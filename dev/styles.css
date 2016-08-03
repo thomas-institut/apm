@@ -1,0 +1,127 @@
+body {
+    font-family:"Source Sans Pro", Helvetica, sans-serif;
+    font-size: 12pt;
+        margin: 0;
+    padding: 0;
+    color: #333;
+}
+
+a, a:visited {
+    text-decoration: none;
+    color: inherit;
+}
+a:hover{
+    color: blue;
+}
+header {
+    background-color: #eee;
+    margin: auto;
+    padding: 0;
+    border: 0;
+    height: 50px;
+    padding-top: 0px;
+    border-bottom: solid 1px #ddd;
+}
+
+div#header-wrap{
+    width: 1000px;
+    margin: auto;
+}
+
+div#nav {
+    font-family: 'Lato', sans-serif;
+    background-color:  #eee;
+    margin: 0;
+    padding: 0;
+    float: right;
+}
+
+section{
+    clear: both;
+    width: 1000px;
+    margin: auto;
+    margin-top: 25px;
+    min-height: 200px;
+}
+
+section h1 {
+    font-size: 1.2em;
+}
+
+section h2 {
+    font-size: 1em;
+}
+
+article {
+    margin: 0;
+    padding-top: 35px;
+}
+
+article h2 {
+    padding: 0;
+    margin-top: 10px;
+}
+article.mssfeedentry{
+    padding-left: 20px;
+}
+
+article.mssfeedentry p {
+    padding: 0;
+    margin: 0;
+    padding-bottom: 10px;
+}
+
+article.mssfeedentry ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    padding-left: 30px;
+}
+
+article.mssfeedentry li  {
+
+    padding: 0;
+    
+}
+footer {
+    width: 1000px;
+    margin: auto;
+    font-size: 10pt;
+    margin-top: 25px;
+    font-family: 'Lato', sans-serif;
+}
+
+p.logo{
+    float: left;
+    margin: 0;
+    padding: 0;
+    background-color:  #eee;
+    font-family: 'Rakkas', cursive;
+    font-size: 2em;
+}
+
+p.logo a:hover {
+    font-weight: normal;
+        color: inherit;
+}
+
+ul.horizontal {
+    margin: 0;
+    padding: 0;
+    padding-top: 15px;
+}
+
+ul.horizontal li {
+    
+    display: inline;
+    padding-right: 24px;
+}
+
+.icon {
+    color: inherit;
+    font-size: 0.8em;
+}
+
+.doctitle {
+    font-weight: bold;
+}

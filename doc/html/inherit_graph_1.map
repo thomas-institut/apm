@@ -1,0 +1,5 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$classweb_page.html" title="Encapsulates basic webpage functions. " alt="" coords="5,31,81,57"/>
+<area shape="rect" id="node2" href="$classapm_page.html" title="Basic APM page. " alt="" coords="130,5,207,32"/>
+<area shape="rect" id="node3" href="$classerror_page.html" title="Error page for APM. " alt="" coords="129,56,208,83"/>
+</map>

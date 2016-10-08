@@ -10,9 +10,9 @@
  * 
  */
 
-require 'apmpage.php';
+require 'appage.php';
 
-$page = new apmPage('Home');
+$page = new ApPage('Home');
 
 $page->startPage(); ?>
  <section id="myassigments">

@@ -7,14 +7,27 @@
  * 
  */
 
-require_once 'config.php';
-require_once 'params.php';
 require_once 'webpage.php';
 require_once 'errorpage.php';
-require_once 'apmdata.php';
+
+if (!file_exists('config.php')){
+    $ep = new ErrorPage();
+    $ep->show("No configuration file", "Tell your admin to configure the system");
+    die();
+}
+require_once 'config.php';
+
+if (!file_exists('params.php')){
+    $ep = new ErrorPage();
+    $ep->show("No parameters file", "Tell your admin to configure the system");
+    die();
+}
+require_once 'params.php';
+
+require_once 'apdata.php';
 
 /**
- * @class apmPage
+ * @class ApPage
  * @brief Basic APM page.
  * 
  * Parent class for all normal APM pages. Children classes
@@ -22,11 +35,11 @@ require_once 'apmdata.php';
  * body of the page.
  */
 
-class apmPage extends webPage {
+class ApPage extends WebPage {
 
     /**
      * Database access 
-     * @var apmData $db 
+     * @var ApData $db 
      */
     protected $db;
 
@@ -59,6 +72,7 @@ class apmPage extends webPage {
      */
     function __construct($title, $pageUrl=''){
         global $params;
+        global $config;
 
         /**
          * 1. Call webPage's constructor
@@ -71,16 +85,28 @@ class apmPage extends webPage {
          * 2. Initialize database
          */
         try {
-            $this->db = new apmData();
+            $this->db = new ApData($config, $params['tables']);
         }
         catch (Exception $e){
             $msg = $e->getMessage();
             $code = $e->getCode();
-            $ep = new errorPage();
-            if ($code == E_MYSQL)
-                $ep->show("MySQL error", $msg);
-            else if ($code == E_NO_TABLES)
-                $ep->show($msg, "Try running the DB setup script.");
+            $ep = new ErrorPage();
+            switch($code){
+                case E_MYSQL:
+                    $ep->show("MySQL error", $msg);
+                    break;
+                
+                case E_NO_TABLES:
+                    $ep->show($msg, "Tell your admin to run the DB creation script.");
+                    break;
+                
+                case E_OUTDATED_DB:
+                    $ep->show($msg, "Tell your admin to upgrade the DB");
+                    break;
+                
+                default:
+                    $ep->show("Oops, an error!", $msg);
+            }
             die();
         }
         /** 

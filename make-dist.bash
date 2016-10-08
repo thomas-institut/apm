@@ -2,12 +2,12 @@
 #
 # Utility to create a distribution directory and zip file
 
-DIST_DIR="apm-v0.01"
+DIST_DIR="apm-v0.02"
 DIST_CSS="css"
 DIST_JSLIBS="js"
 #DIST_JS="js"
 
-INSTALL_FILES_SRC="apmdata.php apmpage.php error.php errorpage.php index.php login.php params.php webpage.php"
+INSTALL_FILES_SRC="apdata.php appage.php errorcodes.php errorpage.php index.php login.php params.php webpage.php"
 INSTALL_FILES_CSS="styles.css"
 
 rm -fr $DIST_DIR

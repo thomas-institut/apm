@@ -1,49 +1,96 @@
 <?php
 /**
- * @file apmdata.php
+ * @file apdata.php
  * 
  * Database handling class
- * @author Rafael Nájera <rafael.najera@nuni-koeln.de>
+ * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 
 
-require_once 'config.php';
-require_once 'params.php';
-require_once 'error.php';
+require_once 'errorcodes.php';
 
 /**
- * @class apmData
+ * @class ApData
  * Provides access to all data via helper functions.
  */
-class apmData extends mysqli{
+class ApData extends mysqli{
    
+    /**
+     *
+     * @var array 
+     */
+    private $settings;
+    
+    /**
+     *
+     * @var array
+     * Array of table names
+     */
+    private $tables;
+    
+    
+    private $databaseversion = '0.01';
+    
     /**
      * Tries to initialize and connect to the MySQL database.
      * 
      * Throws an error if there's no connection 
      * or if the database is not setup properly.
      */
-    function __construct(){
-
-        global $config;
+    function __construct($dbconfig, $tablenames){
 
         parent::init();
 
-        $r  = parent::real_connect($config['host'], $config['user'], $config['pwd']);
+        $r  = parent::real_connect($dbconfig['host'], $dbconfig['user'], $dbconfig['pwd']);
         if (!$r){
             throw new Exception($this->connect_error, E_MYSQL);
         }
 
-        if (!$this->select_db($config['db'])){
+        if (!$this->select_db($dbconfig['db'])){
             throw new Exception($this->error, E_MYSQL);
         }
         $this->query("set character set 'utf8'");
         $this->query("set names 'utf8'");
-
+        
+        $this->tables = $tablenames;
+        
          // Check if database is initialized
-        if (!$this->tableExists('apm_users')){
+        if (!$this->isInitialized()){
             throw new Exception("Tables not initialized", E_NO_TABLES);
         }
+        
+        // Load settings
+        $this->loadSettings();
+        
+        // Check that the database's version is up to date
+        if ($this->settings['dbversion'] !== $this->databaseversion){
+            throw new Exception("Database schema not up to date", E_OUTDATED_DB);
+        }
+       
+    }
+    
+    function loadSettings(){
+         $r = $this->query('select * from ' . $this->tables['settings']);
+        
+        while ($row = $r->fetch_assoc()){
+            $this->settings[$row['key']] = $row['value'];
+        }
+    }
+    
+    
+    /**
+     * @return bool 
+     * Returns true is the database is properly initialized
+     * (right now just checks that all the tables are there!)
+     */
+    function isInitialized(){
+     
+        foreach ($this->tables as $table){
+            if (!$this->tableExists($table)){
+                return FALSE;
+            }
+        }
+        return TRUE;
     }
 
     /**
@@ -78,7 +125,7 @@ class apmData extends mysqli{
      * @param string $username 
      */
     function usernameExists($username){
-        $query = "select * from `apm_users` where `username`='" . $username . "'";
+        $query = 'select * from `' . $this->tables['users'] . '` where `username`=\'' . $username . "'";
         return $this->queryNumRows($query) == 1;
     }
 
@@ -86,14 +133,14 @@ class apmData extends mysqli{
      * Gets the user password hash in the database.
      */
     function userPassword($username){
-        return $this->getOneField('apm_users', 'password', "`username` = '" . $username. "'");
+        return $this->getOneField($this->tables['users'], 'password', "`username` = '" . $username. "'");
     }
 
     /**
      * Gets the user id associated with a given username
      */
     function userId($username){
-        return $this->getOneField('apm_users', 'id', "`username` ='" . $username . "'");
+        return $this->getOneField($this->tables['users'], 'id', "`username` ='" . $username . "'");
     }
 
     /**
@@ -102,7 +149,7 @@ class apmData extends mysqli{
      * @param array $userinfo Array where the information will be stored
      */
     function loadUserInfo($userid, &$userinfo){
-        $this->loadOneRow('select * from `apm_users` where `id`=' . $userid, $userinfo);
+        $this->loadOneRow('select * from `' . $this->tables['users']  . '` where `id`=' . $userid, $userinfo);
     }
 
      
@@ -143,4 +190,3 @@ class apmData extends mysqli{
     }
      
 }
-?>

@@ -16,7 +16,7 @@ require_once 'webpage.php';
  * Provides a function that prints an error page.
  */
 
-class errorPage extends webPage {
+class ErrorPage extends WebPage {
 
     /**
      * @brief Outputs an error page
@@ -30,7 +30,7 @@ class errorPage extends webPage {
      * @param string $msg2 Optional additional error message
      */
     function show($msg, $msg2=''){
-        $this->title = "APM Error!";
+        $this->title = "AP Error!";
         $this->httpHeaderUtf();
         $this->printDocTypeAndHtml();
         $this->printHead();

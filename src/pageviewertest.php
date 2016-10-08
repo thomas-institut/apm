@@ -1,42 +1,87 @@
-<!DOCTYPE html SYSTEM "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!DOCTYPE html>
+<html>
     <head>
         <title>Page Rendering Test</title>
-        <script type="application/javascript" src="openseadragon/openseadragon.min.js"></script>
+        <link rel="stylesheet" type="text/css" media="screen" href="css/normalize.css" />
+        <link rel="stylesheet" type="text/css" media="screen" href="css/styles.css" />
+        <script type="application/javascript" src="js/openseadragon.min.js"></script>
         <style type="text/css">
-            body {
-                width: 90%;
+           
+            button {
+                cursor: pointer;
+            }
+           
+            #viewerheader {
+                position: absolute;
+                top: 0;
+                height: 70px;
+                width: 100%;
+                background-color: #728DC1;
+            }
+             
+            h2.header {
+                padding-left: 10px;
+            }
+            #navigation {
+                position: absolute;
+                top: 70px;
+                height: 41px;
+                width: 100%;
+                background-color: #f1f1f1;
+            }
+            
+            .pv-navbar{
+                list-style-type: none;
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+            } 
+            
+            .pv-navbar button {
+                border: none;
+                padding: 10px;
+                display: block;
+                background-color: transparent;
+            }
+ 
+            #container {
+                position: absolute;
+                width: 100%;
+                top: 111px;
+                bottom: 0;
+                background-color: #f1f1f1;
+                border-top: 1px solid silver;
+            }
+            
+            #pageimage{
+                position: absolute;
+                left: 10px;
+                top: 10px;
+                width: 49%;
+                height: 770px;
+                background-color: white;
+                border: 1px solid silver;
+            }
+            
+            #pagetext {
+                position: absolute;
+                right: 10px;
+                top: 10px;
+                width: 49%;
+                border: 1px solid silver;
+                height: 770px;
+                background-color: white;
+                overflow-x:auto;
             }
             
             td.hebrewline{
                direction: rtl;
                font-family: "Adobe Hebrew", serif;
-               font-size: 1.2em;
+               font-size: 1em;
                margin: 0;
                padding-top: 5px;
             }
-            
-             div.page {
-                clear: both;
-                margin-top: 50px;
-                margin-bottom: 50px;
-                border-top: 1px silver solid;
-                
-            }
-            .page h1{
-                font-family: Calibri;
-            }
-            
-            div.pageimage{
-                float: left;
-                width: 60%;
-                height: 900px;
-            }
-            
-            div.pagetext{
-
-            }
-            
+           
             /* Tooltip container */
             .sic {
                 position: relative;
@@ -57,7 +102,7 @@
  
                 /* Position the tooltip text - see examples below! */
                 position: absolute;
-               z-index: 1;
+                z-index: 1;
              }
 
             /* Show the tooltip text when you mouse over the tooltip container */
@@ -65,32 +110,57 @@
                 visibility: visible;
             }
             
+            table.textlines {
+                
+                width: 100%;
+            }
             td.linenumber {
                 direction: rtl;
                 font-family: Arial, sans-serif;
                 padding-left: 10px;
             }
             
+          
         </style>
     </head>
     <body>
-        <h1>On the diversity of times of pregnancy</h1>
-        <div class="page" id="p493">
-            <h1>Page 493</h1>
-            <div class="pageimage" id="openseadragon1"></div>
-               <script type="text/javascript">
+        <div id="viewerheader">
+            <h2 class="header">BOOK-DARE-M-US-PHL-UPL-LJS.453 - Page 0493</h2>
+        </div>
+        
+        <div id="navigation">
+            <ul class="pv-navbar"> 
+                <li style="float: left;">
+                    <button title="Vertically">
+                        <img src="images/stack_vertically.png" alt="Vertically">
+                    </button>
+                </li>
+                <li style="float: left;">
+                    <button title="Horizontally">
+                        <img src="images/stack_horizontally.png" alt="Horizontally">
+                    </button>
+                </li>
+            </ul>
+        </div>
+        
+        <div id="container">
+            <div id="pageimage">
+            </div>
+            
+            <script type="text/javascript">
                 var viewer = OpenSeadragon({
-                    id: "openseadragon1",
-                        prefixUrl: "openseadragon/images/",
-                       tileSources: {
-                            type: 'image',
-                            url:  'https://bilderberg.uni-koeln.de/images/books/BOOK-DARE-M-US-PHL-UPL-LJS.453/bigjpg/BOOK-DARE-M-US-PHL-UPL-LJS.453-0493.jpg',
-                            buildPyramid: false
-                       }
+                    id: "pageimage",
+                    prefixUrl: "js/openseadragonimages/",
+                    tileSources: {
+                        type: 'image',
+                        url:  'https://bilderberg.uni-koeln.de/images/books/BOOK-DARE-M-US-PHL-UPL-LJS.453/bigjpg/BOOK-DARE-M-US-PHL-UPL-LJS.453-0493.jpg',
+                        buildPyramid: false
+                    }
                 });
-                </script>
-            <div class="pagetext">
-                <table>
+            </script>
+            
+            <div id="pagetext">
+                <table class="textlines">
                     <tr>
                         <td class="hebrewline">-</td>
                         <td class="linenumber">1</td>
@@ -237,54 +307,6 @@
                     </tr>
                 </table>
             </div>
-        </div>
-        
-        <div class="page" id="p494">
-            <h1>Page 494</h1>
-            <div class="pageimage" id="openseadragon2"></div>
-            <script type="text/javascript">
-                var viewer = OpenSeadragon({
-                    id: "openseadragon2",
-                        prefixUrl: "openseadragon/images/",
-                       tileSources: {
-                            type: 'image',
-                            url:  'https://bilderberg.uni-koeln.de/images/books/BOOK-DARE-M-US-PHL-UPL-LJS.453/bigjpg/BOOK-DARE-M-US-PHL-UPL-LJS.453-0494.jpg',
-                            buildPyramid: false
-                       }
-                });
-                </script>
-            <div class="pagetext he">
-               <table> 
-                   <td>זה נראה מענין השמש והירח שסבובם סבה לרוב זמני עבור ב"ח וזמן חייהם גם זה מחוייב</td>
-                <td>   שיהיו סבובי שאר הכוכבים סבה לזמני העבור שאר מיני ב"ח וזמני חייהם אבל זה מחוייב 
-                </td>
-                <td>
-                    כי ראוי שנאמין שהתחלת הנמצאות ותכליתם שמור בסבובי הכוכבים לפי שזה הערך
-                </td>
-                <td> והסדר אי אפשר שיהיה מפני החמר ואולם הוא מפני הטבע שהוא הנאות להויה ולשלמות</td>
-                <td>הסדר הפועל אותו לא שיהיה נאות להפסד והעדר הסדר. ואולם החום והקור ובכלל האיכיות</td>
-                <td>  אשר ביסודות הנה הם נאותים לשני ענינים יחד ר"ל ההויה וההפסד ובאמת
-                    <metamark xml:id="add-245v-1"/>
-                    היה זה לפי  
-                </td>
-                <!--<add place="margin-left" target="add-245v-1">
-                    <l>
-                        <choice>
-                            <abbr>נ</abbr>
-                            <expan>נוסח אחר</expan>
-                        </choice>
-                    </l>
-                    <l>וראוי</l>
-                </add>-->
-                <td>  שהטבע הבלתי מעולה נמשך לטבע הנכבד והמעולה ולא ההפסד והכליון מצד הנכבד על  
-                </td>
-                <td> הכונה הראשונה ואמנם ההפסד וההווה באלו הדברים ובכלל התוספת והחסרון הוא
-                </td>
-                <td>מפני טבע החמר. הנה כבר דברנו במקרים שיקרו לולד במעי אמו ונתננו
-                    סב<!--<add place="above">ו</add>-->תם 
-                </td>
-                <td>והתחלותם ובכאן נשלם המאמר </td>
-            </div></table>
         </div>
     </body>
 </html>

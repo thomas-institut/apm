@@ -143,7 +143,7 @@ class dbTreeTest extends PHPUnit_Framework_TestCase{
         for($i = 1; $i<=100; $i++){
             $data[$i]['field1'] = rand();
             $parents[$i] = rand(0, $i -1);
-        };
+        }
 
 
         // Add nodes to single table tree

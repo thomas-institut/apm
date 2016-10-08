@@ -1,0 +1,66 @@
+
+<?xml-model href="https://thomas-institut.github.io/averroes-tei/averroes-guidelines.rng" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"?><?xml-model href="https://thomas-institut.github.io/averroes-tei/averroes-guidelines.rng" type="application/xml" schematypens="http://purl.oclc.org/dsdl/schematron"?><!-- 
+
+BOOK-DARE-I-AT-VIE-ONB-20.L.73
+
+Pages 0005 to 0053
+
+Transcriber: Natalie Korobzow
+-->
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xml:lang="en">
+    <teiHeader>
+        <fileDesc>
+            <titleStmt>
+                <title type="main"/>
+                <title type="short"/>
+                <author>
+                    <name>Ibn Rušd</name>
+                </author>
+                <editor xml:id="test">
+                    <name>Some Editor</name>
+                    <email>someeditor@gmail.com</email>
+                </editor>
+            </titleStmt>
+            <publicationStmt>
+                <p/>
+            </publicationStmt>
+            <sourceDesc>
+                <p/>
+            </sourceDesc>
+        </fileDesc>
+        <!-- MAINTAIN this list of important changes to the transcription.
+             E.g., chapter finished, major revision, etc-->
+        <revisionDesc status="draft">
+            <change when="2016-08-03" who="#natalie">File created</change>
+        </revisionDesc>
+    </teiHeader>
+    <text xml:lang="la">
+        <body>
+            <div type="page" facs="BOOK-DARE-I-AT-VIE-ONB-20.L.73-0005">
+                <head xml:lang="la">This is the header</head>
+                <l>This is the first line</l>
+                <l>This is the second line, it is supposed to be in Latin</l>
+                <l>but it's in English for testing purposes</l>
+                <l>This is the fourth line, and this has an <choice>
+                        <abbr>abr.</abbr>
+                        <expan>abbreviation</expan>
+                    </choice></l>
+                <!--  Page 1r -->
+            </div>
+            <someElement>Some other element</someElement>
+            <div type="someothertype"> </div>
+            <div type="page" facs="BOOK-DARE-I-AT-VIE-ONB-20.L.73-0006">
+                <head xml:lang="la">This is the header</head>
+                <l>This is the first line</l>
+                <l>This is the second line, it is supposed to be in Latin</l>
+                <l>but it's in English for testing purposes</l>
+                <l>This is the fourth line, and this has an <choice>
+                    <abbr>abr.</abbr>
+                    <expan>abbreviation</expan>
+                </choice></l>
+                <!--  Page 1r -->
+            </div>
+            
+        </body>
+    </text>
+</TEI>

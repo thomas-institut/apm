@@ -14,7 +14,7 @@
  * @todo send output to a stream rather than using 'print'
  */
 
-class webPage {
+class WebPage {
 
     /**
      * @var string $lang 

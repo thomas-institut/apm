@@ -5,23 +5,26 @@
  *
  * Process login attempts and shows a login page for the user
  * 
- *
+ * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 
+require_once 'config.php';
+require_once 'params.php';
 require_once 'webpage.php';
-require_once 'apmdata.php';
+require_once 'apdata.php';
+
 
 /**
   * 1. Initialize database
   * @todo Move db initialization to a class function in rmpage
   */
 try {
-    $db = new apmData();
+    $db = new ApData($config, $params['tables']);
 }
 catch (Exception $e){
     $msg = $e->getMessage();
     $code = $e->getCode();
-    $ep = new errorPage();
+    $ep = new ErrorPage();
     if ($code == E_MYSQL)
         $ep->show("MySQL error", $msg);
     else if ($code == E_NO_TABLES)
@@ -35,7 +38,7 @@ session_start();
 if (isset($_GET['logout'])){
     session_unset();
     session_destroy();
-    webPage::redirectToSelf();
+    WebPage::redirectToSelf();
     die();
 }
 
@@ -44,7 +47,7 @@ if (isset($_POST['user'])){
     if ($db->usernameExists($_POST['user']) and password_verify($_POST['pwd'], $db->userPassword($_POST['user']))){
         // Success!
         $_SESSION['userid'] = $db->userId($_POST['user']);
-        webPage::redirect('index.php');
+        WebPage::redirect('index.php');
         die();
     }
     else{
@@ -58,7 +61,7 @@ if (isset($_POST['user'])){
 session_unset();
 session_destroy();
 
-$page = new webPage('Averroes Project Login', 'styles.css');
+$page = new WebPage('Averroes Project Login', 'styles.css');
 
 $page->httpHeaderUtf();
 $page->printDocTypeAndHtml();

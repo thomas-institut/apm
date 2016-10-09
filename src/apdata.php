@@ -178,6 +178,21 @@ class ApData extends mysqli{
             return $row[$field];
         }
     }
+    
+     /**
+     * Gets the given field from the first row of the result
+      * set of the given query
+     */
+    function getOneFieldQuery($query, $field){
+        $r = $this->query($query);
+        $row = $r->fetch_assoc();
+        if (!isset($row[$field])){
+            throw new Exception($field . ' not in ' . $table, E_MYSQL);
+        }
+        else{
+            return $row[$field];
+        }
+    }
 
       /**
      * Gets the first row of a query as an array association.
@@ -189,4 +204,75 @@ class ApData extends mysqli{
         $data = $r->fetch_assoc();
     }
      
+    
+    /**
+     * @return array
+     * Returns an array with the IDs of all the manuscripts with
+     * some data in the system and the number of pages with data
+     */
+    function getManuscriptList(){
+        $query = "select `doc_id` from " . $this->tables['elements'] .
+                " GROUP BY `doc_id`";
+        $r = $this->query($query);
+        
+        $mss = array();
+        while ($row = $r->fetch_assoc()){
+            array_push($mss, $row['doc_id']);
+        }
+        return $mss;
+    }
+    
+    /**
+     * 
+     * @param string $doc
+     * @return int 
+     * Returns the number of pages of the given document
+     */
+    function getPageCountByDoc($doc){
+        return $this->getOneFieldQuery(
+                'SELECT count(DISTINCT `page_number`) as value from ' . 
+                $this->tables['elements'] .
+                ' WHERE `doc_id`=\'' . $doc . '\'', 'value');
+        
+    }
+    
+    function getLineCountByDoc($doc){
+        return $this->getOneFieldQuery(
+                'SELECT count(DISTINCT `page_number`, `line_number`) as value from ' . 
+                $this->tables['elements'] .
+                ' WHERE `doc_id`=\'' . $doc . '\'', 'value');
+    }
+    /**
+     * 
+     * @param string $doc
+     * @return array
+     * Returns the editors associated with a document as a list of usernames
+     */
+    function getEditorsByDoc($doc){
+        $te = $this->tables['elements'];
+        $tu = $this->tables['users'];
+        $query = "SELECT distinct `$tu`.`username`" . 
+            " from `$te` JOIN `$tu` on `$te`.`editor_id`=`$tu`.`id`" . 
+           " WHERE `doc_id`='" . $doc . "'";
+        
+        $r = $this->query($query);
+        
+        $editors = array();
+        while ($row = $r->fetch_assoc()){
+            array_push($editors, $row['username']);
+        }
+        return $editors;
+    }
+    
+    function getPageListByDoc($doc){
+        $query =  'SELECT distinct `page_number` from ' . 
+                $this->tables['elements'] .
+                ' WHERE `doc_id`=\'' . $doc . '\' order by `page_number` asc';
+        $r = $this->query($query);
+        $pages = array();
+         while ($row = $r->fetch_assoc()){
+            array_push($pages, $row['page_number']);
+        }
+        return $pages;
+    }
 }

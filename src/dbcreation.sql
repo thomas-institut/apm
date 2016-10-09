@@ -28,6 +28,7 @@ CREATE TABLE `ap_elements` (
   `doc_id` varchar(45) NOT NULL,
   `page_number` int(11) NOT NULL,
   `column_number` int(11) NOT NULL DEFAULT 0,
+  `seq`int(11) NOT NULL, 
   `line_number` int(11) NOT NULL,
   `lang` varchar(3) DEFAULT 'la',
   `editor_id` int(11) NOT NULL DEFAULT 0,
@@ -57,6 +58,21 @@ CREATE TABLE `ap_ednotes` (
   `lang` varchar(3) DEFAULT 'la',
   `author_id` int(11) NOT NULL DEFAULT 0,
   `text` varchar(2048) NOT NULL,
+   PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `ap_items` (
+  `id` int(11) NOT NULL,
+  `type` int(11) NOT NULL DEFAULT 0,
+  `ce_id` int(11) NOT NULL,
+  `seq` int(11) NOT NULL,
+  `lang` varchar(3) DEFAULT 'la',
+  `hand_id` int(11) NOT NULL DEFAULT 0,
+  `text` varchar(1024), 
+  `alt_text` varchar(1024) DEFAULT NULL,
+  `extra_info` varchar(128) DEFAULT NULL,
+  `length` int(11) DEFAULT NULL,
+  `target` int(11) DEFAULT NULL,
    PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

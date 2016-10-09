@@ -41,7 +41,7 @@ class ApPage extends WebPage {
      * Database access 
      * @var ApData $db 
      */
-    protected $db;
+    public $db;
 
     /**
      * User info
@@ -79,8 +79,10 @@ class ApPage extends WebPage {
          */
         parent::__construct($title);
         // Add jQuery
-        $this->addScript('jquery.js');
-        $this->addStylesheet("https://fonts.googleapis.com/css?family=Lato:300|Rakkas|Source+Sans+Pro");
+        $this->addScript('jquery-3.1.1.js');
+        $this->addScript('jquery-ui.js');
+        $this->addStylesheet('jquery-ui.css');
+        //$this->addStylesheet("https://fonts.googleapis.com/css?family=Lato:300|Rakkas|Source+Sans+Pro");
         /**
          * 2. Initialize database
          */
@@ -196,13 +198,22 @@ class ApPage extends WebPage {
         <p class="logo"><a href="index.php">Averroes Project</a></p>
         <div id="nav">
             <ul class="horizontal">
-                <li><a href="https://thomas-institut.github.io/averroes-workflow-guidelines/">Worflow Guidelines <span class="icon">&#129109;</span></a></li>
-                <li><a href="https://thomas-institut.github.io/averroes-tei/averroes-guidelines.html">TEI Guidelines <span class="icon">&#129109;</span></a></li>
-                <li><a href="https://wiki.uni-koeln.de/averroes_project/">Wiki <span class="icon">&#129109;</span></a></li>
-                <li>Collaborators</li>
-                <li style="padding-left: 60px;">User: <a>rafael <span class="icon">&#x25bc;</span></a></li>
+                <li><a href="https://thomas-institut.github.io/averroes-workflow-guidelines/">Worflow Guidelines<span class="ui-icon ui-icon-extlink"></span></a></li>
+                <li><a href="https://thomas-institut.github.io/averroes-tei/averroes-guidelines.html">TEI Guidelines<span class="ui-icon ui-icon-extlink"></span></a></li>
+                <li><a href="https://wiki.uni-koeln.de/averroes_project/">Wiki <span class="ui-icon ui-icon-extlink"></span></a></li>
+                <li style="padding-left: 60px;"><span class="ui-icon ui-icon-person"></span> <?php print $this->user['username']?>
+                    <a href="login.php?logout" title="Logout" id="logout"><span class="ui-icon ui-icon-power"></span></a>
+                </li>
             </ul>
         </div>
+  <!--
+  <script>
+            $( "#usermenu" ).menu({
+                icons: { submenu: "ui-icon-triangle-1-s" }
+            });
+        </script>
+  -->
+            
 <?php
         $this->closeLastTag(); // div header-wrap
         $this->closeLastTag(); // header

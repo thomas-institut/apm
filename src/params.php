@@ -20,6 +20,7 @@ $params['tables'] = array();
 $params['tables']['settings']   = 'ap_settings';
 $params['tables']['ednotes']    = 'ap_ednotes';
 $params['tables']['elements']   = 'ap_elements';
+$params['tables']['items']      = 'ap_items';
 $params['tables']['hands']      = 'ap_hands';
 $params['tables']['users']      = 'ap_users';
 

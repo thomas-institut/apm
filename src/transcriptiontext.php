@@ -188,26 +188,21 @@ class TranscriptionTextItem {
      * The element's unique id 
      */
     public $id;
-
-    /**
-     *
-     * @var string  
-     * The element's language
-     */
-    public $lang;
     
-    /**
-     * @var int $handId
-     * @brief The element's hand
-     */
-    public $handId;
+    
+   /**
+    *
+    * @var int
+    * The column element Id to which
+    * this item belongs
+    */
+    public $columnElementId;
     /**
      *
      * @var int $seq
-     * The element's sequence number within the column 
+     * The element's sequence number within the column element 
      */
     public $seq;
-    
     /**
      * @var int type
      * @brief the item's type
@@ -226,6 +221,22 @@ class TranscriptionTextItem {
     const DELETION = 8;
     const MARK = 9;
     const NO_LINEBREAK = 10;
+    
+    /**
+     *
+     * @var string  
+     * The element's language
+     */
+    public $lang;
+    
+    /**
+     * @var int $handId
+     * @brief The element's hand
+     */
+    public $handId;
+    
+    
+
     
     /**
      *

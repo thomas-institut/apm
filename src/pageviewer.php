@@ -75,6 +75,9 @@ else{
         <title>Manuscript Viewer</title>
         <link rel="stylesheet" type="text/css" media="screen" href="normalize.css" />
         <link rel="stylesheet" type="text/css" media="screen" href="styles.css" />
+        <link rel="stylesheet" type="text/css" media="screen" href="jquery-ui.css" />
+        <script type="application/javascript" src="jquery-3.1.1.js"></script>
+        <script type="application/javascript" src="jquery-ui.js"></script>
         <script type="application/javascript" src="openseadragon.min.js"></script>
         <style type="text/css">
            
@@ -145,50 +148,51 @@ else{
                 overflow-x:auto;
             }
             
-            td.hebrewline{
+            td.text-he{
                direction: rtl;
                font-family: "Adobe Hebrew", serif;
-               font-size: 1em;
+               font-size: 1.1em;
                margin: 0;
                padding-top: 5px;
             }
-           
-            /* Tooltip container */
-            .sic {
-                position: relative;
-                display: inline-block;
+            
+            .rubric {
                 color: blue;
-                /*border-bottom: 1px dotted black;  */
-             }
-
-            /* Tooltip text */
-            .sic .sicsupplied {
-                visibility: hidden;
-                width: 120px;
-                background-color: gray;
-                color: #fff;
-                text-align: center;
-                padding: 5px 0;
-                border-radius: 6px;
- 
-                /* Position the tooltip text - see examples below! */
-                position: absolute;
-                z-index: 1;
-             }
-
-            /* Show the tooltip text when you mouse over the tooltip container */
-            .sic:hover .sicsupplied {
-                visibility: visible;
+                font-weight: bold;
+                font-size: 150%;
             }
             
+            .hasednote {
+                text-decoration: underline;
+            }
+
+            .sic {
+                color: orange;
+            }  
+            
+            .mark {
+                color: red;
+                font-family: sans-serif;
+                font-size: 60%;
+            }
+            
+            .unclear{
+                color: darkgray;
+            }
+            
+            .illegible {
+                color: lightsalmon;
+                font-family: sans-serif;
+                font-size: 80%;
+            }
             table.textlines {
                 
                 width: 100%;
             }
             td.linenumber {
-                direction: rtl;
+                /* direction: rtl; */
                 font-family: Arial, sans-serif;
-                padding-left: 10px;
+                padding-left: 20px;
             }
             
           
@@ -229,7 +233,13 @@ else{
             </ul>
         </div>
         
-        <div id="container">
+<?php
+
+function printImageContainer(){
+    global $db, $mss, $page;
+?>
+        
+
             <div id="pageimage">
             </div>
             
@@ -239,160 +249,186 @@ else{
                     prefixUrl: "images/openseadragonimages/",
                     tileSources: {
                         type: 'image',
-                        url:  'https://bilderberg.uni-koeln.de/images/books/BOOK-DARE-M-US-PHL-UPL-LJS.453/bigjpg/BOOK-DARE-M-US-PHL-UPL-LJS.453-0493.jpg',
+                        url:  '<?php print $db->getImageUrlByDoc($mss, $page);?>',
                         buildPyramid: false
                     }
                 });
             </script>
+<?php
+}
+
+/**
+ * 
+ * @global ApData $db
+ * @global string $mss
+ * @global int $page
+ * This is the meat of the page viewer!
+ * For this first version I'm assuming:
+ *  + One column per page
+ *  + Only LINE elements
+ *  + Only TEXT items
+ */
+function printPageTextContainer(){
+    global $db, $mss, $page;
+    
+    print "<div id=\"pagetext\">\n";
+    print "<table class=\"textlines\">\n";
+
+    $elements = $db->getColumnElements($mss, $page, 1);
+    $rtl = ColumnElementArray::isRightToLeft($elements);
+    $richTooltips = array();
+    
+    foreach ($elements as $e){
+        switch ($e->type){
+            case ColumnElement::LINE:
+                $nLabel = $e->getLineNumber();
+                $tooltipText = '';
+                break;
             
-            <div id="pagetext">
-                <table class="textlines">
-                    <tr>
-                        <td class="hebrewline">-</td>
-                        <td class="linenumber">1</td>
-                    </tr>
-                    <tr>
-                        <td class="hebrewline">-</td>
-                        <td class="linenumber">2</td>
-                    </tr>
-                    <tr>
-                        <td class="hebrewline">-</td>
-                        <td class="linenumber">3</td>
-                    </tr>
-                    <tr>
-                        <td class="hebrewline">-</td>
-                        <td class="linenumber">4</td>
-                    </tr>
-                    <tr>
-                        <td class="hebrewline">-</td>
-                        <td class="linenumber">5</td>
-                    </tr>
-                    <tr>
-                        <td class="hebrewline">-</td>
-                        <td class="linenumber">6</td>
-                    </tr>
-                    <tr>
-                        <td class="hebrewline">-</td>
-                        <td class="linenumber">7</td>
-                    </tr>
-                    <tr>
-                        <td class="hebrewline">-</td>
-                        <td class="linenumber">8</td>
-                    </tr>
-                    <tr>
-                        <td class="hebrewline">-</td>
-                        <td class="linenumber">9</td>
-                    </tr>
-                    <tr>
-                        <td class="hebrewline">-</td>
-                        <td class="linenumber">10</td>
-                    </tr>
-                    <tr>
-                        <td class="hebrewline">ואולם חלוף זמני עבור ב"ח הנה הסבה הקרובה חלוף גופו
-                            בגודל וקטנות.</td>
-                        <td class="linenumber">11</td>
-                    </tr>
-                    <tr>
-                        <td class="hebrewline">וחלוף כח הזרע המבשל לעובר וחלוף זמן חייהם ר"ל זמן
-                            הגידול וזמן בחרות הב"ח וזמן זקנותו</td>
-                        <td class="linenumber">12</td>
-                    </tr>
-                    <tr>
-                        <td class="hebrewline"> וזמן ישישותו וזה כי זמן העבור הוא מדת שלמות יצירתו וזה ישוב אל מזגו
-                            וגודל גופו וכן </td>
-                        <td class="linenumber">13</td>
-                    </tr>
-                    <tr>
-                        <td class="hebrewline"> הזמנים הד' שיש לו חוץ לרחם ימצאו על יחס התהוותו ברחם
-                            ולכן החי שימיו ארוכים</td>
-                        <td class="linenumber">14</td>
-                    </tr>
-                    <tr>
-                        <td class="hebrewline"> הוא מתעכב יותר ברחם והב"ח גדול הגוף כמו שזמן התהוותו יותר ארוך מזמן
-                            התהוות ב"ח </td>
-                        <td class="linenumber">15</td>
-                    </tr>
-                    <tr>
-                        <td class="hebrewline"> קטן הגוף כן חייו יותר ארוכים מחיי קטן הגוף. ואמנם
-                            היה זה כן בעבור החום והלחות </td>
-                        <td class="linenumber">16</td>
-                    </tr>
-                    <tr>
-                        <td class="hebrewline"> הגובר על מזגם אבל אין כל מה שחיו ארוכים גופו יותר
-                            גדול ואמנם יהיה על הרוב שחיי האדם </td>
-                        <td class="linenumber">17</td>
-                    </tr>
-                    <tr>
-                        <td class="hebrewline"> ארוכים משאר ב"ח המולידים חי זולת הפיל וגופו קטן משאר
-                            ב"ח. ואולם השארות האדם
-                            <!--<choice>
-                    <unclear>
-                        <add>זמן רב הוא בעבור</add>
-                    </unclear>
-                    <note type="editorial">maybe these words (attested in MS Oxford, Opp. 683)
-                        were not copied by mistake</note>
-                </choice>-->
-                        </td>
-                        <td class="linenumber">18</td>
-                    </tr>
-                    <tr>
-                        <td class="hebrewline"> מזגו שדומה למזג האויר המקיף בו ר"ל חם ולח וכבר ימצא
-                            ב"ח יארך עבורו בעבור גודל גופו </td>
-                        <td class="linenumber">19</td>
-                    </tr>
-                    <tr>
-                        <td class="hebrewline"> ומעוט החום והלחות בו וזה יקרה שיהיו חייו קצרים כמו
-                            הסוס והדומה לו ובכלל זמני עבור </td>
-                        <td class="linenumber">20</td>
-                    </tr>
-                    <tr>
-                        <td class="hebrewline"> הב"ח מוגבלים ומשוערים בסבובי הכוכבים ובפרט הקפותיהם
-                            המפורסמות כמו סבוב</td>
-                        <td class="linenumber">21</td>
-                    </tr>
-                    <tr>
-                        <td class="hebrewline">והתנועה היומית וסבוב השמש שהוא זמן השנה וסבוב הירח
-                            שהוא זמן החדש כי יראה </td>
-                        <td class="linenumber">22</td>
-                    </tr>
-                    <tr>
-                        <td class="hebrewline"> שלסבובי אלו הכוכבים <span class="sic">השם (sic)
-                                    <span class="sicsupplied">רושם</span>
-                            </span>
-                            <!--<choice>
-                    <sic>השם</sic>
-                    <supplied> רושם</supplied>
-                </choice>-->
-                            בשעור זמן עבור הב"ח ובפרט לסבוב השמש ולזה היו זמני </td>
-                        <td class="linenumber">23</td>
-                    </tr>
-                    <tr>
-                        <td class="hebrewline"> הרבה מעבורי הב"ח אמנם ישלמו לחדשים שלמים וזה על הרוב
-                            ואמנם היה לחדשים רושם לעבור </td>
-                        <td class="linenumber">24</td>
-                    </tr>
-                    <tr>
-                        <td class="hebrewline"> לפי שהוא מורכב מטבע השמש וטבע הירח ולזה יתחלף פועל
-                            הירח בחדש לחלוף קבלת</td>
-                        <td class="linenumber">25</td>
-                    </tr>
-                    <tr>
-                        <td class="hebrewline"> אורה מהשמש כי כשתשלם תהיה בשמש אחר ולזה היה לה
-                            בענינה מן השמש האותות </td>
-                        <td class="linenumber">26</td>
-                    </tr>
-                    <tr>
-                        <td class="hebrewline"> גדול במיני המתהוים וזה מבואר ממה שיראה בדבוקים
-                            ובנגודים ובריבועים שיהיה</td>
-                        <td class="linenumber">27</td>
-                    </tr>
-                    <tr>
-                        <td class="hebrewline"> רשומה נכר בתנועות המימות והרוחות וכל הדברים אשר
-                            יוחסו אל ההוייה וכאשר היה </td>
-                        <td class="linenumber">28</td>
-                    </tr>
-                </table>
-            </div>
+            case ColumnElement::HEAD:
+                $nLabel = 'H';
+                $tooltipText = 'Head';
+                break;
+            
+            case ColumnElement::CUSTODES:
+                $nLabel = 'C';
+                $tooltipText = 'Custodes';
+                break;
+            
+            default:
+                $nLabel = 'Unk';
+                $tooltipText = 'Unsupported element';
+                
+        }
+        print "<tr>";
+        $seqtd = '<td class="linenumber "title="'. $tooltipText .  '">' . $nLabel . '</td>';
+        $theText = '';
+        foreach($e->transcribedText->theItems as $item){
+            $htmlId = 'item' . $item->id;
+            $classes = '';
+            $ednotes = $db->getEditorialNotesByItemId($item->id);
+            if ($ednotes !== NULL){
+                $classes = 'hasednote';
+            }
+            switch($item->type){
+                case TranscriptionTextItem::TEXT:
+                    $classes = $classes . ' regulartext';
+                    $theText = $theText . '<span class="'. $classes .  '" id="' . $htmlId . '">' . $item->getText() . '</span>';
+                    break;
+                
+                case TranscriptionTextItem::RUBRIC:
+                    $classes = $classes . ' rubric';
+                    $theText = $theText . '<span class="'. $classes .  '" title="Rubric" id="' . $htmlId . '">' . $item->getText() . '</span>';
+                    break;
+                
+                case TranscriptionTextItem::SIC:
+                    $classes = $classes . ' sic';
+                    $t = $item->getCorrection();
+                    if ($t === ''){
+                        $t = $item->theText;
+                    }
+                    $theText = $theText . '<span class="'. $classes .  '" id="' . $htmlId . '">' . $t . '</span>';
+                    $richTooltips[$htmlId]['type'] = 'sic';
+                    $richTooltips[$htmlId]['text'] =  'sic<br/>Original: ' . $item->theText . '<br/>Correction: ' . $item->getCorrection();
+                    break;
+                
+                case TranscriptionTextItem::MARK:
+                    $classes = $classes . ' mark';
+                    $theText = $theText . '<span class="'. $classes .  '" id="' . $htmlId . '">' . '[N]' . '</span>';
+                    break;
+                
+                case TranscriptionTextItem::UNCLEAR:
+                    $classes = $classes . ' unclear';
+                    $theText = $theText . '<span class="'. $classes .  '" id="' . $htmlId . '">' . $item->getText() . '</span>';
+                    $richTooltips[$htmlId]['type'] = 'unclear';
+                    $ttt = 'Unclear<br/>';
+                    if ($item->altText !== ''){
+                        $ttt = $ttt . 'Alternative: ' . $item->altText . '<br/>';
+                    }
+                    $ttt = $ttt . 'Reason: ' . $item->getReason();
+                    $richTooltips[$htmlId]['text'] =  $ttt;
+                    break;
+                    
+                case TranscriptionTextItem::ILLEGIBLE:
+                    $classes = $classes . ' illegible';
+                    $theText = $theText . '<span class="'. $classes .  '" id="' . $htmlId . '">' . $item->getText() . '</span>';
+                    $richTooltips[$htmlId]['type'] = 'illegible';
+                    $ttt = 'Illegible<br/>';
+                    if ($item->getReason() !== 'illegible'){
+                        $ttt = $ttt . 'Reason: ' . $item->getReason() . '<br/>';
+                    }
+                    $ttt = $ttt . 'Length: ' . $item->getLength();
+                    $richTooltips[$htmlId]['text'] =  $ttt;
+                    break;
+                    
+                    
+                
+                default:
+                    $theText = $theText . $item->getText();
+            }
+            
+            if ($ednotes !== NULL){
+                if (!isset($richTooltips[$htmlId])){
+                    $richTooltips[$htmlId]['type'] = 'ednote';
+                    $richTooltips[$htmlId]['text'] = '';
+                }
+                $t = '<h5>Notes</h5><ol>';
+                foreach ($ednotes as $en){
+                    $t = $t . '<li>';
+                    $t = $t . '<p>' . $db->getUsernameById($en->authorId) . ' @ ' . $en->time . '</p>';
+                    $t = $t . '<p>' . $en->text . '</p>';
+                    $t = $t . '</li>';
+                    
+                }
+                $t = $t . '</ol>';
+                $richTooltips[$htmlId]['text'] = $richTooltips[$htmlId]['text'] . $t;
+            }
+        }
+        $texttd = '<td class="text-'. $e->transcribedText->lang . '">' . $theText . "</td>";
+        
+        if ($rtl){
+            print $texttd;
+            print $seqtd;
+        }
+        else{
+            print $seqtd;
+            print $texttd;
+        }
+        print "</tr>\n";
+    }
+                    
+    print "</table>\n";
+    print "</div>\n";
+    
+    print "<script>$(\"#pagetext\").tooltip();</script>\n";
+    print "<script>\n";
+    foreach($richTooltips as $id => $tooltip){
+        print "$(\"#" . $id . "\").tooltip({content: \"" . $tooltip['text'] ."\", items: \"span\"});\n";
+                
+    }
+    print "</script>\n";
+            
+
+}
+?>
+            <div id="container">
+<?php
+// The idea is to change the order of the 
+// image and text containers depending on the
+// direction of the text, but I still need to
+// play with CSS to do that. For the time
+// being this doesn't do anything really
+
+if ($db->isPageRightToLeft($mss, $page)){
+    printImageContainer();
+    printPageTextContainer();
+}
+else{
+    printPageTextContainer();
+    printImageContainer();
+}
+    
+?>
         </div>
     </body>
 </html>

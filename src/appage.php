@@ -201,8 +201,8 @@ class ApPage extends WebPage {
                 <li><a href="https://thomas-institut.github.io/averroes-workflow-guidelines/">Worflow Guidelines<span class="ui-icon ui-icon-extlink"></span></a></li>
                 <li><a href="https://thomas-institut.github.io/averroes-tei/averroes-guidelines.html">TEI Guidelines<span class="ui-icon ui-icon-extlink"></span></a></li>
                 <li><a href="https://wiki.uni-koeln.de/averroes_project/">Wiki <span class="ui-icon ui-icon-extlink"></span></a></li>
-                <li style="padding-left: 60px;"><span class="ui-icon ui-icon-person"></span> <?php print $this->user['username']?>
-                    <a href="login.php?logout" title="Logout" id="logout"><span class="ui-icon ui-icon-power"></span></a>
+                <li style="padding-left: 60px;">User: <b><?php print $this->user['username']?></b>
+                    <a href="login.php?logout" title="Logout" id="logout"><img src="images/exit-1.png" height="16"></a>
                 </li>
             </ul>
         </div>

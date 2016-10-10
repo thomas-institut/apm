@@ -8,6 +8,9 @@
 
 
 require_once 'errorcodes.php';
+require_once 'columnelement.php';
+require_once 'transcriptiontext.php';
+require_once 'editorialnote.php';
 
 /**
  * @class ApData
@@ -142,6 +145,10 @@ class ApData extends mysqli{
     function userId($username){
         return $this->getOneField($this->tables['users'], 'id', "`username` ='" . $username . "'");
     }
+    
+    function getUsernameById($id){
+        return $this->getOneField($this->tables['users'], 'username', "`id` ='" . $id . "'");
+    }
 
     /**
      * Gets the user info from the database
@@ -238,9 +245,9 @@ class ApData extends mysqli{
     
     function getLineCountByDoc($doc){
         return $this->getOneFieldQuery(
-                'SELECT count(DISTINCT `page_number`, `line_number`) as value from ' . 
+                'SELECT count(DISTINCT `page_number`, `reference`) as value from ' . 
                 $this->tables['elements'] .
-                ' WHERE `doc_id`=\'' . $doc . '\'', 'value');
+                ' WHERE `doc_id`=\'' . $doc . '\' AND `type`=' . ColumnElement::LINE, 'value');
     }
     /**
      * 
@@ -275,4 +282,147 @@ class ApData extends mysqli{
         }
         return $pages;
     }
+    
+    function getImageUrlByDoc($doc, $page){
+        
+        if (strpos($doc, 'BOOK-DARE') !== 0){
+            return sprintf("localrep/%s/%s-%04d.jpg", $doc, $doc, $page);
+        }
+        else {
+            return sprintf("https://bilderberg.uni-koeln.de/images/books/%s/bigjpg/%s-%04d.jpg", $doc, $doc, $page);
+        }
+    }
+    
+    function isPageRightToLeft($doc, $page){
+        // Faking it right now, need to come back to it.
+        return FALSE;
+    }
+    
+    /**
+     * 
+     * @param string $doc
+     * @param int $page
+     * @param int $col
+     * @return array of ColumnElement properly initialized
+     */
+    
+    function getColumnElements($doc, $page, $col){
+        
+        $query = 'SELECT * FROM `' . $this->tables['elements'] . 
+                '` WHERE `doc_id`=\'' . $doc . '\' AND' .
+                ' `page_number`=' . $page . " AND" . 
+                ' `column_number`=' . $col . ' ORDER BY `seq` ASC';
+        $r = $this->query($query);
+        $elements = array();
+        while ($row = $r->fetch_assoc()){
+            switch ($row['type']){
+                case ColumnElement::LINE:
+                    $e = new CeLine();
+                    // the line number
+                    $e->setLineNumber($row['reference']);
+                    break;
+                
+                case ColumnElement::CUSTODES:
+                    $e = new CeCustodes();
+                    break;
+                
+                case ColumnElement::HEAD:
+                    $e = new CeHead();
+                    break;
+                
+                default:
+                    continue;
+            }
+            $e->columnNumber = $col;
+            $e->documentId = $doc;
+            $e->editorId = $row['editor_id'];
+            $e->handId = $row['hand_id'];
+            $e->id = $row['id'];
+            $e->lang = $row['lang'];
+            $e->pageNumber = $page;
+            //$e->placement = $row['placement'];
+            $e->seq = $row['seq'];
+            $e->timestamp = $row['time'];
+            $e->type = $row['type'];
+            
+            $e->transcribedText = $this->getTranscribedText($e->id, $e->lang, $e->editorId, $e->handId);
+            array_push($elements, $e);
+        }
+        return $elements;
+    }
+    
+    function getTranscribedText($cid, $lang, $editorId, $handId){
+        $query = 'SELECT * FROM `' . $this->tables['items'] . 
+                '` WHERE `ce_id`=' . $cid . 
+                ' ORDER BY `seq` ASC';
+        $r = $this->query($query);
+        
+        $tt = new TranscriptionText($cid, $lang, $editorId, $handId);
+        
+        while ($row = $r->fetch_assoc()){
+            switch ($row['type']){
+                case TranscriptionTextItem::TEXT:
+                    $item = new TtiText($row['id'], $row['seq'], $row['text']);
+                    break;
+                
+                case TranscriptionTextItem::RUBRIC:
+                    $item = new TtiRubric($row['id'], $row['seq'], $row['text']);
+                    break;
+                
+                case TranscriptionTextItem::SIC:
+                    $item = new TtiSic($row['id'], $row['seq'], $row['text'], $row['alt_text']);
+                    break;
+                
+                case TranscriptionTextItem::MARK:
+                    $item = new TtiMark($row['id'], $row['seq']);
+                    break;
+                
+                case TranscriptionTextItem::UNCLEAR:
+                    $item = new TtiUnclear($row['id'], $row['seq'], $row['extra_info'], $row['text'], $row['alt_text']);
+                    break;
+                
+                case TranscriptionTextItem::ILLEGIBLE:
+                    $item = new TtiIllegible($row['id'], $row['seq'], $row['length'], $row['extra_info']);
+                    break;
+                
+                default: 
+                    continue;
+            }
+            $item->lang = $row['lang'];
+            $item->handId = $row['hand_id'];
+            $tt->addItem($item);
+        }
+        
+        return $tt;
+    }
+    
+    function getEditorialNotes($type, $target){
+        $query = 'SELECT * FROM `' . $this->tables['ednotes'] . 
+                '` WHERE `type`=' . $type . ' AND ' . 
+                '`target`=' . $target; 
+        $r = $this->query($query);
+        if ($r->num_rows === 0){
+            return NULL;
+        } 
+        else {
+            $notes = array();
+            while ($row = $r->fetch_assoc()){
+                $en = new EditorialNote();
+                $en->id = $row['id'];
+                $en->type = $row['type'];
+                $en->authorId=  $row['author_id'];
+                $en->lang = $row['lang'];
+                $en->target = $row['target'];
+                $en->time = $row['time'];
+                $en->text = $row['text'];
+                array_push($notes, $en);
+            }
+            return $notes;
+        }
+    }
+    function getEditorialNotesByItemId($id){
+        return $this->getEditorialNotes(EditorialNote::INLINE, $id);
+    }
+    
+    
 }

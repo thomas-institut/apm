@@ -33,7 +33,7 @@ foreach ($manuscripts as $mss){
     print "<p>$mss</p>\n";
     print "<p>$numPages pages: ";
     foreach ($pages as $page){
-        print "<a title=\"View Page\" href=\"pageviewer.php?doc=$mss&page=$page\">$page</a> ";
+        print "<a title=\"View Page\" href=\"pageviewer.php?doc=$mss&page=$page\">[$page]</a>&nbsp;";
     }
     print "</p>\n";
     print "<p>$numLines total lines</p>\n";

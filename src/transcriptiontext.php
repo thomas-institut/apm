@@ -105,7 +105,7 @@ class TranscriptionText {
     function __construct($parent = 0, $lang = 'la', $editor = 0, $hand = 0) {
         
         $this->theItems = array();
-        $this->lang = 'la';
+        $this->lang = $lang;
         $this->editorId = $editor;
         $this->handId = $hand;
         $this->parentColumnElementId = $parent;
@@ -114,7 +114,7 @@ class TranscriptionText {
     function addItem($item){
         if (is_a($item, 'TranscriptionTextItem')){
             if ($item->seq !== -1){
-                $this->items[$item->seq] = $item;
+                $this->theItems[$item->seq] = $item;
             }
             else {
                 $item->seq = count($this->theItems);
@@ -257,6 +257,7 @@ class TranscriptionTextItem {
      * For ADDITION: the placement
      * For ILLEGIBLE: the reason 
      * For DELETION: the technique
+     * For UNCLEAR: the reason
      */
     public $extraInfo;
     
@@ -353,15 +354,19 @@ class TtiSic extends TranscriptionTextItem {
      * @param int $s
      * @param string $theText
      */
-    function __construct($id, $s, $theText) {
+    function __construct($id, $s, $theText, $correction='') {
         parent::__construct($id, $s);
         $this->type = parent::SIC;
         if ($theText === NULL or $theText ===''){
             throw new InvalidArgumentException("SIC items need non-empty text");
         }
         $this->theText = $theText;
+        $this->altText = $correction;
     }
 
+    function getCorrection(){
+        return $this->altText;
+    }
 }
 
 class TtiUnclear extends TranscriptionTextItem {
@@ -437,6 +442,10 @@ class TtiIllegible extends TranscriptionTextItem {
         $unknownChar = '🈑';
         
         return str_repeat($unknownChar, $this->length);
+    }
+    
+    function getLength(){
+        return $this->length;
     }
 }
 

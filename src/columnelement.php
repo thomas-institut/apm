@@ -177,6 +177,45 @@ class ColumnElement {
      */
     public $placement;
     
+    function isRightToLeft(){
+        switch($this->lang){
+            case 'ar':
+            case 'he':
+                return TRUE;
+                
+            default:
+                return FALSE;
+        }
+    }
+    
+}
+
+// Some useful functions wrapped here
+class ColumnElementArray{
+    static function getMainLanguage($cearray){
+        $langs = array();
+        foreach ($cearray as $e){
+            if (isset($langs[$e->lang])){
+                $langs[$e->lang]++;
+            }
+            else {
+                $langs[$e->lang] = 1;
+            }
+        }
+     
+        return array_search(max($langs), $langs);
+    }
+    
+    static function isRightToLeft($cearray){
+        switch(ColumnElementArray::getMainLanguage($cearray)){
+            case 'ar':
+            case 'he':
+                return TRUE;
+                
+            default:
+                return FALSE;
+        }
+    }
 }
 
 

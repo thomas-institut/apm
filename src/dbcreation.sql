@@ -29,7 +29,6 @@ CREATE TABLE `ap_elements` (
   `page_number` int(11) NOT NULL,
   `column_number` int(11) NOT NULL DEFAULT 0,
   `seq`int(11) NOT NULL, 
-  `line_number` int(11) NOT NULL,
   `lang` varchar(3) DEFAULT 'la',
   `editor_id` int(11) NOT NULL DEFAULT 0,
   `hand_id` int(11) NOT NULL DEFAULT 0,
@@ -57,6 +56,7 @@ CREATE TABLE `ap_ednotes` (
   `target` int(11) NOT NULL DEFAULT 0,
   `lang` varchar(3) DEFAULT 'la',
   `author_id` int(11) NOT NULL DEFAULT 0,
+  `time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `text` varchar(2048) NOT NULL,
    PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

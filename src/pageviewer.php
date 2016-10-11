@@ -170,6 +170,9 @@ else{
                 color: orange;
             }  
             
+            .abbr {
+                color: chocolate;
+            } 
             .mark {
                 color: red;
                 font-family: sans-serif;
@@ -295,6 +298,11 @@ function printPageTextContainer(){
                 $tooltipText = 'Custodes';
                 break;
             
+            case ColumnElement::GLOSS:
+                $nLabel = 'G';
+                $tooltipText = 'Gloss';
+                break;
+            
             default:
                 $nLabel = 'Unk';
                 $tooltipText = 'Unsupported element';
@@ -330,6 +338,17 @@ function printPageTextContainer(){
                     $theText = $theText . '<span class="'. $classes .  '" id="' . $htmlId . '">' . $t . '</span>';
                     $richTooltips[$htmlId]['type'] = 'sic';
                     $richTooltips[$htmlId]['text'] =  'sic<br/>Original: ' . $item->theText . '<br/>Correction: ' . $item->getCorrection();
+                    break;
+                    
+                case TranscriptionTextItem::ABBREVIATION:
+                    $classes = $classes . ' abbr';
+                    $t = $item->getExpansion();
+                    if ($t === ''){
+                        $t = $item->theText;
+                    }
+                    $theText = $theText . '<span class="'. $classes .  '" id="' . $htmlId . '">' . $t . '</span>';
+                    $richTooltips[$htmlId]['type'] = 'sic';
+                    $richTooltips[$htmlId]['text'] =  'sic<br/>Original: ' . $item->theText . '<br/>Expansion: ' . $item->getExpansion();
                     break;
                 
                 case TranscriptionTextItem::MARK:

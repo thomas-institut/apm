@@ -221,6 +221,7 @@ class TranscriptionTextItem {
     const DELETION = 8;
     const MARK = 9;
     const NO_LINEBREAK = 10;
+    const ABBREVIATION = 11;
     
     /**
      *
@@ -365,6 +366,28 @@ class TtiSic extends TranscriptionTextItem {
     }
 
     function getCorrection(){
+        return $this->altText;
+    }
+}
+
+class TtiAbbreviation extends TranscriptionTextItem {
+    /**
+     * 
+     * @param int $id
+     * @param int $s
+     * @param string $theText
+     */
+    function __construct($id, $s, $theText, $expansion) {
+        parent::__construct($id, $s);
+        $this->type = parent::ABBREVIATION;
+        if ($theText === NULL or $theText ===''){
+            throw new InvalidArgumentException("ABBREVIATION items need non-empty text");
+        }
+        $this->theText = $theText;
+        $this->altText = $expansion;
+    }
+
+    function getExpansion(){
         return $this->altText;
     }
 }

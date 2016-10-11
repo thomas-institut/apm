@@ -330,6 +330,10 @@ class ApData extends mysqli{
                     $e = new CeHead();
                     break;
                 
+                case ColumnElement::GLOSS:
+                    $e = new CeGloss();
+                    break;
+                
                 default:
                     continue;
             }
@@ -383,6 +387,10 @@ class ApData extends mysqli{
                 
                 case TranscriptionTextItem::ILLEGIBLE:
                     $item = new TtiIllegible($row['id'], $row['seq'], $row['length'], $row['extra_info']);
+                    break;
+                
+                case TranscriptionTextItem::ABBREVIATION:
+                    $item = new TtiAbbreviation($row['id'], $row['seq'], $row['text'], $row['alt_text']);
                     break;
                 
                 default: 

@@ -28,7 +28,8 @@ INSERT INTO `ap_users` (`id`, `username`, `password`, `fullname`) VALUES
     (22, 'paul', NULL, 'Paul McCartney'),
     (23, 'george', NULL, 'George Harrison'),
     (24, 'ringo', NULL, 'Ringo Starr'), 
-    (25, 'jareh', NULL, 'Jaleh Ojan');
+    (101, 'natalie', NULL, 'Natalie Korobzow'), 
+    (102, 'jareh', NULL, 'Jaleh Ojan');
 
 
 /*

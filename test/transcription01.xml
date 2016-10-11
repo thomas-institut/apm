@@ -16,7 +16,7 @@ Transcriber: Natalie Korobzow
                 <author>
                     <name>Ibn Rušd</name>
                 </author>
-                <editor xml:id="test">
+                <editor xml:id="natalie">
                     <name>Some Editor</name>
                     <email>someeditor@gmail.com</email>
                 </editor>
@@ -36,31 +36,40 @@ Transcriber: Natalie Korobzow
     </teiHeader>
     <text xml:lang="la">
         <body>
-            <div type="page" facs="BOOK-DARE-I-AT-VIE-ONB-20.L.73-0005">
-                <head xml:lang="la">This is the header</head>
-                <l>This is the first line</l>
-                <l>This is the second line, it is supposed to be in Latin</l>
-                <l>but it's in English for testing purposes</l>
-                <l>This is the fourth line, and this has an <choice>
-                        <abbr>abr.</abbr>
-                        <expan>abbreviation</expan>
-                    </choice></l>
-                <!--  Page 1r -->
+            <div type="page" facs="BOOK-DARE-I-AT-VIE-TEST-0005">
+                <head>The head is here, <choice>
+                    <abbr>Mr.</abbr>
+                    <expan>Mister</expan>
+                    <note type="editorial" xml:lang="en">Very common abbreviation</note>
+                </choice>
+                </head>
+                <l>Some <hi type="rubric">text</hi></l><!-- Test -->
+                <note type="editorial" xml:lang="en">This is an offline note </note>
+                <l>Some more text! 
+                    <note type="editorial" xml:lang="en">The following parts of the previous three words are underlined: טן אשר ל.</note>
+                </l>
+                <l>This is an <sic>errr</sic> and this I <unclear>can't read </unclear> very well.</l>
+                <l>This, however, <unclear>
+                        <choice>
+                            <unclear>may</unclear>
+                            <unclear>might</unclear>
+                        </choice>
+                        <note type="editorial" xml:lang="en">Just the 'm' is legible.</note>
+                </unclear> be read in different ways. But this is 
+                <unclear>
+                    <gap reason="illegible" quantity="5"/>
+                    <note type="editorial" xml:lang="en">Probably says 'illegible' but I don't want to say.</note>
+                </unclear>
+                </l>
             </div>
-            <someElement>Some other element</someElement>
-            <div type="someothertype"> </div>
-            <div type="page" facs="BOOK-DARE-I-AT-VIE-ONB-20.L.73-0006">
-                <head xml:lang="la">This is the header</head>
-                <l>This is the first line</l>
-                <l>This is the second line, it is supposed to be in Latin</l>
-                <l>but it's in English for testing purposes</l>
-                <l>This is the fourth line, and this has an <choice>
-                    <abbr>abr.</abbr>
-                    <expan>abbreviation</expan>
-                </choice></l>
-                <!--  Page 1r -->
+            <div type="page" facs="BOOK-DARE-I-AT-VIE-TEST-0006" xml:lang="he">
+                <l xml:lang='en'>     
+                    Text in a <choice><sic>diffrent </sic><supplied>different </supplied>
+                    <note type="editorial" xml:lang="en">Just a missing vowel!</note></choice> page, in english. We'll see! </l>
+                <l>בְּרֵאשִׁית, בָּרָא אֱלֹהִים, אֵת הַשָּׁמַיִם, וְאֵת הָאָרֶץ.</l>
+                <note type="gloss" placement="margin left">This is a gloss</note>
+                <fw type="catch">A custos</fw>
             </div>
-            
         </body>
     </text>
 </TEI>

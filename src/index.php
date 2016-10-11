@@ -31,9 +31,16 @@ foreach ($manuscripts as $mss){
     $pages = $db->getPageListByDoc($mss);
     print "<li>"; 
     print "<p>$mss</p>\n";
-    print "<p>$numPages pages: ";
+    print "<p>$numPages pages: <br/>";
+    $nLinesPerRow = 10;
+    $n = 0;
     foreach ($pages as $page){
+        if ($n == $nLinesPerRow){
+            print "<br/>";
+            $n = 0;
+        }
         print "<a title=\"View Page\" href=\"pageviewer.php?doc=$mss&page=$page\">[$page]</a>&nbsp;";
+        $n++;
     }
     print "</p>\n";
     print "<p>$numLines total lines</p>\n";

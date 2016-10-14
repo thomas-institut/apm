@@ -131,7 +131,7 @@ else{
                 position: absolute;
                 left: 10px;
                 top: 10px;
-                width: 49%;
+                width: 1%;
                 height: 770px;
                 background-color: white;
                 border: 1px solid silver;
@@ -141,11 +141,20 @@ else{
                 position: absolute;
                 right: 10px;
                 top: 10px;
-                width: 49%;
+                width: 1%;
                 border: 1px solid silver;
                 height: 770px;
                 background-color: white;
                 overflow-x:auto;
+            }
+            
+            #divider{
+                position: absolute;
+                top: 10px;
+                width: 10px;
+                /* background-color: lightblue;*/
+                cursor: pointer;
+                
             }
             
             td.text-he{
@@ -208,6 +217,92 @@ else{
             
           
         </style>
+<script>
+
+// Holds the current position of the container
+// divider as a fraction of the document's width
+var currentPosX = 0.5;
+var resizing = false;
+
+function resizeContainers(posX){
+    currentPosX = posX;
+    win = $(window);
+    absCurrentPosX = win.width()*currentPosX;
+            
+    leftContentWidth = absCurrentPosX - 17;
+    rightContentWidth = win.width() - absCurrentPosX - 17;
+    headerHeight = $('#viewerheader').height() + $('#navigation').height();
+    contentHeight = win.height() - headerHeight - 22;
+    $('#container').css('top', headerHeight + 'px');
+    $('#pageimage').width(leftContentWidth).height(contentHeight);
+    $('#pagetext').width(rightContentWidth).height(contentHeight);
+    $('#divider').css('left', leftContentWidth+12).height(contentHeight+2);
+}
+ 
+function strPrintSizes() {
+    doc = $(document);
+    win = $(window);
+    return 'Doc: ' + doc.width() + 'x' + doc.height() + '  Win: '  
+      + win.width() + 'x' + win.height();
+}
+$(document).ready(function(){
+    
+    resizing = false;
+    divider = $('#divider');
+    
+    divider.on('mousedown', function(event){
+        resizing = true;
+        $('#divider').css('cursor', 'col-resize');
+        resizeContainers(event.pageX/$(window).width());
+        //console.log('Divider mousedown');
+    });
+    divider.on('mouseup', function(){
+        $('#divider').css('cursor', 'pointer');
+        //console.log('Divider mouseup');
+        if (resizing){
+            resizeContainers(event.pageX/$(window).width()); 
+            resizing = false;
+        }
+        
+    });
+    divider.on('mousemove', function (event){
+       // console.log('Divider mousemove');
+       if (resizing) {
+          $('#divider').css('cursor', 'col-resize');
+          resizeContainers(event.pageX/$(window).width()); 
+       } 
+       else {
+            $('#divider').css('cursor', 'pointer');
+       }
+    });
+    divider.on('mouseout', function(event){
+        //console.log('Divider mouseout');
+        if (resizing){
+            resizing = false;
+            resizeContainers(event.pageX/$(window).width()); 
+            $('#divider').css('cursor', 'pointer');
+        }
+    });
+    
+    $(window).resize(function(){
+       //console.log('Window resize, before... ' + strPrintSizes());
+       $(document).height($(window).height());
+       $(document).width($(window).width());
+       resizeContainers(currentPosX);
+       //console.log('Window resize, after... ' + strPrintSizes());
+    });
+});
+
+$(window).on('load', function() {
+    console.log('Ready...' + strPrintSizes());
+    $(document).height($(window).height());
+    $(document).width($(window).width());
+    console.log('Ready...' + strPrintSizes());
+    resizeContainers(0.5);
+});
+
+</script>        
+        
     </head>
     <body>
         <div id="viewerheader">
@@ -442,6 +537,10 @@ function printPageTextContainer(){
             
 
 }
+
+function printDivider(){
+    print '<div id="divider"></div>';
+}
 ?>
             <div id="container">
 <?php
@@ -453,10 +552,12 @@ function printPageTextContainer(){
 
 if ($db->isPageRightToLeft($mss, $page)){
     printImageContainer();
+    printDivider();
     printPageTextContainer();
 }
 else{
     printPageTextContainer();
+    printDivider();
     printImageContainer();
 }
     

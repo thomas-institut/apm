@@ -310,6 +310,19 @@ class TranscriptionTextItem {
         $this->handId = $h;
         $this->seq = $s;
     }
+    
+    function isRtl(){
+        switch($this->lang){
+            case 'ar':
+            case 'he':
+                return TRUE;
+                break;
+            
+            default:
+                return FALSE;
+                
+        }
+    }
 }
 
 class TtiText extends TranscriptionTextItem {

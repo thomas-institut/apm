@@ -45,8 +45,17 @@ foreach ($manuscripts as $mss){
     print "</p>\n";
     print "<p>$numLines total lines</p>\n";
     print "<p>Editors: ";
-    foreach($editors as $editor){
-        print $editor . "&nbsp;";
+    end($editors);
+    $lastKey = key($editors);
+    foreach($editors as $key => $e){
+        $editorInfo = $db->loadUserInfoByUsername($e);
+        print $editorInfo['fullname'];
+        if ($key === $lastKey){
+            print "";
+        }
+        else {
+            print ", ";
+        }
     }
     print "</p>";
     print "</li>\n";

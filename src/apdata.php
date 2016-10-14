@@ -136,7 +136,20 @@ class ApData extends mysqli{
      * Gets the user password hash in the database.
      */
     function userPassword($username){
-        return $this->getOneField($this->tables['users'], 'password', "`username` = '" . $username. "'");
+        $query = 'SELECT password from `' . $this->tables['users'] . '` where `username`=\'' . $username . "'";
+        $r = $this->query($query);
+        if (!$r){
+            return ''; // this will never match any password with password_verify
+        }
+        else{
+            $row = $r->fetch_assoc();
+            if (isset($row['password'])){
+                return $row['password'];
+            }
+            else {
+                return '';
+            }
+        }
     }
 
     /**
@@ -155,8 +168,18 @@ class ApData extends mysqli{
      * @param int $userid User ID
      * @param array $userinfo Array where the information will be stored
      */
-    function loadUserInfo($userid, &$userinfo){
-        $this->loadOneRow('select * from `' . $this->tables['users']  . '` where `id`=' . $userid, $userinfo);
+    function loadUserInfo($userid){
+        $tmp = array();
+        $this->loadOneRow('select * from `' . $this->tables['users']  . '` where `id`=' . $userid, $tmp);
+        return $tmp;
+    }
+    
+    function loadUserInfoByUsername($username){
+        $tmp = array();
+        $q = 'select * from `' . $this->tables['users']  . '` where `username`=\'' . $username . "'";
+        error_log($q);
+        $this->loadOneRow($q, $tmp);
+        return $tmp;
     }
 
      

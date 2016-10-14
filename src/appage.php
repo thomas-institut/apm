@@ -125,7 +125,7 @@ class ApPage extends WebPage {
          * 4. Load user info
          */
         
-        $this->db->loadUserInfo($_SESSION['userid'], $this->user);
+        $this->user = $this->db->loadUserInfo($_SESSION['userid']);
 
        
         

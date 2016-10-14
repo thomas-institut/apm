@@ -42,6 +42,13 @@ if (isset($_GET['logout'])){
     die();
 }
 
+/**
+ * Try to authenticate the user.
+ * 
+ * password_verify checks against the hash in the database
+ * a hash can be generated with  mkpasswd --method=sha-512
+ */
+
 if (isset($_POST['user'])){
     // Login attempt
     if ($db->usernameExists($_POST['user']) and password_verify($_POST['pwd'], $db->userPassword($_POST['user']))){

@@ -6,4 +6,5 @@ netbeans
 images/134171-arrows-set/
 images/149086-essential-set/
 jslibs/jquery-ui-1.12.1.custom/
-
+test/*.sql
+test/*.xml

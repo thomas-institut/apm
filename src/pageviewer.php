@@ -156,6 +156,14 @@ else{
                padding-top: 5px;
             }
             
+            td.text-ar{
+               direction: rtl;
+               font-family: serif;
+               font-size: 1.2em;
+               margin: 0;
+               padding-top: 5px;
+            }
+            
             .rubric {
                 color: blue;
                 font-weight: bold;
@@ -253,7 +261,8 @@ function printImageContainer(){
                     tileSources: {
                         type: 'image',
                         url:  '<?php print $db->getImageUrlByDoc($mss, $page);?>',
-                        buildPyramid: false
+                        buildPyramid: false, 
+                        homeFillsViewer: true
                     }
                 });
             </script>
@@ -309,7 +318,7 @@ function printPageTextContainer(){
                 
         }
         print "<tr>";
-        $seqtd = '<td class="linenumber "title="'. $tooltipText .  '">' . $nLabel . '</td>';
+        $seqtd = '<td class="linenumber" title="'. $tooltipText .  '">' . $nLabel . '</td>';
         $theText = '';
         foreach($e->transcribedText->theItems as $item){
             $htmlId = 'item' . $item->id;
@@ -321,7 +330,11 @@ function printPageTextContainer(){
             switch($item->type){
                 case TranscriptionTextItem::TEXT:
                     $classes = $classes . ' regulartext';
-                    $theText = $theText . '<span class="'. $classes .  '" id="' . $htmlId . '">' . $item->getText() . '</span>';
+                    $theText = $theText . '<span class="'. $classes .  '" id="' . $htmlId . '">' . $item->getText();
+//                    if ($item->isRtl()){
+//                        $theText = $theText .  "&rlm;";
+//                    }
+                    $theText = $theText .  "</span>";                   
                     break;
                 
                 case TranscriptionTextItem::RUBRIC:

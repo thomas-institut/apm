@@ -1,5 +1,5 @@
 body {
-    font-family:"Source Sans Pro", Helvetica, sans-serif;
+    font-family: 'PT Sans', Arial, Verdana;
     font-size: 12pt;
         margin: 0;
     padding: 0;
@@ -14,11 +14,11 @@ a:hover{
     color: blue;
 }
 header {
-    background-color: #eee;
+    /* background-color: #eee;*/
     margin: auto;
     padding: 0;
     border: 0;
-    height: 50px;
+    height: 58px;
     padding-top: 0px;
     border-bottom: solid 1px #ddd;
 }
@@ -29,8 +29,8 @@ div#header-wrap{
 }
 
 div#nav {
-    font-family: Helvetica, Tahoma, Arial, sans-serif;
-    background-color:  #eee;
+    font-family: 'PT Sans', Arial, Verdana;
+    /* background-color:  #eee; */
     margin: 0;
     padding: 0;
     float: right;
@@ -88,15 +88,15 @@ footer {
     margin: auto;
     font-size: 10pt;
     margin-top: 25px;
-    font-family: 'Lato', sans-serif;
+    font-family: 'PT Sans', Arial, Verdana;
 }
 
 p.logo{
     float: left;
     margin: 0;
     padding: 0;
-    background-color:  #eee;
-    font-family: Calibri, Tahoma, sans-serif;
+    /* background-color:  #eee; */
+    font-family: 'PT Sans', Arial, Verdana;
     font-size: 2em;
 }
 
@@ -124,4 +124,19 @@ ul.horizontal li {
 
 .doctitle {
     font-weight: bold;
+}
+
+#login{
+    width: 450px;
+    height: 500px;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: auto;
+}
+
+.logininput {
+    font-size: 1.5em;
 }

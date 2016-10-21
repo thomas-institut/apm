@@ -82,7 +82,7 @@ class ApPage extends WebPage {
         $this->addScript('jquery-3.1.1.js');
         $this->addScript('jquery-ui.js');
         $this->addStylesheet('jquery-ui.css');
-        //$this->addStylesheet("https://fonts.googleapis.com/css?family=Lato:300|Rakkas|Source+Sans+Pro");
+        $this->addStylesheet("https://fonts.googleapis.com/css?family=PT+Sans");
         /**
          * 2. Initialize database
          */
@@ -195,7 +195,7 @@ class ApPage extends WebPage {
         $this->startTag('header');
         $this->startDiv("header-wrap");
 ?>
-        <p class="logo"><a href="index.php">Averroes Project</a></p>
+<p class="logo"><a href="index.php"><img src="images/averroes-logo-250.png"></a></p>
         <div id="nav">
             <ul class="horizontal">
                 <li><a href="https://thomas-institut.github.io/averroes-workflow-guidelines/">Worflow Guidelines<span class="ui-icon ui-icon-extlink"></span></a></li>

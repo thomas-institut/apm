@@ -16,8 +16,7 @@ require_once 'apdata.php';
 
 /**
   * 1. Initialize database
-  * @todo Move db initialization to a class function in rmpage
-  */
+  */ 
 try {
     $db = new ApData($config, $params['tables']);
 }
@@ -69,6 +68,7 @@ session_unset();
 session_destroy();
 
 $page = new WebPage('Averroes Project Login', 'styles.css');
+$page->addStylesheet("https://fonts.googleapis.com/css?family=PT+Sans");
 
 $page->httpHeaderUtf();
 $page->printDocTypeAndHtml();
@@ -84,10 +84,13 @@ if ($loginAttempts > 0){
 
    <form action="<?php echo $_SERVER["PHP_SELF"];?>" method="post">
     <table>
-    <tr><td colspan="2" align="center"><h1><?php print $params['app_name_htmlart'];?></h1></td></tr>
-    <tr><td>Username:</td><td><input type="text" name="user" size="10" required></td></tr>
-    <tr><td>Password:</td><td><input type="password" name="pwd" size="10" required></tr>
-    <tr><td colspan="2" align="center"><p><input type="submit" value="Login"></p></td></tr>
+        <tr><td colspan="2" align="center"><img src="images/averroes-logo-400.png"></td></tr>
+        <tr><td colspan="2">&nbsp;</td></tr>
+         <tr><td colspan="2">&nbsp;</td></tr>
+    <tr><td>Username:</td><td align="right"><input class="logininput" type="text" name="user" size="10" required></td></tr>
+     <tr><td colspan="2">&nbsp;</td></tr>
+    <tr><td>Password:</td><td align="right"><input class="logininput" type="password" name="pwd" size="10" required></tr>
+    <tr><td colspan="2" align="right"><p><input class="logininput" type="submit" value="Login"></p></td></tr>
     </table>
 </form>
 </div>

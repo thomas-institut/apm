@@ -71,22 +71,25 @@ else{
 <html>
     <head>
         <title>Manuscript Viewer</title>
-        <link rel="stylesheet" type="text/css" media="screen" href="normalize.css" />
+<!--        <link rel="stylesheet" type="text/css" media="screen" href="normalize.css" />-->
+        <link rel="stylesheet" type="text/css" media="screen" href=""https://fonts.googleapis.com/css?family=PT+Sans"/>
         <link rel="stylesheet" type="text/css" media="screen" href="styles.css" />
         <link rel="stylesheet" type="text/css" media="screen" href="pageviewer.css" />
+        <link rel="stylesheet" type="text/css" media="screen" href="splitpane.css" />
         <link rel="stylesheet" type="text/css" media="screen" href="jquery-ui.css" />
         <script type="application/javascript" src="jquery-3.1.1.js"></script>
-        <script type="application/javascript" src="jquery-ui.js"></script>
         <script type="application/javascript" src="openseadragon.min.js"></script>
+        <script type="application/javascript" src="splitpane.js"></script>
+        <script type="application/javascript" src="jquery-ui.js"></script>
         <script type="application/javascript" src="pageviewer.js"></script>
     </head>
     <body>
         <div id="viewerheader">
-            <h2 class="header"><?php print "$mss - Page $page"?></h2>
-        </div>
-        
-        <div id="navigation">
-            <ul class="pv-navbar"> 
+            <table width="100%">
+                <tr>
+                    <td><a href="index.php"><img src="images/averroes-logo-250.png"></a></td>
+                    <td><?php print "$mss";?></td>
+                    <td><ul class="pv-navbar"> 
                 <!--                <li style="float: left;">
                                     <button title="Vertically">
                                         <img src="images/stack_vertically.png" alt="Vertically">
@@ -97,45 +100,69 @@ else{
                                         <img src="images/stack_horizontally.png" alt="Horizontally">
                                     </button>
                                 </li>-->
+                
                 <li style="float: left;">
                     <button title="Previous Page: <?php print $prevPage; ?>" 
                             onclick="window.location='pageviewer.php?doc=<?php print $mss; ?>&page=<?php print $prevPage; ?>';" <?php print $prevButtonDisabled ?>>
                         <img src="images/left-arrow-1.png" height="30px" alt="Previous">
                     </button>
                 </li>
+                <li style="float:left"><button class="textonly" style="margin-left: 20px; margin-right: 20px;"><?php print "Page $page"?></button></li>
                 <li style="float: left;">
                     <button title="Next Page: <?php print $nextPage; ?>" 
                             onclick="window.location='pageviewer.php?doc=<?php print $mss; ?>&page=<?php print $nextPage; ?>';" <?php print $nextButtonDisabled ?>>
                         <img src="images/right-arrow-1.png" height="30px" alt="Next">
                     </button>
                 </li>
-                <li style="float: left;">
+                
+            </ul></td>
+            <td>
+                <ul class="pv-navbar"> 
+                    <li style="float:left">
+                        <button title="Make Text Smaller" class="textonly" style="margin-left: 20px; margin-right: 20px;"
+                                onclick="changeDocumentFontSize(false);">[ - ]</button></li>
+                    <li style="float:left">
+                        <button title="Make Text Bigger" class="textonly" style="margin-left: 20px; margin-right: 20px;"
+                                onclick="changeDocumentFontSize(true);">[ + ]</button></li>
+                    
+                </ul>
+            </td>
+            <td><ul class="pv-navbar"> 
+                <li style="float: right;">
                     <button title="Exit Viewer" 
                             onclick="window.location='index.php';">
                         <img src="images/exit-1.png" height="30px" alt="Exit">
                     </button>
                 </li>
-            </ul>
+                 </ul></td>
+                </tr>
+            </table>
         </div>
-            <div id="container">
+        
+<!--        <div id="navigation">
+            
+        </div>-->
+<div id="container">
+        <div class="split-pane vertical-percent">
 <?php
 // The idea is to change the order of the 
 // image and text containers depending on the
 // direction of the text, but I still need to
 // play with CSS to do that. For the time
 // being this doesn't do anything really
-if ($db->isPageRightToLeft($mss, $page)){
+//if ($db->isPageRightToLeft($mss, $page)){
     printImageContainer();
     printDivider();
     printPageTextContainer();
-}
-else{
-    printPageTextContainer();
-    printDivider();
-    printImageContainer();
-}
+//}
+//else{
+//    printPageTextContainer();
+//    printDivider();
+//    printImageContainer();
+//}
 ?>
         </div>
+</div>
     </body>
 </html>        
 <?php
@@ -143,12 +170,12 @@ else{
 function printImageContainer(){
     global $db, $mss, $page;
 ?>
-            <div id="pageimage">
+            <div class="split-pane-component" id="left-component">
             </div>
             
             <script type="text/javascript">
                 var viewer = OpenSeadragon({
-                    id: "pageimage",
+                    id: "left-component",
                     prefixUrl: "images/openseadragonimages/",
                     tileSources: {
                         type: 'image',
@@ -175,7 +202,7 @@ function printImageContainer(){
 function printPageTextContainer(){
     global $db, $mss, $page;
     
-    print "<div id=\"pagetext\">\n";
+    print "<div class=\"split-pane-component\" id=\"right-component\">\n";
     print "<table class=\"textlines\">\n";
 
     $elements = $db->getColumnElements($mss, $page, 1);
@@ -336,5 +363,12 @@ function printPageTextContainer(){
 }
 
 function printDivider(){
-    print '<div id="divider"></div>';
+    print '<div class="split-pane-divider" id="divider"></div>';
+    print "\n";
+}
+
+function printPageTextContainer2(){
+        
+    print "<div class=\"split-pane-component\" id=\"right-component\">\n";
+    print "<p>This is where the text goes</p>\n";
 }

@@ -115,7 +115,9 @@ class ApPage extends WebPage {
          * 3. See if there's a user session going on, if not, show the
          * login page
          */
-        session_start();
+        ini_set('session.gc_maxlifetime', 86400);
+        session_start(['cookie_lifetime' => 86400,]);
+//        session_start();
         if (!isset($_SESSION['userid'])){
             $this->redirect('login.php');
             die();

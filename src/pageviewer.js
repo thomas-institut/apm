@@ -18,84 +18,33 @@
 
 // Holds the current position of the container
 // divider as a fraction of the document's width
-var currentPosX = 0.5;
-var resizing = false;
+var minDocumentFontSize = 8;
+var maxDocumentFontSize = 64;
+var currentDocumentFontSize = 12;
 
-function resizeContainers(posX){
-    currentPosX = posX;
-    win = $(window);
-    absCurrentPosX = win.width()*currentPosX;
-            
-    leftContentWidth = absCurrentPosX - 17;
-    rightContentWidth = win.width() - absCurrentPosX - 17;
-    headerHeight = $('#viewerheader').height() + $('#navigation').height();
-    contentHeight = win.height() - headerHeight - 22;
-    $('#container').css('top', headerHeight + 'px');
-    $('#pageimage').width(leftContentWidth).height(contentHeight);
-    $('#pagetext').width(rightContentWidth).height(contentHeight);
-    $('#divider').css('left', leftContentWidth+12).height(contentHeight+2);
-}
- 
-function strPrintSizes() {
-    doc = $(document);
-    win = $(window);
-    return 'Doc: ' + doc.width() + 'x' + doc.height() + '  Win: '  
-      + win.width() + 'x' + win.height();
+function changeDocumentFontSize(bigger){
+    
+    newFS = currentDocumentFontSize;
+    
+    if (bigger && currentDocumentFontSize < maxDocumentFontSize){
+        newFS++;
+    } 
+    else if (!bigger && currentDocumentFontSize > minDocumentFontSize){
+        newFS--;
+    }
+    if (newFS !== currentDocumentFontSize){
+        $('#right-component').css('font-size', newFS);
+        currentDocumentFontSize = newFS;
+        console.log('Document font size: ' + currentDocumentFontSize);
+    }
 }
 
 $(document).ready(function(){
-    
-    resizing = false;
-    divider = $('#divider');
-    
-    divider.on('mousedown', function(event){
-        resizing = true;
-        $('#divider').css('cursor', 'col-resize');
-        resizeContainers(event.pageX/$(window).width());
-        //console.log('Divider mousedown');
-    });
-    divider.on('mouseup', function(){
-        $('#divider').css('cursor', 'pointer');
-        //console.log('Divider mouseup');
-        if (resizing){
-            resizeContainers(event.pageX/$(window).width()); 
-            resizing = false;
-        }
-        
-    });
-    divider.on('mousemove', function (event){
-       // console.log('Divider mousemove');
-       if (resizing) {
-          $('#divider').css('cursor', 'col-resize');
-          resizeContainers(event.pageX/$(window).width()); 
-       } 
-       else {
-            $('#divider').css('cursor', 'pointer');
-       }
-    });
-    divider.on('mouseout', function(event){
-        //console.log('Divider mouseout');
-        if (resizing){
-            resizing = false;
-            resizeContainers(event.pageX/$(window).width()); 
-            $('#divider').css('cursor', 'pointer');
-        }
-    });
-    
-    $(window).resize(function(){
-       //console.log('Window resize, before... ' + strPrintSizes());
-       $(document).height($(window).height());
-       $(document).width($(window).width());
-       resizeContainers(currentPosX);
-       //console.log('Window resize, after... ' + strPrintSizes());
-    });
+    reportedFS = $('#right-component').css('font-size');
+    currentDocumentFontSize = /\d+/.exec(reportedFS);
+    console.log('Document font size: ' + currentDocumentFontSize + ' pixels');
 });
-
-$(window).on('load', function() {
-    console.log('Ready...' + strPrintSizes());
-    $(document).height($(window).height());
-    $(document).width($(window).width());
-    console.log('Ready...' + strPrintSizes());
-    resizeContainers(0.5);
+           
+$(function() {
+    $('div.split-pane').splitPane();
 });
-

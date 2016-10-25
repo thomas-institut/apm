@@ -9,7 +9,7 @@
  */
 
 $params['app_name'] = 'Averroes Project';
-$params['version'] = '0.02';
+$params['version'] = '0.03';
 $params['app_shortname'] = 'Averroes';
 $params['app_name_htmlart'] = '<span class="logo">Averroes Project</span>';
 $params['copyright_notice'] = '2016, <a href="http://www.thomasinstitut.uni-koeln.de/">Thomas-Institut</a>, <a href="http://www.uni-koeln.de/">Universität zu Köln</a>';

@@ -17,7 +17,7 @@ $p = new ApPage('Home');
 $db = $p->db;
 
 $p->startPage(); ?>
- <section id="Manuscripts">
+<div class="container">
 <h1>Manuscripts</h1>
 <?php
 
@@ -63,12 +63,8 @@ foreach ($manuscripts as $mss){
 
 print "</ul>\n";
 ?>
-            
-</section>
 
-
+</div>
 <?php
 
 $p->closePage();
-
-?>

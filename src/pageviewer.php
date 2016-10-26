@@ -69,98 +69,91 @@ else{
 ?>
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>Manuscript Viewer</title>
-<!--        <link rel="stylesheet" type="text/css" media="screen" href="normalize.css" />-->
-        <link rel="stylesheet" type="text/css" media="screen" href=""https://fonts.googleapis.com/css?family=PT+Sans"/>
-        <link rel="stylesheet" type="text/css" media="screen" href="styles.css" />
-        <link rel="stylesheet" type="text/css" media="screen" href="pageviewer.css" />
-        <link rel="stylesheet" type="text/css" media="screen" href="splitpane.css" />
-        <link rel="stylesheet" type="text/css" media="screen" href="jquery-ui.css" />
-        <script type="application/javascript" src="jquery-3.1.1.js"></script>
-        <script type="application/javascript" src="openseadragon.min.js"></script>
-        <script type="application/javascript" src="splitpane.js"></script>
-        <script type="application/javascript" src="jquery-ui.js"></script>
-        <script type="application/javascript" src="pageviewer.js"></script>
-    </head>
-    <body>
-        <div id="viewerheader">
-            <table width="100%">
-                <tr>
-                    <td><a href="index.php"><img src="images/averroes-logo-250.png"></a></td>
-                    <td><?php print "$mss";?></td>
-                    <td><ul class="pv-navbar"> 
-                <!--                <li style="float: left;">
-                                    <button title="Vertically">
-                                        <img src="images/stack_vertically.png" alt="Vertically">
-                                    </button>
-                                </li>
-                                <li style="float: left;">
-                                    <button title="Horizontally">
-                                        <img src="images/stack_horizontally.png" alt="Horizontally">
-                                    </button>
-                                </li>-->
-                
-                <li style="float: left;">
-                    <button title="Previous Page: <?php print $prevPage; ?>" 
-                            onclick="window.location='pageviewer.php?doc=<?php print $mss; ?>&page=<?php print $prevPage; ?>';" <?php print $prevButtonDisabled ?>>
-                        <img src="images/left-arrow-1.png" height="30px" alt="Previous">
-                    </button>
-                </li>
-                <li style="float:left"><button class="textonly" style="margin-left: 20px; margin-right: 20px;"><?php print "Page $page"?></button></li>
-                <li style="float: left;">
-                    <button title="Next Page: <?php print $nextPage; ?>" 
-                            onclick="window.location='pageviewer.php?doc=<?php print $mss; ?>&page=<?php print $nextPage; ?>';" <?php print $nextButtonDisabled ?>>
-                        <img src="images/right-arrow-1.png" height="30px" alt="Next">
-                    </button>
-                </li>
-                
-            </ul></td>
+<head>
+    <title>Averroes Page Viewer</title>
+    <link rel="stylesheet" type="text/css" media="screen" href="https://fonts.googleapis.com/css?family=PT+Sans"/>
+    <link rel="stylesheet" type="text/css" media="screen" href="styles.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="css/bootstrap.css">
+    <link rel="stylesheet" type="text/css" media="screen" href="pageviewer.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="splitpane.css" />
+    <script type="application/javascript" src="jquery-3.1.1.js"></script>
+    <script type="application/javascript" src="bootstrap.js"></script>
+    <script type="application/javascript" src="openseadragon.min.js"></script>
+    <script type="application/javascript" src="splitpane.js"></script>
+    <script type="application/javascript" src="pageviewer.js"></script>
+</head>
+<body>
+<div id="viewerheader">
+    <table width="100%">
+        <tr>
+            <td width="40%">
+                <a href="index.php"><img src="images/averroes-logo-250.png"></a>
+                <span class="textonly" style="margin-left: 30px"><?php print $mss; ?></span>
+            </td>
+            <td><ul class="pv-navbar"> 
+                    <li style="float: left;">
+                        <button class="textonly headerbutton" 
+                                title="Previous Page: <?php print $prevPage; ?>" 
+                                onclick="window.location='pageviewer.php?doc=<?php print $mss; ?>&page=<?php print $prevPage; ?>';" <?php print $prevButtonDisabled ?>>
+                            <span class="glyphicon glyphicon-step-backward"></span>
+                        </button>
+                    </li>
+                    <li style="float:left">
+                        <button class="textonly headerbutton">
+                            <?php print "Page $page" ?>
+                        </button>
+                    </li>
+                    <li style="float: left;">
+                        <button class="textonly headerbutton"
+                                title="Next Page: <?php print $nextPage; ?>" 
+                                onclick="window.location='pageviewer.php?doc=<?php print $mss; ?>&page=<?php print $nextPage; ?>';" <?php print $nextButtonDisabled ?>>
+                            <span class="glyphicon glyphicon-step-forward"></span>
+                        </button>
+                    </li>
+
+                </ul></td>
             <td>
                 <ul class="pv-navbar"> 
                     <li style="float:left">
-                        <button title="Make Text Smaller" class="textonly" style="margin-left: 20px; margin-right: 20px;"
-                                onclick="changeDocumentFontSize(false);">[ - ]</button></li>
+                        <button title="Make Text Smaller" class="textonly headerbutton"
+                                onclick="changeDocumentFontSize(false);"><span class="glyphicon glyphicon-zoom-out"></span></button></li>
                     <li style="float:left">
-                        <button title="Make Text Bigger" class="textonly" style="margin-left: 20px; margin-right: 20px;"
-                                onclick="changeDocumentFontSize(true);">[ + ]</button></li>
-                    
+                        <button title="Make Text Bigger" class="textonly headerbutton"
+                                onclick="changeDocumentFontSize(true);"><span class="glyphicon glyphicon-zoom-in"></span></button></li>
+
                 </ul>
             </td>
             <td><ul class="pv-navbar"> 
-                <li style="float: right;">
-                    <button title="Exit Viewer" 
-                            onclick="window.location='index.php';">
-                        <img src="images/exit-1.png" height="30px" alt="Exit">
-                    </button>
-                </li>
-                 </ul></td>
-                </tr>
-            </table>
-        </div>
-        
-<!--        <div id="navigation">
-            
-        </div>-->
+                    <li style="float: right;">
+                        <button title="Exit Viewer" class="textonly headerbutton"
+                                onclick="window.location='index.php';">
+                            <span class="glyphicon glyphicon-off"></span>
+                        </button>
+                    </li>
+                </ul></td>
+        </tr>
+    </table>
+</div> <!-- viewerheader -->
+
 <div id="container">
         <div class="split-pane vertical-percent">
-<?php
-// The idea is to change the order of the 
-// image and text containers depending on the
-// direction of the text, but I still need to
-// play with CSS to do that. For the time
-// being this doesn't do anything really
-//if ($db->isPageRightToLeft($mss, $page)){
-    printImageContainer();
-    printDivider();
-    printPageTextContainer();
-//}
-//else{
-//    printPageTextContainer();
-//    printDivider();
-//    printImageContainer();
-//}
-?>
+        <?php
+        // The idea is to change the order of the 
+        // image and text containers depending on the
+        // direction of the text, but I still need to
+        // play with CSS to do that. For the time
+        // being this doesn't do anything really
+        //if ($db->isPageRightToLeft($mss, $page)){
+            printImageContainer();
+            printDivider();
+            printPageTextContainer();
+        //}
+        //else{
+        //    printPageTextContainer();
+        //    printDivider();
+        //    printImageContainer();
+        //}
+        ?>
         </div>
 </div>
     </body>
@@ -250,9 +243,6 @@ function printPageTextContainer(){
                 case TranscriptionTextItem::TEXT:
                     $classes = $classes . ' regulartext';
                     $theText = $theText . '<span class="'. $classes .  '" id="' . $htmlId . '">' . $item->getText();
-//                    if ($item->isRtl()){
-//                        $theText = $theText .  "&rlm;";
-//                    }
                     $theText = $theText .  "</span>";                   
                     break;
                 
@@ -267,9 +257,9 @@ function printPageTextContainer(){
                     if ($t === ''){
                         $t = $item->theText;
                     }
-                    $theText = $theText . '<span class="'. $classes .  '" id="' . $htmlId . '">' . $t . '</span>';
+                    $theText = $theText . '<span class="'. $classes .  '" id="' . $htmlId . '" title="Sic">' . $t . '</span>';
                     $richTooltips[$htmlId]['type'] = 'sic';
-                    $richTooltips[$htmlId]['text'] =  'sic<br/>Original: ' . $item->theText . '<br/>Correction: ' . $item->getCorrection();
+                    $richTooltips[$htmlId]['text'] =  '<b>Original:</b> ' . $item->theText . '<br/><b>Correction:</b> ' . $item->getCorrection();
                     break;
                     
                 case TranscriptionTextItem::ABBREVIATION:
@@ -278,23 +268,23 @@ function printPageTextContainer(){
                     if ($t === ''){
                         $t = $item->theText;
                     }
-                    $theText = $theText . '<span class="'. $classes .  '" id="' . $htmlId . '">' . $t . '</span>';
+                    $theText = $theText . '<span class="'. $classes .  '" id="' . $htmlId . '" title="Abbreviation">' . $t . '</span>';
                     $richTooltips[$htmlId]['type'] = 'sic';
-                    $richTooltips[$htmlId]['text'] =  'sic<br/>Original: ' . $item->theText . '<br/>Expansion: ' . $item->getExpansion();
+                    $richTooltips[$htmlId]['text'] =  '<b>Original:</b> ' . $item->theText . '<br/><b>Expansion:</b> ' . $item->getExpansion();
                     break;
                 
                 case TranscriptionTextItem::MARK:
                     $classes = $classes . ' mark';
-                    $theText = $theText . '<span class="'. $classes .  '" id="' . $htmlId . '">' . '[N]' . '</span>';
+                    $theText = $theText . '<span class="'. $classes .  '" id="' . $htmlId . '" title="Note(s)"><span class="glyphicon glyphicon-exclamation-sign"></span></span>';
                     break;
                 
                 case TranscriptionTextItem::UNCLEAR:
                     $classes = $classes . ' unclear';
-                    $theText = $theText . '<span class="'. $classes .  '" id="' . $htmlId . '">' . $item->getText() . '</span>';
+                    $theText = $theText . '<span class="'. $classes .  '" id="' . $htmlId . '" title="Unclear Text">' . $item->getText() . '</span>';
                     $richTooltips[$htmlId]['type'] = 'unclear';
-                    $ttt = 'Unclear<br/>';
+                    $ttt = '';
                     if ($item->altText !== ''){
-                        $ttt = $ttt . 'Alternative: ' . $item->altText . '<br/>';
+                        $ttt = $ttt . '<b>Alternative:</b> ' . $item->altText . '<br/>';
                     }
                     $ttt = $ttt . 'Reason: ' . $item->getReason();
                     $richTooltips[$htmlId]['text'] =  $ttt;
@@ -302,41 +292,38 @@ function printPageTextContainer(){
                     
                 case TranscriptionTextItem::ILLEGIBLE:
                     $classes = $classes . ' illegible';
-                    $theText = $theText . '<span class="'. $classes .  '" id="' . $htmlId . '">' . $item->getText() . '</span>';
+                    $theText = $theText . '<span class="'. $classes .  '" id="' . $htmlId . '" title="Illegible Text">' . $item->getText() . '</span>';
                     $richTooltips[$htmlId]['type'] = 'illegible';
-                    $ttt = 'Illegible<br/>';
+                    $ttt = '';
                     if ($item->getReason() !== 'illegible'){
-                        $ttt = $ttt . 'Reason: ' . $item->getReason() . '<br/>';
+                        $ttt = $ttt . '<b>Reason:</b> ' . $item->getReason() . '<br/>';
                     }
-                    $ttt = $ttt . 'Length: ' . $item->getLength();
+                    $ttt = $ttt . '<b>Length:</b> ' . $item->getLength() . ' characters';
                     $richTooltips[$htmlId]['text'] =  $ttt;
                     break;
-                    
-                    
-                
+               
                 default:
                     $theText = $theText . $item->getText();
-            }
+            }  // switch($item->type)
             
             if ($ednotes !== NULL){
                 if (!isset($richTooltips[$htmlId])){
                     $richTooltips[$htmlId]['type'] = 'ednote';
                     $richTooltips[$htmlId]['text'] = '';
                 }
-                $t = '<h5>Notes</h5><ol>';
+                $t = '<span class="tooltip-notes">';
                 foreach ($ednotes as $en){
-                    $t = $t . '<li>';
-                    $t = $t . '<p>' . $db->getUsernameById($en->authorId) . ' @ ' . $en->time . '</p>';
+                    $t = $t . '<blockquote>';
                     $t = $t . '<p>' . $en->text . '</p>';
-                    $t = $t . '</li>';
+                    $t = $t . '<footer>' . $db->getUsernameById($en->authorId) . ' @ ' . $en->time . '</footer>';
+                    $t = $t . '</blockquote>';
                     
                 }
-                $t = $t . '</ol>';
+                $t = $t . '</ul></span>';
                 $richTooltips[$htmlId]['text'] = $richTooltips[$htmlId]['text'] . $t;
             }
-        }
+        } // foreach transcribedTextItem
         $texttd = '<td class="text-'. $e->transcribedText->lang . '">' . $theText . "</td>";
-        
         if ($rtl){
             print $texttd;
             print $seqtd;
@@ -351,24 +338,19 @@ function printPageTextContainer(){
     print "</table>\n";
     print "</div>\n";
     
-    print "<script>$(\"#pagetext\").tooltip();</script>\n";
+    // Generate tooltips (actually bootstrap.js popovers)
     print "<script>\n";
     foreach($richTooltips as $id => $tooltip){
-        print "$(\"#" . $id . "\").tooltip({content: \"" . $tooltip['text'] ."\", items: \"span\"});\n";
-                
+        if ($tooltip['type']==='ednote'){
+            print "$(\"#" . $id . "\").popover({title:'Note(s)', content: '" . addslashes($tooltip['text']) ."' , container: 'body', html: true, placement: 'auto', trigger: 'hover' });\n";
+        }else {
+            print "$(\"#" . $id . "\").popover({content: '" . addslashes($tooltip['text']) ."' , container: 'body', html: true, placement: 'auto', trigger: 'hover' });\n";
+        }
     }
     print "</script>\n";
-            
-
 }
 
 function printDivider(){
     print '<div class="split-pane-divider" id="divider"></div>';
     print "\n";
-}
-
-function printPageTextContainer2(){
-        
-    print "<div class=\"split-pane-component\" id=\"right-component\">\n";
-    print "<p>This is where the text goes</p>\n";
 }

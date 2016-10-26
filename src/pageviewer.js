@@ -35,14 +35,14 @@ function changeDocumentFontSize(bigger){
     if (newFS !== currentDocumentFontSize){
         $('#right-component').css('font-size', newFS);
         currentDocumentFontSize = newFS;
-        console.log('Document font size: ' + currentDocumentFontSize);
+//        console.log('Document font size: ' + currentDocumentFontSize);
     }
 }
 
 $(document).ready(function(){
     reportedFS = $('#right-component').css('font-size');
     currentDocumentFontSize = /\d+/.exec(reportedFS);
-    console.log('Document font size: ' + currentDocumentFontSize + ' pixels');
+//    console.log('Document font size: ' + currentDocumentFontSize + ' pixels');
 });
            
 $(function() {

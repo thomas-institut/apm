@@ -80,9 +80,10 @@ class ApPage extends WebPage {
         parent::__construct($title);
         // Add jQuery
         $this->addScript('jquery-3.1.1.js');
-        $this->addScript('jquery-ui.js');
-        $this->addStylesheet('jquery-ui.css');
+        $this->addScript('bootstrap.js');
+        $this->addStylesheet('css/bootstrap.css');
         $this->addStylesheet("https://fonts.googleapis.com/css?family=PT+Sans");
+        $this->addStylesheet('stickyfooter.css');
         /**
          * 2. Initialize database
          */
@@ -117,7 +118,6 @@ class ApPage extends WebPage {
          */
         ini_set('session.gc_maxlifetime', 86400);
         session_start(['cookie_lifetime' => 86400,]);
-//        session_start();
         if (!isset($_SESSION['userid'])){
             $this->redirect('login.php');
             die();
@@ -194,31 +194,40 @@ class ApPage extends WebPage {
      */
     protected function printHeader(){
         global $params;
-        $this->startTag('header');
-        $this->startDiv("header-wrap");
+
 ?>
-<p class="logo"><a href="index.php"><img src="images/averroes-logo-250.png"></a></p>
-        <div id="nav">
-            <ul class="horizontal">
-                <li><a href="https://thomas-institut.github.io/averroes-workflow-guidelines/">Worflow Guidelines<span class="ui-icon ui-icon-extlink"></span></a></li>
-                <li><a href="https://thomas-institut.github.io/averroes-tei/averroes-guidelines.html">TEI Guidelines<span class="ui-icon ui-icon-extlink"></span></a></li>
-                <li><a href="https://wiki.uni-koeln.de/averroes_project/">Wiki <span class="ui-icon ui-icon-extlink"></span></a></li>
-                <li style="padding-left: 60px;">User: <b><?php print $this->user['username']?></b>
-                    <a href="login.php?logout" title="Logout" id="logout"><img src="images/exit-1.png" height="16"></a>
-                </li>
-            </ul>
+    <nav class="navbar navbar-default navbar-static-top" style="background-color: white;">
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand" style="padding:0;" href="#"><img src="images/averroes-logo-250.png" height="50" ></a>
+            </div>
+            <div id="navbar" class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Info<span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            <li><a href="https://thomas-institut.github.io/averroes-workflow-guidelines/">Worflow Guidelines &nbsp;<span class="glyphicon glyphicon-new-window"></span></a></li>
+                            <li><a href="https://thomas-institut.github.io/averroes-tei/averroes-guidelines.html">TEI Guidelines &nbsp;<span class="glyphicon glyphicon-new-window"></span></a></li>
+                            <li><a href="https://wiki.uni-koeln.de/averroes_project/">Wiki &nbsp;<span class="glyphicon glyphicon-new-window"></span></a></li>
+                        </ul>
+                    </li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                            <span class="glyphicon glyphicon-user" aria-hidden="true">&nbsp;</span><?php print $this->user['username'] ?><span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            <li><a href="#">Settings</a></li>
+                            <li role="separator" class="divider"></li>
+                            <li><a href="login.php?logout" title="Logout">Logout</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div><!--/.nav-collapse -->
         </div>
-  <!--
-  <script>
-            $( "#usermenu" ).menu({
-                icons: { submenu: "ui-icon-triangle-1-s" }
-            });
-        </script>
-  -->
-            
+    </nav>
 <?php
-        $this->closeLastTag(); // div header-wrap
-        $this->closeLastTag(); // header
+
     }
 
      /**
@@ -228,11 +237,35 @@ class ApPage extends WebPage {
     protected function printFooter(){
         global $params;
 
-        $this->startTag('footer');
-        $this->p($params['app_name'] . " " . $params['version'] . " &bull; &copy; " . $params['copyright_notice'] . " &bull; " .  strftime("%d %b %Y, %H:%M:%S %Z"));
-        $this->closeLastTag();
+        print '<footer class="footer">';print "\n";
+        print '<div class="container">';print "\n";
+        $this->p($params['app_name'] . " " . $params['version'] . " &bull; &copy; " . $params['copyright_notice'] . " &bull; " .  strftime("%d %b %Y, %H:%M:%S %Z"), 'text-muted');
+        print '</div>';
+        print '</footer>';
+        print "\n";
     }
         
+    /**
+     * Overrides webpage's version to add metas needed by Bootstrap
+     * TODO: this could be done more elegantly.
+     */
+    function printHead(){
+        print "<head>\n";
+        print "<meta charset=\"utf-8\">\n";
+        print "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n";
+        print "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n";
+        
+        foreach ($this->styles as $st) {
+            print "<link rel=\"stylesheet\" type=\"text/css\" href=\"" . 
+                $st . "\"/>\n";
+        }
+        print "<title>" . $this->title . "</title>\n";
+        foreach( $this->scripts as $sc){
+            print "<script type=\"text/javascript\" src=\"" .
+                $sc . "\"></script>\n";
+        }
+        print "</head>\n";
+    }
 
   
 }

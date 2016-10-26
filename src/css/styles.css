@@ -1,7 +1,7 @@
 body {
     font-family: 'PT Sans', Arial, Verdana;
     font-size: 12pt;
-        margin: 0;
+    margin: 0;
     padding: 0;
     color: #333;
 }
@@ -81,15 +81,15 @@ article.mssfeedentry ul {
 article.mssfeedentry li  {
 
     padding: 0;
-    
+
 }
-footer {
+/*footer {
     width: 1000px;
     margin: auto;
     font-size: 10pt;
     margin-top: 25px;
     font-family: 'PT Sans', Arial, Verdana;
-}
+}*/
 
 p.logo{
     float: left;
@@ -102,7 +102,7 @@ p.logo{
 
 p.logo a:hover {
     font-weight: normal;
-        color: inherit;
+    color: inherit;
 }
 
 ul.horizontal {
@@ -112,7 +112,7 @@ ul.horizontal {
 }
 
 ul.horizontal li {
-    
+
     display: inline;
     padding-right: 24px;
 }
@@ -140,3 +140,4 @@ ul.horizontal li {
 .logininput {
     font-size: 1.5em;
 }
+

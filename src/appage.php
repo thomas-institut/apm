@@ -83,7 +83,7 @@ class ApPage extends WebPage {
         $this->addScript('bootstrap.js');
         $this->addStylesheet('css/bootstrap.css');
         $this->addStylesheet("https://fonts.googleapis.com/css?family=PT+Sans");
-        $this->addStylesheet('stickyfooter.css');
+//        $this->addStylesheet('stickyfooter.css');
         /**
          * 2. Initialize database
          */

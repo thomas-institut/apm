@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-if (!isset($_GET['doc']) or !isset($_GET['page'])){ ?>
+if (!isset($_GET['d']) or !isset($_GET['p'])){ ?>
 <!DOCTYPE html>
 <html>
     <body
@@ -34,37 +34,35 @@ require_once 'apdata.php';
 require_once 'params.php';
 require_once 'config.php';
 
-$mss = $_GET['doc'];
-$page = $_GET['page'];
+$docId = $_GET['d'];
+$page = $_GET['p'];
 
 $db = new ApData($config, $params['tables']);
 
-$pageList = $db->getPageListByDoc($mss);
+$pageList = $db->getPageListByDocId($docId);
+$docPageCount = $db->getPageCountByDocId($docId);
+$docInfo = $db->getDoc($docId);
 
-$pindex = array_search($page, $pageList);
-if ($pindex === FALSE){
-    $page = $pageList[0];
-    $pindex = 0;
-}
 
-$prevButtonDisabled='';
+$prevButtonDisabled=false;
 $prevPage = 0;
-if ($pindex === 0){
-    $prevButtonDisabled='disabled';
+if ($page == 1){
+    $prevButtonDisabled=true;
     $prevPage = '-';
 }
 else {
-    $prevPage = $pageList[$pindex-1];
+    $prevPage = $page -1 ;
 }
 
-$nextButtonDisabled='';
+
+$nextButtonDisabled=false;
 $nextPage = 0;
-if ($pindex === (count($pageList)-1)){
-    $nextButtonDisabled='disabled';
+if ($page === $docPageCount){
+    $nextButtonDisabled=true;
     $nextPage = '-';
 } 
 else{
-    $nextPage = $pageList[$pindex+1];
+    $nextPage = $page+1;
 }
 ?>
 <!DOCTYPE html>
@@ -88,39 +86,54 @@ else{
         <tr>
             <td width="40%">
                 <a href="index.php"><img src="images/averroes-logo-250.png"></a>
-                <span class="textonly" style="margin-left: 30px"><?php print $mss; ?></span>
+                <span class="textonly" style="margin-left: 30px"><?php print $docInfo['title']; ?></span>
             </td>
             <td><ul class="pv-navbar"> 
                     <li style="float: left;">
-                        <button class="textonly headerbutton" 
-                                title="Previous Page: <?php print $prevPage; ?>" 
-                                onclick="window.location='pageviewer.php?doc=<?php print $mss; ?>&page=<?php print $prevPage; ?>';" <?php print $prevButtonDisabled ?>>
+                        <button class="textonly headerbutton <?php if ($prevButtonDisabled) print ' disablebutton';?>" 
+                                title="First Page" 
+                                onclick="window.location='pageviewer.php?d=<?php print $docId; ?>&p=1';" <?php if ($prevButtonDisabled) print 'disabled';?>>
                             <span class="glyphicon glyphicon-step-backward"></span>
                         </button>
                     </li>
+                    <li style="float: left;">
+                        <button class="textonly headerbutton <?php if ($prevButtonDisabled) print ' disablebutton';?>" 
+                                title="Previous Page: <?php print $prevPage; ?>" 
+                                onclick="window.location='pageviewer.php?d=<?php print $docId; ?>&p=<?php print $prevPage; ?>';" <?php if ($prevButtonDisabled) print 'disabled';?>>
+                            <span class="glyphicon glyphicon-chevron-left"></span>
+                        </button>
+                    </li>
                     <li style="float:left">
-                        <button class="textonly headerbutton">
+                        <button class="textonly headerbutton" id="pagenumber">
                             <?php print "Page $page" ?>
                         </button>
                     </li>
                     <li style="float: left;">
-                        <button class="textonly headerbutton"
+                        <button class="textonly headerbutton <?php if ($nextButtonDisabled) print ' disablebutton';?>"
                                 title="Next Page: <?php print $nextPage; ?>" 
-                                onclick="window.location='pageviewer.php?doc=<?php print $mss; ?>&page=<?php print $nextPage; ?>';" <?php print $nextButtonDisabled ?>>
+                                onclick="window.location='pageviewer.php?d=<?php print $docId; ?>&p=<?php print $nextPage; ?>';" <?php if ($nextButtonDisabled) print 'disabled';?>>
+                            <span class="glyphicon glyphicon-chevron-right"></span>
+                        </button>
+                    </li>
+                    <li style="float: left;">
+                        <button class="textonly headerbutton <?php if ($nextButtonDisabled) print ' disablebutton';?>" 
+                                title="Last Page: <?php print $docPageCount;?>" 
+                                onclick="window.location='pageviewer.php?d=<?php print $docId; ?>&p=<?php print $docPageCount?>';" <?php if ($nextButtonDisabled) print 'disabled';?>>
                             <span class="glyphicon glyphicon-step-forward"></span>
                         </button>
                     </li>
 
                 </ul></td>
             <td>
-                <ul class="pv-navbar"> 
-                    <li style="float:left">
-                        <button title="Make Text Smaller" class="textonly headerbutton"
-                                onclick="changeDocumentFontSize(false);"><span class="glyphicon glyphicon-zoom-out"></span></button></li>
+                <ul class="pv-navbar">
                     <li style="float:left">
                         <button title="Make Text Bigger" class="textonly headerbutton"
-                                onclick="changeDocumentFontSize(true);"><span class="glyphicon glyphicon-zoom-in"></span></button></li>
-
+                                onclick="changeDocumentFontSize(true);"><span class="glyphicon glyphicon-zoom-in"></span></button>
+                    </li>
+                    <li style="float:left">
+                        <button title="Make Text Smaller" class="textonly headerbutton"
+                                onclick="changeDocumentFontSize(false);"><span class="glyphicon glyphicon-zoom-out"></span></button>
+                    </li>
                 </ul>
             </td>
             <td><ul class="pv-navbar"> 
@@ -134,7 +147,10 @@ else{
         </tr>
     </table>
 </div> <!-- viewerheader -->
-
+<!-- Page table popover -->
+<script>
+    $('#pagenumber').popover({title:'Page List', content: '<?php print addslashes(pageTable($db, $docId));?>', container: 'body', html: true, placement: 'auto', trigger: 'click'});
+</script>
 <div id="container">
         <div class="split-pane vertical-percent">
         <?php
@@ -161,7 +177,7 @@ else{
 <?php
 
 function printImageContainer(){
-    global $db, $mss, $page;
+    global $db, $docId, $page;
 ?>
             <div class="split-pane-component" id="left-component">
             </div>
@@ -172,7 +188,7 @@ function printImageContainer(){
                     prefixUrl: "images/openseadragonimages/",
                     tileSources: {
                         type: 'image',
-                        url:  '<?php print $db->getImageUrlByDoc($mss, $page);?>',
+                        url:  '<?php print $db->getImageUrlByDocId($docId, $page);?>',
                         buildPyramid: false, 
                         homeFillsViewer: true
                     }
@@ -184,7 +200,7 @@ function printImageContainer(){
 /**
  * 
  * @global ApData $db
- * @global string $mss
+ * @global string $docId
  * @global int $page
  * This is the meat of the page viewer!
  * For this first version I'm assuming:
@@ -193,12 +209,17 @@ function printImageContainer(){
  *  + Only TEXT items
  */
 function printPageTextContainer(){
-    global $db, $mss, $page;
+    global $db, $docId, $page;
     
     print "<div class=\"split-pane-component\" id=\"right-component\">\n";
+    $elements = $db->getColumnElements($docId, $page, 1);
+    if (count($elements) == 0){
+        print "<div class=\"notranscription\">No transcription available</div>\n";
+        return;
+    }
     print "<table class=\"textlines\">\n";
 
-    $elements = $db->getColumnElements($mss, $page, 1);
+    
     $rtl = ColumnElementArray::isRightToLeft($elements);
     $richTooltips = array();
     
@@ -353,4 +374,32 @@ function printPageTextContainer(){
 function printDivider(){
     print '<div class="split-pane-divider" id="divider"></div>';
     print "\n";
+}
+
+
+function pageTable($db, $docId, $class='pagetable'){
+    $nLinesPerRow = 10;
+    $pages = $db->getPageListByDocId($docId);
+    $totalPages = $db->getPageCountByDocId($docId);
+    if ($totalPages > 200){
+        $nLinesPerRow = 25;
+    }
+    $n = 0;
+    $t = "<table class=\"$class\">";
+    for($nPage = 1; $nPage <= $totalPages; $nPage++){
+        if ($n == $nLinesPerRow){
+            $t = $t . "</tr><tr>";
+            $n = 0;
+        }
+        if (array_search($nPage, $pages) !== FALSE){
+            $t = $t . "<td>";
+        }
+        else {
+            $t = $t . '<td class="grayed">';
+        }
+        $t = $t . "<a title=\"View Page\" href=\"pageviewer.php?d=$docId&p=$nPage\">$nPage</a></td>";
+        $n++;
+    }
+    $t = $t . "</tr></table>";
+    return $t;
 }

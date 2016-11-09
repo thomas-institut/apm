@@ -76,3 +76,15 @@ CREATE TABLE `ap_items` (
    PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `ap_docs` (
+  `id` int(11) NOT NULL,
+  `doc_id` varchar(45) NOT NULL,
+  `title` varchar(512) DEFAULT NULL,
+  `short_title` varchar(512) DEFAULT '',
+  `page_count` int(11) NOT NULL,
+  `lang` varchar(3) DEFAULT 'la',
+  `doc_type` varchar(16) DEFAULT 'mss',
+  `image_source` varchar(16) DEFAULT 'local',
+  `image_source_data` varchar(512) DEFAULT NULL,
+   PRIMARY KEY (`doc_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

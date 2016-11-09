@@ -170,3 +170,20 @@ button.headerbutton{
     margin-left: 10px; 
     margin-right: 10px;
 }
+
+button.disablebutton{
+    color: silver;
+}
+
+.popover {
+    max-width: 800px;
+}
+
+.notranscription {
+    font-style: italic;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%);
+    
+}

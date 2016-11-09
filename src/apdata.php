@@ -32,7 +32,7 @@ class ApData extends mysqli{
     private $tables;
     
     
-    private $databaseversion = '0.01';
+    private $databaseversion = '0.02';
     
     /**
      * Tries to initialize and connect to the MySQL database.
@@ -235,55 +235,64 @@ class ApData extends mysqli{
     }
      
     
+    function getOneRow($query){
+        $r = $this->query($query);
+        return $r->fetch_assoc();
+    }
+    
     /**
      * @return array
      * Returns an array with the IDs of all the manuscripts with
      * some data in the system and the number of pages with data
      */
-    function getManuscriptList(){
-        $query = "select `doc_id` from " . $this->tables['elements'] .
-                " GROUP BY `doc_id`";
+    function getDocIdList(){
+        $query = "SELECT `id` from  " . $this->tables['docs'];
         $r = $this->query($query);
         
         $mss = array();
         while ($row = $r->fetch_assoc()){
-            array_push($mss, $row['doc_id']);
+            array_push($mss, $row['id']);
         }
         return $mss;
     }
     
+    function getPageCountByDocId($docId){
+        return $this->getOneFieldQuery('SELECT `page_count` from ' .  
+                $this->tables['docs'] . 
+               ' WHERE `id`=\'' . $docId . '\'', 'page_count');
+    }
     /**
      * 
-     * @param string $doc
+     * @param int $docId
      * @return int 
      * Returns the number of pages of the given document
      */
-    function getPageCountByDoc($doc){
+    function getTranscribedPageCountByDoc($docId){
         return $this->getOneFieldQuery(
                 'SELECT count(DISTINCT `page_number`) as value from ' . 
                 $this->tables['elements'] .
-                ' WHERE `doc_id`=\'' . $doc . '\'', 'value');
+                ' WHERE `doc_id`=\'' . $docId . '\'', 'value');
         
     }
     
-    function getLineCountByDoc($doc){
+    function getLineCountByDoc($docId){
         return $this->getOneFieldQuery(
                 'SELECT count(DISTINCT `page_number`, `reference`) as value from ' . 
                 $this->tables['elements'] .
-                ' WHERE `doc_id`=\'' . $doc . '\' AND `type`=' . ColumnElement::LINE, 'value');
+                ' WHERE `doc_id`=\'' . $docId . '\' AND `type`=' . ColumnElement::LINE, 'value');
     }
     /**
      * 
-     * @param string $doc
+     * @param int $docId
      * @return array
      * Returns the editors associated with a document as a list of usernames
      */
-    function getEditorsByDoc($doc){
+    function getEditorsByDocId($docId){
         $te = $this->tables['elements'];
         $tu = $this->tables['users'];
         $query = "SELECT distinct `$tu`.`username`" . 
             " from `$te` JOIN `$tu` on `$te`.`editor_id`=`$tu`.`id`" . 
-           " WHERE `doc_id`='" . $doc . "'";
+           " WHERE `doc_id`='" . $docId . "'";
         
         $r = $this->query($query);
         
@@ -294,10 +303,10 @@ class ApData extends mysqli{
         return $editors;
     }
     
-    function getPageListByDoc($doc){
+    function getPageListByDocId($docId){
         $query =  'SELECT distinct `page_number` from ' . 
                 $this->tables['elements'] .
-                ' WHERE `doc_id`=\'' . $doc . '\' order by `page_number` asc';
+                ' WHERE `doc_id`=\'' . $docId . '\' order by `page_number` asc';
         $r = $this->query($query);
         $pages = array();
          while ($row = $r->fetch_assoc()){
@@ -306,33 +315,50 @@ class ApData extends mysqli{
         return $pages;
     }
     
-    function getImageUrlByDoc($doc, $page){
-        
-        if (strpos($doc, 'BOOK-DARE') !== 0){
-            return sprintf("localrep/%s/%s-%04d.jpg", $doc, $doc, $page);
-        }
-        else {
-            return sprintf("https://bilderberg.uni-koeln.de/images/books/%s/bigjpg/%s-%04d.jpg", $doc, $doc, $page);
-        }
+    function getDoc($docId){
+        $query = 'SELECT * FROM ' . $this->tables['docs'] . ' WHERE `id`=' . $docId;
+        return $this->getOneRow($query);
     }
     
-    function isPageRightToLeft($doc, $page){
+    /**
+     * Returns the image URL for a page or false if the page image source
+     * is not recognized
+     * @param int $docId
+     * @param int $page
+     * @return string|boolean
+     */
+    function getImageUrlByDocId($docId, $page){
+        $doc = $this->getDoc($docId);
+        $isd = $doc['image_source_data'];
+        switch ($doc['image_source']){
+            case 'local':
+                return sprintf("localrep/%s/%s-%04d.jpg", $isd, $isd, $page);
+                break;
+            
+            case 'dare':
+                return sprintf("https://bilderberg.uni-koeln.de/images/books/%s/bigjpg/%s-%04d.jpg", $isd, $isd, $page);
+                break;
+        }
+        return FALSE;
+    }
+    
+    function isPageRightToLeft($docId, $page){
         // Faking it right now, need to come back to it.
         return FALSE;
     }
     
     /**
      * 
-     * @param string $doc
+     * @param string $docId
      * @param int $page
      * @param int $col
      * @return array of ColumnElement properly initialized
      */
     
-    function getColumnElements($doc, $page, $col){
+    function getColumnElements($docId, $page, $col){
         
         $query = 'SELECT * FROM `' . $this->tables['elements'] . 
-                '` WHERE `doc_id`=\'' . $doc . '\' AND' .
+                '` WHERE `doc_id`=\'' . $docId . '\' AND' .
                 ' `page_number`=' . $page . " AND" . 
                 ' `column_number`=' . $col . ' ORDER BY `seq` ASC';
         $r = $this->query($query);
@@ -361,7 +387,7 @@ class ApData extends mysqli{
                     continue;
             }
             $e->columnNumber = $col;
-            $e->documentId = $doc;
+            $e->documentId = $docId;
             $e->editorId = $row['editor_id'];
             $e->handId = $row['hand_id'];
             $e->id = $row['id'];

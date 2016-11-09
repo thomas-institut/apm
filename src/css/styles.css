@@ -83,13 +83,10 @@ article.mssfeedentry li  {
     padding: 0;
 
 }
-/*footer {
-    width: 1000px;
-    margin: auto;
-    font-size: 10pt;
-    margin-top: 25px;
-    font-family: 'PT Sans', Arial, Verdana;
-}*/
+footer {
+    margin-top: 40px;
+
+}
 
 p.logo{
     float: left;
@@ -141,3 +138,19 @@ ul.horizontal li {
     font-size: 1.5em;
 }
 
+table.pagetable td {
+    padding: 3px;
+    
+}
+
+table.pagetable a {
+    color: black;
+}
+
+table.pagetable td.grayed a{
+    color: silver;
+}
+
+.pagetablediv{
+    margin-left: 20px;
+}

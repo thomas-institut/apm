@@ -18,53 +18,74 @@ $db = $p->db;
 
 $p->startPage(); ?>
 <div class="container">
-<h1>Manuscripts</h1>
+<h1>Documents</h1>
 <?php
 
-$manuscripts = $db->getManuscriptList();
-
-print "<ul>\n";
-foreach ($manuscripts as $mss){
-    $numPages = $db->getPageCountByDoc($mss);
-    $numLines = $db->getLineCountByDoc($mss);
-    $editors = $db->getEditorsByDoc($mss);
-    $pages = $db->getPageListByDoc($mss);
-    print "<li>"; 
-    print "<p>$mss</p>\n";
-    print "<p>$numPages pages: <br/>";
-    $nLinesPerRow = 10;
-    $n = 0;
-    foreach ($pages as $page){
-        if ($n == $nLinesPerRow){
-            print "<br/>";
-            $n = 0;
+$docIds = $db->getDocIdList();
+foreach ($docIds as $docId){
+    $numPages = $db->getPageCountByDocId($docId);
+    $numLines = $db->getLineCountByDoc($docId);
+    $numTranscribedPages = $db->getTranscribedPageCountByDoc($docId);
+    $editors = $db->getEditorsByDocId($docId);
+    $docInfo = $db->getDoc($docId);
+    $tableId = "doc-$docId-table";
+    
+    print "<h3>" . $docInfo['title'] . "</h3>"; 
+    print "<p>$numTranscribedPages of $numPages pages transcribed ";
+    print "<a title=\"View Page List\" data-toggle=\"collapse\" data-target=\"#". $tableId . "\"><span class=\"glyphicon glyphicon-list\"></span></a></p>\n";
+    print "<div class=\"collapse pagetablediv\" id=\"" . $tableId . "\">\n";
+    print printPageTable($db, $docId);
+    print "</div>\n";
+    if ($numLines != 0){
+        print "<p>$numLines total lines transcribed</p>\n";
+        print "<p>Editors: ";
+        end($editors);
+        $lastKey = key($editors);
+        foreach($editors as $key => $e){
+            $editorInfo = $db->loadUserInfoByUsername($e);
+            print $editorInfo['fullname'];
+            if ($key === $lastKey){
+                print "";
+            }
+            else {
+                print ", ";
+            }
         }
-        print "<a title=\"View Page\" href=\"pageviewer.php?doc=$mss&page=$page\">[$page]</a>&nbsp;";
-        $n++;
+        print "</p>";
     }
-    print "</p>\n";
-    print "<p>$numLines total lines</p>\n";
-    print "<p>Editors: ";
-    end($editors);
-    $lastKey = key($editors);
-    foreach($editors as $key => $e){
-        $editorInfo = $db->loadUserInfoByUsername($e);
-        print $editorInfo['fullname'];
-        if ($key === $lastKey){
-            print "";
-        }
-        else {
-            print ", ";
-        }
-    }
-    print "</p>";
-    print "</li>\n";
+    $i++;
 }
 
-print "</ul>\n";
 ?>
 
 </div>
 <?php
 
 $p->closePage();
+
+function printPageTable($db, $docId, $class='pagetable'){
+    $nLinesPerRow = 10;
+    $pages = $db->getPageListByDocId($docId);
+    $totalPages = $db->getPageCountByDocId($docId);
+     if ($totalPages > 200){
+        $nLinesPerRow = 25;
+    }
+    $n = 0;
+    $t = "<table class=\"$class\">\n";
+    for($nPage = 1; $nPage <= $totalPages; $nPage++){
+        if ($n == $nLinesPerRow){
+            $t = $t . "</tr>\n<tr>\n";
+            $n = 0;
+        }
+        if (array_search($nPage, $pages) !== FALSE){
+            $t = $t . "<td>";
+        }
+        else {
+            $t = $t . '<td class="grayed">';
+        }
+        $t = $t . "<a title=\"View Page\" href=\"pageviewer.php?d=$docId&p=$nPage\">$nPage</a></td>\n";
+        $n++;
+    }
+    $t = $t . "</tr></table>\n";
+    return $t;
+}

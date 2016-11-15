@@ -217,7 +217,7 @@ class ApData extends mysqli{
         $r = $this->query($query);
         $row = $r->fetch_assoc();
         if (!isset($row[$field])){
-            throw new Exception($field . ' not in ' . $table, E_MYSQL);
+            throw new Exception($field . ' not in result set' , E_MYSQL);
         }
         else{
             return $row[$field];

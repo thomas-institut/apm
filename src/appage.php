@@ -77,10 +77,10 @@ class ApPage extends WebPage {
         /**
          * 1. Call webPage's constructor
          */
-        parent::__construct($title);
+        parent::__construct($title, 'css/styles.css');
         // Add jQuery
-        $this->addScript('jquery-3.1.1.js');
-        $this->addScript('bootstrap.js');
+        $this->addScript('js/jquery-3.1.1.js');
+        $this->addScript('js/bootstrap.js');
         $this->addStylesheet('css/bootstrap.css');
         $this->addStylesheet("https://fonts.googleapis.com/css?family=PT+Sans");
 //        $this->addStylesheet('stickyfooter.css');

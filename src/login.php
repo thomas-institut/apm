@@ -68,7 +68,7 @@ if (isset($_POST['user'])){
 session_unset();
 session_destroy();
 
-$page = new WebPage('Averroes Project Login', 'styles.css');
+$page = new WebPage('Averroes Project Login', 'css/styles.css');
 $page->addStylesheet("https://fonts.googleapis.com/css?family=PT+Sans");
 
 $page->httpHeaderUtf();

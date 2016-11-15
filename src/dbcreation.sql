@@ -5,7 +5,7 @@ CREATE TABLE `ap_settings` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 INSERT INTO `ap_settings` (`key`, `value`) VALUES
-    ('dbversion', '0.01');
+    ('dbversion', '0.02');
 
 CREATE TABLE `ap_users` (
   `id` int(11) NOT NULL,
@@ -25,7 +25,7 @@ INSERT INTO `ap_users` (`id`, `username`, `password`, `fullname`) VALUES
 CREATE TABLE `ap_elements` (
   `id` int(11) NOT NULL,
   `type` int(11) NOT NULL DEFAULT 0,
-  `doc_id` varchar(45) NOT NULL,
+  `doc_id` int(11) NOT NULL,
   `page_number` int(11) NOT NULL,
   `column_number` int(11) NOT NULL DEFAULT 0,
   `seq`int(11) NOT NULL, 
@@ -78,7 +78,6 @@ CREATE TABLE `ap_items` (
 
 CREATE TABLE `ap_docs` (
   `id` int(11) NOT NULL,
-  `doc_id` varchar(45) NOT NULL,
   `title` varchar(512) DEFAULT NULL,
   `short_title` varchar(512) DEFAULT '',
   `page_count` int(11) NOT NULL,
@@ -86,5 +85,5 @@ CREATE TABLE `ap_docs` (
   `doc_type` varchar(16) DEFAULT 'mss',
   `image_source` varchar(16) DEFAULT 'local',
   `image_source_data` varchar(512) DEFAULT NULL,
-   PRIMARY KEY (`doc_id`)
+   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

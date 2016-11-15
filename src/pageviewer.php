@@ -70,15 +70,15 @@ else{
 <head>
     <title>Averroes Page Viewer</title>
     <link rel="stylesheet" type="text/css" media="screen" href="https://fonts.googleapis.com/css?family=PT+Sans"/>
-    <link rel="stylesheet" type="text/css" media="screen" href="styles.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="css/styles.css" />
     <link rel="stylesheet" type="text/css" media="screen" href="css/bootstrap.css">
-    <link rel="stylesheet" type="text/css" media="screen" href="pageviewer.css" />
-    <link rel="stylesheet" type="text/css" media="screen" href="splitpane.css" />
-    <script type="application/javascript" src="jquery-3.1.1.js"></script>
-    <script type="application/javascript" src="bootstrap.js"></script>
-    <script type="application/javascript" src="openseadragon.min.js"></script>
-    <script type="application/javascript" src="splitpane.js"></script>
-    <script type="application/javascript" src="pageviewer.js"></script>
+    <link rel="stylesheet" type="text/css" media="screen" href="css/pageviewer.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="css/splitpane.css" />
+    <script type="application/javascript" src="js/jquery-3.1.1.js"></script>
+    <script type="application/javascript" src="js/bootstrap.js"></script>
+    <script type="application/javascript" src="js/openseadragon.min.js"></script>
+    <script type="application/javascript" src="js/splitpane.js"></script>
+    <script type="application/javascript" src="js/pageviewer.js"></script>
 </head>
 <body>
 <div id="viewerheader">

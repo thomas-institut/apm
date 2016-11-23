@@ -1,0 +1,12 @@
+{% extends "base.twig" %}
+
+{% block title %}{{theuser.fullname}} | Collaborator in the Averroes Project{% endblock %}
+
+{% block content %}
+<h4>User Profile</h4>
+<h1>{{ theuser.fullname }} </h1>
+<p>Username: {{theuser.username}}</p>
+{% if theuser.email %}
+    <p>Email address: <a href='mailto:{{theuser.email}}'>{{theuser.email}}</a></p>
+{% endif %}
+{% endblock %}

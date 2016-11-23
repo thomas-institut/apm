@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" type="text/css" href="/css/styles.css"/>
+<link rel="stylesheet" type="text/css" href="/css/bootstrap.css"/>
+<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=PT+Sans"/>
+<link href='/images-src/averroes-icon.png' rel='icon' sizes='16x16' type='image/png'>
+<title>{% block title %}{% endblock %}</title>
+<script type="text/javascript" src="/js/jquery-3.1.1.js"></script>
+<script type="text/javascript" src="/js/bootstrap.js"></script>
+</head>
+<body>    <nav class="navbar navbar-default navbar-static-top" style="background-color: white;">
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand" style="padding:0;" href="{{ path_for('home') }}"><img src="/images-src/averroes-logo-250.png" height="50" ></a>
+            </div>
+            <div id="navbar" class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li><a href="{{path_for('docs')}}" title="Documents">Documents</a></li>
+                    <li class="dropdown">
+                        <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Project Info<span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            <li><a href="https://thomas-institut.github.io/averroes-workflow-guidelines/">Worflow Guidelines &nbsp;<span class="glyphicon glyphicon-new-window"></span></a></li>
+                            <li><a href="https://thomas-institut.github.io/averroes-tei/averroes-guidelines.html">TEI Guidelines &nbsp;<span class="glyphicon glyphicon-new-window"></span></a></li>
+                            <li><a href="https://wiki.uni-koeln.de/averroes_project/">Wiki &nbsp;<span class="glyphicon glyphicon-new-window"></span></a></li>
+                        </ul>
+                    </li>
+                </ul>
+                
+                <ul class="nav navbar-nav navbar-right">
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                            <span class="glyphicon glyphicon-user" aria-hidden="true">&nbsp;</span>{{ userinfo.fullname }}<span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            <li><a href="{{ path_for('user.profile', {'username' : userinfo.username}) }}">My Profile</a></li>
+                            <li role="separator" class="divider"></li>
+                            <li><a href="{{ path_for('logout') }}" title="Logout">Logout</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div><!--/.nav-collapse -->
+        </div>
+    </nav>
+<div class="container">
+{% block content %}{% endblock %}
+</div>
+<footer class="footer">
+<div class="container">
+<p class="text-muted">{% block copyright %}{{ copyright|raw }}{% endblock %}</p>
+</div></footer>
+</body>
+</html>

@@ -1,0 +1,116 @@
+{% import 'macros.twig' as macros %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Averroes Page Viewer</title>
+    <link rel="stylesheet" type="text/css" media="screen" href="https://fonts.googleapis.com/css?family=PT+Sans"/>
+    <link rel="stylesheet" type="text/css" media="screen" href="/css/styles.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="/css/bootstrap.css">
+    <link rel="stylesheet" type="text/css" media="screen" href="/css/pageviewer.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="/css/splitpane.css" />
+    <script type="application/javascript" src="/js/jquery-3.1.1.js"></script>
+    <script type="application/javascript" src="/js/bootstrap.js"></script>
+    <script type="application/javascript" src="/js/openseadragon.min.js"></script>
+    <script type="application/javascript" src="/js/splitpane.js"></script>
+    <script type="application/javascript" src="/js/pageviewer.js"></script>
+    <script>
+        pageNumber = {{ page }};
+        docId = {{ doc }};
+    </script>
+</head>
+<body>
+<div id="viewerheader">
+    <table width="100%">
+        <tr>
+            <td width="40%">
+                <a href="{{path_for('home')}}" title="Back to main page"><img src="/images-src/averroes-logo-250.png"></a>
+                <span class="textonly" style="margin-left: 30px">{{ docInfo.title}}</span>
+            </td>
+            <td><ul class="pv-navbar"> 
+                    <li style="float: left;">
+                        <button class="textonly headerbutton {{ page==1?' disabled':''}}"
+                                title="First Page" 
+                                onclick="window.location='{{path_for('pageviewer', {'doc': doc, 'page': 1})}}';" {{ page==1 ? ' disabled' : '' }}>
+                            <span class="glyphicon glyphicon-step-backward"></span>
+                        </button>
+                    </li>
+                    <li style="float: left;">
+                        <button class="textonly headerbutton {{ page==1?' disabled':''}}" 
+                                title="Previous Page: {{ page==1?'-':page-1}}" 
+                                onclick="window.location='{{path_for('pageviewer', {'doc': doc, 'page': page-1})}}';" {{ page==1 ? ' disabled' : '' }}>
+                            <span class="glyphicon glyphicon-chevron-left"></span>
+                        </button>
+                    </li>
+                    <li style="float:left">
+                        <button class="textonly headerbutton" id="pagenumber">
+                            Page {{page}}
+                        </button>
+                    </li>
+                    <li style="float: left;">
+                        <button class="textonly headerbutton {{ page==docPageCount?' disabled':''}}"
+                                title="Next Page: {{page+1}}" 
+                                onclick="window.location='{{path_for('pageviewer', {'doc': doc, 'page': page+1})}}';" {{ page==docPageCount ? ' disabled' : '' }}>
+                            <span class="glyphicon glyphicon-chevron-right"></span>
+                        </button>
+                    </li>
+                    <li style="float: left;">
+                        <button class="textonly headerbutton {{ page==docPageCount?' disabled':''}}" 
+                                title="Last Page: {{ docPageCount }}" 
+                                onclick="window.location='{{path_for('pageviewer', {'doc': doc, 'page': docPageCount})}}';" {{ page==docPageCount?' disabled':''}}>
+                            <span class="glyphicon glyphicon-step-forward"></span>
+                        </button>
+                    </li>
+
+                </ul></td>
+            <td>
+                <ul class="pv-navbar">
+                    <li style="float:left">
+                        <button title="Make Text Bigger" class="textonly headerbutton"
+                                onclick="changeDocumentFontSize(true);"><span class="glyphicon glyphicon-zoom-in"></span></button>
+                    </li>
+                    <li style="float:left">
+                        <button title="Make Text Smaller" class="textonly headerbutton"
+                                onclick="changeDocumentFontSize(false);"><span class="glyphicon glyphicon-zoom-out"></span></button>
+                    </li>
+                </ul>
+            </td>
+            <td><ul class="pv-navbar"> 
+                    <li style="float: right;">
+                        <button title="Exit Viewer" class="textonly headerbutton"
+                                onclick="window.location='{{path_for('home')}}';">
+                            <span class="glyphicon glyphicon-off"></span>
+                        </button>
+                    </li>
+                </ul></td>
+        </tr>
+    </table>
+</div> <!-- viewerheader -->
+<!-- Page table popover -->
+<script>
+    $('#pagenumber').popover({title:'Page List', content: '{{macros.pageviewtable(doc, thePages)|escape('js')}}', container: 'body', html: true, placement: 'auto', trigger: 'click'});
+</script>
+<div id="container">
+<div class="split-pane vertical-percent">
+    <div class="split-pane-component" id="left-component">
+            </div>
+            
+            <script type="text/javascript">
+                var viewer = OpenSeadragon({
+                    id: "left-component",
+                    prefixUrl: "/images/openseadragonimages/",
+                    tileSources: {
+                        type: 'image',
+                        url:  '{{ imageUrl}}',
+                        buildPyramid: false, 
+                        homeFillsViewer: true
+                    }
+                });
+            </script>
+    <div class="split-pane-divider" id="divider"></div>
+    <div class="split-pane-component" id="right-component">
+    </div>
+</div>
+</div>
+</body>
+</html>        

@@ -106,15 +106,23 @@ class TranscriptionText {
         
         $this->theItems = array();
         $this->lang = $lang;
-        $this->editorId = $editor;
-        $this->handId = $hand;
-        $this->parentColumnElementId = $parent;
+        $this->editorId = (int) $editor;
+        $this->handId = (int) $hand;
+        $this->parentColumnElementId = (int) $parent;
     }
     
-    function addItem($item){
+    /**
+     * 
+     * @param type $item
+     * @param bool $ordered  (if true, items will be pushed into the array)
+     * @throws InvalidArgumentException
+     */
+    function addItem($item, $ordered=false){
         if (is_a($item, 'TranscriptionTextItem')){
-            if ($item->seq !== -1){
-                $this->theItems[$item->seq] = $item;
+            $seq = (int) $item->seq;
+            if ( $seq !== -1 && !$ordered){
+                $this->theItems[$seq] = $item;
+                
             }
             else {
                 $item->seq = count($this->theItems);
@@ -300,15 +308,15 @@ class TranscriptionTextItem {
      * @param int $h
      */
     function setHandId($h){
-        $this->handId = $h;
+        $this->handId = (int) $h;
     }
             
     
     function __construct($i=0, $s = -1, $l='', $h=-1) {
-        $this->id = $i;
-        $this->lang = $l;
-        $this->handId = $h;
-        $this->seq = $s;
+        $this->id =(int) $i;
+        $this->lang = (int) $l;
+        $this->handId = (int) $h;
+        $this->seq = (int) $s;
     }
     
     function isRtl(){

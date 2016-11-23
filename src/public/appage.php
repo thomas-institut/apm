@@ -1,6 +1,6 @@
 <?php
 /**
- * @file apmpage.php
+ * @file appage.php
  * 
  * @brief Basic Averroes Project Manager page classs
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
@@ -10,21 +10,21 @@
 require_once 'webpage.php';
 require_once 'errorpage.php';
 
-if (!file_exists('config.php')){
-    $ep = new ErrorPage();
-    $ep->show("No configuration file", "Tell your admin to configure the system");
-    die();
-}
-require_once 'config.php';
-
-if (!file_exists('params.php')){
-    $ep = new ErrorPage();
-    $ep->show("No parameters file", "Tell your admin to configure the system");
-    die();
-}
-require_once 'params.php';
-
-require_once 'apdata.php';
+//if (!file_exists('config.php')){
+//    $ep = new ErrorPage();
+//    $ep->show("No configuration file", "Tell your admin to configure the system");
+//    die();
+//}
+//require_once 'config.php';
+//
+//if (!file_exists('params.php')){
+//    $ep = new ErrorPage();
+//    $ep->show("No parameters file", "Tell your admin to configure the system");
+//    die();
+//}
+//require_once 'params.php';
+//
+//require_once 'apdata.php';
 
 /**
  * @class ApPage

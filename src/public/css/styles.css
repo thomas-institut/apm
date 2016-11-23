@@ -147,7 +147,7 @@ table.pagetable a {
     color: black;
 }
 
-table.pagetable td.grayed a{
+table.pagetable td.withouttranscription a{
     color: silver;
 }
 

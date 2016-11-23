@@ -379,17 +379,17 @@ class ApData extends mysqli{
                 default:
                     continue;
             }
-            $e->columnNumber = $col;
-            $e->documentId = $docId;
-            $e->editorId = $row['editor_id'];
-            $e->handId = $row['hand_id'];
-            $e->id = $row['id'];
+            $e->columnNumber = (int) $col;
+            $e->documentId = (int) $docId;
+            $e->editorId = (int) $row['editor_id'];
+            $e->handId = (int) $row['hand_id'];
+            $e->id = (int) $row['id'];
             $e->lang = $row['lang'];
-            $e->pageNumber = $page;
+            $e->pageNumber = (int) $page;
             //$e->placement = $row['placement'];
-            $e->seq = $row['seq'];
+            $e->seq = (int) $row['seq'];
             $e->timestamp = $row['time'];
-            $e->type = $row['type'];
+            $e->type = (int) $row['type'];
             
             $e->transcribedText = $this->getTranscribedText($e->id, $e->lang, $e->editorId, $e->handId);
             array_push($elements, $e);
@@ -440,7 +440,7 @@ class ApData extends mysqli{
             }
             $item->lang = $row['lang'];
             $item->handId = $row['hand_id'];
-            $tt->addItem($item);
+            $tt->addItem($item, true);
         }
         
         return $tt;
@@ -458,11 +458,11 @@ class ApData extends mysqli{
             $notes = array();
             while ($row = $r->fetch_assoc()){
                 $en = new EditorialNote();
-                $en->id = $row['id'];
-                $en->type = $row['type'];
-                $en->authorId=  $row['author_id'];
-                $en->lang = $row['lang'];
-                $en->target = $row['target'];
+                $en->id = (int) $row['id'];
+                $en->type = (int) $row['type'];
+                $en->authorId=  (int) $row['author_id'];
+                $en->lang = (int) $row['lang'];
+                $en->target = (int) $row['target'];
                 $en->time = $row['time'];
                 $en->text = $row['text'];
                 array_push($notes, $en);
@@ -474,5 +474,34 @@ class ApData extends mysqli{
         return $this->getEditorialNotes(EditorialNote::INLINE, $id);
     }
     
-    
+    function getEditorialNotesByDocPageCol($docId, $pageNum, $colNumber=1){
+        $ted = $this->tables['ednotes'];
+        $ti = $this->tables['items'];
+        $te = $this->tables['elements'];
+        
+        $query = "SELECT `$ted`.* from `$ted` " . 
+                "JOIN `$ti` on `$ted`.`target`=`$ti`.`id` " . 
+                "JOIN `$te` on `$te`.`id`= `$ti`.`ce_id` " . 
+                "WHERE `$te`.`doc_id`=$docId and `$te`.`page_number`=$pageNum AND `$te`.`column_number`=$colNumber";
+        
+        $r = $this->query($query);
+        if ($r->num_rows === 0){
+            return NULL;
+        } 
+        else {
+            $notes = array();
+            while ($row = $r->fetch_assoc()){
+                $en = new EditorialNote();
+                $en->id = (int) $row['id'];
+                $en->type = (int) $row['type'];
+                $en->authorId=  (int) $row['author_id'];
+                $en->lang = $row['lang'];
+                $en->target = (int) $row['target'];
+                $en->time = $row['time'];
+                $en->text = $row['text'];
+                array_push($notes, $en);
+            }
+            return $notes;
+        }
+    }
 }

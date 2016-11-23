@@ -1,0 +1,24 @@
+{% extends "base.twig" %}
+{% import 'macros.twig' as macros %}
+
+{% block title %}Documents{% endblock %}
+
+{% block content %}
+<h1>Documents</h1>
+{% for doc in docs %}
+    <h3>{{doc.docInfo.title}}</h3>
+    <p>{{doc.numTranscribedPages}} of {{doc.numPages}} pages transcribed 
+        <a title="View Page List" data-toggle="collapse" data-target="#{{doc.tableId}}"><span class="glyphicon glyphicon-list"></span></a>
+    </p>
+    <div class="collapse pagetablediv" id="{{doc.tableId}}">
+    {{ macros.pageviewtable(doc.docInfo.id, doc.pages)}}
+    </div>
+    {% if doc.numLines %}
+        Transcriber(s): 
+        {% for editor in doc.editors %}
+            <a href="{{path_for('user.profile', {'username' : editor.username})}}" title="View profile">{{editor.fullname}}</a>{% if not loop.last %}, {% endif %}
+        {% endfor %}
+    {% endif %}    
+{% endfor %}
+{% endblock %}
+

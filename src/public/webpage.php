@@ -11,11 +11,18 @@
 /**
  * @class webPage
  * @brief Encapsulates basic webpage functions
- * @todo send output to a stream rather than using 'print'
  */
+
+use \Psr\Http\Message\ResponseInterface as Response;
 
 class WebPage {
 
+    
+    /**
+     *
+     * @var Response
+     */
+    protected $r; 
     /**
      * @var string $lang 
      * @brief Language to declare in the <html> tag
@@ -56,8 +63,9 @@ class WebPage {
      * @param string $script Optional script to include
      * 
      */
-    function __construct($title='', $style='styles.css', $language = 'en-US',
+    function __construct($resp, $title='', $style='styles.css', $language = 'en-US',
                      $script = '' ){
+        $this->r = $resp;
         $this->lang = $language;
         $this->title = $title;
         $this->styles = array();
@@ -69,15 +77,19 @@ class WebPage {
             array_push($this->scripts, $script);
     }
     
+    function write($str){
+        $this->r->getBody()->write($str);
+    }
     /**
      * @brief Prints doctype and html tags
      */
     function printDocTypeAndHtml(){
-        print "<!doctype html>\n";
-        if ($this->lang != '')
-            print "<html lang=\"". $this->lang . "\">\n";
-        else
-            print "<html>\n";
+        $this->write("<!doctype html>\n");
+        if ($this->lang != '') {
+            $this->write("<html lang=\"" . $this->lang . "\">\n");
+        } else {
+            $this->write("<html>\n");
+        }
     }
 
     /**
@@ -98,14 +110,14 @@ class WebPage {
      * @brief Redirects to a new page immediately
      */
     static function redirect($url){
-        header('Location: ' . $url);
+        $this->r = $this->r->withHeader('Location',$url);
     }
     
     /**
      * @brief Redirects to itself
      */
     static function redirectToSelf(){
-        header('Location: '. $_SERVER["PHP_SELF"]);
+        $this->r = $this->r->withHeader('Location', $_SERVER["PHP_SELF"]);
     }
 
     /** 
@@ -121,7 +133,7 @@ class WebPage {
      * @brief Sends an http header specifying UTF-8 output
      */
     function httpHeaderUtf(){
-       	header('Content-Type: text/html; charset=utf-8');
+       	$this->r = $this->r->withHeader('Content-Type', 'text/html; charset=utf-8');
     }
 
     /**
@@ -130,17 +142,17 @@ class WebPage {
      * Prints all stylesheet and script references
      */
     function printHead(){
-        print "<head>\n";
+        $this->write("<head>\n");
         foreach ($this->styles as $st) {
-            print "<link rel=\"stylesheet\" type=\"text/css\" href=\"" . 
-                $st . "\"/>\n";
+            $this->write("<link rel=\"stylesheet\" type=\"text/css\" href=\"" . 
+                $st . "\"/>\n");
         }
-        print "<title>" . $this->title . "</title>\n";
+        $this->write("<title>" . $this->title . "</title>\n");
         foreach( $this->scripts as $sc){
-            print "<script type=\"text/javascript\" src=\"" .
-                $sc . "\"></script>\n";
+            $this->write("<script type=\"text/javascript\" src=\"" .
+                $sc . "\"></script>\n");
         }
-        print "</head>\n";
+        $this->write("</head>\n");
     }
 
     /**
@@ -158,7 +170,7 @@ class WebPage {
      * @brief Closes the <body> tag
      */
     function closeBody(){
-        print "</body>\n";
+        $this->write("</body>\n");
     }
 
    /**
@@ -166,7 +178,7 @@ class WebPage {
      */
 
     function closeHtml(){
-        print "</html>";
+        $this->write("</html>");
     }
 
     /**
@@ -177,7 +189,7 @@ class WebPage {
      */
     function p($text, $class=''){
         $this->startTag('p', $class);
-        print $text;
+        $this->write($text);
         $this->closeLastTag();
  
     }
@@ -188,10 +200,11 @@ class WebPage {
      * @param string $class Optional class
      */
     function startDiv($id, $class=''){
-        print "<div id=\"" . $id . "\"";
-        if ($class != '')
-            print " class=\"" . $class . "\" ";
-        print ">";
+        $this->write("<div id=\"" . $id . "\"");
+        if ($class != '') {
+            $this->write(" class=\"" . $class . "\" ");
+        }
+        $this->write(">");
         array_push($this->openTags, 'div');
 
     }
@@ -207,10 +220,11 @@ class WebPage {
      */
     function startTag($tag, $class=''){
         array_push($this->openTags, $tag);
-        if ($class != '')
-            print '<' . $tag . " class=\"" . $class . "\">";
-        else
-            print '<' . $tag . ">";
+        if ($class != '') {
+            $this->write('<' . $tag . " class=\"" . $class . "\">");
+        } else {
+            $this->write('<' . $tag . ">");
+        }
     }
 
     /**
@@ -218,7 +232,7 @@ class WebPage {
      */
     function closeLastTag(){
         $lt = array_pop($this->openTags);
-        print "</" . $lt . ">\n";
+        $this->write("</" . $lt . ">\n");
     }
     
     /**
@@ -231,6 +245,8 @@ class WebPage {
         }
         return $ip;
     }
+    
+    function getResponse(){
+        return $this->r;
+    }
 }
-
-?>

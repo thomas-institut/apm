@@ -12,7 +12,7 @@ $config['addContentLengthHeader'] = false;
 
 // Application parameters
 $config['app_name'] = 'Averroes Project';
-$config['version'] = '0.05';
+$config['version'] = '0.06';
 $config['app_shortname'] = 'Averroes';
 $config['copyright_notice'] = '2016, <a href="http://www.thomasinstitut.uni-koeln.de/">Thomas-Institut</a>, <a href="http://www.uni-koeln.de/">Universität zu Köln</a>';
 

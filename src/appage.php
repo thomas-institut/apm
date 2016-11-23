@@ -127,7 +127,7 @@ class ApPage extends WebPage {
          * 4. Load user info
          */
         
-        $this->user = $this->db->loadUserInfo($_SESSION['userid']);
+        $this->user = $this->db->getUserInfoByUserId($_SESSION['userid']);
 
        
         
@@ -199,12 +199,12 @@ class ApPage extends WebPage {
     <nav class="navbar navbar-default navbar-static-top" style="background-color: white;">
         <div class="container">
             <div class="navbar-header">
-                <a class="navbar-brand" style="padding:0;" href="#"><img src="images/averroes-logo-250.png" height="50" ></a>
+                <a class="navbar-brand" style="padding:0;" href="index.php"><img src="images/averroes-logo-250.png" height="50" ></a>
             </div>
             <div id="navbar" class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
                     <li class="dropdown">
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Info<span class="caret"></span></a>
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Project Info<span class="caret"></span></a>
                         <ul class="dropdown-menu">
                             <li><a href="https://thomas-institut.github.io/averroes-workflow-guidelines/">Worflow Guidelines &nbsp;<span class="glyphicon glyphicon-new-window"></span></a></li>
                             <li><a href="https://thomas-institut.github.io/averroes-tei/averroes-guidelines.html">TEI Guidelines &nbsp;<span class="glyphicon glyphicon-new-window"></span></a></li>

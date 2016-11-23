@@ -8,3 +8,4 @@ images/149086-essential-set/
 test/*.sql
 test/*.xml
 *.zip
+vendor/

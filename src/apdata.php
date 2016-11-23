@@ -155,7 +155,7 @@ class ApData extends mysqli{
     /**
      * Gets the user id associated with a given username
      */
-    function userId($username){
+    function getUserIdByUsername($username){
         return $this->getOneField($this->tables['users'], 'id', "`username` ='" . $username . "'");
     }
     
@@ -168,20 +168,13 @@ class ApData extends mysqli{
      * @param int $userid User ID
      * @param array $userinfo Array where the information will be stored
      */
-    function loadUserInfo($userid){
-        $tmp = array();
-        $this->loadOneRow('select * from `' . $this->tables['users']  . '` where `id`=' . $userid, $tmp);
-        return $tmp;
+    function getUserInfoByUserId($userid){
+        return $this->getOneRow('select * from `' . $this->tables['users']  . '` where `id`=' . $userid);
     }
     
-    function loadUserInfoByUsername($username){
-        $tmp = array();
-        $q = 'select * from `' . $this->tables['users']  . '` where `username`=\'' . $username . "'";
-        error_log($q);
-        $this->loadOneRow($q, $tmp);
-        return $tmp;
+    function getUserInfoByUsername($username){
+        return $this->getOneRow('select * from `' . $this->tables['users']  . '` where `username`=\'' . $username . "'");
     }
-
      
    /**
      * Queries the DB and returns the number of resulting rows

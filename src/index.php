@@ -42,7 +42,7 @@ foreach ($docIds as $docId){
         end($editors);
         $lastKey = key($editors);
         foreach($editors as $key => $e){
-            $editorInfo = $db->loadUserInfoByUsername($e);
+            $editorInfo = $db->getUserInfoByUsername($e);
             print $editorInfo['fullname'];
             if ($key === $lastKey){
                 print "";

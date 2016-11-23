@@ -53,7 +53,7 @@ if (isset($_POST['user'])){
     // Login attempt
     if ($db->usernameExists($_POST['user']) and password_verify($_POST['pwd'], $db->userPassword($_POST['user']))){
         // Success!
-        $_SESSION['userid'] = $db->userId($_POST['user']);
+        $_SESSION['userid'] = $db->getUserIdByUsername($_POST['user']);
         WebPage::redirect('index.php');
         die();
     }

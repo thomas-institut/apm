@@ -24,6 +24,7 @@ var currentDocumentFontSize = 12;
 
 var pageNumber;
 var docId;
+var apiBase;
 
 function changeDocumentFontSize(bigger){
     
@@ -47,7 +48,7 @@ $(document).ready(function(){
     currentDocumentFontSize = /\d+/.exec(reportedFS);
 //    console.log('Document font size: ' + currentDocumentFontSize + ' pixels');
 
-    $.getJSON('/api/elements/' + docId + '/' + pageNumber + '/1', function (resp){
+    $.getJSON(apiBase + '/api/elements/' + docId + '/' + pageNumber + '/1', function (resp){
         if (resp.elements === null) {
             resp.elements = [];
         }

@@ -61,11 +61,14 @@ $container['view'] = function ($container) {
 // Authentication middleware
 $app->add(function ($request, $response, $next){
     session_start(['cookie_lifetime' => 86400,]);
-    if ($request->getUri()->getPath() !== '/login'){
+    error_log($request->getUri()->getPath());
+    if ($request->getUri()->getPath() !== 'login'){
         if (!isset($_SESSION['userid'])){
-            return $response->withHeader('Location', '/login');
+            error_log("Redirecting to login");
+            return $response->withHeader('Location', $this->router->pathFor('login'));
         }
         else {
+            error_log('Auth middleware: letting it slide!');
             $this->userInfo = $this->db->getUserInfoByUserId($_SESSION['userid']);
             return $next($request, $response); 
         }
@@ -107,7 +110,7 @@ $app->any('/login', function (Request $request, Response $response) {
         }
     }
     $msg = '';
-    return $this->view->render($response, 'login.twig', [ 'message' => $msg ]);
+    return $this->view->render($response, 'login.twig', [ 'message' => $msg, 'baseurl' => $this->settings['baseurl']]);
 })->setName('login');
 
 // LOGOUT
@@ -134,6 +137,7 @@ $app->get('/user/{username}',function (Request $request, Response $response) {
         return $this->view->render($response, 'user.notfound.twig', [
         'userinfo' => $this->userInfo, 
         'copyright' => $this->copyrightNotice,
+        'baseurl' => $this->settings['baseurl'],
         'theuser' => $username
     ]);
     }
@@ -142,6 +146,7 @@ $app->get('/user/{username}',function (Request $request, Response $response) {
     return $this->view->render($response, 'user.profile.twig', [
         'userinfo' => $this->userInfo, 
         'copyright' => $this->copyrightNotice,
+        'baseurl' => $this->settings['baseurl'],
         'theuser' => $userInfo
     ]);
 })->setName('user.profile');
@@ -171,6 +176,7 @@ $app->get('/documents',function (Request $request, Response $response) {
     return $this->view->render($response, 'docs.twig', [
         'userinfo' => $this->userInfo, 
         'copyright' => $this->copyrightNotice,
+        'baseurl' => $this->settings['baseurl'],
         'docs' => $docs
     ]);
 })->setName('docs');
@@ -191,6 +197,7 @@ $app->get('/pageviewer/{doc}/{page}', function(Request $request, Response $respo
     return $this->view->render($response, 'pageviewer.twig', [
         'userinfo' => $this->userInfo, 
         'copyright' => $this->copyrightNotice,
+        'baseurl' => $this->settings['baseurl'],
         'doc' => $docId,
         'docInfo' => $docInfo,
         'docPageCount' => $docPageCount,

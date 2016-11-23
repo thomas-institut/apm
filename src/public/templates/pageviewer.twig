@@ -5,18 +5,20 @@
 <head>
     <title>Averroes Page Viewer</title>
     <link rel="stylesheet" type="text/css" media="screen" href="https://fonts.googleapis.com/css?family=PT+Sans"/>
-    <link rel="stylesheet" type="text/css" media="screen" href="/css/styles.css" />
-    <link rel="stylesheet" type="text/css" media="screen" href="/css/bootstrap.css">
-    <link rel="stylesheet" type="text/css" media="screen" href="/css/pageviewer.css" />
-    <link rel="stylesheet" type="text/css" media="screen" href="/css/splitpane.css" />
-    <script type="application/javascript" src="/js/jquery-3.1.1.js"></script>
-    <script type="application/javascript" src="/js/bootstrap.js"></script>
-    <script type="application/javascript" src="/js/openseadragon.min.js"></script>
-    <script type="application/javascript" src="/js/splitpane.js"></script>
-    <script type="application/javascript" src="/js/pageviewer.js"></script>
+    <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/styles.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/bootstrap.css">
+    <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/pageviewer.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/splitpane.css" />
+    <script type="application/javascript" src="{{baseurl}}/js/jquery-3.1.1.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/bootstrap.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/openseadragon.min.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/splitpane.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/pageviewer.js"></script>
+    <link href='{{baseurl}}/images/averroes-icon.png' rel='icon' sizes='16x16' type='image/png'>
     <script>
         pageNumber = {{ page }};
         docId = {{ doc }};
+        apiBase = '{{ baseurl }}';
     </script>
 </head>
 <body>
@@ -24,7 +26,7 @@
     <table width="100%">
         <tr>
             <td width="40%">
-                <a href="{{path_for('home')}}" title="Back to main page"><img src="/images-src/averroes-logo-250.png"></a>
+                <a href="{{path_for('home')}}" title="Back to main page"><img src="{{baseurl}}/images/averroes-logo-250.png"></a>
                 <span class="textonly" style="margin-left: 30px">{{ docInfo.title}}</span>
             </td>
             <td><ul class="pv-navbar"> 
@@ -98,10 +100,10 @@
             <script type="text/javascript">
                 var viewer = OpenSeadragon({
                     id: "left-component",
-                    prefixUrl: "/images/openseadragonimages/",
+                    prefixUrl: "{{baseurl}}/images/openseadragonimages/",
                     tileSources: {
                         type: 'image',
-                        url:  '{{ imageUrl}}',
+                        url:  '{{baseurl}}/{{ imageUrl}}',
                         buildPyramid: false, 
                         homeFillsViewer: true
                     }

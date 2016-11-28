@@ -4,7 +4,8 @@ use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
 require 'vendor/autoload.php';
-require 'classes/ProjectData.php';
+require 'classes/AverroesProjectData.php';
+require 'classes/Auth.php';
 require 'config.php';
 
 // slim parameters
@@ -59,28 +60,8 @@ $container['view'] = function ($container) {
 // 
 // ---------------------------------------------------------
 
-// Authentication middleware
-$app->add(function ($request, $response, $next){
-    session_start(['cookie_lifetime' => 86400,]);
-    error_log($request->getUri()->getPath());
-    if ($request->getUri()->getPath() !== 'login'){
-        if (!isset($_SESSION['userid'])){
-            error_log("Redirecting to login");
-            return $response->withHeader('Location', $this->router->pathFor('login'));
-        }
-        else {
-            error_log('Auth middleware: letting it slide!');
-            $this->userInfo = $this->db->getUserInfoByUserId($_SESSION['userid']);
-            return $next($request, $response); 
-        }
-    }
-    else {
-        return $next($request, $response); 
-    }
- });
- 
- // Timestamp middleware
- // creates the footer with  copyright notice with the current time
+// Timestamp middleware
+// creates the footer with  copyright notice with the current time
  $app->add(function ($request, $response, $next){
     $config = $this->settings;
     $this->copyrightNotice  = $config['app_name'] . " " . $config['version'] . " &bull; &copy; " . $config['copyright_notice'] . " &bull; " .  strftime("%d %b %Y, %H:%M:%S %Z");
@@ -94,32 +75,11 @@ $app->add(function ($request, $response, $next){
 // 
 // ---------------------------------------------------------
  
-
-
 // LOGIN
-$app->any('/login', function (Request $request, Response $response) {
-    if ($request->isPost()){
-        $data = $request->getParsedBody();
-        if (isset($data['user']) && isset($data['pwd'])){
-            $user = filter_var($data['user'], FILTER_SANITIZE_STRING);
-            $pwd = filter_var($data['pwd'], FILTER_SANITIZE_STRING);
-            if ($this->db->usernameExists($user) and password_verify($pwd, $this->db->userPassword($user))){
-                // Success!
-                $_SESSION['userid'] = $this->db->getUserIdByUsername($user);
-                return $response->withHeader('Location', $this->router->pathFor('home'));
-            }
-        }
-    }
-    $msg = '';
-    return $this->view->render($response, 'login.twig', [ 'message' => $msg, 'baseurl' => $this->settings['baseurl']]);
-})->setName('login');
+$app->any('/login', '\AverroesProject\Auth:login')->setName('login');
 
 // LOGOUT
-$app->any('/logout', function (Request $request, Response $response) {
-    session_unset();
-    session_destroy();
-    return $response->withHeader('Location', $this->router->pathFor('home'));
-})->setName('logout');
+$app->any('/logout', '\AverroesProject\Auth:logout')->setName('logout');
 
 // HOME
 $app->get('/',function (Request $request, Response $response) {
@@ -128,7 +88,7 @@ $app->get('/',function (Request $request, Response $response) {
 //        'userinfo' => $this->userInfo, 
 //        'copyright' => $this->copyrightNotice
 //    ]);
-})->setName('home');
+})->setName('home')->add('\AverroesProject\Auth:authenticate');
 
 // USER.PROFILE
 $app->get('/user/{username}',function (Request $request, Response $response) {
@@ -150,7 +110,7 @@ $app->get('/user/{username}',function (Request $request, Response $response) {
         'baseurl' => $this->settings['baseurl'],
         'theuser' => $userInfo
     ]);
-})->setName('user.profile');
+})->setName('user.profile')->add('\AverroesProject\Auth:authenticate');
 
 
 // DOCS
@@ -180,7 +140,7 @@ $app->get('/documents',function (Request $request, Response $response) {
         'baseurl' => $this->settings['baseurl'],
         'docs' => $docs
     ]);
-})->setName('docs');
+})->setName('docs')->add('\AverroesProject\Auth:authenticate');
 
 //
 // PAGEVIEWER
@@ -206,7 +166,7 @@ $app->get('/pageviewer/{doc}/{page}', function(Request $request, Response $respo
         'thePages' => $thePages,
         'imageUrl' => $imageUrl
     ]);
-})->setName('pageviewer');
+})->setName('pageviewer')->add('\AverroesProject\Auth:authenticate');
 
 
 //

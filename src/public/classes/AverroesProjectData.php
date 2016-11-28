@@ -46,11 +46,11 @@ class AverroesProjectData extends \mysqli{
 
         $r  = parent::real_connect($dbconfig['host'], $dbconfig['user'], $dbconfig['pwd']);
         if (!$r){
-            throw new Exception($this->connect_error, E_MYSQL);
+            throw new \Exception($this->connect_error, E_MYSQL);
         }
 
         if (!$this->select_db($dbconfig['db'])){
-            throw new Exception($this->error, E_MYSQL);
+            throw new \Exception($this->error, E_MYSQL);
         }
         $this->query("set character set 'utf8'");
         $this->query("set names 'utf8'");
@@ -59,7 +59,7 @@ class AverroesProjectData extends \mysqli{
         
          // Check if database is initialized
         if (!$this->isInitialized()){
-            throw new Exception("Tables not initialized", E_NO_TABLES);
+            throw new \Exception("Tables not initialized", E_NO_TABLES);
         }
         
         // Load settings
@@ -67,7 +67,7 @@ class AverroesProjectData extends \mysqli{
         
         // Check that the database's version is up to date
         if ($this->settings['dbversion'] !== $this->databaseversion){
-            throw new Exception("Database schema not up to date", E_OUTDATED_DB);
+            throw new \Exception("Database schema not up to date", E_OUTDATED_DB);
         }
        
     }
@@ -103,7 +103,7 @@ class AverroesProjectData extends \mysqli{
     function query($query, $resultmode = MYSQLI_STORE_RESULT){
         $r = parent::query($query, $resultmode);
         if ($r===false){
-            throw new Exception($this->error, E_MYSQL);
+            throw new \Exception($this->error, E_MYSQL);
         }
         return $r;
     }
@@ -132,6 +132,11 @@ class AverroesProjectData extends \mysqli{
         return $this->queryNumRows($query) == 1;
     }
 
+    function userIdExists($userId){
+        $query = 'select * from `' . $this->tables['users'] . '` where `id`=' . $userId;
+        return $this->queryNumRows($query) == 1;
+    }
+    
     /**
      * Gets the user password hash in the database.
      */
@@ -143,7 +148,7 @@ class AverroesProjectData extends \mysqli{
         }
         else{
             $row = $r->fetch_assoc();
-            if (isset($row['password'])){
+            if (isset($row['password'])){ 
                 return $row['password'];
             }
             else {
@@ -152,6 +157,16 @@ class AverroesProjectData extends \mysqli{
         }
     }
 
+    
+    function storeUserToken($userId, $token){
+        $query = 'UPDATE `' . $this->tables['users'] . '` SET `token`=\'' . $token . '\' WHERE `id`=' . $userId;
+        return $this->query($query);
+    }
+    
+    function getUserToken($userId){
+        return $this->getOneFieldQuery('SELECT token FROM `' . $this->tables['users'] . '` WHERE `id`=' . $userId, 'token');
+    }
+    
     /**
      * Gets the user id associated with a given username
      */
@@ -195,7 +210,7 @@ class AverroesProjectData extends \mysqli{
         $r = $this->query($query);
         $row = $r->fetch_assoc();
         if (!isset($row[$field])){
-            throw new Exception($field . ' not in ' . $table, E_MYSQL);
+            throw new \Exception($field . ' not in ' . $table, E_MYSQL);
         }
         else{
             return $row[$field];
@@ -210,7 +225,7 @@ class AverroesProjectData extends \mysqli{
         $r = $this->query($query);
         $row = $r->fetch_assoc();
         if (!isset($row[$field])){
-            throw new Exception($field . ' not in result set' , E_MYSQL);
+            throw new \Exception($field . ' not in result set' , E_MYSQL);
         }
         else{
             return $row[$field];

@@ -1,7 +1,6 @@
 netbeans
 *~
 /nbproject/private/
-/ap-v0.04
 /src/config.*.php
 test/*.sql
 test/*.xml

@@ -13,11 +13,11 @@ use \Psr\Http\Message\ResponseInterface as Response;
 require 'vendor/autoload.php';
 
 /**
- * Authentication middleware class for the web applications
+ * Authentication middleware class for the web application
  *
  * @author rafael
  */
-class Auth {
+class SiteAuthentication {
     
    protected $ci;
    //Constructor

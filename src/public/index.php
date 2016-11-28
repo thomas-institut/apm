@@ -1,4 +1,26 @@
 <?php
+/*
+ * Copyright (C) 2016 Universität zu Köln
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
+/**
+ * @brief Dispatcher for site and API
+ * @author Rafael Nájera <rafael.najera@uni-koeln.de>
+ */
 namespace AverroesProject;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
@@ -10,16 +32,15 @@ require 'classes/SiteController.php';
 require 'classes/ApiAuthentication.php';
 require 'classes/ApiController.php';
 
-require 'config.php';
 
-// slim parameters
-$config['addContentLengthHeader'] = false;
+// Options that change from development to production
+// (e.g., database access credentials) go into config.php
+require 'config.php';
 
 
 // Application parameters
-$config['app_name'] = 'Averroes Project';
-$config['version'] = '0.07';
-$config['app_shortname'] = 'Averroes';
+$config['app_name'] = 'Averroes Project Manager';
+$config['version'] = '0.08';
 $config['copyright_notice'] = '2016, <a href="http://www.thomasinstitut.uni-koeln.de/">Thomas-Institut</a>, <a href="http://www.uni-koeln.de/">Universität zu Köln</a>';
 
 $config['default_timezone'] = "Europe/Berlin";
@@ -33,8 +54,10 @@ $config['tables']['hands']      = 'ap_hands';
 $config['tables']['users']      = 'ap_users';
 $config['tables']['docs']       = 'ap_docs';
 
+// Slim parameters
+$config['addContentLengthHeader'] = false;
 
-// Initialize the app
+// Initialize the Slim app
 $app = new \Slim\App(["settings" => $config]);
 date_default_timezone_set($config['default_timezone']);
 
@@ -58,11 +81,10 @@ $container['view'] = function ($container) {
     return $view;
 };
 
-// ---------------------------------------------------------
-// 
-// SITE ROUTES
-// 
-// ---------------------------------------------------------
+
+// -----------------------------------------------------------------------------
+//  SITE ROUTES
+// -----------------------------------------------------------------------------
  
 // LOGIN
 $app->any('/login', '\AverroesProject\SiteAuthentication:login')
@@ -71,7 +93,6 @@ $app->any('/login', '\AverroesProject\SiteAuthentication:login')
 // LOGOUT
 $app->any('/logout', '\AverroesProject\SiteAuthentication:logout')
         ->setName('logout');
-
 
 
 // HOME
@@ -90,25 +111,27 @@ $app->get('/documents','\AverroesProject\SiteController:documentsPage')
         ->add('\AverroesProject\SiteAuthentication:authenticate');
 
 // PAGEVIEWER
-
 $app->get('/pageviewer/{doc}/{page}', '\AverroesProject\SiteController:pageViewerPage')
         ->setName('pageviewer')
         ->add('\AverroesProject\SiteAuthentication:authenticate');
 
-// ---------------------------------------------------------
-// 
-// API ROUTES
-// 
-// ---------------------------------------------------------
+
+
+// -----------------------------------------------------------------------------
+//  API ROUTES
+// -----------------------------------------------------------------------------
 
 $app->group('/api', function (){
+    
     // API -> getElements
     $this->get('/elements/{document}/{page}/{column}', '\AverroesProject\ApiController:getElementsByDocPageCol')
         ->setName('api_getelements');
 
 })->add('\AverroesProject\ApiAuthentication');
 
-//
-//  run!
-// 
+
+
+
+
+// All set, run!
 $app->run();

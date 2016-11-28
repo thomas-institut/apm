@@ -1,6 +1,6 @@
 <?php
 /**
- * @file apdata.php
+ * @file AverroesProjectData.php
  * 
  * Database handling class
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
@@ -13,7 +13,7 @@ require_once 'TranscriptionText.php';
 require_once 'EditorialNote.php';
 
 /**
- * @class ApData
+ * @class AverroesProjectData
  * Provides access to all data via helper functions.
  */
 class AverroesProjectData extends \mysqli{

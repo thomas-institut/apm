@@ -18,6 +18,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+namespace AverroesProject;
+
 /**
  * @brief columnElement class
  *
@@ -65,8 +67,6 @@
  *        placement: margin-top | margin-bottom | margin-left | margin-right
  *        target: associated metamark or deletion id
  */
-
-namespace AverroesProject;
 
 
 /**

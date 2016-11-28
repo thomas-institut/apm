@@ -1,5 +1,4 @@
 <?php
-
 /*
  * Copyright (C) 2016 Universität zu Köln
  *
@@ -19,6 +18,10 @@
  */
 
 /**
+ * @brief TranscriptionText classes
+ * @author Rafael Nájera <rafael.najera@uni-koeln.de>
+ * 
+ * 
  * A piece of transcribed text is an array of TranscribedTextItem. 
  * Each TranscribedTextItem has a unique Id that identifies it in the system, 
  * and a reference to its parent ColumnElement.
@@ -78,7 +81,6 @@
  *               // a replacement, no need to designate it as such
  * 
  *
- * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 
 namespace AverroesProject;

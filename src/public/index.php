@@ -1,9 +1,10 @@
 <?php
+namespace AverroesProject;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
-require '../vendor/autoload.php';
-require 'apdata.php';
+require 'vendor/autoload.php';
+require 'classes/ProjectData.php';
 require 'config.php';
 
 // slim parameters
@@ -12,7 +13,7 @@ $config['addContentLengthHeader'] = false;
 
 // Application parameters
 $config['app_name'] = 'Averroes Project';
-$config['version'] = '0.06';
+$config['version'] = '0.07';
 $config['app_shortname'] = 'Averroes';
 $config['copyright_notice'] = '2016, <a href="http://www.thomasinstitut.uni-koeln.de/">Thomas-Institut</a>, <a href="http://www.uni-koeln.de/">Universität zu Köln</a>';
 
@@ -37,7 +38,7 @@ $container = $app->getContainer();
 
 // Database
 $container['db'] = function($c){
-   $db = new ApData($c['settings']['db'], $c['settings']['tables']);
+   $db = new AverroesProjectData($c['settings']['db'], $c['settings']['tables']);
    return $db ;
 };
 
@@ -48,7 +49,7 @@ $container['view'] = function ($container) {
     ]);
     // Instantiate and add Slim specific extension
     $basePath = rtrim(str_ireplace('index.php', '', $container['request']->getUri()->getBasePath()), '/');
-    $view->addExtension(new Slim\Views\TwigExtension($container['router'], $basePath));
+    $view->addExtension(new \Slim\Views\TwigExtension($container['router'], $basePath));
     return $view;
 };
 

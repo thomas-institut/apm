@@ -31,6 +31,9 @@
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
+
+namespace AverroesProject;
+
 class EditorialNote {
     
     /**

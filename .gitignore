@@ -6,4 +6,5 @@ netbeans
 test/*.sql
 test/*.xml
 *.zip
-vendor/
+src/php-sessions/
+src/public/vendor/

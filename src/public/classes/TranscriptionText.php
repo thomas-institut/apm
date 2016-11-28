@@ -81,7 +81,7 @@
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 
-//require_once 'hand.php';
+namespace AverroesProject;
 
 class TranscriptionText {
     
@@ -118,7 +118,7 @@ class TranscriptionText {
      * @throws InvalidArgumentException
      */
     function addItem($item, $ordered=false){
-        if (is_a($item, 'TranscriptionTextItem')){
+        if (is_a($item, 'AverroesProject\TranscriptionTextItem')){
             $seq = (int) $item->seq;
             if ( $seq !== -1 && !$ordered){
                 $this->theItems[$seq] = $item;
@@ -131,7 +131,7 @@ class TranscriptionText {
             
         }
         else{
-            throw new InvalidArgumentException("Items added to a TranscriptionText should be TranscriptionTextItems");
+            throw new \InvalidArgumentException("Items added to a TranscriptionText should be TranscriptionTextItems, got " . get_class($item));
         }
     }
     

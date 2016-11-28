@@ -5,18 +5,18 @@
  * Database handling class
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-
+namespace AverroesProject;
 
 require_once 'errorcodes.php';
-require_once 'columnelement.php';
-require_once 'transcriptiontext.php';
-require_once 'editorialnote.php';
+require_once 'ColumnElement.php';
+require_once 'TranscriptionText.php';
+require_once 'EditorialNote.php';
 
 /**
  * @class ApData
  * Provides access to all data via helper functions.
  */
-class ApData extends mysqli{
+class AverroesProjectData extends \mysqli{
    
     /**
      *
@@ -325,7 +325,7 @@ class ApData extends mysqli{
         $isd = $doc['image_source_data'];
         switch ($doc['image_source']){
             case 'local':
-                return sprintf("localrep/%s/%s-%04d.jpg", $isd, $isd, $page);
+                return sprintf("/localrep/%s/%s-%04d.jpg", $isd, $isd, $page);
                 break;
             
             case 'dare':

@@ -8,4 +8,4 @@ $config['db']['db'] = "averroes";
 // ATTENTION: set to false in production
 $config['displayErrorDetails'] = true;
 
-$config['baseurl']='';
+$config['baseurl']='http://localhost:8080/public';

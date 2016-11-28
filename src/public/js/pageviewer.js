@@ -18,6 +18,7 @@
 
 // Holds the current position of the container
 // divider as a fraction of the document's width
+//
 var minDocumentFontSize = 8;
 var maxDocumentFontSize = 64;
 var currentDocumentFontSize = 12;

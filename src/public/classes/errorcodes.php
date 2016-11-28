@@ -5,7 +5,7 @@
  * 
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-
+namespace AverroesProject;
 
 /**
  * Error codes 

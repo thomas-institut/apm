@@ -154,3 +154,7 @@ table.pagetable td.withouttranscription a{
 .pagetablediv{
     margin-left: 20px;
 }
+
+.largetext {
+    font-size: 1.2em;
+}

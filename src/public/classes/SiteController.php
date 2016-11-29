@@ -126,6 +126,13 @@ class SiteController {
     }
     
     
+    public static function errorPage(Request $request, Response $response, \Exception $exception){
+        return $response->withStatus(500)
+                ->withHeader('Content-Type', 'text/html')
+                ->write('<h1>Oops, something went wrong!</h1>')
+                ->write('<p>' . $exception->getMessage() . '</p>');
+    }
+    
     // Utility function
     function buildPageArray($numPages, $transcribedPages){
         $thePages = array();

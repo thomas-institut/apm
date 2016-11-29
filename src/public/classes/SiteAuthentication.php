@@ -20,14 +20,21 @@
 /**
  * @brief Middleware class for site authentication
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
+ * 
+ * Short term user authentication is implemented by storing the user id
+ * in the PHP session.  
+ * Long term user authentication ('Remember me' option) is done by storing a
+ * cookie in the user's browser with the user id information, a random token and
+ * an encrypted hash of the used id and the token. The hash is generated using 
+ * a randomly chosen secret key.
  */
 
 namespace AverroesProject;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use \Dflydev\FigCookies\FigRequestCookies;
-use Dflydev\FigCookies\SetCookie;
-use Dflydev\FigCookies\FigResponseCookies;
+use \Dflydev\FigCookies\SetCookie;
+use \Dflydev\FigCookies\FigResponseCookies;
 
 require 'vendor/autoload.php';
 
@@ -41,6 +48,7 @@ class SiteAuthentication {
    
     private $cookieName = 'rme';
     private $secret = '1256106427895916503';
+    private $debugMode = TRUE;
    
     //Constructor
     public function __construct( $ci) {
@@ -59,48 +67,63 @@ class SiteAuthentication {
         return hash_hmac('sha256', $v, $this->secret);
     }
 
+    protected function debug($msg){
+        if ($this->debugMode){
+            error_log('SiteAuth : ' . $msg);
+        }
+    }
+
 
     public function authenticate(Request $request, Response $response, $next) {
         session_start();
         $success = false;
         if (!isset($_SESSION['userid'])){
             // Check for long term cookie
-            error_log('Site Auth : no session');
+            $this->debug('No session');
             $longTermCookie = FigRequestCookies::get($request, $this->cookieName);
             if ($longTermCookie !== NULL and $longTermCookie->getValue()){
-                error_log('Site Auth: Cookie = ' . print_r($longTermCookie, true));
+                //$this->debug('Cookie = ' . print_r($longTermCookie, true));
                 $cookieValue = $longTermCookie->getValue();
                 list($userId, $token, $mac) = explode(':', $cookieValue);
                 if (hash_equals($this->generateMac($userId . ':' . $token), $mac)){
                     $userToken = $this->ci->db->getUserToken($userId);
                     if (hash_equals($userToken, $token)){
-                        error_log('Site Auth: Cookie looks good, user = ' . $userId);
+                        $this->debug('Cookie looks good, user = ' . $userId);
                         $success = true;
                     }
                     else {
-                        error_log('Site Auth: User tokens do not match -> ' . $userToken . ' vs ' . $token);
+                        $this->debug('User tokens do not match -> ' . $userToken . ' vs ' . $token);
                     }
                 } else {
-                    error_log('Site Auth: macs do not match!');
+                    $this->debug('Macs do not match!');
                 }
                 
             } else {
-                error_log('Site Auth : ... and no cookie. Fail!');
+                $this->debug('... and no cookie. Fail!');
             }
         } else {
             $userId = $_SESSION['userid'];
-            error_log('Site Auth: Session is set, user id = ' . $userId);
-            $success = true;
+            $this->debug('Session is set, user id = ' . $userId);
+            if ($this->ci->db->userIdExists($userId)){
+                $this->debug("User id exists!");
+                $success = true;
+            } else {
+                $this->debug("User id does not exist!");
+            }
+            
         }
         
         
         if ($success){
-            error_log('Site Auth: go ahead');
+            $this->debug('Success, go ahead!');
             $_SESSION['userid'] = $userId;
             $this->ci['userInfo'] = $this->ci['db']->getUserInfoByUserId($userId);
             return $next($request, $response); 
         } else {
-            error_log("Site Auth: Redirecting to login");
+            $this->debug("Authentication fail, logging out and redirecting to login");
+            session_unset();
+            session_destroy();
+            $response = FigResponseCookies::expire($response, $this->cookieName);
             return $response->withHeader('Location', $this->ci->router->pathFor('login'));
         }
     }
@@ -108,30 +131,35 @@ class SiteAuthentication {
     public function login(Request $request, Response $response, $next){
         session_start();
         $db = $this->ci->db;
-        error_log('Site Auth : Showing login page');
+        $this->debug('Login page');
         if ($request->isPost()){
             $data = $request->getParsedBody();
             if (isset($data['user']) && isset($data['pwd'])){
+                $this->debug('Got data for login');
                 $user = filter_var($data['user'], FILTER_SANITIZE_STRING);
                 $pwd = filter_var($data['pwd'], FILTER_SANITIZE_STRING);
-                error_log('Trying to log in user ' . $user);
+                $rememberme = isset($data['rememberme']) ? $data['rememberme'] : '';
+                $this->debug('Trying to log in user ' . $user);
                 if ($db->usernameExists($user) and password_verify($pwd, $db->userPassword($user))){
-                    error_log('Success!');
+                    $this->debug('Success!');
                     // Success!
                     $userId = $db->getUserIdByUsername($user);
-                    $token = $this->generateRandomToken();
-                    $db->storeUserToken($userId, $token);
-                    $cookieValue = $this->generateLongTermCookieValue($token, $userId);
                     $_SESSION['userid'] = $userId;
-                    $now = new \DateTime();
-                    $cookie = SetCookie::create($this->cookieName)
-                            ->withValue($cookieValue)
-                            ->withExpires($now->add(new \DateInterval('P14D')));
-                    $response = FigResponseCookies::set($response, $cookie);
+                    if ($rememberme === 'on'){
+                        $this->debug('User wants to be remembered for 2 weeks');
+                        $token = $this->generateRandomToken();
+                        $db->storeUserToken($userId, $token);
+                        $cookieValue = $this->generateLongTermCookieValue($token, $userId);
+                        $now = new \DateTime();
+                        $cookie = SetCookie::create($this->cookieName)
+                                ->withValue($cookieValue)
+                                ->withExpires($now->add(new \DateInterval('P14D')));
+                        $response = FigResponseCookies::set($response, $cookie);
+                    }
                     return $response->withHeader('Location', $this->ci->router->pathFor('home'));
                 }
                 else {
-                    error_log('Wrong user/password for user  ' . $user);
+                    $this->debug('Wrong user/password for user  ' . $user);
                 }
             }
         }
@@ -141,7 +169,7 @@ class SiteAuthentication {
     
     public function logout(Request $request, Response $response, $next) {
         session_start();
-        error_log('Logging out');
+        $this->debug('Logging out');
         session_unset();
         session_destroy();
         $response = FigResponseCookies::expire($response, $this->cookieName);

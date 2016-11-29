@@ -32,7 +32,7 @@ class AverroesProjectData extends \mysqli{
     private $tables;
     
     
-    private $databaseversion = '0.02';
+    private $databaseversion = '0.03';
     
     /**
      * Tries to initialize and connect to the MySQL database.
@@ -184,11 +184,15 @@ class AverroesProjectData extends \mysqli{
      * @param array $userinfo Array where the information will be stored
      */
     function getUserInfoByUserId($userid){
-        return $this->getOneRow('select * from `' . $this->tables['users']  . '` where `id`=' . $userid);
+        return $this->getOneRow('SELECT p.id, u.username, p.fullname, p.email FROM `'  . 
+                $this->tables['users'] . '` as u, `' . $this->tables['people'] . '` as p WHERE u.id=p.id ' .
+                'AND u.id='. $userid);
     }
     
     function getUserInfoByUsername($username){
-        return $this->getOneRow('select * from `' . $this->tables['users']  . '` where `username`=\'' . $username . "'");
+        return $this->getOneRow('SELECT p.id, u.username, p.fullname, p.email FROM `'  . 
+                $this->tables['users'] . '` as u, `' . $this->tables['people'] . '` as p WHERE u.id=p.id ' .
+                'AND u.username=\''. $username . '\'');
     }
      
    /**

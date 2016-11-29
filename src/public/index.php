@@ -40,7 +40,7 @@ require 'config.php';
 
 // Application parameters
 $config['app_name'] = 'Averroes Project Manager';
-$config['version'] = '0.08';
+$config['version'] = '0.09';
 $config['copyright_notice'] = '2016, <a href="http://www.thomasinstitut.uni-koeln.de/">Thomas-Institut</a>, <a href="http://www.uni-koeln.de/">Universität zu Köln</a>';
 
 $config['default_timezone'] = "Europe/Berlin";
@@ -53,6 +53,7 @@ $config['tables']['items']      = 'ap_items';
 $config['tables']['hands']      = 'ap_hands';
 $config['tables']['users']      = 'ap_users';
 $config['tables']['docs']       = 'ap_docs';
+$config['tables']['people']     = 'ap_people';
 
 // Slim parameters
 $config['addContentLengthHeader'] = false;
@@ -64,6 +65,12 @@ date_default_timezone_set($config['default_timezone']);
 // Setup the app's container
 $container = $app->getContainer();
 
+// Error Handling
+$container['errorHandler'] = function ($c) {
+    return function($request, $response, $exception){
+        return \AverroesProject\SiteController::errorPage($request, $response, $exception);
+    };
+};
 // Database
 $container['db'] = function($c){
    $db = new AverroesProjectData($c['settings']['db'], $c['settings']['tables']);
@@ -128,9 +135,6 @@ $app->group('/api', function (){
         ->setName('api_getelements');
 
 })->add('\AverroesProject\ApiAuthentication');
-
-
-
 
 
 // All set, run!

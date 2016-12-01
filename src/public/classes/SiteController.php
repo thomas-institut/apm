@@ -74,9 +74,43 @@ class SiteController {
         ]);
     }
     
+    public function userSettingsPage(Request $request, Response $response, $next){
+
+        $username = $request->getAttribute('username');
+        $curUserName = $this->ci->userInfo['username'];
+        if ($username !== $curUserName && !$this->db->isUsernameAdmin($curUserName)){
+            return $this->ci->view->render($response, 'error.notallowed.twig', [
+                'userinfo' => $this->ci->userInfo, 
+                'copyright' => $this->ci->copyrightNotice,
+                'baseurl' => $this->ci->settings['baseurl'],
+                'theuser' => $username
+            ]);
+        }
+        
+        if (!$this->db->usernameExists($username)){
+        return $this->ci->view->render($response, 'user.notfound.twig', [
+            'userinfo' => $this->ci->userInfo, 
+            'copyright' => $this->ci->copyrightNotice,
+            'baseurl' => $this->ci->settings['baseurl'],
+            'theuser' => $username
+        ]);
+        }
+        $userInfo = $this->db->getUserInfoByUsername($username);
+        
+        
+    
+        return $this->ci->view->render($response, 'user.settings.twig', [
+            'userinfo' => $this->ci->userInfo, 
+            'copyright' => $this->ci->copyrightNotice,
+            'baseurl' => $this->ci->settings['baseurl'],
+            'canedit' => true,
+            'theuser' => $userInfo
+        ]);
+    }
+    
     public function documentsPage(Request $request, Response $response, $next){
         $db = $this->db;
-        $docIds = $db->getDocIdList();
+        $docIds = $db->getDocIdList('title');
         $docs = array();
         foreach ($docIds as $docId){
             $doc = array();

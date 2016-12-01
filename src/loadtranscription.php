@@ -18,29 +18,27 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-
+namespace AverroesProject;
 /**
  * Generates SQL code to load a transcription into the database
  * 
  */
-require_once 'columnelement.php';
-require_once 'transcriptiontext.php';
-require_once 'editorialnote.php';
+require_once 'public/config.php';
+require_once 'public/classes/AverroesProjectData.php';
+
+use \XMLReader;
 
 /* -----------------------------------------------------------------*/
 /*
  * ATTENTION: modify these parameters!!!
  * 
  * -----------------------------------------------------------------*/
-$editorIds = array();
-$editorIds['natalie']  = 101;
-$editorIds['jojan'] = 102;
-$editorIds['rknorr'] = 103;
 
-$nextElementId= 1000;
-$nextItemId = 2000;
-$nextEdNoteId = 100;
-$db = new mysqli('localhost','admin', 'p7kir7', 'rafael');
+$db = new AverroesProjectData($config['db'], $config['tables']);
+
+$nextElementId= $db->getNextElementId();
+$nextItemId = $db->getNextItemId();
+$nextEdNoteId = $db->getNextEditorialNoteId();
 
 $defaultLang = 'he';
 $defaultHand = 0;
@@ -52,10 +50,6 @@ if (isset($argv[1])){
 else {
     die("Please give a filename to load.\n");
 }
-
-$nextElementId = $argv[2];
-$nextItemId = $argv[3];
-$nextEdNoteId = $argv[4];
 
 $elements = array();
 $items = array();
@@ -76,7 +70,11 @@ $editorUsername = (string) $theHeader->fileDesc->titleStmt->editor->attributes('
 if ($editorUsername === '' or $editorUsername === NULL){
     die("ERROR: No editor username given in TEI -> fileDesc -> titleStmt : \n");
 }
-$editorId = $editorIds[$editorUsername];
+$editorId = $db->getUserIdByUsername($editorUsername);
+
+if ($editorId === false){
+    die("Error: editor $editorUsername not a user in the system\n");
+}
 SqlComment("Editor: $editorUsername, id=$editorId");
 $reader->next();
 
@@ -105,7 +103,12 @@ while ($processingDivs){
         if ($page_number === 0 or $page_number === NULL){
             die("Can't read a page number from facs attribute: $facs\n");
         }
-        $doc_id = implode('-', $fields);
+        $docDareId = implode('-', $fields);
+        $doc_id =  $db->getDocIdFromDareId($docDareId);
+        if ($doc_id === false){
+            die ("ERROR: Document $docDareId not in the system\n");
+        }
+        $doc_id = (int) $doc_id;
         $lang = $defaultLang;
         $hand = $defaultHand;
         if ($reader->getAttribute('xml:lang') !== NULL){
@@ -128,7 +131,7 @@ foreach($elements as $key => $e){
     print "(";
     print $e['id'] . ", ";
     print $e['type'] . ", ";
-    print stringOrNull($e['doc_id']) . ", ";
+    print $e['doc_id'] . ", ";
     print $e['page_number'] . ", ";
     print $e['column_number'] . ", ";
     print $e['seq'] . ", ";
@@ -226,18 +229,24 @@ function processPageDiv($reader, $doc_id, $page_number, $lang, $hand, $editorId)
     global $elements;
     global $ednotes;
     global $nextEdNoteId;
-    $column_number = 1;  // Assuming 1 column pages for now
+    $column_number = 1;  
     
     $nextElementSeq = 1;
     $nextLineNumber = 1;
     
-    //SqlComment("Starting Page Div processing: $doc_id, $page_number, $lang, $hand, $editorId");
+    SqlComment("Starting Page Div processing: docId=$doc_id, page=$page_number, lang=$lang, handId=$hand, editorId=$editorId");
     $processingCEs = TRUE;
+    $haveColumns = false;
     while($processingCEs){
         readSkippingWSandC($reader);
         switch($reader->nodeType){
             case XMLReader::END_ELEMENT:
-                $processingCEs = FALSE;
+                if ($haveColumns){
+                    $column_number++;
+                    $haveColumns = false;
+                } else {
+                    $processingCEs = FALSE;
+                }
                 break;
             
             case XMLReader::ELEMENT:
@@ -246,9 +255,26 @@ function processPageDiv($reader, $doc_id, $page_number, $lang, $hand, $editorId)
                         $elementLang = $reader->getAttribute('xml:lang');
                 } 
                 switch($reader->name){
+                case 'div':
+                    $type = $reader->getAttribute('type');
+                    if ($type === NULL || $type !== 'column'){
+                        die ("Unrecognized <div> type under a page div: " . $type . "\n" );
+                    };
+                    $n = $reader->getAttribute('n');
+                    if ($n === NULL){ 
+                        die ("Need an 'n' attribute in column <div> element");
+                    }
+                    $n = (int) $n;
+                    if ($n !== $column_number){
+                        die ("Expected column number to be $column_number, got $n in column <div> element ");
+                    }
+                    $haveColumns = true;
+                    SqlComment("Processing column number $column_number");
+                    break;
+                    
                 case 'l':
                     $elementType = ColumnElement::LINE;
-                    //SqlComment("Found line, should be id= $nextElementId, seq=$nextElementSeq, lineno=$nextLineNumber");
+                    SqlComment("Found line, setting id=$nextElementId, col=$column_number, seq=$nextElementSeq, lineno=$nextLineNumber");
                     $e = array();
                     $e['id']=$nextElementId;
                     $e['type']= $elementType;
@@ -270,40 +296,33 @@ function processPageDiv($reader, $doc_id, $page_number, $lang, $hand, $editorId)
                     
                 case 'gap':
                     $n = $reader->getAttribute('quantity');
+                    $type = $reader->getAttribute('unit');
                     $r = $reader->getAttribute('reason');
+                    if ($type !== 'line' && $type !== 'column'){
+                        die("Unrecognized unit attribute for a gap element: " . $type . "\n");
+                    }
                     if ($r !== 'pending-transcription'){
                         die("Unrecognized reason for a gap in a page, got: " . $r . "\n");
                     }
                     if ($n === NULL or $n <= 0){
                         die("Wrong number of lines pending transcription, got: " . $n . "\n");
                     }
-                    for ($i = 0; $i < $n; $i++) {
-//                        $e = array();
-//                        $e['id'] = $nextElementId;
-//                        $e['type'] = ColumnElement::LINE;
-//                        $e['doc_id'] = $doc_id;
-//                        $e['page_number'] = $page_number;
-//                        $e['column_number'] = $column_number;
-//                        $e['seq'] = $nextElementSeq;
-//                        $e['lang'] = $elementLang;
-//                        $e['editor_id'] = $editorId;
-//                        $e['hand_id'] = $hand;
-//                        $e['reference'] = $nextLineNumber;
-//                        $e['placement'] = NULL;
-//                        array_push($elements, $e);
-                        $nextElementId++;
-                        $nextElementSeq++;
-                        $nextLineNumber++;
+                    switch ($type){
+                        case 'line':
+                            $nextElementSeq += $n; 
+                            $nextLineNumber += $n;
+                            break;
+                        
+                        case 'column':
+                            $column_number++;
+                            break;
                     }
-//                    readSkippingWSandC($reader);
-//                    if ($reader->nodeType !== XMLReader::END_ELEMENT){
-//                        die("Expected end of <gap> element, got " . $reader->nodeType . "\n"); 
-//                    }
+                    SqlComment("Found <gap> of type $type, next element will have col=$column_number, seq=$nextElementSeq, lineno=$nextLineNumber");
                     break;
                 
                 case 'head':
                     $elementType = ColumnElement::HEAD;
-                    //SqlComment("Found head, should be id= $nextElementId");
+                    SqlComment("Found head, setting id= $nextElementId, seq=$nextElementSeq");
                     $e = array();
                     $e['id']=$nextElementId;
                     $e['type']= $elementType;
@@ -327,7 +346,7 @@ function processPageDiv($reader, $doc_id, $page_number, $lang, $hand, $editorId)
                         die("Unrecognized fw element");
                     }
                     $elementType = ColumnElement::CUSTODES;
-                    //SqlComment("Found custodes, should be id= $nextElementId");
+                    SqlComment("Found custodes, setting id= $nextElementId, seq=$nextElementSeq");
                     $e = array();
                     $e['id']=$nextElementId;
                     $e['type']= $elementType;
@@ -793,8 +812,226 @@ function processTextItems($reader, $c_id, $lang, $hand, $editor, $elementName, $
                 }
                 break;
                 
+            case 'del':
+                $item = array();
+                $item['extra_info'] = $reader->getAttribute('rend');
+                if (!TranscriptionText::isDeletionTechniqueAllowed($item['extra_info'])){
+                    die("Deletion technique not allowed: " . $item['extra_info'] . "\n");
+                }
+                readSkippingWSandC($reader);
+                if ($reader->nodeType !== XMLReader::TEXT){
+                    die("Expected text inside <del>, got " . $reader->nodeType . "\n"); 
+                }
+                $item['id'] = $nextItemId;
+                $item['type'] = TranscriptionTextItem::DELETION;
+                $item['ce_id'] = $c_id;
+                $item['seq'] = $nextSeq;
+                $item['lang']=$lang;
+                $item['hand_id']=$hand;
+                $item['text']=fixText($reader->readString());
+                $item['alt_text']=NULL;
+                $item['length']='NULL';
+                $item['target']='NULL';
+                
+                readSkippingWSandC($reader);
+                if ($reader->nodeType === XMLReader::ELEMENT and $reader->name==='note'){
+                    processInlineNote($reader, $nextItemId, $editor, $lang);
+                    readSkippingWSandC($reader);
+                }
+                if ($reader->nodeType !== XMLReader::END_ELEMENT){
+                    die("Expected end of <del> element, got " . $reader->nodeType . "\n"); 
+                }
+                array_push($items, $item);
+                $nextItemId++;
+                $nextSeq++;
+                break;
+                
+            case 'g':
+                readSkippingWSandC($reader);
+                if ($reader->nodeType !== XMLReader::TEXT){
+                    die("Expected text inside <g>, got " . $reader->nodeType . "\n"); 
+                }
+                $item = array();
+                $item['extra_info'] = NULL;
+                $item['id'] = $nextItemId;
+                $item['type'] = TranscriptionTextItem::GLIPH;
+                $item['ce_id'] = $c_id;
+                $item['seq'] = $nextSeq;
+                $item['lang']=$lang;
+                $item['hand_id']=$hand;
+                $item['text']=fixText($reader->readString());
+                $item['alt_text']=NULL;
+                $item['length']='NULL';
+                $item['target']='NULL';
+                
+                readSkippingWSandC($reader);
+                if ($reader->nodeType === XMLReader::ELEMENT and $reader->name==='note'){
+                    processInlineNote($reader, $nextItemId, $editor, $lang);
+                    readSkippingWSandC($reader);
+                }
+                if ($reader->nodeType !== XMLReader::END_ELEMENT){
+                    die("Expected end of <g> element, got " . $reader->nodeType . "\n"); 
+                }
+                array_push($items, $item);
+                $nextItemId++;
+                $nextSeq++;
+                break;
+                
+            case 'add':
+                $item = array();
+                $item['extra_info'] = $reader->getAttribute('place');
+                readSkippingWSandC($reader);
+                if ($reader->nodeType !== XMLReader::TEXT){
+                    die("Expected text inside <add>, got " . $reader->nodeType . "\n"); 
+                }
+                $item['id'] = $nextItemId;
+                $item['type'] = TranscriptionTextItem::ADDITION;
+                $item['ce_id'] = $c_id;
+                $item['seq'] = $nextSeq;
+                $item['lang']=$lang;
+                $item['hand_id']=$hand;
+                $item['text']=fixText($reader->readString());
+                $item['alt_text']=NULL;
+                $item['length']='NULL';
+                $item['target']='NULL';
+                readSkippingWSandC($reader);
+                if ($reader->nodeType === XMLReader::ELEMENT and $reader->name==='note'){
+                    processInlineNote($reader, $nextItemId, $editor, $lang);
+                    readSkippingWSandC($reader);
+                }
+                if ($reader->nodeType !== XMLReader::END_ELEMENT){
+                    die("Expected end of <add> element, got " . $reader->nodeType . "\n"); 
+                }
+                array_push($items, $item);
+                $nextItemId++;
+                $nextSeq++;
+                break;
+            
+            case 'lb':
+                $b = $reader->getAttribute('break');
+                if ($b === NULL){
+                    die("Need a 'break' attribute in an <lb>, got none\n");
+                }
+                if ($b !== 'no'){
+                    die("Unrecognized 'break' attribute in <lb>: $b\n");
+                }
+                $item = array();
+                $item['extra_info'] = NULL;
+                $item['id'] = $nextItemId;
+                $item['type'] = TranscriptionTextItem::NO_LINEBREAK;
+                $item['ce_id'] = $c_id;
+                $item['seq'] = $nextSeq;
+                $item['lang']=$lang;
+                $item['hand_id']=$hand;
+                $item['text']=NULL;
+                $item['alt_text']=NULL;
+                $item['length']='NULL';
+                $item['target']='NULL';
+                array_push($items, $item);
+                $nextItemId++;
+                $nextSeq++;
+                break;
+                
+            case 'mod':
+                $type = $reader->getAttribute('type');
+                if ($type === NULL){
+                    die("Need a 'type' attribute inside <mod>\n");
+                }
+                if ( $type !== 'subst'){
+                    die("Unsupported <mod> type: $type\n");
+                }
+                // This maybe needed later!
+                $modXmlId = $reader->getAttribute('xml:id');
+                readSkippingWSandC($reader);
+                if ($reader->nodeType !== XMLReader::ELEMENT){
+                    die("Expected an element after <mod>, got " . $reader->nodeType . "\n"); 
+                }
+                if ($reader->name !== 'del'){
+                    die("Expected a <del> element after <mod>m, got " . $reader->name . "\n");
+                }
+                // Process DELETION
+                $item = array();
+                $item['extra_info'] = $reader->getAttribute('rend');
+                if (!TranscriptionText::isDeletionTechniqueAllowed($item['extra_info'])){
+                    die("Deletion technique not allowed: " . $item['extra_info'] . "\n");
+                }
+                readSkippingWSandC($reader);
+                if ($reader->nodeType !== XMLReader::TEXT){
+                    die("Expected text inside <del>, got " . $reader->nodeType . "\n"); 
+                }
+                $item['id'] = $nextItemId;
+                $item['type'] = TranscriptionTextItem::DELETION;
+                $item['ce_id'] = $c_id;
+                $item['seq'] = $nextSeq;
+                $item['lang']=$lang;
+                $item['hand_id']=$hand;
+                $item['text']=fixText($reader->readString());
+                $item['alt_text']=NULL;
+                $item['length']='NULL';
+                $item['target']='NULL';
+                readSkippingWSandC($reader);
+                if ($reader->nodeType === XMLReader::ELEMENT and $reader->name==='note'){
+                    processInlineNote($reader, $nextItemId, $editor, $lang);
+                    readSkippingWSandC($reader);
+                }
+                if ($reader->nodeType !== XMLReader::END_ELEMENT){
+                    die("Expected end of <del> element, got " . $reader->nodeType . "\n"); 
+                }
+                array_push($items, $item);
+                // save id for later
+                $deletionItemId = $nextItemId;
+                $nextItemId++;
+                $nextSeq++;
+                
+                // On to the addition
+                readSkippingWSandC($reader);
+                if ($reader->nodeType !== XMLReader::ELEMENT){
+                    die("Expected an element after </del>, got " . $reader->nodeType . "\n"); 
+                }
+                if ($reader->name !== 'add'){
+                    die("Expected an <add> element after </del>m, got " . $reader->name . "\n");
+                }
+                $item = array();
+                $place = $reader->getAttribute('place');
+                if ($place === NULL or $place===''){
+                    die("Expected a non-empty place attribute inside <add>\n");
+                }
+                $item['extra_info'] = $place;
+                readSkippingWSandC($reader);
+                if ($reader->nodeType !== XMLReader::TEXT){
+                    die("Expected text inside <add>, got " . $reader->nodeType . "\n"); 
+                }
+                $item['id'] = $nextItemId;
+                $item['type'] = TranscriptionTextItem::ADDITION;
+                
+                $item['ce_id'] = $c_id;
+                $item['seq'] = $nextSeq;
+                $item['lang']=$lang;
+                $item['hand_id']=$hand;
+                $item['text']=fixText($reader->readString());
+                $item['alt_text']=NULL;
+                $item['length']='NULL';
+                $item['target']=$deletionItemId;
+                readSkippingWSandC($reader);
+                if ($reader->nodeType === XMLReader::ELEMENT and $reader->name==='note'){
+                    processInlineNote($reader, $nextItemId, $editor, $lang);
+                    readSkippingWSandC($reader);
+                }
+                if ($reader->nodeType !== XMLReader::END_ELEMENT){
+                    die("Expected end of <add> element, got " . $reader->nodeType . "\n"); 
+                }
+                array_push($items, $item);
+                $nextItemId++;
+                $nextSeq++;
+             
+                readSkippingWSandC($reader);
+                if ($reader->nodeType !== XMLReader::END_ELEMENT){
+                    die("Expected end of <mod> element, got " . $reader->nodeType . "\n"); 
+                }
+                break;
+                
             default: 
-                die("Unrecognized element inside $elementName: " . $reader->name . " in page $pageNumber\n");
+                die("Unrecognized element inside <$elementName>: <" . $reader->name . "> in page $pageNumber\n");
                 
             }
         }

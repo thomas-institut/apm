@@ -96,6 +96,13 @@ class TranscriptionText {
     public $lang;
     public $editorId;
     public $handId;
+    public static $deletionTechniques = [ 
+        'dot-above', 
+        'dot-above-dot-under',
+        'dots-above',
+        'dots-underneath',
+        'strikeout'
+    ];
     
     /**
      *
@@ -185,6 +192,10 @@ class TranscriptionText {
                 }
             }
         }
+    }
+    
+    public static function isDeletionTechniqueAllowed($technique){
+        return in_array($technique, TranscriptionText::$deletionTechniques);
     }
 }
 
@@ -567,19 +578,13 @@ class TtiDeletion extends TranscriptionTextItem {
     function __construct($id, $s, $text, $technique) {
         parent::__construct($id, $s);
         $this->type = parent::DELETION;
-        switch($technique){
-            case 'dot-above':
-            case 'dot-above-dot-under':
-            case 'dots-above':
-            case 'strikeout':
-                $this->extraInfo = $technique;
-                break;
-            
-            default:
-                throw new InvalidArgumentException("Unrecognized technique for DELETION item, technique given: " . $technique);
+        if (TranscriptionText::isDeletionTechniqueAllowed($technique)){
+            $this->extraInfo = $technique;
+        } else {
+            throw new \InvalidArgumentException("Unrecognized technique for DELETION item, technique given: " . $technique);
         }
         if ($text === NULL or $text === ''){
-            throw new InvalidArgumentException("Transcription items of type DELETION need some deleted text");
+            throw new \InvalidArgumentException("Transcription items of type DELETION need some deleted text");
         }
         $this->theText = $text;
     }
@@ -627,10 +632,10 @@ class TtiAddition extends TranscriptionTextItem {
                 break;
             
             default:
-                throw new InvalidArgumentException("Unrecognized placement for ADDITION item, placement given: " . $technique);
+                throw new \InvalidArgumentException("Unrecognized placement for ADDITION item, placement given: " . $place);
         }
         if ($text === NULL or $text === ''){
-            throw new InvalidArgumentException("Transcription items of type ADDITION need some text");
+            throw new \InvalidArgumentException("Transcription items of type ADDITION need some text");
         }
         $this->theText = $text;
         

@@ -40,20 +40,10 @@ require 'config.php';
 
 // Application parameters
 $config['app_name'] = 'Averroes Project Manager';
-$config['version'] = '0.0.9 (α)';
+$config['version'] = '0.0.10 (α)';
 $config['copyright_notice'] = '2016, <a href="http://www.thomasinstitut.uni-koeln.de/">Thomas-Institut</a>, <a href="http://www.uni-koeln.de/">Universität zu Köln</a>';
 
 $config['default_timezone'] = "Europe/Berlin";
-
-$config['tables'] = array();
-$config['tables']['settings']   = 'ap_settings';
-$config['tables']['ednotes']    = 'ap_ednotes';
-$config['tables']['elements']   = 'ap_elements';
-$config['tables']['items']      = 'ap_items';
-$config['tables']['hands']      = 'ap_hands';
-$config['tables']['users']      = 'ap_users';
-$config['tables']['docs']       = 'ap_docs';
-$config['tables']['people']     = 'ap_people';
 
 // Slim parameters
 $config['addContentLengthHeader'] = false;
@@ -66,11 +56,11 @@ date_default_timezone_set($config['default_timezone']);
 $container = $app->getContainer();
 
 // Error Handling
-$container['errorHandler'] = function ($c) {
-    return function($request, $response, $exception){
-        return \AverroesProject\SiteController::errorPage($request, $response, $exception);
-    };
-};
+//$container['errorHandler'] = function ($c) {
+//    return function($request, $response, $exception){
+//        return \AverroesProject\SiteController::errorPage($request, $response, $exception);
+//    };
+//};
 // Database
 $container['db'] = function($c){
    $db = new AverroesProjectData($c['settings']['db'], $c['settings']['tables']);
@@ -112,6 +102,11 @@ $app->get('/user/{username}', '\AverroesProject\SiteController:userProfilePage')
         ->setName('user.profile')
         ->add('\AverroesProject\SiteAuthentication:authenticate');
 
+// USER.SETTINGS
+$app->get('/user/{username}/settings', '\AverroesProject\SiteController:userSettingsPage')
+        ->setName('user.settings')
+        ->add('\AverroesProject\SiteAuthentication:authenticate');
+
 // DOCS
 $app->get('/documents','\AverroesProject\SiteController:documentsPage')
         ->setName('docs')
@@ -131,8 +126,12 @@ $app->get('/pageviewer/{doc}/{page}', '\AverroesProject\SiteController:pageViewe
 $app->group('/api', function (){
     
     // API -> getElements
-    $this->get('/elements/{document}/{page}/{column}', '\AverroesProject\ApiController:getElementsByDocPageCol')
+    $this->get('/{document}/{page}/{column}/elements', '\AverroesProject\ApiController:getElementsByDocPageCol')
         ->setName('api_getelements');
+    
+    // API -> numColumns
+    $this->get('/{document}/{page}/numcolumns', '\AverroesProject\ApiController:getNumColumns')
+        ->setName('api_numcolumns');
 
 })->add('\AverroesProject\ApiAuthentication');
 

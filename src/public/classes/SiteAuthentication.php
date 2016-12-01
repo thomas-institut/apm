@@ -48,7 +48,7 @@ class SiteAuthentication {
    
     private $cookieName = 'rme';
     private $secret = '1256106427895916503';
-    private $debugMode = TRUE;
+    private $debugMode = false;
    
     //Constructor
     public function __construct( $ci) {

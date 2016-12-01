@@ -137,6 +137,10 @@ class AverroesProjectData extends \mysqli{
         return $this->queryNumRows($query) == 1;
     }
     
+    function isUsernameAdmin($username){
+        // just me for the moment!
+        return $username==='rafael';
+    }
     /**
      * Gets the user password hash in the database.
      */
@@ -214,7 +218,8 @@ class AverroesProjectData extends \mysqli{
         $r = $this->query($query);
         $row = $r->fetch_assoc();
         if (!isset($row[$field])){
-            throw new \Exception($field . ' not in ' . $table, E_MYSQL);
+            //throw new \Exception($field . ' not in ' . $table, E_MYSQL);
+            return false;
         }
         else{
             return $row[$field];
@@ -229,7 +234,8 @@ class AverroesProjectData extends \mysqli{
         $r = $this->query($query);
         $row = $r->fetch_assoc();
         if (!isset($row[$field])){
-            throw new \Exception($field . ' not in result set' , E_MYSQL);
+            //throw new \Exception($field . ' not in result set' , E_MYSQL);
+            return false;
         }
         else{
             return $row[$field];
@@ -257,8 +263,16 @@ class AverroesProjectData extends \mysqli{
      * Returns an array with the IDs of all the manuscripts with
      * some data in the system and the number of pages with data
      */
-    function getDocIdList(){
-        $query = "SELECT `id` from  " . $this->tables['docs'];
+    function getDocIdList($order = '', $asc=true){
+        switch ($order){
+            case 'title':
+                $orderby = ' ORDER BY `title` ' . ($asc ? ' ASC' : ' DESC');
+                break;
+            
+            default:
+                $orderby = '';
+        }
+        $query = "SELECT `id` FROM  " . $this->tables['docs'] . $orderby;
         $r = $this->query($query);
         
         $mss = array();
@@ -268,6 +282,16 @@ class AverroesProjectData extends \mysqli{
         return $mss;
     }
     
+    
+    function getNumColumns($docId, $page){
+        $n = $this->getOneFieldQuery(
+                'SELECT MAX(`column_number`) AS nc FROM ' . $this->tables['elements'] . 
+                " WHERE `doc_id`=$docId AND `page_number`=$page", 'nc');
+        if ($n === NULL){
+            return 0;
+        }
+        return (int) $n;
+    }
     function getPageCountByDocId($docId){
         return $this->getOneFieldQuery('SELECT `page_count` from ' .  
                 $this->tables['docs'] . 
@@ -313,6 +337,10 @@ class AverroesProjectData extends \mysqli{
             array_push($editors, $row['username']);
         }
         return $editors;
+    }
+    
+    function getDocIdFromDareId($dareId){
+        return $this->getOneField($this->tables['docs'], 'id', 'image_source_data=\'' . $dareId . '\'');
     }
     
     function getPageListByDocId($docId){
@@ -454,6 +482,22 @@ class AverroesProjectData extends \mysqli{
                     $item = new TtiAbbreviation($row['id'], $row['seq'], $row['text'], $row['alt_text']);
                     break;
                 
+                case TranscriptionTextItem::GLIPH:
+                    $item = new TtiGliph($row['id'], $row['seq'], $row['text']);
+                    break;
+                
+                case TranscriptionTextItem::DELETION:
+                    $item = new TtiDeletion($row['id'], $row['seq'], $row['text'], $row['extra_info']);
+                    break;
+                
+                case TranscriptionTextItem::ADDITION:
+                    $item = new TtiAddition($row['id'], $row['seq'], $row['text'], $row['extra_info'], $row['target']);
+                    break;
+                
+                case TranscriptionTextItem::NO_LINEBREAK:
+                    $item = new TtiNoLinebreak($row['id'], $row['seq']);
+                    break;
+                
                 default: 
                     continue;
             }
@@ -522,5 +566,21 @@ class AverroesProjectData extends \mysqli{
             }
             return $notes;
         }
+    }
+    
+    function getNextElementId(){
+        return $this->getMaxId($this->tables['elements'])+1;
+    }
+    
+    function getNextItemId(){
+        return $this->getMaxId($this->tables['items'])+1;
+    }
+    
+    function getNextEditorialNoteId(){
+        return $this->getMaxId($this->tables['ednotes'])+1;
+    }
+    
+    function getMaxId($table){
+        return $this->getOneFieldQuery("SELECT MAX(`id`) as m FROM $table", 'm');
     }
 }

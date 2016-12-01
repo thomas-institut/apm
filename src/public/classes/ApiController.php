@@ -66,6 +66,15 @@ class ApiController {
             }
         }
 
-        return $response->withJson(['elements' => $elements, 'ednotes' => $ednotes, 'people' => $people]);
+        return $response->withJson(['elements' => $elements, 'ednotes' => $ednotes, 'people' => $people, 'info' => ['col' => (int) $columnNumber]]);
+   }
+   
+   public function getNumColumns(Request $request, Response $response, $next){
+        $docId = $request->getAttribute('document');
+        $pageNumber = $request->getAttribute('page');
+        
+        $numColumns = $this->db->getNumColumns($docId, $pageNumber);
+        
+        return $response->withJson($numColumns);
    }
 }

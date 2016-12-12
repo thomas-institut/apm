@@ -7,3 +7,4 @@ test/*.xml
 *.zip
 src/php-sessions/
 src/public/vendor/
+/scratch

@@ -2,9 +2,7 @@ netbeans
 *~
 /nbproject/private/
 /src/config.*.php
-test/*.sql
-test/*.xml
 *.zip
-src/php-sessions/
+/php-sessions/
 src/public/vendor/
 /scratch

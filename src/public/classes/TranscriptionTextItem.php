@@ -150,7 +150,7 @@ class TranscriptionTextItem {
     
     function __construct($i=0, $s = -1, $l='', $h=-1) {
         $this->id =(int) $i;
-        $this->lang = (int) $l;
+        $this->lang = $l;
         $this->handId = (int) $h;
         $this->seq = (int) $s;
     }

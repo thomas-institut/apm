@@ -28,7 +28,7 @@ require_once 'SimpleProfiler.php';
  */
 class DataTableTest  extends PHPUnit_Framework_TestCase {
     
-    var $numRows = 1000;
+    var $numRows = 100;
     static $profiler;
     public static function setUpBeforeClass(){
      
@@ -73,7 +73,7 @@ class DataTableTest  extends PHPUnit_Framework_TestCase {
      * @depends testInMemoryDataTableCreation
      */
     function testFind(\AverroesProject\InMemoryDataTable $dt){
-        $nSearches = 1000;
+        $nSearches = 100;
         for ($i = 0; $i < $nSearches; $i++){
             $someInt = rand(1, $this->numRows);
             $someTextvalue = "textvalue$someInt";
@@ -92,7 +92,7 @@ class DataTableTest  extends PHPUnit_Framework_TestCase {
     }
     
      public static function tearDownAfterClass(){
-        print self::$profiler->getReport();
+        //print self::$profiler->getReport();
         
     }
 }

@@ -27,7 +27,7 @@ require_once  'SimpleProfiler.php';
  */
 class SQLDataTableTest extends PHPUnit_Framework_TestCase {
     protected static $db;
-    var $numRows = 1000;
+    var $numRows = 100;
     static $profiler;
     
     public static function setUpBeforeClass(){
@@ -78,7 +78,7 @@ class SQLDataTableTest extends PHPUnit_Framework_TestCase {
      */
     function testFind(\AverroesProject\SQLDataTable $dt){
         //print_r($dt);
-        $nSearches = 1000;
+        $nSearches = 100;
         for ($i = 0; $i < $nSearches; $i++){
             $someInt = rand(1, $this->numRows);
             $someTextvalue = "textvalue$someInt";
@@ -102,7 +102,7 @@ class SQLDataTableTest extends PHPUnit_Framework_TestCase {
 
     public static function tearDownAfterClass(){
         self::$db = null;
-        print self::$profiler->getReport();
+        //print self::$profiler->getReport();
         
     }
     

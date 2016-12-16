@@ -19,7 +19,7 @@
  *  
  */
 
-require 'UserManagerWithTables.php';
+require 'UserManager.php';
 /**
  * Description of UserManagerTest
  *
@@ -30,7 +30,7 @@ class UserManagerTest extends PHPUnit_Framework_TestCase {
     private $numUsers = 1000;
     
     public function testUserCreation(){
-        $um = new AverroesProject\UserManagerWithTables();
+        $um = new AverroesProject\UserManager();
         
         // Number of users to generate
         

@@ -44,7 +44,7 @@ class AverroesProjectData extends \mysqli{
     private $tables;
     
     
-    private $databaseversion = '0.03';
+    private $databaseversion = '5';
     
     /**
      * Tries to initialize and connect to the MySQL database.
@@ -134,84 +134,8 @@ class AverroesProjectData extends \mysqli{
             return ($r->num_rows > 0);
         }
     }
-    
+  
     /**
-     * Checks if a username exists in the database.
-     * @param string $username 
-     */
-    function usernameExists($username){
-        $query = 'select * from `' . $this->tables['users'] . '` where `username`=\'' . $username . "'";
-        return $this->queryNumRows($query) == 1;
-    }
-
-    function userIdExists($userId){
-        $query = 'select * from `' . $this->tables['users'] . '` where `id`=' . $userId;
-        return $this->queryNumRows($query) == 1;
-    }
-    
-    function isUsernameAdmin($username){
-        // just me for the moment!
-        return $username==='rafael';
-    }
-    /**
-     * Gets the user password hash in the database.
-     */
-    function userPassword($username){
-        $query = 'SELECT password from `' . $this->tables['users'] . '` where `username`=\'' . $username . "'";
-        $r = $this->query($query);
-        if (!$r){
-            return ''; // this will never match any password with password_verify
-        }
-        else{
-            $row = $r->fetch_assoc();
-            if (isset($row['password'])){ 
-                return $row['password'];
-            }
-            else {
-                return '';
-            }
-        }
-    }
-
-    
-    function storeUserToken($userId, $token){
-        $query = 'UPDATE `' . $this->tables['users'] . '` SET `token`=\'' . $token . '\' WHERE `id`=' . $userId;
-        return $this->query($query);
-    }
-    
-    function getUserToken($userId){
-        return $this->getOneFieldQuery('SELECT token FROM `' . $this->tables['users'] . '` WHERE `id`=' . $userId, 'token');
-    }
-    
-    /**
-     * Gets the user id associated with a given username
-     */
-    function getUserIdByUsername($username){
-        return $this->getOneField($this->tables['users'], 'id', "`username` ='" . $username . "'");
-    }
-    
-    function getUsernameById($id){
-        return $this->getOneField($this->tables['users'], 'username', "`id` ='" . $id . "'");
-    }
-
-    /**
-     * Gets the user info from the database
-     * @param int $userid User ID
-     * @param array $userinfo Array where the information will be stored
-     */
-    function getUserInfoByUserId($userid){
-        return $this->getOneRow('SELECT p.id, u.username, p.fullname, p.email FROM `'  . 
-                $this->tables['users'] . '` as u, `' . $this->tables['people'] . '` as p WHERE u.id=p.id ' .
-                'AND u.id='. $userid);
-    }
-    
-    function getUserInfoByUsername($username){
-        return $this->getOneRow('SELECT p.id, u.username, p.fullname, p.email FROM `'  . 
-                $this->tables['users'] . '` as u, `' . $this->tables['people'] . '` as p WHERE u.id=p.id ' .
-                'AND u.username=\''. $username . '\'');
-    }
-     
-   /**
      * Queries the DB and returns the number of resulting rows
      */
     function queryNumRows($query){

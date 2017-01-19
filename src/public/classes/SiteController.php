@@ -56,7 +56,7 @@ class SiteController {
    public function userProfilePage(Request $request, Response $response, $next){
 
         $username = $request->getAttribute('username');
-        if (!$this->db->usernameExists($username)){
+        if (!$this->ci->um->userExistsByUsername($username)){
         return $this->ci->view->render($response, 'user.notfound.twig', [
             'userinfo' => $this->ci->userInfo, 
             'copyright' => $this->ci->copyrightNotice,
@@ -64,7 +64,7 @@ class SiteController {
             'theuser' => $username
         ]);
         }
-        $userInfo = $this->db->getUserInfoByUsername($username);
+        $userInfo = $this->ci->um->getUserInfoByUsername($username);
     
         return $this->ci->view->render($response, 'user.profile.twig', [
             'userinfo' => $this->ci->userInfo, 
@@ -78,7 +78,8 @@ class SiteController {
 
         $username = $request->getAttribute('username');
         $curUserName = $this->ci->userInfo['username'];
-        if ($username !== $curUserName && !$this->db->isUsernameAdmin($curUserName)){
+        $userId = $this->ci->userInfo['id'];
+        if ($username !== $curUserName && !$this->ci->um->isUserAllowedTo($userId, 'edit-user-settings')){
             return $this->ci->view->render($response, 'error.notallowed.twig', [
                 'userinfo' => $this->ci->userInfo, 
                 'copyright' => $this->ci->copyrightNotice,
@@ -87,7 +88,7 @@ class SiteController {
             ]);
         }
         
-        if (!$this->db->usernameExists($username)){
+        if (!$this->ci->um->userExistsByUsername($username)){
         return $this->ci->view->render($response, 'user.notfound.twig', [
             'userinfo' => $this->ci->userInfo, 
             'copyright' => $this->ci->copyrightNotice,
@@ -95,7 +96,7 @@ class SiteController {
             'theuser' => $username
         ]);
         }
-        $userInfo = $this->db->getUserInfoByUsername($username);
+        $userInfo = $this->ci->um->getUserInfoByUsername($username);
         
         
     
@@ -121,7 +122,7 @@ class SiteController {
             $editorsUsernames = $db->getEditorsByDocId($docId);
             $doc['editors'] = array();
             foreach ($editorsUsernames as $edUsername){
-                array_push($doc['editors'], $db->getUserInfoByUsername($edUsername));
+                array_push($doc['editors'], $this->ci->um->getUserInfoByUsername($edUsername));
             }
             $doc['docInfo'] = $db->getDoc($docId);
             $doc['tableId'] = "doc-$docId-table";

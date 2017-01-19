@@ -57,12 +57,12 @@ class ApiController {
         $people = [];
         foreach($elements as $e){
             if (!isset($people[$e->editorId])){
-                $people[$e->editorId] = $this->db->getUserInfoByUserId($e->editorId);
+                $people[$e->editorId] = $this->ci->um->getUserInfoByUserId($e->editorId);
             }
         }
         foreach($ednotes as $e){
             if (!isset($people[$e->authorId])){
-                $people[$e->authorId] = $this->db->getUserInfoByUserId($e->authorId);
+                $people[$e->authorId] = $this->ci->um->getUserInfoByUserId($e->authorId);
             }
         }
 

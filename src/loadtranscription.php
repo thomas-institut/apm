@@ -34,7 +34,19 @@ use \XMLReader;
  * 
  * -----------------------------------------------------------------*/
 
-$db = new AverroesProjectData($config['db'], $config['tables']);
+$db = new AverroesProjectData($config['settings']['db'], $config['settings']['tables']);
+
+$dbh = new \PDO('mysql:dbname='. $config['settings']['db']['db'] . ';host=' . $config['settings']['db']['host'], 
+        $config['settings']['db']['user'], 
+        $config['settings']['db']['pwd']);
+$dbh->query("set character set 'utf8'");
+$dbh->query("set names 'utf8'");
+
+
+$um = new UserManager(
+            new MySQLDataTableWithRandomIds($dbh, $c['settings']['tables']['users'], 10000, 100000),
+            new MySQLDataTable($dbh, $c['settings']['tables']['relations']), 
+            new MySQLDataTable($dbh, $c['settings']['tables']['people']));
 
 $nextElementId= $db->getNextElementId();
 $nextItemId = $db->getNextItemId();
@@ -70,7 +82,7 @@ $editorUsername = (string) $theHeader->fileDesc->titleStmt->editor->attributes('
 if ($editorUsername === '' or $editorUsername === NULL){
     die("ERROR: No editor username given in TEI -> fileDesc -> titleStmt : \n");
 }
-$editorId = $db->getUserIdByUsername($editorUsername);
+$editorId = $um->getUserIdFromUsername($editorUsername);
 
 if ($editorId === false){
     die("Error: editor $editorUsername not a user in the system\n");

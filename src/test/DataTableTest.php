@@ -91,6 +91,25 @@ class DataTableTest  extends PHPUnit_Framework_TestCase {
         
     }
     
+    /**
+     * 
+     * @depends testInMemoryDataTableCreation
+     */
+    public function testUpdate(\AverroesProject\InMemoryDataTable $dt){
+        $nUpdates = 10;
+        for ($i = 0; $i < $nUpdates; $i++){
+            $someInt = rand(1, $this->numRows);
+            $newTextValue = "NewTextValue$someInt";
+            $testMsg = "Random updates,  iteration $i, int=$someInt";
+            $theId = $dt->findRow(['somekey' => $someInt]);
+            $this->assertNotSame(false, $theId, $testMsg);
+            $this->assertNotSame(false, $dt->updateRow(['id'=>$theId, 'someotherkey' => $newTextValue]));
+            $theRow = $dt->getRow($theId);
+            $this->assertNotSame(false, $theRow);
+            $this->assertSame($newTextValue, $theRow['someotherkey']);
+            $this->assertSame($someInt, $theRow['somekey']);
+        }
+    }
      public static function tearDownAfterClass(){
         //print self::$profiler->getReport();
         

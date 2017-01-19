@@ -27,12 +27,11 @@ require 'UserManager.php';
  */
 class UserManagerTest extends PHPUnit_Framework_TestCase {
     
+    // Number of users to generate
     private $numUsers = 1000;
     
     public function testUserCreation(){
         $um = new AverroesProject\UserManager();
-        
-        // Number of users to generate
         
         // A semi-stress test
         for ($i = 1; $i <= $this->numUsers; $i++){
@@ -59,6 +58,12 @@ class UserManagerTest extends PHPUnit_Framework_TestCase {
             $this->assertSame(true, $um->isRoot($theNewId));
             $this->assertSame(true, $um->revokeRootStatus($theNewId));
             $this->assertSame(false, $um->isRoot($theNewId));
+            
+            $this->assertSame(false, $um->isUserAllowedTo($theNewId, 'someaction'));
+            $this->assertSame(true, $um->allowUserTo($theNewId,'someaction'));
+            $this->assertSame(true, $um->isUserAllowedTo($theNewId, 'someaction'));
+            $this->assertSame(true, $um->disallowUserTo($theNewId,'someaction'));
+            $this->assertSame(false, $um->isUserAllowedTo($theNewId, 'someaction'));
         }
         
         return $um;

@@ -73,7 +73,6 @@ class SiteAuthentication {
         }
     }
 
-
     public function authenticate(Request $request, Response $response, $next) {
         session_start();
         $success = false;
@@ -86,7 +85,7 @@ class SiteAuthentication {
                 $cookieValue = $longTermCookie->getValue();
                 list($userId, $token, $mac) = explode(':', $cookieValue);
                 if (hash_equals($this->generateMac($userId . ':' . $token), $mac)){
-                    $userToken = $this->ci->db->getUserToken($userId);
+                    $userToken = $this->ci->um->getUserToken($userId);
                     if (hash_equals($userToken, $token)){
                         $this->debug('Cookie looks good, user = ' . $userId);
                         $success = true;
@@ -104,7 +103,7 @@ class SiteAuthentication {
         } else {
             $userId = $_SESSION['userid'];
             $this->debug('Session is set, user id = ' . $userId);
-            if ($this->ci->db->userIdExists($userId)){
+            if ($this->ci->um->userExistsById($userId)){
                 $this->debug("User id exists!");
                 $success = true;
             } else {
@@ -117,7 +116,7 @@ class SiteAuthentication {
         if ($success){
             $this->debug('Success, go ahead!');
             $_SESSION['userid'] = $userId;
-            $this->ci['userInfo'] = $this->ci['db']->getUserInfoByUserId($userId);
+            $this->ci['userInfo'] = $this->ci->um->getUserInfoByUserId($userId);
             return $next($request, $response); 
         } else {
             $this->debug("Authentication fail, logging out and redirecting to login");
@@ -130,7 +129,6 @@ class SiteAuthentication {
     
     public function login(Request $request, Response $response, $next){
         session_start();
-        $db = $this->ci->db;
         $this->debug('Login page');
         if ($request->isPost()){
             $data = $request->getParsedBody();
@@ -140,15 +138,15 @@ class SiteAuthentication {
                 $pwd = filter_var($data['pwd'], FILTER_SANITIZE_STRING);
                 $rememberme = isset($data['rememberme']) ? $data['rememberme'] : '';
                 $this->debug('Trying to log in user ' . $user);
-                if ($db->usernameExists($user) and password_verify($pwd, $db->userPassword($user))){
+                if ($this->ci->um->verifyUserPassword($user, $pwd)){
                     $this->debug('Success!');
                     // Success!
-                    $userId = $db->getUserIdByUsername($user);
+                    $userId = $this->ci->um->getUserIdFromUsername($user);
                     $_SESSION['userid'] = $userId;
                     if ($rememberme === 'on'){
                         $this->debug('User wants to be remembered for 2 weeks');
                         $token = $this->generateRandomToken();
-                        $db->storeUserToken($userId, $token);
+                        $this->ci->um->storeUserToken($userId, $token);
                         $cookieValue = $this->generateLongTermCookieValue($token, $userId);
                         $now = new \DateTime();
                         $cookie = SetCookie::create($this->cookieName)

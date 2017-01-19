@@ -31,6 +31,7 @@ require 'classes/SiteAuthentication.php';
 require 'classes/SiteController.php';
 require 'classes/ApiAuthentication.php';
 require 'classes/ApiController.php';
+require 'classes/UserManager.php';
 
 
 // Options that change from development to production
@@ -40,8 +41,8 @@ require 'config.php';
 
 // Application parameters
 $config['app_name'] = 'Averroes Project Manager';
-$config['version'] = '0.0.10 (α)';
-$config['copyright_notice'] = '2016, <a href="http://www.thomasinstitut.uni-koeln.de/">Thomas-Institut</a>, <a href="http://www.uni-koeln.de/">Universität zu Köln</a>';
+$config['version'] = '0.0.11 (α)';
+$config['copyright_notice'] = '2016-17, <a href="http://www.thomasinstitut.uni-koeln.de/">Thomas-Institut</a>, <a href="http://www.uni-koeln.de/">Universität zu Köln</a>';
 
 $config['default_timezone'] = "Europe/Berlin";
 
@@ -62,9 +63,28 @@ $container = $app->getContainer();
 //    };
 //};
 // Database
+
+// Big Data manager... will be gone at some point
 $container['db'] = function($c){
    $db = new AverroesProjectData($c['settings']['db'], $c['settings']['tables']);
    return $db ;
+};
+
+// PDO Database and others
+$container['dbh'] = function($c){
+   $dbh = new \PDO('mysql:dbname='. $c['settings']['db']['db'] . ';host=' . $c['settings']['db']['host'], $c['settings']['db']['user'], $c['settings']['db']['pwd']);
+   $dbh->query("set character set 'utf8'");
+   $dbh->query("set names 'utf8'");
+   return $dbh ;
+};
+
+$container['um'] = function ($c){
+    $um = new UserManager(
+            new MySQLDataTableWithRandomIds($c->dbh, $c['settings']['tables']['users'], 10000, 100000),
+            new MySQLDataTable($c->dbh, $c['settings']['tables']['relations']), 
+            new MySQLDataTable($c->dbh, $c['settings']['tables']['people']));
+    return $um;
+            
 };
 
 // Twig

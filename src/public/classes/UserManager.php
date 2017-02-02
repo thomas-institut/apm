@@ -335,7 +335,21 @@ class UserManager {
         if (!$u['password']){
             return false;
         }
+        //error_log("UM: Checking against hash " . $u['password']);
         return password_verify($givenPassword, $u['password']);
+    }
+    
+    public function storeUserPassword($userName, $password){
+        $hash = password_hash($password, PASSWORD_BCRYPT);
+
+        if ($this->userExistsByUserName($userName)){
+            $userId = $this->getUserIdFromUserName($userName);
+            return $this->userTable->updateRow(['id' => $userId, 'password' => $hash]);
+        }
+        else {
+            return false;
+        }
+        
     }
     
 }

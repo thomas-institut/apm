@@ -105,12 +105,12 @@ CREATE TABLE `ap_pages` (
   `foliation` varchar(16) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-ALTER TABLE `ap_page` 
+ALTER TABLE `ap_pages` 
     ADD PRIMARY KEY (`id`),
     ADD KEY `doc_id` (`doc_id`), 
     ADD KEY `type` (`type`);
 
-ALTER TABLE `ap_page` ADD FOREIGN KEY (`type`) REFERENCES `ap_types_page`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-ALTER TABLE `ap_page` ADD FOREIGN KEY (`doc_id`) REFERENCES `ap_docs`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `ap_pages` ADD FOREIGN KEY (`type`) REFERENCES `ap_types_page`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `ap_pages` ADD FOREIGN KEY (`doc_id`) REFERENCES `ap_docs`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- NOTE: run script to generate page entries in ap_pages --

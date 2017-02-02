@@ -43,3 +43,5 @@ ALTER TABLE `ap_elements` ADD FOREIGN KEY (`page_id`) REFERENCES `ap_pages`(`id`
 ALTER TABLE `ap_elements`
   DROP `doc_id`,
   DROP `page_number`;
+
+UPDATE `ap_settings` SET `value` = '6' WHERE `ap_settings`.`key` = 'dbversion'

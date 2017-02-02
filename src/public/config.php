@@ -16,6 +16,7 @@ $config['tables']['users']      = 'ap_users';
 $config['tables']['relations']  = 'ap_relations';
 $config['tables']['docs']       = 'ap_docs';
 $config['tables']['people']     = 'ap_people';
+$config['tables']['pages']      = 'ap_pages';
 
 // slim error handling
 // ATTENTION: set to false in production

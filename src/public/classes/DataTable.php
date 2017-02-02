@@ -130,6 +130,11 @@ abstract class DataTable {
         return $this->realUpdateRow($theRow);
     }
     
+    
+    /** 
+     * Get all rows
+     */
+    abstract public function getAllRows();
     /**
      * Gets the row with the given row Id
      * 
@@ -170,6 +175,10 @@ abstract class DataTable {
 class InMemoryDataTable extends DataTable {
     
     private $theData = array();
+    
+    public function getAllRows() {
+        return $theData;
+    }
     
     public function rowExistsById($rowId){
         return isset($this->theData[$rowId]);
@@ -308,6 +317,19 @@ class MySQLDataTable extends DataTable {
             return 'NULL';
         }
         return (string) $v;
+    }
+    
+    public function getAllRows() {
+        $r = $this
+                ->db
+                ->query('SELECT * FROM ' . $this->tableName);
+        $rows = array();
+        
+        while ($row = $r->fetch(PDO::FETCH_ASSOC)){
+            array_push($rows, $row);
+        }
+        
+        return $rows;
     }
     
     public function getRow($rowId) {

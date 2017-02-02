@@ -149,16 +149,36 @@ class UserManager {
         
         $pi = $this->peopleTable->getRow($userid);
         $ui = $this->userTable->getRow($userid);
+        
+        if ($pi['email']){
+            // from https://en.gravatar.com/site/implement/hash/
+            $emailhash =  md5(strtolower(trim($pi['email']))) ;
+        } 
+        else {
+            $emailhash =  'nohash';
+        }
+        
+        
         return [ 'id' => $userid, 
                  'username' => $ui['username'],
                  'fullname' => $pi['fullname'],
-                 'email' => $pi['email']
+                 'email' => $pi['email'], 
+                 'emailhash' => $emailhash
                 ];
     }
     
     public function getUserInfoByUsername($username){
         $userid = $this->getUserIdFromUserName($username);
         return $this->getUserInfoByUserId($userid);
+    }
+    
+    public function getUserInfoForAllUsers(){
+        $allUsers = $this->userTable->getAllRows();
+        $allUserInfo = array();
+        foreach($allUsers as $user){
+            array_push($allUserInfo, $this->getUserInfoByUserId($user['id']));
+        }
+        return $allUserInfo;
     }
     // 
     // User creation

@@ -112,11 +112,14 @@ class SiteAuthentication {
             
         }
         
-        
         if ($success){
             $this->debug('Success, go ahead!');
             $_SESSION['userid'] = $userId;
-            $this->ci['userInfo'] = $this->ci->um->getUserInfoByUserId($userId);
+            $ui = $this->ci->um->getUserInfoByUserId($userId);
+            if ($this->ci->um->isUserAllowedTo($userId, 'manageUsers')){
+                $ui['manageUsers'] = 1;
+            }
+            $this->ci['userInfo'] = $ui;
             return $next($request, $response); 
         } else {
             $this->debug("Authentication fail, logging out and redirecting to login");

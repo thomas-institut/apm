@@ -41,7 +41,7 @@ require 'config.php';
 
 // Application parameters
 $config['app_name'] = 'Averroes Project Manager';
-$config['version'] = '0.0.11 (α)';
+$config['version'] = '0.0.12 (α)';
 $config['copyright_notice'] = '2016-17, <a href="http://www.thomasinstitut.uni-koeln.de/">Thomas-Institut</a>, <a href="http://www.uni-koeln.de/">Universität zu Köln</a>';
 
 $config['default_timezone'] = "Europe/Berlin";
@@ -125,6 +125,10 @@ $app->get('/user/{username}', '\AverroesProject\SiteController:userProfilePage')
 // USER.SETTINGS
 $app->get('/user/{username}/settings', '\AverroesProject\SiteController:userSettingsPage')
         ->setName('user.settings')
+        ->add('\AverroesProject\SiteAuthentication:authenticate');
+
+$app->get('/users', '\AverroesProject\SiteController:userManagerPage')
+        ->setName('user.manager')
         ->add('\AverroesProject\SiteAuthentication:authenticate');
 
 // DOCS

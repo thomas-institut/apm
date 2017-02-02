@@ -74,6 +74,24 @@ class SiteController {
         ]);
     }
     
+    public function userManagerPage(Request $request, Response $response, $next){
+         $um = $this->ci->um;
+        if (!$um->isUserAllowedTo($this->ci->userInfo['id'], 'manageUsers')){
+            return $this->ci->view->render($response, 'error.notallowed.tomanage.twig');
+        }
+        
+        $db = $this->db;
+        $docIds = $db->getDocIdList('title');
+        $users = $um->getUserInfoForAllUsers();
+        
+        return $this->ci->view->render($response, 'user.manager.twig', [
+            'userinfo' => $this->ci->userInfo, 
+            'copyright' => $this->ci->copyrightNotice,
+            'baseurl' => $this->ci->settings['baseurl'],
+            'users' => $users
+        ]);
+    }
+    
     public function userSettingsPage(Request $request, Response $response, $next){
 
         $username = $request->getAttribute('username');

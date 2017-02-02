@@ -44,7 +44,7 @@ class AverroesProjectData extends \mysqli{
     private $tables;
     
     
-    private $databaseversion = '5';
+    private $databaseversion = '6';
     
     /**
      * Tries to initialize and connect to the MySQL database.
@@ -220,9 +220,12 @@ class AverroesProjectData extends \mysqli{
     
     
     function getNumColumns($docId, $page){
+        $te = $this->tables['elements'];
+        $tp = $this->tables['pages'];
         $n = $this->getOneFieldQuery(
-                'SELECT MAX(`column_number`) AS nc FROM ' . $this->tables['elements'] . 
-                " WHERE `doc_id`=$docId AND `page_number`=$page", 'nc');
+                'SELECT MAX(e.`column_number`) AS nc FROM ' . $te . ' AS e' .
+                " JOIN `$tp` as p ON p.id=e.page_id " .
+                " WHERE p.`doc_id`=$docId AND p.`page_number`=$page", 'nc');
         if ($n === NULL){
             return 0;
         }
@@ -241,17 +244,17 @@ class AverroesProjectData extends \mysqli{
      */
     function getTranscribedPageCountByDoc($docId){
         return $this->getOneFieldQuery(
-                'SELECT count(DISTINCT `page_number`) as value from ' . 
-                $this->tables['elements'] .
-                ' WHERE `doc_id`=\'' . $docId . '\'', 'value');
+                'SELECT COUNT(DISTINCT(page_id)) as value FROM '.  
+                $this->tables['elements'] . 'as e JOIN ' . $this->tables['pages'] . ' AS p ON e.page_id=p.id ' .
+                ' WHERE p.doc_id=\'' . $docId . '\'', 'value');
         
     }
     
     function getLineCountByDoc($docId){
         return $this->getOneFieldQuery(
-                'SELECT count(DISTINCT `page_number`, `reference`) as value from ' . 
-                $this->tables['elements'] .
-                ' WHERE `doc_id`=\'' . $docId . '\' AND `type`=' . ColumnElement::LINE, 'value');
+                'SELECT count(DISTINCT `page_id`, `reference`) as value from ' . 
+                $this->tables['elements'] . ' as e JOIN ' . $this->tables['pages'] . ' AS p ON e.page_id=p.id ' .
+                ' WHERE p.doc_id=\'' . $docId . '\' AND e.type=' . ColumnElement::LINE, 'value');
     }
     /**
      * 
@@ -262,9 +265,11 @@ class AverroesProjectData extends \mysqli{
     function getEditorsByDocId($docId){
         $te = $this->tables['elements'];
         $tu = $this->tables['users'];
-        $query = "SELECT distinct `$tu`.`username`" . 
-            " from `$te` JOIN `$tu` on `$te`.`editor_id`=`$tu`.`id`" . 
-           " WHERE `doc_id`='" . $docId . "'";
+        $tp = $this->tables['pages'];
+        $query = "SELECT DISTINCT u.`username`" . 
+            " FROM `$tu` AS u JOIN (`$te` AS e, `$tp` as p)" . 
+            " ON (u.id=e.editor_id AND p.id=e.page_id)" . 
+            " WHERE p.doc_id=" . $docId;
         
         $r = $this->query($query);
         
@@ -280,9 +285,11 @@ class AverroesProjectData extends \mysqli{
     }
     
     function getPageListByDocId($docId){
-        $query =  'SELECT distinct `page_number` from ' . 
-                $this->tables['elements'] .
-                ' WHERE `doc_id`=\'' . $docId . '\' order by `page_number` asc';
+        $te = $this->tables['elements'];
+        $tp = $this->tables['pages'];
+        $query =  'SELECT DISTINCT p.`page_number` AS page_number FROM ' . $tp . ' AS p' .
+                ' JOIN ' . $te . ' AS e ON p.id=e.page_id' .
+                ' WHERE p.doc_id=\'' . $docId . '\' ORDER BY p.`page_number` ASC';
         $r = $this->query($query);
         $pages = array();
          while ($row = $r->fetch_assoc()){
@@ -332,11 +339,12 @@ class AverroesProjectData extends \mysqli{
      */
     
     function getColumnElements($docId, $page, $col){
-        
-        $query = 'SELECT * FROM `' . $this->tables['elements'] . 
-                '` WHERE `doc_id`=\'' . $docId . '\' AND' .
-                ' `page_number`=' . $page . " AND" . 
-                ' `column_number`=' . $col . ' ORDER BY `seq` ASC';
+        $te = $this->tables['elements'];
+        $tp = $this->tables['pages'];
+        $query = 'SELECT e.* FROM `' . $te . '` AS e' . 
+                ' JOIN ' . $tp . ' AS p ON e.page_id=p.id WHERE p.`doc_id`=\'' . $docId . '\' AND' .
+                ' p.`page_number`=' . $page . " AND" . 
+                ' e.`column_number`=' . $col . ' ORDER BY e.`seq` ASC';
         $r = $this->query($query);
         $elements = array();
         while ($row = $r->fetch_assoc()){
@@ -477,11 +485,13 @@ class AverroesProjectData extends \mysqli{
         $ted = $this->tables['ednotes'];
         $ti = $this->tables['items'];
         $te = $this->tables['elements'];
+        $tp = $this->tables['pages'];
         
         $query = "SELECT `$ted`.* from `$ted` " . 
                 "JOIN `$ti` on `$ted`.`target`=`$ti`.`id` " . 
                 "JOIN `$te` on `$te`.`id`= `$ti`.`ce_id` " . 
-                "WHERE `$te`.`doc_id`=$docId and `$te`.`page_number`=$pageNum AND `$te`.`column_number`=$colNumber";
+                "JOIN `$tp` on `$tp`.`id`= `$te`.`page_id` " . 
+                "WHERE `$tp`.`doc_id`=$docId and `$tp`.`page_number`=$pageNum AND `$te`.`column_number`=$colNumber";
         
         $r = $this->query($query);
         if ($r->num_rows === 0){

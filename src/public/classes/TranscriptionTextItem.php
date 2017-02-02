@@ -53,7 +53,9 @@ class TranscriptionTextItem {
      */
     public $type;
     
-    // type constants
+    //  
+    //  Element type constants
+    // 
     const INVALID =         0;
     const TEXT =            1;
     const RUBRIC =          2;
@@ -61,11 +63,12 @@ class TranscriptionTextItem {
     const UNCLEAR =         4;
     const ILLEGIBLE =       5;
     const GLIPH =           6;
-    const ADDITION =        7;
+    const ADDITION =        7;  
     const DELETION =        8;
     const MARK =            9;
     const NO_LINEBREAK =   10;
     const ABBREVIATION =   11;
+    const LINEBREAK    =   12;
     
     /**
      *

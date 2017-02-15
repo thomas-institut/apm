@@ -25,28 +25,23 @@ namespace AverroesProject;
  */
 require_once 'public/config.php';
 require_once 'public/classes/AverroesProjectData.php';
+require_once 'public/classes/UserManager.php';
 
 use \XMLReader;
 
-/* -----------------------------------------------------------------*/
-/*
- * ATTENTION: modify these parameters!!!
- * 
- * -----------------------------------------------------------------*/
+$db = new AverroesProjectData($config['db'], $config['tables']);
 
-$db = new AverroesProjectData($config['settings']['db'], $config['settings']['tables']);
-
-$dbh = new \PDO('mysql:dbname='. $config['settings']['db']['db'] . ';host=' . $config['settings']['db']['host'], 
-        $config['settings']['db']['user'], 
-        $config['settings']['db']['pwd']);
+$dbh = new \PDO('mysql:dbname='. $config['db']['db'] . ';host=' . $config['db']['host'], 
+        $config['db']['user'], 
+        $config['db']['pwd']);
 $dbh->query("set character set 'utf8'");
 $dbh->query("set names 'utf8'");
 
 
 $um = new UserManager(
-            new MySQLDataTableWithRandomIds($dbh, $c['settings']['tables']['users'], 10000, 100000),
-            new MySQLDataTable($dbh, $c['settings']['tables']['relations']), 
-            new MySQLDataTable($dbh, $c['settings']['tables']['people']));
+            new MySQLDataTableWithRandomIds($dbh, $config['tables']['users'], 10000, 100000),
+            new MySQLDataTable($dbh, $config['tables']['relations']), 
+            new MySQLDataTable($dbh, $config['tables']['people']));
 
 $nextElementId= $db->getNextElementId();
 $nextItemId = $db->getNextItemId();
@@ -73,7 +68,7 @@ $reader->open($filename);
 
 SqlComment("Generated from $filename");
 
-/* 1. Get information editor info from the TEI header */
+/* 1. Get editor info from the TEI header */
 fastForwardToElement($reader, 'TEI', "Looking for TEI element");
 
 fastForwardToElement($reader, 'teiHeader', "Looking for teiHeader inside TEI element");
@@ -121,12 +116,17 @@ while ($processingDivs){
             die ("ERROR: Document $docDareId not in the system\n");
         }
         $doc_id = (int) $doc_id;
+        $page_id = $db->getPageId($docId, $pageNumber);
+        if ($page_id===false){
+            die ("ERROR in div element: page $page_number is not valid\n");
+        }
+        $page_id = (int) $page_id;
         $lang = $defaultLang;
         $hand = $defaultHand;
         if ($reader->getAttribute('xml:lang') !== NULL){
             $lang = $reader->getAttribute('xml:lang');
         } 
-        processPageDiv($reader, $doc_id, $page_number, $lang, $hand, $editorId);
+        processPageDiv($reader, $page_id, $lang, $hand, $editorId);
     }
     else {
         $processingDivs = FALSE;
@@ -136,15 +136,14 @@ while ($processingDivs){
 
 /* 4. Print SQL */
 
-print "INSERT INTO `ap_elements` (`id`, `type`, `doc_id`, `page_number`, `column_number`, `seq`,`lang`, `editor_id`, `hand_id`, `reference`,`placement`) VALUES\n";
+print "INSERT INTO `ap_elements` (`id`, `type`, `page_id`, `column_number`, `seq`,`lang`, `editor_id`, `hand_id`, `reference`,`placement`) VALUES\n";
 end($elements);
 $lastKey = key($elements);
 foreach($elements as $key => $e){
     print "(";
     print $e['id'] . ", ";
     print $e['type'] . ", ";
-    print $e['doc_id'] . ", ";
-    print $e['page_number'] . ", ";
+    print $e['page_id'] . ", ";
     print $e['column_number'] . ", ";
     print $e['seq'] . ", ";
     print stringOrNull($e['lang']) . ", ";
@@ -236,7 +235,7 @@ function readSkippingWSandC($reader){
     }
 }
 
-function processPageDiv($reader, $doc_id, $page_number, $lang, $hand, $editorId){
+function processPageDiv($reader, $page_id, $lang, $hand, $editorId){
     global $nextElementId;
     global $elements;
     global $ednotes;
@@ -246,13 +245,17 @@ function processPageDiv($reader, $doc_id, $page_number, $lang, $hand, $editorId)
     $nextElementSeq = 1;
     $nextLineNumber = 1;
     
-    SqlComment("Starting Page Div processing: docId=$doc_id, page=$page_number, lang=$lang, handId=$hand, editorId=$editorId");
+    SqlComment("Starting Page Div processing: pageId=$page_id, lang=$lang, handId=$hand, editorId=$editorId");
     $processingCEs = TRUE;
     $haveColumns = false;
     while($processingCEs){
         readSkippingWSandC($reader);
         switch($reader->nodeType){
             case XMLReader::END_ELEMENT:
+                // only </div> is valid in this context
+                if ($reader->name != 'div'){
+                    die("Expected end of div element after column or page, got " . $reader->name . "\n");
+                }
                 if ($haveColumns){
                     $column_number++;
                     $haveColumns = false;
@@ -290,8 +293,7 @@ function processPageDiv($reader, $doc_id, $page_number, $lang, $hand, $editorId)
                     $e = array();
                     $e['id']=$nextElementId;
                     $e['type']= $elementType;
-                    $e['doc_id']= $doc_id;
-                    $e['page_number']= $page_number;
+                    $e['page_id']= $page_id;
                     $e['column_number']=$column_number;
                     $e['seq']=$nextElementSeq;
                     $e['lang']=$elementLang;
@@ -300,7 +302,7 @@ function processPageDiv($reader, $doc_id, $page_number, $lang, $hand, $editorId)
                     $e['reference']=$nextLineNumber;
                     $e['placement']=NULL;
                     array_push($elements, $e);
-                    processTextItems($reader, $nextElementId, $elementLang, $hand, $editorId,  $reader->name, $page_number);
+                    processTextItems($reader, $nextElementId, $elementLang, $hand, $editorId,  $reader->name, $page_id);
                     $nextElementId++;
                     $nextElementSeq++;
                     $nextLineNumber++;
@@ -338,8 +340,7 @@ function processPageDiv($reader, $doc_id, $page_number, $lang, $hand, $editorId)
                     $e = array();
                     $e['id']=$nextElementId;
                     $e['type']= $elementType;
-                    $e['doc_id']= $doc_id;
-                    $e['page_number']= $page_number;
+                    $e['page_id']= $page_id;
                     $e['column_number']=$column_number;
                     $e['seq']=$nextElementSeq;
                     $e['lang']=$elementLang;
@@ -348,7 +349,7 @@ function processPageDiv($reader, $doc_id, $page_number, $lang, $hand, $editorId)
                     $e['reference']='NULL';
                     $e['placement']=NULL;
                     array_push($elements, $e);
-                    processTextItems($reader, $nextElementId, $elementLang, $hand, $editorId, $reader->name, $page_number);
+                    processTextItems($reader, $nextElementId, $elementLang, $hand, $editorId, $reader->name, $page_id);
                     $nextElementId++;
                     $nextElementSeq++;
                     break;
@@ -362,8 +363,7 @@ function processPageDiv($reader, $doc_id, $page_number, $lang, $hand, $editorId)
                     $e = array();
                     $e['id']=$nextElementId;
                     $e['type']= $elementType;
-                    $e['doc_id']= $doc_id;
-                    $e['page_number']= $page_number;
+                    $e['page_id']= $page_id;
                     $e['column_number']=$column_number;
                     $e['seq']=$nextElementSeq;
                     $e['lang']=$elementLang;
@@ -372,20 +372,20 @@ function processPageDiv($reader, $doc_id, $page_number, $lang, $hand, $editorId)
                     $e['reference']='NULL';
                     $e['placement']=NULL;
                     array_push($elements, $e);
-                    processTextItems($reader, $nextElementId, $elementLang, $hand, $editorId, $reader->name, $page_number);
+                    processTextItems($reader, $nextElementId, $elementLang, $hand, $editorId, $reader->name, $page_id);
                     $nextElementId++;
                     $nextElementSeq++;
                     break;
 
                 case 'note':
                     switch($reader->getAttribute('type')){
+                    // <note type="editorial"> some text </note>
                     case 'editorial':
                         $elementType = ColumnElement::NOTE_MARK;
                         $e = array();
                         $e['id']=$nextElementId;
                         $e['type']= $elementType;
-                        $e['doc_id']= $doc_id;
-                        $e['page_number']= $page_number;
+                        $e['page_id']= $page_id;
                         $e['column_number']=$column_number;
                         $e['seq']=$nextElementSeq;
                         $e['lang']=$elementLang;
@@ -418,13 +418,13 @@ function processPageDiv($reader, $doc_id, $page_number, $lang, $hand, $editorId)
                         }
                         break;
                         
+                    // <note type="gloss"> ...    
                     case 'gloss':
                         $elementType = ColumnElement::GLOSS;
                         $e = array();
                         $e['id']=$nextElementId;
                         $e['type']= $elementType;
-                        $e['doc_id']= $doc_id;
-                        $e['page_number']= $page_number;
+                        $e['page_id']= $page_id;
                         $e['column_number']=$column_number;
                         $e['seq']=$nextElementSeq;
                         $e['lang']=$elementLang;
@@ -433,7 +433,7 @@ function processPageDiv($reader, $doc_id, $page_number, $lang, $hand, $editorId)
                         $e['reference']='NULL';
                         $e['placement']=$reader->getAttribute('placement');
                         array_push($elements, $e);
-                        processTextItems($reader, $nextElementId, $elementLang, $hand, $editorId, 'note', $page_number);
+                        processTextItems($reader, $nextElementId, $elementLang, $hand, $editorId, 'note', $page_id);
                         $nextElementId++;
                         $nextElementSeq++;
                         break;
@@ -444,7 +444,7 @@ function processPageDiv($reader, $doc_id, $page_number, $lang, $hand, $editorId)
                     break;
                 
                 default:
-                    die("Uncognized element under page div: " . $reader->name. " at page $page_number\n");
+                    die("Uncognized element under page div: " . $reader->name. " at page $page_id\n");
                 }
                 
                 
@@ -460,7 +460,7 @@ function processPageDiv($reader, $doc_id, $page_number, $lang, $hand, $editorId)
     }
 }
 
-function processTextItems($reader, $c_id, $lang, $hand, $editor, $elementName, $pageNumber){
+function processTextItems($reader, $c_id, $lang, $hand, $editor, $elementName, $page_id){
     global $nextItemId;
     global $nextEdNoteId;
     global $ednotes;
@@ -1043,7 +1043,7 @@ function processTextItems($reader, $c_id, $lang, $hand, $editor, $elementName, $
                 break;
                 
             default: 
-                die("Unrecognized element inside <$elementName>: <" . $reader->name . "> in page $pageNumber\n");
+                die("Unrecognized element inside <$elementName>: <" . $reader->name . "> in page $page_id\n");
                 
             }
         }

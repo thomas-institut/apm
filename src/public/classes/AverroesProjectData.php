@@ -330,6 +330,12 @@ class AverroesProjectData extends \mysqli{
         return FALSE;
     }
     
+    function getPageId($docId, $pageNumber){
+        $tp = $this->tables['pages'];
+        $sql = "SELECT `id` FROM `$tp` WHERE `doc_id`=$docId AND `page_number`=$pageNumber";
+        return $this->getOneFieldQuery($sql, 'id');
+    }
+    
     /**
      * 
      * @param string $docId

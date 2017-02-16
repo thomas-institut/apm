@@ -19,8 +19,8 @@
  *  
  */
 
-require_once 'DataTable.php';
-require_once 'SimpleProfiler.php';
+require_once '../public/classes/DataTable.php';
+require_once '../public/classes/SimpleProfiler.php';
 /**
  * Description of DataTableTest
  *

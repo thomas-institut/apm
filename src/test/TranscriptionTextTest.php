@@ -19,7 +19,7 @@
  *  
  */
 
-require_once 'TranscriptionTextItem.php';
+require_once '../public/classes/TranscriptionTextItem.php';
 
 
 /**

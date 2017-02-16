@@ -1,1 +1,0 @@
-php phpunit.phar --include-path ./src/public/classes src/test

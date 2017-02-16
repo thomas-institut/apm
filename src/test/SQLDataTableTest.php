@@ -18,8 +18,8 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  *  
  */
-require_once 'DataTable.php';
-require_once  'SimpleProfiler.php';
+require_once '../public/classes/DataTable.php';
+require_once  '../public/classes/SimpleProfiler.php';
 /**
  * Description of SQLDataTableTest
  *

@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "ec6a37f6d701006d1016d76fe22bf724",
-    "content-hash": "407bde81a1e75c222979e1560e273170",
+    "hash": "3688b59b6f52d5b43efa73f5c10770e4",
+    "content-hash": "ce32b1d45785c192be566672a5eb2777",
     "packages": [
         {
             "name": "container-interop/container-interop",
@@ -280,16 +280,16 @@
         },
         {
             "name": "rafaelnajera/matcher",
-            "version": "0.1.2",
+            "version": "0.2.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/rafaelnajera/matcher.git",
-                "reference": "73ce83bcb37b35f9b079ed625060b04ab45e3922"
+                "reference": "7c40aa9f8680679d4d8d56dc607a6d0f145e2184"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/rafaelnajera/matcher/zipball/73ce83bcb37b35f9b079ed625060b04ab45e3922",
-                "reference": "73ce83bcb37b35f9b079ed625060b04ab45e3922",
+                "url": "https://api.github.com/repos/rafaelnajera/matcher/zipball/7c40aa9f8680679d4d8d56dc607a6d0f145e2184",
+                "reference": "7c40aa9f8680679d4d8d56dc607a6d0f145e2184",
                 "shasum": ""
             },
             "require": {
@@ -320,7 +320,7 @@
             "keywords": [
                 "regexp"
             ],
-            "time": "2017-02-15 11:01:43"
+            "time": "2017-02-16 15:26:27"
         },
         {
             "name": "slim/slim",

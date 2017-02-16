@@ -19,7 +19,7 @@
  *  
  */
 
-require 'UserManager.php';
+require '../public/classes/UserManager.php';
 /**
  * Description of UserManagerTest
  *

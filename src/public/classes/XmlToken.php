@@ -28,7 +28,7 @@ use \Matcher\Token;
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class XmlToken extends Token {
+class XmlToken implements Token {
     
     var $type;
     var $name;
@@ -40,7 +40,7 @@ class XmlToken extends Token {
         $this->name = $name;
         $this->reqAttr = [];
     }
-    public function addReqAttrs($attrs){
+    public function withReqAttrs($attrs){
         $copy = clone $this;
         foreach($attrs as $atr){
             $copy->reqAttr[]  = $atr;
@@ -108,5 +108,7 @@ class XmlToken extends Token {
         return true;
     }
     
-    
+    public function matched($t2) {
+        return [$this->name, $this->type];
+    }
 }

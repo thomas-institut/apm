@@ -7,7 +7,7 @@
  */
 
 namespace AverroesProject;
-require_once 'TranscriptionTextItem.php';
+
 /**
  * Description of TtiIllegible
  *

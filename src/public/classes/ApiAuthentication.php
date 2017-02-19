@@ -26,7 +26,6 @@ namespace AverroesProject;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
-require 'vendor/autoload.php';
 /**
  * Authentication Middleware class for the API
  *

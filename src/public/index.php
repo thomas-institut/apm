@@ -22,16 +22,11 @@
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 namespace AverroesProject;
+
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
 require 'vendor/autoload.php';
-require 'classes/AverroesProjectData.php';
-require 'classes/SiteAuthentication.php';
-require 'classes/SiteController.php';
-require 'classes/ApiAuthentication.php';
-require 'classes/ApiController.php';
-require 'classes/UserManager.php';
 
 
 // Options that change from development to production

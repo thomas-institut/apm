@@ -8,21 +8,6 @@
 namespace AverroesProject;
 
 require_once 'errorcodes.php';
-require_once 'ColumnElement.php';
-require_once 'TranscriptionText.php';
-require_once 'TranscriptionTextItem.php';
-require_once 'TtiAbbreviation.php';
-require_once 'TtiAddition.php';
-require_once 'TtiDeletion.php';
-require_once 'TtiGliph.php';
-require_once 'TtiIllegible.php';
-require_once 'TtiMark.php';
-require_once 'TtiNoLinebreak.php';
-require_once 'TtiRubric.php';
-require_once 'TtiSic.php';
-require_once 'TtiText.php';
-require_once 'TtiUnclear.php';
-require_once 'EditorialNote.php';
 
 /**
  * @class AverroesProjectData

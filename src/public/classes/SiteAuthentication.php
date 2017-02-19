@@ -36,8 +36,6 @@ use \Dflydev\FigCookies\FigRequestCookies;
 use \Dflydev\FigCookies\SetCookie;
 use \Dflydev\FigCookies\FigResponseCookies;
 
-require 'vendor/autoload.php';
-
 /**
  * Middleware class for site authentication
  *

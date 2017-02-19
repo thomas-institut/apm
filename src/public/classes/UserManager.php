@@ -22,7 +22,6 @@
 namespace AverroesProject;
 
 
-require_once 'DataTable.php';
 
 /**
  * UserManager manages the system users

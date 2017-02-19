@@ -4,8 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "3688b59b6f52d5b43efa73f5c10770e4",
-    "content-hash": "ce32b1d45785c192be566672a5eb2777",
+    "content-hash": "80a299550bc75b7aebccb1a56736780d",
     "packages": [
         {
             "name": "container-interop/container-interop",
@@ -36,7 +35,7 @@
             ],
             "description": "Promoting the interoperability of container objects (DIC, SL, etc.)",
             "homepage": "https://github.com/container-interop/container-interop",
-            "time": "2017-02-14 19:40:03"
+            "time": "2017-02-14T19:40:03+00:00"
         },
         {
             "name": "dflydev/fig-cookies",
@@ -88,7 +87,7 @@
                 "psr-7",
                 "psr7"
             ],
-            "time": "2016-03-28 09:10:18"
+            "time": "2016-03-28T09:10:18+00:00"
         },
         {
             "name": "nikic/fast-route",
@@ -131,7 +130,7 @@
                 "router",
                 "routing"
             ],
-            "time": "2017-01-19 11:35:12"
+            "time": "2017-01-19T11:35:12+00:00"
         },
         {
             "name": "pimple/pimple",
@@ -177,7 +176,7 @@
                 "container",
                 "dependency injection"
             ],
-            "time": "2015-09-11 15:10:35"
+            "time": "2015-09-11T15:10:35+00:00"
         },
         {
             "name": "psr/container",
@@ -226,7 +225,7 @@
                 "container-interop",
                 "psr"
             ],
-            "time": "2017-02-14 16:28:37"
+            "time": "2017-02-14T16:28:37+00:00"
         },
         {
             "name": "psr/http-message",
@@ -276,27 +275,24 @@
                 "request",
                 "response"
             ],
-            "time": "2016-08-06 14:39:51"
+            "time": "2016-08-06T14:39:51+00:00"
         },
         {
             "name": "rafaelnajera/matcher",
-            "version": "0.2.1",
+            "version": "0.4.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/rafaelnajera/matcher.git",
-                "reference": "7c40aa9f8680679d4d8d56dc607a6d0f145e2184"
+                "reference": "fee30ba170ce33b2bf2c9256b1a7fa6ca4b54143"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/rafaelnajera/matcher/zipball/7c40aa9f8680679d4d8d56dc607a6d0f145e2184",
-                "reference": "7c40aa9f8680679d4d8d56dc607a6d0f145e2184",
+                "url": "https://api.github.com/repos/rafaelnajera/matcher/zipball/fee30ba170ce33b2bf2c9256b1a7fa6ca4b54143",
+                "reference": "fee30ba170ce33b2bf2c9256b1a7fa6ca4b54143",
                 "shasum": ""
             },
             "require": {
                 "php": ">=7.0"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "^5.0"
             },
             "type": "library",
             "autoload": {
@@ -320,7 +316,47 @@
             "keywords": [
                 "regexp"
             ],
-            "time": "2017-02-16 15:26:27"
+            "time": "2017-02-19T11:43:38+00:00"
+        },
+        {
+            "name": "rafaelnajera/xmlmatcher",
+            "version": "0.2.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/rafaelnajera/xmlmatcher.git",
+                "reference": "74013928594b8b5537f88e606712a32de1f6ed90"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/rafaelnajera/xmlmatcher/zipball/74013928594b8b5537f88e606712a32de1f6ed90",
+                "reference": "74013928594b8b5537f88e606712a32de1f6ed90",
+                "shasum": ""
+            },
+            "require": {
+                "rafaelnajera/matcher": "^0.4"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "XmlMatcher\\": "XmlMatcher"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Rafael Nájera",
+                    "email": "rafael@najera.ca"
+                }
+            ],
+            "description": "Description of project xmlmatcher.",
+            "homepage": "http://rafaelnajera.com/xmlmatcher",
+            "keywords": [
+                "regexp"
+            ],
+            "time": "2017-02-19T12:14:56+00:00"
         },
         {
             "name": "slim/slim",
@@ -390,7 +426,7 @@
                 "micro",
                 "router"
             ],
-            "time": "2016-12-20 20:30:47"
+            "time": "2016-12-20T20:30:47+00:00"
         },
         {
             "name": "slim/twig-view",
@@ -440,7 +476,7 @@
                 "twig",
                 "view"
             ],
-            "time": "2017-01-25 20:38:39"
+            "time": "2017-01-25T20:38:39+00:00"
         },
         {
             "name": "symfony/polyfill-mbstring",
@@ -499,7 +535,7 @@
                 "portable",
                 "shim"
             ],
-            "time": "2016-11-14 01:06:16"
+            "time": "2016-11-14T01:06:16+00:00"
         },
         {
             "name": "twig/twig",
@@ -561,7 +597,7 @@
             "keywords": [
                 "templating"
             ],
-            "time": "2017-01-11 19:39:01"
+            "time": "2017-01-11T19:39:01+00:00"
         }
     ],
     "packages-dev": [],

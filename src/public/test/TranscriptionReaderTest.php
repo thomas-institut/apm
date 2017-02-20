@@ -150,7 +150,7 @@ class TranscriptionReaderTest extends TestCase {
         $result = $tsReader->read($xmlReader);
         $this->assertEquals(true, $result);
         $this->assertEquals('la', $tsReader->transcription['defaultLang']);
-        $this->assertEquals(1, count($tsReader->transcription['editors']));
+        $this->assertCount(1, $tsReader->transcription['editors']);
         $this->assertEquals('someusername', $tsReader->transcription['editors'][0]);
         $this->assertEquals(0, $tsReader->transcription['countBodyDivsProcessed']);
         
@@ -159,9 +159,39 @@ class TranscriptionReaderTest extends TestCase {
         $result = $tsReader->read($xmlReader);
         $this->assertEquals(true, $result);
         $this->assertEquals('la', $tsReader->transcription['defaultLang']);
-        $this->assertEquals(1, count($tsReader->transcription['editors']));
+        $this->assertCount(1, $tsReader->transcription['editors']);
         $this->assertEquals('someusername', $tsReader->transcription['editors'][0]);
         $this->assertEquals(5, $tsReader->transcription['countBodyDivsProcessed']);
+        
+        $tsReader->reset();
+        $xmlReader->open("test-transcriptions/testNoRealData03.xml");
+        $result = $tsReader->read($xmlReader);
+        $this->assertEquals(true, $result);
+        $this->assertEquals('la', $tsReader->transcription['defaultLang']);
+        $this->assertCount(1, $tsReader->transcription['editors']);
+        $this->assertEquals('someusername', $tsReader->transcription['editors'][0]);
+        $this->assertEquals(5, $tsReader->transcription['countBodyDivsProcessed']);
+        $this->assertCount(1, $tsReader->transcription['pageDivs']);
+        foreach ($tsReader->transcription['pageDivs'] as $pageDiv){
+            $this->assertTrue(isset($pageDiv['id']));
+        }
+        
+        $tsReader->reset();
+        $xmlReader->open("test-transcriptions/testNoRealData04.xml");
+        $result = $tsReader->read($xmlReader);
+        $this->assertEquals(true, $result);
+        $this->assertEquals('la', $tsReader->transcription['defaultLang']);
+        $this->assertCount(1, $tsReader->transcription['editors']);
+        $this->assertEquals('someusername', $tsReader->transcription['editors'][0]);
+        $this->assertEquals(6, $tsReader->transcription['countBodyDivsProcessed']);
+        $this->assertCount(2, $tsReader->transcription['pageDivs']);
+        foreach ($tsReader->transcription['pageDivs'] as $pageDiv){
+            $this->assertTrue(isset($pageDiv['id']));
+        }
+        
+        $div = $tsReader->transcription['pageDivs'][1];
+        $this->assertEquals(2, $div['countGapsAndColumns']);
+        $this->assertCount(2, $div['cols']);
     }
     
 }

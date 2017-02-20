@@ -23,6 +23,8 @@ namespace AverroesProject\Xml;
 
 use XMLReader;
 use XmlMatcher\XmlMatcher;
+use XmlMatcher\XmlToken;
+use Matcher\Pattern;
 
 /**
  * Class to read a transcription from XML input
@@ -38,6 +40,7 @@ class TranscriptionReader {
     const ERROR_WRONG_ELEMENT = 4;
     const ERROR_NOT_TEI = 5;
     const ERROR_XML_LANG_NOT_FOUND = 6;
+    const ERROR_BAD_PAGE_DIV = 7;
     
     const MSG_GENERIC_ERROR = 'Error found';
     const MSG_GENERIC_WARNING = 'Warning';
@@ -52,6 +55,7 @@ class TranscriptionReader {
     const MSG_XML_LANG_REQUIRED = "xml:lang attribute is required";
     const MSG_LOOKING_FOR_BODY_ELEMENT = "Looking for <body> inside <text>";
     const MSG_LOOKING_FOR_PAGE_DIV = "Looking for page <div> inside <body>";
+    const MSG_BAD_PAGE_DIV = "Bad page <div>, expected <page type='page' facs='[pageId]'";
     
     const WARNING_IGNORED_ELEMENT = 500;
     
@@ -63,6 +67,7 @@ class TranscriptionReader {
     public $errorContext;
     
     public $warnings;
+    
     
     public function __construct()
     {
@@ -118,8 +123,97 @@ class TranscriptionReader {
     
     public function processBodyDiv($xml){
         $this->transcription['countBodyDivsProcessed']++;
+        
+        $reader = new XMLReader();
+        $reader->XML($xml);
+        $reader->read();
+        print "\n---\nAt $reader->nodeType, $reader->name\n";
+        
+        $divType = $reader->getAttribute('type');
+        if ($divType === NULL || $divType !== 'page'){
+            print "Not a page, nothing to do\n";
+            return true;
+        }
+        
+        $pageDivPattern =  (new Pattern())
+            ->withTokenSeries([XmlToken::elementToken('div')->withReqAttrs([ ['type', 'page'], ['facs', '/.*/']])
+            ->withOptAttrs([ ['xml:lang', '/.*/']])
+        ]);
+        $matcher = new XmlMatcher($pageDivPattern);
+        $matcher->match($reader);
+        if (!$matcher->matchFound()){
+            $this->setError(self::ERROR_BAD_PAGE_DIV, self::MSG_BAD_PAGE_DIV);
+            return false;
+        }
+        
+        // Build new page div
+        $pageDiv = [];
+        $pageDiv['id'] = count($this->transcription['pageDivs']);
+        $pageDivXml = $reader->readInnerXml();
+        print "Page Div XML: $pageDivXml\n";
+        
+        // Check for column divs or gap element
+        XmlMatcher::advanceReader($reader);
+        print "At $reader->nodeType, $reader->name\n";
+        
+        $columnDivPattern = (new Pattern())
+            ->withTokenSeries([XmlToken::elementToken('div')->withReqAttrs([ ['type', 'column']])
+            ->withOptAttrs([ ['xml:lang', '/.*/'], ['n', '/\d+/']])
+        ]);
+        $gapPattern = (new Pattern())
+            ->withTokenSeries([XmlToken::elementToken('gap')->withReqAttrs([ ['unit', 'column'], ['reason', 'pending-transcription']])
+            ->withOptAttrs([ ['xml:lang', '/.*/'], ['n', '/\d+/']])
+        ]);
+        $matcherColumn = new XmlMatcher($columnDivPattern);
+        $matcherGap = new XmlMatcher($gapPattern);
+        
+        $matcherColumn->match($reader);
+        $matcherGap->match($reader);
+        $gapOrColumnFound = false;
+        $pageDiv['countGapsAndColumns'] = 0;
+        while ($matcherGap->matchFound() or $matcherColumn->matchFound()) {
+            $gapOrColumnFound = true;
+            print "Gap or column found\n";
+            $pageDiv['countGapsAndColumns']++;
+            if ($matcherGap->matchFound()) {
+                for ($i=0; $i<$matcherGap->matched[0]['attributes']['n']; $i++){
+                    $pageDiv['cols'][] = [];
+                }
+            } else {
+                // column div 
+                $currentColumn = $matcherColumn->matched[0]['attributes']['n']-1;
+                $columnDivXml = $reader->readInnerXml();
+                $colTranscription = $this->readColumn($columnDivXml);
+                if ($colTranscription === false){
+                    return false;
+                }
+                $pageDiv['cols'][$currentColumn] = $colTranscription;
+            }
+            XmlMatcher::advanceReader($reader);
+            print "At $reader->nodeType, $reader->name\n";
+            $matcherColumn->reset();
+            $matcherColumn->match($reader);
+            $matcherGap->reset();
+            $matcherGap->match($reader);
+        }
+        // No column or gaps, read elements
+        if (!$gapOrColumnFound){
+            $colTranscription = $this->readColumn($pageDivXml);
+            if ($colTranscription === false){
+                return false;
+            }
+            $pageDiv['cols'][] = $colTranscription;
+        }
+        
+        $this->transcription['pageDivs'][] = $pageDiv;
         return true;
     }
+    
+    public function readColumn($xml)
+    {
+        return [];
+    }
+    
     public function getInfoFromHeader(\XMLReader $reader)
     {
         // 1. Get editor username

@@ -1,6 +1,5 @@
-netbeans
 *~
-/nbproject/private/
+/nbproject
 /src/config.*.php
 *.zip
 /php-sessions/

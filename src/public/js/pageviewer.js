@@ -16,9 +16,6 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-// Holds the current position of the container
-// divider as a fraction of the document's width
-//
 var minDocumentFontSize = 8;
 var maxDocumentFontSize = 64;
 var currentDocumentFontSize = 12;
@@ -26,6 +23,7 @@ var currentDocumentFontSize = 12;
 var pageNumber;
 var docId;
 var apiBase;
+var numColumns;
 
 function changeDocumentFontSize(bigger){
     
@@ -38,9 +36,11 @@ function changeDocumentFontSize(bigger){
         newFS--;
     }
     if (newFS !== currentDocumentFontSize){
-        $('#right-component').css('font-size', newFS);
+        for (var i=1; i <=numColumns; i++){
+            $('#col' + i).css('font-size', newFS);
+        }
+        
         currentDocumentFontSize = newFS;
-//        console.log('Document font size: ' + currentDocumentFontSize);
     }
 }
 
@@ -48,17 +48,48 @@ $(document).ready(function(){
     reportedFS = $('#right-component').css('font-size');
     currentDocumentFontSize = /\d+/.exec(reportedFS);
 //    console.log('Document font size: ' + currentDocumentFontSize + ' pixels');
-
-    $.getJSON(apiBase + '/api/elements/' + docId + '/' + pageNumber + '/1', function (resp){
-        if (resp.elements === null) {
-            resp.elements = [];
+    $.getJSON(apiBase + '/api/' + docId + '/' + pageNumber +  '/numcolumns', function (resp){
+        var col;
+        numColumns = resp;
+        if (numColumns === 0){
+            $('#right-component').html('<div class="notranscription">No transcription available for this page</div>');
+        } else {
+            theUl = '<ul class = "nav nav-tabs">';
+            for (col = 1; col <= numColumns; col++){
+                theUl += '<li id="colheader' + col +'">';
+                theUl += '<a data-toggle="tab" href="#col' + col + '">Column ' + col + '</a></li>';
+            };
+            theUl += '</ul>';
+            theUl += '<div class="tab-content" id="textcolumns"></div>';
+            $('#right-component').html(theUl);
+            
+            
+            $('.nav-tabs a').click(function(){
+                $(this).tab('show');
+            });
+             
+            for (col = 1; col <= numColumns; col++){
+                var theDiv;
+                theDiv = '<div class="textcol tab-pane';
+                if (col === 1){
+                    theDiv += ' active';
+                }
+                theDiv += '" id="col' + col + '"></div>';
+                $('#textcolumns').append(theDiv);
+                $.getJSON(apiBase + '/api/' + docId + '/' + pageNumber + '/' + col + '/elements', function (resp){
+                    var tc; 
+                    var theCol = resp.info['col'];
+                    tc = buildPageTextContainer(resp.elements, resp.ednotes, resp.people);
+                    $('#col' + theCol).html(tc['text']);
+                    setupTooltips(tc['tooltips']);
+                    if (theCol == 1){
+                        $('#colheader' + theCol).tab('show');
+                    }
+                });
+                
+            }
+            
         }
-        if (resp.ednotes === null){
-            resp.ednotes = [];
-        }
-        tc = buildPageTextContainer(resp.elements, resp.ednotes, resp.people);
-        $('#right-component').html(tc['text']);
-        setupTooltips(tc['tooltips']);
     });
 });
            
@@ -81,7 +112,7 @@ function buildPageTextContainer(elements, ednotes, people){
     }
     
     if (elements.length === 0){
-        return { 'text' : '<div class=\"notranscription\">No transcription available</div>', 'tooltips' : []};
+        return { 'text' : '<p class="notranscription">No transcription available for this column</p>', 'tooltips' : []};
     }
     
     rtl = isRtl(elements);
@@ -177,6 +208,12 @@ function buildPageTextContainer(elements, ednotes, people){
                     classes = classes + ' mark';
                     theText = theText + '<span class="' + classes +  '" id="' +  htmlId + '" title="Note(s)"><span class="glyphicon glyphicon-exclamation-sign"></span></span>';
                     break;
+                    
+                // TranscriptionTextItem::NO_LINEBREAK:
+                case 10:
+                    classes = classes + ' nolb';
+                    theText = theText + '<span class="' + classes +  '" id="' +  htmlId + '" title="No linebreak">--</span>';
+                    break;
 
                 //TranscriptionTextItem::UNCLEAR:
                 case 4:
@@ -206,9 +243,48 @@ function buildPageTextContainer(elements, ednotes, people){
                     ttt = ttt + '<b>Length:</b> ' + item.length + ' characters';
                     richTooltips[htmlId]['text'] =  ttt;
                     break;
+                    
+                // TranscriptionTextItem::GLIPH:
+                case 6: 
+                    classes = classes + ' gliph';
+                    theText = theText + '<span class="' + classes +  '" id="' + htmlId + '" title="Gliph">' + item.theText + '</span>';
+                    richTooltips[htmlId] = {};
+                    richTooltips[htmlId]['type'] = 'gliph';
+                    richTooltips[htmlId]['text'] =  '<b>Text:</b> ' + item.theText;
+                    break;
+                    
+                // TranscriptionTextItem::ADDITION:
+                case 7:
+                    classes = classes + ' addition';
+                    if (item.extraInfo == 'above'){
+                        classes += ' addition-above';
+                    }
+                    theText = theText + '<span class="' + classes +  '" id="' + htmlId + '" title="Addition">' + item.theText + '</span>';
+                    richTooltips[htmlId] = {};
+                    richTooltips[htmlId]['type'] = 'del';
+                    richTooltips[htmlId]['text'] =  '<b>Added Text:</b> ' + item.theText + 
+                            '</br><b>Place:</b> ' + item.extraInfo;
+                    break;
+                    
+                // TranscriptionTextItem::DELETION:
+                case 8:
+                    classes = classes + ' deletion';
+                    theText = theText + '<span class="' + classes +  '" id="' + htmlId + '" title="Deletion">' + item.theText + '</span>';
+                    richTooltips[htmlId] = {};
+                    richTooltips[htmlId]['type'] = 'del';
+                    richTooltips[htmlId]['text'] =  '<b>Deleted Text:</b> ' + item.theText + '</br><b>Technique:</b> ' + item.extraInfo;
+                    break;
+                    
                
                 default:
-                    theText = theText + item.theText;
+                    console.log("Unsupported item type " + item.type + ", wrapping it on a default class");
+                    classes = classes + ' unknownitemtype';
+                    theText = theText + '<span class="' + classes +  '" id="' + htmlId + '" title="Unsupported">' + item.theText + '</span>';
+                    if (item.altText != '' || item.extraInfo != ''){
+                        richTooltips[htmlId] = {};
+                        richTooltips[htmlId]['type'] = 'unk';
+                        richTooltips[htmlId]['text'] =  '<b>Alt Text:</b> ' + item.altText + '<br/><b>Extra Info:</b> ' + item.extraInfo;
+                    }
             }
             if (itemHasEdnotes){
                 if (!richTooltips.hasOwnProperty(htmlId)){

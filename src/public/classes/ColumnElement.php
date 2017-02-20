@@ -32,12 +32,12 @@ namespace AverroesProject;
  *      line | head | fw | gloss | off-flow addition | offline editorial note
  * 
  * All columnElement items have:
- *    id: unique Integer
+ *    id: unique Integer that identifies the element in the system
  *    language:  ar | he | la | de | en | fr
  *    hand : Hand = SQL: hands.id
- *    editor: Editor  = SQL: people.id  (constraint: people.role includes 'editor')
+ *    editor: Editor  = SQL: users.id  
  *    timestamp: DateTime
- *    page:  String  (DARE identifier)
+ *    pageId:  int = SQL: pages.id
  *    column: Integer  ( column = 0 means that the element is associated with the whole page)
  *    sequence: Integer 
  * 
@@ -65,7 +65,7 @@ namespace AverroesProject;
  *  off-flow addition: 
  *        theText : TranscribedText
  *        placement: margin-top | margin-bottom | margin-left | margin-right
- *        target: associated metamark or deletion id
+ *        targets: associated metamarks or deletion ids
  */
 
 

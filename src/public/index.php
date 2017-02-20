@@ -22,15 +22,13 @@
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 namespace AverroesProject;
+
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
+use AverroesProject\DataTable\MySqlDataTable;
+use AverroesProject\DataTable\MySqlDataTableWithRandomIds;
 
 require 'vendor/autoload.php';
-require 'classes/AverroesProjectData.php';
-require 'classes/SiteAuthentication.php';
-require 'classes/SiteController.php';
-require 'classes/ApiAuthentication.php';
-require 'classes/ApiController.php';
 
 
 // Options that change from development to production
@@ -40,20 +38,10 @@ require 'config.php';
 
 // Application parameters
 $config['app_name'] = 'Averroes Project Manager';
-$config['version'] = '0.0.9 (α)';
-$config['copyright_notice'] = '2016, <a href="http://www.thomasinstitut.uni-koeln.de/">Thomas-Institut</a>, <a href="http://www.uni-koeln.de/">Universität zu Köln</a>';
+$config['version'] = '0.0.12 (α)';
+$config['copyright_notice'] = '2016-17, <a href="http://www.thomasinstitut.uni-koeln.de/">Thomas-Institut</a>, <a href="http://www.uni-koeln.de/">Universität zu Köln</a>';
 
 $config['default_timezone'] = "Europe/Berlin";
-
-$config['tables'] = array();
-$config['tables']['settings']   = 'ap_settings';
-$config['tables']['ednotes']    = 'ap_ednotes';
-$config['tables']['elements']   = 'ap_elements';
-$config['tables']['items']      = 'ap_items';
-$config['tables']['hands']      = 'ap_hands';
-$config['tables']['users']      = 'ap_users';
-$config['tables']['docs']       = 'ap_docs';
-$config['tables']['people']     = 'ap_people';
 
 // Slim parameters
 $config['addContentLengthHeader'] = false;
@@ -66,15 +54,34 @@ date_default_timezone_set($config['default_timezone']);
 $container = $app->getContainer();
 
 // Error Handling
-$container['errorHandler'] = function ($c) {
-    return function($request, $response, $exception){
-        return \AverroesProject\SiteController::errorPage($request, $response, $exception);
-    };
-};
+//$container['errorHandler'] = function ($c) {
+//    return function($request, $response, $exception){
+//        return \AverroesProject\SiteController::errorPage($request, $response, $exception);
+//    };
+//};
 // Database
+
+// Big Data manager... will be gone at some point
 $container['db'] = function($c){
    $db = new AverroesProjectData($c['settings']['db'], $c['settings']['tables']);
    return $db ;
+};
+
+// PDO Database and others
+$container['dbh'] = function($c){
+   $dbh = new \PDO('mysql:dbname='. $c['settings']['db']['db'] . ';host=' . $c['settings']['db']['host'], $c['settings']['db']['user'], $c['settings']['db']['pwd']);
+   $dbh->query("set character set 'utf8'");
+   $dbh->query("set names 'utf8'");
+   return $dbh ;
+};
+
+$container['um'] = function ($c){
+    $um = new UserManager(
+            new MySqlDataTableWithRandomIds($c->dbh, $c['settings']['tables']['users'], 10000, 100000),
+            new MySqlDataTable($c->dbh, $c['settings']['tables']['relations']), 
+            new MySqlDataTable($c->dbh, $c['settings']['tables']['people']));
+    return $um;
+            
 };
 
 // Twig
@@ -94,33 +101,42 @@ $container['view'] = function ($container) {
 // -----------------------------------------------------------------------------
  
 // LOGIN
-$app->any('/login', '\AverroesProject\SiteAuthentication:login')
+$app->any('/login', '\AverroesProject\Site\SiteAuthentication:login')
         ->setName('login');
 
 // LOGOUT
-$app->any('/logout', '\AverroesProject\SiteAuthentication:logout')
+$app->any('/logout', '\AverroesProject\Site\SiteAuthentication:logout')
         ->setName('logout');
 
 
 // HOME
-$app->get('/','\AverroesProject\SiteController:homePage')
+$app->get('/','\AverroesProject\Site\SiteController:homePage')
         ->setName('home')
-        ->add('\AverroesProject\SiteAuthentication:authenticate');
+        ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
 
 // USER.PROFILE
-$app->get('/user/{username}', '\AverroesProject\SiteController:userProfilePage')
+$app->get('/user/{username}', '\AverroesProject\Site\SiteController:userProfilePage')
         ->setName('user.profile')
-        ->add('\AverroesProject\SiteAuthentication:authenticate');
+        ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
+
+// USER.SETTINGS
+$app->get('/user/{username}/settings', '\AverroesProject\Site\SiteController:userSettingsPage')
+        ->setName('user.settings')
+        ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
+
+$app->get('/users', '\AverroesProject\Site\SiteController:userManagerPage')
+        ->setName('user.manager')
+        ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
 
 // DOCS
-$app->get('/documents','\AverroesProject\SiteController:documentsPage')
+$app->get('/documents','\AverroesProject\Site\SiteController:documentsPage')
         ->setName('docs')
-        ->add('\AverroesProject\SiteAuthentication:authenticate');
+        ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
 
 // PAGEVIEWER
-$app->get('/pageviewer/{doc}/{page}', '\AverroesProject\SiteController:pageViewerPage')
+$app->get('/pageviewer/{doc}/{page}', '\AverroesProject\Site\SiteController:pageViewerPage')
         ->setName('pageviewer')
-        ->add('\AverroesProject\SiteAuthentication:authenticate');
+        ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
 
 
 
@@ -131,10 +147,14 @@ $app->get('/pageviewer/{doc}/{page}', '\AverroesProject\SiteController:pageViewe
 $app->group('/api', function (){
     
     // API -> getElements
-    $this->get('/elements/{document}/{page}/{column}', '\AverroesProject\ApiController:getElementsByDocPageCol')
+    $this->get('/{document}/{page}/{column}/elements', '\AverroesProject\Api\ApiController:getElementsByDocPageCol')
         ->setName('api_getelements');
+    
+    // API -> numColumns
+    $this->get('/{document}/{page}/numcolumns', '\AverroesProject\Api\ApiController:getNumColumns')
+        ->setName('api_numcolumns');
 
-})->add('\AverroesProject\ApiAuthentication');
+})->add('\AverroesProject\Api\ApiAuthentication');
 
 
 // All set, run!

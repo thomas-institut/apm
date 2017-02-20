@@ -29,14 +29,13 @@
  * a randomly chosen secret key.
  */
 
-namespace AverroesProject;
+namespace AverroesProject\Site;
+
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use \Dflydev\FigCookies\FigRequestCookies;
 use \Dflydev\FigCookies\SetCookie;
 use \Dflydev\FigCookies\FigResponseCookies;
-
-require 'vendor/autoload.php';
 
 /**
  * Middleware class for site authentication
@@ -48,7 +47,7 @@ class SiteAuthentication {
    
     private $cookieName = 'rme';
     private $secret = '1256106427895916503';
-    private $debugMode = TRUE;
+    private $debugMode = false;
    
     //Constructor
     public function __construct( $ci) {
@@ -73,7 +72,6 @@ class SiteAuthentication {
         }
     }
 
-
     public function authenticate(Request $request, Response $response, $next) {
         session_start();
         $success = false;
@@ -86,7 +84,7 @@ class SiteAuthentication {
                 $cookieValue = $longTermCookie->getValue();
                 list($userId, $token, $mac) = explode(':', $cookieValue);
                 if (hash_equals($this->generateMac($userId . ':' . $token), $mac)){
-                    $userToken = $this->ci->db->getUserToken($userId);
+                    $userToken = $this->ci->um->getUserToken($userId);
                     if (hash_equals($userToken, $token)){
                         $this->debug('Cookie looks good, user = ' . $userId);
                         $success = true;
@@ -104,7 +102,7 @@ class SiteAuthentication {
         } else {
             $userId = $_SESSION['userid'];
             $this->debug('Session is set, user id = ' . $userId);
-            if ($this->ci->db->userIdExists($userId)){
+            if ($this->ci->um->userExistsById($userId)){
                 $this->debug("User id exists!");
                 $success = true;
             } else {
@@ -113,11 +111,14 @@ class SiteAuthentication {
             
         }
         
-        
         if ($success){
             $this->debug('Success, go ahead!');
             $_SESSION['userid'] = $userId;
-            $this->ci['userInfo'] = $this->ci['db']->getUserInfoByUserId($userId);
+            $ui = $this->ci->um->getUserInfoByUserId($userId);
+            if ($this->ci->um->isUserAllowedTo($userId, 'manageUsers')){
+                $ui['manageUsers'] = 1;
+            }
+            $this->ci['userInfo'] = $ui;
             return $next($request, $response); 
         } else {
             $this->debug("Authentication fail, logging out and redirecting to login");
@@ -130,7 +131,6 @@ class SiteAuthentication {
     
     public function login(Request $request, Response $response, $next){
         session_start();
-        $db = $this->ci->db;
         $this->debug('Login page');
         if ($request->isPost()){
             $data = $request->getParsedBody();
@@ -140,15 +140,15 @@ class SiteAuthentication {
                 $pwd = filter_var($data['pwd'], FILTER_SANITIZE_STRING);
                 $rememberme = isset($data['rememberme']) ? $data['rememberme'] : '';
                 $this->debug('Trying to log in user ' . $user);
-                if ($db->usernameExists($user) and password_verify($pwd, $db->userPassword($user))){
+                if ($this->ci->um->verifyUserPassword($user, $pwd)){
                     $this->debug('Success!');
                     // Success!
-                    $userId = $db->getUserIdByUsername($user);
+                    $userId = $this->ci->um->getUserIdFromUsername($user);
                     $_SESSION['userid'] = $userId;
                     if ($rememberme === 'on'){
                         $this->debug('User wants to be remembered for 2 weeks');
                         $token = $this->generateRandomToken();
-                        $db->storeUserToken($userId, $token);
+                        $this->ci->um->storeUserToken($userId, $token);
                         $cookieValue = $this->generateLongTermCookieValue($token, $userId);
                         $now = new \DateTime();
                         $cookie = SetCookie::create($this->cookieName)

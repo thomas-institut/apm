@@ -8,9 +8,6 @@
 namespace AverroesProject;
 
 require_once 'errorcodes.php';
-require_once 'ColumnElement.php';
-require_once 'TranscriptionText.php';
-require_once 'EditorialNote.php';
 
 /**
  * @class AverroesProjectData
@@ -32,7 +29,7 @@ class AverroesProjectData extends \mysqli{
     private $tables;
     
     
-    private $databaseversion = '0.03';
+    private $databaseversion = '6';
     
     /**
      * Tries to initialize and connect to the MySQL database.
@@ -122,80 +119,8 @@ class AverroesProjectData extends \mysqli{
             return ($r->num_rows > 0);
         }
     }
-    
+  
     /**
-     * Checks if a username exists in the database.
-     * @param string $username 
-     */
-    function usernameExists($username){
-        $query = 'select * from `' . $this->tables['users'] . '` where `username`=\'' . $username . "'";
-        return $this->queryNumRows($query) == 1;
-    }
-
-    function userIdExists($userId){
-        $query = 'select * from `' . $this->tables['users'] . '` where `id`=' . $userId;
-        return $this->queryNumRows($query) == 1;
-    }
-    
-    /**
-     * Gets the user password hash in the database.
-     */
-    function userPassword($username){
-        $query = 'SELECT password from `' . $this->tables['users'] . '` where `username`=\'' . $username . "'";
-        $r = $this->query($query);
-        if (!$r){
-            return ''; // this will never match any password with password_verify
-        }
-        else{
-            $row = $r->fetch_assoc();
-            if (isset($row['password'])){ 
-                return $row['password'];
-            }
-            else {
-                return '';
-            }
-        }
-    }
-
-    
-    function storeUserToken($userId, $token){
-        $query = 'UPDATE `' . $this->tables['users'] . '` SET `token`=\'' . $token . '\' WHERE `id`=' . $userId;
-        return $this->query($query);
-    }
-    
-    function getUserToken($userId){
-        return $this->getOneFieldQuery('SELECT token FROM `' . $this->tables['users'] . '` WHERE `id`=' . $userId, 'token');
-    }
-    
-    /**
-     * Gets the user id associated with a given username
-     */
-    function getUserIdByUsername($username){
-        return $this->getOneField($this->tables['users'], 'id', "`username` ='" . $username . "'");
-    }
-    
-    function getUsernameById($id){
-        return $this->getOneField($this->tables['users'], 'username', "`id` ='" . $id . "'");
-    }
-
-    /**
-     * Gets the user info from the database
-     * @param int $userid User ID
-     * @param array $userinfo Array where the information will be stored
-     */
-    function getUserInfoByUserId($userid){
-        return $this->getOneRow('SELECT p.id, u.username, p.fullname, p.email FROM `'  . 
-                $this->tables['users'] . '` as u, `' . $this->tables['people'] . '` as p WHERE u.id=p.id ' .
-                'AND u.id='. $userid);
-    }
-    
-    function getUserInfoByUsername($username){
-        return $this->getOneRow('SELECT p.id, u.username, p.fullname, p.email FROM `'  . 
-                $this->tables['users'] . '` as u, `' . $this->tables['people'] . '` as p WHERE u.id=p.id ' .
-                'AND u.username=\''. $username . '\'');
-    }
-     
-   /**
      * Queries the DB and returns the number of resulting rows
      */
     function queryNumRows($query){
@@ -214,7 +139,8 @@ class AverroesProjectData extends \mysqli{
         $r = $this->query($query);
         $row = $r->fetch_assoc();
         if (!isset($row[$field])){
-            throw new \Exception($field . ' not in ' . $table, E_MYSQL);
+            //throw new \Exception($field . ' not in ' . $table, E_MYSQL);
+            return false;
         }
         else{
             return $row[$field];
@@ -229,7 +155,8 @@ class AverroesProjectData extends \mysqli{
         $r = $this->query($query);
         $row = $r->fetch_assoc();
         if (!isset($row[$field])){
-            throw new \Exception($field . ' not in result set' , E_MYSQL);
+            //throw new \Exception($field . ' not in result set' , E_MYSQL);
+            return false;
         }
         else{
             return $row[$field];
@@ -257,8 +184,16 @@ class AverroesProjectData extends \mysqli{
      * Returns an array with the IDs of all the manuscripts with
      * some data in the system and the number of pages with data
      */
-    function getDocIdList(){
-        $query = "SELECT `id` from  " . $this->tables['docs'];
+    function getDocIdList($order = '', $asc=true){
+        switch ($order){
+            case 'title':
+                $orderby = ' ORDER BY `title` ' . ($asc ? ' ASC' : ' DESC');
+                break;
+            
+            default:
+                $orderby = '';
+        }
+        $query = "SELECT `id` FROM  " . $this->tables['docs'] . $orderby;
         $r = $this->query($query);
         
         $mss = array();
@@ -268,6 +203,19 @@ class AverroesProjectData extends \mysqli{
         return $mss;
     }
     
+    
+    function getNumColumns($docId, $page){
+        $te = $this->tables['elements'];
+        $tp = $this->tables['pages'];
+        $n = $this->getOneFieldQuery(
+                'SELECT MAX(e.`column_number`) AS nc FROM ' . $te . ' AS e' .
+                " JOIN `$tp` as p ON p.id=e.page_id " .
+                " WHERE p.`doc_id`=$docId AND p.`page_number`=$page", 'nc');
+        if ($n === NULL){
+            return 0;
+        }
+        return (int) $n;
+    }
     function getPageCountByDocId($docId){
         return $this->getOneFieldQuery('SELECT `page_count` from ' .  
                 $this->tables['docs'] . 
@@ -281,17 +229,17 @@ class AverroesProjectData extends \mysqli{
      */
     function getTranscribedPageCountByDoc($docId){
         return $this->getOneFieldQuery(
-                'SELECT count(DISTINCT `page_number`) as value from ' . 
-                $this->tables['elements'] .
-                ' WHERE `doc_id`=\'' . $docId . '\'', 'value');
+                'SELECT COUNT(DISTINCT(page_id)) as value FROM '.  
+                $this->tables['elements'] . 'as e JOIN ' . $this->tables['pages'] . ' AS p ON e.page_id=p.id ' .
+                ' WHERE p.doc_id=\'' . $docId . '\'', 'value');
         
     }
     
     function getLineCountByDoc($docId){
         return $this->getOneFieldQuery(
-                'SELECT count(DISTINCT `page_number`, `reference`) as value from ' . 
-                $this->tables['elements'] .
-                ' WHERE `doc_id`=\'' . $docId . '\' AND `type`=' . ColumnElement::LINE, 'value');
+                'SELECT count(DISTINCT `page_id`, `reference`) as value from ' . 
+                $this->tables['elements'] . ' as e JOIN ' . $this->tables['pages'] . ' AS p ON e.page_id=p.id ' .
+                ' WHERE p.doc_id=\'' . $docId . '\' AND e.type=' . ColumnElement::LINE, 'value');
     }
     /**
      * 
@@ -302,9 +250,11 @@ class AverroesProjectData extends \mysqli{
     function getEditorsByDocId($docId){
         $te = $this->tables['elements'];
         $tu = $this->tables['users'];
-        $query = "SELECT distinct `$tu`.`username`" . 
-            " from `$te` JOIN `$tu` on `$te`.`editor_id`=`$tu`.`id`" . 
-           " WHERE `doc_id`='" . $docId . "'";
+        $tp = $this->tables['pages'];
+        $query = "SELECT DISTINCT u.`username`" . 
+            " FROM `$tu` AS u JOIN (`$te` AS e, `$tp` as p)" . 
+            " ON (u.id=e.editor_id AND p.id=e.page_id)" . 
+            " WHERE p.doc_id=" . $docId;
         
         $r = $this->query($query);
         
@@ -315,10 +265,16 @@ class AverroesProjectData extends \mysqli{
         return $editors;
     }
     
+    function getDocIdFromDareId($dareId){
+        return $this->getOneField($this->tables['docs'], 'id', 'image_source_data=\'' . $dareId . '\'');
+    }
+    
     function getPageListByDocId($docId){
-        $query =  'SELECT distinct `page_number` from ' . 
-                $this->tables['elements'] .
-                ' WHERE `doc_id`=\'' . $docId . '\' order by `page_number` asc';
+        $te = $this->tables['elements'];
+        $tp = $this->tables['pages'];
+        $query =  'SELECT DISTINCT p.`page_number` AS page_number FROM ' . $tp . ' AS p' .
+                ' JOIN ' . $te . ' AS e ON p.id=e.page_id' .
+                ' WHERE p.doc_id=\'' . $docId . '\' ORDER BY p.`page_number` ASC';
         $r = $this->query($query);
         $pages = array();
          while ($row = $r->fetch_assoc()){
@@ -359,6 +315,12 @@ class AverroesProjectData extends \mysqli{
         return FALSE;
     }
     
+    function getPageId($docId, $pageNumber){
+        $tp = $this->tables['pages'];
+        $sql = "SELECT `id` FROM `$tp` WHERE `doc_id`=$docId AND `page_number`=$pageNumber";
+        return $this->getOneFieldQuery($sql, 'id');
+    }
+    
     /**
      * 
      * @param string $docId
@@ -368,11 +330,12 @@ class AverroesProjectData extends \mysqli{
      */
     
     function getColumnElements($docId, $page, $col){
-        
-        $query = 'SELECT * FROM `' . $this->tables['elements'] . 
-                '` WHERE `doc_id`=\'' . $docId . '\' AND' .
-                ' `page_number`=' . $page . " AND" . 
-                ' `column_number`=' . $col . ' ORDER BY `seq` ASC';
+        $te = $this->tables['elements'];
+        $tp = $this->tables['pages'];
+        $query = 'SELECT e.* FROM `' . $te . '` AS e' . 
+                ' JOIN ' . $tp . ' AS p ON e.page_id=p.id WHERE p.`doc_id`=\'' . $docId . '\' AND' .
+                ' p.`page_number`=' . $page . " AND" . 
+                ' e.`column_number`=' . $col . ' ORDER BY e.`seq` ASC';
         $r = $this->query($query);
         $elements = array();
         while ($row = $r->fetch_assoc()){
@@ -454,6 +417,22 @@ class AverroesProjectData extends \mysqli{
                     $item = new TtiAbbreviation($row['id'], $row['seq'], $row['text'], $row['alt_text']);
                     break;
                 
+                case TranscriptionTextItem::GLIPH:
+                    $item = new TtiGliph($row['id'], $row['seq'], $row['text']);
+                    break;
+                
+                case TranscriptionTextItem::DELETION:
+                    $item = new TtiDeletion($row['id'], $row['seq'], $row['text'], $row['extra_info']);
+                    break;
+                
+                case TranscriptionTextItem::ADDITION:
+                    $item = new TtiAddition($row['id'], $row['seq'], $row['text'], $row['extra_info'], $row['target']);
+                    break;
+                
+                case TranscriptionTextItem::NO_LINEBREAK:
+                    $item = new TtiNoLinebreak($row['id'], $row['seq']);
+                    break;
+                
                 default: 
                     continue;
             }
@@ -497,11 +476,13 @@ class AverroesProjectData extends \mysqli{
         $ted = $this->tables['ednotes'];
         $ti = $this->tables['items'];
         $te = $this->tables['elements'];
+        $tp = $this->tables['pages'];
         
         $query = "SELECT `$ted`.* from `$ted` " . 
                 "JOIN `$ti` on `$ted`.`target`=`$ti`.`id` " . 
                 "JOIN `$te` on `$te`.`id`= `$ti`.`ce_id` " . 
-                "WHERE `$te`.`doc_id`=$docId and `$te`.`page_number`=$pageNum AND `$te`.`column_number`=$colNumber";
+                "JOIN `$tp` on `$tp`.`id`= `$te`.`page_id` " . 
+                "WHERE `$tp`.`doc_id`=$docId and `$tp`.`page_number`=$pageNum AND `$te`.`column_number`=$colNumber";
         
         $r = $this->query($query);
         if ($r->num_rows === 0){
@@ -522,5 +503,21 @@ class AverroesProjectData extends \mysqli{
             }
             return $notes;
         }
+    }
+    
+    function getNextElementId(){
+        return $this->getMaxId($this->tables['elements'])+1;
+    }
+    
+    function getNextItemId(){
+        return $this->getMaxId($this->tables['items'])+1;
+    }
+    
+    function getNextEditorialNoteId(){
+        return $this->getMaxId($this->tables['ednotes'])+1;
+    }
+    
+    function getMaxId($table){
+        return $this->getOneFieldQuery("SELECT MAX(`id`) as m FROM $table", 'm');
     }
 }

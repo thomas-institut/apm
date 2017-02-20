@@ -1,7 +1,22 @@
 {
+    
+    "name": "thomas-institut/apm",
+    "description": "Averroes Project Manager",
+    "type": "application",
+    "keywords": ["mss"],
+    "homepage": "http://averroes.uni-koeln.de",
+    "license": "GPL",
+    
     "require": {
         "slim/slim": "^3.5",
         "slim/twig-view": "^2.1",
-        "dflydev/fig-cookies": "^1.0"
+        "dflydev/fig-cookies": "^1.0",
+        "rafaelnajera/xmlmatcher": "^0.2"
+    },
+    
+    "autoload": {
+        "psr-4": {
+            "AverroesProject\\": "classes"
+        }
     }
 }

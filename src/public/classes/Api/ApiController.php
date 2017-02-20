@@ -17,18 +17,17 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-namespace AverroesProject;
+namespace AverroesProject\Api;
 
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
-
-require 'vendor/autoload.php';
 
 /**
  * API Controller class
  *
  */
-class ApiController {
+class ApiController
+{
     protected $ci;
    //Constructor
    public function __construct( $ci) {
@@ -57,15 +56,24 @@ class ApiController {
         $people = [];
         foreach($elements as $e){
             if (!isset($people[$e->editorId])){
-                $people[$e->editorId] = $this->db->getUserInfoByUserId($e->editorId);
+                $people[$e->editorId] = $this->ci->um->getUserInfoByUserId($e->editorId);
             }
         }
         foreach($ednotes as $e){
             if (!isset($people[$e->authorId])){
-                $people[$e->authorId] = $this->db->getUserInfoByUserId($e->authorId);
+                $people[$e->authorId] = $this->ci->um->getUserInfoByUserId($e->authorId);
             }
         }
 
-        return $response->withJson(['elements' => $elements, 'ednotes' => $ednotes, 'people' => $people]);
+        return $response->withJson(['elements' => $elements, 'ednotes' => $ednotes, 'people' => $people, 'info' => ['col' => (int) $columnNumber]]);
+   }
+   
+   public function getNumColumns(Request $request, Response $response, $next){
+        $docId = $request->getAttribute('document');
+        $pageNumber = $request->getAttribute('page');
+        
+        $numColumns = $this->db->getNumColumns($docId, $pageNumber);
+        
+        return $response->withJson($numColumns);
    }
 }

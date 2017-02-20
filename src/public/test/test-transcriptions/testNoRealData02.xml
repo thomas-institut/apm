@@ -1,0 +1,24 @@
+<!-- VALID, just no data in it, body divs not page divs -->
+<TEI>
+    <teiHeader>
+        <fileDesc>
+            <titleStmt>
+                <editor xml:id="someusername"/>
+                <!-- Any other editor here will be ignored! -->
+                <editor xml:id="anothereditor"/>
+            </titleStmt>
+        </fileDesc>
+    </teiHeader>
+    <text xml:lang='la'>
+        <body>
+            <div type="notpage">Div 1</div>
+            <!-- Another div-->
+            <div type="alsonotpage">Div 2</div>
+            <mytag>This element will be completely ignored!</mytag>
+            <div type="notpage">Div 3</div>
+            <div type="notpage">Div 4</div>
+            <div type="notpageeither">Div 5</div>
+        </body>
+    </text>
+</TEI>
+

@@ -1,0 +1,19 @@
+<!-- NOT VALID: not a TEI file! -->
+<myowntag>
+<TEI>
+    <teiHeader>
+        <fileDesc>
+            <titleStmt>
+                <editor xml:id="someusername"/>
+                <!-- Any other editor here will be ignored! -->
+                <editor xml:id="anothereditor"/>
+            </titleStmt>
+        </fileDesc>
+    </teiHeader>
+    <text>
+        <body>
+            Nothing here!
+        </body>
+    </text>
+</TEI>
+</myowntag>

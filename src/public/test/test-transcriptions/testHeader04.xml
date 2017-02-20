@@ -1,0 +1,18 @@
+<!-- INVALID: no teiHeader inside of TEI -->
+<TEI>
+    <deiHeader>
+        <fileDesc>
+            <titleStmt>
+                <editor xml:id="someusername"/>
+                <!-- Any other editor here will be ignored! -->
+                <editor xml:id="anothereditor"/>
+            </titleStmt>
+        </fileDesc>
+    </deiHeader>
+    <text>
+        <body>
+            Nothing here!
+        </body>
+    </text>
+</TEI>
+

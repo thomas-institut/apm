@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "80a299550bc75b7aebccb1a56736780d",
+    "content-hash": "0d176a98b0539cb260596e98dabab769",
     "packages": [
         {
             "name": "container-interop/container-interop",
@@ -279,16 +279,16 @@
         },
         {
             "name": "rafaelnajera/matcher",
-            "version": "0.4.1",
+            "version": "0.5.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/rafaelnajera/matcher.git",
-                "reference": "fee30ba170ce33b2bf2c9256b1a7fa6ca4b54143"
+                "reference": "2eadc085612c21f3edd976226de0e73e673cdf78"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/rafaelnajera/matcher/zipball/fee30ba170ce33b2bf2c9256b1a7fa6ca4b54143",
-                "reference": "fee30ba170ce33b2bf2c9256b1a7fa6ca4b54143",
+                "url": "https://api.github.com/repos/rafaelnajera/matcher/zipball/2eadc085612c21f3edd976226de0e73e673cdf78",
+                "reference": "2eadc085612c21f3edd976226de0e73e673cdf78",
                 "shasum": ""
             },
             "require": {
@@ -316,24 +316,24 @@
             "keywords": [
                 "regexp"
             ],
-            "time": "2017-02-19T11:43:38+00:00"
+            "time": "2017-02-19T18:48:19+00:00"
         },
         {
             "name": "rafaelnajera/xmlmatcher",
-            "version": "0.2.1",
+            "version": "0.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/rafaelnajera/xmlmatcher.git",
-                "reference": "74013928594b8b5537f88e606712a32de1f6ed90"
+                "reference": "25ceae2e09a5eee5d7b52caf6898b0d17dc246f8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/rafaelnajera/xmlmatcher/zipball/74013928594b8b5537f88e606712a32de1f6ed90",
-                "reference": "74013928594b8b5537f88e606712a32de1f6ed90",
+                "url": "https://api.github.com/repos/rafaelnajera/xmlmatcher/zipball/25ceae2e09a5eee5d7b52caf6898b0d17dc246f8",
+                "reference": "25ceae2e09a5eee5d7b52caf6898b0d17dc246f8",
                 "shasum": ""
             },
             "require": {
-                "rafaelnajera/matcher": "^0.4"
+                "rafaelnajera/matcher": "^0.5"
             },
             "type": "library",
             "autoload": {
@@ -356,7 +356,7 @@
             "keywords": [
                 "regexp"
             ],
-            "time": "2017-02-19T12:14:56+00:00"
+            "time": "2017-02-20T12:05:02+00:00"
         },
         {
             "name": "slim/slim",

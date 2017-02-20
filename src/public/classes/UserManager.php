@@ -346,10 +346,7 @@ class UserManager {
             $userId = $this->getUserIdFromUserName($userName);
             return $this->userTable->updateRow(['id' => $userId, 'password' => $hash]);
         }
-        else {
-            return false;
-        }
-        
+        return false;
     }
     
 }

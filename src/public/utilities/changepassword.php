@@ -21,8 +21,11 @@
 
 namespace AverroesProject;
 
-require 'classes/UserManager.php';
-require 'config.php';
+require '../vendor/autoload.php';
+require '../config.php';
+
+use AverroesProject\DataTable\MySqlDataTable;
+use AverroesProject\DataTable\MySqlDataTableWithRandomIds;
 
 $dbh = new \PDO('mysql:dbname='. $config['db']['db'] . ';host=' . $config['db']['host'], 
         $config['db']['user'], 
@@ -32,9 +35,9 @@ $dbh->query("set names 'utf8'");
 
 
 $um = new UserManager(
-            new MySQLDataTableWithRandomIds($dbh, $config['tables']['users'], 10000, 100000),
-            new MySQLDataTable($dbh, $config['tables']['relations']), 
-            new MySQLDataTable($dbh, $config['tables']['people']));
+            new MySqlDataTableWithRandomIds($dbh, $config['tables']['users'], 10000, 100000),
+            new MySqlDataTable($dbh, $config['tables']['relations']), 
+            new MySqlDataTable($dbh, $config['tables']['people']));
 
 if ($argc != 2){
     print "Please give a username.\n";
@@ -62,6 +65,11 @@ if ($password1 !== $password2){
     die();
 }
 
-$um->storeUserPassword($username, $password1);
+if (!$um->storeUserPassword($username, $password1)) {
+    print "ERROR: Could not store password, I'm sorry :(\n";
+    die();
+}
+
+print "Password changed successfully\n";
 
 

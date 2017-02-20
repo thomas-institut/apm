@@ -23,11 +23,12 @@ namespace AverroesProject;
  * Generates SQL code to load a transcription into the database
  * 
  */
-require_once 'public/config.php';
-require_once 'public/classes/AverroesProjectData.php';
-require_once 'public/classes/UserManager.php';
+require '../config.php';
+require '../vendor/autoload';
 
 use \XMLReader;
+use AverroesProject\DataTable\MySqlDataTable;
+use AverroesProject\DataTable\MySqlDataTableWithRandomIds;
 
 $db = new AverroesProjectData($config['db'], $config['tables']);
 
@@ -39,9 +40,9 @@ $dbh->query("set names 'utf8'");
 
 
 $um = new UserManager(
-            new MySQLDataTableWithRandomIds($dbh, $config['tables']['users'], 10000, 100000),
-            new MySQLDataTable($dbh, $config['tables']['relations']), 
-            new MySQLDataTable($dbh, $config['tables']['people']));
+            new MySqlDataTableWithRandomIds($dbh, $config['tables']['users'], 10000, 100000),
+            new MySqlDataTable($dbh, $config['tables']['relations']), 
+            new MySqlDataTable($dbh, $config['tables']['people']));
 
 $nextElementId= $db->getNextElementId();
 $nextItemId = $db->getNextItemId();

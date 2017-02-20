@@ -19,19 +19,23 @@
  *  
  */
 
-require '../public/classes/UserManager.php';
+namespace AverroesProject;
+
+require "../vendor/autoload.php";
+
+use PHPUnit\Framework\TestCase;
 /**
  * Description of UserManagerTest
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class UserManagerTest extends PHPUnit_Framework_TestCase {
+class UserManagerTest extends TestCase {
     
     // Number of users to generate
     private $numUsers = 1000;
     
-    public function testUserCreation(){
-        $um = new AverroesProject\UserManager();
+     public function testUserCreation(){
+        $um = new UserManager();
         
         // A semi-stress test
         for ($i = 1; $i <= $this->numUsers; $i++){

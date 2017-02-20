@@ -19,25 +19,30 @@
  *  
  */
 
-require_once '../public/classes/DataTable.php';
-require_once '../public/classes/SimpleProfiler.php';
+namespace AverroesProject;
+
+require "../vendor/autoload.php";
+
+use AverroesProject\DataTable\InMemoryDataTable;
+use PHPUnit\Framework\TestCase;
+
 /**
  * Description of DataTableTest
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class DataTableTest  extends PHPUnit_Framework_TestCase {
+class DataTableTest extends TestCase {
     
     var $numRows = 100;
     static $profiler;
     public static function setUpBeforeClass(){
      
-        self::$profiler = new AverroesProject\SimpleProfiler;
+        self::$profiler = new SimpleProfiler;
         self::$profiler->timingPoint("Start");
     }
     
     function testInMemoryDataTableCreation() {
-        $dt = new \AverroesProject\InMemoryDataTable();
+        $dt = new InMemoryDataTable();
         self::$profiler->timingPoint("Data table setup");
         $this->assertSame(false, $dt->rowExistsById(1));
         
@@ -72,7 +77,7 @@ class DataTableTest  extends PHPUnit_Framework_TestCase {
      * 
      * @depends testInMemoryDataTableCreation
      */
-    function testFind(\AverroesProject\InMemoryDataTable $dt){
+    function testFind(InMemoryDataTable $dt){
         $nSearches = 100;
         for ($i = 0; $i < $nSearches; $i++){
             $someInt = rand(1, $this->numRows);
@@ -95,7 +100,7 @@ class DataTableTest  extends PHPUnit_Framework_TestCase {
      * 
      * @depends testInMemoryDataTableCreation
      */
-    public function testUpdate(\AverroesProject\InMemoryDataTable $dt){
+    public function testUpdate(InMemoryDataTable $dt){
         $nUpdates = 10;
         for ($i = 0; $i < $nUpdates; $i++){
             $someInt = rand(1, $this->numRows);

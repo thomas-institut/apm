@@ -18,14 +18,20 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  *  
  */
-require_once '../public/classes/DataTable.php';
-require_once  '../public/classes/SimpleProfiler.php';
+namespace AverroesProject;
+
+require "../vendor/autoload.php";
+
+use AverroesProject\DataTable\MySqlDataTable;
+use AverroesProject\DataTable\MySqlDataTableWithRandomIds;
+use PHPUnit\Framework\TestCase;
+use \PDO;
 /**
  * Description of SQLDataTableTest
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class SQLDataTableTest extends PHPUnit_Framework_TestCase {
+class SQLDataTableTest extends TestCase {
     protected static $db;
     var $numRows = 100;
     static $profiler;
@@ -33,12 +39,12 @@ class SQLDataTableTest extends PHPUnit_Framework_TestCase {
     public static function setUpBeforeClass(){
         self::$db = new PDO('mysql:dbname=test;host=127.0.0.1', 'test', 'j0j0j0');
         self::$db->query('TRUNCATE TABLE testtable');
-        self::$profiler = new AverroesProject\SimpleProfiler;
+        self::$profiler = new SimpleProfiler;
         self::$profiler->timingPoint("Start");
     }
     
     public function test1(){
-        $dt = new \AverroesProject\MySQLDataTable(self::$db, 'testtable');
+        $dt = new MySqlDataTable(self::$db, 'testtable');
         self::$profiler->timingPoint("Data table setup");
         $this->assertSame(false, $dt->rowExistsById(1));
         
@@ -74,7 +80,7 @@ class SQLDataTableTest extends PHPUnit_Framework_TestCase {
      * 
      * @depends test1
      */
-    function testEscaping(\AverroesProject\MySQLDataTable $dt){
+    function testEscaping(MySqlDataTable $dt){
         
         // somekey is supposed to be an integer
         $id = $dt->createRow(['somekey' => 'A string']);
@@ -100,7 +106,7 @@ class SQLDataTableTest extends PHPUnit_Framework_TestCase {
      * 
      * @depends test1
      */
-    function testFind(\AverroesProject\MySQLDataTable $dt){
+    function testFind(MySqlDataTable $dt){
         //print_r($dt);
         $nSearches = 100;
         for ($i = 0; $i < $nSearches; $i++){
@@ -125,7 +131,7 @@ class SQLDataTableTest extends PHPUnit_Framework_TestCase {
      * 
      * @depends test1
      */
-    function testFindDuplicates(\AverroesProject\MySQLDataTable $dt){
+    function testFindDuplicates(MySqlDataTable $dt){
         $someString = 'This string should not be in any row';
         
         $nDuplicates = 10;
@@ -149,10 +155,10 @@ class SQLDataTableTest extends PHPUnit_Framework_TestCase {
     }
  
     /**
-     * 
+     * `
      * @depends test1
      */
-    public function testUpdate(\AverroesProject\MySQLDataTable $dt){
+    public function testUpdate(MySqlDataTable $dt){
         $nUpdates = 100;
         for ($i = 0; $i < $nUpdates; $i++){
             $someInt = rand(1, $this->numRows);
@@ -189,7 +195,7 @@ class SQLDataTableTest extends PHPUnit_Framework_TestCase {
         self::$profiler->timingPoint("Start of testRandom Ids");
         $minId = 100000;
         $maxId = 200000;
-        $dt = new \AverroesProject\MySQLDataTableWithRandomIds(self::$db, 'testtable', $minId, $maxId);
+        $dt = new MySqlDataTableWithRandomIds(self::$db, 'testtable', $minId, $maxId);
         self::$profiler->timingPoint("Data table setup");
         
         // Adding new rows
@@ -204,7 +210,7 @@ class SQLDataTableTest extends PHPUnit_Framework_TestCase {
         // Trying to add rows with random Ids, but the Ids are all already taken,
         // new IDs should be greater than the rows constructed in the first test.
         $nRows = 10;
-        $dt2 = new \AverroesProject\MySQLDataTableWithRandomIds(self::$db, 'testtable', 1, $this->numRows);
+        $dt2 = new MySqlDataTableWithRandomIds(self::$db, 'testtable', 1, $this->numRows);
         for ($i = 0; $i < $nRows; $i++){
             $newID = $dt2->createRow([ 'somekey' => $i, 'someotherkey' => "textvalue$i"] );
             $this->assertNotSame(false, $newID);

@@ -21,7 +21,7 @@
  * @brief Middleware class for API authentication
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-namespace AverroesProject;
+namespace AverroesProject\Api;
 
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
@@ -30,7 +30,8 @@ use \Psr\Http\Message\ResponseInterface as Response;
  * Authentication Middleware class for the API
  *
  */
-class ApiAuthentication {
+class ApiAuthentication
+{
     protected $ci;
    //Constructor
    public function __construct( $ci) {

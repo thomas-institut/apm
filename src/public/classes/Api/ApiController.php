@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-namespace AverroesProject;
+namespace AverroesProject\Api;
 
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
@@ -26,7 +26,8 @@ use \Psr\Http\Message\ResponseInterface as Response;
  * API Controller class
  *
  */
-class ApiController {
+class ApiController
+{
     protected $ci;
    //Constructor
    public function __construct( $ci) {

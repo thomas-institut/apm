@@ -25,6 +25,8 @@ namespace AverroesProject;
 
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
+use AverroesProject\DataTable\MySqlDataTable;
+use AverroesProject\DataTable\MySqlDataTableWithRandomIds;
 
 require 'vendor/autoload.php';
 
@@ -75,9 +77,9 @@ $container['dbh'] = function($c){
 
 $container['um'] = function ($c){
     $um = new UserManager(
-            new MySQLDataTableWithRandomIds($c->dbh, $c['settings']['tables']['users'], 10000, 100000),
-            new MySQLDataTable($c->dbh, $c['settings']['tables']['relations']), 
-            new MySQLDataTable($c->dbh, $c['settings']['tables']['people']));
+            new MySqlDataTableWithRandomIds($c->dbh, $c['settings']['tables']['users'], 10000, 100000),
+            new MySqlDataTable($c->dbh, $c['settings']['tables']['relations']), 
+            new MySqlDataTable($c->dbh, $c['settings']['tables']['people']));
     return $um;
             
 };
@@ -99,42 +101,42 @@ $container['view'] = function ($container) {
 // -----------------------------------------------------------------------------
  
 // LOGIN
-$app->any('/login', '\AverroesProject\SiteAuthentication:login')
+$app->any('/login', '\AverroesProject\Site\SiteAuthentication:login')
         ->setName('login');
 
 // LOGOUT
-$app->any('/logout', '\AverroesProject\SiteAuthentication:logout')
+$app->any('/logout', '\AverroesProject\Site\SiteAuthentication:logout')
         ->setName('logout');
 
 
 // HOME
-$app->get('/','\AverroesProject\SiteController:homePage')
+$app->get('/','\AverroesProject\Site\SiteController:homePage')
         ->setName('home')
-        ->add('\AverroesProject\SiteAuthentication:authenticate');
+        ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
 
 // USER.PROFILE
-$app->get('/user/{username}', '\AverroesProject\SiteController:userProfilePage')
+$app->get('/user/{username}', '\AverroesProject\Site\SiteController:userProfilePage')
         ->setName('user.profile')
-        ->add('\AverroesProject\SiteAuthentication:authenticate');
+        ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
 
 // USER.SETTINGS
-$app->get('/user/{username}/settings', '\AverroesProject\SiteController:userSettingsPage')
+$app->get('/user/{username}/settings', '\AverroesProject\Site\SiteController:userSettingsPage')
         ->setName('user.settings')
-        ->add('\AverroesProject\SiteAuthentication:authenticate');
+        ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
 
-$app->get('/users', '\AverroesProject\SiteController:userManagerPage')
+$app->get('/users', '\AverroesProject\Site\SiteController:userManagerPage')
         ->setName('user.manager')
-        ->add('\AverroesProject\SiteAuthentication:authenticate');
+        ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
 
 // DOCS
-$app->get('/documents','\AverroesProject\SiteController:documentsPage')
+$app->get('/documents','\AverroesProject\Site\SiteController:documentsPage')
         ->setName('docs')
-        ->add('\AverroesProject\SiteAuthentication:authenticate');
+        ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
 
 // PAGEVIEWER
-$app->get('/pageviewer/{doc}/{page}', '\AverroesProject\SiteController:pageViewerPage')
+$app->get('/pageviewer/{doc}/{page}', '\AverroesProject\Site\SiteController:pageViewerPage')
         ->setName('pageviewer')
-        ->add('\AverroesProject\SiteAuthentication:authenticate');
+        ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
 
 
 
@@ -145,14 +147,14 @@ $app->get('/pageviewer/{doc}/{page}', '\AverroesProject\SiteController:pageViewe
 $app->group('/api', function (){
     
     // API -> getElements
-    $this->get('/{document}/{page}/{column}/elements', '\AverroesProject\ApiController:getElementsByDocPageCol')
+    $this->get('/{document}/{page}/{column}/elements', '\AverroesProject\Api\ApiController:getElementsByDocPageCol')
         ->setName('api_getelements');
     
     // API -> numColumns
-    $this->get('/{document}/{page}/numcolumns', '\AverroesProject\ApiController:getNumColumns')
+    $this->get('/{document}/{page}/numcolumns', '\AverroesProject\Api\ApiController:getNumColumns')
         ->setName('api_numcolumns');
 
-})->add('\AverroesProject\ApiAuthentication');
+})->add('\AverroesProject\Api\ApiAuthentication');
 
 
 // All set, run!

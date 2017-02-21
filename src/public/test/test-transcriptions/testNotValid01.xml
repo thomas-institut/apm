@@ -1,0 +1,15 @@
+<!-- INVALID: no TEI main element -->
+<DEI>
+    <teiHeader>
+        <fileDesc>
+            <titleStmt>
+                <editor xml:id="someusername"/>
+            </titleStmt>
+        </fileDesc>
+    </teiHeader>
+    <text>
+        <body>
+            Nothing here!
+        </body>
+    </text>
+</DEI>

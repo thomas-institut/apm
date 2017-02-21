@@ -1,0 +1,15 @@
+<!-- NOT VALID: editor should have an xml:id attribute -->
+<TEI>
+    <teiHeader>
+        <fileDesc>
+            <titleStmt>
+                <editor id="someusername"/>
+            </titleStmt>
+        </fileDesc>
+    </teiHeader>
+    <text>
+        <body>
+            Nothing here!
+        </body>
+    </text>
+</TEI>

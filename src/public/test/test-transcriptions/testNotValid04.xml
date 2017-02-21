@@ -1,0 +1,12 @@
+<!--  NOT VALID: editor in the wrong place-->
+<TEI>
+    <teiHeader>
+        <editor xml:id="someusername"/>
+    </teiHeader>
+    <text>
+        <body>
+            Nothing here!
+        </body>
+    </text>
+</TEI>
+

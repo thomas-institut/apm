@@ -1,4 +1,4 @@
-<!-- VALID, just no data in it! -->
+<!-- NOT VALID: no body tag -->
 <TEI>
     <teiHeader>
         <fileDesc>
@@ -9,9 +9,8 @@
             </titleStmt>
         </fileDesc>
     </teiHeader>
-    <text xml:lang='he'>
-        <body>
-        </body>
+    <text>
+        
     </text>
 </TEI>
 

@@ -41,9 +41,12 @@ class TranscriptionReader {
     const ERROR_NOT_TEI = 5;
     const ERROR_XML_LANG_NOT_FOUND = 6;
     const ERROR_BAD_PAGE_DIV = 7;
-    
+    const ERROR_CANNOT_LOAD_XML = 8;
+        
     const MSG_GENERIC_ERROR = 'Error found';
     const MSG_GENERIC_WARNING = 'Warning';
+    const MSG_INCORRECT_STRUCTURE = 'Incorrect structure';
+    const MSG_BAD_TEI = 'Not a valid TEI file';
     const MSG_END_OF_FILE = 'End of file found';
     const MSG_LOOKING_FOR_TEI = 'Looking for <TEI>';
     const MSG_LOOKING_FOR_TEI_HEADER = "Looking for <teiHeader> inside <TEI>";
@@ -55,7 +58,8 @@ class TranscriptionReader {
     const MSG_XML_LANG_REQUIRED = "xml:lang attribute is required";
     const MSG_LOOKING_FOR_BODY_ELEMENT = "Looking for <body> inside <text>";
     const MSG_LOOKING_FOR_PAGE_DIV = "Looking for page <div> inside <body>";
-    const MSG_BAD_PAGE_DIV = "Bad page <div>, expected <page type='page' facs='[pageId]'";
+    const MSG_BAD_PAGE_DIV = 
+            "Bad page <div>, expected <page type='page' facs='[pageId]'";
     
     const WARNING_IGNORED_ELEMENT = 500;
     
@@ -66,6 +70,11 @@ class TranscriptionReader {
     public $errorMsg;
     public $errorContext;
     
+    /**
+     * Warnings
+     * 
+     * @var [][]
+     */
     public $warnings;
     
     
@@ -90,30 +99,37 @@ class TranscriptionReader {
     }
     
     
-    public function read(\XMLReader $reader)
+    public function read($xml)
     {
-        if (!$this->getInfoFromHeader($reader)) {
+        $sXml = simplexml_load_string($xml);
+        
+        if ($sXml === false){
+            $errorMsg = '';
+            foreach(libxml_get_errors() as $error){
+                $errorMsg .= $error . "; ";
+            }
+            $this->setError(self::ERROR_CANNOT_LOAD_XML, $errorMsg);
+            
             return false;
         }
         
-        if (!$this->getDefaultLanguageFromTextElement($reader)) {
+        if (!$this->checkTEIBasicStructure($sXml)){
+            
             return false;
         }
         
-        if (!$this->fastForwardToElement($reader, 'body',self::MSG_LOOKING_FOR_BODY_ELEMENT)){
+        if (!$this->getInfoFromHeader($sXml->teiHeader)) {
             return false;
         }
         
-        // Move to the next element
-        XmlMatcher::advanceReader($reader); 
+        if (!$this->getDefaultLanguageFromTextElement($sXml->text)) {
+            return false;
+        }
         
-        while ($reader->nodeType === \XMLReader::ELEMENT && $reader->name==='div'){
-            $divXml = $reader->readOuterXml();
-            if (!$this->processBodyDiv($divXml)){
+        foreach ($sXml->text->body->div as $bodyDiv){
+            if (!$this->processBodyDiv($bodyDiv)){
                 return false;
             }
-            $reader->next('div');
-            
         }
         
         // No need to check the end of the file; if there were unclosed tags
@@ -121,92 +137,122 @@ class TranscriptionReader {
         return true;
     }
     
-    public function processBodyDiv($xml){
-        $this->transcription['countBodyDivsProcessed']++;
-        
-        $reader = new XMLReader();
-        $reader->XML($xml);
-        $reader->read();
-        print "\n---\nAt $reader->nodeType, $reader->name\n";
-        
-        $divType = $reader->getAttribute('type');
-        if ($divType === NULL || $divType !== 'page'){
-            print "Not a page, nothing to do\n";
-            return true;
+    private function checkTEIBasicStructure($sXml){
+        if ($sXml->getName() !== 'TEI'){
+            $this->setError(self::ERROR_NOT_TEI, self::MSG_BAD_TEI, 
+                    self::MSG_BAD_TEI);
+            return false;
         }
-        
-        $pageDivPattern =  (new Pattern())
-            ->withTokenSeries([XmlToken::elementToken('div')->withReqAttrs([ ['type', 'page'], ['facs', '/.*/']])
-            ->withOptAttrs([ ['xml:lang', '/.*/']])
-        ]);
-        $matcher = new XmlMatcher($pageDivPattern);
-        $matcher->match($reader);
-        if (!$matcher->matchFound()){
-            $this->setError(self::ERROR_BAD_PAGE_DIV, self::MSG_BAD_PAGE_DIV);
+
+        if (count($sXml->teiHeader) === 0) {
+            $this->setError(self::ERROR_INCORRECT_STRUCTURE, 
+                    self::MSG_INCORRECT_STRUCTURE,
+                    self::MSG_LOOKING_FOR_TEI_HEADER);
             return false;
         }
         
-        // Build new page div
+        if (count($sXml->text->body) === 0){
+            $this->setError(self::ERROR_INCORRECT_STRUCTURE, 
+                    self::MSG_INCORRECT_STRUCTURE,
+                    self::MSG_LOOKING_FOR_BODY_ELEMENT);
+            return false;
+        }
+        return true;
+    }
+    
+    /**
+     * Process the xml inside <body>
+     * 
+     * @param string $xml
+     * @return boolean
+     */
+    private function processBodyDiv($sXml){
+        $this->transcription['countBodyDivsProcessed']++;
+
+        if (!$this->isValidPageDiv($sXml)){
+            return true;
+        }
         $pageDiv = [];
         $pageDiv['id'] = count($this->transcription['pageDivs']);
-        $pageDivXml = $reader->readInnerXml();
-        print "Page Div XML: $pageDivXml\n";
+        $pageDiv['facs'] = (string) $sXml['facs'];
+        $pageDiv['lang'] = $this->getLang($sXml);
+
+        $result = $this->processPageDiv($sXml, $pageDiv);
+        if ($result === false) {
+            return false;
+        }
+        $this->transcription['pageDivs'][] = $result;
+      
+        return true;
+    }
+    
+    private function isValidPageDiv($sXml)
+    {
+        $type = (string) $sXml['type'];
+        $facs = (string) $sXml['facs'];
+        if ($type !== 'page') {
+            return false;
+        }
+       
+        if (!$facs){
+            return false;
+        }
         
-        // Check for column divs or gap element
-        XmlMatcher::advanceReader($reader);
-        print "At $reader->nodeType, $reader->name\n";
-        
-        $columnDivPattern = (new Pattern())
-            ->withTokenSeries([XmlToken::elementToken('div')->withReqAttrs([ ['type', 'column']])
-            ->withOptAttrs([ ['xml:lang', '/.*/'], ['n', '/\d+/']])
-        ]);
-        $gapPattern = (new Pattern())
-            ->withTokenSeries([XmlToken::elementToken('gap')->withReqAttrs([ ['unit', 'column'], ['reason', 'pending-transcription']])
-            ->withOptAttrs([ ['xml:lang', '/.*/'], ['n', '/\d+/']])
-        ]);
-        $matcherColumn = new XmlMatcher($columnDivPattern);
-        $matcherGap = new XmlMatcher($gapPattern);
-        
-        $matcherColumn->match($reader);
-        $matcherGap->match($reader);
-        $gapOrColumnFound = false;
-        $pageDiv['countGapsAndColumns'] = 0;
-        while ($matcherGap->matchFound() or $matcherColumn->matchFound()) {
-            $gapOrColumnFound = true;
-            print "Gap or column found\n";
-            $pageDiv['countGapsAndColumns']++;
-            if ($matcherGap->matchFound()) {
-                for ($i=0; $i<$matcherGap->matched[0]['attributes']['n']; $i++){
-                    $pageDiv['cols'][] = [];
+
+        return true;
+    }
+    
+    private function getLang($sXml){
+        $lang = (string) $sXml->attributes('xml', TRUE)['lang'];
+        if ($lang === NULL) {
+            $lang = '';
+        }
+        return $lang;
+    }
+    
+    private function processPageDiv($sXml, $pageDiv)
+    {
+        if (count($sXml->div)>0 || 
+                count($sXml->gap) > 0) {
+            // First, process the column divs
+            foreach ($sXml->div as $cDiv){
+                $colNumber = (int) $cDiv['n'];
+                if (!$colNumber){
+                    // Bad col number
+                    return false;
                 }
-            } else {
-                // column div 
-                $currentColumn = $matcherColumn->matched[0]['attributes']['n']-1;
-                $columnDivXml = $reader->readInnerXml();
-                $colTranscription = $this->readColumn($columnDivXml);
+                $colLang = '';
+                if ( (string) $cDiv->attributes('xml', TRUE)['lang']){
+                    $colLang = (string) $cDiv->attributes('xml', TRUE)['lang'];
+                }
+                $colTranscription = $this->readColumn($cDiv);
                 if ($colTranscription === false){
                     return false;
                 }
-                $pageDiv['cols'][$currentColumn] = $colTranscription;
+                $pageDiv['cols'][$colNumber-1]['transcription'] = 
+                        $colTranscription;
+                
+                $pageDiv['cols'][$colNumber-1]['lang'] = $colLang;
             }
-            XmlMatcher::advanceReader($reader);
-            print "At $reader->nodeType, $reader->name\n";
-            $matcherColumn->reset();
-            $matcherColumn->match($reader);
-            $matcherGap->reset();
-            $matcherGap->match($reader);
-        }
-        // No column or gaps, read elements
-        if (!$gapOrColumnFound){
-            $colTranscription = $this->readColumn($pageDivXml);
-            if ($colTranscription === false){
-                return false;
+            
+            // Second, get the gaps
+            $declaredMissingColumns = 0;
+            foreach($sXml->gap as $gap){
+                $declaredMissingColumns += (int) $gap['n'];
             }
-            $pageDiv['cols'][] = $colTranscription;
+            $pageDiv['nGaps'] = $declaredMissingColumns;
+            return $pageDiv;
         }
-        
-        $this->transcription['pageDivs'][] = $pageDiv;
-        return true;
+       
+        // Single column in page div
+        $colTranscription = $this->readColumn($sXml);
+        if ($colTranscription === false){
+            return false;
+        }
+        $pageDiv['cols'][0] = [];
+        $pageDiv['cols'][0]['transcription'] = $colTranscription;
+        $pageDiv['cols'][0]['lang'] = '';
+        return $pageDiv;
     }
     
     public function readColumn($xml)
@@ -214,42 +260,38 @@ class TranscriptionReader {
         return [];
     }
     
-    public function getInfoFromHeader(\XMLReader $reader)
+    private function getInfoFromHeader($theHeader)
     {
-        // 1. Get editor username
-        if (!$this->fastForwardToElement($reader, 'TEI', self::MSG_LOOKING_FOR_TEI, true)) {
-            if ($this->errorNumber === self::ERROR_WRONG_ELEMENT){
-                $this->setError(self::ERROR_NOT_TEI, self::MSG_NOT_TEI, self::MSG_LOOKING_FOR_TEI);
-            }
+        if (count($theHeader->fileDesc) === 0 ||
+            count($theHeader->fileDesc->titleStmt) === 0 ||
+            count($theHeader->fileDesc->titleStmt->editor) === 0) {
+            $this->setError(self::ERROR_INCORRECT_STRUCTURE, 
+                    self::MSG_NO_EDITOR, 
+                    "inside of teiHeader; expected \fileDesc\titleStmt\editor");
             return false;
         }
-        if (!$this->fastForwardToElement($reader, 'teiHeader', self::MSG_LOOKING_FOR_TEI_HEADER)) {
-            return false;
-        }
-        $theHeader = simplexml_load_string($reader->readOuterXml());
-        if (!isset($theHeader->fileDesc->titleStmt->editor)){
-            $this->setError(self::ERROR_INCORRECT_STRUCTURE, self::MSG_NO_EDITOR, "inside of teiHeader; expected \fileDesc\titleStmt\editor");
-            return false;
-        }
-        $editorUsername = (string) $theHeader->fileDesc->titleStmt->editor->attributes('xml', TRUE)['id'];
+        $editorUsername = (string) $theHeader->fileDesc->titleStmt
+                ->editor->attributes('xml', TRUE)['id'];
         if ($editorUsername === '' or $editorUsername === NULL){
-            $this->setError(self::ERROR_NO_EDITOR, self::MSG_NO_EDITOR, "in TEI\teiHeader\fileDesc\titleStmt");
+            $this->setError(self::ERROR_NO_EDITOR, 
+                    self::MSG_NO_EDITOR, "in TEI\teiHeader\fileDesc\titleStmt");
             return false;
         }
         $this->transcription['editors'][] = $editorUsername;
         return true;
     }
     
-    public function getDefaultLanguageFromTextElement(\XMLReader $reader){
+    public function getDefaultLanguageFromTextElement($sXml){
+       
+        $defaultLang = (string) $sXml->attributes('xml', TRUE)['lang'];
         
-        if (!$this->fastForwardToElement($reader, 'text', self::MSG_LOOKING_FOR_TEXT_ELEMENT)) {
+        if ($defaultLang === '' or $defaultLang === NULL) {
+            $this->setError(self::ERROR_XML_LANG_NOT_FOUND, 
+                    self::MSG_XML_LANG_REQUIRED, " in <text> element");
             return false;
         }
-        if ($reader->getAttribute('xml:lang') === NULL){
-            $this->setError(self::ERROR_XML_LANG_NOT_FOUND, self::MSG_XML_LANG_REQUIRED, " in <text> element");
-            return false;
-        }
-        $this->transcription['defaultLang'] = $reader->getAttribute('xml:lang');
+       
+        $this->transcription['defaultLang'] = $defaultLang;
         return true;
     }
   
@@ -262,7 +304,9 @@ class TranscriptionReader {
      * @param type $errorContext
      * @return boolean
      */
-    public function fastForwardToElement(XMLReader $reader, string $elementName, $errorContext = '', $strictMode = false){
+    private function fastForwardToElement(XMLReader $reader, 
+            string $elementName, $errorContext = '', $strictMode = false)
+    {
         
         while ($reader->read()){
             if ($reader->nodeType === XMLReader::ELEMENT){
@@ -270,24 +314,70 @@ class TranscriptionReader {
                     return true;
                 }
                 if ($strictMode) { 
-                    $this->setError(self::ERROR_WRONG_ELEMENT, sprintf(self::MSG_EXPECTED_ELEMENT, $elementName, $reader->name));
+                    $this->setError(self::ERROR_WRONG_ELEMENT, 
+                            sprintf(self::MSG_EXPECTED_ELEMENT, $elementName, 
+                                    $reader->name));
                     return false;
                 }
-                $this->addWarning(self::WARNING_IGNORED_ELEMENT, sprintf(self::MSG_IGNORED_ELEMENT, $reader->name), $errorContext);
+                $this->addWarning(self::WARNING_IGNORED_ELEMENT, 
+                        sprintf(self::MSG_IGNORED_ELEMENT, $reader->name), 
+                        $errorContext);
             }
         }
         $this->setError(self::ERROR_EOF, self::MSG_END_OF_FILE, $errorContext);
         return false;
     }
 
-    private function addWarning(int $warningNo, string $warningMsg=self::MSG_GENERIC_WARNING, string $warningContext = ''){
+    private function addWarning(int $warningNo, 
+            string $warningMsg=self::MSG_GENERIC_WARNING, 
+            string $warningContext = '')
+    {
         $this->warnings[] = [ $warningNo, $warningMsg, $warningContext];
     }
     
-    private function setError(int $errNo, string $msg = self::MSG_GENERIC_ERROR, string $context = ''){
+    private function setError(int $errNo, 
+            string $msg = self::MSG_GENERIC_ERROR, string $context = '')
+    {
         $this->errorNumber = $errNo;
         $this->errorMsg = $msg;
         $this->errorContext = $context;
+    }
+    
+    /**
+     * Returns the facs and lang attributes from the <div> element.
+     * If the element is not valid, returns false.
+     *
+     * @param XmlReader $reader
+     * @return array
+     */
+    private function getInfoFromPageDivElement($sXml)
+    {   
+        
+        $reader = new XMLReader();
+        $reader->XML($sXml->asXml());
+        $reader->read();
+        $divType = $reader->getAttribute('type');
+        if ($divType === NULL || $divType !== 'page'){
+            $warningMsg = sprintf(self::MSG_IGNORED_ELEMENT, 
+                            "<div type=\"$divType\">");
+            $this->addWarning(self::WARNING_IGNORED_ELEMENT, $warningMsg);
+            print "Warning: $warningMsg\n";
+             return true;
+        }
+        $pageDivPattern =  (new Pattern())
+            ->withTokenSeries([XmlToken::elementToken('div')
+                    ->withReqAttrs([ ['type', 'page'], ['facs', '/.*/']])
+            ->withOptAttrs([ ['xml:lang', '/.*/']])
+        ]);
+        $matcher = new XmlMatcher($pageDivPattern);
+        $matcher->match($reader);
+        if (!$matcher->matchFound()){
+            $this->setError(self::ERROR_BAD_PAGE_DIV, self::MSG_BAD_PAGE_DIV);
+            return false;
+        }
+        return [ 'facs' => $matcher->matched[0]['attributes']['facs'],
+                 'lang' => $matcher->matched[0]['attributes']['xml:lang']
+            ];
     }
     
 }

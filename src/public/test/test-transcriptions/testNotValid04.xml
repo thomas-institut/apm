@@ -1,7 +1,7 @@
-<!-- INVALID: editor element in the wrong place -->
+<!--  NOT VALID: editor in the wrong place-->
 <TEI>
     <teiHeader>
-                <editor xml:id="someusername"/>
+        <editor xml:id="someusername"/>
     </teiHeader>
     <text>
         <body>

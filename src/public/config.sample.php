@@ -1,25 +1,21 @@
 <?php
+/**
+ * Sample configuration file
+ * 
+ * Edit with your production or development parameters
+ * 
+ */
 $config['db']['host'] = "localhost";
-$config['db']['user'] = "admin";
-$config['db']['pwd'] = "p7kir7";
-$config['db']['db'] = "averroes";
+$config['db']['user'] = "MYSQL USER";
+$config['db']['pwd'] = "PASSWORD";
+$config['db']['db'] = "THE DATABASE";
 
+// This is fine for development with the PHP server
 $config['baseurl']='http://localhost:8888/public';
 
-$config['tables'] = array();
-$config['tables']['settings']   = 'ap_settings';
-$config['tables']['ednotes']    = 'ap_ednotes';
-$config['tables']['elements']   = 'ap_elements';
-$config['tables']['items']      = 'ap_items';
-$config['tables']['hands']      = 'ap_hands';
-$config['tables']['users']      = 'ap_users';
-$config['tables']['relations']  = 'ap_relations';
-$config['tables']['docs']       = 'ap_docs';
-$config['tables']['people']     = 'ap_people';
-$config['tables']['pages']      = 'ap_pages';
+/// For production it should be something like this:
+//$config['baseurl']='http://somehost.com/somesubdir';
 
 // slim error handling
 // ATTENTION: set to false in production
 $config['displayErrorDetails'] = true;
-
-

@@ -23,22 +23,25 @@
  */
 namespace AverroesProject;
 
-use \Psr\Http\Message\ServerRequestInterface as Request;
-use \Psr\Http\Message\ResponseInterface as Response;
+require 'vendor/autoload.php';
+
 use AverroesProject\DataTable\MySqlDataTable;
 use AverroesProject\DataTable\MySqlDataTableWithRandomIds;
 
-require 'vendor/autoload.php';
-
-
-// Options that change from development to production
-// (e.g., database access credentials) go into config.php
+/**
+ * Runtime configurations: DB credentials, base URL
+ */
 require 'config.php';
+
+/**
+ * MySQL table configuration
+ */
+require 'config.tables.php';
 
 
 // Application parameters
 $config['app_name'] = 'Averroes Project Manager';
-$config['version'] = '0.0.12 (α)';
+$config['version'] = '0.0.13 (α)';
 $config['copyright_notice'] = '2016-17, <a href="http://www.thomasinstitut.uni-koeln.de/">Thomas-Institut</a>, <a href="http://www.uni-koeln.de/">Universität zu Köln</a>';
 
 $config['default_timezone'] = "Europe/Berlin";
@@ -59,25 +62,29 @@ $container = $app->getContainer();
 //        return \AverroesProject\SiteController::errorPage($request, $response, $exception);
 //    };
 //};
-// Database
 
 // Big Data manager... will be gone at some point
 $container['db'] = function($c){
-   $db = new AverroesProjectData($c['settings']['db'], $c['settings']['tables']);
+   $db = new AverroesProjectData($c['settings']['db'], 
+           $c['settings']['tables']);
    return $db ;
 };
 
 // PDO Database and others
 $container['dbh'] = function($c){
-   $dbh = new \PDO('mysql:dbname='. $c['settings']['db']['db'] . ';host=' . $c['settings']['db']['host'], $c['settings']['db']['user'], $c['settings']['db']['pwd']);
+   $dbh = new \PDO('mysql:dbname='. $c['settings']['db']['db'] . ';host=' . 
+           $c['settings']['db']['host'], $c['settings']['db']['user'], 
+           $c['settings']['db']['pwd']);
    $dbh->query("set character set 'utf8'");
    $dbh->query("set names 'utf8'");
    return $dbh ;
 };
 
+// User Manager
 $container['um'] = function ($c){
     $um = new UserManager(
-            new MySqlDataTableWithRandomIds($c->dbh, $c['settings']['tables']['users'], 10000, 100000),
+            new MySqlDataTableWithRandomIds($c->dbh, 
+                    $c['settings']['tables']['users'], 10000, 100000),
             new MySqlDataTable($c->dbh, $c['settings']['tables']['relations']), 
             new MySqlDataTable($c->dbh, $c['settings']['tables']['people']));
     return $um;
@@ -90,8 +97,10 @@ $container['view'] = function ($container) {
         'cache' => false   // Change this eventually!
     ]);
     // Instantiate and add Slim specific extension
-    $basePath = rtrim(str_ireplace('index.php', '', $container['request']->getUri()->getBasePath()), '/');
-    $view->addExtension(new \Slim\Views\TwigExtension($container['router'], $basePath));
+    $basePath = rtrim(str_ireplace('index.php', '', 
+            $container['request']->getUri()->getBasePath()), '/');
+    $view->addExtension(new \Slim\Views\TwigExtension(
+            $container['router'], $basePath));
     return $view;
 };
 
@@ -115,12 +124,14 @@ $app->get('/','\AverroesProject\Site\SiteController:homePage')
         ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
 
 // USER.PROFILE
-$app->get('/user/{username}', '\AverroesProject\Site\SiteController:userProfilePage')
+$app->get('/user/{username}', 
+        '\AverroesProject\Site\SiteController:userProfilePage')
         ->setName('user.profile')
         ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
 
 // USER.SETTINGS
-$app->get('/user/{username}/settings', '\AverroesProject\Site\SiteController:userSettingsPage')
+$app->get('/user/{username}/settings', 
+        '\AverroesProject\Site\SiteController:userSettingsPage')
         ->setName('user.settings')
         ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
 
@@ -134,7 +145,8 @@ $app->get('/documents','\AverroesProject\Site\SiteController:documentsPage')
         ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
 
 // PAGEVIEWER
-$app->get('/pageviewer/{doc}/{page}', '\AverroesProject\Site\SiteController:pageViewerPage')
+$app->get('/pageviewer/{doc}/{page}', 
+        '\AverroesProject\Site\SiteController:pageViewerPage')
         ->setName('pageviewer')
         ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
 
@@ -147,11 +159,13 @@ $app->get('/pageviewer/{doc}/{page}', '\AverroesProject\Site\SiteController:page
 $app->group('/api', function (){
     
     // API -> getElements
-    $this->get('/{document}/{page}/{column}/elements', '\AverroesProject\Api\ApiController:getElementsByDocPageCol')
+    $this->get('/{document}/{page}/{column}/elements', 
+            '\AverroesProject\Api\ApiController:getElementsByDocPageCol')
         ->setName('api_getelements');
     
     // API -> numColumns
-    $this->get('/{document}/{page}/numcolumns', '\AverroesProject\Api\ApiController:getNumColumns')
+    $this->get('/{document}/{page}/numcolumns', 
+            '\AverroesProject\Api\ApiController:getNumColumns')
         ->setName('api_numcolumns');
 
 })->add('\AverroesProject\Api\ApiAuthentication');

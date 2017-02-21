@@ -4,5 +4,6 @@
 *.zip
 /php-sessions
 src/public/vendor/
+src/public/config.php
 /src/scratch
 *.bak

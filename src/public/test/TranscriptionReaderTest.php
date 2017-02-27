@@ -121,7 +121,7 @@ class TranscriptionReaderTest extends TestCase {
         $this->assertEquals('someid', $pageDiv['facs']);
         $this->assertEquals('', $pageDiv['lang']);
         $this->assertCount(1, $pageDiv['cols']);
-        $col = $pageDiv['cols'][0];
+        $col = $pageDiv['cols'][1];
         $this->assertEquals([],$col['transcription'] );
         $this->assertEquals('', $col['lang']);
         
@@ -143,7 +143,7 @@ class TranscriptionReaderTest extends TestCase {
         $this->assertEquals('someid', $pageDiv1['facs']);
         $this->assertEquals('', $pageDiv1['lang']);
         $this->assertCount(1, $pageDiv1['cols']);
-        $col2 = $pageDiv1['cols'][0];
+        $col2 = $pageDiv1['cols'][1];
         $this->assertEquals([], $col2['transcription'] );
         $this->assertEquals('', $col2['lang']);
         
@@ -151,9 +151,9 @@ class TranscriptionReaderTest extends TestCase {
         $this->assertEquals('someotherid', $pageDiv2['facs']);
         $this->assertCount(1, $pageDiv2['cols']);
         $this->assertEquals(1, $pageDiv2['nGaps']);
-        $this->assertFalse(isset($pageDiv2['cols'][0]));
-        $this->assertTrue(isset($pageDiv2['cols'][1]));
-        $col3 = $pageDiv2['cols'][1];
+        $this->assertFalse(isset($pageDiv2['cols'][1]));
+        $this->assertTrue(isset($pageDiv2['cols'][2]));
+        $col3 = $pageDiv2['cols'][2];
         $this->assertEquals([], $col3['transcription'] );
         $this->assertEquals('', $col3['lang']);
         

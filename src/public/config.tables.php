@@ -4,7 +4,7 @@
  */
 
 
-$config['tables'] = array();
+$config['tables'] = [];
 $config['tables']['settings']   = 'ap_settings';
 $config['tables']['ednotes']    = 'ap_ednotes';
 $config['tables']['elements']   = 'ap_elements';

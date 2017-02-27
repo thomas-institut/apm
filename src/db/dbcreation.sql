@@ -1,10 +1,8 @@
 -- Averroes Project
--- Database version 5
+-- Database version 6
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
-
--- --------------------------------------------------------
 
 --
 -- Table structure for table `ap_docs`
@@ -46,8 +44,7 @@ CREATE TABLE `ap_ednotes` (
 CREATE TABLE `ap_elements` (
   `id` int(11) NOT NULL,
   `type` int(11) NOT NULL DEFAULT '0',
-  `doc_id` int(11) NOT NULL,
-  `page_number` int(11) NOT NULL,
+  `page_id` int(11) NOT NULL,
   `column_number` int(11) NOT NULL DEFAULT '0',
   `seq` int(11) NOT NULL,
   `lang` varchar(3) DEFAULT 'la',
@@ -93,6 +90,21 @@ CREATE TABLE `ap_items` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `ap_pages`
+--
+
+CREATE TABLE `ap_pages` (
+  `id` int(11) NOT NULL,
+  `doc_id` int(11) NOT NULL,
+  `page_number` int(11) NOT NULL,
+  `type` int(11) NOT NULL,
+  `lang` varchar(3) DEFAULT 'la',
+  `foliation` varchar(16) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `ap_people`
 --
 
@@ -129,6 +141,87 @@ CREATE TABLE `ap_settings` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `ap_types_element`
+--
+
+CREATE TABLE `ap_types_element` (
+  `id` int(11) NOT NULL,
+  `name` varchar(32) NOT NULL,
+  `descr` varchar(1024) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Dumping data for table `ap_types_element`
+--
+
+INSERT INTO `ap_types_element` (`id`, `name`, `descr`) VALUES
+(1, 'line', 'Line of text inside a column'),
+(2, 'head', 'Column or page heading'),
+(3, 'gloss', 'Marginal gloss'),
+(4, 'pagenumber', 'Page number'),
+(5, 'custodes', 'Custodes'),
+(6, 'notemark', 'A mark to which notes can refer'),
+(7, 'addition', 'Added text');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `ap_types_item`
+--
+
+CREATE TABLE `ap_types_item` (
+  `id` int(11) NOT NULL,
+  `name` varchar(32) NOT NULL,
+  `descr` varchar(1024) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Dumping data for table `ap_types_item`
+--
+
+INSERT INTO `ap_types_item` (`id`, `name`, `descr`) VALUES
+(1, 'text', 'Text'),
+(2, 'rubric', 'Rubric'),
+(3, 'sic', 'Sic: text that is obviously wrong. A corrected version could be provided'),
+(4, 'unclear', 'Unclear text'),
+(5, 'illegible', 'Illegible text'),
+(6, 'gliph', 'Illegible gliph'),
+(7, 'addition', 'Added text'),
+(8, 'deletion', 'Deleted text'),
+(9, 'mark', 'A mark in the text to which notes and extra column additions can refer'),
+(10, 'nolb', 'A mark at the end of an element to signal that the word before it does not end at the break'),
+(11, 'abbreviation', 'Abbreviation with possible expansion'),
+(12, 'linebreak', 'Line break');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `ap_types_page`
+--
+
+CREATE TABLE `ap_types_page` (
+  `id` int(11) NOT NULL,
+  `name` varchar(32) NOT NULL,
+  `descr` varchar(1024) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Dumping data for table `ap_types_page`
+--
+
+INSERT INTO `ap_types_page` (`id`, `name`, `descr`) VALUES
+(0, 'notset', 'Type not set'),
+(1, 'text', 'Regular page with text'),
+(2, 'blank', 'Blank page'),
+(3, 'frontmatter', 'Front matter'),
+(4, 'backmatter', 'Back matter'),
+(5, 'spinepic', 'Picture of the spine'),
+(6, 'pageblockpic', 'Picture of the text block'),
+(7, 'coverpic', 'Picture of the cover');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `ap_users`
 --
 
@@ -161,9 +254,10 @@ ALTER TABLE `ap_ednotes`
 --
 ALTER TABLE `ap_elements`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `doc_id` (`doc_id`),
   ADD KEY `editor_id` (`editor_id`),
-  ADD KEY `hand_id` (`hand_id`);
+  ADD KEY `hand_id` (`hand_id`),
+  ADD KEY `type` (`type`),
+  ADD KEY `page_id` (`page_id`);
 
 --
 -- Indexes for table `ap_hands`
@@ -177,7 +271,16 @@ ALTER TABLE `ap_hands`
 ALTER TABLE `ap_items`
   ADD PRIMARY KEY (`id`),
   ADD KEY `hand_id` (`hand_id`),
-  ADD KEY `ce_id` (`ce_id`);
+  ADD KEY `ce_id` (`ce_id`),
+  ADD KEY `type` (`type`);
+
+--
+-- Indexes for table `ap_pages`
+--
+ALTER TABLE `ap_pages`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `doc_id` (`doc_id`),
+  ADD KEY `type` (`type`);
 
 --
 -- Indexes for table `ap_people`
@@ -197,6 +300,24 @@ ALTER TABLE `ap_relations`
 --
 ALTER TABLE `ap_settings`
   ADD PRIMARY KEY (`key`);
+
+--
+-- Indexes for table `ap_types_element`
+--
+ALTER TABLE `ap_types_element`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `ap_types_item`
+--
+ALTER TABLE `ap_types_item`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `ap_types_page`
+--
+ALTER TABLE `ap_types_page`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `ap_users`
@@ -220,16 +341,25 @@ ALTER TABLE `ap_ednotes`
 -- Constraints for table `ap_elements`
 --
 ALTER TABLE `ap_elements`
-  ADD CONSTRAINT `ap_elements_ibfk_1` FOREIGN KEY (`doc_id`) REFERENCES `ap_docs` (`id`) ON UPDATE CASCADE,
   ADD CONSTRAINT `ap_elements_ibfk_2` FOREIGN KEY (`editor_id`) REFERENCES `ap_users` (`id`) ON UPDATE CASCADE,
-  ADD CONSTRAINT `ap_elements_ibfk_3` FOREIGN KEY (`hand_id`) REFERENCES `ap_hands` (`id`) ON UPDATE CASCADE;
+  ADD CONSTRAINT `ap_elements_ibfk_3` FOREIGN KEY (`hand_id`) REFERENCES `ap_hands` (`id`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `ap_elements_ibfk_4` FOREIGN KEY (`type`) REFERENCES `ap_types_element` (`id`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `ap_elements_ibfk_5` FOREIGN KEY (`page_id`) REFERENCES `ap_pages` (`id`) ON UPDATE CASCADE;
 
 --
 -- Constraints for table `ap_items`
 --
 ALTER TABLE `ap_items`
   ADD CONSTRAINT `ap_items_ibfk_1` FOREIGN KEY (`ce_id`) REFERENCES `ap_elements` (`id`) ON UPDATE CASCADE,
-  ADD CONSTRAINT `ap_items_ibfk_2` FOREIGN KEY (`hand_id`) REFERENCES `ap_hands` (`id`) ON UPDATE CASCADE;
+  ADD CONSTRAINT `ap_items_ibfk_2` FOREIGN KEY (`hand_id`) REFERENCES `ap_hands` (`id`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `ap_items_ibfk_3` FOREIGN KEY (`type`) REFERENCES `ap_types_item` (`id`) ON UPDATE CASCADE;
+
+--
+-- Constraints for table `ap_pages`
+--
+ALTER TABLE `ap_pages`
+  ADD CONSTRAINT `ap_pages_ibfk_1` FOREIGN KEY (`type`) REFERENCES `ap_types_page` (`id`) ON UPDATE CASCADE,
+  ADD CONSTRAINT `ap_pages_ibfk_2` FOREIGN KEY (`doc_id`) REFERENCES `ap_docs` (`id`) ON UPDATE CASCADE;
 
 --
 -- Constraints for table `ap_relations`
@@ -243,15 +373,14 @@ ALTER TABLE `ap_relations`
 ALTER TABLE `ap_users`
   ADD CONSTRAINT `fk_user_people` FOREIGN KEY (`id`) REFERENCES `ap_people` (`id`) ON UPDATE CASCADE;
 
-
 --
--- Default administrator account
+-- Default administrator account:   username 'admin' , password 'admin'
 --
 INSERT INTO `ap_people` (`id`, `fullname`) VALUES 
     (32988, 'Default Administrator');
 
 INSERT INTO `ap_users` (`id`, `username`, `password`) VALUES 
-    (32988, 'admin', '$2y$10$5Twe8z4URsXYz5dVTpIhr.ye/yrOyFTFI6XWkhh5Pyt3eYwGTg29C');
+    (32988, 'admin', '$2y$10$v7fCIPrvqgGaaZbHQI6sQOn8i9aWk5cEbJmhQDfgP.aEo0wCh0xia');
 
 INSERT INTO `ap_relations` (`id`, `userid`, `relation`, `attribute`) VALUES
     (1, 32988, 'hasRole', 'root');

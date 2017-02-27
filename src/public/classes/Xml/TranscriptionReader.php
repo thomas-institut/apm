@@ -48,16 +48,12 @@ class TranscriptionReader {
     const MSG_INCORRECT_STRUCTURE = 'Incorrect structure';
     const MSG_BAD_TEI = 'Not a valid TEI file';
     const MSG_END_OF_FILE = 'End of file found';
-    const MSG_LOOKING_FOR_TEI = 'Looking for <TEI>';
     const MSG_LOOKING_FOR_TEI_HEADER = "Looking for <teiHeader> inside <TEI>";
     const MSG_IGNORED_ELEMENT = "Ignored element <%s>";
     const MSG_NO_EDITOR = "No editor username given";
     const MSG_EXPECTED_ELEMENT = "Expected <%s>, got <%s>";
-    const MSG_NOT_TEI = "The given XML is not a TEI document";
-    const MSG_LOOKING_FOR_TEXT_ELEMENT = "Looking for <text> element";
     const MSG_XML_LANG_REQUIRED = "xml:lang attribute is required";
     const MSG_LOOKING_FOR_BODY_ELEMENT = "Looking for <body> inside <text>";
-    const MSG_LOOKING_FOR_PAGE_DIV = "Looking for page <div> inside <body>";
     const MSG_BAD_PAGE_DIV = 
             "Bad page <div>, expected <page type='page' facs='[pageId]'";
     
@@ -109,12 +105,10 @@ class TranscriptionReader {
                 $errorMsg .= $error . "; ";
             }
             $this->setError(self::ERROR_CANNOT_LOAD_XML, $errorMsg);
-            
             return false;
         }
         
         if (!$this->checkTEIBasicStructure($sXml)){
-            
             return false;
         }
         
@@ -161,12 +155,13 @@ class TranscriptionReader {
     }
     
     /**
-     * Process the xml inside <body>
-     * 
-     * @param string $xml
+     * Process the XML inside <body>
+     *
+     * @param string $sXml
      * @return boolean
      */
-    private function processBodyDiv($sXml){
+    private function processBodyDiv($sXml)
+    {
         $this->transcription['countBodyDivsProcessed']++;
 
         if (!$this->isValidPageDiv($sXml)){
@@ -193,16 +188,14 @@ class TranscriptionReader {
         if ($type !== 'page') {
             return false;
         }
-       
         if (!$facs){
             return false;
         }
-        
-
         return true;
     }
     
-    private function getLang($sXml){
+    private function getLang($sXml)
+    {
         $lang = (string) $sXml->attributes('xml', TRUE)['lang'];
         if ($lang === NULL) {
             $lang = '';
@@ -210,6 +203,16 @@ class TranscriptionReader {
         return $lang;
     }
     
+    /**
+     * Process a page div. 
+     * 
+     * Returns a 
+     * 
+     * 
+     * @param type $sXml
+     * @param type $pageDiv
+     * @return boolean|array 
+     */
     private function processPageDiv($sXml, $pageDiv)
     {
         if (count($sXml->div)>0 || 
@@ -229,10 +232,10 @@ class TranscriptionReader {
                 if ($colTranscription === false){
                     return false;
                 }
-                $pageDiv['cols'][$colNumber-1]['transcription'] = 
+                $pageDiv['cols'][$colNumber]['transcription'] = 
                         $colTranscription;
                 
-                $pageDiv['cols'][$colNumber-1]['lang'] = $colLang;
+                $pageDiv['cols'][$colNumber]['lang'] = $colLang;
             }
             
             // Second, get the gaps
@@ -249,14 +252,20 @@ class TranscriptionReader {
         if ($colTranscription === false){
             return false;
         }
-        $pageDiv['cols'][0] = [];
-        $pageDiv['cols'][0]['transcription'] = $colTranscription;
-        $pageDiv['cols'][0]['lang'] = '';
+        $pageDiv['cols'][1] = [];
+        $pageDiv['cols'][1]['transcription'] = $colTranscription;
+        $pageDiv['cols'][1]['lang'] = $pageDiv['lang'];
         return $pageDiv;
     }
     
-    public function readColumn($xml)
+    public function readColumn($sXml)
     {
+        foreach($sXml as $element){
+            switch($element->getName()){
+                case 'l':
+                    
+            }
+        }
         return [];
     }
     
@@ -295,39 +304,6 @@ class TranscriptionReader {
         return true;
     }
   
-    /**
-     * Advances an XMLReader object until the next XML element
-     * with the given name
-     * 
-     * @param XMLReader $reader
-     * @param string $elementName
-     * @param type $errorContext
-     * @return boolean
-     */
-    private function fastForwardToElement(XMLReader $reader, 
-            string $elementName, $errorContext = '', $strictMode = false)
-    {
-        
-        while ($reader->read()){
-            if ($reader->nodeType === XMLReader::ELEMENT){
-                if ($reader->name === $elementName){
-                    return true;
-                }
-                if ($strictMode) { 
-                    $this->setError(self::ERROR_WRONG_ELEMENT, 
-                            sprintf(self::MSG_EXPECTED_ELEMENT, $elementName, 
-                                    $reader->name));
-                    return false;
-                }
-                $this->addWarning(self::WARNING_IGNORED_ELEMENT, 
-                        sprintf(self::MSG_IGNORED_ELEMENT, $reader->name), 
-                        $errorContext);
-            }
-        }
-        $this->setError(self::ERROR_EOF, self::MSG_END_OF_FILE, $errorContext);
-        return false;
-    }
-
     private function addWarning(int $warningNo, 
             string $warningMsg=self::MSG_GENERIC_WARNING, 
             string $warningContext = '')

@@ -21,15 +21,68 @@ single place.
 
 ## Documents
 
-At this point the Averroes Project Manager is a manager of manuscripts and
-their transcriptions, but other types of documents may be added later on.
+Currently the Averroes Project Manager is a manager of manuscripts and
+printed editions and their transcriptions, but other types of documents may be 
+added later on. 
 
 A __document__ is an ordered collection of __pages__. Each __page__ has one or 
-more __columns__ and each column an ordered series of __elements__ of different 
-types: headings, lines, glosses, etc. Some elements such as lines, headings and 
-glosses, are composed of an ordered sequence of textual __items__ of different 
-kinds: plain text, rubrics, sics, unclear text, etc.  
+more __columns__ and each column has an ordered series of __elements__ of 
+different types: headings, lines, glosses, etc. Some elements such as lines, 
+headings and glosses, are composed of an ordered sequence of textual __items__ 
+of different kinds: plain text, rubrics, sics, unclear text, etc.  
 
+Data about documents is in the table ```ap_docs```, including information 
+necessary to retrieve page images from DARE's Bilderberg. 
+
+Page information is in the table ```ap_pages```. Each page is associated with a 
+document id, has a default language and an optional foliation number. Each page
+has also a type, which corresponds to an entry in the table ```ap_types_page```,
+but this information is not used right now.
+
+If a page has a transcription, this transcription is stored as a number of 
+elements in the ```ap_elements``` table. Each element has a type which
+corresponds to an entry in the ```ap_types_element``` table: 
+
+
+<!--
+Table data for `ap_types_element`
+-->
+
+{| class="wikitable sortable" style="text-align:center;"
+|+'''ap_types_element'''
+|-
+ ! id
+ ! name
+ ! descr
+|-
+ | 1
+ | line
+ | Line of text inside a column
+|-
+ | 2
+ | head
+ | Column or page heading
+|-
+ | 3
+ | gloss
+ | Marginal gloss
+|-
+ | 4
+ | pagenumber
+ | Page number
+|-
+ | 5
+ | custodes
+ | Custodes
+|-
+ | 6
+ | notemark
+ | A mark to which notes can refer
+|-
+ | 7
+ | addition
+ | Added text
+|}
 
  
 

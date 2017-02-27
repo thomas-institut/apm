@@ -18,7 +18,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-namespace AverroesProject;
+namespace AverroesProject\ColumnElement;
 
 /**
  * @brief columnElement class
@@ -74,7 +74,7 @@ namespace AverroesProject;
  * Parent class of column elements
  * 
  */
-class ColumnElement {
+class Element {
 
     /**
      *
@@ -186,78 +186,6 @@ class ColumnElement {
             default:
                 return FALSE;
         }
-    }
-    
-}
-
-// Some useful functions wrapped here
-class ColumnElementArray{
-    static function getMainLanguage($cearray){
-        $langs = array();
-        foreach ($cearray as $e){
-            if (isset($langs[$e->lang])){
-                $langs[$e->lang]++;
-            }
-            else {
-                $langs[$e->lang] = 1;
-            }
-        }
-     
-        return array_search(max($langs), $langs);
-    }
-    
-    static function isRightToLeft($cearray){
-        switch(ColumnElementArray::getMainLanguage($cearray)){
-            case 'ar':
-            case 'he':
-                return TRUE;
-                
-            default:
-                return FALSE;
-        }
-    }
-}
-
-
-class CeLine extends ColumnElement {
-    
-    function getLineNumber(){
-        return $this->reference;
-    }
-    
-    /**
-     * 
-     * @param int $n
-     */
-    function setLineNumber($n){
-        $this->reference = $n;
-    }
-}
-
-class CeHead extends ColumnElement {
-    
-}
-
-class CeGloss extends ColumnElement {
-    
-}
-
-class CePageNumber extends ColumnElement {
-    
-}
-
-class CeCustodes extends ColumnElement {
-    
-}
-
-class CeNoteMark extends ColumnElement {
-    
-}
-
-class CeAddition extends ColumnElement {
-    
-    function getTargetId(){
-        return $this->reference;
     }
     
 }

@@ -88,9 +88,9 @@ class TranscriptionReaderTest extends TestCase {
         $this->assertEquals(true, $result);
         $this->assertEquals('', $tsReader->errorMsg);
         $this->assertEquals('la', $tsReader->transcription['defaultLang']);
-        $this->assertCount(1, $tsReader->transcription['editors']);
+        $this->assertCount(1, $tsReader->transcription['people']);
         $this->assertEquals('someusername', 
-                $tsReader->transcription['editors'][0]);
+                $tsReader->transcription['people'][0]);
         $this->assertEquals(0, 
                 $tsReader->transcription['countBodyDivsProcessed']);
         
@@ -99,9 +99,9 @@ class TranscriptionReaderTest extends TestCase {
         $result2 = $tsReader->read($xml2);
         $this->assertEquals(true, $result2);
         $this->assertEquals('la', $tsReader->transcription['defaultLang']);
-        $this->assertCount(1, $tsReader->transcription['editors']);
+        $this->assertCount(1, $tsReader->transcription['people']);
         $this->assertEquals('someusername', 
-                $tsReader->transcription['editors'][0]);
+                $tsReader->transcription['people'][0]);
         $this->assertEquals(5, 
                 $tsReader->transcription['countBodyDivsProcessed']);
         
@@ -110,42 +110,36 @@ class TranscriptionReaderTest extends TestCase {
         $result3 = $tsReader->read($xml3);
         $this->assertEquals(true, $result3);
         $this->assertEquals('la', $tsReader->transcription['defaultLang']);
-        $this->assertCount(1, $tsReader->transcription['editors']);
+        $this->assertCount(1, $tsReader->transcription['people']);
         $this->assertEquals('someusername',
-                $tsReader->transcription['editors'][0]);
+                $tsReader->transcription['people'][0]);
         $this->assertEquals(5,
                 $tsReader->transcription['countBodyDivsProcessed']);
         $this->assertCount(1, $tsReader->transcription['pageDivs']);
         $pageDiv = $tsReader->transcription['pageDivs'][0];
-        $this->assertEquals(0, $pageDiv['id']);
         $this->assertEquals('someid', $pageDiv['facs']);
-        $this->assertEquals('', $pageDiv['lang']);
+        $this->assertEquals('', $pageDiv['defaultLang']);
         $this->assertCount(1, $pageDiv['cols']);
         $col = $pageDiv['cols'][1];
-        $this->assertEquals([],$col['transcription'] );
-        $this->assertEquals('', $col['lang']);
+        $this->assertEquals('', $col['defaultLang']);
         
         $tsReader->reset();
         $xml4 = file_get_contents('test-transcriptions/testNoRealData04.xml');
         $result4 = $tsReader->read($xml4);
         $this->assertEquals(true, $result4);
         $this->assertEquals('la', $tsReader->transcription['defaultLang']);
-        $this->assertCount(1, $tsReader->transcription['editors']);
+        $this->assertCount(1, $tsReader->transcription['people']);
         $this->assertEquals('someusername',
-                $tsReader->transcription['editors'][0]);
+                $tsReader->transcription['people'][0]);
         $this->assertEquals(6,
                 $tsReader->transcription['countBodyDivsProcessed']);
         $this->assertCount(2, $tsReader->transcription['pageDivs']);
-        foreach ($tsReader->transcription['pageDivs'] as $pageDiv){
-            $this->assertTrue(isset($pageDiv['id']));
-        }
         $pageDiv1 =  $tsReader->transcription['pageDivs'][0];
         $this->assertEquals('someid', $pageDiv1['facs']);
-        $this->assertEquals('', $pageDiv1['lang']);
+        $this->assertEquals('', $pageDiv1['defaultLang']);
         $this->assertCount(1, $pageDiv1['cols']);
         $col2 = $pageDiv1['cols'][1];
-        $this->assertEquals([], $col2['transcription'] );
-        $this->assertEquals('', $col2['lang']);
+        $this->assertEquals('', $col2['defaultLang']);
         
         $pageDiv2 = $tsReader->transcription['pageDivs'][1];
         $this->assertEquals('someotherid', $pageDiv2['facs']);
@@ -154,8 +148,7 @@ class TranscriptionReaderTest extends TestCase {
         $this->assertFalse(isset($pageDiv2['cols'][1]));
         $this->assertTrue(isset($pageDiv2['cols'][2]));
         $col3 = $pageDiv2['cols'][2];
-        $this->assertEquals([], $col3['transcription'] );
-        $this->assertEquals('', $col3['lang']);
+        $this->assertEquals('', $col3['defaultLang']);
         
     }
     

@@ -22,15 +22,15 @@
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  * 
  * 
- * A piece of transcribed text is an array of TranscribedTextItem. 
- * Each TranscribedTextItem has a unique Id that identifies it in the system, 
- * and a reference to its parent ColumnElement.
+ * A piece of transcribed text is an array of TxText\Item. 
+ * Each Item has a unique Id that identifies it in the system, 
+ * and a reference to its parent ColumnElement\Element.
  * 
- * Normally each TranscribedTextItem inherits language and hand from its
+ * Normally each Item inherits language and hand from its
  * parent, but some may have a different one. EditorialNotes can refer to 
  * TranscribedTextItem's ids. 
  * 
- * Each TranscribedTextItem then has the following data:
+ * Each Item then has the following data:
  *    id: unique Integer
  *    language:  ar | he | la | de | en | fr
  *    hand : Hand = SQL: hands.id
@@ -83,9 +83,9 @@
  *
  */
 
-namespace AverroesProject;
+namespace AverroesProject\TxText;
 
-class TranscriptionText {
+class ItemArray {
     
     /**
      *
@@ -96,13 +96,6 @@ class TranscriptionText {
     public $lang;
     public $editorId;
     public $handId;
-    public static $deletionTechniques = [ 
-        'dot-above', 
-        'dot-above-dot-under',
-        'dots-above',
-        'dots-underneath',
-        'strikeout'
-    ];
     
     /**
      *
@@ -127,7 +120,7 @@ class TranscriptionText {
      * @throws InvalidArgumentException
      */
     function addItem($item, $ordered=false){
-        if (is_a($item, 'AverroesProject\TranscriptionTextItem')){
+        if ($item instanceof Item){
             $seq = (int) $item->seq;
             if ( $seq !== -1 && !$ordered){
                 $this->theItems[$seq] = $item;
@@ -140,7 +133,7 @@ class TranscriptionText {
             
         }
         else{
-            throw new \InvalidArgumentException("Items added to a TranscriptionText should be TranscriptionTextItems, got " . get_class($item));
+            throw new \InvalidArgumentException("Objcts added to an ItemArray should be of class Item, got " . get_class($item));
         }
     }
     
@@ -194,7 +187,4 @@ class TranscriptionText {
         }
     }
     
-    public static function isDeletionTechniqueAllowed($technique){
-        return in_array($technique, TranscriptionText::$deletionTechniques);
-    }
 }

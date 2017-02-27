@@ -59,9 +59,8 @@ corresponds to an entry in the ```ap_types_element``` table:
  * 7, addition, Added text
 
 Each element is addressable by its parent page id, its column number and its
-sequence number. The column number 0 is reserved for elements that are 
-associated with the whole page, not with a particular column, for example, page
-numbers. Any other element is normally associated with columns 1 and above.
+sequence number. Column numbers start with 1; that is, there is no column
+number 0.
 
 Additionally, each element has an associated language, an editor (which has to 
 be a user in the system), and hand id (currently not 

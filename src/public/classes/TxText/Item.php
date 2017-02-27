@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (C) 2016 Universität zu Köln
+ * Copyright (C) 2017 Universität zu Köln
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,14 +17,14 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-namespace AverroesProject;
+namespace AverroesProject\TxText;
 
 /**
  * Description of TranscriptionTextItem
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class TranscriptionTextItem {
+class Item {
 
     /**
      *

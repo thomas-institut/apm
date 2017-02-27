@@ -82,10 +82,7 @@ class TranscriptionReader {
     }
     
     public function reset(){
-        $this->transcription['elements'] = [];
-        $this->transcription['items'] = [];
-        $this->transcription['ednotes'] = [];
-        $this->transcription['editors'] = [];
+        $this->transcription['people'] = [];
         $this->transcription['defaultLang'] = '';
         $this->transcription['pageDivs'] = [];
         $this->transcription['countBodyDivsProcessed'] = 0;
@@ -93,7 +90,6 @@ class TranscriptionReader {
         $this->errorMsg = '';
         $this->warnings = [];
     }
-    
     
     public function read($xml)
     {
@@ -116,9 +112,14 @@ class TranscriptionReader {
             return false;
         }
         
-        if (!$this->getDefaultLanguageFromTextElement($sXml->text)) {
+        $defaultLang = $this->getLang($sXml->text);
+        if ($defaultLang === '' or $defaultLang === NULL) {
+            $this->setError(self::ERROR_XML_LANG_NOT_FOUND, 
+                    self::MSG_XML_LANG_REQUIRED, " in <text> element");
             return false;
         }
+        
+        $this->transcription['defaultLang'] = $defaultLang;
         
         foreach ($sXml->text->body->div as $bodyDiv){
             if (!$this->processBodyDiv($bodyDiv)){
@@ -164,15 +165,13 @@ class TranscriptionReader {
     {
         $this->transcription['countBodyDivsProcessed']++;
 
-        if (!$this->isValidPageDiv($sXml)){
+        if (!$this->isPageDivElement($sXml)){
+            // Not a page div, return true
+            // = don't process but don't generate an error
             return true;
         }
-        $pageDiv = [];
-        $pageDiv['id'] = count($this->transcription['pageDivs']);
-        $pageDiv['facs'] = (string) $sXml['facs'];
-        $pageDiv['lang'] = $this->getLang($sXml);
 
-        $result = $this->processPageDiv($sXml, $pageDiv);
+        $result = $this->processPageDiv($sXml);
         if ($result === false) {
             return false;
         }
@@ -181,7 +180,14 @@ class TranscriptionReader {
         return true;
     }
     
-    private function isValidPageDiv($sXml)
+    /**
+     * Returns true if the given XML is a page div
+     * element
+     * 
+     * @param type $sXml
+     * @return boolean
+     */
+    private function isPageDivElement($sXml)
     {
         $type = (string) $sXml['type'];
         $facs = (string) $sXml['facs'];
@@ -194,6 +200,13 @@ class TranscriptionReader {
         return true;
     }
     
+    /**
+     * Returns the xml:lang attribute of the given XML
+     * or '' if not set
+     *
+     * @param type $sXml
+     * @return string
+     */
     private function getLang($sXml)
     {
         $lang = (string) $sXml->attributes('xml', TRUE)['lang'];
@@ -206,15 +219,29 @@ class TranscriptionReader {
     /**
      * Process a page div. 
      * 
-     * Returns a 
+     * Returns an associative array with the following 
+     * information:
+     * 
+     *   $r['elements'] : column elements
+     *   $r['items'] : column items
+     *   $r['ednotes'] : editorial notes
+     *   $r['people'] : editors and editorial note authors
      * 
      * 
      * @param type $sXml
      * @param type $pageDiv
      * @return boolean|array 
      */
-    private function processPageDiv($sXml, $pageDiv)
+    private function processPageDiv($sXml)
     {
+        
+        $pageDiv = [];
+        $pageDiv['facs'] = (string) $sXml['facs'];
+        $pageDiv['defaultLang'] = $this->getLang($sXml);
+        $pageDiv['cols'] = [];
+        $pageDiv['elements'] = [];
+        $pageDiv['items'] = [];
+        
         if (count($sXml->div)>0 || 
                 count($sXml->gap) > 0) {
             // First, process the column divs
@@ -224,18 +251,15 @@ class TranscriptionReader {
                     // Bad col number
                     return false;
                 }
-                $colLang = '';
-                if ( (string) $cDiv->attributes('xml', TRUE)['lang']){
-                    $colLang = (string) $cDiv->attributes('xml', TRUE)['lang'];
-                }
-                $colTranscription = $this->readColumn($cDiv);
-                if ($colTranscription === false){
+                $pageDiv['cols'][$colNumber] = [];
+                $pageDiv['cols'][$colNumber]['defaultLang'] = 
+                        $this->getLang($cDiv);
+
+                $readResult = $this->readColumn($cDiv, $pageDiv);
+                if ($readResult === false){
                     return false;
                 }
-                $pageDiv['cols'][$colNumber]['transcription'] = 
-                        $colTranscription;
-                
-                $pageDiv['cols'][$colNumber]['lang'] = $colLang;
+                $pageDiv = $readResult;
             }
             
             // Second, get the gaps
@@ -248,25 +272,39 @@ class TranscriptionReader {
         }
        
         // Single column in page div
-        $colTranscription = $this->readColumn($sXml);
-        if ($colTranscription === false){
+        
+        $pageDiv['cols'][1] = [];
+        $pageDiv['cols'][1]['defaultLang'] = $pageDiv['defaultLang'];
+        
+        $readResult2 = $this->readColumn($sXml, $pageDiv);
+        if ($readResult2 === false){
             return false;
         }
-        $pageDiv['cols'][1] = [];
-        $pageDiv['cols'][1]['transcription'] = $colTranscription;
-        $pageDiv['cols'][1]['lang'] = $pageDiv['lang'];
+        $pageDiv = $readResult2;
+        
         return $pageDiv;
     }
     
-    public function readColumn($sXml)
-    {
+    /**
+     * Reads a column of transcription. Returns
+     * an updated page div or false if there's any error.
+     * 
+     * @param type $sXml
+     * @param type $pageDiv
+     * @return array
+     */
+    private function readColumn($sXml, $pageDiv)
+    {   
+        $nextElementId = count($pageDiv['elements']);
+        $nextItemId = count($pageDiv['items']);
+        
         foreach($sXml as $element){
             switch($element->getName()){
                 case 'l':
                     
             }
         }
-        return [];
+        return $pageDiv;
     }
     
     private function getInfoFromHeader($theHeader)
@@ -286,24 +324,10 @@ class TranscriptionReader {
                     self::MSG_NO_EDITOR, "in TEI\teiHeader\fileDesc\titleStmt");
             return false;
         }
-        $this->transcription['editors'][] = $editorUsername;
+        $this->transcription['people'][] = $editorUsername;
         return true;
     }
     
-    public function getDefaultLanguageFromTextElement($sXml){
-       
-        $defaultLang = (string) $sXml->attributes('xml', TRUE)['lang'];
-        
-        if ($defaultLang === '' or $defaultLang === NULL) {
-            $this->setError(self::ERROR_XML_LANG_NOT_FOUND, 
-                    self::MSG_XML_LANG_REQUIRED, " in <text> element");
-            return false;
-        }
-       
-        $this->transcription['defaultLang'] = $defaultLang;
-        return true;
-    }
-  
     private function addWarning(int $warningNo, 
             string $warningMsg=self::MSG_GENERIC_WARNING, 
             string $warningContext = '')
@@ -317,43 +341,6 @@ class TranscriptionReader {
         $this->errorNumber = $errNo;
         $this->errorMsg = $msg;
         $this->errorContext = $context;
-    }
-    
-    /**
-     * Returns the facs and lang attributes from the <div> element.
-     * If the element is not valid, returns false.
-     *
-     * @param XmlReader $reader
-     * @return array
-     */
-    private function getInfoFromPageDivElement($sXml)
-    {   
-        
-        $reader = new XMLReader();
-        $reader->XML($sXml->asXml());
-        $reader->read();
-        $divType = $reader->getAttribute('type');
-        if ($divType === NULL || $divType !== 'page'){
-            $warningMsg = sprintf(self::MSG_IGNORED_ELEMENT, 
-                            "<div type=\"$divType\">");
-            $this->addWarning(self::WARNING_IGNORED_ELEMENT, $warningMsg);
-            print "Warning: $warningMsg\n";
-             return true;
-        }
-        $pageDivPattern =  (new Pattern())
-            ->withTokenSeries([XmlToken::elementToken('div')
-                    ->withReqAttrs([ ['type', 'page'], ['facs', '/.*/']])
-            ->withOptAttrs([ ['xml:lang', '/.*/']])
-        ]);
-        $matcher = new XmlMatcher($pageDivPattern);
-        $matcher->match($reader);
-        if (!$matcher->matchFound()){
-            $this->setError(self::ERROR_BAD_PAGE_DIV, self::MSG_BAD_PAGE_DIV);
-            return false;
-        }
-        return [ 'facs' => $matcher->matched[0]['attributes']['facs'],
-                 'lang' => $matcher->matched[0]['attributes']['xml:lang']
-            ];
     }
     
 }

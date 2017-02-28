@@ -16,8 +16,9 @@ namespace AverroesProject\ColumnElement;
 class NoteMark extends Element 
 {
     
-    public function __construct()
+    public function __construct($id = 0, $colNumber = 0)
     {
+        parent::__construct($id, $colNumber, '');
         $this->type = parent::NOTE_MARK;
     }
         

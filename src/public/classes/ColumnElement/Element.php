@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (C) 2016 Universität zu Köln
+ * Copyright (C) 2017 Universität zu Köln
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,58 +21,7 @@
 namespace AverroesProject\ColumnElement;
 
 /**
- * @brief columnElement class
- *
- * @author Rafael Nájera <rafael.najera@uni-koeln.de>
- * 
- * 
- * Manuscripts are composed of items of type ColumnElement, which represent all 
- * possible elements that belong to a column or a page: 
- * 
- *      line | head | fw | gloss | off-flow addition | offline editorial note
- * 
- * All columnElement items have:
- *    id: unique Integer that identifies the element in the system
- *    language:  ar | he | la | de | en | fr
- *    hand : Hand = SQL: hands.id
- *    editor: Editor  = SQL: users.id  
- *    timestamp: DateTime
- *    pageId:  int = SQL: pages.id
- *    column: Integer  ( column = 0 means that the element is associated with the whole page)
- *    sequence: Integer 
- * 
- * line :
- *   theText : TranscribedText
- *   lineNumber : Integer   (this can be calculated based on the line's sequence 
- *                           once all lines are in)
- * head: 
- *   theText : TranscribedText 
- * 
- * gloss: 
- *   theText : TranscribedText
- *   placement:  left-margin | right-margin
- *
- * pageNumber : (usually by a different hand!)
- *   theNumber : TranscribedText 
- *   // perhaps also placement?
- * 
- * custodes: 
- *   theText : TranscribedText
- * 
- * offline note mark:
- *   a placeholder to which off-line editorial notes can be associated.
- * 
- *  off-flow addition: 
- *        theText : TranscribedText
- *        placement: margin-top | margin-bottom | margin-left | margin-right
- *        targets: associated metamarks or deletion ids
- */
-
-
-/**
- * @class Element 
- * Parent class of column elements
- * 
+ * The base class for all Column Elements
  */
 class Element {
 
@@ -83,23 +32,16 @@ class Element {
      */
     public $id;
     
-    
+
     /**
-     *
-     * @var string
-     * the document Id = DARE Id
+     * Page Id to which the element belongs.
+     * @var int 
      */
-    public $documentId;
-    
+    public $pageId;
     /**
      *
-     * @var string $page
-     * Page ID (e.g. DARE id)
-     */
-    public $pageNumber;
-    /**
+     * @var int 
      *
-     * @var int $column
      * The column number. 0 means the element is associated with the 
      * page rather than with one of the text columns 
      */
@@ -107,7 +49,8 @@ class Element {
     /**
      *
      * @var int $seq
-     * The element's sequence number within the column 
+     * The element's sequence number within the column. By convention
+     * the first element has sequence number 1
      */
     public $seq;
     
@@ -118,7 +61,7 @@ class Element {
     public $lang;
     
     /**
-     * @var int $hand 
+     * @var int $handId
      * @brief The element's hand
      */
     public $handId;
@@ -152,16 +95,20 @@ class Element {
     const NOTE_MARK = 6;
     const ADDITION = 7;
     
-    // fields that may change meaning depending on the 
-    // type of columnElement
+    // 
+    // Fields that may or may not be used depending on the type
+    // of element
+    // 
+    
     /**
      *
-     * @var TranscriptionText
+     * @var ItemArray
      * The transcribed text  
+     * 
      * In the DB it is not necessary because the transcribedText elements
      * will refer to the column element id.
      */
-    public $transcribedText;
+    public $items;
     /**
      *
      * @var int 
@@ -177,14 +124,25 @@ class Element {
      */
     public $placement;
     
+    public function __construct($id = 0, $colNumber = 0, $lang = '') {
+        $this->id = $id;
+        $this->columnNumber = $colNumber;
+        $this->handId = 0;
+        $this->items = [];
+        $this->lang = $lang;
+        $this->editorId  = 0;
+        $this->reference = NULL;
+        $this->placement = NULL;
+    }
+    
     function isRightToLeft(){
         switch($this->lang){
             case 'ar':
             case 'he':
-                return TRUE;
+                return true;
                 
             default:
-                return FALSE;
+                return false;
         }
     }
     

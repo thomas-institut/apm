@@ -15,8 +15,9 @@ namespace AverroesProject\ColumnElement;
  */
 class Addition extends Element {
         
-    public function __construct()
+    public function __construct($id = 0, $colNumber = 0, $lang = '')
     {
+        parent::__construct($id, $colNumber, $lang);
         $this->type = parent::ADDITION;
     }
     

@@ -382,13 +382,13 @@ class AverroesProjectData extends \mysqli{
             $e->timestamp = $row['time'];
             $e->type = (int) $row['type'];
             
-            $e->transcribedText = $this->getTranscribedText($e->id, $e->lang, $e->editorId, $e->handId);
+            $e->items = $this->getItemsForElement($e->id, $e->lang, $e->editorId, $e->handId);
             array_push($elements, $e);
         }
         return $elements;
     }
     
-    function getTranscribedText($cid, $lang, $editorId, $handId){
+    function getItemsForElement($cid, $lang, $editorId, $handId){
         $query = 'SELECT * FROM `' . $this->tables['items'] . 
                 '` WHERE `ce_id`=' . $cid . 
                 ' ORDER BY `seq` ASC';

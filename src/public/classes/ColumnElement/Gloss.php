@@ -17,8 +17,9 @@ namespace AverroesProject\ColumnElement;
 class Gloss extends Element
 {
     
-    public function __construct()
+    public function __construct($id = 0, $colNumber = 0, $lang = '')
     {
+        parent::__construct($id, $colNumber, $lang);
         $this->type = parent::GLOSS;
     }
     

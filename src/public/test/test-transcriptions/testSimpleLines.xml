@@ -1,0 +1,23 @@
+<TEI>
+    <teiHeader>
+        <fileDesc>
+            <titleStmt>
+                <editor xml:id="someusername"/>
+            </titleStmt>
+        </fileDesc>
+    </teiHeader>
+    <text xml:lang='la'>
+        <body>
+            <div type="page" facs="SOME_PAGE_ID">
+                <l>Latine</l>
+                <l xml:lang='ar'>Arabicae</l>
+                <fw type="whatever">Not a custodes, ignore</fw>
+                <head>A heading</head>
+                <fw type="catch">A custodes</fw>
+                <l>Another line</l>
+                <bad>Not valid element, ignore</bad>
+            </div>
+        </body>
+    </text>
+</TEI>
+

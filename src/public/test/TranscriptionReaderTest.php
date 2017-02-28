@@ -152,4 +152,55 @@ class TranscriptionReaderTest extends TestCase {
         
     }
     
+    function testElements()
+    {
+        $tsReader = new TranscriptionReader();
+        $tsReader = new TranscriptionReader();
+
+        $xml = file_get_contents('test-transcriptions/testSimpleLines.xml');
+        $result = $tsReader->read($xml);
+        $this->assertEquals(true, $result);
+        $this->assertEquals('', $tsReader->errorMsg);
+        $this->assertEquals('la', $tsReader->transcription['defaultLang']);
+        $this->assertCount(1, $tsReader->transcription['people']);
+        $this->assertCount(1, $tsReader->transcription['pageDivs']);
+        $pageDiv =  $tsReader->transcription['pageDivs'][0];
+        $this->assertCount(1, $pageDiv['cols']);
+        $this->assertFalse(isset($pageDiv['cols'][0]));
+        $this->assertTrue(isset($pageDiv['cols'][1]));
+        $this->assertCount(5, $pageDiv['elements']);
+        $this->assertCount(2, $tsReader->warnings);
+        foreach ($tsReader->warnings as $w){
+            $this->assertEquals(TranscriptionReader::WARNING_IGNORED_ELEMENT, $w['number']);
+        }
+        $firstElement = $pageDiv['elements'][0];
+        $this->assertEquals(ColumnElement\Element::LINE, $firstElement->type);
+        $this->assertEquals(1, $firstElement->seq);
+        $this->assertEquals(1, $firstElement->columnNumber);
+        $this->assertEquals('', $firstElement->lang);
+        $this->assertEquals(1, $firstElement->getLineNumber());
+        $secondElement = $pageDiv['elements'][1];
+        $this->assertEquals(ColumnElement\Element::LINE, $secondElement->type);
+        $this->assertEquals(2, $secondElement->seq);
+        $this->assertEquals(1, $secondElement->columnNumber);
+        $this->assertEquals('ar', $secondElement->lang);
+        $this->assertEquals(2, $secondElement->getLineNumber());
+        $thirdElement = $pageDiv['elements'][2];
+        $this->assertEquals(ColumnElement\Element::HEAD, $thirdElement->type);
+        $this->assertEquals(3, $thirdElement->seq);
+        $this->assertEquals(1, $thirdElement->columnNumber);
+        $this->assertEquals('', $thirdElement->lang);
+        $fourthElement = $pageDiv['elements'][3];
+        $this->assertEquals(ColumnElement\Element::CUSTODES, $fourthElement->type);
+        $this->assertEquals(4, $fourthElement->seq);
+        $this->assertEquals(1, $fourthElement->columnNumber);
+        $this->assertEquals('', $fourthElement->lang);
+        $fifthElement = $pageDiv['elements'][4];
+        $this->assertEquals(ColumnElement\Element::LINE, $fifthElement->type);
+        $this->assertEquals(5, $fifthElement->seq);
+        $this->assertEquals(1, $fifthElement->columnNumber);
+        $this->assertEquals('', $fifthElement->lang);
+        $this->assertEquals(3, $fifthElement->getLineNumber());
+    }
+    
 }

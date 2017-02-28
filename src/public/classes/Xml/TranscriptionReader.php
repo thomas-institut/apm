@@ -58,7 +58,7 @@ class TranscriptionReader {
             "Bad page <div>, expected <page type='page' facs='[pageId]'";
     
     const WARNING_IGNORED_ELEMENT = 500;
-    
+        
     public $transcription;
     
     
@@ -241,6 +241,7 @@ class TranscriptionReader {
         $pageDiv['cols'] = [];
         $pageDiv['elements'] = [];
         $pageDiv['items'] = [];
+        $pageDiv['ednotes'] = [];
         
         if (count($sXml->div)>0 || 
                 count($sXml->gap) > 0) {
@@ -255,7 +256,7 @@ class TranscriptionReader {
                 $pageDiv['cols'][$colNumber]['defaultLang'] = 
                         $this->getLang($cDiv);
 
-                $readResult = $this->readColumn($cDiv, $pageDiv);
+                $readResult = $this->readColumn($cDiv, $pageDiv, $colNumber);
                 if ($readResult === false){
                     return false;
                 }
@@ -293,20 +294,80 @@ class TranscriptionReader {
      * @param type $pageDiv
      * @return array
      */
-    private function readColumn($sXml, $pageDiv)
+    private function readColumn($sXml, $pageDiv, $colNumber = 1)
     {   
         $nextElementId = count($pageDiv['elements']);
         $nextItemId = count($pageDiv['items']);
+        $elementSeq = 1;
+        $xmlElementCount = 0;
+        $lineNumber = 1;
         
-        foreach($sXml as $element){
-            switch($element->getName()){
+        foreach($sXml as $elementXml){
+            $xmlElementCount++;
+            $ignore = false;
+            $readItems = true;
+            switch($elementXml->getName()){
                 case 'l':
-                    
+                    $element = new \AverroesProject\ColumnElement\Line();
+                    $element->setLineNumber($lineNumber);
+                    $lineNumber++;
+                    break;
+                
+                case 'head':
+                    $element = new \AverroesProject\ColumnElement\Head();
+                    break;
+                
+                case 'fw':
+                    if ((string) $elementXml['type'] !== 'catch'){
+                        // not a custodes, ignore
+                        $ignore = true;
+                        continue;
+                    }
+                    $element = new \AverroesProject\ColumnElement\Custodes();
+                    break;
+                
+                default:
+                    // Not valid element, ignore
+                    $ignore = true;
             }
+            if ($ignore) {
+                $this->addWarning(self::WARNING_IGNORED_ELEMENT, 
+                    sprintf(self::MSG_IGNORED_ELEMENT, $elementXml->getName()), 
+                    sprintf("At page div %s, column %d, XML element %d", 
+                            $pageDiv['facs'], 
+                            $colNumber,
+                            $xmlElementCount));
+                continue;
+            }
+            if ($readItems) {
+                $itemResult = $this->readItems($elementXml, $pageDiv);
+                if ($itemResult === false) {
+                    return false;
+                }
+                $pageDiv = $itemResult;
+            }
+            $element->lang = $this->getLang($elementXml);
+            $element->columnNumber = $colNumber;
+            $element->seq = $elementSeq;
+            $pageDiv['elements'][] = $element;
+            $elementSeq++;
         }
         return $pageDiv;
     }
     
+    private function readItems($sXml, $pageDiv) 
+    {
+     
+        $textPattern = (new Pattern())->withTokenSeries([XmlToken::textToken()]);
+        $sicPattern = (new Pattern())->withTokenSeries([
+            XmlToken::elementToken('sic')->withReqAttrs([ ['rend', 'rubric']]),
+            XmlToken::textToken(),
+            XmlToken::endElementToken('sic')
+        ]);
+        $pMatcher = new \Matcher\ParallelMatcher([$textPattern, $sicPattern]);
+        
+        return $pageDiv;
+    }
     private function getInfoFromHeader($theHeader)
     {
         if (count($theHeader->fileDesc) === 0 ||
@@ -332,7 +393,10 @@ class TranscriptionReader {
             string $warningMsg=self::MSG_GENERIC_WARNING, 
             string $warningContext = '')
     {
-        $this->warnings[] = [ $warningNo, $warningMsg, $warningContext];
+        $this->warnings[] = [ 
+            'number' => $warningNo, 
+            'message' => $warningMsg, 
+            'context' => $warningContext];
     }
     
     private function setError(int $errNo, 

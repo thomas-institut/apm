@@ -70,7 +70,7 @@ namespace AverroesProject\ColumnElement;
 
 
 /**
- * @class columnElement 
+ * @class Element 
  * Parent class of column elements
  * 
  */

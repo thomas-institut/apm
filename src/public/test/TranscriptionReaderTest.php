@@ -155,7 +155,6 @@ class TranscriptionReaderTest extends TestCase {
     function testElements()
     {
         $tsReader = new TranscriptionReader();
-        $tsReader = new TranscriptionReader();
 
         $xml = file_get_contents('test-transcriptions/testSimpleLines.xml');
         $result = $tsReader->read($xml);
@@ -201,6 +200,19 @@ class TranscriptionReaderTest extends TestCase {
         $this->assertEquals(1, $fifthElement->columnNumber);
         $this->assertEquals('', $fifthElement->lang);
         $this->assertEquals(3, $fifthElement->getLineNumber());
+        
+        $this->assertCount(5, $pageDiv['items']);
+        $id = 0;
+        foreach($pageDiv['items'] as $item){
+            $this->assertTrue($item instanceof TxText\Item);
+            $this->assertEquals($id, $item->id);
+            $this->assertEquals($id, $item->columnElementId);
+            $this->assertEquals(1, $item->seq);
+            $id++;
+        }
+        $firstItem = $pageDiv['items'][0];
+        $this->assertTrue($firstItem instanceof TxText\Text);
+        $this->assertEquals('Latine', $firstItem->theText);
     }
     
 }

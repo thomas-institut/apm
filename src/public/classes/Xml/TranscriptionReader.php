@@ -21,10 +21,9 @@
 
 namespace AverroesProject\Xml;
 
-use XMLReader;
-use XmlMatcher\XmlMatcher;
 use XmlMatcher\XmlToken;
 use Matcher\Pattern;
+use AverroesProject\TxText\Item;
 
 /**
  * Class to read a transcription from XML input
@@ -340,32 +339,66 @@ class TranscriptionReader {
                 continue;
             }
             if ($readItems) {
-                $itemResult = $this->readItems($elementXml, $pageDiv);
+                $itemResult = $this->readItems($elementXml, $pageDiv, $nextElementId);
                 if ($itemResult === false) {
                     return false;
                 }
                 $pageDiv = $itemResult;
             }
+            $element->id = $nextElementId;
             $element->lang = $this->getLang($elementXml);
             $element->columnNumber = $colNumber;
             $element->seq = $elementSeq;
             $pageDiv['elements'][] = $element;
             $elementSeq++;
+            $nextElementId++;
         }
         return $pageDiv;
     }
     
-    private function readItems($sXml, $pageDiv) 
+    private function readItems($sXml, $pageDiv, $elementId) 
     {
-     
-        $textPattern = (new Pattern())->withTokenSeries([XmlToken::textToken()]);
+        $reader = new \XMLReader();
+        $reader->XML($sXml->asXml());
+        $reader->read(); // in the outer element
+        $innerXml = $reader->readInnerXml();
+        
+        $textPattern = (new Pattern())
+                ->withTokenSeries([XmlToken::textToken()])
+                ->withCallback( function ($matched) {
+                    $readData = array_pop($matched);
+                    $text= new \AverroesProject\TxText\Text(0, 0, $readData['text']);
+                    $text->lang = '';
+                    $matched[] = $text;
+                    return $matched;
+                }
+                        );
         $sicPattern = (new Pattern())->withTokenSeries([
             XmlToken::elementToken('sic')->withReqAttrs([ ['rend', 'rubric']]),
             XmlToken::textToken(),
             XmlToken::endElementToken('sic')
         ]);
-        $pMatcher = new \Matcher\ParallelMatcher([$textPattern, $sicPattern]);
+        $pMatcher = new \XmlMatcher\XmlParallelMatcher([$textPattern, $sicPattern]);
         
+        $pMatcher->matchXmlString($innerXml);
+        
+//        print "On '$innerXml':\n";
+//        print_r($pMatcher->matched);
+        
+        $seq = 1;
+        $itemId = count($pageDiv['items']);
+        foreach($pMatcher->matched as $itemArray){
+            foreach($itemArray as $item){
+                if ($item instanceof Item){
+                    $item->id = $itemId;
+                    $item->seq = $seq;
+                    $item->columnElementId = $elementId;
+                    $seq++;
+                    $pageDiv['items'][] = $item;
+                    $itemId++;
+                }
+            }
+        }
         return $pageDiv;
     }
     private function getInfoFromHeader($theHeader)

@@ -35,6 +35,14 @@ class Deletion extends Item {
     ];
     
     /**
+     * the Xml Id associated with the deletion 
+     * so that it can be matched with additions
+     * (won't be stored in the database!)
+     * @var string
+     */
+    public $modXmlId;
+    
+    /**
      * 
      * @param int $id
      * @param int $s
@@ -44,7 +52,7 @@ class Deletion extends Item {
     function __construct($id, $s, $text, $technique) {
         parent::__construct($id, $s);
         $this->type = parent::DELETION;
-        if ($this->isDeletionTechniqueAllowed($technique)){
+        if (self::isDeletionTechniqueAllowed($technique)){
             $this->extraInfo = $technique;
         } else {
             throw new \InvalidArgumentException("Unrecognized technique for DELETION item, technique given: " . $technique);
@@ -53,12 +61,13 @@ class Deletion extends Item {
             throw new \InvalidArgumentException("Transcription items of type DELETION need some deleted text");
         }
         $this->theText = $text;
+        $this->modXmlId = '';
     }
     
     /**
      * 
      * @return string
-     * Returns the deletion tecnique
+     * Returns the deletion technique
      */
     function getTechnique(){
         return $this->extraInfo;
@@ -73,9 +82,12 @@ class Deletion extends Item {
         return $this->getTechnique();
     }
     
-    public function isDeletionTechniqueAllowed($technique){
+    public static function isDeletionTechniqueAllowed($technique){
         return in_array($technique, self::$deletionTechniques);
     }
     
+    public function getXmlId() {
+        return $this->modXmlId;
+    }
     
 }

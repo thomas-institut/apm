@@ -27,7 +27,7 @@
                 <gap reason="pending-transcription" quantity="2" unit="line"/>
                 <note type="gloss">A gloss</note>
                 <!-- Line 6! -->
-                <l>Yet another line</l>
+                <l>Yet another line <metamark xml:id="page-XXX-add-YYY"/></l>
                 <fw type="pageNum">175v</fw>
                 <add place="margin left" target="page-XXX-add-YYY">
                     An addition

@@ -26,6 +26,24 @@ namespace AverroesProject\TxText;
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 class Addition extends Item {
+    
+     public static $validPlaces = [ 
+        'above',
+        'below',
+        'inline',
+        'inspace',
+        'overflow'
+    ];
+    
+    
+    /**
+     * The Xml ID associated with the target
+     * (won't be stored in the database!)
+     * @var string
+     */
+    // Only needed to support inline targets!
+    //public $targetXmlId;
+     
     /**
      * 
      * @param int $id
@@ -34,30 +52,45 @@ class Addition extends Item {
      * @param string $place
      * @param int $target
      */
-    function __construct($id, $s, $text, $place, $target) {
+    function __construct($id, $s, $text, $place, $target=0) {
         parent::__construct($id, $s);
         $this->type = parent::ADDITION;
-        switch($place){
-            case 'above':
-            case 'below':
-            case 'inline':
-            case 'inspace':
-            case 'overflow':
-                $this->extraInfo = $place;
-                break;
-            
-            default:
-                throw new \InvalidArgumentException("Unrecognized placement for ADDITION item, placement given: " . $place);
+        if (!self::isPlaceValid($place)){
+            throw new \InvalidArgumentException("Unrecognized placement for ADDITION item, placement given: " . $place);
         }
         if ($text === NULL or $text === ''){
             throw new \InvalidArgumentException("Transcription items of type ADDITION need some text");
         }
         $this->theText = $text;
-        
+        $this->setTarget($target);
+        $this->targetXmlId = '';
+    }
+
+    public static function isPlaceValid($place){
+        return in_array($place, self::$validPlaces);
+    }
+    
+    public function setTarget(int $target)
+    {
         if ($target <= 0){
             $this->target = 0;
         } else {
             $this->target = $target;
         }
+    }
+    
+    public function getTarget()
+    {
+        return $this->target;
+    }
+    
+    public function setPlace($place) 
+    {
+        $this->extraInfo = $place;
+    }
+    
+    public function getPlace()
+    {
+        return $this->extraInfo;
     }
 }

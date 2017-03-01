@@ -40,4 +40,13 @@ class Mark extends Item {
     function getText(){
         return '';
     }
+    
+    function getXmlId(){
+        return $this->extraInfo;
+    }
+    
+    function setXmlId(string $xmlId) 
+    {
+        $this->extraInfo = $xmlId;
+    }
 }

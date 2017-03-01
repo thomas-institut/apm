@@ -27,6 +27,11 @@ namespace AverroesProject\TxText;
  */
 class Illegible extends Item {
     
+    public static $validReasons = [ 
+        'damaged', 
+        'illegible'
+    ];
+    
     /**
      * 
      * @param int $id
@@ -39,19 +44,14 @@ class Illegible extends Item {
         $this->type = parent::ILLEGIBLE;
         
         if ($length <= 0 ){
-            throw new InvalidArgumentException("Transcription items of type ILLEGIBLE need a length > 0, length given: " . $length);
+            throw new \InvalidArgumentException("Transcription items of type ILLEGIBLE need a length > 0, length given: " . $length);
         }
-        $this->length = $length;
-      
-        switch($reason){
-            case 'illegible':
-            case 'damaged':
-                $this->extraInfo = $reason;
-                break;
-            
-            default:
-                throw new InvalidArgumentException("Unrecognized reason for ILLEGIBLE item, reason given: " . $reason);
+        $this->length = (int) $length;
+        
+        if (!self::isReasonValid($reason)) {
+            throw new InvalidArgumentException("Unrecognized reason for ILLEGIBLE item, reason given: " . $reason);
         }
+        $this->extraInfo = $reason;
     }
     
     function getReason(){
@@ -67,5 +67,9 @@ class Illegible extends Item {
     
     function getLength(){
         return $this->length;
+    }
+    
+    public static function isReasonValid($reason){
+        return in_array($reason, self::$validReasons);
     }
 }

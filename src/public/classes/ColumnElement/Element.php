@@ -128,7 +128,7 @@ class Element {
         $this->id = $id;
         $this->columnNumber = $colNumber;
         $this->handId = 0;
-        $this->items = [];
+        $this->items = new \AverroesProject\TxText\ItemArray();
         $this->lang = $lang;
         $this->editorId  = 0;
         $this->reference = NULL;

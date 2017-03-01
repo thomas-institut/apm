@@ -1,0 +1,30 @@
+<TEI>
+    <teiHeader>
+        <fileDesc>
+            <titleStmt>
+                <editor xml:id="someusername"/>
+            </titleStmt>
+        </fileDesc>
+    </teiHeader>
+    <text xml:lang='la'>
+        <body>
+            <div type="page" facs="SOME_PAGE_ID">
+                <l><sic>
+                    Sic with note
+                    <note type="editorial">Note text</note>
+                    </sic>
+                </l>
+                <l>
+                    <sic>Sic with two notes
+                        <note type="editorial">Note 1</note>
+                        <note type="editorial">Note 2</note>
+                    </sic>
+                </l>
+                <note type="editorial">
+                    An offline note
+                </note>
+            </div>
+        </body>
+    </text>
+</TEI>
+

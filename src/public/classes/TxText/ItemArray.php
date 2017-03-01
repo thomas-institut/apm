@@ -89,7 +89,7 @@ class ItemArray {
     
     /**
      *
-     * @var TranscriptionTextItem[]
+     * @var Item[]
      */
     public $theItems;
     
@@ -106,7 +106,7 @@ class ItemArray {
     
     function __construct($parent = 0, $lang = 'la', $editor = 0, $hand = 0) {
         
-        $this->theItems = array();
+        $this->theItems = [];
         $this->lang = $lang;
         $this->editorId = (int) $editor;
         $this->handId = (int) $hand;

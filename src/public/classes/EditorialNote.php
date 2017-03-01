@@ -82,4 +82,20 @@ class EditorialNote {
      */
     public $lang;
     
+    
+    /**
+     * Normalizes a string according to rules for textual items:
+     *   - trims all whitespace at the beginning and end of the string
+     *   - converts all whitespace inside the string to a single space
+     * 
+     * @param string $str
+     */
+    private function normalizeString(string $str){
+        return preg_replace('/\s+/', ' ', trim($str));
+    }
+    
+    public function setText(string $text) 
+    {
+        $this->text = $this->normalizeString($text);
+    }
 }

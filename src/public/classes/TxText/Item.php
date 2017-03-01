@@ -69,6 +69,7 @@ class Item {
     const NO_LINEBREAK =   10;
     const ABBREVIATION =   11;
     const LINEBREAK    =   12;
+    const INITIAL  = 13;
     
     /**
      *
@@ -169,5 +170,23 @@ class Item {
                 return FALSE;
             
         }
+    }
+    
+    /**
+     * Normalizes a string according to rules for textual items:
+     *   - trims all whitespace at the beginning of the string
+     *   - converts all whitespace at the end of the string to a
+     *     single space
+     *   - converts all whitespace inside the string to a single space
+     * 
+     * @param string $str
+     */
+    public static function normalizeString(string $str){
+        $normalized = trim($str);
+        if (trim(substr($str, -1)) === ''){
+            $normalized .= ' ';
+        }
+        $normalized = preg_replace('/\s+/', ' ', $normalized);
+        return $normalized;
     }
 }

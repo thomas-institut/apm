@@ -24,7 +24,7 @@ require "../vendor/autoload.php";
 
 use PHPUnit\Framework\TestCase;
 use AverroesProject\Xml\TranscriptionReader;
-use \XMLReader;
+use AverroesProject\EditorialNote;
 
 /**
  * Description of TranscriptionReaderTest
@@ -149,7 +149,6 @@ class TranscriptionReaderTest extends TestCase {
         $this->assertTrue(isset($pageDiv2['cols'][2]));
         $col3 = $pageDiv2['cols'][2];
         $this->assertEquals('', $col3['defaultLang']);
-        
     }
     
     function testElements()
@@ -167,52 +166,200 @@ class TranscriptionReaderTest extends TestCase {
         $this->assertCount(1, $pageDiv['cols']);
         $this->assertFalse(isset($pageDiv['cols'][0]));
         $this->assertTrue(isset($pageDiv['cols'][1]));
-        $this->assertCount(5, $pageDiv['elements']);
+        $this->assertCount(9, $pageDiv['cols'][1]['elements']);
         $this->assertCount(2, $tsReader->warnings);
         foreach ($tsReader->warnings as $w){
             $this->assertEquals(TranscriptionReader::WARNING_IGNORED_ELEMENT, $w['number']);
         }
-        $firstElement = $pageDiv['elements'][0];
-        $this->assertEquals(ColumnElement\Element::LINE, $firstElement->type);
-        $this->assertEquals(1, $firstElement->seq);
-        $this->assertEquals(1, $firstElement->columnNumber);
-        $this->assertEquals('', $firstElement->lang);
-        $this->assertEquals(1, $firstElement->getLineNumber());
-        $secondElement = $pageDiv['elements'][1];
-        $this->assertEquals(ColumnElement\Element::LINE, $secondElement->type);
-        $this->assertEquals(2, $secondElement->seq);
-        $this->assertEquals(1, $secondElement->columnNumber);
-        $this->assertEquals('ar', $secondElement->lang);
-        $this->assertEquals(2, $secondElement->getLineNumber());
-        $thirdElement = $pageDiv['elements'][2];
-        $this->assertEquals(ColumnElement\Element::HEAD, $thirdElement->type);
-        $this->assertEquals(3, $thirdElement->seq);
-        $this->assertEquals(1, $thirdElement->columnNumber);
-        $this->assertEquals('', $thirdElement->lang);
-        $fourthElement = $pageDiv['elements'][3];
-        $this->assertEquals(ColumnElement\Element::CUSTODES, $fourthElement->type);
-        $this->assertEquals(4, $fourthElement->seq);
-        $this->assertEquals(1, $fourthElement->columnNumber);
-        $this->assertEquals('', $fourthElement->lang);
-        $fifthElement = $pageDiv['elements'][4];
-        $this->assertEquals(ColumnElement\Element::LINE, $fifthElement->type);
-        $this->assertEquals(5, $fifthElement->seq);
-        $this->assertEquals(1, $fifthElement->columnNumber);
-        $this->assertEquals('', $fifthElement->lang);
-        $this->assertEquals(3, $fifthElement->getLineNumber());
+        $element1 = $pageDiv['cols'][1]['elements'][0];
+        $this->assertEquals(ColumnElement\Element::LINE, $element1->type);
+        $this->assertEquals(1, $element1->seq);
+        $this->assertEquals(1, $element1->columnNumber);
+        $this->assertEquals('', $element1->lang);
+        $this->assertEquals(1, $element1->getLineNumber());
+        $item_1_1 = $element1->items->getItem(1);
+        $this->assertTrue($item_1_1 instanceof TxText\Text);
+        $this->assertEquals('Latine', $item_1_1->theText);
         
-        $this->assertCount(5, $pageDiv['items']);
+        $element2 = $pageDiv['cols'][1]['elements'][1];
+        $this->assertEquals(ColumnElement\Element::LINE, $element2->type);
+        $this->assertEquals(2, $element2->seq);
+        $this->assertEquals(1, $element2->columnNumber);
+        $this->assertEquals('ar', $element2->lang);
+        $this->assertEquals(2, $element2->getLineNumber());
+        
+        $element3 = $pageDiv['cols'][1]['elements'][2];
+        $this->assertEquals(ColumnElement\Element::HEAD, $element3->type);
+        $this->assertEquals(3, $element3->seq);
+        $this->assertEquals(1, $element3->columnNumber);
+        $this->assertEquals('', $element3->lang);
+        
+        $element4 = $pageDiv['cols'][1]['elements'][3];
+        $this->assertEquals(ColumnElement\Element::CUSTODES, $element4->type);
+        $this->assertEquals(4, $element4->seq);
+        $this->assertEquals(1, $element4->columnNumber);
+        $this->assertEquals('', $element4->lang);
+        
+        $element5 = $pageDiv['cols'][1]['elements'][4];
+        $this->assertEquals(ColumnElement\Element::LINE, $element5->type);
+        $this->assertEquals(5, $element5->seq);
+        $this->assertEquals(1, $element5->columnNumber);
+        $this->assertEquals('', $element5->lang);
+        $this->assertEquals(3, $element5->getLineNumber());
+        $item_5_1 = $element5->items->getItem(1);
+        $this->assertTrue($item_5_1 instanceof TxText\Text);
+        $this->assertEquals('Another line with ', $item_5_1->theText);
+        $item_5_2 = $element5->items->getItem(2);
+        $this->assertTrue($item_5_2 instanceof TxText\Sic);
+        $this->assertEquals('Some text', $item_5_2->theText);
+        
+        $element6 = $pageDiv['cols'][1]['elements'][5];
+        $this->assertEquals(ColumnElement\Element::GLOSS, $element6->type);
+        $this->assertEquals(6, $element6->seq);
+        $this->assertEquals(1, $element6->columnNumber);
+        $this->assertEquals('', $element6->lang);
+        $item_6_1 = $element6->items->getItem(1);
+        $this->assertTrue($item_6_1 instanceof TxText\Text);
+        $this->assertEquals('A gloss', $item_6_1->theText);
+        
+        // The 7th element is the line after the gap, line number should be 6
+        $element7 = $pageDiv['cols'][1]['elements'][6];
+        $this->assertEquals(ColumnElement\Element::LINE, $element7->type);
+        $this->assertEquals(7, $element7->seq);
+        $this->assertEquals(1, $element7->columnNumber);
+        $this->assertEquals('', $element7->lang);
+        $this->assertEquals(6, $element7->getLineNumber());
+        $item_7_1 = $element7->items->getItem(1);
+        $this->assertTrue($item_7_1 instanceof TxText\Text);
+        $this->assertEquals('Yet another line', $item_7_1->theText);
+        
+        $element8 = $pageDiv['cols'][1]['elements'][7];
+        $this->assertEquals(ColumnElement\Element::PAGE_NUMBER, $element8->type);
+        $this->assertEquals(8, $element8->seq);
+        $this->assertEquals(1, $element8->columnNumber);
+        $this->assertEquals('', $element8->lang);
+        $item_8_1 = $element8->items->getItem(1);
+        $this->assertTrue($item_8_1 instanceof TxText\Text);
+        $this->assertEquals('175v', $item_8_1->theText);
+        
+        $element9 = $pageDiv['cols'][1]['elements'][8];
+        $this->assertEquals(ColumnElement\Element::ADDITION, $element9->type);
+        $this->assertEquals(9, $element9->seq);
+        $this->assertEquals(1, $element9->columnNumber);
+        $this->assertEquals('', $element9->lang);
+        $this->assertEquals('page-XXX-add-YYY', $element9->targetXmlId);
+        $this->assertEquals('margin left', $element9->placement);
+        
         $id = 0;
-        foreach($pageDiv['items'] as $item){
-            $this->assertTrue($item instanceof TxText\Item);
-            $this->assertEquals($id, $item->id);
-            $this->assertEquals($id, $item->columnElementId);
-            $this->assertEquals(1, $item->seq);
-            $id++;
+        foreach ($pageDiv['cols'][1]['elements'] as $element) {
+            $seq = 1;
+            foreach ($element->items->theItems as $item) {
+                $this->assertEquals($id, $item->id);
+                $this->assertEquals($seq, $item->seq);
+                $id++;
+                $seq++;
+            }
         }
-        $firstItem = $pageDiv['items'][0];
-        $this->assertTrue($firstItem instanceof TxText\Text);
-        $this->assertEquals('Latine', $firstItem->theText);
     }
     
+    public function testNotes()
+    {
+        $tsReader = new TranscriptionReader();
+
+        $xml = file_get_contents('test-transcriptions/testNotes.xml');
+        $result = $tsReader->read($xml);
+        // Basic integrity check!
+        $this->assertEquals(true, $result);
+        $this->assertEquals('', $tsReader->errorMsg);
+        $this->assertEquals('la', $tsReader->transcription['defaultLang']);
+        $this->assertCount(1, $tsReader->transcription['people']);
+        $this->assertCount(1, $tsReader->transcription['pageDivs']);
+        $pageDiv = $tsReader->transcription['pageDivs'][0];
+        $this->assertCount(1, $pageDiv['cols']);
+        
+        // Now on to the column
+        $col = $pageDiv['cols'][1];
+        $this->assertCount(3, $col['elements']);
+        $this->assertCount(4, $col['ednotes']);
+        foreach($col['ednotes'] as $ednote){
+            $this->assertTrue($ednote instanceof EditorialNote);
+        }
+        
+        // First element: line with 1 sic item, 1 ednote
+        $element1 = $col['elements'][0];
+        $this->assertTrue($element1 instanceof ColumnElement\Line);
+        $this->assertCount(1, $element1->items->theItems);
+        $this->assertTrue($element1->items->getItem(1) instanceof TxText\Sic);
+        $this->assertEquals('Sic with note ', $element1->items->getItem(1)->getText());
+        
+        $itemId1 = $element1->items->getItem(1)->id;
+        $note1 = $col['ednotes'][0];
+        $this->assertEquals(EditorialNote::INLINE, $note1->type);
+        $this->assertEquals($itemId1, $note1->target);
+        $this->assertEquals('Note text', $note1->text);
+        
+        // Second element, line with 1 item, 2 ednotes
+        $element2 = $col['elements'][1];
+        $this->assertTrue($element2 instanceof ColumnElement\Line);
+        $this->assertCount(1, $element2->items->theItems);
+        $this->assertTrue($element2->items->getItem(1) instanceof TxText\Sic);
+        $this->assertEquals('Sic with two notes ', $element2->items->getItem(1)->getText());
+        $itemId2 = $element2->items->getItem(1)->id;
+        $note2 = $col['ednotes'][1];
+        $this->assertEquals(EditorialNote::INLINE, $note2->type);
+        $this->assertEquals($itemId2, $note2->target);
+        $this->assertEquals('Note 1', $note2->text);
+        $note3 = $col['ednotes'][2];
+        $this->assertEquals(EditorialNote::INLINE, $note3->type);
+        $this->assertEquals($itemId2, $note3->target);
+        $this->assertEquals('Note 2', $note3->text);
+        
+        // Third element, a note mark
+        $element3 = $col['elements'][2];
+        $this->assertTrue($element3 instanceof ColumnElement\NoteMark);
+        $this->assertCount(0, $element3->items->theItems);
+        $element3Id = $element3->id;
+        $note4 = $col['ednotes'][3];
+        $this->assertEquals(EditorialNote::OFFLINE, $note4->type);
+        $this->assertEquals($element3Id, $note4->target);
+        $this->assertEquals('An offline note', $note4->text);
+    }
+    
+    function testItems(){
+        $tsReader = new TranscriptionReader();
+
+        $xml = file_get_contents('test-transcriptions/testItems.xml');
+        $result = $tsReader->read($xml);
+        // Basic integrity check!
+        $this->assertEquals(true, $result);
+        $this->assertEquals('', $tsReader->errorMsg);
+        $this->assertEquals('la', $tsReader->transcription['defaultLang']);
+        $this->assertCount(1, $tsReader->transcription['people']);
+        $this->assertCount(1, $tsReader->transcription['pageDivs']);
+        $pageDiv = $tsReader->transcription['pageDivs'][0];
+        $this->assertCount(1, $pageDiv['cols']);
+        $this->assertCount(1, $pageDiv['cols'][1]['elements']);
+        $lineElement = $pageDiv['cols'][1]['elements'][0];
+        $this->assertTrue($lineElement instanceof ColumnElement\Line);
+        
+        // Number of Items
+        $this->assertEquals(5, $lineElement->items->nItems());
+        
+        $item1 = $lineElement->items->getItem(1);
+        $this->assertTrue($item1 instanceof TxText\Text);
+        
+        $item2 = $lineElement->items->getItem(2);
+        $this->assertTrue($item2 instanceof TxText\Sic);
+        
+        $item3 = $lineElement->items->getItem(3);
+        $this->assertTrue($item3 instanceof TxText\Initial);
+        
+        $item4 = $lineElement->items->getItem(4);
+        $this->assertTrue($item4 instanceof TxText\Rubric);
+        
+        $item5 = $lineElement->items->getItem(5);
+        $this->assertTrue($item5 instanceof TxText\Unclear);
+        
+        
+    }
 }

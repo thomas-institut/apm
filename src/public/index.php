@@ -110,49 +110,49 @@ $container['view'] = function ($container) {
 // -----------------------------------------------------------------------------
  
 // LOGIN
-$app->any('/login', '\AverroesProject\Site\SiteAuthentication:login')
+$app->any('/login', '\AverroesProject\Auth\Authenticator:login')
         ->setName('login');
 
 // LOGOUT
-$app->any('/logout', '\AverroesProject\Site\SiteAuthentication:logout')
+$app->any('/logout', '\AverroesProject\Auth\Authenticator:logout')
         ->setName('logout');
 
 
 // HOME
 $app->get('/','\AverroesProject\Site\SiteController:homePage')
         ->setName('home')
-        ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
+        ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
 // USER.PROFILE
 $app->get('/user/{username}', 
         '\AverroesProject\Site\SiteController:userProfilePage')
         ->setName('user.profile')
-        ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
+        ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
 // USER.SETTINGS
 $app->get('/user/{username}/settings', 
         '\AverroesProject\Site\SiteController:userSettingsPage')
         ->setName('user.settings')
-        ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
+        ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
 $app->get('/users', '\AverroesProject\Site\SiteController:userManagerPage')
         ->setName('user.manager')
-        ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
+        ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
 // DOCS
 $app->get('/documents','\AverroesProject\Site\SiteController:documentsPage')
         ->setName('docs')
-        ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
+        ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
 $app->get('/doc/{id}','\AverroesProject\Site\SiteController:showDocPage')
         ->setName('doc.showdoc')
-        ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
+        ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
 // PAGEVIEWER
 $app->get('/pageviewer/{doc}/{page}', 
         '\AverroesProject\Site\SiteController:pageViewerPage')
         ->setName('pageviewer')
-        ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
+        ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
 
 
@@ -172,7 +172,7 @@ $app->group('/api', function (){
             '\AverroesProject\Api\ApiController:getNumColumns')
         ->setName('api_numcolumns');
 
-})->add('\AverroesProject\Api\ApiAuthentication');
+})->add('\AverroesProject\Auth\Authenticator:authenticateApiRequest');
 
 
 // All set, run!

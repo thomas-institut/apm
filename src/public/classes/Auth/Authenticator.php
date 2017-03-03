@@ -29,7 +29,7 @@
  * a randomly chosen secret key.
  */
 
-namespace AverroesProject\Site;
+namespace AverroesProject\Auth;
 
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
@@ -41,7 +41,7 @@ use \Dflydev\FigCookies\FigResponseCookies;
  * Middleware class for site authentication
  *
  */
-class SiteAuthentication {
+class Authenticator {
     
     protected $ci;
    
@@ -68,7 +68,7 @@ class SiteAuthentication {
 
     protected function debug($msg){
         if ($this->debugMode){
-            error_log('SiteAuth : ' . $msg);
+            error_log('APM Auth : ' . $msg);
         }
     }
 
@@ -78,41 +78,23 @@ class SiteAuthentication {
         if (!isset($_SESSION['userid'])){
             // Check for long term cookie
             $this->debug('No session');
-            $longTermCookie = FigRequestCookies::get($request, $this->cookieName);
-            if ($longTermCookie !== NULL and $longTermCookie->getValue()){
-                //$this->debug('Cookie = ' . print_r($longTermCookie, true));
-                $cookieValue = $longTermCookie->getValue();
-                list($userId, $token, $mac) = explode(':', $cookieValue);
-                if (hash_equals($this->generateMac($userId . ':' . $token), $mac)){
-                    $userToken = $this->ci->um->getUserToken($userId);
-                    if (hash_equals($userToken, $token)){
-                        $this->debug('Cookie looks good, user = ' . $userId);
-                        $success = true;
-                    }
-                    else {
-                        $this->debug('User tokens do not match -> ' . $userToken . ' vs ' . $token);
-                    }
-                } else {
-                    $this->debug('Macs do not match!');
-                }
-                
-            } else {
-                $this->debug('... and no cookie. Fail!');
+            $userId = $this->getUserIdFromLongTermCookie($request);
+            if ($userId !== false) {
+                $success = true;
             }
         } else {
             $userId = $_SESSION['userid'];
-            $this->debug('Session is set, user id = ' . $userId);
+            $this->debug('SITE : Session is set, user id = ' . $userId);
             if ($this->ci->um->userExistsById($userId)){
                 $this->debug("User id exists!");
                 $success = true;
             } else {
-                $this->debug("User id does not exist!");
+                $this->debug("SITE : User id does not exist!");
             }
             
         }
-        
         if ($success){
-            $this->debug('Success, go ahead!');
+            $this->debug('SITE : Success, go ahead!');
             $_SESSION['userid'] = $userId;
             $ui = $this->ci->um->getUserInfoByUserId($userId);
             if ($this->ci->um->isUserAllowedTo($userId, 'manageUsers')){
@@ -121,7 +103,7 @@ class SiteAuthentication {
             $this->ci['userInfo'] = $ui;
             return $next($request, $response); 
         } else {
-            $this->debug("Authentication fail, logging out and redirecting to login");
+            $this->debug("SITE : Authentication fail, logging out and redirecting to login");
             session_unset();
             session_destroy();
             $response = FigResponseCookies::expire($response, $this->cookieName);
@@ -176,5 +158,39 @@ class SiteAuthentication {
         return $response->withHeader('Location', $this->ci->router->pathFor('home'));
     }
     
+    
+    public function authenticateApiRequest (Request $request, Response $response, $next) {
+        $userId = $this->getUserIdFromLongTermCookie($request);
+        if ($userId === false){
+            $this->debug("API : authentication fail");
+            return $response->withJson([ 'error' => "Authentication Failure"]); 
+        }
+        $this->debug('API : Success, go ahead!');
+        $this->ci['userId'] = $userId;
+        return $next($request, $response); 
+    }
+    
+    private function getUserIdFromLongTermCookie(Request $request)
+    {
+        $this->debug('Checking long term cookie');
+        $longTermCookie = FigRequestCookies::get($request, $this->cookieName);
+        if ($longTermCookie !== NULL and $longTermCookie->getValue()){
+            $cookieValue = $longTermCookie->getValue();
+            list($userId, $token, $mac) = explode(':', $cookieValue);
+            if (hash_equals($this->generateMac($userId . ':' . $token), $mac)){
+                $userToken = $this->ci->um->getUserToken($userId);
+                if (hash_equals($userToken, $token)){
+                    $this->debug('Cookie looks good, user = ' . $userId);
+                    return $userId;
+                }
+                $this->debug('User tokens do not match -> ' . $userToken . ' vs ' . $token);
+                return false;
+            } 
+            $this->debug('Macs do not match!');
+            return false;
+        }
+        $this->debug('... there is no cookie. Fail!');
+        return false;
+    }
     
 }

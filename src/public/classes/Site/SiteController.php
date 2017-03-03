@@ -142,7 +142,7 @@ class SiteController {
             }
             $doc['docInfo'] = $db->getDoc($docId);
             $doc['tableId'] = "doc-$docId-table";
-            $doc['pages'] = $this->buildPageArray($doc['numPages'], $transcribedPages);
+            //$doc['pages'] = $this->buildPageArray($doc['numPages'], $transcribedPages);
             array_push($docs, $doc);
         }
         return $this->ci->view->render($response, 'docs.twig', [
@@ -151,6 +151,33 @@ class SiteController {
             'baseurl' => $this->ci->settings['baseurl'],
             'docs' => $docs
         ]);
+    }
+    
+    public function showDocPage(Request $request, Response $response, $next)
+    {
+        $docId = $request->getAttribute('id');
+        $db = $this->db;
+        $doc = [];
+        $doc['numPages'] = $db->getPageCountByDocId($docId);
+        $doc['numLines'] = $db->getLineCountByDoc($docId);
+        $transcribedPages = $db->getPageListByDocId($docId);
+        $doc['numTranscribedPages'] = count($transcribedPages);
+        $editorsUsernames = $db->getEditorsByDocId($docId);
+        $doc['editors'] = array();
+        foreach ($editorsUsernames as $edUsername){
+            array_push($doc['editors'], $this->ci->um->getUserInfoByUsername($edUsername));
+        }
+        $doc['docInfo'] = $db->getDoc($docId);
+        $doc['tableId'] = "doc-$docId-table";
+        $doc['pages'] = $this->buildPageArray($doc['numPages'], $transcribedPages);
+
+        return $this->ci->view->render($response, 'doc.showdoc.twig', [
+        'userinfo' => $this->ci->userInfo, 
+        'copyright' => $this->ci->copyrightNotice,
+        'baseurl' => $this->ci->settings['baseurl'],
+        'doc' => $doc
+    ]);
+            
     }
     
     function pageViewerPage(Request $request, Response $response, $next){

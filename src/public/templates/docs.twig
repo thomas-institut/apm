@@ -5,20 +5,24 @@
 
 {% block content %}
 <h1>Documents</h1>
+<table class="doctable">
+    <tr><th>Title</th><th>Type</th><th>Language</th><th>Transcribed pages</th><th>Transcribers</th></tr>
 {% for doc in docs %}
-    <h3>{{doc.docInfo.title}}</h3>
-    <p>{{doc.numTranscribedPages}} of {{doc.numPages}} pages transcribed 
-        <a title="View Page List" data-toggle="collapse" data-target="#{{doc.tableId}}"><span class="glyphicon glyphicon-list"></span></a>
-    </p>
-    <div class="collapse pagetablediv" id="{{doc.tableId}}">
-    {{ macros.pageviewtable(doc.docInfo.id, doc.pages)}}
-    </div>
+    <tr>
+        
+    <td><a href="{{path_for('doc.showdoc', {'id' : doc.docInfo.id})}}" title="Document details">{{doc.docInfo.title}}</a></td>
+    <td>{{macros.docTypeName(doc.docInfo.doc_type)}}</td>
+    <td>{{macros.langName(doc.docInfo.lang)}}</td>
+    <td>{{doc.numTranscribedPages}} of {{doc.numPages}}</td>
+    <td>
     {% if doc.numLines %}
-        Transcriber(s): 
         {% for editor in doc.editors %}
             <a href="{{path_for('user.profile', {'username' : editor.username})}}" title="View profile">{{editor.fullname}}</a>{% if not loop.last %}, {% endif %}
         {% endfor %}
     {% endif %}    
+    </td>
+    </tr>
 {% endfor %}
+</table>
 {% endblock %}
 

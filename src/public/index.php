@@ -144,6 +144,10 @@ $app->get('/documents','\AverroesProject\Site\SiteController:documentsPage')
         ->setName('docs')
         ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
 
+$app->get('/doc/{id}','\AverroesProject\Site\SiteController:showDocPage')
+        ->setName('doc.showdoc')
+        ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
+
 // PAGEVIEWER
 $app->get('/pageviewer/{doc}/{page}', 
         '\AverroesProject\Site\SiteController:pageViewerPage')

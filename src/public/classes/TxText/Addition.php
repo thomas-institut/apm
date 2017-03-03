@@ -63,6 +63,7 @@ class Addition extends Item {
         }
         $this->theText = $text;
         $this->setTarget($target);
+        $this->setPlace($place);
         $this->targetXmlId = '';
     }
 
@@ -70,7 +71,7 @@ class Addition extends Item {
         return in_array($place, self::$validPlaces);
     }
     
-    public function setTarget(int $target)
+    public function setTarget($target)
     {
         if ($target <= 0){
             $this->target = 0;

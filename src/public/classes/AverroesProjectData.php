@@ -7,13 +7,22 @@
  */
 namespace AverroesProject;
 
-require_once 'errorcodes.php';
+use AverroesProject\TxText\Item;
+use AverroesProject\TxText\ItemArray;
+use AverroesProject\ColumnElement\Element;
 
 /**
  * @class AverroesProjectData
  * Provides access to all data via helper functions.
  */
 class AverroesProjectData extends \mysqli{
+    
+    
+    const E_MYSQL = 100;
+    const E_NO_TABLES = 101;
+    const E_WRONGTYPE = 102;
+    const E_BADKEY = 103;
+    const E_OUTDATED_DB = 104;
    
     /**
      *
@@ -43,11 +52,11 @@ class AverroesProjectData extends \mysqli{
 
         $r  = parent::real_connect($dbconfig['host'], $dbconfig['user'], $dbconfig['pwd']);
         if (!$r){
-            throw new \Exception($this->connect_error, E_MYSQL);
+            throw new \Exception($this->connect_error, self::E_MYSQL);
         }
 
         if (!$this->select_db($dbconfig['db'])){
-            throw new \Exception($this->error, E_MYSQL);
+            throw new \Exception($this->error, self::E_MYSQL);
         }
         $this->query("set character set 'utf8'");
         $this->query("set names 'utf8'");
@@ -56,7 +65,7 @@ class AverroesProjectData extends \mysqli{
         
          // Check if database is initialized
         if (!$this->isInitialized()){
-            throw new \Exception("Tables not initialized", E_NO_TABLES);
+            throw new \Exception("Tables not initialized", self::E_NO_TABLES);
         }
         
         // Load settings
@@ -64,7 +73,7 @@ class AverroesProjectData extends \mysqli{
         
         // Check that the database's version is up to date
         if ($this->settings['dbversion'] !== $this->databaseversion){
-            throw new \Exception("Database schema not up to date", E_OUTDATED_DB);
+            throw new \Exception("Database schema not up to date", self::E_OUTDATED_DB);
         }
        
     }
@@ -100,7 +109,7 @@ class AverroesProjectData extends \mysqli{
     function query($query, $resultmode = MYSQLI_STORE_RESULT){
         $r = parent::query($query, $resultmode);
         if ($r===false){
-            throw new \Exception($this->error, E_MYSQL);
+            throw new \Exception($this->error, self::E_MYSQL);
         }
         return $r;
     }
@@ -239,7 +248,7 @@ class AverroesProjectData extends \mysqli{
         return $this->getOneFieldQuery(
                 'SELECT count(DISTINCT `page_id`, `reference`) as value from ' . 
                 $this->tables['elements'] . ' as e JOIN ' . $this->tables['pages'] . ' AS p ON e.page_id=p.id ' .
-                ' WHERE p.doc_id=\'' . $docId . '\' AND e.type=' . ColumnElement::LINE, 'value');
+                ' WHERE p.doc_id=\'' . $docId . '\' AND e.type=' . Element::LINE, 'value');
     }
     /**
      * 
@@ -340,22 +349,22 @@ class AverroesProjectData extends \mysqli{
         $elements = array();
         while ($row = $r->fetch_assoc()){
             switch ($row['type']){
-                case ColumnElement::LINE:
-                    $e = new CeLine();
+                case Element::LINE:
+                    $e = new ColumnElement\Line();
                     // the line number
                     $e->setLineNumber($row['reference']);
                     break;
                 
-                case ColumnElement::CUSTODES:
-                    $e = new CeCustodes();
+                case Element::CUSTODES:
+                    $e = new ColumnElement\Custodes();
                     break;
                 
-                case ColumnElement::HEAD:
-                    $e = new CeHead();
+                case Element::HEAD:
+                    $e = new ColumnElement\Head();
                     break;
                 
-                case ColumnElement::GLOSS:
-                    $e = new CeGloss();
+                case Element::GLOSS:
+                    $e = new ColumnElement\Gloss();
                     break;
                 
                 default:
@@ -373,64 +382,64 @@ class AverroesProjectData extends \mysqli{
             $e->timestamp = $row['time'];
             $e->type = (int) $row['type'];
             
-            $e->transcribedText = $this->getTranscribedText($e->id, $e->lang, $e->editorId, $e->handId);
+            $e->items = $this->getItemsForElement($e->id, $e->lang, $e->editorId, $e->handId);
             array_push($elements, $e);
         }
         return $elements;
     }
     
-    function getTranscribedText($cid, $lang, $editorId, $handId){
+    function getItemsForElement($cid, $lang, $editorId, $handId){
         $query = 'SELECT * FROM `' . $this->tables['items'] . 
                 '` WHERE `ce_id`=' . $cid . 
                 ' ORDER BY `seq` ASC';
         $r = $this->query($query);
         
-        $tt = new TranscriptionText($cid, $lang, $editorId, $handId);
+        $tt = new ItemArray($cid, $lang, $editorId, $handId);
         
         while ($row = $r->fetch_assoc()){
             switch ($row['type']){
-                case TranscriptionTextItem::TEXT:
-                    $item = new TtiText($row['id'], $row['seq'], $row['text']);
+                case Item::TEXT:
+                    $item = new TxText\Text($row['id'], $row['seq'], $row['text']);
                     break;
                 
-                case TranscriptionTextItem::RUBRIC:
-                    $item = new TtiRubric($row['id'], $row['seq'], $row['text']);
+                case Item::RUBRIC:
+                    $item = new TxText\Rubric($row['id'], $row['seq'], $row['text']);
                     break;
                 
-                case TranscriptionTextItem::SIC:
-                    $item = new TtiSic($row['id'], $row['seq'], $row['text'], $row['alt_text']);
+                case Item::SIC:
+                    $item = new TxText\Sic($row['id'], $row['seq'], $row['text'], $row['alt_text']);
                     break;
                 
-                case TranscriptionTextItem::MARK:
-                    $item = new TtiMark($row['id'], $row['seq']);
+                case Item::MARK:
+                    $item = new TxText\Mark($row['id'], $row['seq']);
                     break;
                 
-                case TranscriptionTextItem::UNCLEAR:
-                    $item = new TtiUnclear($row['id'], $row['seq'], $row['extra_info'], $row['text'], $row['alt_text']);
+                case Item::UNCLEAR:
+                    $item = new TxText\Unclear($row['id'], $row['seq'], $row['extra_info'], $row['text'], $row['alt_text']);
                     break;
                 
-                case TranscriptionTextItem::ILLEGIBLE:
-                    $item = new TtiIllegible($row['id'], $row['seq'], $row['length'], $row['extra_info']);
+                case Item::ILLEGIBLE:
+                    $item = new TxText\Illegible($row['id'], $row['seq'], $row['length'], $row['extra_info']);
                     break;
                 
-                case TranscriptionTextItem::ABBREVIATION:
-                    $item = new TtiAbbreviation($row['id'], $row['seq'], $row['text'], $row['alt_text']);
+                case Item::ABBREVIATION:
+                    $item = new TxText\Abbreviation($row['id'], $row['seq'], $row['text'], $row['alt_text']);
                     break;
                 
-                case TranscriptionTextItem::GLIPH:
-                    $item = new TtiGliph($row['id'], $row['seq'], $row['text']);
+                case Item::GLIPH:
+                    $item = new TxText\Gliph($row['id'], $row['seq'], $row['text']);
                     break;
                 
-                case TranscriptionTextItem::DELETION:
-                    $item = new TtiDeletion($row['id'], $row['seq'], $row['text'], $row['extra_info']);
+                case Item::DELETION:
+                    $item = new TxText\Deletion($row['id'], $row['seq'], $row['text'], $row['extra_info']);
                     break;
                 
-                case TranscriptionTextItem::ADDITION:
-                    $item = new TtiAddition($row['id'], $row['seq'], $row['text'], $row['extra_info'], $row['target']);
+                case Item::ADDITION:
+                    $item = new TxText\Addition($row['id'], $row['seq'], $row['text'], $row['extra_info'], $row['target']);
                     break;
                 
-                case TranscriptionTextItem::NO_LINEBREAK:
-                    $item = new TtiNoLinebreak($row['id'], $row['seq']);
+                case Item::NO_LINEBREAK:
+                    $item = new TxText\NoLinebreak($row['id'], $row['seq']);
                     break;
                 
                 default: 

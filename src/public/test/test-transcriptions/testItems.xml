@@ -1,0 +1,95 @@
+<TEI>
+    <teiHeader>
+        <fileDesc>
+            <titleStmt>
+                <editor xml:id="someusername"/>
+            </titleStmt>
+        </fileDesc>
+    </teiHeader>
+    <text xml:lang='la'>
+        <body>
+            <div type="page" facs="SOME_PAGE_ID">
+                <l><!-- Item 1 -->
+                    Some text
+                    
+                    <!-- Item 2 -->
+                    <sic>Sic 1</sic>
+                    
+                    <!-- Item 3 -->
+                    <hi rend="initial">Initial</hi>
+                    
+                    <!-- Item 4 -->
+                    <hi rend="rubric">Rubric</hi>
+                    
+                    <!-- Item 5 -->
+                    <unclear>Unclear 1</unclear>
+                    
+                    <!-- Item 6 -->
+                    <unclear>
+                        <choice>
+                            <unclear>Unclear 2</unclear>
+                            <unclear>Alt Text</unclear>
+                        </choice>
+                    </unclear>
+                    
+                    <!-- Item 7 -->
+                    <choice>
+                        <sic>Sic 2</sic>
+                        <supplied>Supplied</supplied>
+                    </choice>
+                    
+                    <!-- Item 8 -->
+                    <unclear>
+                        <gap reason="illegible" quantity="5"></gap>
+                    </unclear>
+                    
+                    <!-- Bad item -->
+                    <unclear>
+                        <gap reason="badreason" quantity="5"></gap>
+                    </unclear>
+                    
+                    <!-- Bad item -->
+                    <unclear>
+                        <gap reason="illegible" quantity="0"></gap>
+                    </unclear>
+                    
+                    <!-- Item 9 -->
+                    <choice>
+                        <abbr>Mr.</abbr>
+                        <expan>Mister</expan>
+                    </choice>
+                    
+                    <!-- Item 10 -->
+                    <del rend="dots-above">Deleted text</del>
+                    
+                    <!-- Item 11 -->
+                    <g>공</g>
+                    
+                    <!-- Item 12 -->
+                    <add place="above">Addition</add>
+                    
+                    <!-- Item 13 -->
+                    <metamark xml:id="somexmlid"/>
+                    
+                    <!-- Item 14 -->
+                    <note type="editorial">Some inline note</note>
+                    
+                    <!-- Items 15 & 16 -->
+                    <mod type="subst">
+                        <del rend="strikeout">Deleted text</del>
+                        <add place="inline">Added text</add>
+                    </mod>
+                    
+                    <!-- Item 17 --> 
+                    <mod type="subst" xml:id="somemod">
+                        <del rend="strikeout">Modified text</del>
+                    </mod>
+                </l>
+                <add place="margin left" target="somemod">
+                    An off line addition
+                </add>
+            </div>
+        </body>
+    </text>
+</TEI>
+

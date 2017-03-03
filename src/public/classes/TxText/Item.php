@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (C) 2016 Universität zu Köln
+ * Copyright (C) 2017 Universität zu Köln
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,14 +17,14 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-namespace AverroesProject;
+namespace AverroesProject\TxText;
 
 /**
  * Description of TranscriptionTextItem
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class TranscriptionTextItem {
+class Item {
 
     /**
      *
@@ -69,6 +69,7 @@ class TranscriptionTextItem {
     const NO_LINEBREAK =   10;
     const ABBREVIATION =   11;
     const LINEBREAK    =   12;
+    const INITIAL  = 13;
     
     /**
      *
@@ -169,5 +170,23 @@ class TranscriptionTextItem {
                 return FALSE;
             
         }
+    }
+    
+    /**
+     * Normalizes a string according to rules for textual items:
+     *   - trims all whitespace at the beginning of the string
+     *   - converts all whitespace at the end of the string to a
+     *     single space
+     *   - converts all whitespace inside the string to a single space
+     * 
+     * @param string $str
+     */
+    public static function normalizeString(string $str){
+        $normalized = trim($str);
+        if (trim(substr($str, -1)) === ''){
+            $normalized .= ' ';
+        }
+        $normalized = preg_replace('/\s+/', ' ', $normalized);
+        return $normalized;
     }
 }

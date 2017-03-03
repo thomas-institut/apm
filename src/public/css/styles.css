@@ -8,7 +8,7 @@ body {
 
 a, a:visited {
     text-decoration: none;
-    color: inherit;
+    color: #000066;
 }
 a:hover{
     color: blue;
@@ -88,6 +88,7 @@ footer {
 
 }
 
+
 p.logo{
     float: left;
     margin: 0;
@@ -157,4 +158,18 @@ table.pagetable td.withouttranscription a{
 
 .largetext {
     font-size: 1.2em;
+}
+
+table.doctable th {
+    padding: 7px;
+    
+}
+table.doctable td {
+    padding: 10px;
+    
+}
+
+p.docinfo {
+    padding-top: 5px;
+    padding-bottom: 3px;
 }

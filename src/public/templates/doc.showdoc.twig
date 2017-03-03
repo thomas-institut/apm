@@ -1,0 +1,42 @@
+{% extends "base.twig" %}
+{% import 'macros.twig' as macros %}
+
+{% block title %}Doc: {{doc.docInfo.title}}{% endblock %}
+
+{% block content %}
+    <h4><a href="{{path_for('docs')}}">Documents</a> → Document Details</h4>
+<h1>{{doc.docInfo.title}}</h1>
+    <p class="docinfo">{{macros.langName(doc.docInfo.lang)}} {{macros.docTypeName(doc.docInfo.doc_type)}}, 
+        {{doc.numTranscribedPages}} of {{doc.numPages}} pages transcribed
+{% if doc.numLines %}
+        by
+        {% spaceless %}
+        {% for editor in doc.editors %}
+            <a href="{{path_for('user.profile', {'username' : editor.username})}}" title="View profile">{{editor.fullname}}</a>{% if not loop.last %}, {% endif %}
+        {% endfor %}
+        {% endspaceless %}{% endif %}</p>
+    {% if doc.docInfo.image_source == 'dare' %}
+    <p class="docinfo"> = {{doc.docInfo.image_source_data}} &nbsp;&nbsp;
+        <a href=" http://dare.uni-koeln.de/dare-cgi/permalinks.pas?darepurl=scana-{{doc.docInfo.image_source_data}}-0001" 
+           target="_blank" 
+           title="View document in DARE (opens in new tab/window)">
+            DARE 
+            <span class="glyphicon glyphicon-new-window"></span>
+        </a>
+        &nbsp;&nbsp;
+        <a href="https://bilderberg.uni-koeln.de/cgi-bin/berg.pas?page=book&book={{doc.docInfo.image_source_data}}"
+           target="_blank" 
+           title="View document in Bilderberg (opens in new tab/window)">
+            Bilderberg
+            <span class="glyphicon glyphicon-new-window"></span>
+        </a>
+    </p>
+    {% else %}
+        <p class="docinfo">Not in DARE</p>
+    {% endif %}
+    <p class="docinfo">Pages:</p>
+<div class="pagetablediv" id="{{doc.tableId}}">
+    {{ macros.pageviewtable(doc.docInfo.id, doc.pages)}}
+</div>
+{% endblock %}
+

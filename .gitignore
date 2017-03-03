@@ -2,8 +2,8 @@
 /nbproject
 /src/config.*.php
 *.zip
-/php-sessions/
+/php-sessions
 src/public/vendor/
+src/public/config.php
 /src/scratch
-/scratch
 *.bak

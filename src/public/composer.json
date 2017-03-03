@@ -11,7 +11,7 @@
         "slim/slim": "^3.5",
         "slim/twig-view": "^2.1",
         "dflydev/fig-cookies": "^1.0",
-        "rafaelnajera/xmlmatcher": "^0.3"
+        "rafaelnajera/xmlmatcher": "^0.4"
     },
     
     "autoload": {

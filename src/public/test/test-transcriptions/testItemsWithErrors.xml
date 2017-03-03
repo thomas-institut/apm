@@ -1,0 +1,24 @@
+<TEI>
+    <teiHeader>
+        <fileDesc>
+            <titleStmt>
+                <editor xml:id="someusername"/>
+            </titleStmt>
+        </fileDesc>
+    </teiHeader>
+    <text xml:lang='la'>
+        <body>
+            <div type="page" facs="SOME_PAGE_ID">
+                <!-- In this line the text before the bad <sic> will 
+                     be captured -->
+                <l>Some text <sicx>Sic 1</sicx></l>
+                <!-- In this line no item will be captured since the
+                     whole sic element is bad -->
+                <l>
+                    <sic>Sic <note>bad done</note></sic>
+                </l>
+            </div>
+        </body>
+    </text>
+</TEI>
+

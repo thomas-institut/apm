@@ -79,6 +79,7 @@ $(document).ready(function(){
                 $.getJSON(apiBase + '/api/' + docId + '/' + pageNumber + '/' + col + '/elements', function (resp){
                     var tc; 
                     var theCol = resp.info['col'];
+                    //console.log('Column: ' + theCol);
                     tc = buildPageTextContainer(resp.elements, resp.ednotes, resp.people);
                     $('#col' + theCol).html(tc['text']);
                     setupTooltips(tc['tooltips']);
@@ -155,9 +156,9 @@ function buildPageTextContainer(elements, ednotes, people){
         seqtd = '<td class="linenumber" title="' + tooltipText + '">' + nLabel + '</td>';
         
         theText = '';
-        for (j=0; j < elements[i].transcribedText.theItems.length; j++){
+        for (j=0; j < elements[i].items.theItems.length; j++){
             
-            item = elements[i].transcribedText.theItems[j];
+            item = elements[i].items.theItems[j];
             htmlId = 'item' + item.id;
             classes = '';
             itemHasEdnotes = hasEdnotes(item.id, ednotes);
@@ -304,7 +305,7 @@ function buildPageTextContainer(elements, ednotes, people){
                 richTooltips[htmlId]['text'] += t;
             } // hasEdnotes
         } // for all items  
-        texttd = '<td class="text-' +  elements[i].transcribedText.lang + '">' + theText + "</td>";
+        texttd = '<td class="text-' +  elements[i].items.lang + '">' + theText + "</td>";
         if (rtl){
             s = s + texttd + seqtd;
         }

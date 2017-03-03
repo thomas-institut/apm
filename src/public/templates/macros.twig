@@ -24,3 +24,17 @@
 </table>
 {% endspaceless %}
 {% endmacro %}
+
+{% macro langName(lang) %}
+{% spaceless %}
+{% set names = { 'la' : 'Latin', 'he' : 'Hebrew', 'ar': 'Arabic', 'en' : 'English' } %}
+{{names[lang]}}
+{% endspaceless %}
+{% endmacro %}
+
+{% macro docTypeName(type) %}
+{% spaceless %}
+{% set names = { 'mss' : 'Manuscript', 'print' : 'Print' } %}
+{{names[type]}}
+{% endspaceless %}
+{% endmacro %}

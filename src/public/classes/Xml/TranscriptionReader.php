@@ -21,10 +21,9 @@
 
 namespace AverroesProject\Xml;
 
-use XMLReader;
-use XmlMatcher\XmlMatcher;
 use XmlMatcher\XmlToken;
 use Matcher\Pattern;
+use AverroesProject\TxText\Item;
 
 /**
  * Class to read a transcription from XML input
@@ -42,27 +41,26 @@ class TranscriptionReader {
     const ERROR_XML_LANG_NOT_FOUND = 6;
     const ERROR_BAD_PAGE_DIV = 7;
     const ERROR_CANNOT_LOAD_XML = 8;
+    const ERROR_ADD_WIHOUT_VALID_TARGET = 9;
         
     const MSG_GENERIC_ERROR = 'Error found';
     const MSG_GENERIC_WARNING = 'Warning';
     const MSG_INCORRECT_STRUCTURE = 'Incorrect structure';
     const MSG_BAD_TEI = 'Not a valid TEI file';
     const MSG_END_OF_FILE = 'End of file found';
-    const MSG_LOOKING_FOR_TEI = 'Looking for <TEI>';
     const MSG_LOOKING_FOR_TEI_HEADER = "Looking for <teiHeader> inside <TEI>";
     const MSG_IGNORED_ELEMENT = "Ignored element <%s>";
     const MSG_NO_EDITOR = "No editor username given";
     const MSG_EXPECTED_ELEMENT = "Expected <%s>, got <%s>";
-    const MSG_NOT_TEI = "The given XML is not a TEI document";
-    const MSG_LOOKING_FOR_TEXT_ELEMENT = "Looking for <text> element";
     const MSG_XML_LANG_REQUIRED = "xml:lang attribute is required";
     const MSG_LOOKING_FOR_BODY_ELEMENT = "Looking for <body> inside <text>";
-    const MSG_LOOKING_FOR_PAGE_DIV = "Looking for page <div> inside <body>";
     const MSG_BAD_PAGE_DIV = 
             "Bad page <div>, expected <page type='page' facs='[pageId]'";
     
     const WARNING_IGNORED_ELEMENT = 500;
-    
+    const WARNING_BAD_ITEM = 501;
+    const WARNING_BAD_ATTRIBUTE  = 502;
+        
     public $transcription;
     
     
@@ -86,10 +84,7 @@ class TranscriptionReader {
     }
     
     public function reset(){
-        $this->transcription['elements'] = [];
-        $this->transcription['items'] = [];
-        $this->transcription['ednotes'] = [];
-        $this->transcription['editors'] = [];
+        $this->transcription['people'] = [];
         $this->transcription['defaultLang'] = '';
         $this->transcription['pageDivs'] = [];
         $this->transcription['countBodyDivsProcessed'] = 0;
@@ -98,23 +93,21 @@ class TranscriptionReader {
         $this->warnings = [];
     }
     
-    
     public function read($xml)
     {
+        libxml_use_internal_errors(true);
         $sXml = simplexml_load_string($xml);
         
         if ($sXml === false){
             $errorMsg = '';
             foreach(libxml_get_errors() as $error){
-                $errorMsg .= $error . "; ";
+                $errorMsg .= $error->message . "; ";
             }
             $this->setError(self::ERROR_CANNOT_LOAD_XML, $errorMsg);
-            
             return false;
         }
         
         if (!$this->checkTEIBasicStructure($sXml)){
-            
             return false;
         }
         
@@ -122,9 +115,14 @@ class TranscriptionReader {
             return false;
         }
         
-        if (!$this->getDefaultLanguageFromTextElement($sXml->text)) {
+        $defaultLang = $this->getLang($sXml->text);
+        if ($defaultLang === '' or $defaultLang === NULL) {
+            $this->setError(self::ERROR_XML_LANG_NOT_FOUND, 
+                    self::MSG_XML_LANG_REQUIRED, " in <text> element");
             return false;
         }
+        
+        $this->transcription['defaultLang'] = $defaultLang;
         
         foreach ($sXml->text->body->div as $bodyDiv){
             if (!$this->processBodyDiv($bodyDiv)){
@@ -161,23 +159,22 @@ class TranscriptionReader {
     }
     
     /**
-     * Process the xml inside <body>
-     * 
-     * @param string $xml
+     * Process the XML inside <body>
+     *
+     * @param string $sXml
      * @return boolean
      */
-    private function processBodyDiv($sXml){
+    private function processBodyDiv($sXml)
+    {
         $this->transcription['countBodyDivsProcessed']++;
 
-        if (!$this->isValidPageDiv($sXml)){
+        if (!$this->isPageDivElement($sXml)){
+            // Not a page div, return true
+            // = don't process but don't generate an error
             return true;
         }
-        $pageDiv = [];
-        $pageDiv['id'] = count($this->transcription['pageDivs']);
-        $pageDiv['facs'] = (string) $sXml['facs'];
-        $pageDiv['lang'] = $this->getLang($sXml);
 
-        $result = $this->processPageDiv($sXml, $pageDiv);
+        $result = $this->processPageDiv($sXml);
         if ($result === false) {
             return false;
         }
@@ -186,23 +183,35 @@ class TranscriptionReader {
         return true;
     }
     
-    private function isValidPageDiv($sXml)
+    /**
+     * Returns true if the given XML is a page div
+     * element
+     * 
+     * @param type $sXml
+     * @return boolean
+     */
+    private function isPageDivElement($sXml)
     {
         $type = (string) $sXml['type'];
         $facs = (string) $sXml['facs'];
         if ($type !== 'page') {
             return false;
         }
-       
         if (!$facs){
             return false;
         }
-        
-
         return true;
     }
     
-    private function getLang($sXml){
+    /**
+     * Returns the xml:lang attribute of the given XML
+     * or '' if not set
+     *
+     * @param type $sXml
+     * @return string
+     */
+    private function getLang($sXml)
+    {
         $lang = (string) $sXml->attributes('xml', TRUE)['lang'];
         if ($lang === NULL) {
             $lang = '';
@@ -210,54 +219,744 @@ class TranscriptionReader {
         return $lang;
     }
     
-    private function processPageDiv($sXml, $pageDiv)
+    /**
+     * Process a page div. 
+     * 
+     * Returns an associative array with the following 
+     * information:
+     * 
+     *   $r['elements'] : column elements
+     *   $r['items'] : column items
+     *   $r['ednotes'] : editorial notes
+     *   $r['people'] : editors and editorial note authors
+     * 
+     * 
+     * @param type $sXml
+     * @param type $pageDiv
+     * @return boolean|array 
+     */
+    private function processPageDiv($sXml)
     {
-        if (count($sXml->div)>0 || 
-                count($sXml->gap) > 0) {
-            // First, process the column divs
-            foreach ($sXml->div as $cDiv){
-                $colNumber = (int) $cDiv['n'];
-                if (!$colNumber){
-                    // Bad col number
-                    return false;
-                }
-                $colLang = '';
-                if ( (string) $cDiv->attributes('xml', TRUE)['lang']){
-                    $colLang = (string) $cDiv->attributes('xml', TRUE)['lang'];
-                }
-                $colTranscription = $this->readColumn($cDiv);
-                if ($colTranscription === false){
-                    return false;
-                }
-                $pageDiv['cols'][$colNumber-1]['transcription'] = 
-                        $colTranscription;
-                
-                $pageDiv['cols'][$colNumber-1]['lang'] = $colLang;
+        $pageDiv = [];
+        $pageDiv['facs'] = (string) $sXml['facs'];
+        $pageDiv['defaultLang'] = $this->getLang($sXml);
+        $pageDiv['cols'] = [];
+        $pageDiv['elements'] = [];
+        $pageDiv['ednotes'] = [];
+        
+        // Check for page divs
+        $foundColumnDivs = false;
+        foreach ($sXml->children() as $underDiv){
+            if ($underDiv->getName() === 'div' && 
+                    (string) $underDiv['type'] === 'column') {
+                $foundColumnDivs = true;
+                break;
             }
-            
-            // Second, get the gaps
+        }
+        
+        if ($foundColumnDivs) {
             $declaredMissingColumns = 0;
-            foreach($sXml->gap as $gap){
-                $declaredMissingColumns += (int) $gap['n'];
+            foreach ($sXml->children() as $underDiv){
+                switch($underDiv->getName()) {
+                case 'div':
+                    $colNumber = (int) $underDiv['n'];
+                    if (!$colNumber){
+                        // Bad col number
+                        return false;
+                    }
+                    $pageDiv['cols'][$colNumber] = [];
+                    $pageDiv['cols'][$colNumber]['defaultLang'] = 
+                            $this->getLang($underDiv);
+                    $pageDiv['cols'][$colNumber]['colNumber'] = $colNumber;
+
+                    $readResult = $this->readColumn($underDiv, $pageDiv['cols'][$colNumber], $pageDiv);
+                    if ($readResult === false){
+                        return false;
+                    }
+                    $pageDiv['cols'][$colNumber] = $readResult;
+                    break;
+                    
+                case 'gap':
+                    $declaredMissingColumns += (int) $underDiv['n'];
+                    break;
+                }
+                
             }
-            $pageDiv['nGaps'] = $declaredMissingColumns;
+            $pageDiv['nGaps'] = $declaredMissingColumns;    
             return $pageDiv;
         }
-       
         // Single column in page div
-        $colTranscription = $this->readColumn($sXml);
-        if ($colTranscription === false){
+        $pageDiv['nGaps'] = 0;
+        $pageDiv['cols'][1] = [];
+        $pageDiv['cols'][1]['defaultLang'] = $pageDiv['defaultLang'];
+        $pageDiv['cols'][1]['colNumber'] = 1;
+        
+        $readResult2 = $this->readColumn($sXml, $pageDiv['cols'][1], $pageDiv);
+        if ($readResult2 === false){
             return false;
         }
-        $pageDiv['cols'][0] = [];
-        $pageDiv['cols'][0]['transcription'] = $colTranscription;
-        $pageDiv['cols'][0]['lang'] = '';
+        $pageDiv['cols'][1] = $readResult2;
+        
         return $pageDiv;
     }
     
-    public function readColumn($xml)
+    /**
+     * Reads a column of transcription. Returns
+     * an updated page div or false if there's any error.
+     * 
+     * @param type $sXml
+     * @param type $pageDiv
+     * @return array
+     */
+    private function readColumn($sXml, $col, $pageDiv)
+    {   
+        $col['elements'] = [];
+        $col['ednotes'] = [];
+        $elementId = 0;
+        $elementSeq = 1;
+        $xmlElementCount = 0;
+        $lineNumber = 1;
+        $itemId = 0;
+        $additions = [];
+        
+        foreach($sXml as $elementXml){
+            $xmlElementCount++;
+            $ignore = false;
+            $gap = false;
+            switch($elementXml->getName()) {
+                case 'gap':
+                    // Don't care about unit and reason attributes
+                    $nLines = (int) $elementXml['quantity'];
+                    if ($nLines != 0) {
+                        $lineNumber += $nLines;
+                    }
+                    $readItems = false;
+                    $gap = true;
+                    break;
+                
+                case 'add':
+                    $element = new \AverroesProject\ColumnElement\Addition();
+                    $readItems = true;
+                    // Store the target Id, this will be checked later
+                    // with metamark and del items
+                    $element->targetXmlId = (string) $elementXml['target'];
+                    $element->placement = (string) $elementXml['place'];
+                    $additions[] = ['elementId' => $elementId,
+                        'target' => $element->targetXmlId];
+                    break;
+                    
+                case 'l':
+                    $element = new \AverroesProject\ColumnElement\Line();
+                    $element->setLineNumber($lineNumber);
+                    $lineNumber++;
+                    $readItems = true;
+                    break;
+                
+                case 'head':
+                    $element = new \AverroesProject\ColumnElement\Head();
+                    $readItems = true;
+                    break;
+                
+                case 'fw':
+                    $type = (string) $elementXml['type'];
+                    switch($type) {
+                    case 'catch':
+                        $element = new \AverroesProject\ColumnElement\Custodes();
+                        $readItems = true;
+                        break;
+                    
+                    case 'pageNum':
+                        $element = new \AverroesProject\ColumnElement\PageNumber();
+                        $readItems = true;
+                        break;
+                    
+                    default:
+                        $ignore = true;
+                        break;
+                    }
+                    break;
+                    
+                case 'note':
+                    $type = (string) $elementXml['type'];
+                    if ( $type === 'editorial') {
+                        $readItems = false;
+                        $element = new \AverroesProject\ColumnElement\NoteMark();
+                        $theNote = new \AverroesProject\EditorialNote();
+                        $theNote->type = \AverroesProject\EditorialNote::OFFLINE;
+                        $theNote->target = $elementId;
+                        $theNote->lang = 'en';
+                        $theNote->setText((string) $elementXml);
+                        $col['ednotes'][] = $theNote;
+                        continue;
+                    }
+                    if ($type === 'gloss') {
+                        $element = new \AverroesProject\ColumnElement\Gloss();
+                        $readItems = true;
+                        continue;
+                    }
+                    // Not a valid note, ignore
+                    $ignore = true;
+                    break;
+                    
+                default:
+                    // Not valid element, ignore
+                    $ignore = true;
+            }
+            if ($ignore) {
+                $this->addWarning(self::WARNING_IGNORED_ELEMENT, 
+                    sprintf(self::MSG_IGNORED_ELEMENT, $elementXml->getName()), 
+                    sprintf("At page div %s, column %d, XML element %d", 
+                            $pageDiv['facs'], 
+                            $col['colNumber'],
+                            $xmlElementCount));
+                continue;
+            }
+            if ($readItems) {
+                $itemResult = $this->readItems($elementXml, $elementId, $itemId, $col['ednotes']);
+                if ($itemResult === false) {
+                    return false;
+                }
+                $element->items = $itemResult['items'];
+                $col['ednotes'] = $itemResult['ednotes'];
+                $itemId+= $itemResult['items']->nItems();
+            } 
+            if (!$gap){
+                $element->id = $elementId;
+                $element->lang = $this->getLang($elementXml);
+                $element->columnNumber = $col['colNumber'];
+                $element->seq = $elementSeq;
+                $element->editorId = 0;
+                $col['elements'][] = $element;
+                $elementSeq++;
+                $elementId++;
+            }
+        }
+        if (count($additions) > 0 ) {
+            // Check and update targets
+            $ids = [];
+            foreach($col['elements'] as $element){
+                foreach($element->items->theItems as $item) {
+                    if ($item instanceof \AverroesProject\TxText\Mark || 
+                        $item instanceof \AverroesProject\TxText\Deletion) {
+                        $ids[] = ['itemId' => $item->id, 'xmlId' => $item->getXmlId() ];
+                    }
+                }
+            }
+            
+            foreach ($additions as $addition) {
+                $itemId = $this->searchXmlId($addition['target'], $ids);
+                if ($itemId===false ) {
+                    $this->setError(self::ERROR_ADD_WIHOUT_VALID_TARGET, 
+                            "Addition's target not found: " . $addition['target'], 
+                           sprintf("At page div %s, column %d", 
+                            $pageDiv['facs'], 
+                            $col['colNumber']));
+                    return false;
+                }
+                $col['elements'][$addition['elementId']]->target = $itemId;
+            }
+        }
+        
+        return $col;
+    }
+    
+    private function searchXmlId($xmlId, $idArray) 
     {
-        return [];
+        
+        foreach($idArray as $id){
+            if ($id['xmlId'] === $xmlId) {
+                return $id['itemId'];
+            }
+        }
+        return false;
+    }
+    
+    private function readItems($sXml, $elementId, $itemId, $ednotes) 
+    {
+        $reader = new \XMLReader();
+        $theXml = $sXml->asXml();
+        $reader->XML($theXml);
+        $reader->read(); // in the outer element
+        $innerXml = $reader->readInnerXml();
+        
+        /**
+         * @todo Support note authors
+         */
+        $notePattern = (new Pattern())->withTokenSeries([
+            XmlToken::elementToken('note')->withReqAttrs([
+                ['type', 'editorial']]),
+            XmlToken::textToken(),
+            XmlToken::endElementToken('note')])
+            ->withCallback( function ($matched) use ($itemId, &$ednotes){
+                array_pop($matched); // </note>
+                $readData = array_pop($matched); // the text
+                array_pop($matched); // <note>
+                $note = new \AverroesProject\EditorialNote();
+                $note->type= \AverroesProject\EditorialNote::INLINE;
+                $note->target = $itemId;
+                $note->setText($readData['text']);
+                $note->lang = 'en';
+                $ednotes[] = $note;
+                return $matched;
+            });
+        
+        $textPattern = (new Pattern())
+                ->withTokenSeries([XmlToken::textToken()])
+                ->withCallback( function ($matched) use (&$itemId) {
+                    $readData = array_pop($matched);
+                    $text= new \AverroesProject\TxText\Text(0, 0, 
+                            Item::normalizeString($readData['text']));
+                    $text->lang = '';
+                    $text->id = $itemId;
+                    $matched[] = $text;
+                    $itemId++;
+                    return $matched;
+                });
+                
+        $sic1Pattern = (new Pattern())
+                ->withTokenSeries([
+                    XmlToken::elementToken('sic'),
+                    XmlToken::textToken()])
+                ->withAddedPatternZeroOrMore($notePattern)
+                ->withTokenSeries([
+                    XmlToken::endElementToken('sic')
+                   ])
+                ->withCallback(function ($matched) use (&$itemId){
+                    array_pop($matched); // </sic>
+                    $readData = array_pop($matched); // text
+                    array_pop($matched); // <sic>
+                    $item = new \AverroesProject\TxText\Sic(0, 0, 
+                        Item::normalizeString($readData['text']));
+                    $item->lang = '';
+                    $item->id = $itemId;
+                    $matched[] = $item;
+                    $itemId++;
+                    return $matched;
+                });
+                
+        $sic2Pattern = (new Pattern())
+                ->withTokenSeries([
+                    XmlToken::elementToken('choice'),
+                    XmlToken::elementToken('sic'),
+                    XmlToken::textToken(), // theText
+                    XmlToken::endElementToken('sic'),
+                    XmlToken::elementToken('supplied'),
+                    XmlToken::textToken(), // altText
+                    XmlToken::endElementToken('supplied')])
+                ->withAddedPatternZeroOrMore($notePattern)
+                ->withTokenSeries([
+                    XmlToken::endElementToken('choice')
+                   ])
+                ->withCallback(function ($matched) use (&$itemId){
+                    $nItems = count($matched);
+                    $alt2 = $matched[$nItems-3];
+                    $alt1 = $matched[$nItems-6];
+                    array_splice($matched, -8);
+                    $item = new \AverroesProject\TxText\Sic(0, 0, 
+                            Item::normalizeString($alt1['text']), 
+                            Item::normalizeString($alt2['text']));
+                    $item->lang = '';
+                    $item->id = $itemId;
+                    $matched[] = $item;
+                    $itemId++;
+                    return $matched;
+                });
+
+        $initialPattern = (new Pattern())
+                ->withTokenSeries([
+                    XmlToken::elementToken('hi')
+                        ->withReqAttrs([['rend', 'initial']]),
+                    XmlToken::textToken()])
+                ->withAddedPatternZeroOrMore($notePattern)
+                ->withTokenSeries([
+                    XmlToken::endElementToken('hi')
+                   ])
+                ->withCallback(function ($matched) use (&$itemId){
+                    array_pop($matched); // </hi>
+                    $readData = array_pop($matched); // text
+                    array_pop($matched); // <hi>
+                    $item = new \AverroesProject\TxText\Initial(0, 0, 
+                        Item::normalizeString($readData['text']));
+                    $item->lang = '';
+                    $item->id = $itemId;
+                    $matched[] = $item;
+                    $itemId++;
+                    return $matched;
+                });
+                
+        $rubricPattern = (new Pattern())
+                ->withTokenSeries([
+                    XmlToken::elementToken('hi')
+                        ->withReqAttrs([['rend', 'rubric']]),
+                    XmlToken::textToken()])
+                ->withAddedPatternZeroOrMore($notePattern)
+                ->withTokenSeries([
+                    XmlToken::endElementToken('hi')
+                   ])
+                ->withCallback(function ($matched) use (&$itemId){
+                    array_pop($matched); // </hi>
+                    $readData = array_pop($matched); // text
+                    array_pop($matched); // <hi>
+                    $item = new \AverroesProject\TxText\Rubric(0, 0, 
+                        Item::normalizeString($readData['text']));
+                    $item->lang = '';
+                    $item->id = $itemId;
+                    $matched[] = $item;
+                    $itemId++;
+                    return $matched;
+                });
+        
+        $unclear1Pattern = (new Pattern())
+                ->withTokenSeries([
+                    XmlToken::elementToken('unclear'),
+                    XmlToken::textToken()])
+                ->withAddedPatternZeroOrMore($notePattern)
+                ->withTokenSeries([
+                    XmlToken::endElementToken('unclear')
+                   ])
+                ->withCallback(function ($matched) use (&$itemId){
+                    array_pop($matched); // </unclear>
+                    $readData = array_pop($matched); // text
+                    array_pop($matched); // <unclear>
+                    $item = new \AverroesProject\TxText\Unclear(0, 0, 
+                            'unclear',
+                            Item::normalizeString($readData['text']));
+                    $item->lang = '';
+                    $item->id = $itemId;
+                    $matched[] = $item;
+                    $itemId++;
+                    return $matched;
+                });
+                
+        $unclear2Pattern = (new Pattern())
+                ->withTokenSeries([
+                    XmlToken::elementToken('unclear'),
+                    XmlToken::elementToken('choice'),
+                    XmlToken::elementToken('unclear'),
+                    XmlToken::textToken(), // alt 1
+                    XmlToken::endElementToken('unclear'),
+                    XmlToken::elementToken('unclear'),
+                    XmlToken::textToken(), // alt 2
+                    XmlToken::endElementToken('unclear'),
+                    XmlToken::endElementToken('choice')])
+                ->withAddedPatternZeroOrMore($notePattern)
+                ->withTokenSeries([
+                    XmlToken::endElementToken('unclear')
+                   ])
+                ->withCallback(function ($matched) use (&$itemId){
+                    $nItems = count($matched);
+                    $alt2 = $matched[$nItems-4];
+                    $alt1 = $matched[$nItems-7];
+                    array_splice($matched, -10);
+                    $item = new \AverroesProject\TxText\Unclear(0, 0, 
+                            'unclear',
+                            Item::normalizeString($alt1['text']), 
+                            Item::normalizeString($alt2['text']));
+                    $item->lang = '';
+                    $item->id = $itemId;
+                    $matched[] = $item;
+                    $itemId++;
+                    return $matched;
+                });
+                
+        $illegiblePattern = (new Pattern())
+                ->withTokenSeries([
+                    XmlToken::elementToken('unclear'),
+                    XmlToken::elementToken('gap')
+                        ->withReqAttrs([ 
+                            ['reason', '/^[a-z]+$/'], 
+                            ['quantity', '/^[0-9]+$/']
+                            ])])
+                ->withAddedPatternZeroOrMore($notePattern)
+                ->withTokenSeries([
+                    XmlToken::endElementToken('unclear')
+                   ])
+                ->withCallback(function ($matched) use (&$itemId){
+                    $nItems = count($matched);
+                    $gap = $matched[$nItems-2];
+                    array_splice($matched, -3);
+                    $reason = $gap['attributes']['reason'];
+                    if (!\AverroesProject\TxText\Illegible::isReasonValid($reason)) {
+                        $this->addWarning(self::WARNING_BAD_ATTRIBUTE, 
+                                "Not valid reason '$reason", 
+                                "In <unclear><gap reason=...");
+                        return $matched;
+                    }
+                    $quantity = $gap['attributes']['quantity'];
+                    if ($quantity <= 0 ) {
+                         $this->addWarning(self::WARNING_BAD_ATTRIBUTE, 
+                                "Quantity should be 1 or more, got $quantity", 
+                                "In <unclear><gap reason=...");
+                        return $matched;
+                    }
+                    $item = new \AverroesProject\TxText\Illegible(0, 0, 
+                            $quantity, $reason);
+                    $item->lang = '';
+                    $item->id = $itemId;
+                    $matched[] = $item;
+                    $itemId++;
+                    return $matched;
+                });
+                
+        $abbrPattern = (new Pattern())
+                ->withTokenSeries([
+                    XmlToken::elementToken('choice'),
+                    XmlToken::elementToken('abbr'),
+                    XmlToken::textToken(), // theText
+                    XmlToken::endElementToken('abbr'),
+                    XmlToken::elementToken('expan'),
+                    XmlToken::textToken(), // altText
+                    XmlToken::endElementToken('expan')])
+                ->withAddedPatternZeroOrMore($notePattern)
+                ->withTokenSeries([
+                    XmlToken::endElementToken('choice')
+                   ])
+                ->withCallback(function ($matched) use (&$itemId){
+                    $nItems = count($matched);
+                    $alt2 = $matched[$nItems-3];
+                    $alt1 = $matched[$nItems-6];
+                    array_splice($matched, -8);
+                    $item = new \AverroesProject\TxText\Abbreviation(0, 0, 
+                            Item::normalizeString($alt1['text']), 
+                            Item::normalizeString($alt2['text']));
+                    $item->lang = '';
+                    $item->id = $itemId;
+                    $matched[] = $item;
+                    $itemId++;
+                    return $matched;
+                });
+        
+        $delPattern = (new Pattern())
+                ->withTokenSeries([
+                    XmlToken::elementToken('del')
+                        ->withReqAttrs([['rend', '/.*/']]),
+                    XmlToken::textToken()])
+                ->withAddedPatternZeroOrMore($notePattern)
+                ->withTokenSeries([
+                    XmlToken::endElementToken('del')
+                   ])
+                ->withCallback(function ($matched) use (&$itemId){
+                    array_pop($matched); // </del>
+                    $readData = array_pop($matched); // text
+                    $del = array_pop($matched); // <del>
+                    $technique = $del['attributes']['rend'];
+                    if (!\AverroesProject\TxText\Deletion::isDeletionTechniqueAllowed($technique)) {
+                        $this->addWarning(self::WARNING_BAD_ATTRIBUTE, 
+                                "Not valid deletion technique '$technique", 
+                                "In <del rend=...");
+                        return $matched;
+                    }
+                    $item = new \AverroesProject\TxText\Deletion(0, 0, 
+                        Item::normalizeString($readData['text']),
+                            $technique);
+                    $item->lang = '';
+                    $item->id = $itemId;
+                    $matched[] = $item;
+                    $itemId++;
+                    return $matched;
+                });
+        
+        $gliphPattern = (new Pattern())
+        ->withTokenSeries([
+            XmlToken::elementToken('g'),
+            XmlToken::textToken()])
+        ->withAddedPatternZeroOrMore($notePattern)
+        ->withTokenSeries([
+            XmlToken::endElementToken('g')
+           ])
+        ->withCallback(function ($matched) use (&$itemId){
+            array_pop($matched); // </sic>
+            $readData = array_pop($matched); // text
+            array_pop($matched); // <sic>
+            $item = new \AverroesProject\TxText\Gliph(0, 0, 
+                Item::normalizeString($readData['text']));
+            $item->lang = '';
+            $item->id = $itemId;
+            $matched[] = $item;
+            $itemId++;
+            return $matched;
+        });
+        
+        $noLbPattern = (new Pattern())
+            ->withTokenSeries([
+                XmlToken::elementToken('lb')
+                    ->withReqAttrs([['break', 'no']])
+                    ])
+            ->withCallback(function ($matched) use (&$itemId){
+                array_pop($matched); // <lb/>
+                $item = new \AverroesProject\TxText\NoLinebreak(0, 0);
+                $item->lang = '';
+                $item->id = $itemId;
+                $matched[] = $item;
+                $itemId++;
+                return $matched;
+            });
+            
+         $metamarkPattern = (new Pattern())
+            ->withTokenSeries([
+                XmlToken::elementToken('metamark')
+                    ->withReqAttrs([['xml:id', '/.*/']])
+                    ])
+            ->withCallback(function ($matched) use (&$itemId){
+                $metamark = array_pop($matched); // <metamark/>
+                $item = new \AverroesProject\TxText\Mark(0, 0);
+                $item->setXmlId($metamark['attributes']['xml:id']);
+                $item->lang = '';
+                $item->id = $itemId;
+                $matched[] = $item;
+                $itemId++;
+                return $matched;
+            });
+            
+        $addPattern = (new Pattern())
+                ->withTokenSeries([
+                    XmlToken::elementToken('add')
+                        ->withReqAttrs([['place', '/.*/']])
+                        ->withOptAttrs([['target', '/^#.*/']]),
+                    XmlToken::textToken()])
+                ->withAddedPatternZeroOrMore($notePattern)
+                ->withTokenSeries([
+                    XmlToken::endElementToken('add')
+                   ])
+                ->withCallback(function ($matched) use (&$itemId){
+                    array_pop($matched); // </add>
+                    $readData = array_pop($matched); // text
+                    $add = array_pop($matched); // <add>
+                    $place = $add['attributes']['place'];
+                    if (!\AverroesProject\TxText\Addition::isPlaceValid($place)) {
+                        $this->addWarning(self::WARNING_BAD_ATTRIBUTE, 
+                                "Not valid place'$place", 
+                                "In <add place=...");
+                        return $matched;
+                    }
+                    $item = new \AverroesProject\TxText\Addition(0, 0, 
+                        Item::normalizeString($readData['text']),
+                            $place);
+                    //
+                    // I'm not sure we need to support inline targets!
+                    //$target = $add['attributes']['target'];
+                    //if ($target !== '') {
+                    //    $item->targetXmlId = $target;
+                    //}
+                    $item->lang = '';
+                    $item->id = $itemId;
+                    $matched[] = $item;
+                    $itemId++;
+                    return $matched;
+                });
+        
+        $inlineNotePattern = (new Pattern())->withTokenSeries([
+            XmlToken::elementToken('note')->withReqAttrs([
+                ['type', 'editorial']]),
+            XmlToken::textToken(),
+            XmlToken::endElementToken('note')])
+            ->withCallback( function ($matched) use (&$itemId, &$ednotes){
+                array_pop($matched); // </note>
+                $readData = array_pop($matched); // the text
+                array_pop($matched); // <note>
+                // Add the note
+                $note = new \AverroesProject\EditorialNote();
+                $note->type= \AverroesProject\EditorialNote::INLINE;
+                $note->target = $itemId;
+                $note->setText($readData['text']);
+                $note->lang = 'en';
+                $ednotes[] = $note;
+                // Add a mark
+                
+                $item = new \AverroesProject\TxText\Mark(0, 0);
+                $item->lang = '';
+                $item->id = $itemId;
+                $matched[] = $item;
+                $itemId++;
+                return $matched;
+            });
+        
+        $mod1Pattern = (new Pattern())
+                ->withTokenSeries([
+                    XmlToken::elementToken('mod')
+                        ->withReqAttrs([['type', 'subst'] ,['xml:id', '/.*/']])
+                    ])
+                ->withAddedPattern($delPattern)
+                ->withTokenSeries([
+                    XmlToken::endElementToken('mod')
+                    ])
+                ->withCallback(function ($matched) use (&$itemId){
+                    $nItems = count($matched);
+                    array_pop($matched); // </mod>
+                    $delItem = array_pop($matched); // del
+                    $mod = array_pop($matched); // <mod>
+                    $delItem->modXmlId = $mod['attributes']['xml:id'];
+                    $matched[] = $delItem;
+                    return $matched;
+                });
+        
+        $mod2Pattern = (new Pattern())
+                ->withTokenSeries([
+                    XmlToken::elementToken('mod')
+                        ->withReqAttrs([['type', 'subst']])])
+                ->withAddedPattern($delPattern)
+                ->withAddedPattern($addPattern)
+                ->withTokenSeries([
+                    XmlToken::endElementToken('mod')
+                    ])
+                ->withCallback(function ($matched) use (&$itemId){
+                    $nItems = count($matched);
+                    array_pop($matched); // </mod>
+                    $addItem = array_pop($matched); // add 
+                    $delItem = array_pop($matched); // del
+                    array_pop($matched); // <mod>
+                    $addItem->setTarget($delItem->id);
+                    $matched[] = $delItem;
+                    $matched[] = $addItem;
+                    return $matched;
+                });
+                
+        $pMatcher = new \XmlMatcher\XmlParallelMatcher([
+            $textPattern, 
+            $sic1Pattern, 
+            $sic2Pattern,
+            $initialPattern,
+            $rubricPattern,
+            $unclear1Pattern,
+            $unclear2Pattern,
+            $illegiblePattern,
+            $abbrPattern,
+            $delPattern,
+            $addPattern,
+            $gliphPattern,
+            $noLbPattern,
+            $metamarkPattern,
+            $inlineNotePattern,
+            $mod1Pattern,
+            $mod2Pattern
+       ]);
+        
+        $matchResult = $pMatcher->matchXmlString($innerXml);
+        if (!$matchResult) {
+            // This can only be a match problem since XML problems
+            // would have been detected when reading the whole
+            // document
+            $this->addWarning(self::WARNING_BAD_ITEM, 
+                    "Bad item detected: '" . $pMatcher->matchErrorElement . "'", 
+                    "In: $theXml");
+        }
+        
+        $seq = 1;
+        $itemArray = new \AverroesProject\TxText\ItemArray($elementId);
+        foreach($pMatcher->matched as $matchedArray){
+            foreach($matchedArray as $item){
+                if ($item instanceof Item){
+                    $item->seq = $seq;
+                    $item->columnElementId = $elementId;
+                    $itemArray->addItem($item);
+                    $seq++;
+                    continue;
+                }
+                // This should never happen!
+                $this->addWarning(self::WARNING_BAD_ITEM, "Bad Item", $item[0]);
+            }
+        }
+        return [ 'items' => $itemArray, 'ednotes' => $ednotes];
     }
     
     private function getInfoFromHeader($theHeader)
@@ -277,62 +976,18 @@ class TranscriptionReader {
                     self::MSG_NO_EDITOR, "in TEI\teiHeader\fileDesc\titleStmt");
             return false;
         }
-        $this->transcription['editors'][] = $editorUsername;
+        $this->transcription['people'][] = $editorUsername;
         return true;
     }
     
-    public function getDefaultLanguageFromTextElement($sXml){
-       
-        $defaultLang = (string) $sXml->attributes('xml', TRUE)['lang'];
-        
-        if ($defaultLang === '' or $defaultLang === NULL) {
-            $this->setError(self::ERROR_XML_LANG_NOT_FOUND, 
-                    self::MSG_XML_LANG_REQUIRED, " in <text> element");
-            return false;
-        }
-       
-        $this->transcription['defaultLang'] = $defaultLang;
-        return true;
-    }
-  
-    /**
-     * Advances an XMLReader object until the next XML element
-     * with the given name
-     * 
-     * @param XMLReader $reader
-     * @param string $elementName
-     * @param type $errorContext
-     * @return boolean
-     */
-    private function fastForwardToElement(XMLReader $reader, 
-            string $elementName, $errorContext = '', $strictMode = false)
-    {
-        
-        while ($reader->read()){
-            if ($reader->nodeType === XMLReader::ELEMENT){
-                if ($reader->name === $elementName){
-                    return true;
-                }
-                if ($strictMode) { 
-                    $this->setError(self::ERROR_WRONG_ELEMENT, 
-                            sprintf(self::MSG_EXPECTED_ELEMENT, $elementName, 
-                                    $reader->name));
-                    return false;
-                }
-                $this->addWarning(self::WARNING_IGNORED_ELEMENT, 
-                        sprintf(self::MSG_IGNORED_ELEMENT, $reader->name), 
-                        $errorContext);
-            }
-        }
-        $this->setError(self::ERROR_EOF, self::MSG_END_OF_FILE, $errorContext);
-        return false;
-    }
-
     private function addWarning(int $warningNo, 
             string $warningMsg=self::MSG_GENERIC_WARNING, 
             string $warningContext = '')
     {
-        $this->warnings[] = [ $warningNo, $warningMsg, $warningContext];
+        $this->warnings[] = [ 
+            'number' => $warningNo, 
+            'message' => $warningMsg, 
+            'context' => $warningContext];
     }
     
     private function setError(int $errNo, 
@@ -341,43 +996,6 @@ class TranscriptionReader {
         $this->errorNumber = $errNo;
         $this->errorMsg = $msg;
         $this->errorContext = $context;
-    }
-    
-    /**
-     * Returns the facs and lang attributes from the <div> element.
-     * If the element is not valid, returns false.
-     *
-     * @param XmlReader $reader
-     * @return array
-     */
-    private function getInfoFromPageDivElement($sXml)
-    {   
-        
-        $reader = new XMLReader();
-        $reader->XML($sXml->asXml());
-        $reader->read();
-        $divType = $reader->getAttribute('type');
-        if ($divType === NULL || $divType !== 'page'){
-            $warningMsg = sprintf(self::MSG_IGNORED_ELEMENT, 
-                            "<div type=\"$divType\">");
-            $this->addWarning(self::WARNING_IGNORED_ELEMENT, $warningMsg);
-            print "Warning: $warningMsg\n";
-             return true;
-        }
-        $pageDivPattern =  (new Pattern())
-            ->withTokenSeries([XmlToken::elementToken('div')
-                    ->withReqAttrs([ ['type', 'page'], ['facs', '/.*/']])
-            ->withOptAttrs([ ['xml:lang', '/.*/']])
-        ]);
-        $matcher = new XmlMatcher($pageDivPattern);
-        $matcher->match($reader);
-        if (!$matcher->matchFound()){
-            $this->setError(self::ERROR_BAD_PAGE_DIV, self::MSG_BAD_PAGE_DIV);
-            return false;
-        }
-        return [ 'facs' => $matcher->matched[0]['attributes']['facs'],
-                 'lang' => $matcher->matched[0]['attributes']['xml:lang']
-            ];
     }
     
 }

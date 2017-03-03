@@ -165,12 +165,12 @@ $app->group('/api', function (){
     // API -> getElements
     $this->get('/{document}/{page}/{column}/elements', 
             '\AverroesProject\Api\ApiController:getElementsByDocPageCol')
-        ->setName('api_getelements');
+        ->setName('api.getelements');
     
     // API -> numColumns
     $this->get('/{document}/{page}/numcolumns', 
             '\AverroesProject\Api\ApiController:getNumColumns')
-        ->setName('api_numcolumns');
+        ->setName('api.numcolumns');
 
 })->add('\AverroesProject\Auth\Authenticator:authenticateApiRequest');
 

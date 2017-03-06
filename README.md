@@ -8,19 +8,26 @@ with access to that database.
 ## Development
 
 Development requires:
-* PHP 7.0
 * git
-* PHP Composer
-* PHPUnit 6.0+
 * MySQL 5.7
+* PHP 7.0
+* PHP Composer
+* PHPUnit 6.0+ 
+* npm 3.5+ 
 
-Get all the dependencies with composer:
+Get all PHP dependencies with composer:
 ```bash
 cd src/public
 composer update
 ```
 
-Unit testing:
+Get all Javascript dependencies with npm:
+```bash
+cd src/public
+npm install
+```
+
+PHP Unit testing:
 ```bash
 cd src/public/test
 phpunit .

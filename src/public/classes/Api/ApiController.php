@@ -65,7 +65,10 @@ class ApiController
             }
         }
 
-        return $response->withJson(['elements' => $elements, 'ednotes' => $ednotes, 'people' => $people, 'info' => ['col' => (int) $columnNumber]]);
+        return $response->withJson(['elements' => $elements, 
+            'ednotes' => $ednotes, 
+            'people' => $people, 
+            'info' => ['col' => (int) $columnNumber]]);
    }
    
    public function getNumColumns(Request $request, Response $response, $next){

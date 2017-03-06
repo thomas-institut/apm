@@ -7,3 +7,4 @@ src/public/vendor/
 src/public/config.php
 /src/scratch
 *.bak
+/src/public/node_modules/

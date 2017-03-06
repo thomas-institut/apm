@@ -8,10 +8,180 @@ User profile template
 {% block title %}{{theuser.fullname}} | Collaborator in the Averroes Project{% endblock %}
 
 {% block content %}
-<h4>User Profile</h4>
+    <ol class="breadcrumb">
+        <li class="active"><a href="">User Profile</a></li>
+    </ol>
+
+<img src="https://www.gravatar.com/avatar/{{theuser.emailhash}}?d=mm&s=200">
 <h1>{{ theuser.fullname }} </h1>
 <p>Username: {{theuser.username}}</p>
 {% if theuser.email %}
     <p>Email address: <a href='mailto:{{theuser.email}}'>{{theuser.email}}</a></p>
 {% endif %}
+
+
+<div style="margin-top: 30px"></div>
+
+{% if canEditProfile %}
+<button class="btn btn-primary" 
+        type="button" 
+        data-toggle="collapse" 
+        href="#editProfileForm">
+Edit Profile
+</button>
+
+<button class="btn btn-primary" 
+        type="button" 
+        data-toggle="collapse" 
+        href="#changePasswordForm">
+Change Password
+</button>
+
+{% endif %}
+
+{% if canMakeRoot %}
+<button class="btn btn-primary" 
+        type="button" 
+        data-toggle="collapse" 
+        href="#makeRootForm">
+Make Root
+</button>
+{% endif %}
+
+{% if canEditProfile %}
+<div class="collapse" id="editProfileForm" >
+    <div style="margin-top: 30px"></div>
+    <div class="row">
+    <div class="col-md-4">
+    <form data-toggle="validator" role="form">
+
+    <!-- Username -->
+    <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text"  
+           data-minlength="5"
+           maxlength="20" 
+           class="form-control" 
+           id="username"
+           value="{{theuser.username}}"
+           disabled>
+    </div>
+
+    <!-- Full name -->
+    <div class="form-group has-feedback">
+    <label for="fullname">Full Name</label>
+    <input type="text" 
+           class="form-control" 
+           maxlength="50"
+           id="fullname" 
+           value="{{theuser.fullname}}"
+           required>
+    <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+    <div class="help-block with-errors"></div>
+    </div>
+
+    <!-- Email address -->
+    <div class="form-group has-feedback">
+    <label for="email">Email address</label>
+    <input type="email" 
+           class="form-control" 
+           id="email" 
+           value="{{theuser.email}}">
+    <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+    <div class="help-block with-errors"></div>
+    </div>
+    
+    
+                               
+   
+  <button type="submit" class="btn btn-primary">Submit</button>
+  <button type="button" class="btn btn-default" onClick="$('#editProfileForm').collapse('hide');">Cancel</button>
+</form>
+    <div class="alert alert-info" role="alert" style="margin-top: 20px">
+        <strong>Note:</strong> User avatars are associated with the user's 
+        email address and are managed by <a href="https://gravatar.com/" target="_blank">Gravatar <span class="glyphicon glyphicon-new-window"></span></a>
+    </div>
+
+  </div> <!-- col -->
+    </div> <!-- row -->
+</div> <!-- Collapse -->
+
+ <div class="collapse" id="changePasswordForm">
+     <div style="margin-top: 30px"></div>
+    <div class="row">
+    <div class="col-md-4">      
+            <form data-toggle="validator" role="form">
+                 <!-- Password -->
+    <div class="form-group has-feedback">
+    <label for="password1">Password</label>
+    <input type="password" 
+           class="form-control" 
+           id="password1"
+           data-minlength="8"
+           maxlength="16"
+           placeholder="User password (8-16 characters)">
+    <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+    <div class="help-block with-errors"></div>
+    </div>
+    
+    <!-- Password confirmation -->
+    <div class="form-group has-feedback">
+    <label for="password2">Confirm Password</label>
+    <input type="password" 
+           class="form-control" 
+           id="password2"
+           data-match="#password1"
+           data-match-error="Does not match given password"
+           placeholder="Confirm">
+    <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+    <div class="help-block with-errors"></div>
+  </div>
+                <button type="submit" class="btn btn-primary">Submit</button>
+  <button type="button" class="btn btn-default" onClick="$('#changePasswordForm').collapse('hide');">Cancel</button>
+            </form>
+  </div> <!-- Row -->
+    </div> <!-- col -->
+</div> <!-- Collapse -->
+{% endif %}
+
+{% if canMakeRoot %}
+ <div class="collapse" id="makeRootForm">
+    <div style="margin-top: 30px"/>
+    <div class="row">
+    <div class="col-md-4">      
+           <form data-toggle="validator" role="form">
+               <div class="form-group">
+    <div class="checkbox">
+      <label>
+        <input type="checkbox" id="confirmroot" data-error="You must be sure you want to make this user root!" required>
+        I am 100% sure that I want to give root capabilities to this user
+      </label>
+      <div class="help-block with-errors"></div>
+    </div>
+  </div>
+               <button type="submit" class="btn btn-danger">Make root!</button>
+  <button type="button" class="btn btn-default" onClick="$('#makeRootForm').collapse('hide'); $('#confirmroot').prop('checked', false);">Cancel</button>
+           </form>
+  </div> <!-- Row -->
+    </div> <!-- col -->
+</div> <!-- Collapse -->
+{% endif %}
+
+<script>
+    $('#editProfileForm').on('show.bs.collapse', function () {
+        $('#changePasswordForm').collapse('hide');
+        $('#makeRootForm').collapse('hide');
+    });
+    $('#changePasswordForm').on('show.bs.collapse', function () {
+        $('#editProfileForm').collapse('hide');
+        $('#makeRootForm').collapse('hide');
+    });
+    
+    $('#makeRootForm').on('show.bs.collapse', function () {
+        $('#editProfileForm').collapse('hide');
+        $('#changePasswordForm').collapse('hide');
+    });
+    
+    </script>
+
 {% endblock %}

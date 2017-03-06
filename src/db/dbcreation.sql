@@ -384,3 +384,5 @@ INSERT INTO `ap_users` (`id`, `username`, `password`) VALUES
 
 INSERT INTO `ap_relations` (`id`, `userid`, `relation`, `attribute`) VALUES
     (1, 32988, 'hasRole', 'root');
+
+INSERT INTO `ap_settings` (`key`, `value`) VALUES ('dbversion', '6');

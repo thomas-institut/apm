@@ -1,10 +1,10 @@
-body {
+/*body {
     font-family: 'PT Sans', Arial, Verdana;
     font-size: 12pt;
     margin: 0;
     padding: 0;
     color: #333;
-}
+}*/
 
 a, a:visited {
     text-decoration: none;
@@ -172,4 +172,8 @@ table.doctable td {
 p.docinfo {
     padding-top: 5px;
     padding-bottom: 3px;
+}
+
+.breadcrumb {
+    background-color: white;
 }

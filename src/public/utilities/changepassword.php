@@ -23,6 +23,7 @@ namespace AverroesProject;
 
 require '../vendor/autoload.php';
 require '../config.php';
+require '../config.tables.php';
 
 use AverroesProject\DataTable\MySqlDataTable;
 use AverroesProject\DataTable\MySqlDataTableWithRandomIds;

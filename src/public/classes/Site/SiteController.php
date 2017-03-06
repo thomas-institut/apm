@@ -62,13 +62,23 @@ class SiteController {
             'theuser' => $username
         ]);
         }
+        
         $userInfo = $this->ci->um->getUserInfoByUsername($username);
+        $currentUserId = $this->ci->userInfo['id'];
+        
+        $canEditProfile = $userInfo['id']===$currentUserId ||
+           $this->ci->um->isUserAllowedTo($currentUserId, 
+                'manageUsers');
+        $canMakeRoot = $this->ci->um->isUserAllowedTo($currentUserId, 
+                'makeRoot');
     
         return $this->ci->view->render($response, 'user.profile.twig', [
             'userinfo' => $this->ci->userInfo, 
             'copyright' => $this->ci->copyrightNotice,
             'baseurl' => $this->ci->settings['baseurl'],
-            'theuser' => $userInfo
+            'theuser' => $userInfo, 
+            'canEditProfile' => $canEditProfile,
+            'canMakeRoot' => $canMakeRoot
         ]);
     }
     

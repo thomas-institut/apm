@@ -18,6 +18,9 @@ User profile template
 {% if theuser.email %}
     <p>Email address: <a href='mailto:{{theuser.email}}'>{{theuser.email}}</a></p>
 {% endif %}
+{% if isProfileUserRoot %}
+<span class="label label-success">root</span>
+{% endif %}
 
 
 <div style="margin-top: 30px"></div>
@@ -39,7 +42,7 @@ Change Password
 
 {% endif %}
 
-{% if canMakeRoot %}
+{% if canMakeRoot and not isProfileUserRoot %}
 <button class="btn btn-primary" 
         type="button" 
         data-toggle="collapse" 
@@ -53,7 +56,7 @@ Make Root
     <div style="margin-top: 30px"></div>
     <div class="row">
     <div class="col-md-4">
-    <form data-toggle="validator" role="form">
+    <form data-toggle="validator" role="form" id="theEditProfileForm"> 
 
     <!-- Username -->
     <div class="form-group">
@@ -101,6 +104,8 @@ Make Root
         <strong>Note:</strong> User avatars are associated with the user's 
         email address and are managed by <a href="https://gravatar.com/" target="_blank">Gravatar <span class="glyphicon glyphicon-new-window"></span></a>
     </div>
+    
+    <div class="alert" role="alert" id="editProfileAlert"></div>
 
   </div> <!-- col -->
     </div> <!-- row -->
@@ -144,7 +149,7 @@ Make Root
 </div> <!-- Collapse -->
 {% endif %}
 
-{% if canMakeRoot %}
+{% if canMakeRoot and not isProfileUserRoot %}
  <div class="collapse" id="makeRootForm">
     <div style="margin-top: 30px"/>
     <div class="row">
@@ -182,6 +187,13 @@ Make Root
         $('#changePasswordForm').collapse('hide');
     });
     
+    $('#theEditProfileForm').on('submit', function (event) {
+        
+        event.preventDefault();
+        $.post('{{ path_for('api.user.update', {'userId' : theuser.id})}}', function (resp){
+            $("#editProfileAlert").html("Good!");
+        }).fail(function(jqXHR, text, e) { $("#editProfileAlert").html("Error: " + text + e);});
+    });
     </script>
 
 {% endblock %}

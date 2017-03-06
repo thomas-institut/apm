@@ -53,32 +53,34 @@ class SiteController {
    
    public function userProfilePage(Request $request, Response $response, $next){
 
-        $username = $request->getAttribute('username');
-        if (!$this->ci->um->userExistsByUsername($username)){
+        $profileUsername = $request->getAttribute('username');
+        if (!$this->ci->um->userExistsByUsername($profileUsername)){
         return $this->ci->view->render($response, 'user.notfound.twig', [
             'userinfo' => $this->ci->userInfo, 
             'copyright' => $this->ci->copyrightNotice,
             'baseurl' => $this->ci->settings['baseurl'],
-            'theuser' => $username
+            'theuser' => $profileUsername
         ]);
         }
         
-        $userInfo = $this->ci->um->getUserInfoByUsername($username);
+        $userProfileInfo = $this->ci->um->getUserInfoByUsername($profileUsername);
         $currentUserId = $this->ci->userInfo['id'];
         
-        $canEditProfile = $userInfo['id']===$currentUserId ||
+        $canEditProfile = $userProfileInfo['id']===$currentUserId ||
            $this->ci->um->isUserAllowedTo($currentUserId, 
                 'manageUsers');
         $canMakeRoot = $this->ci->um->isUserAllowedTo($currentUserId, 
                 'makeRoot');
+        $isProfileUserRoot = $this->ci->um->isRoot($userProfileInfo['id']);
     
         return $this->ci->view->render($response, 'user.profile.twig', [
             'userinfo' => $this->ci->userInfo, 
             'copyright' => $this->ci->copyrightNotice,
             'baseurl' => $this->ci->settings['baseurl'],
-            'theuser' => $userInfo, 
+            'theuser' => $userProfileInfo, 
             'canEditProfile' => $canEditProfile,
-            'canMakeRoot' => $canMakeRoot
+            'canMakeRoot' => $canMakeRoot,
+            'isProfileUserRoot' => $isProfileUserRoot
         ]);
     }
     

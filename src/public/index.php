@@ -171,6 +171,11 @@ $app->group('/api', function (){
     $this->get('/{document}/{page}/numcolumns', 
             '\AverroesProject\Api\ApiController:getNumColumns')
         ->setName('api.numcolumns');
+    
+    // API -> user : update profile
+    $this->post('/user/update/{userId}', 
+            '\AverroesProject\Api\ApiController:updateUserProfile')
+        ->setName('api.user.update');
 
 })->add('\AverroesProject\Auth\Authenticator:authenticateApiRequest');
 

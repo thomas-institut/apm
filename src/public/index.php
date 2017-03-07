@@ -182,6 +182,11 @@ $app->group('/api', function (){
             '\AverroesProject\Api\ApiController:changeUserPassword')
         ->setName('api.user.changepassword');
     
+    // API -> user : make root
+    $this->post('/user/{userId}/makeroot', 
+            '\AverroesProject\Api\ApiController:makeUserRoot')
+        ->setName('api.user.makeroot');
+    
 })->add('\AverroesProject\Auth\Authenticator:authenticateApiRequest');
 
 

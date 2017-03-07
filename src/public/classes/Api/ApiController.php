@@ -99,12 +99,16 @@ class ApiController
         }
         
         $profileUserName = $profileUserInfo['username'];
-        $updater = $um->getUserInfoByUserId($this->ci->userId)['username'];
+        $updaterInfo = $um->getUserInfoByUserId($this->ci->userId);
+        $updater = $updaterInfo['username'];
+        if ($updater != $profileUserName && !$um->isUserAllowedTo($updaterInfo['id'], 'manageUsers')) {
+            error_log("UPDATE_USER_PROFILE: $updater tried to update $profileUserName's profile but she/he is not allowed");
+            return $response->withStatus(403);
+        }
         if ($fullname === $profileUserInfo['fullname'] and $email === $profileUserInfo['email']) {
             error_log("UPDATE_USER_PROFILE: $updater tried to updated user $profileUserName, but without new information");
             return $response->withStatus(200);
         }
-       
         
         if ($um->updateUserInfo($profileUserId, $fullname, $email) !== false) {
             
@@ -129,25 +133,62 @@ class ApiController
             error_log("CHANGE_USER_PASSWORD: Error getting info for user ID  $profileUserId");
             return $response->withStatus(409);
         }
-        $profileUsername = $profileUserInfo['username'];
-        $updater = $um->getUserInfoByUserId($this->ci->userId)['username'];
+        $profileUserName = $profileUserInfo['username'];
+         
+        $updaterInfo = $um->getUserInfoByUserId($this->ci->userId);
+        $updater = $updaterInfo['username'];
+        if ($updater != $profileUserName && !$um->isUserAllowedTo($updaterInfo['id'], 'manageUsers')) {
+            error_log("CHANGE_USER_PASSWORD: $updater tried to changer $profileUserName's password but she/he is not allowed");
+            return $response->withStatus(403);
+        }
         if ($password1 == '') {
-             error_log("CHANGE_USER_PASSWORD: Empty password for user $profileUsername, change attempted by $updater");
+             error_log("CHANGE_USER_PASSWORD: Empty password for user $profileUserName, change attempted by $updater");
             return $response->withStatus(409);
         }
         if ($password1 !== $password2) {
-            error_log("CHANGE_USER_PASSWORD: Passwords do not match for user $profileUsername, change attempted by $updater");
+            error_log("CHANGE_USER_PASSWORD: Passwords do not match for user $profileUserName, change attempted by $updater");
             return $response->withStatus(409);
         }
 
         if ($um->storeUserPassword($profileUsername, $password1)) {
-            error_log("CHANGE_USER_PASSWORD: $updater changed $profileUsername's password");
+            error_log("CHANGE_USER_PASSWORD: $updater changed $profileUserName's password");
             return $response->withStatus(200);
         }
         
-        error_log("CHANGE_USER_PASSWORD: Error storing new password for $profileUsername, change attempted by $updater");
+        error_log("CHANGE_USER_PASSWORD: Error storing new password for $profileUserName, change attempted by $updater");
         return $response->withStatus(409);
-   }
-   
-   
+    }
+    
+    public function makeUserRoot(Request $request, Response $response, $next){
+        $um = $this->ci->um;
+        $profileUserId =  (int) $request->getAttribute('userId');
+        $postData = $request->getParsedBody();
+        $confirmroot = $postData['confirmroot'];
+
+        if ($confirmroot !== 'on') {
+            error_log("MAKE_USER_ROOT: no confirmation in request");
+            return $response->withStatus(409);
+        }
+        
+        $profileUserInfo = $um->getUserInfoByUserId($profileUserId);
+        if ($profileUserInfo === false ) {
+            error_log("MAKE_USER_ROOT: Error getting info for user ID  $profileUserId");
+            return $response->withStatus(409);
+        }
+        $profileUserName = $profileUserInfo['username'];
+        $updaterInfo = $um->getUserInfoByUserId($this->ci->userId);
+        $updater = $updaterInfo['username'];
+        if (!$um->isRoot($updaterInfo['id'])) {
+            error_log("MAKE_USER_ROOT: $updater tried to make $profileUserName root but she/he is not allowed");
+            return $response->withStatus(403);
+        }
+        
+       if ($um->makeRoot($profileUserId)) {
+            error_log("MAKE_USER_ROOT: $updater made $profileUserName root");
+            return $response->withStatus(200);
+        }
+        
+        error_log("MAKE_USER_ROOT: Error making $profileUserName root, change attempted by $updater");
+        return $response->withStatus(409);
+    }
 }

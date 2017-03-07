@@ -9,9 +9,10 @@ User profile template
 
 {% block extraJS %}
 <script>
-    apiBase = '{{ baseurl }}';
+    apiBase = '{{baseurl}}';
     profileUserId = {{theuser.id}};
 </script>
+<script type="application/javascript" src="{{baseurl}}/js/apm.js"></script>
 <script type="application/javascript" src="{{baseurl}}/js/userprofile.js"></script>
 {% endblock %}
 
@@ -158,36 +159,45 @@ Make Root
             <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
             <div class="help-block with-errors"></div>
         </div>
+        <div class="form-group">
         <button type="submit" class="btn btn-primary">Submit</button>
         <button type="button" class="btn btn-default" 
                 id="cancelChangePasswordButton">
             Cancel</button>
+        </div>
         </form>
     </div> <!-- Col -->
     </div> <!-- Row -->
 </div> <!-- Collapse -->
 {% endif %}
 
+
 {% if canMakeRoot and not isProfileUserRoot %}
+<!-- Make root form -->
  <div class="collapse" id="makeRootForm">
-    <div style="margin-top: 30px"/>
+    <div style="margin-top: 30px"/></div>
     <div class="row">
-    <div class="col-md-4">      
-           <form data-toggle="validator" role="form">
-               <div class="form-group">
-    <div class="checkbox">
-      <label>
-        <input type="checkbox" id="confirmroot" data-error="You must be sure you want to make this user root!" required>
-        I am 100% sure that I want to give root capabilities to this user
-      </label>
-      <div class="help-block with-errors"></div>
+    <div class="col-md-4" id="makeRootFormDiv">      
+        <form data-toggle="validator" role="form" id="theMakeRootForm">
+        <div class="form-group">
+        <div class="checkbox">
+            <label>
+            <input type="checkbox" 
+                   id="confirmroot" 
+                   name="confirmroot"
+                   data-error="You must be sure you want to make this user root!" 
+                   required>
+            I am 100% sure that I want to give root capabilities to this user</label>
+            <div class="help-block with-errors">                
+            </div>
+        </div>
     </div>
-  </div>
-               <button type="submit" class="btn btn-danger">Make root!</button>
-  <button type="button" class="btn btn-default" onClick="$('#makeRootForm').collapse('hide'); $('#confirmroot').prop('checked', false);">Cancel</button>
-           </form>
-  </div> <!-- Row -->
-    </div> <!-- col -->
+    <button type="submit" class="btn btn-danger">Make root!</button>
+    <button type="button" class="btn btn-default" id="cancelMakeRootButton"
+            >Cancel</button>
+    </form>
+    </div> <!-- Col -->
+    </div> <!-- Row -->
 </div> <!-- Collapse -->
 {% endif %}
 

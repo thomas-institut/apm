@@ -23,7 +23,9 @@ $(document).ready(function(){
     
     userUpdateApiUrl = apiBase + '/api/user/' + profileUserId + '/update';
     userPasswordChangeApiUrl = apiBase + '/api/user/' + profileUserId + '/changepassword';
+    makeRootApiUrl = apiBase + '/api/user/' + profileUserId + '/makeroot';
     
+    // Pseudo-accordion behaviour
     $('#editProfileForm').on('show.bs.collapse', function () {
         $('#changePasswordForm').collapse('hide');
         $('#makeRootForm').collapse('hide');
@@ -38,6 +40,8 @@ $(document).ready(function(){
         $('#changePasswordForm').collapse('hide');
     });
     
+    // Cancel buttons
+    
     $('#cancelChangePasswordButton').on('click', function() {
         $('#changePasswordForm').collapse('hide'); 
         $('#password1').val(''); 
@@ -46,8 +50,19 @@ $(document).ready(function(){
         $('#theChangePasswordForm').validator();
     });
     
+    $('#cancelMakeRootButton').on('click', function() {
+        $('#makeRootForm').collapse('hide');
+        $('#confirmroot').prop('checked', false);
+    });
+    
+    // Form submission
+    
     $('#theEditProfileForm').on('submit', function (event) {
+        if (event.isDefaultPrevented()) {
+            return false;
+        }
         event.preventDefault();
+        event.stopPropagation();
         $.post(userUpdateApiUrl, 
             $('#theEditProfileForm').serialize(),
             function (data, text, jqXHR){
@@ -61,7 +76,11 @@ $(document).ready(function(){
     });
     
     $('#theChangePasswordForm').on('submit', function (event) {
+        if (event.isDefaultPrevented()) {
+            return false;
+        }
         event.preventDefault();
+        event.stopPropagation();
         $.post(userPasswordChangeApiUrl, 
             $('#theChangePasswordForm').serialize(),
             function (data, text, jqXHR){
@@ -73,62 +92,24 @@ $(document).ready(function(){
                 reportError(jqXHR, text, e, $("#changePasswordFormDiv"));
             });
     });
-        
     
+    $('#theMakeRootForm').on('submit', function (event) {
+        if (event.isDefaultPrevented()) {
+            return false;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        $.post(makeRootApiUrl, 
+            $('#theMakeRootForm').serialize(),
+            function (data, text, jqXHR){
+                reportSuccess('User given root status, page will be refreshed...', 
+                $("#makeRootFormDiv"), true);
+
+            })
+            .fail( function(jqXHR, text, e) { 
+                reportError(jqXHR, text, e, $("#makeRootFormDiv"));
+            });
+    });
+    
+
 });
-
-function reportError(jqXHR, text, e, theDiv)
-{
-    var errorMsg;
-    switch(text) {
-        case 'timeout':
-            errorMsg = 'The server took too much time to respond, please try later';
-            break;
-        
-        case 'parsererror':
-            errorMsg = 'Parser error, please report this to the system administrator';
-            break;
-            
-        case 'abort':
-            errorMsg = 'Aborted, if not expected please report to the system administrator';
-            break;
-
-        case 'error':
-            errorMsg = 'Server responded (' + jqXHR.status + ') ' + e;
-            break;
-            
-        default:
-            errorMsg = 'Unknown error, please report this to the system administrator!';
-
-    }
-    
-    theDiv.append(`
-        <div class="alert alert-danger alert-dismissable" role="alert" 
-                style="margin-top: 20px">
-            <button type="button" class="close" data-dismiss="alert" 
-                    aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-           <strong>Oops, something went wrong</strong>:` + 
-            errorMsg + '</div>');
-    
-}
-
-function reportSuccess(msg, theDiv, withReload)
-{
-    theDiv.append(`
-        <div class="alert alert-success alert-dismissable" role="alert" 
-                style="margin-top: 20px">
-            <button type="button" class="close" data-dismiss="alert" 
-                    aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-           <strong>Success! </strong>` + 
-            msg + '</div>');
-            
-    if (withReload) {
-        $(":input").attr("disabled","disabled");
-        window.setTimeout(function(){location.reload();}, 1500);
-    }
-}
-

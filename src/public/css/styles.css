@@ -177,3 +177,8 @@ p.docinfo {
 .breadcrumb {
     background-color: white;
 }
+
+
+.withtopmargin {
+    margin-top: 30px;
+}

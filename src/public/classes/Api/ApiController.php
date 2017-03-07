@@ -191,4 +191,69 @@ class ApiController
         error_log("MAKE_USER_ROOT: Error making $profileUserName root, change attempted by $updater");
         return $response->withStatus(409);
     }
+    
+    public function createNewUser(Request $request, Response $response, $next){
+        $um = $this->ci->um;
+        $postData = $request->getParsedBody();
+        $username = $postData['username'];
+        $fullname = $postData['fullname'];
+        $email = $postData['email'];
+        $password1 = $postData['password1'];
+        $password2 = $postData['password2'];
+        
+        $updaterInfo = $um->getUserInfoByUserId($this->ci->userId);
+        if ($updaterInfo === false) {
+            error_log("CREATE_NEW_USER: can't read updater info from DB");
+            return $response->withStatus(404);
+        }
+        $updater = $updaterInfo['username'];
+        
+        if (!$um->isUserAllowedTo($updaterInfo['id'], 'manageUsers')) {
+            error_log("CREATE_NEW_USER: $updater tried to create a user, but she/he is not allowed");
+            return $response->withStatus(401);
+        }
+        
+        if ($username == '') {
+            error_log("CREATE_NEW_USER: no username given, change attempted by $updater");
+            return $response->withStatus(409);
+        }
+        if ($fullname == '') {
+            error_log("CREATE_NEW_USER: no fullname given, change attempted by $updater");
+            return $response->withStatus(409);
+        }
+        
+        if ($password1 == '') {
+            error_log("CREATE_NEW_USER: no username given, change attempted by $updater");
+            return $response->withStatus(409);
+        }
+        if ($password1 !== $password2) {
+            error_log("CREATE_NEW_USER: Passwords do not match, change attempted by $updater");
+            return $response->withStatus(409);
+        }
+        
+        // Create the user
+        $newUserId = $um->createUserByUserName($username);
+        if ($newUserId === false) {
+            error_log("CREATE_NEW_USER: can't create user $username, change attempted by $updater");
+            return $response->withStatus(409);
+        }
+        
+        // Try to update info, will not return an error, but will log if there's 
+        // any problem
+        
+        // Update the profile info
+        if ($um->updateUserInfo($newUserId, $fullname, $email) === false) {
+            error_log("CREATE_NEW_USER: can't update info for user $username, change attempted by $updater");
+            return $response->withStatus(200);
+        }
+        
+        // Update password
+        if (!$um->storeUserPassword($username, $password1)) {
+            error_log("CREATE_NEW_USER: can't change password for user $username, change attempted by $updater");
+            return $response->withStatus(200);
+        }
+        
+        error_log("CREATE_NEW_USER: User $username successfully created by $updater");
+        return $response->withStatus(200);
+    }
 }

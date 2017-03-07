@@ -58,8 +58,7 @@ function reportError(jqXHR, text, e, theDiv)
     }
     
     theDiv.append(`
-        <div class="alert alert-danger alert-dismissable" role="alert" 
-                style="margin-top: 20px">
+        <div class="alert alert-danger alert-dismissable withtopmargin" role="alert">
             <button type="button" class="close" data-dismiss="alert" 
                     aria-label="Close">
                 <span aria-hidden="true">&times;</span>

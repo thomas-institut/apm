@@ -69,7 +69,7 @@ class MySqlDataTable extends DataTable
         }
         $sql .= '(' . implode(',', $values) . ');';
         if ($this->db->query($sql) === FALSE){
-            //error_log("Can't create, query:  $sql; error info: " . $this->db->errorInfo()[2]);
+            error_log("Can't create, query:  $sql; error info: " . $this->db->errorInfo()[2]);
             return false;
         }
         return $theRow['id'];

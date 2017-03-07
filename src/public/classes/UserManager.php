@@ -215,9 +215,19 @@ class UserManager {
         if ($this->userExistsByUserName($userName)){
             return false;
         }
-        return $this->userTable->createRow([ 'username' => $userName]);
+        $personId = $this->createPerson();
+        return $this->userTable->createRow([
+            'id' => $personId,
+            'username' => $userName]);
     }
-
+    
+    /**
+     * Creates a new entry in the people table. Returns the new id
+     */
+    private function createPerson()
+    {
+        return $this->peopleTable->createRow(['fullname' => 'No name']);
+    }
     //
     // Allowed action methods
     //

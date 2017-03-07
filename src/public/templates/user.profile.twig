@@ -17,8 +17,6 @@ User profile template
 {% endblock %}
 
 {% block content %}
-
-
 <ol class="breadcrumb">
     <li class="active"><a href="">User Profile</a></li>
 </ol>
@@ -33,8 +31,7 @@ User profile template
 <span class="label label-success">root</span>
 {% endif %}
 
-
-<div style="margin-top: 30px"></div>
+<div class="withtopmargin"></div>
 
 {% if canEditProfile %}
 <button class="btn btn-primary" 
@@ -64,7 +61,7 @@ Make Root
 
 {% if canEditProfile %}
 <div class="collapse" id="editProfileForm" >
-    <div style="margin-top: 30px"></div>
+    <div class="withtopmargin"></div>
     <div class="row">
     <div class="col-md-4" id="editProfileFormDiv">
     <form data-toggle="validator" role="form" id="theEditProfileForm"> 
@@ -112,7 +109,7 @@ Make Root
   <button type="button" class="btn btn-default" onClick="$('#editProfileForm').collapse('hide');">Cancel</button>
 </form>
     {% if not canMakeRoot %}
-    <div class="alert alert-info alert-dismissable" role="alert" style="margin-top: 20px">
+    <div class="alert alert-info alert-dismissable withtopmargin" role="alert">
         <button type="button" class="close" data-dismiss="alert" 
                     aria-label="Close">
                 <span aria-hidden="true">&times;</span>
@@ -129,7 +126,7 @@ Make Root
 
 <!-- PASSWORD Change Form -->
  <div class="collapse" id="changePasswordForm">
-     <div style="margin-top: 30px"></div>
+     <div class="withtopmargin"></div>
     <div class="row">
     <div class="col-md-4" id="changePasswordFormDiv">      
         <form data-toggle="validator" role="form" id="theChangePasswordForm">
@@ -175,7 +172,7 @@ Make Root
 {% if canMakeRoot and not isProfileUserRoot %}
 <!-- Make root form -->
  <div class="collapse" id="makeRootForm">
-    <div style="margin-top: 30px"/></div>
+    <div class="withtopmargin"/></div>
     <div class="row">
     <div class="col-md-4" id="makeRootFormDiv">      
         <form data-toggle="validator" role="form" id="theMakeRootForm">

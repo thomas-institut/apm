@@ -83,10 +83,10 @@ $container['dbh'] = function($c){
 // User Manager
 $container['um'] = function ($c){
     $um = new UserManager(
-            new MySqlDataTableWithRandomIds($c->dbh, 
-                    $c['settings']['tables']['users'], 10000, 100000),
+            new MySqlDataTable($c->dbh, 
+                    $c['settings']['tables']['users']),
             new MySqlDataTable($c->dbh, $c['settings']['tables']['relations']), 
-            new MySqlDataTable($c->dbh, $c['settings']['tables']['people']));
+            new MySqlDataTableWithRandomIds($c->dbh, $c['settings']['tables']['people'], 10000, 100000));
     return $um;
             
 };
@@ -186,6 +186,11 @@ $app->group('/api', function (){
     $this->post('/user/{userId}/makeroot', 
             '\AverroesProject\Api\ApiController:makeUserRoot')
         ->setName('api.user.makeroot');
+    
+    // API -> user : add new user
+    $this->post('/user/new', 
+            '\AverroesProject\Api\ApiController:createNewUser')
+        ->setName('api.user.new');
     
 })->add('\AverroesProject\Auth\Authenticator:authenticateApiRequest');
 

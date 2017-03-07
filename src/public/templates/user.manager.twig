@@ -7,6 +7,14 @@ User manager template
 
 {% block title %}Averroes Project : User Manager{% endblock %}
 
+{% block extraJS %}
+<script>
+    apiBase = '{{baseurl}}';
+</script>
+<script type="application/javascript" src="{{baseurl}}/js/apm.js"></script>
+<script type="application/javascript" src="{{baseurl}}/js/usermanager.js"></script>
+{% endblock %}
+
 {% block content %}
 <h1>User Manager</h1>
 <table>
@@ -23,21 +31,22 @@ User manager template
 {% endfor %}
 </table>
 
-<div style="margin-top: 30px"/>
+<div class="withtopmargin"></div>
+
 <div id="addUserButton" class="collapse in">
-<button class="btn btn-primary" type="button"  onClick="$('#addUserForm').collapse('show')">
+<button class="btn btn-primary" 
+        type="button"  
+        data-toggle="collapse" 
+        href="#addUserForm"">
  Add new user
 </button>
 </div>
 
-
 <div class="collapse" id="addUserForm">
-    <div style="margin-top: 30px"/>
     <h3>Add New User:</h3>
     <div class="row">
-    <div class="col-md-4">
-    <form data-toggle="validator" role="form">
-
+    <div class="col-md-4" id="addUserFormDiv"> 
+    <form data-toggle="validator" role="form" id="theAddUserForm">
     <!-- Username -->
     <div class="form-group has-feedback">
         <label for="username">Username</label>
@@ -46,7 +55,8 @@ User manager template
            maxlength="20" 
            class="form-control" 
            pattern="^[a-z]{1,}$" 
-           id="username" 
+           id="username"
+           name="username"
            placeholder="Username (5-10 smallcap letters)" 
            data-error="Username should be 5 to 10 smallcap letters"
            required>
@@ -60,7 +70,8 @@ User manager template
     <input type="text" 
            class="form-control" 
            maxlength="50"
-           id="fullname" 
+           id="fullname"
+           name="fullname"
            placeholder="The new user's full name"
            required>
     <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
@@ -72,7 +83,9 @@ User manager template
     <label for="email">Email address</label>
     <input type="email" 
            class="form-control" 
-           id="email" placeholder="email@email.com"
+           id="email" 
+           name="email"
+           placeholder="e.g., email@email.com"
            required>
     <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
     <div class="help-block with-errors"></div>
@@ -84,6 +97,7 @@ User manager template
     <input type="password" 
            class="form-control" 
            id="password1"
+           name="password1"
            data-minlength="8"
            maxlength="16"
            placeholder="User password (8-16 characters)"
@@ -98,6 +112,7 @@ User manager template
     <input type="password" 
            class="form-control" 
            id="password2"
+           name="password2"
            data-match="#password1"
            data-match-error="Does not match given password"
            placeholder="Confirm"
@@ -105,11 +120,11 @@ User manager template
     <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
     <div class="help-block with-errors"></div>
   </div>
-  <button type="submit" class="btn btn-primary">Submit</button>
-  <button type="button" class="btn btn-default" onClick="$('#addUserForm').collapse('hide');">Cancel</button>
+  <button type="submit" class="btn btn-primary" id="submitAddUserButton">Submit</button>
+  <button type="button" class="btn btn-default" id="cancelAddUserButton">Cancel</button>
 </form>
        
-  </div>
-    </div>
-</div>
+</div> <!-- col -->
+</div> <!-- row -->
+</div> <!-- collapse -->
 {% endblock %}

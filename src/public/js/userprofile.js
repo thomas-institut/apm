@@ -46,8 +46,6 @@ $(document).ready(function(){
         $('#changePasswordForm').collapse('hide'); 
         $('#password1').val(''); 
         $('#password2').val(''); 
-        $('#theChangePasswordForm').validator('destroy');
-        $('#theChangePasswordForm').validator();
     });
     
     $('#cancelMakeRootButton').on('click', function() {
@@ -57,7 +55,7 @@ $(document).ready(function(){
     
     // Form submission
     
-    $('#theEditProfileForm').on('submit', function (event) {
+    $('#theEditProfileForm').validator().on('submit', function (event) {
         if (event.isDefaultPrevented()) {
             return false;
         }
@@ -75,7 +73,7 @@ $(document).ready(function(){
             });
     });
     
-    $('#theChangePasswordForm').on('submit', function (event) {
+    $('#theChangePasswordForm').validator().on('submit', function (event) {
         if (event.isDefaultPrevented()) {
             return false;
         }
@@ -93,7 +91,7 @@ $(document).ready(function(){
             });
     });
     
-    $('#theMakeRootForm').on('submit', function (event) {
+    $('#theMakeRootForm').validator().on('submit', function (event) {
         if (event.isDefaultPrevented()) {
             return false;
         }

@@ -173,7 +173,7 @@ $app->group('/api', function (){
         ->setName('api.numcolumns');
     
     // API -> user : update profile
-    $this->post('/user/update/{userId}', 
+    $this->post('/user/{userId}/update', 
             '\AverroesProject\Api\ApiController:updateUserProfile')
         ->setName('api.user.update');
 

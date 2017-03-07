@@ -7,10 +7,20 @@ User profile template
 
 {% block title %}{{theuser.fullname}} | Collaborator in the Averroes Project{% endblock %}
 
+{% block extraJS %}
+<script>
+    apiBase = '{{ baseurl }}';
+    profileUserId = {{theuser.id}};
+</script>
+<script type="application/javascript" src="{{baseurl}}/js/userprofile.js"></script>
+{% endblock %}
+
 {% block content %}
-    <ol class="breadcrumb">
-        <li class="active"><a href="">User Profile</a></li>
-    </ol>
+
+
+<ol class="breadcrumb">
+    <li class="active"><a href="">User Profile</a></li>
+</ol>
 
 <img src="https://www.gravatar.com/avatar/{{theuser.emailhash}}?d=mm&s=200">
 <h1>{{ theuser.fullname }} </h1>
@@ -55,7 +65,7 @@ Make Root
 <div class="collapse" id="editProfileForm" >
     <div style="margin-top: 30px"></div>
     <div class="row">
-    <div class="col-md-4">
+    <div class="col-md-4" id="editProfileFormDiv">
     <form data-toggle="validator" role="form" id="theEditProfileForm"> 
 
     <!-- Username -->
@@ -94,19 +104,15 @@ Make Root
     <div class="help-block with-errors"></div>
     </div>
     
-    
-                               
-   
   <button type="submit" class="btn btn-primary">Submit</button>
   <button type="button" class="btn btn-default" onClick="$('#editProfileForm').collapse('hide');">Cancel</button>
 </form>
+    {% if not canMakeRoot %}
     <div class="alert alert-info" role="alert" style="margin-top: 20px">
         <strong>Note:</strong> User avatars are associated with the user's 
         email address and are managed by <a href="https://gravatar.com/" target="_blank">Gravatar <span class="glyphicon glyphicon-new-window"></span></a>
     </div>
-    
-    <div class="alert" role="alert" id="editProfileAlert"></div>
-
+    {% endif %}
   </div> <!-- col -->
     </div> <!-- row -->
 </div> <!-- Collapse -->
@@ -173,27 +179,7 @@ Make Root
 {% endif %}
 
 <script>
-    $('#editProfileForm').on('show.bs.collapse', function () {
-        $('#changePasswordForm').collapse('hide');
-        $('#makeRootForm').collapse('hide');
-    });
-    $('#changePasswordForm').on('show.bs.collapse', function () {
-        $('#editProfileForm').collapse('hide');
-        $('#makeRootForm').collapse('hide');
-    });
-    
-    $('#makeRootForm').on('show.bs.collapse', function () {
-        $('#editProfileForm').collapse('hide');
-        $('#changePasswordForm').collapse('hide');
-    });
-    
-    $('#theEditProfileForm').on('submit', function (event) {
-        
-        event.preventDefault();
-        $.post('{{ path_for('api.user.update', {'userId' : theuser.id})}}', function (resp){
-            $("#editProfileAlert").html("Good!");
-        }).fail(function(jqXHR, text, e) { $("#editProfileAlert").html("Error: " + text + e);});
-    });
+   
     </script>
 
 {% endblock %}

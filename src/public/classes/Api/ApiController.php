@@ -83,7 +83,7 @@ class ApiController
    public function updateUserProfile(Request $request, Response $response, $next){
        $profileUser = $request->getAttribute('userId');
        
-       return $response->withStatus(409);
+       return $response->withStatus(200);
        
    }
 }

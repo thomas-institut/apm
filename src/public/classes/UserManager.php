@@ -148,6 +148,9 @@ class UserManager {
     public function getUserInfoByUserId($userid){
         
         $pi = $this->peopleTable->getRow($userid);
+        if ($pi=== false) {
+            return false;
+        }
         $ui = $this->userTable->getRow($userid);
         
         if ($pi['email']){
@@ -155,6 +158,7 @@ class UserManager {
             $emailhash =  md5(strtolower(trim($pi['email']))) ;
         } 
         else {
+            $pi['email'] = '';
             $emailhash =  'nohash';
         }
         
@@ -165,6 +169,22 @@ class UserManager {
                  'email' => $pi['email'], 
                  'emailhash' => $emailhash
                 ];
+    }
+    
+    public function updateUserInfo($userId, $fullName, $email = '')
+    {
+        if ($fullName === '') {
+            return false;
+        }
+        if ($this->userExistsById($userId)){
+            $newInfo = [];
+            $newInfo['id'] = $userId;
+            $newInfo['fullname'] = $fullName;
+            $newInfo['email'] = $email;
+            return $this->peopleTable->updateRow($newInfo);
+        };
+        
+        return false;
     }
     
     public function getUserInfoByUsername($username){

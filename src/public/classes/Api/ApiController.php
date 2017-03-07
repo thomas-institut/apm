@@ -80,10 +80,41 @@ class ApiController
         return $response->withJson($numColumns);
    }
    
-   public function updateUserProfile(Request $request, Response $response, $next){
-       $profileUser = $request->getAttribute('userId');
+    public function updateUserProfile(Request $request, Response $response, $next){
+        $um = $this->ci->um;
+        $profileUser =  (int) $request->getAttribute('userId');
+        $postData = $request->getParsedBody();
+        $fullname = $postData['fullname'];
+        $email = $postData['email'];
+        $profileUserInfo = $um->getUserInfoByUserId($profileUser);
+        
+        
+        if ($profileUserInfo === false ) {
+            error_log("UPDATE_USER_PROFILE: Error getting info from user ID  $profileUser");
+            return $response->withStatus(409);
+        }
        
-       return $response->withStatus(200);
+        if ($fullname == '') {
+            error_log("UPDATE_USER_PROFILE: Error: Empty fullname trying to update profile for user ID  $profileUser");
+            return $response->withStatus(409);
+        }
+        
+        $profileUserName = $profileUserInfo['username'];
+        $updater = $um->getUserInfoByUserId($this->ci->userId)['username'];
+        if ($fullname === $profileUserInfo['fullname'] and $email === $profileUserInfo['email']) {
+            error_log("UPDATE_USER_PROFILE: $updater tried to updated user $profileUserName, but without new information");
+            return $response->withStatus(200);
+        }
        
+        
+        if ($um->updateUserInfo($profileUser, $fullname, $email) !== false) {
+            
+            error_log("UPDATE_USER_PROFILE: $updater updated user $profileUserName with fullname '$fullname', email '$email'");
+            return $response->withStatus(200);
+        }
+        
+        error_log("UPDATE_USER_PROFILE: Error updating user $profileUser with fullname '$fullname', email '$email'");
+        return $response->withStatus(409);       
+      
    }
 }

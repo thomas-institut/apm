@@ -39,9 +39,12 @@ $(document).ready(function(){
     
     $('#theEditProfileForm').on('submit', function (event) {
         event.preventDefault();
-        $.post(userUpdateApiUrl, function (data, text, jqXHR){
-                reportSuccess('User profile updated, click <a href="">here</a> to refresh page', $("#editProfileFormDiv"));
-                
+        console.log($('#theEditProfileForm').serialize());
+        $.post(userUpdateApiUrl, 
+            $('#theEditProfileForm').serialize(),
+            function (data, text, jqXHR){
+                reportSuccess('User profile updated, page will be refreshed...', $("#editProfileFormDiv"), true);
+
             })
             .fail( function(jqXHR, text, e) { 
                 reportError(jqXHR, text, e, $("#editProfileFormDiv"));
@@ -86,7 +89,7 @@ function reportError(jqXHR, text, e, theDiv)
     
 }
 
-function reportSuccess(msg, theDiv)
+function reportSuccess(msg, theDiv, withReload)
 {
     theDiv.append(`
         <div class="alert alert-success alert-dismissable" role="alert" 
@@ -97,5 +100,10 @@ function reportSuccess(msg, theDiv)
             </button>
            <strong>Success! </strong>` + 
             msg + '</div>');
+            
+    if (withReload) {
+        $(":input").attr("disabled","disabled");
+        window.setTimeout(function(){location.reload();}, 1500);
+    }
 }
 

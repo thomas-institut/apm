@@ -74,7 +74,8 @@ Make Root
         <input type="text"  
            data-minlength="5"
            maxlength="20" 
-           class="form-control" 
+           class="form-control"
+           name="username"
            id="username"
            value="{{theuser.username}}"
            disabled>
@@ -86,6 +87,7 @@ Make Root
     <input type="text" 
            class="form-control" 
            maxlength="50"
+           name="fullname"
            id="fullname" 
            value="{{theuser.fullname}}"
            required>
@@ -98,6 +100,7 @@ Make Root
     <label for="email">Email address</label>
     <input type="email" 
            class="form-control" 
+           name="email"
            id="email" 
            value="{{theuser.email}}">
     <span class="glyphicon form-control-feedback" aria-hidden="true"></span>

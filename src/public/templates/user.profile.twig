@@ -111,50 +111,60 @@ Make Root
   <button type="button" class="btn btn-default" onClick="$('#editProfileForm').collapse('hide');">Cancel</button>
 </form>
     {% if not canMakeRoot %}
-    <div class="alert alert-info" role="alert" style="margin-top: 20px">
-        <strong>Note:</strong> User avatars are associated with the user's 
-        email address and are managed by <a href="https://gravatar.com/" target="_blank">Gravatar <span class="glyphicon glyphicon-new-window"></span></a>
+    <div class="alert alert-info alert-dismissable" role="alert" style="margin-top: 20px">
+        <button type="button" class="close" data-dismiss="alert" 
+                    aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        <strong>Note:</strong> Your avatar is associated with your email address and
+        is managed by Gravatar. To set it or change it, please visit
+        <a href="https://gravatar.com/" target="_blank">gravatar.com
+            <span class="glyphicon glyphicon-new-window"></span></a>
     </div>
     {% endif %}
   </div> <!-- col -->
     </div> <!-- row -->
 </div> <!-- Collapse -->
 
+<!-- PASSWORD Change Form -->
  <div class="collapse" id="changePasswordForm">
      <div style="margin-top: 30px"></div>
     <div class="row">
-    <div class="col-md-4">      
-            <form data-toggle="validator" role="form">
-                 <!-- Password -->
-    <div class="form-group has-feedback">
-    <label for="password1">Password</label>
-    <input type="password" 
-           class="form-control" 
-           id="password1"
-           data-minlength="8"
-           maxlength="16"
-           placeholder="User password (8-16 characters)">
-    <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
-    <div class="help-block with-errors"></div>
-    </div>
-    
-    <!-- Password confirmation -->
-    <div class="form-group has-feedback">
-    <label for="password2">Confirm Password</label>
-    <input type="password" 
-           class="form-control" 
-           id="password2"
-           data-match="#password1"
-           data-match-error="Does not match given password"
-           placeholder="Confirm">
-    <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
-    <div class="help-block with-errors"></div>
-  </div>
-                <button type="submit" class="btn btn-primary">Submit</button>
-  <button type="button" class="btn btn-default" onClick="$('#changePasswordForm').collapse('hide');">Cancel</button>
-            </form>
-  </div> <!-- Row -->
-    </div> <!-- col -->
+    <div class="col-md-4" id="changePasswordFormDiv">      
+        <form data-toggle="validator" role="form" id="theChangePasswordForm">
+        <!-- Password -->
+        <div class="form-group has-feedback">
+            <label for="password1">Password</label>
+            <input type="password" 
+               class="form-control" 
+               id="password1"
+               name="password1"
+               data-minlength="8"
+               maxlength="16"
+               placeholder="User password (8-16 characters)" required>
+            <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+            <div class="help-block with-errors"></div>
+        </div>
+        <!-- Password confirmation -->
+        <div class="form-group has-feedback">
+            <label for="password2">Confirm Password</label>
+            <input type="password" 
+                   class="form-control" 
+                   id="password2"
+                   name="password2"
+                   data-match="#password1"
+                   data-match-error="Passwords do not match"
+                   placeholder="Confirm" required>
+            <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+            <div class="help-block with-errors"></div>
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
+        <button type="button" class="btn btn-default" 
+                id="cancelChangePasswordButton">
+            Cancel</button>
+        </form>
+    </div> <!-- Col -->
+    </div> <!-- Row -->
 </div> <!-- Collapse -->
 {% endif %}
 

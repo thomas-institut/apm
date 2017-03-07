@@ -127,17 +127,22 @@ class Authenticator {
                     // Success!
                     $userId = $this->ci->um->getUserIdFromUsername($user);
                     $_SESSION['userid'] = $userId;
+                    $this->debug('Generating token cookie');
+                    $token = $this->generateRandomToken();
+                    $this->ci->um->storeUserToken($userId, $token);
+                    $cookieValue = $this->generateLongTermCookieValue($token, $userId);
                     if ($rememberme === 'on'){
                         $this->debug('User wants to be remembered for 2 weeks');
-                        $token = $this->generateRandomToken();
-                        $this->ci->um->storeUserToken($userId, $token);
-                        $cookieValue = $this->generateLongTermCookieValue($token, $userId);
                         $now = new \DateTime();
                         $cookie = SetCookie::create($this->cookieName)
                                 ->withValue($cookieValue)
                                 ->withExpires($now->add(new \DateInterval('P14D')));
-                        $response = FigResponseCookies::set($response, $cookie);
+                    } else {
+                        $cookie = SetCookie::create($this->cookieName)
+                                ->withValue($cookieValue);
                     }
+                    
+                    $response = FigResponseCookies::set($response, $cookie);
                     return $response->withHeader('Location', $this->ci->router->pathFor('home'));
                 }
                 else {
@@ -163,7 +168,7 @@ class Authenticator {
         $userId = $this->getUserIdFromLongTermCookie($request);
         if ($userId === false){
             $this->debug("API : authentication fail");
-            return $response->withJson([ 'error' => "Authentication Failure"]); 
+            return $response->withStatus(401);
         }
         $this->debug('API : Success, go ahead!');
         $this->ci['userId'] = $userId;

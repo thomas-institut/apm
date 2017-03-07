@@ -82,20 +82,19 @@ class ApiController
    
     public function updateUserProfile(Request $request, Response $response, $next){
         $um = $this->ci->um;
-        $profileUser =  (int) $request->getAttribute('userId');
+        $profileUserId =  (int) $request->getAttribute('userId');
         $postData = $request->getParsedBody();
         $fullname = $postData['fullname'];
         $email = $postData['email'];
-        $profileUserInfo = $um->getUserInfoByUserId($profileUser);
-        
+        $profileUserInfo = $um->getUserInfoByUserId($profileUserId);
         
         if ($profileUserInfo === false ) {
-            error_log("UPDATE_USER_PROFILE: Error getting info from user ID  $profileUser");
+            error_log("UPDATE_USER_PROFILE: Error getting info from user ID  $profileUserId");
             return $response->withStatus(409);
         }
        
         if ($fullname == '') {
-            error_log("UPDATE_USER_PROFILE: Error: Empty fullname trying to update profile for user ID  $profileUser");
+            error_log("UPDATE_USER_PROFILE: Error: Empty fullname trying to update profile for user ID  $profileUserId");
             return $response->withStatus(409);
         }
         
@@ -107,14 +106,48 @@ class ApiController
         }
        
         
-        if ($um->updateUserInfo($profileUser, $fullname, $email) !== false) {
+        if ($um->updateUserInfo($profileUserId, $fullname, $email) !== false) {
             
             error_log("UPDATE_USER_PROFILE: $updater updated user $profileUserName with fullname '$fullname', email '$email'");
             return $response->withStatus(200);
         }
         
-        error_log("UPDATE_USER_PROFILE: Error updating user $profileUser with fullname '$fullname', email '$email'");
+        error_log("UPDATE_USER_PROFILE: Error updating user $profileUserId with fullname '$fullname', email '$email'");
         return $response->withStatus(409);       
-      
    }
+   
+   public function changeUserPassword(Request $request, Response $response, $next){
+        $um = $this->ci->um;
+        $profileUserId =  (int) $request->getAttribute('userId');
+        $postData = $request->getParsedBody();
+        $password1 = $postData['password1'];
+        $password2 = $postData['password2'];
+        $profileUserInfo = $um->getUserInfoByUserId($profileUserId);
+        
+        
+        if ($profileUserInfo === false ) {
+            error_log("CHANGE_USER_PASSWORD: Error getting info for user ID  $profileUserId");
+            return $response->withStatus(409);
+        }
+        $profileUsername = $profileUserInfo['username'];
+        $updater = $um->getUserInfoByUserId($this->ci->userId)['username'];
+        if ($password1 == '') {
+             error_log("CHANGE_USER_PASSWORD: Empty password for user $profileUsername, change attempted by $updater");
+            return $response->withStatus(409);
+        }
+        if ($password1 !== $password2) {
+            error_log("CHANGE_USER_PASSWORD: Passwords do not match for user $profileUsername, change attempted by $updater");
+            return $response->withStatus(409);
+        }
+
+        if ($um->storeUserPassword($profileUsername, $password1)) {
+            error_log("CHANGE_USER_PASSWORD: $updater changed $profileUsername's password");
+            return $response->withStatus(200);
+        }
+        
+        error_log("CHANGE_USER_PASSWORD: Error storing new password for $profileUsername, change attempted by $updater");
+        return $response->withStatus(409);
+   }
+   
+   
 }

@@ -177,6 +177,11 @@ $app->group('/api', function (){
             '\AverroesProject\Api\ApiController:updateUserProfile')
         ->setName('api.user.update');
 
+    // API -> user : change password
+    $this->post('/user/{userId}/changepassword', 
+            '\AverroesProject\Api\ApiController:changeUserPassword')
+        ->setName('api.user.changepassword');
+    
 })->add('\AverroesProject\Auth\Authenticator:authenticateApiRequest');
 
 

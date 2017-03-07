@@ -22,6 +22,7 @@ var profileUserId;
 $(document).ready(function(){
     
     userUpdateApiUrl = apiBase + '/api/user/' + profileUserId + '/update';
+    userPasswordChangeApiUrl = apiBase + '/api/user/' + profileUserId + '/changepassword';
     
     $('#editProfileForm').on('show.bs.collapse', function () {
         $('#changePasswordForm').collapse('hide');
@@ -37,19 +38,43 @@ $(document).ready(function(){
         $('#changePasswordForm').collapse('hide');
     });
     
+    $('#cancelChangePasswordButton').on('click', function() {
+        $('#changePasswordForm').collapse('hide'); 
+        $('#password1').val(''); 
+        $('#password2').val(''); 
+        $('#theChangePasswordForm').validator('destroy');
+        $('#theChangePasswordForm').validator();
+    });
+    
     $('#theEditProfileForm').on('submit', function (event) {
         event.preventDefault();
-        console.log($('#theEditProfileForm').serialize());
         $.post(userUpdateApiUrl, 
             $('#theEditProfileForm').serialize(),
             function (data, text, jqXHR){
-                reportSuccess('User profile updated, page will be refreshed...', $("#editProfileFormDiv"), true);
+                reportSuccess('User profile updated, page will be refreshed...', 
+                $("#editProfileFormDiv"), true);
 
             })
             .fail( function(jqXHR, text, e) { 
                 reportError(jqXHR, text, e, $("#editProfileFormDiv"));
             });
-        });    
+    });
+    
+    $('#theChangePasswordForm').on('submit', function (event) {
+        event.preventDefault();
+        $.post(userPasswordChangeApiUrl, 
+            $('#theChangePasswordForm').serialize(),
+            function (data, text, jqXHR){
+                reportSuccess('User password updated, page will be refreshed...', 
+                $("#changePasswordFormDiv"), true);
+
+            })
+            .fail( function(jqXHR, text, e) { 
+                reportError(jqXHR, text, e, $("#changePasswordFormDiv"));
+            });
+    });
+        
+    
 });
 
 function reportError(jqXHR, text, e, theDiv)

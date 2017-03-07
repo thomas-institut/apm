@@ -360,6 +360,9 @@ class UserManager {
     }
     
     public function storeUserPassword($userName, $password){
+        if ($password == '') {
+            return false;
+        }
         $hash = password_hash($password, PASSWORD_BCRYPT);
 
         if ($this->userExistsByUserName($userName)){

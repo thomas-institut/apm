@@ -74,24 +74,29 @@ function reportError(jqXHR, text, e, theDiv)
  * 
  * @param {string} msg
  * @param {element} theDiv
- * @param {boolean} withReload
+ * @param {boolean} fadeOut=false
  * @returns {nothing}
  */
-function reportSuccess(msg, theDiv, withReload)
+
+var someNum = 1;
+
+function reportSuccess(msg, theDiv, fadeOut=false)
 {
-    theDiv.append(`
-        <div class="alert alert-success alert-dismissable" role="alert" 
+    id = theDiv.attr('id') + '-successalert' + someNum;
+    someNum++;
+    html = '<div class="alert alert-success alert-dismissable" id="' +
+            id + `" role="alert" 
                 style="margin-top: 20px">
             <button type="button" class="close" data-dismiss="alert" 
                     aria-label="Close">
                 <span aria-hidden="true">&times;</span>
             </button>
            <strong>Success! </strong>` + 
-            msg + '</div>');
-            
-    if (withReload) {
-        $(":input").attr("disabled","disabled");
-        window.setTimeout(function(){location.reload();}, 1500);
+            msg + '</div>';
+    
+    theDiv.append(html);
+    if (fadeOut) {
+       $('#' + id).fadeOut(2500);
     }
 }
 

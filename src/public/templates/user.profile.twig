@@ -11,6 +11,7 @@ User profile template
 <script>
     apiBase = '{{baseurl}}';
     profileUserId = {{theuser.id}};
+    profileUserInfo = JSON.parse('{{theuser|json_encode|raw}}');
 </script>
 <script type="application/javascript" src="{{baseurl}}/js/apm.js"></script>
 <script type="application/javascript" src="{{baseurl}}/js/userprofile.js"></script>
@@ -20,16 +21,18 @@ User profile template
 <ol class="breadcrumb">
     <li class="active"><a href="">User Profile</a></li>
 </ol>
-
+<div id="userprofile">
 <img src="https://www.gravatar.com/avatar/{{theuser.emailhash}}?d=mm&s=200">
 <h1>{{ theuser.fullname }} </h1>
 <p>Username: {{theuser.username}}</p>
 {% if theuser.email %}
     <p>Email address: <a href='mailto:{{theuser.email}}'>{{theuser.email}}</a></p>
 {% endif %}
-{% if isProfileUserRoot %}
+{% if theuser.isroot %}
 <span class="label label-success">root</span>
 {% endif %}
+</div>
+
 
 <div class="withtopmargin"></div>
 
@@ -50,9 +53,10 @@ Change Password
 
 {% endif %}
 
-{% if canMakeRoot and not isProfileUserRoot %}
+{% if canMakeRoot and not theuser.isroot %}
 <button class="btn btn-primary" 
         type="button" 
+        id="makerootbutton"
         data-toggle="collapse" 
         href="#makeRootForm">
 Make Root
@@ -169,7 +173,7 @@ Make Root
 {% endif %}
 
 
-{% if canMakeRoot and not isProfileUserRoot %}
+{% if canMakeRoot and not theuser.isroot %}
 <!-- Make root form -->
  <div class="collapse" id="makeRootForm">
     <div class="withtopmargin"/></div>
@@ -198,8 +202,7 @@ Make Root
 </div> <!-- Collapse -->
 {% endif %}
 
-<script>
-   
-    </script>
+
+<div id="reportarea"></div>
 
 {% endblock %}

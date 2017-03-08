@@ -71,7 +71,8 @@ class SiteController {
                 'manageUsers');
         $canMakeRoot = $this->ci->um->isUserAllowedTo($currentUserId, 
                 'makeRoot');
-        $isProfileUserRoot = $this->ci->um->isRoot($userProfileInfo['id']);
+        $userProfileInfo['isroot'] = $this->ci->um->isRoot($userProfileInfo['id']);
+        
     
         return $this->ci->view->render($response, 'user.profile.twig', [
             'userinfo' => $this->ci->userInfo, 
@@ -80,7 +81,6 @@ class SiteController {
             'theuser' => $userProfileInfo, 
             'canEditProfile' => $canEditProfile,
             'canMakeRoot' => $canMakeRoot,
-            'isProfileUserRoot' => $isProfileUserRoot
         ]);
     }
     

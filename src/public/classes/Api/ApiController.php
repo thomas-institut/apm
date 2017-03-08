@@ -82,6 +82,21 @@ class ApiController
         return $response->withJson($numColumns);
    }
    
+    public function getUserProfileInfo(Request $request, Response $response, $next){
+        $um = $this->ci->um;
+        $profileUserId =  (int) $request->getAttribute('userId');
+        $userProfileInfo = $um->getUserInfoByUserId($profileUserId);
+        if ($userProfileInfo === false ) {
+            $this->logger->error("Error getting info from user ID",
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'userId' => $profileUserId]);
+            return $response->withStatus(409);
+        }
+        
+        $userProfileInfo['isroot'] = $um->isRoot($profileUserId);
+        return $response->withJson($userProfileInfo);
+    }
+   
     public function updateUserProfile(Request $request, Response $response, $next){
         $um = $this->ci->um;
         $profileUserId =  (int) $request->getAttribute('userId');
@@ -172,7 +187,7 @@ class ApiController
             return $response->withStatus(409);
         }
 
-        if ($um->storeUserPassword($profileUsername, $password1)) {
+        if ($um->storeUserPassword($profileUserName, $password1)) {
             $this->logger->info("$updater changed $profileUserName's password", 
                     [ 'apiUserId' => $this->ci->userId, 
                       'userId' => $profileUserId]);
@@ -209,14 +224,14 @@ class ApiController
         $updaterInfo = $um->getUserInfoByUserId($this->ci->userId);
         $updater = $updaterInfo['username'];
         if (!$um->isRoot($updaterInfo['id'])) {
-            $this->logger->warning("MAKE_USER_ROOT: $updater tried to make $profileUserName root but she/he is not allowed", 
+            $this->logger->warning("$updater tried to make $profileUserName root but she/he is not allowed", 
                     [ 'apiUserId' => $this->ci->userId, 
                       'userId' => $profileUserId]);
             return $response->withStatus(403);
         }
         
        if ($um->makeRoot($profileUserId)) {
-            $this->logger->info("MAKE_USER_ROOT: $updater made $profileUserName root", 
+            $this->logger->info("$updater gave root status to $profileUserName", 
                     [ 'apiUserId' => $this->ci->userId, 
                       'userId' => $profileUserId]);
             return $response->withStatus(200);

@@ -45,12 +45,15 @@ function bindFormSubmissionEventHandler()
         }
         event.preventDefault();
         event.stopPropagation();
+        newUsername = $('#username').val();
         $.post(createUserApiUrl, 
             $('#theAddUserForm').serialize(),
             function (data, text, jqXHR){
-                reportSuccess('User created, page will be refreshed...', 
-                $("#addUserFormDiv"), true);
-
+                $('#addUserForm').collapse('hide'); 
+                reportSuccess('User ' + newUsername + ' created', 
+                $("#reportarea"), true);
+                window.setTimeout( function () {location.reload();}, 2500)
+                
             })
             .fail( function(jqXHR, text, e) { 
                 reportError(jqXHR, text, e, $("#addUserFormDiv"));

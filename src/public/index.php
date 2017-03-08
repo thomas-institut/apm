@@ -182,6 +182,11 @@ $app->group('/api', function (){
             '\AverroesProject\Api\ApiController:getNumColumns')
         ->setName('api.numcolumns');
     
+    // API -> user : get profile info
+    $this->get('/user/{userId}/info', 
+            '\AverroesProject\Api\ApiController:getUserProfileInfo')
+        ->setName('api.user.info');
+    
     // API -> user : update profile
     $this->post('/user/{userId}/update', 
             '\AverroesProject\Api\ApiController:updateUserProfile')

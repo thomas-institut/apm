@@ -112,7 +112,7 @@ $phpLog = new \Monolog\Handler\ErrorLogHandler();
 $logger = new Logger('apm-logger');
 $logger->pushHandler($logStream);
 $logger->pushHandler($phpLog);
-
+$logger->pushProcessor(new \Monolog\Processor\WebProcessor);
 $container['logger'] = $logger;
 
 // -----------------------------------------------------------------------------

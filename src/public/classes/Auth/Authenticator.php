@@ -54,7 +54,6 @@ class Authenticator {
     public function __construct( $ci) {
         $this->ci = $ci;
         $this->logger = $this->ci->logger->withName('AUTH');
-        $this->logger->pushProcessor(new \Monolog\Processor\WebProcessor);
         $this->apiLogger = $this->logger->withName('AUTH-API');
         $this->siteLogger = $this->logger->withName('AUTH-SITE');
     }

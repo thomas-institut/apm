@@ -8,3 +8,4 @@ src/public/config.php
 /src/scratch
 *.bak
 /src/public/node_modules/
+/src/public/log/

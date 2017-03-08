@@ -229,7 +229,7 @@ CREATE TABLE `ap_users` (
   `id` int(11) NOT NULL,
   `username` varchar(16) NOT NULL,
   `password` varchar(512) DEFAULT NULL,
-  `token` varchar(128) NOT NULL
+  `token` varchar(128) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

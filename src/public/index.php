@@ -27,6 +27,8 @@ require 'vendor/autoload.php';
 
 use AverroesProject\DataTable\MySqlDataTable;
 use AverroesProject\DataTable\MySqlDataTableWithRandomIds;
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
 
 /**
  * Runtime configurations: DB credentials, base URL
@@ -104,6 +106,14 @@ $container['view'] = function ($container) {
     return $view;
 };
 
+// Log
+$logStream = new StreamHandler(__DIR__ . '/' . $config['logfilename'], Logger::DEBUG);
+$phpLog = new \Monolog\Handler\ErrorLogHandler();
+$logger = new Logger('apm-logger');
+$logger->pushHandler($logStream);
+$logger->pushHandler($phpLog);
+
+$container['logger'] = $logger;
 
 // -----------------------------------------------------------------------------
 //  SITE ROUTES

@@ -1,11 +1,13 @@
 <!doctype html>
 <html lang="en-US">
 <head>
+    <link rel="stylesheet" type="text/css" href="{{baseurl}}/node_modules/bootstrap/dist/css/bootstrap.css"/>
 <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/styles.css"/>
 <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=PT+Sans"/>
 <title>Averroes Project Login</title>
 </head>
-<body><div id="login">
+<body>
+   <div id="login">
    <form action="{{baseurl}}/login" method="post">
     <table>
         <tr><td colspan="2" align="center"><img src="{{baseurl}}/images/averroes-logo-400.png"></td></tr>
@@ -18,7 +20,18 @@
      <tr><td colspan="2" align="left"><input type="checkbox" id="cbox" name="rememberme"/>&nbsp;&nbsp;Remember me for 2 weeks</td></tr>
     <tr><td colspan="2" align="right"><p><input class="logininput" type="submit" value="Login"></p></td></tr>
     </table>
-</form>
-</div>
+    </form>
+        
+        {% if message %}
+    <div class="alert alert-danger alert-dismissable withtopmargin" role="alert">
+        <button type="button" class="close" data-dismiss="alert" 
+                    aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        {{ message }}
+    </div>
+    {% endif %}
+    </div>
+    
 </body>
 </html>

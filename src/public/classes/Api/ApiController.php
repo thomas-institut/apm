@@ -289,9 +289,14 @@ class ApiController
         }
         
         // Create the user
+        if ($um->userExistsByUserName($username)) {
+             $this->logger->error("$username already exists, creation attempted by $updater", 
+                    ['apiUserId' => $this->ci->userId]);
+            return $response->withStatus(409);
+        }
         $newUserId = $um->createUserByUserName($username);
         if ($newUserId === false) {
-            $this->logger->error("Can't create user $username, change attempted by $updater", 
+            $this->logger->error("Can't create user $username, creation attempted by $updater", 
                     ['apiUserId' => $this->ci->userId]);
             return $response->withStatus(409);
         }

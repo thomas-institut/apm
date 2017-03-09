@@ -128,8 +128,6 @@ $(document).ready(function(){
                 reportError(jqXHR, text, e, $("#makeRootFormDiv"));
             });
     });
-    
-
 });
 
        

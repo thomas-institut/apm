@@ -156,6 +156,13 @@ CREATE TABLE `ap_settings` (
   `value` varchar(512) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Dumping data for table `ap_settings`
+--
+
+INSERT INTO `ap_settings` (`key`, `value`) VALUES
+('dbversion', '7');
+
 -- --------------------------------------------------------
 
 --
@@ -390,9 +397,3 @@ ALTER TABLE `ap_relations`
 --
 ALTER TABLE `ap_users`
   ADD CONSTRAINT `fk_user_people` FOREIGN KEY (`id`) REFERENCES `ap_people` (`id`) ON UPDATE CASCADE;
-
-
---
--- Database version
---
-INSERT INTO `ap_settings` (`key`, `value`) VALUES ('dbversion', '7');

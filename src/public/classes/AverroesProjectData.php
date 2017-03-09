@@ -38,7 +38,7 @@ class AverroesProjectData extends \mysqli{
     private $tables;
     
     
-    private $databaseversion = '6';
+    private $databaseversion = '7';
     
     /**
      * Tries to initialize and connect to the MySQL database.

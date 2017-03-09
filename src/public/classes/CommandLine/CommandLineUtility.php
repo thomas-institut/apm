@@ -1,0 +1,94 @@
+<?php
+/* 
+ *  Copyright (C) 2017 Universität zu Köln
+ *  
+ *  This program is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU General Public License
+ *  as published by the Free Software Foundation; either version 2
+ *  of the License, or (at your option) any later version.
+ *   
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *  
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ *  
+ */
+
+namespace AverroesProject\CommandLine;
+
+use AverroesProject\DataTable\MySqlDataTable;
+use AverroesProject\DataTable\MySqlDataTableWithRandomIds;
+use AverroesProject\UserManager;
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+
+/**
+ * Description of CommandLineUtility
+ *
+ * @author Rafael Nájera <rafael.najera@uni-koeln.de>
+ */
+abstract class CommandLineUtility {
+    
+    /**
+     *
+     * @var \PDO
+     */
+    protected $dbh;
+    
+    /**
+     *
+     * @var UserManager 
+     */
+    protected $um;
+    
+    /**
+     *
+     * @var Logger 
+     */
+    protected $logger;
+    
+    
+    public function __construct($config) {
+        $this->dbh = new \PDO('mysql:dbname='. $config['db']['db'] . ';host=' . $config['db']['host'], 
+            $config['db']['user'], 
+            $config['db']['pwd']);
+        $this->dbh->query("set character set 'utf8'");
+        $this->dbh->query("set names 'utf8'");
+
+        $this->um = new UserManager(
+            new MySqlDataTable($this->dbh, 
+                    $config['tables']['users']),
+            new MySqlDataTable($this->dbh, $config['tables']['relations']), 
+            new MySqlDataTableWithRandomIds($this->dbh, $config['tables']['people'], 10000, 100000));
+        
+        $processUser = posix_getpwuid(posix_geteuid());
+        
+        // Logger
+        $logStream = new StreamHandler(__DIR__ . '/../../' . $config['logfilename'], Logger::DEBUG);
+        $this->logger = (new Logger('apm-logger'))->withName('CMD');
+        $this->logger->pushProcessor(function ($record) use($processUser) { 
+            $record['extra']['unixuser'] = $processUser['name'];
+            return $record;
+        });
+        $this->logger->pushHandler($logStream);
+        $this->processUser = posix_getpwuid(posix_geteuid());
+    }
+    
+    public function run($argc, $argv) {
+        $result = $this->main($argc, $argv);
+        $status = $result ? 0 : 1;
+        exit($status);
+    }
+    
+    protected function printErrorMsg($msg) 
+    {
+        print "ERROR: $msg \n";
+    }
+
+
+    protected abstract function main($argc, $argv);
+}

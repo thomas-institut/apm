@@ -1,3 +1,4 @@
+#!/usr/bin/php -q
 <?php
 
 /* 
@@ -25,52 +26,8 @@ require '../vendor/autoload.php';
 require '../config.php';
 require '../config.tables.php';
 
-use AverroesProject\DataTable\MySqlDataTable;
-use AverroesProject\DataTable\MySqlDataTableWithRandomIds;
+use AverroesProject\CommandLine\ChangePasswordUtility;
 
-$dbh = new \PDO('mysql:dbname='. $config['db']['db'] . ';host=' . $config['db']['host'], 
-        $config['db']['user'], 
-        $config['db']['pwd']);
-$dbh->query("set character set 'utf8'");
-$dbh->query("set names 'utf8'");
+$app = new ChangePasswordUtility($config);
 
-
-$um = new UserManager(
-            new MySqlDataTableWithRandomIds($dbh, $config['tables']['users'], 10000, 100000),
-            new MySqlDataTable($dbh, $config['tables']['relations']), 
-            new MySqlDataTable($dbh, $config['tables']['people']));
-
-if ($argc != 2){
-    print "Please give a username.\n";
-    die;
-}
-
-$username = $argv[1];
-
-if (!$um->userExistsByUsername($username)){
-    print "ERROR: $username is not a valid username in the system.\n";
-    die();
-}
-print "Password: ";
-system('stty -echo');
-$password1 = trim(fgets(STDIN));
-system('stty echo');
-echo "\n";
-print "Type password again: ";
-system('stty -echo');
-$password2 = trim(fgets(STDIN));
-system('stty echo');
-echo "\n";
-if ($password1 !== $password2){
-    print "ERROR: Passwords do not match!\n";
-    die();
-}
-
-if (!$um->storeUserPassword($username, $password1)) {
-    print "ERROR: Could not store password, I'm sorry :(\n";
-    die();
-}
-
-print "Password changed successfully\n";
-
-
+$app->run($argc, $argv);

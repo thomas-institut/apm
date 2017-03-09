@@ -43,7 +43,7 @@ require 'config.tables.php';
 
 // Application parameters
 $config['app_name'] = 'Averroes Project Manager';
-$config['version'] = '0.0.13 (α)';
+$config['version'] = '0.0.14';
 $config['copyright_notice'] = '2016-17, <a href="http://www.thomasinstitut.uni-koeln.de/">Thomas-Institut</a>, <a href="http://www.uni-koeln.de/">Universität zu Köln</a>';
 
 $config['default_timezone'] = "Europe/Berlin";

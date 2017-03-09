@@ -1,7 +1,7 @@
 # Data Structure
 
 The Averroes Project Manager relies on data stored in a number of tables in a 
-MySQL server (= the database). See the ```dbcreation.sql``` file for a
+MySQL server (= the server). See the ```dbcreation.sql``` file for a
 detailed specification of the tables, indexes and foreign keys.
 
 ## Systems Settings
@@ -20,7 +20,8 @@ Eventually this people table will be replaced by a similar table in the new
 DARE project so that general information about people can be managed from a 
 single place. 
 
-The table ```ap_relations``` currently only stores user roles in the system.
+The table ```ap_relations``` currently only stores user roles in the system
+and, in fact, the only role used right now is ''root''. 
 
 ## Documents
 
@@ -42,7 +43,8 @@ necessary to retrieve page images from DARE's Bilderberg.
 Page information is in the table ```ap_pages```. Each page is associated with a 
 document id, has a default language and an optional foliation number. Each page
 has also a type, which corresponds to an entry in the table ```ap_types_page```,
-but this information is not used right now.
+but this information is not updated or used right now. Page type management
+may be used later on in conjunction with the new DARE system.
 
 ### Column Elements
 
@@ -86,11 +88,12 @@ in the ```ap_types_item```:
  * 10, nolb, A mark at the end of an element to signal that the word before it 
        does not end at the break
  * 11, abbreviation, Abbreviation with possible expansion
- * 12, linebreak, Line break
+ * 12, linebreak, Line break (only for text within glosses, for which lines
+       do not correspond to column lines)
 
-Each item has an associated column element id and a sequence number, plus 
-information that varies depending on its type, although normally there is at
-least a text string.
+Each item has an associated column element id and a sequence number. There
+is also additional information that varies depending on its type, 
+although normally there is at least a text string.
 
 ### Editorial Notes
 

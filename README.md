@@ -2,8 +2,8 @@
 
 This is the web app running on http://averroes.uni-koeln.de/apm
 
-It requires PHP 7.0 and a running MySQL Server 5.7 configured with a database and a user
-with access to that database.
+It requires PHP 7.0 and a running MySQL Server 5.7 configured with a database 
+and a user with access to that database.
 
 ## Development
 
@@ -44,14 +44,23 @@ stored in the current directory).  Run:
 ```bash
 ./runphpwebserver
 ```
+* Create at least one user in the system with root status using the 
+  command line:
+```bash
+cd src/public/utilities;
+./createuser <someuser>
+./makeroot <someuser>
+```
 
 ## Installation in production
 
 To install in production:  
 * Copy the ```src/public``` directory into the apm directory in the server.
-* Create configuration file in ``src/public`` in the server
+* Create a config.php configuration file in ``src/public`` in the server
 (see ```src/public/config.sample.php```).
 * Create the database structure in the server. 
 * Configure the web server so that all request ares handled by ```index.php``` 
 (in an Apache server this can be done with an ```.htaccess``` file,  see ```apache-htaccess```)
+* Create at least one user in the system with root status using the command
+  line utilities as indicated above.
 

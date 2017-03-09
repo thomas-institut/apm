@@ -391,16 +391,8 @@ ALTER TABLE `ap_relations`
 ALTER TABLE `ap_users`
   ADD CONSTRAINT `fk_user_people` FOREIGN KEY (`id`) REFERENCES `ap_people` (`id`) ON UPDATE CASCADE;
 
+
 --
--- Default administrator account:   username 'admin' , password 'admin'
+-- Database version
 --
-INSERT INTO `ap_people` (`id`, `fullname`) VALUES 
-    (32988, 'Default Administrator');
-
-INSERT INTO `ap_users` (`id`, `username`, `password`) VALUES 
-    (32988, 'admin', '$2y$10$v7fCIPrvqgGaaZbHQI6sQOn8i9aWk5cEbJmhQDfgP.aEo0wCh0xia');
-
-INSERT INTO `ap_relations` (`id`, `userid`, `relation`, `attribute`) VALUES
-    (1, 32988, 'hasRole', 'root');
-
 INSERT INTO `ap_settings` (`key`, `value`) VALUES ('dbversion', '7');

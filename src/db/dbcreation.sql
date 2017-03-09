@@ -1,5 +1,23 @@
--- Averroes Project
--- Database version 6
+/*
+ * Copyright (C) 2017 Universität zu Köln
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
+-- Averroes Project Manager
+-- Database version 7
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
@@ -138,6 +156,13 @@ CREATE TABLE `ap_settings` (
   `value` varchar(512) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Dumping data for table `ap_settings`
+--
+
+INSERT INTO `ap_settings` (`key`, `value`) VALUES
+('dbversion', '7');
+
 -- --------------------------------------------------------
 
 --
@@ -229,7 +254,7 @@ CREATE TABLE `ap_users` (
   `id` int(11) NOT NULL,
   `username` varchar(16) NOT NULL,
   `password` varchar(512) DEFAULT NULL,
-  `token` varchar(128) NOT NULL
+  `token` varchar(128) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -372,15 +397,3 @@ ALTER TABLE `ap_relations`
 --
 ALTER TABLE `ap_users`
   ADD CONSTRAINT `fk_user_people` FOREIGN KEY (`id`) REFERENCES `ap_people` (`id`) ON UPDATE CASCADE;
-
---
--- Default administrator account:   username 'admin' , password 'admin'
---
-INSERT INTO `ap_people` (`id`, `fullname`) VALUES 
-    (32988, 'Default Administrator');
-
-INSERT INTO `ap_users` (`id`, `username`, `password`) VALUES 
-    (32988, 'admin', '$2y$10$v7fCIPrvqgGaaZbHQI6sQOn8i9aWk5cEbJmhQDfgP.aEo0wCh0xia');
-
-INSERT INTO `ap_relations` (`id`, `userid`, `relation`, `attribute`) VALUES
-    (1, 32988, 'hasRole', 'root');

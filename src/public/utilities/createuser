@@ -1,3 +1,4 @@
+#!/usr/bin/php -q
 <?php
 
 /* 
@@ -19,11 +20,10 @@
  *  
  */
 
+namespace AverroesProject;
 
+require '../vendor/autoload.php';
+require '../config.php';
+require '../config.tables.php';
 
-$p = $argv[1];
-
-
-$hash = password_hash($p, PASSWORD_BCRYPT);
-
-print "$hash\n";
+(new CommandLine\CreateUserUtility($config))->run($argc, $argv);

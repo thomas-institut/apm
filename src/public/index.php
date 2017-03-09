@@ -27,6 +27,8 @@ require 'vendor/autoload.php';
 
 use AverroesProject\DataTable\MySqlDataTable;
 use AverroesProject\DataTable\MySqlDataTableWithRandomIds;
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
 
 /**
  * Runtime configurations: DB credentials, base URL
@@ -41,7 +43,7 @@ require 'config.tables.php';
 
 // Application parameters
 $config['app_name'] = 'Averroes Project Manager';
-$config['version'] = '0.0.13 (α)';
+$config['version'] = '0.2';
 $config['copyright_notice'] = '2016-17, <a href="http://www.thomasinstitut.uni-koeln.de/">Thomas-Institut</a>, <a href="http://www.uni-koeln.de/">Universität zu Köln</a>';
 
 $config['default_timezone'] = "Europe/Berlin";
@@ -83,10 +85,10 @@ $container['dbh'] = function($c){
 // User Manager
 $container['um'] = function ($c){
     $um = new UserManager(
-            new MySqlDataTableWithRandomIds($c->dbh, 
-                    $c['settings']['tables']['users'], 10000, 100000),
+            new MySqlDataTable($c->dbh, 
+                    $c['settings']['tables']['users']),
             new MySqlDataTable($c->dbh, $c['settings']['tables']['relations']), 
-            new MySqlDataTable($c->dbh, $c['settings']['tables']['people']));
+            new MySqlDataTableWithRandomIds($c->dbh, $c['settings']['tables']['people'], 10000, 100000));
     return $um;
             
 };
@@ -104,55 +106,63 @@ $container['view'] = function ($container) {
     return $view;
 };
 
+// Log
+$logStream = new StreamHandler(__DIR__ . '/' . $config['logfilename'], Logger::DEBUG);
+$phpLog = new \Monolog\Handler\ErrorLogHandler();
+$logger = new Logger('apm-logger');
+$logger->pushHandler($logStream);
+$logger->pushHandler($phpLog);
+$logger->pushProcessor(new \Monolog\Processor\WebProcessor);
+$container['logger'] = $logger;
 
 // -----------------------------------------------------------------------------
 //  SITE ROUTES
 // -----------------------------------------------------------------------------
  
 // LOGIN
-$app->any('/login', '\AverroesProject\Site\SiteAuthentication:login')
+$app->any('/login', '\AverroesProject\Auth\Authenticator:login')
         ->setName('login');
 
 // LOGOUT
-$app->any('/logout', '\AverroesProject\Site\SiteAuthentication:logout')
+$app->any('/logout', '\AverroesProject\Auth\Authenticator:logout')
         ->setName('logout');
 
 
 // HOME
 $app->get('/','\AverroesProject\Site\SiteController:homePage')
         ->setName('home')
-        ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
+        ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
 // USER.PROFILE
 $app->get('/user/{username}', 
         '\AverroesProject\Site\SiteController:userProfilePage')
         ->setName('user.profile')
-        ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
+        ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
 // USER.SETTINGS
 $app->get('/user/{username}/settings', 
         '\AverroesProject\Site\SiteController:userSettingsPage')
         ->setName('user.settings')
-        ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
+        ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
 $app->get('/users', '\AverroesProject\Site\SiteController:userManagerPage')
         ->setName('user.manager')
-        ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
+        ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
 // DOCS
 $app->get('/documents','\AverroesProject\Site\SiteController:documentsPage')
         ->setName('docs')
-        ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
+        ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
 $app->get('/doc/{id}','\AverroesProject\Site\SiteController:showDocPage')
         ->setName('doc.showdoc')
-        ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
+        ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
 // PAGEVIEWER
 $app->get('/pageviewer/{doc}/{page}', 
         '\AverroesProject\Site\SiteController:pageViewerPage')
         ->setName('pageviewer')
-        ->add('\AverroesProject\Site\SiteAuthentication:authenticate');
+        ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
 
 
@@ -165,14 +175,39 @@ $app->group('/api', function (){
     // API -> getElements
     $this->get('/{document}/{page}/{column}/elements', 
             '\AverroesProject\Api\ApiController:getElementsByDocPageCol')
-        ->setName('api_getelements');
+        ->setName('api.getelements');
     
     // API -> numColumns
     $this->get('/{document}/{page}/numcolumns', 
             '\AverroesProject\Api\ApiController:getNumColumns')
-        ->setName('api_numcolumns');
+        ->setName('api.numcolumns');
+    
+    // API -> user : get profile info
+    $this->get('/user/{userId}/info', 
+            '\AverroesProject\Api\ApiController:getUserProfileInfo')
+        ->setName('api.user.info');
+    
+    // API -> user : update profile
+    $this->post('/user/{userId}/update', 
+            '\AverroesProject\Api\ApiController:updateUserProfile')
+        ->setName('api.user.update');
 
-})->add('\AverroesProject\Api\ApiAuthentication');
+    // API -> user : change password
+    $this->post('/user/{userId}/changepassword', 
+            '\AverroesProject\Api\ApiController:changeUserPassword')
+        ->setName('api.user.changepassword');
+    
+    // API -> user : make root
+    $this->post('/user/{userId}/makeroot', 
+            '\AverroesProject\Api\ApiController:makeUserRoot')
+        ->setName('api.user.makeroot');
+    
+    // API -> user : add new user
+    $this->post('/user/new', 
+            '\AverroesProject\Api\ApiController:createNewUser')
+        ->setName('api.user.new');
+    
+})->add('\AverroesProject\Auth\Authenticator:authenticateApiRequest');
 
 
 // All set, run!

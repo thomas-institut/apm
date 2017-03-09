@@ -4,7 +4,11 @@
 {% block title %}Doc: {{doc.docInfo.title}}{% endblock %}
 
 {% block content %}
-    <h4><a href="{{path_for('docs')}}">Documents</a> → Document Details</h4>
+     <ol class="breadcrumb">
+         <li><a href="{{path_for('docs')}}">Documents</a></li>
+        <li class="active">Document Details</li>
+    </ol>
+
 <h1>{{doc.docInfo.title}}</h1>
     <p class="docinfo">{{macros.langName(doc.docInfo.lang)}} {{macros.docTypeName(doc.docInfo.doc_type)}}, 
         {{doc.numTranscribedPages}} of {{doc.numPages}} pages transcribed

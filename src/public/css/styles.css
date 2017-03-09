@@ -1,14 +1,14 @@
-body {
+/*body {
     font-family: 'PT Sans', Arial, Verdana;
     font-size: 12pt;
     margin: 0;
     padding: 0;
     color: #333;
-}
+}*/
 
 a, a:visited {
     text-decoration: none;
-    color: #000066;
+    color: #337ab7;
 }
 a:hover{
     color: blue;
@@ -172,4 +172,13 @@ table.doctable td {
 p.docinfo {
     padding-top: 5px;
     padding-bottom: 3px;
+}
+
+.breadcrumb {
+    background-color: white;
+}
+
+
+.withtopmargin {
+    margin-top: 30px;
 }

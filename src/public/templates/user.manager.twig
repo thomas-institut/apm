@@ -7,6 +7,14 @@ User manager template
 
 {% block title %}Averroes Project : User Manager{% endblock %}
 
+{% block extraJS %}
+<script>
+    apiBase = '{{baseurl}}';
+</script>
+<script type="application/javascript" src="{{baseurl}}/js/apm.js"></script>
+<script type="application/javascript" src="{{baseurl}}/js/usermanager.js"></script>
+{% endblock %}
+
 {% block content %}
 <h1>User Manager</h1>
 <table>
@@ -14,17 +22,111 @@ User manager template
 {% for user in users %}
     <tr> 
         <td style="padding: 10px;"><img src="https://www.gravatar.com/avatar/{{user.emailhash}}?d=mm&s=40"></td>
-        <td style="padding: 10px;">{{user.username}} </td>
+        <td style="padding: 10px;"><a href="{{ path_for('user.profile', {'username' : user.username}) }}"
+                                      title="View/Edit user">{{user.username}}</a></td>
         <td style="padding: 10px;">{{user.fullname}} </td>
         <td style="padding: 10px;">{{user.email}}</td>
-        <td>
-        <a href="#">[Change Password]</a>
-        <a href="#">[Make root]</a>
-        </td>
     </tr>
 
 {% endfor %}
 </table>
 
-<p>Add user: </p>
+<div class="withtopmargin"></div>
+
+<div id="addUserButton" class="collapse in">
+<button class="btn btn-primary" 
+        type="button"  
+        data-toggle="collapse" 
+        href="#addUserForm"">
+ Add new user
+</button>
+</div>
+
+<div class="collapse" id="addUserForm">
+    <h3>Add New User:</h3>
+    <div class="row">
+    <div class="col-md-4" id="addUserFormDiv"> 
+    <form data-toggle="validator" role="form" id="theAddUserForm">
+    <!-- Username -->
+    <div class="form-group has-feedback">
+        <label for="username">Username</label>
+        <input type="text"  
+           data-minlength="5"
+           maxlength="20" 
+           class="form-control" 
+           pattern="^[a-z]{1,}[a-z0-9]{0,}$" 
+           id="username"
+           name="username"
+           placeholder="Username" 
+           data-error="Username should be 5 to 10 smallcap letters or numbers starting with at least one smallcap letter"
+           required>
+        <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+        <div class="help-block with-errors"></div>
+    </div>
+
+    <!-- Full name -->
+    <div class="form-group has-feedback">
+    <label for="fullname">Full Name</label>
+    <input type="text" 
+           class="form-control" 
+           maxlength="50"
+           id="fullname"
+           name="fullname"
+           placeholder="The new user's full name"
+           required>
+    <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+    <div class="help-block with-errors"></div>
+    </div>
+
+    <!-- Email address -->
+    <div class="form-group has-feedback">
+    <label for="email">Email address</label>
+    <input type="email" 
+           class="form-control" 
+           id="email" 
+           name="email"
+           placeholder="e.g., email@email.com"
+           required>
+    <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+    <div class="help-block with-errors"></div>
+    </div>
+    
+    <!-- Password -->
+    <div class="form-group has-feedback">
+    <label for="password1">Password</label>
+    <input type="password" 
+           class="form-control" 
+           id="password1"
+           name="password1"
+           data-minlength="8"
+           maxlength="16"
+           placeholder="User password (8-16 characters)"
+           required>
+    <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+    <div class="help-block with-errors"></div>
+    </div>
+    
+    <!-- Password confirmation -->
+    <div class="form-group has-feedback">
+    <label for="password2">Confirm Password</label>
+    <input type="password" 
+           class="form-control" 
+           id="password2"
+           name="password2"
+           data-match="#password1"
+           data-match-error="Does not match given password"
+           placeholder="Confirm"
+           required>
+    <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+    <div class="help-block with-errors"></div>
+  </div>
+  <button type="submit" class="btn btn-primary" id="submitAddUserButton">Submit</button>
+  <button type="button" class="btn btn-default" id="cancelAddUserButton">Cancel</button>
+</form>
+       
+</div> <!-- col -->
+</div> <!-- row -->
+</div> <!-- collapse -->
+
+<div id="reportarea"></div>
 {% endblock %}

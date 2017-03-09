@@ -1,0 +1,23 @@
+{
+  "name": "apm",
+  "version": "0.0.13",
+  "description": "Averroes Project Manager",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Rafael Nájera <rafael.najera@uni-koeln.de>",
+  "license": "GPL-3.0",
+    
+  "dependencies" :
+        { "jquery" : "3.1.1",
+          "bootstrap" : "3.3.7",
+          "openseadragon" : "2.2.1",
+          "@shagstrom/split-pane" : "0.9.4"
+        }
+              
+  
+}

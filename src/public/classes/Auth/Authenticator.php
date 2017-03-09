@@ -29,7 +29,7 @@
  * a randomly chosen secret key.
  */
 
-namespace AverroesProject\Site;
+namespace AverroesProject\Auth;
 
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
@@ -41,9 +41,10 @@ use \Dflydev\FigCookies\FigResponseCookies;
  * Middleware class for site authentication
  *
  */
-class SiteAuthentication {
+class Authenticator {
     
     protected $ci;
+    private $logger, $apiLogger, $siteLogger;
    
     private $cookieName = 'rme';
     private $secret = '1256106427895916503';
@@ -52,6 +53,9 @@ class SiteAuthentication {
     //Constructor
     public function __construct( $ci) {
         $this->ci = $ci;
+        $this->logger = $this->ci->logger->withName('AUTH');
+        $this->apiLogger = $this->logger->withName('AUTH-API');
+        $this->siteLogger = $this->logger->withName('AUTH-SITE');
     }
    
     private function generateRandomToken(){
@@ -68,7 +72,7 @@ class SiteAuthentication {
 
     protected function debug($msg){
         if ($this->debugMode){
-            error_log('SiteAuth : ' . $msg);
+            $this->logger->debug($msg);
         }
     }
 
@@ -77,31 +81,14 @@ class SiteAuthentication {
         $success = false;
         if (!isset($_SESSION['userid'])){
             // Check for long term cookie
-            $this->debug('No session');
-            $longTermCookie = FigRequestCookies::get($request, $this->cookieName);
-            if ($longTermCookie !== NULL and $longTermCookie->getValue()){
-                //$this->debug('Cookie = ' . print_r($longTermCookie, true));
-                $cookieValue = $longTermCookie->getValue();
-                list($userId, $token, $mac) = explode(':', $cookieValue);
-                if (hash_equals($this->generateMac($userId . ':' . $token), $mac)){
-                    $userToken = $this->ci->um->getUserToken($userId);
-                    if (hash_equals($userToken, $token)){
-                        $this->debug('Cookie looks good, user = ' . $userId);
-                        $success = true;
-                    }
-                    else {
-                        $this->debug('User tokens do not match -> ' . $userToken . ' vs ' . $token);
-                    }
-                } else {
-                    $this->debug('Macs do not match!');
-                }
-                
-            } else {
-                $this->debug('... and no cookie. Fail!');
+            $this->debug('SITE : No session');
+            $userId = $this->getUserIdFromLongTermCookie($request);
+            if ($userId !== false) {
+                $success = true;
             }
         } else {
             $userId = $_SESSION['userid'];
-            $this->debug('Session is set, user id = ' . $userId);
+            $this->debug('SITE : Session is set, user id = ' . $userId);
             if ($this->ci->um->userExistsById($userId)){
                 $this->debug("User id exists!");
                 $success = true;
@@ -110,9 +97,8 @@ class SiteAuthentication {
             }
             
         }
-        
         if ($success){
-            $this->debug('Success, go ahead!');
+            $this->debug('SITE: Success, go ahead!');
             $_SESSION['userid'] = $userId;
             $ui = $this->ci->um->getUserInfoByUserId($userId);
             if ($this->ci->um->isUserAllowedTo($userId, 'manageUsers')){
@@ -121,7 +107,7 @@ class SiteAuthentication {
             $this->ci['userInfo'] = $ui;
             return $next($request, $response); 
         } else {
-            $this->debug("Authentication fail, logging out and redirecting to login");
+            $this->debug("SITE : Authentication fail, logging out and redirecting to login");
             session_unset();
             session_destroy();
             $response = FigResponseCookies::expire($response, $this->cookieName);
@@ -131,7 +117,8 @@ class SiteAuthentication {
     
     public function login(Request $request, Response $response, $next){
         session_start();
-        $this->debug('Login page');
+        $this->debug('Showing login page');
+        $msg = '';
         if ($request->isPost()){
             $data = $request->getParsedBody();
             if (isset($data['user']) && isset($data['pwd'])){
@@ -141,40 +128,87 @@ class SiteAuthentication {
                 $rememberme = isset($data['rememberme']) ? $data['rememberme'] : '';
                 $this->debug('Trying to log in user ' . $user);
                 if ($this->ci->um->verifyUserPassword($user, $pwd)){
-                    $this->debug('Success!');
+                    $this->siteLogger->info("Login", ['user' => $user]);
                     // Success!
                     $userId = $this->ci->um->getUserIdFromUsername($user);
                     $_SESSION['userid'] = $userId;
+                    $this->debug('Generating token cookie');
+                    $token = $this->generateRandomToken();
+                    $this->ci->um->storeUserToken($userId, $token);
+                    $cookieValue = $this->generateLongTermCookieValue($token, $userId);
                     if ($rememberme === 'on'){
                         $this->debug('User wants to be remembered for 2 weeks');
-                        $token = $this->generateRandomToken();
-                        $this->ci->um->storeUserToken($userId, $token);
-                        $cookieValue = $this->generateLongTermCookieValue($token, $userId);
                         $now = new \DateTime();
                         $cookie = SetCookie::create($this->cookieName)
                                 ->withValue($cookieValue)
                                 ->withExpires($now->add(new \DateInterval('P14D')));
-                        $response = FigResponseCookies::set($response, $cookie);
+                    } else {
+                        $cookie = SetCookie::create($this->cookieName)
+                                ->withValue($cookieValue);
                     }
+                    
+                    $response = FigResponseCookies::set($response, $cookie);
                     return $response->withHeader('Location', $this->ci->router->pathFor('home'));
                 }
                 else {
-                    $this->debug('Wrong user/password for user  ' . $user);
+                    $this->siteLogger->notice('Wrong user/password', ['user' => $user]);
+                    $msg = "Wrong username/password, please try again";
                 }
             }
         }
-        $msg = '';
         return $this->ci->view->render($response, 'login.twig', [ 'message' => $msg, 'baseurl' => $this->ci->settings['baseurl']]);
     }
     
     public function logout(Request $request, Response $response, $next) {
         session_start();
-        $this->debug('Logging out');
+        if (!isset($_SESSION['userid'])){
+            $this->siteLogger->error("Logout attempt without a valid session");
+        }
+        $userId = $_SESSION['userid'];
+        $userName = $this->ci->um->getUsernameFromUserId($userId);
+        if ($userName === false) {
+            $this->siteLogger->error("Can't get username from user Id at logout attempt", ['userId' => $userId]);
+        }
+        $this->siteLogger->info('Logout', ['user' => $userName]);
         session_unset();
         session_destroy();
         $response = FigResponseCookies::expire($response, $this->cookieName);
         return $response->withHeader('Location', $this->ci->router->pathFor('home'));
     }
     
+    
+    public function authenticateApiRequest (Request $request, Response $response, $next) {
+        $userId = $this->getUserIdFromLongTermCookie($request);
+        if ($userId === false){
+            $this->apiLogger->notice("Authentication fail");
+            return $response->withStatus(401);
+        }
+        $this->debug('API : Success, go ahead!');
+        $this->ci['userId'] = $userId;
+        return $next($request, $response); 
+    }
+    
+    private function getUserIdFromLongTermCookie(Request $request)
+    {
+        $this->debug('Checking long term cookie');
+        $longTermCookie = FigRequestCookies::get($request, $this->cookieName);
+        if ($longTermCookie !== NULL and $longTermCookie->getValue()){
+            $cookieValue = $longTermCookie->getValue();
+            list($userId, $token, $mac) = explode(':', $cookieValue);
+            if (hash_equals($this->generateMac($userId . ':' . $token), $mac)){
+                $userToken = $this->ci->um->getUserToken($userId);
+                if (hash_equals($userToken, $token)){
+                    $this->debug('Cookie looks good, user = ' . $userId);
+                    return $userId;
+                }
+                $this->debug('User tokens do not match -> ' . $userToken . ' vs ' . $token);
+                return false;
+            } 
+            $this->debug('Macs do not match!');
+            return false;
+        }
+        $this->debug('... there is no cookie. Fail!');
+        return false;
+    }
     
 }

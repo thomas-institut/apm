@@ -7,11 +7,202 @@ User profile template
 
 {% block title %}{{theuser.fullname}} | Collaborator in the Averroes Project{% endblock %}
 
+{% block extraJS %}
+<script>
+    apiBase = '{{baseurl}}';
+    profileUserId = {{theuser.id}};
+    profileUserInfo = JSON.parse('{{theuser|json_encode|raw}}');
+</script>
+<script type="application/javascript" src="{{baseurl}}/js/apm.js"></script>
+<script type="application/javascript" src="{{baseurl}}/js/userprofile.js"></script>
+{% endblock %}
+
 {% block content %}
-<h4>User Profile</h4>
+<ol class="breadcrumb">
+    <li class="active"><a href="">User Profile</a></li>
+</ol>
+<div id="userprofile">
+<img src="https://www.gravatar.com/avatar/{{theuser.emailhash}}?d=mm&s=200">
 <h1>{{ theuser.fullname }} </h1>
 <p>Username: {{theuser.username}}</p>
 {% if theuser.email %}
     <p>Email address: <a href='mailto:{{theuser.email}}'>{{theuser.email}}</a></p>
 {% endif %}
+{% if theuser.isroot %}
+<span class="label label-success">root</span>
+{% endif %}
+</div>
+
+
+<div class="withtopmargin"></div>
+
+{% if canEditProfile %}
+<button class="btn btn-primary" 
+        type="button" 
+        data-toggle="collapse" 
+        href="#editProfileForm">
+Edit Profile
+</button>
+
+<button class="btn btn-primary" 
+        type="button" 
+        data-toggle="collapse" 
+        href="#changePasswordForm">
+Change Password
+</button>
+
+{% endif %}
+
+{% if canMakeRoot and not theuser.isroot %}
+<button class="btn btn-primary" 
+        type="button" 
+        id="makerootbutton"
+        data-toggle="collapse" 
+        href="#makeRootForm">
+Make Root
+</button>
+{% endif %}
+
+{% if canEditProfile %}
+<div class="collapse" id="editProfileForm" >
+    <div class="withtopmargin"></div>
+    <div class="row">
+    <div class="col-md-4" id="editProfileFormDiv">
+    <form data-toggle="validator" role="form" id="theEditProfileForm"> 
+
+    <!-- Username -->
+    <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text"  
+           data-minlength="5"
+           maxlength="20" 
+           class="form-control"
+           name="username"
+           id="username"
+           value="{{theuser.username}}"
+           disabled>
+    </div>
+
+    <!-- Full name -->
+    <div class="form-group has-feedback">
+    <label for="fullname">Full Name</label>
+    <input type="text" 
+           class="form-control" 
+           maxlength="50"
+           name="fullname"
+           id="fullname" 
+           value="{{theuser.fullname}}"
+           required>
+    <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+    <div class="help-block with-errors"></div>
+    </div>
+
+    <!-- Email address -->
+    <div class="form-group has-feedback">
+    <label for="email">Email address</label>
+    <input type="email" 
+           class="form-control" 
+           name="email"
+           id="email" 
+           value="{{theuser.email}}">
+    <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+    <div class="help-block with-errors"></div>
+    </div>
+    
+  <button type="submit" class="btn btn-primary">Submit</button>
+  <button type="button" class="btn btn-default" onClick="$('#editProfileForm').collapse('hide');">Cancel</button>
+</form>
+    {% if not canMakeRoot %}
+    <div class="alert alert-info alert-dismissable withtopmargin" role="alert">
+        <button type="button" class="close" data-dismiss="alert" 
+                    aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        <strong>Note:</strong> Your avatar is associated with your email address and
+        is managed by Gravatar. To set it or change it, please visit
+        <a href="https://gravatar.com/" target="_blank">gravatar.com
+            <span class="glyphicon glyphicon-new-window"></span></a>
+    </div>
+    {% endif %}
+  </div> <!-- col -->
+    </div> <!-- row -->
+</div> <!-- Collapse -->
+
+<!-- PASSWORD Change Form -->
+ <div class="collapse" id="changePasswordForm">
+     <div class="withtopmargin"></div>
+    <div class="row">
+    <div class="col-md-4" id="changePasswordFormDiv">      
+        <form data-toggle="validator" role="form" id="theChangePasswordForm">
+        <!-- Password -->
+        <div class="form-group has-feedback">
+            <label for="password1">Password</label>
+            <input type="password" 
+               class="form-control" 
+               id="password1"
+               name="password1"
+               data-minlength="8"
+               maxlength="16"
+               placeholder="User password (8-16 characters)" required>
+            <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+            <div class="help-block with-errors"></div>
+        </div>
+        <!-- Password confirmation -->
+        <div class="form-group has-feedback">
+            <label for="password2">Confirm Password</label>
+            <input type="password" 
+                   class="form-control" 
+                   id="password2"
+                   name="password2"
+                   data-match="#password1"
+                   data-match-error="Passwords do not match"
+                   placeholder="Confirm" required>
+            <span class="glyphicon form-control-feedback" aria-hidden="true"></span>
+            <div class="help-block with-errors"></div>
+        </div>
+        <div class="form-group">
+        <button type="submit" class="btn btn-primary">Submit</button>
+        <button type="button" class="btn btn-default" 
+                id="cancelChangePasswordButton">
+            Cancel</button>
+        </div>
+        </form>
+    </div> <!-- Col -->
+    </div> <!-- Row -->
+</div> <!-- Collapse -->
+{% endif %}
+
+
+{% if canMakeRoot and not theuser.isroot %}
+<!-- Make root form -->
+ <div class="collapse" id="makeRootForm">
+    <div class="withtopmargin"/></div>
+    <div class="row">
+    <div class="col-md-4" id="makeRootFormDiv">      
+        <form data-toggle="validator" role="form" id="theMakeRootForm">
+        <div class="form-group">
+        <div class="checkbox">
+            <label>
+            <input type="checkbox" 
+                   id="confirmroot" 
+                   name="confirmroot"
+                   data-error="You must be sure you want to make this user root!" 
+                   required>
+            I am 100% sure that I want to give root capabilities to this user</label>
+            <div class="help-block with-errors">                
+            </div>
+        </div>
+    </div>
+    <button type="submit" class="btn btn-danger">Make root!</button>
+    <button type="button" class="btn btn-default" id="cancelMakeRootButton"
+            >Cancel</button>
+    </form>
+    </div> <!-- Col -->
+    </div> <!-- Row -->
+</div> <!-- Collapse -->
+{% endif %}
+
+
+<div id="reportarea"></div>
+
 {% endblock %}

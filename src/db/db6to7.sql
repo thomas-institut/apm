@@ -1,6 +1,5 @@
-<?php
 /*
- * Copyright (C) 2016 Universität zu Köln
+ * Copyright (C) 2017 Universität zu Köln
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -18,29 +17,9 @@
  */
 
 /**
- * @brief Middleware class for API authentication
- * @author Rafael Nájera <rafael.najera@uni-koeln.de>
+ * Author:  Rafael Nájera <rafael.najera@uni-koeln.de>
+ * Created: Mar 7, 2017
  */
-namespace AverroesProject\Api;
 
-use \Psr\Http\Message\ServerRequestInterface as Request;
-use \Psr\Http\Message\ResponseInterface as Response;
-
-/**
- * Authentication Middleware class for the API
- *
- */
-class ApiAuthentication
-{
-    protected $ci;
-   //Constructor
-   public function __construct( $ci) {
-       $this->ci = $ci;
-   }
-   
-   public function __invoke(Request $request, Response $response, $next) {
-       // Nothing here for the moment!
-       error_log('API Auth: letting all through!');
-       return $next($request, $response); 
-   }
-}
+ALTER TABLE `ap_users` CHANGE `token` `token` VARCHAR(128) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL;
+UPDATE `ap_settings` SET `value` = '7' WHERE `ap_settings`.`key` = 'dbversion';

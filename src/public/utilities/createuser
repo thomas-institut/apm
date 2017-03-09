@@ -26,8 +26,4 @@ require '../vendor/autoload.php';
 require '../config.php';
 require '../config.tables.php';
 
-use AverroesProject\CommandLine\ChangePasswordUtility;
-
-$app = new ChangePasswordUtility($config);
-
-$app->run($argc, $argv);
+(new CommandLine\CreateUserUtility($config))->run($argc, $argv);

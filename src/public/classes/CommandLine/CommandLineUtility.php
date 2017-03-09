@@ -53,6 +53,8 @@ abstract class CommandLineUtility {
     
     
     public function __construct($config) {
+        global $argv;
+        
         $this->dbh = new \PDO('mysql:dbname='. $config['db']['db'] . ';host=' . $config['db']['host'], 
             $config['db']['user'], 
             $config['db']['pwd']);
@@ -66,12 +68,16 @@ abstract class CommandLineUtility {
             new MySqlDataTableWithRandomIds($this->dbh, $config['tables']['people'], 10000, 100000));
         
         $processUser = posix_getpwuid(posix_geteuid());
+        $pid = posix_getpid();
+        $cmd = $argv[0];
         
         // Logger
         $logStream = new StreamHandler(__DIR__ . '/../../' . $config['logfilename'], Logger::DEBUG);
         $this->logger = (new Logger('apm-logger'))->withName('CMD');
-        $this->logger->pushProcessor(function ($record) use($processUser) { 
+        $this->logger->pushProcessor(function ($record) use($processUser, $pid, $cmd) { 
             $record['extra']['unixuser'] = $processUser['name'];
+            $record['extra']['pid'] = $pid;
+            $record['extra']['cmd'] = $cmd;
             return $record;
         });
         $this->logger->pushHandler($logStream);

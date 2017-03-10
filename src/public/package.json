@@ -1,6 +1,6 @@
 {
   "name": "apm",
-  "version": "0.0.13",
+  "version": "0.2",
   "description": "Averroes Project Manager",
   "main": "index.js",
   "directories": {
@@ -16,7 +16,9 @@
         { "jquery" : "3.1.1",
           "bootstrap" : "3.3.7",
           "openseadragon" : "2.2.1",
-          "@shagstrom/split-pane" : "0.9.4"
+          "@shagstrom/split-pane" : "0.9.4",
+          "bootstrap-validator" : "0.11.9",
+          "quill" : "1.2.2"
         }
               
   

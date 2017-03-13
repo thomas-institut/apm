@@ -197,10 +197,13 @@ td.linenumber {
     padding-right: 10px;
 }
 
-.tooltip-notes > blockquote{
+.tooltip-notes > blockquote {
     font-size: 1em;
 }
 
+.tooltip-notes > blockquote > footer {
+    margin-top: 0px;
+}
 button.headerbutton{
     margin-left: 10px; 
     margin-right: 10px;
@@ -226,4 +229,8 @@ button.disablebutton{
 
 div.textcol{
     width: 100%;
+}
+
+div.popoverinfo {
+    margin-bottom: 10px;
 }

@@ -17,6 +17,7 @@
     <script type="application/javascript" src="{{baseurl}}/node_modules/@shagstrom/split-pane/split-pane.js"></script>
     <script type="text/javascript" src="{{baseurl}}/node_modules/quill/dist/quill.js"></script>
     
+    <script type="application/javascript" src="{{baseurl}}/js/item.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/pageviewer.js"></script>
     <link href='{{baseurl}}/images/averroes-icon.png' rel='icon' sizes='16x16' type='image/png'>
     <script>
@@ -117,6 +118,41 @@
     <div class="split-pane-component" id="right-component">
     </div>
 </div>
+</div>
+<!-- Edition modals -->
+<div class="modal" id="addNoteModal" tab-index="-1" role="dialog"
+     aria-labelledby="addNoteModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" 
+                        data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" 
+                    id="addNoteModalLabel">Add new note</h4>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <label for="notetext" class="control-label">
+                            New note:
+                        </label>
+                        <textarea class="form-control" 
+                                  id="notetext"
+                                  name="notetext"></textarea>
+                    </div>
+                </form>
+                <p id="addNoteData"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" 
+                        data-dismiss="modal">Close</button>
+                <button type="button" 
+                        class="btn btn-primary">Add note</button>
+            </div>
+        </div>
+    </div>
 </div>
 </body>
 </html>        

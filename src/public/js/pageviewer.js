@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2016 Universität zu Köln
+ * Copyright (C) 2016-7 Universität zu Köln
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -49,6 +49,9 @@ $(document).ready(function ()
     currentDocumentFontSize = /\d+/.exec(reportedFS);
     apiGetColumnInfoUrl = apiBase + '/api/' + docId + '/' + 
             pageNumber + '/numcolumns';
+    
+    setupEditionModals();
+    
     $.getJSON(apiGetColumnInfoUrl, function (resp)
     {
         var col;
@@ -134,233 +137,62 @@ function buildPageTextContainer(elements, ednotes, people)
 
     richTooltips = {};
     for (i = 0; i < elements.length; i++) {
+        elementHtmlId = 'element' + elements[i].id;
+        richTooltips[elementHtmlId] = {};
+        richTooltips[elementHtmlId].text = '';
+        richTooltips[elementHtmlId].type = 'element';
         switch (elements[i].type) {
             // ColumnElement::LINE
             case 1:
                 nLabel = elements[i].reference;
-                tooltipText = '';
+                title = 'Line';
                 break;
 
                 // ColumnElement::HEAD
             case 2:
                 nLabel = 'H';
-                tooltipText = 'Head';
+                title = 'Head';
                 break;
 
                 // ColumnElement::CUSTODES:
             case 5:
                 nLabel = 'C';
-                tooltipText = 'Custodes';
+                title = 'Custodes';
                 break;
 
                 // ColumnElement::GLOSS:
             case 3:
                 nLabel = 'G';
-                tooltipText = 'Gloss';
+                title = 'Gloss';
                 break;
 
             default:
                 nLabel = 'Unk';
-                tooltipText = 'Unsupported Element';
+                title = 'Unsupported Element';
         }
-
+        
+        richTooltips[elementHtmlId].text += '<b>Transcriber:</b>' + 
+                people[elements[i].editorId].fullname +
+                '<br/><b>Date/Time:</b>' + 
+                elements[i].timestamp;
+        
         s = s + '<tr>';
-        seqtd = '<td class="linenumber" title="' + tooltipText + '">' + 
-                nLabel + '</td>';
+        seqtd = '<td class="linenumber">'  + 
+                '<div id="' + elementHtmlId + '" ' + 
+                'title="' + title + '">' +
+                nLabel +
+                '</div>' +
+                '</td>';
+
 
         theText = '';
         for (j = 0; j < elements[i].items.theItems.length; j++) {
 
             item = elements[i].items.theItems[j];
             htmlId = 'item' + item.id;
-            classes = '';
             itemHasEdnotes = hasEdnotes(item.id, ednotes);
-            if (itemHasEdnotes) {
-                classes += 'hasednote';
-            }
-            switch (item.type) {
-                // TranscriptionTextItem::TEXT:
-                case 1:
-                    classes = classes + ' regulartext';
-                    theText = theText + '<span class="' + classes + '" id="' + 
-                            htmlId + '">' + item.theText + '</span>';
-                    break;
-
-                    // TranscriptionTextItem::RUBRIC:
-                case 2:
-                    classes = classes + ' rubric';
-                    theText = theText + '<span class="' + classes + 
-                            '" title="Rubric" id="' + htmlId + '">' + 
-                            item.theText + '</span>';
-                    break;
-
-                    // case TranscriptionTextItem::SIC:
-                case 3:
-                    classes = classes + ' sic';
-                    t = item.altText;
-                    if (t === '') {
-                        t = item.theText;
-                    }
-                    theText = theText + '<span class="' + classes + 
-                            '" id="' + htmlId + '" title="Sic">' + 
-                            t + '</span>';
-                    richTooltips[htmlId] = {};
-                    richTooltips[htmlId]['type'] = 'sic';
-                    richTooltips[htmlId]['text'] = '<b>Original:</b> ' + 
-                            item.theText + '<br/><b>Correction:</b> ' + 
-                            item.altText;
-                    break;
-
-                    // TranscriptionTextItem::ABBREVIATION:
-                case 11:
-                    classes = classes + ' abbr';
-                    t = item.altText;
-                    if (t === '') {
-                        t = item.theText;
-                    }
-                    theText = theText + '<span class="' + classes + 
-                            '" id="' + htmlId + '" title="Abbreviation">' + 
-                            t + '</span>';
-                    richTooltips[htmlId] = {};
-                    richTooltips[htmlId]['type'] = 'abbr';
-                    richTooltips[htmlId]['text'] = '<b>Original:</b> ' + 
-                            item.theText + '<br/><b>Expansion:</b> ' + 
-                            item.altText;
-                    break;
-
-                    // TranscriptionTextItem::MARK:
-                case 9:
-                    classes = classes + ' mark';
-                    theText = theText + '<span class="' + classes + 
-                            '" id="' + htmlId + 
-                            '" title="Note(s)">' + 
-                            '<span class="glyphicon ' + 
-                            'glyphicon-exclamation-sign"></span></span>';
-                    break;
-
-                    // TranscriptionTextItem::NO_LINEBREAK:
-                case 10:
-                    classes = classes + ' nolb';
-                    theText = theText + '<span class="' + classes + 
-                            '" id="' + htmlId + 
-                            '" title="No linebreak">--</span>';
-                    break;
-
-                    //TranscriptionTextItem::UNCLEAR:
-                case 4:
-                    classes = classes + ' unclear';
-                    theText = theText + '<span class="' + classes + 
-                            '" id="' + htmlId + '" title="Unclear Text">' + 
-                            item.theText + '</span>';
-                    richTooltips[htmlId] = {};
-                    richTooltips[htmlId]['type'] = 'unclear';
-                    ttt = '';
-                    if (item.altText !== '' && item.altText !== null) {
-                        ttt = ttt + '<b>Alternative:</b> ' + 
-                                item.altText + '<br/>';
-                    }
-                    ttt = ttt + '<b>Reason:</b> ' + item.extraInfo;
-                    richTooltips[htmlId]['text'] = ttt;
-                    break;
-
-                    // TranscriptionTextItem::ILLEGIBLE:
-                case 5:
-                    classes = classes + ' illegible';
-                    t = "🈑".repeat(item.length);
-                    theText = theText + '<span class="' + classes + 
-                            '" id="' + htmlId + 
-                            '" title="Illegible Text">' + t + '</span>';
-                    richTooltips[htmlId] = {};
-                    richTooltips[htmlId]['type'] = 'illegible';
-                    ttt = '';
-                    if (item.extraInfo !== 'illegible') {
-                        ttt = ttt + '<b>Reason:</b> ' + 
-                                item.extraInfo + '<br/>';
-                    }
-                    ttt = ttt + '<b>Length:</b> ' + item.length + ' characters';
-                    richTooltips[htmlId]['text'] = ttt;
-                    break;
-
-                    // TranscriptionTextItem::GLIPH:
-                case 6:
-                    classes = classes + ' gliph';
-                    theText = theText + '<span class="' + classes + 
-                            '" id="' + htmlId + '" title="Gliph">' + 
-                            item.theText + '</span>';
-                    richTooltips[htmlId] = {};
-                    richTooltips[htmlId]['type'] = 'gliph';
-                    richTooltips[htmlId]['text'] = '<b>Text:</b> ' + 
-                            item.theText;
-                    break;
-
-                    // TranscriptionTextItem::ADDITION:
-                case 7:
-                    classes = classes + ' addition';
-                    if (item.extraInfo == 'above') {
-                        classes += ' addition-above';
-                    }
-                    theText = theText + '<span class="' + classes + 
-                            '" id="' + htmlId + '" title="Addition">' + 
-                            item.theText + '</span>';
-                    richTooltips[htmlId] = {};
-                    richTooltips[htmlId]['type'] = 'del';
-                    richTooltips[htmlId]['text'] = '<b>Added Text:</b> ' + 
-                            item.theText + '</br><b>Place:</b> ' + 
-                            item.extraInfo;
-                    break;
-
-                    // TranscriptionTextItem::DELETION:
-                case 8:
-                    classes = classes + ' deletion';
-                    theText = theText + '<span class="' + classes + 
-                            '" id="' + 
-                            htmlId + 
-                            '" title="Deletion">' + 
-                            item.theText + '</span>';
-                    richTooltips[htmlId] = {};
-                    richTooltips[htmlId]['type'] = 'del';
-                    richTooltips[htmlId]['text'] = '<b>Deleted Text:</b> ' + 
-                            item.theText + '</br><b>Technique:</b> ' + 
-                            item.extraInfo;
-                    break;
-
-
-                default:
-                    console.log("Unsupported item type " + item.type + 
-                            ", wrapping it on a default class");
-                    classes = classes + ' unknownitemtype';
-                    theText = theText + '<span class="' + 
-                            classes + '" id="' + htmlId + 
-                            '" title="Unsupported">' + item.theText + '</span>';
-                    if (item.altText !== '' || item.extraInfo !== '') {
-                        richTooltips[htmlId] = {};
-                        richTooltips[htmlId]['type'] = 'unk';
-                        richTooltips[htmlId]['text'] = '<b>Alt Text:</b> ' + 
-                                item.altText + 
-                                '<br/><b>Extra Info:</b> ' + 
-                                item.extraInfo;
-                    }
-            }
-            if (itemHasEdnotes) {
-                if (!richTooltips.hasOwnProperty(htmlId)) {
-                    richTooltips[htmlId] = {};
-                    richTooltips[htmlId]['type'] = 'ednote';
-                    richTooltips[htmlId]['text'] = '';
-                }
-                t = '<span class="tooltip-notes">';
-                for (k = 0; k < ednotes.length; k++) {
-                    if (ednotes[k]['target'] === item.id) {
-                        t += '<blockquote><p>' + ednotes[k]['text'] + '</p>';
-                        t += '<footer>' + 
-                                people[ednotes[k]['authorId']]['fullname'] + 
-                                ' @ ' + 
-                                ednotes[k]['time'] + '</footer>';
-                        t += '</blockquote>';
-                    }
-                }
-                t += '</span>';
-                richTooltips[htmlId]['text'] += t;
-            } // hasEdnotes
+            theText += getItemSpan(item, itemHasEdnotes);
+            richTooltips[htmlId] = getItemPopover(item, ednotes, people);
         } // for all items  
         texttd = '<td class="text-' + elements[i].items.lang + '">' + 
                 theText + "</td>";
@@ -382,22 +214,37 @@ function setupTooltips(richTooltips)
 {
     Object.keys(richTooltips).forEach(function (key, index)
     {
-        if (richTooltips[key]['type'] === 'ednote') {
+        switch(richTooltips[key].type) {
+        case 'ednote':
             $("#" + key).popover({
-                title: 'Note(s)', 
+                title: 'Inline Note', 
                 content: richTooltips[key]['text'], 
-                container: 'body', 
+                container: '#container', 
                 html: true, 
                 placement: 'auto', 
-                trigger: 'hover'});
-        } else {
+                trigger: 'manual'});
+            $('#' + key).on('click',  function(e) {$(this).popover('toggle');});
+            break;
+            
+        case 'element':
             $("#" + key).popover({
                 content: richTooltips[key]['text'], 
-                container: 'body', 
+                container: '#container', 
+                html: true, 
+                placement: 'auto left', 
+                trigger: 'click'});
+            
+            break;
+        default:
+            $("#" + key).popover({
+                content: richTooltips[key]['text'], 
+                container: '#container', 
                 html: true, 
                 placement: 'auto', 
-                trigger: 'hover'});
+                trigger: 'manual'});
+            $('#' + key).on('click',  function(e) {$(this).popover('toggle');});
         }
+        
     });
 }
 
@@ -422,4 +269,24 @@ function isRtl(elements)
     }
 
     return r;
+}
+
+
+function setupEditionModals() 
+{
+    $('#addNoteModal').on('show.bs.modal', function (event) 
+    {
+        var button = $(event.relatedTarget); // Button that triggered the modal
+        var itemId = button.data('itemid'); // Extract info from data-* attributes
+        // If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
+        // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
+        var modal = $(this);
+        modal.find('#addNoteData').text('For item ' + itemId);
+    });
+}
+
+function closePopover(closeButton)
+{
+    //$(closeButton.parentNode.parentNode).popover('toggle');
+    $(closeButton.parentNode.parentNode).popover('hide');
 }

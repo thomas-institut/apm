@@ -22,7 +22,7 @@ namespace AverroesProject\CommandLine;
 
 use AverroesProject\DataTable\MySqlDataTable;
 use AverroesProject\DataTable\MySqlDataTableWithRandomIds;
-use AverroesProject\UserManager;
+use AverroesProject\Data\UserManager;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 

@@ -24,6 +24,7 @@ namespace AverroesProject;
 require "../vendor/autoload.php";
 
 use PHPUnit\Framework\TestCase;
+use AverroesProject\Data\UserManager;
 /**
  * Description of UserManagerTest
  *

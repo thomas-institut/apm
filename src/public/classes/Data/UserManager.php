@@ -21,7 +21,7 @@
 
 namespace AverroesProject\Data;
 
-use AverroesProject\DataTable\InMemoryDataTable;
+use DataTable\InMemoryDataTable;
 
 
 /**

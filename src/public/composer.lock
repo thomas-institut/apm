@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "2ce5254f66e164723c801cd60e8c47a6",
+    "content-hash": "2e41f75b50fcbcef977e49185911a9a5",
     "packages": [
         {
             "name": "container-interop/container-interop",
@@ -91,16 +91,16 @@
         },
         {
             "name": "monolog/monolog",
-            "version": "1.22.0",
+            "version": "1.22.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Seldaek/monolog.git",
-                "reference": "bad29cb8d18ab0315e6c477751418a82c850d558"
+                "reference": "1e044bc4b34e91743943479f1be7a1d5eb93add0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Seldaek/monolog/zipball/bad29cb8d18ab0315e6c477751418a82c850d558",
-                "reference": "bad29cb8d18ab0315e6c477751418a82c850d558",
+                "url": "https://api.github.com/repos/Seldaek/monolog/zipball/1e044bc4b34e91743943479f1be7a1d5eb93add0",
+                "reference": "1e044bc4b34e91743943479f1be7a1d5eb93add0",
                 "shasum": ""
             },
             "require": {
@@ -165,7 +165,7 @@
                 "logging",
                 "psr-3"
             ],
-            "time": "2016-11-26T00:15:39+00:00"
+            "time": "2017-03-13T07:08:03+00:00"
         },
         {
             "name": "nikic/fast-route",
@@ -401,6 +401,47 @@
                 "psr-3"
             ],
             "time": "2016-10-10T12:19:37+00:00"
+        },
+        {
+            "name": "rafaelnajera/datatable",
+            "version": "0.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/rafaelnajera/datatable.git",
+                "reference": "b7d9c2e1c92c8c71696d90ce292a57df3245ed8c"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/rafaelnajera/datatable/zipball/b7d9c2e1c92c8c71696d90ce292a57df3245ed8c",
+                "reference": "b7d9c2e1c92c8c71696d90ce292a57df3245ed8c",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "DataTable\\": "DataTable"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Rafael Nájera",
+                    "email": "rafael@najera.ca",
+                    "homepage": "http://rafaelnajera.com"
+                }
+            ],
+            "description": "A simple data table interface",
+            "homepage": "http://rafaelnajera.com/datatable",
+            "keywords": [
+                "data"
+            ],
+            "time": "2017-03-14T10:14:10+00:00"
         },
         {
             "name": "rafaelnajera/matcher",

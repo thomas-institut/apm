@@ -12,6 +12,7 @@
         "slim/twig-view": "^2.1",
         "dflydev/fig-cookies": "^1.0",
         "rafaelnajera/xmlmatcher": "^0.4",
+        "rafaelnajera/datatable" : "^0.2",
         "monolog/monolog": "^1.22"
     },
     

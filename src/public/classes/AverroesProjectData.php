@@ -447,6 +447,7 @@ class AverroesProjectData extends \mysqli{
             }
             $item->lang = $row['lang'];
             $item->handId = $row['hand_id'];
+            $item->setColumnElementId($row['ce_id']);
             $tt->addItem($item, true);
         }
         

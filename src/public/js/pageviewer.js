@@ -25,23 +25,12 @@ var docId;
 var apiBase;
 var numColumns;
 
-function changeDocumentFontSize(bigger)
+var cols=[];
+
+$(function ()
 {
-    newFS = currentDocumentFontSize;
-
-    if (bigger && currentDocumentFontSize < maxDocumentFontSize) {
-        newFS++;
-    } else if (!bigger && currentDocumentFontSize > minDocumentFontSize) {
-        newFS--;
-    }
-    if (newFS !== currentDocumentFontSize) {
-        for (var i = 1; i <= numColumns; i++) {
-            $('#col' + i).css('font-size', newFS);
-        }
-
-        currentDocumentFontSize = newFS;
-    }
-}
+    $('div.split-pane').splitPane();
+});
 
 $(document).ready(function ()
 {
@@ -50,7 +39,7 @@ $(document).ready(function ()
     apiGetColumnInfoUrl = apiBase + '/api/' + docId + '/' + 
             pageNumber + '/numcolumns';
     
-    setupEditionModals();
+    setupEditItemModal();
     
     $.getJSON(apiGetColumnInfoUrl, function (resp)
     {
@@ -76,7 +65,8 @@ $(document).ready(function ()
             {
                 $(this).tab('show');
             });
-
+            
+            cols = [];
             for (col = 1; col <= numColumns; col++) {
                 var theDiv;
                 theDiv = '<div class="textcol tab-pane';
@@ -90,8 +80,11 @@ $(document).ready(function ()
                 {
                     var tc;
                     var theCol = resp.info['col'];
-                    //console.log('Column: ' + theCol);
-                    tc = buildPageTextContainer(resp.elements, 
+                    cols[theCol] = {};
+                    cols[theCol]['elements'] = resp.elements;
+                    cols[theCol]['ednotes'] = resp.ednotes;
+                    cols[theCol]['people'] = resp.people;
+                    tc = buildPageTextContainer(theCol, resp.elements, 
                             resp.ednotes, resp.people);
                     $('#col' + theCol).html(tc['text']);
                     setupTooltips(tc['tooltips']);
@@ -103,14 +96,9 @@ $(document).ready(function ()
         }
     });
 });
-           
-$(function ()
-{
-    $('div.split-pane').splitPane();
-});
 
 
-function buildPageTextContainer(elements, ednotes, people)
+function buildPageTextContainer(colNumber, elements, ednotes, people)
 {
 
     function hasEdnotes(id, notes)
@@ -131,7 +119,7 @@ function buildPageTextContainer(elements, ednotes, people)
             'tooltips': []};
     }
 
-    rtl = isRtl(elements);
+    rtl = isElementRtl(elements);
     s = '<table class=\"textlines\">';
 
 
@@ -192,7 +180,8 @@ function buildPageTextContainer(elements, ednotes, people)
             htmlId = 'item' + item.id;
             itemHasEdnotes = hasEdnotes(item.id, ednotes);
             theText += getItemSpan(item, itemHasEdnotes);
-            richTooltips[htmlId] = getItemPopover(item, ednotes, people);
+            richTooltips[htmlId] = getItemPopover(item, ednotes, people, colNumber, elements[i].id);
+            richTooltips[htmlId]['text'] += getItemPopoverButtonText(item, colNumber, i, j);
         } // for all items  
         texttd = '<td class="text-' + elements[i].items.lang + '">' + 
                 theText + "</td>";
@@ -209,6 +198,26 @@ function buildPageTextContainer(elements, ednotes, people)
     return {'text': s, 'tooltips': richTooltips};
 }
 
+
+function getItemPopoverButtonText(item, colNumber, elementArrayKey, itemArrayKey)
+{
+    // Edit / close buttons
+    return `<button class="btn btn-primary btn-xs" 
+           data-toggle="modal"
+           data-target="#editItemModal"
+           data-itemid="` + item.id + `"
+           data-colnumber="` + colNumber + `"
+           data-elementkey="` + elementArrayKey + `"
+           data-itemkey="` + itemArrayKey + `"
+           type="button"> 
+           Edit / Add Notes
+            </button> 
+          <button class="btn btn-xs"
+             onclick="closePopover(this);"
+             type="button"> 
+           Close
+            </button>`;
+}
 
 function setupTooltips(richTooltips)
 {
@@ -248,7 +257,7 @@ function setupTooltips(richTooltips)
     });
 }
 
-function isRtl(elements)
+function isElementRtl(elements)
 {
     r = false;
     rtl = 0;
@@ -271,17 +280,40 @@ function isRtl(elements)
     return r;
 }
 
-
-function setupEditionModals() 
+function isItemRtl(item)
 {
-    $('#addNoteModal').on('show.bs.modal', function (event) 
+    r = false;
+    switch(item.lang) {
+        case 'he':
+        case 'ar':
+            r = true;
+    }
+    return r;
+}
+
+
+function setupEditItemModal() 
+{
+    $('#editItemModal').on('show.bs.modal', function (event) 
     {
         var button = $(event.relatedTarget); // Button that triggered the modal
-        var itemId = button.data('itemid'); // Extract info from data-* attributes
+        var itemId = button.data('itemid'); 
+        var colNumber = button.data('colnumber');
+        var elementKey = button.data('elementkey');
+        element = cols[colNumber]['elements'][elementKey];
+        var itemKey = button.data('itemkey');
+        item = element.items.theItems[itemKey];
         // If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
         // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
         var modal = $(this);
-        modal.find('#addNoteData').text('For item ' + itemId);
+        modal.find('#editItemData').text('Item ID: ' + item.id + ', column ' + colNumber + ', element ID ' + element.id);
+        modal.find('#text').val(item.theText);
+        modal.find('#alttext').val(item.altText);
+        if (isItemRtl(item)) {
+            modal.find('#textLabel').addClass('edit-rtl');
+            modal.find('#text').addClass('edit-rtl');
+            modal.find('#alttext').addClass('edit-rtl');
+        }
     });
 }
 
@@ -289,4 +321,22 @@ function closePopover(closeButton)
 {
     //$(closeButton.parentNode.parentNode).popover('toggle');
     $(closeButton.parentNode.parentNode).popover('hide');
+}
+
+function changeDocumentFontSize(bigger)
+{
+    newFS = currentDocumentFontSize;
+
+    if (bigger && currentDocumentFontSize < maxDocumentFontSize) {
+        newFS++;
+    } else if (!bigger && currentDocumentFontSize > minDocumentFontSize) {
+        newFS--;
+    }
+    if (newFS !== currentDocumentFontSize) {
+        for (var i = 1; i <= numColumns; i++) {
+            $('#col' + i).css('font-size', newFS);
+        }
+
+        currentDocumentFontSize = newFS;
+    }
 }

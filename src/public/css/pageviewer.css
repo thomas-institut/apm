@@ -234,3 +234,7 @@ div.textcol{
 div.popoverinfo {
     margin-bottom: 10px;
 }
+
+.edit-rtl {
+    direction: rtl;
+}

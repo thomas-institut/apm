@@ -150,7 +150,11 @@ class Item {
     function setHandId($h){
         $this->handId = (int) $h;
     }
-            
+     
+    function setColumnElementId($id)
+    {
+        $this->columnElementId = $id;
+    }
     
     function __construct($i=0, $s = -1, $l='', $h=-1) {
         $this->id =(int) $i;

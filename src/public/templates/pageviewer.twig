@@ -119,9 +119,9 @@
     </div>
 </div>
 </div>
-<!-- Edition modals -->
-<div class="modal" id="addNoteModal" tab-index="-1" role="dialog"
-     aria-labelledby="addNoteModalLabel">
+<!-- Edition modal -->
+<div class="modal" id="editItemModal" tab-index="-1" role="dialog"
+     aria-labelledby="editItemModalLabel">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -130,26 +130,35 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
                 <h4 class="modal-title" 
-                    id="addNoteModalLabel">Add new note</h4>
+                    id="editItemModalLabel">Edit Item</h4>
             </div>
             <div class="modal-body">
                 <form>
                     <div class="form-group">
-                        <label for="notetext" class="control-label">
-                            New note:
+                        <label for="text" id="textLabel" class="control-label">
+                            Text:
                         </label>
                         <textarea class="form-control" 
-                                  id="notetext"
-                                  name="notetext"></textarea>
+                                  id="text"
+                                  name="text"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="alttext" id="altTextLabel" class="control-label">
+                            Alt Text:
+                        </label>
+                        <textarea class="form-control" 
+                                  id="alttext"
+                                  name="altext"></textarea>
                     </div>
                 </form>
-                <p id="addNoteData"></p>
+                <p id="editItemData"></p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" 
-                        data-dismiss="modal">Close</button>
                 <button type="button" 
-                        class="btn btn-primary">Add note</button>
+                        class="btn btn-primary">Submit</button>
+                        
+                <button type="button" class="btn btn-default" 
+                        data-dismiss="modal">Cancel</button>
             </div>
         </div>
     </div>

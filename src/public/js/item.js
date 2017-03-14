@@ -46,7 +46,7 @@ function getItemSpan(item, itemHasEdnotes)
     return itemDef.realGetItemSpan[item.type](item, classes, htmlId);
 };
 
-function getItemPopover(item, ednotes, people) 
+function getItemPopover(item, ednotes, people, colNumber, elementId) 
 {
     var popover;
     
@@ -58,11 +58,7 @@ function getItemPopover(item, ednotes, people)
     }
     popover['text']=  '<div class="popoverinfo">' +  popover['text'] + '</div>';
     popover['text'] += getItemPopoverEdnoteText(item, ednotes, people);
-    popover['text'] += getItemPopoverButtonText(item);
-    
     return popover;
-    
-    
 };
 
 function getItemPopoverEdnoteText(item, ednotes, people)
@@ -83,22 +79,6 @@ function getItemPopoverEdnoteText(item, ednotes, people)
     
 }
 
-function getItemPopoverButtonText(item)
-{
-    // Edit / close buttons
-    return `<button class="btn btn-primary btn-xs" 
-           data-toggle="modal"
-           data-target="#addNoteModal"
-           data-itemid="` + item.id + `"
-           type="button"> 
-           Edit / Add Notes
-            </button> 
-          <button class="btn btn-xs"
-             onclick="closePopover(this);"
-             type="button"> 
-           Close
-            </button>`;
-}
 
 /*
  * Item Spans

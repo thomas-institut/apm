@@ -19,26 +19,15 @@ class AverroesProjectData extends \mysqli{
     
     
     const E_MYSQL = 100;
-    const E_NO_TABLES = 101;
     const E_WRONGTYPE = 102;
     const E_BADKEY = 103;
-    const E_OUTDATED_DB = 104;
-   
-    /**
-     *
-     * @var array 
-     */
-    private $settings;
-    
+
     /**
      *
      * @var array
      * Array of table names
      */
     private $tables;
-    
-    
-    private $databaseversion = '7';
     
     /**
      * Tries to initialize and connect to the MySQL database.
@@ -62,44 +51,7 @@ class AverroesProjectData extends \mysqli{
         $this->query("set names 'utf8'");
         
         $this->tables = $tablenames;
-        
-         // Check if database is initialized
-        if (!$this->isInitialized()){
-            throw new \Exception("Tables not initialized", self::E_NO_TABLES);
-        }
-        
-        // Load settings
-        $this->loadSettings();
-        
-        // Check that the database's version is up to date
-        if ($this->settings['dbversion'] !== $this->databaseversion){
-            throw new \Exception("Database schema not up to date", self::E_OUTDATED_DB);
-        }
-       
-    }
-    
-    function loadSettings(){
-         $r = $this->query('select * from ' . $this->tables['settings']);
-        
-        while ($row = $r->fetch_assoc()){
-            $this->settings[$row['key']] = $row['value'];
-        }
-    }
-    
-    
-    /**
-     * @return bool 
-     * Returns true is the database is properly initialized
-     * (right now just checks that all the tables are there!)
-     */
-    function isInitialized(){
-     
-        foreach ($this->tables as $table){
-            if (!$this->tableExists($table)){
-                return FALSE;
-            }
-        }
-        return TRUE;
+
     }
 
     /**
@@ -113,22 +65,7 @@ class AverroesProjectData extends \mysqli{
         }
         return $r;
     }
-    
-    /**
-     * Checks whether a table exists in the database.
-     * @param string $table 
-     */
-    function tableExists($table){
-        $sql = "show tables like '".$table."'";
-        $r = $this->query($sql);
-        if (!$r){
-            return 0;
-        }
-        else{
-            return ($r->num_rows > 0);
-        }
-    }
-  
+   
     /**
      * Queries the DB and returns the number of resulting rows
      */

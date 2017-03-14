@@ -22,6 +22,7 @@ namespace AverroesProject\CommandLine;
 
 use DataTable\MySqlDataTable;
 use DataTable\MySqlDataTableWithRandomIds;
+use AverroesProject\Data\DatabaseChecker;
 use AverroesProject\Data\UserManager;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
@@ -55,18 +56,6 @@ abstract class CommandLineUtility {
     public function __construct($config) {
         global $argv;
         
-        $this->dbh = new \PDO('mysql:dbname='. $config['db']['db'] . ';host=' . $config['db']['host'], 
-            $config['db']['user'], 
-            $config['db']['pwd']);
-        $this->dbh->query("set character set 'utf8'");
-        $this->dbh->query("set names 'utf8'");
-
-        $this->um = new UserManager(
-            new MySqlDataTable($this->dbh, 
-                    $config['tables']['users']),
-            new MySqlDataTable($this->dbh, $config['tables']['relations']), 
-            new MySqlDataTableWithRandomIds($this->dbh, $config['tables']['people'], 10000, 100000));
-        
         $processUser = posix_getpwuid(posix_geteuid());
         $pid = posix_getpid();
         $cmd = $argv[0];
@@ -82,6 +71,39 @@ abstract class CommandLineUtility {
         });
         $this->logger->pushHandler($logStream);
         $this->processUser = posix_getpwuid(posix_geteuid());
+        
+        try {
+            $this->dbh = new \PDO('mysql:dbname='. $config['db']['db'] . 
+                    ';host=' . $config['db']['host'], 
+                $config['db']['user'], 
+                $config['db']['pwd']);
+            $this->dbh->query("set character set 'utf8'");
+            $this->dbh->query("set names 'utf8'");
+        } catch (\PDOException $e) {
+            $this->exitWithError("Database connection failed: " . 
+                    $e->getMessage());
+        }
+        
+        //
+        // Check database
+        //
+        $dbChecker = new DatabaseChecker($this->dbh, $config['tables']);
+
+        if (!$dbChecker->isDatabaseInitialized()) {
+            $this->exitWithError("Database is not initialized");
+        }
+
+        if (!$dbChecker->isDatabaseUpToDate()) {
+            $this->exitWithError("Database schema not up to date");
+        }
+
+        $this->um = new UserManager(
+            new MySqlDataTable($this->dbh, 
+                    $config['tables']['users']),
+            new MySqlDataTable($this->dbh, $config['tables']['relations']), 
+            new MySqlDataTableWithRandomIds($this->dbh, 
+                    $config['tables']['people'], 10000, 100000));
+        
     }
     
     public function run($argc, $argv) {
@@ -97,4 +119,11 @@ abstract class CommandLineUtility {
 
 
     protected abstract function main($argc, $argv);
+    
+    private function exitWithError($msg) 
+    {
+        $this->logger->error($msg);
+        $this->printErrorMsg($msg);
+        exit(0);
+    }
 }

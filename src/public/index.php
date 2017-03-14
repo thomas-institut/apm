@@ -125,8 +125,7 @@ $um = new UserManager(
 
 // Initialize the monster data manager that will be gone
 // at some point
- $db = new AverroesProjectData($config['db'], 
-           $config['tables']);
+ $db = new AverroesProjectData($dbh, $config['tables'], $logger);
 
 // Initialize the Slim app
 $app = new \Slim\App(["settings" => $config]);

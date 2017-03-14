@@ -10,24 +10,22 @@ namespace AverroesProject;
 use AverroesProject\TxText\Item;
 use AverroesProject\TxText\ItemArray;
 use AverroesProject\ColumnElement\Element;
+use \PDO;
 
 /**
  * @class AverroesProjectData
  * Provides access to all data via helper functions.
  */
-class AverroesProjectData extends \mysqli{
+class AverroesProjectData {
     
-    
-    const E_MYSQL = 100;
-    const E_WRONGTYPE = 102;
-    const E_BADKEY = 103;
-
     /**
      *
      * @var array
      * Array of table names
      */
-    private $tables;
+    private $tNames;
+    private $dbh;
+    private $logger;
     
     /**
      * Tries to initialize and connect to the MySQL database.
@@ -35,45 +33,24 @@ class AverroesProjectData extends \mysqli{
      * Throws an error if there's no connection 
      * or if the database is not setup properly.
      */
-    function __construct($dbconfig, $tablenames){
-
-        parent::init();
-
-        $r  = parent::real_connect($dbconfig['host'], $dbconfig['user'], $dbconfig['pwd']);
-        if (!$r){
-            throw new \Exception($this->connect_error, self::E_MYSQL);
-        }
-
-        if (!$this->select_db($dbconfig['db'])){
-            throw new \Exception($this->error, self::E_MYSQL);
-        }
-        $this->query("set character set 'utf8'");
-        $this->query("set names 'utf8'");
-        
-        $this->tables = $tablenames;
-
+    function __construct($dbh, $tablenames, $logger){
+        $this->dbh = $dbh;
+        $this->tNames = $tablenames;
+        $this->logger = $logger;
     }
 
     /**
      * Performs a query with error handling
      */
 
-    function query($query, $resultmode = MYSQLI_STORE_RESULT){
-        $r = parent::query($query, $resultmode);
+    function query($sql){
+        $r = $this->dbh->query($sql);
         if ($r===false){
-            throw new \Exception($this->error, self::E_MYSQL);
+           $this->logger->error("Problem with query", $this->dbh->errorInfo());
         }
         return $r;
     }
    
-    /**
-     * Queries the DB and returns the number of resulting rows
-     */
-    function queryNumRows($query){
-        $r = $this->query($query);
-        return $r->num_rows;
-    }
-
     /**
      * Gets the given field from the first row where the given condition is met.
      * @param string $table Table to lookup
@@ -83,9 +60,8 @@ class AverroesProjectData extends \mysqli{
     function getOneField($table, $field, $condition){
         $query = 'select * from `' . $table . '` where ' . $condition;
         $r = $this->query($query);
-        $row = $r->fetch_assoc();
+        $row = $r->fetch(PDO::FETCH_ASSOC);
         if (!isset($row[$field])){
-            //throw new \Exception($field . ' not in ' . $table, E_MYSQL);
             return false;
         }
         else{
@@ -99,9 +75,8 @@ class AverroesProjectData extends \mysqli{
      */
     function getOneFieldQuery($query, $field){
         $r = $this->query($query);
-        $row = $r->fetch_assoc();
+        $row = $r->fetch(PDO::FETCH_ASSOC);
         if (!isset($row[$field])){
-            //throw new \Exception($field . ' not in result set' , E_MYSQL);
             return false;
         }
         else{
@@ -109,20 +84,9 @@ class AverroesProjectData extends \mysqli{
         }
     }
 
-      /**
-     * Gets the first row of a query as an array association.
-     * @param string $query MySQL query to execute
-     * @param string $data Array where the row will be stored
-     */
-    function loadOneRow($query, &$data){
-        $r = $this->query($query);
-        $data = $r->fetch_assoc();
-    }
-     
-    
     function getOneRow($query){
         $r = $this->query($query);
-        return $r->fetch_assoc();
+        return $r->fetch(PDO::FETCH_ASSOC);
     }
     
     /**
@@ -139,11 +103,11 @@ class AverroesProjectData extends \mysqli{
             default:
                 $orderby = '';
         }
-        $query = "SELECT `id` FROM  " . $this->tables['docs'] . $orderby;
+        $query = "SELECT `id` FROM  " . $this->tNames['docs'] . $orderby;
         $r = $this->query($query);
         
         $mss = array();
-        while ($row = $r->fetch_assoc()){
+        while ($row = $r->fetch(PDO::FETCH_ASSOC)){
             array_push($mss, $row['id']);
         }
         return $mss;
@@ -151,8 +115,8 @@ class AverroesProjectData extends \mysqli{
     
     
     function getNumColumns($docId, $page){
-        $te = $this->tables['elements'];
-        $tp = $this->tables['pages'];
+        $te = $this->tNames['elements'];
+        $tp = $this->tNames['pages'];
         $n = $this->getOneFieldQuery(
                 'SELECT MAX(e.`column_number`) AS nc FROM ' . $te . ' AS e' .
                 " JOIN `$tp` as p ON p.id=e.page_id " .
@@ -164,28 +128,17 @@ class AverroesProjectData extends \mysqli{
     }
     function getPageCountByDocId($docId){
         return $this->getOneFieldQuery('SELECT `page_count` from ' .  
-                $this->tables['docs'] . 
+                $this->tNames['docs'] . 
                ' WHERE `id`=\'' . $docId . '\'', 'page_count');
-    }
-    /**
-     * 
-     * @param int $docId
-     * @return int 
-     * Returns the number of pages of the given document
-     */
-    function getTranscribedPageCountByDoc($docId){
-        return $this->getOneFieldQuery(
-                'SELECT COUNT(DISTINCT(page_id)) as value FROM '.  
-                $this->tables['elements'] . 'as e JOIN ' . $this->tables['pages'] . ' AS p ON e.page_id=p.id ' .
-                ' WHERE p.doc_id=\'' . $docId . '\'', 'value');
-        
     }
     
     function getLineCountByDoc($docId){
         return $this->getOneFieldQuery(
                 'SELECT count(DISTINCT `page_id`, `reference`) as value from ' . 
-                $this->tables['elements'] . ' as e JOIN ' . $this->tables['pages'] . ' AS p ON e.page_id=p.id ' .
-                ' WHERE p.doc_id=\'' . $docId . '\' AND e.type=' . Element::LINE, 'value');
+                $this->tNames['elements'] . ' as e JOIN ' . 
+                $this->tNames['pages'] . ' AS p ON e.page_id=p.id ' .
+                ' WHERE p.doc_id=\'' . $docId . '\' AND e.type=' . 
+                Element::LINE, 'value');
     }
     /**
      * 
@@ -194,9 +147,9 @@ class AverroesProjectData extends \mysqli{
      * Returns the editors associated with a document as a list of usernames
      */
     function getEditorsByDocId($docId){
-        $te = $this->tables['elements'];
-        $tu = $this->tables['users'];
-        $tp = $this->tables['pages'];
+        $te = $this->tNames['elements'];
+        $tu = $this->tNames['users'];
+        $tp = $this->tNames['pages'];
         $query = "SELECT DISTINCT u.`username`" . 
             " FROM `$tu` AS u JOIN (`$te` AS e, `$tp` as p)" . 
             " ON (u.id=e.editor_id AND p.id=e.page_id)" . 
@@ -205,32 +158,31 @@ class AverroesProjectData extends \mysqli{
         $r = $this->query($query);
         
         $editors = array();
-        while ($row = $r->fetch_assoc()){
+        while ($row = $r->fetch(PDO::FETCH_ASSOC)){
             array_push($editors, $row['username']);
         }
         return $editors;
     }
     
-    function getDocIdFromDareId($dareId){
-        return $this->getOneField($this->tables['docs'], 'id', 'image_source_data=\'' . $dareId . '\'');
-    }
-    
     function getPageListByDocId($docId){
-        $te = $this->tables['elements'];
-        $tp = $this->tables['pages'];
-        $query =  'SELECT DISTINCT p.`page_number` AS page_number FROM ' . $tp . ' AS p' .
+        $te = $this->tNames['elements'];
+        $tp = $this->tNames['pages'];
+        $query =  'SELECT DISTINCT p.`page_number` AS page_number FROM ' . 
+                $tp . ' AS p' .
                 ' JOIN ' . $te . ' AS e ON p.id=e.page_id' .
-                ' WHERE p.doc_id=\'' . $docId . '\' ORDER BY p.`page_number` ASC';
+                ' WHERE p.doc_id=\'' . $docId . 
+                '\' ORDER BY p.`page_number` ASC';
         $r = $this->query($query);
         $pages = array();
-         while ($row = $r->fetch_assoc()){
+         while ($row = $r->fetch(PDO::FETCH_ASSOC)){
             array_push($pages, $row['page_number']);
         }
         return $pages;
     }
     
     function getDoc($docId){
-        $query = 'SELECT * FROM ' . $this->tables['docs'] . ' WHERE `id`=' . $docId;
+        $query = 'SELECT * FROM ' . $this->tNames['docs'] . ' WHERE `id`=' . 
+                $docId;
         return $this->getOneRow($query);
     }
     
@@ -250,23 +202,13 @@ class AverroesProjectData extends \mysqli{
                 break;
             
             case 'dare':
-                return sprintf("https://bilderberg.uni-koeln.de/images/books/%s/bigjpg/%s-%04d.jpg", $isd, $isd, $page);
+                return sprintf("https://bilderberg.uni-koeln.de/images/books/%s/bigjpg/%s-%04d.jpg", 
+                        $isd, $isd, $page);
                 break;
         }
         return FALSE;
     }
-    
-    function isPageRightToLeft($docId, $page){
-        // Faking it right now, need to come back to it.
-        return FALSE;
-    }
-    
-    function getPageId($docId, $pageNumber){
-        $tp = $this->tables['pages'];
-        $sql = "SELECT `id` FROM `$tp` WHERE `doc_id`=$docId AND `page_number`=$pageNumber";
-        return $this->getOneFieldQuery($sql, 'id');
-    }
-    
+        
     /**
      * 
      * @param string $docId
@@ -276,15 +218,16 @@ class AverroesProjectData extends \mysqli{
      */
     
     function getColumnElements($docId, $page, $col){
-        $te = $this->tables['elements'];
-        $tp = $this->tables['pages'];
+        $te = $this->tNames['elements'];
+        $tp = $this->tNames['pages'];
         $query = 'SELECT e.* FROM `' . $te . '` AS e' . 
-                ' JOIN ' . $tp . ' AS p ON e.page_id=p.id WHERE p.`doc_id`=\'' . $docId . '\' AND' .
+                ' JOIN ' . $tp . ' AS p ON e.page_id=p.id WHERE p.`doc_id`=\'' .
+                $docId . '\' AND' .
                 ' p.`page_number`=' . $page . " AND" . 
                 ' e.`column_number`=' . $col . ' ORDER BY e.`seq` ASC';
         $r = $this->query($query);
         $elements = array();
-        while ($row = $r->fetch_assoc()){
+        while ($row = $r->fetch(PDO::FETCH_ASSOC)){
             switch ($row['type']){
                 case Element::LINE:
                     $e = new ColumnElement\Line();
@@ -319,32 +262,36 @@ class AverroesProjectData extends \mysqli{
             $e->timestamp = $row['time'];
             $e->type = (int) $row['type'];
             
-            $e->items = $this->getItemsForElement($e->id, $e->lang, $e->editorId, $e->handId);
+            $e->items = $this->getItemsForElement($e->id, $e->lang, 
+                    $e->editorId, $e->handId);
             array_push($elements, $e);
         }
         return $elements;
     }
     
     function getItemsForElement($cid, $lang, $editorId, $handId){
-        $query = 'SELECT * FROM `' . $this->tables['items'] . 
+        $query = 'SELECT * FROM `' . $this->tNames['items'] . 
                 '` WHERE `ce_id`=' . $cid . 
                 ' ORDER BY `seq` ASC';
         $r = $this->query($query);
         
         $tt = new ItemArray($cid, $lang, $editorId, $handId);
         
-        while ($row = $r->fetch_assoc()){
+        while ($row = $r->fetch(PDO::FETCH_ASSOC)){
             switch ($row['type']){
                 case Item::TEXT:
-                    $item = new TxText\Text($row['id'], $row['seq'], $row['text']);
+                    $item = new TxText\Text($row['id'], $row['seq'], 
+                            $row['text']);
                     break;
                 
                 case Item::RUBRIC:
-                    $item = new TxText\Rubric($row['id'], $row['seq'], $row['text']);
+                    $item = new TxText\Rubric($row['id'], $row['seq'], 
+                            $row['text']);
                     break;
                 
                 case Item::SIC:
-                    $item = new TxText\Sic($row['id'], $row['seq'], $row['text'], $row['alt_text']);
+                    $item = new TxText\Sic($row['id'], $row['seq'], 
+                            $row['text'], $row['alt_text']);
                     break;
                 
                 case Item::MARK:
@@ -352,27 +299,33 @@ class AverroesProjectData extends \mysqli{
                     break;
                 
                 case Item::UNCLEAR:
-                    $item = new TxText\Unclear($row['id'], $row['seq'], $row['extra_info'], $row['text'], $row['alt_text']);
+                    $item = new TxText\Unclear($row['id'], $row['seq'], 
+                            $row['extra_info'], $row['text'], $row['alt_text']);
                     break;
                 
                 case Item::ILLEGIBLE:
-                    $item = new TxText\Illegible($row['id'], $row['seq'], $row['length'], $row['extra_info']);
+                    $item = new TxText\Illegible($row['id'], $row['seq'], 
+                            $row['length'], $row['extra_info']);
                     break;
                 
                 case Item::ABBREVIATION:
-                    $item = new TxText\Abbreviation($row['id'], $row['seq'], $row['text'], $row['alt_text']);
+                    $item = new TxText\Abbreviation($row['id'], $row['seq'], 
+                            $row['text'], $row['alt_text']);
                     break;
                 
                 case Item::GLIPH:
-                    $item = new TxText\Gliph($row['id'], $row['seq'], $row['text']);
+                    $item = new TxText\Gliph($row['id'], $row['seq'], 
+                            $row['text']);
                     break;
                 
                 case Item::DELETION:
-                    $item = new TxText\Deletion($row['id'], $row['seq'], $row['text'], $row['extra_info']);
+                    $item = new TxText\Deletion($row['id'], $row['seq'], 
+                            $row['text'], $row['extra_info']);
                     break;
                 
                 case Item::ADDITION:
-                    $item = new TxText\Addition($row['id'], $row['seq'], $row['text'], $row['extra_info'], $row['target']);
+                    $item = new TxText\Addition($row['id'], $row['seq'], 
+                            $row['text'], $row['extra_info'], $row['target']);
                     break;
                 
                 case Item::NO_LINEBREAK:
@@ -392,7 +345,7 @@ class AverroesProjectData extends \mysqli{
     }
     
     function getEditorialNotes($type, $target){
-        $query = 'SELECT * FROM `' . $this->tables['ednotes'] . 
+        $query = 'SELECT * FROM `' . $this->tNames['ednotes'] . 
                 '` WHERE `type`=' . $type . ' AND ' . 
                 '`target`=' . $target; 
         $r = $this->query($query);
@@ -401,7 +354,7 @@ class AverroesProjectData extends \mysqli{
         } 
         else {
             $notes = array();
-            while ($row = $r->fetch_assoc()){
+            while ($row = $r->fetch(PDO::FETCH_ASSOC)){
                 $en = new EditorialNote();
                 $en->id = (int) $row['id'];
                 $en->type = (int) $row['type'];
@@ -415,29 +368,27 @@ class AverroesProjectData extends \mysqli{
             return $notes;
         }
     }
-    function getEditorialNotesByItemId($id){
-        return $this->getEditorialNotes(EditorialNote::INLINE, $id);
-    }
-    
+        
     function getEditorialNotesByDocPageCol($docId, $pageNum, $colNumber=1){
-        $ted = $this->tables['ednotes'];
-        $ti = $this->tables['items'];
-        $te = $this->tables['elements'];
-        $tp = $this->tables['pages'];
+        $ted = $this->tNames['ednotes'];
+        $ti = $this->tNames['items'];
+        $te = $this->tNames['elements'];
+        $tp = $this->tNames['pages'];
         
         $query = "SELECT `$ted`.* from `$ted` " . 
                 "JOIN `$ti` on `$ted`.`target`=`$ti`.`id` " . 
                 "JOIN `$te` on `$te`.`id`= `$ti`.`ce_id` " . 
                 "JOIN `$tp` on `$tp`.`id`= `$te`.`page_id` " . 
-                "WHERE `$tp`.`doc_id`=$docId and `$tp`.`page_number`=$pageNum AND `$te`.`column_number`=$colNumber";
+                "WHERE `$tp`.`doc_id`=$docId and `$tp`.`page_number`=$pageNum "
+                . "AND `$te`.`column_number`=$colNumber";
         
         $r = $this->query($query);
-        if ($r->num_rows === 0){
+        if ($r->rowCount() === 0){
             return NULL;
         } 
         else {
             $notes = array();
-            while ($row = $r->fetch_assoc()){
+            while ($row = $r->fetch(PDO::FETCH_ASSOC)){
                 $en = new EditorialNote();
                 $en->id = (int) $row['id'];
                 $en->type = (int) $row['type'];
@@ -451,20 +402,4 @@ class AverroesProjectData extends \mysqli{
             return $notes;
         }
     }
-    
-    function getNextElementId(){
-        return $this->getMaxId($this->tables['elements'])+1;
-    }
-    
-    function getNextItemId(){
-        return $this->getMaxId($this->tables['items'])+1;
-    }
-    
-    function getNextEditorialNoteId(){
-        return $this->getMaxId($this->tables['ednotes'])+1;
-    }
-    
-    function getMaxId($table){
-        return $this->getOneFieldQuery("SELECT MAX(`id`) as m FROM $table", 'm');
-    }
-}
+ }

@@ -50,10 +50,6 @@ class ApiController
         // Get the editorial notes
         $ednotes = $this->db->getEditorialNotesByDocPageCol($docId, $pageNumber, $columnNumber);
 
-        if ($ednotes === NULL){
-            $ednotes = [];
-        }
-
         // Get the information about every person in the elements and editorial notes
         $people = [];
         foreach($elements as $e){

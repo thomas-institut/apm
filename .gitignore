@@ -10,3 +10,4 @@ src/public/config.php
 /src/public/node_modules/
 /src/public/log/
 /src/public/scratch/
+/src/public/test/testdbconfig.php

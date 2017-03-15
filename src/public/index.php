@@ -28,6 +28,7 @@ require 'vendor/autoload.php';
 use DataTable\MySqlDataTable;
 use DataTable\MySqlDataTableWithRandomIds;
 use AverroesProject\Data\UserManager;
+use AverroesProject\Data\DataManager;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 use AverroesProject\Data\DatabaseChecker;
@@ -125,7 +126,7 @@ $um = new UserManager(
 
 // Initialize the monster data manager that will be gone
 // at some point
- $db = new AverroesProjectData($dbh, $config['tables'], $logger);
+ $db = new DataManager($dbh, $config['tables'], $logger);
 
 // Initialize the Slim app
 $app = new \Slim\App(["settings" => $config]);

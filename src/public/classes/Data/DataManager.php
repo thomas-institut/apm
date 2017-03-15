@@ -1,22 +1,36 @@
 <?php
-/**
- * @file AverroesProjectData.php
- * 
- * Database handling class
- * @author Rafael Nájera <rafael.najera@uni-koeln.de>
+/*
+ *  Copyright (C) 2017 Universität zu Köln
+ *  
+ *  This program is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU General Public License
+ *  as published by the Free Software Foundation; either version 2
+ *  of the License, or (at your option) any later version.
+ *   
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *  
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ *  
  */
-namespace AverroesProject;
+
+namespace AverroesProject\Data;
 
 use AverroesProject\TxText\Item;
 use AverroesProject\TxText\ItemArray;
 use AverroesProject\ColumnElement\Element;
+use AverroesProject\EditorialNote;
 use \PDO;
 
 /**
  * @class AverroesProjectData
  * Provides access to all data via helper functions.
  */
-class AverroesProjectData {
+class DataManager {
     
     /**
      *
@@ -24,8 +38,9 @@ class AverroesProjectData {
      * Array of table names
      */
     private $tNames;
-    private $dbh;
+    private $dbConn;
     private $logger;
+    private $dbh;
     
     /**
      * Tries to initialize and connect to the MySQL database.
@@ -33,61 +48,13 @@ class AverroesProjectData {
      * Throws an error if there's no connection 
      * or if the database is not setup properly.
      */
-    function __construct($dbh, $tablenames, $logger){
-        $this->dbh = $dbh;
+    function __construct($dbConn, $tablenames, $logger){
+        $this->dbConn = $dbConn;
         $this->tNames = $tablenames;
         $this->logger = $logger;
-    }
-
-    /**
-     * Performs a query with error handling
-     */
-
-    function query($sql){
-        $r = $this->dbh->query($sql);
-        if ($r===false){
-           $this->logger->error("Problem with query", $this->dbh->errorInfo());
-        }
-        return $r;
+        $this->dbh = new MySqlHelper($dbConn, $logger);
     }
    
-    /**
-     * Gets the given field from the first row where the given condition is met.
-     * @param string $table Table to lookup
-     * @param string $field Field to retrieve
-     * @param string $condition SQL code after WHERE in the query
-     */
-    function getOneField($table, $field, $condition){
-        $query = 'select * from `' . $table . '` where ' . $condition;
-        $r = $this->query($query);
-        $row = $r->fetch(PDO::FETCH_ASSOC);
-        if (!isset($row[$field])){
-            return false;
-        }
-        else{
-            return $row[$field];
-        }
-    }
-    
-     /**
-     * Gets the given field from the first row of the result
-      * set of the given query
-     */
-    function getOneFieldQuery($query, $field){
-        $r = $this->query($query);
-        $row = $r->fetch(PDO::FETCH_ASSOC);
-        if (!isset($row[$field])){
-            return false;
-        }
-        else{
-            return $row[$field];
-        }
-    }
-
-    function getOneRow($query){
-        $r = $this->query($query);
-        return $r->fetch(PDO::FETCH_ASSOC);
-    }
     
     /**
      * @return array
@@ -104,7 +71,7 @@ class AverroesProjectData {
                 $orderby = '';
         }
         $query = "SELECT `id` FROM  " . $this->tNames['docs'] . $orderby;
-        $r = $this->query($query);
+        $r = $this->dbh->query($query);
         
         $mss = array();
         while ($row = $r->fetch(PDO::FETCH_ASSOC)){
@@ -117,7 +84,7 @@ class AverroesProjectData {
     function getNumColumns($docId, $page){
         $te = $this->tNames['elements'];
         $tp = $this->tNames['pages'];
-        $n = $this->getOneFieldQuery(
+        $n = $this->dbh->getOneFieldQuery(
                 'SELECT MAX(e.`column_number`) AS nc FROM ' . $te . ' AS e' .
                 " JOIN `$tp` as p ON p.id=e.page_id " .
                 " WHERE p.`doc_id`=$docId AND p.`page_number`=$page", 'nc');
@@ -127,13 +94,13 @@ class AverroesProjectData {
         return (int) $n;
     }
     function getPageCountByDocId($docId){
-        return $this->getOneFieldQuery('SELECT `page_count` from ' .  
+        return $this->dbh->getOneFieldQuery('SELECT `page_count` from ' .  
                 $this->tNames['docs'] . 
                ' WHERE `id`=\'' . $docId . '\'', 'page_count');
     }
     
     function getLineCountByDoc($docId){
-        return $this->getOneFieldQuery(
+        return $this->dbh->getOneFieldQuery(
                 'SELECT count(DISTINCT `page_id`, `reference`) as value from ' . 
                 $this->tNames['elements'] . ' as e JOIN ' . 
                 $this->tNames['pages'] . ' AS p ON e.page_id=p.id ' .
@@ -155,7 +122,7 @@ class AverroesProjectData {
             " ON (u.id=e.editor_id AND p.id=e.page_id)" . 
             " WHERE p.doc_id=" . $docId;
         
-        $r = $this->query($query);
+        $r = $this->dbh->query($query);
         
         $editors = array();
         while ($row = $r->fetch(PDO::FETCH_ASSOC)){
@@ -172,7 +139,7 @@ class AverroesProjectData {
                 ' JOIN ' . $te . ' AS e ON p.id=e.page_id' .
                 ' WHERE p.doc_id=\'' . $docId . 
                 '\' ORDER BY p.`page_number` ASC';
-        $r = $this->query($query);
+        $r = $this->dbh->query($query);
         $pages = array();
          while ($row = $r->fetch(PDO::FETCH_ASSOC)){
             array_push($pages, $row['page_number']);
@@ -180,10 +147,9 @@ class AverroesProjectData {
         return $pages;
     }
     
-    function getDoc($docId){
-        $query = 'SELECT * FROM ' . $this->tNames['docs'] . ' WHERE `id`=' . 
-                $docId;
-        return $this->getOneRow($query);
+    function getDocById($docId)
+    {
+        return $this->dbh->getRowById($this->tNames['docs'], $docId);
     }
     
     /**
@@ -194,7 +160,7 @@ class AverroesProjectData {
      * @return string|boolean
      */
     function getImageUrlByDocId($docId, $page){
-        $doc = $this->getDoc($docId);
+        $doc = $this->getDocById($docId);
         $isd = $doc['image_source_data'];
         switch ($doc['image_source']){
             case 'local':
@@ -225,26 +191,26 @@ class AverroesProjectData {
                 $docId . '\' AND' .
                 ' p.`page_number`=' . $page . " AND" . 
                 ' e.`column_number`=' . $col . ' ORDER BY e.`seq` ASC';
-        $r = $this->query($query);
-        $elements = array();
-        while ($row = $r->fetch(PDO::FETCH_ASSOC)){
+        $rows = $this->dbh->getAllRows($query);
+        $elements = [];
+        foreach($rows as $row) {
             switch ($row['type']){
                 case Element::LINE:
-                    $e = new ColumnElement\Line();
+                    $e = new \AverroesProject\ColumnElement\Line();
                     // the line number
                     $e->setLineNumber($row['reference']);
                     break;
                 
                 case Element::CUSTODES:
-                    $e = new ColumnElement\Custodes();
+                    $e = new \AverroesProject\ColumnElement\Custodes();
                     break;
                 
                 case Element::HEAD:
-                    $e = new ColumnElement\Head();
+                    $e = new \AverroesProject\ColumnElement\Head();
                     break;
                 
                 case Element::GLOSS:
-                    $e = new ColumnElement\Gloss();
+                    $e = new \AverroesProject\ColumnElement\Gloss();
                     break;
                 
                 default:
@@ -273,63 +239,63 @@ class AverroesProjectData {
         $query = 'SELECT * FROM `' . $this->tNames['items'] . 
                 '` WHERE `ce_id`=' . $cid . 
                 ' ORDER BY `seq` ASC';
-        $r = $this->query($query);
+        $r = $this->dbh->getAllRows($query);
         
         $tt = new ItemArray($cid, $lang, $editorId, $handId);
         
-        while ($row = $r->fetch(PDO::FETCH_ASSOC)){
+        foreach ($r as $row) {
             switch ($row['type']){
                 case Item::TEXT:
-                    $item = new TxText\Text($row['id'], $row['seq'], 
+                    $item = new \AverroesProject\TxText\Text($row['id'], $row['seq'], 
                             $row['text']);
                     break;
                 
                 case Item::RUBRIC:
-                    $item = new TxText\Rubric($row['id'], $row['seq'], 
+                    $item = new \AverroesProject\TxText\Rubric($row['id'], $row['seq'], 
                             $row['text']);
                     break;
                 
                 case Item::SIC:
-                    $item = new TxText\Sic($row['id'], $row['seq'], 
+                    $item = new \AverroesProject\TxText\Sic($row['id'], $row['seq'], 
                             $row['text'], $row['alt_text']);
                     break;
                 
                 case Item::MARK:
-                    $item = new TxText\Mark($row['id'], $row['seq']);
+                    $item = new \AverroesProject\TxText\Mark($row['id'], $row['seq']);
                     break;
                 
                 case Item::UNCLEAR:
-                    $item = new TxText\Unclear($row['id'], $row['seq'], 
+                    $item = new \AverroesProject\TxText\Unclear($row['id'], $row['seq'], 
                             $row['extra_info'], $row['text'], $row['alt_text']);
                     break;
                 
                 case Item::ILLEGIBLE:
-                    $item = new TxText\Illegible($row['id'], $row['seq'], 
+                    $item = new \AverroesProject\TxText\Illegible($row['id'], $row['seq'], 
                             $row['length'], $row['extra_info']);
                     break;
                 
                 case Item::ABBREVIATION:
-                    $item = new TxText\Abbreviation($row['id'], $row['seq'], 
+                    $item = new \AverroesProject\TxText\Abbreviation($row['id'], $row['seq'], 
                             $row['text'], $row['alt_text']);
                     break;
                 
                 case Item::GLIPH:
-                    $item = new TxText\Gliph($row['id'], $row['seq'], 
+                    $item = new \AverroesProject\TxText\Gliph($row['id'], $row['seq'], 
                             $row['text']);
                     break;
                 
                 case Item::DELETION:
-                    $item = new TxText\Deletion($row['id'], $row['seq'], 
+                    $item = new \AverroesProject\TxText\Deletion($row['id'], $row['seq'], 
                             $row['text'], $row['extra_info']);
                     break;
                 
                 case Item::ADDITION:
-                    $item = new TxText\Addition($row['id'], $row['seq'], 
+                    $item = new \AverroesProject\TxText\Addition($row['id'], $row['seq'], 
                             $row['text'], $row['extra_info'], $row['target']);
                     break;
                 
                 case Item::NO_LINEBREAK:
-                    $item = new TxText\NoLinebreak($row['id'], $row['seq']);
+                    $item = new \AverroesProject\TxText\NoLinebreak($row['id'], $row['seq']);
                     break;
                 
                 default: 
@@ -348,25 +314,24 @@ class AverroesProjectData {
         $query = 'SELECT * FROM `' . $this->tNames['ednotes'] . 
                 '` WHERE `type`=' . $type . ' AND ' . 
                 '`target`=' . $target; 
-        $r = $this->query($query);
-        if ($r->num_rows === 0){
+        $rows = $this->dbh->getAllRows($query);
+        if (count($rows) === 0) {
             return NULL;
         } 
-        else {
-            $notes = array();
-            while ($row = $r->fetch(PDO::FETCH_ASSOC)){
-                $en = new EditorialNote();
-                $en->id = (int) $row['id'];
-                $en->type = (int) $row['type'];
-                $en->authorId=  (int) $row['author_id'];
-                $en->lang = (int) $row['lang'];
-                $en->target = (int) $row['target'];
-                $en->time = $row['time'];
-                $en->text = $row['text'];
-                array_push($notes, $en);
-            }
-            return $notes;
+        $notes = [];
+        foreach ($rows as $row) {
+            $en = new EditorialNote();
+            $en->id = (int) $row['id'];
+            $en->type = (int) $row['type'];
+            $en->authorId=  (int) $row['author_id'];
+            $en->lang = (int) $row['lang'];
+            $en->target = (int) $row['target'];
+            $en->time = $row['time'];
+            $en->text = $row['text'];
+            array_push($notes, $en);
         }
+        return $notes;
+        
     }
         
     function getEditorialNotesByDocPageCol($docId, $pageNum, $colNumber=1){
@@ -382,24 +347,19 @@ class AverroesProjectData {
                 "WHERE `$tp`.`doc_id`=$docId and `$tp`.`page_number`=$pageNum "
                 . "AND `$te`.`column_number`=$colNumber";
         
-        $r = $this->query($query);
-        if ($r->rowCount() === 0){
-            return NULL;
-        } 
-        else {
-            $notes = array();
-            while ($row = $r->fetch(PDO::FETCH_ASSOC)){
-                $en = new EditorialNote();
-                $en->id = (int) $row['id'];
-                $en->type = (int) $row['type'];
-                $en->authorId=  (int) $row['author_id'];
-                $en->lang = $row['lang'];
-                $en->target = (int) $row['target'];
-                $en->time = $row['time'];
-                $en->text = $row['text'];
-                array_push($notes, $en);
-            }
-            return $notes;
+        $rows = $this->dbh->getAllRows($query);
+        $notes = [];
+        foreach ($rows as $row) {
+            $en = new EditorialNote();
+            $en->id = (int) $row['id'];
+            $en->type = (int) $row['type'];
+            $en->authorId=  (int) $row['author_id'];
+            $en->lang = $row['lang'];
+            $en->target = (int) $row['target'];
+            $en->time = $row['time'];
+            $en->text = $row['text'];
+            $notes[]= $en;
         }
+        return $notes;
     }
  }

@@ -152,7 +152,7 @@ class SiteController {
             foreach ($editorsUsernames as $edUsername){
                 array_push($doc['editors'], $this->ci->um->getUserInfoByUsername($edUsername));
             }
-            $doc['docInfo'] = $db->getDoc($docId);
+            $doc['docInfo'] = $db->getDocById($docId);
             $doc['tableId'] = "doc-$docId-table";
             //$doc['pages'] = $this->buildPageArray($doc['numPages'], $transcribedPages);
             array_push($docs, $doc);
@@ -179,7 +179,7 @@ class SiteController {
         foreach ($editorsUsernames as $edUsername){
             array_push($doc['editors'], $this->ci->um->getUserInfoByUsername($edUsername));
         }
-        $doc['docInfo'] = $db->getDoc($docId);
+        $doc['docInfo'] = $db->getDocById($docId);
         $doc['tableId'] = "doc-$docId-table";
         $doc['pages'] = $this->buildPageArray($doc['numPages'], $transcribedPages);
 
@@ -196,7 +196,7 @@ class SiteController {
         $docId = $request->getAttribute('doc');
         $pageNumber = $request->getAttribute('page');
 
-        $docInfo = $this->db->getDoc($docId);
+        $docInfo = $this->db->getDocById($docId);
         $docPageCount = $this->db->getPageCountByDocId($docId);
         $transcribedPages = $this->db->getPageListByDocId($docId);
         $thePages = $this->buildPageArray($docPageCount, $transcribedPages);

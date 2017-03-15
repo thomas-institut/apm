@@ -84,6 +84,8 @@
                     <mod type="subst" xml:id="somemod">
                         <del rend="strikeout">Modified text</del>
                     </mod>
+                    
+                    <lb break="no"/>
                 </l>
                 <add place="margin left" target="somemod">
                     An off line addition

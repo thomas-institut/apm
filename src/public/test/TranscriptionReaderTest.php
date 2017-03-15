@@ -85,6 +85,28 @@ class TranscriptionReaderTest extends TestCase {
         $this->assertEquals(false, $result7);
         $this->assertEquals(TranscriptionReader::ERROR_CANNOT_LOAD_XML, 
                 $tsReader->errorNumber);
+        
+        $xml8 = file_get_contents("test-transcriptions/testNotValid08.xml");
+        $tsReader->reset();
+        $result8 =  $tsReader->read($xml8);
+        $this->assertEquals(false, $result8);
+        $this->assertEquals(TranscriptionReader::ERROR_ADD_WIHOUT_VALID_TARGET, 
+                $tsReader->errorNumber);
+        
+        $xml9 = file_get_contents("test-transcriptions/testNotValid09.xml");
+        $tsReader->reset();
+        $result9 =  $tsReader->read($xml9);
+        $this->assertEquals(false, $result9);
+        $this->assertEquals(TranscriptionReader::ERROR_MISSING_COL_NUMBER, 
+                $tsReader->errorNumber);
+        
+        $xml10 = file_get_contents("test-transcriptions/testNotValid10.xml");
+        $tsReader->reset();
+        $result10 =  $tsReader->read($xml10);
+        $this->assertEquals(false, $result10);
+        $this->assertEquals(TranscriptionReader::ERROR_ADD_WIHOUT_VALID_TARGET, 
+                $tsReader->errorNumber);
+        
     }
 
     public function testFileWithNoRealData(){
@@ -156,6 +178,15 @@ class TranscriptionReaderTest extends TestCase {
         $this->assertTrue(isset($pageDiv2['cols'][2]));
         $col3 = $pageDiv2['cols'][2];
         $this->assertEquals('', $col3['defaultLang']);
+        
+        
+        $xml5 = file_get_contents("test-transcriptions/testNoRealData05.xml");
+        $tsReader->reset();
+        $result5 =  $tsReader->read($xml5);
+        $this->assertEquals(true, $result5);
+        $this->assertCount(1, $tsReader->warnings);
+        $this->assertEquals(TranscriptionReader::WARNING_IGNORED_DIV, 
+                $tsReader->warnings[0]['number']);
     }
     
     function testElements()
@@ -283,6 +314,11 @@ class TranscriptionReaderTest extends TestCase {
         // Basic integrity check!
         $this->assertEquals(true, $result);
         $this->assertEquals('', $tsReader->errorMsg);
+        $this->assertCount(1, $tsReader->warnings);
+        $warning1 = $tsReader->warnings[0];
+        $this->assertEquals(TranscriptionReader::WARNING_IGNORED_ELEMENT, 
+                $warning1['number']);
+        
         $this->assertEquals('la', $tsReader->transcription['defaultLang']);
         $this->assertCount(1, $tsReader->transcription['people']);
         $this->assertCount(1, $tsReader->transcription['pageDivs']);
@@ -356,7 +392,7 @@ class TranscriptionReaderTest extends TestCase {
         
         // Number of Items
         //var_dump($lineElement->items);
-        $this->assertEquals(17, $lineElement->items->nItems());
+        $this->assertEquals(18, $lineElement->items->nItems());
         
         
         $item1 = $lineElement->items->getItem(1);
@@ -447,6 +483,9 @@ class TranscriptionReaderTest extends TestCase {
         $addElement = $pageDiv['cols'][1]['elements'][1];
         $this->assertTrue($addElement instanceof ColumnElement\Addition);
         $this->assertEquals($item17->id, $addElement->target);
+        
+        $item18 = $lineElement->items->getItem(18);
+        $this->assertTrue($item18 instanceof TxText\NoLinebreak);
         
     }
     

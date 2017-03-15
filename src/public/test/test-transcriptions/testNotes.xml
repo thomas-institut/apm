@@ -23,6 +23,9 @@
                 <note type="editorial">
                     An offline note
                 </note>
+                <note type="other">
+                    This note will be ignored
+                </note>
             </div>
         </body>
     </text>

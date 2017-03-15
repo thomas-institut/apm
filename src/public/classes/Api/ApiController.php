@@ -48,7 +48,7 @@ class ApiController
             $elements = [];
         }
         // Get the editorial notes
-        $ednotes = $this->db->getEditorialNotesByDocPageCol($docId, $pageNumber, $columnNumber);
+        $ednotes = $this->db->enm->getEditorialNotesByDocPageCol($docId, $pageNumber, $columnNumber);
 
         // Get the information about every person in the elements and editorial notes
         $people = [];

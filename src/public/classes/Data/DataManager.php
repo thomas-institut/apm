@@ -23,7 +23,7 @@ namespace AverroesProject\Data;
 use AverroesProject\TxText\Item;
 use AverroesProject\TxText\ItemArray;
 use AverroesProject\ColumnElement\Element;
-use AverroesProject\EditorialNote;
+
 use \PDO;
 
 /**
@@ -43,16 +43,23 @@ class DataManager {
     private $dbh;
     
     /**
+     *
+     * @var EdNoteManager 
+     */
+    public $enm; 
+    
+    /**
      * Tries to initialize and connect to the MySQL database.
      * 
      * Throws an error if there's no connection 
      * or if the database is not setup properly.
      */
-    function __construct($dbConn, $tablenames, $logger){
+    function __construct($dbConn, $tableNames, $logger){
         $this->dbConn = $dbConn;
-        $this->tNames = $tablenames;
+        $this->tNames = $tableNames;
         $this->logger = $logger;
         $this->dbh = new MySqlHelper($dbConn, $logger);
+        $this->enm = new EdNoteManager($this->dbh, $tableNames, $logger);
     }
    
     
@@ -310,56 +317,4 @@ class DataManager {
         return $tt;
     }
     
-    function getEditorialNotes($type, $target){
-        $query = 'SELECT * FROM `' . $this->tNames['ednotes'] . 
-                '` WHERE `type`=' . $type . ' AND ' . 
-                '`target`=' . $target; 
-        $rows = $this->dbh->getAllRows($query);
-        if (count($rows) === 0) {
-            return NULL;
-        } 
-        $notes = [];
-        foreach ($rows as $row) {
-            $en = new EditorialNote();
-            $en->id = (int) $row['id'];
-            $en->type = (int) $row['type'];
-            $en->authorId=  (int) $row['author_id'];
-            $en->lang = (int) $row['lang'];
-            $en->target = (int) $row['target'];
-            $en->time = $row['time'];
-            $en->text = $row['text'];
-            array_push($notes, $en);
-        }
-        return $notes;
-        
-    }
-        
-    function getEditorialNotesByDocPageCol($docId, $pageNum, $colNumber=1){
-        $ted = $this->tNames['ednotes'];
-        $ti = $this->tNames['items'];
-        $te = $this->tNames['elements'];
-        $tp = $this->tNames['pages'];
-        
-        $query = "SELECT `$ted`.* from `$ted` " . 
-                "JOIN `$ti` on `$ted`.`target`=`$ti`.`id` " . 
-                "JOIN `$te` on `$te`.`id`= `$ti`.`ce_id` " . 
-                "JOIN `$tp` on `$tp`.`id`= `$te`.`page_id` " . 
-                "WHERE `$tp`.`doc_id`=$docId and `$tp`.`page_number`=$pageNum "
-                . "AND `$te`.`column_number`=$colNumber";
-        
-        $rows = $this->dbh->getAllRows($query);
-        $notes = [];
-        foreach ($rows as $row) {
-            $en = new EditorialNote();
-            $en->id = (int) $row['id'];
-            $en->type = (int) $row['type'];
-            $en->authorId=  (int) $row['author_id'];
-            $en->lang = $row['lang'];
-            $en->target = (int) $row['target'];
-            $en->time = $row['time'];
-            $en->text = $row['text'];
-            $notes[]= $en;
-        }
-        return $notes;
-    }
  }

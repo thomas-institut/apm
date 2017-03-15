@@ -33,7 +33,7 @@ use AverroesProject\Data\UserManager;
 class UserManagerTest extends TestCase {
     
     // Number of users to generate
-    private $numUsers = 1000;
+    private $numUsers = 100;
     
      public function testUserCreation(){
         $um = new UserManager();
@@ -80,7 +80,7 @@ class UserManagerTest extends TestCase {
     public function testExistentUserSearches($um){
         // random searches, existent users
         
-        for ($i = 0 ; $i < 1000; $i++){
+        for ($i = 0 ; $i < $this->numUsers; $i++){
             $someUserName = 'someUser' . rand(1, $this->numUsers);
             $testMsg = "Testing with user $someUserName, iteration $i";
                      
@@ -101,7 +101,7 @@ class UserManagerTest extends TestCase {
     public function testNonExistentUserSearches($um){
         
         // random searches, non existent users
-        for ($i = 0 ; $i < 1000; $i++){
+        for ($i = 0 ; $i < $this->numUsers; $i++){
             $someUserName = 'someUser' . rand($this->numUsers+1, 10*$this->numUsers);
             $testMsg = "Testing with user $someUserName, iteration $i";
             $this->assertSame(false, $um->userExistsByUserName($someUserName), $testMsg);

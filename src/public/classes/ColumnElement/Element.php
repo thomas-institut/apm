@@ -135,6 +135,11 @@ class Element {
         $this->placement = NULL;
     }
     
+    /**
+     * @codeCoverageIgnore
+     * @todo See whether this method is necessary at all.
+     * 
+     */
     function isRightToLeft(){
         switch($this->lang){
             case 'ar':

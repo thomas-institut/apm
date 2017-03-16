@@ -291,7 +291,7 @@ class TranscriptionReaderTest extends TestCase {
         $this->assertEquals('', $element9->lang);
         $this->assertEquals('page-XXX-add-YYY', $element9->targetXmlId);
         $this->assertEquals('margin left', $element9->placement);
-        $this->assertEquals($markId, $element9->target);
+        $this->assertEquals($markId, $element9->getTargetId());
         
         $id = 0;
         foreach ($pageDiv['cols'][1]['elements'] as $element) {
@@ -482,7 +482,7 @@ class TranscriptionReaderTest extends TestCase {
        
         $addElement = $pageDiv['cols'][1]['elements'][1];
         $this->assertTrue($addElement instanceof ColumnElement\Addition);
-        $this->assertEquals($item17->id, $addElement->target);
+        $this->assertEquals($item17->id, $addElement->getTargetId());
         
         $item18 = $lineElement->items->getItem(18);
         $this->assertTrue($item18 instanceof TxText\NoLinebreak);

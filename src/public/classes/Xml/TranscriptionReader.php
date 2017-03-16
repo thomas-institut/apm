@@ -450,7 +450,7 @@ class TranscriptionReader {
                             $col['colNumber']));
                     return false;
                 }
-                $col['elements'][$addition['elementId']]->target = $itemId;
+                $col['elements'][$addition['elementId']]->setTargetId($itemId);
             }
         }
         

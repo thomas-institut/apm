@@ -11,3 +11,4 @@ src/public/config.php
 /src/public/log/
 /src/public/scratch/
 /src/public/test/testdbconfig.php
+/src/public/test/coverage/

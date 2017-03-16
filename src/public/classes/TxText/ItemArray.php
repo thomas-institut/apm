@@ -119,21 +119,19 @@ class ItemArray {
      * @param bool $ordered  (if true, items will be pushed into the array)
      * @throws InvalidArgumentException
      */
-    function addItem($item, $ordered=false){
-        if ($item instanceof Item){
-            $seq = (int) $item->seq;
-            if ( $seq !== -1 && !$ordered){
-                $this->theItems[$seq] = $item;
-                
-            }
-            else {
-                $item->seq = count($this->theItems);
-                array_push($this->theItems, $item);
-            }
-            
+    function addItem($item, $ordered=false)
+    {
+        if (! ($item instanceof Item)) {
+             throw new \InvalidArgumentException(
+                     "Objects added to an ItemArray should be of class Item");
         }
-        else{
-            throw new \InvalidArgumentException("Objcts added to an ItemArray should be of class Item, got " . get_class($item));
+        $seq = (int) $item->seq;
+        if ( $seq !== -1 && !$ordered){
+            $this->theItems[$seq] = $item;
+        }
+        else {
+            $item->seq = count($this->theItems);
+            array_push($this->theItems, $item);
         }
     }
     
@@ -157,16 +155,17 @@ class ItemArray {
      * 
      * @param bool $force
      */
-    function setLanguageOnAllItems($force = FALSE){
+    function setLang($lang, $force = false){
+        $this->lang = $lang;
         foreach ($this->theItems as $item){
             if ($force){
                 $item->setLang($this->lang);
+                continue;
             } 
-            else {
-                if ($item->getLang() === ''){
-                    $item->setLang($this->lang);
-                }
+            if ($item->getLang() === ''){
+                $item->setLang($this->lang);
             }
+
         }
     }
     
@@ -174,17 +173,30 @@ class ItemArray {
      * 
      * @param bool $force
      */
-    function setHandOnAllItems($force = FALSE){
+    function setHandId($handId, $force = false)
+    {
+        $this->handId = $handId;
         foreach ($this->theItems as $item){
             if ($force){
                 $item->setHandId($this->handId);
+                continue;
             } 
-            else {
-                if ($item->getHandId() === -1){
-                    $item->setHandId($this->handId);
-                }
+            if ($item->getHandId() === -1){
+                $item->setHandId($this->handId);
             }
         }
+    }
+    
+    function isRtl()
+    {
+        $n = $this->nItems();
+        $rtl = 0;
+        foreach ($this->theItems as $item){
+            if ($item->isRtl()) {
+                $rtl++;
+            }
+        }
+        return $rtl > ($n - $rtl);
     }
     
 }

@@ -55,8 +55,12 @@ class MySqlHelper {
      */
     function getOneFieldQuery($query, $field){
         $r = $this->query($query);
+        if ($r === false) {
+            return false;
+        }
         $row = $r->fetch(PDO::FETCH_ASSOC);
         if (!isset($row[$field])){
+            $this->logger->error("Field '$field' not found, query=$query");
             return false;
         }
         else{
@@ -66,6 +70,9 @@ class MySqlHelper {
 
     function getOneRow($query){
         $r = $this->query($query);
+        if ($r === false) {
+            return false;
+        }
         return $r->fetch(PDO::FETCH_ASSOC);
     }
     

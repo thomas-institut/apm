@@ -29,3 +29,5 @@ UPDATE `ap_settings` SET `id` = '1' WHERE `ap_settings`.`key` = 'dbversion';
 ALTER TABLE `ap_settings` ADD UNIQUE(`id`);
 ALTER TABLE `ap_settings` ADD INDEX(`id`);
 ALTER TABLE `ap_settings` CHANGE `key` `setting` VARCHAR(16) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL;
+
+UPDATE `ap_settings` SET `value` = '8' WHERE `ap_settings`.`setting` = 'dbversion';

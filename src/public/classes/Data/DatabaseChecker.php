@@ -32,7 +32,7 @@ class DatabaseChecker {
     private $db;
     private $tables;
     
-    const DB_VERSION = 7;
+    const DB_VERSION = 8;
     
     public function __construct(\PDO $dbh, array $tableNames) {
         $this->db = $dbh;
@@ -62,7 +62,9 @@ class DatabaseChecker {
     {
         $r = $this->db->query("show tables like '" . $table . "'");
         if ($r === false) {
-            return false;
+            // This is reached only if the query above has a mistake,
+            // which can't be attained solely by testing
+            return false; // @codeCoverageIgnore
         }
         
         if ($r->fetch()) {

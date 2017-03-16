@@ -51,7 +51,7 @@ EOD;
         self::$logger->pushHandler(self::$handler);
     }
     
-    public function testSimple()
+    public function testQuery()
     {
         $dbh = new MySqlHelper(self::$dbConn, self::$logger);
 
@@ -65,6 +65,13 @@ EOD;
         $this->assertFalse($r);
         $this->assertTrue(self::$handler->hasRecords(Logger::ERROR));
         
+    }
+    
+    public function testGetOneRow()
+    {
+        $dbh = new MySqlHelper(self::$dbConn, self::$logger);
+        
+        // getOneRow
         self::$handler->clear();
         $r = $dbh->getOneRow('SELECT * FROM mysqlhelpertest WHERE id=1');
         $this->assertNotFalse($r);
@@ -74,11 +81,35 @@ EOD;
         $this->assertEquals(['id' => 1, 'number' => 10, 'text' => 'ten'], $r);
         $this->assertFalse(self::$handler->hasRecords(Logger::ERROR));
         
+        // Bad Query
+        self::$handler->clear();
+        $r = $dbh->getOneRow('SELECT * FOM mysqlhelpertest WHERE id=1');
+        $this->assertFalse($r);
+        $this->assertTrue(self::$handler->hasRecords(Logger::ERROR));
+    }    
+        
+    public function testGetOneField()
+    {
+        $dbh = new MySqlHelper(self::$dbConn, self::$logger);
+        
+        // Good get one field
         self::$handler->clear();
         $r = $dbh->getOneFieldQuery('SELECT * FROM mysqlhelpertest WHERE id=1', 'number');
         $this->assertNotFalse($r);
         $this->assertSame('10', $r);
         $this->assertFalse(self::$handler->hasRecords(Logger::ERROR));
+        
+        // Inexistent field
+        self::$handler->clear();
+        $r = $dbh->getOneFieldQuery('SELECT * FROM mysqlhelpertest WHERE id=1', 'badfield');
+        $this->assertFalse($r);
+        $this->assertTrue(self::$handler->hasRecords(Logger::ERROR));
+        
+        // Bad Query
+        self::$handler->clear();
+        $r = $dbh->getOneFieldQuery('SELECT * FOM mysqlhelpertest WHERE id=1', 'badfield');
+        $this->assertFalse($r);
+        $this->assertTrue(self::$handler->hasRecords(Logger::ERROR));
         
         self::$handler->clear();
         $r = $dbh->getRowById('mysqlhelpertest', 2);
@@ -86,6 +117,11 @@ EOD;
         $this->assertSame('20', $r['number']);
         $this->assertSame('twenty', $r['text']);
         $this->assertFalse(self::$handler->hasRecords(Logger::ERROR));
+    }
+        
+    public function testGetAllRows()
+    {
+        $dbh = new MySqlHelper(self::$dbConn, self::$logger);
         
         self::$handler->clear();
         $rows = $dbh->getAllRows('SELECT * FROM mysqlhelpertest');
@@ -103,6 +139,12 @@ EOD;
         $this->assertNotFalse($rows);
         $this->assertCount(0, $rows);
         $this->assertFalse(self::$handler->hasRecords(Logger::ERROR));
+        
+        // Bad query
+        self::$handler->clear();
+        $rows = $dbh->getAllRows('SELECT * FRM mysqlhelpertest WHERE id=25');
+        $this->assertFalse($rows);
+        $this->assertTrue(self::$handler->hasRecords(Logger::ERROR));
     }
     
 }

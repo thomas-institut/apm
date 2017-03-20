@@ -56,10 +56,20 @@ EOD;
           `value` varchar(512) NOT NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+
+EOD;
+        self::$dbConn->query($tableSetupSQL);
+        $checker = new DatabaseChecker(self::$dbConn, $tables);
+        $this->assertFalse($checker->isDatabaseInitialized());
+        $this->assertFalse($checker->isDatabaseUpToDate());
+        
+        $tableSetupSQL = <<<EOD
         INSERT INTO `dbchecktest_settings` (`id`, `setting`, `value`) VALUES
         (1, 'dbversion', '8');
 EOD;
         self::$dbConn->query($tableSetupSQL);
+        
+        $checker = new DatabaseChecker(self::$dbConn, $tables);
         $this->assertFalse($checker->isDatabaseInitialized());
         $this->assertTrue($checker->isDatabaseUpToDate());
         
@@ -69,10 +79,9 @@ EOD;
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 EOD;
         self::$dbConn->query($tableSetupSQL);
-        
+        $checker = new DatabaseChecker(self::$dbConn, $tables);
         $this->assertTrue($checker->isDatabaseInitialized());
-        
-
+        $this->assertTrue($checker->isDatabaseUpToDate());
     }
     
 }

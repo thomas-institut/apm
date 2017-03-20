@@ -113,4 +113,18 @@ class UserManagerTest extends TestCase {
         return $um;
     }
     
+    public function testNonExistentUsers()
+    {
+        $um = new UserManager();
+        
+        for ($i = 0; $i < 10; $i++) {
+            $r = $um->getUserInfoByUserId($i);
+            $this->assertFalse($r);
+            $r = $um->getUserInfoByUserId($i);
+            $this->assertFalse($r);
+        }
+        
+                
+    }
+    
 }

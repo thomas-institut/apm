@@ -37,8 +37,7 @@ class DatabaseChecker {
     public function __construct(\PDO $dbh, array $tableNames) {
         $this->db = $dbh;
         $this->tables = $tableNames;
-        $this->settingsMgr = new SettingsManager(
-                new \DataTable\MySqlDataTable($dbh, $tableNames['settings']));
+        
     }
     
     public function isDatabaseInitialized()
@@ -54,7 +53,17 @@ class DatabaseChecker {
     
     public function isDatabaseUpToDate()
     {
+        $settingsTable = new \DataTable\MySqlDataTable($this->db, 
+                $this->tables['settings']);
+        if (!$settingsTable->isDbTableValid()) {
+            return false;
+        }
+        
+        $this->settingsMgr = new SettingsManager($settingsTable);
         $dbVersion = $this->settingsMgr->getSetting('dbversion');
+        if ($dbVersion === false) {
+            return false;
+        }
         return $dbVersion == self::DB_VERSION;
     }
     

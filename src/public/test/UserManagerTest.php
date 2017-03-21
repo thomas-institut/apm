@@ -58,11 +58,17 @@ class UserManagerTest extends TestCase {
             $this->assertSame(true, $um->setUserRole($theNewId, 'role3'));
             $this->assertSame(true, $um->revokeUserRole($theNewId, 'role3'));
             
-            $this->assertSame(false, $um->isRoot($theNewId));
-            $this->assertSame(true, $um->makeRoot($theNewId));
-            $this->assertSame(true, $um->isRoot($theNewId));
-            $this->assertSame(true, $um->revokeRootStatus($theNewId));
-            $this->assertSame(false, $um->isRoot($theNewId));
+            // Root
+            $this->assertFalse($um->isRoot($theNewId));
+            $this->assertTrue($um->makeRoot($theNewId));
+            $this->assertTrue($um->isRoot($theNewId));
+            $this->assertTrue($um->isUserAllowedTo($theNewId, 'someaction'));
+            $this->assertTrue($um->allowUserTo($theNewId, 'someaction'));
+            $this->assertFalse($um->disallowUserTo($theNewId, 'someaction'));
+            $this->assertTrue($um->setUserRole($theNewId, 'somerole'));
+            $this->assertFalse($um->revokeUserRole($theNewId, 'somerole'));
+            $this->assertTrue($um->revokeRootStatus($theNewId));
+            $this->assertFalse($um->isRoot($theNewId));
             
             $this->assertSame(false, $um->isUserAllowedTo($theNewId, 'someaction'));
             $this->assertSame(true, $um->allowUserTo($theNewId,'someaction'));
@@ -118,13 +124,76 @@ class UserManagerTest extends TestCase {
         $um = new UserManager();
         
         for ($i = 0; $i < 10; $i++) {
-            $r = $um->getUserInfoByUserId($i);
-            $this->assertFalse($r);
-            $r = $um->getUserInfoByUserId($i);
-            $this->assertFalse($r);
+            $this->assertFalse($um->getUserInfoByUserId($i));
+            $this->assertFalse($um->getUserInfoByUserId($i));
+            $this->assertFalse($um->getUsernameFromUserId($i));
+            $this->assertFalse($um->updateUserInfo($i, 'Some name', 
+                    'some@email.com'));
+            $this->assertFalse($um->setUserRole($i, 'somerole'));
+            $this->assertFalse($um->revokeUserRole($i, 'somerole'));
+            $this->assertFalse($um->allowUserTo($i, 'someaction'));
+            $this->assertFalse($um->disallowUserTo($i, 'someaction'));
+            $this->assertFalse($um->storeUserToken($i, 'sometoken'));
+            $this->assertFalse($um->getUserToken($i));
+            
         }
+        $this->assertFalse($um->storeUserPassword('somename', 'password'));
+        $this->assertFalse($um->verifyUserPassword('somename', 'password'));
+    }
+    
+    public function testUserSettings()
+    {
+        $um = new UserManager();
         
-                
+        $userId = $um->createUserByUsername('test');
+        $this->assertEquals($userId, $um->getUserIdFromUserName('test'));
+        $this->assertTrue($um->userExistsById($userId));
+        
+        $expectedUserInfo = [
+            'id' => $userId,
+            'username' => 'test',
+            'fullname' => '',
+            'email' => '',
+            'emailhash' => ''
+        ];
+        
+        $this->assertEquals($expectedUserInfo, 
+                $um->getUserInfoByUserId($userId));
+        
+        $this->assertEquals($expectedUserInfo, 
+                $um->getUserInfoByUsername('test'));
+        
+        $this->assertFalse($um->updateUserInfo($userId, ''));
+        $this->assertTrue($um->updateUserInfo($userId, 'Name', 'email'));
+        $ui = $um->getUserInfoByUserId($userId);
+        $this->assertEquals('Name', $ui['fullname']);
+        $this->assertEquals('email', $ui['email']);
+        $this->assertNotEquals('', $ui['emailhash']);
+        
+        // User token
+        $this->assertSame('', $um->getUserToken($userId));
+        $this->assertTrue($um->storeUserToken($userId, 'thetoken'));
+        $this->assertEquals('thetoken', $um->getUserToken($userId));
+        
+        // Password
+        $this->assertFalse($um->verifyUserPassword('test', 'somepassword'));
+        $this->assertFalse($um->storeUserPassword('test', ''));
+        $this->assertTrue($um->storeUserPassword('test', 'thepass'));
+        $this->assertFalse($um->verifyUserPassword('test', ''));
+        $this->assertFalse($um->verifyUserPassword('test', 'wrongpass'));
+        $this->assertTrue($um->verifyUserPassword('test', 'thepass'));
+        
+        // All user info
+        $allUi = $um->getUserInfoForAllUsers();
+        $this->assertCount(1, $allUi);
+        $this->assertEquals($ui, $allUi[0]);
+        
+        // Revoking permissions that the user does not have
+        $this->assertTrue($um->disallowUserTo($userId, 'someaction'));
+        $this->assertTrue($um->revokeUserRole($userId, 'somerole'));
+        
+        
+        
     }
     
 }

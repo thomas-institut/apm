@@ -22,6 +22,7 @@
 namespace AverroesProject\Data;
 
 use AverroesProject\EditorialNote;
+use DataTable\MySqlDataTable;
 
 /**
  * Manages editorial notes
@@ -33,19 +34,29 @@ class EdNoteManager {
     private $dbh;
     private $tNames;
     private $logger;
+    private $edNotesDataTable;
             
-    public function __construct($dbh, $tableNames, $logger) {
-        
+    public function __construct($dbConn, $dbh, $tableNames, \Monolog\Logger $logger) 
+    {
         $this->dbh = $dbh;
         $this->tNames = $tableNames;
         $this->logger = $logger;
+        $this->edNotesDataTable = new MySqlDataTable($dbConn, 
+                $tableNames['ednotes']);
+        
+        if ($this->edNotesDataTable === false) {
+            $this->logger->error('Cannot construct EdNotes data table');
+        }
     }
     
     function getEditorialNotesByTypeAndTarget($type, $target){
-        $query = 'SELECT * FROM `' . $this->tNames['ednotes'] . 
-                '` WHERE `type`=' . $type . ' AND ' . 
-                '`target`=' . $target; 
-        $rows = $this->dbh->getAllRows($query);
+        
+//        $query = 'SELECT * FROM `' . $this->tNames['ednotes'] . 
+//                '` WHERE `type`=' . $type . ' AND ' . 
+//                '`target`=' . $target; 
+        //$rows = $this->dbh->getAllRows($query);
+        $rows = $this->edNotesDataTable->findRows(['type' => $type,
+            'target' => $target]);
         return $this->editorialNoteArrayFromRows($rows);
     }
         
@@ -66,22 +77,15 @@ class EdNoteManager {
         return $this->editorialNoteArrayFromRows($rows);
     }
     
-    private function newEditorialNoteFromRow($row) {
-        $en = new EditorialNote();
-        $en->id = (int) $row['id'];
-        $en->type = (int) $row['type'];
-        $en->authorId = (int) $row['author_id'];
-        $en->lang = $row['lang'];
-        $en->target = (int) $row['target'];
-        $en->time = $row['time'];
-        $en->text = $row['text'];
-        return $en;
-    }
-    
     private function editorialNoteArrayFromRows($rows) {
         $notes = [];
         foreach ($rows as $row) {
-            $notes[]= $this->newEditorialNoteFromRow($row);
+            $edNote = EditorialNote::constructEdNoteFromArray($row);
+            if ($edNote === false) {
+                $this->logger->error('Bad editorial note row', $row);
+                continue;
+            }
+            $notes[] = $edNote;
         }
         return $notes;
     }

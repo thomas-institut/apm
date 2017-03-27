@@ -59,7 +59,7 @@ class DataManager {
         $this->tNames = $tableNames;
         $this->logger = $logger;
         $this->dbh = new MySqlHelper($dbConn, $logger);
-        $this->enm = new EdNoteManager($this->dbh, $tableNames, $logger);
+        $this->enm = new EdNoteManager($dbConn, $this->dbh, $tableNames, $logger);
     }
    
     

@@ -218,6 +218,11 @@ $app->group('/api', function (){
             '\AverroesProject\Api\ApiController:getNumColumns')
         ->setName('api.numcolumns');
     
+    // API -> numColumns
+    $this->get('/{document}/{page}/newcolumn', 
+            '\AverroesProject\Api\ApiController:addNewColumn')
+        ->setName('api.newcolumn');
+    
     // API -> user : get profile info
     $this->get('/user/{userId}/info', 
             '\AverroesProject\Api\ApiController:getUserProfileInfo')

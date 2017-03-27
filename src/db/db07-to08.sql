@@ -30,4 +30,10 @@ ALTER TABLE `ap_settings` ADD UNIQUE(`id`);
 ALTER TABLE `ap_settings` ADD INDEX(`id`);
 ALTER TABLE `ap_settings` CHANGE `key` `setting` VARCHAR(16) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL;
 
+ALTER TABLE `ap_pages` ADD `num_cols` INT NOT NULL DEFAULT '0' AFTER `lang`;
+UPDATE ap_pages, 
+    (SELECT page_id AS pid, max(column_number) as ncols from ap_elements group by page_id) src  
+    SET ap_pages.num_cols = src.ncols 
+    WHERE ap_pages.id = pid;
+
 UPDATE `ap_settings` SET `value` = '8' WHERE `ap_settings`.`setting` = 'dbversion';

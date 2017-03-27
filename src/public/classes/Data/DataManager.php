@@ -88,18 +88,25 @@ class DataManager {
     }
     
     
-    function getNumColumns($docId, $page){
-        $te = $this->tNames['elements'];
+    function getNumColumns($docId, $page)
+    {
         $tp = $this->tNames['pages'];
-        $n = $this->dbh->getOneFieldQuery(
-                'SELECT MAX(e.`column_number`) AS nc FROM ' . $te . ' AS e' .
-                " JOIN `$tp` as p ON p.id=e.page_id " .
-                " WHERE p.`doc_id`=$docId AND p.`page_number`=$page", 'nc');
-        if ($n === NULL){
-            return 0;
-        }
-        return (int) $n;
+        $n = $this->dbh->getOneRow("SELECT * FROM `$tp` WHERE `doc_id`=$docId " . 
+                " AND `page_number`=$page");
+        return (int) $n['num_cols'];
     }
+    
+    function addNewColumn($docId, $page)
+    {
+        $currentNumCols = $this->getNumColumns($docId, $page);
+        $newNumCols = $currentNumCols + 1;
+        $tp = $this->tNames['pages'];
+        $this->dbh->query("UPDATE `$tp` SET `num_cols` = $newNumCols WHERE `doc_id`=$docId " . 
+                " AND `page_number`=$page");
+        
+        return true;
+    }
+    
     function getPageCountByDocId($docId){
         return $this->dbh->getOneFieldQuery('SELECT `page_count` from ' .  
                 $this->tNames['docs'] . 

@@ -78,6 +78,23 @@ class ApiController
         return $response->withJson($numColumns);
    }
    
+    public function addNewColumn(Request $request, Response $response, $next)
+    {
+        $docId = $request->getAttribute('document');
+        $pageNumber = $request->getAttribute('page');
+        
+        $this->db->addNewColumn($docId, $pageNumber);
+        
+        $numColumns = $this->db->getNumColumns($docId, $pageNumber);
+        $updaterInfo = $this->ci->um->getUserInfoByUserId($this->ci->userId);
+        $userName = $updaterInfo['username'];
+        $this->logger->info("$userName added a column to " . 
+                "doc $docId, page $pageNumber", 
+                ['apiUserId' => $this->ci->userId]);
+        
+        return $response->withJson($numColumns);
+   }
+   
     public function getUserProfileInfo(Request $request, Response $response, $next){
         $um = $this->ci->um;
         $profileUserId =  (int) $request->getAttribute('userId');

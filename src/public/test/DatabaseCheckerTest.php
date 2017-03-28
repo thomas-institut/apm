@@ -12,8 +12,6 @@ require "../vendor/autoload.php";
 require 'testdbconfig.php';
 
 use PHPUnit\Framework\TestCase;
-use Monolog\Logger;
-use Monolog\Handler\TestHandler;
 use \PDO;
 
 /**

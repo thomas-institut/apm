@@ -20,13 +20,9 @@
  */
 namespace AverroesProject;
 require "../vendor/autoload.php";
-require 'testdbconfig.php';
+require_once 'DatabaseTestEnvironment.php';
 
 use PHPUnit\Framework\TestCase;
-use AverroesProject\Data\UserManager;
-use AverroesProject\Data\DataManager;
-use DataTable\MySqlDataTable;
-use DataTable\MySqlDataTableWithRandomIds;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 
@@ -35,7 +31,7 @@ use Monolog\Handler\StreamHandler;
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class ApiTest extends TestCase {
+class ApiControllerTest extends TestCase {
     
     static $ci;
     /**
@@ -44,29 +40,15 @@ class ApiTest extends TestCase {
      */
     static $apiController;
     
-    public static function setUpBeforeClass() {
-        global $config;
-
-        
+    public static function setUpBeforeClass()
+    {
         $logStream = new StreamHandler('test.log', 
             Logger::DEBUG);
         $logger = new Logger('APITEST');
         $logger->pushHandler($logStream);
-        
-        $dbh = new \PDO('mysql:dbname=' . $config['db'] .
-                ';host=' . $config['host'], $config['user'], $config['pwd']);
-        $dbh->query("set character set 'utf8'");
-        $dbh->query("set names 'utf8'");
-        
-        $db = new DataManager($dbh, $config['tables'], $logger);
-        $container = new \Slim\Container();
-        $container['db'] = $db;
-        $container['dbh'] = $dbh;
-        $container['logger'] = $logger;
-        
-        self::$ci = $container;
+
+        self::$ci = DatabaseTestEnvironment::getContainer($logger);
         self::$apiController = new Api\ApiController(self::$ci);
-        
     }
     
     public function testNumColumns()
@@ -77,7 +59,8 @@ class ApiTest extends TestCase {
         
         $inputResp = new \Slim\Http\Response();
         
-        $response = self::$apiController->getNumColumns($request, $inputResp, NULL);
+        $response = self::$apiController->getNumColumns($request, $inputResp, 
+                NULL);
         
         $this->assertEquals(200, $response->getStatusCode());
         $data = json_decode($response->getBody(true), true);
@@ -92,7 +75,8 @@ class ApiTest extends TestCase {
                 ->withAttribute('column', 1);
         
         $inputResp = new \Slim\Http\Response();
-        $response = self::$apiController->getElementsByDocPageCol($request, $inputResp, NULL);
+        $response = self::$apiController->getElementsByDocPageCol($request, 
+                $inputResp, NULL);
         
         $this->assertEquals(200, $response->getStatusCode());
         $data = json_decode($response->getBody(true), true);

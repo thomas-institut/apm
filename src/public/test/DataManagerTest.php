@@ -20,7 +20,7 @@
  */
 namespace AverroesProject;
 require "../vendor/autoload.php";
-require 'testdbconfig.php';
+require_once 'DatabaseTestEnvironment.php';
 
 use PHPUnit\Framework\TestCase;
 use AverroesProject\Data\DataManager;
@@ -41,51 +41,18 @@ class DataManagerTest extends TestCase {
     static $dataManager;
     
     public static function setUpBeforeClass() {
-        global $config;
-
         $logStream = new StreamHandler('test.log', 
             Logger::DEBUG);
         $logger = new Logger('DM-TEST');
         $logger->pushHandler($logStream);
-        
-        $dbConnection = self::getPdo();
-        
-        self::$dataManager = new DataManager($dbConnection, 
-                $config['tables'], 
-                $logger);
+        self::$dataManager = DatabaseTestEnvironment::getDataManager($logger);
     }
     
-    private function resetTestDataSet()
-    {
-        $dbConn = self::getPdo();
-        
-        // Can't TRUNCATE because of foreign keys
-        $query = <<<EOD
-                DELETE FROM ap_ednotes;
-                DELETE FROM ap_items;
-                DELETE FROM ap_elements;
-                DELETE FROM ap_pages;
-                DELETE FROM ap_docs;
-EOD;
-        $dbConn->query($query);
-        
-    }
-    
-    private static function getPdo()
-    {
-        global $config;
-        
-        $pdo = new \PDO('mysql:dbname=' . $config['db'] .
-                ';host=' . $config['host'], $config['user'], $config['pwd']);
-        $pdo->query("set character set 'utf8'");
-        $pdo->query("set names 'utf8'");
-        return $pdo;
-    }
     
     public function testEmptyDatabase() 
     {
         $dm = self::$dataManager;
-        $this->resetTestDataSet();
+        DatabaseTestEnvironment::emptyDatabase();
         
         // No docs at this point
         $this->assertEquals(0, $dm->getPageCountByDocId(100));

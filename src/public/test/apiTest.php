@@ -1,0 +1,116 @@
+<?php
+
+/*
+ *  Copyright (C) 2017 Universität zu Köln
+ *  
+ *  This program is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU General Public License
+ *  as published by the Free Software Foundation; either version 2
+ *  of the License, or (at your option) any later version.
+ *   
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *  
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ *  
+ */
+namespace AverroesProject;
+require "../vendor/autoload.php";
+require 'testdbconfig.php';
+
+use PHPUnit\Framework\TestCase;
+use AverroesProject\Data\UserManager;
+use AverroesProject\Data\DataManager;
+use DataTable\MySqlDataTable;
+use DataTable\MySqlDataTableWithRandomIds;
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+
+/**
+ * Description of testApi
+ *
+ * @author Rafael Nájera <rafael.najera@uni-koeln.de>
+ */
+class testApi extends TestCase {
+    
+    static $ci;
+    /**
+     *
+     * @var Api\ApiController
+     */
+    static $apiController;
+    
+    public static function setUpBeforeClass() {
+        global $config;
+
+        
+        $logStream = new StreamHandler('test.log', 
+            Logger::DEBUG);
+        $logger = new Logger('APITEST');
+        $logger->pushHandler($logStream);
+        
+        $dbh = new \PDO('mysql:dbname=' . $config['db'] .
+                ';host=' . $config['host'], $config['user'], $config['pwd']);
+        $dbh->query("set character set 'utf8'");
+        $dbh->query("set names 'utf8'");
+        
+        //
+        // Initialize User manager
+        //
+        $um = new UserManager(
+                new MySqlDataTable($dbh, $config['tables']['users']), 
+                new MySqlDataTable($dbh, $config['tables']['relations']), 
+                new MySqlDataTableWithRandomIds($dbh, 
+                        $config['tables']['people'], 10000, 100000));
+        
+        
+        $db = new DataManager($dbh, $config['tables'], $logger);
+        $container = new \Slim\Container();
+        $container['db'] = $db;
+        $container['dbh'] = $dbh;
+        $container['um'] = $um;
+        $container['logger'] = $logger;
+        
+        self::$ci = $container;
+        self::$apiController = new Api\ApiController(self::$ci);
+        
+    }
+    
+    public function testNumColumns()
+    {
+        $request = (new \GuzzleHttp\Psr7\ServerRequest('GET', ''))
+                ->withAttribute('document', 1)
+                ->withAttribute('page', 1);
+        
+        $inputResp = new \Slim\Http\Response();
+        
+        $response = self::$apiController->getNumColumns($request, $inputResp, NULL);
+        
+        $this->assertEquals(200, $response->getStatusCode());
+        $data = json_decode($response->getBody(true), true);
+        $this->assertEquals(0, $data);
+    }
+    
+    public function testGetElements() 
+    {
+        $request = (new \GuzzleHttp\Psr7\ServerRequest('GET', ''))
+                ->withAttribute('document', 1)
+                ->withAttribute('page', 1) 
+                ->withAttribute('column', 1);
+        
+        $inputResp = new \Slim\Http\Response();
+        $response = self::$apiController->getElementsByDocPageCol($request, $inputResp, NULL);
+        
+        $this->assertEquals(200, $response->getStatusCode());
+        $data = json_decode($response->getBody(true), true);
+        $this->assertEquals([], $data['elements']);
+        $this->assertEquals([], $data['ednotes']);
+        $this->assertEquals([], $data['people']);
+        $this->assertEquals(['col' => 1], $data['info']);
+        
+    }
+}

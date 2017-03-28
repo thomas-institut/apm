@@ -155,11 +155,18 @@ class ItemArrayTest extends TestCase {
             $this->assertEquals(200, $item->columnElementId);
         }
     }
-    /**
-     * @depends testAddOrderedItems
-     */
-    public function testIsRtl($ia)
+
+    public function testIsRtl()
     {
+        $ia = new TxText\ItemArray();
+        
+        for ($i = 0; $i < 10; $i++) {
+            $item = new TxText\Text($i+100, $i+1000, "Text" + $i + '-');
+            $ia->addItem($item, true);
+            $this->assertSame($item, $ia->getItem($i));
+        }
+        $ia->setLang('he');
+        
         // all 10 items are Hebrew at this point!
         $this->assertTrue($ia->isRtl());
         

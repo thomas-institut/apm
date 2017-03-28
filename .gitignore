@@ -14,3 +14,4 @@ src/public/config.php
 /src/public/test/coverage/
 .~lock*
 /other/
+/src/public/test/test.log

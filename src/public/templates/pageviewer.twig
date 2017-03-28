@@ -124,10 +124,11 @@
             <div class="textcol tab-pane pageinfo" id="pageinfoTab">
                 <div style="margin-top: 20px">
                 <p><strong>Page Number:</strong> {{pageInfo.page_number}}</p>
+                <p><strong>Foliation:</strong> {% if pageInfo.foliation %}{{pageInfo.foliation}}{% else %}Undefined{% endif%}</p>
                 <p><strong>System Page Id:</strong> {{pageInfo.id}}</p>
                 <p><strong>Num Columns:</strong> {{pageInfo.num_cols}}  
                       </p>
-                <p><strong>Foliation:</strong> {% if pageInfo.foliation %}{{pageInfo.foliation}}{% else %}Undefined{% endif%}</p>
+                
                 <p style="margin-top: 50px">
                  <button type="button" id="addColumnButton" data-toggle="modal" 
                          data-target="#addColumnModal"

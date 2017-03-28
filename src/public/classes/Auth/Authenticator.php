@@ -70,9 +70,9 @@ class Authenticator {
         return hash_hmac('sha256', $v, $this->secret);
     }
 
-    protected function debug($msg){
+    protected function debug($msg, $data=[]){
         if ($this->debugMode){
-            $this->logger->debug($msg);
+            $this->logger->debug($msg, $data);
         }
     }
 
@@ -121,6 +121,7 @@ class Authenticator {
         $msg = '';
         if ($request->isPost()){
             $data = $request->getParsedBody();
+            $this->debug('Got POST data', $data);
             if (isset($data['user']) && isset($data['pwd'])){
                 $this->debug('Got data for login');
                 $user = filter_var($data['user'], FILTER_SANITIZE_STRING);

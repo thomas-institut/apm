@@ -1,5 +1,4 @@
-<phpunit colors="true">
-
+<phpunit colors="true" processIsolation="true">
     <filter>
         <whitelist processUncoveredFilesFromWhitelist="true">
             <directory suffix=".php">../classes</directory>

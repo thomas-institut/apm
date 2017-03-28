@@ -16,6 +16,10 @@
         "monolog/monolog": "^1.22"
     },
     
+    "require-dev": {
+        "guzzlehttp/guzzle": "~6.0"
+    },
+    
     "autoload": {
         "psr-4": {
             "AverroesProject\\": "classes"

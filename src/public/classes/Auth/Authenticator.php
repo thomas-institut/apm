@@ -130,7 +130,7 @@ class Authenticator {
         session_start();
         $this->debug('Showing login page');
         $msg = '';
-        if ($request->isPost()){
+        if ($request->getMethod() === 'POST') {
             $data = $request->getParsedBody();
             $this->debug('Got POST data', $data);
             if (isset($data['user']) && isset($data['pwd'])){

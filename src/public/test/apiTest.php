@@ -83,7 +83,7 @@ class testApi extends TestCase {
     public function testNumColumns()
     {
         $request = (new \GuzzleHttp\Psr7\ServerRequest('GET', ''))
-                ->withAttribute('document', 1)
+                ->withAttribute('document', 100)
                 ->withAttribute('page', 1);
         
         $inputResp = new \Slim\Http\Response();

@@ -127,7 +127,7 @@ $um = new UserManager(
 // Initialize the monster data manager that will be gone
 // at some point
  $db = new DataManager($dbh, $config['tables'], $logger);
-
+ 
 // Initialize the Slim app
 $app = new \Slim\App(["settings" => $config]);
 

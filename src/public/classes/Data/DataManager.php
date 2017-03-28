@@ -23,6 +23,7 @@ namespace AverroesProject\Data;
 use AverroesProject\TxText\Item;
 use AverroesProject\TxText\ItemArray;
 use AverroesProject\ColumnElement\Element;
+use DataTable\MySqlDataTable;
 
 use \PDO;
 
@@ -38,8 +39,21 @@ class DataManager {
      * Array of table names
      */
     private $tNames;
+    /**
+     *
+     * @var \PDO
+     */
     private $dbConn;
+    /**
+     *
+     * @var \Monolog\Logger
+     */
     private $logger;
+    
+    /**
+     *
+     * @var MySqlHelper
+     */
     private $dbh;
     
     /**
@@ -48,6 +62,15 @@ class DataManager {
      */
     public $enm; 
     
+    
+    /**
+     *
+     * @var DataTable\MySqlDataTable
+     */
+    private $pagesDataTable;
+    
+    
+    private $docsDataTable;
     /**
      * Tries to initialize and connect to the MySQL database.
      * 
@@ -59,7 +82,14 @@ class DataManager {
         $this->tNames = $tableNames;
         $this->logger = $logger;
         $this->dbh = new MySqlHelper($dbConn, $logger);
-        $this->enm = new EdNoteManager($dbConn, $this->dbh, $tableNames, $logger);
+        $this->enm = new EdNoteManager($dbConn, $this->dbh, $tableNames, 
+                $logger);
+        
+        $this->pagesDataTable = new MySqlDataTable($this->dbConn, 
+                $tableNames['pages']);
+        $this->docsDataTable = new MySqlDataTable($this->dbConn, 
+                $tableNames['docs']);
+        
     }
    
     
@@ -88,6 +118,48 @@ class DataManager {
     }
     
     
+    public function newDoc(string $title, string $shortTitle, int $pageCount, 
+            string $lang, string $type, 
+            string $imageSource, string $imageSourceData) 
+    {
+        
+        $doc = [ 
+            'title' => $title, 
+            'short_title' => $shortTitle,
+            'page_count' => $pageCount,
+            'lang' => $lang, 
+            'doc_type' => $type,
+            'image_source' => $imageSource, 
+            'image_source_data' => $imageSourceData
+            ];
+        
+        $docId = $this->docsDataTable->createRow($doc);
+        if ($docId === false) {
+            return false;
+        }
+        for ($i = 1; $i <= $pageCount; $i++) {
+            $pageId = $this->newPage($docId, $i, $lang);
+            if ($pageId === false) {
+                return false;
+            }
+        }
+        return $docId;
+    }
+    
+    public function newPage($docId,  $pageNumber, $lang, $type=0)
+    {
+        
+        $page = [
+           'doc_id' => $docId,
+           'page_number' => $pageNumber,
+            'type' => $type,
+            'lang' => $lang
+            // foliation => defaults to null in DB
+        ];
+        
+        return $this->pagesDataTable->createRow($page);
+    }
+    
     function getNumColumns($docId, $page)
     {
         $tp = $this->tNames['pages'];
@@ -109,15 +181,29 @@ class DataManager {
     
     function getPageInfo($docId, $page)
     {
-        $tp = $this->tNames['pages'];
-        return $this->dbh->getOneRow("SELECT * FROM `$tp` WHERE `doc_id`=$docId " . 
-                " AND `page_number`=$page");
+        $id = $this->pagesDataTable->findRow([
+            'doc_id' => $docId, 
+            'page_number'=> $page
+            ]);
+        
+        if ($id === false) {
+            return false;
+        }
+        
+        return $this->pagesDataTable->getRow($id);
     }
     
     function getPageCountByDocId($docId){
-        return $this->dbh->getOneFieldQuery('SELECT `page_count` from ' .  
-                $this->tNames['docs'] . 
-               ' WHERE `id`=\'' . $docId . '\'', 'page_count');
+        $row = $this->docsDataTable->getRow($docId);
+        if ($row === false) {
+            // Doc doesn't exist, so it has 0 pages
+            return 0;
+        }
+        if (!isset($row['page_count'])) {
+            // This means that the DB is inconsistent
+            return false;
+        }
+        return $row['page_count'];
     }
     
     function getLineCountByDoc($docId){

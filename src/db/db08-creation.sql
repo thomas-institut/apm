@@ -132,6 +132,7 @@ CREATE TABLE `ap_pages` (
   `page_number` int(11) NOT NULL,
   `type` int(11) NOT NULL,
   `lang` varchar(3) DEFAULT 'la',
+  `num_cols` int(11) NOT NULL DEFAULT '0',
   `foliation` varchar(16) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

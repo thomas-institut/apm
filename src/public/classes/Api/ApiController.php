@@ -31,11 +31,11 @@ class ApiController
     protected $ci;
     private $logger;
    //Constructor
-   public function __construct( $ci) {
+    public function __construct( $ci) {
        $this->ci = $ci;
        $this->db = $ci->db;
        $this->logger = $ci->logger->withName('API');
-   }
+    }
    
    public function getElementsByDocPageCol(Request $request, Response $response, $next){
         $docId = $request->getAttribute('document');

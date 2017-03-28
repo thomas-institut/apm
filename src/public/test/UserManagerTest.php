@@ -33,7 +33,7 @@ use AverroesProject\Data\UserManager;
 class UserManagerTest extends TestCase {
     
     // Number of users to generate
-    private $numUsers = 100;
+    private $numUsers = 10;
     
     public function testUserCreation()
     {

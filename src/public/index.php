@@ -25,7 +25,6 @@ namespace AverroesProject;
 
 require 'vendor/autoload.php';
 
-use AverroesProject\Data\UserManager;
 use AverroesProject\Data\DataManager;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
@@ -111,7 +110,7 @@ if (!$dbChecker->isDatabaseUpToDate()) {
     exitWithError($logger, "Database schema not up to date");
 }
 
- $db = new DataManager($dbh, $config['tables'], $logger);
+$db = new DataManager($dbh, $config['tables'], $logger);
  
 // Initialize the Slim app
 $app = new \Slim\App(["settings" => $config]);

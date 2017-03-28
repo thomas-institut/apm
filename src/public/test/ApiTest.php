@@ -58,21 +58,10 @@ class testApi extends TestCase {
         $dbh->query("set character set 'utf8'");
         $dbh->query("set names 'utf8'");
         
-        //
-        // Initialize User manager
-        //
-        $um = new UserManager(
-                new MySqlDataTable($dbh, $config['tables']['users']), 
-                new MySqlDataTable($dbh, $config['tables']['relations']), 
-                new MySqlDataTableWithRandomIds($dbh, 
-                        $config['tables']['people'], 10000, 100000));
-        
-        
         $db = new DataManager($dbh, $config['tables'], $logger);
         $container = new \Slim\Container();
         $container['db'] = $db;
         $container['dbh'] = $dbh;
-        $container['um'] = $um;
         $container['logger'] = $logger;
         
         self::$ci = $container;

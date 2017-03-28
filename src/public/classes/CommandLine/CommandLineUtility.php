@@ -61,13 +61,15 @@ abstract class CommandLineUtility {
         $cmd = $argv[0];
         
         // Logger
-        $logStream = new StreamHandler(__DIR__ . '/../../' . $config['logfilename'], Logger::DEBUG);
+        $logStream = new StreamHandler(__DIR__ . '/../../' . 
+                $config['logfilename'], Logger::DEBUG);
         $this->logger = (new Logger('apm-logger'))->withName('CMD');
-        $this->logger->pushProcessor(function ($record) use($processUser, $pid, $cmd) { 
-            $record['extra']['unixuser'] = $processUser['name'];
-            $record['extra']['pid'] = $pid;
-            $record['extra']['cmd'] = $cmd;
-            return $record;
+        $this->logger->pushProcessor(
+            function ($record) use($processUser, $pid, $cmd) { 
+                $record['extra']['unixuser'] = $processUser['name'];
+                $record['extra']['pid'] = $pid;
+                $record['extra']['cmd'] = $cmd;
+                return $record;
         });
         $this->logger->pushHandler($logStream);
         $this->processUser = posix_getpwuid(posix_geteuid());

@@ -24,8 +24,6 @@ require 'testdbconfig.php';
 
 use PHPUnit\Framework\TestCase;
 use AverroesProject\Data\DataManager;
-use DataTable\MySqlDataTable;
-use DataTable\MySqlDataTableWithRandomIds;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 

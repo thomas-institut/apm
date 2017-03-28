@@ -197,6 +197,7 @@ class SiteController {
         $pageNumber = $request->getAttribute('page');
 
         $docInfo = $this->db->getDocById($docId);
+        $pageInfo = $this->db->getPageInfo($docId, $pageNumber);
         $docPageCount = $this->db->getPageCountByDocId($docId);
         $transcribedPages = $this->db->getPageListByDocId($docId);
         $thePages = $this->buildPageArray($docPageCount, $transcribedPages);
@@ -210,6 +211,7 @@ class SiteController {
             'docInfo' => $docInfo,
             'docPageCount' => $docPageCount,
             'page' => $pageNumber,
+            'pageInfo' => $pageInfo,
             'thePages' => $thePages,
             'imageUrl' => $imageUrl
         ]);

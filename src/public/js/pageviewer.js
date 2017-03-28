@@ -38,28 +38,35 @@ $(document).ready(function ()
     currentDocumentFontSize = /\d+/.exec(reportedFS);
     apiGetColumnInfoUrl = apiBase + '/api/' + docId + '/' + 
             pageNumber + '/numcolumns';
+    apiAddColumnUrl = apiBase + '/api/' + docId + '/' + 
+            pageNumber + '/newcolumn';
     
     setupEditItemModal();
     
+    $('#realAddColumnButton').click( function (){
+        console.log("I should add a column now!");
+        $.getJSON(apiAddColumnUrl, function (resp) {
+            location.replace('');
+        });
+        
+    });
+  
     $.getJSON(apiGetColumnInfoUrl, function (resp)
     {
         var col;
         numColumns = resp;
-        if (numColumns === 0) {
-            $('#right-component').html('<div class="notranscription">' + 
-                    'No transcription available for this page</div>');
-        } else {
-            theUl = '<ul class = "nav nav-tabs">';
+        if (numColumns === 0)  {
+            $('#pageinfoTab').addClass('active');
+        }
+        else {
+            theUl = '';
             for (col = 1; col <= numColumns; col++) {
                 theUl += '<li id="colheader' + col + '">';
                 theUl += '<a data-toggle="tab" href="#col' + col + 
                         '">Column ' + col + '</a></li>';
             }
             ;
-            theUl += '</ul>';
-            theUl += '<div class="tab-content" id="textcolumns"></div>';
-            $('#right-component').html(theUl);
-
+            $('#tabsUl').append(theUl);
 
             $('.nav-tabs a').click(function ()
             {
@@ -74,7 +81,7 @@ $(document).ready(function ()
                     theDiv += ' active';
                 }
                 theDiv += '" id="col' + col + '"></div>';
-                $('#textcolumns').append(theDiv);
+                $('#theTabs').append(theDiv);
                 $.getJSON(apiBase + '/api/' + docId + '/' + pageNumber + 
                         '/' + col + '/elements', function (resp)
                 {

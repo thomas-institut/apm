@@ -107,6 +107,13 @@ class DataManager {
         return true;
     }
     
+    function getPageInfo($docId, $page)
+    {
+        $tp = $this->tNames['pages'];
+        return $this->dbh->getOneRow("SELECT * FROM `$tp` WHERE `doc_id`=$docId " . 
+                " AND `page_number`=$page");
+    }
+    
     function getPageCountByDocId($docId){
         return $this->dbh->getOneFieldQuery('SELECT `page_count` from ' .  
                 $this->tNames['docs'] . 

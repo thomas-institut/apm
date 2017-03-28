@@ -238,3 +238,7 @@ div.popoverinfo {
 .edit-rtl {
     direction: rtl;
 }
+
+.pageinfo {
+    padding-left: 20px;
+}

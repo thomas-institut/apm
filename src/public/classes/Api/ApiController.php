@@ -69,14 +69,15 @@ class ApiController
             'info' => ['col' => (int) $columnNumber]]);
    }
    
-   public function getNumColumns(Request $request, Response $response, $next){
+    public function getNumColumns(Request $request, Response $response, $next)
+    {
         $docId = $request->getAttribute('document');
         $pageNumber = $request->getAttribute('page');
         
         $numColumns = $this->db->getNumColumns($docId, $pageNumber);
         
         return $response->withJson($numColumns);
-   }
+    }
    
     public function addNewColumn(Request $request, Response $response, $next)
     {

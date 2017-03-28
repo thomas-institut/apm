@@ -29,9 +29,10 @@ use \PDO;
 
 /**
  * @class AverroesProjectData
- * Provides access to all data via helper functions.
+ * Provides access to data via helper functions.
  */
-class DataManager {
+class DataManager 
+{
     
     /**
      *
@@ -70,6 +71,10 @@ class DataManager {
     private $pagesDataTable;
     
     
+     /**
+     *
+     * @var DataTable\MySqlDataTable
+     */
     private $docsDataTable;
     /**
      * Tries to initialize and connect to the MySQL database.
@@ -77,7 +82,8 @@ class DataManager {
      * Throws an error if there's no connection 
      * or if the database is not setup properly.
      */
-    function __construct($dbConn, $tableNames, $logger){
+    function __construct($dbConn, $tableNames, $logger)
+    {
         $this->dbConn = $dbConn;
         $this->tNames = $tableNames;
         $this->logger = $logger;
@@ -98,7 +104,8 @@ class DataManager {
      * Returns an array with the IDs of all the manuscripts with
      * some data in the system and the number of pages with data
      */
-    function getDocIdList($order = '', $asc=true){
+    function getDocIdList($order = '', $asc=true)
+    {
         switch ($order){
             case 'title':
                 $orderby = ' ORDER BY `title` ' . ($asc ? ' ASC' : ' DESC');
@@ -118,6 +125,20 @@ class DataManager {
     }
     
     
+    /**
+     * Creates a new document in the system.
+     * Returns the doc Id of the newly created document or false
+     * if the document could not be created
+     * 
+     * @param string $title
+     * @param string $shortTitle
+     * @param int $pageCount
+     * @param string $lang
+     * @param string $type
+     * @param string $imageSource
+     * @param string $imageSourceData
+     * @return int|boolean
+     */
     public function newDoc(string $title, string $shortTitle, int $pageCount, 
             string $lang, string $type, 
             string $imageSource, string $imageSourceData) 
@@ -135,17 +156,30 @@ class DataManager {
         
         $docId = $this->docsDataTable->createRow($doc);
         if ($docId === false) {
-            return false;
+            // This means a database error
+            // Can't reproduce in testing for now
+            return false; // @codeCoverageIgnore
         }
         for ($i = 1; $i <= $pageCount; $i++) {
             $pageId = $this->newPage($docId, $i, $lang);
             if ($pageId === false) {
-                return false;
+                // This means a database error
+                // Can't reproduce in testing for now
+                return false; // @codeCoverageIgnore
             }
         }
         return $docId;
     }
     
+    /**
+     * Creates a new page for document Id
+     * 
+     * @param type $docId
+     * @param type $pageNumber
+     * @param type $lang
+     * @param type $type
+     * @return boolean|int
+     */
     public function newPage($docId,  $pageNumber, $lang, $type=0)
     {
         
@@ -160,14 +194,30 @@ class DataManager {
         return $this->pagesDataTable->createRow($page);
     }
     
+    /**
+     * Returns the number of columns a given page
+     * 
+     * @param type $docId
+     * @param type $page
+     * @return int
+     */
     function getNumColumns($docId, $page)
     {
-        $tp = $this->tNames['pages'];
-        $n = $this->dbh->getOneRow("SELECT * FROM `$tp` WHERE `doc_id`=$docId " . 
-                " AND `page_number`=$page");
-        return (int) $n['num_cols'];
+        $pInfo = $this->getPageInfo($docId, $page);
+        if ($pInfo === false) {
+            // Page or doc not found
+            return 0;
+        }
+        return (int) $pInfo['num_cols'];
     }
     
+    /**
+     * Adds a new column to a page
+     * 
+     * @param type $docId
+     * @param type $page
+     * @return boolean
+     */
     function addNewColumn($docId, $page)
     {
         $currentNumCols = $this->getNumColumns($docId, $page);
@@ -179,6 +229,12 @@ class DataManager {
         return true;
     }
     
+    /**
+     * Returns an associative array with the information about a page
+     * @param type $docId
+     * @param type $page
+     * @return array|boolean
+     */
     function getPageInfo($docId, $page)
     {
         $id = $this->pagesDataTable->findRow([
@@ -193,6 +249,11 @@ class DataManager {
         return $this->pagesDataTable->getRow($id);
     }
     
+    /**
+     * Returns the number of pages of a document
+     * @param type $docId
+     * @return boolean|int
+     */
     function getPageCountByDocId($docId){
         $row = $this->docsDataTable->getRow($docId);
         if ($row === false) {
@@ -201,11 +262,16 @@ class DataManager {
         }
         if (!isset($row['page_count'])) {
             // This means that the DB is inconsistent
-            return false;
+            return false; // @codeCoverageIgnore
         }
         return $row['page_count'];
     }
     
+    /**
+     * Returns the number of lines with transcription for a document
+     * @param type $docId
+     * @return int
+     */
     function getLineCountByDoc($docId){
         return $this->dbh->getOneFieldQuery(
                 'SELECT count(DISTINCT `page_id`, `reference`) as value from ' . 
@@ -215,10 +281,10 @@ class DataManager {
                 Element::LINE, 'value');
     }
     /**
-     * 
+     * Returns the editors associated with a document as a list of usernames
      * @param int $docId
      * @return array
-     * Returns the editors associated with a document as a list of usernames
+     * 
      */
     function getEditorsByDocId($docId){
         $te = $this->tNames['elements'];
@@ -238,6 +304,12 @@ class DataManager {
         return $editors;
     }
     
+    /**
+     * Returns the page numbers of the pages with transcription
+     * data for a document Id
+     * @param type $docId
+     * @return array
+     */
     function getPageListByDocId($docId){
         $te = $this->tNames['elements'];
         $tp = $this->tNames['pages'];
@@ -254,6 +326,11 @@ class DataManager {
         return $pages;
     }
     
+    /**
+     * Returns the document information for the given document Id
+     * @param type $docId
+     * @return array
+     */
     function getDocById($docId)
     {
         return $this->dbh->getRowById($this->tNames['docs'], $docId);

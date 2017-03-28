@@ -84,7 +84,7 @@ EOD;
         return $pdo;
     }
     
-    public function testNewDoc()
+    public function testEmptyDatabase() 
     {
         $dm = self::$dataManager;
         $this->resetTestDataSet();
@@ -96,14 +96,27 @@ EOD;
         $this->assertEquals([], $dm->getEditorsByDocId(100));
         $this->assertEquals([], $dm->getPageListByDocId(100));
         $this->assertFalse($dm->getImageUrlByDocId(100, 200));
+        $this->assertEquals(0, $dm->getNumColumns(100, 200));
+        $this->assertEquals([], $dm->getDocIdList());
         $this->assertEquals([], $dm->getDocIdList('title'));
-        
+    }
+    
+    /**
+     * 
+     * @depends testEmptyDatabase
+     */
+    public function testNewDoc()
+    {
+        $dm = self::$dataManager;
         
         $newDocId = $dm->newDoc('Document 1', 'Doc 1', 10, 'la', 
                 'mss', 'local', 'DOC1');
         
         $this->assertNotFalse($newDocId);
+        $this->assertEquals([$newDocId], $dm->getDocIdList());
+        $this->assertEquals([$newDocId], $dm->getDocIdList('title'));
         $this->assertEquals(10, $dm->getPageCountByDocId($newDocId));
+        $this->assertCount(0, $dm->getPageListByDocId($newDocId));
         $pageInfo = $dm->getPageInfo($newDocId, 10);
         $this->assertNotFalse($pageInfo);
         $this->assertEquals(0, $pageInfo['num_cols']);

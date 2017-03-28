@@ -32,10 +32,13 @@ use \Psr\Http\Message\ResponseInterface as Response;
  * Site Controller class
  *
  */
-class SiteController {
+class SiteController
+{
     protected $ci;
-   //Constructor
-   public function __construct( $ci) {
+    
+    //Constructor
+    public function __construct( $ci)
+    {
        $this->ci = $ci;
        $this->db = $ci->db;
        $config = $this->ci->settings;
@@ -43,51 +46,54 @@ class SiteController {
                $config['version'] . " &bull; &copy; " . 
                $config['copyright_notice'] . " &bull; " .  
                strftime("%d %b %Y, %H:%M:%S %Z");
-   }
+    }
    
-   public function homePage(Request $request, Response $response, $next){
+    public function homePage(Request $request, Response $response, $next)
+    {
         return $response->withHeader('Location', 
                 $this->ci->router->pathFor('docs'));
-   }
+    }
    
-   
-   public function userProfilePage(Request $request, Response $response, $next){
-
+    public function userProfilePage(Request $request, Response $response, $next)
+    {
         $profileUsername = $request->getAttribute('username');
-        if (!$this->ci->um->userExistsByUsername($profileUsername)){
-        return $this->ci->view->render($response, 'user.notfound.twig', [
-            'userinfo' => $this->ci->userInfo, 
-            'copyright' => $this->ci->copyrightNotice,
-            'baseurl' => $this->ci->settings['baseurl'],
-            'theuser' => $profileUsername
-        ]);
+        if (!$this->db->um->userExistsByUsername($profileUsername)) {
+            return $this->ci->view->render($response, 'user.notfound.twig', [
+                        'userinfo' => $this->ci->userInfo,
+                        'copyright' => $this->ci->copyrightNotice,
+                        'baseurl' => $this->ci->settings['baseurl'],
+                        'theuser' => $profileUsername
+            ]);
         }
-        
-        $userProfileInfo = $this->ci->um->getUserInfoByUsername($profileUsername);
+
+        $userProfileInfo = 
+                $this->db->um->getUserInfoByUsername($profileUsername);
         $currentUserId = $this->ci->userInfo['id'];
-        
-        $canEditProfile = $userProfileInfo['id']===$currentUserId ||
-           $this->ci->um->isUserAllowedTo($currentUserId, 
-                'manageUsers');
-        $canMakeRoot = $this->ci->um->isUserAllowedTo($currentUserId, 
-                'makeRoot');
-        $userProfileInfo['isroot'] = $this->ci->um->isRoot($userProfileInfo['id']);
-        
-    
+
+        $canEditProfile = $userProfileInfo['id'] === $currentUserId ||
+                $this->db->um->isUserAllowedTo($currentUserId, 'manageUsers');
+        $canMakeRoot = 
+                $this->db->um->isUserAllowedTo($currentUserId, 'makeRoot');
+        $userProfileInfo['isroot'] = 
+                $this->db->um->isRoot($userProfileInfo['id']);
+
         return $this->ci->view->render($response, 'user.profile.twig', [
-            'userinfo' => $this->ci->userInfo, 
-            'copyright' => $this->ci->copyrightNotice,
-            'baseurl' => $this->ci->settings['baseurl'],
-            'theuser' => $userProfileInfo, 
-            'canEditProfile' => $canEditProfile,
-            'canMakeRoot' => $canMakeRoot,
+                    'userinfo' => $this->ci->userInfo,
+                    'copyright' => $this->ci->copyrightNotice,
+                    'baseurl' => $this->ci->settings['baseurl'],
+                    'theuser' => $userProfileInfo,
+                    'canEditProfile' => $canEditProfile,
+                    'canMakeRoot' => $canMakeRoot,
         ]);
     }
-    
-    public function userManagerPage(Request $request, Response $response, $next){
-         $um = $this->ci->um;
+
+    public function userManagerPage(Request $request, Response $response, 
+            $next)
+    {
+        $um = $this->db->um;
         if (!$um->isUserAllowedTo($this->ci->userInfo['id'], 'manageUsers')){
-            return $this->ci->view->render($response, 'error.notallowed.tomanage.twig');
+            return $this->ci->view->render($response, 
+                    'error.notallowed.tomanage.twig');
         }
         
         $db = $this->db;
@@ -102,12 +108,14 @@ class SiteController {
         ]);
     }
     
-    public function userSettingsPage(Request $request, Response $response, $next){
-
+    public function userSettingsPage(Request $request, Response $response, 
+            $next)
+    {
         $username = $request->getAttribute('username');
         $curUserName = $this->ci->userInfo['username'];
         $userId = $this->ci->userInfo['id'];
-        if ($username !== $curUserName && !$this->ci->um->isUserAllowedTo($userId, 'edit-user-settings')){
+        if ($username !== $curUserName && 
+                !$this->db->um->isUserAllowedTo($userId, 'edit-user-settings')){
             return $this->ci->view->render($response, 'error.notallowed.twig', [
                 'userinfo' => $this->ci->userInfo, 
                 'copyright' => $this->ci->copyrightNotice,
@@ -116,7 +124,7 @@ class SiteController {
             ]);
         }
         
-        if (!$this->ci->um->userExistsByUsername($username)){
+        if (!$this->db->um->userExistsByUsername($username)){
         return $this->ci->view->render($response, 'user.notfound.twig', [
             'userinfo' => $this->ci->userInfo, 
             'copyright' => $this->ci->copyrightNotice,
@@ -124,9 +132,7 @@ class SiteController {
             'theuser' => $username
         ]);
         }
-        $userInfo = $this->ci->um->getUserInfoByUsername($username);
-        
-        
+        $userInfo = $this->db->um->getUserInfoByUsername($username);
     
         return $this->ci->view->render($response, 'user.settings.twig', [
             'userinfo' => $this->ci->userInfo, 
@@ -137,7 +143,8 @@ class SiteController {
         ]);
     }
     
-    public function documentsPage(Request $request, Response $response, $next){
+    public function documentsPage(Request $request, Response $response, $next)
+    {
         $db = $this->db;
         $docIds = $db->getDocIdList('title');
         $docs = array();
@@ -150,11 +157,11 @@ class SiteController {
             $editorsUsernames = $db->getEditorsByDocId($docId);
             $doc['editors'] = array();
             foreach ($editorsUsernames as $edUsername){
-                array_push($doc['editors'], $this->ci->um->getUserInfoByUsername($edUsername));
+                array_push($doc['editors'], 
+                        $this->db->um->getUserInfoByUsername($edUsername));
             }
             $doc['docInfo'] = $db->getDocById($docId);
             $doc['tableId'] = "doc-$docId-table";
-            //$doc['pages'] = $this->buildPageArray($doc['numPages'], $transcribedPages);
             array_push($docs, $doc);
         }
         return $this->ci->view->render($response, 'docs.twig', [
@@ -177,22 +184,24 @@ class SiteController {
         $editorsUsernames = $db->getEditorsByDocId($docId);
         $doc['editors'] = array();
         foreach ($editorsUsernames as $edUsername){
-            array_push($doc['editors'], $this->ci->um->getUserInfoByUsername($edUsername));
+            array_push($doc['editors'], 
+                    $this->db->um->getUserInfoByUsername($edUsername));
         }
         $doc['docInfo'] = $db->getDocById($docId);
         $doc['tableId'] = "doc-$docId-table";
-        $doc['pages'] = $this->buildPageArray($doc['numPages'], $transcribedPages);
+        $doc['pages'] = $this->buildPageArray($doc['numPages'], 
+                $transcribedPages);
 
         return $this->ci->view->render($response, 'doc.showdoc.twig', [
-        'userinfo' => $this->ci->userInfo, 
-        'copyright' => $this->ci->copyrightNotice,
-        'baseurl' => $this->ci->settings['baseurl'],
-        'doc' => $doc
-    ]);
-            
+            'userinfo' => $this->ci->userInfo, 
+            'copyright' => $this->ci->copyrightNotice,
+            'baseurl' => $this->ci->settings['baseurl'],
+            'doc' => $doc
+        ]);
     }
     
-    function pageViewerPage(Request $request, Response $response, $next){
+    function pageViewerPage(Request $request, Response $response, $next)
+    {
         $docId = $request->getAttribute('doc');
         $pageNumber = $request->getAttribute('page');
 
@@ -218,14 +227,6 @@ class SiteController {
         ]);
     }
     
-    
-    public static function errorPage(Request $request, Response $response, \Exception $exception){
-        return $response->withStatus(500)
-                ->withHeader('Content-Type', 'text/html')
-                ->write('<h1>Oops, something went wrong!</h1>')
-                ->write('<p>' . $exception->getMessage() . '</p>');
-    }
-    
     // Utility function
     function buildPageArray($numPages, $transcribedPages){
         $thePages = array();
@@ -234,7 +235,8 @@ class SiteController {
             $thePage['number'] = $pageNumber;
             $thePage['classes'] = '';
             if (array_search($pageNumber, $transcribedPages) === FALSE){
-                $thePage['classes'] = $thePage['classes'] . ' withouttranscription';
+                $thePage['classes'] = 
+                        $thePage['classes'] . ' withouttranscription';
             }
             array_push($thePages, $thePage);
         }

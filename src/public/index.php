@@ -25,8 +25,6 @@ namespace AverroesProject;
 
 require 'vendor/autoload.php';
 
-use DataTable\MySqlDataTable;
-use DataTable\MySqlDataTableWithRandomIds;
 use AverroesProject\Data\UserManager;
 use AverroesProject\Data\DataManager;
 use Monolog\Logger;
@@ -113,19 +111,6 @@ if (!$dbChecker->isDatabaseUpToDate()) {
     exitWithError($logger, "Database schema not up to date");
 }
 
-//
-// Initialize User manager
-//
-$um = new UserManager(
-            new MySqlDataTable($dbh, 
-                    $config['tables']['users']),
-            new MySqlDataTable($dbh, $config['tables']['relations']), 
-            new MySqlDataTableWithRandomIds($dbh, 
-                    $config['tables']['people'], 10000, 100000));
-
-
-// Initialize the monster data manager that will be gone
-// at some point
  $db = new DataManager($dbh, $config['tables'], $logger);
  
 // Initialize the Slim app
@@ -135,7 +120,6 @@ $container = $app->getContainer();
 
 $container['db'] = $db;
 $container['dbh'] = $dbh;
-$container['um'] = $um;
 $container['logger'] = $logger;
 
 // Twig

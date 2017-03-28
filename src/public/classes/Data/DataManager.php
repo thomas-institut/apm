@@ -24,6 +24,7 @@ use AverroesProject\TxText\Item;
 use AverroesProject\TxText\ItemArray;
 use AverroesProject\ColumnElement\Element;
 use DataTable\MySqlDataTable;
+use DataTable\MySqlDataTableWithRandomIds;
 
 use \PDO;
 
@@ -33,6 +34,8 @@ use \PDO;
  */
 class DataManager 
 {
+    const MIN_USER_ID = 10000;
+    const MAX_USER_ID= 100000;
     
     /**
      *
@@ -70,12 +73,19 @@ class DataManager
      */
     private $pagesDataTable;
     
+    /**
+     *
+     * @var Data\UserManager
+     */
+    public $um;
+    
     
      /**
      *
      * @var DataTable\MySqlDataTable
      */
     private $docsDataTable;
+    
     /**
      * Tries to initialize and connect to the MySQL database.
      * 
@@ -90,6 +100,13 @@ class DataManager
         $this->dbh = new MySqlHelper($dbConn, $logger);
         $this->enm = new EdNoteManager($dbConn, $this->dbh, $tableNames, 
                 $logger);
+        $this->um = new UserManager(
+            new MySqlDataTable($dbConn, 
+                    $tableNames['users']),
+            new MySqlDataTable($dbConn, $tableNames['relations']), 
+            new MySqlDataTableWithRandomIds($dbConn, 
+                    $tableNames['people'], 
+                    self::MIN_USER_ID, self::MAX_USER_ID));
         
         $this->pagesDataTable = new MySqlDataTable($this->dbConn, 
                 $tableNames['pages']);
@@ -117,11 +134,11 @@ class DataManager
         $query = "SELECT `id` FROM  " . $this->tNames['docs'] . $orderby;
         $r = $this->dbh->query($query);
         
-        $mss = array();
+        $docIds = [];
         while ($row = $r->fetch(PDO::FETCH_ASSOC)){
-            array_push($mss, $row['id']);
+            $docIds[] = $row['id'];
         }
-        return $mss;
+        return $docIds;
     }
     
     

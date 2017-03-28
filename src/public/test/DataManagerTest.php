@@ -32,7 +32,7 @@ use Monolog\Handler\StreamHandler;
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class testDataManager extends TestCase {
+class DataManagerTest extends TestCase {
     
     /**
      *     

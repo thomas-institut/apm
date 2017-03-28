@@ -35,7 +35,7 @@ use Monolog\Handler\StreamHandler;
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class testApi extends TestCase {
+class ApiTest extends TestCase {
     
     static $ci;
     /**

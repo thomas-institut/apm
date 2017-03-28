@@ -10,6 +10,7 @@ namespace AverroesProject;
 
 require_once 'DatabaseTestEnvironment.php';
 require_once 'SlimTwigExtensionMockup.php';
+require_once 'SlimRouterMockup.php';
 
 /**
  * Description of SiteTestEnvironment
@@ -21,6 +22,8 @@ class SiteTestEnvironment extends DatabaseTestEnvironment {
     public static function getContainer($logger) {
         $container = parent::getContainer($logger);
 
+        $container['router'] = new \SlimRouterMockup();
+        
         $view = new \Slim\Views\Twig('../templates', [
             'cache' => false
         ]);
@@ -31,6 +34,7 @@ class SiteTestEnvironment extends DatabaseTestEnvironment {
                 $container['router'], $basePath));
 
         $container['view'] = $view;
+        
         return $container;
     }
 

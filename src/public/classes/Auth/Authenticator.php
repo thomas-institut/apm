@@ -75,6 +75,13 @@ class Authenticator {
         return hash_hmac('sha256', $v, $this->secret);
     }
 
+    /**
+     * Logs a debug message in the logger
+     * @codeCoverageIgnore
+     * 
+     * @param type $msg
+     * @param type $data
+     */
     protected function debug($msg, $data=[])
     {
         if ($this->debugMode){
@@ -183,6 +190,8 @@ class Authenticator {
         session_start();
         if (!isset($_SESSION['userid'])){
             $this->siteLogger->error("Logout attempt without a valid session");
+            return $response->withHeader('Location', 
+                $this->ci->router->pathFor('home'));
         }
         $userId = $_SESSION['userid'];
         $userName = $this->ci->db->um->getUsernameFromUserId($userId);

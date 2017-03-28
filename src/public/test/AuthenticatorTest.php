@@ -53,4 +53,18 @@ class AuthenticatorTest extends TestCase {
         
         $this->assertEquals(200, $response->getStatusCode());
     }
+    
+    
+    public function testLogut()
+    {
+        $auth = self::$authenticator;
+        
+        $request = new ServerRequest('GET', '');
+        $inputResp = new \Slim\Http\Response();
+        
+        $response = $auth->logout($request, $inputResp, 
+                NULL);
+        
+        $this->assertEquals(200, $response->getStatusCode());
+    }
 }

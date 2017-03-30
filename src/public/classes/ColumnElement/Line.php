@@ -33,4 +33,12 @@ class Line extends Element {
     function setLineNumber($n){
         $this->reference = $n;
     }
+    
+    public static function createNewLineWithText($text)
+    {
+        $text = new \AverroesProject\TxText\Text(0, 1, "Some text");
+        $element = new Line();
+        $element->items->addItem($text, true);
+        return $element;
+    }
 }

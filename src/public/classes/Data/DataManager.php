@@ -26,6 +26,7 @@ use AverroesProject\ColumnElement\Element;
 use DataTable\MySqlDataTable;
 use DataTable\MySqlDataTableWithRandomIds;
 
+
 use \PDO;
 
 /**
@@ -87,6 +88,18 @@ class DataManager
     private $docsDataTable;
     
     /**
+     *
+     * @var DataTable\MySqlDataTable
+     */
+    private $elementsDataTable;
+    
+    /**
+     *
+     * @var DataTable\MySqlDataTable 
+     */
+    private $itemsDataTable;
+    
+    /**
      * Tries to initialize and connect to the MySQL database.
      * 
      * Throws an error if there's no connection 
@@ -112,6 +125,11 @@ class DataManager
                 $tableNames['pages']);
         $this->docsDataTable = new MySqlDataTable($this->dbConn, 
                 $tableNames['docs']);
+        $this->elementsDataTable = new MySqlDataTable($this->dbConn, 
+                $tableNames['elements']);
+        $this->itemsDataTable = new MySqlDataTable($this->dbConn, 
+                $tableNames['items']);
+        
         
     }
    
@@ -220,7 +238,7 @@ class DataManager
      */
     function getNumColumns($docId, $page)
     {
-        $pInfo = $this->getPageInfo($docId, $page);
+        $pInfo = $this->getPageInfoByDocPage($docId, $page);
         if ($pInfo === false) {
             // Page or doc not found
             return 0;
@@ -252,18 +270,18 @@ class DataManager
      * @param type $page
      * @return array|boolean
      */
-    function getPageInfo($docId, $page)
+    function getPageInfoByDocPage($docId, $page)
     {
-        $id = $this->pagesDataTable->findRow([
-            'doc_id' => $docId, 
-            'page_number'=> $page
-            ]);
-        
+        $id = $this->getPageIdByDocPage($docId, $page);
         if ($id === false) {
             return false;
         }
-        
-        return $this->pagesDataTable->getRow($id);
+        return $this->getPageInfo($id);
+    }
+    
+    public function getPageInfo($pageId)
+    {
+        return $this->pagesDataTable->getRow($pageId);
     }
     
     /**
@@ -395,120 +413,394 @@ class DataManager
         $rows = $this->dbh->getAllRows($query);
         $elements = [];
         foreach($rows as $row) {
-            switch ($row['type']){
-                case Element::LINE:
-                    $e = new \AverroesProject\ColumnElement\Line();
-                    // the line number
-                    $e->setLineNumber($row['reference']);
-                    break;
-                
-                case Element::CUSTODES:
-                    $e = new \AverroesProject\ColumnElement\Custodes();
-                    break;
-                
-                case Element::HEAD:
-                    $e = new \AverroesProject\ColumnElement\Head();
-                    break;
-                
-                case Element::GLOSS:
-                    $e = new \AverroesProject\ColumnElement\Gloss();
-                    break;
-                
-                default:
-                    continue;
-            }
-            $e->columnNumber = (int) $col;
-            $e->documentId = (int) $docId;
-            $e->editorId = (int) $row['editor_id'];
-            $e->handId = (int) $row['hand_id'];
-            $e->id = (int) $row['id'];
-            $e->lang = $row['lang'];
-            $e->pageNumber = (int) $page;
-            //$e->placement = $row['placement'];
-            $e->seq = (int) $row['seq'];
-            $e->timestamp = $row['time'];
-            $e->type = (int) $row['type'];
-            
-            $e->items = $this->getItemsForElement($e->id, $e->lang, 
-                    $e->editorId, $e->handId);
+            $e = $this->createElementObjectFromRow($row);
+            $e->items = $this->getItemsForElement($e);
             array_push($elements, $e);
         }
         return $elements;
     }
     
-    function getItemsForElement($cid, $lang, $editorId, $handId){
+    function getItemsForElement($element)
+    {
         $query = 'SELECT * FROM `' . $this->tNames['items'] . 
-                '` WHERE `ce_id`=' . $cid . 
+                '` WHERE `ce_id`=' . $element->id . 
                 ' ORDER BY `seq` ASC';
         $r = $this->dbh->getAllRows($query);
         
-        $tt = new ItemArray($cid, $lang, $editorId, $handId);
+        $tt = new ItemArray($element->id, 
+                $element->lang, 
+                $element->editorId, 
+                $element->handId);
         
         foreach ($r as $row) {
-            switch ($row['type']){
-                case Item::TEXT:
-                    $item = new \AverroesProject\TxText\Text($row['id'], $row['seq'], 
-                            $row['text']);
-                    break;
-                
-                case Item::RUBRIC:
-                    $item = new \AverroesProject\TxText\Rubric($row['id'], $row['seq'], 
-                            $row['text']);
-                    break;
-                
-                case Item::SIC:
-                    $item = new \AverroesProject\TxText\Sic($row['id'], $row['seq'], 
-                            $row['text'], $row['alt_text']);
-                    break;
-                
-                case Item::MARK:
-                    $item = new \AverroesProject\TxText\Mark($row['id'], $row['seq']);
-                    break;
-                
-                case Item::UNCLEAR:
-                    $item = new \AverroesProject\TxText\Unclear($row['id'], $row['seq'], 
-                            $row['extra_info'], $row['text'], $row['alt_text']);
-                    break;
-                
-                case Item::ILLEGIBLE:
-                    $item = new \AverroesProject\TxText\Illegible($row['id'], $row['seq'], 
-                            $row['length'], $row['extra_info']);
-                    break;
-                
-                case Item::ABBREVIATION:
-                    $item = new \AverroesProject\TxText\Abbreviation($row['id'], $row['seq'], 
-                            $row['text'], $row['alt_text']);
-                    break;
-                
-                case Item::GLIPH:
-                    $item = new \AverroesProject\TxText\Gliph($row['id'], $row['seq'], 
-                            $row['text']);
-                    break;
-                
-                case Item::DELETION:
-                    $item = new \AverroesProject\TxText\Deletion($row['id'], $row['seq'], 
-                            $row['text'], $row['extra_info']);
-                    break;
-                
-                case Item::ADDITION:
-                    $item = new \AverroesProject\TxText\Addition($row['id'], $row['seq'], 
-                            $row['text'], $row['extra_info'], $row['target']);
-                    break;
-                
-                case Item::NO_LINEBREAK:
-                    $item = new \AverroesProject\TxText\NoLinebreak($row['id'], $row['seq']);
-                    break;
-                
-                default: 
-                    continue;
-            }
-            $item->lang = $row['lang'];
-            $item->handId = $row['hand_id'];
-            $item->setColumnElementId($row['ce_id']);
+            $item = $this->createItemObjectFromRow($row);
             $tt->addItem($item, true);
         }
         
         return $tt;
+    }
+    
+    public function getPageIdByDocPage($docId, $pageNum)
+    {
+        return $this->pagesDataTable->findRow([
+            'doc_id' => $docId, 
+            'page_number'=> $pageNum
+            ]);
+    }
+    
+    /**
+     * Creates a new element in the database. 
+     * Return the newly created element, which will be a copy of the
+     * given element with system ids for itself and for its items.
+     * 
+     * if $insertAtEnd is false, the given element's sequence will be
+     * respected and the rest of the elements of the column will be
+     * moved to accommodate the new element's position.
+     * 
+     * @param Element $element
+     * @param boolean $insertAtEnd
+     * @return Element
+     */
+    public function insertNewElement(Element $element, $insertAtEnd=true) 
+    {
+        // Quick checks on the element itself
+        if ($element->id !== 0) {
+            $this->logger->notice('Element with non-zero '
+                    . 'id is being inserted as new', ['id' => $element->id]);
+        }
+        
+        if (is_null($element->pageId)) {
+            $this->logger->error('Element being inserted in '
+                    . 'null page', ['pageid' => $element->pageId]);
+            return false;
+        }
+        
+        if ($element->columnNumber === 0) {
+            $this->logger->error('Element being inserted in '
+                    . 'column 0', ['pageid' => $element->pageId]);
+            return false;
+        }
+        
+        if ($element->items->nItems() === 0) {
+            $this->logger->error('Empty element being inserted', 
+                    ['pageid' => $element->pageId, 
+                        'colnum' => $element->columnNumber, 
+                        'editor' => $element->editorId]);
+            return false;
+        }
+        
+        if (!in_array($element->lang, ['la', 'he', 'ar'])) {
+            $this->logger->error('Element with invalid language being inserted', 
+                    ['pageid' => $element->pageId, 
+                        'colnum' => $element->columnNumber, 
+                        'editor' => $element->editorId, 
+                        'lang' => $element->lang]);
+            return false;
+        }
+        
+        // Database checks
+        $pageInfo = $this->getPageInfo($element->pageId);
+        
+        if ($pageInfo === false) {
+            $this->logger->error('Element being inserted in '
+                    . 'non-existent page', ['pageid' => $element->pageId]);
+            return false;
+        }
+
+        if ($element->columnNumber > $pageInfo['num_cols']) {
+            $this->logger->error('Element being inserted in '
+                    . 'non-existent colum', 
+                    ['pageid' => $element->pageId, 
+                        'colnum' => $element->columnNumber]);
+            return false;
+        }
+        
+        if (!$this->um->userExistsById($element->editorId)) {
+            $this->logger->error('Element being inserted by '
+                    . 'non-existent editor', 
+                    ['pageid' => $element->pageId, 
+                        'colnum' => $element->columnNumber, 
+                        'editor' => $element->editorId]);
+            return false;
+        }
+        
+        
+        $maxSeq = $this->getMaxElementSeq($element->pageId, 
+                    $element->columnNumber);
+        if (!$insertAtEnd && $element->seq > $maxSeq) {
+            // No holes in sequence, insert at end for higher than max
+            // values
+            $insertAtEnd = true;
+        }
+        // Now we have a good element
+        $newElement = clone $element;
+        $newElement->timestamp = date("Y-m-d H:i:s"); 
+        if ($insertAtEnd) {
+            // Simplest case, overwrite element's sequence
+            $newElement->seq = $maxSeq+1;
+        } else {
+            // Need to reposition the rest of the elements in the column
+            $pageInfo = $this->getPageInfo($newElement->pageId);
+            $docId = $pageInfo['doc_id'];
+            $pageNumber = $pageInfo['page_number'];
+            $columnElements = $this->getColumnElements($docId, 
+                    $pageNumber, 
+                    $newElement->columnNumber);
+            foreach($columnElements as $cElement) {
+                if ($cElement->seq >= $newElement->seq) {
+                    $cElement->seq++;
+                    $this->updateElementInDB($cElement);
+                }
+            }
+        }
+        // Now just create the new element
+        $newId = $this->createNewElementInDB($newElement);
+        if ($newId === false) {
+            // This means a database error
+            // Can't reproduce in testing for now
+            // @codeCoverageIgnoreStart
+            $this->logger->error('Can\'t save new element in DB', 
+                ['pageid' => $element->pageId, 
+                    'seq' => $newElement->seq,
+                    'colnum' => $element->columnNumber, 
+                    'editor' => $element->editorId]);
+            return false;
+            // @codeCoverageIgnoreEnd
+        }
+
+        foreach($newElement->items->theItems as $item) {
+            $item->columnElementId = $newId;
+            // Forcing hands right now, this should change in the future
+            $item->handId = $newElement->handId;
+            if ($item->lang == '') {
+                $item->lang = $newElement->lang;
+            }
+            if ($this->saveItemInDB($item) === false ) {
+                // This means a database error
+                // Can't reproduce in testing for now
+                // @codeCoverageIgnoreStart
+                $this->logger->error('Can\'t save new items in DB', 
+                ['pageid' => $element->pageId, 
+                    'seq' => $newElement->seq,
+                    'colnum' => $element->columnNumber, 
+                    'editor' => $element->editorId, 
+                    'itemtype' => $item->type,
+                    'itemseq' => $item->seq
+                    ]); 
+                return false;
+                // @codeCoverageIgnoreEnd
+            }
+        }
+        return $this->getElementById($newId);
+    }
+    
+
+    private function saveItemInDB($item) 
+    {
+        return $this->itemsDataTable->createRow([
+            'ce_id'=> $item->columnElementId,
+            'type' => $item->type,
+            'seq' => $item->seq,
+            'lang' => $item->lang,
+            'hand_id' => $item->handId,
+            'text' => $item->theText,
+            'alt_text' => $item->altText,
+            'extra_info' => $item->extraInfo,
+            'length' => $item->length,
+            'target' => $item->target
+        ]);
+    }
+    
+    private function createNewElementInDB($element) 
+    {
+        return $this->elementsDataTable->createRow([
+                'type' => $element->type,
+                'page_id' => $element->pageId,
+                'column_number' => $element->columnNumber,
+                'seq' => $element->seq,
+                'lang' => $element->lang,
+                'editor_id' => $element->editorId,
+                'hand_id' => $element->handId,
+                'time' => $element->timestamp,
+                'reference' => $element->reference,
+                'placement' => $element->placement
+            ]);
+    }
+    
+    private function updateElementInDB($element) 
+    {
+        return $this->elementsDataTable->updateRow([
+                'id' => $element->id,
+                'type' => $element->type,
+                'page_id' => $element->pageId,
+                'column_number' => $element->columnNumber,
+                'seq' => $element->seq,
+                'lang' => $element->lang,
+                'editor_id' => $element->editorId,
+                'hand_id' => $element->handId,
+                'time' => $element->timestamp,
+                'reference' => $element->reference,
+                'placement' => $element->placement
+            ]);
+    }
+    
+       
+    private function getMaxElementSeq($pageId, $col)
+    {
+        $te = $this->tNames['elements'];
+        $sql = "SELECT MAX(seq) as m FROM $te "
+                . "WHERE page_id=$pageId AND column_number=$col";
+        $row = $this->dbh->getOneRow($sql);
+        return (int) $row['m'];
+    }
+    
+    public function getElementById($elementId) {
+        $row = $this->elementsDataTable->getRow($elementId);
+        
+        if ($row=== false) {
+            return false;
+        }
+        $e = $this->createElementObjectFromRow($row);
+        $e->items = $this->getItemsForElement($e);
+        return $e;
+        
+    }
+    
+    private function createElementObjectFromRow($row) 
+    {
+        switch ($row['type']){
+            case Element::LINE:
+                $e = new \AverroesProject\ColumnElement\Line();
+                // the line number
+                $e->setLineNumber($row['reference']);
+                break;
+
+            case Element::CUSTODES:
+                $e = new \AverroesProject\ColumnElement\Custodes();
+                break;
+
+            case Element::HEAD:
+                $e = new \AverroesProject\ColumnElement\Head();
+                break;
+
+            case Element::GLOSS:
+                $e = new \AverroesProject\ColumnElement\Gloss();
+                break;
+
+            default:
+                continue;
+        }
+        $e->columnNumber = (int) $row['column_number'];
+        $e->pageId = (int) $row['page_id'];
+        $e->seq = (int) $row['seq'];
+        $e->timestamp = $row['time'];
+        $e->editorId = (int) $row['editor_id'];
+        $e->handId = (int) $row['hand_id'];
+        $e->id = (int) $row['id'];
+        $e->lang = $row['lang'];
+        return $e;
+    }
+    
+    private function createItemObjectFromRow($row)
+    {
+        switch ($row['type']){
+            case Item::TEXT:
+                $item = new \AverroesProject\TxText\Text($row['id'], 
+                        $row['seq'], 
+                        $row['text']);
+                break;
+
+            case Item::RUBRIC:
+                $item = new \AverroesProject\TxText\Rubric($row['id'], 
+                        $row['seq'], 
+                        $row['text']);
+                break;
+
+            case Item::SIC:
+                $item = new \AverroesProject\TxText\Sic($row['id'], 
+                        $row['seq'], 
+                        $row['text'], 
+                        $row['alt_text']);
+                break;
+
+            case Item::MARK:
+                $item = new \AverroesProject\TxText\Mark($row['id'], 
+                        $row['seq']);
+                break;
+
+            case Item::UNCLEAR:
+                $item = new \AverroesProject\TxText\Unclear($row['id'], 
+                        $row['seq'], 
+                        $row['extra_info'], 
+                        $row['text'], 
+                        $row['alt_text']);
+                break;
+
+            case Item::ILLEGIBLE:
+                $item = new \AverroesProject\TxText\Illegible($row['id'], 
+                        $row['seq'], 
+                        $row['length'], 
+                        $row['extra_info']);
+                break;
+
+            case Item::ABBREVIATION:
+                $item = new \AverroesProject\TxText\Abbreviation($row['id'], 
+                        $row['seq'], 
+                        $row['text'], 
+                        $row['alt_text']);
+                break;
+
+            case Item::GLIPH:
+                $item = new \AverroesProject\TxText\Gliph($row['id'], 
+                        $row['seq'], 
+                        $row['text']);
+                break;
+
+            case Item::DELETION:
+                $item = new \AverroesProject\TxText\Deletion($row['id'], 
+                        $row['seq'], 
+                        $row['text'], 
+                        $row['extra_info']);
+                break;
+
+            case Item::ADDITION:
+                $item = new \AverroesProject\TxText\Addition($row['id'], 
+                        $row['seq'], 
+                        $row['text'], 
+                        $row['extra_info'], 
+                        $row['target']);
+                break;
+
+            case Item::NO_LINEBREAK:
+                $item = new \AverroesProject\TxText\NoLinebreak($row['id'], 
+                        $row['seq']);
+                break;
+
+            default: 
+                continue;
+        }
+        $item->lang = $row['lang'];
+        $item->handId = $row['hand_id'];
+        $item->setColumnElementId($row['ce_id']);
+        return $item;
+        
+    }
+    
+    /**
+     * Updates an element in the database. 
+     * The element in the DB with the given element's id and its current items
+     * will be made non-current and the given element will take its place
+     * as active, together with the given new items.
+     * 
+     * Returns a copy of the given element with system id's.
+     * 
+     * @param Element $element
+     */
+    public function updateElement(Element $element)
+    {
+        $newElement = clone($element);
+        
+        return $newElement;
     }
     
  }

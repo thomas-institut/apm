@@ -56,7 +56,8 @@ class DataManagerTest extends TestCase {
         
         // No docs at this point
         $this->assertEquals(0, $dm->getPageCountByDocId(100));
-        $this->assertFalse($dm->getPageInfo(100, 200));
+        $this->assertFalse($dm->getPageInfoByDocPage(100, 200));
+        $this->assertFalse($dm->getElementById(1000));
         $this->assertEquals(0, $dm->getLineCountByDoc(100));
         $this->assertEquals([], $dm->getEditorsByDocId(100));
         $this->assertEquals([], $dm->getPageListByDocId(100));
@@ -82,7 +83,7 @@ class DataManagerTest extends TestCase {
         $this->assertEquals([$newDocId], $dm->getDocIdList('title'));
         $this->assertEquals(10, $dm->getPageCountByDocId($newDocId));
         $this->assertCount(0, $dm->getPageListByDocId($newDocId));
-        $pageInfo = $dm->getPageInfo($newDocId, 10);
+        $pageInfo = $dm->getPageInfoByDocPage($newDocId, 10);
         $this->assertNotFalse($pageInfo);
         $this->assertEquals(0, $pageInfo['num_cols']);
         $this->assertEquals('la', $pageInfo['lang']);

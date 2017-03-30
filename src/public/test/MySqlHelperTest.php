@@ -81,6 +81,11 @@ EOD;
         $this->assertEquals(['id' => 1, 'number' => 10, 'text' => 'ten'], $r);
         $this->assertFalse(self::$handler->hasRecords(Logger::ERROR));
         
+        // Non-existent row
+        self::$handler->clear();
+        $r = $dbh->getOneRow('SELECT * FROM mysqlhelpertest WHERE id=20');
+        $this->assertFalse($r);
+        
         // Bad Query
         self::$handler->clear();
         $r = $dbh->getOneRow('SELECT * FOM mysqlhelpertest WHERE id=1');

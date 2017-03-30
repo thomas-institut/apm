@@ -48,6 +48,7 @@ class ApiControllerTest extends TestCase {
         $logger->pushHandler($logStream);
 
         self::$ci = DatabaseTestEnvironment::getContainer($logger);
+        DatabaseTestEnvironment::emptyDatabase();
         self::$apiController = new Api\ApiController(self::$ci);
     }
     

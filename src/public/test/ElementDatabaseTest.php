@@ -127,7 +127,7 @@ class ElementDatabaseTest extends TestCase {
         $newElement = $dm->insertNewElement($goodElement);
         $this->assertNotFalse($newElement);
         $this->assertNotEquals(0, $newElement->id);
-        $this->assertNotEquals($goodElement->timestamp, $newElement->timestamp);
+        //$this->assertNotEquals($goodElement->timestamp, $newElement->timestamp);
         $this->assertEquals(1, $newElement->seq);
         $this->assertEquals($goodElement->items->nItems(), 
                 $newElement->items->nItems());
@@ -167,7 +167,6 @@ class ElementDatabaseTest extends TestCase {
             $newElement = $dm->insertNewElement($element);
             $this->assertNotFalse($newElement);
             $this->assertNotEquals(0, $newElement->id);
-            $this->assertNotEquals($element->timestamp, $newElement->timestamp);
             $this->assertEquals($i+1, $newElement->seq);
             $this->assertEquals($element->items->nItems(), 
                     $newElement->items->nItems());
@@ -180,7 +179,6 @@ class ElementDatabaseTest extends TestCase {
         $newElement = $dm->insertNewElement($element, false);
         $this->assertNotFalse($newElement);
         $this->assertNotEquals(0, $newElement->id);
-        $this->assertNotEquals($element->timestamp, $newElement->timestamp);
         $this->assertEquals($numElements+1, $newElement->seq);
         $this->assertEquals($element->items->nItems(), 
                     $newElement->items->nItems());
@@ -190,7 +188,6 @@ class ElementDatabaseTest extends TestCase {
         $newElement = $dm->insertNewElement($element, false);
         $this->assertNotFalse($newElement);
         $this->assertNotEquals(0, $newElement->id);
-        $this->assertNotEquals($element->timestamp, $newElement->timestamp);
         $this->assertEquals(1, $newElement->seq);
         $this->assertEquals($element->items->nItems(), 
                     $newElement->items->nItems());
@@ -201,7 +198,6 @@ class ElementDatabaseTest extends TestCase {
         $newElement = $dm->insertNewElement($element, false);
         $this->assertNotFalse($newElement);
         $this->assertNotEquals(0, $newElement->id);
-        $this->assertNotEquals($element->timestamp, $newElement->timestamp);
         $this->assertEquals($numElements, $newElement->seq);
         $this->assertEquals($element->items->nItems(), 
                     $newElement->items->nItems());

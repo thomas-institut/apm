@@ -49,3 +49,18 @@ ALTER TABLE `ap_items`
      `id`,
      `valid_from`,
      `valid_until`);
+
+ALTER TABLE `ap_elements` 
+    ADD `valid_from` DATETIME(6) NOT NULL DEFAULT '2016-06-01' AFTER `id`, 
+    ADD `valid_until` DATETIME(6) NOT NULL DEFAULT '9999-12-31 23:59:59.999999' AFTER `valid_from`;
+
+UPDATE `ap_elements` SET `valid_from`=`time`;
+
+ALTER TABLE `ap_elements`
+  DROP PRIMARY KEY,
+   ADD PRIMARY KEY(
+     `id`,
+     `valid_from`,
+     `valid_until`);
+
+ALTER TABLE `ap_elements` DROP `time`;

@@ -74,8 +74,10 @@ CREATE TABLE `ap_ednotes` (
 -- Table structure for table `ap_elements`
 --
 
-CREATE TABLE `ap_elements` (
+REATE TABLE `ap_elements` (
   `id` int(11) NOT NULL,
+  `valid_from` datetime(6) NOT NULL DEFAULT '2016-06-01 00:00:00.000000',
+  `valid_until` datetime(6) NOT NULL DEFAULT '9999-12-31 23:59:59.999999',
   `type` int(11) NOT NULL DEFAULT '0',
   `page_id` int(11) NOT NULL,
   `column_number` int(11) NOT NULL DEFAULT '0',
@@ -83,7 +85,6 @@ CREATE TABLE `ap_elements` (
   `lang` varchar(3) DEFAULT 'la',
   `editor_id` int(11) NOT NULL DEFAULT '0',
   `hand_id` int(11) NOT NULL DEFAULT '0',
-  `time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `reference` int(11) DEFAULT NULL,
   `placement` varchar(64) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -297,7 +298,7 @@ ALTER TABLE `ap_ednotes`
 -- Indexes for table `ap_elements`
 --
 ALTER TABLE `ap_elements`
-  ADD PRIMARY KEY (`id`),
+  ADD PRIMARY KEY (`id`,`valid_from`,`valid_until`),
   ADD KEY `editor_id` (`editor_id`),
   ADD KEY `hand_id` (`hand_id`),
   ADD KEY `type` (`type`),

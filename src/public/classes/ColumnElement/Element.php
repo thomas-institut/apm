@@ -72,13 +72,6 @@ class Element {
      */
     public $editorId;
 
-    
-    /**
-     * @var string $timestamp
-     * @brief a string representing the date and time the element was created
-     */
-    public $timestamp;
-    
     /**
      * @var int type
      * @brief the element's type

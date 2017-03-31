@@ -125,7 +125,7 @@ class DataManager
                 $tableNames['pages']);
         $this->docsDataTable = new MySqlDataTable($this->dbConn, 
                 $tableNames['docs']);
-        $this->elementsDataTable = new MySqlDataTable($this->dbConn, 
+        $this->elementsDataTable = new \DataTable\MySqlUnitemporalDataTable($this->dbConn, 
                 $tableNames['elements']);
         $this->itemsDataTable = new \DataTable\MySqlUnitemporalDataTable($this->dbConn, 
                 $tableNames['items']);
@@ -538,7 +538,7 @@ class DataManager
         }
         // Now we have a good element
         $newElement = clone $element;
-        $newElement->timestamp = date("Y-m-d H:i:s"); 
+        //$newElement->timestamp = date("Y-m-d H:i:s"); 
         if ($insertAtEnd) {
             // Simplest case, overwrite element's sequence
             $newElement->seq = $maxSeq+1;
@@ -625,7 +625,6 @@ class DataManager
                 'lang' => $element->lang,
                 'editor_id' => $element->editorId,
                 'hand_id' => $element->handId,
-                'time' => $element->timestamp,
                 'reference' => $element->reference,
                 'placement' => $element->placement
             ]);
@@ -642,7 +641,6 @@ class DataManager
                 'lang' => $element->lang,
                 'editor_id' => $element->editorId,
                 'hand_id' => $element->handId,
-                'time' => $element->timestamp,
                 'reference' => $element->reference,
                 'placement' => $element->placement
             ]);
@@ -697,7 +695,6 @@ class DataManager
         $e->columnNumber = (int) $row['column_number'];
         $e->pageId = (int) $row['page_id'];
         $e->seq = (int) $row['seq'];
-        $e->timestamp = $row['time'];
         $e->editorId = (int) $row['editor_id'];
         $e->handId = (int) $row['hand_id'];
         $e->id = (int) $row['id'];

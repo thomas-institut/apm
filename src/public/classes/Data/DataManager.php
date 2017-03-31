@@ -127,7 +127,7 @@ class DataManager
                 $tableNames['docs']);
         $this->elementsDataTable = new MySqlDataTable($this->dbConn, 
                 $tableNames['elements']);
-        $this->itemsDataTable = new MySqlDataTable($this->dbConn, 
+        $this->itemsDataTable = new \DataTable\MySqlUnitemporalDataTable($this->dbConn, 
                 $tableNames['items']);
         
         

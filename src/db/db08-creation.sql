@@ -108,6 +108,8 @@ CREATE TABLE `ap_hands` (
 
 CREATE TABLE `ap_items` (
   `id` int(11) NOT NULL,
+  `valid_from` datetime(6) NOT NULL DEFAULT '2016-06-01 00:00:00.000000',
+  `valid_until` datetime(6) NOT NULL DEFAULT '9999-12-31 23:59:59.999999',
   `type` int(11) NOT NULL DEFAULT '0',
   `ce_id` int(11) NOT NULL,
   `seq` int(11) NOT NULL,
@@ -311,7 +313,7 @@ ALTER TABLE `ap_hands`
 -- Indexes for table `ap_items`
 --
 ALTER TABLE `ap_items`
-  ADD PRIMARY KEY (`id`),
+  ADD PRIMARY KEY (`id`,`valid_from`,`valid_until`),
   ADD KEY `hand_id` (`hand_id`),
   ADD KEY `ce_id` (`ce_id`),
   ADD KEY `type` (`type`);

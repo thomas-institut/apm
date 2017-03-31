@@ -37,3 +37,15 @@ UPDATE ap_pages,
     WHERE ap_pages.id = pid;
 
 UPDATE `ap_settings` SET `value` = '8' WHERE `ap_settings`.`setting` = 'dbversion';
+
+
+ALTER TABLE `ap_items` 
+    ADD `valid_from` DATETIME(6) NOT NULL DEFAULT '2016-06-01' AFTER `id`, 
+    ADD `valid_until` DATETIME(6) NOT NULL DEFAULT '9999-12-31 23:59:59.999999' AFTER `valid_from`;
+
+ALTER TABLE `ap_items`
+  DROP PRIMARY KEY,
+   ADD PRIMARY KEY(
+     `id`,
+     `valid_from`,
+     `valid_until`);

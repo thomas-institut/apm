@@ -188,7 +188,7 @@ class UserManager
             $newInfo['id'] = $userId;
             $newInfo['fullname'] = $fullName;
             $newInfo['email'] = $email;
-            return $this->peopleTable->updateRow($newInfo);
+            return false !== $this->peopleTable->updateRow($newInfo);
         };
         
         return false;
@@ -283,12 +283,12 @@ class UserManager
         if ($this->isRoot($userId)) {
             return false;
         }
-        $key = $this->relationsTable->findRow(['userId' => $userId, 
+        $row = $this->relationsTable->findRow(['userId' => $userId, 
             'relation' => 'isAllowed', 'attribute' => $action]);
-        if ($key === false){
+        if ($row === false){
             return true;
         }
-        return $this->relationsTable->deleteRow($key);
+        return $this->relationsTable->deleteRow($row['id']);
     }
     
     public function isUserA($userId, $role)
@@ -330,12 +330,13 @@ class UserManager
         if ($this->isRoot($userId) && $role !== $this->rootRole) {
             return false;
         }
-        $key = $this->relationsTable->findRow(['userId' => $userId, 
+        
+        $row = $this->relationsTable->findRow(['userId' => $userId, 
             'relation' => 'hasRole', 'attribute' => $role]);
-        if ($key === false){
+        if ($row === false){
             return true;
         }
-        return $this->relationsTable->deleteRow($key);
+        return $this->relationsTable->deleteRow($row['id']);
     }
     
     //
@@ -381,7 +382,7 @@ class UserManager
     public function storeUserToken($userId, $token)
     {
         if ($this->userExistsById($userId)){
-            return $this->userTable->updateRow(['id' => $userId, 
+            return false !== $this->userTable->updateRow(['id' => $userId, 
                 'token' => $token]);
         }
         return false;
@@ -413,7 +414,7 @@ class UserManager
 
         if ($this->userExistsByUserName($userName)){
             $userId = $this->getUserIdFromUserName($userName);
-            return $this->userTable->updateRow(['id' => $userId, 
+            return false !== $this->userTable->updateRow(['id' => $userId, 
                 'password' => $hash]);
         }
         return false;

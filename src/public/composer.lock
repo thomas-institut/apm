@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "dd9819f9f325979298283a1e60ff03d1",
+    "content-hash": "afc718d9656e8d34b7c49d2adc12dee8",
     "packages": [
         {
             "name": "container-interop/container-interop",
@@ -404,16 +404,16 @@
         },
         {
             "name": "rafaelnajera/datatable",
-            "version": "0.3",
+            "version": "0.4.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/rafaelnajera/datatable.git",
-                "reference": "9cb5cf97c139452b87938e6f7ba174016bc85ebc"
+                "reference": "83c6ccd9d17dc7fe6ad045db4e151a4df9af9764"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/rafaelnajera/datatable/zipball/9cb5cf97c139452b87938e6f7ba174016bc85ebc",
-                "reference": "9cb5cf97c139452b87938e6f7ba174016bc85ebc",
+                "url": "https://api.github.com/repos/rafaelnajera/datatable/zipball/83c6ccd9d17dc7fe6ad045db4e151a4df9af9764",
+                "reference": "83c6ccd9d17dc7fe6ad045db4e151a4df9af9764",
                 "shasum": ""
             },
             "require": {
@@ -441,7 +441,7 @@
             "keywords": [
                 "data"
             ],
-            "time": "2017-03-20T11:54:41+00:00"
+            "time": "2017-03-31T12:10:51+00:00"
         },
         {
             "name": "rafaelnajera/matcher",

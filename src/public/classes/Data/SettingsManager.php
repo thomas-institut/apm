@@ -43,24 +43,23 @@ class SettingsManager {
     
     public function getSetting(string $setting)
     {
-        $id = $this->settingsTable->findRow(['setting' => $setting]);
-        if ($id === false) {
+        $row = $this->settingsTable->findRow(['setting' => $setting]);
+        if ($row === false) {
             return false;
         }
-        $row = $this->settingsTable->getRow($id);
         return $row['value'];
     }
     
     public function setSetting(string $setting, string $value)
     {
-        $id = $this->settingsTable->findRow(['setting' => $setting]);
-        if ($id == false) {
+        $row = $this->settingsTable->findRow(['setting' => $setting]);
+        if ($row == false) {
             return false !== $this->settingsTable->createRow([
                 'setting' => $setting, 
                 'value' => $value]);
         }
-        return $this->settingsTable->updateRow([ 
-            'id' => $id,
+        return false !== $this->settingsTable->updateRow([ 
+            'id' => $row['id'],
             'setting' => $setting, 
             'value' => $value]);
     }

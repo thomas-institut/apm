@@ -442,10 +442,14 @@ class DataManager
     
     public function getPageIdByDocPage($docId, $pageNum)
     {
-        return $this->pagesDataTable->findRow([
+        $row = $this->pagesDataTable->findRow([
             'doc_id' => $docId, 
             'page_number'=> $pageNum
             ]);
+        if ($row === false) {
+            return false;
+        }
+        return $row['id'];
     }
     
     /**

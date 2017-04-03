@@ -49,9 +49,7 @@ class ApiController
         // Get the elements
         $elements = $this->db->getColumnElements($docId, $pageNumber, 
                 $columnNumber);
-//        if ($elements === NULL){
-//            $elements = [];
-//        }
+
         // Get the editorial notes
         $ednotes = $this->db->enm->getEditorialNotesByDocPageCol($docId, 
                 $pageNumber, $columnNumber);

@@ -131,6 +131,8 @@ CREATE TABLE `ap_items` (
 
 CREATE TABLE `ap_pages` (
   `id` int(11) NOT NULL,
+  `valid_from` datetime(6) NOT NULL DEFAULT '2016-06-01 00:00:00.000000',
+  `valid_until` datetime(6) NOT NULL DEFAULT '9999-12-31 23:59:59.999999',
   `doc_id` int(11) NOT NULL,
   `page_number` int(11) NOT NULL,
   `type` int(11) NOT NULL,
@@ -323,7 +325,7 @@ ALTER TABLE `ap_items`
 -- Indexes for table `ap_pages`
 --
 ALTER TABLE `ap_pages`
-  ADD PRIMARY KEY (`id`),
+  ADD PRIMARY KEY (`id`,`valid_from`,`valid_until`),
   ADD KEY `doc_id` (`doc_id`),
   ADD KEY `type` (`type`);
 

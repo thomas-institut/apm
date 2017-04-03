@@ -121,10 +121,11 @@ class DataManager
                     $tableNames['people'], 
                     self::MIN_USER_ID, self::MAX_USER_ID));
         
-        $this->pagesDataTable = new MySqlDataTable($this->dbConn, 
-                $tableNames['pages']);
+        
         $this->docsDataTable = new MySqlDataTable($this->dbConn, 
                 $tableNames['docs']);
+        $this->pagesDataTable = new \DataTable\MySqlUnitemporalDataTable($this->dbConn, 
+                $tableNames['pages']);
         $this->elementsDataTable = new \DataTable\MySqlUnitemporalDataTable($this->dbConn, 
                 $tableNames['elements']);
         $this->itemsDataTable = new \DataTable\MySqlUnitemporalDataTable($this->dbConn, 
@@ -369,7 +370,7 @@ class DataManager
                 ' JOIN ' . $te . ' AS e ON p.id=e.page_id' .
                 ' WHERE p.doc_id=' . $docId . 
                 " AND `e`.`valid_from` <='$now' AND `e`.`valid_until` > '$now'" . 
-//                " AND `p`.`valid_from` <= $now AND `p`.`valid_until` > $now" . 
+                " AND `p`.`valid_from` <='$now' AND `p`.`valid_until` > '$now'" . 
                 ' ORDER BY p.`page_number` ASC';
         $r = $this->dbh->query($query);
         $pages = array();
@@ -837,4 +838,5 @@ class DataManager
         return $newElement;
     }
     
+   
  }

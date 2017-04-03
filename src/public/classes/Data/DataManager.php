@@ -250,29 +250,32 @@ class DataManager
      * Adds a new column to a page
      * 
      * @param type $docId
-     * @param type $page
+     * @param type $pageNumber
      * @return boolean
      */
-    function addNewColumn($docId, $page)
+    function addNewColumn($docId, $pageNumber)
     {
-        $currentNumCols = $this->getNumColumns($docId, $page);
-        $newNumCols = $currentNumCols + 1;
-        $tp = $this->tNames['pages'];
-        $this->dbh->query("UPDATE `$tp` SET `num_cols` = $newNumCols WHERE `doc_id`=$docId " . 
-                " AND `page_number`=$page");
-        
-        return true;
+        $pageId = $this->getPageIdByDocPage($docId, $pageNumber);
+        if ($pageId === false) {
+            return false;
+        }
+        $pageInfo = $this->pagesDataTable->getRow($pageId);
+        $result = $this->pagesDataTable->updateRow([
+            'id' => $pageId,
+            'num_cols' => $pageInfo['num_cols']+1
+        ]);
+        return $result !== false;
     }
     
     /**
      * Returns an associative array with the information about a page
      * @param type $docId
-     * @param type $page
+     * @param type $pageNumber
      * @return array|boolean
      */
-    function getPageInfoByDocPage($docId, $page)
+    function getPageInfoByDocPage($docId, $pageNumber)
     {
-        $id = $this->getPageIdByDocPage($docId, $page);
+        $id = $this->getPageIdByDocPage($docId, $pageNumber);
         if ($id === false) {
             return false;
         }
@@ -289,7 +292,8 @@ class DataManager
      * @param type $docId
      * @return boolean|int
      */
-    function getPageCountByDocId($docId){
+    function getPageCountByDocId($docId)
+    {
         $row = $this->docsDataTable->getRow($docId);
         if ($row === false) {
             // Doc doesn't exist, so it has 0 pages
@@ -308,32 +312,40 @@ class DataManager
      * @return int
      */
     function getLineCountByDoc($docId){
+        $now = \DataTable\MySqlUnitemporalDataTable::now();
+        
         return $this->dbh->getOneFieldQuery(
-                'SELECT count(DISTINCT `page_id`, `reference`) as value from ' . 
+            'SELECT count(DISTINCT `page_id`, `reference`) as value from ' . 
                 $this->tNames['elements'] . ' as e JOIN ' . 
                 $this->tNames['pages'] . ' AS p ON e.page_id=p.id ' .
-                ' WHERE p.doc_id=\'' . $docId . '\' AND e.type=' . 
-                Element::LINE, 'value');
+                ' WHERE p.doc_id=' . $docId . 
+                ' AND e.type=' . Element::LINE . 
+                " AND `e`.`valid_from` <='$now' AND `e`.`valid_until` > '$now'", 
+            'value'
+        );
     }
     /**
      * Returns the editors associated with a document as a list of usernames
      * @param int $docId
      * @return array
-     * 
      */
-    function getEditorsByDocId($docId){
+    function getEditorsByDocId($docId)
+    {
         $te = $this->tNames['elements'];
         $tu = $this->tNames['users'];
         $tp = $this->tNames['pages'];
+        $now = \DataTable\MySqlUnitemporalDataTable::now();
+        
         $query = "SELECT DISTINCT u.`username`" . 
             " FROM `$tu` AS u JOIN (`$te` AS e, `$tp` as p)" . 
             " ON (u.id=e.editor_id AND p.id=e.page_id)" . 
-            " WHERE p.doc_id=" . $docId;
+            " WHERE p.doc_id=" . $docId . 
+            " AND `e`.`valid_from` <='$now' AND `e`.`valid_until` > '$now'";
         
         $r = $this->dbh->query($query);
         
         $editors = array();
-        while ($row = $r->fetch(PDO::FETCH_ASSOC)){
+        while ($row = $r->fetch(PDO::FETCH_ASSOC)) {
             array_push($editors, $row['username']);
         }
         return $editors;
@@ -344,15 +356,21 @@ class DataManager
      * data for a document Id
      * @param type $docId
      * @return array
+     * 
      */
-    function getPageListByDocId($docId){
+    function getPageListByDocId($docId)
+    {
         $te = $this->tNames['elements'];
         $tp = $this->tNames['pages'];
+        $now = \DataTable\MySqlUnitemporalDataTable::now();
+        
         $query =  'SELECT DISTINCT p.`page_number` AS page_number FROM ' . 
                 $tp . ' AS p' .
                 ' JOIN ' . $te . ' AS e ON p.id=e.page_id' .
-                ' WHERE p.doc_id=\'' . $docId . 
-                '\' ORDER BY p.`page_number` ASC';
+                ' WHERE p.doc_id=' . $docId . 
+                " AND `e`.`valid_from` <='$now' AND `e`.`valid_until` > '$now'" . 
+//                " AND `p`.`valid_from` <= $now AND `p`.`valid_until` > $now" . 
+                ' ORDER BY p.`page_number` ASC';
         $r = $this->dbh->query($query);
         $pages = array();
          while ($row = $r->fetch(PDO::FETCH_ASSOC)){
@@ -394,6 +412,15 @@ class DataManager
         return FALSE;
     }
         
+
+    private function sortRowsByKey(&$rows, $key) 
+    {
+        usort(
+            $rows, 
+            function ($a, $b) use($key) {return $a[$key] < $b[$key] ? -1 : 1;}
+        );    
+    }
+    
     /**
      * 
      * @param string $docId
@@ -403,14 +430,18 @@ class DataManager
      */
     
     function getColumnElements($docId, $page, $col){
-        $te = $this->tNames['elements'];
-        $tp = $this->tNames['pages'];
-        $query = 'SELECT e.* FROM `' . $te . '` AS e' . 
-                ' JOIN ' . $tp . ' AS p ON e.page_id=p.id WHERE p.`doc_id`=\'' .
-                $docId . '\' AND' .
-                ' p.`page_number`=' . $page . " AND" . 
-                ' e.`column_number`=' . $col . ' ORDER BY e.`seq` ASC';
-        $rows = $this->dbh->getAllRows($query);
+        $pageId = $this->getPageIdByDocPage($docId, $page);
+        if ($pageId === false) {
+            // Non-existent page
+            return [];
+        }
+        
+        $rows = $this->elementsDataTable->findRows([
+            'page_id' => $pageId,
+            'column_number' => $col
+        ]);
+        $this->sortRowsByKey($rows, 'seq');
+
         $elements = [];
         foreach($rows as $row) {
             $e = $this->createElementObjectFromRow($row);
@@ -422,21 +453,20 @@ class DataManager
     
     function getItemsForElement($element)
     {
-        $query = 'SELECT * FROM `' . $this->tNames['items'] . 
-                '` WHERE `ce_id`=' . $element->id . 
-                ' ORDER BY `seq` ASC';
-        $r = $this->dbh->getAllRows($query);
+        $rows = $this->itemsDataTable->findRows([
+            'ce_id' => $element->id
+        ]);
+        $this->sortRowsByKey($rows, 'seq');
         
         $tt = new ItemArray($element->id, 
                 $element->lang, 
                 $element->editorId, 
                 $element->handId);
         
-        foreach ($r as $row) {
+        foreach ($rows as $row) {
             $item = $this->createItemObjectFromRow($row);
             $tt->addItem($item, true);
         }
-        
         return $tt;
     }
     
@@ -550,7 +580,7 @@ class DataManager
             $columnElements = $this->getColumnElements($docId, 
                     $pageNumber, 
                     $newElement->columnNumber);
-            foreach($columnElements as $cElement) {
+            foreach ($columnElements as $cElement) {
                 if ($cElement->seq >= $newElement->seq) {
                     $cElement->seq++;
                     $this->updateElementInDB($cElement);
@@ -572,7 +602,7 @@ class DataManager
             // @codeCoverageIgnoreEnd
         }
 
-        foreach($newElement->items->theItems as $item) {
+        foreach ($newElement->items->theItems as $item) {
             $item->columnElementId = $newId;
             // Forcing hands right now, this should change in the future
             $item->handId = $newElement->handId;
@@ -649,9 +679,12 @@ class DataManager
        
     private function getMaxElementSeq($pageId, $col)
     {
+        $now = \DataTable\MySqlUnitemporalDataTable::now();
+        
         $te = $this->tNames['elements'];
         $sql = "SELECT MAX(seq) as m FROM $te "
-                . "WHERE page_id=$pageId AND column_number=$col";
+                . "WHERE page_id=$pageId AND column_number=$col " 
+                . "AND `valid_from` <= '$now' AND `valid_until` > '$now'";
         $row = $this->dbh->getOneRow($sql);
         return (int) $row['m'];
     }

@@ -49,9 +49,9 @@ class ApiController
         // Get the elements
         $elements = $this->db->getColumnElements($docId, $pageNumber, 
                 $columnNumber);
-        if ($elements === NULL){
-            $elements = [];
-        }
+//        if ($elements === NULL){
+//            $elements = [];
+//        }
         // Get the editorial notes
         $ednotes = $this->db->enm->getEditorialNotesByDocPageCol($docId, 
                 $pageNumber, $columnNumber);
@@ -59,7 +59,7 @@ class ApiController
         // Get the information about every person 
         // in the elements and editorial notes
         $people = [];
-        foreach($elements as $e){
+        foreach ($elements as $e){
             if (!isset($people[$e->editorId])){
                 $people[$e->editorId] = 
                         $this->db->um->getUserInfoByUserId($e->editorId);

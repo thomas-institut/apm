@@ -11,7 +11,6 @@ require "../vendor/autoload.php";
 require_once 'DatabaseTestEnvironment.php';
 
 use PHPUnit\Framework\TestCase;
-use AverroesProject\Data\DataManager;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 
@@ -23,7 +22,7 @@ use Monolog\Handler\StreamHandler;
 class ElementDatabaseTest extends TestCase {
         /**
      *     
-     * @var Data\DataManager
+     * @var AverroesProject\Data\DataManager
      */
     static $dataManager;
     

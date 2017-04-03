@@ -690,6 +690,16 @@ class DataManager
         return (int) $row['m'];
     }
     
+    public  function getItemById($itemId)
+    {
+        $row = $this->itemsDataTable->getRow($itemId);
+         if ($row=== false) {
+            return false;
+        }
+        return $this->createItemObjectFromRow($row);
+    }
+
+
     public function getElementById($elementId) {
         $row = $this->elementsDataTable->getRow($elementId);
         
@@ -836,6 +846,30 @@ class DataManager
         $newElement = clone($element);
         
         return $newElement;
+    }
+    
+    public function deleteElement($elementId)
+    {
+        /**
+         * Could there be a timing problem here? The deletes of element
+         * and items will not have all the same valid_to value. There
+         * might be problems if there's a query for elements for a time
+         * right between those values (we're talking about 1/10th of a second
+         * interval maybe)
+         */
+        $element = $this->getElementById($elementId);
+        $res = $this->elementsDataTable->deleteRow($element->id);
+        if ($res === false) {
+            return false;
+        }
+        
+        foreach ($element->items->theItems as $item) {
+            $res2 = $this->itemsDataTable->deleteRow($item->id);
+            if ($res2 === false) {
+                return false;
+            }
+        }
+        return true;
     }
     
    

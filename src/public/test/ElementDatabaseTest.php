@@ -203,5 +203,45 @@ class ElementDatabaseTest extends TestCase {
 
     }
     
-    
+    public function testDeleteElements()
+    {
+        $numElements = 5;
+        $numPages = 5;
+        $dm = self::$dataManager;
+        $docId = $dm->newDoc('Test Elements Doc 3', 'TED-3', $numPages, 'la', 
+                'mss', 'local', 'TESTELEM-3');
+        for ($i = 0; $i < $numPages; $i++) {
+            $dm->addNewColumn($docId, $i);
+        }
+        $editorId = $dm->um->createUserByUsername('testeditor3');
+        $pageId =  $dm->getPageIdByDocPage($docId, 3);
+        
+        for ($i=0; $i<$numElements; $i++) {
+            $element = new ColumnElement\Line();
+            $element->pageId = $pageId;
+            $element->columnNumber = 1;
+            $element->editorId = $editorId;
+            $element->lang = 'la';
+            $element->items->addItem(new TxText\Text(0,1,"This is $i "));
+            $element->items->addItem(new TxText\Rubric(0,2,'with rubric '));
+            $element->items->addItem(new TxText\Text(0,3,'and more text '));
+            $element->items->addItem(new TxText\Abbreviation(0,3,'LOL', 
+                    'laughing out loud'));
+            $newElement = $dm->insertNewElement($element);
+            $this->assertNotFalse($newElement);
+            $this->assertNotEquals(0, $newElement->id);
+            $this->assertEquals($element->items->nItems(), 
+                    $newElement->items->nItems());
+            
+            $result = $dm->deleteElement($newElement->id);
+            $this->assertTrue($result);
+            $retrievedElement = $dm->getElementById($newElement->id);
+            $this->assertFalse($retrievedElement);
+            foreach ($newElement->items->theItems as $item) {
+                $retrievedItem = $dm->getItemById($item->id);
+                $this->assertFalse($retrievedItem);
+            }
+        }
+    }
 }
+

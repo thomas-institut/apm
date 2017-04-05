@@ -85,7 +85,11 @@
 
 namespace AverroesProject\TxText;
 
-class ItemArray {
+use AverroesProject\Algorithm\MyersDiff;
+use AverroesProject\Algorithm\Utility;
+
+class ItemArray
+{
     
     /**
      *
@@ -104,7 +108,8 @@ class ItemArray {
     public $parentColumnElementId;
     
     
-    function __construct($parent = 0, $lang = 'la', $editor = 0, $hand = 0) {
+    public function __construct($parent = 0, $lang = 'la', $editor = 0, $hand = 0)
+    {
         
         $this->theItems = [];
         $this->lang = $lang;
@@ -115,37 +120,45 @@ class ItemArray {
     
     /**
      * 
-     * @param type $item
-     * @param bool $ordered  (if true, items will be pushed into the array)
+     * @param Item $item
+     * @param bool $atTheEnd  (if true, the item will be assigned a sequence 
+     *              number 
      * @throws InvalidArgumentException
      */
-    function addItem($item, $ordered=false)
+    public function addItem($item, $atTheEnd=false)
     {
-        if (! ($item instanceof Item)) {
+        if (!($item instanceof Item)) {
              throw new \InvalidArgumentException(
                      "Objects added to an ItemArray should be of class Item");
         }
-        $seq = (int) $item->seq;
-        if ( $seq !== -1 && !$ordered){
-            $this->theItems[$seq] = $item;
+        $index = count($this->theItems);
+        $maxSeq = -1;
+        if ($index > 0) {
+            $maxSeq = $this->theItems[$index-1]->seq;
         }
-        else {
-            $item->seq = count($this->theItems);
-            array_push($this->theItems, $item);
+        $this->theItems[$index] = $item;
+        if ($item->seq == -1 || $atTheEnd) {
+            $this->theItems[$index]->seq = $maxSeq+1;
         }
+        Utility::arraySortByKey($this->theItems, 'seq');
+        
     }
     
-    function getItem($seq){
+    public function getItem($seq)
+    {
+        
         return $this->theItems[$seq];
     }
     
-    function nItems(){
+    public function nItems()
+    {
         return count($this->theItems);
     }
     
-    function getText(){
+    public function getText()
+    {
         $text = '';
-        foreach($this->theItems as $item){
+        foreach ($this->theItems as $item) {
             $text = $text . $item->getText();
         }
         return $text;
@@ -155,14 +168,15 @@ class ItemArray {
      * 
      * @param bool $force
      */
-    function setLang($lang, $force = false){
+    public function setLang($lang, $force = false)
+    {
         $this->lang = $lang;
-        foreach ($this->theItems as $item){
-            if ($force){
+        foreach ($this->theItems as $item) {
+            if ($force) {
                 $item->setLang($this->lang);
                 continue;
             } 
-            if ($item->getLang() === ''){
+            if ($item->getLang() === '') {
                 $item->setLang($this->lang);
             }
 
@@ -173,10 +187,10 @@ class ItemArray {
      * 
      * @param bool $force
      */
-    function setHandId($handId, $force = false)
+    public function setHandId($handId, $force = false)
     {
         $this->handId = $handId;
-        foreach ($this->theItems as $item){
+        foreach ($this->theItems as $item) {
             if ($force){
                 $item->setHandId($this->handId);
                 continue;
@@ -187,16 +201,42 @@ class ItemArray {
         }
     }
     
-    function isRtl()
+    public function isRtl()
     {
         $n = $this->nItems();
         $rtl = 0;
-        foreach ($this->theItems as $item){
+        foreach ($this->theItems as $item) {
             if ($item->isRtl()) {
                 $rtl++;
             }
         }
         return $rtl > ($n - $rtl);
+    }
+    
+    /**
+     * Gets the edit script that transform the array into the
+     * given array. The resulting indexes in the edit script 
+     * refer to sequence numbers (1,2,...), not array indexes (0,1,...)
+     *
+     * Assumes the items in both arrays are ordered according to 
+     * the desired sequences. 
+     * 
+     * @param \AverroesProject\TxText\ItemArray $newArray
+     */
+    public function getEditScript(ItemArray $newArray) 
+    {
+        $editScript = MyersDiff::calculate(
+            $this->theItems,
+            $newArray->theItems, 
+            function ($a, $b) { return Item::isItemDataEqual($a, $b);}
+        );
+        
+//        foreach ($editScript as &$command) {
+//            $command[0]++;
+//            $command[2]++;
+//        }
+
+        return $editScript;
     }
     
 }

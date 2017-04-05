@@ -84,8 +84,7 @@ class MyersDiffTest extends TestCase {
             }
             return false;
         });
-        var_dump($editScript);
-        
+       
         $this->assertEquals(MyersDiff::KEEP, $editScript[0][1]);
         $this->assertEquals(MyersDiff::DELETE, $editScript[1][1]);
         $this->assertEquals(MyersDiff::INSERT, $editScript[2][1]);

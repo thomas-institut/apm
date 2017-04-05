@@ -938,7 +938,7 @@ class TranscriptionReader {
                     "In: $theXml");
         }
         
-        $seq = 1;
+        $seq = 0;
         $itemArray = new \AverroesProject\TxText\ItemArray($elementId);
         foreach($pMatcher->matched as $matchedArray){
             foreach($matchedArray as $item){

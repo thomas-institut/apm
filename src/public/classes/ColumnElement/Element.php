@@ -144,4 +144,25 @@ class Element {
         }
     }
     
+    /**
+     * Determines if element data (all except items, id and seq) is equal
+     * 
+     * @param Item $a
+     * @param Item $b
+     * @return boolean
+     */
+    public static function isElementDataEqual(Element $a, Element $b) 
+    {
+       $dataA = get_object_vars($a);
+       $dataB = get_object_vars($b);
+       
+       unset($dataA['seq']);
+       unset($dataB['seq']);
+       unset($dataA['id']);
+       unset($dataB['id']);
+       unset($dataA['items']);
+       unset($dataB['items']);
+       return $dataA == $dataB;
+    }
+    
 }

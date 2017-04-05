@@ -25,6 +25,8 @@ use AverroesProject\TxText\ItemArray;
 use AverroesProject\ColumnElement\Element;
 use DataTable\MySqlDataTable;
 use DataTable\MySqlDataTableWithRandomIds;
+use AverroesProject\Algorithm\MyersDiff;
+use AverroesProject\Algorithm\Utility;
 
 
 use \PDO;
@@ -130,8 +132,6 @@ class DataManager
                 $tableNames['elements']);
         $this->itemsDataTable = new \DataTable\MySqlUnitemporalDataTable($this->dbConn, 
                 $tableNames['items']);
-        
-        
     }
    
     
@@ -412,15 +412,6 @@ class DataManager
         }
         return FALSE;
     }
-        
-
-    private function sortRowsByKey(&$rows, $key) 
-    {
-        usort(
-            $rows, 
-            function ($a, $b) use($key) {return $a[$key] < $b[$key] ? -1 : 1;}
-        );    
-    }
     
     /**
      * 
@@ -441,7 +432,7 @@ class DataManager
             'page_id' => $pageId,
             'column_number' => $col
         ]);
-        $this->sortRowsByKey($rows, 'seq');
+        Utility::arraySortByKey($rows, 'seq');
 
         $elements = [];
         foreach($rows as $row) {
@@ -457,7 +448,8 @@ class DataManager
         $rows = $this->itemsDataTable->findRows([
             'ce_id' => $element->id
         ]);
-        $this->sortRowsByKey($rows, 'seq');
+        
+        Utility::arraySortByKey($rows, 'seq');
         
         $tt = new ItemArray($element->id, 
                 $element->lang, 
@@ -628,8 +620,7 @@ class DataManager
         }
         return $this->getElementById($newId);
     }
-    
-
+        
     private function createNewItemInDB($item) 
     {
         return $this->itemsDataTable->createRow([
@@ -646,6 +637,22 @@ class DataManager
         ]);
     }
     
+    private function updateItemInDB($item)
+    {
+        return $this->itemsDataTable->updateRow([
+            'id' => $item->id,
+            'ce_id'=> $item->columnElementId,
+            'type' => $item->type,
+            'seq' => $item->seq,
+            'lang' => $item->lang,
+            'hand_id' => $item->handId,
+            'text' => $item->theText,
+            'alt_text' => $item->altText,
+            'extra_info' => $item->extraInfo,
+            'length' => $item->length,
+            'target' => $item->target
+        ]);
+    }
     private function createNewElementInDB($element) 
     {
         return $this->elementsDataTable->createRow([
@@ -833,19 +840,52 @@ class DataManager
     
     /**
      * Updates an element in the database. 
-     * The element in the DB with the given element's id and its current items
-     * will be made non-current and the given element will take its place
-     * as active, together with the given new items.
+     * If there's a change in the element's data besides the items, the current
+     * version in the DB will be updated.
+     *
+     * The items will be updated as necessary.
+     *
+     * Returns the id of the updated element
      * 
-     * Returns a copy of the given element with system id's.
-     * 
-     * @param Element $element
+     * @param Element $newElement
      */
-    public function updateElement(Element $element)
+    public function updateElement(Element $newElement, Element $oldElement)
     {
-        $newElement = clone($element);
+        if (!Element::isElementDataEqual($newElement, $oldElement)) {
+            $this->updateElementInDB($newElement);
+        }
         
-        return $newElement;
+        $editScript = $oldElement->items->getEditScript($newElement->items);
+       
+        foreach ($editScript as $editInstruction) {
+            list ($index, $cmd, $newSeq) = $editInstruction;
+            switch ($cmd) {
+                case MyersDiff::KEEP:
+                    if ($oldElement->items->theItems[$index]->seq 
+                            !== $newSeq) {
+                        $oldElement->items->theItems[$index]->seq =
+                                $newSeq;
+                        $this->updateItemInDB(
+                            $oldElement->items->theItems[$index]
+                        );
+                    }
+                    break;
+                    
+                case MyersDiff::DELETE:
+                    $this->itemsDataTable->deleteRow(
+                        $oldElement->items->theItems[$index]->id
+                    );
+                    break;
+                
+                case MyersDiff::INSERT:
+                    $this->createNewItemInDB(
+                        $newElement->items->theItems[$index]
+                    );
+                    break;
+            }
+        }
+        
+        return $newElement->id;
     }
     
     public function deleteElement($elementId)

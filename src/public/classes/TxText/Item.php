@@ -193,4 +193,26 @@ class Item {
         $normalized = preg_replace('/\s+/', ' ', $normalized);
         return $normalized;
     }
+    
+    
+    /**
+     * Determines if everything but the id and the seq of two
+     * items are equals
+     * 
+     * @param Item $a
+     * @param Item $b
+     * @return boolean
+     */
+    public static function isItemDataEqual(Item $a, Item $b) 
+    {
+       $dataA = get_object_vars($a);
+       $dataB = get_object_vars($b);
+       
+       unset($dataA['seq']);
+       unset($dataB['seq']);
+       unset($dataA['id']);
+       unset($dataB['id']);
+      
+       return $dataA == $dataB;
+    }
 }

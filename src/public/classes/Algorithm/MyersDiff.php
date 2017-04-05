@@ -127,8 +127,7 @@ class MyersDiff
      *                    $command (-1 = DEL, 0 = KEEP, 1 = ADD),
      *                    $seq : $index in the edited array
      */
-    public static function calculate(array &$a, array &$b, 
-            callable $equals)
+    public static function calculate(array &$a, array &$b, callable $equals)
     {
         // The algorithm uses array keys numbered from zero.
         $n = count($a);
@@ -155,7 +154,7 @@ class MyersDiff
                 // Derive Y from X.
                 $y = $x - $k;
                 // Follow the diagonal.
-                while ($x < $n && $y < $m && $equals($a[$x], $b[$y])) {
+                while ($x < $n && $y < $m && call_user_func($equals,$a[$x], $b[$y])) {
                     ++$x;
                     ++$y;
                 }

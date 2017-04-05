@@ -75,3 +75,7 @@ ALTER TABLE `ap_pages`
      `id`,
      `valid_from`,
      `valid_until`);
+
+
+# Item sequences should start at 0 now
+UPDATE `ap_items` SET `seq`=`seq`-1 

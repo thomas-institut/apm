@@ -13,6 +13,7 @@ require_once 'DatabaseTestEnvironment.php';
 use PHPUnit\Framework\TestCase;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
+use AverroesProject\ColumnElement\Element;
 
 /**
  * Description of ElementTest
@@ -63,17 +64,17 @@ class ElementDatabaseTest extends TestCase {
         $goodElement->columnNumber = 1;
         $goodElement->editorId = $editorId;
         // One of each item type, for good measure
-        $goodElement->items->addItem(new TxText\Text(0,1,'Some text '));
-        $goodElement->items->addItem(new TxText\Rubric(0,2,'Rubric '));
-        $goodElement->items->addItem(new TxText\Sic(0,3,'loose', 'lose'));
-        $goodElement->items->addItem(new TxText\Mark(0,4));
-        $goodElement->items->addItem(new TxText\Unclear(0, 5, 'unclear', 'Hey', 'Hey you'));
-        $goodElement->items->addItem(new TxText\Illegible(0,6,5));
-        $goodElement->items->addItem(new TxText\Abbreviation(0,7,'Mr.', 'Mister'));
-        $goodElement->items->addItem(new TxText\Gliph(0,8,'ā'));
-        $goodElement->items->addItem(new TxText\Deletion(0,9,'deleted', 'strikeout'));
-        $goodElement->items->addItem(new TxText\Addition(0,10,'added', 'above'));
-        $goodElement->items->addItem(new TxText\NoLinebreak(0,11));
+        $goodElement->items->addItem(new TxText\Text(0,-1,'Some text '));
+        $goodElement->items->addItem(new TxText\Rubric(0,-1,'Rubric '));
+        $goodElement->items->addItem(new TxText\Sic(0,-1,'loose', 'lose'));
+        $goodElement->items->addItem(new TxText\Mark(0,-1));
+        $goodElement->items->addItem(new TxText\Unclear(0, -1, 'unclear', 'Hey', 'Hey you'));
+        $goodElement->items->addItem(new TxText\Illegible(0,-1,5));
+        $goodElement->items->addItem(new TxText\Abbreviation(0,-1,'Mr.', 'Mister'));
+        $goodElement->items->addItem(new TxText\Gliph(0,-1,'ā'));
+        $goodElement->items->addItem(new TxText\Deletion(0,-1,'deleted', 'strikeout'));
+        $goodElement->items->addItem(new TxText\Addition(0,-1,'added', 'above'));
+        $goodElement->items->addItem(new TxText\NoLinebreak(0,-1));
         $goodElement->lang = 'la';
         
         
@@ -126,7 +127,6 @@ class ElementDatabaseTest extends TestCase {
         $newElement = $dm->insertNewElement($goodElement);
         $this->assertNotFalse($newElement);
         $this->assertNotEquals(0, $newElement->id);
-        //$this->assertNotEquals($goodElement->timestamp, $newElement->timestamp);
         $this->assertEquals(1, $newElement->seq);
         $this->assertEquals($goodElement->items->nItems(), 
                 $newElement->items->nItems());
@@ -158,10 +158,10 @@ class ElementDatabaseTest extends TestCase {
             $element->columnNumber = 1;
             $element->editorId = $editorId;
             $element->lang = 'la';
-            $element->items->addItem(new TxText\Text(0,1,"This is $i "));
-            $element->items->addItem(new TxText\Rubric(0,2,'with rubric '));
-            $element->items->addItem(new TxText\Text(0,3,'and more text '));
-            $element->items->addItem(new TxText\Abbreviation(0,3,'LOL', 
+            $element->items->addItem(new TxText\Text(0,-1,"This is $i "));
+            $element->items->addItem(new TxText\Rubric(0,-1,'with rubric '));
+            $element->items->addItem(new TxText\Text(0,-1,'and more text '));
+            $element->items->addItem(new TxText\Abbreviation(0,-1,'LOL', 
                     'laughing out loud'));
             $newElement = $dm->insertNewElement($element);
             $this->assertNotFalse($newElement);
@@ -222,10 +222,10 @@ class ElementDatabaseTest extends TestCase {
             $element->columnNumber = 1;
             $element->editorId = $editorId;
             $element->lang = 'la';
-            $element->items->addItem(new TxText\Text(0,1,"This is $i "));
-            $element->items->addItem(new TxText\Rubric(0,2,'with rubric '));
-            $element->items->addItem(new TxText\Text(0,3,'and more text '));
-            $element->items->addItem(new TxText\Abbreviation(0,3,'LOL', 
+            $element->items->addItem(new TxText\Text(0,-1,"This is $i "));
+            $element->items->addItem(new TxText\Rubric(0,-1,'with rubric '));
+            $element->items->addItem(new TxText\Text(0,-1,'and more text '));
+            $element->items->addItem(new TxText\Abbreviation(0,-1,'LOL', 
                     'laughing out loud'));
             $newElement = $dm->insertNewElement($element);
             $this->assertNotFalse($newElement);
@@ -242,6 +242,53 @@ class ElementDatabaseTest extends TestCase {
                 $this->assertFalse($retrievedItem);
             }
         }
+    }
+    
+    public function testUpdateElements()
+    {
+        $numElements = 5;
+        $numPages = 5;
+        $dm = self::$dataManager;
+        $docId = $dm->newDoc('Test Elements Doc 4', 'TED-4', $numPages, 'la', 
+                'mss', 'local', 'TESTELEM-4');
+        for ($i = 0; $i < $numPages; $i++) {
+            $dm->addNewColumn($docId, $i);
+        }
+        $editorId = $dm->um->createUserByUsername('testeditor4');
+        $pageId =  $dm->getPageIdByDocPage($docId, 1);
+        
+        $elementIds = [];
+        for ($i=0; $i<$numElements; $i++) {
+            $element = new ColumnElement\Line();
+            $element->pageId = $pageId;
+            $element->columnNumber = 1;
+            $element->editorId = $editorId;
+            $element->lang = 'la';
+            $element->items->addItem(new TxText\Rubric(0,0,"Hello "));
+            $element->items->addItem(new TxText\Text(0,1,'darkness '));
+            $element->items->addItem(new TxText\Text(0,2,'my '));
+            $element->items->addItem(new TxText\Abbreviation(0,3,'f. ', 
+                    'friend'));
+            $elementIds[] = $dm->insertNewElement($element)->id;
+        }
+        $testElementId = $elementIds[random_int(0, $numElements-1)];
+        $currentElement = $dm->getElementById($testElementId);
+        
+        // No changes!
+        $newVersion = clone $dm->getElementById($testElementId);
+        $newVersion->items = new TxText\ItemArray();
+        $newVersion->items->addItem(new TxText\Rubric(0,0,"Hello "));
+        $newVersion->items->addItem(new TxText\Text(0,0,'darkness '));
+        $newVersion->items->addItem(new TxText\Text(0,0,'my '));
+        $newVersion->items->addItem(new TxText\Abbreviation(0,4,'f. ', 
+                'friend'));
+        
+        $id = $dm->updateElement($currentElement, $newVersion);
+        $this->assertEquals($testElementId, $id);
+        $updatedElement = $dm->getElementById($id);
+        $this->assertTrue(Element::isElementDataEqual($updatedElement, 
+                $currentElement));
+        
     }
 }
 

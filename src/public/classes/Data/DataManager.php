@@ -610,7 +610,7 @@ class DataManager
             if ($item->lang == '') {
                 $item->lang = $newElement->lang;
             }
-            if ($this->saveItemInDB($item) === false ) {
+            if ($this->createNewItemInDB($item) === false ) {
                 // This means a database error
                 // Can't reproduce in testing for now
                 // @codeCoverageIgnoreStart
@@ -630,7 +630,7 @@ class DataManager
     }
     
 
-    private function saveItemInDB($item) 
+    private function createNewItemInDB($item) 
     {
         return $this->itemsDataTable->createRow([
             'ce_id'=> $item->columnElementId,

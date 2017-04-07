@@ -858,6 +858,11 @@ class DataManager
         if (!Element::isElementDataEqual($newElement, $oldElement)) {
             $this->updateElementInDB($newElement);
         }
+        // Force columnElementId in new element's items
+        foreach ($newElement->items as $item) {
+            $item->columnElementId = $newElement->id;
+        }
+            
         
         $editScript = ItemArray::getEditScript(
             $oldElement->items,
@@ -868,12 +873,13 @@ class DataManager
             list ($index, $cmd, $newSeq) = $editInstruction;
             switch ($cmd) {
                 case MyersDiff::KEEP:
-                    print "Keeping item $index\n";
+                    //print "Keeping item $index\n";
                     if ($oldElement->items[$index]->seq 
                             !== $newSeq) {
-                        print "... with new seq $newSeq";
+                        //print "... with new seq $newSeq\n";
                         $oldElement->items[$index]->seq =
                                 $newSeq;
+                        //print_r($oldElement->items[$index]);
                         $this->updateItemInDB(
                             $oldElement->items[$index]
                         );
@@ -881,14 +887,14 @@ class DataManager
                     break;
                     
                 case MyersDiff::DELETE:
-                    print "Deleting item $index\n";
+                    //print "Deleting item $index\n";
                     $this->itemsDataTable->deleteRow(
                         $oldElement->items[$index]->id
                     );
                     break;
                 
                 case MyersDiff::INSERT:
-                    print "Insert item with seq $newSeq\n";
+                    //print "Insert item with seq $newSeq\n";
                     $this->createNewItemInDB(
                         $newElement->items[$index]
                     );

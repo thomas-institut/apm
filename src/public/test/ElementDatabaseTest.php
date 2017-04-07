@@ -369,6 +369,34 @@ class ElementDatabaseTest extends TestCase {
             );
         }
         
+        // Two items in switched position
+        $testElementId4 = $elementIds[3];
+        $currentElement4 = $dm->getElementById($testElementId4);
+
+        $newVersion4 = clone $currentElement4;
+        $newVersion4->items = [];
+        ItemArray::addItem($newVersion4->items, new TxText\Rubric(0,-1,"Hello "));
+        ItemArray::addItem($newVersion4->items, new TxText\Text(0,-1,'my '));
+        ItemArray::addItem($newVersion4->items, new TxText\Text(0,-1,'darkness '));
+        ItemArray::addItem($newVersion4->items, new TxText\Abbreviation(0,-1,'f. ', 
+                'friend'));
+        ItemArray::setLang($newVersion4->items, 'la');
+        ItemArray::setHandId($newVersion4->items, 0);
+        
+        $id4 = $dm->updateElement($newVersion4, $currentElement4);
+        $this->assertEquals($testElementId4, $id4);
+        $updatedElement4 = $dm->getElementById($id4);
+        $this->assertTrue(Element::isElementDataEqual($updatedElement4, 
+                $currentElement4));
+        $this->assertCount(4, $updatedElement4->items);
+        $this->assertEquals(
+                $currentElement4->items[0]->id,
+                $updatedElement4->items[0]->id
+            );
+        $this->assertEquals(
+                $currentElement4->items[3]->id,
+                $updatedElement4->items[3]->id
+            );
     }
 }
 

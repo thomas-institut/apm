@@ -182,7 +182,6 @@ function buildPageTextContainer(colNumber, elements, ednotes, people)
 
         theText = '';
         for (j = 0; j < elements[i].items.length; j++) {
-
             item = elements[i].items[j];
             htmlId = 'item' + item.id;
             itemHasEdnotes = hasEdnotes(item.id, ednotes);

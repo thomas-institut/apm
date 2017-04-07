@@ -1,7 +1,7 @@
 <?php
 
 /*
- *  Copyright (C) 2016 Universität zu Köln
+ *  Copyright (C) 2017 Universität zu Köln
  *  
  *  This program is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License
@@ -216,7 +216,7 @@ class TranscriptionReaderTest extends TestCase {
         $this->assertEquals(1, $element1->columnNumber);
         $this->assertEquals('', $element1->lang);
         $this->assertEquals(1, $element1->getLineNumber());
-        $item_1_1 = $element1->items->getItem(0);
+        $item_1_1 = $element1->items[0];
         $this->assertTrue($item_1_1 instanceof TxText\Text);
         $this->assertEquals('Latine', $item_1_1->theText);
         
@@ -245,10 +245,10 @@ class TranscriptionReaderTest extends TestCase {
         $this->assertEquals(1, $element5->columnNumber);
         $this->assertEquals('', $element5->lang);
         $this->assertEquals(3, $element5->getLineNumber());
-        $item_5_1 = $element5->items->getItem(0);
+        $item_5_1 = $element5->items[0];
         $this->assertTrue($item_5_1 instanceof TxText\Text);
         $this->assertEquals('Another line with ', $item_5_1->theText);
-        $item_5_2 = $element5->items->getItem(1);
+        $item_5_2 = $element5->items[1];
         $this->assertTrue($item_5_2 instanceof TxText\Sic);
         $this->assertEquals('Some text', $item_5_2->theText);
         
@@ -257,7 +257,7 @@ class TranscriptionReaderTest extends TestCase {
         $this->assertEquals(6, $element6->seq);
         $this->assertEquals(1, $element6->columnNumber);
         $this->assertEquals('', $element6->lang);
-        $item_6_1 = $element6->items->getItem(0);
+        $item_6_1 = $element6->items[0];
         $this->assertTrue($item_6_1 instanceof TxText\Text);
         $this->assertEquals('A gloss', $item_6_1->theText);
         
@@ -268,10 +268,10 @@ class TranscriptionReaderTest extends TestCase {
         $this->assertEquals(1, $element7->columnNumber);
         $this->assertEquals('', $element7->lang);
         $this->assertEquals(6, $element7->getLineNumber());
-        $item_7_1 = $element7->items->getItem(0);
+        $item_7_1 = $element7->items[0];
         $this->assertTrue($item_7_1 instanceof TxText\Text);
         $this->assertEquals('Yet another line ', $item_7_1->theText);
-        $item_7_2 = $element7->items->getItem(1);
+        $item_7_2 = $element7->items[1];
         $this->assertTrue($item_7_2 instanceof TxText\Mark);
         $markId = $item_7_2->id;
         
@@ -280,7 +280,7 @@ class TranscriptionReaderTest extends TestCase {
         $this->assertEquals(8, $element8->seq);
         $this->assertEquals(1, $element8->columnNumber);
         $this->assertEquals('', $element8->lang);
-        $item_8_1 = $element8->items->getItem(0);
+        $item_8_1 = $element8->items[0];
         $this->assertTrue($item_8_1 instanceof TxText\Text);
         $this->assertEquals('175v', $item_8_1->theText);
         
@@ -296,7 +296,7 @@ class TranscriptionReaderTest extends TestCase {
         $id = 0;
         foreach ($pageDiv['cols'][1]['elements'] as $element) {
             $seq = 0;
-            foreach ($element->items->theItems as $item) {
+            foreach ($element->items as $item) {
                 $this->assertEquals($id, $item->id);
                 $this->assertEquals($seq, $item->seq);
                 $id++;
@@ -336,11 +336,14 @@ class TranscriptionReaderTest extends TestCase {
         // First element: line with 1 sic item, 1 ednote
         $element1 = $col['elements'][0];
         $this->assertTrue($element1 instanceof ColumnElement\Line);
-        $this->assertCount(1, $element1->items->theItems);
-        $this->assertTrue($element1->items->getItem(0) instanceof TxText\Sic);
-        $this->assertEquals('Sic with note ', $element1->items->getItem(0)->getText());
+        $this->assertCount(1, $element1->items);
+        $this->assertTrue($element1->items[0] instanceof TxText\Sic);
+        $this->assertEquals(
+            'Sic with note ', 
+            $element1->items[0]->getText()
+        );
         
-        $itemId1 = $element1->items->getItem(0)->id;
+        $itemId1 = $element1->items[0]->id;
         $note1 = $col['ednotes'][0];
         $this->assertEquals(EditorialNote::INLINE, $note1->type);
         $this->assertEquals($itemId1, $note1->target);
@@ -349,10 +352,10 @@ class TranscriptionReaderTest extends TestCase {
         // Second element, line with 1 item, 2 ednotes
         $element2 = $col['elements'][1];
         $this->assertTrue($element2 instanceof ColumnElement\Line);
-        $this->assertCount(1, $element2->items->theItems);
-        $this->assertTrue($element2->items->getItem(0) instanceof TxText\Sic);
-        $this->assertEquals('Sic with two notes ', $element2->items->getItem(0)->getText());
-        $itemId2 = $element2->items->getItem(0)->id;
+        $this->assertCount(1, $element2->items);
+        $this->assertTrue($element2->items[0] instanceof TxText\Sic);
+        $this->assertEquals('Sic with two notes ', $element2->items[0]->getText());
+        $itemId2 = $element2->items[0]->id;
         $note2 = $col['ednotes'][1];
         $this->assertEquals(EditorialNote::INLINE, $note2->type);
         $this->assertEquals($itemId2, $note2->target);
@@ -365,7 +368,7 @@ class TranscriptionReaderTest extends TestCase {
         // Third element, a note mark
         $element3 = $col['elements'][2];
         $this->assertTrue($element3 instanceof ColumnElement\NoteMark);
-        $this->assertCount(0, $element3->items->theItems);
+        $this->assertCount(0, $element3->items);
         $element3Id = $element3->id;
         $note4 = $col['ednotes'][3];
         $this->assertEquals(EditorialNote::OFFLINE, $note4->type);
@@ -392,40 +395,40 @@ class TranscriptionReaderTest extends TestCase {
         
         // Number of Items
         //var_dump($lineElement->items);
-        $this->assertEquals(18, $lineElement->items->nItems());
+        $this->assertCount(18, $lineElement->items);
         
         
-        $item1 = $lineElement->items->getItem(0);
+        $item1 = $lineElement->items[0];
         $this->assertTrue($item1 instanceof TxText\Text);
         $this->assertEquals('Some text ', $item1->theText);
         
-        $item2 = $lineElement->items->getItem(1);
+        $item2 = $lineElement->items[1];
         $this->assertTrue($item2 instanceof TxText\Sic);
         $this->assertEquals('Sic 1', $item2->theText);
         
-        $item3 = $lineElement->items->getItem(2);
+        $item3 = $lineElement->items[2];
         $this->assertTrue($item3 instanceof TxText\Initial);
         $this->assertEquals('Initial', $item3->theText);
         
-        $item4 = $lineElement->items->getItem(3);
+        $item4 = $lineElement->items[3];
         $this->assertTrue($item4 instanceof TxText\Rubric);
         $this->assertEquals('Rubric', $item4->theText);
         
-        $item5 = $lineElement->items->getItem(4);
+        $item5 = $lineElement->items[4];
         $this->assertTrue($item5 instanceof TxText\Unclear);
         $this->assertEquals('Unclear 1', $item5->theText);
         
-        $item6 = $lineElement->items->getItem(5);
+        $item6 = $lineElement->items[5];
         $this->assertTrue($item6 instanceof TxText\Unclear);
         $this->assertEquals('Unclear 2', $item6->theText);
         $this->assertEquals('Alt Text', $item6->altText);
         
-        $item7 = $lineElement->items->getItem(6);
+        $item7 = $lineElement->items[6];
         $this->assertTrue($item7 instanceof TxText\Sic);
         $this->assertEquals('Sic 2', $item7->theText);
         $this->assertEquals('Supplied', $item7->altText);
         
-        $item8 = $lineElement->items->getItem(7);
+        $item8 = $lineElement->items[7];
         $this->assertTrue($item8 instanceof TxText\Illegible);
         $this->assertEquals('illegible', $item8->getReason());
         $this->assertSame(5, $item8->getLength());
@@ -438,44 +441,44 @@ class TranscriptionReaderTest extends TestCase {
         $this->assertEquals(TranscriptionReader::WARNING_BAD_ATTRIBUTE, 
                 $tsReader->warnings[0]['number']);
         
-        $item9 = $lineElement->items->getItem(8);
+        $item9 = $lineElement->items[8];
         $this->assertTrue($item9 instanceof TxText\Abbreviation);
         $this->assertEquals('Mr.', $item9->theText);
         $this->assertEquals('Mister', $item9->altText);
         
-        $item10 = $lineElement->items->getItem(9);
+        $item10 = $lineElement->items[9];
         $this->assertTrue($item10 instanceof TxText\Deletion);
         $this->assertEquals('Deleted text', $item10->theText);
         
-        $item11 = $lineElement->items->getItem(10);
+        $item11 = $lineElement->items[10];
         $this->assertTrue($item11 instanceof TxText\Gliph);
         $this->assertEquals('공', $item11->theText);
         
-        $item12 = $lineElement->items->getItem(11);
+        $item12 = $lineElement->items[11];
         $this->assertTrue($item12 instanceof TxText\Addition);
         $this->assertEquals('Addition', $item12->theText);
         
-        $item13 = $lineElement->items->getItem(12);
+        $item13 = $lineElement->items[12];
         $this->assertTrue($item13 instanceof TxText\Mark);
         $this->assertEquals('somexmlid', $item13->getXmlId());
         
-        $item14 = $lineElement->items->getItem(13);
+        $item14 = $lineElement->items[13];
         $this->assertTrue($item14 instanceof TxText\Mark);
         $this->assertTrue(isset($pageDiv['cols'][1]['ednotes'][0]));
         $ednote1 = $pageDiv['cols'][1]['ednotes'][0];
         $this->assertEquals('Some inline note', $ednote1->text);
         $this->assertEquals($item14->id, $ednote1->target);
         
-        $item15 = $lineElement->items->getItem(14);
+        $item15 = $lineElement->items[14];
         $this->assertTrue($item15 instanceof TxText\Deletion);
         $this->assertEquals('Deleted text', $item15->theText);
         
-        $item16 = $lineElement->items->getItem(15);
+        $item16 = $lineElement->items[15];
         $this->assertTrue($item16 instanceof TxText\Addition);
         $this->assertEquals('Added text', $item16->theText);
         $this->assertEquals($item15->id, $item16->getTarget());
         
-        $item17 = $lineElement->items->getItem(16);
+        $item17 = $lineElement->items[16];
         $this->assertTrue($item17 instanceof TxText\Deletion);
         $this->assertEquals('Modified text', $item17->theText);
         $this->assertEquals('somemod', $item17->modXmlId);
@@ -484,7 +487,7 @@ class TranscriptionReaderTest extends TestCase {
         $this->assertTrue($addElement instanceof ColumnElement\Addition);
         $this->assertEquals($item17->id, $addElement->getTargetId());
         
-        $item18 = $lineElement->items->getItem(17);
+        $item18 = $lineElement->items[17];
         $this->assertTrue($item18 instanceof TxText\NoLinebreak);
         
     }
@@ -506,10 +509,10 @@ class TranscriptionReaderTest extends TestCase {
         
         $line1 = $pageDiv['cols'][1]['elements'][0];
         $this->assertTrue($line1 instanceof ColumnElement\Line);
-        $this->assertEquals(1, $line1->items->nItems());
+        $this->assertCount(1, $line1->items);
         
         $line2 = $pageDiv['cols'][1]['elements'][1];
         $this->assertTrue($line2 instanceof ColumnElement\Line);
-        $this->assertEquals(0, $line2->items->nItems());
+        $this->assertCount(0, $line2->items);
     }
 }

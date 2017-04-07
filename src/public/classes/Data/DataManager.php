@@ -126,11 +126,14 @@ class DataManager
         
         $this->docsDataTable = new MySqlDataTable($this->dbConn, 
                 $tableNames['docs']);
-        $this->pagesDataTable = new \DataTable\MySqlUnitemporalDataTable($this->dbConn, 
+        $this->pagesDataTable = new \DataTable\MySqlUnitemporalDataTable(
+                $this->dbConn, 
                 $tableNames['pages']);
-        $this->elementsDataTable = new \DataTable\MySqlUnitemporalDataTable($this->dbConn, 
+        $this->elementsDataTable = new \DataTable\MySqlUnitemporalDataTable(
+                $this->dbConn, 
                 $tableNames['elements']);
-        $this->itemsDataTable = new \DataTable\MySqlUnitemporalDataTable($this->dbConn, 
+        $this->itemsDataTable = new \DataTable\MySqlUnitemporalDataTable(
+                $this->dbConn, 
                 $tableNames['items']);
     }
    
@@ -451,14 +454,11 @@ class DataManager
         
         Utility::arraySortByKey($rows, 'seq');
         
-        $tt = new ItemArray($element->id, 
-                $element->lang, 
-                $element->editorId, 
-                $element->handId);
+        $tt=[];
         
         foreach ($rows as $row) {
             $item = $this->createItemObjectFromRow($row);
-            $tt->addItem($item, true);
+            ItemArray::addItem($tt, $item, true);
         }
         return $tt;
     }
@@ -488,11 +488,11 @@ class DataManager
      * @param boolean $insertAtEnd
      * @return Element
      */
-    public function insertNewElement(Element $element, $insertAtEnd=true) 
+    public function insertNewElement(Element $element, $insertAtEnd = true) 
     {
         // Quick checks on the element itself
-        if ($element->id !== 0) {
-            $this->logger->notice('Element with non-zero '
+        if ($element->id !== Element::ID_NOT_SET) {
+            $this->logger->notice('Element with a valid '
                     . 'id is being inserted as new', ['id' => $element->id]);
         }
         
@@ -502,13 +502,13 @@ class DataManager
             return false;
         }
         
-        if ($element->columnNumber === 0) {
+        if ($element->columnNumber <= 0) {
             $this->logger->error('Element being inserted in '
-                    . 'column 0', ['pageid' => $element->pageId]);
+                    . 'column <= 0', ['pageid' => $element->pageId]);
             return false;
         }
         
-        if ($element->items->nItems() === 0) {
+        if (count($element->items) === 0) {
             $this->logger->error('Empty element being inserted', 
                     ['pageid' => $element->pageId, 
                         'colnum' => $element->columnNumber, 
@@ -595,7 +595,7 @@ class DataManager
             // @codeCoverageIgnoreEnd
         }
 
-        foreach ($newElement->items->theItems as $item) {
+        foreach ($newElement->items as $item) {
             $item->columnElementId = $newId;
             // Forcing hands right now, this should change in the future
             $item->handId = $newElement->handId;
@@ -851,35 +851,46 @@ class DataManager
      */
     public function updateElement(Element $newElement, Element $oldElement)
     {
+        // Force IDs to be same, we're only dealing with the element's data
+        if ($newElement->id !== $oldElement->id) {
+                $newElement->id = $oldElement->id;
+        }
         if (!Element::isElementDataEqual($newElement, $oldElement)) {
             $this->updateElementInDB($newElement);
         }
         
-        $editScript = $oldElement->items->getEditScript($newElement->items);
+        $editScript = ItemArray::getEditScript(
+            $oldElement->items,
+            $newElement->items
+        );
        
         foreach ($editScript as $editInstruction) {
             list ($index, $cmd, $newSeq) = $editInstruction;
             switch ($cmd) {
                 case MyersDiff::KEEP:
-                    if ($oldElement->items->theItems[$index]->seq 
+                    print "Keeping item $index\n";
+                    if ($oldElement->items[$index]->seq 
                             !== $newSeq) {
-                        $oldElement->items->theItems[$index]->seq =
+                        print "... with new seq $newSeq";
+                        $oldElement->items[$index]->seq =
                                 $newSeq;
                         $this->updateItemInDB(
-                            $oldElement->items->theItems[$index]
+                            $oldElement->items[$index]
                         );
                     }
                     break;
                     
                 case MyersDiff::DELETE:
+                    print "Deleting item $index\n";
                     $this->itemsDataTable->deleteRow(
-                        $oldElement->items->theItems[$index]->id
+                        $oldElement->items[$index]->id
                     );
                     break;
                 
                 case MyersDiff::INSERT:
+                    print "Insert item with seq $newSeq\n";
                     $this->createNewItemInDB(
-                        $newElement->items->theItems[$index]
+                        $newElement->items[$index]
                     );
                     break;
             }
@@ -903,7 +914,7 @@ class DataManager
             return false;
         }
         
-        foreach ($element->items->theItems as $item) {
+        foreach ($element->items as $item) {
             $res2 = $this->itemsDataTable->deleteRow($item->id);
             if ($res2 === false) {
                 return false;

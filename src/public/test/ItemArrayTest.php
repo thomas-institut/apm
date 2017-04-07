@@ -1,7 +1,7 @@
 <?php
 
 /*
- *  Copyright (C) 2016 Universität zu Köln
+ *  Copyright (C) 2017 Universität zu Köln
  *  
  *  This program is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU General Public License
@@ -22,6 +22,7 @@ namespace AverroesProject;
 require "../vendor/autoload.php";
 
 use PHPUnit\Framework\TestCase;
+use AverroesProject\TxText\Item;
 use AverroesProject\TxText\ItemArray;
 use AverroesProject\TxText\Text;
 use AverroesProject\TxText\Rubric;
@@ -36,53 +37,66 @@ class ItemArrayTest extends TestCase
     
     public function testAddBadItem()
     {
-        $ia = new TxText\ItemArray();
+        $ia = [];
         $this->expectException(\InvalidArgumentException::class);
-        $ia->addItem(new ColumnElement\Line());
+        ItemArray::addItem($ia, new ColumnElement\Line());
     }
 
     public function testAddBadItem2()
     {
-        $ia = new TxText\ItemArray();
+        $ia = [];
         $this->expectException(\InvalidArgumentException::class);
-        $ia->addItem("somestring");
+        ItemArray::addItem($ia, "somestring");
     }
     
     public function testAddItemsWithSequence()
     {
-        $ia = new TxText\ItemArray();
+        $ia = [];
         
         for ($i = 0; $i < 10; $i++) {
             $item = new TxText\Text($i+100, $i+1, "Text" + $i);
-            $ia->addItem($item);
-            $this->assertSame($item, $ia->getItem($i));
+            ItemArray::addItem($ia, $item);
+            $this->assertSame($item, $ia[$i]);
         }
-        $this->assertEquals(10, $ia->nItems());
+        $this->assertCount(10, $ia);
     }
     
     public function testAddItemsWithoutSequence()
     {
-        $ia = new TxText\ItemArray();
+        $ia = [];
         for ($i = 0; $i < 10; $i++) {
             $item = new TxText\Text($i+100, -1, "Text" + $i);
-            $ia->addItem($item);
-            $this->assertSame($item, $ia->getItem($i));
+            ItemArray::addItem($ia, $item);
+            $this->assertSame($item, $ia[$i]);
             
         }
-        $this->assertEquals(10, $ia->nItems());
-
+        $this->assertCount(10, $ia);
+    }
+    
+    public function testAddToObject()
+    {
+        $line = new ColumnElement\Line();
+        for ($i = 0; $i < 10; $i++) {
+            $item = new TxText\Text($i+100, -1, "Text" + $i);
+            ItemArray::addItem($line->items, $item);
+            $this->assertSame($item, $line->items[$i]);
+        }
+        $this->assertCount(10, $line->items);
+        
+        
+        
     }
     
     public function testAddOrderedItems()
     {
-        $ia = new TxText\ItemArray();
+       $ia = [];
         
         for ($i = 0; $i < 10; $i++) {
             $item = new TxText\Text($i+100, $i+1000, "Text" + $i + '-');
-            $ia->addItem($item, true);
-            $this->assertSame($item, $ia->getItem($i));
+            ItemArray::addItem($ia, $item, true);
+            $this->assertSame($item, $ia[$i]);
         }
-        $this->assertEquals(10, $ia->nItems());
+        $this->assertCount(10, $ia);
         
         return $ia;
     }
@@ -90,23 +104,23 @@ class ItemArrayTest extends TestCase
     /**
      * @depends testAddOrderedItems
      */
-    public function testSetLang(TxText\ItemArray $ia) 
+    public function testSetLang($ia) 
     {
-        foreach($ia->theItems as $item) {
-            $this->assertEquals('', $item->lang);
+        foreach($ia as $item) {
+            $this->assertEquals(Item::LANG_NOT_SET, $item->lang);
         }
-        $ia->setLang('la');
-        foreach($ia->theItems as $item) {
+        ItemArray::setLang($ia, 'la');
+        foreach($ia as $item) {
             $this->assertEquals('la', $item->lang);
         }
         
-        $ia->setLang('he');
-        foreach($ia->theItems as $item) {
+        ItemArray::setLang($ia, 'he');
+        foreach($ia as $item) {
             $this->assertEquals('la', $item->lang);
         }
         
-        $ia->setLang('he', true);
-        foreach($ia->theItems as $item) {
+        ItemArray::setLang($ia, 'he', true);
+        foreach($ia as $item) {
             $this->assertEquals('he', $item->lang);
         }
     }
@@ -114,35 +128,35 @@ class ItemArrayTest extends TestCase
     /**
      * @depends testAddOrderedItems
      */
-    public function testSetHandId(TxText\ItemArray $ia) 
+    public function testSetHandId($ia) 
     {
-        foreach($ia->theItems as $item) {
-            $this->assertEquals(-1, $item->handId);
+        foreach($ia as $item) {
+            $this->assertEquals(Item::ID_NOT_SET, $item->handId);
         }
-        $ia->setHandId(20);
-        foreach($ia->theItems as $item) {
+        ItemArray::setHandId($ia, 20);
+        foreach($ia as $item) {
             $this->assertEquals(20, $item->handId);
         }
         
-        $ia->setHandId(30);
-        foreach($ia->theItems as $item) {
+        ItemArray::setHandId($ia, 30);
+        foreach($ia as $item) {
             $this->assertEquals(20, $item->handId);
         }
         
-        $ia->setHandId(30, true);
-        foreach($ia->theItems as $item) {
+        ItemArray::setHandId($ia, 30, true);
+        foreach($ia as $item) {
             $this->assertEquals(30, $item->handId);
         }
     }
     
     public function testGetText() 
     {
-        $ia = new TxText\ItemArray();
+       $ia = [];
         
-        $ia->addItem(new TxText\Text(100, -1, "Hello "));
-        $ia->addItem(new TxText\Text(101, -1, "World"));
+        ItemArray::addItem($ia, new TxText\Text(100, Item::SEQ_NOT_SET, "Hello "));
+        ItemArray::addItem($ia, new TxText\Text(101, Item::SEQ_NOT_SET, "World"));
         
-        $text = $ia->getText();
+        $text = ItemArray::getText($ia);
         $this->assertEquals('Hello World', $text);
     }
     
@@ -152,57 +166,61 @@ class ItemArrayTest extends TestCase
      */
     public function testSetCElementId($ia)
     {
-        foreach($ia->theItems as $item) {
+        foreach($ia as $item) {
             $item->setColumnElementId(200);
         }
         
-        foreach($ia->theItems as $item) {
+        foreach($ia as $item) {
             $this->assertEquals(200, $item->columnElementId);
         }
     }
 
     public function testIsRtl()
     {
-        $ia = new TxText\ItemArray();
+       $ia=[];
         
         for ($i = 0; $i < 10; $i++) {
             $item = new TxText\Text($i+100, $i+1000, "Text" + $i + '-');
-            $ia->addItem($item, true);
-            $this->assertSame($item, $ia->getItem($i));
+            ItemArray::addItem($ia, $item, true);
+            $this->assertSame($item, $ia[$i]);
         }
-        $ia->setLang('he');
+        ItemArray::setLang($ia, 'he');
         
         // all 10 items are Hebrew at this point!
-        $this->assertTrue($ia->isRtl());
+        $this->assertTrue(ItemArray::isRtl($ia));
         
         for ($i = 1; $i <= 4; $i++) {
-            $ia->getItem($i)->setLang('la');
+            $ia[$i]->setLang('la');
         }
-        $this->assertTrue($ia->isRtl());
+        $this->assertTrue(ItemArray::isRtl($ia));
         // The 5th non-RTL should tip the scale
-        $ia->getItem(5)->setLang('la');
-        $this->assertFalse($ia->isRtl());
+        $ia[5]->setLang('la');
+        $this->assertFalse(ItemArray::isRtl($ia));
     }
     
     public function testEditScript()
     {
-        $itemArray = new ItemArray();
+        $itemArray = [];
         
-        $itemArray->addItem(new Rubric(1, 0, 'Hello '), true);
-        $itemArray->addItem(new Text(2, 1, 'darkness '), true);
-        $itemArray->addItem(new Text(3, 2, 'my '), true);
-        $itemArray->addItem(new Text(4, 3, 'old '), true);
-        $itemArray->addItem(new Text(5, 4, 'friend '), true);
+        ItemArray::addItem($itemArray, new Rubric(1, 0, 'Hello '), true);
+        ItemArray::addItem($itemArray, new Text(2, 1, 'darkness '), true);
+        ItemArray::addItem($itemArray, new Text(3, 2, 'my '), true);
+        ItemArray::addItem($itemArray, new Text(4, 3, 'old '), true);
+        ItemArray::addItem($itemArray, new Text(5, 4, 'friend '), true);
         
-        // The same data
-        $newItemArray = new ItemArray();
-        $newItemArray->addItem(new Rubric(0, 0, 'Hello '), true);
-        $newItemArray->addItem(new Text(0, 0, 'darkness '), true);
-        $newItemArray->addItem(new Text(0, 0, 'my '), true);
-        $newItemArray->addItem(new Text(0, 0, 'old '), true);
-        $newItemArray->addItem(new Text(0, 0, 'friend '), true);
+        // The same data, ids and sequences should be irrelevant
+        $newItemArray = [];
+        ItemArray::addItem($newItemArray, new Rubric(0, 0, 'Hello '), true);
+        ItemArray::addItem($newItemArray, new Text(0, 0, 'darkness '), true);
+        ItemArray::addItem($newItemArray, new Text(0, 0, 'my '), true);
+        ItemArray::addItem($newItemArray, new Text(0, 0, 'old '), true);
+        ItemArray::addItem($newItemArray, new Text(0, 0, 'friend '), true);
         
-        $script = $itemArray->getEditScript($newItemArray);
+        $script = ItemArray::getEditScript(
+            $itemArray, 
+            $newItemArray
+        );
+
         //$this->printCommandSequence($script);
         $this->assertCount(5, $script);
         
@@ -214,14 +232,18 @@ class ItemArrayTest extends TestCase
         }
         
         // Totally different data
-        $newItemArray2 = new ItemArray();
-        $newItemArray2->addItem(new Rubric(1, 1, 'Hola'), true);
-        $newItemArray2->addItem(new Text(2, 2, 'oscuridad '), true);
-        $newItemArray2->addItem(new Text(3, 3, 'mi '), true);
-        $newItemArray2->addItem(new Text(4, 4, 'vieja '), true);
-        $newItemArray2->addItem(new Text(5, 5, 'amiga '), true);
-        $script2 = $itemArray->getEditScript($newItemArray2);
+        $newItemArray2 = [];
+        ItemArray::addItem($newItemArray2, new Rubric(1, 1, 'Hola'), true);
+        ItemArray::addItem($newItemArray2, new Text(2, 2, 'oscuridad '), true);
+        ItemArray::addItem($newItemArray2, new Text(3, 3, 'mi '), true);
+        ItemArray::addItem($newItemArray2, new Text(4, 4, 'vieja '), true);
+        ItemArray::addItem($newItemArray2, new Text(5, 5, 'amiga '), true);
         
+        $script2 = ItemArray::getEditScript(
+            $itemArray, 
+            $newItemArray2
+        );
+
         $this->assertCount(10, $script2);
         // First five should be deletes, next 5 should be inserts
         for ($i = 0; $i < 5; $i++) {
@@ -235,12 +257,12 @@ class ItemArrayTest extends TestCase
         }
         
         // A switch 
-        $newItemArray3 = new ItemArray();
-        $newItemArray3->addItem(new Rubric(0, 0, 'Hello '), true);
-        $newItemArray3->addItem(new Text(0, 0, 'darkness '), true);
-        $newItemArray3->addItem(new Text(0, 0, 'old '), true);
-        $newItemArray3->addItem(new Text(0, 0, 'my '), true);
-        $newItemArray3->addItem(new Text(0, 0, 'friend '), true);
+        $newItemArray3 = [];
+        ItemArray::addItem($newItemArray3, new Rubric(0, 0, 'Hello '), true);
+        ItemArray::addItem($newItemArray3, new Text(0, 0, 'darkness '), true);
+        ItemArray::addItem($newItemArray3, new Text(0, 0, 'old '), true);
+        ItemArray::addItem($newItemArray3, new Text(0, 0, 'my '), true);
+        ItemArray::addItem($newItemArray3, new Text(0, 0, 'friend '), true);
         
         $expectedCommandSequence = [ 
             Algorithm\MyersDiff::KEEP,
@@ -250,7 +272,11 @@ class ItemArrayTest extends TestCase
             Algorithm\MyersDiff::INSERT,
             Algorithm\MyersDiff::KEEP
         ];
-        $script3 = $itemArray->getEditScript($newItemArray3);
+        $script3 = ItemArray::getEditScript(
+            $itemArray, 
+            $newItemArray3
+        );
+
         //$this->printCommandSequence($script3);
         $this->assertCount(count($expectedCommandSequence), $script3);
         for ($i=0; $i < count($expectedCommandSequence); $i++) {

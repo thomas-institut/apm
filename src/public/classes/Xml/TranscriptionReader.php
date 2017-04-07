@@ -24,6 +24,7 @@ namespace AverroesProject\Xml;
 use XmlMatcher\XmlToken;
 use Matcher\Pattern;
 use AverroesProject\TxText\Item;
+use AverroesProject\TxText\ItemArray;
 
 /**
  * Class to read a transcription from XML input
@@ -415,7 +416,7 @@ class TranscriptionReader {
                 $itemResult = $this->readItems($elementXml, $elementId, $itemId, $col['ednotes']);
                 $element->items = $itemResult['items'];
                 $col['ednotes'] = $itemResult['ednotes'];
-                $itemId+= $itemResult['items']->nItems();
+                $itemId+= count($itemResult['items']);
             } 
             if (!$gap){
                 $element->id = $elementId;
@@ -432,7 +433,7 @@ class TranscriptionReader {
             // Check and update targets
             $ids = [];
             foreach($col['elements'] as $element){
-                foreach($element->items->theItems as $item) {
+                foreach($element->items as $item) {
                     if ($item instanceof \AverroesProject\TxText\Mark || 
                         $item instanceof \AverroesProject\TxText\Deletion) {
                         $ids[] = ['itemId' => $item->id, 'xmlId' => $item->getXmlId() ];
@@ -939,13 +940,13 @@ class TranscriptionReader {
         }
         
         $seq = 0;
-        $itemArray = new \AverroesProject\TxText\ItemArray($elementId);
+        $itemArray = [];
         foreach($pMatcher->matched as $matchedArray){
             foreach($matchedArray as $item){
                 if ($item instanceof Item){
                     $item->seq = $seq;
                     $item->columnElementId = $elementId;
-                    $itemArray->addItem($item);
+                    ItemArray::addItem($itemArray, $item);
                     $seq++;
                     continue;
                 }

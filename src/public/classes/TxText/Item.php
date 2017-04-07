@@ -26,6 +26,9 @@ namespace AverroesProject\TxText;
  */
 class Item {
 
+    const ID_NOT_SET = -1;
+    const SEQ_NOT_SET = -1;
+    const LANG_NOT_SET = '';
     /**
      *
      * @var int 
@@ -156,14 +159,18 @@ class Item {
         $this->columnElementId = $id;
     }
     
-    function __construct($i=0, $s = -1, $l='', $h=-1) {
+    function __construct($i=self::ID_NOT_SET, $s = self::SEQ_NOT_SET, 
+            $l = self::LANG_NOT_SET, $h = self::ID_NOT_SET)
+    {
         $this->id =(int) $i;
         $this->lang = $l;
         $this->handId = (int) $h;
         $this->seq = (int) $s;
+        $this->columnElementId = self::ID_NOT_SET;
     }
     
-    function isRtl(){
+    function isRtl()
+    {
         switch($this->lang){
             case 'ar':
             case 'he':
@@ -212,7 +219,9 @@ class Item {
        unset($dataB['seq']);
        unset($dataA['id']);
        unset($dataB['id']);
-      
+       unset($dataA['columnElementId']);
+       unset($dataB['columnElementId']);
+       
        return $dataA == $dataB;
     }
 }

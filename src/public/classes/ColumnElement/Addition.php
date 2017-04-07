@@ -29,7 +29,8 @@ class Addition extends Element {
         
     public $targetXmlId; 
     
-    public function __construct($id = 0, $colNumber = 0, $lang = '')
+    public function __construct($id = Element::ID_NOT_SET, 
+            $colNumber = 0, $lang = Element::LANG_NOT_SET)
     {
         parent::__construct($id, $colNumber, $lang);
         $this->type = parent::ADDITION;

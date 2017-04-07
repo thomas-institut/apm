@@ -177,20 +177,20 @@ function buildPageTextContainer(colNumber, elements, ednotes, people)
                 'title="' + title + '">' +
                 nLabel +
                 '</div>' +
-                '</td>';
+                '</td>'
 
 
         theText = '';
-        for (j = 0; j < elements[i].items.theItems.length; j++) {
+        for (j = 0; j < elements[i].items.length; j++) {
 
-            item = elements[i].items.theItems[j];
+            item = elements[i].items[j];
             htmlId = 'item' + item.id;
             itemHasEdnotes = hasEdnotes(item.id, ednotes);
             theText += getItemSpan(item, itemHasEdnotes);
             richTooltips[htmlId] = getItemPopover(item, ednotes, people, colNumber, elements[i].id);
             richTooltips[htmlId]['text'] += getItemPopoverButtonText(item, colNumber, i, j);
         } // for all items  
-        texttd = '<td class="text-' + elements[i].items.lang + '">' + 
+        texttd = '<td class="text-' + elements[i].lang + '">' + 
                 theText + "</td>";
         if (rtl) {
             s = s + texttd + seqtd;
@@ -309,7 +309,7 @@ function setupEditItemModal()
         var elementKey = button.data('elementkey');
         element = cols[colNumber]['elements'][elementKey];
         var itemKey = button.data('itemkey');
-        item = element.items.theItems[itemKey];
+        item = element.items[itemKey];
         // If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
         // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
         var modal = $(this);

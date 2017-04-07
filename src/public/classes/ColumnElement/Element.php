@@ -24,6 +24,9 @@ namespace AverroesProject\ColumnElement;
  * The base class for all Column Elements
  */
 class Element {
+    
+    const LANG_NOT_SET = '';
+    const ID_NOT_SET = -1;
 
     /**
      *
@@ -117,15 +120,17 @@ class Element {
      */
     public $placement;
     
-    public function __construct($id = 0, $colNumber = 0, $lang = '') {
+    public function __construct($id = self::ID_NOT_SET, 
+            $colNumber = 0, $lang = self::LANG_NOT_SET)
+    {
         $this->id = $id;
         $this->columnNumber = $colNumber;
-        $this->handId = 0;
-        $this->items = new \AverroesProject\TxText\ItemArray();
+        $this->handId = self::ID_NOT_SET;
+        $this->items = [];
         $this->lang = $lang;
-        $this->editorId  = 0;
-        $this->reference = NULL;
-        $this->placement = NULL;
+        $this->editorId  = self::ID_NOT_SET;
+        $this->reference = null;
+        $this->placement = null;
     }
     
     /**
@@ -133,7 +138,8 @@ class Element {
      * @todo See whether this method is necessary at all.
      * 
      */
-    function isRightToLeft(){
+    function isRightToLeft()
+    {
         switch($this->lang){
             case 'ar':
             case 'he':

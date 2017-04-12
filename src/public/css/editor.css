@@ -1,0 +1,83 @@
+/*
+Copyright (C) 2017 Universität zu Köln
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+*/
+/* 
+    Created on : Apr 11, 2017, 10:07:31 AM
+    Author     : Rafael Nájera <rafael.najera@uni-koeln.de>
+*/
+
+
+
+.transcription-editor {
+    width: 800px;
+}
+
+.editor-container {
+    display: block;
+    border: 1px solid #ccc;
+    font-family: sans-serif;
+    font-size: 1.2em;
+}
+
+.editor-container .ql-editor {
+    overflow-y: auto; 
+    tab-size: 4;
+    padding: 5px;
+    outline: none;
+}
+.ql-clipboard {
+    left: -100000px;
+    height: 1px;
+    overflow-y: hidden;
+    position: absolute;
+    top: 50%;
+}
+
+.ql-clipboard p {
+    margin: 0;
+    padding: 0;
+}
+
+.toolbar {
+    background: black;
+    color: white;
+}
+
+.toolbar button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: inline-block;
+    font-size: 18px;
+    padding: 0;
+    height: 32px;
+    width: 32px;
+    text-align: center;
+}
+.toolbar button:active, button:focus {
+    outline: none;
+}
+
+.toolbar .title-button {
+    font-size: 0.8em;
+    margin-left: 30px;
+    margin-right: 5px;
+}
+
+.toolbar button:disabled {
+    color: gray;
+}

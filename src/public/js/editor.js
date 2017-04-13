@@ -52,6 +52,8 @@ class TranscriptionEditor {
         
         this.containerSelector = containerSelector;
         
+        let Parchment = Quill.import('parchment');
+        
         let template = Twig.twig({
             id: "editor",
             href: baseUrl + "templates/editor.twig",
@@ -122,9 +124,24 @@ class TranscriptionEditor {
             quillObject.setSelection(range.index+range.length);
         });
         
+        $(containerSelector).on('dblclick', '.rubric', function(event){
+            let blot = Parchment.find(event.target);
+            let range = {
+                index: blot.offset(quillObject.scroll), 
+                length: blot.length() 
+            };
+            quillObject.setSelection(range);
+        });
+        
         $('#clear-button-' + id).click( function() {
             let range = quillObject.getSelection();
-            quillObject.removeFormat(range.index, range.length);
+            for (let i=range.index; i < range.index+range.length; i++) {
+                let format = quillObject.getFormat(i,1);
+                let lang = format['lang'];
+                quillObject.removeFormat(i,1);
+                quillObject.formatText(i,1, 'lang', lang);
+                
+            }
             quillObject.setSelection(range.index+range.length);
         });
 
@@ -133,11 +150,29 @@ class TranscriptionEditor {
             let range = quillObject.getSelection();
             quillObject.setSelection(range.index+range.length);
         });
+        
+        $(containerSelector).on('dblclick', '.gliph', function(event){
+            let blot = Parchment.find(event.target);
+            let range = {
+                index: blot.offset(quillObject.scroll), 
+                length: blot.length() 
+            };
+            quillObject.setSelection(range);
+        });
 
         $('#initial-button-' + id).click( function() {
             quillObject.format('initial', true);
             let range = quillObject.getSelection();
             quillObject.setSelection(range.index+range.length);
+        });
+        
+        $(containerSelector).on('dblclick', '.initial', function(event){
+            let blot = Parchment.find(event.target);
+            let range = {
+                index: blot.offset(quillObject.scroll), 
+                length: blot.length() 
+            };
+            quillObject.setSelection(range);
         });
 
         $('#sic-button-' + id).click( function() {
@@ -156,6 +191,32 @@ class TranscriptionEditor {
             });
             $('#sic-modal-' + thisObject.id).modal('show');
             
+        });
+        
+        $(containerSelector).on('dblclick', '.sic', function(event){
+            let blot = Parchment.find(event.target);
+            let range = {
+                index: blot.offset(quillObject.scroll), 
+                length: blot.length() 
+            };
+            quillObject.setSelection(range);
+            let format = quillObject.getFormat(range);
+            if (format['sic']) {
+                let text = quillObject.getText(range.index, range.length);
+                let correction = format['sic'];
+                $('#sic-modal-text-' + thisObject.id).html(text);
+                $('#sic-modal-correction-' + thisObject.id).val(correction);
+                $('#sic-modal-submit-button-' + thisObject.id).click(function() {
+                    $('#sic-modal-' + thisObject.id).modal('hide');
+                    let value = $('#sic-modal-correction-' + thisObject.id).val();
+                    if (value === '') {
+                        value = ' ';
+                    }
+                    quillObject.format('sic', value);
+                    quillObject.setSelection(range.index+range.length);
+            });
+            $('#sic-modal-' + thisObject.id).modal('show');
+            }
         });
         
         $('#abbr-button-' + id).click( function() {
@@ -394,7 +455,6 @@ class TranscriptionEditor {
             let currentString = '';
             for (const ch of curOps['insert']) {
                 if (ch === '\n') {
-                    console.log('New line with cs=' + currentString);
                     if (currentString !== '') {
                         let item = { 
                             id : -1,
@@ -406,7 +466,6 @@ class TranscriptionEditor {
                         };
                         curElement.items.push(item);
                     }
-                    console.log('nItems = ' + curElement.items.length)
                     if (curElement.items.length !== 0) {
                         elements.push(curElement);
                         currentElementSeq++;

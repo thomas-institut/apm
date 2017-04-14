@@ -87,6 +87,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
     color: gray;
 }
 
+.modal-ednotes > blockquote {
+    font-size: 1em;
+}
+
+.modal-ednotes > blockquote > footer {
+    margin-top: 0px;
+}
+
 .hetext {
     direction: rtl;
     unicode-bidi: isolate;
@@ -106,4 +114,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
     unicode-bidi: isolate;
     font-style: normal;
     font-family: Calibri;
+}
+
+.sic-note-edit-time{
+    padding-top: 5px;
+    padding-left: 10px;
+    font-size: 0.9em;
+    color: silver;
+        
 }

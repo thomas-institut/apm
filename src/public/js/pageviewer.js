@@ -185,8 +185,8 @@ function buildPageTextContainer(colNumber, elements, ednotes, people)
             item = elements[i].items[j];
             htmlId = 'item' + item.id;
             itemHasEdnotes = hasEdnotes(item.id, ednotes);
-            theText += getItemSpan(item, itemHasEdnotes);
-            richTooltips[htmlId] = getItemPopover(item, ednotes, people, colNumber, elements[i].id);
+            theText += Item.getItemSpan(item, itemHasEdnotes);
+            richTooltips[htmlId] = Item.getItemPopover(item, ednotes, people, colNumber, elements[i].id);
             richTooltips[htmlId]['text'] += getItemPopoverButtonText(item, colNumber, i, j);
         } // for all items  
         texttd = '<td class="text-' + elements[i].lang + '">' + 

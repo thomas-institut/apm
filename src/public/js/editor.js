@@ -16,20 +16,6 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-const INVALID =         0;  
-const TEXT =            1; // DONE
-const RUBRIC =          2; // DONE
-const SIC =             3; // DONE
-const UNCLEAR =         4;
-const ILLEGIBLE =       5;
-const GLIPH =           6; // DONE
-const ADDITION =        7;  
-const DELETION =        8;
-const MARK =            9;
-const NO_LINEBREAK =   10;
-const ABBREVIATION =   11; // DONE
-const LINEBREAK    =   12;
-const INITIAL      =   13; // DONE
 
 /**
  * QuillJS editor for transcriptions
@@ -54,21 +40,23 @@ class TranscriptionEditor {
         this.maxItemId = 0;
         
         this.containerSelector = containerSelector;
+        this.setDefaultLang(defaultLang);
+        this.templateLoaded = false;
+        let thisObject = this;
+        
         
         let Parchment = Quill.import('parchment');
         
         let template = Twig.twig({
             id: "editor",
             href: baseUrl + "templates/editor.twig",
-            async: false 
+            async: false
         });
         
         let editorHtml = template.render({id: id});
         $(containerSelector).html(editorHtml);
-        this.setDefaultLang(defaultLang);
+
         let quillObject = new Quill('#editor-container-' + id); 
-        let thisObject = this;
-        
         $('#sic-modal-' + id).modal({show: false});
     
         quillObject.on('selection-change', function(range, oldRange, source) {
@@ -78,6 +66,12 @@ class TranscriptionEditor {
             if (range.length === 0) {
                 $('.selFmtBtn').prop('disabled', true);
                 thisObject.setDisableLangButtons(true);
+                return;
+            }
+            let text = quillObject.getText(range);
+            if (text.search('\n') !== -1) {
+                $('.selFmtBtn').prop('disabled', true);
+                thisObject.setDisableLangButtons(false);
                 return;
             }
             let selectionHasNoFormat = true;
@@ -93,7 +87,6 @@ class TranscriptionEditor {
                         break;
                     }
                 }
-                
             }
             if (selectionHasNoFormat) {
                 $('.selFmtBtn').prop('disabled', false);
@@ -148,8 +141,12 @@ class TranscriptionEditor {
         });
         
         $('#rubric-button-' + id).click( function() {
-            quillObject.format('rubric', {itemid: thisObject.getOneItemId()});
             let range = quillObject.getSelection();
+            let text = quillObject.getText(range.index, range.length);
+            quillObject.format('rubric', {
+                itemid: thisObject.getOneItemId(),
+                editorid: thisObject.id
+            });
             quillObject.setSelection(range.index+range.length);
         });
         
@@ -180,22 +177,36 @@ class TranscriptionEditor {
                     return;
                 }
             }
+
             for (let i=range.index; i < range.index+range.length; i++) {
                 let format = quillObject.getFormat(i,1);
                 if ($.isEmptyObject(format)) {
                     continue;
                 }
-                
                 let lang = format['lang'];
+                let elementType = '';
+                for (const type of ['head', 'gloss', 'custodes']) {
+                    if (type in format) {
+                        elementType = type;
+                        break;
+                    }
+                }
                 quillObject.removeFormat(i,1);
                 quillObject.formatText(i,1, 'lang', lang);
+                if (elementType !== '') {
+                    quillObject.formatLine(i,1, elementType, true);
+                }
                 
             }
+            
             quillObject.setSelection(range.index+range.length);
         });
 
         $('#gliph-button-' + id).click( function() {
-            quillObject.format('gliph', true);
+            quillObject.format('gliph', {
+                itemid: thisObject.getOneItemId(),
+                editorid: thisObject.id
+            });
             let range = quillObject.getSelection();
             quillObject.setSelection(range.index+range.length);
         });
@@ -210,7 +221,10 @@ class TranscriptionEditor {
         });
 
         $('#initial-button-' + id).click( function() {
-            quillObject.format('initial', true);
+            quillObject.format('initial', {
+                itemid: thisObject.getOneItemId(),
+                editorid: thisObject.id
+            });
             let range = quillObject.getSelection();
             quillObject.setSelection(range.index+range.length);
         });
@@ -243,7 +257,8 @@ class TranscriptionEditor {
                 let itemid = thisObject.getOneItemId();
                 quillObject.format('sic', { 
                     correction: correction,
-                    itemid : itemid
+                    itemid : itemid,
+                    editorid: thisObject.id
                 });
                 quillObject.setSelection(range.index+range.length);
                 // Take care of notes!
@@ -321,13 +336,13 @@ class TranscriptionEditor {
                     if (correction === '') {
                         correction = ' ';
                     }
-                    quillObject.format('sic', {correction: correction, itemid: itemid});
+                    quillObject.format('sic', {correction: correction, itemid: itemid, editorid:thisObject.id });
                     quillObject.setSelection(range.index+range.length);
                     // Then, care of editorial notes
                     let noteId = $('#sic-note-id-' + thisObject.id).val();
                     let noteText = $('#sic-note-' + thisObject.id).val();
                     if (noteId == 'new') {
-                        thisObject.addNewNote(itemid, noteText);
+                        thisObject.addNewNote(parseInt(itemid), noteText);
                     } else {
                         thisObject.updateNote(noteId, noteText);
                     }
@@ -347,25 +362,52 @@ class TranscriptionEditor {
             quillObject.setSelection(range.index+range.length);
         });
 
-        $('#del-button-' + id).click( function() {
-            let value = prompt('Enter technique:');
-            if (value === null) {
-                return;
-            }
-            quillObject.format('deletion', value);
+//        $('#del-button-' + id).click( function() {
+//            let value = prompt('Enter technique:');
+//            if (value === null) {
+//                return;
+//            }
+//            quillObject.format('deletion', value);
+//            let range = quillObject.getSelection();
+//            quillObject.setSelection(range.index+range.length);
+//        });
+
+//        $('#illegible-button-' + id).click( function() {
+//            let range = quillObject.getSelection(true);
+//            quillObject.insertEmbed(range.index, 'image', {
+//                alt: 'Quill Cloud',
+//                url: 'http://quilljs.com/0.20/assets/images/cloud.png'
+//            }, Quill.sources.USER);
+//            quillObject.setSelection(range.index + 1, Quill.sources.SILENT);
+//        });
+
+        function setDeletion(technique) {
+            quillObject.format('deletion', {
+                itemid: thisObject.getOneItemId(),
+                editorid: thisObject.id,
+                technique: technique
+            });
             let range = quillObject.getSelection();
             quillObject.setSelection(range.index+range.length);
+        }
+
+        $('#del-strikeout-'+id).click(function(){
+            setDeletion('strikeout');
+        });
+        
+        $('#line-button-' + id).click(function (){
+            quillObject.format('head', false);
+            quillObject.format('gloss', false);
         });
 
-        $('#illegible-button-' + id).click( function() {
-            let range = quillObject.getSelection(true);
-            quillObject.insertEmbed(range.index, 'image', {
-                alt: 'Quill Cloud',
-                url: 'http://quilljs.com/0.20/assets/images/cloud.png'
-            }, Quill.sources.USER);
-            quillObject.setSelection(range.index + 1, Quill.sources.SILENT);
+        
+        $('#gloss-button-' + id).click(function (){
+            quillObject.format('gloss', true);
         });
-
+        
+        $('#head-button-' + id).click(function (){
+            quillObject.format('head', true);
+        });
         
         $('#set-arabic-'+id).click(function(){
             thisObject.setDefaultLang('ar');
@@ -382,8 +424,11 @@ class TranscriptionEditor {
             $('#lang-button-'+id).html('he');
         });
         
-        this.quillObject = quillObject;
+        thisObject.quillObject = quillObject;
+        TranscriptionEditor.editors[this.id] = thisObject;
+        
     }
+    
     
     getEdnotesForItemId(itemId) {
         let ednotes = [];
@@ -519,6 +564,11 @@ class TranscriptionEditor {
     setData(columnData) {
        
         let delta = [];
+        let formats = [];
+        formats[ELEMENT_HEAD] = 'head';
+        formats[ELEMENT_CUSTODES] = 'custodes';
+        formats[ELEMENT_GLOSS] = 'gloss';
+        
         this.edNotes = columnData.ednotes;
         this.people = columnData.people;
        
@@ -526,13 +576,16 @@ class TranscriptionEditor {
             this.pageId = ele.pageId;
             this.columnNumber = ele.columnNumber;
             switch(ele.type) {
-                case 1: 
-                    // ColumnElement::LINE
+                case ELEMENT_LINE: 
+                case ELEMENT_HEAD:
+                case ELEMENT_CUSTODES:
+                case ELEMENT_GLOSS:
+                case ELEMENT_PAGE_NUMBER:
                     for (const item of ele.items) {
                         let type='unknown';
                         this.maxItemId = Math.max(this.maxItemId, item.id);
                         switch(item.type) {
-                            case TEXT: 
+                            case ITEM_TEXT: 
                                 delta.push({
                                     insert: item.theText,
                                     attributes: {
@@ -541,54 +594,65 @@ class TranscriptionEditor {
                                 });
                                 break;
                                 
-                            case RUBRIC:
+                            case ITEM_RUBRIC:
                                 delta.push({
                                     insert: item.theText,
                                     attributes: { 
-                                        'rubric': {itemid: item.id}, 
-                                        'lang' : item.lang
+                                        rubric: {
+                                            itemid: item.id,
+                                            editorid: this.id
+                                        }, 
+                                        lang : item.lang
                                     }
                                 });
                                 break;
                                 
-                            case GLIPH:
+                            case ITEM_GLIPH:
                                 delta.push({
                                     insert: item.theText,
                                     attributes: {
-                                        'gliph': true, 
+                                        'gliph': {
+                                            itemid: item.id,
+                                            editorid: this.id
+                                        }, 
                                         'lang' : item.lang
                                     }
                                 });
                                 break;
                                 
-                            case INITIAL:
+                            case ITEM_INITIAL:
                                 delta.push({
                                     insert: item.theText,
                                     attributes: { 
-                                        'initial': true, 
+                                        'initial': {
+                                            itemid: item.id,
+                                            editorid: this.id
+                                        }, 
                                         'lang' : item.lang
                                     }
                                 });
                                 break;
                                 
-                            case SIC:
+                            case ITEM_SIC:
                                 delta.push({
                                     insert: item.theText,
                                     attributes: { 
                                         'sic': { 
                                             correction: item.altText,
-                                            itemid: item.id
+                                            itemid: item.id,
+                                            editorid: this.id
                                         },
                                         'lang' : item.lang
                                     }
                                 });
                                 break;
                                 
-                            case ABBREVIATION:
+                            case ITEM_ABBREVIATION:
                                 delta.push({
                                     insert: item.theText,
                                     attributes: { 
                                         'abbr': item.altText, 
+                                        itemid: item.id,
                                         'lang' : item.lang
                                     }
                                 });
@@ -599,7 +663,14 @@ class TranscriptionEditor {
                     }
                     break;
             }
-            delta.push({insert: '\n'});
+            if (formats[ele.type] === undefined) {
+                delta.push({insert: '\n'});
+            } else {
+                let attr = {};
+                attr[formats[ele.type]] = true;
+                delta.push({insert: '\n', attributes: attr});
+            }
+           
         }
         
         this.quillObject.setContents(delta);
@@ -634,35 +705,39 @@ class TranscriptionEditor {
         for (const [i, curOps] of ops.entries()) {
             console.log("Processing ops " + i);
             console.log(JSON.stringify(curOps));
-            let type = TEXT;
+            let type = ITEM_TEXT;
             let theLang = curElement.lang;
             let altText = '';
-            if ('attributes' in curOps) {
+            if (curOps['insert'] !== '\n' && 'attributes' in curOps) {
                 let itemId = -1;
                 if (curOps['attributes']['rubric']) {
-                    type = RUBRIC;
+                    type = ITEM_RUBRIC;
                     itemId = curOps['attributes']['rubric']['itemid'];
                 }
                 if (curOps['attributes']['gliph']) {
-                    type = GLIPH;
+                    type = ITEM_GLIPH;
+                    itemId = curOps['attributes']['gliph']['itemid'];
                 }
                 if (curOps['attributes']['initial']) {
-                    type = INITIAL;
+                    type = ITEM_INITIAL;
+                    itemId = curOps['attributes']['initial']['itemid'];
                 }
                 
                 if (curOps['attributes']['sic']) {
-                    type = SIC;
+                    type = ITEM_SIC;
                     altText = curOps['attributes']['sic']['correction'];
                     itemId = curOps['attributes']['sic']['itemid'];
                 }
                 if (curOps['attributes']['abbr']) {
-                    type = ABBREVIATION;
+                    type = ITEM_ABBREVIATION;
                     altText = curOps['attributes']['abbr'];
+                    itemId = curOps['attributes']['rubric']['itemid'];
                 }
                 
                 if (curOps['attributes']['lang']) {
                     theLang = curOps['attributes']['lang'];
                 }
+                itemId = parseInt(itemId);
                 let item = { 
                     id : itemId,
                     seq : currentItemSeq++,
@@ -691,6 +766,19 @@ class TranscriptionEditor {
                         curElement.items.push(item);
                     }
                     if (curElement.items.length !== 0) {
+                        let elementType = ELEMENT_LINE;
+                        if ('attributes' in curOps) {
+                            if (curOps['attributes']['gloss']) {
+                                elementType = ELEMENT_GLOSS;
+                            };
+                            if (curOps['attributes']['head']) {
+                                elementType = ELEMENT_HEAD;
+                            }
+                            if (curOps['attributes']['custodes']) {
+                                elementType = ELEMENT_CUSTODES;
+                            }
+                        }
+                        curElement['type'] = elementType;
                         elements.push(curElement);
                         currentElementSeq++;
                         curElement = { 
@@ -700,7 +788,7 @@ class TranscriptionEditor {
                             lang : this.defaultLang,
                             editorId : this.editorId,
                             handId : this.handId,
-                            type: 1, 
+                            type: ELEMENT_LINE, 
                             seq : currentElementSeq,
                             items : []    
                         };
@@ -726,6 +814,7 @@ class TranscriptionEditor {
         }
         // filter out stray notes
         let filteredEdnotes = [];
+        console.log(itemIds);
         for (const note of this.edNotes) {
             if (itemIds.includes(note.target)){
                 filteredEdnotes.push(note);
@@ -735,6 +824,37 @@ class TranscriptionEditor {
         return {elements : elements, ednotes: filteredEdnotes, people: this.people};
     }
     
+    
+    static setUpPopover(node, text, editorid=0, itemid) {
+        
+        $(node).popover({
+                    content: function () {
+                        let t = text;
+                        let editorObject = TranscriptionEditor.editors[editorid];
+                        let ednotes = editorObject.getEdnotesForItemId(itemid);
+                        if ($.isEmptyObject(ednotes)) {
+                            return t;
+                        }
+                        let ednotesHtml = '<h3>Notes</h3>';
+                        for (const note of ednotes) {
+                            ednotesHtml += '<blockquote><p>' + note.text + '</p>';
+                            ednotesHtml += '<footer>' + 
+                                editorObject.people[note.authorId]['fullname'] +
+                                ' @ ' +
+                                note.time + '</footer>';
+                            ednotesHtml += '</blockquote>';
+                        }
+                        return t + ednotesHtml;
+                    }, 
+                    container: 'body', 
+                    animation: false,
+                    delay : { 'show': 1000, 'hide': 0},
+                    html: true, 
+                    placement: 'auto', 
+                    trigger: 'hover'});
+        
+        
+    }
      /**
      *  
      *  Sets up Quill blots for the different items and elements
@@ -745,6 +865,8 @@ class TranscriptionEditor {
         let Inline = Quill.import('blots/inline');
         let BlockEmbed = Quill.import('blots/embed');
         let Block = Quill.import('blots/block');
+        
+        TranscriptionEditor.editors = [];
         
         
         class LangBlot extends Inline { 
@@ -772,14 +894,16 @@ class TranscriptionEditor {
         class RubricBlot extends Inline { 
             static create(value) {
                 let node = super.create();
-                node.setAttribute('title', 'Rubric');
                 node.setAttribute('itemid', value.itemid);
+                node.setAttribute('editorid', value.editorid);
+                TranscriptionEditor.setUpPopover(node, 'Rubric', value.editorid, value.itemid);
                 return node;
             }
             
             static formats(node) {
                 return {
-                    itemid: node.getAttribute('itemid')
+                    itemid: node.getAttribute('itemid'),
+                    editorid: node.getAttribute('editorid')
                 };
             }
         };
@@ -788,10 +912,19 @@ class TranscriptionEditor {
         RubricBlot.className = 'rubric';
 
         class GliphBlot extends Inline { 
-            static create() {
+            static create(value) {
                 let node = super.create();
-                node.setAttribute('title', 'Gliph');
+                node.setAttribute('itemid', value.itemid);
+                node.setAttribute('editorid', value.editorid);
+                TranscriptionEditor.setUpPopover(node, 'Gliph', value.editorid, value.itemid);
                 return node;
+            }
+            
+            static formats(node) {
+                return {
+                    itemid: node.getAttribute('itemid'),
+                    editorid: node.getAttribute('editorid')
+                };
             }
         };
         GliphBlot.blotName = 'gliph';
@@ -799,10 +932,19 @@ class TranscriptionEditor {
         GliphBlot.className = 'gliph';
 
         class InitialBlot extends Inline { 
-            static create() {
+            static create(value) {
                 let node = super.create();
-                node.setAttribute('title', 'Initial');
+                node.setAttribute('itemid', value.itemid);
+                node.setAttribute('editorid', value.editorid);
+                TranscriptionEditor.setUpPopover(node, 'Initial', value.editorid, value.itemid);
                 return node;
+            }
+            
+            static formats(node) {
+                return {
+                    itemid: node.getAttribute('itemid'),
+                    editorid: node.getAttribute('editorid')
+                };
             }
         };
         InitialBlot.blotName = 'initial';
@@ -810,14 +952,21 @@ class TranscriptionEditor {
         InitialBlot.className = 'initial';
 
         class DeletionBlot extends Inline {
-            static create(technique) {
+            static create(value) {
                 let node = super.create();
-                node.setAttribute('technique', technique);
+                node.setAttribute('itemid', value.itemid);
+                node.setAttribute('editorid', value.editorid);
+                node.setAttribute('technique', value.technique);
+                TranscriptionEditor.setUpPopover(node, 'Rubric', value.editorid, value.itemid);
                 return node;
             }
 
             static formats(node) {
-                return node.getAttribute('technique');
+                return {
+                    itemid: node.getAttribute('itemid'),
+                    editorid: node.getAttribute('editorid'),
+                    technique: node.getAttribute('technique')
+                };
             }
         };
         DeletionBlot.blotName = 'deletion';
@@ -826,24 +975,26 @@ class TranscriptionEditor {
 
         class SicBlot extends Inline {
             static create(value) {
-                //console.log('Creating SIC with id=' + value.itemid);
                 let node = super.create();
                 if (value.correction === ' ') {
                     node.setAttribute('correction', ' ');
-                    node.setAttribute('title', 'SIC');
                     node.setAttribute('itemid', value.itemid);
+                    node.setAttribute('editorid', value.editorid);
+                    TranscriptionEditor.setUpPopover(node, 'SIC');
                     return node;
                 }
                 node.setAttribute('correction', value.correction);
-                node.setAttribute('title', 'SIC, correction: ' + value.correction);
                 node.setAttribute('itemid', value.itemid);
+                TranscriptionEditor.setUpPopover(node, 'SIC<br/>Correction: ' + 
+                        value.correction, value.editorid, value.itemid);
                 return node;
             }
 
             static formats(node) {
                 return { 
                     correction: node.getAttribute('correction'),  
-                    itemid: node.getAttribute('itemid')
+                    itemid: node.getAttribute('itemid'),
+                    editorid: node.getAttribute('editorid')
                 };
             }
         };
@@ -866,25 +1017,39 @@ class TranscriptionEditor {
         AbbrBlot.blotName = 'abbr';
         AbbrBlot.tagName = 'b';
         AbbrBlot.className = 'abbr';
+        
 
-        class ImageBlot extends BlockEmbed {
-            static create(value) {
-                let node = super.create();
-                node.setAttribute('alt', value.alt);
-                node.setAttribute('src', value.url);
-                return node;
+        class GlossBlot extends Block { 
+            static formats(node) {
+                return true;
             }
+        }
+        GlossBlot.blotName = 'gloss';
+        GlossBlot.tagName = 'p';
+        GlossBlot.className = 'gloss';
+        
+        class HeadBlot extends Block { }
+        HeadBlot.blotName = 'head';
+        HeadBlot.tagName = 'h3';
 
-            static value(node) {
-                return {
-                    alt: node.getAttribute('alt'),
-                    url: node.getAttribute('src')
-                };
-            }
-         };
-
-        ImageBlot.blotName = 'image';
-        ImageBlot.tagName = 'img';
+//        class ImageBlot extends BlockEmbed {
+//            static create(value) {
+//                let node = super.create();
+//                node.setAttribute('alt', value.alt);
+//                node.setAttribute('src', value.url);
+//                return node;
+//            }
+//
+//            static value(node) {
+//                return {
+//                    alt: node.getAttribute('alt'),
+//                    url: node.getAttribute('src')
+//                };
+//            }
+//         };
+//
+//        ImageBlot.blotName = 'image';
+//        ImageBlot.tagName = 'img';
 
 
         Quill.register(LangBlot);
@@ -896,7 +1061,10 @@ class TranscriptionEditor {
         Quill.register(DeletionBlot);
         Quill.register(SicBlot);
         Quill.register(AbbrBlot);
-        Quill.register(ImageBlot);
+        
+        Quill.register(GlossBlot);
+        Quill.register(HeadBlot);
+//        Quill.register(ImageBlot);
     }
     
 }

@@ -14,13 +14,34 @@
         <button id="sic-button-{{id}}" class="selFmtBtn" title="Sic" disabled><i class="fa fa-frown-o"></i></button>
         <button id="abbr-button-{{id}}" class="selFmtBtn" title="Abbreviation" disabled><i class="fa fa-hand-spock-o"></i></button>
         <button id="add-button-{{id}}" class="selFmtBtn" title="Addition" disabled><i class="fa fa-plus-square"></i></button>
-        <button id="del-button-{{id}}" class="selFmtBtn" title="Deletion" disabled><i class="fa fa-minus-square"></i></button>
+        
+
+         <span class="dropdown">
+            <button id="del-button-{{id}}" class="selFmtBtn" title="Deletion" disabled data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                <i class="fa fa-minus-square"></i>
+           </button>
+            <ul class="dropdown-menu" aria-labelledby="del-button-{{id}}">
+                <li><a>Deletion Technique</a></li>
+                <li role=separator class=divider>
+                <li><a id="del-strikeout-{{id}}">Strikeout</a></li>
+                <li><a id="del-dots-above-{{id}}">Single dot above</a></li>
+                <li><a id="del-dot-above-{{id}}">Dots above</a></li>
+                <li><a id="del-dots-underneath-{{id}}">Dots under</a></li>
+                <li><a id="del-dot-above-dot-under-{{id}}">Dot above and under</a></li>
+           </ul>
+        </span>
+        
+        
+        
+        
+        
         <button id="unclear-button-{{id}}" class="selFmtBtn" title="Unclear" disabled><i class="fa fa-low-vision"></i></button>
         <button id="illegible-button-{{id}}" title="Illegible"><i class="fa fa-eye-slash"></i></button>
         <button id="dash-button-{{id}}" title="Dash" disabled><i class="fa fa-minus"></i></button>
         <button class="title-button" disabled>&nbsp;&nbsp;</button>
-        <button id="blockquote-button-{{id}}" title="Marginal Note"><i class="fa fa-quote-right"></i></button>
-        <button id="header-button-{{id}}" title="Header"><i class="fa fa-header"></i></button>
+        <button id="line-button-{{id}}" title="Line">L</button>
+        <button id="gloss-button-{{id}}" title="Gloss"><i class="fa fa-quote-right"></i></button>
+        <button id="head-button-{{id}}" title="Head"><i class="fa fa-header"></i></button>
         <button class="title-button" disabled>Default:</button>
         <span class="dropdown">
             <button class="dropdown-toggle" type="button" id="lang-button-{{id}}" title="Latin" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">

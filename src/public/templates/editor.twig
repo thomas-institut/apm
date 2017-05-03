@@ -1,6 +1,7 @@
 <div class="transcription-editor">
     <div class="toolbar">
         <button id="clear-button-{{id}}" class="selFmtBtn" title="Clear formatting" disabled><i class="fa fa-eraser"></i></button>
+        <button id="edit-button-{{id}}" class="selFmtBtn" title="Edit" disabled><i class="fa fa-pencil"></i></button>
         <button id="ar-button-{{id}}" class="langButton" title="Arabic" disabled>ar</button>
         <button id="he-button-{{id}}" class="langButton" title="Hebrew" disabled>he</button>
         <button id="la-button-{{id}}" class="langButton" title="Latin" disabled>la</button>
@@ -24,16 +25,12 @@
                 <li><a>Deletion Technique</a></li>
                 <li role=separator class=divider>
                 <li><a id="del-strikeout-{{id}}">Strikeout</a></li>
-                <li><a id="del-dots-above-{{id}}">Single dot above</a></li>
-                <li><a id="del-dot-above-{{id}}">Dots above</a></li>
+                <li><a id="del-dot-above-{{id}}">Single dot above</a></li>
+                <li><a id="del-dots-above-{{id}}">Dots above</a></li>
                 <li><a id="del-dots-underneath-{{id}}">Dots under</a></li>
                 <li><a id="del-dot-above-dot-under-{{id}}">Dot above and under</a></li>
            </ul>
         </span>
-        
-        
-        
-        
         
         <button id="unclear-button-{{id}}" class="selFmtBtn" title="Unclear" disabled><i class="fa fa-low-vision"></i></button>
         <button id="illegible-button-{{id}}" title="Illegible"><i class="fa fa-eye-slash"></i></button>
@@ -56,36 +53,55 @@
     </div>
     <div id="editor-container-{{id}}" class="editor-container"></div>
 </div>
-    <div id="sic-modal-{{id}}" class="modal" role="dialog">
-        <div class="modal-dialog modal-sm" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 id="sic-modal-title-{{id}}" class="modal-title">Sic</h4>
-                </div>
-                <div class="modal-body" id="sic-modal-body-{{id}}">
-                    <form>
-                        <div class="form-group">
-                            <label for="sic-modal-text-{{id}}" class="control-label">Text:</label>
-                            <span id="sic-modal-text-{{id}}"></span>
-                        </div>
-                        <div class="form-group">
-                            <label for="sic-modal-correction-{{id}}" class="control-label">Correction:</label>
-                            <input type="text" class="form-control" id="sic-modal-correction-{{id}}">
-                        </div>
-                        <input id="sic-note-id-{{id}}" type="hidden" name="note-id" value=""/>
-                        <div class="form-group">
-                            <label for="sic-note-{{id}}" class="control-label">Note:</label>
-                            <input type="text" class="form-control" id="sic-note-{{id}}">
-                            <p class="sic-note-edit-time" id="sic-note-time-{{id}}"></p>
-                        </div>
-                        <div class="modal-ednotes" id="sic-modal-ednotes-{{id}}">
-                        </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="sic-modal-submit-button-{{id}}">Submit</button>
-                </div>
+<!-- ITEM modal -->            
+<div id="item-modal-{{id}}" class="modal" role="dialog">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 id="item-modal-title-{{id}}" class="modal-title"></h4>
+            </div>
+            <div class="modal-body" id="item-modal-body-{{id}}">
+                <form>
+                    <div class="form-group">
+                        <label for="item-modal-text-{{id}}" class="control-label">Text:</label>
+                        <span id="item-modal-text-{{id}}"></span>
+                    </div>
+                    <div id="item-modal-alttext-fg-{{id}}" class="form-group">
+                        <label for="item-modal-alttext-{{id}}" id="item-modal-alttext-label-{{id}}" class="control-label">Alt Text:</label>
+                        <input type="text" class="form-control" id="item-modal-alttext-{{id}}">
+                    </div>
+                    <div id="item-modal-extrainfo-fg-{{id}}" class="form-group">
+                        <label for="item-modal-extrainfo-{{id}}" id="item-modal-extrainfo-label-{{id}}" class="control-label">Extra Info:</label>
+                        <select name="extrainfo" id="item-modal-extrainfo-{{id}}"></select>
+                    </div>
+                    <input id="item-note-id-{{id}}" type="hidden" name="note-id" value=""/>
+                    <div class="form-group">
+                        <label for="item-note-{{id}}" class="control-label">Note:</label>
+                        <input type="text" class="form-control" id="item-note-{{id}}">
+                        <p class="item-note-edit-time" id="item-note-time-{{id}}"></p>
+                    </div>
+                    <div class="modal-ednotes" id="item-modal-ednotes-{{id}}">
+                    </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="item-modal-submit-button-{{id}}">Submit</button>
             </div>
         </div>
     </div>
+</div>
+<div id="alert-modal-{{id}}" class="modal" role="dialog">
+    <div class="modal-dialog modal-sm " role="document">
+        <div class="modal-content bg-info">
+            <div class="modal-header">
+                <h4>Please confirm</h4>
+            </div>
+            <div class="modal-body" id="alert-modal-body-{{id}}">
+                <p id="alert-modal-text-{{id}}"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">No</button>
+                <button type="button" class="btn btn-danger" id="alert-modal-submit-button-{{id}}">Yes</button>
+            </div>
+</div>

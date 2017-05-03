@@ -80,6 +80,14 @@ class Item {
         return t;
     
 }
+
+    static getValidDeletionTechniques() {
+        return ['dot-above', 
+        'dot-above-dot-under',
+        'dots-above',
+        'dots-underneath',
+        'strikeout'];
+    }
     
 };
 

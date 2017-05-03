@@ -57,7 +57,8 @@ class TranscriptionEditor {
         $(containerSelector).html(editorHtml);
 
         let quillObject = new Quill('#editor-container-' + id); 
-        $('#sic-modal-' + id).modal({show: false});
+        $('#item-modal-' + id).modal({show: false});
+        $('#alert-modal-' + id).modal({show: false});
     
         quillObject.on('selection-change', function(range, oldRange, source) {
             if (!range) {
@@ -66,6 +67,7 @@ class TranscriptionEditor {
             if (range.length === 0) {
                 $('.selFmtBtn').prop('disabled', true);
                 thisObject.setDisableLangButtons(true);
+                $('#edit-button-' + id).prop('disabled', true);
                 return;
             }
             let text = quillObject.getText(range);
@@ -81,7 +83,7 @@ class TranscriptionEditor {
                 if ($.isEmptyObject(format)) {
                     continue;
                 }
-                for (const type of ['rubric', 'gliph', 'initial', 'sic', 'abbr']) {
+                for (const type of ['rubric', 'gliph', 'initial', 'sic', 'abbr', 'deletion']) {
                     if (type in format) {
                         selectionHasNoFormat = false;
                         break;
@@ -90,8 +92,10 @@ class TranscriptionEditor {
             }
             if (selectionHasNoFormat) {
                 $('.selFmtBtn').prop('disabled', false);
+                $('#edit-button-' + id).prop('disabled', true);
                 
             } else {
+                $('#edit-button-' + id).prop('disabled', false);
                 $('#clear-button-' + id).prop('disabled', false);
             }
         });
@@ -119,7 +123,6 @@ class TranscriptionEditor {
                 
                 return;
             }
-
         });
 
         $('#ar-button-' + id).click( function() {
@@ -150,6 +153,23 @@ class TranscriptionEditor {
             quillObject.setSelection(range.index+range.length);
         });
         
+        $('#note-button-' + id).click( function() {
+            let range = quillObject.getSelection();
+            if (range.length > 0) {
+                return;
+            }
+            //quillObject.insertText(range.index, "\uf06a ");
+            //quillObject.setSelection(range.index, 1);
+            //quillObject.removeFormat(range.index, 1);
+            quillObject.format('mark', {
+                itemid: thisObject.getOneItemId(),
+                editorid: thisObject.id
+            });
+            //quillObject.removeFormat(range.index+1, 1);
+            quillObject.setSelection(range.index+1);
+            
+        });
+        
         $(containerSelector).on('dblclick', '.rubric', function(event){
             let blot = Parchment.find(event.target);
             let range = {
@@ -157,6 +177,8 @@ class TranscriptionEditor {
                 length: blot.length() 
             };
             quillObject.setSelection(range);
+            $('#edit-button-' + id).prop('disabled', false);
+            
         });
         
         $('#clear-button-' + id).click( function() {
@@ -165,41 +187,49 @@ class TranscriptionEditor {
             let nonTextualItemsPresent = false;
             for (let i=range.index; i < range.index+range.length; i++) {
                 let format = quillObject.getFormat(i,1);
-                for (const type of ['rubric', 'gliph', 'initial', 'sic', 'abbr']) {
+                for (const type of ['rubric', 'gliph', 'initial', 'sic', 'abbr', 'deletion']) {
                     if (type in format) {
                         nonTextualItemsPresent = true;
                         break;
                     }
                 }
             }
-            if (nonTextualItemsPresent) {
-                if (!confirm("Are you sure you want to clear formatting of this text?")) {
-                    return;
-                }
-            }
-
-            for (let i=range.index; i < range.index+range.length; i++) {
-                let format = quillObject.getFormat(i,1);
-                if ($.isEmptyObject(format)) {
-                    continue;
-                }
-                let lang = format['lang'];
-                let elementType = '';
-                for (const type of ['head', 'gloss', 'custodes']) {
-                    if (type in format) {
-                        elementType = type;
-                        break;
+            
+            function removeFormat(quillObject, range) {
+                for (let i=range.index; i < range.index+range.length; i++) {
+                    let format = quillObject.getFormat(i,1);
+                    if ($.isEmptyObject(format)) {
+                        continue;
+                    }
+                    let lang = format['lang'];
+                    let elementType = '';
+                    for (const type of ['head', 'gloss', 'custodes']) {
+                        if (type in format) {
+                            elementType = type;
+                            break;
+                        }
+                    }
+                    quillObject.removeFormat(i,1);
+                    quillObject.formatText(i,1, 'lang', lang);
+                    if (elementType !== '') {
+                        quillObject.formatLine(i,1, elementType, true);
                     }
                 }
-                quillObject.removeFormat(i,1);
-                quillObject.formatText(i,1, 'lang', lang);
-                if (elementType !== '') {
-                    quillObject.formatLine(i,1, elementType, true);
-                }
-                
+                quillObject.setSelection(range.index+range.length);
             }
             
-            quillObject.setSelection(range.index+range.length);
+            
+            if (nonTextualItemsPresent) {
+                $('#alert-modal-text-' + thisObject.id).html('Are you sure you want to clear formatting of this text?</p><p>Formats and notes will be lost.</p><p class="text-danger">This can NOT be undone!');
+                $('#alert-modal-submit-button-' + thisObject.id).on('click', function() {
+                    $('#alert-modal-' + thisObject.id).modal('hide');
+                    removeFormat(quillObject, range);
+                });
+                $('#alert-modal-' + thisObject.id).modal('show');
+            } else {
+                removeFormat(quillObject, range);
+            }
+            
         });
 
         $('#gliph-button-' + id).click( function() {
@@ -218,6 +248,7 @@ class TranscriptionEditor {
                 length: blot.length() 
             };
             quillObject.setSelection(range);
+            $('#edit-button-' + id).prop('disabled', false);
         });
 
         $('#initial-button-' + id).click( function() {
@@ -236,21 +267,26 @@ class TranscriptionEditor {
                 length: blot.length() 
             };
             quillObject.setSelection(range);
+            $('#edit-button-' + id).prop('disabled', false);
         });
 
         $('#sic-button-' + id).click( function() {
             let range = quillObject.getSelection();
             let text = quillObject.getText(range.index, range.length);
-            $('#sic-modal-text-' + thisObject.id).html(text);
-            $('#sic-modal-correction-' + thisObject.id).val('');
-            $('#sic-modal-ednotes-' + thisObject.id).html('');
-            $('#sic-note-' + thisObject.id).val('');
-            $('#sic-note-time-' + thisObject.id).html('New note');
-            $('#sic-note-id-' + thisObject.id).val('new');
-            $('#sic-modal-submit-button-' + thisObject.id).off();
-            $('#sic-modal-submit-button-' + thisObject.id).on('click', function () {
-                $('#sic-modal-' + thisObject.id).modal('hide');
-                let correction = $('#sic-modal-correction-' + thisObject.id).val();
+            $('#item-modal-title-' + thisObject.id).html('Sic');
+            $('#item-modal-text-' + thisObject.id).html(text);
+            $('#item-modal-alttext-label-'+ thisObject.id).html('Correction:');
+            $('#item-modal-alttext-' + thisObject.id).val('');
+            $('#item-modal-alttext-fg-' + thisObject.id).show();
+            $('#item-modal-extrainfo-fg-' + thisObject.id).hide();
+            $('#item-modal-ednotes-' + thisObject.id).html('');
+            $('#item-note-' + thisObject.id).val('');
+            $('#item-note-time-' + thisObject.id).html('New note');
+            $('#item-note-id-' + thisObject.id).val('new');
+            $('#item-modal-submit-button-' + thisObject.id).off();
+            $('#item-modal-submit-button-' + thisObject.id).on('click', function () {
+                $('#item-modal-' + thisObject.id).modal('hide');
+                let correction = $('#item-modal-alttext-' + thisObject.id).val();
                 if (correction === '') {
                     correction = ' ';
                 }
@@ -262,12 +298,12 @@ class TranscriptionEditor {
                 });
                 quillObject.setSelection(range.index+range.length);
                 // Take care of notes!
-                let noteText = $('#sic-note-' + thisObject.id).val();
+                let noteText = $('#item-note-' + thisObject.id).val();
                 if (noteText != '') {
                     thisObject.addNewNote(itemid, noteText);
                 }
             });
-            $('#sic-modal-' + thisObject.id).modal('show');
+            $('#item-modal-' + thisObject.id).modal('show');
             
         });
         
@@ -278,89 +314,194 @@ class TranscriptionEditor {
                 length: blot.length() 
             };
             quillObject.setSelection(range);
-            let format = quillObject.getFormat(range);
-            if (format['sic']) {
-
-                let text = quillObject.getText(range.index, range.length);
-                let correction = format['sic']['correction'];
-                let itemid = format['sic']['itemid'];
-                let ednotes = thisObject.getEdnotesForItemId(itemid);
-                //console.log('Dblclick for item ' + itemid);
-                //console.log(ednotes);
-                let noteToEdit = thisObject.getLatestNoteForItemAndAuthor(itemid, 
-                        thisObject.editorId);
-                if ( ($.isEmptyObject(noteToEdit) && ednotes.length>0) || 
-                        ednotes.length > 1) {
-                    let ednotesHtml = '<h3>Other notes</h3>';
-                    for (const note of ednotes) {
-                        if (note.id === noteToEdit.id) {
-                            continue;
-                        }
-                        ednotesHtml += '<blockquote><p>' + note.text + '</p>';
-                        ednotesHtml += '<footer>' + 
-                            thisObject.people[note.authorId]['fullname'] +
-                            ' @ ' +
-                            note.time + '</footer>';
-                        ednotesHtml += '</blockquote>';
-                    }
-                    $('#sic-modal-ednotes-' + thisObject.id).html(ednotesHtml);
-                } else {
-                    $('#sic-modal-ednotes-' + thisObject.id).html('');
-                }
-                if (!$.isEmptyObject(noteToEdit)) {
-                    $('#sic-note-' + thisObject.id).val(noteToEdit.text);
-                    $('#sic-note-id-' + thisObject.id).val(noteToEdit.id);
-                    $('#sic-note-time-' + thisObject.id).html(
-                            'Note last edited <time datetime="' +
-                            noteToEdit.time + 
-                            '" title="' + 
-                            noteToEdit.time + 
-                            '">' + 
-                            thisObject.timeSince(noteToEdit.time) + 
-                            ' ago</time>'
-                        );
-                } else {
-                    $('#sic-modal-ednotes-' + thisObject.id).html('');
-                    $('#sic-note-' + thisObject.id).val('');
-                    $('#sic-note-time-' + thisObject.id).html('New note');
-                    $('#sic-note-id-' + thisObject.id).val('new');
-                }
-                $('#sic-modal-text-' + thisObject.id).html(text);
-                $('#sic-modal-correction-' + thisObject.id).val(correction);
-
-                $('#sic-modal-submit-button-' + thisObject.id).off();
-                $('#sic-modal-submit-button-' + thisObject.id).on('click', function (){
-                    $('#sic-modal-' + thisObject.id).modal('hide');
-                    // First, take care of the value
-                    let correction = $('#sic-modal-correction-' + thisObject.id).val();
-                    if (correction === '') {
-                        correction = ' ';
-                    }
-                    quillObject.format('sic', {correction: correction, itemid: itemid, editorid:thisObject.id });
-                    quillObject.setSelection(range.index+range.length);
-                    // Then, care of editorial notes
-                    let noteId = $('#sic-note-id-' + thisObject.id).val();
-                    let noteText = $('#sic-note-' + thisObject.id).val();
-                    if (noteId == 'new') {
-                        thisObject.addNewNote(parseInt(itemid), noteText);
-                    } else {
-                        thisObject.updateNote(noteId, noteText);
-                    }
-                    
-                });
-                $('#sic-modal-' + thisObject.id).modal('show');
-            }
+            $('#edit-button-' + id).prop('disabled', false);
         });
         
         $('#abbr-button-' + id).click( function() {
-            let value = prompt('Enter expansion:');
-            if (value === null || value==='') {
-                return;
-            }
-            quillObject.format('abbr', value);
             let range = quillObject.getSelection();
-            quillObject.setSelection(range.index+range.length);
+            let text = quillObject.getText(range.index, range.length);
+            $('#item-modal-title-' + thisObject.id).html('Abbreviation');
+            $('#item-modal-text-' + thisObject.id).html(text);
+            $('#item-modal-alttext-' + thisObject.id).val('');
+            $('#item-modal-alttext-label-'+ thisObject.id).html('Expansion:');
+            $('#item-modal-alttext-fg-' + thisObject.id).show();
+            $('#item-modal-extrainfo-fg-' + thisObject.id).hide();
+            $('#item-modal-ednotes-' + thisObject.id).html('');
+            $('#item-note-' + thisObject.id).val('');
+            $('#item-note-time-' + thisObject.id).html('New note');
+            $('#item-note-id-' + thisObject.id).val('new');
+            $('#item-modal-submit-button-' + thisObject.id).off();
+            $('#item-modal-submit-button-' + thisObject.id).on('click', function () {
+                $('#item-modal-' + thisObject.id).modal('hide');
+                let expansion = $('#item-modal-alttext-' + thisObject.id).val();
+                if (expansion === '') {
+                    expansion = ' ';
+                }
+                let itemid = thisObject.getOneItemId();
+                quillObject.format('abbr', { 
+                    expansion: expansion,
+                    itemid : itemid,
+                    editorid: thisObject.id
+                });
+                quillObject.setSelection(range.index+range.length);
+                // Take care of notes!
+                let noteText = $('#item-note-' + thisObject.id).val();
+                if (noteText != '') {
+                    thisObject.addNewNote(itemid, noteText);
+                }
+            });
+            $('#item-modal-' + thisObject.id).modal('show');
         });
+        
+        $(containerSelector).on('dblclick', '.abbr', function(event){
+            let blot = Parchment.find(event.target);
+            let range = {
+                index: blot.offset(quillObject.scroll), 
+                length: blot.length() 
+            };
+            quillObject.setSelection(range);
+            $('#edit-button-' + id).prop('disabled', false);
+        });
+        
+        $('#edit-button-' + id).click( function() {
+            let range = quillObject.getSelection();
+            let format = quillObject.getFormat(range);
+            let text = quillObject.getText(range.index, range.length);
+            let altText = '';
+            let itemid = -1;
+            $('#item-modal-title-' + thisObject.id).html('Unknown');
+            if (format['abbr']) {
+                altText = format['abbr']['expansion'];
+                itemid = format['abbr']['itemid'];
+                $('#item-modal-extrainfo-fg-' + thisObject.id).hide();
+                $('#item-modal-alttext-' + thisObject.id).val(altText);
+                $('#item-modal-alttext-label-' + thisObject.id).html('Expansion:');
+                $('#item-modal-alttext-fg-' + thisObject.id).show();
+                $('#item-modal-title-' + thisObject.id).html('Abbreviation');
+            }
+            if (format['sic']) {
+                altText = format['sic']['correction'];
+                itemid = format['sic']['itemid'];
+                $('#item-modal-extrainfo-fg-' + thisObject.id).hide();
+                $('#item-modal-alttext-' + thisObject.id).val(altText);
+                $('#item-modal-alttext-label-' + thisObject.id).html('Correction');
+                $('#item-modal-alttext-fg-' + thisObject.id).show();
+                $('#item-modal-title-' + thisObject.id).html('Sic');
+            }
+            if (format['deletion']) {
+                itemid = format['deletion']['itemid'];
+                let technique = format['deletion']['technique'];
+                $('#item-modal-alttext-fg-' + thisObject.id).hide();
+                $('#item-modal-extrainfo-label-' + thisObject.id).html('Technique:');
+                $('#item-modal-extrainfo-fg-' + thisObject.id).show();
+                let optionsHtml = '';
+                for (const tech of Item.getValidDeletionTechniques()) {
+                    optionsHtml += '<option value="' + tech + '"' ; 
+                    if (tech == technique) {
+                        optionsHtml += ' selected';
+                    }
+                    optionsHtml += '>' + tech + "</option>";
+                }
+                $('#item-modal-extrainfo-' + thisObject.id).html(optionsHtml);
+                $('#item-modal-title-' + thisObject.id).html('Deletion');
+            }
+            if (format['rubric']) {
+                itemid= format['rubric']['itemid'];
+                $('#item-modal-title-' + thisObject.id).html('Rubric');
+                $('#item-modal-alttext-fg-' + thisObject.id).hide();
+                $('#item-modal-extrainfo-fg-' + thisObject.id).hide();
+            }
+            if (format['initial']) {
+                itemid= format['initial']['itemid'];
+                $('#item-modal-title-' + thisObject.id).html('Initial');
+                $('#item-modal-alttext-fg-' + thisObject.id).hide();
+                $('#item-modal-extrainfo-fg-' + thisObject.id).hide();
+            }
+            if (format['gliph']) {
+                itemid= format['gliph']['itemid'];
+                $('#item-modal-title-' + thisObject.id).html('Gliph');
+                $('#item-modal-alttext-fg-' + thisObject.id).hide();
+                $('#item-modal-extrainfo-fg-' + thisObject.id).hide();
+            }
+            
+            let ednotes = thisObject.getEdnotesForItemId(itemid);
+            let noteToEdit = thisObject.getLatestNoteForItemAndAuthor(itemid, 
+                        thisObject.editorId);
+            if ( ($.isEmptyObject(noteToEdit) && ednotes.length>0) || 
+                        (ednotes.length > 1)) {
+                let ednotesHtml = '<h3>Other notes</h3>';
+                for (const note of ednotes) {
+                    if (note.id === noteToEdit.id) {
+                        continue;
+                    }
+                    ednotesHtml += '<blockquote><p>' + note.text + '</p>';
+                    ednotesHtml += '<footer>' + 
+                        thisObject.people[note.authorId]['fullname'] +
+                        ' @ ' +
+                        note.time + '</footer>';
+                    ednotesHtml += '</blockquote>';
+                }
+                $('#item-modal-ednotes-' + thisObject.id).html(ednotesHtml);
+            } else {
+                $('#item-modal-ednotes-' + thisObject.id).html('');
+            }
+            if (!$.isEmptyObject(noteToEdit)) {
+                $('#item-note-' + thisObject.id).val(noteToEdit.text);
+                $('#item-note-id-' + thisObject.id).val(noteToEdit.id);
+                $('#item-note-time-' + thisObject.id).html(
+                        'Note last edited <time datetime="' +
+                        noteToEdit.time + 
+                        '" title="' + 
+                        noteToEdit.time + 
+                        '">' + 
+                        thisObject.timeSince(noteToEdit.time) + 
+                        ' ago</time>'
+                    );
+            } else {
+                $('#item-note-' + thisObject.id).val('');
+                $('#item-note-time-' + thisObject.id).html('New note');
+                $('#item-note-id-' + thisObject.id).val('new');
+            }
+            
+            $('#item-modal-text-' + thisObject.id).html(text);
+
+            $('#item-modal-submit-button-' + thisObject.id).off();
+            $('#item-modal-submit-button-' + thisObject.id).on('click', function (){
+                $('#item-modal-' + thisObject.id).modal('hide');
+                // First, take care of the value
+                if (format['sic']) {
+                    let altText = $('#item-modal-alttext-' + thisObject.id).val();
+                    if (altText === '') {
+                        altText = ' ';
+                    }
+                    quillObject.format('sic', {correction: altText, itemid: itemid, editorid:thisObject.id });
+                }
+                if (format['abbr']) {
+                    let altText = $('#item-modal-alttext-' + thisObject.id).val();
+                    if (altText === '') {
+                        altText = ' ';
+                    }
+                    quillObject.format('abbr', {expansion: altText, itemid: itemid, editorid:thisObject.id });
+                }
+                if (format['deletion']) {
+                    let technique = $('#item-modal-extrainfo-' + thisObject.id).val();
+                    quillObject.format('deletion', {technique: technique, itemid: itemid, editorid:thisObject.id });
+                }
+                quillObject.setSelection(range.index+range.length);
+                // Then, care of editorial notes
+                let noteId = $('#item-note-id-' + thisObject.id).val();
+                let noteText = $('#item-note-' + thisObject.id).val();
+                if (noteId == 'new') {
+                    thisObject.addNewNote(parseInt(itemid), noteText);
+                } else {
+                    thisObject.updateNote(noteId, noteText);
+                }
+
+            });
+            $('#item-modal-' + thisObject.id).modal('show');
+        });
+        
+       
 
 //        $('#del-button-' + id).click( function() {
 //            let value = prompt('Enter technique:');
@@ -393,6 +534,18 @@ class TranscriptionEditor {
 
         $('#del-strikeout-'+id).click(function(){
             setDeletion('strikeout');
+        });
+        $('#del-dots-above-'+id).click(function(){
+            setDeletion('dots-above');
+        });
+        $('#del-dot-above-dot-under-'+id).click(function(){
+            setDeletion('dot-above-dot-under');
+        });
+        $('#del-dots-underneath-'+id).click(function(){
+            setDeletion('dots-underneath');
+        });
+        $('#del-dot-above-'+id).click(function(){
+            setDeletion('dot-above');
         });
         
         $('#line-button-' + id).click(function (){
@@ -499,11 +652,20 @@ class TranscriptionEditor {
     }
     
     updateNote(noteId, text) {
-        for (const note of this.edNotes) {
-            if (note.id == noteId) {
-                note.text = text,
-                note.time = this.getMySqlDate(new Date())
+        let indexToErase = -1;
+        for (let i=0; i < this.edNotes.length; i++) {
+            if (this.edNotes[i].id == noteId) {
+                if (text.trim() === '') {
+                    indexToErase = i;
+                    break;
+                }
+                this.edNotes[i].text = text,
+                this.edNotes[i].time = this.getMySqlDate(new Date());
+                break;
             }
+        }
+        if (indexToErase !== -1) {
+            this.edNotes.splice(indexToErase, 1);
         }
     }
     
@@ -589,7 +751,19 @@ class TranscriptionEditor {
                                 delta.push({
                                     insert: item.theText,
                                     attributes: {
-                                        'lang' : item.lang
+                                        lang : item.lang
+                                    }
+                                });
+                                break;
+                                
+                            case ITEM_MARK: 
+                                delta.push({
+                                    insert: "\uf06a",
+                                    attributes: { 
+                                        mark: {
+                                            itemid: item.id,
+                                            editorid: this.id
+                                        }
                                     }
                                 });
                                 break;
@@ -611,11 +785,11 @@ class TranscriptionEditor {
                                 delta.push({
                                     insert: item.theText,
                                     attributes: {
-                                        'gliph': {
+                                        gliph: {
                                             itemid: item.id,
                                             editorid: this.id
                                         }, 
-                                        'lang' : item.lang
+                                        lang : item.lang
                                     }
                                 });
                                 break;
@@ -624,11 +798,11 @@ class TranscriptionEditor {
                                 delta.push({
                                     insert: item.theText,
                                     attributes: { 
-                                        'initial': {
+                                        initial: {
                                             itemid: item.id,
                                             editorid: this.id
                                         }, 
-                                        'lang' : item.lang
+                                        lang : item.lang
                                     }
                                 });
                                 break;
@@ -637,12 +811,12 @@ class TranscriptionEditor {
                                 delta.push({
                                     insert: item.theText,
                                     attributes: { 
-                                        'sic': { 
+                                        sic: { 
                                             correction: item.altText,
                                             itemid: item.id,
                                             editorid: this.id
                                         },
-                                        'lang' : item.lang
+                                        lang : item.lang
                                     }
                                 });
                                 break;
@@ -651,9 +825,26 @@ class TranscriptionEditor {
                                 delta.push({
                                     insert: item.theText,
                                     attributes: { 
-                                        'abbr': item.altText, 
-                                        itemid: item.id,
-                                        'lang' : item.lang
+                                        abbr : {
+                                            expansion: item.altText, 
+                                            itemid: item.id,
+                                            editorid: this.id
+                                        },
+                                        lang : item.lang
+                                    }
+                                });
+                                break;
+                                
+                            case ITEM_DELETION:
+                                delta.push({
+                                    insert: item.theText,
+                                    attributes: { 
+                                        deletion: { 
+                                            technique: item.extraInfo,
+                                            itemid: item.id,
+                                            editorid: this.id
+                                        },
+                                        lang : item.lang
                                     }
                                 });
                                 break;
@@ -708,11 +899,16 @@ class TranscriptionEditor {
             let type = ITEM_TEXT;
             let theLang = curElement.lang;
             let altText = '';
+            let extraInfo = '';
             if (curOps['insert'] !== '\n' && 'attributes' in curOps) {
                 let itemId = -1;
                 if (curOps['attributes']['rubric']) {
                     type = ITEM_RUBRIC;
                     itemId = curOps['attributes']['rubric']['itemid'];
+                }
+                if (curOps['attributes']['mark']) {
+                    type = ITEM_MARK;
+                    itemId = curOps['attributes']['mark']['itemid'];
                 }
                 if (curOps['attributes']['gliph']) {
                     type = ITEM_GLIPH;
@@ -730,8 +926,14 @@ class TranscriptionEditor {
                 }
                 if (curOps['attributes']['abbr']) {
                     type = ITEM_ABBREVIATION;
-                    altText = curOps['attributes']['abbr'];
-                    itemId = curOps['attributes']['rubric']['itemid'];
+                    altText = curOps['attributes']['abbr']['expansion'];
+                    itemId = curOps['attributes']['abbr']['itemid'];
+                }
+                
+                 if (curOps['attributes']['deletion']) {
+                    type = ITEM_DELETION;
+                    extraInfo = curOps['attributes']['deletion']['technique'];
+                    itemId = curOps['attributes']['deletion']['itemid'];
                 }
                 
                 if (curOps['attributes']['lang']) {
@@ -744,7 +946,8 @@ class TranscriptionEditor {
                     type : type, 
                     lang: theLang,
                     theText : curOps['insert'],
-                    altText : altText
+                    altText : altText, 
+                    extraInfo: extraInfo
                 };
                 curElement.items.push(item);
                 itemIds.push(itemId);
@@ -825,35 +1028,40 @@ class TranscriptionEditor {
     }
     
     
-    static setUpPopover(node, text, editorid=0, itemid) {
+    static setUpPopover(node, title, text, editorid, itemid, notext=false) {
         
         $(node).popover({
-                    content: function () {
-                        let t = text;
-                        let editorObject = TranscriptionEditor.editors[editorid];
-                        let ednotes = editorObject.getEdnotesForItemId(itemid);
-                        if ($.isEmptyObject(ednotes)) {
-                            return t;
-                        }
-                        let ednotesHtml = '<h3>Notes</h3>';
-                        for (const note of ednotes) {
-                            ednotesHtml += '<blockquote><p>' + note.text + '</p>';
-                            ednotesHtml += '<footer>' + 
-                                editorObject.people[note.authorId]['fullname'] +
-                                ' @ ' +
-                                note.time + '</footer>';
-                            ednotesHtml += '</blockquote>';
-                        }
-                        return t + ednotesHtml;
-                    }, 
-                    container: 'body', 
-                    animation: false,
-                    delay : { 'show': 1000, 'hide': 0},
-                    html: true, 
-                    placement: 'auto', 
-                    trigger: 'hover'});
-        
-        
+            content: function () {
+                
+                let editorObject = TranscriptionEditor.editors[editorid];
+                let ednotes = editorObject.getEdnotesForItemId(itemid);
+
+                let theText = node.textContent;
+                let t = '<h3 class="editor-popover-title">' + title + '</h3>';
+                if (!notext) {
+                    t += '<b>Text</b>: ' + theText + '<br/>';
+                }
+                t+= text;
+                let ednotesHtml = '<h4>Notes:</h4>';
+                if ($.isEmptyObject(ednotes)) {
+                    ednotesHtml += '&nbsp;&nbsp;<i>None</i>';
+                }
+                for (const note of ednotes) {
+                    ednotesHtml += '<blockquote><p>' + note.text + '</p>';
+                    ednotesHtml += '<footer>' + 
+                        editorObject.people[note.authorId]['fullname'] +
+                        ' @ ' +
+                        note.time + '</footer>';
+                    ednotesHtml += '</blockquote>';
+                }
+                return t + ednotesHtml;
+            }, 
+            container: 'body', 
+            animation: false,
+            delay : { 'show': 1000, 'hide': 0},
+            html: true, 
+            placement: 'auto', 
+            trigger: 'hover'});
     }
      /**
      *  
@@ -896,7 +1104,7 @@ class TranscriptionEditor {
                 let node = super.create();
                 node.setAttribute('itemid', value.itemid);
                 node.setAttribute('editorid', value.editorid);
-                TranscriptionEditor.setUpPopover(node, 'Rubric', value.editorid, value.itemid);
+                TranscriptionEditor.setUpPopover(node, 'Rubric', '', value.editorid, value.itemid);
                 return node;
             }
             
@@ -910,13 +1118,39 @@ class TranscriptionEditor {
         RubricBlot.blotName = 'rubric';
         RubricBlot.tagName = 'b';
         RubricBlot.className = 'rubric';
+        
+        class MarkBlot extends BlockEmbed { 
+            static create(value) {
+                let node = super.create(value);
+                //node.innerHtml = 'NOTE';
+                node.setAttribute('itemid', value.itemid);
+                node.setAttribute('editorid', value.editorid);
+                //node.setAttribute('contenteditable', false);
+                //TranscriptionEditor.setUpPopover(node, 'Note', '', value.editorid, value.itemid, true);
+                return node;
+            }
+            
+            static formats(node) {
+                return {
+                    itemid: node.getAttribute('itemid'),
+                    editorid: node.getAttribute('editorid')
+                };
+            }
+            
+            index() {
+                return 1;
+            }
+        };
+        MarkBlot.blotName = 'mark';
+        MarkBlot.tagName = 'b';
+        MarkBlot.className = 'mark';
 
         class GliphBlot extends Inline { 
             static create(value) {
                 let node = super.create();
                 node.setAttribute('itemid', value.itemid);
                 node.setAttribute('editorid', value.editorid);
-                TranscriptionEditor.setUpPopover(node, 'Gliph', value.editorid, value.itemid);
+                TranscriptionEditor.setUpPopover(node, 'Gliph', '', value.editorid, value.itemid);
                 return node;
             }
             
@@ -936,7 +1170,7 @@ class TranscriptionEditor {
                 let node = super.create();
                 node.setAttribute('itemid', value.itemid);
                 node.setAttribute('editorid', value.editorid);
-                TranscriptionEditor.setUpPopover(node, 'Initial', value.editorid, value.itemid);
+                TranscriptionEditor.setUpPopover(node, 'Initial', '', value.editorid, value.itemid);
                 return node;
             }
             
@@ -957,7 +1191,8 @@ class TranscriptionEditor {
                 node.setAttribute('itemid', value.itemid);
                 node.setAttribute('editorid', value.editorid);
                 node.setAttribute('technique', value.technique);
-                TranscriptionEditor.setUpPopover(node, 'Rubric', value.editorid, value.itemid);
+                TranscriptionEditor.setUpPopover(node, 'Deletion', 
+                        '<b>Technique</b>: ' + value.technique, value.editorid, value.itemid);
                 return node;
             }
 
@@ -980,12 +1215,13 @@ class TranscriptionEditor {
                     node.setAttribute('correction', ' ');
                     node.setAttribute('itemid', value.itemid);
                     node.setAttribute('editorid', value.editorid);
-                    TranscriptionEditor.setUpPopover(node, 'SIC');
+                    TranscriptionEditor.setUpPopover(node, 'Sic', '', value.editorid, value.itemid);
                     return node;
                 }
                 node.setAttribute('correction', value.correction);
                 node.setAttribute('itemid', value.itemid);
-                TranscriptionEditor.setUpPopover(node, 'SIC<br/>Correction: ' + 
+                node.setAttribute('editorid', value.editorid);
+                TranscriptionEditor.setUpPopover(node, 'Sic',  '<b>Correction</b>: ' + 
                         value.correction, value.editorid, value.itemid);
                 return node;
             }
@@ -1003,15 +1239,22 @@ class TranscriptionEditor {
         SicBlot.className = 'sic';
         
         class AbbrBlot extends Inline {
-            static create(expansion) {
+            static create(value) {
                 let node = super.create();
-                node.setAttribute('expansion', expansion);
-                node.setAttribute('title', 'ABBR. Expansion: ' + expansion);
+                node.setAttribute('expansion', value.expansion);
+                node.setAttribute('itemid', value.itemid);
+                node.setAttribute('editorid', value.editorid);
+                TranscriptionEditor.setUpPopover(node, 'Abbreviation',  '<b>Expansion</b>: ' + 
+                        value.expansion, value.editorid, value.itemid);
                 return node;
             }
 
             static formats(node) {
-                return node.getAttribute('expansion');
+                return { 
+                    expansion: node.getAttribute('expansion'),  
+                    itemid: node.getAttribute('itemid'),
+                    editorid: node.getAttribute('editorid')
+                };
             }
         };
         AbbrBlot.blotName = 'abbr';
@@ -1057,6 +1300,8 @@ class TranscriptionEditor {
         Quill.register(RubricBlot);
         Quill.register(GliphBlot);
         Quill.register(InitialBlot);
+        
+        Quill.register(MarkBlot);
 
         Quill.register(DeletionBlot);
         Quill.register(SicBlot);

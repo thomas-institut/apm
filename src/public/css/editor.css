@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
     border: 1px solid #ccc;
     font-family: sans-serif;
     font-size: 1.2em;
+    padding-bottom: 10px;
 }
 
 .editor-container .ql-editor {
@@ -85,6 +86,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 .toolbar button:disabled {
     color: gray;
+}
+
+.editor-statusbar {
+    
 }
 
 .modal-ednotes > blockquote {

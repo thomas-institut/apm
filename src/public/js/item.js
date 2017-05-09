@@ -89,6 +89,14 @@ class Item {
         'strikeout'];
     }
     
+    static getValidAdditionPlaces() {
+        return ['above',
+        'below',
+        'inline',
+        'inspace',
+        'overflow'];
+    }
+    
 };
 
 

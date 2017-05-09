@@ -14,9 +14,21 @@
 
         <button id="sic-button-{{id}}" class="selFmtBtn" title="Sic" disabled><i class="fa fa-frown-o"></i></button>
         <button id="abbr-button-{{id}}" class="selFmtBtn" title="Abbreviation" disabled><i class="fa fa-hand-spock-o"></i></button>
-        <button id="add-button-{{id}}" class="selFmtBtn" title="Addition" disabled><i class="fa fa-plus-square"></i></button>
         
-
+        <span class="dropdown">
+            <button id="add-button-{{id}}" class="selFmtBtn" title="Addition" disabled data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                <i class="fa fa-plus-square"></i>
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="add-button-{{id}}">
+                <li><a>Placement</a></li>
+                <li role=separator class=divider>
+                <li><a id="add-above-{{id}}">Above</a></li>
+                <li><a id="add-below-{{id}}">Below</a></li>
+                <li><a id="add-inline-{{id}}">Inline</a></li>
+                <li><a id="add-inspace-{{id}}">In Space</a></li>
+                <li><a id="add-overflow-{{id}}">Overflow</a></li>
+           </ul>
+        </span>
          <span class="dropdown">
             <button id="del-button-{{id}}" class="selFmtBtn" title="Deletion" disabled data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
                 <i class="fa fa-minus-square"></i>
@@ -33,7 +45,7 @@
         </span>
         
         <button id="unclear-button-{{id}}" class="selFmtBtn" title="Unclear" disabled><i class="fa fa-low-vision"></i></button>
-        <button id="illegible-button-{{id}}" title="Illegible"><i class="fa fa-eye-slash"></i></button>
+        <button id="illegible-button-{{id}}" class="selFmtBtn" title="Illegible"><i class="fa fa-eye-slash"></i></button>
         <button id="dash-button-{{id}}" title="Dash" disabled><i class="fa fa-minus"></i></button>
         <button class="title-button" disabled>&nbsp;&nbsp;</button>
         <button id="line-button-{{id}}" title="Line">L</button>
@@ -77,6 +89,10 @@
                     <div id="item-modal-extrainfo-fg-{{id}}" class="form-group">
                         <label for="item-modal-extrainfo-{{id}}" id="item-modal-extrainfo-label-{{id}}" class="control-label">Extra Info:</label>
                         <select name="extrainfo" id="item-modal-extrainfo-{{id}}"></select>
+                    </div>
+                    <div id="item-modal-target-fg-{{id}}" class="form-group">
+                        <label for="item-modal-target-{{id}}" id="item-modal-target-label-{{id}}" class="control-label">Extra Info:</label>
+                        <select name="target" id="item-modal-target-{{id}}"></select>
                     </div>
                     <input id="item-note-id-{{id}}" type="hidden" name="note-id" value=""/>
                     <div class="form-group">

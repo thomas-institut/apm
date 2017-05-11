@@ -238,13 +238,14 @@ AbbrBlot.tagName = 'b';
 AbbrBlot.className = 'abbr';
 Quill.register(AbbrBlot);
 
+
 class MarkBlot extends BlockEmbed {
     static create(value) {
         let node = super.create();
         node.setAttribute('itemid', value.itemid);
         node.setAttribute('editorid', value.editorid);
         node.setAttribute('alt', 'Comment');
-        node.setAttribute('src', MarkBlot.baseUrl + '/images/averroes-icon.png');
+        node.setAttribute('src', MarkBlot.baseUrl + '/api/images/mark/16');
         TranscriptionEditor.setUpPopover(node, 'Note',  '', value.editorid, value.itemid, true);
         return node;
     }

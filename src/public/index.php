@@ -231,6 +231,13 @@ $app->group('/api', function (){
             '\AverroesProject\Api\ApiController:createNewUser')
         ->setName('api.user.new');
     
+    // API -> images : Mark Icon
+    $this->get('/images/mark/{size}', 
+            '\AverroesProject\Api\ApiController:generateMarkIcon')
+        ->setName('api.images.mark');
+    
+    
+    
 })->add('\AverroesProject\Auth\Authenticator:authenticateApiRequest');
 
 

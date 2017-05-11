@@ -39,6 +39,18 @@ class ApiController
        $this->logger = $ci->logger->withName('API');
     }
    
+    public function generateMarkIcon(Request $request, 
+            Response $response, $next)
+    {
+        $size = $request->getAttribute('size');
+        
+        $imageData = \AverroesProject\Image\EditorImages::markIcon($size);
+        
+        $response->getBody()->write($imageData);
+        return $response->withHeader('Content-Type', 'image/png');
+        //return $response;
+    }
+    
     public function getElementsByDocPageCol(Request $request, 
             Response $response, $next)
     {

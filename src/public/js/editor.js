@@ -20,7 +20,7 @@
 /* global Twig, Quill, ELEMENT_LINE, ELEMENT_HEAD, ELEMENT_CUSTODES */
 /* global ELEMENT_GLOSS, ELEMENT_PAGE_NUMBER, ITEM_TEXT, ITEM_MARK */
 /* global ITEM_RUBRIC, ITEM_GLIPH, ITEM_INITIAL, ITEM_SIC, ITEM_ABBREVIATION*/
-/* global ITEM_DELETION, Item, ITEM_ADDITION*/
+/* global ITEM_DELETION, Item, ITEM_ADDITION, ITEM_UNCLEAR*/
 
 
 let Inline = Quill.import('blots/inline');
@@ -238,6 +238,33 @@ AbbrBlot.tagName = 'b';
 AbbrBlot.className = 'abbr';
 Quill.register(AbbrBlot);
 
+class UnclearBlot extends Inline {
+    static create(value) {
+        let node = super.create();
+        node.setAttribute('reading2', value.reading2);
+        node.setAttribute('reason', value.reason);
+        node.setAttribute('itemid', value.itemid);
+        node.setAttribute('editorid', value.editorid);
+        TranscriptionEditor.setUpPopover(node, 'Unclear',  '<b>Alt. Reading</b>: ' + 
+                value.reading2 + '<br/><b>Reason</b>:' + value.reason, value.editorid, value.itemid);
+        return node;
+    }
+
+    static formats(node) {
+        return { 
+            reading2: node.getAttribute('reading2'),  
+            reason: node.getAttribute('reason'),
+            itemid: node.getAttribute('itemid'),
+            editorid: node.getAttribute('editorid')
+        };
+    }
+}
+
+UnclearBlot.blotName = 'unclear';
+UnclearBlot.tagName = 'b';
+UnclearBlot.className = 'unclear';
+Quill.register(UnclearBlot);
+
 
 class MarkBlot extends BlockEmbed {
     static create(value) {
@@ -445,6 +472,10 @@ class TranscriptionEditor {
             TranscriptionEditor.genSimpleDoubleClickFunction(thisObject, quillObject)
         );
 
+        $(containerSelector).on('dblclick', '.unclear', 
+            TranscriptionEditor.genSimpleDoubleClickFunction(thisObject, quillObject)
+        );
+
         
          $('#note-button-' + id).click( function() {
             let range = quillObject.getSelection();
@@ -614,6 +645,26 @@ class TranscriptionEditor {
                 $('#item-modal-alttext-fg-' + thisObject.id).show();
                 $('#item-modal-title-' + thisObject.id).html('Sic');
             }
+            if (format.unclear) {
+                altText = format.unclear.reading2;
+                itemid = format.unclear.itemid;
+                $('#item-modal-text-fg-' + thisObject.id).show();
+                $('#item-modal-extrainfo-label-' + thisObject.id).html('Reason:');
+                $('#item-modal-extrainfo-fg-' + thisObject.id).show();
+                let optionsHtml = '';
+                for (const reason of Item.getValidUnclearReasons()) {
+                    optionsHtml += '<option value="' + reason + '"' ; 
+                    if (reason === format.unclear.reason) {
+                        optionsHtml += ' selected';
+                    }
+                    optionsHtml += '>' + reason + "</option>";
+                }
+                $('#item-modal-extrainfo-' + thisObject.id).html(optionsHtml);
+                $('#item-modal-alttext-' + thisObject.id).val(altText);
+                $('#item-modal-alttext-label-' + thisObject.id).html('Alt. Reading');
+                $('#item-modal-alttext-fg-' + thisObject.id).show();
+                $('#item-modal-title-' + thisObject.id).html('Unclear');
+            }
             if (format.deletion) {
                 itemid = format.deletion.itemid;
                 let technique = format.deletion.technique;
@@ -709,6 +760,14 @@ class TranscriptionEditor {
                         altText = ' ';
                     }
                     quillObject.format('abbr', {expansion: altText, itemid: itemid, editorid:thisObject.id });
+                }
+                if (format.unclear) {
+                    let altText = $('#item-modal-alttext-' + thisObject.id).val();
+                    if (altText === '') {
+                        altText = ' ';
+                    }
+                    let reason = $('#item-modal-extrainfo-' + thisObject.id).val();
+                    quillObject.format('unclear', {reading2: altText, reason: reason, itemid: itemid, editorid:thisObject.id });
                 }
                 if (format.deletion) {
                     let technique = $('#item-modal-extrainfo-' + thisObject.id).val();
@@ -870,7 +929,7 @@ class TranscriptionEditor {
             if ($.isEmptyObject(format)) {
                 continue;
             }
-            for (const type of ['rubric', 'gliph', 'initial', 'sic', 'abbr', 'deletion', 'addition']) {
+            for (const type of ['rubric', 'gliph', 'initial', 'sic', 'abbr', 'deletion', 'addition', 'unclear']) {
                 if (type in format) {
                     return true;
                 }
@@ -1323,6 +1382,21 @@ class TranscriptionEditor {
                                     }
                                 });
                                 break;
+                            
+                            case ITEM_UNCLEAR:
+                                delta.push({
+                                    insert: item.theText,
+                                    attributes: { 
+                                        unclear: { 
+                                            reason: item.extraInfo,
+                                            reading2: item.altText,
+                                            itemid: item.id,
+                                            editorid: this.id
+                                        },
+                                        lang : item.lang
+                                    }
+                                });
+                                break;
                                 
                         }
                       
@@ -1422,6 +1496,12 @@ class TranscriptionEditor {
                         extraInfo = curOps.attributes.addition.place;
                         itemId = curOps.attributes.addition.itemid;
                         target =curOps.attributes.addition.target;
+                    }
+                    if (curOps.attributes.unclear) {
+                        type = ITEM_UNCLEAR;
+                        altText = curOps.attributes.unclear.reading2;
+                        extraInfo = curOps.attributes.unclear.reason;
+                        itemId = curOps.attributes.unclear.itemid;
                     }
 
                     if (curOps.attributes.lang) {

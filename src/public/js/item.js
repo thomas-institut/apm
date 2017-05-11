@@ -97,6 +97,11 @@ class Item {
         'overflow'];
     }
     
+    static getValidUnclearReasons() {
+        return ['unclear',
+        'damaged'];
+    }
+    
 };
 
 

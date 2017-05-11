@@ -322,6 +322,7 @@ class TranscriptionEditor {
             if (!range) {
                 return;
             }
+            let hasFormat = TranscriptionEditor.selectionHasFormat(quillObject, range);
             if (range.length === 0) {
                 $('.selFmtBtn').prop('disabled', true);
                 thisObject.setDisableLangButtons(true);
@@ -337,7 +338,6 @@ class TranscriptionEditor {
                 return;
             }
             thisObject.setDisableLangButtons(false);
-            let hasFormat = TranscriptionEditor.selectionHasFormat(quillObject, range);
             if (hasFormat) {
                 $('.selFmtBtn').prop('disabled', true);
                 $('#clear-button-' + id).prop('disabled', false);
@@ -356,13 +356,39 @@ class TranscriptionEditor {
                         console.log("Text has been deleted at pos " + 
                             delta.ops[0].retain + ", " + delta.ops[1].delete +
                             " characters");
-                        console.log(oldDelta);
-                        TranscriptionEditor.hideAllPopovers(thisObject.containerSelector);
+                        let deletionRanges = TranscriptionEditor.getDeletionRanges(oldDelta.ops);
+                        let coveredDeletions = 
+                                TranscriptionEditor.getCoveredDeletions(deletionRanges, 
+                                    delta.ops[0].retain,
+                                    delta.ops[1].delete
+                                    );
+                        if (coveredDeletions.length > 0) {
+                            let theOps = quillObject.getContents().ops;
+                            for (const del of coveredDeletions) {
+                                let add = TranscriptionEditor.getAdditionRangeByTarget(theOps, del.id);
+                                if (add) {
+                                    console.log("Updating addition " + add.id);
+                                    console.log(add);
+                                    quillObject.formatText( 
+                                            add.index,
+                                            add.length,
+                                            'addition', {
+                                                itemid: add.id,
+                                                editorid: thisObject.id,
+                                                place: add.place,
+                                                target: -1
+                                    });
+                                } else {
+                                    console.log("No addition associated with deletion " + del.id);
+                                }
+                            }
+                        }
+                        TranscriptionEditor.hideAllPopovers();
                     }
-                    if (delta.ops[1].insert) {
-                        console.log("Text has been inserted at pos " + 
-                            delta.ops[0].retain + ": " + delta.ops[1].insert);
-                    }
+//                    if (delta.ops[1].insert) {
+//                        console.log("Text has been inserted at pos " + 
+//                            delta.ops[0].retain + ": " + delta.ops[1].insert);
+//                    }
             }
         });
         $('#ar-button-' + id).click( function() {
@@ -863,7 +889,7 @@ class TranscriptionEditor {
     }
     
     setAddition(place, target = -1) {
-        let possibleTargets = this.getAdditionTargets();
+        //let possibleTargets = this.getAdditionTargets();
         
         //if (possibleTargets.length === 0) {
             this.quillObject.format('addition', {
@@ -1490,6 +1516,61 @@ class TranscriptionEditor {
         }
         
         return {elements : elements, ednotes: filteredEdnotes, people: this.people};
+    }
+    
+    static getDeletionRanges(ops) {
+        let index = 0;
+        let ranges = [];
+        for (const op of ops) {
+            if (!op.insert) {
+                continue;
+            }
+            if (op.attributes && op.attributes.deletion) {
+                ranges.push({
+                    id: parseInt(op.attributes.deletion.itemid), 
+                    index: index, 
+                    length: op.insert.length
+                });
+            }
+            index += op.insert.length;
+        }
+        return ranges;
+    }
+    
+    static getCoveredDeletions(ranges, index, length) {
+        let deletions = [];
+        
+        for (const range of ranges) {
+            if (range.index >= index && 
+                    (range.index+range.length) <= (index+length) ) {
+                deletions.push(range);
+            }
+        }
+        return deletions;
+    }
+    
+    static getAdditionRangeByTarget(ops, target) {
+        let index = 0;
+        if (typeof target === 'string') {
+            target = parseInt(target);
+        }
+        for (const op of ops) {
+            if (!op.insert) {
+                continue;
+            }
+            if (op.attributes && op.attributes.addition) {
+                if (parseInt(op.attributes.addition.target) === target) {
+                    return {
+                        index: index, 
+                        length: op.insert.length,
+                        place: op.attributes.addition.place,
+                        id: parseInt(op.attributes.addition.itemid)
+                    }
+                }
+            }
+            index += op.insert.length;
+        }
+        return false;
     }
     
     static hideAllPopovers() {

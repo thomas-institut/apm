@@ -20,7 +20,7 @@
 /* global Twig, Quill, ELEMENT_LINE, ELEMENT_HEAD, ELEMENT_CUSTODES */
 /* global ELEMENT_GLOSS, ELEMENT_PAGE_NUMBER, ITEM_TEXT, ITEM_MARK */
 /* global ITEM_RUBRIC, ITEM_GLIPH, ITEM_INITIAL, ITEM_SIC, ITEM_ABBREVIATION*/
-/* global ITEM_DELETION, Item, ITEM_ADDITION, ITEM_UNCLEAR*/
+/* global ITEM_DELETION, Item, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_ILLEGIBLE*/
 
 
 let Inline = Quill.import('blots/inline');
@@ -265,6 +265,34 @@ UnclearBlot.tagName = 'b';
 UnclearBlot.className = 'unclear';
 Quill.register(UnclearBlot);
 
+class IllegibleBlot extends BlockEmbed {
+    static create(value) {
+        let node = super.create();
+        node.setAttribute('reason', value.reason);
+        node.setAttribute('length', value.length);
+        node.setAttribute('alt', 'Illegible');
+        node.setAttribute('src', IllegibleBlot.baseUrl + '/api/images/illegible/14/' + value.length);
+        node.setAttribute('itemid', value.itemid);
+        node.setAttribute('editorid', value.editorid);
+        TranscriptionEditor.setUpPopover(node, 'Illegible',  '<b>Length</b>: ' + 
+                value.length + '<br/><b>Reason</b>:' + value.reason, value.editorid, value.itemid, true);
+        return node;
+    }
+
+    static value(node) {
+        return { 
+            length: node.getAttribute('length'),  
+            reason: node.getAttribute('reason'),
+            itemid: node.getAttribute('itemid'),
+            editorid: node.getAttribute('editorid')
+        };
+    }
+}
+
+IllegibleBlot.blotName = 'illegible';
+IllegibleBlot.tagName = 'img';
+IllegibleBlot.className = 'illegible';
+Quill.register(IllegibleBlot);
 
 class MarkBlot extends BlockEmbed {
     static create(value) {
@@ -330,6 +358,7 @@ class TranscriptionEditor {
         TranscriptionEditor.editors[editorId] = thisObject;
         
         MarkBlot.baseUrl = baseUrl;
+        IllegibleBlot.baseUrl = baseUrl;
         
         let template = Twig.twig({
             id: "editor",
@@ -476,8 +505,7 @@ class TranscriptionEditor {
             TranscriptionEditor.genSimpleDoubleClickFunction(thisObject, quillObject)
         );
 
-        
-         $('#note-button-' + id).click( function() {
+        $('#note-button-' + id).click( function() {
             let range = quillObject.getSelection();
             if (range.length > 0) {
                 return;
@@ -1398,6 +1426,19 @@ class TranscriptionEditor {
                                 });
                                 break;
                                 
+                            case ITEM_ILLEGIBLE:
+                                 delta.push({
+                                    insert: { 
+                                        illegible: {
+                                            length: item.length,
+                                            reason: item.extraInfo,
+                                            itemid: item.id,
+                                            editorid: this.id
+                                        }
+                                    }
+                                });
+                                break;
+                                
                         }
                       
                     }
@@ -1450,6 +1491,7 @@ class TranscriptionEditor {
             let altText = '';
             let extraInfo = '';
             let target = -1;
+            let length = -1;
             if (curOps.insert !== '\n' ) {
                 let itemId = -1;
                 let theText = curOps.insert;
@@ -1457,6 +1499,12 @@ class TranscriptionEditor {
                     if ('mark' in theText) {
                         type = ITEM_MARK;
                         itemId = theText.mark.itemid;
+                    }
+                    if ('illegible' in theText) {
+                        type = ITEM_ILLEGIBLE;
+                        itemId = theText.illegible.itemid;
+                        extraInfo = theText.illegible.reason;
+                        length = parseInt(theText.illegible.length);
                     }
                     theText = '';
                 }
@@ -1520,6 +1568,9 @@ class TranscriptionEditor {
                 };
                 if (target !== -1) {
                     item.target = target;
+                }
+                if (length !== -1) {
+                    item.length = length;
                 }
                 curElement.items.push(item);
                 itemIds.push(itemId);

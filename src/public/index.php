@@ -236,7 +236,10 @@ $app->group('/api', function (){
             '\AverroesProject\Api\ApiController:generateMarkIcon')
         ->setName('api.images.mark');
     
-    
+    // API -> images : Illegible Icon
+    $this->get('/images/illegible/{size}/{length}', 
+            '\AverroesProject\Api\ApiController:generateIllegibleIcon')
+        ->setName('api.images.illegible');
     
 })->add('\AverroesProject\Auth\Authenticator:authenticateApiRequest');
 

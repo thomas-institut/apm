@@ -102,6 +102,11 @@ class Item {
         'damaged'];
     }
     
+    static getValidIllegibleReasons() {
+        return ['damaged',
+        'illegible'];
+    }
+    
 };
 
 

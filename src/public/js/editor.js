@@ -374,7 +374,8 @@ class TranscriptionEditor {
         
         $('#item-modal-' + id).modal({show: false});
         $('#alert-modal-' + id).modal({show: false});
-    
+        
+   
         quillObject.on('selection-change', function(range, oldRange, source) {
             if (!range) {
                 return;
@@ -385,6 +386,7 @@ class TranscriptionEditor {
                 thisObject.setDisableLangButtons(true);
                 $('#edit-button-' + id).prop('disabled', true);
                 $('#note-button-' + id).prop('disabled', false);
+                $('#illegible-button-'+id).prop('disabled', false);
                 return;
             }
             $('#note-button-' + id).prop('disabled', true);
@@ -530,33 +532,11 @@ class TranscriptionEditor {
             
         });
         
-        $(containerSelector).on('dblclick', '.mark', function(event){
-            let blot = Quill.find(event.target);
-            let range = {
-                index: blot.offset(quillObject.scroll), 
-                length: blot.length() 
-            };
-            quillObject.setSelection(range);
-            let delta = quillObject.getContents(range.index, range.length);
-            if (!delta.ops[0].insert.mark) {
-                return;
-            }
-            let itemid = delta.ops[0].insert.mark.itemid;
-
-            TranscriptionEditor.resetItemModal(thisObject.id);
-            $('#item-modal-title-' + thisObject.id).html('Note');
-            TranscriptionEditor.setupNotesInItemModal(thisObject, itemid);
+        $(containerSelector).on('dblclick', '.mark', 
+            TranscriptionEditor.genEmbedDoubleClickFunction(thisObject, quillObject));
             
-            $('#item-modal-submit-button-' + thisObject.id).on('click', function () {
-                $('#item-modal-' + thisObject.id).modal('hide');
-                // Take care of notes!
-                let noteText = $('#item-note-' + thisObject.id).val();
-                if (noteText !== '') {
-                    thisObject.addNewNote(itemid, noteText);
-                }
-            });
-            $('#item-modal-' + thisObject.id).modal('show');
-        });
+        $(containerSelector).on('dblclick', '.illegible', 
+            TranscriptionEditor.genEmbedDoubleClickFunction(thisObject, quillObject));
         
         $('#clear-button-' + id).click( function() {
             let range = quillObject.getSelection();
@@ -643,6 +623,101 @@ class TranscriptionEditor {
             });
             $('#item-modal-' + thisObject.id).modal('show');
         });
+        
+        $('#unclear-button-' + id).click( function() {
+            let range = quillObject.getSelection();
+            let text = quillObject.getText(range.index, range.length);
+            TranscriptionEditor.resetItemModal(thisObject.id);
+            $('#item-modal-title-' + thisObject.id).html('Unclear');
+            $('#item-modal-text-' + thisObject.id).html(text);
+            $('#item-modal-text-fg-' + thisObject.id).show();
+            $('#item-modal-alttext-label-'+ thisObject.id).html('Alt. Reading:');
+            $('#item-modal-alttext-' + thisObject.id).val('');
+            $('#item-modal-alttext-fg-' + thisObject.id).show();
+            
+            $('#item-modal-text-fg-' + thisObject.id).show();
+            $('#item-modal-extrainfo-label-' + thisObject.id).html('Reason:');
+            $('#item-modal-extrainfo-fg-' + thisObject.id).show();
+            let optionsHtml = '';
+            for (const reason of Item.getValidUnclearReasons()) {
+                optionsHtml += '<option value="' + reason + '"' ; 
+                if (reason === 'unclear') {
+                    optionsHtml += ' selected';
+                }
+                optionsHtml += '>' + reason + "</option>";
+            }
+            $('#item-modal-extrainfo-' + thisObject.id).html(optionsHtml);
+            
+            $('#item-modal-submit-button-' + thisObject.id).on('click', function () {
+                $('#item-modal-' + thisObject.id).modal('hide');
+                let reading2 = $('#item-modal-alttext-' + thisObject.id).val();
+                if (reading2 === '') {
+                    reading2 = ' ';
+                }
+                let itemid = thisObject.getOneItemId();
+                let reason = $('#item-modal-extrainfo-' + thisObject.id).val();
+                quillObject.format('unclear', { 
+                    reading2: reading2,
+                    reason: reason,
+                    itemid : itemid,
+                    editorid: thisObject.id
+                });
+                quillObject.setSelection(range.index+range.length);
+                // Take care of notes!
+                let noteText = $('#item-note-' + thisObject.id).val();
+                if (noteText !== '') {
+                    thisObject.addNewNote(itemid, noteText);
+                }
+            });
+            $('#item-modal-' + thisObject.id).modal('show');
+            
+        });
+        
+        
+        $('#illegible-button-' + id).click( function() {
+            let range = quillObject.getSelection();
+            if (range.length > 0) {
+                return;
+            }
+            TranscriptionEditor.resetItemModal(thisObject.id);
+            $('#item-modal-title-' + thisObject.id).html('Illegible');
+            $('#item-modal-extrainfo-label-' + thisObject.id).html('Reason:');
+            $('#item-modal-extrainfo-fg-' + thisObject.id).show();
+            let optionsHtml = '';
+            for (const reason of Item.getValidIllegibleReasons()) {
+                optionsHtml += '<option value="' + reason + '"' ; 
+                if (reason === 'illegible') {
+                    optionsHtml += ' selected';
+                }
+                optionsHtml += '>' + reason + "</option>";
+            }
+            $('#item-modal-extrainfo-' + thisObject.id).html(optionsHtml);
+            $('#item-modal-length-fg-' + thisObject.id).show();
+            $('#item-modal-length-' + thisObject.id).val(4);
+            
+            
+            $('#item-modal-submit-button-' + thisObject.id).on('click', function () {
+                $('#item-modal-' + thisObject.id).modal('hide');
+                let itemid = thisObject.getOneItemId();
+                let reason = $('#item-modal-extrainfo-' + thisObject.id).val();
+                let length = $('#item-modal-length-' + thisObject.id).val();
+                quillObject.insertEmbed(range.index, 'illegible', { 
+                    length: length,
+                    reason: reason,
+                    itemid : itemid,
+                    editorid: thisObject.id
+                });
+                quillObject.setSelection(range.index+1);
+                // Take care of notes!
+                let noteText = $('#item-note-' + thisObject.id).val();
+                if (noteText !== '') {
+                    thisObject.addNewNote(itemid, noteText);
+                }
+            });
+            $('#item-modal-' + thisObject.id).modal('show');
+            
+        });
+        
         
         $('#edit-button-' + id).click( function() {
             let range = quillObject.getSelection();
@@ -1041,11 +1116,87 @@ class TranscriptionEditor {
         };
     }
     
+    static genEmbedDoubleClickFunction(thisObject, quillObject) {
+        return function(event){
+            let blot = Quill.find(event.target);
+            let range = {
+                index: blot.offset(quillObject.scroll), 
+                length: blot.length() 
+            };
+            quillObject.setSelection(range);
+            let delta = quillObject.getContents(range.index, range.length);
+            let unrecognizedEmbed = true;
+            let itemid = -1;
+            let length = -1;
+            let reason = '';
+            TranscriptionEditor.resetItemModal(thisObject.id);
+            if (delta.ops[0].insert.mark) {
+                itemid = delta.ops[0].insert.mark.itemid;
+                $('#item-modal-title-' + thisObject.id).html('Note');
+                unrecognizedEmbed = false;
+            }
+            if (delta.ops[0].insert.illegible) {
+                itemid = delta.ops[0].insert.illegible.itemid;
+                reason = delta.ops[0].insert.illegible.reason;
+                length = delta.ops[0].insert.illegible.length;
+                unrecognizedEmbed = false;
+                $('#item-modal-title-' + thisObject.id).html('Illegible');
+                $('#item-modal-extrainfo-label-' + thisObject.id).html('Reason:');
+                $('#item-modal-extrainfo-fg-' + thisObject.id).show();
+                let optionsHtml = '';
+                for (const theReason of Item.getValidIllegibleReasons()) {
+                    optionsHtml += '<option value="' + theReason + '"' ; 
+                    if (theReason === reason) {
+                        optionsHtml += ' selected';
+                    }
+                    optionsHtml += '>' + theReason + "</option>";
+                }
+                $('#item-modal-length-fg-' + thisObject.id).show();
+                $('#item-modal-length-' + thisObject.id).val(length);
+                $('#item-modal-extrainfo-' + thisObject.id).html(optionsHtml);
+            }
+            
+            if (unrecognizedEmbed) {
+                return;
+            }
+            
+            TranscriptionEditor.setupNotesInItemModal(thisObject, itemid);
+            
+            $('#item-modal-submit-button-' + thisObject.id).on('click', function () {
+                $('#item-modal-' + thisObject.id).modal('hide');
+                
+                if (delta.ops[0].insert.illegible) {
+                    let reason = $('#item-modal-extrainfo-' + thisObject.id).val();
+                    let length = $('#item-modal-length-' + thisObject.id).val();
+                    quillObject.deleteText(range.index, 1);
+                    quillObject.insertEmbed(range.index, 'illegible', {
+                            reason: reason, 
+                            length: length,
+                            itemid: itemid,
+                            editorid: thisObject.id
+                    });
+                    
+                }
+                                 
+                // Take care of notes!
+                let noteId = $('#item-note-id-' + thisObject.id).val();
+                let noteText = $('#item-note-' + thisObject.id).val();
+                if (noteId === 'new') {
+                    thisObject.addNewNote(itemid, noteText);
+                } else {
+                    thisObject.updateNote(noteId, noteText);
+                }
+            });
+            $('#item-modal-' + thisObject.id).modal('show');
+        }
+    }
+    
     static resetItemModal(id) {
         $('#item-modal-title-' + id).html('');
         $('#item-modal-text-fg-' + id).hide();
         $('#item-modal-alttext-fg-' + id).hide();
         $('#item-modal-extrainfo-fg-' + id).hide();
+        $('#item-modal-length-fg-' + id).hide();
         $('#item-modal-target-fg-' + id).hide();
         $('#item-modal-ednotes-' + id).html('');
         $('#item-note-' + id).val('');

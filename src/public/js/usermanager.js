@@ -18,6 +18,8 @@
 
 /* eslint-env jquery */
 
+/* global ApmUtil */
+
 var apiBase
 var createUserApiUrl
 
@@ -48,12 +50,12 @@ function bindFormSubmissionEventHandler () {
             $('#theAddUserForm').serialize(),
             function (data, text, jqXHR) {
               $('#addUserForm').collapse('hide')
-              reportSuccess('User ' + newUsername + ' created',
+              ApmUtil.reportSuccess('User ' + newUsername + ' created',
                 $('#reportarea'), true)
               window.setTimeout(function () { location.reload() }, 2500)
             })
             .fail(function (jqXHR, text, e) {
-              reportError(jqXHR, text, e, $('#addUserFormDiv'))
+              ApmUtil.reportError(jqXHR, text, e, $('#addUserFormDiv'))
             })
   })
 }

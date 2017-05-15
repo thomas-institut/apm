@@ -18,6 +18,8 @@
 
 /* eslint-env jquery */
 
+/* global ApmUtil */
+
 var apiBase
 var profileUserInfo
 
@@ -82,11 +84,11 @@ $(document).ready(function () {
             function (data, text, jqXHR) {
               getProfileInfoFromBackEnd()
               $('#editProfileForm').collapse('hide')
-              reportSuccess('User profile updated',
+              ApmUtil.reportSuccess('User profile updated',
                 $('#reportarea'), true)
             })
             .fail(function (jqXHR, text, e) {
-              reportError(jqXHR, text, e, $('#editProfileFormDiv'))
+              ApmUtil.reportError(jqXHR, text, e, $('#editProfileFormDiv'))
             })
   })
 
@@ -100,11 +102,11 @@ $(document).ready(function () {
             $('#theChangePasswordForm').serialize(),
             function (data, text, jqXHR) {
               $('#changePasswordForm').collapse('hide')
-              reportSuccess('User password updated',
+              ApmUtil.reportSuccess('User password updated',
                 $('#reportarea'), true)
             })
             .fail(function (jqXHR, text, e) {
-              reportError(jqXHR, text, e, $('#changePasswordFormDiv'))
+              ApmUtil.reportError(jqXHR, text, e, $('#changePasswordFormDiv'))
             })
   })
 
@@ -120,11 +122,11 @@ $(document).ready(function () {
               getProfileInfoFromBackEnd()
               $('#makeRootForm').collapse('hide')
               $('#makerootbutton').hide()
-              reportSuccess('User given root status',
+              ApmUtil.reportSuccess('User given root status',
                 $('#reportarea'), true)
             })
             .fail(function (jqXHR, text, e) {
-              reportError(jqXHR, text, e, $('#makeRootFormDiv'))
+              ApmUtil.reportError(jqXHR, text, e, $('#makeRootFormDiv'))
             })
   })
 })

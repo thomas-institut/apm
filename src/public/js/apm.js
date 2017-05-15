@@ -18,102 +18,99 @@
 
 /* eslint-env jquery */
 
-/**
- * Some utility functions
- */
+class ApmUtil {
+  /**
+   * Appends an error alert to theDiv according to the error received.
+   *
+   * This function is meant to be used within the error callback of an
+   * AJAX call.
+   *
+   * @param {jqXHR} jqXHR
+   * @param {string} text
+   * @param {string} e
+   * @param {element} theDiv
+   * @returns {nothing}
+   */
+  static reportError (jqXHR, text, e, theDiv) {
+    var errorMsg
+    switch (text) {
+      case 'timeout':
+        errorMsg = 'The server took too much time to respond, please try later'
+        break
 
-/**
- * Appends an error alert to theDiv according to the error received.
- *
- * This function is meant to be used within the error callback of an
- * AJAX call.
- *
- * @param {jqXHR} jqXHR
- * @param {string} text
- * @param {string} e
- * @param {element} theDiv
- * @returns {nothing}
- */
-function reportError (jqXHR, text, e, theDiv) {
-  var errorMsg
-  switch (text) {
-    case 'timeout':
-      errorMsg = 'The server took too much time to respond, please try later'
-      break
+      case 'parsererror':
+        errorMsg = 'Parser error, please report this to the system administrator'
+        break
 
-    case 'parsererror':
-      errorMsg = 'Parser error, please report this to the system administrator'
-      break
+      case 'abort':
+        errorMsg = 'Aborted, if not expected please report to the system administrator'
+        break
 
-    case 'abort':
-      errorMsg = 'Aborted, if not expected please report to the system administrator'
-      break
+      case 'error':
+        errorMsg = 'Server responded (' + jqXHR.status + ') ' + e
+        break
 
-    case 'error':
-      errorMsg = 'Server responded (' + jqXHR.status + ') ' + e
-      break
+      default:
+        errorMsg = 'Unknown error, please report this to the system administrator!'
+    }
 
-    default:
-      errorMsg = 'Unknown error, please report this to the system administrator!'
+    theDiv.append(`
+          <div class="alert alert-danger alert-dismissable withtopmargin" role="alert">
+              <button type="button" class="close" data-dismiss="alert" 
+                      aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+              </button>
+             <strong>Oops, something went wrong</strong>: ` +
+              errorMsg + '</div>')
   }
 
-  theDiv.append(`
-        <div class="alert alert-danger alert-dismissable withtopmargin" role="alert">
-            <button type="button" class="close" data-dismiss="alert" 
-                    aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-           <strong>Oops, something went wrong</strong>: ` +
-            errorMsg + '</div>')
-}
+  /**
+   * Appends a success alert with the given message to theDiv.
+   * Optionally, reloads the current page after a short delay.
+   *
+   * @param {string} msg
+   * @param {element} theDiv
+   * @param {boolean} fadeOut
+   * @returns {nothing}
+   */
+  static reportSuccess (msg, theDiv, fadeOut = false) {
+    let id = theDiv.attr('id') + '-successalert' + ApmUtil.someNum
+    ApmUtil.someNum++
+    let html = '<div class="alert alert-success alert-dismissable" id="' +
+              id + `" role="alert" 
+                  style="margin-top: 20px">
+              <button type="button" class="close" data-dismiss="alert" 
+                      aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+              </button>
+             <strong>Success! </strong>` +
+              msg + '</div>'
 
-/**
- * Appends a success alert with the given message to theDiv.
- * Optionally, reloads the current page after a short delay.
- *
- * @param {string} msg
- * @param {element} theDiv
- * @param {boolean} fadeOut
- * @returns {nothing}
- */
+    theDiv.append(html)
+    if (fadeOut) {
+      $('#' + id).fadeOut(2500)
+    }
+  }
 
-var someNum = 1
+  static getUserIdFromLongTermCookie () {
+    let rmeCookie = ApmUtil.getCookie('rme')
+    return rmeCookie.split(':').pop()
+  }
 
-function reportSuccess (msg, theDiv, fadeOut = false) {
-  let id = theDiv.attr('id') + '-successalert' + someNum
-  someNum++
-  let html = '<div class="alert alert-success alert-dismissable" id="' +
-            id + `" role="alert" 
-                style="margin-top: 20px">
-            <button type="button" class="close" data-dismiss="alert" 
-                    aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-           <strong>Success! </strong>` +
-            msg + '</div>'
-
-  theDiv.append(html)
-  if (fadeOut) {
-    $('#' + id).fadeOut(2500)
+  /**
+   * Gets a cookie value
+   * (from http://stackoverflow.com/questions/10730362/get-cookie-by-name
+   * @param {string} name
+   * @returns {unresolved}
+   */
+  static getCookie (name) {
+    let value = '; ' + document.cookie
+    let parts = value.split('; ' + name + '=')
+    if (parts.length === 2) {
+      return parts.pop().split(';').shift()
+    }
+    return false
   }
 }
 
-function getUserIdFromLongTermCookie () {
-  let rmeCookie = getCookie('rme')
-  return rmeCookie.split(':').pop()
-}
-
-/**
- * Gets a cookie value
- * (from http://stackoverflow.com/questions/10730362/get-cookie-by-name
- * @param {string} name
- * @returns {unresolved}
- */
-function getCookie (name) {
-  let value = '; ' + document.cookie
-  let parts = value.split('; ' + name + '=')
-  if (parts.length === 2) {
-    return parts.pop().split(';').shift()
-  }
-  return false
-}
+ApmUtil.someNum = 1

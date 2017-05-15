@@ -18,21 +18,12 @@
 
 /* eslint-env jquery */
 
-/* global ApmUtil */
+/* global ApmUtil, ApiUrl */
 
-var apiBase
 var profileUserInfo
 
-var userUpdateApiUrl
-var userPasswordChangeApiUrl
-var makeRootApiUrl
-var userGetInfoApiUrl
-
 $(document).ready(function () {
-  userUpdateApiUrl = apiBase + '/api/user/' + profileUserInfo['id'] + '/update'
-  userGetInfoApiUrl = apiBase + '/api/user/' + profileUserInfo['id'] + '/info'
-  userPasswordChangeApiUrl = apiBase + '/api/user/' + profileUserInfo['id'] + '/changepassword'
-  makeRootApiUrl = apiBase + '/api/user/' + profileUserInfo['id'] + '/makeroot'
+  let userId = profileUserInfo['id']
 
     // Pseudo-accordion behaviour
   $('#editProfileForm').on('show.bs.collapse', function () {
@@ -49,7 +40,7 @@ $(document).ready(function () {
     $('#changePasswordForm').collapse('hide')
   })
 
-    // Cancel buttons
+  // Cancel buttons
 
   $('#cancelChangePasswordButton').on('click', function () {
     $('#changePasswordForm').collapse('hide')
@@ -79,10 +70,10 @@ $(document).ready(function () {
     event.preventDefault()
     event.stopPropagation()
     console.log(profileUserInfo['fullname'])
-    $.post(userUpdateApiUrl,
+    $.post(ApiUrl.updateProfile(userId),
             $('#theEditProfileForm').serialize(),
             function (data, text, jqXHR) {
-              getProfileInfoFromBackEnd()
+              getProfileInfoFromBackEnd(userId)
               $('#editProfileForm').collapse('hide')
               ApmUtil.reportSuccess('User profile updated',
                 $('#reportarea'), true)
@@ -98,9 +89,9 @@ $(document).ready(function () {
     }
     event.preventDefault()
     event.stopPropagation()
-    $.post(userPasswordChangeApiUrl,
+    $.post(ApiUrl.userPasswordChange(userId),
             $('#theChangePasswordForm').serialize(),
-            function (data, text, jqXHR) {
+            function () {
               $('#changePasswordForm').collapse('hide')
               ApmUtil.reportSuccess('User password updated',
                 $('#reportarea'), true)
@@ -116,10 +107,10 @@ $(document).ready(function () {
     }
     event.preventDefault()
     event.stopPropagation()
-    $.post(makeRootApiUrl,
+    $.post(ApiUrl.userMakeRoot(userId),
             $('#theMakeRootForm').serialize(),
-            function (data, text, jqXHR) {
-              getProfileInfoFromBackEnd()
+            function () {
+              getProfileInfoFromBackEnd(userId)
               $('#makeRootForm').collapse('hide')
               $('#makerootbutton').hide()
               ApmUtil.reportSuccess('User given root status',
@@ -146,8 +137,8 @@ function userProfileHtml (userInfo) {
   return str
 }
 
-function getProfileInfoFromBackEnd () {
-  $.getJSON(userGetInfoApiUrl,
+function getProfileInfoFromBackEnd (id) {
+  $.getJSON(ApiUrl.userGetInfo(id),
             function (resp) {
               profileUserInfo = resp
               $('#userprofile').html(userProfileHtml(profileUserInfo))

@@ -18,23 +18,18 @@
 
 /* eslint-env jquery */
 
-/* global ApmUtil */
-
-var apiBase
-var createUserApiUrl
+/* global ApmUtil, ApiUrl */
 
 $(document).ready(function () {
-  createUserApiUrl = apiBase + '/api/user/new'
 
-    // Cancel button
-
+  // Cancel button
   $('#cancelAddUserButton').on('click', function () {
     $('#addUserForm').collapse('hide')
     $('#password1').val('')
     $('#password2').val('')
   })
 
-     // Form submission
+  // Form submission
   bindFormSubmissionEventHandler()
 })
 
@@ -46,7 +41,7 @@ function bindFormSubmissionEventHandler () {
     event.preventDefault()
     event.stopPropagation()
     let newUsername = $('#username').val()
-    $.post(createUserApiUrl,
+    $.post(ApiUrl.createUser(),
             $('#theAddUserForm').serialize(),
             function (data, text, jqXHR) {
               $('#addUserForm').collapse('hide')

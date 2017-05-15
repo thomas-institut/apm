@@ -324,9 +324,14 @@ GlossBlot.tagName = 'p'
 GlossBlot.className = 'gloss'
 Quill.register(GlossBlot)
 
-class HeadBlot extends Block { }
+class HeadBlot extends Block { 
+  static formats (node) {
+    return true
+  }  
+}
 HeadBlot.blotName = 'head'
-HeadBlot.tagName = 'h3'
+HeadBlot.tagName = 'p'
+HeadBlot.className = 'headelement'
 Quill.register(HeadBlot)
 
 class TranscriptionEditor {
@@ -343,6 +348,7 @@ class TranscriptionEditor {
     this.baseUrl = baseUrl
     this.minItemId = 0
     this.minNoteId = 0
+    this.enabled = false
 
     this.containerSelector = containerSelector
     this.setDefaultLang(defaultLang)
@@ -364,6 +370,7 @@ class TranscriptionEditor {
 
     let quillObject = new Quill('#editor-container-' + id, {})
     this.quillObject = quillObject
+    this.disable()
 
     $('#item-modal-' + id).modal({show: false})
     $('#alert-modal-' + id).modal({show: false})
@@ -718,7 +725,7 @@ class TranscriptionEditor {
 
     $('#edit-button-' + id).click(function () {
       let currentRange = quillObject.getSelection()
-      let [blot, offset] = quillObject.getLeaf(currentRange.index)
+      let [blot, offset] = quillObject.getLeaf(currentRange.index+1)
       let range = {
         index: blot.offset(quillObject.scroll),
         length: blot.length()
@@ -990,7 +997,26 @@ class TranscriptionEditor {
     thisObject.quillObject = quillObject
     TranscriptionEditor.editors[this.id] = thisObject
   }
+  
+  enable() {
+    this.enabled = true
+    $('#toolbar-'+ this.id).show()
+    this.quillObject.enable(this.enabled)
+  }
+  
+  disable() {
+    this.enabled = false
+    $('#toolbar-' + this.id).hide()
+    this.quillObject.enable(this.enabled)
+  }
 
+  toggleEnable() {
+    if (this.enabled) {
+      this.disable()
+    } else {
+      this.enable()
+    }
+  }
   getAdditionTargets (additionId = -1) {
     let ops = this.quillObject.getContents().ops
     let targets = [ {itemid: -1, text: '[none]'}]
@@ -1121,6 +1147,9 @@ class TranscriptionEditor {
 
   static genSimpleFormatClickFunction (thisObject, quillObject, format) {
     return function () {
+      if (!thisObject.enabled) {
+        return true
+      }
       quillObject.format(format, {
         itemid: thisObject.getOneItemId(),
         editorid: thisObject.id
@@ -1132,6 +1161,9 @@ class TranscriptionEditor {
 
   static genSimpleDoubleClickFunction (thisObject, quillObject) {
     return function (event) {
+      if (!thisObject.enabled) {
+        return true
+      }
       let blot = Quill.find(event.target)
       let range = {
         index: blot.offset(quillObject.scroll),
@@ -1144,6 +1176,9 @@ class TranscriptionEditor {
 
   static genEmbedDoubleClickFunction (thisObject, quillObject) {
     return function (event) {
+      if (!thisObject.enabled) {
+        return true
+      }
       let blot = Quill.find(event.target)
       let range = {
         index: blot.offset(quillObject.scroll),

@@ -73,7 +73,7 @@ function reportError (jqXHR, text, e, theDiv) {
  *
  * @param {string} msg
  * @param {element} theDiv
- * @param {boolean} fadeOut=false
+ * @param {boolean} fadeOut
  * @returns {nothing}
  */
 

@@ -370,7 +370,7 @@ class TranscriptionEditor {
 
     quillObject.on('selection-change', function (range, oldRange, source) {
       if (!range) {
-        return
+        return false
       }
       let hasFormat = TranscriptionEditor.selectionHasFormat(quillObject, range)
       if (range.length === 0) {
@@ -381,12 +381,12 @@ class TranscriptionEditor {
           $('#note-button-' + id).prop('disabled', true)
           $('#illegible-button-' + id).prop('disabled', true)
           $('#edit-button-' + id).prop('disabled', false)
-          return
+          return false
         }
         $('#note-button-' + id).prop('disabled', false)
         $('#illegible-button-' + id).prop('disabled', false)
 
-        return
+        return false
       }
       $('#note-button-' + id).prop('disabled', true)
       $('#illegible-button-' + id).prop('disabled', true)
@@ -394,7 +394,7 @@ class TranscriptionEditor {
       if (text.search('\n') !== -1) {
         $('.selFmtBtn').prop('disabled', true)
         thisObject.setDisableLangButtons(false)
-        return
+        return false
       }
       thisObject.setDisableLangButtons(false)
       if (hasFormat) {
@@ -402,7 +402,7 @@ class TranscriptionEditor {
         $('#clear-button-' + id).prop('disabled', false)
         if (TranscriptionEditor.rangeIsInMidItem(quillObject, range)) {
           $('#edit-button-' + id).prop('disabled', false)
-          return
+          return false
         }
         $('#edit-button-' + id).prop('disabled', true)
       } else {
@@ -515,7 +515,7 @@ class TranscriptionEditor {
     $('#note-button-' + id).click(function () {
       let range = quillObject.getSelection()
       if (range.length > 0) {
-        return
+        return false
       }
       TranscriptionEditor.resetItemModal(thisObject.id)
       $('#item-modal-title-' + thisObject.id).html('Note')
@@ -677,7 +677,7 @@ class TranscriptionEditor {
     $('#illegible-button-' + id).click(function () {
       let range = quillObject.getSelection()
       if (range.length > 0) {
-        return
+        return false
       }
       TranscriptionEditor.resetItemModal(thisObject.id)
       $('#item-modal-title-' + thisObject.id).html('Illegible')
@@ -1183,7 +1183,7 @@ class TranscriptionEditor {
       }
 
       if (unrecognizedEmbed) {
-        return
+        return false
       }
 
       TranscriptionEditor.setupNotesInItemModal(thisObject, itemid)
@@ -1318,7 +1318,7 @@ class TranscriptionEditor {
 
   addNewNote (itemId, text) {
     if (text === '') {
-      return
+      return false
     }
     if (typeof itemId === 'string') {
       itemId = parseInt(itemId)

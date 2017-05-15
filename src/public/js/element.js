@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (C) 2017 Universität zu Köln
  *
  * This program is free software; you can redistribute it and/or
@@ -16,10 +16,10 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-const ELEMENT_LINE = 1;
-const ELEMENT_HEAD = 2;
-const ELEMENT_GLOSS = 3;
-const ELEMENT_PAGE_NUMBER = 4;
-const ELEMENT_CUSTODES = 5;
-const ELEMENT_NOTE_MARK = 6;
-const ELEMENT_ADDITION = 7;
+const ELEMENT_LINE = 1
+const ELEMENT_HEAD = 2
+const ELEMENT_GLOSS = 3
+const ELEMENT_PAGE_NUMBER = 4
+const ELEMENT_CUSTODES = 5
+const ELEMENT_NOTE_MARK = 6
+const ELEMENT_ADDITION = 7

@@ -16,95 +16,91 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+/* eslint-env jquery */
+
 /**
  * Some utility functions
  */
 
 /**
  * Appends an error alert to theDiv according to the error received.
- * 
+ *
  * This function is meant to be used within the error callback of an
  * AJAX call.
- *  
+ *
  * @param {jqXHR} jqXHR
  * @param {string} text
  * @param {string} e
  * @param {element} theDiv
  * @returns {nothing}
  */
-function reportError(jqXHR, text, e, theDiv)
-{
-    var errorMsg;
-    switch(text) {
-        case 'timeout':
-            errorMsg = 'The server took too much time to respond, please try later';
-            break;
-        
-        case 'parsererror':
-            errorMsg = 'Parser error, please report this to the system administrator';
-            break;
-            
-        case 'abort':
-            errorMsg = 'Aborted, if not expected please report to the system administrator';
-            break;
+function reportError (jqXHR, text, e, theDiv) {
+  var errorMsg
+  switch (text) {
+    case 'timeout':
+      errorMsg = 'The server took too much time to respond, please try later'
+      break
 
-        case 'error':
-            errorMsg = 'Server responded (' + jqXHR.status + ') ' + e;
-            break;
-            
-        default:
-            errorMsg = 'Unknown error, please report this to the system administrator!';
+    case 'parsererror':
+      errorMsg = 'Parser error, please report this to the system administrator'
+      break
 
-    }
-    
-    theDiv.append(`
+    case 'abort':
+      errorMsg = 'Aborted, if not expected please report to the system administrator'
+      break
+
+    case 'error':
+      errorMsg = 'Server responded (' + jqXHR.status + ') ' + e
+      break
+
+    default:
+      errorMsg = 'Unknown error, please report this to the system administrator!'
+  }
+
+  theDiv.append(`
         <div class="alert alert-danger alert-dismissable withtopmargin" role="alert">
             <button type="button" class="close" data-dismiss="alert" 
                     aria-label="Close">
                 <span aria-hidden="true">&times;</span>
             </button>
-           <strong>Oops, something went wrong</strong>: ` + 
-            errorMsg + '</div>');
-    
+           <strong>Oops, something went wrong</strong>: ` +
+            errorMsg + '</div>')
 }
 
 /**
  * Appends a success alert with the given message to theDiv.
  * Optionally, reloads the current page after a short delay.
- * 
+ *
  * @param {string} msg
  * @param {element} theDiv
  * @param {boolean} fadeOut=false
  * @returns {nothing}
  */
 
-var someNum = 1;
+var someNum = 1
 
-function reportSuccess(msg, theDiv, fadeOut=false)
-{
-    id = theDiv.attr('id') + '-successalert' + someNum;
-    someNum++;
-    html = '<div class="alert alert-success alert-dismissable" id="' +
+function reportSuccess (msg, theDiv, fadeOut = false) {
+  let id = theDiv.attr('id') + '-successalert' + someNum
+  someNum++
+  let html = '<div class="alert alert-success alert-dismissable" id="' +
             id + `" role="alert" 
                 style="margin-top: 20px">
             <button type="button" class="close" data-dismiss="alert" 
                     aria-label="Close">
                 <span aria-hidden="true">&times;</span>
             </button>
-           <strong>Success! </strong>` + 
-            msg + '</div>';
-    
-    theDiv.append(html);
-    if (fadeOut) {
-       $('#' + id).fadeOut(2500);
-    }
+           <strong>Success! </strong>` +
+            msg + '</div>'
+
+  theDiv.append(html)
+  if (fadeOut) {
+    $('#' + id).fadeOut(2500)
+  }
 }
 
-
-function getUserIdFromLongTermCookie()
-{
-    $rmeCookie = getCookie('rme');
-    return $rmeCookie.split(':').pop();
+function getUserIdFromLongTermCookie () {
+  let rmeCookie = getCookie('rme')
+  return rmeCookie.split(':').pop()
 }
 
 /**
@@ -113,11 +109,11 @@ function getUserIdFromLongTermCookie()
  * @param {string} name
  * @returns {unresolved}
  */
-function getCookie(name) {
-  var value = "; " + document.cookie;
-  var parts = value.split("; " + name + "=");
+function getCookie (name) {
+  let value = '; ' + document.cookie
+  let parts = value.split('; ' + name + '=')
   if (parts.length === 2) {
-      return parts.pop().split(";").shift();
+    return parts.pop().split(';').shift()
   }
-  return false;
+  return false
 }

@@ -16,47 +16,44 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-var apiBase;
+/* eslint-env jquery */
 
+var apiBase
+var createUserApiUrl
 
-$(document).ready(function(){
-    
-    createUserApiUrl = apiBase + '/api/user/new';
-    
+$(document).ready(function () {
+  createUserApiUrl = apiBase + '/api/user/new'
+
     // Cancel button
-    
-    $('#cancelAddUserButton').on('click', function() {
-        $('#addUserForm').collapse('hide'); 
-        $('#password1').val(''); 
-        $('#password2').val(''); 
-    });
+
+  $('#cancelAddUserButton').on('click', function () {
+    $('#addUserForm').collapse('hide')
+    $('#password1').val('')
+    $('#password2').val('')
+  })
 
      // Form submission
-    bindFormSubmissionEventHandler();
-    
-    
-});
+  bindFormSubmissionEventHandler()
+})
 
-function bindFormSubmissionEventHandler()
-{
-    $('#theAddUserForm').validator().on('submit', function (event) {
-        if (event.isDefaultPrevented()) {
-            return false;
-        }
-        event.preventDefault();
-        event.stopPropagation();
-        newUsername = $('#username').val();
-        $.post(createUserApiUrl, 
+function bindFormSubmissionEventHandler () {
+  $('#theAddUserForm').validator().on('submit', function (event) {
+    if (event.isDefaultPrevented()) {
+      return false
+    }
+    event.preventDefault()
+    event.stopPropagation()
+    let newUsername = $('#username').val()
+    $.post(createUserApiUrl,
             $('#theAddUserForm').serialize(),
-            function (data, text, jqXHR){
-                $('#addUserForm').collapse('hide'); 
-                reportSuccess('User ' + newUsername + ' created', 
-                $("#reportarea"), true);
-                window.setTimeout( function () {location.reload();}, 2500)
-                
+            function (data, text, jqXHR) {
+              $('#addUserForm').collapse('hide')
+              reportSuccess('User ' + newUsername + ' created',
+                $('#reportarea'), true)
+              window.setTimeout(function () { location.reload() }, 2500)
             })
-            .fail( function(jqXHR, text, e) { 
-                reportError(jqXHR, text, e, $("#addUserFormDiv"));
-            });
-    });
+            .fail(function (jqXHR, text, e) {
+              reportError(jqXHR, text, e, $('#addUserFormDiv'))
+            })
+  })
 }

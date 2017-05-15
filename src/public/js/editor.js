@@ -385,11 +385,19 @@ class TranscriptionEditor {
                 $('.selFmtBtn').prop('disabled', true);
                 thisObject.setDisableLangButtons(true);
                 $('#edit-button-' + id).prop('disabled', true);
+                if (TranscriptionEditor.rangeIsInMidItem(quillObject,range)) {
+                    $('#note-button-' + id).prop('disabled', true);
+                    $('#illegible-button-'+id).prop('disabled', true);
+                    $('#edit-button-' + id).prop('disabled', false);
+                    return;
+                }
                 $('#note-button-' + id).prop('disabled', false);
                 $('#illegible-button-'+id).prop('disabled', false);
+                
                 return;
             }
             $('#note-button-' + id).prop('disabled', true);
+            $('#illegible-button-'+id).prop('disabled', true);
             let text = quillObject.getText(range);
             if (text.search('\n') !== -1) {
                 $('.selFmtBtn').prop('disabled', true);
@@ -400,6 +408,10 @@ class TranscriptionEditor {
             if (hasFormat) {
                 $('.selFmtBtn').prop('disabled', true);
                 $('#clear-button-' + id).prop('disabled', false);
+                if (TranscriptionEditor.rangeIsInMidItem(quillObject,range)) {
+                    $('#edit-button-' + id).prop('disabled', false);
+                    return;
+                }
                 $('#edit-button-' + id).prop('disabled', true);
             } else {
                 $('.selFmtBtn').prop('disabled', false);
@@ -720,7 +732,14 @@ class TranscriptionEditor {
         
         
         $('#edit-button-' + id).click( function() {
-            let range = quillObject.getSelection();
+            let currentRange = quillObject.getSelection();
+            let [blot, offset] = quillObject.getLeaf(currentRange.index);
+            let range = {
+                index: blot.offset(quillObject.scroll), 
+                length: blot.length() 
+            };
+            quillObject.setSelection(range);
+            
             let format = quillObject.getFormat(range);
             let text = quillObject.getText(range.index, range.length);
             let altText = '';
@@ -846,6 +865,10 @@ class TranscriptionEditor {
             TranscriptionEditor.setupNotesInItemModal(thisObject, itemid);
             $('#item-modal-text-' + thisObject.id).html(text);
 
+            $('#item-modal-cancel-button-' + thisObject.id).on('click', function (){
+                //$('#item-modal-' + thisObject.id).modal('hide');
+                quillObject.setSelection(currentRange);
+            });
             $('#item-modal-submit-button-' + thisObject.id).off();
             $('#item-modal-submit-button-' + thisObject.id).on('click', function (){
                 $('#item-modal-' + thisObject.id).modal('hide');
@@ -1032,11 +1055,32 @@ class TranscriptionEditor {
             if ($.isEmptyObject(format)) {
                 continue;
             }
-            for (const type of ['rubric', 'gliph', 'initial', 'sic', 'abbr', 'deletion', 'addition', 'unclear']) {
-                if (type in format) {
-                    return true;
-                }
+            if (TranscriptionEditor.formatHasItem(format)) {
+                return true;
             }
+        }
+        return false;
+    }
+    
+    static formatHasItem(format) {
+        for (const type of ['rubric', 'gliph', 'initial', 'sic', 'abbr', 'deletion', 'addition', 'unclear']) {
+            if (type in format) {
+                return type;
+            }
+        }
+        return false;
+    }
+    
+    static rangeIsInMidItem(quillObject, range) {
+        let prevFormat = quillObject.getFormat(range.index, 0);
+        let nextFormat = quillObject.getFormat(range.index+length+1, 0);
+        let prevItem = TranscriptionEditor.formatHasItem(prevFormat);
+        let nextItem = TranscriptionEditor.formatHasItem(nextFormat);
+        if ( prevItem === nextItem) {
+            if (prevItem === false) {
+                return false;
+            }
+            return true;
         }
         return false;
     }

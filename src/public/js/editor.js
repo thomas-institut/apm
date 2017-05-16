@@ -993,19 +993,19 @@ class TranscriptionEditor {
     })
     
     $('#gloss-top-' + id).click(function () {
-      thisObject.setGloss('top')
+      thisObject.setGloss('margin top')
     })
     
     $('#gloss-bottom-' + id).click(function () {
-      thisObject.setGloss('bottom')
+      thisObject.setGloss('margin bottom')
     })
     
     $('#gloss-left-' + id).click(function () {
-      thisObject.setGloss('left')
+      thisObject.setGloss('margin left')
     })
     
     $('#gloss-right-' + id).click(function () {
-      thisObject.setGloss('right')
+      thisObject.setGloss('margin right')
     })
 
     $('#head-button-' + id).click(function () {

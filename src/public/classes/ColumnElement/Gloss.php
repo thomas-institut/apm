@@ -30,11 +30,33 @@ namespace AverroesProject\ColumnElement;
 class Gloss extends Element
 {
     
+    public static $validPlacements = [ 
+        'margin top',
+        'margin bottom',
+        'margin right',
+        'margin left'
+    ];
+    
     public function __construct($id = Element::ID_NOT_SET, $colNumber = 0, 
             $lang = Element::LANG_NOT_SET)
     {
         parent::__construct($id, $colNumber, $lang);
         $this->type = parent::GLOSS;
+        $this->placement = 'margin left';
     }
     
+    public function setPlacement($placement) 
+    {
+        $this->placement = $placement;
+    }
+    
+    public function getPlacement() 
+    {
+        return $this->placement;
+    }
+    
+    public static function isPlacementValid($placement)
+    {
+        return in_array($placement, self::$validPlacements);
+    }
 }

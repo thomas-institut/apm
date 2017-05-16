@@ -27,7 +27,7 @@ namespace AverroesProject\TxText;
  */
 class Addition extends Item {
     
-     public static $validPlaces = [ 
+    public static $validPlaces = [ 
         'above',
         'below',
         'inline',

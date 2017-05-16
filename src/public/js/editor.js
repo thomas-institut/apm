@@ -21,7 +21,7 @@
 /* global Twig, Quill, ELEMENT_LINE, ELEMENT_HEAD, ELEMENT_CUSTODES */
 /* global ELEMENT_GLOSS, ELEMENT_PAGE_NUMBER, ITEM_TEXT, ITEM_MARK */
 /* global ITEM_RUBRIC, ITEM_GLIPH, ITEM_INITIAL, ITEM_SIC, ITEM_ABBREVIATION */
-/* global ITEM_DELETION, Item, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_ILLEGIBLE */
+/* global ITEM_DELETION, Item, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_ILLEGIBLE, ELEMENT_PAGENUMBER */
 
 let Inline = Quill.import('blots/inline')
 let BlockEmbed = Quill.import('blots/embed')
@@ -349,6 +349,26 @@ HeadBlot.blotName = 'head'
 HeadBlot.tagName = 'p'
 HeadBlot.className = 'headelement'
 Quill.register(HeadBlot)
+
+class CustodesBlot extends Block { 
+  static formats (node) {
+    return true
+  }  
+}
+CustodesBlot.blotName = 'custodes'
+CustodesBlot.tagName = 'p'
+CustodesBlot.className = 'custodes'
+Quill.register(CustodesBlot)
+
+class PageNumberBlot extends Block { 
+  static formats (node) {
+    return true
+  }  
+}
+PageNumberBlot.blotName = 'pagenumber'
+PageNumberBlot.tagName = 'p'
+PageNumberBlot.className = 'pagenumber'
+Quill.register(PageNumberBlot)
 
 class TranscriptionEditor {
   constructor (containerSelector, id, baseUrl, editorId = 1,
@@ -990,6 +1010,8 @@ class TranscriptionEditor {
     $('#line-button-' + id).click(function () {
       quillObject.format('head', false)
       quillObject.format('gloss', false)
+      quillObject.format('custodes', false)
+      quillObject.format('pagenumber', false)
     })
     
     $('#gloss-top-' + id).click(function () {
@@ -1010,6 +1032,14 @@ class TranscriptionEditor {
 
     $('#head-button-' + id).click(function () {
       quillObject.format('head', true)
+    })
+    
+    $('#custodes-button-' + id).click(function () {
+      quillObject.format('custodes', true)
+    })
+    
+    $('#pagenumber-button-' + id).click(function () {
+      quillObject.format('pagenumber', true)
     })
 
     $('#set-arabic-' + id).click(function () {
@@ -1517,7 +1547,7 @@ class TranscriptionEditor {
     let deletionTexts = []
     formats[ELEMENT_HEAD] = 'head'
     formats[ELEMENT_CUSTODES] = 'custodes'
-    formats[ELEMENT_GLOSS] = 'gloss'
+    formats[ELEMENT_PAGE_NUMBER] = 'pagenumber'
 
     this.edNotes = columnData.ednotes
     for (const note of this.edNotes) {
@@ -1859,6 +1889,9 @@ class TranscriptionEditor {
               }
               if (curOps.attributes.custodes) {
                 elementType = ELEMENT_CUSTODES
+              }
+              if (curOps.attributes.pagenumber) {
+                elementType = ELEMENT_PAGE_NUMBER
               }
             }
             curElement.type = elementType

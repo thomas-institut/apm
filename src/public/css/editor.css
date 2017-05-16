@@ -88,6 +88,38 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
     color: gray;
 }
 
+.editor-controlbar {
+    background: white;
+    color: gray;
+}
+
+.editor-controlbar button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: inline-block;
+    font-size: 18px;
+    padding: 0;
+    height: 32px;
+    width: 32px;
+    text-align: center;
+}
+.editor-controlbar button:active, button:focus {
+    outline: none;
+    color: black;
+}
+
+.editor-controlbar .title-button {
+    font-size: 0.8em;
+    margin-left: 30px;
+    margin-right: 5px;
+}
+
+.editor-controlbar button:disabled {
+    color: gray;
+}
+
+
 .editor-statusbar {
     
 }
@@ -165,7 +197,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
     padding: 2px;
     font-size: 0.7em;
     color: #b6c7cc;
-    border-radius: 5px;
+    border-radius: 3px;
     border: solid 1px #b6c7cc;
     margin-right: 5px;
     margin-left: 5px;
@@ -183,17 +215,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 }
 
 .editor-container p.headelement::before {
-    content: 'Head';
-    font-size: 0.9em;
+    content: 'H';
+    font-size: 1em;
 }
 
 .editor-container p.custodes::before {
-    content: 'Custodes';
+    content: 'C';
     font-size: 0.8em;
 }
 
 .editor-container p.pagenumber::before {
-    content: 'PageNumber';
+    content: 'P';
     font-size: 0.8em;
 }
 

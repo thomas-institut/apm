@@ -1056,6 +1056,11 @@ class TranscriptionEditor {
       thisObject.setDefaultLang('he')
       $('#lang-button-' + id).html('he')
     })
+    
+    $('#toggle-button-'+ id).click(function() {
+      thisObject.toggleEnable()
+      return true;
+    });
 
     thisObject.quillObject = quillObject
     TranscriptionEditor.editors[this.id] = thisObject
@@ -1065,11 +1070,19 @@ class TranscriptionEditor {
     this.enabled = true
     $('#toolbar-'+ this.id).show()
     this.quillObject.enable(this.enabled)
+    $('#save-button-' + this.id).show()
+    $('#reset-button-' + this.id).show()
+    $('#toggle-button-' + this.id).prop('title', 'Leave editor')
+    $('#toggle-button-' + this.id).html('<i class="fa fa-circle-o"></i>')
   }
   
   disable() {
     this.enabled = false
     $('#toolbar-' + this.id).hide()
+    $('#save-button-' + this.id).hide()
+    $('#reset-button-' + this.id).hide()
+    $('#toggle-button-' + this.id).prop('title', 'Edit')
+    $('#toggle-button-' + this.id).html('<i class="fa fa-pencil"></i>')
     this.quillObject.enable(this.enabled)
   }
 

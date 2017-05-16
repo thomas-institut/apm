@@ -47,7 +47,7 @@
         <button id="unclear-button-{{id}}" class="selFmtBtn" title="Unclear" disabled><i class="fa fa-low-vision"></i></button>
         <button id="illegible-button-{{id}}"  title="Illegible"><i class="fa fa-eye-slash"></i></button>
         <button id="dash-button-{{id}}" title="Dash" disabled><i class="fa fa-minus"></i></button>
-        <button class="title-button" disabled>&nbsp;&nbsp;</button>
+        <button class="title-button" disabled>&nbsp;</button>
         <button id="line-button-{{id}}" title="Line">L</button>
         
         <span class="dropdown">
@@ -65,7 +65,7 @@
         </span>    
         <button id="head-button-{{id}}" title="Head"><i class="fa fa-header"></i></button>
         <button id="custodes-button-{{id}}" title="Custodes">C</button>
-        <button id="pagenumber-button-{{id}}" title="Page Number">PN</button>
+        <button id="pagenumber-button-{{id}}" title="Page Number">P</button>
         
         <button class="title-button" disabled>Default:</button>
         <span class="dropdown">
@@ -81,7 +81,11 @@
     </div>
     <div id="editor-container-{{id}}" class="editor-container"></div>
     <div id="status-bar-{{id}}" class="editor-statusbar">
-        <div id="status-bar-alert-{{id}}" class="alert" role="alert"></div>
+    <div id="editor-controls-{{id}}" class="editor-controlbar">
+        <button id="save-button-{{id}}" title="Save changes" disabled><i class="fa fa-save"></i></button>
+        <button id="reset-button-{{id}}" title="Reset" disabled><i class="fa fa-refresh"></i></button>
+        <button id="toggle-button-{{id}}" title="Cancel"><i class="fa fa-pencil"></i></button>
+    </div>
     </div>
 </div>
 <!-- ITEM modal -->            

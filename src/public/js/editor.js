@@ -315,8 +315,24 @@ MarkBlot.className = 'mark'
 Quill.register(MarkBlot)
 
 class GlossBlot extends Block {
-  static formats (node) {
-    return true
+  
+  static create(value) {
+    let node = super.create(value)
+    let id = value.elementId
+    node.setAttribute('id', 'gloss' + id)
+    node.setAttribute('elementid', id)
+    node.setAttribute('place', value.place)
+    let ruleIndex = GlossBlot.styleSheet.cssRules.length
+    GlossBlot.styleSheet.insertRule('p#gloss' + id +'::before { content: "Gloss @ ' + value.place + '"}', ruleIndex)
+    console.log(GlossBlot.styleSheet)
+    return node
+  }
+  
+  static formats(node) {
+    return {
+      elementId: node.getAttribute('elementid'),
+      place: node.getAttribute('place')
+    }
   }
 }
 GlossBlot.blotName = 'gloss'
@@ -371,6 +387,11 @@ class TranscriptionEditor {
     let quillObject = new Quill('#editor-container-' + id, {})
     this.quillObject = quillObject
     this.disable()
+    
+    let styleElement = document.createElement('style')
+    document.head.appendChild(styleElement)
+    this.styleSheet = styleElement.sheet
+    GlossBlot.styleSheet = this.styleSheet
 
     $('#item-modal-' + id).modal({show: false})
     $('#alert-modal-' + id).modal({show: false})
@@ -970,9 +991,21 @@ class TranscriptionEditor {
       quillObject.format('head', false)
       quillObject.format('gloss', false)
     })
-
-    $('#gloss-button-' + id).click(function () {
-      quillObject.format('gloss', true)
+    
+    $('#gloss-top-' + id).click(function () {
+      thisObject.setGloss('top')
+    })
+    
+    $('#gloss-bottom-' + id).click(function () {
+      thisObject.setGloss('bottom')
+    })
+    
+    $('#gloss-left-' + id).click(function () {
+      thisObject.setGloss('left')
+    })
+    
+    $('#gloss-right-' + id).click(function () {
+      thisObject.setGloss('right')
     })
 
     $('#head-button-' + id).click(function () {
@@ -1102,6 +1135,13 @@ class TranscriptionEditor {
     })
     let range = this.quillObject.getSelection()
     this.quillObject.setSelection(range.index + range.length)
+  }
+  
+  setGloss(place) {
+    this.quillObject.format('gloss', {
+      elementId: this.getOneItemId(),
+      place: place
+    })
   }
 
   setAddition (place, target = -1) {
@@ -1647,13 +1687,27 @@ class TranscriptionEditor {
           }
           break
       }
-      if (formats[ele.type] === undefined) {
-        delta.push({insert: '\n'})
-      } else {
-        let attr = {}
-        attr[formats[ele.type]] = true
-        delta.push({insert: '\n', attributes: attr})
+      
+      switch(ele.type) {
+        case ELEMENT_GLOSS:
+          delta.push({
+            insert: '\n',
+            attributes: {
+              gloss:  {
+                elementId: ele.id,
+                place: ele.placement
+              }
+            }
+          })
+          break;
+          
+        default:
+          let attr = {}
+          attr[formats[ele.type]] = true
+          delta.push({insert: '\n', attributes: attr})
+          break;
       }
+      
     }
 
     this.quillObject.setContents(delta)
@@ -1677,7 +1731,7 @@ class TranscriptionEditor {
       lang: this.defaultLang,
       editorId: this.editorId,
       handId: this.handId,
-      type: 1,
+      type: ELEMENT_LINE,
       seq: 0,
       items: []
     }
@@ -1797,6 +1851,8 @@ class TranscriptionEditor {
             if ('attributes' in curOps) {
               if (curOps.attributes.gloss) {
                 elementType = ELEMENT_GLOSS
+                curElement.id = curOps.attributes.gloss.elementId
+                curElement.placement = curOps.attributes.gloss.place
               }
               if (curOps.attributes.head) {
                 elementType = ELEMENT_HEAD

@@ -49,7 +49,20 @@
         <button id="dash-button-{{id}}" title="Dash" disabled><i class="fa fa-minus"></i></button>
         <button class="title-button" disabled>&nbsp;&nbsp;</button>
         <button id="line-button-{{id}}" title="Line">L</button>
-        <button id="gloss-button-{{id}}" title="Gloss"><i class="fa fa-quote-right"></i></button>
+        
+        <span class="dropdown">
+            <button id="gloss-button-{{id}}" title="Marginal Gloss" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                G
+           </button>
+            <ul class="dropdown-menu" aria-labelledby="gloss-button-{{id}}">
+                <li><a>Place</a></li>
+                <li role=separator class=divider>
+                <li><a id="gloss-top-{{id}}">Column Top</a></li>
+                <li><a id="gloss-bottom-{{id}}">Column Bottom</a></li>
+                <li><a id="gloss-left-{{id}}">Margin Left</a></li>
+                <li><a id="gloss-right{{id}}">Margin Right</a></li>
+           </ul>
+        </span>    
         <button id="head-button-{{id}}" title="Head"><i class="fa fa-header"></i></button>
         <button class="title-button" disabled>Default:</button>
         <span class="dropdown">

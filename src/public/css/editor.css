@@ -161,28 +161,79 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 }
 
 .editor-container p::before {
-    content: 'L ';
-    color: menu;
+    content: 'L';
+    padding: 2px;
+    font-size: 0.7em;
+    color: #b6c7cc;
+    border-radius: 5px;
+    border: solid 1px #b6c7cc;
+    margin-right: 5px;
+    margin-left: 5px;
 }
 
-
+.editor-container p.gloss {
+    
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
 
 .editor-container p.gloss::before {
     content: 'Gloss';
-    padding-left: 4px;
-    padding-right: 4px;
-    margin-left: 3px;
-    margin-right: 3px;
-    color: brown;
-    border: 1px solid brown;
+    font-size: 0.8em;
 }
 
 .editor-container p.headelement::before {
     content: 'Head';
-    padding-left: 4px;
-    padding-right: 4px;
-    margin-left: 3px;
-    margin-right: 3px;
-    color: brown;
-    border: 1px solid brown;
+    font-size: 0.9em;
+}
+
+.rubric {
+    font-weight: bold;
+    color: blue;
+}
+
+.initial {
+    font-weight: bold;
+    font-size: 20pt;
+}
+
+.gliph {
+    font-weight: normal;
+    color: fuchsia;
+    background-color: lightgray;
+}
+
+.deletion {
+    font-weight: normal;
+    text-decoration: line-through;
+    color: red;
+}
+
+.addition {
+    font-weight: normal;
+    background-color: lightblue;
+    border-radius: 5px;
+    padding: 2px;
+}
+
+.sic {
+    font-weight: normal;
+    background-color: #e2ddd6;
+    border-radius: 5px;
+    padding: 2px;
+} 
+
+.abbr {
+    color: chocolate;
+}
+
+.mark {
+    font-family: FontAwesome;
+    background: white;
+    color: red;
+}
+
+.unclear{
+    font-weight: normal;
+    color: #d58512;
 }

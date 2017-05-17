@@ -78,6 +78,8 @@ class ApiController
         // Get the editorial notes
         $ednotes = $this->db->enm->getEditorialNotesByDocPageCol($docId, 
                 $pageNumber, $columnNumber);
+        
+        $pageInfo = $this->db->getPageInfoByDocPage($docId, $pageNumber);
 
         // Get the information about every person 
         // in the elements and editorial notes
@@ -94,11 +96,24 @@ class ApiController
                         $this->db->um->getUserInfoByUserId($e->authorId);
             }
         }
+        // Add API user info as well
+        if (!isset($people[$this->ci->userId])){
+            $people[$this->ci->userId] = 
+                    $this->db->um->getUserInfoByUserId($this->ci->userId);
+        }
+
 
         return $response->withJson(['elements' => $elements, 
             'ednotes' => $ednotes, 
             'people' => $people, 
-            'info' => ['col' => (int) $columnNumber]]);
+            'info' => [
+                'col' => (int) $columnNumber,
+                'docId' => $pageInfo['doc_id'],
+                'pageId' => $pageInfo['id'],
+                'lang' => $pageInfo['lang'],
+                'numCols' => $pageInfo['num_cols']
+                ]
+         ]);
    }
    
     public function getNumColumns(Request $request, Response $response, $next)

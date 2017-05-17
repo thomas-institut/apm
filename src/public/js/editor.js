@@ -1547,6 +1547,11 @@ class TranscriptionEditor {
   }
 
   setDefaultLang (lang) {
+    let labels = {
+      la: 'Latin',
+      he: 'Hebrew',
+      ar: 'Arabic'
+    }
     if (lang !== 'ar' && lang !== 'he') {
       lang = 'la'
     }
@@ -1559,7 +1564,10 @@ class TranscriptionEditor {
       $('#editor-container-' + this.id).removeClass(l + 'text')
     }
     $('#' + lang + '-button-' + this.id).prop('disabled', true)
+    $('#lang-button-'+this.id).attr('title', labels[lang])
+    $('#lang-button-'+this.id).html(lang)
     this.defaultLang = lang
+    
   }
 
   setDisableLangButtons (disable = true) {

@@ -25,6 +25,7 @@ var docId
 var apiBase
 var numColumns
 var userId
+var defaultLang
 var cols = []
 
 $(function () {
@@ -32,7 +33,6 @@ $(function () {
 })
 
 $(document).ready(function () {
-  console.log('User Id: ' + userId)
   apiGetColumnInfoUrl = apiBase + '/api/' + docId + '/' +
             pageNumber + '/numcolumns'
   apiAddColumnUrl = apiBase + '/api/' + docId + '/' +
@@ -43,6 +43,22 @@ $(document).ready(function () {
     $.getJSON(apiAddColumnUrl, function (resp) {
       location.replace('')
     })
+  })
+  
+  $('#editPageButton').click(function () {
+    let langs = [ 'ar', 'he', 'la']
+    let langLabels = { ar: 'Arabic', he: 'Hebrew', la: 'Latin'}
+    let optionsHtml = ''
+    for (const lang of langs) {
+      optionsHtml += '<option value="' + lang + '"'
+      if (defaultLang === lang) {
+        optionsHtml += ' selected'
+      }
+      optionsHtml += '>' + langLabels[lang] + '</option>'
+    }
+    $('#editPage-lang').html(optionsHtml)
+    $('#editPage-foliation').val(foliation)
+    $('#editPageModal').modal('show')
   })
 
   // Load columns
@@ -76,7 +92,7 @@ $(document).ready(function () {
                   theCol, 
                   apiBase,
                   userId,   //editorId
-                  getDefaultLang(resp.elements),  // default Lang
+                  resp.info['lang'],
                   0 // handId
               );
               te.setData(resp)

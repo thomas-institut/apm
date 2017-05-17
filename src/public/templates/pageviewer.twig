@@ -30,6 +30,8 @@
         docId = {{ doc }}
         apiBase = '{{ baseurl }}'
         userId = {{userinfo.id}}
+        defaultLang = '{{pageInfo.lang}}'
+        foliation = '{{pageInfo.foliation}}'
     </script>
 </head>
 <body>
@@ -119,13 +121,14 @@
             <div class="textcol tab-pane pageinfo" id="pageinfoTab">
                 <div style="margin-top: 20px">
                 <p><strong>Page Number:</strong> {{pageInfo.page_number}}</p>
-                <p><strong>Foliation:</strong> {% if pageInfo.foliation %}{{pageInfo.foliation}}{% else %}Undefined{% endif%}</p>
                 <p><strong>System Page Id:</strong> {{pageInfo.id}}</p>
-                <p><strong>Num Columns:</strong> {{pageInfo.num_cols}}  
-                      </p>
-                
-                <p style="margin-top: 50px">
-                 <button type="button" id="addColumnButton" data-toggle="modal" 
+                <p style="margin-top: 50px"/>
+                <p><strong>Foliation:</strong> {% if pageInfo.foliation %}{{pageInfo.foliation}}{% else %}Undefined{% endif%}</p>
+                <p><strong>Default Language:</strong> {{pageInfo.lang}}</p>
+                <p><button type="button" id="editPageButton" class="btn btn-primary btn-sm">Edit Settings</button></p>
+                <p style="margin-top: 50px"/>
+                <p><strong>Num Columns:</strong> {{pageInfo.num_cols}}</p>
+                <p><button type="button" id="addColumnButton" data-toggle="modal" 
                          data-target="#addColumnModal"
                          class="btn btn-primary btn-sm">Add Column</button></p>
                 </div>
@@ -155,5 +158,37 @@
     </div><!-- /.modal-content -->
   </div><!-- /.modal-dialog -->
 </div><!-- /.modal -->
+
+<!-- Page Settings Modal -->
+<div class="modal fade" tabindex="-1" role="dialog" id="editPageModal">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title text-info">Page Settings</h4>
+      </div>
+        <div class="modal-body">
+            <form>
+                <div id="editPage-foliation-fg" class="form-group">
+                    <label for="editPage-foliation" class="control-label">Foliation:</label>
+                    <input type="text" class="form-control" id="editPage-foliation">
+                    </input>
+                </div>
+                <div id="editPage-lang-fg" class="form-group">
+                    <label for="editPage-lang" class="control-label">Default Language:</label>
+                    <select name="lang" id="editPage-lang"></select>
+                </div>
+            </form>   
+        </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="editPageSubmitButton">Go for it!</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+
+
 </body>
 </html>        

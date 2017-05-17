@@ -263,12 +263,14 @@ UnclearBlot.className = 'unclear'
 Quill.register(UnclearBlot)
 
 class IllegibleBlot extends BlockEmbed {
+  
   static create (value) {
     let node = super.create()
     node.setAttribute('reason', value.reason)
     node.setAttribute('length', value.length)
     node.setAttribute('alt', 'Illegible')
-    node.setAttribute('src', IllegibleBlot.baseUrl + '/api/images/illegible/14/' + value.length)
+    let size = Math.round(((IllegibleBlot.size-1)*0.2+1)*14)
+    node.setAttribute('src', IllegibleBlot.baseUrl + '/api/images/illegible/' + size + '/' + value.length)
     node.setAttribute('itemid', value.itemid)
     node.setAttribute('editorid', value.editorid)
     TranscriptionEditor.setUpPopover(node, 'Illegible', '<b>Length</b>: ' +
@@ -387,22 +389,34 @@ class TranscriptionEditor {
     this.enabled = false
 
     this.containerSelector = containerSelector
-    this.setDefaultLang(defaultLang)
+    
     this.templateLoaded = false
     let thisObject = this
     TranscriptionEditor.editors[editorId] = thisObject
 
     MarkBlot.baseUrl = baseUrl
     IllegibleBlot.baseUrl = baseUrl
+    if (!TranscriptionEditor.editorTemplate) {
+      TranscriptionEditor.editorTemplate = Twig.twig({
+        id: 'editor',
+        href: baseUrl + '/templates/editor.twig',
+        async: false
+      })
+    }
+    
+    if (!TranscriptionEditor.modalsTemplate) {
+      TranscriptionEditor.modalsTemplate = Twig.twig({
+        id: 'editor-modals',
+        href: baseUrl + '/templates/editor-modals.twig',
+        async: false
+      })
+    }
 
-    let template = Twig.twig({
-      id: 'editor',
-      href: baseUrl + 'templates/editor.twig',
-      async: false
-    })
-
-    let editorHtml = template.render({id: id})
+    let editorHtml = TranscriptionEditor.editorTemplate.render({id: id})
     $(containerSelector).html(editorHtml)
+    this.setFontSize(3)
+    let modalsHtml = TranscriptionEditor.modalsTemplate.render({id: id})
+    $('body').append(modalsHtml)
 
     let quillObject = new Quill('#editor-container-' + id, {})
     this.quillObject = quillObject
@@ -962,15 +976,6 @@ class TranscriptionEditor {
       $('#item-modal-' + thisObject.id).modal('show')
     })
 
-//        $('#illegible-button-' + id).click( function() {
-//            let range = quillObject.getSelection(true);
-//            quillObject.insertEmbed(range.index, 'image', {
-//                alt: 'Quill Cloud',
-//                url: 'http://quilljs.com/0.20/assets/images/cloud.png'
-//            }, Quill.sources.USER);
-//            quillObject.setSelection(range.index + 1, Quill.sources.SILENT);
-//        });
-
     $('#add-above-' + id).click(function () {
       thisObject.setAddition('above')
     })
@@ -1061,9 +1066,42 @@ class TranscriptionEditor {
       thisObject.toggleEnable()
       return true;
     });
+    
+    $('#zoom-in-button-'+ id).click(function() {
+      thisObject.makeTextBigger()
+      return true;
+    });
+    
+    $('#zoom-out-button-'+ id).click(function() {
+      thisObject.makeTextSmaller()
+      return true;
+    });
 
+    this.setDefaultLang(defaultLang)
     thisObject.quillObject = quillObject
     TranscriptionEditor.editors[this.id] = thisObject
+  }
+  
+  setFontSize(size) {
+    if (this.fontSize) {
+      $('#editor-container-'+this.id).removeClass('fontsize' + this.fontSize)
+    }
+    $('#editor-container-'+this.id).addClass('fontsize' + size)
+    this.fontSize = size
+    IllegibleBlot.size = this.fontSize
+    console.log('Font size: ' + size + ' on ' + '#editor-container-'+this.id)
+  }
+  
+  makeTextSmaller() {
+    if (this.fontSize > 1) {
+      this.setFontSize(this.fontSize-1)
+    }
+  }
+  
+  makeTextBigger() {
+    if (this.fontSize < 8) {
+      this.setFontSize(this.fontSize+1)
+    }
   }
   
   enable() {
@@ -1074,6 +1112,8 @@ class TranscriptionEditor {
     $('#reset-button-' + this.id).show()
     $('#toggle-button-' + this.id).prop('title', 'Leave editor')
     $('#toggle-button-' + this.id).html('<i class="fa fa-circle-o"></i>')
+    let event = new Event('edit-enable')
+    $(this.containerSelector).get()[0].dispatchEvent(event)
   }
   
   disable() {
@@ -1084,6 +1124,8 @@ class TranscriptionEditor {
     $('#toggle-button-' + this.id).prop('title', 'Edit')
     $('#toggle-button-' + this.id).html('<i class="fa fa-pencil"></i>')
     this.quillObject.enable(this.enabled)
+    let event = new Event('edit-disable')
+    $(this.containerSelector).get()[0].dispatchEvent(event)
   }
 
   toggleEnable() {
@@ -1508,6 +1550,7 @@ class TranscriptionEditor {
     if (lang !== 'ar' && lang !== 'he') {
       lang = 'la'
     }
+    console.log("Setting up default lang: " + lang)
     for (const l of ['ar', 'he', 'la']) {
       if (l === lang) {
         $('#editor-container-' + this.id).addClass(l + 'text')
@@ -1754,6 +1797,14 @@ class TranscriptionEditor {
     }
 
     this.quillObject.setContents(delta)
+  }
+  
+  onEditorEnable(f) {
+    $(this.containerSelector).on('edit-enable', f)
+  }
+  
+  onEditorDisable(f) {
+    $(this.containerSelector).on('edit-disable', f)
   }
 
     /**
@@ -2048,3 +2099,5 @@ class TranscriptionEditor {
 }
 
 TranscriptionEditor.editors = []
+
+

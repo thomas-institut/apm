@@ -1,0 +1,61 @@
+<!-- ITEM modal {{id}} -->            
+<div id="item-modal-{{id}}" class="modal" role="dialog">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 id="item-modal-title-{{id}}" class="modal-title"></h4>
+            </div>
+            <div class="modal-body" id="item-modal-body-{{id}}">
+                <form>
+                    <div id="item-modal-text-fg-{{id}}" class="form-group">
+                        <label for="item-modal-text-{{id}}" class="control-label">Text:</label>
+                        <span id="item-modal-text-{{id}}"></span>
+                    </div>
+                    <div id="item-modal-alttext-fg-{{id}}" class="form-group">
+                        <label for="item-modal-alttext-{{id}}" id="item-modal-alttext-label-{{id}}" class="control-label">Alt Text:</label>
+                        <input type="text" class="form-control" id="item-modal-alttext-{{id}}">
+                    </div>
+                    <div id="item-modal-extrainfo-fg-{{id}}" class="form-group">
+                        <label for="item-modal-extrainfo-{{id}}" id="item-modal-extrainfo-label-{{id}}" class="control-label">Extra Info:</label>
+                        <select name="extrainfo" id="item-modal-extrainfo-{{id}}"></select>
+                    </div>
+                    <div id="item-modal-length-fg-{{id}}" class="form-group">
+                        <label for="item-modal-length-{{id}}" id="item-modal-extrainfo-label-{{id}}" class="control-label">Length:</label>
+                        <input type="number" name="length" class="form-control" id="item-modal-length-{{id}}"></input>
+                    </div>
+                    <div id="item-modal-target-fg-{{id}}" class="form-group">
+                        <label for="item-modal-target-{{id}}" id="item-modal-target-label-{{id}}" class="control-label">Extra Info:</label>
+                        <select name="target" id="item-modal-target-{{id}}"></select>
+                    </div>
+                    <input id="item-note-id-{{id}}" type="hidden" name="note-id" value=""/>
+                    <div class="form-group">
+                        <label for="item-note-{{id}}" class="control-label">Note:</label>
+                        <input type="text" class="form-control" id="item-note-{{id}}">
+                        <p class="item-note-edit-time" id="item-note-time-{{id}}"></p>
+                    </div>
+                    <div class="modal-ednotes" id="item-modal-ednotes-{{id}}">
+                    </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" id="item-modal-cancel-button-{{id}}" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="item-modal-submit-button-{{id}}">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- ALERT modal {{id}} -->             
+<div id="alert-modal-{{id}}" class="modal" role="dialog">
+    <div class="modal-dialog modal-sm " role="document">
+        <div class="modal-content bg-info">
+            <div class="modal-header">
+                <h4>Please confirm</h4>
+            </div>
+            <div class="modal-body" id="alert-modal-body-{{id}}">
+                <p id="alert-modal-text-{{id}}"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">No</button>
+                <button type="button" class="btn btn-danger" id="alert-modal-submit-button-{{id}}">Yes</button>
+            </div>
+</div>

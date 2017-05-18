@@ -782,7 +782,7 @@ class TranscriptionReader {
                     ])
             ->withCallback(function ($matched) use (&$itemId){
                 array_pop($matched); // <lb/>
-                $item = new \AverroesProject\TxText\NoLinebreak(0, 0);
+                $item = new \AverroesProject\TxText\NoWordBreak(0, 0);
                 $item->lang = '';
                 $item->id = $itemId;
                 $matched[] = $item;

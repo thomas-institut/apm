@@ -823,8 +823,8 @@ class DataManager
                         $row['target']);
                 break;
 
-            case Item::NO_LINEBREAK:
-                $item = new \AverroesProject\TxText\NoLinebreak($row['id'], 
+            case Item::NO_WORD_BREAK:
+                $item = new \AverroesProject\TxText\NoWordBreak($row['id'], 
                         $row['seq']);
                 break;
 

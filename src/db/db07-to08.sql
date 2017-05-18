@@ -79,3 +79,6 @@ ALTER TABLE `ap_pages`
 
 # Item sequences should start at 0 now
 UPDATE `ap_items` SET `seq`=`seq`-1 
+
+# Change in name for item NO_LINEBREAK → NO_WORD_BREAK
+UPDATE `ap_types_item` SET `name` = 'nowb' WHERE `ap_types_item`.`id` = 10;

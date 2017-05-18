@@ -48,7 +48,17 @@ class ApiController
         
         $response->getBody()->write($imageData);
         return $response->withHeader('Content-Type', 'image/png');
-        //return $response;
+    }
+    
+     public function generateNoWordBreakIcon(Request $request, 
+            Response $response, $next)
+    {
+        $size = $request->getAttribute('size');
+        
+        $imageData = \AverroesProject\Image\EditorImages::noWordBreakIcon($size);
+        
+        $response->getBody()->write($imageData);
+        return $response->withHeader('Content-Type', 'image/png');
     }
     
     public function generateIllegibleIcon(Request $request, 

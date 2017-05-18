@@ -21,7 +21,7 @@
 /* global Twig, Quill, ELEMENT_LINE, ELEMENT_HEAD, ELEMENT_CUSTODES */
 /* global ELEMENT_GLOSS, ELEMENT_PAGE_NUMBER, ITEM_TEXT, ITEM_MARK */
 /* global ITEM_RUBRIC, ITEM_GLIPH, ITEM_INITIAL, ITEM_SIC, ITEM_ABBREVIATION */
-/* global ITEM_DELETION, Item, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_ILLEGIBLE, ELEMENT_PAGENUMBER */
+/* global ITEM_DELETION, Item, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_ILLEGIBLE, ELEMENT_PAGENUMBER, ITEM_NO_WORD_BREAK */
 
 let Inline = Quill.import('blots/inline')
 let BlockEmbed = Quill.import('blots/embed')
@@ -299,7 +299,8 @@ class MarkBlot extends BlockEmbed {
     node.setAttribute('itemid', value.itemid)
     node.setAttribute('editorid', value.editorid)
     node.setAttribute('alt', 'Comment')
-    node.setAttribute('src', MarkBlot.baseUrl + '/api/images/mark/16')
+    let size = Math.round(((MarkBlot.size-1)*0.2+1)*14)
+    node.setAttribute('src', MarkBlot.baseUrl + '/api/images/mark/' + size)
     TranscriptionEditor.setUpPopover(node, 'Note', '', value.editorid, value.itemid, true)
     return node
   }
@@ -315,6 +316,33 @@ MarkBlot.blotName = 'mark'
 MarkBlot.tagName = 'img'
 MarkBlot.className = 'mark'
 Quill.register(MarkBlot)
+
+class NoWordBreakBlot extends BlockEmbed {
+  static create (value) {
+    let node = super.create()
+    node.setAttribute('itemid', value.itemid)
+    node.setAttribute('editorid', value.editorid)
+    node.setAttribute('alt', 'No Word Break')
+    let size = Math.round(((NoWordBreakBlot.size-1)*0.2+1)*14)
+    node.setAttribute('src', NoWordBreakBlot.baseUrl + '/api/images/nowb/' + size)
+    //node.setAttribute('src', NoWordBreakBlot.baseUrl + '/api/images/nowb/16')
+    TranscriptionEditor.setUpPopover(node, 'No Word Break', '', value.editorid, value.itemid, true)
+    return node
+  }
+
+  static value (node) {
+    return {
+      itemid: node.getAttribute('itemid'),
+      editorid: node.getAttribute('editorid')
+    }
+  }
+ }
+NoWordBreakBlot.blotName = 'nowb'
+NoWordBreakBlot.tagName = 'img'
+NoWordBreakBlot.className = 'nowb'
+Quill.register(NoWordBreakBlot)
+
+
 
 class GlossBlot extends Block {
   
@@ -396,6 +424,7 @@ class TranscriptionEditor {
 
     MarkBlot.baseUrl = baseUrl
     IllegibleBlot.baseUrl = baseUrl
+    NoWordBreakBlot.baseUrl = baseUrl
     if (!TranscriptionEditor.editorTemplate) {
       TranscriptionEditor.editorTemplate = Twig.twig({
         id: 'editor',
@@ -1089,7 +1118,8 @@ class TranscriptionEditor {
     $('#editor-container-'+this.id).addClass('fontsize' + size)
     this.fontSize = size
     IllegibleBlot.size = this.fontSize
-    console.log('Font size: ' + size + ' on ' + '#editor-container-'+this.id)
+    NoWordBreakBlot.size = this.fontSize
+    MarkBlot.size = this.fontSize
   }
   
   makeTextSmaller() {
@@ -1651,6 +1681,17 @@ class TranscriptionEditor {
                   }
                 })
                 break
+                
+              case ITEM_NO_WORD_BREAK:
+                delta.push({
+                  insert: {
+                    nowb: {
+                      itemid: item.id,
+                      editorid: this.id
+                    }
+                  }
+                })
+                break
 
               case ITEM_RUBRIC:
                 delta.push({
@@ -1856,6 +1897,10 @@ class TranscriptionEditor {
           if ('mark' in theText) {
             type = ITEM_MARK
             itemId = theText.mark.itemid
+          }
+          if ('nowb' in theText) {
+            type = ITEM_NO_WORD_BREAK
+            itemId = theText.nowb.itemid
           }
           if ('illegible' in theText) {
             type = ITEM_ILLEGIBLE

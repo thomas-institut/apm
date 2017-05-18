@@ -488,7 +488,7 @@ class TranscriptionReaderTest extends TestCase {
         $this->assertEquals($item17->id, $addElement->getTargetId());
         
         $item18 = $lineElement->items[17];
-        $this->assertTrue($item18 instanceof TxText\NoLinebreak);
+        $this->assertTrue($item18 instanceof TxText\NoWordBreak);
         
     }
     

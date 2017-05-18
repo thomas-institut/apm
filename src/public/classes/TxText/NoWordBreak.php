@@ -25,7 +25,7 @@ namespace AverroesProject\TxText;
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class NoLinebreak extends Item {
+class NoWordBreak extends Item {
     /**
      * 
      * @param int $id
@@ -33,7 +33,7 @@ class NoLinebreak extends Item {
      */
     function __construct($id, $s) {
         parent::__construct($id, $s);
-        $this->type = parent::NO_LINEBREAK;
+        $this->type = parent::NO_WORD_BREAK;
     }
     
     function getText(){

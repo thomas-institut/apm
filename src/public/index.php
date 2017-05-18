@@ -236,6 +236,11 @@ $app->group('/api', function (){
             '\AverroesProject\Api\ApiController:generateMarkIcon')
         ->setName('api.images.mark');
     
+    // API -> images : No Word Break Icon
+    $this->get('/images/nowb/{size}', 
+            '\AverroesProject\Api\ApiController:generateNoWordBreakIcon')
+        ->setName('api.images.nowb');
+    
     // API -> images : Illegible Icon
     $this->get('/images/illegible/{size}/{length}', 
             '\AverroesProject\Api\ApiController:generateIllegibleIcon')

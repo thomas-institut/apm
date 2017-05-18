@@ -88,7 +88,7 @@ class ElementDatabaseTest extends TestCase {
         ItemArray::addItem($goodElement->items, new TxText\Gliph(0,-1,'ā'));
         ItemArray::addItem($goodElement->items, new TxText\Deletion(0,-1,'deleted', 'strikeout'));
         ItemArray::addItem($goodElement->items, new TxText\Addition(0,-1,'added', 'above'));
-        ItemArray::addItem($goodElement->items, new TxText\NoLinebreak(0,-1));
+        ItemArray::addItem($goodElement->items, new TxText\NoWordBreak(0,-1));
         $goodElement->lang = 'la';
         
         

@@ -69,7 +69,7 @@ class Item {
     const ADDITION =        7;  
     const DELETION =        8;
     const MARK =            9;
-    const NO_LINEBREAK =   10;
+    const NO_WORD_BREAK =   10;
     const ABBREVIATION =   11;
     const LINEBREAK    =   12;
     const INITIAL  = 13;

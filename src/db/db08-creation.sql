@@ -236,7 +236,7 @@ INSERT INTO `ap_types_item` (`id`, `name`, `descr`) VALUES
 (7, 'addition', 'Added text'),
 (8, 'deletion', 'Deleted text'),
 (9, 'mark', 'A mark in the text to which notes and extra column additions can refer'),
-(10, 'nolb', 'A mark at the end of an element to signal that the word before it does not end at the break'),
+(10, 'nowb', 'A mark at the end of an element to signal that the word before it does not end at the break'),
 (11, 'abbreviation', 'Abbreviation with possible expansion'),
 (12, 'linebreak', 'Line break');
 

@@ -37,7 +37,7 @@ class Abbreviation extends Item {
         parent::__construct($id, $s);
         $this->type = parent::ABBREVIATION;
         if ($theText === NULL or $theText ===''){
-            throw new InvalidArgumentException("ABBREVIATION items need non-empty text");
+            throw new \InvalidArgumentException("ABBREVIATION items need non-empty text");
         }
         $this->theText = $theText;
         $this->altText = $expansion;

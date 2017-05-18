@@ -8,13 +8,14 @@ User profile template
 {% block title %}{{theuser.fullname}} | Collaborator in the Averroes Project{% endblock %}
 
 {% block extraJS %}
+
+<script type="application/javascript" src="{{baseurl}}/js/apm.js"></script>
+<script type="application/javascript" src="{{baseurl}}/js/apiurl.js"></script>
+<script type="application/javascript" src="{{baseurl}}/js/userprofile.js"></script>
 <script>
-    apiBase = '{{baseurl}}';
-    profileUserId = {{theuser.id}};
+    ApiUrl.setBase('{{baseurl}}')
     profileUserInfo = JSON.parse('{{theuser|json_encode|raw}}');
 </script>
-<script type="application/javascript" src="{{baseurl}}/js/apm.js"></script>
-<script type="application/javascript" src="{{baseurl}}/js/userprofile.js"></script>
 {% endblock %}
 
 {% block content %}

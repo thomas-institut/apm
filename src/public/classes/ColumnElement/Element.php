@@ -24,6 +24,9 @@ namespace AverroesProject\ColumnElement;
  * The base class for all Column Elements
  */
 class Element {
+    
+    const LANG_NOT_SET = '';
+    const ID_NOT_SET = -1;
 
     /**
      *
@@ -72,13 +75,6 @@ class Element {
      */
     public $editorId;
 
-    
-    /**
-     * @var string $timestamp
-     * @brief a string representing the date and time the element was created
-     */
-    public $timestamp;
-    
     /**
      * @var int type
      * @brief the element's type
@@ -124,18 +120,26 @@ class Element {
      */
     public $placement;
     
-    public function __construct($id = 0, $colNumber = 0, $lang = '') {
+    public function __construct($id = self::ID_NOT_SET, 
+            $colNumber = 0, $lang = self::LANG_NOT_SET)
+    {
         $this->id = $id;
         $this->columnNumber = $colNumber;
-        $this->handId = 0;
-        $this->items = new \AverroesProject\TxText\ItemArray();
+        $this->handId = self::ID_NOT_SET;
+        $this->items = [];
         $this->lang = $lang;
-        $this->editorId  = 0;
-        $this->reference = NULL;
-        $this->placement = NULL;
+        $this->editorId  = self::ID_NOT_SET;
+        $this->reference = null;
+        $this->placement = null;
     }
     
-    function isRightToLeft(){
+    /**
+     * @codeCoverageIgnore
+     * @todo See whether this method is necessary at all.
+     * 
+     */
+    function isRightToLeft()
+    {
         switch($this->lang){
             case 'ar':
             case 'he':
@@ -144,6 +148,27 @@ class Element {
             default:
                 return false;
         }
+    }
+    
+    /**
+     * Determines if element data (all except items, id and seq) is equal
+     * 
+     * @param Item $a
+     * @param Item $b
+     * @return boolean
+     */
+    public static function isElementDataEqual(Element $a, Element $b) 
+    {
+       $dataA = get_object_vars($a);
+       $dataB = get_object_vars($b);
+       
+       unset($dataA['seq']);
+       unset($dataB['seq']);
+       unset($dataA['id']);
+       unset($dataB['id']);
+       unset($dataA['items']);
+       unset($dataB['items']);
+       return $dataA == $dataB;
     }
     
 }

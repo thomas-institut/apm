@@ -8,11 +8,12 @@ User manager template
 {% block title %}Averroes Project : User Manager{% endblock %}
 
 {% block extraJS %}
-<script>
-    apiBase = '{{baseurl}}';
-</script>
 <script type="application/javascript" src="{{baseurl}}/js/apm.js"></script>
+<script type="application/javascript" src="{{baseurl}}/js/apiurl.js"></script>
 <script type="application/javascript" src="{{baseurl}}/js/usermanager.js"></script>
+<script>
+    ApiUrl.setBase('{{baseurl}}')
+</script>
 {% endblock %}
 
 {% block content %}

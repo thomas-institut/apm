@@ -18,173 +18,129 @@
  */
 
 /**
- * @brief TranscriptionText classes
+ * 
+ * Methods to manage an array of Items meant to be part of an element
+ *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
- * 
- * 
- * A piece of transcribed text is an array of TxText\Item. 
- * Each Item has a unique Id that identifies it in the system, 
- * and a reference to its parent ColumnElement\Element.
- * 
- * Normally each Item inherits language and hand from its
- * parent, but some may have a different one. EditorialNotes can refer to 
- * TranscribedTextItem's ids. 
- * 
- * Each Item then has the following data:
- *    id: unique Integer
- *    language:  ar | he | la | de | en | fr
- *    hand : Hand = SQL: hands.id
- *    sequence: Integer 
- * 
- *    + text:  i.e., normal text 
- *        theText : String
- *    + rubric:
- *        theText : String
- *    + initials:
- *        theText : String
- *    + sic: 
- *         theText: String
- *         correction: String  (may be NULL)
- * 
- *    + unclear text: 
- *         proposed reading: String  
- *         alternative reading: String
- *         reason: unclear | damaged
- *         // any other alternative readings can be left to the notes
- * 
- *    + illegible text:  (=gap in TEI)
- *         length: Integer : # of illegible characters
- *         reason:  illegible | damaged
- * 
- *    // TEI has a "damaged" element, which is just a list of unclear
- *    // and illegible portions. Any sequence of unclear and illegible
- *    // items with reason = damaged amounts to one of such elements
- * 
- *    + gliph:
- *       theText: String  (usually 1 character)
- * 
- *    + nolinebreak: strictly as the last element in a line
- *       no data, just a mark
- * 
- *    + mark: a place holder associated with an off-flow addition
- *       no data, just a mark
- *    
- *    + deletion:
- *        theText: String
- *        technique: strikeover | two-dots | ....
- * 
- *    + in-flow addition: 
- *        theText : String
- *        place (in-flow) : above | below | inline | overflow | inspace
- *        target: deletion id (optional)
- *               // the presence a deletion id signals that this is 
- *               // a replacement, no need to designate it as such
- * 
  *
  */
 
 namespace AverroesProject\TxText;
 
-class ItemArray {
-    
+use AverroesProject\Algorithm\MyersDiff;
+use AverroesProject\Algorithm\Utility;
+
+class ItemArray
+{
+
     /**
+     * Adds an item to an array making sure the sequence numbers
+     * in the individual items are consistent with the array indexes
      *
-     * @var Item[]
-     */
-    public $theItems;
-    
-    public $lang;
-    public $editorId;
-    public $handId;
-    
-    /**
-     *
-     * @var int
-     */
-    public $parentColumnElementId;
-    
-    
-    function __construct($parent = 0, $lang = 'la', $editor = 0, $hand = 0) {
-        
-        $this->theItems = [];
-        $this->lang = $lang;
-        $this->editorId = (int) $editor;
-        $this->handId = (int) $hand;
-        $this->parentColumnElementId = (int) $parent;
-    }
-    
-    /**
-     * 
-     * @param type $item
-     * @param bool $ordered  (if true, items will be pushed into the array)
+     * @param Item[] $itemArray
+     * @param Item $item
+     * @param boolean $atTheEnd  (if true, the item will be assigned a sequence 
+     *              number 
      * @throws InvalidArgumentException
      */
-    function addItem($item, $ordered=false){
-        if ($item instanceof Item){
-            $seq = (int) $item->seq;
-            if ( $seq !== -1 && !$ordered){
-                $this->theItems[$seq] = $item;
-                
-            }
-            else {
-                $item->seq = count($this->theItems);
-                array_push($this->theItems, $item);
-            }
-            
+    public static function addItem(&$itemArray, $item, $atTheEnd=false)
+    {
+        if (!($item instanceof Item)) {
+             throw new \InvalidArgumentException(
+                     "Objects added to an ItemArray should be of class Item");
         }
-        else{
-            throw new \InvalidArgumentException("Objcts added to an ItemArray should be of class Item, got " . get_class($item));
+        $index = count($itemArray);
+        $maxSeq = -1;
+        if ($index > 0) {
+            $maxSeq = $itemArray[$index-1]->seq;
         }
+        $itemArray[$index] = $item;
+        if ($item->seq == -1 || $atTheEnd) {
+            $itemArray[$index]->seq = $maxSeq+1;
+        }
+        Utility::arraySortByKey($itemArray, 'seq');
     }
-    
-    function getItem($seq){
-        return $this->theItems[$seq];
-    }
-    
-    function nItems(){
-        return count($this->theItems);
-    }
-    
-    function getText(){
+
+    /**
+     * Returns the textual representation of a whole Item array
+     * @param type $itemArray
+     * @return string
+     */
+    public static function getText($itemArray)
+    {
         $text = '';
-        foreach($this->theItems as $item){
+        foreach ($itemArray as $item) {
             $text = $text . $item->getText();
         }
         return $text;
     }
     
     /**
-     * 
-     * @param bool $force
+     * Sets the language of the items in an array if not set or
+     * if $force is true
+     *
+     * @param Item[] $itemArray 
+     * @param string $lang 
+     * @param boolean $force
      */
-    function setLanguageOnAllItems($force = FALSE){
-        foreach ($this->theItems as $item){
-            if ($force){
-                $item->setLang($this->lang);
+    public static function setLang($itemArray, $lang, $force = false)
+    {
+        foreach ($itemArray as $item) {
+            if ($force || $item->getLang() === Item::LANG_NOT_SET) {
+                $item->setLang($lang);
             } 
-            else {
-                if ($item->getLang() === ''){
-                    $item->setLang($this->lang);
-                }
-            }
         }
     }
     
     /**
-     * 
-     * @param bool $force
+     * Sets the hand ID of the items in an array if not set or
+     * if $force is true
+     *
+     * @param Item[] $itemArray 
+     * @param int $handId 
+     * @param boolean $force
      */
-    function setHandOnAllItems($force = FALSE){
-        foreach ($this->theItems as $item){
-            if ($force){
-                $item->setHandId($this->handId);
-            } 
-            else {
-                if ($item->getHandId() === -1){
-                    $item->setHandId($this->handId);
-                }
+    public static function setHandId($theItems, $handId, $force = false)
+    {
+        foreach ($theItems as $item) {
+            if ($force || $item->getHandId() ===  Item::ID_NOT_SET) {
+                $item->setHandId($handId);
             }
         }
+    }
+    
+    public static function isRtl($theItems)
+    {
+        $n = count($theItems);
+        $rtl = 0;
+        foreach ($theItems as $item) {
+            if ($item->isRtl()) {
+                $rtl++;
+            }
+        }
+        return $rtl > ($n - $rtl);
+    }
+    
+    /**
+     * Gets the edit script that transform the array into the
+     * given array. The resulting indexes in the edit script 
+     * refer to sequence numbers (1,2,...), not array indexes (0,1,...)
+     *
+     * Assumes the items in both arrays are ordered according to 
+     * the desired sequences. 
+     * 
+     * @param Item[] $oldArray
+     * @param Item[] $newArray
+     */
+    public static function getEditScript($oldArray, $newArray) 
+    {
+        $editScript = MyersDiff::calculate(
+            $oldArray,
+            $newArray, 
+            function ($a, $b) { return Item::isItemDataEqual($a, $b);}
+        );
+
+        return $editScript;
     }
     
 }

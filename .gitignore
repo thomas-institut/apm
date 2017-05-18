@@ -9,3 +9,9 @@ src/public/config.php
 *.bak
 /src/public/node_modules/
 /src/public/log/
+/src/public/scratch/
+/src/public/test/testdbconfig.php
+/src/public/test/coverage/
+.~lock*
+/other/
+/src/public/test/test.log

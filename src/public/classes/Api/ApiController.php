@@ -30,60 +30,133 @@ class ApiController
 {
     protected $ci;
     private $logger;
-   //Constructor
-   public function __construct( $ci) {
+    
+    //Constructor
+    public function __construct( $ci)
+    {
        $this->ci = $ci;
        $this->db = $ci->db;
        $this->logger = $ci->logger->withName('API');
-   }
+    }
    
-   public function getElementsByDocPageCol(Request $request, Response $response, $next){
+    public function generateMarkIcon(Request $request, 
+            Response $response, $next)
+    {
+        $size = $request->getAttribute('size');
+        
+        $imageData = \AverroesProject\Image\EditorImages::markIcon($size);
+        
+        $response->getBody()->write($imageData);
+        return $response->withHeader('Content-Type', 'image/png');
+    }
+    
+     public function generateNoWordBreakIcon(Request $request, 
+            Response $response, $next)
+    {
+        $size = $request->getAttribute('size');
+        
+        $imageData = \AverroesProject\Image\EditorImages::noWordBreakIcon($size);
+        
+        $response->getBody()->write($imageData);
+        return $response->withHeader('Content-Type', 'image/png');
+    }
+    
+    public function generateIllegibleIcon(Request $request, 
+            Response $response, $next)
+    {
+        $size = $request->getAttribute('size');
+        $length = $request->getAttribute('length');
+        
+        $imageData = \AverroesProject\Image\EditorImages::illegibleIcon($size, $length);
+        
+        $response->getBody()->write($imageData);
+        return $response->withHeader('Content-Type', 'image/png');
+        //return $response;
+    }
+    
+    public function getElementsByDocPageCol(Request $request, 
+            Response $response, $next)
+    {
         $docId = $request->getAttribute('document');
         $pageNumber = $request->getAttribute('page');
         $columnNumber = $request->getAttribute('column');
 
         // Get the elements
-        $elements = $this->db->getColumnElements($docId, $pageNumber, $columnNumber);
-        if ($elements === NULL){
-            $elements = [];
-        }
+        $elements = $this->db->getColumnElements($docId, $pageNumber, 
+                $columnNumber);
+
         // Get the editorial notes
-        $ednotes = $this->db->getEditorialNotesByDocPageCol($docId, $pageNumber, $columnNumber);
+        $ednotes = $this->db->enm->getEditorialNotesByDocPageCol($docId, 
+                $pageNumber, $columnNumber);
+        
+        $pageInfo = $this->db->getPageInfoByDocPage($docId, $pageNumber);
 
-        if ($ednotes === NULL){
-            $ednotes = [];
-        }
-
-        // Get the information about every person in the elements and editorial notes
+        // Get the information about every person 
+        // in the elements and editorial notes
         $people = [];
-        foreach($elements as $e){
+        foreach ($elements as $e){
             if (!isset($people[$e->editorId])){
-                $people[$e->editorId] = $this->ci->um->getUserInfoByUserId($e->editorId);
+                $people[$e->editorId] = 
+                        $this->db->um->getUserInfoByUserId($e->editorId);
             }
         }
         foreach($ednotes as $e){
             if (!isset($people[$e->authorId])){
-                $people[$e->authorId] = $this->ci->um->getUserInfoByUserId($e->authorId);
+                $people[$e->authorId] = 
+                        $this->db->um->getUserInfoByUserId($e->authorId);
             }
         }
+        // Add API user info as well
+        if (!isset($people[$this->ci->userId])){
+            $people[$this->ci->userId] = 
+                    $this->db->um->getUserInfoByUserId($this->ci->userId);
+        }
+
 
         return $response->withJson(['elements' => $elements, 
             'ednotes' => $ednotes, 
             'people' => $people, 
-            'info' => ['col' => (int) $columnNumber]]);
+            'info' => [
+                'col' => (int) $columnNumber,
+                'docId' => $pageInfo['doc_id'],
+                'pageId' => $pageInfo['id'],
+                'lang' => $pageInfo['lang'],
+                'numCols' => $pageInfo['num_cols']
+                ]
+         ]);
    }
    
-   public function getNumColumns(Request $request, Response $response, $next){
+    public function getNumColumns(Request $request, Response $response, $next)
+    {
         $docId = $request->getAttribute('document');
         $pageNumber = $request->getAttribute('page');
         
         $numColumns = $this->db->getNumColumns($docId, $pageNumber);
         
         return $response->withJson($numColumns);
+    }
+   
+    public function addNewColumn(Request $request, Response $response, $next)
+    {
+        $docId = $request->getAttribute('document');
+        $pageNumber = $request->getAttribute('page');
+        
+        $this->db->addNewColumn($docId, $pageNumber);
+        
+        $numColumns = $this->db->getNumColumns($docId, $pageNumber);
+        $updaterInfo = $this->db->um->getUserInfoByUserId($this->ci->userId);
+        $userName = $updaterInfo['username'];
+        $this->logger->info("$userName added a column to " . 
+                "doc $docId, page $pageNumber", 
+                ['apiUserId' => $this->ci->userId]);
+        
+        return $response->withJson($numColumns);
    }
    
-    public function getUserProfileInfo(Request $request, Response $response, $next){
-        $um = $this->ci->um;
+    public function getUserProfileInfo(Request $request, Response $response, 
+            $next)
+    {
+        $um = $this->db->um;
         $profileUserId =  (int) $request->getAttribute('userId');
         $userProfileInfo = $um->getUserInfoByUserId($profileUserId);
         if ($userProfileInfo === false ) {
@@ -97,8 +170,10 @@ class ApiController
         return $response->withJson($userProfileInfo);
     }
    
-    public function updateUserProfile(Request $request, Response $response, $next){
-        $um = $this->ci->um;
+    public function updateUserProfile(Request $request, Response $response, 
+            $next)
+    {
+        $um = $this->db->um;
         $profileUserId =  (int) $request->getAttribute('userId');
         $postData = $request->getParsedBody();
         $fullname = $postData['fullname'];
@@ -122,14 +197,18 @@ class ApiController
         $profileUserName = $profileUserInfo['username'];
         $updaterInfo = $um->getUserInfoByUserId($this->ci->userId);
         $updater = $updaterInfo['username'];
-        if ($updater != $profileUserName && !$um->isUserAllowedTo($updaterInfo['id'], 'manageUsers')) {
-            $this->logger->warning("$updater tried to update $profileUserName's profile but she/he is not allowed", 
+        if ($updater != $profileUserName && 
+                !$um->isUserAllowedTo($updaterInfo['id'], 'manageUsers')) {
+            $this->logger->warning("$updater tried to update "
+                    . "$profileUserName's profile but she/he is not allowed", 
                     [ 'apiUserId' => $this->ci->userId, 
                       'userId' => profileUserId]);
             return $response->withStatus(403);
         }
-        if ($fullname === $profileUserInfo['fullname'] and $email === $profileUserInfo['email']) {
-            $this->logger->notice("$updater tried to update $profileUserName's profile, but without new information", 
+        if ($fullname === $profileUserInfo['fullname'] && 
+                $email === $profileUserInfo['email']) {
+            $this->logger->notice("$updater tried to update "
+                    . "$profileUserName's profile, but without new information", 
                     [ 'apiUserId' => $this->ci->userId, 
                       'userId' => $profileUserId]);
             return $response->withStatus(200);
@@ -137,20 +216,24 @@ class ApiController
         
         if ($um->updateUserInfo($profileUserId, $fullname, $email) !== false) {
             
-            $this->logger->info("$updater updated $profileUserName's profile with fullname '$fullname', email '$email'", 
+            $this->logger->info("$updater updated $profileUserName's "
+                    . "profile with fullname '$fullname', email '$email'", 
                     [ 'apiUserId' => $this->ci->userId, 
                       'userId' => $profileUserId]);
             return $response->withStatus(200);
         }
         
-        $this->logger->error("Could not update user $profileUserId with fullname '$fullname', email '$email'", 
+        $this->logger->error("Could not update user $profileUserId with "
+                . "fullname '$fullname', email '$email'", 
                 [ 'apiUserId' => $this->ci->userId, 
                       'userId' => $profileUserId]);
         return $response->withStatus(409);       
-   }
+    }
    
-   public function changeUserPassword(Request $request, Response $response, $next){
-        $um = $this->ci->um;
+    public function changeUserPassword(Request $request, Response $response, 
+           $next)
+    {
+        $um = $this->db->um;
         $profileUserId =  (int) $request->getAttribute('userId');
         $postData = $request->getParsedBody();
         $password1 = $postData['password1'];
@@ -168,40 +251,47 @@ class ApiController
          
         $updaterInfo = $um->getUserInfoByUserId($this->ci->userId);
         $updater = $updaterInfo['username'];
-        if ($updater != $profileUserName && !$um->isUserAllowedTo($updaterInfo['id'], 'manageUsers')) {
-            $this->logger->warning("$updater tried to changer $profileUserName's password but she/he is not allowed", 
+        if ($updater != $profileUserName && 
+                !$um->isUserAllowedTo($updaterInfo['id'], 'manageUsers')) {
+            $this->logger->warning("$updater tried to changer "
+                    . "$profileUserName's password but she/he is not allowed", 
                     [ 'apiUserId' => $this->ci->userId, 
                       'userId' => $profileUserId]);
             return $response->withStatus(403);
         }
         if ($password1 == '') {
-             $this->logger->warning("Empty password for user $profileUserName, change attempted by $updater", 
+             $this->logger->warning("Empty password for user "
+                     . "$profileUserName, change attempted by $updater", 
                     [ 'apiUserId' => $this->ci->userId, 
                       'userId' => $profileUserId]);
             return $response->withStatus(409);
         }
         if ($password1 !== $password2) {
-            $this->logger->warning("Passwords do not match for user $profileUserName, change attempted by $updater", 
+            $this->logger->warning("Passwords do not match for user "
+                    . "$profileUserName, change attempted by $updater", 
                     [ 'apiUserId' => $this->ci->userId, 
                       'userId' => $profileUserId]);
             return $response->withStatus(409);
         }
 
         if ($um->storeUserPassword($profileUserName, $password1)) {
-            $this->logger->info("$updater changed $profileUserName's password", 
+            $this->logger->info("$updater changed "
+                    . "$profileUserName's password", 
                     [ 'apiUserId' => $this->ci->userId, 
                       'userId' => $profileUserId]);
             return $response->withStatus(200);
         }
         
-        $this->logger->error("Error storing new password for $profileUserName, change attempted by $updater", 
+        $this->logger->error("Error storing new password for "
+                . "$profileUserName, change attempted by $updater", 
                     [ 'apiUserId' => $this->ci->userId, 
                       'userId' => $profileUserId]);
         return $response->withStatus(409);
     }
     
-    public function makeUserRoot(Request $request, Response $response, $next){
-        $um = $this->ci->um;
+    public function makeUserRoot(Request $request, Response $response, $next)
+    {
+        $um = $this->db->um;
         $profileUserId =  (int) $request->getAttribute('userId');
         $postData = $request->getParsedBody();
         $confirmroot = $postData['confirmroot'];
@@ -224,7 +314,8 @@ class ApiController
         $updaterInfo = $um->getUserInfoByUserId($this->ci->userId);
         $updater = $updaterInfo['username'];
         if (!$um->isRoot($updaterInfo['id'])) {
-            $this->logger->warning("$updater tried to make $profileUserName root but she/he is not allowed", 
+            $this->logger->warning("$updater tried to make $profileUserName "
+                    . "root but she/he is not allowed", 
                     [ 'apiUserId' => $this->ci->userId, 
                       'userId' => $profileUserId]);
             return $response->withStatus(403);
@@ -237,14 +328,16 @@ class ApiController
             return $response->withStatus(200);
         }
         
-        $this->logger->error("Error making $profileUserName root, change attempted by $updater", 
+        $this->logger->error("Error making $profileUserName root, change "
+                . "attempted by $updater", 
                     [ 'apiUserId' => $this->ci->userId, 
                       'userId' => $profileUserId]);
         return $response->withStatus(409);
     }
     
-    public function createNewUser(Request $request, Response $response, $next){
-        $um = $this->ci->um;
+    public function createNewUser(Request $request, Response $response, $next)
+    {
+        $um = $this->db->um;
         $postData = $request->getParsedBody();
         $username = $postData['username'];
         $fullname = $postData['fullname'];
@@ -261,52 +354,60 @@ class ApiController
         $updater = $updaterInfo['username'];
         
         if (!$um->isUserAllowedTo($updaterInfo['id'], 'manageUsers')) {
-            $this->logger->warning("$updater tried to create a user, but she/he is not allowed", 
+            $this->logger->warning("$updater tried to create a user, "
+                    . "but she/he is not allowed", 
                     ['apiUserId' => $this->ci->userId]);
             return $response->withStatus(401);
         }
         
         if ($username == '') {
-            $this->logger->warning("No username given for user creation, change attempted by $updater", 
+            $this->logger->warning("No username given for user creation, "
+                    . "change attempted by $updater", 
                     ['apiUserId' => $this->ci->userId]);
             return $response->withStatus(409);
         }
         if ($fullname == '') {
-            $this->logger->warning("No fullname given for user creation, change attempted by $updater", 
+            $this->logger->warning("No fullname given for user creation, "
+                    . "change attempted by $updater", 
                     ['apiUserId' => $this->ci->userId]);
             return $response->withStatus(409);
         }
         
         if ($password1 == '') {
-            $this->logger->warning("No password given for user creation, change attempted by $updater", 
+            $this->logger->warning("No password given for user creation, "
+                    . "change attempted by $updater", 
                     ['apiUserId' => $this->ci->userId]);
             return $response->withStatus(409);
         }
         if ($password1 !== $password2) {
-            $this->logger->warning("Passwords do not match for user creation, change attempted by $updater", 
+            $this->logger->warning("Passwords do not match for user creation, "
+                    . "change attempted by $updater", 
                     ['apiUserId' => $this->ci->userId]);
             return $response->withStatus(409);
         }
         
         // Create the user
         if ($um->userExistsByUserName($username)) {
-             $this->logger->error("$username already exists, creation attempted by $updater", 
+             $this->logger->error("$username already exists, "
+                     . "creation attempted by $updater", 
                     ['apiUserId' => $this->ci->userId]);
             return $response->withStatus(409);
         }
         $newUserId = $um->createUserByUserName($username);
         if ($newUserId === false) {
-            $this->logger->error("Can't create user $username, creation attempted by $updater", 
+            $this->logger->error("Can't create user $username, "
+                    . "creation attempted by $updater", 
                     ['apiUserId' => $this->ci->userId]);
             return $response->withStatus(409);
         }
         
-        // Try to update info, will not return an error to the user, but will log if there's 
-        // any problem
+        // Try to update info, will not return an error to the user, but 
+        // will log if there's any problem
         
         // Update the profile info
         if ($um->updateUserInfo($newUserId, $fullname, $email) === false) {
-            $this->logger->error("Can't update info for user $username, change attempted by $updater", 
+            $this->logger->error("Can't update info for user $username, "
+                    . "change attempted by $updater", 
                     ['apiUserId' => $this->ci->userId , 
                      'userId' => $newUserId]);
             return $response->withStatus(200);
@@ -314,7 +415,8 @@ class ApiController
         
         // Update password
         if (!$um->storeUserPassword($username, $password1)) {
-            $this->logger->error("Can't change password for user $username, change attempted by $updater", 
+            $this->logger->error("Can't change password for user $username, "
+                    . "change attempted by $updater", 
                     ['apiUserId' => $this->ci->userId , 
                      'userId' => $newUserId]);
             return $response->withStatus(200);

@@ -8,11 +8,16 @@
     "license": "GPL",
     
     "require": {
-        "slim/slim": "^3.5",
-        "slim/twig-view": "^2.1",
+        "slim/slim": "^3.8",
+        "slim/twig-view": "^2.2",
         "dflydev/fig-cookies": "^1.0",
         "rafaelnajera/xmlmatcher": "^0.4",
+        "rafaelnajera/datatable" : "0.4.1",
         "monolog/monolog": "^1.22"
+    },
+    
+    "require-dev": {
+        "guzzlehttp/guzzle": "~6.0"
     },
     
     "autoload": {

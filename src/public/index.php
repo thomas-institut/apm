@@ -25,10 +25,10 @@ namespace AverroesProject;
 
 require 'vendor/autoload.php';
 
-use AverroesProject\DataTable\MySqlDataTable;
-use AverroesProject\DataTable\MySqlDataTableWithRandomIds;
+use AverroesProject\Data\DataManager;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
+use AverroesProject\Data\DatabaseChecker;
 
 /**
  * Runtime configurations: DB credentials, base URL
@@ -44,54 +44,82 @@ require 'config.tables.php';
 // Application parameters
 $config['app_name'] = 'Averroes Project Manager';
 $config['version'] = '0.2';
-$config['copyright_notice'] = '2016-17, <a href="http://www.thomasinstitut.uni-koeln.de/">Thomas-Institut</a>, <a href="http://www.uni-koeln.de/">Universität zu Köln</a>';
-
+$config['copyright_notice'] = <<<EOD
+        2016-17, 
+        <a href="http://www.thomasinstitut.uni-koeln.de/">
+            Thomas-Institut</a>, 
+        <a href="http://www.uni-koeln.de/">
+            Universität zu Köln
+        </a>
+EOD;
 $config['default_timezone'] = "Europe/Berlin";
 
 // Slim parameters
 $config['addContentLengthHeader'] = false;
 
-// Initialize the Slim app
-$app = new \Slim\App(["settings" => $config]);
+
+function exitWithError($logger, $msg, $logMsg = '') 
+{
+    if ($logMsg === '') {
+        $logMsg = $msg;
+    }
+    $logger->error($logMsg);
+    http_response_code(503);
+    print "ERROR: $msg";
+    exit();
+}
+
+
+// Set timezone
 date_default_timezone_set($config['default_timezone']);
 
-// Setup the app's container
+// Setup logger
+$logStream = new StreamHandler(__DIR__ . '/' . $config['logfilename'], 
+        Logger::DEBUG);
+$phpLog = new \Monolog\Handler\ErrorLogHandler();
+$logger = new Logger('APM');
+$logger->pushHandler($logStream);
+$logger->pushHandler($phpLog);
+$logger->pushProcessor(new \Monolog\Processor\WebProcessor);
+
+//
+// Set up database connection
+//
+try {
+    $dbh = new \PDO('mysql:dbname='. $config['db']['db'] . ';host=' . 
+               $config['db']['host'], $config['db']['user'], 
+               $config['db']['pwd']);
+    $dbh->query("set character set 'utf8'");
+    $dbh->query("set names 'utf8'");
+} catch (\PDOException $e) {
+    exitWithError($logger, 
+            "Database connection failed", 
+            "Database connection failed: " . $e->getMessage());
+}
+
+//
+// Check database
+//
+$dbChecker = new DatabaseChecker($dbh, $config['tables']);
+
+if (!$dbChecker->isDatabaseInitialized()) {
+    exitWithError($logger, "Database is not initialized");
+}
+
+if (!$dbChecker->isDatabaseUpToDate()) {
+    exitWithError($logger, "Database schema not up to date");
+}
+
+$db = new DataManager($dbh, $config['tables'], $logger);
+ 
+// Initialize the Slim app
+$app = new \Slim\App(["settings" => $config]);
+
 $container = $app->getContainer();
 
-// Error Handling
-//$container['errorHandler'] = function ($c) {
-//    return function($request, $response, $exception){
-//        return \AverroesProject\SiteController::errorPage($request, $response, $exception);
-//    };
-//};
-
-// Big Data manager... will be gone at some point
-$container['db'] = function($c){
-   $db = new AverroesProjectData($c['settings']['db'], 
-           $c['settings']['tables']);
-   return $db ;
-};
-
-// PDO Database and others
-$container['dbh'] = function($c){
-   $dbh = new \PDO('mysql:dbname='. $c['settings']['db']['db'] . ';host=' . 
-           $c['settings']['db']['host'], $c['settings']['db']['user'], 
-           $c['settings']['db']['pwd']);
-   $dbh->query("set character set 'utf8'");
-   $dbh->query("set names 'utf8'");
-   return $dbh ;
-};
-
-// User Manager
-$container['um'] = function ($c){
-    $um = new UserManager(
-            new MySqlDataTable($c->dbh, 
-                    $c['settings']['tables']['users']),
-            new MySqlDataTable($c->dbh, $c['settings']['tables']['relations']), 
-            new MySqlDataTableWithRandomIds($c->dbh, $c['settings']['tables']['people'], 10000, 100000));
-    return $um;
-            
-};
+$container['db'] = $db;
+$container['dbh'] = $dbh;
+$container['logger'] = $logger;
 
 // Twig
 $container['view'] = function ($container) {
@@ -105,15 +133,6 @@ $container['view'] = function ($container) {
             $container['router'], $basePath));
     return $view;
 };
-
-// Log
-$logStream = new StreamHandler(__DIR__ . '/' . $config['logfilename'], Logger::DEBUG);
-$phpLog = new \Monolog\Handler\ErrorLogHandler();
-$logger = new Logger('apm-logger');
-$logger->pushHandler($logStream);
-$logger->pushHandler($phpLog);
-$logger->pushProcessor(new \Monolog\Processor\WebProcessor);
-$container['logger'] = $logger;
 
 // -----------------------------------------------------------------------------
 //  SITE ROUTES
@@ -182,6 +201,11 @@ $app->group('/api', function (){
             '\AverroesProject\Api\ApiController:getNumColumns')
         ->setName('api.numcolumns');
     
+    // API -> numColumns
+    $this->get('/{document}/{page}/newcolumn', 
+            '\AverroesProject\Api\ApiController:addNewColumn')
+        ->setName('api.newcolumn');
+    
     // API -> user : get profile info
     $this->get('/user/{userId}/info', 
             '\AverroesProject\Api\ApiController:getUserProfileInfo')
@@ -206,6 +230,21 @@ $app->group('/api', function (){
     $this->post('/user/new', 
             '\AverroesProject\Api\ApiController:createNewUser')
         ->setName('api.user.new');
+    
+    // API -> images : Mark Icon
+    $this->get('/images/mark/{size}', 
+            '\AverroesProject\Api\ApiController:generateMarkIcon')
+        ->setName('api.images.mark');
+    
+    // API -> images : No Word Break Icon
+    $this->get('/images/nowb/{size}', 
+            '\AverroesProject\Api\ApiController:generateNoWordBreakIcon')
+        ->setName('api.images.nowb');
+    
+    // API -> images : Illegible Icon
+    $this->get('/images/illegible/{size}/{length}', 
+            '\AverroesProject\Api\ApiController:generateIllegibleIcon')
+        ->setName('api.images.illegible');
     
 })->add('\AverroesProject\Auth\Authenticator:authenticateApiRequest');
 

@@ -1,5 +1,3 @@
-<?php
-
 /*
  * Copyright (C) 2017 Universität zu Köln
  *
@@ -18,36 +16,10 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-namespace AverroesProject\TxText;
-
-/**
- * Description of TtiNoLinebreak
- *
- * @author Rafael Nájera <rafael.najera@uni-koeln.de>
- */
-class NoLinebreak extends Item {
-    /**
-     * 
-     * @param int $id
-     * @param int $s
-     */
-    function __construct($id, $s) {
-        parent::__construct($id, $s);
-        $this->type = parent::NO_LINEBREAK;
-    }
-    
-    function getText(){
-        return '';
-    }
-    
-    function getNiceText(){
-        switch ($this->lang){
-            case 'ar':
-            case 'he':
-                return '🠸';
-                
-            default: 
-                return '🠺';
-        }
-    }
-}
+const ELEMENT_LINE = 1
+const ELEMENT_HEAD = 2
+const ELEMENT_GLOSS = 3
+const ELEMENT_PAGE_NUMBER = 4
+const ELEMENT_CUSTODES = 5
+const ELEMENT_NOTE_MARK = 6
+const ELEMENT_ADDITION = 7

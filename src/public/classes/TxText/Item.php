@@ -26,6 +26,9 @@ namespace AverroesProject\TxText;
  */
 class Item {
 
+    const ID_NOT_SET = -1;
+    const SEQ_NOT_SET = -1;
+    const LANG_NOT_SET = '';
     /**
      *
      * @var int 
@@ -66,7 +69,7 @@ class Item {
     const ADDITION =        7;  
     const DELETION =        8;
     const MARK =            9;
-    const NO_LINEBREAK =   10;
+    const NO_WORD_BREAK =   10;
     const ABBREVIATION =   11;
     const LINEBREAK    =   12;
     const INITIAL  = 13;
@@ -150,16 +153,24 @@ class Item {
     function setHandId($h){
         $this->handId = (int) $h;
     }
-            
+     
+    function setColumnElementId($id)
+    {
+        $this->columnElementId = $id;
+    }
     
-    function __construct($i=0, $s = -1, $l='', $h=-1) {
+    function __construct($i=self::ID_NOT_SET, $s = self::SEQ_NOT_SET, 
+            $l = self::LANG_NOT_SET, $h = self::ID_NOT_SET)
+    {
         $this->id =(int) $i;
         $this->lang = $l;
         $this->handId = (int) $h;
         $this->seq = (int) $s;
+        $this->columnElementId = self::ID_NOT_SET;
     }
     
-    function isRtl(){
+    function isRtl()
+    {
         switch($this->lang){
             case 'ar':
             case 'he':
@@ -188,5 +199,29 @@ class Item {
         }
         $normalized = preg_replace('/\s+/', ' ', $normalized);
         return $normalized;
+    }
+    
+    
+    /**
+     * Determines if everything but the id and the seq of two
+     * items are equals
+     * 
+     * @param Item $a
+     * @param Item $b
+     * @return boolean
+     */
+    public static function isItemDataEqual(Item $a, Item $b) 
+    {
+       $dataA = get_object_vars($a);
+       $dataB = get_object_vars($b);
+       
+       unset($dataA['seq']);
+       unset($dataB['seq']);
+       unset($dataA['id']);
+       unset($dataB['id']);
+       unset($dataA['columnElementId']);
+       unset($dataB['columnElementId']);
+       
+       return $dataA == $dataB;
     }
 }

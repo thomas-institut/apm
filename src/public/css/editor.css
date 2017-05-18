@@ -1,0 +1,350 @@
+/*
+Copyright (C) 2017 Universität zu Köln
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+*/
+/* 
+    Created on : Apr 11, 2017, 10:07:31 AM
+    Author     : Rafael Nájera <rafael.najera@uni-koeln.de>
+*/
+
+
+
+.transcription-editor {
+    width: 100%;
+}
+
+.editor-container {
+    display: block;
+    font-family: sans-serif;
+    padding-bottom: 10px;
+}
+
+.fontsize1 {
+    font-size: 1em;
+}
+
+.fontsize2 {
+    font-size: 1.2em;
+}
+
+.fontsize3 {
+    font-size: 1.4em;
+}
+
+.fontsize4 {
+    font-size: 1.6em;
+}
+
+.fontsize5 {
+    font-size: 1.8em;
+}
+
+.fontsize6 {
+    font-size: 2em;
+}
+
+.fontsize7 {
+    font-size: 2.2em;
+}
+
+.fontsize8 {
+    font-size: 2.4em;
+}
+
+.ql-container {
+  box-sizing: border-box;
+  margin: 0px;
+  position: relative;
+  padding: 0;
+}
+
+.editor-container .ql-editor {
+    overflow-y: auto; 
+    tab-size: 4;
+    padding: 5px;
+    outline: none;
+}
+.ql-clipboard {
+    left: -100000px;
+    height: 1px;
+    overflow-y: hidden;
+    position: absolute;
+    top: 50%;
+}
+
+.ql-clipboard p {
+    margin: 0;
+    padding: 0;
+}
+
+.toolbar {
+    background: black;
+    color: white;
+}
+
+.toolbar button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: inline-block;
+    font-size: 18px;
+    padding: 0;
+    height: 32px;
+    width: 32px;
+    text-align: center;
+}
+.toolbar button:active, button:focus {
+    outline: none;
+}
+
+.toolbar .title-button {
+    font-size: 0.8em;
+    margin-left: 30px;
+    margin-right: 5px;
+}
+
+.toolbar .langButton {
+    font-size: 0.9em;
+    font-family: monospace;
+}
+
+.toolbar button:disabled {
+    color: gray;
+}
+
+.editor-controlbar {
+    background: #fbfbfb;
+    color: gray;
+}
+
+.editor-controlbar button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: inline-block;
+    font-size: 18px;
+    padding: 0;
+    height: 32px;
+    width: 32px;
+    text-align: center;
+}
+.editor-controlbar button:hover {
+    color: black;
+}
+
+.editor-controlbar button:disabled {
+    color: gray;
+}
+
+.editor-controlbar .title-button {
+    font-size: 0.8em;
+    margin-left: 30px;
+    margin-right: 5px;
+}
+
+.editor-statusbar {
+    
+}
+
+.modal-ednotes > blockquote {
+    font-size: 1em;
+}
+
+.modal-ednotes > blockquote > footer {
+    margin-top: 0px;
+}
+
+.popover blockquote {
+    font-size: 1em;
+}
+
+.popover blockquote > footer {
+    margin-top: 0px;
+}
+
+.popover .editor-popover-title {
+  padding: 3px;
+  margin: 0;
+  font-size: 1.4em;
+/*  background-color: #f7f7f7;*/
+  border-bottom: 1px solid #eaeaea;
+  
+/*  border-radius: 5px 5px 0 0;*/
+  margin-bottom: 5px;
+}
+
+.popover h4 {
+    margin: 0;
+    padding: 0;
+    padding-top: 20px;
+    padding-bottom: 5px;
+    font-size: 1.1em;
+}
+
+.hetext {
+    direction: rtl;
+    unicode-bidi: isolate;
+    font-family: "Adobe Hebrew";
+    font-style: normal;
+}
+
+.artext {
+    direction: rtl;
+    unicode-bidi: isolate;
+    font-family: sans-serif;
+    font-style: normal;
+}
+
+.latext {
+    direction: ltr;
+    unicode-bidi: isolate;
+    font-style: normal;
+    font-family: sans-serif;
+}
+
+.item-note-edit-time{
+    padding-top: 5px;
+    padding-left: 10px;
+    font-size: 0.9em;
+    color: silver;
+        
+}
+.editor-container p {
+    padding: 0;
+    margin: 0;
+    margin: 10px 0;
+}
+
+.editor-container p::before {
+   
+}
+
+.editor-container p.gloss {
+    margin: 10px 20px;
+}
+
+.editor-container p.gloss::before {
+    content: 'Gloss';
+    font-size: 0.7em;
+    font-style: normal;
+    font-family: monospace;
+    padding: 2px;
+    color: #b6c7cc;
+    border-radius: 3px;
+    border: solid 1px #b6c7cc;
+    margin-right: 5px;
+    margin-left: 5px;
+}
+
+.editor-container p.headelement {
+    margin: 10px 20px;
+}
+
+.editor-container p.headelement::before {
+    content: 'Head';
+    font-size: 0.8em;
+    font-style: normal;
+    font-family: monospace;
+    padding: 2px;
+    color: #b6c7cc;
+    border-radius: 3px;
+    border: solid 1px #b6c7cc;
+    margin-right: 5px;
+    margin-left: 5px;
+}
+
+.editor-container p.custodes {
+    margin: 10px 20px;
+}
+.editor-container p.custodes::before {
+    content: 'Custodes';
+    font-size: 0.7em;
+    font-style: normal;
+    font-family: monospace;
+    padding: 2px;
+    color: #b6c7cc;
+    border-radius: 3px;
+    border: solid 1px #b6c7cc;
+    margin-right: 5px;
+    margin-left: 5px;
+}
+
+.editor-container p.pagenumber {
+    margin: 10px 20px;
+}
+.editor-container p.pagenumber::before {
+    content: 'Page Number';
+    font-size: 0.7em;
+    font-style: normal;
+    font-family: monospace;
+    padding: 2px;
+    color: #b6c7cc;
+    border-radius: 3px;
+    border: solid 1px #b6c7cc;
+    margin-right: 5px;
+    margin-left: 5px;
+}
+
+.rubric {
+    font-weight: bold;
+    color: blue;
+}
+
+.initial {
+    font-weight: bold;
+    font-size: 20pt;
+}
+
+.gliph {
+    font-weight: normal;
+    color: fuchsia;
+    background-color: lightgray;
+}
+
+.deletion {
+    font-weight: normal;
+    text-decoration: line-through;
+    color: red;
+}
+
+.addition {
+    font-weight: normal;
+    background-color: lightblue;
+    border-radius: 5px;
+    padding: 2px;
+}
+
+.sic {
+    font-weight: normal;
+    background-color: #e2ddd6;
+    border-radius: 5px;
+    padding: 2px;
+} 
+
+.abbr {
+    color: chocolate;
+}
+
+.mark {
+    font-family: FontAwesome;
+    background: white;
+    color: red;
+}
+
+.unclear{
+    font-weight: normal;
+    color: #d58512;
+}

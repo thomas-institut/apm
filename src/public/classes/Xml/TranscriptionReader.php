@@ -24,6 +24,7 @@ namespace AverroesProject\Xml;
 use XmlMatcher\XmlToken;
 use Matcher\Pattern;
 use AverroesProject\TxText\Item;
+use AverroesProject\TxText\ItemArray;
 
 /**
  * Class to read a transcription from XML input
@@ -42,6 +43,7 @@ class TranscriptionReader {
     const ERROR_BAD_PAGE_DIV = 7;
     const ERROR_CANNOT_LOAD_XML = 8;
     const ERROR_ADD_WIHOUT_VALID_TARGET = 9;
+    const ERROR_MISSING_COL_NUMBER = 10;
         
     const MSG_GENERIC_ERROR = 'Error found';
     const MSG_GENERIC_WARNING = 'Warning';
@@ -60,6 +62,7 @@ class TranscriptionReader {
     const WARNING_IGNORED_ELEMENT = 500;
     const WARNING_BAD_ITEM = 501;
     const WARNING_BAD_ATTRIBUTE  = 502;
+    const WARNING_IGNORED_DIV = 503;
         
     public $transcription;
     
@@ -116,7 +119,7 @@ class TranscriptionReader {
         }
         
         $defaultLang = $this->getLang($sXml->text);
-        if ($defaultLang === '' or $defaultLang === NULL) {
+        if ($defaultLang === '') {
             $this->setError(self::ERROR_XML_LANG_NOT_FOUND, 
                     self::MSG_XML_LANG_REQUIRED, " in <text> element");
             return false;
@@ -171,6 +174,7 @@ class TranscriptionReader {
         if (!$this->isPageDivElement($sXml)){
             // Not a page div, return true
             // = don't process but don't generate an error
+            $this->addWarning(self::WARNING_IGNORED_DIV, "Ignored DIV under body, not a page div");
             return true;
         }
 
@@ -197,7 +201,7 @@ class TranscriptionReader {
         if ($type !== 'page') {
             return false;
         }
-        if (!$facs){
+        if ($facs === ''){
             return false;
         }
         return true;
@@ -212,11 +216,7 @@ class TranscriptionReader {
      */
     private function getLang($sXml)
     {
-        $lang = (string) $sXml->attributes('xml', TRUE)['lang'];
-        if ($lang === NULL) {
-            $lang = '';
-        }
-        return $lang;
+        return (string) $sXml->attributes('xml', TRUE)['lang'];
     }
     
     /**
@@ -261,7 +261,8 @@ class TranscriptionReader {
                 case 'div':
                     $colNumber = (int) $underDiv['n'];
                     if (!$colNumber){
-                        // Bad col number
+                        $this->setError(self::ERROR_MISSING_COL_NUMBER, 
+                                "Bad column number in div: n=$colNumber");
                         return false;
                     }
                     $pageDiv['cols'][$colNumber] = [];
@@ -413,12 +414,9 @@ class TranscriptionReader {
             }
             if ($readItems) {
                 $itemResult = $this->readItems($elementXml, $elementId, $itemId, $col['ednotes']);
-                if ($itemResult === false) {
-                    return false;
-                }
                 $element->items = $itemResult['items'];
                 $col['ednotes'] = $itemResult['ednotes'];
-                $itemId+= $itemResult['items']->nItems();
+                $itemId+= count($itemResult['items']);
             } 
             if (!$gap){
                 $element->id = $elementId;
@@ -435,7 +433,7 @@ class TranscriptionReader {
             // Check and update targets
             $ids = [];
             foreach($col['elements'] as $element){
-                foreach($element->items->theItems as $item) {
+                foreach($element->items as $item) {
                     if ($item instanceof \AverroesProject\TxText\Mark || 
                         $item instanceof \AverroesProject\TxText\Deletion) {
                         $ids[] = ['itemId' => $item->id, 'xmlId' => $item->getXmlId() ];
@@ -453,7 +451,7 @@ class TranscriptionReader {
                             $col['colNumber']));
                     return false;
                 }
-                $col['elements'][$addition['elementId']]->target = $itemId;
+                $col['elements'][$addition['elementId']]->setTargetId($itemId);
             }
         }
         
@@ -784,7 +782,7 @@ class TranscriptionReader {
                     ])
             ->withCallback(function ($matched) use (&$itemId){
                 array_pop($matched); // <lb/>
-                $item = new \AverroesProject\TxText\NoLinebreak(0, 0);
+                $item = new \AverroesProject\TxText\NoWordBreak(0, 0);
                 $item->lang = '';
                 $item->id = $itemId;
                 $matched[] = $item;
@@ -941,14 +939,14 @@ class TranscriptionReader {
                     "In: $theXml");
         }
         
-        $seq = 1;
-        $itemArray = new \AverroesProject\TxText\ItemArray($elementId);
+        $seq = 0;
+        $itemArray = [];
         foreach($pMatcher->matched as $matchedArray){
             foreach($matchedArray as $item){
                 if ($item instanceof Item){
                     $item->seq = $seq;
                     $item->columnElementId = $elementId;
-                    $itemArray->addItem($item);
+                    ItemArray::addItem($itemArray, $item);
                     $seq++;
                     continue;
                 }

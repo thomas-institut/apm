@@ -103,89 +103,6 @@ h2.header {
     width: 5px;
 }
 
-td.text-he{
-    direction: rtl;
-    font-family: "Adobe Hebrew", serif;
-    font-size: 1.5em;
-    margin: 0;
-    /*   padding-top: 5px;*/
-}
-
-td.text-ar{
-    direction: rtl;
-    font-family: serif;
-    font-size: 1.5em;
-    margin: 0;
-    /*   padding-top: 5px;*/
-}
-
-td.text-la{
-     font-family: serif;
-    font-size: 1.5em;
-    margin: 0;
-}
-
-.rubric {
-    color: blue;
-    font-weight: bold;
-    font-size: 150%;
-}
-
-.hasednote {
-    /*    text-decoration: underline;*/
-}
-
-.sic {
-    background-color: #e2ddd6;
-}  
-
-.abbr {
-    color: chocolate;
-} 
-.mark {
-    color: #bc2a01;
-    /*    font-family: sans-serif;*/
-    font-size: 80%;
-    background-color: white;
-}
-
-.unclear{
-    color: #d58512;
-}
-
-.illegible {
-    color: lightsalmon;
-    font-family: sans-serif;
-    font-size: 80%;
-}
-
-.deletion {
-    text-decoration: line-through;
-    color: red;
-}
-
-.addition {
-    color: blue;
-    background-color: lightblue;
-}
-
-.addition-above{
-    position: relative;
-    bottom: 0.5em;
-}
-
-.gliph {
-    color: fuchsia;
-    background-color: lightgray;
-}
-
-.nolb {
-    color: lightgray;
-}
-.unknownitemtype{
-    color: green;
-    
-}
 table.textlines {
 
     width: 100%;
@@ -197,10 +114,13 @@ td.linenumber {
     padding-right: 10px;
 }
 
-.tooltip-notes > blockquote{
+.tooltip-notes > blockquote {
     font-size: 1em;
 }
 
+.tooltip-notes > blockquote > footer {
+    margin-top: 0px;
+}
 button.headerbutton{
     margin-left: 10px; 
     margin-right: 10px;
@@ -226,4 +146,16 @@ button.disablebutton{
 
 div.textcol{
     width: 100%;
+}
+
+div.popoverinfo {
+    margin-bottom: 10px;
+}
+
+.edit-rtl {
+    direction: rtl;
+}
+
+.pageinfo {
+    padding-left: 20px;
 }

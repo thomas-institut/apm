@@ -5,21 +5,33 @@
 <head>
     <title>Averroes Page Viewer</title>
     <link rel="stylesheet" type="text/css" media="screen" href="https://fonts.googleapis.com/css?family=PT+Sans"/>
-
     <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/node_modules/bootstrap/dist/css/bootstrap.css">
+    <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/node_modules/@shagstrom/split-pane/split-pane.css" />
     <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/styles.css" />
     <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/pageviewer.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/editor.css" />
+    
     <script type="application/javascript" src="{{baseurl}}/node_modules/jquery/dist/jquery.js"></script>
     <script type="application/javascript" src="{{baseurl}}/node_modules/bootstrap/dist/js/bootstrap.js"></script>
     <script type="application/javascript" src="{{baseurl}}/node_modules/openseadragon/build/openseadragon/openseadragon.min.js"></script>
     <script type="application/javascript" src="{{baseurl}}/node_modules/@shagstrom/split-pane/split-pane.js"></script>
+    <script type="text/javascript" src="{{baseurl}}/node_modules//twig/twig.js"></script>
+    
+    <script type="application/javascript" src="{{baseurl}}/js/quill.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/apiurl.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/item.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/element.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/editor.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/pageviewer.js"></script>
     <link href='{{baseurl}}/images/averroes-icon.png' rel='icon' sizes='16x16' type='image/png'>
     <script>
-        pageNumber = {{ page }};
-        docId = {{ doc }};
-        apiBase = '{{ baseurl }}';
+        pageNumber = {{ page }}
+        docId = {{ doc }}
+        apiBase = '{{ baseurl }}'
+        userId = {{userinfo.id}}
+        defaultLang = '{{pageInfo.lang}}'
+        foliation = '{{pageInfo.foliation}}'
     </script>
 </head>
 <body>
@@ -66,18 +78,7 @@
                     </li>
 
                 </ul></td>
-            <td>
-                <ul class="pv-navbar">
-                    <li style="float:left">
-                        <button title="Make Text Bigger" class="textonly headerbutton"
-                                onclick="changeDocumentFontSize(true);"><span class="glyphicon glyphicon-zoom-in"></span></button>
-                    </li>
-                    <li style="float:left">
-                        <button title="Make Text Smaller" class="textonly headerbutton"
-                                onclick="changeDocumentFontSize(false);"><span class="glyphicon glyphicon-zoom-out"></span></button>
-                    </li>
-                </ul>
-            </td>
+          
             <td><ul class="pv-navbar"> 
                     <li style="float: right;">
                         <button title="Exit Viewer" class="textonly headerbutton"
@@ -112,8 +113,82 @@
             </script>
     <div class="split-pane-divider" id="divider"></div>
     <div class="split-pane-component" id="right-component">
+        <ul class="nav nav-tabs" id="tabsUl">
+            <li id="pageinfoHeader"><a data-toggle="tab" href="#pageinfoTab">
+                    Page Info</a></li>
+        </ul>
+        <div class="tab-content" id="theTabs">
+            <div class="textcol tab-pane pageinfo" id="pageinfoTab">
+                <div style="margin-top: 20px">
+                <p><strong>Page Number:</strong> {{pageInfo.page_number}}</p>
+                <p><strong>System Page Id:</strong> {{pageInfo.id}}</p>
+                <p style="margin-top: 50px"/>
+                <p><strong>Foliation:</strong> {% if pageInfo.foliation %}{{pageInfo.foliation}}{% else %}Undefined{% endif%}</p>
+                <p><strong>Default Language:</strong> {{pageInfo.lang}}</p>
+                <p><button type="button" id="editPageButton" class="btn btn-primary btn-sm">Edit Settings</button></p>
+                <p style="margin-top: 50px"/>
+                <p><strong>Num Columns:</strong> {{pageInfo.num_cols}}</p>
+                <p><button type="button" id="addColumnButton" data-toggle="modal" 
+                         data-target="#addColumnModal"
+                         class="btn btn-primary btn-sm">Add Column</button></p>
+                </div>
+            </div>
+            
+        </div>
     </div>
 </div>
 </div>
+                      
+<!-- Add column modal -->
+<div class="modal fade" tabindex="-1" role="dialog" id="addColumnModal">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title text-info">Add Column</h4>
+      </div>
+      <div class="modal-body text-danger">
+          <p>Are you sure you want to add a new column to this page?</p>
+          <p class="text-warning">It cannot be undone!</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="realAddColumnButton">Go for it!</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+<!-- Page Settings Modal -->
+<div class="modal fade" tabindex="-1" role="dialog" id="editPageModal">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title text-info">Page Settings</h4>
+      </div>
+        <div class="modal-body">
+            <form>
+                <div id="editPage-foliation-fg" class="form-group">
+                    <label for="editPage-foliation" class="control-label">Foliation:</label>
+                    <input type="text" class="form-control" id="editPage-foliation">
+                    </input>
+                </div>
+                <div id="editPage-lang-fg" class="form-group">
+                    <label for="editPage-lang" class="control-label">Default Language:</label>
+                    <select name="lang" id="editPage-lang"></select>
+                </div>
+            </form>   
+        </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="editPageSubmitButton">Go for it!</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+
+
 </body>
 </html>        

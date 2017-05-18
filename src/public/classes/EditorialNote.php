@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (C) 2016 Universität zu Köln
+ * Copyright (C) 2016-7 Universität zu Köln
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -40,7 +40,7 @@ class EditorialNote {
      *
      * @var int
      */
-    public $id;
+    public $id = 0;
     
     /**
      *
@@ -48,7 +48,6 @@ class EditorialNote {
      */
     public $type;
     
-    const INVALID = 0;
     const OFFLINE = 1;
     const INLINE = 2;
     
@@ -57,31 +56,69 @@ class EditorialNote {
      *
      * @var int
      */
-    public $target;
+    public $target = 0;
     /**
      *
      * @var int
      */
-    public $authorId;
+    public $authorId = 0;
     
     /**
      *
      * @var string
      */
-    public $text;
+    public $text = '';
     
     /**
      *
      * @var string(datetime)
      */
-    public $time;
+    public $time = '';
     
     /**
      *
      * @var string
      */
-    public $lang;
+    public $lang = 'en';
     
+    public function __construct() {
+        $this->type = self::INLINE;
+    }
+    
+    
+    public static function constructEdNoteFromArray($theArray) 
+    {
+        $en = new EditorialNote();
+        
+        if (!isset($theArray['type'])) {
+            return false;
+        }
+        $type = (int) $theArray['type'];
+        if (!$en->isGivenTypeValid($type)) {
+            return false;
+        }
+        $en->setType($type);
+        if (isset($theArray['id'])) {
+            $en->id = (int) $theArray['id'];
+        }
+        if (isset($theArray['author_id'])) {
+            $en->authorId = (int) $theArray['author_id'];    
+        }
+        if (isset($theArray['lang'])) {
+            $en->lang =  (string) $theArray['lang'];
+        }
+        if (isset($theArray['target'])) {
+            $en->target =  (int) $theArray['target'];
+        }
+        if (isset($theArray['time'])) {
+            $en->time =  (string) $theArray['time'];
+        }
+        if (isset($theArray['text'])) {
+            $en->setText($theArray['text']);
+        }
+
+        return $en;
+    }
     
     /**
      * Normalizes a string according to rules for textual items:
@@ -90,12 +127,25 @@ class EditorialNote {
      * 
      * @param string $str
      */
-    private function normalizeString(string $str){
+    private function normalizeString(string $str)
+    {
         return preg_replace('/\s+/', ' ', trim($str));
     }
     
     public function setText(string $text) 
     {
         $this->text = $this->normalizeString($text);
+    }
+    
+    public function setType($type) 
+    {
+        if ($this->isGivenTypeValid($type)) {
+            $this->type = $type;
+        }
+    }
+    
+    private function isGivenTypeValid($type) 
+    {
+        return $type === self::OFFLINE || $type === self::INLINE;
     }
 }

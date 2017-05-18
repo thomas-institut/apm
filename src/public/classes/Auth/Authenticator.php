@@ -51,32 +51,46 @@ class Authenticator {
     private $debugMode = false;
    
     //Constructor
-    public function __construct( $ci) {
+    public function __construct( $ci)
+    {
         $this->ci = $ci;
         $this->logger = $this->ci->logger->withName('AUTH');
         $this->apiLogger = $this->logger->withName('AUTH-API');
         $this->siteLogger = $this->logger->withName('AUTH-SITE');
     }
    
-    private function generateRandomToken(){
+    private function generateRandomToken()
+    {
         return bin2hex(random_bytes(20));
     }
     
-    private function generateLongTermCookieValue($token, $userId){
+    private function generateLongTermCookieValue($token, $userId)
+    {
         $v = $userId . ':' . $token;
         return $v . ':' . $this->generateMac($v);
     }
-    private function generateMac($v){
+    
+    private function generateMac($v)
+    {
         return hash_hmac('sha256', $v, $this->secret);
     }
 
-    protected function debug($msg){
+    /**
+     * Logs a debug message in the logger
+     * @codeCoverageIgnore
+     * 
+     * @param type $msg
+     * @param type $data
+     */
+    protected function debug($msg, $data=[])
+    {
         if ($this->debugMode){
-            $this->logger->debug($msg);
+            $this->logger->debug($msg, $data);
         }
     }
 
-    public function authenticate(Request $request, Response $response, $next) {
+    public function authenticate(Request $request, Response $response, $next)
+    {
         session_start();
         $success = false;
         if (!isset($_SESSION['userid'])){
@@ -89,7 +103,7 @@ class Authenticator {
         } else {
             $userId = $_SESSION['userid'];
             $this->debug('SITE : Session is set, user id = ' . $userId);
-            if ($this->ci->um->userExistsById($userId)){
+            if ($this->ci->db->um->userExistsById($userId)){
                 $this->debug("User id exists!");
                 $success = true;
             } else {
@@ -100,84 +114,103 @@ class Authenticator {
         if ($success){
             $this->debug('SITE: Success, go ahead!');
             $_SESSION['userid'] = $userId;
-            $ui = $this->ci->um->getUserInfoByUserId($userId);
-            if ($this->ci->um->isUserAllowedTo($userId, 'manageUsers')){
+            $ui = $this->ci->db->um->getUserInfoByUserId($userId);
+            if ($this->ci->db->um->isUserAllowedTo($userId, 'manageUsers')){
                 $ui['manageUsers'] = 1;
             }
             $this->ci['userInfo'] = $ui;
             return $next($request, $response); 
         } else {
-            $this->debug("SITE : Authentication fail, logging out and redirecting to login");
+            $this->debug("SITE : Authentication fail, logging out "
+                    . "and redirecting to login");
             session_unset();
             session_destroy();
-            $response = FigResponseCookies::expire($response, $this->cookieName);
-            return $response->withHeader('Location', $this->ci->router->pathFor('login'));
+            $response = FigResponseCookies::expire($response, 
+                    $this->cookieName);
+            return $response->withHeader('Location', 
+                    $this->ci->router->pathFor('login'));
         }
     }
     
-    public function login(Request $request, Response $response, $next){
+    public function login(Request $request, Response $response, $next)
+    {
         session_start();
         $this->debug('Showing login page');
         $msg = '';
-        if ($request->isPost()){
+        if ($request->getMethod() === 'POST') {
             $data = $request->getParsedBody();
+            $this->debug('Got POST data', $data);
             if (isset($data['user']) && isset($data['pwd'])){
                 $this->debug('Got data for login');
                 $user = filter_var($data['user'], FILTER_SANITIZE_STRING);
                 $pwd = filter_var($data['pwd'], FILTER_SANITIZE_STRING);
-                $rememberme = isset($data['rememberme']) ? $data['rememberme'] : '';
+                $rememberme = 
+                        isset($data['rememberme']) ? $data['rememberme'] : '';
                 $this->debug('Trying to log in user ' . $user);
-                if ($this->ci->um->verifyUserPassword($user, $pwd)){
+                if ($this->ci->db->um->verifyUserPassword($user, $pwd)){
                     $this->siteLogger->info("Login", ['user' => $user]);
                     // Success!
-                    $userId = $this->ci->um->getUserIdFromUsername($user);
+                    $userId = $this->ci->db->um->getUserIdFromUsername($user);
                     $_SESSION['userid'] = $userId;
                     $this->debug('Generating token cookie');
                     $token = $this->generateRandomToken();
-                    $this->ci->um->storeUserToken($userId, $token);
-                    $cookieValue = $this->generateLongTermCookieValue($token, $userId);
+                    $this->ci->db->um->storeUserToken($userId, $token);
+                    $cookieValue = $this->generateLongTermCookieValue($token, 
+                            $userId);
                     if ($rememberme === 'on'){
                         $this->debug('User wants to be remembered for 2 weeks');
                         $now = new \DateTime();
                         $cookie = SetCookie::create($this->cookieName)
                                 ->withValue($cookieValue)
-                                ->withExpires($now->add(new \DateInterval('P14D')));
+                                ->withExpires($now->add(
+                                        new \DateInterval('P14D')));
                     } else {
                         $cookie = SetCookie::create($this->cookieName)
                                 ->withValue($cookieValue);
                     }
                     
                     $response = FigResponseCookies::set($response, $cookie);
-                    return $response->withHeader('Location', $this->ci->router->pathFor('home'));
+                    return $response->withHeader('Location', 
+                            $this->ci->router->pathFor('home'));
                 }
                 else {
-                    $this->siteLogger->notice('Wrong user/password', ['user' => $user]);
+                    $this->siteLogger->notice('Wrong user/password', 
+                            ['user' => $user]);
                     $msg = "Wrong username/password, please try again";
                 }
             }
         }
-        return $this->ci->view->render($response, 'login.twig', [ 'message' => $msg, 'baseurl' => $this->ci->settings['baseurl']]);
+        return $this->ci->view->render($response, 'login.twig', 
+                [ 'message' => $msg, 
+                    'baseurl' => $this->ci->settings['baseurl']]);
     }
     
-    public function logout(Request $request, Response $response, $next) {
+    public function logout(Request $request, Response $response, $next)
+    {
         session_start();
         if (!isset($_SESSION['userid'])){
             $this->siteLogger->error("Logout attempt without a valid session");
+            return $response->withHeader('Location', 
+                $this->ci->router->pathFor('home'));
         }
         $userId = $_SESSION['userid'];
-        $userName = $this->ci->um->getUsernameFromUserId($userId);
+        $userName = $this->ci->db->um->getUsernameFromUserId($userId);
         if ($userName === false) {
-            $this->siteLogger->error("Can't get username from user Id at logout attempt", ['userId' => $userId]);
+            $this->siteLogger->error("Can't get username from user Id at "
+                    . "logout attempt", ['userId' => $userId]);
         }
         $this->siteLogger->info('Logout', ['user' => $userName]);
         session_unset();
         session_destroy();
         $response = FigResponseCookies::expire($response, $this->cookieName);
-        return $response->withHeader('Location', $this->ci->router->pathFor('home'));
+        return $response->withHeader('Location', 
+                $this->ci->router->pathFor('home'));
     }
     
     
-    public function authenticateApiRequest (Request $request, Response $response, $next) {
+    public function authenticateApiRequest (Request $request, 
+            Response $response, $next)
+    {
         $userId = $this->getUserIdFromLongTermCookie($request);
         if ($userId === false){
             $this->apiLogger->notice("Authentication fail");
@@ -195,13 +228,14 @@ class Authenticator {
         if ($longTermCookie !== NULL and $longTermCookie->getValue()){
             $cookieValue = $longTermCookie->getValue();
             list($userId, $token, $mac) = explode(':', $cookieValue);
-            if (hash_equals($this->generateMac($userId . ':' . $token), $mac)){
-                $userToken = $this->ci->um->getUserToken($userId);
+            if (hash_equals($this->generateMac($userId . ':' . $token), $mac)) {
+                $userToken = $this->ci->db->um->getUserToken($userId);
                 if (hash_equals($userToken, $token)){
                     $this->debug('Cookie looks good, user = ' . $userId);
                     return $userId;
                 }
-                $this->debug('User tokens do not match -> ' . $userToken . ' vs ' . $token);
+                $this->debug('User tokens do not match -> ' . $userToken . 
+                        ' vs ' . $token);
                 return false;
             } 
             $this->debug('Macs do not match!');

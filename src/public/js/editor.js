@@ -402,7 +402,7 @@ Quill.register(PageNumberBlot)
 
 class TranscriptionEditor {
   constructor (containerSelector, id, baseUrl, editorId = 1,
-            defaultLang = 'la', handId = 0) {
+            defaultLang = 'la', handId = 0, sizeGuide = {}) {
     this.id = id
     this.editorId = editorId
     this.handId = handId
@@ -415,8 +415,9 @@ class TranscriptionEditor {
     this.minItemId = 0
     this.minNoteId = 0
     this.enabled = false
-
+     
     this.containerSelector = containerSelector
+    this.sizeGuide = sizeGuide
     
     this.templateLoaded = false
     let thisObject = this
@@ -446,10 +447,14 @@ class TranscriptionEditor {
     this.setFontSize(3)
     let modalsHtml = TranscriptionEditor.modalsTemplate.render({id: id})
     $('body').append(modalsHtml)
+    
+    
 
     let quillObject = new Quill('#editor-container-' + id, {})
     this.quillObject = quillObject
     this.disable()
+    
+    this.resizeEditor()
     
     let styleElement = document.createElement('style')
     document.head.appendChild(styleElement)
@@ -1142,6 +1147,7 @@ class TranscriptionEditor {
     $('#reset-button-' + this.id).show()
     $('#toggle-button-' + this.id).prop('title', 'Leave editor')
     $('#toggle-button-' + this.id).html('<i class="fa fa-circle-o"></i>')
+    this.resizeEditor()
     let event = new Event('edit-enable')
     $(this.containerSelector).get()[0].dispatchEvent(event)
   }
@@ -1154,6 +1160,7 @@ class TranscriptionEditor {
     $('#toggle-button-' + this.id).prop('title', 'Edit')
     $('#toggle-button-' + this.id).html('<i class="fa fa-pencil"></i>')
     this.quillObject.enable(this.enabled)
+    this.resizeEditor()
     let event = new Event('edit-disable')
     $(this.containerSelector).get()[0].dispatchEvent(event)
   }
@@ -1404,6 +1411,28 @@ class TranscriptionEditor {
       })
       $('#item-modal-' + thisObject.id).modal('show')
     }
+  }
+  
+  resizeEditor() {
+    if (!this.sizeGuide.selector) {
+      return false
+    }
+    let totalHeight = $(this.sizeGuide.selector).height()
+    console.log(this.sizeGuide.selector + ': ' + totalHeight)
+    let controlsHeight = $('#editor-controls-' + this.id).height()
+    console.log('Editor controls: '+ controlsHeight)
+    let toolbarHeight = $('#toolbar-' + this.id).height()
+    if (!this.enabled) {
+      toolbarHeight = 0
+    }
+    console.log('Toolbar: '+ toolbarHeight)
+    console.log('Offset:' + this.sizeGuide.offset)
+    let editorHeight = totalHeight - controlsHeight - toolbarHeight - this.sizeGuide.offset - 1
+    console.log(editorHeight)
+    $('#editor-container-' + this.id).find('div.ql-editor').prop(
+        'style',
+        'max-height: ' +  editorHeight + 'px;'
+    )
   }
 
   static resetItemModal (id) {

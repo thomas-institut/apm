@@ -64,6 +64,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
     font-size: 2.4em;
 }
 
+.ql-container {
+  box-sizing: border-box;
+  margin: 0px;
+  position: relative;
+  padding: 0;
+}
+
 .editor-container .ql-editor {
     overflow-y: auto; 
     tab-size: 4;
@@ -119,7 +126,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 }
 
 .editor-controlbar {
-    background: white;
+    background: #fbfbfb;
     color: gray;
 }
 
@@ -134,9 +141,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
     width: 32px;
     text-align: center;
 }
-.editor-controlbar button:active, button:focus {
-    outline: none;
+.editor-controlbar button:hover {
     color: black;
+}
+
+.editor-controlbar button:disabled {
+    color: gray;
 }
 
 .editor-controlbar .title-button {
@@ -144,11 +154,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
     margin-left: 30px;
     margin-right: 5px;
 }
-
-.editor-controlbar button:disabled {
-    color: gray;
-}
-
 
 .editor-statusbar {
     
@@ -219,15 +224,24 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 }
 .editor-container p {
     padding: 0;
-    margin: 2px;
+    margin: 0;
+    margin: 10px 0;
 }
 
 .editor-container p::before {
-    content: 'L';
+   
+}
+
+.editor-container p.gloss {
+    margin: 10px 20px;
+}
+
+.editor-container p.gloss::before {
+    content: 'Gloss';
+    font-size: 0.7em;
     font-style: normal;
     font-family: monospace;
     padding: 2px;
-    font-size: 0.7em;
     color: #b6c7cc;
     border-radius: 3px;
     border: solid 1px #b6c7cc;
@@ -235,30 +249,53 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
     margin-left: 5px;
 }
 
-.editor-container p.gloss {
-    
-    margin-top: 10px;
-    margin-bottom: 10px;
-}
-
-.editor-container p.gloss::before {
-    content: 'Gloss';
-    font-size: 0.8em;
+.editor-container p.headelement {
+    margin: 10px 20px;
 }
 
 .editor-container p.headelement::before {
     content: 'Head';
-    font-size: 1em;
+    font-size: 0.8em;
+    font-style: normal;
+    font-family: monospace;
+    padding: 2px;
+    color: #b6c7cc;
+    border-radius: 3px;
+    border: solid 1px #b6c7cc;
+    margin-right: 5px;
+    margin-left: 5px;
 }
 
+.editor-container p.custodes {
+    margin: 10px 20px;
+}
 .editor-container p.custodes::before {
     content: 'Custodes';
-    font-size: 0.8em;
+    font-size: 0.7em;
+    font-style: normal;
+    font-family: monospace;
+    padding: 2px;
+    color: #b6c7cc;
+    border-radius: 3px;
+    border: solid 1px #b6c7cc;
+    margin-right: 5px;
+    margin-left: 5px;
 }
 
+.editor-container p.pagenumber {
+    margin: 10px 20px;
+}
 .editor-container p.pagenumber::before {
     content: 'Page Number';
-    font-size: 0.8em;
+    font-size: 0.7em;
+    font-style: normal;
+    font-family: monospace;
+    padding: 2px;
+    color: #b6c7cc;
+    border-radius: 3px;
+    border: solid 1px #b6c7cc;
+    margin-right: 5px;
+    margin-left: 5px;
 }
 
 .rubric {

@@ -86,6 +86,8 @@ $(document).ready(function () {
               theUl += '<a data-toggle="tab" id="col-label-' + theCol + '" href="#col' + theCol +
                   '">Column ' + theCol + '</a></li>'
               $('#tabsUl').append(theUl)
+              console.log($('#right-component').height())
+              console.log($('#tabsUl').height())
                   
               let te = new TranscriptionEditor(
                   '#col' + theCol, 
@@ -93,7 +95,11 @@ $(document).ready(function () {
                   apiBase,
                   userId,   //editorId
                   resp.info['lang'],
-                  0 // handId
+                  0, // handId
+                  {
+                    selector: '#right-component',
+                    offset: $('#tabsUl').height()
+                  }
               );
               te.setData(resp)
               te.onEditorEnable(function (e) {

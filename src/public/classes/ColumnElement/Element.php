@@ -20,6 +20,8 @@
 
 namespace AverroesProject\ColumnElement;
 
+use AverroesProject\TxText\Item;
+
 /**
  * The base class for all Column Elements
  */
@@ -151,24 +153,43 @@ class Element {
     }
     
     /**
-     * Determines if element data (all except items, id and seq) is equal
+     * Determines if element data is equal, ignoring seq, id and possibly editorId
      * 
      * @param Item $a
      * @param Item $b
      * @return boolean
      */
-    public static function isElementDataEqual(Element $a, Element $b) 
+    public static function isElementDataEqual(Element $a, Element $b, $ignoreItems = true, $ignoreEditorId = false) 
     {
-       $dataA = get_object_vars($a);
-       $dataB = get_object_vars($b);
+        $dataA = get_object_vars($a);
+        $dataB = get_object_vars($b);
        
-       unset($dataA['seq']);
-       unset($dataB['seq']);
-       unset($dataA['id']);
-       unset($dataB['id']);
-       unset($dataA['items']);
-       unset($dataB['items']);
-       return $dataA == $dataB;
+        unset($dataA['seq']);
+        unset($dataB['seq']);
+        unset($dataA['id']);
+        unset($dataB['id']);
+        unset($dataA['items']);
+        unset($dataB['items']);
+        if ($ignoreEditorId) {
+            unset($dataA['editorId']);
+            unset($dataB['editorId']);
+        }
+        if ($dataA != $dataB) {
+            return false;
+        }
+        if ($ignoreItems) {
+            return true;
+        }
+        if (count($a->items) !== count($b->items)) {
+            return false;
+        }
+       
+        for ($i = 0; $i < count($a->items); $i++){
+            if (!Item::isItemDataEqual($a->items[$i], $b->items[$i])) {
+                return false;
+            }
+        }
+        return true;
     }
     
 }

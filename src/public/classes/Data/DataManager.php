@@ -23,6 +23,7 @@ namespace AverroesProject\Data;
 use AverroesProject\TxText\Item;
 use AverroesProject\TxText\ItemArray;
 use AverroesProject\ColumnElement\Element;
+use AverroesProject\ColumnElement\ElementArray;
 use DataTable\MySqlDataTable;
 use DataTable\MySqlDataTableWithRandomIds;
 use AverroesProject\Algorithm\MyersDiff;
@@ -72,7 +73,7 @@ class DataManager
     
     /**
      *
-     * @var DataTable\MySqlDataTable
+     * @var DataTable\MySqlUnitemporalDataTable
      */
     private $pagesDataTable;
     
@@ -85,19 +86,19 @@ class DataManager
     
      /**
      *
-     * @var DataTable\MySqlDataTable
+     * @var DataTable\MySqlUnitemporalDataTable
      */
     private $docsDataTable;
     
     /**
      *
-     * @var DataTable\MySqlDataTable
+     * @var DataTable\MySqlUnitemporalDataTable
      */
     private $elementsDataTable;
     
     /**
      *
-     * @var DataTable\MySqlDataTable 
+     * @var DataTable\MySqlUnitemporalDataTable 
      */
     private $itemsDataTable;
     
@@ -400,7 +401,7 @@ class DataManager
      * @param int $page
      * @return string|boolean
      */
-    function getImageUrlByDocId($docId, $page){
+    public function getImageUrlByDocId($docId, $page){
         $doc = $this->getDocById($docId);
         $isd = $doc['image_source_data'];
         switch ($doc['image_source']){
@@ -416,21 +417,8 @@ class DataManager
         return FALSE;
     }
     
-    /**
-     * 
-     * @param string $docId
-     * @param int $page
-     * @param int $col
-     * @return array of ColumnElement properly initialized
-     */
     
-    function getColumnElements($docId, $page, $col){
-        $pageId = $this->getPageIdByDocPage($docId, $page);
-        if ($pageId === false) {
-            // Non-existent page
-            return [];
-        }
-        
+    public function getColumnElementsByPageId($pageId, $col) {
         $rows = $this->elementsDataTable->findRows([
             'page_id' => $pageId,
             'column_number' => $col
@@ -444,6 +432,23 @@ class DataManager
             array_push($elements, $e);
         }
         return $elements;
+    }
+    /**
+     * 
+     * @param string $docId
+     * @param int $page
+     * @param int $col
+     * @return array of ColumnElement properly initialized
+     */
+    
+    public function getColumnElements($docId, $page, $col){
+        $pageId = $this->getPageIdByDocPage($docId, $page);
+        if ($pageId === false) {
+            // Non-existent page
+            return [];
+        }
+        return $this->getColumnElementsByPageId($pageId, $col);
+        
     }
     
     function getItemsForElement($element)
@@ -561,7 +566,6 @@ class DataManager
         }
         // Now we have a good element
         $newElement = clone $element;
-        //$newElement->timestamp = date("Y-m-d H:i:s"); 
         if ($insertAtEnd) {
             // Simplest case, overwrite element's sequence
             $newElement->seq = $maxSeq+1;
@@ -621,9 +625,12 @@ class DataManager
         return $this->getElementById($newId);
     }
         
-    private function createNewItemInDB($item) 
+    private function createNewItemInDB($item, $time = false) 
     {
-        return $this->itemsDataTable->createRow([
+         if (!$time) {
+            $time = \DataTable\MySqlUnitemporalDataTable::now();
+        }
+        return $this->itemsDataTable->createRowWithTime([
             'ce_id'=> $item->columnElementId,
             'type' => $item->type,
             'seq' => $item->seq,
@@ -634,12 +641,15 @@ class DataManager
             'extra_info' => $item->extraInfo,
             'length' => $item->length,
             'target' => $item->target
-        ]);
+        ], $time);
     }
     
-    private function updateItemInDB($item)
+    private function updateItemInDB($item, $time = false)
     {
-        return $this->itemsDataTable->updateRow([
+        if (!$time) {
+            $time = \DataTable\MySqlUnitemporalDataTable::now();
+        }
+        return $this->itemsDataTable->realUpdateRowWithTime([
             'id' => $item->id,
             'ce_id'=> $item->columnElementId,
             'type' => $item->type,
@@ -651,7 +661,7 @@ class DataManager
             'extra_info' => $item->extraInfo,
             'length' => $item->length,
             'target' => $item->target
-        ]);
+        ], $time);
     }
     private function createNewElementInDB($element) 
     {
@@ -694,7 +704,10 @@ class DataManager
                 . "WHERE page_id=$pageId AND column_number=$col " 
                 . "AND `valid_from` <= '$now' AND `valid_until` > '$now'";
         $row = $this->dbh->getOneRow($sql);
-        return (int) $row['m'];
+        if (isset($row['m'])) {
+            return (int) $row['m'];
+        }
+        return -1;
     }
     
     public  function getItemById($itemId)
@@ -839,41 +852,96 @@ class DataManager
     }
     
     /**
+     * Updates column elements in the database
+     * 
+     * @param array $newElements
+     * @param array $oldElements
+     */
+    public function updateColumnElements($pageId, $columnNumber, array $newElements) 
+    {
+        // force pageId and columnNumber in the elements in $newElements
+        foreach($newElements as $element ) {
+            $element->pageId = $pageId;
+            $element->columnNumber = $columnNumber;
+        }
+        
+        $oldElements = $this->getColumnElementsByPageId($pageId, $columnNumber);
+        $editScript = ElementArray::getEditScript(
+            $oldElements,
+            $newElements
+        );
+
+        $newItemsIds = [];
+        $newElementsIndex = 0;
+        foreach ($editScript as $editInstruction) {
+            list ($index, $cmd, $newSeq) = $editInstruction;
+            switch ($cmd) {
+                case MyersDiff::KEEP:
+                    //print ("Keeping element @ " . $index . ", id=" . $oldElements[$index]->id . "\n");
+                    //print ("New Element index: " . $newElementsIndex . "\n");
+                    $ids = $this->updateElement($newElements[$newElementsIndex], $oldElements[$index]);
+                    foreach($ids as $id) {
+                        $newItemsIds[] = $id;
+                    }
+                    $newElementsIndex++;
+                    break;
+                    
+                case MyersDiff::DELETE:
+                    //print ("Deleting element @ " . $index . ", id=" . $oldElements[$index]->id . "\n");
+                    $this->deleteElement($oldElements[$index]->id . "\n");
+                    break;
+                
+                case MyersDiff::INSERT:
+                    //print ("Inserting element @ " . $index . "\n");
+                    //print ("New Element index: " . $newElementsIndex . "\n");
+                    $element = $this->insertNewElement($newElements[$newElementsIndex]);
+                    foreach($element->items as $item) {
+                        $newItemsIds[] = $item->id;
+                    }
+                    $newElementsIndex++;
+                    break;
+            }
+        }
+    }
+    
+    /**
      * Updates an element in the database. 
      * If there's a change in the element's data besides the items, the current
      * version in the DB will be updated.
      *
      * The items will be updated as necessary.
      *
-     * Returns the id of the updated element
+     * Returns the id of the updated element and a list of 
+     * ids for new items in the DB
      * 
      * @param Element $newElement
      */
     public function updateElement(Element $newElement, Element $oldElement)
     {
-        // Force IDs to be same, we're only dealing with the element's data
+        // Force element IDs to be same, we're only dealing with the element's data
         if ($newElement->id !== $oldElement->id) {
                 $newElement->id = $oldElement->id;
         }
-        if (!Element::isElementDataEqual($newElement, $oldElement)) {
-            $this->updateElementInDB($newElement);
-        }
+        
         // Force columnElementId in new element's items
         foreach ($newElement->items as $item) {
             $item->columnElementId = $newElement->id;
         }
-            
         
+        $itemIds = [];
         $editScript = ItemArray::getEditScript(
             $oldElement->items,
             $newElement->items
         );
-       
+        $ignoreNewEditor = true;
+        $now = \DataTable\MySqlUnitemporalDataTable::now();
+        
+        $newItemsIndex = 0;
         foreach ($editScript as $editInstruction) {
             list ($index, $cmd, $newSeq) = $editInstruction;
             switch ($cmd) {
                 case MyersDiff::KEEP:
-                    //print "Keeping item $index\n";
+//                    print "Keeping item $index\n";
                     if ($oldElement->items[$index]->seq 
                             !== $newSeq) {
                         //print "... with new seq $newSeq\n";
@@ -881,28 +949,45 @@ class DataManager
                                 $newSeq;
                         //print_r($oldElement->items[$index]);
                         $this->updateItemInDB(
-                            $oldElement->items[$index]
+                            $oldElement->items[$index],
+                            $now
                         );
                     }
+                    $itemIds[$newElement->items[$newItemsIndex]->id] = $oldElement->items[$index]->id;
+                    $newItemsIndex++;
                     break;
                     
                 case MyersDiff::DELETE:
-                    //print "Deleting item $index\n";
-                    $this->itemsDataTable->deleteRow(
-                        $oldElement->items[$index]->id
+//                    print "Deleting item $index\n";
+                    $this->itemsDataTable->deleteRowWithTime(
+                        $oldElement->items[$index]->id,
+                        $now
                     );
+                    $ignoreNewEditor = false;
                     break;
                 
                 case MyersDiff::INSERT:
-                    //print "Insert item with seq $newSeq\n";
-                    $this->createNewItemInDB(
-                        $newElement->items[$index]
+//                    print "Insert item with seq $newSeq\n";
+//                    var_dump($newElement->items[$index]);
+                    $newItemId = $this->createNewItemInDB(
+                        $newElement->items[$index], 
+                        $now
                     );
+                    //print "...with item Id = ";
+                    //var_dump($newItemId);
+                    $itemIds[$newElement->items[$newItemsIndex]->id] = $newItemId;
+                    $newItemsIndex++;
+                    $ignoreNewEditor = false;
                     break;
             }
         }
+        //print ("Ignore new editor: " . ($ignoreNewEditor ? 'true' : 'false') . "\n");
+        if (!Element::isElementDataEqual($newElement, $oldElement, true, $ignoreNewEditor)) {
+            $this->updateElementInDB($newElement);
+        }
         
-        return $newElement->id;
+        return [$newElement->id, $itemIds];
+        
     }
     
     public function deleteElement($elementId)
@@ -928,6 +1013,4 @@ class DataManager
         }
         return true;
     }
-    
-   
  }

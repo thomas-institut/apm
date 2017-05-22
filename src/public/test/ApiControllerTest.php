@@ -83,8 +83,8 @@ class ApiControllerTest extends TestCase {
         $data = json_decode($response->getBody(true), true);
         $this->assertEquals([], $data['elements']);
         $this->assertEquals([], $data['ednotes']);
-        $this->assertEquals([], $data['people']);
-        $this->assertEquals(['col' => 1], $data['info']);
+        $this->assertEquals([1 => false], $data['people']); // only test UserId
+        $this->assertEquals(1, $data['info']['col']);
         
     }
 }

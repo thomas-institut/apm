@@ -73,6 +73,7 @@ EOD;
         $container['db'] = $db;
         //$container['dbh'] = $dbh;
         $container['logger'] = $logger;
+        $container['userId'] = 1;
         return $container;
     }
 }

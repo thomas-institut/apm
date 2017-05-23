@@ -42,7 +42,7 @@ class EdNotesTest extends TestCase {
             'type' => 100
         ];
         
-        $this->assertFalse(EditorialNote::constructEdNoteFromArray($array1));
+        $this->assertFalse(EditorialNote::constructEdNoteFromRow($array1));
         
         // no type
         $array2 = [ 
@@ -51,7 +51,7 @@ class EdNotesTest extends TestCase {
             'target' => 1500,
             'time' => '2017-01-02'
         ];
-        $this->assertFalse(EditorialNote::constructEdNoteFromArray($array2));
+        $this->assertFalse(EditorialNote::constructEdNoteFromRow($array2));
         
         // minimal array
         $array3 = [ 
@@ -59,7 +59,7 @@ class EdNotesTest extends TestCase {
         ];
         
         $defaultEdNote = new EditorialNote();
-        $builtEdNote = EditorialNote::constructEdNoteFromArray($array3);
+        $builtEdNote = EditorialNote::constructEdNoteFromRow($array3);
         $this->assertNotFalse($builtEdNote);
         
         $defaultEdNote->setType(EditorialNote::OFFLINE);
@@ -77,7 +77,7 @@ class EdNotesTest extends TestCase {
             'time' => '2017-01-02',
             'text' => '   sometext'
         ];
-        $builtEdNote = EditorialNote::constructEdNoteFromArray($array4);
+        $builtEdNote = EditorialNote::constructEdNoteFromRow($array4);
         $this->assertNotFalse($builtEdNote);
         
         $this->assertSame(100, $builtEdNote->id);

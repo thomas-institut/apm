@@ -86,6 +86,40 @@ class EditorialNote {
     }
     
     
+    public static function constructEdNoteFromRow($theRow) 
+    {
+        $en = new EditorialNote();
+        
+        if (!isset($theRow['type'])) {
+            return false;
+        }
+        $type = (int) $theRow['type'];
+        if (!$en->isGivenTypeValid($type)) {
+            return false;
+        }
+        $en->setType($type);
+        if (isset($theRow['id'])) {
+            $en->id = (int) $theRow['id'];
+        }
+        if (isset($theRow['author_id'])) {
+            $en->authorId = (int) $theRow['author_id'];    
+        }
+        if (isset($theRow['lang'])) {
+            $en->lang =  (string) $theRow['lang'];
+        }
+        if (isset($theRow['target'])) {
+            $en->target =  (int) $theRow['target'];
+        }
+        if (isset($theRow['time'])) {
+            $en->time =  (string) $theRow['time'];
+        }
+        if (isset($theRow['text'])) {
+            $en->setText($theRow['text']);
+        }
+
+        return $en;
+    }
+    
     public static function constructEdNoteFromArray($theArray) 
     {
         $en = new EditorialNote();
@@ -101,8 +135,8 @@ class EditorialNote {
         if (isset($theArray['id'])) {
             $en->id = (int) $theArray['id'];
         }
-        if (isset($theArray['author_id'])) {
-            $en->authorId = (int) $theArray['author_id'];    
+        if (isset($theArray['authorId'])) {
+            $en->authorId = (int) $theArray['authorId'];    
         }
         if (isset($theArray['lang'])) {
             $en->lang =  (string) $theArray['lang'];

@@ -25,8 +25,8 @@ require_once 'DatabaseTestEnvironment.php';
 use PHPUnit\Framework\TestCase;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
-use AverroesProject\ColumnElement\Element;
 use AverroesProject\TxText\ItemArray;
+use AverroesProject\ColumnElement\Element;
 
 /**
  * Description of ElementTest
@@ -43,7 +43,7 @@ class ElementDatabaseTest extends TestCase {
     public static function setUpBeforeClass() {
         $logStream = new StreamHandler('test.log', 
             Logger::DEBUG);
-        $logger = new Logger('ELEMENT-TEST');
+        $logger = new Logger(' ELEMENT-TEST');
         $logger->pushHandler($logStream);
         self::$dataManager = DatabaseTestEnvironment::getDataManager($logger);
     }
@@ -66,7 +66,7 @@ class ElementDatabaseTest extends TestCase {
         $dm = self::$dataManager;
         $docId = $dm->newDoc('Test Elements Doc', 'TED', $numPages, 'la', 
                 'mss', 'local', 'TESTELEM');
-        for ($i = 0; $i < $numPages; $i++) {
+        for ($i = 1; $i <= $numPages; $i++) {
             $dm->addNewColumn($docId, $i);
         }
         $editorId = $dm->um->createUserByUsername('testeditor');

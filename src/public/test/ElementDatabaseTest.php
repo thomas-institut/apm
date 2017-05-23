@@ -430,6 +430,8 @@ class ElementDatabaseTest extends TestCase {
         }
         $originalEditor = $dm->um->createUserByUsername('testcoled');
         $reviewer = $dm->um->createUserByUsername('testcolrev');
+        $reviewer2 = $dm->um->createUserByUsername('testcolrev2');
+        $reviewer3 = $dm->um->createUserByUsername('testcolrev3');
         $pageId =  $dm->getPageIdByDocPage($docId, 1);
         
         $elementIds = [];
@@ -450,6 +452,7 @@ class ElementDatabaseTest extends TestCase {
         
         // TEST 1: no changes in the lines, just a new editor
         // There should not be any change in the database
+        //print "\n\n========== TEST 1 ===============\n\n";
         $newElements = [];
         for ($i=0; $i<$numElements; $i++) { 
             $element = new ColumnElement\Line();
@@ -459,18 +462,23 @@ class ElementDatabaseTest extends TestCase {
             $element->lang = 'la';
             $element->handId = 0;
             $element->seq = $i;
-            ItemArray::addItem($element->items, new TxText\Text(0,0,"Original Line ". (string)($i+1)));  
+            ItemArray::addItem($element->items, new TxText\Text($i+10,0,"Original Line ". (string)($i+1)));  
             ItemArray::setLang($element->items, 'la');
             ItemArray::setHandId($element->items, 0);
             $newElements[] = $element;
         }
-        $dm->updateColumnElements($pageId, 1, $newElements);
+        //print "Editor Id: " . $reviewer . " (but no changes in DB) \n";
+        $updatedItemIds = $dm->updateColumnElements($pageId, 1, $newElements);
         $updatedElements = $dm->getColumnElementsByPageId($pageId, 1);
         $this->assertEquals($updatedElements, $originalElements);
+        foreach ($updatedItemIds as $id => $newId) {
+            $this->assertEquals($newId, $originalElements[$id-10]->items[0]->id);
+        }
         
         // TEST 2: Changes in all lines
-        // Elements should remain, but not the items
-        $newElements = [];
+        // Elements should reflect new editor, items should all change
+        //print "\n\n========== TEST 2 ===============\n\n";
+        $newElements2 = [];
         for ($i=0; $i<$numElements; $i++) { 
             $element = new ColumnElement\Line();
             $element->pageId = $pageId;
@@ -479,20 +487,93 @@ class ElementDatabaseTest extends TestCase {
             $element->lang = 'la';
             $element->handId = 0;
             $element->seq = $i;
-            ItemArray::addItem($element->items, new TxText\Text(0,0,"New Line ". (string)($i+1)));  
+            ItemArray::addItem($element->items, new TxText\Text($i+10,0,"Test 2 Line ". (string)($i+1)));  
             ItemArray::setLang($element->items, 'la');
             ItemArray::setHandId($element->items, 0);
-            $newElements[] = $element;
+            $newElements2[] = $element;
         }
-        $dm->updateColumnElements($pageId, 1, $newElements);
-        $updatedElements = $dm->getColumnElementsByPageId($pageId, 1);
+        //print "Editor Id: " . $reviewer . "\n";
+        $updatedItemIds2 = $dm->updateColumnElements($pageId, 1, $newElements2);
+        $updatedElements2 = $dm->getColumnElementsByPageId($pageId, 1);
+        $this->assertCount($numElements, $updatedElements2);
         for ($i = 0; $i < $numElements; $i++) {
-            $this->assertEquals($updatedElements[$i]->id, $originalElements[$i]->id);
-            $this->assertEquals($updatedElements[$i]->seq, $originalElements[$i]->seq);
-            $this->assertNotEquals($updatedElements[$i]->editorId, $originalElements[$i]->editorId);
-            $this->assertEquals($reviewer, $updatedElements[$i]->editorId);
+            $this->assertEquals($updatedElements2[$i]->id, $originalElements[$i]->id);
+            $this->assertEquals($updatedElements2[$i]->seq, $originalElements[$i]->seq);
+            $this->assertNotEquals($updatedElements2[$i]->editorId, $originalElements[$i]->editorId);
+            $this->assertEquals($reviewer, $updatedElements2[$i]->editorId);
+        }
+        foreach ($updatedItemIds2 as $id => $newId) {
+            $this->assertNotEquals($newId, $originalElements[$id-10]->items[0]->id);
+            $this->assertEquals($newId, $updatedElements2[$id-10]->items[0]->id);
         }
         
+        // TEST 3: Text Change in one line
+        // Only one element must change
+        //print "\n\n========== TEST 3 ===============\n\n";
+        $originalElements3 = $updatedElements2;
+        $newElements3 = [];
+        for ($i=0; $i<$numElements; $i++) { 
+            $element = new ColumnElement\Line();
+            $element->id = $i+100;
+            $element->pageId = $pageId;
+            $element->columnNumber = 1;
+            $element->editorId = $reviewer2;
+            $element->lang = 'la';
+            $element->handId = 0;
+            $element->seq = $i;
+            ItemArray::addItem($element->items, new TxText\Text($i+10,0,"Test 2 Line ". (string)($i+1)));  
+            ItemArray::setLang($element->items, 'la');
+            ItemArray::setHandId($element->items, 0);
+            $newElements3[] = $element;
+        }
+        //print "Editor Id: " . $reviewer2 . "\n";
+        $newElements3[0]->items[0]->theText = 'Test 3 Line 1';
+        $updatedItemIds3 = $dm->updateColumnElements($pageId, 1, $newElements3);
+        $updatedElements3 = $dm->getColumnElementsByPageId($pageId, 1);
+        $this->assertCount($numElements, $updatedElements3);
+        $this->assertEquals($updatedElements3[0]->id, $originalElements3[0]->id); 
+        $this->assertEquals($updatedElements3[0]->seq, $originalElements3[0]->seq); // same sequence
+        $this->assertNotEquals($updatedElements3[0]->editorId, $originalElements3[0]->editorId);
+        $this->assertEquals($reviewer2, $updatedElements3[0]->editorId);
+        $this->assertEquals($updatedItemIds3[$newElements3[0]->items[0]->id], $updatedElements3[0]->items[0]->id);
+        for ($i = 1; $i < $numElements; $i++) {
+            $this->assertEquals($updatedElements3[$i]->id, $originalElements3[$i]->id);
+            $this->assertEquals($updatedElements3[$i]->seq, $originalElements3[$i]->seq);
+            $this->assertEquals($updatedElements3[$i]->editorId, $originalElements3[$i]->editorId);
+            $this->assertEquals($reviewer, $updatedElements3[$i]->editorId);
+            $this->assertEquals($updatedItemIds3[$newElements3[$i]->items[0]->id], $updatedElements3[$i]->items[0]->id);
+        }
+        
+        // TEST 4: Text and type change in one line 
+        // Line elements will be bumped up, new items created
+        //print "\n\n========== TEST 4 ===============\n\n";
+        $originalElements4 = $updatedElements3;
+        $newElements4 = [];
+        for ($i=0; $i<$numElements; $i++) { 
+            $element = new ColumnElement\Line();
+            $element->id = $i+1000;
+            $element->pageId = $pageId;
+            $element->columnNumber = 1;
+            $element->editorId = $reviewer3; 
+            $element->lang = 'la';
+            $element->handId = 0;
+            $element->seq = $i;
+            ItemArray::addItem($element->items, new TxText\Text($i+100,0,"Test 2 Line ". (string)($i+1)));  
+            ItemArray::setLang($element->items, 'la');
+            ItemArray::setHandId($element->items, 0);
+            $newElements4[] = $element;
+        }
+        //print "Editor Id: " . $reviewer3 . "\n";
+        $newElements4[0]->type = Element::HEAD;
+        $newElements4[0]->items[0]->theText = 'Test 4 Line 1';
+        $updatedItemIds4 = $dm->updateColumnElements($pageId, 1, $newElements4);
+        $updatedElements4 = $dm->getColumnElementsByPageId($pageId, 1);
+        //print_r($updatedElements4);
+        $this->assertCount($numElements, $updatedElements4);
+        for ($i = 0; $i < $numElements; $i++) {
+            $this->assertEquals($i, $updatedElements4[$i]->seq);
+            $this->assertEquals($updatedItemIds4[$newElements4[$i]->items[0]->id], $updatedElements4[$i]->items[0]->id);
+        }
     }
 }
 

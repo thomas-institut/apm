@@ -159,13 +159,19 @@ class Element {
      * @param Item $b
      * @return boolean
      */
-    public static function isElementDataEqual(Element $a, Element $b, $ignoreItems = true, $ignoreEditorId = false) 
+    public static function isElementDataEqual(Element $a, 
+            Element $b, 
+            $ignoreItems = true, 
+            $ignoreEditorId = false, 
+            $ignoreSequence = true) 
     {
         $dataA = get_object_vars($a);
         $dataB = get_object_vars($b);
        
-        unset($dataA['seq']);
-        unset($dataB['seq']);
+        if ($ignoreSequence) {
+            unset($dataA['seq']);
+            unset($dataB['seq']);
+        }
         unset($dataA['id']);
         unset($dataB['id']);
         unset($dataA['items']);

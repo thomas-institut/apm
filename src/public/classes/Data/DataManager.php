@@ -680,6 +680,7 @@ class DataManager
     
     private function updateElementInDB($element) 
     {
+        //print("Updating id=" . $element->id . " with seq=" . $element->seq . "\n");
         return $this->elementsDataTable->updateRow([
                 'id' => $element->id,
                 'type' => $element->type,
@@ -871,17 +872,31 @@ class DataManager
             $newElements
         );
 
+        /**
+         * ATTENTION: these instructions are supposed to happen simultaneously
+         * but with this implementation they appear with different times in
+         * the database. When versions are implemented in the UI, this will 
+         * have to be fixed to avoid all these micro-changes appearing as 
+         * different versions.
+         */
         $newItemsIds = [];
         $newElementsIndex = 0;
         foreach ($editScript as $editInstruction) {
+            //print("\nNew Element index: " . $newElementsIndex . "\n");
             list ($index, $cmd, $newSeq) = $editInstruction;
             switch ($cmd) {
                 case MyersDiff::KEEP:
                     //print ("Keeping element @ " . $index . ", id=" . $oldElements[$index]->id . "\n");
-                    //print ("New Element index: " . $newElementsIndex . "\n");
-                    $ids = $this->updateElement($newElements[$newElementsIndex], $oldElements[$index]);
-                    foreach($ids as $id) {
-                        $newItemsIds[] = $id;
+                    if ($oldElements[$index]->seq 
+                            !== $newSeq) {
+                        //print "... with new seq $newSeq\n";
+                        //print "... seq was " . $oldElements[$index]->seq . "\n";
+                        $newElements[$newElementsIndex]->seq =
+                                $newSeq;
+                    }
+                    list ($elementId, $ids) = $this->updateElement($newElements[$newElementsIndex], $oldElements[$index]);
+                    foreach($ids as $oldId => $newId) {
+                        $newItemsIds[$oldId] = $newId;
                     }
                     $newElementsIndex++;
                     break;
@@ -893,15 +908,19 @@ class DataManager
                 
                 case MyersDiff::INSERT:
                     //print ("Inserting element @ " . $index . "\n");
-                    //print ("New Element index: " . $newElementsIndex . "\n");
-                    $element = $this->insertNewElement($newElements[$newElementsIndex]);
-                    foreach($element->items as $item) {
-                        $newItemsIds[] = $item->id;
+                    //print ("...New Seq: " . $newSeq . "\n");
+                    $newElements[$newElementsIndex]->seq = $newSeq;
+                    $element = $this->insertNewElement($newElements[$newElementsIndex], false);
+                    for ($j = 0; $j < count($newElements[$newElementsIndex]->items); $j++) {
+                        $givenId = $newElements[$newElementsIndex]->items[$j]->id;
+                        $newItemsIds[$givenId] = $element->items[$j]->id;
                     }
+                    //print("...element id = " . $element->id . "\n");
                     $newElementsIndex++;
                     break;
             }
         }
+        return $newItemsIds;
     }
     
     /**
@@ -982,7 +1001,8 @@ class DataManager
             }
         }
         //print ("Ignore new editor: " . ($ignoreNewEditor ? 'true' : 'false') . "\n");
-        if (!Element::isElementDataEqual($newElement, $oldElement, true, $ignoreNewEditor)) {
+        if (!Element::isElementDataEqual($newElement, $oldElement, true, $ignoreNewEditor, false)) {
+            //print "...changing element in DB\n";
             $this->updateElementInDB($newElement);
         }
         

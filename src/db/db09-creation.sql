@@ -74,7 +74,7 @@ CREATE TABLE `ap_ednotes` (
 -- Table structure for table `ap_elements`
 --
 
-REATE TABLE `ap_elements` (
+CREATE TABLE `ap_elements` (
   `id` int(11) NOT NULL,
   `valid_from` datetime(6) NOT NULL DEFAULT '2016-06-01 00:00:00.000000',
   `valid_until` datetime(6) NOT NULL DEFAULT '9999-12-31 23:59:59.999999',

@@ -39,7 +39,7 @@ use \PDO;
 class DataManager 
 {
     const MIN_USER_ID = 10000;
-    const MAX_USER_ID= 100000;
+    const MAX_USER_ID = 100000;
     
     /**
      *
@@ -462,7 +462,7 @@ class DataManager
         $tt=[];
         
         foreach ($rows as $row) {
-            $item = $this->createItemObjectFromRow($row);
+            $item = self::createItemObjectFromRow($row);
             ItemArray::addItem($tt, $item, true);
         }
         return $tt;
@@ -717,7 +717,7 @@ class DataManager
          if ($row=== false) {
             return false;
         }
-        return $this->createItemObjectFromRow($row);
+        return self::createItemObjectFromRow($row);
     }
 
 
@@ -733,13 +733,13 @@ class DataManager
         
     }
     
-    private function createElementObjectFromRow($row) 
-    {
-        switch ($row['type']){
+    public static function createElementObjectFromArbitraryRow($fields, $row) {
+        
+        switch ($row[$fields['type']]){
             case Element::LINE:
                 $e = new \AverroesProject\ColumnElement\Line();
                 // the line number
-                $e->setLineNumber($row['reference']);
+                $e->setLineNumber($row[$fields['reference']]);
                 break;
 
             case Element::CUSTODES:
@@ -757,99 +757,186 @@ class DataManager
             default:
                 continue;
         }
-        $e->columnNumber = (int) $row['column_number'];
-        $e->pageId = (int) $row['page_id'];
-        $e->seq = (int) $row['seq'];
-        $e->editorId = (int) $row['editor_id'];
-        $e->handId = (int) $row['hand_id'];
-        $e->id = (int) $row['id'];
-        $e->lang = $row['lang'];
+        $e->columnNumber = (int) $row[$fields['column_number']];
+        $e->pageId = (int) $row[$fields['page_id']];
+        $e->seq = (int) $row[$fields['seq']];
+        $e->editorId = (int) $row[$fields['editor_id']];
+        $e->handId = (int) $row[$fields['hand_id']];
+        $e->id = (int) $row[$fields['id']];
+        $e->lang = $row[$fields['lang']];
         return $e;
     }
     
-    private function createItemObjectFromRow($row)
+    /**
+     * Creates an array of Element objects from an array such
+     * as the one created by the TranscriptionEditor
+     * @param type $theArray
+     */
+    public static function createElementArrayFromArray($theArray) {
+        $elements = [];
+        foreach($theArray as $elementArray) {
+            $e = self::createElementObjectFromArray($elementArray);
+            $e->items = [];
+            foreach($elementArray['items'] as $itemArray) {
+                $item = self::createItemObjectFromArray($itemArray);
+                $e->items[] = $item;
+            }
+            $elements[] = $e;
+        }
+        return $elements;
+    }
+    
+    private function createElementObjectFromRow($row) 
     {
-        switch ($row['type']){
+        $fields = [ 
+            'id' => 'id',
+            'type'=> 'type',
+            'page_id' => 'page_id',
+            'column_number' => 'column_number',
+            'seq' => 'seq',
+            'lang' => 'lang',
+            'editor_id' => 'editor_id',
+            'hand_id' => 'hand_id',
+            'reference' => 'reference',
+            'placement' => 'placement'
+        ];
+        return self::createElementObjectFromArbitraryRow($fields, $row);
+    }
+    
+    public static function createElementObjectFromArray($theArray) 
+    {
+        $fields = [ 
+            'id' => 'id',
+            'type'=> 'type',
+            'page_id' => 'pageId',
+            'column_number' => 'columnNumber',
+            'seq' => 'seq',
+            'lang' => 'lang',
+            'editor_id' => 'editorId',
+            'hand_id' => 'handId',
+            'reference' => 'reference',
+            'placement' => 'placement'
+        ];
+        return self::createElementObjectFromArbitraryRow($fields, $theArray);
+    }
+    
+    public static function createItemObjectFromArbitraryRow($fields, $row) {
+        switch ($row[$fields['type']]){
             case Item::TEXT:
-                $item = new \AverroesProject\TxText\Text($row['id'], 
-                        $row['seq'], 
-                        $row['text']);
+                $item = new \AverroesProject\TxText\Text($row[$fields['id']], 
+                        $row[$fields['seq']], 
+                        $row[$fields['text']]);
                 break;
 
             case Item::RUBRIC:
-                $item = new \AverroesProject\TxText\Rubric($row['id'], 
-                        $row['seq'], 
-                        $row['text']);
+                $item = new \AverroesProject\TxText\Rubric($row[$fields['id']], 
+                        $row[$fields['seq']], 
+                        $row[$fields['text']]);
                 break;
 
             case Item::SIC:
-                $item = new \AverroesProject\TxText\Sic($row['id'], 
-                        $row['seq'], 
-                        $row['text'], 
-                        $row['alt_text']);
+                $item = new \AverroesProject\TxText\Sic($row[$fields['id']], 
+                        $row[$fields['seq']], 
+                        $row[$fields['text']], 
+                        $row[$fields['alt_text']]);
                 break;
 
             case Item::MARK:
-                $item = new \AverroesProject\TxText\Mark($row['id'], 
-                        $row['seq']);
+                $item = new \AverroesProject\TxText\Mark($row[$fields['id']], 
+                        $row[$fields['seq']]);
                 break;
 
             case Item::UNCLEAR:
-                $item = new \AverroesProject\TxText\Unclear($row['id'], 
-                        $row['seq'], 
-                        $row['extra_info'], 
-                        $row['text'], 
-                        $row['alt_text']);
+                $item = new \AverroesProject\TxText\Unclear($row[$fields['id']], 
+                        $row[$fields['seq']], 
+                        $row[$fields['extra_info']], 
+                        $row[$fields['text']], 
+                        $row[$fields['alt_text']]);
                 break;
 
             case Item::ILLEGIBLE:
-                $item = new \AverroesProject\TxText\Illegible($row['id'], 
-                        $row['seq'], 
-                        $row['length'], 
-                        $row['extra_info']);
+                $item = new \AverroesProject\TxText\Illegible($row[$fields['id']], 
+                        $row[$fields['seq']], 
+                        $row[$fields['length']], 
+                        $row[$fields['extra_info']]);
                 break;
 
             case Item::ABBREVIATION:
-                $item = new \AverroesProject\TxText\Abbreviation($row['id'], 
-                        $row['seq'], 
-                        $row['text'], 
-                        $row['alt_text']);
+                $item = new \AverroesProject\TxText\Abbreviation($row[$fields['id']], 
+                        $row[$fields['seq']], 
+                        $row[$fields['text']], 
+                        $row[$fields['alt_text']]);
                 break;
 
             case Item::GLIPH:
-                $item = new \AverroesProject\TxText\Gliph($row['id'], 
-                        $row['seq'], 
-                        $row['text']);
+                $item = new \AverroesProject\TxText\Gliph($row[$fields['id']], 
+                        $row[$fields['seq']], 
+                        $row[$fields['text']]);
                 break;
 
             case Item::DELETION:
-                $item = new \AverroesProject\TxText\Deletion($row['id'], 
-                        $row['seq'], 
-                        $row['text'], 
-                        $row['extra_info']);
+                $item = new \AverroesProject\TxText\Deletion($row[$fields['id']], 
+                        $row[$fields['seq']], 
+                        $row[$fields['text']], 
+                        $row[$fields['extra_info']]);
                 break;
 
             case Item::ADDITION:
-                $item = new \AverroesProject\TxText\Addition($row['id'], 
-                        $row['seq'], 
-                        $row['text'], 
-                        $row['extra_info'], 
-                        $row['target']);
+                $item = new \AverroesProject\TxText\Addition($row[$fields['id']], 
+                        $row[$fields['seq']], 
+                        $row[$fields['text']], 
+                        $row[$fields['extra_info']], 
+                        $row[$fields['target']]);
                 break;
 
             case Item::NO_WORD_BREAK:
-                $item = new \AverroesProject\TxText\NoWordBreak($row['id'], 
-                        $row['seq']);
+                $item = new \AverroesProject\TxText\NoWordBreak($row[$fields['id']], 
+                        $row[$fields['seq']]);
                 break;
 
             default: 
                 continue;
         }
-        $item->lang = $row['lang'];
-        $item->handId = $row['hand_id'];
-        $item->setColumnElementId($row['ce_id']);
+        $item->lang = $row[$fields['lang']];
+        $item->handId = $row[$fields['hand_id']];
+        $item->setColumnElementId($row[$fields['ce_id']]);
         return $item;
-        
+    }
+    
+    public static function createItemObjectFromRow($row)
+    {
+        $fields = [ 
+            'id' => 'id',
+            'type'=> 'type',
+            'ce_id' => 'ce_id',
+            'seq' => 'seq',
+            'lang' => 'lang',
+            'hand_id' => 'hand_id',
+            'text' => 'text',
+            'alt_text' => 'alt_text',
+            'extra_info' => 'extra_info',
+            'length' => 'length',
+            'target' => 'target',
+        ];
+        return self::createItemObjectFromArbitraryRow($fields, $row);
+    }
+    
+    public static function createItemObjectFromArray($theArray)
+    {
+        $fields = [ 
+            'id' => 'id',
+            'type'=> 'type',
+            'ce_id' => 'columnElementId',
+            'seq' => 'seq',
+            'lang' => 'lang',
+            'hand_id' => 'handId',
+            'text' => 'theText',
+            'alt_text' => 'altText',
+            'extra_info' => 'extraInfo',
+            'length' => 'length',
+            'target' => 'target',
+        ];
+        return self::createItemObjectFromArbitraryRow($fields, $theArray);
     }
     
     /**

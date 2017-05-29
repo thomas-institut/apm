@@ -46,6 +46,7 @@ class ApiController
     const API_ERROR_DUPLICATE_ITEM_ID = 1010;
     const API_ERROR_MISSING_EDNOTE_KEY = 1011;
     const API_ERROR_WRONG_TARGET_FOR_EDNOTE = 1012;
+    const API_ERROR_WRONG_AUTHOR_ID = 1013;
             
     
     
@@ -285,6 +286,19 @@ class ApiController
                     ]);
                 return $response->withStatus(409)->withJson(['error' => self::API_ERROR_WRONG_TARGET_FOR_EDNOTE]);
             }
+            if (!$this->db->um->userExistsById($edNotes[$i]['authorId'])) {
+                $this->logger->error("Inexisted author Id for editorial note: " . $edNotes[$i]['authorId'],
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_WRONG_AUTHOR_ID,
+                      'docId' => $docId,
+                      'pageNumber' => $pageNumber,
+                      'columnNumber' => $columnNumber,
+                      'edNoteIndex' => $i,
+                      'edNote' => $edNotes[$i]
+                    ]);
+                return $response->withStatus(409)->withJson(['error' => self::API_ERROR_WRONG_AUTHOR_ID]); 
+            }
+            
         }
         
         $newElements = \AverroesProject\Data\DataManager::createElementArrayFromArray($newElementsArray);

@@ -544,6 +544,23 @@ class ApiControllerTest extends TestCase {
         $respData = json_decode($response->getBody(true), true);
         $this->assertEquals(Api\ApiController::API_ERROR_WRONG_TARGET_FOR_EDNOTE, $respData['error']);
         
+        // TEST: Bad authorId in editorial note
+        $badEdNote = $goodEditorialNote;
+        $badEdNote['authorId'] = 0;
+        $response = self::$apiController->updateElementsByDocPageCol(
+        self::requestWithData($request, [
+                'elements' => [
+                    $goodElement
+                ], 
+                'ednotes' => [ $badEdNote]
+            ]), 
+            $inputResp, 
+            null
+        );
+        $this->assertEquals(409, $response->getStatusCode());
+        $respData = json_decode($response->getBody(true), true);
+        $this->assertEquals(Api\ApiController::API_ERROR_WRONG_AUTHOR_ID, $respData['error']);
+        
         // TEST: Add an ednote
         $response = self::$apiController->updateElementsByDocPageCol(
         self::requestWithData($request, [

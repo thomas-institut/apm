@@ -31,12 +31,30 @@ class ApiController
     protected $ci;
     private $logger;
     
+    // Error codes
+    const API_NO_ERROR = 0;
+    const API_ERROR_NO_DATA = 1000;
+    const API_ERROR_NO_ELEMENT_ARRAY = 1001;
+    const API_ERROR_NO_EDNOTES = 1002;
+    const API_ERROR_ZERO_ELEMENTS = 1003;
+    const API_ERROR_MISSING_ELEMENT_KEY = 1004;
+    const API_ERROR_WRONG_PAGE_ID = 1005;
+    const API_ERROR_WRONG_COLUMN_NUMBER = 1006;
+    const API_ERROR_WRONG_EDITOR_ID = 1007;
+    const API_ERROR_EMPTY_ELEMENT = 1008;
+    const API_ERROR_MISSING_ITEM_KEY = 1009;
+    const API_ERROR_DUPLICATE_ITEM_ID = 1010;
+    const API_ERROR_MISSING_EDNOTE_KEY = 1011;
+    const API_ERROR_WRONG_TARGET_FOR_EDNOTE = 1012;
+            
+    
+    
     //Constructor
     public function __construct( $ci)
     {
        $this->ci = $ci;
        $this->db = $ci->db;
-       $this->logger = $ci->logger->withName('API-TEST');
+       $this->logger = $ci->logger->withName('API');
     }
    
     public function generateMarkIcon(Request $request, 
@@ -91,48 +109,60 @@ class ApiController
         // Some checks: all required arrays, data with given docId, pageNo and colNumber
         if (is_null($inputDataObject) ) {
             $this->logger->error("Element update: no data in input",
-                    [ 'apiUserId' => $this->ci->userId, 'data' => $postData]);
-            return $response->withStatus(409);
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_NO_DATA,
+                      'data' => $postData]);
+            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_NO_DATA]);
         }
         if (!isset($inputDataObject['elements']) ) {
             $this->logger->error("Input data array does not contain elements",
-                    [ 'apiUserId' => $this->ci->userId, 'inputDataObject' => $inputDataObject]);
-            return $response->withStatus(409);
+                    [ 'apiUserId' => $this->ci->userId, 
+                       'apiError' => self::API_ERROR_NO_ELEMENT_ARRAY, 
+                        'inputDataObject' => $inputDataObject
+                    ]);
+            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_NO_ELEMENT_ARRAY]);
         }
         
         if (!isset($inputDataObject['ednotes']) ) {
             $this->logger->error("Input data array does not contain ednote array",
-                    [ 'apiUserId' => $this->ci->userId, 'inputDataObject' => $inputDataObject]);
-            return $response->withStatus(409);
+                    [ 'apiUserId' => $this->ci->userId, 
+                       'apiError' => self::API_ERROR_NO_EDNOTES,  
+                        'inputDataObject' => $inputDataObject]);
+            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_NO_EDNOTES]);
         }
         
         if (count($inputDataObject['elements'])===0 ) {
             $this->logger->error("Empty element array to update column",
-                    [ 'apiUserId' => $this->ci->userId, 'inputDataObject' => $inputDataObject]);
-            return $response->withStatus(409);
+                    [ 'apiUserId' => $this->ci->userId, 
+                       'apiError' => self::API_ERROR_ZERO_ELEMENTS,   
+                        'inputDataObject' => $inputDataObject]);
+            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_ZERO_ELEMENTS]);
         }
-        
-        
+
         // Check elements and force hand Id on items
         $pageId = $this->db->getPageIdByDocPage($docId, $pageNumber);
         $newElementsArray = $inputDataObject['elements'];
+        $edNotes = $inputDataObject['ednotes'];
         
         $requiredElementKeys = ['id', 'pageId', 'columnNumber', 'seq' , 'lang', 'handId', 'editorId', 'type', 'items', 'reference', 'placement'];
         $requiredItemProperties = ['id', 'type', 'seq', 'lang', 'theText', 'altText', 'extraInfo', 'target', 'columnElementId'];
+        $requiredEdNoteKeys = ['id', 'type', 'target', 'authorId', 'text'];
         $givenItemIds = [];
         
+        //print "Checking " . count($newElementsArray) . " elements\n";
         for ($i = 0; $i < count($newElementsArray); $i++) {
             // Check that all object properties are present
             foreach ($requiredElementKeys as $reqKey) {
                 if (!array_key_exists($reqKey, $newElementsArray[$i])) {
                      $this->logger->error("Missing key in element: " . $reqKey,
                     [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_MISSING_ELEMENT_KEY, 
                       'docId' => $docId,
                       'pageNumber' => $pageNumber,
                       'columnNumber' => $columnNumber,
                       'elementArray' => $newElementsArray[$i]
                 ]);
-                return $response->withStatus(409);
+                return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_MISSING_ELEMENT_KEY]);
                 }
             }
             
@@ -140,100 +170,141 @@ class ApiController
             if ($newElementsArray[$i]['pageId'] !== $pageId) {
                 $this->logger->error("Element with wrong pageId in input array",
                     [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_WRONG_PAGE_ID, 
                       'docId' => $docId,
                       'pageNumber' => $pageNumber,
                       'columnNumber' => $columnNumber,
                       'elementArray' => $newElementsArray[$i]
                 ]);
-                return $response->withStatus(409);
+                return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_WRONG_PAGE_ID]);
             }
            
             // check columnNumber
             if ($newElementsArray[$i]['columnNumber'] !== $columnNumber) {
                 $this->logger->error("Element with wrong columnNumber in input array",
-                    [ 'apiUserId' => $this->ci->userId, 
+                    [ 'apiUserId' => $this->ci->userId,
+                      'apiError' => self::API_ERROR_WRONG_COLUMN_NUMBER,
                       'docId' => $docId,
                       'pageNumber' => $pageNumber,
                       'columnNumber' => $columnNumber,
                       'elementArray' => $newElementsArray[$i]
                 ]);
-                return $response->withStatus(409);
+                return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_WRONG_COLUMN_NUMBER]);
             }
             // check EditorId
             if (!$this->db->um->userExistsById($newElementsArray[$i]['editorId'])) {
                 $this->logger->error("Non existent editorId in input array",
                     [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_WRONG_EDITOR_ID,
                       'docId' => $docId,
                       'pageNumber' => $pageNumber,
                       'columnNumber' => $columnNumber,
                       'elementArray' => $newElementsArray[$i]
                 ]);
-                return $response->withStatus(409);
+                return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_WRONG_EDITOR_ID]);
             }
             
             // Check that there are items, no empty elements allowed
             if (count($newElementsArray[$i]['items']) === 0) {
                 $this->logger->error("Empty element in input array",
                     [ 'apiUserId' => $this->ci->userId, 
+                        'apiError' => self::API_ERROR_EMPTY_ELEMENT,
                       'docId' => $docId,
                       'pageNumber' => $pageNumber,
                       'columnNumber' => $columnNumber,
                       'elementArray' => $newElementsArray[$i]
                 ]);
-                return $response->withStatus(409);
+                return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_EMPTY_ELEMENT]);
             }
             
             // Check that item data is complete
             // Force handId to 0
+            // print "  Checking " . count($newElementsArray[$i]['items']) . " items for element $i\n";
             for ($j = 0; $j < count($newElementsArray[$i]['items']); $j++) {
                 foreach ($requiredItemProperties as $reqKey) {
                     if (!array_key_exists($reqKey, $newElementsArray[$i]['items'][$j])) {
                         $this->logger->error("Missing key in item: " . $reqKey,
                             [ 'apiUserId' => $this->ci->userId, 
+                              'apiError' => self::API_ERROR_MISSING_ITEM_KEY,
                               'docId' => $docId,
                               'pageNumber' => $pageNumber,
                               'columnNumber' => $columnNumber,
                               'itemIndex' => $j,
                               'elementArray' => $newElementsArray[$i]
                             ]);
-                        return $response->withStatus(409);
+                        return $response->withStatus(409)->withJson(['error' => self::API_ERROR_MISSING_ITEM_KEY]);
                     }
-                    $id = $newElementsArray[$i]['items'][$j]['id'];
-                    if ($id !== -1) {
-                        // Check for duplicate item Ids
-                        if (isset($givenItemIds[$id])) {
-                            $this->logger->error("Duplicate Item id : " . $id,
-                            [ 'apiUserId' => $this->ci->userId, 
-                              'docId' => $docId,
-                              'pageNumber' => $pageNumber,
-                              'columnNumber' => $columnNumber,
-                              'itemIndex' => $j,
-                              'elementArray' => $newElementsArray[$i]
-                            ]);
-                            return $response->withStatus(409);
-                        }
-                        $givenItemIds[$id] = true;
+                }
+                $id = $newElementsArray[$i]['items'][$j]['id'];
+                //print "Item ID = $id\n";
+                if ($id !== -1) {
+                    // Check for duplicate item Ids
+                    if (isset($givenItemIds[$id])) {
+                        $this->logger->error("Duplicate Item id : " . $id,
+                        [ 'apiUserId' => $this->ci->userId,
+                          'apiError' => self::API_ERROR_DUPLICATE_ITEM_ID,
+                          'docId' => $docId,
+                          'pageNumber' => $pageNumber,
+                          'columnNumber' => $columnNumber,
+                          'itemIndex' => $j,
+                          'elementArray' => $newElementsArray[$i]
+                        ]);
+                        return $response->withStatus(409)->withJson(['error' => self::API_ERROR_DUPLICATE_ITEM_ID]);
                     }
+                    $givenItemIds[$id] = true;
                 }
                 $newElementsArray[$i]['items'][$j]['handId'] = 0;
             }
         }
-        $newElements = \AverroesProject\Data\DataManager::createElementArrayFromArray($newElementsArray);
-
-        $newItemIds = $this->ci->db->updateColumnElements($pageId, $columnNumber, $newElements);
-
-        // Get the editorial notes
-        $edNotes  = \AverroesProject\Data\EdNoteManager::editorialNoteArrayFromArray($inputDataObject['ednotes']);
-        // Update targets
+        
+        // Check ednotes
         for ($i = 0; $i < count($edNotes); $i++) {
-            $targetId = $edNotes[$i]->target;
-            if (isset($newItemsIds[$targetId])) {
-                $edNotes[$i]->target = $targetId;
-            } else {
-                $this->logger->warning('Editorial note without valid target Id');
+            foreach ($requiredEdNoteKeys as $reqKey) {
+                if (!array_key_exists($reqKey, $edNotes[$i])) {
+                    $this->logger->error("Missing key in editorial note: " . $reqKey,
+                        [ 'apiUserId' => $this->ci->userId, 
+                          'apiError' => self::API_ERROR_MISSING_EDNOTE_KEY,
+                          'docId' => $docId,
+                          'pageNumber' => $pageNumber,
+                          'columnNumber' => $columnNumber,
+                          'edNoteIndex' => $i,
+                          'edNote' => $edNotes[$i]
+                        ]);
+                    return $response->withStatus(409)->withJson(['error' => self::API_ERROR_MISSING_EDNOTE_KEY]);
+                }
+            }
+            if (!isset($givenItemIds[$edNotes[$i]['target']])) {
+                $this->logger->error("Bad target for editorial note: " . $edNotes[$i]['target'],
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_WRONG_TARGET_FOR_EDNOTE,
+                      'docId' => $docId,
+                      'pageNumber' => $pageNumber,
+                      'columnNumber' => $columnNumber,
+                      'edNoteIndex' => $i,
+                      'edNote' => $edNotes[$i]
+                    ]);
+                return $response->withStatus(409)->withJson(['error' => self::API_ERROR_WRONG_TARGET_FOR_EDNOTE]);
             }
         }
         
+        $newElements = \AverroesProject\Data\DataManager::createElementArrayFromArray($newElementsArray);
+        
+        // Get the editorial notes
+        $edNotes  = \AverroesProject\Data\EdNoteManager::editorialNoteArrayFromArray($inputDataObject['ednotes']);
+        
+        $newItemIds = $this->ci->db->updateColumnElements($pageId, $columnNumber, $newElements);
+        // Update targets
+        for ($i = 0; $i < count($edNotes); $i++) {
+            $targetId = $edNotes[$i]->target;
+            if (isset($newItemIds[$targetId])) {
+                $edNotes[$i]->target = $newItemIds[$targetId];
+            } else {
+                // This should never happen!
+                $this->logger->error('Editorial note without valid target Id: ' . $targetId, get_object_vars($edNotes[$i]));
+            }
+        }
+        
+        $this->ci->db->enm->updateNotesFromArray($edNotes);
         return $response->withStatus(200);
     }
     

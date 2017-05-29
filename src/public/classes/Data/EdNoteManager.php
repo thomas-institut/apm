@@ -144,6 +144,8 @@ class EdNoteManager {
         
         unset($dataA['id']);
         unset($dataB['id']);
+        unset($dataA['time']);
+        unset($dataB['time']);
         return $dataA == $dataB;
     }
     

@@ -196,6 +196,10 @@ $app->group('/api', function (){
             '\AverroesProject\Api\ApiController:getElementsByDocPageCol')
         ->setName('api.getelements');
     
+    $this->post('/{document}/{page}/{column}/elements/update', 
+            '\AverroesProject\Api\ApiController:updateElementsByDocPageCol')
+        ->setName('api.updateelements');
+    
     // API -> numColumns
     $this->get('/{document}/{page}/numcolumns', 
             '\AverroesProject\Api\ApiController:getNumColumns')

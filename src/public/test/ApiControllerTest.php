@@ -165,7 +165,7 @@ class ApiControllerTest extends TestCase {
         for ($i = 1; $i <= $numPages; $i++) {
             $dm->addNewColumn($docId, $i);
         }
-        print ('DocId = ' . $docId . "\n");
+        //print ('DocId = ' . $docId . "\n");
         $pageId =  $dm->getPageIdByDocPage($docId, 1);
         
         
@@ -182,6 +182,8 @@ class ApiControllerTest extends TestCase {
                 null
         );
         $this->assertEquals(409, $response->getStatusCode());
+        $respData = json_decode($response->getBody(true), true);
+        $this->assertEquals(Api\ApiController::API_ERROR_NO_DATA, $respData['error']);
         
         
         // TEST 2: unstructured data in request contents
@@ -191,6 +193,8 @@ class ApiControllerTest extends TestCase {
                 null
         );
         $this->assertEquals(409, $response->getStatusCode());
+        $respData = json_decode($response->getBody(true), true);
+        $this->assertEquals(Api\ApiController::API_ERROR_NO_DATA, $respData['error']);
         
         // TEST 3: wrong POST field
         $queryString = http_build_query([ 'somefield' => 'some data'], '', '&');
@@ -200,6 +204,8 @@ class ApiControllerTest extends TestCase {
                 null 
         );
         $this->assertEquals(409, $response->getStatusCode());
+        $respData = json_decode($response->getBody(true), true);
+        $this->assertEquals(Api\ApiController::API_ERROR_NO_DATA, $respData['error']);
         
         // TEST 4: empty data
         $response = self::$apiController->updateElementsByDocPageCol(
@@ -208,6 +214,8 @@ class ApiControllerTest extends TestCase {
             null
         );
         $this->assertEquals(409, $response->getStatusCode());
+        $respData = json_decode($response->getBody(true), true);
+        $this->assertEquals(Api\ApiController::API_ERROR_NO_ELEMENT_ARRAY, $respData['error']);
         
         // TEST 4: wrong data fields 
         $response = self::$apiController->updateElementsByDocPageCol(
@@ -216,6 +224,8 @@ class ApiControllerTest extends TestCase {
             null
         );
         $this->assertEquals(409, $response->getStatusCode());
+        $respData = json_decode($response->getBody(true), true);
+        $this->assertEquals(Api\ApiController::API_ERROR_NO_ELEMENT_ARRAY, $respData['error']);
         
         // TEST 5: no ednotes
         $response = self::$apiController->updateElementsByDocPageCol(
@@ -228,6 +238,8 @@ class ApiControllerTest extends TestCase {
             null
         );
         $this->assertEquals(409, $response->getStatusCode());
+        $respData = json_decode($response->getBody(true), true);
+        $this->assertEquals(Api\ApiController::API_ERROR_NO_EDNOTES, $respData['error']);
         
         // TEST 6: zero elements
          $response = self::$apiController->updateElementsByDocPageCol(
@@ -239,14 +251,16 @@ class ApiControllerTest extends TestCase {
             null
         );
         $this->assertEquals(409, $response->getStatusCode());
+        $respData = json_decode($response->getBody(true), true);
+        $this->assertEquals(Api\ApiController::API_ERROR_ZERO_ELEMENTS, $respData['error']);
         
         $textItem = [
-            'id'=> -1, 
+            'id'=> 100, 
             'type'=> Item::TEXT, 
             'columnElementId' => -1,
             'seq'=> 0, 
             'lang'=> 'la',
-            'theText' => 'Some text',
+            'theText' => 'Some text ',
             'altText' => '',
             'extraInfo' => '',
             'target' => null
@@ -281,6 +295,8 @@ class ApiControllerTest extends TestCase {
                 null
             );
             $this->assertEquals(409, $response->getStatusCode());
+            $respData = json_decode($response->getBody(true), true);
+            $this->assertEquals(Api\ApiController::API_ERROR_MISSING_ELEMENT_KEY, $respData['error']);
         }
         
         // TEST 8: bad pageId
@@ -297,6 +313,8 @@ class ApiControllerTest extends TestCase {
             null
         );
         $this->assertEquals(409, $response->getStatusCode());
+        $respData = json_decode($response->getBody(true), true);
+        $this->assertEquals(Api\ApiController::API_ERROR_WRONG_PAGE_ID, $respData['error']);
         
         // TEST 8: bad columnElement
         $badElement = $goodElement;
@@ -312,6 +330,8 @@ class ApiControllerTest extends TestCase {
             null
         );
         $this->assertEquals(409, $response->getStatusCode());
+        $respData = json_decode($response->getBody(true), true);
+        $this->assertEquals(Api\ApiController::API_ERROR_WRONG_COLUMN_NUMBER, $respData['error']);
         
         // TEST 8: bad editorId
         $badElement = $goodElement;
@@ -327,6 +347,8 @@ class ApiControllerTest extends TestCase {
             null
         );
         $this->assertEquals(409, $response->getStatusCode());
+        $respData = json_decode($response->getBody(true), true);
+        $this->assertEquals(Api\ApiController::API_ERROR_WRONG_EDITOR_ID, $respData['error']);
         
         // TEST 9: no items
         $badElement = $goodElement;
@@ -342,6 +364,8 @@ class ApiControllerTest extends TestCase {
             null
         );
         $this->assertEquals(409, $response->getStatusCode());
+        $respData = json_decode($response->getBody(true), true);
+        $this->assertEquals(Api\ApiController::API_ERROR_EMPTY_ELEMENT, $respData['error']);
         
         // TEST 10: badly formed items
         $keys = array_keys($textItem);
@@ -360,6 +384,8 @@ class ApiControllerTest extends TestCase {
                 null
             );
             $this->assertEquals(409, $response->getStatusCode());
+            $respData = json_decode($response->getBody(true), true);
+            $this->assertEquals(Api\ApiController::API_ERROR_MISSING_ITEM_KEY, $respData['error']);
         }
 
         // TEST 11: duplicate Item Ids
@@ -380,7 +406,8 @@ class ApiControllerTest extends TestCase {
             null
         );
         $this->assertEquals(409, $response->getStatusCode());
-        
+        $respData = json_decode($response->getBody(true), true);
+        $this->assertEquals(Api\ApiController::API_ERROR_DUPLICATE_ITEM_ID, $respData['error']);
         
         // FINALLY do it!
         $response = self::$apiController->updateElementsByDocPageCol(
@@ -394,6 +421,184 @@ class ApiControllerTest extends TestCase {
             null
         );
         $this->assertEquals(200, $response->getStatusCode());
+        
+        // Get the elements back
+        $elementsInDb = $dm->getColumnElements($docId, 1, 1);
+        
+        $this->assertCount(1, $elementsInDb);
+        $this->assertEquals($goodElement['pageId'], $elementsInDb[0]->pageId);
+        $this->assertEquals($goodElement['columnNumber'], $elementsInDb[0]->columnNumber);
+        $this->assertEquals($goodElement['seq'], $elementsInDb[0]->seq);
+        $this->assertEquals($goodElement['type'], $elementsInDb[0]->type); 
+        $this->assertEquals($goodElement['lang'], $elementsInDb[0]->lang);
+        $this->assertEquals($goodElement['handId'], $elementsInDb[0]->handId);
+        $this->assertEquals($goodElement['editorId'], $elementsInDb[0]->editorId);
+        $this->assertEquals($goodElement['reference'], $elementsInDb[0]->reference);
+        $this->assertEquals($goodElement['placement'], $elementsInDb[0]->placement);
+        $this->assertCount(1, $elementsInDb[0]->items);
+        $itemInDb = $elementsInDb[0]->items[0];
+        $this->assertEquals($textItem['type'], $itemInDb->type);
+        $this->assertEquals($textItem['seq'], $itemInDb->seq);
+        $this->assertEquals($textItem['lang'], $itemInDb->lang);
+        $this->assertEquals($textItem['theText'], $itemInDb->theText);
+        $this->assertEquals($textItem['altText'], $itemInDb->altText);
+        $this->assertEquals($textItem['extraInfo'], $itemInDb->extraInfo);
+        $this->assertEquals($textItem['target'], $itemInDb->target);
+         
+        // Now for a simple update
+        $abbrItem = $textItem;
+        $abbrItem['id'] = $textItem['id'] + 1;
+        $abbrItem['type'] = Item::ABBREVIATION;
+        $abbrItem['theText'] = 'Mr.';
+        $abbrItem['altText'] = "Mister";
+        $abbrItem['seq'] = $textItem['seq'] + 1;
+        $goodElement['editorId'] = self::$editor2;
+        $goodElement['items'] = [ $textItem, $abbrItem];
+        
+        
+        $response = self::$apiController->updateElementsByDocPageCol(
+        self::requestWithData($request, [
+                'elements' => [
+                    $goodElement
+                ], 
+                'ednotes' => []
+            ]), 
+            $inputResp, 
+            null
+        );
+        $this->assertEquals(200, $response->getStatusCode());
+        
+        // Get the elements back
+        $elementsInDb = $dm->getColumnElements($docId, 1, 1);
+        
+        $this->assertCount(1, $elementsInDb);
+        $this->assertEquals($goodElement['pageId'], $elementsInDb[0]->pageId);
+        $this->assertEquals($goodElement['columnNumber'], $elementsInDb[0]->columnNumber);
+        $this->assertEquals($goodElement['seq'], $elementsInDb[0]->seq);
+        $this->assertEquals($goodElement['type'], $elementsInDb[0]->type); 
+        $this->assertEquals($goodElement['lang'], $elementsInDb[0]->lang);
+        $this->assertEquals($goodElement['handId'], $elementsInDb[0]->handId);
+        $this->assertEquals($goodElement['editorId'], $elementsInDb[0]->editorId);
+        $this->assertEquals($goodElement['reference'], $elementsInDb[0]->reference);
+        $this->assertEquals($goodElement['placement'], $elementsInDb[0]->placement);
+        $this->assertCount(2, $elementsInDb[0]->items);
+        $itemInDb = $elementsInDb[0]->items[0];
+        $this->assertEquals($textItem['type'], $itemInDb->type);
+        $this->assertEquals($textItem['seq'], $itemInDb->seq);
+        $this->assertEquals($textItem['lang'], $itemInDb->lang);
+        $this->assertEquals($textItem['theText'], $itemInDb->theText);
+        $this->assertEquals($textItem['altText'], $itemInDb->altText);
+        $this->assertEquals($textItem['extraInfo'], $itemInDb->extraInfo);
+        $this->assertEquals($textItem['target'], $itemInDb->target);
+        $itemInDb2 = $elementsInDb[0]->items[1];
+        $this->assertEquals($abbrItem['type'], $itemInDb2->type);
+        $this->assertEquals($abbrItem['seq'], $itemInDb2->seq);
+        $this->assertEquals($abbrItem['lang'], $itemInDb2->lang);
+        $this->assertEquals($abbrItem['theText'], $itemInDb2->theText);
+        $this->assertEquals($abbrItem['altText'], $itemInDb2->altText);
+        $this->assertEquals($abbrItem['extraInfo'], $itemInDb2->extraInfo);
+        $this->assertEquals($abbrItem['target'], $itemInDb2->target);
+        
+        $goodEditorialNote = [ 
+            'id' => -1,
+            'type' => EditorialNote::INLINE,
+            'target' => $abbrItem['id'],
+            'authorId' => self::$editor1,
+            'text' =>  'This is an editorial note',
+        ];
+        
+        // TEST: badly formed editorial notes
+        $keys = array_keys($goodEditorialNote);
+        for ($i = 0; $i < count($keys); $i++) {
+            $badEdNote = $goodEditorialNote;
+            unset($badEdNote[$keys[$i]]);
+            $response = self::$apiController->updateElementsByDocPageCol(
+            self::requestWithData($request, [
+                    'elements' => [
+                        $goodElement
+                    ], 
+                    'ednotes' => [ $badEdNote]
+                ]), 
+                $inputResp, 
+                null
+            );
+            $this->assertEquals(409, $response->getStatusCode());
+            $respData = json_decode($response->getBody(true), true);
+            $this->assertEquals(Api\ApiController::API_ERROR_MISSING_EDNOTE_KEY, $respData['error']);
+        }
+        
+        // TEST: Bad target in editorial note
+        $badEdNote = $goodEditorialNote;
+        $badEdNote['target'] = $abbrItem['id'] + 1;
+        $response = self::$apiController->updateElementsByDocPageCol(
+        self::requestWithData($request, [
+                'elements' => [
+                    $goodElement
+                ], 
+                'ednotes' => [ $badEdNote]
+            ]), 
+            $inputResp, 
+            null
+        );
+        $this->assertEquals(409, $response->getStatusCode());
+        $respData = json_decode($response->getBody(true), true);
+        $this->assertEquals(Api\ApiController::API_ERROR_WRONG_TARGET_FOR_EDNOTE, $respData['error']);
+        
+        // TEST: Add an ednote
+        $response = self::$apiController->updateElementsByDocPageCol(
+        self::requestWithData($request, [
+                'elements' => [
+                    $goodElement
+                ], 
+                'ednotes' => [ $goodEditorialNote ]
+            ]), 
+            $inputResp, 
+            null
+        );
+        $this->assertEquals(200, $response->getStatusCode());
+        $edNotesInDb = $dm->enm->getEditorialNotesByDocPageCol($docId, 1, 1);
+        $this->assertCount(1, $edNotesInDb);
+        $this->assertEquals($goodEditorialNote['authorId'], $edNotesInDb[0]->authorId);
+        $this->assertEquals($goodEditorialNote['text'], $edNotesInDb[0]->text);
+        
+        // TEST: update with same ednote, no change in DB
+        $response = self::$apiController->updateElementsByDocPageCol(
+        self::requestWithData($request, [
+                'elements' => [
+                    $goodElement
+                ], 
+                'ednotes' => [ $goodEditorialNote ]
+            ]), 
+            $inputResp, 
+            null
+        );
+        $this->assertEquals(200, $response->getStatusCode());
+        $edNotesInDb = $dm->enm->getEditorialNotesByDocPageCol($docId, 1, 1);
+        $this->assertCount(1, $edNotesInDb);
+        $this->assertEquals($goodEditorialNote['authorId'], $edNotesInDb[0]->authorId);
+        $this->assertEquals($goodEditorialNote['text'], $edNotesInDb[0]->text);
+        
+        
+        // TEST: update with a new ednote, should have 2 ednotes in column
+        $goodEditorialNote2 = $goodEditorialNote;
+        $goodEditorialNote2['authorId'] = self::$editor2;
+        $response = self::$apiController->updateElementsByDocPageCol(
+        self::requestWithData($request, [
+                'elements' => [
+                    $goodElement
+                ], 
+                'ednotes' => [ $goodEditorialNote2 ]
+            ]), 
+            $inputResp, 
+            null
+        );
+        $this->assertEquals(200, $response->getStatusCode());
+        $edNotesInDb = $dm->enm->getEditorialNotesByDocPageCol($docId, 1, 1);
+        $this->assertCount(2, $edNotesInDb);
+        $this->assertEquals($goodEditorialNote['authorId'], $edNotesInDb[0]->authorId);
+        $this->assertEquals($goodEditorialNote['text'], $edNotesInDb[0]->text);
+        $this->assertEquals($goodEditorialNote2['authorId'], $edNotesInDb[1]->authorId);
+        $this->assertEquals($goodEditorialNote2['text'], $edNotesInDb[1]->text);
     }
     
     public static function requestWithData($request, $data) {
@@ -404,6 +609,5 @@ class ApiControllerTest extends TestCase {
         );
 
     }
-    
     
 }

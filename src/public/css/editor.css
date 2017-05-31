@@ -141,18 +141,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
     width: 32px;
     text-align: center;
 }
-.editor-controlbar button:hover {
+/*.editor-controlbar button:hover {
     color: black;
-}
+}*/
 
 .editor-controlbar button:disabled {
-    color: gray;
+    color: silver;
 }
 
 .editor-controlbar .title-button {
     font-size: 0.8em;
     margin-left: 30px;
     margin-right: 5px;
+}
+
+.grayedout {
+    color: silver;
 }
 
 .editor-statusbar {

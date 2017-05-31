@@ -64,17 +64,20 @@ $(document).ready(function () {
   // Load columns
   $.getJSON(apiGetColumnInfoUrl, function (resp) {
     let numColumns = resp
+    let thePageNumber = pageNumber
     if (numColumns === 0) {
       $('#pageinfoTab').addClass('active')
     } else {
       for (let col = 1; col <= numColumns; col++) {
+        let getApiUrl = apiBase + '/api/' + docId + '/' + thePageNumber + '/' + col + '/elements'
+        let updateApiUrl = getApiUrl + '/update'
         $.getJSON(
-          apiBase + '/api/' + docId + '/' + pageNumber + '/' + col + '/elements', 
+          getApiUrl, 
           function (resp) {
               $('.nav-tabs a').click(function () {
                 $(this).tab('show')
               })
-              console.log(resp)
+              //console.log(resp)
               let theCol = resp.info['col']
               let theDiv = '<div class="textcol tab-pane'
               if (theCol === 1) {
@@ -86,8 +89,8 @@ $(document).ready(function () {
               theUl += '<a data-toggle="tab" id="col-label-' + theCol + '" href="#col' + theCol +
                   '">Column ' + theCol + '</a></li>'
               $('#tabsUl').append(theUl)
-              console.log($('#right-component').height())
-              console.log($('#tabsUl').height())
+              //console.log($('#right-component').height())
+              //console.log($('#tabsUl').height())
                   
               let te = new TranscriptionEditor(
                   '#col' + theCol, 
@@ -108,7 +111,27 @@ $(document).ready(function () {
               te.onEditorDisable(function (e) {
                 $('#col-label-' + theCol).html('Column ' + theCol)
               })
-
+              
+              te.onEditorSave(function(e){
+                //console.log("Saving...")
+                let currentData = te.getData();
+                //console.log(currentData)
+                $.post(
+                  updateApiUrl, 
+                  { data: JSON.stringify(currentData) }
+                ).done( function () { 
+                  $.getJSON(getApiUrl, function (newResp){
+                    console.log(newResp)
+                    te.saveSuccess(newResp)
+                  })
+                }).fail( function(resp) {
+                  te.saveFail('Status: ' + resp.status + ' Error: ' + resp.responseJSON.error)
+                })
+              });
+              
+              te.onEditorReset(function(e){
+                //console.log("Resetting...")
+              });
               if (theCol === 1) {
                 $('#colheader' + theCol).tab('show')
               }

@@ -496,10 +496,10 @@ class DataManager
     public function insertNewElement(Element $element, $insertAtEnd = true) 
     {
         // Quick checks on the element itself
-        if ($element->id !== Element::ID_NOT_SET) {
-            $this->logger->notice('Element with a valid '
-                    . 'id is being inserted as new', ['id' => $element->id]);
-        }
+//        if ($element->id !== Element::ID_NOT_SET) {
+//            $this->logger->notice('Element with a valid '
+//                    . 'id is being inserted as new', ['id' => $element->id]);
+//        }
         
         if (is_null($element->pageId)) {
             $this->logger->error('Element being inserted in '

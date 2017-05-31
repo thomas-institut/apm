@@ -49,13 +49,13 @@
     <div class="modal-dialog modal-sm " role="document">
         <div class="modal-content bg-info">
             <div class="modal-header">
-                <h4>Please confirm</h4>
+                <h4 id="alert-modal-title-{{id}}">Please confirm</h4>
             </div>
             <div class="modal-body" id="alert-modal-body-{{id}}">
                 <p id="alert-modal-text-{{id}}"></p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-primary" data-dismiss="modal">No</button>
+                <button type="button" class="btn btn-primary" id="alert-modal-cancel-button-{{id}}" data-dismiss="modal">No</button>
                 <button type="button" class="btn btn-danger" id="alert-modal-submit-button-{{id}}">Yes</button>
             </div>
 </div>

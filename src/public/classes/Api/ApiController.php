@@ -96,9 +96,10 @@ class ApiController
     public function updateElementsByDocPageCol(Request $request, 
             Response $response, $next)
     {
-        $docId = $request->getAttribute('document');
-        $pageNumber = $request->getAttribute('page');
-        $columnNumber = $request->getAttribute('column');
+        $startTime = microtime(true);
+        $docId = (int) $request->getAttribute('document');
+        $pageNumber = (int) $request->getAttribute('page');
+        $columnNumber = (int) $request->getAttribute('column');
         $rawData = $request->getBody()->getContents();
         parse_str($rawData, $postData);
         $inputDataObject = null;
@@ -300,13 +301,14 @@ class ApiController
             }
             
         }
-        
+        $checksDone = microtime(true);
         $newElements = \AverroesProject\Data\DataManager::createElementArrayFromArray($newElementsArray);
         
         // Get the editorial notes
         $edNotes  = \AverroesProject\Data\EdNoteManager::editorialNoteArrayFromArray($inputDataObject['ednotes']);
         
         $newItemIds = $this->ci->db->updateColumnElements($pageId, $columnNumber, $newElements);
+        $elementsUpdated = microtime(true);
         // Update targets
         for ($i = 0; $i < count($edNotes); $i++) {
             $targetId = $edNotes[$i]->target;
@@ -317,8 +319,14 @@ class ApiController
                 $this->logger->error('Editorial note without valid target Id: ' . $targetId, get_object_vars($edNotes[$i]));
             }
         }
-        
         $this->ci->db->enm->updateNotesFromArray($edNotes);
+        $done = microtime(true);
+        $this->logger->notice("Elements updated: checks in " . 
+                ($checksDone - $startTime) . 
+                "s, update in " . 
+                ($elementsUpdated - $checksDone) . 
+                "s, ednotes in " .
+                ($done - $elementsUpdated) . "s");
         return $response->withStatus(200);
     }
     

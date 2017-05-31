@@ -463,6 +463,8 @@ class TranscriptionEditor {
 
     $('#item-modal-' + id).modal({show: false})
     $('#alert-modal-' + id).modal({show: false})
+    $('#save-button-' + id).hide()
+    $('#reset-button-' + id).hide()
 
     quillObject.on('selection-change', function (range, oldRange, source) {
       if (!range) {
@@ -509,6 +511,15 @@ class TranscriptionEditor {
     })
 
     quillObject.on('text-change', function (delta, oldDelta, source) {
+      
+      if (!thisObject.enabled) {
+        return
+      }
+      if (!_.isEqual(quillObject.getContents(), thisObject.lastSavedData)) {
+        thisObject.setContentsChanged()
+      } else {
+        thisObject.setContentsNotChanged()
+      }
       if (delta.ops.length === 2) {
         if (delta.ops[0].retain) {
           if (delta.ops[1].delete) {
@@ -545,10 +556,6 @@ class TranscriptionEditor {
             TranscriptionEditor.hideAllPopovers()
           }
         }
-//                    if (delta.ops[1].insert) {
-//                        console.log("Text has been inserted at pos " +
-//                            delta.ops[0].retain + ": " + delta.ops[1].insert);
-//                    }
       }
     })
     $('#ar-button-' + id).click(function () {
@@ -641,6 +648,9 @@ class TranscriptionEditor {
     $('#clear-button-' + id).click(function () {
       let range = quillObject.getSelection()
       if (TranscriptionEditor.selectionHasFormat(quillObject, range)) {
+        $('#alert-modal-title-' + this.id).html('Please confirm')
+        $('#alert-modal-submit-button-' + thisObject.id).html('Clear formatting')
+        $('#alert-modal-cancel-button-' + thisObject.id).html('Cancel')
         $('#alert-modal-text-' + thisObject.id).html(
                         'Are you sure you want to clear formatting of this text?</p><p>Formats and notes will be lost.</p><p class="text-danger">This can NOT be undone!')
         $('#alert-modal-submit-button-' + thisObject.id).on('click', function () {
@@ -1098,22 +1108,48 @@ class TranscriptionEditor {
     
     $('#toggle-button-'+ id).click(function() {
       thisObject.toggleEnable()
-      return true;
+      return true
     });
+    
+    $('#save-button-' + id).click(function(){
+      thisObject.save()
+      return true
+    });
+    
+    $('#reset-button-' + id).click(function(){
+      thisObject.reset()
+      return true
+    });
+    
     
     $('#zoom-in-button-'+ id).click(function() {
       thisObject.makeTextBigger()
-      return true;
+      return true
     });
     
     $('#zoom-out-button-'+ id).click(function() {
       thisObject.makeTextSmaller()
-      return true;
+      return true
     });
 
     this.setDefaultLang(defaultLang)
     thisObject.quillObject = quillObject
     TranscriptionEditor.editors[this.id] = thisObject
+    this.saving = false
+    this.setContentsNotChanged()
+    
+  }
+  
+  setContentsChanged() {
+    $('#save-button-' + this.id).prop('disabled', false)
+    $('#reset-button-' + this.id).prop('disabled', false)
+    this.contentsChanged = true
+  }
+  
+  setContentsNotChanged() {
+    $('#save-button-' + this.id).prop('disabled', true)
+    $('#reset-button-' + this.id).prop('disabled', true)
+    this.contentsChanged = false
   }
   
   setFontSize(size) {
@@ -1143,16 +1179,43 @@ class TranscriptionEditor {
     this.enabled = true
     $('#toolbar-'+ this.id).show()
     this.quillObject.enable(this.enabled)
+    $('#save-button-' + this.id).prop('disabled', true)
+    $('#reset-button-' + this.id).prop('disabled', true)
     $('#save-button-' + this.id).show()
     $('#reset-button-' + this.id).show()
     $('#toggle-button-' + this.id).prop('title', 'Leave editor')
-    $('#toggle-button-' + this.id).html('<i class="fa fa-circle-o"></i>')
+    $('#toggle-button-' + this.id).html('<i class="fa fa-power-off"></i>')
     this.resizeEditor()
+    this.setContentsNotChanged()
     let event = new Event('edit-enable')
     $(this.containerSelector).get()[0].dispatchEvent(event)
   }
   
   disable() {
+    let thisObject = this
+    if (this.contentsChanged) {
+      $('#alert-modal-title-' + this.id).html('There are changes to the text')
+      $('#alert-modal-text-' + this.id).html(
+          '<p>Are you sure you want to leave the editor?</p><p class="text-danger">Changes will be lost!</p>')
+      $('#alert-modal-submit-button-' + thisObject.id).html('Yes, leave!')
+      $('#alert-modal-cancel-button-' + thisObject.id).html('Cancel')
+      $('#alert-modal-submit-button-' + this.id).on('click', function () {
+          $('#alert-modal-' + thisObject.id).modal('hide')
+          thisObject.enabled = false
+          $('#toolbar-' + thisObject.id).hide()
+          $('#save-button-' + thisObject.id).hide()
+          $('#reset-button-' + thisObject.id).hide()
+          $('#toggle-button-' + thisObject.id).prop('title', 'Edit')
+          $('#toggle-button-' + thisObject.id).html('<i class="fa fa-pencil"></i>')
+          thisObject.quillObject.setContents(thisObject.lastSavedData)
+          thisObject.quillObject.enable(thisObject.enabled)
+          thisObject.resizeEditor()
+          let event = new Event('edit-disable')
+          $(thisObject.containerSelector).get()[0].dispatchEvent(event)
+        })
+      $('#alert-modal-' + this.id).modal('show')
+      return
+    }
     this.enabled = false
     $('#toolbar-' + this.id).hide()
     $('#save-button-' + this.id).hide()
@@ -1162,6 +1225,50 @@ class TranscriptionEditor {
     this.quillObject.enable(this.enabled)
     this.resizeEditor()
     let event = new Event('edit-disable')
+    $(this.containerSelector).get()[0].dispatchEvent(event)
+    
+  }
+  
+  save() {
+//    let currentContents = this.quillObject.getContents()
+//    if (_.isEqual(currentContents, this.lastSavedData)) {
+//      console.log("Nothing to save")
+//      return true
+//    }
+    if (!this.contentsChanged) {
+      console.log("Nothing to save")
+      return true
+    }
+    this.saving = true
+    $('#save-button-' + this.id).prop('title', 'Saving changes...')
+    $('#save-button-' + this.id).html('<i class="fa fa-spinner fa-spin fa-fw"></i>')
+    this.quillObject.enable(false)
+    let event = new Event('editor-save')
+    $(this.containerSelector).get()[0].dispatchEvent(event)
+  }
+  
+  saveSuccess(newData) {
+    this.lastSavedData = newData
+    this.setData(newData)
+    this.setContentsNotChanged()
+    this.saving = false
+    $('#save-button-' + this.id).prop('title', 'Save changes')
+    $('#save-button-' + this.id).html('<i class="fa fa-save"></i>')
+    this.quillObject.enable(true)
+  }
+  
+  saveFail(reason) {
+    this.saving = false
+    $('#save-button-' + this.id).prop('title', 'Could not save: ' + reason + ' (click to try again)')
+    $('#save-button-' + this.id).html('<span class="fa-stack"><i class="fa fa-save fa-stack-1x"></i><i class="fa fa-exclamation-triangle fa-stack-1x text-danger"></i></span>')
+    this.quillObject.enable(true)
+  }
+  
+  reset() {
+    this.quillObject.setContents(this.lastSavedData)
+    $('#save-button-' + this.id).prop('title', 'Save changes')
+    $('#save-button-' + this.id).html('<i class="fa fa-save"></i>')
+    let event = new Event('editor-reset')
     $(this.containerSelector).get()[0].dispatchEvent(event)
   }
 
@@ -1418,17 +1525,17 @@ class TranscriptionEditor {
       return false
     }
     let totalHeight = $(this.sizeGuide.selector).height()
-    console.log(this.sizeGuide.selector + ': ' + totalHeight)
+    //console.log(this.sizeGuide.selector + ': ' + totalHeight)
     let controlsHeight = $('#editor-controls-' + this.id).height()
-    console.log('Editor controls: '+ controlsHeight)
+    //console.log('Editor controls: '+ controlsHeight)
     let toolbarHeight = $('#toolbar-' + this.id).height()
     if (!this.enabled) {
       toolbarHeight = 0
     }
-    console.log('Toolbar: '+ toolbarHeight)
-    console.log('Offset:' + this.sizeGuide.offset)
+    //console.log('Toolbar: '+ toolbarHeight)
+    //console.log('Offset:' + this.sizeGuide.offset)
     let editorHeight = totalHeight - controlsHeight - toolbarHeight - this.sizeGuide.offset - 1
-    console.log(editorHeight)
+    //console.log(editorHeight)
     $('#editor-container-' + this.id).find('div.ql-editor').prop(
         'style',
         'max-height: ' +  editorHeight + 'px;'
@@ -1614,7 +1721,7 @@ class TranscriptionEditor {
     if (lang !== 'ar' && lang !== 'he') {
       lang = 'la'
     }
-    console.log("Setting up default lang: " + lang)
+    //console.log("Setting up default lang: " + lang)
     for (const l of ['ar', 'he', 'la']) {
       if (l === lang) {
         $('#editor-container-' + this.id).addClass(l + 'text')
@@ -1678,10 +1785,10 @@ class TranscriptionEditor {
     }
 
     this.people = columnData.people
+    this.pageId = columnData.info.pageId
+    this.columnNumber = columnData.info.col
 
     for (const ele of columnData.elements) {
-      this.pageId = ele.pageId
-      this.columnNumber = ele.columnNumber
       switch (ele.type) {
         case ELEMENT_LINE:
         case ELEMENT_HEAD:
@@ -1875,6 +1982,7 @@ class TranscriptionEditor {
     }
 
     this.quillObject.setContents(delta)
+    this.lastSavedData = this.quillObject.getContents()
   }
   
   onEditorEnable(f) {
@@ -1883,6 +1991,14 @@ class TranscriptionEditor {
   
   onEditorDisable(f) {
     $(this.containerSelector).on('edit-disable', f)
+  }
+  
+  onEditorSave(f) {
+    $(this.containerSelector).on('editor-save', f)
+  }
+  
+  onEditorReset(f) {
+    $(this.containerSelector).on('editor-reset', f)
   }
 
     /**
@@ -1895,20 +2011,23 @@ class TranscriptionEditor {
     let ops = this.quillObject.getContents().ops
     let elements = []
     let itemIds = []
-
+    let currentItemSeq = 0
+    let currentElementSeq = 0
+    let currentElementId = 1
     let curElement = {
-      id: -1,
+      id: currentElementId++,
       pageId: this.pageId,
       columnNumber: this.columnNumber,
       lang: this.defaultLang,
       editorId: this.editorId,
       handId: this.handId,
       type: ELEMENT_LINE,
-      seq: 0,
-      items: []
+      seq: currentElementSeq++,
+      items: [],
+      reference: null,
+      placement: null
     }
-    let currentItemSeq = 0
-    let currentElementSeq = 0
+    
 
     for (const [i, curOps] of ops.entries()) {
       console.log('Processing ops ' + i)
@@ -1988,14 +2107,59 @@ class TranscriptionEditor {
           }
         }
         itemId = parseInt(itemId)
+        if (type === ITEM_TEXT) {
+          // Checking for non formatted text with new lines!
+          let theTexts = theText.split("\n")
+          if (theTexts.length > 1) {
+            //console.log("Got multiple lines without format")
+            for (const line of theTexts) {
+              if (line === '') {
+                continue
+              }
+              let item = {
+                id: -1,
+                columnElementId: currentElementId,
+                seq: currentItemSeq++,
+                type: ITEM_TEXT,
+                lang: theLang,
+                theText: line,
+                altText: null,
+                extraInfo: null,
+                length: null,
+                target: null
+              }
+              curElement.items.push(item)
+              elements.push(curElement)
+              curElement = {
+                id: currentElementId++,
+                pageId: this.pageId,
+                columnNumber: this.columnNumber,
+                lang: this.defaultLang,
+                editorId: this.editorId,
+                handId: this.handId,
+                type: ELEMENT_LINE,
+                seq: currentElementSeq++,
+                items: [],
+                reference: null, 
+                placement: null
+              }
+              currentItemSeq = 0
+            }
+            continue
+          }
+        }
+        
         let item = {
           id: itemId,
+          columnElementId: currentElementId,
           seq: currentItemSeq++,
           type: type,
           lang: theLang,
           theText: theText,
           altText: altText,
-          extraInfo: extraInfo
+          extraInfo: extraInfo,
+          length: null,
+          target: null
         }
         if (target !== -1) {
           item.target = target
@@ -2007,18 +2171,22 @@ class TranscriptionEditor {
         itemIds.push(itemId)
         continue
       }
-
+      //console.log('About to let currentString = ""')
       let currentString = ''
       for (const ch of curOps.insert) {
         if (ch === '\n') {
           if (currentString !== '') {
             let item = {
               id: -1,
+              columnElementId: currentElementId,
               type: type,
               seq: currentItemSeq,
               lang: theLang,
               theText: currentString,
-              altText: ''
+              altText: '',
+              extraInfo: null,
+              length: null,
+              target: null
             }
             curElement.items.push(item)
           }
@@ -2042,17 +2210,18 @@ class TranscriptionEditor {
             }
             curElement.type = elementType
             elements.push(curElement)
-            currentElementSeq++
             curElement = {
-              id: -1,
+              id: currentElementId++,
               pageId: this.pageId,
               columnNumber: this.columnNumber,
               lang: this.defaultLang,
               editorId: this.editorId,
               handId: this.handId,
               type: ELEMENT_LINE,
-              seq: currentElementSeq,
-              items: []
+              seq: currentElementSeq++,
+              items: [],
+              reference: null,
+              placement: null
             }
             currentItemSeq = 0
           }
@@ -2064,19 +2233,19 @@ class TranscriptionEditor {
       if (currentString !== '') {
         let item = {
           id: -1,
+          columnElementId: currentElementId,
           type: type,
-          seq: currentItemSeq,
+          seq: currentItemSeq++,
           lang: theLang,
           theText: currentString,
           altText: ''
         }
         curElement.items.push(item)
-        currentItemSeq++
       }
     }
         // filter out stray notes
     let filteredEdnotes = []
-    console.log(itemIds)
+    //console.log(itemIds)
     for (const note of this.edNotes) {
       if (itemIds.includes(note.target)) {
         filteredEdnotes.push(note)

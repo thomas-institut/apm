@@ -102,6 +102,9 @@ class DataManager
      */
     private $itemsDataTable;
     
+    
+    public $queryStats;
+    
     /**
      * Tries to initialize and connect to the MySQL database.
      * 
@@ -113,6 +116,8 @@ class DataManager
         $this->dbConn = $dbConn;
         $this->tNames = $tableNames;
         $this->logger = $logger;
+        $this->queryStats = new QueryStats();
+        
         $this->dbh = new MySqlHelper($dbConn, $logger);
         $this->enm = new EdNoteManager($dbConn, $this->dbh, $tableNames, 
                 $logger);
@@ -155,6 +160,7 @@ class DataManager
                 $orderby = '';
         }
         $query = "SELECT `id` FROM  " . $this->tNames['docs'] . $orderby;
+        $this->queryStats->countQuery('select');
         $r = $this->dbh->query($query);
         
         $docIds = [];
@@ -194,6 +200,7 @@ class DataManager
             'image_source_data' => $imageSourceData
             ];
         
+        $this->queryStats->countQuery('create');
         $docId = $this->docsDataTable->createRow($doc);
         if ($docId === false) {
             // This means a database error
@@ -231,6 +238,7 @@ class DataManager
             // foliation => defaults to null in DB
         ];
         
+        $this->queryStats->countQuery('create');
         return $this->pagesDataTable->createRow($page);
     }
     
@@ -264,7 +272,9 @@ class DataManager
         if ($pageId === false) {
             return false;
         }
+        $this->queryStats->countQuery('select');
         $pageInfo = $this->pagesDataTable->getRow($pageId);
+        $this->queryStats->countQuery('update');
         $result = $this->pagesDataTable->updateRow([
             'id' => $pageId,
             'num_cols' => $pageInfo['num_cols']+1
@@ -289,6 +299,7 @@ class DataManager
     
     public function getPageInfo($pageId)
     {
+        $this->queryStats->countQuery('select');
         return $this->pagesDataTable->getRow($pageId);
     }
     
@@ -299,6 +310,7 @@ class DataManager
      */
     function getPageCountByDocId($docId)
     {
+        $this->queryStats->countQuery('select');
         $row = $this->docsDataTable->getRow($docId);
         if ($row === false) {
             // Doc doesn't exist, so it has 0 pages
@@ -319,8 +331,9 @@ class DataManager
     function getLineCountByDoc($docId){
         $now = \DataTable\MySqlUnitemporalDataTable::now();
         
+        $this->queryStats->countQuery('select');
         return $this->dbh->getOneFieldQuery(
-            'SELECT count(DISTINCT `page_id`, `reference`) as value from ' . 
+            'SELECT count(DISTINCT `page_id`, `seq`) as value from ' . 
                 $this->tNames['elements'] . ' as e JOIN ' . 
                 $this->tNames['pages'] . ' AS p ON e.page_id=p.id ' .
                 ' WHERE p.doc_id=' . $docId . 
@@ -341,6 +354,7 @@ class DataManager
         $tp = $this->tNames['pages'];
         $now = \DataTable\MySqlUnitemporalDataTable::now();
         
+        $this->queryStats->countQuery('select');
         $query = "SELECT DISTINCT u.`username`" . 
             " FROM `$tu` AS u JOIN (`$te` AS e, `$tp` as p)" . 
             " ON (u.id=e.editor_id AND p.id=e.page_id)" . 
@@ -369,6 +383,7 @@ class DataManager
         $tp = $this->tNames['pages'];
         $now = \DataTable\MySqlUnitemporalDataTable::now();
         
+        $this->queryStats->countQuery('select');
         $query =  'SELECT DISTINCT p.`page_number` AS page_number FROM ' . 
                 $tp . ' AS p' .
                 ' JOIN ' . $te . ' AS e ON p.id=e.page_id' .
@@ -391,6 +406,7 @@ class DataManager
      */
     function getDocById($docId)
     {
+        $this->queryStats->countQuery('select');
         return $this->dbh->getRowById($this->tNames['docs'], $docId);
     }
     
@@ -419,6 +435,7 @@ class DataManager
     
     
     public function getColumnElementsByPageId($pageId, $col) {
+        $this->queryStats->countQuery('select');
         $rows = $this->elementsDataTable->findRows([
             'page_id' => $pageId,
             'column_number' => $col
@@ -453,6 +470,7 @@ class DataManager
     
     function getItemsForElement($element)
     {
+        $this->queryStats->countQuery('select');
         $rows = $this->itemsDataTable->findRows([
             'ce_id' => $element->id
         ]);
@@ -470,6 +488,7 @@ class DataManager
     
     public function getPageIdByDocPage($docId, $pageNum)
     {
+        $this->queryStats->countQuery('select');
         $row = $this->pagesDataTable->findRow([
             'doc_id' => $docId, 
             'page_number'=> $pageNum
@@ -627,9 +646,11 @@ class DataManager
         
     private function createNewItemInDB($item, $time = false) 
     {
-         if (!$time) {
+        
+        if (!$time) {
             $time = \DataTable\MySqlUnitemporalDataTable::now();
         }
+        $this->queryStats->countQuery('create');
         return $this->itemsDataTable->createRowWithTime([
             'ce_id'=> $item->columnElementId,
             'type' => $item->type,
@@ -649,6 +670,7 @@ class DataManager
         if (!$time) {
             $time = \DataTable\MySqlUnitemporalDataTable::now();
         }
+        $this->queryStats->countQuery('update');
         return $this->itemsDataTable->realUpdateRowWithTime([
             'id' => $item->id,
             'ce_id'=> $item->columnElementId,
@@ -665,6 +687,7 @@ class DataManager
     }
     private function createNewElementInDB($element) 
     {
+        $this->queryStats->countQuery('create');
         return $this->elementsDataTable->createRow([
                 'type' => $element->type,
                 'page_id' => $element->pageId,
@@ -680,7 +703,7 @@ class DataManager
     
     private function updateElementInDB($element) 
     {
-        //print("Updating id=" . $element->id . " with seq=" . $element->seq . "\n");
+        $this->queryStats->countQuery('update');
         return $this->elementsDataTable->updateRow([
                 'id' => $element->id,
                 'type' => $element->type,
@@ -701,6 +724,7 @@ class DataManager
         $now = \DataTable\MySqlUnitemporalDataTable::now();
         
         $te = $this->tNames['elements'];
+        $this->queryStats->countQuery('select');
         $sql = "SELECT MAX(seq) as m FROM $te "
                 . "WHERE page_id=$pageId AND column_number=$col " 
                 . "AND `valid_from` <= '$now' AND `valid_until` > '$now'";
@@ -713,6 +737,7 @@ class DataManager
     
     public  function getItemById($itemId)
     {
+        $this->queryStats->countQuery('select');
         $row = $this->itemsDataTable->getRow($itemId);
          if ($row=== false) {
             return false;
@@ -722,6 +747,7 @@ class DataManager
 
 
     public function getElementById($elementId) {
+        $this->queryStats->countQuery('select');
         $row = $this->elementsDataTable->getRow($elementId);
         
         if ($row=== false) {
@@ -947,6 +973,7 @@ class DataManager
      */
     public function updateColumnElements($pageId, $columnNumber, array $newElements) 
     {
+        $this->logger->debug("Updating column elements, pageId=$pageId, col=$columnNumber");
         // force pageId and columnNumber in the elements in $newElements
         foreach($newElements as $element ) {
             $element->pageId = $pageId;
@@ -969,15 +996,14 @@ class DataManager
         $newItemsIds = [];
         $newElementsIndex = 0;
         foreach ($editScript as $editInstruction) {
-            //print("\nNew Element index: " . $newElementsIndex . "\n");
             list ($index, $cmd, $newSeq) = $editInstruction;
             switch ($cmd) {
                 case MyersDiff::KEEP:
-                    //print ("Keeping element @ " . $index . ", id=" . $oldElements[$index]->id . "\n");
+                    $this->logger->debug("Keeping element @ pos " . $index . ", id=" . $oldElements[$index]->id);
                     if ($oldElements[$index]->seq 
                             !== $newSeq) {
-                        //print "... with new seq $newSeq\n";
-                        //print "... seq was " . $oldElements[$index]->seq . "\n";
+                        $this->logger->debug("... with new seq $newSeq");
+                        $this->logger->debug("... seq was " . $oldElements[$index]->seq );
                         $newElements[$newElementsIndex]->seq =
                                 $newSeq;
                     }
@@ -989,20 +1015,20 @@ class DataManager
                     break;
                     
                 case MyersDiff::DELETE:
-                    //print ("Deleting element @ " . $index . ", id=" . $oldElements[$index]->id . "\n");
+                    $this->logger->debug("DELETING element @ " . $index . ", id=" . $oldElements[$index]->id);
                     $this->deleteElement($oldElements[$index]->id . "\n");
                     break;
                 
                 case MyersDiff::INSERT:
-                    //print ("Inserting element @ " . $index . "\n");
-                    //print ("...New Seq: " . $newSeq . "\n");
+                    $this->logger->debug("INSERTING element @ " . $index);
+                    $this->logger->debug("...New Seq: " . $newSeq);
                     $newElements[$newElementsIndex]->seq = $newSeq;
                     $element = $this->insertNewElement($newElements[$newElementsIndex], false);
                     for ($j = 0; $j < count($newElements[$newElementsIndex]->items); $j++) {
                         $givenId = $newElements[$newElementsIndex]->items[$j]->id;
                         $newItemsIds[$givenId] = $element->items[$j]->id;
                     }
-                    //print("...element id = " . $element->id . "\n");
+                    $this->logger->debug("...element id = " . $element->id);
                     $newElementsIndex++;
                     break;
             }
@@ -1053,7 +1079,6 @@ class DataManager
                         //print "... with new seq $newSeq\n";
                         $oldElement->items[$index]->seq =
                                 $newSeq;
-                        //print_r($oldElement->items[$index]);
                         $this->updateItemInDB(
                             $oldElement->items[$index],
                             $now
@@ -1064,7 +1089,8 @@ class DataManager
                     break;
                     
                 case MyersDiff::DELETE:
-//                    print "Deleting item $index\n";
+                    $this->logger->debug("...deleting item @ pos $index");
+                    $this->queryStats->countQuery('delete-item');
                     $this->itemsDataTable->deleteRowWithTime(
                         $oldElement->items[$index]->id,
                         $now
@@ -1073,8 +1099,7 @@ class DataManager
                     break;
                 
                 case MyersDiff::INSERT:
-//                    print "Insert item with seq $newSeq\n";
-//                    var_dump($newElement->items[$index]);
+                    $this->logger->debug("...inserting item with seq $newSeq");
                     $newItemId = $this->createNewItemInDB(
                         $newElement->items[$index], 
                         $now
@@ -1087,9 +1112,11 @@ class DataManager
                     break;
             }
         }
-        //print ("Ignore new editor: " . ($ignoreNewEditor ? 'true' : 'false') . "\n");
+        if (!$ignoreNewEditor && $newElement->editorId !== $oldElement->editorId) {
+            $this->logger->debug('...changes by new editor!');
+        }
         if (!Element::isElementDataEqual($newElement, $oldElement, true, $ignoreNewEditor, false)) {
-            //print "...changing element in DB\n";
+            $this->logger->debug("...updating element in DB");
             $this->updateElementInDB($newElement);
         }
         
@@ -1107,12 +1134,14 @@ class DataManager
          * interval maybe)
          */
         $element = $this->getElementById($elementId);
+        $this->queryStats->countQuery('delete');
         $res = $this->elementsDataTable->deleteRow($element->id);
         if ($res === false) {
             return false;
         }
         
         foreach ($element->items as $item) {
+            $this->queryStats->countQuery('delete');
             $res2 = $this->itemsDataTable->deleteRow($item->id);
             if ($res2 === false) {
                 return false;

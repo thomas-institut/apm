@@ -176,6 +176,8 @@ class Element {
         unset($dataB['id']);
         unset($dataA['items']);
         unset($dataB['items']);
+        unset($dataA['reference']);
+        unset($dataB['reference']);
         if ($ignoreEditorId) {
             unset($dataA['editorId']);
             unset($dataB['editorId']);

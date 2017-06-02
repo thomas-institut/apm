@@ -96,6 +96,7 @@ class ApiController
     public function updateElementsByDocPageCol(Request $request, 
             Response $response, $next)
     {
+        $this->db->queryStats->reset();
         $startTime = microtime(true);
         $docId = (int) $request->getAttribute('document');
         $pageNumber = (int) $request->getAttribute('page');
@@ -321,12 +322,13 @@ class ApiController
         }
         $this->ci->db->enm->updateNotesFromArray($edNotes);
         $done = microtime(true);
-        $this->logger->notice("Elements updated: checks in " . 
+        $this->logger->debug("Elements updated: checks in " . 
                 ($checksDone - $startTime) . 
                 "s, update in " . 
                 ($elementsUpdated - $checksDone) . 
                 "s, ednotes in " .
                 ($done - $elementsUpdated) . "s");
+        $this->logger->debug('Query stats', $this->db->queryStats->info);
         return $response->withStatus(200);
     }
     

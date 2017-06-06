@@ -410,6 +410,11 @@ class DataManager
         return $this->dbh->getRowById($this->tNames['docs'], $docId);
     }
     
+    function getDocByDareId($dareId) {
+        $this->queryStats->countQuery('select');
+        return $this->docsDataTable->findRow(['image_source_data' => $dareId]);
+    }
+    
     /**
      * Returns the image URL for a page or false if the page image source
      * is not recognized
@@ -510,16 +515,11 @@ class DataManager
      * 
      * @param Element $element
      * @param boolean $insertAtEnd
+     * @param array $itemIds  new Item Ids (so that addition targets can be set)
      * @return Element
      */
-    public function insertNewElement(Element $element, $insertAtEnd = true) 
+    public function insertNewElement(Element $element, $insertAtEnd = true, $itemIds = []) 
     {
-        // Quick checks on the element itself
-//        if ($element->id !== Element::ID_NOT_SET) {
-//            $this->logger->notice('Element with a valid '
-//                    . 'id is being inserted as new', ['id' => $element->id]);
-//        }
-        
         if (is_null($element->pageId)) {
             $this->logger->error('Element being inserted in '
                     . 'null page', ['pageid' => $element->pageId]);
@@ -625,7 +625,16 @@ class DataManager
             if ($item->lang == '') {
                 $item->lang = $newElement->lang;
             }
-            if ($this->createNewItemInDB($item) === false ) {
+            // Check for addition targets
+            if ($item->type === Item::ADDITION && $item->target) {
+                if (!isset($itemIds[$item->target])) {
+                    $this->logger->warning("Creating an Addition item with target Id not yet defined", get_object_vars($item));
+                }
+                $this->logger->debug("Setting addition target for new item: $item->target => " . $itemIds[$item->target]);
+                $item->target = $itemIds[$item->target];
+            }
+            $newItemId = $this->createNewItemInDB($item);
+            if ($newItemId === false ) {
                 // This means a database error
                 // Can't reproduce in testing for now
                 // @codeCoverageIgnoreStart
@@ -640,6 +649,7 @@ class DataManager
                 return false;
                 // @codeCoverageIgnoreEnd
             }
+            $itemIds[$item->id] = $newItemId;
         }
         return $this->getElementById($newId);
     }
@@ -999,7 +1009,7 @@ class DataManager
             list ($index, $cmd, $newSeq) = $editInstruction;
             switch ($cmd) {
                 case MyersDiff::KEEP:
-                    $this->logger->debug("Keeping element @ pos " . $index . ", id=" . $oldElements[$index]->id);
+                    $this->logger->debug("KEEPING element @ pos " . $index . ", id=" . $oldElements[$index]->id);
                     if ($oldElements[$index]->seq 
                             !== $newSeq) {
                         $this->logger->debug("... with new seq $newSeq");
@@ -1007,7 +1017,7 @@ class DataManager
                         $newElements[$newElementsIndex]->seq =
                                 $newSeq;
                     }
-                    list ($elementId, $ids) = $this->updateElement($newElements[$newElementsIndex], $oldElements[$index]);
+                    list ($elementId, $ids) = $this->updateElement($newElements[$newElementsIndex], $oldElements[$index], $newItemsIds);
                     foreach($ids as $oldId => $newId) {
                         $newItemsIds[$oldId] = $newId;
                     }
@@ -1023,7 +1033,11 @@ class DataManager
                     $this->logger->debug("INSERTING element @ " . $index);
                     $this->logger->debug("...New Seq: " . $newSeq);
                     $newElements[$newElementsIndex]->seq = $newSeq;
-                    $element = $this->insertNewElement($newElements[$newElementsIndex], false);
+                    $element = $this->insertNewElement($newElements[$newElementsIndex], false, $newItemsIds);
+                    if ($element === false) {
+                        $this->logger->error("Can't insert new element in DB", get_object_vars($newElements[$newElementsIndex]));
+                        return false;
+                    }
                     for ($j = 0; $j < count($newElements[$newElementsIndex]->items); $j++) {
                         $givenId = $newElements[$newElementsIndex]->items[$j]->id;
                         $newItemsIds[$givenId] = $element->items[$j]->id;
@@ -1048,7 +1062,7 @@ class DataManager
      * 
      * @param Element $newElement
      */
-    public function updateElement(Element $newElement, Element $oldElement)
+    public function updateElement(Element $newElement, Element $oldElement, $itemIds = [])
     {
         // Force element IDs to be same, we're only dealing with the element's data
         if ($newElement->id !== $oldElement->id) {
@@ -1060,7 +1074,6 @@ class DataManager
             $item->columnElementId = $newElement->id;
         }
         
-        $itemIds = [];
         $editScript = ItemArray::getEditScript(
             $oldElement->items,
             $newElement->items
@@ -1073,7 +1086,7 @@ class DataManager
             list ($index, $cmd, $newSeq) = $editInstruction;
             switch ($cmd) {
                 case MyersDiff::KEEP:
-//                    print "Keeping item $index\n";
+                    $this->logger->debug("Keeping item $index");
                     if ($oldElement->items[$index]->seq 
                             !== $newSeq) {
                         //print "... with new seq $newSeq\n";
@@ -1100,6 +1113,23 @@ class DataManager
                 
                 case MyersDiff::INSERT:
                     $this->logger->debug("...inserting item with seq $newSeq");
+                    // This should take care of new addition with targets that
+                    // come earlier in the item sequence in the same element,
+                    // which is the most usual case
+                    if ($newElement->items[$index]->type === Item::ADDITION && 
+                            $newElement->items[$index]->target) {
+                        if (!isset($itemIds[$newElement->items[$index]->target])) {
+                            $this->logger->warning("Addition without valid target @ pos $index", get_object_vars($newElement->items[$index]));
+                        } else {
+                            $this->logger->debug("Setting addition target " . 
+                                $newElement->items[$index]->target . 
+                                " => " . 
+                                $itemIds[$newElement->items[$index]->target]);
+                            $newElement->items[$index]->target = 
+                                $itemIds[$newElement->items[$index]->target];
+                        }
+                        
+                    }
                     $newItemId = $this->createNewItemInDB(
                         $newElement->items[$index], 
                         $now

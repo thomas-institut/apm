@@ -25,6 +25,7 @@ use XmlMatcher\XmlToken;
 use Matcher\Pattern;
 use AverroesProject\TxText\Item;
 use AverroesProject\TxText\ItemArray;
+use AverroesProject\ColumnElement\Element;
 
 /**
  * Class to read a transcription from XML input
@@ -132,9 +133,32 @@ class TranscriptionReader {
                 return false;
             }
         }
+
+        // Set language and handId in all columns, elements and items if not set
+        foreach($this->transcription['pageDivs'] as &$page) {
+            if ($page['defaultLang'] === '') {
+                $page['defaultLang'] = $defaultLang;
+            }
+            foreach ($page['cols'] as &$col) {
+                if ($col['defaultLang'] === '') {
+                    $col['defaultLang'] = $page['defaultLang'];
+                }
+                foreach ($col['elements'] as &$element) {
+                    if ($element->lang === Element::LANG_NOT_SET) {
+                        $element->lang = $col['defaultLang'];
+                    }
+                    if ($element->handId === Element::ID_NOT_SET) {
+                        $element->handId = 0;
+                    }
+                    ItemArray::setLang($element->items, $element->lang);
+                    ItemArray::setHandId($element->items, 0);
+                }
+            }
+        }
         
         // No need to check the end of the file; if there were unclosed tags
         // the XmlReader would have complained already!
+       
         return true;
     }
     
@@ -243,6 +267,7 @@ class TranscriptionReader {
         $pageDiv['cols'] = [];
         $pageDiv['elements'] = [];
         $pageDiv['ednotes'] = [];
+        $pageDiv['defaultEditor'] = 0;
         
         // Check for page divs
         $foundColumnDivs = false;
@@ -314,7 +339,7 @@ class TranscriptionReader {
         $col['elements'] = [];
         $col['ednotes'] = [];
         $elementId = 0;
-        $elementSeq = 1;
+        $elementSeq = 0;
         $xmlElementCount = 0;
         $lineNumber = 1;
         $itemId = 0;
@@ -328,7 +353,7 @@ class TranscriptionReader {
                 case 'gap':
                     // Don't care about unit and reason attributes
                     $nLines = (int) $elementXml['quantity'];
-                    if ($nLines != 0) {
+                    if ($nLines !== 0) {
                         $lineNumber += $nLines;
                     }
                     $readItems = false;
@@ -342,19 +367,23 @@ class TranscriptionReader {
                     // with metamark and del items
                     $element->targetXmlId = (string) $elementXml['target'];
                     $element->placement = (string) $elementXml['place'];
+                    $element->editorId = $pageDiv['defaultEditor'];
                     $additions[] = ['elementId' => $elementId,
                         'target' => $element->targetXmlId];
                     break;
                     
                 case 'l':
                     $element = new \AverroesProject\ColumnElement\Line();
-                    $element->setLineNumber($lineNumber);
+                    //$element->setLineNumber($lineNumber);
+                    $element->setLineNumber(0); // ignoring line numbers
+                    $element->editorId = $pageDiv['defaultEditor'];
                     $lineNumber++;
                     $readItems = true;
                     break;
                 
                 case 'head':
                     $element = new \AverroesProject\ColumnElement\Head();
+                    $element->editorId = $pageDiv['defaultEditor'];
                     $readItems = true;
                     break;
                 
@@ -363,11 +392,13 @@ class TranscriptionReader {
                     switch($type) {
                     case 'catch':
                         $element = new \AverroesProject\ColumnElement\Custodes();
+                        $element->editorId = $pageDiv['defaultEditor'];
                         $readItems = true;
                         break;
                     
                     case 'pageNum':
                         $element = new \AverroesProject\ColumnElement\PageNumber();
+                        $element->editorId = $pageDiv['defaultEditor'];
                         $readItems = true;
                         break;
                     
@@ -382,16 +413,20 @@ class TranscriptionReader {
                     if ( $type === 'editorial') {
                         $readItems = false;
                         $element = new \AverroesProject\ColumnElement\NoteMark();
+                        $element->editorId = $pageDiv['defaultEditor'];
                         $theNote = new \AverroesProject\EditorialNote();
                         $theNote->type = \AverroesProject\EditorialNote::OFFLINE;
                         $theNote->target = $elementId;
                         $theNote->lang = 'en';
                         $theNote->setText((string) $elementXml);
-                        $col['ednotes'][] = $theNote;
+                        // offline notes not supported yet
+                        //$col['ednotes'][] = $theNote;
+                        $ignore = true;
                         continue;
                     }
                     if ($type === 'gloss') {
                         $element = new \AverroesProject\ColumnElement\Gloss();
+                        $element->editorId = $pageDiv['defaultEditor'];
                         $readItems = true;
                         continue;
                     }
@@ -416,7 +451,7 @@ class TranscriptionReader {
                 $itemResult = $this->readItems($elementXml, $elementId, $itemId, $col['ednotes']);
                 $element->items = $itemResult['items'];
                 $col['ednotes'] = $itemResult['ednotes'];
-                $itemId+= count($itemResult['items']);
+                $itemId += count($itemResult['items']);
             } 
             if (!$gap){
                 $element->id = $elementId;
@@ -485,13 +520,14 @@ class TranscriptionReader {
                 ['type', 'editorial']]),
             XmlToken::textToken(),
             XmlToken::endElementToken('note')])
-            ->withCallback( function ($matched) use ($itemId, &$ednotes){
+            ->withCallback( function ($matched) use (&$itemId, &$ednotes){
                 array_pop($matched); // </note>
                 $readData = array_pop($matched); // the text
                 array_pop($matched); // <note>
                 $note = new \AverroesProject\EditorialNote();
                 $note->type= \AverroesProject\EditorialNote::INLINE;
-                $note->target = $itemId;
+                $note->target = $itemId; 
+                //print "Note with target: $itemId\n";                           
                 $note->setText($readData['text']);
                 $note->lang = 'en';
                 $ednotes[] = $note;
@@ -506,6 +542,7 @@ class TranscriptionReader {
                             Item::normalizeString($readData['text']));
                     $text->lang = '';
                     $text->id = $itemId;
+                    //print "Text item with id = $itemId\n";
                     $matched[] = $text;
                     $itemId++;
                     return $matched;
@@ -527,6 +564,7 @@ class TranscriptionReader {
                         Item::normalizeString($readData['text']));
                     $item->lang = '';
                     $item->id = $itemId;
+                    //print "Sic with id: $itemId\n";
                     $matched[] = $item;
                     $itemId++;
                     return $matched;

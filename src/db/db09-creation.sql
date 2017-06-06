@@ -101,6 +101,8 @@ CREATE TABLE `ap_hands` (
   `description` varchar(1024) DEFAULT ''
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+
+INSERT INTO `ap_hands` (`id`, `name`, `description`) VALUES ('0', 'Default Hand', 'Default Hand');
 -- --------------------------------------------------------
 
 --

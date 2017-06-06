@@ -9,7 +9,7 @@
     <text xml:lang='la'>
         <body>
             <div type="page" facs="SOME_PAGE_ID">
-                <l><sic>
+                <l>Some text and  a <sic>
                     Sic with note
                     <note type="editorial">Note text</note>
                     </sic>

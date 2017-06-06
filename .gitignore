@@ -15,3 +15,4 @@ src/public/config.php
 .~lock*
 /other/
 /src/public/test/test.log
+/src/public/utilities/out.txt

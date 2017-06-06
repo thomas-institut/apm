@@ -20,10 +20,10 @@
 
 namespace AverroesProject\CommandLine;
 
-use DataTable\MySqlDataTable;
-use DataTable\MySqlDataTableWithRandomIds;
+
 use AverroesProject\Data\DatabaseChecker;
 use AverroesProject\Data\UserManager;
+use AverroesProject\Data\DataManager;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 
@@ -98,14 +98,9 @@ abstract class CommandLineUtility {
         if (!$dbChecker->isDatabaseUpToDate()) {
             $this->exitWithError("Database schema not up to date");
         }
-
-        $this->um = new UserManager(
-            new MySqlDataTable($this->dbh, 
-                    $config['tables']['users']),
-            new MySqlDataTable($this->dbh, $config['tables']['relations']), 
-            new MySqlDataTableWithRandomIds($this->dbh, 
-                    $config['tables']['people'], 10000, 100000));
         
+        $this->dm = new DataManager($this->dbh, $config['tables'], $this->logger);
+        $this->um = $this->dm->um;
     }
     
     public function run($argc, $argv) {
@@ -117,6 +112,11 @@ abstract class CommandLineUtility {
     protected function printErrorMsg($msg) 
     {
         print "ERROR: $msg \n";
+    }
+    
+    protected function printWarningMsg($msg) 
+    {
+        print "WARNING: $msg \n";
     }
 
 

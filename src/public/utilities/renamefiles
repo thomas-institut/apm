@@ -1,0 +1,32 @@
+#!/usr/bin/php -q
+<?php
+
+/* 
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+if ($argc != 3) {
+    print self::USAGE;
+    return false;
+}
+
+$prefix = $argv[1];
+$i = (int) $argv[2];
+
+if ($i <= 0) {
+    $this->printErrorMsg("Starting Id must be >= 0");
+    return false;
+}
+
+while($f = fgets(STDIN)){
+    $f = rtrim($f);
+    $fields = explode('.', $f);
+    $extension = array_pop($fields);
+    if ($extension === 'jpg' || $extension === 'JPG') {
+        printf("mv %s %s-%04d.jpg\n", $f, $prefix, $i++);
+    }
+}
+
+return true;

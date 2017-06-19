@@ -1055,7 +1055,20 @@ class TranscriptionEditor {
     $('#del-dot-above-' + id).click(function () {
       thisObject.setDeletion('dot-above')
     })
-
+    
+    $('#nowb-button-' + id).click(function () {
+      let range = quillObject.getSelection()
+      if (range.length > 0) {
+        return false
+      }
+      let itemId = thisObject.getOneItemId()
+      quillObject.insertEmbed(range.index, 'nowb', {
+            itemid: itemId,
+            editorid: thisObject.id
+      })
+      quillObject.setSelection(range.index + 1)
+    })
+    
     $('#line-button-' + id).click(function () {
       quillObject.format('head', false)
       quillObject.format('gloss', false)
@@ -1334,7 +1347,7 @@ class TranscriptionEditor {
   }
 
   static formatHasItem (format) {
-    for (const type of ['rubric', 'gliph', 'initial', 'sic', 'abbr', 'deletion', 'addition', 'unclear']) {
+    for (const type of ['rubric', 'gliph', 'initial', 'sic', 'abbr', 'deletion', 'addition', 'unclear', 'nowb']) {
       if (type in format) {
         return type
       }

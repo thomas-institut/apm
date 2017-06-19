@@ -52,10 +52,13 @@ abstract class CommandLineUtility {
      */
     protected $logger;
     
+    protected $config;
+    
     
     public function __construct($config) {
         global $argv;
         
+        $this->config = $config;
         $processUser = posix_getpwuid(posix_geteuid());
         $pid = posix_getpid();
         $cmd = $argv[0];

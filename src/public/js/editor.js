@@ -1778,6 +1778,18 @@ class TranscriptionEditor {
     this.minNoteId--
     return this.minNoteId
   }
+  
+  static getMainLanguage(languageCounts) {
+    let max = 0
+    let mainLanguage = false
+    for (const lang in languageCounts) {
+      if (languageCounts[lang]>= max) {
+        max = languageCounts[lang]
+        mainLanguage = lang
+      }
+    }
+    return mainLanguage
+  }
 
    /**
     * Loads the given elements and items into the editor
@@ -1788,9 +1800,11 @@ class TranscriptionEditor {
     let delta = []
     let formats = []
     let deletionTexts = []
+    let languageCounts = {'ar': 0, 'he': 0, 'la':0}
     formats[ELEMENT_HEAD] = 'head'
     formats[ELEMENT_CUSTODES] = 'custodes'
     formats[ELEMENT_PAGE_NUMBER] = 'pagenumber'
+    
 
     this.edNotes = columnData.ednotes
     for (const note of this.edNotes) {
@@ -1968,6 +1982,7 @@ class TranscriptionEditor {
                 })
                 break
             }
+            languageCounts[item.lang]++
           }
           break
       }
@@ -1996,6 +2011,9 @@ class TranscriptionEditor {
 
     this.quillObject.setContents(delta)
     this.lastSavedData = this.quillObject.getContents()
+    let mainLang = TranscriptionEditor.getMainLanguage(languageCounts)
+    //console.log(languageCounts)
+    this.setDefaultLang(mainLang)
   }
   
   onEditorEnable(f) {

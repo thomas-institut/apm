@@ -39,13 +39,14 @@ class ElementDatabaseTest extends TestCase {
      * @var AverroesProject\Data\DataManager
      */
     static $dataManager;
+    static $logger;
     
     public static function setUpBeforeClass() {
         $logStream = new StreamHandler('test.log', 
             Logger::DEBUG);
-        $logger = new Logger(' ELEMENT-TEST');
-        $logger->pushHandler($logStream);
-        self::$dataManager = DatabaseTestEnvironment::getDataManager($logger);
+        self::$logger = new Logger(' ELEMENT-TEST');
+        self::$logger->pushHandler($logStream);
+        self::$dataManager = DatabaseTestEnvironment::getDataManager(self::$logger);
     }
     
     public function testEmptyDatabase()
@@ -88,6 +89,7 @@ class ElementDatabaseTest extends TestCase {
         ItemArray::addItem($goodElement->items, new TxText\Gliph(0,-1,'ā'));
         ItemArray::addItem($goodElement->items, new TxText\Deletion(0,-1,'deleted', 'strikeout'));
         ItemArray::addItem($goodElement->items, new TxText\Addition(0,-1,'added', 'above'));
+        ItemArray::addItem($goodElement->items, new TxText\ChunkMark(0, -1, 'AW', 1, TxText\ChunkMark::CHUNK_START));
         ItemArray::addItem($goodElement->items, new TxText\NoWordBreak(0,-1));
         $goodElement->lang = 'la';
         
@@ -138,6 +140,7 @@ class ElementDatabaseTest extends TestCase {
         $this->assertFalse($res8);
         
         // Simple insert
+        self::$logger->debug("Simple insert");
         $newElement = $dm->insertNewElement($goodElement);
         $this->assertNotFalse($newElement);
         $this->assertNotEquals(0, $newElement->id);

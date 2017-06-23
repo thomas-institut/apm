@@ -250,6 +250,11 @@ $app->group('/api', function (){
             '\AverroesProject\Api\ApiController:generateIllegibleIcon')
         ->setName('api.images.illegible');
     
+    // API -> images : ChunkMark Icon
+    $this->get('/images/chunkmark/{dareid}/{chunkno}/{type}/{dir}/{size}', 
+            '\AverroesProject\Api\ApiController:generateChunkMarkIcon')
+        ->setName('api.images.chunkmark');
+    
 })->add('\AverroesProject\Auth\Authenticator:authenticateApiRequest');
 
 

@@ -21,7 +21,7 @@
 /* global Twig, Quill, ELEMENT_LINE, ELEMENT_HEAD, ELEMENT_CUSTODES */
 /* global ELEMENT_GLOSS, ELEMENT_PAGE_NUMBER, ITEM_TEXT, ITEM_MARK */
 /* global ITEM_RUBRIC, ITEM_GLIPH, ITEM_INITIAL, ITEM_SIC, ITEM_ABBREVIATION */
-/* global ITEM_DELETION, Item, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_ILLEGIBLE, ELEMENT_PAGENUMBER, ITEM_NO_WORD_BREAK */
+/* global ITEM_DELETION, Item, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_ILLEGIBLE, ELEMENT_PAGENUMBER, ITEM_NO_WORD_BREAK, ITEM_CHUNK_MARK */
 
 let Inline = Quill.import('blots/inline')
 let BlockEmbed = Quill.import('blots/embed')
@@ -317,6 +317,43 @@ MarkBlot.tagName = 'img'
 MarkBlot.className = 'mark'
 Quill.register(MarkBlot)
 
+class ChunkMarkBlot extends BlockEmbed {
+  static create (value) {
+    let node = super.create()
+    node.setAttribute('itemid', value.itemid)
+    node.setAttribute('editorid', value.editorid)
+    node.setAttribute('dareid', value.dareid)
+    node.setAttribute('chunkno', value.chunkno)
+    node.setAttribute('type', value.type)
+    node.setAttribute('alt', value.type + ' ' + value.dareid + '-' + value.chunkno)
+    let size = Math.round(((ChunkMarkBlot.size-1)*0.2+1)*14)
+    node.setAttribute('src', ChunkMarkBlot.baseUrl + 
+            '/api/images/chunkmark/' +
+            value.dareid + '/' +
+            value.chunkno + '/' +
+            value.type + '/' +
+            ChunkMarkBlot.dir + '/' +
+            size)
+    TranscriptionEditor.setUpPopover(node, 'Chunk ' + value.type, '', value.editorid, value.itemid, true)
+    return node
+  }
+
+  static value (node) {
+    return {
+      itemid: node.getAttribute('itemid'),
+      editorid: node.getAttribute('editorid'),
+      dareid: node.getAttribute('dareid'),
+      chunkno: node.getAttribute('chunkno'),
+      type: node.getAttribute('type')
+    }
+  }
+ }
+ChunkMarkBlot.blotName = 'chunkmark'
+ChunkMarkBlot.tagName = 'img'
+ChunkMarkBlot.className = 'chunkmark'
+Quill.register(ChunkMarkBlot)
+
+
 class NoWordBreakBlot extends BlockEmbed {
   static create (value) {
     let node = super.create()
@@ -426,6 +463,7 @@ class TranscriptionEditor {
     MarkBlot.baseUrl = baseUrl
     IllegibleBlot.baseUrl = baseUrl
     NoWordBreakBlot.baseUrl = baseUrl
+    ChunkMarkBlot.baseUrl = baseUrl
     if (!TranscriptionEditor.editorTemplate) {
       TranscriptionEditor.editorTemplate = Twig.twig({
         id: 'editor',
@@ -779,6 +817,9 @@ class TranscriptionEditor {
       })
       $('#item-modal-' + thisObject.id).modal('show')
     })
+    
+    $('#chunk-start-button-' + id).click(TranscriptionEditor.genChunkButtonFunction(thisObject, quillObject, 'start'))
+    $('#chunk-end-button-' + id).click(TranscriptionEditor.genChunkButtonFunction(thisObject, quillObject, 'end'))
 
     $('#illegible-button-' + id).click(function () {
       let range = quillObject.getSelection()
@@ -1174,6 +1215,7 @@ class TranscriptionEditor {
     IllegibleBlot.size = this.fontSize
     NoWordBreakBlot.size = this.fontSize
     MarkBlot.size = this.fontSize
+    ChunkMarkBlot.size = this.fontSize
   }
   
   makeTextSmaller() {
@@ -1425,6 +1467,47 @@ class TranscriptionEditor {
       }
     }
     quillObject.setSelection(range.index + range.length)
+  }
+  
+  
+  static genChunkButtonFunction(thisObject, quillObject, type) {
+    return function () {
+      let range = quillObject.getSelection()
+      if (range.length > 0) {
+        return false
+      }
+      TranscriptionEditor.resetItemModal(thisObject.id)
+      $('#item-modal-title-' + thisObject.id).html('Chunk Start')
+      $('#item-modal-text-fg-' + thisObject.id).hide()
+      $('#item-modal-alttext-label-' + thisObject.id).html('Work')
+      $('#item-modal-alttext-' + thisObject.id).val('AW')
+      $('#item-modal-alttext-fg-' + thisObject.id).show()
+      $('#item-modal-extrainfo-fg-' + thisObject.id).hide()
+      $('#item-modal-length-fg-' + thisObject.id).show()
+      $('#item-modal-length-label-' + thisObject.id).html('Chunk Number')
+      $('#item-modal-length-' + thisObject.id).val(1)
+
+      $('#item-modal-submit-button-' + thisObject.id).on('click', function () {
+        $('#item-modal-' + thisObject.id).modal('hide')
+        let itemid = thisObject.getOneItemId()
+        let dareid = $('#item-modal-alttext-' + thisObject.id).val()
+        let chunkno = $('#item-modal-length-' + thisObject.id).val()
+        quillObject.insertEmbed(range.index, 'chunkmark', {
+          type: type,
+          chunkno: chunkno,
+          dareid: dareid,
+          itemid: itemid,
+          editorid: thisObject.id
+        })
+        quillObject.setSelection(range.index + 1)
+                // Take care of notes!
+        let noteText = $('#item-note-' + thisObject.id).val()
+        if (noteText !== '') {
+          thisObject.addNewNote(itemid, noteText)
+        }
+      })
+      $('#item-modal-' + thisObject.id).modal('show')
+    }
   }
 
   static genSimpleFormatClickFunction (thisObject, quillObject, format) {
@@ -1746,6 +1829,7 @@ class TranscriptionEditor {
     $('#lang-button-'+this.id).attr('title', labels[lang])
     $('#lang-button-'+this.id).html(lang)
     this.defaultLang = lang
+    ChunkMarkBlot.dir = (lang === 'la') ? 'ltr' : 'ltr';
     
   }
 
@@ -1981,6 +2065,20 @@ class TranscriptionEditor {
                   }
                 })
                 break
+                
+              case ITEM_CHUNK_MARK:
+                delta.push({
+                  insert: {
+                    chunkmark: {
+                      type: item.altText,
+                      dareid: item.theText,
+                      chunkno: item.target,
+                      itemid: item.id,
+                      editorid: this.id
+                    }
+                  }
+                })
+                break
             }
             languageCounts[item.lang]++
           }
@@ -2073,21 +2171,31 @@ class TranscriptionEditor {
         let itemId = -1
         let theText = curOps.insert
         if (typeof theText !== 'string') {
-          if ('mark' in theText) {
+          let theOps = theText
+          if ('mark' in theOps) {
             type = ITEM_MARK
             itemId = theText.mark.itemid
+            theText = ''
           }
-          if ('nowb' in theText) {
+          if ('nowb' in theOps) {
             type = ITEM_NO_WORD_BREAK
             itemId = theText.nowb.itemid
+            theText = ''
           }
-          if ('illegible' in theText) {
+          if ('illegible' in theOps) {
             type = ITEM_ILLEGIBLE
             itemId = theText.illegible.itemid
             extraInfo = theText.illegible.reason
             length = parseInt(theText.illegible.length)
+            theText = ''
           }
-          theText = ''
+          if ('chunkmark' in theOps) {
+            type = ITEM_CHUNK_MARK
+            itemId = theText.chunkmark.itemid
+            altText = theText.chunkmark.type
+            target = parseInt(theText.chunkmark.chunkno)
+            theText = theText.chunkmark.dareid
+          }
         }
         if ('attributes' in curOps) {
           if (curOps.attributes.rubric) {

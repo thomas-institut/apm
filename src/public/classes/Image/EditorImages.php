@@ -106,4 +106,35 @@ class EditorImages {
         return $image_data;
     }
     
+    
+    public static function ChunkMarkIcon($size, $dareId, $chunkNumber, $type, $dir) {
+        $textsize = $size*0.8;
+        $text = ":$dareId-$chunkNumber ]";
+        if ( ($type === 'start' && $dir==='ltr') || ($type==='end' && $dir==='rtl')) {
+            $text = "[ $dareId-$chunkNumber:";
+        }
+
+        $fontpath = self::FONT_ARIAL_PATH;
+        $bbox = imagettfbbox($textsize, 0, $fontpath, $text);
+        $textWidth = $bbox[2]-$bbox[0];
+        $textHeight = $bbox[5]-$bbox[3];
+        
+        $height = $size+5;
+        $width = $textWidth + 5;
+        $im = imagecreatetruecolor($width, $height);
+        $background = imagecolorallocate($im, 0, 0, 255);
+        //imagecolortransparent($im, $background);
+        $textcolor = imagecolorallocate($im, 255, 255, 255);
+        $x = ($width / 2) - ($textWidth/2) - $bbox[0];
+        $y = ($height / 2) - ($textHeight/ 2) - $bbox[1];
+        imagefilledrectangle($im, 0, 0, $width-1, $height-1, $background);
+        imagettftext($im, $textsize, 0, $x, $y, $textcolor, $fontpath, $text);
+        ob_start();
+        imagepng($im);
+        $image_data = ob_get_contents();
+        ob_end_clean();
+        //return $bboxStr;
+        return $image_data;
+    }
+    
 }

@@ -661,6 +661,9 @@ class DataManager
             $time = \DataTable\MySqlUnitemporalDataTable::now();
         }
         $this->queryStats->countQuery('create');
+        if ($item->type === Item::CHUNK_MARK) {
+            $this->logger->debug("Creating chunk mark in db", get_object_vars($item));
+        }
         return $this->itemsDataTable->createRowWithTime([
             'ce_id'=> $item->columnElementId,
             'type' => $item->type,
@@ -810,6 +813,7 @@ class DataManager
      */
     public static function createElementArrayFromArray($theArray) {
         $elements = [];
+        //print "Creating element array from array";
         foreach($theArray as $elementArray) {
             $e = self::createElementObjectFromArray($elementArray);
             $e->items = [];
@@ -928,6 +932,14 @@ class DataManager
             case Item::NO_WORD_BREAK:
                 $item = new \AverroesProject\TxText\NoWordBreak($row[$fields['id']], 
                         $row[$fields['seq']]);
+                break;
+            
+            case Item::CHUNK_MARK:
+                $item = new \AverroesProject\TxText\ChunkMark($row[$fields['id']],
+                    $row[$fields['seq']], 
+                    $row[$fields['text']], 
+                    (int) $row[$fields['length']], 
+                    $row[$fields['alt_text']]);
                 break;
 
             default: 

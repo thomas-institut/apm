@@ -93,6 +93,22 @@ class ApiController
         //return $response;
     }
     
+    public function generateChunkMarkIcon(Request $request, 
+            Response $response, $next)
+    {
+        $dareId = $request->getAttribute('dareid');
+        $chunkNumber = $request->getAttribute('chunkno');
+        $type = $request->getAttribute('type');
+        $size = $request->getAttribute('size');
+        $dir = $request->getAttribute('dir');
+        
+        $imageData = \AverroesProject\Image\EditorImages::ChunkMarkIcon($size, $dareId, $chunkNumber, $type, $dir);
+        
+        $response->getBody()->write($imageData);
+        return $response->withHeader('Content-Type', 'image/png');
+        //return $response;
+    }
+    
     public function updateElementsByDocPageCol(Request $request, 
             Response $response, $next)
     {
@@ -304,7 +320,6 @@ class ApiController
         }
         $checksDone = microtime(true);
         $newElements = \AverroesProject\Data\DataManager::createElementArrayFromArray($newElementsArray);
-        
         // Get the editorial notes
         $edNotes  = \AverroesProject\Data\EdNoteManager::editorialNoteArrayFromArray($inputDataObject['ednotes']);
         
@@ -366,6 +381,7 @@ class ApiController
         }
         // Add API user info as well
         if (!isset($people[$this->ci->userId])){
+            //print "API User ID: " . $this->ci->userId . "\n";
             $people[$this->ci->userId] = 
                     $this->db->um->getUserInfoByUserId($this->ci->userId);
         }

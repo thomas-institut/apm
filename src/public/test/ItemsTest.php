@@ -58,6 +58,5 @@ class ItemsTest extends TestCase {
         $this->assertFalse(TxText\Item::isItemDataEqual($abr1, $abr2));
         $this->assertFalse(TxText\Item::isItemDataEqual($abr1, $abr3));
         $this->assertTrue(TxText\Item::isItemDataEqual($abr1, $abr4));
-        
     }
 }

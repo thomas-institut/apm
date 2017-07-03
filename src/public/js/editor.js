@@ -485,8 +485,6 @@ class TranscriptionEditor {
     this.setFontSize(3)
     let modalsHtml = TranscriptionEditor.modalsTemplate.render({id: id})
     $('body').append(modalsHtml)
-    
-    
 
     let quillObject = new Quill('#editor-container-' + id, {})
     this.quillObject = quillObject
@@ -516,16 +514,26 @@ class TranscriptionEditor {
         if (TranscriptionEditor.rangeIsInMidItem(quillObject, range)) {
           $('#note-button-' + id).prop('disabled', true)
           $('#illegible-button-' + id).prop('disabled', true)
+          $('#nowb-button-' + id).prop('disabled', true)
+          $('#chunk-start-button-' + id).prop('disabled', true)
+          $('#chunk-end-button-' + id).prop('disabled', true)
           $('#edit-button-' + id).prop('disabled', false)
           return false
         }
         $('#note-button-' + id).prop('disabled', false)
         $('#illegible-button-' + id).prop('disabled', false)
+        $('#nowb-button-' + id).prop('disabled', false)
+        $('#chunk-start-button-' + id).prop('disabled', false)
+        $('#chunk-end-button-' + id).prop('disabled', false)
 
         return false
       }
       $('#note-button-' + id).prop('disabled', true)
       $('#illegible-button-' + id).prop('disabled', true)
+      $('#nowb-button-' + id).prop('disabled', true)
+      $('#chunk-start-button-' + id).prop('disabled', true)
+      $('#chunk-end-button-' + id).prop('disabled', true)
+      
       let text = quillObject.getText(range)
       if (text.search('\n') !== -1) {
         $('.selFmtBtn').prop('disabled', true)
@@ -1376,8 +1384,22 @@ class TranscriptionEditor {
     if (range.length < 1) {
       return false
     }
+    let delta = quillObject.getContents(range.index, range.length)
+    for (const [i, op] of delta.ops.entries()) {
+      if (typeof op.insert !== 'object') {
+        continue
+      }
+      for (const type of ['chunkmark', 'nowb', 'mark', 'illegible']) {
+        if (type in op.insert) {
+          console.log('Found mark: ' + type)
+          return true
+        }
+      }
+    }
+    
     for (let i = range.index; i < range.index + range.length - 1; i++) {
       let format = quillObject.getFormat(i, 1)
+      
       if ($.isEmptyObject(format)) {
         continue
       }
@@ -1476,22 +1498,16 @@ class TranscriptionEditor {
       if (range.length > 0) {
         return false
       }
-      TranscriptionEditor.resetItemModal(thisObject.id)
-      $('#item-modal-title-' + thisObject.id).html('Chunk Start')
-      $('#item-modal-text-fg-' + thisObject.id).hide()
-      $('#item-modal-alttext-label-' + thisObject.id).html('Work')
-      $('#item-modal-alttext-' + thisObject.id).val('AW')
-      $('#item-modal-alttext-fg-' + thisObject.id).show()
-      $('#item-modal-extrainfo-fg-' + thisObject.id).hide()
-      $('#item-modal-length-fg-' + thisObject.id).show()
-      $('#item-modal-length-label-' + thisObject.id).html('Chunk Number')
-      $('#item-modal-length-' + thisObject.id).val(1)
 
-      $('#item-modal-submit-button-' + thisObject.id).on('click', function () {
-        $('#item-modal-' + thisObject.id).modal('hide')
+      $('#chunk-modal-title-' + thisObject.id).html('Chunk ' + type)
+      $('#chunk-modal-worknumber-' + thisObject.id).val(1)
+      $('#chunk-modal-chunknumber-' + thisObject.id).val(1)
+
+      $('#chunk-modal-submit-button-' + thisObject.id).on('click', function () {
+        $('#chunk-modal-' + thisObject.id).modal('hide')
         let itemid = thisObject.getOneItemId()
-        let dareid = $('#item-modal-alttext-' + thisObject.id).val()
-        let chunkno = $('#item-modal-length-' + thisObject.id).val()
+        let dareid = 'AW'+ $('#chunk-modal-worknumber-' + thisObject.id).val()
+        let chunkno = $('#chunk-modal-chunknumber-' + thisObject.id).val()
         quillObject.insertEmbed(range.index, 'chunkmark', {
           type: type,
           chunkno: chunkno,
@@ -1501,12 +1517,12 @@ class TranscriptionEditor {
         })
         quillObject.setSelection(range.index + 1)
                 // Take care of notes!
-        let noteText = $('#item-note-' + thisObject.id).val()
+        let noteText = $('#chunk-note-' + thisObject.id).val()
         if (noteText !== '') {
           thisObject.addNewNote(itemid, noteText)
         }
       })
-      $('#item-modal-' + thisObject.id).modal('show')
+      $('#chunk-modal-' + thisObject.id).modal('show')
     }
   }
 

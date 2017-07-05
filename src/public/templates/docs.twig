@@ -3,10 +3,21 @@
 
 {% block title %}Documents{% endblock %}
 
+{% block extraJS %}
+<script>
+$(document).ready(function() 
+{ 
+    $("#theDocTable").DataTable({ 'paging': false, 'searching' : false }); 
+} 
+);
+</script>
+{% endblock %}
+
+
 {% block content %}
 <h1>Documents</h1>
-<table class="doctable">
-    <tr><th>Title</th><th>Type</th><th>Language</th><th>Transcribed pages</th><th>Transcribers</th></tr>
+<table class="doctable" id="theDocTable">
+    <thead><tr><th>Title</th><th>Type</th><th>Language</th><th>Transcribed pages</th><th>Transcribers</th></tr></thead>
 {% for doc in docs %}
     <tr>
         

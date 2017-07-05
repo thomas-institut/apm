@@ -39,7 +39,7 @@ $(document).ready(function () {
             pageNumber + '/newcolumn'
 
   $('#realAddColumnButton').click(function () {
-    console.log('I should add a column now!')
+    //console.log('I should add a column now!')
     $.getJSON(apiAddColumnUrl, function (resp) {
       location.replace('')
     })
@@ -121,7 +121,7 @@ $(document).ready(function () {
                   { data: JSON.stringify(currentData) }
                 ).done( function () { 
                   $.getJSON(getApiUrl, function (newResp){
-                    console.log(newResp)
+                    //console.log(newResp)
                     te.saveSuccess(newResp)
                   })
                 }).fail( function(resp) {

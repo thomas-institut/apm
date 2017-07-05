@@ -27,6 +27,26 @@ let Inline = Quill.import('blots/inline')
 let BlockEmbed = Quill.import('blots/embed')
 let Block = Quill.import('blots/block')
 
+
+let Clipboard = Quill.import('modules/clipboard');
+let Delta = Quill.import('delta');
+
+class PlainClipboard extends Clipboard {
+  convert(html = null) {
+    //console.log("Pasting...")
+    //console.log(html)
+    if (typeof html === 'string') {
+      this.container.innerHTML = html;
+    }
+    let text = this.container.innerText;
+    this.container.innerHTML = '';
+    return new Delta().insert(text);
+  }
+}
+
+Quill.register('modules/clipboard', PlainClipboard, true);
+
+
 class LangBlot extends Inline {
   static create (lang) {
     let node = super.create()
@@ -335,6 +355,8 @@ class ChunkMarkBlot extends BlockEmbed {
             ChunkMarkBlot.dir + '/' +
             size)
     TranscriptionEditor.setUpPopover(node, 'Chunk ' + value.type, '', value.editorid, value.itemid, true)
+    //console.log("Creating chunk mark ")
+    //console.log(value)
     return node
   }
 
@@ -391,7 +413,7 @@ class GlossBlot extends Block {
     node.setAttribute('place', value.place)
     let ruleIndex = GlossBlot.styleSheet.cssRules.length
     GlossBlot.styleSheet.insertRule('p#gloss' + id +'::before { content: "Gloss @ ' + value.place + '"}', ruleIndex)
-    console.log(GlossBlot.styleSheet)
+    //console.log(GlossBlot.styleSheet)
     return node
   }
   
@@ -569,9 +591,9 @@ class TranscriptionEditor {
       if (delta.ops.length === 2) {
         if (delta.ops[0].retain) {
           if (delta.ops[1].delete) {
-            console.log('Text has been deleted at pos ' +
-                            delta.ops[0].retain + ', ' + delta.ops[1].delete +
-                            ' characters')
+//            console.log('Text has been deleted at pos ' +
+//                            delta.ops[0].retain + ', ' + delta.ops[1].delete +
+//                            ' characters')
             let deletionRanges = TranscriptionEditor.getDeletionRanges(oldDelta.ops)
             let coveredDeletions =
                                 TranscriptionEditor.getCoveredDeletions(deletionRanges,
@@ -583,8 +605,8 @@ class TranscriptionEditor {
               for (const del of coveredDeletions) {
                 let add = TranscriptionEditor.getAdditionRangeByTarget(theOps, del.id)
                 if (add) {
-                  console.log('Updating addition ' + add.id)
-                  console.log(add)
+//                  console.log('Updating addition ' + add.id)
+//                  console.log(add)
                   quillObject.formatText(
                                             add.index,
                                             add.length,
@@ -595,7 +617,7 @@ class TranscriptionEditor {
                                               target: -1
                                             })
                 } else {
-                  console.log('No addition associated with deletion ' + del.id)
+                  //console.log('No addition associated with deletion ' + del.id)
                 }
               }
             }
@@ -699,6 +721,7 @@ class TranscriptionEditor {
         $('#alert-modal-cancel-button-' + thisObject.id).html('Cancel')
         $('#alert-modal-text-' + thisObject.id).html(
                         'Are you sure you want to clear formatting of this text?</p><p>Formats and notes will be lost.</p><p class="text-danger">This can NOT be undone!')
+        $('#alert-modal-submit-button-' + thisObject.id).off()
         $('#alert-modal-submit-button-' + thisObject.id).on('click', function () {
           $('#alert-modal-' + thisObject.id).modal('hide')
           TranscriptionEditor.removeFormat(quillObject, range)
@@ -744,6 +767,7 @@ class TranscriptionEditor {
     $('#abbr-button-' + id).click(function () {
       let range = quillObject.getSelection()
       let text = quillObject.getText(range.index, range.length)
+      TranscriptionEditor.resetItemModal(thisObject.id)
       $('#item-modal-title-' + thisObject.id).html('Abbreviation')
       $('#item-modal-text-' + thisObject.id).html(text)
       $('#item-modal-text-fg-' + thisObject.id).show()
@@ -1262,6 +1286,7 @@ class TranscriptionEditor {
           '<p>Are you sure you want to leave the editor?</p><p class="text-danger">Changes will be lost!</p>')
       $('#alert-modal-submit-button-' + thisObject.id).html('Yes, leave!')
       $('#alert-modal-cancel-button-' + thisObject.id).html('Cancel')
+      $('#alert-modal-submit-button-' + this.id).off()
       $('#alert-modal-submit-button-' + this.id).on('click', function () {
           $('#alert-modal-' + thisObject.id).modal('hide')
           thisObject.enabled = false
@@ -1299,7 +1324,7 @@ class TranscriptionEditor {
 //      return true
 //    }
     if (!this.contentsChanged) {
-      console.log("Nothing to save")
+      //console.log("Nothing to save")
       return true
     }
     this.saving = true
@@ -1391,7 +1416,7 @@ class TranscriptionEditor {
       }
       for (const type of ['chunkmark', 'nowb', 'mark', 'illegible']) {
         if (type in op.insert) {
-          console.log('Found mark: ' + type)
+          //console.log('Found mark: ' + type)
           return true
         }
       }
@@ -1498,11 +1523,11 @@ class TranscriptionEditor {
       if (range.length > 0) {
         return false
       }
-
       $('#chunk-modal-title-' + thisObject.id).html('Chunk ' + type)
       $('#chunk-modal-worknumber-' + thisObject.id).val(1)
       $('#chunk-modal-chunknumber-' + thisObject.id).val(1)
 
+      $('#chunk-modal-submit-button-' + thisObject.id).off()
       $('#chunk-modal-submit-button-' + thisObject.id).on('click', function () {
         $('#chunk-modal-' + thisObject.id).modal('hide')
         let itemid = thisObject.getOneItemId()
@@ -2175,8 +2200,8 @@ class TranscriptionEditor {
     
 
     for (const [i, curOps] of ops.entries()) {
-      console.log('Processing ops ' + i)
-      console.log(JSON.stringify(curOps))
+      //console.log('Processing ops ' + i)
+      //console.log(JSON.stringify(curOps))
       let type = ITEM_TEXT
       let theLang = curElement.lang
       let altText = ''

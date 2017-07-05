@@ -29,6 +29,7 @@ $(document).ready(function () {
     $('#password2').val('')
   })
 
+   $("#usertable").DataTable({ 'paging': false, 'searching' : false });
   // Form submission
   bindFormSubmissionEventHandler()
 })

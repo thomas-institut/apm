@@ -9,22 +9,22 @@
     <text xml:lang='la'>
         <body>
             <div type="page" facs="SOME_PAGE_ID">
-                <l><!-- Item 1 -->
+                <l><!-- Item 0 -->
                     Some text
                     
-                    <!-- Item 2 -->
+                    <!-- Item 1 -->
                     <sic>Sic 1</sic>
                     
-                    <!-- Item 3 -->
+                    <!-- Item 2 -->
                     <hi rend="initial">Initial</hi>
                     
-                    <!-- Item 4 -->
+                    <!-- Item 3 -->
                     <hi rend="rubric">Rubric</hi>
                     
-                    <!-- Item 5 -->
+                    <!-- Item 4 -->
                     <unclear>Unclear 1</unclear>
                     
-                    <!-- Item 6 -->
+                    <!-- Item 5 -->
                     <unclear>
                         <choice>
                             <unclear>Unclear 2</unclear>
@@ -32,13 +32,13 @@
                         </choice>
                     </unclear>
                     
-                    <!-- Item 7 -->
+                    <!-- Item 6 -->
                     <choice>
                         <sic>Sic 2</sic>
                         <supplied>Supplied</supplied>
                     </choice>
                     
-                    <!-- Item 8 -->
+                    <!-- Item 7 -->
                     <unclear>
                         <gap reason="illegible" quantity="5"></gap>
                     </unclear>
@@ -53,38 +53,51 @@
                         <gap reason="illegible" quantity="0"></gap>
                     </unclear>
                     
-                    <!-- Item 9 -->
+                    <!-- Item 8 -->
                     <choice>
                         <abbr>Mr.</abbr>
                         <expan>Mister</expan>
                     </choice>
                     
-                    <!-- Item 10 -->
+                    <!-- Item 9 -->
                     <del rend="dots-above">Deleted text</del>
                     
-                    <!-- Item 11 -->
+                    <!-- Item 10 -->
                     <g>공</g>
                     
-                    <!-- Item 12 -->
+                    <!-- Item 11 -->
                     <add place="above">Addition</add>
                     
-                    <!-- Item 13 -->
+                    <!-- Item 12 -->
                     <metamark xml:id="somexmlid"/>
                     
-                    <!-- Item 14 -->
+                    <!-- Item 13 -->
                     <note type="editorial">Some inline note</note>
                     
-                    <!-- Items 15 & 16 -->
+                    <!-- Items 14 & 15 -->
                     <mod type="subst">
                         <del rend="strikeout">Deleted text</del>
                         <add place="inline">Added text</add>
                     </mod>
                     
-                    <!-- Item 17 --> 
+                    <!-- Item 16 --> 
                     <mod type="subst" xml:id="somemod">
                         <del rend="strikeout">Modified text</del>
                     </mod>
                     
+                    <!-- Item 17 --> 
+                    <chunkstart work="AW01" chunkno="1"/>
+                
+                    <!-- Item 18 --> 
+                    <chunkend work="AW01" chunkno="1"/>
+                    
+                    <!-- Bad chunk number--> 
+                    <chunkstart work="AW01" chunkno="0"/>
+                    
+                    <!-- Bad chunk number--> 
+                    <chunkend work="AW01" chunkno="0"/>
+                    
+                    <!-- Item 19 --> 
                     <lb break="no"/>
                 </l>
                 <add place="margin left" target="somemod">

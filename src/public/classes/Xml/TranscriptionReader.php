@@ -341,7 +341,6 @@ class TranscriptionReader {
         $elementId = 0;
         $elementSeq = 0;
         $xmlElementCount = 0;
-        $lineNumber = 1;
         $itemId = 0;
         $additions = [];
         
@@ -351,13 +350,15 @@ class TranscriptionReader {
             $gap = false;
             switch($elementXml->getName()) {
                 case 'gap':
-                    // Don't care about unit and reason attributes
+                    // Don't care about unit and reason attributes, it's
+                    // always lines and pending transcription
                     $nLines = (int) $elementXml['quantity'];
-                    if ($nLines !== 0) {
-                        $lineNumber += $nLines;
-                    }
+                    $element = new \AverroesProject\ColumnElement\LineGap();
+                    $element->editorId = $pageDiv['defaultEditor'];
                     $readItems = false;
-                    $gap = true;
+                    if ($nLines !== 0) {
+                        $element->setLineCount($nLines);
+                    }
                     break;
                 
                 case 'add':
@@ -374,10 +375,7 @@ class TranscriptionReader {
                     
                 case 'l':
                     $element = new \AverroesProject\ColumnElement\Line();
-                    //$element->setLineNumber($lineNumber);
-                    $element->setLineNumber(0); // ignoring line numbers
                     $element->editorId = $pageDiv['defaultEditor'];
-                    $lineNumber++;
                     $readItems = true;
                     break;
                 

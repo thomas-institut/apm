@@ -206,7 +206,7 @@ class TranscriptionReaderTest extends TestCase {
         $this->assertCount(1, $pageDiv['cols']);
         $this->assertFalse(isset($pageDiv['cols'][0]));
         $this->assertTrue(isset($pageDiv['cols'][1]));
-        $this->assertCount(9, $pageDiv['cols'][1]['elements']);
+        $this->assertCount(10, $pageDiv['cols'][1]['elements']);
         foreach($pageDiv['cols'][1]['elements'] as $element) {
             $this->assertEquals(0, $element->editorId);
             $this->assertEquals(0, $element->handId);
@@ -263,22 +263,29 @@ class TranscriptionReaderTest extends TestCase {
         $this->assertTrue($item_5_2 instanceof TxText\Sic);
         $this->assertEquals('Some text', $item_5_2->theText);
         
-        $element6 = $pageDiv['cols'][1]['elements'][5];
+        $element5b = $pageDiv['cols'][1]['elements'][5];
+        $this->assertEquals(ColumnElement\Element::LINE_GAP, $element5b->type);
+        $this->assertEquals(5, $element5b->seq);
+        $this->assertEquals(1, $element5b->columnNumber);
+        $this->assertEquals('la', $element5b->lang);
+        $this->assertCount(0, $element5b->items);
+        
+        
+        $element6 = $pageDiv['cols'][1]['elements'][6];
         $this->assertEquals(ColumnElement\Element::GLOSS, $element6->type);
-        $this->assertEquals(5, $element6->seq);
+        $this->assertEquals(6, $element6->seq);
         $this->assertEquals(1, $element6->columnNumber);
         $this->assertEquals('la', $element6->lang);
         $item_6_1 = $element6->items[0];
         $this->assertTrue($item_6_1 instanceof TxText\Text);
         $this->assertEquals('A gloss', $item_6_1->theText);
         
-        // The 7th element is the line after the gap, line number should be 6
-        $element7 = $pageDiv['cols'][1]['elements'][6];
+        
+        $element7 = $pageDiv['cols'][1]['elements'][7];
         $this->assertEquals(ColumnElement\Element::LINE, $element7->type);
-        $this->assertEquals(6, $element7->seq);
+        $this->assertEquals(7, $element7->seq);
         $this->assertEquals(1, $element7->columnNumber);
         $this->assertEquals('la', $element7->lang);
-        //$this->assertEquals(6, $element7->getLineNumber());
         $item_7_1 = $element7->items[0];
         $this->assertTrue($item_7_1 instanceof TxText\Text);
         $this->assertEquals('Yet another line ', $item_7_1->theText);
@@ -286,18 +293,18 @@ class TranscriptionReaderTest extends TestCase {
         $this->assertTrue($item_7_2 instanceof TxText\Mark);
         $markId = $item_7_2->id;
         
-        $element8 = $pageDiv['cols'][1]['elements'][7];
+        $element8 = $pageDiv['cols'][1]['elements'][8];
         $this->assertEquals(ColumnElement\Element::PAGE_NUMBER, $element8->type);
-        $this->assertEquals(7, $element8->seq);
+        $this->assertEquals(8, $element8->seq);
         $this->assertEquals(1, $element8->columnNumber);
         $this->assertEquals('la', $element8->lang);
         $item_8_1 = $element8->items[0];
         $this->assertTrue($item_8_1 instanceof TxText\Text);
         $this->assertEquals('175v', $item_8_1->theText);
         
-        $element9 = $pageDiv['cols'][1]['elements'][8];
+        $element9 = $pageDiv['cols'][1]['elements'][9];
         $this->assertEquals(ColumnElement\Element::ADDITION, $element9->type);
-        $this->assertEquals(8, $element9->seq);
+        $this->assertEquals(9, $element9->seq);
         $this->assertEquals(1, $element9->columnNumber);
         $this->assertEquals('la', $element9->lang);
         $this->assertEquals('page-XXX-add-YYY', $element9->targetXmlId);

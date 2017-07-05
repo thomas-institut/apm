@@ -18,34 +18,29 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-
 namespace AverroesProject\ColumnElement;
 
 /**
- * Description of Line
+ * Description of Addition
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-
-class Line extends Element {
-    
+class LineGap extends Element {
+        
     public function __construct($id = Element::ID_NOT_SET, 
             $colNumber = 0, $lang = Element::LANG_NOT_SET)
     {
         parent::__construct($id, $colNumber, $lang);
-        $this->type = parent::LINE;
-        $this->setLineNumber(0); // ignoring line numbers
+        $this->type = parent::LINE_GAP;
+        $this->reference = 1;
     }
     
-    function getLineNumber(){
+    function getLineCount(){
         return $this->reference;
     }
     
-    /**
-     * 
-     * @param int $n
-     */
-    function setLineNumber($n){
-        $this->reference = $n;
+    function setLineCount($count)
+    {
+        $this->reference = $count;
     }
 }

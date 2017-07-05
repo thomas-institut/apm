@@ -92,6 +92,7 @@ class Element {
     const CUSTODES = 5;
     const NOTE_MARK = 6;
     const ADDITION = 7;
+    const LINE_GAP = 8;
     
     // 
     // Fields that may or may not be used depending on the type

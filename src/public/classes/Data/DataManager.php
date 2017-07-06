@@ -532,7 +532,7 @@ class DataManager
             return false;
         }
         
-        if (count($element->items) === 0) {
+        if ($element->type !== Element::LINE_GAP && count($element->items) === 0) {
             $this->logger->error('Empty element being inserted', 
                     ['pageid' => $element->pageId, 
                         'colnum' => $element->columnNumber, 
@@ -792,6 +792,9 @@ class DataManager
             case Element::GLOSS:
                 $e = new \AverroesProject\ColumnElement\Gloss();
                 break;
+            
+            case Element::LINE_GAP:
+                $e = new \AverroesProject\ColumnElement\LineGap();
 
             default:
                 continue;
@@ -803,6 +806,7 @@ class DataManager
         $e->handId = (int) $row[$fields['hand_id']];
         $e->id = (int) $row[$fields['id']];
         $e->lang = $row[$fields['lang']];
+        $e->reference = (int) $row[$fields['reference']];
         return $e;
     }
     
@@ -870,6 +874,12 @@ class DataManager
 
             case Item::RUBRIC:
                 $item = new \AverroesProject\TxText\Rubric($row[$fields['id']], 
+                        $row[$fields['seq']], 
+                        $row[$fields['text']]);
+                break;
+            
+            case Item::INITIAL:
+                $item = new \AverroesProject\TxText\Initial($row[$fields['id']], 
                         $row[$fields['seq']], 
                         $row[$fields['text']]);
                 break;

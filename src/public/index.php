@@ -255,6 +255,11 @@ $app->group('/api', function (){
             '\AverroesProject\Api\ApiController:generateChunkMarkIcon')
         ->setName('api.images.chunkmark');
     
+    // API -> images : Line Gap Mark
+    $this->get('/images/linegap/{count}/{size}', 
+            '\AverroesProject\Api\ApiController:generateLineGapImage')
+        ->setName('api.images.linegap');
+    
 })->add('\AverroesProject\Auth\Authenticator:authenticateApiRequest');
 
 

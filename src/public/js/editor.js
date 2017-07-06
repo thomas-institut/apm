@@ -459,6 +459,30 @@ PageNumberBlot.tagName = 'p'
 PageNumberBlot.className = 'pagenumber'
 Quill.register(PageNumberBlot)
 
+
+class LineGapBlot extends BlockEmbed {
+  static create(value) {
+    let node = super.create()
+    node.setAttribute('editorid', value.editorid)
+    node.setAttribute('linecount', value.linecount)
+    node.setAttribute('alt', 'Line Gap')
+    let size = Math.round(((LineGapBlot.size-1)*0.2+1)*14)
+    node.setAttribute('src', LineGapBlot.baseUrl + '/api/images/linegap/' + value.linecount + '/' + size)
+    return node;
+  }
+
+  static value(node) {
+    return {
+      editorid: node.getAttribute('editorid'),
+      linecount: node.getAttribute('linecount')
+    };
+  }
+}
+LineGapBlot.blotName = 'linegap'
+LineGapBlot.tagName = 'img'
+LineGapBlot.className = 'linegap'
+Quill.register(LineGapBlot)
+
 class TranscriptionEditor {
   constructor (containerSelector, id, baseUrl, editorId = 1,
             defaultLang = 'la', handId = 0, sizeGuide = {}) {
@@ -486,6 +510,7 @@ class TranscriptionEditor {
     IllegibleBlot.baseUrl = baseUrl
     NoWordBreakBlot.baseUrl = baseUrl
     ChunkMarkBlot.baseUrl = baseUrl
+    LineGapBlot.baseUrl = baseUrl
     if (!TranscriptionEditor.editorTemplate) {
       TranscriptionEditor.editorTemplate = Twig.twig({
         id: 'editor',
@@ -1176,6 +1201,33 @@ class TranscriptionEditor {
     $('#pagenumber-button-' + id).click(function () {
       quillObject.format('pagenumber', true)
     })
+    
+    $('#linegap-button-' + id).click(function () {
+      let range = quillObject.getSelection()
+      if (range.length > 0) {
+        return false
+      }
+      TranscriptionEditor.resetItemModal(thisObject.id)
+      $('#item-modal-title-' + thisObject.id).html('Line Gap')
+      $('#item-modal-text-fg-' + thisObject.id).hide()
+      $('#item-modal-alttext-fg-' + thisObject.id).hide()
+      $('#item-modal-extrainfo-fg-' + thisObject.id).hide()
+      $('#item-modal-length-label-' + thisObject.id).html('Lines not transcribed:')
+      $('#item-modal-length-' + thisObject.id).val(1)
+      $('#item-modal-length-fg-' + thisObject.id).show()
+      $('#item-modal-ednote-fg-' + thisObject.id).hide()
+      $('#item-modal-submit-button-' + thisObject.id).off()
+      $('#item-modal-submit-button-' + thisObject.id).on('click', function () {
+        $('#item-modal-' + thisObject.id).modal('hide')
+        let count = $('#item-modal-length-' + thisObject.id).val()
+        if (count <= 0) {
+          console.log("Bad line count for line gap: " + count)
+          return false
+        }
+        thisObject.insertLineGap(range.index, count)
+      })
+      $('#item-modal-' + thisObject.id).modal('show')
+    })
 
     $('#set-arabic-' + id).click(function () {
       thisObject.setDefaultLang('ar')
@@ -1248,6 +1300,7 @@ class TranscriptionEditor {
     NoWordBreakBlot.size = this.fontSize
     MarkBlot.size = this.fontSize
     ChunkMarkBlot.size = this.fontSize
+    LineGapBlot.size = this.fontSize
   }
   
   makeTextSmaller() {
@@ -1474,7 +1527,15 @@ class TranscriptionEditor {
       place: place
     })
   }
-
+ 
+  insertLineGap(position, count) {
+     this.quillObject.insertEmbed(position, 'linegap', {
+            editorid: this.id,
+            linecount: count
+      })
+      this.quillObject.insertText(position +1, '\n')
+      this.quillObject.setSelection(position +2)
+  }
   setAddition (place, target = -1) {
         // let possibleTargets = this.getAdditionTargets();
 
@@ -1686,6 +1747,7 @@ class TranscriptionEditor {
     $('#item-modal-extrainfo-fg-' + id).hide()
     $('#item-modal-length-fg-' + id).hide()
     $('#item-modal-target-fg-' + id).hide()
+    $('#item-modal-ednote-fg-' + id).show()
     $('#item-modal-ednotes-' + id).html('')
     $('#item-note-' + id).val('')
     $('#item-note-time-' + id).html('New note')
@@ -1942,6 +2004,17 @@ class TranscriptionEditor {
 
     for (const ele of columnData.elements) {
       switch (ele.type) {
+        case ELEMENT_LINE_GAP:
+          delta.push({
+            insert: {
+              linegap : {
+                editorid: this.id,
+                linecount: ele.reference
+              }
+            }
+          })
+          break;
+        
         case ELEMENT_LINE:
         case ELEMENT_HEAD:
         case ELEMENT_CUSTODES:
@@ -2200,8 +2273,8 @@ class TranscriptionEditor {
     
 
     for (const [i, curOps] of ops.entries()) {
-      //console.log('Processing ops ' + i)
-      //console.log(JSON.stringify(curOps))
+      console.log('Processing ops ' + i)
+      console.log(JSON.stringify(curOps))
       let type = ITEM_TEXT
       let theLang = curElement.lang
       let altText = ''
@@ -2236,6 +2309,27 @@ class TranscriptionEditor {
             altText = theText.chunkmark.type
             target = parseInt(theText.chunkmark.chunkno)
             theText = theText.chunkmark.dareid
+          }
+          if ('linegap' in theOps) {
+            curElement.type = ELEMENT_LINE_GAP
+            curElement.reference = theText.linegap.linecount
+            curElement.items = []
+            elements.push(curElement)
+            curElement = {
+              id: currentElementId++,
+              pageId: this.pageId,
+              columnNumber: this.columnNumber,
+              lang: this.defaultLang,
+              editorId: this.editorId,
+              handId: this.handId,
+              type: ELEMENT_LINE,
+              seq: currentElementSeq++,
+              items: [],
+              reference: null, 
+              placement: null
+            }
+            currentItemSeq = 0
+            continue
           }
         }
         if ('attributes' in curOps) {

@@ -175,3 +175,5 @@ UPDATE `ap_settings` SET `value` = '9' WHERE `ap_settings`.`setting` = 'dbversio
 INSERT INTO `ap_types_item` (`id`, `name`, `descr`) VALUES
 (13, 'initial', 'Initial'),
 (14, 'chunk', 'Chunk Mark');
+
+INSERT INTO `ap_types_element` (`id`, `name`, `descr`) VALUES ('8', 'linegap', 'Missing lines in transcription');

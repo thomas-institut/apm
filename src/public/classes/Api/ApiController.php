@@ -109,6 +109,19 @@ class ApiController
         //return $response;
     }
     
+    public function generateLineGapImage(Request $request, 
+            Response $response, $next)
+    {
+        $count = $request->getAttribute('count');
+        $size = $request->getAttribute('size');
+        
+        $imageData = \AverroesProject\Image\EditorImages::LineGapImage($size, $count);
+        
+        $response->getBody()->write($imageData);
+        return $response->withHeader('Content-Type', 'image/png');
+        //return $response;
+    }
+    
     public function updateElementsByDocPageCol(Request $request, 
             Response $response, $next)
     {
@@ -224,7 +237,7 @@ class ApiController
             }
             
             // Check that there are items, no empty elements allowed
-            if (count($newElementsArray[$i]['items']) === 0) {
+            if ($newElementsArray[$i]['type'] !== \AverroesProject\ColumnElement\Element::LINE_GAP &&  count($newElementsArray[$i]['items']) === 0) {
                 $this->logger->error("Empty element in input array",
                     [ 'apiUserId' => $this->ci->userId, 
                         'apiError' => self::API_ERROR_EMPTY_ELEMENT,

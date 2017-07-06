@@ -113,9 +113,9 @@ $(document).ready(function () {
               })
               
               te.onEditorSave(function(e){
-                //console.log("Saving...")
+                console.log("Saving...")
                 let currentData = te.getData();
-                //console.log(currentData)
+                console.log(currentData)
                 $.post(
                   updateApiUrl, 
                   { data: JSON.stringify(currentData) }

@@ -206,7 +206,7 @@ class TranscriptionReaderTest extends TestCase {
         $this->assertCount(1, $pageDiv['cols']);
         $this->assertFalse(isset($pageDiv['cols'][0]));
         $this->assertTrue(isset($pageDiv['cols'][1]));
-        $this->assertCount(9, $pageDiv['cols'][1]['elements']);
+        $this->assertCount(10, $pageDiv['cols'][1]['elements']);
         foreach($pageDiv['cols'][1]['elements'] as $element) {
             $this->assertEquals(0, $element->editorId);
             $this->assertEquals(0, $element->handId);
@@ -263,22 +263,29 @@ class TranscriptionReaderTest extends TestCase {
         $this->assertTrue($item_5_2 instanceof TxText\Sic);
         $this->assertEquals('Some text', $item_5_2->theText);
         
-        $element6 = $pageDiv['cols'][1]['elements'][5];
+        $element5b = $pageDiv['cols'][1]['elements'][5];
+        $this->assertEquals(ColumnElement\Element::LINE_GAP, $element5b->type);
+        $this->assertEquals(5, $element5b->seq);
+        $this->assertEquals(1, $element5b->columnNumber);
+        $this->assertEquals('la', $element5b->lang);
+        $this->assertCount(0, $element5b->items);
+        
+        
+        $element6 = $pageDiv['cols'][1]['elements'][6];
         $this->assertEquals(ColumnElement\Element::GLOSS, $element6->type);
-        $this->assertEquals(5, $element6->seq);
+        $this->assertEquals(6, $element6->seq);
         $this->assertEquals(1, $element6->columnNumber);
         $this->assertEquals('la', $element6->lang);
         $item_6_1 = $element6->items[0];
         $this->assertTrue($item_6_1 instanceof TxText\Text);
         $this->assertEquals('A gloss', $item_6_1->theText);
         
-        // The 7th element is the line after the gap, line number should be 6
-        $element7 = $pageDiv['cols'][1]['elements'][6];
+        
+        $element7 = $pageDiv['cols'][1]['elements'][7];
         $this->assertEquals(ColumnElement\Element::LINE, $element7->type);
-        $this->assertEquals(6, $element7->seq);
+        $this->assertEquals(7, $element7->seq);
         $this->assertEquals(1, $element7->columnNumber);
         $this->assertEquals('la', $element7->lang);
-        //$this->assertEquals(6, $element7->getLineNumber());
         $item_7_1 = $element7->items[0];
         $this->assertTrue($item_7_1 instanceof TxText\Text);
         $this->assertEquals('Yet another line ', $item_7_1->theText);
@@ -286,18 +293,18 @@ class TranscriptionReaderTest extends TestCase {
         $this->assertTrue($item_7_2 instanceof TxText\Mark);
         $markId = $item_7_2->id;
         
-        $element8 = $pageDiv['cols'][1]['elements'][7];
+        $element8 = $pageDiv['cols'][1]['elements'][8];
         $this->assertEquals(ColumnElement\Element::PAGE_NUMBER, $element8->type);
-        $this->assertEquals(7, $element8->seq);
+        $this->assertEquals(8, $element8->seq);
         $this->assertEquals(1, $element8->columnNumber);
         $this->assertEquals('la', $element8->lang);
         $item_8_1 = $element8->items[0];
         $this->assertTrue($item_8_1 instanceof TxText\Text);
         $this->assertEquals('175v', $item_8_1->theText);
         
-        $element9 = $pageDiv['cols'][1]['elements'][8];
+        $element9 = $pageDiv['cols'][1]['elements'][9];
         $this->assertEquals(ColumnElement\Element::ADDITION, $element9->type);
-        $this->assertEquals(8, $element9->seq);
+        $this->assertEquals(9, $element9->seq);
         $this->assertEquals(1, $element9->columnNumber);
         $this->assertEquals('la', $element9->lang);
         $this->assertEquals('page-XXX-add-YYY', $element9->targetXmlId);
@@ -410,45 +417,46 @@ class TranscriptionReaderTest extends TestCase {
         $lineElement = $pageDiv['cols'][1]['elements'][0];
         $this->assertTrue($lineElement instanceof ColumnElement\Line);
         
+        //var_dump($tsReader->warnings);
         // Number of Items
         //var_dump($lineElement->items);
-        $this->assertCount(18, $lineElement->items);
+        $this->assertCount(20, $lineElement->items);
         
         
-        $item1 = $lineElement->items[0];
-        $this->assertTrue($item1 instanceof TxText\Text);
-        $this->assertEquals('Some text ', $item1->theText);
+        $item0 = $lineElement->items[0];
+        $this->assertTrue($item0 instanceof TxText\Text);
+        $this->assertEquals('Some text ', $item0->theText);
         
-        $item2 = $lineElement->items[1];
-        $this->assertTrue($item2 instanceof TxText\Sic);
-        $this->assertEquals('Sic 1', $item2->theText);
+        $item1 = $lineElement->items[1];
+        $this->assertTrue($item1 instanceof TxText\Sic);
+        $this->assertEquals('Sic 1', $item1->theText);
         
-        $item3 = $lineElement->items[2];
-        $this->assertTrue($item3 instanceof TxText\Initial);
-        $this->assertEquals('Initial', $item3->theText);
+        $item2 = $lineElement->items[2];
+        $this->assertTrue($item2 instanceof TxText\Initial);
+        $this->assertEquals('Initial', $item2->theText);
         
-        $item4 = $lineElement->items[3];
-        $this->assertTrue($item4 instanceof TxText\Rubric);
-        $this->assertEquals('Rubric', $item4->theText);
+        $item3 = $lineElement->items[3];
+        $this->assertTrue($item3 instanceof TxText\Rubric);
+        $this->assertEquals('Rubric', $item3->theText);
         
-        $item5 = $lineElement->items[4];
+        $item4 = $lineElement->items[4];
+        $this->assertTrue($item4 instanceof TxText\Unclear);
+        $this->assertEquals('Unclear 1', $item4->theText);
+        
+        $item5 = $lineElement->items[5];
         $this->assertTrue($item5 instanceof TxText\Unclear);
-        $this->assertEquals('Unclear 1', $item5->theText);
+        $this->assertEquals('Unclear 2', $item5->theText);
+        $this->assertEquals('Alt Text', $item5->altText);
         
-        $item6 = $lineElement->items[5];
-        $this->assertTrue($item6 instanceof TxText\Unclear);
-        $this->assertEquals('Unclear 2', $item6->theText);
-        $this->assertEquals('Alt Text', $item6->altText);
+        $item6 = $lineElement->items[6];
+        $this->assertTrue($item6 instanceof TxText\Sic);
+        $this->assertEquals('Sic 2', $item6->theText);
+        $this->assertEquals('Supplied', $item6->altText);
         
-        $item7 = $lineElement->items[6];
-        $this->assertTrue($item7 instanceof TxText\Sic);
-        $this->assertEquals('Sic 2', $item7->theText);
-        $this->assertEquals('Supplied', $item7->altText);
-        
-        $item8 = $lineElement->items[7];
-        $this->assertTrue($item8 instanceof TxText\Illegible);
-        $this->assertEquals('illegible', $item8->getReason());
-        $this->assertSame(5, $item8->getLength());
+        $item7 = $lineElement->items[7];
+        $this->assertTrue($item7  instanceof TxText\Illegible);
+        $this->assertEquals('illegible', $item7->getReason());
+        $this->assertSame(5, $item7->getLength());
         
         $this->assertTrue(isset($tsReader->warnings[0]));
         $this->assertEquals(TranscriptionReader::WARNING_BAD_ATTRIBUTE, 
@@ -456,56 +464,76 @@ class TranscriptionReaderTest extends TestCase {
         
         $this->assertTrue(isset($tsReader->warnings[1]));
         $this->assertEquals(TranscriptionReader::WARNING_BAD_ATTRIBUTE, 
-                $tsReader->warnings[0]['number']);
+                $tsReader->warnings[1]['number']);
         
-        $item9 = $lineElement->items[8];
-        $this->assertTrue($item9 instanceof TxText\Abbreviation);
-        $this->assertEquals('Mr.', $item9->theText);
-        $this->assertEquals('Mister', $item9->altText);
+        $item8 = $lineElement->items[8];
+        $this->assertTrue($item8 instanceof TxText\Abbreviation);
+        $this->assertEquals('Mr.', $item8->theText);
+        $this->assertEquals('Mister', $item8->altText);
         
-        $item10 = $lineElement->items[9];
-        $this->assertTrue($item10 instanceof TxText\Deletion);
-        $this->assertEquals('Deleted text', $item10->theText);
+        $item9 = $lineElement->items[9];
+        $this->assertTrue($item9 instanceof TxText\Deletion);
+        $this->assertEquals('Deleted text', $item9->theText);
         
-        $item11 = $lineElement->items[10];
-        $this->assertTrue($item11 instanceof TxText\Gliph);
-        $this->assertEquals('공', $item11->theText);
+        $item10 = $lineElement->items[10];
+        $this->assertTrue($item10 instanceof TxText\Gliph);
+        $this->assertEquals('공', $item10->theText);
         
-        $item12 = $lineElement->items[11];
-        $this->assertTrue($item12 instanceof TxText\Addition);
-        $this->assertEquals('Addition', $item12->theText);
+        $item11 = $lineElement->items[11];
+        $this->assertTrue($item11 instanceof TxText\Addition);
+        $this->assertEquals('Addition', $item11->theText);
         
-        $item13 = $lineElement->items[12];
+        $item12 = $lineElement->items[12];
+        $this->assertTrue($item12 instanceof TxText\Mark);
+        $this->assertEquals('somexmlid', $item12->getXmlId());
+        
+        $item13 = $lineElement->items[13];
         $this->assertTrue($item13 instanceof TxText\Mark);
-        $this->assertEquals('somexmlid', $item13->getXmlId());
-        
-        $item14 = $lineElement->items[13];
-        $this->assertTrue($item14 instanceof TxText\Mark);
         $this->assertTrue(isset($pageDiv['cols'][1]['ednotes'][0]));
         $ednote1 = $pageDiv['cols'][1]['ednotes'][0];
         $this->assertEquals('Some inline note', $ednote1->text);
-        $this->assertEquals($item14->id, $ednote1->target);
+        $this->assertEquals($item13->id, $ednote1->target);
         
-        $item15 = $lineElement->items[14];
-        $this->assertTrue($item15 instanceof TxText\Deletion);
-        $this->assertEquals('Deleted text', $item15->theText);
+        $item14 = $lineElement->items[14];
+        $this->assertTrue($item14 instanceof TxText\Deletion);
+        $this->assertEquals('Deleted text', $item14->theText);
         
-        $item16 = $lineElement->items[15];
-        $this->assertTrue($item16 instanceof TxText\Addition);
-        $this->assertEquals('Added text', $item16->theText);
-        $this->assertEquals($item15->id, $item16->getTarget());
+        $item15 = $lineElement->items[15];
+        $this->assertTrue($item15 instanceof TxText\Addition);
+        $this->assertEquals('Added text', $item15->theText);
+        $this->assertEquals($item14->id, $item15->getTarget());
         
-        $item17 = $lineElement->items[16];
-        $this->assertTrue($item17 instanceof TxText\Deletion);
-        $this->assertEquals('Modified text', $item17->theText);
-        $this->assertEquals('somemod', $item17->modXmlId);
+        $item16 = $lineElement->items[16];
+        $this->assertTrue($item16 instanceof TxText\Deletion);
+        $this->assertEquals('Modified text', $item16->theText);
+        $this->assertEquals('somemod', $item16->modXmlId);
        
         $addElement = $pageDiv['cols'][1]['elements'][1];
         $this->assertTrue($addElement instanceof ColumnElement\Addition);
-        $this->assertEquals($item17->id, $addElement->getTargetId());
+        $this->assertEquals($item16->id, $addElement->getTargetId());
         
-        $item18 = $lineElement->items[17];
-        $this->assertTrue($item18 instanceof TxText\NoWordBreak);
+        $item17 = $lineElement->items[17];
+        $this->assertTrue($item17 instanceof TxText\ChunkMark);
+        $this->assertEquals('start', $item17->getType());
+        $this->assertEquals('AW01', $item17->getDareId());
+        $this->assertEquals(1, $item17->getChunkNumber());
+        
+        $item18 = $lineElement->items[18];
+        $this->assertTrue($item18 instanceof TxText\ChunkMark);
+        $this->assertEquals('end', $item18->getType());
+        $this->assertEquals('AW01', $item18->getDareId());
+        $this->assertEquals(1, $item18->getChunkNumber());
+        
+        $this->assertTrue(isset($tsReader->warnings[2]));
+        $this->assertEquals(TranscriptionReader::WARNING_BAD_ATTRIBUTE, 
+                $tsReader->warnings[2]['number']);
+        
+        $this->assertTrue(isset($tsReader->warnings[3]));
+        $this->assertEquals(TranscriptionReader::WARNING_BAD_ATTRIBUTE, 
+                $tsReader->warnings[3]['number']);
+        
+        $item19 = $lineElement->items[19];
+        $this->assertTrue($item19 instanceof TxText\NoWordBreak);
         
     }
     

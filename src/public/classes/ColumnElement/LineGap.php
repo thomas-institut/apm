@@ -1,3 +1,5 @@
+<?php
+
 /*
  * Copyright (C) 2017 Universität zu Köln
  *
@@ -16,9 +18,29 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-/**
- * Author:  Rafael Nájera <rafael.najera@uni-koeln.de>
- * Created: May 18, 2017
- */
+namespace AverroesProject\ColumnElement;
 
-UPDATE `ap_settings` SET `value` = '9' WHERE `ap_settings`.`setting` = 'dbversion';
+/**
+ * Description of Addition
+ *
+ * @author Rafael Nájera <rafael.najera@uni-koeln.de>
+ */
+class LineGap extends Element {
+        
+    public function __construct($id = Element::ID_NOT_SET, 
+            $colNumber = 0, $lang = Element::LANG_NOT_SET)
+    {
+        parent::__construct($id, $colNumber, $lang);
+        $this->type = parent::LINE_GAP;
+        $this->reference = 1;
+    }
+    
+    function getLineCount(){
+        return $this->reference;
+    }
+    
+    function setLineCount($count)
+    {
+        $this->reference = $count;
+    }
+}

@@ -341,7 +341,6 @@ class TranscriptionReader {
         $elementId = 0;
         $elementSeq = 0;
         $xmlElementCount = 0;
-        $lineNumber = 1;
         $itemId = 0;
         $additions = [];
         
@@ -351,13 +350,15 @@ class TranscriptionReader {
             $gap = false;
             switch($elementXml->getName()) {
                 case 'gap':
-                    // Don't care about unit and reason attributes
+                    // Don't care about unit and reason attributes, it's
+                    // always lines and pending transcription
                     $nLines = (int) $elementXml['quantity'];
-                    if ($nLines !== 0) {
-                        $lineNumber += $nLines;
-                    }
+                    $element = new \AverroesProject\ColumnElement\LineGap();
+                    $element->editorId = $pageDiv['defaultEditor'];
                     $readItems = false;
-                    $gap = true;
+                    if ($nLines !== 0) {
+                        $element->setLineCount($nLines);
+                    }
                     break;
                 
                 case 'add':
@@ -374,10 +375,7 @@ class TranscriptionReader {
                     
                 case 'l':
                     $element = new \AverroesProject\ColumnElement\Line();
-                    //$element->setLineNumber($lineNumber);
-                    $element->setLineNumber(0); // ignoring line numbers
                     $element->editorId = $pageDiv['defaultEditor'];
-                    $lineNumber++;
                     $readItems = true;
                     break;
                 
@@ -946,6 +944,52 @@ class TranscriptionReader {
                     $matched[] = $addItem;
                     return $matched;
                 });
+        
+        $chunkStartPattern = (new Pattern())
+            ->withTokenSeries([
+                XmlToken::elementToken('chunkstart')
+                    ->withReqAttrs([['work', '/.*/'], ['chunkno', '/[0-9]+/']])
+                    ])
+            ->withCallback(function ($matched) use (&$itemId){
+                $chunkElement = array_pop($matched); 
+                $workId = $chunkElement['attributes']['work'];
+                $chunkNo = (int) $chunkElement['attributes']['chunkno'];
+                if ($chunkNo === 0) {
+                    $this->addWarning(self::WARNING_BAD_ATTRIBUTE, 
+                            "Invalid chunk number " . $chunkElement['attributes']['chunkno'], 
+                             "In <chunkstart work=\"$workId\"...");
+                    return $matched;
+                }
+                $item = new \AverroesProject\TxText\ChunkMark(0, 0, $workId, $chunkNo, 'start');
+                $item->lang = '';
+                $item->id = $itemId;
+                $matched[] = $item;
+                $itemId++;
+                return $matched;
+            });
+            
+        $chunkEndPattern = (new Pattern())
+            ->withTokenSeries([
+                XmlToken::elementToken('chunkend')
+                    ->withReqAttrs([['work', '/.*/'], ['chunkno', '/[0-9]+/']])
+                    ])
+            ->withCallback(function ($matched) use (&$itemId){
+                $chunkElement = array_pop($matched); 
+                $workId = $chunkElement['attributes']['work'];
+                $chunkNo = (int) $chunkElement['attributes']['chunkno'];
+                if ($chunkNo === 0) {
+                    $this->addWarning(self::WARNING_BAD_ATTRIBUTE, 
+                            "Invalid chunk number " . $chunkElement['attributes']['chunkno'], 
+                            "In <chunkend work=\"$workId\"...");
+                    return $matched;
+                }
+                $item = new \AverroesProject\TxText\ChunkMark(0, 0, $workId, $chunkNo, 'end');
+                $item->lang = '';
+                $item->id = $itemId;
+                $matched[] = $item;
+                $itemId++;
+                return $matched;
+            });
                 
         $pMatcher = new \XmlMatcher\XmlParallelMatcher([
             $textPattern, 
@@ -964,7 +1008,9 @@ class TranscriptionReader {
             $metamarkPattern,
             $inlineNotePattern,
             $mod1Pattern,
-            $mod2Pattern
+            $mod2Pattern,
+            $chunkStartPattern,
+            $chunkEndPattern
        ]);
         
         $matchResult = $pMatcher->matchXmlString($innerXml);

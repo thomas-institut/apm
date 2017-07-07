@@ -18,34 +18,44 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-
-namespace AverroesProject\ColumnElement;
+namespace AverroesProject\TxText;
 
 /**
- * Description of Line
+ * Description of TtiUnclear
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-
-class Line extends Element {
+class ChunkMark extends Item {
     
-    public function __construct($id = Element::ID_NOT_SET, 
-            $colNumber = 0, $lang = Element::LANG_NOT_SET)
+    const CHUNK_START = 'start';
+    const CHUNK_END = 'end';
+   
+    
+    function __construct($id, $seq, string $dareId, int $chunkNumber, string $type)
     {
-        parent::__construct($id, $colNumber, $lang);
-        $this->type = parent::LINE;
-        $this->setLineNumber(0); // ignoring line numbers
+        parent::__construct($id, $seq);
+        
+        $this->type = Item::CHUNK_MARK;
+        $this->theText = $dareId;
+        $this->target = $chunkNumber;
+        if ($type !== self::CHUNK_START && $type !== self::CHUNK_END) {
+             throw new \InvalidArgumentException("Wrong type, must be 'start' or 'end'");
+        }
+        $this->altText = $type;
     }
     
-    function getLineNumber(){
-        return $this->reference;
+    function getDareId()
+    {
+        return $this->theText;
     }
     
-    /**
-     * 
-     * @param int $n
-     */
-    function setLineNumber($n){
-        $this->reference = $n;
+    function getChunkNumber() 
+    {
+        return $this->target;
     }
+    
+    function getType() {
+        return $this->altText;
+    }
+    
 }

@@ -13,13 +13,14 @@ User manager template
 <script type="application/javascript" src="{{baseurl}}/js/usermanager.js"></script>
 <script>
     ApiUrl.setBase('{{baseurl}}')
+    
 </script>
 {% endblock %}
 
 {% block content %}
 <h1>User Manager</h1>
-<table>
-    <!-- <tr><th></th><th>Username</th><th>Full Name</th><th>Email</th><th>Actions</th></tr> -->
+<table id="usertable">
+    <thead><tr><th>Avatar</th><th>Username</th><th>Full Name</th><th>Email</th></tr></thead>
 {% for user in users %}
     <tr> 
         <td style="padding: 10px;"><img src="https://www.gravatar.com/avatar/{{user.emailhash}}?d=mm&s=40"></td>

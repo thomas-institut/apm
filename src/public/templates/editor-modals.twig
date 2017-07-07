@@ -21,7 +21,7 @@
                         <select name="extrainfo" id="item-modal-extrainfo-{{id}}"></select>
                     </div>
                     <div id="item-modal-length-fg-{{id}}" class="form-group">
-                        <label for="item-modal-length-{{id}}" id="item-modal-extrainfo-label-{{id}}" class="control-label">Length:</label>
+                        <label for="item-modal-length-{{id}}" id="item-modal-length-label-{{id}}" class="control-label">Length:</label>
                         <input type="number" name="length" class="form-control" id="item-modal-length-{{id}}"></input>
                     </div>
                     <div id="item-modal-target-fg-{{id}}" class="form-group">
@@ -29,7 +29,7 @@
                         <select name="target" id="item-modal-target-{{id}}"></select>
                     </div>
                     <input id="item-note-id-{{id}}" type="hidden" name="note-id" value=""/>
-                    <div class="form-group">
+                    <div class="form-group" id="item-modal-ednote-fg-{{id}}">
                         <label for="item-note-{{id}}" class="control-label">Note:</label>
                         <input type="text" class="form-control" id="item-note-{{id}}">
                         <p class="item-note-edit-time" id="item-note-time-{{id}}"></p>
@@ -44,6 +44,43 @@
         </div>
     </div>
 </div>
+            
+            
+<!-- CHUNK modal {{id}} -->            
+<div id="chunk-modal-{{id}}" class="modal" role="dialog">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 id="chunk-modal-title-{{id}}" class="modal-title">Chunk</h4>
+            </div>
+            <div class="modal-body" id="chunk-modal-body-{{id}}">
+                <form class="form-horizontal">
+                    <div id="chunk-modal-worknumber-fg-{{id}}" class="form-group">
+                        <label for="chunk-modal-worknumber-{{id}}" class="control-label">Work Number:</label>
+                        <input type="number" name="worknumber" class="form-control" id="chunk-modal-worknumber-{{id}}"></input>
+                    </div>
+                    <div id="chunk-modal-chunknumber-fg-{{id}}" class="form-group">
+                        <label for="chunk-modal-chunknumber-{{id}}" id="chunk-modal-chunknumber-label-{{id}}" class="control-label">Chunk:</label>
+                        <input type="number" name="chunk" class="form-control" id="chunk-modal-chunknumber-{{id}}"></input>
+                    </div>
+                    <input id="chunk-note-id-{{id}}" type="hidden" name="note-id" value=""/>
+                    <div class="form-group">
+                        <label for="chunk-note-{{id}}" class="control-label">Note:</label>
+                        <input type="text" class="form-control" id="chunk-note-{{id}}">
+                        <p class="chunk-note-edit-time" id="chunk-note-time-{{id}}"></p>
+                    </div>
+                    <div class="modal-ednotes" id="chunk-modal-ednotes-{{id}}">
+                    </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" id="chunk-modal-cancel-button-{{id}}" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="chunk-modal-submit-button-{{id}}">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>            
+            
 <!-- ALERT modal {{id}} -->             
 <div id="alert-modal-{{id}}" class="modal" role="dialog">
     <div class="modal-dialog modal-sm " role="document">

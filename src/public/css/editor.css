@@ -209,7 +209,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 .artext {
     direction: rtl;
     unicode-bidi: isolate;
-    font-family: sans-serif;
+    font-family: serif;
     font-style: normal;
 }
 
@@ -352,4 +352,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 .unclear{
     font-weight: normal;
     color: #d58512;
+}
+
+img.chunkmark  {
+    margin: 0px;
+    margin-left: 5px;
+    margin-right: 5px;
 }

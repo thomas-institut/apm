@@ -73,6 +73,7 @@ class Item {
     const ABBREVIATION =   11;
     const LINEBREAK    =   12;
     const INITIAL  = 13;
+    const CHUNK_MARK = 14;
     
     /**
      *

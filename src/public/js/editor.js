@@ -21,11 +21,31 @@
 /* global Twig, Quill, ELEMENT_LINE, ELEMENT_HEAD, ELEMENT_CUSTODES */
 /* global ELEMENT_GLOSS, ELEMENT_PAGE_NUMBER, ITEM_TEXT, ITEM_MARK */
 /* global ITEM_RUBRIC, ITEM_GLIPH, ITEM_INITIAL, ITEM_SIC, ITEM_ABBREVIATION */
-/* global ITEM_DELETION, Item, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_ILLEGIBLE, ELEMENT_PAGENUMBER, ITEM_NO_WORD_BREAK */
+/* global ITEM_DELETION, Item, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_ILLEGIBLE, ELEMENT_PAGENUMBER, ITEM_NO_WORD_BREAK, ITEM_CHUNK_MARK */
 
 let Inline = Quill.import('blots/inline')
 let BlockEmbed = Quill.import('blots/embed')
 let Block = Quill.import('blots/block')
+
+
+let Clipboard = Quill.import('modules/clipboard');
+let Delta = Quill.import('delta');
+
+class PlainClipboard extends Clipboard {
+  convert(html = null) {
+    //console.log("Pasting...")
+    //console.log(html)
+    if (typeof html === 'string') {
+      this.container.innerHTML = html;
+    }
+    let text = this.container.innerText;
+    this.container.innerHTML = '';
+    return new Delta().insert(text);
+  }
+}
+
+Quill.register('modules/clipboard', PlainClipboard, true);
+
 
 class LangBlot extends Inline {
   static create (lang) {
@@ -317,6 +337,45 @@ MarkBlot.tagName = 'img'
 MarkBlot.className = 'mark'
 Quill.register(MarkBlot)
 
+class ChunkMarkBlot extends BlockEmbed {
+  static create (value) {
+    let node = super.create()
+    node.setAttribute('itemid', value.itemid)
+    node.setAttribute('editorid', value.editorid)
+    node.setAttribute('dareid', value.dareid)
+    node.setAttribute('chunkno', value.chunkno)
+    node.setAttribute('type', value.type)
+    node.setAttribute('alt', value.type + ' ' + value.dareid + '-' + value.chunkno)
+    let size = Math.round(((ChunkMarkBlot.size-1)*0.2+1)*14)
+    node.setAttribute('src', ChunkMarkBlot.baseUrl + 
+            '/api/images/chunkmark/' +
+            value.dareid + '/' +
+            value.chunkno + '/' +
+            value.type + '/' +
+            ChunkMarkBlot.dir + '/' +
+            size)
+    TranscriptionEditor.setUpPopover(node, 'Chunk ' + value.type, '', value.editorid, value.itemid, true)
+    //console.log("Creating chunk mark ")
+    //console.log(value)
+    return node
+  }
+
+  static value (node) {
+    return {
+      itemid: node.getAttribute('itemid'),
+      editorid: node.getAttribute('editorid'),
+      dareid: node.getAttribute('dareid'),
+      chunkno: node.getAttribute('chunkno'),
+      type: node.getAttribute('type')
+    }
+  }
+ }
+ChunkMarkBlot.blotName = 'chunkmark'
+ChunkMarkBlot.tagName = 'img'
+ChunkMarkBlot.className = 'chunkmark'
+Quill.register(ChunkMarkBlot)
+
+
 class NoWordBreakBlot extends BlockEmbed {
   static create (value) {
     let node = super.create()
@@ -354,7 +413,7 @@ class GlossBlot extends Block {
     node.setAttribute('place', value.place)
     let ruleIndex = GlossBlot.styleSheet.cssRules.length
     GlossBlot.styleSheet.insertRule('p#gloss' + id +'::before { content: "Gloss @ ' + value.place + '"}', ruleIndex)
-    console.log(GlossBlot.styleSheet)
+    //console.log(GlossBlot.styleSheet)
     return node
   }
   
@@ -400,6 +459,30 @@ PageNumberBlot.tagName = 'p'
 PageNumberBlot.className = 'pagenumber'
 Quill.register(PageNumberBlot)
 
+
+class LineGapBlot extends BlockEmbed {
+  static create(value) {
+    let node = super.create()
+    node.setAttribute('editorid', value.editorid)
+    node.setAttribute('linecount', value.linecount)
+    node.setAttribute('alt', 'Line Gap')
+    let size = Math.round(((LineGapBlot.size-1)*0.2+1)*14)
+    node.setAttribute('src', LineGapBlot.baseUrl + '/api/images/linegap/' + value.linecount + '/' + size)
+    return node;
+  }
+
+  static value(node) {
+    return {
+      editorid: node.getAttribute('editorid'),
+      linecount: node.getAttribute('linecount')
+    };
+  }
+}
+LineGapBlot.blotName = 'linegap'
+LineGapBlot.tagName = 'img'
+LineGapBlot.className = 'linegap'
+Quill.register(LineGapBlot)
+
 class TranscriptionEditor {
   constructor (containerSelector, id, baseUrl, editorId = 1,
             defaultLang = 'la', handId = 0, sizeGuide = {}) {
@@ -426,6 +509,8 @@ class TranscriptionEditor {
     MarkBlot.baseUrl = baseUrl
     IllegibleBlot.baseUrl = baseUrl
     NoWordBreakBlot.baseUrl = baseUrl
+    ChunkMarkBlot.baseUrl = baseUrl
+    LineGapBlot.baseUrl = baseUrl
     if (!TranscriptionEditor.editorTemplate) {
       TranscriptionEditor.editorTemplate = Twig.twig({
         id: 'editor',
@@ -447,8 +532,6 @@ class TranscriptionEditor {
     this.setFontSize(3)
     let modalsHtml = TranscriptionEditor.modalsTemplate.render({id: id})
     $('body').append(modalsHtml)
-    
-    
 
     let quillObject = new Quill('#editor-container-' + id, {})
     this.quillObject = quillObject
@@ -478,16 +561,26 @@ class TranscriptionEditor {
         if (TranscriptionEditor.rangeIsInMidItem(quillObject, range)) {
           $('#note-button-' + id).prop('disabled', true)
           $('#illegible-button-' + id).prop('disabled', true)
+          $('#nowb-button-' + id).prop('disabled', true)
+          $('#chunk-start-button-' + id).prop('disabled', true)
+          $('#chunk-end-button-' + id).prop('disabled', true)
           $('#edit-button-' + id).prop('disabled', false)
           return false
         }
         $('#note-button-' + id).prop('disabled', false)
         $('#illegible-button-' + id).prop('disabled', false)
+        $('#nowb-button-' + id).prop('disabled', false)
+        $('#chunk-start-button-' + id).prop('disabled', false)
+        $('#chunk-end-button-' + id).prop('disabled', false)
 
         return false
       }
       $('#note-button-' + id).prop('disabled', true)
       $('#illegible-button-' + id).prop('disabled', true)
+      $('#nowb-button-' + id).prop('disabled', true)
+      $('#chunk-start-button-' + id).prop('disabled', true)
+      $('#chunk-end-button-' + id).prop('disabled', true)
+      
       let text = quillObject.getText(range)
       if (text.search('\n') !== -1) {
         $('.selFmtBtn').prop('disabled', true)
@@ -523,9 +616,9 @@ class TranscriptionEditor {
       if (delta.ops.length === 2) {
         if (delta.ops[0].retain) {
           if (delta.ops[1].delete) {
-            console.log('Text has been deleted at pos ' +
-                            delta.ops[0].retain + ', ' + delta.ops[1].delete +
-                            ' characters')
+//            console.log('Text has been deleted at pos ' +
+//                            delta.ops[0].retain + ', ' + delta.ops[1].delete +
+//                            ' characters')
             let deletionRanges = TranscriptionEditor.getDeletionRanges(oldDelta.ops)
             let coveredDeletions =
                                 TranscriptionEditor.getCoveredDeletions(deletionRanges,
@@ -537,8 +630,8 @@ class TranscriptionEditor {
               for (const del of coveredDeletions) {
                 let add = TranscriptionEditor.getAdditionRangeByTarget(theOps, del.id)
                 if (add) {
-                  console.log('Updating addition ' + add.id)
-                  console.log(add)
+//                  console.log('Updating addition ' + add.id)
+//                  console.log(add)
                   quillObject.formatText(
                                             add.index,
                                             add.length,
@@ -549,7 +642,7 @@ class TranscriptionEditor {
                                               target: -1
                                             })
                 } else {
-                  console.log('No addition associated with deletion ' + del.id)
+                  //console.log('No addition associated with deletion ' + del.id)
                 }
               }
             }
@@ -653,6 +746,7 @@ class TranscriptionEditor {
         $('#alert-modal-cancel-button-' + thisObject.id).html('Cancel')
         $('#alert-modal-text-' + thisObject.id).html(
                         'Are you sure you want to clear formatting of this text?</p><p>Formats and notes will be lost.</p><p class="text-danger">This can NOT be undone!')
+        $('#alert-modal-submit-button-' + thisObject.id).off()
         $('#alert-modal-submit-button-' + thisObject.id).on('click', function () {
           $('#alert-modal-' + thisObject.id).modal('hide')
           TranscriptionEditor.removeFormat(quillObject, range)
@@ -698,6 +792,7 @@ class TranscriptionEditor {
     $('#abbr-button-' + id).click(function () {
       let range = quillObject.getSelection()
       let text = quillObject.getText(range.index, range.length)
+      TranscriptionEditor.resetItemModal(thisObject.id)
       $('#item-modal-title-' + thisObject.id).html('Abbreviation')
       $('#item-modal-text-' + thisObject.id).html(text)
       $('#item-modal-text-fg-' + thisObject.id).show()
@@ -779,6 +874,9 @@ class TranscriptionEditor {
       })
       $('#item-modal-' + thisObject.id).modal('show')
     })
+    
+    $('#chunk-start-button-' + id).click(TranscriptionEditor.genChunkButtonFunction(thisObject, quillObject, 'start'))
+    $('#chunk-end-button-' + id).click(TranscriptionEditor.genChunkButtonFunction(thisObject, quillObject, 'end'))
 
     $('#illegible-button-' + id).click(function () {
       let range = quillObject.getSelection()
@@ -1055,7 +1153,20 @@ class TranscriptionEditor {
     $('#del-dot-above-' + id).click(function () {
       thisObject.setDeletion('dot-above')
     })
-
+    
+    $('#nowb-button-' + id).click(function () {
+      let range = quillObject.getSelection()
+      if (range.length > 0) {
+        return false
+      }
+      let itemId = thisObject.getOneItemId()
+      quillObject.insertEmbed(range.index, 'nowb', {
+            itemid: itemId,
+            editorid: thisObject.id
+      })
+      quillObject.setSelection(range.index + 1)
+    })
+    
     $('#line-button-' + id).click(function () {
       quillObject.format('head', false)
       quillObject.format('gloss', false)
@@ -1089,6 +1200,33 @@ class TranscriptionEditor {
     
     $('#pagenumber-button-' + id).click(function () {
       quillObject.format('pagenumber', true)
+    })
+    
+    $('#linegap-button-' + id).click(function () {
+      let range = quillObject.getSelection()
+      if (range.length > 0) {
+        return false
+      }
+      TranscriptionEditor.resetItemModal(thisObject.id)
+      $('#item-modal-title-' + thisObject.id).html('Line Gap')
+      $('#item-modal-text-fg-' + thisObject.id).hide()
+      $('#item-modal-alttext-fg-' + thisObject.id).hide()
+      $('#item-modal-extrainfo-fg-' + thisObject.id).hide()
+      $('#item-modal-length-label-' + thisObject.id).html('Lines not transcribed:')
+      $('#item-modal-length-' + thisObject.id).val(1)
+      $('#item-modal-length-fg-' + thisObject.id).show()
+      $('#item-modal-ednote-fg-' + thisObject.id).hide()
+      $('#item-modal-submit-button-' + thisObject.id).off()
+      $('#item-modal-submit-button-' + thisObject.id).on('click', function () {
+        $('#item-modal-' + thisObject.id).modal('hide')
+        let count = $('#item-modal-length-' + thisObject.id).val()
+        if (count <= 0) {
+          console.log("Bad line count for line gap: " + count)
+          return false
+        }
+        thisObject.insertLineGap(range.index, count)
+      })
+      $('#item-modal-' + thisObject.id).modal('show')
     })
 
     $('#set-arabic-' + id).click(function () {
@@ -1161,6 +1299,8 @@ class TranscriptionEditor {
     IllegibleBlot.size = this.fontSize
     NoWordBreakBlot.size = this.fontSize
     MarkBlot.size = this.fontSize
+    ChunkMarkBlot.size = this.fontSize
+    LineGapBlot.size = this.fontSize
   }
   
   makeTextSmaller() {
@@ -1199,6 +1339,7 @@ class TranscriptionEditor {
           '<p>Are you sure you want to leave the editor?</p><p class="text-danger">Changes will be lost!</p>')
       $('#alert-modal-submit-button-' + thisObject.id).html('Yes, leave!')
       $('#alert-modal-cancel-button-' + thisObject.id).html('Cancel')
+      $('#alert-modal-submit-button-' + this.id).off()
       $('#alert-modal-submit-button-' + this.id).on('click', function () {
           $('#alert-modal-' + thisObject.id).modal('hide')
           thisObject.enabled = false
@@ -1236,7 +1377,7 @@ class TranscriptionEditor {
 //      return true
 //    }
     if (!this.contentsChanged) {
-      console.log("Nothing to save")
+      //console.log("Nothing to save")
       return true
     }
     this.saving = true
@@ -1321,8 +1462,22 @@ class TranscriptionEditor {
     if (range.length < 1) {
       return false
     }
+    let delta = quillObject.getContents(range.index, range.length)
+    for (const [i, op] of delta.ops.entries()) {
+      if (typeof op.insert !== 'object') {
+        continue
+      }
+      for (const type of ['chunkmark', 'nowb', 'mark', 'illegible']) {
+        if (type in op.insert) {
+          //console.log('Found mark: ' + type)
+          return true
+        }
+      }
+    }
+    
     for (let i = range.index; i < range.index + range.length - 1; i++) {
       let format = quillObject.getFormat(i, 1)
+      
       if ($.isEmptyObject(format)) {
         continue
       }
@@ -1334,7 +1489,7 @@ class TranscriptionEditor {
   }
 
   static formatHasItem (format) {
-    for (const type of ['rubric', 'gliph', 'initial', 'sic', 'abbr', 'deletion', 'addition', 'unclear']) {
+    for (const type of ['rubric', 'gliph', 'initial', 'sic', 'abbr', 'deletion', 'addition', 'unclear', 'nowb']) {
       if (type in format) {
         return type
       }
@@ -1372,7 +1527,15 @@ class TranscriptionEditor {
       place: place
     })
   }
-
+ 
+  insertLineGap(position, count) {
+     this.quillObject.insertEmbed(position, 'linegap', {
+            editorid: this.id,
+            linecount: count
+      })
+      this.quillObject.insertText(position +1, '\n')
+      this.quillObject.setSelection(position +2)
+  }
   setAddition (place, target = -1) {
         // let possibleTargets = this.getAdditionTargets();
 
@@ -1412,6 +1575,41 @@ class TranscriptionEditor {
       }
     }
     quillObject.setSelection(range.index + range.length)
+  }
+  
+  
+  static genChunkButtonFunction(thisObject, quillObject, type) {
+    return function () {
+      let range = quillObject.getSelection()
+      if (range.length > 0) {
+        return false
+      }
+      $('#chunk-modal-title-' + thisObject.id).html('Chunk ' + type)
+      $('#chunk-modal-worknumber-' + thisObject.id).val(1)
+      $('#chunk-modal-chunknumber-' + thisObject.id).val(1)
+
+      $('#chunk-modal-submit-button-' + thisObject.id).off()
+      $('#chunk-modal-submit-button-' + thisObject.id).on('click', function () {
+        $('#chunk-modal-' + thisObject.id).modal('hide')
+        let itemid = thisObject.getOneItemId()
+        let dareid = 'AW'+ $('#chunk-modal-worknumber-' + thisObject.id).val()
+        let chunkno = $('#chunk-modal-chunknumber-' + thisObject.id).val()
+        quillObject.insertEmbed(range.index, 'chunkmark', {
+          type: type,
+          chunkno: chunkno,
+          dareid: dareid,
+          itemid: itemid,
+          editorid: thisObject.id
+        })
+        quillObject.setSelection(range.index + 1)
+                // Take care of notes!
+        let noteText = $('#chunk-note-' + thisObject.id).val()
+        if (noteText !== '') {
+          thisObject.addNewNote(itemid, noteText)
+        }
+      })
+      $('#chunk-modal-' + thisObject.id).modal('show')
+    }
   }
 
   static genSimpleFormatClickFunction (thisObject, quillObject, format) {
@@ -1549,6 +1747,7 @@ class TranscriptionEditor {
     $('#item-modal-extrainfo-fg-' + id).hide()
     $('#item-modal-length-fg-' + id).hide()
     $('#item-modal-target-fg-' + id).hide()
+    $('#item-modal-ednote-fg-' + id).show()
     $('#item-modal-ednotes-' + id).html('')
     $('#item-note-' + id).val('')
     $('#item-note-time-' + id).html('New note')
@@ -1733,6 +1932,7 @@ class TranscriptionEditor {
     $('#lang-button-'+this.id).attr('title', labels[lang])
     $('#lang-button-'+this.id).html(lang)
     this.defaultLang = lang
+    ChunkMarkBlot.dir = (lang === 'la') ? 'ltr' : 'ltr';
     
   }
 
@@ -1765,6 +1965,18 @@ class TranscriptionEditor {
     this.minNoteId--
     return this.minNoteId
   }
+  
+  static getMainLanguage(languageCounts) {
+    let max = 0
+    let mainLanguage = false
+    for (const lang in languageCounts) {
+      if (languageCounts[lang]>= max) {
+        max = languageCounts[lang]
+        mainLanguage = lang
+      }
+    }
+    return mainLanguage
+  }
 
    /**
     * Loads the given elements and items into the editor
@@ -1775,9 +1987,11 @@ class TranscriptionEditor {
     let delta = []
     let formats = []
     let deletionTexts = []
+    let languageCounts = {'ar': 0, 'he': 0, 'la':0}
     formats[ELEMENT_HEAD] = 'head'
     formats[ELEMENT_CUSTODES] = 'custodes'
     formats[ELEMENT_PAGE_NUMBER] = 'pagenumber'
+    
 
     this.edNotes = columnData.ednotes
     for (const note of this.edNotes) {
@@ -1790,6 +2004,17 @@ class TranscriptionEditor {
 
     for (const ele of columnData.elements) {
       switch (ele.type) {
+        case ELEMENT_LINE_GAP:
+          delta.push({
+            insert: {
+              linegap : {
+                editorid: this.id,
+                linecount: ele.reference
+              }
+            }
+          })
+          break;
+        
         case ELEMENT_LINE:
         case ELEMENT_HEAD:
         case ELEMENT_CUSTODES:
@@ -1954,7 +2179,22 @@ class TranscriptionEditor {
                   }
                 })
                 break
+                
+              case ITEM_CHUNK_MARK:
+                delta.push({
+                  insert: {
+                    chunkmark: {
+                      type: item.altText,
+                      dareid: item.theText,
+                      chunkno: item.target,
+                      itemid: item.id,
+                      editorid: this.id
+                    }
+                  }
+                })
+                break
             }
+            languageCounts[item.lang]++
           }
           break
       }
@@ -1983,6 +2223,9 @@ class TranscriptionEditor {
 
     this.quillObject.setContents(delta)
     this.lastSavedData = this.quillObject.getContents()
+    let mainLang = TranscriptionEditor.getMainLanguage(languageCounts)
+    //console.log(languageCounts)
+    this.setDefaultLang(mainLang)
   }
   
   onEditorEnable(f) {
@@ -2042,21 +2285,52 @@ class TranscriptionEditor {
         let itemId = -1
         let theText = curOps.insert
         if (typeof theText !== 'string') {
-          if ('mark' in theText) {
+          let theOps = theText
+          if ('mark' in theOps) {
             type = ITEM_MARK
             itemId = theText.mark.itemid
+            theText = ''
           }
-          if ('nowb' in theText) {
+          if ('nowb' in theOps) {
             type = ITEM_NO_WORD_BREAK
             itemId = theText.nowb.itemid
+            theText = ''
           }
-          if ('illegible' in theText) {
+          if ('illegible' in theOps) {
             type = ITEM_ILLEGIBLE
             itemId = theText.illegible.itemid
             extraInfo = theText.illegible.reason
             length = parseInt(theText.illegible.length)
+            theText = ''
           }
-          theText = ''
+          if ('chunkmark' in theOps) {
+            type = ITEM_CHUNK_MARK
+            itemId = theText.chunkmark.itemid
+            altText = theText.chunkmark.type
+            target = parseInt(theText.chunkmark.chunkno)
+            theText = theText.chunkmark.dareid
+          }
+          if ('linegap' in theOps) {
+            curElement.type = ELEMENT_LINE_GAP
+            curElement.reference = theText.linegap.linecount
+            curElement.items = []
+            elements.push(curElement)
+            curElement = {
+              id: currentElementId++,
+              pageId: this.pageId,
+              columnNumber: this.columnNumber,
+              lang: this.defaultLang,
+              editorId: this.editorId,
+              handId: this.handId,
+              type: ELEMENT_LINE,
+              seq: currentElementSeq++,
+              items: [],
+              reference: null, 
+              placement: null
+            }
+            currentItemSeq = 0
+            continue
+          }
         }
         if ('attributes' in curOps) {
           if (curOps.attributes.rubric) {

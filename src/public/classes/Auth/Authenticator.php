@@ -51,7 +51,7 @@ class Authenticator {
     private $debugMode = false;
    
     //Constructor
-    public function __construct( $ci)
+    public function __construct($ci)
     {
         $this->ci = $ci;
         $this->logger = $this->ci->logger->withName('AUTH');
@@ -136,6 +136,7 @@ class Authenticator {
     {
         session_start();
         $this->debug('Showing login page');
+        //$this->logger->debug("Login headers", $request->getHeaders());
         $msg = '';
         if ($request->getMethod() === 'POST') {
             $data = $request->getParsedBody();

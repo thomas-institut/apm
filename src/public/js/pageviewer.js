@@ -39,7 +39,7 @@ $(document).ready(function () {
             pageNumber + '/newcolumn'
 
   $('#realAddColumnButton').click(function () {
-    console.log('I should add a column now!')
+    //console.log('I should add a column now!')
     $.getJSON(apiAddColumnUrl, function (resp) {
       location.replace('')
     })
@@ -89,8 +89,6 @@ $(document).ready(function () {
               theUl += '<a data-toggle="tab" id="col-label-' + theCol + '" href="#col' + theCol +
                   '">Column ' + theCol + '</a></li>'
               $('#tabsUl').append(theUl)
-              //console.log($('#right-component').height())
-              //console.log($('#tabsUl').height())
                   
               let te = new TranscriptionEditor(
                   '#col' + theCol, 
@@ -113,15 +111,15 @@ $(document).ready(function () {
               })
               
               te.onEditorSave(function(e){
-                //console.log("Saving...")
+                console.log("Saving...")
                 let currentData = te.getData();
-                //console.log(currentData)
+                console.log(currentData)
                 $.post(
                   updateApiUrl, 
                   { data: JSON.stringify(currentData) }
                 ).done( function () { 
                   $.getJSON(getApiUrl, function (newResp){
-                    console.log(newResp)
+                    //console.log(newResp)
                     te.saveSuccess(newResp)
                   })
                 }).fail( function(resp) {

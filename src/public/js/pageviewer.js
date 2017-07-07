@@ -89,8 +89,6 @@ $(document).ready(function () {
               theUl += '<a data-toggle="tab" id="col-label-' + theCol + '" href="#col' + theCol +
                   '">Column ' + theCol + '</a></li>'
               $('#tabsUl').append(theUl)
-              //console.log($('#right-component').height())
-              //console.log($('#tabsUl').height())
                   
               let te = new TranscriptionEditor(
                   '#col' + theCol, 

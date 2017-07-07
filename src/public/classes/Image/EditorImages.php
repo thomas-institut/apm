@@ -29,8 +29,8 @@ namespace AverroesProject\Image;
 class EditorImages {
     const FONT_AWESOME_PATH = './fonts/fontawesome-webfont.ttf';
     const FONT_ARIAL_PATH = './fonts/arialbd.ttf';
-    //const FONT_MONO = './fonts/cour.ttf';
-    const FONT_MONO = './fonts/LiberationMono-Regular.ttf';
+    const FONT_MONO = './fonts/cour.ttf';
+    //const FONT_MONO = './fonts/LiberationMono-Regular.ttf';
     
     public static function markIcon($size) {
         $height = $size;

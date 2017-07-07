@@ -109,7 +109,7 @@ class ImportXmlFile extends CommandLineUtility {
                     continue;
                 }
                 foreach ($col['elements'] as &$element) {
-                    if (count($element->items) === 0) {
+                    if ($element->type !== \AverroesProject\ColumnElement\Element::LINE_GAP && count($element->items) === 0) {
                         $this->printErrorMsg("Empty element in column " . $col['colNumber'] . " page $pageNumber");
                         return false;
                     }

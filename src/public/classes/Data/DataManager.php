@@ -605,6 +605,7 @@ class DataManager
         }
         // Now just create the new element
         $newId = $this->createNewElementInDB($newElement);
+        $this->logger->debug("New element Id = $newId, type = " . $newElement->type);
         if ($newId === false) {
             // This means a database error
             // Can't reproduce in testing for now
@@ -769,7 +770,6 @@ class DataManager
         $e = $this->createElementObjectFromRow($row);
         $e->items = $this->getItemsForElement($e);
         return $e;
-        
     }
     
     public static function createElementObjectFromArbitraryRow($fields, $row) {
@@ -778,7 +778,7 @@ class DataManager
             case Element::LINE:
                 $e = new \AverroesProject\ColumnElement\Line();
                 // the line number
-                $e->setLineNumber($row[$fields['reference']]);
+                //$e->setLineNumber($row[$fields['reference']]);
                 break;
 
             case Element::CUSTODES:
@@ -795,6 +795,15 @@ class DataManager
             
             case Element::LINE_GAP:
                 $e = new \AverroesProject\ColumnElement\LineGap();
+                break;
+            
+            case Element::ADDITION:
+                $e = new \AverroesProject\ColumnElement\Addition();
+                break;
+            
+            case Element::PAGE_NUMBER:
+                $e = new \AverroesProject\ColumnElement\PageNumber();
+                break;
 
             default:
                 continue;
@@ -807,6 +816,7 @@ class DataManager
         $e->id = (int) $row[$fields['id']];
         $e->lang = $row[$fields['lang']];
         $e->reference = (int) $row[$fields['reference']];
+        $e->placement = $row[$fields['placement']];
         return $e;
     }
     
@@ -948,7 +958,7 @@ class DataManager
                 $item = new \AverroesProject\TxText\ChunkMark($row[$fields['id']],
                     $row[$fields['seq']], 
                     $row[$fields['text']], 
-                    (int) $row[$fields['length']], 
+                    (int) $row[$fields['target']], 
                     $row[$fields['alt_text']]);
                 break;
 

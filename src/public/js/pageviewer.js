@@ -111,8 +111,9 @@ $(document).ready(function () {
               })
               
               te.onEditorSave(function(e){
-                console.log("Saving...")
+                
                 let currentData = te.getData();
+                console.log("Current data from editor...")
                 console.log(currentData)
                 $.post(
                   updateApiUrl, 

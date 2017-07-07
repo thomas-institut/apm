@@ -21,7 +21,7 @@
 /* global Twig, Quill, ELEMENT_LINE, ELEMENT_HEAD, ELEMENT_CUSTODES */
 /* global ELEMENT_GLOSS, ELEMENT_PAGE_NUMBER, ITEM_TEXT, ITEM_MARK */
 /* global ITEM_RUBRIC, ITEM_GLIPH, ITEM_INITIAL, ITEM_SIC, ITEM_ABBREVIATION */
-/* global ITEM_DELETION, Item, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_ILLEGIBLE, ELEMENT_PAGENUMBER, ITEM_NO_WORD_BREAK, ITEM_CHUNK_MARK */
+/* global ITEM_DELETION, Item, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_ILLEGIBLE, ELEMENT_PAGENUMBER, ITEM_NO_WORD_BREAK, ITEM_CHUNK_MARK, ELEMENT_ADDITION */
 
 let Inline = Quill.import('blots/inline')
 let BlockEmbed = Quill.import('blots/embed')
@@ -428,6 +428,35 @@ GlossBlot.blotName = 'gloss'
 GlossBlot.tagName = 'p'
 GlossBlot.className = 'gloss'
 Quill.register(GlossBlot)
+
+class AdditionElementBlot extends Block {
+  
+  static create(value) {
+    let node = super.create(value)
+    let id = value.elementId
+    node.setAttribute('id', 'add' + id)
+    node.setAttribute('elementid', id)
+    node.setAttribute('place', value.place)
+    node.setAttribute('target', value.target)
+    let ruleIndex = GlossBlot.styleSheet.cssRules.length
+    GlossBlot.styleSheet.insertRule('p#add' + id +'::before { content: "Addition @ ' + value.place + ', target ' + value.target + '"}', ruleIndex)
+    //console.log(GlossBlot.styleSheet)
+    return node
+  }
+  
+  static formats(node) {
+    return {
+      elementId: node.getAttribute('elementid'),
+      place: node.getAttribute('place'),
+      target: node.getAttribute('target')
+    }
+  }
+}
+AdditionElementBlot.blotName = 'additionelement'
+AdditionElementBlot.tagName = 'p'
+AdditionElementBlot.className = 'additionelement'
+Quill.register(AdditionElementBlot)
+
 
 class HeadBlot extends Block { 
   static formats (node) {
@@ -2019,6 +2048,7 @@ class TranscriptionEditor {
         case ELEMENT_HEAD:
         case ELEMENT_CUSTODES:
         case ELEMENT_GLOSS:
+        case ELEMENT_ADDITION:
         case ELEMENT_PAGE_NUMBER:
           for (const item of ele.items) {
             this.minItemId = Math.min(this.minItemId, item.id)
@@ -2207,6 +2237,21 @@ class TranscriptionEditor {
               gloss:  {
                 elementId: ele.id,
                 place: ele.placement
+              }
+            }
+          })
+          break;
+          
+          case ELEMENT_ADDITION:
+            console.log("Addition element")
+            console.log(ele)
+          delta.push({
+            insert: '\n',
+            attributes: {
+              additionelement:  {
+                elementId: ele.id,
+                place: ele.placement,
+                target: ele.reference
               }
             }
           })

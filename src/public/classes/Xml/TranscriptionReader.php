@@ -984,6 +984,7 @@ class TranscriptionReader {
                     return $matched;
                 }
                 $item = new \AverroesProject\TxText\ChunkMark(0, 0, $workId, $chunkNo, 'end');
+                $this->addWarning(1000, "Chunk end: $chunkNo");
                 $item->lang = '';
                 $item->id = $itemId;
                 $matched[] = $item;

@@ -21,7 +21,7 @@
 /* global Twig, Quill, ELEMENT_LINE, ELEMENT_HEAD, ELEMENT_CUSTODES */
 /* global ELEMENT_GLOSS, ELEMENT_PAGE_NUMBER, ITEM_TEXT, ITEM_MARK */
 /* global ITEM_RUBRIC, ITEM_GLIPH, ITEM_INITIAL, ITEM_SIC, ITEM_ABBREVIATION */
-/* global ITEM_DELETION, Item, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_ILLEGIBLE, ELEMENT_PAGENUMBER, ITEM_NO_WORD_BREAK, ITEM_CHUNK_MARK, ELEMENT_ADDITION */
+/* global ITEM_DELETION, Item, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_ILLEGIBLE, ELEMENT_PAGENUMBER, ITEM_NO_WORD_BREAK, ITEM_CHUNK_MARK, ELEMENT_ADDITION, ELEMENT_LINE_GAP */
 
 let Inline = Quill.import('blots/inline')
 let BlockEmbed = Quill.import('blots/embed')
@@ -1999,6 +1999,9 @@ class TranscriptionEditor {
     let max = 0
     let mainLanguage = false
     for (const lang in languageCounts) {
+      if (languageCounts[lang]===0) {
+        continue
+      }
       if (languageCounts[lang]>= max) {
         max = languageCounts[lang]
         mainLanguage = lang
@@ -2030,6 +2033,7 @@ class TranscriptionEditor {
     this.people = columnData.people
     this.pageId = columnData.info.pageId
     this.columnNumber = columnData.info.col
+    this.pageDefaultLang = columnData.info.lang
 
     for (const ele of columnData.elements) {
       switch (ele.type) {
@@ -2269,7 +2273,12 @@ class TranscriptionEditor {
     this.quillObject.setContents(delta)
     this.lastSavedData = this.quillObject.getContents()
     let mainLang = TranscriptionEditor.getMainLanguage(languageCounts)
-    //console.log(languageCounts)
+    console.log(languageCounts)
+    console.log(mainLang)
+    if (!mainLang) {
+      mainLang = this.pageDefaultLang
+    }
+    
     this.setDefaultLang(mainLang)
   }
   
@@ -2326,6 +2335,10 @@ class TranscriptionEditor {
       let extraInfo = ''
       let target = -1
       let length = -1
+      if (curOps.insert === '\n\n') {
+        console.log("Double newline in ops detected")
+        curOps.insert = '\n'
+      }
       if (curOps.insert !== '\n') {
         let itemId = -1
         let theText = curOps.insert
@@ -2490,7 +2503,7 @@ class TranscriptionEditor {
         itemIds.push(itemId)
         continue
       }
-      //console.log('About to let currentString = ""')
+
       let currentString = ''
       for (const ch of curOps.insert) {
         if (ch === '\n') {

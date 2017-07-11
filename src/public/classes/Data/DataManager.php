@@ -169,8 +169,7 @@ class DataManager
         }
         return $docIds;
     }
-    
-    
+   
     /**
      * Creates a new document in the system.
      * Returns the doc Id of the newly created document or false

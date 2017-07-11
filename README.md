@@ -52,9 +52,11 @@ cd src/public/utilities;
 ./createuser <someuser>
 ./makeroot <someuser>
 ```
-* Browse to http://localhost:8888 
+* Browse to http://localhost:8888/public
 
-Javascript testing: browse to http://localhost:8888/test/SpecRunner.html
+Javascript testing: 
+
+* browse to http://localhost:8888/public/test/SpecRunner.html
 
 
 

@@ -69,6 +69,13 @@ $(document).ready(function () {
       $('#pageinfoTab').addClass('active')
     } else {
       for (let col = 1; col <= numColumns; col++) {
+        let theUl = '<li id="colheader' + col + '">'
+        theUl += '<a data-toggle="tab" id="col-label-' + col + '" href="#col' + col +
+                  '">Column ' + col + '</a></li>'
+        $('#tabsUl').append(theUl)
+      }
+      
+      for (let col = 1; col <= numColumns; col++) {
         let getApiUrl = apiBase + '/api/' + docId + '/' + thePageNumber + '/' + col + '/elements'
         let updateApiUrl = getApiUrl + '/update'
         $.getJSON(
@@ -85,11 +92,6 @@ $(document).ready(function () {
               }
               theDiv += '" id="col' + col + '"></div>'
               $('#theTabs').append(theDiv)
-              let theUl = '<li id="colheader' + theCol + '">'
-              theUl += '<a data-toggle="tab" id="col-label-' + theCol + '" href="#col' + theCol +
-                  '">Column ' + theCol + '</a></li>'
-              $('#tabsUl').append(theUl)
-                  
               let te = new TranscriptionEditor(
                   '#col' + theCol, 
                   theCol, 

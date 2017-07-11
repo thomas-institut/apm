@@ -14,6 +14,7 @@ Development requires:
 * PHP Composer
 * PHPUnit 6.0+ 
 * npm 3.5+ 
+* jasmine 2.6.0+
 
 Get all PHP dependencies with composer:
 ```bash
@@ -51,11 +52,18 @@ cd src/public/utilities;
 ./createuser <someuser>
 ./makeroot <someuser>
 ```
+* Browse to http://localhost:8888 
+
+Javascript testing: browse to http://localhost:8888/test/SpecRunner.html
+
+
+
 
 ## Installation in production
 
 To install in production:  
 * Copy the ```src/public``` directory into the apm directory in the server.
+ (no need to copy src/public/test, src/public/jasmine)
 * Create a config.php configuration file in ``src/public`` in the server
 (see ```src/public/config.sample.php```).
 * Create the database structure in the server. 

@@ -45,6 +45,7 @@ class TranscriptionReader {
     const ERROR_CANNOT_LOAD_XML = 8;
     const ERROR_ADD_WIHOUT_VALID_TARGET = 9;
     const ERROR_MISSING_COL_NUMBER = 10;
+    const ERROR_XML_LANG_NOT_ALLOWED = 11;
         
     const MSG_GENERIC_ERROR = 'Error found';
     const MSG_GENERIC_WARNING = 'Warning';
@@ -59,6 +60,7 @@ class TranscriptionReader {
     const MSG_LOOKING_FOR_BODY_ELEMENT = "Looking for <body> inside <text>";
     const MSG_BAD_PAGE_DIV = 
             "Bad page <div>, expected <page type='page' facs='[pageId]'";
+    const MSG_XML_LANG_NOT_ALLOWED = "Invalid language xml:lang '%s'";
     
     const WARNING_IGNORED_ELEMENT = 500;
     const WARNING_BAD_ITEM = 501;
@@ -97,7 +99,30 @@ class TranscriptionReader {
         $this->warnings = [];
     }
     
-    public function read($xml)
+    private function isLangAllowed($lang, $allowedLangs) 
+    {
+        // Special case: empty $allowedLangs means ALL languages
+        // are allowed
+        if (count($allowedLangs) === 0) {
+            return true;
+        }
+        foreach ($allowedLangs as $allowed) {
+            if ($lang === $allowed) {
+                return true;
+            }
+        }
+        return false;
+        
+    }
+    
+    /**
+     * The defaults array should contain at least a 'langs' element
+     * with the languages allowed in xml:lang attributes
+     * @param type $xml
+     * @param type $defaults array of defaults
+     * @return boolean
+     */
+    public function read($xml, $defaults = [ 'langs' => [] ])
     {
         libxml_use_internal_errors(true);
         $sXml = simplexml_load_string($xml);
@@ -123,6 +148,11 @@ class TranscriptionReader {
         if ($defaultLang === '') {
             $this->setError(self::ERROR_XML_LANG_NOT_FOUND, 
                     self::MSG_XML_LANG_REQUIRED, " in <text> element");
+            return false;
+        }
+        if (!$this->isLangAllowed($defaultLang, $defaults['langs'])) {
+            $this->setError(self::ERROR_XML_LANG_NOT_ALLOWED, 
+            sprintf(self::MSG_XML_LANG_NOT_ALLOWED, $defaultLang), " in <text> element");
             return false;
         }
         

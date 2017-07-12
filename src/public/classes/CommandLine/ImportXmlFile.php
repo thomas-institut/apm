@@ -35,7 +35,9 @@ class ImportXmlFile extends CommandLineUtility {
     
     public function main($argc, $argv)
     {
-       
+       $defaults = [
+         'langs' => ['la', 'ar', 'he']
+       ];
         
         if ($argc > 3) {
             print self::USAGE;
@@ -74,7 +76,7 @@ class ImportXmlFile extends CommandLineUtility {
         $tsReader = new TranscriptionReader();
         
         print ("Analyzing transcription...\n");
-        $result = $tsReader->read($xml);
+        $result = $tsReader->read($xml, $defaults);
         
         if ($result === false) {
             $this->printErrorMsg("$tsReader->errorNumber: $tsReader->errorMsg : $tsReader->errorContext");

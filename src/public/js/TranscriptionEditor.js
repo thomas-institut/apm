@@ -96,7 +96,9 @@ class TranscriptionEditor {
       if (!range) {
         return false
       }
+      console.log("Selection: @" + range.index + ", l=" + range.length)
       let hasFormat = TranscriptionEditor.selectionHasFormat(quillObject, range)
+      console.log("Has format: " + hasFormat)
       if (range.length === 0) {
         $('.selFmtBtn').prop('disabled', true)
         thisObject.setDisableLangButtons(true)
@@ -118,6 +120,8 @@ class TranscriptionEditor {
 
         return false
       }
+      // Selection's length >= 1
+      
       $('#note-button-' + id).prop('disabled', true)
       $('#illegible-button-' + id).prop('disabled', true)
       $('#nowb-button-' + id).prop('disabled', true)
@@ -126,10 +130,12 @@ class TranscriptionEditor {
       
       let text = quillObject.getText(range)
       if (text.search('\n') !== -1) {
+        // Selection includes new lines
         $('.selFmtBtn').prop('disabled', true)
         thisObject.setDisableLangButtons(false)
         return false
       }
+      // Selection does not include new lines
       thisObject.setDisableLangButtons(false)
       if (hasFormat) {
         $('.selFmtBtn').prop('disabled', true)
@@ -1017,10 +1023,8 @@ class TranscriptionEditor {
         }
       }
     }
-    
-    for (let i = range.index; i < range.index + range.length - 1; i++) {
+    for (let i = range.index; i < range.index + range.length; i++) {
       let format = quillObject.getFormat(i, 1)
-      
       if ($.isEmptyObject(format)) {
         continue
       }
@@ -1041,6 +1045,7 @@ class TranscriptionEditor {
   }
 
   static rangeIsInMidItem (quillObject, range) {
+ 
     let prevFormat = quillObject.getFormat(range.index, 0)
     let nextFormat = quillObject.getFormat(range.index + range.length + 1, 0)
     let prevItem = TranscriptionEditor.formatHasItem(prevFormat)

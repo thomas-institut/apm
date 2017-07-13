@@ -127,8 +127,12 @@ class Item {
      */
     public $target;
     
-    function getText(){
+    public function getText(){
         return $this->theText;
+    }
+    
+    public function getAltText() {
+        return '';
     }
     
     function getLang(){

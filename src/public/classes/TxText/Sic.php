@@ -45,4 +45,8 @@ class Sic extends Item {
     function getCorrection(){
         return $this->altText;
     }
+    
+    public function getAltText() {
+        return $this->getCorrection();
+    }
 }

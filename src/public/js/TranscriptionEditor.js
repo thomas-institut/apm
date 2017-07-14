@@ -76,6 +76,11 @@ class TranscriptionEditor {
     $(containerSelector).on('dragstart drag dragend drop', function (e){
       return false
     })
+    $(window).on('resize', function (e){
+      console.log("Resizing")
+      console.log($(containerSelector + ' .ql-editor').height())
+      return false
+    })
     
     this.setFontSize(3)
     let modalsHtml = TranscriptionEditor.modalsTemplate.render({id: id})

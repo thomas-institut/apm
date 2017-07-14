@@ -30,20 +30,7 @@ let Block = Quill.import('blots/block')
 let Clipboard = Quill.import('modules/clipboard');
 let Delta = Quill.import('delta');
 
-class PlainClipboard extends Clipboard {
-  convert(html = null) {
-    //console.log("Pasting...")
-    //console.log(html)
-    if (typeof html === 'string') {
-      this.container.innerHTML = html;
-    }
-    let text = this.container.innerText;
-    this.container.innerHTML = '';
-    return new Delta().insert(text);
-  }
-}
 
-Quill.register('modules/clipboard', PlainClipboard, true);
 
 
 class LangBlot extends Inline {

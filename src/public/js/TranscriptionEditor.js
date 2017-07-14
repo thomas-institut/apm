@@ -72,6 +72,11 @@ class TranscriptionEditor {
 
     let editorHtml = TranscriptionEditor.editorTemplate.render({id: id})
     $(containerSelector).html(editorHtml)
+    // Disable drag and drop in editor (too many issues)
+    $(containerSelector).on('dragstart drag dragend drop', function (e){
+      return false
+    })
+    
     this.setFontSize(3)
     let modalsHtml = TranscriptionEditor.modalsTemplate.render({id: id})
     $('body').append(modalsHtml)
@@ -96,9 +101,9 @@ class TranscriptionEditor {
       if (!range) {
         return false
       }
-      console.log("Selection: @" + range.index + ", l=" + range.length)
+      //console.log("Selection: @" + range.index + ", l=" + range.length)
       let hasFormat = TranscriptionEditor.selectionHasFormat(quillObject, range)
-      console.log("Has format: " + hasFormat)
+      //console.log("Has format: " + hasFormat)
       if (range.length === 0) {
         $('.selFmtBtn').prop('disabled', true)
         thisObject.setDisableLangButtons(true)

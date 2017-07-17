@@ -1087,6 +1087,10 @@ class TranscriptionEditor {
   }
  
   insertLineGap(position, count) {
+    if (position !== 0) {
+      this.quillObject.insertText(position, '\n')
+      position++
+    }
      this.quillObject.insertEmbed(position, 'linegap', {
             editorid: this.id,
             linecount: count

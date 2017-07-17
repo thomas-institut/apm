@@ -155,12 +155,16 @@ describe("EditorData", function() {
           {insert: '\n'},   
           // Line gap in a regular line element
           {insert: 'Line 3'},
-          {insert: {linegap: {linecount: 2}}},
+          {insert: {linegap: {linecount: 1}}},
           {insert: '\n'},
           // Line gap in a non-line element, element should convert into line element
-          {insert: 'Line 6'},
-          {insert: {linegap: {linecount: 2}}},
-          {attributes: {head:true}, insert:"\n"}
+          {insert: 'Line 5'},
+          {insert: {linegap: {linecount: 1}}},
+          {attributes: {head:true}, insert:"\n"},
+          // Line gap with lang attribute
+          {insert: 'Line 7'},
+          {attributes:{lang:"la"},insert:{linegap:{linecount:1}}},
+          {insert: '\n'}
         ]
       }
       console.log("---- LINE GAP test ---")
@@ -169,7 +173,7 @@ describe("EditorData", function() {
       expect(apiData.elements).toBeDefined()
       expect(apiData.people).toBeDefined()
       expect(apiData.ednotes).toBeDefined()
-      expect(apiData.elements.length).toBe(6)
+      expect(apiData.elements.length).toBe(8)
       expect(apiData.elements[0].type).toBe(ELEMENT_LINE)
       expect(apiData.elements[0].items.length).toBe(1)
       expect(apiData.elements[0].items[0].type = ITEM_TEXT)
@@ -189,10 +193,18 @@ describe("EditorData", function() {
       expect(apiData.elements[4].type).toBe(ELEMENT_LINE)
       expect(apiData.elements[4].items.length).toBe(1)
       expect(apiData.elements[4].items[0].type = ITEM_TEXT)
-      expect(apiData.elements[4].items[0].theText = 'Line 6')
+      expect(apiData.elements[4].items[0].theText = 'Line 5')
       
       expect(apiData.elements[5].type).toBe(ELEMENT_LINE_GAP)
       expect(apiData.elements[5].items.length).toBe(0)
+      
+      expect(apiData.elements[6].type).toBe(ELEMENT_LINE)
+      expect(apiData.elements[6].items.length).toBe(1)
+      expect(apiData.elements[6].items[0].type = ITEM_TEXT)
+      expect(apiData.elements[6].items[0].theText = 'Line 7')
+      
+      expect(apiData.elements[7].type).toBe(ELEMENT_LINE_GAP)
+      expect(apiData.elements[7].items.length).toBe(0)
       
       
     })

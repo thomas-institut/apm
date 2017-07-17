@@ -116,16 +116,40 @@ class EditorData {
           curElement = createNewElement()
           continue;
         } 
-        //
-        // Item with some text in it
-        //
-        //console.log("insert is text with attributes")
-        let item = createNewItem()
+        
+        // Insert can be text or a line gap
+        
+        let theInsert = curOps.insert
         if (typeof curOps.insert !== 'string') {
+          if ('linegap' in curOps.insert) {
+            // if a line gap, then the only attribute should be language
+            if (curElement.items.length > 0) {
+              // this means the line gap does not have newline before
+              // which is possible in Quill
+              curElement.type = ELEMENT_LINE
+              elements.push(curElement)
+              curElement = createNewElement()
+            }
+            curElement.type = ELEMENT_LINE_GAP
+            curElement.reference = theInsert.linegap.linecount
+            curElement.items = []
+            elements.push(curElement)
+            previousElementType = ELEMENT_LINE_GAP
+            curElement = createNewElement()
+            continue;
+          }
           console.log("ERROR: Quill 2 API : ops with attributes and a non-string")
           console.log(JSON.stringify(curOps))
           continue
         }
+        
+        //
+        // Item with some text in it
+        //
+        //
+        //console.log("insert is text with attributes")
+        let item = createNewItem()
+        
         item.theText =curOps.insert
         if (curOps.attributes.lang) {
           item.lang = curOps.attributes.lang

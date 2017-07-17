@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-/* global expect, EditorData, ELEMENT_LINE, ITEM_TEXT, ELEMENT_CUSTODES, ELEMENT_HEAD, ELEMENT_LINE_GAP, ELEMENT_PAGE_NUMBER, ELEMENT_GLOSS, ELEMENT_ADDITION, ELEMENT_NOTE_MARK */
+/* global expect, EditorData, ELEMENT_LINE, ITEM_TEXT, ELEMENT_CUSTODES, ELEMENT_HEAD, ELEMENT_LINE_GAP, ELEMENT_PAGE_NUMBER, ELEMENT_GLOSS, ELEMENT_ADDITION, ELEMENT_NOTE_MARK, ITEM_RUBRIC, ITEM_GLIPH, ITEM_INITIAL, ITEM_SIC, ITEM_ABBREVIATION, ITEM_DELETION, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_MARK, ITEM_NO_WORD_BREAK, ITEM_ILLEGIBLE, ITEM_CHUNK_MARK */
 
 describe("EditorData", function() {
 
@@ -30,7 +30,7 @@ describe("EditorData", function() {
     let editorInfo = { 
       pageId: 100, 
       columnNumber: 1, 
-      lang: 'la', 
+      defaultLang: 'la', 
       editorId: 200, 
       handId: 1, 
       edNotes: [], 
@@ -66,6 +66,135 @@ describe("EditorData", function() {
         expect(item.lang).toBe(editorInfo.defaultLang)
         i++
       }
+    })
+    
+    it("should support simple textual items: rubric, gliph, initial, sic, abbr, del, add, unclear", function () {
+      let delta = { 
+        ops: [ 
+          {attributes: { rubric: {itemid: 100}}, insert: 'some text'},
+          {attributes: { gliph: {itemid: 101}}, insert: 'some text'},
+          {attributes: { initial: {itemid: 102}}, insert: 'some text'},
+          {attributes: { sic: {itemid: 103, correction: 'some expansion'}}, insert: 'some text'},
+          {attributes: { abbr: {itemid: 104, expansion: 'some expansion'}}, insert: 'some text'},
+          {attributes: { deletion: {itemid: 105, technique: 'some technique'}}, insert: 'some text'},
+          {attributes: { addition: {itemid: 106, place: 'margin left', target: 105}}, insert: 'some text'},
+          {attributes: { unclear: {itemid: 107, reading2: 'some reading', reason: 'some reason'}}, insert: 'some text'},
+          {insert: '\n'}
+        ]
+      }
+      let apiData = EditorData.getApiDataFromQuillDelta( delta, editorInfo)
+      expect(apiData.elements).toBeDefined()
+      expect(apiData.people).toBeDefined()
+      expect(apiData.ednotes).toBeDefined()
+      expect(apiData.elements.length).toBe(1)
+      expect(apiData.elements[0].type).toBe(ELEMENT_LINE)
+      expect(apiData.elements[0].items.length).toBe(8)
+      let i = 100
+      let seq = 0
+      for (const item of apiData.elements[0].items) {
+        expect(item.theText).toBe('some text')
+        expect(item.lang).toBe(editorInfo.defaultLang)
+        expect(item.id).toBe(i)
+        expect(item.seq).toBe(seq)
+        i++
+        seq++
+      }
+      expect(apiData.elements[0].items[0].type).toBe(ITEM_RUBRIC)
+      expect(apiData.elements[0].items[1].type).toBe(ITEM_GLIPH)
+      expect(apiData.elements[0].items[2].type).toBe(ITEM_INITIAL)
+      expect(apiData.elements[0].items[3].type).toBe(ITEM_SIC)
+      expect(apiData.elements[0].items[4].type).toBe(ITEM_ABBREVIATION)
+      expect(apiData.elements[0].items[5].type).toBe(ITEM_DELETION)
+      expect(apiData.elements[0].items[6].type).toBe(ITEM_ADDITION)
+      expect(apiData.elements[0].items[7].type).toBe(ITEM_UNCLEAR)
+    })
+    
+    it("should support non-textual items: mark, nowb, illegible, chunkmark", function () {
+      let delta = { 
+        ops: [ 
+          {insert: {mark: {itemid: 100}}},
+          {insert: {nowb: {itemid: 101}}},
+          {insert: {illegible: {itemid: 102, reason: 'some reason', length: 5}}},
+          {insert: {chunkmark: {itemid: 103, type: 'start', chunkno: '45', dareid: 'AW47'}}},
+          {insert: '\n'}
+        ]
+      }
+      let apiData = EditorData.getApiDataFromQuillDelta( delta, editorInfo)
+      expect(apiData.elements).toBeDefined()
+      expect(apiData.people).toBeDefined()
+      expect(apiData.ednotes).toBeDefined()
+      expect(apiData.elements.length).toBe(1)
+      expect(apiData.elements[0].type).toBe(ELEMENT_LINE)
+      expect(apiData.elements[0].items.length).toBe(4)
+      let i = 100
+      for (const item of apiData.elements[0].items) {
+        expect(item.lang).toBe(editorInfo.defaultLang)
+        expect(item.id).toBe(i)
+        i++
+      }
+      expect(apiData.elements[0].items[0].type).toBe(ITEM_MARK)
+      expect(apiData.elements[0].items[0].theText).toBe('')
+      
+      expect(apiData.elements[0].items[1].type).toBe(ITEM_NO_WORD_BREAK)
+      expect(apiData.elements[0].items[1].theText).toBe('')
+      
+      expect(apiData.elements[0].items[2].type).toBe(ITEM_ILLEGIBLE)
+      expect(apiData.elements[0].items[2].theText).toBe('')
+      
+      expect(apiData.elements[0].items[3].type).toBe(ITEM_CHUNK_MARK)
+      expect(apiData.elements[0].items[3].theText).toBe('AW47')
+    })
+    
+    
+    it("should support line gaps", function () {
+      let delta = { 
+        ops: [ 
+          // Normal case
+          {insert: 'Line 1\n'},
+          {insert: {linegap: {linecount: 1}}},
+          {insert: '\n'},   
+          // Line gap in a regular line element
+          {insert: 'Line 3'},
+          {insert: {linegap: {linecount: 2}}},
+          {insert: '\n'},
+          // Line gap in a non-line element, element should convert into line element
+          {insert: 'Line 6'},
+          {insert: {linegap: {linecount: 2}}},
+          {attributes: {head:true}, insert:"\n"}
+        ]
+      }
+      console.log("---- LINE GAP test ---")
+      let apiData = EditorData.getApiDataFromQuillDelta( delta, editorInfo)
+      console.log(apiData)
+      expect(apiData.elements).toBeDefined()
+      expect(apiData.people).toBeDefined()
+      expect(apiData.ednotes).toBeDefined()
+      expect(apiData.elements.length).toBe(6)
+      expect(apiData.elements[0].type).toBe(ELEMENT_LINE)
+      expect(apiData.elements[0].items.length).toBe(1)
+      expect(apiData.elements[0].items[0].type = ITEM_TEXT)
+      expect(apiData.elements[0].items[0].theText = 'Line 1')
+      
+      expect(apiData.elements[1].type).toBe(ELEMENT_LINE_GAP)
+      expect(apiData.elements[1].items.length).toBe(0)
+      
+      expect(apiData.elements[2].type).toBe(ELEMENT_LINE)
+      expect(apiData.elements[2].items.length).toBe(1)
+      expect(apiData.elements[2].items[0].type = ITEM_TEXT)
+      expect(apiData.elements[2].items[0].theText = 'Line 3')
+      
+      expect(apiData.elements[3].type).toBe(ELEMENT_LINE_GAP)
+      expect(apiData.elements[3].items.length).toBe(0)
+      
+      expect(apiData.elements[4].type).toBe(ELEMENT_LINE)
+      expect(apiData.elements[4].items.length).toBe(1)
+      expect(apiData.elements[4].items[0].type = ITEM_TEXT)
+      expect(apiData.elements[4].items[0].theText = 'Line 6')
+      
+      expect(apiData.elements[5].type).toBe(ELEMENT_LINE_GAP)
+      expect(apiData.elements[5].items.length).toBe(0)
+      
+      
     })
       
     it("should support head elements (type " + ELEMENT_HEAD + ")", function () {
@@ -205,10 +334,39 @@ describe("EditorData", function() {
       expect(ele.reference).toBe(lgLineCount)
       expect(ele.items.length).toBe(0)
     })
+    
+    
+    
+    it("should properly deal with inserts starting with newline (issues #20 and #32)", function () {
+      let delta = { 
+        ops: [ 
+          {attributes: {lang: 'he'}, insert: 'Line 1'},
+          {insert: '\nLine 2\n'}
+        ]
+      }
+      let apiData = EditorData.getApiDataFromQuillDelta( delta, editorInfo)
+      expect(apiData.elements).toBeDefined()
+      expect(apiData.people).toBeDefined()
+      expect(apiData.ednotes).toBeDefined()
+      expect(apiData.elements.length).toBe(2)
+      let ele1 = apiData.elements[0]
+      expect(ele1.type).toBe(ELEMENT_LINE)
+      expect(ele1.items.length).toBe(1)
+      expect(ele1.items[0].lang).toBe('he')
+      expect(ele1.items[0].theText).toBe('Line 1')
+      let ele2 = apiData.elements[1]
+      expect(ele2.type).toBe(ELEMENT_LINE)
+      expect(ele2.items.length).toBe(1)
+      expect(ele2.items[0].lang).toBe('la')
+      expect(ele2.items[0].theText).toBe('Line 2')
+      
+    })
+    
       
   })
     
 })
   
 
+  
   

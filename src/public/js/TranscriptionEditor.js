@@ -886,6 +886,7 @@ class TranscriptionEditor {
     $('#toggle-button-' + this.id).html('<i class="fa fa-power-off"></i>')
     this.resizeEditor()
     this.setContentsNotChanged()
+    this.quillObject.setSelection(this.quillObject.getLength())
     let event = new Event('edit-enable')
     $(this.containerSelector).get()[0].dispatchEvent(event)
   }

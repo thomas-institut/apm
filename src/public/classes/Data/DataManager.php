@@ -960,6 +960,12 @@ class DataManager
                     (int) $row[$fields['target']], 
                     $row[$fields['alt_text']]);
                 break;
+            
+            case Item::CHARACTER_GAP:
+                $item = new \AverroesProject\TxText\CharacterGap(
+                        $row[$fields['id']], 
+                        $row[$fields['seq']],
+                        $row[$fields['length']]);
 
             default: 
                 continue;

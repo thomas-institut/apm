@@ -23,7 +23,7 @@
 /* global ITEM_RUBRIC, ITEM_GLIPH, ITEM_INITIAL, ITEM_SIC, ITEM_ABBREVIATION */
 /* global ITEM_DELETION, Item, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_ILLEGIBLE, ELEMENT_PAGENUMBER */
 /* global ITEM_NO_WORD_BREAK, ITEM_CHUNK_MARK, ELEMENT_ADDITION, ELEMENT_LINE_GAP, MarkBlot */
-/* global IllegibleBlot, NoWordBreakBlot, ChunkMarkBlot, LineGapBlot, _, GlossBlot, EditorData */
+/* global IllegibleBlot, NoWordBreakBlot, ChunkMarkBlot, LineGapBlot, _, GlossBlot, EditorData, ITEM_CHARACTER_GAP, CharacterGapBlot */
 
 
 class TranscriptionEditor {
@@ -54,6 +54,7 @@ class TranscriptionEditor {
     NoWordBreakBlot.baseUrl = baseUrl
     ChunkMarkBlot.baseUrl = baseUrl
     LineGapBlot.baseUrl = baseUrl
+    CharacterGapBlot.baseUrl = baseUrl
     if (!TranscriptionEditor.editorTemplate) {
       TranscriptionEditor.editorTemplate = Twig.twig({
         id: 'editor',
@@ -479,6 +480,20 @@ class TranscriptionEditor {
       })
       $('#item-modal-' + thisObject.id).modal('show')
     })
+    
+    
+    $('#chgap-button-' + id).click(function () {
+      let range = quillObject.getSelection()
+      if (range.length > 0) {
+        return false
+      }
+      quillObject.insertEmbed(range.index, 'chgap', {
+          length: 5,
+          itemid: thisObject.getOneItemId(),
+          editorid: thisObject.id
+        })
+        quillObject.setSelection(range.index + 1)
+    })
 
     $('#edit-button-' + id).click(function () {
       let currentRange = quillObject.getSelection()
@@ -873,6 +888,7 @@ class TranscriptionEditor {
     MarkBlot.size = this.fontSize
     ChunkMarkBlot.size = this.fontSize
     LineGapBlot.size = this.fontSize
+    CharacterGapBlot.size = this.fontSize
   }
   
   makeTextSmaller() {
@@ -1767,6 +1783,18 @@ class TranscriptionEditor {
                   }
                 })
                 break
+                
+              case ITEM_CHARACTER_GAP: 
+                delta.push({
+                  insert: {
+                    chgap: {
+                      length: item.length,
+                      itemid: item.id,
+                      editorid: this.id
+                    }
+                  }
+                })
+                break;
             }
             languageCounts[item.lang]++
           }

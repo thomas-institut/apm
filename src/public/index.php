@@ -260,6 +260,11 @@ $app->group('/api', function (){
             '\AverroesProject\Api\ApiController:generateLineGapImage')
         ->setName('api.images.linegap');
     
+    // API -> images : Character Gap Mark
+    $this->get('/images/charactergap/{length}/{size}', 
+            '\AverroesProject\Api\ApiController:generateCharacterGapImage')
+        ->setName('api.images.charactergap');
+    
 })->add('\AverroesProject\Auth\Authenticator:authenticateApiRequest');
 
 

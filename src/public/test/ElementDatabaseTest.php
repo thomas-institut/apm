@@ -78,7 +78,7 @@ class ElementDatabaseTest extends TestCase {
         $goodElement->columnNumber = 1;
         $goodElement->editorId = $editorId;
         $goodElement->handId = 0;
-        // One of each item type, for good measure
+        // One of each item type, for good measure  (no item line break at the moment)
         ItemArray::addItem($goodElement->items, new TxText\Text(0,-1,'Some text '));
         ItemArray::addItem($goodElement->items, new TxText\Rubric(0,-1,'Rubric '));
         ItemArray::addItem($goodElement->items, new TxText\Sic(0,-1,'loose', 'lose'));
@@ -91,6 +91,8 @@ class ElementDatabaseTest extends TestCase {
         ItemArray::addItem($goodElement->items, new TxText\Addition(0,-1,'added', 'above'));
         ItemArray::addItem($goodElement->items, new TxText\ChunkMark(0, -1, 'AW', 1, TxText\ChunkMark::CHUNK_START));
         ItemArray::addItem($goodElement->items, new TxText\NoWordBreak(0,-1));
+        ItemArray::addItem($goodElement->items, new TxText\Initial(0,-1, "I"));
+        ItemArray::addItem($goodElement->items, new TxText\CharacterGap(0,-1));
         $goodElement->lang = 'la';
         
         

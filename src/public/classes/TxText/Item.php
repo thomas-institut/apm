@@ -74,6 +74,7 @@ class Item {
     const LINEBREAK    =   12;
     const INITIAL  = 13;
     const CHUNK_MARK = 14;
+    const CHARACTER_GAP = 15;
     
     /**
      *

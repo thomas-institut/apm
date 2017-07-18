@@ -20,7 +20,7 @@
 /* global ELEMENT_GLOSS, ELEMENT_PAGE_NUMBER, ITEM_TEXT, ITEM_MARK */
 /* global ITEM_RUBRIC, ITEM_GLIPH, ITEM_INITIAL, ITEM_SIC, ITEM_ABBREVIATION */
 /* global ITEM_DELETION, Item, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_ILLEGIBLE, ELEMENT_PAGENUMBER */
-/* global ITEM_NO_WORD_BREAK, ITEM_CHUNK_MARK, ELEMENT_ADDITION, ELEMENT_LINE_GAP, ELEMENT_INVALID */
+/* global ITEM_NO_WORD_BREAK, ITEM_CHUNK_MARK, ELEMENT_ADDITION, ELEMENT_LINE_GAP, ELEMENT_INVALID, ITEM_CHARACTER_GAP */
 
 class EditorData {
   
@@ -117,7 +117,7 @@ class EditorData {
           continue;
         } 
         
-        // Insert can be text or a line gap
+        // Insert can be text or a  gap
         
         let theInsert = curOps.insert
         if (typeof curOps.insert !== 'string') {
@@ -138,6 +138,19 @@ class EditorData {
             curElement = createNewElement()
             continue;
           }
+          
+          if ('chgap' in curOps.insert) {
+            let item = createNewItem()
+            item.type = ITEM_CHARACTER_GAP
+            item.id = curOps.insert.chgap.itemid
+            item.length = curOps.insert.chgap.length
+            // Make sure item id is an int
+            item.id = parseInt(item.id)
+            itemIds.push(item.id)
+            curElement.items.push(item)
+            continue;
+          }
+          
           console.log("ERROR: Quill 2 API : ops with attributes and a non-string")
           console.log(JSON.stringify(curOps))
           continue
@@ -268,9 +281,14 @@ class EditorData {
         continue;
       }
       let item = createNewItem()
-      if ('mark' in curOps.insert) {
+      if ('mark' in theInsert) {
         item.type = ITEM_MARK
         item.id = theInsert.mark.itemid
+      }
+      if ('chgap' in curOps.insert) {
+        item.type = ITEM_CHARACTER_GAP
+        item.id = theInsert.chgap.itemid
+        item.length = theInsert.chgap.length
       }
       if ('nowb' in curOps.insert) {
         item.type = ITEM_NO_WORD_BREAK

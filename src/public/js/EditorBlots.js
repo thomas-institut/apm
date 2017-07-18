@@ -362,6 +362,33 @@ ChunkMarkBlot.className = 'chunkmark'
 Quill.register(ChunkMarkBlot)
 
 
+class CharacterGapBlot extends BlockEmbed {
+  static create (value) {
+    let node = super.create()
+    node.setAttribute('itemid', value.itemid)
+    node.setAttribute('editorid', value.editorid)
+    node.setAttribute('length', value.length)
+    node.setAttribute('alt', 'Gap')
+    node.setAttribute('title', 'Gap')
+    let size = Math.round(((CharacterGapBlot.size-1)*0.2+1)*14)
+    node.setAttribute('src', CharacterGapBlot.baseUrl + '/api/images/charactergap/' + value.length + '/' + size)
+    //TranscriptionEditor.setUpPopover(node, 'Note', '', value.editorid, value.itemid, true)
+    return node
+  }
+
+  static value (node) {
+    return {
+      itemid: node.getAttribute('itemid'),
+      editorid: node.getAttribute('editorid'),
+      length: node.getAttribute('length')
+    }
+  }
+ }
+CharacterGapBlot.blotName = 'chgap'
+CharacterGapBlot.tagName = 'img'
+CharacterGapBlot.className = 'chgap'
+Quill.register(CharacterGapBlot)
+
 class NoWordBreakBlot extends BlockEmbed {
   static create (value) {
     let node = super.create()

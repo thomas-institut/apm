@@ -109,7 +109,7 @@ describe("EditorData", function() {
       expect(apiData.elements[0].items[7].type).toBe(ITEM_UNCLEAR)
     })
     
-    it("should support non-textual items: mark, nowb, illegible, chunkmark, chgap", function () {
+    it("should support non-textual items: mark, nowb, illegible, chunkmark, chgap, pmark", function () {
       let delta = { 
         ops: [ 
           {insert: {mark: {itemid: 100}}},
@@ -117,6 +117,7 @@ describe("EditorData", function() {
           {insert: {illegible: {itemid: 102, reason: 'some reason', length: 5}}},
           {insert: {chunkmark: {itemid: 103, type: 'start', chunkno: '45', dareid: 'AW47'}}},
           {insert: {chgap: {itemid: 104, length: 5}}},
+          {insert: {pmark: {itemid: 105}}},
           {insert: '\n'}
         ]
       }
@@ -126,7 +127,7 @@ describe("EditorData", function() {
       expect(apiData.ednotes).toBeDefined()
       expect(apiData.elements.length).toBe(1)
       expect(apiData.elements[0].type).toBe(ELEMENT_LINE)
-      expect(apiData.elements[0].items.length).toBe(5)
+      expect(apiData.elements[0].items.length).toBe(6)
       let i = 100
       for (const item of apiData.elements[0].items) {
         expect(item.lang).toBe(editorInfo.defaultLang)
@@ -148,6 +149,11 @@ describe("EditorData", function() {
       expect(apiData.elements[0].items[4].type).toBe(ITEM_CHARACTER_GAP)
       expect(apiData.elements[0].items[4].theText).toBe('')
       expect(apiData.elements[0].items[4].length).toBe(5)
+      
+      expect(apiData.elements[0].items[5].type).toBe(ITEM_PARAGRAPH_MARK)
+      expect(apiData.elements[0].items[5].theText).toBe('')
+     
+      
     })
     
     

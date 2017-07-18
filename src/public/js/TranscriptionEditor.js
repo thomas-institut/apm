@@ -55,6 +55,7 @@ class TranscriptionEditor {
     ChunkMarkBlot.baseUrl = baseUrl
     LineGapBlot.baseUrl = baseUrl
     CharacterGapBlot.baseUrl = baseUrl
+    ParagraphMarkBlot.baseUrl = baseUrl
     if (!TranscriptionEditor.editorTemplate) {
       TranscriptionEditor.editorTemplate = Twig.twig({
         id: 'editor',
@@ -494,6 +495,18 @@ class TranscriptionEditor {
         })
         quillObject.setSelection(range.index + 1)
     })
+    
+    $('#pmark-button-' + id).click(function () {
+      let range = quillObject.getSelection()
+      if (range.length > 0) {
+        return false
+      }
+      quillObject.insertEmbed(range.index, 'pmark', {
+          itemid: thisObject.getOneItemId(),
+          editorid: thisObject.id
+        })
+        quillObject.setSelection(range.index + 1)
+    })    
 
     $('#edit-button-' + id).click(function () {
       let currentRange = quillObject.getSelection()
@@ -889,6 +902,7 @@ class TranscriptionEditor {
     ChunkMarkBlot.size = this.fontSize
     LineGapBlot.size = this.fontSize
     CharacterGapBlot.size = this.fontSize
+    ParagraphMarkBlot.size = this.fontSize
   }
   
   makeTextSmaller() {
@@ -1795,6 +1809,17 @@ class TranscriptionEditor {
                   }
                 })
                 break;
+                
+              case ITEM_PARAGRAPH_MARK:
+                delta.push({
+                  insert: {
+                    pmark: {
+                      itemid: item.id,
+                      editorid: this.id
+                    }
+                  }
+                })
+                break  
             }
             languageCounts[item.lang]++
           }

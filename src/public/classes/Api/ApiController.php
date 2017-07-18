@@ -122,13 +122,25 @@ class ApiController
         //return $response;
     }
     
-        public function generateCharacterGapImage(Request $request, 
+    public function generateCharacterGapImage(Request $request, 
             Response $response, $next)
     {
         $size = $request->getAttribute('size');
         $length = $request->getAttribute('length');
         
         $imageData = \AverroesProject\Image\EditorImages::CharacterGapImage($size, $length);
+        
+        $response->getBody()->write($imageData);
+        return $response->withHeader('Content-Type', 'image/png');
+        //return $response;
+    }
+    
+    public function generateParagraphMarkIcon(Request $request, 
+            Response $response, $next)
+    {
+        $size = $request->getAttribute('size');
+        
+        $imageData = \AverroesProject\Image\EditorImages::paragraphMarkIcon($size);
         
         $response->getBody()->write($imageData);
         return $response->withHeader('Content-Type', 'image/png');

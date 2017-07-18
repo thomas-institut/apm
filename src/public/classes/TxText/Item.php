@@ -75,7 +75,9 @@ class Item {
     const INITIAL  = 13;
     const CHUNK_MARK = 14;
     const CHARACTER_GAP = 15;
-    
+    const PARAGRAPH_MARK = 16;
+
+
     /**
      *
      * @var string  

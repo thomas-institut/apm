@@ -1,3 +1,5 @@
+<?php
+
 /*
  * Copyright (C) 2017 Universität zu Köln
  *
@@ -16,12 +18,27 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+namespace AverroesProject\TxText;
+
+
 /**
- * Author:  Rafael Nájera <rafael.najera@uni-koeln.de>
- * Created: May 18, 2017
+ * Description of TtiMark
+ *
+ * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-
-INSERT INTO `ap_types_item` (`id`, `name`, `descr`) VALUES ('15', 'charactergap', 'Character Gap');
-INSERT INTO `ap_types_item` (`id`, `name`, `descr`) VALUES ('16', 'paragraphmark', 'Paragraph Mark');
-
-UPDATE `ap_settings` SET `value` = '10' WHERE `ap_settings`.`setting` = 'dbversion';
+class ParagraphMark extends Item {
+    /**
+     * 
+     * @param int $id
+     * @param int $s
+     */
+    function __construct($id, $s) {
+        parent::__construct($id, $s);
+        $this->type = parent::PARAGRAPH_MARK;
+    }
+    
+    function getText(){
+        return '';
+    }
+    
+}

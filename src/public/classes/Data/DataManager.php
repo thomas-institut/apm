@@ -966,6 +966,12 @@ class DataManager
                         $row[$fields['id']], 
                         $row[$fields['seq']],
                         $row[$fields['length']]);
+                break;
+            
+            case Item::PARAGRAPH_MARK:
+                $item = new \AverroesProject\TxText\ParagraphMark($row[$fields['id']], 
+                        $row[$fields['seq']]);
+                break;
 
             default: 
                 continue;

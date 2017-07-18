@@ -20,7 +20,7 @@
 /* global ELEMENT_GLOSS, ELEMENT_PAGE_NUMBER, ITEM_TEXT, ITEM_MARK */
 /* global ITEM_RUBRIC, ITEM_GLIPH, ITEM_INITIAL, ITEM_SIC, ITEM_ABBREVIATION */
 /* global ITEM_DELETION, Item, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_ILLEGIBLE, ELEMENT_PAGENUMBER */
-/* global ITEM_NO_WORD_BREAK, ITEM_CHUNK_MARK, ELEMENT_ADDITION, ELEMENT_LINE_GAP, ELEMENT_INVALID, ITEM_CHARACTER_GAP */
+/* global ITEM_NO_WORD_BREAK, ITEM_CHUNK_MARK, ELEMENT_ADDITION, ELEMENT_LINE_GAP, ELEMENT_INVALID, ITEM_CHARACTER_GAP, ITEM_PARAGRAPH_MARK */
 
 class EditorData {
   
@@ -144,6 +144,17 @@ class EditorData {
             item.type = ITEM_CHARACTER_GAP
             item.id = curOps.insert.chgap.itemid
             item.length = curOps.insert.chgap.length
+            // Make sure item id is an int
+            item.id = parseInt(item.id)
+            itemIds.push(item.id)
+            curElement.items.push(item)
+            continue;
+          }
+          
+          if ('pmark' in theInsert) {
+            let item = createNewItem()
+            item.type = ITEM_PARAGRAPH_MARK
+            item.id = theInsert.pmark.itemid
             // Make sure item id is an int
             item.id = parseInt(item.id)
             itemIds.push(item.id)
@@ -306,6 +317,10 @@ class EditorData {
         item.altText = theInsert.chunkmark.type
         item.target = parseInt(theInsert.chunkmark.chunkno)
         item.theText = theInsert.chunkmark.dareid
+      }
+      if ('pmark' in theInsert) {
+        item.type = ITEM_PARAGRAPH_MARK
+        item.id = theInsert.pmark.itemid
       }
       item.id = parseInt(item.id)
       itemIds.push(item.id)

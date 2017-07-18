@@ -389,6 +389,8 @@ CharacterGapBlot.tagName = 'img'
 CharacterGapBlot.className = 'chgap'
 Quill.register(CharacterGapBlot)
 
+
+
 class NoWordBreakBlot extends BlockEmbed {
   static create (value) {
     let node = super.create()
@@ -414,7 +416,29 @@ NoWordBreakBlot.tagName = 'img'
 NoWordBreakBlot.className = 'nowb'
 Quill.register(NoWordBreakBlot)
 
+class ParagraphMarkBlot extends BlockEmbed {
+  static create (value) {
+    let node = super.create()
+    node.setAttribute('itemid', value.itemid)
+    node.setAttribute('editorid', value.editorid)
+    node.setAttribute('alt', 'Paragraph')
+    node.setAttribute('title', 'Paragraph')
+    let size = Math.round(((ParagraphMarkBlot.size-1)*0.2+1)*14)
+    node.setAttribute('src', ParagraphMarkBlot.baseUrl + '/api/images/paragraphmark/' + size)
+    return node
+  }
 
+  static value (node) {
+    return {
+      itemid: node.getAttribute('itemid'),
+      editorid: node.getAttribute('editorid')
+    }
+  }
+ }
+ParagraphMarkBlot.blotName = 'pmark'
+ParagraphMarkBlot.tagName = 'img'
+ParagraphMarkBlot.className = 'pmark'
+Quill.register(ParagraphMarkBlot)
 
 class GlossBlot extends Block {
   

@@ -152,6 +152,7 @@ class TranscriptionEditor {
         $('#clear-button-' + id).prop('disabled', false)
         if (TranscriptionEditor.rangeIsInMidItem(quillObject, range)) {
           $('#edit-button-' + id).prop('disabled', false)
+          $('#clear-button-' + id).prop('disabled', true)
           return false
         }
         $('#edit-button-' + id).prop('disabled', true)

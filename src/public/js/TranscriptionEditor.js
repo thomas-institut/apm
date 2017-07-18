@@ -721,6 +721,10 @@ class TranscriptionEditor {
     $('#del-dot-above-' + id).click(function () {
       thisObject.setDeletion('dot-above')
     })
+    $('#del-line-above-' + id).click(function () {
+      thisObject.setDeletion('line-above')
+    })
+    
     
     $('#nowb-button-' + id).click(function () {
       let range = quillObject.getSelection()

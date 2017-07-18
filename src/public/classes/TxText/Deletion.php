@@ -31,7 +31,8 @@ class Deletion extends Item {
         'dot-above-dot-under',
         'dots-above',
         'dots-underneath',
-        'strikeout'
+        'strikeout',
+        'line-above'
     ];
     
     /**

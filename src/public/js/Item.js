@@ -47,7 +47,10 @@ class Item {
       'below',
       'inline',
       'inspace',
-      'overflow']
+      'overflow', 
+      'margin left',
+      'margin right'
+    ]
   }
 
   static getValidUnclearReasons () {

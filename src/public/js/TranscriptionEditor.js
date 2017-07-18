@@ -697,6 +697,14 @@ class TranscriptionEditor {
     $('#add-overflow-' + id).click(function () {
       thisObject.setAddition('overflow')
     })
+    
+    $('#add-marginleft-' + id).click(function () {
+      thisObject.setAddition('margin left')
+    })
+    
+     $('#add-marginright-' + id).click(function () {
+      thisObject.setAddition('margin right')
+    })
 
     $('#del-strikeout-' + id).click(function () {
       thisObject.setDeletion('strikeout')
@@ -1101,9 +1109,6 @@ class TranscriptionEditor {
       this.quillObject.setSelection(position +2)
   }
   setAddition (place, target = -1) {
-        // let possibleTargets = this.getAdditionTargets();
-
-        // if (possibleTargets.length === 0) {
     this.quillObject.format('addition', {
       itemid: this.getOneItemId(),
       editorid: this.id,
@@ -1112,10 +1117,6 @@ class TranscriptionEditor {
     })
     let range = this.quillObject.getSelection()
     this.quillObject.setSelection(range.index + range.length)
-
-        // }
-
-        // console.log(possibleTargets);
   }
 
   static removeFormat (quillObject, range) {

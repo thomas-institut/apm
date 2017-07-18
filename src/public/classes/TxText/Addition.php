@@ -32,7 +32,9 @@ class Addition extends Item {
         'below',
         'inline',
         'inspace',
-        'overflow'
+        'overflow',
+        'margin left',
+        'margin right'
     ];
     
     

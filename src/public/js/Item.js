@@ -42,7 +42,8 @@ class Item {
       'dots-above',
       'dots-underneath',
       'strikeout', 
-      'line-above'
+      'line-above',
+      'no-sign'
     ]
   }
 

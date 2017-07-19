@@ -752,6 +752,9 @@ class TranscriptionEditor {
     $('#del-line-above-' + id).click(function () {
       thisObject.setDeletion('line-above')
     })
+    $('#del-no-sign-' + id).click(function () {
+      thisObject.setDeletion('no-sign')
+    })
     
     
     $('#nowb-button-' + id).click(function () {

@@ -482,7 +482,11 @@ class TranscriptionEditor {
       $('#item-modal-' + thisObject.id).modal('show')
     })
     
-    
+    $('#pcircledot-button-'+ id).click(function () {
+      let range = quillObject.getSelection()
+      quillObject.insertText(range.index, '⊙')
+      quillObject.setSelection(range.index + 1)
+    })
     $('#chgap-button-' + id).click(function () {
       let range = quillObject.getSelection()
       if (range.length > 0) {

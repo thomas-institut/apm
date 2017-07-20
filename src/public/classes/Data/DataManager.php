@@ -169,8 +169,7 @@ class DataManager
         }
         return $docIds;
     }
-    
-    
+   
     /**
      * Creates a new document in the system.
      * Returns the doc Id of the newly created document or false
@@ -960,6 +959,18 @@ class DataManager
                     $row[$fields['text']], 
                     (int) $row[$fields['target']], 
                     $row[$fields['alt_text']]);
+                break;
+            
+            case Item::CHARACTER_GAP:
+                $item = new \AverroesProject\TxText\CharacterGap(
+                        $row[$fields['id']], 
+                        $row[$fields['seq']],
+                        $row[$fields['length']]);
+                break;
+            
+            case Item::PARAGRAPH_MARK:
+                $item = new \AverroesProject\TxText\ParagraphMark($row[$fields['id']], 
+                        $row[$fields['seq']]);
                 break;
 
             default: 

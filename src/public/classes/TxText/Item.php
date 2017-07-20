@@ -74,7 +74,10 @@ class Item {
     const LINEBREAK    =   12;
     const INITIAL  = 13;
     const CHUNK_MARK = 14;
-    
+    const CHARACTER_GAP = 15;
+    const PARAGRAPH_MARK = 16;
+
+
     /**
      *
      * @var string  
@@ -127,8 +130,12 @@ class Item {
      */
     public $target;
     
-    function getText(){
+    public function getText(){
         return $this->theText;
+    }
+    
+    public function getAltText() {
+        return '';
     }
     
     function getLang(){

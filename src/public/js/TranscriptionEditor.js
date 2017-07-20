@@ -21,496 +21,10 @@
 /* global Twig, Quill, ELEMENT_LINE, ELEMENT_HEAD, ELEMENT_CUSTODES */
 /* global ELEMENT_GLOSS, ELEMENT_PAGE_NUMBER, ITEM_TEXT, ITEM_MARK */
 /* global ITEM_RUBRIC, ITEM_GLIPH, ITEM_INITIAL, ITEM_SIC, ITEM_ABBREVIATION */
-/* global ITEM_DELETION, Item, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_ILLEGIBLE, ELEMENT_PAGENUMBER, ITEM_NO_WORD_BREAK, ITEM_CHUNK_MARK, ELEMENT_ADDITION, ELEMENT_LINE_GAP */
+/* global ITEM_DELETION, Item, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_ILLEGIBLE, ELEMENT_PAGENUMBER */
+/* global ITEM_NO_WORD_BREAK, ITEM_CHUNK_MARK, ELEMENT_ADDITION, ELEMENT_LINE_GAP, MarkBlot */
+/* global IllegibleBlot, NoWordBreakBlot, ChunkMarkBlot, LineGapBlot, _, GlossBlot, EditorData, ITEM_CHARACTER_GAP, CharacterGapBlot */
 
-let Inline = Quill.import('blots/inline')
-let BlockEmbed = Quill.import('blots/embed')
-let Block = Quill.import('blots/block')
-
-
-let Clipboard = Quill.import('modules/clipboard');
-let Delta = Quill.import('delta');
-
-class PlainClipboard extends Clipboard {
-  convert(html = null) {
-    //console.log("Pasting...")
-    //console.log(html)
-    if (typeof html === 'string') {
-      this.container.innerHTML = html;
-    }
-    let text = this.container.innerText;
-    this.container.innerHTML = '';
-    return new Delta().insert(text);
-  }
-}
-
-Quill.register('modules/clipboard', PlainClipboard, true);
-
-
-class LangBlot extends Inline {
-  static create (lang) {
-    let node = super.create()
-    node.setAttribute('lang', lang)
-    for (const l of ['ar', 'he', 'la']) {
-      if (l === lang) {
-        $(node).addClass(l + 'text')
-        continue
-      }
-      $(node).removeClass(l + 'text')
-    }
-    return node
-  }
-
-  static formats (node) {
-    return node.getAttribute('lang')
-  }
-}
-
-LangBlot.blotName = 'lang'
-LangBlot.tagName = 'em'
-LangBlot.className = 'language'
-Quill.register(LangBlot)
-
-class RubricBlot extends Inline {
-  static create (value) {
-    let node = super.create()
-    node.setAttribute('itemid', value.itemid)
-    node.setAttribute('editorid', value.editorid)
-    TranscriptionEditor.setUpPopover(node, 'Rubric', '', value.editorid, value.itemid)
-    return node
-  }
-
-  static formats (node) {
-    return {
-      itemid: node.getAttribute('itemid'),
-      editorid: node.getAttribute('editorid')
-    }
-  }
-}
-
-RubricBlot.blotName = 'rubric'
-RubricBlot.tagName = 'b'
-RubricBlot.className = 'rubric'
-Quill.register(RubricBlot)
-
-class GliphBlot extends Inline {
-  static create (value) {
-    let node = super.create()
-    node.setAttribute('itemid', value.itemid)
-    node.setAttribute('editorid', value.editorid)
-    TranscriptionEditor.setUpPopover(node, 'Gliph', '', value.editorid, value.itemid)
-    return node
-  }
-
-  static formats (node) {
-    return {
-      itemid: node.getAttribute('itemid'),
-      editorid: node.getAttribute('editorid')
-    }
-  }
-}
-
-GliphBlot.blotName = 'gliph'
-GliphBlot.tagName = 'b'
-GliphBlot.className = 'gliph'
-Quill.register(GliphBlot)
-
-class InitialBlot extends Inline {
-  static create (value) {
-    let node = super.create()
-    node.setAttribute('itemid', value.itemid)
-    node.setAttribute('editorid', value.editorid)
-    TranscriptionEditor.setUpPopover(node, 'Initial', '', value.editorid, value.itemid)
-    return node
-  }
-
-  static formats (node) {
-    return {
-      itemid: node.getAttribute('itemid'),
-      editorid: node.getAttribute('editorid')
-    }
-  }
-}
-
-InitialBlot.blotName = 'initial'
-InitialBlot.tagName = 'b'
-InitialBlot.className = 'initial'
-Quill.register(InitialBlot)
-
-class AdditionBlot extends Inline {
-  static create (value) {
-    let node = super.create()
-    node.setAttribute('itemid', value.itemid)
-    node.setAttribute('editorid', value.editorid)
-    node.setAttribute('place', value.place)
-    node.setAttribute('target', value.target)
-    let targetText = 'N/A'
-    if (value.target === -1) {
-      targetText = '[none]'
-    } else {
-      if (value.targetText) {
-        targetText = value.targetText
-      }
-    }
-    TranscriptionEditor.setUpPopover(node, 'Addition',
-                '<b>Place</b>: ' + value.place +
-                '<br/><b>Replaces</b>: ' + targetText, value.editorid, value.itemid)
-    return node
-  }
-
-  static formats (node) {
-    return {
-      itemid: node.getAttribute('itemid'),
-      editorid: node.getAttribute('editorid'),
-      place: node.getAttribute('place'),
-      target: parseInt(node.getAttribute('target'))
-    }
-  }
-}
-
-AdditionBlot.blotName = 'addition'
-AdditionBlot.tagName = 'b'
-AdditionBlot.className = 'addition'
-Quill.register(AdditionBlot)
-
-class DeletionBlot extends Inline {
-  static create (value) {
-    let node = super.create()
-    node.setAttribute('itemid', value.itemid)
-    node.setAttribute('editorid', value.editorid)
-    node.setAttribute('technique', value.technique)
-    TranscriptionEditor.setUpPopover(node, 'Deletion',
-                '<b>Technique</b>: ' + value.technique, value.editorid, value.itemid)
-    return node
-  }
-
-  static formats (node) {
-    return {
-      itemid: node.getAttribute('itemid'),
-      editorid: node.getAttribute('editorid'),
-      technique: node.getAttribute('technique')
-    }
-  }
-}
-
-DeletionBlot.blotName = 'deletion'
-DeletionBlot.tagName = 'b'
-DeletionBlot.className = 'deletion'
-Quill.register(DeletionBlot)
-
-class SicBlot extends Inline {
-  static create (value) {
-    let node = super.create()
-    if (value.correction === ' ') {
-      node.setAttribute('correction', ' ')
-      node.setAttribute('itemid', value.itemid)
-      node.setAttribute('editorid', value.editorid)
-      TranscriptionEditor.setUpPopover(node, 'Sic', '', value.editorid, value.itemid)
-      return node
-    }
-    node.setAttribute('correction', value.correction)
-    node.setAttribute('itemid', value.itemid)
-    node.setAttribute('editorid', value.editorid)
-    TranscriptionEditor.setUpPopover(node, 'Sic', '<b>Correction</b>: ' +
-                value.correction, value.editorid, value.itemid)
-    return node
-  }
-
-  static formats (node) {
-    return {
-      correction: node.getAttribute('correction'),
-      itemid: node.getAttribute('itemid'),
-      editorid: node.getAttribute('editorid')
-    }
-  }
-}
-
-SicBlot.blotName = 'sic'
-SicBlot.tagName = 'b'
-SicBlot.className = 'sic'
-Quill.register(SicBlot)
-
-class AbbrBlot extends Inline {
-  static create (value) {
-    let node = super.create()
-    node.setAttribute('expansion', value.expansion)
-    node.setAttribute('itemid', value.itemid)
-    node.setAttribute('editorid', value.editorid)
-    TranscriptionEditor.setUpPopover(node, 'Abbreviation', '<b>Expansion</b>: ' +
-                value.expansion, value.editorid, value.itemid)
-    return node
-  }
-
-  static formats (node) {
-    return {
-      expansion: node.getAttribute('expansion'),
-      itemid: node.getAttribute('itemid'),
-      editorid: node.getAttribute('editorid')
-    }
-  }
-}
-
-AbbrBlot.blotName = 'abbr'
-AbbrBlot.tagName = 'b'
-AbbrBlot.className = 'abbr'
-Quill.register(AbbrBlot)
-
-class UnclearBlot extends Inline {
-  static create (value) {
-    let node = super.create()
-    node.setAttribute('reading2', value.reading2)
-    node.setAttribute('reason', value.reason)
-    node.setAttribute('itemid', value.itemid)
-    node.setAttribute('editorid', value.editorid)
-    TranscriptionEditor.setUpPopover(node, 'Unclear', '<b>Alt. Reading</b>: ' +
-                value.reading2 + '<br/><b>Reason</b>:' + value.reason, value.editorid, value.itemid)
-    return node
-  }
-
-  static formats (node) {
-    return {
-      reading2: node.getAttribute('reading2'),
-      reason: node.getAttribute('reason'),
-      itemid: node.getAttribute('itemid'),
-      editorid: node.getAttribute('editorid')
-    }
-  }
-}
-
-UnclearBlot.blotName = 'unclear'
-UnclearBlot.tagName = 'b'
-UnclearBlot.className = 'unclear'
-Quill.register(UnclearBlot)
-
-class IllegibleBlot extends BlockEmbed {
-  
-  static create (value) {
-    let node = super.create()
-    node.setAttribute('reason', value.reason)
-    node.setAttribute('length', value.length)
-    node.setAttribute('alt', 'Illegible')
-    let size = Math.round(((IllegibleBlot.size-1)*0.2+1)*14)
-    node.setAttribute('src', IllegibleBlot.baseUrl + '/api/images/illegible/' + size + '/' + value.length)
-    node.setAttribute('itemid', value.itemid)
-    node.setAttribute('editorid', value.editorid)
-    TranscriptionEditor.setUpPopover(node, 'Illegible', '<b>Length</b>: ' +
-                value.length + '<br/><b>Reason</b>:' + value.reason, value.editorid, value.itemid, true)
-    return node
-  }
-
-  static value (node) {
-    return {
-      length: node.getAttribute('length'),
-      reason: node.getAttribute('reason'),
-      itemid: node.getAttribute('itemid'),
-      editorid: node.getAttribute('editorid')
-    }
-  }
-}
-
-IllegibleBlot.blotName = 'illegible'
-IllegibleBlot.tagName = 'img'
-IllegibleBlot.className = 'illegible'
-Quill.register(IllegibleBlot)
-
-class MarkBlot extends BlockEmbed {
-  static create (value) {
-    let node = super.create()
-    node.setAttribute('itemid', value.itemid)
-    node.setAttribute('editorid', value.editorid)
-    node.setAttribute('alt', 'Comment')
-    let size = Math.round(((MarkBlot.size-1)*0.2+1)*14)
-    node.setAttribute('src', MarkBlot.baseUrl + '/api/images/mark/' + size)
-    TranscriptionEditor.setUpPopover(node, 'Note', '', value.editorid, value.itemid, true)
-    return node
-  }
-
-  static value (node) {
-    return {
-      itemid: node.getAttribute('itemid'),
-      editorid: node.getAttribute('editorid')
-    }
-  }
- }
-MarkBlot.blotName = 'mark'
-MarkBlot.tagName = 'img'
-MarkBlot.className = 'mark'
-Quill.register(MarkBlot)
-
-class ChunkMarkBlot extends BlockEmbed {
-  static create (value) {
-    let node = super.create()
-    node.setAttribute('itemid', value.itemid)
-    node.setAttribute('editorid', value.editorid)
-    node.setAttribute('dareid', value.dareid)
-    node.setAttribute('chunkno', value.chunkno)
-    node.setAttribute('type', value.type)
-    node.setAttribute('alt', value.type + ' ' + value.dareid + '-' + value.chunkno)
-    let size = Math.round(((ChunkMarkBlot.size-1)*0.2+1)*14)
-    node.setAttribute('src', ChunkMarkBlot.baseUrl + 
-            '/api/images/chunkmark/' +
-            value.dareid + '/' +
-            value.chunkno + '/' +
-            value.type + '/' +
-            ChunkMarkBlot.dir + '/' +
-            size)
-    TranscriptionEditor.setUpPopover(node, 'Chunk ' + value.type, '', value.editorid, value.itemid, true)
-    //console.log("Creating chunk mark ")
-    //console.log(value)
-    return node
-  }
-
-  static value (node) {
-    return {
-      itemid: node.getAttribute('itemid'),
-      editorid: node.getAttribute('editorid'),
-      dareid: node.getAttribute('dareid'),
-      chunkno: node.getAttribute('chunkno'),
-      type: node.getAttribute('type')
-    }
-  }
- }
-ChunkMarkBlot.blotName = 'chunkmark'
-ChunkMarkBlot.tagName = 'img'
-ChunkMarkBlot.className = 'chunkmark'
-Quill.register(ChunkMarkBlot)
-
-
-class NoWordBreakBlot extends BlockEmbed {
-  static create (value) {
-    let node = super.create()
-    node.setAttribute('itemid', value.itemid)
-    node.setAttribute('editorid', value.editorid)
-    node.setAttribute('alt', 'No Word Break')
-    let size = Math.round(((NoWordBreakBlot.size-1)*0.2+1)*14)
-    node.setAttribute('src', NoWordBreakBlot.baseUrl + '/api/images/nowb/' + size)
-    //node.setAttribute('src', NoWordBreakBlot.baseUrl + '/api/images/nowb/16')
-    TranscriptionEditor.setUpPopover(node, 'No Word Break', '', value.editorid, value.itemid, true)
-    return node
-  }
-
-  static value (node) {
-    return {
-      itemid: node.getAttribute('itemid'),
-      editorid: node.getAttribute('editorid')
-    }
-  }
- }
-NoWordBreakBlot.blotName = 'nowb'
-NoWordBreakBlot.tagName = 'img'
-NoWordBreakBlot.className = 'nowb'
-Quill.register(NoWordBreakBlot)
-
-
-
-class GlossBlot extends Block {
-  
-  static create(value) {
-    let node = super.create(value)
-    let id = value.elementId
-    node.setAttribute('id', 'gloss' + id)
-    node.setAttribute('elementid', id)
-    node.setAttribute('place', value.place)
-    let ruleIndex = GlossBlot.styleSheet.cssRules.length
-    GlossBlot.styleSheet.insertRule('p#gloss' + id +'::before { content: "Gloss @ ' + value.place + '"}', ruleIndex)
-    //console.log(GlossBlot.styleSheet)
-    return node
-  }
-  
-  static formats(node) {
-    return {
-      elementId: node.getAttribute('elementid'),
-      place: node.getAttribute('place')
-    }
-  }
-}
-GlossBlot.blotName = 'gloss'
-GlossBlot.tagName = 'p'
-GlossBlot.className = 'gloss'
-Quill.register(GlossBlot)
-
-class AdditionElementBlot extends Block {
-  
-  static create(value) {
-    let node = super.create(value)
-    let id = value.elementId
-    node.setAttribute('id', 'add' + id)
-    node.setAttribute('elementid', id)
-    node.setAttribute('place', value.place)
-    node.setAttribute('target', value.target)
-    let ruleIndex = GlossBlot.styleSheet.cssRules.length
-    GlossBlot.styleSheet.insertRule('p#add' + id +'::before { content: "Addition @ ' + value.place + ', target ' + value.target + '"}', ruleIndex)
-    //console.log(GlossBlot.styleSheet)
-    return node
-  }
-  
-  static formats(node) {
-    return {
-      elementId: node.getAttribute('elementid'),
-      place: node.getAttribute('place'),
-      target: node.getAttribute('target')
-    }
-  }
-}
-AdditionElementBlot.blotName = 'additionelement'
-AdditionElementBlot.tagName = 'p'
-AdditionElementBlot.className = 'additionelement'
-Quill.register(AdditionElementBlot)
-
-
-class HeadBlot extends Block { 
-  static formats (node) {
-    return true
-  }  
-}
-HeadBlot.blotName = 'head'
-HeadBlot.tagName = 'p'
-HeadBlot.className = 'headelement'
-Quill.register(HeadBlot)
-
-class CustodesBlot extends Block { 
-  static formats (node) {
-    return true
-  }  
-}
-CustodesBlot.blotName = 'custodes'
-CustodesBlot.tagName = 'p'
-CustodesBlot.className = 'custodes'
-Quill.register(CustodesBlot)
-
-class PageNumberBlot extends Block { 
-  static formats (node) {
-    return true
-  }  
-}
-PageNumberBlot.blotName = 'pagenumber'
-PageNumberBlot.tagName = 'p'
-PageNumberBlot.className = 'pagenumber'
-Quill.register(PageNumberBlot)
-
-
-class LineGapBlot extends BlockEmbed {
-  static create(value) {
-    let node = super.create()
-    node.setAttribute('editorid', value.editorid)
-    node.setAttribute('linecount', value.linecount)
-    node.setAttribute('alt', 'Line Gap')
-    let size = Math.round(((LineGapBlot.size-1)*0.2+1)*14)
-    node.setAttribute('src', LineGapBlot.baseUrl + '/api/images/linegap/' + value.linecount + '/' + size)
-    return node;
-  }
-
-  static value(node) {
-    return {
-      editorid: node.getAttribute('editorid'),
-      linecount: node.getAttribute('linecount')
-    };
-  }
-}
-LineGapBlot.blotName = 'linegap'
-LineGapBlot.tagName = 'img'
-LineGapBlot.className = 'linegap'
-Quill.register(LineGapBlot)
 
 class TranscriptionEditor {
   constructor (containerSelector, id, baseUrl, editorId = 1,
@@ -540,6 +54,8 @@ class TranscriptionEditor {
     NoWordBreakBlot.baseUrl = baseUrl
     ChunkMarkBlot.baseUrl = baseUrl
     LineGapBlot.baseUrl = baseUrl
+    CharacterGapBlot.baseUrl = baseUrl
+    ParagraphMarkBlot.baseUrl = baseUrl
     if (!TranscriptionEditor.editorTemplate) {
       TranscriptionEditor.editorTemplate = Twig.twig({
         id: 'editor',
@@ -558,6 +74,16 @@ class TranscriptionEditor {
 
     let editorHtml = TranscriptionEditor.editorTemplate.render({id: id})
     $(containerSelector).html(editorHtml)
+    // Disable drag and drop in editor (too many issues)
+    $(containerSelector).on('dragstart drag dragend drop', function (e){
+      return false
+    })
+    $(window).on('resize', function (e){
+      console.log("Resizing")
+      console.log($(containerSelector + ' .ql-editor').height())
+      return false
+    })
+    
     this.setFontSize(3)
     let modalsHtml = TranscriptionEditor.modalsTemplate.render({id: id})
     $('body').append(modalsHtml)
@@ -582,7 +108,9 @@ class TranscriptionEditor {
       if (!range) {
         return false
       }
+      //console.log("Selection: @" + range.index + ", l=" + range.length)
       let hasFormat = TranscriptionEditor.selectionHasFormat(quillObject, range)
+      //console.log("Has format: " + hasFormat)
       if (range.length === 0) {
         $('.selFmtBtn').prop('disabled', true)
         thisObject.setDisableLangButtons(true)
@@ -604,6 +132,8 @@ class TranscriptionEditor {
 
         return false
       }
+      // Selection's length >= 1
+      
       $('#note-button-' + id).prop('disabled', true)
       $('#illegible-button-' + id).prop('disabled', true)
       $('#nowb-button-' + id).prop('disabled', true)
@@ -612,16 +142,19 @@ class TranscriptionEditor {
       
       let text = quillObject.getText(range)
       if (text.search('\n') !== -1) {
+        // Selection includes new lines
         $('.selFmtBtn').prop('disabled', true)
         thisObject.setDisableLangButtons(false)
         return false
       }
+      // Selection does not include new lines
       thisObject.setDisableLangButtons(false)
       if (hasFormat) {
         $('.selFmtBtn').prop('disabled', true)
         $('#clear-button-' + id).prop('disabled', false)
         if (TranscriptionEditor.rangeIsInMidItem(quillObject, range)) {
           $('#edit-button-' + id).prop('disabled', false)
+          $('#clear-button-' + id).prop('disabled', true)
           return false
         }
         $('#edit-button-' + id).prop('disabled', true)
@@ -635,7 +168,7 @@ class TranscriptionEditor {
     quillObject.on('text-change', function (delta, oldDelta, source) {
       
       if (!thisObject.enabled) {
-        return
+        return false
       }
       if (!_.isEqual(quillObject.getContents(), thisObject.lastSavedData)) {
         thisObject.setContentsChanged()
@@ -948,6 +481,36 @@ class TranscriptionEditor {
       })
       $('#item-modal-' + thisObject.id).modal('show')
     })
+    
+    $('#pcircledot-button-'+ id).click(function () {
+      let range = quillObject.getSelection()
+      quillObject.insertText(range.index, '⊙')
+      quillObject.setSelection(range.index + 1)
+    })
+    $('#chgap-button-' + id).click(function () {
+      let range = quillObject.getSelection()
+      if (range.length > 0) {
+        return false
+      }
+      quillObject.insertEmbed(range.index, 'chgap', {
+          length: 5,
+          itemid: thisObject.getOneItemId(),
+          editorid: thisObject.id
+        })
+        quillObject.setSelection(range.index + 1)
+    })
+    
+    $('#pmark-button-' + id).click(function () {
+      let range = quillObject.getSelection()
+      if (range.length > 0) {
+        return false
+      }
+      quillObject.insertEmbed(range.index, 'pmark', {
+          itemid: thisObject.getOneItemId(),
+          editorid: thisObject.id
+        })
+        quillObject.setSelection(range.index + 1)
+    })    
 
     $('#edit-button-' + id).click(function () {
       let currentRange = quillObject.getSelection()
@@ -1166,6 +729,14 @@ class TranscriptionEditor {
     $('#add-overflow-' + id).click(function () {
       thisObject.setAddition('overflow')
     })
+    
+    $('#add-marginleft-' + id).click(function () {
+      thisObject.setAddition('margin left')
+    })
+    
+     $('#add-marginright-' + id).click(function () {
+      thisObject.setAddition('margin right')
+    })
 
     $('#del-strikeout-' + id).click(function () {
       thisObject.setDeletion('strikeout')
@@ -1182,6 +753,13 @@ class TranscriptionEditor {
     $('#del-dot-above-' + id).click(function () {
       thisObject.setDeletion('dot-above')
     })
+    $('#del-line-above-' + id).click(function () {
+      thisObject.setDeletion('line-above')
+    })
+    $('#del-no-sign-' + id).click(function () {
+      thisObject.setDeletion('no-sign')
+    })
+    
     
     $('#nowb-button-' + id).click(function () {
       let range = quillObject.getSelection()
@@ -1330,6 +908,8 @@ class TranscriptionEditor {
     MarkBlot.size = this.fontSize
     ChunkMarkBlot.size = this.fontSize
     LineGapBlot.size = this.fontSize
+    CharacterGapBlot.size = this.fontSize
+    ParagraphMarkBlot.size = this.fontSize
   }
   
   makeTextSmaller() {
@@ -1356,6 +936,7 @@ class TranscriptionEditor {
     $('#toggle-button-' + this.id).html('<i class="fa fa-power-off"></i>')
     this.resizeEditor()
     this.setContentsNotChanged()
+    this.quillObject.setSelection(this.quillObject.getLength())
     let event = new Event('edit-enable')
     $(this.containerSelector).get()[0].dispatchEvent(event)
   }
@@ -1384,7 +965,7 @@ class TranscriptionEditor {
           $(thisObject.containerSelector).get()[0].dispatchEvent(event)
         })
       $('#alert-modal-' + this.id).modal('show')
-      return
+      return true
     }
     this.enabled = false
     $('#toolbar-' + this.id).hide()
@@ -1503,10 +1084,8 @@ class TranscriptionEditor {
         }
       }
     }
-    
-    for (let i = range.index; i < range.index + range.length - 1; i++) {
+    for (let i = range.index; i < range.index + range.length; i++) {
       let format = quillObject.getFormat(i, 1)
-      
       if ($.isEmptyObject(format)) {
         continue
       }
@@ -1527,6 +1106,7 @@ class TranscriptionEditor {
   }
 
   static rangeIsInMidItem (quillObject, range) {
+ 
     let prevFormat = quillObject.getFormat(range.index, 0)
     let nextFormat = quillObject.getFormat(range.index + range.length + 1, 0)
     let prevItem = TranscriptionEditor.formatHasItem(prevFormat)
@@ -1558,6 +1138,10 @@ class TranscriptionEditor {
   }
  
   insertLineGap(position, count) {
+    if (position !== 0) {
+      this.quillObject.insertText(position, '\n')
+      position++
+    }
      this.quillObject.insertEmbed(position, 'linegap', {
             editorid: this.id,
             linecount: count
@@ -1566,9 +1150,6 @@ class TranscriptionEditor {
       this.quillObject.setSelection(position +2)
   }
   setAddition (place, target = -1) {
-        // let possibleTargets = this.getAdditionTargets();
-
-        // if (possibleTargets.length === 0) {
     this.quillObject.format('addition', {
       itemid: this.getOneItemId(),
       editorid: this.id,
@@ -1577,10 +1158,6 @@ class TranscriptionEditor {
     })
     let range = this.quillObject.getSelection()
     this.quillObject.setSelection(range.index + range.length)
-
-        // }
-
-        // console.log(possibleTargets);
   }
 
   static removeFormat (quillObject, range) {
@@ -2227,6 +1804,29 @@ class TranscriptionEditor {
                   }
                 })
                 break
+                
+              case ITEM_CHARACTER_GAP: 
+                delta.push({
+                  insert: {
+                    chgap: {
+                      length: item.length,
+                      itemid: item.id,
+                      editorid: this.id
+                    }
+                  }
+                })
+                break;
+                
+              case ITEM_PARAGRAPH_MARK:
+                delta.push({
+                  insert: {
+                    pmark: {
+                      itemid: item.id,
+                      editorid: this.id
+                    }
+                  }
+                })
+                break  
             }
             languageCounts[item.lang]++
           }
@@ -2273,8 +1873,8 @@ class TranscriptionEditor {
     this.quillObject.setContents(delta)
     this.lastSavedData = this.quillObject.getContents()
     let mainLang = TranscriptionEditor.getMainLanguage(languageCounts)
-    console.log(languageCounts)
-    console.log(mainLang)
+//    console.log(languageCounts)
+//    console.log(mainLang)
     if (!mainLang) {
       mainLang = this.pageDefaultLang
     }
@@ -2305,286 +1905,7 @@ class TranscriptionEditor {
      * @returns {Array|elements}
      */
   getData () {
-    let ops = this.quillObject.getContents().ops
-    let elements = []
-    let itemIds = []
-    let currentItemSeq = 0
-    let currentElementSeq = 0
-    let currentElementId = 1
-    let curElement = {
-      id: currentElementId++,
-      pageId: this.pageId,
-      columnNumber: this.columnNumber,
-      lang: this.defaultLang,
-      editorId: this.editorId,
-      handId: this.handId,
-      type: ELEMENT_LINE,
-      seq: currentElementSeq++,
-      items: [],
-      reference: null,
-      placement: null
-    }
-    
-
-    for (const [i, curOps] of ops.entries()) {
-      console.log('Processing ops ' + i)
-      console.log(JSON.stringify(curOps))
-      let type = ITEM_TEXT
-      let theLang = curElement.lang
-      let altText = ''
-      let extraInfo = ''
-      let target = -1
-      let length = -1
-      if (curOps.insert === '\n\n') {
-        console.log("Double newline in ops detected")
-        curOps.insert = '\n'
-      }
-      if (curOps.insert !== '\n') {
-        let itemId = -1
-        let theText = curOps.insert
-        if (typeof theText !== 'string') {
-          let theOps = theText
-          if ('mark' in theOps) {
-            type = ITEM_MARK
-            itemId = theText.mark.itemid
-            theText = ''
-          }
-          if ('nowb' in theOps) {
-            type = ITEM_NO_WORD_BREAK
-            itemId = theText.nowb.itemid
-            theText = ''
-          }
-          if ('illegible' in theOps) {
-            type = ITEM_ILLEGIBLE
-            itemId = theText.illegible.itemid
-            extraInfo = theText.illegible.reason
-            length = parseInt(theText.illegible.length)
-            theText = ''
-          }
-          if ('chunkmark' in theOps) {
-            type = ITEM_CHUNK_MARK
-            itemId = theText.chunkmark.itemid
-            altText = theText.chunkmark.type
-            target = parseInt(theText.chunkmark.chunkno)
-            theText = theText.chunkmark.dareid
-          }
-          if ('linegap' in theOps) {
-            curElement.type = ELEMENT_LINE_GAP
-            curElement.reference = theText.linegap.linecount
-            curElement.items = []
-            elements.push(curElement)
-            curElement = {
-              id: currentElementId++,
-              pageId: this.pageId,
-              columnNumber: this.columnNumber,
-              lang: this.defaultLang,
-              editorId: this.editorId,
-              handId: this.handId,
-              type: ELEMENT_LINE,
-              seq: currentElementSeq++,
-              items: [],
-              reference: null, 
-              placement: null
-            }
-            currentItemSeq = 0
-            continue
-          }
-        }
-        if ('attributes' in curOps) {
-          if (curOps.attributes.rubric) {
-            type = ITEM_RUBRIC
-            itemId = curOps.attributes.rubric.itemid
-          }
-
-          if (curOps.attributes.gliph) {
-            type = ITEM_GLIPH
-            itemId = curOps.attributes.gliph.itemid
-          }
-          if (curOps.attributes.initial) {
-            type = ITEM_INITIAL
-            itemId = curOps.attributes.initial.itemid
-          }
-
-          if (curOps.attributes.sic) {
-            type = ITEM_SIC
-            altText = curOps.attributes.sic.correction
-            itemId = curOps.attributes.sic.itemid
-          }
-          if (curOps.attributes.abbr) {
-            type = ITEM_ABBREVIATION
-            altText = curOps.attributes.abbr.expansion
-            itemId = curOps.attributes.abbr.itemid
-          }
-
-          if (curOps.attributes.deletion) {
-            type = ITEM_DELETION
-            extraInfo = curOps.attributes.deletion.technique
-            itemId = curOps.attributes.deletion.itemid
-          }
-          if (curOps.attributes.addition) {
-            type = ITEM_ADDITION
-            extraInfo = curOps.attributes.addition.place
-            itemId = curOps.attributes.addition.itemid
-            target = curOps.attributes.addition.target
-          }
-          if (curOps.attributes.unclear) {
-            type = ITEM_UNCLEAR
-            altText = curOps.attributes.unclear.reading2
-            extraInfo = curOps.attributes.unclear.reason
-            itemId = curOps.attributes.unclear.itemid
-          }
-
-          if (curOps.attributes.lang) {
-            theLang = curOps.attributes.lang
-          }
-        }
-        itemId = parseInt(itemId)
-        if (type === ITEM_TEXT) {
-          // Checking for non formatted text with new lines!
-          let theTexts = theText.split("\n")
-          if (theTexts.length > 1) {
-            //console.log("Got multiple lines without format")
-            for (const line of theTexts) {
-              if (line === '') {
-                continue
-              }
-              let item = {
-                id: -1,
-                columnElementId: currentElementId,
-                seq: currentItemSeq++,
-                type: ITEM_TEXT,
-                lang: theLang,
-                theText: line,
-                altText: null,
-                extraInfo: null,
-                length: null,
-                target: null
-              }
-              curElement.items.push(item)
-              elements.push(curElement)
-              curElement = {
-                id: currentElementId++,
-                pageId: this.pageId,
-                columnNumber: this.columnNumber,
-                lang: this.defaultLang,
-                editorId: this.editorId,
-                handId: this.handId,
-                type: ELEMENT_LINE,
-                seq: currentElementSeq++,
-                items: [],
-                reference: null, 
-                placement: null
-              }
-              currentItemSeq = 0
-            }
-            continue
-          }
-        }
-        
-        let item = {
-          id: itemId,
-          columnElementId: currentElementId,
-          seq: currentItemSeq++,
-          type: type,
-          lang: theLang,
-          theText: theText,
-          altText: altText,
-          extraInfo: extraInfo,
-          length: null,
-          target: null
-        }
-        if (target !== -1) {
-          item.target = target
-        }
-        if (length !== -1) {
-          item.length = length
-        }
-        curElement.items.push(item)
-        itemIds.push(itemId)
-        continue
-      }
-
-      let currentString = ''
-      for (const ch of curOps.insert) {
-        if (ch === '\n') {
-          if (currentString !== '') {
-            let item = {
-              id: -1,
-              columnElementId: currentElementId,
-              type: type,
-              seq: currentItemSeq,
-              lang: theLang,
-              theText: currentString,
-              altText: '',
-              extraInfo: null,
-              length: null,
-              target: null
-            }
-            curElement.items.push(item)
-          }
-          if (curElement.items.length !== 0) {
-            let elementType = ELEMENT_LINE
-            if ('attributes' in curOps) {
-              if (curOps.attributes.gloss) {
-                elementType = ELEMENT_GLOSS
-                curElement.id = curOps.attributes.gloss.elementId
-                curElement.placement = curOps.attributes.gloss.place
-              }
-              if (curOps.attributes.head) {
-                elementType = ELEMENT_HEAD
-              }
-              if (curOps.attributes.custodes) {
-                elementType = ELEMENT_CUSTODES
-              }
-              if (curOps.attributes.pagenumber) {
-                elementType = ELEMENT_PAGE_NUMBER
-              }
-            }
-            curElement.type = elementType
-            elements.push(curElement)
-            curElement = {
-              id: currentElementId++,
-              pageId: this.pageId,
-              columnNumber: this.columnNumber,
-              lang: this.defaultLang,
-              editorId: this.editorId,
-              handId: this.handId,
-              type: ELEMENT_LINE,
-              seq: currentElementSeq++,
-              items: [],
-              reference: null,
-              placement: null
-            }
-            currentItemSeq = 0
-          }
-          currentString = ''
-          continue
-        }
-        currentString += ch
-      }
-      if (currentString !== '') {
-        let item = {
-          id: -1,
-          columnElementId: currentElementId,
-          type: type,
-          seq: currentItemSeq++,
-          lang: theLang,
-          theText: currentString,
-          altText: ''
-        }
-        curElement.items.push(item)
-      }
-    }
-        // filter out stray notes
-    let filteredEdnotes = []
-    //console.log(itemIds)
-    for (const note of this.edNotes) {
-      if (itemIds.includes(note.target)) {
-        filteredEdnotes.push(note)
-      }
-    }
-
-    return {elements: elements, ednotes: filteredEdnotes, people: this.people}
+    return EditorData.getApiDataFromQuillDelta(this.quillObject.getContents(), this)
   }
 
   static getDeletionRanges (ops) {
@@ -2682,5 +2003,3 @@ class TranscriptionEditor {
 }
 
 TranscriptionEditor.editors = []
-
-

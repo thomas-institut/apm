@@ -107,6 +107,17 @@ class TranscriptionReaderTest extends TestCase {
         $this->assertEquals(TranscriptionReader::ERROR_ADD_WIHOUT_VALID_TARGET, 
                 $tsReader->errorNumber);
         
+        // With a language that is not allowed
+        $xml11 = file_get_contents("test-transcriptions/testNotValid11.xml");
+        $tsReader->reset();
+        $result11 =  $tsReader->read($xml11, [ 'langs' => ['ar', 'he', 'la']]);
+        $this->assertEquals(false, $result11);
+        $this->assertEquals(TranscriptionReader::ERROR_XML_LANG_NOT_ALLOWED, 
+                $tsReader->errorNumber);
+        // Let's allow the language, now it should work
+        $result11b =  $tsReader->read($xml11, [ 'langs' => ['ar', 'he', 'lat']]);
+        $this->assertEquals(true, $result11b);
+        $this->assertEquals('lat', $tsReader->transcription['defaultLang']);
     }
 
     public function testFileWithNoRealData(){

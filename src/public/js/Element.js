@@ -1,4 +1,3 @@
-<?php
 /*
  * Copyright (C) 2017 Universität zu Köln
  *
@@ -17,36 +16,12 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-namespace AverroesProject\TxText;
-
-/**
- * Description of TtiSic
- *
- * @author Rafael Nájera <rafael.najera@uni-koeln.de>
- */
-
-class Sic extends Item {
-    /**
-     * 
-     * @param int $id
-     * @param int $s
-     * @param string $theText
-     */
-    function __construct($id, $s, $theText, $correction='') {
-        parent::__construct($id, $s);
-        $this->type = parent::SIC;
-        if ($theText === NULL or $theText ===''){
-            throw new InvalidArgumentException("SIC items need non-empty text");
-        }
-        $this->theText = $theText;
-        $this->altText = $correction;
-    }
-
-    function getCorrection(){
-        return $this->altText;
-    }
-    
-    public function getAltText() {
-        return $this->getCorrection();
-    }
-}
+const ELEMENT_INVALID = -1
+const ELEMENT_LINE = 1
+const ELEMENT_HEAD = 2
+const ELEMENT_GLOSS = 3
+const ELEMENT_PAGE_NUMBER = 4
+const ELEMENT_CUSTODES = 5
+const ELEMENT_NOTE_MARK = 6
+const ELEMENT_ADDITION = 7
+const ELEMENT_LINE_GAP = 8

@@ -34,6 +34,8 @@
                 <li><a id="add-inline-{{id}}">Inline</a></li>
                 <li><a id="add-inspace-{{id}}">In Space</a></li>
                 <li><a id="add-overflow-{{id}}">Overflow</a></li>
+                <li><a id="add-marginleft-{{id}}">Margin Left</a></li>
+                <li><a id="add-marginright-{{id}}">Margin Right</a></li>
            </ul>
         </span>
          <span class="dropdown">
@@ -48,6 +50,8 @@
                 <li><a id="del-dots-above-{{id}}">Dots above</a></li>
                 <li><a id="del-dots-underneath-{{id}}">Dots under</a></li>
                 <li><a id="del-dot-above-dot-under-{{id}}">Dot above and under</a></li>
+                <li><a id="del-line-above-{{id}}">Line above</a></li>
+                <li><a id="del-no-sign-{{id}}">No sign</a></li>
            </ul>
         </span>
         
@@ -56,9 +60,18 @@
         <button id="chunk-start-button-{{id}}"  title="Chunk Start">{</button>
         <button id="chunk-end-button-{{id}}"  title="Chunk End">}</button>
         
+        <button id="chgap-button-{{id}}" title="Character gap"><i class="fa fa-square-o"></i></button>
+        <button id="pmark-button-{{id}}" title="Paragraph Mark">¶</button>
         
-        <button id="nowb-button-{{id}}" title="Non word-breaking dash"><i class="fa fa-minus"></i></button>
+        
         <button class="title-button" disabled>&nbsp;</button>
+        {#Special characters#}
+        <button id="nowb-button-{{id}}" title="Non word-breaking dash"><i class="fa fa-minus"></i></button>
+        <button id="pcircledot-button-{{id}}" title="Circle dot">⊙</button>
+        
+        <button class="title-button" disabled>&nbsp;</button>
+        {#Elements#}
+        
         <button id="line-button-{{id}}" title="Line">L</button>
         
         <span class="dropdown">
@@ -71,7 +84,7 @@
                 <li><a id="gloss-top-{{id}}">Margin Top</a></li>
                 <li><a id="gloss-bottom-{{id}}">Margin Bottom</a></li>
                 <li><a id="gloss-left-{{id}}">Margin Left</a></li>
-                <li><a id="gloss-right{{id}}">Margin Right</a></li>
+                <li><a id="gloss-right-{{id}}">Margin Right</a></li>
            </ul>
         </span>    
         <button id="head-button-{{id}}" title="Head"><i class="fa fa-header"></i></button>
@@ -94,4 +107,6 @@
     <div id="editor-container-{{id}}" class="editor-container"></div>
     <div id="status-bar-{{id}}" class="editor-statusbar">
     </div>
+</div>
+<div id="cbtmp" style="display: none;">
 </div>

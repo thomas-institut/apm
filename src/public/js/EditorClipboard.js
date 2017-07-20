@@ -1,4 +1,3 @@
-<?php
 /*
  * Copyright (C) 2017 Universität zu Köln
  *
@@ -17,36 +16,27 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-namespace AverroesProject\TxText;
 
-/**
- * Description of TtiSic
- *
- * @author Rafael Nájera <rafael.najera@uni-koeln.de>
- */
 
-class Sic extends Item {
-    /**
-     * 
-     * @param int $id
-     * @param int $s
-     * @param string $theText
-     */
-    function __construct($id, $s, $theText, $correction='') {
-        parent::__construct($id, $s);
-        $this->type = parent::SIC;
-        if ($theText === NULL or $theText ===''){
-            throw new InvalidArgumentException("SIC items need non-empty text");
-        }
-        $this->theText = $theText;
-        $this->altText = $correction;
-    }
+/* global Quill */
 
-    function getCorrection(){
-        return $this->altText;
+class EditorClipboard extends Clipboard {
+  convert(html = null) {
+    if (typeof html === 'string') {
+      this.container.innerHTML = html;
     }
-    
-    public function getAltText() {
-        return $this->getCorrection();
-    }
+    //console.log("Pasting...")
+    //console.log(this.container.innerHTML)
+//    $('#cbtmp').html(this.container.innerHTML)
+//    if ($('#cbtmp :first-child').prop('tagName') === 'IMG') {
+//      if ($('#cbtmp :first-child').hasClass('mark')) {
+//        console.log("Found mark in clipboard")
+//      }
+//    }
+    let text = this.container.innerText;
+    this.container.innerHTML = '';
+    return new Delta().insert(text);
+  }
 }
+
+Quill.register('modules/clipboard', EditorClipboard, true);

@@ -30,6 +30,8 @@ const ITEM_ABBREVIATION = 11
 const ITEM_LINE_BREAK = 12
 const ITEM_INITIAL = 13
 const ITEM_CHUNK_MARK = 14
+const ITEM_CHARACTER_GAP = 15
+const ITEM_PARAGRAPH_MARK = 16
 const ITEM_UNSUPPORTED = 9999
 
 class Item {
@@ -39,7 +41,10 @@ class Item {
       'dot-above-dot-under',
       'dots-above',
       'dots-underneath',
-      'strikeout']
+      'strikeout', 
+      'line-above',
+      'no-sign'
+    ]
   }
 
   static getValidAdditionPlaces () {
@@ -47,7 +52,10 @@ class Item {
       'below',
       'inline',
       'inspace',
-      'overflow']
+      'overflow', 
+      'margin left',
+      'margin right'
+    ]
   }
 
   static getValidUnclearReasons () {

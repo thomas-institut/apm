@@ -1,4 +1,3 @@
-<?php
 /*
  * Copyright (C) 2017 Universität zu Köln
  *
@@ -17,36 +16,12 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-namespace AverroesProject\TxText;
-
 /**
- * Description of TtiSic
- *
- * @author Rafael Nájera <rafael.najera@uni-koeln.de>
+ * Author:  Rafael Nájera <rafael.najera@uni-koeln.de>
+ * Created: May 18, 2017
  */
 
-class Sic extends Item {
-    /**
-     * 
-     * @param int $id
-     * @param int $s
-     * @param string $theText
-     */
-    function __construct($id, $s, $theText, $correction='') {
-        parent::__construct($id, $s);
-        $this->type = parent::SIC;
-        if ($theText === NULL or $theText ===''){
-            throw new InvalidArgumentException("SIC items need non-empty text");
-        }
-        $this->theText = $theText;
-        $this->altText = $correction;
-    }
+INSERT INTO `ap_types_item` (`id`, `name`, `descr`) VALUES ('15', 'charactergap', 'Character Gap');
+INSERT INTO `ap_types_item` (`id`, `name`, `descr`) VALUES ('16', 'paragraphmark', 'Paragraph Mark');
 
-    function getCorrection(){
-        return $this->altText;
-    }
-    
-    public function getAltText() {
-        return $this->getCorrection();
-    }
-}
+UPDATE `ap_settings` SET `value` = '10' WHERE `ap_settings`.`setting` = 'dbversion';

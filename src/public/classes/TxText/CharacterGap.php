@@ -1,4 +1,5 @@
 <?php
+
 /*
  * Copyright (C) 2017 Universität zu Köln
  *
@@ -19,34 +20,39 @@
 
 namespace AverroesProject\TxText;
 
+
 /**
- * Description of TtiSic
+ * Description of CharacterGap
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-
-class Sic extends Item {
+class CharacterGap extends Item
+{
     /**
      * 
      * @param int $id
      * @param int $s
-     * @param string $theText
      */
-    function __construct($id, $s, $theText, $correction='') {
+    public function __construct($id, $s, $l = 1)
+    {
         parent::__construct($id, $s);
-        $this->type = parent::SIC;
-        if ($theText === NULL or $theText ===''){
-            throw new InvalidArgumentException("SIC items need non-empty text");
-        }
-        $this->theText = $theText;
-        $this->altText = $correction;
-    }
-
-    function getCorrection(){
-        return $this->altText;
+        $this->type = parent::CHARACTER_GAP;
+        $this->setLength($l);
     }
     
-    public function getAltText() {
-        return $this->getCorrection();
+    public function getText()
+    {
+        $spaceCharacter = ' ';
+        $str = '';
+        for ($i = 0; $i < $this->length; $i++) {
+            $str .= $spaceCharacter;
+        }
+        return $str;
+    }
+    
+    public function setLength(int $l) 
+    {
+        $this->length = $l;
     }
 }
+

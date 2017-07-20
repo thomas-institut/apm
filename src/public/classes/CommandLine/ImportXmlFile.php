@@ -31,22 +31,43 @@ use AverroesProject\Xml\TranscriptionReader;
 
 class ImportXmlFile extends CommandLineUtility {
     
-    const USAGE = "usage: importxmlfile <filename>\n";
+    const USAGE = "usage: importxmlfile [--dry-run] <filename>\n";
     
     public function main($argc, $argv)
     {
-        if ($argc != 2) {
+       $defaults = [
+         'langs' => ['la', 'ar', 'he']
+       ];
+        
+        if ($argc > 3) {
             print self::USAGE;
             return false;
         }
-
-        $filename = $argv[1];
+        $dryRun = false;
+        $fileName = false;
+        for ($i = 1; $i < $argc; $i++) {
+            if ($argv[$i] === '--dry-run') {
+                $dryRun = true;
+                continue;
+            }
+            $fileName = $argv[$i];
+        }
         
-        print ("Loading XML file...");
-        $xml = file_get_contents($filename);
+        if (!$fileName) {
+            $this->printErrorMsg("No filename given in command line");
+            print self::USAGE;
+            return false;
+        }
+        
+        if ($dryRun) {
+            print "Dry run mode, database will NOT be updated\n";
+        }
+        print ("Loading XML file '" . $fileName . "'...");
+        error_reporting(E_ALL & ~E_WARNING);
+        $xml = file_get_contents($fileName);
                 
         if ($xml === false) {
-            $msg = "Can't read file '$filename'";
+            $msg = "Can't read file '$fileName'";
             $this->printErrorMsg($msg);
             return false;
         }
@@ -55,7 +76,7 @@ class ImportXmlFile extends CommandLineUtility {
         $tsReader = new TranscriptionReader();
         
         print ("Analyzing transcription...\n");
-        $result = $tsReader->read($xml);
+        $result = $tsReader->read($xml, $defaults);
         
         if ($result === false) {
             $this->printErrorMsg("$tsReader->errorNumber: $tsReader->errorMsg : $tsReader->errorContext");
@@ -120,13 +141,21 @@ class ImportXmlFile extends CommandLineUtility {
                     $ednote->authorId = $editorUserId;
                 }
                 print "Updating page $pageNumber, column " . $col['colNumber'] . " in the database\n";
-                $newItemIds = $this->dm->updateColumnElements($pageId, $col['colNumber'], $col['elements']);
+                if (!$dryRun) {
+                    $newItemIds = $this->dm->updateColumnElements($pageId, $col['colNumber'], $col['elements']);
+                } else {
+                    print "... dry-run, nothing really updated (other errors might be detected when updating for real)\n";
+                    $newItemIds = true;
+                }
                 
                 if ($newItemIds === false) {
                     $this->printErrorMsg("Can't update column elements");
                     return false;
                 }
                 
+                if ($dryRun) {
+                    continue;
+                }
                 // Update targets
                 $edNotes = $col['ednotes'];
                 for ($i = 0; $i < count($edNotes); $i++) {

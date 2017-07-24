@@ -144,9 +144,6 @@ class UserManagerTest extends TestCase {
             $this->assertFalse($um->revokeUserRole($i, 'somerole'));
             $this->assertFalse($um->allowUserTo($i, 'someaction'));
             $this->assertFalse($um->disallowUserTo($i, 'someaction'));
-            $this->assertFalse($um->storeUserToken($i, 'sometoken'));
-            $this->assertFalse($um->getUserToken($i));
-            
         }
         $this->assertFalse($um->storeUserPassword('somename', 'password'));
         $this->assertFalse($um->verifyUserPassword('somename', 'password'));
@@ -181,11 +178,6 @@ class UserManagerTest extends TestCase {
         $this->assertEquals('email', $ui['email']);
         $this->assertNotEquals('', $ui['emailhash']);
         
-        // User token
-        $this->assertSame('', $um->getUserToken($userId));
-        $this->assertTrue($um->storeUserToken($userId, 'thetoken'));
-        $this->assertEquals('thetoken', $um->getUserToken($userId));
-        
         // Password
         $this->assertFalse($um->verifyUserPassword('test', 'somepassword'));
         $this->assertFalse($um->storeUserPassword('test', ''));
@@ -204,4 +196,26 @@ class UserManagerTest extends TestCase {
         $this->assertTrue($um->revokeUserRole($userId, 'somerole'));
     }
     
+    
+    public function testTokenOperations()
+    {
+        $ipAddresses = ['10.0.0.1', '192.168.1.1', '123.123.123.123'];
+        $userAgents = ['Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36', 
+            'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:54.0) Gecko/20100101 Firefox/54.0'];
+        $um = new UserManager();
+        
+        $userId = $um->createUserByUsername('test');
+        $this->assertEquals($userId, $um->getUserIdFromUserName('test'));
+        $this->assertTrue($um->userExistsById($userId));
+        
+        foreach($ipAddresses as $ipAddress) {
+            foreach($userAgents as $userAgent) {
+                $this->assertEquals('', $um->getUserToken($userId, $userAgent, $ipAddress));
+                $token1 = 'token1-' . $ipAddress . '-' . $userAgent;
+                $this->assertTrue($um->storeUserToken($userId, $userAgent, $ipAddress, $token1));
+                $this->assertEquals($token1, $um->getUserToken($userId, $userAgent, $ipAddress));
+            }
+        }
+        
+    }
 }

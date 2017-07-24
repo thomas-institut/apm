@@ -11,7 +11,9 @@ $config['tables']['elements']   = 'ap_elements';
 $config['tables']['items']      = 'ap_items';
 $config['tables']['hands']      = 'ap_hands';
 $config['tables']['users']      = 'ap_users';
+$config['tables']['tokens']     = 'ap_tokens';
 $config['tables']['relations']  = 'ap_relations';
 $config['tables']['docs']       = 'ap_docs';
 $config['tables']['people']     = 'ap_people';
 $config['tables']['pages']      = 'ap_pages';
+

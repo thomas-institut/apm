@@ -66,6 +66,62 @@ class EditorData {
       }
     }
     
+    function processNonTextualItem(curOps) {
+      let theInsert = curOps.insert
+      if ('linegap' in curOps.insert) {
+        if (curElement.items.length > 0) {
+          // this means the line gap does not have newline before
+          // which is possible in Quill
+          curElement.type = ELEMENT_LINE
+          elements.push(curElement)
+          curElement = createNewElement()
+        }
+        curElement.type = ELEMENT_LINE_GAP
+        curElement.reference = theInsert.linegap.linecount
+        curElement.items = []
+        elements.push(curElement)
+        previousElementType = ELEMENT_LINE_GAP
+        curElement = createNewElement()
+        return true
+      }
+      
+      let item = createNewItem()
+      if ('mark' in theInsert) {
+        item.type = ITEM_MARK
+        item.id = theInsert.mark.itemid
+      }
+      if ('chgap' in curOps.insert) {
+        item.type = ITEM_CHARACTER_GAP
+        item.id = theInsert.chgap.itemid
+        item.length = theInsert.chgap.length
+      }
+      if ('nowb' in curOps.insert) {
+        item.type = ITEM_NO_WORD_BREAK
+        item.id = theInsert.nowb.itemid
+      }
+      if ('illegible' in curOps.insert) {
+        item.type = ITEM_ILLEGIBLE
+        item.id = theInsert.illegible.itemid
+        item.extraInfo = theInsert.illegible.reason
+        item.length = parseInt(theInsert.illegible.length)
+      }
+      if ('chunkmark' in curOps.insert) {
+        item.type = ITEM_CHUNK_MARK
+        item.id = theInsert.chunkmark.itemid
+        item.altText = theInsert.chunkmark.type
+        item.target = parseInt(theInsert.chunkmark.chunkno)
+        item.theText = theInsert.chunkmark.dareid
+      }
+      if ('pmark' in theInsert) {
+        item.type = ITEM_PARAGRAPH_MARK
+        item.id = theInsert.pmark.itemid
+      }
+      item.id = parseInt(item.id)
+      itemIds.push(item.id)
+      curElement.items.push(item)
+      return true
+    }
+    
     let previousElementType = ELEMENT_INVALID
     let curElement = createNewElement()
     
@@ -119,51 +175,8 @@ class EditorData {
         
         // Insert can be text or a  gap
         
-        let theInsert = curOps.insert
         if (typeof curOps.insert !== 'string') {
-          if ('linegap' in curOps.insert) {
-            // if a line gap, then the only attribute should be language
-            if (curElement.items.length > 0) {
-              // this means the line gap does not have newline before
-              // which is possible in Quill
-              curElement.type = ELEMENT_LINE
-              elements.push(curElement)
-              curElement = createNewElement()
-            }
-            curElement.type = ELEMENT_LINE_GAP
-            curElement.reference = theInsert.linegap.linecount
-            curElement.items = []
-            elements.push(curElement)
-            previousElementType = ELEMENT_LINE_GAP
-            curElement = createNewElement()
-            continue;
-          }
-          
-          if ('chgap' in curOps.insert) {
-            let item = createNewItem()
-            item.type = ITEM_CHARACTER_GAP
-            item.id = curOps.insert.chgap.itemid
-            item.length = curOps.insert.chgap.length
-            // Make sure item id is an int
-            item.id = parseInt(item.id)
-            itemIds.push(item.id)
-            curElement.items.push(item)
-            continue;
-          }
-          
-          if ('pmark' in theInsert) {
-            let item = createNewItem()
-            item.type = ITEM_PARAGRAPH_MARK
-            item.id = theInsert.pmark.itemid
-            // Make sure item id is an int
-            item.id = parseInt(item.id)
-            itemIds.push(item.id)
-            curElement.items.push(item)
-            continue;
-          }
-          
-          console.log("ERROR: Quill 2 API : ops with attributes and a non-string")
-          console.log(JSON.stringify(curOps))
+          processNonTextualItem(curOps)
           continue
         }
         
@@ -271,60 +284,8 @@ class EditorData {
         continue // i.e., next ops
       }
       
-      // no attributes and no text in curOps 
-      // this means a non-textual item or a line gap
-      //console.log("Insert is object without attributes")
-      let theInsert = curOps.insert
-      if ('linegap' in curOps.insert) {
-        if (curElement.items.length > 0) {
-          // this means the line gap does not have newline before
-          // which is possible in Quill
-          curElement.type = ELEMENT_LINE
-          elements.push(curElement)
-          curElement = createNewElement()
-        }
-        curElement.type = ELEMENT_LINE_GAP
-        curElement.reference = theInsert.linegap.linecount
-        curElement.items = []
-        elements.push(curElement)
-        previousElementType = ELEMENT_LINE_GAP
-        curElement = createNewElement()
-        continue;
-      }
-      let item = createNewItem()
-      if ('mark' in theInsert) {
-        item.type = ITEM_MARK
-        item.id = theInsert.mark.itemid
-      }
-      if ('chgap' in curOps.insert) {
-        item.type = ITEM_CHARACTER_GAP
-        item.id = theInsert.chgap.itemid
-        item.length = theInsert.chgap.length
-      }
-      if ('nowb' in curOps.insert) {
-        item.type = ITEM_NO_WORD_BREAK
-        item.id = theInsert.nowb.itemid
-      }
-      if ('illegible' in curOps.insert) {
-        item.type = ITEM_ILLEGIBLE
-        item.id = theInsert.illegible.itemid
-        item.extraInfo = theInsert.illegible.reason
-        item.length = parseInt(theInsert.illegible.length)
-      }
-      if ('chunkmark' in curOps.insert) {
-        item.type = ITEM_CHUNK_MARK
-        item.id = theInsert.chunkmark.itemid
-        item.altText = theInsert.chunkmark.type
-        item.target = parseInt(theInsert.chunkmark.chunkno)
-        item.theText = theInsert.chunkmark.dareid
-      }
-      if ('pmark' in theInsert) {
-        item.type = ITEM_PARAGRAPH_MARK
-        item.id = theInsert.pmark.itemid
-      }
-      item.id = parseInt(item.id)
-      itemIds.push(item.id)
-      curElement.items.push(item)
+      processNonTextualItem(curOps)
+     
     }
 
     // filter out stray notes

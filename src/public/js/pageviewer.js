@@ -133,6 +133,12 @@ $(document).ready(function () {
               te.onEditorReset(function(e){
                 //console.log("Resetting...")
               });
+              
+              $(window).on("beforeunload", function(e) {
+                if (te.contentsChanged) {
+                  return false  // make the browser show a message confirming leave
+                }
+              });
               if (theCol === 1) {
                 $('#colheader' + theCol).tab('show')
               }

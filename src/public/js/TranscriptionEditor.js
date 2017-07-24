@@ -974,6 +974,7 @@ class TranscriptionEditor {
     $('#toggle-button-' + this.id).prop('title', 'Edit')
     $('#toggle-button-' + this.id).html('<i class="fa fa-pencil"></i>')
     this.quillObject.enable(this.enabled)
+    this.contentsChanged = false
     this.resizeEditor()
     let event = new Event('edit-disable')
     $(this.containerSelector).get()[0].dispatchEvent(event)

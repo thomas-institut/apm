@@ -197,8 +197,8 @@ class SicBlot extends Inline {
     node.setAttribute('correction', value.correction)
     node.setAttribute('itemid', value.itemid)
     node.setAttribute('editorid', value.editorid)
-    TranscriptionEditor.setUpPopover(node, 'Sic', '<b>Correction</b>: ' +
-                value.correction, value.editorid, value.itemid)
+    TranscriptionEditor.setUpPopover(node, 'Sic', '<b>Correction</b>: <br/><span class="prominent">' +
+                value.correction  + '</span>', value.editorid, value.itemid)
     return node
   }
 
@@ -222,8 +222,8 @@ class AbbrBlot extends Inline {
     node.setAttribute('expansion', value.expansion)
     node.setAttribute('itemid', value.itemid)
     node.setAttribute('editorid', value.editorid)
-    TranscriptionEditor.setUpPopover(node, 'Abbreviation', '<b>Expansion</b>: ' +
-                value.expansion, value.editorid, value.itemid)
+    TranscriptionEditor.setUpPopover(node, 'Abbreviation', '<b>Expansion</b>:<br/><span class="prominent">' +
+                value.expansion + '</span>', value.editorid, value.itemid)
     return node
   }
 

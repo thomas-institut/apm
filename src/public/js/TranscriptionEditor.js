@@ -23,7 +23,7 @@
 /* global ITEM_RUBRIC, ITEM_GLIPH, ITEM_INITIAL, ITEM_SIC, ITEM_ABBREVIATION */
 /* global ITEM_DELETION, Item, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_ILLEGIBLE, ELEMENT_PAGENUMBER */
 /* global ITEM_NO_WORD_BREAK, ITEM_CHUNK_MARK, ELEMENT_ADDITION, ELEMENT_LINE_GAP, MarkBlot */
-/* global IllegibleBlot, NoWordBreakBlot, ChunkMarkBlot, LineGapBlot, _, GlossBlot, EditorData, ITEM_CHARACTER_GAP, CharacterGapBlot */
+/* global IllegibleBlot, NoWordBreakBlot, ChunkMarkBlot, LineGapBlot, _, GlossBlot, EditorData, ITEM_CHARACTER_GAP, CharacterGapBlot, ParagraphMarkBlot */
 
 
 class TranscriptionEditor {

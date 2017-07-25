@@ -440,6 +440,29 @@ ParagraphMarkBlot.tagName = 'img'
 ParagraphMarkBlot.className = 'pmark'
 Quill.register(ParagraphMarkBlot)
 
+class MathTextBlot extends Inline {
+  static create (value) {
+    let node = super.create()
+    node.setAttribute('itemid', value.itemid)
+    node.setAttribute('editorid', value.editorid)
+    TranscriptionEditor.setUpPopover(node, 'Math Text', '', value.editorid, value.itemid)
+    return node
+  }
+
+  static formats (node) {
+    return {
+      itemid: node.getAttribute('itemid'),
+      editorid: node.getAttribute('editorid')
+    }
+  }
+}
+
+MathTextBlot.blotName = 'mathtext'
+MathTextBlot.tagName = 'b'
+MathTextBlot.className = 'mathtext'
+Quill.register(MathTextBlot)
+
+
 class GlossBlot extends Block {
   
   static create(value) {

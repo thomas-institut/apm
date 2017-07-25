@@ -94,6 +94,7 @@ class ElementDatabaseTest extends TestCase {
         ItemArray::addItem($goodElement->items, new TxText\Initial(0,-1, "I"));
         ItemArray::addItem($goodElement->items, new TxText\CharacterGap(0,-1));
         ItemArray::addItem($goodElement->items, new TxText\ParagraphMark(0,-1));
+        ItemArray::addItem($goodElement->items, new TxText\MathText(0,-1, 'some text'));
         $goodElement->lang = 'la';
         
         

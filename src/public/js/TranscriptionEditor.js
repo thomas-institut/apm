@@ -23,7 +23,7 @@
 /* global ITEM_RUBRIC, ITEM_GLIPH, ITEM_INITIAL, ITEM_SIC, ITEM_ABBREVIATION */
 /* global ITEM_DELETION, Item, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_ILLEGIBLE, ELEMENT_PAGENUMBER */
 /* global ITEM_NO_WORD_BREAK, ITEM_CHUNK_MARK, ELEMENT_ADDITION, ELEMENT_LINE_GAP, MarkBlot */
-/* global IllegibleBlot, NoWordBreakBlot, ChunkMarkBlot, LineGapBlot, _, GlossBlot, EditorData, ITEM_CHARACTER_GAP, CharacterGapBlot, ParagraphMarkBlot */
+/* global IllegibleBlot, NoWordBreakBlot, ChunkMarkBlot, LineGapBlot, _, GlossBlot, EditorData, ITEM_CHARACTER_GAP, CharacterGapBlot, ParagraphMarkBlot, ITEM_MATH_TEXT */
 
 
 class TranscriptionEditor {
@@ -233,6 +233,10 @@ class TranscriptionEditor {
 
     $('#rubric-button-' + id).click(
             TranscriptionEditor.genSimpleFormatClickFunction(thisObject, quillObject, 'rubric')
+        )
+
+    $('#mathtext-button-' + id).click(
+            TranscriptionEditor.genSimpleFormatClickFunction(thisObject, quillObject, 'mathtext')
         )
     $('#gliph-button-' + id).click(
             TranscriptionEditor.genSimpleFormatClickFunction(thisObject, quillObject, 'gliph')
@@ -1098,7 +1102,7 @@ class TranscriptionEditor {
   }
 
   static formatHasItem (format) {
-    for (const type of ['rubric', 'gliph', 'initial', 'sic', 'abbr', 'deletion', 'addition', 'unclear', 'nowb']) {
+    for (const type of ['rubric', 'gliph', 'initial', 'sic', 'abbr', 'deletion', 'addition', 'unclear', 'nowb', 'mathtext']) {
       if (type in format) {
         return type
       }
@@ -1827,7 +1831,20 @@ class TranscriptionEditor {
                     }
                   }
                 })
-                break  
+                break
+              
+              case ITEM_MATH_TEXT:
+                delta.push({
+                  insert: item.theText,
+                  attributes: {
+                    mathtext: {
+                      itemid: item.id,
+                      editorid: this.id
+                    },
+                    lang: item.lang
+                  }
+                })
+                break
             }
             languageCounts[item.lang]++
           }

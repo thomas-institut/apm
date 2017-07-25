@@ -20,7 +20,7 @@
 /* global ELEMENT_GLOSS, ELEMENT_PAGE_NUMBER, ITEM_TEXT, ITEM_MARK */
 /* global ITEM_RUBRIC, ITEM_GLIPH, ITEM_INITIAL, ITEM_SIC, ITEM_ABBREVIATION */
 /* global ITEM_DELETION, Item, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_ILLEGIBLE, ELEMENT_PAGENUMBER */
-/* global ITEM_NO_WORD_BREAK, ITEM_CHUNK_MARK, ELEMENT_ADDITION, ELEMENT_LINE_GAP, ELEMENT_INVALID, ITEM_CHARACTER_GAP, ITEM_PARAGRAPH_MARK */
+/* global ITEM_NO_WORD_BREAK, ITEM_CHUNK_MARK, ELEMENT_ADDITION, ELEMENT_LINE_GAP, ELEMENT_INVALID, ITEM_CHARACTER_GAP, ITEM_PARAGRAPH_MARK, ITEM_MATH_TEXT */
 
 class EditorData {
   
@@ -194,6 +194,10 @@ class EditorData {
         if (curOps.attributes.rubric) {
           item.type = ITEM_RUBRIC
           item.id = curOps.attributes.rubric.itemid
+        }
+        if (curOps.attributes.mathtext) {
+          item.type = ITEM_MATH_TEXT
+          item.id = curOps.attributes.mathtext.itemid
         }
         if (curOps.attributes.gliph) {
           item.type = ITEM_GLIPH

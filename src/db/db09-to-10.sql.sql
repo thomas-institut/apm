@@ -23,6 +23,7 @@
 
 INSERT INTO `ap_types_item` (`id`, `name`, `descr`) VALUES ('15', 'charactergap', 'Character Gap');
 INSERT INTO `ap_types_item` (`id`, `name`, `descr`) VALUES ('16', 'paragraphmark', 'Paragraph Mark');
+INSERT INTO `ap_types_item` (`id`, `name`, `descr`) VALUES ('17', 'math_text', 'Mathematical text, e.g., symbols');
 
 --
 -- Table structure for table `ap_tokens`

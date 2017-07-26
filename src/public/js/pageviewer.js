@@ -135,7 +135,9 @@ $(document).ready(function () {
               });
               
               $(window).on("beforeunload", function(e) {
+                //console.log("Before unload")
                 if (te.contentsChanged) {
+                  //console.log("There are changes in editor")
                   return false  // make the browser show a message confirming leave
                 }
               });

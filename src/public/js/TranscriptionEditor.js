@@ -955,6 +955,7 @@ class TranscriptionEditor {
       $('#alert-modal-cancel-button-' + thisObject.id).html('Cancel')
       $('#alert-modal-submit-button-' + this.id).off()
       $('#alert-modal-submit-button-' + this.id).on('click', function () {
+          //console.log("User wants to drop changes in editor")
           $('#alert-modal-' + thisObject.id).modal('hide')
           thisObject.enabled = false
           $('#toolbar-' + thisObject.id).hide()
@@ -964,6 +965,7 @@ class TranscriptionEditor {
           $('#toggle-button-' + thisObject.id).html('<i class="fa fa-pencil"></i>')
           thisObject.quillObject.setContents(thisObject.lastSavedData)
           thisObject.quillObject.enable(thisObject.enabled)
+          thisObject.setContentsNotChanged()
           thisObject.resizeEditor()
           let event = new Event('edit-disable')
           $(thisObject.containerSelector).get()[0].dispatchEvent(event)

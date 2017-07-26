@@ -207,7 +207,7 @@ class SiteController
 
         $docInfo = $this->db->getDocById($docId);
         $pageInfo = $this->db->getPageInfoByDocPage($docId, $pageNumber);
-        $this->ci->logger->debug('Page info', $pageInfo);
+        //$this->ci->logger->debug('Page info', $pageInfo);
         $docPageCount = $this->db->getPageCountByDocId($docId);
         $transcribedPages = $this->db->getPageListByDocId($docId);
         $thePages = $this->buildPageArray($docPageCount, $transcribedPages);

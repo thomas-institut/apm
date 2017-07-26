@@ -43,7 +43,7 @@ class TokenizerTest extends TestCase {
         $items1[] = new Text(4, 3, "correction");
         
         $tokens1 = Tokenizer::tokenize($items1);
-        var_dump($tokens1);
+        //var_dump($tokens1);
         $expectedTokens1 = ['This', 'is', 'a', 'simple', 'rubric', 'wit', 'a', 'correction'];
         $this->assertCount(count($expectedTokens1), $tokens1);
         for($i = 0; $i < count($tokens1); $i++){

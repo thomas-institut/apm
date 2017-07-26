@@ -127,7 +127,10 @@ class DataManager
             new MySqlDataTable($dbConn, $tableNames['relations']), 
             new MySqlDataTableWithRandomIds($dbConn, 
                     $tableNames['people'], 
-                    self::MIN_USER_ID, self::MAX_USER_ID));
+                    self::MIN_USER_ID, self::MAX_USER_ID), 
+            new MySqlDataTable($dbConn, $tableNames['tokens']),
+            $this->logger
+        );
         
         
         $this->docsDataTable = new MySqlDataTable($this->dbConn, 
@@ -971,6 +974,12 @@ class DataManager
             case Item::PARAGRAPH_MARK:
                 $item = new \AverroesProject\TxText\ParagraphMark($row[$fields['id']], 
                         $row[$fields['seq']]);
+                break;
+            
+            case Item::MATH_TEXT:
+                $item = new \AverroesProject\TxText\MathText($row[$fields['id']], 
+                        $row[$fields['seq']], 
+                        $row[$fields['text']]);
                 break;
 
             default: 

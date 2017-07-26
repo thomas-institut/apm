@@ -68,7 +68,7 @@ describe("EditorData", function() {
       }
     })
     
-    it("should support simple textual items: rubric, gliph, initial, sic, abbr, del, add, unclear", function () {
+    it("should support simple textual items: rubric, gliph, initial, sic, abbr, del, add, unclear, mathtext", function () {
       let delta = { 
         ops: [ 
           {attributes: { rubric: {itemid: 100}}, insert: 'some text'},
@@ -79,6 +79,7 @@ describe("EditorData", function() {
           {attributes: { deletion: {itemid: 105, technique: 'some technique'}}, insert: 'some text'},
           {attributes: { addition: {itemid: 106, place: 'margin left', target: 105}}, insert: 'some text'},
           {attributes: { unclear: {itemid: 107, reading2: 'some reading', reason: 'some reason'}}, insert: 'some text'},
+          {attributes: { mathtext: {itemid: 108}}, insert: 'some text'},
           {insert: '\n'}
         ]
       }
@@ -88,7 +89,7 @@ describe("EditorData", function() {
       expect(apiData.ednotes).toBeDefined()
       expect(apiData.elements.length).toBe(1)
       expect(apiData.elements[0].type).toBe(ELEMENT_LINE)
-      expect(apiData.elements[0].items.length).toBe(8)
+      expect(apiData.elements[0].items.length).toBe(9)
       let i = 100
       let seq = 0
       for (const item of apiData.elements[0].items) {
@@ -107,6 +108,7 @@ describe("EditorData", function() {
       expect(apiData.elements[0].items[5].type).toBe(ITEM_DELETION)
       expect(apiData.elements[0].items[6].type).toBe(ITEM_ADDITION)
       expect(apiData.elements[0].items[7].type).toBe(ITEM_UNCLEAR)
+      expect(apiData.elements[0].items[8].type).toBe(ITEM_MATH_TEXT)
     })
     
     it("should support non-textual items: mark, nowb, illegible, chunkmark, chgap, pmark", function () {

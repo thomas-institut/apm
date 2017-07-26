@@ -23,5 +23,41 @@
 
 INSERT INTO `ap_types_item` (`id`, `name`, `descr`) VALUES ('15', 'charactergap', 'Character Gap');
 INSERT INTO `ap_types_item` (`id`, `name`, `descr`) VALUES ('16', 'paragraphmark', 'Paragraph Mark');
+INSERT INTO `ap_types_item` (`id`, `name`, `descr`) VALUES ('17', 'math_text', 'Mathematical text, e.g., symbols');
+
+--
+-- Table structure for table `ap_tokens`
+--
+
+CREATE TABLE `ap_tokens` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `user_agent` varchar(512) NOT NULL,
+  `ip_address` varchar(32) NOT NULL,
+  `token` varchar(128) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Indexes for dumped tables
+--
+
+--
+-- Indexes for table `ap_tokens`
+--
+ALTER TABLE `ap_tokens`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user_id` (`user_id`);
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `ap_tokens`
+--
+ALTER TABLE `ap_tokens`
+  ADD CONSTRAINT `ap_tokens_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `ap_users` (`id`) ON UPDATE CASCADE;
+
+
 
 UPDATE `ap_settings` SET `value` = '10' WHERE `ap_settings`.`setting` = 'dbversion';

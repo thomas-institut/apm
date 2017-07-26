@@ -136,7 +136,7 @@ class Authenticator {
     {
         session_start();
         $this->debug('Showing login page');
-        //$this->logger->debug("Login headers", $request->getHeaders());
+        $this->debug("Login headers", $request->getHeaders());
         $msg = '';
         if ($request->getMethod() === 'POST') {
             $data = $request->getParsedBody();
@@ -149,13 +149,20 @@ class Authenticator {
                         isset($data['rememberme']) ? $data['rememberme'] : '';
                 $this->debug('Trying to log in user ' . $user);
                 if ($this->ci->db->um->verifyUserPassword($user, $pwd)){
-                    $this->siteLogger->info("Login", ['user' => $user]);
+                    $userAgent = $request->getHeader('User-Agent')[0];
+                    $ipAddress = $request->getServerParam('REMOTE_ADDR');
+                    $this->siteLogger->info("Login", ['user' => $user, 'user_agent' => $userAgent, 'ip_address' => $ipAddress ]);
                     // Success!
                     $userId = $this->ci->db->um->getUserIdFromUsername($user);
                     $_SESSION['userid'] = $userId;
                     $this->debug('Generating token cookie');
                     $token = $this->generateRandomToken();
-                    $this->ci->db->um->storeUserToken($userId, $token);
+                    $this->ci->db->um->storeUserToken(
+                            $userId, 
+                            $userAgent, 
+                            $ipAddress,
+                            $token
+                    );
                     $cookieValue = $this->generateLongTermCookieValue($token, 
                             $userId);
                     if ($rememberme === 'on'){
@@ -230,7 +237,11 @@ class Authenticator {
             $cookieValue = $longTermCookie->getValue();
             list($userId, $token, $mac) = explode(':', $cookieValue);
             if (hash_equals($this->generateMac($userId . ':' . $token), $mac)) {
-                $userToken = $this->ci->db->um->getUserToken($userId);
+                $userToken = $this->ci->db->um->getUserToken(
+                        $userId, 
+                        $request->getHeader('User-Agent')[0], 
+                        $request->getServerParam('REMOTE_ADDR')
+                );
                 if (hash_equals($userToken, $token)){
                     $this->debug('Cookie looks good, user = ' . $userId);
                     return $userId;

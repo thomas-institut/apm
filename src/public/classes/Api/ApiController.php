@@ -151,6 +151,7 @@ class ApiController
             Response $response, $next)
     {
         $this->db->queryStats->reset();
+        
         $startTime = microtime(true);
         $docId = (int) $request->getAttribute('document');
         $pageNumber = (int) $request->getAttribute('page');
@@ -158,6 +159,8 @@ class ApiController
         $rawData = $request->getBody()->getContents();
         parse_str($rawData, $postData);
         $inputDataObject = null;
+        
+        
         
         if (isset($postData['data'])) {
             $inputDataObject = json_decode($postData['data'], true);
@@ -357,6 +360,15 @@ class ApiController
             
         }
         $checksDone = microtime(true);
+        
+        $this->logger->info("UPDATE elements", 
+                            [ 'apiUserId' => $this->ci->userId, 
+                              'pageId' => $pageId,
+                              'docId' => $docId,
+                              'pageNumber' => $pageNumber,
+                              'columnNumber' => $columnNumber,
+                            ]);
+        
         $newElements = \AverroesProject\Data\DataManager::createElementArrayFromArray($newElementsArray);
         // Get the editorial notes
         $edNotes  = \AverroesProject\Data\EdNoteManager::editorialNoteArrayFromArray($inputDataObject['ednotes']);
@@ -376,11 +388,11 @@ class ApiController
         $this->ci->db->enm->updateNotesFromArray($edNotes);
         $done = microtime(true);
         $this->logger->debug("Elements updated: checks in " . 
-                ($checksDone - $startTime) . 
-                "s, update in " . 
-                ($elementsUpdated - $checksDone) . 
-                "s, ednotes in " .
-                ($done - $elementsUpdated) . "s");
+                (($checksDone - $startTime)*1000) . 
+                " ms, update in " . 
+                (($elementsUpdated - $checksDone)*1000) . 
+                " ms, ednotes in " .
+                (($done - $elementsUpdated)*1000) . "ms");
         $this->logger->debug('Query stats', $this->db->queryStats->info);
         return $response->withStatus(200);
     }
@@ -424,6 +436,12 @@ class ApiController
                     $this->db->um->getUserInfoByUserId($this->ci->userId);
         }
 
+        $this->logger->info("QUERY Page Data", [ 
+            'apiUserId'=> $this->ci->userId, 
+            'col' => (int) $columnNumber,
+            'docId' => $docId,
+            'pageNumber' => $pageNumber,
+            'pageId' => $pageInfo['id']]);
 
         return $response->withJson(['elements' => $elements, 
             'ednotes' => $ednotes, 

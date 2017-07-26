@@ -69,6 +69,8 @@ class UserManager
     private $userTable;
     private $relationsTable;
     private $peopleTable;
+    private $tokensTable;
+    private $logger;
     
     var $rootRole = 'root';
 
@@ -84,11 +86,15 @@ class UserManager
      * @param DataTable $ut
      * @param DataTable $rt
      */
-    public function __construct($ut = NULL, $rt = NULL, $pt = NULL)
+    public function __construct($ut = NULL, $rt = NULL, $pt = NULL, $tt = NULL, $logger = NULL)
     {
         $this->userTable = ($ut===NULL) ? new InMemoryDataTable() : $ut;
         $this->relationsTable = ($rt===NULL) ? new InMemoryDataTable() : $rt;
         $this->peopleTable = ($pt===NULL) ? new InMemoryDataTable() : $pt;
+        $this->tokensTable = ($tt===NULL) ? new InMemoryDataTable() : $tt;
+        if ($logger !== NULL) {
+            $this->logger = $logger;
+        }
     }
     
     // 
@@ -367,23 +373,53 @@ class UserManager
      * @param int $userId
      * @return string
      */
-    public function getUserToken($userId)
+    public function getUserToken($userId, $userAgent, $ipAddress)
     {
         if ($this->userExistsById($userId)){
-            $userRow = $this->userTable->getRow($userId);
-            if (isset($userRow['token'])){
-                return $userRow['token'];
+            $tokenRows = $this->getUserTokenRows($userId, $userAgent, $ipAddress);
+            if ($tokenRows === false) {
+                return '';
+            }
+            if (count($tokenRows) === 0) {
+                return '';
+            }
+            if (isset($tokenRows[0]['token'])){
+                return $tokenRows[0]['token'];
             }
             return '';
         }
         return false;
     }
     
-    public function storeUserToken($userId, $token)
+    public function getUserTokenRows($userId, $userAgent, $ipAddress) {
+        return $this->tokensTable->findRows( [
+            'user_id' => $userId, 
+            'user_agent' => $userAgent, 
+            'ip_address' => $ipAddress
+        ]);
+    }
+    public function storeUserToken($userId, $userAgent, $ipAddress, $token)
     {
+        //$this->logger->debug("Storing user token");
         if ($this->userExistsById($userId)){
-            return false !== $this->userTable->updateRow(['id' => $userId, 
-                'token' => $token]);
+            // Get the current token
+            $tokenRows = $this->getUserTokenRows($userId, $userAgent, $ipAddress);
+            //$this->logger->debug("Token rows: " . print_r($tokenRows, true));
+            if ($tokenRows !== false) {
+                // Delete current token
+                foreach($tokenRows as $tokenRow) {
+                    $this->tokensTable->deleteRow($tokenRow['id']);
+                }
+            }
+            
+            $row = [
+                'user_id' => $userId, 
+                'user_agent' => $userAgent, 
+                'ip_address' => $ipAddress,
+                'token' => $token
+            ];
+            //$this->logger->debug("Creating row: " . print_r($row, true));
+            return false !== $this->tokensTable->createRow($row);
         }
         return false;
     }

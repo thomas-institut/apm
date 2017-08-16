@@ -16,14 +16,20 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-/* eslint-env jquery */
+/*eslint-env es6*/
+/*eslint-env jquery*/
+
+/*eslint no-var: "error"*/
+/*eslint default-case: "error"*/
+/*eslint no-console: ["error", { allow: ["warn", "error"] }] */
 
 /* global Twig, Quill, ELEMENT_LINE, ELEMENT_HEAD, ELEMENT_CUSTODES */
 /* global ELEMENT_GLOSS, ELEMENT_PAGE_NUMBER, ITEM_TEXT, ITEM_MARK */
 /* global ITEM_RUBRIC, ITEM_GLIPH, ITEM_INITIAL, ITEM_SIC, ITEM_ABBREVIATION */
-/* global ITEM_DELETION, Item, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_ILLEGIBLE, ELEMENT_PAGENUMBER */
+/* global ITEM_DELETION, Item, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_ILLEGIBLE */
 /* global ITEM_NO_WORD_BREAK, ITEM_CHUNK_MARK, ELEMENT_ADDITION, ELEMENT_LINE_GAP, MarkBlot */
-/* global IllegibleBlot, NoWordBreakBlot, ChunkMarkBlot, LineGapBlot, _, GlossBlot, EditorData, ITEM_CHARACTER_GAP, CharacterGapBlot, ParagraphMarkBlot, ITEM_MATH_TEXT */
+/* global IllegibleBlot, NoWordBreakBlot, ChunkMarkBlot, LineGapBlot, _, GlossBlot, EditorData */
+/* global ITEM_CHARACTER_GAP, CharacterGapBlot, ParagraphMarkBlot, ITEM_MATH_TEXT, ITEM_PARAGRAPH_MARK */
 
 
 class TranscriptionEditor {
@@ -46,7 +52,7 @@ class TranscriptionEditor {
     this.sizeGuide = sizeGuide
     
     this.templateLoaded = false
-    let thisObject = this
+    const thisObject = this
     TranscriptionEditor.editors[editorId] = thisObject
 
     MarkBlot.baseUrl = baseUrl
@@ -72,29 +78,29 @@ class TranscriptionEditor {
       })
     }
 
-    let editorHtml = TranscriptionEditor.editorTemplate.render({id: id})
+    const editorHtml = TranscriptionEditor.editorTemplate.render({id: id})
     $(containerSelector).html(editorHtml)
     // Disable drag and drop in editor (too many issues)
-    $(containerSelector).on('dragstart drag dragend drop', function (e){
+    $(containerSelector).on('dragstart drag dragend drop', function (){
       return false
     })
-    $(window).on('resize', function (e){
-      console.log("Resizing")
-      console.log($(containerSelector + ' .ql-editor').height())
+    $(window).on('resize', function (){
+      //console.log("Resizing")
+      //console.log($(containerSelector + ' .ql-editor').height())
       return false
     })
     
     this.setFontSize(3)
-    let modalsHtml = TranscriptionEditor.modalsTemplate.render({id: id})
+    const modalsHtml = TranscriptionEditor.modalsTemplate.render({id: id})
     $('body').append(modalsHtml)
 
-    let quillObject = new Quill('#editor-container-' + id, {})
+    const quillObject = new Quill('#editor-container-' + id, {})
     this.quillObject = quillObject
     this.disable()
     
     this.resizeEditor()
     
-    let styleElement = document.createElement('style')
+    const styleElement = document.createElement('style')
     document.head.appendChild(styleElement)
     this.styleSheet = styleElement.sheet
     GlossBlot.styleSheet = this.styleSheet
@@ -104,12 +110,12 @@ class TranscriptionEditor {
     $('#save-button-' + id).hide()
     $('#reset-button-' + id).hide()
 
-    quillObject.on('selection-change', function (range, oldRange, source) {
+    quillObject.on('selection-change', function (range) {
       if (!range) {
         return false
       }
       //console.log("Selection: @" + range.index + ", l=" + range.length)
-      let hasFormat = TranscriptionEditor.selectionHasFormat(quillObject, range)
+      const hasFormat = TranscriptionEditor.selectionHasFormat(quillObject, range)
       //console.log("Has format: " + hasFormat)
       if (range.length === 0) {
         $('.selFmtBtn').prop('disabled', true)
@@ -140,7 +146,7 @@ class TranscriptionEditor {
       $('#chunk-start-button-' + id).prop('disabled', true)
       $('#chunk-end-button-' + id).prop('disabled', true)
       
-      let text = quillObject.getText(range)
+      const text = quillObject.getText(range)
       if (text.search('\n') !== -1) {
         // Selection includes new lines
         $('.selFmtBtn').prop('disabled', true)
@@ -165,7 +171,7 @@ class TranscriptionEditor {
       }
     })
 
-    quillObject.on('text-change', function (delta, oldDelta, source) {
+    quillObject.on('text-change', function (delta, oldDelta) {
       
       if (!thisObject.enabled) {
         return false
@@ -178,31 +184,28 @@ class TranscriptionEditor {
       if (delta.ops.length === 2) {
         if (delta.ops[0].retain) {
           if (delta.ops[1].delete) {
-//            console.log('Text has been deleted at pos ' +
-//                            delta.ops[0].retain + ', ' + delta.ops[1].delete +
-//                            ' characters')
-            let deletionRanges = TranscriptionEditor.getDeletionRanges(oldDelta.ops)
-            let coveredDeletions =
+            const deletionRanges = TranscriptionEditor.getDeletionRanges(oldDelta.ops)
+            const coveredDeletions =
                                 TranscriptionEditor.getCoveredDeletions(deletionRanges,
                                     delta.ops[0].retain,
                                     delta.ops[1].delete
                                     )
             if (coveredDeletions.length > 0) {
-              let theOps = quillObject.getContents().ops
+              const theOps = quillObject.getContents().ops
               for (const del of coveredDeletions) {
-                let add = TranscriptionEditor.getAdditionRangeByTarget(theOps, del.id)
+                const add = TranscriptionEditor.getAdditionRangeByTarget(theOps, del.id)
                 if (add) {
-//                  console.log('Updating addition ' + add.id)
-//                  console.log(add)
                   quillObject.formatText(
-                                            add.index,
-                                            add.length,
-                                            'addition', {
-                                              itemid: add.id,
-                                              editorid: thisObject.id,
-                                              place: add.place,
-                                              target: -1
-                                            })
+                    add.index,
+                    add.length,
+                    'addition', 
+                    {
+                      itemid: add.id,
+                      editorid: thisObject.id,
+                      place: add.place,
+                      target: -1
+                    }
+                  )
                 } else {
                   //console.log('No addition associated with deletion ' + del.id)
                 }
@@ -215,19 +218,19 @@ class TranscriptionEditor {
     })
     $('#ar-button-' + id).click(function () {
       quillObject.format('lang', 'ar')
-      let range = quillObject.getSelection()
+      const range = quillObject.getSelection()
       quillObject.setSelection(range.index + range.length)
     })
 
     $('#la-button-' + id).click(function () {
       quillObject.format('lang', 'la')
-      let range = quillObject.getSelection()
+      const range = quillObject.getSelection()
       quillObject.setSelection(range.index + range.length)
     })
 
     $('#he-button-' + id).click(function () {
       quillObject.format('lang', 'he')
-      let range = quillObject.getSelection()
+      const range = quillObject.getSelection()
       quillObject.setSelection(range.index + range.length)
     })
 
@@ -275,7 +278,7 @@ class TranscriptionEditor {
         )
 
     $('#note-button-' + id).click(function () {
-      let range = quillObject.getSelection()
+      const range = quillObject.getSelection()
       if (range.length > 0) {
         return false
       }
@@ -284,9 +287,9 @@ class TranscriptionEditor {
       $('#item-modal-submit-button-' + thisObject.id).on('click', function () {
         $('#item-modal-' + thisObject.id).modal('hide')
                 // Take care of notes!
-        let noteText = $('#item-note-' + thisObject.id).val()
+        const noteText = $('#item-note-' + thisObject.id).val()
         if (noteText !== '') {
-          let itemId = thisObject.getOneItemId()
+          const itemId = thisObject.getOneItemId()
           thisObject.addNewNote(itemId, noteText)
           quillObject.insertEmbed(range.index, 'mark', {
             itemid: itemId,
@@ -305,9 +308,9 @@ class TranscriptionEditor {
             TranscriptionEditor.genEmbedDoubleClickFunction(thisObject, quillObject))
 
     $('#clear-button-' + id).click(function () {
-      let range = quillObject.getSelection()
+      const range = quillObject.getSelection()
       if (TranscriptionEditor.selectionHasFormat(quillObject, range)) {
-        $('#alert-modal-title-' + this.id).html('Please confirm')
+        $('#alert-modal-title-' + thisObject.id).html('Please confirm')
         $('#alert-modal-submit-button-' + thisObject.id).html('Clear formatting')
         $('#alert-modal-cancel-button-' + thisObject.id).html('Cancel')
         $('#alert-modal-text-' + thisObject.id).html(
@@ -324,8 +327,8 @@ class TranscriptionEditor {
     })
 
     $('#sic-button-' + id).click(function () {
-      let range = quillObject.getSelection()
-      let text = quillObject.getText(range.index, range.length)
+      const range = quillObject.getSelection()
+      const text = quillObject.getText(range.index, range.length)
       TranscriptionEditor.resetItemModal(thisObject.id)
       $('#item-modal-title-' + thisObject.id).html('Sic')
       $('#item-modal-text-' + thisObject.id).html(text)
@@ -339,7 +342,7 @@ class TranscriptionEditor {
         if (correction === '') {
           correction = ' '
         }
-        let itemid = thisObject.getOneItemId()
+        const itemid = thisObject.getOneItemId()
         quillObject.format('sic', {
           correction: correction,
           itemid: itemid,
@@ -347,7 +350,7 @@ class TranscriptionEditor {
         })
         quillObject.setSelection(range.index + range.length)
                 // Take care of notes!
-        let noteText = $('#item-note-' + thisObject.id).val()
+        const noteText = $('#item-note-' + thisObject.id).val()
         if (noteText !== '') {
           thisObject.addNewNote(itemid, noteText)
         }
@@ -356,8 +359,8 @@ class TranscriptionEditor {
     })
 
     $('#abbr-button-' + id).click(function () {
-      let range = quillObject.getSelection()
-      let text = quillObject.getText(range.index, range.length)
+      const range = quillObject.getSelection()
+      const text = quillObject.getText(range.index, range.length)
       TranscriptionEditor.resetItemModal(thisObject.id)
       $('#item-modal-title-' + thisObject.id).html('Abbreviation')
       $('#item-modal-text-' + thisObject.id).html(text)
@@ -377,7 +380,7 @@ class TranscriptionEditor {
         if (expansion === '') {
           expansion = ' '
         }
-        let itemid = thisObject.getOneItemId()
+        const itemid = thisObject.getOneItemId()
         quillObject.format('abbr', {
           expansion: expansion,
           itemid: itemid,
@@ -385,7 +388,7 @@ class TranscriptionEditor {
         })
         quillObject.setSelection(range.index + range.length)
                 // Take care of notes!
-        let noteText = $('#item-note-' + thisObject.id).val()
+        const noteText = $('#item-note-' + thisObject.id).val()
         if (noteText !== '') {
           thisObject.addNewNote(itemid, noteText)
         }
@@ -394,8 +397,8 @@ class TranscriptionEditor {
     })
 
     $('#unclear-button-' + id).click(function () {
-      let range = quillObject.getSelection()
-      let text = quillObject.getText(range.index, range.length)
+      const range = quillObject.getSelection()
+      const text = quillObject.getText(range.index, range.length)
       TranscriptionEditor.resetItemModal(thisObject.id)
       $('#item-modal-title-' + thisObject.id).html('Unclear')
       $('#item-modal-text-' + thisObject.id).html(text)
@@ -423,8 +426,8 @@ class TranscriptionEditor {
         if (reading2 === '') {
           reading2 = ' '
         }
-        let itemid = thisObject.getOneItemId()
-        let reason = $('#item-modal-extrainfo-' + thisObject.id).val()
+        const itemid = thisObject.getOneItemId()
+        const reason = $('#item-modal-extrainfo-' + thisObject.id).val()
         quillObject.format('unclear', {
           reading2: reading2,
           reason: reason,
@@ -433,7 +436,7 @@ class TranscriptionEditor {
         })
         quillObject.setSelection(range.index + range.length)
                 // Take care of notes!
-        let noteText = $('#item-note-' + thisObject.id).val()
+        const noteText = $('#item-note-' + thisObject.id).val()
         if (noteText !== '') {
           thisObject.addNewNote(itemid, noteText)
         }
@@ -445,7 +448,7 @@ class TranscriptionEditor {
     $('#chunk-end-button-' + id).click(TranscriptionEditor.genChunkButtonFunction(thisObject, quillObject, 'end'))
 
     $('#illegible-button-' + id).click(function () {
-      let range = quillObject.getSelection()
+      const range = quillObject.getSelection()
       if (range.length > 0) {
         return false
       }
@@ -467,9 +470,9 @@ class TranscriptionEditor {
 
       $('#item-modal-submit-button-' + thisObject.id).on('click', function () {
         $('#item-modal-' + thisObject.id).modal('hide')
-        let itemid = thisObject.getOneItemId()
-        let reason = $('#item-modal-extrainfo-' + thisObject.id).val()
-        let length = $('#item-modal-length-' + thisObject.id).val()
+        const itemid = thisObject.getOneItemId()
+        const reason = $('#item-modal-extrainfo-' + thisObject.id).val()
+        const length = $('#item-modal-length-' + thisObject.id).val()
         quillObject.insertEmbed(range.index, 'illegible', {
           length: length,
           reason: reason,
@@ -478,7 +481,7 @@ class TranscriptionEditor {
         })
         quillObject.setSelection(range.index + 1)
                 // Take care of notes!
-        let noteText = $('#item-note-' + thisObject.id).val()
+        const noteText = $('#item-note-' + thisObject.id).val()
         if (noteText !== '') {
           thisObject.addNewNote(itemid, noteText)
         }
@@ -487,12 +490,12 @@ class TranscriptionEditor {
     })
     
     $('#pcircledot-button-'+ id).click(function () {
-      let range = quillObject.getSelection()
+      const range = quillObject.getSelection()
       quillObject.insertText(range.index, '⊙')
       quillObject.setSelection(range.index + 1)
     })
     $('#chgap-button-' + id).click(function () {
-      let range = quillObject.getSelection()
+      const range = quillObject.getSelection()
       if (range.length > 0) {
         return false
       }
@@ -505,7 +508,7 @@ class TranscriptionEditor {
     })
     
     $('#pmark-button-' + id).click(function () {
-      let range = quillObject.getSelection()
+      const range = quillObject.getSelection()
       if (range.length > 0) {
         return false
       }
@@ -517,16 +520,16 @@ class TranscriptionEditor {
     })    
 
     $('#edit-button-' + id).click(function () {
-      let currentRange = quillObject.getSelection()
-      let [blot, offset] = quillObject.getLeaf(currentRange.index+1)
-      let range = {
+      const currentRange = quillObject.getSelection()
+      const blot = quillObject.getLeaf(currentRange.index+1)[0]
+      const range = {
         index: blot.offset(quillObject.scroll),
         length: blot.length()
       }
       quillObject.setSelection(range)
 
-      let format = quillObject.getFormat(range)
-      let text = quillObject.getText(range.index, range.length)
+      const format = quillObject.getFormat(range)
+      const text = quillObject.getText(range.index, range.length)
       let altText = ''
       let itemid = -1
       let additionTargets = []
@@ -574,7 +577,7 @@ class TranscriptionEditor {
       }
       if (format.deletion) {
         itemid = format.deletion.itemid
-        let technique = format.deletion.technique
+        const technique = format.deletion.technique
         $('#item-modal-text-fg-' + thisObject.id).show()
         $('#item-modal-alttext-fg-' + thisObject.id).hide()
         $('#item-modal-extrainfo-label-' + thisObject.id).html('Technique:')
@@ -592,8 +595,8 @@ class TranscriptionEditor {
       }
       if (format.addition) {
         itemid = format.addition.itemid
-        let target = format.addition.target
-        let place = format.addition.place
+        const target = format.addition.target
+        const place = format.addition.place
         $('#item-modal-text-fg-' + thisObject.id).show()
         $('#item-modal-alttext-fg-' + thisObject.id).hide()
         $('#item-modal-extrainfo-label-' + thisObject.id).html('Place:')
@@ -677,16 +680,16 @@ class TranscriptionEditor {
           if (altText === '') {
             altText = ' '
           }
-          let reason = $('#item-modal-extrainfo-' + thisObject.id).val()
+          const reason = $('#item-modal-extrainfo-' + thisObject.id).val()
           quillObject.format('unclear', {reading2: altText, reason: reason, itemid: itemid, editorid: thisObject.id })
         }
         if (format.deletion) {
-          let technique = $('#item-modal-extrainfo-' + thisObject.id).val()
+          const technique = $('#item-modal-extrainfo-' + thisObject.id).val()
           quillObject.format('deletion', {technique: technique, itemid: itemid, editorid: thisObject.id })
         }
         if (format.addition) {
-          let place = $('#item-modal-extrainfo-' + thisObject.id).val()
-          let target = parseInt($('#item-modal-target-' + thisObject.id).val())
+          const place = $('#item-modal-extrainfo-' + thisObject.id).val()
+          const target = parseInt($('#item-modal-target-' + thisObject.id).val())
           let targetText = ''
           for (const someT of additionTargets) {
             if (target === someT.itemid) {
@@ -703,8 +706,8 @@ class TranscriptionEditor {
         }
         quillObject.setSelection(range.index + range.length)
                 // Then, care of editorial notes
-        let noteId = $('#item-note-id-' + thisObject.id).val()
-        let noteText = $('#item-note-' + thisObject.id).val()
+        const noteId = $('#item-note-id-' + thisObject.id).val()
+        const noteText = $('#item-note-' + thisObject.id).val()
         if (noteId === 'new') {
           thisObject.addNewNote(itemid, noteText)
         } else {
@@ -766,11 +769,11 @@ class TranscriptionEditor {
     
     
     $('#nowb-button-' + id).click(function () {
-      let range = quillObject.getSelection()
+      const range = quillObject.getSelection()
       if (range.length > 0) {
         return false
       }
-      let itemId = thisObject.getOneItemId()
+      const itemId = thisObject.getOneItemId()
       quillObject.insertEmbed(range.index, 'nowb', {
             itemid: itemId,
             editorid: thisObject.id
@@ -814,7 +817,7 @@ class TranscriptionEditor {
     })
     
     $('#linegap-button-' + id).click(function () {
-      let range = quillObject.getSelection()
+      const range = quillObject.getSelection()
       if (range.length > 0) {
         return false
       }
@@ -830,9 +833,9 @@ class TranscriptionEditor {
       $('#item-modal-submit-button-' + thisObject.id).off()
       $('#item-modal-submit-button-' + thisObject.id).on('click', function () {
         $('#item-modal-' + thisObject.id).modal('hide')
-        let count = $('#item-modal-length-' + thisObject.id).val()
+        const count = $('#item-modal-length-' + thisObject.id).val()
         if (count <= 0) {
-          console.log("Bad line count for line gap: " + count)
+          //console.log("Bad line count for line gap: " + count)
           return false
         }
         thisObject.insertLineGap(range.index, count)
@@ -941,12 +944,12 @@ class TranscriptionEditor {
     this.resizeEditor()
     this.setContentsNotChanged()
     this.quillObject.setSelection(this.quillObject.getLength())
-    let event = new Event('edit-enable')
+    const event = new Event('edit-enable')
     $(this.containerSelector).get()[0].dispatchEvent(event)
   }
   
   disable() {
-    let thisObject = this
+    const thisObject = this
     if (this.contentsChanged) {
       $('#alert-modal-title-' + this.id).html('There are changes to the text')
       $('#alert-modal-text-' + this.id).html(
@@ -967,7 +970,7 @@ class TranscriptionEditor {
           thisObject.quillObject.enable(thisObject.enabled)
           thisObject.setContentsNotChanged()
           thisObject.resizeEditor()
-          let event = new Event('edit-disable')
+          const event = new Event('edit-disable')
           $(thisObject.containerSelector).get()[0].dispatchEvent(event)
         })
       $('#alert-modal-' + this.id).modal('show')
@@ -982,7 +985,7 @@ class TranscriptionEditor {
     this.quillObject.enable(this.enabled)
     this.contentsChanged = false
     this.resizeEditor()
-    let event = new Event('edit-disable')
+    const event = new Event('edit-disable')
     $(this.containerSelector).get()[0].dispatchEvent(event)
     
   }
@@ -1001,7 +1004,7 @@ class TranscriptionEditor {
     $('#save-button-' + this.id).prop('title', 'Saving changes...')
     $('#save-button-' + this.id).html('<i class="fa fa-spinner fa-spin fa-fw"></i>')
     this.quillObject.enable(false)
-    let event = new Event('editor-save')
+    const event = new Event('editor-save')
     $(this.containerSelector).get()[0].dispatchEvent(event)
   }
   
@@ -1026,7 +1029,7 @@ class TranscriptionEditor {
     this.quillObject.setContents(this.lastSavedData)
     $('#save-button-' + this.id).prop('title', 'Save changes')
     $('#save-button-' + this.id).html('<i class="fa fa-save"></i>')
-    let event = new Event('editor-reset')
+    const event = new Event('editor-reset')
     $(this.containerSelector).get()[0].dispatchEvent(event)
   }
 
@@ -1038,10 +1041,10 @@ class TranscriptionEditor {
     }
   }
   getAdditionTargets (additionId = -1) {
-    let ops = this.quillObject.getContents().ops
-    let targets = [ {itemid: -1, text: '[none]'}]
-    let deletions = []
-    let additionTargets = []
+    const ops = this.quillObject.getContents().ops
+    const targets = [{itemid: -1, text: '[none]'}]
+    const deletions = []
+    const additionTargets = []
     for (const curOps of ops) {
       if (curOps.insert !== '\n' &&
                         'attributes' in curOps) {
@@ -1079,8 +1082,8 @@ class TranscriptionEditor {
     if (range.length < 1) {
       return false
     }
-    let delta = quillObject.getContents(range.index, range.length)
-    for (const [i, op] of delta.ops.entries()) {
+    const delta = quillObject.getContents(range.index, range.length)
+    for (const op of delta.ops.entries()) {
       if (typeof op.insert !== 'object') {
         continue
       }
@@ -1092,7 +1095,7 @@ class TranscriptionEditor {
       }
     }
     for (let i = range.index; i < range.index + range.length; i++) {
-      let format = quillObject.getFormat(i, 1)
+      const format = quillObject.getFormat(i, 1)
       if ($.isEmptyObject(format)) {
         continue
       }
@@ -1114,10 +1117,10 @@ class TranscriptionEditor {
 
   static rangeIsInMidItem (quillObject, range) {
  
-    let prevFormat = quillObject.getFormat(range.index, 0)
-    let nextFormat = quillObject.getFormat(range.index + range.length + 1, 0)
-    let prevItem = TranscriptionEditor.formatHasItem(prevFormat)
-    let nextItem = TranscriptionEditor.formatHasItem(nextFormat)
+    const prevFormat = quillObject.getFormat(range.index, 0)
+    const nextFormat = quillObject.getFormat(range.index + range.length + 1, 0)
+    const prevItem = TranscriptionEditor.formatHasItem(prevFormat)
+    const nextItem = TranscriptionEditor.formatHasItem(nextFormat)
     if (prevItem === nextItem) {
       if (prevItem === false) {
         return false
@@ -1133,7 +1136,7 @@ class TranscriptionEditor {
       editorid: this.id,
       technique: technique
     })
-    let range = this.quillObject.getSelection()
+    const range = this.quillObject.getSelection()
     this.quillObject.setSelection(range.index + range.length)
   }
   
@@ -1163,17 +1166,17 @@ class TranscriptionEditor {
       place: place,
       target: target
     })
-    let range = this.quillObject.getSelection()
+    const range = this.quillObject.getSelection()
     this.quillObject.setSelection(range.index + range.length)
   }
 
   static removeFormat (quillObject, range) {
     for (let i = range.index; i < range.index + range.length; i++) {
-      let format = quillObject.getFormat(i, 1)
+      const format = quillObject.getFormat(i, 1)
       if ($.isEmptyObject(format)) {
         continue
       }
-      let lang = format.lang
+      const lang = format.lang
       let elementType = ''
       for (const type of ['head', 'gloss', 'custodes']) {
         if (type in format) {
@@ -1193,7 +1196,7 @@ class TranscriptionEditor {
   
   static genChunkButtonFunction(thisObject, quillObject, type) {
     return function () {
-      let range = quillObject.getSelection()
+      const range = quillObject.getSelection()
       if (range.length > 0) {
         return false
       }
@@ -1204,9 +1207,9 @@ class TranscriptionEditor {
       $('#chunk-modal-submit-button-' + thisObject.id).off()
       $('#chunk-modal-submit-button-' + thisObject.id).on('click', function () {
         $('#chunk-modal-' + thisObject.id).modal('hide')
-        let itemid = thisObject.getOneItemId()
-        let dareid = 'AW'+ $('#chunk-modal-worknumber-' + thisObject.id).val()
-        let chunkno = $('#chunk-modal-chunknumber-' + thisObject.id).val()
+        const itemid = thisObject.getOneItemId()
+        const dareid = 'AW'+ $('#chunk-modal-worknumber-' + thisObject.id).val()
+        const chunkno = $('#chunk-modal-chunknumber-' + thisObject.id).val()
         quillObject.insertEmbed(range.index, 'chunkmark', {
           type: type,
           chunkno: chunkno,
@@ -1216,7 +1219,7 @@ class TranscriptionEditor {
         })
         quillObject.setSelection(range.index + 1)
                 // Take care of notes!
-        let noteText = $('#chunk-note-' + thisObject.id).val()
+        const noteText = $('#chunk-note-' + thisObject.id).val()
         if (noteText !== '') {
           thisObject.addNewNote(itemid, noteText)
         }
@@ -1234,7 +1237,7 @@ class TranscriptionEditor {
         itemid: thisObject.getOneItemId(),
         editorid: thisObject.id
       })
-      let range = quillObject.getSelection()
+      const range = quillObject.getSelection()
       quillObject.setSelection(range.index + range.length)
     }
   }
@@ -1244,8 +1247,8 @@ class TranscriptionEditor {
       if (!thisObject.enabled) {
         return true
       }
-      let blot = Quill.find(event.target)
-      let range = {
+      const blot = Quill.find(event.target)
+      const range = {
         index: blot.offset(quillObject.scroll),
         length: blot.length()
       }
@@ -1259,13 +1262,13 @@ class TranscriptionEditor {
       if (!thisObject.enabled) {
         return true
       }
-      let blot = Quill.find(event.target)
-      let range = {
+      const blot = Quill.find(event.target)
+      const range = {
         index: blot.offset(quillObject.scroll),
         length: blot.length()
       }
       quillObject.setSelection(range)
-      let delta = quillObject.getContents(range.index, range.length)
+      const delta = quillObject.getContents(range.index, range.length)
       let unrecognizedEmbed = true
       let itemid = -1
       let length = -1
@@ -1307,8 +1310,8 @@ class TranscriptionEditor {
         $('#item-modal-' + thisObject.id).modal('hide')
 
         if (delta.ops[0].insert.illegible) {
-          let reason = $('#item-modal-extrainfo-' + thisObject.id).val()
-          let length = $('#item-modal-length-' + thisObject.id).val()
+          const reason = $('#item-modal-extrainfo-' + thisObject.id).val()
+          const length = $('#item-modal-length-' + thisObject.id).val()
           quillObject.deleteText(range.index, 1)
           quillObject.insertEmbed(range.index, 'illegible', {
             reason: reason,
@@ -1319,8 +1322,8 @@ class TranscriptionEditor {
         }
 
                 // Take care of notes!
-        let noteId = $('#item-note-id-' + thisObject.id).val()
-        let noteText = $('#item-note-' + thisObject.id).val()
+        const noteId = $('#item-note-id-' + thisObject.id).val()
+        const noteText = $('#item-note-' + thisObject.id).val()
         if (noteId === 'new') {
           thisObject.addNewNote(itemid, noteText)
         } else {
@@ -1335,9 +1338,9 @@ class TranscriptionEditor {
     if (!this.sizeGuide.selector) {
       return false
     }
-    let totalHeight = $(this.sizeGuide.selector).height()
+    const totalHeight = $(this.sizeGuide.selector).height()
     //console.log(this.sizeGuide.selector + ': ' + totalHeight)
-    let controlsHeight = $('#editor-controls-' + this.id).height()
+    const controlsHeight = $('#editor-controls-' + this.id).height()
     //console.log('Editor controls: '+ controlsHeight)
     let toolbarHeight = $('#toolbar-' + this.id).height()
     if (!this.enabled) {
@@ -1345,11 +1348,11 @@ class TranscriptionEditor {
     }
     //console.log('Toolbar: '+ toolbarHeight)
     //console.log('Offset:' + this.sizeGuide.offset)
-    let editorHeight = totalHeight - controlsHeight - toolbarHeight - this.sizeGuide.offset - 1
+    const editorHeight = totalHeight - controlsHeight - toolbarHeight - this.sizeGuide.offset - 1
     //console.log(editorHeight)
     $('#editor-container-' + this.id).find('div.ql-editor').prop(
         'style',
-        'max-height: ' +  editorHeight + 'px;'
+        'max-height: ' + editorHeight + 'px;'
     )
   }
 
@@ -1369,11 +1372,10 @@ class TranscriptionEditor {
   }
 
   static setupNotesInItemModal (thisObject, itemid) {
-    let ednotes = thisObject.getEdnotesForItemId(itemid)
-    let noteToEdit = thisObject.getLatestNoteForItemAndAuthor(itemid,
+    const ednotes = thisObject.getEdnotesForItemId(itemid)
+    const noteToEdit = thisObject.getLatestNoteForItemAndAuthor(itemid,
                     thisObject.editorId)
-    if (($.isEmptyObject(noteToEdit) && ednotes.length > 0) ||
-                    (ednotes.length > 1)) {
+    if ($.isEmptyObject(noteToEdit) && ednotes.length > 0 || ednotes.length > 1) {
       let ednotesHtml = '<h3>Other notes</h3>'
       for (const note of ednotes) {
         if (note.id === noteToEdit.id) {
@@ -1399,7 +1401,7 @@ class TranscriptionEditor {
                     '" title="' +
                     noteToEdit.time +
                     '">' +
-                    thisObject.timeSince(noteToEdit.time) +
+                    TranscriptionEditor.timeSince(noteToEdit.time) +
                     ' ago</time>'
                 )
     } else {
@@ -1409,7 +1411,7 @@ class TranscriptionEditor {
     }
   }
 
-  getMySqlDate (d) {
+  static getMySqlDate (d) {
     return d.getFullYear() + '-' +
             ('00' + (d.getMonth() + 1)).slice(-2) + '-' +
             ('00' + d.getDate()).slice(-2) + ' ' +
@@ -1418,11 +1420,11 @@ class TranscriptionEditor {
             ('00' + d.getSeconds()).slice(-2)
   }
 
-  timeSince (dateString) {
-    let date = Date.parse(dateString)
+  static timeSince (dateString) {
+    const date = Date.parse(dateString)
 
-    var seconds = Math.floor((new Date() - date) / 1000)
-    var interval = seconds / 31536000
+    const seconds = Math.floor((new Date() - date) / 1000)
+    let interval = seconds / 31536000
 
     if (interval > 1) {
       return interval.toFixed(1) + ' years'
@@ -1441,13 +1443,13 @@ class TranscriptionEditor {
     }
     interval = seconds / 60
     if (interval > 1) {
-      let minutes = Math.floor(interval)
+      const minutes = Math.floor(interval)
       if (minutes === 1) {
         return '1 minute'
       }
       return minutes + ' minutes'
     }
-    let secs = Math.floor(seconds)
+    const secs = Math.floor(seconds)
     if (secs === 1) {
       return '1 second'
     }
@@ -1461,14 +1463,14 @@ class TranscriptionEditor {
     if (typeof itemId === 'string') {
       itemId = parseInt(itemId)
     }
-    let noteId = this.getOneNoteId()
+    const noteId = this.getOneNoteId()
     this.edNotes.push({
       id: noteId,
       authorId: this.editorId,
       target: itemId,
       type: 2,
       text: text,
-      time: this.getMySqlDate(new Date()),
+      time: TranscriptionEditor.getMySqlDate(new Date()),
       lang: 'en'
     })
   }
@@ -1485,7 +1487,7 @@ class TranscriptionEditor {
           break
         }
         this.edNotes[i].text = text
-        this.edNotes[i].time = this.getMySqlDate(new Date())
+        this.edNotes[i].time = TranscriptionEditor.getMySqlDate(new Date())
         break
       }
     }
@@ -1498,7 +1500,7 @@ class TranscriptionEditor {
     if (typeof itemId === 'string') {
       itemId = parseInt(itemId)
     }
-    let ednotes = []
+    const ednotes = []
     for (const note of this.edNotes) {
       if (note.type === 2 && note.target === itemId) {
         ednotes.push(note)
@@ -1525,7 +1527,7 @@ class TranscriptionEditor {
   }
 
   setDefaultLang (lang) {
-    let labels = {
+    const labels = {
       la: 'Latin',
       he: 'Hebrew',
       ar: 'Arabic'
@@ -1545,7 +1547,7 @@ class TranscriptionEditor {
     $('#lang-button-'+this.id).attr('title', labels[lang])
     $('#lang-button-'+this.id).html(lang)
     this.defaultLang = lang
-    ChunkMarkBlot.dir = (lang === 'la') ? 'ltr' : 'ltr';
+    ChunkMarkBlot.dir = lang === 'la' ? 'ltr' : 'ltr';
     
   }
 
@@ -1595,15 +1597,15 @@ class TranscriptionEditor {
   }
 
    /**
-    * Loads the given elements and items into the editor
-    * @param {array} columnData
-    * @returns {none}
+    * Loads the given elements and items into the editor.
+    * @param {array} columnData Data from API
+    * @returns {none} Nothing.
     */
   setData (columnData) {
-    let delta = []
-    let formats = []
-    let deletionTexts = []
-    let languageCounts = {'ar': 0, 'he': 0, 'la':0}
+    const delta = []
+    const formats = []
+    const deletionTexts = []
+    const languageCounts = {'ar': 0, 'he': 0, 'la':0}
     formats[ELEMENT_HEAD] = 'head'
     formats[ELEMENT_CUSTODES] = 'custodes'
     formats[ELEMENT_PAGE_NUMBER] = 'pagenumber'
@@ -1620,6 +1622,7 @@ class TranscriptionEditor {
     this.pageDefaultLang = columnData.info.lang
 
     for (const ele of columnData.elements) {
+      const attr = {}
       switch (ele.type) {
         case ELEMENT_LINE_GAP:
           delta.push({
@@ -1847,10 +1850,15 @@ class TranscriptionEditor {
                   }
                 })
                 break
+                
+              default:
+                console.warn('Unrecognized item type ' + item.type + ' when setting editor data')
             }
             languageCounts[item.lang]++
           }
           break
+          
+          // no default
       }
       
       switch(ele.type) {
@@ -1867,8 +1875,8 @@ class TranscriptionEditor {
           break;
           
           case ELEMENT_ADDITION:
-            console.log("Addition element")
-            console.log(ele)
+            //onsole.log("Addition element")
+            //console.log(ele)
           delta.push({
             insert: '\n',
             attributes: {
@@ -1882,7 +1890,6 @@ class TranscriptionEditor {
           break;
           
         default:
-          let attr = {}
           attr[formats[ele.type]] = true
           delta.push({insert: '\n', attributes: attr})
           break;
@@ -1922,7 +1929,7 @@ class TranscriptionEditor {
      * Takes the contents of a quill editor and returns an array of elements
      * and items.
      *
-     * @returns {Array|elements}
+     * @returns {Array|elements} An array that can be passed to the API
      */
   getData () {
     return EditorData.getApiDataFromQuillDelta(this.quillObject.getContents(), this)
@@ -1930,7 +1937,7 @@ class TranscriptionEditor {
 
   static getDeletionRanges (ops) {
     let index = 0
-    let ranges = []
+    const ranges = []
     for (const op of ops) {
       if (!op.insert) {
         continue
@@ -1948,11 +1955,10 @@ class TranscriptionEditor {
   }
 
   static getCoveredDeletions (ranges, index, length) {
-    let deletions = []
+    const deletions = []
 
     for (const range of ranges) {
-      if (range.index >= index &&
-                    (range.index + range.length) <= (index + length)) {
+      if (range.index >= index && range.index + range.length <= index + length) {
         deletions.push(range)
       }
     }
@@ -1990,10 +1996,10 @@ class TranscriptionEditor {
   static setUpPopover (node, title, text, editorid, itemid, noText = false) {
     $(node).popover({
       content: function () {
-        let editorObject = TranscriptionEditor.editors[editorid]
-        let ednotes = editorObject.getEdnotesForItemId(itemid)
+        const editorObject = TranscriptionEditor.editors[editorid]
+        const ednotes = editorObject.getEdnotesForItemId(itemid)
 
-        let theText = node.textContent
+        const theText = node.textContent
         let t = '<h3 class="editor-popover-title">' + title + '</h3>'
         if (!noText) {
           t += '<b>Text</b>: ' + theText + '<br/>'

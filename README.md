@@ -15,6 +15,7 @@ Development requires:
 * PHPUnit 6.0+ 
 * npm 3.5+ 
 * jasmine 2.6.0+
+* eslint 4.4.1+
 
 Get all PHP dependencies with composer:
 ```bash

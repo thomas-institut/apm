@@ -19,20 +19,27 @@
 /* global ELEMENT_LINE, ELEMENT_HEAD, ELEMENT_CUSTODES */
 /* global ELEMENT_GLOSS, ELEMENT_PAGE_NUMBER, ITEM_TEXT, ITEM_MARK */
 /* global ITEM_RUBRIC, ITEM_GLIPH, ITEM_INITIAL, ITEM_SIC, ITEM_ABBREVIATION */
-/* global ITEM_DELETION, Item, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_ILLEGIBLE, ELEMENT_PAGENUMBER */
+/* global ITEM_DELETION, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_ILLEGIBLE */
 /* global ITEM_NO_WORD_BREAK, ITEM_CHUNK_MARK, ELEMENT_ADDITION, ELEMENT_LINE_GAP, ELEMENT_INVALID, ITEM_CHARACTER_GAP, ITEM_PARAGRAPH_MARK, ITEM_MATH_TEXT */
 
+/* exported EditorData */
 class EditorData {
   
   static getApiDataFromQuillDelta(delta, editorInfo) {
-    let ops = delta.ops
-    let elements = []
-    let itemIds = []
+    const ops = delta.ops
+    const elements = []
+    const itemIds = []
     let currentItemSeq = 0
     let currentElementSeq = 0
     let currentElementId = 0
     
+    let previousElementType = ELEMENT_INVALID
     
+    /**
+     * Updates item and element sequence numbers and creates a new empty Element object
+     * 
+     * @returns {Element} a new Element object
+     */
     function createNewElement() {
       currentItemSeq = 0
       currentElementId++
@@ -51,6 +58,12 @@ class EditorData {
       }
     }
     
+    let curElement = createNewElement()
+    
+    /**
+     * 
+     * @returns {Item} a new Item object
+     */
     function createNewItem() {
       return {
         id: -1,
@@ -66,8 +79,13 @@ class EditorData {
       }
     }
     
+    /**
+     * 
+     * @param {type} curOps an Ops object from Quill
+     * @returns {Boolean} false on error
+     */
     function processNonTextualItem(curOps) {
-      let theInsert = curOps.insert
+      const theInsert = curOps.insert
       if ('linegap' in curOps.insert) {
         if (curElement.items.length > 0) {
           // this means the line gap does not have newline before
@@ -85,7 +103,7 @@ class EditorData {
         return true
       }
       
-      let item = createNewItem()
+      const item = createNewItem()
       if ('mark' in theInsert) {
         item.type = ITEM_MARK
         item.id = theInsert.mark.itemid
@@ -121,14 +139,10 @@ class EditorData {
       curElement.items.push(item)
       return true
     }
-    
-    let previousElementType = ELEMENT_INVALID
-    let curElement = createNewElement()
-    
 
-    for (const [i, curOps] of ops.entries()) {
-      console.log('Processing ops ' + i)
-      console.log(JSON.stringify(curOps))
+    for (const curOps of ops.entries()) {
+      //console.log('Processing ops ' + i)
+      //console.log(JSON.stringify(curOps))
       
       if ('attributes' in curOps) {
         if (curOps.insert === '\n') {
@@ -138,7 +152,7 @@ class EditorData {
           //console.log("Insert is newline with attributes")
           if (previousElementType === ELEMENT_LINE_GAP) {
             // ignore this ops
-            console.log("WARNING: Quill 2 API : Ignoring newline, prev element was line gap")
+            console.warn('WARNING: Quill 2 API : Ignoring newline, prev element was line gap')
             continue
           }
           if (curOps.attributes.gloss) {
@@ -162,8 +176,8 @@ class EditorData {
             curElement.type = ELEMENT_PAGE_NUMBER
           }
           if (curElement.type === ELEMENT_INVALID) {
-            console.log("WARNING: Quill 2 API : single newline without valid attribute")
-            console.log(JSON.stringify(curOps))
+            console.warn('WARNING: Quill 2 API : single newline without valid attribute')
+            console.warn(JSON.stringify(curOps))
           }
           
           //console.log(curElement)
@@ -185,7 +199,7 @@ class EditorData {
         //
         //
         //console.log("insert is text with attributes")
-        let item = createNewItem()
+        const item = createNewItem()
         
         item.theText =curOps.insert
         if (curOps.attributes.lang) {
@@ -220,7 +234,7 @@ class EditorData {
         if (curOps.attributes.deletion) {
           item.type = ITEM_DELETION
           item.extraInfo = curOps.attributes.deletion.technique
-          item.id  = curOps.attributes.deletion.itemid
+          item.id = curOps.attributes.deletion.itemid
         }
         if (curOps.attributes.addition) {
           item.type = ITEM_ADDITION
@@ -252,10 +266,11 @@ class EditorData {
           if (curOps.insert[i] === '\n') {
             if (text !== '') {
               //console.log('Creating new text item')
-              let item = createNewItem()
+              const item = createNewItem()
               item.type = ITEM_TEXT
               item.theText = text
-              curElement.items.push(item) // no need to push the item id to itemIds
+              // no need to push the item id to itemIds
+              curElement.items.push(item) 
               text = ''
             }
             if (curElement.items.length > 0) {
@@ -264,28 +279,29 @@ class EditorData {
               elements.push(curElement)
               previousElementType = curElement.type
               curElement = createNewElement()
+            } else if (previousElementType === ELEMENT_LINE_GAP) {
+              console.warn('INFO: Quill 2 API : Ignoring newline, prev element was line gap')
             } else {
-              if (previousElementType === ELEMENT_LINE_GAP) {
-                console.log("INFO: Quill 2 API : Ignoring newline, prev element was line gap")
-              } else {
-                console.log("INFO: Quill 2 API : Ignoring newline, no items")
-              }
+              console.warn('INFO: Quill 2 API : Ignoring newline, no items')
             }
-            continue // i.e. next character
+            // continue to next character
+            continue 
           }
           // character is not a new line
           text += curOps.insert[i]
-        } // for all characters
+        }
         // Store last item if there's text
         if (text !== '') {
           //console.log('Creating new text item')
-          let item = createNewItem()
+          const item = createNewItem()
           item.type = ITEM_TEXT
           item.theText = text
-          curElement.items.push(item) // no need to push the item id to itemIds
+          // no need to push the item id to itemIds
+          curElement.items.push(item) 
           text = ''
         }
-        continue // i.e., next ops
+        // continue to next ops
+        continue 
       }
       
       processNonTextualItem(curOps)
@@ -293,14 +309,14 @@ class EditorData {
     }
 
     // filter out stray notes
-    let filteredEdnotes = []
+    const filteredEdnotes = []
     //console.log(itemIds)
     for (const note of editorInfo.edNotes) {
       if (itemIds.includes(note.target)) {
         filteredEdnotes.push(note)
       } else {
-        console.log("WARNING: Quill 2 API : stray ednote")
-        console.log(note)
+        console.warn('WARNING: Quill 2 API : stray ednote')
+        console.warn(note)
       }
     }
     return {elements: elements, ednotes: filteredEdnotes, people: editorInfo.people}

@@ -16,6 +16,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+/* eslint "no-unused-vars": "off" */
+
 const ITEM_TEXT = 1
 const ITEM_RUBRIC = 2
 const ITEM_SIC = 3
@@ -25,7 +27,7 @@ const ITEM_GLIPH = 6
 const ITEM_ADDITION = 7
 const ITEM_DELETION = 8
 const ITEM_MARK = 9
-const ITEM_NO_WORD_BREAK  = 10
+const ITEM_NO_WORD_BREAK = 10
 const ITEM_ABBREVIATION = 11
 const ITEM_LINE_BREAK = 12
 const ITEM_INITIAL = 13
@@ -38,7 +40,8 @@ const ITEM_UNSUPPORTED = 9999
 class Item {
 
   static getValidDeletionTechniques () {
-    return ['dot-above',
+    return [
+      'dot-above',
       'dot-above-dot-under',
       'dots-above',
       'dots-underneath',
@@ -49,23 +52,28 @@ class Item {
   }
 
   static getValidAdditionPlaces () {
-    return ['above',
-      'below',
-      'inline',
-      'inspace',
-      'overflow', 
-      'margin left',
-      'margin right'
-    ]
+    return [
+        'above',
+        'below',
+        'inline',
+        'inspace',
+        'overflow', 
+        'margin left',
+        'margin right'
+      ]
   }
 
   static getValidUnclearReasons () {
-    return ['unclear',
-      'damaged']
+    return [
+        'unclear',
+        'damaged'
+      ]
   }
 
   static getValidIllegibleReasons () {
-    return ['damaged',
-      'illegible']
+    return [
+        'damaged',
+        'illegible'
+      ]
   }
-};
+}

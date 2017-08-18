@@ -17,8 +17,7 @@
  */
 
 
-
-/* global Quill */
+/* global Quill, Delta, Clipboard */
 
 class EditorClipboard extends Clipboard {
   convert(html = null) {
@@ -33,7 +32,7 @@ class EditorClipboard extends Clipboard {
 //        console.log("Found mark in clipboard")
 //      }
 //    }
-    let text = this.container.innerText;
+    const text = this.container.innerText;
     this.container.innerHTML = '';
     return new Delta().insert(text);
   }

@@ -140,10 +140,10 @@ class EditorData {
       return true
     }
 
-    for (const curOps of ops.entries()) {
+    for (const entry of ops.entries()) {
       //console.log('Processing ops ' + i)
       //console.log(JSON.stringify(curOps))
-      
+      const curOps = entry[1]
       if ('attributes' in curOps) {
         if (curOps.insert === '\n') {
           //

@@ -16,23 +16,22 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-/* eslint-env jquery */
-
 class ApmUtil {
+
   /**
    * Appends an error alert to theDiv according to the error received.
    *
    * This function is meant to be used within the error callback of an
    * AJAX call.
    *
-   * @param {jqXHR} jqXHR
-   * @param {string} text
-   * @param {string} e
-   * @param {element} theDiv
-   * @returns {nothing}
+   * @param {jqXHR} jqXHR  jquery XHR object
+   * @param {string} text error test
+   * @param {string} e event
+   * @param {element} theDiv  the Div
+   * @returns {nothing} nothing
    */
   static reportError (jqXHR, text, e, theDiv) {
-    var errorMsg
+    let errorMsg = ''
     switch (text) {
       case 'timeout':
         errorMsg = 'The server took too much time to respond, please try later'
@@ -68,15 +67,15 @@ class ApmUtil {
    * Appends a success alert with the given message to theDiv.
    * Optionally, reloads the current page after a short delay.
    *
-   * @param {string} msg
-   * @param {element} theDiv
-   * @param {boolean} fadeOut
-   * @returns {nothing}
+   * @param {string} msg  Sucess message
+   * @param {element} theDiv  div object
+   * @param {boolean} fadeOut to fade or not to fade
+   * @returns {nothing} nothing
    */
   static reportSuccess (msg, theDiv, fadeOut = false) {
-    let id = theDiv.attr('id') + '-successalert' + ApmUtil.someNum
+    const id = theDiv.attr('id') + '-successalert' + ApmUtil.someNum
     ApmUtil.someNum++
-    let html = '<div class="alert alert-success alert-dismissable" id="' +
+    const html = '<div class="alert alert-success alert-dismissable" id="' +
               id + `" role="alert" 
                   style="margin-top: 20px">
               <button type="button" class="close" data-dismiss="alert" 
@@ -93,19 +92,19 @@ class ApmUtil {
   }
 
   static getUserIdFromLongTermCookie () {
-    let rmeCookie = ApmUtil.getCookie('rme')
+    const rmeCookie = ApmUtil.getCookie('rme')
     return rmeCookie.split(':').pop()
   }
 
   /**
    * Gets a cookie value
    * (from http://stackoverflow.com/questions/10730362/get-cookie-by-name
-   * @param {string} name
-   * @returns {unresolved}
+   * @param {string} name  Cookie name
+   * @returns {Cookie|boolean}  a cookie or false
    */
   static getCookie (name) {
-    let value = '; ' + document.cookie
-    let parts = value.split('; ' + name + '=')
+    const value = '; ' + document.cookie
+    const parts = value.split('; ' + name + '=')
     if (parts.length === 2) {
       return parts.pop().split(';').shift()
     }

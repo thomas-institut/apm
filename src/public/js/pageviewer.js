@@ -16,23 +16,18 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-/* eslint-env jquery, browser */
 
-/* global Item */
-
-var pageNumber
-var docId
-var apiBase
-var numColumns
-var userId
-var defaultLang
-var cols = []
-
-$(function () {
-  $('div.split-pane').splitPane()
-})
+let pageNumber = 0
+let docId = 0
+let apiBase = ''
+let numColumns = 0
+let userId = 0
+let defaultLang = ''
+const cols = []
 
 $(document).ready(function () {
+  $('div.split-pane').splitPane()
+  
   apiGetColumnInfoUrl = apiBase + '/api/' + docId + '/' +
             pageNumber + '/numcolumns'
   apiAddColumnUrl = apiBase + '/api/' + docId + '/' +
@@ -46,8 +41,8 @@ $(document).ready(function () {
   })
   
   $('#editPageButton').click(function () {
-    let langs = [ 'ar', 'he', 'la']
-    let langLabels = { ar: 'Arabic', he: 'Hebrew', la: 'Latin'}
+    const langs = ['ar', 'he', 'la']
+    const langLabels = { ar: 'Arabic', he: 'Hebrew', la: 'Latin'}
     let optionsHtml = ''
     for (const lang of langs) {
       optionsHtml += '<option value="' + lang + '"'
@@ -63,8 +58,8 @@ $(document).ready(function () {
 
   // Load columns
   $.getJSON(apiGetColumnInfoUrl, function (resp) {
-    let numColumns = resp
-    let thePageNumber = pageNumber
+    const numColumns = resp
+    const thePageNumber = pageNumber
     if (numColumns === 0) {
       $('#pageinfoTab').addClass('active')
     } else {
@@ -76,8 +71,8 @@ $(document).ready(function () {
       }
       
       for (let col = 1; col <= numColumns; col++) {
-        let getApiUrl = apiBase + '/api/' + docId + '/' + thePageNumber + '/' + col + '/elements'
-        let updateApiUrl = getApiUrl + '/update'
+        const getApiUrl = apiBase + '/api/' + docId + '/' + thePageNumber + '/' + col + '/elements'
+        const updateApiUrl = getApiUrl + '/update'
         $.getJSON(
           getApiUrl, 
           function (resp) {
@@ -85,19 +80,19 @@ $(document).ready(function () {
                 $(this).tab('show')
               })
               //console.log(resp)
-              let theCol = resp.info['col']
+              const theCol = resp.info.col
               let theDiv = '<div class="textcol tab-pane'
               if (theCol === 1) {
                 theDiv += ' active'
               }
               theDiv += '" id="col' + col + '"></div>'
               $('#theTabs').append(theDiv)
-              let te = new TranscriptionEditor(
+              const te = new TranscriptionEditor(
                   '#col' + theCol, 
                   theCol, 
                   apiBase,
-                  userId,   //editorId
-                  resp.info['lang'],
+                  userId, //editorId
+                  resp.info.lang,
                   0, // handId
                   {
                     selector: '#right-component',
@@ -114,18 +109,18 @@ $(document).ready(function () {
               
               te.onEditorSave(function(e){
                 
-                let currentData = te.getData();
-                console.log("Current data from editor...")
+                const currentData = te.getData();
+                console.log('Current data from editor...')
                 console.log(currentData)
                 $.post(
                   updateApiUrl, 
                   { data: JSON.stringify(currentData) }
-                ).done( function () { 
+                ).done(function () { 
                   $.getJSON(getApiUrl, function (newResp){
                     //console.log(newResp)
                     te.saveSuccess(newResp)
                   })
-                }).fail( function(resp) {
+                }).fail(function(resp) {
                   te.saveFail('Status: ' + resp.status + ' Error: ' + resp.responseJSON.error)
                 })
               });
@@ -134,11 +129,11 @@ $(document).ready(function () {
                 //console.log("Resetting...")
               });
               
-              $(window).on("beforeunload", function(e) {
+              $(window).on('beforeunload', function(e) {
                 //console.log("Before unload")
                 if (te.contentsChanged) {
                   //console.log("There are changes in editor")
-                  return false  // make the browser show a message confirming leave
+                  return false // make the browser show a message confirming leave
                 }
               });
               if (theCol === 1) {
@@ -152,9 +147,8 @@ $(document).ready(function () {
 })
 
 
-
 function getDefaultLang(elements) {
-  let languages = {
+  const languages = {
     'ar':0,
     'he':0,
     'la':0

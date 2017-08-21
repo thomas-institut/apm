@@ -17,7 +17,10 @@
  */
 
 
-/* global Quill, Delta, Clipboard */
+/* global Quill */
+
+const Clipboard = Quill.import('modules/clipboard')
+const Delta = Quill.import('delta')
 
 class EditorClipboard extends Clipboard {
   convert(html = null) {

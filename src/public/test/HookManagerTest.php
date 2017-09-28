@@ -45,6 +45,9 @@ class HookManagerTest extends TestCase {
         
         $this->assertCount(0, $hm->getDefinedHooks());
         
+        $result5 = $hm->attachToHook('test', 'Someclass::inexistentFunction');
+        $this->assertFalse($result5);
+        
         $someVar = 0;
         $result = $hm->attachToHook('test', function($p1) use (&$someVar) { $someVar += $p1; return $someVar;});
         $this->assertTrue($result);

@@ -9,6 +9,7 @@
 namespace AverroesProject\Plugin;
 
 use AverroesProject\Data\SettingsManager;
+use AverroesProject\Plugin\HookManager;
 /**
  * Description of PluginManager
  *
@@ -39,6 +40,19 @@ class PluginManager {
      */
     public $errorDetails;
     
+    /**
+     *
+     * @var HookManager $hm
+     */
+    public $hm;
+    
+    /**
+     *
+     * @var Plugin[] $pluginObjects
+     */
+    public $pluginObjects;
+
+
     const PM_ERROR_NO_ERROR = 0;
     const PM_ERROR_BAD_SETTING = 1;
     const PM_ERROR_SM_ERROR = 2;
@@ -49,10 +63,12 @@ class PluginManager {
     const PM_ACTIVE_PLUGINS_SETTING = 'plugins-active';
     
    
-    public function __construct(SettingsManager $sm, $dirs = []) {
+    public function __construct(SettingsManager $sm, HookManager $hm, $dirs = []) {
         $this->sm = $sm;
+        $this->hm = $hm;
         $this->resetErrorStatus();
         $this->pluginDirs = [];
+        $this->pluginObjects = [];
         foreach($dirs as $dir) {
             $this->addPluginDir($dir);
         }
@@ -78,17 +94,34 @@ class PluginManager {
     {
         $activePlugins = $this->getActivePluginArray();
         if ($activePlugins === false) {
-            return false;
+            return false; //@codeCoverageIgnore 
         }
         $this->resetErrorStatus();
         
-        
         foreach($activePlugins as $pluginInfo) {
+            // Check if there's already an initialized plugin object 
+            $objectAlreadyThere = false;
+            foreach($this->pluginObjects as $pObj) {
+                if (is_a($pObj, $pluginInfo['class'])) {
+                    $objectAlreadyThere = true;
+                    break;
+                }
+            }
+            if ($objectAlreadyThere) {
+                continue;
+            }
+            $dirLoaded = true;
             if (!$this->loadPluginDir($pluginInfo['dir'], $pluginInfo['class'])) {
                 // bad plugin, deactivate
                 $this->deactivatePlugin($pluginInfo['dir'], $pluginInfo['class']);
                 $this->errorDetails .= "\n" . $pluginInfo['dir'] . ", " . $pluginInfo['class'];
                 $this->error = self::PM_ERROR_CANNOT_LOAD_PLUGIN;
+                $dirLoaded = false;
+            }
+            if ($dirLoaded) {
+                $pObject = new $pluginInfo['class']($this->hm);
+                $this->pluginObjects[] = $pObject;
+                $pObject->init();
             }
         }
         if ($this->error !== self::PM_ERROR_NO_ERROR) {
@@ -97,20 +130,29 @@ class PluginManager {
         return true;
     }
    
+    
+    public function storeActivePluginArray($apArray) 
+    {
+        return $this->sm->setSetting(self::PM_ACTIVE_PLUGINS_SETTING, json_encode($apArray))===true; 
+    }
     public function getActivePluginArray()
     {
         $this->resetErrorStatus();
         $activePluginsSetting =  $this->sm->getSetting(self::PM_ACTIVE_PLUGINS_SETTING);
         if ($activePluginsSetting === false) {
             // No setting, create new
-            if ($this->sm->setSetting(self::PM_ACTIVE_PLUGINS_SETTING, serialize([]))) {
+            if ($this->storeActivePluginArray([])) {
                 return [];
             }
+            // For testing, assume settings error work the way they should.
+            // So, ignore this branch for coverage analysis
+            // @codeCoverageIgnoreStart
             $this->error = self::PM_ERROR_SM_ERROR;
             return false;
+            // @codeCoverageIgnoreEnd
         }
-        $activePlugins = unserialize($activePluginsSetting);
-        if ($activePlugins === false) {
+        $activePlugins = json_decode($activePluginsSetting, true);
+        if ($activePlugins === NULL) {
             // this means the setting is not a valid serialization
             $this->error = self::PM_ERROR_BAD_SETTING;
             return false;
@@ -132,13 +174,53 @@ class PluginManager {
     
     public function activatePlugin($dir, $class)
     {
-        return true;
+        $activePlugins = $this->getActivePluginArray();
+        if ($activePlugins === false) {
+            return false; //@codeCoverageIgnore 
+        }
+        foreach($activePlugins as $activeP) {
+            if ($activeP['dir']===$dir || $activeP['class']===$class) {
+                // Plugin is already active
+                return true;
+            }
+        }
+        
+        if ($this->loadPluginDir($dir, $class) === false) {
+            return false;
+        }
+        $pObject = new $class($this->hm);
+        $this->pluginObjects[] = $pObject;
+        if ($pObject->activate() === false){
+            return false; //@codeCoverageIgnore 
+        }
+        $pObject->init();
+            
+        $activePlugins[] = [ 'dir' => $dir, 'class' => $class];
+        return $this->storeActivePluginArray($activePlugins);
     }
     
     public function deactivatePlugin($dir, $class)
     {
-        return true;
+        $activePlugins = $this->getActivePluginArray();
+        if ($activePlugins === false) {
+            return false;  //@codeCoverageIgnore 
+        }
+        $newActivePlugins = [];
+        foreach($activePlugins as $activeP) {
+            if ($activeP['dir']!==$dir && $activeP['class']!==$class) {
+                $newActivePlugins[] = $activeP;
+            }
+        }
+        if (class_exists($class, false)) {
+            foreach($this->pluginObjects as $pObj) {
+                if (is_a($pObj, $class)){
+                    $pObj->deactivate();
+                }
+            }
+        }
+        return $this->storeActivePluginArray($newActivePlugins);
     }
+    
     private function isDirValid($dir) 
     {
         return is_dir($dir);
@@ -148,7 +230,7 @@ class PluginManager {
     {
         $files = glob($dir . "/*.php");
         foreach ($files as $file) {
-            if ((include $file) === false) {
+            if ((include_once $file) === false) {
                 return false;
             }
         }

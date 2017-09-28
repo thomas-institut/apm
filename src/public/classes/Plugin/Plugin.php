@@ -17,7 +17,7 @@ abstract class Plugin {
     
     /**
      *
-     * @var HookManager $hm
+     * @var AverroesProject\Plugin\HookManager $hm
      */
     protected $hm;
     

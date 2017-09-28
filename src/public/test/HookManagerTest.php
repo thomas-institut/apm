@@ -30,7 +30,13 @@ use AverroesProject\Plugin\HookManager;
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class PluginManagerTest extends TestCase {
+class HookManagerTest extends TestCase {
+    
+    
+    public static function someFunction($p) 
+    {
+        return $p + 1;
+    }
     
     public function testBasic() 
     {
@@ -59,7 +65,8 @@ class PluginManagerTest extends TestCase {
         
         $result3 = $hm->attachToHook('test2', function($p1)  { return $p1 + 1;});
         $this->assertTrue($result3);
-        $result4 = $hm->attachToHook('test2', function($p1)  { return $p1 + 1;});
+        
+        $result4 = $hm->attachToHook('test2', 'AverroesProject\HookManagerTest::someFunction');
         $this->assertTrue($result4);
         $hmResult2 = $hm->callHookedMethods('test2', 0);
         $this->assertEquals(2, $hmResult2);

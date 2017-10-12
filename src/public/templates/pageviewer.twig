@@ -107,6 +107,7 @@
                 var viewer = OpenSeadragon({
                     id: "left-component",
                     prefixUrl: "{{baseurl}}/node_modules/openseadragon/build/openseadragon/images/",
+                    maxZoomPixelRatio: 3,
                     tileSources: {
                         type: 'image',
                         url:  '{{imageUrl}}',

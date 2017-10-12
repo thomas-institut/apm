@@ -212,6 +212,7 @@ class SiteController
         $transcribedPages = $this->db->getPageListByDocId($docId);
         $thePages = $this->buildPageArray($docPageCount, $transcribedPages);
         $imageUrl = $this->db->getImageUrlByDocId($docId, $pageNumber);
+        $pageTypeNames  = $this->db->getPageTypeNames();
 
         return $this->ci->view->render($response, 'pageviewer.twig', [
             'userinfo' => $this->ci->userInfo, 
@@ -222,6 +223,7 @@ class SiteController
             'docPageCount' => $docPageCount,
             'page' => $pageNumber,
             'pageInfo' => $pageInfo,
+            'pageTypeNames' => $pageTypeNames,
             'thePages' => $thePages,
             'imageUrl' => $imageUrl
         ]);

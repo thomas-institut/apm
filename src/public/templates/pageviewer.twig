@@ -31,11 +31,15 @@
     <link href='{{baseurl}}/images/averroes-icon.png' rel='icon' sizes='16x16' type='image/png'>
     <script>
         pageNumber = {{ page }}
+        pageSystemId = {{pageInfo.id}}
         docId = {{ doc }}
         apiBase = '{{ baseurl }}'
         userId = {{userinfo.id}}
         defaultLang = '{{pageInfo.lang}}'
         foliation = '{{pageInfo.foliation}}'
+        pageType = {{pageInfo.type}}
+        pageTypeNames = JSON.parse('{{pageTypeNames|json_encode|raw}}')
+        
     </script>
 </head>
 <body>
@@ -128,6 +132,7 @@
                 <p><strong>Page Number:</strong> {{pageInfo.page_number}}</p>
                 <p><strong>System Page Id:</strong> {{pageInfo.id}}</p>
                 <p style="margin-top: 50px"/>
+                <p><strong>Page Type:</strong> {{attribute(pageTypeNames, pageInfo.type).descr}}</p>
                 <p><strong>Foliation:</strong> {% if pageInfo.foliation %}{{pageInfo.foliation}}{% else %}Undefined{% endif%}</p>
                 <p><strong>Default Language:</strong> {{pageInfo.lang}}</p>
                 <p><button type="button" id="editPageButton" class="btn btn-primary btn-sm">Edit Settings</button></p>
@@ -173,10 +178,14 @@
         <h4 class="modal-title text-info">Page Settings</h4>
       </div>
         <div class="modal-body">
-            <form>
+            <form id="pageSettingsForm">
+                <div id="editPage-type-fg" class="form-group">
+                    <label for="editPage-type" class="control-label">Page Type:</label>
+                    <select name="type" id="editPage-type"></select>
+                </div>
                 <div id="editPage-foliation-fg" class="form-group">
                     <label for="editPage-foliation" class="control-label">Foliation:</label>
-                    <input type="text" class="form-control" id="editPage-foliation">
+                    <input name="foliation" type="text" class="form-control" id="editPage-foliation">
                     </input>
                 </div>
                 <div id="editPage-lang-fg" class="form-group">

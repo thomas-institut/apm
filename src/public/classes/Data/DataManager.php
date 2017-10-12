@@ -103,6 +103,12 @@ class DataManager
     private $itemsDataTable;
     
     
+    /**
+     *
+     * @var DataTable\MySqlTable
+     */
+    private $pageTypesTable;
+    
     public $queryStats;
     
     /**
@@ -135,6 +141,8 @@ class DataManager
         
         $this->docsDataTable = new MySqlDataTable($this->dbConn, 
                 $tableNames['docs']);
+        $this->pageTypesTable = new MySqlDataTable($this->dbConn, 
+                $tableNames['types_page']);
         $this->pagesDataTable = new \DataTable\MySqlUnitemporalDataTable(
                 $this->dbConn, 
                 $tableNames['pages']);
@@ -323,6 +331,61 @@ class DataManager
             return false; // @codeCoverageIgnore
         }
         return $row['page_count'];
+    }
+    
+    /**
+     * Gets the page types table into an array
+     */
+    function getPageTypeNames()
+    {
+        $query = 'SELECT * FROM ' . $this->tNames['types_page'];
+        $this->queryStats->countQuery('select');
+        $res = $this->dbh->query($query);
+        if ($res === false) {
+            return false;
+        }
+        return $res->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    /**
+     * Updates the page settings: lang, foliation and type
+     * 
+     * Won't update anything else, e.g., num_cols, page_number, etc.
+     * 
+     * @param int $pageId
+     * @param array $settings
+     */
+    function updatePageSettings($pageId, $settings) {
+        $row['id'] = $pageId;
+        
+        if ($settings === []) {
+            return false;
+        }
+        if (isset($settings['lang'])) {
+            $row['lang'] = $settings['lang'];
+        }
+        if (isset($settings['foliation'])) {
+            if ($settings['foliation'] == '') {
+                $settings['foliation'] = NULL;
+            }
+            $row['foliation'] = $settings['foliation'];
+        }
+        
+        if (isset($settings['type'])) {
+            $row['type'] = $settings['type'];
+            $typeInfo = $this->pageTypesTable->getRow($row['type']);
+            if ($typeInfo === false) {
+                return false;
+            }
+        }
+        
+        if (count(array_keys($row)) === 1) {
+            // this means that $settings did not have any
+            // real setting, so there's nothing to do
+            return true;
+        }
+        
+        return $this->pagesDataTable->updateRow($row) === $pageId;
     }
     
     /**

@@ -16,4 +16,5 @@ $config['tables']['relations']  = 'ap_relations';
 $config['tables']['docs']       = 'ap_docs';
 $config['tables']['people']     = 'ap_people';
 $config['tables']['pages']      = 'ap_pages';
+$config['tables']['types_page'] = 'ap_types_page';
 

@@ -397,6 +397,27 @@ class ApiController
         return $response->withStatus(200);
     }
     
+    public function updatePageSettings(Request $request, Response $response, $next)
+    {
+        $pageId = (int) $request->getAttribute('pageId');
+        $postData = $request->getParsedBody();
+        $foliation = $postData['foliation'];
+        $type = (int) $postData['type'];
+        $lang = $postData['lang'];
+        $newSettings = [ 
+            'foliation' => $foliation, 
+            'type' => $type,
+            'lang' => $lang
+            ];
+        
+        $r = $this->ci->db->updatePageSettings($pageId, $newSettings);
+        if ($r === false) {
+            $this->logger->error("Can't update page settings for page $pageId", $newSettings);
+            return $response->withStatus(409);
+        }
+        return $response->withStatus(200);
+    }
+    
     public function getElementsByDocPageCol(Request $request, 
             Response $response, $next)
     {

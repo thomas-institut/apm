@@ -56,7 +56,6 @@ class DatabaseTestEnvironment {
                 DELETE FROM ap_hands;
                 INSERT INTO `ap_hands` (`id`, `name`, `description`) VALUES
 (0, 'Unknown', 'Unknown hand');
-
 EOD;
         $dbConn->query($query);
         

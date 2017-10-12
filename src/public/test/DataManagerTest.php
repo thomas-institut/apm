@@ -216,6 +216,83 @@ class DataManagerTest extends TestCase {
         $this->assertEquals($newItemIds[101], $element1->items[2]->target);
         $this->assertEquals($newItemIds[103], $element1->items[4]->target);
         $this->assertEquals($newItemIds[105], $element2->items[1]->target);
+        
+        return $docId;
+    }
+    
+    /**
+     * @depends testUpdateColumn
+     */
+    public function testUpdatePageSettings ($docId)
+    {
+        $dm = self::$dataManager;
+        $types = $dm->getPageTypeNames();
+        $this->assertNotFalse($types);
+
+        $pageId = $dm->getPageIdByDocPage($docId, 1);
+        $initialSettings = $dm->getPageInfo($pageId);
+        
+        $this->assertEquals(1, $initialSettings['id']);
+        $this->assertEquals(0, $initialSettings['type']);
+        $this->assertEquals('la', $initialSettings['lang']);
+        $this->assertEquals(NULL, $initialSettings['foliation']);
+        $this->assertEquals(2,$initialSettings['num_cols'] );
+        
+        $res1 = $dm->updatePageSettings($pageId, []);
+        $this->assertFalse($res1);
+        
+        // Bad Settings, including dangerous ones like 'num_cols'
+        $badSettings = ['notassetting', 'num_cols', 'doc_id', 'id', 'page_number', 'valid_from', 'valid_until'];
+        foreach ($badSettings as $badSetting) {
+            $res2 = $dm->updatePageSettings($pageId, [ $badSetting => 100]);
+            $this->assertTrue($res2);
+            $curSettings2 = $dm->getPageInfo($pageId);
+            $this->assertEquals($initialSettings, $curSettings2);
+        }
+        
+        $res3 = $dm->updatePageSettings($pageId, ['foliation' => '119r']);
+        $this->assertTrue($res3);
+        $curSettings3 = $dm->getPageInfo($pageId);
+        $this->assertEquals($initialSettings['lang'], $curSettings3['lang']);
+        $this->assertEquals($initialSettings['type'], $curSettings3['type']);
+        $this->assertEquals('119r', $curSettings3['foliation']);
+       
+        $res4 = $dm->updatePageSettings($pageId, ['foliation' => '']);
+        $this->assertTrue($res4);
+        $curSettings4 = $dm->getPageInfo($pageId);
+        $this->assertEquals($initialSettings['lang'], $curSettings4['lang']);
+        $this->assertEquals($initialSettings['type'], $curSettings4['type']);
+        $this->assertEquals(NULL, $curSettings4['foliation']);
+        
+        $res5 = $dm->updatePageSettings($pageId, ['lang' => 'he']);
+        $this->assertTrue($res5);
+        $curSettings5 = $dm->getPageInfo($pageId);
+        $this->assertEquals('he', $curSettings5['lang']);
+        $this->assertEquals($initialSettings['type'], $curSettings5['type']);
+        $this->assertEquals(NULL, $curSettings5['foliation']);
+        
+        // type not valid!
+        $res6 = $dm->updatePageSettings($pageId, ['type' => 25]);
+        $this->assertFalse($res6);
+        $curSettings6 = $dm->getPageInfo($pageId);
+        $this->assertEquals($curSettings5, $curSettings6);
+        
+        // good type!
+        $res7 = $dm->updatePageSettings($pageId, ['type' => 3]);
+        $this->assertTrue($res7);
+        $curSettings7 = $dm->getPageInfo($pageId);
+        $this->assertEquals('he', $curSettings7['lang']);
+        $this->assertEquals(3, $curSettings7['type']);
+        $this->assertEquals(NULL, $curSettings7['foliation']);
+        
+        // Two things at once
+        $res8 = $dm->updatePageSettings($pageId, ['type' => 4, 'foliation' => '120r']);
+        $this->assertTrue($res8);
+        $curSettings8 = $dm->getPageInfo($pageId);
+        $this->assertEquals('he', $curSettings8['lang']);
+        $this->assertEquals(4, $curSettings8['type']);
+        $this->assertEquals('120r', $curSettings8['foliation']);
+        
     }
     
 }

@@ -32,12 +32,29 @@ $(document).ready(function () {
             pageNumber + '/numcolumns'
   apiAddColumnUrl = apiBase + '/api/' + docId + '/' +
             pageNumber + '/newcolumn'
+    
+  apiUpdatePageSettingsUrl = apiBase + '/api/page/' + pageSystemId + '/update'
 
   $('#realAddColumnButton').click(function () {
     //console.log('I should add a column now!')
     $.getJSON(apiAddColumnUrl, function (resp) {
       location.replace('')
     })
+  })
+  
+  
+  $('#editPageSubmitButton').click( function () {
+    console.log('Updating page settings')
+    console.log($('#pageSettingsForm').serialize())
+    $.post(
+      apiUpdatePageSettingsUrl, $('#pageSettingsForm').serialize())
+    .done(function () { 
+      location.replace('')         
+    })
+    .fail(function() {
+      console.log("Error updating page settings")
+    })
+
   })
   
   $('#editPageButton').click(function () {
@@ -52,6 +69,18 @@ $(document).ready(function () {
       optionsHtml += '>' + langLabels[lang] + '</option>'
     }
     $('#editPage-lang').html(optionsHtml)
+    
+    let optionsType = ''
+    for (const type of pageTypeNames) {
+      optionsType += '<option value="' + type.id + '"'
+      if (pageType === parseInt(type.id)) {
+        optionsType += ' selected'
+      }
+      optionsType += '>' + type.descr + '</option>'
+    }
+    $('#editPage-type').html(optionsType)
+    
+    
     $('#editPage-foliation').val(foliation)
     $('#editPageModal').modal('show')
   })

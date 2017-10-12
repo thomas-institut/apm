@@ -205,6 +205,11 @@ $app->group('/api', function (){
             '\AverroesProject\Api\ApiController:getNumColumns')
         ->setName('api.numcolumns');
     
+    // API -> updatePageSettings
+    $this->post('/page/{pageId}/update', 
+            '\AverroesProject\Api\ApiController:updatePageSettings')
+        ->setName('api.updatepagesettings');
+    
     // API -> numColumns
     $this->get('/{document}/{page}/newcolumn', 
             '\AverroesProject\Api\ApiController:addNewColumn')

@@ -31,6 +31,7 @@
     <link href='{{baseurl}}/images/averroes-icon.png' rel='icon' sizes='16x16' type='image/png'>
     <script>
         pageNumber = {{ page }}
+        pageNumberFoliation = '{{ pageNumberFoliation }}'
         pageSystemId = {{pageInfo.id}}
         docId = {{ doc }}
         apiBase = '{{ baseurl }}'
@@ -48,7 +49,7 @@
         <tr>
             <td width="40%">
                 <a href="{{path_for('home')}}" title="Back to main page"><img src="{{baseurl}}/images/averroes-logo-250.png"></a>
-                <span class="textonly" style="margin-left: 30px">{{ docInfo.title}}</span>
+                <span class="textonly" style="margin-left: 30px"><a href="{{path_for('doc.showdoc', {'id' : doc })}}">{{ docInfo.title}}</a></span>
             </td>
             <td><ul class="pv-navbar"> 
                     <li style="float: left;">
@@ -67,7 +68,7 @@
                     </li>
                     <li style="float:left">
                         <button class="textonly headerbutton" id="pagenumber">
-                            Page {{page}}
+                            Page {{pageNumberFoliation}}
                         </button>
                     </li>
                     <li style="float: left;">

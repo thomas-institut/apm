@@ -16,7 +16,7 @@
             {% set n = 0 %}    
         {% endif%}
 
-        <td class="{{ page.classes }}"><a href="{{ path_for('pageviewer', {'doc' : doc, 'page' : page.number})}}" title="View Page">{{page.number}}</a></td>
+        <td class="{{ page.classes }}"><a href="{{ path_for('pageviewer', {'doc' : doc, 'page' : page.number})}}" title="View Page">{{page.foliation}}</a></td>
 
         {% set n = n+1 %}                                   
     {% endfor %}

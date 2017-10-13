@@ -464,6 +464,26 @@ class DataManager
         return $pages;
     }
     
+    
+    /**
+     *  Returns the page information for each page for the given $docId
+     * 
+     * @param int $docId
+     * @return array
+     */
+    function getDocPageInfo($docId) {
+        $tp = $this->tNames['pages'];
+        $td = $this->tNames['docs'];
+        $this->queryStats->countQuery('select');
+        
+        $query = "SELECT `$tp`.* FROM `$tp` JOIN `$td` " .
+                 "ON (`$td`.id=`$tp`.doc_id) WHERE " . 
+                 "`$tp`.valid_until>'9999-12-31' AND `$td`.id=$docId " . 
+                 "ORDER BY `$tp`.page_number ASC";
+        $res = $this->dbh->query($query);
+        
+        return $res->fetchAll(PDO::FETCH_ASSOC);
+    }
     /**
      * Returns the document information for the given document Id
      * @param type $docId

@@ -201,6 +201,28 @@ class SiteController
         ]);
     }
     
+    public function defineDocPages(Request $request, Response $response, $next)
+    {
+        $docId = $request->getAttribute('id');
+        $db = $this->db;
+        $doc = [];
+        $doc['numPages'] = $db->getPageCountByDocId($docId);
+        $transcribedPages = $db->getPageListByDocId($docId);
+        $pagesInfo = $db->getDocPageInfo($docId);
+        $doc['numTranscribedPages'] = count($transcribedPages);
+        $doc['docInfo'] = $db->getDocById($docId);
+        $doc['tableId'] = "doc-$docId-table";
+        $doc['pages'] = $this->buildPageArray($pagesInfo, 
+                $transcribedPages);
+
+        return $this->ci->view->render($response, 'doc.defdocpages.twig', [
+            'userinfo' => $this->ci->userInfo, 
+            'copyright' => $this->ci->copyrightNotice,
+            'baseurl' => $this->ci->settings['baseurl'],
+            'doc' => $doc
+        ]);
+    }
+    
     function pageViewerPage(Request $request, Response $response, $next)
     {
         $docId = $request->getAttribute('doc');
@@ -254,6 +276,7 @@ class SiteController
                 $thePage['classes'] = 
                         $thePage['classes'] . ' withouttranscription';
             }
+            $thePage['classes'] .= ' type' . $page['type'];
             array_push($thePages, $thePage);
         }
         return $thePages;

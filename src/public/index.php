@@ -177,6 +177,10 @@ $app->get('/doc/{id}','\AverroesProject\Site\SiteController:showDocPage')
         ->setName('doc.showdoc')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
+$app->get('/doc/{id}/definepages','\AverroesProject\Site\SiteController:defineDocPages')
+        ->setName('doc.definedocpages')
+        ->add('\AverroesProject\Auth\Authenticator:authenticate');
+
 // PAGEVIEWER
 $app->get('/pageviewer/{doc}/{page}', 
         '\AverroesProject\Site\SiteController:pageViewerPage')

@@ -110,6 +110,18 @@ class ApmUtil {
     }
     return false
   }
+  
+  static setPageTypeSelectOptions(selector, pageTypeNames, pageType = 0) {
+    let optionsType = ''
+    for (const type of pageTypeNames) {
+      optionsType += '<option value="' + type.id + '"'
+      if (pageType === parseInt(type.id)) {
+        optionsType += ' selected'
+      }
+      optionsType += '>' + type.descr + '</option>'
+    }
+    $(selector).html(optionsType)
+  }
 }
 
 ApmUtil.someNum = 1

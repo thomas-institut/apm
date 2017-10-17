@@ -141,9 +141,28 @@ ul.horizontal li {
 
 table.pagetable td {
     padding: 3px;
-    
 }
 
+/* Not set */
+table.pagetable td.type0 {
+    background-color: #EFFEEF;
+}
+
+/* Normal text */
+table.pagetable td.type1 {
+    background-color: white;
+}
+
+/* Front Matter */
+table.pagetable td.type2 {
+    background-color: #f9f9f9;
+}
+
+/* Back Matter */
+table.pagetable td.type3 {
+    background-color: #f9f9f9;
+
+}
 table.pagetable a {
     color: black;
 }
@@ -181,4 +200,8 @@ p.docinfo {
 
 .withtopmargin {
     margin-top: 30px;
+}
+
+.withmarginleft-small {
+    margin-left: 25px;
 }

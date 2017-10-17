@@ -25,6 +25,33 @@
 {% endspaceless %}
 {% endmacro %}
 
+{% macro pageviewtable2(doc, pages) %}
+{% spaceless %}
+    {% set pagesPerRow = 25 %}
+    {% set n=0 %}
+<table class="pagetable">
+    <tr>
+    {% for page in pages %}
+        {% if n==pagesPerRow %}
+    </tr>
+    <tr>
+            {% set n = 0 %}    
+        {% endif%}
+
+        <td class="{{ page.classes }}">
+            <a href="{{ path_for('pageviewer', {'doc' : doc, 'page' : page.number})}}" 
+               target="_blank" title="Page {{page.number}}">
+                {{page.foliation}}
+            </a>
+        </td>
+        {% set n = n+1 %}                                   
+    {% endfor %}
+    </tr>    
+</table>
+{% endspaceless %}
+{% endmacro %}
+
+
 {% macro langName(lang) %}
 {% spaceless %}
 {% set names = { 'la' : 'Latin', 'he' : 'Hebrew', 'ar': 'Arabic', 'en' : 'English' } %}

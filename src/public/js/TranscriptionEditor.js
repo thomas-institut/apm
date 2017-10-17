@@ -29,7 +29,8 @@
 /* global ITEM_DELETION, Item, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_ILLEGIBLE */
 /* global ITEM_NO_WORD_BREAK, ITEM_CHUNK_MARK, ELEMENT_ADDITION, ELEMENT_LINE_GAP, MarkBlot */
 /* global IllegibleBlot, NoWordBreakBlot, ChunkMarkBlot, LineGapBlot, _, GlossBlot, EditorData */
-/* global ITEM_CHARACTER_GAP, CharacterGapBlot, ParagraphMarkBlot, ITEM_MATH_TEXT, ITEM_PARAGRAPH_MARK */
+/* global ITEM_CHARACTER_GAP, CharacterGapBlot, ParagraphMarkBlot, ITEM_MATH_TEXT, 
+ * ITEM_PARAGRAPH_MARK */
 
 
 class TranscriptionEditor {
@@ -314,7 +315,9 @@ class TranscriptionEditor {
         $('#alert-modal-submit-button-' + thisObject.id).html('Clear formatting')
         $('#alert-modal-cancel-button-' + thisObject.id).html('Cancel')
         $('#alert-modal-text-' + thisObject.id).html(
-                        'Are you sure you want to clear formatting of this text?</p><p>Formats and notes will be lost.</p><p class="text-danger">This can NOT be undone!')
+                        'Are you sure you want to clear formatting of this text?</p>'+ 
+                        '<p>Formats and notes will be lost.</p>' + 
+                        '<p class="text-danger">This can NOT be undone!')
         $('#alert-modal-submit-button-' + thisObject.id).off()
         $('#alert-modal-submit-button-' + thisObject.id).on('click', function () {
           $('#alert-modal-' + thisObject.id).modal('hide')
@@ -444,8 +447,10 @@ class TranscriptionEditor {
       $('#item-modal-' + thisObject.id).modal('show')
     })
     
-    $('#chunk-start-button-' + id).click(TranscriptionEditor.genChunkButtonFunction(thisObject, quillObject, 'start'))
-    $('#chunk-end-button-' + id).click(TranscriptionEditor.genChunkButtonFunction(thisObject, quillObject, 'end'))
+    $('#chunk-start-button-' + id).click(
+            TranscriptionEditor.genChunkButtonFunction(thisObject, quillObject, 'start'))
+    $('#chunk-end-button-' + id).click(
+            TranscriptionEditor.genChunkButtonFunction(thisObject, quillObject, 'end'))
 
     $('#illegible-button-' + id).click(function () {
       const range = quillObject.getSelection()
@@ -681,11 +686,13 @@ class TranscriptionEditor {
             altText = ' '
           }
           const reason = $('#item-modal-extrainfo-' + thisObject.id).val()
-          quillObject.format('unclear', {reading2: altText, reason: reason, itemid: itemid, editorid: thisObject.id })
+          quillObject.format('unclear', {reading2: altText, reason: reason, itemid: itemid, 
+            editorid: thisObject.id })
         }
         if (format.deletion) {
           const technique = $('#item-modal-extrainfo-' + thisObject.id).val()
-          quillObject.format('deletion', {technique: technique, itemid: itemid, editorid: thisObject.id })
+          quillObject.format('deletion', {technique: technique, itemid: itemid, 
+            editorid: thisObject.id })
         }
         if (format.addition) {
           const place = $('#item-modal-extrainfo-' + thisObject.id).val()

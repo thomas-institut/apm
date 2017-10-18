@@ -23,15 +23,18 @@
 /*eslint default-case: "error"*/
 /*eslint no-console: ["error", { allow: ["warn", "error"] }] */
 
-/* global PageRange, FOLIATION_RECTOVERSO, FOLIATION_CONSECUTIVE */
+/* global PageRange, FOLIATION_RECTOVERSO, FOLIATION_CONSECUTIVE, ApiUrl */
 
 class DefPagesDefAll {
   
   
-  constructor (numPages, htmIdPrefix = 'dap-') {
+  constructor (numPages, htmIdPrefix = 'dap-', docId) {
 
     this.numPages = numPages
     this.prefix = '#' + htmIdPrefix
+    this.docId = docId
+    
+    this.updating = false
     
     this.rangeSepString = ' &ndash; '
 
@@ -55,6 +58,7 @@ class DefPagesDefAll {
     this.overwriteFoliationFormGroup = $(this.prefix + 'overwrite-f-fg')
     this.overwriteFoliationCheckbox = $(this.prefix + 'overwrite-f')
     this.submitButton = $(this.prefix + 'submit-button')
+    this.statusSpan = $(this.prefix + 'status')
 
     this.lastTextPageField.val(this.numPages)
 
@@ -67,6 +71,8 @@ class DefPagesDefAll {
     this.foliateFrontBackMatterCheckbox.on('click', this.genCheckFormFunction())
     this.foliateTextPagesCheckbox.on('click', this.genCheckFormFunction())
     this.createColsCheckbox.on('click', this.genCheckFormFunction())
+    
+    this.submitButton.on('click', this.genSubmitChangesFunction())
     
     this.foliateFrontBackMatterLabelGroup.hide()
     this.foliateFrontBackMatterLabelGroup.removeClass('hidden')
@@ -159,7 +165,99 @@ class DefPagesDefAll {
         }
     }
   }
+  
+  genSubmitChangesFunction() {
+    let thisObject = this
+    return function () {
+      if (thisObject.updating) {
+        return
+      }
+      let fp = parseInt(thisObject.firstTextPageField.val())
+      let lp = parseInt(thisObject.lastTextPageField.val())
+      let frontMatterRange = new PageRange(1, fp-1, thisObject.numPages)
+      let textPagesRange = new PageRange(fp, lp, thisObject.numPages)
+      let backMatterRange = new PageRange(lp+1, thisObject.numPages, thisObject.numPages)
+
+      let overwriteTypes = thisObject.overwritePageTypesCheckbox.is(":checked")
+      let foliateFrontBackMatter = thisObject.foliateFrontBackMatterCheckbox.is(":checked")
+      let foliateTextPages = thisObject.foliateTextPagesCheckbox.is(":checked")
+      let overwriteFoliation = thisObject.overwriteFoliationCheckbox.is(":checked")
+      let createCols = thisObject.createColsCheckbox.is(":checked")
+      
+      let pageDefs = []
+      for (const page of frontMatterRange.toArray()) {
+        let thePageDef = { 
+          docId: thisObject.docId, 
+          page: page
+        }
+        if (overwriteTypes) {
+          thePageDef.type = 2
+        }
+
+        if (foliateFrontBackMatter) {
+          thePageDef.foliation = frontMatterRange.foliate(page, FOLIATION_CONSECUTIVE, 1, 'x')
+          thePageDef.overwriteFoliation = overwriteFoliation
+        }
+        pageDefs.push(thePageDef)
+      }
+      
+      for (const page of textPagesRange.toArray()) {
+        let thePageDef = { 
+          docId: thisObject.docId, 
+          page: page
+        }
+        if (overwriteTypes) {
+          thePageDef.type = 1
+        }
+
+        if (foliateTextPages) {
+          thePageDef.foliation = textPagesRange.foliate(page, FOLIATION_RECTOVERSO, 1)
+          thePageDef.overwriteFoliation = overwriteFoliation
+        }
+        
+        if (createCols) {
+          thePageDef.cols = parseInt(thisObject.colsField.val())
+        }
+        pageDefs.push(thePageDef)
+      }
+      
+      for (const page of backMatterRange.toArray()) {
+        let thePageDef = { 
+          docId: thisObject.docId, 
+          page: page
+        }
+        if (overwriteTypes) {
+          thePageDef.type = 3
+        }
+
+        if (foliateFrontBackMatter) {
+          thePageDef.foliation = backMatterRange.foliate(page, 
+              FOLIATION_CONSECUTIVE, 
+              frontMatterRange.getLength()+1, 
+              'x')
+          thePageDef.overwriteFoliation = overwriteFoliation
+        }
+        pageDefs.push(thePageDef)
+      }
+      
+      thisObject.statusSpan.html('Updating, this might take a few seconds ... <i class="fa fa-refresh fa-spin"></i>')
+      thisObject.updating = true
+      
+      $.post(
+        ApiUrl.bulkPageSettings(), 
+        { data: JSON.stringify(pageDefs) }
+      )
+      .done(function () { 
+        thisObject.statusSpan.html("Updating... done")
+        thisObject.updating = false
+        location.replace('')
+      })
+      .fail(function(resp) {
+        thisObject.statusSpan.html("Updating... fail with error code " + resp.status + ' :(')
+        thisObject.updating = false
+      })
+    }
+  }
 
 }
-
 

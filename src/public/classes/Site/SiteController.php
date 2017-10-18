@@ -193,10 +193,15 @@ class SiteController
         $doc['pages'] = $this->buildPageArray($pagesInfo, 
                 $transcribedPages);
 
+        $canDefinePages = false;
+        if ($this->db->um->isUserAllowedTo($this->ci->userInfo['id'], 'define-doc-pages')) {
+            $canDefinePages = true;
+        }
         return $this->ci->view->render($response, 'doc.showdoc.twig', [
             'userinfo' => $this->ci->userInfo, 
             'copyright' => $this->ci->copyrightNotice,
             'baseurl' => $this->ci->settings['baseurl'],
+            'canDefinePages' => $canDefinePages,
             'doc' => $doc
         ]);
     }

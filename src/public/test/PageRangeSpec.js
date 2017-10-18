@@ -66,6 +66,15 @@ describe("PageRange", function() {
       expect(range.isInRange('somestring')).toBe(false)
       expect(range.isInRange('15a')).toBe(false)
     })
+    
+    it("should convert to an array of numbers", function () {
+      let range = new PageRange(0, 0)
+      expect(range.toArray()).toEqual([])
+      let range2 = new PageRange(10, 19)
+      let theArray = range2.toArray()
+      expect(theArray.length).toBe(10)
+      expect(theArray[0]).toBe(10)
+    })
    
   })
   

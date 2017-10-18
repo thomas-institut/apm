@@ -214,6 +214,12 @@ $app->group('/api', function (){
             '\AverroesProject\Api\ApiController:updatePageSettings')
         ->setName('api.updatepagesettings');
     
+    $this->post('/page/bulkupdate', 
+            '\AverroesProject\Api\ApiController:updatePageSettingsBulk')
+        ->setName('api.updatepagesettings.bulk');
+    
+    
+    
     // API -> numColumns
     $this->get('/{document}/{page}/newcolumn', 
             '\AverroesProject\Api\ApiController:addNewColumn')

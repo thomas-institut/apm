@@ -39,6 +39,10 @@ class ApiUrl {
   static userMakeRoot (id) {
     return ApiUrl.base + '/api/user/' + id + '/makeroot'
   }
+  
+  static bulkPageSettings() {
+    return ApiUrl.base + '/api/page/bulkupdate'
+  }
 }
 
 ApiUrl.base = ''

@@ -162,4 +162,17 @@ class PageRange {
     return ini + first + sep + last + end
   }
   
+  toArray() {
+    if (this.isEmpty()) {
+      return []
+    }
+    
+    let theArray = []
+    for (let i = this.a; i <=this.b; i++) {
+      theArray.push(i)
+    }
+    return theArray
+    
+  }
+  
 }

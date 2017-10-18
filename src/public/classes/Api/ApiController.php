@@ -418,6 +418,91 @@ class ApiController
         return $response->withStatus(200);
     }
     
+    public function updatePageSettingsBulk(Request $request, Response $response, $next)
+    {
+        $this->db->queryStats->reset();
+        $startTime = microtime(true);
+        
+        $rawData = $request->getBody()->getContents();
+        $postData = [];
+        parse_str($rawData, $postData);
+        $inputArray = null;
+        if (isset($postData['data'])) {
+            $inputArray = json_decode($postData['data'], true);
+        }
+        
+        if (is_null($inputArray) ) {
+            $this->logger->error("Bulk page settings update: no data in input",
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_NO_DATA,
+                      'data' => $postData]);
+            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_NO_DATA]);
+        }
+        
+        $dm = $this->db;
+        $errors = [];
+        foreach($inputArray as $pageDef) {
+            if (!isset($pageDef['docId']) && !isset($pageDef['page'])) {
+                $errors[] = "No docId or page in request" . print_r($pageDef, true);
+                continue;
+            }
+            $pageId = $dm->getPageIdByDocPage($pageDef['docId'], $pageDef['page']);
+            if ($pageId === false) {
+                $errors[] = "Page not found, doc " . $pageDef['docId'] . " page " . $pageDef['page'];
+                continue;
+            }
+            
+            $newPageSettings = [];
+            
+            if (isset($pageDef['type'])) {
+                $newPageSettings['type'] = $pageDef['type'];
+            }
+            
+            if (isset($pageDef['foliation'])) {
+                if (!isset($pageDef['overwriteFoliation'])) {
+                    $errors[] = "No overwriteFoliation in request, " . $pageDef['docId'] . " page " . $pageDef['page'];
+                    continue;
+                }
+                if (!$pageDef['overwriteFoliation']) {
+                    // do not overwrite foliation if foliation already exists
+                    $pageInfo = $dm->getPageInfo($pageId);
+                    if ($pageInfo === null) {
+                        $errors[] = "Could not get page Info from DB, " . $pageDef['docId'] . " page " . $pageDef['page'];
+                        continue;
+                    }
+                    if (is_null($pageInfo['foliation'])) {
+                        // no page foliation exists, so, set the new one
+                        $newPageSettings['foliation'] = $pageDef['foliation'];
+                    }
+                } else {
+                    $newPageSettings['foliation'] = $pageDef['foliation'];
+                }
+            }
+            
+            if (count(array_keys($newPageSettings)) === 0) {
+                // nothing to do
+                $this->logger->debug("Nothing to update for doc " . $pageDef['docId'] . " page " . $pageDef['page']);
+                continue;
+            }
+            
+            $dm->updatePageSettings($pageId, $newPageSettings);
+        }
+        
+        $done = microtime(true);
+        $this->logger->info("Bulk page settings", [
+            'apiUserId'=> $this->ci->userId, 
+            'count' => count($inputArray)
+            ]);
+        $this->logger->debug("Bulk page settings update done in " . 
+                (($done - $startTime)*1000) . "ms");
+        $this->logger->debug('Query stats', $this->db->queryStats->info);
+        
+        if (count($errors) > 0) {
+            $this->logger->notice("Bulk page settings update with errors", $errors);
+        }
+        return $response->withStatus(200);
+    }
+    
     public function getElementsByDocPageCol(Request $request, 
             Response $response, $next)
     {

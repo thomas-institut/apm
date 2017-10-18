@@ -11,7 +11,7 @@
 <script>
     ApiUrl.setBase('{{baseurl}}')
     $(document).ready(function () {
-        let dapObject = new DefPagesDefAll({{doc.numPages}})
+        let dapObject = new DefPagesDefAll({{doc.numPages}}, 'dap-', {{doc.docInfo.id}})
     })
 </script>
 {% endblock %}
@@ -60,7 +60,7 @@
         
         <div id="dap-foliate-fbm-fg" class="form-group form-inline">
             <input type="checkbox" name="dap-foliate-fbm" class="form-control" id="dap-foliate-fbm" disabled></input>
-            Assign foliation to front/back matter (x1, x2, ...)
+            Assign foliation to given front/back matter (x1, x2, ...)
         </div>
             <p class="withmarginleft-small text-muted hidden" id="dap-fmbm-foliation">
                <span id="dap-fm-foliation-label">-</span>
@@ -69,7 +69,7 @@
             
         <div id="dap-foliate-tp-fg" class="form-group  form-inline">
             <input type="checkbox" name="dap-foliate-tp" class="form-control" id="dap-foliate-tp"></input>
-            Assign foliation to text pages (1r, 1v, 2r, 2v, ...)
+            Assign foliation to given text pages (1r, 1v, 2r, 2v, ...)
         </div>
             
             <p class="withmarginleft-small text-muted hidden" id="dap-tp-foliation">
@@ -82,7 +82,9 @@
         </div>
             
         <button type="button" class="btn btn-primary hidden" id="dap-submit-button" >Go for it!</button>
+        <span id="dap-status"></span>
         </form> 
+                
         </div>
     </div>
         
@@ -128,6 +130,7 @@
             Overwrite current page foliation
         </div>
             <button type="button" class="btn btn-primary" id="editPageSubmitButton">Go for it!</button>
+            
         </form> 
         </div>
             

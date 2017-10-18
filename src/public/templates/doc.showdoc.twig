@@ -42,5 +42,12 @@
 <div class="pagetablediv" id="{{doc.tableId}}">
     {{ macros.pageviewtable(doc.docInfo.id, doc.pages)}}
 </div>
+    
+{% if canDefinePages %}
+    <h3>Admin</h3>
+    <ul>
+        <li><a href="{{path_for('doc.definedocpages', {'id' : doc.docInfo.id})}}">Define pages</a></li>
+    </ul>
+{% endif %}    
 {% endblock %}
 

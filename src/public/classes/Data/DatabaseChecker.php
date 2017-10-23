@@ -32,7 +32,7 @@ class DatabaseChecker {
     private $db;
     private $tables;
     
-    const DB_VERSION = 10;
+    const DB_VERSION = 11;
     
     public function __construct(\PDO $dbh, array $tableNames) {
         $this->db = $dbh;

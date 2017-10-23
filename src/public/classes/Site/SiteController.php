@@ -214,6 +214,7 @@ class SiteController
         $doc['numPages'] = $db->getPageCountByDocId($docId);
         $transcribedPages = $db->getPageListByDocId($docId);
         $pagesInfo = $db->getDocPageInfo($docId);
+        $pageTypes  = $this->db->getPageTypeNames();
         $doc['numTranscribedPages'] = count($transcribedPages);
         $doc['docInfo'] = $db->getDocById($docId);
         $doc['tableId'] = "doc-$docId-table";
@@ -224,6 +225,7 @@ class SiteController
             'userinfo' => $this->ci->userInfo, 
             'copyright' => $this->ci->copyrightNotice,
             'baseurl' => $this->ci->settings['baseurl'],
+            'pageTypes' => $pageTypes,
             'doc' => $doc
         ]);
     }

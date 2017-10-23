@@ -119,8 +119,7 @@ class DefPagesDefAll {
           thisObject.foliateFrontBackMatterCheckbox.prop('disabled', false)
         }
         
-        if (thisObject.foliateTextPagesCheckbox.is(":checked") || 
-                thisObject.foliateFrontBackMatterCheckbox.is(":checked") ){
+        if (thisObject.foliateTextPagesCheckbox.is(":checked") ){
           thisObject.overwriteFoliationFormGroup.show()
           thisObject.textPagesFoliationLabelGroup.show()
           thisObject.textPagesFoliationLabel.html(
@@ -149,7 +148,7 @@ class DefPagesDefAll {
           } else {
             thisObject.backMatterFoliationLabel.html('')
           }
-          
+          thisObject.overwriteFoliationFormGroup.show()
           thisObject.foliateFrontBackMatterLabelGroup.show()
         } else {
           thisObject.foliateFrontBackMatterLabelGroup.hide()
@@ -170,7 +169,7 @@ class DefPagesDefAll {
     let thisObject = this
     return function () {
       if (thisObject.updating) {
-        return
+        return false
       }
       let fp = parseInt(thisObject.firstTextPageField.val())
       let lp = parseInt(thisObject.lastTextPageField.val())

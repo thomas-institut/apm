@@ -640,6 +640,13 @@ class TranscriptionEditor {
         $('#item-modal-alttext-fg-' + thisObject.id).hide()
         $('#item-modal-extrainfo-fg-' + thisObject.id).hide()
       }
+      if (format.mathtext) {
+        itemid = format.mathtext.itemid
+        $('#item-modal-title-' + thisObject.id).html('Math Text')
+        $('#item-modal-text-fg-' + thisObject.id).show()
+        $('#item-modal-alttext-fg-' + thisObject.id).hide()
+        $('#item-modal-extrainfo-fg-' + thisObject.id).hide()
+      }
       if (format.initial) {
         itemid = format.initial.itemid
         $('#item-modal-title-' + thisObject.id).html('Initial')

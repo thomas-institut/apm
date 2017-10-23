@@ -70,6 +70,7 @@ class DefPagesDefAll {
     this.overwriteFoliationCheckbox.on('click', this.genCheckFormFunction())
     this.foliateFrontBackMatterCheckbox.on('click', this.genCheckFormFunction())
     this.foliateTextPagesCheckbox.on('click', this.genCheckFormFunction())
+    this.colsField.on('click', this.genCheckFormFunction())
     this.createColsCheckbox.on('click', this.genCheckFormFunction())
     
     this.submitButton.on('click', this.genSubmitChangesFunction())
@@ -99,9 +100,13 @@ class DefPagesDefAll {
           thisObject.lastTextPageField.val(thisObject.numPages)
           lp = thisObject.numPages
         }
-        if (thisObject.lastTextPageField.val() < fp) {
+        if (parseInt(thisObject.lastTextPageField.val()) < fp) {
           thisObject.lastTextPageField.val(fp)
           lp = fp
+        }
+        
+        if (parseInt(thisObject.colsField.val()) < 1) {
+          thisObject.colsField.val(1)
         }
         
         let frontMatterRange = new PageRange(1, fp-1, thisObject.numPages)

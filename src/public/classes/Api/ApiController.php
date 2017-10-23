@@ -479,6 +479,18 @@ class ApiController
                 }
             }
             
+            if (isset($pageDef['cols'])) {
+                $pageInfo = $dm->getPageInfo($pageId);
+                if ($pageInfo['num_cols'] < $pageDef['cols']) {
+                    // Add columns
+                    for ($i = $pageInfo['num_cols']; $i < $pageDef['cols']; $i++) {
+                        $this->db->addNewColumn($pageDef['docId'], $pageDef['page']);
+                    }
+                } else {
+                    $this->logger->debug("Asked for " . $pageDef['cols'] . " col(s), currently " . $pageInfo['num_cols'] . " col(s). Nothing done. ");
+                }
+            }
+            
             if (count(array_keys($newPageSettings)) === 0) {
                 // nothing to do
                 $this->logger->debug("Nothing to update for doc " . $pageDef['docId'] . " page " . $pageDef['page']);

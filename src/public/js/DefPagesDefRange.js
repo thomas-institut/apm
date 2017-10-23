@@ -51,6 +51,8 @@ class DefPagesDefRange {
     this.foliationStartField = $(this.prefix + 'startnum')
     this.foliationPrefixField = $(this.prefix + 'prefix')
     this.foliationSuffixField = $(this.prefix + 'suffix')
+    this.colsField = $(this.prefix + 'cols')
+    this.createColsCheckbox = $(this.prefix + 'createcols')
     this.statusSpan = $(this.prefix + 'status')
     this.submitButton = $(this.prefix + 'submit-button')
     
@@ -63,6 +65,8 @@ class DefPagesDefRange {
     this.foliationStartField.on('keyup', this.genCheckFormFunction())
     this.foliationPrefixField.on('keyup', this.genCheckFormFunction())
     this.foliationSuffixField.on('keyup', this.genCheckFormFunction())
+    this.colsField.on('click', this.genCheckFormFunction())
+    this.createColsCheckbox.on('click', this.genCheckFormFunction())
     
     this.submitButton.on('click', this.genSubmitChangesFunction())
     
@@ -108,19 +112,16 @@ class DefPagesDefRange {
           lp = fp
         }
         
+        if (parseInt(thisObject.colsField.val()) < 1) {
+          thisObject.colsField.val(1)
+        }
         
         if ( parseInt(thisObject.foliationStartField.val()) < 1) {
           thisObject.foliationStartField.val(1)
         }
         
         let pagesRange = new PageRange(fp, lp, thisObject.numPages)
-        
-//        if(thisObject.setPageTypeCheckbox.is(':checked')) {
-//          thisObject.overwriteTypeFormGroup.show()
-//        } else {
-//          thisObject.overwriteTypeFormGroup.hide()
-//        }
-        
+
         if(thisObject.foliateCheckbox.is(':checked')) {
           thisObject.overwriteFoliationFormGroup.show()
           let foliationTypeString = thisObject.foliationTypeSelect.val()
@@ -141,8 +142,9 @@ class DefPagesDefRange {
           thisObject.foliationLabel.hide()
         }
         
-        if(thisObject.setPageTypeCheckbox.is(':checked') 
-                || thisObject.foliateCheckbox.is(':checked') ) {
+        if(thisObject.setPageTypeCheckbox.is(':checked') ||
+                thisObject.createColsCheckbox.is(":checked") ||
+                thisObject.foliateCheckbox.is(':checked') ) {
           thisObject.submitButton.show()
         } else {
           thisObject.submitButton.hide()
@@ -162,10 +164,9 @@ class DefPagesDefRange {
       let textPagesRange = new PageRange(fp, lp, thisObject.numPages)
       
       let setPageTypes = thisObject.setPageTypeCheckbox.is(':checked')
-//      let overwriteTypes = this.overwriteTypeCheckbox.is(':checked')  
       let foliateTextPages = thisObject.foliateCheckbox.is(':checked')
       let overwriteFoliation = thisObject.overwriteFoliationCheckbox.is(':checked')
-      
+      let createCols = thisObject.createColsCheckbox.is(":checked")
       
       let pageDefs = []
        
@@ -176,6 +177,10 @@ class DefPagesDefRange {
         }
         if (setPageTypes) {
           thePageDef.type = thisObject.pageTypesSelect.val()
+        }
+        
+        if (createCols) {
+          thePageDef.cols = parseInt(thisObject.colsField.val())
         }
 
         if (foliateTextPages) {

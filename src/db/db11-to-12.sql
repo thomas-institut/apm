@@ -25,6 +25,6 @@ ALTER TABLE `ap_pages` ADD `img_number` INT NOT NULL AFTER `page_number`, ADD `s
 UPDATE `ap_pages` SET `img_number`=`page_number`, `seq`=`page_number`;
 
 
-
+ALTER TABLE `ap_docs` DROP `page_count`;
 
 UPDATE `ap_settings` SET `value` = '12' WHERE `ap_settings`.`setting` = 'dbversion';

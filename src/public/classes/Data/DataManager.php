@@ -203,7 +203,6 @@ class DataManager
         $doc = [ 
             'title' => $title, 
             'short_title' => $shortTitle,
-            'page_count' => $pageCount,
             'lang' => $lang, 
             'doc_type' => $type,
             'image_source' => $imageSource, 
@@ -323,16 +322,15 @@ class DataManager
     function getPageCountByDocId($docId)
     {
         $this->queryStats->countQuery('select');
-        $row = $this->docsDataTable->getRow($docId);
-        if ($row === false) {
-            // Doc doesn't exist, so it has 0 pages
-            return 0;
+        
+        $query = 'SELECT COUNT(*) FROM ' . $this->tNames['pages'] . 
+                ' WHERE `doc_id`=' . $docId . 
+                ' AND `valid_until`=\'9999-12-31 23:59:59.999999\'';
+        $res = $this->dbh->query($query);
+        if ($res === false) {
+            return false;
         }
-        if (!isset($row['page_count'])) {
-            // This means that the DB is inconsistent
-            return false; // @codeCoverageIgnore
-        }
-        return $row['page_count'];
+        return $res->fetch(PDO::FETCH_NUM)[0];
     }
     
     /**
@@ -400,7 +398,7 @@ class DataManager
         
         $this->queryStats->countQuery('select');
         return $this->dbh->getOneFieldQuery(
-            'SELECT count(DISTINCT `page_id`, `seq`) as value from ' . 
+            'SELECT count(DISTINCT `page_id`, e.`seq`) as value from ' . 
                 $this->tNames['elements'] . ' as e JOIN ' . 
                 $this->tNames['pages'] . ' AS p ON e.page_id=p.id ' .
                 ' WHERE p.doc_id=' . $docId . 

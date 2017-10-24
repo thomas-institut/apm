@@ -44,7 +44,7 @@ class MySqlHelper {
     function query($sql){
         $r = $this->dbConn->query($sql);
         if ($r===false){
-           $this->logger->error("Problem with query", $this->dbConn->errorInfo());
+           $this->logger->error("Problem with query: $sql", $this->dbConn->errorInfo());
         }
         return $r;
     }

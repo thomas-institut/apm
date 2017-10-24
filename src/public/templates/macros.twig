@@ -1,6 +1,6 @@
 {# Some useful macros #}
 
-{% macro pageviewtable(doc, pages) %}
+{% macro pageviewtable(doc, pages, navByPage) %}
 {% spaceless %}
     {% set pagesPerRow = 10 %}
     {% if pages|length > 200 %}
@@ -15,8 +15,19 @@
     <tr>
             {% set n = 0 %}    
         {% endif%}
-
-        <td class="{{ page.classes }}"><a href="{{ path_for('pageviewer', {'doc' : doc, 'page' : page.number})}}" title="View Page">{{page.foliation}}</a></td>
+        {% set foliation = page.foliation %}
+        {% if foliation == '-' %} 
+            {%if navByPage == true %} 
+            {% set foliation = page.number %}
+            {% else %}
+            {% set foliation = page.seq %}
+            {% endif %}
+        {% endif %}
+    {%if navByPage == true %}
+        <td class="{{ page.classes }}"><a href="{{ path_for('pageviewer.docpage', {'doc' : doc, 'page' : page.number})}}" title="View Page (page = {{page.number}})">{{foliation}}</a></td>
+    {% else %}
+        <td class="{{ page.classes }}"><a href="{{ path_for('pageviewer.docseq', {'doc' : doc, 'seq' : page.seq})}}" title="View Page (seq = {{page.seq}})">{{foliation}}</a></td>
+    {% endif %}
 
         {% set n = n+1 %}                                   
     {% endfor %}
@@ -25,7 +36,7 @@
 {% endspaceless %}
 {% endmacro %}
 
-{% macro pageviewtablepv(doc, pages) %}
+{% macro pageviewtablepv(doc, pages, navByPage) %}
 {% spaceless %}
     {% set pagesPerRow = 20 %}
     {% set n=0 %}
@@ -37,8 +48,21 @@
     <tr>
             {% set n = 0 %}    
         {% endif%}
+        
+        {% set foliation = page.foliation %}
+        {% if foliation == '-' %} 
+            {%if navByPage == true %} 
+            {% set foliation = page.number %}
+            {% else %}
+            {% set foliation = page.seq %}
+            {% endif %}
+        {% endif %}
 
-        <td class="{{ page.classes }}"><a href="{{ path_for('pageviewer', {'doc' : doc, 'page' : page.number})}}" title="View Page">{{page.foliation}}</a></td>
+        {%if navByPage == true %}
+        <td class="{{ page.classes }}"><a href="{{ path_for('pageviewer.docpage', {'doc' : doc, 'page' : page.number})}}" title="View Page">{{foliation}}</a></td>
+    {% else %}
+        <td class="{{ page.classes }}"><a href="{{ path_for('pageviewer.docseq', {'doc' : doc, 'seq' : page.seq})}}" title="View Page">{{foliation}}</a></td>
+    {% endif %}
 
         {% set n = n+1 %}                                   
     {% endfor %}
@@ -59,11 +83,18 @@
     <tr>
             {% set n = 0 %}    
         {% endif%}
-
+{% set foliation = page.foliation %}
+        {% if foliation == '-' %} 
+            {%if navByPage == true %} 
+            {% set foliation = page.number %}
+            {% else %}
+            {% set foliation = page.seq %}
+            {% endif %}
+        {% endif %}
         <td class="{{ page.classes }}">
-            <a href="{{ path_for('pageviewer', {'doc' : doc, 'page' : page.number})}}" 
-               target="_blank" title="Page {{page.number}}">
-                {{page.foliation}}
+            <a href="{{ path_for('pageviewer.docpage', {'doc' : doc, 'page' : page.number})}}" 
+               target="_blank" title="Page {{page.number}}, Seq={{page.seq}}">
+                {{foliation}}
             </a>
         </td>
         {% set n = n+1 %}                                   

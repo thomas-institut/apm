@@ -182,11 +182,15 @@ $app->get('/doc/{id}/definepages','\AverroesProject\Site\SiteController:defineDo
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
 // PAGEVIEWER
-$app->get('/pageviewer/{doc}/{page}', 
-        '\AverroesProject\Site\SiteController:pageViewerPage')
-        ->setName('pageviewer')
+$app->get('/pageviewer/doc/{doc}/page/{page}', 
+        '\AverroesProject\Site\SiteController:pageViewerPageByDocPage')
+        ->setName('pageviewer.docpage')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
+$app->get('/pageviewer/doc/{doc}/seq/{seq}', 
+        '\AverroesProject\Site\SiteController:pageViewerPageByDocSeq')
+        ->setName('pageviewer.docseq')
+        ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
 
 // -----------------------------------------------------------------------------

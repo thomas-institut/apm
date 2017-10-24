@@ -180,7 +180,7 @@ class SiteController
         $doc['numPages'] = $db->getPageCountByDocId($docId);
         $doc['numLines'] = $db->getLineCountByDoc($docId);
         $transcribedPages = $db->getTranscribedPageListByDocId($docId);
-        $pagesInfo = $db->getDocPageInfo($docId);
+        $pagesInfo = $db->getDocPageInfo($docId, \AverroesProject\Data\DataManager::ORDER_BY_SEQ);
         $doc['numTranscribedPages'] = count($transcribedPages);
         $editorsUsernames = $db->getEditorsByDocId($docId);
         $doc['editors'] = array();
@@ -201,6 +201,7 @@ class SiteController
             'userinfo' => $this->ci->userInfo, 
             'copyright' => $this->ci->copyrightNotice,
             'baseurl' => $this->ci->settings['baseurl'],
+            'navByPage' => false,
             'canDefinePages' => $canDefinePages,
             'doc' => $doc
         ]);
@@ -230,7 +231,7 @@ class SiteController
         ]);
     }
     
-    function pageViewerPage(Request $request, Response $response, $next)
+    function pageViewerPageByDocPage(Request $request, Response $response, $next)
     {
         $docId = $request->getAttribute('doc');
         $pageNumber = $request->getAttribute('page');
@@ -239,7 +240,7 @@ class SiteController
         $pageInfo = $this->db->getPageInfoByDocPage($docId, $pageNumber);
         //$this->ci->logger->debug('Page info', $pageInfo);
         $docPageCount = $this->db->getPageCountByDocId($docId);
-        $pagesInfo = $this->db->getDocPageInfo($docId);
+        $pagesInfo = $this->db->getDocPageInfo($docId, \AverroesProject\Data\DataManager::ORDER_BY_PAGE_NUMBER);
         $transcribedPages = $this->db->getTranscribedPageListByDocId($docId);
         $thePages = $this->buildPageArray($pagesInfo, $transcribedPages);
         $imageUrl = $this->db->getImageUrlByDocId($docId, $pageNumber);
@@ -253,10 +254,50 @@ class SiteController
             'userinfo' => $this->ci->userInfo, 
             'copyright' => $this->ci->copyrightNotice,
             'baseurl' => $this->ci->settings['baseurl'],
+            'navByPage' => true,
             'doc' => $docId,
             'docInfo' => $docInfo,
             'docPageCount' => $docPageCount,
             'page' => $pageNumber,
+            'seq' => $pageInfo['seq'],
+            'pageNumberFoliation' => $pageNumberFoliation,
+            'pageInfo' => $pageInfo,
+            'pageTypeNames' => $pageTypeNames,
+            'thePages' => $thePages,
+            'imageUrl' => $imageUrl
+        ]);
+    }
+    
+     function pageViewerPageByDocSeq(Request $request, Response $response, $next)
+    {
+        $docId = $request->getAttribute('doc');
+        $seq = $request->getAttribute('seq');
+        
+        $docInfo = $this->db->getDocById($docId);
+        $pageId = $this->db->getPageIdByDocSeq($docId, $seq);
+        $pageInfo = $this->db->getPageInfo($pageId);
+        $pageNumber = $pageInfo['page_number'];
+        $docPageCount = $this->db->getPageCountByDocId($docId);
+        $pagesInfo = $this->db->getDocPageInfo($docId, \AverroesProject\Data\DataManager::ORDER_BY_SEQ);
+        $transcribedPages = $this->db->getTranscribedPageListByDocId($docId);
+        $thePages = $this->buildPageArray($pagesInfo, $transcribedPages);
+        $imageUrl = $this->db->getImageUrlByDocId($docId, $pageNumber);
+        $pageTypeNames  = $this->db->getPageTypeNames();
+        $pageNumberFoliation = $pageNumber;
+        if ($pageInfo['foliation'] !== NULL) {
+            $pageNumberFoliation = $pageInfo['foliation'];
+        }
+
+        return $this->ci->view->render($response, 'pageviewer.twig', [
+            'userinfo' => $this->ci->userInfo, 
+            'copyright' => $this->ci->copyrightNotice,
+            'baseurl' => $this->ci->settings['baseurl'],
+            'navByPage' => false,  // i.e., navigate by sequence
+            'doc' => $docId,
+            'docInfo' => $docInfo,
+            'docPageCount' => $docPageCount,
+            'page' => $pageNumber,
+            'seq' => $seq,
             'pageNumberFoliation' => $pageNumberFoliation,
             'pageInfo' => $pageInfo,
             'pageTypeNames' => $pageTypeNames,
@@ -266,14 +307,15 @@ class SiteController
     }
     
     // Utility function
-    function buildPageArray($pagesInfo, $transcribedPages){
+    function buildPageArray($pagesInfo, $transcribedPages, $navByPage = true){
         $thePages = array();
         foreach ($pagesInfo as $page) {
             $thePage = array();
             $thePage['number'] = $page['page_number'];
+            $thePage['seq'] = $page['seq'];
             $thePage['type'] = $page['type'];
             if ($page['foliation'] === NULL) {
-                $thePage['foliation'] = $page['page_number'];
+                $thePage['foliation'] = '-';
             } else {
                 $thePage['foliation'] = $page['foliation'];
             }

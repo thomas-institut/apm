@@ -31,6 +31,7 @@
     <link href='{{baseurl}}/images/averroes-icon.png' rel='icon' sizes='16x16' type='image/png'>
     <script>
         pageNumber = {{ page }}
+        seq = {{ seq }}
         pageNumberFoliation = '{{ pageNumberFoliation }}'
         pageSystemId = {{pageInfo.id}}
         docId = {{ doc }}
@@ -40,7 +41,6 @@
         foliation = '{{pageInfo.foliation}}'
         pageType = {{pageInfo.type}}
         pageTypeNames = JSON.parse('{{pageTypeNames|json_encode|raw}}')
-        
     </script>
 </head>
 <body>
@@ -53,16 +53,27 @@
             </td>
             <td><ul class="pv-navbar"> 
                     <li style="float: left;">
-                        <button class="textonly headerbutton {{ page==1?' disabled':''}}"
+                        {% if navByPage==true %}
+                            <button class="textonly headerbutton {{ page==1?' disabled':''}}"
                                 title="First Page" 
-                                onclick="window.location='{{path_for('pageviewer', {'doc': doc, 'page': 1})}}';" {{ page==1 ? ' disabled' : '' }}>
+                                    onclick="window.location='{{path_for('pageviewer.docpage', {'doc': doc, 'page': 1})}}';" {{ page==1 ? ' disabled' : '' }}>
+                        {% else %}
+                            <button class="textonly headerbutton {{ seq==1?' disabled':''}}"
+                                    onclick="window.location='{{path_for('pageviewer.docseq', {'doc': doc, 'seq': 1})}}';" {{ seq==1 ? ' disabled' : '' }}>
+                        {% endif %}
                             <span class="glyphicon glyphicon-step-backward"></span>
                         </button>
                     </li>
                     <li style="float: left;">
+                        {% if navByPage==true %}
                         <button class="textonly headerbutton {{ page==1?' disabled':''}}" 
-                                title="Previous Page: {{ page==1?'-':page-1}}" 
-                                onclick="window.location='{{path_for('pageviewer', {'doc': doc, 'page': page-1})}}';" {{ page==1 ? ' disabled' : '' }}>
+                                title="Previous Page" 
+                                onclick="window.location='{{path_for('pageviewer.docpage', {'doc': doc, 'page': page-1})}}';" {{ page==1 ? ' disabled' : '' }}>
+                        {% else %}
+                            <button class="textonly headerbutton {{ seq==1?' disabled':''}}" 
+                                title="Previous Page" 
+                                onclick="window.location='{{path_for('pageviewer.docseq', {'doc': doc, 'seq': seq-1})}}';" {{ seq==1 ? ' disabled' : '' }}>
+                        {% endif %}
                             <span class="glyphicon glyphicon-chevron-left"></span>
                         </button>
                     </li>
@@ -72,16 +83,28 @@
                         </button>
                     </li>
                     <li style="float: left;">
+                        {% if navByPage==true %}
                         <button class="textonly headerbutton {{ page==docPageCount?' disabled':''}}"
-                                title="Next Page: {{page+1}}" 
-                                onclick="window.location='{{path_for('pageviewer', {'doc': doc, 'page': page+1})}}';" {{ page==docPageCount ? ' disabled' : '' }}>
+                                title="Next Page" 
+                                onclick="window.location='{{path_for('pageviewer.docpage', {'doc': doc, 'page': page+1})}}';" {{ page==docPageCount ? ' disabled' : '' }}>
+                        {% else %}
+                            <button class="textonly headerbutton {{ seq==docPageCount?' disabled':''}}"
+                                title="Next Page" 
+                                onclick="window.location='{{path_for('pageviewer.docseq', {'doc': doc, 'seq': seq+1})}}';" {{ seq==docPageCount ? ' disabled' : '' }}>
+                        {% endif %}    
                             <span class="glyphicon glyphicon-chevron-right"></span>
                         </button>
                     </li>
                     <li style="float: left;">
-                        <button class="textonly headerbutton {{ page==docPageCount?' disabled':''}}" 
-                                title="Last Page: {{ docPageCount }}" 
-                                onclick="window.location='{{path_for('pageviewer', {'doc': doc, 'page': docPageCount})}}';" {{ page==docPageCount?' disabled':''}}>
+                        {% if navByPage==true %}
+                            <button class="textonly headerbutton {{ page==docPageCount?' disabled':''}}" 
+                                title="Last Page" 
+                                onclick="window.location='{{path_for('pageviewer.docpage', {'doc': doc, 'page': docPageCount})}}';" {{ page==docPageCount?' disabled':''}}>
+                        {% else %}  
+                            <button class="textonly headerbutton {{ seq==docPageCount?' disabled':''}}" 
+                                title="Last Page" 
+                                onclick="window.location='{{path_for('pageviewer.docseq', {'doc': doc, 'seq': docPageCount})}}';" {{ seq==docPageCount?' disabled':''}}>
+                        {% endif %}
                             <span class="glyphicon glyphicon-step-forward"></span>
                         </button>
                     </li>
@@ -101,7 +124,7 @@
 </div> <!-- viewerheader -->
 <!-- Page table popover -->
 <script>
-    $('#pagenumber').popover({title:'Page List', content: '{{macros.pageviewtablepv(doc, thePages)|escape('js')}}', container: 'body', html: true, placement: 'auto', trigger: 'click'});
+    $('#pagenumber').popover({title:'Page List', content: '{{macros.pageviewtablepv(doc, thePages, navByPage)|escape('js')}}', container: 'body', html: true, placement: 'auto', trigger: 'click'});
 </script>
 <div id="container">
 <div class="split-pane vertical-percent">
@@ -130,8 +153,10 @@
         <div class="tab-content" id="theTabs">
             <div class="textcol tab-pane pageinfo" id="pageinfoTab">
                 <div style="margin-top: 20px">
-                <p><strong>Page Number:</strong> {{pageInfo.page_number}}</p>
                 <p><strong>System Page Id:</strong> {{pageInfo.id}}</p>
+                <p><strong>Page Number:</strong> {{pageInfo.page_number}}</p>
+                <p><strong>Sequence Number:</strong> {{pageInfo.seq}}</p>
+                <p><strong>Image Number:</strong> {{pageInfo.img_number}}</p>
                 <p style="margin-top: 50px"/>
                 <p><strong>Page Type:</strong> {{attribute(pageTypeNames, pageInfo.type).descr}}</p>
                 <p><strong>Foliation:</strong> {% if pageInfo.foliation %}{{pageInfo.foliation}}{% else %}Undefined{% endif%}</p>

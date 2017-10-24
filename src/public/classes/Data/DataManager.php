@@ -41,6 +41,9 @@ class DataManager
     const MIN_USER_ID = 10000;
     const MAX_USER_ID = 100000;
     
+    const ORDER_BY_PAGE_NUMBER = 100;
+    const ORDER_BY_SEQ = 101;
+    
     /**
      *
      * @var array
@@ -442,11 +445,16 @@ class DataManager
      * @return array
      * 
      */
-    function getTranscribedPageListByDocId($docId)
+    function getTranscribedPageListByDocId($docId, $order = self::ORDER_BY_PAGE_NUMBER)
     {
         $te = $this->tNames['elements'];
         $tp = $this->tNames['pages'];
         $now = \DataTable\MySqlUnitemporalDataTable::now();
+        
+        $orderby = 'page_number';
+        if ($order === self::ORDER_BY_SEQ) {
+            $orderby = 'seq';
+        }
         
         $this->queryStats->countQuery('select');
         $query =  'SELECT DISTINCT p.`page_number` AS page_number FROM ' . 
@@ -455,7 +463,7 @@ class DataManager
                 ' WHERE p.doc_id=' . $docId . 
                 " AND `e`.`valid_from` <='$now' AND `e`.`valid_until` > '$now'" . 
                 " AND `p`.`valid_from` <='$now' AND `p`.`valid_until` > '$now'" . 
-                ' ORDER BY p.`page_number` ASC';
+                " ORDER BY p.`$orderby` ASC";
         $r = $this->dbh->query($query);
         $pages = array();
          while ($row = $r->fetch(PDO::FETCH_ASSOC)){
@@ -471,15 +479,20 @@ class DataManager
      * @param int $docId
      * @return array
      */
-    function getDocPageInfo($docId) {
+    function getDocPageInfo($docId, $order = self::ORDER_BY_PAGE_NUMBER) {
         $tp = $this->tNames['pages'];
         $td = $this->tNames['docs'];
         $this->queryStats->countQuery('select');
         
+        $orderby = 'page_number';
+        if ($order === self::ORDER_BY_SEQ) {
+            $orderby = 'seq';
+        }
+        
         $query = "SELECT `$tp`.* FROM `$tp` JOIN `$td` " .
                  "ON (`$td`.id=`$tp`.doc_id) WHERE " . 
                  "`$tp`.valid_until>'9999-12-31' AND `$td`.id=$docId " . 
-                 "ORDER BY `$tp`.page_number ASC";
+                 "ORDER BY `$tp`.$orderby ASC";
         $res = $this->dbh->query($query);
         
         return $res->fetchAll(PDO::FETCH_ASSOC);
@@ -582,6 +595,19 @@ class DataManager
         $row = $this->pagesDataTable->findRow([
             'doc_id' => $docId, 
             'page_number'=> $pageNum
+            ]);
+        if ($row === false) {
+            return false;
+        }
+        return $row['id'];
+    }
+    
+     public function getPageIdByDocSeq($docId, $seq)
+    {
+        $this->queryStats->countQuery('select');
+        $row = $this->pagesDataTable->findRow([
+            'doc_id' => $docId, 
+            'seq'=> $seq
             ]);
         if ($row === false) {
             return false;

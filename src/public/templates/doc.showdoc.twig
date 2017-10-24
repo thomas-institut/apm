@@ -40,7 +40,7 @@
     {% endif %}
     <p class="docinfo">Pages:</p>
 <div class="pagetablediv" id="{{doc.tableId}}">
-    {{ macros.pageviewtable(doc.docInfo.id, doc.pages)}}
+    {{ macros.pageviewtable(doc.docInfo.id, doc.pages, navByPage)}}
 </div>
     
 {% if canDefinePages %}

@@ -442,7 +442,7 @@ class DataManager
      * @return array
      * 
      */
-    function getPageListByDocId($docId)
+    function getTranscribedPageListByDocId($docId)
     {
         $te = $this->tNames['elements'];
         $tp = $this->tNames['pages'];
@@ -1349,5 +1349,40 @@ class DataManager
         if (!$this->isPageEmpty($pageId)) {
             return false;
         }
+        
+        $deletedPageInfo = $this->getPageInfo($pageId);
+        $deletedPageNum = $deletedPageInfo['page_number'];
+        $deletedSeq = $deletedPageInfo['seq'];
+        
+        $docPageCount = $this->getPageCountByDocId($docId);
+
+        // Update page number and sequence for the other pages
+        for ($i = 1; $i <= $docPageCount; $i++) {
+            $page = $this->getPageInfoByDocPage($docId, $i);
+            $newPageNum = $page['page_number'];
+            $newSeq = $page['seq'];
+            if ($page['page_number'] > $deletedPageNum) {
+                $newPageNum = $page['page_number'] - 1;
+            }
+            if ($page['seq'] > $deletedSeq) {
+                $newSeq = $page['seq'] - 1;
+            }
+            if ($newPageNum != $page['page_number'] || $newSeq != $page['seq']) {
+                $updateResult = $this->pagesDataTable->updateRow([
+                    'id' => $page['id'],
+                    'page_number' => $newPageNum,
+                    'seq' => $newSeq
+                ]);
+                if ($updateResult !== $page['id']) {
+                    return false;
+                }
+            }
+        }
+        
+        // Delete page in pages table
+        if (!$this->deletePageInPagesTable($pageId)) {
+            return false;
+        }
+        return true;
     }
  }

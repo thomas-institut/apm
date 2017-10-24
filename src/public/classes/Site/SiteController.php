@@ -152,7 +152,7 @@ class SiteController
             $doc = array();
             $doc['numPages'] = $db->getPageCountByDocId($docId);
             $doc['numLines'] = $db->getLineCountByDoc($docId);
-            $transcribedPages = $db->getPageListByDocId($docId);
+            $transcribedPages = $db->getTranscribedPageListByDocId($docId);
             $doc['numTranscribedPages'] = count($transcribedPages);
             $editorsUsernames = $db->getEditorsByDocId($docId);
             $doc['editors'] = array();
@@ -179,7 +179,7 @@ class SiteController
         $doc = [];
         $doc['numPages'] = $db->getPageCountByDocId($docId);
         $doc['numLines'] = $db->getLineCountByDoc($docId);
-        $transcribedPages = $db->getPageListByDocId($docId);
+        $transcribedPages = $db->getTranscribedPageListByDocId($docId);
         $pagesInfo = $db->getDocPageInfo($docId);
         $doc['numTranscribedPages'] = count($transcribedPages);
         $editorsUsernames = $db->getEditorsByDocId($docId);
@@ -212,7 +212,7 @@ class SiteController
         $db = $this->db;
         $doc = [];
         $doc['numPages'] = $db->getPageCountByDocId($docId);
-        $transcribedPages = $db->getPageListByDocId($docId);
+        $transcribedPages = $db->getTranscribedPageListByDocId($docId);
         $pagesInfo = $db->getDocPageInfo($docId);
         $pageTypes  = $this->db->getPageTypeNames();
         $doc['numTranscribedPages'] = count($transcribedPages);
@@ -240,7 +240,7 @@ class SiteController
         //$this->ci->logger->debug('Page info', $pageInfo);
         $docPageCount = $this->db->getPageCountByDocId($docId);
         $pagesInfo = $this->db->getDocPageInfo($docId);
-        $transcribedPages = $this->db->getPageListByDocId($docId);
+        $transcribedPages = $this->db->getTranscribedPageListByDocId($docId);
         $thePages = $this->buildPageArray($pagesInfo, $transcribedPages);
         $imageUrl = $this->db->getImageUrlByDocId($docId, $pageNumber);
         $pageTypeNames  = $this->db->getPageTypeNames();

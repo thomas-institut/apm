@@ -66,7 +66,7 @@ class DataManagerTest extends TestCase {
         $this->assertFalse($dm->getElementById(1000));
         $this->assertEquals(0, $dm->getLineCountByDoc(100));
         $this->assertEquals([], $dm->getEditorsByDocId(100));
-        $this->assertEquals([], $dm->getPageListByDocId(100));
+        $this->assertEquals([], $dm->getTranscribedPageListByDocId(100));
         $this->assertFalse($dm->getImageUrlByDocId(100, 200));
         $this->assertEquals(0, $dm->getNumColumns(100, 200));
         $this->assertEquals([], $dm->getDocIdList());
@@ -88,7 +88,7 @@ class DataManagerTest extends TestCase {
         $this->assertEquals([$newDocId], $dm->getDocIdList());
         $this->assertEquals([$newDocId], $dm->getDocIdList('title'));
         $this->assertEquals(10, $dm->getPageCountByDocId($newDocId));
-        $this->assertCount(0, $dm->getPageListByDocId($newDocId));
+        $this->assertCount(0, $dm->getTranscribedPageListByDocId($newDocId));
         $pageInfo = $dm->getPageInfoByDocPage($newDocId, 10);
         $this->assertNotFalse($pageInfo);
         $this->assertEquals(0, $pageInfo['num_cols']);
@@ -302,11 +302,42 @@ class DataManagerTest extends TestCase {
     public function testDeletePage($docId) 
     {
         $dm = self::$dataManager;
-
-        $pageId = $dm->getPageIdByDocPage($docId, 1);
-        
-        $res = $dm->deletePageInPagesTable($pageId);
+        $res = $dm->deletePage($docId, 1);
         $this->assertFalse($res);
+        $testPageCount = 100;
+        
+        $newDocId = $dm->newDoc('Document 2', 'Doc 1', $testPageCount, 'la', 
+                'mss', 'local', 'DOC2');
+        
+        $this->assertNotFalse($newDocId);
+        $this->assertEquals($testPageCount, $dm->getPageCountByDocId($newDocId));
+        
+        $originalPageIds = [];
+        for ($i=0; $i < $testPageCount; $i++) {
+            $originalPageIds[] = $dm->getPageIdByDocPage($newDocId, $i+1);
+        }
+        
+        $pageToDelete = random_int(1, $testPageCount);
+        $pageToDeleteId = $dm->getPageIdByDocPage($newDocId, $pageToDelete);
+        $this->assertContains($pageToDeleteId, $originalPageIds);
+        
+        $dm->deletePage($newDocId, $pageToDelete);
+        $this->assertFalse($dm->getPageInfo($pageToDeleteId));
+        $this->assertEquals($testPageCount-1, $dm->getPageCountByDocId($newDocId));
+        
+        $sequences = [];
+        for ($i=0; $i < $testPageCount-1; $i++) {
+            $pageId = $dm->getPageIdByDocPage($newDocId, $i+1);
+            $this->assertNotEquals($pageToDeleteId, $pageId);
+            $pageInfo = $dm->getPageInfo($pageId);
+            $this->assertLessThan($testPageCount, $pageInfo['seq']);
+            $sequences[] = $pageInfo['seq'];
+        }
+        
+        for ($i = 1; $i < $testPageCount; $i++) {
+            $this->assertContains($i, $sequences);
+        }
+        
     }
     
 }

@@ -243,6 +243,8 @@ class DataManager
         $page = [
            'doc_id' => $docId,
            'page_number' => $pageNumber,
+            'img_number' => $pageNumber,
+            'seq' => $pageNumber,
             'type' => $type,
             'lang' => $lang
             // foliation => defaults to null in DB
@@ -1313,5 +1315,33 @@ class DataManager
             }
         }
         return true;
+    }
+    
+    /**
+     * Returns true if the given page does not any transcription data
+     * associated with it
+     * @param int $pageId
+     */
+    public function isPageEmpty($pageId) 
+    {
+        $pageInfo = $this->getPageInfo($pageId);
+        if ($pageInfo['num_cols'] === 0) {
+            return true;
+        }
+        for ($i = 1; $i <= $pageInfo['num_cols']; $i++) {
+            $elements = $this->getColumnElementsByPageId($pageId, $i);
+            if (count($elements) > 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    public function deletePage($pageId) 
+    {
+        if (!$this->isPageEmpty($pageId)) {
+            return false;
+        }
+        return $this->pagesDataTable->deleteRow($pageId);
     }
  }

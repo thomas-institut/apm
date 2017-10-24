@@ -286,11 +286,11 @@ class DataManagerTest extends TestCase {
         $this->assertEquals(NULL, $curSettings7['foliation']);
         
         // Two things at once
-        $res8 = $dm->updatePageSettings($pageId, ['type' => 4, 'foliation' => '120r']);
+        $res8 = $dm->updatePageSettings($pageId, ['type' => 2, 'foliation' => '120r']);
         $this->assertTrue($res8);
         $curSettings8 = $dm->getPageInfo($pageId);
         $this->assertEquals('he', $curSettings8['lang']);
-        $this->assertEquals(4, $curSettings8['type']);
+        $this->assertEquals(2, $curSettings8['type']);
         $this->assertEquals('120r', $curSettings8['foliation']);
         
     }

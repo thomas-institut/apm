@@ -1337,11 +1337,19 @@ class DataManager
         return true;
     }
     
-    public function deletePage($pageId) 
+    public function deletePageInPagesTable($pageId) 
     {
         if (!$this->isPageEmpty($pageId)) {
             return false;
         }
         return $this->pagesDataTable->deleteRow($pageId);
+    }
+    
+    public function deletePage($docId, $pageNum) 
+    {
+        $pageId = $this->getPageIdByDocPage($docId, $pageNum);
+        if (!$this->isPageEmpty($pageId)) {
+            return false;
+        }
     }
  }

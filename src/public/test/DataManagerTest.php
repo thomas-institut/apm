@@ -293,6 +293,20 @@ class DataManagerTest extends TestCase {
         $this->assertEquals(2, $curSettings8['type']);
         $this->assertEquals('120r', $curSettings8['foliation']);
         
+        return $docId;
+    }
+    
+     /**
+     * @depends testUpdatePageSettings
+     */
+    public function testDeletePage($docId) 
+    {
+        $dm = self::$dataManager;
+
+        $pageId = $dm->getPageIdByDocPage($docId, 1);
+        
+        $res = $dm->deletePageInPagesTable($pageId);
+        $this->assertFalse($res);
     }
     
 }

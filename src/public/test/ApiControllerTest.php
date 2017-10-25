@@ -29,6 +29,7 @@ use AverroesProject\TxText\ItemArray;
 use GuzzleHttp\Psr7;
 use AverroesProject\ColumnElement\Element;
 use AverroesProject\TxText\Item;
+use AverroesProject\Plugin\HookManager;
 
 /**
  * Description of testApi
@@ -58,11 +59,12 @@ class ApiControllerTest extends TestCase {
             Logger::DEBUG);
         $logger = new Logger('APITEST');
         $logger->pushHandler($logStream);
+        $hm = new HookManager();
 
         self::$ci = DatabaseTestEnvironment::getContainer($logger);
         DatabaseTestEnvironment::emptyDatabase();
         self::$apiController = new Api\ApiController(self::$ci);
-        self::$dataManager = DatabaseTestEnvironment::getDataManager($logger);
+        self::$dataManager = DatabaseTestEnvironment::getDataManager($logger, $hm);
         self::$editor1 = self::$dataManager->um->createUserByUserName('testeditor1');
         self::$editor2 = self::$dataManager->um->createUserByUserName('testeditor2');
     }

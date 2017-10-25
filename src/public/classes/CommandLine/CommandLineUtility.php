@@ -102,7 +102,9 @@ abstract class CommandLineUtility {
             $this->exitWithError("Database schema not up to date");
         }
         
-        $this->dm = new DataManager($this->dbh, $config['tables'], $this->logger);
+        $hm = new \AverroesProject\Plugin\HookManager();
+        
+        $this->dm = new DataManager($this->dbh, $config['tables'], $this->logger, $hm);
         $this->um = $this->dm->um;
     }
     

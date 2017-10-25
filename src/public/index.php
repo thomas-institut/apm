@@ -29,6 +29,7 @@ use AverroesProject\Data\DataManager;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 use AverroesProject\Data\DatabaseChecker;
+use AverroesProject\Plugin\HookManager;
 
 /**
  * Runtime configurations: DB credentials, base URL
@@ -109,8 +110,11 @@ if (!$dbChecker->isDatabaseInitialized()) {
 if (!$dbChecker->isDatabaseUpToDate()) {
     exitWithError($logger, "Database schema not up to date");
 }
+// Hook Manager
+$hm = new HookManager();
 
-$db = new DataManager($dbh, $config['tables'], $logger);
+// Data Manager
+$db = new DataManager($dbh, $config['tables'], $logger, $hm);
  
 // Initialize the Slim app
 $app = new \Slim\App(["settings" => $config]);
@@ -120,6 +124,7 @@ $container = $app->getContainer();
 $container['db'] = $db;
 $container['dbh'] = $dbh;
 $container['logger'] = $logger;
+$container['hm'] = $hm;
 
 // Twig
 $container['view'] = function ($container) {

@@ -27,6 +27,7 @@ use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 use AverroesProject\ColumnElement\Element;
 use AverroesProject\TxText\ItemArray;
+use AverroesProject\Plugin\HookManager;
 
 /**
  * Description of ElementTest
@@ -46,7 +47,8 @@ class EdNoteManagerTest extends TestCase {
             Logger::DEBUG);
         $logger = new Logger('EDNOTE-TEST');
         $logger->pushHandler($logStream);
-        self::$dataManager = DatabaseTestEnvironment::getDataManager($logger);
+        $hm = new HookManager();
+        self::$dataManager = DatabaseTestEnvironment::getDataManager($logger, $hm);
         self::$edNoteManager = self::$dataManager->enm;
         
     }

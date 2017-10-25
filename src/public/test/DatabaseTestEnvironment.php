@@ -11,6 +11,7 @@ require "../vendor/autoload.php";
 require 'testdbconfig.php';
 
 use AverroesProject\Data\DataManager;
+use AverroesProject\Plugin\HookManager;
 
 /**
  * Utility class to set up the test environment for database testing
@@ -30,13 +31,14 @@ class DatabaseTestEnvironment {
         return $pdo;
     }
     
-    public static function getDataManager($logger)
+    public static function getDataManager($logger, $hm)
     {   
         global $config;
 
         return new DataManager(self::getPdo(), 
                 $config['tables'], 
-                $logger);
+                $logger,
+                $hm);
     }
     
     
@@ -66,13 +68,15 @@ EOD;
         global $config;
         
         $dbh = self::getPdo();
-        $db = new DataManager($dbh, $config['tables'], $logger);
+        $hm = new HookManager();
+        $db = new DataManager($dbh, $config['tables'], $logger, $hm);
         
         $container = new \Slim\Container();
         $container['db'] = $db;
         //$container['dbh'] = $dbh;
         $container['logger'] = $logger;
         $container['userId'] = 50100100;
+        $container['hm'] = $hm;
         return $container;
     }
 }

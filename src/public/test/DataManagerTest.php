@@ -32,6 +32,7 @@ use AverroesProject\ColumnElement\Addition;
 use AverroesProject\TxText\Deletion;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
+use AverroesProject\Plugin\HookManager;
 
 /**
  * Description of testApi
@@ -51,7 +52,8 @@ class DataManagerTest extends TestCase {
             Logger::DEBUG);
         $logger = new Logger('DM-TEST');
         $logger->pushHandler($logStream);
-        self::$dataManager = DatabaseTestEnvironment::getDataManager($logger);
+        $hm = new HookManager();
+        self::$dataManager = DatabaseTestEnvironment::getDataManager($logger, $hm);
     }
     
     

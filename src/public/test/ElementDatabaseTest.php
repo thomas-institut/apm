@@ -27,6 +27,7 @@ use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 use AverroesProject\TxText\ItemArray;
 use AverroesProject\ColumnElement\Element;
+use AverroesProject\Plugin\HookManager;
 
 /**
  * Description of ElementTest
@@ -46,7 +47,8 @@ class ElementDatabaseTest extends TestCase {
             Logger::DEBUG);
         self::$logger = new Logger(' ELEMENT-TEST');
         self::$logger->pushHandler($logStream);
-        self::$dataManager = DatabaseTestEnvironment::getDataManager(self::$logger);
+        $hm = new HookManager();
+        self::$dataManager = DatabaseTestEnvironment::getDataManager(self::$logger, $hm);
     }
     
     public function testEmptyDatabase()

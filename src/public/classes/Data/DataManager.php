@@ -28,6 +28,7 @@ use DataTable\MySqlDataTable;
 use DataTable\MySqlDataTableWithRandomIds;
 use AverroesProject\Algorithm\MyersDiff;
 use AverroesProject\Algorithm\Utility;
+use AverroesProject\Plugin\HookManager;
 
 
 use \PDO;
@@ -115,16 +116,23 @@ class DataManager
     public $queryStats;
     
     /**
+     *
+     * @var HookManager
+     */
+    public $hm;
+    
+    /**
      * Tries to initialize and connect to the MySQL database.
      * 
      * Throws an error if there's no connection 
      * or if the database is not setup properly.
      */
-    function __construct($dbConn, $tableNames, $logger)
+    function __construct($dbConn, $tableNames, $logger, $hm)
     {
         $this->dbConn = $dbConn;
         $this->tNames = $tableNames;
         $this->logger = $logger;
+        $this->hm = $hm;
         $this->queryStats = new QueryStats();
         
         $this->dbh = new MySqlHelper($dbConn, $logger);
@@ -140,7 +148,6 @@ class DataManager
             new MySqlDataTable($dbConn, $tableNames['tokens']),
             $this->logger
         );
-        
         
         $this->docsDataTable = new MySqlDataTable($this->dbConn, 
                 $tableNames['docs']);

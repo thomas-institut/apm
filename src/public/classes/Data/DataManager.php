@@ -534,15 +534,24 @@ class DataManager
         }
         
         $isd = $doc['image_source_data'];
+        
+        $url = $this->hm->callHookedMethods('get-image-url-' . $doc['image_source'],
+                [ 'imageSourceData' => $isd, 
+                   'imageNumber' => $imageNumber]);
 
-        switch ($doc['image_source']){
-            case 'local':
-                return sprintf("/localrep/%s/%s-%04d.jpg", $isd, $isd, $imageNumber);
-            
-            case 'dare':
-                return sprintf("https://bilderberg.uni-koeln.de/images/books/%s/bigjpg/%s-%04d.jpg", 
-                        $isd, $isd, $imageNumber);
+        if (!is_string($url)) {
+            return false;
         }
+        
+        return $url;
+//        switch ($doc['image_source']){
+//            case 'local':
+//                return sprintf("/localrep/%s/%s-%04d.jpg", $isd, $isd, $imageNumber);
+//            
+//            case 'dare':
+//                return sprintf("https://bilderberg.uni-koeln.de/images/books/%s/bigjpg/%s-%04d.jpg", 
+//                        $isd, $isd, $imageNumber);
+//        }
         return false;
     }
     

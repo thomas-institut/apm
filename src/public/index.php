@@ -113,6 +113,19 @@ if (!$dbChecker->isDatabaseUpToDate()) {
 // Hook Manager
 $hm = new HookManager();
 
+// Load plugins (eventually this will be done by a PluginManager
+if ((include_once 'plugins/SimpleImageSource.php') === false) {
+    exitWithError($logger, "Can't load required plugin SimpleImageSource");
+}
+$sisObject = new \SimpleImageSource($hm, $logger);
+$sisObject->init();
+
+if ((include_once 'plugins/DareImageSource.php') === false) {
+    exitWithError($logger, "Can't load required plugin DareImageSource");
+}
+$disObject = new \DareImageSource($hm, $logger);
+$disObject->init();
+
 // Data Manager
 $db = new DataManager($dbh, $config['tables'], $logger, $hm);
  

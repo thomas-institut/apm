@@ -67,7 +67,7 @@ class DataManagerTest extends TestCase {
         $this->assertEquals(0, $dm->getLineCountByDoc(100));
         $this->assertEquals([], $dm->getEditorsByDocId(100));
         $this->assertEquals([], $dm->getTranscribedPageListByDocId(100));
-        $this->assertFalse($dm->getImageUrlByDocId(100, 200));
+        $this->assertFalse($dm->getImageUrlByDocId(100, []));
         $this->assertEquals(0, $dm->getNumColumns(100, 200));
         $this->assertEquals([], $dm->getDocIdList());
         $this->assertEquals([], $dm->getDocIdList('title'));

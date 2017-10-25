@@ -21,8 +21,6 @@
 
 namespace AverroesProject\CommandLine;
 
-use AverroesProject\Xml\TranscriptionReader;
-
 /**
  * Description of ChangePasswordUtility
  *
@@ -68,8 +66,8 @@ class InitDoc extends CommandLineUtility {
         
         print "Creating $numPages  pages for doc Id $docId (" . $docInfo['title'] . ")...\n";
         for ($i = 0; $i < $numPages; $i++) {
-            $pageId = $this->dm->getPageIdByDocPage($docId, $i+1);
-            if ($pageId !== false) {
+            $curPageId = $this->dm->getPageIdByDocPage($docId, $i+1);
+            if ($curPageId !== false) {
                 $this->printWarningMsg("Page " . ($i+1) . " already exists, skipping.");
                 continue;
             }

@@ -36,6 +36,10 @@ class SimpleImageSource extends \AverroesProject\Plugin\Plugin {
             $this->logger->info("SimpleImageSource Plugin: cannot attach to hook get-image-url");
             return false;
         }
+        if (! $this->hm->attachToHook('get-docinfo-html-' . self::STUB, array($this, 'getDocInfoHtml')) ) {
+            $this->logger->info("SimpleImageSource Plugin: cannot attach to hook get-docinfo-html");
+            return false;
+        }
         
         return true;
     }
@@ -46,7 +50,7 @@ class SimpleImageSource extends \AverroesProject\Plugin\Plugin {
     
     public function getImageUrl($param)  
     {
-         if (!is_array($param)) {
+        if (!is_array($param)) {
             return $param;
         }
         if (!isset($param['imageSourceData']) || 
@@ -61,6 +65,20 @@ class SimpleImageSource extends \AverroesProject\Plugin\Plugin {
                     $imageSourceData, 
                     $imageSourceData, 
                     $imageNumber);
+    }
+    
+    public function getDocInfoHtml($param) {
+         if (!is_array($param)) {
+            return $param;
+        }
+        if (!isset($param['imageSourceData'])) { 
+            return $param;
+        }
+
+        $imageSourceData = $param['imageSourceData'];
+        
+        return 'Images stored locally (' . $imageSourceData . ')';
+        
     }
    
 }

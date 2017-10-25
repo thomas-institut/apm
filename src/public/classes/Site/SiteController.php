@@ -41,6 +41,7 @@ class SiteController
     {
        $this->ci = $ci;
        $this->db = $ci->db;
+       $this->hm = $ci->hm;
        $config = $this->ci->settings;
        $this->ci->copyrightNotice  = $config['app_name'] . " v" . 
                $config['version'] . " &bull; &copy; " . 
@@ -192,7 +193,15 @@ class SiteController
         $doc['tableId'] = "doc-$docId-table";
         $doc['pages'] = $this->buildPageArray($pagesInfo, 
                 $transcribedPages);
+        
+        $docInfoHtml = $this->hm->callHookedMethods('get-docinfo-html-' . $doc['docInfo']['image_source'],
+                [ 'imageSourceData' => $doc['docInfo']['image_source_data']]);
 
+        if (!is_string($docInfoHtml)) {
+            $docInfoHtml = 'Image source not supported, please report to administrator.';
+        }
+        $doc['docInfoHtml'] = $docInfoHtml;
+        
         $canDefinePages = false;
         if ($this->db->um->isUserAllowedTo($this->ci->userInfo['id'], 'define-doc-pages')) {
             $canDefinePages = true;
@@ -222,6 +231,7 @@ class SiteController
         $doc['pages'] = $this->buildPageArray($pagesInfo, 
                 $transcribedPages);
 
+        
         return $this->ci->view->render($response, 'doc.defdocpages.twig', [
             'userinfo' => $this->ci->userInfo, 
             'copyright' => $this->ci->copyrightNotice,

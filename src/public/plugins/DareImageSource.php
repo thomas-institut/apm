@@ -36,6 +36,10 @@ class DareImageSource extends \AverroesProject\Plugin\Plugin {
             $this->logger->info("DareImageSource Plugin: cannot attach to hook get-image-url");
             return false;
         }
+        if (! $this->hm->attachToHook('get-docinfo-html-' . self::STUB, array($this, 'getDocInfoHtml')) ) {
+            $this->logger->info("DareImageSource Plugin: cannot attach to hook get-docinfo-html");
+            return false;
+        }
         
         return true;
     }
@@ -61,6 +65,30 @@ class DareImageSource extends \AverroesProject\Plugin\Plugin {
                     $imageSourceData, 
                     $imageSourceData, 
                     $imageNumber);
+    }
+    
+    public function getDocInfoHtml($param) {
+         if (!is_array($param)) {
+            return $param;
+        }
+        if (!isset($param['imageSourceData'])) { 
+            return $param;
+        }
+
+        $imageSourceData = $param['imageSourceData'];
+        $html = '= Bilderberg ' . $imageSourceData . ' &nbsp;&nbsp;';
+        $html .= '<a href=" http://dare.uni-koeln.de/dare-cgi/permalinks.pas?darepurl=scana-' .
+                $imageSourceData . 
+                '" target="_blank" title="View document in DARE">' . 
+                'DARE <span class="glyphicon glyphicon-new-window"></span></a>' ;
+        $html .= '&nbsp;&nbsp;';
+        $html .= '<a href="https://bilderberg.uni-koeln.de/cgi-bin/berg.pas?page=book&book=' . 
+                $imageSourceData . 
+                '" target="_blank" title="View document in Bilderberg">' . 
+                'Bilderberg <span class="glyphicon glyphicon-new-window"></span></a>';
+        
+        return $html;
+
     }
    
 }

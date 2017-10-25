@@ -544,15 +544,6 @@ class DataManager
         }
         
         return $url;
-//        switch ($doc['image_source']){
-//            case 'local':
-//                return sprintf("/localrep/%s/%s-%04d.jpg", $isd, $isd, $imageNumber);
-//            
-//            case 'dare':
-//                return sprintf("https://bilderberg.uni-koeln.de/images/books/%s/bigjpg/%s-%04d.jpg", 
-//                        $isd, $isd, $imageNumber);
-//        }
-        return false;
     }
     
     

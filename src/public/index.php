@@ -199,7 +199,7 @@ $app->get('/documents','\AverroesProject\Site\SiteController:documentsPage')
         ->setName('docs')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
-$app->get('/doc/{id}','\AverroesProject\Site\SiteController:showDocPage')
+$app->get('/doc/{id}/details','\AverroesProject\Site\SiteController:showDocPage')
         ->setName('doc.showdoc')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
@@ -208,12 +208,12 @@ $app->get('/doc/{id}/definepages','\AverroesProject\Site\SiteController:defineDo
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
 // PAGEVIEWER
-$app->get('/pageviewer/doc/{doc}/page/{page}', 
+$app->get('/doc/{doc}/realpage/{page}/view', 
         '\AverroesProject\Site\SiteController:pageViewerPageByDocPage')
         ->setName('pageviewer.docpage')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
-$app->get('/pageviewer/doc/{doc}/seq/{seq}', 
+$app->get('/doc/{doc}/page/{seq}/view', 
         '\AverroesProject\Site\SiteController:pageViewerPageByDocSeq')
         ->setName('pageviewer.docseq')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');

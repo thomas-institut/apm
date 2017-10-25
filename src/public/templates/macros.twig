@@ -24,9 +24,9 @@
             {% endif %}
         {% endif %}
     {%if navByPage == true %}
-        <td class="{{ page.classes }}"><a href="{{ path_for('pageviewer.docpage', {'doc' : doc, 'page' : page.number})}}" title="View Page (page = {{page.number}})">{{foliation}}</a></td>
+        <td class="{{ page.classes }}"><a href="{{ path_for('pageviewer.docpage', {'doc' : doc, 'page' : page.number})}}" title="View Page (real page = {{page.number}})">{{foliation}}</a></td>
     {% else %}
-        <td class="{{ page.classes }}"><a href="{{ path_for('pageviewer.docseq', {'doc' : doc, 'seq' : page.seq})}}" title="View Page (seq = {{page.seq}})">{{foliation}}</a></td>
+        <td class="{{ page.classes }}"><a href="{{ path_for('pageviewer.docseq', {'doc' : doc, 'seq' : page.seq})}}" title="View Page (Page {{page.seq}})">{{foliation}}</a></td>
     {% endif %}
 
         {% set n = n+1 %}                                   

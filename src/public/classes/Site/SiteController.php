@@ -243,7 +243,7 @@ class SiteController
         $pagesInfo = $this->db->getDocPageInfo($docId, \AverroesProject\Data\DataManager::ORDER_BY_PAGE_NUMBER);
         $transcribedPages = $this->db->getTranscribedPageListByDocId($docId);
         $thePages = $this->buildPageArray($pagesInfo, $transcribedPages);
-        $imageUrl = $this->db->getImageUrlByDocId($docId, $pageInfo);
+        $imageUrl = $this->db->getImageUrl($docId, $pageInfo['img_number']);
         $pageTypeNames  = $this->db->getPageTypeNames();
         $pageNumberFoliation = $pageNumber;
         if ($pageInfo['foliation'] !== NULL) {
@@ -281,7 +281,7 @@ class SiteController
         $pagesInfo = $this->db->getDocPageInfo($docId, \AverroesProject\Data\DataManager::ORDER_BY_SEQ);
         $transcribedPages = $this->db->getTranscribedPageListByDocId($docId);
         $thePages = $this->buildPageArray($pagesInfo, $transcribedPages);
-        $imageUrl = $this->db->getImageUrlByDocId($docId, $pageInfo);
+        $imageUrl = $this->db->getImageUrl($docId, $pageInfo['img_number']);
         $pageTypeNames  = $this->db->getPageTypeNames();
         $pageNumberFoliation = $pageNumber;
         if ($pageInfo['foliation'] !== NULL) {

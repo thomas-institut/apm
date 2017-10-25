@@ -520,25 +520,23 @@ class DataManager
      * @param int $page
      * @return string|boolean
      */
-    public function getImageUrlByDocId($docId, $pageInfo){
+    public function getImageUrl($docId, $imageNumber){
         $doc = $this->getDocById($docId);
-        
-        $isd = $doc['image_source_data'];
-        if (!isset($pageInfo['img_number'])) {
+        if ($doc === false) {
             return false;
         }
-        $imageNumber = $pageInfo['img_number'];
+        
+        $isd = $doc['image_source_data'];
+
         switch ($doc['image_source']){
             case 'local':
                 return sprintf("/localrep/%s/%s-%04d.jpg", $isd, $isd, $imageNumber);
-                break;
             
             case 'dare':
                 return sprintf("https://bilderberg.uni-koeln.de/images/books/%s/bigjpg/%s-%04d.jpg", 
                         $isd, $isd, $imageNumber);
-                break;
         }
-        return FALSE;
+        return false;
     }
     
     

@@ -113,11 +113,11 @@ if (!$dbChecker->isDatabaseUpToDate()) {
 // Hook Manager
 $hm = new HookManager();
 
-// Load plugins (eventually this will be done by a PluginManager
-if ((include_once 'plugins/SimpleImageSource.php') === false) {
-    exitWithError($logger, "Can't load required plugin SimpleImageSource");
+// Load plugins (eventually this will be done by a PluginManager)
+if ((include_once 'plugins/LocalImageSource.php') === false) {
+    exitWithError($logger, "Can't load required plugin LocalImageSource");
 }
-$sisObject = new \SimpleImageSource($hm, $logger);
+$sisObject = new \LocalImageSource($hm, $logger);
 $sisObject->init();
 
 if ((include_once 'plugins/DareImageSource.php') === false) {
@@ -125,6 +125,14 @@ if ((include_once 'plugins/DareImageSource.php') === false) {
 }
 $disObject = new \DareImageSource($hm, $logger);
 $disObject->init();
+
+if ((include_once 'plugins/AverroesServerImageSource.php') === false) {
+    exitWithError($logger, "Can't load required plugin AverroesServerImageSource");
+}
+$asisObject = new \AverroesServerImageSource($hm, $logger);
+$asisObject->init();
+
+$logger->debug("Valid image sources: ", $hm->callHookedMethods('get-image-sources', []));
 
 // Data Manager
 $db = new DataManager($dbh, $config['tables'], $logger, $hm);

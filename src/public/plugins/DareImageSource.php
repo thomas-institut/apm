@@ -11,75 +11,27 @@
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class DareImageSource extends \AverroesProject\Plugin\Plugin {
+class DareImageSource extends \AverroesProject\Plugin\ImageSourcePlugin {
     
-    public $logger;
-    
-    const STUB = 'dare';
+   
     
     public function __construct($hm, $logger) {
-        parent::__construct($hm);
-        $this->logger = $logger;
+        parent::__construct($hm, $logger, 'dare');
     }
-    
-    public function activate() {
-        
-    }
-    
-    public function deactivate() {
-        
-    }
-    
-    public function init() {
-        
-        if (! $this->hm->attachToHook('get-image-url-' . self::STUB, array($this, 'getImageUrl')) ) {
-            $this->logger->info("DareImageSource Plugin: cannot attach to hook get-image-url");
-            return false;
-        }
-        if (! $this->hm->attachToHook('get-docinfo-html-' . self::STUB, array($this, 'getDocInfoHtml')) ) {
-            $this->logger->info("DareImageSource Plugin: cannot attach to hook get-docinfo-html");
-            return false;
-        }
-        
-        return true;
-    }
-    
-    public function getMetadata() {
-        
-    }
-    
-    public function getImageUrl($param) 
+       
+    public function realGetImageUrl($imageSourceData, $imageNumber) 
     {
-        if (!is_array($param)) {
-            return $param;
-        }
-        if (!isset($param['imageSourceData']) || 
-            !isset($param['imageNumber'])) {
-            return $param;
-        }
-
-        $imageSourceData = $param['imageSourceData'];
-        $imageNumber = $param['imageNumber'];
-        
         return sprintf("https://bilderberg.uni-koeln.de/images/books/%s/bigjpg/%s-%04d.jpg", 
                     $imageSourceData, 
                     $imageSourceData, 
                     $imageNumber);
     }
     
-    public function getDocInfoHtml($param) {
-         if (!is_array($param)) {
-            return $param;
-        }
-        if (!isset($param['imageSourceData'])) { 
-            return $param;
-        }
-
-        $imageSourceData = $param['imageSourceData'];
+    public function realGetDocInfoHtml($imageSourceData) {
         $html = '= Bilderberg ' . $imageSourceData . ' &nbsp;&nbsp;';
         $html .= '<a href=" http://dare.uni-koeln.de/dare-cgi/permalinks.pas?darepurl=scana-' .
                 $imageSourceData . 
-                '" target="_blank" title="View document in DARE">' . 
+                '-0001" target="_blank" title="View document in DARE">' . 
                 'DARE <span class="glyphicon glyphicon-new-window"></span></a>' ;
         $html .= '&nbsp;&nbsp;';
         $html .= '<a href="https://bilderberg.uni-koeln.de/cgi-bin/berg.pas?page=book&book=' . 

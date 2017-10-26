@@ -43,6 +43,7 @@ class ApiUrl {
   static bulkPageSettings() {
     return ApiUrl.base + '/api/page/bulkupdate'
   }
+  
 }
 
 ApiUrl.base = ''

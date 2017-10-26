@@ -132,8 +132,6 @@ if ((include_once 'plugins/AverroesServerImageSource.php') === false) {
 $asisObject = new \AverroesServerImageSource($hm, $logger);
 $asisObject->init();
 
-$logger->debug("Valid image sources: ", $hm->callHookedMethods('get-image-sources', []));
-
 // Data Manager
 $db = new DataManager($dbh, $config['tables'], $logger, $hm);
  
@@ -207,6 +205,9 @@ $app->get('/doc/{id}/definepages','\AverroesProject\Site\SiteController:defineDo
         ->setName('doc.definedocpages')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
+$app->get('/doc/{id}/edit','\AverroesProject\Site\SiteController:editDocPage')
+        ->setName('doc.editdoc')
+        ->add('\AverroesProject\Auth\Authenticator:authenticate');
 // PAGEVIEWER
 $app->get('/doc/{doc}/realpage/{page}/view', 
         '\AverroesProject\Site\SiteController:pageViewerPageByDocPage')
@@ -230,6 +231,11 @@ $app->group('/api', function (){
             '\AverroesProject\Api\ApiController:getElementsByDocPageCol')
         ->setName('api.getelements');
     
+    // API -> updateDoc
+    $this->post('/doc/{id}/update', 
+            '\AverroesProject\Api\ApiController:updateDocSettings')
+        ->setName('api.doc.update');
+    
     $this->post('/{document}/{page}/{column}/elements/update', 
             '\AverroesProject\Api\ApiController:updateElementsByDocPageCol')
         ->setName('api.updateelements');
@@ -247,8 +253,6 @@ $app->group('/api', function (){
     $this->post('/page/bulkupdate', 
             '\AverroesProject\Api\ApiController:updatePageSettingsBulk')
         ->setName('api.updatepagesettings.bulk');
-    
-    
     
     // API -> numColumns
     $this->get('/{document}/{page}/newcolumn', 

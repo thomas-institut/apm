@@ -357,6 +357,51 @@ class DataManager
         return $res->fetchAll(PDO::FETCH_ASSOC);
     }
     
+    public function updateDocSettings($docId, $newSettings) 
+    {
+        $row['id'] = $docId;
+        
+        if ($newSettings === []) {
+            return false;
+        }
+        
+        if (isset($newSettings['title'])) {
+            $row['title'] = trim($newSettings['title']);
+            if ($row['title'] === '') {
+                return false;
+            }
+        }
+        
+        if (isset($newSettings['short_title'])) {
+            $row['short_title'] = trim($newSettings['short_title']);
+        }
+        
+        if (isset($newSettings['lang'])) {
+            $row['lang'] = $newSettings['lang'];
+        }
+        
+        if (isset($newSettings['doc_type'])) {
+            $row['doc_type'] = $newSettings['doc_type'];
+        }
+        
+        if (isset($newSettings['image_source'])) {
+            $row['image_source'] = $newSettings['image_source'];
+        }
+        
+        if (isset($newSettings['image_source_data'])) {
+            $row['image_source_data'] = trim($newSettings['image_source_data']);
+        }
+        
+        if (count(array_keys($row)) === 1) {
+            // this means that $settings did not have any
+            // real setting, so there's nothing to do
+            return true;
+        }
+        
+        $this->queryStats->countQuery('update');
+        return $this->docsDataTable->updateRow($row) === $docId;
+    }
+    
     /**
      * Updates the page settings: lang, foliation and type
      * 
@@ -395,6 +440,7 @@ class DataManager
             return true;
         }
         
+        $this->queryStats->countQuery('update');
         return $this->pagesDataTable->updateRow($row) === $pageId;
     }
     

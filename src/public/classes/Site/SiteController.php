@@ -216,6 +216,57 @@ class SiteController
         ]);
     }
     
+    public function editDocPage(Request $request, Response $response, $next)
+    {
+        $docId = $request->getAttribute('id');
+        $db = $this->db;
+        $docInfo = $db->getDocById($docId);
+        
+        $availableImageSources = $this->ci->hm->callHookedMethods('get-image-sources', []);
+        
+        $imageSourceOptions = '';
+        $docImageSourceIsImplemented = false;
+        foreach($availableImageSources as $imageSource) {
+            $imageSourceOptions .= '<option value="' . $imageSource . '"';
+            if ($docInfo['image_source'] === $imageSource) {
+                $imageSourceOptions .= ' selected';
+                $docImageSourceIsImplemented = true;
+            }
+            $imageSourceOptions .= '>' . $imageSource . '</option>';
+        }
+        
+        $languages = [ ['ar', 'Arabic'], ['he', 'Hebrew'], ['la', 'Latin']];
+        $langOptions = '';
+        foreach($languages as $lang) {
+            $langOptions .= '<option value="' . $lang[0] . '"';
+            if ($docInfo['lang'] === $lang[0]) {
+                $langOptions  .= ' selected';
+            }
+            $langOptions .= '>' . $lang[1] . '</option>';
+        }
+        
+        $docTypes = [ ['mss', 'Manuscript'], ['print', 'Print']];
+        $docTypesOptions = '';
+        foreach($docTypes as $type) {
+            $docTypesOptions .= '<option value="' . $type[0] . '"';
+            if ($docInfo['doc_type'] === $type[0]) {
+                $docTypesOptions  .= ' selected';
+            }
+            $docTypesOptions .= '>' . $type[1] . '</option>';
+        }
+        
+        return $this->ci->view->render($response, 'doc.edit.twig', [
+            'userinfo' => $this->ci->userInfo, 
+            'copyright' => $this->ci->copyrightNotice,
+            'baseurl' => $this->ci->settings['baseurl'],
+            'docInfo' => $docInfo, 
+            'imageSourceOptions' => $imageSourceOptions,
+            'langOptions' => $langOptions,
+            'docTypesOptions' => $docTypesOptions
+        ]);
+        
+    }
+    
     public function defineDocPages(Request $request, Response $response, $next)
     {
         $docId = $request->getAttribute('id');

@@ -12,7 +12,7 @@ Development requires:
 * MySQL 5.7
 * PHP 7.0
 * PHP Composer
-* PHPUnit 6.0+ 
+* PHPUnit 6.4+
 * npm 3.5+ 
 * jasmine 2.6.0+
 * eslint 4.4.1+

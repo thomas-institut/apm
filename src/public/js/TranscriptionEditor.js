@@ -940,7 +940,7 @@ class TranscriptionEditor {
   }
   
   makeTextBigger() {
-    if (this.fontSize < 8) {
+    if (this.fontSize < 10) {
       this.setFontSize(this.fontSize+1)
     }
   }

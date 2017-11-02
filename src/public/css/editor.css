@@ -28,7 +28,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 .editor-container {
     display: block;
-    font-family: sans-serif;
     padding-bottom: 10px;
 }
 
@@ -62,6 +61,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 .fontsize8 {
     font-size: 2.4em;
+}
+.fontsize9 {
+    font-size: 2.6em;
+}
+
+.fontsize10 {
+    font-size: 2.8em;
 }
 
 .prominent {
@@ -207,14 +213,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 .hetext {
     direction: rtl;
     unicode-bidi: isolate;
-    font-family: "Adobe Hebrew";
+    font-family: 'Linux Libertine', serif;
     font-style: normal;
 }
 
 .artext {
     direction: rtl;
     unicode-bidi: isolate;
-    font-family: serif;
+    font-family: 'Scheherazade', serif;
     font-style: normal;
 }
 
@@ -222,7 +228,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
     direction: ltr;
     unicode-bidi: isolate;
     font-style: normal;
-    font-family: sans-serif;
 }
 
 .item-note-edit-time{

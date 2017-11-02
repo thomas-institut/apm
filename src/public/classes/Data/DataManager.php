@@ -580,6 +580,72 @@ class DataManager
     }
     
     /**
+     * Returns an array of document Ids for the documents
+     * in which a user has done some transcription work
+     * @param int $userId
+     */
+    public function getDocIdsTranscribedByUser(int $userId)
+    {
+        $tp = $this->tNames['pages'];
+        $td = $this->tNames['docs'];
+        $te = $this->tNames['elements'];
+        $eot = '9999-12-31 23:59:59.999999';
+        
+        $this->queryStats->countQuery('select');
+        
+        $query = "SELECT DISTINCT $td.id, $td.title FROM $td " . 
+                 "JOIN ($te, $tp) ON ($te.page_id=$tp.id and $td.id=$tp.doc_id) " . 
+                 "WHERE $te.editor_id=$userId " . 
+                 "AND $te.valid_until='$eot' AND $tp.valid_until='$eot'" . 
+                 "ORDER BY $td.title ASC";
+
+        $res = $this->dbh->query($query);
+        if ($res === false) {
+            return [];
+        }
+        
+        $docIds = [];
+        while ($row = $res->fetch(PDO::FETCH_ASSOC)){
+            $docIds[] = $row['id'];
+        }
+        return $docIds;
+    }
+    
+    /**
+     * Returns the page Ids transcribed by a user in a given document
+     * 
+     * @param int $userId
+     * @param int $docId
+     */
+    public function getPageIdsTranscribedByUser(int $userId, int $docId) 
+    {
+        $tp = $this->tNames['pages'];
+        $td = $this->tNames['docs'];
+        $te = $this->tNames['elements'];
+        $eot = '9999-12-31 23:59:59.999999';
+        
+        $this->queryStats->countQuery('select');
+        
+        $query = "SELECT DISTINCT $tp.id, $tp.seq FROM $tp " . 
+                 "JOIN ($td, $te) ON ($te.page_id=$tp.id and $td.id=$tp.doc_id) " . 
+                 "WHERE $te.editor_id=$userId " . 
+                 "AND $td.id=$docId " .
+                 "AND $te.valid_until='$eot' AND $tp.valid_until='$eot' " . 
+                 "ORDER BY $tp.seq ASC";
+
+        $res = $this->dbh->query($query);
+        if ($res === false) {
+            return [];
+        }
+        
+        $pageIds = [];
+        while ($row = $res->fetch(PDO::FETCH_ASSOC)){
+            $pageIds[] = $row['id'];
+        }
+        return $pageIds;
+    }
+    
+    /**
      * Returns the image URL for a page or false if the page image source
      * is not recognized
      * @param int $docId

@@ -52,7 +52,7 @@ class SiteController
     public function homePage(Request $request, Response $response, $next)
     {
         return $response->withHeader('Location', 
-                $this->ci->router->pathFor('docs'));
+                $this->ci->router->pathFor('dashboard'));
     }
    
     public function userProfilePage(Request $request, Response $response, $next)
@@ -78,6 +78,14 @@ class SiteController
         $userProfileInfo['isroot'] = 
                 $this->db->um->isRoot($userProfileInfo['id']);
 
+        $userId = $userProfileInfo['id'];
+        $docIds = $this->db->getDocIdsTranscribedByUser($userId);
+        
+        $docListHtml = '';
+        foreach($docIds as $docId) {
+            $docListHtml .= $this->genDocPagesListForUser($userId, $docId);
+        }
+        
         return $this->ci->view->render($response, 'user.profile.twig', [
                     'userinfo' => $this->ci->userInfo,
                     'copyright' => $this->ci->copyrightNotice,
@@ -85,6 +93,7 @@ class SiteController
                     'theuser' => $userProfileInfo,
                     'canEditProfile' => $canEditProfile,
                     'canMakeRoot' => $canMakeRoot,
+                    'doclist' => $docListHtml
         ]);
     }
 
@@ -172,6 +181,55 @@ class SiteController
             'docs' => $docs
         ]);
     }
+    
+     public function dashboardPage(Request $request, Response $response, $next)
+    {
+        $db = $this->db;
+        $userId = (int)$this->ci->userInfo['id'];
+        $docIds = $db->getDocIdsTranscribedByUser($userId);
+        
+        $docListHtml = '';
+        foreach($docIds as $docId) {
+            $docListHtml .= $this->genDocPagesListForUser($userId, $docId);
+        }
+        
+        
+        return $this->ci->view->render($response, 'dashboard.twig', [
+            'userinfo' => $this->ci->userInfo, 
+            'copyright' => $this->ci->copyrightNotice,
+            'baseurl' => $this->ci->settings['baseurl'],
+            'doclist' => $docListHtml
+        ]);
+    }
+    
+    private function genDocPagesListForUser($userId, $docId)
+    {
+        $docInfo = $this->db->getDocById($docId);
+        $url = $this->ci->router->pathFor('doc.showdoc', ['id' => $docId]);
+        $title = $docInfo['title'];
+        $docListHtml = '<li>';
+        $docListHtml .= "<a href=\"$url\" title=\"View Document\">$title</a>";
+        $docListHtml .= '<br/><span style="font-size: 0.9em">';
+        $pageIds = $this->db->getPageIdsTranscribedByUser($userId, $docId);
+
+        $nPagesInLine = 0;
+        $maxPagesInLine = 25;
+        foreach($pageIds as $pageId) {
+            $nPagesInLine++;
+            if ($nPagesInLine > $maxPagesInLine) {
+                $docListHtml .= "<br/>";
+                $nPagesInLine = 1;
+            }
+            $pageInfo = $this->db->getPageInfo($pageId);
+            $pageNum = is_null($pageInfo['foliation']) ? $pageInfo['seq'] : $pageInfo['foliation'];
+            $pageUrl = $this->ci->router->pathFor('pageviewer.docseq', ['doc' => $docId, 'seq'=>$pageInfo['seq']]);
+            $docListHtml .= "<a href=\"$pageUrl\" title=\"View Page\">$pageNum</a>&nbsp;&nbsp;";
+        }
+        $docListHtml .= '</span></li>';
+        
+        return $docListHtml;
+    }
+    
     
     public function showDocPage(Request $request, Response $response, $next)
     {

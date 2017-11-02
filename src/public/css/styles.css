@@ -210,3 +210,37 @@ p.docinfo {
 .withmarginleft-small {
     margin-left: 25px;
 }
+
+
+
+.dashboard section {
+    margin: 0;
+    margin-bottom: 50px;
+    padding: 0;
+    min-height: 0;
+    
+}
+
+.dashboard section h1 {
+    font-size: 1.8em;
+    font-weight: bold;
+}
+
+.dashboard section h2 {
+    font-size: 1.5em;
+    font-weight: bold;
+}
+
+ul.doclist {
+    list-style-type: none;
+    padding: 0;
+    margin-left: 20px;
+    margin-bottom: 25px;
+}
+
+ul.doclist li {
+    padding: 0;
+    margin-bottom: 1.5em;
+    margin-left: 20px;
+    text-indent: -20px;
+}

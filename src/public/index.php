@@ -176,6 +176,11 @@ $app->get('/','\AverroesProject\Site\SiteController:homePage')
         ->setName('home')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
+// DASHBOARD
+$app->get('/dashboard','\AverroesProject\Site\SiteController:dashboardPage')
+        ->setName('dashboard')
+        ->add('\AverroesProject\Auth\Authenticator:authenticate');
+
 // USER.PROFILE
 $app->get('/user/{username}', 
         '\AverroesProject\Site\SiteController:userProfilePage')

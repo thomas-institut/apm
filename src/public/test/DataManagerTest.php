@@ -93,6 +93,7 @@ class DataManagerTest extends TestCase {
         $this->assertCount(0, $dm->getTranscribedPageListByDocId($newDocId));
         $pageInfo = $dm->getPageInfoByDocPage($newDocId, 10);
         $this->assertNotFalse($pageInfo);
+        $this->assertTrue($dm->isPageEmpty($pageInfo['id']));
         $this->assertEquals(0, $pageInfo['num_cols']);
         $this->assertEquals('la', $pageInfo['lang']);
         $this->assertNull($pageInfo['foliation']);
@@ -123,8 +124,10 @@ class DataManagerTest extends TestCase {
     public function testUpdateColumn($docId) {
         $dm = self::$dataManager;
         $nCols = $dm->getNumColumns($docId, 1);
+        $this->assertEquals(2, $nCols);
         $pageId = $dm->getPageIdByDocPage($docId, 1);
         $this->assertNotFalse($pageId);
+        $this->assertTrue($dm->isPageEmpty($pageId));
         $editor1 = $dm->um->createUserByUserName('testeditor1');
         
         $lineElement = new Line();

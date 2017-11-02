@@ -321,7 +321,16 @@ class DataManager
     public function getPageInfo($pageId)
     {
         $this->queryStats->countQuery('select');
-        return $this->pagesDataTable->getRow($pageId);
+        $row = $this->pagesDataTable->getRow($pageId);
+        if ($row === false) {
+            return false;
+        }
+        // Sanitize types!
+        $row['id'] = (int) $row['id'];
+        $row['page_number'] = (int) $row['page_number'];
+        $row['seq'] = (int) $row['seq'];
+        $row['num_cols'] = (int) $row['num_cols'];
+        return $row;
     }
     
     /**
@@ -338,7 +347,9 @@ class DataManager
                 ' AND `valid_until`=\'9999-12-31 23:59:59.999999\'';
         $res = $this->dbh->query($query);
         if ($res === false) {
-            return false;
+            // This means a database error
+            // Can't reproduce in testing for now
+            return false; // @codeCoverageIgnore
         }
         return $res->fetch(PDO::FETCH_NUM)[0];
     }
@@ -352,7 +363,9 @@ class DataManager
         $this->queryStats->countQuery('select');
         $res = $this->dbh->query($query);
         if ($res === false) {
-            return false;
+            // This means a database error
+            // Can't reproduce in testing for now
+            return false; // @codeCoverageIgnore
         }
         return $res->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -1417,14 +1430,6 @@ class DataManager
         return true;
     }
     
-    public function deletePageInPagesTable($pageId) 
-    {
-        if (!$this->isPageEmpty($pageId)) {
-            return false;
-        }
-        return $this->pagesDataTable->deleteRow($pageId);
-    }
-    
     public function deletePage($docId, $pageNum) 
     {
         $pageId = $this->getPageIdByDocPage($docId, $pageNum);
@@ -1456,14 +1461,18 @@ class DataManager
                     'seq' => $newSeq
                 ]);
                 if ($updateResult !== $page['id']) {
-                    return false;
+                    // This means a database error
+                    // Can't reproduce in testing for now
+                    return false; // @codeCoverageIgnore 
                 }
             }
         }
         
         // Delete page in pages table
-        if (!$this->deletePageInPagesTable($pageId)) {
-            return false;
+        if (!$this->pagesDataTable->deleteRow($pageId)) {
+            // This means a database error
+            // Can't reproduce in testing for now
+            return false; // @codeCoverageIgnore 
         }
         return true;
     }

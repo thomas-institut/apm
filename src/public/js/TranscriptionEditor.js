@@ -92,6 +92,9 @@ class TranscriptionEditor {
     })
     
     this.setFontSize(3)
+    if (defaultLang==='ar') {
+      this.setFontSize(5)
+    }
     const modalsHtml = TranscriptionEditor.modalsTemplate.render({id: id})
     $('body').append(modalsHtml)
 

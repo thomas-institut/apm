@@ -21,6 +21,7 @@ namespace AverroesProject\Api;
 
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
+use AverroesProject\Profiler\Profiler;
 
 /**
  * API Controller class
@@ -108,7 +109,6 @@ class ApiController
         
         $response->getBody()->write($imageData);
         return $response->withHeader('Content-Type', 'image/png');
-        //return $response;
     }
     
     public function generateLineGapImage(Request $request, 
@@ -121,7 +121,6 @@ class ApiController
         
         $response->getBody()->write($imageData);
         return $response->withHeader('Content-Type', 'image/png');
-        //return $response;
     }
     
     public function generateCharacterGapImage(Request $request, 
@@ -134,7 +133,6 @@ class ApiController
         
         $response->getBody()->write($imageData);
         return $response->withHeader('Content-Type', 'image/png');
-        //return $response;
     }
     
     public function generateParagraphMarkIcon(Request $request, 
@@ -146,22 +144,20 @@ class ApiController
         
         $response->getBody()->write($imageData);
         return $response->withHeader('Content-Type', 'image/png');
-        //return $response;
     }
     
     public function updateElementsByDocPageCol(Request $request, 
             Response $response, $next)
     {
-        $this->db->queryStats->reset();
         
-        $startTime = microtime(true);
+        $profiler = new Profiler('updateElements', $this->db);
+        
         $docId = (int) $request->getAttribute('document');
         $pageNumber = (int) $request->getAttribute('page');
         $columnNumber = (int) $request->getAttribute('column');
         $rawData = $request->getBody()->getContents();
         parse_str($rawData, $postData);
         $inputDataObject = null;
-        
         
         
         if (isset($postData['data'])) {
@@ -361,7 +357,7 @@ class ApiController
             }
             
         }
-        $checksDone = microtime(true);
+        $profiler->lap('Checks Done');
         
         $this->logger->info("UPDATE elements", 
                             [ 'apiUserId' => $this->ci->userId, 
@@ -376,7 +372,7 @@ class ApiController
         $edNotes  = \AverroesProject\Data\EdNoteManager::editorialNoteArrayFromArray($inputDataObject['ednotes']);
         
         $newItemIds = $this->ci->db->updateColumnElements($pageId, $columnNumber, $newElements);
-        $elementsUpdated = microtime(true);
+        $profiler->lap('Elements Updated');
         // Update targets
         for ($i = 0; $i < count($edNotes); $i++) {
             $targetId = $edNotes[$i]->target;
@@ -388,19 +384,14 @@ class ApiController
             }
         }
         $this->ci->db->enm->updateNotesFromArray($edNotes);
-        $done = microtime(true);
-        $this->logger->debug("Elements updated: checks in " . 
-                (($checksDone - $startTime)*1000) . 
-                " ms, update in " . 
-                (($elementsUpdated - $checksDone)*1000) . 
-                " ms, ednotes in " .
-                (($done - $elementsUpdated)*1000) . "ms");
-        $this->logger->debug('Query stats', $this->db->queryStats->info);
+        
+        $profiler->log($this->logger);
         return $response->withStatus(200);
     }
     
     public function updatePageSettings(Request $request, Response $response, $next)
     {
+        $profiler = new Profiler('updatePageSettings', $this->db);
         $pageId = (int) $request->getAttribute('pageId');
         $postData = $request->getParsedBody();
         $foliation = $postData['foliation'];
@@ -417,13 +408,13 @@ class ApiController
             $this->logger->error("Can't update page settings for page $pageId", $newSettings);
             return $response->withStatus(409);
         }
+        $profiler->log($this->logger);
         return $response->withStatus(200);
     }
     
     public function updateDocSettings(Request $request, Response $response, $next)
     {
-        
-        $this->db->queryStats->reset();
+        $profiler = new Profiler('updateDocSettings', $this->db);
         $docId = (int) $request->getAttribute('id');
         
         $rawData = $request->getBody()->getContents();
@@ -456,16 +447,14 @@ class ApiController
             'newSettings' => $newSettings
             ]);
 
-
+        $profiler->log($this->logger);
         return $response->withStatus(200);
         
     }
     
     public function updatePageSettingsBulk(Request $request, Response $response, $next)
     {
-        $this->db->queryStats->reset();
-        $startTime = microtime(true);
-        
+        $profiler = new Profiler('updatePageSettingsBulk', $this->db);
         $rawData = $request->getBody()->getContents();
         $postData = [];
         parse_str($rawData, $postData);
@@ -548,13 +537,10 @@ class ApiController
             'apiUserId'=> $this->ci->userId, 
             'count' => count($inputArray)
             ]);
-        $this->logger->debug("Bulk page settings update done in " . 
-                (($done - $startTime)*1000) . "ms");
-        $this->logger->debug('Query stats', $this->db->queryStats->info);
-        
         if (count($errors) > 0) {
             $this->logger->notice("Bulk page settings update with errors", $errors);
         }
+        $profiler->log($this->logger);
         return $response->withStatus(200);
     }
     
@@ -648,6 +634,7 @@ class ApiController
             $next)
     {
         $um = $this->db->um;
+        $profiler = new \AverroesProject\Profiler\Profiler('getUserProfileInfo', $this->db);
         $profileUserId =  (int) $request->getAttribute('userId');
         $userProfileInfo = $um->getUserInfoByUserId($profileUserId);
         if ($userProfileInfo === false ) {
@@ -658,6 +645,7 @@ class ApiController
         }
         
         $userProfileInfo['isroot'] = $um->isRoot($profileUserId);
+        $profiler->log($this->logger);
         return $response->withJson($userProfileInfo);
     }
    

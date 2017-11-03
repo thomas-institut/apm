@@ -557,7 +557,7 @@ class DataManager
         
         $query = "SELECT `$tp`.* FROM `$tp` JOIN `$td` " .
                  "ON (`$td`.id=`$tp`.doc_id) WHERE " . 
-                 "`$tp`.valid_until>'9999-12-31' AND `$td`.id=$docId " . 
+                 "`$tp`.valid_until='9999-12-31 23:59:59.999999' AND `$td`.id=$docId " . 
                  "ORDER BY `$tp`.$orderby ASC";
         $res = $this->dbh->query($query);
         

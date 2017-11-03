@@ -27,6 +27,7 @@ namespace AverroesProject\Site;
 
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
+use AverroesProject\Profiler\Profiler;
 
 /**
  * Site Controller class
@@ -57,7 +58,9 @@ class SiteController
    
     public function userProfilePage(Request $request, Response $response, $next)
     {
+        
         $profileUsername = $request->getAttribute('username');
+        $profiler = new Profiler('userProfilePage-' . $profileUsername, $this->db);
         if (!$this->db->um->userExistsByUsername($profileUsername)) {
             return $this->ci->view->render($response, 'user.notfound.twig', [
                         'userinfo' => $this->ci->userInfo,
@@ -78,6 +81,7 @@ class SiteController
         $userProfileInfo['isroot'] = 
                 $this->db->um->isRoot($userProfileInfo['id']);
 
+        $profiler->lap("Basic Info");
         $userId = $userProfileInfo['id'];
         $docIds = $this->db->getDocIdsTranscribedByUser($userId);
         
@@ -86,6 +90,7 @@ class SiteController
             $docListHtml .= $this->genDocPagesListForUser($userId, $docId);
         }
         
+        $profiler->log($this->ci->logger);
         return $this->ci->view->render($response, 'user.profile.twig', [
                     'userinfo' => $this->ci->userInfo,
                     'copyright' => $this->ci->copyrightNotice,
@@ -100,6 +105,7 @@ class SiteController
     public function userManagerPage(Request $request, Response $response, 
             $next)
     {
+        $profiler = new Profiler('userManagerPage', $this->db);
         $um = $this->db->um;
         if (!$um->isUserAllowedTo($this->ci->userInfo['id'], 'manageUsers')){
             return $this->ci->view->render($response, 
@@ -110,6 +116,7 @@ class SiteController
         $docIds = $db->getDocIdList('title');
         $users = $um->getUserInfoForAllUsers();
         
+        $profiler->log($this->ci->logger);
         return $this->ci->view->render($response, 'user.manager.twig', [
             'userinfo' => $this->ci->userInfo, 
             'copyright' => $this->ci->copyrightNotice,
@@ -155,8 +162,10 @@ class SiteController
     
     public function documentsPage(Request $request, Response $response, $next)
     {
+        $profiler = new Profiler('documentsPage', $this->db);
         $db = $this->db;
         $docIds = $db->getDocIdList('title');
+        $profiler->lap('Doc Id List');
         $docs = array();
         foreach ($docIds as $docId){
             $doc = array();
@@ -173,7 +182,9 @@ class SiteController
             $doc['docInfo'] = $db->getDocById($docId);
             $doc['tableId'] = "doc-$docId-table";
             array_push($docs, $doc);
+            $profiler->lap('Doc ' . $docId);
         }
+        $profiler->log($this->ci->logger);
         return $this->ci->view->render($response, 'docs.twig', [
             'userinfo' => $this->ci->userInfo, 
             'copyright' => $this->ci->copyrightNotice,
@@ -184,8 +195,10 @@ class SiteController
     
      public function dashboardPage(Request $request, Response $response, $next)
     {
+        
         $db = $this->db;
         $userId = (int)$this->ci->userInfo['id'];
+        $profiler = new Profiler('dashboardPage-' . $this->ci->userInfo['username'] . '-' . $userId, $db);
         $docIds = $db->getDocIdsTranscribedByUser($userId);
         
         $docListHtml = '';
@@ -193,7 +206,7 @@ class SiteController
             $docListHtml .= $this->genDocPagesListForUser($userId, $docId);
         }
         
-        
+        $profiler->log($this->ci->logger);
         return $this->ci->view->render($response, 'dashboard.twig', [
             'userinfo' => $this->ci->userInfo, 
             'copyright' => $this->ci->copyrightNotice,
@@ -233,6 +246,7 @@ class SiteController
     
     public function showDocPage(Request $request, Response $response, $next)
     {
+        $profiler = new Profiler('showDocPage', $this->db);
         $docId = $request->getAttribute('id');
         $db = $this->db;
         $doc = [];
@@ -264,6 +278,7 @@ class SiteController
         if ($this->db->um->isUserAllowedTo($this->ci->userInfo['id'], 'define-doc-pages')) {
             $canDefinePages = true;
         }
+        $profiler->log($this->ci->logger);
         return $this->ci->view->render($response, 'doc.showdoc.twig', [
             'userinfo' => $this->ci->userInfo, 
             'copyright' => $this->ci->copyrightNotice,
@@ -327,6 +342,7 @@ class SiteController
     
     public function defineDocPages(Request $request, Response $response, $next)
     {
+        $profiler = new Profiler('defineDocPages', $this->db);
         $docId = $request->getAttribute('id');
         $db = $this->db;
         $doc = [];
@@ -340,7 +356,7 @@ class SiteController
         $doc['pages'] = $this->buildPageArray($pagesInfo, 
                 $transcribedPages);
 
-        
+        $profiler->log($this->ci->logger);
         return $this->ci->view->render($response, 'doc.defdocpages.twig', [
             'userinfo' => $this->ci->userInfo, 
             'copyright' => $this->ci->copyrightNotice,

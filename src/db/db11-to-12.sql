@@ -27,4 +27,8 @@ UPDATE `ap_pages` SET `img_number`=`page_number`, `seq`=`page_number`;
 
 ALTER TABLE `ap_docs` DROP `page_count`;
 
+ALTER TABLE `ap_docs` ADD INDEX(`title`);
+ALTER TABLE `ap_pages` ADD INDEX( `seq`);
+ALTER TABLE `ap_elements` ADD INDEX(`column_number`);
+
 UPDATE `ap_settings` SET `value` = '12' WHERE `ap_settings`.`setting` = 'dbversion';

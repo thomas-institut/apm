@@ -26,7 +26,7 @@ $(document).ready(function()
     <td>{{macros.langName(doc.docInfo.lang)}}</td>
     <td>{{doc.numTranscribedPages}} of {{doc.numPages}}</td>
     <td>
-    {% if doc.numLines %}
+    {% if doc.numTranscribedPages %}
         {% for editor in doc.editors %}
             <a href="{{path_for('user.profile', {'username' : editor.username})}}" title="View profile">{{editor.fullname}}</a>{% if not loop.last %}, {% endif %}
         {% endfor %}

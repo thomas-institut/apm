@@ -463,8 +463,6 @@ class DataManager
      * @return int
      */
     function getLineCountByDoc($docId){
-        $now = \DataTable\MySqlUnitemporalDataTable::now();
-        
         $this->queryStats->countQuery('select');
         return $this->dbh->getOneFieldQuery(
             'SELECT count(DISTINCT `page_id`, e.`seq`) as value from ' . 
@@ -472,7 +470,7 @@ class DataManager
                 $this->tNames['pages'] . ' AS p ON e.page_id=p.id ' .
                 ' WHERE p.doc_id=' . $docId . 
                 ' AND e.type=' . Element::LINE . 
-                " AND `e`.`valid_from` <='$now' AND `e`.`valid_until` > '$now'", 
+                " AND `e`.`valid_until`='9999-12-31 23:59:59.999999'", 
             'value'
         );
     }
@@ -486,14 +484,13 @@ class DataManager
         $te = $this->tNames['elements'];
         $tu = $this->tNames['users'];
         $tp = $this->tNames['pages'];
-        $now = \DataTable\MySqlUnitemporalDataTable::now();
         
         $this->queryStats->countQuery('select');
         $query = "SELECT DISTINCT u.`username`" . 
             " FROM `$tu` AS u JOIN (`$te` AS e, `$tp` as p)" . 
             " ON (u.id=e.editor_id AND p.id=e.page_id)" . 
             " WHERE p.doc_id=" . $docId . 
-            " AND `e`.`valid_from` <='$now' AND `e`.`valid_until` > '$now'";
+            " AND `e`.`valid_until`='9999-12-31 23:59:59.999999'";
         
         $r = $this->dbh->query($query);
         
@@ -515,7 +512,6 @@ class DataManager
     {
         $te = $this->tNames['elements'];
         $tp = $this->tNames['pages'];
-        $now = \DataTable\MySqlUnitemporalDataTable::now();
         
         $orderby = 'page_number';
         if ($order === self::ORDER_BY_SEQ) {
@@ -527,8 +523,8 @@ class DataManager
                 $tp . ' AS p' .
                 ' JOIN ' . $te . ' AS e ON p.id=e.page_id' .
                 ' WHERE p.doc_id=' . $docId . 
-                " AND `e`.`valid_from` <='$now' AND `e`.`valid_until` > '$now'" . 
-                " AND `p`.`valid_from` <='$now' AND `p`.`valid_until` > '$now'" . 
+                " AND `e`.`valid_until`='9999-12-31 23:59:59.999999'" . 
+                " AND `p`.`valid_until`='9999-12-31 23:59:59.999999'" . 
                 " ORDER BY p.`$orderby` ASC";
         $r = $this->dbh->query($query);
         $pages = array();
@@ -557,7 +553,7 @@ class DataManager
         
         $query = "SELECT `$tp`.* FROM `$tp` JOIN `$td` " .
                  "ON (`$td`.id=`$tp`.doc_id) WHERE " . 
-                 "`$tp`.valid_until='9999-12-31 23:59:59.999999' AND `$td`.id=$docId " . 
+                 "`$tp`.`valid_until`='9999-12-31 23:59:59.999999' AND `$td`.id=$docId " . 
                  "ORDER BY `$tp`.$orderby ASC";
         $res = $this->dbh->query($query);
         
@@ -981,13 +977,12 @@ class DataManager
        
     private function getMaxElementSeq($pageId, $col)
     {
-        $now = \DataTable\MySqlUnitemporalDataTable::now();
-        
+       
         $te = $this->tNames['elements'];
         $this->queryStats->countQuery('select');
         $sql = "SELECT MAX(seq) as m FROM $te "
                 . "WHERE page_id=$pageId AND column_number=$col " 
-                . "AND `valid_from` <= '$now' AND `valid_until` > '$now'";
+                . "AND `valid_until`='9999-12-31 23:59:59.999999'";
         $row = $this->dbh->getOneRow($sql);
         if (isset($row['m'])) {
             return (int) $row['m'];

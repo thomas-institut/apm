@@ -170,14 +170,14 @@ class SiteController
         foreach ($docIds as $docId){
             $doc = array();
             $doc['numPages'] = $db->getPageCountByDocId($docId);
-            $doc['numLines'] = $db->getLineCountByDoc($docId);
+            //$doc['numLines'] = $db->getLineCountByDoc($docId);
             $transcribedPages = $db->getTranscribedPageListByDocId($docId);
             $doc['numTranscribedPages'] = count($transcribedPages);
             $editorsUsernames = $db->getEditorsByDocId($docId);
-            $doc['editors'] = array();
+            $doc['editors'] = [];
             foreach ($editorsUsernames as $edUsername){
-                array_push($doc['editors'], 
-                        $this->db->um->getUserInfoByUsername($edUsername));
+                $doc['editors'][] = 
+                        $this->db->um->getUserInfoByUsername($edUsername);
             }
             $doc['docInfo'] = $db->getDocById($docId);
             $doc['tableId'] = "doc-$docId-table";

@@ -486,17 +486,18 @@ class DataManager
         $tp = $this->tNames['pages'];
         
         $this->queryStats->countQuery('select');
-        $query = "SELECT DISTINCT u.`username`" . 
-            " FROM `$tu` AS u JOIN (`$te` AS e, `$tp` as p)" . 
-            " ON (u.id=e.editor_id AND p.id=e.page_id)" . 
-            " WHERE p.doc_id=" . $docId . 
-            " AND `e`.`valid_until`='9999-12-31 23:59:59.999999'";
+        $query = "SELECT DISTINCT $tu.`id`" . 
+            " FROM `$tu` JOIN (`$te`,  `$tp`)" . 
+            " ON ($tu.id=$te.editor_id AND $tp.id=$te.page_id)" . 
+            " WHERE $tp.doc_id=" . $docId . 
+            " AND $tp.`valid_until`='9999-12-31 23:59:59.999999'" .
+            " AND $te.`valid_until`='9999-12-31 23:59:59.999999'";
         
         $r = $this->dbh->query($query);
         
-        $editors = array();
-        while ($row = $r->fetch(PDO::FETCH_ASSOC)) {
-            array_push($editors, $row['username']);
+        $editors = [];
+        while ($row = $r->fetch()) {
+            $editors[] = $row['id'];
         }
         return $editors;
     }

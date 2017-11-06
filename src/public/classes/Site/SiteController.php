@@ -168,21 +168,24 @@ class SiteController
         $profiler->lap('Doc Id List');
         $docs = array();
         foreach ($docIds as $docId){
+            $profiler->lap("Doc $docId - START");
             $doc = array();
             $doc['numPages'] = $db->getPageCountByDocId($docId);
-            //$doc['numLines'] = $db->getLineCountByDoc($docId);
+            $profiler->lap("Doc $docId - getPageCount");
             $transcribedPages = $db->getTranscribedPageListByDocId($docId);
+            $profiler->lap("Doc $docId - getTranscribedPageList");
             $doc['numTranscribedPages'] = count($transcribedPages);
-            $editorsUsernames = $db->getEditorsByDocId($docId);
+            $editorsIds = $db->getEditorsByDocId($docId);
+            $profiler->lap("Doc $docId - getEditors");
             $doc['editors'] = [];
-            foreach ($editorsUsernames as $edUsername){
+            foreach ($editorsIds as $edId){
                 $doc['editors'][] = 
-                        $this->db->um->getUserInfoByUsername($edUsername);
+                        $this->db->um->getUserInfoByUserId($edId);
             }
             $doc['docInfo'] = $db->getDocById($docId);
             $doc['tableId'] = "doc-$docId-table";
             array_push($docs, $doc);
-            $profiler->lap('Doc ' . $docId);
+            $profiler->lap("Doc $docId - END");
         }
         $profiler->log($this->ci->logger);
         return $this->ci->view->render($response, 'docs.twig', [
@@ -255,11 +258,11 @@ class SiteController
         $transcribedPages = $db->getTranscribedPageListByDocId($docId);
         $pagesInfo = $db->getDocPageInfo($docId, \AverroesProject\Data\DataManager::ORDER_BY_SEQ);
         $doc['numTranscribedPages'] = count($transcribedPages);
-        $editorsUsernames = $db->getEditorsByDocId($docId);
+        $editorsIds = $db->getEditorsByDocId($docId);
         $doc['editors'] = array();
-        foreach ($editorsUsernames as $edUsername){
+        foreach ($editorsIds as $edId){
             array_push($doc['editors'], 
-                    $this->db->um->getUserInfoByUsername($edUsername));
+                    $this->db->um->getUserInfoByUserId($edId));
         }
         $doc['docInfo'] = $db->getDocById($docId);
         $doc['tableId'] = "doc-$docId-table";

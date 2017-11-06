@@ -173,8 +173,8 @@ class SiteController
             $doc['numPages'] = $db->getPageCountByDocId($docId);
             //$profiler->lap("Doc $docId - getPageCount");
             $transcribedPages = $db->getTranscribedPageListByDocId($docId);
-            $profiler->lap("Doc $docId - getTranscribedPageList");
-            //$doc['numTranscribedPages'] = count($transcribedPages);
+            //$profiler->lap("Doc $docId - getTranscribedPageList");
+            $doc['numTranscribedPages'] = count($transcribedPages);
             $editorsIds = $db->getEditorsByDocId($docId);
             //$profiler->lap("Doc $docId - getEditors");
             $doc['editors'] = [];
@@ -249,8 +249,9 @@ class SiteController
     
     public function showDocPage(Request $request, Response $response, $next)
     {
-        $profiler = new Profiler('showDocPage', $this->db);
+        
         $docId = $request->getAttribute('id');
+        $profiler = new Profiler('showDocPage-' . $docId, $this->db);
         $db = $this->db;
         $doc = [];
         $doc['numPages'] = $db->getPageCountByDocId($docId);

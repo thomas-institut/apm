@@ -168,15 +168,15 @@ class SiteController
         $profiler->lap('Doc Id List');
         $docs = array();
         foreach ($docIds as $docId){
-            $profiler->lap("Doc $docId - START");
+            //$profiler->lap("Doc $docId - START");
             $doc = array();
             $doc['numPages'] = $db->getPageCountByDocId($docId);
-            $profiler->lap("Doc $docId - getPageCount");
+            //$profiler->lap("Doc $docId - getPageCount");
             $transcribedPages = $db->getTranscribedPageListByDocId($docId);
             $profiler->lap("Doc $docId - getTranscribedPageList");
-            $doc['numTranscribedPages'] = count($transcribedPages);
+            //$doc['numTranscribedPages'] = count($transcribedPages);
             $editorsIds = $db->getEditorsByDocId($docId);
-            $profiler->lap("Doc $docId - getEditors");
+            //$profiler->lap("Doc $docId - getEditors");
             $doc['editors'] = [];
             foreach ($editorsIds as $edId){
                 $doc['editors'][] = 
@@ -185,7 +185,7 @@ class SiteController
             $doc['docInfo'] = $db->getDocById($docId);
             $doc['tableId'] = "doc-$docId-table";
             array_push($docs, $doc);
-            $profiler->lap("Doc $docId - END");
+            //$profiler->lap("Doc $docId - END");
         }
         $profiler->log($this->ci->logger);
         return $this->ci->view->render($response, 'docs.twig', [

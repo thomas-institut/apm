@@ -244,3 +244,22 @@ ul.doclist li {
     margin-left: 20px;
     text-indent: -20px;
 }
+
+
+.chunktext-he {
+    direction: rtl;
+    font-family: 'Linux Libertine', serif;
+    font-style: normal;
+}
+
+.chunktext-ar {
+    direction: rtl;
+    font-family: 'Scheherazade', serif;
+    font-style: normal;
+}
+
+.chunktext-la {
+    direction: ltr;
+    font-style: normal;
+}
+

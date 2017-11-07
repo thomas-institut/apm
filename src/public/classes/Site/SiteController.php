@@ -56,6 +56,82 @@ class SiteController
                 $this->ci->router->pathFor('dashboard'));
     }
    
+    public function chunksPage(Request $request, Response $response, $next) 
+    {
+       
+        $db = $this->db;
+        $profiler = new Profiler('chunksPage', $db);
+
+        $works = $db->getWorksWithTranscriptions();
+        
+        $chunkListHtml = '';
+        foreach($works as $work) {
+            $chunks = $db->getChunksWithTranscriptionForWorkId($work);
+            $chunkListHtml .= "<li>$work<ul><li>";
+            foreach($chunks as $chunk) {
+                $chunkListHtml .= "<a href=\"" . 
+                        $this->ci->router->pathFor('chunk', ['work' => $work, 'chunk' => $chunk]) .
+                        "\" title=\"View chunk\">$chunk</a>&nbsp;&nbsp;";    
+            }
+            $chunkListHtml .= "</li></ul></li>";
+        }
+        
+        $profiler->log($this->ci->logger);
+        return $this->ci->view->render($response, 'chunks.twig', [
+            'userinfo' => $this->ci->userInfo, 
+            'copyright' => $this->ci->copyrightNotice,
+            'baseurl' => $this->ci->settings['baseurl'],
+            'chunklist' => $chunkListHtml
+        ]);
+    }
+    
+    public function chunkPage(Request $request, Response $response, $next) 
+    {
+       
+        $db = $this->db;
+        $work = $request->getAttribute('work');
+        $chunkNumber = $request->getAttribute('chunk');
+        $profiler = new Profiler("chunkPage-$work-$chunkNumber", $db);
+
+        $docListHtml = '';
+        $docs = $db->getDocsForChunk($work, $chunkNumber);
+        foreach ($docs as $doc) {
+            $locations = $db->getChunkLocationsForDoc($doc['id'], $work, $chunkNumber);
+            $docListHtml .= '<h3>' . $doc['title'];
+            if (count($locations)===0) {
+                $docListHtml .= ':  (!) ERROR in chunk info, did somebody just erased the chunks in this document? Please refresh';
+                continue;
+            }
+            $docListHtml .= ', ' . (is_null($locations[0]['foliation']) ? $locations[0]['page_seq'] : $locations[0]['foliation']) . " - ";
+            if (count($locations)===1) {
+                $docListHtml .= '?</h3><p class="text-danger">(!) no chunk end found</p>';
+                continue;
+            }
+            $docListHtml .= (is_null($locations[1]['foliation']) ? $locations[1]['page_seq'] : $locations[1]['foliation']);
+            $profiler->lap('Doc '. $doc['id'] . ' locations');
+            $items = $db->getItemsBetweenLocations((int) $doc['id'], 
+                    $locations[0]['page_seq'], $locations[0]['column_number'], $locations[0]['e_seq'], $locations[0]['item_seq'],
+                    $locations[1]['page_seq'], $locations[1]['column_number'], $locations[1]['e_seq'], $locations[1]['item_seq']
+                );
+            $docListHtml .= '</h3><p class="chunktext chunktext-' . $doc['lang'] . '">';
+            foreach ($items as $item) {
+                $docListHtml .= (is_null($item['text']) ? '' : $item['text']);
+            }
+            $docListHtml .= '</p>';
+            $profiler->lap('Doc '. $doc['id'] . ' END');
+        }
+        
+        $profiler->log($this->ci->logger);
+        return $this->ci->view->render($response, 'chunk.twig', [
+            'userinfo' => $this->ci->userInfo, 
+            'copyright' => $this->ci->copyrightNotice,
+            'baseurl' => $this->ci->settings['baseurl'],
+            'work' => $work,
+            'chunk' => $chunkNumber,
+            'doclist' => $docListHtml
+        ]);
+    }
+    
     public function userProfilePage(Request $request, Response $response, $next)
     {
         

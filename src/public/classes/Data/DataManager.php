@@ -721,6 +721,148 @@ class DataManager
         return $tt;
     }
     
+    public function getWorksWithTranscriptions()
+    {
+        $ti = $this->tNames['items'];
+        $te = $this->tNames['elements'];
+        
+        $this->queryStats->countQuery('select');
+        $query = "SELECT DISTINCT $ti.text " . 
+            " FROM $ti " . 
+            " JOIN $te ON ($ti.ce_id=$te.id) " .
+            " WHERE $ti.type=" . Item::CHUNK_MARK . 
+            " AND $ti.`valid_until`='9999-12-31 23:59:59.999999'" . 
+            " AND $te.`valid_until`='9999-12-31 23:59:59.999999'";
+        
+        $r = $this->dbh->query($query);
+        
+        $works = [];
+        while ($row = $r->fetch()) {
+            $works[] = $row['text'];
+        }
+        return $works;
+    }
+    
+    public function getChunksWithTranscriptionForWorkId($workId)
+    {
+        $ti = $this->tNames['items'];
+        $te = $this->tNames['elements'];
+        
+        $this->queryStats->countQuery('select');
+        $query = "SELECT DISTINCT $ti.target " . 
+            " FROM $ti " . 
+            " JOIN $te ON ($ti.ce_id=$te.id) " .
+            " WHERE $ti.type=" . Item::CHUNK_MARK . 
+            " AND $ti.text='" . $workId . "'"  . 
+            " AND $ti.`valid_until`='9999-12-31 23:59:59.999999'" . 
+            " AND $te.`valid_until`='9999-12-31 23:59:59.999999'" . 
+            " ORDER BY $ti.target ASC";
+        
+        $r = $this->dbh->query($query);
+        
+        $chunks = [];
+        while ($row = $r->fetch()) {
+            $chunks[] = $row['target'];
+        }
+        return $chunks;
+    }
+    
+    public function getDocsForChunk($workId, $chunkNumber)
+    {
+        $ti = $this->tNames['items'];
+        $te = $this->tNames['elements'];
+        $td = $this->tNames['docs'];
+        $tp = $this->tNames['pages'];
+        
+        $this->queryStats->countQuery('select');
+        $query = "SELECT DISTINCT $td.* FROM $td" . 
+                " JOIN ($te, $ti, $tp)" . 
+                " ON ($te.id=$ti.ce_id AND $tp.id=$te.page_id AND $td.id=$tp.doc_id)" . 
+                " WHERE $ti.type=" . Item::CHUNK_MARK .  
+                " AND $ti.text='$workId'" . 
+                " AND $ti.target=$chunkNumber" . 
+                " AND $ti.valid_until='9999-12-31 23:59:59.999999'" . 
+                " AND $te.valid_until='9999-12-31 23:59:59.999999'".
+                " AND $tp.valid_until='9999-12-31 23:59:59.999999'";
+        
+        $r = $this->dbh->query($query);
+        
+        $docs = [];
+        while ($row = $r->fetch()) {
+            $docs[] = $row;
+        }
+        return $docs;
+    }
+    
+    public function getChunkLocationsForDoc($docId, $workId, $chunkNumber)
+    {
+        $ti = $this->tNames['items'];
+        $te = $this->tNames['elements'];
+        $tp = $this->tNames['pages'];
+        
+        $this->queryStats->countQuery('select');
+        
+        $query = "SELECT $tp.seq as 'page_seq'," .
+            " $tp.foliation," . 
+            " $te.column_number," . 
+            " $te.seq as 'e_seq'," . 
+            " $ti.seq as 'item_seq'," . 
+            " $ti.alt_text as 'type'" . 
+            " FROM $tp" . 
+            " JOIN ($te, $ti)" . 
+            " ON ($te.id=$ti.ce_id AND $tp.id=$te.page_id)" . 
+            " WHERE $ti.type=" . Item::CHUNK_MARK .  
+            " AND $ti.text='$workId'" . 
+            " AND $ti.target=$chunkNumber" . 
+            " AND $tp.doc_id=$docId" . 
+            " AND $ti.valid_until='9999-12-31 23:59:59.999999'" . 
+            " AND $te.valid_until='9999-12-31 23:59:59.999999'" .
+            " AND $tp.valid_until='9999-12-31 23:59:59.999999'";
+        
+        $r = $this->dbh->query($query);
+        
+        $rows = [];
+        while ($row = $r->fetch()) {
+            $rows[] = $row;
+        }
+        return $rows;
+    }
+    
+    public function getItemsBetweenLocations($docId, $pageSeq1, $col1, $elementSeq1, $itemSeq1, $pageSeq2, $col2, $elementSeq2, $itemSeq2)
+    {
+        $ti = $this->tNames['items'];
+        $te = $this->tNames['elements'];
+        $tp = $this->tNames['pages'];
+        
+        $this->queryStats->countQuery('select');
+        
+        $seqNumberStart = $pageSeq1*1000000 + $col1 * 10000 + $elementSeq1*100 + $itemSeq1;
+        $seqNumberEnd = $pageSeq2*1000000 + $col2 * 10000 + $elementSeq2*100 + $itemSeq2;
+        if ($seqNumberStart >= $seqNumberEnd) {
+            return [];
+        }
+        
+        $query = "SELECT $ti.*" .
+            " FROM $ti" . 
+            " JOIN ($te FORCE INDEX (page_id_2), $tp)" . 
+            " ON ($te.id=$ti.ce_id AND $tp.id=$te.page_id)" . 
+            " WHERE $tp.doc_id=$docId" . 
+            " AND ($tp.seq*1000000 + $te.column_number*10000 + $te.seq * 100 + $ti.seq) > $seqNumberStart" . 
+            " AND ($tp.seq*1000000 + $te.column_number*10000 + $te.seq * 100 + $ti.seq) < $seqNumberEnd" .             
+            " AND $ti.valid_until='9999-12-31 23:59:59.999999'" . 
+            " AND $te.valid_until='9999-12-31 23:59:59.999999'" .
+            " AND $tp.valid_until='9999-12-31 23:59:59.999999'" . 
+            " ORDER BY $tp.seq, $te.column_number, $te.seq, $ti.seq ASC";
+        
+        $r = $this->dbh->query($query);
+        
+        $rows = [];
+        while ($row = $r->fetch()) {
+            $rows[] = $row;
+        }
+        return $rows;
+    }
+    
     public function getPageIdByDocPage($docId, $pageNum)
     {
         $this->queryStats->countQuery('select');

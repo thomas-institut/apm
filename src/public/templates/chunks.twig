@@ -1,0 +1,10 @@
+{% extends "base.twig" %}
+
+{% block title %}Chunks{% endblock %}
+
+{% block content %}
+<div class="chunks">
+    <h1>Chunks</h1>
+    <ul class="chunklist">{{chunklist|raw}}</ul>
+</div>
+{% endblock %}

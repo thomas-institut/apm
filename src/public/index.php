@@ -197,6 +197,15 @@ $app->get('/users', '\AverroesProject\Site\SiteController:userManagerPage')
         ->setName('user.manager')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
+// CHUNKS
+$app->get('/chunks','\AverroesProject\Site\SiteController:chunksPage')
+        ->setName('chunks')
+        ->add('\AverroesProject\Auth\Authenticator:authenticate');
+
+$app->get('/chunk/{work}/{chunk}','\AverroesProject\Site\SiteController:chunkPage')
+        ->setName('chunk')
+        ->add('\AverroesProject\Auth\Authenticator:authenticate');
+
 // DOCS
 $app->get('/documents','\AverroesProject\Site\SiteController:documentsPage')
         ->setName('docs')

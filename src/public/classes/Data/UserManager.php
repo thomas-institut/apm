@@ -150,6 +150,11 @@ class UserManager
         return $this->userTable->getIdForKeyValue('username', $userName);
     }
     
+    public function getPersonInfo($personId)
+    {
+        return $this->peopleTable->getRow($personId);
+    }
+    
     /**
      * Gets the user info from the database
      * @param int $userid User ID

@@ -113,6 +113,12 @@ class DataManager
      */
     private $pageTypesTable;
     
+    /**
+     *
+     * @var DataTable\MySqlTable 
+     */
+    private $worksTable;
+    
     public $queryStats;
     
     /**
@@ -162,6 +168,8 @@ class DataManager
         $this->itemsDataTable = new \DataTable\MySqlUnitemporalDataTable(
                 $this->dbConn, 
                 $tableNames['items']);
+        $this->worksTable = new MySqlDataTable($this->dbConn, 
+                $tableNames['works']);
     }
    
     
@@ -732,7 +740,8 @@ class DataManager
             " JOIN $te ON ($ti.ce_id=$te.id) " .
             " WHERE $ti.type=" . Item::CHUNK_MARK . 
             " AND $ti.`valid_until`='9999-12-31 23:59:59.999999'" . 
-            " AND $te.`valid_until`='9999-12-31 23:59:59.999999'";
+            " AND $te.`valid_until`='9999-12-31 23:59:59.999999'" . 
+            " ORDER BY $ti.text";
         
         $r = $this->dbh->query($query);
         
@@ -741,6 +750,25 @@ class DataManager
             $works[] = $row['text'];
         }
         return $works;
+    }
+    
+    
+    /**
+     *  Get data for a work
+     * @param string $work
+     * @return boolean
+     */
+    public function getWorkInfo($work)
+    {
+        $workInfo = $this->worksTable->findRow(['dare_id' => $work]);
+        if ($workInfo === false) {
+            return false;
+        }
+        
+        $authorInfo = $this->um->getPersonInfo((int) $workInfo['author_id']);
+        
+        $workInfo['author_name'] = $authorInfo['fullname'];
+        return $workInfo;
     }
     
     public function getChunksWithTranscriptionForWorkId($workId)
@@ -828,7 +856,12 @@ class DataManager
         return $rows;
     }
     
-    public function getItemsBetweenLocations($docId, $pageSeq1, $col1, $elementSeq1, $itemSeq1, $pageSeq2, $col2, $elementSeq2, $itemSeq2)
+    public function calcSeqNumber($loc)
+    {
+        return $loc['page_seq']*1000000 + $loc['column_number'] * 10000 + $loc['e_seq']*100 + $loc['item_seq'];
+    }
+    
+    public function getItemsBetweenLocations($docId, $loc1, $loc2)
     {
         $ti = $this->tNames['items'];
         $te = $this->tNames['elements'];
@@ -836,8 +869,8 @@ class DataManager
         
         $this->queryStats->countQuery('select');
         
-        $seqNumberStart = $pageSeq1*1000000 + $col1 * 10000 + $elementSeq1*100 + $itemSeq1;
-        $seqNumberEnd = $pageSeq2*1000000 + $col2 * 10000 + $elementSeq2*100 + $itemSeq2;
+        $seqNumberStart = $this->calcSeqNumber($loc1);
+        $seqNumberEnd = $this->calcSeqNumber($loc2);
         if ($seqNumberStart >= $seqNumberEnd) {
             return [];
         }
@@ -861,6 +894,16 @@ class DataManager
             $rows[] = $row;
         }
         return $rows;
+    }
+    
+    public function getPlainTextBetweenLocations(int $docId, array $loc1, array $loc2)
+    {
+        $items = $this->getItemsBetweenLocations($docId, $loc1, $loc2);
+        $plainText = '';
+        foreach ($items as $item) {
+             $plainText .= is_null($item['text']) ? '' : $item['text'];
+        }
+        return $plainText;
     }
     
     public function getPageIdByDocPage($docId, $pageNum)

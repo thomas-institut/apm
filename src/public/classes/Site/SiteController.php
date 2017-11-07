@@ -62,18 +62,21 @@ class SiteController
         $db = $this->db;
         $profiler = new Profiler('chunksPage', $db);
 
-        $works = $db->getWorksWithTranscriptions();
+        $workIds = $db->getWorksWithTranscriptions();
         
-        $chunkListHtml = '';
-        foreach($works as $work) {
-            $chunks = $db->getChunksWithTranscriptionForWorkId($work);
-            $chunkListHtml .= "<li>$work<ul><li>";
-            foreach($chunks as $chunk) {
-                $chunkListHtml .= "<a href=\"" . 
-                        $this->ci->router->pathFor('chunk', ['work' => $work, 'chunk' => $chunk]) .
-                        "\" title=\"View chunk\">$chunk</a>&nbsp;&nbsp;";    
+        $works = [];
+        foreach($workIds as $workId) {
+            $work = ['work_id' => $workId, 'is_valid' => true];
+            $workInfo = $db->getWorkInfo($workId);
+            if ($workInfo === false) {
+                $work['is_valid'] = false;
+                $works[] = $work;
+                continue;
             }
-            $chunkListHtml .= "</li></ul></li>";
+            $work['work_info'] = $workInfo;
+            $chunks = $db->getChunksWithTranscriptionForWorkId($workId);
+            $work['chunks'] = $chunks;
+            $works[] = $work;
         }
         
         $profiler->log($this->ci->logger);
@@ -81,7 +84,7 @@ class SiteController
             'userinfo' => $this->ci->userInfo, 
             'copyright' => $this->ci->copyrightNotice,
             'baseurl' => $this->ci->settings['baseurl'],
-            'chunklist' => $chunkListHtml
+            'works' => $works
         ]);
     }
     
@@ -89,46 +92,56 @@ class SiteController
     {
        
         $db = $this->db;
-        $work = $request->getAttribute('work');
+        $workId = $request->getAttribute('work');
         $chunkNumber = $request->getAttribute('chunk');
-        $profiler = new Profiler("chunkPage-$work-$chunkNumber", $db);
+        $profiler = new Profiler("chunkPage-$workId-$chunkNumber", $db);
+        $workInfo = $db->getWorkInfo($workId);
+        $witnessList = $db->getDocsForChunk($workId, $chunkNumber);
 
-        $docListHtml = '';
-        $docs = $db->getDocsForChunk($work, $chunkNumber);
-        foreach ($docs as $doc) {
-            $locations = $db->getChunkLocationsForDoc($doc['id'], $work, $chunkNumber);
-            $docListHtml .= '<h3>' . $doc['title'];
+        $docs = [];
+        $witnessNumber = 0;
+        foreach ($witnessList as $witness) {
+            $doc = $witness;
+            $doc['number'] = ++$witnessNumber;
+            $doc['errors'] = [];
+            $doc['warning'] = '';
+            $locations = $db->getChunkLocationsForDoc($witness['id'], $workId, $chunkNumber);
             if (count($locations)===0) {
-                $docListHtml .= ':  (!) ERROR in chunk info, did somebody just erased the chunks in this document? Please refresh';
+                $doc['errors'][] =  'Error in chunk info, did somebody just erased the chunks in this document? Please refresh';
+                $doc['plain_text'] = '';
+                $docs[] = $doc;
                 continue;
             }
-            $docListHtml .= ', ' . (is_null($locations[0]['foliation']) ? $locations[0]['page_seq'] : $locations[0]['foliation']) . " - ";
+            
+            $doc['start']['seq'] = $locations[0]['page_seq'];
+            $doc['start']['foliation'] = is_null($locations[0]['foliation']) ? $locations[0]['page_seq'] : $locations[0]['foliation'];
             if (count($locations)===1) {
-                $docListHtml .= '?</h3><p class="text-danger">(!) no chunk end found</p>';
+                $doc['end']['seq'] = $locations[0]['page_seq'];
+                $doc['end']['foliation'] = '?';
+                $doc['plain_text'] = '';
+                $doc['warnings'][] = 'No chunk end found';
+                $docs[] = $doc;
                 continue;
             }
-            $docListHtml .= (is_null($locations[1]['foliation']) ? $locations[1]['page_seq'] : $locations[1]['foliation']);
+            $doc['end']['seq'] = $locations[1]['page_seq'];
+            $doc['end']['foliation'] = is_null($locations[1]['foliation']) ? $locations[1]['page_seq'] : $locations[1]['foliation'];
             $profiler->lap('Doc '. $doc['id'] . ' locations');
-            $items = $db->getItemsBetweenLocations((int) $doc['id'], 
-                    $locations[0]['page_seq'], $locations[0]['column_number'], $locations[0]['e_seq'], $locations[0]['item_seq'],
-                    $locations[1]['page_seq'], $locations[1]['column_number'], $locations[1]['e_seq'], $locations[1]['item_seq']
-                );
-            $docListHtml .= '</h3><p class="chunktext chunktext-' . $doc['lang'] . '">';
-            foreach ($items as $item) {
-                $docListHtml .= (is_null($item['text']) ? '' : $item['text']);
-            }
-            $docListHtml .= '</p>';
+            $doc['plain_text'] = $db->getPlainTextBetweenLocations((int) $doc['id'], $locations[0], $locations[1]);
+            $docs[] = $doc;
             $profiler->lap('Doc '. $doc['id'] . ' END');
         }
         
         $profiler->log($this->ci->logger);
-        return $this->ci->view->render($response, 'chunk.twig', [
+        return $this->ci->view->render($response, 'chunk.show.twig', [
             'userinfo' => $this->ci->userInfo, 
             'copyright' => $this->ci->copyrightNotice,
             'baseurl' => $this->ci->settings['baseurl'],
-            'work' => $work,
+            'work' => $workId,
             'chunk' => $chunkNumber,
-            'doclist' => $docListHtml
+            'work_info' => $workInfo,
+            'docs' => $docs,
+            'num_docs' => count($docs)
+             
         ]);
     }
     

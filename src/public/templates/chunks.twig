@@ -3,8 +3,20 @@
 {% block title %}Chunks{% endblock %}
 
 {% block content %}
-<div class="chunks">
     <h1>Chunks</h1>
-    <ul class="chunklist">{{chunklist|raw}}</ul>
+    <div class="chunks">
+        <ul class="chunklist">
+        {% for work in works %}
+            <li><h4>{{work.work_info.author_name}}, <em>{{work.work_info.title}}</em> ({{work.work_id}})</h4>
+                <ul>
+                    <li>
+                    {% for chunk in work.chunks %}
+                        <a href="{{path_for('chunk', {'work' : work.work_info.dare_id, 'chunk': chunk})}}" title="View chunk">{{chunk}}</a>&nbsp;&nbsp;
+                    {% endfor %}
+                    </li>
+                </ul>
+            </li>
+        {% endfor %}
+        </ul>
 </div>
 {% endblock %}

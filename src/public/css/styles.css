@@ -246,6 +246,10 @@ ul.doclist li {
 }
 
 
+.chunktext {
+    font-size: 1.2em;
+}
+
 .chunktext-he {
     direction: rtl;
     font-family: 'Linux Libertine', serif;
@@ -263,3 +267,27 @@ ul.doclist li {
     font-style: normal;
 }
 
+ul.chunklist {
+    list-style: none;
+    margin: 20px 0 20px 0;
+    padding: 0;
+}
+
+ul.chunklist  li {
+    padding:0;
+    margin: 5px 0 30px 10px;
+}
+
+ul.chunklist ul {
+    list-style: none;
+    margin: 0 0 0 20px;
+    padding: 0;
+}
+
+.chunktexts {
+    margin-top: 40px;
+}
+
+.witnesslist {
+    margin-top: 40px;
+}

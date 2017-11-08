@@ -54,5 +54,9 @@ class CharacterGap extends Item
     {
         $this->length = $l;
     }
+    
+    public function getPlainText() {
+        return '[...]';
+    }
 }
 

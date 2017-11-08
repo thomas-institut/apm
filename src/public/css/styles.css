@@ -248,6 +248,8 @@ ul.doclist li {
 
 .chunktext {
     font-size: 1.2em;
+    white-space: pre-wrap;
+    word-wrap: break-word;
 }
 
 .chunktext-he {
@@ -290,4 +292,5 @@ ul.chunklist ul {
 
 .witnesslist {
     margin-top: 40px;
+    margin-bottom: 60px;
 }

@@ -861,7 +861,7 @@ class DataManager
         return $loc['page_seq']*1000000 + $loc['column_number'] * 10000 + $loc['e_seq']*100 + $loc['item_seq'];
     }
     
-    public function getItemsBetweenLocations($docId, $loc1, $loc2)
+    public function getItemStreamBetweenLocations($docId, $loc1, $loc2)
     {
         $ti = $this->tNames['items'];
         $te = $this->tNames['elements'];
@@ -875,7 +875,9 @@ class DataManager
             return [];
         }
         
-        $query = "SELECT $ti.*" .
+        $query = "SELECT $ti.id, $ti.type, $ti.seq, $ti.ce_id, $ti.lang, $ti.hand_id, $ti.text, $ti.alt_text, $ti.extra_info, $ti.length, $ti.target, " .
+                "$te.type as 'e.type', $te.page_id, $te.column_number as col, $te.seq as 'e.seq', $te.hand_id as 'e.hand_id', $te.reference, $te.placement, " .
+                "$tp.seq as 'p.seq', $tp.foliation" . 
             " FROM $ti" . 
             " JOIN ($te FORCE INDEX (page_id_2), $tp)" . 
             " ON ($te.id=$ti.ce_id AND $tp.id=$te.page_id)" . 
@@ -894,16 +896,6 @@ class DataManager
             $rows[] = $row;
         }
         return $rows;
-    }
-    
-    public function getPlainTextBetweenLocations(int $docId, array $loc1, array $loc2)
-    {
-        $items = $this->getItemsBetweenLocations($docId, $loc1, $loc2);
-        $plainText = '';
-        foreach ($items as $item) {
-             $plainText .= is_null($item['text']) ? '' : $item['text'];
-        }
-        return $plainText;
     }
     
     public function getPageIdByDocPage($docId, $pageNum)

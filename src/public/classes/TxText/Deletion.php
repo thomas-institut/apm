@@ -92,4 +92,8 @@ class Deletion extends Item {
         return $this->modXmlId;
     }
     
+    public function getPlainText() {
+        return '';
+    }
+    
 }

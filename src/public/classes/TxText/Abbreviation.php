@@ -46,4 +46,8 @@ class Abbreviation extends Item {
     function getExpansion(){
         return $this->altText;
     }
+    
+    public function getPlainText() {
+        return $this->getExpansion();
+    }
 }

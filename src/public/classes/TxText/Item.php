@@ -139,7 +139,11 @@ class Item {
         return '';
     }
     
-    function getLang(){
+    public function getPlainText() {
+        return $this->getText();
+    }
+    
+    public function getLang(){
         return $this->lang;
     }
     

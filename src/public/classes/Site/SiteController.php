@@ -27,6 +27,7 @@ namespace AverroesProject\Site;
 
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
+use AverroesProject\ItemStream\ItemStream;
 use AverroesProject\Profiler\Profiler;
 
 /**
@@ -126,7 +127,8 @@ class SiteController
             $doc['end']['seq'] = $locations[1]['page_seq'];
             $doc['end']['foliation'] = is_null($locations[1]['foliation']) ? $locations[1]['page_seq'] : $locations[1]['foliation'];
             $profiler->lap('Doc '. $doc['id'] . ' locations');
-            $doc['plain_text'] = $db->getPlainTextBetweenLocations((int) $doc['id'], $locations[0], $locations[1]);
+            $itemStream = $db->getItemStreamBetweenLocations((int) $doc['id'], $locations[0], $locations[1]);
+            $doc['plain_text'] = ItemStream::getPlainText($itemStream);
             $docs[] = $doc;
             $profiler->lap('Doc '. $doc['id'] . ' END');
         }

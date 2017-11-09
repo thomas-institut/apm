@@ -422,7 +422,7 @@ class SiteController
         $thePages = $this->buildPageArray($pagesInfo, $transcribedPages);
         $imageUrl = $this->db->getImageUrl($docId, $pageInfo['img_number']);
         $pageTypeNames  = $this->db->getPageTypeNames();
-        $pageNumberFoliation = $pageNumber;
+        $pageNumberFoliation = $pageInfo['seq'];
         if ($pageInfo['foliation'] !== NULL) {
             $pageNumberFoliation = $pageInfo['foliation'];
         }

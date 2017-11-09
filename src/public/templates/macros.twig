@@ -83,18 +83,10 @@
     <tr>
             {% set n = 0 %}    
         {% endif%}
-{% set foliation = page.foliation %}
-        {% if foliation == '-' %} 
-            {%if navByPage == true %} 
-            {% set foliation = page.number %}
-            {% else %}
-            {% set foliation = page.seq %}
-            {% endif %}
-        {% endif %}
         <td class="{{ page.classes }}">
             <a href="{{ path_for('pageviewer.docpage', {'doc' : doc, 'page' : page.number})}}" 
-               target="_blank" title="Page {{page.number}}, Seq={{page.seq}}">
-                {{foliation}}
+               target="_blank" title="Page {{page.number}}, Seq={{page.seq}}, Fol: {{page.foliation}}">
+                {{page.seq}}
             </a>
         </td>
         {% set n = n+1 %}                                   

@@ -527,7 +527,9 @@ class TranscriptionEditor {
         quillObject.setSelection(range.index + 1)
     })    
 
+    /* Edit Button */
     $('#edit-button-' + id).click(function () {
+      // Set selection to the whole item
       const currentRange = quillObject.getSelection()
       const blot = quillObject.getLeaf(currentRange.index+1)[0]
       const range = {
@@ -601,6 +603,7 @@ class TranscriptionEditor {
         $('#item-modal-extrainfo-' + thisObject.id).html(optionsHtml)
         $('#item-modal-title-' + thisObject.id).html('Deletion')
       }
+      // Element::ADDITION
       if (format.addition) {
         itemid = format.addition.itemid
         const target = format.addition.target
@@ -1057,18 +1060,31 @@ class TranscriptionEditor {
       this.enable()
     }
   }
+  
+  /**
+   * 
+   * @param {type} additionId
+   * @returns {Array|TranscriptionEditor.getAdditionTargets.targets}
+   */
   getAdditionTargets (additionId = -1) {
     const ops = this.quillObject.getContents().ops
     const targets = [{itemid: -1, text: '[none]'}]
-    const deletions = []
+    const potentialTargets = []
+   
     const additionTargets = []
     for (const curOps of ops) {
       if (curOps.insert !== '\n' &&
                         'attributes' in curOps) {
         if (curOps.attributes.deletion) {
-          deletions.push({
+          potentialTargets.push({
             itemid: parseInt(curOps.attributes.deletion.itemid),
-            text: curOps.insert
+            text: 'DELETION: ' + curOps.insert
+          })
+        }
+        if (curOps.attributes.unclear) {
+          potentialTargets.push({
+            itemid: parseInt(curOps.attributes.unclear.itemid),
+            text: 'UNCLEAR: ' + curOps.insert
           })
         }
         if (curOps.attributes.addition) {
@@ -1079,9 +1095,9 @@ class TranscriptionEditor {
       }
     }
 
-    for (const del of deletions) {
-      if (!(del.itemid in additionTargets)) {
-        targets.push(del)
+    for (const pTarget of potentialTargets) {
+      if (!(pTarget.itemid in additionTargets)) {
+        targets.push(pTarget)
       }
     }
     return targets
@@ -1621,7 +1637,7 @@ class TranscriptionEditor {
   setData (columnData) {
     const delta = []
     const formats = []
-    const deletionTexts = []
+    const additionTargetTexts = []
     const languageCounts = {'ar': 0, 'he': 0, 'la':0}
     formats[ELEMENT_HEAD] = 'head'
     formats[ELEMENT_CUSTODES] = 'custodes'
@@ -1760,7 +1776,7 @@ class TranscriptionEditor {
                 break
 
               case ITEM_DELETION:
-                deletionTexts[item.id] = item.theText
+                additionTargetTexts[item.id] = 'DELETION: ' + item.theText
                 delta.push({
                   insert: item.theText,
                   attributes: {
@@ -1781,7 +1797,7 @@ class TranscriptionEditor {
                     addition: {
                       place: item.extraInfo,
                       target: item.target,
-                      targetText: deletionTexts[item.target],
+                      targetText: additionTargetTexts[item.target],
                       itemid: item.id,
                       editorid: this.id
                     },
@@ -1791,6 +1807,7 @@ class TranscriptionEditor {
                 break
 
               case ITEM_UNCLEAR:
+                additionTargetTexts[item.id] = 'UNCLEAR: ' + item.theText
                 delta.push({
                   insert: item.theText,
                   attributes: {

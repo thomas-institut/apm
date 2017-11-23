@@ -147,6 +147,8 @@ $(document).ready(function () {
                 ).done(function () { 
                   $.getJSON(getApiUrl, function (newResp){
                     //console.log(newResp)
+                    console.log('Data from API...')
+                    console.log(newResp)
                     te.saveSuccess(newResp)
                   })
                 }).fail(function(resp) {

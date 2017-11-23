@@ -9,10 +9,7 @@
     <div class="toolbar" id="toolbar-{{id}}">
         <button id="clear-button-{{id}}" class="selFmtBtn" title="Clear formatting" disabled><i class="fa fa-eraser"></i></button>
         <button id="edit-button-{{id}}" class="selFmtBtn" title="Edit" disabled><i class="fa fa-pencil"></i></button>
-        <button id="ar-button-{{id}}" class="langButton" title="Arabic" disabled>ar</button>
-        <button id="he-button-{{id}}" class="langButton" title="Hebrew" disabled>he</button>
-        <button id="la-button-{{id}}" class="langButton" title="Latin" disabled>la</button>
-
+        <span id="langButtons-{{id}}"></span>
         <button id="rubric-button-{{id}}" class="selFmtBtn" title="Rubric" disabled>R</button>
         <button id="gliph-button-{{id}}" class="selFmtBtn" title="Gliph" disabled>G</button>
         <button id="initial-button-{{id}}" class="selFmtBtn" title="Initial" disabled>I</button>
@@ -98,10 +95,7 @@
             <button class="dropdown-toggle" type="button" id="lang-button-{{id}}" title="Latin" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
                 la
            </button>
-            <ul class="dropdown-menu" aria-labelledby="lang-button-{{id}}">
-                <li><a id="set-arabic-{{id}}">Arabic</a></li>
-                <li><a id="set-latin-{{id}}">Latin</a></li>
-                <li><a id="set-hebrew-{{id}}">Hebrew</a></li>
+            <ul class="dropdown-menu" id="set-lang-dd-menu-{{id}}" aria-labelledby="lang-button-{{id}}">
            </ul>
         </span>
     </div>

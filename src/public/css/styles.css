@@ -1,13 +1,3 @@
-@font-face {
-    font-family: "Linux Libertine";
-    src: url(../fonts/LinLibertine_Rah.ttf) format("truetype");
-}
-
-@font-face {
-    font-family: "Scheherazade";
-    src: url(../fonts/Scheherazade-Regular.woff);
-}
-
 body {
     font-family: Helvetica, sans-serif;
 /*    font-size: 14px;*/

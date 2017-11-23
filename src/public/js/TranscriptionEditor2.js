@@ -23,934 +23,360 @@
 /*eslint default-case: "error"*/
 /*eslint no-console: ["error", { allow: ["warn", "error"] }] */
 
-/* global Twig, Quill, ELEMENT_LINE, ELEMENT_HEAD, ELEMENT_CUSTODES */
-/* global ELEMENT_GLOSS, ELEMENT_PAGE_NUMBER, ITEM_TEXT, ITEM_MARK */
-/* global ITEM_RUBRIC, ITEM_GLIPH, ITEM_INITIAL, ITEM_SIC, ITEM_ABBREVIATION */
-/* global ITEM_DELETION, Item, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_ILLEGIBLE */
-/* global ITEM_NO_WORD_BREAK, ITEM_CHUNK_MARK, ELEMENT_ADDITION, ELEMENT_LINE_GAP, MarkBlot */
-/* global IllegibleBlot, NoWordBreakBlot, ChunkMarkBlot, LineGapBlot, _, GlossBlot, EditorData */
-/* global ITEM_CHARACTER_GAP, CharacterGapBlot, ParagraphMarkBlot, ITEM_MATH_TEXT, 
- * ITEM_PARAGRAPH_MARK */
+/* global Twig, Quill, _, EditorData */
 
-
-class TranscriptionEditor {
-  constructor (containerSelector, id, baseUrl, editorId = 1,
-            defaultLang = 'la', handId = 0, sizeGuide = {}) {
+/**
+ * 
+ * Implementation of the transcription editor
+ */
+class TranscriptionEditor
+{
+  
+  /**
+   * Constructs the transcription editor in the DOM node with the 
+   * given HTML id (containerId) with the given id number and the given
+   * options.
+   * 
+   * The id number is used as a suffix to all HTML ids for the page
+   * elements of the particular TranscriptionEditor instance.
+   * 
+   * 
+   * @param {string} containerId
+   * @param {int} id
+   * @param {object} userOptions
+   * @returns {Boolean}
+   */
+  constructor(containerId, id = 1, userOptions = false)
+  {
+    this.containerId = containerId
     this.id = id
-    this.editorId = editorId
-    this.handId = handId
-    this.pageId = -1
-    this.columnNumber = -1
-    this.edNotes = []
-    this.people = []
-    this.maxItemId = 0
-    this.baseUrl = baseUrl
-    this.minItemId = 0
-    this.minNoteId = 0
-    this.enabled = false
-     
-    this.containerSelector = containerSelector
-    this.sizeGuide = sizeGuide
+    this.options = TranscriptionEditor.getOptions(userOptions)
     
-    this.templateLoaded = false
-    const thisObject = this
-    TranscriptionEditor.editors[editorId] = thisObject
-
-    MarkBlot.baseUrl = baseUrl
-    IllegibleBlot.baseUrl = baseUrl
-    NoWordBreakBlot.baseUrl = baseUrl
-    ChunkMarkBlot.baseUrl = baseUrl
-    LineGapBlot.baseUrl = baseUrl
-    CharacterGapBlot.baseUrl = baseUrl
-    ParagraphMarkBlot.baseUrl = baseUrl
-    if (!TranscriptionEditor.editorTemplate) {
-      TranscriptionEditor.editorTemplate = Twig.twig({
-        id: 'editor',
-        href: baseUrl + '/templates/editor.twig',
-        async: false
-      })
-    }
-    
-    if (!TranscriptionEditor.modalsTemplate) {
-      TranscriptionEditor.modalsTemplate = Twig.twig({
-        id: 'editor-modals',
-        href: baseUrl + '/templates/editor-modals.twig',
-        async: false
-      })
-    }
-
+    let containerSelector = '#' + containerId
     const editorHtml = TranscriptionEditor.editorTemplate.render({id: id})
     $(containerSelector).html(editorHtml)
-    // Disable drag and drop in editor (too many issues)
-    $(containerSelector).on('dragstart drag dragend drop', function (){
-      return false
-    })
-    $(window).on('resize', function (){
-      //console.log("Resizing")
-      //console.log($(containerSelector + ' .ql-editor').height())
-      return false
-    })
-    
-    this.setFontSize(3)
-    if (defaultLang==='ar') {
-      this.setFontSize(5)
-    }
     const modalsHtml = TranscriptionEditor.modalsTemplate.render({id: id})
     $('body').append(modalsHtml)
-
-    const quillObject = new Quill('#editor-container-' + id, {})
-    this.quillObject = quillObject
-    this.disable()
     
-    this.resizeEditor()
+    this.quillObject = new Quill('#editor-container-' + this.id, {})
+    this.setDefaultLang(this.options.defaultLang)
+    this.setFontSize(this.options.langDef[this.defaultLang].fontsize)
+    this.setData(null) // start with empty data
+
+    // EVENT HANDLERS
+    $(window).on('resize', this.genOnResize())
+    // Disable drag and drop in editor (too many issues)
+    $(containerSelector).on('dragstart drag dragend drop', function ()
+    {
+      return false
+    })
+    this.quillObject.on('text-change', this.genOnQuillChange());
     
-    const styleElement = document.createElement('style')
-    document.head.appendChild(styleElement)
-    this.styleSheet = styleElement.sheet
-    GlossBlot.styleSheet = this.styleSheet
+    // Top toolbar
+    $('#zoom-in-button-' + id).on('click', this.genOnClickZoomButton('in'))
+    $('#zoom-out-button-' + id).on('click', this.genOnClickZoomButton('out'))
+    $('#toggle-button-'+ id).on('click', this.genOnClickToggleEnableButton())
+    $('#save-button-' + id).on('click', this.genOnClickSaveButton())
+    $('#reset-button-' + id).on('click', this.genOnClickResetButton())
+   
 
-    $('#item-modal-' + id).modal({show: false})
-    $('#alert-modal-' + id).modal({show: false})
-    $('#save-button-' + id).hide()
-    $('#reset-button-' + id).hide()
+    // Block formats
+    $('#line-button-' + id).on('click', this.genOnClickLineButton())
+    $('#head-button-' + id).on('click', this.genOnClickSimpleBlockButton('head'))
+    $('#custodes-button-' + id).on('click', this.genOnClickSimpleBlockButton('custodes'))
+    $('#pagenumber-button-' + id).on('click', this.genOnClickSimpleBlockButton('pagenumber'))
 
-    quillObject.on('selection-change', function (range) {
-      if (!range) {
-        return false
-      }
-      //console.log("Selection: @" + range.index + ", l=" + range.length)
-      const hasFormat = TranscriptionEditor.selectionHasFormat(quillObject, range)
-      //console.log("Has format: " + hasFormat)
-      if (range.length === 0) {
-        $('.selFmtBtn').prop('disabled', true)
-        thisObject.setDisableLangButtons(true)
-        $('#edit-button-' + id).prop('disabled', true)
-        if (TranscriptionEditor.rangeIsInMidItem(quillObject, range)) {
-          $('#note-button-' + id).prop('disabled', true)
-          $('#illegible-button-' + id).prop('disabled', true)
-          $('#nowb-button-' + id).prop('disabled', true)
-          $('#chunk-start-button-' + id).prop('disabled', true)
-          $('#chunk-end-button-' + id).prop('disabled', true)
-          $('#edit-button-' + id).prop('disabled', false)
-          return false
-        }
-        $('#note-button-' + id).prop('disabled', false)
-        $('#illegible-button-' + id).prop('disabled', false)
-        $('#nowb-button-' + id).prop('disabled', false)
-        $('#chunk-start-button-' + id).prop('disabled', false)
-        $('#chunk-end-button-' + id).prop('disabled', false)
-
-        return false
-      }
-      // Selection's length >= 1
-      
-      $('#note-button-' + id).prop('disabled', true)
-      $('#illegible-button-' + id).prop('disabled', true)
-      $('#nowb-button-' + id).prop('disabled', true)
-      $('#chunk-start-button-' + id).prop('disabled', true)
-      $('#chunk-end-button-' + id).prop('disabled', true)
-      
-      const text = quillObject.getText(range)
-      if (text.search('\n') !== -1) {
-        // Selection includes new lines
-        $('.selFmtBtn').prop('disabled', true)
-        thisObject.setDisableLangButtons(false)
-        return false
-      }
-      // Selection does not include new lines
-      thisObject.setDisableLangButtons(false)
-      if (hasFormat) {
-        $('.selFmtBtn').prop('disabled', true)
-        $('#clear-button-' + id).prop('disabled', false)
-        if (TranscriptionEditor.rangeIsInMidItem(quillObject, range)) {
-          $('#edit-button-' + id).prop('disabled', false)
-          $('#clear-button-' + id).prop('disabled', true)
-          return false
-        }
-        $('#edit-button-' + id).prop('disabled', true)
-      } else {
-        $('.selFmtBtn').prop('disabled', false)
-        $('#edit-button-' + id).prop('disabled', true)
-        $('#clear-button-' + id).prop('disabled', true)
-      }
-    })
-
-    quillObject.on('text-change', function (delta, oldDelta) {
-      
-      if (!thisObject.enabled) {
-        return false
-      }
-      if (!_.isEqual(quillObject.getContents(), thisObject.lastSavedData)) {
-        thisObject.setContentsChanged()
-      } else {
-        thisObject.setContentsNotChanged()
-      }
-      if (delta.ops.length === 2) {
-        if (delta.ops[0].retain) {
-          if (delta.ops[1].delete) {
-            const deletionRanges = TranscriptionEditor.getDeletionRanges(oldDelta.ops)
-            const coveredDeletions =
-                                TranscriptionEditor.getCoveredDeletions(deletionRanges,
-                                    delta.ops[0].retain,
-                                    delta.ops[1].delete
-                                    )
-            if (coveredDeletions.length > 0) {
-              const theOps = quillObject.getContents().ops
-              for (const del of coveredDeletions) {
-                const add = TranscriptionEditor.getAdditionRangeByTarget(theOps, del.id)
-                if (add) {
-                  quillObject.formatText(
-                    add.index,
-                    add.length,
-                    'addition', 
-                    {
-                      itemid: add.id,
-                      editorid: thisObject.id,
-                      place: add.place,
-                      target: -1
-                    }
-                  )
-                } else {
-                  //console.log('No addition associated with deletion ' + del.id)
-                }
-              }
-            }
-            TranscriptionEditor.hideAllPopovers()
-          }
-        }
-      }
-    })
-    $('#ar-button-' + id).click(function () {
-      quillObject.format('lang', 'ar')
-      const range = quillObject.getSelection()
-      quillObject.setSelection(range.index + range.length)
-    })
-
-    $('#la-button-' + id).click(function () {
-      quillObject.format('lang', 'la')
-      const range = quillObject.getSelection()
-      quillObject.setSelection(range.index + range.length)
-    })
-
-    $('#he-button-' + id).click(function () {
-      quillObject.format('lang', 'he')
-      const range = quillObject.getSelection()
-      quillObject.setSelection(range.index + range.length)
-    })
-
-    $('#rubric-button-' + id).click(
-            TranscriptionEditor.genSimpleFormatClickFunction(thisObject, quillObject, 'rubric')
-        )
-
-    $('#mathtext-button-' + id).click(
-            TranscriptionEditor.genSimpleFormatClickFunction(thisObject, quillObject, 'mathtext')
-        )
-    $('#gliph-button-' + id).click(
-            TranscriptionEditor.genSimpleFormatClickFunction(thisObject, quillObject, 'gliph')
-        )
-    $('#initial-button-' + id).click(
-            TranscriptionEditor.genSimpleFormatClickFunction(thisObject, quillObject, 'initial')
-        )
-
-    $(containerSelector).on('dblclick', '.rubric',
-            TranscriptionEditor.genSimpleDoubleClickFunction(thisObject, quillObject)
-        )
-    $(containerSelector).on('dblclick', '.gliph',
-            TranscriptionEditor.genSimpleDoubleClickFunction(thisObject, quillObject)
-        )
-    $(containerSelector).on('dblclick', '.initial',
-            TranscriptionEditor.genSimpleDoubleClickFunction(thisObject, quillObject)
-        )
-    $(containerSelector).on('dblclick', '.sic',
-            TranscriptionEditor.genSimpleDoubleClickFunction(thisObject, quillObject)
-        )
-
-    $(containerSelector).on('dblclick', '.abbr',
-            TranscriptionEditor.genSimpleDoubleClickFunction(thisObject, quillObject)
-        )
-
-    $(containerSelector).on('dblclick', '.deletion',
-            TranscriptionEditor.genSimpleDoubleClickFunction(thisObject, quillObject)
-        )
-
-    $(containerSelector).on('dblclick', '.addition',
-            TranscriptionEditor.genSimpleDoubleClickFunction(thisObject, quillObject)
-        )
-
-    $(containerSelector).on('dblclick', '.unclear',
-            TranscriptionEditor.genSimpleDoubleClickFunction(thisObject, quillObject)
-        )
-
-    $('#note-button-' + id).click(function () {
-      const range = quillObject.getSelection()
-      if (range.length > 0) {
-        return false
-      }
-      TranscriptionEditor.resetItemModal(thisObject.id)
-      $('#item-modal-title-' + thisObject.id).html('Note')
-      $('#item-modal-submit-button-' + thisObject.id).on('click', function () {
-        $('#item-modal-' + thisObject.id).modal('hide')
-                // Take care of notes!
-        const noteText = $('#item-note-' + thisObject.id).val()
-        if (noteText !== '') {
-          const itemId = thisObject.getOneItemId()
-          thisObject.addNewNote(itemId, noteText)
-          quillObject.insertEmbed(range.index, 'mark', {
-            itemid: itemId,
-            editorid: thisObject.id
-          })
-          quillObject.setSelection(range.index + 1)
-        }
-      })
-      $('#item-modal-' + thisObject.id).modal('show')
-    })
-
-    $(containerSelector).on('dblclick', '.mark',
-            TranscriptionEditor.genEmbedDoubleClickFunction(thisObject, quillObject))
-
-    $(containerSelector).on('dblclick', '.illegible',
-            TranscriptionEditor.genEmbedDoubleClickFunction(thisObject, quillObject))
-
-    $('#clear-button-' + id).click(function () {
-      const range = quillObject.getSelection()
-      if (TranscriptionEditor.selectionHasFormat(quillObject, range)) {
-        $('#alert-modal-title-' + thisObject.id).html('Please confirm')
-        $('#alert-modal-submit-button-' + thisObject.id).html('Clear formatting')
-        $('#alert-modal-cancel-button-' + thisObject.id).html('Cancel')
-        $('#alert-modal-text-' + thisObject.id).html(
-                        'Are you sure you want to clear formatting of this text?</p>'+ 
-                        '<p>Formats and notes will be lost.</p>' + 
-                        '<p class="text-danger">This can NOT be undone!')
-        $('#alert-modal-submit-button-' + thisObject.id).off()
-        $('#alert-modal-submit-button-' + thisObject.id).on('click', function () {
-          $('#alert-modal-' + thisObject.id).modal('hide')
-          TranscriptionEditor.removeFormat(quillObject, range)
-        })
-        $('#alert-modal-' + thisObject.id).modal('show')
-      } else {
-        TranscriptionEditor.removeFormat(quillObject, range)
-      }
-    })
-
-    $('#sic-button-' + id).click(function () {
-      const range = quillObject.getSelection()
-      const text = quillObject.getText(range.index, range.length)
-      TranscriptionEditor.resetItemModal(thisObject.id)
-      $('#item-modal-title-' + thisObject.id).html('Sic')
-      $('#item-modal-text-' + thisObject.id).html(text)
-      $('#item-modal-text-fg-' + thisObject.id).show()
-      $('#item-modal-alttext-label-' + thisObject.id).html('Correction:')
-      $('#item-modal-alttext-' + thisObject.id).val('')
-      $('#item-modal-alttext-fg-' + thisObject.id).show()
-      $('#item-modal-submit-button-' + thisObject.id).on('click', function () {
-        $('#item-modal-' + thisObject.id).modal('hide')
-        let correction = $('#item-modal-alttext-' + thisObject.id).val()
-        if (correction === '') {
-          correction = ' '
-        }
-        const itemid = thisObject.getOneItemId()
-        quillObject.format('sic', {
-          correction: correction,
-          itemid: itemid,
-          editorid: thisObject.id
-        })
-        quillObject.setSelection(range.index + range.length)
-                // Take care of notes!
-        const noteText = $('#item-note-' + thisObject.id).val()
-        if (noteText !== '') {
-          thisObject.addNewNote(itemid, noteText)
-        }
-      })
-      $('#item-modal-' + thisObject.id).modal('show')
-    })
-
-    $('#abbr-button-' + id).click(function () {
-      const range = quillObject.getSelection()
-      const text = quillObject.getText(range.index, range.length)
-      TranscriptionEditor.resetItemModal(thisObject.id)
-      $('#item-modal-title-' + thisObject.id).html('Abbreviation')
-      $('#item-modal-text-' + thisObject.id).html(text)
-      $('#item-modal-text-fg-' + thisObject.id).show()
-      $('#item-modal-alttext-' + thisObject.id).val('')
-      $('#item-modal-alttext-label-' + thisObject.id).html('Expansion:')
-      $('#item-modal-alttext-fg-' + thisObject.id).show()
-      $('#item-modal-extrainfo-fg-' + thisObject.id).hide()
-      $('#item-modal-ednotes-' + thisObject.id).html('')
-      $('#item-note-' + thisObject.id).val('')
-      $('#item-note-time-' + thisObject.id).html('New note')
-      $('#item-note-id-' + thisObject.id).val('new')
-      $('#item-modal-submit-button-' + thisObject.id).off()
-      $('#item-modal-submit-button-' + thisObject.id).on('click', function () {
-        $('#item-modal-' + thisObject.id).modal('hide')
-        let expansion = $('#item-modal-alttext-' + thisObject.id).val()
-        if (expansion === '') {
-          expansion = ' '
-        }
-        const itemid = thisObject.getOneItemId()
-        quillObject.format('abbr', {
-          expansion: expansion,
-          itemid: itemid,
-          editorid: thisObject.id
-        })
-        quillObject.setSelection(range.index + range.length)
-                // Take care of notes!
-        const noteText = $('#item-note-' + thisObject.id).val()
-        if (noteText !== '') {
-          thisObject.addNewNote(itemid, noteText)
-        }
-      })
-      $('#item-modal-' + thisObject.id).modal('show')
-    })
-
-    $('#unclear-button-' + id).click(function () {
-      const range = quillObject.getSelection()
-      const text = quillObject.getText(range.index, range.length)
-      TranscriptionEditor.resetItemModal(thisObject.id)
-      $('#item-modal-title-' + thisObject.id).html('Unclear')
-      $('#item-modal-text-' + thisObject.id).html(text)
-      $('#item-modal-text-fg-' + thisObject.id).show()
-      $('#item-modal-alttext-label-' + thisObject.id).html('Alt. Reading:')
-      $('#item-modal-alttext-' + thisObject.id).val('')
-      $('#item-modal-alttext-fg-' + thisObject.id).show()
-
-      $('#item-modal-text-fg-' + thisObject.id).show()
-      $('#item-modal-extrainfo-label-' + thisObject.id).html('Reason:')
-      $('#item-modal-extrainfo-fg-' + thisObject.id).show()
-      let optionsHtml = ''
-      for (const reason of Item.getValidUnclearReasons()) {
-        optionsHtml += '<option value="' + reason + '"'
-        if (reason === 'unclear') {
-          optionsHtml += ' selected'
-        }
-        optionsHtml += '>' + reason + '</option>'
-      }
-      $('#item-modal-extrainfo-' + thisObject.id).html(optionsHtml)
-
-      $('#item-modal-submit-button-' + thisObject.id).on('click', function () {
-        $('#item-modal-' + thisObject.id).modal('hide')
-        let reading2 = $('#item-modal-alttext-' + thisObject.id).val()
-        if (reading2 === '') {
-          reading2 = ' '
-        }
-        const itemid = thisObject.getOneItemId()
-        const reason = $('#item-modal-extrainfo-' + thisObject.id).val()
-        quillObject.format('unclear', {
-          reading2: reading2,
-          reason: reason,
-          itemid: itemid,
-          editorid: thisObject.id
-        })
-        quillObject.setSelection(range.index + range.length)
-                // Take care of notes!
-        const noteText = $('#item-note-' + thisObject.id).val()
-        if (noteText !== '') {
-          thisObject.addNewNote(itemid, noteText)
-        }
-      })
-      $('#item-modal-' + thisObject.id).modal('show')
-    })
-    
-    $('#chunk-start-button-' + id).click(
-            TranscriptionEditor.genChunkButtonFunction(thisObject, quillObject, 'start'))
-    $('#chunk-end-button-' + id).click(
-            TranscriptionEditor.genChunkButtonFunction(thisObject, quillObject, 'end'))
-
-    $('#illegible-button-' + id).click(function () {
-      const range = quillObject.getSelection()
-      if (range.length > 0) {
-        return false
-      }
-      TranscriptionEditor.resetItemModal(thisObject.id)
-      $('#item-modal-title-' + thisObject.id).html('Illegible')
-      $('#item-modal-extrainfo-label-' + thisObject.id).html('Reason:')
-      $('#item-modal-extrainfo-fg-' + thisObject.id).show()
-      let optionsHtml = ''
-      for (const reason of Item.getValidIllegibleReasons()) {
-        optionsHtml += '<option value="' + reason + '"'
-        if (reason === 'illegible') {
-          optionsHtml += ' selected'
-        }
-        optionsHtml += '>' + reason + '</option>'
-      }
-      $('#item-modal-extrainfo-' + thisObject.id).html(optionsHtml)
-      $('#item-modal-length-fg-' + thisObject.id).show()
-      $('#item-modal-length-' + thisObject.id).val(4)
-
-      $('#item-modal-submit-button-' + thisObject.id).on('click', function () {
-        $('#item-modal-' + thisObject.id).modal('hide')
-        const itemid = thisObject.getOneItemId()
-        const reason = $('#item-modal-extrainfo-' + thisObject.id).val()
-        const length = $('#item-modal-length-' + thisObject.id).val()
-        quillObject.insertEmbed(range.index, 'illegible', {
-          length: length,
-          reason: reason,
-          itemid: itemid,
-          editorid: thisObject.id
-        })
-        quillObject.setSelection(range.index + 1)
-                // Take care of notes!
-        const noteText = $('#item-note-' + thisObject.id).val()
-        if (noteText !== '') {
-          thisObject.addNewNote(itemid, noteText)
-        }
-      })
-      $('#item-modal-' + thisObject.id).modal('show')
-    })
-    
-    $('#pcircledot-button-'+ id).click(function () {
-      const range = quillObject.getSelection()
-      quillObject.insertText(range.index, '⊙')
-      quillObject.setSelection(range.index + 1)
-    })
-    $('#chgap-button-' + id).click(function () {
-      const range = quillObject.getSelection()
-      if (range.length > 0) {
-        return false
-      }
-      quillObject.insertEmbed(range.index, 'chgap', {
-          length: 5,
-          itemid: thisObject.getOneItemId(),
-          editorid: thisObject.id
-        })
-        quillObject.setSelection(range.index + 1)
-    })
-    
-    $('#pmark-button-' + id).click(function () {
-      const range = quillObject.getSelection()
-      if (range.length > 0) {
-        return false
-      }
-      quillObject.insertEmbed(range.index, 'pmark', {
-          itemid: thisObject.getOneItemId(),
-          editorid: thisObject.id
-        })
-        quillObject.setSelection(range.index + 1)
-    })    
-
-    /* Edit Button */
-    $('#edit-button-' + id).click(function () {
-      // Set selection to the whole item
-      const currentRange = quillObject.getSelection()
-      const blot = quillObject.getLeaf(currentRange.index+1)[0]
-      const range = {
-        index: blot.offset(quillObject.scroll),
-        length: blot.length()
-      }
-      quillObject.setSelection(range)
-
-      const format = quillObject.getFormat(range)
-      const text = quillObject.getText(range.index, range.length)
-      let altText = ''
-      let itemid = -1
-      let additionTargets = []
-      TranscriptionEditor.resetItemModal(thisObject.id)
-      $('#item-modal-title-' + thisObject.id).html('Unknown')
-      if (format.abbr) {
-        altText = format.abbr.expansion
-        itemid = format.abbr.itemid
-        $('#item-modal-text-fg-' + thisObject.id).show()
-        $('#item-modal-extrainfo-fg-' + thisObject.id).hide()
-        $('#item-modal-alttext-' + thisObject.id).val(altText)
-        $('#item-modal-alttext-label-' + thisObject.id).html('Expansion:')
-        $('#item-modal-alttext-fg-' + thisObject.id).show()
-        $('#item-modal-title-' + thisObject.id).html('Abbreviation')
-      }
-      if (format.sic) {
-        altText = format.sic.correction
-        itemid = format.sic.itemid
-        $('#item-modal-text-fg-' + thisObject.id).show()
-        $('#item-modal-extrainfo-fg-' + thisObject.id).hide()
-        $('#item-modal-alttext-' + thisObject.id).val(altText)
-        $('#item-modal-alttext-label-' + thisObject.id).html('Correction')
-        $('#item-modal-alttext-fg-' + thisObject.id).show()
-        $('#item-modal-title-' + thisObject.id).html('Sic')
-      }
-      if (format.unclear) {
-        altText = format.unclear.reading2
-        itemid = format.unclear.itemid
-        $('#item-modal-text-fg-' + thisObject.id).show()
-        $('#item-modal-extrainfo-label-' + thisObject.id).html('Reason:')
-        $('#item-modal-extrainfo-fg-' + thisObject.id).show()
-        let optionsHtml = ''
-        for (const reason of Item.getValidUnclearReasons()) {
-          optionsHtml += '<option value="' + reason + '"'
-          if (reason === format.unclear.reason) {
-            optionsHtml += ' selected'
-          }
-          optionsHtml += '>' + reason + '</option>'
-        }
-        $('#item-modal-extrainfo-' + thisObject.id).html(optionsHtml)
-        $('#item-modal-alttext-' + thisObject.id).val(altText)
-        $('#item-modal-alttext-label-' + thisObject.id).html('Alt. Reading')
-        $('#item-modal-alttext-fg-' + thisObject.id).show()
-        $('#item-modal-title-' + thisObject.id).html('Unclear')
-      }
-      if (format.deletion) {
-        itemid = format.deletion.itemid
-        const technique = format.deletion.technique
-        $('#item-modal-text-fg-' + thisObject.id).show()
-        $('#item-modal-alttext-fg-' + thisObject.id).hide()
-        $('#item-modal-extrainfo-label-' + thisObject.id).html('Technique:')
-        $('#item-modal-extrainfo-fg-' + thisObject.id).show()
-        let optionsHtml = ''
-        for (const tech of Item.getValidDeletionTechniques()) {
-          optionsHtml += '<option value="' + tech + '"'
-          if (tech === technique) {
-            optionsHtml += ' selected'
-          }
-          optionsHtml += '>' + tech + '</option>'
-        }
-        $('#item-modal-extrainfo-' + thisObject.id).html(optionsHtml)
-        $('#item-modal-title-' + thisObject.id).html('Deletion')
-      }
-      // Element::ADDITION
-      if (format.addition) {
-        itemid = format.addition.itemid
-        const target = format.addition.target
-        const place = format.addition.place
-        $('#item-modal-text-fg-' + thisObject.id).show()
-        $('#item-modal-alttext-fg-' + thisObject.id).hide()
-        $('#item-modal-extrainfo-label-' + thisObject.id).html('Place:')
-        $('#item-modal-extrainfo-fg-' + thisObject.id).show()
-
-        let optionsHtml = ''
-        for (const thePlace of Item.getValidAdditionPlaces()) {
-          optionsHtml += '<option value="' + thePlace + '"'
-          if (thePlace === place) {
-            optionsHtml += ' selected'
-          }
-          optionsHtml += '>' + thePlace + '</option>'
-        }
-        $('#item-modal-extrainfo-' + thisObject.id).html(optionsHtml)
-        additionTargets = thisObject.getAdditionTargets(itemid)
-                // console.log(additionTargets);
-
-        let targetsHtml = ''
-        for (const theTarget of additionTargets) {
-          targetsHtml += '<option value="' + theTarget.itemid + '"'
-          if (theTarget.itemid === target) {
-            targetsHtml += ' selected'
-          }
-          targetsHtml += '>' + theTarget.text + '</option>'
-        }
-        $('#item-modal-target-' + thisObject.id).html(targetsHtml)
-        $('#item-modal-target-label-' + thisObject.id).html('Replaces:')
-        $('#item-modal-target-fg-' + thisObject.id).show()
-
-        $('#item-modal-title-' + thisObject.id).html('Addition')
-      }
-      if (format.rubric) {
-        itemid = format.rubric.itemid
-        $('#item-modal-title-' + thisObject.id).html('Rubric')
-        $('#item-modal-text-fg-' + thisObject.id).show()
-        $('#item-modal-alttext-fg-' + thisObject.id).hide()
-        $('#item-modal-extrainfo-fg-' + thisObject.id).hide()
-      }
-      if (format.mathtext) {
-        itemid = format.mathtext.itemid
-        $('#item-modal-title-' + thisObject.id).html('Math Text')
-        $('#item-modal-text-fg-' + thisObject.id).show()
-        $('#item-modal-alttext-fg-' + thisObject.id).hide()
-        $('#item-modal-extrainfo-fg-' + thisObject.id).hide()
-      }
-      if (format.initial) {
-        itemid = format.initial.itemid
-        $('#item-modal-title-' + thisObject.id).html('Initial')
-        $('#item-modal-text-fg-' + thisObject.id).show()
-        $('#item-modal-alttext-fg-' + thisObject.id).hide()
-        $('#item-modal-extrainfo-fg-' + thisObject.id).hide()
-      }
-      if (format.gliph) {
-        itemid = format.gliph.itemid
-        $('#item-modal-title-' + thisObject.id).html('Gliph')
-        $('#item-modal-text-fg-' + thisObject.id).show()
-        $('#item-modal-alttext-fg-' + thisObject.id).hide()
-        $('#item-modal-extrainfo-fg-' + thisObject.id).hide()
-      }
-
-      TranscriptionEditor.setupNotesInItemModal(thisObject, itemid)
-      $('#item-modal-text-' + thisObject.id).html(text)
-
-      $('#item-modal-cancel-button-' + thisObject.id).on('click', function () {
-                // $('#item-modal-' + thisObject.id).modal('hide');
-        quillObject.setSelection(currentRange)
-      })
-      $('#item-modal-submit-button-' + thisObject.id).off()
-      $('#item-modal-submit-button-' + thisObject.id).on('click', function () {
-        $('#item-modal-' + thisObject.id).modal('hide')
-                // First, take care of the value
-        if (format.sic) {
-          let altText = $('#item-modal-alttext-' + thisObject.id).val()
-          if (altText === '') {
-            altText = ' '
-          }
-          quillObject.format('sic', {correction: altText, itemid: itemid, editorid: thisObject.id })
-        }
-        if (format.abbr) {
-          let altText = $('#item-modal-alttext-' + thisObject.id).val()
-          if (altText === '') {
-            altText = ' '
-          }
-          quillObject.format('abbr', {expansion: altText, itemid: itemid, editorid: thisObject.id })
-        }
-        if (format.unclear) {
-          let altText = $('#item-modal-alttext-' + thisObject.id).val()
-          if (altText === '') {
-            altText = ' '
-          }
-          const reason = $('#item-modal-extrainfo-' + thisObject.id).val()
-          quillObject.format('unclear', {reading2: altText, reason: reason, itemid: itemid, 
-            editorid: thisObject.id })
-        }
-        if (format.deletion) {
-          const technique = $('#item-modal-extrainfo-' + thisObject.id).val()
-          quillObject.format('deletion', {technique: technique, itemid: itemid, 
-            editorid: thisObject.id })
-        }
-        if (format.addition) {
-          const place = $('#item-modal-extrainfo-' + thisObject.id).val()
-          const target = parseInt($('#item-modal-target-' + thisObject.id).val())
-          let targetText = ''
-          for (const someT of additionTargets) {
-            if (target === someT.itemid) {
-              targetText = someT.text
-              break
-            }
-          }
-          quillObject.format('addition', {place: place,
-            itemid: itemid,
-            editorid: thisObject.id,
-            target: target,
-            targetText: targetText
-          })
-        }
-        quillObject.setSelection(range.index + range.length)
-                // Then, care of editorial notes
-        const noteId = $('#item-note-id-' + thisObject.id).val()
-        const noteText = $('#item-note-' + thisObject.id).val()
-        if (noteId === 'new') {
-          thisObject.addNewNote(itemid, noteText)
-        } else {
-          thisObject.updateNote(noteId, noteText)
-        }
-      })
-      $('#item-modal-' + thisObject.id).modal('show')
-    })
-
-    $('#add-above-' + id).click(function () {
-      thisObject.setAddition('above')
-    })
-
-    $('#add-below-' + id).click(function () {
-      thisObject.setAddition('below')
-    })
-
-    $('#add-inline-' + id).click(function () {
-      thisObject.setAddition('inline')
-    })
-
-    $('#add-inspace-' + id).click(function () {
-      thisObject.setAddition('inspace')
-    })
-
-    $('#add-overflow-' + id).click(function () {
-      thisObject.setAddition('overflow')
-    })
-    
-    $('#add-marginleft-' + id).click(function () {
-      thisObject.setAddition('margin left')
-    })
-    
-     $('#add-marginright-' + id).click(function () {
-      thisObject.setAddition('margin right')
-    })
-
-    $('#del-strikeout-' + id).click(function () {
-      thisObject.setDeletion('strikeout')
-    })
-    $('#del-dots-above-' + id).click(function () {
-      thisObject.setDeletion('dots-above')
-    })
-    $('#del-dot-above-dot-under-' + id).click(function () {
-      thisObject.setDeletion('dot-above-dot-under')
-    })
-    $('#del-dots-underneath-' + id).click(function () {
-      thisObject.setDeletion('dots-underneath')
-    })
-    $('#del-dot-above-' + id).click(function () {
-      thisObject.setDeletion('dot-above')
-    })
-    $('#del-line-above-' + id).click(function () {
-      thisObject.setDeletion('line-above')
-    })
-    $('#del-no-sign-' + id).click(function () {
-      thisObject.setDeletion('no-sign')
-    })
-    
-    
-    $('#nowb-button-' + id).click(function () {
-      const range = quillObject.getSelection()
-      if (range.length > 0) {
-        return false
-      }
-      const itemId = thisObject.getOneItemId()
-      quillObject.insertEmbed(range.index, 'nowb', {
-            itemid: itemId,
-            editorid: thisObject.id
-      })
-      quillObject.setSelection(range.index + 1)
-    })
-    
-    $('#line-button-' + id).click(function () {
-      quillObject.format('head', false)
-      quillObject.format('gloss', false)
-      quillObject.format('custodes', false)
-      quillObject.format('pagenumber', false)
-    })
-    
-    $('#gloss-top-' + id).click(function () {
-      thisObject.setGloss('margin top')
-    })
-    
-    $('#gloss-bottom-' + id).click(function () {
-      thisObject.setGloss('margin bottom')
-    })
-    
-    $('#gloss-left-' + id).click(function () {
-      thisObject.setGloss('margin left')
-    })
-    
-    $('#gloss-right-' + id).click(function () {
-      thisObject.setGloss('margin right')
-    })
-
-    $('#head-button-' + id).click(function () {
-      quillObject.format('head', true)
-    })
-    
-    $('#custodes-button-' + id).click(function () {
-      quillObject.format('custodes', true)
-    })
-    
-    $('#pagenumber-button-' + id).click(function () {
-      quillObject.format('pagenumber', true)
-    })
-    
-    $('#linegap-button-' + id).click(function () {
-      const range = quillObject.getSelection()
-      if (range.length > 0) {
-        return false
-      }
-      TranscriptionEditor.resetItemModal(thisObject.id)
-      $('#item-modal-title-' + thisObject.id).html('Line Gap')
-      $('#item-modal-text-fg-' + thisObject.id).hide()
-      $('#item-modal-alttext-fg-' + thisObject.id).hide()
-      $('#item-modal-extrainfo-fg-' + thisObject.id).hide()
-      $('#item-modal-length-label-' + thisObject.id).html('Lines not transcribed:')
-      $('#item-modal-length-' + thisObject.id).val(1)
-      $('#item-modal-length-fg-' + thisObject.id).show()
-      $('#item-modal-ednote-fg-' + thisObject.id).hide()
-      $('#item-modal-submit-button-' + thisObject.id).off()
-      $('#item-modal-submit-button-' + thisObject.id).on('click', function () {
-        $('#item-modal-' + thisObject.id).modal('hide')
-        const count = $('#item-modal-length-' + thisObject.id).val()
-        if (count <= 0) {
-          //console.log("Bad line count for line gap: " + count)
-          return false
-        }
-        thisObject.insertLineGap(range.index, count)
-      })
-      $('#item-modal-' + thisObject.id).modal('show')
-    })
-
-    $('#set-arabic-' + id).click(function () {
-      thisObject.setDefaultLang('ar')
-      $('#lang-button-' + id).html('ar')
-    })
-
-    $('#set-latin-' + id).click(function () {
-      thisObject.setDefaultLang('la')
-      $('#lang-button-' + id).html('la')
-    })
-
-    $('#set-hebrew-' + id).click(function () {
-      thisObject.setDefaultLang('he')
-      $('#lang-button-' + id).html('he')
-    })
-    
-    $('#toggle-button-'+ id).click(function() {
-      thisObject.toggleEnable()
-      return true
-    });
-    
-    $('#save-button-' + id).click(function(){
-      thisObject.save()
-      return true
-    });
-    
-    $('#reset-button-' + id).click(function(){
-      thisObject.reset()
-      return true
-    });
-    
-    
-    $('#zoom-in-button-'+ id).click(function() {
-      thisObject.makeTextBigger()
-      return true
-    });
-    
-    $('#zoom-out-button-'+ id).click(function() {
-      thisObject.makeTextSmaller()
-      return true
-    });
-
-    this.setDefaultLang(defaultLang)
-    thisObject.quillObject = quillObject
-    TranscriptionEditor.editors[this.id] = thisObject
-    this.saving = false
-    this.setContentsNotChanged()
-    
-  }
-  
-  setContentsChanged() {
-    $('#save-button-' + this.id).prop('disabled', false)
-    $('#reset-button-' + this.id).prop('disabled', false)
-    this.contentsChanged = true
-  }
-  
-  setContentsNotChanged() {
-    $('#save-button-' + this.id).prop('disabled', true)
-    $('#reset-button-' + this.id).prop('disabled', true)
-    this.contentsChanged = false
-  }
-  
-  setFontSize(size) {
-    if (this.fontSize) {
-      $('#editor-container-'+this.id).removeClass('fontsize' + this.fontSize)
+    // Languages
+    let langDef = this.options.langDef
+    for (const lang in this.options.langDef) {
+      // language button
+      let buttonId = lang + '-button-' + this.id
+      $('#langButtons-'+this.id).append(
+              '<button id="' + buttonId +  '" class="langButton" ' + 
+              'title="' + langDef[lang].name + '" disabled>' + 
+              lang + '</button>'
+        ) 
+      // option in default language menu
+      let optionId = 'set-' + lang + '-' + this.id 
+      $('#set-lang-dd-menu-' + id).append('<li><a id="'+ optionId +'">' + langDef[lang].name + '</a></li>')
+      $('#' + optionId).on('click', this.genOnClickSetLang(lang))
     }
-    $('#editor-container-'+this.id).addClass('fontsize' + size)
-    this.fontSize = size
-    IllegibleBlot.size = this.fontSize
-    NoWordBreakBlot.size = this.fontSize
-    MarkBlot.size = this.fontSize
-    ChunkMarkBlot.size = this.fontSize
-    LineGapBlot.size = this.fontSize
-    CharacterGapBlot.size = this.fontSize
-    ParagraphMarkBlot.size = this.fontSize
+
+    // enable/disable
+    if (this.options.startEnabled) {
+      this.enable()
+    }
+    else {
+      this.disable()
+    }
+    // generate number lines when all elements are done
+    this.numberLines()
+    
+    
+    TranscriptionEditor.registerEditorInstance(this.id, this)
+    
+  }
+
+  /**
+   * Generates a full options object from a user options object
+   * It fills the options objects with appropriate defaults for 
+   * parameters not specified by the user.
+   * 
+   * @param {object} userOptions
+   * @returns {TranscriptionEditor.getOptions.options}
+   */
+  static getOptions(userOptions) {
+    let options = userOptions
+    if (options === false) {
+      options = {}
+    }
+    // startEnabled:  true/false
+    if (options.startEnabled === undefined) {
+      options.startEnabled = false
+    }
+
+    // langDef : language definitions
+    if (options.langDef === undefined) {
+      options.langDef = { 
+        ar: { code: 'ar', name: 'Arabic', rtl: true, fontsize: 5},  // Scheherazade font
+        jrb: { code: 'jrb', name: 'Judeo Arabic', rtl: true, fontsize: 3}, // SIL Ezra 
+        he: { code: 'he', name: 'Hebrew', rtl: true, fontsize: 3},  // Linux Libertine font
+        la: { code: 'la', name: 'Latin', rtl: false, fontsize: 3}  // Arial 
+      }    
+    }
+    
+    // defaultLang :  language code
+    if (options.defaultLang === undefined) {
+      options.defaultLang = 'la'
+    }
+    // Min and max font size : integer
+    if (options.minFontSize === undefined) {
+      options.minFontSize = 0
+    }
+    if (options.maxFontSize === undefined) {
+      options.maxFontSize = 10
+    }
+    // Line number options
+    if (options.lineNumbers === undefined) {
+      options.lineNumbers   = {
+        fontFactor: 0.6,
+        charWidth: 0.6, // for PT Mono
+        margin: 5,
+        numChars: 2
+      }
+    }
+    // pixPerEm : Integer
+    // Pixels per Em (normally 16)
+    if (options.pixPerEm === undefined) {
+      options.pixPerEm = 16
+    }
+    // editorLineHeight: Number
+    // lineHeight in ems for normal paragraphs in the
+    // editor (must match what's given in the CSS definition)
+    if (options.editorLineHeight === undefined) {
+      options.editorLineHeight = 1.4
+    }
+    return options
+  }
+    
+  setDefaultLang(lang)
+  {
+    let langDef = this.options.langDef
+    if (langDef[lang] === undefined) {
+      console.log('Invalid default language: ' + lang)
+      return false
+    }
+
+    for (const l in langDef) {
+      if (l === lang) {
+        $('#editor-container-' + this.id).addClass(l + '-text')
+        continue
+      }
+      $('#editor-container-' + this.id).removeClass(l + '-text')
+    }
+    //$('#' + lang + '-button-' + this.id).prop('disabled', true)
+    $('#lang-button-' + this.id).attr('title', langDef[lang].name)
+    $('#lang-button-' + this.id).html(lang)
+    this.defaultLang = lang
+    // ChunkMarkBlot.dir = lang === 'la' ? 'ltr' : 'ltr';
+  }
+
+  getParagraphType(p)
+  {
+    for (const blot of TranscriptionEditor.blockBlots) {
+      if (p.hasClass(blot.className)) {
+        return blot.name
+      }
+    }
+    return 'normal'
+  }
+
+  calcEditorFontEmSize(fontSize) 
+  {
+    return 1 + fontSize*0.2
   }
   
-  makeTextSmaller() {
-    if (this.fontSize > 1) {
-      this.setFontSize(this.fontSize-1)
+  getEditorMarginSize() 
+  {
+    let factor = this.options.lineNumbers.fontFactor
+    let charWidth = this.options.lineNumbers.charWidth
+    let pixPerEm = this.options.pixPerEm
+    let margin = this.options.lineNumbers.margin
+    let editorFontSizeInEms = this.calcEditorFontEmSize(this.fontSize)
+    let numChars = this.options.lineNumbers.numChars
+   
+    return (numChars*editorFontSizeInEms*pixPerEm*factor*charWidth) + 2*margin
+  }
+  
+  static padNumber(number, places, char) 
+  {
+    let str = number.toString()
+    let numberStr = ''
+    for (let i=places; i > str.length; i--) {
+      numberStr += char
+    }
+    numberStr += str
+    return numberStr
+  }
+  
+  setFontSize(fontSize)
+  {
+    let emSize = this.calcEditorFontEmSize(fontSize)
+    $('#editor-container-' + this.id).css('font-size', emSize+'em')
+    this.fontSize = fontSize
+    this.setEditorMargin()
+    //    IllegibleBlot.size = this.fontSize
+    //    NoWordBreakBlot.size = this.fontSize
+    //    MarkBlot.size = this.fontSize
+    //    ChunkMarkBlot.size = this.fontSize
+    //    LineGapBlot.size = this.fontSize
+    //    CharacterGapBlot.size = this.fontSize
+    //    ParagraphMarkBlot.size = this.fontSize
+  }
+  
+  setEditorMargin() 
+  {
+    let marginSize = this.getEditorMarginSize()
+    if (this.options.langDef[this.defaultLang].rtl) {
+      $('#editor-container-' + this.id + ' .ql-editor').css('margin-left', '0')
+      $('#editor-container-' + this.id + ' .ql-editor').css('margin-right', marginSize + 'px')
+      return true
+    }
+    $('#editor-container-' + this.id + ' .ql-editor').css('margin-right', '0')
+    $('#editor-container-' + this.id + ' .ql-editor').css('margin-left', marginSize + 'px')
+    return true
+  }
+
+  makeTextSmaller()
+  {
+    if (this.fontSize > this.options.minFontSize) {
+      this.setFontSize(this.fontSize - 1)
     }
   }
-  
-  makeTextBigger() {
-    if (this.fontSize < 10) {
-      this.setFontSize(this.fontSize+1)
+
+  makeTextBigger()
+  {
+    if (this.fontSize < this.options.maxFontSize) {
+      this.setFontSize(this.fontSize + 1)
     }
   }
+
+  numberLines()
+  {
+    let pElements = $('#' + this.containerId + ' ' + '.ql-editor > p')
+    let editorDiv = $('#' + this.containerId + ' ' + '.ql-editor')
+    let editorContainerLeftPos = $(editorDiv).offset().left
+    let lineNumber = 0
+    let overlayNumber = 0
+    for (const p of pElements) {
+      let theP = $(p)
+      let offset = theP.offset()
+      let fontFactor = this.options.lineNumbers.fontFactor  /// line number font size to editor font size 
+      let editorFontSize = this.calcEditorFontEmSize(this.fontSize)*this.options.pixPerEm
+      let lineNumberTopPos = offset.top 
+      let fontEmSize = this.calcEditorFontEmSize(this.fontSize)*fontFactor
+      let fontCharWidth = fontEmSize*this.options.pixPerEm*this.options.lineNumbers.charWidth
+      let numberMargin = this.options.lineNumbers.margin;
+      let numChars = this.options.lineNumbers.numChars;
+      let lineNumberLeftPos = editorContainerLeftPos - numberMargin - numChars*fontCharWidth;
+      if (this.defaultLang !== 'la') {
+        lineNumberLeftPos = editorContainerLeftPos + $(editorDiv).outerWidth() + numberMargin;
+      }
+      let overlay = ''
+      let lineNumberLabel = '-'
+      switch (this.getParagraphType(theP)) {
+        case 'normal':
+          lineNumberLabel = TranscriptionEditor.padNumber(++lineNumber, numChars, '&nbsp;')
+          break;
+
+        case 'custodes':
+          lineNumberLabel = '<a title="Custodes">&nbsp;C</a>'
+          break
+
+        case 'pagenumber':
+          lineNumberLabel = '<a title="Page Number">PN</a>'
+          break
+
+        case 'head':
+          lineNumberLabel = '<a title="Head">&nbsp;H</a>'
+          break
+
+      }
+      overlayNumber++
+      let overlayId = this.containerId + '-lnr-' + overlayNumber
+      overlay = '<div class="linenumber" id="' +
+              overlayId +
+              '" style="position: absolute;' + 
+              'top:' +  lineNumberTopPos + 'px; ' + 
+              'left: ' + lineNumberLeftPos + 'px; ' + 
+              'line-height: ' + this.options.editorLineHeight*editorFontSize + 'px;' +
+              'font-size:' + fontEmSize + 'em; ' +
+              'width: ' +  (numChars*fontCharWidth) + 'px;' +
+              'height: ' + this.options.editorLineHeight*editorFontSize + 'px;' +  
+              '">' +
+              lineNumberLabel +
+              '</div>'
+      $('#' + overlayId).remove()
+      $('body').append(overlay)
+    }
+    if (this.numpElements > pElements.length) {
+      for (let i = pElements.length + 1; i <= this.numpElements; i++) {
+        let overlayId = this.containerId + '-lnr-' + i
+        $('#' + overlayId).remove()
+      }
+    }
+    this.numpElements = pElements.length
+
+  }
   
+  dispatchEvent(eventName)
+  {
+    const event = new Event(eventName)
+    $('#' + this.containerId).get()[0].dispatchEvent(event)
+  }
+  
+  /**
+   * Attaches a callback function to an editor event
+   * 
+   * @param {String} eventName
+   * @param {function} f
+   */
+  on(eventName, f) 
+  {
+    for(const ev of TranscriptionEditor.events) {
+      if (ev === eventName) {
+          $('#' + this.containerId).on(eventName, f)
+          return true
+      }
+    }
+    return false
+  }
+  
+ /**
+  * Enables the editor
+  * 
+  * @event Emits the 'edit-enable' event when done.
+  */
   enable() {
     this.enabled = true
     $('#toolbar-'+ this.id).show()
@@ -961,13 +387,18 @@ class TranscriptionEditor {
     $('#reset-button-' + this.id).show()
     $('#toggle-button-' + this.id).prop('title', 'Leave editor')
     $('#toggle-button-' + this.id).html('<i class="fa fa-power-off"></i>')
-    this.resizeEditor()
+//    this.resizeEditor()
+    this.lastSavedData = this.quillObject.getContents()
     this.setContentsNotChanged()
     this.quillObject.setSelection(this.quillObject.getLength())
-    const event = new Event('edit-enable')
-    $(this.containerSelector).get()[0].dispatchEvent(event)
+    this.dispatchEvent('editor-enable')
   }
   
+  /**
+   * Disables the editor
+   * @event Emits the 'edit-disable' event when done
+   * @returns {Boolean}
+   */
   disable() {
     const thisObject = this
     if (this.contentsChanged) {
@@ -989,9 +420,9 @@ class TranscriptionEditor {
           thisObject.quillObject.setContents(thisObject.lastSavedData)
           thisObject.quillObject.enable(thisObject.enabled)
           thisObject.setContentsNotChanged()
-          thisObject.resizeEditor()
-          const event = new Event('edit-disable')
-          $(thisObject.containerSelector).get()[0].dispatchEvent(event)
+          //thisObject.resizeEditor()
+          thisObject.numberLines()
+          thisObject.dispatchEvent('editor-disable')
         })
       $('#alert-modal-' + this.id).modal('show')
       return true
@@ -1004,28 +435,51 @@ class TranscriptionEditor {
     $('#toggle-button-' + this.id).html('<i class="fa fa-pencil"></i>')
     this.quillObject.enable(this.enabled)
     this.contentsChanged = false
-    this.resizeEditor()
-    const event = new Event('edit-disable')
-    $(this.containerSelector).get()[0].dispatchEvent(event)
-    
+    //this.resizeEditor()
+    thisObject.numberLines()
+    this.dispatchEvent('editor-disable')
   }
   
+  toggleEnable() {
+    if (this.enabled) {
+      this.disable()
+    } else {
+      this.enable()
+    }
+  }
+  
+  setContentsChanged() {
+    $('#save-button-' + this.id).prop('disabled', false)
+    $('#reset-button-' + this.id).prop('disabled', false)
+    this.contentsChanged = true
+  }
+  
+  setContentsNotChanged() {
+    $('#save-button-' + this.id).prop('disabled', true)
+    $('#reset-button-' + this.id).prop('disabled', true)
+    this.contentsChanged = false
+  }
+
+  /**
+   * Enters the editor into save mode
+   * 
+   * Emits an 'editor-save' event that the application should process
+   * On a successful save the application should call the saveSuccess or saveFail methods
+   * to bring back the editor into a normal state.
+   * 
+   * 
+   * @returns {Boolean}
+   */
   save() {
-//    let currentContents = this.quillObject.getContents()
-//    if (_.isEqual(currentContents, this.lastSavedData)) {
-//      console.log("Nothing to save")
-//      return true
-//    }
     if (!this.contentsChanged) {
-      //console.log("Nothing to save")
+      // No changes, return
       return true
     }
     this.saving = true
     $('#save-button-' + this.id).prop('title', 'Saving changes...')
     $('#save-button-' + this.id).html('<i class="fa fa-spinner fa-spin fa-fw"></i>')
     this.quillObject.enable(false)
-    const event = new Event('editor-save')
-    $(this.containerSelector).get()[0].dispatchEvent(event)
+    this.dispatchEvent('editor-save')
   }
   
   saveSuccess(newData) {
@@ -1049,555 +503,14 @@ class TranscriptionEditor {
     this.quillObject.setContents(this.lastSavedData)
     $('#save-button-' + this.id).prop('title', 'Save changes')
     $('#save-button-' + this.id).html('<i class="fa fa-save"></i>')
-    const event = new Event('editor-reset')
-    $(this.containerSelector).get()[0].dispatchEvent(event)
+    this.dispatchEvent('editor-reset')
   }
 
-  toggleEnable() {
-    if (this.enabled) {
-      this.disable()
-    } else {
-      this.enable()
-    }
+  getData()
+  {
+     return EditorData.getApiDataFromQuillDelta(this.quillObject.getContents(), this)
   }
   
-  /**
-   * 
-   * @param {type} additionId
-   * @returns {Array|TranscriptionEditor.getAdditionTargets.targets}
-   */
-  getAdditionTargets (additionId = -1) {
-    const ops = this.quillObject.getContents().ops
-    const targets = [{itemid: -1, text: '[none]'}]
-    const potentialTargets = []
-   
-    const additionTargets = []
-    for (const curOps of ops) {
-      if (curOps.insert !== '\n' &&
-                        'attributes' in curOps) {
-        if (curOps.attributes.deletion) {
-          potentialTargets.push({
-            itemid: parseInt(curOps.attributes.deletion.itemid),
-            text: 'DELETION: ' + curOps.insert
-          })
-        }
-        if (curOps.attributes.unclear) {
-          potentialTargets.push({
-            itemid: parseInt(curOps.attributes.unclear.itemid),
-            text: 'UNCLEAR: ' + curOps.insert
-          })
-        }
-        if (curOps.attributes.addition) {
-          if (curOps.attributes.addition.itemid !== additionId) {
-            additionTargets[curOps.attributes.addition.target] = true
-          }
-        }
-      }
-    }
-
-    for (const pTarget of potentialTargets) {
-      if (!(pTarget.itemid in additionTargets)) {
-        targets.push(pTarget)
-      }
-    }
-    return targets
-  }
-
-  static statusBarAlert (id, text) {
-    $('#status-bar-alert-' + id).html('<i class="fa fa-exclamation-triangle"></i> ' +
-                text)
-    $('#status-bar-alert-' + id).addClass('alert-danger')
-    $('#status-bar-alert-' + id).show()
-    $('#status-bar-alert-' + id).fadeOut(3000)
-  }
-
-  static selectionHasFormat (quillObject, range) {
-    if (range.length < 1) {
-      return false
-    }
-    const delta = quillObject.getContents(range.index, range.length)
-    for (const op of delta.ops.entries()) {
-      if (typeof op.insert !== 'object') {
-        continue
-      }
-      for (const type of ['chunkmark', 'nowb', 'mark', 'illegible']) {
-        if (type in op.insert) {
-          //console.log('Found mark: ' + type)
-          return true
-        }
-      }
-    }
-    for (let i = range.index; i < range.index + range.length; i++) {
-      const format = quillObject.getFormat(i, 1)
-      if ($.isEmptyObject(format)) {
-        continue
-      }
-      if (TranscriptionEditor.formatHasItem(format)) {
-        return true
-      }
-    }
-    return false
-  }
-
-  static formatHasItem (format) {
-    for (const type of ['rubric', 'gliph', 'initial', 'sic', 'abbr', 'deletion', 'addition', 'unclear', 'nowb', 'mathtext']) {
-      if (type in format) {
-        return type
-      }
-    }
-    return false
-  }
-
-  static rangeIsInMidItem (quillObject, range) {
- 
-    const prevFormat = quillObject.getFormat(range.index, 0)
-    const nextFormat = quillObject.getFormat(range.index + range.length + 1, 0)
-    const prevItem = TranscriptionEditor.formatHasItem(prevFormat)
-    const nextItem = TranscriptionEditor.formatHasItem(nextFormat)
-    if (prevItem === nextItem) {
-      if (prevItem === false) {
-        return false
-      }
-      return true
-    }
-    return false
-  }
-
-  setDeletion (technique) {
-    this.quillObject.format('deletion', {
-      itemid: this.getOneItemId(),
-      editorid: this.id,
-      technique: technique
-    })
-    const range = this.quillObject.getSelection()
-    this.quillObject.setSelection(range.index + range.length)
-  }
-  
-  setGloss(place) {
-    this.quillObject.format('gloss', {
-      elementId: this.getOneItemId(),
-      place: place
-    })
-  }
- 
-  insertLineGap(position, count) {
-    if (position !== 0) {
-      this.quillObject.insertText(position, '\n')
-      position++
-    }
-     this.quillObject.insertEmbed(position, 'linegap', {
-            editorid: this.id,
-            linecount: count
-      })
-      this.quillObject.insertText(position +1, '\n')
-      this.quillObject.setSelection(position +2)
-  }
-  setAddition (place, target = -1) {
-    this.quillObject.format('addition', {
-      itemid: this.getOneItemId(),
-      editorid: this.id,
-      place: place,
-      target: target
-    })
-    const range = this.quillObject.getSelection()
-    this.quillObject.setSelection(range.index + range.length)
-  }
-
-  static removeFormat (quillObject, range) {
-    for (let i = range.index; i < range.index + range.length; i++) {
-      const format = quillObject.getFormat(i, 1)
-      if ($.isEmptyObject(format)) {
-        continue
-      }
-      const lang = format.lang
-      let elementType = ''
-      for (const type of ['head', 'gloss', 'custodes']) {
-        if (type in format) {
-          elementType = type
-          break
-        }
-      }
-      quillObject.removeFormat(i, 1)
-      quillObject.formatText(i, 1, 'lang', lang)
-      if (elementType !== '') {
-        quillObject.formatLine(i, 1, elementType, true)
-      }
-    }
-    quillObject.setSelection(range.index + range.length)
-  }
-  
-  
-  static genChunkButtonFunction(thisObject, quillObject, type) {
-    return function () {
-      const range = quillObject.getSelection()
-      if (range.length > 0) {
-        return false
-      }
-      $('#chunk-modal-title-' + thisObject.id).html('Chunk ' + type)
-      $('#chunk-modal-worknumber-' + thisObject.id).val(1)
-      $('#chunk-modal-chunknumber-' + thisObject.id).val(1)
-
-      $('#chunk-modal-submit-button-' + thisObject.id).off()
-      $('#chunk-modal-submit-button-' + thisObject.id).on('click', function () {
-        $('#chunk-modal-' + thisObject.id).modal('hide')
-        const itemid = thisObject.getOneItemId()
-        const dareid = 'AW'+ $('#chunk-modal-worknumber-' + thisObject.id).val()
-        const chunkno = $('#chunk-modal-chunknumber-' + thisObject.id).val()
-        quillObject.insertEmbed(range.index, 'chunkmark', {
-          type: type,
-          chunkno: chunkno,
-          dareid: dareid,
-          itemid: itemid,
-          editorid: thisObject.id
-        })
-        quillObject.setSelection(range.index + 1)
-                // Take care of notes!
-        const noteText = $('#chunk-note-' + thisObject.id).val()
-        if (noteText !== '') {
-          thisObject.addNewNote(itemid, noteText)
-        }
-      })
-      $('#chunk-modal-' + thisObject.id).modal('show')
-    }
-  }
-
-  static genSimpleFormatClickFunction (thisObject, quillObject, format) {
-    return function () {
-      if (!thisObject.enabled) {
-        return true
-      }
-      quillObject.format(format, {
-        itemid: thisObject.getOneItemId(),
-        editorid: thisObject.id
-      })
-      const range = quillObject.getSelection()
-      quillObject.setSelection(range.index + range.length)
-    }
-  }
-
-  static genSimpleDoubleClickFunction (thisObject, quillObject) {
-    return function (event) {
-      if (!thisObject.enabled) {
-        return true
-      }
-      const blot = Quill.find(event.target)
-      const range = {
-        index: blot.offset(quillObject.scroll),
-        length: blot.length()
-      }
-      quillObject.setSelection(range)
-      $('#edit-button-' + thisObject.id).prop('disabled', false)
-    }
-  }
-
-  static genEmbedDoubleClickFunction (thisObject, quillObject) {
-    return function (event) {
-      if (!thisObject.enabled) {
-        return true
-      }
-      const blot = Quill.find(event.target)
-      const range = {
-        index: blot.offset(quillObject.scroll),
-        length: blot.length()
-      }
-      quillObject.setSelection(range)
-      const delta = quillObject.getContents(range.index, range.length)
-      let unrecognizedEmbed = true
-      let itemid = -1
-      let length = -1
-      let reason = ''
-      TranscriptionEditor.resetItemModal(thisObject.id)
-      if (delta.ops[0].insert.mark) {
-        itemid = delta.ops[0].insert.mark.itemid
-        $('#item-modal-title-' + thisObject.id).html('Note')
-        unrecognizedEmbed = false
-      }
-      if (delta.ops[0].insert.illegible) {
-        itemid = delta.ops[0].insert.illegible.itemid
-        reason = delta.ops[0].insert.illegible.reason
-        length = delta.ops[0].insert.illegible.length
-        unrecognizedEmbed = false
-        $('#item-modal-title-' + thisObject.id).html('Illegible')
-        $('#item-modal-extrainfo-label-' + thisObject.id).html('Reason:')
-        $('#item-modal-extrainfo-fg-' + thisObject.id).show()
-        let optionsHtml = ''
-        for (const theReason of Item.getValidIllegibleReasons()) {
-          optionsHtml += '<option value="' + theReason + '"'
-          if (theReason === reason) {
-            optionsHtml += ' selected'
-          }
-          optionsHtml += '>' + theReason + '</option>'
-        }
-        $('#item-modal-length-fg-' + thisObject.id).show()
-        $('#item-modal-length-' + thisObject.id).val(length)
-        $('#item-modal-extrainfo-' + thisObject.id).html(optionsHtml)
-      }
-
-      if (unrecognizedEmbed) {
-        return false
-      }
-
-      TranscriptionEditor.setupNotesInItemModal(thisObject, itemid)
-
-      $('#item-modal-submit-button-' + thisObject.id).on('click', function () {
-        $('#item-modal-' + thisObject.id).modal('hide')
-
-        if (delta.ops[0].insert.illegible) {
-          const reason = $('#item-modal-extrainfo-' + thisObject.id).val()
-          const length = $('#item-modal-length-' + thisObject.id).val()
-          quillObject.deleteText(range.index, 1)
-          quillObject.insertEmbed(range.index, 'illegible', {
-            reason: reason,
-            length: length,
-            itemid: itemid,
-            editorid: thisObject.id
-          })
-        }
-
-                // Take care of notes!
-        const noteId = $('#item-note-id-' + thisObject.id).val()
-        const noteText = $('#item-note-' + thisObject.id).val()
-        if (noteId === 'new') {
-          thisObject.addNewNote(itemid, noteText)
-        } else {
-          thisObject.updateNote(noteId, noteText)
-        }
-      })
-      $('#item-modal-' + thisObject.id).modal('show')
-    }
-  }
-  
-  resizeEditor() {
-    if (!this.sizeGuide.selector) {
-      return false
-    }
-    const totalHeight = $(this.sizeGuide.selector).height()
-    //console.log(this.sizeGuide.selector + ': ' + totalHeight)
-    const controlsHeight = $('#editor-controls-' + this.id).height()
-    //console.log('Editor controls: '+ controlsHeight)
-    let toolbarHeight = $('#toolbar-' + this.id).height()
-    if (!this.enabled) {
-      toolbarHeight = 0
-    }
-    //console.log('Toolbar: '+ toolbarHeight)
-    //console.log('Offset:' + this.sizeGuide.offset)
-    const editorHeight = totalHeight - controlsHeight - toolbarHeight - this.sizeGuide.offset - 1
-    //console.log(editorHeight)
-    $('#editor-container-' + this.id).find('div.ql-editor').prop(
-        'style',
-        'max-height: ' + editorHeight + 'px;'
-    )
-  }
-
-  static resetItemModal (id) {
-    $('#item-modal-title-' + id).html('')
-    $('#item-modal-text-fg-' + id).hide()
-    $('#item-modal-alttext-fg-' + id).hide()
-    $('#item-modal-extrainfo-fg-' + id).hide()
-    $('#item-modal-length-fg-' + id).hide()
-    $('#item-modal-target-fg-' + id).hide()
-    $('#item-modal-ednote-fg-' + id).show()
-    $('#item-modal-ednotes-' + id).html('')
-    $('#item-note-' + id).val('')
-    $('#item-note-time-' + id).html('New note')
-    $('#item-note-id-' + id).val('new')
-    $('#item-modal-submit-button-' + id).off()
-  }
-
-  static setupNotesInItemModal (thisObject, itemid) {
-    const ednotes = thisObject.getEdnotesForItemId(itemid)
-    const noteToEdit = thisObject.getLatestNoteForItemAndAuthor(itemid,
-                    thisObject.editorId)
-    if ($.isEmptyObject(noteToEdit) && ednotes.length > 0 || ednotes.length > 1) {
-      let ednotesHtml = '<h3>Other notes</h3>'
-      for (const note of ednotes) {
-        if (note.id === noteToEdit.id) {
-          continue
-        }
-        ednotesHtml += '<blockquote><p>' + note.text + '</p>'
-        ednotesHtml += '<footer>' +
-                    thisObject.people[note.authorId].fullname +
-                    ' @ ' +
-                    note.time + '</footer>'
-        ednotesHtml += '</blockquote>'
-      }
-      $('#item-modal-ednotes-' + thisObject.id).html(ednotesHtml)
-    } else {
-      $('#item-modal-ednotes-' + thisObject.id).html('')
-    }
-    if (!$.isEmptyObject(noteToEdit)) {
-      $('#item-note-' + thisObject.id).val(noteToEdit.text)
-      $('#item-note-id-' + thisObject.id).val(noteToEdit.id)
-      $('#item-note-time-' + thisObject.id).html(
-                    'Note last edited <time datetime="' +
-                    noteToEdit.time +
-                    '" title="' +
-                    noteToEdit.time +
-                    '">' +
-                    TranscriptionEditor.timeSince(noteToEdit.time) +
-                    ' ago</time>'
-                )
-    } else {
-      $('#item-note-' + thisObject.id).val('')
-      $('#item-note-time-' + thisObject.id).html('New note')
-      $('#item-note-id-' + thisObject.id).val('new')
-    }
-  }
-
-  static getMySqlDate (d) {
-    return d.getFullYear() + '-' +
-            ('00' + (d.getMonth() + 1)).slice(-2) + '-' +
-            ('00' + d.getDate()).slice(-2) + ' ' +
-            ('00' + d.getHours()).slice(-2) + ':' +
-            ('00' + d.getMinutes()).slice(-2) + ':' +
-            ('00' + d.getSeconds()).slice(-2)
-  }
-
-  static timeSince (dateString) {
-    const date = Date.parse(dateString)
-
-    const seconds = Math.floor((new Date() - date) / 1000)
-    let interval = seconds / 31536000
-
-    if (interval > 1) {
-      return interval.toFixed(1) + ' years'
-    }
-    interval = seconds / 2592000
-    if (interval > 1) {
-      return interval.toFixed(1) + ' months'
-    }
-    interval = seconds / 86400
-    if (interval > 1) {
-      return interval.toFixed(1) + ' days'
-    }
-    interval = seconds / 3600
-    if (interval > 1) {
-      return interval.toFixed(1) + ' hours'
-    }
-    interval = seconds / 60
-    if (interval > 1) {
-      const minutes = Math.floor(interval)
-      if (minutes === 1) {
-        return '1 minute'
-      }
-      return minutes + ' minutes'
-    }
-    const secs = Math.floor(seconds)
-    if (secs === 1) {
-      return '1 second'
-    }
-    return secs + ' seconds'
-  }
-
-  addNewNote (itemId, text) {
-    if (text === '') {
-      return false
-    }
-    if (typeof itemId === 'string') {
-      itemId = parseInt(itemId)
-    }
-    const noteId = this.getOneNoteId()
-    this.edNotes.push({
-      id: noteId,
-      authorId: this.editorId,
-      target: itemId,
-      type: 2,
-      text: text,
-      time: TranscriptionEditor.getMySqlDate(new Date()),
-      lang: 'en'
-    })
-  }
-
-  updateNote (noteId, text) {
-    if (typeof noteId === 'string') {
-      noteId = parseInt(noteId)
-    }
-    let indexToErase = -1
-    for (let i = 0; i < this.edNotes.length; i++) {
-      if (this.edNotes[i].id === noteId) {
-        if (text.trim() === '') {
-          indexToErase = i
-          break
-        }
-        this.edNotes[i].text = text
-        this.edNotes[i].time = TranscriptionEditor.getMySqlDate(new Date())
-        break
-      }
-    }
-    if (indexToErase !== -1) {
-      this.edNotes.splice(indexToErase, 1)
-    }
-  }
-
-  getEdnotesForItemId (itemId) {
-    if (typeof itemId === 'string') {
-      itemId = parseInt(itemId)
-    }
-    const ednotes = []
-    for (const note of this.edNotes) {
-      if (note.type === 2 && note.target === itemId) {
-        ednotes.push(note)
-      }
-    }
-    return ednotes
-  }
-
-  getLatestNoteForItemAndAuthor (itemId, authorId) {
-    if (typeof itemId === 'string') {
-      itemId = parseInt(itemId)
-    }
-    let latestTime = ''
-    let latestNote = {}
-    for (const note of this.edNotes) {
-      if (note.type === 2 && note.target === itemId &&
-                    note.authorId === authorId &&
-                    note.time > latestTime) {
-        latestTime = note.time
-        latestNote = note
-      }
-    }
-    return latestNote
-  }
-
-  setDefaultLang (lang) {
-    const labels = {
-      la: 'Latin',
-      he: 'Hebrew',
-      ar: 'Arabic'
-    }
-    if (lang !== 'ar' && lang !== 'he') {
-      lang = 'la'
-    }
-    //console.log("Setting up default lang: " + lang)
-    for (const l of ['ar', 'he', 'la']) {
-      if (l === lang) {
-        $('#editor-container-' + this.id).addClass(l + 'text')
-        continue
-      }
-      $('#editor-container-' + this.id).removeClass(l + 'text')
-    }
-    $('#' + lang + '-button-' + this.id).prop('disabled', true)
-    $('#lang-button-'+this.id).attr('title', labels[lang])
-    $('#lang-button-'+this.id).html(lang)
-    this.defaultLang = lang
-    ChunkMarkBlot.dir = lang === 'la' ? 'ltr' : 'ltr';
-    
-  }
-
-  setDisableLangButtons (disable = true) {
-    for (const lang of ['la', 'ar', 'he']) {
-//            if (lang === this.defaultLang) {
-//                $('#' + lang + "-button-" + this.id).prop('disabled', true);
-//                continue;
-//            }
-      $('#' + lang + '-button-' + this.id).prop('disabled', disable)
-    }
-  }
-
-  getQuillObject () {
-    return this.quillObject
-  }
-
   getOneItemId () {
     if (this.minItemId >= 0) {
       this.minItemId = -1000
@@ -1628,22 +541,27 @@ class TranscriptionEditor {
     }
     return mainLanguage
   }
-
-   /**
+  
+  /**
     * Loads the given elements and items into the editor.
     * @param {array} columnData Data from API
     * @returns {none} Nothing.
     */
   setData (columnData) {
-    const delta = []
-    const formats = []
-    const additionTargetTexts = []
-    const languageCounts = {'ar': 0, 'he': 0, 'la':0}
-    formats[ELEMENT_HEAD] = 'head'
-    formats[ELEMENT_CUSTODES] = 'custodes'
-    formats[ELEMENT_PAGE_NUMBER] = 'pagenumber'
+    if (columnData === null) {
+      this.edNotes = []
+      this.people = []
+      this.pageId = 1
+      this.columnNumber = 1
+      this.pageDefaultLang = this.defaultLang
+      this.info = {}
+      this.info.pageId = this.pageId
+      this.info.col = 1
+      this.info.lang = this.defaultLang
+      this.info.numCols = 1
+      return true
+    }
     
-
     this.edNotes = columnData.ednotes
     for (const note of this.edNotes) {
       this.minNoteId = Math.min(this.minNoteId, note.id)
@@ -1653,289 +571,12 @@ class TranscriptionEditor {
     this.pageId = columnData.info.pageId
     this.columnNumber = columnData.info.col
     this.pageDefaultLang = columnData.info.lang
+    
+    let editorData = EditorData.getEditorDataFromApiData(columnData, this)
 
-    for (const ele of columnData.elements) {
-      const attr = {}
-      switch (ele.type) {
-        case ELEMENT_LINE_GAP:
-          delta.push({
-            insert: {
-              linegap : {
-                editorid: this.id,
-                linecount: ele.reference
-              }
-            }
-          })
-          break;
-        
-        case ELEMENT_LINE:
-        case ELEMENT_HEAD:
-        case ELEMENT_CUSTODES:
-        case ELEMENT_GLOSS:
-        case ELEMENT_ADDITION:
-        case ELEMENT_PAGE_NUMBER:
-          for (const item of ele.items) {
-            this.minItemId = Math.min(this.minItemId, item.id)
-            switch (item.type) {
-              case ITEM_TEXT:
-                delta.push({
-                  insert: item.theText,
-                  attributes: {
-                    lang: item.lang
-                  }
-                })
-                break
-
-              case ITEM_MARK:
-                delta.push({
-                  insert: {
-                    mark: {
-                      itemid: item.id,
-                      editorid: this.id
-                    }
-                  }
-                })
-                break
-                
-              case ITEM_NO_WORD_BREAK:
-                delta.push({
-                  insert: {
-                    nowb: {
-                      itemid: item.id,
-                      editorid: this.id
-                    }
-                  }
-                })
-                break
-
-              case ITEM_RUBRIC:
-                delta.push({
-                  insert: item.theText,
-                  attributes: {
-                    rubric: {
-                      itemid: item.id,
-                      editorid: this.id
-                    },
-                    lang: item.lang
-                  }
-                })
-                break
-
-              case ITEM_GLIPH:
-                delta.push({
-                  insert: item.theText,
-                  attributes: {
-                    gliph: {
-                      itemid: item.id,
-                      editorid: this.id
-                    },
-                    lang: item.lang
-                  }
-                })
-                break
-
-              case ITEM_INITIAL:
-                delta.push({
-                  insert: item.theText,
-                  attributes: {
-                    initial: {
-                      itemid: item.id,
-                      editorid: this.id
-                    },
-                    lang: item.lang
-                  }
-                })
-                break
-
-              case ITEM_SIC:
-                delta.push({
-                  insert: item.theText,
-                  attributes: {
-                    sic: {
-                      correction: item.altText,
-                      itemid: item.id,
-                      editorid: this.id
-                    },
-                    lang: item.lang
-                  }
-                })
-                break
-
-              case ITEM_ABBREVIATION:
-                delta.push({
-                  insert: item.theText,
-                  attributes: {
-                    abbr: {
-                      expansion: item.altText,
-                      itemid: item.id,
-                      editorid: this.id
-                    },
-                    lang: item.lang
-                  }
-                })
-                break
-
-              case ITEM_DELETION:
-                additionTargetTexts[item.id] = 'DELETION: ' + item.theText
-                delta.push({
-                  insert: item.theText,
-                  attributes: {
-                    deletion: {
-                      technique: item.extraInfo,
-                      itemid: item.id,
-                      editorid: this.id
-                    },
-                    lang: item.lang
-                  }
-                })
-                break
-
-              case ITEM_ADDITION:
-                delta.push({
-                  insert: item.theText,
-                  attributes: {
-                    addition: {
-                      place: item.extraInfo,
-                      target: item.target,
-                      targetText: additionTargetTexts[item.target],
-                      itemid: item.id,
-                      editorid: this.id
-                    },
-                    lang: item.lang
-                  }
-                })
-                break
-
-              case ITEM_UNCLEAR:
-                additionTargetTexts[item.id] = 'UNCLEAR: ' + item.theText
-                delta.push({
-                  insert: item.theText,
-                  attributes: {
-                    unclear: {
-                      reason: item.extraInfo,
-                      reading2: item.altText,
-                      itemid: item.id,
-                      editorid: this.id
-                    },
-                    lang: item.lang
-                  }
-                })
-                break
-
-              case ITEM_ILLEGIBLE:
-                delta.push({
-                  insert: {
-                    illegible: {
-                      length: item.length,
-                      reason: item.extraInfo,
-                      itemid: item.id,
-                      editorid: this.id
-                    }
-                  }
-                })
-                break
-                
-              case ITEM_CHUNK_MARK:
-                delta.push({
-                  insert: {
-                    chunkmark: {
-                      type: item.altText,
-                      dareid: item.theText,
-                      chunkno: item.target,
-                      itemid: item.id,
-                      editorid: this.id
-                    }
-                  }
-                })
-                break
-                
-              case ITEM_CHARACTER_GAP: 
-                delta.push({
-                  insert: {
-                    chgap: {
-                      length: item.length,
-                      itemid: item.id,
-                      editorid: this.id
-                    }
-                  }
-                })
-                break;
-                
-              case ITEM_PARAGRAPH_MARK:
-                delta.push({
-                  insert: {
-                    pmark: {
-                      itemid: item.id,
-                      editorid: this.id
-                    }
-                  }
-                })
-                break
-              
-              case ITEM_MATH_TEXT:
-                delta.push({
-                  insert: item.theText,
-                  attributes: {
-                    mathtext: {
-                      itemid: item.id,
-                      editorid: this.id
-                    },
-                    lang: item.lang
-                  }
-                })
-                break
-                
-              default:
-                console.warn('Unrecognized item type ' + item.type + ' when setting editor data')
-            }
-            languageCounts[item.lang]++
-          }
-          break
-          
-          // no default
-      }
-      
-      switch(ele.type) {
-        case ELEMENT_GLOSS:
-          delta.push({
-            insert: '\n',
-            attributes: {
-              gloss:  {
-                elementId: ele.id,
-                place: ele.placement
-              }
-            }
-          })
-          break;
-          
-          case ELEMENT_ADDITION:
-            //onsole.log("Addition element")
-            //console.log(ele)
-          delta.push({
-            insert: '\n',
-            attributes: {
-              additionelement:  {
-                elementId: ele.id,
-                place: ele.placement,
-                target: ele.reference
-              }
-            }
-          })
-          break;
-          
-        default:
-          attr[formats[ele.type]] = true
-          delta.push({insert: '\n', attributes: attr})
-          break;
-      }
-      
-    }
-
-    this.quillObject.setContents(delta)
+    this.quillObject.setContents(editorData.delta)
     this.lastSavedData = this.quillObject.getContents()
-    let mainLang = TranscriptionEditor.getMainLanguage(languageCounts)
-//    console.log(languageCounts)
-//    console.log(mainLang)
+    let mainLang = editorData.mainLang
     if (!mainLang) {
       mainLang = this.pageDefaultLang
     }
@@ -1943,123 +584,365 @@ class TranscriptionEditor {
     this.setDefaultLang(mainLang)
   }
   
-  onEditorEnable(f) {
-    $(this.containerSelector).on('edit-enable', f)
+  getQuillData() 
+  {
+    return this.quillObject.getContents()
+  }
+
+  genOnQuillChange()
+  {
+    let thisObject = this
+    return function (delta, oldDelta, source)
+    {
+      if (!thisObject.enabled) {
+        return false
+      }
+      if (!_.isEqual(thisObject.quillObject.getContents(), thisObject.lastSavedData)) {
+        thisObject.setContentsChanged()
+      } else {
+        thisObject.setContentsNotChanged()
+      }
+      thisObject.numberLines()
+    }
+  }
+
+  genOnResize()
+  {
+    let thisObject = this
+    return function (e)
+    {
+      thisObject.numberLines()
+    }
+  }
+
+  genOnClickZoomButton(type)
+  {
+    let thisObject = this
+    return function ()
+    {
+      switch (type) {
+        case 'in':
+          thisObject.makeTextBigger()
+          break;
+
+        case 'out':
+          thisObject.makeTextSmaller()
+          break;
+      }
+      thisObject.numberLines()
+      return true
+    }
+  }
+
+  genOnClickSimpleBlockButton(format) 
+  {
+    let quillObject = this.quillObject
+    return function ()
+    {
+      quillObject.format(format, true)
+    }
+  }
+
+  genOnClickToggleEnableButton()
+  {
+    let thisObject = this
+    return function ()
+    {
+      thisObject.toggleEnable()
+      thisObject.numberLines()
+      return true
+    }
+  }
+  genOnClickLineButton()
+  {
+    let quillObject = this.quillObject
+    return function ()
+    {
+      for(const blockBlot of TranscriptionEditor.blockBlots) {
+        quillObject.format(blockBlot.name, false)
+      }
+    }
+  }
+
+  genOnClickSetLang(lang)
+  {
+    let thisObject = this
+    return function ()
+    {
+      thisObject.setDefaultLang(lang)
+      thisObject.setEditorMargin(thisObject.fontSize)
+      $('#lang-button-' + thisObject.id).html(lang)
+      thisObject.numberLines()
+    }
   }
   
-  onEditorDisable(f) {
-    $(this.containerSelector).on('edit-disable', f)
+  genOnClickSaveButton()
+  {
+    let thisObject = this
+    return function(){
+      thisObject.save()
+      return true
+    }
   }
   
-  onEditorSave(f) {
-    $(this.containerSelector).on('editor-save', f)
+  genOnClickResetButton()
+  {
+    let thisObject = this
+    return function(){
+      thisObject.reset()
+      return true
+    }
   }
   
-  onEditorReset(f) {
-    $(this.containerSelector).on('editor-reset', f)
-  }
-
-    /**
-     * Takes the contents of a quill editor and returns an array of elements
-     * and items.
-     *
-     * @returns {Array|elements} An array that can be passed to the API
-     */
-  getData () {
-    return EditorData.getApiDataFromQuillDelta(this.quillObject.getContents(), this)
-  }
-
-  static getDeletionRanges (ops) {
-    let index = 0
-    const ranges = []
-    for (const op of ops) {
-      if (!op.insert) {
-        continue
-      }
-      if (op.attributes && op.attributes.deletion) {
-        ranges.push({
-          id: parseInt(op.attributes.deletion.itemid),
-          index: index,
-          length: op.insert.length
-        })
-      }
-      index += op.insert.length
+  static registerEvent(eventName)
+  {
+    if (TranscriptionEditor.events === undefined) {
+      TranscriptionEditor.events = []
     }
-    return ranges
+    TranscriptionEditor.events.push(eventName)
   }
 
-  static getCoveredDeletions (ranges, index, length) {
-    const deletions = []
-
-    for (const range of ranges) {
-      if (range.index >= index && range.index + range.length <= index + length) {
-        deletions.push(range)
-      }
+  static registerEditorInstance(id, editorObject) 
+  {
+    TranscriptionEditor.editors[id] = editorObject
+  }
+  static registerBlockBlot(theBlot)
+  {
+    if (TranscriptionEditor.blockBlots === undefined) {
+      TranscriptionEditor.blockBlots = []
     }
-    return deletions
+    TranscriptionEditor.blockBlots.push({
+      name: theBlot.blotName,
+      className: theBlot.className
+    })
+    Quill.register(theBlot)
   }
+  
+  static init(baseUrl)
+  {
+    TranscriptionEditor.editors = [] // ??? I don't think this is needed anymore
+    TranscriptionEditor.baseUrl = baseUrl
+    TranscriptionEditor.registerEvent('editor-enable')
+    TranscriptionEditor.registerEvent('editor-disable')
+    TranscriptionEditor.registerEvent('editor-save')
+    TranscriptionEditor.registerEvent('editor-reset')
+    TranscriptionEditor.editorTemplate = Twig.twig({
+      id: 'editor',
+      data: `
+<div class="transcription-editor">
+  <div id="editor-controls-{{id}}" class="editor-controlbar">
+      <button id="zoom-in-button-{{id}}" title="Make text bigger"><i class="fa fa-search-plus"></i></button>
+      <button id="zoom-out-button-{{id}}" title="Make text smaller"><i class="fa fa-search-minus"></i></button>
+      <button id="toggle-button-{{id}}" title="Edit"><i class="fa fa-pencil"></i></button>
+      <button id="save-button-{{id}}" title="Save changes"><i class="fa fa-save"></i></button>
+      <button id="reset-button-{{id}}" title="Revert to last saved changes"><i class="fa fa-refresh"></i></button>
+  </div>
+  <div class="toolbar" id="toolbar-{{id}}">
+        <button id="clear-button-{{id}}" class="selFmtBtn" title="Clear formatting" disabled><i class="fa fa-eraser"></i></button>
+        <button id="edit-button-{{id}}" class="selFmtBtn" title="Edit" disabled><i class="fa fa-pencil"></i></button>
+        <span id="langButtons-{{id}}"></span>
+        <button id="rubric-button-{{id}}" class="selFmtBtn" title="Rubric" disabled>R</button>
+        <button id="gliph-button-{{id}}" class="selFmtBtn" title="Gliph" disabled>G</button>
+        <button id="initial-button-{{id}}" class="selFmtBtn" title="Initial" disabled>I</button>
+        <button id="mathtext-button-{{id}}" class="selFmtBtn" title="Math Text" disabled>M</button>
 
-  static getAdditionRangeByTarget (ops, target) {
-    let index = 0
-    if (typeof target === 'string') {
-      target = parseInt(target)
-    }
-    for (const op of ops) {
-      if (!op.insert) {
-        continue
-      }
-      if (op.attributes && op.attributes.addition) {
-        if (parseInt(op.attributes.addition.target) === target) {
-          return {
-            index: index,
-            length: op.insert.length,
-            place: op.attributes.addition.place,
-            id: parseInt(op.attributes.addition.itemid)
-          }
-        }
-      }
-      index += op.insert.length
-    }
-    return false
+        <button id="note-button-{{id}}" title="Editorial Note"><i class="fa fa-comment-o"></i></button>
+
+        <button id="sic-button-{{id}}" class="selFmtBtn" title="Sic" disabled><i class="fa fa-frown-o"></i></button>
+        <button id="abbr-button-{{id}}" class="selFmtBtn" title="Abbreviation" disabled><i class="fa fa-hand-spock-o"></i></button>
+        
+        <span class="dropdown">
+            <button id="add-button-{{id}}" class="selFmtBtn" title="Addition" disabled data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                <i class="fa fa-plus-square"></i>
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="add-button-{{id}}">
+                <li><a>Placement</a></li>
+                <li role=separator class=divider>
+                <li><a id="add-above-{{id}}">Above</a></li>
+                <li><a id="add-below-{{id}}">Below</a></li>
+                <li><a id="add-inline-{{id}}">Inline</a></li>
+                <li><a id="add-inspace-{{id}}">In Space</a></li>
+                <li><a id="add-overflow-{{id}}">Overflow</a></li>
+                <li><a id="add-marginleft-{{id}}">Margin Left</a></li>
+                <li><a id="add-marginright-{{id}}">Margin Right</a></li>
+           </ul>
+        </span>
+         <span class="dropdown">
+            <button id="del-button-{{id}}" class="selFmtBtn" title="Deletion" disabled data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                <i class="fa fa-minus-square"></i>
+           </button>
+            <ul class="dropdown-menu" aria-labelledby="del-button-{{id}}">
+                <li><a>Deletion Technique</a></li>
+                <li role=separator class=divider>
+                <li><a id="del-strikeout-{{id}}">Strikeout</a></li>
+                <li><a id="del-dot-above-{{id}}">Single dot above</a></li>
+                <li><a id="del-dots-above-{{id}}">Dots above</a></li>
+                <li><a id="del-dots-underneath-{{id}}">Dots under</a></li>
+                <li><a id="del-dot-above-dot-under-{{id}}">Dot above and under</a></li>
+                <li><a id="del-line-above-{{id}}">Line above</a></li>
+                <li><a id="del-no-sign-{{id}}">No sign</a></li>
+           </ul>
+        </span>
+        
+        <button id="unclear-button-{{id}}" class="selFmtBtn" title="Unclear" disabled><i class="fa fa-low-vision"></i></button>
+        <button id="illegible-button-{{id}}"  title="Illegible"><i class="fa fa-eye-slash"></i></button>
+        <button id="chunk-start-button-{{id}}"  title="Chunk Start">{</button>
+        <button id="chunk-end-button-{{id}}"  title="Chunk End">}</button>
+        
+        <button id="chgap-button-{{id}}" title="Character gap"><i class="fa fa-square-o"></i></button>
+        <button id="pmark-button-{{id}}" title="Paragraph Mark">¶</button>
+        
+        
+        <button class="title-button" disabled>&nbsp;</button>
+        {#Special characters#}
+        <button id="nowb-button-{{id}}" title="Non word-breaking dash"><i class="fa fa-minus"></i></button>
+        <button id="pcircledot-button-{{id}}" title="Circle dot">⊙</button>
+        
+        <button class="title-button" disabled>&nbsp;</button>
+        {#Elements#}
+        
+        <button id="line-button-{{id}}" title="Line">L</button>
+        
+        <span class="dropdown">
+            <button id="gloss-button-{{id}}" title="Marginal Gloss" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                G
+           </button>
+            <ul class="dropdown-menu" aria-labelledby="gloss-button-{{id}}">
+                <li><a>Placement</a></li>
+                <li role=separator class=divider>
+                <li><a id="gloss-top-{{id}}">Margin Top</a></li>
+                <li><a id="gloss-bottom-{{id}}">Margin Bottom</a></li>
+                <li><a id="gloss-left-{{id}}">Margin Left</a></li>
+                <li><a id="gloss-right-{{id}}">Margin Right</a></li>
+           </ul>
+        </span>    
+        <button id="head-button-{{id}}" title="Head"><i class="fa fa-header"></i></button>
+        <button id="custodes-button-{{id}}" title="Custodes">C</button>
+        <button id="pagenumber-button-{{id}}" title="Page Number">P</button>
+        <button id="linegap-button-{{id}}" title="Line Gap">Gap</button>
+        
+        <button class="title-button" disabled>Default:</button>
+        <span class="dropdown">
+            <button class="dropdown-toggle" type="button" id="lang-button-{{id}}" title="Latin" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                la
+           </button>
+            <ul class="dropdown-menu" id="set-lang-dd-menu-{{id}}" aria-labelledby="lang-button-{{id}}">
+           </ul>
+        </span>
+    </div>
+    <div id="editor-container-{{id}}" class="editor-container"></div>
+    <div id="status-bar-{{id}}" class="editor-statusbar">
+    </div>
+</div>
+<div id="cbtmp" style="display: none;">
+</div>
+`
+    })
+    TranscriptionEditor.modalsTemplate = Twig.twig({
+      id: 'editor-modals',
+      data:`
+<!-- ITEM modal {{id}} -->            
+<div id="item-modal-{{id}}" class="modal" role="dialog">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 id="item-modal-title-{{id}}" class="modal-title"></h4>
+            </div>
+            <div class="modal-body" id="item-modal-body-{{id}}">
+                <form>
+                    <div id="item-modal-text-fg-{{id}}" class="form-group">
+                        <label for="item-modal-text-{{id}}" class="control-label">Text:</label>
+                        <span id="item-modal-text-{{id}}"></span>
+                    </div>
+                    <div id="item-modal-alttext-fg-{{id}}" class="form-group">
+                        <label for="item-modal-alttext-{{id}}" id="item-modal-alttext-label-{{id}}" class="control-label">Alt Text:</label>
+                        <input type="text" class="form-control" id="item-modal-alttext-{{id}}">
+                    </div>
+                    <div id="item-modal-extrainfo-fg-{{id}}" class="form-group">
+                        <label for="item-modal-extrainfo-{{id}}" id="item-modal-extrainfo-label-{{id}}" class="control-label">Extra Info:</label>
+                        <select name="extrainfo" id="item-modal-extrainfo-{{id}}"></select>
+                    </div>
+                    <div id="item-modal-length-fg-{{id}}" class="form-group">
+                        <label for="item-modal-length-{{id}}" id="item-modal-length-label-{{id}}" class="control-label">Length:</label>
+                        <input type="number" name="length" class="form-control" id="item-modal-length-{{id}}"></input>
+                    </div>
+                    <div id="item-modal-target-fg-{{id}}" class="form-group">
+                        <label for="item-modal-target-{{id}}" id="item-modal-target-label-{{id}}" class="control-label">Extra Info:</label>
+                        <select name="target" id="item-modal-target-{{id}}"></select>
+                    </div>
+                    <input id="item-note-id-{{id}}" type="hidden" name="note-id" value=""/>
+                    <div class="form-group" id="item-modal-ednote-fg-{{id}}">
+                        <label for="item-note-{{id}}" class="control-label">Note:</label>
+                        <textarea rows="4" class="form-control" id="item-note-{{id}}"></textarea>
+                        <p class="item-note-edit-time" id="item-note-time-{{id}}"></p>
+                    </div>
+                    <div class="modal-ednotes" id="item-modal-ednotes-{{id}}">
+                    </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" id="item-modal-cancel-button-{{id}}" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="item-modal-submit-button-{{id}}">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+            
+            
+<!-- CHUNK modal {{id}} -->            
+<div id="chunk-modal-{{id}}" class="modal" role="dialog">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 id="chunk-modal-title-{{id}}" class="modal-title">Chunk</h4>
+            </div>
+            <div class="modal-body" id="chunk-modal-body-{{id}}">
+                <form class="form-horizontal">
+                    <div id="chunk-modal-worknumber-fg-{{id}}" class="form-group">
+                        <label for="chunk-modal-worknumber-{{id}}" class="control-label">Work Number:</label>
+                        <input type="number" name="worknumber" class="form-control" id="chunk-modal-worknumber-{{id}}"></input>
+                    </div>
+                    <div id="chunk-modal-chunknumber-fg-{{id}}" class="form-group">
+                        <label for="chunk-modal-chunknumber-{{id}}" id="chunk-modal-chunknumber-label-{{id}}" class="control-label">Chunk:</label>
+                        <input type="number" name="chunk" class="form-control" id="chunk-modal-chunknumber-{{id}}"></input>
+                    </div>
+                    <input id="chunk-note-id-{{id}}" type="hidden" name="note-id" value=""/>
+                    <div class="form-group">
+                        <label for="chunk-note-{{id}}" class="control-label">Note:</label>
+                        <input type="text" class="form-control" id="chunk-note-{{id}}">
+                        <p class="chunk-note-edit-time" id="chunk-note-time-{{id}}"></p>
+                    </div>
+                    <div class="modal-ednotes" id="chunk-modal-ednotes-{{id}}">
+                    </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" id="chunk-modal-cancel-button-{{id}}" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="chunk-modal-submit-button-{{id}}">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>            
+            
+<!-- ALERT modal {{id}} -->             
+<div id="alert-modal-{{id}}" class="modal" role="dialog">
+    <div class="modal-dialog modal-sm " role="document">
+        <div class="modal-content bg-info">
+            <div class="modal-header">
+                <h4 id="alert-modal-title-{{id}}">Please confirm</h4>
+            </div>
+            <div class="modal-body" id="alert-modal-body-{{id}}">
+                <p id="alert-modal-text-{{id}}"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="alert-modal-cancel-button-{{id}}" data-dismiss="modal">No</button>
+                <button type="button" class="btn btn-danger" id="alert-modal-submit-button-{{id}}">Yes</button>
+            </div>
+</div>      
+`
+    })
   }
-
-  static hideAllPopovers () {
-    $('.popover').remove()
-  }
-
-  static setUpPopover (node, title, text, editorid, itemid, noText = false) {
-    $(node).popover({
-      content: function () {
-        const editorObject = TranscriptionEditor.editors[editorid]
-        const ednotes = editorObject.getEdnotesForItemId(itemid)
-
-        const theText = node.textContent
-        let t = '<h3 class="editor-popover-title">' + title + '</h3>'
-        if (!noText) {
-          t += '<b>Text</b>: ' + theText + '<br/>'
-        }
-        t += text
-        let ednotesHtml = '<h4>Notes:</h4>'
-        if ($.isEmptyObject(ednotes)) {
-          ednotesHtml += '&nbsp;&nbsp;<i>None</i>'
-        }
-        for (const note of ednotes) {
-          ednotesHtml += '<blockquote><p>' + note.text + '</p>'
-          ednotesHtml += '<footer>' +
-                        editorObject.people[note.authorId].fullname +
-                        ' @ ' +
-                        note.time + '</footer>'
-          ednotesHtml += '</blockquote>'
-        }
-        return t + ednotesHtml
-      },
-      container: 'body',
-      animation: false,
-      delay: { 'show': 1500, 'hide': 0},
-      html: true,
-      placement: 'auto',
-      trigger: 'hover'})
-  }
+  
+  
 }
 
-TranscriptionEditor.editors = []

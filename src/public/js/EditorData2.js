@@ -319,7 +319,315 @@ class EditorData {
         console.warn(note)
       }
     }
-    return {elements: elements, ednotes: filteredEdnotes, people: editorInfo.people}
+    return {elements: elements, ednotes: filteredEdnotes, people: editorInfo.people, info: editorInfo.info}
+  }
+  
+  static getMainLanguage(languageCounts) {
+    let max = 0
+    let mainLanguage = false
+    for (const lang in languageCounts) {
+      if (languageCounts[lang]===0) {
+        continue
+      }
+      if (languageCounts[lang]>= max) {
+        max = languageCounts[lang]
+        mainLanguage = lang
+      }
+    }
+    return mainLanguage
+  }
+  
+  static getEditorDataFromApiData(columnData, editorInfo)
+  {
+    const delta = []
+    const formats = []
+    const additionTargetTexts = []
+    const languageCounts = {ar: 0, he: 0, la:0, jrb: 0}
+    
+    
+    
+    formats[ELEMENT_HEAD] = 'head'
+    formats[ELEMENT_CUSTODES] = 'custodes'
+    formats[ELEMENT_PAGE_NUMBER] = 'pagenumber'
+
+    for (const ele of columnData.elements) {
+      const attr = {}
+      switch (ele.type) {
+        case ELEMENT_LINE_GAP:
+          delta.push({
+            insert: {
+              linegap : {
+                editorid: editorInfo.id,
+                linecount: ele.reference
+              }
+            }
+          })
+          break;
+        
+        case ELEMENT_LINE:
+        case ELEMENT_HEAD:
+        case ELEMENT_CUSTODES:
+        case ELEMENT_GLOSS:
+        case ELEMENT_ADDITION:
+        case ELEMENT_PAGE_NUMBER:
+          for (const item of ele.items) {
+            editorInfo.minItemId = Math.min(editorInfo.minItemId, item.id)
+            switch (item.type) {
+              case ITEM_TEXT:
+                delta.push({
+                  insert: item.theText,
+                  attributes: {
+                    lang: item.lang
+                  }
+                })
+                break
+
+              case ITEM_MARK:
+                delta.push({
+                  insert: {
+                    mark: {
+                      itemid: item.id,
+                      editorid: editorInfo.id
+                    }
+                  }
+                })
+                break
+                
+              case ITEM_NO_WORD_BREAK:
+                delta.push({
+                  insert: {
+                    nowb: {
+                      itemid: item.id,
+                      editorid: editorInfo.id
+                    }
+                  }
+                })
+                break
+
+              case ITEM_RUBRIC:
+                delta.push({
+                  insert: item.theText,
+                  attributes: {
+                    rubric: {
+                      itemid: item.id,
+                      editorid: editorInfo.id
+                    },
+                    lang: item.lang
+                  }
+                })
+                break
+
+              case ITEM_GLIPH:
+                delta.push({
+                  insert: item.theText,
+                  attributes: {
+                    gliph: {
+                      itemid: item.id,
+                      editorid: editorInfo.id
+                    },
+                    lang: item.lang
+                  }
+                })
+                break
+
+              case ITEM_INITIAL:
+                delta.push({
+                  insert: item.theText,
+                  attributes: {
+                    initial: {
+                      itemid: item.id,
+                      editorid: editorInfo.id
+                    },
+                    lang: item.lang
+                  }
+                })
+                break
+
+              case ITEM_SIC:
+                delta.push({
+                  insert: item.theText,
+                  attributes: {
+                    sic: {
+                      correction: item.altText,
+                      itemid: item.id,
+                      editorid: editorInfo.id
+                    },
+                    lang: item.lang
+                  }
+                })
+                break
+
+              case ITEM_ABBREVIATION:
+                delta.push({
+                  insert: item.theText,
+                  attributes: {
+                    abbr: {
+                      expansion: item.altText,
+                      itemid: item.id,
+                      editorid: editorInfo.id
+                    },
+                    lang: item.lang
+                  }
+                })
+                break
+
+              case ITEM_DELETION:
+                additionTargetTexts[item.id] = 'DELETION: ' + item.theText
+                delta.push({
+                  insert: item.theText,
+                  attributes: {
+                    deletion: {
+                      technique: item.extraInfo,
+                      itemid: item.id,
+                      editorid: editorInfo.id
+                    },
+                    lang: item.lang
+                  }
+                })
+                break
+
+              case ITEM_ADDITION:
+                delta.push({
+                  insert: item.theText,
+                  attributes: {
+                    addition: {
+                      place: item.extraInfo,
+                      target: item.target,
+                      targetText: additionTargetTexts[item.target],
+                      itemid: item.id,
+                      editorid: editorInfo.id
+                    },
+                    lang: item.lang
+                  }
+                })
+                break
+
+              case ITEM_UNCLEAR:
+                additionTargetTexts[item.id] = 'UNCLEAR: ' + item.theText
+                delta.push({
+                  insert: item.theText,
+                  attributes: {
+                    unclear: {
+                      reason: item.extraInfo,
+                      reading2: item.altText,
+                      itemid: item.id,
+                      editorid: editorInfo.id
+                    },
+                    lang: item.lang
+                  }
+                })
+                break
+
+              case ITEM_ILLEGIBLE:
+                delta.push({
+                  insert: {
+                    illegible: {
+                      length: item.length,
+                      reason: item.extraInfo,
+                      itemid: item.id,
+                      editorid: editorInfo.id
+                    }
+                  }
+                })
+                break
+                
+              case ITEM_CHUNK_MARK:
+                delta.push({
+                  insert: {
+                    chunkmark: {
+                      type: item.altText,
+                      dareid: item.theText,
+                      chunkno: item.target,
+                      itemid: item.id,
+                      editorid: editorInfo.id
+                    }
+                  }
+                })
+                break
+                
+              case ITEM_CHARACTER_GAP: 
+                delta.push({
+                  insert: {
+                    chgap: {
+                      length: item.length,
+                      itemid: item.id,
+                      editorid: editorInfo.id
+                    }
+                  }
+                })
+                break;
+                
+              case ITEM_PARAGRAPH_MARK:
+                delta.push({
+                  insert: {
+                    pmark: {
+                      itemid: item.id,
+                      editorid: editorInfo.id
+                    }
+                  }
+                })
+                break
+              
+              case ITEM_MATH_TEXT:
+                delta.push({
+                  insert: item.theText,
+                  attributes: {
+                    mathtext: {
+                      itemid: item.id,
+                      editorid: editorInfo.id
+                    },
+                    lang: item.lang
+                  }
+                })
+                break
+                
+              default:
+                console.warn('Unrecognized item type ' + item.type + ' when setting editor data')
+            }
+            languageCounts[item.lang]++
+          }
+          break
+          
+          // no default
+      }
+      
+      switch(ele.type) {
+        case ELEMENT_GLOSS:
+          delta.push({
+            insert: '\n',
+            attributes: {
+              gloss:  {
+                elementId: ele.id,
+                place: ele.placement
+              }
+            }
+          })
+          break;
+          
+          case ELEMENT_ADDITION:
+            //onsole.log("Addition element")
+            //console.log(ele)
+          delta.push({
+            insert: '\n',
+            attributes: {
+              additionelement:  {
+                elementId: ele.id,
+                place: ele.placement,
+                target: ele.reference
+              }
+            }
+          })
+          break;
+          
+        default:
+          attr[formats[ele.type]] = true
+          delta.push({insert: '\n', attributes: attr})
+          break;
+      }
+      
+    }
+    let mainLang = EditorData.getMainLanguage(languageCounts)
+    return { delta: delta, mainLang: mainLang }
   }
   
 }

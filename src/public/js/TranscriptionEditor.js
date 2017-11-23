@@ -30,7 +30,7 @@
 /* global ITEM_NO_WORD_BREAK, ITEM_CHUNK_MARK, ELEMENT_ADDITION, ELEMENT_LINE_GAP, MarkBlot */
 /* global IllegibleBlot, NoWordBreakBlot, ChunkMarkBlot, LineGapBlot, _, GlossBlot, EditorData */
 /* global ITEM_CHARACTER_GAP, CharacterGapBlot, ParagraphMarkBlot, ITEM_MATH_TEXT, 
- * ITEM_PARAGRAPH_MARK */
+ * ITEM_PARAGRAPH_MARK , ITEM_PARAGRAPH_MARK*/
 
 
 class TranscriptionEditor {
@@ -1045,6 +1045,14 @@ class TranscriptionEditor {
     this.quillObject.enable(true)
   }
   
+
+  
+  getQuillData()
+  {
+    
+  }
+  
+  
   reset() {
     this.quillObject.setContents(this.lastSavedData)
     $('#save-button-' + this.id).prop('title', 'Save changes')
@@ -1965,10 +1973,10 @@ class TranscriptionEditor {
      *
      * @returns {Array|elements} An array that can be passed to the API
      */
-  getData () {
+  getData (){
     return EditorData.getApiDataFromQuillDelta(this.quillObject.getContents(), this)
   }
-
+  
   static getDeletionRanges (ops) {
     let index = 0
     const ranges = []

@@ -1,0 +1,113 @@
+<div class="transcription-editor">
+    <div id="editor-controls-{{id}}" class="editor-controlbar">
+        <button id="zoom-in-button-{{id}}" title="Make text bigger"><i class="fa fa-search-plus"></i></button>
+        <button id="zoom-out-button-{{id}}" title="Make text smaller"><i class="fa fa-search-minus"></i></button>
+        <button id="toggle-button-{{id}}" title="Edit"><i class="fa fa-pencil"></i></button>
+        <button id="save-button-{{id}}" title="Save changes"><i class="fa fa-save"></i></button>
+        <button id="reset-button-{{id}}" title="Revert to last saved changes"><i class="fa fa-refresh"></i></button>
+    </div>
+    <div class="toolbar" id="toolbar-{{id}}">
+        <button id="clear-button-{{id}}" class="selFmtBtn" title="Clear formatting" disabled><i class="fa fa-eraser"></i></button>
+        <button id="edit-button-{{id}}" class="selFmtBtn" title="Edit" disabled><i class="fa fa-pencil"></i></button>
+        <button id="ar-button-{{id}}" class="langButton" title="Arabic" disabled>ar</button>
+        <button id="he-button-{{id}}" class="langButton" title="Hebrew" disabled>he</button>
+        <button id="la-button-{{id}}" class="langButton" title="Latin" disabled>la</button>
+
+        <button id="rubric-button-{{id}}" class="selFmtBtn" title="Rubric" disabled>R</button>
+        <button id="gliph-button-{{id}}" class="selFmtBtn" title="Gliph" disabled>G</button>
+        <button id="initial-button-{{id}}" class="selFmtBtn" title="Initial" disabled>I</button>
+        <button id="mathtext-button-{{id}}" class="selFmtBtn" title="Math Text" disabled>M</button>
+
+        <button id="note-button-{{id}}" title="Editorial Note"><i class="fa fa-comment-o"></i></button>
+
+        <button id="sic-button-{{id}}" class="selFmtBtn" title="Sic" disabled><i class="fa fa-frown-o"></i></button>
+        <button id="abbr-button-{{id}}" class="selFmtBtn" title="Abbreviation" disabled><i class="fa fa-hand-spock-o"></i></button>
+        
+        <span class="dropdown">
+            <button id="add-button-{{id}}" class="selFmtBtn" title="Addition" disabled data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                <i class="fa fa-plus-square"></i>
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="add-button-{{id}}">
+                <li><a>Placement</a></li>
+                <li role=separator class=divider>
+                <li><a id="add-above-{{id}}">Above</a></li>
+                <li><a id="add-below-{{id}}">Below</a></li>
+                <li><a id="add-inline-{{id}}">Inline</a></li>
+                <li><a id="add-inspace-{{id}}">In Space</a></li>
+                <li><a id="add-overflow-{{id}}">Overflow</a></li>
+                <li><a id="add-marginleft-{{id}}">Margin Left</a></li>
+                <li><a id="add-marginright-{{id}}">Margin Right</a></li>
+           </ul>
+        </span>
+         <span class="dropdown">
+            <button id="del-button-{{id}}" class="selFmtBtn" title="Deletion" disabled data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                <i class="fa fa-minus-square"></i>
+           </button>
+            <ul class="dropdown-menu" aria-labelledby="del-button-{{id}}">
+                <li><a>Deletion Technique</a></li>
+                <li role=separator class=divider>
+                <li><a id="del-strikeout-{{id}}">Strikeout</a></li>
+                <li><a id="del-dot-above-{{id}}">Single dot above</a></li>
+                <li><a id="del-dots-above-{{id}}">Dots above</a></li>
+                <li><a id="del-dots-underneath-{{id}}">Dots under</a></li>
+                <li><a id="del-dot-above-dot-under-{{id}}">Dot above and under</a></li>
+                <li><a id="del-line-above-{{id}}">Line above</a></li>
+                <li><a id="del-no-sign-{{id}}">No sign</a></li>
+           </ul>
+        </span>
+        
+        <button id="unclear-button-{{id}}" class="selFmtBtn" title="Unclear" disabled><i class="fa fa-low-vision"></i></button>
+        <button id="illegible-button-{{id}}"  title="Illegible"><i class="fa fa-eye-slash"></i></button>
+        <button id="chunk-start-button-{{id}}"  title="Chunk Start">{</button>
+        <button id="chunk-end-button-{{id}}"  title="Chunk End">}</button>
+        
+        <button id="chgap-button-{{id}}" title="Character gap"><i class="fa fa-square-o"></i></button>
+        <button id="pmark-button-{{id}}" title="Paragraph Mark">¶</button>
+        
+        
+        <button class="title-button" disabled>&nbsp;</button>
+        {#Special characters#}
+        <button id="nowb-button-{{id}}" title="Non word-breaking dash"><i class="fa fa-minus"></i></button>
+        <button id="pcircledot-button-{{id}}" title="Circle dot">⊙</button>
+        
+        <button class="title-button" disabled>&nbsp;</button>
+        {#Elements#}
+        
+        <button id="line-button-{{id}}" title="Line">L</button>
+        
+        <span class="dropdown">
+            <button id="gloss-button-{{id}}" title="Marginal Gloss" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                G
+           </button>
+            <ul class="dropdown-menu" aria-labelledby="gloss-button-{{id}}">
+                <li><a>Placement</a></li>
+                <li role=separator class=divider>
+                <li><a id="gloss-top-{{id}}">Margin Top</a></li>
+                <li><a id="gloss-bottom-{{id}}">Margin Bottom</a></li>
+                <li><a id="gloss-left-{{id}}">Margin Left</a></li>
+                <li><a id="gloss-right-{{id}}">Margin Right</a></li>
+           </ul>
+        </span>    
+        <button id="head-button-{{id}}" title="Head"><i class="fa fa-header"></i></button>
+        <button id="custodes-button-{{id}}" title="Custodes">C</button>
+        <button id="pagenumber-button-{{id}}" title="Page Number">P</button>
+        <button id="linegap-button-{{id}}" title="Line Gap">Gap</button>
+        
+        <button class="title-button" disabled>Default:</button>
+        <span class="dropdown">
+            <button class="dropdown-toggle" type="button" id="lang-button-{{id}}" title="Latin" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                la
+           </button>
+            <ul class="dropdown-menu" aria-labelledby="lang-button-{{id}}">
+                <li><a id="set-arabic-{{id}}">Arabic</a></li>
+                <li><a id="set-latin-{{id}}">Latin</a></li>
+                <li><a id="set-hebrew-{{id}}">Hebrew</a></li>
+           </ul>
+        </span>
+    </div>
+    <div id="editor-container-{{id}}" class="editor-container"></div>
+    <div id="status-bar-{{id}}" class="editor-statusbar">
+    </div>
+</div>
+<div id="cbtmp" style="display: none;">
+</div>

@@ -166,7 +166,7 @@ class EditorData {
             curElement.placement = curOps.attributes.additionelement.place
             curElement.reference = curOps.attributes.additionelement.target
           }
-          if (curOps.attributes.head) {
+          if (curOps.attributes.headelement) {
             curElement.type = ELEMENT_HEAD
           }
           if (curOps.attributes.custodes) {
@@ -336,17 +336,26 @@ class EditorData {
     }
     return mainLanguage
   }
-  
-  static getEditorDataFromApiData(columnData, editorInfo)
+  /**
+   * Builds an  
+   * @param {Object} columnData
+   * @param {int} editorId
+   * @param {Object} langDef
+   * @param {int} minItemId
+   * @returns {delta, mainLanguage, minItemId}
+   */
+  static getEditorDataFromApiData(columnData, editorId, langDef, minItemId)
   {
     const delta = []
     const formats = []
     const additionTargetTexts = []
-    const languageCounts = {ar: 0, he: 0, la:0, jrb: 0}
     
+    let languageCounts = {}
+    for (const lang in langDef) {
+      languageCounts[lang] = 0
+    }
     
-    
-    formats[ELEMENT_HEAD] = 'head'
+    formats[ELEMENT_HEAD] = 'headelement'
     formats[ELEMENT_CUSTODES] = 'custodes'
     formats[ELEMENT_PAGE_NUMBER] = 'pagenumber'
 
@@ -357,7 +366,7 @@ class EditorData {
           delta.push({
             insert: {
               linegap : {
-                editorid: editorInfo.id,
+                editorid: editorId,
                 linecount: ele.reference
               }
             }
@@ -371,7 +380,7 @@ class EditorData {
         case ELEMENT_ADDITION:
         case ELEMENT_PAGE_NUMBER:
           for (const item of ele.items) {
-            editorInfo.minItemId = Math.min(editorInfo.minItemId, item.id)
+            minItemId = Math.min(minItemId, item.id)
             switch (item.type) {
               case ITEM_TEXT:
                 delta.push({
@@ -387,7 +396,7 @@ class EditorData {
                   insert: {
                     mark: {
                       itemid: item.id,
-                      editorid: editorInfo.id
+                      editorid: editorId
                     }
                   }
                 })
@@ -398,7 +407,7 @@ class EditorData {
                   insert: {
                     nowb: {
                       itemid: item.id,
-                      editorid: editorInfo.id
+                      editorid: editorId
                     }
                   }
                 })
@@ -410,7 +419,7 @@ class EditorData {
                   attributes: {
                     rubric: {
                       itemid: item.id,
-                      editorid: editorInfo.id
+                      editorid: editorId
                     },
                     lang: item.lang
                   }
@@ -423,7 +432,7 @@ class EditorData {
                   attributes: {
                     gliph: {
                       itemid: item.id,
-                      editorid: editorInfo.id
+                      editorid: editorId
                     },
                     lang: item.lang
                   }
@@ -436,7 +445,7 @@ class EditorData {
                   attributes: {
                     initial: {
                       itemid: item.id,
-                      editorid: editorInfo.id
+                      editorid: editorId
                     },
                     lang: item.lang
                   }
@@ -450,7 +459,7 @@ class EditorData {
                     sic: {
                       correction: item.altText,
                       itemid: item.id,
-                      editorid: editorInfo.id
+                      editorid: editorId
                     },
                     lang: item.lang
                   }
@@ -464,7 +473,7 @@ class EditorData {
                     abbr: {
                       expansion: item.altText,
                       itemid: item.id,
-                      editorid: editorInfo.id
+                      editorid: editorId
                     },
                     lang: item.lang
                   }
@@ -479,7 +488,7 @@ class EditorData {
                     deletion: {
                       technique: item.extraInfo,
                       itemid: item.id,
-                      editorid: editorInfo.id
+                      editorid: editorId
                     },
                     lang: item.lang
                   }
@@ -495,7 +504,7 @@ class EditorData {
                       target: item.target,
                       targetText: additionTargetTexts[item.target],
                       itemid: item.id,
-                      editorid: editorInfo.id
+                      editorid: editorId
                     },
                     lang: item.lang
                   }
@@ -511,7 +520,7 @@ class EditorData {
                       reason: item.extraInfo,
                       reading2: item.altText,
                       itemid: item.id,
-                      editorid: editorInfo.id
+                      editorid: editorId
                     },
                     lang: item.lang
                   }
@@ -525,7 +534,7 @@ class EditorData {
                       length: item.length,
                       reason: item.extraInfo,
                       itemid: item.id,
-                      editorid: editorInfo.id
+                      editorid: editorId
                     }
                   }
                 })
@@ -539,7 +548,7 @@ class EditorData {
                       dareid: item.theText,
                       chunkno: item.target,
                       itemid: item.id,
-                      editorid: editorInfo.id
+                      editorid: editorId
                     }
                   }
                 })
@@ -551,7 +560,7 @@ class EditorData {
                     chgap: {
                       length: item.length,
                       itemid: item.id,
-                      editorid: editorInfo.id
+                      editorid: editorId
                     }
                   }
                 })
@@ -562,7 +571,7 @@ class EditorData {
                   insert: {
                     pmark: {
                       itemid: item.id,
-                      editorid: editorInfo.id
+                      editorid: editorId
                     }
                   }
                 })
@@ -574,7 +583,7 @@ class EditorData {
                   attributes: {
                     mathtext: {
                       itemid: item.id,
-                      editorid: editorInfo.id
+                      editorid: editorId
                     },
                     lang: item.lang
                   }
@@ -627,7 +636,7 @@ class EditorData {
       
     }
     let mainLang = EditorData.getMainLanguage(languageCounts)
-    return { delta: delta, mainLang: mainLang }
+    return { delta: delta, mainLang: mainLang, minItemId: minItemId }
   }
   
 }

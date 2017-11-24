@@ -52,6 +52,9 @@ class TranscriptionEditor
     this.id = id
     this.options = TranscriptionEditor.getOptions(userOptions)
     
+    this.minItemId = 0
+    this.minNoteId = 0
+    
     let containerSelector = '#' + containerId
     const editorHtml = TranscriptionEditor.editorTemplate.render({id: id})
     $(containerSelector).html(editorHtml)
@@ -71,6 +74,7 @@ class TranscriptionEditor
       return false
     })
     this.quillObject.on('text-change', this.genOnQuillChange());
+    this.quillObject.on('selection-change', this.genOnSelectionChange())
     
     // Top toolbar
     $('#zoom-in-button-' + id).on('click', this.genOnClickZoomButton('in'))
@@ -79,12 +83,21 @@ class TranscriptionEditor
     $('#save-button-' + id).on('click', this.genOnClickSaveButton())
     $('#reset-button-' + id).on('click', this.genOnClickResetButton())
    
+    // Simple formats
+    $('#rubric-button-' + id).click(this.genOnClickSimpleFormat('rubric'))
 
     // Block formats
     $('#line-button-' + id).on('click', this.genOnClickLineButton())
-    $('#head-button-' + id).on('click', this.genOnClickSimpleBlockButton('head'))
-    $('#custodes-button-' + id).on('click', this.genOnClickSimpleBlockButton('custodes'))
-    $('#pagenumber-button-' + id).on('click', this.genOnClickSimpleBlockButton('pagenumber'))
+    
+    for (const blockBot of TranscriptionEditor.blockBlots) {
+      let buttonId = blockBot.name + '-button-' + this.id
+      $('#simpleBlockButtons-'+this.id).append(
+              '<button id="' + buttonId +  '" ' + 
+              'title="' + blockBot.title + '">' + 
+              blockBot.icon + '</button>'
+        )
+      $('#'+buttonId).on('click', this.genOnClickSimpleBlockButton(blockBot.name))
+    }
 
     // Languages
     let langDef = this.options.langDef
@@ -317,7 +330,7 @@ class TranscriptionEditor
           lineNumberLabel = '<a title="Page Number">PN</a>'
           break
 
-        case 'head':
+        case 'headelement':
           lineNumberLabel = '<a title="Head">&nbsp;H</a>'
           break
 
@@ -505,6 +518,12 @@ class TranscriptionEditor
     $('#save-button-' + this.id).html('<i class="fa fa-save"></i>')
     this.dispatchEvent('editor-reset')
   }
+  
+  setDisableLangButtons (disable = true) {
+    for (const lang in this.options.langDef) {
+      $('#' + lang + '-button-' + this.id).prop('disabled', disable)
+    }
+  }
 
   getData()
   {
@@ -572,8 +591,9 @@ class TranscriptionEditor
     this.columnNumber = columnData.info.col
     this.pageDefaultLang = columnData.info.lang
     
-    let editorData = EditorData.getEditorDataFromApiData(columnData, this)
-
+    let editorData = EditorData.getEditorDataFromApiData(columnData, this.id, this.options.langDef, this.minItemId)
+  
+    this.minItemId = editorData.minItemId
     this.quillObject.setContents(editorData.delta)
     this.lastSavedData = this.quillObject.getContents()
     let mainLang = editorData.mainLang
@@ -605,6 +625,73 @@ class TranscriptionEditor
       thisObject.numberLines()
     }
   }
+  
+  genOnSelectionChange() 
+  {
+    let thisObject = this
+    let quillObject = this.quillObject
+    let id = this.id
+    return function (range) {
+      if (!range) {
+        return false
+      }
+      //console.log("Selection: @" + range.index + ", l=" + range.length)
+      const hasFormat = TranscriptionEditor.selectionHasFormat(quillObject, range)
+      //console.log("Has format: " + hasFormat)
+      if (range.length === 0) {
+        $('.selFmtBtn').prop('disabled', true)
+        thisObject.setDisableLangButtons(true)
+        $('#edit-button-' + id).prop('disabled', true)
+        if (TranscriptionEditor.rangeIsInMidItem(quillObject, range)) {
+          $('#note-button-' + id).prop('disabled', true)
+          $('#illegible-button-' + id).prop('disabled', true)
+          $('#nowb-button-' + id).prop('disabled', true)
+          $('#chunk-start-button-' + id).prop('disabled', true)
+          $('#chunk-end-button-' + id).prop('disabled', true)
+          $('#edit-button-' + id).prop('disabled', false)
+          return false
+        }
+        $('#note-button-' + id).prop('disabled', false)
+        $('#illegible-button-' + id).prop('disabled', false)
+        $('#nowb-button-' + id).prop('disabled', false)
+        $('#chunk-start-button-' + id).prop('disabled', false)
+        $('#chunk-end-button-' + id).prop('disabled', false)
+
+        return false
+      }
+      // Selection's length >= 1
+      
+      $('#note-button-' + id).prop('disabled', true)
+      $('#illegible-button-' + id).prop('disabled', true)
+      $('#nowb-button-' + id).prop('disabled', true)
+      $('#chunk-start-button-' + id).prop('disabled', true)
+      $('#chunk-end-button-' + id).prop('disabled', true)
+      
+      const text = quillObject.getText(range)
+      if (text.search('\n') !== -1) {
+        // Selection includes new lines
+        $('.selFmtBtn').prop('disabled', true)
+        thisObject.setDisableLangButtons(false)
+        return false
+      }
+      // Selection does not include new lines
+      thisObject.setDisableLangButtons(false)
+      if (hasFormat) {
+        $('.selFmtBtn').prop('disabled', true)
+        $('#clear-button-' + id).prop('disabled', false)
+        if (TranscriptionEditor.rangeIsInMidItem(quillObject, range)) {
+          $('#edit-button-' + id).prop('disabled', false)
+          $('#clear-button-' + id).prop('disabled', true)
+          return false
+        }
+        $('#edit-button-' + id).prop('disabled', true)
+      } else {
+        $('.selFmtBtn').prop('disabled', false)
+        $('#edit-button-' + id).prop('disabled', true)
+        $('#clear-button-' + id).prop('disabled', true)
+      }
+    }
+  }
 
   genOnResize()
   {
@@ -615,6 +702,22 @@ class TranscriptionEditor
     }
   }
 
+
+  genOnClickSimpleFormat(format) {
+    let thisObject = this
+    let quillObject = this.quillObject
+    return function () {
+      if (!thisObject.enabled) {
+        return true
+      }
+      quillObject.format(format, {
+        itemid: thisObject.getOneItemId(),
+        editorid: thisObject.id
+      })
+      const range = quillObject.getSelection()
+      quillObject.setSelection(range.index + range.length)
+    }
+  }
   genOnClickZoomButton(type)
   {
     let thisObject = this
@@ -694,6 +797,105 @@ class TranscriptionEditor
     }
   }
   
+  static selectionHasFormat (quillObject, range) {
+    if (range.length < 1) {
+      return false
+    }
+    const delta = quillObject.getContents(range.index, range.length)
+    for (const op of delta.ops.entries()) {
+      if (typeof op.insert !== 'object') {
+        continue
+      }
+      for (const type of ['chunkmark', 'nowb', 'mark', 'illegible']) {
+        if (type in op.insert) {
+          //console.log('Found mark: ' + type)
+          return true
+        }
+      }
+    }
+    for (let i = range.index; i < range.index + range.length; i++) {
+      const format = quillObject.getFormat(i, 1)
+      if ($.isEmptyObject(format)) {
+        continue
+      }
+      if (TranscriptionEditor.formatHasItem(format)) {
+        return true
+      }
+    }
+    return false
+  }
+
+  static formatHasItem (format) {
+    for (const type of ['rubric', 'gliph', 'initial', 'sic', 'abbr', 'deletion', 'addition', 'unclear', 'nowb', 'mathtext']) {
+      if (type in format) {
+        return type
+      }
+    }
+    return false
+  }
+  
+  static setUpPopover (node, title, text, editorid, itemid, noText = false) {
+    $(node).popover({
+      content: function () {
+        const editorObject = TranscriptionEditor.editors[editorid]
+        const ednotes = editorObject.getEdnotesForItemId(itemid)
+
+        const theText = node.textContent
+        let t = '<h3 class="editor-popover-title">' + title + '</h3>'
+        if (!noText) {
+          t += '<b>Text</b>: ' + theText + '<br/>'
+        }
+        t += text
+        let ednotesHtml = '<h4>Notes:</h4>'
+        if ($.isEmptyObject(ednotes)) {
+          ednotesHtml += '&nbsp;&nbsp;<i>None</i>'
+        }
+        for (const note of ednotes) {
+          ednotesHtml += '<blockquote><p>' + note.text + '</p>'
+          ednotesHtml += '<footer>' +
+                        editorObject.people[note.authorId].fullname +
+                        ' @ ' +
+                        note.time + '</footer>'
+          ednotesHtml += '</blockquote>'
+        }
+        return t + ednotesHtml
+      },
+      container: 'body',
+      animation: false,
+      delay: { 'show': 1500, 'hide': 0},
+      html: true,
+      placement: 'auto',
+      trigger: 'hover'})
+  }
+
+  getEdnotesForItemId (itemId) {
+    if (typeof itemId === 'string') {
+      itemId = parseInt(itemId)
+    }
+    const ednotes = []
+    for (const note of this.edNotes) {
+      if (note.type === 2 && note.target === itemId) {
+        ednotes.push(note)
+      }
+    }
+    return ednotes
+  }
+  
+  static rangeIsInMidItem (quillObject, range) {
+ 
+    const prevFormat = quillObject.getFormat(range.index, 0)
+    const nextFormat = quillObject.getFormat(range.index + range.length + 1, 0)
+    const prevItem = TranscriptionEditor.formatHasItem(prevFormat)
+    const nextItem = TranscriptionEditor.formatHasItem(nextFormat)
+    if (prevItem === nextItem) {
+      if (prevItem === false) {
+        return false
+      }
+      return true
+    }
+    return false
+  }
+  
   static registerEvent(eventName)
   {
     if (TranscriptionEditor.events === undefined) {
@@ -706,15 +908,17 @@ class TranscriptionEditor
   {
     TranscriptionEditor.editors[id] = editorObject
   }
-  static registerBlockBlot(theBlot)
+  static registerBlockBlot(theBlot, options)
   {
     if (TranscriptionEditor.blockBlots === undefined) {
       TranscriptionEditor.blockBlots = []
     }
-    TranscriptionEditor.blockBlots.push({
-      name: theBlot.blotName,
-      className: theBlot.className
-    })
+    theBlot.blotName = options.name
+    if (options.className === undefined) {
+      options.className = options.name
+    }
+    theBlot.className = options.className
+    TranscriptionEditor.blockBlots.push(options)
     Quill.register(theBlot)
   }
   
@@ -799,10 +1003,15 @@ class TranscriptionEditor
         <button id="pcircledot-button-{{id}}" title="Circle dot">⊙</button>
         
         <button class="title-button" disabled>&nbsp;</button>
+      
         {#Elements#}
-        
         <button id="line-button-{{id}}" title="Line">L</button>
-        
+      
+        <span id="simpleBlockButtons-{{id}}"></span>
+        {#<button id="headelement-button-{{id}}" title="Head"><i class="fa fa-header"></i></button>
+        <button id="custodes-button-{{id}}" title="Custodes">C</button>
+        <button id="pagenumber-button-{{id}}" title="Page Number">P</button>#}
+      
         <span class="dropdown">
             <button id="gloss-button-{{id}}" title="Marginal Gloss" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
                 G
@@ -816,9 +1025,6 @@ class TranscriptionEditor
                 <li><a id="gloss-right-{{id}}">Margin Right</a></li>
            </ul>
         </span>    
-        <button id="head-button-{{id}}" title="Head"><i class="fa fa-header"></i></button>
-        <button id="custodes-button-{{id}}" title="Custodes">C</button>
-        <button id="pagenumber-button-{{id}}" title="Page Number">P</button>
         <button id="linegap-button-{{id}}" title="Line Gap">Gap</button>
         
         <button class="title-button" disabled>Default:</button>

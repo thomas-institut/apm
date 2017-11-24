@@ -31,19 +31,62 @@ class SimpleBlockBlot extends Block
  }
 SimpleBlockBlot.tagName = 'p'
 
+class SimpleFormatBlot extends Inline {
+    static create (value) {
+      const node = super.create()
+      node.setAttribute('itemid', value.itemid)
+      node.setAttribute('editorid', value.editorid)
+      TranscriptionEditor.setUpPopover(node, SimpleFormatBlot.title, '', value.editorid, value.itemid)
+      return node
+    }
+
+  static formats (node) {
+    return {
+      itemid: node.getAttribute('itemid'),
+      editorid: node.getAttribute('editorid')
+    }
+  }
+}
+SimpleFormatBlot.tagName = 'b'
+SimpleFormatBlot.title = 'Generic Format'
+
+
+
 class HeadBlot extends SimpleBlockBlot {}
-
-HeadBlot.blotName = 'head'
-HeadBlot.className = 'headelement'
-TranscriptionEditor.registerBlockBlot(HeadBlot)
-
+class PageNumberBlot extends SimpleBlockBlot{}
 class CustodesBlot extends SimpleBlockBlot{}
 
-CustodesBlot.blotName = 'custodes'
-CustodesBlot.className = 'custodes'
-TranscriptionEditor.registerBlockBlot(CustodesBlot)
+TranscriptionEditor.registerBlockBlot(HeadBlot, { name: 'headelement', title: 'Head', icon: 'H'} )
+TranscriptionEditor.registerBlockBlot(PageNumberBlot, { name: 'pagenumber', title: 'Page Number', icon: 'P'} )
+TranscriptionEditor.registerBlockBlot(CustodesBlot, { name: 'custodes', title: 'Custodes', icon: 'C'} )
 
-class PageNumberBlot extends SimpleBlockBlot{}
-PageNumberBlot.blotName = 'pagenumber'
-PageNumberBlot.className = 'pagenumber'
-TranscriptionEditor.registerBlockBlot(PageNumberBlot)
+
+//class RubricBlot extends Inline {
+//  static create (value) {
+//    const node = super.create()
+//    node.setAttribute('itemid', value.itemid)
+//    node.setAttribute('editorid', value.editorid)
+//    TranscriptionEditor.setUpPopover(node, 'Rubric', '', value.editorid, value.itemid)
+//    return node
+//  }
+//
+//  static formats (node) {
+//    return {
+//      itemid: node.getAttribute('itemid'),
+//      editorid: node.getAttribute('editorid')
+//    }
+//  }
+//}
+//
+//RubricBlot.blotName = 'rubric'
+//RubricBlot.tagName = 'b'
+//RubricBlot.className = 'rubric'
+//Quill.register(RubricBlot)
+
+class RubricBlot extends SimpleFormatBlot {}
+
+RubricBlot.blotName = 'rubric'
+RubricBlot.className = 'rubric'
+RubricBlot.prototype.title = 'Rubric'
+
+Quill.register(RubricBlot)

@@ -489,4 +489,6 @@ ALTER TABLE `ap_users`
 ALTER TABLE `ap_works`
   ADD CONSTRAINT `ap_works_ibfk_1` FOREIGN KEY (`author_id`) REFERENCES `ap_people` (`id`);
 
+INSERT INTO `ap_hands` (`id`, `name`, `description`) VALUES ('0', 'Unknown', 'Unknown hand');
+
 INSERT INTO `ap_settings` (`id`, `setting`, `value`) VALUES (1, 'dbversion', '13');

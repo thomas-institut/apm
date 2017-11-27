@@ -25,7 +25,7 @@
 /* exported EditorData */
 class EditorData {
   
-  static getApiDataFromQuillDelta(delta, editorInfo) {
+  static getApiDataFromQuillDelta(delta, editorInfo, blockBlots, formatBlots) {
     const ops = delta.ops
     const elements = []
     const itemIds = []
@@ -166,15 +166,13 @@ class EditorData {
             curElement.placement = curOps.attributes.additionelement.place
             curElement.reference = curOps.attributes.additionelement.target
           }
-          if (curOps.attributes.headelement) {
-            curElement.type = ELEMENT_HEAD
+          // Simple block elements
+          for (const blockBlot of blockBlots) {
+            if (curOps.attributes[blockBlot.name]) {
+              curElement.type = blockBlot.type
+            }
           }
-          if (curOps.attributes.custodes) {
-            curElement.type = ELEMENT_CUSTODES
-          }
-          if (curOps.attributes.pagenumber) {
-            curElement.type = ELEMENT_PAGE_NUMBER
-          }
+
           if (curElement.type === ELEMENT_INVALID) {
             console.warn('WARNING: Quill 2 API : single newline without valid attribute')
             console.warn(JSON.stringify(curOps))
@@ -205,21 +203,12 @@ class EditorData {
         if (curOps.attributes.lang) {
           item.lang = curOps.attributes.lang
         }
-        if (curOps.attributes.rubric) {
-          item.type = ITEM_RUBRIC
-          item.id = curOps.attributes.rubric.itemid
-        }
-        if (curOps.attributes.mathtext) {
-          item.type = ITEM_MATH_TEXT
-          item.id = curOps.attributes.mathtext.itemid
-        }
-        if (curOps.attributes.gliph) {
-          item.type = ITEM_GLIPH
-          item.id = curOps.attributes.gliph.itemid
-        }
-        if (curOps.attributes.initial) {
-          item.type = ITEM_INITIAL
-          item.id = curOps.attributes.initial.itemid
+        // Simple format elements
+        for (const formatBlot of formatBlots) {
+          if (curOps.attributes[formatBlot.name]) {
+            item.type = formatBlot.type
+            item.id = curOps.attributes[formatBlot.name].itemid
+          }
         }
         if (curOps.attributes.sic) {
           item.type = ITEM_SIC

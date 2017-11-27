@@ -16,11 +16,36 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-/* global Quill, TranscriptionEditor */
+/* global Quill, TranscriptionEditor, ITEM_RUBRIC, ITEM_INITIAL, ITEM_GLIPH, ITEM_MATH_TEXT, ELEMENT_HEAD, ELEMENT_PAGE_NUMBER, ELEMENT_CUSTODES */
 
 const Inline = Quill.import('blots/inline')
 const BlockEmbed = Quill.import('blots/embed')
 const Block = Quill.import('blots/block')
+
+class LangBlot extends Inline {
+  static create (lang) {
+    const node = super.create()
+    node.setAttribute('lang', lang)
+    let classes = $(node).attr('class').split(' ')
+    for (let i = 0; i < classes.length; i++) {
+      if (classes[i].endsWith('-text')) {
+        $(node).removeClass(classes[i])
+      }
+    }
+    $(node).addClass(lang + '-text')
+    return node
+  }
+
+  static formats (node) {
+    return node.getAttribute('lang')
+  }
+}
+
+LangBlot.blotName = 'lang'
+LangBlot.tagName = 'em'
+LangBlot.className = 'language'
+Quill.register(LangBlot)
+
 
 class SimpleBlockBlot extends Block 
 {
@@ -36,7 +61,7 @@ class SimpleFormatBlot extends Inline {
       const node = super.create()
       node.setAttribute('itemid', value.itemid)
       node.setAttribute('editorid', value.editorid)
-      TranscriptionEditor.setUpPopover(node, SimpleFormatBlot.title, '', value.editorid, value.itemid)
+      TranscriptionEditor.setUpPopover(node, this.title, '', value.editorid, value.itemid)
       return node
     }
 
@@ -51,42 +76,22 @@ SimpleFormatBlot.tagName = 'b'
 SimpleFormatBlot.title = 'Generic Format'
 
 
+class RubricBlot extends SimpleFormatBlot {}
+class InitialBlot extends SimpleFormatBlot {}
+class GliphBlot extends SimpleFormatBlot {}
+class MathTextBlot extends SimpleFormatBlot {}
 
 class HeadBlot extends SimpleBlockBlot {}
 class PageNumberBlot extends SimpleBlockBlot{}
 class CustodesBlot extends SimpleBlockBlot{}
 
-TranscriptionEditor.registerBlockBlot(HeadBlot, { name: 'headelement', title: 'Head', icon: 'H'} )
-TranscriptionEditor.registerBlockBlot(PageNumberBlot, { name: 'pagenumber', title: 'Page Number', icon: 'P'} )
-TranscriptionEditor.registerBlockBlot(CustodesBlot, { name: 'custodes', title: 'Custodes', icon: 'C'} )
+TranscriptionEditor.registerFormatBlot(RubricBlot, { type: ITEM_RUBRIC, name: 'rubric', title: 'Rubric', icon: 'R'} )
+TranscriptionEditor.registerFormatBlot(InitialBlot, { type: ITEM_INITIAL, name: 'initial', title: 'Initial', icon: 'I'} )
+TranscriptionEditor.registerFormatBlot(GliphBlot, { type: ITEM_GLIPH, name: 'gliph', title: 'Gliph', icon: 'G'} )
+TranscriptionEditor.registerFormatBlot(MathTextBlot, { type: ITEM_MATH_TEXT, name: 'mathtext', title: 'Math Text', icon: 'M'} )
+
+TranscriptionEditor.registerBlockBlot(HeadBlot, { type: ELEMENT_HEAD, name: 'headelement', title: 'Head', icon: 'H'} )
+TranscriptionEditor.registerBlockBlot(PageNumberBlot, { type: ELEMENT_PAGE_NUMBER, name: 'pagenumber', title: 'Page Number', icon: 'P'} )
+TranscriptionEditor.registerBlockBlot(CustodesBlot, { type: ELEMENT_CUSTODES, name: 'custodes', title: 'Custodes', icon: 'C'} )
 
 
-//class RubricBlot extends Inline {
-//  static create (value) {
-//    const node = super.create()
-//    node.setAttribute('itemid', value.itemid)
-//    node.setAttribute('editorid', value.editorid)
-//    TranscriptionEditor.setUpPopover(node, 'Rubric', '', value.editorid, value.itemid)
-//    return node
-//  }
-//
-//  static formats (node) {
-//    return {
-//      itemid: node.getAttribute('itemid'),
-//      editorid: node.getAttribute('editorid')
-//    }
-//  }
-//}
-//
-//RubricBlot.blotName = 'rubric'
-//RubricBlot.tagName = 'b'
-//RubricBlot.className = 'rubric'
-//Quill.register(RubricBlot)
-
-class RubricBlot extends SimpleFormatBlot {}
-
-RubricBlot.blotName = 'rubric'
-RubricBlot.className = 'rubric'
-RubricBlot.prototype.title = 'Rubric'
-
-Quill.register(RubricBlot)

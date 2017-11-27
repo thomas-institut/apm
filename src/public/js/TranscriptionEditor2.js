@@ -76,15 +76,48 @@ class TranscriptionEditor
     this.quillObject.on('text-change', this.genOnQuillChange());
     this.quillObject.on('selection-change', this.genOnSelectionChange())
     
-    // Top toolbar
+    // TOP TOOLBAR
     $('#zoom-in-button-' + id).on('click', this.genOnClickZoomButton('in'))
     $('#zoom-out-button-' + id).on('click', this.genOnClickZoomButton('out'))
     $('#toggle-button-'+ id).on('click', this.genOnClickToggleEnableButton())
     $('#save-button-' + id).on('click', this.genOnClickSaveButton())
     $('#reset-button-' + id).on('click', this.genOnClickResetButton())
+    
+    // BOTTOM TOOLBAR
+    
+    // Clear and edit
+    $('#clear-button-' + id).on('click', this.genOnClickClearFormats())
+    
+    // Language Buttons and default language options
+    let langDef = this.options.langDef
+    for (const lang in this.options.langDef) {
+      // language button
+      let buttonId = lang + '-button-' + this.id
+      $('#langButtons-'+this.id).append(
+              '<button id="' + buttonId +  '" class="langButton" ' + 
+              'title="' + langDef[lang].name + '" disabled>' + 
+              lang + '</button>'
+        ) 
+      $('#' + buttonId).on('click', this.genOnClickLangButton(lang))
+      // option in default language menu
+      let optionId = 'set-' + lang + '-' + this.id 
+      $('#set-lang-dd-menu-' + id).append('<li><a id="'+ optionId +'">' + langDef[lang].name + '</a></li>')
+      $('#' + optionId).on('click', this.genOnClickSetLang(lang))
+    }
    
     // Simple formats
-    $('#rubric-button-' + id).click(this.genOnClickSimpleFormat('rubric'))
+    for (const formatBlot of TranscriptionEditor.formatBlots) {
+      let buttonId = formatBlot.name + '-button-' + this.id
+      $('#simpleFormatButtons-'+this.id).append(
+              '<button id="' + buttonId +  '" ' + 
+              'class="selFmtBtn" ' +
+              'title="' + formatBlot.title + '">' + 
+              formatBlot.icon + '</button>'
+        )
+      $('#'+buttonId).on('click', this.genOnClickSimpleFormat(formatBlot.name))
+      $(containerSelector).on('dblclick','.' + formatBlot.className, 
+          this.genOnDoubleClickSimpleFormat())
+    }
 
     // Block formats
     $('#line-button-' + id).on('click', this.genOnClickLineButton())
@@ -99,21 +132,7 @@ class TranscriptionEditor
       $('#'+buttonId).on('click', this.genOnClickSimpleBlockButton(blockBot.name))
     }
 
-    // Languages
-    let langDef = this.options.langDef
-    for (const lang in this.options.langDef) {
-      // language button
-      let buttonId = lang + '-button-' + this.id
-      $('#langButtons-'+this.id).append(
-              '<button id="' + buttonId +  '" class="langButton" ' + 
-              'title="' + langDef[lang].name + '" disabled>' + 
-              lang + '</button>'
-        ) 
-      // option in default language menu
-      let optionId = 'set-' + lang + '-' + this.id 
-      $('#set-lang-dd-menu-' + id).append('<li><a id="'+ optionId +'">' + langDef[lang].name + '</a></li>')
-      $('#' + optionId).on('click', this.genOnClickSetLang(lang))
-    }
+    
 
     // enable/disable
     if (this.options.startEnabled) {
@@ -527,7 +546,7 @@ class TranscriptionEditor
 
   getData()
   {
-     return EditorData.getApiDataFromQuillDelta(this.quillObject.getContents(), this)
+     return EditorData.getApiDataFromQuillDelta(this.quillObject.getContents(), this, TranscriptionEditor.blockBlots, TranscriptionEditor.formatBlots)
   }
   
   getOneItemId () {
@@ -702,6 +721,14 @@ class TranscriptionEditor
     }
   }
 
+  genOnClickLangButton(lang) {
+    let quillObject = this.quillObject
+    return function () {
+      quillObject.format('lang', lang)
+      const range = quillObject.getSelection()
+      quillObject.setSelection(range.index + range.length)
+    }
+  }
 
   genOnClickSimpleFormat(format) {
     let thisObject = this
@@ -718,6 +745,32 @@ class TranscriptionEditor
       quillObject.setSelection(range.index + range.length)
     }
   }
+  
+  genOnClickClearFormats() {
+    let quillObject = this.quillObject
+    let thisObject = this
+    return function () {
+      const range = quillObject.getSelection()
+      if (TranscriptionEditor.selectionHasFormat(quillObject, range)) {
+        $('#alert-modal-title-' + thisObject.id).html('Please confirm')
+        $('#alert-modal-submit-button-' + thisObject.id).html('Clear formatting')
+        $('#alert-modal-cancel-button-' + thisObject.id).html('Cancel')
+        $('#alert-modal-text-' + thisObject.id).html(
+                        'Are you sure you want to clear formatting of this text?</p>'+ 
+                        '<p>Formats and notes will be lost.</p>' + 
+                        '<p class="text-danger">This can NOT be undone!')
+        $('#alert-modal-submit-button-' + thisObject.id).off()
+        $('#alert-modal-submit-button-' + thisObject.id).on('click', function () {
+          $('#alert-modal-' + thisObject.id).modal('hide')
+          TranscriptionEditor.removeFormat(quillObject, range)
+        })
+        $('#alert-modal-' + thisObject.id).modal('show')
+      } else {
+        TranscriptionEditor.removeFormat(quillObject, range)
+      }
+    }
+  }
+  
   genOnClickZoomButton(type)
   {
     let thisObject = this
@@ -794,6 +847,24 @@ class TranscriptionEditor
     return function(){
       thisObject.reset()
       return true
+    }
+  }
+  
+  genOnDoubleClickSimpleFormat() {
+    let thisObject = this
+    let quillObject = this.quillObject
+    return function (event) {
+      if (!thisObject.enabled) {
+        return true
+      }
+      console.log('Double click on simple format')
+      const blot = Quill.find(event.target)
+      const range = {
+        index: blot.offset(quillObject.scroll),
+        length: blot.length()
+      }
+      quillObject.setSelection(range)
+      $('#edit-button-' + thisObject.id).prop('disabled', false)
     }
   }
   
@@ -881,6 +952,29 @@ class TranscriptionEditor
     return ednotes
   }
   
+  static removeFormat (quillObject, range) {
+    for (let i = range.index; i < range.index + range.length; i++) {
+      const format = quillObject.getFormat(i, 1)
+      if ($.isEmptyObject(format)) {
+        continue
+      }
+      const lang = format.lang
+      let elementType = ''
+      for (const blockBlot of TranscriptionEditor.blockBlots) {
+        if (blockBlot.name in format) {
+          elementType = blockBlot.name
+          break
+        }
+      }
+      quillObject.removeFormat(i, 1)
+      quillObject.formatText(i, 1, 'lang', lang)
+      if (elementType !== '') {
+        quillObject.formatLine(i, 1, elementType, true)
+      }
+    }
+    quillObject.setSelection(range.index + range.length)
+  }
+  
   static rangeIsInMidItem (quillObject, range) {
  
     const prevFormat = quillObject.getFormat(range.index, 0)
@@ -922,6 +1016,21 @@ class TranscriptionEditor
     Quill.register(theBlot)
   }
   
+  static registerFormatBlot(theBlot, options)
+  {
+    if (TranscriptionEditor.formatBlots === undefined) {
+      TranscriptionEditor.formatBlots = []
+    }
+    theBlot.blotName = options.name
+    if (options.className === undefined) {
+      options.className = options.name
+    }
+    theBlot.className = options.className
+    theBlot.title = options.title
+    TranscriptionEditor.formatBlots.push(options)
+    Quill.register(theBlot)
+  }
+  
   static init(baseUrl)
   {
     TranscriptionEditor.editors = [] // ??? I don't think this is needed anymore
@@ -945,10 +1054,7 @@ class TranscriptionEditor
         <button id="clear-button-{{id}}" class="selFmtBtn" title="Clear formatting" disabled><i class="fa fa-eraser"></i></button>
         <button id="edit-button-{{id}}" class="selFmtBtn" title="Edit" disabled><i class="fa fa-pencil"></i></button>
         <span id="langButtons-{{id}}"></span>
-        <button id="rubric-button-{{id}}" class="selFmtBtn" title="Rubric" disabled>R</button>
-        <button id="gliph-button-{{id}}" class="selFmtBtn" title="Gliph" disabled>G</button>
-        <button id="initial-button-{{id}}" class="selFmtBtn" title="Initial" disabled>I</button>
-        <button id="mathtext-button-{{id}}" class="selFmtBtn" title="Math Text" disabled>M</button>
+        <span id="simpleFormatButtons-{{id}}"></span>
 
         <button id="note-button-{{id}}" title="Editorial Note"><i class="fa fa-comment-o"></i></button>
 
@@ -1008,9 +1114,6 @@ class TranscriptionEditor
         <button id="line-button-{{id}}" title="Line">L</button>
       
         <span id="simpleBlockButtons-{{id}}"></span>
-        {#<button id="headelement-button-{{id}}" title="Head"><i class="fa fa-header"></i></button>
-        <button id="custodes-button-{{id}}" title="Custodes">C</button>
-        <button id="pagenumber-button-{{id}}" title="Page Number">P</button>#}
       
         <span class="dropdown">
             <button id="gloss-button-{{id}}" title="Marginal Gloss" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">

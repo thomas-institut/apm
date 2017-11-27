@@ -51,6 +51,8 @@ class TranscriptionEditor
     this.containerId = containerId
     this.id = id
     this.options = TranscriptionEditor.getOptions(userOptions)
+    this.people = this.options.people
+    this.editorId = this.options.editorId
     
     this.minItemId = 0
     this.minNoteId = 0
@@ -87,6 +89,7 @@ class TranscriptionEditor
     
     // Clear and edit
     $('#clear-button-' + id).on('click', this.genOnClickClearFormats())
+    $('#edit-button-'+id).on('click', this.genOnClickEdit())
     
     // Language Buttons and default language options
     let langDef = this.options.langDef
@@ -162,6 +165,20 @@ class TranscriptionEditor
     if (options === false) {
       options = {}
     }
+    
+    if (options.people === undefined) {
+      options.people = []
+      options.people[0] = { fullname: 'No editor' }
+      options.people[1] = { fullname: 'Editor 1'}
+    }
+    // editorId: int
+    // the Id of the transcriber
+    if (options.editorId === undefined) {
+      options.editorId = 1 // 
+    }
+    
+    
+    
     // startEnabled:  true/false
     if (options.startEnabled === undefined) {
       options.startEnabled = false
@@ -588,7 +605,7 @@ class TranscriptionEditor
   setData (columnData) {
     if (columnData === null) {
       this.edNotes = []
-      this.people = []
+      //this.people = []
       this.pageId = 1
       this.columnNumber = 1
       this.pageDefaultLang = this.defaultLang
@@ -868,6 +885,348 @@ class TranscriptionEditor
     }
   }
   
+  genOnClickEdit() {
+    let quillObject = this.quillObject
+    let thisObject = this
+    return function () {
+      // Set selection to the whole item
+      const currentRange = quillObject.getSelection()
+      const blot = quillObject.getLeaf(currentRange.index+1)[0]
+      const range = {
+        index: blot.offset(quillObject.scroll),
+        length: blot.length()
+      }
+      quillObject.setSelection(range)
+
+      const format = quillObject.getFormat(range)
+      const text = quillObject.getText(range.index, range.length)
+      //let altText = ''
+      let itemid = -1
+      //let additionTargets = []
+      TranscriptionEditor.resetItemModal(thisObject.id)
+      $('#item-modal-title-' + thisObject.id).html('Unknown')
+      
+//      if (format.abbr) {
+//        altText = format.abbr.expansion
+//        itemid = format.abbr.itemid
+//        $('#item-modal-text-fg-' + thisObject.id).show()
+//        $('#item-modal-extrainfo-fg-' + thisObject.id).hide()
+//        $('#item-modal-alttext-' + thisObject.id).val(altText)
+//        $('#item-modal-alttext-label-' + thisObject.id).html('Expansion:')
+//        $('#item-modal-alttext-fg-' + thisObject.id).show()
+//        $('#item-modal-title-' + thisObject.id).html('Abbreviation')
+//      }
+//      if (format.sic) {
+//        altText = format.sic.correction
+//        itemid = format.sic.itemid
+//        $('#item-modal-text-fg-' + thisObject.id).show()
+//        $('#item-modal-extrainfo-fg-' + thisObject.id).hide()
+//        $('#item-modal-alttext-' + thisObject.id).val(altText)
+//        $('#item-modal-alttext-label-' + thisObject.id).html('Correction')
+//        $('#item-modal-alttext-fg-' + thisObject.id).show()
+//        $('#item-modal-title-' + thisObject.id).html('Sic')
+//      }
+//      if (format.unclear) {
+//        altText = format.unclear.reading2
+//        itemid = format.unclear.itemid
+//        $('#item-modal-text-fg-' + thisObject.id).show()
+//        $('#item-modal-extrainfo-label-' + thisObject.id).html('Reason:')
+//        $('#item-modal-extrainfo-fg-' + thisObject.id).show()
+//        let optionsHtml = ''
+//        for (const reason of Item.getValidUnclearReasons()) {
+//          optionsHtml += '<option value="' + reason + '"'
+//          if (reason === format.unclear.reason) {
+//            optionsHtml += ' selected'
+//          }
+//          optionsHtml += '>' + reason + '</option>'
+//        }
+//        $('#item-modal-extrainfo-' + thisObject.id).html(optionsHtml)
+//        $('#item-modal-alttext-' + thisObject.id).val(altText)
+//        $('#item-modal-alttext-label-' + thisObject.id).html('Alt. Reading')
+//        $('#item-modal-alttext-fg-' + thisObject.id).show()
+//        $('#item-modal-title-' + thisObject.id).html('Unclear')
+//      }
+//      if (format.deletion) {
+//        itemid = format.deletion.itemid
+//        const technique = format.deletion.technique
+//        $('#item-modal-text-fg-' + thisObject.id).show()
+//        $('#item-modal-alttext-fg-' + thisObject.id).hide()
+//        $('#item-modal-extrainfo-label-' + thisObject.id).html('Technique:')
+//        $('#item-modal-extrainfo-fg-' + thisObject.id).show()
+//        let optionsHtml = ''
+//        for (const tech of Item.getValidDeletionTechniques()) {
+//          optionsHtml += '<option value="' + tech + '"'
+//          if (tech === technique) {
+//            optionsHtml += ' selected'
+//          }
+//          optionsHtml += '>' + tech + '</option>'
+//        }
+//        $('#item-modal-extrainfo-' + thisObject.id).html(optionsHtml)
+//        $('#item-modal-title-' + thisObject.id).html('Deletion')
+//      }
+//      // Element::ADDITION
+//      if (format.addition) {
+//        itemid = format.addition.itemid
+//        const target = format.addition.target
+//        const place = format.addition.place
+//        $('#item-modal-text-fg-' + thisObject.id).show()
+//        $('#item-modal-alttext-fg-' + thisObject.id).hide()
+//        $('#item-modal-extrainfo-label-' + thisObject.id).html('Place:')
+//        $('#item-modal-extrainfo-fg-' + thisObject.id).show()
+//
+//        let optionsHtml = ''
+//        for (const thePlace of Item.getValidAdditionPlaces()) {
+//          optionsHtml += '<option value="' + thePlace + '"'
+//          if (thePlace === place) {
+//            optionsHtml += ' selected'
+//          }
+//          optionsHtml += '>' + thePlace + '</option>'
+//        }
+//        $('#item-modal-extrainfo-' + thisObject.id).html(optionsHtml)
+//        additionTargets = thisObject.getAdditionTargets(itemid)
+//                // console.log(additionTargets);
+//
+//        let targetsHtml = ''
+//        for (const theTarget of additionTargets) {
+//          targetsHtml += '<option value="' + theTarget.itemid + '"'
+//          if (theTarget.itemid === target) {
+//            targetsHtml += ' selected'
+//          }
+//          targetsHtml += '>' + theTarget.text + '</option>'
+//        }
+//        $('#item-modal-target-' + thisObject.id).html(targetsHtml)
+//        $('#item-modal-target-label-' + thisObject.id).html('Replaces:')
+//        $('#item-modal-target-fg-' + thisObject.id).show()
+//
+//        $('#item-modal-title-' + thisObject.id).html('Addition')
+//      }
+      for (const formatBlot of TranscriptionEditor.formatBlots) {
+        if (format[formatBlot.name]) {
+          itemid = format[formatBlot.name].itemid
+          $('#item-modal-title-' + thisObject.id).html(formatBlot.title)
+          $('#item-modal-text-fg-' + thisObject.id).show()
+          $('#item-modal-alttext-fg-' + thisObject.id).hide()
+          $('#item-modal-extrainfo-fg-' + thisObject.id).hide()
+          break
+        }
+      }
+//      if (format.rubric) {
+//        itemid = format.rubric.itemid
+//        $('#item-modal-title-' + thisObject.id).html('Rubric')
+//        $('#item-modal-text-fg-' + thisObject.id).show()
+//        $('#item-modal-alttext-fg-' + thisObject.id).hide()
+//        $('#item-modal-extrainfo-fg-' + thisObject.id).hide()
+//      }
+//      if (format.mathtext) {
+//        itemid = format.mathtext.itemid
+//        $('#item-modal-title-' + thisObject.id).html('Math Text')
+//        $('#item-modal-text-fg-' + thisObject.id).show()
+//        $('#item-modal-alttext-fg-' + thisObject.id).hide()
+//        $('#item-modal-extrainfo-fg-' + thisObject.id).hide()
+//      }
+//      if (format.initial) {
+//        itemid = format.initial.itemid
+//        $('#item-modal-title-' + thisObject.id).html('Initial')
+//        $('#item-modal-text-fg-' + thisObject.id).show()
+//        $('#item-modal-alttext-fg-' + thisObject.id).hide()
+//        $('#item-modal-extrainfo-fg-' + thisObject.id).hide()
+//      }
+//      if (format.gliph) {
+//        itemid = format.gliph.itemid
+//        $('#item-modal-title-' + thisObject.id).html('Gliph')
+//        $('#item-modal-text-fg-' + thisObject.id).show()
+//        $('#item-modal-alttext-fg-' + thisObject.id).hide()
+//        $('#item-modal-extrainfo-fg-' + thisObject.id).hide()
+//      }
+
+      TranscriptionEditor.setupNotesInItemModal(thisObject, itemid)
+      $('#item-modal-text-' + thisObject.id).html(text)
+
+      $('#item-modal-cancel-button-' + thisObject.id).on('click', function () {
+                // $('#item-modal-' + thisObject.id).modal('hide');
+        quillObject.setSelection(currentRange)
+      })
+      $('#item-modal-submit-button-' + thisObject.id).off()
+      $('#item-modal-submit-button-' + thisObject.id).on('click', function () {
+        $('#item-modal-' + thisObject.id).modal('hide')
+                // First, take care of the value
+//        if (format.sic) {
+//          let altText = $('#item-modal-alttext-' + thisObject.id).val()
+//          if (altText === '') {
+//            altText = ' '
+//          }
+//          quillObject.format('sic', {correction: altText, itemid: itemid, editorid: thisObject.id })
+//        }
+//        if (format.abbr) {
+//          let altText = $('#item-modal-alttext-' + thisObject.id).val()
+//          if (altText === '') {
+//            altText = ' '
+//          }
+//          quillObject.format('abbr', {expansion: altText, itemid: itemid, editorid: thisObject.id })
+//        }
+//        if (format.unclear) {
+//          let altText = $('#item-modal-alttext-' + thisObject.id).val()
+//          if (altText === '') {
+//            altText = ' '
+//          }
+//          const reason = $('#item-modal-extrainfo-' + thisObject.id).val()
+//          quillObject.format('unclear', {reading2: altText, reason: reason, itemid: itemid, 
+//            editorid: thisObject.id })
+//        }
+//        if (format.deletion) {
+//          const technique = $('#item-modal-extrainfo-' + thisObject.id).val()
+//          quillObject.format('deletion', {technique: technique, itemid: itemid, 
+//            editorid: thisObject.id })
+//        }
+//        if (format.addition) {
+//          const place = $('#item-modal-extrainfo-' + thisObject.id).val()
+//          const target = parseInt($('#item-modal-target-' + thisObject.id).val())
+//          let targetText = ''
+//          for (const someT of additionTargets) {
+//            if (target === someT.itemid) {
+//              targetText = someT.text
+//              break
+//            }
+//          }
+//          quillObject.format('addition', {place: place,
+//            itemid: itemid,
+//            editorid: thisObject.id,
+//            target: target,
+//            targetText: targetText
+//          })
+        //})
+        quillObject.setSelection(range.index + range.length)
+                // Then, care of editorial notes
+        const noteId = $('#item-note-id-' + thisObject.id).val()
+        const noteText = $('#item-note-' + thisObject.id).val()
+        if (noteId === 'new') {
+          thisObject.addNewNote(itemid, noteText)
+        } else {
+          thisObject.updateNote(noteId, noteText)
+        }
+      })
+      $('#item-modal-' + thisObject.id).modal('show')
+    }
+  }
+  
+  addNewNote (itemId, text) {
+    if (text === '') {
+      return false
+    }
+    if (typeof itemId === 'string') {
+      itemId = parseInt(itemId)
+    }
+    const noteId = this.getOneNoteId()
+    console.log('Adding new note ' + noteId)
+    this.edNotes.push({
+      id: noteId,
+      authorId: this.editorId,
+      target: itemId,
+      type: 2,
+      text: text,
+      time: TranscriptionEditor.getMySqlDate(new Date()),
+      lang: 'en'
+    })
+  }
+
+  updateNote (noteId, text) {
+    if (typeof noteId === 'string') {
+      noteId = parseInt(noteId)
+    }
+    let indexToErase = -1
+    for (let i = 0; i < this.edNotes.length; i++) {
+      if (this.edNotes[i].id === noteId) {
+        if (text.trim() === '') {
+          indexToErase = i
+          break
+        }
+        this.edNotes[i].text = text
+        this.edNotes[i].time = TranscriptionEditor.getMySqlDate(new Date())
+        break
+      }
+    }
+    if (indexToErase !== -1) {
+      this.edNotes.splice(indexToErase, 1)
+    }
+  }
+  
+  static setupNotesInItemModal (thisObject, itemid) {
+    const ednotes = thisObject.getEdnotesForItemId(itemid)
+    const noteToEdit = thisObject.getLatestNoteForItemAndAuthor(itemid,
+                    thisObject.editorId)
+    if ($.isEmptyObject(noteToEdit) && ednotes.length > 0 || ednotes.length > 1) {
+      let ednotesHtml = '<h3>Other notes</h3>'
+      for (const note of ednotes) {
+        if (note.id === noteToEdit.id) {
+          continue
+        }
+        ednotesHtml += '<blockquote><p>' + note.text + '</p>'
+        ednotesHtml += '<footer>' +
+                    thisObject.people[note.authorId].fullname +
+                    ' @ ' +
+                    note.time + '</footer>'
+        ednotesHtml += '</blockquote>'
+      }
+      $('#item-modal-ednotes-' + thisObject.id).html(ednotesHtml)
+    } else {
+      $('#item-modal-ednotes-' + thisObject.id).html('')
+    }
+    if (!$.isEmptyObject(noteToEdit)) {
+      $('#item-note-' + thisObject.id).val(noteToEdit.text)
+      $('#item-note-id-' + thisObject.id).val(noteToEdit.id)
+      $('#item-note-time-' + thisObject.id).html(
+                    'Note last edited <time datetime="' +
+                    noteToEdit.time +
+                    '" title="' +
+                    noteToEdit.time +
+                    '">' +
+                    TranscriptionEditor.timeSince(noteToEdit.time) +
+                    ' ago</time>'
+                )
+    } else {
+      $('#item-note-' + thisObject.id).val('')
+      $('#item-note-time-' + thisObject.id).html('New note')
+      $('#item-note-id-' + thisObject.id).val('new')
+    }
+  }
+  
+  static timeSince (dateString) {
+    const date = Date.parse(dateString)
+
+    const seconds = Math.floor((new Date() - date) / 1000)
+    let interval = seconds / 31536000
+
+    if (interval > 1) {
+      return interval.toFixed(1) + ' years'
+    }
+    interval = seconds / 2592000
+    if (interval > 1) {
+      return interval.toFixed(1) + ' months'
+    }
+    interval = seconds / 86400
+    if (interval > 1) {
+      return interval.toFixed(1) + ' days'
+    }
+    interval = seconds / 3600
+    if (interval > 1) {
+      return interval.toFixed(1) + ' hours'
+    }
+    interval = seconds / 60
+    if (interval > 1) {
+      const minutes = Math.floor(interval)
+      if (minutes === 1) {
+        return '1 minute'
+      }
+      return minutes + ' minutes'
+    }
+    const secs = Math.floor(seconds)
+    if (secs === 1) {
+      return '1 second'
+    }
+    return secs + ' seconds'
+  }
+
+  
   static selectionHasFormat (quillObject, range) {
     if (range.length < 1) {
       return false
@@ -908,9 +1267,11 @@ class TranscriptionEditor
   static setUpPopover (node, title, text, editorid, itemid, noText = false) {
     $(node).popover({
       content: function () {
+        
         const editorObject = TranscriptionEditor.editors[editorid]
+        console.log('Getting notes for item ' + itemid + ' (popover)')
         const ednotes = editorObject.getEdnotesForItemId(itemid)
-
+        console.log(ednotes)
         const theText = node.textContent
         let t = '<h3 class="editor-popover-title">' + title + '</h3>'
         if (!noText) {
@@ -944,6 +1305,7 @@ class TranscriptionEditor
       itemId = parseInt(itemId)
     }
     const ednotes = []
+    console.log(this.edNotes)
     for (const note of this.edNotes) {
       if (note.type === 2 && note.target === itemId) {
         ednotes.push(note)
@@ -951,6 +1313,33 @@ class TranscriptionEditor
     }
     return ednotes
   }
+  
+   getLatestNoteForItemAndAuthor (itemId, authorId) {
+    if (typeof itemId === 'string') {
+      itemId = parseInt(itemId)
+    }
+    let latestTime = ''
+    let latestNote = {}
+    for (const note of this.edNotes) {
+      if (note.type === 2 && note.target === itemId &&
+                    note.authorId === authorId &&
+                    note.time > latestTime) {
+        latestTime = note.time
+        latestNote = note
+      }
+    }
+    return latestNote
+  }
+
+  static getMySqlDate (d) {
+    return d.getFullYear() + '-' +
+            ('00' + (d.getMonth() + 1)).slice(-2) + '-' +
+            ('00' + d.getDate()).slice(-2) + ' ' +
+            ('00' + d.getHours()).slice(-2) + ':' +
+            ('00' + d.getMinutes()).slice(-2) + ':' +
+            ('00' + d.getSeconds()).slice(-2)
+  }
+
   
   static removeFormat (quillObject, range) {
     for (let i = range.index; i < range.index + range.length; i++) {
@@ -988,6 +1377,21 @@ class TranscriptionEditor
       return true
     }
     return false
+  }
+  
+  static resetItemModal (id) {
+    $('#item-modal-title-' + id).html('')
+    $('#item-modal-text-fg-' + id).hide()
+    $('#item-modal-alttext-fg-' + id).hide()
+    $('#item-modal-extrainfo-fg-' + id).hide()
+    $('#item-modal-length-fg-' + id).hide()
+    $('#item-modal-target-fg-' + id).hide()
+    $('#item-modal-ednote-fg-' + id).show()
+    $('#item-modal-ednotes-' + id).html('')
+    $('#item-note-' + id).val('')
+    $('#item-note-time-' + id).html('New note')
+    $('#item-note-id-' + id).val('new')
+    $('#item-modal-submit-button-' + id).off()
   }
   
   static registerEvent(eventName)

@@ -199,7 +199,7 @@ class EditorData {
         //console.log("insert is text with attributes")
         const item = createNewItem()
         
-        item.theText =curOps.insert
+        item.theText = curOps.insert
         if (curOps.attributes.lang) {
           item.lang = curOps.attributes.lang
         }
@@ -208,17 +208,10 @@ class EditorData {
           if (curOps.attributes[formatBlot.name]) {
             item.type = formatBlot.type
             item.id = curOps.attributes[formatBlot.name].itemid
+            if (formatBlot.alttext) {
+              item.altText = curOps.attributes[formatBlot.name].alttext
+            }
           }
-        }
-        if (curOps.attributes.sic) {
-          item.type = ITEM_SIC
-          item.altText = curOps.attributes.sic.correction
-          item.id = curOps.attributes.sic.itemid
-        }
-        if (curOps.attributes.abbr) {
-          item.type = ITEM_ABBREVIATION
-          item.altText = curOps.attributes.abbr.expansion
-          item.id = curOps.attributes.abbr.itemid
         }
         if (curOps.attributes.deletion) {
           item.type = ITEM_DELETION
@@ -446,7 +439,7 @@ class EditorData {
                   insert: item.theText,
                   attributes: {
                     sic: {
-                      correction: item.altText,
+                      alttext: item.altText,
                       itemid: item.id,
                       editorid: editorId
                     },
@@ -460,7 +453,7 @@ class EditorData {
                   insert: item.theText,
                   attributes: {
                     abbr: {
-                      expansion: item.altText,
+                      alttext: item.altText,
                       itemid: item.id,
                       editorid: editorId
                     },

@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-/* global Quill, TranscriptionEditor, ITEM_RUBRIC, ITEM_INITIAL, ITEM_GLIPH, ITEM_MATH_TEXT, ELEMENT_HEAD, ELEMENT_PAGE_NUMBER, ELEMENT_CUSTODES */
+/* global Quill, TranscriptionEditor, ITEM_RUBRIC, ITEM_INITIAL, ITEM_GLIPH, ITEM_MATH_TEXT, ELEMENT_HEAD, ELEMENT_PAGE_NUMBER, ELEMENT_CUSTODES, ITEM_SIC, ITEM_ABBREVIATION, ITEM_UNCLEAR */
 
 const Inline = Quill.import('blots/inline')
 const BlockEmbed = Quill.import('blots/embed')
@@ -61,15 +61,27 @@ class SimpleFormatBlot extends Inline {
       const node = super.create()
       node.setAttribute('itemid', value.itemid)
       node.setAttribute('editorid', value.editorid)
-      TranscriptionEditor.setUpPopover(node, this.title, '', value.editorid, value.itemid)
+      let popoverSecondaryHtml = ''
+      if (value.alttext !== undefined) {
+        node.setAttribute('alttext', value.alttext)
+        if (value.alttext !== '') {
+          popoverSecondaryHtml += '<b>' + this.alttext.title + '</b>: <br/><span class="prominent">' +
+                value.alttext + '</span>'
+        }
+      }
+      TranscriptionEditor.setUpPopover(node, this.title, popoverSecondaryHtml, value.editorid, value.itemid)
       return node
     }
 
   static formats (node) {
-    return {
+    let value = {
       itemid: node.getAttribute('itemid'),
       editorid: node.getAttribute('editorid')
     }
+    if (this.alttext !== undefined) {
+      value.alttext = node.getAttribute('alttext')
+    }
+    return value
   }
 }
 SimpleFormatBlot.tagName = 'b'
@@ -80,6 +92,9 @@ class RubricBlot extends SimpleFormatBlot {}
 class InitialBlot extends SimpleFormatBlot {}
 class GliphBlot extends SimpleFormatBlot {}
 class MathTextBlot extends SimpleFormatBlot {}
+class SicBlot extends SimpleFormatBlot {}
+class AbbrBlot extends SimpleFormatBlot {}
+class UnclearBlot extends SimpleFormatBlot {}
 
 class HeadBlot extends SimpleBlockBlot {}
 class PageNumberBlot extends SimpleBlockBlot{}
@@ -89,6 +104,27 @@ TranscriptionEditor.registerFormatBlot(RubricBlot, { type: ITEM_RUBRIC, name: 'r
 TranscriptionEditor.registerFormatBlot(InitialBlot, { type: ITEM_INITIAL, name: 'initial', title: 'Initial', icon: 'I'} )
 TranscriptionEditor.registerFormatBlot(GliphBlot, { type: ITEM_GLIPH, name: 'gliph', title: 'Gliph', icon: 'G'} )
 TranscriptionEditor.registerFormatBlot(MathTextBlot, { type: ITEM_MATH_TEXT, name: 'mathtext', title: 'Math Text', icon: 'M'} )
+TranscriptionEditor.registerFormatBlot(SicBlot, { 
+  type: ITEM_SIC, 
+  name: 'sic', 
+  title: 'Sic', 
+  icon: '<i class="fa fa-frown-o"></i>',
+  alttext : { title: 'Correction' }
+})
+TranscriptionEditor.registerFormatBlot(AbbrBlot, { 
+  type: ITEM_ABBREVIATION, 
+  name: 'abbr', 
+  title: 'Abbreviation', 
+  icon: '<i class="fa fa-hand-spock-o">',
+  alttext : { title: 'Expansion' }
+})
+//TranscriptionEditor.registerFormatBlot(UnclearBlot, { 
+//  type: ITEM_UNCLEAR, 
+//  name: 'unclear', 
+//  title: 'Unclear', 
+//  icon: '<i class="fa fa-low-vision"></i>',
+//  alttext : { title: 'Alt. Reading' }
+//})
 
 TranscriptionEditor.registerBlockBlot(HeadBlot, { type: ELEMENT_HEAD, name: 'headelement', title: 'Head', icon: 'H'} )
 TranscriptionEditor.registerBlockBlot(PageNumberBlot, { type: ELEMENT_PAGE_NUMBER, name: 'pagenumber', title: 'Page Number', icon: 'P'} )

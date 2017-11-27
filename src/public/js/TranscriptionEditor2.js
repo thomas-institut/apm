@@ -754,10 +754,14 @@ class TranscriptionEditor
       if (!thisObject.enabled) {
         return true
       }
-      quillObject.format(format, {
+      let value =  {
         itemid: thisObject.getOneItemId(),
         editorid: thisObject.id
-      })
+      }
+      if (TranscriptionEditor.formatBlots.alttext) {
+        value.alttext = '' // change this!
+      }
+      quillObject.format(format, value)
       const range = quillObject.getSelection()
       quillObject.setSelection(range.index + range.length)
     }
@@ -900,7 +904,7 @@ class TranscriptionEditor
 
       const format = quillObject.getFormat(range)
       const text = quillObject.getText(range.index, range.length)
-      //let altText = ''
+      let altText = ''
       let itemid = -1
       //let additionTargets = []
       TranscriptionEditor.resetItemModal(thisObject.id)
@@ -915,16 +919,6 @@ class TranscriptionEditor
 //        $('#item-modal-alttext-label-' + thisObject.id).html('Expansion:')
 //        $('#item-modal-alttext-fg-' + thisObject.id).show()
 //        $('#item-modal-title-' + thisObject.id).html('Abbreviation')
-//      }
-//      if (format.sic) {
-//        altText = format.sic.correction
-//        itemid = format.sic.itemid
-//        $('#item-modal-text-fg-' + thisObject.id).show()
-//        $('#item-modal-extrainfo-fg-' + thisObject.id).hide()
-//        $('#item-modal-alttext-' + thisObject.id).val(altText)
-//        $('#item-modal-alttext-label-' + thisObject.id).html('Correction')
-//        $('#item-modal-alttext-fg-' + thisObject.id).show()
-//        $('#item-modal-title-' + thisObject.id).html('Sic')
 //      }
 //      if (format.unclear) {
 //        altText = format.unclear.reading2
@@ -1006,39 +1000,16 @@ class TranscriptionEditor
           $('#item-modal-title-' + thisObject.id).html(formatBlot.title)
           $('#item-modal-text-fg-' + thisObject.id).show()
           $('#item-modal-alttext-fg-' + thisObject.id).hide()
+          if (formatBlot.alttext) {
+            altText = format[formatBlot.name].alttext
+            $('#item-modal-alttext-' + thisObject.id).val(altText)
+            $('#item-modal-alttext-label-' + thisObject.id).html(formatBlot.alttext.title)
+            $('#item-modal-alttext-fg-' + thisObject.id).show()
+          }
           $('#item-modal-extrainfo-fg-' + thisObject.id).hide()
           break
         }
       }
-//      if (format.rubric) {
-//        itemid = format.rubric.itemid
-//        $('#item-modal-title-' + thisObject.id).html('Rubric')
-//        $('#item-modal-text-fg-' + thisObject.id).show()
-//        $('#item-modal-alttext-fg-' + thisObject.id).hide()
-//        $('#item-modal-extrainfo-fg-' + thisObject.id).hide()
-//      }
-//      if (format.mathtext) {
-//        itemid = format.mathtext.itemid
-//        $('#item-modal-title-' + thisObject.id).html('Math Text')
-//        $('#item-modal-text-fg-' + thisObject.id).show()
-//        $('#item-modal-alttext-fg-' + thisObject.id).hide()
-//        $('#item-modal-extrainfo-fg-' + thisObject.id).hide()
-//      }
-//      if (format.initial) {
-//        itemid = format.initial.itemid
-//        $('#item-modal-title-' + thisObject.id).html('Initial')
-//        $('#item-modal-text-fg-' + thisObject.id).show()
-//        $('#item-modal-alttext-fg-' + thisObject.id).hide()
-//        $('#item-modal-extrainfo-fg-' + thisObject.id).hide()
-//      }
-//      if (format.gliph) {
-//        itemid = format.gliph.itemid
-//        $('#item-modal-title-' + thisObject.id).html('Gliph')
-//        $('#item-modal-text-fg-' + thisObject.id).show()
-//        $('#item-modal-alttext-fg-' + thisObject.id).hide()
-//        $('#item-modal-extrainfo-fg-' + thisObject.id).hide()
-//      }
-
       TranscriptionEditor.setupNotesInItemModal(thisObject, itemid)
       $('#item-modal-text-' + thisObject.id).html(text)
 
@@ -1049,21 +1020,14 @@ class TranscriptionEditor
       $('#item-modal-submit-button-' + thisObject.id).off()
       $('#item-modal-submit-button-' + thisObject.id).on('click', function () {
         $('#item-modal-' + thisObject.id).modal('hide')
-                // First, take care of the value
-//        if (format.sic) {
-//          let altText = $('#item-modal-alttext-' + thisObject.id).val()
-//          if (altText === '') {
-//            altText = ' '
-//          }
-//          quillObject.format('sic', {correction: altText, itemid: itemid, editorid: thisObject.id })
-//        }
-//        if (format.abbr) {
-//          let altText = $('#item-modal-alttext-' + thisObject.id).val()
-//          if (altText === '') {
-//            altText = ' '
-//          }
-//          quillObject.format('abbr', {expansion: altText, itemid: itemid, editorid: thisObject.id })
-//        }
+        for (const formatBlot of TranscriptionEditor.formatBlots) {
+          if (format[formatBlot.name]) {
+            if (formatBlot.alttext) {
+              let altText = $('#item-modal-alttext-' + thisObject.id).val()
+              quillObject.format(formatBlot.name, {alttext: altText, itemid: itemid, editorid: thisObject.id }) 
+            }
+          }
+        }
 //        if (format.unclear) {
 //          let altText = $('#item-modal-alttext-' + thisObject.id).val()
 //          if (altText === '') {
@@ -1096,7 +1060,7 @@ class TranscriptionEditor
 //          })
         //})
         quillObject.setSelection(range.index + range.length)
-                // Then, care of editorial notes
+        // Then, care of editorial notes
         const noteId = $('#item-note-id-' + thisObject.id).val()
         const noteText = $('#item-note-' + thisObject.id).val()
         if (noteId === 'new') {
@@ -1269,9 +1233,7 @@ class TranscriptionEditor
       content: function () {
         
         const editorObject = TranscriptionEditor.editors[editorid]
-        console.log('Getting notes for item ' + itemid + ' (popover)')
         const ednotes = editorObject.getEdnotesForItemId(itemid)
-        console.log(ednotes)
         const theText = node.textContent
         let t = '<h3 class="editor-popover-title">' + title + '</h3>'
         if (!noText) {
@@ -1305,7 +1267,6 @@ class TranscriptionEditor
       itemId = parseInt(itemId)
     }
     const ednotes = []
-    console.log(this.edNotes)
     for (const note of this.edNotes) {
       if (note.type === 2 && note.target === itemId) {
         ednotes.push(note)
@@ -1431,6 +1392,9 @@ class TranscriptionEditor
     }
     theBlot.className = options.className
     theBlot.title = options.title
+    if (options.alttext) {
+      theBlot.alttext = options.alttext
+    }
     TranscriptionEditor.formatBlots.push(options)
     Quill.register(theBlot)
   }

@@ -325,7 +325,7 @@ class EditorData {
    */
   static getEditorDataFromApiData(columnData, editorId, langDef, minItemId)
   {
-    const delta = []
+    const ops = []
     const formats = []
     const additionTargetTexts = []
     
@@ -342,7 +342,7 @@ class EditorData {
       const attr = {}
       switch (ele.type) {
         case ELEMENT_LINE_GAP:
-          delta.push({
+          ops.push({
             insert: {
               linegap : {
                 editorid: editorId,
@@ -362,7 +362,7 @@ class EditorData {
             minItemId = Math.min(minItemId, item.id)
             switch (item.type) {
               case ITEM_TEXT:
-                delta.push({
+                ops.push({
                   insert: item.theText,
                   attributes: {
                     lang: item.lang
@@ -371,7 +371,7 @@ class EditorData {
                 break
 
               case ITEM_MARK:
-                delta.push({
+                ops.push({
                   insert: {
                     mark: {
                       itemid: item.id,
@@ -382,7 +382,7 @@ class EditorData {
                 break
                 
               case ITEM_NO_WORD_BREAK:
-                delta.push({
+                ops.push({
                   insert: {
                     nowb: {
                       itemid: item.id,
@@ -393,7 +393,7 @@ class EditorData {
                 break
 
               case ITEM_RUBRIC:
-                delta.push({
+                ops.push({
                   insert: item.theText,
                   attributes: {
                     rubric: {
@@ -406,7 +406,7 @@ class EditorData {
                 break
 
               case ITEM_GLIPH:
-                delta.push({
+                ops.push({
                   insert: item.theText,
                   attributes: {
                     gliph: {
@@ -419,7 +419,7 @@ class EditorData {
                 break
 
               case ITEM_INITIAL:
-                delta.push({
+                ops.push({
                   insert: item.theText,
                   attributes: {
                     initial: {
@@ -432,7 +432,7 @@ class EditorData {
                 break
 
               case ITEM_SIC:
-                delta.push({
+                ops.push({
                   insert: item.theText,
                   attributes: {
                     sic: {
@@ -446,7 +446,7 @@ class EditorData {
                 break
 
               case ITEM_ABBREVIATION:
-                delta.push({
+                ops.push({
                   insert: item.theText,
                   attributes: {
                     abbr: {
@@ -461,7 +461,7 @@ class EditorData {
 
               case ITEM_DELETION:
                 additionTargetTexts[item.id] = 'DELETION: ' + item.theText
-                delta.push({
+                ops.push({
                   insert: item.theText,
                   attributes: {
                     deletion: {
@@ -475,7 +475,7 @@ class EditorData {
                 break
 
               case ITEM_ADDITION:
-                delta.push({
+                ops.push({
                   insert: item.theText,
                   attributes: {
                     addition: {
@@ -492,7 +492,7 @@ class EditorData {
 
               case ITEM_UNCLEAR:
                 additionTargetTexts[item.id] = 'UNCLEAR: ' + item.theText
-                delta.push({
+                ops.push({
                   insert: item.theText,
                   attributes: {
                     unclear: {
@@ -507,7 +507,7 @@ class EditorData {
                 break
 
               case ITEM_ILLEGIBLE:
-                delta.push({
+                ops.push({
                   insert: {
                     illegible: {
                       length: item.length,
@@ -520,7 +520,7 @@ class EditorData {
                 break
                 
               case ITEM_CHUNK_MARK:
-                delta.push({
+                ops.push({
                   insert: {
                     chunkmark: {
                       type: item.altText,
@@ -534,7 +534,7 @@ class EditorData {
                 break
                 
               case ITEM_CHARACTER_GAP: 
-                delta.push({
+                ops.push({
                   insert: {
                     chgap: {
                       length: item.length,
@@ -546,7 +546,7 @@ class EditorData {
                 break;
                 
               case ITEM_PARAGRAPH_MARK:
-                delta.push({
+                ops.push({
                   insert: {
                     pmark: {
                       itemid: item.id,
@@ -557,7 +557,7 @@ class EditorData {
                 break
               
               case ITEM_MATH_TEXT:
-                delta.push({
+                ops.push({
                   insert: item.theText,
                   attributes: {
                     mathtext: {
@@ -581,7 +581,7 @@ class EditorData {
       
       switch(ele.type) {
         case ELEMENT_GLOSS:
-          delta.push({
+          ops.push({
             insert: '\n',
             attributes: {
               gloss:  {
@@ -595,7 +595,7 @@ class EditorData {
           case ELEMENT_ADDITION:
             //onsole.log("Addition element")
             //console.log(ele)
-          delta.push({
+          ops.push({
             insert: '\n',
             attributes: {
               additionelement:  {
@@ -609,13 +609,13 @@ class EditorData {
           
         default:
           attr[formats[ele.type]] = true
-          delta.push({insert: '\n', attributes: attr})
+          ops.push({insert: '\n', attributes: attr})
           break;
       }
       
     }
     let mainLang = EditorData.getMainLanguage(languageCounts)
-    return { delta: delta, mainLang: mainLang, minItemId: minItemId }
+    return { delta: {ops: ops}, mainLang: mainLang, minItemId: minItemId }
   }
   
 }

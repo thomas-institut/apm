@@ -384,12 +384,347 @@ describe("EditorData", function() {
       expect(ele2.items.length).toBe(1)
       expect(ele2.items[0].lang).toBe('la')
       expect(ele2.items[0].theText).toBe('Line 2')
+    })
+  })
+  
+  describe("getEditorDataFromApiData", function (){
+    
+    let langDef = TranscriptionEditor.getOptions([]).langDef
+    let minimalColumnData = {elements: []}
+    let editorId = 123456
+    
+    it("should return empty delta on empty column data", function () {
       
+      
+      let editorData = EditorData.getEditorDataFromApiData(minimalColumnData, editorId, langDef, 0)
+      
+      expect(editorData.delta).toBeDefined()
+      expect(editorData.delta.ops).toBeDefined()
+      expect(editorData.mainLang).toBeDefined()
+      expect(editorData.minItemId).toBeDefined()
+      expect(editorData.minItemId).toBe(0)
+     
     })
     
+    it("should support simple formats: rubric, initial, gliph, math text, sic, abbr, unclear, deletion", function () {
       
-  })
+      let columnData = JSON.parse(`
+{
+  "elements": [
+    {
+      "id": 1,
+      "pageId": 1,
+      "columnNumber": 1,
+      "lang": "la",
+      "editorId": 1,
+      "type": 1,
+      "seq": 0,
+      "items": [
+        {
+          "id": 1,
+          "columnElementId": 1,
+          "seq": 0,
+          "type": 2,
+          "lang": "la",
+          "theText": "Rubric",
+          "altText": null,
+          "extraInfo": null,
+          "length": null,
+          "target": null
+        },
+        {
+          "id": 2,
+          "columnElementId": 1,
+          "seq": 1,
+          "type": 13,
+          "lang": "la",
+          "theText": "Initial",
+          "altText": null,
+          "extraInfo": null,
+          "length": null,
+          "target": null
+        },
+        {
+          "id": 3,
+          "columnElementId": 1,
+          "seq": 2,
+          "type": 6,
+          "lang": "la",
+          "theText": "Gliph",
+          "altText": null,
+          "extraInfo": null,
+          "length": null,
+          "target": null
+        },
+        {
+          "id": 4,
+          "columnElementId": 1,
+          "seq": 3,
+          "type": 17,
+          "lang": "la",
+          "theText": "MathText",
+          "altText": null,
+          "extraInfo": null,
+          "length": null,
+          "target": null
+        },
+        {
+          "id": 5,
+          "columnElementId": 1,
+          "seq": 4,
+          "type": 3,
+          "lang": "la",
+          "theText": "Sic",
+          "altText": "correction",
+          "extraInfo": null,
+          "length": null,
+          "target": null
+        },
+        {
+          "id": 6,
+          "columnElementId": 1,
+          "seq": 5,
+          "type": 11,
+          "lang": "la",
+          "theText": "Abbr",
+          "altText": "abbreviation",
+          "extraInfo": null,
+          "length": null,
+          "target": null
+        },
+        {
+          "id": 7,
+          "columnElementId": 1,
+          "seq": 6,
+          "type": 4,
+          "lang": "la",
+          "theText": "Unclear",
+          "altText": "altreading",
+          "extraInfo": "unclear",
+          "length": null,
+          "target": null
+        },
+        {
+          "id": 8,
+          "columnElementId": 1,
+          "seq": 7,
+          "type": 8,
+          "lang": "la",
+          "theText": "Deletion",
+          "altText": null,
+          "extraInfo": "strikeout",
+          "length": null,
+          "target": null
+        }
+      ],
+      "reference": null,
+      "placement": null
+    }
+  ],
+  "ednotes": [],
+  "people": [
+    {
+      "fullname": "No editor"
+    },
+    {
+      "fullname": "Editor 1"
+    }
+  ],
+  "info": {
+    "pageId": 1,
+    "col": 1,
+    "lang": "la",
+    "numCols": 1
+  }
+}
+`)
+      let itemSequence = [
+        { name: 'rubric', itemid: 1, text: 'Rubric' },
+        { name: 'initial', itemid: 2, text: 'Initial' },
+        { name: 'gliph', itemid: 3, text: 'Gliph' },
+        { name: 'mathtext', itemid: 4, text: 'MathText' },
+        { name: 'sic', itemid: 5, text: 'Sic', alttext: 'correction' },
+        { name: 'abbr', itemid: 6, text: 'Abbr', alttext: 'abbreviation' },
+        { name: 'unclear', itemid: 7, text: 'Unclear', alttext: 'altreading' },
+        { name: 'deletion', itemid: 8, text: 'Deletion', extrainfo: 'strikeout' }
+      ]
+      let editorData = EditorData.getEditorDataFromApiData(columnData, editorId, langDef, 0)
+      
+      expect(editorData.delta).toBeDefined()
+      expect(editorData.delta.ops).toBeDefined()
+      expect(editorData.mainLang).toBeDefined()
+      expect(editorData.minItemId).toBeDefined()
+      expect(editorData.mainLang).toBe('la')
+      expect(editorData.minItemId).toBe(0)
+      
+      let ops = editorData.delta.ops
+      
+      expect(ops.length).toBe(itemSequence.length+1) // one per item plus a newline
+      for (let i=0; i < itemSequence.length; i++) {
+        let item = itemSequence[i]
+        expect(ops[i].insert).toBe(item.text)
+        expect(ops[i].attributes).toBeDefined()
+        expect(ops[i].attributes[item.name]).toBeDefined()
+        expect(ops[i].attributes[item.name].itemid).toBe(item.itemid)
+        expect(ops[i].attributes[item.name].editorid).toBe(editorId)
+        if (item.alttext !== undefined) {
+          expect(ops[i].attributes[item.name].alttext).toBe(item.alttext)
+        }
+        if (item.extrainfo !== undefined) {
+          expect(ops[i].attributes[item.name].extrainfo).toBe(item.extrainfo)
+        }
+      }
+    })
     
+    it("should support basic elements: line, head, pagenumber, custodes", function() {
+      let columnData = JSON.parse(`
+{
+  "elements": [
+    {
+      "id": 1,
+      "pageId": 1,
+      "columnNumber": 1,
+      "lang": "la",
+      "editorId": 1,
+      "type": 2,
+      "seq": 0,
+      "items": [
+        {
+          "id": 1,
+          "columnElementId": 1,
+          "seq": 0,
+          "type": 1,
+          "lang": "la",
+          "theText": "Head",
+          "altText": null,
+          "extraInfo": null,
+          "length": null,
+          "target": null
+        }
+      ],
+      "reference": null,
+      "placement": null
+    },
+    {
+      "id": 2,
+      "pageId": 1,
+      "columnNumber": 1,
+      "lang": "la",
+      "editorId": 1,
+      "type": 4,
+      "seq": 1,
+      "items": [
+        {
+          "id": 2,
+          "columnElementId": 2,
+          "seq": 0,
+          "type": 1,
+          "lang": "la",
+          "theText": "PageNumber",
+          "altText": null,
+          "extraInfo": null,
+          "length": null,
+          "target": null
+        }
+      ],
+      "reference": null,
+      "placement": null
+    },
+    {
+      "id": 3,
+      "pageId": 1,
+      "columnNumber": 1,
+      "lang": "la",
+      "editorId": 1,
+      "type": 5,
+      "seq": 2,
+      "items": [
+        {
+          "id": 3,
+          "columnElementId": 3,
+          "seq": 0,
+          "type": 1,
+          "lang": "la",
+          "theText": "Custodes",
+          "altText": null,
+          "extraInfo": null,
+          "length": null,
+          "target": null
+        }
+      ],
+      "reference": null,
+      "placement": null
+    },
+    {
+      "id": 4,
+      "pageId": 1,
+      "columnNumber": 1,
+      "lang": "la",
+      "editorId": 1,
+      "type": 1,
+      "seq": 3,
+      "items": [
+        {
+          "id": 4,
+          "columnElementId": 4,
+          "seq": 0,
+          "type": 1,
+          "lang": "la",
+          "theText": "Line",
+          "altText": null,
+          "extraInfo": null,
+          "length": null,
+          "target": null
+        }
+      ],
+      "reference": null,
+      "placement": null
+    }
+  ],
+  "ednotes": [],
+  "people": [
+    {
+      "fullname": "No editor"
+    },
+    {
+      "fullname": "Editor 1"
+    }
+  ],
+  "info": {
+    "pageId": 1,
+    "col": 1,
+    "lang": "la",
+    "numCols": 1
+  }
+}
+`)
+      let elementSequence = [
+        { name: 'headelement', text: 'Head' },
+        { name: 'pagenumber', text: 'PageNumber'},
+        { name: 'custodes', text: 'Custodes' },
+        { text: 'Line' }
+      ]
+      
+      let editorData = EditorData.getEditorDataFromApiData(columnData, editorId, langDef, 0)
+      expect(editorData.delta).toBeDefined()
+      expect(editorData.delta.ops).toBeDefined()
+      expect(editorData.mainLang).toBeDefined()
+      expect(editorData.minItemId).toBeDefined()
+      expect(editorData.mainLang).toBe('la')
+      expect(editorData.minItemId).toBe(0)
+      
+      let ops = editorData.delta.ops
+      
+      expect(ops.length).toBe(2*elementSequence.length) // each element generates a text and a \n
+      for (let i=0; i < elementSequence.length; i++) {
+        let textOp = ops[2*i]
+        let newLineOp = ops[2*i+1]
+        let element = elementSequence[i]
+        expect(newLineOp.attributes[element.name]).toBe(true)
+        expect(textOp.insert).toBe(element.text)
+      }
+    })
+  })
 })
   
 

@@ -104,7 +104,8 @@ class TranscriptionEditor
       $('#' + buttonId).on('click', this.genOnClickLangButton(lang))
       // option in default language menu
       let optionId = 'set-' + lang + '-' + this.id 
-      $('#set-lang-dd-menu-' + id).append('<li><a id="'+ optionId +'">' + langDef[lang].name + '</a></li>')
+      $('#set-lang-dd-menu-' + id).append('<li><a id="'+ optionId +'">' 
+              + langDef[lang].name + '</a></li>')
       $('#' + optionId).on('click', this.genOnClickSetLang(lang))
     }
    
@@ -340,7 +341,7 @@ class TranscriptionEditor
     for (const p of pElements) {
       let theP = $(p)
       let offset = theP.offset()
-      let fontFactor = this.options.lineNumbers.fontFactor  /// line number font size to editor font size 
+      let fontFactor = this.options.lineNumbers.fontFactor 
       let editorFontSize = this.calcEditorFontEmSize(this.fontSize)*this.options.pixPerEm
       let lineNumberTopPos = offset.top 
       let fontEmSize = this.calcEditorFontEmSize(this.fontSize)*fontFactor
@@ -1650,7 +1651,4 @@ class TranscriptionEditor
 `
     })
   }
-  
-  
 }
-

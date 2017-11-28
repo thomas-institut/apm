@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-/* global Quill, TranscriptionEditor, ITEM_RUBRIC, ITEM_INITIAL, ITEM_GLIPH, ITEM_MATH_TEXT, ELEMENT_HEAD, ELEMENT_PAGE_NUMBER, ELEMENT_CUSTODES, ITEM_SIC, ITEM_ABBREVIATION, ITEM_UNCLEAR */
+/* global Quill, TranscriptionEditor, ITEM_RUBRIC, ITEM_INITIAL, ITEM_GLIPH, ITEM_MATH_TEXT, ELEMENT_HEAD, ELEMENT_PAGE_NUMBER, ELEMENT_CUSTODES, ITEM_SIC, ITEM_ABBREVIATION, ITEM_UNCLEAR, Item, ITEM_DELETION */
 
 const Inline = Quill.import('blots/inline')
 const BlockEmbed = Quill.import('blots/embed')
@@ -66,8 +66,13 @@ class SimpleFormatBlot extends Inline {
         node.setAttribute('alttext', value.alttext)
         if (value.alttext !== '') {
           popoverSecondaryHtml += '<b>' + this.alttext.title + '</b>: <br/><span class="prominent">' +
-                value.alttext + '</span>'
+                value.alttext + '</span><br/>'
         }
+      }
+      if (value.extrainfo !== undefined) {
+        node.setAttribute('extrainfo', value.extrainfo)
+        popoverSecondaryHtml += '<b>' + this.extrainfo.title + '</b>: <br/>' +
+                value.extrainfo + '<br/>'
       }
       TranscriptionEditor.setUpPopover(node, this.title, popoverSecondaryHtml, value.editorid, value.itemid)
       return node
@@ -80,6 +85,9 @@ class SimpleFormatBlot extends Inline {
     }
     if (this.alttext !== undefined) {
       value.alttext = node.getAttribute('alttext')
+    }
+    if (this.extrainfo !== undefined) {
+      value.extrainfo = node.getAttribute('extrainfo')
     }
     return value
   }
@@ -95,6 +103,7 @@ class MathTextBlot extends SimpleFormatBlot {}
 class SicBlot extends SimpleFormatBlot {}
 class AbbrBlot extends SimpleFormatBlot {}
 class UnclearBlot extends SimpleFormatBlot {}
+class DeletionBlot extends SimpleFormatBlot {}
 
 class HeadBlot extends SimpleBlockBlot {}
 class PageNumberBlot extends SimpleBlockBlot{}
@@ -118,13 +127,24 @@ TranscriptionEditor.registerFormatBlot(AbbrBlot, {
   icon: '<i class="fa fa-hand-spock-o">',
   alttext : { title: 'Expansion' }
 })
-//TranscriptionEditor.registerFormatBlot(UnclearBlot, { 
-//  type: ITEM_UNCLEAR, 
-//  name: 'unclear', 
-//  title: 'Unclear', 
-//  icon: '<i class="fa fa-low-vision"></i>',
-//  alttext : { title: 'Alt. Reading' }
-//})
+
+TranscriptionEditor.registerFormatBlot(UnclearBlot, { 
+  type: ITEM_UNCLEAR, 
+  name: 'unclear', 
+  title: 'Unclear', 
+  icon: '<i class="fa fa-low-vision"></i>',
+  alttext : { title: 'Alt. Reading' },
+  extrainfo: { title: 'Reason', options : Item.getValidUnclearReasons() }
+})
+
+TranscriptionEditor.registerFormatBlot(DeletionBlot, { 
+  type: ITEM_DELETION, 
+  name: 'deletion', 
+  title: 'Deletion', 
+  icon: '<i class="fa fa-minus-square"></i>',
+  extrainfo: { title: 'Technique', options : Item.getValidDeletionTechniques() }
+})
+
 
 TranscriptionEditor.registerBlockBlot(HeadBlot, { type: ELEMENT_HEAD, name: 'headelement', title: 'Head', icon: 'H'} )
 TranscriptionEditor.registerBlockBlot(PageNumberBlot, { type: ELEMENT_PAGE_NUMBER, name: 'pagenumber', title: 'Page Number', icon: 'P'} )

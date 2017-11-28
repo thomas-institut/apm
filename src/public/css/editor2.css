@@ -265,6 +265,18 @@ b.gliph {
     color: fuchsia;
 }
 
+b.sic {
+    color: cadetblue
+} 
+
+b.abbr {
+    color: chocolate;
+}
+
+b.unclear {
+    color: gray;
+}
+
 b.mathtext {
     color: #990099;
 }
@@ -282,14 +294,11 @@ b.mathtext {
     padding: 2px;
 }
 
-.sic {
-    font-weight: normal;
-    background-color: #e2ddd6;
-    border-radius: 5px;
-    padding: 2px;
+b.sic {
+    color: cadetblue
 } 
 
-.abbr {
+b.abbr {
     color: chocolate;
 }
 

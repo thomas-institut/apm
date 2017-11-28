@@ -211,24 +211,21 @@ class EditorData {
             if (formatBlot.alttext) {
               item.altText = curOps.attributes[formatBlot.name].alttext
             }
+            if (formatBlot.extrainfo) {
+              item.extraInfo = curOps.attributes[formatBlot.name].extrainfo
+            }
           }
         }
-        if (curOps.attributes.deletion) {
-          item.type = ITEM_DELETION
-          item.extraInfo = curOps.attributes.deletion.technique
-          item.id = curOps.attributes.deletion.itemid
-        }
+//        if (curOps.attributes.deletion) {
+//          item.type = ITEM_DELETION
+//          item.extraInfo = curOps.attributes.deletion.technique
+//          item.id = curOps.attributes.deletion.itemid
+//        }
         if (curOps.attributes.addition) {
           item.type = ITEM_ADDITION
           item.extraInfo = curOps.attributes.addition.place
           item.id = curOps.attributes.addition.itemid
           item.target = curOps.attributes.addition.target
-        }
-        if (curOps.attributes.unclear) {
-          item.type = ITEM_UNCLEAR
-          item.altText = curOps.attributes.unclear.reading2
-          item.extraInfo = curOps.attributes.unclear.reason
-          item.id = curOps.attributes.unclear.itemid
         }
         // Make sure item id is an int
         item.id = parseInt(item.id)
@@ -468,7 +465,7 @@ class EditorData {
                   insert: item.theText,
                   attributes: {
                     deletion: {
-                      technique: item.extraInfo,
+                      extrainfo: item.extraInfo,
                       itemid: item.id,
                       editorid: editorId
                     },
@@ -499,8 +496,8 @@ class EditorData {
                   insert: item.theText,
                   attributes: {
                     unclear: {
-                      reason: item.extraInfo,
-                      reading2: item.altText,
+                      extrainfo: item.extraInfo,
+                      alttext: item.altText,
                       itemid: item.id,
                       editorid: editorId
                     },

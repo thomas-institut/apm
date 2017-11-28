@@ -117,7 +117,7 @@ class TranscriptionEditor
               'title="' + formatBlot.title + '">' + 
               formatBlot.icon + '</button>'
         )
-      $('#'+buttonId).on('click', this.genOnClickSimpleFormat(formatBlot.name))
+      $('#'+buttonId).on('click', this.genOnClickSimpleFormat(formatBlot))
       $(containerSelector).on('dblclick','.' + formatBlot.className, 
           this.genOnDoubleClickSimpleFormat())
     }
@@ -747,7 +747,7 @@ class TranscriptionEditor
     }
   }
 
-  genOnClickSimpleFormat(format) {
+  genOnClickSimpleFormat(theBlot) {
     let thisObject = this
     let quillObject = this.quillObject
     return function () {
@@ -758,12 +758,50 @@ class TranscriptionEditor
         itemid: thisObject.getOneItemId(),
         editorid: thisObject.id
       }
-      if (TranscriptionEditor.formatBlots.alttext) {
-        value.alttext = '' // change this!
+      if (theBlot.alttext || theBlot.extrainfo) {
+        const range = quillObject.getSelection()
+        const text = quillObject.getText(range.index, range.length)
+        TranscriptionEditor.resetItemModal(thisObject.id)
+        $('#item-modal-title-' + thisObject.id).html(theBlot.title)
+        $('#item-modal-text-' + thisObject.id).html(text)
+        $('#item-modal-text-fg-' + thisObject.id).show()
+        if (theBlot.alttext) {
+          $('#item-modal-alttext-label-' + thisObject.id).html(theBlot.alttext.title)
+          $('#item-modal-alttext-' + thisObject.id).val('')
+          $('#item-modal-alttext-fg-' + thisObject.id).show()
+        }
+        if (theBlot.extrainfo) {
+          $('#item-modal-extrainfo-label-' + thisObject.id).html(theBlot.extrainfo.title)
+          $('#item-modal-extrainfo-fg-' + thisObject.id).show()
+          let optionsHtml = ''
+          for (const option of theBlot.extrainfo.options) {
+            optionsHtml += '<option value="' + option + '"'
+            optionsHtml += '>' + option + '</option>'
+          }
+          $('#item-modal-extrainfo-' + thisObject.id).html(optionsHtml)
+        }
+        $('#item-modal-submit-button-' + thisObject.id).on('click', function () {
+          $('#item-modal-' + thisObject.id).modal('hide')
+          if (theBlot.alttext) {
+            value.alttext = $('#item-modal-alttext-' + thisObject.id).val()
+          }
+          if (theBlot.extrainfo) {
+            value.extrainfo = $('#item-modal-extrainfo-' + thisObject.id).val()
+          }
+          quillObject.format(theBlot.name, value)
+          quillObject.setSelection(range.index + range.length)
+          // Take care of notes!
+          const noteText = $('#item-note-' + thisObject.id).val()
+          if (noteText !== '') {
+            thisObject.addNewNote(value.itemid, noteText)
+          }
+        })
+        $('#item-modal-' + thisObject.id).modal('show')
+      } else {
+        quillObject.format(theBlot.name, value)
+        const range = quillObject.getSelection()
+        quillObject.setSelection(range.index + range.length)
       }
-      quillObject.format(format, value)
-      const range = quillObject.getSelection()
-      quillObject.setSelection(range.index + range.length)
     }
   }
   
@@ -909,17 +947,7 @@ class TranscriptionEditor
       //let additionTargets = []
       TranscriptionEditor.resetItemModal(thisObject.id)
       $('#item-modal-title-' + thisObject.id).html('Unknown')
-      
-//      if (format.abbr) {
-//        altText = format.abbr.expansion
-//        itemid = format.abbr.itemid
-//        $('#item-modal-text-fg-' + thisObject.id).show()
-//        $('#item-modal-extrainfo-fg-' + thisObject.id).hide()
-//        $('#item-modal-alttext-' + thisObject.id).val(altText)
-//        $('#item-modal-alttext-label-' + thisObject.id).html('Expansion:')
-//        $('#item-modal-alttext-fg-' + thisObject.id).show()
-//        $('#item-modal-title-' + thisObject.id).html('Abbreviation')
-//      }
+
 //      if (format.unclear) {
 //        altText = format.unclear.reading2
 //        itemid = format.unclear.itemid
@@ -1007,6 +1035,19 @@ class TranscriptionEditor
             $('#item-modal-alttext-fg-' + thisObject.id).show()
           }
           $('#item-modal-extrainfo-fg-' + thisObject.id).hide()
+          if (formatBlot.extrainfo) {
+            $('#item-modal-extrainfo-label-' + thisObject.id).html(formatBlot.extrainfo.title)
+            $('#item-modal-extrainfo-fg-' + thisObject.id).show()
+            let optionsHtml = ''
+            for (const option of formatBlot.extrainfo.options) {
+              optionsHtml += '<option value="' + option + '"'
+              if (option === format[formatBlot.name].extrainfo) {
+                optionsHtml += ' selected'
+              }
+              optionsHtml += '>' + option + '</option>'
+            }
+            $('#item-modal-extrainfo-' + thisObject.id).html(optionsHtml)
+          }
           break
         }
       }
@@ -1022,26 +1063,16 @@ class TranscriptionEditor
         $('#item-modal-' + thisObject.id).modal('hide')
         for (const formatBlot of TranscriptionEditor.formatBlots) {
           if (format[formatBlot.name]) {
+            let value = {itemid: itemid, editorid: thisObject.id}
             if (formatBlot.alttext) {
-              let altText = $('#item-modal-alttext-' + thisObject.id).val()
-              quillObject.format(formatBlot.name, {alttext: altText, itemid: itemid, editorid: thisObject.id }) 
+              value.alttext = $('#item-modal-alttext-' + thisObject.id).val()
             }
+            if (formatBlot.extrainfo) {
+              value.extrainfo = $('#item-modal-extrainfo-' + thisObject.id).val()
+            }
+            quillObject.format(formatBlot.name, value) 
           }
         }
-//        if (format.unclear) {
-//          let altText = $('#item-modal-alttext-' + thisObject.id).val()
-//          if (altText === '') {
-//            altText = ' '
-//          }
-//          const reason = $('#item-modal-extrainfo-' + thisObject.id).val()
-//          quillObject.format('unclear', {reading2: altText, reason: reason, itemid: itemid, 
-//            editorid: thisObject.id })
-//        }
-//        if (format.deletion) {
-//          const technique = $('#item-modal-extrainfo-' + thisObject.id).val()
-//          quillObject.format('deletion', {technique: technique, itemid: itemid, 
-//            editorid: thisObject.id })
-//        }
 //        if (format.addition) {
 //          const place = $('#item-modal-extrainfo-' + thisObject.id).val()
 //          const target = parseInt($('#item-modal-target-' + thisObject.id).val())
@@ -1395,6 +1426,10 @@ class TranscriptionEditor
     if (options.alttext) {
       theBlot.alttext = options.alttext
     }
+    if (options.extrainfo) {
+      theBlot.extrainfo = options.extrainfo
+    }
+    
     TranscriptionEditor.formatBlots.push(options)
     Quill.register(theBlot)
   }
@@ -1425,9 +1460,6 @@ class TranscriptionEditor
         <span id="simpleFormatButtons-{{id}}"></span>
 
         <button id="note-button-{{id}}" title="Editorial Note"><i class="fa fa-comment-o"></i></button>
-
-        <button id="sic-button-{{id}}" class="selFmtBtn" title="Sic" disabled><i class="fa fa-frown-o"></i></button>
-        <button id="abbr-button-{{id}}" class="selFmtBtn" title="Abbreviation" disabled><i class="fa fa-hand-spock-o"></i></button>
         
         <span class="dropdown">
             <button id="add-button-{{id}}" class="selFmtBtn" title="Addition" disabled data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
@@ -1462,7 +1494,6 @@ class TranscriptionEditor
            </ul>
         </span>
         
-        <button id="unclear-button-{{id}}" class="selFmtBtn" title="Unclear" disabled><i class="fa fa-low-vision"></i></button>
         <button id="illegible-button-{{id}}"  title="Illegible"><i class="fa fa-eye-slash"></i></button>
         <button id="chunk-start-button-{{id}}"  title="Chunk Start">{</button>
         <button id="chunk-end-button-{{id}}"  title="Chunk End">}</button>

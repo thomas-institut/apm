@@ -543,6 +543,11 @@ class LineGapBlot extends BlockEmbed {
     node.setAttribute('alt', 'Line Gap')
     const size = Math.round(((LineGapBlot.size-1)*0.2+1)*14)
     node.setAttribute('src', LineGapBlot.baseUrl + '/api/images/linegap/' + value.linecount + '/' + size)
+//    let img = document.createElement('img')
+//    img.setAttribute('src', LineGapBlot.baseUrl + '/api/images/linegap/' + value.linecount + '/' + size)
+//    img.setAttribute('alt', 'Line Gap')
+    //let text = document.createTextNode('[... ' + value.linecount + ' lines not transcribed ...]')
+    //node.appendChild(text)
     return node;
   }
 

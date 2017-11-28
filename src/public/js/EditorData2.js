@@ -120,7 +120,7 @@ class EditorData {
       if ('illegible' in curOps.insert) {
         item.type = ITEM_ILLEGIBLE
         item.id = theInsert.illegible.itemid
-        item.extraInfo = theInsert.illegible.reason
+        item.extraInfo = theInsert.illegible.extrainfo
         item.length = parseInt(theInsert.illegible.length)
       }
       if ('chunkmark' in curOps.insert) {
@@ -216,11 +216,6 @@ class EditorData {
             }
           }
         }
-//        if (curOps.attributes.deletion) {
-//          item.type = ITEM_DELETION
-//          item.extraInfo = curOps.attributes.deletion.technique
-//          item.id = curOps.attributes.deletion.itemid
-//        }
         if (curOps.attributes.addition) {
           item.type = ITEM_ADDITION
           item.extraInfo = curOps.attributes.addition.place
@@ -321,9 +316,10 @@ class EditorData {
    * @param {int} editorId
    * @param {Object} langDef
    * @param {int} minItemId
+   * @param {array} formatBlots
    * @returns {delta, mainLanguage, minItemId}
    */
-  static getEditorDataFromApiData(columnData, editorId, langDef, minItemId)
+  static getEditorDataFromApiData(columnData, editorId, langDef, minItemId, formatBlots)
   {
     const ops = []
     const formats = []
@@ -360,6 +356,36 @@ class EditorData {
         case ELEMENT_PAGE_NUMBER:
           for (const item of ele.items) {
             minItemId = Math.min(minItemId, item.id)
+            // Simple format blots
+            let foundBlot = false
+            for (const theBlot of formatBlots) {
+              if (theBlot.type === item.type) {
+                if (theBlot.canBeTarget) {
+                  additionTargetTexts[item.id] = theBlot.title + ': ' + item.theText
+                }
+                let theOps = {
+                  insert: item.theText
+                }
+                theOps.attributes = {lang: item.lang}
+                theOps.attributes[theBlot.name] = {
+                    itemid: item.id,
+                    editorid: editorId
+                }
+                if (theBlot.alttext !== undefined) {
+                  theOps.attributes[theBlot.name].alttext = item.altText
+                }
+                if (theBlot.extrainfo !== undefined) {
+                  theOps.attributes[theBlot.name].extrainfo = item.extraInfo
+                }
+                ops.push(theOps)
+                languageCounts[item.lang]++
+                foundBlot = true
+                break
+              }
+            }
+            if (foundBlot) {
+              continue
+            }
             switch (item.type) {
               case ITEM_TEXT:
                 ops.push({
@@ -392,88 +418,6 @@ class EditorData {
                 })
                 break
 
-              case ITEM_RUBRIC:
-                ops.push({
-                  insert: item.theText,
-                  attributes: {
-                    rubric: {
-                      itemid: item.id,
-                      editorid: editorId
-                    },
-                    lang: item.lang
-                  }
-                })
-                break
-
-              case ITEM_GLIPH:
-                ops.push({
-                  insert: item.theText,
-                  attributes: {
-                    gliph: {
-                      itemid: item.id,
-                      editorid: editorId
-                    },
-                    lang: item.lang
-                  }
-                })
-                break
-
-              case ITEM_INITIAL:
-                ops.push({
-                  insert: item.theText,
-                  attributes: {
-                    initial: {
-                      itemid: item.id,
-                      editorid: editorId
-                    },
-                    lang: item.lang
-                  }
-                })
-                break
-
-              case ITEM_SIC:
-                ops.push({
-                  insert: item.theText,
-                  attributes: {
-                    sic: {
-                      alttext: item.altText,
-                      itemid: item.id,
-                      editorid: editorId
-                    },
-                    lang: item.lang
-                  }
-                })
-                break
-
-              case ITEM_ABBREVIATION:
-                ops.push({
-                  insert: item.theText,
-                  attributes: {
-                    abbr: {
-                      alttext: item.altText,
-                      itemid: item.id,
-                      editorid: editorId
-                    },
-                    lang: item.lang
-                  }
-                })
-                break
-
-              case ITEM_DELETION:
-                additionTargetTexts[item.id] = 'DELETION: ' + item.theText
-                ops.push({
-                  insert: item.theText,
-                  attributes: {
-                    deletion: {
-                      extrainfo: item.extraInfo,
-                      itemid: item.id,
-                      editorid: editorId
-                    },
-                    lang: item.lang
-                  }
-                })
-                break
-
               case ITEM_ADDITION:
                 ops.push({
                   insert: item.theText,
@@ -490,28 +434,12 @@ class EditorData {
                 })
                 break
 
-              case ITEM_UNCLEAR:
-                additionTargetTexts[item.id] = 'UNCLEAR: ' + item.theText
-                ops.push({
-                  insert: item.theText,
-                  attributes: {
-                    unclear: {
-                      extrainfo: item.extraInfo,
-                      alttext: item.altText,
-                      itemid: item.id,
-                      editorid: editorId
-                    },
-                    lang: item.lang
-                  }
-                })
-                break
-
               case ITEM_ILLEGIBLE:
                 ops.push({
                   insert: {
                     illegible: {
                       length: item.length,
-                      reason: item.extraInfo,
+                      extrainfo: item.extraInfo,
                       itemid: item.id,
                       editorid: editorId
                     }
@@ -552,19 +480,6 @@ class EditorData {
                       itemid: item.id,
                       editorid: editorId
                     }
-                  }
-                })
-                break
-              
-              case ITEM_MATH_TEXT:
-                ops.push({
-                  insert: item.theText,
-                  attributes: {
-                    mathtext: {
-                      itemid: item.id,
-                      editorid: editorId
-                    },
-                    lang: item.lang
                   }
                 })
                 break

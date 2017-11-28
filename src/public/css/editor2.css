@@ -88,8 +88,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 .toolbar .title-button {
     font-size: 0.8em;
-    margin-left: 30px;
+    /*margin-left: 30px; */
     margin-right: 5px;
+}
+
+.toolbar span.separator {
+    margin: 0 0 0 20px;
+    padding: 0;
 }
 
 .toolbar .langButton {

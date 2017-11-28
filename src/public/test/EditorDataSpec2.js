@@ -180,9 +180,9 @@ describe("EditorData", function() {
           {insert: '\n'}
         ]
       }
-      console.log("---- LINE GAP test ---")
+      //console.log("---- LINE GAP test ---")
       let apiData = EditorData.getApiDataFromQuillDelta( delta, editorInfo, TranscriptionEditor.blockBlots, TranscriptionEditor.formatBlots)
-      console.log(apiData)
+      //console.log(apiData)
       expect(apiData.elements).toBeDefined()
       expect(apiData.people).toBeDefined()
       expect(apiData.ednotes).toBeDefined()
@@ -390,6 +390,8 @@ describe("EditorData", function() {
   describe("getEditorDataFromApiData", function (){
     
     let langDef = TranscriptionEditor.getOptions([]).langDef
+    let formatBlots = TranscriptionEditor.formatBlots
+    let blockBlots = TranscriptionEditor.blockBlots
     let minimalColumnData = {elements: []}
     let editorId = 123456
     
@@ -548,7 +550,8 @@ describe("EditorData", function() {
         { name: 'unclear', itemid: 7, text: 'Unclear', alttext: 'altreading' },
         { name: 'deletion', itemid: 8, text: 'Deletion', extrainfo: 'strikeout' }
       ]
-      let editorData = EditorData.getEditorDataFromApiData(columnData, editorId, langDef, 0)
+      
+      let editorData = EditorData.getEditorDataFromApiData(columnData, editorId, langDef, 0, formatBlots)
       
       expect(editorData.delta).toBeDefined()
       expect(editorData.delta.ops).toBeDefined()
@@ -705,7 +708,7 @@ describe("EditorData", function() {
         { text: 'Line' }
       ]
       
-      let editorData = EditorData.getEditorDataFromApiData(columnData, editorId, langDef, 0)
+      let editorData = EditorData.getEditorDataFromApiData(columnData, editorId, langDef, 0, formatBlots)
       expect(editorData.delta).toBeDefined()
       expect(editorData.delta.ops).toBeDefined()
       expect(editorData.mainLang).toBeDefined()

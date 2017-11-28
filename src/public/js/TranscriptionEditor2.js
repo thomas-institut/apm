@@ -23,7 +23,7 @@
 /*eslint default-case: "error"*/
 /*eslint no-console: ["error", { allow: ["warn", "error"] }] */
 
-/* global Twig, Quill, _, EditorData */
+/* global Twig, Quill, _, EditorData, NoWordBreakBlot */
 
 /**
  * 
@@ -67,7 +67,7 @@ class TranscriptionEditor
     this.setDefaultLang(this.options.defaultLang)
     this.setFontSize(this.options.langDef[this.defaultLang].fontsize)
     this.setData(null) // start with empty data
-
+   
     // EVENT HANDLERS
     $(window).on('resize', this.genOnResize())
     // Disable drag and drop in editor (too many issues)
@@ -122,7 +122,22 @@ class TranscriptionEditor
       $(containerSelector).on('dblclick','.' + formatBlot.className, 
           this.genOnDoubleClickSimpleFormat())
     }
+    
+    // Image formats
+    for (const theBlot of TranscriptionEditor.imageBlots) {
+      let buttonId = theBlot.name + '-button-' + this.id
+      $('#simpleImageButtons-'+this.id).append(
+              '<button id="' + buttonId +  '" ' + 
+              //'class="selFmtBtn" ' +
+              'title="' + theBlot.title + '">' + 
+              theBlot.icon + '</button>'
+        )
+      $('#'+buttonId).on('click', this.genOnClickSimpleImageButton(theBlot))
+      //$(containerSelector).on('dblclick','.' + formatBlot.className, 
+      //    this.genOnDoubleClickSimpleImage(theBlot))
+    }
 
+    //$('#nowb-button-' + id).on('click', this.genOnClickSimpleImageButton('nowb'))
     // Block formats
     $('#line-button-' + id).on('click', this.genOnClickLineButton())
     
@@ -295,8 +310,12 @@ class TranscriptionEditor
     $('#editor-container-' + this.id).css('font-size', emSize+'em')
     this.fontSize = fontSize
     this.setEditorMargin()
+    // Update image blots
+    for (let i = 0; i < TranscriptionEditor.imageBlots.length; i++){
+      TranscriptionEditor.imageBlots[i].jsClass.size = this.fontSize
+    }
     //    IllegibleBlot.size = this.fontSize
-    //    NoWordBreakBlot.size = this.fontSize
+    //NoWordBreakBlot.size = this.fontSize
     //    MarkBlot.size = this.fontSize
     //    ChunkMarkBlot.size = this.fontSize
     //    LineGapBlot.size = this.fontSize
@@ -628,7 +647,7 @@ class TranscriptionEditor
     this.columnNumber = columnData.info.col
     this.pageDefaultLang = columnData.info.lang
     
-    let editorData = EditorData.getEditorDataFromApiData(columnData, this.id, this.options.langDef, this.minItemId)
+    let editorData = EditorData.getEditorDataFromApiData(columnData, this.id, this.options.langDef, this.minItemId, TranscriptionEditor.formatBlots)
   
     this.minItemId = editorData.minItemId
     this.quillObject.setContents(editorData.delta)
@@ -907,6 +926,40 @@ class TranscriptionEditor
     return function(){
       thisObject.reset()
       return true
+    }
+  }
+  
+  genOnClickSimpleImageButton(theBlot, value = {}) 
+  {
+    let quillObject = this.quillObject
+    let thisObject = this
+    return function () {
+      const range = quillObject.getSelection()
+      if (range.length > 0) {
+        return false
+      }
+      const itemId = thisObject.getOneItemId()
+      let theValue = {
+            itemid: itemId,
+            editorid: thisObject.id
+      }
+      if (theBlot.extrainfo !== undefined) {
+        if (value.extrainfo === undefined) {
+          console.warn('Need extrainfo for blot \''  + theBlot.name + '\' but none given, using default')
+          value.extrainfo = theBlot.extrainfo.default
+        }
+        theValue.extrainfo = value.extrainfo
+      }
+      if (theBlot.length !== undefined) {
+        if (value.length === undefined) {
+          console.warn('Need length for blot \''  + theBlot.name + '\' but none given, using default')
+          value.length = theBlot.length.default
+        }
+        theValue.length = value.length
+      }
+      
+      quillObject.insertEmbed(range.index, theBlot.name, theValue)
+      quillObject.setSelection(range.index + 1)
     }
   }
   
@@ -1435,6 +1488,46 @@ class TranscriptionEditor
     Quill.register(theBlot)
   }
   
+  static registerImageBlot(theBlot, options)
+  {
+    if (TranscriptionEditor.imageBlots === undefined) {
+      TranscriptionEditor.imageBlots = []
+    }
+    theBlot.blotName = options.name
+    if (options.className === undefined) {
+      options.className = options.name
+    }
+    if (options.imageAlt === undefined) {
+      options.imageAlt = options.name
+    }
+    if (options.withPopover === undefined) {
+      options.withPopover = false
+    }
+    if (options.getImageUrl === undefined) {
+      options.getImageUrl = function () { return 'urlnotset'}
+    }
+    theBlot.className = options.className
+    theBlot.title = options.title
+    theBlot.imageAlt = options.imageAlt
+    theBlot.withPopover = options.withPopover
+    theBlot.getImageUrl = options.getImageUrl
+    
+    if (options.alttext) {
+      theBlot.alttext = options.alttext
+    }
+    if (options.extrainfo) {
+      theBlot.extrainfo = options.extrainfo
+    }
+    
+    if (options.length) {
+      theBlot.extrainfo = options.length
+    }
+
+    options.jsClass = theBlot
+    TranscriptionEditor.imageBlots.push(options)
+    Quill.register(theBlot)
+  }
+  
   static init(baseUrl)
   {
     TranscriptionEditor.editors = [] // ??? I don't think this is needed anymore
@@ -1457,11 +1550,21 @@ class TranscriptionEditor
   <div class="toolbar" id="toolbar-{{id}}">
         <button id="clear-button-{{id}}" class="selFmtBtn" title="Clear formatting" disabled><i class="fa fa-eraser"></i></button>
         <button id="edit-button-{{id}}" class="selFmtBtn" title="Edit" disabled><i class="fa fa-pencil"></i></button>
+        <span class="separator"/>
+      
         <span id="langButtons-{{id}}"></span>
+      
+        <span class="separator"/>
+      
         <span id="simpleFormatButtons-{{id}}"></span>
-
+      
+        <span class="separator"/>
+      
+        <span id="simpleImageButtons-{{id}}"></span>
+      
+        <span class="separator"/>
+      
         <button id="note-button-{{id}}" title="Editorial Note"><i class="fa fa-comment-o"></i></button>
-        
         <span class="dropdown">
             <button id="add-button-{{id}}" class="selFmtBtn" title="Addition" disabled data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
                 <i class="fa fa-plus-square"></i>
@@ -1478,42 +1581,20 @@ class TranscriptionEditor
                 <li><a id="add-marginright-{{id}}">Margin Right</a></li>
            </ul>
         </span>
-         <span class="dropdown">
-            <button id="del-button-{{id}}" class="selFmtBtn" title="Deletion" disabled data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-                <i class="fa fa-minus-square"></i>
-           </button>
-            <ul class="dropdown-menu" aria-labelledby="del-button-{{id}}">
-                <li><a>Deletion Technique</a></li>
-                <li role=separator class=divider>
-                <li><a id="del-strikeout-{{id}}">Strikeout</a></li>
-                <li><a id="del-dot-above-{{id}}">Single dot above</a></li>
-                <li><a id="del-dots-above-{{id}}">Dots above</a></li>
-                <li><a id="del-dots-underneath-{{id}}">Dots under</a></li>
-                <li><a id="del-dot-above-dot-under-{{id}}">Dot above and under</a></li>
-                <li><a id="del-line-above-{{id}}">Line above</a></li>
-                <li><a id="del-no-sign-{{id}}">No sign</a></li>
-           </ul>
-        </span>
         
-        <button id="illegible-button-{{id}}"  title="Illegible"><i class="fa fa-eye-slash"></i></button>
+        {#<button id="illegible-button-{{id}}"  title="Illegible"><i class="fa fa-eye-slash"></i></button>#}
         <button id="chunk-start-button-{{id}}"  title="Chunk Start">{</button>
         <button id="chunk-end-button-{{id}}"  title="Chunk End">}</button>
-        
-        <button id="chgap-button-{{id}}" title="Character gap"><i class="fa fa-square-o"></i></button>
-        <button id="pmark-button-{{id}}" title="Paragraph Mark">¶</button>
-        
-        
-        <button class="title-button" disabled>&nbsp;</button>
+       
         {#Special characters#}
-        <button id="nowb-button-{{id}}" title="Non word-breaking dash"><i class="fa fa-minus"></i></button>
         <button id="pcircledot-button-{{id}}" title="Circle dot">⊙</button>
         
-        <button class="title-button" disabled>&nbsp;</button>
+        <span class="separator"/>
       
         {#Elements#}
         <button id="line-button-{{id}}" title="Line">L</button>
-      
         <span id="simpleBlockButtons-{{id}}"></span>
+        <span class="separator"/>
       
         <span class="dropdown">
             <button id="gloss-button-{{id}}" title="Marginal Gloss" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
@@ -1530,6 +1611,7 @@ class TranscriptionEditor
         </span>    
         <button id="linegap-button-{{id}}" title="Line Gap">Gap</button>
         
+        <span class="separator"/>
         <button class="title-button" disabled>Default:</button>
         <span class="dropdown">
             <button class="dropdown-toggle" type="button" id="lang-button-{{id}}" title="Latin" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">

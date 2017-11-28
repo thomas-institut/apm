@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-/* global Quill, TranscriptionEditor, ITEM_RUBRIC, ITEM_INITIAL, ITEM_GLIPH, ITEM_MATH_TEXT, ELEMENT_HEAD, ELEMENT_PAGE_NUMBER, ELEMENT_CUSTODES, ITEM_SIC, ITEM_ABBREVIATION, ITEM_UNCLEAR, Item, ITEM_DELETION */
+/* global Quill, TranscriptionEditor, ITEM_RUBRIC, ITEM_INITIAL, ITEM_GLIPH, ITEM_MATH_TEXT, ELEMENT_HEAD, ELEMENT_PAGE_NUMBER, ELEMENT_CUSTODES, ITEM_SIC, ITEM_ABBREVIATION, ITEM_UNCLEAR, Item, ITEM_DELETION, ITEM_NO_WORD_BREAK, ITEM_CHARACTER_GAP, ITEM_PARAGRAPH_MARK */
 
 const Inline = Quill.import('blots/inline')
 const BlockEmbed = Quill.import('blots/embed')
@@ -96,6 +96,43 @@ SimpleFormatBlot.tagName = 'b'
 SimpleFormatBlot.title = 'Generic Format'
 
 
+class SimpleImgBlot extends BlockEmbed {
+  static create (value) {
+    const node = super.create()
+    node.setAttribute('itemid', value.itemid)
+    node.setAttribute('editorid', value.editorid)
+    if (value.extrainfo !== undefined) {
+      node.setAttribute('extrainfo', value.extrainfo)
+    }
+    if (value.length !== undefined) {
+      node.setAttribute('length', value.length)
+    }
+    node.setAttribute('alt', this.imageAlt)
+    node.setAttribute('title', this.title)
+    const size = Math.round(((this.size-1)*0.2+1)*14)
+    node.setAttribute('src', this.getImageUrl(TranscriptionEditor.baseUrl, size, value))
+    if (this.withPopover) {
+      TranscriptionEditor.setUpPopover(node, this.title, '', value.editorid, value.itemid, true)
+    }
+    return node
+  }
+
+  static value (node) {
+    let value = {
+      itemid: node.getAttribute('itemid'),
+      editorid: node.getAttribute('editorid')
+    }
+    if (this.extrainfo !== undefined) {
+      value.extrainfo = node.getAttribute('extrainfo')
+    }
+    if (this.length !== undefined) {
+      value.length = node.getAttribute('length')
+    }
+    return value
+  }
+ }
+SimpleImgBlot.tagName = 'img'
+
 class RubricBlot extends SimpleFormatBlot {}
 class InitialBlot extends SimpleFormatBlot {}
 class GliphBlot extends SimpleFormatBlot {}
@@ -105,9 +142,17 @@ class AbbrBlot extends SimpleFormatBlot {}
 class UnclearBlot extends SimpleFormatBlot {}
 class DeletionBlot extends SimpleFormatBlot {}
 
+class NoWordBreakBlot extends SimpleImgBlot {}
+class ParagraphMarkBlot extends SimpleImgBlot {}
+class CharacterGapBlot extends SimpleImgBlot {}
+class IllegibleBlot extends SimpleImgBlot {}
+
 class HeadBlot extends SimpleBlockBlot {}
 class PageNumberBlot extends SimpleBlockBlot{}
 class CustodesBlot extends SimpleBlockBlot{}
+
+
+
 
 TranscriptionEditor.registerFormatBlot(RubricBlot, { type: ITEM_RUBRIC, name: 'rubric', title: 'Rubric', icon: 'R'} )
 TranscriptionEditor.registerFormatBlot(InitialBlot, { type: ITEM_INITIAL, name: 'initial', title: 'Initial', icon: 'I'} )
@@ -142,9 +187,56 @@ TranscriptionEditor.registerFormatBlot(DeletionBlot, {
   name: 'deletion', 
   title: 'Deletion', 
   icon: '<i class="fa fa-minus-square"></i>',
+  canBeTarget: true,
   extrainfo: { title: 'Technique', options : Item.getValidDeletionTechniques() }
 })
 
+TranscriptionEditor.registerImageBlot(NoWordBreakBlot, { 
+  type: ITEM_NO_WORD_BREAK,
+  name: 'nowb',
+  title: 'Non word-breaking dash',
+  icon: '<i class="fa fa-minus"></i>',
+  imageAlt:'[-]',
+  getImageUrl: function (baseUrl, size, value) { 
+    return baseUrl + '/api/images/nowb/' + size 
+  }
+})
+
+TranscriptionEditor.registerImageBlot(ParagraphMarkBlot, { 
+  type: ITEM_PARAGRAPH_MARK,
+  name: 'pmark',
+  title: 'Paragraph Mark',
+  icon: '¶',
+  imageAlt:'[¶]',
+  getImageUrl: function (baseUrl, size, value) { 
+    return baseUrl + '/api/images/paragraphmark/' + size
+  }
+})
+
+TranscriptionEditor.registerImageBlot(CharacterGapBlot, { 
+  type: ITEM_CHARACTER_GAP,
+  name: 'chgap',
+  title: 'Character Gap',
+  icon: '<i class="fa fa-square-o"></i>',
+  imageAlt:'[...]',
+  length: { default: 5 },
+  getImageUrl: function (baseUrl, size, value) { 
+    return baseUrl + '/api/images/charactergap/' + value.length + '/' + size
+  }
+})
+
+TranscriptionEditor.registerImageBlot(IllegibleBlot, { 
+  type: ITEM_ILLEGIBLE,
+  name: 'illegible',
+  title: 'Illegible',
+  icon: '<i class="fa fa-eye-slash">',
+  imageAlt:'[illegible]',
+  extrainfo: { title: 'Reason', options : Item.getValidIllegibleReasons(), default: 'illegible' },
+  length: { default: 5 },
+  getImageUrl: function (baseUrl, size, value) { 
+    return baseUrl + '/api/images/illegible/' + size + '/' + value.length
+  }
+})
 
 TranscriptionEditor.registerBlockBlot(HeadBlot, { type: ELEMENT_HEAD, name: 'headelement', title: 'Head', icon: 'H'} )
 TranscriptionEditor.registerBlockBlot(PageNumberBlot, { type: ELEMENT_PAGE_NUMBER, name: 'pagenumber', title: 'Page Number', icon: 'P'} )

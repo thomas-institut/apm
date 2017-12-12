@@ -136,8 +136,21 @@ class TranscriptionEditor
       //$(containerSelector).on('dblclick','.' + formatBlot.className, 
       //    this.genOnDoubleClickSimpleImage(theBlot))
     }
+    
+    // Special Characters
+    for (const char of TranscriptionEditor.specialCharacters) {
+      let buttonId = char.name + '-button-' + this.id
+      $('#specialCharacterButtons-'+this.id).append(
+              '<button id="' + buttonId +  '" ' + 
+              //'class="selFmtBtn" ' +
+              'title="' + char.title + '">' + 
+              char.icon + '</button>'
+        )
+      $('#'+buttonId).on('click', this.genOnClickSpecialCharacterButton(char))
+      //$(containerSelector).on('dblclick','.' + formatBlot.className, 
+      //    this.genOnDoubleClickSimpleImage(theBlot))
+    }
 
-    //$('#nowb-button-' + id).on('click', this.genOnClickSimpleImageButton('nowb'))
     // Block formats
     $('#line-button-' + id).on('click', this.genOnClickLineButton())
     
@@ -151,8 +164,6 @@ class TranscriptionEditor
       $('#'+buttonId).on('click', this.genOnClickSimpleBlockButton(blockBot.name))
     }
 
-    
-
     // enable/disable
     if (this.options.startEnabled) {
       this.enable()
@@ -163,9 +174,7 @@ class TranscriptionEditor
     // generate number lines when all elements are done
     this.numberLines()
     
-    
     TranscriptionEditor.registerEditorInstance(this.id, this)
-    
   }
 
   /**
@@ -192,8 +201,6 @@ class TranscriptionEditor
     if (options.editorId === undefined) {
       options.editorId = 1 // 
     }
-    
-    
     
     // startEnabled:  true/false
     if (options.startEnabled === undefined) {
@@ -963,6 +970,16 @@ class TranscriptionEditor
     }
   }
   
+  genOnClickSpecialCharacterButton(char) 
+  { 
+    let quillObject = this.quillObject
+    return function () {
+      const range = quillObject.getSelection()
+      quillObject.insertText(range.index, char.character)
+      quillObject.setSelection(range.index + 1)
+    }
+  }
+  
   genOnDoubleClickSimpleFormat() {
     let thisObject = this
     let quillObject = this.quillObject
@@ -1488,6 +1505,31 @@ class TranscriptionEditor
     Quill.register(theBlot)
   }
   
+  static registerSpecialCharacter(character, options) 
+  {
+    if (TranscriptionEditor.specialCharacters === undefined) {
+      TranscriptionEditor.specialCharacters = []
+    }
+    
+    if (options === undefined) {
+      options = {}
+    }
+    if (options.icon === undefined) {
+      options.icon = character
+    }
+    
+    if (options.title === undefined) {
+      options.title = 'Insert ' + character
+    }
+    
+    if (options.name === undefined) {
+      options.name = 'char' + character.charCodeAt(0)
+    }
+    
+    options.character = character
+    TranscriptionEditor.specialCharacters.push(options)
+    
+  }
   static registerImageBlot(theBlot, options)
   {
     if (TranscriptionEditor.imageBlots === undefined) {
@@ -1540,6 +1582,7 @@ class TranscriptionEditor
       id: 'editor',
       data: `
 <div class="transcription-editor">
+  {#  TOP TOOLBAR #}  
   <div id="editor-controls-{{id}}" class="editor-controlbar">
       <button id="zoom-in-button-{{id}}" title="Make text bigger"><i class="fa fa-search-plus"></i></button>
       <button id="zoom-out-button-{{id}}" title="Make text smaller"><i class="fa fa-search-minus"></i></button>
@@ -1547,83 +1590,93 @@ class TranscriptionEditor
       <button id="save-button-{{id}}" title="Save changes"><i class="fa fa-save"></i></button>
       <button id="reset-button-{{id}}" title="Revert to last saved changes"><i class="fa fa-refresh"></i></button>
   </div>
+      
+  {#  BOTTOM TOOLBAR #}
   <div class="toolbar" id="toolbar-{{id}}">
-        <button id="clear-button-{{id}}" class="selFmtBtn" title="Clear formatting" disabled><i class="fa fa-eraser"></i></button>
-        <button id="edit-button-{{id}}" class="selFmtBtn" title="Edit" disabled><i class="fa fa-pencil"></i></button>
-        <span class="separator"/>
       
-        <span id="langButtons-{{id}}"></span>
+    {# Clear and Edit #}
+    <button id="clear-button-{{id}}" class="selFmtBtn" title="Clear formatting" disabled><i class="fa fa-eraser"></i></button>
+    <button id="edit-button-{{id}}" class="selFmtBtn" title="Edit" disabled><i class="fa fa-pencil"></i></button>
+    <span class="separator"/>
+
+    {# Languages #}
+    <span id="langButtons-{{id}}"></span>
+    <span class="separator"/>
+
+    {# Simple Format Buttons #}
+    <span id="simpleFormatButtons-{{id}}"></span>
+    <span class="separator"/>
       
-        <span class="separator"/>
+    {# Simple Image Buttons #}
+    <span id="simpleImageButtons-{{id}}"></span>
+    <span class="separator"/>
       
-        <span id="simpleFormatButtons-{{id}}"></span>
+    {# Special characters #}
+    <span id="specialCharacterButtons-{{id}}"></span>
+    <span class="separator"/>
+
+    {# Editorial Note #}
+    <button id="note-button-{{id}}" title="Editorial Note"><i class="fa fa-comment-o"></i></button>
+    <span class="separator"/>
       
-        <span class="separator"/>
+    {#Elements#}
+    <button id="line-button-{{id}}" title="Line">L</button>
+    <span id="simpleBlockButtons-{{id}}"></span>
+    <span class="separator"/>
+
+    {# Default Language #}
+    <button class="title-button" disabled>Default:</button>
+    <span class="dropdown">
+        <button class="dropdown-toggle" type="button" id="lang-button-{{id}}" title="Latin" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+            la
+       </button>
+        <ul class="dropdown-menu" id="set-lang-dd-menu-{{id}}" aria-labelledby="lang-button-{{id}}">
+       </ul>
+    </span>
+    <span class="separator"/>
       
-        <span id="simpleImageButtons-{{id}}"></span>
-      
-        <span class="separator"/>
-      
-        <button id="note-button-{{id}}" title="Editorial Note"><i class="fa fa-comment-o"></i></button>
-        <span class="dropdown">
-            <button id="add-button-{{id}}" class="selFmtBtn" title="Addition" disabled data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-                <i class="fa fa-plus-square"></i>
-            </button>
-            <ul class="dropdown-menu" aria-labelledby="add-button-{{id}}">
-                <li><a>Placement</a></li>
-                <li role=separator class=divider>
-                <li><a id="add-above-{{id}}">Above</a></li>
-                <li><a id="add-below-{{id}}">Below</a></li>
-                <li><a id="add-inline-{{id}}">Inline</a></li>
-                <li><a id="add-inspace-{{id}}">In Space</a></li>
-                <li><a id="add-overflow-{{id}}">Overflow</a></li>
-                <li><a id="add-marginleft-{{id}}">Margin Left</a></li>
-                <li><a id="add-marginright-{{id}}">Margin Right</a></li>
-           </ul>
-        </span>
-        
-        {#<button id="illegible-button-{{id}}"  title="Illegible"><i class="fa fa-eye-slash"></i></button>#}
-        <button id="chunk-start-button-{{id}}"  title="Chunk Start">{</button>
-        <button id="chunk-end-button-{{id}}"  title="Chunk End">}</button>
-       
-        {#Special characters#}
-        <button id="pcircledot-button-{{id}}" title="Circle dot">⊙</button>
-        
-        <span class="separator"/>
-      
-        {#Elements#}
-        <button id="line-button-{{id}}" title="Line">L</button>
-        <span id="simpleBlockButtons-{{id}}"></span>
-        <span class="separator"/>
-      
-        <span class="dropdown">
-            <button id="gloss-button-{{id}}" title="Marginal Gloss" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-                G
-           </button>
-            <ul class="dropdown-menu" aria-labelledby="gloss-button-{{id}}">
-                <li><a>Placement</a></li>
-                <li role=separator class=divider>
-                <li><a id="gloss-top-{{id}}">Margin Top</a></li>
-                <li><a id="gloss-bottom-{{id}}">Margin Bottom</a></li>
-                <li><a id="gloss-left-{{id}}">Margin Left</a></li>
-                <li><a id="gloss-right-{{id}}">Margin Right</a></li>
-           </ul>
-        </span>    
-        <button id="linegap-button-{{id}}" title="Line Gap">Gap</button>
-        
-        <span class="separator"/>
-        <button class="title-button" disabled>Default:</button>
-        <span class="dropdown">
-            <button class="dropdown-toggle" type="button" id="lang-button-{{id}}" title="Latin" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-                la
-           </button>
-            <ul class="dropdown-menu" id="set-lang-dd-menu-{{id}}" aria-labelledby="lang-button-{{id}}">
-           </ul>
-        </span>
-    </div>
-    <div id="editor-container-{{id}}" class="editor-container"></div>
-    <div id="status-bar-{{id}}" class="editor-statusbar">
-    </div>
+    {# OTHER #}
+    <span class="dropdown">
+        <button id="add-button-{{id}}" class="selFmtBtn" title="Addition" disabled data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+            <i class="fa fa-plus-square"></i>
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="add-button-{{id}}">
+            <li><a>Placement</a></li>
+            <li role=separator class=divider>
+            <li><a id="add-above-{{id}}">Above</a></li>
+            <li><a id="add-below-{{id}}">Below</a></li>
+            <li><a id="add-inline-{{id}}">Inline</a></li>
+            <li><a id="add-inspace-{{id}}">In Space</a></li>
+            <li><a id="add-overflow-{{id}}">Overflow</a></li>
+            <li><a id="add-marginleft-{{id}}">Margin Left</a></li>
+            <li><a id="add-marginright-{{id}}">Margin Right</a></li>
+       </ul>
+    </span>
+
+    {#<button id="illegible-button-{{id}}"  title="Illegible"><i class="fa fa-eye-slash"></i></button>#}
+    <button id="chunk-start-button-{{id}}"  title="Chunk Start">{</button>
+    <button id="chunk-end-button-{{id}}"  title="Chunk End">}</button>
+    <span class="separator"/>
+
+    <span class="dropdown">
+        <button id="gloss-button-{{id}}" title="Marginal Gloss" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+            G
+       </button>
+        <ul class="dropdown-menu" aria-labelledby="gloss-button-{{id}}">
+            <li><a>Placement</a></li>
+            <li role=separator class=divider>
+            <li><a id="gloss-top-{{id}}">Margin Top</a></li>
+            <li><a id="gloss-bottom-{{id}}">Margin Bottom</a></li>
+            <li><a id="gloss-left-{{id}}">Margin Left</a></li>
+            <li><a id="gloss-right-{{id}}">Margin Right</a></li>
+       </ul>
+    </span>    
+    <button id="linegap-button-{{id}}" title="Line Gap">Gap</button>
+
+    <span class="separator"/>
+</div>
+<div id="editor-container-{{id}}" class="editor-container"></div>
+<div id="status-bar-{{id}}" class="editor-statusbar"></div>
 </div>
 <div id="cbtmp" style="display: none;">
 </div>

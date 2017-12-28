@@ -111,7 +111,51 @@ class TranscriptionEditor
    
     // Simple formats
     for (const formatBlot of TranscriptionEditor.formatBlots) {
+      // No button
+      if (formatBlot.noButton) {
+        continue
+      }
       let buttonId = formatBlot.name + '-button-' + this.id
+      if (formatBlot.buttonWithOptions) {
+        if (formatBlot[formatBlot.buttonWithOptions] === undefined) {
+          console.error('Undefined options field for blot ' + formatBlot.name)
+          continue
+        }
+        let optionsFieldName = formatBlot.buttonWithOptions
+        let optionsField = formatBlot[optionsFieldName]
+        let dropdownHtml = ''
+        dropdownHtml += '<span class="dropdown">'
+        dropdownHtml +=
+            '<button id="' + buttonId +  '" ' + 
+            'class="selFmtBtn" ' +
+            'title="' + formatBlot.title + '"' + 
+            'disabled data-toggle="dropdown" aria-haspopup="true" aria-expanded="true"' +
+            '>' + 
+            formatBlot.icon + '</button>'
+        dropdownHtml += '<ul class="dropdown-menu" aria-labelledby="'  +
+          buttonId + '">'
+        dropdownHtml += '<li><a>' +optionsField.title + '</a></li>'
+        dropdownHtml += '<li role=separator class=divider>'
+        let optionNumber = 1
+        for (const option of optionsField.options ) {
+          let optionId = buttonId + '-' + optionNumber
+          dropdownHtml += '<li><a id="' + optionId + '">' + option + '</a></li>'
+          optionNumber++
+        }
+        dropdownHtml += '</ul></span'
+        $('#simpleFormatButtons-'+this.id).append(dropdownHtml)
+        optionNumber = 1
+        for (const option of optionsField.options ) {
+          let value = {}
+          value[optionsFieldName] = option
+          $('#'+buttonId + '-' + optionNumber).on('click', 
+            this.genOnClickSimpleFormat(formatBlot, value))
+          optionNumber++
+        }
+        continue
+      }
+      
+      // Single button
       $('#simpleFormatButtons-'+this.id).append(
               '<button id="' + buttonId +  '" ' + 
               'class="selFmtBtn" ' +
@@ -125,17 +169,51 @@ class TranscriptionEditor
     
     // Image formats
     for (const theBlot of TranscriptionEditor.imageBlots) {
-      let buttonId = theBlot.name + '-button-' + this.id
-      $('#simpleImageButtons-'+this.id).append(
-              '<button id="' + buttonId +  '" ' + 
-              //'class="selFmtBtn" ' +
-              'title="' + theBlot.title + '">' + 
-              theBlot.icon + '</button>'
-        )
-      $('#'+buttonId).on('click', this.genOnClickSimpleImageButton(theBlot))
-      //$(containerSelector).on('dblclick','.' + formatBlot.className, 
-      //    this.genOnDoubleClickSimpleImage(theBlot))
+      // No button
+      if (theBlot.noButton) {
+        continue
+      }
+      // Single button
+      if (theBlot.buttons === undefined) {
+        // with options 
+        if (theBlot.buttonWithOptions) {
+          // do later!
+        } else {
+          let buttonId = theBlot.name + '-button-' + this.id
+          $('#simpleImageButtons-'+this.id).append(
+                '<button id="' + buttonId +  '" ' + 
+                'class="imgFmtBtn" ' +
+                'title="' + theBlot.title + '">' + 
+                theBlot.icon + '</button>'
+            )
+          $('#'+buttonId).on('click', this.genOnClickSimpleImageButton(theBlot))
+          if (theBlot.withEditOnDoubleClick) {
+            $(containerSelector).on('dblclick','.' + theBlot.className, 
+              this.genOnDoubleClickSimpleEmbed(theBlot))
+          }
+          continue
+        }
+      }
+      // Multiple buttons
+      for (const theButton of theBlot.buttons) {
+        let buttonId = theBlot.name + theButton.name + '-button-' + this.id
+        $('#simpleImageButtons-'+this.id).append(
+                '<button id="' + buttonId +  '" ' + 
+                'class="imgFmtBtn" ' +
+                'title="' + theButton.title + '">' + 
+                theButton.icon + '</button>'
+          )
+        $('#'+buttonId).on('click', this.genOnClickSimpleImageButton(theBlot, theButton.value))
+        //$(containerSelector).on('dblclick','.' + formatBlot.className, 
+        //    this.genOnDoubleClickSimpleImage(theBlot))
+      }
     }
+    
+    // Special image buttons
+    $('#chunk-start-button-' + id).click(
+            this.genChunkButtonFunction('start'))
+    $('#chunk-end-button-' + id).click(
+            this.genChunkButtonFunction('end'))
     
     // Special Characters
     for (const char of TranscriptionEditor.specialCharacters) {
@@ -155,13 +233,61 @@ class TranscriptionEditor
     $('#line-button-' + id).on('click', this.genOnClickLineButton())
     
     for (const blockBot of TranscriptionEditor.blockBlots) {
-      let buttonId = blockBot.name + '-button-' + this.id
-      $('#simpleBlockButtons-'+this.id).append(
+      // No button
+      if (blockBot.noButton) {
+        continue
+      }
+      // Single button
+      if (blockBot.buttons === undefined) {
+        let buttonId = blockBot.name + '-button-' + this.id
+        // with options 
+        if (blockBot.buttonWithOptions) {
+          if (blockBot[blockBot.buttonWithOptions] === undefined) {
+            console.error('Undefined options field for blot ' + blockBot.name)
+            continue
+          }
+          let optionsFieldName = blockBot.buttonWithOptions
+          let optionsField = blockBot[optionsFieldName]
+          let dropdownHtml = ''
+          dropdownHtml += '<span class="dropdown">'
+          dropdownHtml +=
               '<button id="' + buttonId +  '" ' + 
-              'title="' + blockBot.title + '">' + 
+              'title="' + blockBot.title + '"' + 
+              'data-toggle="dropdown" aria-haspopup="true" aria-expanded="true"' +
+              '>' + 
               blockBot.icon + '</button>'
-        )
-      $('#'+buttonId).on('click', this.genOnClickSimpleBlockButton(blockBot.name))
+          dropdownHtml += '<ul class="dropdown-menu" aria-labelledby="'  +
+            buttonId + '">'
+          dropdownHtml += '<li><a>' +optionsField.title + '</a></li>'
+          dropdownHtml += '<li role=separator class=divider>'
+          let optionNumber = 1
+          for (const option of optionsField.options ) {
+            let optionId = buttonId + '-' + optionNumber
+            dropdownHtml += '<li><a id="' + optionId + '">' + option + '</a></li>'
+            optionNumber++
+          }
+          dropdownHtml += '</ul></span'
+          $('#simpleBlockButtons-'+this.id).append(dropdownHtml)
+          optionNumber = 1
+          for (const option of optionsField.options ) {
+            let value = {}
+            value[optionsFieldName] = option
+            $('#'+buttonId + '-' + optionNumber).on('click', 
+              this.genOnClickSimpleBlockButton(blockBot, value))
+            optionNumber++
+          }
+          continue
+        } else {
+          $('#simpleBlockButtons-'+this.id).append(
+                  '<button id="' + buttonId +  '" ' + 
+                  'title="' + blockBot.title + '">' + 
+                  blockBot.icon + '</button>'
+            )
+          $('#'+buttonId).on('click', this.genOnClickSimpleBlockButton(blockBot))
+          continue
+        }
+      }
+      
     }
 
     // enable/disable
@@ -364,8 +490,62 @@ class TranscriptionEditor
     let editorContainerLeftPos = $(editorDiv).offset().left
     let lineNumber = 0
     let overlayNumber = 0
+    let inMarginal = false
+    let lastMarginalId = -1
+    let numChars = this.options.lineNumbers.numChars;
     for (const p of pElements) {
       let theP = $(p)
+      let lineNumberLabel = '-'
+      switch (this.getParagraphType(theP)) {
+        case 'normal':
+          inMarginal = false
+          lineNumberLabel = TranscriptionEditor.padNumber(++lineNumber, numChars, '&nbsp;')
+          break;
+
+        case 'custodes':
+          inMarginal = false
+          lineNumberLabel = '<a title="Custodes">&nbsp;C</a>'
+          break
+
+        case 'pagenumber':
+          inMarginal = false
+          lineNumberLabel = '<a title="Page Number">PN</a>'
+          break
+
+        case 'headelement':
+          inMarginal = false
+          lineNumberLabel = '<a title="Head">&nbsp;H</a>'
+          break
+          
+        case 'gloss':
+          let place = theP.attr('place')
+          let elementId = theP.attr('elementid')
+          if (!inMarginal || elementId !== lastMarginalId) {
+            // first line of marginal
+            lastMarginalId = elementId
+            theP.addClass('firstmarginalline')
+          } else {
+            theP.removeClass('firstmarginalline')
+          }
+          lineNumberLabel = '<a title="Gloss @ ' + place + '">&nbsp;G</a>'
+          inMarginal = true
+          break
+        
+        case 'addition':
+          place = theP.attr('place')
+          elementId = theP.attr('elementid')
+          if (!inMarginal || elementId !== lastMarginalId) {
+            // first line of marginal
+            lastMarginalId = elementId
+            theP.addClass('firstmarginalline')
+          } else {
+            theP.removeClass('firstmarginalline')
+          }
+          lineNumberLabel = '<a title="Addition @ ' + place + '">&nbsp;A</a>'
+          inMarginal = true
+          break
+          
+      }
       let offset = theP.offset()
       let fontFactor = this.options.lineNumbers.fontFactor 
       let editorFontSize = this.calcEditorFontEmSize(this.fontSize)*this.options.pixPerEm
@@ -373,31 +553,12 @@ class TranscriptionEditor
       let fontEmSize = this.calcEditorFontEmSize(this.fontSize)*fontFactor
       let fontCharWidth = fontEmSize*this.options.pixPerEm*this.options.lineNumbers.charWidth
       let numberMargin = this.options.lineNumbers.margin;
-      let numChars = this.options.lineNumbers.numChars;
+      
       let lineNumberLeftPos = editorContainerLeftPos - numberMargin - numChars*fontCharWidth;
       if (this.defaultLang !== 'la') {
         lineNumberLeftPos = editorContainerLeftPos + $(editorDiv).outerWidth() + numberMargin;
       }
       let overlay = ''
-      let lineNumberLabel = '-'
-      switch (this.getParagraphType(theP)) {
-        case 'normal':
-          lineNumberLabel = TranscriptionEditor.padNumber(++lineNumber, numChars, '&nbsp;')
-          break;
-
-        case 'custodes':
-          lineNumberLabel = '<a title="Custodes">&nbsp;C</a>'
-          break
-
-        case 'pagenumber':
-          lineNumberLabel = '<a title="Page Number">PN</a>'
-          break
-
-        case 'headelement':
-          lineNumberLabel = '<a title="Head">&nbsp;H</a>'
-          break
-
-      }
       overlayNumber++
       let overlayId = this.containerId + '-lnr-' + overlayNumber
       overlay = '<div class="linenumber" id="' +
@@ -703,32 +864,21 @@ class TranscriptionEditor
       //console.log("Has format: " + hasFormat)
       if (range.length === 0) {
         $('.selFmtBtn').prop('disabled', true)
+        $('.imgFmtBtn').prop('disabled', false)
+        $('#note-button-' + id).prop('disabled', false)
         thisObject.setDisableLangButtons(true)
         $('#edit-button-' + id).prop('disabled', true)
         if (TranscriptionEditor.rangeIsInMidItem(quillObject, range)) {
           $('#note-button-' + id).prop('disabled', true)
-          $('#illegible-button-' + id).prop('disabled', true)
-          $('#nowb-button-' + id).prop('disabled', true)
-          $('#chunk-start-button-' + id).prop('disabled', true)
-          $('#chunk-end-button-' + id).prop('disabled', true)
           $('#edit-button-' + id).prop('disabled', false)
+          $('.imgFmtBtn').prop('disabled', true)
           return false
         }
-        $('#note-button-' + id).prop('disabled', false)
-        $('#illegible-button-' + id).prop('disabled', false)
-        $('#nowb-button-' + id).prop('disabled', false)
-        $('#chunk-start-button-' + id).prop('disabled', false)
-        $('#chunk-end-button-' + id).prop('disabled', false)
-
         return false
       }
       // Selection's length >= 1
-      
+      $('.imgFmtBtn').prop('disabled', true)
       $('#note-button-' + id).prop('disabled', true)
-      $('#illegible-button-' + id).prop('disabled', true)
-      $('#nowb-button-' + id).prop('disabled', true)
-      $('#chunk-start-button-' + id).prop('disabled', true)
-      $('#chunk-end-button-' + id).prop('disabled', true)
       
       const text = quillObject.getText(range)
       if (text.search('\n') !== -1) {
@@ -755,6 +905,42 @@ class TranscriptionEditor
       }
     }
   }
+  
+  genChunkButtonFunction(type) {
+    let thisObject = this
+    let quillObject = this.quillObject
+    return function () {
+      const range = quillObject.getSelection()
+      if (range.length > 0) {
+        return false
+      }
+      $('#chunk-modal-title-' + thisObject.id).html('Chunk ' + type)
+      $('#chunk-modal-worknumber-' + thisObject.id).val(1)
+      $('#chunk-modal-chunknumber-' + thisObject.id).val(1)
+
+      $('#chunk-modal-submit-button-' + thisObject.id).off()
+      $('#chunk-modal-submit-button-' + thisObject.id).on('click', function () {
+        $('#chunk-modal-' + thisObject.id).modal('hide')
+        const itemid = thisObject.getOneItemId()
+        const dareid = 'AW'+ $('#chunk-modal-worknumber-' + thisObject.id).val()
+        const chunkno = $('#chunk-modal-chunknumber-' + thisObject.id).val()
+        quillObject.insertEmbed(range.index, 'chunkmark', {
+          alttext: type,
+          target: chunkno,
+          text: dareid,
+          itemid: itemid,
+          editorid: thisObject.id
+        })
+        quillObject.setSelection(range.index + 1)
+                // Take care of notes!
+        const noteText = $('#chunk-note-' + thisObject.id).val()
+        if (noteText !== '') {
+          thisObject.addNewNote(itemid, noteText)
+        }
+      })
+      $('#chunk-modal-' + thisObject.id).modal('show')
+    }
+  }
 
   genOnResize()
   {
@@ -773,63 +959,144 @@ class TranscriptionEditor
       quillObject.setSelection(range.index + range.length)
     }
   }
+  
+  getTargets (itemId = -1) {
+    const ops = this.quillObject.getContents().ops
+    const targets = [{itemid: -1, text: '[none]'}]
+    const potentialTargets = []
+   
+    const additionTargets = []
+    for (const curOps of ops) {
+      if (curOps.insert !== '\n' &&
+                        'attributes' in curOps) {
+        if (curOps.attributes.deletion) {
+          potentialTargets.push({
+            itemid: parseInt(curOps.attributes.deletion.itemid),
+            text: 'DELETION: ' + curOps.insert
+          })
+        }
+        if (curOps.attributes.unclear) {
+          potentialTargets.push({
+            itemid: parseInt(curOps.attributes.unclear.itemid),
+            text: 'UNCLEAR: ' + curOps.insert
+          })
+        }
+        if (curOps.attributes.addition) {
+          if (curOps.attributes.addition.itemid !== itemId) {
+            additionTargets[curOps.attributes.addition.target] = true
+          }
+        }
+      }
+    }
 
-  genOnClickSimpleFormat(theBlot) {
+    for (const pTarget of potentialTargets) {
+      if (!(pTarget.itemid in additionTargets)) {
+        targets.push(pTarget)
+      }
+    }
+    return targets
+  }
+
+  genOnClickSimpleFormat(theBlot, value = {}) {
     let thisObject = this
     let quillObject = this.quillObject
     return function () {
       if (!thisObject.enabled) {
         return true
       }
-      let value =  {
-        itemid: thisObject.getOneItemId(),
+      let needsDialog = false
+      const itemId = thisObject.getOneItemId()
+      let theValue =  {
+        itemid: itemId,
         editorid: thisObject.id
       }
-      if (theBlot.alttext || theBlot.extrainfo) {
-        const range = quillObject.getSelection()
-        const text = quillObject.getText(range.index, range.length)
-        TranscriptionEditor.resetItemModal(thisObject.id)
-        $('#item-modal-title-' + thisObject.id).html(theBlot.title)
-        $('#item-modal-text-' + thisObject.id).html(text)
-        $('#item-modal-text-fg-' + thisObject.id).show()
-        if (theBlot.alttext) {
-          $('#item-modal-alttext-label-' + thisObject.id).html(theBlot.alttext.title)
-          $('#item-modal-alttext-' + thisObject.id).val('')
-          $('#item-modal-alttext-fg-' + thisObject.id).show()
+      
+      let fields = ['text', 'alttext', 'extrainfo', 'target', 'thelength']
+      
+      for (const theField of fields) {
+        if (theBlot[theField] !== undefined) {
+          if (value[theField] === undefined) {
+            if (theBlot[theField].default !== undefined) {
+              console.warn('Need ' + theField + ' for blot \''  + theBlot.name + '\' but none given, using default')
+              value[theField] = theBlot[theField].default
+            } else {
+              needsDialog = true
+            }
+          }
+          theValue[theField] = value[theField]
         }
-        if (theBlot.extrainfo) {
-          $('#item-modal-extrainfo-label-' + thisObject.id).html(theBlot.extrainfo.title)
-          $('#item-modal-extrainfo-fg-' + thisObject.id).show()
-          let optionsHtml = ''
-          for (const option of theBlot.extrainfo.options) {
-            optionsHtml += '<option value="' + option + '"'
-            optionsHtml += '>' + option + '</option>'
-          }
-          $('#item-modal-extrainfo-' + thisObject.id).html(optionsHtml)
+      }
+      if (theBlot.forceInputDialog) {
+        needsDialog = true
+      }
+      // Deal with target field 
+      let targets = []
+      if (theBlot.target) {
+        targets = thisObject.getTargets()
+        if (theBlot.target.default === -1) {
+          theValue.targetText = '[none]'
         }
-        $('#item-modal-submit-button-' + thisObject.id).on('click', function () {
-          $('#item-modal-' + thisObject.id).modal('hide')
-          if (theBlot.alttext) {
-            value.alttext = $('#item-modal-alttext-' + thisObject.id).val()
-          }
-          if (theBlot.extrainfo) {
-            value.extrainfo = $('#item-modal-extrainfo-' + thisObject.id).val()
-          }
-          quillObject.format(theBlot.name, value)
-          quillObject.setSelection(range.index + range.length)
-          // Take care of notes!
-          const noteText = $('#item-note-' + thisObject.id).val()
-          if (noteText !== '') {
-            thisObject.addNewNote(value.itemid, noteText)
-          }
-        })
-        $('#item-modal-' + thisObject.id).modal('show')
-      } else {
-        quillObject.format(theBlot.name, value)
+      }
+      
+      if (!needsDialog) {
+        quillObject.format(theBlot.name, theValue)
         const range = quillObject.getSelection()
         quillObject.setSelection(range.index + range.length)
+        return true
       }
-    }
+      // Let's fire up the modal
+      const range = quillObject.getSelection()
+      const text = quillObject.getText(range.index, range.length)
+      TranscriptionEditor.resetItemModal(thisObject.id)
+      $('#item-modal-title-' + thisObject.id).html(theBlot.title)
+      $('#item-modal-text-' + thisObject.id).html(text)
+      $('#item-modal-text-fg-' + thisObject.id).show()
+      if (theBlot.alttext) {
+        $('#item-modal-alttext-label-' + thisObject.id).html(theBlot.alttext.title)
+        $('#item-modal-alttext-' + thisObject.id).val('')
+        $('#item-modal-alttext-fg-' + thisObject.id).show()
+      }
+      if (theBlot.extrainfo) {
+        $('#item-modal-extrainfo-label-' + thisObject.id).html(theBlot.extrainfo.title)
+        $('#item-modal-extrainfo-fg-' + thisObject.id).show()
+        let optionsHtml = ''
+        for (const option of theBlot.extrainfo.options) {
+          optionsHtml += '<option value="' + option + '"'
+          optionsHtml += '>' + option + '</option>'
+        }
+        $('#item-modal-extrainfo-' + thisObject.id).html(optionsHtml)
+      }
+      if (theBlot.target) {
+        let targetsHtml = ''
+        for (const theTarget of targets) {
+          targetsHtml += '<option value="' + theTarget.itemid + '"'
+          if (theTarget.itemid === theValue.target) {
+            targetsHtml += ' selected'
+          }
+          targetsHtml += '>' + theTarget.text + '</option>'
+        }
+        $('#item-modal-target-' + thisObject.id).html(targetsHtml)
+        $('#item-modal-target-label-' + thisObject.id).html(theBlot.target.title)
+        $('#item-modal-target-fg-' + thisObject.id).show()
+      }
+      $('#item-modal-submit-button-' + thisObject.id).on('click', function () {
+        $('#item-modal-' + thisObject.id).modal('hide')
+        if (theBlot.alttext) {
+          theValue.alttext = $('#item-modal-alttext-' + thisObject.id).val()
+        }
+        if (theBlot.extrainfo) {
+          theValue.extrainfo = $('#item-modal-extrainfo-' + thisObject.id).val()
+        }
+        quillObject.format(theBlot.name, theValue)
+        quillObject.setSelection(range.index + range.length)
+        // Take care of notes!
+        const noteText = $('#item-note-' + thisObject.id).val()
+        if (noteText !== '') {
+          thisObject.addNewNote(theValue.itemid, noteText)
+        }
+      })
+      $('#item-modal-' + thisObject.id).modal('show')
+  }
   }
   
   genOnClickClearFormats() {
@@ -876,12 +1143,45 @@ class TranscriptionEditor
     }
   }
 
-  genOnClickSimpleBlockButton(format) 
+  genOnClickSimpleBlockButton(theBlot, value = {}) 
   {
+    let thisObject = this
     let quillObject = this.quillObject
     return function ()
     {
-      quillObject.format(format, true)
+      if (!thisObject.enable) {
+        return true
+      }
+      let needsDialog = false
+      const elementId = thisObject.getOneItemId()
+      let theValue =  {
+        elementId: elementId,
+        editorid: thisObject.id
+      }
+      
+      let fields = ['place']
+      for (const theField of fields) {
+        if (theBlot[theField] !== undefined) {
+          if (value[theField] === undefined) {
+            if (theBlot[theField].default !== undefined) {
+              console.warn('Need ' + theField + ' for blot \''  + theBlot.name + '\' but none given, using default')
+              value[theField] = theBlot[theField].default
+            } else {
+              needsDialog = true
+            }
+          }
+          theValue[theField] = value[theField]
+        }
+      }
+      if (theBlot.forceInputDialog) {
+        needsDialog = true
+      }
+      if (!needsDialog) {
+        quillObject.format(theBlot.name, theValue)
+        return true
+      }
+      // Needs dialog
+      console.warn('Block blot needs dialog... not implemented yet')
     }
   }
 
@@ -936,6 +1236,41 @@ class TranscriptionEditor
     }
   }
   
+  setupModalForSimpleImageBlog(thisObject, theBlot, theValue)
+  {
+    TranscriptionEditor.resetItemModal(thisObject.id)
+      $('#item-modal-title-' + thisObject.id).html(theBlot.title)
+      if (theBlot.text) {
+        $('#item-modal-text-' + thisObject.id).html(theValue.text)
+        $('#item-modal-text-fg-' + thisObject.id).show()
+      }
+      if (theBlot.alttext) {
+        $('#item-modal-alttext-label-' + thisObject.id).html(theBlot.alttext.title)
+        $('#item-modal-alttext-' + thisObject.id).val(theValue.alttext)
+        $('#item-modal-alttext-fg-' + thisObject.id).show()
+      }
+      if (theBlot.extrainfo) {
+        $('#item-modal-extrainfo-label-' + thisObject.id).html(theBlot.extrainfo.title)
+        $('#item-modal-extrainfo-fg-' + thisObject.id).show()
+        let optionsHtml = ''
+        for (const option of theBlot.extrainfo.options) {
+          optionsHtml += '<option value="' + option + '"'
+          if (option === theBlot.extrainfo.default) {
+            optionsHtml += ' selected'
+          }
+          optionsHtml += '>' + option + '</option>'
+        }
+        $('#item-modal-extrainfo-' + thisObject.id).html(optionsHtml)
+      }
+      if (theBlot.thelength) {
+        $('#item-modal-length-label-' + thisObject.id).html(theBlot.thelength.title)
+        $('#item-modal-length-' + thisObject.id).val(theValue.thelength)
+        $('#item-modal-length-' + thisObject.id).attr('min',theBlot.thelength.min)
+        $('#item-modal-length-' + thisObject.id).attr('max',theBlot.thelength.max)
+        $('#item-modal-length-fg-' + thisObject.id).show()
+      }
+  }
+  
   genOnClickSimpleImageButton(theBlot, value = {}) 
   {
     let quillObject = this.quillObject
@@ -945,28 +1280,58 @@ class TranscriptionEditor
       if (range.length > 0) {
         return false
       }
+      let needsDialog = false
       const itemId = thisObject.getOneItemId()
       let theValue = {
             itemid: itemId,
             editorid: thisObject.id
       }
-      if (theBlot.extrainfo !== undefined) {
-        if (value.extrainfo === undefined) {
-          console.warn('Need extrainfo for blot \''  + theBlot.name + '\' but none given, using default')
-          value.extrainfo = theBlot.extrainfo.default
-        }
-        theValue.extrainfo = value.extrainfo
-      }
-      if (theBlot.length !== undefined) {
-        if (value.length === undefined) {
-          console.warn('Need length for blot \''  + theBlot.name + '\' but none given, using default')
-          value.length = theBlot.length.default
-        }
-        theValue.length = value.length
-      }
+      let fields = ['text', 'alttext', 'extrainfo', 'target', 'thelength']
       
-      quillObject.insertEmbed(range.index, theBlot.name, theValue)
-      quillObject.setSelection(range.index + 1)
+      for (const theField of fields) {
+        if (theBlot[theField] !== undefined) {
+          if (value[theField] === undefined) {
+            if (theBlot[theField].default !== undefined) {
+              console.warn('Need ' + theField + ' for blot \''  + theBlot.name + '\' but none given, using default')
+              value[theField] = theBlot[theField].default
+            } else {
+              needsDialog = true
+            }
+          }
+          theValue[theField] = value[theField]
+        }
+      }
+      if (theBlot.forceInputDialog) {
+        needsDialog = true
+      }
+      if (!needsDialog) {
+        quillObject.insertEmbed(range.index, theBlot.name, theValue)
+        quillObject.setSelection(range.index + 1)
+        return true
+      }
+      // Let's fire up the modal
+      thisObject.setupModalForSimpleImageBlog(thisObject, theBlot, theValue)
+      $('#item-modal-submit-button-' + thisObject.id).on('click', function () {
+          $('#item-modal-' + thisObject.id).modal('hide')
+          if (theBlot.alttext) {
+            theValue.alttext = $('#item-modal-alttext-' + thisObject.id).val()
+          }
+          if (theBlot.extrainfo) {
+            theValue.extrainfo = $('#item-modal-extrainfo-' + thisObject.id).val()
+          }
+          if (theBlot.thelength) {
+            theValue.thelength = $('#item-modal-length-' + thisObject.id).val()
+          }
+          quillObject.insertEmbed(range.index, theBlot.name, theValue)
+          quillObject.setSelection(range.index + 1)
+          // Take care of notes!
+          const noteText = $('#item-note-' + thisObject.id).val()
+          if (noteText !== '') {
+            thisObject.addNewNote(theValue.itemid, noteText)
+          }
+        })
+        $('#item-modal-' + thisObject.id).modal('show')
+      
     }
   }
   
@@ -998,6 +1363,58 @@ class TranscriptionEditor
     }
   }
   
+  genOnDoubleClickSimpleEmbed (theBlot) {
+    let thisObject = this
+    let quillObject = this.quillObject
+  
+    return function (event) {
+      if (!thisObject.enabled) {
+        return true
+      }
+      const blot = Quill.find(event.target)
+      const range = {
+        index: blot.offset(quillObject.scroll),
+        length: blot.length()
+      }
+      quillObject.setSelection(range)
+      const delta = quillObject.getContents(range.index, range.length)
+      TranscriptionEditor.resetItemModal(thisObject.id)
+      if (!delta.ops[0].insert[theBlot.name]) {
+         console.warn('Double click on embed without proper value')
+         return false
+      }
+      let value = delta.ops[0].insert[theBlot.name]
+      // Let's fire up the modal
+      thisObject.setupModalForSimpleImageBlog(thisObject, theBlot, value)
+      TranscriptionEditor.setupNotesInItemModal(thisObject, value.itemid)
+      $('#item-modal-submit-button-' + thisObject.id).on('click', function () {
+          $('#item-modal-' + thisObject.id).modal('hide')
+          if (theBlot.alttext) {
+            value.alttext = $('#item-modal-alttext-' + thisObject.id).val()
+          }
+          if (theBlot.extrainfo) {
+            value.extrainfo = $('#item-modal-extrainfo-' + thisObject.id).val()
+          }
+          if (theBlot.thelength) {
+            value.thelength = $('#item-modal-length-' + thisObject.id).val()
+          }
+          quillObject.deleteText(range.index, 1)
+          quillObject.insertEmbed(range.index, theBlot.name, value)
+          quillObject.setSelection(range.index + 1)
+
+          // Take care of notes!
+          const noteId = $('#item-note-id-' + thisObject.id).val()
+          const noteText = $('#item-note-' + thisObject.id).val()
+          if (noteId === 'new') {
+            thisObject.addNewNote(value.itemid, noteText)
+          } else {
+            thisObject.updateNote(noteId, noteText)
+          }
+      })
+      $('#item-modal-' + thisObject.id).modal('show')
+    }
+  }
+  
   genOnClickEdit() {
     let quillObject = this.quillObject
     let thisObject = this
@@ -1015,84 +1432,9 @@ class TranscriptionEditor
       const text = quillObject.getText(range.index, range.length)
       let altText = ''
       let itemid = -1
-      //let additionTargets = []
+      let targets = []
       TranscriptionEditor.resetItemModal(thisObject.id)
       $('#item-modal-title-' + thisObject.id).html('Unknown')
-
-//      if (format.unclear) {
-//        altText = format.unclear.reading2
-//        itemid = format.unclear.itemid
-//        $('#item-modal-text-fg-' + thisObject.id).show()
-//        $('#item-modal-extrainfo-label-' + thisObject.id).html('Reason:')
-//        $('#item-modal-extrainfo-fg-' + thisObject.id).show()
-//        let optionsHtml = ''
-//        for (const reason of Item.getValidUnclearReasons()) {
-//          optionsHtml += '<option value="' + reason + '"'
-//          if (reason === format.unclear.reason) {
-//            optionsHtml += ' selected'
-//          }
-//          optionsHtml += '>' + reason + '</option>'
-//        }
-//        $('#item-modal-extrainfo-' + thisObject.id).html(optionsHtml)
-//        $('#item-modal-alttext-' + thisObject.id).val(altText)
-//        $('#item-modal-alttext-label-' + thisObject.id).html('Alt. Reading')
-//        $('#item-modal-alttext-fg-' + thisObject.id).show()
-//        $('#item-modal-title-' + thisObject.id).html('Unclear')
-//      }
-//      if (format.deletion) {
-//        itemid = format.deletion.itemid
-//        const technique = format.deletion.technique
-//        $('#item-modal-text-fg-' + thisObject.id).show()
-//        $('#item-modal-alttext-fg-' + thisObject.id).hide()
-//        $('#item-modal-extrainfo-label-' + thisObject.id).html('Technique:')
-//        $('#item-modal-extrainfo-fg-' + thisObject.id).show()
-//        let optionsHtml = ''
-//        for (const tech of Item.getValidDeletionTechniques()) {
-//          optionsHtml += '<option value="' + tech + '"'
-//          if (tech === technique) {
-//            optionsHtml += ' selected'
-//          }
-//          optionsHtml += '>' + tech + '</option>'
-//        }
-//        $('#item-modal-extrainfo-' + thisObject.id).html(optionsHtml)
-//        $('#item-modal-title-' + thisObject.id).html('Deletion')
-//      }
-//      // Element::ADDITION
-//      if (format.addition) {
-//        itemid = format.addition.itemid
-//        const target = format.addition.target
-//        const place = format.addition.place
-//        $('#item-modal-text-fg-' + thisObject.id).show()
-//        $('#item-modal-alttext-fg-' + thisObject.id).hide()
-//        $('#item-modal-extrainfo-label-' + thisObject.id).html('Place:')
-//        $('#item-modal-extrainfo-fg-' + thisObject.id).show()
-//
-//        let optionsHtml = ''
-//        for (const thePlace of Item.getValidAdditionPlaces()) {
-//          optionsHtml += '<option value="' + thePlace + '"'
-//          if (thePlace === place) {
-//            optionsHtml += ' selected'
-//          }
-//          optionsHtml += '>' + thePlace + '</option>'
-//        }
-//        $('#item-modal-extrainfo-' + thisObject.id).html(optionsHtml)
-//        additionTargets = thisObject.getAdditionTargets(itemid)
-//                // console.log(additionTargets);
-//
-//        let targetsHtml = ''
-//        for (const theTarget of additionTargets) {
-//          targetsHtml += '<option value="' + theTarget.itemid + '"'
-//          if (theTarget.itemid === target) {
-//            targetsHtml += ' selected'
-//          }
-//          targetsHtml += '>' + theTarget.text + '</option>'
-//        }
-//        $('#item-modal-target-' + thisObject.id).html(targetsHtml)
-//        $('#item-modal-target-label-' + thisObject.id).html('Replaces:')
-//        $('#item-modal-target-fg-' + thisObject.id).show()
-//
-//        $('#item-modal-title-' + thisObject.id).html('Addition')
-//      }
       for (const formatBlot of TranscriptionEditor.formatBlots) {
         if (format[formatBlot.name]) {
           itemid = format[formatBlot.name].itemid
@@ -1119,6 +1461,20 @@ class TranscriptionEditor
             }
             $('#item-modal-extrainfo-' + thisObject.id).html(optionsHtml)
           }
+          if (formatBlot.target) {
+            targets = thisObject.getTargets()
+            let targetsHtml = ''
+            for (const theTarget of targets) {
+              targetsHtml += '<option value="' + theTarget.itemid + '"'
+              if (theTarget.itemid === format[formatBlot.name].target) {
+                targetsHtml += ' selected'
+              }
+              targetsHtml += '>' + theTarget.text + '</option>'
+            }
+            $('#item-modal-target-' + thisObject.id).html(targetsHtml)
+            $('#item-modal-target-label-' + thisObject.id).html(formatBlot.target.title)
+            $('#item-modal-target-fg-' + thisObject.id).show()
+          }
           break
         }
       }
@@ -1141,26 +1497,21 @@ class TranscriptionEditor
             if (formatBlot.extrainfo) {
               value.extrainfo = $('#item-modal-extrainfo-' + thisObject.id).val()
             }
+            if (formatBlot.target) {
+              const target = parseInt($('#item-modal-target-' + thisObject.id).val())
+              let targetText = ''
+              for (const someT of targets) {
+                if (target === someT.itemid) {
+                  targetText = someT.text
+                  break
+                }
+              }
+              value.target = target
+              value.targetText = targetText
+            }
             quillObject.format(formatBlot.name, value) 
           }
         }
-//        if (format.addition) {
-//          const place = $('#item-modal-extrainfo-' + thisObject.id).val()
-//          const target = parseInt($('#item-modal-target-' + thisObject.id).val())
-//          let targetText = ''
-//          for (const someT of additionTargets) {
-//            if (target === someT.itemid) {
-//              targetText = someT.text
-//              break
-//            }
-//          }
-//          quillObject.format('addition', {place: place,
-//            itemid: itemid,
-//            editorid: thisObject.id,
-//            target: target,
-//            targetText: targetText
-//          })
-        //})
         quillObject.setSelection(range.index + range.length)
         // Then, care of editorial notes
         const noteId = $('#item-note-id-' + thisObject.id).val()
@@ -1298,12 +1649,12 @@ class TranscriptionEditor
       return false
     }
     const delta = quillObject.getContents(range.index, range.length)
-    for (const op of delta.ops.entries()) {
-      if (typeof op.insert !== 'object') {
+    for (const op of delta.ops) {
+      if (op.insert === undefined) {
         continue
       }
-      for (const type of ['chunkmark', 'nowb', 'mark', 'illegible']) {
-        if (type in op.insert) {
+      for (const imageBlot of TranscriptionEditor.imageBlots) {
+        if (op.insert[imageBlot.name] !== undefined) {
           //console.log('Found mark: ' + type)
           return true
         }
@@ -1333,13 +1684,11 @@ class TranscriptionEditor
   static setUpPopover (node, title, text, editorid, itemid, noText = false) {
     $(node).popover({
       content: function () {
-        
         const editorObject = TranscriptionEditor.editors[editorid]
         const ednotes = editorObject.getEdnotesForItemId(itemid)
-        const theText = node.textContent
         let t = '<h3 class="editor-popover-title">' + title + '</h3>'
         if (!noText) {
-          t += '<b>Text</b>: ' + theText + '<br/>'
+          t += '<b>Text</b>: ' + node.textContent + '<br/>'
         }
         t += text
         let ednotesHtml = '<h4>Notes:</h4>'
@@ -1358,6 +1707,7 @@ class TranscriptionEditor
       },
       container: 'body',
       animation: false,
+      template: '<div class="popover" role="tooltip"><div class="arrow"></div><div class="popover-content"></div></div>', 
       delay: { 'show': 1500, 'hide': 0},
       html: true,
       placement: 'auto',
@@ -1475,10 +1825,14 @@ class TranscriptionEditor
       TranscriptionEditor.blockBlots = []
     }
     theBlot.blotName = options.name
+    theBlot.title = options.title
     if (options.className === undefined) {
       options.className = options.name
     }
     theBlot.className = options.className
+    if (options.place) {
+      theBlot.place = options.place
+    }
     TranscriptionEditor.blockBlots.push(options)
     Quill.register(theBlot)
   }
@@ -1499,6 +1853,9 @@ class TranscriptionEditor
     }
     if (options.extrainfo) {
       theBlot.extrainfo = options.extrainfo
+    }
+    if (options.target) {
+      theBlot.target = options.target
     }
     
     TranscriptionEditor.formatBlots.push(options)
@@ -1554,15 +1911,20 @@ class TranscriptionEditor
     theBlot.withPopover = options.withPopover
     theBlot.getImageUrl = options.getImageUrl
     
+    if (options.text) {
+      theBlot.text = options.text
+    }
     if (options.alttext) {
       theBlot.alttext = options.alttext
     }
     if (options.extrainfo) {
       theBlot.extrainfo = options.extrainfo
     }
-    
-    if (options.length) {
-      theBlot.extrainfo = options.length
+    if (options.target) {
+      theBlot.target = options.target
+    }
+    if (options.thelength) {
+      theBlot.thelength = options.thelength
     }
 
     options.jsClass = theBlot
@@ -1609,6 +1971,8 @@ class TranscriptionEditor
       
     {# Simple Image Buttons #}
     <span id="simpleImageButtons-{{id}}"></span>
+    <button id="chunk-start-button-{{id}}"  title="Chunk Start">{</button>
+    <button id="chunk-end-button-{{id}}"  title="Chunk End">}</button>
     <span class="separator"/>
       
     {# Special characters #}
@@ -1623,6 +1987,8 @@ class TranscriptionEditor
     <button id="line-button-{{id}}" title="Line">L</button>
     <span id="simpleBlockButtons-{{id}}"></span>
     <span class="separator"/>
+    {# OTHER #}
+    <button id="linegap-button-{{id}}" title="Line Gap">Gap</button>
 
     {# Default Language #}
     <button class="title-button" disabled>Default:</button>
@@ -1635,43 +2001,7 @@ class TranscriptionEditor
     </span>
     <span class="separator"/>
       
-    {# OTHER #}
-    <span class="dropdown">
-        <button id="add-button-{{id}}" class="selFmtBtn" title="Addition" disabled data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-            <i class="fa fa-plus-square"></i>
-        </button>
-        <ul class="dropdown-menu" aria-labelledby="add-button-{{id}}">
-            <li><a>Placement</a></li>
-            <li role=separator class=divider>
-            <li><a id="add-above-{{id}}">Above</a></li>
-            <li><a id="add-below-{{id}}">Below</a></li>
-            <li><a id="add-inline-{{id}}">Inline</a></li>
-            <li><a id="add-inspace-{{id}}">In Space</a></li>
-            <li><a id="add-overflow-{{id}}">Overflow</a></li>
-            <li><a id="add-marginleft-{{id}}">Margin Left</a></li>
-            <li><a id="add-marginright-{{id}}">Margin Right</a></li>
-       </ul>
-    </span>
 
-    {#<button id="illegible-button-{{id}}"  title="Illegible"><i class="fa fa-eye-slash"></i></button>#}
-    <button id="chunk-start-button-{{id}}"  title="Chunk Start">{</button>
-    <button id="chunk-end-button-{{id}}"  title="Chunk End">}</button>
-    <span class="separator"/>
-
-    <span class="dropdown">
-        <button id="gloss-button-{{id}}" title="Marginal Gloss" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-            G
-       </button>
-        <ul class="dropdown-menu" aria-labelledby="gloss-button-{{id}}">
-            <li><a>Placement</a></li>
-            <li role=separator class=divider>
-            <li><a id="gloss-top-{{id}}">Margin Top</a></li>
-            <li><a id="gloss-bottom-{{id}}">Margin Bottom</a></li>
-            <li><a id="gloss-left-{{id}}">Margin Left</a></li>
-            <li><a id="gloss-right-{{id}}">Margin Right</a></li>
-       </ul>
-    </span>    
-    <button id="linegap-button-{{id}}" title="Line Gap">Gap</button>
 
     <span class="separator"/>
 </div>

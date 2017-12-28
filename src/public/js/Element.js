@@ -26,3 +26,15 @@ const ELEMENT_CUSTODES = 5
 const ELEMENT_NOTE_MARK = 6
 const ELEMENT_ADDITION = 7
 const ELEMENT_LINE_GAP = 8
+
+
+class Element {
+  static getValidMarginalPlacements () {
+    return [
+      'margin left',
+      'margin right',
+      'margin top',
+      'margin bottom'
+    ]
+  }
+}

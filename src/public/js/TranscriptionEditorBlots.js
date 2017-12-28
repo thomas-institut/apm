@@ -56,6 +56,29 @@ class SimpleBlockBlot extends Block
  }
 SimpleBlockBlot.tagName = 'p'
 
+class MarginalBlockBlot extends SimpleBlockBlot
+{
+  static create(value) {
+    const node = super.create(value)
+    const id = value.elementId
+    node.setAttribute('elementid', id)
+    if (value.place !== undefined) {
+      node.setAttribute('place', value.place)
+    }
+    return node
+  }
+  
+  static formats(node) {
+    let value = {
+      elementId: node.getAttribute('elementid')
+    }
+    if (this.place !== undefined) {
+      value.place = node.getAttribute('place')
+    }
+    return value
+  }
+}
+
 class SimpleFormatBlot extends Inline {
     static create (value) {
       const node = super.create()
@@ -74,6 +97,13 @@ class SimpleFormatBlot extends Inline {
         popoverSecondaryHtml += '<b>' + this.extrainfo.title + '</b>: <br/>' +
                 value.extrainfo + '<br/>'
       }
+      // Target is special, need to write also a text
+      if (value.target !== undefined) {
+        node.setAttribute('target', value.target)
+        node.setAttribute('targettext', value.targetText)
+        popoverSecondaryHtml += '<b>' + this.target.title + '</b>: <br/>' +
+                value.targetText + '<br/>'
+      }
       TranscriptionEditor.setUpPopover(node, this.title, popoverSecondaryHtml, value.editorid, value.itemid)
       return node
     }
@@ -89,6 +119,10 @@ class SimpleFormatBlot extends Inline {
     if (this.extrainfo !== undefined) {
       value.extrainfo = node.getAttribute('extrainfo')
     }
+    if (this.target !== undefined) {
+      value.target = node.getAttribute('target')
+      value.targetText = node.getAttribute('targettext')
+    }
     return value
   }
 }
@@ -101,18 +135,40 @@ class SimpleImgBlot extends BlockEmbed {
     const node = super.create()
     node.setAttribute('itemid', value.itemid)
     node.setAttribute('editorid', value.editorid)
+    if (value.text !== undefined) {
+      node.setAttribute('bltext', value.text)
+    }
+    if (value.alttext !== undefined) {
+      node.setAttribute('alttext', value.alttext)
+    }
     if (value.extrainfo !== undefined) {
       node.setAttribute('extrainfo', value.extrainfo)
     }
-    if (value.length !== undefined) {
-      node.setAttribute('length', value.length)
+    if (value.target !== undefined) {
+      node.setAttribute('target', value.target)
+    }
+    if (value.thelength !== undefined) {
+      node.setAttribute('length', value.thelength)
     }
     node.setAttribute('alt', this.imageAlt)
     node.setAttribute('title', this.title)
     const size = Math.round(((this.size-1)*0.2+1)*14)
     node.setAttribute('src', this.getImageUrl(TranscriptionEditor.baseUrl, size, value))
     if (this.withPopover) {
-      TranscriptionEditor.setUpPopover(node, this.title, '', value.editorid, value.itemid, true)
+      let popoverSecondaryHtml = ''
+      if (value.alttext !== undefined) {
+        if (value.alttext !== '') {
+          popoverSecondaryHtml += '<br/><b>' + this.alttext.title + '</b>: <br/><span class="prominent">' +
+                value.alttext + '</span><br/>'
+        }
+      }
+      if (value.thelength !== undefined) {
+        popoverSecondaryHtml += '<b>' + this.thelength.title + '</b>: ' + value.thelength + '<br/>'
+      }
+      if (value.extrainfo !== undefined) {
+        popoverSecondaryHtml += '<b>' + this.extrainfo.title + '</b>: ' + value.extrainfo + '<br/>'
+      }
+      TranscriptionEditor.setUpPopover(node, this.title, popoverSecondaryHtml, value.editorid, value.itemid, true)
     }
     return node
   }
@@ -122,11 +178,20 @@ class SimpleImgBlot extends BlockEmbed {
       itemid: node.getAttribute('itemid'),
       editorid: node.getAttribute('editorid')
     }
+    if (this.text !== undefined) {
+      value.text = node.getAttribute('bltext')
+    }
+    if (this.alttext !== undefined) {
+      value.alttext = node.getAttribute('alttext')
+    }
     if (this.extrainfo !== undefined) {
       value.extrainfo = node.getAttribute('extrainfo')
     }
-    if (this.length !== undefined) {
-      value.length = node.getAttribute('length')
+    if (this.target !== undefined) {
+      value.target = node.getAttribute('target')
+    }
+    if (this.thelength !== undefined) {
+      value.thelength = node.getAttribute('length')
     }
     return value
   }

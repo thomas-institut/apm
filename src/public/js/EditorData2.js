@@ -111,7 +111,7 @@ class EditorData {
       if ('chgap' in curOps.insert) {
         item.type = ITEM_CHARACTER_GAP
         item.id = theInsert.chgap.itemid
-        item.length = theInsert.chgap.length
+        item.length = theInsert.chgap.thelength
       }
       if ('nowb' in curOps.insert) {
         item.type = ITEM_NO_WORD_BREAK
@@ -121,14 +121,14 @@ class EditorData {
         item.type = ITEM_ILLEGIBLE
         item.id = theInsert.illegible.itemid
         item.extraInfo = theInsert.illegible.extrainfo
-        item.length = parseInt(theInsert.illegible.length)
+        item.length = parseInt(theInsert.illegible.thelength)
       }
       if ('chunkmark' in curOps.insert) {
         item.type = ITEM_CHUNK_MARK
         item.id = theInsert.chunkmark.itemid
-        item.altText = theInsert.chunkmark.type
-        item.target = parseInt(theInsert.chunkmark.chunkno)
-        item.theText = theInsert.chunkmark.dareid
+        item.altText = theInsert.chunkmark.alttext
+        item.target = parseInt(theInsert.chunkmark.target)
+        item.theText = theInsert.chunkmark.text
       }
       if ('pmark' in theInsert) {
         item.type = ITEM_PARAGRAPH_MARK
@@ -214,14 +214,17 @@ class EditorData {
             if (formatBlot.extrainfo) {
               item.extraInfo = curOps.attributes[formatBlot.name].extrainfo
             }
+            if (formatBlot.target) {
+              item.target = curOps.attributes[formatBlot.name].target
+            }
           }
         }
-        if (curOps.attributes.addition) {
-          item.type = ITEM_ADDITION
-          item.extraInfo = curOps.attributes.addition.place
-          item.id = curOps.attributes.addition.itemid
-          item.target = curOps.attributes.addition.target
-        }
+//        if (curOps.attributes.addition) {
+//          item.type = ITEM_ADDITION
+//          item.extraInfo = curOps.attributes.addition.place
+//          item.id = curOps.attributes.addition.itemid
+//          item.target = curOps.attributes.addition.target
+//        }
         // Make sure item id is an int
         item.id = parseInt(item.id)
         itemIds.push(item.id)
@@ -377,6 +380,10 @@ class EditorData {
                 if (theBlot.extrainfo !== undefined) {
                   theOps.attributes[theBlot.name].extrainfo = item.extraInfo
                 }
+                if (theBlot.target !== undefined) {
+                  theOps.attributes[theBlot.name].target = item.target
+                  theOps.attributes[theBlot.name].targetText = additionTargetTexts[item.target]
+                }
                 ops.push(theOps)
                 languageCounts[item.lang]++
                 foundBlot = true
@@ -418,27 +425,27 @@ class EditorData {
                 })
                 break
 
-              case ITEM_ADDITION:
-                ops.push({
-                  insert: item.theText,
-                  attributes: {
-                    addition: {
-                      place: item.extraInfo,
-                      target: item.target,
-                      targetText: additionTargetTexts[item.target],
-                      itemid: item.id,
-                      editorid: editorId
-                    },
-                    lang: item.lang
-                  }
-                })
-                break
+//              case ITEM_ADDITION:
+//                ops.push({
+//                  insert: item.theText,
+//                  attributes: {
+//                    addition: {
+//                      extrainfo: item.extraInfo,
+//                      target: item.target,
+//                      targetText: additionTargetTexts[item.target],
+//                      itemid: item.id,
+//                      editorid: editorId
+//                    },
+//                    lang: item.lang
+//                  }
+//                })
+//                break
 
               case ITEM_ILLEGIBLE:
                 ops.push({
                   insert: {
                     illegible: {
-                      length: item.length,
+                      thelength: item.length,
                       extrainfo: item.extraInfo,
                       itemid: item.id,
                       editorid: editorId
@@ -451,9 +458,9 @@ class EditorData {
                 ops.push({
                   insert: {
                     chunkmark: {
-                      type: item.altText,
-                      dareid: item.theText,
-                      chunkno: item.target,
+                      alttext: item.altText,
+                      text: item.theText,
+                      target: item.target,
                       itemid: item.id,
                       editorid: editorId
                     }
@@ -465,7 +472,7 @@ class EditorData {
                 ops.push({
                   insert: {
                     chgap: {
-                      length: item.length,
+                      thelength: item.length,
                       itemid: item.id,
                       editorid: editorId
                     }

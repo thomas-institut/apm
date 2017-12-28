@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-/* global expect, EditorData, ELEMENT_LINE, ITEM_TEXT, ELEMENT_CUSTODES, ELEMENT_HEAD, ELEMENT_LINE_GAP, ELEMENT_PAGE_NUMBER, ELEMENT_GLOSS, ELEMENT_ADDITION, ELEMENT_NOTE_MARK, ITEM_RUBRIC, ITEM_GLIPH, ITEM_INITIAL, ITEM_SIC, ITEM_ABBREVIATION, ITEM_DELETION, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_MARK, ITEM_NO_WORD_BREAK, ITEM_ILLEGIBLE, ITEM_CHUNK_MARK, TranscriptionEditor */
+/* global expect, EditorData, ELEMENT_LINE, ITEM_TEXT, ELEMENT_CUSTODES, ELEMENT_HEAD, ELEMENT_LINE_GAP, ELEMENT_PAGE_NUMBER, ELEMENT_GLOSS, ELEMENT_ADDITION, ELEMENT_NOTE_MARK, ITEM_RUBRIC, ITEM_GLIPH, ITEM_INITIAL, ITEM_SIC, ITEM_ABBREVIATION, ITEM_DELETION, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_MARK, ITEM_NO_WORD_BREAK, ITEM_ILLEGIBLE, ITEM_CHUNK_MARK, TranscriptionEditor, ITEM_MATH_TEXT, ITEM_PARAGRAPH_MARK, ITEM_CHARACTER_GAP */
 
 describe("EditorData", function() {
 
@@ -116,9 +116,9 @@ describe("EditorData", function() {
         ops: [ 
           {insert: {mark: {itemid: 100}}},
           {insert: {nowb: {itemid: 101}}},
-          {insert: {illegible: {itemid: 102, reason: 'some reason', length: 5}}},
-          {insert: {chunkmark: {itemid: 103, type: 'start', chunkno: '45', dareid: 'AW47'}}},
-          {insert: {chgap: {itemid: 104, length: 5}}},
+          {insert: {illegible: {itemid: 102, extrainfo: 'some reason', thelength: 5}}},
+          {insert: {chunkmark: {itemid: 103, alttext: 'start', target: '45', text: 'AW47'}}},
+          {insert: {chgap: {itemid: 104, thelength: 5}}},
           {insert: {pmark: {itemid: 105}}},
           {insert: '\n'}
         ]
@@ -144,6 +144,8 @@ describe("EditorData", function() {
       
       expect(apiData.elements[0].items[2].type).toBe(ITEM_ILLEGIBLE)
       expect(apiData.elements[0].items[2].theText).toBe('')
+      expect(apiData.elements[0].items[2].length).toBe(5)
+      expect(apiData.elements[0].items[2].extraInfo).toBe('some reason')
       
       expect(apiData.elements[0].items[3].type).toBe(ITEM_CHUNK_MARK)
       expect(apiData.elements[0].items[3].theText).toBe('AW47')
@@ -154,7 +156,6 @@ describe("EditorData", function() {
       
       expect(apiData.elements[0].items[5].type).toBe(ITEM_PARAGRAPH_MARK)
       expect(apiData.elements[0].items[5].theText).toBe('')
-     
       
     })
     

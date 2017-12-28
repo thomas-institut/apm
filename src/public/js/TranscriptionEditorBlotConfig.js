@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-/* global TranscriptionEditor, ITEM_RUBRIC, ITEM_INITIAL, ITEM_GLIPH, ITEM_MATH_TEXT, ELEMENT_HEAD, ELEMENT_PAGE_NUMBER, ELEMENT_CUSTODES, ITEM_SIC, ITEM_ABBREVIATION, ITEM_UNCLEAR, Item, ITEM_DELETION, ITEM_NO_WORD_BREAK, ITEM_CHARACTER_GAP, ITEM_PARAGRAPH_MARK, ITEM_ILLEGIBLE */
+/* global TranscriptionEditor, ITEM_RUBRIC, ITEM_INITIAL, ITEM_GLIPH, ITEM_MATH_TEXT, ELEMENT_HEAD, ELEMENT_PAGE_NUMBER, ELEMENT_CUSTODES, ITEM_SIC, ITEM_ABBREVIATION, ITEM_UNCLEAR, Item, ITEM_DELETION, ITEM_NO_WORD_BREAK, ITEM_CHARACTER_GAP, ITEM_PARAGRAPH_MARK, ITEM_ILLEGIBLE, ITEM_CHUNK_MARK, ITEM_ADDITION */
 
 
 class RubricBlot extends SimpleFormatBlot {}
@@ -79,6 +79,17 @@ TranscriptionEditor.registerFormatBlot(UnclearBlot, {
   extrainfo: { title: 'Reason', options : Item.getValidUnclearReasons() }
 })
 
+class AdditionBlot extends SimpleFormatBlot {}
+TranscriptionEditor.registerFormatBlot(AdditionBlot, { 
+  type: ITEM_ADDITION, 
+  name: 'addition', 
+  title: 'Addition', 
+  icon: '<i class="fa fa-plus-square"></i>',
+  target: { title: 'Replaces',  default: -1}, 
+  buttonWithOptions: 'extrainfo',
+  extrainfo: { title: 'Placement', options : Item.getValidAdditionPlaces() }
+})
+
 class DeletionBlot extends SimpleFormatBlot {}
 TranscriptionEditor.registerFormatBlot(DeletionBlot, { 
   type: ITEM_DELETION, 
@@ -86,6 +97,7 @@ TranscriptionEditor.registerFormatBlot(DeletionBlot, {
   title: 'Deletion', 
   icon: '<i class="fa fa-minus-square"></i>',
   canBeTarget: true,
+  buttonWithOptions: 'extrainfo',
   extrainfo: { title: 'Technique', options : Item.getValidDeletionTechniques() }
 })
 
@@ -120,9 +132,9 @@ TranscriptionEditor.registerImageBlot(CharacterGapBlot, {
   title: 'Character Gap',
   icon: '<i class="fa fa-square-o"></i>',
   imageAlt:'[...]',
-  length: { default: 5 },
+  thelength: { default: 5 },
   getImageUrl: function (baseUrl, size, value) { 
-    return baseUrl + '/api/images/charactergap/' + value.length + '/' + size
+    return baseUrl + '/api/images/charactergap/' + value.thelength + '/' + size
   }
 })
 
@@ -133,10 +145,46 @@ TranscriptionEditor.registerImageBlot(IllegibleBlot, {
   title: 'Illegible',
   icon: '<i class="fa fa-eye-slash">',
   imageAlt:'[illegible]',
-  extrainfo: { title: 'Reason', options : Item.getValidIllegibleReasons(), default: 'illegible' },
-  length: { default: 5 },
+  withPopover: true,
+  //forceInputDialog: true,
+  withEditOnDoubleClick: true,
+  extrainfo: { title: 'Reason', options : Item.getValidIllegibleReasons(), default: 'illegible'},
+  thelength: { title: 'Length', default: 5,  min: 1, max: 5 },
   getImageUrl: function (baseUrl, size, value) { 
-    return baseUrl + '/api/images/illegible/' + size + '/' + value.length
+    return baseUrl + '/api/images/illegible/' + size + '/' + value.thelength
+  }
+})
+
+class ChunkMarkBlot extends SimpleImgBlot {}
+TranscriptionEditor.registerImageBlot(ChunkMarkBlot, { 
+  type: ITEM_CHUNK_MARK,
+  name: 'chunkmark',
+  title: 'Chunk',
+  icon: '{}',
+  imageAlt:'[Chunk]',
+  text: { default: 'AW1' },
+  target: { default: 1 },
+  alttext: { default: 'start' },
+  noButton: true,
+//  buttons: [ 
+//    { name: 'start',  
+//      title: 'Chunk Start', 
+//      icon: '{' ,
+//      value: { alttext: 'start' }
+//    }, 
+//    { name: 'end', 
+//      title: 'Chunk End', 
+//      icon: '}',
+//      value: { alttext: 'end' }
+//    }
+//  ],
+  getImageUrl: function (baseUrl, size, value) { 
+    return baseUrl + 
+            '/api/images/chunkmark/' +
+            value.text + '/' +
+            value.target + '/' +
+            value.alttext + '/ltr/' +
+            size
   }
 })
 
@@ -163,6 +211,16 @@ TranscriptionEditor.registerBlockBlot(CustodesBlot, {
   name: 'custodes', 
   title: 'Custodes', 
   icon: 'C'
+})
+
+class GlossBlot extends MarginalBlockBlot{}
+TranscriptionEditor.registerBlockBlot(GlossBlot, {
+  type: ELEMENT_GLOSS, 
+  name: 'gloss', 
+  title: 'Marginal Gloss', 
+  icon: 'G',
+  buttonWithOptions: 'place',
+  place: { title: 'Placement', options : Element.getValidMarginalPlacements(), default: 'margin left'}
 })
 
 

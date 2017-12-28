@@ -287,8 +287,11 @@ class TranscriptionEditor
           continue
         }
       }
-      
     }
+    
+    // Special image blocks
+    
+    $('#linegap-button-' + id).on('click', this.genOnClickLineGapButton())
 
     // enable/disable
     if (this.options.startEnabled) {
@@ -486,6 +489,7 @@ class TranscriptionEditor
   numberLines()
   {
     let pElements = $('#' + this.containerId + ' ' + '.ql-editor > p')
+    console.log('Numbering lines, ' + pElements.length + ' elements')
     let editorDiv = $('#' + this.containerId + ' ' + '.ql-editor')
     let editorContainerLeftPos = $(editorDiv).offset().left
     let lineNumber = 0
@@ -499,8 +503,17 @@ class TranscriptionEditor
       switch (this.getParagraphType(theP)) {
         case 'normal':
           inMarginal = false
+          let children = theP.children()
+          if (children.length === 1) {
+            let theChild = $(children[0])
+            if (theChild.hasClass('linegap')) {
+              lineNumber += parseInt(theChild.attr('length'))
+              lineNumberLabel = '..'
+              break
+            }
+          }
           lineNumberLabel = TranscriptionEditor.padNumber(++lineNumber, numChars, '&nbsp;')
-          break;
+          break
 
         case 'custodes':
           inMarginal = false
@@ -831,6 +844,51 @@ class TranscriptionEditor
   getQuillData() 
   {
     return this.quillObject.getContents()
+  }
+  
+  genOnClickLineGapButton()
+  {
+    let thisObject = this
+    let quillObject = this.quillObject
+    return function () {
+      const range = quillObject.getSelection()
+      if (!range || range.length > 0) {
+        return false
+      }
+      TranscriptionEditor.resetItemModal(thisObject.id)
+      $('#item-modal-title-' + thisObject.id).html('Line Gap')
+      $('#item-modal-text-fg-' + thisObject.id).hide()
+      $('#item-modal-alttext-fg-' + thisObject.id).hide()
+      $('#item-modal-extrainfo-fg-' + thisObject.id).hide()
+      $('#item-modal-length-label-' + thisObject.id).html('Lines not transcribed:')
+      $('#item-modal-length-' + thisObject.id).val(1)
+      $('#item-modal-length-fg-' + thisObject.id).show()
+      $('#item-modal-ednote-fg-' + thisObject.id).hide()
+      $('#item-modal-submit-button-' + thisObject.id).off()
+      $('#item-modal-submit-button-' + thisObject.id).on('click', function () {
+        $('#item-modal-' + thisObject.id).modal('hide')
+        const count = $('#item-modal-length-' + thisObject.id).val()
+        if (count <= 0) {
+          //console.log("Bad line count for line gap: " + count)
+          return false
+        }
+        thisObject.insertLineGap(range.index, count)
+      })
+      $('#item-modal-' + thisObject.id).modal('show')
+    }
+  }
+  
+  insertLineGap(position, count) {
+    if (position !== 0) {
+      this.quillObject.insertText(position, '\n')
+      position++
+    }
+   this.quillObject.insertEmbed(position, 'linegap', {
+          editorid: this.id,
+          thelength: count
+    })
+    this.quillObject.insertText(position+1, '\n')
+    this.quillObject.setSelection(position +2)
   }
 
   genOnQuillChange()
@@ -1989,6 +2047,7 @@ class TranscriptionEditor
     <span class="separator"/>
     {# OTHER #}
     <button id="linegap-button-{{id}}" title="Line Gap">Gap</button>
+    <span class="separator"/>
 
     {# Default Language #}
     <button class="title-button" disabled>Default:</button>

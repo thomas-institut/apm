@@ -151,7 +151,7 @@ class EditorImages {
         $textWidth = $bbox[2]-$bbox[0];
         $textHeight = $bbox[5]-$bbox[3];
         
-        $height = $size+40;
+        $height = $size;
         $width = $textWidth + 5;
         $im = imagecreatetruecolor($width, $height);
         $background = imagecolorallocate($im, 244, 245, 247);

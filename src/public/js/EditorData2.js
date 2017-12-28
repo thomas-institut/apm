@@ -95,7 +95,7 @@ class EditorData {
           curElement = createNewElement()
         }
         curElement.type = ELEMENT_LINE_GAP
-        curElement.reference = theInsert.linegap.linecount
+        curElement.reference = theInsert.linegap.thelength
         curElement.items = []
         elements.push(curElement)
         previousElementType = ELEMENT_LINE_GAP
@@ -345,7 +345,7 @@ class EditorData {
             insert: {
               linegap : {
                 editorid: editorId,
-                linecount: ele.reference
+                thelength: ele.reference
               }
             }
           })

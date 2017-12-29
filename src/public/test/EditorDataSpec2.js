@@ -346,7 +346,7 @@ describe("EditorData", function() {
       let lgLineCount = 5
       let delta = { 
         ops: [ 
-          {insert:{linegap:{editorid:lgEditorId,linecount:lgLineCount}}},
+          {insert:{linegap:{editorid:lgEditorId, thelength:lgLineCount}}},
           {insert:"\n"}
         ]
       }

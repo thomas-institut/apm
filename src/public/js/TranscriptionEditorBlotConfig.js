@@ -138,6 +138,20 @@ TranscriptionEditor.registerImageBlot(CharacterGapBlot, {
   }
 })
 
+class MarkBlot extends SimpleImgBlot {}
+TranscriptionEditor.registerImageBlot(MarkBlot, { 
+  type: ITEM_MARK,
+  name: 'mark',
+  title: 'Editorial Notes',
+  noButton: true,
+  withPopover: true,
+  icon: 'M',
+  imageAlt:'[note]',
+  getImageUrl: function (baseUrl, size, value) { 
+    return baseUrl + '/api/images/mark/' + size
+  }
+})
+
 class LineGapBlot extends SimpleImgBlot {}
 TranscriptionEditor.registerImageBlot(LineGapBlot, { 
   type: ELEMENT_LINE_GAP,

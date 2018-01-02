@@ -228,6 +228,9 @@ class TranscriptionEditor
       //$(containerSelector).on('dblclick','.' + formatBlot.className, 
       //    this.genOnDoubleClickSimpleImage(theBlot))
     }
+    
+    // Note button
+    $('#note-button-' + id).on('click', this.genOnClickNoteButton())
 
     // Block formats
     $('#line-button-' + id).on('click', this.genOnClickLineButton())
@@ -844,6 +847,35 @@ class TranscriptionEditor
   getQuillData() 
   {
     return this.quillObject.getContents()
+  }
+  
+  genOnClickNoteButton()
+  {
+    let thisObject = this
+    let quillObject = this.quillObject
+    return function () {
+      const range = quillObject.getSelection()
+      if (range.length > 0) {
+        return false
+      }
+      TranscriptionEditor.resetItemModal(thisObject.id)
+      $('#item-modal-title-' + thisObject.id).html('Note')
+      $('#item-modal-submit-button-' + thisObject.id).on('click', function () {
+        $('#item-modal-' + thisObject.id).modal('hide')
+                // Take care of notes!
+        const noteText = $('#item-note-' + thisObject.id).val()
+        if (noteText !== '') {
+          const itemId = thisObject.getOneItemId()
+          thisObject.addNewNote(itemId, noteText)
+          quillObject.insertEmbed(range.index, 'mark', {
+            itemid: itemId,
+            editorid: thisObject.id
+          })
+          quillObject.setSelection(range.index + 1)
+        }
+      })
+      $('#item-modal-' + thisObject.id).modal('show')
+    }
   }
   
   genOnClickLineGapButton()

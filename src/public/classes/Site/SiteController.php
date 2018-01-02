@@ -480,7 +480,7 @@ class SiteController
             $pageNumberFoliation = $pageInfo['foliation'];
         }
 
-        return $this->ci->view->render($response, 'pageviewer.twig', [
+        return $this->ci->view->render($response, 'pageviewer2.twig', [
             'userinfo' => $this->ci->userInfo, 
             'copyright' => $this->ci->copyrightNotice,
             'baseurl' => $this->ci->settings['baseurl'],
@@ -518,7 +518,7 @@ class SiteController
             $pageNumberFoliation = $pageInfo['foliation'];
         }
 
-        return $this->ci->view->render($response, 'pageviewer.twig', [
+        return $this->ci->view->render($response, 'pageviewer2.twig', [
             'userinfo' => $this->ci->userInfo, 
             'copyright' => $this->ci->copyrightNotice,
             'baseurl' => $this->ci->settings['baseurl'],

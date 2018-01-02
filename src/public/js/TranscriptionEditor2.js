@@ -398,11 +398,12 @@ class TranscriptionEditor
       }
       $('#editor-container-' + this.id).removeClass(l + '-text')
     }
-    //$('#' + lang + '-button-' + this.id).prop('disabled', true)
+
     $('#lang-button-' + this.id).attr('title', langDef[lang].name)
     $('#lang-button-' + this.id).html(lang)
     this.defaultLang = lang
-    // ChunkMarkBlot.dir = lang === 'la' ? 'ltr' : 'ltr';
+    this.setEditorMargin()
+
   }
 
   getParagraphType(p)
@@ -453,13 +454,6 @@ class TranscriptionEditor
     for (let i = 0; i < TranscriptionEditor.imageBlots.length; i++){
       TranscriptionEditor.imageBlots[i].jsClass.size = this.fontSize
     }
-    //    IllegibleBlot.size = this.fontSize
-    //NoWordBreakBlot.size = this.fontSize
-    //    MarkBlot.size = this.fontSize
-    //    ChunkMarkBlot.size = this.fontSize
-    //    LineGapBlot.size = this.fontSize
-    //    CharacterGapBlot.size = this.fontSize
-    //    ParagraphMarkBlot.size = this.fontSize
   }
   
   setEditorMargin() 
@@ -492,9 +486,10 @@ class TranscriptionEditor
   numberLines()
   {
     let pElements = $('#' + this.containerId + ' ' + '.ql-editor > p')
-    console.log('Numbering lines, ' + pElements.length + ' elements')
+    console.log('Numbering lines in editor ' + this.id + ', ' + pElements.length + ' elements')
     let editorDiv = $('#' + this.containerId + ' ' + '.ql-editor')
-    let editorContainerLeftPos = $(editorDiv).offset().left
+    let editorContainerLeftPos = $(editorDiv).position().left
+    let marginSize = this.getEditorMarginSize()
     let lineNumber = 0
     let overlayNumber = 0
     let inMarginal = false
@@ -562,15 +557,15 @@ class TranscriptionEditor
           break
           
       }
-      let offset = theP.offset()
+      let offset = theP.position()
       let fontFactor = this.options.lineNumbers.fontFactor 
       let editorFontSize = this.calcEditorFontEmSize(this.fontSize)*this.options.pixPerEm
-      let lineNumberTopPos = offset.top 
+      let lineNumberTopPos = offset.top + $('#editor-container-' + this.id).position().top
       let fontEmSize = this.calcEditorFontEmSize(this.fontSize)*fontFactor
       let fontCharWidth = fontEmSize*this.options.pixPerEm*this.options.lineNumbers.charWidth
       let numberMargin = this.options.lineNumbers.margin;
       
-      let lineNumberLeftPos = editorContainerLeftPos - numberMargin - numChars*fontCharWidth;
+      let lineNumberLeftPos = editorContainerLeftPos + marginSize - numberMargin - numChars*fontCharWidth;
       if (this.defaultLang !== 'la') {
         lineNumberLeftPos = editorContainerLeftPos + $(editorDiv).outerWidth() + numberMargin;
       }
@@ -590,7 +585,7 @@ class TranscriptionEditor
               lineNumberLabel +
               '</div>'
       $('#' + overlayId).remove()
-      $('body').append(overlay)
+      $('#' + this.containerId).append(overlay)
     }
     if (this.numpElements > pElements.length) {
       for (let i = pElements.length + 1; i <= this.numpElements; i++) {
@@ -842,6 +837,7 @@ class TranscriptionEditor
     }
     
     this.setDefaultLang(mainLang)
+    this.numberLines()
   }
   
   getQuillData() 
@@ -1907,7 +1903,10 @@ class TranscriptionEditor
 
   static registerEditorInstance(id, editorObject) 
   {
-    TranscriptionEditor.editors[id] = editorObject
+    if (TranscriptionEditor.editors === undefined) {
+      TranscriptionEditor.editors = []
+    }
+    TranscriptionEditor.editors.push(editorObject)
   }
   static registerBlockBlot(theBlot, options)
   {

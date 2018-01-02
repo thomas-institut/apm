@@ -28,6 +28,14 @@ const cols = []
 $(document).ready(function () {
   $('div.split-pane').splitPane()
   
+  $('div.split-pane').on('dividerdragend', function (e){
+    for (const te of TranscriptionEditor.editors) {
+      // TODO: optimize, renumber lines only for active tab
+      // if the tab's text is LTR 
+      te.numberLines()
+    }
+  })
+  
   apiGetColumnInfoUrl = apiBase + '/api/' + docId + '/' +
             pageNumber + '/numcolumns'
   apiAddColumnUrl = apiBase + '/api/' + docId + '/' +
@@ -127,6 +135,14 @@ $(document).ready(function () {
                 $('#col-label-' + theCol).html('Column ' + theCol)
               })
               
+              $('#col-label-' + theCol).on('shown.bs.tab', function (e){
+                 te.numberLines()
+              })
+              
+//              $('#col-' + theCol).on('resize', function (e){
+//                console.log('Resizing col ' + theCol)
+//                 te.numberLines()
+//              })
               te.on('editor-save', function(e){
                 
                 const currentData = te.getData();

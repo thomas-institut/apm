@@ -173,6 +173,10 @@ class TranscriptionEditor
     for (const theBlot of TranscriptionEditor.imageBlots) {
       // No button
       if (theBlot.noButton) {
+        if (theBlot.withEditOnDoubleClick) {
+          $(containerSelector).on('dblclick','.' + theBlot.className, 
+            this.genOnDoubleClickSimpleEmbed(theBlot))
+        }
         continue
       }
       // Single button

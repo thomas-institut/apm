@@ -142,9 +142,10 @@ class MarkBlot extends SimpleImgBlot {}
 TranscriptionEditor.registerImageBlot(MarkBlot, { 
   type: ITEM_MARK,
   name: 'mark',
-  title: 'Editorial Notes',
+  title: 'Editorial Note(s)',
   noButton: true,
   withPopover: true,
+  withEditOnDoubleClick: true,
   icon: 'M',
   imageAlt:'[note]',
   getImageUrl: function (baseUrl, size, value) { 

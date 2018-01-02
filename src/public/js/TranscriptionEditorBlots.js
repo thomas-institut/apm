@@ -84,6 +84,14 @@ class SimpleFormatBlot extends Inline {
       const node = super.create()
       node.setAttribute('itemid', value.itemid)
       node.setAttribute('editorid', value.editorid)
+      if (value.handid === undefined) {
+        value.handid = 0
+      }
+      node.setAttribute('handid', value.handid)
+      if (value.handid !== 0) {
+        $(node).addClass('hand' + value.handid)
+      }
+    
       let popoverSecondaryHtml = ''
       if (value.alttext !== undefined) {
         node.setAttribute('alttext', value.alttext)
@@ -104,6 +112,7 @@ class SimpleFormatBlot extends Inline {
         popoverSecondaryHtml += '<b>' + this.target.title + '</b>: <br/>' +
                 value.targetText + '<br/>'
       }
+      popoverSecondaryHtml += '<b>Hand</b>: ' + (parseInt(value.handid)+1) + '<br/>'
       TranscriptionEditor.setUpPopover(node, this.title, popoverSecondaryHtml, value.editorid, value.itemid)
       return node
     }
@@ -111,7 +120,8 @@ class SimpleFormatBlot extends Inline {
   static formats (node) {
     let value = {
       itemid: node.getAttribute('itemid'),
-      editorid: node.getAttribute('editorid')
+      editorid: node.getAttribute('editorid'),
+      handid: node.getAttribute('handid')
     }
     if (this.alttext !== undefined) {
       value.alttext = node.getAttribute('alttext')

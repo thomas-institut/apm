@@ -23,4 +23,8 @@
 
 ALTER TABLE `ap_elements` ADD INDEX `page_id_2` (`page_id`, `editor_id`);
 
+ALTER TABLE ap_items DROP FOREIGN KEY ap_items_ibfk_2;
+ALTER TABLE ap_elements DROP FOREIGN KEY ap_elements_ibfk_3;
+DROP TABLE ap_hands;
+
 UPDATE `ap_settings` SET `value` = '13' WHERE `ap_settings`.`setting` = 'dbversion';

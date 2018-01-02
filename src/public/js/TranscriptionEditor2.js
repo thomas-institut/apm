@@ -359,6 +359,15 @@ class TranscriptionEditor
     if (options.defaultLang === undefined) {
       options.defaultLang = 'la'
     }
+    
+    
+    if (options.hands === undefined) {
+      options.hands = [ 
+        { name: '1', id: 0 }, 
+        { name: '2' , id: 1 },
+        { name: '3' , id: 2 }
+      ]
+    }
     // Min and max font size : integer
     if (options.minFontSize === undefined) {
       options.minFontSize = 0
@@ -492,7 +501,7 @@ class TranscriptionEditor
   numberLines()
   {
     let pElements = $('#' + this.containerId + ' ' + '.ql-editor > p')
-    console.log('Numbering lines in editor ' + this.id + ', ' + pElements.length + ' elements')
+    //console.log('Numbering lines in editor ' + this.id + ', ' + pElements.length + ' elements')
     let editorDiv = $('#' + this.containerId + ' ' + '.ql-editor')
     let editorContainerLeftPos = $(editorDiv).position().left
     let marginSize = this.getEditorMarginSize()
@@ -1100,7 +1109,8 @@ class TranscriptionEditor
       const itemId = thisObject.getOneItemId()
       let theValue =  {
         itemid: itemId,
-        editorid: thisObject.id
+        editorid: thisObject.id,
+        handid: 0
       }
       
       let fields = ['text', 'alttext', 'extrainfo', 'target', 'thelength']
@@ -1171,6 +1181,19 @@ class TranscriptionEditor
         $('#item-modal-target-label-' + thisObject.id).html(theBlot.target.title)
         $('#item-modal-target-fg-' + thisObject.id).show()
       }
+      
+      // hands
+      
+      let handsHtml = ''
+      for (const hand of thisObject.options.hands) {
+          handsHtml += '<option value="' + hand.id + '"'
+          if (hand.id === theValue.handid) {
+            handsHtml += ' selected'
+          }
+          handsHtml += '>' + hand.name + '</option>'
+        }
+      $('#item-modal-hand-' + thisObject.id).html(handsHtml)
+      $('#item-modal-hand-fg-' + thisObject.id).show()
       $('#item-modal-submit-button-' + thisObject.id).on('click', function () {
         $('#item-modal-' + thisObject.id).modal('hide')
         if (theBlot.alttext) {
@@ -1179,6 +1202,7 @@ class TranscriptionEditor
         if (theBlot.extrainfo) {
           theValue.extrainfo = $('#item-modal-extrainfo-' + thisObject.id).val()
         }
+        theValue.handid = $('#item-modal-hand-' + thisObject.id).val()
         quillObject.format(theBlot.name, theValue)
         quillObject.setSelection(range.index + range.length)
         // Take care of notes!
@@ -1567,6 +1591,17 @@ class TranscriptionEditor
             $('#item-modal-target-label-' + thisObject.id).html(formatBlot.target.title)
             $('#item-modal-target-fg-' + thisObject.id).show()
           }
+          let handsHtml = ''
+          // hands
+          for (const hand of thisObject.options.hands) {
+              handsHtml += '<option value="' + hand.id + '"'
+              if (hand.id === parseInt(format[formatBlot.name].handid)) {
+                handsHtml += ' selected'
+              }
+              handsHtml += '>' + hand.name + '</option>'
+            }
+          $('#item-modal-hand-' + thisObject.id).html(handsHtml)
+          $('#item-modal-hand-fg-' + thisObject.id).show()
           break
         }
       }
@@ -1583,6 +1618,7 @@ class TranscriptionEditor
         for (const formatBlot of TranscriptionEditor.formatBlots) {
           if (format[formatBlot.name]) {
             let value = {itemid: itemid, editorid: thisObject.id}
+            value.handid = $('#item-modal-hand-' + thisObject.id).val()
             if (formatBlot.alttext) {
               value.alttext = $('#item-modal-alttext-' + thisObject.id).val()
             }
@@ -1891,6 +1927,7 @@ class TranscriptionEditor
     $('#item-modal-extrainfo-fg-' + id).hide()
     $('#item-modal-length-fg-' + id).hide()
     $('#item-modal-target-fg-' + id).hide()
+    $('#item-modal-hand-fg-' + id).hide()
     $('#item-modal-ednote-fg-' + id).show()
     $('#item-modal-ednotes-' + id).html('')
     $('#item-note-' + id).val('')
@@ -2145,6 +2182,11 @@ class TranscriptionEditor
                         <label for="item-modal-target-{{id}}" id="item-modal-target-label-{{id}}" class="control-label">Extra Info:</label>
                         <select name="target" id="item-modal-target-{{id}}"></select>
                     </div>
+                    <div id="item-modal-hand-fg-{{id}}" class="form-group">
+                        <label for="item-modal-hand-{{id}}" id="item-modal-hand-label-{{id}}" class="control-label">Hand:</label>
+                        <select name="hand" id="item-modal-hand-{{id}}"></select>
+                    </div>
+      
                     <input id="item-note-id-{{id}}" type="hidden" name="note-id" value=""/>
                     <div class="form-group" id="item-modal-ednote-fg-{{id}}">
                         <label for="item-note-{{id}}" class="control-label">Note:</label>

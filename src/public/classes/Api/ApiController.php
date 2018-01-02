@@ -276,7 +276,7 @@ class ApiController
             }
             
             // Check that item data is complete
-            // Force handId to 0
+            // Force handId to 0 if not handId given
             // print "  Checking " . count($newElementsArray[$i]['items']) . " items for element $i\n";
             for ($j = 0; $j < count($newElementsArray[$i]['items']); $j++) {
                 foreach ($requiredItemProperties as $reqKey) {
@@ -311,7 +311,9 @@ class ApiController
                     }
                     $givenItemIds[$id] = true;
                 }
-                $newElementsArray[$i]['items'][$j]['handId'] = 0;
+                if (!isset($newElementsArray[$i]['items'][$j]['handId'])) {
+                    $newElementsArray[$i]['items'][$j]['handId'] = 0;
+                }
             }
         }
         

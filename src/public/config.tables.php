@@ -9,7 +9,6 @@ $config['tables']['settings']   = 'ap_settings';
 $config['tables']['ednotes']    = 'ap_ednotes';
 $config['tables']['elements']   = 'ap_elements';
 $config['tables']['items']      = 'ap_items';
-$config['tables']['hands']      = 'ap_hands';
 $config['tables']['users']      = 'ap_users';
 $config['tables']['tokens']     = 'ap_tokens';
 $config['tables']['relations']  = 'ap_relations';

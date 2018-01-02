@@ -385,3 +385,12 @@ img.chunkmark  {
     font-family: Ezra, serif;
     font-style: normal;
 }
+
+.hand1 .la-text, b.hand1 {
+    font-family: 'Times New Roman', Times, serif;
+}
+
+.hand2 .la-text, b.hand2 {
+    font-family: cursive, sans-serif ;
+}
+

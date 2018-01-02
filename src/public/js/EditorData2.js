@@ -71,6 +71,7 @@ class EditorData {
         seq: currentItemSeq++,
         type: ITEM_TEXT,
         lang: editorInfo.defaultLang,
+        handId: 0,
         theText: '',
         altText: null,
         extraInfo: null,
@@ -208,6 +209,7 @@ class EditorData {
           if (curOps.attributes[formatBlot.name]) {
             item.type = formatBlot.type
             item.id = curOps.attributes[formatBlot.name].itemid
+            item.handId = curOps.attributes[formatBlot.name].handid
             if (formatBlot.alttext) {
               item.altText = curOps.attributes[formatBlot.name].alttext
             }
@@ -372,7 +374,8 @@ class EditorData {
                 theOps.attributes = {lang: item.lang}
                 theOps.attributes[theBlot.name] = {
                     itemid: item.id,
-                    editorid: editorId
+                    editorid: editorId,
+                    handid: item.handId
                 }
                 if (theBlot.alttext !== undefined) {
                   theOps.attributes[theBlot.name].alttext = item.altText

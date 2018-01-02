@@ -17,6 +17,8 @@
  */
 
 
+/* global TranscriptionEditor, pageTypeNames, pageType, pageSystemId, foliation */
+
 let pageNumber = 0
 let docId = 0
 let apiBase = ''
@@ -126,7 +128,9 @@ $(document).ready(function () {
               $('#theTabs').append(theDiv)
               const te = new TranscriptionEditor(
                   'col' + theCol, 
-                  theCol);
+                  theCol,
+                  { editorId: userId}
+                  );
               te.setData(resp)
               te.on('editor-enable',function (e) {
                 $('#col-label-' + theCol).html('Column ' + theCol + ' (editing)')
@@ -139,12 +143,7 @@ $(document).ready(function () {
                  te.numberLines()
               })
               
-//              $('#col-' + theCol).on('resize', function (e){
-//                console.log('Resizing col ' + theCol)
-//                 te.numberLines()
-//              })
               te.on('editor-save', function(e){
-                
                 const currentData = te.getData();
                 console.log('Current data from editor...')
                 console.log(currentData)

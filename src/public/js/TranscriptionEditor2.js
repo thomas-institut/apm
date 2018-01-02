@@ -53,6 +53,8 @@ class TranscriptionEditor
     this.options = TranscriptionEditor.getOptions(userOptions)
     this.people = this.options.people
     this.editorId = this.options.editorId
+    // Default hand Id is always 0!
+    this.handId = 0
     
     this.minItemId = 0
     this.minNoteId = 0
@@ -1770,7 +1772,7 @@ class TranscriptionEditor
   static setUpPopover (node, title, text, editorid, itemid, noText = false) {
     $(node).popover({
       content: function () {
-        const editorObject = TranscriptionEditor.editors[editorid]
+        const editorObject = TranscriptionEditor.editorsById[editorid]
         const ednotes = editorObject.getEdnotesForItemId(itemid)
         let t = '<h3 class="editor-popover-title">' + title + '</h3>'
         if (!noText) {
@@ -1906,7 +1908,11 @@ class TranscriptionEditor
     if (TranscriptionEditor.editors === undefined) {
       TranscriptionEditor.editors = []
     }
+    if (TranscriptionEditor.editorsById === undefined) {
+      TranscriptionEditor.editorsById = []
+    }
     TranscriptionEditor.editors.push(editorObject)
+    TranscriptionEditor.editorsById[id] = editorObject
   }
   static registerBlockBlot(theBlot, options)
   {
@@ -2023,7 +2029,7 @@ class TranscriptionEditor
   
   static init(baseUrl)
   {
-    TranscriptionEditor.editors = [] // ??? I don't think this is needed anymore
+
     TranscriptionEditor.baseUrl = baseUrl
     TranscriptionEditor.registerEvent('editor-enable')
     TranscriptionEditor.registerEvent('editor-disable')

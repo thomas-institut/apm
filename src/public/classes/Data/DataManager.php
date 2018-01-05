@@ -378,6 +378,33 @@ class DataManager
         return $res->fetchAll(PDO::FETCH_ASSOC);
     }
     
+    // TODO: fix maxChunk!
+    public function getActiveWorks()
+    {
+         $query = 'SELECT dare_id, p.fullname, short_title FROM ' . $this->tNames['works'] . 
+                 ' AS w JOIN (' . $this->tNames['people'] . ' AS p) ON (p.id=w.author_id) WHERE enabled=1' ;
+        $this->queryStats->countQuery('select');
+        $res = $this->dbh->query($query);
+        if ($res === false) {
+            // This means a database error
+            // Can't reproduce in testing for now
+            return false; // @codeCoverageIgnore
+        }
+        $data =  $res->fetchAll(PDO::FETCH_ASSOC);
+        
+        $theWorks = [];
+        foreach($data as $work) {
+            //$this->logger->debug('Work', $work);
+            $theWorks[] =  [ 
+                'title' => '(' . $work['dare_id'] . ') ' . $work['fullname'] . ' - ' . $work['short_title'], 
+                'dareId' => $work['dare_id'], 
+                'maxChunk' => 500
+                ];
+        }
+        return $theWorks;
+
+    }
+    
     public function updateDocSettings($docId, $newSettings) 
     {
         $row['id'] = $docId;

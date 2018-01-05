@@ -17,7 +17,7 @@
  */
 
 
-/* global TranscriptionEditor, pageTypeNames, pageType, pageSystemId, foliation */
+/* global TranscriptionEditor, pageTypeNames, pageType, pageSystemId, foliation, activeWorks */
 
 let pageNumber = 0
 let docId = 0
@@ -28,6 +28,7 @@ let defaultLang = ''
 const cols = []
 
 $(document).ready(function () {
+  
   $('div.split-pane').splitPane()
   
   $('div.split-pane').on('dividerdragend', function (e){
@@ -129,7 +130,7 @@ $(document).ready(function () {
               const te = new TranscriptionEditor(
                   'col' + theCol, 
                   theCol,
-                  { editorId: userId}
+                  { editorId: userId , activeWorks: activeWorks}
                   );
               te.setData(resp)
               te.on('editor-enable',function (e) {

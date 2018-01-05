@@ -191,6 +191,7 @@ class SimpleImgBlot extends BlockEmbed {
     if (this.renumberLinesOnImageLoad) {
       TranscriptionEditor.setOnLoadCallback(node, this.name, value)
     }
+    
     return node
   }
 

@@ -281,14 +281,14 @@ b.abbr {
 }
 
 b.unclear {
-    color: gray;
+    color: #143382;
 }
 
 b.mathtext {
     color: #990099;
 }
 b.sic {
-    color: cadetblue
+    color: #ad9c87
 } 
 
 b.abbr {

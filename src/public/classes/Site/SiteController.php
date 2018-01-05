@@ -475,6 +475,8 @@ class SiteController
         $thePages = $this->buildPageArray($pagesInfo, $transcribedPages);
         $imageUrl = $this->db->getImageUrl($docId, $pageInfo['img_number']);
         $pageTypeNames  = $this->db->getPageTypeNames();
+        $activeWorks = $this->db->getActiveWorks();
+        //$this->ci->logger->debug('Active Works', $activeWorks);
         $pageNumberFoliation = $pageNumber;
         if ($pageInfo['foliation'] !== NULL) {
             $pageNumberFoliation = $pageInfo['foliation'];
@@ -493,6 +495,7 @@ class SiteController
             'pageNumberFoliation' => $pageNumberFoliation,
             'pageInfo' => $pageInfo,
             'pageTypeNames' => $pageTypeNames,
+            'activeWorks' => $activeWorks,
             'thePages' => $thePages,
             'imageUrl' => $imageUrl
         ]);
@@ -513,6 +516,8 @@ class SiteController
         $thePages = $this->buildPageArray($pagesInfo, $transcribedPages);
         $imageUrl = $this->db->getImageUrl($docId, $pageInfo['img_number']);
         $pageTypeNames  = $this->db->getPageTypeNames();
+        $activeWorks = $this->db->getActiveWorks();
+        
         $pageNumberFoliation = $pageInfo['seq'];
         if ($pageInfo['foliation'] !== NULL) {
             $pageNumberFoliation = $pageInfo['foliation'];
@@ -531,6 +536,7 @@ class SiteController
             'pageNumberFoliation' => $pageNumberFoliation,
             'pageInfo' => $pageInfo,
             'pageTypeNames' => $pageTypeNames,
+            'activeWorks' => $activeWorks,
             'thePages' => $thePages,
             'imageUrl' => $imageUrl
         ]);

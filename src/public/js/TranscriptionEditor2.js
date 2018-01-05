@@ -53,6 +53,7 @@ class TranscriptionEditor
     this.options = TranscriptionEditor.getOptions(userOptions)
     this.people = this.options.people
     this.editorId = this.options.editorId
+    this.activeWorks = this.options.activeWorks
     // Default hand Id is always 0!
     this.handId = 0
     
@@ -328,6 +329,16 @@ class TranscriptionEditor
     if (options === false) {
       options = {}
     }
+    
+    if (options.activeWorks === undefined) {
+      options.activeWorks = []
+      options.activeWorks.push({
+        title: "Averroes - Stub Work",
+        dareId: 'AW01',
+        maxChunk: 125
+      })
+    }
+    
     
     if (options.people === undefined) {
       options.people = []
@@ -1042,14 +1053,21 @@ class TranscriptionEditor
         return false
       }
       $('#chunk-modal-title-' + thisObject.id).html('Chunk ' + type)
-      $('#chunk-modal-worknumber-' + thisObject.id).val(1)
+      let workOptionsHtml = ''
+      for (const work of thisObject.activeWorks) {
+        workOptionsHtml += '<option value="' + work.dareId + '">'
+           + work.title + '</option>'
+      }
+      $('#chunk-modal-dareid-' + thisObject.id).html(workOptionsHtml)
+      $('#chunk-modal-chunknumber-' + thisObject.id).attr('min', 1)
+      $('#chunk-modal-chunknumber-' + thisObject.id).attr('max', 500)
       $('#chunk-modal-chunknumber-' + thisObject.id).val(1)
 
       $('#chunk-modal-submit-button-' + thisObject.id).off()
       $('#chunk-modal-submit-button-' + thisObject.id).on('click', function () {
         $('#chunk-modal-' + thisObject.id).modal('hide')
         const itemid = thisObject.getOneItemId()
-        const dareid = 'AW'+ $('#chunk-modal-worknumber-' + thisObject.id).val()
+        const dareid = $('#chunk-modal-dareid-' + thisObject.id).val()
         const chunkno = $('#chunk-modal-chunknumber-' + thisObject.id).val()
         quillObject.insertEmbed(range.index, 'chunkmark', {
           alttext: type,
@@ -2276,7 +2294,7 @@ class TranscriptionEditor
             
 <!-- CHUNK modal {{id}} -->            
 <div id="chunk-modal-{{id}}" class="modal" role="dialog">
-    <div class="modal-dialog modal-sm" role="document">
+    <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
@@ -2284,12 +2302,12 @@ class TranscriptionEditor
             </div>
             <div class="modal-body" id="chunk-modal-body-{{id}}">
                 <form class="form-horizontal">
-                    <div id="chunk-modal-worknumber-fg-{{id}}" class="form-group">
-                        <label for="chunk-modal-worknumber-{{id}}" class="control-label">Work Number:</label>
-                        <input type="number" name="worknumber" class="form-control" id="chunk-modal-worknumber-{{id}}"></input>
+                    <div id="chunk-modal-work-fg-{{id}}" class="form-group">
+                        <label for="chunk-modal-work-{{id}}" class="control-label">Work:</label>
+                        <select name="chunk-modal-dareid" id="chunk-modal-dareid-{{id}}"></select>
                     </div>
                     <div id="chunk-modal-chunknumber-fg-{{id}}" class="form-group">
-                        <label for="chunk-modal-chunknumber-{{id}}" id="chunk-modal-chunknumber-label-{{id}}" class="control-label">Chunk:</label>
+                        <label for="chunk-modal-chunknumber-{{id}}" id="chunk-modal-chunknumber-label-{{id}}" class="control-label">Chunk Number:</label>
                         <input type="number" name="chunk" class="form-control" id="chunk-modal-chunknumber-{{id}}"></input>
                     </div>
                     <input id="chunk-note-id-{{id}}" type="hidden" name="note-id" value=""/>

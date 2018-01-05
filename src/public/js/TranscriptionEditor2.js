@@ -514,6 +514,7 @@ class TranscriptionEditor
     let inMarginal = false
     let lastMarginalId = -1
     let numChars = this.options.lineNumbers.numChars;
+    let lastMarginalP = undefined
     for (const p of pElements) {
       let theP = $(p)
       let lineNumberLabel = '-'
@@ -550,14 +551,16 @@ class TranscriptionEditor
         case 'gloss':
           let place = theP.attr('place')
           let elementId = theP.attr('elementid')
+          lastMarginalP = theP
           if (!inMarginal || elementId !== lastMarginalId) {
             // first line of marginal
             lastMarginalId = elementId
             theP.addClass('firstmarginalline')
+            lineNumberLabel = '<a title="Gloss @ ' + place + '">&nbsp;G</a>'
           } else {
             theP.removeClass('firstmarginalline')
+            lineNumberLabel = ''
           }
-          lineNumberLabel = '<a title="Gloss @ ' + place + '">&nbsp;G</a>'
           inMarginal = true
           break
         
@@ -574,7 +577,13 @@ class TranscriptionEditor
           lineNumberLabel = '<a title="Addition @ ' + place + '">&nbsp;A</a>'
           inMarginal = true
           break
-          
+      }
+      if (!inMarginal && lastMarginalP !== undefined) {
+        lastMarginalP.addClass('lastmarginalline')
+        lastMarginalP = undefined
+      }
+      if (lineNumberLabel === '') {
+        continue
       }
       let offset = theP.position()
       let fontFactor = this.options.lineNumbers.fontFactor 

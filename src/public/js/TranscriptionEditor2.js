@@ -977,12 +977,17 @@ class TranscriptionEditor
       if (!range) {
         return false
       }
+      if (!thisObject.enabled) {
+        return false
+      }
       //console.log("Selection: @" + range.index + ", l=" + range.length)
       const hasFormat = TranscriptionEditor.selectionHasFormat(quillObject, range)
       //console.log("Has format: " + hasFormat)
       if (range.length === 0) {
         $('.selFmtBtn').prop('disabled', true)
         $('.imgFmtBtn').prop('disabled', false)
+        $('.chunkButton').prop('disabled', false)
+        $('.lineGapButton').prop('disabled', false)
         $('#note-button-' + id).prop('disabled', false)
         thisObject.setDisableLangButtons(true)
         $('#edit-button-' + id).prop('disabled', true)
@@ -991,6 +996,10 @@ class TranscriptionEditor
           $('#edit-button-' + id).prop('disabled', false)
           $('.imgFmtBtn').prop('disabled', true)
           return false
+        }
+        if (!TranscriptionEditor.indexIsInNormalLine(quillObject, range.index)) {
+            $('.chunkButton').prop('disabled', true)
+            $('.lineGapButton').prop('disabled', true)
         }
         return false
       }
@@ -1312,6 +1321,9 @@ class TranscriptionEditor
       }
       if (!needsDialog) {
         quillObject.format(theBlot.name, theValue)
+        // Disable chunk and line gap buttons 
+        $('.chunkButton').prop('disabled', true)
+        $('.lineGapButton').prop('disabled', true)
         return true
       }
       // Needs dialog
@@ -1337,6 +1349,23 @@ class TranscriptionEditor
       for(const blockBlot of TranscriptionEditor.blockBlots) {
         quillObject.format(blockBlot.name, false)
       }
+      let currentSelection = quillObject.getSelection()
+      if (currentSelection.length === 0) {
+        // if cursor in a single place, check
+        // and enable/disable chunk and line gap buttons
+        if (!TranscriptionEditor.rangeIsInMidItem(quillObject, currentSelection)) {
+          $('.chunkButton').prop('disabled', false)
+          $('.lineGapButton').prop('disabled', false)
+          return true
+        }
+        $('.chunkButton').prop('disabled', true)
+        $('.lineGapButton').prop('disabled', true)
+        return true
+      }
+      // Move cursor to end of selection 
+      // this forces a selection change event and a 
+      // proper setting of the button status
+      quillObject.setSelection(currentSelection.index + currentSelection.length)
     }
   }
 
@@ -1947,6 +1976,15 @@ class TranscriptionEditor
     return false
   }
   
+  static indexIsInNormalLine(quillObject, index) {
+    let [line,] = quillObject.getLine(index)
+    if (line instanceof SimpleBlockBlot) {
+      return false
+    }
+    return true
+  }
+  
+  
   static resetItemModal (id) {
     $('#item-modal-title-' + id).html('')
     $('#item-modal-text-fg-' + id).hide()
@@ -2138,8 +2176,8 @@ class TranscriptionEditor
       
     {# Simple Image Buttons #}
     <span id="simpleImageButtons-{{id}}"></span>
-    <button id="chunk-start-button-{{id}}"  title="Chunk Start">{</button>
-    <button id="chunk-end-button-{{id}}"  title="Chunk End">}</button>
+    <button id="chunk-start-button-{{id}}" class="imgFmtBtn chunkButton"  title="Chunk Start">{</button>
+    <button id="chunk-end-button-{{id}}" class="imgFmtBtn chunkButton"  title="Chunk End">}</button>
     <span class="separator"/>
       
     {# Special characters #}
@@ -2155,7 +2193,7 @@ class TranscriptionEditor
     <span id="simpleBlockButtons-{{id}}"></span>
     <span class="separator"/>
     {# OTHER #}
-    <button id="linegap-button-{{id}}" title="Line Gap">Gap</button>
+    <button id="linegap-button-{{id}}" class="imgFmtBtn lineGapButton" title="Line Gap">Gap</button>
     <span class="separator"/>
 
     {# Default Language #}

@@ -161,6 +161,7 @@ TranscriptionEditor.registerImageBlot(LineGapBlot, {
   icon: 'Gap',
   imageAlt:'[... Line Gap ...]',
   noButton: true,
+  renumberLinesOnImageLoad: true,
   thelength: { default: 5 },
   getImageUrl: function (baseUrl, size, value) { 
     return baseUrl + '/api/images/linegap/' + value.thelength + '/' + size

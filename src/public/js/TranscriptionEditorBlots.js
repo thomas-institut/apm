@@ -143,7 +143,15 @@ SimpleFormatBlot.title = 'Generic Format'
 class SimpleImgBlot extends BlockEmbed {
   static create (value) {
     const node = super.create()
+    if (SimpleImgBlot.lastId===undefined) {
+        SimpleImgBlot.lastId = 0
+    }
+    SimpleImgBlot.lastId++
+    let uniqueId = SimpleImgBlot.lastId
+    let htmlId = 'sib-' + value.editorid + '-' + uniqueId
+    node.setAttribute('id', htmlId)
     node.setAttribute('itemid', value.itemid)
+    
     node.setAttribute('editorid', value.editorid)
     if (value.text !== undefined) {
       node.setAttribute('bltext', value.text)
@@ -179,6 +187,9 @@ class SimpleImgBlot extends BlockEmbed {
         popoverSecondaryHtml += '<b>' + this.extrainfo.title + '</b>: ' + value.extrainfo + '<br/>'
       }
       TranscriptionEditor.setUpPopover(node, this.title, popoverSecondaryHtml, value.editorid, value.itemid, true)
+    }
+    if (this.renumberLinesOnImageLoad) {
+      TranscriptionEditor.setOnLoadCallback(node, this.name, value)
     }
     return node
   }

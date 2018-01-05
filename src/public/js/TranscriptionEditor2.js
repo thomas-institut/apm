@@ -477,10 +477,14 @@ class TranscriptionEditor
     if (this.options.langDef[this.defaultLang].rtl) {
       $('#editor-container-' + this.id + ' .ql-editor').css('margin-left', '0')
       $('#editor-container-' + this.id + ' .ql-editor').css('margin-right', marginSize + 'px')
+      $('#editor-container-' + this.id + ' .ql-editor').css('border-right', 'solid 1px #e0e0e0')
+      $('#editor-container-' + this.id + ' .ql-editor').css('border-left', 'none')
       return true
     }
     $('#editor-container-' + this.id + ' .ql-editor').css('margin-right', '0')
     $('#editor-container-' + this.id + ' .ql-editor').css('margin-left', marginSize + 'px')
+    $('#editor-container-' + this.id + ' .ql-editor').css('border-left', 'solid 1px #e0e0e0')
+    $('#editor-container-' + this.id + ' .ql-editor').css('border-right', 'none')
     return true
   }
 
@@ -501,7 +505,7 @@ class TranscriptionEditor
   numberLines()
   {
     let pElements = $('#' + this.containerId + ' ' + '.ql-editor > p')
-    //console.log('Numbering lines in editor ' + this.id + ', ' + pElements.length + ' elements')
+    console.log('Numbering lines in editor ' + this.id + ', ' + pElements.length + ' elements')
     let editorDiv = $('#' + this.containerId + ' ' + '.ql-editor')
     let editorContainerLeftPos = $(editorDiv).position().left
     let marginSize = this.getEditorMarginSize()
@@ -521,7 +525,7 @@ class TranscriptionEditor
             let theChild = $(children[0])
             if (theChild.hasClass('linegap')) {
               lineNumber += parseInt(theChild.attr('length'))
-              lineNumberLabel = '..'
+              lineNumberLabel = ''
               break
             }
           }
@@ -575,7 +579,9 @@ class TranscriptionEditor
       let offset = theP.position()
       let fontFactor = this.options.lineNumbers.fontFactor 
       let editorFontSize = this.calcEditorFontEmSize(this.fontSize)*this.options.pixPerEm
-      let lineNumberTopPos = offset.top + $('#editor-container-' + this.id).position().top
+      let lineNumberTopPos = offset.top 
+              + $('#editor-container-' + this.id).position().top 
+              + parseInt(theP.css('marginTop'))
       let fontEmSize = this.calcEditorFontEmSize(this.fontSize)*fontFactor
       let fontCharWidth = fontEmSize*this.options.pixPerEm*this.options.lineNumbers.charWidth
       let numberMargin = this.options.lineNumbers.margin;
@@ -852,6 +858,7 @@ class TranscriptionEditor
     }
     
     this.setDefaultLang(mainLang)
+    console.log('Set Data')
     this.numberLines()
   }
   
@@ -947,6 +954,7 @@ class TranscriptionEditor
       } else {
         thisObject.setContentsNotChanged()
       }
+      console.log('Quill change')
       thisObject.numberLines()
     }
   }
@@ -1048,6 +1056,7 @@ class TranscriptionEditor
     let thisObject = this
     return function (e)
     {
+      console.log('Resize')
       thisObject.numberLines()
     }
   }
@@ -1809,6 +1818,15 @@ class TranscriptionEditor
     return false
   }
   
+  static setOnLoadCallback(node, name, value)
+  {
+    const editorObject = TranscriptionEditor.editorsById[value.editorid]
+    $(node).on('load', function() {
+      console.log('Image loaded')
+      editorObject.numberLines()
+    })
+  }
+  
   static setUpPopover (node, title, text, editorid, itemid, noText = false) {
     $(node).popover({
       content: function () {
@@ -2038,6 +2056,9 @@ class TranscriptionEditor
     if (options.withPopover === undefined) {
       options.withPopover = false
     }
+    if (options.renumberLinesOnImageLoad === undefined) {
+      options.renumberLinesOnImageLoad= false
+    }
     if (options.getImageUrl === undefined) {
       options.getImageUrl = function () { return 'urlnotset'}
     }
@@ -2045,6 +2066,7 @@ class TranscriptionEditor
     theBlot.title = options.title
     theBlot.imageAlt = options.imageAlt
     theBlot.withPopover = options.withPopover
+    theBlot.renumberLinesOnImageLoad = options.renumberLinesOnImageLoad
     theBlot.getImageUrl = options.getImageUrl
     
     if (options.text) {

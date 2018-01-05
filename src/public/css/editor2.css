@@ -52,6 +52,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
     background: white;
     white-space: pre-wrap;
     margin-left: 25px;
+    border-left: solid 1px #e0e0e0;
 }
 .ql-clipboard {
     left: -100000px;
@@ -109,6 +110,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 .editor-controlbar {
     background: #fbfbfb;
     color: gray;
+    border-bottom: solid 1px #e0e0e0;
+    border-top: solid 1px #f0f0f0;
 }
 
 .editor-controlbar button {
@@ -197,8 +200,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 }
 
 
-
-
 .editor-container p.additionelement {
     margin: 10px 20px;
 }
@@ -218,21 +219,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 .editor-container p.headelement {
     margin-bottom: 10px;
-    background: silver;
+    background: #fafafa;;
     border-radius: 5px;
 }
 
 .editor-container p.custodes {
-    background: beige;
-    margin-top: 10px;
+    /*background: #fafafa;*/
+    margin: 20px 20px 0 20px;
     border-radius: 5px;
 }
 
 
 .editor-container p.pagenumber {
-    background: #ffeee6;
-    margin-top: 10px;
-    margin-bottom: 10px;
+    /*background: #ffeee6;*/
+    margin: 0 20px 10px 20px;
     border-radius: 5px;
 }
 
@@ -246,8 +246,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
     margin-top: 20px;
 }
 
-.editor-container p.linegap {
-    margin: 0px 10px;
+.editor-container img.linegap {
+    margin: 30px 10px;
 }
 
 .ql-editor b {
@@ -285,6 +285,13 @@ b.unclear {
 b.mathtext {
     color: #990099;
 }
+b.sic {
+    color: cadetblue
+} 
+
+b.abbr {
+    color: chocolate;
+}
 
 .deletion {
     font-weight: normal;
@@ -299,13 +306,7 @@ b.mathtext {
     padding: 2px;
 }
 
-b.sic {
-    color: cadetblue
-} 
 
-b.abbr {
-    color: chocolate;
-}
 
 .mark {
     font-family: FontAwesome;
@@ -386,11 +387,37 @@ img.chunkmark  {
     font-style: normal;
 }
 
+/* HANDS */
+
 .hand1 .la-text, b.hand1 {
     font-family: 'Times New Roman', Times, serif;
 }
 
 .hand2 .la-text, b.hand2 {
     font-family: cursive, sans-serif ;
+}
+
+.hand1 .ar-text, b.hand1 {
+    font-family: 'Times New Roman', Times, serif;
+}
+
+.hand2 .ar-text, b.hand2 {
+    font-family: cursive, sans-serif ;
+}
+
+.hand1 .he-text, b.hand1 {
+    font-family: cursive, sans-serif ;
+}
+
+.hand2 .he-text, b.hand2 {
+    font-family: 'Times New Roman', Times, serif;
+}
+
+.hand1 .jrb-text, b.hand1 {
+    font-family: cursive, sans-serif ;
+}
+
+.hand2 .jrb-text, b.hand2 {
+    font-family: 'Times New Roman', Times, serif;
 }
 

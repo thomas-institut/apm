@@ -75,11 +75,12 @@ class Addition extends Item {
     
     public function setTarget($target)
     {
-        if ($target <= 0){
-            $this->target = 0;
-        } else {
-            $this->target = $target;
-        }
+        $this->target = $target;
+//        if ($target <= 0){
+//            $this->target = 0;
+//        } else {
+//            $this->target = $target;
+//        }
     }
     
     public function getTarget()

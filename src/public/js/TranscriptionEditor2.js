@@ -867,6 +867,8 @@ class TranscriptionEditor
     this.columnNumber = columnData.info.col
     this.pageDefaultLang = columnData.info.lang
     
+    console.log(columnData)
+    
     let editorData = EditorData.getEditorDataFromApiData(columnData, this.id, this.options.langDef, this.minItemId, TranscriptionEditor.formatBlots)
   
     this.minItemId = editorData.minItemId
@@ -974,7 +976,7 @@ class TranscriptionEditor
       } else {
         thisObject.setContentsNotChanged()
       }
-      console.log('Quill change')
+      //console.log('Quill change')
       thisObject.numberLines()
     }
   }
@@ -1092,7 +1094,7 @@ class TranscriptionEditor
     let thisObject = this
     return function (e)
     {
-      console.log('Resize')
+      //console.log('Resize')
       thisObject.numberLines()
     }
   }
@@ -1106,9 +1108,11 @@ class TranscriptionEditor
     }
   }
   
+  
   getTargets (itemId = -1) {
+    // TODO: implement this using registered blots!
     const ops = this.quillObject.getContents().ops
-    const targets = [{itemid: -1, text: '[none]'}]
+    const targets = [{itemid: 0, text: '[none]'}]
     const potentialTargets = []
    
     const additionTargets = []
@@ -1118,13 +1122,13 @@ class TranscriptionEditor
         if (curOps.attributes.deletion) {
           potentialTargets.push({
             itemid: parseInt(curOps.attributes.deletion.itemid),
-            text: 'DELETION: ' + curOps.insert
+            text: 'Deletion: ' + curOps.insert
           })
         }
         if (curOps.attributes.unclear) {
           potentialTargets.push({
             itemid: parseInt(curOps.attributes.unclear.itemid),
-            text: 'UNCLEAR: ' + curOps.insert
+            text: 'Unclear: ' + curOps.insert
           })
         }
         if (curOps.attributes.addition) {
@@ -1180,7 +1184,7 @@ class TranscriptionEditor
       let targets = []
       if (theBlot.target) {
         targets = thisObject.getTargets()
-        if (theBlot.target.default === -1) {
+        if (theBlot.target.default === 0) {
           theValue.targetText = '[none]'
         }
       }

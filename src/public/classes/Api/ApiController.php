@@ -368,7 +368,7 @@ class ApiController
                               'pageNumber' => $pageNumber,
                               'columnNumber' => $columnNumber,
                             ]);
-        
+
         $newElements = \AverroesProject\Data\DataManager::createElementArrayFromArray($newElementsArray);
         // Get the editorial notes
         $edNotes  = \AverroesProject\Data\EdNoteManager::editorialNoteArrayFromArray($inputDataObject['ednotes']);

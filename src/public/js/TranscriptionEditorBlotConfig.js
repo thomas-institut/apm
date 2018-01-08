@@ -85,7 +85,7 @@ TranscriptionEditor.registerFormatBlot(AdditionBlot, {
   name: 'addition', 
   title: 'Addition', 
   icon: '<i class="fa fa-plus-square"></i>',
-  target: { title: 'Replaces',  default: -1}, 
+  target: { title: 'Replaces',  default: 0}, 
   buttonWithOptions: 'extrainfo',
   extrainfo: { title: 'Placement', options : Item.getValidAdditionPlaces() }
 })

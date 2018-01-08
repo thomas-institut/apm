@@ -330,6 +330,8 @@ class EditorData {
     const formats = []
     const additionTargetTexts = []
     
+    additionTargetTexts[0] = '[none]'
+    
     let languageCounts = {}
     for (const lang in langDef) {
       languageCounts[lang] = 0

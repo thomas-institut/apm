@@ -1109,9 +1109,9 @@ class DataManager
             $time = \DataTable\MySqlUnitemporalDataTable::now();
         }
         $this->queryStats->countQuery('create');
-        if ($item->type === Item::CHUNK_MARK) {
-            $this->logger->debug("Creating chunk mark in db", get_object_vars($item));
-        }
+//        if ($item->type === Item::ADDITION) {
+//            $this->logger->debug("Creating addition in db", get_object_vars($item));
+//        }
         return $this->itemsDataTable->createRowWithTime([
             'ce_id'=> $item->columnElementId,
             'type' => $item->type,
@@ -1392,7 +1392,7 @@ class DataManager
                         $row[$fields['seq']], 
                         $row[$fields['text']], 
                         $row[$fields['extra_info']], 
-                        $row[$fields['target']]);
+                        (int) $row[$fields['target']]);
                 break;
 
             case Item::NO_WORD_BREAK:
@@ -1485,6 +1485,7 @@ class DataManager
             $element->pageId = $pageId;
             $element->columnNumber = $columnNumber;
         }
+        //$this->logger->debug("The elements", $newElements);
         
         $oldElements = $this->getColumnElementsByPageId($pageId, $columnNumber);
         $editScript = ElementArray::getEditScript(

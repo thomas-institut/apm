@@ -987,7 +987,7 @@ class DataManager
             return false;
         }
         
-        if (!in_array($element->lang, ['la', 'he', 'ar'])) {
+        if (!in_array($element->lang, ['la', 'he', 'ar', 'jrb'])) {
             $this->logger->error('Element with invalid language being inserted', 
                     ['pageid' => $element->pageId, 
                         'colnum' => $element->columnNumber, 

@@ -69,8 +69,8 @@ $(document).ready(function () {
   })
   
   $('#editPageButton').click(function () {
-    const langs = ['ar', 'he', 'la']
-    const langLabels = { ar: 'Arabic', he: 'Hebrew', la: 'Latin'}
+    const langs = ['ar', 'he', 'la', 'jrb']
+    const langLabels = { ar: 'Arabic', he: 'Hebrew', la: 'Latin', jrb: 'Judeo Arabic'}
     let optionsHtml = ''
     for (const lang of langs) {
       optionsHtml += '<option value="' + lang + '"'
@@ -189,7 +189,8 @@ function getDefaultLang(elements) {
   const languages = {
     'ar':0,
     'he':0,
-    'la':0
+    'la':0,
+    'jrb':0
   }
 
   for (let i = 0; i < elements.length; i++) {
@@ -201,6 +202,9 @@ function getDefaultLang(elements) {
   }
   if (languages.he > languages.ar) {
     lang = 'he'
+  }
+  if (languages.jrb > languages.he) {
+    lang = 'jrb'
   }
   return lang
 }

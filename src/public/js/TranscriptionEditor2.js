@@ -516,7 +516,7 @@ class TranscriptionEditor
   numberLines()
   {
     let pElements = $('#' + this.containerId + ' ' + '.ql-editor > p')
-    console.log('Numbering lines in editor ' + this.id + ', ' + pElements.length + ' elements')
+    //console.log('Numbering lines in editor ' + this.id + ', ' + pElements.length + ' elements')
     let editorDiv = $('#' + this.containerId + ' ' + '.ql-editor')
     let editorContainerLeftPos = $(editorDiv).position().left
     let marginSize = this.getEditorMarginSize()
@@ -878,7 +878,7 @@ class TranscriptionEditor
     }
     
     this.setDefaultLang(mainLang)
-    console.log('Set Data')
+    //console.log('Set Data')
     this.numberLines()
   }
   

@@ -43,9 +43,8 @@
         pageType = {{pageInfo.type}}
         pageTypeNames = JSON.parse('{{pageTypeNames|json_encode|raw}}')
         activeWorks = JSON.parse("{{activeWorks|json_encode|e('js')}}")
-        console.log(activeWorks)
-        
-        TranscriptionEditor.init('{{baseurl}}')
+
+    TranscriptionEditor.init('{{baseurl}}')
     </script>
 </head>
 <body>

@@ -46,7 +46,8 @@ class ApmUrlGenerator {
   openSeaDragonImagePrefix() {
     return this.base + '/node_modules/openseadragon/build/openseadragon/images/'
   }
-  createUser () {
+  
+  apiCreateUser () {
     return this.base + '/api/user/new'
   }
 

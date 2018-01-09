@@ -175,13 +175,12 @@ class PageViewer {
       $.post(
         apiUpdatePageSettingsUrl, 
         $('#pageSettingsForm').serialize())
-        .done(function () { 
-          location.replace('')         
-        })
-        .fail(function() {
-          console.log("Error updating page settings")
-        }
-      )
+      .done(function () { 
+        location.replace('')         
+      })
+      .fail(function() {
+        console.log("Error updating page settings")
+      })
     }
   }
   

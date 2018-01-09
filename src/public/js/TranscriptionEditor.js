@@ -359,10 +359,7 @@ class TranscriptionEditor
     // langDef : language definitions
     if (options.langDef === undefined) {
       options.langDef = { 
-        ar: { code: 'ar', name: 'Arabic', rtl: true, fontsize: 5},  // Scheherazade font
-        jrb: { code: 'jrb', name: 'Judeo Arabic', rtl: true, fontsize: 3}, // SIL Ezra 
-        he: { code: 'he', name: 'Hebrew', rtl: true, fontsize: 3},  // Linux Libertine font
-        la: { code: 'la', name: 'Latin', rtl: false, fontsize: 3}  // Arial 
+        la: { code: 'la', name: 'Latin', rtl: false, fontsize: 3} 
       }    
     }
     

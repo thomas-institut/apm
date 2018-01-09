@@ -25,7 +25,7 @@
 /* exported EditorData */
 class EditorData {
   
-  static getApiDataFromQuillDelta(delta, editorInfo) {
+  static getApiDataFromQuillDelta(delta, editorInfo, blockBlots, formatBlots) {
     const ops = delta.ops
     const elements = []
     const itemIds = []
@@ -71,6 +71,7 @@ class EditorData {
         seq: currentItemSeq++,
         type: ITEM_TEXT,
         lang: editorInfo.defaultLang,
+        handId: 0,
         theText: '',
         altText: null,
         extraInfo: null,
@@ -95,7 +96,7 @@ class EditorData {
           curElement = createNewElement()
         }
         curElement.type = ELEMENT_LINE_GAP
-        curElement.reference = theInsert.linegap.linecount
+        curElement.reference = theInsert.linegap.thelength
         curElement.items = []
         elements.push(curElement)
         previousElementType = ELEMENT_LINE_GAP
@@ -111,7 +112,7 @@ class EditorData {
       if ('chgap' in curOps.insert) {
         item.type = ITEM_CHARACTER_GAP
         item.id = theInsert.chgap.itemid
-        item.length = theInsert.chgap.length
+        item.length = theInsert.chgap.thelength
       }
       if ('nowb' in curOps.insert) {
         item.type = ITEM_NO_WORD_BREAK
@@ -120,15 +121,15 @@ class EditorData {
       if ('illegible' in curOps.insert) {
         item.type = ITEM_ILLEGIBLE
         item.id = theInsert.illegible.itemid
-        item.extraInfo = theInsert.illegible.reason
-        item.length = parseInt(theInsert.illegible.length)
+        item.extraInfo = theInsert.illegible.extrainfo
+        item.length = parseInt(theInsert.illegible.thelength)
       }
       if ('chunkmark' in curOps.insert) {
         item.type = ITEM_CHUNK_MARK
         item.id = theInsert.chunkmark.itemid
-        item.altText = theInsert.chunkmark.type
-        item.target = parseInt(theInsert.chunkmark.chunkno)
-        item.theText = theInsert.chunkmark.dareid
+        item.altText = theInsert.chunkmark.alttext
+        item.target = parseInt(theInsert.chunkmark.target)
+        item.theText = theInsert.chunkmark.text
       }
       if ('pmark' in theInsert) {
         item.type = ITEM_PARAGRAPH_MARK
@@ -166,15 +167,13 @@ class EditorData {
             curElement.placement = curOps.attributes.additionelement.place
             curElement.reference = curOps.attributes.additionelement.target
           }
-          if (curOps.attributes.head) {
-            curElement.type = ELEMENT_HEAD
+          // Simple block elements
+          for (const blockBlot of blockBlots) {
+            if (curOps.attributes[blockBlot.name]) {
+              curElement.type = blockBlot.type
+            }
           }
-          if (curOps.attributes.custodes) {
-            curElement.type = ELEMENT_CUSTODES
-          }
-          if (curOps.attributes.pagenumber) {
-            curElement.type = ELEMENT_PAGE_NUMBER
-          }
+
           if (curElement.type === ELEMENT_INVALID) {
             console.warn('WARNING: Quill 2 API : single newline without valid attribute')
             console.warn(JSON.stringify(curOps))
@@ -201,53 +200,33 @@ class EditorData {
         //console.log("insert is text with attributes")
         const item = createNewItem()
         
-        item.theText =curOps.insert
+        item.theText = curOps.insert
         if (curOps.attributes.lang) {
           item.lang = curOps.attributes.lang
         }
-        if (curOps.attributes.rubric) {
-          item.type = ITEM_RUBRIC
-          item.id = curOps.attributes.rubric.itemid
+        // Simple format elements
+        for (const formatBlot of formatBlots) {
+          if (curOps.attributes[formatBlot.name]) {
+            item.type = formatBlot.type
+            item.id = curOps.attributes[formatBlot.name].itemid
+            item.handId = curOps.attributes[formatBlot.name].handid
+            if (formatBlot.alttext) {
+              item.altText = curOps.attributes[formatBlot.name].alttext
+            }
+            if (formatBlot.extrainfo) {
+              item.extraInfo = curOps.attributes[formatBlot.name].extrainfo
+            }
+            if (formatBlot.target) {
+              item.target = curOps.attributes[formatBlot.name].target
+            }
+          }
         }
-        if (curOps.attributes.mathtext) {
-          item.type = ITEM_MATH_TEXT
-          item.id = curOps.attributes.mathtext.itemid
-        }
-        if (curOps.attributes.gliph) {
-          item.type = ITEM_GLIPH
-          item.id = curOps.attributes.gliph.itemid
-        }
-        if (curOps.attributes.initial) {
-          item.type = ITEM_INITIAL
-          item.id = curOps.attributes.initial.itemid
-        }
-        if (curOps.attributes.sic) {
-          item.type = ITEM_SIC
-          item.altText = curOps.attributes.sic.correction
-          item.id = curOps.attributes.sic.itemid
-        }
-        if (curOps.attributes.abbr) {
-          item.type = ITEM_ABBREVIATION
-          item.altText = curOps.attributes.abbr.expansion
-          item.id = curOps.attributes.abbr.itemid
-        }
-        if (curOps.attributes.deletion) {
-          item.type = ITEM_DELETION
-          item.extraInfo = curOps.attributes.deletion.technique
-          item.id = curOps.attributes.deletion.itemid
-        }
-        if (curOps.attributes.addition) {
-          item.type = ITEM_ADDITION
-          item.extraInfo = curOps.attributes.addition.place
-          item.id = curOps.attributes.addition.itemid
-          item.target = curOps.attributes.addition.target
-        }
-        if (curOps.attributes.unclear) {
-          item.type = ITEM_UNCLEAR
-          item.altText = curOps.attributes.unclear.reading2
-          item.extraInfo = curOps.attributes.unclear.reason
-          item.id = curOps.attributes.unclear.itemid
-        }
+//        if (curOps.attributes.addition) {
+//          item.type = ITEM_ADDITION
+//          item.extraInfo = curOps.attributes.addition.place
+//          item.id = curOps.attributes.addition.itemid
+//          item.target = curOps.attributes.addition.target
+//        }
         // Make sure item id is an int
         item.id = parseInt(item.id)
         itemIds.push(item.id)
@@ -319,7 +298,251 @@ class EditorData {
         console.warn(note)
       }
     }
-    return {elements: elements, ednotes: filteredEdnotes, people: editorInfo.people}
+    return {elements: elements, ednotes: filteredEdnotes, people: editorInfo.people, info: editorInfo.info}
+  }
+  
+  static getMainLanguage(languageCounts) {
+    let max = 0
+    let mainLanguage = false
+    for (const lang in languageCounts) {
+      if (languageCounts[lang]===0) {
+        continue
+      }
+      if (languageCounts[lang]>= max) {
+        max = languageCounts[lang]
+        mainLanguage = lang
+      }
+    }
+    return mainLanguage
+  }
+  /**
+   * Builds an  
+   * @param {Object} columnData
+   * @param {int} editorId
+   * @param {Object} langDef
+   * @param {int} minItemId
+   * @param {array} formatBlots
+   * @returns {delta, mainLanguage, minItemId}
+   */
+  static getEditorDataFromApiData(columnData, editorId, langDef, minItemId, formatBlots)
+  {
+    const ops = []
+    const formats = []
+    const additionTargetTexts = []
+    
+    additionTargetTexts[0] = '[none]'
+    
+    let languageCounts = {}
+    for (const lang in langDef) {
+      languageCounts[lang] = 0
+    }
+    
+    formats[ELEMENT_HEAD] = 'headelement'
+    formats[ELEMENT_CUSTODES] = 'custodes'
+    formats[ELEMENT_PAGE_NUMBER] = 'pagenumber'
+
+    for (const ele of columnData.elements) {
+      const attr = {}
+      switch (ele.type) {
+        case ELEMENT_LINE_GAP:
+          ops.push({
+            insert: {
+              linegap : {
+                editorid: editorId,
+                thelength: ele.reference
+              }
+            }
+          })
+          break;
+        
+        case ELEMENT_LINE:
+        case ELEMENT_HEAD:
+        case ELEMENT_CUSTODES:
+        case ELEMENT_GLOSS:
+        case ELEMENT_ADDITION:
+        case ELEMENT_PAGE_NUMBER:
+          for (const item of ele.items) {
+            minItemId = Math.min(minItemId, item.id)
+            // Simple format blots
+            let foundBlot = false
+            for (const theBlot of formatBlots) {
+              if (theBlot.type === item.type) {
+                if (theBlot.canBeTarget) {
+                  additionTargetTexts[item.id] = theBlot.title + ': ' + item.theText
+                }
+                let theOps = {
+                  insert: item.theText
+                }
+                theOps.attributes = {lang: item.lang}
+                theOps.attributes[theBlot.name] = {
+                    itemid: item.id,
+                    editorid: editorId,
+                    handid: item.handId
+                }
+                if (theBlot.alttext !== undefined) {
+                  theOps.attributes[theBlot.name].alttext = item.altText
+                }
+                if (theBlot.extrainfo !== undefined) {
+                  theOps.attributes[theBlot.name].extrainfo = item.extraInfo
+                }
+                if (theBlot.target !== undefined) {
+                  theOps.attributes[theBlot.name].target = item.target
+                  theOps.attributes[theBlot.name].targetText = additionTargetTexts[item.target]
+                }
+                ops.push(theOps)
+                languageCounts[item.lang]++
+                foundBlot = true
+                break
+              }
+            }
+            if (foundBlot) {
+              continue
+            }
+            switch (item.type) {
+              case ITEM_TEXT:
+                ops.push({
+                  insert: item.theText,
+                  attributes: {
+                    lang: item.lang
+                  }
+                })
+                break
+
+              case ITEM_MARK:
+                ops.push({
+                  insert: {
+                    mark: {
+                      itemid: item.id,
+                      editorid: editorId
+                    }
+                  }
+                })
+                break
+                
+              case ITEM_NO_WORD_BREAK:
+                ops.push({
+                  insert: {
+                    nowb: {
+                      itemid: item.id,
+                      editorid: editorId
+                    }
+                  }
+                })
+                break
+
+//              case ITEM_ADDITION:
+//                ops.push({
+//                  insert: item.theText,
+//                  attributes: {
+//                    addition: {
+//                      extrainfo: item.extraInfo,
+//                      target: item.target,
+//                      targetText: additionTargetTexts[item.target],
+//                      itemid: item.id,
+//                      editorid: editorId
+//                    },
+//                    lang: item.lang
+//                  }
+//                })
+//                break
+
+              case ITEM_ILLEGIBLE:
+                ops.push({
+                  insert: {
+                    illegible: {
+                      thelength: item.length,
+                      extrainfo: item.extraInfo,
+                      itemid: item.id,
+                      editorid: editorId
+                    }
+                  }
+                })
+                break
+                
+              case ITEM_CHUNK_MARK:
+                ops.push({
+                  insert: {
+                    chunkmark: {
+                      alttext: item.altText,
+                      text: item.theText,
+                      target: item.target,
+                      itemid: item.id,
+                      editorid: editorId
+                    }
+                  }
+                })
+                break
+                
+              case ITEM_CHARACTER_GAP: 
+                ops.push({
+                  insert: {
+                    chgap: {
+                      thelength: item.length,
+                      itemid: item.id,
+                      editorid: editorId
+                    }
+                  }
+                })
+                break;
+                
+              case ITEM_PARAGRAPH_MARK:
+                ops.push({
+                  insert: {
+                    pmark: {
+                      itemid: item.id,
+                      editorid: editorId
+                    }
+                  }
+                })
+                break
+                
+              default:
+                console.warn('Unrecognized item type ' + item.type + ' when setting editor data')
+            }
+            languageCounts[item.lang]++
+          }
+          break
+          
+          // no default
+      }
+      
+      switch(ele.type) {
+        case ELEMENT_GLOSS:
+          ops.push({
+            insert: '\n',
+            attributes: {
+              gloss:  {
+                elementId: ele.id,
+                place: ele.placement
+              }
+            }
+          })
+          break;
+          
+          case ELEMENT_ADDITION:
+            //onsole.log("Addition element")
+            //console.log(ele)
+          ops.push({
+            insert: '\n',
+            attributes: {
+              additionelement:  {
+                elementId: ele.id,
+                place: ele.placement,
+                target: ele.reference
+              }
+            }
+          })
+          break;
+          
+        default:
+          attr[formats[ele.type]] = true
+          ops.push({insert: '\n', attributes: attr})
+          break;
+      }
+      
+    }
+    let mainLang = EditorData.getMainLanguage(languageCounts)
+    return { delta: {ops: ops}, mainLang: mainLang, minItemId: minItemId }
   }
   
 }

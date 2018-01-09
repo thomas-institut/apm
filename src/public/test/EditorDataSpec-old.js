@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-/* global expect, EditorData, ELEMENT_LINE, ITEM_TEXT, ELEMENT_CUSTODES, ELEMENT_HEAD, ELEMENT_LINE_GAP, ELEMENT_PAGE_NUMBER, ELEMENT_GLOSS, ELEMENT_ADDITION, ELEMENT_NOTE_MARK, ITEM_RUBRIC, ITEM_GLIPH, ITEM_INITIAL, ITEM_SIC, ITEM_ABBREVIATION, ITEM_DELETION, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_MARK, ITEM_NO_WORD_BREAK, ITEM_ILLEGIBLE, ITEM_CHUNK_MARK, TranscriptionEditor, ITEM_MATH_TEXT, ITEM_PARAGRAPH_MARK, ITEM_CHARACTER_GAP */
+/* global expect, EditorData, ELEMENT_LINE, ITEM_TEXT, ELEMENT_CUSTODES, ELEMENT_HEAD, ELEMENT_LINE_GAP, ELEMENT_PAGE_NUMBER, ELEMENT_GLOSS, ELEMENT_ADDITION, ELEMENT_NOTE_MARK, ITEM_RUBRIC, ITEM_GLIPH, ITEM_INITIAL, ITEM_SIC, ITEM_ABBREVIATION, ITEM_DELETION, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_MARK, ITEM_NO_WORD_BREAK, ITEM_ILLEGIBLE, ITEM_CHUNK_MARK */
 
 describe("EditorData", function() {
 
@@ -39,7 +39,7 @@ describe("EditorData", function() {
     
     it("should return empty arrays on empty delta", function (){
       let emptyDelta = {ops:[]}
-      let apiData = EditorData.getApiDataFromQuillDelta( emptyDelta, editorInfo, TranscriptionEditor.blockBlots, TranscriptionEditor.formatBlots)
+      let apiData = EditorData.getApiDataFromQuillDelta( emptyDelta, editorInfo)
       expect(apiData.elements).toBeDefined()
       expect(apiData.people).toBeDefined()
       expect(apiData.ednotes).toBeDefined()
@@ -51,7 +51,7 @@ describe("EditorData", function() {
           {insert: 'Line 1\nLine 2\nLine 3\n'}
         ]
       }
-      let apiData = EditorData.getApiDataFromQuillDelta( bareTextDelta, editorInfo, TranscriptionEditor.blockBlots, TranscriptionEditor.formatBlots)
+      let apiData = EditorData.getApiDataFromQuillDelta( bareTextDelta, editorInfo)
       expect(apiData.elements).toBeDefined()
       expect(apiData.people).toBeDefined()
       expect(apiData.ednotes).toBeDefined()
@@ -83,7 +83,7 @@ describe("EditorData", function() {
           {insert: '\n'}
         ]
       }
-      let apiData = EditorData.getApiDataFromQuillDelta( delta, editorInfo, TranscriptionEditor.blockBlots, TranscriptionEditor.formatBlots)
+      let apiData = EditorData.getApiDataFromQuillDelta( delta, editorInfo)
       expect(apiData.elements).toBeDefined()
       expect(apiData.people).toBeDefined()
       expect(apiData.ednotes).toBeDefined()
@@ -116,14 +116,14 @@ describe("EditorData", function() {
         ops: [ 
           {insert: {mark: {itemid: 100}}},
           {insert: {nowb: {itemid: 101}}},
-          {insert: {illegible: {itemid: 102, extrainfo: 'some reason', thelength: 5}}},
-          {insert: {chunkmark: {itemid: 103, alttext: 'start', target: '45', text: 'AW47'}}},
-          {insert: {chgap: {itemid: 104, thelength: 5}}},
+          {insert: {illegible: {itemid: 102, reason: 'some reason', length: 5}}},
+          {insert: {chunkmark: {itemid: 103, type: 'start', chunkno: '45', dareid: 'AW47'}}},
+          {insert: {chgap: {itemid: 104, length: 5}}},
           {insert: {pmark: {itemid: 105}}},
           {insert: '\n'}
         ]
       }
-      let apiData = EditorData.getApiDataFromQuillDelta( delta, editorInfo, TranscriptionEditor.blockBlots, TranscriptionEditor.formatBlots)
+      let apiData = EditorData.getApiDataFromQuillDelta( delta, editorInfo)
       expect(apiData.elements).toBeDefined()
       expect(apiData.people).toBeDefined()
       expect(apiData.ednotes).toBeDefined()
@@ -144,8 +144,6 @@ describe("EditorData", function() {
       
       expect(apiData.elements[0].items[2].type).toBe(ITEM_ILLEGIBLE)
       expect(apiData.elements[0].items[2].theText).toBe('')
-      expect(apiData.elements[0].items[2].length).toBe(5)
-      expect(apiData.elements[0].items[2].extraInfo).toBe('some reason')
       
       expect(apiData.elements[0].items[3].type).toBe(ITEM_CHUNK_MARK)
       expect(apiData.elements[0].items[3].theText).toBe('AW47')
@@ -156,6 +154,7 @@ describe("EditorData", function() {
       
       expect(apiData.elements[0].items[5].type).toBe(ITEM_PARAGRAPH_MARK)
       expect(apiData.elements[0].items[5].theText).toBe('')
+     
       
     })
     
@@ -181,9 +180,9 @@ describe("EditorData", function() {
           {insert: '\n'}
         ]
       }
-      //console.log("---- LINE GAP test ---")
-      let apiData = EditorData.getApiDataFromQuillDelta( delta, editorInfo, TranscriptionEditor.blockBlots, TranscriptionEditor.formatBlots)
-      //console.log(apiData)
+      console.log("---- LINE GAP test ---")
+      let apiData = EditorData.getApiDataFromQuillDelta( delta, editorInfo)
+      console.log(apiData)
       expect(apiData.elements).toBeDefined()
       expect(apiData.people).toBeDefined()
       expect(apiData.ednotes).toBeDefined()
@@ -227,10 +226,10 @@ describe("EditorData", function() {
       let delta = {  
         ops: [ 
           {insert: 'Text'},
-          {attributes: {headelement:true}, insert:"\n"}
+          {attributes: {head:true}, insert:"\n"}
         ]
       }
-      let apiData = EditorData.getApiDataFromQuillDelta( delta, editorInfo, TranscriptionEditor.blockBlots, TranscriptionEditor.formatBlots)
+      let apiData = EditorData.getApiDataFromQuillDelta( delta, editorInfo)
       expect(apiData.elements).toBeDefined()
       expect(apiData.people).toBeDefined()
       expect(apiData.ednotes).toBeDefined()
@@ -253,7 +252,7 @@ describe("EditorData", function() {
           {attributes: {gloss: {elementId: gElementId, place: gPlace}}, insert:"\n"}
         ]
       }
-       let apiData = EditorData.getApiDataFromQuillDelta( delta, editorInfo, TranscriptionEditor.blockBlots, TranscriptionEditor.formatBlots)
+       let apiData = EditorData.getApiDataFromQuillDelta( delta, editorInfo)
       expect(apiData.elements).toBeDefined()
       expect(apiData.people).toBeDefined()
       expect(apiData.ednotes).toBeDefined()
@@ -275,7 +274,7 @@ describe("EditorData", function() {
           {attributes: {pagenumber:true}, insert:"\n"}
         ]
       }
-      let apiData = EditorData.getApiDataFromQuillDelta( delta, editorInfo, TranscriptionEditor.blockBlots, TranscriptionEditor.formatBlots)
+      let apiData = EditorData.getApiDataFromQuillDelta( delta, editorInfo)
       expect(apiData.elements).toBeDefined()
       expect(apiData.people).toBeDefined()
       expect(apiData.ednotes).toBeDefined()
@@ -296,7 +295,7 @@ describe("EditorData", function() {
           {attributes: {custodes:true}, insert:"\n"}
         ]
       }
-      let apiData = EditorData.getApiDataFromQuillDelta( delta, editorInfo, TranscriptionEditor.blockBlots, TranscriptionEditor.formatBlots)
+      let apiData = EditorData.getApiDataFromQuillDelta( delta, editorInfo)
       expect(apiData.elements).toBeDefined()
       expect(apiData.people).toBeDefined()
       expect(apiData.ednotes).toBeDefined()
@@ -324,7 +323,7 @@ describe("EditorData", function() {
           {attributes: {additionelement: {elementId: aElementId, place: aPlace, target: aTarget}}, insert:"\n"}
         ]
       }
-       let apiData = EditorData.getApiDataFromQuillDelta( delta, editorInfo, TranscriptionEditor.blockBlots, TranscriptionEditor.formatBlots)
+       let apiData = EditorData.getApiDataFromQuillDelta( delta, editorInfo)
       expect(apiData.elements).toBeDefined()
       expect(apiData.people).toBeDefined()
       expect(apiData.ednotes).toBeDefined()
@@ -346,11 +345,11 @@ describe("EditorData", function() {
       let lgLineCount = 5
       let delta = { 
         ops: [ 
-          {insert:{linegap:{editorid:lgEditorId, thelength:lgLineCount}}},
+          {insert:{linegap:{editorid:lgEditorId,linecount:lgLineCount}}},
           {insert:"\n"}
         ]
       }
-      let apiData = EditorData.getApiDataFromQuillDelta( delta, editorInfo, TranscriptionEditor.blockBlots, TranscriptionEditor.formatBlots)
+      let apiData = EditorData.getApiDataFromQuillDelta( delta, editorInfo)
       expect(apiData.elements).toBeDefined()
       expect(apiData.people).toBeDefined()
       expect(apiData.ednotes).toBeDefined()
@@ -370,7 +369,7 @@ describe("EditorData", function() {
           {insert: '\nLine 2\n'}
         ]
       }
-      let apiData = EditorData.getApiDataFromQuillDelta( delta, editorInfo, TranscriptionEditor.blockBlots, TranscriptionEditor.formatBlots)
+      let apiData = EditorData.getApiDataFromQuillDelta( delta, editorInfo)
       expect(apiData.elements).toBeDefined()
       expect(apiData.people).toBeDefined()
       expect(apiData.ednotes).toBeDefined()
@@ -385,350 +384,12 @@ describe("EditorData", function() {
       expect(ele2.items.length).toBe(1)
       expect(ele2.items[0].lang).toBe('la')
       expect(ele2.items[0].theText).toBe('Line 2')
+      
     })
+    
+      
   })
-  
-  describe("getEditorDataFromApiData", function (){
     
-    let langDef = TranscriptionEditor.getOptions([]).langDef
-    let formatBlots = TranscriptionEditor.formatBlots
-    let blockBlots = TranscriptionEditor.blockBlots
-    let minimalColumnData = {elements: []}
-    let editorId = 123456
-    
-    it("should return empty delta on empty column data", function () {
-      
-      
-      let editorData = EditorData.getEditorDataFromApiData(minimalColumnData, editorId, langDef, 0)
-      
-      expect(editorData.delta).toBeDefined()
-      expect(editorData.delta.ops).toBeDefined()
-      expect(editorData.mainLang).toBeDefined()
-      expect(editorData.minItemId).toBeDefined()
-      expect(editorData.minItemId).toBe(0)
-     
-    })
-    
-    it("should support simple formats: rubric, initial, gliph, math text, sic, abbr, unclear, deletion", function () {
-      
-      let columnData = JSON.parse(`
-{
-  "elements": [
-    {
-      "id": 1,
-      "pageId": 1,
-      "columnNumber": 1,
-      "lang": "la",
-      "editorId": 1,
-      "type": 1,
-      "seq": 0,
-      "items": [
-        {
-          "id": 1,
-          "columnElementId": 1,
-          "seq": 0,
-          "type": 2,
-          "lang": "la",
-          "theText": "Rubric",
-          "altText": null,
-          "extraInfo": null,
-          "length": null,
-          "target": null
-        },
-        {
-          "id": 2,
-          "columnElementId": 1,
-          "seq": 1,
-          "type": 13,
-          "lang": "la",
-          "theText": "Initial",
-          "altText": null,
-          "extraInfo": null,
-          "length": null,
-          "target": null
-        },
-        {
-          "id": 3,
-          "columnElementId": 1,
-          "seq": 2,
-          "type": 6,
-          "lang": "la",
-          "theText": "Gliph",
-          "altText": null,
-          "extraInfo": null,
-          "length": null,
-          "target": null
-        },
-        {
-          "id": 4,
-          "columnElementId": 1,
-          "seq": 3,
-          "type": 17,
-          "lang": "la",
-          "theText": "MathText",
-          "altText": null,
-          "extraInfo": null,
-          "length": null,
-          "target": null
-        },
-        {
-          "id": 5,
-          "columnElementId": 1,
-          "seq": 4,
-          "type": 3,
-          "lang": "la",
-          "theText": "Sic",
-          "altText": "correction",
-          "extraInfo": null,
-          "length": null,
-          "target": null
-        },
-        {
-          "id": 6,
-          "columnElementId": 1,
-          "seq": 5,
-          "type": 11,
-          "lang": "la",
-          "theText": "Abbr",
-          "altText": "abbreviation",
-          "extraInfo": null,
-          "length": null,
-          "target": null
-        },
-        {
-          "id": 7,
-          "columnElementId": 1,
-          "seq": 6,
-          "type": 4,
-          "lang": "la",
-          "theText": "Unclear",
-          "altText": "altreading",
-          "extraInfo": "unclear",
-          "length": null,
-          "target": null
-        },
-        {
-          "id": 8,
-          "columnElementId": 1,
-          "seq": 7,
-          "type": 8,
-          "lang": "la",
-          "theText": "Deletion",
-          "altText": null,
-          "extraInfo": "strikeout",
-          "length": null,
-          "target": null
-        }
-      ],
-      "reference": null,
-      "placement": null
-    }
-  ],
-  "ednotes": [],
-  "people": [
-    {
-      "fullname": "No editor"
-    },
-    {
-      "fullname": "Editor 1"
-    }
-  ],
-  "info": {
-    "pageId": 1,
-    "col": 1,
-    "lang": "la",
-    "numCols": 1
-  }
-}
-`)
-      let itemSequence = [
-        { name: 'rubric', itemid: 1, text: 'Rubric' },
-        { name: 'initial', itemid: 2, text: 'Initial' },
-        { name: 'gliph', itemid: 3, text: 'Gliph' },
-        { name: 'mathtext', itemid: 4, text: 'MathText' },
-        { name: 'sic', itemid: 5, text: 'Sic', alttext: 'correction' },
-        { name: 'abbr', itemid: 6, text: 'Abbr', alttext: 'abbreviation' },
-        { name: 'unclear', itemid: 7, text: 'Unclear', alttext: 'altreading' },
-        { name: 'deletion', itemid: 8, text: 'Deletion', extrainfo: 'strikeout' }
-      ]
-      
-      let editorData = EditorData.getEditorDataFromApiData(columnData, editorId, langDef, 0, formatBlots)
-      
-      expect(editorData.delta).toBeDefined()
-      expect(editorData.delta.ops).toBeDefined()
-      expect(editorData.mainLang).toBeDefined()
-      expect(editorData.minItemId).toBeDefined()
-      expect(editorData.mainLang).toBe('la')
-      expect(editorData.minItemId).toBe(0)
-      
-      let ops = editorData.delta.ops
-      
-      expect(ops.length).toBe(itemSequence.length+1) // one per item plus a newline
-      for (let i=0; i < itemSequence.length; i++) {
-        let item = itemSequence[i]
-        expect(ops[i].insert).toBe(item.text)
-        expect(ops[i].attributes).toBeDefined()
-        expect(ops[i].attributes[item.name]).toBeDefined()
-        expect(ops[i].attributes[item.name].itemid).toBe(item.itemid)
-        expect(ops[i].attributes[item.name].editorid).toBe(editorId)
-        if (item.alttext !== undefined) {
-          expect(ops[i].attributes[item.name].alttext).toBe(item.alttext)
-        }
-        if (item.extrainfo !== undefined) {
-          expect(ops[i].attributes[item.name].extrainfo).toBe(item.extrainfo)
-        }
-      }
-    })
-    
-    it("should support basic elements: line, head, pagenumber, custodes", function() {
-      let columnData = JSON.parse(`
-{
-  "elements": [
-    {
-      "id": 1,
-      "pageId": 1,
-      "columnNumber": 1,
-      "lang": "la",
-      "editorId": 1,
-      "type": 2,
-      "seq": 0,
-      "items": [
-        {
-          "id": 1,
-          "columnElementId": 1,
-          "seq": 0,
-          "type": 1,
-          "lang": "la",
-          "theText": "Head",
-          "altText": null,
-          "extraInfo": null,
-          "length": null,
-          "target": null
-        }
-      ],
-      "reference": null,
-      "placement": null
-    },
-    {
-      "id": 2,
-      "pageId": 1,
-      "columnNumber": 1,
-      "lang": "la",
-      "editorId": 1,
-      "type": 4,
-      "seq": 1,
-      "items": [
-        {
-          "id": 2,
-          "columnElementId": 2,
-          "seq": 0,
-          "type": 1,
-          "lang": "la",
-          "theText": "PageNumber",
-          "altText": null,
-          "extraInfo": null,
-          "length": null,
-          "target": null
-        }
-      ],
-      "reference": null,
-      "placement": null
-    },
-    {
-      "id": 3,
-      "pageId": 1,
-      "columnNumber": 1,
-      "lang": "la",
-      "editorId": 1,
-      "type": 5,
-      "seq": 2,
-      "items": [
-        {
-          "id": 3,
-          "columnElementId": 3,
-          "seq": 0,
-          "type": 1,
-          "lang": "la",
-          "theText": "Custodes",
-          "altText": null,
-          "extraInfo": null,
-          "length": null,
-          "target": null
-        }
-      ],
-      "reference": null,
-      "placement": null
-    },
-    {
-      "id": 4,
-      "pageId": 1,
-      "columnNumber": 1,
-      "lang": "la",
-      "editorId": 1,
-      "type": 1,
-      "seq": 3,
-      "items": [
-        {
-          "id": 4,
-          "columnElementId": 4,
-          "seq": 0,
-          "type": 1,
-          "lang": "la",
-          "theText": "Line",
-          "altText": null,
-          "extraInfo": null,
-          "length": null,
-          "target": null
-        }
-      ],
-      "reference": null,
-      "placement": null
-    }
-  ],
-  "ednotes": [],
-  "people": [
-    {
-      "fullname": "No editor"
-    },
-    {
-      "fullname": "Editor 1"
-    }
-  ],
-  "info": {
-    "pageId": 1,
-    "col": 1,
-    "lang": "la",
-    "numCols": 1
-  }
-}
-`)
-      let elementSequence = [
-        { name: 'headelement', text: 'Head' },
-        { name: 'pagenumber', text: 'PageNumber'},
-        { name: 'custodes', text: 'Custodes' },
-        { text: 'Line' }
-      ]
-      
-      let editorData = EditorData.getEditorDataFromApiData(columnData, editorId, langDef, 0, formatBlots)
-      expect(editorData.delta).toBeDefined()
-      expect(editorData.delta.ops).toBeDefined()
-      expect(editorData.mainLang).toBeDefined()
-      expect(editorData.minItemId).toBeDefined()
-      expect(editorData.mainLang).toBe('la')
-      expect(editorData.minItemId).toBe(0)
-      
-      let ops = editorData.delta.ops
-      
-      expect(ops.length).toBe(2*elementSequence.length) // each element generates a text and a \n
-      for (let i=0; i < elementSequence.length; i++) {
-        let textOp = ops[2*i]
-        let newLineOp = ops[2*i+1]
-        let element = elementSequence[i]
-        expect(newLineOp.attributes[element.name]).toBe(true)
-        expect(textOp.insert).toBe(element.text)
-      }
-    })
-  })
 })
   
 

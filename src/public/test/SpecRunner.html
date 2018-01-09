@@ -13,18 +13,25 @@
 
   <!-- Requirements -->
   <script type="application/javascript" src="../node_modules/quill/dist/quill.min.js"></script>
+  <script type="text/javascript" src="../node_modules/twig/twig.js"></script>
 
   <!-- Things to test -->
   <script src="../js/Item.js"></script>
   <script src="../js/Element.js"></script>
-  <script src="../js/EditorBlots.js"></script>
-  <script src="../js/EditorData.js"></script>
-  <script src="../js/TranscriptionEditor.js"></script>
+  <script src="../js/TranscriptionEditor2.js"></script>
   <script src="../js/PageRange.js"></script>
+
+  <script>
+    TranscriptionEditor.init()
+  </script>
+  
+   <script src="../js/TranscriptionEditorBlots.js"></script>
+   <script src="../js/TranscriptionEditorBlotConfig.js"></script>
+   <script src="../js/EditorData2.js"></script>
 
    <!-- SPEC files -->
    <script src="TranscriptionEditorSpec.js"></script>
-   <script src="EditorDataSpec.js"></script>
+   <script src="EditorDataSpec2.js"></script>
    <script src="PageRangeSpec.js"></script>
 </head>
 

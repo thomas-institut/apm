@@ -865,9 +865,12 @@ class TranscriptionEditor
     this.people = columnData.people
     this.pageId = columnData.info.pageId
     this.columnNumber = columnData.info.col
-    this.pageDefaultLang = columnData.info.lang
+    this.pageDefaultLang = columnData.info.lang ? columnData.info.lang : this.defaultLang
     
-    console.log(columnData)
+    
+    
+    
+    //console.log(columnData)
     
     let editorData = EditorData.getEditorDataFromApiData(columnData, this.id, this.options.langDef, this.minItemId, TranscriptionEditor.formatBlots)
   
@@ -1882,7 +1885,7 @@ class TranscriptionEditor
   {
     const editorObject = TranscriptionEditor.editorsById[value.editorid]
     $(node).on('load', function() {
-      console.log('Image loaded')
+      //console.log('Image loaded')
       editorObject.numberLines()
     })
   }

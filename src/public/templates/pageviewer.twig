@@ -20,7 +20,7 @@
     <script type="text/javascript" src="{{baseurl}}/node_modules//twig/twig.js"></script>
     
     <script type="application/javascript" src="{{baseurl}}/node_modules/quill/dist/quill.min.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/ApiUrl.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/ApmUrlGenerator.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/Item.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/Element.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/TranscriptionEditor.js"></script>
@@ -31,20 +31,33 @@
     <script type="application/javascript" src="{{baseurl}}/js/PageViewer.js"></script>
     <link href='{{baseurl}}/images/averroes-icon.png' rel='icon' sizes='16x16' type='image/png'>
     <script>
-        pageNumber = {{ page }}
-        seq = {{ seq }}
-        pageNumberFoliation = '{{ pageNumberFoliation }}'
-        pageSystemId = {{pageInfo.id}}
-        docId = {{ doc }}
-        apiBase = '{{ baseurl }}'
-        userId = {{userinfo.id}}
-        defaultLang = '{{pageInfo.lang}}'
-        foliation = '{{pageInfo.foliation}}'
-        pageType = {{pageInfo.type}}
-        pageTypeNames = JSON.parse('{{pageTypeNames|json_encode|raw}}')
-        activeWorks = JSON.parse("{{activeWorks|json_encode|e('js')}}")
-
     TranscriptionEditor.init('{{baseurl}}')
+    
+    $(document).ready(function () {
+        let pv = new PageViewer({
+            baseUrl : '{{ baseurl }}',
+            urlGenerator: new ApmUrlGenerator('{{ baseurl }}'),
+            imageUrl: '{{imageUrl}}',
+            pageType: {{pageInfo.type}},
+            foliation: '{{pageInfo.foliation}}',
+            pageNumber: {{ page }},
+            seq: {{ seq }},
+            pageNumberFoliation:'{{ pageNumberFoliation }}',
+            pageSystemId: {{pageInfo.id}},
+            docId: {{ doc }},
+            userId: {{ userinfo.id }},
+            defaultLang: '{{pageInfo.lang}}',
+            activeWorks: JSON.parse("{{activeWorks|json_encode|e('js')}}"),
+            langDef: { 
+                ar: { code: 'ar', name: 'Arabic', rtl: true, fontsize: 5}, 
+                jrb: { code: 'jrb', name: 'Judeo Arabic', rtl: true, fontsize: 3},
+                he: { code: 'he', name: 'Hebrew', rtl: true, fontsize: 3}, 
+                la: { code: 'la', name: 'Latin', rtl: false, fontsize: 3} 
+              },
+            pageTypeNames : JSON.parse('{{pageTypeNames|json_encode|raw}}'),
+            pagePopoverContent : '{{macros.pageviewtablepv(doc, thePages, navByPage)|escape('js')}}'
+        })
+    })
     </script>
 </head>
 <body>
@@ -128,26 +141,11 @@
 </div> <!-- viewerheader -->
 <!-- Page table popover -->
 <script>
-    $('#pagenumber').popover({title:'Page List', content: '{{macros.pageviewtablepv(doc, thePages, navByPage)|escape('js')}}', container: 'body', html: true, placement: 'auto', trigger: 'click'});
+
 </script>
 <div id="container">
 <div class="split-pane vertical-percent">
-    <div class="split-pane-component" id="left-component">
-            </div>
-            
-            <script type="text/javascript">
-                var viewer = OpenSeadragon({
-                    id: "left-component",
-                    prefixUrl: "{{baseurl}}/node_modules/openseadragon/build/openseadragon/images/",
-                    maxZoomPixelRatio: 3,
-                    tileSources: {
-                        type: 'image',
-                        url:  '{{imageUrl}}',
-                        buildPyramid: false, 
-                        homeFillsViewer: true
-                    }
-                });
-            </script>
+    <div class="split-pane-component" id="left-component"></div>
     <div class="split-pane-divider" id="divider"></div>
     <div class="split-pane-component" id="right-component">
         <ul class="nav nav-tabs" id="tabsUl">

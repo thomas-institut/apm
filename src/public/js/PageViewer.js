@@ -17,194 +17,203 @@
  */
 
 
-/* global TranscriptionEditor, pageTypeNames, pageType, pageSystemId, foliation, activeWorks */
+/* global TranscriptionEditor */
 
-let pageNumber = 0
-let docId = 0
-let apiBase = ''
-let numColumns = 0
-let userId = 0
-let defaultLang = ''
-const cols = []
-
-$(document).ready(function () {
+ 
+class PageViewer {  
   
-  $('div.split-pane').splitPane()
-  
-  $('div.split-pane').on('dividerdragend', function (e){
-    for (const te of TranscriptionEditor.editors) {
-      // TODO: optimize, renumber lines only for active tab
-      // if the tab's text is LTR 
-      te.numberLines()
-    }
-  })
-  
-  apiGetColumnInfoUrl = apiBase + '/api/' + docId + '/' +
-            pageNumber + '/numcolumns'
-  apiAddColumnUrl = apiBase + '/api/' + docId + '/' +
-            pageNumber + '/newcolumn'
+  constructor (options){
+    this.options = options
+    let pathFor = options.urlGenerator
     
-  apiUpdatePageSettingsUrl = apiBase + '/api/page/' + pageSystemId + '/update'
-
-  $('#realAddColumnButton').click(function () {
-    //console.log('I should add a column now!')
-    $.getJSON(apiAddColumnUrl, function (resp) {
-      location.replace('')
-    })
-  })
-  
-  
-  $('#editPageSubmitButton').click( function () {
-    console.log('Updating page settings')
-    console.log($('#pageSettingsForm').serialize())
-    $.post(
-      apiUpdatePageSettingsUrl, $('#pageSettingsForm').serialize())
-    .done(function () { 
-      location.replace('')         
-    })
-    .fail(function() {
-      console.log("Error updating page settings")
-    })
-
-  })
-  
-  $('#editPageButton').click(function () {
-    const langs = ['ar', 'he', 'la', 'jrb']
-    const langLabels = { ar: 'Arabic', he: 'Hebrew', la: 'Latin', jrb: 'Judeo Arabic'}
-    let optionsHtml = ''
-    for (const lang of langs) {
-      optionsHtml += '<option value="' + lang + '"'
-      if (defaultLang === lang) {
-        optionsHtml += ' selected'
+    this.osdViewer = OpenSeadragon({
+      id: "left-component",
+      prefixUrl: pathFor.openSeaDragonImagePrefix(),
+      maxZoomPixelRatio: 3,
+      tileSources: {
+          type: 'image',
+          url:  options.imageUrl,
+          buildPyramid: false, 
+          homeFillsViewer: true
       }
-      optionsHtml += '>' + langLabels[lang] + '</option>'
-    }
-    $('#editPage-lang').html(optionsHtml)
-    
-    let optionsType = ''
-    for (const type of pageTypeNames) {
-      optionsType += '<option value="' + type.id + '"'
-      if (pageType === parseInt(type.id)) {
-        optionsType += ' selected'
-      }
-      optionsType += '>' + type.descr + '</option>'
-    }
-    $('#editPage-type').html(optionsType)
-    
-    
-    $('#editPage-foliation').val(foliation)
-    $('#editPageModal').modal('show')
-  })
+    })
+        
+    $('#pagenumber').popover({
+      title:'Page List', 
+      content: options.pagePopoverContent, 
+      container: 'body', 
+      html: true, 
+      placement: 'auto', 
+      trigger: 'click'
+    })
 
-  // Load columns
-  $.getJSON(apiGetColumnInfoUrl, function (resp) {
-    const numColumns = resp
-    const thePageNumber = pageNumber
-    if (numColumns === 0) {
-      $('#pageinfoTab').addClass('active')
-    } else {
+    $('div.split-pane').splitPane()
+    $('div.split-pane').on('dividerdragend', function (e){
+      for (const te of TranscriptionEditor.editors) {
+        // TODO: optimize, renumber lines only for active tab
+        // if the tab's text is LTR 
+        te.numberLines()
+      }
+    })
+    
+    let apiAddColumnUrl = pathFor.apiAddColumn(this.options.docId, this.options.pageNumber)
+    $('#realAddColumnButton').click(function () {
+      //console.log('I should add a column now!')
+      $.getJSON(apiAddColumnUrl, function (resp) {
+        location.replace('')
+      })
+    })
+
+    $('#editPageSubmitButton').on('click', 
+      this.genOnClickEditPageSubmitButton())
+      
+    $('#editPageButton').on('click', 
+      this.genOnClickEditPageButton())
+      
+    // Load columns
+    $.getJSON(pathFor.apiGetNumColumns(this.options.docId, this.options.pageNumber), 
+      this.genOnLoadNumColumns())
+  }
+  
+  genOnLoadNumColumns(){
+    let thisObject = this
+    let pathFor = thisObject.options.urlGenerator
+    
+    return function (numColumns) {
+      const thePageNumber = thisObject.options.pageNumber
+      if (numColumns === 0) {
+        $('#pageinfoTab').addClass('active')
+        return true
+      } 
+      
       for (let col = 1; col <= numColumns; col++) {
         let theUl = '<li id="colheader' + col + '">'
         theUl += '<a data-toggle="tab" id="col-label-' + col + '" href="#col' + col +
-                  '">Column ' + col + '</a></li>'
+                '">Column ' + col + '</a></li>'
         $('#tabsUl').append(theUl)
       }
-      
       for (let col = 1; col <= numColumns; col++) {
-        const getApiUrl = apiBase + '/api/' + docId + '/' + thePageNumber + '/' + col + '/elements'
-        const updateApiUrl = getApiUrl + '/update'
+        let apiGetColumnDataUrl = pathFor.apiGetColumnData(thisObject.options.docId, thePageNumber, col)
         $.getJSON(
-          getApiUrl, 
-          function (resp) {
-              $('.nav-tabs a').click(function () {
-                $(this).tab('show')
-              })
-              //console.log(resp)
-              const theCol = resp.info.col
-              let theDiv = '<div class="textcol tab-pane'
-              if (theCol === 1) {
-                theDiv += ' active'
-              }
-              theDiv += '" id="col' + col + '"></div>'
-              $('#theTabs').append(theDiv)
-              const te = new TranscriptionEditor(
-                  'col' + theCol, 
-                  theCol,
-                  { editorId: userId , activeWorks: activeWorks}
-                  );
-              te.setData(resp)
-              te.on('editor-enable',function (e) {
-                $('#col-label-' + theCol).html('Column ' + theCol + ' (editing)')
-              })
-              te.on('editor-disable', function (e) {
-                $('#col-label-' + theCol).html('Column ' + theCol)
-              })
-              
-              $('#col-label-' + theCol).on('shown.bs.tab', function (e){
-                 te.numberLines()
-              })
-              
-              te.on('editor-save', function(e){
-                const currentData = te.getData();
-                console.log('Current data from editor...')
-                console.log(currentData)
-                $.post(
-                  updateApiUrl, 
-                  { data: JSON.stringify(currentData) }
-                ).done(function () { 
-                  $.getJSON(getApiUrl, function (newResp){
-                    //console.log(newResp)
-                    console.log('Data from API...')
-                    console.log(newResp)
-                    te.saveSuccess(newResp)
-                  })
-                }).fail(function(resp) {
-                  te.saveFail('Status: ' + resp.status + ' Error: ' + resp.responseJSON.error)
-                })
-              });
-              
-              te.on('editor-reset',function(e){
-                //console.log("Resetting...")
-              });
-              
-              $(window).on('beforeunload', function(e) {
-                //console.log("Before unload")
-                if (te.contentsChanged) {
-                  //console.log("There are changes in editor")
-                  return false // make the browser show a message confirming leave
-                }
-              });
-              if (theCol === 1) {
-                $('#colheader' + theCol).tab('show')
-              }
+          apiGetColumnDataUrl, 
+          function (respColData) {
+            $('.nav-tabs a').click(function () {
+              $(this).tab('show')
+            })
+          const theCol = respColData.info.col
+          let theDiv = '<div class="textcol tab-pane'
+          if (theCol === 1) {
+              theDiv += ' active'
           }
-        )
+          theDiv += '" id="col' + col + '"></div>'
+          $('#theTabs').append(theDiv)
+          const te = new TranscriptionEditor('col' + theCol, theCol,
+            { 
+              editorId: thisObject.options.userId , 
+              activeWorks: thisObject.options.activeWorks, 
+              langDef: thisObject.options.langDef,
+              defaultLang: thisObject.options.defaultLang
+            }
+          )
+          te.setData(respColData)
+          te.on('editor-enable',function (e) {
+              $('#col-label-' + theCol).html('Column ' + theCol + ' (editing)')
+          })
+          te.on('editor-disable', function (e) {
+            $('#col-label-' + theCol).html('Column ' + theCol)
+           })
+
+           $('#col-label-' + theCol).on('shown.bs.tab', function (e){
+             te.numberLines()
+          })
+
+          te.on('editor-save', function(){
+            const currentData = te.getData();
+            console.log('Current data from editor...')
+            console.log(currentData)
+            $.post(
+              pathFor.apiUpdateColumnData(thisObject.options.docId, thePageNumber, col), 
+              { data: JSON.stringify(currentData) }
+            )
+            .done(function () { 
+                $.getJSON(apiGetColumnDataUrl, function (newColumnData){
+                  //console.log(newResp)
+                  console.log('Data from API...')
+                  console.log(newColumnData)
+                  te.saveSuccess(newColumnData)
+                })
+            })
+            .fail(function(resp) {
+              te.saveFail('Status: ' + resp.status + ' Error: ' + resp.responseJSON.error)
+            })
+          })
+
+          te.on('editor-reset',function(e){
+            //console.log("Resetting...")
+          });
+
+          $(window).on('beforeunload', function(e) {
+            if (te.contentsChanged) {
+              //console.log("There are changes in editor")
+              return false // make the browser show a message confirming leave
+            }
+          })
+          if (theCol === 1) {
+            $('#colheader' + theCol).tab('show')
+          }
+        })
       }
     }
-  })
-})
+  }
+  
+  genOnClickEditPageSubmitButton(){
+    let apiUpdatePageSettingsUrl = this.options.urlGenerator.apiUpdatePageSettings(this.options.pageSystemId)
+    
+    return function () {
+      //console.log('Updating page settings')
+      //console.log($('#pageSettingsForm').serialize())
+      $.post(
+        apiUpdatePageSettingsUrl, 
+        $('#pageSettingsForm').serialize())
+        .done(function () { 
+          location.replace('')         
+        })
+        .fail(function() {
+          console.log("Error updating page settings")
+        }
+      )
+    }
+  }
+  
+  genOnClickEditPageButton() {
+    let thisObject = this
+    return function () {
+
+      let optionsHtml = ''
+      let langDef = thisObject.options.langDef
+      for (const lang in langDef) {
+        optionsHtml += '<option value="' + lang + '"'
+        if (thisObject.defaultLang === lang) {
+          optionsHtml += ' selected'
+        }
+        optionsHtml += '>' + langDef[lang].name + '</option>'
+      }
+      $('#editPage-lang').html(optionsHtml)
+
+      let optionsType = ''
+      for (const type of thisObject.options.pageTypeNames) {
+        optionsType += '<option value="' + type.id + '"'
+        if (thisObject.options.pageType === parseInt(type.id)) {
+          optionsType += ' selected'
+        }
+        optionsType += '>' + type.descr + '</option>'
+      }
+      $('#editPage-type').html(optionsType)
 
 
-function getDefaultLang(elements) {
-  const languages = {
-    'ar':0,
-    'he':0,
-    'la':0,
-    'jrb':0
+      $('#editPage-foliation').val(thisObject.options.foliation)
+      $('#editPageModal').modal('show')
+    }
   }
 
-  for (let i = 0; i < elements.length; i++) {
-    languages[elements[i].lang]++
-  }
-  let lang='la'
-  if (languages.ar > languages.la) {
-    lang = 'ar'
-  }
-  if (languages.he > languages.ar) {
-    lang = 'he'
-  }
-  if (languages.jrb > languages.he) {
-    lang = 'jrb'
-  }
-  return lang
 }

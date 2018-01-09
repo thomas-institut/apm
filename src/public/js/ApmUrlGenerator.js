@@ -67,7 +67,7 @@ class ApmUrlGenerator {
     return this.base + '/api/user/' + id + '/makeroot'
   }
   
-  bulkPageSettings() {
+  apiBulkPageSettings() {
     return this.base + '/api/page/bulkupdate'
   }
   

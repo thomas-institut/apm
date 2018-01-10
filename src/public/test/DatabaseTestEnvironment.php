@@ -38,7 +38,7 @@ class DatabaseTestEnvironment {
         return new DataManager(self::getPdo(), 
                 $config['tables'], 
                 $logger,
-                $hm);
+                $hm, $config['langCodes']);
     }
     
     
@@ -69,7 +69,7 @@ EOD;
         
         $dbh = self::getPdo();
         $hm = new HookManager();
-        $db = new DataManager($dbh, $config['tables'], $logger, $hm);
+        $db = new DataManager($dbh, $config['tables'], $logger, $hm, $config['langCodes']);
         
         $container = new \Slim\Container();
         $container['db'] = $db;

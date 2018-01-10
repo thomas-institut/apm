@@ -133,7 +133,7 @@ $asisObject = new \AverroesServerImageSource($hm, $logger);
 $asisObject->init();
 
 // Data Manager
-$db = new DataManager($dbh, $config['tables'], $logger, $hm);
+$db = new DataManager($dbh, $config['tables'], $logger, $hm, $config['langCodes']);
  
 // Initialize the Slim app
 $app = new \Slim\App(["settings" => $config]);

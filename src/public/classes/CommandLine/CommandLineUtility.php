@@ -104,7 +104,7 @@ abstract class CommandLineUtility {
         
         $hm = new \AverroesProject\Plugin\HookManager();
         
-        $this->dm = new DataManager($this->dbh, $config['tables'], $this->logger, $hm);
+        $this->dm = new DataManager($this->dbh, $config['tables'], $this->logger, $hm, $config['langCodes']);
         $this->um = $this->dm->um;
     }
     

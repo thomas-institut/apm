@@ -127,18 +127,21 @@ class DataManager
      */
     public $hm;
     
+    
+    private $langCodes;
     /**
      * Tries to initialize and connect to the MySQL database.
      * 
      * Throws an error if there's no connection 
      * or if the database is not setup properly.
      */
-    function __construct($dbConn, $tableNames, $logger, $hm)
+    function __construct($dbConn, $tableNames, $logger, $hm, $langCodes = [])
     {
         $this->dbConn = $dbConn;
         $this->tNames = $tableNames;
         $this->logger = $logger;
         $this->hm = $hm;
+        $this->langCodes = $langCodes;
         $this->queryStats = new QueryStats();
         
         $this->dbh = new MySqlHelper($dbConn, $logger);
@@ -987,7 +990,7 @@ class DataManager
             return false;
         }
         
-        if (!in_array($element->lang, ['la', 'he', 'ar', 'jrb'])) {
+        if (!in_array($element->lang, $this->langCodes)) {
             $this->logger->error('Element with invalid language being inserted', 
                     ['pageid' => $element->pageId, 
                         'colnum' => $element->columnNumber, 

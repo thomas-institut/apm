@@ -403,14 +403,15 @@ class SiteController
             $imageSourceOptions .= '>' . $imageSource . '</option>';
         }
         
-        $languages = [ ['ar', 'Arabic'], ['he', 'Hebrew'], ['la', 'Latin']];
+        
+        $languages = $this->ci->settings['languages'];
         $langOptions = '';
         foreach($languages as $lang) {
-            $langOptions .= '<option value="' . $lang[0] . '"';
-            if ($docInfo['lang'] === $lang[0]) {
+            $langOptions .= '<option value="' . $lang['code'] . '"';
+            if ($docInfo['lang'] === $lang['code']) {
                 $langOptions  .= ' selected';
             }
-            $langOptions .= '>' . $lang[1] . '</option>';
+            $langOptions .= '>' . $lang['name'] . '</option>';
         }
         
         $docTypes = [ ['mss', 'Manuscript'], ['print', 'Print']];

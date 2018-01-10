@@ -51,19 +51,19 @@ class ApmUrlGenerator {
     return this.base + '/api/user/new'
   }
 
-  updateProfile (id) {
+  apiUpdateProfile (id) {
     return this.base + '/api/user/' + id + '/update'
   }
 
-  userGetInfo (id) {
+  apiUserGetInfo (id) {
     return this.base + '/api/user/' + id + '/info'
   }
 
-  userPasswordChange (id) {
+  apiUserPasswordChange (id) {
     return this.base + '/api/user/' + id + '/changepassword'
   }
 
-  userMakeRoot (id) {
+  apiUserMakeRoot (id) {
     return this.base + '/api/user/' + id + '/makeroot'
   }
   

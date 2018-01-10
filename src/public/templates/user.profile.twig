@@ -10,11 +10,14 @@ User profile template
 {% block extraJS %}
 
 <script type="application/javascript" src="{{baseurl}}/js/ApmUtil.js"></script>
-<script type="application/javascript" src="{{baseurl}}/js/ApiUrl.js"></script>
-<script type="application/javascript" src="{{baseurl}}/js/userprofile.js"></script>
+<script type="application/javascript" src="{{baseurl}}/js/ApmUrlGenerator.js"></script>
+<script type="application/javascript" src="{{baseurl}}/js/UserProfile.js"></script>
 <script>
-    ApiUrl.setBase('{{baseurl}}')
-    profileUserInfo = JSON.parse('{{theuser|json_encode|raw}}');
+    $(document).ready(function () {
+        let profileUserInfo = JSON.parse('{{theuser|json_encode|raw}}');
+        let urlGenerator = new ApmUrlGenerator('{{baseurl}}')
+        let up = new UserProfile(profileUserInfo, urlGenerator)
+    })
 </script>
 {% endblock %}
 

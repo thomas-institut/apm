@@ -20,9 +20,7 @@
 
 /* global ApmUtil */
 
-var profileUserInfo
-
-class UserProfile {
+class UserProfilePage {
   
   constructor(profileUserInfo, urlGenerator) {
     this.profileUserInfo = profileUserInfo

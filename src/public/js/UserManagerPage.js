@@ -20,7 +20,7 @@
 
 /* global ApmUtil */
 
-class UserManager {
+class UserManagerPage {
   
   constructor(options) {
     this.pathFor = options.urlGenerator

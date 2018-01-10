@@ -23,7 +23,7 @@
 /*eslint default-case: "error"*/
 /*eslint no-console: ["error", { allow: ["warn", "error"] }] */
 
-class DocEdit {
+class DocEditPage {
   
   
   constructor(prefix, docInfo, docEditApiUrl, cancelUrl) {

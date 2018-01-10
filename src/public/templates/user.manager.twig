@@ -10,10 +10,10 @@ User manager template
 {% block extraJS %}
 <script type="application/javascript" src="{{baseurl}}/js/ApmUtil.js"></script>
 <script type="application/javascript" src="{{baseurl}}/js/ApmUrlGenerator.js"></script>
-<script type="application/javascript" src="{{baseurl}}/js/UserManager.js"></script>
+<script type="application/javascript" src="{{baseurl}}/js/UserManagerPage.js"></script>
 <script>
     $(document).ready(function () {
-        let um = new UserManager({
+        let um = new UserManagerPage({
             urlGenerator: new ApmUrlGenerator('{{baseurl}}')
         })
     })

@@ -36,7 +36,7 @@ class ImportXmlFile extends CommandLineUtility {
     public function main($argc, $argv)
     {
        $defaults = [
-         'langs' => ['la', 'ar', 'he']
+         'langs' => $this->config['langCodes']
        ];
         
         if ($argc > 3) {

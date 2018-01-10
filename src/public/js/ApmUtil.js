@@ -122,6 +122,14 @@ class ApmUtil {
     }
     $(selector).html(optionsType)
   }
+  
+  static getLangDefFromLanguagesArray(langArray) {
+    let langDef = {}
+    for (const lang of langArray) {
+      langDef[lang['code']] = lang
+    }
+    return langDef
+  }
 }
 
 ApmUtil.someNum = 1

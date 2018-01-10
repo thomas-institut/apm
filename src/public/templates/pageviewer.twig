@@ -20,6 +20,7 @@
     <script type="text/javascript" src="{{baseurl}}/node_modules//twig/twig.js"></script>
     
     <script type="application/javascript" src="{{baseurl}}/node_modules/quill/dist/quill.min.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/ApmUtil.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/ApmUrlGenerator.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/Item.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/Element.js"></script>
@@ -48,12 +49,7 @@
             userId: {{ userinfo.id }},
             defaultLang: '{{pageInfo.lang}}',
             activeWorks: JSON.parse("{{activeWorks|json_encode|e('js')}}"),
-            langDef: { 
-                ar: { code: 'ar', name: 'Arabic', rtl: true, fontsize: 5}, 
-                jrb: { code: 'jrb', name: 'Judeo Arabic', rtl: true, fontsize: 3},
-                he: { code: 'he', name: 'Hebrew', rtl: true, fontsize: 3}, 
-                la: { code: 'la', name: 'Latin', rtl: false, fontsize: 3} 
-              },
+            langDef: ApmUtil.getLangDefFromLanguagesArray(JSON.parse("{{languagesArray|json_encode|e('js')}}")),
             pageTypeNames : JSON.parse('{{pageTypeNames|json_encode|raw}}'),
             pagePopoverContent : '{{macros.pageviewtablepv(doc, thePages, navByPage)|escape('js')}}'
         })

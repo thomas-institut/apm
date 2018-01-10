@@ -477,8 +477,8 @@ class SiteController
         $imageUrl = $this->db->getImageUrl($docId, $pageInfo['img_number']);
         $pageTypeNames  = $this->db->getPageTypeNames();
         $activeWorks = $this->db->getActiveWorks();
-        //$this->ci->logger->debug('Active Works', $activeWorks);
         $pageNumberFoliation = $pageNumber;
+        $languagesArray = $this->ci->settings['languages'];
         if ($pageInfo['foliation'] !== NULL) {
             $pageNumberFoliation = $pageInfo['foliation'];
         }
@@ -498,7 +498,8 @@ class SiteController
             'pageTypeNames' => $pageTypeNames,
             'activeWorks' => $activeWorks,
             'thePages' => $thePages,
-            'imageUrl' => $imageUrl
+            'imageUrl' => $imageUrl,
+            'languagesArray' => $languagesArray
         ]);
     }
     
@@ -518,6 +519,7 @@ class SiteController
         $imageUrl = $this->db->getImageUrl($docId, $pageInfo['img_number']);
         $pageTypeNames  = $this->db->getPageTypeNames();
         $activeWorks = $this->db->getActiveWorks();
+        $languagesArray = $this->ci->settings['languages'];
         
         $pageNumberFoliation = $pageInfo['seq'];
         if ($pageInfo['foliation'] !== NULL) {
@@ -539,7 +541,8 @@ class SiteController
             'pageTypeNames' => $pageTypeNames,
             'activeWorks' => $activeWorks,
             'thePages' => $thePages,
-            'imageUrl' => $imageUrl
+            'imageUrl' => $imageUrl,
+            'languagesArray' => $languagesArray
         ]);
     }
     

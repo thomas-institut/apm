@@ -869,7 +869,10 @@ class TranscriptionEditor
     
     //console.log(columnData)
     
-    let editorData = EditorData.getEditorDataFromApiData(columnData, this.id, this.options.langDef, this.minItemId, TranscriptionEditor.formatBlots)
+    let editorData = EditorData.getTranscriptionEditorDataFromApiData(
+            columnData, this.id, this.options.langDef, this.minItemId, 
+            TranscriptionEditor.blockBlots,
+            TranscriptionEditor.formatBlots)
   
     this.minItemId = editorData.minItemId
     this.quillObject.setContents(editorData.delta)
@@ -2110,6 +2113,7 @@ class TranscriptionEditor
     TranscriptionEditor.specialCharacters.push(options)
     
   }
+  
   static registerImageBlot(theBlot, options)
   {
     if (TranscriptionEditor.imageBlots === undefined) {
@@ -2157,6 +2161,10 @@ class TranscriptionEditor
     options.jsClass = theBlot
     TranscriptionEditor.imageBlots.push(options)
     Quill.register(theBlot)
+  }
+  
+  static registerLineGapBlot(theBlot, options) {
+    TranscriptionEditor.lineGapBlot = theBlot
   }
   
   static init(baseUrl)

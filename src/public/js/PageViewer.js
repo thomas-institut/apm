@@ -128,8 +128,11 @@ class PageViewer {
           })
 
           te.on('editor-save', function(){
+            console.log("Saving...")
+            console.log('Quill data:')
+            console.log(te.quillObject.getContents())
             const currentData = te.getData();
-            console.log('Current data from editor...')
+            console.log('API data uploaded to server:')
             console.log(currentData)
             $.post(
               pathFor.apiUpdateColumnData(thisObject.options.docId, thePageNumber, col), 
@@ -138,9 +141,10 @@ class PageViewer {
             .done(function () { 
                 $.getJSON(apiGetColumnDataUrl, function (newColumnData){
                   //console.log(newResp)
-                  console.log('Data from API...')
+                  console.log('API data received from server:')
                   console.log(newColumnData)
                   te.saveSuccess(newColumnData)
+                  console.log('... finished saving')
                 })
             })
             .fail(function(resp) {

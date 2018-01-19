@@ -474,6 +474,7 @@ class SiteController
         $transcribedPages = $this->db->getTranscribedPageListByDocId($docId);
         $thePages = $this->buildPageArray($pagesInfo, $transcribedPages);
         $imageUrl = $this->db->getImageUrl($docId, $pageInfo['img_number']);
+        $osdConfig = $this->db->getOpenSeaDragonConfig($docId, $pageInfo['img_number']);
         $pageTypeNames  = $this->db->getPageTypeNames();
         $activeWorks = $this->db->getActiveWorks();
         //$this->ci->logger->debug('Active Works', $activeWorks);
@@ -497,7 +498,9 @@ class SiteController
             'pageTypeNames' => $pageTypeNames,
             'activeWorks' => $activeWorks,
             'thePages' => $thePages,
-            'imageUrl' => $imageUrl
+            'imageUrl' => $imageUrl,
+            'openSeaDragonConfig' => $osdConfig
+                
         ]);
     }
     
@@ -515,6 +518,7 @@ class SiteController
         $transcribedPages = $this->db->getTranscribedPageListByDocId($docId);
         $thePages = $this->buildPageArray($pagesInfo, $transcribedPages);
         $imageUrl = $this->db->getImageUrl($docId, $pageInfo['img_number']);
+        $osdConfig = $this->db->getOpenSeaDragonConfig($docId, $pageInfo['img_number']);
         $pageTypeNames  = $this->db->getPageTypeNames();
         $activeWorks = $this->db->getActiveWorks();
         
@@ -538,7 +542,8 @@ class SiteController
             'pageTypeNames' => $pageTypeNames,
             'activeWorks' => $activeWorks,
             'thePages' => $thePages,
-            'imageUrl' => $imageUrl
+            'imageUrl' => $imageUrl,
+            'openSeaDragonConfig' => $osdConfig
         ]);
     }
     

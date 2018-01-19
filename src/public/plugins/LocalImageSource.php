@@ -26,6 +26,11 @@ class LocalImageSource extends \AverroesProject\Plugin\ImageSourcePlugin {
                     $imageNumber);
     }
     
+    public function realGetOpenSeaDragonConfig($imageSourceData, $imageNumber) {
+        return sprintf("tileSources: {type: 'image', url:  '%s', buildPyramid: false,homeFillsViewer: true}", 
+                $this->realGetImageUrl($imageSourceData, $imageNumber));
+    }
+    
     public function realGetDocInfoHtml($imageSourceData) {
         return 'Images stored locally &nbsp;&nbsp;&nbsp;'. 
           '<a href="/localrep/' . $imageSourceData . '/" ' . 

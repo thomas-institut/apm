@@ -11,29 +11,29 @@
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class DareImageSource extends \AverroesProject\Plugin\ImageSourcePlugin {
+class DareDeepZoomImageSource extends \AverroesProject\Plugin\ImageSourcePlugin {
     
    
     
     public function __construct($hm, $logger) {
-        parent::__construct($hm, $logger, 'dare');
+        parent::__construct($hm, $logger, 'dare-deepzoom');
     }
        
     public function realGetImageUrl($imageSourceData, $imageNumber) 
     {
-        return sprintf("https://bilderberg.uni-koeln.de/images/books/%s/bigjpg/%s-%04d.jpg", 
+        return sprintf("https://bilderberg.uni-koeln.de/iipsrv/iipsrv.fcgi?DeepZoom=books/%s/pyratiff/%s-%04d.tif.dzi", 
                     $imageSourceData, 
                     $imageSourceData, 
                     $imageNumber);
     }
     
-    public function realGetOpenSeaDragonConfig($imageSourceData, $imageNumber) {
-        return sprintf("tileSources: {type: 'image', url:  '%s', buildPyramid: false,homeFillsViewer: true}", 
+   public function realGetOpenSeaDragonConfig($imageSourceData, $imageNumber) {
+        return sprintf("tileSources: '%s'", 
                 $this->realGetImageUrl($imageSourceData, $imageNumber));
     }
     
     public function realGetDocInfoHtml($imageSourceData) {
-        $html = '= Bilderberg ' . $imageSourceData . ' &nbsp;&nbsp;';
+        $html = '= Bilderberg ' . $imageSourceData . ' (DZ) &nbsp;&nbsp;';
         $html .= '<a href=" http://dare.uni-koeln.de/dare-cgi/permalinks.pas?darepurl=scana-' .
                 $imageSourceData . 
                 '-0001" target="_blank" title="View document in DARE">' . 

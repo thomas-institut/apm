@@ -15,7 +15,7 @@
     <script type="application/javascript" src="{{baseurl}}/node_modules/lodash/lodash.js"></script>
     <script type="application/javascript" src="{{baseurl}}/node_modules/jquery/dist/jquery.js"></script>
     <script type="application/javascript" src="{{baseurl}}/node_modules/bootstrap/dist/js/bootstrap.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/node_modules/openseadragon/build/openseadragon/openseadragon.min.js"></script>
+    <script type="application/javascript" src="http://openseadragon.github.io/openseadragon/openseadragon.min.js"></script>
     <script type="application/javascript" src="{{baseurl}}/node_modules/@shagstrom/split-pane/split-pane.js"></script>
     <script type="text/javascript" src="{{baseurl}}/node_modules//twig/twig.js"></script>
     
@@ -140,12 +140,7 @@
                     id: "left-component",
                     prefixUrl: "{{baseurl}}/node_modules/openseadragon/build/openseadragon/images/",
                     maxZoomPixelRatio: 3,
-                    tileSources: {
-                        type: 'image',
-                        url:  '{{imageUrl}}',
-                        buildPyramid: false, 
-                        homeFillsViewer: true
-                    }
+                    {{openSeaDragonConfig|raw}}
                 });
             </script>
     <div class="split-pane-divider" id="divider"></div>

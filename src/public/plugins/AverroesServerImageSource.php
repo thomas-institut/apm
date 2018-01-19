@@ -26,6 +26,11 @@ class AverroesServerImageSource extends \AverroesProject\Plugin\ImageSourcePlugi
                     $imageNumber);
     }
     
+    public function realGetOpenSeaDragonConfig($imageSourceData, $imageNumber) {
+        return sprintf("tileSources: {type: 'image', url:  '%s', buildPyramid: false,homeFillsViewer: true}", 
+                $this->realGetImageUrl($imageSourceData, $imageNumber));
+    }
+    
     public function realGetDocInfoHtml($imageSourceData) {
         return 'Images stored in the Averroes Project server &nbsp;&nbsp;&nbsp;'. 
           '<a href="http://averroes.uni-koeln.de/localrep/' . $imageSourceData . '/" ' . 

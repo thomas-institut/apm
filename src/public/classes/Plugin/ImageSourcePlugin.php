@@ -48,6 +48,7 @@ abstract class ImageSourcePlugin extends \AverroesProject\Plugin\Plugin {
         
         $hookGetImageUrl = 'get-image-url-' . $this->stub;
         $hookGetDocInfoHtml = 'get-docinfo-html-' . $this->stub;
+        $hookGetOpenSeaDragonConfig = 'get-openseadragon-config-' . $this->stub;
         $hookGetImageSources = 'get-image-sources';
         
         if (! $this->hm->attachToHook($hookGetImageUrl, array($this, 'getImageUrl')) ) {
@@ -60,6 +61,10 @@ abstract class ImageSourcePlugin extends \AverroesProject\Plugin\Plugin {
         }
         if (! $this->hm->attachToHook($hookGetImageSources, array($this, 'getImageSource')) ) {
             $this->logger->error("Cannot attach to hook $hookGetImageSources");
+            return false;
+        }
+        if (! $this->hm->attachToHook($hookGetOpenSeaDragonConfig, array($this, 'getOpenSeaDragonConfig')) ) {
+            $this->logger->error("Cannot attach to hook $hookGetOpenSeaDragonConfig");
             return false;
         }
         return true;
@@ -94,6 +99,17 @@ abstract class ImageSourcePlugin extends \AverroesProject\Plugin\Plugin {
         return $this->realGetDocInfoHtml($param['imageSourceData']);
     }
     
+    public function getOpenSeaDragonConfig($param) {
+        if (!is_array($param)) {
+            return $param;
+        }
+        if (!isset($param['imageSourceData']) || 
+            !isset($param['imageNumber'])) {
+            return $param;
+        }
+        return $this->realGetOpenSeaDragonConfig($param['imageSourceData'], $param['imageNumber']);
+    }
+    
     public function getImageSource($param) 
     {
         if (!is_array($param)) {
@@ -106,5 +122,6 @@ abstract class ImageSourcePlugin extends \AverroesProject\Plugin\Plugin {
     }
     
     abstract public function realGetImageUrl($imageSourceData, $imageNumber);
+    abstract public function realGetOpenSeaDragonConfig($imageSourceData, $imageNumber);
     abstract public function realGetDocInfoHtml($imageSourceData);
 }

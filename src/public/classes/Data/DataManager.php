@@ -703,6 +703,25 @@ class DataManager
         return $url;
     }
     
+    public function getOpenSeaDragonConfig($docId, $imageNumber){
+        $doc = $this->getDocById($docId);
+        if ($doc === false) {
+            return false;
+        }
+        
+        $isd = $doc['image_source_data'];
+        
+        $url = $this->hm->callHookedMethods('get-openseadragon-config-' . $doc['image_source'],
+                [ 'imageSourceData' => $isd, 
+                   'imageNumber' => $imageNumber]);
+
+        if (!is_string($url)) {
+            return false;
+        }
+        
+        return $url;
+    }
+    
     
     public function getColumnElementsByPageId($pageId, $col) {
         $this->queryStats->countQuery('select');

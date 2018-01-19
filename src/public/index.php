@@ -126,6 +126,12 @@ if ((include_once 'plugins/DareImageSource.php') === false) {
 $disObject = new \DareImageSource($hm, $logger);
 $disObject->init();
 
+if ((include_once 'plugins/DareDeepZoomImageSource.php') === false) {
+    exitWithError($logger, "Can't load required plugin DareDeepZoomImageSource");
+}
+$ddzisObject = new \DareDeepZoomImageSource($hm, $logger);
+$ddzisObject->init();
+
 if ((include_once 'plugins/AverroesServerImageSource.php') === false) {
     exitWithError($logger, "Can't load required plugin AverroesServerImageSource");
 }

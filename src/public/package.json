@@ -15,11 +15,11 @@
     "@shagstrom/split-pane": "0.9.4",
     "bootstrap": "3.3.7",
     "bootstrap-validator": "0.11.9",
-    "jquery": "3.1.1",
+    "jquery": "3.2.1",
     "lodash": "^4.17.4",
-    "openseadragon": "2.2.1",
+    "openseadragon": "2.3.1",
     "quill": "1.2.3",
-    "twig": "1.10.4"
+    "twig": "1.10.5"
   },
   "devDependencies": {
     "standard": "^10.0.2"

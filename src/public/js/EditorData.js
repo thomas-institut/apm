@@ -52,9 +52,8 @@ class EditorData {
      */
     function createNewElement() {
       currentItemSeq = 0
-      currentElementId++
       return {
-        id: currentElementId,
+        id: -1,
         pageId: editorInfo.pageId,
         columnNumber: editorInfo.columnNumber,
         lang: editorInfo.defaultLang,
@@ -97,9 +96,14 @@ class EditorData {
           // this means the line gap does not have newline before
           // which is possible in Quill
           curElement.type = mainTextElementType
+          if (curElement.type !== previousElementType) {
+            currentElementId++
+          }
+          curElement.id = currentElementId
           elements.push(curElement)
           curElement = createNewElement()
         }
+        curElement.id = ++currentElementId
         curElement.type = lineGapElementType
         curElement.reference = theInsert.linegap.thelength
         curElement.items = []
@@ -180,6 +184,10 @@ class EditorData {
             console.warn('WARNING: Quill 2 API : single newline without valid attribute')
             console.warn(JSON.stringify(curOps))
           }
+          if (previousElementType !== curElement.type) {
+            currentElementId++
+          } 
+          curElement.id = currentElementId
           elements.push(curElement)
           previousElementType = curElement.type
           curElement = createNewElement()
@@ -231,18 +239,22 @@ class EditorData {
         let normalizedText = curOps.insert.replace(/\n+/g, '\n')
         let text = normalizedText.replace(/\n$/, '')
         if (text !== '') {
+          // curOps.insert !== '\n' , that is, there is text in the insert
+          // that needs to be put in an item
           const item = createNewItem()
           item.type = normalTextItemType
           item.theText = text
-          // no need to push the item id to itemIds
           curElement.items.push(item) 
-          //text = ''
         }
         if (text !== normalizedText) {
           // text ends in a new line, create a new mainTextElement if last element
           // is not a line gap
           if (previousElementType !== lineGapElementType) {
             curElement.type = mainTextElementType
+            if (previousElementType !== curElement.type) {
+              currentElementId++
+            }
+            curElement.id = currentElementId
             elements.push(curElement)
             previousElementType = curElement.type
             curElement = createNewElement()
@@ -259,6 +271,42 @@ class EditorData {
     if (curElement.items.length !== 0) {
       elements.push(curElement)
     }
+    
+    // Implode elements with the same id, adding new line items
+    // between them
+    let processedElements = []
+    let currentElement = undefined
+    for (const ele of elements) {
+      if (currentElement===undefined || ele.id !== currentElement.id) {
+        if (currentElement !== undefined) {
+          processedElements.push(currentElement)
+        }
+        currentElement = ele
+        continue
+      }
+      // still in the same element id
+      // add a new line and ele.items
+      let lastItemSeq = currentElement.items[currentElement.items.length-1].seq
+      currentElement.items.push({
+        id: -1,
+        columnElementId: currentElement.id,
+        seq: ++lastItemSeq,
+        type: normalTextItemType,
+        lang: editorInfo.defaultLang,
+        handId: 0,
+        theText: '\n',
+        altText: null,
+        extraInfo: null,
+        length: null,
+        target: null
+      })
+      for (const item of ele.items) {
+        item.seq = ++lastItemSeq
+        currentElement.items.push(item)
+      }
+    }
+    processedElements.push(currentElement)
+    
     // filter out stray notes
     const filteredEdnotes = []
     for (const note of editorInfo.edNotes) {
@@ -269,7 +317,7 @@ class EditorData {
         console.warn(note)
       }
     }
-    return {elements: elements, ednotes: filteredEdnotes, people: editorInfo.people, info: editorInfo.info}
+    return {elements: processedElements, ednotes: filteredEdnotes, people: editorInfo.people, info: editorInfo.info}
   }
   
 
@@ -384,12 +432,62 @@ class EditorData {
               continue
             }
             if (item.type === ITEM_TEXT) {
-              ops.push({
-                insert: item.theText,
-                attributes: {
-                  lang: item.lang
+              let curString = ''
+              for (let i=0; i < item.theText.length; i++) {
+                if (item.theText.charAt(i) === '\n') {
+                  if (curString !== '') {
+                    ops.push({
+                      insert: curString,
+                      attributes: {
+                        lang: item.lang
+                      }
+                    })
+                  }
+                  switch(ele.type) {
+                    case ELEMENT_GLOSS:
+                      ops.push({
+                        insert: '\n',
+                        attributes: {
+                          gloss:  {
+                            elementId: ele.id,
+                            place: ele.placement
+                          }
+                        }
+                      })
+                      break;
+
+                      case ELEMENT_ADDITION:
+                      ops.push({
+                        insert: '\n',
+                        attributes: {
+                          additionelement:  {
+                            elementId: ele.id,
+                            place: ele.placement,
+                            target: ele.reference
+                          }
+                        }
+                      })
+                      break;
+
+                    default:
+                      attr[formats[ele.type]] = true
+                      ops.push({insert: '\n', attributes: attr})
+                      break;
+                  }
+                  curString = ''
                 }
-              })
+                else {
+                  curString += item.theText.charAt(i)
+                }
+              }
+              if (curString !== '') {
+                ops.push({
+                  insert: curString,
+                  attributes: {
+                    lang: item.lang
+                  }
+                })
+              }
             } else {
               console.warn('Unrecognized item type ' + item.type + ' when setting editor data')
             }

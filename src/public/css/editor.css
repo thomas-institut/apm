@@ -22,17 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 
-@font-face {
-    font-family: "Linux Libertine";
-    src: url(../fonts/LinLibertine_Rah.ttf) format("truetype");
-}
-
-@font-face {
-    font-family: "Scheherazade";
-    src: url(../fonts/Scheherazade-Regular.woff);
-}
-
-
 .transcription-editor {
     width: 100%;
 }
@@ -40,45 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 .editor-container {
     display: block;
     padding-bottom: 10px;
-}
-
-.fontsize1 {
-    font-size: 1em;
-}
-
-.fontsize2 {
-    font-size: 1.2em;
-}
-
-.fontsize3 {
-    font-size: 1.4em;
-}
-
-.fontsize4 {
-    font-size: 1.6em;
-}
-
-.fontsize5 {
-    font-size: 1.8em;
-}
-
-.fontsize6 {
-    font-size: 2em;
-}
-
-.fontsize7 {
-    font-size: 2.2em;
-}
-
-.fontsize8 {
-    font-size: 2.4em;
-}
-.fontsize9 {
-    font-size: 2.6em;
-}
-
-.fontsize10 {
-    font-size: 2.8em;
+    background: #f4f3f0;
 }
 
 .prominent {
@@ -98,7 +49,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
     tab-size: 4;
     padding: 5px;
     outline: none;
+    background: white;
     white-space: pre-wrap;
+    margin-left: 25px;
+    border-left: solid 1px #e0e0e0;
 }
 .ql-clipboard {
     left: -100000px;
@@ -135,8 +89,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 .toolbar .title-button {
     font-size: 0.8em;
-    margin-left: 30px;
+    /*margin-left: 30px; */
     margin-right: 5px;
+}
+
+.toolbar span.separator {
+    margin: 0 0 0 20px;
+    padding: 0;
 }
 
 .toolbar .langButton {
@@ -151,6 +110,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 .editor-controlbar {
     background: #fbfbfb;
     color: gray;
+    border-bottom: solid 1px #e0e0e0;
+    border-top: solid 1px #f0f0f0;
 }
 
 .editor-controlbar button {
@@ -221,25 +182,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
     font-size: 1.1em;
 }
 
-.hetext {
-    direction: rtl;
-    unicode-bidi: isolate;
-    font-family: 'Linux Libertine', serif;
-    font-style: normal;
-}
 
-.artext {
-    direction: rtl;
-    unicode-bidi: isolate;
-    font-family: 'Scheherazade', serif;
-    font-style: normal;
-}
-
-.latext {
-    direction: ltr;
-    unicode-bidi: isolate;
-    font-style: normal;
-}
 
 .item-note-edit-time{
     padding-top: 5px;
@@ -248,115 +191,101 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
     color: silver;
         
 }
+
+
 .editor-container p {
     padding: 0;
     margin: 0;
-    margin: 10px 0;
+    line-height: 1.4em;
 }
 
-.editor-container p::before {
-   
-}
 
-.editor-container p.gloss {
-    margin: 10px 20px;
-}
 
-.editor-container p.gloss::before {
-    content: 'Gloss';
-    font-size: 0.7em;
-    font-style: normal;
-    font-family: monospace;
-    padding: 2px;
-    color: #b6c7cc;
-    border-radius: 3px;
-    border: solid 1px #b6c7cc;
-    margin-right: 5px;
-    margin-left: 5px;
-}
 
-.editor-container p.additionelement {
-    margin: 10px 20px;
-}
 
-.editor-container p.additionelement::before {
-    content: 'Addition';
-    font-size: 0.6em;
-    font-style: normal;
-    font-family: monospace;
-    padding: 2px;
-    color: #b6c7cc;
-    border-radius: 3px;
-    border: solid 1px #b6c7cc;
-    margin-right: 5px;
-    margin-left: 5px;
-}
 
 .editor-container p.headelement {
-    margin: 10px 20px;
-}
-
-.editor-container p.headelement::before {
-    content: 'Head';
-    font-size: 0.8em;
-    font-style: normal;
-    font-family: monospace;
-    padding: 2px;
-    color: #b6c7cc;
-    border-radius: 3px;
-    border: solid 1px #b6c7cc;
-    margin-right: 5px;
-    margin-left: 5px;
+    margin-bottom: 10px;
+    background: #fafafa;;
+    border-radius: 5px;
 }
 
 .editor-container p.custodes {
-    margin: 10px 20px;
+    /*background: #fafafa;*/
+    margin: 20px 20px 0 20px;
 }
-.editor-container p.custodes::before {
-    content: 'Custodes';
-    font-size: 0.7em;
-    font-style: normal;
-    font-family: monospace;
-    padding: 2px;
-    color: #b6c7cc;
-    border-radius: 3px;
-    border: solid 1px #b6c7cc;
-    margin-right: 5px;
-    margin-left: 5px;
-}
+
 
 .editor-container p.pagenumber {
-    margin: 10px 20px;
-}
-.editor-container p.pagenumber::before {
-    content: 'Page Number';
-    font-size: 0.7em;
-    font-style: normal;
-    font-family: monospace;
-    padding: 2px;
-    color: #b6c7cc;
-    border-radius: 3px;
-    border: solid 1px #b6c7cc;
-    margin-right: 5px;
-    margin-left: 5px;
+    /*background: #ffeee6;*/
+    margin: 0 20px 10px 20px;
 }
 
-.rubric {
-    font-weight: bold;
-    color: blue;
+.editor-container p.gloss {
+    margin: 0px 20px;
+    padding: 0px 5px;
+    background: #f0ffe5;
+}
+
+.editor-container p.additionelement {
+    margin: 0px 20px;
+    padding: 0px 5px;
+    background: #ddecff;
+}
+
+.editor-container p.firstmarginalline {
+    margin-top: 30px;
+}
+
+.editor-container p.lastmarginalline {
+    margin-bottom: 20px;
+}
+
+.editor-container img.linegap {
+    margin: 30px 10px;
+}
+
+.ql-editor b {
+    font-weight: normal;
     border: solid 1px #e8eaed;
     border-radius: 3px;
 }
 
-.initial {
+b.rubric {
+    color: blue;
     font-weight: bold;
-    font-size: 20pt;
 }
 
-.gliph {
-    font-weight: normal;
+b.initial {
+    color: black;
+    font-weight: bold;
+}
+
+b.gliph {
     color: fuchsia;
-    background-color: lightgray;
+}
+
+b.sic {
+    color: cadetblue
+} 
+
+b.abbr {
+    color: chocolate;
+}
+
+b.unclear {
+    color: #143382;
+}
+
+b.mathtext {
+    color: #990099;
+}
+b.sic {
+    color: #ad9c87
+} 
+
+b.abbr {
+    color: chocolate;
 }
 
 .deletion {
@@ -367,21 +296,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 .addition {
     font-weight: normal;
-    background-color: lightblue;
+    background-color: #ddecff;
     border-radius: 5px;
     padding: 2px;
 }
 
-.sic {
-    font-weight: normal;
-    background-color: #e2ddd6;
-    border-radius: 5px;
-    padding: 2px;
-} 
 
-.abbr {
-    color: chocolate;
-}
 
 .mark {
     font-family: FontAwesome;
@@ -394,13 +314,105 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
     color: #d58512;
 }
 
-.mathtext {
-    color: #990099;
-    border-top: solid 1px #990099;
-}
+
 
 img.chunkmark  {
     margin: 0px;
     margin-left: 5px;
     margin-right: 5px;
 }
+
+
+/* LINE NUMBERS */
+@font-face {
+    font-family: 'PT Mono';
+    src: url(../fonts/PTMono.woff);
+}
+
+.linenumber {
+    color: gray;
+    font-family: 'PT Mono', monospace;
+}
+
+.linenumber a:hover {
+    text-decoration: none;
+}
+
+/* LANGUAGES */
+
+@font-face {
+    font-family: "Linux Libertine";
+    src: url(../fonts/LinLibertine_Rah.ttf) format("truetype");
+}
+
+@font-face {
+    font-family: "Scheherazade";
+    src: url(../fonts/Scheherazade-Regular.woff);
+}
+@font-face {
+    font-family: "Ezra";
+    src: url(../fonts/SILEOT.woff);
+}
+
+.he-text {
+    direction: rtl;
+    unicode-bidi: isolate;
+    font-family: 'Linux Libertine', serif;
+    font-style: normal;
+}
+
+.ar-text {
+    direction: rtl;
+    unicode-bidi: isolate;
+    font-family: 'Scheherazade', serif;
+    font-style: normal;
+}
+
+.la-text {
+    direction: ltr;
+    unicode-bidi: isolate;
+    font-style: normal;
+    font-family: Arial, sans-serif;
+}
+
+.jrb-text {
+    direction: rtl;
+    unicode-bidi: isolate;
+    font-family: Ezra, serif;
+    font-style: normal;
+}
+
+/* HANDS */
+
+.hand1 .la-text, b.hand1 {
+    font-family: 'Times New Roman', Times, serif;
+}
+
+.hand2 .la-text, b.hand2 {
+    font-family: cursive, sans-serif ;
+}
+
+.hand1 .ar-text, b.hand1 {
+    font-family: 'Times New Roman', Times, serif;
+}
+
+.hand2 .ar-text, b.hand2 {
+    font-family: cursive, sans-serif ;
+}
+
+.hand1 .he-text, b.hand1 {
+    font-family: cursive, sans-serif ;
+}
+
+.hand2 .he-text, b.hand2 {
+    font-family: 'Times New Roman', Times, serif;
+}
+
+.hand1 .jrb-text, b.hand1 {
+    font-family: cursive, sans-serif ;
+}
+
+.hand2 .jrb-text, b.hand2 {
+    font-family: 'Times New Roman', Times, serif;
+}
+

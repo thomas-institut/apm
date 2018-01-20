@@ -526,6 +526,8 @@ class TranscriptionEditor
     for (const p of pElements) {
       let theP = $(p)
       let lineNumberLabel = '-'
+      let place = null
+      let elementId = null
       switch (this.getParagraphType(theP)) {
         case 'normal':
           inMarginal = false
@@ -557,8 +559,8 @@ class TranscriptionEditor
           break
           
         case 'gloss':
-          let place = theP.attr('place')
-          let elementId = theP.attr('elementid')
+          place = theP.attr('place')
+          elementId = theP.attr('elementid')
           lastMarginalP = theP
           if (!inMarginal || elementId !== lastMarginalId) {
             // first line of marginal
@@ -572,17 +574,19 @@ class TranscriptionEditor
           inMarginal = true
           break
         
-        case 'addition':
+        case 'additionelement':
           place = theP.attr('place')
           elementId = theP.attr('elementid')
+          lastMarginalP = theP
           if (!inMarginal || elementId !== lastMarginalId) {
             // first line of marginal
             lastMarginalId = elementId
             theP.addClass('firstmarginalline')
+            lineNumberLabel = '<a title="Addition @ ' + place + '">&nbsp;A</a>'
           } else {
             theP.removeClass('firstmarginalline')
+            lineNumberLabel = ''
           }
-          lineNumberLabel = '<a title="Addition @ ' + place + '">&nbsp;A</a>'
           inMarginal = true
           break
       }

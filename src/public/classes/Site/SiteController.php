@@ -113,7 +113,7 @@ class SiteController
                 $docs[] = $doc;
                 continue;
             }
-            
+            $this->ci->logger->debug('Chunk loc for ' . $workId . ' ' . $chunkNumber, $locations);
             $doc['start']['seq'] = $locations[0]['page_seq'];
             $doc['start']['foliation'] = is_null($locations[0]['foliation']) ? $locations[0]['page_seq'] : $locations[0]['foliation'];
             if (count($locations)===1) {

@@ -162,7 +162,7 @@ class EditorData {
               let saveId = false
               curElement.type = blockBlot.type
               if (blockBlot.place) {
-                curElement.place = curOps.attributes[blockBlot.name].place
+                curElement.placement = curOps.attributes[blockBlot.name].place
                 saveId = true
               }
               if (blockBlot.target) {

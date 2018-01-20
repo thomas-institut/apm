@@ -243,7 +243,7 @@ TranscriptionEditor.registerBlockBlot(GlossBlot, {
 })
 
 class Marginal extends MarginalBlockBlot{}
-TranscriptionEditor.registerBlockBlot(GlossBlot, {
+TranscriptionEditor.registerBlockBlot(Marginal, {
   type: ELEMENT_ADDITION, 
   name: 'additionelement', 
   title: 'Marginal Addition', 

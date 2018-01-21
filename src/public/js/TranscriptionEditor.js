@@ -637,13 +637,13 @@ class TranscriptionEditor
       $('#' + overlayId).remove()
       $('#' + this.containerId).append(overlay)
     }
-    if (this.numpElements > pElements.length) {
-      for (let i = pElements.length + 1; i <= this.numpElements; i++) {
+    if (this.numOverlays > overlayNumber) {
+      for (let i = overlayNumber + 1; i <= this.numOverlays; i++) {
         let overlayId = this.containerId + '-lnr-' + i
         $('#' + overlayId).remove()
       }
     }
-    this.numpElements = pElements.length
+    this.numOverlays = overlayNumber
 
   }
   
@@ -687,6 +687,8 @@ class TranscriptionEditor
     $('#toggle-button-' + this.id).html('<i class="fa fa-power-off"></i>')
 //    this.resizeEditor()
     this.lastSavedData = this.quillObject.getContents()
+    console.log("lastSavedData after enable")
+    console.log(this.lastSavedData)
     this.setContentsNotChanged()
     this.quillObject.setSelection(this.quillObject.getLength())
     this.dispatchEvent('editor-enable')
@@ -889,6 +891,8 @@ class TranscriptionEditor
     this.minItemId = editorData.minItemId
     this.quillObject.setContents(editorData.delta)
     this.lastSavedData = this.quillObject.getContents()
+    console.log("lastSavedData after setData")
+    console.log(this.lastSavedData)
     let mainLang = editorData.mainLang
     if (!mainLang) {
       mainLang = this.pageDefaultLang
@@ -2079,6 +2083,9 @@ class TranscriptionEditor
     if (options.place) {
       theBlot.place = options.place
     }
+    if (options.target) {
+      theBlot.target = options.target
+    }
     TranscriptionEditor.blockBlots.push(options)
     Quill.register(theBlot)
   }
@@ -2314,6 +2321,7 @@ class TranscriptionEditor
                     </div>
                     <div class="modal-ednotes" id="item-modal-ednotes-{{id}}">
                     </div>
+                  </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" id="item-modal-cancel-button-{{id}}" data-dismiss="modal">Cancel</button>
@@ -2322,7 +2330,34 @@ class TranscriptionEditor
         </div>
     </div>
 </div>
-            
+ 
+ <!-- MARGINAL modal {{id}} -->            
+<div id="marginal-modal-{{id}}" class="modal" role="dialog">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 id="marginal-modal-title-{{id}}" class="modal-title"></h4>
+            </div>
+            <div class="modal-body" id="marginal-modal-body-{{id}}">
+                <form>
+                    <div id="marginal-modal-place-fg-{{id}}" class="form-group">
+                        <label for="marginal-modal-place-{{id}}" id="marginal-modal-place-label-{{id}}" class="control-label">Place:</label>
+                        <select name="place" id="marginal-modal-place-{{id}}"></select>
+                    </div>
+                    <div id="marginal-modal-target-fg-{{id}}" class="form-group">
+                        <label for="marginal-modal-target-{{id}}" id="marginal-modal-target-label-{{id}}" class="control-label">Extra Info:</label>
+                        <select name="target" id="marginal-modal-target-{{id}}"></select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" id="marginal-modal-cancel-button-{{id}}" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="marginal-modal-submit-button-{{id}}">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
             
 <!-- CHUNK modal {{id}} -->            
 <div id="chunk-modal-{{id}}" class="modal" role="dialog">

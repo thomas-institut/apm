@@ -184,10 +184,12 @@ class EditorData {
             console.warn('WARNING: Quill 2 API : single newline without valid attribute')
             console.warn(JSON.stringify(curOps))
           }
-          if (previousElementType !== curElement.type) {
-            currentElementId++
-          } 
-          curElement.id = currentElementId
+          if (curElement.id === -1) {
+            if (previousElementType !== curElement.type) {
+              currentElementId++
+            } 
+            curElement.id = currentElementId
+          }
           elements.push(curElement)
           previousElementType = curElement.type
           curElement = createNewElement()
@@ -276,9 +278,12 @@ class EditorData {
     // between them
     let processedElements = []
     let currentElement = undefined
+    let currentSeq = 0
+    console.log("Processing elements...")
     for (const ele of elements) {
       if (currentElement===undefined || ele.id !== currentElement.id) {
         if (currentElement !== undefined) {
+          currentElement.seq = currentSeq++
           processedElements.push(currentElement)
         }
         currentElement = ele
@@ -305,6 +310,7 @@ class EditorData {
         currentElement.items.push(item)
       }
     }
+    currentElement.seq = currentSeq++
     processedElements.push(currentElement)
     
     // filter out stray notes

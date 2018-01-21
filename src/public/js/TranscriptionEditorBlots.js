@@ -65,6 +65,15 @@ class MarginalBlockBlot extends SimpleBlockBlot
     if (value.place !== undefined) {
       node.setAttribute('place', value.place)
     }
+    // Target is special, need to write also a text
+    if (value.target !== undefined) {
+      node.setAttribute('target', value.target)
+      let tText = value.targetText
+      if (tText === undefined) {
+        tText = '[none]'
+      }
+      node.setAttribute('targettext', tText)
+    }
     return node
   }
   
@@ -74,6 +83,10 @@ class MarginalBlockBlot extends SimpleBlockBlot
     }
     if (this.place !== undefined) {
       value.place = node.getAttribute('place')
+    }
+    if (this.target !== undefined) {
+      value.target = node.getAttribute('target')
+      value.targetText = node.getAttribute('targettext')
     }
     return value
   }

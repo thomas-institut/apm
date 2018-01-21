@@ -528,6 +528,8 @@ class TranscriptionEditor
       let lineNumberLabel = '-'
       let place = null
       let elementId = null
+      let target = null
+      let targetText = null
       switch (this.getParagraphType(theP)) {
         case 'normal':
           inMarginal = false
@@ -577,12 +579,18 @@ class TranscriptionEditor
         case 'additionelement':
           place = theP.attr('place')
           elementId = theP.attr('elementid')
+          target = theP.attr('target')
+          targetText = theP.attr('targettext')
           lastMarginalP = theP
           if (!inMarginal || elementId !== lastMarginalId) {
             // first line of marginal
             lastMarginalId = elementId
             theP.addClass('firstmarginalline')
-            lineNumberLabel = '<a title="Addition @ ' + place + '">&nbsp;A</a>'
+            let title = 'Addition @ ' + place 
+            if (targetText !== '[none]') {
+              title += ' , for ' + targetText
+            }
+            lineNumberLabel = '<a title="' + title + '">&nbsp;A</a>'
           } else {
             theP.removeClass('firstmarginalline')
             lineNumberLabel = ''
@@ -1331,7 +1339,7 @@ class TranscriptionEditor
         editorid: thisObject.id
       }
       
-      let fields = ['place']
+      let fields = ['place', 'target']
       for (const theField of fields) {
         if (theBlot[theField] !== undefined) {
           if (value[theField] === undefined) {
@@ -1347,6 +1355,14 @@ class TranscriptionEditor
       }
       if (theBlot.forceInputDialog) {
         needsDialog = true
+      }
+       // Deal with target field 
+      let targets = []
+      if (theBlot.target) {
+        targets = thisObject.getTargets()
+        if (theBlot.target.default === 0) {
+          theValue.targetText = '[none]'
+        }
       }
       if (!needsDialog) {
         quillObject.format(theBlot.name, theValue)

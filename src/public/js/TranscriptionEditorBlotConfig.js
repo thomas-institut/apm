@@ -183,18 +183,6 @@ TranscriptionEditor.registerImageBlot(ChunkMarkBlot, {
   target: { default: 1 },
   alttext: { default: 'start' },
   noButton: true,
-//  buttons: [ 
-//    { name: 'start',  
-//      title: 'Chunk Start', 
-//      icon: '{' ,
-//      value: { alttext: 'start' }
-//    }, 
-//    { name: 'end', 
-//      title: 'Chunk End', 
-//      icon: '}',
-//      value: { alttext: 'end' }
-//    }
-//  ],
   getImageUrl: function (baseUrl, size, value) { 
     return baseUrl + 
             '/api/images/chunkmark/' +
@@ -249,6 +237,7 @@ TranscriptionEditor.registerBlockBlot(Marginal, {
   title: 'Marginal Addition', 
   icon: 'A',
   buttonWithOptions: 'place',
+  target: { title: 'For',  default: 0}, 
   place: { title: 'Placement', options : Element.getValidMarginalPlacements(), default: 'margin left'}
 })
 

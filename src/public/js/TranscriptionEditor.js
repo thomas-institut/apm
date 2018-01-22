@@ -526,6 +526,7 @@ class TranscriptionEditor
     for (const p of pElements) {
       let theP = $(p)
       let lineNumberLabel = '-'
+      let topLabelText = ''
       let place = null
       let elementId = null
       let target = null
@@ -568,10 +569,11 @@ class TranscriptionEditor
             // first line of marginal
             lastMarginalId = elementId
             theP.addClass('firstmarginalline')
-            lineNumberLabel = '<a title="Gloss @ ' + place + '">&nbsp;G</a>'
+            lineNumberLabel = '<a title="Gloss">&nbsp;G</a>'
+            topLabelText = 'Gloss @ ' + place
           } else {
             theP.removeClass('firstmarginalline')
-            lineNumberLabel = ''
+            lineNumberLabel = '&nbsp;-'
           }
           inMarginal = true
           break
@@ -588,12 +590,13 @@ class TranscriptionEditor
             theP.addClass('firstmarginalline')
             let title = 'Addition @ ' + place 
             if (targetText !== '[none]') {
-              title += ' , for ' + targetText
+              title += ', replaces ' + targetText
             }
-            lineNumberLabel = '<a title="' + title + '">&nbsp;A</a>'
+            lineNumberLabel = '<a title="Addition">&nbsp;A</a>'
+            topLabelText = title
           } else {
             theP.removeClass('firstmarginalline')
-            lineNumberLabel = ''
+            lineNumberLabel = '&nbsp;-'
           }
           inMarginal = true
           break
@@ -621,7 +624,7 @@ class TranscriptionEditor
       }
       let overlay = ''
       overlayNumber++
-      let overlayId = this.containerId + '-lnr-' + overlayNumber
+      let overlayId = this.containerId + '-ovr-' + overlayNumber
       overlay = '<div class="linenumber" id="' +
               overlayId +
               '" style="position: absolute;' + 
@@ -636,10 +639,37 @@ class TranscriptionEditor
               '</div>'
       $('#' + overlayId).remove()
       $('#' + this.containerId).append(overlay)
+      if (topLabelText !== '') {
+        overlayNumber++
+        overlayId = this.containerId + '-ovr-' + overlayNumber
+        let topLabelTopPos = offset.top 
+              + $('#editor-container-' + this.id).position().top 
+              + parseInt(theP.css('marginTop'))
+              - this.options.editorLineHeight*editorFontSize*0.8
+        let topLabelLeft = editorContainerLeftPos + marginSize + 40;
+        if (this.defaultLang !== 'la') {
+           topLabelLeft -= marginSize
+        }
+        overlay = '<div class="linenumber" id="' +
+        overlayId +
+        '" style="position: absolute;' + 
+        'top:' +  topLabelTopPos + 'px; ' + 
+        'left: ' + topLabelLeft + 'px; ' + 
+        'line-height: ' + this.options.editorLineHeight*editorFontSize + 'px;' +
+        'font-size:' + fontEmSize + 'em; ' +
+        'width: ' +  (topLabelText.length*fontCharWidth + 10) + 'px;' +
+        'height: ' + this.options.editorLineHeight*editorFontSize + 'px;' +  
+        '">' +
+        topLabelText +
+        '</div>'
+        $('#' + overlayId).remove()
+        $('#' + this.containerId).append(overlay)
+      }
+
     }
     if (this.numOverlays > overlayNumber) {
       for (let i = overlayNumber + 1; i <= this.numOverlays; i++) {
-        let overlayId = this.containerId + '-lnr-' + i
+        let overlayId = this.containerId + '-ovr-' + i
         $('#' + overlayId).remove()
       }
     }
@@ -685,10 +715,7 @@ class TranscriptionEditor
     $('#reset-button-' + this.id).show()
     $('#toggle-button-' + this.id).prop('title', 'Leave editor')
     $('#toggle-button-' + this.id).html('<i class="fa fa-power-off"></i>')
-//    this.resizeEditor()
     this.lastSavedData = this.quillObject.getContents()
-    console.log("lastSavedData after enable")
-    console.log(this.lastSavedData)
     this.setContentsNotChanged()
     this.quillObject.setSelection(this.quillObject.getLength())
     this.dispatchEvent('editor-enable')
@@ -891,8 +918,6 @@ class TranscriptionEditor
     this.minItemId = editorData.minItemId
     this.quillObject.setContents(editorData.delta)
     this.lastSavedData = this.quillObject.getContents()
-    console.log("lastSavedData after setData")
-    console.log(this.lastSavedData)
     let mainLang = editorData.mainLang
     if (!mainLang) {
       mainLang = this.pageDefaultLang
@@ -1376,7 +1401,51 @@ class TranscriptionEditor
         return true
       }
       // Needs dialog
-      console.warn('Block blot needs dialog... not implemented yet')
+      TranscriptionEditor.resetMarginalModal(thisObject.id)
+      $('#marginal-modal-title-' + thisObject.id).html(theBlot.title)
+      if (theBlot.place) {
+        $('#marginal-modal-place-label-' + thisObject.id).html(theBlot.place.title)
+        $('#marginal-modal-place-fg-' + thisObject.id).show()
+        let optionsHtml = ''
+        for (const option of theBlot.place.options) {
+          optionsHtml += '<option value="' + option + '"'
+          optionsHtml += '>' + option + '</option>'
+        }
+        $('#marginal-modal-place-' + thisObject.id).html(optionsHtml)
+      }
+      if (theBlot.target) {
+        let targetsHtml = ''
+        for (const theTarget of targets) {
+          targetsHtml += '<option value="' + theTarget.itemid + '"'
+          if (theTarget.itemid === theValue.target) {
+            targetsHtml += ' selected'
+          }
+          targetsHtml += '>' + theTarget.text + '</option>'
+        }
+        $('#marginal-modal-target-' + thisObject.id).html(targetsHtml)
+        $('#marginal-modal-target-label-' + thisObject.id).html(theBlot.target.title)
+        $('#marginal-modal-target-fg-' + thisObject.id).show()
+      }
+      $('#marginal-modal-submit-button-' + thisObject.id).on('click', function () {
+        $('#marginal-modal-' + thisObject.id).modal('hide')
+        if (theBlot.place) {
+          theValue.place = $('#marginal-modal-place-' + thisObject.id).val()
+        }
+        if (theBlot.target) {
+          const target = parseInt($('#marginal-modal-target-' + thisObject.id).val())
+          let targetText = ''
+          for (const someT of targets) {
+            if (target === someT.itemid) {
+              targetText = someT.text
+              break
+            }
+          }
+          theValue.target = target
+          theValue.targetText = targetText
+        }
+        quillObject.format(theBlot.name, theValue)
+      })
+      $('#marginal-modal-' + thisObject.id).modal('show')
     }
   }
 
@@ -1674,11 +1743,16 @@ class TranscriptionEditor
             $('#item-modal-extrainfo-' + thisObject.id).html(optionsHtml)
           }
           if (formatBlot.target) {
+            let currentTarget = parseInt(format[formatBlot.name].target)
+            let currentTargetText = format[formatBlot.name].targetText
             targets = thisObject.getTargets()
+            if (currentTarget !== 0) {
+              targets.push({itemid: currentTarget, text: currentTargetText})
+            }
             let targetsHtml = ''
             for (const theTarget of targets) {
               targetsHtml += '<option value="' + theTarget.itemid + '"'
-              if (theTarget.itemid === format[formatBlot.name].target) {
+              if (theTarget.itemid === currentTarget) {
                 targetsHtml += ' selected'
               }
               targetsHtml += '>' + theTarget.text + '</option>'
@@ -2050,6 +2124,15 @@ class TranscriptionEditor
     $('#item-modal-submit-button-' + id).off()
   }
   
+  static resetMarginalModal (id) {
+    $('#marginal-modal-title-' + id).html('')
+    $('#marginal-modal-place-fg-' + id).hide()
+    $('#marginal-modal-target-fg-' + id).hide()
+    $('#marginal-modal-submit-button-' + id).off()
+  }
+  
+  
+  
   static registerEvent(eventName)
   {
     if (TranscriptionEditor.events === undefined) {
@@ -2346,7 +2429,7 @@ class TranscriptionEditor
                         <select name="place" id="marginal-modal-place-{{id}}"></select>
                     </div>
                     <div id="marginal-modal-target-fg-{{id}}" class="form-group">
-                        <label for="marginal-modal-target-{{id}}" id="marginal-modal-target-label-{{id}}" class="control-label">Extra Info:</label>
+                        <label for="marginal-modal-target-{{id}}" id="marginal-modal-target-label-{{id}}" class="control-label">Replaces:</label>
                         <select name="target" id="marginal-modal-target-{{id}}"></select>
                     </div>
                 </form>

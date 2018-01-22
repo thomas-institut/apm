@@ -230,11 +230,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 .editor-container p.additionelement {
     margin: 0px 20px;
     padding: 0px 5px;
-    background: #ddecff;
+    background: #eaf3ff;
 }
 
 .editor-container p.firstmarginalline {
-    margin-top: 30px;
+    margin-top: 50px;
 }
 
 .editor-container p.lastmarginalline {
@@ -301,12 +301,22 @@ b.abbr {
     padding: 2px;
 }
 
+.editor-container p.additionelement .addition {
+    background-color: #afd2ff;
+}
 
+.editor-container p.additionelement b {
+   border: solid 1px #c5d4e5;
+}
+
+.editor-container p.gloss .addition {
+    background-color: #afd2ff;
+}
 
 .mark {
     font-family: FontAwesome;
-    background: white;
-    color: red;
+    background: transparent;
+
 }
 
 .unclear{

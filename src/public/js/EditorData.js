@@ -170,7 +170,7 @@ class EditorData {
                 saveId = true
               }
               if (blockBlot.target) {
-                curElement.target = curOps.attributes[blockBlot.name].target
+                curElement.reference = curOps.attributes[blockBlot.name].target
                 saveId = true
               }
               if (saveId) {
@@ -245,7 +245,6 @@ class EditorData {
           // that needs to be put in text items
           let lines = text.split('\n')
           let lastLine = lines.pop()
-          console.log(lines)
           if (lines.length !== 0 ) {
             let linesText = lines.join('\n')
             if (linesText !== '') {
@@ -494,7 +493,8 @@ class EditorData {
                           additionelement:  {
                             elementId: ele.id,
                             place: ele.placement,
-                            target: ele.reference
+                            target: ele.reference,
+                            targetText: additionTargetTexts[parseInt(ele.reference)]
                           }
                         }
                       })
@@ -551,7 +551,8 @@ class EditorData {
               additionelement:  {
                 elementId: ele.id,
                 place: ele.placement,
-                target: ele.reference
+                target: ele.reference,
+                targetText: additionTargetTexts[parseInt(ele.reference)]
               }
             }
           })

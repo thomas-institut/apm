@@ -242,10 +242,34 @@ class EditorData {
         let text = normalizedText.replace(/\n$/, '')
         if (text !== '') {
           // curOps.insert !== '\n' , that is, there is text in the insert
-          // that needs to be put in an item
+          // that needs to be put in text items
+          let lines = text.split('\n')
+          let lastLine = lines.pop()
+          console.log(lines)
+          if (lines.length !== 0 ) {
+            let linesText = lines.join('\n')
+            if (linesText !== '') {
+              const item = createNewItem()
+              item.type = normalTextItemType
+              item.theText = lines.join('\n')
+              curElement.items.push(item)
+            } 
+            
+            // create a new mainTextElement
+            if (previousElementType !== lineGapElementType) {
+              curElement.type = mainTextElementType
+              if (previousElementType !== curElement.type) {
+                currentElementId++
+              }
+              curElement.id = currentElementId
+              elements.push(curElement)
+              previousElementType = curElement.type
+              curElement = createNewElement()
+            }
+          }
           const item = createNewItem()
           item.type = normalTextItemType
-          item.theText = text
+          item.theText = lastLine
           curElement.items.push(item) 
         }
         if (text !== normalizedText) {

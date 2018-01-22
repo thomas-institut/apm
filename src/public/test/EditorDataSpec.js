@@ -66,12 +66,45 @@ describe("EditorData", function() {
       expect(apiData.people).toBeDefined()
       expect(apiData.ednotes).toBeDefined()
       expect(apiData.elements.length).toBe(1) 
-      let item = apiData.elements[0].items[0]
-      expect(item.type).toBe(ITEM_TEXT)
-      expect(item.theText).toEqual(someText)
-      expect(item.lang).toBe(editorInfo.defaultLang)
+      let text = ''
+      for (const item of apiData.elements[0].items) {
+        expect(item.type).toBe(ITEM_TEXT)
+        expect(item.lang).toBe(editorInfo.defaultLang)
+        text += item.theText
+      }
+      expect(text).toEqual(someText)
+    })
+    
+    it("should handle mixed elements in inserts", function () {
+      let someText = 'Line 1\nLine 2'
+      let headText = 'Head'
+      
+      let bareTextDelta = { 
+        ops: [ 
+          {insert: someText + '\n' + headText},
+          {insert: '\n', attributes: {headelement: true}}
+        ]
+      }
+      let apiData = EditorData.getApiDataFromQuillDelta(bareTextDelta, editorInfo)
+      expect(apiData.elements).toBeDefined()
+      expect(apiData.people).toBeDefined()
+      expect(apiData.ednotes).toBeDefined()
+      expect(apiData.elements.length).toBe(2) 
+      
+      let element0 = apiData.elements[0]
+      expect(element0.type).toBe(ELEMENT_LINE)
+      expect(element0.items.length).toBe(1)
+      expect(element0.items[0].theText).toEqual(someText)
+      expect(element0.items[0].lang).toBe(editorInfo.defaultLang)
+      
+      let element1 = apiData.elements[1]
+      expect(element1.type).toBe(ELEMENT_HEAD)
+      expect(element1.items.length).toBe(1)
+      expect(element1.items[0].theText).toEqual(headText)
+      expect(element1.items[0].lang).toBe(editorInfo.defaultLang)
       
     })
+    
     
     it("should support simple textual items in all element types", function () {
       let delta = { 
@@ -251,27 +284,19 @@ describe("EditorData", function() {
       expect(apiData.elements).toBeDefined()
       expect(apiData.people).toBeDefined()
       expect(apiData.ednotes).toBeDefined()
-      
-//      expect(apiData.elements.length).toBe(2)
-//      let ele1 = apiData.elements[0]
-//      expect(ele1.type).toBe(ELEMENT_LINE)
-//      expect(ele1.items.length).toBe(1)
-//      expect(ele1.items[0].lang).toBe('he')
-//      expect(ele1.items[0].theText).toBe('Line 1')
-//      let ele2 = apiData.elements[1]
-//      expect(ele2.type).toBe(ELEMENT_LINE)
-//      expect(ele2.items.length).toBe(1)
-//      expect(ele2.items[0].lang).toBe('la')
-//      expect(ele2.items[0].theText).toBe('Line 2')
-//      
       expect(apiData.elements.length).toBe(1)
       let ele1 = apiData.elements[0]
+      console.log(ele1)
       expect(ele1.type).toBe(ELEMENT_LINE)
-      expect(ele1.items.length).toBe(2)
+      expect(ele1.items.length).toBeGreaterThan(1)
       expect(ele1.items[0].lang).toBe('he')
       expect(ele1.items[0].theText).toBe('Line 1')
-      expect(ele1.items[1].lang).toBe('la')
-      expect(ele1.items[1].theText).toBe('\nLine 2')
+      let laText = ''
+      for (let i=1; i < ele1.items.length; i++) {
+        expect(ele1.items[i].lang).toBe('la')
+        laText += ele1.items[i].theText
+      }
+      expect(laText).toBe('\nLine 2')
     })
   })
   

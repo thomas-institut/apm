@@ -515,6 +515,7 @@ class TranscriptionEditor
     let pElements = $('#' + this.containerId + ' ' + '.ql-editor > p')
     //console.log('Numbering lines in editor ' + this.id + ', ' + pElements.length + ' elements')
     let editorDiv = $('#' + this.containerId + ' ' + '.ql-editor')
+    let overlaysContainer = $('#editor-container-container-' + this.id)
     let editorContainerLeftPos = $(editorDiv).position().left
     let marginSize = this.getEditorMarginSize()
     let lineNumber = 0
@@ -653,7 +654,7 @@ class TranscriptionEditor
               lineNumberLabel +
               '</div>'
       $('#' + overlayId).remove()
-      $('#' + this.containerId).append(overlay)
+      overlaysContainer.append(overlay)
       if (topLabelText !== '') {
         overlayNumber++
         overlayId = this.containerId + '-ovr-' + overlayNumber
@@ -678,7 +679,7 @@ class TranscriptionEditor
         topLabelText +
         '</div>'
         $('#' + overlayId).remove()
-        $('#' + this.containerId).append(overlay)
+        overlaysContainer.append(overlay)
       }
 
     }
@@ -2366,7 +2367,9 @@ class TranscriptionEditor
 
     <span class="separator"/>
 </div>
-<div id="editor-container-{{id}}" class="editor-container"></div>
+<div id="editor-container-container-{{id}}">
+  <div id="editor-container-{{id}}" class="editor-container"></div>
+</div>
 <div id="status-bar-{{id}}" class="editor-statusbar"></div>
 </div>
 <div id="cbtmp" style="display: none;">

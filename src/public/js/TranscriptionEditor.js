@@ -534,14 +534,29 @@ class TranscriptionEditor
       switch (this.getParagraphType(theP)) {
         case 'normal':
           inMarginal = false
+          let foundLineGap = false
+          let theLineGap = undefined
           let children = theP.children()
           if (children.length === 1) {
             let theChild = $(children[0])
             if (theChild.hasClass('linegap')) {
-              lineNumber += parseInt(theChild.attr('length'))
-              lineNumberLabel = ''
-              break
+              foundLineGap = true
+              theLineGap = theChild
+            } else {
+              if (theChild.children.length > 0) {
+                let theGrandChildren = theChild.children()
+                let theGrandChild = $(theGrandChildren[0])
+                if (theGrandChild.hasClass('linegap')) {
+                  foundLineGap = true
+                  theLineGap = theGrandChild
+                }
+              }
             }
+          }
+          if(foundLineGap) {
+            lineNumber += parseInt(theLineGap.attr('length'))
+            lineNumberLabel = ''
+            break
           }
           lineNumberLabel = TranscriptionEditor.padNumber(++lineNumber, numChars, '&nbsp;')
           break

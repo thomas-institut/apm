@@ -269,8 +269,45 @@ describe("EditorData", function() {
       expect(apiData.elements[7].type).toBe(ELEMENT_LINE_GAP)
       expect(apiData.elements[7].items.length).toBe(0)
       expect(apiData.elements[7].reference).toBe(1)
+    })
+    
+    it("should support multiple lines after line gaps (issue #61)", function() {
+      let delta = {
+        ops: [
+          {attributes: {lang: 'la'}, insert: "Line 1"},
+          {insert: '\n'},
+          {attributes: {lang: 'la'}, insert: "Line 2"},
+          {insert: '\n'},
+          {attributes: {lang: 'la'}, insert: { linegap:{editorid:1, itemid: 100, thelength: 5}}},
+          {insert: '\n'},
+          {attributes: {lang: 'la'}, insert: "Line 8"},
+          {insert: '\nLine 9\nLine 10\n'}
+        ]
+      }
       
+      //console.log("Debugging Issue #61")
+      //console.log(delta)
+      let apiData = EditorData.getApiDataFromQuillDelta( delta, editorInfo)
       
+      expect(apiData.elements).toBeDefined()
+      expect(apiData.people).toBeDefined()
+      expect(apiData.ednotes).toBeDefined()
+      expect(apiData.elements.length).toBe(3)
+      expect(apiData.elements[0].type).toBe(ELEMENT_LINE)
+      expect(apiData.elements[1].type).toBe(ELEMENT_LINE_GAP)
+      expect(apiData.elements[2].type).toBe(ELEMENT_LINE)
+      
+      let ele2 = apiData.elements[2]
+      //console.log("Going over ele2 items")
+      let theText = ''
+      for (const item of ele2.items) {
+        expect(item.type).toBe(ITEM_TEXT)
+        //console.log({seq: item.seq, theText: item.theText})
+        theText += item.theText
+      }
+      //console.log('Imploded text:')
+      //console.log({theText: theText})
+      expect(theText).toBe('Line 8\nLine 9\nLine 10')
     })
     
     it("should properly deal with inserts starting with newline (issues #20 and #32)", function () {
@@ -286,7 +323,7 @@ describe("EditorData", function() {
       expect(apiData.ednotes).toBeDefined()
       expect(apiData.elements.length).toBe(1)
       let ele1 = apiData.elements[0]
-      console.log(ele1)
+      //console.log(ele1)
       expect(ele1.type).toBe(ELEMENT_LINE)
       expect(ele1.items.length).toBeGreaterThan(1)
       expect(ele1.items[0].lang).toBe('he')

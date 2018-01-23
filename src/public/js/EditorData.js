@@ -107,6 +107,7 @@ class EditorData {
         curElement.type = lineGapElementType
         curElement.reference = theInsert.linegap.thelength
         curElement.items = []
+        //console.log("Creating line gap element")
         elements.push(curElement)
         previousElementType = lineGapElementType
         curElement = createNewElement()
@@ -150,15 +151,19 @@ class EditorData {
     }
 
     // START of ops processing
+    let opsCounter = 0
     for (const entry of ops.entries()) {
       const curOps = entry[1]
+      //console.log('[' + (opsCounter++) + '] PROCESSING OPS: ')
+      //console.log(curOps)
       if ('attributes' in curOps) {
         // 1. Insert with attributes
         if (curOps.insert === '\n') {
           // 1.a. End of line with attributes
           if (previousElementType === lineGapElementType) {
             // ignore this ops
-            console.warn('WARNING: Quill 2 API : Ignoring newline, prev element was line gap')
+            //console.log('Ignoring newline with attributes, prev element was line gap')
+            previousElementType = -1
             continue
           }
           for (const blockBlot of blockBlots) {
@@ -190,6 +195,7 @@ class EditorData {
             } 
             curElement.id = currentElementId
           }
+          //console.log("Creating block element, type " + curElement.type)
           elements.push(curElement)
           previousElementType = curElement.type
           curElement = createNewElement()
@@ -237,9 +243,36 @@ class EditorData {
       // 2. Insert without attributes
       if (typeof curOps.insert === 'string') {
         // 2.a. Insert text without attributes, possibly including new lines
+        let text = curOps.insert
+        // First take care of line gaps
+        if (previousElementType===lineGapElementType) {
+          if (!text.includes('\n')) {
+            console.warn("Quill 2 API: Found an insert without newlines after a lineGap, this is really odd! Skipping")
+            previousElementType = -1
+            continue
+          }
+          if (text === '\n') {
+            // This is the normal case and it's quick to check
+            //console.log("Single newline after lineGap found, skipping")
+            previousElementType = -1
+            continue
+          }
+          // eat up all text up to the first newline and continue processing the string if not empty
+          text = text.replace(/^.*\n/, '')
+          if (text === '') {
+            //console.log("Found text + new line after lineGap, very odd. Skipping")
+            previousElementType = -1
+            continue
+          }
+          previousElementType = -1
+          //console.log("Found text + newline + additionalText after lineGap. Odd, but OK, will process additional text")
+        }
+          
         curElement.type = mainTextElementType
         let normalizedText = curOps.insert.replace(/\n+/g, '\n')
-        let text = normalizedText.replace(/\n$/, '')
+        text = normalizedText.replace(/\n$/, '')
+        //console.log("Processing string insert")
+        //console.log({insert: curOps.insert, norm: normalizedText, text: text})
         if (text !== '') {
           // curOps.insert !== '\n' , that is, there is text in the insert
           // that needs to be put in text items
@@ -247,15 +280,17 @@ class EditorData {
           let lastLine = lines.pop()
           if (lines.length !== 0 ) {
             let linesText = lines.join('\n')
+            //console.log({lines: lines, lastLine: lastLine, linesText: linesText})
             if (linesText !== '') {
               const item = createNewItem()
               item.type = normalTextItemType
-              item.theText = lines.join('\n')
+              item.theText = linesText 
               curElement.items.push(item)
             } 
             
             // create a new mainTextElement
-            if (previousElementType !== lineGapElementType) {
+            //if (previousElementType !== lineGapElementType) {
+              //console.log("Creating line element")
               curElement.type = mainTextElementType
               if (previousElementType !== curElement.type) {
                 currentElementId++
@@ -264,7 +299,10 @@ class EditorData {
               elements.push(curElement)
               previousElementType = curElement.type
               curElement = createNewElement()
-            }
+//            }
+//            else {
+//              console.log("No element created from all but lastLine because prev element is lineGap")
+//            }
           }
           const item = createNewItem()
           item.type = normalTextItemType
@@ -274,16 +312,19 @@ class EditorData {
         if (text !== normalizedText) {
           // text ends in a new line, create a new mainTextElement if last element
           // is not a line gap
-          if (previousElementType !== lineGapElementType) {
+          //if (previousElementType !== lineGapElementType) {
             curElement.type = mainTextElementType
             if (previousElementType !== curElement.type) {
               currentElementId++
             }
             curElement.id = currentElementId
+            //console.log("Creating line element")
             elements.push(curElement)
             previousElementType = curElement.type
             curElement = createNewElement()
-          }
+//          } else {
+//            console.log("insert ends in newline, but prevElement is lineGap, so nothing created")
+//          }
         }
         continue  // 2.a. 終
       }
@@ -294,6 +335,7 @@ class EditorData {
     
     // Check if there are elements to store
     if (curElement.items.length !== 0) {
+      //console.log("Pushing trailing element")
       elements.push(curElement)
     }
     
@@ -302,6 +344,8 @@ class EditorData {
     let processedElements = []
     let currentElement = undefined
     let currentSeq = 0
+    //console.log("Before imploding elements...")
+    //console.log(elements)
     for (const ele of elements) {
       if (currentElement===undefined || ele.id !== currentElement.id) {
         if (currentElement !== undefined) {

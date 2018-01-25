@@ -5,12 +5,10 @@
 
 {% block extraJS %}
 <script type="application/javascript" src="{{baseurl}}/js/ApmUtil.js"></script>
-<script type="application/javascript" src="{{baseurl}}/js/ApiUrl.js"></script>
-<script type="application/javascript" src="{{baseurl}}/js/DocEdit.js"></script>
+<script type="application/javascript" src="{{baseurl}}/js/DocEditPage.js"></script>
 <script>
-    ApiUrl.setBase('{{baseurl}}')
     $(document).ready(function () {
-        docEditObj = new DocEdit('de', 
+        docEditObj = new DocEditPage('de', 
         JSON.parse('{{docInfo|json_encode|raw}}'),
         '{{path_for('api.doc.update', {'id': docInfo.id})}}',
         '{{path_for('doc.showdoc', {'id' : docInfo.id })}}')

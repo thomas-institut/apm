@@ -23,16 +23,17 @@
 /*eslint default-case: "error"*/
 /*eslint no-console: ["error", { allow: ["warn", "error"] }] */
 
-/* global PageRange, FOLIATION_RECTOVERSO, FOLIATION_CONSECUTIVE, ApiUrl */
+/* global PageRange, FOLIATION_RECTOVERSO, FOLIATION_CONSECUTIVE */
 
 class DefPagesDefRange {
   
   
-  constructor (numPages, htmIdPrefix, docId, pageTypes) {
+  constructor (numPages, htmIdPrefix, docId, pageTypes, urlGenerator) {
 
     this.numPages = numPages
     this.prefix = '#' + htmIdPrefix
     this.docId = docId
+    this.pathFor = urlGenerator
     
     this.updating = false
     
@@ -206,7 +207,7 @@ class DefPagesDefRange {
       thisObject.updating = true
       
       $.post(
-        ApiUrl.bulkPageSettings(), 
+        thisObject.pathFor.apiBulkPageSettings(), 
         { data: JSON.stringify(pageDefs) }
       )
       .done(function () { 

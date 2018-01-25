@@ -1,3 +1,5 @@
+<?php
+
 /*
  * Copyright (C) 2017 Universität zu Köln
  *
@@ -16,34 +18,31 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-class ApiUrl {
-  static setBase (base) {
-    ApiUrl.base = base
-  }
-  static createUser () {
-    return ApiUrl.base + '/api/user/new'
-  }
+namespace AverroesProject\ColumnElement;
 
-  static updateProfile (id) {
-    return ApiUrl.base + '/api/user/' + id + '/update'
-  }
-
-  static userGetInfo (id) {
-    return ApiUrl.base + '/api/user/' + id + '/info'
-  }
-
-  static userPasswordChange (id) {
-    return ApiUrl.base + '/api/user/' + id + '/changepassword'
-  }
-
-  static userMakeRoot (id) {
-    return ApiUrl.base + '/api/user/' + id + '/makeroot'
-  }
-  
-  static bulkPageSettings() {
-    return ApiUrl.base + '/api/page/bulkupdate'
-  }
-  
+/**
+ * Description of Addition
+ *
+ * @author Rafael Nájera <rafael.najera@uni-koeln.de>
+ */
+class Substitution extends Element {
+        
+    public $targetXmlId; 
+    
+    public function __construct($id = Element::ID_NOT_SET, 
+            $colNumber = 0, $lang = Element::LANG_NOT_SET)
+    {
+        parent::__construct($id, $colNumber, $lang);
+        $this->type = parent::SUBSTITUTION;
+        $this->targetXmlId = '';
+    }
+    
+    function getTargetId(){
+        return $this->reference;
+    }
+    
+    function setTargetId($id)
+    {
+        $this->reference = $id;
+    }
 }
-
-ApiUrl.base = ''

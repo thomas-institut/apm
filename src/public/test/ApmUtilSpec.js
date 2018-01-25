@@ -16,26 +16,27 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-/* eslint "no-unused-vars": "off" */
-const ELEMENT_INVALID = -1
-const ELEMENT_LINE = 1
-const ELEMENT_HEAD = 2
-const ELEMENT_GLOSS = 3
-const ELEMENT_PAGE_NUMBER = 4
-const ELEMENT_CUSTODES = 5
-const ELEMENT_NOTE_MARK = 6
-const ELEMENT_SUBSTITUTION = 7
-const ELEMENT_LINE_GAP = 8
-const ELEMENT_ADDITION = 9
+/* global ApmUtil, expect*/
 
-
-class Element {
-  static getValidMarginalPlacements () {
-    return [
-      'margin left',
-      'margin right',
-      'margin top',
-      'margin bottom'
-    ]
-  }
-}
+describe("ApmUtil", function() {
+  
+  describe("API to JS glue code", function (){
+    it("should convert languages array to langDef object", function (){
+      let emptyLangArray = []
+      expect(ApmUtil.getLangDefFromLanguagesArray(emptyLangArray)).toEqual({})
+      
+      let langArray1 = [ 
+        { code: 'ar', name: 'Arabic', rtl: true, fontsize: 3},
+        { code: 'la', name: 'Latin', rtl: false, fontsize: 3}
+      ]
+      let langDef1 = ApmUtil.getLangDefFromLanguagesArray(langArray1)
+      expect(langDef1.ar).toBeDefined()
+      expect(langDef1.ar).toEqual(langArray1[0])
+      expect(langDef1.la).toBeDefined()
+      expect(langDef1.la).toEqual(langArray1[1])
+      
+    })
+  })
+  
+})
+  

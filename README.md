@@ -40,9 +40,7 @@ To run the app in development:
 (see ```src/public/config.sample.php```).
 * Create the database structure
 with the SQL script ```src/db/dbcreation.sql```. 
-* Run the PHP7 webserver with root in ```src``` and with
-the given ```localphp.ini```  (this file just makes sure that php-sessions are
-stored in the current directory).  Run:
+* Run the PHP7 webserver with root in ```src```  Run:
 ```bash
 ./runphpwebserver
 ```

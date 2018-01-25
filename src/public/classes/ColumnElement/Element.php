@@ -91,8 +91,9 @@ class Element {
     const PAGE_NUMBER = 4;
     const CUSTODES = 5;
     const NOTE_MARK = 6;
-    const ADDITION = 7;
+    const SUBSTITUTION = 7;
     const LINE_GAP = 8;
+    const ADDITION = 9;
     
     // 
     // Fields that may or may not be used depending on the type

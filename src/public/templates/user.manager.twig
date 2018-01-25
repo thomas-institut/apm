@@ -9,11 +9,14 @@ User manager template
 
 {% block extraJS %}
 <script type="application/javascript" src="{{baseurl}}/js/ApmUtil.js"></script>
-<script type="application/javascript" src="{{baseurl}}/js/ApiUrl.js"></script>
-<script type="application/javascript" src="{{baseurl}}/js/usermanager.js"></script>
+<script type="application/javascript" src="{{baseurl}}/js/ApmUrlGenerator.js"></script>
+<script type="application/javascript" src="{{baseurl}}/js/UserManagerPage.js"></script>
 <script>
-    ApiUrl.setBase('{{baseurl}}')
-    
+    $(document).ready(function () {
+        let um = new UserManagerPage({
+            urlGenerator: new ApmUrlGenerator('{{baseurl}}')
+        })
+    })
 </script>
 {% endblock %}
 

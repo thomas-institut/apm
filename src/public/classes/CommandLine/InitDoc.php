@@ -52,7 +52,7 @@ class InitDoc extends CommandLineUtility {
             return false;
         }
         
-        if ($colsPerPage <= 0) {
+        if ($colsPerPage < 0) {
             $this->printErrorMsg('Wrong cols per page');
             return false;
         }

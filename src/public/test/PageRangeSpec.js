@@ -28,7 +28,7 @@ describe("PageRange", function() {
       expect(range.b).toBe(2)
      
       let range2 = new PageRange(1,2, 100)
-      console.log(range2)
+      //console.log(range2)
       expect(range2.isEmpty()).toBe(false)
       expect(range2.a).toBe(1)
       expect(range2.b).toBe(2)

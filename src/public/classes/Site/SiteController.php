@@ -403,14 +403,15 @@ class SiteController
             $imageSourceOptions .= '>' . $imageSource . '</option>';
         }
         
-        $languages = [ ['ar', 'Arabic'], ['he', 'Hebrew'], ['la', 'Latin']];
+        
+        $languages = $this->ci->settings['languages'];
         $langOptions = '';
         foreach($languages as $lang) {
-            $langOptions .= '<option value="' . $lang[0] . '"';
-            if ($docInfo['lang'] === $lang[0]) {
+            $langOptions .= '<option value="' . $lang['code'] . '"';
+            if ($docInfo['lang'] === $lang['code']) {
                 $langOptions  .= ' selected';
             }
-            $langOptions .= '>' . $lang[1] . '</option>';
+            $langOptions .= '>' . $lang['name'] . '</option>';
         }
         
         $docTypes = [ ['mss', 'Manuscript'], ['print', 'Print']];
@@ -477,13 +478,13 @@ class SiteController
         $osdConfig = $this->db->getOpenSeaDragonConfig($docId, $pageInfo['img_number']);
         $pageTypeNames  = $this->db->getPageTypeNames();
         $activeWorks = $this->db->getActiveWorks();
-        //$this->ci->logger->debug('Active Works', $activeWorks);
         $pageNumberFoliation = $pageNumber;
+        $languagesArray = $this->ci->settings['languages'];
         if ($pageInfo['foliation'] !== NULL) {
             $pageNumberFoliation = $pageInfo['foliation'];
         }
 
-        return $this->ci->view->render($response, 'pageviewer2.twig', [
+        return $this->ci->view->render($response, 'pageviewer.twig', [
             'userinfo' => $this->ci->userInfo, 
             'copyright' => $this->ci->copyrightNotice,
             'baseurl' => $this->ci->settings['baseurl'],
@@ -499,8 +500,8 @@ class SiteController
             'activeWorks' => $activeWorks,
             'thePages' => $thePages,
             'imageUrl' => $imageUrl,
-            'openSeaDragonConfig' => $osdConfig
-                
+            'openSeaDragonConfig' => $osdConfig,
+            'languagesArray' => $languagesArray
         ]);
     }
     
@@ -521,13 +522,14 @@ class SiteController
         $osdConfig = $this->db->getOpenSeaDragonConfig($docId, $pageInfo['img_number']);
         $pageTypeNames  = $this->db->getPageTypeNames();
         $activeWorks = $this->db->getActiveWorks();
+        $languagesArray = $this->ci->settings['languages'];
         
         $pageNumberFoliation = $pageInfo['seq'];
         if ($pageInfo['foliation'] !== NULL) {
             $pageNumberFoliation = $pageInfo['foliation'];
         }
 
-        return $this->ci->view->render($response, 'pageviewer2.twig', [
+        return $this->ci->view->render($response, 'pageviewer.twig', [
             'userinfo' => $this->ci->userInfo, 
             'copyright' => $this->ci->copyrightNotice,
             'baseurl' => $this->ci->settings['baseurl'],
@@ -543,7 +545,8 @@ class SiteController
             'activeWorks' => $activeWorks,
             'thePages' => $thePages,
             'imageUrl' => $imageUrl,
-            'openSeaDragonConfig' => $osdConfig
+           'openSeaDragonConfig' => $osdConfig,
+            'languagesArray' => $languagesArray
         ]);
     }
     

@@ -22,3 +22,17 @@ $config['displayErrorDetails'] = true;
 
 // Log file name (relative to the location of the web base)
 $config['logfilename'] = 'log/apm.log';
+
+
+$config['languages'] = [
+    [ 'code' => 'ar', 'name' => 'Arabic', 'rtl' => true, 'fontsize' => 5],
+    [ 'code' => 'jrb', 'name' => 'Judeo Arabic', 'rtl' => true, 'fontsize' => 3],
+    [ 'code' => 'he', 'name' => 'Hebrew', 'rtl' => true, 'fontsize' => 3], 
+    [ 'code' => 'la', 'name' => 'Latin', 'rtl' => false, 'fontsize' => 3] 
+];
+
+$config['langCodes'] = [];
+foreach ($config['languages'] as $lang) {
+    $config['langCodes'][] = $lang['code'];
+}
+

@@ -20,20 +20,30 @@
 /* global ELEMENT_GLOSS, ELEMENT_PAGE_NUMBER, ITEM_TEXT, ITEM_MARK */
 /* global ITEM_RUBRIC, ITEM_GLIPH, ITEM_INITIAL, ITEM_SIC, ITEM_ABBREVIATION */
 /* global ITEM_DELETION, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_ILLEGIBLE */
-/* global ITEM_NO_WORD_BREAK, ITEM_CHUNK_MARK, ELEMENT_ADDITION, ELEMENT_LINE_GAP, ELEMENT_INVALID, ITEM_CHARACTER_GAP, ITEM_PARAGRAPH_MARK, ITEM_MATH_TEXT */
+/* global ITEM_NO_WORD_BREAK, ITEM_CHUNK_MARK, ELEMENT_ADDITION, ELEMENT_LINE_GAP, ELEMENT_INVALID, ITEM_CHARACTER_GAP, ITEM_PARAGRAPH_MARK, ITEM_MATH_TEXT, TranscriptionEditor, ELEMENT_SUBSTITUTION */
 
 /* exported EditorData */
 class EditorData {
   
   static getApiDataFromQuillDelta(delta, editorInfo) {
+    
+    // Transcription editor settings
+    let formatBlots = TranscriptionEditor.formatBlots
+    let blockBlots = TranscriptionEditor.blockBlots
+    let imageBlots = TranscriptionEditor.imageBlots
+    let mainTextElementType = ELEMENT_LINE
+    let lineGapElementType = ELEMENT_LINE_GAP
+    let invalidElementType = ELEMENT_INVALID
+    let normalTextItemType = ITEM_TEXT
+    let lineGapBlotName = TranscriptionEditor.lineGapBlot.blotName
+    
     const ops = delta.ops
     const elements = []
     const itemIds = []
     let currentItemSeq = 0
     let currentElementSeq = 0
     let currentElementId = 0
-    
-    let previousElementType = ELEMENT_INVALID
+    let previousElementType = invalidElementType
     
     /**
      * Updates item and element sequence numbers and creates a new empty Element object
@@ -42,15 +52,14 @@ class EditorData {
      */
     function createNewElement() {
       currentItemSeq = 0
-      currentElementId++
       return {
-        id: currentElementId,
+        id: -1,
         pageId: editorInfo.pageId,
         columnNumber: editorInfo.columnNumber,
         lang: editorInfo.defaultLang,
         editorId: editorInfo.editorId,
         handId: editorInfo.handId,
-        type: ELEMENT_INVALID,
+        type: invalidElementType,
         seq: currentElementSeq++,
         items: [],
         reference: null,
@@ -69,8 +78,9 @@ class EditorData {
         id: -1,
         columnElementId: currentElementId,
         seq: currentItemSeq++,
-        type: ITEM_TEXT,
+        type: normalTextItemType,
         lang: editorInfo.defaultLang,
+        handId: 0,
         theText: '',
         altText: null,
         extraInfo: null,
@@ -79,60 +89,60 @@ class EditorData {
       }
     }
     
-    /**
-     * 
-     * @param {type} curOps an Ops object from Quill
-     * @returns {Boolean} false on error
-     */
     function processNonTextualItem(curOps) {
       const theInsert = curOps.insert
-      if ('linegap' in curOps.insert) {
+      if (lineGapBlotName in curOps.insert) {
         if (curElement.items.length > 0) {
           // this means the line gap does not have newline before
           // which is possible in Quill
-          curElement.type = ELEMENT_LINE
+          curElement.type = mainTextElementType
+          if (curElement.type !== previousElementType) {
+            currentElementId++
+          }
+          curElement.id = currentElementId
           elements.push(curElement)
           curElement = createNewElement()
         }
-        curElement.type = ELEMENT_LINE_GAP
-        curElement.reference = theInsert.linegap.linecount
+        curElement.id = ++currentElementId
+        curElement.type = lineGapElementType
+        curElement.reference = theInsert.linegap.thelength
         curElement.items = []
+        //console.log("Creating line gap element")
         elements.push(curElement)
-        previousElementType = ELEMENT_LINE_GAP
+        previousElementType = lineGapElementType
         curElement = createNewElement()
         return true
       }
       
       const item = createNewItem()
-      if ('mark' in theInsert) {
-        item.type = ITEM_MARK
-        item.id = theInsert.mark.itemid
+      let formatFound = false
+      for (const theBlot of imageBlots) {
+        if (theBlot.name in theInsert) {
+          item.type = theBlot.type
+          item.id = theInsert[theBlot.name].itemid
+          if (theBlot.text) {
+            item.theText = theInsert[theBlot.name].text
+          }
+          if (theBlot.alttext) {
+            item.altText = theInsert[theBlot.name].alttext
+          }
+          if (theBlot.extrainfo) {
+            item.extraInfo = theInsert[theBlot.name].extrainfo
+          }
+          if (theBlot.target) {
+            item.target = theInsert[theBlot.name].target
+          }
+          if (theBlot.thelength) {
+            item.length = theInsert[theBlot.name].thelength
+          }
+          formatFound = true
+          break
+        }
       }
-      if ('chgap' in curOps.insert) {
-        item.type = ITEM_CHARACTER_GAP
-        item.id = theInsert.chgap.itemid
-        item.length = theInsert.chgap.length
-      }
-      if ('nowb' in curOps.insert) {
-        item.type = ITEM_NO_WORD_BREAK
-        item.id = theInsert.nowb.itemid
-      }
-      if ('illegible' in curOps.insert) {
-        item.type = ITEM_ILLEGIBLE
-        item.id = theInsert.illegible.itemid
-        item.extraInfo = theInsert.illegible.reason
-        item.length = parseInt(theInsert.illegible.length)
-      }
-      if ('chunkmark' in curOps.insert) {
-        item.type = ITEM_CHUNK_MARK
-        item.id = theInsert.chunkmark.itemid
-        item.altText = theInsert.chunkmark.type
-        item.target = parseInt(theInsert.chunkmark.chunkno)
-        item.theText = theInsert.chunkmark.dareid
-      }
-      if ('pmark' in theInsert) {
-        item.type = ITEM_PARAGRAPH_MARK
-        item.id = theInsert.pmark.itemid
+      if (!formatFound) {
+        console.warn('Unknown non-textual format in ops')
+        console.warn(curOps)
+        return false
       }
       item.id = parseInt(item.id)
       itemIds.push(item.id)
@@ -140,177 +150,239 @@ class EditorData {
       return true
     }
 
+    // START of ops processing
+    let opsCounter = 0
     for (const entry of ops.entries()) {
-      //console.log('Processing ops ' + i)
-      //console.log(JSON.stringify(curOps))
       const curOps = entry[1]
+      //console.log('[' + (opsCounter++) + '] PROCESSING OPS: ')
+      //console.log(curOps)
       if ('attributes' in curOps) {
+        // 1. Insert with attributes
         if (curOps.insert === '\n') {
-          //
-          // End of element, element.type !== ELEMENT_LINE
-          //
-          //console.log("Insert is newline with attributes")
-          if (previousElementType === ELEMENT_LINE_GAP) {
+          // 1.a. End of line with attributes
+          if (previousElementType === lineGapElementType) {
             // ignore this ops
-            console.warn('WARNING: Quill 2 API : Ignoring newline, prev element was line gap')
+            //console.log('Ignoring newline with attributes, prev element was line gap')
+            previousElementType = -1
             continue
           }
-          if (curOps.attributes.gloss) {
-            curElement.type = ELEMENT_GLOSS
-            curElement.id = curOps.attributes.gloss.elementId
-            curElement.placement = curOps.attributes.gloss.place
+          for (const blockBlot of blockBlots) {
+            if (curOps.attributes[blockBlot.name]) {
+              let saveId = false
+              curElement.type = blockBlot.type
+              if (blockBlot.place) {
+                curElement.placement = curOps.attributes[blockBlot.name].place
+                saveId = true
+              }
+              if (blockBlot.target) {
+                curElement.reference = curOps.attributes[blockBlot.name].target
+                saveId = true
+              }
+              if (saveId) {
+                curElement.id = curOps.attributes[blockBlot.name].elementId
+              }
+              break
+            }
           }
-          if (curOps.attributes.additionelement) {
-            curElement.type = ELEMENT_ADDITION
-            curElement.id = curOps.attributes.additionelement.elementId
-            curElement.placement = curOps.attributes.additionelement.place
-            curElement.reference = curOps.attributes.additionelement.target
-          }
-          if (curOps.attributes.head) {
-            curElement.type = ELEMENT_HEAD
-          }
-          if (curOps.attributes.custodes) {
-            curElement.type = ELEMENT_CUSTODES
-          }
-          if (curOps.attributes.pagenumber) {
-            curElement.type = ELEMENT_PAGE_NUMBER
-          }
-          if (curElement.type === ELEMENT_INVALID) {
+
+          if (curElement.type === invalidElementType) {
             console.warn('WARNING: Quill 2 API : single newline without valid attribute')
             console.warn(JSON.stringify(curOps))
           }
-          
-          //console.log(curElement)
+          if (curElement.id === -1) {
+            if (previousElementType !== curElement.type) {
+              currentElementId++
+            } 
+            curElement.id = currentElementId
+          }
+          //console.log("Creating block element, type " + curElement.type)
           elements.push(curElement)
           previousElementType = curElement.type
           curElement = createNewElement()
-          continue;
-        } 
+          continue   //1.a. 終
+        }  
         
-        // Insert can be text or a  gap
-        
+        // 1.b. Insert text or non-textual item with attributes 
         if (typeof curOps.insert !== 'string') {
+          // 1.b.i. Insert non-textual item with attributes
+          // the attributes will be ignored!
           processNonTextualItem(curOps)
-          continue
+          continue // 1.b.i. 終
         }
         
-        //
-        // Item with some text in it
-        //
-        //
-        //console.log("insert is text with attributes")
+        // 1.b.ii Insert text with attributes
         const item = createNewItem()
-        
-        item.theText =curOps.insert
+        item.theText = curOps.insert
         if (curOps.attributes.lang) {
           item.lang = curOps.attributes.lang
         }
-        if (curOps.attributes.rubric) {
-          item.type = ITEM_RUBRIC
-          item.id = curOps.attributes.rubric.itemid
-        }
-        if (curOps.attributes.mathtext) {
-          item.type = ITEM_MATH_TEXT
-          item.id = curOps.attributes.mathtext.itemid
-        }
-        if (curOps.attributes.gliph) {
-          item.type = ITEM_GLIPH
-          item.id = curOps.attributes.gliph.itemid
-        }
-        if (curOps.attributes.initial) {
-          item.type = ITEM_INITIAL
-          item.id = curOps.attributes.initial.itemid
-        }
-        if (curOps.attributes.sic) {
-          item.type = ITEM_SIC
-          item.altText = curOps.attributes.sic.correction
-          item.id = curOps.attributes.sic.itemid
-        }
-        if (curOps.attributes.abbr) {
-          item.type = ITEM_ABBREVIATION
-          item.altText = curOps.attributes.abbr.expansion
-          item.id = curOps.attributes.abbr.itemid
-        }
-        if (curOps.attributes.deletion) {
-          item.type = ITEM_DELETION
-          item.extraInfo = curOps.attributes.deletion.technique
-          item.id = curOps.attributes.deletion.itemid
-        }
-        if (curOps.attributes.addition) {
-          item.type = ITEM_ADDITION
-          item.extraInfo = curOps.attributes.addition.place
-          item.id = curOps.attributes.addition.itemid
-          item.target = curOps.attributes.addition.target
-        }
-        if (curOps.attributes.unclear) {
-          item.type = ITEM_UNCLEAR
-          item.altText = curOps.attributes.unclear.reading2
-          item.extraInfo = curOps.attributes.unclear.reason
-          item.id = curOps.attributes.unclear.itemid
+        // Simple format elements
+        for (const formatBlot of formatBlots) {
+          if (curOps.attributes[formatBlot.name]) {
+            item.type = formatBlot.type
+            item.id = curOps.attributes[formatBlot.name].itemid
+            item.handId = curOps.attributes[formatBlot.name].handid
+            if (formatBlot.alttext) {
+              item.altText = curOps.attributes[formatBlot.name].alttext
+            }
+            if (formatBlot.extrainfo) {
+              item.extraInfo = curOps.attributes[formatBlot.name].extrainfo
+            }
+            if (formatBlot.target) {
+              item.target = curOps.attributes[formatBlot.name].target
+            }
+          }
         }
         // Make sure item id is an int
         item.id = parseInt(item.id)
         itemIds.push(item.id)
         curElement.items.push(item)
-        continue;
+        continue // 1.b.ii. 終
       }
-      // No attributes in curOps
-      
+
+      // 2. Insert without attributes
       if (typeof curOps.insert === 'string') {
-        //
-        // Text without attributes, possibly including new lines
-        //
-        //console.log("Insert is text without attributes")
-        let text = ''
-        for (let i = 0; i < curOps.insert.length; i++) {
-          if (curOps.insert[i] === '\n') {
-            if (text !== '') {
-              //console.log('Creating new text item')
+        // 2.a. Insert text without attributes, possibly including new lines
+        let text = curOps.insert
+        // First take care of line gaps
+        if (previousElementType===lineGapElementType) {
+          if (!text.includes('\n')) {
+            console.warn("Quill 2 API: Found an insert without newlines after a lineGap, this is really odd! Skipping")
+            previousElementType = -1
+            continue
+          }
+          if (text === '\n') {
+            // This is the normal case and it's quick to check
+            //console.log("Single newline after lineGap found, skipping")
+            previousElementType = -1
+            continue
+          }
+          // eat up all text up to the first newline and continue processing the string if not empty
+          text = text.replace(/^.*\n/, '')
+          if (text === '') {
+            //console.log("Found text + new line after lineGap, very odd. Skipping")
+            previousElementType = -1
+            continue
+          }
+          previousElementType = -1
+          //console.log("Found text + newline + additionalText after lineGap. Odd, but OK, will process additional text")
+        }
+          
+        curElement.type = mainTextElementType
+        let normalizedText = curOps.insert.replace(/\n+/g, '\n')
+        text = normalizedText.replace(/\n$/, '')
+        //console.log("Processing string insert")
+        //console.log({insert: curOps.insert, norm: normalizedText, text: text})
+        if (text !== '') {
+          // curOps.insert !== '\n' , that is, there is text in the insert
+          // that needs to be put in text items
+          let lines = text.split('\n')
+          let lastLine = lines.pop()
+          if (lines.length !== 0 ) {
+            let linesText = lines.join('\n')
+            //console.log({lines: lines, lastLine: lastLine, linesText: linesText})
+            if (linesText !== '') {
               const item = createNewItem()
-              item.type = ITEM_TEXT
-              item.theText = text
-              // no need to push the item id to itemIds
-              curElement.items.push(item) 
-              text = ''
-            }
-            if (curElement.items.length > 0) {
-              //console.log("Storing element")
-              curElement.type = ELEMENT_LINE
+              item.type = normalTextItemType
+              item.theText = linesText 
+              curElement.items.push(item)
+            } 
+            
+            // create a new mainTextElement
+            //if (previousElementType !== lineGapElementType) {
+              //console.log("Creating line element")
+              curElement.type = mainTextElementType
+              if (previousElementType !== curElement.type) {
+                currentElementId++
+              }
+              curElement.id = currentElementId
               elements.push(curElement)
               previousElementType = curElement.type
               curElement = createNewElement()
-            } else if (previousElementType === ELEMENT_LINE_GAP) {
-              console.warn('INFO: Quill 2 API : Ignoring newline, prev element was line gap')
-            } else {
-              console.warn('INFO: Quill 2 API : Ignoring newline, no items')
-            }
-            // continue to next character
-            continue 
+//            }
+//            else {
+//              console.log("No element created from all but lastLine because prev element is lineGap")
+//            }
           }
-          // character is not a new line
-          text += curOps.insert[i]
-        }
-        // Store last item if there's text
-        if (text !== '') {
-          //console.log('Creating new text item')
           const item = createNewItem()
-          item.type = ITEM_TEXT
-          item.theText = text
-          // no need to push the item id to itemIds
+          item.type = normalTextItemType
+          item.theText = lastLine
           curElement.items.push(item) 
-          text = ''
         }
-        // continue to next ops
-        continue 
+        if (text !== normalizedText) {
+          // text ends in a new line, create a new mainTextElement if last element
+          // is not a line gap
+          //if (previousElementType !== lineGapElementType) {
+            curElement.type = mainTextElementType
+            if (previousElementType !== curElement.type) {
+              currentElementId++
+            }
+            curElement.id = currentElementId
+            //console.log("Creating line element")
+            elements.push(curElement)
+            previousElementType = curElement.type
+            curElement = createNewElement()
+//          } else {
+//            console.log("insert ends in newline, but prevElement is lineGap, so nothing created")
+//          }
+        }
+        continue  // 2.a. 終
       }
-      
+      // 2.b. Insert non-textual item without attributes
       processNonTextualItem(curOps)
-     
+      // 2.b. 終
+    } // processing of ops.entries 終
+    
+    // Check if there are elements to store
+    if (curElement.items.length !== 0) {
+      //console.log("Pushing trailing element")
+      elements.push(curElement)
     }
-
+    
+    // Implode elements with the same id, adding new line items
+    // between them
+    let processedElements = []
+    let currentElement = undefined
+    let currentSeq = 0
+    //console.log("Before imploding elements...")
+    //console.log(elements)
+    for (const ele of elements) {
+      if (currentElement===undefined || ele.id !== currentElement.id) {
+        if (currentElement !== undefined) {
+          currentElement.seq = currentSeq++
+          processedElements.push(currentElement)
+        }
+        currentElement = ele
+        continue
+      }
+      // still in the same element id
+      // add a new line and ele.items
+      let lastItemSeq = currentElement.items[currentElement.items.length-1].seq
+      currentElement.items.push({
+        id: -1,
+        columnElementId: currentElement.id,
+        seq: ++lastItemSeq,
+        type: normalTextItemType,
+        lang: editorInfo.defaultLang,
+        handId: 0,
+        theText: '\n',
+        altText: null,
+        extraInfo: null,
+        length: null,
+        target: null
+      })
+      for (const item of ele.items) {
+        item.seq = ++lastItemSeq
+        currentElement.items.push(item)
+      }
+    }
+    if (currentElement !== undefined) {
+      currentElement.seq = currentSeq++
+      processedElements.push(currentElement)
+    }
+    
     // filter out stray notes
     const filteredEdnotes = []
-    //console.log(itemIds)
     for (const note of editorInfo.edNotes) {
       if (itemIds.includes(note.target)) {
         filteredEdnotes.push(note)
@@ -319,7 +391,268 @@ class EditorData {
         console.warn(note)
       }
     }
-    return {elements: elements, ednotes: filteredEdnotes, people: editorInfo.people}
+    return {elements: processedElements, ednotes: filteredEdnotes, people: editorInfo.people, info: editorInfo.info}
+  }
+  
+
+
+
+  static getTranscriptionEditorDataFromApiData(columnData, editorId, langDef, minItemId)
+  {
+    const ops = []
+    const formats = []
+    const additionTargetTexts = []
+    let formatBlots = TranscriptionEditor.formatBlots
+    let blockBlots = TranscriptionEditor.blockBlots
+    let imageBlots = TranscriptionEditor.imageBlots
+    
+    additionTargetTexts[0] = '[none]'
+    
+    let languageCounts = {}
+    for (const lang in langDef) {
+      languageCounts[lang] = 0
+    }
+    
+    formats[ELEMENT_HEAD] = 'headelement'
+    formats[ELEMENT_CUSTODES] = 'custodes'
+    formats[ELEMENT_PAGE_NUMBER] = 'pagenumber'
+
+    for (const ele of columnData.elements) {
+      const attr = {}
+      switch (ele.type) {
+        case ELEMENT_LINE_GAP:
+          ops.push({
+            insert: {
+              linegap : {
+                editorid: editorId,
+                thelength: ele.reference
+              }
+            }
+          })
+          break;
+        
+        case ELEMENT_LINE:
+        case ELEMENT_HEAD:
+        case ELEMENT_CUSTODES:
+        case ELEMENT_GLOSS:
+        case ELEMENT_ADDITION:
+        case ELEMENT_SUBSTITUTION:
+        case ELEMENT_PAGE_NUMBER:
+          for (const item of ele.items) {
+            minItemId = Math.min(minItemId, item.id)
+            // Simple format blots
+            let foundBlot = false
+            for (const theBlot of formatBlots) {
+              if (theBlot.type === item.type) {
+                if (theBlot.canBeTarget) {
+                  additionTargetTexts[item.id] = theBlot.title + ': ' + item.theText
+                }
+                let theOps = {
+                  insert: item.theText
+                }
+                theOps.attributes = {lang: item.lang}
+                theOps.attributes[theBlot.name] = {
+                    itemid: item.id,
+                    editorid: editorId,
+                    handid: item.handId
+                }
+                if (theBlot.alttext !== undefined) {
+                  theOps.attributes[theBlot.name].alttext = item.altText
+                }
+                if (theBlot.extrainfo !== undefined) {
+                  theOps.attributes[theBlot.name].extrainfo = item.extraInfo
+                }
+                if (theBlot.target !== undefined) {
+                  theOps.attributes[theBlot.name].target = item.target
+                  theOps.attributes[theBlot.name].targetText = additionTargetTexts[item.target]
+                }
+                ops.push(theOps)
+                languageCounts[item.lang]++
+                foundBlot = true
+                break
+              }
+            }
+            if (foundBlot) {
+              continue
+            }
+            for (const theBlot of imageBlots) {
+              if (theBlot.type === item.type) {
+                let theAttr = {
+                    itemid: item.id,
+                    editorid: editorId
+                }
+                if (theBlot.text !== undefined) {
+                  theAttr.text = item.theText
+                }
+                if (theBlot.alttext !== undefined) {
+                  theAttr.alttext = item.altText
+                }
+                if (theBlot.extrainfo !== undefined) {
+                  theAttr.extrainfo = item.extraInfo
+                }
+                if (theBlot.thelength !== undefined) {
+                  theAttr.thelength = item.length
+                }
+                if (theBlot.target !== undefined) {
+                  theAttr.target = item.target
+                }
+                let theOps = { insert: {} }
+                theOps.insert[theBlot.name] = theAttr
+                ops.push(theOps)
+                foundBlot = true
+                break
+              }
+            }
+            if (foundBlot) {
+              continue
+            }
+            if (item.type === ITEM_TEXT) {
+              let curString = ''
+              for (let i=0; i < item.theText.length; i++) {
+                if (item.theText.charAt(i) === '\n') {
+                  if (curString !== '') {
+                    ops.push({
+                      insert: curString,
+                      attributes: {
+                        lang: item.lang
+                      }
+                    })
+                  }
+                  switch(ele.type) {
+                    case ELEMENT_GLOSS:
+                      ops.push({
+                        insert: '\n',
+                        attributes: {
+                          gloss:  {
+                            elementId: ele.id,
+                            place: ele.placement
+                          }
+                        }
+                      })
+                      break;
+
+                      case ELEMENT_ADDITION:
+                      ops.push({
+                        insert: '\n',
+                        attributes: {
+                          additionelement:  {
+                            elementId: ele.id,
+                            place: ele.placement,
+                            target: ele.reference,
+                            targetText: additionTargetTexts[parseInt(ele.reference)]
+                          }
+                        }
+                      })
+                      break;
+                      
+                      case ELEMENT_SUBSTITUTION:
+                      ops.push({
+                        insert: '\n',
+                        attributes: {
+                          substelement:  {
+                            elementId: ele.id,
+                            place: ele.placement,
+                            target: ele.reference,
+                            targetText: additionTargetTexts[parseInt(ele.reference)]
+                          }
+                        }
+                      })
+                      break;
+
+                    default:
+                      attr[formats[ele.type]] = true
+                      ops.push({insert: '\n', attributes: attr})
+                      break;
+                  }
+                  curString = ''
+                }
+                else {
+                  curString += item.theText.charAt(i)
+                }
+              }
+              if (curString !== '') {
+                ops.push({
+                  insert: curString,
+                  attributes: {
+                    lang: item.lang
+                  }
+                })
+              }
+            } else {
+              console.warn('Unrecognized item type ' + item.type + ' when setting editor data')
+            }
+            languageCounts[item.lang]++
+          }
+          break
+          
+          // no default
+      }
+      
+      switch(ele.type) {
+        case ELEMENT_GLOSS:
+          ops.push({
+            insert: '\n',
+            attributes: {
+              gloss:  {
+                elementId: ele.id,
+                place: ele.placement
+              }
+            }
+          })
+          break;
+          
+          case ELEMENT_ADDITION:
+          ops.push({
+            insert: '\n',
+            attributes: {
+              additionelement:  {
+                elementId: ele.id,
+                place: ele.placement,
+                target: ele.reference,
+                targetText: additionTargetTexts[parseInt(ele.reference)]
+              }
+            }
+          })
+          break;
+          
+          case ELEMENT_SUBSTITUTION:
+          ops.push({
+            insert: '\n',
+            attributes: {
+              substelement:  {
+                elementId: ele.id,
+                place: ele.placement,
+                target: ele.reference,
+                targetText: additionTargetTexts[parseInt(ele.reference)]
+              }
+            }
+          })
+          break;
+          
+        default:
+          attr[formats[ele.type]] = true
+          ops.push({insert: '\n', attributes: attr})
+          break;
+      }
+      
+    }
+    let mainLang = EditorData.getMainLanguage(languageCounts)
+    return { delta: {ops: ops}, mainLang: mainLang, minItemId: minItemId }
+  }
+  
+  static getMainLanguage(languageCounts) {
+    let max = 0
+    let mainLanguage = false
+    for (const lang in languageCounts) {
+      if (languageCounts[lang]===0) {
+        continue
+      }
+      if (languageCounts[lang]>= max) {
+        max = languageCounts[lang]
+        mainLanguage = lang
+      }
+    }
+    return mainLanguage
   }
   
 }

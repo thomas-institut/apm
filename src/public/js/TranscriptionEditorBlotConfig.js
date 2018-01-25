@@ -153,20 +153,7 @@ TranscriptionEditor.registerImageBlot(MarkBlot, {
   }
 })
 
-class LineGapBlot extends SimpleImgBlot {}
-TranscriptionEditor.registerImageBlot(LineGapBlot, { 
-  type: ELEMENT_LINE_GAP,
-  name: 'linegap',
-  title: 'Line Gap',
-  icon: 'Gap',
-  imageAlt:'[... Line Gap ...]',
-  noButton: true,
-  renumberLinesOnImageLoad: true,
-  thelength: { default: 5 },
-  getImageUrl: function (baseUrl, size, value) { 
-    return baseUrl + '/api/images/linegap/' + value.thelength + '/' + size
-  }
-})
+
 
 class IllegibleBlot extends SimpleImgBlot {}
 TranscriptionEditor.registerImageBlot(IllegibleBlot, { 
@@ -196,18 +183,6 @@ TranscriptionEditor.registerImageBlot(ChunkMarkBlot, {
   target: { default: 1 },
   alttext: { default: 'start' },
   noButton: true,
-//  buttons: [ 
-//    { name: 'start',  
-//      title: 'Chunk Start', 
-//      icon: '{' ,
-//      value: { alttext: 'start' }
-//    }, 
-//    { name: 'end', 
-//      title: 'Chunk End', 
-//      icon: '}',
-//      value: { alttext: 'end' }
-//    }
-//  ],
   getImageUrl: function (baseUrl, size, value) { 
     return baseUrl + 
             '/api/images/chunkmark/' +
@@ -217,6 +192,8 @@ TranscriptionEditor.registerImageBlot(ChunkMarkBlot, {
             size
   }
 })
+
+
 
 class HeadBlot extends SimpleBlockBlot {}
 TranscriptionEditor.registerBlockBlot(HeadBlot, {
@@ -250,8 +227,40 @@ TranscriptionEditor.registerBlockBlot(GlossBlot, {
   title: 'Marginal Gloss', 
   icon: 'G',
   buttonWithOptions: 'place',
-  place: { title: 'Placement', options : Element.getValidMarginalPlacements(), default: 'margin left'}
+  place: { title: 'Placement', options : Element.getValidMarginalPlacements(), default: 'margin right'}
+})
+
+class MarginalSubstitution extends MarginalBlockBlot{}
+TranscriptionEditor.registerBlockBlot(MarginalSubstitution, {
+  type: ELEMENT_SUBSTITUTION, 
+  name: 'substelement', 
+  title: 'Marginal Substitution', 
+  icon: 'S',
+  //buttonWithOptions: 'place',
+  target: { title: 'Replaces'}, 
+  place: { title: 'Placement', options : Element.getValidMarginalPlacements()}
 })
 
 
 TranscriptionEditor.registerSpecialCharacter('⊙')
+
+
+
+// This should be standard!
+
+
+class LineGapBlot extends SimpleImgBlot {}
+TranscriptionEditor.registerImageBlot(LineGapBlot, { 
+  type: ELEMENT_LINE_GAP,
+  name: 'linegap',
+  title: 'Line Gap',
+  icon: 'Gap',
+  imageAlt:'[... Line Gap ...]',
+  noButton: true,
+  renumberLinesOnImageLoad: true,
+  thelength: { default: 5 },
+  getImageUrl: function (baseUrl, size, value) { 
+    return baseUrl + '/api/images/linegap/' + value.thelength + '/' + size
+  }
+})
+TranscriptionEditor.registerLineGapBlot(LineGapBlot)

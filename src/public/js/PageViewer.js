@@ -25,18 +25,14 @@ class PageViewer {
   constructor (options){
     this.options = options
     let pathFor = options.urlGenerator
-    
-    this.osdViewer = OpenSeadragon({
+    let osdOptions = {
       id: "left-component",
       prefixUrl: pathFor.openSeaDragonImagePrefix(),
-      maxZoomPixelRatio: 3,
-      tileSources: {
-          type: 'image',
-          url:  options.imageUrl,
-          buildPyramid: false, 
-          homeFillsViewer: true
-      }
-    })
+      maxZoomPixelRatio: 3
+    }
+    osdOptions.tileSources = options.osdConfig.tileSources
+    
+    this.osdViewer = OpenSeadragon(osdOptions)
         
     $('#pagenumber').popover({
       title:'Page List', 

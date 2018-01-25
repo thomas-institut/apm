@@ -52,7 +52,7 @@
             langDef: ApmUtil.getLangDefFromLanguagesArray(JSON.parse("{{languagesArray|json_encode|e('js')}}")),
             pageTypeNames : JSON.parse('{{pageTypeNames|json_encode|raw}}'),
             pagePopoverContent : '{{macros.pageviewtablepv(doc, thePages, navByPage)|escape('js')}}',
-            {{openSeaDragonConfig|raw}}
+            osdConfig: { {{openSeaDragonConfig|raw}} }
         })
     })
     </script>

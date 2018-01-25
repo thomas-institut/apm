@@ -20,7 +20,7 @@
 /* global ELEMENT_GLOSS, ELEMENT_PAGE_NUMBER, ITEM_TEXT, ITEM_MARK */
 /* global ITEM_RUBRIC, ITEM_GLIPH, ITEM_INITIAL, ITEM_SIC, ITEM_ABBREVIATION */
 /* global ITEM_DELETION, ITEM_ADDITION, ITEM_UNCLEAR, ITEM_ILLEGIBLE */
-/* global ITEM_NO_WORD_BREAK, ITEM_CHUNK_MARK, ELEMENT_ADDITION, ELEMENT_LINE_GAP, ELEMENT_INVALID, ITEM_CHARACTER_GAP, ITEM_PARAGRAPH_MARK, ITEM_MATH_TEXT, TranscriptionEditor */
+/* global ITEM_NO_WORD_BREAK, ITEM_CHUNK_MARK, ELEMENT_ADDITION, ELEMENT_LINE_GAP, ELEMENT_INVALID, ITEM_CHARACTER_GAP, ITEM_PARAGRAPH_MARK, ITEM_MATH_TEXT, TranscriptionEditor, ELEMENT_SUBSTITUTION */
 
 /* exported EditorData */
 class EditorData {
@@ -436,6 +436,7 @@ class EditorData {
         case ELEMENT_CUSTODES:
         case ELEMENT_GLOSS:
         case ELEMENT_ADDITION:
+        case ELEMENT_SUBSTITUTION:
         case ELEMENT_PAGE_NUMBER:
           for (const item of ele.items) {
             minItemId = Math.min(minItemId, item.id)
@@ -543,6 +544,20 @@ class EditorData {
                         }
                       })
                       break;
+                      
+                      case ELEMENT_SUBSTITUTION:
+                      ops.push({
+                        insert: '\n',
+                        attributes: {
+                          substelement:  {
+                            elementId: ele.id,
+                            place: ele.placement,
+                            target: ele.reference,
+                            targetText: additionTargetTexts[parseInt(ele.reference)]
+                          }
+                        }
+                      })
+                      break;
 
                     default:
                       attr[formats[ele.type]] = true
@@ -587,12 +602,24 @@ class EditorData {
           break;
           
           case ELEMENT_ADDITION:
-            //onsole.log("Addition element")
-            //console.log(ele)
           ops.push({
             insert: '\n',
             attributes: {
               additionelement:  {
+                elementId: ele.id,
+                place: ele.placement,
+                target: ele.reference,
+                targetText: additionTargetTexts[parseInt(ele.reference)]
+              }
+            }
+          })
+          break;
+          
+          case ELEMENT_SUBSTITUTION:
+          ops.push({
+            insert: '\n',
+            attributes: {
+              substelement:  {
                 elementId: ele.id,
                 place: ele.placement,
                 target: ele.reference,

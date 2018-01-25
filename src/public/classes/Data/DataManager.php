@@ -1253,6 +1253,10 @@ class DataManager
             case Element::PAGE_NUMBER:
                 $e = new \AverroesProject\ColumnElement\PageNumber();
                 break;
+            
+            case Element::SUBSTITUTION:
+                $e = new \AverroesProject\ColumnElement\Substitution();
+                break;
 
             default:
                 continue;
@@ -1517,6 +1521,21 @@ class DataManager
                         $newElements[$newElementsIndex]->seq =
                                 $newSeq;
                     }
+                    if ($oldElements[$index]->type === Element::SUBSTITUTION || $oldElements[$index]->type === Element::ADDITION) {
+                        $this->logger->debug("Keeping substitution/addition element");
+                        if ($oldElements[$index]->reference !== 0) {
+                            if (!isset($newItemsIds[$oldElements[$index]->reference])) {
+                                $this->logger->warning('Found element without a valid target reference', get_object_vars($oldElements[$index]));
+                            }
+                            else {
+                                if ($oldElements[$index]->reference !== $newItemsIds[$oldElements[$index]->reference]) {
+                                    $this->logger->debug("... with new reference", 
+                                            [ 'oldref' => $oldElements[$index]->reference, 'newref'=> $newItemsIds[$oldElements[$index]->reference] ]);
+                                    $newElements[$index]->reference = $newItemsIds[$oldElements[$index]->reference];
+                                }
+                            }
+                        }
+                    }
                     list ($elementId, $ids) = $this->updateElement($newElements[$newElementsIndex], $oldElements[$index], $newItemsIds);
                     foreach($ids as $oldId => $newId) {
                         $newItemsIds[$oldId] = $newId;
@@ -1597,6 +1616,26 @@ class DataManager
                             $now
                         );
                     }
+                    
+                    if ($oldElement->items[$index]->type === Item::ADDITION) {
+                        $this->logger->debug("Keeping an addition",get_object_vars($oldElement->items[$index]));
+                        if ($oldElement->items[$index]->target !== 0) {
+                            $this->logger->debug("...with non-zero target", [ 'target'=>$oldElement->items[$index]->target]);
+                            if (!isset($itemIds[$oldElement->items[$index]->target])) {
+                                $this->logger->warning("Addition without valid target @ pos $index", get_object_vars($oldElement->items[$index]));
+                            } 
+                            else {
+                                if ($oldElement->items[$index]->target !== $itemIds[$oldElement->items[$index]->target]) {
+                                    $oldElement->items[$index]->target = $itemIds[$oldElement->items[$index]->target];
+                                    $this->logger->debug("...with new target", [ 'target'=>$oldElement->items[$index]->target]);
+                                    $this->updateItemInDB(
+                                        $oldElement->items[$index],
+                                        $now
+                                    );
+                                }
+                            }
+                        }
+                    }
                     $itemIds[$newElement->items[$newItemsIndex]->id] = $oldElement->items[$index]->id;
                     $newItemsIndex++;
                     break;
@@ -1613,7 +1652,7 @@ class DataManager
                 
                 case MyersDiff::INSERT:
                     $this->logger->debug("...inserting item with seq $newSeq");
-                    // This should take care of new addition with targets that
+                    // This takes care of new addition with targets that
                     // come earlier in the item sequence in the same element,
                     // which is the most usual case
                     if ($newElement->items[$index]->type === Item::ADDITION && 

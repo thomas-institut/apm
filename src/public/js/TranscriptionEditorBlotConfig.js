@@ -230,12 +230,12 @@ TranscriptionEditor.registerBlockBlot(GlossBlot, {
   place: { title: 'Placement', options : Element.getValidMarginalPlacements(), default: 'margin right'}
 })
 
-class Marginal extends MarginalBlockBlot{}
-TranscriptionEditor.registerBlockBlot(Marginal, {
-  type: ELEMENT_ADDITION, 
-  name: 'additionelement', 
-  title: 'Marginal Addition', 
-  icon: 'A',
+class MarginalSubstitution extends MarginalBlockBlot{}
+TranscriptionEditor.registerBlockBlot(MarginalSubstitution, {
+  type: ELEMENT_SUBSTITUTION, 
+  name: 'substelement', 
+  title: 'Marginal Substitution', 
+  icon: 'S',
   //buttonWithOptions: 'place',
   target: { title: 'Replaces'}, 
   place: { title: 'Placement', options : Element.getValidMarginalPlacements()}

@@ -616,6 +616,31 @@ class TranscriptionEditor
           }
           inMarginal = true
           break
+          
+          case 'substelement':
+          place = theP.attr('place')
+          elementId = theP.attr('elementid')
+          target = theP.attr('target')
+          targetText = theP.attr('targettext')
+          lastMarginalP = theP
+          if (!inMarginal || elementId !== lastMarginalId) {
+            // first line of marginal
+            lastMarginalId = elementId
+            theP.addClass('firstmarginalline')
+            let title = 'Subst @ ' + place 
+            if (targetText !== '[none]') {
+              title += ', replaces ' + targetText
+            } else {
+              title += '&nbsp;&nbsp;(!) MISSING SUBSTITUTION TARGET'
+            }
+            lineNumberLabel = '<a title="Marginal Substitution">&nbsp;S</a>'
+            topLabelText = title
+          } else {
+            theP.removeClass('firstmarginalline')
+            lineNumberLabel = '&nbsp;-'
+          }
+          inMarginal = true
+          break
       }
       if (!inMarginal && lastMarginalP !== undefined) {
         lastMarginalP.addClass('lastmarginalline')

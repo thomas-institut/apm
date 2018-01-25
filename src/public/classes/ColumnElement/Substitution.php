@@ -1,3 +1,5 @@
+<?php
+
 /*
  * Copyright (C) 2017 Universität zu Köln
  *
@@ -16,26 +18,31 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-/* eslint "no-unused-vars": "off" */
-const ELEMENT_INVALID = -1
-const ELEMENT_LINE = 1
-const ELEMENT_HEAD = 2
-const ELEMENT_GLOSS = 3
-const ELEMENT_PAGE_NUMBER = 4
-const ELEMENT_CUSTODES = 5
-const ELEMENT_NOTE_MARK = 6
-const ELEMENT_SUBSTITUTION = 7
-const ELEMENT_LINE_GAP = 8
-const ELEMENT_ADDITION = 9
+namespace AverroesProject\ColumnElement;
 
-
-class Element {
-  static getValidMarginalPlacements () {
-    return [
-      'margin left',
-      'margin right',
-      'margin top',
-      'margin bottom'
-    ]
-  }
+/**
+ * Description of Addition
+ *
+ * @author Rafael Nájera <rafael.najera@uni-koeln.de>
+ */
+class Substitution extends Element {
+        
+    public $targetXmlId; 
+    
+    public function __construct($id = Element::ID_NOT_SET, 
+            $colNumber = 0, $lang = Element::LANG_NOT_SET)
+    {
+        parent::__construct($id, $colNumber, $lang);
+        $this->type = parent::SUBSTITUTION;
+        $this->targetXmlId = '';
+    }
+    
+    function getTargetId(){
+        return $this->reference;
+    }
+    
+    function setTargetId($id)
+    {
+        $this->reference = $id;
+    }
 }

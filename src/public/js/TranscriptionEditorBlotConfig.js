@@ -51,6 +51,7 @@ TranscriptionEditor.registerFormatBlot(MathTextBlot, {
   icon: 'M'
 })
 
+
 class SicBlot extends SimpleFormatBlot {}
 TranscriptionEditor.registerFormatBlot(SicBlot, { 
   type: ITEM_SIC, 
@@ -100,6 +101,16 @@ TranscriptionEditor.registerFormatBlot(DeletionBlot, {
   buttonWithOptions: 'extrainfo',
   extrainfo: { title: 'Technique', options : Item.getValidDeletionTechniques() }
 })
+
+class MarginalMarkBlot extends SimpleFormatBlot {}
+TranscriptionEditor.registerFormatBlot(MarginalMarkBlot, {
+  type: ITEM_MARGINAL_MARK, 
+  name: 'marginalmark', 
+  title: 'Mark', 
+  canBeTarget: true,
+  icon: '<i class="fa fa-arrow-up" aria-hidden="true"></i>'
+})
+
 
 class NoWordBreakBlot extends SimpleImgBlot {}
 TranscriptionEditor.registerImageBlot(NoWordBreakBlot, { 
@@ -234,10 +245,10 @@ class MarginalSubstitution extends MarginalBlockBlot{}
 TranscriptionEditor.registerBlockBlot(MarginalSubstitution, {
   type: ELEMENT_SUBSTITUTION, 
   name: 'substelement', 
-  title: 'Marginal Substitution', 
-  icon: 'S',
+  title: 'Marginal Addition', 
+  icon: 'A',
   //buttonWithOptions: 'place',
-  target: { title: 'Replaces'}, 
+  target: { title: 'Replaces / At'}, 
   place: { title: 'Placement', options : Element.getValidMarginalPlacements()}
 })
 

@@ -117,7 +117,8 @@ describe("EditorData", function() {
           {attributes: { abbr: {itemid: 105, expansion: 'some expansion'}}, insert: 'some text'},
           {attributes: { unclear: {itemid: 106, reading2: 'some reading', reason: 'some reason'}}, insert: 'some text'},
           {attributes: { deletion: {itemid: 107, technique: 'some technique'}}, insert: 'some text'},
-          {attributes: { addition: {itemid: 108, place: 'margin left', target: 107}}, insert: 'some text'}
+          {attributes: { addition: {itemid: 108, place: 'margin left', target: 107}}, insert: 'some text'},
+          {attributes: { marginalmark: {itemid: 109 }}, insert: 'some text' }
         ]
       }
       
@@ -131,7 +132,7 @@ describe("EditorData", function() {
         expect(apiData.ednotes).toBeDefined()
         expect(apiData.elements.length).toBe(1)
         expect(apiData.elements[0].type).toBe(block.type)
-        expect(apiData.elements[0].items.length).toBe(9)
+        expect(apiData.elements[0].items.length).toBe(delta.ops.length-1)
         let i = 100
         let seq = 0
         for (const item of apiData.elements[0].items) {

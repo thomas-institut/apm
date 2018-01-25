@@ -77,6 +77,7 @@ class Item {
     const CHARACTER_GAP = 15;
     const PARAGRAPH_MARK = 16;
     const MATH_TEXT = 17;
+    const MARGINAL_MARK = 18;
 
 
     /**

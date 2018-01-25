@@ -1451,6 +1451,12 @@ class DataManager
                         $row[$fields['seq']], 
                         $row[$fields['text']]);
                 break;
+            
+            case Item::MARGINAL_MARK:
+                $item = new \AverroesProject\TxText\MarginalMark($row[$fields['id']], 
+                        $row[$fields['seq']], 
+                        $row[$fields['text']]);
+                break;
 
             default: 
                 continue;

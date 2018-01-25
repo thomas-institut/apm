@@ -63,7 +63,7 @@ EOD;
         
         $tableSetupSQL = <<<EOD
         INSERT INTO `dbchecktest_settings` (`id`, `setting`, `value`) VALUES
-        (1, 'dbversion', '13');
+        (1, 'dbversion', '14');
 EOD;
         self::$dbConn->query($tableSetupSQL);
         

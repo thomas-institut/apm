@@ -627,13 +627,13 @@ class TranscriptionEditor
             // first line of marginal
             lastMarginalId = elementId
             theP.addClass('firstmarginalline')
-            let title = 'Subst @ ' + place 
+            let title = 'Addition @ ' + place 
             if (targetText !== '[none]') {
-              title += ', replaces ' + targetText
+              title += ' <i class="fa fa-exchange" aria-hidden="true"></i> ' + targetText
             } else {
-              title += '&nbsp;&nbsp;(!) MISSING SUBSTITUTION TARGET'
+              title += '&nbsp;&nbsp;(!) NO TARGET'
             }
-            lineNumberLabel = '<a title="Marginal Substitution">&nbsp;S</a>'
+            lineNumberLabel = '<a title="Marginal Substitution">&nbsp;A</a>'
             topLabelText = title
           } else {
             theP.removeClass('firstmarginalline')
@@ -945,10 +945,7 @@ class TranscriptionEditor
     this.pageId = columnData.info.pageId
     this.columnNumber = columnData.info.col
     this.pageDefaultLang = columnData.info.lang ? columnData.info.lang : this.defaultLang
-    
-    
-    
-    
+
     //console.log(columnData)
     
     let editorData = EditorData.getTranscriptionEditorDataFromApiData(
@@ -1214,6 +1211,12 @@ class TranscriptionEditor
           potentialTargets.push({
             itemid: parseInt(curOps.attributes.unclear.itemid),
             text: 'Unclear: ' + curOps.insert
+          })
+        }
+        if (curOps.attributes.marginalmark) {
+          potentialTargets.push({
+            itemid: parseInt(curOps.attributes.marginalmark.itemid),
+            text: 'Mark: ' + curOps.insert
           })
         }
         if (curOps.attributes.addition) {
@@ -2012,7 +2015,7 @@ class TranscriptionEditor
   }
 
   static formatHasItem (format) {
-    for (const type of ['rubric', 'gliph', 'initial', 'sic', 'abbr', 'deletion', 'addition', 'unclear', 'nowb', 'mathtext']) {
+    for (const type of ['rubric', 'gliph', 'initial', 'sic', 'abbr', 'deletion', 'addition', 'unclear', 'nowb', 'mathtext', 'marginalmark']) {
       if (type in format) {
         return type
       }

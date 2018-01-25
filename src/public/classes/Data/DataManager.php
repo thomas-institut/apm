@@ -1571,6 +1571,23 @@ class DataManager
                     $this->logger->debug("INSERTING element @ " . $index);
                     $this->logger->debug("...New Seq: " . $newSeq);
                     $newElements[$newElementsIndex]->seq = $newSeq;
+                    if ($newElements[$index]->type === Element::SUBSTITUTION || $newElements[$index]->type === Element::ADDITION) {
+                        $this->logger->debug("...Inserting substitution/addition element");
+                        if ($newElements[$index]->reference !== 0) {
+                            if (!isset($newItemsIds[$newElements[$index]->reference])) {
+                                $this->logger->warning('Found element without a valid target reference', get_object_vars($newElements[$index]));
+                            }
+                            else {
+                                if ($newElements[$index]->reference !== $newItemsIds[$newElements[$index]->reference]) {
+                                    $this->logger->debug("... with new reference", 
+                                            [ 'oldref' => $newElements[$index]->reference, 'newref'=> $newItemsIds[$newElements[$index]->reference] ]);
+                                    $newElements[$index]->reference = $newItemsIds[$newElements[$index]->reference];
+                                }
+                            }
+                        } else {
+                            $this->logger->debug("...with reference === 0");
+                        }
+                    }
                     $element = $this->insertNewElement($newElements[$newElementsIndex], false, $newItemsIds);
                     if ($element === false) {
                         $this->logger->error("Can't insert new element in DB", get_object_vars($newElements[$newElementsIndex]));

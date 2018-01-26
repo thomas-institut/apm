@@ -83,6 +83,9 @@ class CheckElementSequence extends CommandLineUtility {
                         if ($problemWithSeq and $allFixed) {
                             print "...fixed\n";
                         }
+                    } 
+                    else {
+                        print "\n";
                     }
                     break;
                 }

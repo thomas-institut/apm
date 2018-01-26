@@ -2497,7 +2497,7 @@ class TranscriptionEditor
                 <h4 id="chunk-modal-title-{{id}}" class="modal-title">Chunk</h4>
             </div>
             <div class="modal-body" id="chunk-modal-body-{{id}}">
-                <form class="form-horizontal">
+                <form>
                     <div id="chunk-modal-work-fg-{{id}}" class="form-group">
                         <label for="chunk-modal-work-{{id}}" class="control-label">Work:</label>
                         <select name="chunk-modal-dareid" id="chunk-modal-dareid-{{id}}"></select>
@@ -2514,6 +2514,7 @@ class TranscriptionEditor
                     </div>
                     <div class="modal-ednotes" id="chunk-modal-ednotes-{{id}}">
                     </div>
+               </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" id="chunk-modal-cancel-button-{{id}}" data-dismiss="modal">Cancel</button>

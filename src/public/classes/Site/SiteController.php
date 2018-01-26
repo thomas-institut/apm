@@ -126,6 +126,11 @@ class SiteController
             }
             $doc['end']['seq'] = $locations[1]['page_seq'];
             $doc['end']['foliation'] = is_null($locations[1]['foliation']) ? $locations[1]['page_seq'] : $locations[1]['foliation'];
+            if ($locations[0]['type'] === 'end') {
+                $doc['warnings'][] = 'Chunk marks in reverse order';
+                $docs[] = $doc;
+                continue;
+            }
             $profiler->lap('Doc '. $doc['id'] . ' locations');
             $itemStream = $db->getItemStreamBetweenLocations((int) $doc['id'], $locations[0], $locations[1]);
             $doc['plain_text'] = ItemStream::getPlainText($itemStream);

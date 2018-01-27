@@ -658,21 +658,18 @@ class TranscriptionEditor
         continue
       }
       let offset = theP.position()
-      //console.log('P offset =' + offset.top)
       let fontFactor = this.options.lineNumbers.fontFactor 
       let editorFontSize = this.calcEditorFontEmSize(this.fontSize)*this.options.pixPerEm
       let lineNumberTopPos = offset.top 
-              //+ $('#editor-container-' + this.id).position().top 
               + parseInt(theP.css('marginTop'))
               - firstPTopOffset
+              + 3
       let fontEmSize = this.calcEditorFontEmSize(this.fontSize)*fontFactor
       let fontCharWidth = fontEmSize*this.options.pixPerEm*this.options.lineNumbers.charWidth
       let numberMargin = this.options.lineNumbers.margin;
       
-      //let lineNumberLeftPos = editorContainerLeftPos + marginSize - numberMargin - numChars*fontCharWidth;
        let lineNumberLeftPos = marginSize - numberMargin - numChars*fontCharWidth;
       if (this.defaultLang !== 'la') {
-//        lineNumberLeftPos = editorContainerLeftPos + $(editorDiv).outerWidth() + numberMargin;
         lineNumberLeftPos = $(editorDiv).outerWidth() + numberMargin;
       }
       let overlay = ''
@@ -891,7 +888,7 @@ class TranscriptionEditor
     window.setTimeout( function() {
       //console.log('Number Lines on reset')
       thisObject.numberLines()
-    }, 100)
+    }, 200)
     this.dispatchEvent('editor-reset')
   }
   
@@ -989,7 +986,7 @@ class TranscriptionEditor
     window.setTimeout( function() {
       //console.log('Number Lines on set data')
       thisObject.numberLines()
-    }, 100)
+    }, 200)
 
   }
   
@@ -1578,7 +1575,11 @@ class TranscriptionEditor
       thisObject.setEditorMargin(thisObject.fontSize)
       $('#lang-button-' + thisObject.id).html(lang)
       //console.log('Number lines on click set lang')
-      thisObject.numberLines()
+      // delay a little bit, wait for html elements to be ready 
+      window.setTimeout( function() {
+        thisObject.numberLines()
+      }, 100)
+      
     }
   }
   

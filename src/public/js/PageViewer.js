@@ -108,7 +108,8 @@ class PageViewer {
               editorId: thisObject.options.userId , 
               activeWorks: thisObject.options.activeWorks, 
               langDef: thisObject.options.langDef,
-              defaultLang: thisObject.options.defaultLang
+              defaultLang: thisObject.options.defaultLang,
+              containerId: 'right-component'
             }
           )
           te.setData(respColData)

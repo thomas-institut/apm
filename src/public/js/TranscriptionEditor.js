@@ -54,6 +54,7 @@ class TranscriptionEditor
     this.people = this.options.people
     this.editorId = this.options.editorId
     this.activeWorks = this.options.activeWorks
+    this.containerElement = $('#' + this.options.containerId)
     // Default hand Id is always 0!
     this.handId = 0
     
@@ -311,6 +312,7 @@ class TranscriptionEditor
       this.disable()
     }
     // generate number lines when all elements are done
+    
     this.numberLines()
     
     TranscriptionEditor.registerEditorInstance(this.id, this)
@@ -416,10 +418,12 @@ class TranscriptionEditor
 
     for (const l in langDef) {
       if (l === lang) {
-        $('#editor-container-' + this.id).addClass(l + '-text')
+        //$('#editor-container-' + this.id).addClass(l + '-text')
+        $('#editor-container-container-' + this.id).addClass(l + '-text')
         continue
       }
-      $('#editor-container-' + this.id).removeClass(l + '-text')
+      //$('#editor-container-' + this.id).removeClass(l + '-text')
+      $('#editor-container-container-' + this.id).removeClass(l + '-text')
     }
 
     $('#lang-button-' + this.id).attr('title', langDef[lang].name)
@@ -524,6 +528,9 @@ class TranscriptionEditor
     let lastMarginalId = -1
     let numChars = this.options.lineNumbers.numChars;
     let lastMarginalP = undefined
+    let firstP = $(pElements[0])
+    let firstPTopOffset = firstP.position().top
+    //console.log('Top offset: ' + firstPTopOffset)
     for (const p of pElements) {
       let theP = $(p)
       let lineNumberLabel = '-'
@@ -650,18 +657,22 @@ class TranscriptionEditor
         continue
       }
       let offset = theP.position()
+      //console.log('P offset =' + offset.top)
       let fontFactor = this.options.lineNumbers.fontFactor 
       let editorFontSize = this.calcEditorFontEmSize(this.fontSize)*this.options.pixPerEm
       let lineNumberTopPos = offset.top 
-              + $('#editor-container-' + this.id).position().top 
+              //+ $('#editor-container-' + this.id).position().top 
               + parseInt(theP.css('marginTop'))
+              - firstPTopOffset
       let fontEmSize = this.calcEditorFontEmSize(this.fontSize)*fontFactor
       let fontCharWidth = fontEmSize*this.options.pixPerEm*this.options.lineNumbers.charWidth
       let numberMargin = this.options.lineNumbers.margin;
       
-      let lineNumberLeftPos = editorContainerLeftPos + marginSize - numberMargin - numChars*fontCharWidth;
+      //let lineNumberLeftPos = editorContainerLeftPos + marginSize - numberMargin - numChars*fontCharWidth;
+       let lineNumberLeftPos = marginSize - numberMargin - numChars*fontCharWidth;
       if (this.defaultLang !== 'la') {
-        lineNumberLeftPos = editorContainerLeftPos + $(editorDiv).outerWidth() + numberMargin;
+//        lineNumberLeftPos = editorContainerLeftPos + $(editorDiv).outerWidth() + numberMargin;
+        lineNumberLeftPos = $(editorDiv).outerWidth() + numberMargin;
       }
       let overlay = ''
       overlayNumber++
@@ -684,9 +695,10 @@ class TranscriptionEditor
         overlayNumber++
         overlayId = this.containerId + '-ovr-' + overlayNumber
         let topLabelTopPos = offset.top 
-              + $('#editor-container-' + this.id).position().top 
+              //+ $('#editor-container-' + this.id).position().top 
               + parseInt(theP.css('marginTop'))
               - this.options.editorLineHeight*editorFontSize*0.8
+              - firstPTopOffset
         let topLabelLeft = editorContainerLeftPos + marginSize + 40;
         if (this.defaultLang !== 'la') {
            topLabelLeft -= marginSize
@@ -759,6 +771,7 @@ class TranscriptionEditor
     this.lastSavedData = this.quillObject.getContents()
     this.setContentsNotChanged()
     this.quillObject.setSelection(this.quillObject.getLength())
+    this.resizeContainer()
     this.dispatchEvent('editor-enable')
   }
   
@@ -788,7 +801,7 @@ class TranscriptionEditor
           thisObject.quillObject.setContents(thisObject.lastSavedData)
           thisObject.quillObject.enable(thisObject.enabled)
           thisObject.setContentsNotChanged()
-          //thisObject.resizeEditor()
+          thisObject.resizeContainer()
           thisObject.numberLines()
           thisObject.dispatchEvent('editor-disable')
         })
@@ -803,7 +816,7 @@ class TranscriptionEditor
     $('#toggle-button-' + this.id).html('<i class="fa fa-pencil"></i>')
     this.quillObject.enable(this.enabled)
     this.contentsChanged = false
-    //this.resizeEditor()
+    this.resizeContainer()
     thisObject.numberLines()
     this.dispatchEvent('editor-disable')
   }
@@ -1170,13 +1183,21 @@ class TranscriptionEditor
       $('#chunk-modal-' + thisObject.id).modal('show')
     }
   }
+  
+  resizeContainer()
+  {
+    let cont = $('#editor-container-container-' + this.id)
+    let contHeight = this.containerElement.height()
+    cont.css('height', contHeight - cont.position().top + 'px')
+  }
 
   genOnResize()
   {
     let thisObject = this
     return function (e)
     {
-      //console.log('Resize')
+
+      thisObject.resizeContainer()
       thisObject.numberLines()
     }
   }
@@ -2395,7 +2416,7 @@ class TranscriptionEditor
 
     <span class="separator"/>
 </div>
-<div id="editor-container-container-{{id}}">
+<div id="editor-container-container-{{id}}" style="overflow-y: scroll; height: 500px; position: relative;">
   <div id="editor-container-{{id}}" class="editor-container"></div>
 </div>
 <div id="status-bar-{{id}}" class="editor-statusbar"></div>

@@ -966,7 +966,15 @@ class TranscriptionReader {
                 ->withCallback(function ($matched) use (&$itemId){
                     $nItems = count($matched);
                     array_pop($matched); // </mod>
-                    $addItem = array_pop($matched); // add 
+                    $addItem = array_pop($matched); // add
+//                    print "Popped addItem\n";
+//                    print_r($addItem);
+//                    if (!is_a($addItem, 'AverroesProject\TxText\Addition' )) {
+//                         $this->addWarning(self::WARNING_BAD_ATTRIBUTE, 
+//                                "Expected an addition, got " . get_class($addItem), 
+//                                "In <mod type=\"subst\"...");
+//                        return $matched;
+//                    }
                     $delItem = array_pop($matched); // del
                     array_pop($matched); // <mod>
                     $addItem->setTarget($delItem->id);

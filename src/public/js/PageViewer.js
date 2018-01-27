@@ -123,6 +123,7 @@ class PageViewer {
 
            $('#col-label-' + theCol).on('shown.bs.tab', function (e){
              //console.log("Number lines on shown.bs.tab")
+             te.resizeContainer()
              te.numberLines()
           })
 

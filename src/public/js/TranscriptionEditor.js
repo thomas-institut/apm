@@ -313,6 +313,7 @@ class TranscriptionEditor
     }
     // generate number lines when all elements are done
     
+    //console.log('Number lines on TE constructor')
     this.numberLines()
     
     TranscriptionEditor.registerEditorInstance(this.id, this)
@@ -802,6 +803,7 @@ class TranscriptionEditor
           thisObject.quillObject.enable(thisObject.enabled)
           thisObject.setContentsNotChanged()
           thisObject.resizeContainer()
+          //console.object("Number lines on disable, after dialog")
           thisObject.numberLines()
           thisObject.dispatchEvent('editor-disable')
         })
@@ -817,6 +819,7 @@ class TranscriptionEditor
     this.quillObject.enable(this.enabled)
     this.contentsChanged = false
     this.resizeContainer()
+    //console.log('Number lines on disable')
     thisObject.numberLines()
     this.dispatchEvent('editor-disable')
   }
@@ -884,6 +887,11 @@ class TranscriptionEditor
     this.quillObject.setContents(this.lastSavedData)
     $('#save-button-' + this.id).prop('title', 'Save changes')
     $('#save-button-' + this.id).html('<i class="fa fa-save"></i>')
+    let thisObject = this
+    window.setTimeout( function() {
+      //console.log('Number Lines on reset')
+      thisObject.numberLines()
+    }, 100)
     this.dispatchEvent('editor-reset')
   }
   
@@ -975,8 +983,14 @@ class TranscriptionEditor
     }
     
     this.setDefaultLang(mainLang)
-    //console.log('Set Data')
-    this.numberLines()
+    
+    // delay a little bit, wait for html elements to be ready 
+    let thisObject = this
+    window.setTimeout( function() {
+      //console.log('Number Lines on set data')
+      thisObject.numberLines()
+    }, 100)
+
   }
   
   getQuillData() 
@@ -1071,7 +1085,7 @@ class TranscriptionEditor
       } else {
         thisObject.setContentsNotChanged()
       }
-      //console.log('Quill change')
+      //console.log('Number lines on Quill change')
       thisObject.numberLines()
     }
   }
@@ -1198,6 +1212,7 @@ class TranscriptionEditor
     {
 
       thisObject.resizeContainer()
+      //console.log('Number lines on resize')
       thisObject.numberLines()
     }
   }
@@ -1412,6 +1427,7 @@ class TranscriptionEditor
           thisObject.makeTextSmaller()
           break;
       }
+      //console.log('Number lines on click zoom')
       thisObject.numberLines()
       return true
     }
@@ -1520,6 +1536,7 @@ class TranscriptionEditor
     return function ()
     {
       thisObject.toggleEnable()
+      //console.log('Number lines on click toggle enable')
       thisObject.numberLines()
       return true
     }
@@ -1560,6 +1577,7 @@ class TranscriptionEditor
       thisObject.setDefaultLang(lang)
       thisObject.setEditorMargin(thisObject.fontSize)
       $('#lang-button-' + thisObject.id).html(lang)
+      //console.log('Number lines on click set lang')
       thisObject.numberLines()
     }
   }
@@ -2048,7 +2066,7 @@ class TranscriptionEditor
   {
     const editorObject = TranscriptionEditor.editorsById[value.editorid]
     $(node).on('load', function() {
-      //console.log('Image loaded')
+      //console.log('Number lines on image loaded')
       editorObject.numberLines()
     })
   }

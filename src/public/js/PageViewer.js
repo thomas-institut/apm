@@ -48,6 +48,7 @@ class PageViewer {
       for (const te of TranscriptionEditor.editors) {
         // TODO: optimize, renumber lines only for active tab
         // if the tab's text is LTR 
+        //console.log('Number lines on dividerdragend')
         te.numberLines()
       }
     })
@@ -121,6 +122,7 @@ class PageViewer {
            })
 
            $('#col-label-' + theCol).on('shown.bs.tab', function (e){
+             //console.log("Number lines on shown.bs.tab")
              te.numberLines()
           })
 

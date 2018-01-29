@@ -99,6 +99,22 @@
                     
                     <!-- Item 19 --> 
                     <lb break="no"/>
+                    
+                    <!--Bad deletion technique, but item generated, Item 20-->
+                    <del rend="wiggly-line">Deleted text</del>
+                    
+                    <!-- Bad place, but item generated, Item 21 -->
+                    <add place="thekitchen">Addition</add>
+                    
+                    <!-- Items 22 & 23, but with warnings -->
+                    <mod type="subst">
+                        <del rend="stomped">Deleted text</del>
+                        <add place="theoffice">Added text</add>
+                    </mod>
+                    
+                    <!-- Item 24 -->
+                    <gap quantity="5" unit="character" reason="irrelevant"/>
+                    
                 </l>
                 <add place="margin left" target="somemod">
                     An off line addition

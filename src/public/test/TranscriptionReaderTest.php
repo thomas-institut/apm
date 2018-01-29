@@ -431,7 +431,8 @@ class TranscriptionReaderTest extends TestCase {
         //var_dump($tsReader->warnings);
         // Number of Items
         //var_dump($lineElement->items);
-        $this->assertCount(20, $lineElement->items);
+        $this->assertCount(25, $lineElement->items);
+        $this->assertCount(8, $tsReader->warnings);
         
         
         $item0 = $lineElement->items[0];
@@ -545,6 +546,39 @@ class TranscriptionReaderTest extends TestCase {
         
         $item19 = $lineElement->items[19];
         $this->assertTrue($item19 instanceof TxText\NoWordBreak);
+        
+        $item20 = $lineElement->items[20];
+        $this->assertTrue($item20 instanceof TxText\Deletion);
+        $this->assertTrue(isset($tsReader->warnings[4]));
+        $this->assertEquals(TranscriptionReader::WARNING_BAD_ATTRIBUTE, 
+                $tsReader->warnings[4]['number']);
+        
+        $item21 = $lineElement->items[21];
+        $this->assertTrue($item21 instanceof TxText\Addition);
+        $this->assertTrue(isset($tsReader->warnings[5]));
+        $this->assertEquals(TranscriptionReader::WARNING_BAD_ATTRIBUTE, 
+                $tsReader->warnings[5]['number']);
+        
+        
+        $item22 = $lineElement->items[22];
+        $this->assertTrue($item22 instanceof TxText\Deletion);
+        $this->assertEquals('Deleted text', $item22->theText);
+        
+        $item23 = $lineElement->items[23];
+        $this->assertTrue($item23 instanceof TxText\Addition);
+        $this->assertEquals('Added text', $item23->theText);
+        $this->assertEquals($item22->id, $item23->getTarget());
+        $this->assertTrue(isset($tsReader->warnings[6]));
+        $this->assertEquals(TranscriptionReader::WARNING_BAD_ATTRIBUTE, 
+                $tsReader->warnings[6]['number']);
+        $this->assertTrue(isset($tsReader->warnings[7]));
+        $this->assertEquals(TranscriptionReader::WARNING_BAD_ATTRIBUTE, 
+                $tsReader->warnings[7]['number']);
+        
+        
+        $item24 = $lineElement->items[24];
+        $this->assertTrue($item24 instanceof TxText\CharacterGap);
+        $this->assertEquals(5, $item24->length);
         
     }
     

@@ -808,7 +808,7 @@ class TranscriptionReader {
                         $this->addWarning(self::WARNING_BAD_ATTRIBUTE, 
                                 "Not valid deletion technique '$technique", 
                                 "In <del rend=...");
-                        return $matched;
+                        $technique = \AverroesProject\TxText\Deletion::$deletionTechniques[0];
                     }
                     $item = new \AverroesProject\TxText\Deletion(0, 0, 
                         Item::normalizeString($readData['text']),
@@ -856,6 +856,26 @@ class TranscriptionReader {
                 return $matched;
             });
             
+        $chGapPattern = (new Pattern())
+            ->withTokenSeries([
+                XmlToken::elementToken('gap')
+                    ->withReqAttrs([
+                         ['reason', '/^[a-z]+$/'], 
+                         ['quantity', '/^[0-9]+$/'],
+                         ['unit', 'character']
+                       ])
+                    ])
+            ->withCallback(function ($matched) use (&$itemId){
+                $gap = array_pop($matched); // <gap/>
+                $quantity = $gap['attributes']['quantity'];
+                $item = new \AverroesProject\TxText\CharacterGap(0,0,$quantity);
+                $item->lang = '';
+                $item->id = $itemId;
+                $matched[] = $item;
+                $itemId++;
+                return $matched;
+            });
+            
          $metamarkPattern = (new Pattern())
             ->withTokenSeries([
                 XmlToken::elementToken('metamark')
@@ -891,7 +911,7 @@ class TranscriptionReader {
                         $this->addWarning(self::WARNING_BAD_ATTRIBUTE, 
                                 "Not valid place'$place", 
                                 "In <add place=...");
-                        return $matched;
+                        $place = \AverroesProject\TxText\Addition::$validPlaces[0];
                     }
                     $item = new \AverroesProject\TxText\Addition(0, 0, 
                         Item::normalizeString($readData['text']),
@@ -967,14 +987,6 @@ class TranscriptionReader {
                     $nItems = count($matched);
                     array_pop($matched); // </mod>
                     $addItem = array_pop($matched); // add
-//                    print "Popped addItem\n";
-//                    print_r($addItem);
-//                    if (!is_a($addItem, 'AverroesProject\TxText\Addition' )) {
-//                         $this->addWarning(self::WARNING_BAD_ATTRIBUTE, 
-//                                "Expected an addition, got " . get_class($addItem), 
-//                                "In <mod type=\"subst\"...");
-//                        return $matched;
-//                    }
                     $delItem = array_pop($matched); // del
                     array_pop($matched); // <mod>
                     $addItem->setTarget($delItem->id);
@@ -1043,6 +1055,7 @@ class TranscriptionReader {
             $addPattern,
             $gliphPattern,
             $noLbPattern,
+            $chGapPattern,
             $metamarkPattern,
             $inlineNotePattern,
             $mod1Pattern,

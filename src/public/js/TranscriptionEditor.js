@@ -514,6 +514,16 @@ class TranscriptionEditor
       this.setFontSize(this.fontSize + 1)
     }
   }
+  
+  measureText(text, className, fontSizeInEms=1) {
+    let measuringDiv = document.getElementById('text-measurement-'+this.id)
+    $(measuringDiv).addClass(className)
+    measuringDiv.style.fontSize= fontSizeInEms + 'em'
+    $(measuringDiv).html(text)
+    let measurement = { width: measuringDiv.clientWidth+1, height: measuringDiv.clientHeight+1}
+    $(measuringDiv).removeClass(className)
+    return measurement
+  }
 
   numberLines()
   {
@@ -637,9 +647,9 @@ class TranscriptionEditor
             theP.addClass('firstmarginalline')
             let title = 'Addition @ ' + place 
             if (targetText !== '[none]') {
-              title += ' <i class="fa fa-exchange" aria-hidden="true"></i> ' + targetText
+              title += '  ' + targetText
             } else {
-              title += '&nbsp;&nbsp;(!) NO TARGET'
+              title += ' (!) NO TARGET'
             }
             lineNumberLabel = '<a title="Marginal Substitution">&nbsp;A</a>'
             topLabelText = title
@@ -693,22 +703,25 @@ class TranscriptionEditor
         overlayNumber++
         overlayId = this.containerId + '-ovr-' + overlayNumber
         let topLabelTopPos = offset.top 
-              //+ $('#editor-container-' + this.id).position().top 
               + parseInt(theP.css('marginTop'))
               - this.options.editorLineHeight*editorFontSize*0.8
               - firstPTopOffset
-        let topLabelLeft = editorContainerLeftPos + marginSize + 40;
+        
+        let topLabelLeft = marginSize + 40;
+        let topLabelWidth = this.measureText(topLabelText, 'linenumber', fontEmSize).width
         if (this.defaultLang !== 'la') {
-           topLabelLeft -= marginSize
+           topLabelLeft = $(editorDiv).outerWidth() - numberMargin - topLabelWidth - 40;
         }
         overlay = '<div class="linenumber" id="' +
         overlayId +
         '" style="position: absolute;' + 
+        'direction: ltr;' +
+        //'border: 1px solid black;' +
         'top:' +  topLabelTopPos + 'px; ' + 
         'left: ' + topLabelLeft + 'px; ' + 
         'line-height: ' + this.options.editorLineHeight*editorFontSize + 'px;' +
         'font-size:' + fontEmSize + 'em; ' +
-        'width: ' +  (topLabelText.length*fontCharWidth + 10) + 'px;' +
+        'width: ' +  topLabelWidth  + 'px;' +
         'height: ' + this.options.editorLineHeight*editorFontSize + 'px;' +  
         '">' +
         topLabelText +
@@ -2578,7 +2591,13 @@ class TranscriptionEditor
                 <button type="button" class="btn btn-primary" id="alert-modal-cancel-button-{{id}}" data-dismiss="modal">No</button>
                 <button type="button" class="btn btn-danger" id="alert-modal-submit-button-{{id}}">Yes</button>
             </div>
-</div>      
+      </div>
+    </div>
+</div>
+<!-- TEXT measuring div -->
+<div id="text-measurement-{{id}}" style="position:absolute; visibility: hidden; height: auto; width: auto; white-space: nowrap; direction: ltr;">
+   Some text
+</div>
 `
     })
   }

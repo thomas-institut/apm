@@ -414,6 +414,53 @@ class ApiController
         return $response->withStatus(200);
     }
     
+    public function newDocument(Request $request, Response $response, $next) 
+    {
+        $profiler = new Profiler('updateDocSettings', $this->db);
+        
+        $rawData = $request->getBody()->getContents();
+        $postData = [];
+        parse_str($rawData, $postData);
+        $docSettings = null;
+        if (isset($postData['data'])) {
+            $docSettings = json_decode($postData['data'], true);
+        }
+        
+        if (is_null($docSettings) ) {
+            $this->logger->error("New document: no data in input",
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_NO_DATA,
+                      'data' => $postData]);
+            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_NO_DATA]);
+        }
+        
+        $dm = $this->db;
+        
+        $this->logger->debug('New doc',[ 'apiUserId' => $this->ci->userId, 
+                      'docSettings' => $docSettings] );
+        
+        $docId = $dm->newDoc(
+                $docSettings['title'], 
+                $docSettings['short_title'],
+                0,  // start with 0 pages
+                $docSettings['lang'],
+                $docSettings['doc_type'],
+                $docSettings['image_source'],
+                $docSettings['image_source_data']
+            );
+        
+        if ($docId === false) {
+            $this->logger->error("New document: cannot create",
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_DB_UPDATE_ERROR,
+                      'docSettings' => $docSettings]);
+            return $response->withStatus(409)->withJson(['error' => self::API_ERROR_DB_UPDATE_ERROR]);
+        }
+        $profiler->log($this->logger);
+        return $response->withStatus(200)->withJson(['newDocId' => $docId]);
+        
+    }
+    
     public function updateDocSettings(Request $request, Response $response, $next)
     {
         $profiler = new Profiler('updateDocSettings', $this->db);

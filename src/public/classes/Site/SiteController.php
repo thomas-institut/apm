@@ -283,12 +283,18 @@ class SiteController
             array_push($docs, $doc);
             //$profiler->lap("Doc $docId - END");
         }
+        
+        $canManageDocuments = false;
+        if ($this->db->um->isUserAllowedTo($this->ci->userInfo['id'], 'docs-create-new')) {
+            $canManageDocuments = true;
+        }
         $profiler->log($this->ci->logger);
         return $this->ci->view->render($response, 'docs.twig', [
             'userinfo' => $this->ci->userInfo, 
             'copyright' => $this->ci->copyrightNotice,
             'baseurl' => $this->ci->settings['baseurl'],
-            'docs' => $docs
+            'docs' => $docs,
+            'canManageDocuments' => $canManageDocuments
         ]);
     }
     
@@ -386,6 +392,42 @@ class SiteController
             'navByPage' => false,
             'canDefinePages' => $canDefinePages,
             'doc' => $doc
+        ]);
+    }
+    
+    public function newDocPage(Request $request, Response $response, $next)
+    {
+        $db = $this->db;
+        $availableImageSources = $this->ci->hm->callHookedMethods('get-image-sources', []);
+        $imageSourceOptions = '';
+        $docImageSourceIsImplemented = false;
+        foreach($availableImageSources as $imageSource) {
+            $imageSourceOptions .= '<option value="' . $imageSource . '"';
+            $imageSourceOptions .= '>' . $imageSource . '</option>';
+        }
+        
+        
+        $languages = $this->ci->settings['languages'];
+        $langOptions = '';
+        foreach($languages as $lang) {
+            $langOptions .= '<option value="' . $lang['code'] . '"';
+            $langOptions .= '>' . $lang['name'] . '</option>';
+        }
+        
+        $docTypes = [ ['mss', 'Manuscript'], ['print', 'Print']];
+        $docTypesOptions = '';
+        foreach($docTypes as $type) {
+            $docTypesOptions .= '<option value="' . $type[0] . '"';
+            $docTypesOptions .= '>' . $type[1] . '</option>';
+        }
+        
+        return $this->ci->view->render($response, 'doc.new.twig', [
+            'userinfo' => $this->ci->userInfo, 
+            'copyright' => $this->ci->copyrightNotice,
+            'baseurl' => $this->ci->settings['baseurl'],
+            'imageSourceOptions' => $imageSourceOptions,
+            'langOptions' => $langOptions,
+            'docTypesOptions' => $docTypesOptions
         ]);
     }
     

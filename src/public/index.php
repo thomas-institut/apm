@@ -228,6 +228,11 @@ $app->get('/doc/{id}/definepages','\AverroesProject\Site\SiteController:defineDo
 $app->get('/doc/{id}/edit','\AverroesProject\Site\SiteController:editDocPage')
         ->setName('doc.editdoc')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
+
+$app->get('/doc/new','\AverroesProject\Site\SiteController:newDocPage')
+        ->setName('doc.new')
+        ->add('\AverroesProject\Auth\Authenticator:authenticate');
+
 // PAGEVIEWER
 $app->get('/doc/{doc}/realpage/{page}/view', 
         '\AverroesProject\Site\SiteController:pageViewerPageByDocPage')
@@ -250,6 +255,11 @@ $app->group('/api', function (){
     $this->get('/{document}/{page}/{column}/elements', 
             '\AverroesProject\Api\ApiController:getElementsByDocPageCol')
         ->setName('api.getelements');
+    
+    // API -> updateDoc
+    $this->post('/doc/new', 
+            '\AverroesProject\Api\ApiController:newDocument')
+        ->setName('api.doc.new');
     
     // API -> updateDoc
     $this->post('/doc/{id}/update', 

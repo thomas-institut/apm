@@ -35,5 +35,12 @@ $(document).ready(function()
     </tr>
 {% endfor %}
 </table>
+
+{% if canManageDocuments %}
+    <h3>Admin</h3>
+    <ul>
+        <li><a href="{{path_for('doc.new')}}">Add New Document</a></li>
+    </ul>
+{% endif %} 
 {% endblock %}
 

@@ -1,0 +1,68 @@
+{% extends "base.twig" %}
+{% import 'macros.twig' as macros %}
+
+{% block title %}New Document{% endblock %}
+
+{% block extraJS %}
+<script type="application/javascript" src="{{baseurl}}/js/ApmUtil.js"></script>
+<script type="application/javascript" src="{{baseurl}}/js/NewDocPage.js"></script>
+<script>
+    $(document).ready(function () {
+        docEditObj = new NewDocPage('de', 
+        '{{path_for('api.doc.new')}}',
+        '{{path_for('docs')}}', 
+        '{{path_for('docs')}}' 
+        )
+    })
+</script>
+{% endblock %}
+
+{% block content %}
+     <ol class="breadcrumb">
+        <li><a href="{{path_for('docs')}}">Documents</a></li>
+        <li class="active">Add New Document</li>
+    </ol>
+
+<h1>New Document</h1>
+  
+<div class="row">
+    <div class="col-md-8">    
+<div class="withmarginleft-small">
+    <form id="de-form">
+        <div id="de-title-fg" class="form-group">
+            <label for="de-title" id="de-title-label" class="control-label">Title:</label>
+            <input type="text" class="form-control" id="de-title" value=""/>
+        </div>
+        <div id="de-titlestatus"></div>
+        <div id="de-shorttitle-fg" class="form-group">
+            <label for="de-shorttitle" id="de-shorttitle-label" class="control-label">Short Title:</label>
+            <input type="text" class="form-control" id="de-shorttitle" value=""/>
+        </div>
+        <div id="de-type-fg" class="form-group">
+            <label for="de-type" id="de-type-label" class="control-label">Type:</label>
+            <select id="de-type">{{docTypesOptions|raw}}</select>
+        </div>
+        <div id="de-lang-fg" class="form-group">
+            <label for="de-lang" id="de-lang-label" class="control-label">Language:</label>
+            <select id="de-lang">{{langOptions|raw}}</select>
+        </div>
+        <div id="de-imagesource-fg" class="form-group">
+            <label for="de-imagesource" id="de-imagesource-label" class="control-label">Image Source:</label>
+            <select id="de-imagesource">{{imageSourceOptions|raw}}</select>
+        </div>
+        <div id="de-imagesourcedata-fg" class="form-group">
+            <label for="de-shorttitle" id="de-imagesourcedata-label" class="control-label">Image Source Data:</label>
+            <input type="text" class="form-control" id="de-imagesourcedata" value=""/>
+        </div>
+    </form>
+    
+    <button type="button" class="btn btn-default" id="de-cancel">Cancel</button>
+    <button type="button" class="btn btn-primary hidden" id="de-submit">Create Document</button>
+    <div id="de-status"></div>
+</div>
+    </div>
+</div>
+          
+    
+{% endblock %}
+

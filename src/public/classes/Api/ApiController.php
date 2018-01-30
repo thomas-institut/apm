@@ -421,7 +421,13 @@ class ApiController
     {
         $profiler = new Profiler('deleteDocument', $this->db);
         $docId = (int) $request->getAttribute('id');
-        $this->logger->debug("Request to delete doc " . $docId);
+        //$this->logger->debug("Request to delete doc " . $docId);
+        if (!$this->db->um->isUserAllowedTo($this->ci->userId, 'delete-documents')){
+            $this->logger->warning("deleteDocument: unauthorized request", 
+                    [ 'apiUserId' => $this->ci->userId, 'docId' => $docId]
+                );
+            return $response->withStatus(403);
+        }
         
         $docSettings = $this->ci->db->getDocById($docId);
         if ($docSettings === false) {
@@ -458,6 +464,13 @@ class ApiController
     public function addPages(Request $request, Response $response, $next) 
     {
         $profiler = new Profiler('addPages', $this->db);
+        
+        if (!$this->db->um->isUserAllowedTo($this->ci->userId, 'add-pages')){
+            $this->logger->warning("addPages: unauthorized request", 
+                    [ 'apiUserId' => $this->ci->userId]
+                );
+            return $response->withStatus(403);
+        }
         
         $docId = (int) $request->getAttribute('id');
         $docInfo = $this->ci->db->getDocById($docId);
@@ -516,7 +529,14 @@ class ApiController
     
     public function newDocument(Request $request, Response $response, $next) 
     {
-        $profiler = new Profiler('updateDocSettings', $this->db);
+        $profiler = new Profiler('New Doc', $this->db);
+        
+        if (!$this->db->um->isUserAllowedTo($this->ci->userId, 'create-new-document')){
+            $this->logger->warning("New Doc: unauthorized request", 
+                    [ 'apiUserId' => $this->ci->userId]
+                );
+            return $response->withStatus(403);
+        }
         
         $rawData = $request->getBody()->getContents();
         $postData = [];
@@ -564,6 +584,12 @@ class ApiController
     public function updateDocSettings(Request $request, Response $response, $next)
     {
         $profiler = new Profiler('updateDocSettings', $this->db);
+        if (!$this->db->um->isUserAllowedTo($this->ci->userId, 'update-doc-settings')){
+            $this->logger->warning("updateDocSettings: unauthorized request", 
+                    [ 'apiUserId' => $this->ci->userId]
+                );
+            return $response->withStatus(403);
+        }
         $docId = (int) $request->getAttribute('id');
         
         $rawData = $request->getBody()->getContents();
@@ -604,6 +630,14 @@ class ApiController
     public function updatePageSettingsBulk(Request $request, Response $response, $next)
     {
         $profiler = new Profiler('updatePageSettingsBulk', $this->db);
+        
+        if (!$this->db->um->isUserAllowedTo($this->ci->userId, 'update-page-settings-bulk')){
+            
+            $this->logger->warning("updatePageSettingsBulk: unauthorized request", 
+                    [ 'apiUserId' => $this->ci->userId]
+                );
+            return $response->withStatus(403);
+        }
         $rawData = $request->getBody()->getContents();
         $postData = [];
         parse_str($rawData, $postData);

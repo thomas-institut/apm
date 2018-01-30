@@ -3,6 +3,8 @@
 {% block title %}Not Authorized{% endblock %}
 
 {% block content %}
-<h1>Error: Not Authorized </h1>
-<p>You are not authorized to change the settings for user '{{theuser}}'.</p>
+    <div class="alert alert-danger" role="alert">
+        <h1><i class="fa fa-exclamation-triangle" aria-hidden="true"></i> Error</h1>
+        <p class="lead">{{message}}</p>
+    </div>
 {% endblock %}

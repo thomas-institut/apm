@@ -204,8 +204,16 @@ class SiteController
         $profiler = new Profiler('userManagerPage', $this->db);
         $um = $this->db->um;
         if (!$um->isUserAllowedTo($this->ci->userInfo['id'], 'manageUsers')){
-            return $this->ci->view->render($response, 
-                    'error.notallowed.tomanage.twig');
+            return $this->ci->view->render(
+                    $response, 
+                    'error.notallowed.twig', 
+                    [
+                        'userinfo' => $this->ci->userInfo, 
+                        'copyright' => $this->ci->copyrightNotice,
+                        'baseurl' => $this->ci->settings['baseurl'],
+                        'message' => 'You are not authorized to manage users.'
+                    ]
+                );
         }
         
         $db = $this->db;
@@ -233,7 +241,7 @@ class SiteController
                 'userinfo' => $this->ci->userInfo, 
                 'copyright' => $this->ci->copyrightNotice,
                 'baseurl' => $this->ci->settings['baseurl'],
-                'theuser' => $username
+                'message' => 'You are not authorized to change the settings for user ' . $username
             ]);
         }
         
@@ -397,6 +405,17 @@ class SiteController
     
     public function newDocPage(Request $request, Response $response, $next)
     {
+     
+        if (!$this->db->um->isUserAllowedTo($this->ci->userInfo['id'], 'create-new-documents')){
+            $this->ci->logger->debug("User " . $this->ci->userInfo['id'] . ' tried to add new doc but is not allowed to do it');
+            return $this->ci->view->render($response, 'error.notallowed.twig', [
+                'userinfo' => $this->ci->userInfo, 
+                'copyright' => $this->ci->copyrightNotice,
+                'baseurl' => $this->ci->settings['baseurl'],
+                'message' => 'You are not authorized to add new documents in the system'
+            ]);
+        }
+        
         $db = $this->db;
         $availableImageSources = $this->ci->hm->callHookedMethods('get-image-sources', []);
         $imageSourceOptions = '';
@@ -433,6 +452,16 @@ class SiteController
     
     public function editDocPage(Request $request, Response $response, $next)
     {
+        if (!$this->db->um->isUserAllowedTo($this->ci->userInfo['id'], 'edit-documents')){
+            $this->ci->logger->debug("User " . $this->ci->userInfo['id'] . ' tried to edit a document but is not allowed to do it');
+            return $this->ci->view->render($response, 'error.notallowed.twig', [
+                'userinfo' => $this->ci->userInfo, 
+                'copyright' => $this->ci->copyrightNotice,
+                'baseurl' => $this->ci->settings['baseurl'],
+                'message' => 'You are not authorized to edit document settings'
+            ]);
+        }
+        
         $docId = $request->getAttribute('id');
         $db = $this->db;
         $docInfo = $db->getDocById($docId);
@@ -495,6 +524,17 @@ class SiteController
     public function defineDocPages(Request $request, Response $response, $next)
     {
         $profiler = new Profiler('defineDocPages', $this->db);
+        
+        if (!$this->db->um->isUserAllowedTo($this->ci->userInfo['id'], 'define-doc-pages')){
+            $this->ci->logger->debug("User " . $this->ci->userInfo['id'] . ' tried to define document pages  but is not allowed to do it');
+            return $this->ci->view->render($response, 'error.notallowed.twig', [
+                'userinfo' => $this->ci->userInfo, 
+                'copyright' => $this->ci->copyrightNotice,
+                'baseurl' => $this->ci->settings['baseurl'],
+                'message' => 'You are not authorized to edit document settings'
+            ]);
+        }
+        
         $docId = $request->getAttribute('id');
         $db = $this->db;
         $doc = [];

@@ -71,6 +71,10 @@ class ApmUrlGenerator {
     return this.base + '/api/page/bulkupdate'
   }
   
+  apiAddPages(docId) {
+    return this.base + '/api/doc/' + docId + '/addpages'
+  }
+  
 }
 
 

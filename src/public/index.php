@@ -266,6 +266,12 @@ $app->group('/api', function (){
             '\AverroesProject\Api\ApiController:deleteDocument')
         ->setName('api.doc.delete');
     
+    // API -> add pages to a document
+     $this->post('/doc/{id}/addpages', 
+            '\AverroesProject\Api\ApiController:addPages')
+        ->setName('api.doc.addpages');
+       
+    
     // API -> update document settings
     $this->post('/doc/{id}/update', 
             '\AverroesProject\Api\ApiController:updateDocSettings')

@@ -9,12 +9,14 @@
 <script type="application/javascript" src="{{baseurl}}/js/PageRange.js"></script>
 <script type="application/javascript" src="{{baseurl}}/js/DefPagesDefAll.js"></script>
 <script type="application/javascript" src="{{baseurl}}/js/DefPagesDefRange.js"></script>
+<script type="application/javascript" src="{{baseurl}}/js/DefPagesAddPages.js"></script>
 <script>
     $(document).ready(function () {
         let pageTypes = JSON.parse('{{pageTypes|json_encode|raw}}')
         let urlGenerator = new ApmUrlGenerator('{{baseurl}}')
         let dapObject = new DefPagesDefAll({{doc.numPages}}, 'dap-', {{doc.docInfo.id}}, urlGenerator)
         let drObject = new DefPagesDefRange({{doc.numPages}}, 'dr-', {{doc.docInfo.id}}, pageTypes, urlGenerator)
+        let apObject = new DefPagesAddPages({{doc.numPages}}, 'ap-', {{doc.docInfo.id}}, urlGenerator)
     })
 </script>
 {% endblock %}
@@ -34,7 +36,7 @@
 </div>
 
 <div class="withtopmargin"></div>
-    <div class="row">
+<div class="row">
     <div class="col-md-6" id="pageSettingsFormCol">    
         <h2>Define All Pages</h2>
         <div id="dap-div" class="withmarginleft-small">
@@ -50,18 +52,18 @@
                 Text Pages: <span id="dap-tp-label">1 - {{doc.numPages}}</span><br/>
                 Back Matter: <span id="dap-bm-label">-</span>
             </p>
-        
+
             <div id="dap-overwrite-pt-fg" class="form-group  form-inline withmarginleft-small">
             <input type="checkbox"class="form-control" id="dap-overwrite-pt"></input>
             Overwrite current page types
         </div>
-            
+
         <div id="dap-createcols-fg" class="form-group form-inline" >
             <input type="checkbox" class="form-control" id="dap-createcols"></input>
             Assign <input type="number" class="form-control" id="dap-cols" value="1" style="width: 60px;"></input> column(s) to each text page
             (won't change current columns)
         </div>
-        
+
         <div id="dap-foliate-fbm-fg" class="form-group form-inline">
             <input type="checkbox" class="form-control" id="dap-foliate-fbm" disabled></input>
             Assign foliation to given front/back matter (x1, x2, ...)
@@ -70,88 +72,103 @@
                <span id="dap-fm-foliation-label">-</span>
                <span id="dap-bm-foliation-label">-</span>
             </p>
-            
+
         <div id="dap-foliate-tp-fg" class="form-group  form-inline">
             <input type="checkbox" class="form-control" id="dap-foliate-tp"></input>
             Assign foliation to given text pages (1r, 1v, 2r, 2v, ...)
         </div>
-            
+
             <p class="withmarginleft-small text-muted hidden" id="dap-tp-foliation">
                <span id="dap-tp-foliation-label"></span>
             </p>
-        
+
         <div id="dap-overwrite-f-fg" class="form-group form-inline hidden">
             <input type="checkbox" class="form-control" id="dap-overwrite-f"></input>
             Overwrite current page foliation
         </div>
-            
+
         <button type="button" class="btn btn-primary hidden" id="dap-submit-button" >Go for it!</button>
         <span id="dap-status"></span>
         </form> 
-                
+
         </div>
     </div>
-        
-        <div class="col-md-6">
-            <h2>Define Range</h2>
-            <div id="dr-div" class="withmarginleft-small">
-            <form id="dr-Form">
-        <div id="dr-ftp-fg" class="form-group form-inline">
-            From page 
-            <input type="number" class="form-control" id="dr-fp" value="1" style="width: 90px;"></input>
-             to page 
-             <input type="number" class="form-control" id="dr-lp" value="10" style="width: 90px;"></input>
-             (real page numbers)
-        </div>
-       
-        <div id="dr-settype-fg"  class="form-group form-inline">
-            <input type="checkbox" class="form-control" id="dr-settype"></input>
-            Set page type to <select id="dr-pagetypes-select"></select>
-        </div>
-                
-        {#<div id="dr-overwritetype-fg" class="form-group form-inline withmarginleft-small hidden">
-            <input type="checkbox" class="form-control" id="dr-overwritetype"></input>
-            Overwrite current page type
-        </div> #}               
-                
-        <div id="dr-foliate-fg" class="form-group  form-inline">
-            <input type="checkbox" class="form-control" id="dr-foliate"></input>
-            Assign 
-            <select id="dr-foliation-type-select">
-                <option value="rv" selected>recto/verso</option>
-                <option value="c">consecutive</option>
-            </select> foliation starting with 
-            <input type="number" class="form-control" id="dr-startnum" value="1" style="width: 70px;"></input>
-        </div>
-        <div id="dr-foliatetp-fg2" class="form-group  form-inline withmarginleft-small">   
-            Prefix:  <input type="text" class="form-control" id="dr-prefix" style="width: 70px;"></input>
-            Suffix:  <input type="text" class="form-control" id="dr-suffix" style="width: 70px;"></input>
-            (spaces will be ignored)
-        </div>
-                
-        <p class="withmarginleft-small text-muted hidden" id="dr-foliation-label"> 
-            Some label!
-        </p>
-        
-        <div id="dr-overwritef-fg" class="form-group  form-inline withmarginleft-small hidden">
-            <input type="checkbox" class="form-control" id="dr-overwritef"></input>
-            Overwrite current page foliation
-        </div>
-        
-        <div id="dr-createcols-fg" class="form-group form-inline" >
-            <input type="checkbox" class="form-control" id="dr-createcols"></input>
-            Assign <input type="number" class="form-control" id="dr-cols" value="1" style="width: 60px;"></input> column(s) to each text page
-            (won't change current columns)
-        </div>
-        
-            <button type="button" class="btn btn-primary hidden" id="dr-submit-button">Go for it!</button>
-            <span id="dr-status"></span>
-            
-        </form> 
-        </div>
-            
+
+    <div class="col-md-6">
+        <h2>Define Range</h2>
+        <div id="dr-div" class="withmarginleft-small">
+        <form id="dr-Form">
+    <div id="dr-ftp-fg" class="form-group form-inline">
+        From page 
+        <input type="number" class="form-control" id="dr-fp" value="1" style="width: 90px;"></input>
+         to page 
+         <input type="number" class="form-control" id="dr-lp" value="10" style="width: 90px;"></input>
+         (real page numbers)
+    </div>
+
+    <div id="dr-settype-fg"  class="form-group form-inline">
+        <input type="checkbox" class="form-control" id="dr-settype"></input>
+        Set page type to <select id="dr-pagetypes-select"></select>
+    </div>
+
+    {#<div id="dr-overwritetype-fg" class="form-group form-inline withmarginleft-small hidden">
+        <input type="checkbox" class="form-control" id="dr-overwritetype"></input>
+        Overwrite current page type
+    </div> #}               
+
+    <div id="dr-foliate-fg" class="form-group  form-inline">
+        <input type="checkbox" class="form-control" id="dr-foliate"></input>
+        Assign 
+        <select id="dr-foliation-type-select">
+            <option value="rv" selected>recto/verso</option>
+            <option value="c">consecutive</option>
+        </select> foliation starting with 
+        <input type="number" class="form-control" id="dr-startnum" value="1" style="width: 70px;"></input>
+    </div>
+    <div id="dr-foliatetp-fg2" class="form-group  form-inline withmarginleft-small">   
+        Prefix:  <input type="text" class="form-control" id="dr-prefix" style="width: 70px;"></input>
+        Suffix:  <input type="text" class="form-control" id="dr-suffix" style="width: 70px;"></input>
+        (spaces will be ignored)
+    </div>
+
+    <p class="withmarginleft-small text-muted hidden" id="dr-foliation-label"> 
+        Some label!
+    </p>
+
+    <div id="dr-overwritef-fg" class="form-group  form-inline withmarginleft-small hidden">
+        <input type="checkbox" class="form-control" id="dr-overwritef"></input>
+        Overwrite current page foliation
+    </div>
+
+    <div id="dr-createcols-fg" class="form-group form-inline" >
+        <input type="checkbox" class="form-control" id="dr-createcols"></input>
+        Assign <input type="number" class="form-control" id="dr-cols" value="1" style="width: 60px;"></input> column(s) to each text page
+        (won't change current columns)
+    </div>
+
+        <button type="button" class="btn btn-primary hidden" id="dr-submit-button">Go for it!</button>
+        <span id="dr-status"></span>
+
+    </form> 
+    </div>
+
 </div>
-          
+</div>
+    
+<div class="row">
+    <div class="col-md-6">
+        <h2>Add Pages</h2>
+        <div id="ap-div" class="withmarginleft-small">
+            <form id="ap-form">
+                 <div id="ap-addpages-fg" class="form-group form-inline" >
+                    Add <input type="number" class="form-control" id="ap-num-pages" value="0" min="0" max="2000" style="width: 100px;"></input> pages at the end of the document
+                 </div>
+                <button type="button" class="btn btn-primary hidden" id="ap-submit-button">Go for it!</button>
+            </form>
+            <span id="ap-status"></span>
+        </div>
+    </div>
+</div>
     
 {% endblock %}
 

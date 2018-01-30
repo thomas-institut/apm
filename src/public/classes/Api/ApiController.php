@@ -455,6 +455,65 @@ class ApiController
         return $response->withStatus(200);
     }
     
+    public function addPages(Request $request, Response $response, $next) 
+    {
+        $profiler = new Profiler('addPages', $this->db);
+        
+        $docId = (int) $request->getAttribute('id');
+        $docInfo = $this->ci->db->getDocById($docId);
+        if ($docInfo === false) {
+            $this->logger->error("Add Pages: document does not exist",
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_WRONG_DOCUMENT, 
+                      'docId' => $docId ]);
+            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_WRONG_DOCUMENT, 'msg' => 'Document does not exist']);
+        }
+        
+        $rawData = $request->getBody()->getContents();
+        $postData = [];
+        parse_str($rawData, $postData);
+        
+        
+        if (!isset($postData['numPages'])) {
+            $this->logger->error("Add pages: no data in input",
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_NO_DATA,
+                      'data' => $postData]);
+            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_NO_DATA]);
+        }
+        
+        $numPages = (int) json_decode($postData['numPages'], true);
+        
+        if ($numPages === 0) {
+            // nothing to do!
+            $this->logger->debug("addPages: request for 0 pages, nothing to do");
+            $profiler->log($this->logger);
+            return $response->withStatus(200);
+        }
+        
+        
+        $this->logger->debug("addPages: request for " . $numPages . " new pages");
+        
+        $curNumPages = $this->db->getPageCountByDocId($docId);
+        
+        for ($i = $curNumPages; $i < ($numPages+$curNumPages); $i++) {
+            $pageId = $this->db->newPage($docId, $i+1, $docInfo['lang']);
+            if ($pageId === false) {
+                $this->logger->error("Add pages: cannot create page",
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_DB_UPDATE_ERROR,
+                      'curNumPages' => $curNumPages,
+                      'requestedNewPages' => $numPages,
+                      'pageNumberNotCreated' => $i
+                    ]);
+                return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_DB_UPDATE_ERROR]);
+            }
+        }
+        
+        $profiler->log($this->logger);
+        return $response->withStatus(200);
+    }
+    
     public function newDocument(Request $request, Response $response, $next) 
     {
         $profiler = new Profiler('updateDocSettings', $this->db);

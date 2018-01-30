@@ -73,18 +73,22 @@
     </div>
 </div>
         
-{%if canBeDeleted %}
+
     
 <div class="row" style="margin-top: 50px">
-    <div class="col-md-8">    
-        <p class="text-warning">This document has never had any pages defined, it can be safely deleted.</p>
-        <p><button type="button" class="btn btn-danger" id="de-delete">Delete This Document</button> </p>
-        
-       
+    <div class="col-md-8"> 
+ 
+        {%if canBeDeleted %}
+            <p class="text-warning">This document has never had any pages defined, it can be safely deleted.</p>
+            <p><button type="button" class="btn btn-danger" id="de-delete">Delete This Document</button> </p>
+        {% else %}
+            <p class="text-warning">This document has pages defined, it cannot deleted.</p>
+        {% endif %}
     </div>
 </div>
     
-{% endif %}
+
+
 
 <!-- ALERT modal -->             
 <div id="de-alert-modal" class="modal" role="dialog">

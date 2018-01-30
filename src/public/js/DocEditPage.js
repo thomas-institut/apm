@@ -26,12 +26,14 @@
 class DocEditPage {
   
   
-  constructor(prefix, docInfo, docEditApiUrl, cancelUrl) {
+  constructor(prefix, docInfo, docEditApiUrl, cancelUrl, deleteUrl, successDeleteUrl) {
     
     this.docInfoFields = ['title', 'short_title', 'doc_type', 'lang', 'image_source', 'image_source_data']
     
     this.docInfo = docInfo
     this.docEditApiUrl = docEditApiUrl
+    this.apiDeleteUrl = deleteUrl
+    this.successDeleteUrl = successDeleteUrl
     
     this.titleField = $('#' + prefix + '-title')
     this.shortTitleField = $('#' + prefix + '-shorttitle')
@@ -42,8 +44,15 @@ class DocEditPage {
     this.submitButton = $('#' + prefix + '-submit')
     this.cancelButton = $('#' + prefix + '-cancel')
     this.resetButton = $('#' + prefix + '-reset')
+    this.deleteButton = $('#' + prefix + '-delete')
     this.statusDiv = $('#' + prefix + '-status')
     this.titleStatusDiv = $('#' + prefix + '-titlestatus')
+    
+    this.alertModal = $('#' + prefix + '-alert-modal')
+    this.alertModalTitle = $('#' + prefix + '-alert-modal-title')
+    this.alertModalSubmitButton = $('#' + prefix + '-alert-modal-submit-button')
+    this.alertModalCancelButton = $('#' + prefix + '-alert-modal-cancel-button')
+    this.alertModalText = $('#' + prefix + '-alert-modal-text')
     
     this.titleField.on('keyup', this.genCheckFormFunction())
     this.shortTitleField.on('keyup', this.genCheckFormFunction())
@@ -56,6 +65,7 @@ class DocEditPage {
     this.submitButton.on('click', this.genSubmitFunction())
     this.resetButton.on('click', this.genResetFunction())
     this.cancelButton.on('click', function (){ location.replace(cancelUrl)})
+    this.deleteButton.on('click', this.genDeleteFunction())
     
     this.submitButton.hide()
     this.submitButton.removeClass('hidden')
@@ -84,6 +94,33 @@ class DocEditPage {
         return true
       }
       thisObject.statusDiv.html('<div class="alert alert-info>No changes, nothing to do</div>')
+    }
+  }
+  
+  genDeleteFunction() {
+    let thisObject = this
+    return function() {
+      thisObject.alertModalTitle.html('Please confirm')
+      thisObject.alertModalSubmitButton.html('Delete Document')
+      thisObject.alertModalCancelButton.html('Cancel')
+      thisObject.alertModalText.html(
+                      'Are you sure you want to delete this document?</p>'+ 
+                      '<p class="text-danger">This can NOT be undone!')
+      thisObject.alertModalSubmitButton.off()
+      thisObject.alertModalSubmitButton.on('click', function () {
+        $.get(
+          thisObject.apiDeleteUrl
+        )
+        .done(function () { 
+          thisObject.statusDiv.html("Delete... done")
+          location.replace(thisObject.successDeleteUrl)
+         })
+        .fail(function(resp) {
+          thisObject.statusDiv.html("Delete... fail with error code " + resp.status + ' :(')
+        })
+        return true
+      })
+      thisObject.alertModal.modal('show')
     }
   }
   

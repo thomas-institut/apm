@@ -256,16 +256,22 @@ $app->group('/api', function (){
             '\AverroesProject\Api\ApiController:getElementsByDocPageCol')
         ->setName('api.getelements');
     
-    // API -> updateDoc
+    // API -> create new document
     $this->post('/doc/new', 
             '\AverroesProject\Api\ApiController:newDocument')
         ->setName('api.doc.new');
     
-    // API -> updateDoc
+    // API -> delete document
+    $this->get('/doc/{id}/delete', 
+            '\AverroesProject\Api\ApiController:deleteDocument')
+        ->setName('api.doc.delete');
+    
+    // API -> update document settings
     $this->post('/doc/{id}/update', 
             '\AverroesProject\Api\ApiController:updateDocSettings')
         ->setName('api.doc.update');
     
+    // API -> updateColumnElements
     $this->post('/{document}/{page}/{column}/elements/update', 
             '\AverroesProject\Api\ApiController:updateElementsByDocPageCol')
         ->setName('api.updateelements');

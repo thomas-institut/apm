@@ -11,7 +11,10 @@
         docEditObj = new DocEditPage('de', 
         JSON.parse('{{docInfo|json_encode|raw}}'),
         '{{path_for('api.doc.update', {'id': docInfo.id})}}',
-        '{{path_for('doc.showdoc', {'id' : docInfo.id })}}')
+        '{{path_for('doc.showdoc', {'id' : docInfo.id })}}', 
+        '{{path_for('api.doc.delete', {'id' : docInfo.id })}}',
+        '{{path_for('docs')}}',
+        )
     })
     
 </script>
@@ -69,7 +72,37 @@
 </div>
     </div>
 </div>
-          
+        
+{%if canBeDeleted %}
+    
+<div class="row" style="margin-top: 50px">
+    <div class="col-md-8">    
+        <p class="text-warning">This document has never had any pages defined, it can be safely deleted.</p>
+        <p><button type="button" class="btn btn-danger" id="de-delete">Delete This Document</button> </p>
+        
+       
+    </div>
+</div>
+    
+{% endif %}
+
+<!-- ALERT modal -->             
+<div id="de-alert-modal" class="modal" role="dialog">
+    <div class="modal-dialog modal-sm " role="document">
+        <div class="modal-content bg-info">
+            <div class="modal-header">
+                <h4 id="alert-modal-title">Please confirm</h4>
+            </div>
+            <div class="modal-body" id="de-alert-modal-body">
+                <p id="de-alert-modal-text"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="de-alert-modal-cancel-button" data-dismiss="modal">No</button>
+                <button type="button" class="btn btn-danger" id="de-alert-modal-submit-button">Yes</button>
+            </div>
+      </div>
+    </div>
+</div>
     
 {% endblock %}
 

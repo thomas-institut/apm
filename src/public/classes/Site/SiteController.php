@@ -471,6 +471,13 @@ class SiteController
             $docTypesOptions .= '>' . $type[1] . '</option>';
         }
         
+        $canBeDeleted = false;
+        $nPages = $db->getPageCountByDocIdAllTime($docId);
+        $this->ci->logger->debug("nPages all time: " . $nPages);
+        if ($nPages === 0) {
+            $canBeDeleted = true;
+        }
+        
         return $this->ci->view->render($response, 'doc.edit.twig', [
             'userinfo' => $this->ci->userInfo, 
             'copyright' => $this->ci->copyrightNotice,
@@ -478,8 +485,10 @@ class SiteController
             'docInfo' => $docInfo, 
             'imageSourceOptions' => $imageSourceOptions,
             'langOptions' => $langOptions,
-            'docTypesOptions' => $docTypesOptions
+            'docTypesOptions' => $docTypesOptions,
+            'canBeDeleted' => $canBeDeleted
         ]);
+        
         
     }
     

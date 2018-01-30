@@ -48,6 +48,8 @@ class ApiController
     const API_ERROR_MISSING_EDNOTE_KEY = 1011;
     const API_ERROR_WRONG_TARGET_FOR_EDNOTE = 1012;
     const API_ERROR_WRONG_AUTHOR_ID = 1013;
+    const API_ERROR_WRONG_DOCUMENT = 1014;
+    const API_ERROR_DOC_CANNOT_BE_SAFELY_DELETED = 1015;
     
     const API_ERROR_DB_UPDATE_ERROR = 1200;
             
@@ -409,6 +411,45 @@ class ApiController
         if ($r === false) {
             $this->logger->error("Can't update page settings for page $pageId", $newSettings);
             return $response->withStatus(409);
+        }
+        $profiler->log($this->logger);
+        return $response->withStatus(200);
+    }
+    
+    
+    public function deleteDocument(Request $request, Response $response, $next) 
+    {
+        $profiler = new Profiler('deleteDocument', $this->db);
+        $docId = (int) $request->getAttribute('id');
+        $this->logger->debug("Request to delete doc " . $docId);
+        
+        $docSettings = $this->ci->db->getDocById($docId);
+        if ($docSettings === false) {
+            $this->logger->error("Delete document: document does not exist",
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_WRONG_DOCUMENT, 
+                      'docId' => $docId ]);
+            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_WRONG_DOCUMENT, 'msg' => 'Document does not exist']);
+        }
+        
+        // Make sure the document is safe to delete
+        $nPages = $this->ci->db->getPageCountByDocIdAllTime($docId);
+        if ($nPages !== 0) {
+            $this->logger->error("Delete document: document cannot be safely deleted",
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_DOC_CANNOT_BE_SAFELY_DELETED, 
+                      'docId' => $docId, 
+                      'pageCountAllTime' => $nPages]);
+            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_DOC_CANNOT_BE_SAFELY_DELETED, 'msg' => 'Document cannot be safely deleted']);
+        }
+        
+        $result = $this->ci->db->deleteDocById($docId);
+        if ($result === false) {
+            $this->logger->error("Delete document: cannot delete",
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_DB_UPDATE_ERROR,
+                      'docId' => $docId]);
+            return $response->withStatus(409)->withJson(['error' => self::API_ERROR_DB_UPDATE_ERROR, 'msg' => 'Database erorr']);
         }
         $profiler->log($this->logger);
         return $response->withStatus(200);

@@ -365,6 +365,21 @@ class DataManager
         return $res->fetch(PDO::FETCH_NUM)[0];
     }
     
+    function getPageCountByDocIdAllTime($docId)
+    {
+        $this->queryStats->countQuery('select');
+        
+        $query = 'SELECT COUNT(*) FROM ' . $this->tNames['pages'] . 
+                ' WHERE `doc_id`=' . $docId;
+        $res = $this->dbh->query($query);
+        if ($res === false) {
+            // This means a database error
+            // Can't reproduce in testing for now
+            return false; // @codeCoverageIgnore
+        }
+        return (int) $res->fetch(PDO::FETCH_NUM)[0];
+    }
+    
     /**
      * Gets the page types table into an array
      */
@@ -597,6 +612,14 @@ class DataManager
         $res = $this->dbh->query($query);
         
         return $res->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    function deleteDocById($docId) {
+        $this->queryStats->countQuery('delete');
+        if ($this->getPageCountByDocIdAllTime($docId) !== 0) {
+            return false;
+        }
+        return $this->docsDataTable->deleteRow($docId);
     }
     /**
      * Returns the document information for the given document Id

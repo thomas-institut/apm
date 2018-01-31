@@ -1,0 +1,41 @@
+{% extends "base.twig" %}
+{% import 'macros.twig' as macros %}
+
+{% block title %}Quick Collation{% endblock %}
+
+{% block extraJS %}
+<script type="application/javascript" src="{{baseurl}}/js/ApmUrlGenerator.js"></script>
+<script type="application/javascript" src="{{baseurl}}/js/CollationTableFormatter.js"></script>
+<script type="application/javascript" src="{{baseurl}}/js/QuickCollation.js"></script>
+<script>
+    $(document).ready(function () {
+        let ug = new ApmUrlGenerator('{{baseurl}}')
+        let qcObject = new QuickCollation(ug)
+    })
+</script>
+{% endblock %}
+
+{% block content %}
+
+<h1>Quick Collation</h1>
+
+<p>Enter three texts to collate in the fields below: </p>
+
+<form id="textform">
+    <table>
+        <tr><td>Text A</td><td><textarea rows="5" cols="80" id="textA">This is Sparta and this is not</textarea></td></tr>
+        <tr><td>Text B</td><td><textarea rows="5" cols="80" id="textB">This is Athens and this is not</textarea></td></tr>
+        <tr><td>Text C</td><td><textarea rows="5" cols="80" id="textC">This is Sparta and this is Athens</textarea></td></tr>
+        <tr><td/><td><button type="button" class="btn btn-primary" id="collateButton">Collate</button></td>
+        <tr><td/><td><p class="text-danger" id="status"></p></td>
+    </table>
+    
+</form>
+
+
+<h2>Collation Table</h2>
+<div id="collationtablediv" style="overflow-x: auto;">
+</div>
+    
+{% endblock %}
+

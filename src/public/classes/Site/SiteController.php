@@ -328,6 +328,15 @@ class SiteController
         ]);
     }
     
+    public function quickCollationPage(Request $request, Response $response, $next)
+    {
+        return $this->ci->view->render($response, 'collation.quick.twig', [
+            'userinfo' => $this->ci->userInfo, 
+            'copyright' => $this->ci->copyrightNotice,
+            'baseurl' => $this->ci->settings['baseurl'],
+        ]);
+    }
+    
     private function genDocPagesListForUser($userId, $docId)
     {
         $docInfo = $this->db->getDocById($docId);

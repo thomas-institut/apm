@@ -75,6 +75,9 @@ class ApmUrlGenerator {
     return this.base + '/api/doc/' + docId + '/addpages'
   }
   
+  apiQuickCollation() {
+    return this.base + '/api/collation/quick'
+  }
 }
 
 

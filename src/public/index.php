@@ -30,6 +30,7 @@ use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 use AverroesProject\Data\DatabaseChecker;
 use AverroesProject\Plugin\HookManager;
+use AverroesProject\Collatex\CollatexRunner;
 
 /**
  * Runtime configurations: DB credentials, base URL
@@ -140,6 +141,14 @@ $asisObject->init();
 
 // Data Manager
 $db = new DataManager($dbh, $config['tables'], $logger, $hm, $config['langCodes']);
+
+// Collation Runner
+
+$cr = new CollatexRunner(
+        $config['collatex']['collatexJarFile'], 
+        $config['collatex']['tmp'], 
+        $config['collatex']['javaExecutable']
+        );
  
 // Initialize the Slim app
 $app = new \Slim\App(["settings" => $config]);
@@ -150,6 +159,7 @@ $container['db'] = $db;
 $container['dbh'] = $dbh;
 $container['logger'] = $logger;
 $container['hm'] = $hm;
+$container['cr'] = $cr;
 
 // Twig
 $container['view'] = function ($container) {
@@ -185,6 +195,12 @@ $app->get('/','\AverroesProject\Site\SiteController:homePage')
 // DASHBOARD
 $app->get('/dashboard','\AverroesProject\Site\SiteController:dashboardPage')
         ->setName('dashboard')
+        ->add('\AverroesProject\Auth\Authenticator:authenticate');
+
+
+// QUICK COLLATION
+$app->get('/quickcollation', '\AverroesProject\Site\SiteController:quickCollationPage')
+        ->setName('quickcollation')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
 // USER.PROFILE
@@ -325,6 +341,13 @@ $app->group('/api', function (){
     $this->post('/user/new', 
             '\AverroesProject\Api\ApiController:createNewUser')
         ->setName('api.user.new');
+    
+    
+    // API -> quick collation
+    $this->post('/collation/quick', 
+            '\AverroesProject\Api\ApiController:quickCollation')
+        ->setName('api.collation.quick');
+    
     
     // API -> images : Mark Icon
     $this->get('/images/mark/{size}', 

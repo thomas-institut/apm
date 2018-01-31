@@ -284,3 +284,17 @@ ul.chunklist ul {
     margin-top: 40px;
     margin-bottom: 60px;
 }
+
+
+table.collationtable td {
+    padding-left: 5px;
+    padding-right: 5px;
+    }
+
+table.segmenttable td {
+    border: solid 1px silver
+}
+
+table.witnesstable td {
+    font-weight: bold;
+}

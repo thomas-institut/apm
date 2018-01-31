@@ -50,6 +50,7 @@ class ApiController
     const API_ERROR_WRONG_AUTHOR_ID = 1013;
     const API_ERROR_WRONG_DOCUMENT = 1014;
     const API_ERROR_DOC_CANNOT_BE_SAFELY_DELETED = 1015;
+    const API_ERROR_ERROR_RUNNING_COLLATEX = 1016;
     
     const API_ERROR_DB_UPDATE_ERROR = 1200;
             
@@ -146,6 +147,53 @@ class ApiController
         
         $response->getBody()->write($imageData);
         return $response->withHeader('Content-Type', 'image/png');
+    }
+    
+    
+    public function quickCollation(Request $request, 
+            Response $response, $next)
+    {
+        $profiler = new Profiler('quickCollation', $this->db);
+        
+        $rawData = $request->getBody()->getContents();
+        parse_str($rawData, $postData);
+        $inputDataObject = null;
+        
+        if (isset($postData['data'])) {
+            $inputDataObject = json_decode($postData['data'], true);
+        }
+        
+        // Some checks
+        if (is_null($inputDataObject) ) {
+            $this->logger->error("Quick Collation: no data in input",
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_NO_DATA,
+                      'rawdata' => $postData]);
+            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_NO_DATA]);
+        }
+        
+        if (!isset($inputDataObject['witnesses'])) {
+            $this->logger->error("Quick Collation: no witnesses in input data",
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_NO_DATA,
+                      'data' => $inputDataObject ]);
+            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_NO_DATA]);
+        }
+        
+        $cr = $this->ci->cr;
+        
+        $output = $cr->run($inputDataObject['witnesses']);
+        if ($output === false) {
+            $this->logger->error("Quick Collation: error running Collatex",
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_ERROR_RUNNING_COLLATEX,
+                      'data' => $inputDataObject, 
+                      'collatexRunnerError' => $cr->error]);
+            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_ERROR_RUNNING_COLLATEX]);
+        }
+        
+        $profiler->log($this->logger);
+        return $response->withJson($output);
     }
     
     public function updateElementsByDocPageCol(Request $request, 

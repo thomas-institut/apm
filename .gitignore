@@ -16,3 +16,5 @@ src/public/config.php
 /other/
 /src/public/test/test.log
 /src/public/utilities/out.txt
+/src/public/collatex/tmp/
+/src/public/test/tmp/

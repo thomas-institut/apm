@@ -28,56 +28,53 @@ class CollationTableFormatter {
   
   
   constructor (){
-    this.tokenNotPresent = '<span style="color: gray">&mdash;</span>'
+    this.tokenNotPresent = '&mdash;'
+    this.tokenNotPresentTdClass = 'tokennotpresent'
     this.collationTableClass = 'collationtable'
-    this.witnessTableClass = 'witnesstable'
+    this.witnessTdClass = 'witness'
+    
     
   }
   
   
   
   format(collatexOutput) {
-    let output = '<table class="'+ this.collationTableClass + '">'
-    output += '<tr><td>'
     
-    output += '<table class="' + this.witnessTableClass + '">'
-    for (const witness of collatexOutput.witnesses) {
-      output += '<tr><td>' + witness + '</td></tr>'
+    let numRows = collatexOutput.witnesses.length
+    
+    let theRows = []
+    for (let i = 0; i < numRows; i++) {
+      theRows[i] = []
+      theRows[i].push('<td class="' + this.witnessTdClass + '">' +collatexOutput.witnesses[i] + '</td>')
     }
-    output +='</table>'
-    output += '</td>'
+    
     let table = collatexOutput.table
     for (const segment of table) {
-      //console.log(segment)
-      output += '<td>'
-      output += this.formatSegmentTable(segment)
-      output += '</td>'
+      for (let i = 0; i < numRows; i++) {
+        if (segment[i].length === 0) {
+          theRows[i].push('<td class="' + this.tokenNotPresentTdClass + '">' + this.tokenNotPresent + '</td>')
+          continue
+        }
+        let theSegmentTd = '<td>'
+        for (let j = 0; j < segment[i].length; j++) {
+          theSegmentTd += segment[i][j] + ' '
+        }
+        theSegmentTd += '</td>'
+        theRows[i].push(theSegmentTd)
+      }
     }
     
-    output += "</tr></table>"
-    
-    return output
-  }
-  
-  formatSegmentTable (segmentTable) {
-    let output = '<table class="segmenttable">'
-    
-    for (const witness of segmentTable) {
-      //console.log(witness)
+    let output = '<table class="' + this.collationTableClass + '">'
+    for (let i = 0; i < numRows; i++) {
       output += '<tr>'
-      if (witness.length === 0) {
-        output += '<td>' + this.tokenNotPresent  + '</td>'
-      } else {
-        output += '<td>'
-        for (const token of witness) {
-          output += token + ' '
-        }
-        output += '</td>'
+      for (const theTd of theRows[i]) {
+        output += theTd
       }
       output += '</tr>'
     }
     output += '</table>'
-    
     return output
   }
+  
+ 
 }

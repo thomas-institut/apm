@@ -28,16 +28,23 @@ class QuickCollation {
   constructor(urlGenerator) {
 
     this.pathFor = urlGenerator
-    this.textTitles = ['A', 'B', 'C']
+    this.textTitles = ['A', 'B', 'C', 'D']
     this.updating = false
     this.ctf = new CollationTableFormatter()
     
+    this.collationTablesHtml = [ '']
+    this.currentView = 0
+   
     
     this.collateButton = $('#collateButton')
     this.status = $('#status')
     this.collationTableDiv = $('#collationtablediv')
+    this.changeTableViewButton = $('#changeTableViewButton')
+    this.changeTextDirectionButton = $('#changeTextDirectionButton')
         
     this.collateButton.on('click', this.genOnClickCollateButton())
+    this.changeTableViewButton.on('click', this.genOnClickChangeTableViewButton())
+    this.changeTextDirectionButton.on('click', this.genOnClickChangeTextDirectionButton())
     
   }
   
@@ -77,7 +84,11 @@ class QuickCollation {
         .done(function (data) { 
           thisObject.status.html('Collating... done, formatting table <i class="fa fa-spinner fa-spin fa-fw"></i>')
           console.log(data)
-          thisObject.collationTableDiv.html(thisObject.ctf.format(data))
+          thisObject.collationTablesHtml = []
+          thisObject.collationTablesHtml.push(thisObject.ctf.format(data, false, 15))
+          thisObject.collationTablesHtml.push(thisObject.ctf.format(data, true, 8))
+          thisObject.collationTableDiv.html(thisObject.collationTablesHtml[0])
+          thisObject.currentView = 0
           thisObject.updating = false
           thisObject.status.html('Collating...done')
         })
@@ -88,6 +99,36 @@ class QuickCollation {
       
     }
   }
+  
+  
+  genOnClickChangeTableViewButton() {
+    let thisObject = this
+    return function () { 
+      let numViewsAvailable = thisObject.collationTablesHtml.length
+      
+      if (thisObject.currentView === numViewsAvailable -1 ) {
+        thisObject.currentView = 0
+      } else {
+        thisObject.currentView++
+      }
+      thisObject.collationTableDiv.html(thisObject.collationTablesHtml[thisObject.currentView])
+    
+    }
+  }
+  
+  genOnClickChangeTextDirectionButton() {
+    let thisObject = this
+    return function () { 
+      if (thisObject.collationTableDiv.hasClass('ltrtext')) {
+        thisObject.collationTableDiv.removeClass('ltrtext')
+        thisObject.collationTableDiv.addClass('rtltext')
+      } else {
+        thisObject.collationTableDiv.removeClass('rtltext')
+        thisObject.collationTableDiv.addClass('ltrtext')
+      }
+    }
+  }
+  
   
   
 }

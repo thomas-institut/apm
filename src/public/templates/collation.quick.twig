@@ -7,6 +7,36 @@
 <script type="application/javascript" src="{{baseurl}}/js/ApmUrlGenerator.js"></script>
 <script type="application/javascript" src="{{baseurl}}/js/CollationTableFormatter.js"></script>
 <script type="application/javascript" src="{{baseurl}}/js/QuickCollation.js"></script>
+<style>
+    textarea {
+        width: 100%;
+        height: 5em;
+    }
+    
+    div.texttitle {
+        font-weight: bold;
+        text-align: center;
+        height: 5em;
+        padding-top: 1.5em;
+        padding-bottom: 1.5em;
+    }
+    
+    .cancelindent {
+        margin-left: 0;
+    }
+    table.collationtable {
+        margin-bottom: 20px;
+    }
+    
+    .ltrtext {
+        direction: ltr;
+    }
+    
+    .rtltext {
+        direction: rtl;
+    }
+</style>
+
 <script>
     $(document).ready(function () {
         let ug = new ApmUrlGenerator('{{baseurl}}')
@@ -19,22 +49,62 @@
 
 <h1>Quick Collation</h1>
 
-<p>Enter three texts to collate in the fields below: </p>
+<p>Enter at least two texts to collate in the fields below: </p>
 
-<form id="textform">
-    <table>
-        <tr><td>Text A</td><td><textarea rows="5" cols="80" id="textA">This is Sparta and this is not</textarea></td></tr>
-        <tr><td>Text B</td><td><textarea rows="5" cols="80" id="textB">This is Athens and this is not</textarea></td></tr>
-        <tr><td>Text C</td><td><textarea rows="5" cols="80" id="textC">This is Sparta and this is Athens</textarea></td></tr>
-        <tr><td/><td><button type="button" class="btn btn-primary" id="collateButton">Collate</button></td>
-        <tr><td/><td><p class="text-danger" id="status"></p></td>
-    </table>
-    
-</form>
+
+<div class="row cancelindent">
+    <div class="col-md-1 texttitle">
+        Text A
+    </div>
+    <div class="col-md-11">
+        <textarea  id="textA">Gallia est omnis divisa in partes tres, quarum unam incolunt Belgae, aliam Aquitani, tertiam qui ipsorum lingua Celtae, nostra Galli appellantur. </textarea>
+    </div>
+</div>
+<div class="row cancelindent">
+    <div class="col-md-1 texttitle">
+        Text B
+    </div>
+    <div class="col-md-11">
+        <textarea  id="textB">Gallia omnis divisa est in partes tres, quarum unum incolunt Belgae, aliam Aquitani, tertiam qui ipsorum lingua Celtae, nostrae Galli appellantur. </textarea>
+    </div>
+</div>
+
+<div class="row cancelindent">
+    <div class="col-md-1 texttitle">
+        Text C
+    </div>
+    <div class="col-md-11">
+        <textarea id="textC">Gallia est omnis divisa in partes tres, qvarum vnam incolunt Belgae, aliam Aquitani, tertiam qui ipsorum lingua Celtae, nostra Galli appellantur. </textarea>
+    </div>
+</div>
+
+<div class="row cancelindent">
+    <div class="col-md-1 texttitle">
+        Text D
+    </div>
+    <div class="col-md-11">
+        <textarea id="textD">Gallia est omnis divisa in partes 3, quarum unam incolunt Belge, aliam Aquitani, tertam qui ipsorum lingua Celte, nostra Galli appellantur. </textarea>
+    </div>
+</div>
+
+
+<div class="row cancelindent">
+    <div class="col-md-1"></div>
+    <div class="col-md-11">
+    <button type="button" class="btn btn-primary" id="collateButton">Collate</button>
+    </div>
+</div>
+<div class="row cancelindent">
+    <p class="text-danger" id="status"></p>
+</div>
 
 
 <h2>Collation Table</h2>
-<div id="collationtablediv" style="overflow-x: auto;">
+<button type="button" class="btn" id="changeTableViewButton">Collapse / Expand Segments</button>
+<button type="button" class="btn" id="changeTextDirectionButton">LTR / RTL </button>
+<div class="row">
+<div id="collationtablediv" class="ltrtext" style="overflow-x: auto; margin-top: 20px;">
+</div>
 </div>
     
 {% endblock %}

@@ -46,7 +46,7 @@ class SiteControllerTest extends TestCase {
         
         $request = new ServerRequest('GET', '');
         $inputResp = new \Slim\Http\Response();
-        self::$ci['userInfo'] = [];
+        self::$ci['userInfo'] = ['id' => 100];
         
         $response = self::$siteController->documentsPage($request, $inputResp, 
                 NULL);

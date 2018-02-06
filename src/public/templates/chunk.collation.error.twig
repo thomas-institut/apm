@@ -1,0 +1,16 @@
+{% extends "base.twig" %}
+
+{% block title %}CT Error{% endblock %}
+
+{% block content %}
+    <ol class="breadcrumb">
+         <li><a href="{{path_for('chunks')}}">Chunks</a></li>
+         <li><a href="{{path_for('chunk', {'work' : work, 'chunk': chunk})}}">{{work}}-{{chunk}}</a></li>
+         <li>Collation Table</li>
+         <li class="active">{{langName}}</li>
+    </ol>
+    <div class="alert alert-danger" role="alert">
+        <h1><i class="fa fa-exclamation-triangle" aria-hidden="true"></i> Error</h1>
+        <p class="lead">{{message|raw}}</p>
+    </div>
+{% endblock %}

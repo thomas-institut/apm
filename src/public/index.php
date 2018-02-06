@@ -228,6 +228,10 @@ $app->get('/chunk/{work}/{chunk}','\AverroesProject\Site\SiteController:chunkPag
         ->setName('chunk')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
+$app->get('/chunk/{work}/{chunk}/collation/{lang}','\AverroesProject\Site\SiteController:collationTablePage')
+        ->setName('chunk.collationtable')
+        ->add('\AverroesProject\Auth\Authenticator:authenticate');
+
 // DOCS
 $app->get('/documents','\AverroesProject\Site\SiteController:documentsPage')
         ->setName('docs')

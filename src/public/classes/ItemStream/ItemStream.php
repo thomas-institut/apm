@@ -55,6 +55,15 @@ class ItemStream {
         return $plainText;
     }
     
+    public static function createItemArray($itemStream) 
+    {
+        $itemArray = [];
+        foreach($itemStream as $item) {
+            $itemArray[] = DataManager::createItemObjectFromRow($item);     
+        }
+        return $itemArray;
+    }
+    
     public static function createPageColElementItemTreeFromItemStream($itemStream)
     {
         $tree = [];

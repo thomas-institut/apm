@@ -152,6 +152,138 @@ class SiteController
         ]);
     }
     
+    public function collationTablePage(Request $request, Response $response, $next) 
+    {
+        $db = $this->db;
+        $workId = $request->getAttribute('work');
+        $chunkNumber = $request->getAttribute('chunk');
+        $language = $request->getAttribute('lang');
+        $profiler = new Profiler("CollationTable-$workId-$chunkNumber-$language", $db);
+        $workInfo = $db->getWorkInfo($workId);
+        $witnessList = $db->getDocsForChunk($workId, $chunkNumber);
+        
+        $languages = $this->ci->settings['languages'];
+        $langInfo = null;
+        foreach($languages as $lang) {
+            if ($lang['code'] === $language) {
+                $langInfo = $lang;
+            }
+        }
+        
+        if (is_null($langInfo)) {
+            $msg = 'Invalid language <b>' . $language . '</b>';
+            return $this->ci->view->render($response, 'chunk.collation.error.twig', [
+                'userinfo' => $this->ci->userInfo, 
+                'copyright' => $this->ci->copyrightNotice,
+                'baseurl' => $this->ci->settings['baseurl'],
+                'work' => $workId,
+                'chunk' => $chunkNumber,
+                'lang' => $language,
+                'message' => $msg
+            ]);
+        }
+        
+        $docs = [];
+        $witnessNumber = 0;
+        foreach ($witnessList as $witness) {
+            $doc = $witness;
+            $docInfo = $db->getDocById($witness['id']);
+            if ($docInfo['lang'] !== $language) {
+                // not the right language
+                continue;
+            }
+            $doc['number'] = ++$witnessNumber;
+            $doc['errors'] = [];
+            $doc['warning'] = '';
+            $locations = $db->getChunkLocationsForDoc($witness['id'], $workId, $chunkNumber);
+            if (count($locations)===0) {
+                // No data for this witness, normally this should not happen
+                continue;
+            }
+            $this->ci->logger->debug('Chunk loc for ' . $workId . ' ' . $chunkNumber, $locations);
+            $doc['start']['seq'] = $locations[0]['page_seq'];
+            $doc['start']['foliation'] = is_null($locations[0]['foliation']) ? $locations[0]['page_seq'] : $locations[0]['foliation'];
+            if (count($locations)===1) {
+                // no chunk end
+                continue;
+            }
+            $doc['end']['seq'] = $locations[1]['page_seq'];
+            $doc['end']['foliation'] = is_null($locations[1]['foliation']) ? $locations[1]['page_seq'] : $locations[1]['foliation'];
+            if ($locations[0]['type'] === 'end') {
+                // chunk marks in reverse order
+                continue;
+            }
+            $profiler->lap('Doc '. $doc['id'] . ' locations');
+            $doc['itemStream'] = $db->getItemStreamBetweenLocations((int) $doc['id'], $locations[0], $locations[1]);
+            $doc['items'] = ItemStream::createItemArray($doc['itemStream']);
+            $doc['plain_text'] = ItemStream::getPlainText($doc['itemStream']);
+            $doc['tokens'] = \AverroesProject\Collation\Tokenizer::tokenize($doc['items']);
+            $docs[] = $doc;
+            $profiler->lap('Doc '. $doc['id'] . ' END');
+        }
+        
+        if (count($docs) < 2) {
+            $msg = count($docs) . ' witness(es) found in ' . $langInfo['name'] . ', need at least 2 to collate.';
+            return $this->ci->view->render($response, 'chunk.collation.error.twig', [
+                'userinfo' => $this->ci->userInfo, 
+                'copyright' => $this->ci->copyrightNotice,
+                'baseurl' => $this->ci->settings['baseurl'],
+                'work' => $workId,
+                'chunk' => $chunkNumber,
+                'lang' => $language,
+                'langName' => $langInfo['name'],
+                'message' => $msg
+            ]);
+        }
+        
+        $collatexWitnessArray  = [];
+        foreach($docs as $theDoc) {
+            $collatexWitnessArray[] = [
+                'id' => $theDoc['title'],
+                'tokens' => $theDoc['tokens']
+                ];
+        }
+        
+        $cr = $this->ci->cr;
+        
+        $output = $cr->run($collatexWitnessArray);
+        
+        if ($output === false) {
+            $this->ci->logger->error("Collation Error: error running Collatex",
+                    [ 'data' => $collatexWitnessArray, 
+                      'collatexRunnerError' => $cr->error, 
+                      'rawOutput' => $cr->rawOutput ]);
+            $msg = "Error running Collatex, please report it to developer";
+            return $this->ci->view->render($response, 'chunk.collation.error.twig', [
+                'userinfo' => $this->ci->userInfo, 
+                'copyright' => $this->ci->copyrightNotice,
+                'baseurl' => $this->ci->settings['baseurl'],
+                'work' => $workId,
+                'chunk' => $chunkNumber,
+                'lang' => $language,
+                'langName' => $langInfo['name'],
+                'message' => $msg
+            ]);
+        }
+        
+        return $this->ci->view->render($response, 'chunk.collation.twig', [
+                'userinfo' => $this->ci->userInfo, 
+                'copyright' => $this->ci->copyrightNotice,
+                'baseurl' => $this->ci->settings['baseurl'],
+                'work' => $workId,
+                'chunk' => $chunkNumber,
+                'lang' => $language,
+                'langName' => $langInfo['name'],
+                'rtl' => $langInfo['rtl'],
+                'work_info' => $workInfo,
+                'docs' => $docs,
+                'num_docs' => count($docs),
+                'collatexOutput' => $output
+            ]);
+        
+        
+    }
+    
     public function userProfilePage(Request $request, Response $response, $next)
     {
         

@@ -141,7 +141,11 @@ class Item {
     }
     
     public function getPlainText() {
-        return $this->getText();
+        $theText = $this->getText();
+        $normalized = preg_replace('/\s\s+/', ' ', $theText);
+        $normalized = preg_replace('/\R/', ' ', $normalized);
+        
+        return$normalized;
     }
     
     public function getLang(){

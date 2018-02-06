@@ -48,6 +48,21 @@ class QuickCollation {
     
   }
   
+  // Simple tokenization
+  static tokenize(text) {
+    
+    let textTokens = text.split(' ')
+
+    let outputTokens = []
+    for (const token of textTokens) {
+      if (token !== '') {
+        outputTokens.push({t: token})
+      }
+    }
+    
+    return outputTokens
+  }
+  
   
   genOnClickCollateButton()
   {
@@ -62,10 +77,12 @@ class QuickCollation {
         if (theText === '') {
           continue
         }
+        let tokens = QuickCollation.tokenize(theText)
+        console.log(tokens)
         collatexInput.witnesses.push(
           { 
             id: textTitle, 
-            content: theText
+            tokens: tokens
           }
         )
       }

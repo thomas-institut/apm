@@ -293,11 +293,15 @@ table.collationtable td {
  }
 
 
-td.witness {
+table.collationtable td.witness {
     font-weight: bold;
 }
 
-td.tokennotpresent {
+table.collationtable td.tokennotpresent {
     text-align: center;
     color: silver;
+}
+
+table.collationtable td.notmainvariant {
+    background: #e3ebf7;
 }

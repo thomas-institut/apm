@@ -188,7 +188,8 @@ class ApiController
                     [ 'apiUserId' => $this->ci->userId, 
                       'apiError' => self::API_ERROR_ERROR_RUNNING_COLLATEX,
                       'data' => $inputDataObject, 
-                      'collatexRunnerError' => $cr->error]);
+                      'collatexRunnerError' => $cr->error, 
+                      'rawOutput' => $cr->rawOutput ]);
             return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_ERROR_RUNNING_COLLATEX]);
         }
         

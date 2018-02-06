@@ -30,27 +30,37 @@ class CollationTableFormatter {
   constructor (){
     this.tokenNotPresent = '&mdash;'
     this.tokenNotPresentTdClass = 'tokennotpresent'
+    this.notMainVariantTdClass = 'notmainvariant'
     this.collationTableClass = 'collationtable'
     this.witnessTdClass = 'witness'
   }
   
-  format(collatexOutput, collapseSegments = true, maxColumnsPerTable = false) {
+  getTokenText(token) {
+    if (typeof token === 'object') {
+      if ('t' in token) {
+        return token.t
+      }
+      return ''
+    }
+    return token.toString()
+  }
+  
+  // transforms the table in collatexOutput into a flat list of tokens
+  flattenCollatexTokens(collatexOutput, collapseSegments = true) {
+    
+    let processedOutput = collatexOutput
     
     let numWitnesses = collatexOutput.witnesses.length
-    if (maxColumnsPerTable === false) {
-      maxColumnsPerTable = 1000
-    }
-    
     let theRows = []
     
-   for (let i=0; i < numWitnesses; i++) {
-     theRows[i] = []
-   }
+    for (let i=0; i < numWitnesses; i++) {
+      theRows[i] = []
+    }
     
     let table = collatexOutput.table
     let segmentLengths = []
     
-    // calculate the max number of tokens in each segments
+    // calculate the max number of tokens in each segment
     for (const segment of table) {
       let segmentLength = 0
       for (let i=0; i < numWitnesses; i++) {
@@ -68,32 +78,126 @@ class CollationTableFormatter {
           // collapse
           if (table[k][i].length === 0) {
             // no tokens in segment k for witness i
-            theRows[i].push('<td class="' + this.tokenNotPresentTdClass + '">' + this.tokenNotPresent + '</td>')
+            theRows[i].push({ t: '', isEmpty: true})
             continue
           }
-          let theSegmentTd = '<td>'
+          let theSegmentToken = { isEmpty: false, rawTokens: table[k][i] }
+          let textualRepresentation = ''
+          
           for (let j = 0; j < table[k][i].length; j++) {
-            theSegmentTd += table[k][i][j] + ' '
+            textualRepresentation += this.getTokenText(table[k][i][j]) + ' '
           }
-          theSegmentTd += '</td>'
-          theRows[i].push(theSegmentTd)
+          theSegmentToken.t = textualRepresentation
+          theRows[i].push(theSegmentToken)
           continue
         }
         // do not collapse
         for (let j = 0; j < segmentLengths[k]; j++) {
           if (j < table[k][i].length) {
-            theRows[i].push('<td>' + table[k][i][j] + ' ' + '</td>')
+            let token = table[k][i][j]
+            if (typeof token === 'object') {
+              let processedToken =  table[k][i][j]
+              processedToken.isEmpty = false
+              theRows[i].push(processedToken)
+              continue
+            }
+            let processedToken = { isEmpty: false, t: token} 
+            if (token === '') {
+              processedToken.isEmpty = true
+              processedToken.t = ''
+            }
+            theRows[i].push(processedToken)
           } else {
-            theRows[i].push('<td class="' + this.tokenNotPresentTdClass + '">' + this.tokenNotPresent + '</td>')
+            theRows[i].push({ t: '', isEmpty: true})
           }
         }
       }
     }
+    processedOutput.flattenedTable = theRows
+    return processedOutput
+  }
+  
+  getMainVariant(variantsArray) {
+    let counts = {}
+    let compare = 0
+    let mostFrequent = ''
+    for (let i=0; i<variantsArray.length; i++) {
+      let variant = variantsArray[i]
+      if (variant === '') {
+        continue
+      }
+      if (counts[variant] === undefined) {
+        counts[variant] = 1
+      } else {
+        counts[variant]++
+      }
+      if (counts[variant] > compare) {
+        compare = counts[variant]
+        mostFrequent = variant
+      }
+    }
+    return mostFrequent
+  }
+  
+  tagVariants(flattenedCollatex) {
+    let numWitnesses = flattenedCollatex.witnesses.length
+    let numTokens = flattenedCollatex.flattenedTable[0].length
+    let output = flattenedCollatex
+    
+    for (let tkn=0; tkn < numTokens; tkn++) {
+      let variants = []
+      let mainVariant = ''
+      for (let w=0; w < numWitnesses; w++) {
+        variants.push(output.flattenedTable[w][tkn].t)
+        mainVariant = this.getMainVariant(variants)
+      }
+      for (let w=0; w < numWitnesses; w++) {
+        if (output.flattenedTable[w][tkn].t === mainVariant) {
+          output.flattenedTable[w][tkn].isMainVariant = true
+        } else {
+          output.flattenedTable[w][tkn].isMainVariant = false
+        }
+      }
+    }
+    return output
+  }
+  
+  getTdFromToken(token) {
+    if (token.isEmpty) {
+      return '<td class="' + this.tokenNotPresentTdClass + '">' + this.tokenNotPresent + '</td>'
+    }
+    let tdClasses = []
+    if (!token.isMainVariant) {
+      tdClasses.push(this.notMainVariantTdClass)
+    }
+    let theTd = ''
+    if (tdClasses.length > 0) {
+      theTd = '<td class="' 
+      for (const c of tdClasses) {
+        theTd += c + ' '
+      }
+      theTd += '">'
+    } else {
+      theTd = '<td>'
+    }
+    theTd += this.getTokenText(token) + '</td>'
+    return theTd
+  }
+  
+  format(collatexOutput, collapseSegments = true, maxColumnsPerTable = false) {
+    
+    let numWitnesses = collatexOutput.witnesses.length
+    if (maxColumnsPerTable === false) {
+      maxColumnsPerTable = 1000
+    }
+    
+    let flattenedCollatexOutput = this.flattenCollatexTokens(collatexOutput, collapseSegments)
+    let taggedCollatex = this.tagVariants(flattenedCollatexOutput)
+    console.log(taggedCollatex)
+    let theRows = taggedCollatex.flattenedTable
     
     let numColumns = theRows[0].length
-    console.log('Num columns = ' + numColumns)
     let numTables = Math.ceil(numColumns / maxColumnsPerTable)
-    console.log('Num tables = ' + numTables)
     
     let output = ''
     let columnsRemaining = numColumns
@@ -105,8 +209,8 @@ class CollationTableFormatter {
       for (let i = 0; i < numWitnesses; i++) {
         output += '<tr>'
         output += '<td class="' + this.witnessTdClass + '">' + collatexOutput.witnesses[i] + '</td>'
-        for (let tdn=firstColumn; tdn < lastColumn; tdn++ ){
-          output += theRows[i][tdn]
+        for (let tkn=firstColumn; tkn < lastColumn; tkn++ ){
+          output += this.getTdFromToken(theRows[i][tkn])
         }
         output += '</tr>'
       }

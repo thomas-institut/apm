@@ -25,6 +25,7 @@ require "../vendor/autoload.php";
 use PHPUnit\Framework\TestCase;
 use AverroesProject\Collation\Tokenizer;
 use AverroesProject\TxText\Text;
+use AverroesProject\TxText\Rubric;
 
 /**
  * Description of TranscriptionReaderTest
@@ -99,19 +100,27 @@ class TokenizerTest extends TestCase {
     
     public function testSimpleTokens(){
         
-        $items1 = [];
-        $items1[] = new Text(1, 0, "This is   a   simple ");
-        $items1[] = new TxText\Rubric(2, 1, "rubric   ");
-        $items1[] = new TxText\Sic(3, 2, 'wit a ', 'with a ');
-        $items1[] = new Text(4, 3, "correction");
         
-        $tokens1 = Tokenizer::tokenize($items1);
-        $expectedTokens1 = ['This', 'is', 'a', 'simple', 'rubric', 'wit a', 'correction'];
-        $this->assertCount(count($expectedTokens1), $tokens1);
-        for($i = 0; $i < count($tokens1); $i++){
-            $this->assertEquals($expectedTokens1[$i], $tokens1[$i]['t']);
-        }
+        $testCases = [
+            [   // TEST CASE 1
+                'items' => [
+                    new Text(1, 0, "This is a simple sentence."),
+                ], 
+                'expected' => [
+                    ['t' => 'This', 'itemType' => TxText\Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'is', 'itemType' => TxText\Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'a', 'itemType' => TxText\Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'simple', 'itemType' => TxText\Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'sentence', 'itemType' => TxText\Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => '.', 'itemType' => TxText\Item::TEXT, 'tokenType' => Tokenizer::TOKEN_PUNCT]
+                ]
+            ]
+        ];
         
+       foreach($testCases as $testCase) {
+           $tokens = Tokenizer::tokenize($testCase['item']);
+           $this->assertCount(count($testCase['expected']), $tokens);
+       }
     }
 
 }

@@ -144,8 +144,7 @@ class Item {
         $theText = $this->getText();
         $normalized = preg_replace('/\s\s+/', ' ', $theText);
         $normalized = preg_replace('/\R/', ' ', $normalized);
-        
-        return$normalized;
+        return $normalized;
     }
     
     public function getLang(){

@@ -23,31 +23,45 @@ class ItemStream {
     {
         $itemTree = self::createPageColElementItemTreeFromItemStream($itemStream);
         $plainText = '';
+        $foundNoWordBreak = false;
         foreach ($itemTree as $page) {
             //$plainText .= '[' . $page['foliation'] . '] ';
             foreach($page['cols'] as $col) {
                 foreach($col['elements'] as $element) {
                     $type = (int) $element['type'];
-                    // pre-element
                     
                     // element
                     switch ($type) {
                         case Element::LINE:
-                        case Element::HEAD:
+                        //case Element::HEAD:
                             foreach($element['items'] as $item) {
+                                if ((int) $item['type'] === \AverroesProject\TxText\Item::NO_WORD_BREAK) {
+                                    $foundNoWordBreak = true;
+                                    continue;
+                                }
                                 $itemObject = DataManager::createItemObjectFromRow($item);
-                                $plainText .= $itemObject->getPlainText();
+                                $itemPlainText = $itemObject->getPlainText();
+                                if ($foundNoWordBreak) {
+                                    $itemPlainText = preg_replace('/\A\s+/', '', $itemPlainText);
+                                    $foundNoWordBreak = false;
+                                }
+                                $plainText .= $itemPlainText;
                             }
                             break;
                     }
                     // post Element
                     switch ($type) {
-                        case Element::HEAD:
-                            $plainText .= "\n";
-                            break;
+//                        case Element::HEAD:
+//                            $plainText .= "\n";
+//                            break;
                         
                         case Element::LINE:
+                            if ($foundNoWordBreak) {
+                                $foundNoWordBreak = false;
+                                break;
+                            }
                             $plainText .= ' ';
+                            break;
                     }
                 }
             }

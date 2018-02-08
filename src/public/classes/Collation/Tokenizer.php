@@ -39,6 +39,16 @@ class Tokenizer {
         return false;
     }
     
+    private static function mbStringToArray ($string) { 
+    $strlen = mb_strlen($string); 
+    while ($strlen) { 
+        $array[] = mb_substr($string,0,1,"UTF-8"); 
+        $string = mb_substr($string,1,$strlen,"UTF-8"); 
+        $strlen = mb_strlen($string); 
+    } 
+    return $array; 
+} 
+    
     /**
      * Splits the given string into an array 
      * of strings of the following kinds:
@@ -47,25 +57,27 @@ class Tokenizer {
      *  - words
      * @param string $text
      */
-    public static function splitText(string $text) 
+    public static function splitText(string $theText) 
     {
         $tokens = [];
         $currentTokenCharacters = [];
         $currentTokenType = self::TOKEN_UNDEFINED;
         $state = 0;
-        $wsRegExp = '/\s+/';
-        $puntRegExp = '/[\.,;:\(\)\[\]¶⊙!]+/';
+        $wsRegExp = '\s+';
+        $puntRegExp = '[\.,;:\(\)\[\]¶⊙!]+';
+        mb_regex_encoding('UTF-8');
+        $text = self::mbStringToArray($theText);
         
-        for ($i=0; $i<strlen($text); $i++) {
+        for ($i=0; $i < count($text); $i++) {
             switch($state) {
                 case 0:
-                    if (preg_match($wsRegExp, $text[$i])) {
+                    if (mb_ereg($wsRegExp, $text[$i])) {
                         $currentTokenCharacters[] = $text[$i];
                         $currentTokenType = self::TOKEN_WS;
                         $state = 1;
                         break;
                     }
-                    if (preg_match($puntRegExp, $text[$i])) {
+                    if (mb_ereg($puntRegExp, $text[$i])) {
                         $currentTokenCharacters[] = $text[$i];
                         $currentTokenType = self::TOKEN_PUNCT;
                         $state = 2;
@@ -77,11 +89,11 @@ class Tokenizer {
                     break;
                 
                 case 1:
-                    if (preg_match($wsRegExp, $text[$i])) {
+                    if (mb_ereg($wsRegExp, $text[$i])) {
                         $currentTokenCharacters[] = $text[$i];
                         break;
                     }
-                    if (preg_match($puntRegExp, $text[$i])) {
+                    if (mb_ereg($puntRegExp, $text[$i])) {
                         $tokens[] = [ 'type' => $currentTokenType, 'text' => implode($currentTokenCharacters)];
                         $currentTokenCharacters  = [];
                         $currentTokenCharacters[] = $text[$i];
@@ -97,7 +109,7 @@ class Tokenizer {
                     break;
                     
                 case 2:
-                    if (preg_match($wsRegExp, $text[$i])) {
+                    if (mb_ereg($wsRegExp, $text[$i])) {
                         $tokens[] = [ 'type' => $currentTokenType, 'text' => implode($currentTokenCharacters)];
                         $currentTokenCharacters  = [];
                         $currentTokenCharacters[] = $text[$i];
@@ -105,7 +117,7 @@ class Tokenizer {
                         $state = 1;
                         break;
                     }
-                    if (preg_match($puntRegExp, $text[$i])) {
+                    if (mb_ereg($puntRegExp, $text[$i])) {
                         // punctuation characters generate one token per character
                         $tokens[] = [ 'type' => $currentTokenType, 'text' => implode($currentTokenCharacters)];
                         $currentTokenCharacters  = [];
@@ -121,7 +133,7 @@ class Tokenizer {
                     break;
                     
                 case 3: 
-                    if (preg_match($wsRegExp, $text[$i])) {
+                    if (mb_ereg($wsRegExp, $text[$i])) {
                         $tokens[] = [ 'type' => $currentTokenType, 'text' => implode($currentTokenCharacters)];
                         $currentTokenCharacters  = [];
                         $currentTokenCharacters[] = $text[$i];
@@ -129,7 +141,7 @@ class Tokenizer {
                         $state = 1;
                         break;
                     }
-                    if (preg_match($puntRegExp, $text[$i])) {
+                    if (mb_ereg($puntRegExp, $text[$i])) {
                         $tokens[] = [ 'type' => $currentTokenType, 'text' => implode($currentTokenCharacters)];
                         $currentTokenCharacters  = [];
                         $currentTokenCharacters[] = $text[$i];
@@ -147,39 +159,64 @@ class Tokenizer {
     
     public static function tokenize(array $items) 
     {
-        // Get a list of strings 
-        $texts = [];
-        foreach($items as $item) {
-            $t = $item->getText();
-            if (self::isWhiteSpace($t)) {
-                continue;
-            }
-            $n = $item->getAltText();
-            $stringToken = [ 't' => trim($t), 'n' => '', 'type' => $item->type];
-            if (!self::isWhiteSpace($n)) {
-                $stringToken['n'] = trim($n);
-            }
-            $texts[] =  $stringToken;
-        }
         
         // "explode" the strings
         $tokens = [];
-        foreach($texts as $stringToken) {
-            if ($stringToken['n'] !== '') {
-                // not splitting items with alt text
-                $tokens[] = $stringToken;
+        $currentToken = null;
+        foreach ($items as $item) {
+            //print ("Processing item " . $item->id . ', text=\'' . $item->getText() . "'\n");
+            $text = $item->getText();
+            if ($text === '') {
                 continue;
             }
-            $words = preg_split("/[\s]+/", $stringToken['t']);
-            
-            for ($i = 0; $i < count($words); $i++) {
-                if (self::isWhiteSpace($words[$i])) {
-                    continue;
+            $textTokens = self::splitText($text);
+            foreach ($textTokens as $textToken) {
+                //print "\nProcessing token\n";
+                //print_r($textToken);
+                switch($textToken['type']) {
+                    case self::TOKEN_WS:
+                        if (!is_null($currentToken)) {
+                            $tokens[] = $currentToken;
+                        }
+                        $currentToken = null;
+                        break;
+                        
+                    case self::TOKEN_WORD:
+                        if (is_null($currentToken)) {
+                            $currentToken = [ 't' => $textToken['text'], 'itemType' => $item->type, 'tokenType' => self::TOKEN_WORD];
+                            break;
+                        }
+                        if ($currentToken['tokenType'] === self::TOKEN_WORD) {
+                            // two words in a row, add the texts
+                            // TODO: deal with different item types
+                            $currentToken['t'] .= $textToken['text'];
+                            break;
+                        }
+                        // current token is not TOKEN_WORD, so push current token into token list 
+                        // and start a new current token
+                        $tokens[] = $currentToken;
+                        $currentToken = [ 't' => $textToken['text'], 'itemType' => $item->type, 'tokenType' => self::TOKEN_WORD];
+                        break;
+                        
+                    case self::TOKEN_PUNCT:
+                        if (is_null($currentToken)) {
+                            $currentToken = [ 't' => $textToken['text'], 'itemType' => $item->type, 'tokenType' => self::TOKEN_PUNCT];
+                            break;
+                        }
+                        // Punctuation tokens force a new token, so push current token into token list
+                        // and start a new current token
+                        $tokens[] = $currentToken;
+                        $currentToken = [ 't' => $textToken['text'], 'itemType' => $item->type, 'tokenType' => self::TOKEN_PUNCT];
+                        break;
+
                 }
-                $token = [ 't' => $words[$i], 'type' => $stringToken['type']];
-                $tokens[] = $token;
             }
         }
+        // push last token if not null
+        if (!is_null($currentToken)) {
+            $tokens[] = $currentToken;
+        }
+        
         return $tokens;
     }
 }

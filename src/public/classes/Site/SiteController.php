@@ -253,7 +253,7 @@ class SiteController
                     [ 'data' => $collatexWitnessArray, 
                       'collatexRunnerError' => $cr->error, 
                       'rawOutput' => $cr->rawOutput ]);
-            $msg = "Error running Collatex, please report it to developer";
+            $msg = "Error running Collatex, please report it";
             return $this->ci->view->render($response, 'chunk.collation.error.twig', [
                 'userinfo' => $this->ci->userInfo, 
                 'copyright' => $this->ci->copyrightNotice,

@@ -303,5 +303,24 @@ table.collationtable td.tokennotpresent {
 }
 
 table.collationtable td.notmainvariant {
-    background: #e3ebf7;
+    background-color: #e8f0ff;
 }
+
+table.collationtable td.rubric {
+    color: blue;
+    font-weight: bold;
+}
+
+table.collationtable td.addition {
+   color: #8aa9e2;
+}
+
+table.collationtable td.deletion {
+    font-weight: normal;
+    text-decoration: line-through;
+    color: red;
+}
+
+table.collationtable td.sic {
+    color: #ad9c87
+} 

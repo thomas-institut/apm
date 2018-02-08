@@ -24,6 +24,8 @@
 /*eslint no-console: ["error", { allow: ["warn", "error"] }] */
 
 
+/* global ITEM_RUBRIC, ITEM_DELETION, ITEM_ADDITION, ITEM_SIC, ITEM_UNCLEAR, ITEM_ILLEGIBLE, ITEM_GLIPH, ITEM_ABBREVIATION, ITEM_INITIAL, ITEM_MATH_TEXT */
+
 class CollationTableFormatter {
   
   
@@ -33,6 +35,21 @@ class CollationTableFormatter {
     this.notMainVariantTdClass = 'notmainvariant'
     this.collationTableClass = 'collationtable'
     this.witnessTdClass = 'witness'
+    
+    // item types
+    this.itemTypeClasses = []
+    
+    this.itemTypeClasses[ITEM_RUBRIC] = 'rubric'
+    this.itemTypeClasses[ITEM_DELETION] = 'deletion'
+    this.itemTypeClasses[ITEM_ADDITION] = 'addition'
+    this.itemTypeClasses[ITEM_SIC] = 'sic'
+    this.itemTypeClasses[ITEM_UNCLEAR] = 'unclear'
+    this.itemTypeClasses[ITEM_ILLEGIBLE] = 'illegible'
+    this.itemTypeClasses[ITEM_GLIPH] = 'gliph'
+    this.itemTypeClasses[ITEM_ABBREVIATION] = 'abbr'
+    this.itemTypeClasses[ITEM_INITIAL] = 'initial'
+    this.itemTypeClasses[ITEM_MATH_TEXT] = 'mathtext'
+
   }
   
   getTokenText(token) {
@@ -170,6 +187,21 @@ class CollationTableFormatter {
     if (!token.isMainVariant) {
       tdClasses.push(this.notMainVariantTdClass)
     }
+    
+    if (this.itemTypeClasses[token.itemType] !== undefined) {
+      tdClasses.push(this.itemTypeClasses[token.itemType])
+    }
+//    if (token.itemType === ITEM_RUBRIC) {
+//      
+//    }
+//    if (token.itemType === ITEM_DELETION) {
+//      tdClasses.push(this.deletionClass)
+//    }
+//    
+//    if (token.itemType === ITEM_ADDITION) {
+//      tdClasses.push(this.additionClass)
+//    }
+//    
     let theTd = ''
     if (tdClasses.length > 0) {
       theTd = '<td class="' 

@@ -26,6 +26,7 @@ use PHPUnit\Framework\TestCase;
 use AverroesProject\Collation\Tokenizer;
 use AverroesProject\TxText\Text;
 use AverroesProject\TxText\Rubric;
+use AverroesProject\TxText\Item;
 
 /**
  * Description of TranscriptionReaderTest
@@ -84,6 +85,12 @@ class TokenizerTest extends TestCase {
                     ['type' => Tokenizer::TOKEN_WS, 'text' => ' '],
                     ['type' => Tokenizer::TOKEN_WORD, 'text' => 'ולזה'],
                 ]
+            ],
+            [
+                'text' => "החלקיים",
+                'expected' => [
+                    ['type' => Tokenizer::TOKEN_WORD, 'text' => "החלקיים"]
+                ]
             ]
         ];
         
@@ -102,24 +109,88 @@ class TokenizerTest extends TestCase {
         
         
         $testCases = [
-            [   // TEST CASE 1
+            [   // TEST CASE 1: Single item with whitespace and punctuation
                 'items' => [
-                    new Text(1, 0, "This is a simple sentence."),
+                    new Text(1, 0, "  This is a simple\n sentence.  "),
                 ], 
                 'expected' => [
-                    ['t' => 'This', 'itemType' => TxText\Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
-                    ['t' => 'is', 'itemType' => TxText\Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
-                    ['t' => 'a', 'itemType' => TxText\Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
-                    ['t' => 'simple', 'itemType' => TxText\Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
-                    ['t' => 'sentence', 'itemType' => TxText\Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
-                    ['t' => '.', 'itemType' => TxText\Item::TEXT, 'tokenType' => Tokenizer::TOKEN_PUNCT]
+                    ['t' => 'This', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'is', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'a', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'simple', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'sentence', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => '.', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_PUNCT]
+                ]
+            ],
+            [ // TEST CASE 2: two items
+                'items' => [
+                    new Text(1, 0, "This is a"),
+                    new Text(2, 1, " simple\n sentence.")
+                ],
+                'expected' => [
+                    ['t' => 'This', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'is', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'a', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'simple', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'sentence', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => '.', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_PUNCT]
+                ]
+                
+            ],
+            [ // TEST CASE 3: two items, no word break between them
+                'items' => [
+                    new Text(1, 0, "This is a sim"),
+                    new Text(2, 1, "ple\n sentence.")
+                ],
+                'expected' => [
+                    ['t' => 'This', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'is', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'a', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'simple', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'sentence', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => '.', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_PUNCT]
+                ]
+            ],
+            [ // TEST CASE 4: A word split between two items of different type
+              //  the split word inherits the item type of its first part
+                'items' => [
+                    new TxText\Initial(1, 0, "T"),
+                    new Text(2, 1, "his is a simple\n sentence.")
+                ],
+                'expected' => [
+                    ['t' => 'This', 'itemType' => Item::INITIAL, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'is', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'a', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'simple', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'sentence', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => '.', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_PUNCT]
+                ]
+            ],
+            [ // TEST CASE 5: A rubric with a new line in between
+                'items' => [
+                    new Rubric(1, 0, "This is a simple"),
+                    new Text(2, 1, "\n"),
+                    new Rubric(3, 2, "sentence.")
+                ],
+                'expected' => [
+                    ['t' => 'This', 'itemType' => Item::RUBRIC, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'is', 'itemType' => Item::RUBRIC, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'a', 'itemType' => Item::RUBRIC, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'simple', 'itemType' => Item::RUBRIC, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'sentence', 'itemType' => Item::RUBRIC, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => '.', 'itemType' => Item::RUBRIC, 'tokenType' => Tokenizer::TOKEN_PUNCT]
                 ]
             ]
         ];
         
        foreach($testCases as $testCase) {
-           $tokens = Tokenizer::tokenize($testCase['item']);
+           $tokens = Tokenizer::tokenize($testCase['items']);
+           //print_r($tokens);
            $this->assertCount(count($testCase['expected']), $tokens);
+           for ($i = 0; $i < count($tokens); $i++) {
+               $this->assertEquals($testCase['expected'][$i]['t'], $tokens[$i]['t']);
+               $this->assertEquals($testCase['expected'][$i]['itemType'], $tokens[$i]['itemType']);
+           }
        }
     }
 

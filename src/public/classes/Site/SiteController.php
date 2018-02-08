@@ -215,7 +215,7 @@ class SiteController
                 // No data for this witness, normally this should not happen
                 continue;
             }
-            $this->ci->logger->debug('Chunk loc for ' . $workId . ' ' . $chunkNumber, $locations);
+            //$this->ci->logger->debug('Chunk loc for ' . $workId . ' ' . $chunkNumber, $locations);
             $doc['start']['seq'] = $locations[0]['page_seq'];
             $doc['start']['foliation'] = is_null($locations[0]['foliation']) ? $locations[0]['page_seq'] : $locations[0]['foliation'];
             if (count($locations)===1) {
@@ -228,13 +228,12 @@ class SiteController
                 // chunk marks in reverse order
                 continue;
             }
-            $profiler->lap('Doc '. $doc['id'] . ' locations');
+           
             $doc['itemStream'] = $db->getItemStreamBetweenLocations((int) $doc['id'], $locations[0], $locations[1]);
             $doc['items'] = ItemStream::createItemArray($doc['itemStream']);
             $doc['plain_text'] = ItemStream::getPlainText($doc['itemStream']);
             $doc['tokens'] = \AverroesProject\Collation\Tokenizer::tokenize($doc['items']);
             $docs[] = $doc;
-            $profiler->lap('Doc '. $doc['id'] . ' END');
         }
         
         if (count($docs) < 2) {
@@ -260,7 +259,7 @@ class SiteController
         }
         
         $cr = $this->ci->cr;
-        
+        $profiler->lap('Pre-Collatex');
         $output = $cr->run($collatexWitnessArray);
         
         if ($output === false) {
@@ -281,6 +280,7 @@ class SiteController
             ]);
         }
         
+        $profiler->log($this->ci->logger);
         return $this->ci->view->render($response, 'chunk.collation.twig', [
                 'userinfo' => $this->ci->userInfo, 
                 'copyright' => $this->ci->copyrightNotice,

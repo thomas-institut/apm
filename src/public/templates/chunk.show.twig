@@ -49,6 +49,15 @@ $(document).ready(function()
 {% endfor %}
 </table>
     </div>
+{% if collationLangs|length > 0 %}
+<div class="collationtablelinks">
+    <p>Collation Table(s): 
+        {% for lang in collationLangs %}
+            <a href="{{path_for('chunk.collationtable', {'work': work, 'chunk': chunk, 'lang' : lang.code})}}"> {{lang.name}}</a>&nbsp;&nbsp;&nbsp;
+        {% endfor %}
+</div>
+{% endif %}
+
 <div class="chunktexts">
 {% for doc in docs %}
     

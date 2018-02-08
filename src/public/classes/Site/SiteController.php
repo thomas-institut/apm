@@ -101,6 +101,13 @@ class SiteController
 
         $docs = [];
         $witnessNumber = 0;
+        $goodWitnessesPerLang = [];
+        foreach($this->ci->settings['languages'] as $lang) {
+            $goodWitnessesPerLang[$lang['code']]['numWitnesses'] = 0;
+            $goodWitnessesPerLang[$lang['code']]['name'] = $lang['name'];
+            $goodWitnessesPerLang[$lang['code']]['code'] = $lang['code'];
+        }
+        
         foreach ($witnessList as $witness) {
             $doc = $witness;
             $doc['number'] = ++$witnessNumber;
@@ -135,7 +142,15 @@ class SiteController
             $itemStream = $db->getItemStreamBetweenLocations((int) $doc['id'], $locations[0], $locations[1]);
             $doc['plain_text'] = ItemStream::getPlainText($itemStream);
             $docs[] = $doc;
+            $goodWitnessesPerLang[$doc['lang']]['numWitnesses']++;
             $profiler->lap('Doc '. $doc['id'] . ' END');
+        }
+        
+        $validCollationLangs = [];
+        foreach ($goodWitnessesPerLang as $lang => $witnessLangInfo) {
+            if ($witnessLangInfo['numWitnesses'] >= 2) {
+                $validCollationLangs[] = $goodWitnessesPerLang[$lang];
+            }
         }
         
         $profiler->log($this->ci->logger);
@@ -147,8 +162,8 @@ class SiteController
             'chunk' => $chunkNumber,
             'work_info' => $workInfo,
             'docs' => $docs,
-            'num_docs' => count($docs)
-             
+            'num_docs' => count($docs),
+            'collationLangs' => $validCollationLangs
         ]);
     }
     

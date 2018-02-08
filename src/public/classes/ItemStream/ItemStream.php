@@ -58,7 +58,16 @@ class ItemStream {
     public static function createItemArray($itemStream) 
     {
         $itemArray = [];
+        $cE = 0;
         foreach($itemStream as $item) {
+            if ( (int) $item['e.type'] !== Element::LINE) {
+                continue;
+            }
+            if ($item['ce_id'] !== $cE) {
+                // add a new line after each element
+                $cE = $item['ce_id'];
+                $itemArray[] = new \AverroesProject\TxText\Text(0, 0, "\n");
+            }
             $itemArray[] = DataManager::createItemObjectFromRow($item);     
         }
         return $itemArray;

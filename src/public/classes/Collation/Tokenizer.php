@@ -163,8 +163,12 @@ class Tokenizer {
         // "explode" the strings
         $tokens = [];
         $currentToken = null;
+        $noWordBreakFound = false;
         foreach ($items as $item) {
-            //print ("Processing item " . $item->id . ', text=\'' . $item->getText() . "'\n");
+            if ($item->type === \AverroesProject\TxText\Item::NO_WORD_BREAK) {
+                $noWordBreakFound = true;
+                continue;
+            }
             $text = $item->getText();
             if ($text === '') {
                 continue;
@@ -175,6 +179,10 @@ class Tokenizer {
                 //print_r($textToken);
                 switch($textToken['type']) {
                     case self::TOKEN_WS:
+                        if ($noWordBreakFound) {
+                            // skip over white space
+                            break;
+                        }
                         if (!is_null($currentToken)) {
                             $tokens[] = $currentToken;
                         }
@@ -182,6 +190,10 @@ class Tokenizer {
                         break;
                         
                     case self::TOKEN_WORD:
+                        if ($noWordBreakFound) {
+                            // reset  noWordBreak flag
+                            $noWordBreakFound = false;
+                        }
                         if (is_null($currentToken)) {
                             $currentToken = [ 't' => $textToken['text'], 'itemType' => $item->type, 'tokenType' => self::TOKEN_WORD];
                             break;
@@ -199,6 +211,10 @@ class Tokenizer {
                         break;
                         
                     case self::TOKEN_PUNCT:
+                        if ($noWordBreakFound) {
+                            // reset  noWordBreak flag
+                            $noWordBreakFound = false;
+                        }
                         if (is_null($currentToken)) {
                             $currentToken = [ 't' => $textToken['text'], 'itemType' => $item->type, 'tokenType' => self::TOKEN_PUNCT];
                             break;

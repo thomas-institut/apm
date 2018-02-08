@@ -193,5 +193,68 @@ class TokenizerTest extends TestCase {
            }
        }
     }
+    
+    public function testNonWordBreakHyphens()
+    {
+        $testCases = [
+            [   // TEST CASE 
+                'items' => [
+                    new Text(1, 0, "  This is a sim"),
+                    new TxText\NoWordBreak(2, 1),
+                    new Text(3,2, "\nple sentence.")
+                ], 
+                'expected' => [
+                    ['t' => 'This', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'is', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'a', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'simple', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'sentence', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => '.', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_PUNCT]
+                ]
+            ],
+            [   // TEST CASE 2 : more white space
+                'items' => [
+                    new Text(1, 0, "  This is a sim"),
+                    new TxText\NoWordBreak(2, 1),
+                    new Text(3,2, "   \n  "),
+                    new Text(4,3, "\nple sentence.")
+                ], 
+                'expected' => [
+                    ['t' => 'This', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'is', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'a', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'simple', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'sentence', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => '.', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_PUNCT]
+                ]
+            ],
+            [   // TEST CASE 3 : Punctuation after NoWB
+                'items' => [
+                    new Text(1, 0, "  This is a simple sentence"),
+                    new TxText\NoWordBreak(2, 1),
+                    new Text(3,2, "\n.")
+                ], 
+                'expected' => [
+                    ['t' => 'This', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'is', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'a', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'simple', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'sentence', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => '.', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_PUNCT]
+                ]
+            ],
+            
+        ];
+        
+        foreach($testCases as $testCase) {
+           $tokens = Tokenizer::tokenize($testCase['items']);
+           $this->assertCount(count($testCase['expected']), $tokens);
+           for ($i = 0; $i < count($tokens); $i++) {
+               $this->assertEquals($testCase['expected'][$i]['t'], $tokens[$i]['t']);
+               $this->assertEquals($testCase['expected'][$i]['itemType'], $tokens[$i]['itemType']);
+           }
+       }
+        
+    }
 
 }

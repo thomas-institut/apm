@@ -191,17 +191,7 @@ class CollationTableFormatter {
     if (this.itemTypeClasses[token.itemType] !== undefined) {
       tdClasses.push(this.itemTypeClasses[token.itemType])
     }
-//    if (token.itemType === ITEM_RUBRIC) {
-//      
-//    }
-//    if (token.itemType === ITEM_DELETION) {
-//      tdClasses.push(this.deletionClass)
-//    }
-//    
-//    if (token.itemType === ITEM_ADDITION) {
-//      tdClasses.push(this.additionClass)
-//    }
-//    
+ 
     let theTd = ''
     if (tdClasses.length > 0) {
       theTd = '<td class="' 

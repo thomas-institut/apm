@@ -20,6 +20,8 @@
  */
 namespace AverroesProject\Collation;
 
+use AverroesProject\TxText\Item;
+
 /**
  * Description of Tokenizer
  *
@@ -169,7 +171,24 @@ class Tokenizer {
                 $noWordBreakFound = true;
                 continue;
             }
-            $text = $item->getText();
+            switch($item->type) {
+                case Item::SIC:
+                case Item::ABBREVIATION:
+                    if ($item->altText !== '' ){
+                        $text = $item->altText;
+                        $altText = $item->getText();
+                    } else {
+                        $text = $item->getText();
+                        $altText = '';
+                    }
+                    break;
+                
+                default:
+                    $text = $item->getText();
+                    $altText = '';
+                    break;
+            }
+            
             if ($text === '') {
                 continue;
             }

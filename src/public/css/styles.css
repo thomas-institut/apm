@@ -324,3 +324,12 @@ table.collationtable td.deletion {
 table.collationtable td.sic {
     color: #ad9c87
 } 
+
+table.collationtable td.abbr {
+    color: chocolate;
+}
+
+
+table.collationtable td.unclear {
+    color: #143382;
+}

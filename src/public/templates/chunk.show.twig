@@ -24,13 +24,13 @@ $(document).ready(function()
     <thead><tr><th>Title</th><th>Type</th><th>Language</th><th>Pages</th><th/></tr></thead>
 {% for doc in docs %}
 <tr>
-    <td><a href="{{path_for('doc.showdoc', {'id' : doc.id})}}" title="View Document">{{doc.title}}</a></td>
+    <td><a href="{{path_for('doc.showdoc', {'id' : doc.id})}}" target="_blank" title="View Document in New Tab">{{doc.title}}</a></td>
     <td>{{macros.docTypeName(doc.doc_type)}}</td>
     <td>{{macros.langName(doc.lang)}}</td>
     <td>
-        <a href="{{path_for('pageviewer.docseq', {'doc' : doc.id, 'seq' : doc.start.seq})}}" title="View Page">{{doc.start.foliation}}</a>
+        <a href="{{path_for('pageviewer.docseq', {'doc' : doc.id, 'seq' : doc.start.seq})}}" target="_blank" title="View Page in New Tab">{{doc.start.foliation}}</a>
         {% if doc.end.foliation != doc.start.foliation %} -
-            <a href="{{path_for('pageviewer.docseq', {'doc' : doc.id, 'seq' : doc.end.seq})}}" title="View Page">{{doc.end.foliation}}</a>
+            <a href="{{path_for('pageviewer.docseq', {'doc' : doc.id, 'seq' : doc.end.seq})}}" target="_blank" title="View Page in New Tab">{{doc.end.foliation}}</a>
         {% endif %}
     </td>
     <td>

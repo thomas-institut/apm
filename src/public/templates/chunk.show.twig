@@ -53,7 +53,7 @@ $(document).ready(function()
 <div class="collationtablelinks">
     <p>Collation Table(s): 
         {% for lang in collationLangs %}
-            <a href="{{path_for('chunk.collationtable', {'work': work, 'chunk': chunk, 'lang' : lang.code})}}"> {{lang.name}}</a>&nbsp;&nbsp;&nbsp;
+            <a href="{{path_for('chunk.collationtable', {'work': work, 'chunk': chunk, 'lang' : lang.code})}}" target="_blank" title="View {{lang.name}} Collation Table in New Tab"> {{lang.name}}</a>&nbsp;&nbsp;&nbsp;
         {% endfor %}
 </div>
 {% endif %}

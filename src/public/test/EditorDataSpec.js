@@ -131,6 +131,9 @@ describe("EditorData", function() {
         expect(apiData.people).toBeDefined()
         expect(apiData.ednotes).toBeDefined()
         expect(apiData.elements.length).toBe(1)
+        for (let i=0; i < apiData.elements.length; i++) {
+          expect(apiData.elements[i].seq).toBe(i)
+        }
         expect(apiData.elements[0].type).toBe(block.type)
         expect(apiData.elements[0].items.length).toBe(delta.ops.length-1)
         let i = 100
@@ -176,6 +179,9 @@ describe("EditorData", function() {
         expect(apiData.people).toBeDefined()
         expect(apiData.ednotes).toBeDefined()
         expect(apiData.elements.length).toBe(1)
+        for (let i=0; i < apiData.elements.length; i++) {
+          expect(apiData.elements[i].seq).toBe(i)
+        }
         expect(apiData.elements[0].type).toBe(block.type)
         expect(apiData.elements[0].items.length).toBe(6)
         let i = 100
@@ -235,6 +241,9 @@ describe("EditorData", function() {
       expect(apiData.people).toBeDefined()
       expect(apiData.ednotes).toBeDefined()
       expect(apiData.elements.length).toBe(8)
+      for (let i=0; i < apiData.elements.length; i++) {
+        expect(apiData.elements[i].seq).toBe(i)
+      }
       expect(apiData.elements[0].type).toBe(ELEMENT_LINE)
       expect(apiData.elements[0].items.length).toBe(1)
       expect(apiData.elements[0].items[0].type = ITEM_TEXT)
@@ -336,8 +345,34 @@ describe("EditorData", function() {
       }
       expect(laText).toBe('\nLine 2')
     })
+    
+    it("should properly deal with empty lines after marginals (issue #64)", function () {
+      let delta = { 
+        ops: [ 
+          {attributes: {lang: 'la'}, insert: 'Line 1'},
+          {insert: "\n"},
+          {attributes: {lang: 'la'}, insert: 'Line 2'},
+          {insert: "\n"},
+          {attributes: {lang: 'la'}, insert: 'Marginal Addition'},
+          {attributes: {substelement: {elementId: "-1001", place: "margin left", target: "0", targetText: "[none]"}}, insert: "\n"},
+          {insert: "\n"},
+        ]
+      }
+      let apiData = EditorData.getApiDataFromQuillDelta( delta, editorInfo)
+      console.log(apiData)
+      expect(apiData.elements).toBeDefined()
+      expect(apiData.people).toBeDefined()
+      expect(apiData.ednotes).toBeDefined()
+      expect(apiData.elements.length).toBe(2)
+      for (let i=0; i < apiData.elements.length; i++) {
+        expect(apiData.elements[i].seq).toBe(i)
+      }
+      
+    })
    
   })
+  
+  
   
   describe("getEditorDataFromApiData", function (){
     

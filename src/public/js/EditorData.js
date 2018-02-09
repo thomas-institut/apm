@@ -271,8 +271,6 @@ class EditorData {
         curElement.type = mainTextElementType
         let normalizedText = curOps.insert.replace(/\n+/g, '\n')
         text = normalizedText.replace(/\n$/, '')
-        //console.log("Processing string insert")
-        //console.log({insert: curOps.insert, norm: normalizedText, text: text})
         if (text !== '') {
           // curOps.insert !== '\n' , that is, there is text in the insert
           // that needs to be put in text items
@@ -310,21 +308,18 @@ class EditorData {
           curElement.items.push(item) 
         }
         if (text !== normalizedText) {
-          // text ends in a new line, create a new mainTextElement if last element
-          // is not a line gap
-          //if (previousElementType !== lineGapElementType) {
+          // text ends in a new line, create a new mainTextElement 
+          // if there are items to store
+          if (curElement.items.length > 0) {
             curElement.type = mainTextElementType
             if (previousElementType !== curElement.type) {
               currentElementId++
             }
             curElement.id = currentElementId
-            //console.log("Creating line element")
             elements.push(curElement)
             previousElementType = curElement.type
             curElement = createNewElement()
-//          } else {
-//            console.log("insert ends in newline, but prevElement is lineGap, so nothing created")
-//          }
+          }
         }
         continue  // 2.a. 終
       }

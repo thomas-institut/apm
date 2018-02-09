@@ -1085,11 +1085,56 @@ class TranscriptionEditor
   genOnQuillChange()
   {
     let thisObject = this
+    let formatBlots = TranscriptionEditor.formatBlots
     return function (delta, oldDelta, source)
     {
       if (!thisObject.enabled) {
         return false
       }
+      // Check for split items (i.e., items with the same item id
+      let itemIds = []
+      let contents = thisObject.quillObject.getContents()
+      let modifiedContents = false
+      let newContents = { ops: [] }
+      for (const op of contents.ops) {
+        if (op.attributes) {
+          let formatFound = false
+          for (const formatBlot of formatBlots) {
+            if (op.attributes[formatBlot.name] && op.attributes[formatBlot.name].itemid) {
+              formatFound = true
+              let id = parseInt(op.attributes[formatBlot.name].itemid)
+              if (itemIds.indexOf(id) !== -1) {
+                // duplicate id
+                let newOp = op
+                let newId = thisObject.getOneItemId()
+                newOp.attributes[formatBlot.name].itemid = newId
+                itemIds.push(newId)
+                newContents.ops.push(newOp)
+                modifiedContents = true
+              } else {
+                itemIds.push(id)
+                newContents.ops.push(op)
+              }
+              break
+            } 
+          }
+          if (!formatFound) {
+            newContents.ops.push(op)
+          }
+        } else {
+          newContents.ops.push(op)
+        }
+      }
+      
+      if (modifiedContents) {
+        console.log('Duplicate ids found, setting up new quill content')
+        let curSelection = thisObject.quillObject.getSelection()
+        thisObject.quillObject.setContents(newContents, 'silent')
+        thisObject.quillObject.setSelection(curSelection)
+      }
+
+      
+      
       if (!_.isEqual(thisObject.quillObject.getContents(), thisObject.lastSavedData)) {
         thisObject.setContentsChanged()
       } else {

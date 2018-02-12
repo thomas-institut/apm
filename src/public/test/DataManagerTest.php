@@ -345,4 +345,85 @@ class DataManagerTest extends TestCase {
         
     }
     
+    public function testGetItemStream()
+    {
+        
+        $dm = self::$dataManager;
+        $testPageCount = 10;
+      
+        // Create document
+        $docId = $dm->newDoc('Document 3', 'Doc 3', $testPageCount, 'la', 
+                'mss', 'local', 'DOC3');
+        
+        $this->assertNotFalse($docId);
+        $this->assertEquals($testPageCount, $dm->getPageCountByDocId($docId));
+        
+        // Add columns
+        for ($i = 0; $i < $testPageCount; $i++) {
+            $this->assertNotFalse($dm->addNewColumn($docId, $i+1));
+            $this->assertEquals(1, $dm->getNumColumns($docId, $i+1));
+        }
+        
+        // Create an editor user id
+        $editor = $dm->um->createUserByUserName('testeditor');
+        
+        // Test case 1: simple item array, no references
+        
+        $testCase1Array = [
+          [ 'type' => TxText\Item::TEXT, 'text' => 'One'],
+          [ 'type' => TxText\Item::TEXT, 'text' => "\n"],
+          [ 'type' => TxText\Item::RUBRIC, 'text' => 'Two'],
+          [ 'type' => TxText\Item::TEXT, 'text' => "\n"],
+          [ 'type' => TxText\Item::TEXT, 'text' => 'Three'],
+          [ 'type' => TxText\Item::TEXT, 'text' => "\n"],
+          [ 'type' => TxText\Item::SIC, 'text' => 'Four'],
+          [ 'type' => TxText\Item::TEXT, 'text' => "\n"],
+          [ 'type' => TxText\Item::TEXT, 'text' => "Five"],
+          [ 'type' => TxText\Item::TEXT, 'text' => "\n"],
+        ];
+        
+        
+        $mainTextElement = new Line();
+        $mainTextElement->lang = 'la';
+        $mainTextElement->handId = 0;
+        $mainTextElement->editorId = $editor;
+        $itemId = 100;
+        $itemSeq = 0;
+        foreach($testCase1Array as $itemDef) {
+            switch ($itemDef['type']) {
+                case TxText\Item::TEXT:
+                    $item = new Text($itemId++, $itemSeq++, $itemDef['text']);
+                    break;
+                
+                case TxText\Item::RUBRIC: 
+                    $item = new TxText\Rubric($itemId++, $itemSeq++, $itemDef['text']);
+                    break;
+                
+                case TxText\Item::SIC: 
+                    $item = new TxText\Sic($itemId++, $itemSeq++, $itemDef['text']);
+                    break;
+            }
+            ItemArray::addItem($mainTextElement->items, $item);
+        }
+        ItemArray::setHandId($mainTextElement->items, 0);
+        ItemArray::setLang($mainTextElement->items, 'la');
+        $newElements = [];
+        $newElements[] = $mainTextElement;  
+        $pageId = $dm->getPageIdByDocPage($docId, 1);
+        $dm->updateColumnElements($pageId, 1, $newElements);
+        
+        // $loc1 with col=0 so that ALL items in the column are included
+        $loc1 = [ 'page_seq' => 1, 'column_number' => 0, 'e_seq' => 0, 'item_seq' => 0];
+        $loc2 = [ 'page_seq' => 1, 'column_number' => 1, 'e_seq' => 9999, 'item_seq' => 9999];
+        $itemStream1 = $dm->getItemStreamBetweenLocations($docId, $loc1, $loc2);
+        
+        $this->assertCount(count($testCase1Array), $itemStream1);
+        for ($i = 0; $i < count($itemStream1); $i++) {
+            $this->assertEquals($testCase1Array[$i]['type'], $itemStream1[$i]['type']);
+            $this->assertEquals($testCase1Array[$i]['text'], $itemStream1[$i]['text']);
+        }
+           
+        
+    }
+    
 }

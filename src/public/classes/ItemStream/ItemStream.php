@@ -69,7 +69,7 @@ class ItemStream {
         return $plainText;
     }
     
-    public static function createItemArray($itemStream) 
+    public static function createItemArrayFromItemStream($itemStream) 
     {
         $itemArray = [];
         $cE = 0;

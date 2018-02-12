@@ -230,7 +230,7 @@ class SiteController
             }
            
             $doc['itemStream'] = $db->getItemStreamBetweenLocations((int) $doc['id'], $locations[0], $locations[1]);
-            $doc['items'] = ItemStream::createItemArray($doc['itemStream']);
+            $doc['items'] = ItemStream::createItemArrayFromItemStream($doc['itemStream']);
             //$doc['plain_text'] = ItemStream::getPlainText($doc['itemStream']);
             $doc['tokens'] = \AverroesProject\Collation\Tokenizer::tokenize($doc['items']);
             $docs[] = $doc;

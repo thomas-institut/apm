@@ -934,6 +934,19 @@ class DataManager
         return $loc['page_seq']*1000000 + $loc['column_number'] * 10000 + $loc['e_seq']*100 + $loc['item_seq'];
     }
     
+    /**
+     * Returns an ordered list with the items between the given locations
+     * but not including the items at the locations themselves.
+     * 
+     *  The list of items includes the text of all inline and marginal additions
+     * at the appropriate places. That is, all references are resolved and the
+     * returned list of items is the actual text between the given locations
+     * 
+     * @param int $docId
+     * @param array $loc1
+     * @param array $loc2
+     * @return array
+     */
     public function getItemStreamBetweenLocations($docId, $loc1, $loc2)
     {
         $ti = $this->tNames['items'];
@@ -965,7 +978,7 @@ class DataManager
         $r = $this->dbh->query($query);
         
         $rows = [];
-        while ($row = $r->fetch()) {
+        while ($row = $r->fetch(PDO::FETCH_ASSOC)) {
             $rows[] = $row;
         }
         return $rows;

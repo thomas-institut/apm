@@ -929,6 +929,16 @@ class DataManager
         return $rows;
     }
     
+    public function getAdditionItemWithGivenTarget(int $target) {
+        $ti = $this->tNames['items'];
+        $this->queryStats->countQuery('select');
+        
+        $query = "SELECT * from $ti WHERE type=" . Item::ADDITION . " AND target=$target AND valid_until='9999-12-31 23:59:59.999999' LIMIT 1";
+        $r = $this->dbh->query($query);
+        
+        return $r->fetch(PDO::FETCH_ASSOC);
+    }
+    
     public function calcSeqNumber($loc)
     {
         return $loc['page_seq']*1000000 + $loc['column_number'] * 10000 + $loc['e_seq']*100 + $loc['item_seq'];
@@ -981,7 +991,38 @@ class DataManager
         while ($row = $r->fetch(PDO::FETCH_ASSOC)) {
             $rows[] = $row;
         }
-        return $rows;
+        
+        // Deal with targets and references
+        $items = [];
+        $additionItemsAlreadyInOutput = [];
+        foreach($rows as $inputRow) {
+            switch( (int) $inputRow['type']) {
+                case Item::DELETION:
+                case Item::UNCLEAR:
+                case Item::MARGINAL_MARK:
+                    $items[] = $inputRow;
+                    $additionItem  = $this->getAdditionItemWithGivenTarget((int) $inputRow['id']);
+                    if ($additionItem) {
+                        $fieldsToCopy = ['e.type', 'page_id', 'col', 'e.seq', 'e.hand_id', 'reference', 'placement', 'p.seq', 'foliation'];
+                        foreach ($fieldsToCopy as $field) {
+                            $additionItem[$field] = $inputRow[$field];
+                        }
+                        $items[] = $additionItem;
+                        $additionItemsAlreadyInOutput[] = (int) $additionItem['id'];
+                    }
+                    break;
+                
+                case Item::ADDITION:
+                    if (!in_array((int)$inputRow['id'], $additionItemsAlreadyInOutput)) {
+                        $items[] = $inputRow;
+                    }
+                    break;
+                    
+                default:
+                    $items[] = $inputRow;
+            }
+        }
+        return $items;
     }
     
     public function getPageIdByDocPage($docId, $pageNum)

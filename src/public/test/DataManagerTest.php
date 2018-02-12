@@ -422,7 +422,34 @@ class DataManagerTest extends TestCase {
             $this->assertEquals($testCase1Array[$i]['type'], $itemStream1[$i]['type']);
             $this->assertEquals($testCase1Array[$i]['text'], $itemStream1[$i]['text']);
         }
-           
+        
+        
+        // TEST CASE 2: a deletion, some text and an addition with target the deletion
+        
+        $mainTextElement2 = new Line();
+        $mainTextElement2->lang = 'la';
+        $mainTextElement2->handId = 0;
+        $mainTextElement2->editorId = $editor;
+        ItemArray::addItem($mainTextElement2->items, new Deletion(100, 0, 'deletion', 'strikeout'));
+        ItemArray::addItem($mainTextElement2->items, new Text(101, 1, 'some text'));
+        ItemArray::addItem($mainTextElement2->items, new TxText\Addition(102, 2, 'addition', 'above', 100));
+        ItemArray::addItem($mainTextElement2->items, new Text(103, 3, 'another text'));
+        ItemArray::setHandId($mainTextElement2->items, 0);
+        ItemArray::setLang($mainTextElement2->items, 'la');
+        $newElements2 = [];
+        $newElements2[] = $mainTextElement2;  
+        $pageId = $dm->getPageIdByDocPage($docId, 2);
+        $dm->updateColumnElements($pageId, 1, $newElements2);
+        // $loc1 with col=0 so that ALL items in the column are included
+        $loc1 = [ 'page_seq' => 2, 'column_number' => 0, 'e_seq' => 0, 'item_seq' => 0];
+        $loc2 = [ 'page_seq' => 2, 'column_number' => 1, 'e_seq' => 9999, 'item_seq' => 9999];
+        $itemStream2 = $dm->getItemStreamBetweenLocations($docId, $loc1, $loc2);
+        
+        $this->assertCount(4, $itemStream2);
+        $this->assertEquals(TxText\Item::DELETION, $itemStream2[0]['type']);
+        $this->assertEquals(TxText\Item::ADDITION, $itemStream2[1]['type']);
+        $this->assertEquals(TxText\Item::TEXT, $itemStream2[2]['type']);
+        $this->assertEquals(TxText\Item::TEXT, $itemStream2[3]['type']);
         
     }
     

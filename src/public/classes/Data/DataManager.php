@@ -939,6 +939,45 @@ class DataManager
         return $r->fetch(PDO::FETCH_ASSOC);
     }
     
+    public function getAdditionElementIdWithGivenReference(int $reference) {
+        $te = $this->tNames['elements'];
+        $this->queryStats->countQuery('select');
+        $query = "SELECT id from $te where type=" . Element::SUBSTITUTION . " AND reference=$reference AND valid_until='9999-12-31 23:59:59.999999' LIMIT 1";
+        $r = $this->dbh->query($query);
+        $row = $r->fetch(PDO::FETCH_ASSOC);
+        if ($row) {
+            return (int) $row['id'];
+        } 
+        return false;
+    }
+            
+    
+    public function getItemStreamForElementId(int $elementId) {
+        $ti = $this->tNames['items'];
+        $te = $this->tNames['elements'];
+        $tp = $this->tNames['pages'];
+        
+        $query = "SELECT $ti.id, $ti.type, $ti.seq, $ti.ce_id, $ti.lang, $ti.hand_id, $ti.text, $ti.alt_text, $ti.extra_info, $ti.length, $ti.target, " .
+                "$te.type as 'e.type', $te.page_id, $te.column_number as col, $te.seq as 'e.seq', $te.hand_id as 'e.hand_id', $te.reference, $te.placement, " .
+                "$tp.seq as 'p.seq', $tp.foliation" . 
+            " FROM $ti" . 
+            " JOIN ($te FORCE INDEX (page_id_2), $tp)" . 
+            " ON ($te.id=$ti.ce_id AND $tp.id=$te.page_id)" . 
+            " WHERE $te.id=$elementId" . 
+            " AND $ti.valid_until='9999-12-31 23:59:59.999999'" . 
+            " AND $te.valid_until='9999-12-31 23:59:59.999999'" .
+            " AND $tp.valid_until='9999-12-31 23:59:59.999999'" . 
+            " ORDER BY $ti.seq ASC";
+        
+        $r = $this->dbh->query($query);
+        
+        $rows = [];
+        while ($row = $r->fetch(PDO::FETCH_ASSOC)) {
+            $rows[] = $row;
+        }
+        return $rows;
+    }
+    
     public function calcSeqNumber($loc)
     {
         return $loc['page_seq']*1000000 + $loc['column_number'] * 10000 + $loc['e_seq']*100 + $loc['item_seq'];
@@ -978,6 +1017,7 @@ class DataManager
             " JOIN ($te FORCE INDEX (page_id_2), $tp)" . 
             " ON ($te.id=$ti.ce_id AND $tp.id=$te.page_id)" . 
             " WHERE $tp.doc_id=$docId" . 
+            " AND $te.type=" . Element::LINE . 
             " AND ($tp.seq*1000000 + $te.column_number*10000 + $te.seq * 100 + $ti.seq) > $seqNumberStart" . 
             " AND ($tp.seq*1000000 + $te.column_number*10000 + $te.seq * 100 + $ti.seq) < $seqNumberEnd" .             
             " AND $ti.valid_until='9999-12-31 23:59:59.999999'" . 
@@ -1009,6 +1049,14 @@ class DataManager
                         }
                         $items[] = $additionItem;
                         $additionItemsAlreadyInOutput[] = (int) $additionItem['id'];
+                    } else {
+                        $additionElementId = $this->getAdditionElementIdWithGivenReference((int) $inputRow['id']);
+                        if ($additionElementId) {
+                            $additionElementItemStream = $this->getItemStreamForElementId($additionElementId);
+                            foreach($additionElementItemStream as $additionItem) {
+                                $items[] = $additionItem;
+                            }
+                        }
                     }
                     break;
                 

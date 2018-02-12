@@ -33,6 +33,7 @@ use AverroesProject\TxText\Deletion;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 use AverroesProject\Plugin\HookManager;
+use AverroesProject\ItemStream\ItemStream;
 
 /**
  * Description of testApi
@@ -450,6 +451,45 @@ class DataManagerTest extends TestCase {
         $this->assertEquals(TxText\Item::ADDITION, $itemStream2[1]['type']);
         $this->assertEquals(TxText\Item::TEXT, $itemStream2[2]['type']);
         $this->assertEquals(TxText\Item::TEXT, $itemStream2[3]['type']);
+        
+        
+        // TEST CASE 3: some text, a mark and a marginal addition
+        $mainTextElement3 = new Line();
+        $mainTextElement3->lang = 'la';
+        $mainTextElement3->handId = 0;
+        $mainTextElement3->editorId = $editor;
+        ItemArray::addItem($mainTextElement3->items, new Text(100, 0, 'Some text.'));
+        ItemArray::addItem($mainTextElement3->items, new TxText\MarginalMark(101, 1, '[A]'));
+        ItemArray::addItem($mainTextElement3->items, new Text(102, 2, ' More text.'));
+        ItemArray::setHandId($mainTextElement3->items, 0);
+        ItemArray::setLang($mainTextElement3->items, 'la');
+        
+        $marginalElement = new ColumnElement\Substitution();
+        $marginalElement->reference = 101;
+        $marginalElement->lang = 'la';
+        $marginalElement->handId = 0;
+        $marginalElement->editorId = $editor;
+        ItemArray::addItem($marginalElement->items, new Text(105, 0, 'Marginal text.'));
+        $newElements3 = [];
+        $newElements3[] = $mainTextElement3;
+        $newElements3[] = $marginalElement;
+        $pageId = $dm->getPageIdByDocPage($docId, 3);
+        $dm->updateColumnElements($pageId, 1, $newElements3);
+        // $loc1 with col=0 so that ALL items in the column are included
+        $loc1 = [ 'page_seq' => 3, 'column_number' => 0, 'e_seq' => 0, 'item_seq' => 0];
+        $loc2 = [ 'page_seq' => 3, 'column_number' => 1, 'e_seq' => 9999, 'item_seq' => 9999];
+        $itemStream3 = $dm->getItemStreamBetweenLocations($docId, $loc1, $loc2);
+        $this->assertCount(4, $itemStream3);
+        $this->assertEquals(TxText\Item::TEXT, $itemStream3[0]['type']);
+        $this->assertEquals(TxText\Item::MARGINAL_MARK, $itemStream3[1]['type']);
+        $this->assertEquals(TxText\Item::TEXT, $itemStream3[2]['type']);
+        $this->assertEquals('Marginal text.', $itemStream3[2]['text']);
+        $this->assertEquals(TxText\Item::TEXT, $itemStream3[3]['type']);
+        
+        print_r($itemStream3);
+        
+        $plainText = ItemStream::getPlainText($itemStream3);
+        print_r($plainText);
         
     }
     

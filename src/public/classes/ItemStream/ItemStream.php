@@ -33,7 +33,7 @@ class ItemStream {
                     // element
                     switch ($type) {
                         case Element::LINE:
-                        //case Element::HEAD:
+                        case Element::SUBSTITUTION:
                             foreach($element['items'] as $item) {
                                 if ((int) $item['type'] === \AverroesProject\TxText\Item::NO_WORD_BREAK) {
                                     $foundNoWordBreak = true;
@@ -74,9 +74,9 @@ class ItemStream {
         $itemArray = [];
         $cE = 0;
         foreach($itemStream as $item) {
-            if ( (int) $item['e.type'] !== Element::LINE) {
-                continue;
-            }
+//            if ( (int) $item['e.type'] !== Element::LINE) {
+//                continue;
+//            }
             if ($item['ce_id'] !== $cE) {
                 // add a new line after each element
                 $cE = $item['ce_id'];

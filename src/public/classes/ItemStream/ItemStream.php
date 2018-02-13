@@ -42,7 +42,7 @@ class ItemStream {
                                 $itemObject = DataManager::createItemObjectFromRow($item);
                                 $itemPlainText = $itemObject->getPlainText();
                                 if ($foundNoWordBreak) {
-                                    $itemPlainText = preg_replace('/\A\s+/', '', $itemPlainText);
+                                    $itemPlainText = mb_ereg_replace('\A\s+', '', $itemPlainText);
                                     $foundNoWordBreak = false;
                                 }
                                 $plainText .= $itemPlainText;

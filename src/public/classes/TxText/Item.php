@@ -141,9 +141,10 @@ class Item {
     }
     
     public function getPlainText() {
+        mb_regex_encoding('UTF-8');
         $theText = $this->getText();
-        $normalized = preg_replace('/\s\s+/', ' ', $theText);
-        $normalized = preg_replace('/\R/', ' ', $normalized);
+        $normalized = mb_ereg_replace('\s\s+', ' ', $theText);
+        $normalized = mb_ereg_replace('\n', ' ', $normalized);
         return $normalized;
     }
     
@@ -211,10 +212,10 @@ class Item {
      */
     public static function normalizeString(string $str){
         $normalized = trim($str);
-        if (trim(substr($str, -1)) === ''){
+        if (trim(mb_substr($str, -1)) === ''){
             $normalized .= ' ';
         }
-        $normalized = preg_replace('/\s+/', ' ', $normalized);
+        $normalized = mb_ereg_replace('\s+', ' ', $normalized);
         return $normalized;
     }
     

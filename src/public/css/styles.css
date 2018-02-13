@@ -252,6 +252,7 @@ ul.doclist li {
     direction: rtl;
     font-family: 'Scheherazade', serif;
     font-style: normal;
+    font-size: 1.5em;
 }
 
 .chunktext-la {

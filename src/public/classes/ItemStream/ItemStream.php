@@ -51,10 +51,7 @@ class ItemStream {
                     }
                     // post Element
                     switch ($type) {
-//                        case Element::HEAD:
-//                            $plainText .= "\n";
-//                            break;
-                        
+                       
                         case Element::LINE:
                             if ($foundNoWordBreak) {
                                 $foundNoWordBreak = false;
@@ -66,7 +63,8 @@ class ItemStream {
                 }
             }
         }
-        return $plainText;
+        
+        return trim($plainText);
     }
     
     public static function createItemArrayFromItemStream($itemStream) 
@@ -94,6 +92,7 @@ class ItemStream {
         $cP = 0;
         $cC = 0;
         $cE = 0;
+        $cEindex = 0;
         foreach($itemStream as $item){
             if ($item['page_id'] !== $cP)  {
                 // New Page
@@ -113,12 +112,17 @@ class ItemStream {
                 $cE = 0;
             }
             if ($item['ce_id'] !== $cE) {
+                // we need to detect changes in element id but cannot
+                // rely on that number to store the items in the tree.
+                // Indeed, single line elements may be discontiguous in
+                // the stream due to marginal additions
                 $cE = $item['ce_id'];
-                $tree[$cP]['cols'][$cC]['elements'][$cE]['id'] = $item['ce_id'];
-                $tree[$cP]['cols'][$cC]['elements'][$cE]['type'] = $item['e.type'];
-                $tree[$cP]['cols'][$cC]['elements'][$cE]['items'] = [];
+                $cEindex++;
+                $tree[$cP]['cols'][$cC]['elements'][$cEindex]['id'] = $item['ce_id'];
+                $tree[$cP]['cols'][$cC]['elements'][$cEindex]['type'] = $item['e.type'];
+                $tree[$cP]['cols'][$cC]['elements'][$cEindex]['items'] = [];
             }
-            $tree[$cP]['cols'][$cC]['elements'][$cE]['items'][] = $item;
+            $tree[$cP]['cols'][$cC]['elements'][$cEindex]['items'][] = $item;
         }
         return $tree;    
     }

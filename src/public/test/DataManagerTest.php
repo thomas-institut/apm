@@ -486,10 +486,9 @@ class DataManagerTest extends TestCase {
         $this->assertEquals('Marginal text.', $itemStream3[2]['text']);
         $this->assertEquals(TxText\Item::TEXT, $itemStream3[3]['type']);
         
-        print_r($itemStream3);
-        
         $plainText = ItemStream::getPlainText($itemStream3);
-        print_r($plainText);
+        
+        $this->assertEquals('Some text. Marginal text. More text.', $plainText);
         
     }
     

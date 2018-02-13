@@ -156,6 +156,10 @@ class CollatexRunner {
         
         $this->rawOutput =  $this->rawRun($input);
         
+        if ($this->error !== self::CR_NO_ERROR) {
+            return false;
+        }
+        
         $output = json_decode($this->rawOutput);
         if ($output === null) {
             $this->error = self::CR_COLLATEX_DID_NOT_RETURN_JSON;

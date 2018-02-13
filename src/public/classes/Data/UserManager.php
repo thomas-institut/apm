@@ -421,7 +421,8 @@ class UserManager
                 'user_id' => $userId, 
                 'user_agent' => $userAgent, 
                 'ip_address' => $ipAddress,
-                'token' => $token
+                'token' => $token,
+                'creation_time' => date('Y-m-d H:i:s')
             ];
             //$this->logger->debug("Creating row: " . print_r($row, true));
             return false !== $this->tokensTable->createRow($row);

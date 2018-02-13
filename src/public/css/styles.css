@@ -293,6 +293,13 @@ table.collationtable td {
     border: solid 1px silver
  }
 
+ table.collationtable td.he-td {
+     font-size: 1.1em;
+ }
+ 
+ table.collationtable td.ar-td {
+     font-size: 1.4em;
+ }
 
 table.collationtable td.witness {
     font-weight: bold;

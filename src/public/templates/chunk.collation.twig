@@ -23,8 +23,10 @@
 <script>
 $(document).ready(function() 
 { 
+    // rtl = {{rtl ? 1 : 0}}
     let collatexOutput = JSON.parse("{{collatexOutput|json_encode|e('js')}}")
-    let ctObject = new CollationTablePage(collatexOutput, {{rtl}})
+    let ctObject = new CollationTablePage(collatexOutput, {{rtl ? 1 : 0}}, ['{{lang}}-td'])
+    
 } 
 );
 </script>

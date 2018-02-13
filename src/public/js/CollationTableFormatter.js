@@ -29,13 +29,13 @@
 class CollationTableFormatter {
   
   
-  constructor (){
+  constructor (defaultTdClasses = []){
     this.tokenNotPresent = '&mdash;'
     this.tokenNotPresentTdClass = 'tokennotpresent'
     this.notMainVariantTdClass = 'notmainvariant'
     this.collationTableClass = 'collationtable'
     this.witnessTdClass = 'witness'
-    
+    this.defaultTdClasses = defaultTdClasses
     // item types
     this.itemTypeClasses = []
     
@@ -183,7 +183,8 @@ class CollationTableFormatter {
     if (token.isEmpty) {
       return '<td class="' + this.tokenNotPresentTdClass + '">' + this.tokenNotPresent + '</td>'
     }
-    let tdClasses = []
+    let tdClasses = this.defaultTdClasses.slice()
+    //let tdClasses = []
     if (!token.isMainVariant) {
       tdClasses.push(this.notMainVariantTdClass)
     }

@@ -25,9 +25,9 @@
 
 class CollationTablePage {
   
-  constructor(data, rtl=false) {
+  constructor(data, rtl=false, defaultTdClasses) {
 
-    this.ctf = new CollationTableFormatter()
+    this.ctf = new CollationTableFormatter(defaultTdClasses)
     
     this.currentView = 0
     

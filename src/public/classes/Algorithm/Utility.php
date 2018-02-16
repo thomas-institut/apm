@@ -27,6 +27,12 @@ namespace AverroesProject\Algorithm;
  */
 class Utility {
     
+    /**
+     * Sorts an array by the given key
+     * 
+     * @param array $rows
+     * @param string $key
+     */
     public static function arraySortByKey(&$rows, $key) 
     {
         usort(

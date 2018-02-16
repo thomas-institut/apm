@@ -273,119 +273,127 @@ $app->group('/api', function (){
     
     // API -> getElements
     $this->get('/{document}/{page}/{column}/elements', 
-            '\AverroesProject\Api\ApiController:getElementsByDocPageCol')
+            '\AverroesProject\Api\ApiElements:getElementsByDocPageCol')
         ->setName('api.getelements');
     
-    // API -> create new document
+    
+    // API -> updateColumnElements
+    $this->post('/{document}/{page}/{column}/elements/update', 
+            '\AverroesProject\Api\ApiElements:updateElementsByDocPageCol')
+        ->setName('api.updateelements');
+
+
+    // --------- DOCUMENTS ---------
+    
+     // API -> create new document
     $this->post('/doc/new', 
-            '\AverroesProject\Api\ApiController:newDocument')
+            '\AverroesProject\Api\ApiDocuments:newDocument')
         ->setName('api.doc.new');
     
     // API -> delete document
     $this->get('/doc/{id}/delete', 
-            '\AverroesProject\Api\ApiController:deleteDocument')
+            '\AverroesProject\Api\ApiDocuments:deleteDocument')
         ->setName('api.doc.delete');
     
     // API -> add pages to a document
      $this->post('/doc/{id}/addpages', 
-            '\AverroesProject\Api\ApiController:addPages')
+            '\AverroesProject\Api\ApiDocuments:addPages')
         ->setName('api.doc.addpages');
-       
     
     // API -> update document settings
     $this->post('/doc/{id}/update', 
-            '\AverroesProject\Api\ApiController:updateDocSettings')
+            '\AverroesProject\Api\ApiDocuments:updateDocSettings')
         ->setName('api.doc.update');
-    
-    // API -> updateColumnElements
-    $this->post('/{document}/{page}/{column}/elements/update', 
-            '\AverroesProject\Api\ApiController:updateElementsByDocPageCol')
-        ->setName('api.updateelements');
     
     // API -> numColumns
     $this->get('/{document}/{page}/numcolumns', 
-            '\AverroesProject\Api\ApiController:getNumColumns')
+            '\AverroesProject\Api\ApiDocuments:getNumColumns')
         ->setName('api.numcolumns');
     
     // API -> updatePageSettings
     $this->post('/page/{pageId}/update', 
-            '\AverroesProject\Api\ApiController:updatePageSettings')
+            '\AverroesProject\Api\ApiDocuments:updatePageSettings')
         ->setName('api.updatepagesettings');
     
     $this->post('/page/bulkupdate', 
-            '\AverroesProject\Api\ApiController:updatePageSettingsBulk')
+            '\AverroesProject\Api\ApiDocuments:updatePageSettingsBulk')
         ->setName('api.updatepagesettings.bulk');
     
     // API -> numColumns
     $this->get('/{document}/{page}/newcolumn', 
-            '\AverroesProject\Api\ApiController:addNewColumn')
+            '\AverroesProject\Api\ApiDocuments:addNewColumn')
         ->setName('api.newcolumn');
+    
+    
+    // --------- USERS ---------
     
     // API -> user : get profile info
     $this->get('/user/{userId}/info', 
-            '\AverroesProject\Api\ApiController:getUserProfileInfo')
+            '\AverroesProject\Api\ApiUsers:getUserProfileInfo')
         ->setName('api.user.info');
     
     // API -> user : update profile
     $this->post('/user/{userId}/update', 
-            '\AverroesProject\Api\ApiController:updateUserProfile')
+            '\AverroesProject\Api\ApiUsers:updateUserProfile')
         ->setName('api.user.update');
 
     // API -> user : change password
     $this->post('/user/{userId}/changepassword', 
-            '\AverroesProject\Api\ApiController:changeUserPassword')
+            '\AverroesProject\Api\ApiUsers:changeUserPassword')
         ->setName('api.user.changepassword');
     
     // API -> user : make root
     $this->post('/user/{userId}/makeroot', 
-            '\AverroesProject\Api\ApiController:makeUserRoot')
+            '\AverroesProject\Api\ApiUsers:makeUserRoot')
         ->setName('api.user.makeroot');
     
     // API -> user : add new user
     $this->post('/user/new', 
-            '\AverroesProject\Api\ApiController:createNewUser')
+            '\AverroesProject\Api\ApiUsers:createNewUser')
         ->setName('api.user.new');
     
+    // ------ COLLATION ------
     
     // API -> quick collation
     $this->post('/collation/quick', 
-            '\AverroesProject\Api\ApiController:quickCollation')
+            '\AverroesProject\Api\ApiCollation:quickCollation')
         ->setName('api.collation.quick');
     
+    // ------- ICONS -----------
     
     // API -> images : Mark Icon
     $this->get('/images/mark/{size}', 
-            '\AverroesProject\Api\ApiController:generateMarkIcon')
+            '\AverroesProject\Api\ApiIcons:generateMarkIcon')
         ->setName('api.images.mark');
     
     // API -> images : No Word Break Icon
     $this->get('/images/nowb/{size}', 
-            '\AverroesProject\Api\ApiController:generateNoWordBreakIcon')
+            '\AverroesProject\Api\ApiIcons:generateNoWordBreakIcon')
         ->setName('api.images.nowb');
     
     // API -> images : Illegible Icon
     $this->get('/images/illegible/{size}/{length}', 
-            '\AverroesProject\Api\ApiController:generateIllegibleIcon')
+            '\AverroesProject\Api\ApiIcons:generateIllegibleIcon')
         ->setName('api.images.illegible');
     
     // API -> images : ChunkMark Icon
     $this->get('/images/chunkmark/{dareid}/{chunkno}/{type}/{dir}/{size}', 
-            '\AverroesProject\Api\ApiController:generateChunkMarkIcon')
+            '\AverroesProject\Api\ApiIcons:generateChunkMarkIcon')
         ->setName('api.images.chunkmark');
     
     // API -> images : Line Gap Mark
     $this->get('/images/linegap/{count}/{size}', 
-            '\AverroesProject\Api\ApiController:generateLineGapImage')
+            '\AverroesProject\Api\ApiIcons:generateLineGapImage')
         ->setName('api.images.linegap');
     
     // API -> images : Character Gap Mark
     $this->get('/images/charactergap/{length}/{size}', 
-            '\AverroesProject\Api\ApiController:generateCharacterGapImage')
+            '\AverroesProject\Api\ApiIcons:generateCharacterGapImage')
         ->setName('api.images.charactergap');
     
-    // API -> images : Paragrpaph Mark
+    // API -> images : Paragraph Mark
     $this->get('/images/paragraphmark/{size}', 
-            '\AverroesProject\Api\ApiController:generateParagraphMarkIcon')
+            '\AverroesProject\Api\ApiIcons:generateParagraphMarkIcon')
         ->setName('api.images.charactergap');
     
 })->add('\AverroesProject\Auth\Authenticator:authenticateApiRequest');

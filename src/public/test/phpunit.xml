@@ -2,7 +2,6 @@
     <filter>
         <whitelist processUncoveredFilesFromWhitelist="true">
             <directory suffix=".php">../classes</directory>
-            <!--<directory suffix=".php">../classes</directory>-->
 <!--            <exclude>
                 <directory suffix=".php">/path/to/files</directory>
                 <file>/path/to/file</file>

@@ -88,6 +88,7 @@ class EditorialNote {
     
     public static function constructEdNoteFromRow($theRow) 
     {
+        
         $en = new EditorialNote();
         
         if (!isset($theRow['type'])) {

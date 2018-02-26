@@ -35,7 +35,7 @@ class EdNotesTest extends TestCase {
         $this->assertEquals(EditorialNote::INLINE, $edNote->type);
     }
     
-    public function testConstructFromArray()
+    public function testConstructFromRow()
     {
         // wrong type
         $array1 = [ 
@@ -78,6 +78,58 @@ class EdNotesTest extends TestCase {
             'text' => '   sometext'
         ];
         $builtEdNote = EditorialNote::constructEdNoteFromRow($array4);
+        $this->assertNotFalse($builtEdNote);
+        
+        $this->assertSame(100, $builtEdNote->id);
+        $this->assertSame(500, $builtEdNote->authorId);
+        $this->assertSame(1500, $builtEdNote->target);
+        $this->assertEquals('sometext', $builtEdNote->text);
+    }
+    
+    
+     public function testConstructFromArray()
+    {
+        // wrong type
+        $array1 = [ 
+            'type' => 100
+        ];
+        
+        $this->assertFalse(EditorialNote::constructEdNoteFromArray($array1));
+        
+        // no type
+        $array2 = [ 
+            'id' => 100,
+            'lang' => 'fr',
+            'target' => 1500,
+            'time' => '2017-01-02'
+        ];
+        $this->assertFalse(EditorialNote::constructEdNoteFromArray($array2));
+        
+        // minimal array
+        $array3 = [ 
+            'type' => EditorialNote::OFFLINE
+        ];
+        
+        $defaultEdNote = new EditorialNote();
+        $builtEdNote = EditorialNote::constructEdNoteFromArray($array3);
+        $this->assertNotFalse($builtEdNote);
+        
+        $defaultEdNote->setType(EditorialNote::OFFLINE);
+        
+        $this->assertEquals($defaultEdNote, $builtEdNote);
+        
+        
+        // good array
+        $array4 = [ 
+            'id' => '100',
+            'type' => EditorialNote::OFFLINE,
+            'authorId' => 500,
+            'lang' => 'fr',
+            'target' => 1500,
+            'time' => '2017-01-02',
+            'text' => '   sometext'
+        ];
+        $builtEdNote = EditorialNote::constructEdNoteFromArray($array4);
         $this->assertNotFalse($builtEdNote);
         
         $this->assertSame(100, $builtEdNote->id);

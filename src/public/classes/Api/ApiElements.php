@@ -21,7 +21,7 @@ namespace AverroesProject\Api;
 
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
-use AverroesProject\Profiler\Profiler;
+use AverroesProject\Profiler\ApmProfiler;
 
 /**
  * API Controller class
@@ -35,7 +35,7 @@ class ApiElements extends ApiController
             Response $response, $next)
     {
         
-        $profiler = new Profiler('updateElements', $this->db);
+        $profiler = new ApmProfiler('updateElements', $this->db);
         
         $docId = (int) $request->getAttribute('document');
         $pageNumber = (int) $request->getAttribute('page');

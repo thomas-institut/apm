@@ -19,9 +19,6 @@
 
 namespace AverroesProject\Api;
 
-use \Psr\Http\Message\ServerRequestInterface as Request;
-use \Psr\Http\Message\ResponseInterface as Response;
-use AverroesProject\Profiler\Profiler;
 
 /**
  * API Controller class

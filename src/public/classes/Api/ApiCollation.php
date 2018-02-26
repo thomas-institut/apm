@@ -21,7 +21,7 @@ namespace AverroesProject\Api;
 
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
-use AverroesProject\Profiler\Profiler;
+use AverroesProject\Profiler\ApmProfiler;
 
 /**
  * API Controller class
@@ -33,7 +33,7 @@ class ApiCollation extends ApiController
     public function quickCollation(Request $request, 
             Response $response, $next)
     {
-        $profiler = new Profiler('quickCollation', $this->db);
+        $profiler = new ApmProfiler('quickCollation', $this->db);
         
         $rawData = $request->getBody()->getContents();
         parse_str($rawData, $postData);

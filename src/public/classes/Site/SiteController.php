@@ -28,7 +28,7 @@ namespace AverroesProject\Site;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use AverroesProject\ItemStream\ItemStream;
-use AverroesProject\Profiler\Profiler;
+use AverroesProject\Profiler\ApmProfiler;
 
 /**
  * Site Controller class
@@ -61,7 +61,7 @@ class SiteController
     {
        
         $db = $this->db;
-        $profiler = new Profiler('chunksPage', $db);
+        $profiler = new ApmProfiler('chunksPage', $db);
 
         $workIds = $db->getWorksWithTranscriptions();
         
@@ -95,7 +95,7 @@ class SiteController
         $db = $this->db;
         $workId = $request->getAttribute('work');
         $chunkNumber = $request->getAttribute('chunk');
-        $profiler = new Profiler("chunkPage-$workId-$chunkNumber", $db);
+        $profiler = new ApmProfiler("chunkPage-$workId-$chunkNumber", $db);
         $workInfo = $db->getWorkInfo($workId);
         $witnessList = $db->getDocsForChunk($workId, $chunkNumber);
 
@@ -173,7 +173,7 @@ class SiteController
         $workId = $request->getAttribute('work');
         $chunkNumber = $request->getAttribute('chunk');
         $language = $request->getAttribute('lang');
-        $profiler = new Profiler("CollationTable-$workId-$chunkNumber-$language", $db);
+        $profiler = new ApmProfiler("CollationTable-$workId-$chunkNumber-$language", $db);
         $workInfo = $db->getWorkInfo($workId);
         $witnessList = $db->getDocsForChunk($workId, $chunkNumber);
         
@@ -303,7 +303,7 @@ class SiteController
     {
         
         $profileUsername = $request->getAttribute('username');
-        $profiler = new Profiler('userProfilePage-' . $profileUsername, $this->db);
+        $profiler = new ApmProfiler('userProfilePage-' . $profileUsername, $this->db);
         if (!$this->db->um->userExistsByUsername($profileUsername)) {
             return $this->ci->view->render($response, 'user.notfound.twig', [
                         'userinfo' => $this->ci->userInfo,
@@ -348,7 +348,7 @@ class SiteController
     public function userManagerPage(Request $request, Response $response, 
             $next)
     {
-        $profiler = new Profiler('userManagerPage', $this->db);
+        $profiler = new ApmProfiler('userManagerPage', $this->db);
         $um = $this->db->um;
         if (!$um->isUserAllowedTo($this->ci->userInfo['id'], 'manageUsers')){
             return $this->ci->view->render(
@@ -413,7 +413,7 @@ class SiteController
     
     public function documentsPage(Request $request, Response $response, $next)
     {
-        $profiler = new Profiler('documentsPage', $this->db);
+        $profiler = new ApmProfiler('documentsPage', $this->db);
         $db = $this->db;
         $docIds = $db->getDocIdList('title');
         $profiler->lap('Doc Id List');
@@ -458,7 +458,7 @@ class SiteController
         
         $db = $this->db;
         $userId = (int)$this->ci->userInfo['id'];
-        $profiler = new Profiler('dashboardPage-' . $this->ci->userInfo['username'] . '-' . $userId, $db);
+        $profiler = new ApmProfiler('dashboardPage-' . $this->ci->userInfo['username'] . '-' . $userId, $db);
         $docIds = $db->getDocIdsTranscribedByUser($userId);
         
         $docListHtml = '';
@@ -517,7 +517,7 @@ class SiteController
     {
         
         $docId = $request->getAttribute('id');
-        $profiler = new Profiler('showDocPage-' . $docId, $this->db);
+        $profiler = new ApmProfiler('showDocPage-' . $docId, $this->db);
         $db = $this->db;
         $doc = [];
         $doc['numPages'] = $db->getPageCountByDocId($docId);
@@ -679,7 +679,7 @@ class SiteController
     
     public function defineDocPages(Request $request, Response $response, $next)
     {
-        $profiler = new Profiler('defineDocPages', $this->db);
+        $profiler = new ApmProfiler('defineDocPages', $this->db);
         
         if (!$this->db->um->isUserAllowedTo($this->ci->userInfo['id'], 'define-doc-pages')){
             $this->ci->logger->debug("User " . $this->ci->userInfo['id'] . ' tried to define document pages  but is not allowed to do it');

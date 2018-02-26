@@ -21,7 +21,7 @@ namespace AverroesProject\Api;
 
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
-use AverroesProject\Profiler\Profiler;
+use AverroesProject\Profiler\ApmProfiler;
 
 /**
  * API Controller class
@@ -32,7 +32,7 @@ class ApiDocuments extends ApiController
     
     public function updatePageSettings(Request $request, Response $response, $next)
     {
-        $profiler = new Profiler('updatePageSettings', $this->db);
+        $profiler = new ApmProfiler('updatePageSettings', $this->db);
         $pageId = (int) $request->getAttribute('pageId');
         $postData = $request->getParsedBody();
         $foliation = $postData['foliation'];
@@ -56,7 +56,7 @@ class ApiDocuments extends ApiController
     
     public function deleteDocument(Request $request, Response $response, $next) 
     {
-        $profiler = new Profiler('deleteDocument', $this->db);
+        $profiler = new ApmProfiler('deleteDocument', $this->db);
         $docId = (int) $request->getAttribute('id');
         //$this->logger->debug("Request to delete doc " . $docId);
         if (!$this->db->um->isUserAllowedTo($this->ci->userId, 'delete-documents')){
@@ -100,7 +100,7 @@ class ApiDocuments extends ApiController
     
     public function addPages(Request $request, Response $response, $next) 
     {
-        $profiler = new Profiler('addPages', $this->db);
+        $profiler = new ApmProfiler('addPages', $this->db);
         
         if (!$this->db->um->isUserAllowedTo($this->ci->userId, 'add-pages')){
             $this->logger->warning("addPages: unauthorized request", 
@@ -166,7 +166,7 @@ class ApiDocuments extends ApiController
     
     public function newDocument(Request $request, Response $response, $next) 
     {
-        $profiler = new Profiler('New Doc', $this->db);
+        $profiler = new ApmProfiler('New Doc', $this->db);
         
         if (!$this->db->um->isUserAllowedTo($this->ci->userId, 'create-new-document')){
             $this->logger->warning("New Doc: unauthorized request", 
@@ -220,7 +220,7 @@ class ApiDocuments extends ApiController
     
     public function updateDocSettings(Request $request, Response $response, $next)
     {
-        $profiler = new Profiler('updateDocSettings', $this->db);
+        $profiler = new ApmProfiler('updateDocSettings', $this->db);
         if (!$this->db->um->isUserAllowedTo($this->ci->userId, 'update-doc-settings')){
             $this->logger->warning("updateDocSettings: unauthorized request", 
                     [ 'apiUserId' => $this->ci->userId]
@@ -266,7 +266,7 @@ class ApiDocuments extends ApiController
     
     public function updatePageSettingsBulk(Request $request, Response $response, $next)
     {
-        $profiler = new Profiler('updatePageSettingsBulk', $this->db);
+        $profiler = new ApmProfiler('updatePageSettingsBulk', $this->db);
         
         if (!$this->db->um->isUserAllowedTo($this->ci->userId, 'update-page-settings-bulk')){
             

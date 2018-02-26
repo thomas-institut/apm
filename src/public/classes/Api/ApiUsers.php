@@ -21,7 +21,7 @@ namespace AverroesProject\Api;
 
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
-use AverroesProject\Profiler\Profiler;
+use AverroesProject\Profiler\ApmProfiler;
 
 /**
  * API Controller class
@@ -33,7 +33,7 @@ class ApiUsers extends ApiController
             $next)
     {
         $um = $this->db->um;
-        $profiler = new Profiler('getUserProfileInfo', $this->db);
+        $profiler = new ApmProfiler('getUserProfileInfo', $this->db);
         $profileUserId =  (int) $request->getAttribute('userId');
         $userProfileInfo = $um->getUserInfoByUserId($profileUserId);
         if ($userProfileInfo === false ) {

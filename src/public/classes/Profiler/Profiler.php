@@ -21,9 +21,6 @@
 namespace AverroesProject\Profiler;
 
 
-use AverroesProject\Data\DataManager;
-use Monolog\Logger;
-
 /**
  * Simple profiler 
  *
@@ -32,10 +29,10 @@ use Monolog\Logger;
 class Profiler {
     
     /**
-     *
-     * @var DataManager $db
+     * Constants for the $startNow parameter in the constructor
      */
-    private $db;
+    const START_NOW = true;
+    const START_LATER = false;
     
     /*
      * @var string $name
@@ -48,35 +45,39 @@ class Profiler {
      */
     private $laps;
     
-    public function __construct(string $name, DataManager $db) {
-        $this->db = $db;
+    public function __construct(string $name, $whenToStart = self::START_NOW) {
         $this->name = $name;
-        $this->start();
+        if ($whenToStart === self::START_NOW) {
+            $this->start();
+        }
     }
     
-    public function lap(string $lapName) 
+    public function lap(string $lapName) : void
     {
         $this->laps[] = [ 'name' => $lapName, 'time' => microtime(true)];
     }
     
-    public function stop()
+    public function stop() : void
     {
-        $this->lap('Finish');
+        if (count($this->laps) > 0) {
+            // the profiler has started, so let's finish it
+            $this->lap('Finish');
+        }
     }
     
-    public function start()
+    public function start() : void 
     {
         $this->laps = [];
-        $this->db->queryStats->reset();
         $this->lap('Start');
     }
     
     
-    private function calcDuration($t2, $t1)
+    private function calcDuration($t2, $t1) : float
     {
         return round(($t2-$t1)*1000, 3);
     }
-    private function getLaps()
+    
+    private function getLaps() : array
     {
         $nLaps = count($this->laps);
         if ($nLaps === 0) {
@@ -106,19 +107,19 @@ class Profiler {
         
     }
     
-    public function getData()
+    public function getData() : array
     {
         return [ 
             'name' => $this->name,
-            'query-stats' => $this->db->queryStats->info,
             'laps' => $this->getLaps()
         ];
     }
     
-    public function log(Logger $logger)
+    
+    public function getTotalTime() : float
     {
         $data = $this->getData();
-        $totalTime = $data['laps'][count($data['laps'])-1][2];
-        $logger->debug("PROFILER $this->name finished in $totalTime ms", $data);
+        return $data['laps'][count($data['laps'])-1][2];
     }
+
 }

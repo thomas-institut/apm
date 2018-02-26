@@ -102,7 +102,7 @@ class CollatexRunner {
     
     public function rawRun(string $rawJsonInput) {
         
-        $start = microtime();
+        $start = microtime(true);
         $this->reset();
         
         if (!$this->runningEnvironmentOk()) {
@@ -143,7 +143,7 @@ class CollatexRunner {
         }
         
         unlink($tmpInputFileName);
-        $end = microtime();
+        $end = microtime(true);
         $this->runTime = $end - $start;
         return $output;
     }

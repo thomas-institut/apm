@@ -63,6 +63,7 @@ class CollatexRunTest extends TestCase
         $result2 = $cr2->runningEnvironmentOk();
         $this->assertFalse($result2);
         $this->assertEquals(CollatexRunner::CR_TEMP_FOLDER_NOT_FOUND, $cr2->error);
+        $this->assertFalse($cr2->rawRun(''));
         
         $cr3 = new CollatexRunner('../collatex/bin/collatex-tools-1.7.1.jar', '/var', 'badjava');
         $result3 = $cr3->runningEnvironmentOk();
@@ -81,27 +82,49 @@ class CollatexRunTest extends TestCase
     
     public function testRawRun()
     {
+        $goodJson = json_encode($this->createSimpleCollatexInput());
+        
+        $cr1 = new CollatexRunner('mock-collatex/exit1.bash', 'tmp', '/usr/bin/java');
+        $this->assertTrue($cr1->runningEnvironmentOk());
+        $result = $cr1->rawRun($goodJson);
+        $this->assertFalse($result); 
+        $this->assertEquals(CollatexRunner::CR_COLLATEX_EXIT_VALUE_NON_ZERO, $cr1->error);
+        
+        
         $cr = $this->createCollatexRunner();
         
         $result = $cr->rawRun('bad json');
         $this->assertNotFalse($result);
         $this->assertEquals(null, json_decode($result));
 
-        $result = $cr->rawRun(json_encode($this->createSimpleCollatexInput()));
+        $result = $cr->rawRun($goodJson);
         $this->assertNotFalse($result);
     }
     
     public function testSimpleRun()
     {
-        $cr = $this->createCollatexRunner();
+        // Test case 1: error in collatex executable
+        $cr1 = new CollatexRunner('mock-collatex/exit1.bash', 'tmp', '/usr/bin/java');
+        $result1 = $cr1->run([]);
+        $this->assertFalse($result1);
+        $this->assertEquals(CollatexRunner::CR_COLLATEX_EXIT_VALUE_NON_ZERO, $cr1->error);
         
-        $witnessList = [
+        // Test case 2: invalid witness list, Collatex returns error message
+        $cr2 = $this->createCollatexRunner();
+        $result2 = $cr2->run([]);
+        $this->assertFalse($result2);
+        $this->assertEquals(CollatexRunner::CR_COLLATEX_DID_NOT_RETURN_JSON, $cr2->error);
+        
+        $cr3 = $this->createCollatexRunner();
+        $validWitnessList = [
             [ 'id' => 'A', 'content' => 'This is Sparta and this is not'],
             [ 'id' => 'B', 'content' => 'This is Athens and this is not'],
             [ 'id' => 'C', 'content' => 'This is Athens and this is Sparta']
         ];
-        $result = $cr->run($witnessList);
-        $this->assertNotFalse($result);
+        $result3 = $cr3->run($validWitnessList);
+        $this->assertTrue(is_array($result3));
+        $this->assertArrayHasKey('witnesses', $result3);
+        $this->assertArrayHasKey('table', $result3);
+        $this->assertEquals(['A', 'B', 'C'], $result3['witnesses']);
     }
-    
 }

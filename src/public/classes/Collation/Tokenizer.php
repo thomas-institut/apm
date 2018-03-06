@@ -46,13 +46,17 @@ class Tokenizer {
     
     /**
      * Splits the given string into an array 
-     * of tokens of the following kinds:
+     * of text tokens.
+     * 
+     * Text tokens can be of the following kinds:
      *  - whitespace
      *  - punctuation
      *  - words
+     * 
      * @param string $theText
+     * @returns array of tokens
      */
-    public static function splitText(string $theText) 
+    public static function splitText(string $theText) : array
     {
         $tokens = [];
         $currentTokenCharacters = [];
@@ -156,7 +160,14 @@ class Tokenizer {
         return $tokens;
     }
     
-    public static function tokenize(array $items) 
+    
+    /**
+     * Produces an array of tokens suitable for use in Collatex out
+     * of an array of Items
+     * @param array $items
+     * @return array
+     */
+    public static function tokenize(array $items) : array
     {
         $tokens = [];
         $currentToken = null;

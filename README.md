@@ -2,7 +2,7 @@
 
 This is the web app running on http://averroes.uni-koeln.de/apm
 
-It requires PHP 7.0 and a running MySQL Server 5.7 configured with a database 
+It requires PHP 7.2 and a running MySQL Server 5.7 configured with a database 
 and a user with access to that database.
 
 ## Development

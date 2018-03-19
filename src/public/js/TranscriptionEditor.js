@@ -1150,6 +1150,7 @@ class TranscriptionEditor
     let thisObject = this
     let quillObject = this.quillObject
     let id = this.id
+    
     return function (range) {
       if (!range) {
         return false

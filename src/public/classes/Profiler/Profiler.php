@@ -47,6 +47,7 @@ class Profiler {
     
     public function __construct(string $name, $whenToStart = self::START_NOW) {
         $this->name = $name;
+        $this->laps = [];
         if ($whenToStart === self::START_NOW) {
             $this->start();
         }

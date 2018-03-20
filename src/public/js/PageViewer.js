@@ -196,7 +196,7 @@ class PageViewer {
       let langDef = thisObject.options.langDef
       for (const lang in langDef) {
         optionsHtml += '<option value="' + lang + '"'
-        if (thisObject.defaultLang === lang) {
+        if (thisObject.options.defaultLang === lang) {
           optionsHtml += ' selected'
         }
         optionsHtml += '>' + langDef[lang].name + '</option>'

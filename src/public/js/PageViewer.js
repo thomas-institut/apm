@@ -26,9 +26,10 @@ class PageViewer {
     this.options = options
     let pathFor = options.urlGenerator
     let osdOptions = {
-      id: "left-component",
+      id: "osd-pane",
       prefixUrl: pathFor.openSeaDragonImagePrefix(),
-      maxZoomPixelRatio: 3
+      maxZoomPixelRatio: 3,
+      showRotationControl: true
     }
     osdOptions.tileSources = options.osdConfig.tileSources
     
@@ -49,6 +50,7 @@ class PageViewer {
         // TODO: optimize, renumber lines only for active tab
         // if the tab's text is LTR 
         //console.log('Number lines on dividerdragend')
+        te.resizeContainer()
         te.numberLines()
       }
     })
@@ -66,6 +68,12 @@ class PageViewer {
       
     $('#editPageButton').on('click', 
       this.genOnClickEditPageButton())
+      
+    $('#vertButton').on('click', 
+      this.genOnVerticalButton())
+      
+    $('#horizButton').on('click', 
+      this.genOnHorizontalButton())  
       
     // Load columns
     $.getJSON(pathFor.apiGetNumColumns(this.options.docId, this.options.pageNumber), 
@@ -110,7 +118,7 @@ class PageViewer {
               activeWorks: thisObject.options.activeWorks, 
               langDef: thisObject.options.langDef,
               defaultLang: thisObject.options.defaultLang,
-              containerId: 'right-component'
+              containerId: 'editor-pane'
             }
           )
           te.setData(respColData)
@@ -187,6 +195,76 @@ class PageViewer {
       })
     }
   }
+  
+  genOnVerticalButton()
+  {
+    let thisObject = this
+    
+    return function () {
+      $('#osd-pane').removeClass('horiz-top')
+      $('#osd-pane').addClass('vert-left')
+      $('#osd-pane').css('height', "100%")
+      $('#osd-pane').css('width', "")
+      $('#osd-pane').css('right', "50%")
+      $('#osd-pane').css('bottom', "")
+
+      $('#editor-pane').removeClass('horiz-bottom')
+      $('#editor-pane').addClass('vert-right')
+      $('#editor-pane').css('height', "100%")
+      $('#editor-pane').css('width', "")
+      
+      $('#divider').removeClass('horiz-divider')
+      $('#divider').addClass('vert-divider')
+      $('#divider').css('bottom', "")
+      $('#divider').css('right', "50%")
+      
+      $('#full-pane').removeClass('horizontal-percent')
+      $('#full-pane').addClass('vertical-percent')
+      
+      for (const te of TranscriptionEditor.editors) {
+        te.resizeContainer()
+        te.numberLines()
+      }
+      
+    }
+    
+  }
+  
+  
+  genOnHorizontalButton()
+  {
+    let thisObject = this
+    
+    return function () {
+      $('#osd-pane').removeClass('vert-left')
+      $('#osd-pane').addClass('horiz-top')
+      $('#osd-pane').css('width', "100%")
+      $('#osd-pane').css('height', "")
+      $('#osd-pane').css('bottom', "50%")
+      $('#osd-pane').css('right', "")
+      
+      $('#editor-pane').removeClass('vert-right')
+      $('#editor-pane').addClass('horiz-bottom')
+      $('#editor-pane').css('width', "100%")
+      $('#editor-pane').css('height', "")
+      
+      $('#divider').removeClass('vert-divider')
+      $('#divider').addClass('horiz-divider')
+      $('#divider').css('right', "")
+      $('#divider').css('bottom', "50%")
+      
+      $('#full-pane').removeClass('vertical-percent')
+      $('#full-pane').addClass('horizontal-percent')
+      
+      for (const te of TranscriptionEditor.editors) {
+        te.resizeContainer()
+        te.numberLines()
+      }
+      
+    }
+    
+  }
+  
   
   genOnClickEditPageButton() {
     let thisObject = this

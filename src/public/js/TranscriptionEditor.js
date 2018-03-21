@@ -1258,7 +1258,8 @@ class TranscriptionEditor
   {
     let cont = $('#editor-container-container-' + this.id)
     let contHeight = this.containerElement.height()
-    cont.css('height', contHeight - cont.position().top + 'px')
+    let newHeight = contHeight - cont.position().top
+    cont.css('height',  newHeight + 'px')
   }
 
   genOnResize()

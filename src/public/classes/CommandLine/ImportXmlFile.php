@@ -31,7 +31,7 @@ use AverroesProject\Xml\TranscriptionReader;
 
 class ImportXmlFile extends CommandLineUtility {
     
-    const USAGE = "usage: importxmlfile [--dry-run] <filename>\n";
+    const USAGE = "usage: importxmlfile [--real-run] <filename>\n";
     
     public function main($argc, $argv)
     {
@@ -43,11 +43,11 @@ class ImportXmlFile extends CommandLineUtility {
             print self::USAGE;
             return false;
         }
-        $dryRun = false;
+        $dryRun = true;
         $fileName = false;
         for ($i = 1; $i < $argc; $i++) {
-            if ($argv[$i] === '--dry-run') {
-                $dryRun = true;
+            if ($argv[$i] === '--real-run') {
+                $dryRun = false;
                 continue;
             }
             $fileName = $argv[$i];
@@ -60,7 +60,7 @@ class ImportXmlFile extends CommandLineUtility {
         }
         
         if ($dryRun) {
-            print "Dry run mode, database will NOT be updated\n";
+            print "Dry run mode, the database will NOT be updated\n";
         }
         print ("Loading XML file '" . $fileName . "'...");
         error_reporting(E_ALL & ~E_WARNING);

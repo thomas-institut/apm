@@ -43,7 +43,9 @@ class ApiControllerTest extends TestCase {
      *
      * @var Api\ApiController
      */
-    static $apiController;
+    static $apiElements;
+    static $apiUsers;
+    static $apiDocuments;
     
     /*     
      * @var AverroesProject\Data\DataManager
@@ -63,7 +65,9 @@ class ApiControllerTest extends TestCase {
 
         self::$ci = DatabaseTestEnvironment::getContainer($logger);
         DatabaseTestEnvironment::emptyDatabase();
-        self::$apiController = new Api\ApiController(self::$ci);
+        self::$apiElements = new Api\ApiElements(self::$ci);
+        self::$apiUsers = new Api\ApiUsers(self::$ci);
+        self::$apiDocuments = new Api\ApiDocuments(self::$ci);
         self::$dataManager = DatabaseTestEnvironment::getDataManager($logger, $hm);
         self::$editor1 = self::$dataManager->um->createUserByUserName('testeditor1');
         self::$editor2 = self::$dataManager->um->createUserByUserName('testeditor2');
@@ -77,7 +81,7 @@ class ApiControllerTest extends TestCase {
         
         $inputResp = new \Slim\Http\Response();
         
-        $response = self::$apiController->getNumColumns($request, $inputResp, 
+        $response = self::$apiDocuments->getNumColumns($request, $inputResp, 
                 NULL);
         
         $this->assertEquals(200, $response->getStatusCode());
@@ -93,7 +97,7 @@ class ApiControllerTest extends TestCase {
                 ->withAttribute('column', 1);
         
         $inputResp = new \Slim\Http\Response();
-        $response = self::$apiController->getElementsByDocPageCol($request, 
+        $response = self::$apiElements->getElementsByDocPageCol($request, 
                 $inputResp, NULL);
         
         $this->assertEquals(200, $response->getStatusCode());
@@ -134,7 +138,7 @@ class ApiControllerTest extends TestCase {
                 ->withAttribute('column', 1);
         
         $inputResp2 = new \Slim\Http\Response();
-        $response2 = self::$apiController->getElementsByDocPageCol($request, 
+        $response2 = self::$apiElements->getElementsByDocPageCol($request, 
                 $inputResp2, null);
         
         $this->assertEquals(200, $response2->getStatusCode());
@@ -178,7 +182,7 @@ class ApiControllerTest extends TestCase {
         $inputResp = new \Slim\Http\Response();
         
         // TEST 1: nothing in request contents
-        $response = self::$apiController->updateElementsByDocPageCol(
+        $response = self::$apiElements->updateElementsByDocPageCol(
                 $request, 
                 $inputResp, 
                 null
@@ -189,7 +193,7 @@ class ApiControllerTest extends TestCase {
         
         
         // TEST 2: unstructured data in request contents
-        $response = self::$apiController->updateElementsByDocPageCol(
+        $response = self::$apiElements->updateElementsByDocPageCol(
                 $request->withBody(Psr7\stream_for('Some data')), 
                 $inputResp, 
                 null
@@ -200,7 +204,7 @@ class ApiControllerTest extends TestCase {
         
         // TEST 3: wrong POST field
         $queryString = http_build_query([ 'somefield' => 'some data'], '', '&');
-        $response = self::$apiController->updateElementsByDocPageCol(
+        $response = self::$apiElements->updateElementsByDocPageCol(
                 $request->withBody(Psr7\stream_for($queryString)), 
                 $inputResp, 
                 null 
@@ -210,7 +214,7 @@ class ApiControllerTest extends TestCase {
         $this->assertEquals(Api\ApiController::API_ERROR_NO_DATA, $respData['error']);
         
         // TEST 4: empty data
-        $response = self::$apiController->updateElementsByDocPageCol(
+        $response = self::$apiElements->updateElementsByDocPageCol(
             self::requestWithData($request, []), 
             $inputResp, 
             null
@@ -220,7 +224,7 @@ class ApiControllerTest extends TestCase {
         $this->assertEquals(Api\ApiController::API_ERROR_NO_ELEMENT_ARRAY, $respData['error']);
         
         // TEST 4: wrong data fields 
-        $response = self::$apiController->updateElementsByDocPageCol(
+        $response = self::$apiElements->updateElementsByDocPageCol(
             self::requestWithData($request, ['somefield' => 'somedata']), 
             $inputResp, 
             null
@@ -230,7 +234,7 @@ class ApiControllerTest extends TestCase {
         $this->assertEquals(Api\ApiController::API_ERROR_NO_ELEMENT_ARRAY, $respData['error']);
         
         // TEST 5: no ednotes
-        $response = self::$apiController->updateElementsByDocPageCol(
+        $response = self::$apiElements->updateElementsByDocPageCol(
             self::requestWithData($request, [
                 'elements' => [
                     ['id' => 100, 'type' => 1]
@@ -244,7 +248,7 @@ class ApiControllerTest extends TestCase {
         $this->assertEquals(Api\ApiController::API_ERROR_NO_EDNOTES, $respData['error']);
         
         // TEST 6: zero elements
-         $response = self::$apiController->updateElementsByDocPageCol(
+         $response = self::$apiElements->updateElementsByDocPageCol(
             self::requestWithData($request, [
                 'elements' => [], 
                 'ednotes' => []
@@ -286,7 +290,7 @@ class ApiControllerTest extends TestCase {
         for ($i = 0; $i < count($keys); $i++) {
             $badElement = $goodElement;
             unset($badElement[$keys[$i]]);
-            $response = self::$apiController->updateElementsByDocPageCol(
+            $response = self::$apiElements->updateElementsByDocPageCol(
             self::requestWithData($request, [
                     'elements' => [
                         $badElement
@@ -304,7 +308,7 @@ class ApiControllerTest extends TestCase {
         // TEST 8: bad pageId
         $badElement = $goodElement;
         $badElement['pageId'] = 0;
-        $response = self::$apiController->updateElementsByDocPageCol(
+        $response = self::$apiElements->updateElementsByDocPageCol(
         self::requestWithData($request, [
                 'elements' => [
                     $badElement
@@ -321,7 +325,7 @@ class ApiControllerTest extends TestCase {
         // TEST 8: bad columnElement
         $badElement = $goodElement;
         $badElement['columnNumber'] = 0;
-        $response = self::$apiController->updateElementsByDocPageCol(
+        $response = self::$apiElements->updateElementsByDocPageCol(
         self::requestWithData($request, [
                 'elements' => [
                     $badElement
@@ -338,7 +342,7 @@ class ApiControllerTest extends TestCase {
         // TEST 8: bad editorId
         $badElement = $goodElement;
         $badElement['editorId'] = -1;
-        $response = self::$apiController->updateElementsByDocPageCol(
+        $response = self::$apiElements->updateElementsByDocPageCol(
         self::requestWithData($request, [
                 'elements' => [
                     $badElement
@@ -355,7 +359,7 @@ class ApiControllerTest extends TestCase {
         // TEST 9: no items
         $badElement = $goodElement;
         $badElement['items'] = [];
-        $response = self::$apiController->updateElementsByDocPageCol(
+        $response = self::$apiElements->updateElementsByDocPageCol(
         self::requestWithData($request, [
                 'elements' => [
                     $badElement
@@ -375,7 +379,7 @@ class ApiControllerTest extends TestCase {
             $badItem = $textItem;
             unset($badItem[$keys[$i]]);
             $badElement['items'] = [$badItem];
-            $response = self::$apiController->updateElementsByDocPageCol(
+            $response = self::$apiElements->updateElementsByDocPageCol(
             self::requestWithData($request, [
                     'elements' => [
                         $badElement
@@ -397,7 +401,7 @@ class ApiControllerTest extends TestCase {
         $item1['id'] = 100;
         $item2['id'] = 100;
         $badElement['items'] = [ $item1, $item2];
-        $response = self::$apiController->updateElementsByDocPageCol(
+        $response = self::$apiElements->updateElementsByDocPageCol(
         self::requestWithData($request, [
                 'elements' => [
                     $badElement
@@ -412,7 +416,7 @@ class ApiControllerTest extends TestCase {
         $this->assertEquals(Api\ApiController::API_ERROR_DUPLICATE_ITEM_ID, $respData['error']);
         
         // FINALLY do it!
-        $response = self::$apiController->updateElementsByDocPageCol(
+        $response = self::$apiElements->updateElementsByDocPageCol(
         self::requestWithData($request, [
                 'elements' => [
                     $goodElement
@@ -458,7 +462,7 @@ class ApiControllerTest extends TestCase {
         $goodElement['items'] = [ $textItem, $abbrItem];
         
         
-        $response = self::$apiController->updateElementsByDocPageCol(
+        $response = self::$apiElements->updateElementsByDocPageCol(
         self::requestWithData($request, [
                 'elements' => [
                     $goodElement
@@ -514,7 +518,7 @@ class ApiControllerTest extends TestCase {
         for ($i = 0; $i < count($keys); $i++) {
             $badEdNote = $goodEditorialNote;
             unset($badEdNote[$keys[$i]]);
-            $response = self::$apiController->updateElementsByDocPageCol(
+            $response = self::$apiElements->updateElementsByDocPageCol(
             self::requestWithData($request, [
                     'elements' => [
                         $goodElement
@@ -532,7 +536,7 @@ class ApiControllerTest extends TestCase {
         // TEST: Bad target in editorial note
         $badEdNote = $goodEditorialNote;
         $badEdNote['target'] = $abbrItem['id'] + 1;
-        $response = self::$apiController->updateElementsByDocPageCol(
+        $response = self::$apiElements->updateElementsByDocPageCol(
         self::requestWithData($request, [
                 'elements' => [
                     $goodElement
@@ -549,7 +553,7 @@ class ApiControllerTest extends TestCase {
         // TEST: Bad authorId in editorial note
         $badEdNote = $goodEditorialNote;
         $badEdNote['authorId'] = 0;
-        $response = self::$apiController->updateElementsByDocPageCol(
+        $response = self::$apiElements->updateElementsByDocPageCol(
         self::requestWithData($request, [
                 'elements' => [
                     $goodElement
@@ -564,7 +568,7 @@ class ApiControllerTest extends TestCase {
         $this->assertEquals(Api\ApiController::API_ERROR_WRONG_AUTHOR_ID, $respData['error']);
         
         // TEST: Add an ednote
-        $response = self::$apiController->updateElementsByDocPageCol(
+        $response = self::$apiElements->updateElementsByDocPageCol(
         self::requestWithData($request, [
                 'elements' => [
                     $goodElement
@@ -581,7 +585,7 @@ class ApiControllerTest extends TestCase {
         $this->assertEquals($goodEditorialNote['text'], $edNotesInDb[0]->text);
         
         // TEST: update with same ednote, no change in DB
-        $response = self::$apiController->updateElementsByDocPageCol(
+        $response = self::$apiElements->updateElementsByDocPageCol(
         self::requestWithData($request, [
                 'elements' => [
                     $goodElement
@@ -601,7 +605,7 @@ class ApiControllerTest extends TestCase {
         // TEST: update with a new ednote, should have 2 ednotes in column
         $goodEditorialNote2 = $goodEditorialNote;
         $goodEditorialNote2['authorId'] = self::$editor2;
-        $response = self::$apiController->updateElementsByDocPageCol(
+        $response = self::$apiElements->updateElementsByDocPageCol(
         self::requestWithData($request, [
                 'elements' => [
                     $goodElement

@@ -55,7 +55,7 @@ class AuthenticatorTest extends TestCase {
     }
     
     
-    public function testLogut()
+    public function testLogout()
     {
         $auth = self::$authenticator;
         
@@ -65,6 +65,6 @@ class AuthenticatorTest extends TestCase {
         $response = $auth->logout($request, $inputResp, 
                 NULL);
         
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertEquals(302, $response->getStatusCode());
     }
 }

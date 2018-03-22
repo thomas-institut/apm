@@ -51,6 +51,8 @@ abstract class ImageSourcePlugin extends \AverroesProject\Plugin\Plugin {
         $hookGetOpenSeaDragonConfig = 'get-openseadragon-config-' . $this->stub;
         $hookGetImageSources = 'get-image-sources';
         
+        // @codeCoverageIgnoreStart
+        // Cannot reproduce these errors in testing
         if (! $this->hm->attachToHook($hookGetImageUrl, array($this, 'getImageUrl')) ) {
             $this->logger->error("Cannot attach to hook $hookGetImageUrl");
             return false;
@@ -67,6 +69,7 @@ abstract class ImageSourcePlugin extends \AverroesProject\Plugin\Plugin {
             $this->logger->error("Cannot attach to hook $hookGetOpenSeaDragonConfig");
             return false;
         }
+        // @codeCoverageIgnoreEnd
         return true;
     }
     

@@ -60,7 +60,9 @@ class Item {
         'inspace',
         'overflow', 
         'margin left',
-        'margin right'
+        'margin right', 
+        'margin top', 
+        'margin bottom'
       ]
   }
 

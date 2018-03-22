@@ -18,32 +18,26 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-namespace AverroesProject\Algorithm;
+use AverroesProject\Plugin\ImageSourcePlugin;
 
 /**
- * Utility Methods
+ * 
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class Utility {
+class ImageSourcePluginMockup extends ImageSourcePlugin {
     
-    /**
-     * Sorts an array by the given key
-     * 
-     * @param array $rows
-     * @param string $key
-     */
-    public static function arraySortByKey(&$rows, $key) 
+    public function realGetImageUrl($imageSourceData, $imageNumber)
     {
-        usort(
-            $rows, 
-            function ($a, $b) use($key) {
-                if (is_object($a)) {
-                    $a = (array) $a;
-                    $b = (array) $b;
-                }
-                return $a[$key] < $b[$key] ? -1 : 1;
-            }
-        );    
+        return 'ImageUrl';
+    }
+    
+    public function realGetOpenSeaDragonConfig($imageSourceData, $imageNumber){
+        return 'OpenSeaDragonConfig';
+    }
+    
+    public function realGetDocInfoHtml($imageSourceData)
+    {
+        return 'DocInfoHtml';
     }
 }

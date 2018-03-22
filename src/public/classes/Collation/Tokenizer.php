@@ -34,13 +34,6 @@ class Tokenizer {
     const TOKEN_WS = 2;
     const TOKEN_PUNCT = 3;
     
-    private static function isWhiteSpace(string $s) {
-        if (trim($s) === '') {
-            return true;
-        }
-        return false;
-    }
-    
     private static function mbStringToArray ($string) { 
         $strlen = mb_strlen($string); 
         while ($strlen) { 
@@ -53,13 +46,17 @@ class Tokenizer {
     
     /**
      * Splits the given string into an array 
-     * of strings of the following kinds:
+     * of text tokens.
+     * 
+     * Text tokens can be of the following kinds:
      *  - whitespace
      *  - punctuation
      *  - words
-     * @param string $text
+     * 
+     * @param string $theText
+     * @returns array of tokens
      */
-    public static function splitText(string $theText) 
+    public static function splitText(string $theText) : array
     {
         $tokens = [];
         $currentTokenCharacters = [];
@@ -72,7 +69,8 @@ class Tokenizer {
         
         for ($i=0; $i < count($text); $i++) {
             switch($state) {
-                case 0:
+                case 0: 
+                    // State 0: Initial state
                     if (mb_ereg($wsRegExp, $text[$i])) {
                         $currentTokenCharacters[] = $text[$i];
                         $currentTokenType = self::TOKEN_WS;
@@ -91,6 +89,7 @@ class Tokenizer {
                     break;
                 
                 case 1:
+                    // State 1: Processing white space
                     if (mb_ereg($wsRegExp, $text[$i])) {
                         $currentTokenCharacters[] = $text[$i];
                         break;
@@ -111,6 +110,7 @@ class Tokenizer {
                     break;
                     
                 case 2:
+                    // State 2: processing punctuation
                     if (mb_ereg($wsRegExp, $text[$i])) {
                         $tokens[] = [ 'type' => $currentTokenType, 'text' => implode($currentTokenCharacters)];
                         $currentTokenCharacters  = [];
@@ -135,6 +135,7 @@ class Tokenizer {
                     break;
                     
                 case 3: 
+                    // State 3: processing a word
                     if (mb_ereg($wsRegExp, $text[$i])) {
                         $tokens[] = [ 'type' => $currentTokenType, 'text' => implode($currentTokenCharacters)];
                         $currentTokenCharacters  = [];
@@ -159,10 +160,15 @@ class Tokenizer {
         return $tokens;
     }
     
-    public static function tokenize(array $items) 
+    
+    /**
+     * Produces an array of tokens suitable for use in Collatex out
+     * of an array of Items
+     * @param array $items
+     * @return array
+     */
+    public static function tokenize(array $items) : array
     {
-        
-        // "explode" the strings
         $tokens = [];
         $currentToken = null;
         $noWordBreakFound = false;
@@ -174,6 +180,8 @@ class Tokenizer {
             switch($item->type) {
                 case Item::SIC:
                 case Item::ABBREVIATION:
+                    // The text for SIC and ABBREVIATION is the correction/expansion
+                    // if it exists
                     if ($item->altText !== '' ){
                         $text = $item->altText;
                         $altText = $item->getText();
@@ -190,12 +198,14 @@ class Tokenizer {
             }
             
             if ($text === '') {
-                continue;
+                // this should not happen, it means that
+                // an item has no text, which would have been caught
+                // in the item's constructor
+                // cannot reproduce in testing
+                continue; // @codeCoverageIgnore  
             }
             $textTokens = self::splitText($text);
             foreach ($textTokens as $textToken) {
-                //print "\nProcessing token\n";
-                //print_r($textToken);
                 switch($textToken['type']) {
                     case self::TOKEN_WS:
                         if ($noWordBreakFound) {
@@ -210,7 +220,7 @@ class Tokenizer {
                         
                     case self::TOKEN_WORD:
                         if ($noWordBreakFound) {
-                            // reset  noWordBreak flag
+                            // reset noWordBreak flag
                             $noWordBreakFound = false;
                         }
                         if (is_null($currentToken)) {
@@ -223,7 +233,8 @@ class Tokenizer {
                             $currentToken['t'] .= $textToken['text'];
                             break;
                         }
-                        // current token is not TOKEN_WORD, so push current token into token list 
+                        // current token is not TOKEN_WORD  (i.e, it is TOKEN_PUNCT)
+                        // so push current token into token list 
                         // and start a new current token
                         $tokens[] = $currentToken;
                         $currentToken = [ 't' => $textToken['text'], 'itemType' => $item->type, 'tokenType' => self::TOKEN_WORD];
@@ -238,7 +249,7 @@ class Tokenizer {
                             $currentToken = [ 't' => $textToken['text'], 'itemType' => $item->type, 'tokenType' => self::TOKEN_PUNCT];
                             break;
                         }
-                        // Punctuation tokens force a new token, so push current token into token list
+                        // Punctuation tokens always force a new token, so push current token into token list
                         // and start a new current token
                         $tokens[] = $currentToken;
                         $currentToken = [ 't' => $textToken['text'], 'itemType' => $item->type, 'tokenType' => self::TOKEN_PUNCT];

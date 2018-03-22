@@ -180,18 +180,83 @@ class TokenizerTest extends TestCase {
                     ['t' => 'sentence', 'itemType' => Item::RUBRIC, 'tokenType' => Tokenizer::TOKEN_WORD],
                     ['t' => '.', 'itemType' => Item::RUBRIC, 'tokenType' => Tokenizer::TOKEN_PUNCT]
                 ]
-            ]
+            ],
+            [ // TEST CASE 6: Sic and Abbreviations
+                'items' => [
+                    new Text(1, 0, "This is a simple "),
+                    new TxText\Sic(2, 1, "wrd", "word"),
+                    new Text(3, 2, " and an "),
+                    new TxText\Abbreviation(4,3,"abbr", "abbreviation")
+                ],
+                'expected' => [
+                    ['t' => 'This', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'is', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'a', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'simple', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'word', 'itemType' => Item::SIC, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'and', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'an', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'abbreviation', 'itemType' => Item::ABBREVIATION, 'tokenType' => Tokenizer::TOKEN_WORD]
+                ]
+            ],
+            [ // TEST CASE 7: Sic without expansion
+                'items' => [
+                    new Text(1, 0, "This is a simple "),
+                    new TxText\Sic(2, 1, "wrd"),
+                    new Text(3, 2, " and an "),
+                    new TxText\Abbreviation(4,3,"abbr", "")
+                ],
+                'expected' => [
+                    ['t' => 'This', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'is', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'a', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'simple', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'wrd', 'itemType' => Item::SIC, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'and', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'an', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'abbr', 'itemType' => Item::ABBREVIATION, 'tokenType' => Tokenizer::TOKEN_WORD]
+                ]
+            ],
+            [   // TEST CASE 8: Punctuation followed by word
+                'items' => [
+                    new Text(1, 0, "This is a simple.sentence"),
+                ], 
+                'expected' => [
+                    ['t' => 'This', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'is', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'a', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'simple', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => '.', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_PUNCT],
+                    ['t' => 'sentence', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD]
+                ]
+            ],
+            [   // TEST CASE 9: Starting with punctuation
+                'items' => [
+                    new Text(1, 0, ".This is a simple.sentence"),
+                ], 
+                'expected' => [
+                    ['t' => '.', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_PUNCT],
+                    ['t' => 'This', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'is', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'a', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => 'simple', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD],
+                    ['t' => '.', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_PUNCT],
+                    ['t' => 'sentence', 'itemType' => Item::TEXT, 'tokenType' => Tokenizer::TOKEN_WORD]
+                ]
+            ],
         ];
         
-       foreach($testCases as $testCase) {
-           $tokens = Tokenizer::tokenize($testCase['items']);
-           //print_r($tokens);
-           $this->assertCount(count($testCase['expected']), $tokens);
-           for ($i = 0; $i < count($tokens); $i++) {
-               $this->assertEquals($testCase['expected'][$i]['t'], $tokens[$i]['t']);
-               $this->assertEquals($testCase['expected'][$i]['itemType'], $tokens[$i]['itemType']);
-           }
-       }
+        $testCaseNumber = 0;
+        foreach($testCases as $testCase) {
+            $testCaseNumber++;
+            $tokens = Tokenizer::tokenize($testCase['items']);
+            //print_r($tokens);
+            $this->assertCount(count($testCase['expected']), $tokens);
+            for ($i = 0; $i < count($tokens); $i++) {
+                $this->assertEquals($testCase['expected'][$i]['t'], $tokens[$i]['t'], "Test case " . $testCaseNumber);
+                $this->assertEquals($testCase['expected'][$i]['itemType'], $tokens[$i]['itemType'], "Test case " . $testCaseNumber);
+            }
+        }
     }
     
     public function testNonWordBreakHyphens()

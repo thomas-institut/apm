@@ -40,6 +40,8 @@ class PluginManagerTest extends TestCase {
         $hm = new HookManager();
         $pm = new PluginManager($sm, $hm, ['./test-plugins/basic']);
         
+        $numInitialPluginClasses = count($pm->getPluginClasses());
+        
         $this->assertCount(1, $pm->pluginDirs);
         
         $result = $pm->addPluginDir('./test-plugins/baddir');
@@ -57,7 +59,7 @@ class PluginManagerTest extends TestCase {
         $this->assertEquals(PluginManager::PM_ERROR_NO_ERROR, $pm->error);
         
         $pc = $pm->getPluginClasses();
-        $this->assertCount(0, $pc);
+        $this->assertCount($numInitialPluginClasses, $pc);
     }
     
     public function testLoadDirs()
@@ -66,11 +68,13 @@ class PluginManagerTest extends TestCase {
         $hm = new HookManager();
         $pm = new PluginManager($sm, $hm, ['./test-plugins/basic']);
         
+        $numInitialPluginClasses = count($pm->getPluginClasses());
+        
         $result = $pm->loadPluginDir('./test-plugins/basic');
         $this->assertTrue($result);
         $pc = $pm->getPluginClasses();
-        $this->assertCount(1, $pc);
-        $this->assertEquals('BasicPlugin', $pc[0]);
+        $this->assertCount($numInitialPluginClasses + 1, $pc);
+        $this->assertContains('BasicPlugin', $pc);
         
         
         $result2 = $pm->loadPluginDir('./test-plugins/basic2', 'BadClass');
@@ -79,8 +83,8 @@ class PluginManagerTest extends TestCase {
         $result3 = $pm->loadPluginDir('./test-plugins/basic2', 'BasicPlugin2');
         $this->assertTrue($result3);
         $pc2 = $pm->getPluginClasses();
-        $this->assertCount(2, $pc2);
-        $this->assertEquals('BasicPlugin2', $pc2[1]);
+        $this->assertCount($numInitialPluginClasses + 2, $pc2);
+        $this->assertContains('BasicPlugin2', $pc2);
     }
     
     public function testActivate()

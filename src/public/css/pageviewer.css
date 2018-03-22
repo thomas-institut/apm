@@ -38,32 +38,22 @@ button {
     height: 60px;
     width: 100%;
     background-color: white;
+    padding-left: 5px;
+    padding-right: 5px;
 }
 
-h2.header {
-    padding-left: 10px;
-    margin: 0;
-}
-#navigation {
-    position: absolute;
-    top: 60px;
-    height: 41px;
-    width: 100%;
-    background-color: #f1f1f1;
-}
-
-.pv-navbar{
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-} 
-
-.pv-navbar button {
+.headerbutton {
     border: none;
     padding: 5px;
-    display: block;
     background-color: transparent;
+    margin-right: 20px;
+}
+
+.headerbuttonright {
+    border: none;
+    padding: 5px;
+    background-color: transparent;
+    margin-left: 20px;
 }
 
 .textonly{
@@ -83,24 +73,49 @@ h2.header {
     box-sizing: border-box;
 }
 
-#left-component{
+#osd-pane{
     background-color: white;
     border: 1px solid silver;
-    margin-right: 5px;
-    right: 50%;
     box-sizing: border-box;
+    right: 50%;
 }
 
-#right-component {
+#editor-pane {
     border: 1px solid silver;
     background-color: white;
     box-sizing: border-box;
-    width: 50%;
 }
 
 #divider{
+    
+}
+
+.vert-left {
+    margin-right: 5px;
+    right: 50%;
+}
+
+.vert-right {
+    width: 50%;
+}
+
+.vert-divider {
     right:50%;
     width: 5px;
+}
+
+.horiz-top {
+    margin-bottom: 5px;
+    bottom: 50%;
+}
+
+.horiz-bottom {
+     height: 50%;
+}
+
+.horiz-divider {
+    bottom:50%;
+    height: 5px;
 }
 
 table.textlines {
@@ -121,10 +136,10 @@ td.linenumber {
 .tooltip-notes > blockquote > footer {
     margin-top: 0px;
 }
-button.headerbutton{
+/*button.headerbutton{
     margin-left: 10px; 
     margin-right: 10px;
-}
+}*/
 
 button.disablebutton{
     color: silver;
@@ -132,16 +147,6 @@ button.disablebutton{
 
 .popover {
     max-width: 800px;
-}
-
-.notranscription {
-    font-style: italic;
-    font-size: 2em;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translateX(-50%) translateY(-50%);
-    
 }
 
 div.textcol{

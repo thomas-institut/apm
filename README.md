@@ -2,7 +2,7 @@
 
 This is the web app running on http://averroes.uni-koeln.de/apm
 
-It requires PHP 7.0 and a running MySQL Server 5.7 configured with a database 
+It requires PHP 7.2 and a running MySQL Server 5.7 configured with a database 
 and a user with access to that database.
 
 ## Development
@@ -10,9 +10,9 @@ and a user with access to that database.
 Development requires:
 * git
 * MySQL 5.7
-* PHP 7.0
+* PHP 7.2
 * PHP Composer
-* PHPUnit 6.4+
+* PHPUnit 7.0+
 * npm 3.5+ 
 * jasmine 2.6.0+
 * eslint 4.4.1+
@@ -36,11 +36,11 @@ phpunit .
 ```
 
 To run the app in development:
-* Create configuration file in ``src/public`` 
+* Create a configuration file in ``src/public`` 
 (see ```src/public/config.sample.php```).
 * Create the database structure
 with the SQL script ```src/db/dbcreation.sql```. 
-* Run the PHP7 webserver with root in ```src```  Run:
+* Run the PHP7.2 webserver with root in ```src```  Run:
 ```bash
 ./runphpwebserver
 ```

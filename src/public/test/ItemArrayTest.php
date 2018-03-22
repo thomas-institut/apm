@@ -54,7 +54,7 @@ class ItemArrayTest extends TestCase
         $ia = [];
         
         for ($i = 0; $i < 10; $i++) {
-            $item = new TxText\Text($i+100, $i+1, "Text" + $i);
+            $item = new TxText\Text($i+100, $i+1, "Text" . $i);
             ItemArray::addItem($ia, $item);
             $this->assertSame($item, $ia[$i]);
         }
@@ -65,7 +65,7 @@ class ItemArrayTest extends TestCase
     {
         $ia = [];
         for ($i = 0; $i < 10; $i++) {
-            $item = new TxText\Text($i+100, -1, "Text" + $i);
+            $item = new TxText\Text($i+100, -1, "Text" . $i);
             ItemArray::addItem($ia, $item);
             $this->assertSame($item, $ia[$i]);
             
@@ -77,7 +77,7 @@ class ItemArrayTest extends TestCase
     {
         $line = new ColumnElement\Line();
         for ($i = 0; $i < 10; $i++) {
-            $item = new TxText\Text($i+100, -1, "Text" + $i);
+            $item = new TxText\Text($i+100, -1, "Text" . $i);
             ItemArray::addItem($line->items, $item);
             $this->assertSame($item, $line->items[$i]);
         }
@@ -92,7 +92,7 @@ class ItemArrayTest extends TestCase
        $ia = [];
         
         for ($i = 0; $i < 10; $i++) {
-            $item = new TxText\Text($i+100, $i+1000, "Text" + $i + '-');
+            $item = new TxText\Text($i+100, $i+1000, "Text" . $i . '-');
             ItemArray::addItem($ia, $item, true);
             $this->assertSame($item, $ia[$i]);
         }
@@ -180,7 +180,7 @@ class ItemArrayTest extends TestCase
        $ia=[];
         
         for ($i = 0; $i < 10; $i++) {
-            $item = new TxText\Text($i+100, $i+1000, "Text" + $i + '-');
+            $item = new TxText\Text($i+100, $i+1000, "Text" . $i . '-');
             ItemArray::addItem($ia, $item, true);
             $this->assertSame($item, $ia[$i]);
         }

@@ -102,7 +102,7 @@ class CollatexRunner {
     
     public function rawRun(string $rawJsonInput) {
         
-        $start = microtime();
+        $start = microtime(true);
         $this->reset();
         
         if (!$this->runningEnvironmentOk()) {
@@ -111,12 +111,19 @@ class CollatexRunner {
         
         $tmpInputFileName = tempnam($this->tempFolder, 'collatex-input-');
         if ($tmpInputFileName === false) {
+            // Cannot reproduce this condition in testing
+            // @codeCoverageIgnoreStart
             $this->error = self::CR_CANNOT_CREATE_INPUT_TEMP_FILE;
             return false;
+            // @codeCoverageIgnoreEnd
         }
         $handle = fopen($tmpInputFileName, "w");
         if ($handle === false) {
-            $this->error = self::CR_CANNOT_OPEN_INPUT_TEMP_FILE;
+            // Cannot reproduce this condition in testing
+            // @codeCoverageIgnoreStart
+            $this->error = self::CR_CANNOT_OPEN_INPUT_TEMP_FILE;  
+            return false;
+            // @codeCoverageIgnoreEnd
         }
         
         fwrite($handle, $rawJsonInput);
@@ -133,8 +140,11 @@ class CollatexRunner {
         }
         
         if (count($returnArray) === 0) {
+            // Cannot reproduce this condition in testing
+            // @codeCoverageIgnoreStart
             $this->error = self::CR_COLLATEX_RETURNED_NO_OUTPUT;
             return false;
+            // @codeCoverageIgnoreEnd
         }
         $output = $returnArray[0];
         
@@ -143,7 +153,7 @@ class CollatexRunner {
         }
         
         unlink($tmpInputFileName);
-        $end = microtime();
+        $end = microtime(true);
         $this->runTime = $end - $start;
         return $output;
     }
@@ -160,7 +170,7 @@ class CollatexRunner {
             return false;
         }
         
-        $output = json_decode($this->rawOutput);
+        $output = json_decode($this->rawOutput, true);
         if ($output === null) {
             $this->error = self::CR_COLLATEX_DID_NOT_RETURN_JSON;
             return false;

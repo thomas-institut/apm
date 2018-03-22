@@ -19,3 +19,5 @@ src/public/config.php
 /src/public/collatex/tmp/
 /src/public/test/tmp/
 /src/docs/
+/npm-debug.log
+

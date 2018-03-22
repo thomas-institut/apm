@@ -1161,41 +1161,42 @@ class TranscriptionEditor
       //console.log("Selection: @" + range.index + ", l=" + range.length)
       const hasFormat = TranscriptionEditor.selectionHasFormat(quillObject, range)
       //console.log("Has format: " + hasFormat)
+      let toolbarSelector = '#toolbar-' + id
       if (range.length === 0) {
-        $('.selFmtBtn').prop('disabled', true)
-        $('.imgFmtBtn').prop('disabled', false)
-        $('.chunkButton').prop('disabled', false)
-        $('.lineGapButton').prop('disabled', false)
+        $(toolbarSelector + ' .selFmtBtn').prop('disabled', true)
+        $(toolbarSelector + ' .imgFmtBtn').prop('disabled', false)
+        $(toolbarSelector + ' .chunkButton').prop('disabled', false)
+        $(toolbarSelector + ' .lineGapButton').prop('disabled', false)
         $('#note-button-' + id).prop('disabled', false)
         thisObject.setDisableLangButtons(true)
         $('#edit-button-' + id).prop('disabled', true)
         if (TranscriptionEditor.rangeIsInMidItem(quillObject, range)) {
           $('#note-button-' + id).prop('disabled', true)
           $('#edit-button-' + id).prop('disabled', false)
-          $('.imgFmtBtn').prop('disabled', true)
+          $(toolbarSelector + ' .imgFmtBtn').prop('disabled', true)
           return false
         }
         if (!TranscriptionEditor.indexIsInNormalLine(quillObject, range.index)) {
-            $('.chunkButton').prop('disabled', true)
-            $('.lineGapButton').prop('disabled', true)
+            $(toolbarSelector + ' .chunkButton').prop('disabled', true)
+            $(toolbarSelector + ' .lineGapButton').prop('disabled', true)
         }
         return false
       }
       // Selection's length >= 1
-      $('.imgFmtBtn').prop('disabled', true)
+      $(toolbarSelector + ' .imgFmtBtn').prop('disabled', true)
       $('#note-button-' + id).prop('disabled', true)
       
       const text = quillObject.getText(range)
       if (text.search('\n') !== -1) {
         // Selection includes new lines
-        $('.selFmtBtn').prop('disabled', true)
+        $(toolbarSelector + ' .selFmtBtn').prop('disabled', true)
         thisObject.setDisableLangButtons(false)
         return false
       }
       // Selection does not include new lines
       thisObject.setDisableLangButtons(false)
       if (hasFormat) {
-        $('.selFmtBtn').prop('disabled', true)
+        $(toolbarSelector + ' .selFmtBtn').prop('disabled', true)
         $('#clear-button-' + id).prop('disabled', false)
         if (TranscriptionEditor.rangeIsInMidItem(quillObject, range)) {
           $('#edit-button-' + id).prop('disabled', false)
@@ -1204,7 +1205,7 @@ class TranscriptionEditor
         }
         $('#edit-button-' + id).prop('disabled', true)
       } else {
-        $('.selFmtBtn').prop('disabled', false)
+        $(toolbarSelector + ' .selFmtBtn').prop('disabled', false)
         $('#edit-button-' + id).prop('disabled', true)
         $('#clear-button-' + id).prop('disabled', true)
       }

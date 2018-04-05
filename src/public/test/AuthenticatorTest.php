@@ -8,7 +8,7 @@
 
 namespace AverroesProject;
 require "../vendor/autoload.php";
-require_once 'SiteTestEnvironment.php';
+require_once 'SiteMockup/SiteTestEnvironment.php';
 
 use PHPUnit\Framework\TestCase;
 use Monolog\Logger;

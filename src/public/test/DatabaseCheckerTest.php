@@ -9,7 +9,7 @@
 namespace AverroesProject\Data;
 
 require "../vendor/autoload.php";
-require 'testdbconfig.php';
+require 'SiteMockup/testdbconfig.php';
 
 use PHPUnit\Framework\TestCase;
 use \PDO;

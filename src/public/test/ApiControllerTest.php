@@ -20,7 +20,7 @@
  */
 namespace AverroesProject;
 require "../vendor/autoload.php";
-require_once 'DatabaseTestEnvironment.php';
+require_once 'SiteMockup/DatabaseTestEnvironment.php';
 
 use PHPUnit\Framework\TestCase;
 use Monolog\Logger;

@@ -24,6 +24,10 @@ class PageViewer {
   
   constructor (options){
     this.options = options
+    this.cookieName = 'apm-pv-' + this.options.userId + '-' + this.options.pageSystemId
+    
+    
+   
     let pathFor = options.urlGenerator
     let osdOptions = {
       id: "osd-pane",
@@ -45,15 +49,13 @@ class PageViewer {
     })
 
     $('div.split-pane').splitPane()
-    $('div.split-pane').on('dividerdragend', function (e){
-      for (const te of TranscriptionEditor.editors) {
-        // TODO: optimize, renumber lines only for active tab
-        // if the tab's text is LTR 
-        //console.log('Number lines on dividerdragend')
-        te.resizeContainer()
-        te.numberLines()
-      }
-    })
+    this.getViewerLayoutFromCookie()
+    if (this.layout.vertical) {
+      this.doVerticalLayout(this.layout.percentage)
+    } else {
+      this.doHorizontalLayout(this.layout.percentage)
+    }
+    $('div.split-pane').on('dividerdragend', this.genOnDividerdragend())
     
     let apiAddColumnUrl = pathFor.apiAddColumn(this.options.docId, this.options.pageNumber)
     $('#realAddColumnButton').click(function () {
@@ -78,6 +80,40 @@ class PageViewer {
     // Load columns
     $.getJSON(pathFor.apiGetNumColumns(this.options.docId, this.options.pageNumber), 
       this.genOnLoadNumColumns())
+  }
+  
+  genOnDividerdragend() {
+    let thisObject = this
+    return function (e, data){
+      for (const te of TranscriptionEditor.editors) {
+        // TODO: optimize, renumber lines only for active tab
+        // if the tab's text is LTR 
+        //console.log('Number lines on dividerdragend')
+        te.resizeContainer()
+        te.numberLines()
+        let perc = 100*data.lastComponentSize / (data.lastComponentSize + data.firstComponentSize + 5)
+        thisObject.layout.percentage = perc
+        thisObject.storeViewerLayoutInCookie(thisObject.layout)
+      }
+    }
+  }
+  
+  getViewerLayoutFromCookie() {
+    
+    let layout = Cookies.getJSON(this.cookieName)
+    if (layout === undefined) {
+      console.log('No cookie present, using defaults')
+      layout = { 
+        vertical: true,
+        percentage: 50
+      }
+      this.storeViewerLayoutInCookie(layout)
+    }
+    this.layout = layout
+  }
+  
+  storeViewerLayoutInCookie(layout) {
+    Cookies.set(this.cookieName, layout)
   }
   
   genOnLoadNumColumns(){
@@ -196,38 +232,80 @@ class PageViewer {
     }
   }
   
-  genOnVerticalButton()
-  {
-    let thisObject = this
-    
-    return function () {
-      $('#osd-pane').removeClass('horiz-top')
+  doVerticalLayout(perc) {
+    $('#osd-pane').removeClass('horiz-top')
       $('#osd-pane').addClass('vert-left')
       $('#osd-pane').css('height', "100%")
       $('#osd-pane').css('width', "")
-      $('#osd-pane').css('right', "50%")
+      $('#osd-pane').css('right', perc + "%")
       $('#osd-pane').css('bottom', "")
 
       $('#editor-pane').removeClass('horiz-bottom')
       $('#editor-pane').addClass('vert-right')
       $('#editor-pane').css('height', "100%")
-      $('#editor-pane').css('width', "")
+      $('#editor-pane').css('width', perc + "%")
       
       $('#divider').removeClass('horiz-divider')
       $('#divider').addClass('vert-divider')
       $('#divider').css('bottom', "")
-      $('#divider').css('right', "50%")
+      $('#divider').css('right', perc + "%")
       
       $('#full-pane').removeClass('horizontal-percent')
       $('#full-pane').addClass('vertical-percent')
       
-      for (const te of TranscriptionEditor.editors) {
-        te.resizeContainer()
-        te.numberLines()
-      }
+      this.layout.vertical = true
+      this.layout.percentage = perc
+      this.storeViewerLayoutInCookie(this.layout)
       
-    }
+      if (TranscriptionEditor.editors) {
+        for (const te of TranscriptionEditor.editors) {
+          te.resizeContainer()
+          te.numberLines()
+        }
+      }
+  }
+  
+  doHorizontalLayout(perc) {
+    $('#osd-pane').removeClass('vert-left')
+      $('#osd-pane').addClass('horiz-top')
+      $('#osd-pane').css('width', "100%")
+      $('#osd-pane').css('height', "")
+      $('#osd-pane').css('bottom', perc + "%")
+      $('#osd-pane').css('right', "")
+      
+      $('#editor-pane').removeClass('vert-right')
+      $('#editor-pane').addClass('horiz-bottom')
+      $('#editor-pane').css('width', "100%")
+      $('#editor-pane').css('height', perc + "%")
+      
+      $('#divider').removeClass('vert-divider')
+      $('#divider').addClass('horiz-divider')
+      $('#divider').css('right', "")
+      $('#divider').css('bottom', perc + "%")
+      
+      $('#full-pane').removeClass('vertical-percent')
+      $('#full-pane').addClass('horizontal-percent')
+      
+      this.layout.vertical = false
+      this.layout.percentage = perc
+      this.storeViewerLayoutInCookie(this.layout)
+      
+      if (TranscriptionEditor.editors) {
+        for (const te of TranscriptionEditor.editors) {
+          te.resizeContainer()
+          te.numberLines()
+        }
+      }
+  }
+  
+  
+  genOnVerticalButton()
+  {
+    let thisObject = this
     
+    return function () {
+      thisObject.doVerticalLayout(50)
+    }
   }
   
   
@@ -236,33 +314,8 @@ class PageViewer {
     let thisObject = this
     
     return function () {
-      $('#osd-pane').removeClass('vert-left')
-      $('#osd-pane').addClass('horiz-top')
-      $('#osd-pane').css('width', "100%")
-      $('#osd-pane').css('height', "")
-      $('#osd-pane').css('bottom', "50%")
-      $('#osd-pane').css('right', "")
-      
-      $('#editor-pane').removeClass('vert-right')
-      $('#editor-pane').addClass('horiz-bottom')
-      $('#editor-pane').css('width', "100%")
-      $('#editor-pane').css('height', "")
-      
-      $('#divider').removeClass('vert-divider')
-      $('#divider').addClass('horiz-divider')
-      $('#divider').css('right', "")
-      $('#divider').css('bottom', "50%")
-      
-      $('#full-pane').removeClass('vertical-percent')
-      $('#full-pane').addClass('horizontal-percent')
-      
-      for (const te of TranscriptionEditor.editors) {
-        te.resizeContainer()
-        te.numberLines()
-      }
-      
+      thisObject.doHorizontalLayout(50)
     }
-    
   }
   
   

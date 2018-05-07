@@ -24,21 +24,34 @@ class PageViewer {
   
   constructor (options){
     this.options = options
-    this.cookieName = 'apm-pv-' + this.options.userId + '-' + this.options.pageSystemId
+    this.cookieName = 'apm-pv2-' + this.options.userId + '-' + this.options.pageSystemId
     
-    
-   
+    this.getViewerLayoutFromCookie()
     let pathFor = options.urlGenerator
+    
+    if (this.layout.vertical) {
+      this.doVerticalLayout(this.layout.percentage)
+    } else {
+      this.doHorizontalLayout(this.layout.percentage)
+    }
+    $('div.split-pane').splitPane()
+    
     let osdOptions = {
       id: "osd-pane",
       prefixUrl: pathFor.openSeaDragonImagePrefix(),
-      maxZoomPixelRatio: 3,
-      showRotationControl: true
-    }
+      minZoomLevel: 0.4,
+      maxZoomLevel:5,
+      showRotationControl: true,
+      defaultZoomLevel: this.layout.zoom,
+      preserveImageSizeOnResize: true
+   }
     osdOptions.tileSources = options.osdConfig.tileSources
     
     this.osdViewer = OpenSeadragon(osdOptions)
-        
+    
+    //console.log('OSD constructed')
+    //console.log(this.osdViewer)
+    
     $('#pagenumber').popover({
       title:'Page List', 
       content: options.pagePopoverContent, 
@@ -48,14 +61,21 @@ class PageViewer {
       trigger: 'click'
     })
 
-    $('div.split-pane').splitPane()
-    this.getViewerLayoutFromCookie()
-    if (this.layout.vertical) {
-      this.doVerticalLayout(this.layout.percentage)
-    } else {
-      this.doHorizontalLayout(this.layout.percentage)
-    }
+    let osd = this.osdViewer
+    
     $('div.split-pane').on('dividerdragend', this.genOnDividerdragend())
+    this.osdViewer.addHandler('zoom', this.genOnOsdZoom())
+//    this.osdViewer.addHandler('reset-size', function(d) {
+//      console.log('OSD reset image rize to ' + d.contentSize.x + ' x ' + d.contentSize.y)
+//    })
+    
+//    this.osdViewer.addHandler('resize', function(d) {
+//      console.log('OSD resize to ' +  d.newContainerSize.x + ' x ' + d.newContainerSize.y)
+//    })
+    
+//    this.osdViewer.addHandler('pan', function (s) {
+//      console.log('OSD pan to ( ' + s.center.x + ', ' + s.center.y + ' )')
+//    })
     
     let apiAddColumnUrl = pathFor.apiAddColumn(this.options.docId, this.options.pageNumber)
     $('#realAddColumnButton').click(function () {
@@ -82,6 +102,15 @@ class PageViewer {
       this.genOnLoadNumColumns())
   }
   
+  genOnOsdZoom() {
+    let thisObject = this
+    return function(e) {
+      //console.log('OSD zoom to ' + e.zoom)
+      thisObject.layout.zoom = e.zoom
+      thisObject.storeViewerLayoutInCookie(thisObject.layout)
+    }
+  }
+  
   genOnDividerdragend() {
     let thisObject = this
     return function (e, data){
@@ -102,12 +131,16 @@ class PageViewer {
     
     let layout = Cookies.getJSON(this.cookieName)
     if (layout === undefined) {
-      console.log('No cookie present, using defaults')
+      console.log('No layout cookie present, using defaults')
       layout = { 
         vertical: true,
-        percentage: 50
+        percentage: 50,
+        zoom: 1
       }
       this.storeViewerLayoutInCookie(layout)
+    }
+    if (layout.zoom === undefined) {
+      layout.zoom = 1
     }
     this.layout = layout
   }

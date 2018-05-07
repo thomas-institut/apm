@@ -36,7 +36,7 @@ use AverroesProject\Profiler\ApmProfiler;
  */
 class SiteCollationTable extends SiteController
 {
-    public function collationTablePage(Request $request, Response $response, $next) 
+    public function collationTablePage(Request $request, Response $response, $args) 
     {
         $db = $this->db;
         $workId = $request->getAttribute('work');
@@ -45,6 +45,34 @@ class SiteCollationTable extends SiteController
         $profiler = new ApmProfiler("CollationTable-$workId-$chunkNumber-$language", $db);
         $workInfo = $db->getWorkInfo($workId);
         $witnessList = $db->getDocsForChunk($workId, $chunkNumber);
+        
+        $docsToInclude = [];
+        $partialCollation = false;
+        if (isset($args['docs'])) {
+            $docsInArgs = explode('/', $args['docs']);
+            foreach ($docsInArgs as $docId) {
+                $docId = intval($docId);
+                if ($docId !== 0) {
+                    $docsToInclude[] = $docId;
+                }
+            }
+            $partialCollation = true;
+            $this->ci->logger->debug('Partial collation', $docsToInclude);
+            if (count($docsToInclude) < 2) {
+                $msg = 'Error in partial collation table request: need at least 2 witnesses to collate, got only ' . count($docsToInclude) . '.';
+                return $this->ci->view->render($response, 'chunk.collation.error.twig', [
+                    'userinfo' => $this->ci->userInfo, 
+                    'copyright' => $this->ci->copyrightNotice,
+                    'baseurl' => $this->ci->settings['baseurl'],
+                    'work' => $workId,
+                    'chunk' => $chunkNumber,
+                    'langName' => $language,
+                    'isPartial' => $partialCollation,
+                    'message' => $msg
+                ]);
+            }
+            
+        }
         
         $languages = $this->ci->settings['languages'];
         $langInfo = null;
@@ -63,6 +91,7 @@ class SiteCollationTable extends SiteController
                 'work' => $workId,
                 'chunk' => $chunkNumber,
                 'lang' => $language,
+                'isPartial' => $partialCollation,
                 'message' => $msg
             ]);
         }
@@ -70,6 +99,11 @@ class SiteCollationTable extends SiteController
         $docs = [];
         $witnessNumber = 0;
         foreach ($witnessList as $witness) {
+            if ($partialCollation) {
+                if (!in_array(intval($witness['id']), $docsToInclude)) {
+                    continue;
+                }
+            }
             $doc = $witness;
             $docInfo = $db->getDocById($witness['id']);
             if ($docInfo['lang'] !== $language) {
@@ -106,7 +140,10 @@ class SiteCollationTable extends SiteController
         }
         
         if (count($docs) < 2) {
-            $msg = count($docs) . ' witness(es) found in ' . $langInfo['name'] . ', need at least 2 to collate.';
+            $msg = count($docs) . ' witness(es) found for ' . $langInfo['name'] . ', need at least 2 to collate.'; 
+            if ($partialCollation) {
+                $msg .= '<br/> It could be that the partial collation table request has wrong document ids.';
+            }
             return $this->ci->view->render($response, 'chunk.collation.error.twig', [
                 'userinfo' => $this->ci->userInfo, 
                 'copyright' => $this->ci->copyrightNotice,
@@ -115,6 +152,7 @@ class SiteCollationTable extends SiteController
                 'chunk' => $chunkNumber,
                 'lang' => $language,
                 'langName' => $langInfo['name'],
+                'isPartial' => $partialCollation,
                 'message' => $msg
             ]);
         }
@@ -145,6 +183,7 @@ class SiteCollationTable extends SiteController
                 'chunk' => $chunkNumber,
                 'lang' => $language,
                 'langName' => $langInfo['name'],
+                'isPartial' => $partialCollation,
                 'message' => $msg
             ]);
         }
@@ -158,10 +197,12 @@ class SiteCollationTable extends SiteController
                 'chunk' => $chunkNumber,
                 'lang' => $language,
                 'langName' => $langInfo['name'],
+                'isPartial' => $partialCollation,
                 'rtl' => $langInfo['rtl'],
                 'work_info' => $workInfo,
                 'docs' => $docs,
                 'num_docs' => count($docs),
+                'total_num_docs' => count($witnessList),
                 'collatexOutput' => $output
             ]);
         

@@ -226,7 +226,7 @@ $app->get('/chunk/{work}/{chunk}','\AverroesProject\Site\SiteChunks:singleChunkP
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
 // COLLATION TABLE
-$app->get('/chunk/{work}/{chunk}/collation/{lang}','\AverroesProject\Site\SiteCollationTable:collationTablePage')
+$app->get('/chunk/{work}/{chunk}/collation/{lang}[/{docs:.*}]','\AverroesProject\Site\SiteCollationTable:collationTablePage')
         ->setName('chunk.collationtable')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 

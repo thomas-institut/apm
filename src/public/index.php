@@ -188,79 +188,82 @@ $app->any('/logout', '\AverroesProject\Auth\Authenticator:logout')
 
 
 // HOME
-$app->get('/','\AverroesProject\Site\SiteController:homePage')
+$app->get('/','\AverroesProject\Site\SiteHomePage:homePage')
         ->setName('home')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
 // DASHBOARD
-$app->get('/dashboard','\AverroesProject\Site\SiteController:dashboardPage')
+$app->get('/dashboard','\AverroesProject\Site\SiteDashboard:dashboardPage')
         ->setName('dashboard')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
 
-// QUICK COLLATION
-$app->get('/quickcollation', '\AverroesProject\Site\SiteController:quickCollationPage')
-        ->setName('quickcollation')
-        ->add('\AverroesProject\Auth\Authenticator:authenticate');
+
 
 // USER.PROFILE
 $app->get('/user/{username}', 
-        '\AverroesProject\Site\SiteController:userProfilePage')
+        '\AverroesProject\Site\SiteUserManager:userProfilePage')
         ->setName('user.profile')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
 // USER.SETTINGS
 $app->get('/user/{username}/settings', 
-        '\AverroesProject\Site\SiteController:userSettingsPage')
+        '\AverroesProject\Site\SiteUserManager:userSettingsPage')
         ->setName('user.settings')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
-$app->get('/users', '\AverroesProject\Site\SiteController:userManagerPage')
+$app->get('/users', '\AverroesProject\Site\SiteUserManager:userManagerPage')
         ->setName('user.manager')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
 // CHUNKS
-$app->get('/chunks','\AverroesProject\Site\SiteController:chunksPage')
+$app->get('/chunks','\AverroesProject\Site\SiteChunks:chunksPage')
         ->setName('chunks')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
-$app->get('/chunk/{work}/{chunk}','\AverroesProject\Site\SiteController:chunkPage')
+$app->get('/chunk/{work}/{chunk}','\AverroesProject\Site\SiteChunks:singleChunkPage')
         ->setName('chunk')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
-$app->get('/chunk/{work}/{chunk}/collation/{lang}','\AverroesProject\Site\SiteController:collationTablePage')
+// COLLATION TABLE
+$app->get('/chunk/{work}/{chunk}/collation/{lang}','\AverroesProject\Site\SiteCollationTable:collationTablePage')
         ->setName('chunk.collationtable')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
+// Quick Collation
+$app->get('/quickcollation', '\AverroesProject\Site\SiteCollationTable:quickCollationPage')
+        ->setName('quickcollation')
+        ->add('\AverroesProject\Auth\Authenticator:authenticate');
+
 // DOCS
-$app->get('/documents','\AverroesProject\Site\SiteController:documentsPage')
+$app->get('/documents','\AverroesProject\Site\SiteDocuments:documentsPage')
         ->setName('docs')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
-$app->get('/doc/{id}/details','\AverroesProject\Site\SiteController:showDocPage')
+$app->get('/doc/{id}/details','\AverroesProject\Site\SiteDocuments:showDocPage')
         ->setName('doc.showdoc')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
-$app->get('/doc/{id}/definepages','\AverroesProject\Site\SiteController:defineDocPages')
+$app->get('/doc/{id}/definepages','\AverroesProject\Site\SiteDocuments:defineDocPages')
         ->setName('doc.definedocpages')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
-$app->get('/doc/{id}/edit','\AverroesProject\Site\SiteController:editDocPage')
+$app->get('/doc/{id}/edit','\AverroesProject\Site\SiteDocuments:editDocPage')
         ->setName('doc.editdoc')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
-$app->get('/doc/new','\AverroesProject\Site\SiteController:newDocPage')
+$app->get('/doc/new','\AverroesProject\Site\SiteDocuments:newDocPage')
         ->setName('doc.new')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
 // PAGEVIEWER
 $app->get('/doc/{doc}/realpage/{page}/view', 
-        '\AverroesProject\Site\SiteController:pageViewerPageByDocPage')
+        '\AverroesProject\Site\SitePageViewer:pageViewerPageByDocPage')
         ->setName('pageviewer.docpage')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
 $app->get('/doc/{doc}/page/{seq}/view', 
-        '\AverroesProject\Site\SiteController:pageViewerPageByDocSeq')
+        '\AverroesProject\Site\SitePageViewer:pageViewerPageByDocSeq')
         ->setName('pageviewer.docseq')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 

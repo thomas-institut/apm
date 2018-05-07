@@ -14,7 +14,6 @@ use PHPUnit\Framework\TestCase;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 use GuzzleHttp\Psr7\ServerRequest;
-use AverroesProject\Auth\Authenticator;
 
 
 /**
@@ -24,11 +23,6 @@ use AverroesProject\Auth\Authenticator;
  */
 class SiteControllerTest extends TestCase {
      static $ci;
-    /**
-     *
-     * @var Site\SiteController
-     */
-    static $siteController;
     
     public static function setUpBeforeClass()
     {
@@ -38,7 +32,6 @@ class SiteControllerTest extends TestCase {
         $logger->pushHandler($logStream);
 
         self::$ci = SiteTestEnvironment::getContainer($logger);
-        self::$siteController = new Site\SiteController(self::$ci);
     }
     
     public function testDocumentsPage()
@@ -48,7 +41,9 @@ class SiteControllerTest extends TestCase {
         $inputResp = new \Slim\Http\Response();
         self::$ci['userInfo'] = ['id' => 100];
         
-        $response = self::$siteController->documentsPage($request, $inputResp, 
+        $sc = new Site\SiteDocuments(self::$ci);
+        
+        $response = $sc->documentsPage($request, $inputResp, 
                 NULL);
         
         $this->assertEquals(200, $response->getStatusCode());
@@ -61,7 +56,8 @@ class SiteControllerTest extends TestCase {
         $inputResp = new \Slim\Http\Response();
         self::$ci['userInfo'] = ['id' => 100];
         
-        $response = self::$siteController->homePage($request, $inputResp, 
+        $sc = new Site\SiteHomePage(self::$ci);
+        $response = $sc->homePage($request, $inputResp, 
                 NULL);
         
         $this->assertEquals(302, $response->getStatusCode());
@@ -73,8 +69,10 @@ class SiteControllerTest extends TestCase {
         $request = new ServerRequest('GET', '');
         $inputResp = new \Slim\Http\Response();
         self::$ci['userInfo'] = ['id' => 100, 'username' => 'testUser'];
+         
+        $sc = new Site\SiteDashboard(self::$ci);
         
-        $response = self::$siteController->dashboardPage($request, $inputResp, 
+        $response =$sc->dashboardPage($request, $inputResp, 
                 NULL);
         
         $this->assertEquals(200, $response->getStatusCode());
@@ -86,8 +84,9 @@ class SiteControllerTest extends TestCase {
         $request = new ServerRequest('GET', '');
         $inputResp = new \Slim\Http\Response();
         self::$ci['userInfo'] = ['id' => 100];
+        $sc = new Site\SiteChunks(self::$ci);
         
-        $response = self::$siteController->chunksPage($request, $inputResp, 
+        $response = $sc->chunksPage($request, $inputResp, 
                 NULL);
         
         $this->assertEquals(200, $response->getStatusCode());
@@ -100,7 +99,9 @@ class SiteControllerTest extends TestCase {
         $inputResp = new \Slim\Http\Response();
         self::$ci['userInfo'] = ['id' => 100];
         
-        $response = self::$siteController->userManagerPage($request, $inputResp, 
+        $sc = new Site\SiteUserManager(self::$ci);
+        
+        $response =$sc->userManagerPage($request, $inputResp, 
                 NULL);
         
         $this->assertEquals(200, $response->getStatusCode());

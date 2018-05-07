@@ -31,7 +31,7 @@ class UserManagerPage {
       $('#password2').val('')
     })
 
-    $("#usertable").DataTable({ 'paging': false, 'searching' : false });
+    $("#usertable").DataTable({ 'paging': false, 'searching' : true });
     $('#theAddUserForm').validator().on('submit', this.genFormSubmitHandler())
   }
   

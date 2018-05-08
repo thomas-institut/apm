@@ -78,6 +78,16 @@ class ApmUrlGenerator {
   apiQuickCollation() {
     return this.base + '/api/collation/quick'
   }
+  
+  siteCollationTable(work, chunkno, lang, ids=[]) {
+    
+    let extra = ''
+    if (ids.length > 0) {
+      extra += '/'
+      extra += ids.join('/')
+    }
+    return this.base +  '/chunk/' + work + '/' + chunkno + '/collation/' + lang + extra
+  }
 }
 
 

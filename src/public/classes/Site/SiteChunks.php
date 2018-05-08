@@ -61,7 +61,8 @@ class SiteChunks extends SiteController
             $doc = $witness;
             $doc['number'] = ++$witnessNumber;
             $doc['errors'] = [];
-            $doc['warning'] = '';
+            $doc['warnings'] = [];
+            $doc['goodWitness'] = false;
             $locations = $db->getChunkLocationsForDoc($witness['id'], $workId, $chunkNumber);
             if (count($locations)===0) {
                 $doc['errors'][] =  'Error in chunk info, did somebody just erased the chunks in this document? Please refresh';
@@ -90,6 +91,9 @@ class SiteChunks extends SiteController
             $profiler->lap('Doc '. $doc['id'] . ' locations');
             $itemStream = $db->getItemStreamBetweenLocations((int) $doc['id'], $locations[0], $locations[1]);
             $doc['plain_text'] = ItemStream::getPlainText($itemStream);
+            if (count($doc['warnings']) === 0 || count($doc['errors']) === 0) {
+                $doc['goodWitness'] = true;
+            }
             $docs[] = $doc;
             $goodWitnessesPerLang[$doc['lang']]['numWitnesses']++;
             $profiler->lap('Doc '. $doc['id'] . ' END');

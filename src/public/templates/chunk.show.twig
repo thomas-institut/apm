@@ -3,11 +3,22 @@
 
 {% block title %}Chunk {{work}}-{{chunk}}{% endblock %}
 {% block extraJS %}
+    <script type="application/javascript" src="{{baseurl}}/js/ApmUrlGenerator.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/ChunkPage.js"></script>
 <script>
 $(document).ready(function() 
 { 
-    $("#theWitnessTable").DataTable({ 'paging': false, 'searching' : false, 'sDom':'t' }); 
+    let cp = new ChunkPage(
+            { 
+                chunkno: {{chunk}},
+                work: '{{work}}'
+            },
+            JSON.parse('{{docs|json_encode|e('js')}}'), 
+            JSON.parse('{{collationLangs|json_encode|e('js')}}'),
+            new ApmUrlGenerator('{{baseurl}}')
+    )
 } 
+        
 );
 </script>
 {% endblock %}
@@ -21,7 +32,7 @@ $(document).ready(function()
 {% if num_docs > 0 %}
     <div class="witnesslist">
 <table id="theWitnessTable">
-    <thead><tr><th>Title</th><th>Type</th><th>Language</th><th>Pages</th><th/></tr></thead>
+    <thead><tr><th>Title</th><th>Type</th><th>Language</th><th>Pages</th><th>Include in Collation</th><th>Show Text</th><th/></tr></thead>
 {% for doc in docs %}
 <tr>
     <td><a href="{{path_for('doc.showdoc', {'id' : doc.id})}}" target="_blank" title="View Document in New Tab">{{doc.title}}</a></td>
@@ -34,10 +45,19 @@ $(document).ready(function()
         {% endif %}
     </td>
     <td>
+        {% if doc.goodWitness %}
+          <input class="includeincollation" id="check-{{doc.id}}" type="checkbox" value="{{doc.id}}-{{doc.lang}}" checked>
+          {% endif %}
+    </td>
+    <td>
     {% if doc.plain_text %}
         <p><a data-toggle="collapse" href="#plaintext-{{doc.id}}-{{work}}-{{chunk}}" aria-expanded="true" aria-controls="plaintext-{{doc.id}}-{{work}}-{{chunk}}">
-                Show/Hide Text</a>
+                Show/Hide</a>
+        </p>
+              
     {% endif %}
+    </td>
+    <td>
     {% if doc.error %}
         <p class="text-danger">{{doc.error}}</p>
     {% endif %}
@@ -45,16 +65,13 @@ $(document).ready(function()
         <p class="text-warning">{{warning}}</p>
     {% endfor %}
     </td>
+    
 </tr>
 {% endfor %}
 </table>
     </div>
 {% if collationLangs|length > 0 %}
-<div class="collationtablelinks">
-    <p>Collation Table(s): 
-        {% for lang in collationLangs %}
-            <a href="{{path_for('chunk.collationtable', {'work': work, 'chunk': chunk, 'lang' : lang.code})}}" target="_blank" title="View {{lang.name}} Collation Table in New Tab"> {{lang.name}}</a>&nbsp;&nbsp;&nbsp;
-        {% endfor %}
+<div id="collationtablelinks">
 </div>
 {% endif %}
 

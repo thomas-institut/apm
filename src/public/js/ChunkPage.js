@@ -87,6 +87,7 @@ class ChunkPage {
              { 
                lang: l,
                name: this.langs[l].name,
+               isPartial: true,
                url:  this.pathFor.siteCollationTable(this.options.work, this.options.chunkno, l, w[l])
              })
         } else {
@@ -94,6 +95,7 @@ class ChunkPage {
              { 
                lang: l,
                name: this.langs[l].name,
+               isPartial: false,
                url:  this.pathFor.siteCollationTable(this.options.work, this.options.chunkno, l)
              })
         }
@@ -106,7 +108,11 @@ class ChunkPage {
       this.ctLinksElement.html(html)
     } else {
       for(const u in urls) {
-        html += '<a href="' + urls[u].url + '" title="Open collation table">' + urls[u].name + '</a>&nbsp;'
+        let title="Open collation table in new tab"
+        if (urls[u].isPartial) {
+          title="Open partial collation table in new tab"
+        }
+        html += '<a href="' + urls[u].url + '" title="' + title + '" target="_blank">' + urls[u].name + '</a>&nbsp;'
       }
       this.ctLinksElement.html(html)
     }

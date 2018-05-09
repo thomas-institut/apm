@@ -98,9 +98,13 @@ class SiteCollationTable extends SiteController
         
         $docs = [];
         $witnessNumber = 0;
+        $totalNumDocs = 0;
         foreach ($witnessList as $witness) {
             if ($partialCollation) {
                 if (!in_array(intval($witness['id']), $docsToInclude)) {
+                    if ($witness['lang'] === $language) {
+                        $totalNumDocs++;
+                    }
                     continue;
                 }
             }
@@ -110,6 +114,7 @@ class SiteCollationTable extends SiteController
                 // not the right language
                 continue;
             }
+            
             $doc['number'] = ++$witnessNumber;
             $doc['errors'] = [];
             $doc['warning'] = '';
@@ -137,6 +142,7 @@ class SiteCollationTable extends SiteController
             //$doc['plain_text'] = ItemStream::getPlainText($doc['itemStream']);
             $doc['tokens'] = \AverroesProject\Collation\Tokenizer::tokenize($doc['items']);
             $docs[] = $doc;
+            $totalNumDocs++;
         }
         
         if (count($docs) < 2) {
@@ -202,7 +208,7 @@ class SiteCollationTable extends SiteController
                 'work_info' => $workInfo,
                 'docs' => $docs,
                 'num_docs' => count($docs),
-                'total_num_docs' => count($witnessList),
+                'total_num_docs' => $totalNumDocs,
                 'collatexOutput' => $output
             ]);
         

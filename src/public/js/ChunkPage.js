@@ -39,7 +39,6 @@ class ChunkPage {
             null, // pages
             { orderable: false }, // include in collation
             { orderable: false }, // show/hide text
-            { orderable: false } // error/warnings
         ]
     })
     
@@ -103,7 +102,7 @@ class ChunkPage {
     }
     let html = 'Collation Tables: '
     if (urls.length === 0 ) {
-      html += '<i>Choose at least 2 witnesses in at least one language to generate collation table(s)</i>'
+      html += '<i>Choose at least 2 witnesses in one language to generate collation table(s)</i>'
       this.ctLinksElement.html(html)
     } else {
       for(const u in urls) {

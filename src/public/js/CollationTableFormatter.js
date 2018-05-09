@@ -216,6 +216,7 @@ class CollationTableFormatter {
     
     let flattenedCollatexOutput = this.flattenCollatexTokens(collatexOutput, collapseSegments)
     let taggedCollatex = this.tagVariants(flattenedCollatexOutput)
+    console.log('Tagged collatex, collapse segments = ' + collapseSegments)
     console.log(taggedCollatex)
     let theRows = taggedCollatex.flattenedTable
     

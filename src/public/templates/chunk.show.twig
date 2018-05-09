@@ -32,7 +32,7 @@ $(document).ready(function()
 {% if num_docs > 0 %}
     <div class="witnesslist">
 <table id="theWitnessTable">
-    <thead><tr><th>Title</th><th>Type</th><th>Language</th><th>Pages</th><th>Include in Collation</th><th>Show Text</th><th/></tr></thead>
+    <thead><tr><th>Title</th><th>Type</th><th>Language</th><th>Pages</th><th>Include in Collation</th><th/></tr></thead>
 {% for doc in docs %}
 <tr>
     <td><a href="{{path_for('doc.showdoc', {'id' : doc.id})}}" target="_blank" title="View Document in New Tab">{{doc.title}}</a></td>
@@ -44,7 +44,7 @@ $(document).ready(function()
             <a href="{{path_for('pageviewer.docseq', {'doc' : doc.id, 'seq' : doc.end.seq})}}" target="_blank" title="View Page in New Tab">{{doc.end.foliation}}</a>
         {% endif %}
     </td>
-    <td>
+    <td style="padding-left: 30px">
         {% if doc.goodWitness %}
           <input class="includeincollation" id="check-{{doc.id}}" type="checkbox" value="{{doc.id}}-{{doc.lang}}" checked>
           {% endif %}
@@ -52,17 +52,14 @@ $(document).ready(function()
     <td>
     {% if doc.plain_text %}
         <p><a data-toggle="collapse" href="#plaintext-{{doc.id}}-{{work}}-{{chunk}}" aria-expanded="true" aria-controls="plaintext-{{doc.id}}-{{work}}-{{chunk}}">
-                Show/Hide</a>
+                Show / Hide Text</a>
         </p>
-              
     {% endif %}
-    </td>
-    <td>
     {% if doc.error %}
         <p class="text-danger">{{doc.error}}</p>
     {% endif %}
     {% for warning in doc.warnings %}
-        <p class="text-warning">{{warning}}</p>
+        <p class="text-warning"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i> {{warning}}</p>
     {% endfor %}
     </td>
     

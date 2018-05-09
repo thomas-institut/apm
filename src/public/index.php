@@ -45,7 +45,7 @@ require 'config.tables.php';
 
 // Application parameters
 $config['app_name'] = 'Averroes Project Manager';
-$config['version'] = '0.12.2 (2018-May-07)';
+$config['version'] = '0.13.0 (2018-May-09)';
 $config['copyright_notice'] = <<<EOD
         2016-18, 
         <a href="http://www.thomasinstitut.uni-koeln.de/">

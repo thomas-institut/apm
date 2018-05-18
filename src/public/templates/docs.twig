@@ -8,11 +8,19 @@
 $(document).ready(function() 
 { 
     $("#theDocTable").DataTable({ 
-        'paging': false, 
-        'searching' : true,
-        'language': {
+        paging: true, 
+        searching : true,
+        language: {
             search: 'Filter:'
-        }
+        },
+        columns: [
+           null,
+           null,
+           null,
+           {searchable: false},
+           {searchable: false},
+           null
+        ]
     }); 
 } 
 );
@@ -23,14 +31,15 @@ $(document).ready(function()
 {% block content %}
 <h1>Documents</h1>
 <table class="doctable" id="theDocTable">
-    <thead><tr><th>Title</th><th>Type</th><th>Language</th><th>Pages with Transcription Data</th><th>Transcribers</th></tr></thead>
+    <thead><tr><th>Title</th><th>Type</th><th>Language</th><th>Pages</th><th>Transcribed</th><th>Transcribers</th></tr></thead>
 {% for doc in docs %}
     <tr>
         
     <td><a href="{{path_for('doc.showdoc', {'id' : doc.docInfo.id})}}" title="Document details">{{doc.docInfo.title}}</a></td>
     <td>{{macros.docTypeName(doc.docInfo.doc_type)}}</td>
     <td>{{macros.langName(doc.docInfo.lang)}}</td>
-    <td>{{doc.numTranscribedPages}} of {{doc.numPages}}</td>
+    <td>{{doc.numPages}}</td>
+    <td>{{doc.numTranscribedPages}}</td>
     <td>
     {% if doc.numTranscribedPages %}
         {% for editor in doc.editors %}

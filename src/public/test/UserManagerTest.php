@@ -54,9 +54,9 @@ class UserManagerTest extends TestCase {
 
             $this->assertTrue($um->setUserRole($theNewId, 'role1'));
             $this->assertTrue($um->setUserRole($theNewId, 'role2'));
-            $this->assertTrue($um->isUserA($theNewId, 'role1'));
-            $this->assertTrue($um->isUserA($theNewId, 'role2'));
-            $this->assertFalse($um->isUserA($theNewId, 'role3'));
+            $this->assertTrue($um->userHasRole($theNewId, 'role1'));
+            $this->assertTrue($um->userHasRole($theNewId, 'role2'));
+            $this->assertFalse($um->userHasRole($theNewId, 'role3'));
             $this->assertTrue($um->setUserRole($theNewId, 'role3'));
             $this->assertTrue($um->revokeUserRole($theNewId, 'role3'));
             
@@ -101,11 +101,11 @@ class UserManagerTest extends TestCase {
                     $testMsg);
             $this->assertFalse($um->isRoot($someUserName), $testMsg);
             $theUserId = $um->getUserIdFromUserName($someUserName);
-            $this->assertTrue($um->isUserA($theUserId, 'role1'), 
+            $this->assertTrue($um->userHasRole($theUserId, 'role1'), 
                     $testMsg);
-            $this->assertTrue($um->isUserA($theUserId, 'role2'), 
+            $this->assertTrue($um->userHasRole($theUserId, 'role2'), 
                     $testMsg);
-            $this->assertFalse($um->isUserA($theUserId, 'role3'), 
+            $this->assertFalse($um->userHasRole($theUserId, 'role3'), 
                     $testMsg);
         }
         return $um;

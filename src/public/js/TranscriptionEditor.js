@@ -888,7 +888,7 @@ class TranscriptionEditor
   
   saveFail(reason) {
     this.saving = false
-    $('#save-button-' + this.id).prop('title', 'Could not save: ' + reason + ' (click to try again)')
+    $('#save-button-' + this.id).prop('title', 'Could not save: ' + reason )
     $('#save-button-' + this.id).html('<span class="fa-stack"><i class="fa fa-save fa-stack-1x"></i><i class="fa fa-exclamation-triangle fa-stack-1x text-danger"></i></span>')
     this.quillObject.enable(true)
   }

@@ -35,6 +35,9 @@ User profile template
 {% if theuser.isroot %}
 <span class="label label-success">root</span>
 {% endif %}
+{% if theuser.isreadonly %}
+<span class="label label-info">readOnly</span>
+{% endif %}
 </div>
 
 

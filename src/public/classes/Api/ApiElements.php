@@ -37,6 +37,20 @@ class ApiElements extends ApiController
         
         $profiler = new ApmProfiler('updateElements', $this->db);
         
+        $um = $this->db->um;
+         
+        if ($um->userHasRole($this->ci->userId, 'readOnly')) {
+            $this->logger->error("User is not authorized to update elements",
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => ApiController::API_ERROR_NOT_AUTHORIZED,
+                    ]);
+            return $response->withStatus(409)->withJson(
+                    ['error' => ApiController::API_ERROR_NOT_AUTHORIZED,
+                     'msg' => 'User is not allowed to save'
+                    ]);
+        }
+        
+        
         $docId = (int) $request->getAttribute('document');
         $pageNumber = (int) $request->getAttribute('page');
         $columnNumber = (int) $request->getAttribute('column');

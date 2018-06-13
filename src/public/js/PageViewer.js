@@ -77,14 +77,10 @@ class PageViewer {
 //      console.log('OSD pan to ( ' + s.center.x + ', ' + s.center.y + ' )')
 //    })
     
-    let apiAddColumnUrl = pathFor.apiAddColumn(this.options.docId, this.options.pageNumber)
-    $('#realAddColumnButton').click(function () {
-      //console.log('I should add a column now!')
-      $.getJSON(apiAddColumnUrl, function (resp) {
-        location.replace('')
-      })
-    })
-
+    
+    $('#realAddColumnButton').on('click', 
+      this.genOnClickRealAddColumnButton())
+      
     $('#editPageSubmitButton').on('click', 
       this.genOnClickEditPageSubmitButton())
       
@@ -149,6 +145,29 @@ class PageViewer {
     Cookies.set(this.cookieName, layout)
   }
   
+  genOnClickRealAddColumnButton() {
+    let pathFor = this.options.urlGenerator
+    let apiAddColumnUrl = pathFor.apiAddColumn(this.options.docId, this.options.pageNumber)
+    return function () {
+      $.getJSON(apiAddColumnUrl, function (resp) {
+        location.replace('')
+      })
+      .fail( function (resp) {
+        console.log("Error adding new column")
+        
+        $('#addColumnModal').modal('hide')
+        let msg = ''
+        if (resp.responseJSON.msg !== undefined) {
+          msg = resp.responseJSON.msg
+        }
+
+        $('#pageinfoerrors').html('<p class="text-danger">Error adding new column.<br/>' 
+          + 'HTTP Status: '  + resp.status + '<br/>'  
+          + 'Error: (' + resp.responseJSON.error + ') ' 
+          + msg  + '</p>')
+      })
+    }
+  }
   genOnLoadNumColumns(){
     let thisObject = this
     let pathFor = thisObject.options.urlGenerator
@@ -225,7 +244,12 @@ class PageViewer {
                 })
             })
             .fail(function(resp) {
-              te.saveFail('Status: ' + resp.status + ' Error: ' + resp.responseJSON.error)
+              let msg = 'Click to try again'
+              if (resp.responseJSON.msg !== undefined) {
+                msg = resp.responseJSON.msg
+              }
+              te.saveFail('Status: ' + resp.status + ' Error: ' + resp.responseJSON.error + ' (' 
+                 + msg + ')')
             })
           })
 
@@ -259,8 +283,19 @@ class PageViewer {
       .done(function () { 
         location.replace('')         
       })
-      .fail(function() {
+      .fail(function(resp) {
         console.log("Error updating page settings")
+        
+        $('#editPageModal').modal('hide')
+        let msg = ''
+        if (resp.responseJSON.msg !== undefined) {
+          msg = resp.responseJSON.msg
+        }
+
+        $('#pageinfoerrors').html('<p class="text-danger">Error updating page settings.<br/>' 
+          + 'HTTP Status: '  + resp.status + '<br/>'  
+          + 'Error: (' + resp.responseJSON.error + ') ' 
+          + msg  + '</p>')
       })
     }
   }

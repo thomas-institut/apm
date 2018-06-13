@@ -60,6 +60,9 @@ class SiteUserManager extends SiteController
                 $this->db->um->isUserAllowedTo($currentUserId, 'makeRoot');
         $userProfileInfo['isroot'] = 
                 $this->db->um->isRoot($userProfileInfo['id']);
+        $userProfileInfo['isreadonly'] = 
+                $this->db->um->userHasRole($userProfileInfo['id'], 'readOnly');
+        
 
         $profiler->lap("Basic Info");
         $userId = $userProfileInfo['id'];

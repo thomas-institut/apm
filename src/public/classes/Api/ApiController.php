@@ -49,6 +49,8 @@ abstract class ApiController
     const API_ERROR_DOC_CANNOT_BE_SAFELY_DELETED = 1015;
     const API_ERROR_ERROR_RUNNING_COLLATEX = 1016;
     
+    const API_ERROR_NOT_AUTHORIZED  = 1100;
+    
     const API_ERROR_DB_UPDATE_ERROR = 1200;
             
     

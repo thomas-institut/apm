@@ -254,7 +254,7 @@ class UserManager
     //
     
      /**
-     * Returns true if a user is allowed to do $action
+     * Returns true if a user is explicity allowed to do $action
      * @param string $action, the action, normally a verb, 
      *                e.g.: 'edit-other-users'
      * @return boolean
@@ -302,7 +302,7 @@ class UserManager
         return $this->relationsTable->deleteRow($row['id']);
     }
     
-    public function isUserA($userId, $role)
+    public function userHasRole($userId, $role)
     {
         
         return $this->relationsTable->findRow(['userId' => $userId, 
@@ -356,7 +356,7 @@ class UserManager
     
     public function isRoot($userId)
     {
-        return $this->isUserA($userId, $this->rootRole);
+        return $this->userHasRole($userId, $this->rootRole);
     }
     
     public function makeRoot($userId)

@@ -33,6 +33,20 @@ class ApiDocuments extends ApiController
     public function updatePageSettings(Request $request, Response $response, $next)
     {
         $profiler = new ApmProfiler('updatePageSettings', $this->db);
+        
+        $um = $this->db->um;
+         
+        if ($um->userHasRole($this->ci->userId, 'readOnly')) {
+            $this->logger->error("User is not authorized to update page settings",
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => ApiController::API_ERROR_NOT_AUTHORIZED,
+                    ]);
+            return $response->withStatus(409)->withJson(
+                    ['error' => ApiController::API_ERROR_NOT_AUTHORIZED,
+                     'msg' => 'User is not authorized to update page settings'
+                    ]);
+        }
+        
         $pageId = (int) $request->getAttribute('pageId');
         $postData = $request->getParsedBody();
         $foliation = $postData['foliation'];
@@ -378,6 +392,19 @@ class ApiDocuments extends ApiController
     {
         $docId = $request->getAttribute('document');
         $pageNumber = $request->getAttribute('page');
+        
+        $um = $this->db->um;
+         
+        if ($um->userHasRole($this->ci->userId, 'readOnly')) {
+            $this->logger->error("User is not authorized to add new column",
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => ApiController::API_ERROR_NOT_AUTHORIZED,
+                    ]);
+            return $response->withStatus(409)->withJson(
+                    ['error' => ApiController::API_ERROR_NOT_AUTHORIZED,
+                     'msg' => 'User is not authorized to add new columns'
+                    ]);
+        }
         
         $this->db->addNewColumn($docId, $pageNumber);
         

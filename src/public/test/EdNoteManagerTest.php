@@ -181,6 +181,7 @@ class EdNoteManagerTest extends TestCase {
             $edNotes = self::$edNoteManager->getEditorialNotesByTypeAndTarget(EditorialNote::INLINE, $elements[$i]->items[2]->id);
             $this->assertCount(1, $edNotes);
             $edNotes[0]->text = "New note for " . $elements[$i]->items[2]->id;
+            $edNotes[0]->id = -100;
             self::$edNoteManager->updateNotesFromArray($edNotes);
             $edNotes2 = self::$edNoteManager->getEditorialNotesByTypeAndTarget(EditorialNote::INLINE, $elements[$i]->items[2]->id);
             $this->assertCount(2, $edNotes2);
@@ -191,6 +192,7 @@ class EdNoteManagerTest extends TestCase {
             $edNotes = self::$edNoteManager->getEditorialNotesByTypeAndTarget(EditorialNote::INLINE, $elements[$i]->items[2]->id);
             $this->assertCount(2, $edNotes);
             $newNote = clone $edNotes[1];
+            $newNote->id = -100;
             $newNote->text = "Even newer note for " . $elements[$i]->items[2]->id;
             $edNotes[] = $newNote;
             self::$edNoteManager->updateNotesFromArray($edNotes);

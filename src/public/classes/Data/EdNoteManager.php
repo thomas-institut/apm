@@ -102,6 +102,17 @@ class EdNoteManager {
         ]);
     }
     
+    public function updateNote($note) {
+        return $this->edNotesDataTable->updateRow([
+            'id' => $note->id,
+            'type' => $note->type,
+            'lang' => 'en',
+            'author_id' => $note->authorId,
+            'text' => $note->text,
+            'target' => $note->target
+                ]);
+    }
+    
     public function updateNotesFromArray(array $edNotes) {
         // First, group the notes by target and type
         $theNotes = [];
@@ -120,13 +131,30 @@ class EdNoteManager {
             foreach ($notesForType as $target => $notesForTarget) {
                 $currentNotes = $this->getEditorialNotesByTypeAndTarget($type, $target);
                 foreach ($notesForTarget as $note) {
+                    if ($this->isNoteIdInArray($note->id, $currentNotes)) {
+                        // Update the given note
+                        $this->updateNote($note);
+                        continue;
+                    }
                     if (!self::isNoteInArray($note, $currentNotes)) {
                         // Not a duplicate, insert it
-                        $this->insertNote($type, $target, $note->authorId, $note->text);
+                        $res = $this->insertNote($type, $target, $note->authorId, $note->text);
+                        $this->logger->debug("Note inserted, new id = " . $res);
                     }
                 }
             }
         }
+    }
+    
+    
+    private function isNoteIdInArray($noteId, $theArray) 
+    {
+        foreach ($theArray as $note) {
+            if ($noteId === $note->id) {
+               return true;
+            }
+        }
+        return false;
     }
     
     private static function isNoteInArray($theNote, $theArray) {

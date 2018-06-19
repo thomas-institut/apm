@@ -284,6 +284,7 @@ class ApiElements extends ApiController
                 $this->logger->error('Editorial note without valid target Id: ' . $targetId, get_object_vars($edNotes[$i]));
             }
         }
+        $this->logger->debug("Updating ednotes", $edNotes);
         $this->ci->db->enm->updateNotesFromArray($edNotes);
         
         $profiler->log($this->logger);

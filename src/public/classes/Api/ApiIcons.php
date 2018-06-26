@@ -72,9 +72,10 @@ class ApiIcons extends ApiController
         $chunkNumber = $request->getAttribute('chunkno');
         $type = $request->getAttribute('type');
         $size = $request->getAttribute('size');
+        $segment = $request->getAttribute('segment');
         $dir = $request->getAttribute('dir');
         
-        $imageData = \AverroesProject\Image\EditorImages::ChunkMarkIcon($size, $dareId, $chunkNumber, $type, $dir);
+        $imageData = \AverroesProject\Image\EditorImages::ChunkMarkIcon($size, $dareId, $chunkNumber, $segment, $type, $dir);
         
         $response->getBody()->write($imageData);
         return $response->withHeader('Content-Type', 'image/png');

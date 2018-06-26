@@ -123,24 +123,29 @@ class SiteCollationTable extends SiteController
                 // No data for this witness, normally this should not happen
                 continue;
             }
-            //$this->ci->logger->debug('Chunk loc for ' . $workId . ' ' . $chunkNumber, $locations);
-            $doc['start']['seq'] = $locations[0]['page_seq'];
-            $doc['start']['foliation'] = is_null($locations[0]['foliation']) ? $locations[0]['page_seq'] : $locations[0]['foliation'];
-            if (count($locations)===1) {
-                // no chunk end
-                continue;
+            // Check if there's an invalid segment
+            $invalidSegment = false;
+            foreach($locations as $segment) {
+                if (!$segment['valid']) {
+                    $invalidSegment = true;
+                    break;
+                }
             }
-            $doc['end']['seq'] = $locations[1]['page_seq'];
-            $doc['end']['foliation'] = is_null($locations[1]['foliation']) ? $locations[1]['page_seq'] : $locations[1]['foliation'];
-            if ($locations[0]['type'] === 'end') {
-                // chunk marks in reverse order
-                continue;
+            if ($invalidSegment) {
+                continue; // nothing to do with this witness
             }
-           
-            $doc['itemStream'] = $db->getItemStreamBetweenLocations((int) $doc['id'], $locations[0], $locations[1]);
-            $doc['items'] = ItemStream::createItemArrayFromItemStream($doc['itemStream']);
-            //$doc['plain_text'] = ItemStream::getPlainText($doc['itemStream']);
-            $doc['tokens'] = \AverroesProject\Collation\Tokenizer::tokenize($doc['items']);
+            $doc['itemStream'] =[];
+            $doc['items'] = [];
+            $doc['tokens'] = [];
+            foreach($locations as $segment) {
+                if (!$segment['valid']) {
+                    continue;
+                }
+                $doc['itemStream'] = array_merge($doc['itemStream'], $db->getItemStreamBetweenLocations((int) $doc['id'], $segment['start'], $segment['end']));
+                $doc['items'] = array_merge($doc['items'], ItemStream::createItemArrayFromItemStream($doc['itemStream']));
+                $doc['tokens'] = array_merge($doc['tokens'], \AverroesProject\Collation\Tokenizer::tokenize($doc['items']));
+            }
+            
             $docs[] = $doc;
             $totalNumDocs++;
         }

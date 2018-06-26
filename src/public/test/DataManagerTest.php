@@ -492,4 +492,109 @@ class DataManagerTest extends TestCase {
         
     }
     
+    
+    public function testGetChunkLocations() 
+    {
+        $dm = self::$dataManager;
+        
+        $locs = [];
+        
+        $result0 = $dm->getChunkLocationArrayFromRawLocations($locs);
+        $this->assertCount(0, $result0);
+        
+        $locs[0] = [ 
+            'page_seq' => 10, 
+            'foliation' => '20r',
+            'column_number' => 1,
+            'e_seq' => 0, 
+            'item_seq' => 0, 
+            'type' => 'start',
+            'segment' => 1
+            ];
+        
+        $result1 = $dm->getChunkLocationArrayFromRawLocations($locs);
+        
+        $this->assertCount(1, $result1);
+        $this->assertFalse($result1[1]['valid']);
+        
+        $locs[1] = [ 
+            'page_seq' => 20, 
+            'foliation' => '15r',
+            'column_number' => 1,
+            'e_seq' => 0, 
+            'item_seq' => 0, 
+            'type' => 'end',
+            'segment' => 1
+            ];
+        
+        
+        
+        $result2 = $dm->getChunkLocationArrayFromRawLocations($locs);
+        
+        $this->assertCount(1, $result2);
+        $this->assertTrue($result2[1]['valid']);
+        $this->assertArrayHasKey('start', $result2[1]);
+        $this->assertArrayHasKey('end', $result2[1]);
+        $this->assertEquals($locs[0], $result2[1]['start']);
+        $this->assertEquals($locs[1], $result2[1]['end']);
+        
+        
+        $locs[1] = [ 
+            'page_seq' => 5, 
+            'foliation' => '15r',
+            'column_number' => 1,
+            'e_seq' => 0, 
+            'item_seq' => 0, 
+            'type' => 'end',
+            'segment' => 1
+            ];
+        
+        $result3 = $dm->getChunkLocationArrayFromRawLocations($locs);
+        $this->assertCount(1, $result3);
+        $this->assertFalse($result3[1]['valid']);
+
+        $locs[1] = [ 
+            'page_seq' => 20, 
+            'foliation' => '15r',
+            'column_number' => 1,
+            'e_seq' => 0, 
+            'item_seq' => 0, 
+            'type' => 'end',
+            'segment' => 1
+            ];
+        
+        $locs[2] = [ 
+            'page_seq' => 40, 
+            'foliation' => '15r',
+            'column_number' => 1,
+            'e_seq' => 0, 
+            'item_seq' => 0, 
+            'type' => 'end',
+            'segment' => 2
+            ];
+        
+        $locs[3] = [ 
+            'page_seq' => 30, 
+            'foliation' => '15r',
+            'column_number' => 1,
+            'e_seq' => 0, 
+            'item_seq' => 0, 
+            'type' => 'start',
+            'segment' => 2
+            ];
+        
+        $result4 = $dm->getChunkLocationArrayFromRawLocations($locs);
+        
+        $this->assertCount(2, $result4);
+        $this->assertTrue($result4[1]['valid']);
+        $this->assertTrue($result4[2]['valid']);
+        $this->assertArrayHasKey('start', $result4[1]);
+        $this->assertArrayHasKey('end', $result4[1]);
+        $this->assertArrayHasKey('start', $result4[2]);
+        $this->assertArrayHasKey('end', $result4[2]);
+        $this->assertEquals($locs[0], $result4[1]['start']);
+        $this->assertEquals($locs[1], $result4[1]['end']);
+        $this->assertEquals($locs[3], $result4[2]['start']);
+        $this->assertEquals($locs[2], $result4[2]['end']);
+    }
 }

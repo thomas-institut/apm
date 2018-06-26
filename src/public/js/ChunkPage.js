@@ -26,6 +26,7 @@ class ChunkPage {
     this.includeInCollationButtonClass = 'includeincollation'
     this.ctLinksElement = $('#collationtablelinks')
     this.witnessInfo = witnessInfo
+    console.log(this.witnessInfo)
     this.collationLangs = collationLangs
     
     $("#theWitnessTable").DataTable({ 

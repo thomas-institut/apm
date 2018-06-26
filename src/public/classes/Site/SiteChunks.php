@@ -62,40 +62,39 @@ class SiteChunks extends SiteController
             $doc['number'] = ++$witnessNumber;
             $doc['errors'] = [];
             $doc['warnings'] = [];
-            $doc['goodWitness'] = false;
+            $doc['goodWitness'] = true;
+            $doc['plain_text'] = '';
             $locations = $db->getChunkLocationsForDoc($witness['id'], $workId, $chunkNumber);
             if (count($locations)===0) {
                 $doc['errors'][] =  'Error in chunk info, did somebody just erased the chunks in this document? Please refresh';
                 $doc['plain_text'] = '';
+                $doc['goodWitness'] = false;
                 $docs[] = $doc;
                 continue;
             }
             $this->ci->logger->debug('Chunk loc for ' . $workId . ' ' . $chunkNumber, $locations);
-            $doc['start']['seq'] = $locations[0]['page_seq'];
-            $doc['start']['foliation'] = is_null($locations[0]['foliation']) ? $locations[0]['page_seq'] : $locations[0]['foliation'];
-            if (count($locations)===1) {
-                $doc['end']['seq'] = $locations[0]['page_seq'];
-                $doc['end']['foliation'] = '?';
+            
+            $doc['segments'] = $locations;
+            
+            foreach($locations as $segLocation ) {
+                if (!$segLocation['valid']) {
+                    foreach($segLocation['warnings'] as $w) {
+                        $doc['warnings'][] = $w;
+                    }
+                    $doc['goodWitness'] = false;
+                    continue;
+                }
+                $itemStream = $db->getItemStreamBetweenLocations((int) $doc['id'], $segLocation['start'], $segLocation['end']);
+                $doc['plain_text'] .= ItemStream::getPlainText($itemStream) . ' '; // CHECK: Space in between? 
+            }
+          
+            if ($doc['goodWitness']) {
+                $goodWitnessesPerLang[$doc['lang']]['numWitnesses']++;
+            } else {
                 $doc['plain_text'] = '';
-                $doc['warnings'][] = 'No chunk end found';
-                $docs[] = $doc;
-                continue;
-            }
-            $doc['end']['seq'] = $locations[1]['page_seq'];
-            $doc['end']['foliation'] = is_null($locations[1]['foliation']) ? $locations[1]['page_seq'] : $locations[1]['foliation'];
-            if ($locations[0]['type'] === 'end') {
-                $doc['warnings'][] = 'Chunk marks in reverse order';
-                $docs[] = $doc;
-                continue;
-            }
-            $profiler->lap('Doc '. $doc['id'] . ' locations');
-            $itemStream = $db->getItemStreamBetweenLocations((int) $doc['id'], $locations[0], $locations[1]);
-            $doc['plain_text'] = ItemStream::getPlainText($itemStream);
-            if (count($doc['warnings']) === 0 || count($doc['errors']) === 0) {
-                $doc['goodWitness'] = true;
             }
             $docs[] = $doc;
-            $goodWitnessesPerLang[$doc['lang']]['numWitnesses']++;
+            
             $profiler->lap('Doc '. $doc['id'] . ' END');
         }
         

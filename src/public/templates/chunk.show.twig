@@ -39,10 +39,13 @@ $(document).ready(function()
     <td>{{macros.docTypeName(doc.doc_type)}}</td>
     <td>{{macros.langName(doc.lang)}}</td>
     <td>
-        <a href="{{path_for('pageviewer.docseq', {'doc' : doc.id, 'seq' : doc.start.seq})}}" target="_blank" title="View Page in New Tab">{{doc.start.foliation}}</a>
-        {% if doc.end.foliation != doc.start.foliation %} -
-            <a href="{{path_for('pageviewer.docseq', {'doc' : doc.id, 'seq' : doc.end.seq})}}" target="_blank" title="View Page in New Tab">{{doc.end.foliation}}</a>
-        {% endif %}
+        {% for seg in doc.segments %}
+            <a href="{{path_for('pageviewer.docseq', {'doc' : doc.id, 'seq' : seg.start.page_seq})}}" target="_blank" title="View Page in New Tab">{{seg.start.foliation}}</a>
+            {% if doc.end.foliation != doc.start.foliation %} -
+                <a href="{{path_for('pageviewer.docseq', {'doc' : doc.id, 'seq' : seg.end.page_seq})}}" target="_blank" title="View Page in New Tab">{{seg.end.foliation}}</a>
+            {% endif %}
+            {% if not loop.last %}, {% endif %}
+        {% endfor %}
     </td>
     <td style="padding-left: 30px">
         {% if doc.goodWitness %}

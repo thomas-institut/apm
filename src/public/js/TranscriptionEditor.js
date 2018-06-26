@@ -1230,6 +1230,10 @@ class TranscriptionEditor
       $('#chunk-modal-chunknumber-' + thisObject.id).attr('min', 1)
       $('#chunk-modal-chunknumber-' + thisObject.id).attr('max', 500)
       $('#chunk-modal-chunknumber-' + thisObject.id).val(1)
+      
+      $('#chunk-modal-segment-' + thisObject.id).attr('min', 1)
+      $('#chunk-modal-segment-' + thisObject.id).attr('max', 100)
+      $('#chunk-modal-segment-' + thisObject.id).val(1)
 
       $('#chunk-modal-submit-button-' + thisObject.id).off()
       $('#chunk-modal-submit-button-' + thisObject.id).on('click', function () {
@@ -1237,11 +1241,13 @@ class TranscriptionEditor
         const itemid = thisObject.getOneItemId()
         const dareid = $('#chunk-modal-dareid-' + thisObject.id).val()
         const chunkno = $('#chunk-modal-chunknumber-' + thisObject.id).val()
+        const segment = $('#chunk-modal-segment-' + thisObject.id).val()
         quillObject.insertEmbed(range.index, 'chunkmark', {
           alttext: type,
           target: chunkno,
           text: dareid,
           itemid: itemid,
+          thelength: segment,
           editorid: thisObject.id
         })
         quillObject.setSelection(range.index + 1)
@@ -2603,10 +2609,18 @@ class TranscriptionEditor
                         <label for="chunk-modal-work-{{id}}" class="control-label">Work:</label>
                         <select name="chunk-modal-dareid" id="chunk-modal-dareid-{{id}}"></select>
                     </div>
+      
                     <div id="chunk-modal-chunknumber-fg-{{id}}" class="form-group">
                         <label for="chunk-modal-chunknumber-{{id}}" id="chunk-modal-chunknumber-label-{{id}}" class="control-label">Chunk Number:</label>
                         <input type="number" name="chunk" class="form-control" id="chunk-modal-chunknumber-{{id}}"></input>
                     </div>
+      
+                    <div id="chunk-modal-segment-fg-{{id}}" class="form-group">
+                        <label for="chunk-modal-segment-{{id}}" id="chunk-modal-segment-label-{{id}}" class="control-label">Segment Number:</label>
+                        <input type="number" name="segment" class="form-control" id="chunk-modal-segment-{{id}}"></input>
+                    </div>
+
+
                     <input id="chunk-note-id-{{id}}" type="hidden" name="note-id" value=""/>
                     <div class="form-group">
                         <label for="chunk-note-{{id}}" class="control-label">Note:</label>

@@ -894,7 +894,33 @@ class DataManager
         return $docs;
     }
     
-    public function getChunkLocationsForDoc($docId, $workId, $chunkNumber)
+    
+    
+    public function getChunkLocationsForDoc($docId, $workId, $chunkNumber) 
+    {
+        $locations = $this->getChunkLocationsForDocRaw($docId, $workId, $chunkNumber);
+        return $this->getChunkLocationArrayFromRawLocations($locations);
+    }
+    
+    /**
+     * Returns a an array with the chunk start and end locations
+     * for the given document, work and chunk numbers
+     * 
+     * Each row has the following fields:
+     *  page_seq : page sequence number within the document
+     *  foliation: page foliation
+     *  column_number: column
+     *  e_seq: element sequence number within the column
+     *  item_seq: item sequence number within the element
+     *  type: 'start' or 'end'
+     *  segment: chunk segment number 
+     * 
+     * @param int $docId
+     * @param string $workId
+     * @param int $chunkNumber
+     * @return array
+     */
+    public function getChunkLocationsForDocRaw($docId, $workId, $chunkNumber)
     {
         $ti = $this->tNames['items'];
         $te = $this->tNames['elements'];
@@ -907,7 +933,8 @@ class DataManager
             " $te.column_number," . 
             " $te.seq as 'e_seq'," . 
             " $ti.seq as 'item_seq'," . 
-            " $ti.alt_text as 'type'" . 
+            " $ti.alt_text as 'type'," . 
+            " $ti.length as 'segment'" . 
             " FROM $tp" . 
             " JOIN ($te, $ti)" . 
             " ON ($te.id=$ti.ce_id AND $tp.id=$te.page_id)" . 
@@ -927,6 +954,109 @@ class DataManager
             $rows[] = $row;
         }
         return $rows;
+    }
+    
+    /**
+     * Returns true if $loc1 represents
+     * an item location that is located after
+     * $loc2
+     * 
+     * 
+     * 
+     * @param array $loc1
+     * @param array $loc2
+     */
+    private function isAfter($loc1, $loc2) 
+    {
+        if ($loc1['page_seq'] > $loc2['page_seq']) {
+            return true;
+        }
+        
+        if ($loc1['column_number'] > $loc2['column_number']) {
+            return true;
+        }
+        
+        if ($loc1['e_seq'] > $loc2['e_seq']) {
+            return true;
+        }
+        
+        if ($loc1['item_seq'] > $loc2['item_seq']) {
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Returns an array containing the start and end locations
+     * for every chunk segment in the given array of locations
+     * ordered by segment
+     * 
+     * The given locations arrays is supposed to contain the 
+     * locations for a single chunk in a particular documents
+     * 
+     * The returned array has the following structure:
+     * 
+     *   $results[n] = [ 'valid' => is_this_segment_valid (boolean)
+     *                   'start' => start_location (or null)
+     *                   'end' => end_location (or null),
+     *                   'warnings' => array of string messages ]
+     * 
+     *  n = 0,1,2,... up to the number of segments found in the input array
+     *  
+     * 
+     * @param array $locations
+     */
+    public function getChunkLocationArrayFromRawLocations($locations)
+    {
+        $cLocs = [];
+        
+        foreach($locations as &$location) {
+            if (is_null($location['segment'])) {
+                $location['segment'] = 1;
+            }
+            $segment = $location['segment'];
+            
+            if (is_null($location['foliation'])) {
+                $location['foliation'] = $location['page_seq'];
+            }
+            if (!isset($cLocs[$segment])) {
+                $cLocs[$segment] = [];
+                $cLocs[$segment]['warnings'] = [];
+                $cLocs[$segment]['valid'] = true;
+            }
+            if (isset($cLocs[$segment][$location['type']])) {
+                // the location is already in the array, this is not good!
+                $cLocs[$segment]['valid'] = false;
+                $cLocs[$segment]['warnings'][] = 'Duplicate ' . 
+                        $location['type'] . ' location found ';
+                continue;
+            }
+            $cLocs[$segment][$location['type']] = $location;
+        }
+        
+        foreach($cLocs as $key => &$segmentLoc) {
+            if (!$segmentLoc['valid']) {
+                continue;
+            }
+            if (!isset($segmentLoc['start'])) {
+                $segmentLoc['valid'] = false;
+                $segmentLoc['warnings'][] = 'No chunk segment start found for segment ' . $key;
+                continue;
+            }
+            if (!isset($segmentLoc['end'])) {
+                $segmentLoc['valid'] = false;
+                $segmentLoc['warnings'][] = 'No chunk segment end found for segment ' . $key;
+                continue;
+            }
+            if ($this->isAfter($segmentLoc['start'], $segmentLoc['end'])) {
+                $segmentLoc['valid'] = false;
+                $segmentLoc['warnings'][] = 'Chunk segment start is after chunk end in segment ' . $key;
+            }
+        }
+        
+        ksort($cLocs);
+        return $cLocs;
     }
     
     public function getAdditionItemWithGivenTarget(int $target) {
@@ -1553,11 +1683,15 @@ class DataManager
                 break;
             
             case Item::CHUNK_MARK:
+                if (!isset($row[$fields['length']])) {
+                    $row[$fields['length']] = 1;
+                }
                 $item = new \AverroesProject\TxText\ChunkMark($row[$fields['id']],
                     $row[$fields['seq']], 
                     $row[$fields['text']], 
                     (int) $row[$fields['target']], 
-                    $row[$fields['alt_text']]);
+                    $row[$fields['alt_text']], 
+                    $row[$fields['length']]);
                 break;
             
             case Item::CHARACTER_GAP:

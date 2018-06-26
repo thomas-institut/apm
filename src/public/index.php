@@ -380,7 +380,7 @@ $app->group('/api', function (){
         ->setName('api.images.illegible');
     
     // API -> images : ChunkMark Icon
-    $this->get('/images/chunkmark/{dareid}/{chunkno}/{type}/{dir}/{size}', 
+    $this->get('/images/chunkmark/{dareid}/{chunkno}/{segment}/{type}/{dir}/{size}', 
             '\AverroesProject\Api\ApiIcons:generateChunkMarkIcon')
         ->setName('api.images.chunkmark');
     

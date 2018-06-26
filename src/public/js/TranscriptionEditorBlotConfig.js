@@ -193,12 +193,14 @@ TranscriptionEditor.registerImageBlot(ChunkMarkBlot, {
   text: { default: 'AW1' },
   target: { default: 1 },
   alttext: { default: 'start' },
+  thelength: { default: 1 },
   noButton: true,
   getImageUrl: function (baseUrl, size, value) { 
     return baseUrl + 
             '/api/images/chunkmark/' +
             value.text + '/' +
             value.target + '/' +
+            value.thelength + '/' +
             value.alttext + '/ltr/' +
             size
   }

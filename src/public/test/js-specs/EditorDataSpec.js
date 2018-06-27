@@ -164,7 +164,7 @@ describe("EditorData", function() {
           {insert: {mark: {itemid: 100}}},
           {insert: {nowb: {itemid: 101}}},
           {insert: {illegible: {itemid: 102, extrainfo: 'some reason', thelength: 5}}},
-          {insert: {chunkmark: {itemid: 103, alttext: 'start', target: '45', text: 'AW47'}}},
+          {insert: {chunkmark: {itemid: 103, alttext: 'start', target: '45', text: 'AW47', thelength: 2}}},
           {insert: {chgap: {itemid: 104, thelength: 5}}},
           {insert: {pmark: {itemid: 105}}}
         ]
@@ -203,6 +203,7 @@ describe("EditorData", function() {
 
         expect(apiData.elements[0].items[3].type).toBe(ITEM_CHUNK_MARK)
         expect(apiData.elements[0].items[3].theText).toBe('AW47')
+        expect(apiData.elements[0].items[3].length).toBe(2)
 
         expect(apiData.elements[0].items[4].type).toBe(ITEM_CHARACTER_GAP)
         expect(apiData.elements[0].items[4].theText).toBe('')

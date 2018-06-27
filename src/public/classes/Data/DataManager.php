@@ -968,23 +968,16 @@ class DataManager
      */
     private function isAfter($loc1, $loc2) 
     {
-        if ($loc1['page_seq'] > $loc2['page_seq']) {
-            return true;
-        }
         
-        if ($loc1['column_number'] > $loc2['column_number']) {
-            return true;
-        }
+        $loc1Nr = $loc1['page_seq']*100000000 + 
+            $loc1['column_number']*1000000 +
+            $loc1['e_seq'] * 1000 + $loc1['item_seq'];
         
-        if ($loc1['e_seq'] > $loc2['e_seq']) {
-            return true;
-        }
+         $loc2Nr = $loc2['page_seq']*100000000 + 
+            $loc2['column_number']*1000000 +
+            $loc2['e_seq'] * 1000 + $loc2['item_seq'];
         
-        if ($loc1['item_seq'] > $loc2['item_seq']) {
-            return true;
-        }
-        
-        return false;
+         return $loc1Nr > $loc2Nr;
     }
     
     /**

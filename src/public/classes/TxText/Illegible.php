@@ -60,7 +60,7 @@ class Illegible extends Item {
     
     function getText(){
         
-        $unknownChar = '🈑';
+        $unknownChar = 'ø';
         
         return str_repeat($unknownChar, $this->length);
     }

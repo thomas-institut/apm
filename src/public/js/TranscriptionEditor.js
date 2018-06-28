@@ -1228,7 +1228,7 @@ class TranscriptionEditor
       }
       $('#chunk-modal-dareid-' + thisObject.id).html(workOptionsHtml)
       $('#chunk-modal-chunknumber-' + thisObject.id).attr('min', 1)
-      $('#chunk-modal-chunknumber-' + thisObject.id).attr('max', 500)
+      $('#chunk-modal-chunknumber-' + thisObject.id).attr('max', 9999)
       $('#chunk-modal-chunknumber-' + thisObject.id).val(1)
       
       $('#chunk-modal-segment-' + thisObject.id).attr('min', 1)

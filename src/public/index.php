@@ -78,7 +78,7 @@ function exitWithError($logger, $msg, $logMsg = '')
 date_default_timezone_set($config['default_timezone']);
 
 // Setup logger
-$logStream = new StreamHandler(__DIR__ . '/' . $config['logfilename'], 
+$logStream = new StreamHandler($config['logfilename'], 
         Logger::DEBUG);
 $phpLog = new \Monolog\Handler\ErrorLogHandler();
 $logger = new Logger('APM');

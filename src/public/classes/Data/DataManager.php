@@ -945,7 +945,7 @@ class DataManager
             " AND $ti.valid_until='9999-12-31 23:59:59.999999'" . 
             " AND $te.valid_until='9999-12-31 23:59:59.999999'" .
             " AND $tp.valid_until='9999-12-31 23:59:59.999999'" . 
-            " ORDER BY $tp.seq, $te.column_number, $te.seq, $ti.seq ASC";;
+            " ORDER BY $tp.seq, $te.column_number, $te.seq, $ti.seq ASC";
         
         $r = $this->dbh->query($query);
         

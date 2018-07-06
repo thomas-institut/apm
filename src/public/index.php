@@ -56,6 +56,8 @@ $config['copyright_notice'] = <<<EOD
 EOD;
 $config['default_timezone'] = "Europe/Berlin";
 
+$config['collatex']['collatexJarFile'] = 'collatex/bin/collatex-tools-1.7.1.jar';
+
 // Slim parameters
 $config['addContentLengthHeader'] = false;
 
@@ -76,7 +78,7 @@ function exitWithError($logger, $msg, $logMsg = '')
 date_default_timezone_set($config['default_timezone']);
 
 // Setup logger
-$logStream = new StreamHandler(__DIR__ . '/' . $config['logfilename'], 
+$logStream = new StreamHandler($config['logfilename'], 
         Logger::DEBUG);
 $phpLog = new \Monolog\Handler\ErrorLogHandler();
 $logger = new Logger('APM');

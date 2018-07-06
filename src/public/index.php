@@ -56,6 +56,8 @@ $config['copyright_notice'] = <<<EOD
 EOD;
 $config['default_timezone'] = "Europe/Berlin";
 
+$config['collatex']['collatexJarFile'] = 'collatex/bin/collatex-tools-1.7.1.jar';
+
 // Slim parameters
 $config['addContentLengthHeader'] = false;
 

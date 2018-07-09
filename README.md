@@ -55,7 +55,7 @@ cd src/public/utilities;
 
 Javascript testing: 
 
-* browse to http://localhost:8888/public/test/SpecRunner.html
+* browse to https://localhost:8888/public/test/SpecRunner.html
 
 ## Installation in production
 
@@ -67,8 +67,8 @@ To install in production:
 * Create the database structure in the server. 
 * Configure the web server so that all request are handled by ```index.php``` 
   In an Apache server this can be done with the rewrite rules given
-  in ```url-rewrite-rules```. These can be copied to the directory configuration
-  in the apache configuration or to an .htaccess fiel
+  in ```url-rewrite-rules```. Copy them to the directory configuration
+  in the apache configuration or to an .htaccess file
 * Create at least one user in the system with root status using the command
   line utilities as indicated above.
 

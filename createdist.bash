@@ -44,8 +44,3 @@ tar cfz $TAR_NAME $DIST_NAME
 rm -fr $DIST_NAME
 mv $TAR_NAME $CUR_DIR/$DIST_DIR/
 cd $CUR_DIR
-
-
-
-
-

@@ -57,19 +57,18 @@ Javascript testing:
 
 * browse to http://localhost:8888/public/test/SpecRunner.html
 
-
-
-
 ## Installation in production
 
 To install in production:  
-* Copy the ```src/public``` directory into the apm directory in the server.
- (no need to copy src/public/test, src/public/jasmine)
-* Create a config.php configuration file in ``src/public`` in the server
-(see ```src/public/config.sample.php```).
+* Create a distribution tar file with ```createdist.bash```
+* Copy the tar file to the server and unpack it in the desired folder
+* Copy config.sample.php to config.php and edit it with the appropriate
+  parameters
 * Create the database structure in the server. 
-* Configure the web server so that all request ares handled by ```index.php``` 
-(in an Apache server this can be done with an ```.htaccess``` file,  see ```apache-htaccess```)
+* Configure the web server so that all request are handled by ```index.php``` 
+  In an Apache server this can be done with the rewrite rules given
+  in ```url-rewrite-rules```. These can be copied to the directory configuration
+  in the apache configuration or to an .htaccess fiel
 * Create at least one user in the system with root status using the command
   line utilities as indicated above.
 

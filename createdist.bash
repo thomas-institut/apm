@@ -19,7 +19,7 @@ CUR_DIR=$(pwd)
 TMP_DIR=$TMP/$DIST_NAME
 TAR_NAME=$DIST_NAME.tar.gz
 
-echo Creating $TAR_NAME
+echo Creating $DIST_DIR/$TAR_NAME 
 mkdir $TMP_DIR
 cp -R src/public/classes $TMP_DIR
 cp -R src/public/collatex $TMP_DIR

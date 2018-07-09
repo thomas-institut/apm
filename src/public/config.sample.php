@@ -20,6 +20,9 @@ $config['db']['tablePrefix'] = 'ap_';
 // BASE URL
 $config['baseurl']='http://localhost:8888/public';
 
+// TIME ZONE
+$config['default_timezone'] = "Europe/Berlin";
+
 // SLIM ERROR HANDLING
 // Might be set to false in production
 $config['displayErrorDetails'] = true;

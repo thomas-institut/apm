@@ -24,6 +24,5 @@ namespace AverroesProject;
 
 require __DIR__ . '/../vendor/autoload.php';
 require __DIR__ . '/../config.php';
-require __DIR__ . '/../config.tables.php';
 
 (new CommandLine\RevokeRootUtility($config))->run($argc, $argv);

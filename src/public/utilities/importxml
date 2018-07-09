@@ -23,7 +23,6 @@
 namespace AverroesProject;
 
 require __DIR__ . '/../vendor/autoload.php';
-require __DIR__ . '/../config.php';
-require __DIR__ . '/../config.tables.php';
+require __DIR__ . '/../setup.php';
 
 (new CommandLine\ImportXmlFile($config))->run($argc, $argv);

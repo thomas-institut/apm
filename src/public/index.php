@@ -23,7 +23,15 @@
  */
 namespace AverroesProject;
 
+
 require 'vendor/autoload.php';
+
+/**
+ * Runtime configurations: DB credentials, base URL
+ *  setup.php loads and process config.php
+ */
+require 'setup.php';
+
 
 use AverroesProject\Data\DataManager;
 use Monolog\Logger;
@@ -32,10 +40,6 @@ use AverroesProject\Data\DatabaseChecker;
 use AverroesProject\Plugin\HookManager;
 use AverroesProject\Collatex\CollatexRunner;
 
-/**
- * Runtime configurations: DB credentials, base URL
- */
-require 'config.php';
 
 // Application parameters
 $config['app_name'] = 'Averroes Project Manager';
@@ -48,32 +52,10 @@ $config['copyright_notice'] = <<<EOD
             Universität zu Köln
         </a>
 EOD;
-$config['default_timezone'] = "Europe/Berlin";
+
 $config['collatex']['collatexJarFile'] = 'collatex/bin/collatex-tools-1.7.1.jar';
 // Slim parameters
 $config['addContentLengthHeader'] = false;
-
-// Generate langCodes
-$config['langCodes'] = [];
-foreach ($config['languages'] as $lang) {
-    $config['langCodes'][] = $lang['code'];
-}
-
-$prefix = $config['db']['tablePrefix'];
-
-$config['tables'] = [];
-$config['tables']['settings']   = $prefix . 'settings';
-$config['tables']['ednotes']    = $prefix . 'ednotes';
-$config['tables']['elements']   = $prefix . 'elements';
-$config['tables']['items']      = $prefix . 'items';
-$config['tables']['users']      = $prefix . 'users';
-$config['tables']['tokens']     = $prefix . 'tokens';
-$config['tables']['relations']  = $prefix . 'relations';
-$config['tables']['docs']       = $prefix . 'docs';
-$config['tables']['people']     = $prefix . 'people';
-$config['tables']['pages']      = $prefix . 'pages';
-$config['tables']['types_page'] = $prefix . 'types_page';
-$config['tables']['works']      = $prefix . 'works';
 
 function exitWithError($logger, $msg, $logMsg = '') 
 {

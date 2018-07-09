@@ -2,28 +2,34 @@
 /**
  * Sample configuration file
  * 
- * Edit with your production or development parameters
+ * All entries are required.
+ * 
+ * Edit and save to config.php
  * 
  */
+
+// DATABASE ACCESS
 $config['db']['host'] = "localhost";
 $config['db']['user'] = "MYSQL USER";
 $config['db']['pwd'] = "PASSWORD";
 $config['db']['db'] = "THE DATABASE";
 
-// This is fine for development with the PHP server
+// TABLE NAME PREFIX
+$config['db']['tablePrefix'] = 'ap_';
+
+// BASE URL
 $config['baseurl']='http://localhost:8888/public';
 
-/// For production it should be something like this:
-//$config['baseurl']='http://somehost.com/somesubdir';
-
-// slim error handling
-// ATTENTION: set to false in production
+// SLIM ERROR HANDLING
+// Might be set to false in production
 $config['displayErrorDetails'] = true;
 
-// Log file name (relative to the location of the web base)
-$config['logfilename'] = 'log/apm.log';
+// LOG FILE  
+// The web server user should be able to create and write to the given file
+$config['logfilename'] = '/var/log/apm/apm.log';
 
 
+// LANGUAGES
 $config['languages'] = [
     [ 'code' => 'ar', 'name' => 'Arabic', 'rtl' => true, 'fontsize' => 5],
     [ 'code' => 'jrb', 'name' => 'Judeo Arabic', 'rtl' => true, 'fontsize' => 3],
@@ -31,13 +37,6 @@ $config['languages'] = [
     [ 'code' => 'la', 'name' => 'Latin', 'rtl' => false, 'fontsize' => 3] 
 ];
 
-$config['langCodes'] = [];
-foreach ($config['languages'] as $lang) {
-    $config['langCodes'][] = $lang['code'];
-}
-
-
-// Collatex
-
-$config['collatex']['tmp'] = '/tmp';
+// COLLATEX
+$config['collatex']['tmp'] = 'collatex/tmp';
 $config['collatex']['javaExecutable'] = '/usr/bin/java';

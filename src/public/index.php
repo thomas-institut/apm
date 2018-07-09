@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (C) 2016 Universität zu Köln
+ * Copyright (C) 2016-18 Universität zu Köln
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -37,12 +37,6 @@ use AverroesProject\Collatex\CollatexRunner;
  */
 require 'config.php';
 
-/**
- * MySQL table configuration
- */
-require 'config.tables.php';
-
-
 // Application parameters
 $config['app_name'] = 'Averroes Project Manager';
 $config['version'] = '0.15.2 (2018-Jul-06)';
@@ -55,12 +49,31 @@ $config['copyright_notice'] = <<<EOD
         </a>
 EOD;
 $config['default_timezone'] = "Europe/Berlin";
-
 $config['collatex']['collatexJarFile'] = 'collatex/bin/collatex-tools-1.7.1.jar';
-
 // Slim parameters
 $config['addContentLengthHeader'] = false;
 
+// Generate langCodes
+$config['langCodes'] = [];
+foreach ($config['languages'] as $lang) {
+    $config['langCodes'][] = $lang['code'];
+}
+
+$prefix = $config['db']['tablePrefix'];
+
+$config['tables'] = [];
+$config['tables']['settings']   = $prefix . 'settings';
+$config['tables']['ednotes']    = $prefix . 'ednotes';
+$config['tables']['elements']   = $prefix . 'elements';
+$config['tables']['items']      = $prefix . 'items';
+$config['tables']['users']      = $prefix . 'users';
+$config['tables']['tokens']     = $prefix . 'tokens';
+$config['tables']['relations']  = $prefix . 'relations';
+$config['tables']['docs']       = $prefix . 'docs';
+$config['tables']['people']     = $prefix . 'people';
+$config['tables']['pages']      = $prefix . 'pages';
+$config['tables']['types_page'] = $prefix . 'types_page';
+$config['tables']['works']      = $prefix . 'works';
 
 function exitWithError($logger, $msg, $logMsg = '') 
 {

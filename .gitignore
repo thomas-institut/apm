@@ -22,3 +22,4 @@ src/public/config.php
 /npm-debug.log
 
 /src/npm-debug.log
+/dist/

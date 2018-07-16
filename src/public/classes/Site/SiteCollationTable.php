@@ -199,6 +199,11 @@ class SiteCollationTable extends SiteController
             ]);
         }
         
+        $showExpandCollapseButton = false;
+        if ($this->db->um->isUserAllowedTo($this->ci->userInfo['id'], 'expandCollapseCollationTable')) {
+            $showExpandCollapseButton = true;
+        }
+        
         $profiler->log($this->ci->logger);
         return $this->ci->view->render($response, 'chunk.collation.twig', [
                 'userinfo' => $this->ci->userInfo, 
@@ -214,7 +219,8 @@ class SiteCollationTable extends SiteController
                 'docs' => $docs,
                 'num_docs' => count($docs),
                 'total_num_docs' => $totalNumDocs,
-                'collatexOutput' => $output
+                'collatexOutput' => $output,
+                'showExpandCollapseButton' => $showExpandCollapseButton
             ]);
         
         

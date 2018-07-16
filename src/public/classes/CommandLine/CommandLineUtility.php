@@ -64,8 +64,7 @@ abstract class CommandLineUtility {
         $cmd = $argv[0];
         
         // Logger
-        $logStream = new StreamHandler(__DIR__ . '/../../' . 
-                $config['logfilename'], Logger::DEBUG);
+        $logStream = new StreamHandler($config['logfilename'], Logger::DEBUG);
         $this->logger = (new Logger('apm-logger'))->withName('CMD');
         $this->logger->pushProcessor(
             function ($record) use($processUser, $pid, $cmd) { 

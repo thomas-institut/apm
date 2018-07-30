@@ -8,6 +8,10 @@
  * 
  */
 
+// SUPPORT
+$config['support-contact-name'] = 'John Doe';
+$config['support-contact-email'] = 'john@doe.com';
+
 // DATABASE ACCESS
 $config['db']['host'] = "localhost";
 $config['db']['user'] = "MYSQL USER";

@@ -1,4 +1,4 @@
-{% extends "base.twig" %}
+{% extends "base-public.twig" %}
 {% import 'macros.twig' as macros %}
 
 {% block title %}Quick Collation{% endblock %}
@@ -36,12 +36,14 @@
     .rtltext {
         direction: rtl;
     }
+    
 </style>
 
 <script>
     $(document).ready(function () {
         let ug = new ApmUrlGenerator('{{baseurl}}')
         let qcObject = new QuickCollation(ug)
+        $('.help').popover({trigger: 'hover', html: true})
     })
 </script>
 {% endblock %}
@@ -50,7 +52,18 @@
 
 <h1>Quick Collation</h1>
 
-<p>Enter at least two texts to collate in the fields below: </p>
+<p class="text-muted">This is an interface to the Collatex software. 
+    Enter at least two texts to collate in the following fields; leave the rest blank. 
+    The given texts will be split into words and passed 
+    to Collatex. The results will then be shown in tabular form. Variants are shown with a light blue background. </p>
+<p class="text-muted">For more information about Collatex please 
+    visit <a href="https://collatex.net/">https://collatex.net/</a>.  </p>
+<p class="text-muted">Please report issues with this webpage to 
+    {{contactName}} (<a href="mailto:{{contactEmail}}"><tt>{{contactEmail}}</tt></a>)</p>
+
+<p style="margin-top: 50px;"> </p>
+
+
 
 
 <div class="row cancelindent">
@@ -58,7 +71,7 @@
         Text A
     </div>
     <div class="col-md-11">
-        <textarea  id="textA">Gallia est omnis divisa in partes tres, quarum unam incolunt Belgae, aliam Aquitani, tertiam qui ipsorum lingua Celtae, nostra Galli appellantur. </textarea>
+        <textarea  id="textA"></textarea>
     </div>
 </div>
 <div class="row cancelindent">
@@ -66,7 +79,7 @@
         Text B
     </div>
     <div class="col-md-11">
-        <textarea  id="textB">Gallia omnis divisa est in partes tres, quarum unum incolunt Belgae, aliam Aquitani, tertiam qui ipsorum lingua Celtae, nostrae Galli appellantur. </textarea>
+        <textarea  id="textB"></textarea>
     </div>
 </div>
 
@@ -75,7 +88,7 @@
         Text C
     </div>
     <div class="col-md-11">
-        <textarea id="textC">Gallia est omnis divisa in partes tres, qvarum vnam incolunt Belgae, aliam Aquitani, tertiam qui ipsorum lingua Celtae, nostra Galli appellantur. </textarea>
+        <textarea id="textC"></textarea>
     </div>
 </div>
 
@@ -84,10 +97,45 @@
         Text D
     </div>
     <div class="col-md-11">
-        <textarea id="textD">Gallia est omnis divisa in partes 3, quarum unam incolunt Belge, aliam Aquitani, tertam qui ipsorum lingua Celte, nostra Galli appellantur. </textarea>
+        <textarea id="textD"></textarea>
     </div>
 </div>
 
+<div class="row cancelindent">
+    <div class="col-md-1 texttitle">
+        Text E
+    </div>
+    <div class="col-md-11">
+        <textarea id="textE"></textarea>
+    </div>
+</div>
+
+<div class="row cancelindent">
+    <div class="col-md-1 texttitle">
+        Text F
+    </div>
+    <div class="col-md-11">
+        <textarea id="textF"></textarea>
+    </div>
+</div>
+
+<div class="row cancelindent">
+    <div class="col-md-1 texttitle">
+        Text G
+    </div>
+    <div class="col-md-11">
+        <textarea id="textG"></textarea>
+    </div>
+</div>
+
+<div class="row cancelindent">
+    <div class="col-md-1 texttitle">
+        Text H
+    </div>
+    <div class="col-md-11">
+        <textarea id="textH"></textarea>
+    </div>
+</div>
 
 <div class="row cancelindent">
     <div class="col-md-1"></div>
@@ -96,15 +144,23 @@
     </div>
 </div>
 <div class="row cancelindent">
-    <p class="text-danger" id="status"></p>
+    <h1 class="text-danger" id="status"></h1>
 </div>
 
 
+<div id="collationtablesection">
 <h2>Collation Table</h2>
-<button type="button" class="btn" id="changeTableViewButton">Collapse / Expand Segments</button>
-<button type="button" class="btn" id="changeTextDirectionButton">LTR / RTL </button>
+<button type="button" class="btn btn-default" id="changeTableViewButton">Collapse / Expand Segments</button> 
+<a class="help" data-toggle="popover" title="Help" data-content="<p>Collatex returns matching text segments composed of one or more words.</p><p>In the Averroes Project, 
+however, scholars prefer to see the table with one word per column. Click this button to switch between showing the segments as they come from 
+Collatex or showing them expanded word by word.</p><p>Please notice that word-by-word expansion is done with an algorithm developed in the Averroes
+Project that may still have some problems."><span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span></a>
+&nbsp;&nbsp;&nbsp;&nbsp;
+<button type="button" class="btn btn-default" id="changeTextDirectionButton">LTR / RTL </button>
+<a class="help" data-toggle="popover" title="Help" data-content="Click to change the table direction between left-to-right and right-to-left"><span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span></a>
 <div class="row">
 <div id="collationtablediv" class="ltrtext" style="overflow-x: auto; margin-top: 20px;">
+</div>
 </div>
 </div>
     

@@ -28,7 +28,7 @@ class QuickCollation {
   constructor(urlGenerator) {
 
     this.pathFor = urlGenerator
-    this.textTitles = ['A', 'B', 'C', 'D']
+    this.textTitles = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
     this.updating = false
     this.ctf = new CollationTableFormatter()
     
@@ -39,12 +39,15 @@ class QuickCollation {
     this.collateButton = $('#collateButton')
     this.status = $('#status')
     this.collationTableDiv = $('#collationtablediv')
+    this.collationTableSection = $('#collationtablesection')
     this.changeTableViewButton = $('#changeTableViewButton')
     this.changeTextDirectionButton = $('#changeTextDirectionButton')
         
     this.collateButton.on('click', this.genOnClickCollateButton())
     this.changeTableViewButton.on('click', this.genOnClickChangeTableViewButton())
     this.changeTextDirectionButton.on('click', this.genOnClickChangeTextDirectionButton())
+    
+    this.collationTableSection.addClass('hidden')
     
   }
   
@@ -86,14 +89,17 @@ class QuickCollation {
           }
         )
       }
+      thisObject.collationTableSection.addClass('hidden')
       if (collatexInput.witnesses.length < 2) {
         thisObject.status.html('Error: need at least two texts to collate')
+        return
       }
       
       console.log('All set to call API at ' + thisObject.pathFor.apiQuickCollation())
       console.log(collatexInput)
       this.updating = true
       thisObject.status.html('Collating... <i class="fa fa-spinner fa-spin fa-fw"></i>')
+      
       $.post(
           thisObject.pathFor.apiQuickCollation(), 
           { data: JSON.stringify(collatexInput) }
@@ -107,7 +113,8 @@ class QuickCollation {
           thisObject.collationTableDiv.html(thisObject.collationTablesHtml[0])
           thisObject.currentView = 0
           thisObject.updating = false
-          thisObject.status.html('Collating...done')
+          thisObject.status.html('')
+          thisObject.collationTableSection.removeClass('hidden')
         })
         .fail(function(resp) {
           thisObject.status.html("Collating... fail with error code " + resp.status + ' :(')

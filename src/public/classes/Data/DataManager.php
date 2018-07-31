@@ -1385,9 +1385,6 @@ class DataManager
             $time = \DataTable\MySqlUnitemporalDataTable::now();
         }
         $this->queryStats->countQuery('create-item');
-//        if ($item->type === Item::ADDITION) {
-//            $this->logger->debug("Creating addition in db", get_object_vars($item));
-//        }
         return $this->itemsDataTable->createRowWithTime([
             'ce_id'=> $item->columnElementId,
             'type' => $item->type,
@@ -1830,7 +1827,7 @@ class DataManager
                 case MyersDiff::DELETE:
                     $this->logger->debug("DELETING element @ " . $index . ", id=" . $oldElements[$index]->id);
                     $this->logger->debug("... .... time=" . $time);
-                    $this->deleteElement($oldElements[$index]->id . "\n", $time);
+                    $this->deleteElement($oldElements[$index]->id, $time);
                     break;
                 
                 case MyersDiff::INSERT:
@@ -2003,7 +2000,7 @@ class DataManager
         
     }
     
-    public function deleteElement($elementId, $time=false)
+    public function deleteElement(int $elementId, $time=false)
     {
         /**
          * Could there be a timing problem here? The deletes of element
@@ -2017,7 +2014,7 @@ class DataManager
             $time = \DataTable\MySqlUnitemporalDataTable::now();
         }
         $element = $this->getElementById($elementId);
-        $this->queryStats->countQuery('delete');
+        $this->queryStats->countQuery('delete-element');
         $res = $this->elementsDataTable->deleteRowWithTime($element->id, $time);
         if ($res === false) {
             return false;

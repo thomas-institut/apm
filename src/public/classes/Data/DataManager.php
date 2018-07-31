@@ -515,18 +515,18 @@ class DataManager
      * @param type $docId
      * @return int
      */
-    function getLineCountByDoc($docId){
-        $this->queryStats->countQuery('select');
-        return $this->dbh->getOneFieldQuery(
-            'SELECT count(DISTINCT `page_id`, e.`seq`) as value from ' . 
-                $this->tNames['elements'] . ' as e JOIN ' . 
-                $this->tNames['pages'] . ' AS p ON e.page_id=p.id ' .
-                ' WHERE p.doc_id=' . $docId . 
-                ' AND e.type=' . Element::LINE . 
-                " AND `e`.`valid_until`='9999-12-31 23:59:59.999999'", 
-            'value'
-        );
-    }
+//    function getLineCountByDoc($docId){
+//        $this->queryStats->countQuery('select');
+//        return $this->dbh->getOneFieldQuery(
+//            'SELECT count(DISTINCT `page_id`, e.`seq`) as value from ' . 
+//                $this->tNames['elements'] . ' as e JOIN ' . 
+//                $this->tNames['pages'] . ' AS p ON e.page_id=p.id ' .
+//                ' WHERE p.doc_id=' . $docId . 
+//                ' AND e.type=' . Element::LINE . 
+//                " AND `e`.`valid_until`='9999-12-31 23:59:59.999999'", 
+//            'value'
+//        );
+//    }
     /**
      * Returns the editors associated with a document as a list of usernames
      * @param int $docId
@@ -1236,8 +1236,13 @@ class DataManager
      * @param array $itemIds  new Item Ids (so that addition targets can be set)
      * @return Element
      */
-    public function insertNewElement(Element $element, $insertAtEnd = true, $itemIds = []) 
+    public function insertNewElement(Element $element, $insertAtEnd = true, $itemIds = [], $time = false) 
     {
+        
+        if (!$time) {
+            $time = \DataTable\MySqlUnitemporalDataTable::now();
+        }
+        
         if (is_null($element->pageId)) {
             $this->logger->error('Element being inserted in '
                     . 'null page', ['pageid' => $element->pageId]);
@@ -1317,12 +1322,12 @@ class DataManager
             foreach ($columnElements as $cElement) {
                 if ($cElement->seq >= $newElement->seq) {
                     $cElement->seq++;
-                    $this->updateElementInDB($cElement);
+                    $this->updateElementInDB($cElement, $time);
                 }
             }
         }
         // Now just create the new element
-        $newId = $this->createNewElementInDB($newElement);
+        $newId = $this->createNewElementInDB($newElement, $time);
         $this->logger->debug("New element Id = $newId, type = " . $newElement->type);
         if ($newId === false) {
             // This means a database error
@@ -1352,7 +1357,7 @@ class DataManager
                 $this->logger->debug("Setting addition target for new item: $item->target => " . $itemIds[$item->target]);
                 $item->target = $itemIds[$item->target];
             }
-            $newItemId = $this->createNewItemInDB($item);
+            $newItemId = $this->createNewItemInDB($item, $time);
             if ($newItemId === false ) {
                 // This means a database error
                 // Can't reproduce in testing for now
@@ -1379,7 +1384,7 @@ class DataManager
         if (!$time) {
             $time = \DataTable\MySqlUnitemporalDataTable::now();
         }
-        $this->queryStats->countQuery('create');
+        $this->queryStats->countQuery('create-item');
 //        if ($item->type === Item::ADDITION) {
 //            $this->logger->debug("Creating addition in db", get_object_vars($item));
 //        }
@@ -1402,7 +1407,7 @@ class DataManager
         if (!$time) {
             $time = \DataTable\MySqlUnitemporalDataTable::now();
         }
-        $this->queryStats->countQuery('update');
+        $this->queryStats->countQuery('update-item');
         return $this->itemsDataTable->realUpdateRowWithTime([
             'id' => $item->id,
             'ce_id'=> $item->columnElementId,
@@ -1417,10 +1422,14 @@ class DataManager
             'target' => $item->target
         ], $time);
     }
-    private function createNewElementInDB($element) 
+    private function createNewElementInDB($element, $time = false) 
     {
-        $this->queryStats->countQuery('create');
-        return $this->elementsDataTable->createRow([
+         if (!$time) {
+            $time = \DataTable\MySqlUnitemporalDataTable::now();
+        }
+        
+        $this->queryStats->countQuery('create-element');
+        return $this->elementsDataTable->createRowWithTime([
                 'type' => $element->type,
                 'page_id' => $element->pageId,
                 'column_number' => $element->columnNumber,
@@ -1430,13 +1439,16 @@ class DataManager
                 'hand_id' => $element->handId,
                 'reference' => $element->reference,
                 'placement' => $element->placement
-            ]);
+            ], $time);
     }
     
-    private function updateElementInDB($element) 
+    private function updateElementInDB($element,  $time = false) 
     {
-        $this->queryStats->countQuery('update');
-        return $this->elementsDataTable->updateRow([
+        if (!$time) {
+            $time = \DataTable\MySqlUnitemporalDataTable::now();
+        }
+        $this->queryStats->countQuery('update-element');
+        return $this->elementsDataTable->realUpdateRowWithTime([
                 'id' => $element->id,
                 'type' => $element->type,
                 'page_id' => $element->pageId,
@@ -1447,7 +1459,7 @@ class DataManager
                 'hand_id' => $element->handId,
                 'reference' => $element->reference,
                 'placement' => $element->placement
-            ]);
+            ], $time);
     }
     
        
@@ -1777,14 +1789,8 @@ class DataManager
             $oldElements,
             $newElements
         );
-
-        /**
-         * ATTENTION: these instructions are supposed to happen simultaneously
-         * but with this implementation they appear with different times in
-         * the database. When versions are implemented in the UI, this will 
-         * have to be fixed to avoid all these micro-changes appearing as 
-         * different versions.
-         */
+        
+        $time = \DataTable\MySqlUnitemporalDataTable::now();
         $newItemsIds = [];
         $newElementsIndex = 0;
         foreach ($editScript as $editInstruction) {
@@ -1814,7 +1820,7 @@ class DataManager
                             }
                         }
                     }
-                    list ($elementId, $ids) = $this->updateElement($newElements[$newElementsIndex], $oldElements[$index], $newItemsIds);
+                    list ($elementId, $ids) = $this->updateElement($newElements[$newElementsIndex], $oldElements[$index], $newItemsIds, $time);
                     foreach($ids as $oldId => $newId) {
                         $newItemsIds[$oldId] = $newId;
                     }
@@ -1823,7 +1829,8 @@ class DataManager
                     
                 case MyersDiff::DELETE:
                     $this->logger->debug("DELETING element @ " . $index . ", id=" . $oldElements[$index]->id);
-                    $this->deleteElement($oldElements[$index]->id . "\n");
+                    $this->logger->debug("... .... time=" . $time);
+                    $this->deleteElement($oldElements[$index]->id . "\n", $time);
                     break;
                 
                 case MyersDiff::INSERT:
@@ -1847,7 +1854,8 @@ class DataManager
                             $this->logger->debug("...with reference === 0");
                         }
                     }
-                    $element = $this->insertNewElement($newElements[$newElementsIndex], false, $newItemsIds);
+                    $this->logger->debug("... .... time=" . $time);
+                    $element = $this->insertNewElement($newElements[$newElementsIndex], false, $newItemsIds, $time);
                     if ($element === false) {
                         $this->logger->error("Can't insert new element in DB", get_object_vars($newElements[$newElementsIndex]));
                         return false;
@@ -1876,8 +1884,11 @@ class DataManager
      * 
      * @param Element $newElement
      */
-    public function updateElement(Element $newElement, Element $oldElement, $itemIds = [])
+    public function updateElement(Element $newElement, Element $oldElement, $itemIds = [], $time = false)
     {
+        if (!$time) {
+            $time = \DataTable\MySqlUnitemporalDataTable::now();
+        }
         // Force element IDs to be same, we're only dealing with the element's data
         if ($newElement->id !== $oldElement->id) {
                 $newElement->id = $oldElement->id;
@@ -1893,7 +1904,7 @@ class DataManager
             $newElement->items
         );
         $ignoreNewEditor = true;
-        $now = \DataTable\MySqlUnitemporalDataTable::now();
+        
         
         $newItemsIndex = 0;
         foreach ($editScript as $editInstruction) {
@@ -1908,7 +1919,7 @@ class DataManager
                                 $newSeq;
                         $this->updateItemInDB(
                             $oldElement->items[$index],
-                            $now
+                            $time
                         );
                     }
                     
@@ -1923,9 +1934,10 @@ class DataManager
                                 if ($oldElement->items[$index]->target !== $itemIds[$oldElement->items[$index]->target]) {
                                     $oldElement->items[$index]->target = $itemIds[$oldElement->items[$index]->target];
                                     $this->logger->debug("...with new target", [ 'target'=>$oldElement->items[$index]->target]);
+                                    $this->logger->debug("... .... time=" . $time);
                                     $this->updateItemInDB(
                                         $oldElement->items[$index],
-                                        $now
+                                        $time
                                     );
                                 }
                             }
@@ -1938,9 +1950,10 @@ class DataManager
                 case MyersDiff::DELETE:
                     $this->logger->debug("...deleting item @ pos $index");
                     $this->queryStats->countQuery('delete-item');
+                    $this->logger->debug("... .... time=" . $time);
                     $this->itemsDataTable->deleteRowWithTime(
                         $oldElement->items[$index]->id,
-                        $now
+                        $time
                     );
                     $ignoreNewEditor = false;
                     break;
@@ -1964,9 +1977,10 @@ class DataManager
                         }
                         
                     }
+                    $this->logger->debug("... .... time=" . $time);
                     $newItemId = $this->createNewItemInDB(
                         $newElement->items[$index], 
-                        $now
+                        $time
                     );
                     //print "...with item Id = ";
                     //var_dump($newItemId);
@@ -1981,14 +1995,15 @@ class DataManager
         }
         if (!Element::isElementDataEqual($newElement, $oldElement, true, $ignoreNewEditor, false)) {
             $this->logger->debug("...updating element in DB");
-            $this->updateElementInDB($newElement);
+            $this->logger->debug("... .... time=" . $time);
+            $this->updateElementInDB($newElement, $time);
         }
         
         return [$newElement->id, $itemIds];
         
     }
     
-    public function deleteElement($elementId)
+    public function deleteElement($elementId, $time=false)
     {
         /**
          * Could there be a timing problem here? The deletes of element
@@ -1997,16 +2012,20 @@ class DataManager
          * right between those values (we're talking about 1/10th of a second
          * interval maybe)
          */
+        
+        if (!$time) {
+            $time = \DataTable\MySqlUnitemporalDataTable::now();
+        }
         $element = $this->getElementById($elementId);
         $this->queryStats->countQuery('delete');
-        $res = $this->elementsDataTable->deleteRow($element->id);
+        $res = $this->elementsDataTable->deleteRowWithTime($element->id, $time);
         if ($res === false) {
             return false;
         }
         
         foreach ($element->items as $item) {
             $this->queryStats->countQuery('delete');
-            $res2 = $this->itemsDataTable->deleteRow($item->id);
+            $res2 = $this->itemsDataTable->deleteRowWithTime($item->id, $time);
             if ($res2 === false) {
                 return false;
             }

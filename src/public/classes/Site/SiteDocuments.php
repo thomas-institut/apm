@@ -86,7 +86,6 @@ class SiteDocuments extends SiteController
         $db = $this->db;
         $doc = [];
         $doc['numPages'] = $db->getPageCountByDocId($docId);
-        $doc['numLines'] = $db->getLineCountByDoc($docId);
         $transcribedPages = $db->getTranscribedPageListByDocId($docId);
         $pagesInfo = $db->getDocPageInfo($docId, \AverroesProject\Data\DataManager::ORDER_BY_SEQ);
         $doc['numTranscribedPages'] = count($transcribedPages);

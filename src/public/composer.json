@@ -13,7 +13,9 @@
         "dflydev/fig-cookies": "^1.0",
         "rafaelnajera/xmlmatcher": "^0.4",
         "rafaelnajera/datatable" : "0.4.2",
-        "monolog/monolog": "^1.23"
+        "monolog/monolog": "^1.23",
+        "phpoffice/phpspreadsheet": "^1.4",
+        "phpoffice/phpword": "^0.15.0"
     },
     
     "require-dev": {

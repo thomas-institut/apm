@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <title>Dashboard for /home/rafael/Dropbox/prog/averroes/apm/src/public/classes/averroesproject/Data</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="../../.css/bootstrap.min.css" rel="stylesheet" type="text/css">
+  <link href="../../.css/nv.d3.min.css" rel="stylesheet" type="text/css">
+  <link href="../../.css/style.css" rel="stylesheet" type="text/css">
+  <link href="../../.css/custom.css" rel="stylesheet" type="text/css">
+  <!--[if lt IE 9]>
+  <script src="../../.js/html5shiv.min.js"></script>
+  <script src="../../.js/respond.min.js"></script>
+  <![endif]-->
+ </head>
+ <body>
+  <header>
+   <div class="container">
+    <div class="row">
+     <div class="col-md-12">
+      <ol class="breadcrumb">
+        <li><a href="../../index.html">/home/rafael/Dropbox/prog/averroes/apm/src/public/classes</a></li>
+        <li><a href="../index.html">averroesproject</a></li>
+        <li><a href="index.html">Data</a></li>
+        <li class="active">(Dashboard)</li>
+
+      </ol>
+     </div>
+    </div>
+   </div>
+  </header>
+  <div class="container">
+   <div class="row">
+    <div class="col-md-12">
+     <h2>Classes</h2>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Coverage Distribution</h3>
+     <div id="classCoverageDistribution" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Complexity</h3>
+     <div id="classComplexity" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Insufficient Coverage</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Class</th>
+         <th class="text-right">Coverage</th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="DataManager.php.html#40">AverroesProject\Data\DataManager</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DatabaseChecker.php.html#29">AverroesProject\Data\DatabaseChecker</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="EdNoteManager.php.html#32">AverroesProject\Data\EdNoteManager</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MySqlHelper.php.html#31">AverroesProject\Data\MySqlHelper</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="QueryStats.php.html#16">AverroesProject\Data\QueryStats</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="SettingsManager.php.html#30">AverroesProject\Data\SettingsManager</a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserManager.php.html#66">AverroesProject\Data\UserManager</a></td><td class="text-right">0%</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Project Risks</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Class</th>
+         <th class="text-right"><abbr title="Change Risk Anti-Patterns (CRAP) Index">CRAP</abbr></th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="DataManager.php.html#40">AverroesProject\Data\DataManager</a></td><td class="text-right">61752</td></tr>
+       <tr><td><a href="UserManager.php.html#66">AverroesProject\Data\UserManager</a></td><td class="text-right">4032</td></tr>
+       <tr><td><a href="EdNoteManager.php.html#32">AverroesProject\Data\EdNoteManager</a></td><td class="text-right">812</td></tr>
+       <tr><td><a href="MySqlHelper.php.html#31">AverroesProject\Data\MySqlHelper</a></td><td class="text-right">132</td></tr>
+       <tr><td><a href="DatabaseChecker.php.html#29">AverroesProject\Data\DatabaseChecker</a></td><td class="text-right">110</td></tr>
+       <tr><td><a href="SettingsManager.php.html#30">AverroesProject\Data\SettingsManager</a></td><td class="text-right">42</td></tr>
+       <tr><td><a href="QueryStats.php.html#16">AverroesProject\Data\QueryStats</a></td><td class="text-right">30</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-12">
+     <h2>Methods</h2>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Coverage Distribution</h3>
+     <div id="methodCoverageDistribution" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Complexity</h3>
+     <div id="methodComplexity" style="height: 300px;">
+       <svg></svg>
+     </div>
+    </div>
+   </div>
+   <div class="row">
+    <div class="col-md-6">
+     <h3>Insufficient Coverage</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Method</th>
+         <th class="text-right">Coverage</th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="DataManager.php.html#138"><abbr title="AverroesProject\Data\DataManager::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="EdNoteManager.php.html#160"><abbr title="AverroesProject\Data\EdNoteManager::isNoteInArray">isNoteInArray</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="QueryStats.php.html#26"><abbr title="AverroesProject\Data\QueryStats::reset">reset</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="QueryStats.php.html#21"><abbr title="AverroesProject\Data\QueryStats::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MySqlHelper.php.html#84"><abbr title="AverroesProject\Data\MySqlHelper::getAllRows">getAllRows</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MySqlHelper.php.html#79"><abbr title="AverroesProject\Data\MySqlHelper::getRowById">getRowById</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MySqlHelper.php.html#71"><abbr title="AverroesProject\Data\MySqlHelper::getOneRow">getOneRow</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MySqlHelper.php.html#56"><abbr title="AverroesProject\Data\MySqlHelper::getOneFieldQuery">getOneFieldQuery</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MySqlHelper.php.html#44"><abbr title="AverroesProject\Data\MySqlHelper::query">query</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="MySqlHelper.php.html#35"><abbr title="AverroesProject\Data\MySqlHelper::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="EdNoteManager.php.html#193"><abbr title="AverroesProject\Data\EdNoteManager::editorialNoteArrayFromArray">editorialNoteArrayFromArray</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="EdNoteManager.php.html#180"><abbr title="AverroesProject\Data\EdNoteManager::editorialNoteArrayFromRows">editorialNoteArrayFromRows</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="EdNoteManager.php.html#169"><abbr title="AverroesProject\Data\EdNoteManager::isNoteDataEqual">isNoteDataEqual</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="EdNoteManager.php.html#150"><abbr title="AverroesProject\Data\EdNoteManager::isNoteIdInArray">isNoteIdInArray</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="SettingsManager.php.html#38"><abbr title="AverroesProject\Data\SettingsManager::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="EdNoteManager.php.html#116"><abbr title="AverroesProject\Data\EdNoteManager::updateNotesFromArray">updateNotesFromArray</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="EdNoteManager.php.html#105"><abbr title="AverroesProject\Data\EdNoteManager::updateNote">updateNote</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="EdNoteManager.php.html#95"><abbr title="AverroesProject\Data\EdNoteManager::insertNote">insertNote</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="EdNoteManager.php.html#91"><abbr title="AverroesProject\Data\EdNoteManager::insertInlineNote">insertInlineNote</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="EdNoteManager.php.html#63"><abbr title="AverroesProject\Data\EdNoteManager::getEditorialNotesByDocPageCol">getEditorialNotesByDocPageCol</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="EdNoteManager.php.html#52"><abbr title="AverroesProject\Data\EdNoteManager::getEditorialNotesByTypeAndTarget">getEditorialNotesByTypeAndTarget</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="EdNoteManager.php.html#39"><abbr title="AverroesProject\Data\EdNoteManager::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DatabaseChecker.php.html#70"><abbr title="AverroesProject\Data\DatabaseChecker::tableExists">tableExists</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DatabaseChecker.php.html#54"><abbr title="AverroesProject\Data\DatabaseChecker::isDatabaseUpToDate">isDatabaseUpToDate</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DatabaseChecker.php.html#43"><abbr title="AverroesProject\Data\DatabaseChecker::isDatabaseInitialized">isDatabaseInitialized</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DatabaseChecker.php.html#37"><abbr title="AverroesProject\Data\DatabaseChecker::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#2053"><abbr title="AverroesProject\Data\DataManager::deletePage">deletePage</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="QueryStats.php.html#31"><abbr title="AverroesProject\Data\QueryStats::countQuery">countQuery</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="SettingsManager.php.html#44"><abbr title="AverroesProject\Data\SettingsManager::getSetting">getSetting</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#2003"><abbr title="AverroesProject\Data\DataManager::deleteElement">deleteElement</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserManager.php.html#277"><abbr title="AverroesProject\Data\UserManager::allowUserTo">allowUserTo</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserManager.php.html#437"><abbr title="AverroesProject\Data\UserManager::verifyUserPassword">verifyUserPassword</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserManager.php.html#406"><abbr title="AverroesProject\Data\UserManager::storeUserToken">storeUserToken</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserManager.php.html#399"><abbr title="AverroesProject\Data\UserManager::getUserTokenRows">getUserTokenRows</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserManager.php.html#381"><abbr title="AverroesProject\Data\UserManager::getUserToken">getUserToken</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserManager.php.html#367"><abbr title="AverroesProject\Data\UserManager::revokeRootStatus">revokeRootStatus</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserManager.php.html#362"><abbr title="AverroesProject\Data\UserManager::makeRoot">makeRoot</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserManager.php.html#357"><abbr title="AverroesProject\Data\UserManager::isRoot">isRoot</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserManager.php.html#335"><abbr title="AverroesProject\Data\UserManager::revokeUserRole">revokeUserRole</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserManager.php.html#316"><abbr title="AverroesProject\Data\UserManager::setUserRole">setUserRole</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserManager.php.html#305"><abbr title="AverroesProject\Data\UserManager::userHasRole">userHasRole</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserManager.php.html#289"><abbr title="AverroesProject\Data\UserManager::disallowUserTo">disallowUserTo</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserManager.php.html#262"><abbr title="AverroesProject\Data\UserManager::isUserAllowedTo">isUserAllowedTo</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="SettingsManager.php.html#53"><abbr title="AverroesProject\Data\SettingsManager::setSetting">setSetting</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserManager.php.html#248"><abbr title="AverroesProject\Data\UserManager::createPerson">createPerson</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserManager.php.html#234"><abbr title="AverroesProject\Data\UserManager::createUserByUsername">createUserByUsername</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserManager.php.html#214"><abbr title="AverroesProject\Data\UserManager::getUserInfoForAllUsers">getUserInfoForAllUsers</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserManager.php.html#208"><abbr title="AverroesProject\Data\UserManager::getUserInfoByUsername">getUserInfoByUsername</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserManager.php.html#192"><abbr title="AverroesProject\Data\UserManager::updateUserInfo">updateUserInfo</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserManager.php.html#163"><abbr title="AverroesProject\Data\UserManager::getUserInfoByUserId">getUserInfoByUserId</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserManager.php.html#153"><abbr title="AverroesProject\Data\UserManager::getPersonInfo">getPersonInfo</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserManager.php.html#148"><abbr title="AverroesProject\Data\UserManager::getUserIdFromUserName">getUserIdFromUserName</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserManager.php.html#134"><abbr title="AverroesProject\Data\UserManager::getUsernameFromUserId">getUsernameFromUserId</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserManager.php.html#122"><abbr title="AverroesProject\Data\UserManager::userExistsByUserName">userExistsByUserName</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserManager.php.html#111"><abbr title="AverroesProject\Data\UserManager::userExistsById">userExistsById</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserManager.php.html#89"><abbr title="AverroesProject\Data\UserManager::__construct">__construct</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#2038"><abbr title="AverroesProject\Data\DataManager::isPageEmpty">isPageEmpty</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#1884"><abbr title="AverroesProject\Data\DataManager::updateElement">updateElement</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#184"><abbr title="AverroesProject\Data\DataManager::getDocIdList">getDocIdList</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#565"><abbr title="AverroesProject\Data\DataManager::getTranscribedPageListByDocId">getTranscribedPageListByDocId</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#786"><abbr title="AverroesProject\Data\DataManager::getItemsForElement">getItemsForElement</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#776"><abbr title="AverroesProject\Data\DataManager::getColumnElements">getColumnElements</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#752"><abbr title="AverroesProject\Data\DataManager::getColumnElementsByPageId">getColumnElementsByPageId</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#732"><abbr title="AverroesProject\Data\DataManager::getOpenSeaDragonConfig">getOpenSeaDragonConfig</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#713"><abbr title="AverroesProject\Data\DataManager::getImageUrl">getImageUrl</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#678"><abbr title="AverroesProject\Data\DataManager::getPageIdsTranscribedByUser">getPageIdsTranscribedByUser</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#645"><abbr title="AverroesProject\Data\DataManager::getDocIdsTranscribedByUser">getDocIdsTranscribedByUser</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#635"><abbr title="AverroesProject\Data\DataManager::getDocByDareId">getDocByDareId</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#629"><abbr title="AverroesProject\Data\DataManager::getDocById">getDocById</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#617"><abbr title="AverroesProject\Data\DataManager::deleteDocById">deleteDocById</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#598"><abbr title="AverroesProject\Data\DataManager::getDocPageInfo">getDocPageInfo</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#535"><abbr title="AverroesProject\Data\DataManager::getEditorsByDocId">getEditorsByDocId</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#833"><abbr title="AverroesProject\Data\DataManager::getWorkInfo">getWorkInfo</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#479"><abbr title="AverroesProject\Data\DataManager::updatePageSettings">updatePageSettings</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#426"><abbr title="AverroesProject\Data\DataManager::updateDocSettings">updateDocSettings</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#400"><abbr title="AverroesProject\Data\DataManager::getActiveWorks">getActiveWorks</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#386"><abbr title="AverroesProject\Data\DataManager::getPageTypeNames">getPageTypeNames</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#368"><abbr title="AverroesProject\Data\DataManager::getPageCountByDocIdAllTime">getPageCountByDocIdAllTime</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#352"><abbr title="AverroesProject\Data\DataManager::getPageCountByDocId">getPageCountByDocId</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#332"><abbr title="AverroesProject\Data\DataManager::getPageInfo">getPageInfo</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#323"><abbr title="AverroesProject\Data\DataManager::getPageInfoByDocPage">getPageInfoByDocPage</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#301"><abbr title="AverroesProject\Data\DataManager::addNewColumn">addNewColumn</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#284"><abbr title="AverroesProject\Data\DataManager::getNumColumns">getNumColumns</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#260"><abbr title="AverroesProject\Data\DataManager::newPage">newPage</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#219"><abbr title="AverroesProject\Data\DataManager::newDoc">newDoc</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#804"><abbr title="AverroesProject\Data\DataManager::getWorksWithTranscriptions">getWorksWithTranscriptions</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#846"><abbr title="AverroesProject\Data\DataManager::getChunksWithTranscriptionForWorkId">getChunksWithTranscriptionForWorkId</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#1774"><abbr title="AverroesProject\Data\DataManager::updateColumnElements">updateColumnElements</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#1402"><abbr title="AverroesProject\Data\DataManager::updateItemInDB">updateItemInDB</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#1750"><abbr title="AverroesProject\Data\DataManager::createItemObjectFromArray">createItemObjectFromArray</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#1732"><abbr title="AverroesProject\Data\DataManager::createItemObjectFromRow">createItemObjectFromRow</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#1607"><abbr title="AverroesProject\Data\DataManager::createItemObjectFromArbitraryRow">createItemObjectFromArbitraryRow</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#1590"><abbr title="AverroesProject\Data\DataManager::createElementObjectFromArray">createElementObjectFromArray</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#1573"><abbr title="AverroesProject\Data\DataManager::createElementObjectFromRow">createElementObjectFromRow</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#1558"><abbr title="AverroesProject\Data\DataManager::createElementArrayFromArray">createElementArrayFromArray</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#1501"><abbr title="AverroesProject\Data\DataManager::createElementObjectFromArbitraryRow">createElementObjectFromArbitraryRow</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#1489"><abbr title="AverroesProject\Data\DataManager::getElementById">getElementById</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#1478"><abbr title="AverroesProject\Data\DataManager::getItemById">getItemById</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#1463"><abbr title="AverroesProject\Data\DataManager::getMaxElementSeq">getMaxElementSeq</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#1442"><abbr title="AverroesProject\Data\DataManager::updateElementInDB">updateElementInDB</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#1422"><abbr title="AverroesProject\Data\DataManager::createNewElementInDB">createNewElementInDB</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#1381"><abbr title="AverroesProject\Data\DataManager::createNewItemInDB">createNewItemInDB</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#870"><abbr title="AverroesProject\Data\DataManager::getDocsForChunk">getDocsForChunk</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#1239"><abbr title="AverroesProject\Data\DataManager::insertNewElement">insertNewElement</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#1212"><abbr title="AverroesProject\Data\DataManager::getPageIdByDocSeq">getPageIdByDocSeq</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#1199"><abbr title="AverroesProject\Data\DataManager::getPageIdByDocPage">getPageIdByDocPage</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#1122"><abbr title="AverroesProject\Data\DataManager::getItemStreamBetweenLocations">getItemStreamBetweenLocations</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#1104"><abbr title="AverroesProject\Data\DataManager::calcSeqNumber">calcSeqNumber</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#1078"><abbr title="AverroesProject\Data\DataManager::getItemStreamForElementId">getItemStreamForElementId</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#1065"><abbr title="AverroesProject\Data\DataManager::getAdditionElementIdWithGivenReference">getAdditionElementIdWithGivenReference</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#1055"><abbr title="AverroesProject\Data\DataManager::getAdditionItemWithGivenTarget">getAdditionItemWithGivenTarget</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#1003"><abbr title="AverroesProject\Data\DataManager::getChunkLocationArrayFromRawLocations">getChunkLocationArrayFromRawLocations</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#969"><abbr title="AverroesProject\Data\DataManager::isAfter">isAfter</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#923"><abbr title="AverroesProject\Data\DataManager::getChunkLocationsForDocRaw">getChunkLocationsForDocRaw</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="DataManager.php.html#899"><abbr title="AverroesProject\Data\DataManager::getChunkLocationsForDoc">getChunkLocationsForDoc</abbr></a></td><td class="text-right">0%</td></tr>
+       <tr><td><a href="UserManager.php.html#450"><abbr title="AverroesProject\Data\UserManager::storeUserPassword">storeUserPassword</abbr></a></td><td class="text-right">0%</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+    <div class="col-md-6">
+     <h3>Project Risks</h3>
+     <div class="scrollbox">
+      <table class="table">
+       <thead>
+        <tr>
+         <th>Method</th>
+         <th class="text-right"><abbr title="Change Risk Anti-Patterns (CRAP) Index">CRAP</abbr></th>
+        </tr>
+       </thead>
+       <tbody>
+       <tr><td><a href="DataManager.php.html#1239"><abbr title="AverroesProject\Data\DataManager::insertNewElement">insertNewElement</abbr></a></td><td class="text-right">506</td></tr>
+       <tr><td><a href="DataManager.php.html#1774"><abbr title="AverroesProject\Data\DataManager::updateColumnElements">updateColumnElements</abbr></a></td><td class="text-right">420</td></tr>
+       <tr><td><a href="DataManager.php.html#1607"><abbr title="AverroesProject\Data\DataManager::createItemObjectFromArbitraryRow">createItemObjectFromArbitraryRow</abbr></a></td><td class="text-right">380</td></tr>
+       <tr><td><a href="DataManager.php.html#1884"><abbr title="AverroesProject\Data\DataManager::updateElement">updateElement</abbr></a></td><td class="text-right">380</td></tr>
+       <tr><td><a href="DataManager.php.html#1122"><abbr title="AverroesProject\Data\DataManager::getItemStreamBetweenLocations">getItemStreamBetweenLocations</abbr></a></td><td class="text-right">182</td></tr>
+       <tr><td><a href="DataManager.php.html#1003"><abbr title="AverroesProject\Data\DataManager::getChunkLocationArrayFromRawLocations">getChunkLocationArrayFromRawLocations</abbr></a></td><td class="text-right">132</td></tr>
+       <tr><td><a href="DataManager.php.html#426"><abbr title="AverroesProject\Data\DataManager::updateDocSettings">updateDocSettings</abbr></a></td><td class="text-right">110</td></tr>
+       <tr><td><a href="DataManager.php.html#1501"><abbr title="AverroesProject\Data\DataManager::createElementObjectFromArbitraryRow">createElementObjectFromArbitraryRow</abbr></a></td><td class="text-right">90</td></tr>
+       <tr><td><a href="DataManager.php.html#2053"><abbr title="AverroesProject\Data\DataManager::deletePage">deletePage</abbr></a></td><td class="text-right">90</td></tr>
+       <tr><td><a href="EdNoteManager.php.html#116"><abbr title="AverroesProject\Data\EdNoteManager::updateNotesFromArray">updateNotesFromArray</abbr></a></td><td class="text-right">72</td></tr>
+       <tr><td><a href="DataManager.php.html#479"><abbr title="AverroesProject\Data\DataManager::updatePageSettings">updatePageSettings</abbr></a></td><td class="text-right">72</td></tr>
+       <tr><td><a href="UserManager.php.html#89"><abbr title="AverroesProject\Data\UserManager::__construct">__construct</abbr></a></td><td class="text-right">42</td></tr>
+       <tr><td><a href="UserManager.php.html#381"><abbr title="AverroesProject\Data\UserManager::getUserToken">getUserToken</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="UserManager.php.html#335"><abbr title="AverroesProject\Data\UserManager::revokeUserRole">revokeUserRole</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="DataManager.php.html#2003"><abbr title="AverroesProject\Data\DataManager::deleteElement">deleteElement</abbr></a></td><td class="text-right">30</td></tr>
+       <tr><td><a href="DataManager.php.html#2038"><abbr title="AverroesProject\Data\DataManager::isPageEmpty">isPageEmpty</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="DataManager.php.html#184"><abbr title="AverroesProject\Data\DataManager::getDocIdList">getDocIdList</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="DataManager.php.html#219"><abbr title="AverroesProject\Data\DataManager::newDoc">newDoc</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="UserManager.php.html#289"><abbr title="AverroesProject\Data\UserManager::disallowUserTo">disallowUserTo</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="UserManager.php.html#437"><abbr title="AverroesProject\Data\UserManager::verifyUserPassword">verifyUserPassword</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="UserManager.php.html#406"><abbr title="AverroesProject\Data\UserManager::storeUserToken">storeUserToken</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="UserManager.php.html#163"><abbr title="AverroesProject\Data\UserManager::getUserInfoByUserId">getUserInfoByUserId</abbr></a></td><td class="text-right">20</td></tr>
+       <tr><td><a href="DatabaseChecker.php.html#54"><abbr title="AverroesProject\Data\DatabaseChecker::isDatabaseUpToDate">isDatabaseUpToDate</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="DatabaseChecker.php.html#43"><abbr title="AverroesProject\Data\DatabaseChecker::isDatabaseInitialized">isDatabaseInitialized</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="MySqlHelper.php.html#56"><abbr title="AverroesProject\Data\MySqlHelper::getOneFieldQuery">getOneFieldQuery</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="QueryStats.php.html#31"><abbr title="AverroesProject\Data\QueryStats::countQuery">countQuery</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="EdNoteManager.php.html#160"><abbr title="AverroesProject\Data\EdNoteManager::isNoteInArray">isNoteInArray</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="UserManager.php.html#192"><abbr title="AverroesProject\Data\UserManager::updateUserInfo">updateUserInfo</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="UserManager.php.html#277"><abbr title="AverroesProject\Data\UserManager::allowUserTo">allowUserTo</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="DatabaseChecker.php.html#70"><abbr title="AverroesProject\Data\DatabaseChecker::tableExists">tableExists</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="UserManager.php.html#316"><abbr title="AverroesProject\Data\UserManager::setUserRole">setUserRole</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="EdNoteManager.php.html#193"><abbr title="AverroesProject\Data\EdNoteManager::editorialNoteArrayFromArray">editorialNoteArrayFromArray</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="DataManager.php.html#1558"><abbr title="AverroesProject\Data\DataManager::createElementArrayFromArray">createElementArrayFromArray</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="EdNoteManager.php.html#150"><abbr title="AverroesProject\Data\EdNoteManager::isNoteIdInArray">isNoteIdInArray</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="EdNoteManager.php.html#180"><abbr title="AverroesProject\Data\EdNoteManager::editorialNoteArrayFromRows">editorialNoteArrayFromRows</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="UserManager.php.html#450"><abbr title="AverroesProject\Data\UserManager::storeUserPassword">storeUserPassword</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="DataManager.php.html#400"><abbr title="AverroesProject\Data\DataManager::getActiveWorks">getActiveWorks</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="DataManager.php.html#645"><abbr title="AverroesProject\Data\DataManager::getDocIdsTranscribedByUser">getDocIdsTranscribedByUser</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="DataManager.php.html#678"><abbr title="AverroesProject\Data\DataManager::getPageIdsTranscribedByUser">getPageIdsTranscribedByUser</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="DataManager.php.html#713"><abbr title="AverroesProject\Data\DataManager::getImageUrl">getImageUrl</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="DataManager.php.html#732"><abbr title="AverroesProject\Data\DataManager::getOpenSeaDragonConfig">getOpenSeaDragonConfig</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="DataManager.php.html#565"><abbr title="AverroesProject\Data\DataManager::getTranscribedPageListByDocId">getTranscribedPageListByDocId</abbr></a></td><td class="text-right">12</td></tr>
+       <tr><td><a href="DataManager.php.html#535"><abbr title="AverroesProject\Data\DataManager::getEditorsByDocId">getEditorsByDocId</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="SettingsManager.php.html#38"><abbr title="AverroesProject\Data\SettingsManager::__construct">__construct</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="SettingsManager.php.html#44"><abbr title="AverroesProject\Data\SettingsManager::getSetting">getSetting</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="SettingsManager.php.html#53"><abbr title="AverroesProject\Data\SettingsManager::setSetting">setSetting</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="UserManager.php.html#134"><abbr title="AverroesProject\Data\UserManager::getUsernameFromUserId">getUsernameFromUserId</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="DataManager.php.html#1402"><abbr title="AverroesProject\Data\DataManager::updateItemInDB">updateItemInDB</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="MySqlHelper.php.html#84"><abbr title="AverroesProject\Data\MySqlHelper::getAllRows">getAllRows</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="UserManager.php.html#214"><abbr title="AverroesProject\Data\UserManager::getUserInfoForAllUsers">getUserInfoForAllUsers</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="UserManager.php.html#234"><abbr title="AverroesProject\Data\UserManager::createUserByUsername">createUserByUsername</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="UserManager.php.html#262"><abbr title="AverroesProject\Data\UserManager::isUserAllowedTo">isUserAllowedTo</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="DataManager.php.html#386"><abbr title="AverroesProject\Data\DataManager::getPageTypeNames">getPageTypeNames</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="DataManager.php.html#368"><abbr title="AverroesProject\Data\DataManager::getPageCountByDocIdAllTime">getPageCountByDocIdAllTime</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="DataManager.php.html#352"><abbr title="AverroesProject\Data\DataManager::getPageCountByDocId">getPageCountByDocId</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="DataManager.php.html#332"><abbr title="AverroesProject\Data\DataManager::getPageInfo">getPageInfo</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="DataManager.php.html#323"><abbr title="AverroesProject\Data\DataManager::getPageInfoByDocPage">getPageInfoByDocPage</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="DataManager.php.html#301"><abbr title="AverroesProject\Data\DataManager::addNewColumn">addNewColumn</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="DataManager.php.html#284"><abbr title="AverroesProject\Data\DataManager::getNumColumns">getNumColumns</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="DataManager.php.html#598"><abbr title="AverroesProject\Data\DataManager::getDocPageInfo">getDocPageInfo</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="MySqlHelper.php.html#44"><abbr title="AverroesProject\Data\MySqlHelper::query">query</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="MySqlHelper.php.html#71"><abbr title="AverroesProject\Data\MySqlHelper::getOneRow">getOneRow</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="DataManager.php.html#923"><abbr title="AverroesProject\Data\DataManager::getChunkLocationsForDocRaw">getChunkLocationsForDocRaw</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="DataManager.php.html#1442"><abbr title="AverroesProject\Data\DataManager::updateElementInDB">updateElementInDB</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="DataManager.php.html#1463"><abbr title="AverroesProject\Data\DataManager::getMaxElementSeq">getMaxElementSeq</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="DataManager.php.html#1478"><abbr title="AverroesProject\Data\DataManager::getItemById">getItemById</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="DataManager.php.html#1381"><abbr title="AverroesProject\Data\DataManager::createNewItemInDB">createNewItemInDB</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="DataManager.php.html#1212"><abbr title="AverroesProject\Data\DataManager::getPageIdByDocSeq">getPageIdByDocSeq</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="DataManager.php.html#1199"><abbr title="AverroesProject\Data\DataManager::getPageIdByDocPage">getPageIdByDocPage</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="DataManager.php.html#1078"><abbr title="AverroesProject\Data\DataManager::getItemStreamForElementId">getItemStreamForElementId</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="DataManager.php.html#1065"><abbr title="AverroesProject\Data\DataManager::getAdditionElementIdWithGivenReference">getAdditionElementIdWithGivenReference</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="DataManager.php.html#870"><abbr title="AverroesProject\Data\DataManager::getDocsForChunk">getDocsForChunk</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="DataManager.php.html#617"><abbr title="AverroesProject\Data\DataManager::deleteDocById">deleteDocById</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="DataManager.php.html#846"><abbr title="AverroesProject\Data\DataManager::getChunksWithTranscriptionForWorkId">getChunksWithTranscriptionForWorkId</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="DataManager.php.html#833"><abbr title="AverroesProject\Data\DataManager::getWorkInfo">getWorkInfo</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="DataManager.php.html#804"><abbr title="AverroesProject\Data\DataManager::getWorksWithTranscriptions">getWorksWithTranscriptions</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="DataManager.php.html#786"><abbr title="AverroesProject\Data\DataManager::getItemsForElement">getItemsForElement</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="DataManager.php.html#776"><abbr title="AverroesProject\Data\DataManager::getColumnElements">getColumnElements</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="EdNoteManager.php.html#39"><abbr title="AverroesProject\Data\EdNoteManager::__construct">__construct</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="DataManager.php.html#752"><abbr title="AverroesProject\Data\DataManager::getColumnElementsByPageId">getColumnElementsByPageId</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="DataManager.php.html#1422"><abbr title="AverroesProject\Data\DataManager::createNewElementInDB">createNewElementInDB</abbr></a></td><td class="text-right">6</td></tr>
+       <tr><td><a href="DataManager.php.html#1489"><abbr title="AverroesProject\Data\DataManager::getElementById">getElementById</abbr></a></td><td class="text-right">6</td></tr>
+
+       </tbody>
+      </table>
+     </div>
+    </div>
+   </div>
+   <footer>
+    <hr/>
+    <p>
+     <small>Generated by <a href="https://github.com/sebastianbergmann/php-code-coverage" target="_top">php-code-coverage 6.0.7</a> using <a href="https://secure.php.net/" target="_top">PHP 7.2.11-2+ubuntu16.04.1+deb.sury.org+1</a> with <a href="https://xdebug.org/">Xdebug 2.6.1</a> and <a href="https://phpunit.de/">PHPUnit 7.2.4</a> at Thu Oct 25 10:31:52 CEST 2018.</small>
+    </p>
+   </footer>
+  </div>
+  <script src="../../.js/jquery.min.js" type="text/javascript"></script>
+  <script src="../../.js/bootstrap.min.js" type="text/javascript"></script>
+  <script src="../../.js/holder.min.js" type="text/javascript"></script>
+  <script src="../../.js/d3.min.js" type="text/javascript"></script>
+  <script src="../../.js/nv.d3.min.js" type="text/javascript"></script>
+  <script type="text/javascript">
+$(document).ready(function() {
+  nv.addGraph(function() {
+    var chart = nv.models.multiBarChart();
+    chart.tooltips(false)
+      .showControls(false)
+      .showLegend(false)
+      .reduceXTicks(false)
+      .staggerLabels(true)
+      .yAxis.tickFormat(d3.format('d'));
+
+    d3.select('#classCoverageDistribution svg')
+      .datum(getCoverageDistributionData([7,0,0,0,0,0,0,0,0,0,0,0], "Class Coverage"))
+      .transition().duration(500).call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  nv.addGraph(function() {
+    var chart = nv.models.multiBarChart();
+    chart.tooltips(false)
+      .showControls(false)
+      .showLegend(false)
+      .reduceXTicks(false)
+      .staggerLabels(true)
+      .yAxis.tickFormat(d3.format('d'));
+
+    d3.select('#methodCoverageDistribution svg')
+      .datum(getCoverageDistributionData([116,0,0,0,0,0,0,0,0,0,0,0], "Method Coverage"))
+      .transition().duration(500).call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  function getCoverageDistributionData(data, label) {
+    var labels = [
+      '0%',
+      '0-10%',
+      '10-20%',
+      '20-30%',
+      '30-40%',
+      '40-50%',
+      '50-60%',
+      '60-70%',
+      '70-80%',
+      '80-90%',
+      '90-100%',
+      '100%'
+    ];
+    var values = [];
+    $.each(labels, function(key) {
+      values.push({x: labels[key], y: data[key]});
+    });
+
+    return [
+      {
+        key: label,
+        values: values,
+        color: "#4572A7"
+      }
+    ];
+  }
+  nv.addGraph(function() {
+    var chart = nv.models.scatterChart()
+      .showDistX(true)
+      .showDistY(true)
+      .showLegend(false)
+      .forceX([0, 100]);
+    chart.tooltipContent(function(graph) {
+      return '<p>' + graph.point.class + '</p>';
+    });
+
+    chart.xAxis.axisLabel('Code Coverage (in percent)');
+    chart.yAxis.axisLabel('Cyclomatic Complexity');
+
+    d3.select('#classComplexity svg')
+      .datum(getComplexityData([[0,248,"<a href=\"DataManager.php.html#40\">AverroesProject\\Data\\DataManager<\/a>"],[0,10,"<a href=\"DatabaseChecker.php.html#29\">AverroesProject\\Data\\DatabaseChecker<\/a>"],[0,28,"<a href=\"EdNoteManager.php.html#32\">AverroesProject\\Data\\EdNoteManager<\/a>"],[0,11,"<a href=\"MySqlHelper.php.html#31\">AverroesProject\\Data\\MySqlHelper<\/a>"],[0,5,"<a href=\"QueryStats.php.html#16\">AverroesProject\\Data\\QueryStats<\/a>"],[0,6,"<a href=\"SettingsManager.php.html#30\">AverroesProject\\Data\\SettingsManager<\/a>"],[0,63,"<a href=\"UserManager.php.html#66\">AverroesProject\\Data\\UserManager<\/a>"]], 'Class Complexity'))
+      .transition()
+      .duration(500)
+      .call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  nv.addGraph(function() {
+    var chart = nv.models.scatterChart()
+      .showDistX(true)
+      .showDistY(true)
+      .showLegend(false)
+      .forceX([0, 100]);
+    chart.tooltipContent(function(graph) {
+      return '<p>' + graph.point.class + '</p>';
+    });
+
+    chart.xAxis.axisLabel('Code Coverage (in percent)');
+    chart.yAxis.axisLabel('Method Complexity');
+
+    d3.select('#methodComplexity svg')
+      .datum(getComplexityData([[0,1,"<a href=\"DataManager.php.html#138\">AverroesProject\\Data\\DataManager::__construct<\/a>"],[0,4,"<a href=\"DataManager.php.html#184\">AverroesProject\\Data\\DataManager::getDocIdList<\/a>"],[0,4,"<a href=\"DataManager.php.html#219\">AverroesProject\\Data\\DataManager::newDoc<\/a>"],[0,1,"<a href=\"DataManager.php.html#260\">AverroesProject\\Data\\DataManager::newPage<\/a>"],[0,2,"<a href=\"DataManager.php.html#284\">AverroesProject\\Data\\DataManager::getNumColumns<\/a>"],[0,2,"<a href=\"DataManager.php.html#301\">AverroesProject\\Data\\DataManager::addNewColumn<\/a>"],[0,2,"<a href=\"DataManager.php.html#323\">AverroesProject\\Data\\DataManager::getPageInfoByDocPage<\/a>"],[0,2,"<a href=\"DataManager.php.html#332\">AverroesProject\\Data\\DataManager::getPageInfo<\/a>"],[0,2,"<a href=\"DataManager.php.html#352\">AverroesProject\\Data\\DataManager::getPageCountByDocId<\/a>"],[0,2,"<a href=\"DataManager.php.html#368\">AverroesProject\\Data\\DataManager::getPageCountByDocIdAllTime<\/a>"],[0,2,"<a href=\"DataManager.php.html#386\">AverroesProject\\Data\\DataManager::getPageTypeNames<\/a>"],[0,3,"<a href=\"DataManager.php.html#400\">AverroesProject\\Data\\DataManager::getActiveWorks<\/a>"],[0,10,"<a href=\"DataManager.php.html#426\">AverroesProject\\Data\\DataManager::updateDocSettings<\/a>"],[0,8,"<a href=\"DataManager.php.html#479\">AverroesProject\\Data\\DataManager::updatePageSettings<\/a>"],[0,2,"<a href=\"DataManager.php.html#535\">AverroesProject\\Data\\DataManager::getEditorsByDocId<\/a>"],[0,3,"<a href=\"DataManager.php.html#565\">AverroesProject\\Data\\DataManager::getTranscribedPageListByDocId<\/a>"],[0,2,"<a href=\"DataManager.php.html#598\">AverroesProject\\Data\\DataManager::getDocPageInfo<\/a>"],[0,2,"<a href=\"DataManager.php.html#617\">AverroesProject\\Data\\DataManager::deleteDocById<\/a>"],[0,1,"<a href=\"DataManager.php.html#629\">AverroesProject\\Data\\DataManager::getDocById<\/a>"],[0,1,"<a href=\"DataManager.php.html#635\">AverroesProject\\Data\\DataManager::getDocByDareId<\/a>"],[0,3,"<a href=\"DataManager.php.html#645\">AverroesProject\\Data\\DataManager::getDocIdsTranscribedByUser<\/a>"],[0,3,"<a href=\"DataManager.php.html#678\">AverroesProject\\Data\\DataManager::getPageIdsTranscribedByUser<\/a>"],[0,3,"<a href=\"DataManager.php.html#713\">AverroesProject\\Data\\DataManager::getImageUrl<\/a>"],[0,3,"<a href=\"DataManager.php.html#732\">AverroesProject\\Data\\DataManager::getOpenSeaDragonConfig<\/a>"],[0,2,"<a href=\"DataManager.php.html#752\">AverroesProject\\Data\\DataManager::getColumnElementsByPageId<\/a>"],[0,2,"<a href=\"DataManager.php.html#776\">AverroesProject\\Data\\DataManager::getColumnElements<\/a>"],[0,2,"<a href=\"DataManager.php.html#786\">AverroesProject\\Data\\DataManager::getItemsForElement<\/a>"],[0,2,"<a href=\"DataManager.php.html#804\">AverroesProject\\Data\\DataManager::getWorksWithTranscriptions<\/a>"],[0,2,"<a href=\"DataManager.php.html#833\">AverroesProject\\Data\\DataManager::getWorkInfo<\/a>"],[0,2,"<a href=\"DataManager.php.html#846\">AverroesProject\\Data\\DataManager::getChunksWithTranscriptionForWorkId<\/a>"],[0,2,"<a href=\"DataManager.php.html#870\">AverroesProject\\Data\\DataManager::getDocsForChunk<\/a>"],[0,1,"<a href=\"DataManager.php.html#899\">AverroesProject\\Data\\DataManager::getChunkLocationsForDoc<\/a>"],[0,2,"<a href=\"DataManager.php.html#923\">AverroesProject\\Data\\DataManager::getChunkLocationsForDocRaw<\/a>"],[0,1,"<a href=\"DataManager.php.html#969\">AverroesProject\\Data\\DataManager::isAfter<\/a>"],[0,11,"<a href=\"DataManager.php.html#1003\">AverroesProject\\Data\\DataManager::getChunkLocationArrayFromRawLocations<\/a>"],[0,1,"<a href=\"DataManager.php.html#1055\">AverroesProject\\Data\\DataManager::getAdditionItemWithGivenTarget<\/a>"],[0,2,"<a href=\"DataManager.php.html#1065\">AverroesProject\\Data\\DataManager::getAdditionElementIdWithGivenReference<\/a>"],[0,2,"<a href=\"DataManager.php.html#1078\">AverroesProject\\Data\\DataManager::getItemStreamForElementId<\/a>"],[0,1,"<a href=\"DataManager.php.html#1104\">AverroesProject\\Data\\DataManager::calcSeqNumber<\/a>"],[0,13,"<a href=\"DataManager.php.html#1122\">AverroesProject\\Data\\DataManager::getItemStreamBetweenLocations<\/a>"],[0,2,"<a href=\"DataManager.php.html#1199\">AverroesProject\\Data\\DataManager::getPageIdByDocPage<\/a>"],[0,2,"<a href=\"DataManager.php.html#1212\">AverroesProject\\Data\\DataManager::getPageIdByDocSeq<\/a>"],[0,22,"<a href=\"DataManager.php.html#1239\">AverroesProject\\Data\\DataManager::insertNewElement<\/a>"],[0,2,"<a href=\"DataManager.php.html#1381\">AverroesProject\\Data\\DataManager::createNewItemInDB<\/a>"],[0,2,"<a href=\"DataManager.php.html#1402\">AverroesProject\\Data\\DataManager::updateItemInDB<\/a>"],[0,2,"<a href=\"DataManager.php.html#1422\">AverroesProject\\Data\\DataManager::createNewElementInDB<\/a>"],[0,2,"<a href=\"DataManager.php.html#1442\">AverroesProject\\Data\\DataManager::updateElementInDB<\/a>"],[0,2,"<a href=\"DataManager.php.html#1463\">AverroesProject\\Data\\DataManager::getMaxElementSeq<\/a>"],[0,2,"<a href=\"DataManager.php.html#1478\">AverroesProject\\Data\\DataManager::getItemById<\/a>"],[0,2,"<a href=\"DataManager.php.html#1489\">AverroesProject\\Data\\DataManager::getElementById<\/a>"],[0,9,"<a href=\"DataManager.php.html#1501\">AverroesProject\\Data\\DataManager::createElementObjectFromArbitraryRow<\/a>"],[0,3,"<a href=\"DataManager.php.html#1558\">AverroesProject\\Data\\DataManager::createElementArrayFromArray<\/a>"],[0,1,"<a href=\"DataManager.php.html#1573\">AverroesProject\\Data\\DataManager::createElementObjectFromRow<\/a>"],[0,1,"<a href=\"DataManager.php.html#1590\">AverroesProject\\Data\\DataManager::createElementObjectFromArray<\/a>"],[0,19,"<a href=\"DataManager.php.html#1607\">AverroesProject\\Data\\DataManager::createItemObjectFromArbitraryRow<\/a>"],[0,1,"<a href=\"DataManager.php.html#1732\">AverroesProject\\Data\\DataManager::createItemObjectFromRow<\/a>"],[0,1,"<a href=\"DataManager.php.html#1750\">AverroesProject\\Data\\DataManager::createItemObjectFromArray<\/a>"],[0,20,"<a href=\"DataManager.php.html#1774\">AverroesProject\\Data\\DataManager::updateColumnElements<\/a>"],[0,19,"<a href=\"DataManager.php.html#1884\">AverroesProject\\Data\\DataManager::updateElement<\/a>"],[0,5,"<a href=\"DataManager.php.html#2003\">AverroesProject\\Data\\DataManager::deleteElement<\/a>"],[0,4,"<a href=\"DataManager.php.html#2038\">AverroesProject\\Data\\DataManager::isPageEmpty<\/a>"],[0,9,"<a href=\"DataManager.php.html#2053\">AverroesProject\\Data\\DataManager::deletePage<\/a>"],[0,1,"<a href=\"DatabaseChecker.php.html#37\">AverroesProject\\Data\\DatabaseChecker::__construct<\/a>"],[0,3,"<a href=\"DatabaseChecker.php.html#43\">AverroesProject\\Data\\DatabaseChecker::isDatabaseInitialized<\/a>"],[0,3,"<a href=\"DatabaseChecker.php.html#54\">AverroesProject\\Data\\DatabaseChecker::isDatabaseUpToDate<\/a>"],[0,3,"<a href=\"DatabaseChecker.php.html#70\">AverroesProject\\Data\\DatabaseChecker::tableExists<\/a>"],[0,2,"<a href=\"EdNoteManager.php.html#39\">AverroesProject\\Data\\EdNoteManager::__construct<\/a>"],[0,1,"<a href=\"EdNoteManager.php.html#52\">AverroesProject\\Data\\EdNoteManager::getEditorialNotesByTypeAndTarget<\/a>"],[0,1,"<a href=\"EdNoteManager.php.html#63\">AverroesProject\\Data\\EdNoteManager::getEditorialNotesByDocPageCol<\/a>"],[0,1,"<a href=\"EdNoteManager.php.html#91\">AverroesProject\\Data\\EdNoteManager::insertInlineNote<\/a>"],[0,1,"<a href=\"EdNoteManager.php.html#95\">AverroesProject\\Data\\EdNoteManager::insertNote<\/a>"],[0,1,"<a href=\"EdNoteManager.php.html#105\">AverroesProject\\Data\\EdNoteManager::updateNote<\/a>"],[0,8,"<a href=\"EdNoteManager.php.html#116\">AverroesProject\\Data\\EdNoteManager::updateNotesFromArray<\/a>"],[0,3,"<a href=\"EdNoteManager.php.html#150\">AverroesProject\\Data\\EdNoteManager::isNoteIdInArray<\/a>"],[0,3,"<a href=\"EdNoteManager.php.html#160\">AverroesProject\\Data\\EdNoteManager::isNoteInArray<\/a>"],[0,1,"<a href=\"EdNoteManager.php.html#169\">AverroesProject\\Data\\EdNoteManager::isNoteDataEqual<\/a>"],[0,3,"<a href=\"EdNoteManager.php.html#180\">AverroesProject\\Data\\EdNoteManager::editorialNoteArrayFromRows<\/a>"],[0,3,"<a href=\"EdNoteManager.php.html#193\">AverroesProject\\Data\\EdNoteManager::editorialNoteArrayFromArray<\/a>"],[0,1,"<a href=\"MySqlHelper.php.html#35\">AverroesProject\\Data\\MySqlHelper::__construct<\/a>"],[0,2,"<a href=\"MySqlHelper.php.html#44\">AverroesProject\\Data\\MySqlHelper::query<\/a>"],[0,3,"<a href=\"MySqlHelper.php.html#56\">AverroesProject\\Data\\MySqlHelper::getOneFieldQuery<\/a>"],[0,2,"<a href=\"MySqlHelper.php.html#71\">AverroesProject\\Data\\MySqlHelper::getOneRow<\/a>"],[0,1,"<a href=\"MySqlHelper.php.html#79\">AverroesProject\\Data\\MySqlHelper::getRowById<\/a>"],[0,2,"<a href=\"MySqlHelper.php.html#84\">AverroesProject\\Data\\MySqlHelper::getAllRows<\/a>"],[0,1,"<a href=\"QueryStats.php.html#21\">AverroesProject\\Data\\QueryStats::__construct<\/a>"],[0,1,"<a href=\"QueryStats.php.html#26\">AverroesProject\\Data\\QueryStats::reset<\/a>"],[0,3,"<a href=\"QueryStats.php.html#31\">AverroesProject\\Data\\QueryStats::countQuery<\/a>"],[0,2,"<a href=\"SettingsManager.php.html#38\">AverroesProject\\Data\\SettingsManager::__construct<\/a>"],[0,2,"<a href=\"SettingsManager.php.html#44\">AverroesProject\\Data\\SettingsManager::getSetting<\/a>"],[0,2,"<a href=\"SettingsManager.php.html#53\">AverroesProject\\Data\\SettingsManager::setSetting<\/a>"],[0,6,"<a href=\"UserManager.php.html#89\">AverroesProject\\Data\\UserManager::__construct<\/a>"],[0,1,"<a href=\"UserManager.php.html#111\">AverroesProject\\Data\\UserManager::userExistsById<\/a>"],[0,1,"<a href=\"UserManager.php.html#122\">AverroesProject\\Data\\UserManager::userExistsByUserName<\/a>"],[0,2,"<a href=\"UserManager.php.html#134\">AverroesProject\\Data\\UserManager::getUsernameFromUserId<\/a>"],[0,1,"<a href=\"UserManager.php.html#148\">AverroesProject\\Data\\UserManager::getUserIdFromUserName<\/a>"],[0,1,"<a href=\"UserManager.php.html#153\">AverroesProject\\Data\\UserManager::getPersonInfo<\/a>"],[0,4,"<a href=\"UserManager.php.html#163\">AverroesProject\\Data\\UserManager::getUserInfoByUserId<\/a>"],[0,3,"<a href=\"UserManager.php.html#192\">AverroesProject\\Data\\UserManager::updateUserInfo<\/a>"],[0,1,"<a href=\"UserManager.php.html#208\">AverroesProject\\Data\\UserManager::getUserInfoByUsername<\/a>"],[0,2,"<a href=\"UserManager.php.html#214\">AverroesProject\\Data\\UserManager::getUserInfoForAllUsers<\/a>"],[0,2,"<a href=\"UserManager.php.html#234\">AverroesProject\\Data\\UserManager::createUserByUsername<\/a>"],[0,1,"<a href=\"UserManager.php.html#248\">AverroesProject\\Data\\UserManager::createPerson<\/a>"],[0,2,"<a href=\"UserManager.php.html#262\">AverroesProject\\Data\\UserManager::isUserAllowedTo<\/a>"],[0,3,"<a href=\"UserManager.php.html#277\">AverroesProject\\Data\\UserManager::allowUserTo<\/a>"],[0,4,"<a href=\"UserManager.php.html#289\">AverroesProject\\Data\\UserManager::disallowUserTo<\/a>"],[0,1,"<a href=\"UserManager.php.html#305\">AverroesProject\\Data\\UserManager::userHasRole<\/a>"],[0,3,"<a href=\"UserManager.php.html#316\">AverroesProject\\Data\\UserManager::setUserRole<\/a>"],[0,5,"<a href=\"UserManager.php.html#335\">AverroesProject\\Data\\UserManager::revokeUserRole<\/a>"],[0,1,"<a href=\"UserManager.php.html#357\">AverroesProject\\Data\\UserManager::isRoot<\/a>"],[0,1,"<a href=\"UserManager.php.html#362\">AverroesProject\\Data\\UserManager::makeRoot<\/a>"],[0,1,"<a href=\"UserManager.php.html#367\">AverroesProject\\Data\\UserManager::revokeRootStatus<\/a>"],[0,5,"<a href=\"UserManager.php.html#381\">AverroesProject\\Data\\UserManager::getUserToken<\/a>"],[0,1,"<a href=\"UserManager.php.html#399\">AverroesProject\\Data\\UserManager::getUserTokenRows<\/a>"],[0,4,"<a href=\"UserManager.php.html#406\">AverroesProject\\Data\\UserManager::storeUserToken<\/a>"],[0,4,"<a href=\"UserManager.php.html#437\">AverroesProject\\Data\\UserManager::verifyUserPassword<\/a>"],[0,3,"<a href=\"UserManager.php.html#450\">AverroesProject\\Data\\UserManager::storeUserPassword<\/a>"]], 'Method Complexity'))
+      .transition()
+      .duration(500)
+      .call(chart);
+
+    nv.utils.windowResize(chart.update);
+
+    return chart;
+  });
+
+  function getComplexityData(data, label) {
+    var values = [];
+    $.each(data, function(key) {
+      var value = Math.round(data[key][0]*100) / 100;
+      values.push({
+        x: value,
+        y: data[key][1],
+        class: data[key][2],
+        size: 0.05,
+        shape: 'diamond'
+      });
+    });
+
+    return [
+      {
+        key: label,
+        values: values,
+        color: "#4572A7"
+      }
+    ];
+  }
+});
+  </script>
+ </body>
+</html>

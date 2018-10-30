@@ -141,9 +141,12 @@ class SiteCollationTable extends SiteController
                 if (!$segment['valid']) {
                     continue;
                 }
-                $doc['itemStream'] = array_merge($doc['itemStream'], $db->getItemStreamBetweenLocations((int) $doc['id'], $segment['start'], $segment['end']));
-                $doc['items'] = array_merge($doc['items'], ItemStream::createItemArrayFromItemStream($doc['itemStream']));
-                $doc['tokens'] = array_merge($doc['tokens'], \AverroesProject\Collation\Tokenizer::tokenize($doc['items']));
+                $segmentItemStream = $db->getItemStreamBetweenLocations((int) $doc['id'], $segment['start'], $segment['end']);
+                $segmentItems = ItemStream::createItemArrayFromItemStream($segmentItemStream);
+                $segmentTokens = \AverroesProject\Collation\Tokenizer::tokenize($segmentItems);
+                $doc['itemStream'] = array_merge($doc['itemStream'], $segmentItemStream);
+                $doc['items'] = array_merge($doc['items'], $segmentItems);
+                $doc['tokens'] = array_merge($doc['tokens'], $segmentTokens);
             }
             
             $docs[] = $doc;

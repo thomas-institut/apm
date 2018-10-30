@@ -1,19 +1,23 @@
 # APM
-This is the web app running on http://averroes.uni-koeln.de/apm
+This is the web app running at http://averroes.uni-koeln.de/apm
 
 It requires PHP 7.2 and a running MySQL Server 5.7 configured with a database 
-and a user with access to that database.
+and a user with access to that database. It has been tested and has run for a 
+while without problems in an Ubuntu 16.04.1 server with PHP 7.2 installed
+from  Ondřej Surý's repository (see https://tecadmin.net/install-php-7-on-ubuntu/)
+
 
 ## Development
 
 Development requires:
-* git
+
+* git 2.7.4+
 * MySQL 5.7
 * PHP 7.2
-* PHP Composer
-* PHPUnit 7.0+
-* npm 3.5+ 
-* jasmine 2.6.0+
+* PHP Composer 1.6.5+
+* PHPUnit 7.2.4+
+* npm 6.4.1+ 
+* jasmine 3.2.1+
 * eslint 4.4.1+
 
 Get all PHP dependencies with composer:
@@ -54,7 +58,7 @@ cd src/public/utilities;
 
 Javascript testing: 
 
-* browse to https://localhost:8888/public/test/SpecRunner.html
+* browse to http://localhost:8888/public/test/js/runtests.html
 
 ## Installation in production
 

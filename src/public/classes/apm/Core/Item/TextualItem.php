@@ -76,6 +76,16 @@ class TextualItem extends Item {
     protected $deletion;
     const DELETION_NONE='';
     
+    /** @var float */
+    protected $clarity;
+    const CLARITY_CLEAR = 1.0;
+    const CLARITY_UNCLEAR = 0.5;
+    const CLARITY_ILLEGIBLE = 0;
+    
+    /** @var string */
+    protected $clarityReason;
+    const CLARITY_REASON_NONE = '';
+    
     
     /** @var array */
     protected $alternateTexts;
@@ -88,15 +98,15 @@ class TextualItem extends Item {
             throw new \InvalidArgumentException('TextualItem text must not be empty');
         }
         $this->text=$t;
-        $this->normalizedText='';
-        $this->normalizationType= self::NORMALIZATION_NONE;
-        $this->hand = self::DEFAULT_HAND;
-        $this->format = self::FORMAT_NONE;
-        $this->textualFlow = self::FLOW_MAIN_TEXT;
-        $this->location = self::LOCATION_INLINE;
-        $this->language = self::LANG_NONE;
-        $this->deletion = self::DELETION_NONE;
-        $this->alternateTexts = [];
+        $this->setNormalization('', self::NORMALIZATION_NONE);
+        $this->setHand(self::DEFAULT_HAND);
+        $this->setFormat(self::FORMAT_NONE);
+        $this->setLanguage(self::LANG_NONE);
+        $this->setTextualFlow(self::FLOW_MAIN_TEXT);
+        $this->setLocation(self::LOCATION_INLINE);
+        $this->setClarity(self::CLARITY_CLEAR, self::CLARITY_REASON_NONE);
+        $this->setDeletion(self::DELETION_NONE);
+        $this->setAlternateTexts([]);
     }
     
     public function getPlainText() {
@@ -137,5 +147,58 @@ class TextualItem extends Item {
     
     public function getFormat() {
         return $this->format;
+    }
+    
+    public function setClarity(float $clarityIndex, string $reason = self::CLARITY_REASON_NONE) {
+        $this->clarity = $clarityIndex;
+        $this->clarityReason = $reason;
+    }
+    
+    public function getClarityValue() {
+        return $this->clarity;
+    }
+    
+    public function getClarityReason() : string {
+        return $this->clarityReason;
+    }
+    
+    public function setSingleAlternateText(string $text) {
+        $this->alternateTexts = [ $text ];
+    }
+    
+    public function setAlternateTexts(array $texts) {
+        $this->alternateTexts = $texts;
+    }
+    
+    public function getAlternateTexts() : array {
+        return $this->alternateTexts;
+    }
+    
+    public function setDeletion(string $technique) {
+        $this->deletion = $technique;
+    }
+    
+    public function getDeletion() : string {
+        return $this->deletion;
+    }
+    
+    public function setTextualFlow(int $textualFlow) {
+        $this->textualFlow = $textualFlow;
+    }
+    
+    public function getTextualFlow() : int {
+        return $this->textualFlow;
+    }
+    
+    public function setLocation(string $loc) {
+        $this->location = $loc;
+    }
+    
+    public function getLocation() : string {
+        return $this->location;
+    }
+    
+    public function getLength() : int {
+        return strlen($this->getPlainText());
     }
 }

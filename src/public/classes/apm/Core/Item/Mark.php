@@ -30,15 +30,26 @@ namespace APM\Core\Item;
  */
 class Mark extends Item {
     
+    /** @var string */
     private $type;
+    
+    /** @var string */
     private $text;
+    
+    /** @var int */
+    private $length;
+    
+    private $data;
     
     const NO_TYPE = '';
     const NO_TEXT = '';
+    const NO_LENGTH = '';
+            
     
     public function __construct(string $type = self::NO_TYPE, string $text = self::NO_TEXT) {
         $this->type = $type;
         $this->text = $text;
+        $this->length = self::NO_LENGTH;
     }
     
     public function getPlainText(){
@@ -54,5 +65,13 @@ class Mark extends Item {
     
     public function getMarkType() {
         return $this->type;
+    }
+    
+    public function getLength() : int {
+        return $this->length;
+    }
+    
+    public function setLength(int $l) {
+        $this->length = $l;
     }
 }

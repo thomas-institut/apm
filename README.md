@@ -38,8 +38,8 @@ Get all Javascript dependencies with npm:
 cd src/public
 npm install
 ```
-Create a testdbconfig.php file under src/public/test with the correct
-test database credentials. Use src/public/test/testdbconfig.sample.php as
+Create a ``testdbconfig.php`` file under ``src/public/test`` with the correct
+test database credentials. Use ``src/public/test/testdbconfig.sample.php`` as
 a starting point.
 
 PHP Unit testing:

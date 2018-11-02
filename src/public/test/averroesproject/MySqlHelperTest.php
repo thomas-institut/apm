@@ -9,7 +9,8 @@
 namespace AverroesProject\Data;
 
 require "../vendor/autoload.php";
-require 'SiteMockup/testdbconfig.php';
+require '../test/testdbconfig.php';
+
 
 use PHPUnit\Framework\TestCase;
 use Monolog\Logger;

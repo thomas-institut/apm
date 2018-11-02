@@ -24,3 +24,4 @@ src/public/config.php
 /src/npm-debug.log
 /dist/
 /src/public/test/averroesproject/tmp/
+/src/public/package-lock.json

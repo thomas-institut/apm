@@ -1,7 +1,7 @@
 <?php
 
 $config['host'] = "localhost";
-$config['user'] = "test";
+$config['user'] = "testuser";
 $config['pwd'] = "j0j0j0";
 $config['db'] = "test";
 

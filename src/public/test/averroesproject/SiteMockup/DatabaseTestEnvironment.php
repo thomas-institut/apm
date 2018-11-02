@@ -8,7 +8,7 @@
 
 namespace AverroesProject;
 require "../vendor/autoload.php";
-require 'testdbconfig.php';
+require '../test/testdbconfig.php';
 
 use AverroesProject\Data\DataManager;
 use AverroesProject\Plugin\HookManager;

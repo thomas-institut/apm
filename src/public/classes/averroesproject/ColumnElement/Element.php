@@ -102,7 +102,7 @@ class Element {
     
     /**
      *
-     * @var ItemArray
+     * @var array  
      * The transcribed text  
      * 
      * In the DB it is not necessary because the transcribedText elements

@@ -25,7 +25,8 @@
     "autoload": {
         "psr-4": {
             "AverroesProject\\": "classes\\averroesproject",
-            "APM\\": "classes\\apm"
+            "APM\\": "classes\\apm",
+            "AverroesProjectToApm\\" : "classes\\ap2apm"
         }
     }
 }

@@ -120,6 +120,9 @@ class TextualItem extends Item {
         return $this->normalizedText;
     }
 
+    public function getNormalizationType() {
+        return $this->normalizationType;
+    }
     public function setNormalization(string $normalizedText, string $normalizationType) {
         $this->normalizationType = $normalizationType;
         $this->normalizedText = $normalizedText;
@@ -199,6 +202,6 @@ class TextualItem extends Item {
     }
     
     public function getLength() : int {
-        return strlen($this->getPlainText());
+        return mb_strlen($this->getPlainText());
     }
 }

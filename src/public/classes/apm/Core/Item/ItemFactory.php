@@ -73,9 +73,8 @@ class ItemFactory {
         return $item;
     }
     
-    public function createChunkMark(string $type, string $work, $chunkNo, $segment) : Mark {
-        $text = implode('-', [$type, $work, $chunkNo, $segment]);
-        $item = new Mark(self::MARK_CHUNK, $text);
+    public function createChunkMark(string $type, string $work, int $chunkNo, int $segment = 1) : ChunkMark {
+        $item = new ChunkMark($type, $work, $chunkNo, $segment);
         return $item;
     }
     
@@ -101,7 +100,7 @@ class ItemFactory {
         return $item;
     }
     
-    public function createUnclearItem(string $text, string $reason, string $altText = '') : TextualItem {
+    public function createUnclearItem(string $text, string $reason, string $altText = '', string $lang = '') : TextualItem {
         $item = $this->createPlainTextItem($text, $lang);
         $item->setClarity(TextualItem::CLARITY_UNCLEAR, $reason);
         if ($altText !== '') {

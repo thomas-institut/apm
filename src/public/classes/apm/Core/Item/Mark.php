@@ -63,6 +63,10 @@ class Mark extends Item {
         return $this->text;
     }
     
+    protected function setMarkText(string $text) {
+        $this->text = $text;
+    }
+    
     public function getMarkType() {
         return $this->type;
     }

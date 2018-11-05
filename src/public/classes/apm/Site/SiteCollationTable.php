@@ -28,8 +28,6 @@ namespace APM\Site;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
-use AverroesProject\Profiler\ApmProfiler;
-
 /**
  * Site Controller class
  *
@@ -40,7 +38,7 @@ class SiteCollationTable extends SiteController
     
     public function quickCollationPage(Request $request, Response $response, $next)
     {
-        return $this->ci->view->render($response, 'collation.quick.twig', [
+        return $this->ci->view->render($response, 'apm/collation.quick.twig', [
             'contactName' => $this->ci->settings['support-contact-name'],
             'contactEmail' => $this->ci->settings['support-contact-email'],
             'copyright' => $this->ci->copyrightNotice,

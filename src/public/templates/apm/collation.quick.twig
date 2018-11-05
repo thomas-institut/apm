@@ -1,13 +1,13 @@
-{% extends "base-public.twig" %}
+{% extends "apm/base-public.twig" %}
 {% import 'macros.twig' as macros %}
 
-{% block title %}Quick Collation{% endblock %}
+{% block title %}Quick Collation (new){% endblock %}
 
 {% block extraJS %}
-<script type="application/javascript" src="{{baseurl}}/js/ApmUrlGenerator.js"></script>
+<script type="application/javascript" src="{{baseurl}}/js/apm/ApmUrlGenerator.js"></script>
 <script type="application/javascript" src="{{baseurl}}/js/Item.js"></script>
 <script type="application/javascript" src="{{baseurl}}/js/CollationTableFormatter.js"></script>
-<script type="application/javascript" src="{{baseurl}}/js/QuickCollation.js"></script>
+<script type="application/javascript" src="{{baseurl}}/js/apm/QuickCollation.js"></script>
 <style>
     textarea {
         width: 100%;
@@ -50,7 +50,7 @@
 
 {% block content %}
 
-<h1>Quick Collation</h1>
+<h1>Quick Collation (new)</h1>
 
 <p class="text-muted">This is an interface to the Collatex software. 
     Enter at least two texts to collate in the following fields; leave the rest blank. 

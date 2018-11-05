@@ -230,7 +230,10 @@ $app->get('/chunk/{work}/{chunk}/collation/{lang}[/{docs:.*}]','\AverroesProject
 // Quick Collation
 $app->get('/quickcollation', '\AverroesProject\Site\SiteCollationTable:quickCollationPage')
         ->setName('quickcollation');
-//        ->add('\AverroesProject\Auth\Authenticator:authenticate');
+
+$app->get('/new/quickcollation', '\APM\Site\SiteCollationTable:quickCollationPage')
+        ->setName('new-quickcollation');
+
 
 // DOCS
 $app->get('/documents','\AverroesProject\Site\SiteDocuments:documentsPage')
@@ -400,6 +403,13 @@ $app->group('/api/public', function (){
     $this->post('/collation/quick', 
             '\AverroesProject\Api\ApiCollation:quickCollation')
         ->setName('api.collation.quick');
+});
+
+$app->group('/api/new/public', function (){
+// API -> quick collation
+    $this->post('/collation/quick', 
+            '\APM\Api\ApiCollation:quickCollation')
+        ->setName('api.new.collation.quick');
 });
 
 // All set, run!

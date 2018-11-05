@@ -1,9 +1,21 @@
 <?php
 
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Copyright (C) 2016-18 Universität zu Köln
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
 namespace APM;
@@ -22,7 +34,7 @@ class SiteTestEnvironment extends DatabaseTestEnvironment {
     public static function getContainer($logger) {
         $container = parent::getContainer($logger);
 
-        $container['router'] = new \SlimRouterMockup();
+        $container['router'] = new SlimRouterMockup();
         
         $view = new \Slim\Views\Twig('../templates', [
             'cache' => false
@@ -30,7 +42,7 @@ class SiteTestEnvironment extends DatabaseTestEnvironment {
         // Instantiate and add Slim specific extension
         $basePath = rtrim(str_ireplace('index.php', '', 
                 $container['request']->getUri()->getBasePath()), '/');
-        $view->addExtension(new \SlimTwigExtensionMockup(
+        $view->addExtension(new SlimTwigExtensionMockup(
                 $container['router'], $basePath));
 
         $container['view'] = $view;

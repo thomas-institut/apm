@@ -34,3 +34,8 @@ foreach ($config['languages'] as $lang) {
     $config['langCodes'][] = $lang['code'];
 }
 
+// COLLATEX
+$config['collatex']['tmp'] = 'collatex/tmp';
+$config['collatex']['javaExecutable'] = '/usr/bin/java';
+$config['collatex']['collatexJarFile'] = 'collatex/bin/collatex-tools-1.7.1.jar';
+

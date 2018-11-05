@@ -48,58 +48,5 @@ class SiteController
                $config['copyright_notice'] . " &bull; " .  
                strftime("%d %b %Y, %H:%M:%S %Z");
     }
-
-    protected function genDocPagesListForUser($userId, $docId)
-    {
-        $docInfo = $this->db->getDocById($docId);
-        $url = $this->ci->router->pathFor('doc.showdoc', ['id' => $docId]);
-        $title = $docInfo['title'];
-        $docListHtml = '<li>';
-        $docListHtml .= "<a href=\"$url\" title=\"View Document\">$title</a>";
-        $docListHtml .= '<br/><span style="font-size: 0.9em">';
-        $pageIds = $this->db->getPageIdsTranscribedByUser($userId, $docId);
-
-        $nPagesInLine = 0;
-        $maxPagesInLine = 25;
-        foreach($pageIds as $pageId) {
-            $nPagesInLine++;
-            if ($nPagesInLine > $maxPagesInLine) {
-                $docListHtml .= "<br/>";
-                $nPagesInLine = 1;
-            }
-            $pageInfo = $this->db->getPageInfo($pageId);
-            $pageNum = is_null($pageInfo['foliation']) ? $pageInfo['seq'] : $pageInfo['foliation'];
-            $pageUrl = $this->ci->router->pathFor('pageviewer.docseq', ['doc' => $docId, 'seq'=>$pageInfo['seq']]);
-            $docListHtml .= "<a href=\"$pageUrl\" title=\"View Page\">$pageNum</a>&nbsp;&nbsp;";
-        }
-        $docListHtml .= '</span></li>';
-        
-        return $docListHtml;
-    }
-    
-    // Utility function
-    protected function buildPageArray($pagesInfo, $transcribedPages, $navByPage = true){
-        $thePages = array();
-        foreach ($pagesInfo as $page) {
-            $thePage = array();
-            $thePage['number'] = $page['page_number'];
-            $thePage['seq'] = $page['seq'];
-            $thePage['type'] = $page['type'];
-            if ($page['foliation'] === NULL) {
-                $thePage['foliation'] = '-';
-            } else {
-                $thePage['foliation'] = $page['foliation'];
-            }
-            
-            $thePage['classes'] = '';
-            if (array_search($page['page_number'], $transcribedPages) === FALSE){
-                $thePage['classes'] = 
-                        $thePage['classes'] . ' withouttranscription';
-            }
-            $thePage['classes'] .= ' type' . $page['type'];
-            array_push($thePages, $thePage);
-        }
-        return $thePages;
-    }
     
 }

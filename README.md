@@ -42,7 +42,8 @@ Create a ``testdbconfig.php`` file under ``src/public/test`` with the correct
 test database credentials. Use ``src/public/test/testdbconfig.sample.php`` as
 a starting point.
 
-PHP Unit testing:
+Perform all PHP tests: 
+
 ```bash
 cd src/public/test
 phpunit .
@@ -52,7 +53,8 @@ If not, create an issue in Github to discuss possible solutions. Don't just
 fix the issues and push your master branch to Github as this may break other
 people's environments. 
 
-Javascript testing: 
+Perform all Javascript tests:
+
 * Install the istanbul code coverage package globally (https://istanbul.js.org/) 
 ```bash
 npm i nyc -g
@@ -61,11 +63,9 @@ npm i nyc -g
 ```bash
 bash src/public/js/generateistanbuljs.bash
 ```
-* 
-
 * browse to http://localhost:8888/public/test/js/runtests.html
 
-These also should all pass in the master branch.
+These tests should also all pass in the master branch.
 
 To run the app in development:
 * Create a configuration file in ``src/public`` 

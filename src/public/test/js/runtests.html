@@ -14,14 +14,15 @@
   <script src="jasmine/lib/jasmine-3.2.1/jasmine-html.js"></script>
   <script src="jasmine/lib/jasmine-3.2.1/boot.js"></script>
 
-  <script src="coveragereport/SimpleIstanbulReporter.js"></script>
-  <link rel="stylesheet" href="coveragereport/simpleistanbulreporter.css">
+  <script src="coveragereporter/SimpleIstanbulReporter.js"></script>
+  <link rel="stylesheet" href="coveragereporter/simpleistanbulreporter.css">
   
   <!-- Requirements -->
   <script type="application/javascript" src="../../node_modules/quill/dist/quill.min.js"></script>
   <script type="text/javascript" src="../../node_modules/twig/twig.js"></script>
 
   <!-- Things to test -->
+  <!-- All files included here will be shown in the coverage report -->
   <script src="../../js/istanbul/Item.js"></script>
   <script src="../../js/istanbul/Element.js"></script>
   <script src="../../js/istanbul/TranscriptionEditor.js"></script>
@@ -30,8 +31,7 @@
   <script src="../../js/istanbul/CollationTable.js"></script>
   <script src="../../js/istanbul/ApmUrlGenerator.js"></script>
   <script src="../../js/istanbul/CollationTableFormatter.js"></script>
-  <script src="../../js/istanbul/apm/ApmUrlGenerator.js"></script>
-   
+     
   <style>
       html {
           font-family: sans-serif;

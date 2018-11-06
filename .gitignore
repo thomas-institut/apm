@@ -25,3 +25,4 @@ src/public/config.php
 /dist/
 /src/public/test/averroesproject/tmp/c*
 /src/public/package-lock.json
+/src/public/js/istanbul/

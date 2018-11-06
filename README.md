@@ -53,6 +53,15 @@ fix the issues and push your master branch to Github as this may break other
 people's environments. 
 
 Javascript testing: 
+* Install the istanbul code coverage package globally (https://istanbul.js.org/) 
+```bash
+npm i nyc -g
+```
+* Before testing and after every change in the javascript code, generate Istanbul code coverage versions of javascript files
+```bash
+bash src/public/js/generateistanbuljs.bash
+```
+* 
 
 * browse to http://localhost:8888/public/test/js/runtests.html
 

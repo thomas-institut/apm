@@ -1,2 +1,2 @@
 #!/bin/bash
-php -S localhost:8888 -t src
+php -d display_errors=on -S localhost:8888 -t src 

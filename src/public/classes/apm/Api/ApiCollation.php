@@ -23,6 +23,9 @@ use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use AverroesProject\Profiler\ApmProfiler;
 
+use APM\Core\Token\StringToken;
+use APM\Core\Witness\StringWitness;
+
 /**
  * API Controller class
  *
@@ -74,36 +77,73 @@ class ApiCollation extends ApiController
             return $response->withStatus(409)->withJson( ['error' => self::ERROR_NOT_ENOUGH_WITNESSES]);
         }
         
-        // Check witness data
+        $witnessArray = [];
+        
+        // Check and get initial witness data
         foreach ($witnesses as $witness) {
-            if (!isset($witness['title']) || !isset($witness['text'])) {
+            if (!isset($witness['id']) || !isset($witness['text'])) {
+                
                 $this->logger->error("Quick Collation: bad witness in data",
                     [ 'apiUserId' => $this->ci->userId, 
                       'apiError' => self::ERROR_BAD_WITNESS,
                       'data' => $inputDataObject ]);
             return $response->withStatus(409)->withJson( ['error' => self::ERROR_BAD_WITNESS]);
             }
+            $sw =  new StringWitness('QuickCollation', 'no-chunk', $witness['text']);
+            $tokens = $sw->getTokens();
+            $witnessArray[] = [
+                'id' =>$witness['id'], 
+                'stringWitness' => $sw,
+                'stringTokens' => $tokens
+            ];
         }
+        
+        // Build Collatex witness array
+        $collatexWitnesses = [];
+        foreach($witnessArray as $witness) {
+            $collatexTokens = [];
+            foreach ($witness['stringTokens'] as $key => $stringToken) {
+                /* @var $stringToken StringToken */
+                $collatexToken = [];
+                $collatexToken['t'] = $stringToken->getText();
+                if ($stringToken->getNormalization() !== $stringToken->getText()) {
+                    $collatexToken['n'] = $stringToken->getNormalization();
+                }
+                $collatexToken['stringWitnessTokenId'] = $key;
+//                $collatexToken['type']  = $stringToken->getType();
+//                $collatexToken['lineNumber'] =  $stringToken->getLineNumber();
+//                $collatexToken['charRange'] = [ 
+//                    $stringToken->getCharRange()->getStart(),
+//                    $stringToken->getCharRange()->getEnd(),
+//                ];
+                $collatexTokens[] = $collatexToken;
+            }
+            $collatexWitnesses[] = [ 
+                'id' => $witness['id'],
+                'tokens' => $collatexTokens
+            ];
+        }
+        
         $cr = $this->ci->cr;
         
-        // Construct the temporary witnesses
         
         // Run Collatex
-        $output = 'This would be the result of running Collatex';
-        //$output = $cr->run($inputDataObject['witnesses']);
-//        if ($output === false) {
-//            $this->logger->error("Quick Collation: error running Collatex",
-//                    [ 'apiUserId' => $this->ci->userId, 
-//                      'apiError' => ApiController::API_ERROR_ERROR_RUNNING_COLLATEX,
-//                      'data' => $inputDataObject, 
-//                      'collatexRunnerError' => $cr->error, 
-//                      'rawOutput' => $cr->rawOutput ]);
-//            return $response->withStatus(409)->withJson( ['error' => ApiController::API_ERROR_ERROR_RUNNING_COLLATEX]);
-//        }
+        //$output = 'This would be the result of running Collatex';
+        $collatexOutput = $cr->run($collatexWitnesses);
+        if ($collatexOutput === false) {
+            $this->logger->error("Quick Collation: error running Collatex",
+                        [ 'apiUserId' => $this->ci->userId, 
+                        'apiError' => ApiController::API_ERROR_ERROR_RUNNING_COLLATEX,
+                        'data' => $inputDataObject, 
+                        'collatexRunnerError' => $cr->error, 
+                        'rawOutput' => $cr->rawOutput ]);
+            return $response->withStatus(409)->withJson( ['error' => ApiController::API_ERROR_ERROR_RUNNING_COLLATEX]);
+        }
         
         $profiler->log($this->logger);
         
-        return $response->withJson([$output]);
+        return $response->withJson(['rawCollatexOutput'=> $collatexOutput]);
+        
     }
     
 }

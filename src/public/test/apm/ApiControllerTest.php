@@ -127,11 +127,11 @@ class ApiControllerTest extends TestCase {
             self::requestWithData($request, [
                 'witnesses' => [ 
                     [
-                        'title' => 'Test', 
+                        'id' => 'Test', 
                         'text' => 'Some text' 
                     ], 
                     [
-                        'title' => 'Test 2'  
+                        'id' => 'Test 2'  
                          // Missing text
                     ]]
             ]), 
@@ -147,11 +147,11 @@ class ApiControllerTest extends TestCase {
             self::requestWithData($request, [
                 'witnesses' => [ 
                     [
-                        'title' => 'A', 
+                        'id' => 'A', 
                         'text' => 'Some text' 
                     ], 
                     [
-                        'title' => 'B' ,
+                        'id' => 'B' ,
                         'text' => 'Some other text'
                     ]]
             ]), 

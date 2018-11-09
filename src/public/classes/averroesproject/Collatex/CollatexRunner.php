@@ -158,7 +158,23 @@ class CollatexRunner {
         return $output;
     }
     
-    
+    /**
+     * Runs Collatex on an array of witnesses
+     * 
+     * The witnesses in the input array should be in the format expected by 
+     * Collatex:
+     * 
+     *    $witness = [ 
+     *                  'id' => 'WitnessID', 
+     *                  'tokens' => [ 
+     *                      ['t' => 'tokenText1', 'n' => 'normalization1', ...],
+     *                      ['t' => 'tokenText2', 'n' => 'normalization2', ...],
+     *                      ...
+     *                  ]
+     *               ]
+     * @param array $witnessArray
+     * @return boolean
+     */
     public function run(array $witnessArray) {
         
         $this->reset();

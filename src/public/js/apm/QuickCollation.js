@@ -98,7 +98,7 @@ class QuickCollation {
           thisObject.collationTableSection.removeClass('hidden')
         })
         .fail(function(resp) {
-          thisObject.status.html("Collating... fail with error code " + resp.status + ' :(')
+          thisObject.status.html("Collating... fail with error code " + resp.status + ' [' + resp.responseJSON.error + '] :(')
           thisObject.updating = false
         })
       

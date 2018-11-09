@@ -158,6 +158,8 @@ $container['logger'] = $logger;
 $container['hm'] = $hm;
 $container['cr'] = $cr;
 
+$container['userId'] = 0;  // The authentication module will update this with the correct Id 
+//
 // Twig
 $container['view'] = function ($container) {
     $view = new \Slim\Views\Twig('templates', [

@@ -48,7 +48,7 @@ class Authenticator {
    
     private $cookieName = 'rme';
     private $secret = '1256106427895916503';
-    private $debugMode = false;
+    private $debugMode = true;
    
     //Constructor
     public function __construct($ci)

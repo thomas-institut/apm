@@ -23,6 +23,7 @@ namespace APM\Core\Collation;
 
 use APM\Core\Token\Token;
 use APM\Core\Apparatus\ApparatusGenerator;
+use APM\Core\Witness\Witness;
 
 /**
  * Representation of a collation table
@@ -31,12 +32,18 @@ use APM\Core\Apparatus\ApparatusGenerator;
  */
 class Collation {
     
-    /* @var $table array */
+    const TOKENREF_NULL = -1;
+    
+    /* @var array */
     private $witnesses;
+    
+    /* @var array */
+    private $collationTable;
     
     
     public function __construct() {
         $this->witnesses = [];
+        $this->collationTable = [];
     }
     
     /**
@@ -50,36 +57,43 @@ class Collation {
         }
         $sigla = array_keys($this->witnesses);
         
-        return count($this->witnesses[$sigla[0]]);
+        return count($this->collationTable[$sigla[0]]);
     }
     
     /**
      * Adds a witness to the collation with the given siglum
      * 
      * @param string $siglum
-     * @param array $tokens  Array of Core\Token\Token
+     * @param Witness $witness
      * @throws \InvalidArgumentException
      */
-    public function addWitness(string $siglum, array $tokens) {
+    public function addWitness(string $siglum, Witness $witness) {
         
-        if (count($tokens) === 0) {
+        $tokenCount = count($witness->getTokens());
+        if ($tokenCount === 0) {
             throw new \InvalidArgumentException('Cannot add empty witnesses');
         }
         
+        $tokenRefs = [];
+        for($i = 0; $i < $tokenCount; $i++) {
+            $tokenRefs[] = $i;
+        }
+        
         $currentSize = $this->getTokenCount();
-        $tokenCount = count($tokens);
+        
         
         if ($tokenCount < $currentSize) {
             // Pad the given array with empty tokens at the end
             for ($i = $tokenCount; $i < $currentSize; $i++) {
-                $tokens[] = Token::emptyToken();
+                $tokenRefs[] = self::TOKENREF_NULL;
             }
         }
         if ($tokenCount > $currentSize) {
             // Pad the existing witnesses
-            $this->padWitnessesToSize($tokenCount);
+            $this->padCollationTableRowToSize($tokenCount);
         }
-        $this->witnesses[$siglum] = $tokens;
+        $this->collationTable[$siglum] = $tokenRefs;
+        $this->witnesses[$siglum] = $witness;
     }
     
     /**
@@ -94,14 +108,29 @@ class Collation {
      * @throws \InvalidArgumentException
      */
     public function getColumn(int $index) {
+        $rawColumn = $this->getRawColumn($index);
+        $column = [];
+        foreach(array_keys($rawColumn) as $siglum) {
+            /* ATTENTION: this might be extremely inefficient! */
+            $ref = $rawColumn[$siglum];
+            if ($ref === self::TOKENREF_NULL) {
+                $column[$siglum] = Token::emptyToken();
+                continue;
+            }
+            $column[$siglum] = $this->witnesses[$siglum]->getTokens()[$rawColumn[$siglum]];
+        }
+        return $column;
+    }
+    
+    public function getRawColumn(int $index) : array {
         if ($index >= $this->getTokenCount()) {
             throw new \InvalidArgumentException('Index out of range');
         }
-        $column = [];
-        foreach($this->witnesses as $siglum => $tokens) {
-            $column[$siglum] = $tokens[$index];
+        $rawColumn = [];
+        foreach(array_keys($this->collationTable) as $siglum) {
+            $rawColumn[$siglum] = $this->collationTable[$siglum][$index];
         }
-        return $column;
+        return $rawColumn;
     }
     
     /**
@@ -110,9 +139,9 @@ class Collation {
      * @param string $siglum
      * @return Token[]
      */
-    public function getWitnessTokens(string $siglum) {
+    public function getWitnessTokens(string $siglum) : array {
         if (isset($this->witnesses[$siglum])) {
-            return $this->witnesses[$siglum];
+            return $this->witnesses[$siglum]->getTokens();
         }
         return [];
     }
@@ -139,20 +168,30 @@ class Collation {
      * @return type
      */
     public function shiftToken(string $siglum, int $index, int $count) {
-        $firstPart = array_slice($this->witnesses[$siglum], 0, $index);
-        $secondPart = array_slice($this->witnesses[$siglum], $index);
-        $firstPart[] = Token::emptyToken();
-        $this->witnesses[$siglum] = array_merge($firstPart, $secondPart);
-        $newSize = count($this->witnesses[$siglum]);
-        
-        // Deal with the extra token at the end
-        if ($this->witnesses[$siglum][$newSize-1]->isEmpty()) {
-            // Last token is empty token, just pop it and return
-            array_pop($this->witnesses[$siglum]);
-            return;
+        $originalSize = count($this->collationTable[$siglum]);
+        $firstPart = array_slice($this->collationTable[$siglum], 0, $index);
+        $secondPart = array_slice($this->collationTable[$siglum], $index);
+        for($i=0; $i<$count; $i++) {
+            $firstPart[] = self::TOKENREF_NULL;
         }
-        // need to pad the other witnesses
-        $this->padWitnessesToSize($newSize);
+        $this->collationTable[$siglum] = array_merge($firstPart, $secondPart);
+        
+        $newSize = count($this->collationTable[$siglum]);;
+        // Deal with the extra tokens at the end
+        for ($i = 0; $i < $count; $i++) {
+            if ($this->collationTable[$siglum][$newSize-1] === self::TOKENREF_NULL) {
+                // Last token is null, just pop it and return
+                array_pop($this->collationTable[$siglum]);
+                $newSize--;
+            } else {
+                // last token is not null, break the loop 
+                break;
+            }
+        }
+        if ($newSize !== $originalSize) {
+            // need to pad the other witnesses
+            $this->padCollationTableRowToSize($newSize);
+        }
     }
     
     /**
@@ -162,11 +201,10 @@ class Collation {
         $columnsToRemove = [];
         $tokenCount = $this->getTokenCount();
         for ($i=0; $i<$tokenCount;$i++) {
-            $column = $this->getColumn($i);
+            $column = $this->getRawColumn($i);
             $columnIsEmpty = true;
-            foreach($column as $token) {
-                /* @var Token $token */
-                if (!$token->isEmpty()){
+            foreach($column as $ref) {
+                if ($ref !== self::TOKENREF_NULL){
                     $columnIsEmpty = false;
                     break;
                 } 
@@ -185,18 +223,18 @@ class Collation {
         return ApparatusGenerator::genEntryForColumn($column, $mainReading, $lemma);
     }
     
-    protected function padWitnessesToSize(int $newSize) {
-        foreach($this->witnesses as &$witness) {
-            $witnessSize = count($witness);
-            for ($i = $witnessSize; $i < $newSize; $i++) {
-                $witness[] = Token::emptyToken();
+    protected function padCollationTableRowToSize(int $newSize) {
+        foreach($this->collationTable as &$collationTableRow) {
+            $rowSize = count($collationTableRow);
+            for ($i = $rowSize; $i < $newSize; $i++) {
+                $collationTableRow[] = self::TOKENREF_NULL;
             }
         }
     }
     
     private function removeColumn(int $index) {
-        foreach($this->witnesses as &$witness) {
-            array_splice($witness, $index, 1);
+        foreach($this->collationTable as &$collationTableRow) {
+            array_splice($collationTableRow, $index, 1);
         }
     }
     

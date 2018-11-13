@@ -110,12 +110,6 @@ class ApiCollation extends ApiController
                     $collatexToken['n'] = $stringToken->getNormalization();
                 }
                 $collatexToken['stringWitnessTokenId'] = $key;
-//                $collatexToken['type']  = $stringToken->getType();
-//                $collatexToken['lineNumber'] =  $stringToken->getLineNumber();
-//                $collatexToken['charRange'] = [ 
-//                    $stringToken->getCharRange()->getStart(),
-//                    $stringToken->getCharRange()->getEnd(),
-//                ];
                 $collatexTokens[] = $collatexToken;
             }
             $collatexWitnesses[] = [ 
@@ -128,8 +122,9 @@ class ApiCollation extends ApiController
         
         
         // Run Collatex
-        //$output = 'This would be the result of running Collatex';
         $collatexOutput = $cr->run($collatexWitnesses);
+        // @codeCoverageIgnoreStart
+        // Not worrying about testing CollatexErrors here
         if ($collatexOutput === false) {
             $this->logger->error("Quick Collation: error running Collatex",
                         [ 'apiUserId' => $this->ci->userId, 
@@ -139,7 +134,7 @@ class ApiCollation extends ApiController
                         'rawOutput' => $cr->rawOutput ]);
             return $response->withStatus(409)->withJson( ['error' => ApiController::API_ERROR_ERROR_RUNNING_COLLATEX]);
         }
-        
+        // @codeCoverageIgnoreEnd
         $profiler->log($this->logger);
         
         return $response->withJson(['rawCollatexOutput'=> $collatexOutput]);

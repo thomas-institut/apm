@@ -63,21 +63,22 @@ class CollationTest extends TestCase {
         $w1 = new StringWitness('tw', 'tchunk', 'This is witness one');
         $w2 = new StringWitness('tw', 'tchunk', 'This is witness two with more text');
         $w3 = new StringWitness('tw', 'tchunk', 'This witness three');
+        $w4 = new Core\Witness\SimpleWitness('tw', 'tchunk', []);
         
         // Add witnesses
-        $collation->addWitness('A', $w1->getTokens());
+        $collation->addWitness('A', $w1);
         $this->assertEquals(count($w1->getTokens()), $collation->getTokenCount());
         
-        $collation->addWitness('B', $w2->getTokens());
+        $collation->addWitness('B', $w2);
         $this->assertEquals(count($w2->getTokens()), $collation->getTokenCount());
        
-        $collation->addWitness('C', $w3->getTokens());
+        $collation->addWitness('C', $w3);
         $expectedSize = count($w2->getTokens());
         $this->assertEquals($expectedSize, $collation->getTokenCount());
         
         $exceptionRaised = false;
         try {
-            $collation->addWitness('D', []);
+            $collation->addWitness('D', $w4);
         } catch (\InvalidArgumentException $ex) {
             $exceptionRaised = true;
         }
@@ -110,6 +111,7 @@ class CollationTest extends TestCase {
         $tokens2 = $collation->getWitnessTokens('NonexistentSiglum');
         $this->assertEquals([], $tokens2);
 
+        $expectedSize = $collation->getTokenCount();
         // Token shifting
         $collation->shiftToken('C', 1, 1);
         $this->assertEquals($expectedSize, $collation->getTokenCount());

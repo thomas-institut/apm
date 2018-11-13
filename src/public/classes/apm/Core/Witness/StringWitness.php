@@ -35,6 +35,9 @@ class StringWitness extends Witness {
     
     public function __construct(string $work, string $chunk, string $text) {
         parent::__construct($work, $chunk);
+        if ($text === '') {
+            throw new \InvalidArgumentException('String cannot be empty');
+        }
         $this->sourceString = $text;
     }
     

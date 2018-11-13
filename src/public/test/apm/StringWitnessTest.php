@@ -53,4 +53,14 @@ class StringWitnessTest extends TestCase {
         }
         $this->assertEquals($normalizedText, $w->getPlainText());
     }
+    
+    public function testConstructor() {
+        $exceptionRaised1 = false;
+        try {
+            $w = new StringWitness('tw', 'tchunk', '');
+        } catch (\InvalidArgumentException $ex) {
+            $exceptionRaised1 = true;
+        }
+        $this->assertTrue($exceptionRaised1);
+    }
 }

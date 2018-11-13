@@ -25,6 +25,7 @@ use AverroesProject\Profiler\ApmProfiler;
 
 use APM\Core\Token\StringToken;
 use APM\Core\Witness\StringWitness;
+use APM\Core\Collation\Collation;
 
 /**
  * API Controller class
@@ -77,12 +78,12 @@ class ApiCollation extends ApiController
             return $response->withStatus(409)->withJson( ['error' => self::ERROR_NOT_ENOUGH_WITNESSES]);
         }
         
-        $witnessArray = [];
+        
+        $collation = new Collation();
         
         // Check and get initial witness data
         foreach ($witnesses as $witness) {
             if (!isset($witness['id']) || !isset($witness['text'])) {
-                
                 $this->logger->error("Quick Collation: bad witness in data",
                     [ 'apiUserId' => $this->ci->userId, 
                       'apiError' => self::ERROR_BAD_WITNESS,
@@ -90,39 +91,16 @@ class ApiCollation extends ApiController
             return $response->withStatus(409)->withJson( ['error' => self::ERROR_BAD_WITNESS]);
             }
             $sw =  new StringWitness('QuickCollation', 'no-chunk', $witness['text']);
-            $tokens = $sw->getTokens();
-            $witnessArray[] = [
-                'id' =>$witness['id'], 
-                'stringWitness' => $sw,
-                'stringTokens' => $tokens
-            ];
+            $collation->addWitness($witness['id'], $sw);
         }
         
-        // Build Collatex witness array
-        $collatexWitnesses = [];
-        foreach($witnessArray as $witness) {
-            $collatexTokens = [];
-            foreach ($witness['stringTokens'] as $key => $stringToken) {
-                /* @var $stringToken StringToken */
-                $collatexToken = [];
-                $collatexToken['t'] = $stringToken->getText();
-                if ($stringToken->getNormalization() !== $stringToken->getText()) {
-                    $collatexToken['n'] = $stringToken->getNormalization();
-                }
-                $collatexToken['stringWitnessTokenId'] = $key;
-                $collatexTokens[] = $collatexToken;
-            }
-            $collatexWitnesses[] = [ 
-                'id' => $witness['id'],
-                'tokens' => $collatexTokens
-            ];
-        }
+        $collatexInput = $collation->getCollatexInput();
         
         $cr = $this->ci->cr;
         
         
         // Run Collatex
-        $collatexOutput = $cr->run($collatexWitnesses);
+        $collatexOutput = $cr->run($collatexInput);
         // @codeCoverageIgnoreStart
         // Not worrying about testing CollatexErrors here
         if ($collatexOutput === false) {

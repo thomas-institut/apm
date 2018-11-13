@@ -138,4 +138,172 @@ class CollationTest extends TestCase {
         
     }
     
+    public function testCollatexInputGeneration() {
+        $collation = new Collation();
+        
+               
+        $w1 = new StringWitness('tw', 'tchunk', 'This is witness one');
+        $w2 = new StringWitness('tw', 'tchunk', 'This is witness two with more text');
+        $w3 = new StringWitness('tw', 'tchunk', 'This witness three');
+        $w4  = new Core\Witness\SimpleWitness('tw', 'tchunk', [ new Token(3, 'text', 'norm')]);
+        
+        // Add witnesses
+        $collation->addWitness('A', $w1);
+        $collation->addWitness('B', $w2);
+        $collation->addWitness('C', $w3);
+        $collation->addWitness('D', $w4);
+        
+        $collatexInput = $collation->getCollatexInput();
+                
+        $this->assertCount(4, $collatexInput);
+        foreach($collatexInput as $collatexWitness) {
+            $this->assertArrayHasKey('id', $collatexWitness);
+            $this->assertArrayHasKey('tokens', $collatexWitness);
+            foreach($collatexWitness['tokens'] as $collatexToken) {
+                $this->assertArrayHasKey('t', $collatexToken);
+                $this->assertArrayHasKey('witnessRef', $collatexToken);
+                $this->assertNotEquals('', $collatexToken['t']);
+            }
+        }
+    }
+    
+    public function testCollatexOutputProcessing(){
+        $collation = new Collation();
+        
+               
+        $w1 = new StringWitness('tw', 'tchunk', 'This is witness one');
+        $w2 = new StringWitness('tw', 'tchunk', 'This is witness two');
+        $w3 = new StringWitness('tw', 'tchunk', 'This is witness three');
+        $w4  = new Core\Witness\SimpleWitness('tw', 'tchunk', [ 
+            new Token(3, 'Ths', 'This'),
+            new Token(1, 'is'),
+            new Token(1, 'witness'),
+            new Token(1, 'four')
+            ]);
+        
+        // Add witnesses
+        $collation->addWitness('A', $w1);
+        $collation->addWitness('B', $w2);
+        $collation->addWitness('C', $w3);
+        $collation->addWitness('D', $w4);
+        
+        // Test bad collatex outputs
+        $badCollatexOutputs = [ 
+            [ 'reason' => 'Empty', 'theArray' => []],
+            [ 'reason' => 'Missing witnesses', 'theArray' => [ 'table' => []]],
+            [ 'reason' => 'Missing table', 'theArray' => [ 'witnesses' => []]],
+            [ 'reason' => 'Not enough witnesses', 'theArray' => [
+                'table' => [],
+                'witnesses' => ['A', 'B']
+                ]],
+            [ 'reason' => 'Not all the witnesses', 'theArray' => [
+                'table' => [],
+                'witnesses' => ['A', 'B', 'C', 'C']
+                ]],
+            [ 'reason' => 'Extraneous witness', 'theArray' => [
+                'table' => [],
+                'witnesses' => ['A', 'B', 'C', 'E']
+                ]],
+            [ 'reason' => 'Bad number of witnesses in segment', 'theArray' => [
+                'table' => [ [ [],[],[]]],  // only 3 elements in segment
+                'witnesses' => ['A', 'B', 'C', 'D']
+                ]],
+            [ 'reason' => 'Not witnessRef in segment', 'theArray' => [
+                'table' => [ [ ['t' => 'test'],['t' => 'test'],['t' => 'test'], ['t' => 'test']] ],  
+                'witnesses' => ['A', 'B', 'C', 'D']
+                ]]
+        ];
+        foreach($badCollatexOutputs as $testCase) {
+            $exceptionRaised = false;
+            try {
+                $collation->setCollationTableFromCollatexOutput($testCase['theArray']);
+            } catch (\InvalidArgumentException $ex) {
+                $exceptionRaised = true;
+            }
+            $this->assertTrue($exceptionRaised, $testCase['reason']);
+        }
+        
+        // Simple, aligned collatexOutput  (not really the "right" collation for
+        // the given witnesses!
+        $goodCollatexOutput = [
+            'witnesses' => ['A', 'B', 'C', 'D'],
+            'table' => [
+                [
+                    [ 
+                        [ 't' => 'This', 'witnessRef' =>0], 
+                        [ 't' => 'is', 'witnessRef' => 1], 
+                        [ 't' => 'witness', 'witnessRef' => 2],
+                        [ 't' => 'one', 'witnessRef' => 3]
+                    ],
+                    [ 
+                        [ 't' => 'This', 'witnessRef' =>0], 
+                        [ 't' => 'is', 'witnessRef' => 1], 
+                        [ 't' => 'witness', 'witnessRef' => 2],
+                        [ 't' => 'two', 'witnessRef' => 3]
+                    ],
+                    [ 
+                        [ 't' => 'This', 'witnessRef' =>0], 
+                        [ 't' => 'is', 'witnessRef' => 1], 
+                        [ 't' => 'witness', 'witnessRef' => 2],
+                        [ 't' => 'three', 'witnessRef' => 3]
+                    ],
+                    [ 
+                         [ 't' => 'This', 'witnessRef' =>0], 
+                        [ 't' => 'is', 'witnessRef' => 1], 
+                        [ 't' => 'witness', 'witnessRef' => 2],
+                        [ 't' => 'four', 'witnessRef' => 3]
+                    ]
+                ]
+               
+            ]
+        ];
+        $collation->setCollationTableFromCollatexOutput($goodCollatexOutput);
+        
+        $this->assertEquals(4, $collation->getTokenCount());
+        foreach ($collation->getSigla() as $siglum) {
+            $tokens = $collation->getWitnessCollationTokens($siglum);
+            $this->assertCount(4, $tokens);
+        }
+        
+    }
+    
+    public function testSegmentPadding() {
+        $collation = new Collation();
+        
+               
+        $w1 = new StringWitness('tw', 'tchunk', 'This is witness one');
+        $w2 = new StringWitness('tw', 'tchunk', 'This is witness two');
+        $w3 = new StringWitness('tw', 'tchunk', 'This is witnes three');
+        // Add witnesses
+        $collation->addWitness('A', $w1);
+        $collation->addWitness('B', $w2);
+        $collation->addWitness('C', $w3);
+        
+        
+        $segment1 = [ 
+            [ 
+                [ 't' => 'This', 'witnessRef' => 0],
+                [ 't' => 'is', 'witnessRef' => 1],
+                [ 't' => 'witness', 'witnessRef' => 2]
+            ],
+            [ 
+                [ 't' => 'This', 'witnessRef' => 0],
+                [ 't' => 'is', 'witnessRef' => 1],
+                [ 't' => 'witness', 'witnessRef' => 2],
+                [ 't' => 'two', 'witnessRef' => 3]
+            ],
+            [ 
+                [ 't' => 'This', 'witnessRef' => 0],
+                [ 't' => 'is', 'witnessRef' => 1],
+            ]
+        ];
+        $collation->setCollationTableFromCollatexOutput(['witnesses' => ['A', 'B', 'C'], 'table'=> [ $segment1]]);
+        $this->assertEquals(4, $collation->getTokenCount());
+        foreach ($collation->getSigla() as $siglum) {
+            $this->assertCount(4, $collation->getWitnessCollationRawTokens($siglum), $siglum);
+            $this->assertCount(4, $collation->getWitnessCollationTokens($siglum), $siglum);
+        }
+    }
+    
+    
 }

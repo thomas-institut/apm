@@ -33,6 +33,7 @@ use APM\Core\Witness\Witness;
 class Collation {
     
     const TOKENREF_NULL = -1;
+    const COLLATEX_NULL_TOKEN = '---';
     
     /* @var array */
     private $witnesses;
@@ -146,6 +147,25 @@ class Collation {
         return [];
     }
     
+    public function getWitnessCollationRawTokens(string $siglum) : array {
+        return $this->collationTable[$siglum];
+    }
+    
+    public function getWitnessCollationTokens(string $siglum) : array {
+        $rawCollationTokens = $this->getWitnessCollationRawTokens($siglum);
+        $witnessTokens = $this->getWitnessTokens($siglum);
+        
+        $collationTokens = [];
+        foreach ($rawCollationTokens as $collationTokenRef) {
+            if ($collationTokenRef === self::TOKENREF_NULL) {
+                $collationTokens[] = Token::emptyToken();
+                continue;
+            }
+            $collationTokens[] = $witnessTokens[$collationTokenRef];
+        }
+        return $collationTokens;
+    }
+    
     /**
      * Returns the sigla in the collation table
      * 
@@ -221,6 +241,141 @@ class Collation {
     public function getApparatusEntryForColumn(int $columnIndex, string $mainReading, string $lemma = '') {
         $column = $this->getColumn($columnIndex);
         return ApparatusGenerator::genEntryForColumn($column, $mainReading, $lemma);
+    }
+    
+    /**
+     * Generates an array that can be used as input to
+     * Collatex
+     * 
+     */
+    public function getCollatexInput() : array {
+         
+        $collatexWitnesses = [];
+        foreach($this->witnesses as $siglum => $witness) {
+            $collatexTokens = [];
+            $witnessTokens = $witness->getTokens();
+            foreach($this->collationTable[$siglum] as $columnNumber => $ref) {
+                $collatexToken = [];
+                $collatexToken['witnessRef'] = $ref;
+                if ($ref === self::TOKENREF_NULL) {
+                    $collatexToken['t'] = self::COLLATEX_NULL_TOKEN;
+                    $collatexTokens[] = $collatexToken;
+                    continue;
+                }
+                $witnessToken = $witnessTokens[$ref];
+                $collatexToken['t'] = $witnessToken->getText();
+                if ($witnessToken->getNormalization() !== $witnessToken->getText()) {
+                    $collatexToken['n'] = $witnessToken->getNormalization();
+                }
+                $collatexTokens[] = $collatexToken;
+            }
+            // Trim null tokens at the end of token Array
+            while ($collatexTokens[count($collatexTokens)-1]['witnessRef'] === self::TOKENREF_NULL) {
+                array_pop($collatexTokens);
+            }
+            $collatexWitnesses[] = [ 
+                'id' => $siglum,
+                'tokens' => $collatexTokens
+            ];
+        }
+        return $collatexWitnesses;
+    }
+    
+    public function setCollationTableFromCollatexOutput(array $collatexOutput) {
+        // First, check that the input is a valid collatex output
+        if (!isset($collatexOutput['table']) || !isset($collatexOutput['witnesses'])) {
+            throw new \InvalidArgumentException('Not a valid Collatex output array');
+        }
+        
+        if (count($collatexOutput['witnesses']) !== count($this->witnesses)) {
+            throw new \InvalidArgumentException('Invalid number of witnesses in collatex data');
+        }
+        
+        // Build sigla to collatex output index conversion table
+        $s2ci = [];
+        foreach (array_keys($this->witnesses) as $siglum){
+            $s2ci[$siglum] = -1;
+        }
+        foreach($collatexOutput['witnesses'] as $index => $siglum) {
+            $s2ci[$siglum] = $index;
+        }
+        // Check consistency of witness data in Collatex output
+        foreach (array_keys($this->witnesses) as $siglum){
+            if ($s2ci[$siglum] === -1){
+                throw new \InvalidArgumentException("Witness " . $siglum . ' not in given Collatex output');
+            }
+        }
+        
+        // All good so far, process the table
+        // The collatex output table is an array of segments. 
+        // Each segment is an array with one element corresponding to each
+        // witness. Each one of these elements contains an array of tokens 
+        // from the corresponding witness. 
+        $table = $collatexOutput['table'];
+        $witnessCount = count($this->witnesses);
+        $currentColumnNumber = 0;
+        $newCollationTable = [];
+        foreach (array_keys($this->witnesses) as $siglum) {
+            $newCollationTable[$siglum] = [];
+        }
+        
+        foreach ($table as $segment) {
+            if (count($segment) !== $witnessCount) {
+                throw new \InvalidArgumentException('Found invalid number of witnesses in a Collatex output segment');
+            }
+            $alignedSegment = $this->alignSegment($segment);
+            foreach ($alignedSegment as $index => $witnessTokens) {
+                $siglum = $collatexOutput['witnesses'][$index];
+                foreach($witnessTokens as $segmentTokenIndex => $collatexToken) {
+                    if (!isset($collatexToken['witnessRef'])) {
+                        throw new \InvalidArgumentException('Cannot found witnessRef in given collatex output');
+                    }
+                    $newCollationTable[$siglum][] = $collatexToken['witnessRef'];
+                }
+            }
+        }
+        
+        $this->collationTable = $newCollationTable;
+        
+    }
+    
+    /**
+     * Takes a Collatex output segment and aligns its token so that
+     * all witness have exactly the same number of tokens
+     * 
+     * @param array $segment
+     */
+    
+    protected function alignSegment(array $segment) : array {
+        // 1. Analyze segment lengths
+        $biggestLength = count($segment[0]);
+        $allSameLength = true;
+        for($i=1; $i < count($segment)-1;$i++) {
+            $currentLength = count($segment[$i]);
+            if ($currentLength !== $biggestLength) {
+                $allSameLength = false;
+            }
+            if ($currentLength > $biggestLength) {
+                $biggestLength = $currentLength;
+            }
+        }
+        
+        if ($allSameLength) {
+            // nothing to do
+            return $segment;
+        }
+        
+        $alignedSegment = [];
+        // Basic implementation: pad smaller segments
+        foreach($segment as $witnessSegment) {
+            $paddedWitnessSegment = $witnessSegment;
+            for ($j=count($witnessSegment); $j < $biggestLength; $j++) {
+                $paddedWitnessSegment[] = [ 't' => self::COLLATEX_NULL_TOKEN, 'witnessRef' => -1];
+            }
+            $alignedSegment[] = $paddedWitnessSegment;
+        }
+        return $alignedSegment;
+        
     }
     
     protected function padCollationTableRowToSize(int $newSize) {

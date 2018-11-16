@@ -58,7 +58,7 @@ class CollationTableFormatter {
         output += '<tr>'
         output += '<td class="' + this.witnessTdClass + '">' + sigla[i] + '</td>'
         for (let tkn=firstColumn; tkn < lastColumn; tkn++ ){
-          output += this.getTdFromToken(collationTable[sigla[i]][tkn])
+          output += this.getTdFromToken(sigla[i],collationTable[sigla[i]][tkn])
         }
         output += '</tr>'
       }
@@ -68,8 +68,15 @@ class CollationTableFormatter {
     return output
   }
   
- getTdFromToken(token) {
-   return '<td class="' + token.class + '">' + token.text + '</td>'
+ getTdFromToken(siglum, token) {
+   return '<td class="' + 
+           token.class + 
+           '"><a data-content="' + 
+           siglum + ', line ' + token.lineNumber + '"' +
+           '>' +
+           token.text  +
+           '</a>' +
+           '</td>'
  }
  
 }

@@ -35,7 +35,7 @@ class QuickCollation {
     this.collationTablesHtml = [ '']
     this.currentView = 0
    
-    
+    this.collationTableElement = $('#collationtablediv')
     this.collateButton = $('#collateButton')
     this.status = $('#status')
     this.collationTableDiv = $('#collationtablediv')
@@ -48,6 +48,7 @@ class QuickCollation {
     this.changeTextDirectionButton.on('click', this.genOnClickChangeTextDirectionButton())
     
     this.collationTableSection.addClass('hidden')
+    this.collationTableElement.popover({container: 'body', trigger: 'hover'})
     
     
     

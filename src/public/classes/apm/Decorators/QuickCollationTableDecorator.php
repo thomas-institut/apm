@@ -18,7 +18,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-namespace Apm\Decorators;
+namespace APM\Decorators;
 
 use APM\Core\Collation\CollationTableDecorator;
 use APM\Core\Collation\Collation;
@@ -30,8 +30,41 @@ use APM\Core\Collation\Collation;
  */
 class QuickCollationTableDecorator implements CollationTableDecorator {
     
+    const CLASS_EMPTYTOKEN = 'tokennotpresent';
+    const CLASS_NORMALTOKEN = 'normalToken';
+    
+    const TEXT_EMPTYTOKEN = '&mdash;';
+    
     public function decorate(Collation $c): array {
+        $collationTable = $c->getCollationTable();
         
+        $decoratedCollationTable = [];
+        
+        // 1. Put tokens in with basic classes
+        foreach($collationTable as $siglum => $tokens) {
+            $decoratedCollationTable[$siglum] = [];
+            foreach($tokens as $token) {
+                $decoratedToken = [];
+                if ($token->isEmpty()) {
+                    $decoratedToken['text'] = self::TEXT_EMPTYTOKEN;
+                    $decoratedToken['class'] = self::CLASS_EMPTYTOKEN;
+                    $decoratedCollationTable[$siglum][] = $decoratedToken;
+                    continue;
+                }
+                $decoratedToken['text'] = $token->getText();
+                $decoratedToken['class'] = self::CLASS_NORMALTOKEN;
+                $decoratedToken['lineNumber'] = $token->getLineNumber();
+                $decoratedCollationTable[$siglum][] = $decoratedToken;
+            }
+        }
+        
+//        // 2. Put line breaks
+//        foreach($collationTable as $siglum => $tokens) {
+//            foreach($tokens as $index => $token) {
+//                $decoratedCollationTable[$siglum][]
+//            }
+//        }
+        return $decoratedCollationTable;
     }
 
 }

@@ -23,9 +23,9 @@ use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use AverroesProject\Profiler\ApmProfiler;
 
-use APM\Core\Token\StringToken;
 use APM\Core\Witness\StringWitness;
 use APM\Core\Collation\Collation;
+use APM\Decorators\QuickCollationTableDecorator;
 
 /**
  * API Controller class
@@ -132,24 +132,8 @@ class ApiCollation extends ApiController
         }
         // @codeCoverageIgnoreEnd
         
-        $collationTable = $collation->getCollationTable();
-        
-        $decoratedCollationTable = [];
-        foreach($collationTable as $siglum => $tokens) {
-            $decoratedCollationTable[$siglum] = [];
-            foreach($tokens as $token) {
-                $decoratedToken = [];
-                if ($token->isEmpty()) {
-                    $decoratedToken['text'] = '&mdash;';
-                    $decoratedToken['class'] = 'emptyToken';
-                    $decoratedCollationTable[$siglum][] = $decoratedToken;
-                    continue;
-                }
-                $decoratedToken['text'] = $token->getText();
-                $decoratedToken['class'] = 'normalToken';
-                $decoratedCollationTable[$siglum][] = $decoratedToken;
-            }
-        }
+        $decoratedCollationTable = (new QuickCollationTableDecorator())->decorate($collation);
+
         $profiler->log($this->logger);
         
         return $response->withJson([

@@ -49,6 +49,8 @@ class QuickCollation {
     
     this.collationTableSection.addClass('hidden')
     
+    
+    
   }
   
   
@@ -91,7 +93,7 @@ class QuickCollation {
           thisObject.status.html('Collating... done, formatting table <i class="fa fa-spinner fa-spin fa-fw"></i>')
           console.log(data)
 
-          thisObject.collationTableDiv.html(data)
+          thisObject.collationTableDiv.html(thisObject.ctf.format(data))
           thisObject.currentView = 0
           thisObject.updating = false
           thisObject.status.html('')

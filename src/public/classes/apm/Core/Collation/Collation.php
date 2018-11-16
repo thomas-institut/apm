@@ -151,6 +151,7 @@ class Collation {
         return $this->collationTable[$siglum];
     }
     
+    
     public function getWitnessCollationTokens(string $siglum) : array {
         $rawCollationTokens = $this->getWitnessCollationRawTokens($siglum);
         $witnessTokens = $this->getWitnessTokens($siglum);
@@ -164,6 +165,14 @@ class Collation {
             $collationTokens[] = $witnessTokens[$collationTokenRef];
         }
         return $collationTokens;
+    }
+    
+    public function getCollationTable() : array {
+        $table = [];
+        foreach (array_keys($this->witnesses) as $siglum) {
+            $table[$siglum] = $this->getWitnessCollationTokens($siglum);
+        }
+        return $table;
     }
     
     /**
@@ -308,12 +317,10 @@ class Collation {
         
         // All good so far, process the table
         // The collatex output table is an array of segments. 
-        // Each segment is an array with one element corresponding to each
-        // witness. Each one of these elements contains an array of tokens 
-        // from the corresponding witness. 
+        // Each segment is an array with one element per witness, each one
+        // of containing a sequence of tokens 
         $table = $collatexOutput['table'];
         $witnessCount = count($this->witnesses);
-        $currentColumnNumber = 0;
         $newCollationTable = [];
         foreach (array_keys($this->witnesses) as $siglum) {
             $newCollationTable[$siglum] = [];
@@ -350,7 +357,7 @@ class Collation {
         // 1. Analyze segment lengths
         $biggestLength = count($segment[0]);
         $allSameLength = true;
-        for($i=1; $i < count($segment)-1;$i++) {
+        for($i=1; $i < count($segment);$i++) {
             $currentLength = count($segment[$i]);
             if ($currentLength !== $biggestLength) {
                 $allSameLength = false;

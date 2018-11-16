@@ -5,8 +5,7 @@
 
 {% block extraJS %}
 <script type="application/javascript" src="{{baseurl}}/js/apm/ApmUrlGenerator.js"></script>
-<script type="application/javascript" src="{{baseurl}}/js/Item.js"></script>
-<script type="application/javascript" src="{{baseurl}}/js/CollationTableFormatter.js"></script>
+<script type="application/javascript" src="{{baseurl}}/js/apm/CollationTableFormatter.js"></script>
 <script type="application/javascript" src="{{baseurl}}/js/apm/QuickCollation.js"></script>
 <style>
     textarea {
@@ -150,11 +149,11 @@
 
 <div id="collationtablesection">
 <h2>Collation Table</h2>
-<button type="button" class="btn btn-default" id="changeTableViewButton">Collapse / Expand Segments</button> 
+{#<button type="button" class="btn btn-default" id="changeTableViewButton">Collapse / Expand Segments</button> 
 <a class="help" data-toggle="popover" title="Help" data-content="<p>Collatex returns matching text segments composed of one or more words.</p><p>In the Averroes Project, 
 however, scholars prefer to see the table with one word per column. Click this button to switch between showing the segments as they come from 
 Collatex or showing them expanded word by word.</p><p>Please notice that word-by-word expansion is done with an algorithm developed in the Averroes
-Project that may still have some problems."><span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span></a>
+Project that may still have some problems."><span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span></a>#}
 &nbsp;&nbsp;&nbsp;&nbsp;
 <button type="button" class="btn btn-default" id="changeTextDirectionButton">LTR / RTL </button>
 <a class="help" data-toggle="popover" title="Help" data-content="Click to change the table direction between left-to-right and right-to-left"><span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span></a>

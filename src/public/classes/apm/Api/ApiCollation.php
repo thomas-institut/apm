@@ -36,6 +36,7 @@ class ApiCollation extends ApiController
     const ERROR_NO_WITNESSES = 2000;
     const ERROR_NOT_ENOUGH_WITNESSES = 2001;
     const ERROR_BAD_WITNESS = 2002;
+    const ERROR_FAILED_COLLATEX_PROCESSING = 2003;
     
     public function quickCollation(Request $request, 
             Response $response, $next)
@@ -113,9 +114,49 @@ class ApiCollation extends ApiController
             return $response->withStatus(409)->withJson( ['error' => ApiController::API_ERROR_ERROR_RUNNING_COLLATEX]);
         }
         // @codeCoverageIgnoreEnd
+        
+        try {
+            $collation->setCollationTableFromCollatexOutput($collatexOutput);
+        }
+        // @codeCoverageIgnoreStart
+        // Can't replicate this consistently in testing
+        catch(\Exception $ex) {
+            $this->logger->error('Error processing collatexOutput into collation object', 
+                    [ 'apiUserId' => $this->ci->userId, 
+                        'apiError' => self::ERROR_FAILED_COLLATEX_PROCESSING,
+                        'data' => $inputDataObject, 
+                        'rawCollatexOutput' => $cr->rawOutput,
+                        'exceptionMessage' => $ex->getMessage()
+                        ]);
+            return $response->withStatus(409)->withJson( ['error' => self::ERROR_FAILED_COLLATEX_PROCESSING]);
+        }
+        // @codeCoverageIgnoreEnd
+        
+        $collationTable = $collation->getCollationTable();
+        
+        $decoratedCollationTable = [];
+        foreach($collationTable as $siglum => $tokens) {
+            $decoratedCollationTable[$siglum] = [];
+            foreach($tokens as $token) {
+                $decoratedToken = [];
+                if ($token->isEmpty()) {
+                    $decoratedToken['text'] = '&mdash;';
+                    $decoratedToken['class'] = 'emptyToken';
+                    $decoratedCollationTable[$siglum][] = $decoratedToken;
+                    continue;
+                }
+                $decoratedToken['text'] = $token->getText();
+                $decoratedToken['class'] = 'normalToken';
+                $decoratedCollationTable[$siglum][] = $decoratedToken;
+            }
+        }
         $profiler->log($this->logger);
         
-        return $response->withJson(['rawCollatexOutput'=> $collatexOutput]);
+        return $response->withJson([
+            'rawCollatexOutput'=> $collatexOutput, 
+            'collationTable' => $decoratedCollationTable,
+            'sigla' => $collation->getSigla()
+            ]);
         
     }
     

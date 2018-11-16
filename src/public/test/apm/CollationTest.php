@@ -260,9 +260,13 @@ class CollationTest extends TestCase {
         $collation->setCollationTableFromCollatexOutput($goodCollatexOutput);
         
         $this->assertEquals(4, $collation->getTokenCount());
-        foreach ($collation->getSigla() as $siglum) {
-            $tokens = $collation->getWitnessCollationTokens($siglum);
+        $collationTable = $collation->getCollationTable();
+        $tokenClassName = get_class(Token::emptyToken());
+        foreach ($collationTable as $tokens) {
             $this->assertCount(4, $tokens);
+            foreach($tokens as $token) {
+                $this->assertTrue(is_a($token, $tokenClassName));
+            }
         }
         
     }
@@ -303,7 +307,107 @@ class CollationTest extends TestCase {
             $this->assertCount(4, $collation->getWitnessCollationRawTokens($siglum), $siglum);
             $this->assertCount(4, $collation->getWitnessCollationTokens($siglum), $siglum);
         }
+        
+        $table = $collation->getCollationTable();
+        foreach($table as $siglum => $tokens) {
+            $this->assertCount(4, $tokens);
+        }
+        
     }
     
+    public function testCollatexProcessing() {
+        
+        $testCases = [
+            [  // TEST CASE 1
+                'title' => 'Two texts different size' , 
+                'witnesses' => [ 'A' => 'This is some text', 'B' =>  'This is some text with more text'],
+                'collatexOutput' => json_decode($this->getTestCase1JSON(), true),
+                'expectedSize' => 7
+            ]
+        ];
+        
+        
+        foreach($testCases as $testCase) {
+            $collation = new Collation();
+            foreach($testCase['witnesses'] as $siglum => $text) {
+                $collation->addWitness($siglum, new StringWitness('tw', 'tc', $text));
+            }
+            $collation->setCollationTableFromCollatexOutput($testCase['collatexOutput']);
+            $collationTable = $collation->getCollationTable();
+            foreach($collationTable as $siglum => $tokens) {
+                $id = $testCase['title'] .  ' witness ' . $siglum;
+                $this->assertCount($testCase['expectedSize'], $collation->getWitnessCollationRawTokens($siglum), $id);
+                $this->assertCount($testCase['expectedSize'], $tokens, $id );
+            }
+        }
+    }
+    
+    private function getTestCase1JSON() {
+        return <<<EOT
+{
+    "witnesses": [
+      "A",
+      "B"
+    ],
+    "table": [
+      [
+        [
+          {
+            "witnessRef": 0,
+            "t": "This"
+          },
+          {
+            "witnessRef": 1,
+            "t": "is"
+          },
+          {
+            "witnessRef": 2,
+            "t": "some"
+          },
+          {
+            "witnessRef": 3,
+            "t": "text"
+          }
+        ],
+        [
+          {
+            "witnessRef": 0,
+            "t": "this"
+          },
+          {
+            "witnessRef": 1,
+            "t": "is"
+          },
+          {
+            "witnessRef": 2,
+            "t": "some"
+          },
+          {
+            "witnessRef": 3,
+            "t": "text"
+          }
+        ]
+      ],
+      [
+        [],
+        [
+          {
+            "witnessRef": 4,
+            "t": "with"
+          },
+          {
+            "witnessRef": 5,
+            "t": "more"
+          },
+          {
+            "witnessRef": 6,
+            "t": "text"
+          }
+        ]
+      ]
+    ]
+  }
+EOT;
+    }
     
 }

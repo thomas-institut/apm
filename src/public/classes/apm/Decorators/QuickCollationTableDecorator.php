@@ -36,35 +36,50 @@ class QuickCollationTableDecorator implements CollationTableDecorator {
     const TEXT_EMPTYTOKEN = '&mdash;';
     
     public function decorate(Collation $c): array {
-        $collationTable = $c->getCollationTable();
-        
+        $sigla = $c->getSigla();
         $decoratedCollationTable = [];
         
         // 1. Put tokens in with basic classes
-        foreach($collationTable as $siglum => $tokens) {
+        foreach($sigla as $siglum) {
             $decoratedCollationTable[$siglum] = [];
-            foreach($tokens as $token) {
+            $tokenRefs = $c->getWitnessCollationRawTokens($siglum);
+            $witnessTokens = $c->getWitnessTokens($siglum);
+            foreach($tokenRefs as $tokenRef) {
                 $decoratedToken = [];
-                if ($token->isEmpty()) {
+                if ($tokenRef === Collation::TOKENREF_NULL) {
                     $decoratedToken['text'] = self::TEXT_EMPTYTOKEN;
-                    $decoratedToken['class'] = self::CLASS_EMPTYTOKEN;
+                    $decoratedToken['classes'] = [self::CLASS_EMPTYTOKEN];
+                    $decoratedToken['empty'] = true;
                     $decoratedCollationTable[$siglum][] = $decoratedToken;
                     continue;
                 }
+                $token = $witnessTokens[$tokenRef];
                 $decoratedToken['text'] = $token->getText();
-                $decoratedToken['class'] = self::CLASS_NORMALTOKEN;
+                $decoratedToken['classes'] = [self::CLASS_NORMALTOKEN];
                 $decoratedToken['lineNumber'] = $token->getLineNumber();
+                $decoratedToken['empty'] = false;
+                $decoratedToken['witnessTokenIndex'] = $tokenRef;
                 $decoratedCollationTable[$siglum][] = $decoratedToken;
             }
         }
         
-//        // 2. Put line breaks
-//        foreach($collationTable as $siglum => $tokens) {
-//            foreach($tokens as $index => $token) {
-//                $decoratedCollationTable[$siglum][]
-//            }
-//        }
+        // 2. Put line breaks
+        $bd = new \APM\Core\Algorithm\BoundaryDetector();
+        $isEmptyFunc = function ($t) { return $t['empty'];};
+        $getLineNumberFunc = function($t) { return $t['lineNumber']; };
+        
+        foreach($decoratedCollationTable as $siglum => &$decoratedTokens)  {
+            $lineBreakIndexes = $bd->findBoundaries($decoratedTokens, $getLineNumberFunc, $isEmptyFunc);
+            foreach($lineBreakIndexes as $lbIndex) {
+                if ($decoratedTokens[$lbIndex]['empty'] === false) {
+                    $decoratedTokens[$lbIndex]['lineBreak'] = true;
+                }
+            }
+        }
+        
+        
         return $decoratedCollationTable;
+
     }
 
 }

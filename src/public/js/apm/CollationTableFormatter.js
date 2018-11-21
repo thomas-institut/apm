@@ -31,12 +31,13 @@ class CollationTableFormatter {
     this.tokenNotPresent = '&mdash;'
     this.collationTableClass = 'collationtable'
     this.witnessTdClass = 'witness'
+    this.newLineHtml =  '<span class="newlinesymbol">&ldsh;</span>';
 
   }
   
   
   
-  format(apiResponse) {
+  format(apiResponse, popoverClass) {
     
     let sigla = apiResponse.sigla
     let collationTable = apiResponse.collationTable
@@ -58,7 +59,7 @@ class CollationTableFormatter {
         output += '<tr>'
         output += '<td class="' + this.witnessTdClass + '">' + sigla[i] + '</td>'
         for (let tkn=firstColumn; tkn < lastColumn; tkn++ ){
-          output += this.getTdFromToken(sigla[i],collationTable[sigla[i]][tkn])
+          output += this.getTdFromToken(sigla[i],collationTable[sigla[i]][tkn], popoverClass)
         }
         output += '</tr>'
       }
@@ -68,15 +69,30 @@ class CollationTableFormatter {
     return output
   }
   
- getTdFromToken(siglum, token) {
-   return '<td class="' + 
-           token.class + 
-           '"><a data-content="' + 
-           siglum + ', line ' + token.lineNumber + '"' +
-           '>' +
-           token.text  +
-           '</a>' +
-           '</td>'
+ getTdFromToken(siglum, token, popoverClass) {
+   
+   if (token.empty) {
+     return '<td class="' + token.classes.join(' ') + '">'+ token.text + '</td>'
+   }
+   
+   let html = '<td class="' + token.classes.join(' ') + '">'
+   html += '<a class="' + popoverClass + '" title="' + token.text + '" '
+   html += 'role="button" tabindex="0" '
+   html += 'data-content="' + this.getPopoverHtmlFromToken(siglum, token) + '">'
+   html += token.text
+   html += '</a>'
+   if (token.lineBreak) {
+     html += this.newLineHtml
+   }
+   html += '</td>'
+   
+   return html
+ }
+ 
+ getPopoverHtmlFromToken(siglum, token) {
+   let html = siglum + ', token ' + (token.witnessTokenIndex+1) + ', line ' + token.lineNumber
+   return html
+   
  }
  
 }

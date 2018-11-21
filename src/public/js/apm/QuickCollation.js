@@ -31,6 +31,7 @@ class QuickCollation {
     this.textTitles = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
     this.updating = false
     this.ctf = new CollationTableFormatter()
+    this.popoverClass = 'ctpopover'
     
     this.collationTablesHtml = [ '']
     this.currentView = 0
@@ -48,13 +49,18 @@ class QuickCollation {
     this.changeTextDirectionButton.on('click', this.genOnClickChangeTextDirectionButton())
     
     this.collationTableSection.addClass('hidden')
-    this.collationTableElement.popover({container: 'body', trigger: 'hover'})
     
-    
+    // Popovers
+    this.collationTableElement.popover({
+      container: 'body', 
+      selector: '.' + this.popoverClass, 
+      trigger: 'hover', 
+      delay: {show: 500, hide: 0},
+      placement: 'auto'
+    })
     
   }
-  
-  
+
   genOnClickCollateButton()
   {
     let thisObject = this
@@ -94,7 +100,7 @@ class QuickCollation {
           thisObject.status.html('Collating... done, formatting table <i class="fa fa-spinner fa-spin fa-fw"></i>')
           console.log(data)
 
-          thisObject.collationTableDiv.html(thisObject.ctf.format(data))
+          thisObject.collationTableDiv.html(thisObject.ctf.format(data, thisObject.popoverClass))
           thisObject.currentView = 0
           thisObject.updating = false
           thisObject.status.html('')

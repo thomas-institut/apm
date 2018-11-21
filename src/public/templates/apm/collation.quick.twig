@@ -4,39 +4,12 @@
 {% block title %}Quick Collation (new){% endblock %}
 
 {% block extraJS %}
+    
+<link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/collationtable.css" />
+
 <script type="application/javascript" src="{{baseurl}}/js/apm/ApmUrlGenerator.js"></script>
 <script type="application/javascript" src="{{baseurl}}/js/apm/CollationTableFormatter.js"></script>
 <script type="application/javascript" src="{{baseurl}}/js/apm/QuickCollation.js"></script>
-<style>
-    textarea {
-        width: 100%;
-        height: 5em;
-    }
-    
-    div.texttitle {
-        font-weight: bold;
-        text-align: center;
-        height: 5em;
-        padding-top: 1.5em;
-        padding-bottom: 1.5em;
-    }
-    
-    .cancelindent {
-        margin-left: 0;
-    }
-    table.collationtable {
-        margin-bottom: 20px;
-    }
-    
-    .ltrtext {
-        direction: ltr;
-    }
-    
-    .rtltext {
-        direction: rtl;
-    }
-    
-</style>
 
 <script>
     $(document).ready(function () {
@@ -156,7 +129,7 @@ Collatex or showing them expanded word by word.</p><p>Please notice that word-by
 Project that may still have some problems."><span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span></a>#}
 &nbsp;&nbsp;&nbsp;&nbsp;
 <button type="button" class="btn btn-default" id="changeTextDirectionButton">LTR / RTL </button>
-<a class="help" data-toggle="popover" title="Help" data-content="Click to change the table direction between left-to-right and right-to-left"><span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span></a>
+<a class="help" title="Help" data-content="Click to change the table direction between left-to-right and right-to-left"><span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span></a>
 <div class="row">
 <div id="collationtablediv" class="ltrtext" style="overflow-x: auto; margin-top: 20px;">
 </div>

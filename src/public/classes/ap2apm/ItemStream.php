@@ -39,16 +39,21 @@ class ItemStream {
      */
     private $items;
     
-    public function __construct(int $docId, array $itemRows, string $defaultLang = 'la') {
+    public function __construct(int $docId, array $itemSegments, string $defaultLang = 'la') {
         $this->items = [];
         $factory = new ItemStreamItemFactory($defaultLang);
         
-        foreach ($itemRows as $row) {
-            $address = new AddressInItemStream();
-            $address->setFromItemStreamRow($docId, $row);
-            $item = $factory->createItemFromRow($row);
-            $this->items[] = new ItemInItemStream($address, $item);
+        foreach($itemSegments as $itemRows){
+            foreach ($itemRows as $row) {
+                $address = new AddressInItemStream();
+                $address->setFromItemStreamRow($docId, $row);
+                $item = $factory->createItemFromRow($row);
+                $this->items[] = new ItemInItemStream($address, $item);
+            }
         }
-        
+    }
+    
+    public function getItems() : array {
+        return $this->items;
     }
 }

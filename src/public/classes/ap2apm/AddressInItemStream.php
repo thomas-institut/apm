@@ -64,6 +64,9 @@ class AddressInItemStream extends Point {
         $this->setCoord(self::COORD_PAGE_ID, $itemStreamRow['page_id']);
         $this->setCoord(self::COORD_PAGESEQ, $itemStreamRow['p.seq']);
         $this->setCoord(self::COORD_PAGEFOL, $itemStreamRow['foliation']);
+        if (!$itemStreamRow['foliation']) {
+            $this->setCoord(self::COORD_PAGEFOL, strval($itemStreamRow['p.seq']));
+        }
     }
 
 }

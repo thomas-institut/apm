@@ -1,0 +1,94 @@
+{% extends "base.twig" %}
+{% import 'macros.twig' as macros %}
+
+{% block title %}Witness {{work}}-{{chunk}} : {{type}}-{{witnessid}} {% endblock %}
+{% block extraJS %}
+    
+    <style> 
+        .textualitem {
+            font-size: 1.1em;
+        }
+        .abbr {
+            color: #ff6666;
+        }
+    </style>
+            
+    <script type="application/javascript" src="{{baseurl}}/js/ApmUrlGenerator.js"></script>
+<script>
+$(document).ready(
+    function() { 
+        console.log("Ready to go")
+    } 
+);
+</script>
+{% endblock %}
+{% block content %}
+     <ol class="breadcrumb">
+         <li><a href="{{path_for('chunks')}}">Chunks</a></li>
+        <li>{{work}}-{{chunk}}</li>
+        <li class="active">Witness {{type}}-{{witnessid}} Details </li>
+    </ol>
+<h1>{{work_info.author_name}}, <em>{{work_info.title}}</em>, chunk {{chunk}}</h1>
+<p><b>Chunk code</b>: {{work}}-{{chunk}}</p>
+<p><b>Witness</b>: {{type}}-{{witnessid}} </p>
+<p><b>Document</b>: <a href="{{path_for('doc.showdoc', {'id' : doc.id})}}" target="_blank" title="View Document in New Tab">{{doc.title}}</a>, 
+    ({{macros.docTypeName(doc.doc_type)}} {{macros.langName(doc.lang)}})
+<p>
+<p><b>Segment Location(s)</b>: 
+    {% for seg in doc.segments %}
+    <a href="{{path_for('pageviewer.docseq', {'doc' : doc.id, 'seq' : seg.start.page_seq})}}" target="_blank" title="View Page in New Tab">{{seg.start.foliation}}</a>{% if seg.end.foliation and seg.end.foliation != seg.start.foliation %}&ndash;<a href="{{path_for('pageviewer.docseq', {'doc' : doc.id, 'seq' : seg.end.page_seq})}}" target="_blank" title="View Page in New Tab">{{seg.end.foliation}}</a>{% endif %}{% if not loop.last %}, {% endif %}
+    {% endfor %}
+</p>
+<p>
+    {% if doc.error %}
+        <p class="text-danger">{{doc.error}}</p>
+    {% endif %}
+    {% for warning in doc.warnings %}
+        <p class="text-warning"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i> {{warning}}</p>
+    {% endfor %}
+</p>
+    
+
+<div class="chunktexts">
+   
+    {% if doc.plain_text %}
+    <div class="collapse in" id="plaintext-{{doc.id}}-{{work}}-{{chunk}}">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+            <h3 class="panel-title">Plain Text</h3>
+            </div>
+             <div class="panel-body">
+                     <p class="chunktext chunktext-{{doc.lang}}">{{doc.plain_text}}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    
+    {% if doc.formatted %}
+    <div class="collapse in" id="formatted-{{doc.id}}-{{work}}-{{chunk}}">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+            <h3 class="panel-title">Formatted</h3>
+            </div>
+             <div class="panel-body">
+                     <p class="formatted chunktext-{{doc.lang}}">{{doc.formatted|raw}}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if doc.itemStreamDump %}
+    <div class="collapse in" id="itemstreamdump-{{doc.id}}-{{work}}-{{chunk}}">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+            <h3 class="panel-title">ItemStream Dump</h3>
+            </div>
+             <div class="panel-body">
+                 <pre>{{doc.itemStreamDump}}</pre>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

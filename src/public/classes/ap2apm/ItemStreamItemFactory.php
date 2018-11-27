@@ -60,6 +60,9 @@ class ItemStreamItemFactory {
             
             case AP_Item::UNCLEAR:
                 return $this->if->createUnclearItem($text, $extraInfo, $altText, $lang);
+                
+            case AP_Item::ABBREVIATION:
+                return $this->if->createAbbreviationItem($text, $altText, $lang);
         }
         
     }

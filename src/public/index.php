@@ -224,6 +224,10 @@ $app->get('/chunk/{work}/{chunk}','\AverroesProject\Site\SiteChunks:singleChunkP
         ->setName('chunk')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
+$app->get('/witness/{work}/{chunk}/{type}/{id}','\AverroesProjectToApm\Site\WitnessPage:witnessPage')
+        ->setName('witness')
+        ->add('\AverroesProject\Auth\Authenticator:authenticate');
+
 // COLLATION TABLE
 $app->get('/chunk/{work}/{chunk}/collation/{lang}[/{docs:.*}]','\AverroesProject\Site\SiteCollationTable:collationTablePage')
         ->setName('chunk.collationtable')
@@ -413,6 +417,8 @@ $app->group('/api/new/public', function (){
             '\APM\Api\ApiCollation:quickCollation')
         ->setName('api.new.collation.quick');
 });
+
+
 
 // All set, run!
 $app->run();

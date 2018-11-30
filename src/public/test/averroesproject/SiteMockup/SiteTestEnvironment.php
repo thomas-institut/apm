@@ -12,6 +12,8 @@ require_once 'DatabaseTestEnvironment.php';
 require_once 'SlimTwigExtensionMockup.php';
 require_once 'SlimRouterMockup.php';
 
+require_once '../test/testdbconfig.php';
+
 /**
  * Description of SiteTestEnvironment
  *
@@ -20,6 +22,7 @@ require_once 'SlimRouterMockup.php';
 class SiteTestEnvironment extends DatabaseTestEnvironment {
     
     public static function getContainer($logger) {
+        global $config;
         $container = parent::getContainer($logger);
 
         $container['router'] = new \SlimRouterMockup();
@@ -34,6 +37,7 @@ class SiteTestEnvironment extends DatabaseTestEnvironment {
                 $container['router'], $basePath));
 
         $container['view'] = $view;
+        $container['settings'] = $config;
         
         return $container;
     }

@@ -50,10 +50,14 @@ class WitnessPage extends SiteController {
         
         $locations = $db->getChunkLocationsForDoc($witnessId, $workId, $chunkNumber);
         if (count($locations)===0) {
+            // If the links in the website are properly constructed, it is 
+            // extremely unlikely that this error will ever occur. It will occur
+            // if the user enters a url for a document without the given chunk
             $doc['errors'][] =  'Error in chunk info, did somebody just erased the chunks in this document? Please refresh';
             $doc['plain_text'] = '';
             $doc['goodWitness'] = false;
         }
+        
         $doc['segments'] = $locations;
         $doc['plain_text'] = '';
         $doc['segmentApItemStreams'] = [];

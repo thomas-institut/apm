@@ -56,4 +56,8 @@ class ItemStream {
     public function getItems() : array {
         return $this->items;
     }
+    
+    public function addItem(ItemInItemStream $item) {
+        $this->items[] = $item;
+    }
 }

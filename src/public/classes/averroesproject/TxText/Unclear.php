@@ -45,10 +45,10 @@ class Unclear extends Item {
                 break;
             
             default:
-                throw new InvalidArgumentException("Unrecognized reason for UNCLEAR item, reason given: " . $reason);
+                throw new \InvalidArgumentException("Unrecognized reason for UNCLEAR item, reason given: " . $reason);
         }
         if ($firstReading === NULL or $firstReading === ''){
-            throw new InvalidArgumentException("Transcription items of type UNCLEAR need at least one reading, use ILLEGIBLE");
+            throw new \InvalidArgumentException("Transcription items of type UNCLEAR need at least one reading, use ILLEGIBLE");
         }
         $this->theText = $firstReading;
         $this->altText = $altReading;

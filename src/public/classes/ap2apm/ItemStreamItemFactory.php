@@ -67,78 +67,78 @@ class ItemStreamItemFactory {
         $item = null;
         
         switch($itemType) {
-            case AP_Item::TEXT:
+            case AP_Item::TEXT: // @codeCoverageIgnore
                 $item = $this->if->createPlainTextItem($text, $lang);
                 break;
             
-            case AP_Item::RUBRIC: 
+            case AP_Item::RUBRIC: // @codeCoverageIgnore
                 $item = $this->if->createRubricItem($text, $lang);
                 break;
                 
-            case AP_Item::SIC:
+            case AP_Item::SIC: // @codeCoverageIgnore
                 $item = $this->if->createSicItem($text, $altText, $lang);
                 break;
             
-            case AP_Item::UNCLEAR:
+            case AP_Item::UNCLEAR: // @codeCoverageIgnore
                 $item = $this->if->createUnclearItem($text, $extraInfo, $altText, $lang);
                 break;
                 
-            case AP_Item::ABBREVIATION:
+            case AP_Item::ABBREVIATION: // @codeCoverageIgnore
                 $item = $this->if->createAbbreviationItem($text, $altText, $lang);
                 break;
                 
-            case AP_Item::ILLEGIBLE:
-                if ($length === 0) {
-                    return $item;
-                }
+            case AP_Item::ILLEGIBLE: // @codeCoverageIgnore
+//                if ($length <= 0) {
+//                    return $item;
+//                }
                 $item = $this->if->createIllegibleItem($length, $extraInfo);
                 break;
             
-            case AP_Item::GLIPH:
+            case AP_Item::GLIPH: // @codeCoverageIgnore
                 $item = $this->if->createGliphItem($text, $lang);
                 break;
                 
-            case AP_Item::ADDITION:
+            case AP_Item::ADDITION: // @codeCoverageIgnore
                 $item = $this->if->createAdditionItem($text, $extraInfo, $lang);
                 break;
             
-            case AP_Item::DELETION:
+            case AP_Item::DELETION: // @codeCoverageIgnore
                 $item = $this->if->createDeletionItem($text, $extraInfo, $lang);
                 break;
             
-            case AP_Item::MARK:
+            case AP_Item::MARK: // @codeCoverageIgnore
                 $item = $this->if->createNoteMark();
                 break;
                 
-            case AP_Item::NO_WORD_BREAK:
+            case AP_Item::NO_WORD_BREAK: // @codeCoverageIgnore
                 $item = $this->if->createNoWb();
                 break;
                 
-            case AP_Item::LINEBREAK:
+            case AP_Item::LINEBREAK: // @codeCoverageIgnore
                 $item = $this->if->createPlainTextItem("\n", $lang);
                 break;
                 
-            case AP_Item::INITIAL:
+            case AP_Item::INITIAL: // @codeCoverageIgnore
                 $item = $this->if->createInitialItem($text, $lang);
                 break;
                 
-            case AP_Item::CHUNK_MARK:
+            case AP_Item::CHUNK_MARK: // @codeCoverageIgnore
                 $item = $this->if->createChunkMark($altText, $text, $target, $length);
                 break;
                 
-            case AP_Item::CHARACTER_GAP:
+            case AP_Item::CHARACTER_GAP: // @codeCoverageIgnore
                 $item = $this->if->createCharacterGapItem($length);
                 break;
             
-            case AP_Item::PARAGRAPH_MARK:
+            case AP_Item::PARAGRAPH_MARK: // @codeCoverageIgnore
                 $item = $this->if->createParagraphMark();
                 break;
                 
-            case AP_Item::MATH_TEXT:
+            case AP_Item::MATH_TEXT: // @codeCoverageIgnore
                 $item = $this->if->createMathTextItem($text, $lang);
                 break;
                 
-            case AP_Item::MARGINAL_MARK:
+            case AP_Item::MARGINAL_MARK: // @codeCoverageIgnore
                 $item = $this->if->createReferenceMark($text);
                 break;
         }
@@ -150,9 +150,9 @@ class ItemStreamItemFactory {
         }
         
         switch($elementType) {
-            case Element::ADDITION:
-            case Element::SUBSTITUTION:
-            case Element::GLOSS:
+            case Element::ADDITION: // @codeCoverageIgnore
+            case Element::SUBSTITUTION: // @codeCoverageIgnore
+            case Element::GLOSS: // @codeCoverageIgnore
                 if ($item->getLocation() === Item::LOCATION_INLINE) {
                     $item->setLocation($elementPlacement);
                 }

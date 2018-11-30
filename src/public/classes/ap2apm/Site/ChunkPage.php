@@ -67,11 +67,17 @@ class ChunkPage extends SiteController
             $doc['segmentApItemStreams'] = [];
             $locations = $db->getChunkLocationsForDoc($witness['id'], $workId, $chunkNumber);
             if (count($locations)===0) {
+                // @codeCoverageIgnoreStart
+                // Can't reproduce this in testing, it's actually a very unlike error!
+                // It will only happen if in the time between getting the list of documents
+                // for the given chunk and actually getting the chunk location for one
+                // of those documents, somebody changes the document and erases the chunk marks
                 $doc['errors'][] =  'Error in chunk info, did somebody just erased the chunks in this document? Please refresh';
                 $doc['plain_text'] = '';
                 $doc['goodWitness'] = false;
                 $docs[] = $doc;
                 continue;
+                // @codeCoverageIgnoreEnd
             }
             $this->ci->logger->debug('Chunk loc for ' . $workId . ' ' . $chunkNumber, $locations);
             

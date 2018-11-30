@@ -101,8 +101,9 @@ class WitnessPageFormatter implements ItemStreamFormatter {
                 $html .= $this->formatMark($theItem);
                 continue;
             }
-       
-            $html .= self::UNKNOWN_ITEM_HTML;
+            
+            // This should NEVER happen
+            $html .= self::UNKNOWN_ITEM_HTML; // @codeCoverageIgnore
         }
         return $html;
     }
@@ -117,7 +118,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         $classes[] = self::CLASS_HAND . $item->getHand();
         
         if ($item->getHand() !== 0) {
-            $popoverHtml = '<b>Hand: </b> '  . ($item->getHand() + 1) . '<br/>';
+            $popoverHtml = '<b>Hand: </b> '  . ($item->getHand() + 1) . '<br/>'; // @codeCoverageIgnore
         }
         
         if ($item->getFormat() !== TextualItem::FORMAT_NONE) {

@@ -100,3 +100,9 @@ p.formattedchunktext {
     margin-left: 10px;
     margin-top: 10px;
 }
+
+.foliation {
+    font-family: monospace;
+    color: #8a978b;
+    font-size: 0.8em;
+}

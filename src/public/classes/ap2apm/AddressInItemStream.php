@@ -72,5 +72,9 @@ class AddressInItemStream extends Point {
     public function getItemId()  {
         return $this->getCoord(self::COORD_ITEMID);
     }
+    
+    public function getFoliation() {
+        return $this->getCoord(self::COORD_PAGEFOL);
+    }
 
 }

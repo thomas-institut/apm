@@ -52,6 +52,8 @@ class WitnessPageFormatter implements ItemStreamFormatter {
     const CLASS_GLOSS = 'gloss';
     const CLASS_OFFLINE = 'offline';
     
+    const CLASS_FOLIATION = 'foliation';
+    
     const CLASS_WITHPOPOVER = 'withformatpopover';
     
     private $markIcons;
@@ -90,11 +92,18 @@ class WitnessPageFormatter implements ItemStreamFormatter {
      public function formatItemStream(ItemStream $stream, array $edNotes = []): string {
         $html = '';
         $gotNoWb = false;
+        $currentFoliation = '';
         foreach($stream->getItems() as $itemWithAddress) {
             $theItem = $itemWithAddress->getItem();
             $theAddress = $itemWithAddress->getAddress();
             $itemId = $theAddress->getItemId();
             $itemNotes = $this->getNotesForItemId($itemId, $edNotes);
+            
+            if ($theAddress->getFoliation() !== $currentFoliation) {
+                $currentFoliation = $theAddress->getFoliation();
+                $html .= ' <span class="' . self::CLASS_FOLIATION . '">[' . $currentFoliation . "]</span> ";
+            }
+            
             
             if (is_a($theItem, $this->noWbClass)) {
                 $gotNoWb = true;

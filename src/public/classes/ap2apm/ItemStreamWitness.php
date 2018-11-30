@@ -20,8 +20,7 @@
 
 namespace AverroesProjectToApm;
 
-use APM\Core\Witness\Witness;
-use AverroesProject\ItemStream\ItemStream;
+use APM\Core\Witness\TranscriptionWitness;
 
 
 /**
@@ -29,19 +28,22 @@ use AverroesProject\ItemStream\ItemStream;
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class ItemStreamWitness extends Witness{
+class ItemStreamWitness extends TranscriptionWitness {
     /**
      *
-     * @var array
+     * @var ItemStream
      */
     private $itemStream;
     
-    public function __construct(string $work, string $chunk, array $stream ) {
+    public function __construct(string $work, string $chunk, ItemStream $stream) {
         parent::__construct($work, $chunk);
-    }
-    
-    public function getTokens(): array {
         
+        $this->itemStream = $stream;
+        
+    }
+
+    public function getItemArray(): array {
+        return $this->itemStream->getItems();
     }
 
 }

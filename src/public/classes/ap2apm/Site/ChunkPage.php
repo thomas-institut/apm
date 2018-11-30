@@ -102,6 +102,10 @@ class ChunkPage extends SiteController
             }
 
             $itemStream = new \AverroesProjectToApm\ItemStream($doc['id'], $doc['segmentApItemStreams'], $doc['lang']);
+            //$itemStrWitness = new \AverroesProjectToApm\ItemStreamWitness($workId, $chunkNumber, $itemStream);
+            //$tokens = $itemStrWitness->getTokens();
+            
+            $doc['itemStream'] = $itemStream;
             $edNotes = $db->enm->getEditorialNotesForListOfItems($itemIds);
             $noteAuthorIds = [];
             foreach($edNotes as $edNote) {

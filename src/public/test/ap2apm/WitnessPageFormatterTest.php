@@ -41,12 +41,14 @@ use AverroesProject\EditorialNote;
 class WitnessPageFormatterTest extends TestCase {
     
     function testMarksWithinGlosses() {
-        
+        $docId = 1;
+        $itemId = 100;
         $mark = new Core\Item\Mark('test', 'some text');
         $mark->setTextualFlow(Item::FLOW_GLOSS);
         $address = new AddressInItemStream();
+        $address->setFromItemStreamRow($docId, ['id' => $itemId, 'seq'=> 0, 'ce_id' => 0, 'e.seq' => 0, 'col' => 1, 'page_id' => 20, 'p.seq' => 1, 'foliation' => null]);
         
-        $itemStream = new ItemStream(1, []);
+        $itemStream = new ItemStream($docId, []);
         $itemStream->addItem(new ItemInItemStream($address, $mark));
         
         $formatter = new WitnessPageFormatter();

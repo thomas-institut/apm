@@ -25,6 +25,7 @@ use \Psr\Http\Message\ResponseInterface as Response;
 
 use AverroesProject\ItemStream\ItemStream as ApItemStream;
 use AverroesProjectToApm\ItemStream;
+use AverroesProjectToApm\Formatter\WitnessPageFormatter;
 
 /**
  * Description of WitnessPage
@@ -65,20 +66,17 @@ class WitnessPage extends SiteController {
                 continue;
             }
             $apItemStream = $db->getItemStreamBetweenLocations((int) $doc['id'], $segLocation['start'], $segLocation['end']);
+            //$this->ci->logger->debug('AP ItemStream', $apItemStream);
             $doc['segmentApItemStreams'][] = $apItemStream;
             $doc['plain_text'] .= ApItemStream::getPlainText($apItemStream) . ' '; // CHECK: Space in between? 
             
         }
         
         $itemStream = new ItemStream($witnessId, $doc['segmentApItemStreams'], $doc['lang']);
-        
-        $this->ci->logger->debug('Itemstream with ' . count($itemStream->getItems()) . ' items');
         $html = '';
-        $formatter = new \AverroesProjectToApm\Formatter\WitnessPageFormatter();
-        foreach($itemStream->getItems() as $item) {
-            $html .= $formatter->formatTextualItem($item->getItem());
-            
-        }
+        $formatter = new WitnessPageFormatter();
+        $html = $formatter->formatItemStream($itemStream);
+        
         
         $doc['itemStreamDump'] =  print_r($itemStream, true);
         $doc['formatted'] = $html;

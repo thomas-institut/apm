@@ -39,6 +39,7 @@ class Mark extends Item {
     /** @var int */
     private $length;
     
+    
     private $data;
     
     const NO_TYPE = '';
@@ -47,9 +48,11 @@ class Mark extends Item {
             
     
     public function __construct(string $type = self::NO_TYPE, string $text = self::NO_TEXT) {
+        parent::__construct();
         $this->type = $type;
         $this->text = $text;
         $this->length = self::NO_LENGTH;
+        
     }
     
     public function getPlainText(){
@@ -78,4 +81,5 @@ class Mark extends Item {
     public function setLength(int $l) {
         $this->length = $l;
     }
+
 }

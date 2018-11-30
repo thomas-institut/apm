@@ -4,20 +4,20 @@
 {% block title %}Witness {{work}}-{{chunk}} : {{type}}-{{witnessid}} {% endblock %}
 {% block extraJS %}
     
-    <style> 
-        .textualitem {
-            font-size: 1.1em;
-        }
-        .abbr {
-            color: #ff6666;
-        }
-    </style>
-            
+  
+        
+  <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/ap2apm/witness.css"/>            
     <script type="application/javascript" src="{{baseurl}}/js/ApmUrlGenerator.js"></script>
 <script>
 $(document).ready(
     function() { 
-        console.log("Ready to go")
+        $('body .withformatpopover').popover({
+            container: 'body', 
+            html: true,
+            trigger: 'hover', 
+            delay: {show: 500, hide: 0},
+            placement: 'auto'
+         })
     } 
 );
 </script>

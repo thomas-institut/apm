@@ -1,0 +1,91 @@
+/*
+ * Copyright (C) 2016-18 Universität zu Köln
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+/* 
+    Created on : Nov 29, 2018, 9:51:26 AM
+    Author     : Rafael Nájera <rafael.najera@uni-koeln.de>
+*/
+
+
+p.formattedchunktext {
+    font-size: 1.2em;
+    line-height: 1.6em;
+}
+
+.textualitem {
+    
+}
+.abbr {
+    color: chocolate;
+}
+
+.gliph {
+    color: fuchsia;
+}
+.rubric {
+    color: blue;
+    font-weight: bold;
+}
+
+.initial {
+    font-weight: bold;
+}
+
+.sic {
+   color: #ad9c87;
+}
+
+.unclear {
+    color: #143382;
+}
+
+.illegible {
+    color: gray;
+}
+
+.markitem {
+    color: silver;
+    font-variant: small-caps;
+}
+
+.deletion {
+    text-decoration: line-through;
+    color: red;
+}
+
+.addition {
+    background-color: #ddecff;
+}
+
+.gloss {
+    background-color: #cbf7ce;
+}
+.offline {
+    border-bottom: 2px solid lightblue;
+}
+
+.note {
+    color: red;
+}
+
+.mathtext {
+    color: #990099;
+}
+
+.chunktext-la .hand_1 {
+    font-family: serif;
+}

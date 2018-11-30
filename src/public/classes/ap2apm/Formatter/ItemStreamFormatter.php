@@ -20,14 +20,13 @@
 
 namespace AverroesProjectToApm\Formatter;
 
-use APM\Core\Item\TextualItem;
+use AverroesProjectToApm\ItemStream;
+
 /**
  * Description of ItemFormatter
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-interface ItemFormatter {
-    
-    public function formatTextualItem(TextualItem $item) : string;
-    
+interface ItemStreamFormatter {
+    public function formatItemStream(ItemStream $stream) : string;
 }

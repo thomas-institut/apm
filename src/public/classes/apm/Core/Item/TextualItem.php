@@ -62,16 +62,6 @@ class TextualItem extends Item {
     protected $format;
     const FORMAT_NONE = '';
     
-    /** @var int */
-    protected $textualFlow;
-    const FLOW_MAIN_TEXT = 0;
-    const FLOW_ADDITION = 1;
-    const FLOW_GLOSS = 2;
-    
-    /** @var string */
-    protected $location;
-    const LOCATION_INLINE = '';
-    
     /** @var string */
     protected $deletion;
     const DELETION_NONE='';
@@ -97,13 +87,14 @@ class TextualItem extends Item {
         if ($t === '') {
             throw new \InvalidArgumentException('TextualItem text must not be empty');
         }
+        parent::__construct();
         $this->text=$t;
         $this->setNormalization('', self::NORMALIZATION_NONE);
         $this->setHand(self::DEFAULT_HAND);
         $this->setFormat(self::FORMAT_NONE);
         $this->setLanguage(self::LANG_NONE);
-        $this->setTextualFlow(self::FLOW_MAIN_TEXT);
-        $this->setLocation(self::LOCATION_INLINE);
+//        $this->setTextualFlow(self::FLOW_MAIN_TEXT);
+//        $this->setLocation(self::LOCATION_INLINE);
         $this->setClarity(self::CLARITY_CLEAR, self::CLARITY_REASON_NONE);
         $this->setDeletion(self::DELETION_NONE);
         $this->setAlternateTexts([]);
@@ -183,22 +174,6 @@ class TextualItem extends Item {
     
     public function getDeletion() : string {
         return $this->deletion;
-    }
-    
-    public function setTextualFlow(int $textualFlow) {
-        $this->textualFlow = $textualFlow;
-    }
-    
-    public function getTextualFlow() : int {
-        return $this->textualFlow;
-    }
-    
-    public function setLocation(string $loc) {
-        $this->location = $loc;
-    }
-    
-    public function getLocation() : string {
-        return $this->location;
     }
     
     public function getLength() : int {

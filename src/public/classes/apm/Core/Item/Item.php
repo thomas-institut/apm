@@ -29,6 +29,41 @@ namespace APM\Core\Item;
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 abstract class Item {
+    
+    
+    /** @var string */
+    protected $location;
+    const LOCATION_INLINE = '';
+    
+    /** @var int */
+    protected $textualFlow;
+    const FLOW_MAIN_TEXT = 0;
+    const FLOW_ADDITION = 1;
+    const FLOW_GLOSS = 2;
+    
     abstract public function getPlainText();
     abstract public function getNormalizedText();
+    
+    
+    public function __construct() {
+        $this->setTextualFlow(self::FLOW_MAIN_TEXT);
+        $this->setLocation(self::LOCATION_INLINE);;
+    }
+    public function setLocation(string $loc) {
+        $this->location = $loc;
+    }
+    
+    public function getLocation() : string {
+        return $this->location;
+    }
+    
+    public function setTextualFlow(int $textualFlow) {
+        $this->textualFlow = $textualFlow;
+    }
+    
+    public function getTextualFlow() : int {
+        return $this->textualFlow;
+    }
+    
+    
 }

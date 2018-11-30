@@ -21,29 +21,213 @@
 namespace AverroesProjectToApm\Formatter;
 
 use APM\Core\Item\TextualItem;
+use APM\Core\Item\Mark;
+use APM\Core\Item\Item;
+use APM\Core\Item\NoWbMark;
+use AverroesProjectToApm\ItemStream;
 
 /**
  * Description of WitnessPageFormatter
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class WitnessPageFormatter implements ItemFormatter {
+class WitnessPageFormatter implements ItemStreamFormatter {
     
-    public function formatTextualItem(TextualItem $item): string {
+    const ICON_NOTE = '<i class="fa fa-comment-o" aria-hidden="true"></i>';
+    const ICON_PARAGRAPH = '¶';
+    const ICON_GAP = '<i class="fa fa-ellipsis-h" aria-hidden="true"></i>';
+    
+    const UNKNOWN_ITEM_HTML = '<span class="unknown">???</span>';
+    
+    const CLASS_TEXTUALITEM = 'textualitem';
+    const CLASS_MARKITEM = 'markitem';
+    const CLASS_HAND = 'hand_';
+    const CLASS_UNCLEAR = 'unclear';
+    const CLASS_ILLEGIBLE = 'illegible';
+    const CLASS_DELETION = 'deletion';
+    const CLASS_ADDITION = 'addition';
+    const CLASS_GLOSS = 'gloss';
+    const CLASS_OFFLINE = 'offline';
+    
+    const CLASS_WITHPOPOVER = 'withformatpopover';
+    
+    private $markIcons;
+    
+    private $normalizationNames;
+    
+    private $noWbClass;
+    private $markClass;
+    private $textualClass;
+    
+    public function __construct() {
+        
+        $this->markIcons['note'] = self::ICON_NOTE;
+        $this->markIcons['paragraph'] = self::ICON_PARAGRAPH;
+        $this->markIcons['gap'] = self::ICON_GAP;
+                 
+        
+        $this->normalizationNames['sic'] = 'Sic';
+        $this->normalizationNames['abbr'] = 'Abbreviation';
+        
+        $this->markClass = get_class(new Mark());
+        $this->noWbClass = get_class(new NoWbMark());
+        $this->textualClass = get_class(new TextualItem('stub'));
+     
+    }
+    
+    
+     public function formatItemStream(ItemStream $stream): string {
+        $html = '';
+        $gotNoWb = false;
+        foreach($stream->getItems() as $itemWithAddress) {
+            $theItem = $itemWithAddress->getItem();
+            
+            if (is_a($theItem, $this->noWbClass)) {
+                $gotNoWb = true;
+                continue;
+            }
+            if (is_a($theItem, $this->textualClass)) {
+                $html .= $this->formatTextualItem($theItem, $gotNoWb);
+                $gotNoWb = false;
+                continue;
+            }
+            
+            $gotNoWb = false;
+            if (is_a($theItem, $this->markClass)) {
+                if ($theItem->getMarkType() === \APM\Core\Item\ItemFactory::MARK_REF) {
+                    $html .= ' ';
+                    continue;
+                }
+                $html .= $this->formatMark($theItem);
+                continue;
+            }
+       
+            $html .= self::UNKNOWN_ITEM_HTML;
+        }
+        return $html;
+    }
+
+   
+    protected function formatTextualItem(TextualItem $item, bool $gotNoWb): string {
         
         $classes = [];
-        $classes[] = 'textualitem';
+        $classes[] = self::CLASS_TEXTUALITEM;
+        $popoverHtml = '';
+        
+        $classes[] = self::CLASS_HAND . $item->getHand();
+        
+        if ($item->getHand() !== 0) {
+            $popoverHtml = '<b>Hand: </b> '  . ($item->getHand() + 1) . '<br/>';
+        }
         
         if ($item->getFormat() !== TextualItem::FORMAT_NONE) {
             $classes[] = $item->getFormat();
         }
-        $text = $item->getNormalizedText();
-        if ($item->getNormalizationType() !== TextualItem::NORMALIZATION_NONE) {
-            $classes[] = $item->getNormalizationType();
+        
+        if ($item->getClarityValue() < 1) {
+            $classes[] = $item->getClarityValue() > 0 ? self::CLASS_UNCLEAR : self::CLASS_ILLEGIBLE;
+            $popoverHtml .= '<b>';
+            $popoverHtml .= $item->getClarityValue() > 0 ? 'Unclear' : 'Illegible';
+            $popoverHtml .= '</b><br/>&rsaquo; ';
+            $popoverHtml .= $item->getClarityReason();
+            $popoverHtml .= '<br/>';
         }
         
-        $html = '<span class="' . implode(' ', $classes) . '">' . $text . '</span>';
+        if ($item->getDeletion() !== TextualItem::DELETION_NONE) {
+            $classes[] = self::CLASS_DELETION;
+            $popoverHtml .= '<b>Deletion</b><br/>&lowast; ' . $item->getDeletion() . '<br/>';
+        }
+        
+        $this->formatTextualFlow($item, $classes, $popoverHtml);
+        $this->formatLocation($item, $classes, $popoverHtml);
+        
+        
+        
+        $text = $item->getPlainText();
+        if ($gotNoWb) {
+            $text = $this->removeLeadingNewLines($text);
+        }
+        $normalization = $item->getNormalizedText();
+        if ($normalization !== $text) {
+        }
+        
+        if ($item->getNormalizationType() !== TextualItem::NORMALIZATION_NONE) {
+            $classes[] = $item->getNormalizationType();
+            if ($normalization === '') {
+                $normalization = ' (no reading given)';
+            }
+            $popoverHtml = '<b>' . $this->normalizationNames[$item->getNormalizationType()] . '</b><br/>&equiv; ' . $normalization;
+        }
+        
+        if ($popoverHtml !== '') {
+            $classes[] = self::CLASS_WITHPOPOVER;
+        }
+        
+        $html = '<span class="' . 
+                implode(' ', $classes) . '"';
+        if ($popoverHtml !== '') {
+            $html .= ' data-content="' . $popoverHtml . '"';
+        }
+        $html .= '>' .  $text .  '</span>';
+        return $html;
+    }
+    
+    protected function formatMark(Mark $item) : string {
+        
+        $classes = [];
+        $classes[] = self::CLASS_MARKITEM;
+        
+        $text = $item->getMarkText();
+        if ($text === '') {
+            $text = $this->markIcons[$item->getMarkType()];
+        }
+        
+        $classes[] = $item->getMarkType();
+        $popoverHtml = '';
+        
+        $this->formatTextualFlow($item, $classes, $popoverHtml);
+        $this->formatLocation($item, $classes, $popoverHtml);
+      
+        
+        
+        if ($popoverHtml !== '') {
+            $classes[] = self::CLASS_WITHPOPOVER;
+        }
+        
+        $html = '<span class="' . 
+                implode(' ', $classes) . '"';
+        if ($popoverHtml !== '') {
+            $html .= ' data-content="' . $popoverHtml . '"';
+        }
+        $html .= '>' .  $text .  '</span>';
         return $html;
     }
 
+    protected function removeLeadingNewLines(string $str) : string {
+        return mb_ereg_replace("^\n", '', $str);
+    }
+    
+    protected function formatTextualFlow(Item $item, array &$classes, string &$popoverHtml) {
+        
+        if ($item->getTextualFlow() !== Item::FLOW_MAIN_TEXT) {
+            $classes[] = $item->getTextualFlow() === Item::FLOW_ADDITION ? self::CLASS_ADDITION : self::CLASS_GLOSS;
+            switch ($item->getTextualFlow()) {
+                case Item::FLOW_ADDITION:
+                    $popoverHtml .= '<b>Addition</b><br/>';
+                    break;
+                
+                case Item::FLOW_GLOSS:
+                    $popoverHtml .= '<b>Gloss</b><br/>';
+                    break;
+            }
+        }
+    }
+    
+    protected function formatLocation(Item $item, array &$classes, string &$popoverHtml) {
+        if ($item->getLocation() !== Item::LOCATION_INLINE) {
+            $classes[] = self::CLASS_OFFLINE;
+            $popoverHtml .= '&rarr; ' . $item->getLocation();
+            $popoverHtml .= '<br/>';
+        }
+    }
 }

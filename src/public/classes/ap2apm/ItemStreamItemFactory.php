@@ -25,6 +25,8 @@ use APM\Core\Item\Item;
 
 use APM\Core\Item\ItemFactory;
 use AverroesProject\TxText\Item as AP_Item;
+use AverroesProject\ColumnElement\Element;
+use APM\Core\Item\TextualItem;
 /**
  * Factory of Items out of AP item stream rows
  *
@@ -38,32 +40,151 @@ class ItemStreamItemFactory {
      */
     private $if;
     
+    /** @var string */
+    private $textualItemClass;
+    
+    private $markItemClass;
+    
     public function __construct(string $defaultLang) {
         $this->if = new ItemFactory($defaultLang, 0);
+        $this->textualItemClass = get_class(new \APM\Core\Item\TextualItem('stub'));
+        $this->markItemClass = get_class(new \APM\Core\Item\Mark());
     }
     
     public function createItemFromRow($row) : Item {
+        $itemType = $this->getGoodInt($row, 'type');
         $lang = $row['lang'];
-        $text = $row['text'];
-        $altText = $row['alt_text'];
-        $extraInfo = $row['extra_info'];
+        $text = $this->getGoodString($row, 'text');
+        $altText = $this->getGoodString($row, 'alt_text');
+        $extraInfo = $this->getGoodString($row, 'extra_info');
+        $length =  $this->getGoodInt($row, 'length');
+        $target = $row['target'];
+        $hand = $this->getGoodInt($row, 'hand_id');;
         
-        switch($row['type']) {
+        $elementType = $row['e.type'];
+        $elementPlacement = $this->getGoodString($row, 'placement');
+        
+        $item = null;
+        
+        switch($itemType) {
             case AP_Item::TEXT:
-                return $this->if->createPlainTextItem($text, $lang);
+                $item = $this->if->createPlainTextItem($text, $lang);
+                break;
             
             case AP_Item::RUBRIC: 
-                return $this->if->createRubricItem($text, $lang);
+                $item = $this->if->createRubricItem($text, $lang);
+                break;
                 
             case AP_Item::SIC:
-                return $this->if->createSicItem($text, $altText, $lang);
+                $item = $this->if->createSicItem($text, $altText, $lang);
+                break;
             
             case AP_Item::UNCLEAR:
-                return $this->if->createUnclearItem($text, $extraInfo, $altText, $lang);
+                $item = $this->if->createUnclearItem($text, $extraInfo, $altText, $lang);
+                break;
                 
             case AP_Item::ABBREVIATION:
-                return $this->if->createAbbreviationItem($text, $altText, $lang);
+                $item = $this->if->createAbbreviationItem($text, $altText, $lang);
+                break;
+                
+            case AP_Item::ILLEGIBLE:
+                if ($length === 0) {
+                    return $item;
+                }
+                $item = $this->if->createIllegibleItem($length, $extraInfo);
+                break;
+            
+            case AP_Item::GLIPH:
+                $item = $this->if->createGliphItem($text, $lang);
+                break;
+                
+            case AP_Item::ADDITION:
+                $item = $this->if->createAdditionItem($text, $extraInfo, $lang);
+                break;
+            
+            case AP_Item::DELETION:
+                $item = $this->if->createDeletionItem($text, $extraInfo, $lang);
+                break;
+            
+            case AP_Item::MARK:
+                $item = $this->if->createNoteMark();
+                break;
+                
+            case AP_Item::NO_WORD_BREAK:
+                $item = $this->if->createNoWb();
+                break;
+                
+            case AP_Item::LINEBREAK:
+                $item = $this->if->createPlainTextItem("\n", $lang);
+                break;
+                
+            case AP_Item::INITIAL:
+                $item = $this->if->createInitialItem($text, $lang);
+                break;
+                
+            case AP_Item::CHUNK_MARK:
+                $item = $this->if->createChunkMark($altText, $text, $target, $length);
+                break;
+                
+            case AP_Item::CHARACTER_GAP:
+                $item = $this->if->createCharacterGapItem($length);
+                break;
+            
+            case AP_Item::PARAGRAPH_MARK:
+                $item = $this->if->createParagraphMark();
+                break;
+                
+            case AP_Item::MATH_TEXT:
+                $item = $this->if->createMathTextItem($text, $lang);
+                break;
+                
+            case AP_Item::MARGINAL_MARK:
+                $item = $this->if->createReferenceMark($text);
+                break;
         }
         
+        if ($hand !== 0) {
+            if (is_a($item, $this->textualItemClass)) {
+                $item->setHand($hand);
+            }
+        }
+        
+        switch($elementType) {
+            case Element::ADDITION:
+            case Element::SUBSTITUTION:
+            case Element::GLOSS:
+                if ($item->getLocation() === Item::LOCATION_INLINE) {
+                    $item->setLocation($elementPlacement);
+                }
+                if ($item->getTextualFlow()=== Item::FLOW_MAIN_TEXT) {
+                    if ($elementType === Element::GLOSS) {
+                        $item->setTextualFlow(Item::FLOW_GLOSS);
+                    } else {
+                        $item->setTextualFlow(Item::FLOW_ADDITION);
+                    }
+                }
+                break;
+        }
+        
+        
+        
+        return $item;
+        
+    }
+    
+    private function getGoodString(array $someArray, string $someKey) : string {
+        if (!isset($someArray[$someKey]) || is_null($someArray[$someKey])) {
+            return '';
+        }
+        
+        return (string) $someArray[$someKey];
+    }
+    
+    private function getGoodInt(array $someArray, string $someKey) : int {
+        if (!isset($someArray[$someKey]) || is_null($someArray[$someKey])) {
+            return -1;
+        }
+        
+        return intVal($someArray[$someKey]);
     }
 }

@@ -28,6 +28,9 @@ use APM\Core\Item\Item;
 use AverroesProjectToApm\AddressInItemStream;
 use AverroesProjectToApm\ItemStream;
 use AverroesProjectToApm\ItemInItemStream;
+use AverroesProjectToApm\Formatter\WitnessPageFormatter;
+
+use AverroesProject\EditorialNote;
 
 /**
  * For now this is just to hit a couple of format cases that 
@@ -46,11 +49,47 @@ class WitnessPageFormatterTest extends TestCase {
         $itemStream = new ItemStream(1, []);
         $itemStream->addItem(new ItemInItemStream($address, $mark));
         
-        $formatter = new \AverroesProjectToApm\Formatter\WitnessPageFormatter();
+        $formatter = new WitnessPageFormatter();
         
         $html = $formatter->formatItemStream($itemStream);
         
         $this->assertNotEquals('', $html);
+    }
+    
+    function testNoteMarks() {
+        $itemId = 100;
+        $docId = 1;
+        $authorId = 9989;
+        $time= '2018-11-30 15:01:00';
+        $noteText = 'This is a note';
+        
+        $noteMark = new Core\Item\Mark('note');
+        $address = new AddressInItemStream();
+        $address->setFromItemStreamRow($docId, ['id' => $itemId, 'seq'=> 0, 'ce_id' => 0, 'e.seq' => 0, 'col' => 1, 'page_id' => 20, 'p.seq' => 1, 'foliation' => null]);
+        
+        $edNote = new EditorialNote();
+        $edNote->target = $itemId;
+        $edNote->authorId = $authorId;
+        $edNote->time = $time;
+        $edNote->text = $noteText;
+        
+        $edNote2 = clone $edNote;
+        $edNote2->authorId = 12323;
+        
+        $edNote3 = clone $edNote;
+        $edNote3->target = $itemId+1;
+        
+        $itemStream = new ItemStream(1, []);
+        $itemStream->addItem(new ItemInItemStream($address, $noteMark));
+        
+        $formatter = new WitnessPageFormatter([$authorId => 'Somebody']);
+        
+        $html = $formatter->formatItemStream($itemStream, [$edNote, $edNote2, $edNote3]);
+        
+        //print "html = '$html'\n";
+        $this->assertNotEquals('', $html);
+        
+        
     }
     
 }

@@ -54,6 +54,7 @@ class Ap2APMSiteControllerTest extends TestCase {
         $chunkNo = 1;
         
         $numPages = 5;
+        /* @var $dm \AverroesProject\Data\DataManager */
         $dm = self::$dataManager;
         $docId = $dm->newDoc('Test site Doc', 'TA-1', $numPages, 'la', 
                 'mss', 'local', 'TESTSITE1');
@@ -95,9 +96,13 @@ class Ap2APMSiteControllerTest extends TestCase {
         TxText\ItemArray::addItem($element->items, new TxText\Text($itemId++,$itemSeq++,"a word that cont"));  
         TxText\ItemArray::addItem($element->items, new TxText\NoWordBreak($itemId++,$itemSeq++));  
         TxText\ItemArray::addItem($element->items, new TxText\Text($itemId++,$itemSeq++,"\ntinues in the next line"));  
+        $noteItemId = $itemId;
         TxText\ItemArray::addItem($element->items, new TxText\Mark($itemId++,$itemSeq++));  
         TxText\ItemArray::addItem($element->items, new TxText\ChunkMark($itemId++, $itemSeq++, $work, $chunkNo, 'end', 1));  
         $dm->insertNewElement($element)->id;
+        
+        $dm->enm->insertNote(EditorialNote::INLINE, $noteItemId, self::$editor2, 'this is a note');
+        
         
         // An invalid witness in doc 2
         $pageId2 =  $dm->getPageIdByDocPage($docId2, 1);

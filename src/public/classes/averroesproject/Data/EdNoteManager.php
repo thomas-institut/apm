@@ -80,6 +80,22 @@ class EdNoteManager {
         return self::editorialNoteArrayFromRows($rows);
     }
     
+    
+    public function getEditorialNotesForListOfItems(array $itemIds) {
+        $ted = $this->tNames['ednotes'];
+        $ti = $this->tNames['items'];
+        
+        if ($itemIds === []) {
+            return [];
+        }
+        
+        $idSet = implode(',', $itemIds);
+        
+        $query = "SELECT `$ted`.* FROM `$ted` WHERE target IN ($idSet)";
+        $rows = $this->dbh->getAllRows($query);
+        return self::editorialNoteArrayFromRows($rows);
+    }
+    
     /**
      * Inserts a new note for item $target
      * The item and the authorId must exist in the DB, they are not checked

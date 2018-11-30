@@ -37,7 +37,10 @@ class WitnessPageFormatter implements ItemStreamFormatter {
     const ICON_PARAGRAPH = '¶';
     const ICON_GAP = '<i class="fa fa-ellipsis-h" aria-hidden="true"></i>';
     
+    
     const UNKNOWN_ITEM_HTML = '<span class="unknown">???</span>';
+    
+    const UNKNOWN_USER = 'Unknown User';
     
     const CLASS_TEXTUALITEM = 'textualitem';
     const CLASS_MARKITEM = 'markitem';
@@ -59,7 +62,13 @@ class WitnessPageFormatter implements ItemStreamFormatter {
     private $markClass;
     private $textualClass;
     
-    public function __construct() {
+    /**
+     *
+     * @var array 
+     */
+    private $userNames;
+    
+    public function __construct($userInfo = []) {
         
         $this->markIcons['note'] = self::ICON_NOTE;
         $this->markIcons['paragraph'] = self::ICON_PARAGRAPH;
@@ -72,22 +81,27 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         $this->markClass = get_class(new Mark());
         $this->noWbClass = get_class(new NoWbMark());
         $this->textualClass = get_class(new TextualItem('stub'));
+        
+        $this->userNames = $userInfo;
      
     }
     
     
-     public function formatItemStream(ItemStream $stream): string {
+     public function formatItemStream(ItemStream $stream, array $edNotes = []): string {
         $html = '';
         $gotNoWb = false;
         foreach($stream->getItems() as $itemWithAddress) {
             $theItem = $itemWithAddress->getItem();
+            $theAddress = $itemWithAddress->getAddress();
+            $itemId = $theAddress->getItemId();
+            $itemNotes = $this->getNotesForItemId($itemId, $edNotes);
             
             if (is_a($theItem, $this->noWbClass)) {
                 $gotNoWb = true;
                 continue;
             }
             if (is_a($theItem, $this->textualClass)) {
-                $html .= $this->formatTextualItem($theItem, $gotNoWb);
+                $html .= $this->formatTextualItem($theItem, $gotNoWb, $itemNotes);
                 $gotNoWb = false;
                 continue;
             }
@@ -98,7 +112,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
                     $html .= ' ';
                     continue;
                 }
-                $html .= $this->formatMark($theItem);
+                $html .= $this->formatMark($theItem, $itemNotes);
                 continue;
             }
             
@@ -109,7 +123,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
     }
 
    
-    protected function formatTextualItem(TextualItem $item, bool $gotNoWb): string {
+    protected function formatTextualItem(TextualItem $item, bool $gotNoWb, $notes = []): string {
         
         $classes = [];
         $classes[] = self::CLASS_TEXTUALITEM;
@@ -129,7 +143,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
             $classes[] = $item->getClarityValue() > 0 ? self::CLASS_UNCLEAR : self::CLASS_ILLEGIBLE;
             $popoverHtml .= '<b>';
             $popoverHtml .= $item->getClarityValue() > 0 ? 'Unclear' : 'Illegible';
-            $popoverHtml .= '</b><br/>&rsaquo; ';
+            $popoverHtml .= '</b><br/><i class="fa fa-eye-slash" aria-hidden="true"></i></span> ';
             $popoverHtml .= $item->getClarityReason();
             $popoverHtml .= '<br/>';
         }
@@ -160,6 +174,8 @@ class WitnessPageFormatter implements ItemStreamFormatter {
             $popoverHtml = '<b>' . $this->normalizationNames[$item->getNormalizationType()] . '</b><br/>&equiv; ' . $normalization;
         }
         
+        $popoverHtml .= $this->generateNotesHtml($notes);
+        
         if ($popoverHtml !== '') {
             $classes[] = self::CLASS_WITHPOPOVER;
         }
@@ -167,13 +183,13 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         $html = '<span class="' . 
                 implode(' ', $classes) . '"';
         if ($popoverHtml !== '') {
-            $html .= ' data-content="' . $popoverHtml . '"';
+            $html .=  " data-content='" . $popoverHtml . "'";
         }
         $html .= '>' .  $text .  '</span>';
         return $html;
     }
     
-    protected function formatMark(Mark $item) : string {
+    protected function formatMark(Mark $item, $notes = []) : string {
         
         $classes = [];
         $classes[] = self::CLASS_MARKITEM;
@@ -188,8 +204,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         
         $this->formatTextualFlow($item, $classes, $popoverHtml);
         $this->formatLocation($item, $classes, $popoverHtml);
-      
-        
+        $popoverHtml .= $this->generateNotesHtml($notes);
         
         if ($popoverHtml !== '') {
             $classes[] = self::CLASS_WITHPOPOVER;
@@ -198,7 +213,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         $html = '<span class="' . 
                 implode(' ', $classes) . '"';
         if ($popoverHtml !== '') {
-            $html .= ' data-content="' . $popoverHtml . '"';
+            $html .= " data-content='" . $popoverHtml . "'";
         }
         $html .= '>' .  $text .  '</span>';
         return $html;
@@ -227,8 +242,39 @@ class WitnessPageFormatter implements ItemStreamFormatter {
     protected function formatLocation(Item $item, array &$classes, string &$popoverHtml) {
         if ($item->getLocation() !== Item::LOCATION_INLINE) {
             $classes[] = self::CLASS_OFFLINE;
-            $popoverHtml .= '&rarr; ' . $item->getLocation();
+            $popoverHtml .= '<i class="fa fa-location-arrow" aria-hidden="true"></i> ' . $item->getLocation();
             $popoverHtml .= '<br/>';
         }
+    }
+    
+    
+    protected function generateNotesHtml(array $edNotes) : string {
+        if (count($edNotes) === 0)  {
+            return '';
+        }
+        $html = '<b>Notes</b><br/>';
+        
+        foreach ($edNotes as $note) {
+            $html .= '<p class="notetext">' . $note->text . '</p>';
+            $html .= '<p class="noteheader"> --' . $this->getUsername($note->authorId) . ' @ ' . $note->time . '</p>';
+        }
+        return $html;
+    }
+    
+    public function getNotesForItemId(int $itemId, array $notes) : array {
+        $notesForItem = [];
+        foreach ($notes as $note) {
+            if ($note->target === $itemId) {
+                $notesForItem[] = $note;
+            }
+        }
+        return $notesForItem;
+    }
+    
+    private function getUsername($userId) {
+        if (!isset($this->userNames[$userId])) {
+            return self::UNKNOWN_USER;
+        }
+        return $this->userNames[$userId];
     }
 }

@@ -89,3 +89,14 @@ p.formattedchunktext {
 .chunktext-la .hand_1 {
     font-family: serif;
 }
+
+.popover p.noteheader {
+    margin-left: 10px;
+    font-size: 0.8em;
+    color: silver;
+}
+
+.popover p.notetext {
+    margin-left: 10px;
+    margin-top: 10px;
+}

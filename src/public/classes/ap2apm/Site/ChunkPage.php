@@ -82,6 +82,7 @@ class ChunkPage extends SiteController
             $this->ci->logger->debug('Chunk loc for ' . $workId . ' ' . $chunkNumber, $locations);
             
             $doc['segments'] = $locations;
+            $itemIds = [];
             
             foreach($locations as $segLocation ) {
                 if (!$segLocation['valid']) {
@@ -92,15 +93,28 @@ class ChunkPage extends SiteController
                     continue;
                 }
                 $apItemStream = $db->getItemStreamBetweenLocations((int) $doc['id'], $segLocation['start'], $segLocation['end']);
+                
+                foreach($apItemStream as $row) {
+                    $itemIds[] = (int) $row['id'];
+                }
                 $doc['segmentApItemStreams'][] = $apItemStream;
                 $doc['plain_text'] .= ItemStream::getPlainText($apItemStream) . ' '; // CHECK: Space in between? 
             }
 
             $itemStream = new \AverroesProjectToApm\ItemStream($doc['id'], $doc['segmentApItemStreams'], $doc['lang']);
+            $edNotes = $db->enm->getEditorialNotesForListOfItems($itemIds);
+            $noteAuthorIds = [];
+            foreach($edNotes as $edNote) {
+                $noteAuthorIds[$edNote->authorId] = 1;
+            }
+            $noteAuthorNames=[];
+            foreach(array_keys($noteAuthorIds) as $authorId) {
+                $noteAuthorNames[$authorId] = $db->um->getUserInfoByUserId($authorId)['fullname'];
+            }
+            // TODO: get note author names
             $html = '';
-            $formatter = new \AverroesProjectToApm\Formatter\WitnessPageFormatter();
-            $html = $formatter->formatItemStream($itemStream);
-            //$doc['itemStreamDump'] =  print_r($itemStream, true);
+            $formatter = new \AverroesProjectToApm\Formatter\WitnessPageFormatter($noteAuthorNames);
+            $html = $formatter->formatItemStream($itemStream, $edNotes);
             $doc['formatted'] = $html;
             
             if ($doc['goodWitness']) {

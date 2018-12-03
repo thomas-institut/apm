@@ -140,8 +140,8 @@ class Ap2APMSiteControllerTest extends TestCase {
                 ->withAttribute('id', $docId);
         $inputResp = new \Slim\Http\Response();
         self::$ci['userInfo'] = ['id' => self::$editor1];
-        $witnessPageObject = new \AverroesProjectToApm\Site\WitnessPage(self::$ci);
-        $response = $witnessPageObject->witnessPage($request, $inputResp, 
+        $chunkPageObject = new \AverroesProjectToApm\Site\ChunkPage(self::$ci);
+        $response = $chunkPageObject->witnessPage($request, $inputResp, 
                 NULL);
         $this->assertEquals(200, $response->getStatusCode());
         
@@ -153,8 +153,8 @@ class Ap2APMSiteControllerTest extends TestCase {
                 ->withAttribute('id', $docId2);
         $inputResp2 = new \Slim\Http\Response();
         self::$ci['userInfo'] = ['id' => self::$editor1];
-        $witnessPageObject2 = new \AverroesProjectToApm\Site\WitnessPage(self::$ci);
-        $response2 = $witnessPageObject2->witnessPage($request2, $inputResp2, 
+        $chunkPageObject2 = new \AverroesProjectToApm\Site\ChunkPage(self::$ci);
+        $response2 = $chunkPageObject2->witnessPage($request2, $inputResp2, 
                 NULL);
         $this->assertEquals(200, $response2->getStatusCode());
         
@@ -166,8 +166,8 @@ class Ap2APMSiteControllerTest extends TestCase {
                 ->withAttribute('id', $docId3);
         $inputResp3 = new \Slim\Http\Response();
         self::$ci['userInfo'] = ['id' => self::$editor1];
-        $witnessPageObject3 = new \AverroesProjectToApm\Site\WitnessPage(self::$ci);
-        $response3 = $witnessPageObject3->witnessPage($request3, $inputResp3, 
+        $chunkPageObject3 = new \AverroesProjectToApm\Site\ChunkPage(self::$ci);
+        $response3 = $chunkPageObject3->witnessPage($request3, $inputResp3, 
                 NULL);
         $this->assertEquals(200, $response3->getStatusCode());
         
@@ -178,10 +178,10 @@ class Ap2APMSiteControllerTest extends TestCase {
         $inputResp1_1 = new \Slim\Http\Response();
         
         
-        $chunkPageObject = new \AverroesProjectToApm\Site\ChunkPage(self::$ci);
+        $chunkPageObject4 = new \AverroesProjectToApm\Site\ChunkPage(self::$ci);
         
         
-        $response1_1 = $chunkPageObject->singleChunkPage($request1_1, $inputResp1_1, 
+        $response1_1 = $chunkPageObject4->singleChunkPage($request1_1, $inputResp1_1, 
                 NULL);
         
         $this->assertEquals(200, $response1_1->getStatusCode());

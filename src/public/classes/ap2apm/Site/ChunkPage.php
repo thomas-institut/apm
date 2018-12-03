@@ -58,78 +58,13 @@ class ChunkPage extends SiteController
         }
         
         foreach ($witnessList as $witness) {
-            $doc = $witness;
-            $doc['number'] = ++$witnessNumber;
-            $doc['errors'] = [];
-            $doc['warnings'] = [];
-            $doc['goodWitness'] = true;
-            $doc['plain_text'] = '';
-            $doc['segmentApItemStreams'] = [];
-            $locations = $db->getChunkLocationsForDoc($witness['id'], $workId, $chunkNumber);
-            if (count($locations)===0) {
-                // @codeCoverageIgnoreStart
-                // Can't reproduce this in testing, it's actually a very unlike error!
-                // It will only happen if in the time between getting the list of documents
-                // for the given chunk and actually getting the chunk location for one
-                // of those documents, somebody changes the document and erases the chunk marks
-                $doc['errors'][] =  'Error in chunk info, did somebody just erased the chunks in this document? Please refresh';
-                $doc['plain_text'] = '';
-                $doc['goodWitness'] = false;
-                $docs[] = $doc;
-                continue;
-                // @codeCoverageIgnoreEnd
-            }
-            $this->ci->logger->debug('Chunk loc for ' . $workId . ' ' . $chunkNumber, $locations);
-            
-            $doc['segments'] = $locations;
-            $itemIds = [];
-            
-            foreach($locations as $segLocation ) {
-                if (!$segLocation['valid']) {
-                    foreach($segLocation['warnings'] as $w) {
-                        $doc['warnings'][] = $w;
-                    }
-                    $doc['goodWitness'] = false;
-                    continue;
-                }
-                $apItemStream = $db->getItemStreamBetweenLocations((int) $doc['id'], $segLocation['start'], $segLocation['end']);
-                
-                foreach($apItemStream as $row) {
-                    $itemIds[] = (int) $row['id'];
-                }
-                $doc['segmentApItemStreams'][] = $apItemStream;
-                $doc['plain_text'] .= ItemStream::getPlainText($apItemStream) . ' '; // CHECK: Space in between? 
-            }
-
-            $itemStream = new \AverroesProjectToApm\ItemStream($doc['id'], $doc['segmentApItemStreams'], $doc['lang']);
-            //$itemStrWitness = new \AverroesProjectToApm\ItemStreamWitness($workId, $chunkNumber, $itemStream);
-            //$tokens = $itemStrWitness->getTokens();
-            
-            $doc['itemStream'] = $itemStream;
-            $edNotes = $db->enm->getEditorialNotesForListOfItems($itemIds);
-            $noteAuthorIds = [];
-            foreach($edNotes as $edNote) {
-                $noteAuthorIds[$edNote->authorId] = 1;
-            }
-            $noteAuthorNames=[];
-            foreach(array_keys($noteAuthorIds) as $authorId) {
-                $noteAuthorNames[$authorId] = $db->um->getUserInfoByUserId($authorId)['fullname'];
-            }
-            // TODO: get note author names
-            $html = '';
-            $formatter = new \AverroesProjectToApm\Formatter\WitnessPageFormatter($noteAuthorNames);
-            $html = $formatter->formatItemStream($itemStream, $edNotes);
-            $doc['formatted'] = $html;
-            
+            $doc = $this->buildWitnessDataFromDocData($witness, $workId, $chunkNumber, $db, ++$witnessNumber);
             if ($doc['goodWitness']) {
                 $goodWitnessesPerLang[$doc['lang']]['numWitnesses']++;
             } else {
                 $doc['plain_text'] = '';
             }
-            
-            
             $docs[] = $doc;
-            
             $profiler->lap('Doc '. $doc['id'] . ' END');
         }
         
@@ -153,5 +88,115 @@ class ChunkPage extends SiteController
             'collationLangs' => $validCollationLangs
         ]);
     }
+    
+    
+    public function witnessPage(Request $request, Response $response, $next){
+        
+        $db = $this->db;
+        $workId = $request->getAttribute('work');
+        $chunkNumber = $request->getAttribute('chunk');
+        $type = $request->getAttribute('type');
+        //$profiler = new ApmProfiler("WitnessPage-$workId-$chunkNumber", $db);
+        $workInfo = $db->getWorkInfo($workId);
+
+        // Assume, for the time being, that type==='doc'
+        
+        $witnessId = $request->getAttribute('id');
+        $docData = $db->getDocById($witnessId);
+        
+        $doc = $this->buildWitnessDataFromDocData($docData, $workId, $chunkNumber, $db, 1);
+        if ($doc['goodWitness']) {
+            $doc['itemStreamDump'] =  print_r($doc['itemStream'], true);
+            $doc['tokenDump'] = $this->prettyPrintTokens($doc['tokens']);
+        }
+
+        return $this->ci->view->render($response, 'ap2apm/witness.twig', [
+            'userinfo' => $this->ci->userInfo, 
+            'copyright' => $this->ci->copyrightNotice,
+            'baseurl' => $this->ci->settings['baseurl'],
+            'work' => $workId,
+            'chunk' => $chunkNumber,
+            'type' => $type,
+            'witnessid' => $witnessId,
+            'work_info' => $workInfo,
+            'doc' => $doc
+        ]);
+    }
+    
+    protected  function prettyPrintTokens($tokens) {
+        $output = '';
+        $tokenNumber = 1;
+        foreach($tokens as $token) {
+            $output .= $tokenNumber++ . ' : [' . $token->getType() . ']  \'' . $token->getText() . "'\n";
+        }
+        return $output;
+    }
+
+
+    protected function buildWitnessDataFromDocData(array $docData, $workId, $chunkNumber, $db, $witnessNumber) : array  {
+        $doc = $docData;
+        $doc['number'] = ++$witnessNumber;
+        $doc['errors'] = [];
+        $doc['warnings'] = [];
+        $doc['goodWitness'] = true;
+        $doc['plain_text'] = '';
+        $doc['segmentApItemStreams'] = [];
+        $locations = $db->getChunkLocationsForDoc($docData['id'], $workId, $chunkNumber);
+        if (count($locations)===0) {
+            // @codeCoverageIgnoreStart
+            // Can't reproduce this in testing, it's actually a very unlike error!
+            // It will only happen if in the time between getting the list of documents
+            // for the given chunk and actually getting the chunk location for one
+            // of those documents, somebody changes the document and erases the chunk marks
+            $doc['errors'][] =  'Error in chunk info, did somebody just erased the chunks in this document? Please refresh';
+            $doc['plain_text'] = '';
+            $doc['goodWitness'] = false;
+            return $doc;
+            // @codeCoverageIgnoreEnd
+        }
+        //$this->ci->logger->debug('Chunk loc for ' . $workId . ' ' . $chunkNumber, $locations);
+
+        $doc['segments'] = $locations;
+        $itemIds = [];
+
+        foreach($locations as $segLocation ) {
+            if (!$segLocation['valid']) {
+                foreach($segLocation['warnings'] as $w) {
+                    $doc['warnings'][] = $w;
+                }
+                $doc['goodWitness'] = false;
+                continue;
+            }
+            $apItemStream = $db->getItemStreamBetweenLocations((int) $doc['id'], $segLocation['start'], $segLocation['end']);
+
+            foreach($apItemStream as $row) {
+                $itemIds[] = (int) $row['id'];
+            }
+            $doc['segmentApItemStreams'][] = $apItemStream;
+            $doc['plain_text'] .= ItemStream::getPlainText($apItemStream) . ' '; // CHECK: Space in between? 
+        }
+
+        $itemStream = new \AverroesProjectToApm\ItemStream($doc['id'], $doc['segmentApItemStreams'], $doc['lang']);
+        $itemStrWitness = new \AverroesProjectToApm\ItemStreamWitness($workId, $chunkNumber, $itemStream);
+        $doc['tokens'] = $itemStrWitness->getTokens();
+
+        $doc['itemStream'] = $itemStream;
+        $edNotes = $db->enm->getEditorialNotesForListOfItems($itemIds);
+        $noteAuthorIds = [];
+        foreach($edNotes as $edNote) {
+            $noteAuthorIds[$edNote->authorId] = 1;
+        }
+        $noteAuthorNames=[];
+        foreach(array_keys($noteAuthorIds) as $authorId) {
+            $noteAuthorNames[$authorId] = $db->um->getUserInfoByUserId($authorId)['fullname'];
+        }
+        $formatter = new \AverroesProjectToApm\Formatter\WitnessPageFormatter($noteAuthorNames);
+        $html = $formatter->formatItemStream($itemStream, $edNotes);
+        $doc['formatted'] = $html;
+        
+        return $doc;
+    }
+    
+    
    
 }

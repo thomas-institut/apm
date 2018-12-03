@@ -172,15 +172,13 @@ class WitnessPageFormatter implements ItemStreamFormatter {
             $text = $this->removeLeadingNewLines($text);
         }
         $normalization = $item->getNormalizedText();
-        if ($normalization !== $text) {
-        }
         
         if ($item->getNormalizationType() !== TextualItem::NORMALIZATION_NONE) {
             $classes[] = $item->getNormalizationType();
-            if ($normalization === '') {
+            if ($normalization === '' || $normalization===$text) {
                 $normalization = ' (no reading given)';
             }
-            $popoverHtml = '<b>' . $this->normalizationNames[$item->getNormalizationType()] . '</b><br/>&equiv; ' . $normalization;
+            $popoverHtml = '<b>' . $this->normalizationNames[$item->getNormalizationType()] . '</b><br/>&equiv; ' . $normalization . '<br/>';
         }
         
         $popoverHtml .= $this->generateNotesHtml($notes);

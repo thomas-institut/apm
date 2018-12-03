@@ -116,7 +116,14 @@ class TextualItem extends Item {
     }
     public function setNormalization(string $normalizedText, string $normalizationType) {
         $this->normalizationType = $normalizationType;
-        $this->normalizedText = $normalizedText;
+        if ($normalizedText === '') {
+            // If no normalized text is given, then just copy the main text
+            // This is the case of a text marked as sic, but without a correction
+            $this->normalizedText = $this->text;
+        } else {
+            $this->normalizedText = $normalizedText;
+        }
+        
     }
     
     public function setHand(int $hand) {

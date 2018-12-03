@@ -47,93 +47,99 @@ class ItemStreamTest extends TestCase {
     public function testTextualItems() {
         $textualItemClass = get_class(new Core\Item\TextualItem('stub'));
         
+        $ceId = 500;
+        $initialItemId = 100;
+        $pageId = 100;
+        
+        $itemId = $initialItemId;
+        $itemSeq = 0;
         $inputRows = [
             [
-                'id' => 100, 'seq' => 0, 'ce_id' => 500, 'e.seq' => 0, 'col' => 1, 'page_id' => 100, 'p.seq' => '1', 'foliation' => null,
+                'id' => $itemId++, 'seq' => $itemSeq++, 'ce_id' => $ceId, 'e.seq' => 0, 'col' => 1, 'page_id' => $pageId, 'p.seq' => '1', 'foliation' => null,
                 'type' => APItem::TEXT, 'text' => 'Some text',
                 'lang' => 'la', 'alt_text'=> null, 'extra_info' => null, 
                 'length' => null, 'target' => null, 'hand' => 0, 
                 'e.type' => Element::LINE, 'placement' => null
             ],
             [
-                'id' => 101, 'seq' => 1, 'ce_id' => 500, 'e.seq' => 0, 'col' => 1, 'page_id' => 100, 'p.seq' => '1', 'foliation' => null,
+                'id' => $itemId++, 'seq' => $itemSeq++, 'ce_id' => $ceId, 'e.seq' => 0, 'col' => 1, 'page_id' => $pageId, 'p.seq' => '1', 'foliation' => null,
                 'type' => APItem::RUBRIC, 'text' => 'Some text',
                 'lang' => 'la', 'alt_text'=> null, 'extra_info' => null, 
                 'length' => null, 'target' => null, 'hand' => 0, 
                 'e.type' => Element::LINE, 'placement' => null
             ],
             [
-                'id' => 102, 'seq' => 2, 'ce_id' => 500, 'e.seq' => 0, 'col' => 1, 'page_id' => 100, 'p.seq' => '1', 'foliation' => null,
+                'id' => $itemId++, 'seq' => $itemSeq++, 'ce_id' => $ceId, 'e.seq' => 0, 'col' => 1, 'page_id' => $pageId, 'p.seq' => '1', 'foliation' => null,
                 'type' => APItem::GLIPH, 'text' => 'Some text',
                 'lang' => 'la', 'alt_text'=> null, 'extra_info' => null, 
                 'length' => null, 'target' => null, 'hand' => 0, 
                 'e.type' => Element::LINE, 'placement' => null
             ],
             [
-                'id' => 103, 'seq' => 3, 'ce_id' => 500, 'e.seq' => 0, 'col' => 1, 'page_id' => 100, 'p.seq' => '1', 'foliation' => null,
+                'id' => $itemId++, 'seq' => $itemSeq++, 'ce_id' => $ceId, 'e.seq' => 0, 'col' => 1, 'page_id' => $pageId, 'p.seq' => '1', 'foliation' => null,
                 'type' => APItem::GLIPH, 'text' => 'Some text',
                 'lang' => 'la', 'alt_text'=> null, 'extra_info' => null, 
                 'length' => null, 'target' => null, 'hand' => 0, 
                 'e.type' => Element::LINE, 'placement' => null
             ],
             [
-                'id' => 104, 'seq' => 4, 'ce_id' => 500, 'e.seq' => 0, 'col' => 1, 'page_id' => 100, 'p.seq' => '1', 'foliation' => null,
+                'id' => $itemId++, 'seq' => $itemSeq++, 'ce_id' => $ceId, 'e.seq' => 0, 'col' => 1, 'page_id' => $pageId, 'p.seq' => '1', 'foliation' => null,
                 'type' => APItem::MATH_TEXT, 'text' => 'Some text',
                 'lang' => 'la', 'alt_text'=> null, 'extra_info' => null, 
                 'length' => null, 'target' => null, 'hand' => 0, 
                 'e.type' => Element::LINE, 'placement' => null
             ], 
             [
-                'id' => 105, 'seq' => 5, 'ce_id' => 500, 'e.seq' => 0, 'col' => 1, 'page_id' => 100, 'p.seq' => '1', 'foliation' => null,
+                'id' => $itemId++, 'seq' => $itemSeq++, 'ce_id' => $ceId, 'e.seq' => 0, 'col' => 1, 'page_id' => $pageId, 'p.seq' => '1', 'foliation' => null,
                 'type' => APItem::SIC, 'text' => 'Some text',
                 'lang' => 'la', 'alt_text'=> 'some other text', 'extra_info' => null, 
                 'length' => null, 'target' => null, 'hand' => 0, 
                 'e.type' => Element::LINE, 'placement' => null
             ], 
             [
-                'id' => 106, 'seq' => 6, 'ce_id' => 500, 'e.seq' => 0, 'col' => 1, 'page_id' => 100, 'p.seq' => '1', 'foliation' => null,
+                'id' => $itemId++, 'seq' => $itemSeq++, 'ce_id' => $ceId, 'e.seq' => 0, 'col' => 1, 'page_id' => $pageId, 'p.seq' => '1', 'foliation' => null,
                 'type' => APItem::ABBREVIATION, 'text' => 'Some text',
                 'lang' => 'la', 'alt_text'=> 'some other text', 'extra_info' => null, 
                 'length' => null, 'target' => null, 'hand' => 0, 
                 'e.type' => Element::LINE, 'placement' => null
             ],
             [
-                'id' => 107, 'seq' => 7, 'ce_id' => 500, 'e.seq' => 0, 'col' => 1, 'page_id' => 100, 'p.seq' => '1', 'foliation' => null,
+                'id' => $itemId++, 'seq' => $itemSeq++, 'ce_id' => $ceId, 'e.seq' => 0, 'col' => 1, 'page_id' => $pageId, 'p.seq' => '1', 'foliation' => null,
                 'type' => APItem::UNCLEAR, 'text' => 'Some text',
                 'lang' => 'la', 'alt_text'=> 'some other text', 'extra_info' => 'unclear reason', 
                 'length' => null, 'target' => null, 'hand' => 0, 
                 'e.type' => Element::LINE, 'placement' => null
             ],
             [
-                'id' => 108, 'seq' => 8, 'ce_id' => 500, 'e.seq' => 0, 'col' => 1, 'page_id' => 100, 'p.seq' => '1', 'foliation' => null,
+                'id' => $itemId++, 'seq' => $itemSeq++, 'ce_id' => $ceId, 'e.seq' => 0, 'col' => 1, 'page_id' => $pageId, 'p.seq' => '1', 'foliation' => null,
                 'type' => APItem::ADDITION, 'text' => 'Some text',
                 'lang' => 'la', 'alt_text'=> null, 'extra_info' => 'location', 
                 'length' => null, 'target' => null, 'hand' => 0, 
                 'e.type' => Element::LINE, 'placement' => null
             ],
             [
-                'id' => 109, 'seq' => 9, 'ce_id' => 500, 'e.seq' => 0, 'col' => 1, 'page_id' => 100, 'p.seq' => '1', 'foliation' => null,
+                'id' => $itemId++, 'seq' => $itemSeq++, 'ce_id' => $ceId, 'e.seq' => 0, 'col' => 1, 'page_id' => $pageId, 'p.seq' => '1', 'foliation' => null,
                 'type' => APItem::DELETION, 'text' => 'Some text',
                 'lang' => 'la', 'alt_text'=> null, 'extra_info' => 'deletion technique', 
                 'length' => null, 'target' => null, 'hand' => 0, 
                 'e.type' => Element::LINE, 'placement' => null
             ],
             [
-                'id' => 110, 'seq' => 10, 'ce_id' => 500, 'e.seq' => 0, 'col' => 1, 'page_id' => 100, 'p.seq' => '1', 'foliation' => null,
+                'id' => $itemId++, 'seq' => $itemSeq++, 'ce_id' => $ceId, 'e.seq' => 0, 'col' => 1, 'page_id' => $pageId, 'p.seq' => '1', 'foliation' => null,
                 'type' => APItem::INITIAL, 'text' => 'Some text',
                 'lang' => 'la', 'alt_text'=> null, 'extra_info' => null, 
                 'length' => null, 'target' => null, 'hand' => 0, 
                 'e.type' => Element::LINE, 'placement' => null
             ],
             [
-                'id' => 111, 'seq' => 11, 'ce_id' => 500, 'e.seq' => 0, 'col' => 1, 'page_id' => 100, 'p.seq' => '1', 'foliation' => null,
+                'id' => $itemId++, 'seq' => $itemSeq++, 'ce_id' => $ceId, 'e.seq' => 0, 'col' => 1, 'page_id' => $pageId, 'p.seq' => '1', 'foliation' => null,
                 'type' => APItem::ILLEGIBLE, 'text' => null,
                 'lang' => 'la', 'alt_text'=> null, 'extra_info' => 'illegible reason', 
                 'length' => 5, 'target' => null, 'hand' => 0, 
                 'e.type' => Element::LINE, 'placement' => null
             ],
             [
-                'id' => 112, 'seq' => 12, 'ce_id' => 500, 'e.seq' => 0, 'col' => 1, 'page_id' => 100, 'p.seq' => '1', 'foliation' => null,
+                'id' => $itemId++, 'seq' => $itemSeq++, 'ce_id' => $ceId, 'e.seq' => 0, 'col' => 1, 'page_id' => $pageId, 'p.seq' => '1', 'foliation' => null,
                 'type' => APItem::LINEBREAK, 'text' => null,
                 'lang' => 'la', 'alt_text'=> null, 'extra_info' => null, 
                 'length' => null, 'target' => null, 'hand' => 0, 

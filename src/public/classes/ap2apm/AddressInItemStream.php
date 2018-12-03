@@ -20,7 +20,9 @@
 
 namespace AverroesProjectToApm;
 
+use APM\Core\Transcription\ItemAddressInDocument;
 use APM\Core\Address\Point;
+
 /**
  * Class to capture the location fields of an AverroesProject ItemStream
  *   - item id
@@ -38,7 +40,7 @@ use APM\Core\Address\Point;
  *  
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class AddressInItemStream extends Point {
+class AddressInItemStream extends ItemAddressInDocument {
     
     const COORD_ITEMID = 0;
     const COORD_ITEMSEQ = 1;
@@ -50,31 +52,62 @@ class AddressInItemStream extends Point {
     const COORD_PAGEFOL = 7;
     const COORD_DOCID = 8;
     
+    /**
+     *
+     * @var Point
+     */
+    private $fullAddress;
+    
     public function __construct() {
-        parent::__construct(9);
+        $this->fullAddress = new Point(9);
+        parent::__construct();
     }
     
     public function setFromItemStreamRow(int $docId, array $itemStreamRow) {
-        $this->setCoord(self::COORD_DOCID, $docId);
-        $this->setCoord(self::COORD_ITEMID, $itemStreamRow['id']);
-        $this->setCoord(self::COORD_ITEMSEQ, $itemStreamRow['seq']);
-        $this->setCoord(self::COORD_ELEMENTID, $itemStreamRow['ce_id']);
-        $this->setCoord(self::COORD_ELEMENTSEQ, $itemStreamRow['e.seq']);
-        $this->setCoord(self::COORD_COL, $itemStreamRow['col']);
-        $this->setCoord(self::COORD_PAGE_ID, $itemStreamRow['page_id']);
-        $this->setCoord(self::COORD_PAGESEQ, $itemStreamRow['p.seq']);
-        $this->setCoord(self::COORD_PAGEFOL, $itemStreamRow['foliation']);
+        $this->fullAddress->setCoord(self::COORD_DOCID, $docId);
+        $this->fullAddress->setCoord(self::COORD_ITEMID, $itemStreamRow['id']);
+        $this->fullAddress->setCoord(self::COORD_ITEMSEQ, $itemStreamRow['seq']);
+        $this->fullAddress->setCoord(self::COORD_ELEMENTID, $itemStreamRow['ce_id']);
+        $this->fullAddress->setCoord(self::COORD_ELEMENTSEQ, $itemStreamRow['e.seq']);
+        $this->fullAddress->setCoord(self::COORD_COL, $itemStreamRow['col']);
+        $this->fullAddress->setCoord(self::COORD_PAGE_ID, $itemStreamRow['page_id']);
+        $this->fullAddress->setCoord(self::COORD_PAGESEQ, $itemStreamRow['p.seq']);
+        $this->fullAddress->setCoord(self::COORD_PAGEFOL, $itemStreamRow['foliation']);
         if (!$itemStreamRow['foliation']) {
-            $this->setCoord(self::COORD_PAGEFOL, strval($itemStreamRow['p.seq']));
+            $this->fullAddress->setCoord(self::COORD_PAGEFOL, strval($itemStreamRow['p.seq']));
         }
     }
     
     public function getItemId()  {
-        return $this->getCoord(self::COORD_ITEMID);
+        return $this->fullAddress->getCoord(self::COORD_ITEMID);
     }
     
     public function getFoliation() {
-        return $this->getCoord(self::COORD_PAGEFOL);
+        return $this->fullAddress->getCoord(self::COORD_PAGEFOL);
+    }
+    
+    public function getPageId() {
+        return $this->fullAddress->getCoord(self::COORD_PAGE_ID);
+    }
+    
+    public function setPageId($pageId) {
+        $this->fullAddress->setCoord(self::COORD_PAGE_ID, $pageId);
+    }
+    
+    public function getTbIndex() {
+        return $this->fullAddress->getCoord(self::COORD_ELEMENTID);
+    }
+    
+    public function setTbIndex($index) {
+        $this->fullAddress->setCoord(self::COORD_ELEMENTID, $index);
+    }
+    
+    public function getItemIndex() {
+        return $this->fullAddress->getCoord(self::COORD_ITEMID);
+    }
+    
+    protected function setItemIndex($index) {
+        $this->fullAddress->setCoord(self::COORD_ITEMID, $index);
     }
 
 }

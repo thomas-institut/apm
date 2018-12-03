@@ -228,7 +228,7 @@ $app->get('/chunk/{work}/{chunk}','\AverroesProjectToApm\Site\ChunkPage:singleCh
         ->setName('chunk')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
-$app->get('/chunk/{work}/{chunk}/witness/{type}/{id}','\AverroesProjectToApm\Site\WitnessPage:witnessPage')
+$app->get('/chunk/{work}/{chunk}/witness/{type}/{id}','\AverroesProjectToApm\Site\ChunkPage:witnessPage')
         ->setName('witness')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 

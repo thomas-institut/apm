@@ -78,6 +78,19 @@ $(document).ready(
     </div>
     {% endif %}
     
+    {% if doc.tokenDump %}
+    <div class="collapse in" id="tokendump-{{doc.id}}-{{work}}-{{chunk}}">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+            <h3 class="panel-title">Token Dump</h3>
+            </div>
+             <div class="panel-body">
+                 <pre>{{doc.tokenDump}}</pre>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
     {% if doc.itemStreamDump %}
     <div class="collapse in" id="itemstreamdump-{{doc.id}}-{{work}}-{{chunk}}">
         <div class="panel panel-default">

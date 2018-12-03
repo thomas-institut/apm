@@ -78,6 +78,7 @@ abstract class TranscriptionWitness extends Witness {
             
             $rawItem = $sourceItem->getItem();
             $itemAddress = $sourceItem->getAddress();
+            //print "Processing item with index =" . $itemAddress->getItemIndex() . "\n";
             
             if ($itemAddress->getPageId() !== $currentPage ||
                     $itemAddress->getTbIndex() !== $currentTextBox) {

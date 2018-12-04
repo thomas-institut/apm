@@ -25,6 +25,7 @@ use APM\Core\Item\Mark;
 use APM\Core\Item\Item;
 use APM\Core\Item\NoWbMark;
 use AverroesProjectToApm\ItemStream;
+use APM\Core\Item\ItemWithAddress;
 
 /**
  * Description of WitnessPageFormatter
@@ -53,6 +54,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
     const CLASS_OFFLINE = 'offline';
     
     const CLASS_FOLIATION = 'foliation';
+    const CLASS_COLUMNBREAK = 'columnbreak';
     
     const CLASS_WITHPOPOVER = 'withformatpopover';
     
@@ -93,6 +95,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         $html = '';
         $gotNoWb = false;
         $currentFoliation = '';
+        $currentTbIndex = -1;
         foreach($stream->getItems() as $itemWithAddress) {
             $theItem = $itemWithAddress->getItem();
             $theAddress = $itemWithAddress->getAddress();
@@ -101,9 +104,17 @@ class WitnessPageFormatter implements ItemStreamFormatter {
             
             if ($theAddress->getFoliation() !== $currentFoliation) {
                 $currentFoliation = $theAddress->getFoliation();
+                $currentTbIndex = $theAddress->getTbIndex();
                 $html .= ' <span class="' . self::CLASS_FOLIATION . '">[' . $currentFoliation . "]</span> ";
+            } else {
+                if ($currentTbIndex !== $theAddress->getTbIndex()) {
+                    $currentTbIndex = $theAddress->getTbIndex();    
+                    if ($currentTbIndex < 10) {
+                        // a column break!
+                        $html .=  ' <span class="' . self::CLASS_COLUMNBREAK . '">[' .$currentFoliation . ':c'.  $currentTbIndex . "]</span> ";
+                    }
+                }
             }
-            
             
             if (is_a($theItem, $this->noWbClass)) {
                 $gotNoWb = true;

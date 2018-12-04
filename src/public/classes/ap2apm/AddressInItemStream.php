@@ -22,6 +22,7 @@ namespace AverroesProjectToApm;
 
 use APM\Core\Transcription\ItemAddressInDocument;
 use APM\Core\Address\Point;
+use AverroesProject\ColumnElement\Element;
 
 /**
  * Class to capture the location fields of an AverroesProject ItemStream
@@ -51,6 +52,7 @@ class AddressInItemStream extends ItemAddressInDocument {
     const COORD_PAGESEQ = 6;
     const COORD_PAGEFOL = 7;
     const COORD_DOCID = 8;
+    const COORD_TBINDEX = 9;
     
     /**
      *
@@ -59,7 +61,7 @@ class AddressInItemStream extends ItemAddressInDocument {
     private $fullAddress;
     
     public function __construct() {
-        $this->fullAddress = new Point(9);
+        $this->fullAddress = new Point(10);
         parent::__construct();
     }
     
@@ -76,6 +78,18 @@ class AddressInItemStream extends ItemAddressInDocument {
         if (!$itemStreamRow['foliation']) {
             $this->fullAddress->setCoord(self::COORD_PAGEFOL, strval($itemStreamRow['p.seq']));
         }
+        // Get tb index: if element is line, set it as col, if not, the element id
+        $elementType = Element::LINE;
+        if (isset($itemStreamRow['e.type'])) {
+            $elementType = intval($itemStreamRow['e.type']);
+        }
+        
+        if ($elementType === Element::LINE) {
+            $this->fullAddress->setCoord(self::COORD_TBINDEX, $this->fullAddress->getCoord(self::COORD_COL));
+        } else {
+            $this->fullAddress->setCoord(self::COORD_TBINDEX, $this->fullAddress->getCoord(self::COORD_ELEMENTID));
+        }
+        
     }
     
     public function getFullAddress() {
@@ -99,11 +113,11 @@ class AddressInItemStream extends ItemAddressInDocument {
     }
     
     public function getTbIndex() {
-        return $this->fullAddress->getCoord(self::COORD_ELEMENTID);
+        return $this->fullAddress->getCoord(self::COORD_TBINDEX);
     }
     
     public function setTbIndex($index) {
-        $this->fullAddress->setCoord(self::COORD_ELEMENTID, $index);
+        $this->fullAddress->setCoord(self::COORD_TBINDEX, $index);
     }
     
     public function getItemIndex() {

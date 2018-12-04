@@ -200,22 +200,47 @@ class ChunkPage extends SiteController
     
     protected function prettyPrintAddressInItemStream(\APM\Core\Address\Point $address) : string{
         
-        $coords = [];
-        for ($i = 0; $i < 9; $i++) {
-            $coords[] = $address->getCoord($i);
-        }
-        
-        return '[' . implode(', ', $coords) . ']';
+        return $this->prettyPrintPoint($address);
     }
     
      protected  function prettyPrintTokens($tokens) {
+        $types[\APM\Core\Token\Token::TOKEN_WORD] = 'W';
+        $types[\APM\Core\Token\Token::TOKEN_WS] = 'S';
+        $types[\APM\Core\Token\Token::TOKEN_PUNCT] = 'P';
+        $types[\APM\Core\Token\Token::TOKEN_EMPTY] = 'E';
+        $types[\APM\Core\Token\Token::TOKEN_UNDEFINED] = 'U';
         $output = '';
         $tokenNumber = 1;
         foreach($tokens as $token) {
-            $output .= $tokenNumber++ . ' : (' . $token->getType() . ') ' . 
-                    $this->prettyPrintAddressInItemStream($token->getSourceItemAddresses()[0]->getFullAddress()) . ' \'' . $token->getText() . "'\n";
+            /* @var  $token \APM\Core\Token\TranscriptionToken */
+            $addresses = [];
+            foreach($token->getSourceItemAddresses() as $address) {
+                $addresses[] = $this->prettyPrintAddressInItemStream($address->getFullAddress());
+            }
+            $lineRange = $token->getTextBoxLineRange();
+
+            $output .= $tokenNumber++ . ' : (' . $types[$token->getType()] . ') ' . 
+                    '[ ' . implode(' - ' , $addresses) . ' ] ' . 
+                    $this->prettyPrintLineRange($lineRange) . ' ' .
+                    '\'' . $token->getText() . "'\n";
         }
         return $output;
+    }
+    
+    protected function prettyPrintLineRange(\APM\Core\Address\PointRange $lineRange) {
+        $start = $lineRange->getStart();
+        $end = $lineRange->getEnd();
+        
+        return $this->prettyPrintPoint($start) . ' -> ' . $this->prettyPrintPoint($end);
+    }
+    
+    protected function prettyPrintPoint(\APM\Core\Address\Point $point) {
+        $dim = $point->getDimensionCount();
+        $data = [];
+        for ($i=0; $i< $dim; $i++) {
+            $data[] = $point->getCoord($i);
+        }
+        return implode(':', $data);
     }
    
 }

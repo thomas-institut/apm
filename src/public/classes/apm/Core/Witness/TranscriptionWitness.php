@@ -46,6 +46,9 @@ abstract class TranscriptionWitness extends Witness {
      */
     abstract function getItemArray() : array;
     
+    public function getInitialLineNumberForTextBox(int $pageId, int $textBox) : int {
+        return 1;
+    }
     /**
      * Returns an array of TranscriptionToken
      * @return array
@@ -67,7 +70,7 @@ abstract class TranscriptionWitness extends Witness {
         $currentPage = $sourceItems[0]->getAddress()->getPageId();
         $currentTextBox = $sourceItems[0]->getAddress()->getTbIndex();
         $pageTextBoxCurrentLines = [];
-        $pageTextBoxCurrentLines[$currentTextBox] = 1;
+        $pageTextBoxCurrentLines[$currentTextBox] = $this->getInitialLineNumberForTextBox($currentPage, $currentTextBox);
         $openWordToken = false;
         $noWbItemOpen = false;
         $currentWordToken = new TranscriptionToken(Token::TOKEN_EMPTY, '');
@@ -87,7 +90,7 @@ abstract class TranscriptionWitness extends Witness {
                 $currentPage = $itemAddress->getPageId();
                 $currentTextBox = $itemAddress->getTbIndex();
                 $pageTextBoxCurrentLines = [];
-                $pageTextBoxCurrentLines[$currentTextBox] = 1;
+                $pageTextBoxCurrentLines[$currentTextBox] = $this->getInitialLineNumberForTextBox($currentPage, $currentTextBox);
                 if ($openWordToken) {
                     // Close open word token
                     //print "word was open, closing\n";
@@ -151,10 +154,13 @@ abstract class TranscriptionWitness extends Witness {
                             $tokens[] = $tToken;
                         }
                     }
-                    if ($pageTextBoxCurrentLines[$currentTextBox] < $stringToken->getLineRange()->getEnd() ) {
-                        // Line change in text box
-                        $pageTextBoxCurrentLines[$currentTextBox] = $stringToken->getLineRange()->getEnd();
-                    }
+                    // advance current line
+                    $pageTextBoxCurrentLines[$currentTextBox] = 
+                        $pageTextBoxCurrentLines[$currentTextBox] + $stringToken->getLineRange()->getEnd() - 1 ;
+//                    if ($pageTextBoxCurrentLines[$currentTextBox] < $stringToken->getLineRange()->getEnd() ) {
+//                        // Line change in text box
+//                        $pageTextBoxCurrentLines[$currentTextBox] = $stringToken->getLineRange()->getEnd();
+//                    }
                 }
                 continue; // next StringToken
             }

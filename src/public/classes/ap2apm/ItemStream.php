@@ -44,11 +44,21 @@ class ItemStream {
         $factory = new ItemStreamItemFactory($defaultLang);
         
         foreach($itemSegments as $itemRows){
+            $previousElementId = -1;
+            $previousTbIndex = -1;
+            
             foreach ($itemRows as $row) {
                 $address = new AddressInItemStream();
                 $address->setFromItemStreamRow($docId, $row);
+                
+                if ($row['ce_id'] !== $previousElementId && $address->getTbIndex() === $previousTbIndex) {
+                    $this->items[] = new ItemInItemStream($address, new \APM\Core\Item\TextualItem("\n"));
+                }
                 $item = $factory->createItemFromRow($row);
                 $this->items[] = new ItemInItemStream($address, $item);
+                
+                $previousElementId = $row['ce_id'];
+                $previousTbIndex = $address->getTbIndex();
             }
         }
     }

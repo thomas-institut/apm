@@ -35,10 +35,15 @@ class ItemStreamWitness extends TranscriptionWitness {
      */
     private $itemStream;
     
+    
+    /** @var array */
+    private $initialLineNumbers;
+    
     public function __construct(string $work, string $chunk, ItemStream $stream) {
         parent::__construct($work, $chunk);
         
         $this->itemStream = $stream;
+        $this->initialLineNumbers = [];
         
     }
 
@@ -46,4 +51,18 @@ class ItemStreamWitness extends TranscriptionWitness {
         return $this->itemStream->getItems();
     }
 
+    
+    public function getInitialLineNumberForTextBox(int $pageId, int $textBox) : int {
+        if (isset($this->initialLineNumbers[$pageId][$textBox])) {
+            return $this->initialLineNumbers[$pageId][$textBox];
+        }
+        return 1;
+    }
+    
+    public function setInitialLineNumberForTextBox(int $textBox, int $lineNumber) {
+        if (!isset($this->initialLineNumbers[$pageId])) {
+            $this->initialLineNumbers[$pageId] = [];
+        }
+        $this->initialLineNumbers[$pageId][$textBox] = $lineNumber;
+    }
 }

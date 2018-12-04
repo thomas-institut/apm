@@ -106,3 +106,9 @@ p.formattedchunktext {
     color: #8a978b;
     font-size: 0.8em;
 }
+
+.columnbreak {
+    font-family: monospace;
+    color: #8a978b;
+    font-size: 0.8em;
+}

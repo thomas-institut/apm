@@ -152,8 +152,11 @@ class ItemStreamTest extends TestCase {
         $items = $is->getItems();
         
         $this->assertCount(13, $items);
+        $index = $initialItemId;
         foreach($items as $itemInStream) {
             $this->assertTrue(is_a($itemInStream->getItem(), $textualItemClass ));
+            $this->assertEquals($index, $itemInStream->getAddress()->getItemIndex());
+            $index++;
         }
         
         foreach($inputRows as &$row) {

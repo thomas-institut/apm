@@ -78,17 +78,19 @@ abstract class TranscriptionWitness extends Witness {
             
             $rawItem = $sourceItem->getItem();
             $itemAddress = $sourceItem->getAddress();
-            //print "Processing item with index =" . $itemAddress->getItemIndex() . "\n";
+            //print "Processing item with index = " . $itemAddress->getItemIndex() . "\n";
             
             if ($itemAddress->getPageId() !== $currentPage ||
                     $itemAddress->getTbIndex() !== $currentTextBox) {
                 // new page or text box, reset all counters
+                //print "New Page or text box, resetting counters\n";
                 $currentPage = $itemAddress->getPageId();
                 $currentTextBox = $itemAddress->getTbIndex();
                 $pageTextBoxCurrentLines = [];
                 $pageTextBoxCurrentLines[$currentTextBox] = 1;
                 if ($openWordToken) {
                     // Close open word token
+                    //print "word was open, closing\n";
                     $tokens[] = $currentWordToken;
                     $openWordToken = false;
                 }
@@ -99,7 +101,9 @@ abstract class TranscriptionWitness extends Witness {
                 // 
                 // Notice that tokens are constructed out of the normalized 
                 // text, not the "original" text
+                //print "Textual Item: '" . $rawItem->getNormalizedText() . "'\n";
                 $stringTokens = StringTokenizer::getTokensFromString($rawItem->getNormalizedText());
+                //print "  -- " . count($stringTokens) . " string tokens\n";
                 foreach($stringTokens as $stringToken) {
                     /* @var $stringToken StringToken */
                     $tToken =  new TranscriptionToken($stringToken->getType(), 
@@ -125,6 +129,7 @@ abstract class TranscriptionWitness extends Witness {
                             $noWbItemOpen = false;
                         }  else {
                             // closed word token : open a new currentWordToken
+                            //print "A word token, making it the currentWordToken: '" . $tToken->getText() . "'\n" ;
                             $currentWordToken = $tToken;
                             $openWordToken = true;
                         }
@@ -134,10 +139,15 @@ abstract class TranscriptionWitness extends Witness {
                         } else {
                             // Any other token type: "close" currentWordToken and
                             // add it to the token array
-                            $tokens[] = $currentWordToken;
-                            $openWordToken = false;
+                            //print "A non-word token\n";
+                            if ($openWordToken) {
+                                //print "   adding currentWordToken to token array\n";
+                                $tokens[] = $currentWordToken;
+                                $openWordToken = false;
+                            }
                             $noWbItemOpen = false;
                             // Add the token just processed as well
+                            //print "   adding the non-word token to token array as well\n";
                             $tokens[] = $tToken;
                         }
                     }
@@ -177,6 +187,7 @@ abstract class TranscriptionWitness extends Witness {
                 $openWordToken = false;
             }
         }
+        //print "All items processed\n";
         // If there's still an openToken, close it
         if ($openWordToken) {
             $tokens[] = $currentWordToken;

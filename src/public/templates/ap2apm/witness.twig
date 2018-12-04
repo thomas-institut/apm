@@ -91,6 +91,32 @@ $(document).ready(
     </div>
     {% endif %}
     
+    {% if doc.segmentsDataDump %}
+    <div class="collapse in" id="segmentsDataDump-{{doc.id}}-{{work}}-{{chunk}}">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+            <h3 class="panel-title">Segments Data Dump</h3>
+            </div>
+             <div class="panel-body">
+                 {{doc.segmentsDataDump|raw}}
+             </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if doc.segmentsJSON %}
+    <div class="collapse in" id="segmentsJson-{{doc.id}}-{{work}}-{{chunk}}">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+            <h3 class="panel-title">Segments JSON</h3>
+            </div>
+             <div class="panel-body">
+                 <pre> {{doc.segmentsJSON}} </pre>
+             </div>
+        </div>
+    </div>
+    {% endif %}
+    
     {% if doc.itemStreamDump %}
     <div class="collapse in" id="itemstreamdump-{{doc.id}}-{{work}}-{{chunk}}">
         <div class="panel panel-default">

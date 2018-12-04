@@ -108,6 +108,13 @@ class ChunkPage extends SiteController
         if ($doc['goodWitness']) {
             $doc['itemStreamDump'] =  print_r($doc['itemStream'], true);
             $doc['tokenDump'] = $this->prettyPrintTokens($doc['tokens']);
+            
+            ob_start();
+            var_dump($doc['segmentApItemStreams']);
+            $doc['segmentsDataDump'] = ob_get_contents();
+            ob_end_clean();
+            
+            $doc['segmentsJSON'] = json_encode($doc['segmentApItemStreams'] );
         }
 
         return $this->ci->view->render($response, 'ap2apm/witness.twig', [
@@ -123,19 +130,12 @@ class ChunkPage extends SiteController
         ]);
     }
     
-    protected  function prettyPrintTokens($tokens) {
-        $output = '';
-        $tokenNumber = 1;
-        foreach($tokens as $token) {
-            $output .= $tokenNumber++ . ' : [' . $token->getType() . ']  \'' . $token->getText() . "'\n";
-        }
-        return $output;
-    }
+   
 
 
     protected function buildWitnessDataFromDocData(array $docData, $workId, $chunkNumber, $db, $witnessNumber) : array  {
         $doc = $docData;
-        $doc['number'] = ++$witnessNumber;
+        $doc['number'] = $witnessNumber;
         $doc['errors'] = [];
         $doc['warnings'] = [];
         $doc['goodWitness'] = true;
@@ -154,8 +154,6 @@ class ChunkPage extends SiteController
             return $doc;
             // @codeCoverageIgnoreEnd
         }
-        //$this->ci->logger->debug('Chunk loc for ' . $workId . ' ' . $chunkNumber, $locations);
-
         $doc['segments'] = $locations;
         $itemIds = [];
 
@@ -175,10 +173,12 @@ class ChunkPage extends SiteController
             $doc['segmentApItemStreams'][] = $apItemStream;
             $doc['plain_text'] .= ItemStream::getPlainText($apItemStream) . ' '; // CHECK: Space in between? 
         }
-
+        
+        $this->ci->logger->debug('Segment count: ' . count($doc['segmentApItemStreams']));
         $itemStream = new \AverroesProjectToApm\ItemStream($doc['id'], $doc['segmentApItemStreams'], $doc['lang']);
         $itemStrWitness = new \AverroesProjectToApm\ItemStreamWitness($workId, $chunkNumber, $itemStream);
         $doc['tokens'] = $itemStrWitness->getTokens();
+        $this->ci->logger->debug('Token Count: ' . count($doc['tokens']));
 
         $doc['itemStream'] = $itemStream;
         $edNotes = $db->enm->getEditorialNotesForListOfItems($itemIds);
@@ -198,5 +198,24 @@ class ChunkPage extends SiteController
     }
     
     
+    protected function prettyPrintAddressInItemStream(\APM\Core\Address\Point $address) : string{
+        
+        $coords = [];
+        for ($i = 0; $i < 9; $i++) {
+            $coords[] = $address->getCoord($i);
+        }
+        
+        return '[' . implode(', ', $coords) . ']';
+    }
+    
+     protected  function prettyPrintTokens($tokens) {
+        $output = '';
+        $tokenNumber = 1;
+        foreach($tokens as $token) {
+            $output .= $tokenNumber++ . ' : (' . $token->getType() . ') ' . 
+                    $this->prettyPrintAddressInItemStream($token->getSourceItemAddresses()[0]->getFullAddress()) . ' \'' . $token->getText() . "'\n";
+        }
+        return $output;
+    }
    
 }

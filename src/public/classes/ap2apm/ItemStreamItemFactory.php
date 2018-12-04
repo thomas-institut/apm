@@ -58,10 +58,10 @@ class ItemStreamItemFactory {
         $altText = $this->getGoodString($row, 'alt_text');
         $extraInfo = $this->getGoodString($row, 'extra_info');
         $length =  $this->getGoodInt($row, 'length');
-        $target = $row['target'];
+        $target = intval($row['target']);
         $hand = $this->getGoodInt($row, 'hand_id');;
         
-        $elementType = $row['e.type'];
+        $elementType = intval($row['e.type']);
         $elementPlacement = $this->getGoodString($row, 'placement');
         
         $item = null;

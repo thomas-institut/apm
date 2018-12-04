@@ -65,17 +65,21 @@ class AddressInItemStream extends ItemAddressInDocument {
     
     public function setFromItemStreamRow(int $docId, array $itemStreamRow) {
         $this->fullAddress->setCoord(self::COORD_DOCID, $docId);
-        $this->fullAddress->setCoord(self::COORD_ITEMID, $itemStreamRow['id']);
-        $this->fullAddress->setCoord(self::COORD_ITEMSEQ, $itemStreamRow['seq']);
-        $this->fullAddress->setCoord(self::COORD_ELEMENTID, $itemStreamRow['ce_id']);
-        $this->fullAddress->setCoord(self::COORD_ELEMENTSEQ, $itemStreamRow['e.seq']);
-        $this->fullAddress->setCoord(self::COORD_COL, $itemStreamRow['col']);
-        $this->fullAddress->setCoord(self::COORD_PAGE_ID, $itemStreamRow['page_id']);
-        $this->fullAddress->setCoord(self::COORD_PAGESEQ, $itemStreamRow['p.seq']);
+        $this->fullAddress->setCoord(self::COORD_ITEMID, intval($itemStreamRow['id']));
+        $this->fullAddress->setCoord(self::COORD_ITEMSEQ, intval($itemStreamRow['seq']));
+        $this->fullAddress->setCoord(self::COORD_ELEMENTID, intval($itemStreamRow['ce_id']));
+        $this->fullAddress->setCoord(self::COORD_ELEMENTSEQ, intval($itemStreamRow['e.seq']));
+        $this->fullAddress->setCoord(self::COORD_COL, intval($itemStreamRow['col']));
+        $this->fullAddress->setCoord(self::COORD_PAGE_ID, intval($itemStreamRow['page_id']));
+        $this->fullAddress->setCoord(self::COORD_PAGESEQ, intval($itemStreamRow['p.seq']));
         $this->fullAddress->setCoord(self::COORD_PAGEFOL, $itemStreamRow['foliation']);
         if (!$itemStreamRow['foliation']) {
             $this->fullAddress->setCoord(self::COORD_PAGEFOL, strval($itemStreamRow['p.seq']));
         }
+    }
+    
+    public function getFullAddress() {
+        return $this->fullAddress;
     }
     
     public function getItemId()  {
@@ -109,5 +113,7 @@ class AddressInItemStream extends ItemAddressInDocument {
     protected function setItemIndex($index) {
         $this->fullAddress->setCoord(self::COORD_ITEMID, $index);
     }
+    
+    
 
 }

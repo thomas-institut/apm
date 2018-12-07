@@ -318,7 +318,7 @@ class Collation {
         // All good so far, process the table
         // The collatex output table is an array of segments. 
         // Each segment is an array with one element per witness, each one
-        // of containing a sequence of tokens 
+        // containing a sequence of tokens 
         $table = $collatexOutput['table'];
         $witnessCount = count($this->witnesses);
         $newCollationTable = [];

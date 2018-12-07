@@ -54,6 +54,7 @@ class ChunkPage {
       }
       if (w.goodWitness) {
         this.langs[w.lang].goodWitnesses++
+        let toggleButton = new CollapseToggleButton($('#texttoggle-' + w.id), $('#text-' + w.id))
       }
     }
     this.updateCollationTableLinks()
@@ -112,18 +113,22 @@ class ChunkPage {
 
       }
     }
-    let html = 'Collation Tables: '
+    let html = '<h4>Automatic Collation Tables</h4>'
     if (urls.length === 0 ) {
       html += '<i>Choose at least 2 witnesses in one language to generate collation table(s)</i>'
       this.ctLinksElement.html(html)
     } else {
+      html += '<ul>'
       for(const u in urls) {
         let title="Open collation table in new tab"
+        let urltext = urls[u].name + ', all witnesses'
         if (urls[u].isPartial) {
           title="Open partial collation table in new tab"
+          urltext = urls[u].name + ', marked witnesses'
         }
-        html += '<a href="' + urls[u].url + '" title="' + title + '" target="_blank">' + urls[u].name + '</a>&nbsp;'
+        html += '<li><a href="' + urls[u].url + '" title="' + title + '" target="_blank">' + urltext + '</a></li>'
       }
+      html += '</ul>'
       this.ctLinksElement.html(html)
     }
   }

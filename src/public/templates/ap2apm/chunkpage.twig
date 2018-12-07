@@ -3,9 +3,16 @@
 
 {% block title %}Chunk {{work}}-{{chunk}}{% endblock %}
 {% block extraJS %}
+    <style>
+        
+        div#collationtablelinks {
+            margin-bottom: 50px;
+        }
+    </style>
     
     <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/ap2apm/witness.css"/>
     <script type="application/javascript" src="{{baseurl}}/js/apm/ApmUrlGenerator.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/apm/CollapseToggleButton.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/apm/ChunkPage.js"></script>
 <script>
 $(document).ready(function() 
@@ -52,17 +59,11 @@ $(document).ready(function()
           {% endif %}
     </td>
     <td>
-{#    {% if doc.plain_text %}
-        <p><a data-toggle="collapse" href="#plaintext-{{doc.id}}-{{work}}-{{chunk}}" aria-expanded="true" aria-controls="plaintext-{{doc.id}}-{{work}}-{{chunk}}">
-                Show / Hide Text</a>
-        </p>
-    {% endif %}#}
-    
-        {% if doc.formatted %}
-        <p><a data-toggle="collapse" href="#formatted-{{doc.id}}-{{work}}-{{chunk}}" aria-expanded="true" aria-controls="formated-{{doc.id}}-{{work}}-{{chunk}}">
-                Show / Hide Text</a>
-        </p>
-    {% endif %}
+
+        {% if userCanViewChunkDetails %}
+            <a title="View Witness Detaisl" href="{{path_for('witness', { 'work' : work, 'chunk': chunk, 'type': 'doc', 'id': doc.id})}}"><i class="fa fa-cogs" aria-hidden="true"></i></a>
+        {% endif %}
+
     {% if doc.error %}
         <p class="text-danger">{{doc.error}}</p>
     {% endif %}
@@ -75,12 +76,14 @@ $(document).ready(function()
 {% endfor %}
 </table>
     </div>
+
 {% if collationLangs|length > 0 %}
 <div id="collationtablelinks">
 </div>
 {% endif %}
 
 <div class="chunktexts">
+    
 {% for doc in docs %}
     
 {#    {% if doc.plain_text %}
@@ -97,11 +100,16 @@ $(document).ready(function()
     {% endif %}#}
     
         {% if doc.formatted %}
-    <div class="collapse in" id="formatted-{{doc.id}}-{{work}}-{{chunk}}">
+   
         <div class="panel panel-default">
             <div class="panel-heading">
-            <h3 class="panel-title">{{doc.title}}</h3>
+                <h3 class="panel-title">{{doc.title}}
+                    &nbsp;&nbsp;&nbsp;
+                    <a role="button" title="Click to show/hide text" data-toggle="collapse" href="#text-{{doc.id}}" aria-expanded="true" aria-controls="text-{{doc.id}}">
+                        <span id="texttoggle-{{doc.id}}"><i class="fa fa-angle-down" aria-hidden="true"></i></span>
+                    </a></h3>
             </div>
+                     <div class="collapse in" id="text-{{doc.id}}">
              <div class="panel-body">
                      <p class="formattedchunktext chunktext-{{doc.lang}}">{{doc.formatted|raw}}</p>
             </div>

@@ -75,6 +75,11 @@ class ChunkPage extends SiteController
             }
         }
         
+        $canViewWitnessDetails = false;
+        if ($db->um->isUserAllowedTo($this->ci->userInfo['id'], 'witness-view-details')) {
+            $canViewWitnessDetails = true;
+        }
+        
         $profiler->log($this->ci->logger);
         return $this->ci->view->render($response, 'ap2apm/chunkpage.twig', [
             'userinfo' => $this->ci->userInfo, 
@@ -85,7 +90,8 @@ class ChunkPage extends SiteController
             'work_info' => $workInfo,
             'docs' => $docs,
             'num_docs' => count($docs),
-            'collationLangs' => $validCollationLangs
+            'collationLangs' => $validCollationLangs,
+            'userCanViewChunkDetails' => $canViewWitnessDetails
         ]);
     }
     
@@ -107,11 +113,11 @@ class ChunkPage extends SiteController
         $doc = $this->buildWitnessDataFromDocData($docData, $workId, $chunkNumber, $db, 1);
         if ($doc['goodWitness']) {
             $doc['itemStreamDump'] =  print_r($doc['itemStream'], true);
-            $doc['tokenDump'] = $this->prettyPrintTokens($doc['tokens']);
             
+            $doc['tokenDump'] = $this->prettyPrintTokens($doc['tokens']);
             ob_start();
-            var_dump($doc['segmentApItemStreams']);
-            $doc['segmentsDataDump'] = ob_get_contents();
+                var_dump($doc['segmentApItemStreams']);
+                $doc['segmentsDataDump'] = ob_get_contents();
             ob_end_clean();
             
             $doc['segmentsJSON'] = json_encode($doc['segmentApItemStreams'] );
@@ -174,11 +180,11 @@ class ChunkPage extends SiteController
             $doc['plain_text'] .= ItemStream::getPlainText($apItemStream) . ' '; // CHECK: Space in between? 
         }
         
-        $this->ci->logger->debug('Segment count: ' . count($doc['segmentApItemStreams']));
+        $this->ci->logger->debug('Doc ' . $docData['id'] . ' segment count: ' . count($doc['segmentApItemStreams']));
         $itemStream = new \AverroesProjectToApm\ItemStream($doc['id'], $doc['segmentApItemStreams'], $doc['lang']);
         $itemStrWitness = new \AverroesProjectToApm\ItemStreamWitness($workId, $chunkNumber, $itemStream);
         $doc['tokens'] = $itemStrWitness->getTokens();
-        $this->ci->logger->debug('Token Count: ' . count($doc['tokens']));
+        $this->ci->logger->debug('Doc ' . $docData['id'] . ' token Count: ' . count($doc['tokens']));
 
         $doc['itemStream'] = $itemStream;
         $edNotes = $db->enm->getEditorialNotesForListOfItems($itemIds);

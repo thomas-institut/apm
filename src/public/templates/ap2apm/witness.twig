@@ -25,11 +25,11 @@ $(document).ready(
 {% block content %}
      <ol class="breadcrumb">
          <li><a href="{{path_for('chunks')}}">Chunks</a></li>
-        <li>{{work}}-{{chunk}}</li>
+         <li><a href="{{path_for('chunk', {'work' : work, 'chunk': chunk})}}" title="View chunk">{{work}}-{{chunk}}</a></li>
         <li class="active">Witness {{type}}-{{witnessid}} Details </li>
     </ol>
 <h1>{{work_info.author_name}}, <em>{{work_info.title}}</em>, chunk {{chunk}}</h1>
-<p><b>Chunk code</b>: {{work}}-{{chunk}}</p>
+<p><b>Chunk code</b>: <a href="{{path_for('chunk', {'work' : work, 'chunk': chunk})}}" title="View chunk">{{work}}-{{chunk}}</a></p>
 <p><b>Witness</b>: {{type}}-{{witnessid}} </p>
 <p><b>Document</b>: <a href="{{path_for('doc.showdoc', {'id' : doc.id})}}" target="_blank" title="View Document in New Tab">{{doc.title}}</a>, 
     ({{macros.docTypeName(doc.doc_type)}} {{macros.langName(doc.lang)}})

@@ -24,8 +24,12 @@ class DatabaseTestEnvironment {
     {
         global $config;
         
-        $pdo = new \PDO('mysql:dbname=' . $config['db'] .
-                ';host=' . $config['host'], $config['user'], $config['pwd']);
+        $pdo = new \PDO(
+                'mysql:dbname=' . $config['db'] .';host=' . $config['host'], 
+                $config['user'], 
+                $config['pwd'],
+                [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]
+                );
         $pdo->query("set character set 'utf8'");
         $pdo->query("set names 'utf8'");
         return $pdo;
@@ -53,13 +57,14 @@ class DatabaseTestEnvironment {
                 DELETE FROM ap_elements;
                 DELETE FROM ap_pages;
                 DELETE FROM ap_docs;
+                DELETE FROM ap_relations;
                 DELETE FROM ap_users;
                 DELETE FROM ap_people;
                 DELETE FROM ap_hands;
                 INSERT INTO `ap_hands` (`id`, `name`, `description`) VALUES
 (0, 'Unknown', 'Unknown hand');
 EOD;
-        $dbConn->query($query);
+       $dbConn->query($query);
         
     }
     

@@ -175,15 +175,15 @@ class CollationTable extends SiteController
                 ];
         }
         
+        
         $cr = $this->ci->cr;
         $profiler->lap('Pre-Collatex');
-        $output = $cr->run($collatexWitnessArray);
+        $output = $cr->collate($collatexWitnessArray);
         
-        if ($output === false) {
+        if ($output === []) {
             $this->ci->logger->error("Collation Error: error running Collatex",
                     [ 'data' => $collatexWitnessArray, 
-                      'collatexRunnerError' => $cr->error, 
-                      'rawOutput' => $cr->rawOutput ]);
+                      'collationEngineDetails' => $cr->getRunDetails() ]);
             $msg = "Error running Collatex, please report it";
             return $this->ci->view->render($response, 'chunk.collation.error.twig', [
                 'userinfo' => $this->ci->userInfo, 
@@ -219,6 +219,7 @@ class CollationTable extends SiteController
                 'num_docs' => count($docs),
                 'total_num_docs' => $totalNumDocs,
                 'collatexOutput' => $output,
+                'collationEngineDetails' => $cr->getRunDetails(),
                 'showExpandCollapseButton' => $showExpandCollapseButton
             ]);
         

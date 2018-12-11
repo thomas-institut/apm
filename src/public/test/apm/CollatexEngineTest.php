@@ -18,23 +18,23 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  *  
  */
-namespace AverroesProject;
+namespace APM;
 require "../vendor/autoload.php";
 
 use PHPUnit\Framework\TestCase;
-use AverroesProject\Collatex\CollatexRunner;
+use APM\CollationEngine\Collatex;
 /**
  * Description of ItemArrayTest
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class CollatexRunTest extends TestCase
+class CollatexEngineTest extends TestCase
 {
     const COLLATEX_JAR = '../collatex/bin/collatex-tools-1.7.1.jar';
         
     public function createCollatexRunner()
     {
-        return new CollatexRunner(self::COLLATEX_JAR, __DIR__ . '/tmp', '/usr/bin/java');
+        return new Collatex(self::COLLATEX_JAR, __DIR__ . '/tmp', '/usr/bin/java');
     }
     
     public function createSimpleCollatexInput() 
@@ -55,26 +55,26 @@ class CollatexRunTest extends TestCase
     
     public function testRunningEnvironmentCheck()
     {
-        $cr1 = new CollatexRunner('badexec', 'badtemp', 'badjava');
+        $cr1 = new Collatex('badexec', 'badtemp', 'badjava');
         $result1 = $cr1->runningEnvironmentOk();
         $this->assertFalse($result1);
-        $this->assertEquals(CollatexRunner::CR_COLLATEX_EXECUTABLE_NOT_FOUND, $cr1->error);
+        $this->assertEquals(Collatex::CR_COLLATEX_EXECUTABLE_NOT_FOUND, $cr1->getErrorCode());
         
-        $cr2 = new CollatexRunner(self::COLLATEX_JAR, 'badtemp', 'badjava');
+        $cr2 = new Collatex(self::COLLATEX_JAR, 'badtemp', 'badjava');
         $result2 = $cr2->runningEnvironmentOk();
         $this->assertFalse($result2);
-        $this->assertEquals(CollatexRunner::CR_TEMP_FOLDER_NOT_FOUND, $cr2->error);
+        $this->assertEquals(Collatex::CR_TEMP_FOLDER_NOT_FOUND, $cr2->getErrorCode());
         $this->assertFalse($cr2->rawRun(''));
         
-        $cr3 = new CollatexRunner(self::COLLATEX_JAR, '/var', 'badjava');
+        $cr3 = new Collatex(self::COLLATEX_JAR, '/var', 'badjava');
         $result3 = $cr3->runningEnvironmentOk();
         $this->assertFalse($result3);
-        $this->assertEquals(CollatexRunner::CR_TEMP_FOLDER_NOT_WRITABLE, $cr3->error);
+        $this->assertEquals(Collatex::CR_TEMP_FOLDER_NOT_WRITABLE, $cr3->getErrorCode());
         
-        $cr4 = new CollatexRunner(self::COLLATEX_JAR, __DIR__ . '/tmp', 'badjava');
+        $cr4 = new Collatex(self::COLLATEX_JAR, __DIR__ . '/tmp', 'badjava');
         $result4 = $cr4->runningEnvironmentOk();
         $this->assertFalse($result4);
-        $this->assertEquals(CollatexRunner::CR_JAVA_EXECUTABLE_NOT_FOUND, $cr4->error);
+        $this->assertEquals(Collatex::CR_JAVA_EXECUTABLE_NOT_FOUND, $cr4->getErrorCode());
         
         $cr5 = $this->createCollatexRunner();
         $result5 = $cr5->runningEnvironmentOk();
@@ -85,11 +85,11 @@ class CollatexRunTest extends TestCase
     {
         $goodJson = json_encode($this->createSimpleCollatexInput());
         
-        $cr1 = new CollatexRunner(__DIR__ . '/mock-collatex/exit1.bash', __DIR__ . '/tmp', '/usr/bin/java');
+        $cr1 = new Collatex(__DIR__ . '/mock-collatex/exit1.bash', __DIR__ . '/tmp', '/usr/bin/java');
         $this->assertTrue($cr1->runningEnvironmentOk());
         $result = $cr1->rawRun($goodJson);
         $this->assertFalse($result); 
-        $this->assertEquals(CollatexRunner::CR_COLLATEX_EXIT_VALUE_NON_ZERO, $cr1->error);
+        $this->assertEquals(Collatex::CR_COLLATEX_EXIT_VALUE_NON_ZERO, $cr1->getErrorCode());
         
         
         $cr = $this->createCollatexRunner();
@@ -105,16 +105,16 @@ class CollatexRunTest extends TestCase
     public function testSimpleRun()
     {
         // Test case 1: error in collatex executable
-        $cr1 = new CollatexRunner(__DIR__ . '/mock-collatex/exit1.bash', __DIR__ . '/tmp', '/usr/bin/java');
-        $result1 = $cr1->run([]);
-        $this->assertFalse($result1);
-        $this->assertEquals(CollatexRunner::CR_COLLATEX_EXIT_VALUE_NON_ZERO, $cr1->error);
+        $cr1 = new Collatex(__DIR__ . '/mock-collatex/exit1.bash', __DIR__ . '/tmp', '/usr/bin/java');
+        $result1 = $cr1->collate([]);
+        $this->assertEquals([], $result1);
+        $this->assertEquals(Collatex::CR_COLLATEX_EXIT_VALUE_NON_ZERO, $cr1->getErrorCode());
         
         // Test case 2: invalid witness list, Collatex returns error message
         $cr2 = $this->createCollatexRunner();
-        $result2 = $cr2->run([]);
-        $this->assertFalse($result2);
-        $this->assertEquals(CollatexRunner::CR_COLLATEX_DID_NOT_RETURN_JSON, $cr2->error);
+        $result2 = $cr2->collate([]);
+        $this->assertEquals([], $result2);
+        $this->assertEquals(Collatex::CR_COLLATEX_DID_NOT_RETURN_JSON, $cr2->getErrorCode());
         
         $cr3 = $this->createCollatexRunner();
         $validWitnessList = [
@@ -122,7 +122,7 @@ class CollatexRunTest extends TestCase
             [ 'id' => 'B', 'content' => 'This is Athens and this is not'],
             [ 'id' => 'C', 'content' => 'This is Athens and this is Sparta']
         ];
-        $result3 = $cr3->run($validWitnessList);
+        $result3 = $cr3->collate($validWitnessList);
         $this->assertTrue(is_array($result3));
         $this->assertArrayHasKey('witnesses', $result3);
         $this->assertArrayHasKey('table', $result3);

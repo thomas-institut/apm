@@ -24,7 +24,7 @@ use \Psr\Http\Message\ResponseInterface as Response;
 use AverroesProject\Profiler\ApmProfiler;
 
 use APM\Core\Witness\StringWitness;
-use APM\Core\Collation\Collation;
+use APM\Core\Collation\CollationTable;
 use APM\Decorators\QuickCollationTableDecorator;
 
 /**
@@ -80,7 +80,7 @@ class ApiCollation extends ApiController
         }
         
         
-        $collation = new Collation();
+        $collation = new CollationTable();
         
         // Check and get initial witness data
         foreach ($witnesses as $witness) {
@@ -95,13 +95,12 @@ class ApiCollation extends ApiController
             $collation->addWitness($witness['id'], $sw);
         }
         
-        $collatexInput = $collation->getCollatexInput();
+        $collatexInput = $collation->getCollationEngineInput();
         
-        $cr = $this->ci->cr;
-        
+        $collationEngine = $this->ci->cr;
         
         // Run Collatex
-        $collatexOutput = $cr->run($collatexInput);
+        $collatexOutput = $collationEngine->collate($collatexInput);
         // @codeCoverageIgnoreStart
         // Not worrying about testing CollatexErrors here
         if ($collatexOutput === false) {
@@ -109,14 +108,14 @@ class ApiCollation extends ApiController
                         [ 'apiUserId' => $this->ci->userId, 
                         'apiError' => ApiController::API_ERROR_ERROR_RUNNING_COLLATEX,
                         'data' => $inputDataObject, 
-                        'collatexRunnerError' => $cr->error, 
-                        'rawOutput' => $cr->rawOutput ]);
+                        'collationEngineDetails' => $collationEngine->getRunDetails()
+                    ]);
             return $response->withStatus(409)->withJson( ['error' => ApiController::API_ERROR_ERROR_RUNNING_COLLATEX]);
         }
         // @codeCoverageIgnoreEnd
         
         try {
-            $collation->setCollationTableFromCollatexOutput($collatexOutput);
+            $collation->setCollationTableFromCollationEngineOutput($collatexOutput);
         }
         // @codeCoverageIgnoreStart
         // Can't replicate this consistently in testing
@@ -125,7 +124,7 @@ class ApiCollation extends ApiController
                     [ 'apiUserId' => $this->ci->userId, 
                         'apiError' => self::ERROR_FAILED_COLLATEX_PROCESSING,
                         'data' => $inputDataObject, 
-                        'rawCollatexOutput' => $cr->rawOutput,
+                         'collationEngineDetails' => $collationEngine->getRunDetails(),
                         'exceptionMessage' => $ex->getMessage()
                         ]);
             return $response->withStatus(409)->withJson( ['error' => self::ERROR_FAILED_COLLATEX_PROCESSING]);
@@ -137,7 +136,7 @@ class ApiCollation extends ApiController
         $profiler->log($this->logger);
         
         return $response->withJson([
-            'rawCollatexOutput'=> $collatexOutput, 
+            'collationEngineDetails' => $collationEngine->getRunDetails(), 
             'collationTable' => $decoratedCollationTable,
             'sigla' => $collation->getSigla()
             ]);

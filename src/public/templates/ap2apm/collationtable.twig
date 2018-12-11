@@ -27,6 +27,7 @@ $(document).ready(function()
     let collatexOutput = JSON.parse("{{collatexOutput|json_encode|e('js')}}")
     let ctObject = new CollationTablePage(collatexOutput, {{rtl ? 1 : 0}}, ['{{lang}}-td'])
     
+    console.log(JSON.parse("{{collationEngineDetails|json_encode|e('js')}}"))
 } 
 );
 </script>

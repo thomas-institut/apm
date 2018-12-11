@@ -46,6 +46,8 @@ class Ap2APMSiteControllerTest extends TestCase {
         
         self::$editor1 = self::$dataManager->um->createUserByUserName('testeditor1');
         self::$editor2 = self::$dataManager->um->createUserByUserName('testeditor2');
+        
+        $logger->debug("Finished set up before class", ['editor1' => self::$editor1]);
     }
     
     public function testChunkAndWitnessPage()
@@ -71,6 +73,8 @@ class Ap2APMSiteControllerTest extends TestCase {
             $dm->addNewColumn($docId3, $i);
         }
         $editor = $dm->um->createUserByUsername('anothereditor');
+        $this->assertNotFalse($editor);
+        $dm->um->allowUserTo(self::$editor1, 'witness-view-details');
         
         // A valid witness in doc 1
         $pageId =  $dm->getPageIdByDocPage($docId, 1);

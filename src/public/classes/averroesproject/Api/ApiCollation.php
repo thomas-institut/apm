@@ -69,8 +69,8 @@ class ApiCollation extends ApiController
                     [ 'apiUserId' => $this->ci->userId, 
                       'apiError' => ApiController::API_ERROR_ERROR_RUNNING_COLLATEX,
                       'data' => $inputDataObject, 
-                      'collatexRunnerError' => $cr->error, 
-                      'rawOutput' => $cr->rawOutput ]);
+                      'collatexRunnerError' => $cr->getErrorCode(), 
+                      'rawOutput' => $cr->getRawOutput() ]);
             return $response->withStatus(409)->withJson( ['error' => ApiController::API_ERROR_ERROR_RUNNING_COLLATEX]);
         }
         

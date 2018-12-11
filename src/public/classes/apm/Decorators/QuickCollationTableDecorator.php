@@ -21,7 +21,7 @@
 namespace APM\Decorators;
 
 use APM\Core\Collation\CollationTableDecorator;
-use APM\Core\Collation\Collation;
+use APM\Core\Collation\CollationTable;
 
 /**
  * Description of QuickCollationTableDecorator
@@ -35,7 +35,7 @@ class QuickCollationTableDecorator implements CollationTableDecorator {
     
     const TEXT_EMPTYTOKEN = '&mdash;';
     
-    public function decorate(Collation $c): array {
+    public function decorate(CollationTable $c): array {
         $sigla = $c->getSigla();
         $decoratedCollationTable = [];
         
@@ -46,7 +46,7 @@ class QuickCollationTableDecorator implements CollationTableDecorator {
             $witnessTokens = $c->getWitnessTokens($siglum);
             foreach($tokenRefs as $tokenRef) {
                 $decoratedToken = [];
-                if ($tokenRef === Collation::TOKENREF_NULL) {
+                if ($tokenRef === CollationTable::TOKENREF_NULL) {
                     $decoratedToken['text'] = self::TEXT_EMPTYTOKEN;
                     $decoratedToken['classes'] = [self::CLASS_EMPTYTOKEN];
                     $decoratedToken['empty'] = true;

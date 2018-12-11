@@ -30,10 +30,10 @@ use APM\Core\Witness\Witness;
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class Collation {
+class CollationTable {
     
     const TOKENREF_NULL = -1;
-    const COLLATEX_NULL_TOKEN = '---';
+    const COLLATIONENGINE_NULL_TOKEN = '---';
     
     /* @var array */
     private $witnesses;
@@ -254,72 +254,72 @@ class Collation {
     
     /**
      * Generates an array that can be used as input to
-     * Collatex
+     * an automatic collation engine
      * 
      */
-    public function getCollatexInput() : array {
+    public function getCollationEngineInput() : array {
          
-        $collatexWitnesses = [];
+        $collationEngineWitnesses = [];
         foreach($this->witnesses as $siglum => $witness) {
-            $collatexTokens = [];
+            $collationEngineTokens = [];
             $witnessTokens = $witness->getTokens();
             foreach($this->collationTable[$siglum] as $columnNumber => $ref) {
-                $collatexToken = [];
-                $collatexToken['witnessRef'] = $ref;
+                $collationEngineToken = [];
+                $collationEngineToken['witnessRef'] = $ref;
                 if ($ref === self::TOKENREF_NULL) {
-                    $collatexToken['t'] = self::COLLATEX_NULL_TOKEN;
-                    $collatexTokens[] = $collatexToken;
+                    $collationEngineToken['t'] = self::COLLATIONENGINE_NULL_TOKEN;
+                    $collationEngineTokens[] = $collationEngineToken;
                     continue;
                 }
                 $witnessToken = $witnessTokens[$ref];
-                $collatexToken['t'] = $witnessToken->getText();
+                $collationEngineToken['t'] = $witnessToken->getText();
                 if ($witnessToken->getNormalization() !== $witnessToken->getText()) {
-                    $collatexToken['n'] = $witnessToken->getNormalization();
+                    $collationEngineToken['n'] = $witnessToken->getNormalization();
                 }
-                $collatexTokens[] = $collatexToken;
+                $collationEngineTokens[] = $collationEngineToken;
             }
             // Trim null tokens at the end of token Array
-            while ($collatexTokens[count($collatexTokens)-1]['witnessRef'] === self::TOKENREF_NULL) {
-                array_pop($collatexTokens);
+            while ($collationEngineTokens[count($collationEngineTokens)-1]['witnessRef'] === self::TOKENREF_NULL) {
+                array_pop($collationEngineTokens);
             }
-            $collatexWitnesses[] = [ 
+            $collationEngineWitnesses[] = [ 
                 'id' => $siglum,
-                'tokens' => $collatexTokens
+                'tokens' => $collationEngineTokens
             ];
         }
-        return $collatexWitnesses;
+        return $collationEngineWitnesses;
     }
     
-    public function setCollationTableFromCollatexOutput(array $collatexOutput) {
-        // First, check that the input is a valid collatex output
-        if (!isset($collatexOutput['table']) || !isset($collatexOutput['witnesses'])) {
-            throw new \InvalidArgumentException('Not a valid Collatex output array');
+    public function setCollationTableFromCollationEngineOutput(array $collationEngineOutput) {
+        // First, check that the input is a valid collation engine output
+        if (!isset($collationEngineOutput['table']) || !isset($collationEngineOutput['witnesses'])) {
+            throw new \InvalidArgumentException('Not a valid collation engine output array');
         }
         
-        if (count($collatexOutput['witnesses']) !== count($this->witnesses)) {
-            throw new \InvalidArgumentException('Invalid number of witnesses in collatex data');
+        if (count($collationEngineOutput['witnesses']) !== count($this->witnesses)) {
+            throw new \InvalidArgumentException('Invalid number of witnesses in collation engine data');
         }
         
-        // Build sigla to collatex output index conversion table
+        // Build sigla to collation engine output index conversion table
         $s2ci = [];
         foreach (array_keys($this->witnesses) as $siglum){
             $s2ci[$siglum] = -1;
         }
-        foreach($collatexOutput['witnesses'] as $index => $siglum) {
+        foreach($collationEngineOutput['witnesses'] as $index => $siglum) {
             $s2ci[$siglum] = $index;
         }
         // Check consistency of witness data in Collatex output
         foreach (array_keys($this->witnesses) as $siglum){
             if ($s2ci[$siglum] === -1){
-                throw new \InvalidArgumentException("Witness " . $siglum . ' not in given Collatex output');
+                throw new \InvalidArgumentException("Witness " . $siglum . ' not in given collation engine output');
             }
         }
         
         // All good so far, process the table
-        // The collatex output table is an array of segments. 
+        // The collation engine output table is an array of segments. 
         // Each segment is an array with one element per witness, each one
         // containing a sequence of tokens 
-        $table = $collatexOutput['table'];
+        $table = $collationEngineOutput['table'];
         $witnessCount = count($this->witnesses);
         $newCollationTable = [];
         foreach (array_keys($this->witnesses) as $siglum) {
@@ -332,12 +332,12 @@ class Collation {
             }
             $alignedSegment = $this->alignSegment($segment);
             foreach ($alignedSegment as $index => $witnessTokens) {
-                $siglum = $collatexOutput['witnesses'][$index];
-                foreach($witnessTokens as $segmentTokenIndex => $collatexToken) {
-                    if (!isset($collatexToken['witnessRef'])) {
-                        throw new \InvalidArgumentException('Cannot found witnessRef in given collatex output');
+                $siglum = $collationEngineOutput['witnesses'][$index];
+                foreach($witnessTokens as $segmentTokenIndex => $collationEngineToken) {
+                    if (!isset($collationEngineToken['witnessRef'])) {
+                        throw new \InvalidArgumentException('Cannot found witnessRef in given collation engine output');
                     }
-                    $newCollationTable[$siglum][] = $collatexToken['witnessRef'];
+                    $newCollationTable[$siglum][] = $collationEngineToken['witnessRef'];
                 }
             }
         }
@@ -377,7 +377,7 @@ class Collation {
         foreach($segment as $witnessSegment) {
             $paddedWitnessSegment = $witnessSegment;
             for ($j=count($witnessSegment); $j < $biggestLength; $j++) {
-                $paddedWitnessSegment[] = [ 't' => self::COLLATEX_NULL_TOKEN, 'witnessRef' => -1];
+                $paddedWitnessSegment[] = [ 't' => self::COLLATIONENGINE_NULL_TOKEN, 'witnessRef' => -1];
             }
             $alignedSegment[] = $paddedWitnessSegment;
         }

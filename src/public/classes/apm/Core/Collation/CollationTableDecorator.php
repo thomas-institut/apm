@@ -42,7 +42,7 @@ interface CollationTableDecorator {
      * with complete information about how they should be displayed
      * on a website, for example: ['text'=> 'the text', 'cssClass' => 'someClass, 'popoverHtml' => ....]
      * 
-     * @param \APM\Core\Collation\Collation $c
+     * @param \APM\Core\Collation\CollationTable $c
      */
-    public function decorate(Collation $c) : array;
+    public function decorate(CollationTable $c) : array;
 }

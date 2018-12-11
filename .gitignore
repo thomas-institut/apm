@@ -23,6 +23,6 @@ src/public/config.php
 
 /src/npm-debug.log
 /dist/
-/src/public/test/averroesproject/tmp/c*
+/src/public/test/apm/tmp/c*
 /src/public/package-lock.json
 /src/public/js/istanbul/

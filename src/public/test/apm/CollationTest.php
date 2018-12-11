@@ -23,7 +23,7 @@ namespace APM;
 require "../vendor/autoload.php";
 
 use PHPUnit\Framework\TestCase;
-use APM\Core\Collation\Collation;
+use APM\Core\Collation\CollationTable;
 use APM\Core\Witness\StringWitness;
 use APM\Core\Token\Token;
 
@@ -35,7 +35,7 @@ use APM\Core\Token\Token;
  */
 class CollationTest extends TestCase {
     
-    private function prettyPrintCollation(Collation $c) : string {
+    private function prettyPrintCollation(CollationTable $c) : string {
         $out = "\n";
         foreach ($c->getSigla() as $siglum) {
             $tokens = $c->getWitnessTokens($siglum);
@@ -56,7 +56,7 @@ class CollationTest extends TestCase {
     
     public function testSimple() {
         
-        $collation = new Collation();
+        $collation = new CollationTable();
         
         $this->assertEquals(0, $collation->getTokenCount());
                 
@@ -139,7 +139,7 @@ class CollationTest extends TestCase {
     }
     
     public function testCollatexInputGeneration() {
-        $collation = new Collation();
+        $collation = new CollationTable();
         
                
         $w1 = new StringWitness('tw', 'tchunk', 'This is witness one');
@@ -153,7 +153,7 @@ class CollationTest extends TestCase {
         $collation->addWitness('C', $w3);
         $collation->addWitness('D', $w4);
         
-        $collatexInput = $collation->getCollatexInput();
+        $collatexInput = $collation->getCollationEngineInput();
                 
         $this->assertCount(4, $collatexInput);
         foreach($collatexInput as $collatexWitness) {
@@ -168,7 +168,7 @@ class CollationTest extends TestCase {
     }
     
     public function testCollatexOutputProcessing(){
-        $collation = new Collation();
+        $collation = new CollationTable();
         
                
         $w1 = new StringWitness('tw', 'tchunk', 'This is witness one');
@@ -216,7 +216,7 @@ class CollationTest extends TestCase {
         foreach($badCollatexOutputs as $testCase) {
             $exceptionRaised = false;
             try {
-                $collation->setCollationTableFromCollatexOutput($testCase['theArray']);
+                $collation->setCollationTableFromCollationEngineOutput($testCase['theArray']);
             } catch (\InvalidArgumentException $ex) {
                 $exceptionRaised = true;
             }
@@ -257,7 +257,7 @@ class CollationTest extends TestCase {
                
             ]
         ];
-        $collation->setCollationTableFromCollatexOutput($goodCollatexOutput);
+        $collation->setCollationTableFromCollationEngineOutput($goodCollatexOutput);
         
         $this->assertEquals(4, $collation->getTokenCount());
         $collationTable = $collation->getCollationTable();
@@ -272,7 +272,7 @@ class CollationTest extends TestCase {
     }
     
     public function testSegmentPadding() {
-        $collation = new Collation();
+        $collation = new CollationTable();
         
                
         $w1 = new StringWitness('tw', 'tchunk', 'This is witness one');
@@ -301,7 +301,7 @@ class CollationTest extends TestCase {
                 [ 't' => 'is', 'witnessRef' => 1],
             ]
         ];
-        $collation->setCollationTableFromCollatexOutput(['witnesses' => ['A', 'B', 'C'], 'table'=> [ $segment1]]);
+        $collation->setCollationTableFromCollationEngineOutput(['witnesses' => ['A', 'B', 'C'], 'table'=> [ $segment1]]);
         $this->assertEquals(4, $collation->getTokenCount());
         foreach ($collation->getSigla() as $siglum) {
             $this->assertCount(4, $collation->getWitnessCollationRawTokens($siglum), $siglum);
@@ -328,11 +328,11 @@ class CollationTest extends TestCase {
         
         
         foreach($testCases as $testCase) {
-            $collation = new Collation();
+            $collation = new CollationTable();
             foreach($testCase['witnesses'] as $siglum => $text) {
                 $collation->addWitness($siglum, new StringWitness('tw', 'tc', $text));
             }
-            $collation->setCollationTableFromCollatexOutput($testCase['collatexOutput']);
+            $collation->setCollationTableFromCollationEngineOutput($testCase['collatexOutput']);
             $collationTable = $collation->getCollationTable();
             foreach($collationTable as $siglum => $tokens) {
                 $id = $testCase['title'] .  ' witness ' . $siglum;

@@ -141,7 +141,7 @@ $db = new DataManager($dbh, $config['tables'], $logger, $hm, $config['langCodes'
 
 // Collation Runner
 
-$cr = new CollatexRunner(
+$cr = new \APM\CollationEngine\Collatex(
         $config['collatex']['collatexJarFile'], 
         $config['collatex']['tmp'], 
         $config['collatex']['javaExecutable']

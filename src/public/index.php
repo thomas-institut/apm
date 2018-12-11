@@ -233,15 +233,15 @@ $app->get('/chunk/{work}/{chunk}/witness/{type}/{id}','\AverroesProjectToApm\Sit
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
 // COLLATION TABLE
-$app->get('/chunk/{work}/{chunk}/collation/{lang}[/{docs:.*}]','\AverroesProject\Site\SiteCollationTable:collationTablePage')
+$app->get('/chunk/{work}/{chunk}/collation/{lang}[/{docs:.*}]','\AverroesProjectToApm\Site\CollationTable:collationTablePage')
         ->setName('chunk.collationtable')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
 // Quick Collation
-$app->get('/quickcollation', '\AverroesProject\Site\SiteCollationTable:quickCollationPage')
-        ->setName('quickcollation');
+//$app->get('/quickcollation', '\AverroesProject\Site\SiteCollationTable:quickCollationPage')
+//        ->setName('quickcollation');
 
-$app->get('/new/quickcollation', '\APM\Site\SiteCollationTable:quickCollationPage')
+$app->get('/quickcollation', '\APM\Site\SiteCollationTable:quickCollationPage')
         ->setName('new-quickcollation');
 
 
@@ -408,18 +408,15 @@ $app->group('/api', function (){
     
 })->add('\AverroesProject\Auth\Authenticator:authenticateApiRequest');
 
+// -----------------
+// PUBLIC API
+// -----------------
+
 $app->group('/api/public', function (){
 // API -> quick collation
     $this->post('/collation/quick', 
-            '\AverroesProject\Api\ApiCollation:quickCollation')
-        ->setName('api.collation.quick');
-});
-
-$app->group('/api/new/public', function (){
-// API -> quick collation
-    $this->post('/collation/quick', 
             '\APM\Api\ApiCollation:quickCollation')
-        ->setName('api.new.collation.quick');
+        ->setName('api.collation.quick');
 });
 
 

@@ -53,6 +53,7 @@ class DatabaseTestEnvironment {
                 DELETE FROM ap_elements;
                 DELETE FROM ap_pages;
                 DELETE FROM ap_docs;
+                DELETE FROM ap_relations;
                 DELETE FROM ap_users;
                 DELETE FROM ap_people;
                 DELETE FROM ap_hands;

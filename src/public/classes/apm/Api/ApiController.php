@@ -19,6 +19,8 @@
 
 namespace APM\Api;
 
+use \Psr\Http\Message\ServerRequestInterface as Request;
+use \Psr\Http\Message\ResponseInterface as Response;
 
 /**
  * API Controller class
@@ -47,7 +49,8 @@ abstract class ApiController
     const API_ERROR_WRONG_AUTHOR_ID = 1013;
     const API_ERROR_WRONG_DOCUMENT = 1014;
     const API_ERROR_DOC_CANNOT_BE_SAFELY_DELETED = 1015;
-    const API_ERROR_ERROR_RUNNING_COLLATEX = 1016;
+    const API_ERROR_COLLATION_ENGINE_ERROR = 1016;
+    const API_ERROR_MISSING_REQUIRED_FIELD = 1017;
     
     const API_ERROR_NOT_AUTHORIZED  = 1100;
     
@@ -61,5 +64,50 @@ abstract class ApiController
        $this->ci = $ci;
        $this->db = $ci->db;
        $this->logger = $ci->logger->withName('API-new');
+    }
+    
+    /**
+     * Checks that the given request contains a 'data' field, which in 
+     * turn contains the given $requiredFields. 
+     * 
+     * If there's any error, returns a Response with the proper error status
+     * If everything is OK, returns the input data array
+     * 
+     * @param Request $request
+     * @param Response $response
+     * @param string $apiCall
+     * @param array $requiredFields
+     * @return type
+     */
+    protected function checkAndGetInputData(Request $request, 
+            Response $response, string $apiCall, array $requiredFields) {
+        $rawData = $request->getBody()->getContents();
+        parse_str($rawData, $postData);
+        $inputData = null;
+        
+        if (isset($postData['data'])) {
+            $inputData = json_decode($postData['data'], true);
+        }
+        
+        // Some checks
+        if (is_null($inputData) ) {
+            $this->logger->error("$apiCall: no data in input",
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_NO_DATA,
+                      'rawdata' => $postData]);
+            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_NO_DATA]);
+        }
+        
+        foreach ($requiredFields as $requiredField) {
+            if (!isset($inputData[$requiredField])) {
+                $this->logger->error("$apiCall: missing required field $requiredField in input data",
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_MISSING_REQUIRED_FIELD,
+                      'rawdata' => $postData]);
+            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_MISSING_REQUIRED_FIELD]);
+            }
+        }
+        
+        return $inputData;
     }
 }

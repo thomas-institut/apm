@@ -28,6 +28,10 @@ use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 use GuzzleHttp\Psr7;
 
+use AverroesProject\TxText\ChunkMark;
+use AverroesProject\TxText\Text;
+use AverroesProject\ColumnElement\Line;
+use AverroesProject\TxText\ItemArray;
 
 use APM\Api\ApiController;
 use APM\Api\ApiCollation;
@@ -60,7 +64,7 @@ class ApiControllerTest extends TestCase {
         
         $logStream = new StreamHandler('test.log', 
             Logger::DEBUG);
-        $logger = new Logger('APITEST');
+        $logger = new Logger('apm.APITEST');
         $logger->pushHandler($logStream);
         $hm = new \AverroesProject\Plugin\HookManager();
         $cr = new \APM\CollationEngine\Collatex(
@@ -71,14 +75,18 @@ class ApiControllerTest extends TestCase {
 
         self::$ci = DatabaseTestEnvironment::getContainer($logger);
         self::$ci->cr = $cr;
+        self::$ci->settings = $config;
         DatabaseTestEnvironment::emptyDatabase();
         
         self::$dataManager = DatabaseTestEnvironment::getDataManager($logger, $hm);
         self::$editor1 = self::$dataManager->um->createUserByUserName('testeditor1');
         self::$editor2 = self::$dataManager->um->createUserByUserName('testeditor2');
         
+        
         // API controllers to test
         self::$apiCollation = new ApiCollation(self::$ci);
+        
+        $logger->debug('Finished setupbeforeclass', [ 'editor1' => self::$editor1, 'editor2' => self::$editor2]);
     }
     
 
@@ -107,7 +115,7 @@ class ApiControllerTest extends TestCase {
         );
         $this->assertEquals(409, $response->getStatusCode());
         $respData = json_decode($response->getBody(true), true);
-        $this->assertEquals(ApiCollation::ERROR_NO_WITNESSES, $respData['error']);
+        $this->assertEquals(ApiController::API_ERROR_MISSING_REQUIRED_FIELD, $respData['error']);
         
         // Less than two witnesses
         $response = self::$apiCollation->quickCollation(
@@ -162,6 +170,147 @@ class ApiControllerTest extends TestCase {
         
     }
     
+    public function testAutomaticCollation() {
+        
+        $work = 'AW47';
+        $chunk = 1;
+        $lang = 'la';
+        $otherLang = 'he';
+        $numGoodWitnesses = 5;
+        $numBadWitnesses = 2;
+        
+        $request = (new \GuzzleHttp\Psr7\ServerRequest('POST', ''));
+        $inputResp = new \Slim\Http\Response();
+        
+        // No data
+        $response = self::$apiCollation->automaticCollation(
+            $request, 
+            $inputResp, 
+            null
+        );
+        $this->assertEquals(409, $response->getStatusCode());
+        $respData = json_decode($response->getBody(true), true);
+        $this->assertEquals(ApiController::API_ERROR_NO_DATA, $respData['error']);
+     
+        // No valid fields in data
+        $response = self::$apiCollation->automaticCollation(
+            self::requestWithData($request, [
+                'somekey' => 'somevalue'
+            ]), 
+            $inputResp, 
+            null
+        );
+        $this->assertEquals(409, $response->getStatusCode());
+        $respData = json_decode($response->getBody(true), true);
+        $this->assertEquals(ApiController::API_ERROR_MISSING_REQUIRED_FIELD, $respData['error']);
+        
+        // Less than two witnesses in partial collation
+        $response = self::$apiCollation->automaticCollation(
+            self::requestWithData($request, [
+                'work' => $work,
+                'chunk' => $chunk,
+                'lang' => $lang,
+                'witnesses' => [ [ 'type' => 'doc',  'id' => 1]]
+            ]), 
+            $inputResp, 
+            null
+        );
+        $this->assertEquals(409, $response->getStatusCode());
+        $respData = json_decode($response->getBody(true), true);
+        $this->assertEquals(ApiCollation::ERROR_NOT_ENOUGH_WITNESSES, $respData['error']);
+        
+        
+        // Invalid language
+        $response = self::$apiCollation->automaticCollation(
+            self::requestWithData($request, [
+                'work' => $work,
+                'chunk' => $chunk,
+                'lang' => 'tagalog',
+                'witnesses' => []  // i.e., collate ALL witnesses
+            ]), 
+            $inputResp, 
+            null
+        );
+        $this->assertEquals(409, $response->getStatusCode());
+        $respData = json_decode($response->getBody(true), true);
+        $this->assertEquals(ApiCollation::ERROR_INVALID_LANGUAGE, $respData['error']);
+        
+        // Less than two witnesses in the database
+        $response = self::$apiCollation->automaticCollation(
+            self::requestWithData($request, [
+                'work' => $work,
+                'chunk' => $chunk,
+                'lang' => $lang,
+                'witnesses' => []  // i.e., collate ALL witnesses
+            ]), 
+            $inputResp, 
+            null
+        );
+        $this->assertEquals(409, $response->getStatusCode());
+        $respData = json_decode($response->getBody(true), true);
+        $this->assertEquals(ApiCollation::ERROR_NOT_ENOUGH_WITNESSES, $respData['error']);
+        
+        
+        $docIds = $this->createWitnessesInDb($work, $chunk, $lang, self::$editor1, $numGoodWitnesses, $numBadWitnesses);
+        array_merge($docIds, $this->createWitnessesInDb($work, $chunk, $otherLang, self::$editor1, $numGoodWitnesses, $numBadWitnesses));
+        
+        // This one should work!
+        $response = self::$apiCollation->automaticCollation(
+            self::requestWithData($request, [
+                'work' => $work,
+                'chunk' => $chunk,
+                'lang' => $lang,
+                'witnesses' => []  // i.e., collate ALL witnesses
+            ]), 
+            $inputResp, 
+            null
+        );
+        $this->assertEquals(200, $response->getStatusCode());
+        $respData = json_decode($response->getBody(true), true);
+        $this->assertTrue(isset($respData['collatexOutput']));
+        
+        // a partial collation
+        $response = self::$apiCollation->automaticCollation(
+            self::requestWithData($request, [
+                'work' => $work,
+                'chunk' => $chunk,
+                'lang' => $lang,
+                'witnesses' => [
+                    ['type' => 'doc', 'id'=> $docIds[1]],
+                    ['type' => 'doc', 'id'=> $docIds[2]],
+                    ['type' => 'doc', 'id'=> $docIds[3]],
+                    ]
+            ]), 
+            $inputResp, 
+            null
+        );
+        $this->assertEquals(200, $response->getStatusCode());
+        $respData = json_decode($response->getBody(true), true);
+        $this->assertTrue(isset($respData['collatexOutput']));
+        
+        // a partial collation with wrong doc ids
+        $badId = max($docIds)+1;
+        $response = self::$apiCollation->automaticCollation(
+            self::requestWithData($request, [
+                'work' => $work,
+                'chunk' => $chunk,
+                'lang' => $lang,
+                'witnesses' => [
+                    ['type' => 'doc', 'id'=> $docIds[1]],
+                    ['type' => 'doc', 'id'=> $badId++],
+                    ['type' => 'doc', 'id'=> $badId],
+                    ]
+            ]), 
+            $inputResp, 
+            null
+        );
+        $this->assertEquals(409, $response->getStatusCode());
+        $respData = json_decode($response->getBody(true), true);
+        $this->assertEquals(ApiCollation::ERROR_NOT_ENOUGH_WITNESSES, $respData['error']);
+      
+        
+    }
+    
     public static function requestWithData($request, $data) {
         return $request->withBody(
             Psr7\stream_for(
@@ -169,6 +318,58 @@ class ApiControllerTest extends TestCase {
             )
         );
 
+    }
+    
+    private function createWitnessesInDb($work, $chunk, $lang, $editor, $numGoodWitnesses, $numBadWitnesses) {
+        $dm = self::$dataManager;
+        
+        $witnessNumber = 1;
+        $docIds = [];
+        for($i=0; $i< $numGoodWitnesses; $i++) {
+            $docId = $dm->newDoc('TestWitness' . $witnessNumber, 'TW-1', 1, $lang, 
+                'mss', 'local', 'TESTWITNESS' . $witnessNumber);
+            $pageId =  $dm->getPageIdByDocPage($docId, 1);
+            $dm->addNewColumn($docId, 1);
+            $element = new Line();
+            $element->pageId = $pageId;
+            $element->columnNumber = 1;
+            $element->editorId = $editor;
+            $element->lang = $lang;
+            $element->handId = 0;
+            $element->seq = 0;
+            $itemSeq=0;
+            $itemId = 0;
+            ItemArray::addItem($element->items, new ChunkMark($itemId++, $itemSeq++, $work, $chunk, 'start', 1));  
+            ItemArray::addItem($element->items, new Text($itemId++,$itemSeq++,"The text of the chunk, witness " . $witnessNumber));  
+            ItemArray::addItem($element->items, new ChunkMark($itemId++, $itemSeq++, $work, $chunk, 'end', 1));  
+            $dm->insertNewElement($element);
+            $witnessNumber++;
+            $docIds[] = $docId;
+        }
+        
+        for($i=0; $i< $numBadWitnesses; $i++) {
+            $docId = $dm->newDoc('TestWitness' . $witnessNumber . ' (bad)', 'TW-1', 1, $lang, 
+                'mss', 'local', 'TESTWITNESS' . $witnessNumber);
+            $pageId =  $dm->getPageIdByDocPage($docId, 1);
+            $dm->addNewColumn($docId, 1);
+            $element = new Line();
+            $element->pageId = $pageId;
+            $element->columnNumber = 1;
+            $element->editorId = $editor;
+            $element->lang = $lang;
+            $element->handId = 0;
+            $element->seq = 0;
+            $itemSeq=0;
+            $itemId = 0;
+            ItemArray::addItem($element->items, new ChunkMark($itemId++, $itemSeq++, $work, $chunk, 'start', 1));  
+            ItemArray::addItem($element->items, new Text($itemId++,$itemSeq++,"The text of the chunk, (bad) witness " . $witnessNumber));  
+            $dm->insertNewElement($element);
+            $witnessNumber++;
+            $docIds[] = $docId;
+        }
+        
+        return $docIds;
+        
     }
     
 }

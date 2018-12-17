@@ -38,13 +38,22 @@ class CollationTable {
     /* @var array */
     private $witnesses;
     
+    
+    /* @var array */
+    private $tokens;
+    
     /* @var array */
     private $collationTable;
     
+    /* @var bool */
+    private $ignoreWhiteSpace;
     
-    public function __construct() {
+    
+    public function __construct($ignoreWhitespace = true) {
         $this->witnesses = [];
+        $this->tokens = [];
         $this->collationTable = [];
+        $this->ignoreWhiteSpace = $ignoreWhitespace;
     }
     
     /**
@@ -70,7 +79,11 @@ class CollationTable {
      */
     public function addWitness(string $siglum, Witness $witness) {
         
-        $tokenCount = count($witness->getTokens());
+        $witnessTokens = $witness->getTokens();
+        if ($this->ignoreWhiteSpace) {
+            $witnessTokens = $this->filterTokens($witnessTokens, Token::TOKEN_WS);
+        }
+        $tokenCount = count($witnessTokens);
         if ($tokenCount === 0) {
             throw new \InvalidArgumentException('Cannot add empty witnesses');
         }
@@ -95,6 +108,7 @@ class CollationTable {
         }
         $this->collationTable[$siglum] = $tokenRefs;
         $this->witnesses[$siglum] = $witness;
+        $this->tokens[$siglum]= $witnessTokens;
     }
     
     /**
@@ -118,7 +132,7 @@ class CollationTable {
                 $column[$siglum] = Token::emptyToken();
                 continue;
             }
-            $column[$siglum] = $this->witnesses[$siglum]->getTokens()[$rawColumn[$siglum]];
+            $column[$siglum] = $this->tokens[$siglum][$ref];
         }
         return $column;
     }
@@ -141,8 +155,8 @@ class CollationTable {
      * @return Token[]
      */
     public function getWitnessTokens(string $siglum) : array {
-        if (isset($this->witnesses[$siglum])) {
-            return $this->witnesses[$siglum]->getTokens();
+        if (isset($this->tokens[$siglum])) {
+            return $this->tokens[$siglum];
         }
         return [];
     }
@@ -262,7 +276,7 @@ class CollationTable {
         $collationEngineWitnesses = [];
         foreach($this->witnesses as $siglum => $witness) {
             $collationEngineTokens = [];
-            $witnessTokens = $witness->getTokens();
+            $witnessTokens = $this->tokens[$siglum];
             foreach($this->collationTable[$siglum] as $columnNumber => $ref) {
                 $collationEngineToken = [];
                 $collationEngineToken['witnessRef'] = $ref;
@@ -398,6 +412,17 @@ class CollationTable {
         foreach($this->collationTable as &$collationTableRow) {
             array_splice($collationTableRow, $index, 1);
         }
+    }
+    
+    private function filterTokens(array $tokens, int $tokenType) {
+        $filteredTokens = [];
+        foreach($tokens as $token) {
+            if ($token->getType() === $tokenType) {
+                continue;
+            }
+            $filteredTokens[] = $token;
+        }
+        return $filteredTokens;
     }
     
 }

@@ -267,7 +267,10 @@ class ApiControllerTest extends TestCase {
         );
         $this->assertEquals(200, $response->getStatusCode());
         $respData = json_decode($response->getBody(true), true);
-        $this->assertTrue(isset($respData['collatexOutput']));
+        
+        $this->assertTrue(isset($respData['collationTable']));
+        $this->assertTrue(isset($respData['sigla']));
+        $this->assertTrue(isset($respData['collationEngineDetails']));
         
         // a partial collation
         $response = self::$apiCollation->automaticCollation(
@@ -286,7 +289,9 @@ class ApiControllerTest extends TestCase {
         );
         $this->assertEquals(200, $response->getStatusCode());
         $respData = json_decode($response->getBody(true), true);
-        $this->assertTrue(isset($respData['collatexOutput']));
+        $this->assertTrue(isset($respData['collationTable']));
+        $this->assertTrue(isset($respData['sigla']));
+        $this->assertTrue(isset($respData['collationEngineDetails']));
         
         // a partial collation with wrong doc ids
         $badId = max($docIds)+1;

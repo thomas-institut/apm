@@ -28,6 +28,7 @@ use AverroesProject\ItemStream\ItemStream;
 use APM\Core\Witness\StringWitness;
 use APM\Core\Collation\CollationTable;
 use APM\Decorators\QuickCollationTableDecorator;
+use AverroesProjectToApm\Decorators\TransitionalCollationTableDecorator;
 
 /**
  * API Controller class
@@ -124,6 +125,30 @@ class ApiCollation extends ApiController
         
     }
     
+    
+    /**
+     * Generates an automatic collation table from a POST request
+     * 
+     * the POST request must contain a 'data' field with the following
+     * subfields:
+     *  work :  work code (e.g., 'AW47')
+     *  chunk:  chunk number
+     *  lang:  language code, e.g., 'la', 'he'
+     *  witnesses:  array of witness identifications, each element of
+     *      the array must be of the form: 
+     *          [ 'type' => <TYPE> , 'id' => <ID> ]
+     *      where <TYPE> is a valid witness type
+     *      (currently only 'doc'  is implemented)
+     *      and <ID> is the witness system id (normally relative to its type), 
+     *      e.g, a system document id.
+     *      if the witnesses array is empty, all valid witnesses for the
+     *      given work, chunk and language will be collated.
+     * 
+     * @param Request $request
+     * @param Response $response
+     * @param type $next
+     * @return type
+     */
     public function automaticCollation(Request $request, 
             Response $response, $next)
     {
@@ -142,34 +167,8 @@ class ApiCollation extends ApiController
         $witnesses = $inputDataObject['witnesses'];
         
         $profiler = new ApmProfiler("CollationTable-$workId-$chunkNumber-$language", $db);
-        $workInfo = $db->getWorkInfo($workId);
         
-        // Eventually, instead of just the docs for a chunk, we'll need
-        // to get a true list of witnesses, including, for example, derivative
-        // witnesses, text, etc.
-        $witnessList = $db->getDocsForChunk($workId, $chunkNumber);
-        
-        $witnessesToInclude = [];
-        $partialCollation = false;
-        
-        if (count($witnesses) !== 0) {
-            foreach ($witnesses as $witness) {
-                // for the time being, actually, there is only 'doc' type witnesses
-                $witnessType = isset($witness['type']) ? $witness['type'] : 'doc';
-                $witnessId = intVal($witness['id']);
-                if ($witnessId !== 0) {
-                    $witnessesToInclude[] = $witnessId;
-                }
-            }
-            $partialCollation = true;
-            $this->ci->logger->debug('Partial collation', $witnessesToInclude);
-            if (count($witnessesToInclude) < 2) {
-                $msg = 'Error in partial collation table request: need at least 2 witnesses to collate, got only ' . count($witnessesToInclude) . '.';
-                $this->logger->error($msg, $witnessesToInclude);
-                return $response->withStatus(409)->withJson( ['error' => self::ERROR_NOT_ENOUGH_WITNESSES]);
-            }
-        }
-        
+        // Check language
         $languages = $this->ci->settings['languages'];
         $langInfo = null;
         foreach($languages as $lang) {
@@ -184,32 +183,148 @@ class ApiCollation extends ApiController
             return $response->withStatus(409)->withJson( ['error' => self::ERROR_INVALID_LANGUAGE]);
         }
         
-        $docs = [];
-        $witnessNumber = 0;
-        $totalNumDocs = 0;
-        foreach ($witnessList as $witness) {
-            if ($partialCollation) {
-                if (!in_array(intval($witness['id']), $witnessesToInclude)) {
-                    if ($witness['lang'] === $language) {
-                        $totalNumDocs++;
-                    }
-                    continue;
+        
+        
+        $workInfo = $db->getWorkInfo($workId);
+        
+        // Eventually, instead of just the docs for a chunk, we'll need
+        // to get a true list of witnesses, including, for example, derivative
+        // witnesses, text, etc.
+        $validWitnessLocations = $this->getValidWitnessLocationsForWorkChunkLang($db, $workId, $chunkNumber, $language);
+        if (count($validWitnessLocations) < 2) {
+            $msg = 'Not enough valid witness to collate';
+            $this->logger->error($msg, $validWitnessLocations);
+            return $response->withStatus(409)->withJson( ['error' => self::ERROR_NOT_ENOUGH_WITNESSES]);
+        }
+        
+        $witnessesToInclude = [];
+        $partialCollation = false;
+        
+        if (count($witnesses) !== 0) {
+            foreach ($witnesses as $witness) {
+                // for the time being, actually, there is only 'doc' type witnesses
+                $witnessType = isset($witness['type']) ? $witness['type'] : 'doc';
+                $witnessId = isset($witness['id']) ? intVal($witness['id']) : 0;
+                if ($witnessId !== 0 && isset($validWitnessLocations[$witnessId])) {
+                    $witnessesToInclude[$witnessId] = $validWitnessLocations[$witnessId];
                 }
             }
-            $doc = $witness;
+            $partialCollation = true;
+            $this->ci->logger->debug('Partial collation', $witnessesToInclude);
+            if (count($witnessesToInclude) < 2) {
+                $msg = 'Error in partial collation table request: need at least 2 witnesses to collate, got only ' . count($witnessesToInclude) . '.';
+                $this->logger->error($msg, $witnessesToInclude);
+                return $response->withStatus(409)->withJson( ['error' => self::ERROR_NOT_ENOUGH_WITNESSES]);
+            }
+        }
+        
+        if (!$partialCollation) {
+            $witnessesToInclude = $validWitnessLocations;
+        }
+        
+        $collationTable = new CollationTable();
+        $itemIds = [];
+        foreach ($witnessesToInclude as $id => $witnessLocation)  {
+            // Get the AverroesProject item streams
+            $segmentStreams = [];
+            foreach($witnessLocation as $segLocation) {
+                $apItemStream = $db->getItemStreamBetweenLocations($id, $segLocation['start'], $segLocation['end']);
+                foreach($apItemStream as $row) {
+                    $itemIds[] = (int) $row['id'];
+                }
+                $segmentStreams[] = $apItemStream;
+            }
+            $itemStream = new \AverroesProjectToApm\ItemStream($id, $segmentStreams, $language);
+            $itemStrWitness = new \AverroesProjectToApm\ItemStreamWitness($workId, $chunkNumber, $itemStream);
+            $docData = $db->getDocById($id);
+            $collationTable->addWitness($docData['title'], $itemStrWitness);
+        }
+        
+        $edNotes = $db->enm->getEditorialNotesForListOfItems($itemIds);
+        $noteAuthorIds = [];
+        foreach($edNotes as $edNote) {
+            $noteAuthorIds[$edNote->authorId] = 1;
+        }
+        
+        $collatexInput = $collationTable->getCollationEngineInput();
+        
+        $collationEngine = $this->ci->cr;
+        
+        // Run Collatex
+        $collatexOutput = $collationEngine->collate($collatexInput);
+        // @codeCoverageIgnoreStart
+        // Not worrying about testing CollatexErrors here
+        if ($collatexOutput === false) {
+            $this->logger->error("Quick Collation: error running Collatex",
+                        [ 'apiUserId' => $this->ci->userId, 
+                        'apiError' => ApiController::API_ERROR_COLLATION_ENGINE_ERROR,
+                        'data' => $inputData, 
+                        'collationEngineDetails' => $collationEngine->getRunDetails()
+                    ]);
+            return $response->withStatus(409)->withJson( ['error' => ApiController::API_ERROR_COLLATION_ENGINE_ERROR]);
+        }
+        // @codeCoverageIgnoreEnd
+        
+        try {
+            $collationTable->setCollationTableFromCollationEngineOutput($collatexOutput);
+        }
+        // @codeCoverageIgnoreStart
+        // Can't replicate this consistently in testing
+        catch(\Exception $ex) {
+            $this->logger->error('Error processing collatexOutput into collation object', 
+                    [ 'apiUserId' => $this->ci->userId, 
+                        'apiError' => self::ERROR_FAILED_COLLATION_ENGINE_PROCESSING,
+                        'data' => $inputData, 
+                         'collationEngineDetails' => $collationEngine->getRunDetails(),
+                        'exceptionMessage' => $ex->getMessage()
+                        ]);
+            return $response->withStatus(409)->withJson( ['error' => self::ERROR_FAILED_COLLATION_ENGINE_PROCESSING]);
+        }
+        // @codeCoverageIgnoreEnd
+        
+       $decoratedCollationTable = (new TransitionalCollationTableDecorator())->decorate($collationTable);
+
+        $profiler->log($this->logger);
+        
+        return $response->withJson([
+            'collationEngineDetails' => $collationEngine->getRunDetails(), 
+            'collationTable' => $decoratedCollationTable,
+            'sigla' => $collationTable->getSigla()
+            ]);
+        
+//        return $response->withJson([
+//                'work' => $workId,
+//                'chunk' => $chunkNumber,
+//                'lang' => $language,
+//                'langName' => $langInfo['name'],
+//                'isPartial' => $partialCollation,
+//                'rtl' => $langInfo['rtl'],
+//                'work_info' => $workInfo,
+//                'docs' => $docs,
+//                'num_docs' => count($docs),
+//                'total_num_docs' => $totalNumDocs,
+//                'collatexOutput' => $output,
+//                'collationEngineDetails' => $cr->getRunDetails(),
+//                'data' => $collatexWitnessArray
+//            ]);
+    }
+    
+    
+    protected function getValidWitnessLocationsForWorkChunkLang($db, $workId, $chunkNumber, $language) : array {
+        $witnessList = $db->getDocsForChunk($workId, $chunkNumber);
+        
+        $witnessesForLang = [];
+        
+        foreach($witnessList as $witness) {
             $docInfo = $db->getDocById($witness['id']);
             if ($docInfo['lang'] !== $language) {
                 // not the right language
                 continue;
             }
-            
-            $doc['number'] = ++$witnessNumber;
-            $doc['errors'] = [];
-            $doc['warning'] = '';
             $locations = $db->getChunkLocationsForDoc($witness['id'], $workId, $chunkNumber);
             if (count($locations)===0) {
                 // No data for this witness, normally this should not happen
-                continue;  // @codeCoverageIgnore
+                continue;
             }
             // Check if there's an invalid segment
             $invalidSegment = false;
@@ -222,73 +337,8 @@ class ApiCollation extends ApiController
             if ($invalidSegment) {
                 continue; // nothing to do with this witness
             }
-            $doc['itemStream'] =[];
-            $doc['items'] = [];
-            $doc['tokens'] = [];
-            foreach($locations as $segment) {
-                /* at this point only witnesses with valid segments
-                 * are processed, so the following check is not
-                 *  necessary
-                if (!$segment['valid']) {
-                    continue;
-                }
-                 */
-                $segmentItemStream = $db->getItemStreamBetweenLocations((int) $doc['id'], $segment['start'], $segment['end']);
-                $segmentItems = ItemStream::createItemArrayFromItemStream($segmentItemStream);
-                $segmentTokens = \AverroesProject\Collation\Tokenizer::tokenize($segmentItems);
-                $doc['itemStream'] = array_merge($doc['itemStream'], $segmentItemStream);
-                $doc['items'] = array_merge($doc['items'], $segmentItems);
-                $doc['tokens'] = array_merge($doc['tokens'], $segmentTokens);
-            }
-            
-            $docs[] = $doc;
-            $totalNumDocs++;
+            $witnessesForLang[$witness['id']] = $locations;
         }
-        
-        if (count($docs) < 2) {
-            $msg = count($docs) . ' witness(es) found for ' . $langInfo['name'] . ', need at least 2 to collate.'; 
-            if ($partialCollation) {
-                $msg .= '<br/> It could be that the partial collation table request has wrong document ids.';
-            }
-            $this->logger->error($msg, $witnessesToInclude);
-            return $response->withStatus(409)->withJson( ['error' => self::ERROR_NOT_ENOUGH_WITNESSES]);
-        }
-        
-        $collatexWitnessArray  = [];
-        foreach($docs as $theDoc) {
-            $collatexWitnessArray[] = [
-                'id' => $theDoc['title'],
-                'tokens' => $theDoc['tokens']
-                ];
-        }
-        $cr = $this->ci->cr;
-        $profiler->lap('Pre-Collatex');
-        $output = $cr->collate($collatexWitnessArray);
-        
-        if ($output === []) {
-            // @codeCoverageIgnoreStart
-            // Collatex errors are tested somewhere else
-            $this->ci->logger->error("Collation Error: error running Collatex",
-                    [ 'data' => $collatexWitnessArray, 
-                      'collationEngineDetails' => $cr->getRunDetails() ]);
-            $msg = "Error running Collatex, please report it";
-            return $response->withStatus(409)->withJson( ['error' => ApiController::API_ERROR_COLLATION_ENGINE_ERROR]);
-            // @codeCoverageIgnoreEnd
-        }
-        $profiler->log($this->ci->logger);
-
-        return $response->withJson([
-                'work' => $workId,
-                'chunk' => $chunkNumber,
-                'lang' => $language,
-                'langName' => $langInfo['name'],
-                'isPartial' => $partialCollation,
-                'rtl' => $langInfo['rtl'],
-                'work_info' => $workInfo,
-                'docs' => $docs,
-                'num_docs' => count($docs),
-                'total_num_docs' => $totalNumDocs,
-                'collatexOutput' => $output,
-            ]);
+        return $witnessesForLang;
     }
 }

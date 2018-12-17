@@ -220,10 +220,6 @@ $app->get('/chunks','\AverroesProject\Site\SiteChunks:chunksPage')
         ->setName('chunks')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
-//$app->get('/chunk/{work}/{chunk}','\AverroesProject\Site\SiteChunks:singleChunkPage')
-//        ->setName('chunk')
-//        ->add('\AverroesProject\Auth\Authenticator:authenticate');
-
 $app->get('/chunk/{work}/{chunk}','\AverroesProjectToApm\Site\ChunkPage:singleChunkPage')
         ->setName('chunk')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
@@ -232,17 +228,15 @@ $app->get('/chunk/{work}/{chunk}/witness/{type}/{id}','\AverroesProjectToApm\Sit
         ->setName('witness')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
-// COLLATION TABLE
-$app->get('/chunk/{work}/{chunk}/collation/{lang}[/{docs:.*}]','\AverroesProjectToApm\Site\CollationTable:collationTablePage')
+// COLLATION TABLES
+
+$app->get('/collation/auto/{work}/{chunk}/{lang}[/{docs:.*}]','\AverroesProjectToApm\Site\CollationTable:automaticCollationPage')
         ->setName('chunk.collationtable')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
-// Quick Collation
-//$app->get('/quickcollation', '\AverroesProject\Site\SiteCollationTable:quickCollationPage')
-//        ->setName('quickcollation');
 
-$app->get('/quickcollation', '\APM\Site\SiteCollationTable:quickCollationPage')
-        ->setName('new-quickcollation');
+$app->get('/collation/quick', '\APM\Site\SiteCollationTable:quickCollationPage')
+        ->setName('quickcollation');
 
 
 // DOCS
@@ -367,7 +361,10 @@ $app->group('/api', function (){
     
     // ------ COLLATION ------
     
-    
+    $this->post('/collation/auto',
+            '\APM\Api\ApiCollation:automaticCollation'
+            )
+        ->setName('api.collation.auto');
     
     // ------- ICONS -----------
     

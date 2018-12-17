@@ -35,8 +35,6 @@ class CollationTableFormatter {
 
   }
   
-  
-  
   format(apiResponse, popoverClass) {
     
     let sigla = apiResponse.sigla

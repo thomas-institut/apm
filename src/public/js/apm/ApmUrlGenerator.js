@@ -26,14 +26,17 @@ class ApmUrlGenerator {
     return this.base + '/api/public/collation/quick'
   }
   
+  apiAutomaticCollation() {
+    return this.base + '/api/collation/auto'
+  }
+  
   siteCollationTable(work, chunkno, lang, ids=[]) {
-    
     let extra = ''
     if (ids.length > 0) {
       extra += '/'
       extra += ids.join('/')
     }
-    return this.base +  '/chunk/' + work + '/' + chunkno + '/collation/' + lang + extra
+    return this.base +  '/collation/auto/' + work + '/' + chunkno + '/' + lang + extra
   }
 
 }

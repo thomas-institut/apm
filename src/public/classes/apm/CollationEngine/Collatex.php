@@ -38,6 +38,7 @@ class Collatex extends CollationEngine {
     protected $javaExecutable;
     
     protected $rawOutput;
+    protected $input;
     
     const CR_COLLATEX_EXECUTABLE_NOT_FOUND=101;
     const CR_TEMP_FOLDER_NOT_FOUND=102;
@@ -56,6 +57,7 @@ class Collatex extends CollationEngine {
         $this->collatexExecutable = $collatexExecutable;
         $this->tempFolder = $tempFolder;
         $this->javaExecutable = $java;
+        $this->input = [];
         $this->reset();
     }
     
@@ -172,6 +174,7 @@ class Collatex extends CollationEngine {
         $this->reset();
         $input = json_encode([ 'witnesses' => $witnessArray]);
         
+        $this->input = $witnessArray;
         $this->rawOutput =  $this->rawRun($input);
         
         if ($this->getErrorCode() !== self::ERROR_NOERROR) {
@@ -188,13 +191,14 @@ class Collatex extends CollationEngine {
     }
     
     public function getRawOutput() {
-        return $this->rawOutput;
+        return json_decode($this->rawOutput, true);
     }
     
     public function getRunDetails() : array {
         $details = parent::getRunDetails();
         
-        $details['rawOutput'] = $this->getRawOutput();
+        $details['collatexOutput'] = $this->getRawOutput();
+        $details['collatexInput'] = $this->input;
         return $details;
     }
 

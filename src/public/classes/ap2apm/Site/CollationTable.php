@@ -32,37 +32,44 @@ use AverroesProject\Profiler\ApmProfiler;
  */
 class CollationTable extends SiteController
 {
-    public function automaticCollationPage(Request $request, Response $response, $args) 
+    public function collationTablePage(Request $request, Response $response, $args) 
     {
         $db = $this->db;
         $workId = $request->getAttribute('work');
         $chunkNumber = $request->getAttribute('chunk');
         $language = $request->getAttribute('lang');
-        $profiler = new ApmProfiler("AutomaticCollation-$workId-$chunkNumber-$language", $db);
+        $profiler = new ApmProfiler("CollationTable-$workId-$chunkNumber-$language", $db);
+        $workInfo = $db->getWorkInfo($workId);
+        $witnessList = $db->getDocsForChunk($workId, $chunkNumber);
         
-        $warnings = [];
-        
-        $apiCallOptions = [
-            'work' => $workId,
-            'chunk' => $chunkNumber,
-            'lang' => $language,
-            'witnesses' => []
-        ];
-        
-        // get witnesses to include
+        $docsToInclude = [];
         $partialCollation = false;
         if (isset($args['docs'])) {
             $docsInArgs = explode('/', $args['docs']);
             foreach ($docsInArgs as $docId) {
                 $docId = intval($docId);
                 if ($docId !== 0) {
-                    $apiCallOptions['witnesses'][] = ['type' => 'doc', 'id' => $docId];
+                    $docsToInclude[] = $docId;
                 }
             }
             $partialCollation = true;
+            $this->ci->logger->debug('Partial collation', $docsToInclude);
+            if (count($docsToInclude) < 2) {
+                $msg = 'Error in partial collation table request: need at least 2 witnesses to collate, got only ' . count($docsToInclude) . '.';
+                return $this->ci->view->render($response, 'chunk.collation.error.twig', [
+                    'userinfo' => $this->ci->userInfo, 
+                    'copyright' => $this->ci->copyrightNotice,
+                    'baseurl' => $this->ci->settings['baseurl'],
+                    'work' => $workId,
+                    'chunk' => $chunkNumber,
+                    'langName' => $language,
+                    'isPartial' => $partialCollation,
+                    'message' => $msg
+                ]);
+            }
+            
         }
         
-        // check that language is valid
         $languages = $this->ci->settings['languages'];
         $langInfo = null;
         foreach($languages as $lang) {
@@ -85,45 +92,28 @@ class CollationTable extends SiteController
             ]);
         }
         
-        // get work info
-        $workInfo = $db->getWorkInfo($workId);
-        
-        // get total witness counts
-        $validWitnesses = $this->getValidWitnessDocIdsForWorkChunkLang($db, $workId, $chunkNumber, $language);
-        
-        $profiler->log($this->ci->logger);
-        
-        return $this->ci->view->render($response, 'ap2apm/collationtable.twig', [
-                'userinfo' => $this->ci->userInfo, 
-                'copyright' => $this->ci->copyrightNotice,
-                'baseurl' => $this->ci->settings['baseurl'],
-                'work' => $workId,
-                'chunk' => $chunkNumber,
-                'lang' => $language,
-                'apiCallOptions' => $apiCallOptions,
-                'langName' => $langInfo['name'],
-                'isPartial' => $partialCollation,
-                'rtl' => $langInfo['rtl'],
-                'work_info' => $workInfo,
-                'num_docs' => $partialCollation ? count($apiCallOptions['witnesses']) : count($validWitnesses),
-                'total_num_docs' => count($validWitnesses),
-                'warnings' => $warnings
-            ]);
-        
-        
-    }
-    
-    protected function getValidWitnessDocIdsForWorkChunkLang($db, $workId, $chunkNumber, $language) : array {
-        $witnessList = $db->getDocsForChunk($workId, $chunkNumber);
-        
-        $witnessesForLang = [];
-        
-        foreach($witnessList as $witness) {
+        $docs = [];
+        $witnessNumber = 0;
+        $totalNumDocs = 0;
+        foreach ($witnessList as $witness) {
+            if ($partialCollation) {
+                if (!in_array(intval($witness['id']), $docsToInclude)) {
+                    if ($witness['lang'] === $language) {
+                        $totalNumDocs++;
+                    }
+                    continue;
+                }
+            }
+            $doc = $witness;
             $docInfo = $db->getDocById($witness['id']);
             if ($docInfo['lang'] !== $language) {
                 // not the right language
                 continue;
             }
+            
+            $doc['number'] = ++$witnessNumber;
+            $doc['errors'] = [];
+            $doc['warning'] = '';
             $locations = $db->getChunkLocationsForDoc($witness['id'], $workId, $chunkNumber);
             if (count($locations)===0) {
                 // No data for this witness, normally this should not happen
@@ -140,8 +130,99 @@ class CollationTable extends SiteController
             if ($invalidSegment) {
                 continue; // nothing to do with this witness
             }
-            $witnessesForLang[] = $witness['id'];
+            $doc['itemStream'] =[];
+            $doc['items'] = [];
+            $doc['tokens'] = [];
+            foreach($locations as $segment) {
+                if (!$segment['valid']) {
+                    continue;
+                }
+                $segmentItemStream = $db->getItemStreamBetweenLocations((int) $doc['id'], $segment['start'], $segment['end']);
+                $segmentItems = ItemStream::createItemArrayFromItemStream($segmentItemStream);
+                $segmentTokens = \AverroesProject\Collation\Tokenizer::tokenize($segmentItems);
+                $doc['itemStream'] = array_merge($doc['itemStream'], $segmentItemStream);
+                $doc['items'] = array_merge($doc['items'], $segmentItems);
+                $doc['tokens'] = array_merge($doc['tokens'], $segmentTokens);
+            }
+            
+            $docs[] = $doc;
+            $totalNumDocs++;
         }
-        return $witnessesForLang;
+        
+        if (count($docs) < 2) {
+            $msg = count($docs) . ' witness(es) found for ' . $langInfo['name'] . ', need at least 2 to collate.'; 
+            if ($partialCollation) {
+                $msg .= '<br/> It could be that the partial collation table request has wrong document ids.';
+            }
+            return $this->ci->view->render($response, 'chunk.collation.error.twig', [
+                'userinfo' => $this->ci->userInfo, 
+                'copyright' => $this->ci->copyrightNotice,
+                'baseurl' => $this->ci->settings['baseurl'],
+                'work' => $workId,
+                'chunk' => $chunkNumber,
+                'lang' => $language,
+                'langName' => $langInfo['name'],
+                'isPartial' => $partialCollation,
+                'message' => $msg
+            ]);
+        }
+        
+        $collatexWitnessArray  = [];
+        foreach($docs as $theDoc) {
+            $collatexWitnessArray[] = [
+                'id' => $theDoc['title'],
+                'tokens' => $theDoc['tokens']
+                ];
+        }
+        
+        
+        $cr = $this->ci->cr;
+        $profiler->lap('Pre-Collatex');
+        $output = $cr->collate($collatexWitnessArray);
+        
+        if ($output === []) {
+            $this->ci->logger->error("Collation Error: error running Collatex",
+                    [ 'data' => $collatexWitnessArray, 
+                      'collationEngineDetails' => $cr->getRunDetails() ]);
+            $msg = "Error running Collatex, please report it";
+            return $this->ci->view->render($response, 'chunk.collation.error.twig', [
+                'userinfo' => $this->ci->userInfo, 
+                'copyright' => $this->ci->copyrightNotice,
+                'baseurl' => $this->ci->settings['baseurl'],
+                'work' => $workId,
+                'chunk' => $chunkNumber,
+                'lang' => $language,
+                'langName' => $langInfo['name'],
+                'isPartial' => $partialCollation,
+                'message' => $msg
+            ]);
+        }
+        
+        $showExpandCollapseButton = false;
+        if ($this->db->um->isUserAllowedTo($this->ci->userInfo['id'], 'expandCollapseCollationTable')) {
+            $showExpandCollapseButton = true;
+        }
+        
+        $profiler->log($this->ci->logger);
+        return $this->ci->view->render($response, 'ap2apm/collationtable.twig', [
+                'userinfo' => $this->ci->userInfo, 
+                'copyright' => $this->ci->copyrightNotice,
+                'baseurl' => $this->ci->settings['baseurl'],
+                'work' => $workId,
+                'chunk' => $chunkNumber,
+                'lang' => $language,
+                'langName' => $langInfo['name'],
+                'isPartial' => $partialCollation,
+                'rtl' => $langInfo['rtl'],
+                'work_info' => $workInfo,
+                'docs' => $docs,
+                'num_docs' => count($docs),
+                'total_num_docs' => $totalNumDocs,
+                'collatexOutput' => $output,
+                'collationEngineDetails' => $cr->getRunDetails(),
+                'showExpandCollapseButton' => $showExpandCollapseButton
+            ]);
+        
+        
     }
 }

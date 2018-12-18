@@ -291,22 +291,7 @@ class ApiCollation extends ApiController
             'collationTable' => $decoratedCollationTable,
             'sigla' => $collationTable->getSigla()
             ]);
-        
-//        return $response->withJson([
-//                'work' => $workId,
-//                'chunk' => $chunkNumber,
-//                'lang' => $language,
-//                'langName' => $langInfo['name'],
-//                'isPartial' => $partialCollation,
-//                'rtl' => $langInfo['rtl'],
-//                'work_info' => $workInfo,
-//                'docs' => $docs,
-//                'num_docs' => count($docs),
-//                'total_num_docs' => $totalNumDocs,
-//                'collatexOutput' => $output,
-//                'collationEngineDetails' => $cr->getRunDetails(),
-//                'data' => $collatexWitnessArray
-//            ]);
+
     }
     
     
@@ -323,8 +308,11 @@ class ApiCollation extends ApiController
             }
             $locations = $db->getChunkLocationsForDoc($witness['id'], $workId, $chunkNumber);
             if (count($locations)===0) {
-                // No data for this witness, normally this should not happen
-                continue;
+                // No data for this witness, this would only happen
+                // if somebody erased the chunk marks from the document
+                // in the few milliseconds between getDocsForChunk() and 
+                // getChunkLocationsForDoc() 
+                continue; // @codeCoverageIgnore
             }
             // Check if there's an invalid segment
             $invalidSegment = false;

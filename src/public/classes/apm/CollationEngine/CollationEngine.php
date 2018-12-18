@@ -31,7 +31,7 @@ abstract class CollationEngine {
     const ERROR_NOERROR=0;
     
     /** @var float */
-    private $runTime;
+    private $duration;
     /** @var int */
     private $errorCode;
     /** @var string */
@@ -75,7 +75,7 @@ abstract class CollationEngine {
     }
     
     public function resetChronometer() {
-        $this->runTime = 0;
+        $this->duration = 0;
     }
     
     public function resetError() {
@@ -83,8 +83,16 @@ abstract class CollationEngine {
         $this->errorContext = '';
     }
 
-    public function getRunTime() : float {
-        return $this->runTime;
+    public function getRunDateTime() : float {
+        return $this->startMicroTime;
+    }
+    
+    public function getRunDateTimeString() : string {
+        return strftime("%d %b %Y, %H:%M:%S %Z", $this->getRunDateTime());
+    }
+    
+    public function getDuration() : float {
+        return $this->duration;
     }
 
     public function getErrorCode() : int {
@@ -100,7 +108,8 @@ abstract class CollationEngine {
             'engineName' => $this->getName(),
             'errorCode' => $this->getErrorCode(),
             'errorContext' => $this->getErrorContext(),
-            'runTime' => $this->getRunTime()
+            'runDateTime' => $this->getRunDateTimeString(),
+            'duration' => $this->getDuration()
         ];
     }
     
@@ -113,13 +122,13 @@ abstract class CollationEngine {
     // PROTECTED 
     // 
     protected function startChrono() {
-        $this->runTime = 0;
+        $this->duration = 0;
         $this->startMicroTime = microtime(true);
     }
     
     protected function endChrono() {
         $this->endMicroTime = microtime(true);
-        $this->runTime = $this->endMicroTime - $this->startMicroTime;
+        $this->duration = $this->endMicroTime - $this->startMicroTime;
     }
     
     protected function setError(int $code, string $context='') {

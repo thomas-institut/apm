@@ -28,24 +28,19 @@ $(document).ready(function()
          <li>Automatic Collation Table</li>
          <li class="active">{{langName}} {%if isPartial %}(partial){%endif%}</li>
     </ol>
-<h1>Automatic Collation Table</h1> 
-<p>{{work_info.author_name}}, <em>{{work_info.title}}</em>, chunk {{chunk}} ({{work}}-{{chunk}})</p>
-<p>{{langName}}, 
-    {%if isPartial %}
-        {{num_docs}} out of {{total_num_docs}} witnesses
-    {%else %}
-        all {{num_docs}} valid witnesses
-    {%endif%}
-</p>
+    
+    <h1>Automatic Collation Table</h1> 
+    <p>{{work_info.author_name}}, <em>{{work_info.title}}</em>, chunk {{chunk}} ({{work}}-{{chunk}})</p>
+    <p>{{langName}}, 
+        {%if isPartial %}
+            {{num_docs}} out of {{total_num_docs}} witnesses
+        {%else %}
+            all {{num_docs}} valid witnesses
+        {%endif%}
+    </p>
+    <p><button title="Click to re-calculate the collation table with the most recend data" id="redobutton" class="btn btn-default">Redo Collation Table</button></p>
+    <div id="status" class="text-danger"></div>
+    <div id="collationtablediv" class="ltrtext" style="overflow-x: auto; margin-top: 20px;"></div>
+    <div id="collationEngineDetails" class="text-muted small"> </div>
 
-<div class="row">
-    <div id="status" class="text-danger">
-        
-    </div>
-<div id="collationtablediv" class="ltrtext" style="overflow-x: auto; margin-top: 20px;">
-    < The collation table will be shown here >
-</div>
-    <div id="collationEngineDetails" class="text-muted">
-    </div>
-</div>
 {% endblock %}

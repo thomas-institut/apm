@@ -180,7 +180,7 @@ class ApiCollation extends ApiController
         if (is_null($langInfo)) {
             $msg = 'Invalid language <b>' . $language . '</b>';
             $this->logger->error($msg);
-            return $response->withStatus(409)->withJson( ['error' => self::ERROR_INVALID_LANGUAGE]);
+            return $response->withStatus(409)->withJson( ['error' => self::ERROR_INVALID_LANGUAGE, 'msg' => $msg]);
         }
         
         
@@ -192,9 +192,9 @@ class ApiCollation extends ApiController
         // witnesses, text, etc.
         $validWitnessLocations = $this->getValidWitnessLocationsForWorkChunkLang($db, $workId, $chunkNumber, $language);
         if (count($validWitnessLocations) < 2) {
-            $msg = 'Not enough valid witness to collate';
+            $msg = 'Not enough valid witnesses to collate';
             $this->logger->error($msg, $validWitnessLocations);
-            return $response->withStatus(409)->withJson( ['error' => self::ERROR_NOT_ENOUGH_WITNESSES]);
+            return $response->withStatus(409)->withJson( ['error' => self::ERROR_NOT_ENOUGH_WITNESSES, 'msg' => $msg]);
         }
         
         $witnessesToInclude = [];
@@ -214,7 +214,7 @@ class ApiCollation extends ApiController
             if (count($witnessesToInclude) < 2) {
                 $msg = 'Error in partial collation table request: need at least 2 witnesses to collate, got only ' . count($witnessesToInclude) . '.';
                 $this->logger->error($msg, $witnessesToInclude);
-                return $response->withStatus(409)->withJson( ['error' => self::ERROR_NOT_ENOUGH_WITNESSES]);
+                return $response->withStatus(409)->withJson( ['error' => self::ERROR_NOT_ENOUGH_WITNESSES, 'msg' => $msg]);
             }
         }
         
@@ -255,13 +255,14 @@ class ApiCollation extends ApiController
         // @codeCoverageIgnoreStart
         // Not worrying about testing CollatexErrors here
         if ($collatexOutput === false) {
-            $this->logger->error("Quick Collation: error running Collatex",
+            $msg = "Automatic Collation: error running Collation Engine";
+            $this->logger->error($msg,
                         [ 'apiUserId' => $this->ci->userId, 
                         'apiError' => ApiController::API_ERROR_COLLATION_ENGINE_ERROR,
-                        'data' => $inputData, 
+                        'data' => $collatexInput, 
                         'collationEngineDetails' => $collationEngine->getRunDetails()
                     ]);
-            return $response->withStatus(409)->withJson( ['error' => ApiController::API_ERROR_COLLATION_ENGINE_ERROR]);
+            return $response->withStatus(409)->withJson( ['error' => ApiController::API_ERROR_COLLATION_ENGINE_ERROR, 'msg' => $msg]);
         }
         // @codeCoverageIgnoreEnd
         
@@ -271,7 +272,8 @@ class ApiCollation extends ApiController
         // @codeCoverageIgnoreStart
         // Can't replicate this consistently in testing
         catch(\Exception $ex) {
-            $this->logger->error('Error processing collatexOutput into collation object', 
+            $msg = 'Error processing collation Engine output into collation object';
+            $this->logger->error($msg, 
                     [ 'apiUserId' => $this->ci->userId, 
                         'apiError' => self::ERROR_FAILED_COLLATION_ENGINE_PROCESSING,
                         'data' => $inputData, 

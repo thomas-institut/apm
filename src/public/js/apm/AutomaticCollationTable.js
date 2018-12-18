@@ -23,6 +23,7 @@ class AutomaticCollationTable {
     this.collationTableDiv = $('#collationtablediv')
     this.status = $('#status')
     this.collationEngineDetails = $('#collationEngineDetails')
+    this.redoButton = $('#redobutton')
     this.apiCollationUrl = urlGen.apiAutomaticCollation()
     this.updating = false
     this.apiCallOptions = initialApiOptions
@@ -32,6 +33,10 @@ class AutomaticCollationTable {
     this.collationTableDiv.html('')
     this.collationEngineDetails.html('')
     this.status.html('')
+    let thisObject = this
+    this.redoButton.on('click', function() { 
+      thisObject.getCollationTable()
+    })
     if (loadNow) {
         this.getCollationTable()
     }
@@ -43,6 +48,7 @@ class AutomaticCollationTable {
     console.log('API call options:')
     console.log(this.apiCallOptions)
     this.updating = true
+    this.redoButton.prop('disabled', true)
     this.status.html('Collating... <i class="fa fa-spinner fa-spin fa-fw"></i>')
     this.collationTableDiv.html('')
     this.collationEngineDetails.html('')
@@ -58,18 +64,28 @@ class AutomaticCollationTable {
       thisObject.status.html('Collating... done, formatting table <i class="fa fa-spinner fa-spin fa-fw"></i>')
       thisObject.collationTableDiv.html(thisObject.ctf.format(data, thisObject.popoverClass))
       thisObject.status.html('')
+      thisObject.redoButton.prop('disabled', false)
       thisObject.updating = false
-      let ced = data.collationEngineDetails
-      let cedHtml = 'Engine: ' + ced.engineName + '<br/>'
-      cedHtml += 'Runtime: ' + Math.round(ced.runTime*1000.0) + ' ms'
-      thisObject.collationEngineDetails.html(cedHtml)
+      thisObject.collationEngineDetails.html(thisObject.getCollationEngineDetailsHtml(data.collationEngineDetails))
     })
     .fail(function(resp) {
       console.log('Error in automatic collation, resp:')
       console.log(resp)
-      thisObject.status.html("Collating... fail with error code " + resp.status + ' :(')
+      let failMsg = 'Collating... fail <i class="fa fa-frown-o" aria-hidden="true"></i><br/> '
+      failMsg += '<span class="small">HTTP code ' + resp.status + '</span>'
+      if (typeof(resp.responseJSON) !== 'undefined') {
+        failMsg += '<br/><span class="small"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i>&nbsp;'  + resp.responseJSON.msg + '</span>'
+      }
+      thisObject.status.html(failMsg)
       thisObject.updating = false
     })
+  }
+  
+  getCollationEngineDetailsHtml(ced) {
+    let cedHtml = '<b>Engine:</b> ' + ced.engineName + '<br/>'
+    cedHtml += '<b>Date/Time:</b> '  + ced.runDateTime + '<br/>'
+    cedHtml += '<b>Runtime:</b> ' + Math.round(ced.duration*1000.0) + ' ms'
+    return cedHtml
   }
   
 }

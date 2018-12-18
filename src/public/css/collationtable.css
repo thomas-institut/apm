@@ -59,3 +59,7 @@ table.collationtable a {
 .newlinesymbol {
     color: #9abeef;
 }
+
+div#status {
+    font-size: 3em;
+}

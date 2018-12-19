@@ -32,7 +32,11 @@ class CollationTableFormatter {
     this.collationTableClass = 'collationtable'
     this.witnessTdClass = 'witness'
     this.newLineHtml =  '<span class="newlinesymbol">&ldsh;</span>';
-
+    this.maxColumnsPerTable = 15
+  }
+  
+  setMaxColumnsPerTable(mcpt) {
+    this.maxColumnsPerTable = mcpt
   }
   
   format(apiResponse, popoverClass) {
@@ -40,18 +44,16 @@ class CollationTableFormatter {
     let sigla = apiResponse.sigla
     let collationTable = apiResponse.collationTable
     let numWitnesses = sigla.length
-      
-    let maxColumnsPerTable = 20
 
     let numColumns = collationTable[sigla[0]].length
-    let numTables = Math.ceil(numColumns / maxColumnsPerTable)
+    let numTables = Math.ceil(numColumns / this.maxColumnsPerTable)
     
     let output = ''
     let columnsRemaining = numColumns
     for (let t=0; t < numTables; t++) {
       output += '<table class="' + this.collationTableClass + '">'
-      let numColsInThisTable = Math.min(maxColumnsPerTable, columnsRemaining)
-      let firstColumn = t*maxColumnsPerTable
+      let numColsInThisTable = Math.min(this.maxColumnsPerTable, columnsRemaining)
+      let firstColumn = t*this.maxColumnsPerTable
       let lastColumn = firstColumn + numColsInThisTable
       for (let i = 0; i < numWitnesses; i++) {
         output += '<tr>'

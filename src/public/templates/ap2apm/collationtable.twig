@@ -30,15 +30,56 @@ $(document).ready(function()
     </ol>
     
     <h1>Automatic Collation Table</h1> 
-    <p>{{work_info.author_name}}, <em>{{work_info.title}}</em>, chunk {{chunk}} ({{work}}-{{chunk}})</p>
-    <p>{{langName}}, 
-        {%if isPartial %}
-            {{num_docs}} out of {{total_num_docs}} witnesses
-        {%else %}
-            all {{num_docs}} valid witnesses
-        {%endif%}
-    </p>
-    <p><button title="Click to re-calculate the collation table with the most recend data" id="redobutton" class="btn btn-default">Redo Collation Table</button></p>
+    <div class="row">
+        <div class="col-md-9">
+            <p>{{work_info.author_name}}, <em>{{work_info.title}}</em>, chunk {{chunk}} ({{work}}-{{chunk}})</p>
+            <p>{{langName}}, 
+                {%if isPartial %}
+                    {{num_docs}} out of {{total_num_docs}} witnesses
+                {%else %}
+                    all {{num_docs}} valid witnesses
+                {%endif%}
+        
+                <button title="Click to edit the automatic collation settings" 
+                    id="editsettingsbutton" class="btn btn-default btn-sm noborder ">
+                    <i class="fa fa-pencil" aria-hidden="true"></i>
+                </button>
+            </p>
+        </div>
+        <div class="col-md-3">
+            <div id="collationtablebuttons" >
+                <button title="Reload the collation table with the most recent data" 
+                    id="redobutton" class="btn btn-default btn-lg noborder">
+                    <i class="fa fa-refresh" aria-hidden="true"></i>
+                </button>
+                <button title="Change view settings" 
+                    id="viewsettingsbutton" class="btn btn-default btn-lg noborder">
+                    <i class="fa fa-cog" aria-hidden="true"></i>
+                </button>
+                <button title="Export" 
+                    id="exportbutton" class="btn btn-default btn-lg noborder">
+                    <i class="fa fa-download" aria-hidden="true"></i>
+                </button>
+            </div>
+            <div id="viewsettingsform" class="ctdropdownform" >
+                <h3>View Settings</h3>
+                <form>
+                <p><input type="checkbox">Highlight Variants</p>
+                <p><input type="checkbox">Show in multiple rows</p>
+                <p><input type="number"> columns per row</p>
+                <p>
+                    <button id="viewsettingsform-applybutton" class="btn btn-primary btn-sm r">
+                        Apply
+                    </button>
+                    <button id="viewsettingsform-cancelbutton" class="btn btn-default btn-sm r">
+                        Cancel
+                    </button>
+                </p>
+                </form>
+            </div>
+        </div>
+    </div>
+    
     <div id="status" class="text-danger"></div>
     <div id="collationtablediv" class="ltrtext" style="overflow-x: auto; margin-top: 20px;"></div>
     <div id="collationEngineDetails" class="text-muted small"> </div>

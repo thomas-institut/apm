@@ -63,3 +63,21 @@ table.collationtable a {
 div#status {
     font-size: 3em;
 }
+
+.noborder {
+    border: none;
+}
+
+div.ctdropdownform {
+    position: absolute;
+    z-index: 1000;
+    margin: 10px;
+    border: 1px solid silver;
+    border-radius: 5px;
+}
+
+div.ctdropdownform h3 {
+    margin: 0;
+    padding: 10px;
+    background: silver;
+}

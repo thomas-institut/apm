@@ -29,11 +29,27 @@ class AutomaticCollationTable {
     this.apiCallOptions = initialApiOptions
     this.ctf = new CollationTableFormatter()
     this.popoverClass = 'ctpopover'
-
+    this.viewSettingsForm = $('#viewsettingsform')
+    this.viewSettingsButton = $('#viewsettingsbutton')
+    this.viewSettingsFormCancelButton = $('#viewsettingsform-cancelbutton')
+    
+    let thisObject = this
+    
+    this.viewSettingsForm.addClass('hidden')
+    this.viewSettingsButton.on('click', function () { 
+      if (thisObject.viewSettingsForm.hasClass('hidden')) {
+        thisObject.viewSettingsForm.removeClass('hidden')
+      } else {
+        thisObject.viewSettingsForm.addClass('hidden')
+      }
+    })
+    this.viewSettingsFormCancelButton.on('click', function() {
+      thisObject.viewSettingsForm.addClass('hidden')
+    })
     this.collationTableDiv.html('')
     this.collationEngineDetails.html('')
     this.status.html('')
-    let thisObject = this
+    
     this.redoButton.on('click', function() { 
       thisObject.getCollationTable()
     })

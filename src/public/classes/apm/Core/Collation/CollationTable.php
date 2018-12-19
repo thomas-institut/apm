@@ -111,6 +111,11 @@ class CollationTable {
         $this->tokens[$siglum]= $witnessTokens;
     }
     
+    
+    public function getWitness(string $siglum) {
+        return $this->witnesses[$siglum];
+    }
+    
     /**
      * Gets the column for the given index.
      * 

@@ -128,6 +128,10 @@ class AddressInItemStream extends ItemAddressInDocument {
         $this->fullAddress->setCoord(self::COORD_ITEMID, $index);
     }
     
+    public function getColumn() {
+        return $this->fullAddress->getCoord(self::COORD_COL);
+    }
+    
     
 
 }

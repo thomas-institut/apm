@@ -4,6 +4,7 @@
 {% block title %}ACT {{work}}-{{chunk}}-{{lang}}{%if isPartial %}-partial{%endif%}{% endblock %}
 
 {% block extraJS %}
+      {#<link rel="stylesheet" type="text/css" href="{{baseurl}}/css/ap2apm/witness.css"/>            #}
     <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/collationtable.css" />
     <script type="application/javascript" src="{{baseurl}}/js/apm/ApmUrlGenerator.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/apm/AutomaticCollationTable.js"></script>
@@ -14,9 +15,18 @@
 <script>
 $(document).ready(function() 
 { 
+    $('#collationtablediv').popover({
+            container: 'body', 
+            html: true,
+            trigger: 'hover', 
+            selector: '.withformatpopover',
+            delay: {show: 500, hide: 0},
+            placement: 'auto'
+         })
     let apiCallOptions = JSON.parse("{{apiCallOptions|json_encode|e('js')}}")
     let urlGenerator = new ApmUrlGenerator('{{baseurl}}')
     let miniApp = new AutomaticCollationTable(urlGenerator, apiCallOptions, true)
+    
 } 
 );
 </script>

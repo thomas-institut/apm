@@ -23,6 +23,9 @@ namespace AverroesProjectToApm\Decorators;
 use APM\Core\Collation\CollationTableDecorator;
 use APM\Core\Collation\CollationTable;
 
+use AverroesProjectToApm\AddressInItemStream;
+use APM\Core\Item\TextualItem;
+
 /**
  * Description of QuickCollationTableDecorator
  *
@@ -32,6 +35,7 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
     
     const CLASS_EMPTYTOKEN = 'tokennotpresent';
     const CLASS_NORMALTOKEN = 'normalToken';
+    const CLASS_VARIANT_PREFIX = 'variant_';
     
     const TEXT_EMPTYTOKEN = '&mdash;';
     
@@ -39,12 +43,19 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
         $sigla = $c->getSigla();
         $decoratedCollationTable = [];
         
+        $addressInItemStreamClass  = get_class(new AddressInItemStream());
+        $textualItemClass = get_class(new TextualItem('stub'));
+        
+        $formatter = new \AverroesProjectToApm\Formatter\WitnessPageFormatter();
+        $variantTable = $this->buildVariantTable($c);
+        
         // 1. Put tokens in with basic classes
         foreach($sigla as $siglum) {
             $decoratedCollationTable[$siglum] = [];
             $tokenRefs = $c->getWitnessCollationRawTokens($siglum);
             $witnessTokens = $c->getWitnessTokens($siglum);
-            foreach($tokenRefs as $tokenRef) {
+            $witnessItemStream = $c->getWitness($siglum)->getItemStream();
+            foreach($tokenRefs as $i => $tokenRef) {
                 $decoratedToken = [];
                 if ($tokenRef === CollationTable::TOKENREF_NULL) {
                     $decoratedToken['text'] = self::TEXT_EMPTYTOKEN;
@@ -56,12 +67,39 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
                 $token = $witnessTokens[$tokenRef];
                 $decoratedToken['text'] = $token->getText();
                 $decoratedToken['classes'] = [self::CLASS_NORMALTOKEN];
-                //$decoratedToken['lineNumber'] = $token->getLineNumber();
+                $decoratedToken['classes'][] = self::CLASS_VARIANT_PREFIX .  $variantTable[$siglum][$i];
+                //$decoratedToken['lineNumber'] = '.';
                 $decoratedToken['empty'] = false;
                 $decoratedToken['witnessTokenIndex'] = $tokenRef;
+                $addresses = $token->getSourceItemAddresses();
+                //$decoratedToken['itemAddresses'] = [];
+                $decoratedToken['itemFormats'] = [];
+                foreach($addresses as $address) {
+                    if (is_a($address, $addressInItemStreamClass)) {
+                        //$decoratedToken['itemAddresses'][] = $address;
+                        $sourceItem = $witnessItemStream->getItemById($address->getItemIndex());
+                        if ($sourceItem !== false && is_a($sourceItem, $textualItemClass)) {
+                            $sourceItem->setPlainText($token->getText());
+                            $decoratedToken['itemFormats'][] = $formatter->getTextualItemFormat($sourceItem, false);
+                        }
+                    }
+                }
+                if (count($addresses) === 1) {
+                    // the simplest case!
+                    $address = $addresses[0];
+                    list($text, $classes, $popoverHtml) = $decoratedToken['itemFormats'][0];
+                    // Add address to popover
+                    array_push($classes, \AverroesProjectToApm\Formatter\WitnessPageFormatter::CLASS_WITHPOPOVER);
+                    $popoverHtml .= '[' . $address->getFoliation() . ':c' . $address->getColumn() . ']';
+                    $decoratedToken['classes'] = array_merge($decoratedToken['classes'], $classes);
+                    $decoratedToken['popoverHtml'] = $popoverHtml;
+                }
+                
                 $decoratedCollationTable[$siglum][] = $decoratedToken;
             }
         }
+        
+        
         
         // 2. Put line breaks
 //        $bd = new \APM\Core\Algorithm\BoundaryDetector();
@@ -79,7 +117,52 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
         
         
         return $decoratedCollationTable;
-
     }
-
+    
+    
+    protected function buildVariantTable(CollationTable $c) : array {
+        $tokenCount = $c->getTokenCount();
+        $variantTable = [];
+        $sigla = $c->getSigla();
+        foreach($sigla as $siglum) {
+            $variantTable[$siglum] = [];
+        }
+        
+        for ($i = 0; $i< $tokenCount; $i++) {
+            $column = $c->getColumn($i);
+            $readings = [];
+            foreach($column as $siglum => $token) {
+                if ($token->isEmpty()) {
+                    continue;
+                }
+                if (!isset($readings[$token->getNormalization()])) {
+                    $readings[$token->getNormalization()] = 0;
+                }
+                $readings[$token->getNormalization()]++;
+            }
+            $rankings = array_keys($readings);
+            
+            
+            foreach($column as $siglum => $token) {
+                $variantTable[$siglum][] = intVal(array_search($token->getText(), $rankings));
+            }
+        }
+        return $variantTable;
+    }
+    
+    protected function prettyPrintAddressInItemStream(\APM\Core\Address\Point $address) : string {
+        
+        return $this->prettyPrintPoint($address);
+    }
+    
+    protected function prettyPrintPoint(\APM\Core\Address\Point $point) {
+        $dim = $point->getDimensionCount();
+        $data = [];
+        for ($i=0; $i< $dim; $i++) {
+            $data[] = $point->getCoord($i);
+        }
+        return implode(':', $data);
+    }
+    
+    
 }

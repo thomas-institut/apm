@@ -103,6 +103,10 @@ class TextualItem extends Item {
     public function getPlainText() {
         return $this->text;
     }
+    
+    public function setPlainText(string $text) {
+        $this->text = $text;
+    }
 
     public function getNormalizedText() {
         if ($this->normalizationType === self::NORMALIZATION_NONE) {

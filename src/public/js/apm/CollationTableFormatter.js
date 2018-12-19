@@ -74,13 +74,19 @@ class CollationTableFormatter {
    if (token.empty) {
      return '<td class="' + token.classes.join(' ') + '">'+ token.text + '</td>'
    }
+   if (typeof(token.html) !== 'undefined') {
+     if (token.html !== '') {
+       return '<td>' + token.html + '</td>'
+     }
+   }
    
-   let html = '<td class="' + token.classes.join(' ') + '">'
-   html += '<a class="' + popoverClass + '" title="' + token.text + '" '
-   html += 'role="button" tabindex="0" '
-   html += 'data-content="' + this.getPopoverHtmlFromToken(siglum, token) + '">'
+   token.classes.push(popoverClass)
+   let popOverHtml = this.getPopoverHtmlFromToken(siglum, token)
+   
+   let html = '<td class="' + token.classes.join(' ') + '"' 
+   html += 'data-content=\'' + popOverHtml + '\''
+   html += '>'
    html += token.text
-   html += '</a>'
    if (token.lineBreak) {
      html += this.newLineHtml
    }
@@ -90,7 +96,15 @@ class CollationTableFormatter {
  }
  
  getPopoverHtmlFromToken(siglum, token) {
-   let html = siglum + ', token ' + (token.witnessTokenIndex+1) + ', line ' + token.lineNumber
+   
+   let html = ''
+   if (typeof(token.popoverHtml) !== 'undefined') {
+     html += token.popoverHtml
+   }
+   html += '<br/>Token ' + (token.witnessTokenIndex+1) 
+   if (typeof(token.lineNumber) !== 'undefined') {
+     html += ' , line ' + token.lineNumber
+   }
    return html
    
  }

@@ -70,4 +70,19 @@ class ItemStream {
     public function addItem(ItemInItemStream $item) {
         $this->items[] = $item;
     }
+    
+    /**
+     * Searches the item stream for an item with the given item Id
+     * 
+     * @param int $itemId
+     * @return boolean
+     */
+    public function getItemById(int $itemId) {
+        foreach($this->items as $item) {
+            if ($item->getAddress()->getItemIndex() === $itemId) {
+                return $item->getItem();
+            }
+        }
+        return false;
+    }
 }

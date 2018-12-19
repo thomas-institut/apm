@@ -30,7 +30,7 @@ use AverroesProject\Profiler\ApmProfiler;
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class CollationTable extends SiteController
+class CollationTableSiteController extends SiteController
 {
     public function automaticCollationPage(Request $request, Response $response, $args) 
     {

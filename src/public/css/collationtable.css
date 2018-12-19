@@ -81,3 +81,156 @@ div.ctdropdownform h3 {
     padding: 10px;
     background: silver;
 }
+
+table.collationtable {
+    border-collapse: collapse;
+}
+table.collationtable td {
+    padding-left: 5px;
+    padding-right: 5px;
+    border: solid 1px silver
+ }
+
+ table.collationtable td.he-td {
+     font-size: 1.1em;
+ }
+ 
+ table.collationtable td.ar-td {
+     font-size: 1.4em;
+ }
+
+table.collationtable td.witness {
+    font-weight: bold;
+}
+
+table.collationtable td.tokennotpresent {
+    text-align: center;
+    color: silver;
+}
+table.collationtable td.addition.variant_1 {
+    background-image: linear-gradient(to top, #ddecff, #fbedff);
+}
+
+
+table.collationtable td.variant_1 {
+    background-color: #fbedff;
+}
+
+/*table.collationtable td.rubric {
+    color: blue;
+    font-weight: bold;
+}
+
+table.collationtable td.addition {
+   color: #8aa9e2;
+}
+
+table.collationtable td.deletion {
+    font-weight: normal;
+    text-decoration: line-through;
+    color: red;
+}
+
+table.collationtable td.sic {
+    color: #ad9c87
+} 
+
+table.collationtable td.abbr {
+    color: chocolate;
+}
+
+
+table.collationtable td.unclear {
+    color: #143382;
+}*/
+
+
+
+.textualitem {
+    
+}
+.abbr {
+    color: chocolate;
+}
+
+.gliph {
+    color: fuchsia;
+}
+.rubric {
+    color: blue;
+    font-weight: bold;
+}
+
+.initial {
+    font-weight: bold;
+}
+
+.sic {
+   color: #ad9c87;
+}
+
+.unclear {
+    color: #143382;
+}
+
+.illegible {
+    color: gray;
+}
+
+.markitem {
+    color: silver;
+    font-variant: small-caps;
+}
+
+.deletion {
+    text-decoration: line-through;
+    color: red;
+}
+
+.addition {
+    background-color: #ddecff;
+}
+
+.gloss {
+    background-color: #cbf7ce;
+}
+
+td.offline {
+    border: none;
+    border-bottom: 2px solid lightblue;
+}
+
+.note {
+    color: red;
+}
+
+.mathtext {
+    color: #990099;
+}
+
+.hand_1 {
+    font-family: serif;
+}
+
+.popover p.noteheader {
+    margin-left: 10px;
+    font-size: 0.8em;
+    color: silver;
+}
+
+.popover p.notetext {
+    margin-left: 10px;
+    margin-top: 10px;
+}
+
+.foliation {
+    font-family: monospace;
+    color: #8a978b;
+    font-size: 0.8em;
+}
+
+.columnbreak {
+    font-family: monospace;
+    color: #8a978b;
+    font-size: 0.8em;
+}

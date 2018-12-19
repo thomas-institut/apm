@@ -46,6 +46,10 @@ class ItemStreamWitness extends TranscriptionWitness {
         $this->initialLineNumbers = [];
         
     }
+    
+    public function getItemStream() : ItemStream {
+        return $this->itemStream;
+    }
 
     public function getItemArray(): array {
         return $this->itemStream->getItems();

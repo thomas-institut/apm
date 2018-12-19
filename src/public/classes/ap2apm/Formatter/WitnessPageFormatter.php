@@ -38,6 +38,9 @@ class WitnessPageFormatter implements ItemStreamFormatter {
     const ICON_PARAGRAPH = '¶';
     const ICON_GAP = '<i class="fa fa-ellipsis-h" aria-hidden="true"></i>';
     
+    const ICON_ORIGINALTEXT = '+';
+    const ICON_EQUIV = '&equiv;';
+    
     
     const UNKNOWN_ITEM_HTML = '<span class="unknown">???</span>';
     
@@ -142,9 +145,8 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         return $html;
     }
 
-   
-    protected function formatTextualItem(TextualItem $item, bool $gotNoWb, $notes = []): string {
-        
+    
+    public function getTextualItemFormat(TextualItem $item, bool $gotNoWb, $notes = []) : array {
         $classes = [];
         $classes[] = self::CLASS_TEXTUALITEM;
         $popoverHtml = '';
@@ -189,7 +191,9 @@ class WitnessPageFormatter implements ItemStreamFormatter {
             if ($normalization === '' || $normalization===$text) {
                 $normalization = ' (no reading given)';
             }
-            $popoverHtml = '<b>' . $this->normalizationNames[$item->getNormalizationType()] . '</b><br/>&equiv; ' . $normalization . '<br/>';
+            $popoverHtml = '<b>' . $this->normalizationNames[$item->getNormalizationType()] . '</b>'. '<br/>' .  
+                   '&nbsp;' .  self::ICON_ORIGINALTEXT . ' ' . $text .  '<br/>' . 
+                   '&nbsp;' . self::ICON_EQUIV . ' ' . $normalization . '<br/>';
         }
         
         $popoverHtml .= $this->generateNotesHtml($notes);
@@ -197,6 +201,13 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         if ($popoverHtml !== '') {
             $classes[] = self::CLASS_WITHPOPOVER;
         }
+        
+        return [ $text, $classes, $popoverHtml];
+    }
+   
+    public function formatTextualItem(TextualItem $item, bool $gotNoWb, $notes = []): string {
+        
+        list($text, $classes, $popoverHtml) = $this->getTextualItemFormat($item, $gotNoWb, $notes);
         
         $html = '<span class="' . 
                 implode(' ', $classes) . '"';

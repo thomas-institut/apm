@@ -101,16 +101,25 @@ abstract class TranscriptionWitness extends Witness {
             
             if (is_a($rawItem, $textualItemClass)) {
                 // Textual item: get the internal tokens and process them
-                // 
+                $rawItemNormalizedText = $rawItem->getNormalizedText();
+                $rawItemPlainText = $rawItem->getPlainText();
                 // Notice that tokens are constructed out of the normalized 
                 // text, not the "original" text
-                //print "Textual Item: '" . $rawItem->getNormalizedText() . "'\n";
-                $stringTokens = StringTokenizer::getTokensFromString($rawItem->getNormalizedText());
+                $stringTokens = StringTokenizer::getTokensFromString($rawItemNormalizedText);
                 //print "  -- " . count($stringTokens) . " string tokens\n";
                 foreach($stringTokens as $stringToken) {
                     /* @var $stringToken StringToken */
-                    $tToken =  new TranscriptionToken($stringToken->getType(), 
+                    // Check if the stringtoken covers all the text's item
+                    if ($stringToken->getText() === $rawItemNormalizedText) {
+                        // this means that there is only one token in the item,
+                        // so, we can use the item's plain text and normalization 
+                        // to build the TranscriptionToken
+                        $tToken =  new TranscriptionToken($stringToken->getType(), 
+                            $rawItemPlainText, $rawItemNormalizedText);
+                    } else {
+                        $tToken =  new TranscriptionToken($stringToken->getType(), 
                             $stringToken->getText(), $stringToken->getNormalization());
+                    }
                     $tToken->setSourceItemAddresses([$itemAddress]);
                     $tToken->setSourceItemCharRanges([$stringToken->getCharRange()]);
                     $tToken->setTextBoxLineRange(

@@ -47,7 +47,7 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
         $textualItemClass = get_class(new TextualItem('stub'));
         
         $formatter = new \AverroesProjectToApm\Formatter\WitnessPageFormatter();
-        $variantTable = $this->buildVariantTable($c);
+        $variantTable = $c->getVariantTable();
         
         // 1. Put tokens in with basic classes
         foreach($sigla as $siglum) {
@@ -120,35 +120,7 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
     }
     
     
-    protected function buildVariantTable(CollationTable $c) : array {
-        $tokenCount = $c->getTokenCount();
-        $variantTable = [];
-        $sigla = $c->getSigla();
-        foreach($sigla as $siglum) {
-            $variantTable[$siglum] = [];
-        }
-        
-        for ($i = 0; $i< $tokenCount; $i++) {
-            $column = $c->getColumn($i);
-            $readings = [];
-            foreach($column as $siglum => $token) {
-                if ($token->isEmpty()) {
-                    continue;
-                }
-                if (!isset($readings[$token->getNormalization()])) {
-                    $readings[$token->getNormalization()] = 0;
-                }
-                $readings[$token->getNormalization()]++;
-            }
-            $rankings = array_keys($readings);
-            
-            
-            foreach($column as $siglum => $token) {
-                $variantTable[$siglum][] = intVal(array_search($token->getText(), $rankings));
-            }
-        }
-        return $variantTable;
-    }
+   
     
     protected function prettyPrintAddressInItemStream(\APM\Core\Address\Point $address) : string {
         

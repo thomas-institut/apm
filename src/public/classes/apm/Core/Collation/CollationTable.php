@@ -366,6 +366,60 @@ class CollationTable {
     }
     
     /**
+     * Returns a matrix with the ranking of each reading for each token
+     * in the collation table in relation to the other readings in the same
+     * column.
+     * 
+     * The returned array is of the form:
+     *   $variantTable = [ 'siglum1' => [ rankToken1, rankToken2, ..., rankTokenN ],
+     *                    'siglum2' => [ rankToken1, ...  ]
+     *                     ...
+     *                     ];
+     * 
+     * Where rankTokenJ is an integer representing the rank of the corresponding
+     * token's reading within its column. So, if the token's reading is the 
+     * most common reading, its rank is 0, if it's the second most common, its
+     * rank is 1, and so on. Empty tokens get rank -1
+     * 
+     * @return array
+     */
+    public function getVariantTable() : array {
+        $tokenCount = $this->getTokenCount();
+        $variantTable = [];
+        $sigla = $this->getSigla();
+        foreach($sigla as $siglum) {
+            $variantTable[$siglum] = [];
+        }
+        
+        for ($i = 0; $i< $tokenCount; $i++) {
+            $column = $this->getColumn($i);
+            $readings = [];
+            foreach($column as $siglum => $token) {
+                if ($token->isEmpty()) {
+                    continue;
+                }
+                if (!isset($readings[$token->getNormalization()])) {
+                    $readings[$token->getNormalization()] = 0;
+                }
+                $readings[$token->getNormalization()]++;
+            }
+            arsort($readings);
+            $rankings = array_keys($readings);
+            
+            foreach($column as $siglum => $token) {
+                if ($token->isEmpty()) {
+                    $variantTable[$siglum][] = -1;
+                    continue;
+                }
+                $searchResult = array_search($token->getNormalization(), $rankings);
+                $rank = $searchResult === false ? -1 : intVal($searchResult);
+                $variantTable[$siglum][] = $rank;
+            }
+        }
+        return $variantTable;
+    }
+    
+    /**
      * Takes a Collatex output segment and aligns its token so that
      * all witness have exactly the same number of tokens
      * 

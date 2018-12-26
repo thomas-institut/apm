@@ -315,6 +315,48 @@ class CollationTest extends TestCase {
         
     }
     
+    public function testGetVariantTable() {
+        $collation = new CollationTable();
+        
+           
+        // Simple case, no empty tokens
+        $w1 = new StringWitness('tw', 'tchunk', 'This is witness one');
+        $w2 = new StringWitness('tw', 'tchunk', 'This is witness two');
+        $w3 = new StringWitness('tw', 'tchunk', 'This is witnes three');
+        // Add witnesses
+        $collation->addWitness('A', $w1);
+        $collation->addWitness('B', $w2);
+        $collation->addWitness('C', $w3);
+        
+        $variantTable = $collation->getVariantTable();
+        $this->assertCount(3, $variantTable);
+        $this->assertEquals([0,0,0,0], $variantTable['A']);
+        $this->assertEquals([0,0,0,1], $variantTable['B']);
+        $this->assertEquals([0,0,1,2], $variantTable['C']);
+        
+        // Same, but with witnesses added in different order
+        $c2 = new CollationTable();
+        $c2->addWitness('C', $w3);
+        $c2->addWitness('B', $w2);
+        $c2->addWitness('A', $w1);
+        $vt2 = $c2->getVariantTable();
+        $this->assertCount(3, $vt2);
+        $this->assertEquals([0,0,0,2], $vt2['A']);
+        $this->assertEquals([0,0,0,1], $vt2['B']);
+        $this->assertEquals([0,0,1,0], $vt2['C']);
+        
+        // adding another witness with extra tokens
+        $w4 = new StringWitness('tw', 'tchunk', 'This is witness four with extra tokens');
+        $c2->addWitness('D', $w4);
+        $vt3 = $c2->getVariantTable();
+        $this->assertCount(4, $vt3);
+        $this->assertEquals([0,0,0,2,-1,-1,-1], $vt3['A']);
+        $this->assertEquals([0,0,0,1,-1,-1,-1], $vt3['B']);
+        $this->assertEquals([0,0,1,0,-1,-1,-1], $vt3['C']);
+        $this->assertEquals([0,0,0,3,0,0,0], $vt3['D']);
+        
+    }
+    
     public function testCollatexProcessing() {
         
         $testCases = [

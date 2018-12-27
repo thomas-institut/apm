@@ -27,6 +27,21 @@ use APM\Core\Witness\Witness;
 
 /**
  * Representation of a collation table
+ * 
+ * A collation table is a matrix of witness tokens. Each row is an array
+ * of tokens coming out of a single witness possibly interspersed with empty
+ * tokens. 
+ * 
+ * Each column represents a series of aligned tokens accross the different witnesses.
+ * 
+ * Not all tokens from a witness are in the collation table. In fact, by default
+ * the collation table class ignores all whitespace tokens. It can also be made
+ * to ignore punctuation.
+ * 
+ * The CollationTable class by itself does not guarantee any "proper" alignment 
+ * of the witnesses' tokens but provides suitable data to feed a collation engine 
+ * to do the alignment work. It also provides a way to make itself reflect
+ * the results of such an engine.
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
@@ -46,14 +61,23 @@ class CollationTable {
     private $collationTable;
     
     /* @var bool */
-    private $ignoreWhiteSpace;
+    private $ignorePunctuation;
     
     
-    public function __construct($ignoreWhitespace = true) {
+    public function __construct($ignorePunctuation = false) {
         $this->witnesses = [];
         $this->tokens = [];
         $this->collationTable = [];
-        $this->ignoreWhiteSpace = $ignoreWhitespace;
+        $this->ignorePunctuation = $ignorePunctuation;
+    }
+    
+    /**
+     * Returns the sigla in the collation table
+     * 
+     * @return string[]
+     */
+    public function getSigla() {
+        return array_keys($this->witnesses);
     }
     
     /**
@@ -65,7 +89,7 @@ class CollationTable {
         if (count($this->witnesses) === 0) {
             return 0;
         }
-        $sigla = array_keys($this->witnesses);
+        $sigla = $this->getSigla();
         
         return count($this->collationTable[$sigla[0]]);
     }
@@ -79,22 +103,19 @@ class CollationTable {
      */
     public function addWitness(string $siglum, Witness $witness) {
         
-        $witnessTokens = $witness->getTokens();
-        if ($this->ignoreWhiteSpace) {
-            $witnessTokens = $this->filterTokens($witnessTokens, Token::TOKEN_WS);
+        $originalWitnessTokens = $witness->getTokens();
+        $tokenTypesToIgnore = [ Token::TOKEN_WS];
+        if ($this->ignorePunctuation) {
+            $tokenTypesToIgnore[] = Token::TOKEN_PUNCT;
         }
-        $tokenCount = count($witnessTokens);
+        $tokenRefs = $this->filterTokens($originalWitnessTokens, $tokenTypesToIgnore);
+        
+        $tokenCount = count($tokenRefs);
         if ($tokenCount === 0) {
             throw new \InvalidArgumentException('Cannot add empty witnesses');
         }
         
-        $tokenRefs = [];
-        for($i = 0; $i < $tokenCount; $i++) {
-            $tokenRefs[] = $i;
-        }
-        
         $currentSize = $this->getTokenCount();
-        
         
         if ($tokenCount < $currentSize) {
             // Pad the given array with empty tokens at the end
@@ -108,71 +129,28 @@ class CollationTable {
         }
         $this->collationTable[$siglum] = $tokenRefs;
         $this->witnesses[$siglum] = $witness;
-        $this->tokens[$siglum]= $witnessTokens;
+        // TODO: check if this is needed!
+        $this->tokens[$siglum]= $originalWitnessTokens;
     }
     
     
+    /**
+     * Returns the witness with the given $siglum
+     * 
+     * @param string $siglum
+     * @return type
+     */
     public function getWitness(string $siglum) {
         return $this->witnesses[$siglum];
     }
     
     /**
-     * Gets the column for the given index.
-     * 
-     * A collation table column is an associative array with one entry
-     * for each witness: 
-     *   $column = [  'siglumA' => someToken, 'siglumB' => otherToken, ... ]
-     * 
-     * @param int $index
-     * @return array
-     * @throws \InvalidArgumentException
-     */
-    public function getColumn(int $index) {
-        $rawColumn = $this->getRawColumn($index);
-        $column = [];
-        foreach(array_keys($rawColumn) as $siglum) {
-            /* ATTENTION: this might be extremely inefficient! */
-            $ref = $rawColumn[$siglum];
-            if ($ref === self::TOKENREF_NULL) {
-                $column[$siglum] = Token::emptyToken();
-                continue;
-            }
-            $column[$siglum] = $this->tokens[$siglum][$ref];
-        }
-        return $column;
-    }
-    
-    public function getRawColumn(int $index) : array {
-        if ($index >= $this->getTokenCount()) {
-            throw new \InvalidArgumentException('Index out of range');
-        }
-        $rawColumn = [];
-        foreach(array_keys($this->collationTable) as $siglum) {
-            $rawColumn[$siglum] = $this->collationTable[$siglum][$index];
-        }
-        return $rawColumn;
-    }
-    
-    /**
-     * Returns the tokens for the witness identified by the given siglum
-     * 
+     * Returns a row of the collation table
      * @param string $siglum
-     * @return Token[]
+     * @return array
      */
-    public function getWitnessTokens(string $siglum) : array {
-        if (isset($this->tokens[$siglum])) {
-            return $this->tokens[$siglum];
-        }
-        return [];
-    }
-    
-    public function getWitnessCollationRawTokens(string $siglum) : array {
-        return $this->collationTable[$siglum];
-    }
-    
-    
-    public function getWitnessCollationTokens(string $siglum) : array {
-        $rawCollationTokens = $this->getWitnessCollationRawTokens($siglum);
+    public function getRow(string $siglum) : array {
+        $rawCollationTokens = $this->getReferencesForRow($siglum);
         $witnessTokens = $this->getWitnessTokens($siglum);
         
         $collationTokens = [];
@@ -186,22 +164,72 @@ class CollationTable {
         return $collationTokens;
     }
     
+    /**
+     * Returns the full collation table
+     * 
+     * @return array
+     */
     public function getCollationTable() : array {
         $table = [];
-        foreach (array_keys($this->witnesses) as $siglum) {
-            $table[$siglum] = $this->getWitnessCollationTokens($siglum);
+        foreach ($this->getSigla() as $siglum) {
+            $table[$siglum] = $this->getRow($siglum);
         }
         return $table;
     }
     
+    
     /**
-     * Returns the sigla in the collation table
+     * Gets the column for the given index.
      * 
-     * @return string[]
+     * A collation table column is an associative array with one entry
+     * for each witness: 
+     *   $column = [  'siglumA' => someToken, 'siglumB' => otherToken, ... ]
+     * 
+     * @param int $index
+     * @return array
+     * @throws \InvalidArgumentException if the $index is out of range
      */
-    public function getSigla() {
-        return array_keys($this->witnesses);
+    public function getColumn(int $index) {
+        $rawColumn = $this->getReferencesForColumn($index);
+        $column = [];
+        foreach(array_keys($rawColumn) as $siglum) {
+            $ref = $rawColumn[$siglum];
+            if ($ref === self::TOKENREF_NULL) {
+                $column[$siglum] = Token::emptyToken();
+                continue;
+            }
+            $column[$siglum] = $this->tokens[$siglum][$ref];
+        }
+        return $column;
     }
+    
+    /**
+     * Returns the tokens for the witness identified by the given siglum that
+     * are present in the collation table.
+     * 
+     * @param string $siglum
+     * @return Token[]
+     */
+    public function getWitnessTokens(string $siglum) : array {
+        if (isset($this->tokens[$siglum])) {
+            return $this->tokens[$siglum];
+        }
+        return [];
+    }
+    
+    /**
+     * Returns an array of index references to the token array for a witness
+     * Each element of this array corresponds to a column in the collation table.
+     * An empty token in the collation table is represented by the 
+     * constant CollationTable::TOKENREF_NULL
+     *
+     * @param string $siglum
+     * @return array
+     */
+    public function getReferencesForRow(string $siglum) : array {
+        return $this->collationTable[$siglum];
+    }
+    
     
     /**
      * Shifts the token at $index by $count positions for the witness
@@ -249,7 +277,7 @@ class CollationTable {
         $columnsToRemove = [];
         $tokenCount = $this->getTokenCount();
         for ($i=0; $i<$tokenCount;$i++) {
-            $column = $this->getRawColumn($i);
+            $column = $this->getReferencesForColumn($i);
             $columnIsEmpty = true;
             foreach($column as $ref) {
                 if ($ref !== self::TOKENREF_NULL){
@@ -309,6 +337,12 @@ class CollationTable {
         return $collationEngineWitnesses;
     }
     
+    /**
+     * Sets up the collation table using the output of a collation engine
+     * 
+     * @param array $collationEngineOutput
+     * @throws \InvalidArgumentException
+     */
     public function setCollationTableFromCollationEngineOutput(array $collationEngineOutput) {
         // First, check that the input is a valid collation engine output
         if (!isset($collationEngineOutput['table']) || !isset($collationEngineOutput['witnesses'])) {
@@ -467,21 +501,32 @@ class CollationTable {
         }
     }
     
+    protected function getReferencesForColumn(int $index) : array {
+        if ($index >= $this->getTokenCount()) {
+            throw new \InvalidArgumentException('Index out of range');
+        }
+        $rawColumn = [];
+        foreach(array_keys($this->collationTable) as $siglum) {
+            $rawColumn[$siglum] = $this->collationTable[$siglum][$index];
+        }
+        return $rawColumn;
+    }
+    
     private function removeColumn(int $index) {
         foreach($this->collationTable as &$collationTableRow) {
             array_splice($collationTableRow, $index, 1);
         }
     }
     
-    private function filterTokens(array $tokens, int $tokenType) {
-        $filteredTokens = [];
-        foreach($tokens as $token) {
-            if ($token->getType() === $tokenType) {
+    private function filterTokens(array $tokens, array $tokenTypesToIgnore) {
+        $tokenRefs = [];
+        foreach($tokens as $index => $token) {
+            if (array_search($token->getType(), $tokenTypesToIgnore) !== false) {
                 continue;
             }
-            $filteredTokens[] = $token;
+            $tokenRefs[] = $index;
         }
-        return $filteredTokens;
+        return $tokenRefs;
     }
     
 }

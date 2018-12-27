@@ -52,7 +52,7 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
         // 1. Put tokens in with basic classes
         foreach($sigla as $siglum) {
             $decoratedCollationTable[$siglum] = [];
-            $tokenRefs = $c->getWitnessCollationRawTokens($siglum);
+            $tokenRefs = $c->getReferencesForRow($siglum);
             $witnessTokens = $c->getWitnessTokens($siglum);
             $witnessItemStream = $c->getWitness($siglum)->getItemStream();
             foreach($tokenRefs as $i => $tokenRef) {

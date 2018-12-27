@@ -165,6 +165,8 @@ class ApiCollation extends ApiController
         $chunkNumber = $inputDataObject['chunk'];
         $language = $inputDataObject['lang'];
         $witnesses = $inputDataObject['witnesses'];
+        $ignorePunctuation = isset($inputDataObject['ignorePunctuation']) ?
+                $inputDataObject['ignorePunctuation'] : false;
         
         $profiler = new ApmProfiler("CollationTable-$workId-$chunkNumber-$language", $db);
         
@@ -222,7 +224,7 @@ class ApiCollation extends ApiController
             $witnessesToInclude = $validWitnessLocations;
         }
         
-        $collationTable = new CollationTable();
+        $collationTable = new CollationTable($ignorePunctuation);
         $itemIds = [];
         foreach ($witnessesToInclude as $id => $witnessLocation)  {
             // Get the AverroesProject item streams

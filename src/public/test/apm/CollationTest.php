@@ -304,8 +304,8 @@ class CollationTest extends TestCase {
         $collation->setCollationTableFromCollationEngineOutput(['witnesses' => ['A', 'B', 'C'], 'table'=> [ $segment1]]);
         $this->assertEquals(4, $collation->getTokenCount());
         foreach ($collation->getSigla() as $siglum) {
-            $this->assertCount(4, $collation->getWitnessCollationRawTokens($siglum), $siglum);
-            $this->assertCount(4, $collation->getWitnessCollationTokens($siglum), $siglum);
+            $this->assertCount(4, $collation->getReferencesForRow($siglum), $siglum);
+            $this->assertCount(4, $collation->getRow($siglum), $siglum);
         }
         
         $table = $collation->getCollationTable();
@@ -378,7 +378,7 @@ class CollationTest extends TestCase {
             $collationTable = $collation->getCollationTable();
             foreach($collationTable as $siglum => $tokens) {
                 $id = $testCase['title'] .  ' witness ' . $siglum;
-                $this->assertCount($testCase['expectedSize'], $collation->getWitnessCollationRawTokens($siglum), $id);
+                $this->assertCount($testCase['expectedSize'], $collation->getReferencesForRow($siglum), $id);
                 $this->assertCount($testCase['expectedSize'], $tokens, $id );
             }
         }

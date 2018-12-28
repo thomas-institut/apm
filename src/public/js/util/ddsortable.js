@@ -102,8 +102,6 @@ class DragAndDropSortableList {
   }
   
   addDnDHandlers(elem) {
-    //console.log('Adding handlers')
-    //console.log(elem)
     elem.addEventListener('dragstart', this.genOnDragStartFunc(), false);
     elem.addEventListener('dragenter', this.genOnDragEnter(), false)
     elem.addEventListener('dragover', this.genOnDragOver(), false);
@@ -113,11 +111,4 @@ class DragAndDropSortableList {
   }
   
 }
-
-function addDnDHandlers(elem) {
-
-}
-
-var cols = document.querySelectorAll('#columns .column');
-[].forEach.call(cols, addDnDHandlers);
 

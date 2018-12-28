@@ -137,11 +137,11 @@ class ApiCollation extends ApiController
      *  witnesses:  array of witness identifications, each element of
      *      the array must be of the form: 
      *          [ 'type' => <TYPE> , 'id' => <ID> ]
-     *      where <TYPE> is a valid witness type
-     *      (currently only 'doc'  is implemented)
-     *      and <ID> is the witness system id (normally relative to its type), 
-     *      e.g, a system document id.
-     *      if the witnesses array is empty, all valid witnesses for the
+     *      where 
+     *          <TYPE> is a valid witness type  (currently only 'doc'  is implemented)
+     *          <ID> is the witness system id (normally relative to its type)
+     *               e.g, a system document id.
+     *      If the witnesses array is empty, all valid witnesses for the
      *      given work, chunk and language will be collated.
      * 
      * @param Request $request

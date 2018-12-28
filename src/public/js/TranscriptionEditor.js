@@ -741,9 +741,10 @@ class TranscriptionEditor
 
   }
   
-  dispatchEvent(eventName)
+  dispatchEvent(eventName, data = {})
   {
-    const event = new Event(eventName)
+    
+    const event = new CustomEvent(eventName, {detail : data})
     $('#' + this.containerId).get()[0].dispatchEvent(event)
   }
   

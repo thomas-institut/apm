@@ -4,7 +4,6 @@
 {% block title %}ACT {{work}}-{{chunk}}-{{lang}}{%if isPartial %}-partial{%endif%}{% endblock %}
 
 {% block extraJS %}
-      {#<link rel="stylesheet" type="text/css" href="{{baseurl}}/css/ap2apm/witness.css"/>            #}
     <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/collationtable.css" />
     <script type="application/javascript" src="{{baseurl}}/js/apm/ApmUrlGenerator.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/apm/AutomaticCollationTable.js"></script>
@@ -42,19 +41,23 @@ $(document).ready(function()
     <h1>Automatic Collation Table</h1> 
     <div class="row">
         <div class="col-md-9">
-            <p>{{work_info.author_name}}, <em>{{work_info.title}}</em>, chunk {{chunk}} ({{work}}-{{chunk}})</p>
-            <p>{{langName}}, 
-                {%if isPartial %}
-                    {{num_docs}} out of {{total_num_docs}} witnesses
-                {%else %}
-                    all {{num_docs}} valid witnesses
-                {%endif%}
-        
-                <button title="Click to edit the automatic collation settings" 
-                    id="editsettingsbutton" class="btn btn-default btn-sm noborder ">
-                    <i class="fa fa-pencil" aria-hidden="true"></i>
-                </button>
-            </p>
+            <div id="collationtableinfo">
+                <p>{{work_info.author_name}}, <em>{{work_info.title}}</em>, chunk {{chunk}} ({{work}}-{{chunk}})</p>
+                <p>{{langName}}, 
+                    {%if isPartial %}
+                        {{num_docs}} out of {{total_num_docs}} witnesses
+                    {%else %}
+                        all {{num_docs}} valid witnesses
+                    {%endif%}
+
+                    <button title="Click to edit the automatic collation settings" 
+                        id="editsettingsbutton" class="btn btn-default btn-sm noborder ">
+                        <i class="fa fa-pencil" aria-hidden="true"></i>
+                    </button>
+                </p>
+            </div>
+            <div id="editsettingsform" class="inlineform">
+            </div> 
         </div>
         <div class="col-md-3">
             <div id="collationtablebuttons" >
@@ -74,18 +77,28 @@ $(document).ready(function()
             <div id="viewsettingsform" class="ctdropdownform" >
                 <h3>View Settings</h3>
                 <form>
-                <p><input type="checkbox">Highlight Variants</p>
-                <p><input type="checkbox">Show in multiple rows</p>
-                <p><input type="number"> columns per row</p>
-                <p>
-                    <button id="viewsettingsform-applybutton" class="btn btn-primary btn-sm r">
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox">Highlight Variants
+                        </label>
+                    </div>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox">Show in multiple rows
+                        </label>
+                    </div>
+                <div class="form-group">
+                    <input type="number" id="columnsperrow"> 
+                    <label for="columnsperrow">columns per row</label>
+                </div>
+                
+                    <button type="button" id="viewsettingsform-applybutton" class="btn btn-primary btn-sm">
                         Apply
                     </button>
-                    <button id="viewsettingsform-cancelbutton" class="btn btn-default btn-sm r">
+                    <button type="button" id="viewsettingsform-cancelbutton" class="btn btn-default btn-sm">
                         Cancel
                     </button>
-                </p>
-                </form>
+                                </form>
             </div>
         </div>
     </div>

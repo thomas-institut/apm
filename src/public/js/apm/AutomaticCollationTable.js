@@ -32,6 +32,9 @@ class AutomaticCollationTable {
     this.viewSettingsForm = $('#viewsettingsform')
     this.viewSettingsButton = $('#viewsettingsbutton')
     this.viewSettingsFormCancelButton = $('#viewsettingsform-cancelbutton')
+    this.editSettingsForm = $('#editsettingsform')
+    this.editSettingsButton = $('#editsettingsbutton')
+    this.editSettingsFormCancelButton = $('#editsettingsfrom-cancelbutton')
     
     let thisObject = this
     
@@ -46,11 +49,26 @@ class AutomaticCollationTable {
     this.viewSettingsFormCancelButton.on('click', function() {
       thisObject.viewSettingsForm.addClass('hidden')
     })
+    
+    this.editSettingsForm.addClass('hidden')
+    this.editSettingsButton.on('click', function () { 
+      if (thisObject.editSettingsForm.hasClass('hidden')) {
+        thisObject.editSettingsForm.removeClass('hidden')
+      } else {
+        thisObject.editSettingsForm.addClass('hidden')
+      }
+    })
+    this.editSettingsFormCancelButton.on('click', function() {
+      thisObject.editSettingsForm.addClass('hidden')
+    })
+    
+    
     this.collationTableDiv.html('')
     this.collationEngineDetails.html('')
     this.status.html('')
     
     this.redoButton.on('click', function() { 
+      console.log('redoButton clicked')
       thisObject.getCollationTable()
     })
     if (loadNow) {

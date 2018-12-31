@@ -35,6 +35,9 @@ class AutomaticCollationTableSettingsForm {
     this.overBoxClass = 'overBox'
     this.witnessDraggableClass = 'wdraggable'
     
+    this.notEnoughWitnessesWarningHtml = '<p class="text-danger">' + 
+            '<i class="fa fa-exclamation-triangle" aria-hidden="true"></i>' + 
+            ' Please select 2 or more witnesses to include in the collation table</p>'
     
     this.witnessList = []
     this.initialOptions = {}
@@ -54,6 +57,7 @@ class AutomaticCollationTableSettingsForm {
     this.ignorePunctuationCheckbox = $(this.containerSelector + ' .ignorepunct-cb')
     this.witnessesAvailableSelectBox = $(this.containerSelector + ' .witnessesavailable-box')
     this.witnessesToIncludeBox = $(this.containerSelector + ' .witnessestoinclude-box')
+    this.warningDiv = $(this.containerSelector + ' .warningdiv')
     
     this.cancelButton.on('click', this.genOnClickCancelButton())
     this.applyButton.on('click', this.genOnClickApplyButton())
@@ -89,6 +93,7 @@ class AutomaticCollationTableSettingsForm {
       console.log('ALL witness are to be included')
       for(const witness of this.witnessList) {
         witness.toInclude = true
+        options.witnesses.push({ type: witness.type, id: witness.id})
       }
     }
     
@@ -97,15 +102,23 @@ class AutomaticCollationTableSettingsForm {
     
     // 3. Set up witness boxes
     
+    // 3.a. Prepare html for boxes
     let witnessesAvailableHtml = ''
     let witnessesToIncludeHtml = ''
+    let witnessesToIncludeHtmlElements = []
     for(const witness of this.witnessList) {
       if (!witness.toInclude) {
         witnessesAvailableHtml += this.getWitnessDraggableHtml(witness)
       } else {
-        witnessesToIncludeHtml += this.getWitnessDraggableHtml(witness)
+        witnessesToIncludeHtmlElements[witness.id] = this.getWitnessDraggableHtml(witness)
       }
     }
+    // 3.b arrange the elements of the toInclude box in the order given in the options 
+    for(const witnessToInclude of options.witnesses) {
+      witnessesToIncludeHtml += witnessesToIncludeHtmlElements[witnessToInclude.id]
+    }
+    
+    // 3.c set html in boxes
     this.witnessesAvailableSelectBox.html(witnessesAvailableHtml)
     this.witnessesToIncludeBox.html(witnessesToIncludeHtml)
     
@@ -114,8 +127,23 @@ class AutomaticCollationTableSettingsForm {
       this.addWitnessBoxDnDHandlers(elem)
     }
     
+
     this.dealWithEmptyBoxes()
-   
+    this.dealWithNotEnoughWitnessesToInclude()
+  }
+  
+  dealWithNotEnoughWitnessesToInclude() {
+    // if there are less than 2 witnesses to include
+    // show a warning and disable apply button
+    
+    if (this.getToIncludeWitnessesCount() < 2) {
+      this.applyButton.prop('disabled', true)
+      this.warningDiv.html(this.notEnoughWitnessesWarningHtml)
+      return false
+    }
+    
+    this.applyButton.prop('disabled', false)
+    this.warningDiv.html('')
   }
   
   dealWithEmptyBoxes() {
@@ -223,8 +251,8 @@ class AutomaticCollationTableSettingsForm {
     this.updateWitnessListFromBoxes()
     // Notice that the list of included witnesses can, in principle, be empty, which only means
     // that the user has not chosen any witnesses to include. In the context of calling the
-    // collation API, it means that ALL witness are to be collated; it is up to the
-    // caller to handle this semantic difference.
+    // collation API, an empty list of included witnesses means, however, that ALL witness are 
+    // to be collated; it is up to the caller to handle this semantic difference.
     let wToIncludeBoxChildren = this.witnessesToIncludeBox.children()
     for(const elem of wToIncludeBoxChildren) {
       options.witnesses.push({
@@ -327,6 +355,7 @@ class AutomaticCollationTableSettingsForm {
         thisObject.addWitnessBoxDnDHandlers(dropElem)
         thisObject.updateWitnessListFromBoxes()
         thisObject.dealWithEmptyBoxes()
+        thisObject.dealWithNotEnoughWitnessesToInclude()
       }
       this.classList.remove(thisObject.overClass)
       return false;
@@ -352,6 +381,7 @@ class AutomaticCollationTableSettingsForm {
       this.classList.remove(thisObject.overBoxClass)
       thisObject.updateWitnessListFromBoxes()
       thisObject.dealWithEmptyBoxes()
+      thisObject.dealWithNotEnoughWitnessesToInclude()
     }
   }
   genOnDragOverBox() {
@@ -376,7 +406,6 @@ class AutomaticCollationTableSettingsForm {
   genOnDragEndBox() {
     let thisObject = this
     return function (e) {
-      console.log('Drag End Box')
       this.classList.remove(thisObject.overBoxClass)
     }
   }
@@ -426,6 +455,7 @@ class AutomaticCollationTableSettingsForm {
             Cancel
           </button>
         </form>
+      <div class="warningdiv"></div>
 `
     })
   }

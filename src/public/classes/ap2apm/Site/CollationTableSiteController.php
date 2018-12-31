@@ -90,6 +90,11 @@ class CollationTableSiteController extends SiteController
         
         // get total witness counts
         $validWitnesses = $this->getValidWitnessDocIdsForWorkChunkLang($db, $workId, $chunkNumber, $language);
+        $availableWitnesses = [];
+        foreach($validWitnesses as $witnessId) {
+            $docInfo = $db->getDocById($witnessId);
+            $availableWitnesses[] = [ 'type' => 'doc', 'id' => intVal($witnessId), 'title' => $docInfo['title']];
+        }
         
         $profiler->log($this->ci->logger);
         
@@ -107,6 +112,7 @@ class CollationTableSiteController extends SiteController
                 'work_info' => $workInfo,
                 'num_docs' => $partialCollation ? count($apiCallOptions['witnesses']) : count($validWitnesses),
                 'total_num_docs' => count($validWitnesses),
+                'availableWitnesses' => $availableWitnesses,
                 'warnings' => $warnings
             ]);
         

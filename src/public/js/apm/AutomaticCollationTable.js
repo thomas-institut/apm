@@ -18,8 +18,11 @@
 
 class AutomaticCollationTable {
   
-  constructor(urlGen, initialApiOptions, loadNow) {
+  constructor(urlGen, availableWitnesses, initialApiOptions, loadNow) {
     console.log('ACT mini app starting')
+    console.log('Available Witnesses:')
+    console.log(availableWitnesses)
+    this.availableWitnesses = availableWitnesses
     this.collationTableDiv = $('#collationtablediv')
     this.status = $('#status')
     this.collationEngineDetails = $('#collationEngineDetails')
@@ -32,6 +35,8 @@ class AutomaticCollationTable {
     this.viewSettingsForm = $('#viewsettingsform')
     this.viewSettingsButton = $('#viewsettingsbutton')
     this.viewSettingsFormCancelButton = $('#viewsettingsform-cancelbutton')
+    
+    this.editSettingsFormSelector = '#editsettingsform'
     this.editSettingsForm = $('#editsettingsform')
     this.editSettingsButton = $('#editsettingsbutton')
     this.editSettingsFormCancelButton = $('#editsettingsfrom-cancelbutton')
@@ -50,13 +55,28 @@ class AutomaticCollationTable {
       thisObject.viewSettingsForm.addClass('hidden')
     })
     
+    
+    this.editSettingsFormManager =  new AutomaticCollationTableSettingsForm(this.editSettingsFormSelector)
+    
     this.editSettingsForm.addClass('hidden')
     this.editSettingsButton.on('click', function () { 
       if (thisObject.editSettingsForm.hasClass('hidden')) {
-        thisObject.editSettingsForm.removeClass('hidden')
+        thisObject.editSettingsFormManager.show(thisObject.availableWitnesses, thisObject.apiCallOptions)
       } else {
-        thisObject.editSettingsForm.addClass('hidden')
+        thisObject.editSettingsFormManager.hide()
       }
+    })
+    
+    this.editSettingsFormManager.on('cancel', function(){
+        thisObject.editSettingsFormManager.hide()
+    })
+                
+    this.editSettingsFormManager.on('apply', function(e){
+        thisObject.apiCallOptions = e.detail
+        console.log('Got options from form:')
+        console.log(thisObject.apiCallOptions)
+        thisObject.editSettingsFormManager.hide()
+        thisObject.getCollationTable()
     })
     this.editSettingsFormCancelButton.on('click', function() {
       thisObject.editSettingsForm.addClass('hidden')

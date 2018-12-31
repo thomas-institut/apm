@@ -54,6 +54,8 @@ class AutomaticCollationTableSettingsForm {
     
     this.cancelButton = $(this.containerSelector + ' .cancel-btn')
     this.applyButton = $(this.containerSelector + ' .apply-btn')
+    this.allButton = $(this.containerSelector + ' .all-btn')
+    this.noneButton = $(this.containerSelector + ' .none-btn')
     this.ignorePunctuationCheckbox = $(this.containerSelector + ' .ignorepunct-cb')
     this.witnessesAvailableSelectBox = $(this.containerSelector + ' .witnessesavailable-box')
     this.witnessesToIncludeBox = $(this.containerSelector + ' .witnessestoinclude-box')
@@ -61,6 +63,8 @@ class AutomaticCollationTableSettingsForm {
     
     this.cancelButton.on('click', this.genOnClickCancelButton())
     this.applyButton.on('click', this.genOnClickApplyButton())
+    this.allButton.on('click', this.genOnClickAllButton())
+    this.noneButton.on('click', this.genOnClickNoneButton())
   }
   
   show(availableDocs, options) {
@@ -74,7 +78,7 @@ class AutomaticCollationTableSettingsForm {
     this.container.addClass('hidden')
   }
   
-  setOptions(availableWitnesses, options) {
+  setOptions(availableWitnesses, options, noneIncludedMeansAll = true) {
     this.initialOptions = options
     // 1. Build the witnesses master list
     this.witnessList = availableWitnesses
@@ -88,7 +92,7 @@ class AutomaticCollationTableSettingsForm {
         }
       }
     }
-    if(options.witnesses.length === 0) {
+    if(noneIncludedMeansAll && options.witnesses.length === 0) {
       // This means ALL witnesses are to be included
       console.log('ALL witness are to be included')
       for(const witness of this.witnessList) {
@@ -126,7 +130,6 @@ class AutomaticCollationTableSettingsForm {
     for(const elem of witnessBoxes) {
       this.addWitnessBoxDnDHandlers(elem)
     }
-    
 
     this.dealWithEmptyBoxes()
     this.dealWithNotEnoughWitnessesToInclude()
@@ -295,6 +298,28 @@ class AutomaticCollationTableSettingsForm {
     }
   }
   
+  genOnClickAllButton() {
+    let thisObject = this
+    return function() {
+      console.log('ALL button clicked')
+      let newOptions = thisObject.getOptions()
+      newOptions.witnesses = []
+      thisObject.setOptions(thisObject.witnessList, newOptions)
+      
+    }
+  }
+  
+  genOnClickNoneButton() {
+    let thisObject = this
+    return function() {
+      console.log('NONE button clicked')
+      let newOptions = thisObject.getOptions()
+      newOptions.witnesses = []
+      thisObject.setOptions(thisObject.witnessList, newOptions, false)
+      
+    }
+  }
+  
   
   //----------------------------------------------------------------
   // Drag and Drop Functions
@@ -399,6 +424,7 @@ class AutomaticCollationTableSettingsForm {
   genOnDragLeaveBox() {
     let thisObject = this
     return function (e) {
+      console.log('DragLeave Box')
       this.classList.remove(thisObject.overBoxClass)  // this / e.target is previous target element.
     }
   }
@@ -406,6 +432,7 @@ class AutomaticCollationTableSettingsForm {
   genOnDragEndBox() {
     let thisObject = this
     return function (e) {
+      console.log('DragEnd Box')
       this.classList.remove(thisObject.overBoxClass)
     }
   }
@@ -434,7 +461,10 @@ class AutomaticCollationTableSettingsForm {
           <table class="table">
           <tr>
            <th>Witnesses Available</th>
-           <th>Witnessess To Include</th>
+           <th>Witnessess To Include 
+              &nbsp;&nbsp;&nbsp;
+              <button type="button" class="btn btn-default btn-xs all-btn">All</button>
+              <button type="button" class="btn btn-default btn-xs none-btn">None</button>
            </tr>
            <tr>
           <td>

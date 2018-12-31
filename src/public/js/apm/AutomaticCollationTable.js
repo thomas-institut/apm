@@ -30,37 +30,44 @@ class AutomaticCollationTable {
     this.apiCollationUrl = urlGen.apiAutomaticCollation()
     this.updating = false
     this.apiCallOptions = initialApiOptions
+    this.collationTableData = null
     this.ctf = new CollationTableFormatter()
     this.popoverClass = 'ctpopover'
-    this.viewSettingsForm = $('#viewsettingsform')
+    
+    this.viewSettingsFormSelector = '#viewsettingsform'
     this.viewSettingsButton = $('#viewsettingsbutton')
-    this.viewSettingsFormCancelButton = $('#viewsettingsform-cancelbutton')
+    this.viewSettings = this.ctf.getOptions()
     
     this.editSettingsFormSelector = '#editsettingsform'
-    this.editSettingsForm = $('#editsettingsform')
     this.editSettingsButton = $('#editsettingsbutton')
-    this.editSettingsFormCancelButton = $('#editsettingsfrom-cancelbutton')
     
     let thisObject = this
     
-    this.viewSettingsForm.addClass('hidden')
+    this.viewSettingsFormManager = new AutomaticCollationTableViewSettingsForm(this.viewSettingsFormSelector)
     this.viewSettingsButton.on('click', function () { 
-      if (thisObject.viewSettingsForm.hasClass('hidden')) {
-        thisObject.viewSettingsForm.removeClass('hidden')
+      if (thisObject.viewSettingsFormManager.isHidden()) {
+        thisObject.viewSettingsFormManager.show(thisObject.viewSettings)
       } else {
-        thisObject.viewSettingsForm.addClass('hidden')
+        thisObject.viewSettingsFormManager.hide()
       }
     })
-    this.viewSettingsFormCancelButton.on('click', function() {
-      thisObject.viewSettingsForm.addClass('hidden')
+    this.viewSettingsFormManager.on('cancel', function() {
+      thisObject.viewSettingsFormManager.hide()
+    })
+    this.viewSettingsFormManager.on('apply', function(e) {
+      thisObject.viewSettings = e.detail
+      console.log('Got view settings from form')
+      console.log(thisObject.viewSettings)
+      thisObject.ctf.setOptions(thisObject.viewSettings)
+      thisObject.collationTableDiv.html(thisObject.ctf.format(thisObject.collationTableData, thisObject.popoverClass))
+      thisObject.viewSettingsFormManager.hide()
     })
     
     
     this.editSettingsFormManager =  new AutomaticCollationTableSettingsForm(this.editSettingsFormSelector)
     
-    this.editSettingsForm.addClass('hidden')
     this.editSettingsButton.on('click', function () { 
-      if (thisObject.editSettingsForm.hasClass('hidden')) {
+      if (thisObject.editSettingsFormManager.isHidden()) {
         thisObject.editSettingsFormManager.show(thisObject.availableWitnesses, thisObject.apiCallOptions)
       } else {
         thisObject.editSettingsFormManager.hide()
@@ -78,9 +85,7 @@ class AutomaticCollationTable {
         thisObject.editSettingsFormManager.hide()
         thisObject.getCollationTable()
     })
-    this.editSettingsFormCancelButton.on('click', function() {
-      thisObject.editSettingsForm.addClass('hidden')
-    })
+
     
     
     this.collationTableDiv.html('')
@@ -115,8 +120,10 @@ class AutomaticCollationTable {
     .done(function (data) { 
       console.log('Automatic collation successful. Data:')
       console.log(data)
+      thisObject.collationTableData = data
       thisObject.status.html('Collating... done, formatting table <i class="fa fa-spinner fa-spin fa-fw"></i>')
       thisObject.collationTableDiv.html(thisObject.ctf.format(data, thisObject.popoverClass))
+      
       thisObject.status.html('')
       thisObject.redoButton.prop('disabled', false)
       thisObject.updating = false
@@ -140,6 +147,12 @@ class AutomaticCollationTable {
     cedHtml += '<b>Date/Time:</b> '  + ced.runDateTime + '<br/>'
     cedHtml += '<b>Runtime:</b> ' + Math.round(ced.duration*1000.0) + ' ms'
     return cedHtml
+  }
+  
+  setViewSettingsInForm(settings) {
+    if (settings.highlightVariants) {
+      
+    }
   }
   
 }

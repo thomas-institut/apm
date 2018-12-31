@@ -9,6 +9,7 @@
     <script type="text/javascript" src="{{baseurl}}/node_modules//twig/twig.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/apm/ApmUrlGenerator.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/apm/AutoCollTableSettingsForm.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/apm/AutoCollTableViewSettingsForm.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/apm/AutomaticCollationTable.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/apm/CollationTableFormatter.js"></script>
     <style>
@@ -78,32 +79,7 @@ $(document).ready(function()
                     <i class="fa fa-download" aria-hidden="true"></i>
                 </button>
             </div>
-            <div id="viewsettingsform" class="ctdropdownform" >
-                <h3>View Settings</h3>
-                <form>
-                    <div class="checkbox">
-                        <label>
-                            <input type="checkbox">Highlight Variants
-                        </label>
-                    </div>
-                    <div class="checkbox">
-                        <label>
-                            <input type="checkbox">Show in multiple rows
-                        </label>
-                    </div>
-                <div class="form-group">
-                    <input type="number" id="columnsperrow"> 
-                    <label for="columnsperrow">columns per row</label>
-                </div>
-                
-                    <button type="button" id="viewsettingsform-applybutton" class="btn btn-primary btn-sm">
-                        Apply
-                    </button>
-                    <button type="button" id="viewsettingsform-cancelbutton" class="btn btn-default btn-sm">
-                        Cancel
-                    </button>
-                                </form>
-            </div>
+            <div id="viewsettingsform" class="ctdropdownform" ></div>
         </div>
     </div>
     

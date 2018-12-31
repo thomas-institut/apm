@@ -27,33 +27,73 @@
 class CollationTableFormatter {
   
   
-  constructor (defaultTdClasses = []){
+  constructor (options = {}){
     this.tokenNotPresent = '&mdash;'
     this.collationTableClass = 'collationtable'
     this.witnessTdClass = 'witness'
     this.newLineHtml =  '<span class="newlinesymbol">&ldsh;</span>';
+    this.variantClassPrefix = 'variant'
     this.maxColumnsPerTable = 15
+    this.setOptions(options)
   }
   
-  setMaxColumnsPerTable(mcpt) {
-    this.maxColumnsPerTable = mcpt
+  getDefaultOptions() {
+    let options = {}
+    
+    options.multipleRows = true
+    options.maxColumnsPerTable = 15
+    options.highlightVariants = true
+    
+    return options
   }
   
-  format(apiResponse, popoverClass) {
+  setOptions(options={}) {
+    this.options = this.getCleanOptionsObject(this.getDefaultOptions(), options)
+  }
+  
+  getOptions() {
+    return this.options
+  }
+  
+  getCleanOptionsObject(defaultOptions, options) {
+
+    let cleanOptions = defaultOptions
+    
+    if (typeof(options.multipleRows) === 'boolean') {
+      cleanOptions.multipleRows = options.multipleRows
+    }
+    
+    if(typeof(options.maxColumnsPerTable) === 'number' && options.maxColumnsPerTable > 0) {
+      cleanOptions.maxColumnsPerTable = options.maxColumnsPerTable
+    }
+    
+    if (typeof(options.highlightVariants) === 'boolean') {
+      cleanOptions.highlightVariants = options.highlightVariants
+    }
+    return cleanOptions
+  }
+  
+  format(apiResponse, popoverClass, oneTimeOptions = {}) {
     
     let sigla = apiResponse.sigla
     let collationTable = apiResponse.collationTable
     let numWitnesses = sigla.length
+    let options = this.getCleanOptionsObject(this.options, oneTimeOptions)
 
     let numColumns = collationTable[sigla[0]].length
-    let numTables = Math.ceil(numColumns / this.maxColumnsPerTable)
+    let numTables = 1
+    let maxColumnsPerTable = numColumns
+    if (options.multipleRows) {
+      numTables = Math.ceil(numColumns / options.maxColumnsPerTable)
+      maxColumnsPerTable = options.maxColumnsPerTable
+    }
     
     let output = ''
     let columnsRemaining = numColumns
     for (let t=0; t < numTables; t++) {
       output += '<table class="' + this.collationTableClass + '">'
-      let numColsInThisTable = Math.min(this.maxColumnsPerTable, columnsRemaining)
-      let firstColumn = t*this.maxColumnsPerTable
+      let numColsInThisTable = Math.min(maxColumnsPerTable, columnsRemaining)
+      let firstColumn = t*maxColumnsPerTable
       let lastColumn = firstColumn + numColsInThisTable
       for (let i = 0; i < numWitnesses; i++) {
         output += '<tr>'
@@ -106,6 +146,9 @@ class CollationTableFormatter {
      html += ' , line ' + token.lineNumber
    }
    return html
+ }
+ 
+ filterOutVariantClasses(collationTable) {
    
  }
  

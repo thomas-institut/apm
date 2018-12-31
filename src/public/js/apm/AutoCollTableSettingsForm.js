@@ -78,6 +78,10 @@ class AutomaticCollationTableSettingsForm {
     this.container.addClass('hidden')
   }
   
+  isHidden() {
+    return this.container.hasClass('hidden')
+  }
+  
   setOptions(availableWitnesses, options, noneIncludedMeansAll = true) {
     this.initialOptions = options
     // 1. Build the witnesses master list

@@ -122,8 +122,9 @@ class CollationTableFormatter {
    
    token.classes.push(popoverClass)
    let popOverHtml = this.getPopoverHtmlFromToken(siglum, token)
+   let filteredTokenClasses = this.getTokenClasses(token.classes, this.options.highlightVariants)
    
-   let html = '<td class="' + token.classes.join(' ') + '"' 
+   let html = '<td class="' + filteredTokenClasses.join(' ') + '"' 
    html += 'data-content=\'' + popOverHtml + '\''
    html += '>'
    html += token.text
@@ -133,6 +134,21 @@ class CollationTableFormatter {
    html += '</td>'
    
    return html
+ }
+ 
+ getTokenClasses(classes, includeVariants = true) {
+    if (includeVariants) {
+      return classes
+    }
+    let filteredClasses = []
+    let re = RegExp('^' + this.variantClassPrefix + '.*') 
+    for(const tokenClass of classes) {
+      if (re.test(tokenClass)) {
+        continue
+      }
+      filteredClasses.push(tokenClass)
+    }
+    return filteredClasses
  }
  
  getPopoverHtmlFromToken(siglum, token) {
@@ -148,8 +164,6 @@ class CollationTableFormatter {
    return html
  }
  
- filterOutVariantClasses(collationTable) {
-   
- }
+
  
 }

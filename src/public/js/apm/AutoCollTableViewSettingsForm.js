@@ -73,7 +73,7 @@ class AutomaticCollationTableViewSettingsForm {
   
   getOptions() {
     let options = {}
-    options.hightlightVariants = this.highlightVariantsCheckBox.is(':checked')
+    options.highlightVariants = this.highlightVariantsCheckBox.is(':checked')
     options.multipleRows =  this.multipleRowsCheckBox.is(':checked')
     options.maxColumnsPerTable = parseInt(this.columnsPerRowInput.val())
     return options

@@ -56,8 +56,8 @@ class AutomaticCollationTable {
     })
     this.viewSettingsFormManager.on('apply', function(e) {
       thisObject.viewSettings = e.detail
-      console.log('Got view settings from form')
-      console.log(thisObject.viewSettings)
+//      console.log('Got view settings from form')
+//      console.log(thisObject.viewSettings)
       thisObject.ctf.setOptions(thisObject.viewSettings)
       thisObject.collationTableDiv.html(thisObject.ctf.format(thisObject.collationTableData, thisObject.popoverClass))
       thisObject.viewSettingsFormManager.hide()

@@ -140,7 +140,8 @@ class Authenticator {
         $msg = '';
         if ($request->getMethod() === 'POST') {
             $data = $request->getParsedBody();
-            $this->debug('Got POST data', $data);
+            // DON'T DO THIS:    $this->debug('Got POST data', $data);
+            // ... it will show the user password in the log!
             if (isset($data['user']) && isset($data['pwd'])){
                 $this->debug('Got data for login');
                 $user = filter_var($data['user'], FILTER_SANITIZE_STRING);

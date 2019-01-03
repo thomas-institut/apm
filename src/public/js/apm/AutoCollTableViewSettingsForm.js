@@ -44,6 +44,7 @@ class AutomaticCollationTableViewSettingsForm {
     this.highlightVariantsCheckBox = $(this.containerSelector + ' .highlightvariants-cb')
     this.multipleRowsCheckBox = $(this.containerSelector + ' .multiplerows-cb')
     this.columnsPerRowInput =  $(this.containerSelector + ' .columnsperrow') 
+    this.showNormalizationsCheckBox = $(this.containerSelector + ' .shownormalizations-cb') 
     
     
     this.cancelButton.on('click', this.genOnClickCancelButton())
@@ -66,6 +67,7 @@ class AutomaticCollationTableViewSettingsForm {
   
   setOptions(options) {
     this.initialOptions = options
+    this.showNormalizationsCheckBox.prop('checked', options.showNormalizations)
     this.highlightVariantsCheckBox.prop('checked', options.highlightVariants)
     this.multipleRowsCheckBox.prop('checked', options.multipleRows)
     this.columnsPerRowInput.val(options.maxColumnsPerTable)
@@ -73,6 +75,7 @@ class AutomaticCollationTableViewSettingsForm {
   
   getOptions() {
     let options = {}
+    options.showNormalizations = this.showNormalizationsCheckBox.is(':checked')
     options.highlightVariants = this.highlightVariantsCheckBox.is(':checked')
     options.multipleRows =  this.multipleRowsCheckBox.is(':checked')
     options.maxColumnsPerTable = parseInt(this.columnsPerRowInput.val())
@@ -120,6 +123,11 @@ class AutomaticCollationTableViewSettingsForm {
       data: `
       <h3>View Settings</h3>
         <form>
+          <div class="checkbox">
+            <label>
+              <input type="checkbox" class="shownormalizations-cb">Show Normalizations
+            </label>
+          </div>
           <div class="checkbox">
             <label>
               <input type="checkbox" class="highlightvariants-cb">Highlight Variants

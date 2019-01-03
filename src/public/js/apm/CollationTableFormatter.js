@@ -32,6 +32,7 @@ class CollationTableFormatter {
     this.collationTableClass = 'collationtable'
     this.witnessTdClass = 'witness'
     this.newLineHtml =  '<span class="newlinesymbol">&ldsh;</span>';
+    this.normalizationPostfix = '<sub class="text-muted">&nbsp;<b>N</b></sub>'
     this.variantClassPrefix = 'variant'
     this.maxColumnsPerTable = 15
     this.setOptions(options)
@@ -43,6 +44,7 @@ class CollationTableFormatter {
     options.multipleRows = true
     options.maxColumnsPerTable = 15
     options.highlightVariants = true
+    options.showNormalizations = false
     
     return options
   }
@@ -70,6 +72,10 @@ class CollationTableFormatter {
     if (typeof(options.highlightVariants) === 'boolean') {
       cleanOptions.highlightVariants = options.highlightVariants
     }
+    
+    if (typeof(options.showNormalizations) === 'boolean') {
+      cleanOptions.showNormalizations = options.showNormalizations
+    }
     return cleanOptions
   }
   
@@ -82,18 +88,22 @@ class CollationTableFormatter {
     for(const siglum of sigla) {
       output += siglum + sep
       for (const tkn of collationTable[siglum]) {
-        output += this.getCsvRepresentationForToken(tkn) + sep
+        output += this.getCsvRepresentationForToken(tkn, this.options.showNormalizations) + sep
       }
       output += "\n"
     }
     return output
   }
   
-  getCsvRepresentationForToken(tkn) {
+  getCsvRepresentationForToken(tkn, showNormalizations) {
     if (tkn.empty) {
       return ''
     }
-    return '"' + tkn.text + '"'
+    let text = tkn.text
+    if (showNormalizations) {
+      text = tkn.norm
+    }
+    return '"' + text + '"'
   }
   
   format(apiResponse, popoverClass, oneTimeOptions = {}) {
@@ -122,7 +132,7 @@ class CollationTableFormatter {
         output += '<tr>'
         output += '<td class="' + this.witnessTdClass + '">' + sigla[i] + '</td>'
         for (let tkn=firstColumn; tkn < lastColumn; tkn++ ){
-          output += this.getTdFromToken(sigla[i],collationTable[sigla[i]][tkn], popoverClass)
+          output += this.getTdFromToken(sigla[i],collationTable[sigla[i]][tkn], popoverClass, options.showNormalizations)
         }
         output += '</tr>'
       }
@@ -132,29 +142,62 @@ class CollationTableFormatter {
     return output
   }
   
- getTdFromToken(siglum, token, popoverClass) {
+  getTdFromToken(siglum, token, popoverClass, showNormalization = false) {
+    
+    if (token.empty) {
+      return '<td class="' + token.classes.join(' ') + '">'+ token.text + '</td>'
+    }  
+    if (typeof(token.html) !== 'undefined') {
+      if (token.html !== '') {
+        return '<td>' + token.html + '</td>'
+      }
+    }
+    let html = ''
+    let popoverHtml = ''
+    if (typeof(token.popoverHtml) === 'string' ) {
+      popoverHtml = token.popoverHtml
+    }
+    token.classes.push(popoverClass)
+    let textHtml = token.text 
+    if (showNormalization) {
+      textHtml = token.norm
+    }
+    if (token.itemFormats.length > 1) {
+      //multi-item token
+      if (!showNormalization) {
+        textHtml = ''
+      }
+      let popoverPrefix = ' + ' + token.text + '<br/>'
+      popoverPrefix += ' &equiv; ' + token.norm + '<br/><br/>'
+      
+      popoverHtml = popoverPrefix + popoverHtml
+      for(const itemFormat of token.itemFormats) {
+        let text = itemFormat[0]
+        let classes = itemFormat[1]
+        let popover = itemFormat[2]
+        if (!showNormalization) {
+          textHtml += '<span class=">'  + classes.join(' ') + '">' + text + '</span>'
+        }
+        popoverHtml += popover
+      }
+    }
+    
+    popoverHtml = this.addAddressesToPopoverHtml(token, popoverHtml)
+    let filteredTokenClasses = this.getTokenClasses(token.classes, this.options.highlightVariants)
    
-   if (token.empty) {
-     return '<td class="' + token.classes.join(' ') + '">'+ token.text + '</td>'
-   }
-   if (typeof(token.html) !== 'undefined') {
-     if (token.html !== '') {
-       return '<td>' + token.html + '</td>'
-     }
-   }
-   
-   token.classes.push(popoverClass)
-   let popOverHtml = this.getPopoverHtmlFromToken(siglum, token)
-   let filteredTokenClasses = this.getTokenClasses(token.classes, this.options.highlightVariants)
-   
-   let html = '<td class="' + filteredTokenClasses.join(' ') + '"' 
-   html += 'data-content=\'' + popOverHtml + '\''
-   html += '>'
-   html += token.text
-   if (token.lineBreak) {
-     html += this.newLineHtml
-   }
-   html += '</td>'
+    html += '<td class="' + filteredTokenClasses.join(' ') + '"' 
+    html += 'data-content=\'' + popoverHtml + '\''
+    html += '>'
+    html += textHtml
+    if (showNormalization && textHtml !== token.text) {
+      html += this.normalizationPostfix
+    }
+    if (token.lineBreak) {
+      html += this.newLineHtml
+    }
+    
+    html += '</td>'
+    
    
    return html
  }
@@ -174,18 +217,24 @@ class CollationTableFormatter {
     return filteredClasses
  }
  
- getPopoverHtmlFromToken(siglum, token) {
+  addAddressesToPopoverHtml(token, popoverHtml) {
    
-   let html = ''
-   if (typeof(token.popoverHtml) !== 'undefined') {
-     html += token.popoverHtml
-   }
-   html += '<br/>Token ' + (token.witnessTokenIndex+1) 
-   if (typeof(token.lineNumber) !== 'undefined') {
-     html += ' , line ' + token.lineNumber
-   }
-   return html
- }
+    let html = ''
+    if (typeof(popoverHtml) !== 'undefined') {
+      html += popoverHtml
+    }
+    if (typeof(token.addressHtml) !== 'undefined') {
+      if (html !== '') {
+        html += '<br/>'
+      }
+      html += token.addressHtml
+    }
+    html += '<br/>Token ' + (token.witnessTokenIndex+1) 
+    if (typeof(token.lineNumber) !== 'undefined') {
+      html += ' , line ' + token.lineNumber
+    }
+    return html
+  }
  
 
  

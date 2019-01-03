@@ -62,6 +62,7 @@ class AutomaticCollationTable {
 //      
       thisObject.ctf.setOptions(thisObject.viewSettings)
       thisObject.collationTableDiv.html(thisObject.ctf.format(thisObject.collationTableData, thisObject.popoverClass))
+      thisObject.setCsvDownloadFile(thisObject.collationTableData)
       thisObject.viewSettingsFormManager.hide()
     })
     

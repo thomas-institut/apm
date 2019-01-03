@@ -177,9 +177,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         
         $this->formatTextualFlow($item, $classes, $popoverHtml);
         $this->formatLocation($item, $classes, $popoverHtml);
-        
-        
-        
+
         $text = $item->getPlainText();
         if ($gotNoWb) {
             $text = $this->removeLeadingNewLines($text);

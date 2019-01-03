@@ -59,6 +59,7 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
                 $decoratedToken = [];
                 if ($tokenRef === CollationTable::TOKENREF_NULL) {
                     $decoratedToken['text'] = self::TEXT_EMPTYTOKEN;
+                    $decoratedToken['norm'] = self::TEXT_EMPTYTOKEN;
                     $decoratedToken['classes'] = [self::CLASS_EMPTYTOKEN];
                     $decoratedToken['empty'] = true;
                     $decoratedCollationTable[$siglum][] = $decoratedToken;
@@ -66,31 +67,34 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
                 }
                 $token = $witnessTokens[$tokenRef];
                 $decoratedToken['text'] = $token->getText();
+                $decoratedToken['norm'] = $token->getNormalization();
                 $decoratedToken['classes'] = [self::CLASS_NORMALTOKEN];
                 $decoratedToken['classes'][] = self::CLASS_VARIANT_PREFIX .  $variantTable[$siglum][$i];
-                //$decoratedToken['lineNumber'] = '.';
                 $decoratedToken['empty'] = false;
                 $decoratedToken['witnessTokenIndex'] = $tokenRef;
                 $addresses = $token->getSourceItemAddresses();
-                //$decoratedToken['itemAddresses'] = [];
+                $charRanges = $token->getSourceItemCharRanges();
                 $decoratedToken['itemFormats'] = [];
-                foreach($addresses as $address) {
+                foreach($addresses as $i => $address) {
                     if (is_a($address, $addressInItemStreamClass)) {
-                        //$decoratedToken['itemAddresses'][] = $address;
                         $sourceItem = $witnessItemStream->getItemById($address->getItemIndex());
                         if ($sourceItem !== false && is_a($sourceItem, $textualItemClass)) {
-                            $sourceItem->setPlainText($token->getText());
-                            $decoratedToken['itemFormats'][] = $formatter->getTextualItemFormat($sourceItem, false);
+                            list($text, $classes, $popover) = $formatter->getTextualItemFormat($sourceItem, false);
+                            // fix the text!
+                            $text = $this->getSubstringFromItemAndRange($sourceItem, $charRanges[$i]);
+                            $decoratedToken['itemFormats'][] = [$text, $classes, $popover];
                         }
                     }
                 }
-                if (count($addresses) === 1) {
-                    // the simplest case!
+                if (count($addresses) >= 1) {
+                    // report only the first address
                     $address = $addresses[0];
+                    
                     list($text, $classes, $popoverHtml) = $decoratedToken['itemFormats'][0];
                     // Add address to popover
                     array_push($classes, \AverroesProjectToApm\Formatter\WitnessPageFormatter::CLASS_WITHPOPOVER);
-                    $popoverHtml .= '[' . $address->getFoliation() . ':c' . $address->getColumn() . ']';
+                    
+                    $decoratedToken['addressHtml'] = '[' . $address->getFoliation() . ':c' . $address->getColumn() . ']';
                     $decoratedToken['classes'] = array_merge($decoratedToken['classes'], $classes);
                     $decoratedToken['popoverHtml'] = $popoverHtml;
                 }
@@ -121,6 +125,12 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
     
     
    
+    
+    protected function getSubstringFromItemAndRange($item, \APM\Core\Address\IntRange $range) : string {
+        $sourceString = $item->getPlainText();
+        $subStr = mb_substr($sourceString, $range->getStart(), $range->getLength());
+        return $subStr;
+    }
     
     protected function prettyPrintAddressInItemStream(\APM\Core\Address\Point $address) : string {
         

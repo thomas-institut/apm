@@ -27,6 +27,7 @@ class AutomaticCollationTable {
     this.status = $('#status')
     this.collationEngineDetails = $('#collationEngineDetails')
     this.redoButton = $('#redobutton')
+    this.exportCsvButton = $('#exportcsvbutton')
     this.apiCollationUrl = urlGen.apiAutomaticCollation()
     this.updating = false
     this.apiCallOptions = initialApiOptions
@@ -56,8 +57,9 @@ class AutomaticCollationTable {
     })
     this.viewSettingsFormManager.on('apply', function(e) {
       thisObject.viewSettings = e.detail
-//      console.log('Got view settings from form')
+      console.log('Got view settings from form')
 //      console.log(thisObject.viewSettings)
+//      
       thisObject.ctf.setOptions(thisObject.viewSettings)
       thisObject.collationTableDiv.html(thisObject.ctf.format(thisObject.collationTableData, thisObject.popoverClass))
       thisObject.viewSettingsFormManager.hide()
@@ -99,7 +101,6 @@ class AutomaticCollationTable {
     if (loadNow) {
         this.getCollationTable()
     }
-    
   }
   
   getCollationTable() {
@@ -123,6 +124,7 @@ class AutomaticCollationTable {
       thisObject.collationTableData = data
       thisObject.status.html('Collating... done, formatting table <i class="fa fa-spinner fa-spin fa-fw"></i>')
       thisObject.collationTableDiv.html(thisObject.ctf.format(data, thisObject.popoverClass))
+      thisObject.setCsvDownloadFile(data)
       
       thisObject.status.html('')
       thisObject.redoButton.prop('disabled', false)
@@ -153,6 +155,11 @@ class AutomaticCollationTable {
     if (settings.highlightVariants) {
       
     }
+  }
+  
+  setCsvDownloadFile(data) {
+    let href = 'data:text/csv,' + encodeURIComponent(this.ctf.generateCsv(data))
+    this.exportCsvButton.attr('href', href)
   }
   
 }

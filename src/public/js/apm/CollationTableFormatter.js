@@ -73,6 +73,29 @@ class CollationTableFormatter {
     return cleanOptions
   }
   
+  generateCsv(data, sep = ',') {
+    let sigla = data.sigla
+    let collationTable = data.collationTable
+    let numWitnesses = sigla.length
+    
+    let output = ''
+    for(const siglum of sigla) {
+      output += siglum + sep
+      for (const tkn of collationTable[siglum]) {
+        output += this.getCsvRepresentationForToken(tkn) + sep
+      }
+      output += "\n"
+    }
+    return output
+  }
+  
+  getCsvRepresentationForToken(tkn) {
+    if (tkn.empty) {
+      return ''
+    }
+    return '"' + tkn.text + '"'
+  }
+  
   format(apiResponse, popoverClass, oneTimeOptions = {}) {
     
     let sigla = apiResponse.sigla

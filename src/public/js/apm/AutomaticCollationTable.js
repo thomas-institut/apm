@@ -31,6 +31,7 @@ class AutomaticCollationTable {
     
     this.availableWitnesses = this.options.availableWitnesses
     this.collationTableDiv = $('#collationtablediv')
+    this.actTitleElement = $('#act-title')
     this.status = $('#status')
     this.collationEngineDetails = $('#collationEngineDetails')
     this.redoButton = $('#redobutton')
@@ -101,6 +102,7 @@ class AutomaticCollationTable {
     this.collationTableDiv.html('')
     this.collationEngineDetails.html('')
     this.status.html('')
+    this.actTitleElement.html(this.getTitleFromOptions())
     
     this.redoButton.on('click', function() { 
       console.log('redoButton clicked')
@@ -150,12 +152,32 @@ class AutomaticCollationTable {
     
   }
   
+  getTitleFromOptions() {
+    let title = ''
+    
+    let numWitnesses = this.apiCallOptions.witnesses.length
+    if (numWitnesses === 0) {
+      numWitnesses = this.availableWitnesses.length
+    }
+    
+    title += this.options.langDef[this.apiCallOptions.lang].name + ', '
+    title += numWitnesses  + ' of ' 
+    title += this.availableWitnesses.length + ' witnesses'
+    
+    if (this.apiCallOptions.ignorePunctuation) {
+      title += ', ignoring punctuation'
+    }
+        
+    return title
+  }
+  
   getCollationTable() {
     console.log('All set to call API at ' + this.apiCollationUrl)
     console.log('API call options:')
     console.log(this.apiCallOptions)
     this.updating = true
     this.redoButton.prop('disabled', true)
+    this.actTitleElement.html(this.getTitleFromOptions())
     this.status.html('Collating... <i class="fa fa-spinner fa-spin fa-fw"></i>')
     this.collationTableDiv.html('')
     this.collationEngineDetails.html('')

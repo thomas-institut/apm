@@ -31,7 +31,7 @@ $(document).ready(function()
     let urlGenerator = new ApmUrlGenerator('{{baseurl}}')
     
     let miniApp = new AutomaticCollationTable(
-            {urlGen: urlGenerator, 
+            {   urlGen: urlGenerator, 
                 availableWitnesses: availableWitnesses,
                 loadNow: true
             }, 
@@ -55,13 +55,7 @@ $(document).ready(function()
         <div class="col-md-9">
             <div id="collationtableinfo">
                 <p>{{work_info.author_name}}, <em>{{work_info.title}}</em>, chunk {{chunk}} ({{work}}-{{chunk}})</p>
-                <p>{{langName}}, 
-                    {%if isPartial %}
-                        {{num_docs}} out of {{total_num_docs}} witnesses
-                    {%else %}
-                        all {{num_docs}} valid witnesses
-                    {%endif%}
-
+                <p><span id="act-title"></span>
                     <button title="Click to edit the automatic collation settings" 
                         id="editsettingsbutton" class="btn btn-default btn-sm noborder ">
                         <i class="fa fa-pencil" aria-hidden="true"></i>
@@ -86,7 +80,7 @@ $(document).ready(function()
                      <small>CSV</small> <i class="fa fa-download" aria-hidden="true"></i>
                 </a>
             </div>
-            <div id="viewsettingsform" class="ctdropdownform" ></div>
+            <div id="viewsettingsform" class="ctdropdownform text-left" ></div>
         </div>
     </div>
     

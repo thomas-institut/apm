@@ -107,7 +107,7 @@ class AutomaticCollationTableSettingsForm {
     
     // 2. Set up options
     this.ignorePunctuationCheckbox.prop('checked', options.ignorePunctuation)
-    
+        
     // 3. Set up witness boxes
     
     // 3.a. Prepare html for boxes

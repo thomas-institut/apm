@@ -159,6 +159,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         
         if ($item->getFormat() !== TextualItem::FORMAT_NONE) {
             $classes[] = $item->getFormat();
+            $popoverHtml .= '<b>Format:</b> ' . $item->getFormat() . '<br/>' ;
         }
         
         if ($item->getClarityValue() < 1) {

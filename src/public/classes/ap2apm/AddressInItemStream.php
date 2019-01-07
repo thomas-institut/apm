@@ -132,6 +132,12 @@ class AddressInItemStream extends ItemAddressInDocument {
         return $this->fullAddress->getCoord(self::COORD_COL);
     }
     
+    public function getCeId() {
+        return $this->fullAddress->getCoord(self::COORD_ELEMENTID);
+    }
     
+    public function getItemSeq() {
+        return $this->fullAddress->getCoord(self::COORD_ITEMSEQ);
+    }
 
 }

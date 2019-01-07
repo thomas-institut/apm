@@ -18,21 +18,28 @@
 
 class AutomaticCollationTable {
   
-  constructor(urlGen, availableWitnesses, initialApiOptions, loadNow) {
+  constructor(options, initialApiOptions) {
     console.log('ACT mini app starting')
     console.log('Available Witnesses:')
-    console.log(availableWitnesses)
-    this.availableWitnesses = availableWitnesses
+    console.log(options.availableWitnesses)
+    
+    this.rtlClass = 'rtltext'
+    this.ltrClass = 'ltrtext'
+    
+    
+    this.options = this.getCleanOptionsObject(this.getDefaultOptions(), options)
+    
+    this.availableWitnesses = this.options.availableWitnesses
     this.collationTableDiv = $('#collationtablediv')
     this.status = $('#status')
     this.collationEngineDetails = $('#collationEngineDetails')
     this.redoButton = $('#redobutton')
     this.exportCsvButton = $('#exportcsvbutton')
-    this.apiCollationUrl = urlGen.apiAutomaticCollation()
+    this.apiCollationUrl = this.options.urlGen.apiAutomaticCollation()
     this.updating = false
     this.apiCallOptions = initialApiOptions
     this.collationTableData = null
-    this.ctf = new CollationTableFormatter()
+    this.ctf = new CollationTableFormatter({lang: initialApiOptions.lang})
     this.popoverClass = 'ctpopover'
     
     this.viewSettingsFormSelector = '#viewsettingsform'
@@ -99,9 +106,48 @@ class AutomaticCollationTable {
       console.log('redoButton clicked')
       thisObject.getCollationTable()
     })
-    if (loadNow) {
+    if (this.options.loadNow) {
         this.getCollationTable()
     }
+  }
+  
+  
+  getDefaultOptions() {
+    let options = {}
+    
+    options.langDef = { 
+       la: { code: 'la', name: 'Latin', rtl: false, fontsize: 3},
+       ar: { code: 'ar', name: 'Arabic', rtl: true, fontsize: 3},
+       he: { code: 'he', name: 'Hebrew', rtl: true, fontsize: 3}
+     } 
+    options.availableWitnesses = []
+    options.loadNow = false
+    options.urlGen = null
+    
+    return options
+  }
+  
+  getCleanOptionsObject(defaultOptions, options) {
+    let cleanOptions = defaultOptions
+    
+    if (typeof(options.langDef) === 'object') {
+      cleanOptions.langDef = options.langDef
+    }
+    
+    if (typeof(options.availableWitnesses) === 'object') {
+      cleanOptions.availableWitnesses = options.availableWitnesses
+    }
+    
+    if (typeof(options.loadNow) === 'boolean') {
+      cleanOptions.loadNow = options.loadNow
+    }
+    
+    if(typeof(options.urlGen) === 'object'){
+      cleanOptions.urlGen = options.urlGen
+    }
+    
+    return cleanOptions
+    
   }
   
   getCollationTable() {
@@ -124,6 +170,11 @@ class AutomaticCollationTable {
       console.log(data)
       thisObject.collationTableData = data
       thisObject.status.html('Collating... done, formatting table <i class="fa fa-spinner fa-spin fa-fw"></i>')
+      if (thisObject.options.langDef[thisObject.apiCallOptions.lang].rtl) {
+        thisObject.collationTableDiv.removeClass(thisObject.ltrClass)
+        thisObject.collationTableDiv.addClass(thisObject.rtlClass)
+      }
+      
       thisObject.collationTableDiv.html(thisObject.ctf.format(data, thisObject.popoverClass))
       thisObject.setCsvDownloadFile(data)
       

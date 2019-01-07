@@ -50,6 +50,8 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
         $variantTable = $c->getVariantTable();
         
         // 1. Put tokens in with basic classes
+        //    and collect ceIds from tokens (so that we can get editorial notes later)
+        $tokenCeIdsCollectorArray = [];
         foreach($sigla as $siglum) {
             $decoratedCollationTable[$siglum] = [];
             $tokenRefs = $c->getReferencesForRow($siglum);
@@ -77,12 +79,24 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
                 $decoratedToken['itemFormats'] = [];
                 foreach($addresses as $i => $address) {
                     if (is_a($address, $addressInItemStreamClass)) {
+                        if (!isset($tokenCeIdsCollectorArray[$address->getCeId()])) {
+                            $tokenCeIdsCollectorArray[$address->getCeId()] = true;
+                        }
                         $sourceItem = $witnessItemStream->getItemById($address->getItemIndex());
                         if ($sourceItem !== false && is_a($sourceItem, $textualItemClass)) {
                             list($text, $classes, $popover) = $formatter->getTextualItemFormat($sourceItem, false);
                             // fix the text!
                             $text = $this->getSubstringFromItemAndRange($sourceItem, $charRanges[$i]);
-                            $decoratedToken['itemFormats'][] = [$text, $classes, $popover];
+                            $decoratedToken['itemFormats'][] = [ 
+                                'text' => $text, 
+                                'classes' => $classes, 
+                                'popoverHtml' => $popover, 
+                                'postNotes' => [], 
+                                'preNotes' => [],
+                                'itemId' => $address->getItemIndex(),
+                                'itemSeq' => $address->getItemSeq(),
+                                'ceId' => $address->getCeId()
+                            ];
                         }
                     }
                 }
@@ -90,11 +104,12 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
                     // report only the first address
                     $address = $addresses[0];
                     
-                    list($text, $classes, $popoverHtml) = $decoratedToken['itemFormats'][0];
+                    $classes =  $decoratedToken['itemFormats'][0]['classes'];
+                    $popoverHtml =  $decoratedToken['itemFormats'][0]['popoverHtml'];
                     // Add address to popover
                     array_push($classes, \AverroesProjectToApm\Formatter\WitnessPageFormatter::CLASS_WITHPOPOVER);
                     
-                    $decoratedToken['addressHtml'] = '[' . $address->getFoliation() . ':c' . $address->getColumn() . ']';
+                    $decoratedToken['addressHtml'] = '<b>Page:</b> ' . $address->getFoliation() . '<br/><b>Column:</b> ' . $address->getColumn() . '<br/>';
                     $decoratedToken['classes'] = array_merge($decoratedToken['classes'], $classes);
                     $decoratedToken['popoverHtml'] = $popoverHtml;
                 }
@@ -103,21 +118,8 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
             }
         }
         
-        
-        
-        // 2. Put line breaks
-//        $bd = new \APM\Core\Algorithm\BoundaryDetector();
-//        $isEmptyFunc = function ($t) { return $t['empty'];};
-//        $getLineNumberFunc = function($t) { return $t['lineNumber']; };
-//        
-//        foreach($decoratedCollationTable as $siglum => &$decoratedTokens)  {
-//            $lineBreakIndexes = $bd->findBoundaries($decoratedTokens, $getLineNumberFunc, $isEmptyFunc);
-//            foreach($lineBreakIndexes as $lbIndex) {
-//                if ($decoratedTokens[$lbIndex]['empty'] === false) {
-//                    $decoratedTokens[$lbIndex]['lineBreak'] = true;
-//                }
-//            }
-//        }
+//        $tokenCeIds = array_keys($tokenCeIdsCollectorArray);
+
         
         
         return $decoratedCollationTable;

@@ -67,6 +67,7 @@ class AutomaticCollationTableViewSettingsForm {
   
   setOptions(options) {
     this.initialOptions = options
+    this.lang = options.lang // not shown in UI
     this.showNormalizationsCheckBox.prop('checked', options.showNormalizations)
     this.highlightVariantsCheckBox.prop('checked', options.highlightVariants)
     this.multipleRowsCheckBox.prop('checked', options.multipleRows)
@@ -75,6 +76,7 @@ class AutomaticCollationTableViewSettingsForm {
   
   getOptions() {
     let options = {}
+    options.lang = this.lang
     options.showNormalizations = this.showNormalizationsCheckBox.is(':checked')
     options.highlightVariants = this.highlightVariantsCheckBox.is(':checked')
     options.multipleRows =  this.multipleRowsCheckBox.is(':checked')

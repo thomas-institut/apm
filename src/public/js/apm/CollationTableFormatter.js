@@ -45,6 +45,7 @@ class CollationTableFormatter {
     options.maxColumnsPerTable = 15
     options.highlightVariants = true
     options.showNormalizations = false
+    options.lang = 'la'
     
     return options
   }
@@ -75,6 +76,10 @@ class CollationTableFormatter {
     
     if (typeof(options.showNormalizations) === 'boolean') {
       cleanOptions.showNormalizations = options.showNormalizations
+    }
+    
+    if (typeof(options.lang) === 'string') {
+      cleanOptions.lang = options.lang
     }
     return cleanOptions
   }
@@ -153,6 +158,8 @@ class CollationTableFormatter {
       }
     }
     let html = ''
+    
+    token.classes.push(this.options.lang + '-td')
     let popoverHtml = ''
     if (typeof(token.popoverHtml) === 'string' ) {
       popoverHtml = token.popoverHtml
@@ -172,9 +179,9 @@ class CollationTableFormatter {
       
       popoverHtml = popoverPrefix + popoverHtml
       for(const itemFormat of token.itemFormats) {
-        let text = itemFormat[0]
-        let classes = itemFormat[1]
-        let popover = itemFormat[2]
+        let text = itemFormat.text
+        let classes = itemFormat.classes
+        let popover = itemFormat.popoverHtml
         if (!showNormalization) {
           textHtml += '<span class=">'  + classes.join(' ') + '">' + text + '</span>'
         }
@@ -229,10 +236,10 @@ class CollationTableFormatter {
       }
       html += token.addressHtml
     }
-    html += '<br/>Token ' + (token.witnessTokenIndex+1) 
-    if (typeof(token.lineNumber) !== 'undefined') {
-      html += ' , line ' + token.lineNumber
-    }
+//    html += '<br/>Token ' + (token.witnessTokenIndex+1) 
+//    if (typeof(token.lineNumber) !== 'undefined') {
+//      html += ' , line ' + token.lineNumber
+//    }
     return html
   }
  

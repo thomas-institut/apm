@@ -211,7 +211,7 @@ class AutomaticCollationTable {
       let failMsg = 'Collating... fail <i class="fa fa-frown-o" aria-hidden="true"></i><br/> '
       failMsg += '<span class="small">HTTP code ' + resp.status + '</span>'
       if (typeof(resp.responseJSON) !== 'undefined') {
-        failMsg += '<br/><span class="small"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i>&nbsp;'  + resp.responseJSON.msg + '</span>'
+        failMsg += '<br/><span class="small"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i>&nbsp;Error '  + resp.responseJSON.error + '</span>'
       }
       thisObject.status.html(failMsg)
       thisObject.updating = false

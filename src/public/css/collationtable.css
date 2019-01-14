@@ -120,6 +120,10 @@ table.collationtable td.variant_1 {
     background-color: #fbedff;
 }
 
+table.collationtable td.variant_2 {
+    background-color: #ffcccc;
+}
+
 /*table.collationtable td.rubric {
     color: blue;
     font-weight: bold;

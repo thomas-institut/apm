@@ -34,6 +34,8 @@ use APM\Core\Item\ItemWithAddress;
  */
 class WitnessPageFormatter implements ItemStreamFormatter {
     
+    const DATEFORMAT_DEFAULT = 'Y-m-d H:i:s';
+    
     const ICON_NOTE = '<i class="fa fa-comment-o" aria-hidden="true"></i>';
     const ICON_PARAGRAPH = '¶';
     const ICON_GAP = '<i class="fa fa-ellipsis-h" aria-hidden="true"></i>';
@@ -69,6 +71,8 @@ class WitnessPageFormatter implements ItemStreamFormatter {
     private $markClass;
     private $textualClass;
     
+    private $dateFormat;
+    
     /**
      *
      * @var array 
@@ -80,7 +84,8 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         $this->markIcons['note'] = self::ICON_NOTE;
         $this->markIcons['paragraph'] = self::ICON_PARAGRAPH;
         $this->markIcons['gap'] = self::ICON_GAP;
-                 
+        
+        $this->dateFormat = self::DATEFORMAT_DEFAULT;
         
         $this->normalizationNames['sic'] = 'Sic';
         $this->normalizationNames['abbr'] = 'Abbreviation';
@@ -94,7 +99,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
     }
     
     
-     public function formatItemStream(ItemStream $stream, array $edNotes = []): string {
+     public function formatItemStream(ItemStream $stream): string {
         $html = '';
         $gotNoWb = false;
         $currentFoliation = '';
@@ -102,9 +107,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         foreach($stream->getItems() as $itemWithAddress) {
             $theItem = $itemWithAddress->getItem();
             $theAddress = $itemWithAddress->getAddress();
-            $itemId = $theAddress->getItemId();
-            $itemNotes = $this->getNotesForItemId($itemId, $edNotes);
-            
+           
             if ($theAddress->getFoliation() !== $currentFoliation) {
                 $currentFoliation = $theAddress->getFoliation();
                 $currentTbIndex = $theAddress->getTbIndex();
@@ -124,7 +127,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
                 continue;
             }
             if (is_a($theItem, $this->textualClass)) {
-                $html .= $this->formatTextualItem($theItem, $gotNoWb, $itemNotes);
+                $html .= $this->formatTextualItem($theItem, $gotNoWb);
                 $gotNoWb = false;
                 continue;
             }
@@ -135,7 +138,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
                     $html .= ' ';
                     continue;
                 }
-                $html .= $this->formatMark($theItem, $itemNotes);
+                $html .= $this->formatMark($theItem);
                 continue;
             }
             
@@ -146,7 +149,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
     }
 
     
-    public function getTextualItemFormat(TextualItem $item, bool $gotNoWb, $notes = []) : array {
+    public function getTextualItemFormat(TextualItem $item, bool $gotNoWb) : array {
         $classes = [];
         $classes[] = self::CLASS_TEXTUALITEM;
         $popoverHtml = '';
@@ -195,7 +198,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
                    '&nbsp;' . self::ICON_EQUIV . ' ' . $normalization . '<br/>';
         }
         
-        $popoverHtml .= $this->generateNotesHtml($notes);
+        $popoverHtml .= $this->generateNotesHtml($item->getNotes());
         
         if ($popoverHtml !== '') {
             $classes[] = self::CLASS_WITHPOPOVER;
@@ -204,9 +207,9 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         return [ $text, $classes, $popoverHtml];
     }
    
-    public function formatTextualItem(TextualItem $item, bool $gotNoWb, $notes = []): string {
+    public function formatTextualItem(TextualItem $item, bool $gotNoWb): string {
         
-        list($text, $classes, $popoverHtml) = $this->getTextualItemFormat($item, $gotNoWb, $notes);
+        list($text, $classes, $popoverHtml) = $this->getTextualItemFormat($item, $gotNoWb);
         
         $html = '<span class="' . 
                 implode(' ', $classes) . '"';
@@ -217,7 +220,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         return $html;
     }
     
-    protected function formatMark(Mark $item, $notes = []) : string {
+    protected function formatMark(Mark $item) : string {
         
         $classes = [];
         $classes[] = self::CLASS_MARKITEM;
@@ -232,7 +235,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         
         $this->formatTextualFlow($item, $classes, $popoverHtml);
         $this->formatLocation($item, $classes, $popoverHtml);
-        $popoverHtml .= $this->generateNotesHtml($notes);
+        $popoverHtml .= $this->generateNotesHtml($item->getNotes());
         
         if ($popoverHtml !== '') {
             $classes[] = self::CLASS_WITHPOPOVER;
@@ -275,7 +278,6 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         }
     }
     
-    
     protected function generateNotesHtml(array $edNotes) : string {
         if (count($edNotes) === 0)  {
             return '';
@@ -283,20 +285,12 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         $html = '<b>Notes</b><br/>';
         
         foreach ($edNotes as $note) {
-            $html .= '<p class="notetext">' . $note->text . '</p>';
-            $html .= '<p class="noteheader"> --' . $this->getUsername($note->authorId) . ' @ ' . $note->time . '</p>';
+            $html .= '<p class="notetext">' . $note->getText() . '</p>';
+            $html .= '<p class="noteheader"> --' . 
+                    $this->getUsername($note->getAuthor()) . ' @ ' . 
+                    date($this->dateFormat, $note->getTime()) . '</p>';
         }
         return $html;
-    }
-    
-    public function getNotesForItemId(int $itemId, array $notes) : array {
-        $notesForItem = [];
-        foreach ($notes as $note) {
-            if ($note->target === $itemId) {
-                $notesForItem[] = $note;
-            }
-        }
-        return $notesForItem;
     }
     
     private function getUsername($userId) {

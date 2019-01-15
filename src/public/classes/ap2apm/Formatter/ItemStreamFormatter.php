@@ -28,5 +28,5 @@ use AverroesProjectToApm\ItemStream;
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 interface ItemStreamFormatter {
-    public function formatItemStream(ItemStream $stream, array $edNotes = []) : string;
+    public function formatItemStream(ItemStream $stream) : string;
 }

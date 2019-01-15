@@ -41,13 +41,16 @@ abstract class Item {
     const FLOW_ADDITION = 1;
     const FLOW_GLOSS = 2;
     
+    /** @var array */
+    protected $notes;
+    
     abstract public function getPlainText();
     abstract public function getNormalizedText();
     
-    
     public function __construct() {
         $this->setTextualFlow(self::FLOW_MAIN_TEXT);
-        $this->setLocation(self::LOCATION_INLINE);;
+        $this->setLocation(self::LOCATION_INLINE);
+        $this->notes = [];
     }
     public function setLocation(string $loc) {
         $this->location = $loc;
@@ -65,5 +68,23 @@ abstract class Item {
         return $this->textualFlow;
     }
     
+    public function getNotes() : array  {
+        return $this->notes;
+    }
+    
+    public function setNotes(array $notes) {
+        $noteClass = get_class(new Note());
+        $this->notes = [];
+        foreach($notes as $note) {
+            if (!is_a($note, $noteClass)) {
+                throw new \InvalidArgumentException('Expected Note object in array, got ' . get_class($note));
+            }
+            $this->notes[] = clone $note;
+        }
+    }
+    
+    public function addNote(Note $note) {
+        $this->notes[] = $note;
+    }
     
 }

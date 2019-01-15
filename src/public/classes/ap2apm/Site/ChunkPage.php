@@ -150,7 +150,7 @@ class ChunkPage extends SiteController
         $locations = $db->getChunkLocationsForDoc($docData['id'], $workId, $chunkNumber);
         if (count($locations)===0) {
             // @codeCoverageIgnoreStart
-            // Can't reproduce this in testing, it's actually a very unlike error!
+            // Can't reproduce this in testing, it's actually a very unlikely error!
             // It will only happen if in the time between getting the list of documents
             // for the given chunk and actually getting the chunk location for one
             // of those documents, somebody changes the document and erases the chunk marks
@@ -181,7 +181,9 @@ class ChunkPage extends SiteController
         }
         
         $this->ci->logger->debug('Doc ' . $docData['id'] . ' segment count: ' . count($doc['segmentApItemStreams']));
-        $itemStream = new \AverroesProjectToApm\ItemStream($doc['id'], $doc['segmentApItemStreams'], $doc['lang']);
+        $edNoteArrayFromDb = $db->enm->rawGetEditorialNotesForListOfItems($itemIds);
+        $this->ci->logger->debug('Ednotes', $edNoteArrayFromDb);
+        $itemStream = new \AverroesProjectToApm\ItemStream($doc['id'], $doc['segmentApItemStreams'], $doc['lang'], $edNoteArrayFromDb);
         $itemStrWitness = new \AverroesProjectToApm\ItemStreamWitness($workId, $chunkNumber, $itemStream);
         $doc['tokens'] = $itemStrWitness->getTokens();
         $this->ci->logger->debug('Doc ' . $docData['id'] . ' token Count: ' . count($doc['tokens']));

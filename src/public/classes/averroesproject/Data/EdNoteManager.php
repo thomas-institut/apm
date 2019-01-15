@@ -82,6 +82,10 @@ class EdNoteManager {
     
     
     public function getEditorialNotesForListOfItems(array $itemIds) {
+       return self::editorialNoteArrayFromRows($this->rawGetEditorialNotesForListOfItems($itemIds));
+    }
+    
+    public function rawGetEditorialNotesForListOfItems(array $itemIds) {
         $ted = $this->tNames['ednotes'];
         $ti = $this->tNames['items'];
         
@@ -93,8 +97,9 @@ class EdNoteManager {
         
         $query = "SELECT `$ted`.* FROM `$ted` WHERE target IN ($idSet)";
         $rows = $this->dbh->getAllRows($query);
-        return self::editorialNoteArrayFromRows($rows);
+        return $rows;
     }
+    
     
     /**
      * Inserts a new note for item $target

@@ -27,6 +27,7 @@ use APM\Core\Item\ItemFactory;
 use AverroesProject\TxText\Item as AP_Item;
 use AverroesProject\ColumnElement\Element;
 use APM\Core\Item\TextualItem;
+use APM\Core\Item\Note as ItemNote;
 /**
  * Factory of Items out of AP item stream rows
  *
@@ -170,6 +171,24 @@ class ItemStreamItemFactory {
         
         return $item;
         
+    }
+    
+    public function createItemNoteFromRow($row) {
+        $note = new ItemNote();
+        
+        if (isset($row['author_id'])) {
+            $note->setAuthor((int) $row['author_id']);    
+        }
+        
+        if (isset($row['time'])) {
+            $note->setTime(strtotime((string) $row['time']));
+        }
+        
+        if (isset($row['text'])) {
+            $note->setText($row['text']);
+        }
+        
+        return $note;
     }
     
     private function getGoodString(array $someArray, string $someKey) : string {

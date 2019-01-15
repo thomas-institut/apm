@@ -244,12 +244,6 @@ class ApiCollation extends ApiController
             $collationTable->addWitness($docData['title'], $itemStrWitness);
         }
         
-        $edNotes = $db->enm->getEditorialNotesForListOfItems($itemIds);
-        $noteAuthorIds = [];
-        foreach($edNotes as $edNote) {
-            $noteAuthorIds[$edNote->authorId] = 1;
-        }
-        
         $collatexInput = $collationTable->getCollationEngineInput();
         
         $collationEngine = $this->ci->cr;

@@ -88,7 +88,7 @@ class FormatterPeopleDirectory extends PeopleDirectory {
         
         $commonPrefixes = ['de', 'la', 'von', 'van', 'della', 'al', 'ben', 'bin'];
         
-        $words = split(' ', $fullName);
+        $words = explode(' ', $fullName);
         
         // First, join common prefixes 
         $names = [];

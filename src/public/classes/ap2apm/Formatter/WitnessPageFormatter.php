@@ -285,7 +285,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         foreach ($edNotes as $note) {
             $html .= '<p class="notetext">' . $note->getText() . '</p>';
             $html .= '<p class="noteheader"> --' . 
-                    $this->userDirectory->getFullName($note->getAuthor()) . ' @ ' . 
+                    $this->userDirectory->getInitialAndLastName($note->getAuthor()) . ' @ ' . 
                     date($this->dateFormat, $note->getTime()) . '</p>';
         }
         return $html;

@@ -27,6 +27,8 @@ use APM\Core\Item\NoWbMark;
 use AverroesProjectToApm\ItemStream;
 use APM\Core\Item\ItemWithAddress;
 
+use AverroesProjectToApm\UserDirectory;
+
 /**
  * Description of WitnessPageFormatter
  *
@@ -72,14 +74,10 @@ class WitnessPageFormatter implements ItemStreamFormatter {
     private $textualClass;
     
     private $dateFormat;
+
+    private $userDirectory;
     
-    /**
-     *
-     * @var array 
-     */
-    private $userNames;
-    
-    public function __construct($userInfo = []) {
+    public function __construct(UserDirectory $userDirectory) {
         
         $this->markIcons['note'] = self::ICON_NOTE;
         $this->markIcons['paragraph'] = self::ICON_PARAGRAPH;
@@ -94,7 +92,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         $this->noWbClass = get_class(new NoWbMark());
         $this->textualClass = get_class(new TextualItem('stub'));
         
-        $this->userNames = $userInfo;
+        $this->userDirectory = $userDirectory;
      
     }
     
@@ -287,16 +285,11 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         foreach ($edNotes as $note) {
             $html .= '<p class="notetext">' . $note->getText() . '</p>';
             $html .= '<p class="noteheader"> --' . 
-                    $this->getUsername($note->getAuthor()) . ' @ ' . 
+                    $this->userDirectory->getFullName($note->getAuthor()) . ' @ ' . 
                     date($this->dateFormat, $note->getTime()) . '</p>';
         }
         return $html;
     }
     
-    private function getUsername($userId) {
-        if (!isset($this->userNames[$userId])) {
-            return self::UNKNOWN_USER;
-        }
-        return $this->userNames[$userId];
-    }
+
 }

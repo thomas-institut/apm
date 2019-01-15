@@ -28,6 +28,7 @@ use AverroesProject\TxText\Item as AP_Item;
 use AverroesProject\ColumnElement\Element;
 use APM\Core\Item\TextualItem;
 use APM\Core\Item\Note as ItemNote;
+use APM\Core\Person\Person;
 /**
  * Factory of Items out of AP item stream rows
  *
@@ -177,7 +178,8 @@ class ItemStreamItemFactory {
         $note = new ItemNote();
         
         if (isset($row['author_id'])) {
-            $note->setAuthor((int) $row['author_id']);    
+            // $note->setAuthor((int) $row['author_id']);    
+            $note->setAuthor(new Person(UserDirectory::IDTYPE_AP_PERSON_ID, (int) $row['author_id']));
         }
         
         if (isset($row['time'])) {

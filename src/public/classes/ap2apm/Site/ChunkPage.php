@@ -198,7 +198,8 @@ class ChunkPage extends SiteController
         foreach(array_keys($noteAuthorIds) as $authorId) {
             $noteAuthorNames[$authorId] = $db->um->getUserInfoByUserId($authorId)['fullname'];
         }
-        $formatter = new \AverroesProjectToApm\Formatter\WitnessPageFormatter($noteAuthorNames);
+        $userDirectory = new \AverroesProjectToApm\UserDirectory($db->um);
+        $formatter = new \AverroesProjectToApm\Formatter\WitnessPageFormatter($userDirectory);
         $html = $formatter->formatItemStream($itemStream, $edNotes);
         $doc['formatted'] = $html;
         

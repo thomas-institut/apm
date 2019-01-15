@@ -25,6 +25,8 @@ use APM\Core\Collation\CollationTable;
 
 use AverroesProjectToApm\AddressInItemStream;
 use APM\Core\Item\TextualItem;
+use AverroesProjectToApm\UserDirectory;
+use AverroesProjectToApm\Formatter\WitnessPageFormatter;
 
 /**
  * Description of QuickCollationTableDecorator
@@ -39,6 +41,12 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
     
     const TEXT_EMPTYTOKEN = '&mdash;';
     
+    private $ud;
+    
+    public function __construct(UserDirectory $userDirectory) {
+        $this->ud = $userDirectory;
+    }
+    
     public function decorate(CollationTable $c): array {
         $sigla = $c->getSigla();
         $decoratedCollationTable = [];
@@ -46,7 +54,7 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
         $addressInItemStreamClass  = get_class(new AddressInItemStream());
         $textualItemClass = get_class(new TextualItem('stub'));
         
-        $formatter = new \AverroesProjectToApm\Formatter\WitnessPageFormatter();
+        $formatter = new WitnessPageFormatter($this->ud);
         $variantTable = $c->getVariantTable();
         
         // 1. Put tokens in with basic classes

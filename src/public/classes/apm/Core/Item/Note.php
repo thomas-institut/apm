@@ -20,6 +20,8 @@
 
 namespace APM\Core\Item;
 
+use APM\Core\Person\Person;
+
 /**
  * Simple representation of an editorial note: a text by an author with a given 
  * time.
@@ -28,9 +30,11 @@ namespace APM\Core\Item;
  */
 class Note {
     
+    /** @var Person */
     protected $author;
     const AUTHOR_UNDEFINED = false;
     
+    /** @var string */
     protected $text;
     const TEXT_NOTEXT = '[empty]';
     

@@ -29,6 +29,7 @@ use APM\Core\Witness\StringWitness;
 use APM\Core\Collation\CollationTable;
 use APM\Decorators\QuickCollationTableDecorator;
 use AverroesProjectToApm\Decorators\TransitionalCollationTableDecorator;
+use AverroesProjectToApm\UserDirectory;
 
 /**
  * API Controller class
@@ -236,7 +237,8 @@ class ApiCollation extends ApiController
                 }
                 $segmentStreams[] = $apItemStream;
             }
-            $itemStream = new \AverroesProjectToApm\ItemStream($id, $segmentStreams, $language);
+            $edNoteArrayFromDb = $db->enm->rawGetEditorialNotesForListOfItems($itemIds);
+            $itemStream = new \AverroesProjectToApm\ItemStream($id, $segmentStreams, $language, $edNoteArrayFromDb);
             $itemStrWitness = new \AverroesProjectToApm\ItemStreamWitness($workId, $chunkNumber, $itemStream);
             $docData = $db->getDocById($id);
             $collationTable->addWitness($docData['title'], $itemStrWitness);
@@ -286,7 +288,9 @@ class ApiCollation extends ApiController
         }
         // @codeCoverageIgnoreEnd
         
-       $decoratedCollationTable = (new TransitionalCollationTableDecorator())->decorate($collationTable);
+        $userDirectory = new UserDirectory($db->um);
+        $decorator = new TransitionalCollationTableDecorator($userDirectory);
+        $decoratedCollationTable = $decorator->decorate($collationTable);
 
         $profiler->log($this->logger);
         

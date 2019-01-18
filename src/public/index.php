@@ -43,9 +43,9 @@ use AverroesProject\Collatex\CollatexRunner;
 
 // Application parameters
 $config['app_name'] = 'Averroes Project Manager';
-$config['version'] = '0.19.0 (2019-Jan-07)';
+$config['version'] = '0.19.1 (2019-Jan-18)';
 $config['copyright_notice'] = <<<EOD
-        2016-18, 
+        2016-19, 
         <a href="http://www.thomasinstitut.uni-koeln.de/">
             Thomas-Institut</a>, 
         <a href="http://www.uni-koeln.de/">

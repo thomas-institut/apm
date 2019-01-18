@@ -193,7 +193,7 @@ class CollationTableFormatter {
     let filteredTokenClasses = this.getTokenClasses(token.classes, this.options.highlightVariants)
    
     html += '<td class="' + filteredTokenClasses.join(' ') + '"' 
-    html += 'data-content=\'' + popoverHtml + '\''
+    html += 'data-content=\'' + this.escapeHtml(popoverHtml) + '\''
     html += '>'
     html += textHtml
     if (showNormalization && textHtml !== token.text) {
@@ -223,6 +223,22 @@ class CollationTableFormatter {
     }
     return filteredClasses
  }
+ 
+  escapeHtml (string) {
+    let entityMap = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+      '/': '&#x2F;',
+      '`': '&#x60;',
+      '=': '&#x3D;'
+    }
+    return String(string).replace(/[&<>"'`=\/]/g, function (s) {
+      return entityMap[s];
+    })
+  }
  
   addAddressesToPopoverHtml(token, popoverHtml) {
    

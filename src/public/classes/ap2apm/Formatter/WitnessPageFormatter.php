@@ -196,7 +196,6 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         }
         
         $popoverHtml .= $this->generateNotesHtml($notes);
-        $popoverHtml = htmlspecialchars($popoverHtml, ENT_QUOTES|ENT_HTML5);
         
         if ($popoverHtml !== '') {
             $classes[] = self::CLASS_WITHPOPOVER;

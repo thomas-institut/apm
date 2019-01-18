@@ -65,6 +65,8 @@ class WitnessPageFormatter implements ItemStreamFormatter {
     
     const CLASS_WITHPOPOVER = 'withformatpopover';
     
+    const CLASS_SECTIONHEADER = 'sh';
+    
     private $markIcons;
     
     private $normalizationNames;
@@ -155,12 +157,12 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         $classes[] = self::CLASS_HAND . $item->getHand();
         
         if ($item->getHand() !== 0) {
-            $popoverHtml = '<b>Hand: </b> '  . ($item->getHand() + 1) . '<br/>'; // @codeCoverageIgnore
+            $popoverHtml = $this->generateSingleLineInfoItem('Hand', $item->getHand() + 1); // @codeCoverageIgnore
         }
         
         if ($item->getFormat() !== TextualItem::FORMAT_NONE) {
             $classes[] = $item->getFormat();
-            $popoverHtml .= '<b>Format:</b> ' . $item->getFormat() . '<br/>' ;
+            $popoverHtml .= $this->generateSingleLineInfoItem('Format', $item->getFormat());
         }
         
         if ($item->getClarityValue() < 1) {
@@ -291,5 +293,13 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         return $html;
     }
     
+    
+    protected function generateSingleLineInfoItem(string $title, string $content) : string {
+        $html = '<p class="'. self::CLASS_SECTIONHEADER . '">';
+        $html .= '<b>' . $title . '</b>: ';
+        $html .= $content;
+        $html .= '</p>';
+        return $html;
+    }
 
 }

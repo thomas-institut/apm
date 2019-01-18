@@ -196,6 +196,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         }
         
         $popoverHtml .= $this->generateNotesHtml($notes);
+        $popoverHtml = htmlspecialchars($popoverHtml, ENT_QUOTES|ENT_HTML5);
         
         if ($popoverHtml !== '') {
             $classes[] = self::CLASS_WITHPOPOVER;
@@ -211,7 +212,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         $html = '<span class="' . 
                 implode(' ', $classes) . '"';
         if ($popoverHtml !== '') {
-            $html .=  " data-content='" . $popoverHtml . "'";
+            $html .=  " data-content='" . htmlspecialchars($popoverHtml, ENT_QUOTES|ENT_HTML5) . "'";
         }
         $html .= '>' .  $text .  '</span>';
         return $html;
@@ -241,7 +242,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         $html = '<span class="' . 
                 implode(' ', $classes) . '"';
         if ($popoverHtml !== '') {
-            $html .= " data-content='" . $popoverHtml . "'";
+            $html .= " data-content='" . htmlspecialchars($popoverHtml, ENT_QUOTES|ENT_HTML5) . "'";
         }
         $html .= '>' .  $text .  '</span>';
         return $html;

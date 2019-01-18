@@ -58,7 +58,11 @@ class ChunkPage extends SiteController
         }
         
         foreach ($witnessList as $witness) {
-            $doc = $this->buildWitnessDataFromDocData($witness, $workId, $chunkNumber, $db, ++$witnessNumber);
+            try {
+                $doc = $this->buildWitnessDataFromDocData($witness, $workId, $chunkNumber, $db, ++$witnessNumber);
+            } catch (\Exception $e) {
+                $this->ci->logger->error('Error in build Witness Data', $e->getMessage());
+            }
             if ($doc['goodWitness']) {
                 $goodWitnessesPerLang[$doc['lang']]['numWitnesses']++;
             } else {

@@ -33,7 +33,7 @@ use AverroesProject\Data\UserManager;
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class UserDirectory extends PeopleDirectory {
+class ApUserDirectory extends PeopleDirectory {
     
     const IDTYPE_AP_PERSON_ID = 'ap_person_id';
     

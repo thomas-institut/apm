@@ -23,13 +23,12 @@ use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
 use AverroesProject\Profiler\ApmProfiler;
-use AverroesProject\ItemStream\ItemStream;
 
 use APM\Core\Witness\StringWitness;
 use APM\Core\Collation\CollationTable;
 use APM\Decorators\QuickCollationTableDecorator;
 use AverroesProjectToApm\Decorators\TransitionalCollationTableDecorator;
-use AverroesProjectToApm\UserDirectory;
+use AverroesProjectToApm\ApUserDirectory;
 
 /**
  * API Controller class
@@ -282,7 +281,7 @@ class ApiCollation extends ApiController
         }
         // @codeCoverageIgnoreEnd
         
-        $userDirectory = new UserDirectory($db->um);
+        $userDirectory = new ApUserDirectory($db->um);
         $decorator = new TransitionalCollationTableDecorator($userDirectory);
         $decoratedCollationTable = $decorator->decorate($collationTable);
 

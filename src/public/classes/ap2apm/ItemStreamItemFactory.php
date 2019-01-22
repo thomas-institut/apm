@@ -26,7 +26,6 @@ use APM\Core\Item\Item;
 use APM\Core\Item\ItemFactory;
 use AverroesProject\TxText\Item as AP_Item;
 use AverroesProject\ColumnElement\Element;
-use APM\Core\Item\TextualItem;
 use APM\Core\Item\Note as ItemNote;
 use APM\Core\Person\Person;
 /**
@@ -179,7 +178,7 @@ class ItemStreamItemFactory {
         
         if (isset($row['author_id'])) {
             // $note->setAuthor((int) $row['author_id']);    
-            $note->setAuthor(new Person(UserDirectory::IDTYPE_AP_PERSON_ID, (int) $row['author_id']));
+            $note->setAuthor(new Person(ApUserDirectory::IDTYPE_AP_PERSON_ID, (int) $row['author_id']));
         }
         
         if (isset($row['time'])) {

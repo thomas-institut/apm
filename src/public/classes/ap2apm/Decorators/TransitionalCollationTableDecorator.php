@@ -25,7 +25,7 @@ use APM\Core\Collation\CollationTable;
 
 use AverroesProjectToApm\AddressInItemStream;
 use APM\Core\Item\TextualItem;
-use AverroesProjectToApm\UserDirectory;
+use AverroesProjectToApm\ApUserDirectory;
 use AverroesProjectToApm\Formatter\WitnessPageFormatter;
 
 /**
@@ -43,7 +43,7 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
     
     private $ud;
     
-    public function __construct(UserDirectory $userDirectory) {
+    public function __construct(ApUserDirectory $userDirectory) {
         $this->ud = $userDirectory;
     }
     

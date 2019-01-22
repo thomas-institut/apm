@@ -202,7 +202,7 @@ class ChunkPage extends SiteController
         foreach(array_keys($noteAuthorIds) as $authorId) {
             $noteAuthorNames[$authorId] = $db->um->getUserInfoByUserId($authorId)['fullname'];
         }
-        $userDirectory = new \AverroesProjectToApm\UserDirectory($db->um);
+        $userDirectory = new \AverroesProjectToApm\ApUserDirectory($db->um);
         $formatter = new \AverroesProjectToApm\Formatter\WitnessPageFormatter($userDirectory);
         $html = $formatter->formatItemStream($itemStream, $edNotes);
         $doc['formatted'] = $html;

@@ -46,7 +46,7 @@ class FormatterPeopleDirectory extends PeopleDirectory {
         
         $subStrings = [];
         foreach($analyzedFullName['firstNames'] as $firstName) {
-            $subStrings[] = $this->getInitial($firstName) . '.';
+            $subStrings[] = $this->getInitial($firstName);
         }
         
         foreach($analyzedFullName['lastNames'] as $lastName) {
@@ -67,14 +67,14 @@ class FormatterPeopleDirectory extends PeopleDirectory {
         
         $subStrings = [];
         foreach($analyzedFullName['firstNames'] as $firstName) {
-            $subStrings[] = $this->getInitial($firstName) . '.';
+            $subStrings[] = $this->getInitial($firstName);
         }
         
         foreach($analyzedFullName['lastNames'] as $lastName) {
-            $subStrings[] = $this->getInitial($lastName) . '.';
+            $subStrings[] = $this->getInitial($lastName);
         }
         
-        return implode(' ', $subStrings);
+        return implode('', $subStrings);
     }
     
     /**
@@ -121,9 +121,6 @@ class FormatterPeopleDirectory extends PeopleDirectory {
     }
     
     private function getInitial(string $name) : string {
-//        if ($name === '') {
-//            return '';
-//        }
         
         return mb_substr($name, 0, 1);
         

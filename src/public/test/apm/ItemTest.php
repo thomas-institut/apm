@@ -51,6 +51,25 @@ class ItemTest extends TestCase {
         $item1->setNormalization($testString2, 'abbr');
         $this->assertEquals($testString2, $item1->getNormalizedText());
         
+        $item1->setPlainText('some text');
+        
+        // Test adding notes
+        $exceptionRaised0 = false;
+        try {
+            $item1->setNotes([1, 2, 3]);
+        } catch (\InvalidArgumentException $ex) {
+            $exceptionRaised0 = true;
+        }
+        $this->assertTrue($exceptionRaised0);
+        $theNote = new Core\Item\Note('This is a note', 'Test User');
+        $item1->setNotes([$theNote, $theNote, $theNote]);
+        $this->assertCount(3, $item1->getNotes());
+        
+        $item1->addNote($theNote);
+        $this->assertCount(4, $item1->getNotes());
+        
+        
+        
         $exceptionRaised1 = false;
         try {
             $item1 = new TextualItem('');

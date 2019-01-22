@@ -77,7 +77,7 @@ abstract class Item {
         $this->notes = [];
         foreach($notes as $note) {
             if (!is_a($note, $noteClass)) {
-                throw new \InvalidArgumentException('Expected Note object in array, got ' . get_class($note));
+                throw new \InvalidArgumentException('Expected Note object in array');
             }
             $this->notes[] = clone $note;
         }

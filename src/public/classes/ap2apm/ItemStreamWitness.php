@@ -69,4 +69,17 @@ class ItemStreamWitness extends TranscriptionWitness {
         }
         $this->initialLineNumbers[$pageId][$textBox] = $lineNumber;
     }
+
+    public function getNonTokenItems(): array {
+        $tokens = $this->getTokens();
+        $items = $this->getItemArray();
+        
+        $nonTokenItems = [];
+        $lastItemSeq = -1;
+        foreach ($tokens as $i => $token) {
+            $nonTokenItems[$i] = ['pre' => [], 'post' => []];
+            
+        }
+    }
+
 }

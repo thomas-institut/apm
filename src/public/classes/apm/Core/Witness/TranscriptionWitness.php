@@ -30,6 +30,7 @@ use APM\Core\Token\StringToken;
 use APM\Core\Token\Token;
 use APM\Core\Address\PointRange;
 use APM\Core\Address\IntRange;
+
 /**
  * A Witness whose source is a DocumentTranscription.
  * 
@@ -49,6 +50,7 @@ abstract class TranscriptionWitness extends Witness {
     public function getInitialLineNumberForTextBox(int $pageId, int $textBox) : int {
         return 1;
     }
+    
     /**
      * Returns an array of TranscriptionToken
      * @return array
@@ -210,5 +212,45 @@ abstract class TranscriptionWitness extends Witness {
         }
         return $tokens;
     }
+    
+    /**
+     * Returns a list of all the items that do not contribute 
+     * tokens.
+     * 
+     * The returned array contains one element for each token. Each
+     * element is itself an array with two keys: 'pre'  and 'post'
+     * with the items that do not contribute tokens that appear immediately before and
+     * inmediately after the corresponding token. Normally, only the first element
+     * of the returned array, that is, the one corresponding to the first token,
+     * will potentially have a non-empty 'pre' element.
+     * 
+     *  For example, assume that a witness has the following sequence of items:
+     *   0: note mark 1
+     *   1: text = 'this is a' 
+     *   2: note mark 2
+     *   3: text = ' witness'
+     *   4: note mark 3
+     * 
+     * The tokens are:  
+     *   0: This
+     *   1: WHITESPACE
+     *   2: is
+     *   3: WHITESPACE
+     *   4: a
+     *   5: WHITESPACE
+     *   6: witness
+     * 
+     * The returned array will be :
+     * 
+     *   0 => [ 'pre' => [ notemark1 ], 'post' => [] ],
+     *   1 => [ 'pre' => [], 'post' => [] ],
+     *   2 => [ 'pre' => [], 'post' => [] ],
+     *   3 => [ 'pre' => [], 'post' => [] ],
+     *   4 => [ 'pre' => [], 'post' => [ notemark2] ],
+     *   5 => [ 'pre' => [], 'post' => [] ],
+     *   6 => [ 'pre' => [], 'post' => [ notemark3] ]
+     * 
+     */
+    abstract public function getNonTokenItems() : array;
 
 }

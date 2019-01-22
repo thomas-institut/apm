@@ -58,8 +58,6 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
         $variantTable = $c->getVariantTable();
         
         // 1. Put tokens in with basic classes
-        //    and collect ceIds from tokens (so that we can get editorial notes later)
-        $tokenCeIdsCollectorArray = [];
         foreach($sigla as $siglum) {
             $decoratedCollationTable[$siglum] = [];
             $tokenRefs = $c->getReferencesForRow($siglum);
@@ -87,13 +85,11 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
                 $decoratedToken['itemFormats'] = [];
                 foreach($addresses as $i => $address) {
                     if (is_a($address, $addressInItemStreamClass)) {
-                        if (!isset($tokenCeIdsCollectorArray[$address->getCeId()])) {
-                            $tokenCeIdsCollectorArray[$address->getCeId()] = true;
-                        }
                         $sourceItem = $witnessItemStream->getItemById($address->getItemIndex());
                         if ($sourceItem !== false && is_a($sourceItem, $textualItemClass)) {
-                            list($text, $classes, $popover) = $formatter->getTextualItemFormat($sourceItem, false);
-                            // fix the text!
+                            list($itemText, $classes, $popover) = $formatter->getTextualItemFormat($sourceItem, false);
+                            // $itemText contains the full item's text, we only need 
+                            // the text that belongs to the token
                             $text = $this->getSubstringFromItemAndRange($sourceItem, $charRanges[$i]);
                             $decoratedToken['itemFormats'][] = [ 
                                 'text' => $text, 
@@ -125,10 +121,6 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
                 $decoratedCollationTable[$siglum][] = $decoratedToken;
             }
         }
-        
-//        $tokenCeIds = array_keys($tokenCeIdsCollectorArray);
-
-        
         
         return $decoratedCollationTable;
     }

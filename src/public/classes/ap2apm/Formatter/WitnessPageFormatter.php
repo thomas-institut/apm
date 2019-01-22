@@ -25,9 +25,9 @@ use APM\Core\Item\Mark;
 use APM\Core\Item\Item;
 use APM\Core\Item\NoWbMark;
 use AverroesProjectToApm\ItemStream;
-use APM\Core\Item\ItemWithAddress;
 
-use AverroesProjectToApm\UserDirectory;
+
+use APM\Core\Person\PeopleDirectory;
 
 /**
  * Description of WitnessPageFormatter
@@ -79,7 +79,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
 
     private $userDirectory;
     
-    public function __construct(UserDirectory $userDirectory) {
+    public function __construct(PeopleDirectory $userDirectory) {
         
         $this->markIcons['note'] = self::ICON_NOTE;
         $this->markIcons['paragraph'] = self::ICON_PARAGRAPH;

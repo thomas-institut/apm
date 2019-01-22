@@ -29,6 +29,7 @@ use AverroesProjectToApm\AddressInItemStream;
 use AverroesProjectToApm\ItemStream;
 use AverroesProjectToApm\ItemInItemStream;
 use AverroesProjectToApm\Formatter\WitnessPageFormatter;
+use APM\Core\Person\FormatterPeopleDirectory;
 
 use AverroesProject\EditorialNote;
 
@@ -50,8 +51,9 @@ class WitnessPageFormatterTest extends TestCase {
         
         $itemStream = new ItemStream($docId, []);
         $itemStream->addItem(new ItemInItemStream($address, $mark));
+        $ud = new FormatterPeopleDirectory();
         
-        $formatter = new WitnessPageFormatter();
+        $formatter = new WitnessPageFormatter($ud);
         
         $html = $formatter->formatItemStream($itemStream);
         
@@ -84,7 +86,8 @@ class WitnessPageFormatterTest extends TestCase {
         $itemStream = new ItemStream(1, []);
         $itemStream->addItem(new ItemInItemStream($address, $noteMark));
         
-        $formatter = new WitnessPageFormatter([$authorId => 'Somebody']);
+        $ud = new FormatterPeopleDirectory();
+        $formatter = new WitnessPageFormatter($ud);
         
         $html = $formatter->formatItemStream($itemStream, [$edNote, $edNote2, $edNote3]);
         

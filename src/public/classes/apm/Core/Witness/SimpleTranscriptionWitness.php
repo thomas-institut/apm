@@ -47,4 +47,8 @@ class SimpleTranscriptionWitness extends TranscriptionWitness {
                 ItemAddressInDocument::NullAddress());
     }
 
+    public function getNonTokenItems(): array {
+        return [];
+    }
+
 }

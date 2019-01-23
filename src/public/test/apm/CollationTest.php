@@ -54,9 +54,7 @@ class CollationTest extends TestCase {
         return $out;
     }
     
-    public function testSimple() {
-        
-        $collation = new CollationTable();
+    public function doSimpleCollationTests($collation) {
         
         $this->assertEquals(0, $collation->getTokenCount());
                 
@@ -135,6 +133,17 @@ class CollationTest extends TestCase {
         $this->assertEquals('is] C om. ', $collation->getApparatusEntryForColumn(1, 'is'));
         $this->assertEquals('one] B:two C:three ', $collation->getApparatusEntryForColumn(3, 'one'));
         $this->assertEquals('one+] B:+with ', $collation->getApparatusEntryForColumn(4, '', 'one+'));
+    }
+    
+    public function testSimple() {
+        
+        $collation = new CollationTable();
+        
+        $this->doSimpleCollationTests($collation);
+        
+        $collation2 = new CollationTable(true);  // ignoring punctuation
+        
+        $this->doSimpleCollationTests($collation2);
         
     }
     

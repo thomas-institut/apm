@@ -97,6 +97,12 @@ p.formattedchunktext {
     margin-left: 2px;
 }
 
+.markitem.gap {
+    border: none;
+    margin: 0;
+    border-radius: 0px;
+}
+
 .mathtext {
     color: #990099;
 }

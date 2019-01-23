@@ -78,8 +78,11 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
             
             $tokenRefs = $c->getReferencesForRow($siglum);
             $witnessTokens = $c->getWitnessTokens($siglum);
-            $nonItemTokens = $c->getWitness($siglum)->getNonTokenItemIndexes();
-            $decoratedCollationTable['extra'][$siglum]['nonTokenItemIndexes'] = $nonItemTokens;
+            $rawNonTokenItemIndexes = $c->getWitness($siglum)->getNonTokenItemIndexes();
+            
+            $nonTokenItemIndexes = $this->aggregateNonTokenItemIndexes($rawNonTokenItemIndexes, $tokenRefs, $witnessTokens);
+            
+            //$decoratedCollationTable['extra'][$siglum]['nonTokenItemIndexes'] = $nonTokenItemIndexes;
             $itemArray = $c->getWitness($siglum)->getItemArray();
             $witnessItemStream = $c->getWitness($siglum)->getItemStream();
             foreach($tokenRefs as $i => $tokenRef) {
@@ -101,10 +104,10 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
                 $decoratedToken['witnessTokenIndex'] = $tokenRef;
                 $decoratedToken['itemIndexes'] = $token->getSourceItemIndexes();
                 $decoratedToken['postNotes'] = [];
-                if ($nonItemTokens[$tokenRef]['post'] !== []) {
+                if ($nonTokenItemIndexes[$tokenRef]['post'] !== []) {
                     // There are non-token items after the token
                     // check if there notes
-                    foreach($nonItemTokens[$tokenRef]['post'] as $itemIndex)  {
+                    foreach($nonTokenItemIndexes[$tokenRef]['post'] as $itemIndex)  {
                         if ($this->isNoteMark($itemArray[$itemIndex]->getItem())){
                             $decoratedToken['postNotes'][] = $formatter->formatMark($itemArray[$itemIndex]->getItem());
                         }
@@ -185,6 +188,47 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
             return true;
         }
         return false;
+    }
+    
+    /**
+     * Aggregates nonTokenIndexes taking care of missing token references in the 
+     * given $tokenRefs array
+     * 
+     * The returned array contains one element per element in $tokenRefs with
+     * the same structure as $rawNonTokenItemIndexes
+     * 
+     * @param type $rawNonTokenItemIndexes
+     * @param type $tokenRefs
+     * @param type $witnessTokens
+     */
+    protected function aggregateNonTokenItemIndexes($rawNonTokenItemIndexes, $tokenRefs) {
+        
+        $aggregatedPost = [];
+        $resultingArray = [];
+        // Note that the array is traversed from the last element to the first
+        // this is because the 'post' field of a particular token must have the post fields of
+        // the item indexes not present in the tokenRefs array that come AFTER it
+        for ($i = count($rawNonTokenItemIndexes)-1; $i >=0; $i--) {
+            $tokenItemIndexes = $rawNonTokenItemIndexes[$i];
+            $aggregatedPost = array_merge($tokenItemIndexes['post'], $aggregatedPost);
+            $tokenIndexInRef = array_search($i, $tokenRefs);
+            if ($tokenIndexInRef !== false) {
+                $resultingArray[$i]['post'] = $aggregatedPost;
+                $aggregatedPost = [];
+            }
+        }
+        
+        $aggregatedPre = [];
+        for($i=0; $i < count($rawNonTokenItemIndexes); $i++) {
+            $tokenItemIndexes = $rawNonTokenItemIndexes[$i];
+            $aggregatedPre = array_merge($aggregatedPre, $tokenItemIndexes['pre']);
+            $tokenIndexInRef = array_search($i, $tokenRefs);
+            if ($tokenIndexInRef !== false) {
+                $resultingArray[$i]['pre'] = $aggregatedPre;
+                $aggregatedPre = [];
+            }
+        }
+        return $resultingArray;
     }
     
     

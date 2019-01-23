@@ -221,7 +221,8 @@ class AutomaticCollationTable {
   getCollationEngineDetailsHtml(ced) {
     let cedHtml = '<b>Engine:</b> ' + ced.engineName + '<br/>'
     cedHtml += '<b>Date/Time:</b> '  + ced.runDateTime + '<br/>'
-    cedHtml += '<b>Runtime:</b> ' + Math.round(ced.duration*1000.0) + ' ms'
+    cedHtml += '<b>Collation Runtime:</b> ' + Math.round(ced.duration*1000.0) + ' ms' + '<br/>'
+    cedHtml += '<b>Total Runtime:</b>' + Math.round(ced.totalDuration*1000.0) + ' ms'
     return cedHtml
   }
   

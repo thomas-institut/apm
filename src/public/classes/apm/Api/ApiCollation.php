@@ -224,6 +224,8 @@ class ApiCollation extends ApiController
             $witnessesToInclude = $validWitnessLocations;
         }
         
+        $profiler->lap('Checks done');
+        
         $collationTable = new CollationTable($ignorePunctuation);
         $itemIds = [];
         foreach ($witnessesToInclude as $id => $witnessLocation)  {
@@ -243,8 +245,10 @@ class ApiCollation extends ApiController
             $collationTable->addWitness($docData['title'], $itemStrWitness);
         }
         
+        $profiler->lap('Collation table built');
         $collatexInput = $collationTable->getCollationEngineInput();
         
+        $profiler->lap('Collatex input built');
         $collationEngine = $this->ci->cr;
         
         // Run Collatex
@@ -263,6 +267,7 @@ class ApiCollation extends ApiController
         }
         // @codeCoverageIgnoreEnd
         
+        $profiler->lap('Collatex done');
         try {
             $collationTable->setCollationTableFromCollationEngineOutput($collatexOutput);
         }
@@ -281,14 +286,18 @@ class ApiCollation extends ApiController
         }
         // @codeCoverageIgnoreEnd
         
+        $profiler->lap('Collation table built from collatex output');
         $userDirectory = new ApUserDirectory($db->um);
         $decorator = new TransitionalCollationTableDecorator($userDirectory);
         $decoratedCollationTable = $decorator->decorate($collationTable);
 
         $profiler->log($this->logger);
         
+        $collationEngineDetails = $collationEngine->getRunDetails();
+        $collationEngineDetails['totalDuration'] =  $profiler->getTotalTime() / 1000;
+        
         return $response->withJson([
-            'collationEngineDetails' => $collationEngine->getRunDetails(), 
+            'collationEngineDetails' => $collationEngineDetails, 
             'collationTable' => $decoratedCollationTable,
             'sigla' => $collationTable->getSigla()
             ]);

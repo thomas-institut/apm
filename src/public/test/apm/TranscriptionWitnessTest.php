@@ -69,6 +69,9 @@ class TranscriptionWitnessTest extends TestCase {
         foreach($tokens as $i => $token) {
             /* @var $token TranscriptionToken */
             $this->assertCount(1, $token->getSourceItemAddresses());
+            $this->assertCount(1, $token->getSourceItemIndexes());
+            $itemIndex = $token->getSourceItemIndexes()[0];
+            $this->assertEquals(floor($i/$numTokensInPageText), $itemIndex);
             $itemAdress = $token->getSourceItemAddresses()[0];
             /* @var $itemAddress ItemAddressInDocument */
             $this->assertEquals($startPage + floor($i/$numTokensInPageText),
@@ -148,19 +151,36 @@ class TranscriptionWitnessTest extends TestCase {
         $ptf = new PageTranscriptionFactory();
         
         $dt->setPageTranscription(1, $ptf->createPageTranscriptionFromColumnItemArray([[
+            new Mark('note', 'note1'),
             new TextualItem('Text'),
-            new Mark('note', 'note'),
+            new Mark('note', 'note2'),
             new TextualItem('more te'),
             new Core\Item\NoWbMark(),
-            new TextualItem("\nxt")
+            new TextualItem("\nxt"),
+            new Mark('note', 'note3'),
         ]]));
         
         $dtw = new SimpleTranscriptionWitness('Test Work', 'Test Chunk', $dt);
         
         $tokens = $dtw->getTokens();
         
-        //var_dump($tokens);
-        
         $this->assertCount(4, $tokens);
+        
+        // Check item indexes
+        $this->assertEquals([1], $tokens[0]->getSourceItemIndexes());
+        $this->assertEquals([3], $tokens[1]->getSourceItemIndexes());
+        $this->assertEquals([3], $tokens[2]->getSourceItemIndexes());
+        $this->assertEquals([3,5], $tokens[3]->getSourceItemIndexes());
+        
+        $nonTokenIndexes = $dtw->getNonTokenItemIndexes();
+        
+        $expectedNonTokenIndexes = [
+            [ 'pre' => [0], 'post' => [2]],  // token 0
+            [ 'pre' => [], 'post' => []],   // token 1
+            [ 'pre' => [], 'post' => []],   // token 2
+            [ 'pre' => [], 'post' => [6]]    // token 3
+        ];
+        
+        $this->assertEquals($expectedNonTokenIndexes, $nonTokenIndexes);
     }
 }

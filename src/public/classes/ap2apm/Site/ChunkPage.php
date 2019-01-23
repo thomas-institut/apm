@@ -117,8 +117,15 @@ class ChunkPage extends SiteController
         $doc = $this->buildWitnessDataFromDocData($docData, $workId, $chunkNumber, $db, 1);
         if ($doc['goodWitness']) {
             $doc['itemStreamDump'] =  print_r($doc['itemStream'], true);
+            $nonTokenItems = $doc['itemStreamWitness']->getNonTokenItemIndexes();
+            //$doc['nonTokenItems'] = print_r($nonTokenItems, true);
+            $doc['tokenDump'] = $this->prettyPrintTokens($doc['tokens'], $nonTokenItems);
             
-            $doc['tokenDump'] = $this->prettyPrintTokens($doc['tokens']);
+//            ob_start();
+//                var_dump($doc['tokens']);
+//                $doc['tokenDump2'] = ob_get_contents();
+//            ob_end_clean();
+            
             ob_start();
                 var_dump($doc['segmentApItemStreams']);
                 $doc['segmentsDataDump'] = ob_get_contents();
@@ -188,8 +195,9 @@ class ChunkPage extends SiteController
         $edNoteArrayFromDb = $db->enm->rawGetEditorialNotesForListOfItems($itemIds);
         $this->ci->logger->debug('Ednotes', $edNoteArrayFromDb);
         $itemStream = new \AverroesProjectToApm\ItemStream($doc['id'], $doc['segmentApItemStreams'], $doc['lang'], $edNoteArrayFromDb);
-        $itemStrWitness = new \AverroesProjectToApm\ItemStreamWitness($workId, $chunkNumber, $itemStream);
-        $doc['tokens'] = $itemStrWitness->getTokens();
+        $itemStreamWitness = new \AverroesProjectToApm\ItemStreamWitness($workId, $chunkNumber, $itemStream);
+        $doc['itemStreamWitness'] = $itemStreamWitness;
+        $doc['tokens'] = $itemStreamWitness->getTokens();
         $this->ci->logger->debug('Doc ' . $docData['id'] . ' token Count: ' . count($doc['tokens']));
 
         $doc['itemStream'] = $itemStream;
@@ -216,15 +224,14 @@ class ChunkPage extends SiteController
         return $this->prettyPrintPoint($address);
     }
     
-     protected  function prettyPrintTokens($tokens) {
+     protected  function prettyPrintTokens($tokens, $nonTokenItems) {
         $types[\APM\Core\Token\Token::TOKEN_WORD] = 'W';
         $types[\APM\Core\Token\Token::TOKEN_WS] = 'S';
         $types[\APM\Core\Token\Token::TOKEN_PUNCT] = 'P';
         $types[\APM\Core\Token\Token::TOKEN_EMPTY] = 'E';
         $types[\APM\Core\Token\Token::TOKEN_UNDEFINED] = 'U';
         $output = '';
-        $tokenNumber = 1;
-        foreach($tokens as $token) {
+        foreach($tokens as $i => $token) {
             /* @var  $token \APM\Core\Token\TranscriptionToken */
             $addresses = [];
             foreach($token->getSourceItemAddresses() as $address) {
@@ -232,10 +239,25 @@ class ChunkPage extends SiteController
             }
             $lineRange = $token->getTextBoxLineRange();
 
-            $output .= $tokenNumber++ . ' : (' . $types[$token->getType()] . ') ' . 
+            $output .= $i . ' : (' . $types[$token->getType()] . ') ' . 
                     '[ ' . implode(' - ' , $addresses) . ' ] ' . 
                     $this->prettyPrintLineRange($lineRange) . ' ' .
-                    '\'' . $token->getText() . "'\n";
+                    '\'' . $token->getText() . '\'';
+            
+            if ($nonTokenItems[$i]['pre'] !== []) {
+                $output .= '   PRE: ';
+                foreach($nonTokenItems[$i]['pre'] as $index) {
+                    $output .=  'Item_' . $index . ' ';
+                }
+            }
+            if ($nonTokenItems[$i]['post'] !== []) {
+                $output .= '   POST: ';
+                foreach($nonTokenItems[$i]['post'] as $index) {
+                    $output .=  'Item_' . $index . ' ';
+                }
+            }
+            
+            $output .= "\n";
         }
         return $output;
     }

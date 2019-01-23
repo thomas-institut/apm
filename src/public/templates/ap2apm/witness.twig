@@ -91,6 +91,19 @@ $(document).ready(
     </div>
     {% endif %}
     
+     {% if doc.nonTokenItems %}
+    <div class="collapse in" id="nontokenitems-{{doc.id}}-{{work}}-{{chunk}}">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+            <h3 class="panel-title">Non-token items</h3>
+            </div>
+             <div class="panel-body">
+                 <pre>{{doc.nonTokenItems}}</pre>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
     {% if doc.segmentsDataDump %}
     <div class="collapse in" id="segmentsDataDump-{{doc.id}}-{{work}}-{{chunk}}">
         <div class="panel panel-default">

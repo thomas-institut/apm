@@ -31,6 +31,12 @@ class TranscriptionToken extends Token {
     
     /**
      *
+     * @var array Array of indexes to the transcription's item array
+     */
+    protected $sourceItemIndexes;
+    
+    /**
+     *
      * @var array Array of ItemInDocumentAddress objects
      */
     protected $sourceItemAddresses;
@@ -58,6 +64,7 @@ class TranscriptionToken extends Token {
     
     public function __construct(int $type, string $t, string $n = '') {
         parent::__construct($type, $t, $n);
+        $this->setSourceItemIndexes([]);
         $this->setSourceItemAddresses([]);
         $this->setSourceItemCharRanges([]);
         $this->textBoxLineRange = new PointRange([-1,-1], [-1, -1]);
@@ -69,6 +76,13 @@ class TranscriptionToken extends Token {
     
     public function setSourceItemAddresses(array $addresses) {
         $this->sourceItemAddresses = $addresses;
+    }
+    
+    public function getSourceItemIndexes() : array {
+        return $this->sourceItemIndexes;
+    }
+    public function setSourceItemIndexes(array $indexes) {
+        $this->sourceItemIndexes = $indexes;
     }
     
     public function getSourceItemCharRanges() : array {
@@ -86,6 +100,10 @@ class TranscriptionToken extends Token {
                 $t1->getText() . $t2->getText(),
                 $t1->getNormalization() . $t2->getNormalization()
             );
+        $rt->setSourceItemIndexes(array_merge(
+                $t1->getSourceItemIndexes(), 
+                $t2->getSourceItemIndexes()
+            ));
         $rt->setSourceItemAddresses(array_merge(
                 $t1->getSourceItemAddresses(), 
                 $t2->getSourceItemAddresses()

@@ -78,29 +78,26 @@ abstract class TranscriptionWitness extends Witness {
         $currentWordToken = new TranscriptionToken(Token::TOKEN_EMPTY, '');
         
         // 4. Iterate over all items in the transcription
-        foreach ($sourceItems as $sourceItem) {
+        foreach ($sourceItems as $itemIndex => $sourceItem) {
             /* @var $sourceItem ItemInDocument */
-            
             $rawItem = $sourceItem->getItem();
             $itemAddress = $sourceItem->getAddress();
-            //print "Processing item with index = " . $itemAddress->getItemIndex() . "\n";
-            
+
             if ($itemAddress->getPageId() !== $currentPage ||
                     $itemAddress->getTbIndex() !== $currentTextBox) {
                 // new page or text box, reset all counters
-                //print "New Page or text box, resetting counters\n";
                 $currentPage = $itemAddress->getPageId();
                 $currentTextBox = $itemAddress->getTbIndex();
                 $pageTextBoxCurrentLines = [];
                 $pageTextBoxCurrentLines[$currentTextBox] = $this->getInitialLineNumberForTextBox($currentPage, $currentTextBox);
                 if ($openWordToken) {
                     // Close open word token
-                    //print "word was open, closing\n";
                     $tokens[] = $currentWordToken;
                     $openWordToken = false;
                 }
             }
             
+            // Handle a TextualItem
             if (is_a($rawItem, $textualItemClass)) {
                 // Textual item: get the internal tokens and process them
                 $rawItemNormalizedText = $rawItem->getNormalizedText();
@@ -108,7 +105,6 @@ abstract class TranscriptionWitness extends Witness {
                 // Notice that tokens are constructed out of the normalized 
                 // text, not the "original" text
                 $stringTokens = StringTokenizer::getTokensFromString($rawItemNormalizedText);
-                //print "  -- " . count($stringTokens) . " string tokens\n";
                 foreach($stringTokens as $stringToken) {
                     /* @var $stringToken StringToken */
                     // Check if the stringtoken covers all the text's item
@@ -122,6 +118,8 @@ abstract class TranscriptionWitness extends Witness {
                         $tToken =  new TranscriptionToken($stringToken->getType(), 
                             $stringToken->getText(), $stringToken->getNormalization());
                     }
+                    // Build and store the token addresses and ranges
+                    $tToken->setSourceItemIndexes([$itemIndex]);
                     $tToken->setSourceItemAddresses([$itemAddress]);
                     $tToken->setSourceItemCharRanges([$stringToken->getCharRange()]);
                     $tToken->setTextBoxLineRange(
@@ -135,6 +133,7 @@ abstract class TranscriptionWitness extends Witness {
                             $pageTextBoxCurrentLines[$currentTextBox] + $stringToken->getLineRange()->getEnd() - 1 
                         ])
                     );
+                    // Deal with open word tokens and NoWb
                     if ($tToken->getType() === Token::TOKEN_WORD) {
                         if ($openWordToken) {
                             // open word token : add text to currentWordToken
@@ -147,21 +146,18 @@ abstract class TranscriptionWitness extends Witness {
                             $currentWordToken = $tToken;
                             $openWordToken = true;
                         }
-                    } else {
+                    } else { // i.e., not a word token
                         if ($noWbItemOpen && $tToken->getType()=== Token::TOKEN_WS && $tToken->getText() === "\n") {
                             // got a newline after a noWbItem, ignore
                         } else {
                             // Any other token type: "close" currentWordToken and
                             // add it to the token array
-                            //print "A non-word token\n";
                             if ($openWordToken) {
-                                //print "   adding currentWordToken to token array\n";
                                 $tokens[] = $currentWordToken;
                                 $openWordToken = false;
                             }
                             $noWbItemOpen = false;
                             // Add the token just processed as well
-                            //print "   adding the non-word token to token array as well\n";
                             $tokens[] = $tToken;
                         }
                     }
@@ -174,8 +170,9 @@ abstract class TranscriptionWitness extends Witness {
 //                    }
                 }
                 continue; // next StringToken
-            }
+            } // rawItem is a TextualItem
             
+            // Handle a NoWb Item
             if (is_a($rawItem, $noWbItemClass)) {
                 if ($openWordToken) {
                     // just add the item info to the item addresses of the current token
@@ -193,6 +190,8 @@ abstract class TranscriptionWitness extends Witness {
                 }
                 continue;
             }
+            
+            
             // Any other item type
             
             // TODO: handle "special items"
@@ -203,8 +202,10 @@ abstract class TranscriptionWitness extends Witness {
                 $tokens[] = $currentWordToken;
                 $openWordToken = false;
             }
-        }
-        //print "All items processed\n";
+            
+            
+        } // foreach sourceIteam
+        // All source items processed
         // If there's still an openToken, close it
         if ($openWordToken) {
             $tokens[] = $currentWordToken;
@@ -250,7 +251,48 @@ abstract class TranscriptionWitness extends Witness {
      *   5 => [ 'pre' => [], 'post' => [] ],
      *   6 => [ 'pre' => [], 'post' => [ notemark3] ]
      * 
+     * @param array $itemArray 
      */
-    abstract public function getNonTokenItems() : array;
+    
+    public function getNonTokenItemIndexes() : array {
+        return self::getNonTokenItemIndexesFromArrays($this->getItemArray(), $this->getTokens());
+    }
+    
+    static public function getNonTokenItemIndexesFromArrays(array $itemArray, array $tokenArray) : array {
+        $nonTokenIndexes = [];
+        
+        $previousTokenMaxItemIndex = -1;
+        foreach ($tokenArray as $i => $token) {
+            $nonTokenIndexes[$i] = [ 'pre' => [], 'post' => []];
+            $curTokenMinItemItemIndex = min($token->getSourceItemIndexes());
+            if ($curTokenMinItemItemIndex > $previousTokenMaxItemIndex+1) {
+                // some items were skipped, namely all between $previousTokenMaxItemIndex
+                //  and $curTokenMinItemItemIndex, non including those two
+                for ($j = $previousTokenMaxItemIndex+1; $j < $curTokenMinItemItemIndex; $j++) {
+                    if ($i !== 0) {
+                        // add missing items to the previous token 'post' field
+                        $nonTokenIndexes[$i-1]['post'][] = $j;
+                    } else {
+                        $nonTokenIndexes[0]['pre'][] = $j;
+                    }
+                }
+            }
+            $previousTokenMaxItemIndex = max($token->getSourceItemIndexes());
+        }
+        
+        // all tokens are processed, but there might still be items beyond
+        // the last item in the tokens
+        $maxTokenIndex = count($tokenArray)-1;
+        $maxItemIndex = count($itemArray)-1;
+        $lastTokenMaxItemIndex = max($tokenArray[$maxTokenIndex]->getSourceItemIndexes());
+        if ($maxItemIndex > $lastTokenMaxItemIndex ) {
+            for ($j = $lastTokenMaxItemIndex+1; $j <= $maxItemIndex; $j++){
+                $nonTokenIndexes[$maxTokenIndex]['post'][] = $j;
+            }
+        }
+        
+        
+        return $nonTokenIndexes;
+    }
 
 }

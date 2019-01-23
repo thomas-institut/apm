@@ -220,7 +220,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         return $html;
     }
     
-    protected function formatMark(Mark $item) : string {
+    public function formatMark(Mark $item) : string {
         
         $classes = [];
         $classes[] = self::CLASS_MARKITEM;

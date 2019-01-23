@@ -192,7 +192,11 @@ class CollationTableFormatter {
     popoverHtml = this.addAddressesToPopoverHtml(token, popoverHtml)
     let filteredTokenClasses = this.getTokenClasses(token.classes, this.options.highlightVariants)
    
-    html += '<td class="' + filteredTokenClasses.join(' ') + '"' 
+    let elementType = 'td';
+    if (token.postNotes.length > 0) { 
+      elementType = 'span'
+    }
+    html += '<' + elementType + ' class="' + filteredTokenClasses.join(' ') + '"' 
     html += 'data-content=\'' + this.escapeHtml(popoverHtml) + '\''
     html += '>'
     html += textHtml
@@ -202,9 +206,15 @@ class CollationTableFormatter {
     if (token.lineBreak) {
       html += this.newLineHtml
     }
+    html += '</' + elementType + '>'
     
-    html += '</td>'
-    
+    if (token.postNotes.length > 0) {
+      html = '<td>' + html + '&nbsp;'
+      for(const noteHtml of token.postNotes) {
+        html += noteHtml
+      }
+      html += '</td>'
+    }
    
    return html
  }

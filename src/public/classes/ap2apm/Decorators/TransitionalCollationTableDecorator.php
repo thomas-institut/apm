@@ -23,8 +23,11 @@ namespace AverroesProjectToApm\Decorators;
 use APM\Core\Collation\CollationTableDecorator;
 use APM\Core\Collation\CollationTable;
 
+use APM\Core\Item\ItemFactory;
+
 use AverroesProjectToApm\AddressInItemStream;
 use APM\Core\Item\TextualItem;
+use APM\Core\Item\Mark;
 use AverroesProjectToApm\ApUserDirectory;
 use AverroesProjectToApm\Formatter\WitnessPageFormatter;
 
@@ -43,16 +46,28 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
     
     private $ud;
     
+    /** @var string */
+    protected $textualItemClass;
+    /** @var string */
+    protected $markItemClass;
+
+
     public function __construct(ApUserDirectory $userDirectory) {
         $this->ud = $userDirectory;
+        
+        $this->textualItemClass = get_class(new TextualItem('stub'));
+        $this->markItemClass = get_class(new Mark());
     }
     
     public function decorate(CollationTable $c): array {
         $sigla = $c->getSigla();
         $decoratedCollationTable = [];
         
+        $decoratedCollationTable['extra'] = [];
+        
         $addressInItemStreamClass  = get_class(new AddressInItemStream());
-        $textualItemClass = get_class(new TextualItem('stub'));
+        $textualItemClass = $this->textualItemClass;
+        
         
         $formatter = new WitnessPageFormatter($this->ud);
         $variantTable = $c->getVariantTable();
@@ -60,8 +75,12 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
         // 1. Put tokens in with basic classes
         foreach($sigla as $siglum) {
             $decoratedCollationTable[$siglum] = [];
+            
             $tokenRefs = $c->getReferencesForRow($siglum);
             $witnessTokens = $c->getWitnessTokens($siglum);
+            $nonItemTokens = $c->getWitness($siglum)->getNonTokenItemIndexes();
+            $decoratedCollationTable['extra'][$siglum]['nonTokenItemIndexes'] = $nonItemTokens;
+            $itemArray = $c->getWitness($siglum)->getItemArray();
             $witnessItemStream = $c->getWitness($siglum)->getItemStream();
             foreach($tokenRefs as $i => $tokenRef) {
                 $decoratedToken = [];
@@ -80,6 +99,17 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
                 $decoratedToken['classes'][] = self::CLASS_VARIANT_PREFIX .  $variantTable[$siglum][$i];
                 $decoratedToken['empty'] = false;
                 $decoratedToken['witnessTokenIndex'] = $tokenRef;
+                $decoratedToken['itemIndexes'] = $token->getSourceItemIndexes();
+                $decoratedToken['postNotes'] = [];
+                if ($nonItemTokens[$tokenRef]['post'] !== []) {
+                    // There are non-token items after the token
+                    // check if there notes
+                    foreach($nonItemTokens[$tokenRef]['post'] as $itemIndex)  {
+                        if ($this->isNoteMark($itemArray[$itemIndex]->getItem())){
+                            $decoratedToken['postNotes'][] = $formatter->formatMark($itemArray[$itemIndex]->getItem());
+                        }
+                    }
+                }
                 $addresses = $token->getSourceItemAddresses();
                 $charRanges = $token->getSourceItemCharRanges();
                 $decoratedToken['itemFormats'] = [];
@@ -95,8 +125,6 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
                                 'text' => $text, 
                                 'classes' => $classes, 
                                 'popoverHtml' => $popover, 
-                                'postNotes' => [], 
-                                'preNotes' => [],
                                 'itemId' => $address->getItemIndex(),
                                 'itemSeq' => $address->getItemSeq(),
                                 'ceId' => $address->getCeId()
@@ -146,6 +174,17 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
             $data[] = $point->getCoord($i);
         }
         return implode(':', $data);
+    }
+    
+    protected  function isNoteMark($var) {
+        if (!is_object($var)) {
+            return false;
+        }
+        
+        if (is_a($var, $this->markItemClass) && ($var->getMarkType() === ItemFactory::MARK_NOTE))  {
+            return true;
+        }
+        return false;
     }
     
     

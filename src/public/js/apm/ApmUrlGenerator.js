@@ -38,6 +38,11 @@ class ApmUrlGenerator {
     }
     return this.base +  '/collation/auto/' + work + '/' + chunkno + '/' + lang + extra
   }
+  
+  
+  sitePageView(docId, pageNumber) {
+    return this.base + '/doc/' + docId + '/page/' + pageNumber + 'view'
+  }
 
 }
 

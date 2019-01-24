@@ -46,6 +46,7 @@ class CollationTableFormatter {
     options.highlightVariants = true
     options.showNormalizations = false
     options.lang = 'la'
+    options.urlGenerator = null
     
     return options
   }
@@ -80,6 +81,10 @@ class CollationTableFormatter {
     
     if (typeof(options.lang) === 'string') {
       cleanOptions.lang = options.lang
+    }
+    
+    if (typeof(options.urlGenerator) === 'object') {
+      cleanOptions.urlGenerator = options.urlGenerator
     }
     return cleanOptions
   }

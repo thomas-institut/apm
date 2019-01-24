@@ -998,37 +998,37 @@ class DataManager
      *  n = 0,1,2,... up to the number of segments found in the input array
      *  
      * 
-     * @param array $locations
+     * @param array $locationRows
      */
-    public function getChunkLocationArrayFromRawLocations($locations)
+    public function getChunkLocationArrayFromRawLocations($locationRows)
     {
-        $cLocs = [];
+        $chunkLocations = [];
         
-        foreach($locations as &$location) {
-            if (is_null($location['segment'])) {
-                $location['segment'] = 1;
+        foreach($locationRows as &$locationRow) {
+            if (is_null($locationRow['segment'])) {
+                $locationRow['segment'] = 1;
             }
-            $segment = $location['segment'];
+            $chunkSegment = $locationRow['segment'];
             
-            if (is_null($location['foliation'])) {
-                $location['foliation'] = $location['page_seq'];
+            if (is_null($locationRow['foliation'])) {
+                $locationRow['foliation'] = $locationRow['page_seq'];
             }
-            if (!isset($cLocs[$segment])) {
-                $cLocs[$segment] = [];
-                $cLocs[$segment]['warnings'] = [];
-                $cLocs[$segment]['valid'] = true;
+            if (!isset($chunkLocations[$chunkSegment])) {
+                $chunkLocations[$chunkSegment] = [];
+                $chunkLocations[$chunkSegment]['warnings'] = [];
+                $chunkLocations[$chunkSegment]['valid'] = true;
             }
-            if (isset($cLocs[$segment][$location['type']])) {
+            if (isset($chunkLocations[$chunkSegment][$locationRow['type']])) {
                 // the location is already in the array, this is not good!
-                $cLocs[$segment]['valid'] = false;
-                $cLocs[$segment]['warnings'][] = 'Duplicate ' . 
-                        $location['type'] . ' location found ';
+                $chunkLocations[$chunkSegment]['valid'] = false;
+                $chunkLocations[$chunkSegment]['warnings'][] = 'Duplicate ' . 
+                        $locationRow['type'] . ' location found ';
                 continue;
             }
-            $cLocs[$segment][$location['type']] = $location;
+            $chunkLocations[$chunkSegment][$locationRow['type']] = $locationRow;
         }
         
-        foreach($cLocs as $key => &$segmentLoc) {
+        foreach($chunkLocations as $key => &$segmentLoc) {
             if (!$segmentLoc['valid']) {
                 continue;
             }
@@ -1048,8 +1048,8 @@ class DataManager
             }
         }
         
-        ksort($cLocs);
-        return $cLocs;
+        ksort($chunkLocations);
+        return $chunkLocations;
     }
     
     public function getAdditionItemWithGivenTarget(int $target) {

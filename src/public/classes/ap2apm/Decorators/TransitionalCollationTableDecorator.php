@@ -82,7 +82,6 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
             
             $nonTokenItemIndexes = $this->aggregateNonTokenItemIndexes($rawNonTokenItemIndexes, $tokenRefs, $witnessTokens);
             
-            //$decoratedCollationTable['extra'][$siglum]['nonTokenItemIndexes'] = $nonTokenItemIndexes;
             $itemArray = $c->getWitness($siglum)->getItemArray();
             $witnessItemStream = $c->getWitness($siglum)->getItemStream();
             foreach($tokenRefs as $i => $tokenRef) {
@@ -106,7 +105,7 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
                 $decoratedToken['postNotes'] = [];
                 if ($nonTokenItemIndexes[$tokenRef]['post'] !== []) {
                     // There are non-token items after the token
-                    // check if there notes
+                    // check if there are notes
                     foreach($nonTokenItemIndexes[$tokenRef]['post'] as $itemIndex)  {
                         if ($this->isNoteMark($itemArray[$itemIndex]->getItem())){
                             $decoratedToken['postNotes'][] = $formatter->formatMark($itemArray[$itemIndex]->getItem());

@@ -19,7 +19,7 @@
 class EditionViewer {
   
   constructor (tokens, notes, divId) {
-    console.log('Construction Edition Viewer')
+    console.log('Constructing Edition Viewer')
     this.tokens = tokens
     this.notes = notes
     this.container = $('#' + divId)
@@ -183,6 +183,20 @@ class EditionViewer {
     
     return newTokens
     
+  }
+ 
+  
+  lineNotes(notes, placedTokens) {
+    
+  }
+  
+  /**
+   * Returns a list of tokens to be typeset for the given line range 
+   * 
+   * @returns array
+   */
+  getApparatusTokensFromNotes(linedNotes, startLine, endLine) {
+    return []
   }
   
   

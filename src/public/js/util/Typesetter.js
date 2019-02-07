@@ -27,12 +27,39 @@
  * 
  * 
  * A token is an object with the following elements:
- *    text : string
- *    font-family:  string (optional, default to defaultFontFamily given in constructor options)
- *    font-style: string, = CSS font-style  (defaults to 'normal')
- *    fontSize:  string, = CSS font-size, but only em and px sizes are recognized
- *    fontWeight: string = CSS font-weight (defaults to 'normal')
- * 
+ *    type:  string => 'text' | 'glue'
+ *    
+ *    type === 'text'
+ *      text : string
+ *      fontFamily:  string = CSS font-family (optional, default to defaultFontFamily given in constructor options)
+ *      fontStyle: string, = CSS font-style  (defaults to 'normal')
+ *      fontSize:  string, = CSS font-size, but only em and px sizes are recognized
+ *      fontWeight: string = CSS font-weight (defaults to 'normal')
+ *    
+ *    type === 'glue' 
+ *       The term 'glue' is taken from Donald Knuth's the TeXbook, where it is explained in 
+ *       chapter 12. Glue is meant to represent a potentially variable length space that may or 
+ *       may not eventually appear in the typeset text. 
+ *       
+ *       space: int, normal length of the space in pixels
+ *       stretch: int, extra pixels the space can have, this is only a suggestion, the typesetter
+ *           algorithm may stretch spaces more than this in extreme situations.
+ *       shrink: int, how many pixels less the space can have; space - shrink is the absolute minimum
+ *           for the space
+ *           
+ *       For the moment, stretch and shrink are ignored, stretch defaults to 10000 (esentially 
+ *       infinite) and shrink defaults to zero
+ *      
+ *  The typesetter returns tokens with the following elements added
+ *    
+ *    deltaX: float
+ *    deltaY: float
+ *    lineNumber: int
+ *    
+ *    if type===glue
+ *       status: string, = 'set'
+ *       setSpace: float, the calculated width of the glue
+ *      
  */
 
 class Typesetter {
@@ -40,7 +67,14 @@ class Typesetter {
   constructor(options = {}) {
     console.log('Constructing typesetter')
     this.options = this.getSanitizedOptions(options)
+    
+    this.emSize = this.getTextWidthWithDefaults('m')
+    this.normalSpace = this.options.normalSpaceWidth * this.emSize
+    
     console.log(this.options)
+    console.log('emSize = ' + this.emSize)
+    console.log('normalSpace = ' + this.normalSpace)
+    
   }
   
   getDefaultOptions() {
@@ -84,6 +118,10 @@ class Typesetter {
     
     if (typeof(options.minSpaceWidth) === 'number') {
       sanitizedOptions.minSpaceWidth = options.minSpaceWidth
+    }
+    
+    if (typeof(options.rightToLeft === 'boolean')) {
+      sanitizedOptions.rightToLeft = options.rightToLeft
     }
     
     // TODO: fill this up
@@ -131,26 +169,38 @@ class Typesetter {
     let currentLine = 1
     let currentX = rightToLeft ? lineWidth : 0
     let currentY = this.options.defaultFontSize
-    let emSize = this.getTextWidthWithDefaults('m')
-    console.log('em size: ' + emSize)
-    let pxSpaceWidth = this.options.normalSpaceWidth * emSize
     let pxLineHeight = this.options.lineHeight
     
     for(const token of tokens) {
-      if (token.space) {
+      if (token.type === 'glue') {
         //console.log('Space token')
-        let spaceWidth = pxSpaceWidth
+        let spaceWidth = token.space
+        if (token.space <= 0) {
+          // ignore negative and zero space
+          continue
+        }
         let newX = advanceX(currentX, spaceWidth, rightToLeft)
         if (isOutOfBounds(newX, lineWidth, rightToLeft)) {
           currentY += pxLineHeight
           currentLine++
           currentX = rightToLeft ? lineWidth : 0
         } else {
+          let glueToken = token
+          glueToken.status = 'set'
+          glueToken.setSpace = token.space
+          glueToken.lineNumber = currentLine
+          glueToken.deltaX = currentX
+          glueToken.deltaY = currentY
           currentX = newX
+          typesetTokens.push(glueToken)
         }
         continue
       }
-      //console.log('Normal token: \'' + token.text + '\'')
+      // Token is of type text
+      if (token.text === '') {
+        // ignore empty text
+        continue
+      }
       let newToken = token
       let fontDefString = ''
       if (token.fontWeight) {
@@ -189,8 +239,19 @@ class Typesetter {
     return this.typesetTokens(tokens)
   }
   
-  genTextSvg(left, top, token) {
+  genTextSvg(left, top, token, showGlue = true) {
     
+    if (token.type === 'glue') {
+      if (!showGlue) {
+        return ''
+      }
+      let fontHeight = this.options.defaultFontSize
+      let svg = '<rect x="' + (left+token.deltaX) + '" y="' + (top+token.deltaY - fontHeight ) + '" '+
+              'width="' + token.setSpace + '" height="' + fontHeight + '" ' +
+              'style="fill:silver;"/>'
+      return svg
+      
+    }
     if (token.text === '') {
       return ''
     }
@@ -225,8 +286,8 @@ class Typesetter {
     let tokensText = theString.split(' ')
     let tokens = []
     for (const tokenText of tokensText) {
-      tokens.push({text: tokenText})
-      tokens.push({text: '', space: 'normal'})
+      tokens.push({type: 'text', text: tokenText})
+      tokens.push({type: 'glue',  space: this.normalSpace })
     }
     return tokens
   }
@@ -238,13 +299,17 @@ class Typesetter {
     let italicsRegExp = RegExp('^_(.*)_([.,;:?!]*)$')
     let mdTokens = []
     for (const stringToken of stringTokens) {
+      if (stringToken.type === 'glue') {
+        mdTokens.push(stringToken)
+        continue
+      }
       if (boldRegExp.test(stringToken.text)) {
         let regExpArray = boldRegExp.exec(stringToken.text)
         stringToken.text = regExpArray[1]
         stringToken.fontWeight = 'bold'
         mdTokens.push(stringToken)
         if (regExpArray[2]) {
-          mdTokens.push({ text: regExpArray[2]})
+          mdTokens.push({ type: 'text', text: regExpArray[2]})
         }
         continue
       }
@@ -254,7 +319,7 @@ class Typesetter {
         stringToken.fontStyle = 'italic'
         mdTokens.push(stringToken)
         if (regExpArray[2]) {
-          mdTokens.push({ text: regExpArray[2]})
+          mdTokens.push({ type: 'text', text: regExpArray[2]})
         }
         continue
       }

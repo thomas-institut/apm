@@ -20,29 +20,40 @@
 
 class EditionViewer {
   
-  constructor (tokens, notes, divId, rightToLeft = false) {
+  constructor (collationTokens, aparatusArray, divId, rightToLeft = false) {
     console.log('Constructing Edition Viewer')
-    this.tokens = tokens
-    this.notes = notes
+    
+    this.collationTokens = collationTokens  
+    this.apparatusArray = aparatusArray
+    this.rightToLeft = rightToLeft
+
     this.container = $('#' + divId)
     this.fontFamily = 'Times New Roman'
     
-    this.lineWidthInCm = 11
-    this.fontSizeInPts = 14
-    this.lineHeightInPts = 20
+    this.pageWidthInCm = 21
     
-    this.apparatusFontSizeInPts = 12
-    this.apparatusLineHeightInPts = 18
-    
-    this.topMarginInCm = 0.5
-    this.leftMarginInCm = 2
+    this.topMarginInCm = 2
+    this.leftMarginInCm = 3
     
     this.bottomMarginInCm = 1
-    this.rightMarginInCm = 2
+    this.rightMarginInCm = 3
+    
+    this.lineWidthInCm = this.pageWidthInCm - this.leftMarginInCm - this.rightMarginInCm 
+    
+    this.fontSizeInPts = 14
+    this.lineHeightInPts = 20
+    this.normalSpaceWidthInEms = 0.32
+    
+    this.apparatusFontSizeInPts = 11
+    this.apparatusLineHeightInPts = 15
+    
+
     
     this.textToLineNumbersInCm = 0.5
-    this.textToApparatusInCm = 1.5
+    this.textToApparatusInCm = 1
     
+    this.fontSize = Typesetter.pt2px(this.fontSizeInPts)
+    this.apparatusFontSize = Typesetter.pt2px(this.apparatusFontSizeInPts)
     this.topMargin = Typesetter.cm2px(this.topMarginInCm)
     this.leftMargin = Typesetter.cm2px(this.leftMarginInCm)
     this.bottomMargin = Typesetter.cm2px(this.bottomMarginInCm)
@@ -53,43 +64,163 @@ class EditionViewer {
     this.ts = new Typesetter({
        lineWidth: Typesetter.cm2px(this.lineWidthInCm),
        lineHeight: Typesetter.pt2px(this.lineHeightInPts),
-       defaultFontSize: Typesetter.pt2px(this.fontSizeInPts),
+       defaultFontSize: this.fontSize,
        rightToLeft: rightToLeft,
        defaultFontFamily: 'Times New Roman',
-       normalSpaceWidth: 0.32,
+       normalSpaceWidth: this.normalSpaceWidthInEms
     })
     
     this.tsApparatus = new Typesetter({
        lineWidth: Typesetter.cm2px(this.lineWidthInCm),
        lineHeight: Typesetter.pt2px(this.apparatusLineHeightInPts),
-       defaultFontSize: Typesetter.pt2px(this.apparatusFontSizeInPts),
+       defaultFontSize: this.apparatusFontSize,
        rightToLeft: rightToLeft,
        defaultFontFamily: 'Times New Roman',
-       normalSpaceWidth: 0.32,
+       normalSpaceWidth: this.normalSpaceWidthInEms
     })
-
-    // Some fake note text to test how it looks
-    this.fakeApparatusMds  = [ 
-        '**2** shown] _om._ A   with] wit C   **6** aperiamad] + iste A' ,
-        '**1** This] A:24r  B:141v  C:48   **10** qui] B:142r   iste] C:49   **12** Optio] A:24v' 
-    ]
+    
+    this.mainTextTokens = this.generateTokensToTypesetFromCollationTableTokens(this.collationTokens)
+    console.log('Main Text Tokens')
+    console.log(this.mainTextTokens)
+    
+    this.ct2tsIndexMap = this.getCollationTableIndexToTypesetTokensMap(this.mainTextTokens)
+    
+    console.log('Index Map')
+    console.log(this.ct2tsIndexMap)
+    
+    this.typesetMainTextTokens = this.ts.typesetTokens(this.mainTextTokens)
+    
+    for(const apparatus of this.apparatusArray) {
+      for (const note of apparatus) {
+        let lineNumbers = this.getLineNumbersForApparatusEntry(note, this.typesetMainTextTokens, this.ct2tsIndexMap)
+        note.lineStart = lineNumbers.start
+        note.lineEnd = lineNumbers.end
+      }
+    }
+    
+    this.apparatusTokensToTypeset = this.getApparatusTokensToTypeset()
+    
+    console.log('Apparatus to typeset')
+    console.log(this.apparatusTokensToTypeset)
+    
+    this.lineNumbers = this.ts.typesetLineNumbers(this.typesetMainTextTokens,5)
+    this.typesetApparatuses = []
+    for (const apparatusToTypeset of this.apparatusTokensToTypeset) {
+      this.typesetApparatuses.push(this.tsApparatus.typesetTokens(apparatusToTypeset))
+    }
     
     this.container.html(this.getHtml())
   }
   
-  getHtml() {
-    
-    this.typesetTokens = this.ts.typesetTokens(this.tokens)
-    let lineNumbers = this.ts.typesetLineNumbers(this.typesetTokens,5)
-    let typesetApparatuses = []
-    for (const fakeApparatusMd of this.fakeApparatusMds) {
-      typesetApparatuses.push(this.tsApparatus.typesetMarkdownString(fakeApparatusMd))
+  generateTokensToTypesetFromCollationTableTokens(collationTableTokens) {
+    // for now, just add whitespace in between the tokens
+    let tokensToTypeset = []
+    let currentCollationTableTokenIndex = 0
+    for(const collationTableToken of collationTableTokens) {
+      collationTableToken.collationTableIndex = currentCollationTableTokenIndex
+      currentCollationTableTokenIndex++
+      tokensToTypeset.push(collationTableToken)
+      tokensToTypeset.push({type: 'glue', space: 'normal'})
     }
+    if (tokensToTypeset.length > 1) {
+      tokensToTypeset.pop()  // take out the last glue
+    }
+    return tokensToTypeset
+  }
+  
+  getCollationTableIndexToTypesetTokensMap(tokensToTypeset) {
     
+    let map = []
+    let currentTokenIndex = 0
+    for(const token of tokensToTypeset) {
+      if (typeof(token.collationTableIndex) === 'number') {
+        map[token.collationTableIndex] = currentTokenIndex
+      }
+      currentTokenIndex++
+    }
+    return map
+  }
+  
+  
+  getLineNumbersForApparatusEntry(note, tsTokens, map) {
+    return { 
+        start: tsTokens[map[note.start]].lineNumber, 
+        end: tsTokens[map[note.end]].lineNumber
+    } 
+  }
+  
+  getApparatusTokensToTypeset() {
+    
+    let apparatusToTypesetArray = []
+    
+    for (const apparatus of this.apparatusArray) {
+      let apparatusToTypeset = []
+      
+      // 1. group notes by start-end
+      let groups = []
+      for (const note of apparatus) {
+        let pageGroup = 'g_' + note.lineStart.toString() 
+        if (note.lineStart !== note.lineEnd) {
+          pageGroup += '_' + note.lineEnd.toString()
+        }
+        
+        if (typeof(groups[pageGroup]) === 'undefined' ) {
+          groups[pageGroup] = { 
+            lineStart: note.lineStart,
+            lineEnd: note.lineEnd,
+            entries: []
+          }
+        }
+        groups[pageGroup].entries.push(note)
+      }
+      console.log('GROUPS')
+      console.log(groups)
+      // 2. TODO: order the groups
+      
+      // 3. build the pageGroup entries
+      for(const pageGroupKey in groups) {
+        let pageGroup = groups[pageGroupKey]
+        let pageString = pageGroup.lineStart.toString() 
+        if (pageGroup.lineEnd !== pageGroup.lineStart) {
+          pageString += '–' + pageGroup.lineEnd.toString()
+        }
+        apparatusToTypeset.push({ type: 'text', text: pageString, fontWeight: 'bold'})
+        apparatusToTypeset.push({ type: 'glue', space: 'normal'} )
+        
+        for (const entry of pageGroup.entries) {
+          let entryLesson = this.collationTokens[entry.start].text 
+          if (entry.start !== entry.end) {
+            entryLesson += ' '
+            if (entry.end > (entry.start + 1)) {
+              entryLesson += '… '
+            }
+            entryLesson += this.collationTokens[entry.end].text 
+          }
+          entryLesson += ']'
+          apparatusToTypeset.push({ type: 'text', text: entryLesson})
+          apparatusToTypeset.push({ type: 'glue', space: 'normal'} )
+          
+          let entryTokens = this.tsApparatus.getTokensFromMarkdownString(entry.markDown)
+          for (const entryToken of entryTokens ) {
+            apparatusToTypeset.push(entryToken)
+          }
+          apparatusToTypeset.push({ type: 'glue', space: 15 })  // TODO: parametrize this!
+        }
+                
+      }
+      
+      
+      apparatusToTypesetArray.push(apparatusToTypeset)
+    }
+    return apparatusToTypesetArray
+    
+  }
+  
+  getHtml() {
     let html = this.getSvgHtml(
-      this.typesetTokens, 
-      lineNumbers, 
-      typesetApparatuses,
+      this.typesetMainTextTokens, 
+      this.lineNumbers, 
+      this.typesetApparatuses,
       'editionsvg', 
       this.leftMargin, this.topMargin, 
       this.rightMargin, this.bottomMargin, 
@@ -116,7 +247,7 @@ class EditionViewer {
       }
       
      
-      let svgHeight = topMargin + mainTextHeight + this.textToApparatus * typesetApparatuses.length + totalApparatusHeight + bottomMargin
+      let svgHeight = topMargin + mainTextHeight + (this.textToApparatus * typesetApparatuses.length) + totalApparatusHeight + bottomMargin
       let svgWidth = leftMargin + mainTextWidth + rightMargin
 
 
@@ -134,30 +265,27 @@ class EditionViewer {
       }
       
       let apparatusY = topMargin + mainTextHeight
+      let currentApparatusIndex = 0
       for (const apparatus of typesetApparatuses) {
-        apparatusY += this.textToApparatus 
-        html += '<line x1="' + leftMargin + '" y1="' + (apparatusY - 5) + '" ' + 
+        apparatusY += this.textToApparatus  
+        apparatusY += currentApparatusIndex !== 0 ? apparatusHeights[currentApparatusIndex-1] : 0
+        
+        if (this.rightToLeft) {
+          html += '<line x1="' + (typesetter.getTextWidth() + leftMargin) + '" y1="' + (apparatusY - 5) + '" ' + 
+                'x2="' + (typesetter.getTextWidth() + leftMargin - 50) + '" y2="' +  (apparatusY - 5) + '" style="stroke: silver; stroke-width: 1" />'         
+        } else {
+          html += '<line x1="' + leftMargin + '" y1="' + (apparatusY - 5) + '" ' + 
                 'x2="' + (leftMargin+50) + '" y2="' +  (apparatusY - 5) + '" style="stroke: silver; stroke-width: 1" />'
+        }
                 
         for(const token of apparatus) {
           html += typesetter.genTokenSvg(leftMargin, apparatusY, token)
         }
+        currentApparatusIndex++
       }
 
       html += '</svg>'
       return html
-  }
-  
-  
-
-  
-  /**
-   * Returns a list of tokens to be typeset for the given line range 
-   * 
-   * @returns array
-   */
-  getApparatusTokensFromNotes(linedNotes, startLine, endLine) {
-    return []
   }
   
   

@@ -40,7 +40,8 @@
  *       chapter 12. Glue is meant to represent a potentially variable-length space that may or 
  *       may not eventually appear in the typeset text. 
  *       
- *       space: number, normal length of the space in pixels
+ *       space: 'normal' | number,  if a number is given this is the space size in pixels; if 'normal'
+ *              the normalSpaceWidth given in the constructor options is used
  *       stretch: number, extra pixels the space can have, this is only a suggestion, the typesetter
  *           algorithm may stretch spaces more than this in extreme situations.
  *       shrink: number , how many pixels less the space can have; space - shrink is the absolute minimum
@@ -76,15 +77,15 @@
 class Typesetter {
   
   constructor(options = {}) {
-    console.log('Constructing typesetter')
+    //console.log('Constructing typesetter')
     this.options = this.getSanitizedOptions(options)
     
     this.emSize = this.getTextWidthWithDefaults('m')
     this.normalSpace = this.options.normalSpaceWidth * this.emSize
     
-    console.log(this.options)
-    console.log('emSize = ' + this.emSize)
-    console.log('normalSpace = ' + this.normalSpace)
+//    console.log(this.options)
+//    console.log('emSize = ' + this.emSize)
+//    console.log('normalSpace = ' + this.normalSpace)
     
   }
   
@@ -169,7 +170,7 @@ class Typesetter {
   getTextWidthWithDefaults(text) {
     if (typeof(this.defaultFontDefinitionString) === 'undefined') {
       this.defaultFontDefinitionString = this.options.defaultFontSize  + 'px ' + this.options.defaultFontFamily
-      console.log('Default string def: ' + this.defaultFontDefinitionString)
+      //console.log('Default string def: ' + this.defaultFontDefinitionString)
     }
     return this.getStringWidth(text, this.defaultFontDefinitionString) 
   }
@@ -204,7 +205,7 @@ class Typesetter {
     
     for(const token of tokens) {
       if (token.type === 'glue') {
-        let spaceWidth = token.space
+        let spaceWidth = (token.space === 'normal') ? this.normalSpace : token.space
         if (token.space <= 0) {
           // ignore negative and zero space
           continue
@@ -433,6 +434,8 @@ class Typesetter {
     // NOTE: just estimating the descender height at this point
     // when browser support advanced text metrics this can be 
     // calculated automatically 
+    console.log('Getting text height: ')
+    console.log(tokens[tokens.length-1])
     return tokens[tokens.length-1].deltaY + (this.options.defaultFontSize * 0.4)
   }
   

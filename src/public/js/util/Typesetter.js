@@ -22,43 +22,54 @@
  * 
  * The class provides a typesetting engine that allows for various typesetting scenarios.
  * The main method is typesetTokens, which takes an array of tokens and returns a copy
- * of those tokens with position information that can then be used to place them in a HTML canvas
- * or an SVG
+ * of those tokens with position information that can then be used to place them in an SVG element
  * 
  * 
- * A token is an object with the following elements:
- *    type:  string => 'text' | 'glue'
+ * A token is an object with the following properties:
+ *    type:  'text' | 'glue'
  *    
  *    type === 'text'
  *      text : string
- *      fontFamily:  string = CSS font-family (optional, default to defaultFontFamily given in constructor options)
- *      fontStyle: string, = CSS font-style  (defaults to 'normal')
- *      fontSize:  string, = CSS font-size, but only em and px sizes are recognized
- *      fontWeight: string = CSS font-weight (defaults to 'normal')
+ *      fontFamily:  string = CSS font-family (optional, defaults to defaultFontFamily given in the constructor options)
+ *      fontStyle: 'normal' | 'italic',  defaults to 'normal'
+ *      fontSize:  number, font size in pixels
+ *      fontWeight: 'normal' | 'bold', defaults to 'normal'
  *    
  *    type === 'glue' 
  *       The term 'glue' is taken from Donald Knuth's the TeXbook, where it is explained in 
- *       chapter 12. Glue is meant to represent a potentially variable length space that may or 
+ *       chapter 12. Glue is meant to represent a potentially variable-length space that may or 
  *       may not eventually appear in the typeset text. 
  *       
- *       space: int, normal length of the space in pixels
- *       stretch: int, extra pixels the space can have, this is only a suggestion, the typesetter
+ *       space: number, normal length of the space in pixels
+ *       stretch: number, extra pixels the space can have, this is only a suggestion, the typesetter
  *           algorithm may stretch spaces more than this in extreme situations.
- *       shrink: int, how many pixels less the space can have; space - shrink is the absolute minimum
+ *       shrink: number , how many pixels less the space can have; space - shrink is the absolute minimum
  *           for the space
  *           
  *       For the moment, stretch and shrink are ignored, stretch defaults to 10000 (esentially 
  *       infinite) and shrink defaults to zero
  *      
- *  The typesetter returns tokens with the following elements added
+ *  The typesetter returns tokens with the following properties added or overwritten
  *    
- *    deltaX: float
- *    deltaY: float
- *    lineNumber: int
+ *    deltaX: number 
+ *    deltaY: number
+ *    width: float, token width in pixels. 
+ *        for a  text token, (deltaX, deltaY) is the position to use when placing the token in SVG using
+ *        the appropriate text direction. So, if the text is left-to-right, the position
+ *        corresponds to the left-most point of the text's baseline; if the text is
+ *        right-to-left, the position corresponds to the right-most point of the baseline
+ *        
+ *        for a glue token, (deltaX, deltaY) is the position of the bottom, left corner of an 
+ *        imaginary rectangle representing the white space.  
+ *        
+ *    lineNumber: number 
  *    
- *    if type===glue
+ *    when the token text direction is not the default one:
+ *    
+ *      direction: 'rtl' | 'ltr' 
+ *    
+ *    if type === 'glue'
  *       status: string, = 'set'
- *       setSpace: float, the calculated width of the glue
  *      
  */
 
@@ -178,7 +189,6 @@ class Typesetter {
     
     for(const token of tokens) {
       if (token.type === 'glue') {
-        //console.log('Space token')
         let spaceWidth = token.space
         if (token.space <= 0) {
           // ignore negative and zero space
@@ -186,18 +196,18 @@ class Typesetter {
         }
         let newX = advanceX(currentX, spaceWidth, rightToLeft)
         if (isOutOfBounds(newX, lineWidth, rightToLeft)) {
-          //console.log('Out of bounds on space')
-          //console.log('newX = ' + newX)
+          // advance to the next line
           currentY += pxLineHeight
           currentLine++
           currentX = rightToLeft ? lineWidth : 0
-          //console.log('currentY: ' + currentY)
-          //console.log('currentX: ' + currentX)
         } else {
+          // create and insert a set glue token into output token array
           let glueToken = token
           glueToken.status = 'set'
-          glueToken.setSpace = token.space
+          glueToken.width = token.space
           glueToken.lineNumber = currentLine
+          // if rightToLeft, make sure the glue is positioned correctly to the left
+          // of the currentX point, at newX
           glueToken.deltaX = rightToLeft ? newX : currentX
           glueToken.deltaY = currentY
           currentX = newX
@@ -210,7 +220,7 @@ class Typesetter {
         // ignore empty text
         continue
       }
-      let newToken = token
+      
       let fontDefString = ''
       if (token.fontWeight) {
         fontDefString += token.fontWeight + ' '
@@ -220,32 +230,22 @@ class Typesetter {
       let tokenWidth = this.getStringWidth(token.text, fontDefString) 
       let newX = advanceX(currentX, tokenWidth, rightToLeft)
       if (isOutOfBounds(newX, lineWidth, rightToLeft)) {
-        //console.log('Out of bounds on token ' + token.text)
-        //console.log('newX = ' + newX)
         currentY += pxLineHeight
         currentLine++
         currentX = rightToLeft ? lineWidth : 0
-        if (rightToLeft) { 
-          newX = advanceX(currentX, tokenWidth, rightToLeft)
-        }
-        //console.log('currentY: ' + currentY)
-        //console.log('currentX: ' + currentX)
       } 
       
+      let newToken = token
       newToken.lineNumber = currentLine
-      newToken.deltaX = rightToLeft ? newX : currentX
+      newToken.deltaX = currentX
       newToken.deltaY = currentY
       newToken.fontFamily = this.options.defaultFontFamily
       newToken.fontSize = this.options.defaultFontSize
-      if (rightToLeft) {
-        currentX = newX
-      } else {
-        currentX = advanceX(currentX, tokenWidth, rightToLeft)
-      }
-      
-
-      
+      newToken.width = tokenWidth
       typesetTokens.push(newToken)
+      
+      currentX = advanceX(currentX, tokenWidth, rightToLeft)
+
     }
     return typesetTokens
   }
@@ -281,17 +281,18 @@ class Typesetter {
       lineNumbersDeltaYs[token.lineNumber] = token.deltaY
     }
     let lineNumbersFontDefinition = (this.options.defaultFontSize * this.options.lineNumbersFontSizeMultiplier) + 'px ' + this.options.defaultFontFamily
-    console.log(lineNumbersFontDefinition)
     let lineNumberTokens =[]
     for (const i in lineNumbersDeltaYs) {
       if ( (i * 1) ===1 || (i % lineNumberFrequency) === 0 ) {
-        
+        let tokenWidth = this.getStringWidth(i.toString(), lineNumbersFontDefinition)
         let newToken = {
           type: 'text',
           text: i.toString(),
-          deltaX: this.options.rightToLeft ? 0 : -this.getStringWidth(i.toString(), lineNumbersFontDefinition),
+          deltaX: this.options.rightToLeft ? 0 : -tokenWidth,  //left-align on rtl text and right-align on ltr text
           deltaY: lineNumbersDeltaYs[i],
-          fontSize: this.options.defaultFontSize * this.options.lineNumbersFontSizeMultiplier
+          fontSize: this.options.defaultFontSize * this.options.lineNumbersFontSizeMultiplier,
+          width: tokenWidth,
+          direction: 'ltr'
         }
         lineNumberTokens.push(newToken)
       }
@@ -307,7 +308,7 @@ class Typesetter {
       }
       let fontHeight = this.options.defaultFontSize
       let svg = '<rect x="' + (left+token.deltaX) + '" y="' + (top+token.deltaY - fontHeight ) + '" '+
-              'width="' + token.setSpace + '" height="' + fontHeight + '" ' +
+              'width="' + token.width + '" height="' + fontHeight + '" ' +
               'style="fill:silver;"/>'
       return svg
       
@@ -343,7 +344,7 @@ class Typesetter {
       svgString += 'font-style="' + fontStyle +'" '
     }
     
-    if (this.options.rightToLeft) {
+    if ((!token.direction && this.options.rightToLeft) || (token.direction === 'rtl')) {
       svgString += 'direction="rtl" writing-mode="rl" '
     }
     svgString += ' x="' + (left + token.deltaX) + '" y="' + (top + token.deltaY) + '">' +  token.text + '</text>'
@@ -362,6 +363,10 @@ class Typesetter {
   }
   
   getTokensFromMarkdownString(theString) {
+    
+    // TODO: parse markdown properly. At this point only bold and italics on single
+    // words are supported
+    
     let stringTokens = this.getTokensFromString(theString)
     
     let boldRegExp = RegExp('^\\*\\*(.*)\\*\\*([.,;:?!]*)$')

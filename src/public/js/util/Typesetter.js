@@ -88,6 +88,7 @@ class Typesetter {
     options.normalSpaceWidth = 1  // in ems
     options.minSpaceWidth = 0.8 // in ems
     options.justifyText = false
+    options.lineNumbersFontSizeMultiplier = 0.8
     
     return options
   }
@@ -122,6 +123,10 @@ class Typesetter {
     
     if (typeof(options.rightToLeft === 'boolean')) {
       sanitizedOptions.rightToLeft = options.rightToLeft
+    }
+    
+    if (typeof(options.lineNumbersFontSizeMultiplier) === 'number') {
+      sanitizedOptions.lineNumbersFontSizeMultiplier = options.lineNumbersFontSizeMultiplier
     }
     
     // TODO: fill this up
@@ -181,15 +186,19 @@ class Typesetter {
         }
         let newX = advanceX(currentX, spaceWidth, rightToLeft)
         if (isOutOfBounds(newX, lineWidth, rightToLeft)) {
+          //console.log('Out of bounds on space')
+          //console.log('newX = ' + newX)
           currentY += pxLineHeight
           currentLine++
           currentX = rightToLeft ? lineWidth : 0
+          //console.log('currentY: ' + currentY)
+          //console.log('currentX: ' + currentX)
         } else {
           let glueToken = token
           glueToken.status = 'set'
           glueToken.setSpace = token.space
           glueToken.lineNumber = currentLine
-          glueToken.deltaX = currentX
+          glueToken.deltaX = rightToLeft ? newX : currentX
           glueToken.deltaY = currentY
           currentX = newX
           typesetTokens.push(glueToken)
@@ -211,18 +220,31 @@ class Typesetter {
       let tokenWidth = this.getStringWidth(token.text, fontDefString) 
       let newX = advanceX(currentX, tokenWidth, rightToLeft)
       if (isOutOfBounds(newX, lineWidth, rightToLeft)) {
+        //console.log('Out of bounds on token ' + token.text)
+        //console.log('newX = ' + newX)
         currentY += pxLineHeight
         currentLine++
         currentX = rightToLeft ? lineWidth : 0
+        if (rightToLeft) { 
+          newX = advanceX(currentX, tokenWidth, rightToLeft)
+        }
+        //console.log('currentY: ' + currentY)
+        //console.log('currentX: ' + currentX)
       } 
       
       newToken.lineNumber = currentLine
-      newToken.deltaX = currentX
+      newToken.deltaX = rightToLeft ? newX : currentX
       newToken.deltaY = currentY
       newToken.fontFamily = this.options.defaultFontFamily
       newToken.fontSize = this.options.defaultFontSize
+      if (rightToLeft) {
+        currentX = newX
+      } else {
+        currentX = advanceX(currentX, tokenWidth, rightToLeft)
+      }
       
-      currentX = advanceX(currentX, tokenWidth, rightToLeft)
+
+      
       typesetTokens.push(newToken)
     }
     return typesetTokens
@@ -239,7 +261,45 @@ class Typesetter {
     return this.typesetTokens(tokens)
   }
   
-  genTextSvg(left, top, token, showGlue = true) {
+  /**
+   * Takes an array of typeset tokens and generates
+   * typeset token for line numbers 
+   * if rightToLeft, line numbers will have all deltaX = 0 
+   * which will make them left-aligned
+   * if not rightToLeft, line numbers will be right aligned,
+   * so all their deltaX will be negative
+   * 
+   * @param {array} typesetTokens
+   * @param {int} lineNumberFrequency
+   * @returns {array}
+   */
+  typesetLineNumbers(typesetTokens, lineNumberFrequency) {
+    
+   // get line y positions
+    let lineNumbersDeltaYs = []
+    for(const token of typesetTokens) {
+      lineNumbersDeltaYs[token.lineNumber] = token.deltaY
+    }
+    let lineNumbersFontDefinition = (this.options.defaultFontSize * this.options.lineNumbersFontSizeMultiplier) + 'px ' + this.options.defaultFontFamily
+    console.log(lineNumbersFontDefinition)
+    let lineNumberTokens =[]
+    for (const i in lineNumbersDeltaYs) {
+      if ( (i * 1) ===1 || (i % lineNumberFrequency) === 0 ) {
+        
+        let newToken = {
+          type: 'text',
+          text: i.toString(),
+          deltaX: this.options.rightToLeft ? 0 : -this.getStringWidth(i.toString(), lineNumbersFontDefinition),
+          deltaY: lineNumbersDeltaYs[i],
+          fontSize: this.options.defaultFontSize * this.options.lineNumbersFontSizeMultiplier
+        }
+        lineNumberTokens.push(newToken)
+      }
+    }
+    return lineNumberTokens
+  }
+  
+  genTokenSvg(left, top, token, showGlue = false) {
     
     if (token.type === 'glue') {
       if (!showGlue) {
@@ -255,11 +315,12 @@ class Typesetter {
     if (token.text === '') {
       return ''
     }
-    let fontsize = this.options.defaultFontSize
+    let fontSize = this.options.defaultFontSize
     let fillColor = '#000000'
     let fontfamily = this.options.defaultFontFamily
     let fontWeight = ''
     let fontStyle = ''
+
     if (token.fontWeight) {
       fontWeight = token.fontWeight
     }
@@ -268,7 +329,11 @@ class Typesetter {
       fontStyle = token.fontStyle
     }
     
-    let svgString = '<text fill="' +  fillColor + '" font-size="' + fontsize + '" '
+    if (token.fontSize) {
+      fontSize = token.fontSize
+    }
+    
+    let svgString = '<text fill="' +  fillColor + '" font-size="' + fontSize + '" '
     svgString += 'font-family="' + fontfamily + '" '
     if (fontWeight) {
       svgString += 'font-weight="' + fontWeight +'" '
@@ -276,6 +341,10 @@ class Typesetter {
     
     if (fontStyle) {
       svgString += 'font-style="' + fontStyle +'" '
+    }
+    
+    if (this.options.rightToLeft) {
+      svgString += 'direction="rtl" writing-mode="rl" '
     }
     svgString += ' x="' + (left + token.deltaX) + '" y="' + (top + token.deltaY) + '">' +  token.text + '</text>'
     return svgString

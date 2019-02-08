@@ -100,6 +100,8 @@ class Typesetter {
     options.minSpaceWidth = 0.8 // in ems
     options.justifyText = false
     options.lineNumbersFontSizeMultiplier = 0.8
+    options.spaceBetweenParagraphs = 0
+    options.paragraphFirstLineIndent = options.defaultFontSize * 2
     
     return options
   }
@@ -140,6 +142,14 @@ class Typesetter {
       sanitizedOptions.lineNumbersFontSizeMultiplier = options.lineNumbersFontSizeMultiplier
     }
     
+    if (typeof(options.paragraphFirstLineIndent) === 'number') {
+      sanitizedOptions.paragraphFirstLineIndent = options.paragraphFirstLineIndent
+    }
+    
+    if (typeof(options.spaceBetweenParagraphs) === 'number')  {
+      sanitizedOptions.spaceBetweenParagraphs = options.spaceBetweenParagraphs
+    }
+    
     // TODO: fill this up
     
     return sanitizedOptions
@@ -164,7 +174,8 @@ class Typesetter {
     return this.getStringWidth(text, this.defaultFontDefinitionString) 
   }
   
-  typesetTokens(tokens) {
+  typesetTokens(tokens, defaultFontSize = false) {
+    
     function isOutOfBounds(x, lineWidth, rightToLeft) {
       if (rightToLeft) {
         return x < 0
@@ -179,12 +190,16 @@ class Typesetter {
       return x + deltaX
     }
     
+    if (defaultFontSize === false) {
+      defaultFontSize = this.options.defaultFontSize
+    }
+    
     let typesetTokens = []
     let lineWidth = this.options.lineWidth
     let rightToLeft = this.options.rightToLeft
     let currentLine = 1
     let currentX = rightToLeft ? lineWidth : 0
-    let currentY = this.options.defaultFontSize
+    let currentY = defaultFontSize
     let pxLineHeight = this.options.lineHeight
     
     for(const token of tokens) {
@@ -221,11 +236,20 @@ class Typesetter {
         continue
       }
       
+      if (token.text === "\n") {
+        // new paragraph
+        currentY += pxLineHeight + this.options.spaceBetweenParagraphs
+        currentLine++
+        currentX = rightToLeft ? lineWidth : 0
+        currentX = advanceX(currentX, this.options.paragraphFirstLineIndent, rightToLeft)
+        continue
+      }
+      
       let fontDefString = ''
       if (token.fontWeight) {
         fontDefString += token.fontWeight + ' '
       }
-      fontDefString += this.options.defaultFontSize + 'px ' + this.options.defaultFontFamily
+      fontDefString += defaultFontSize + 'px ' + this.options.defaultFontFamily
       
       let tokenWidth = this.getStringWidth(token.text, fontDefString) 
       let newX = advanceX(currentX, tokenWidth, rightToLeft)
@@ -240,7 +264,7 @@ class Typesetter {
       newToken.deltaX = currentX
       newToken.deltaY = currentY
       newToken.fontFamily = this.options.defaultFontFamily
-      newToken.fontSize = this.options.defaultFontSize
+      newToken.fontSize = defaultFontSize
       newToken.width = tokenWidth
       typesetTokens.push(newToken)
       
@@ -250,15 +274,15 @@ class Typesetter {
     return typesetTokens
   }
   
-  typesetString(theString) {
+  typesetString(theString, defaultFontSize = false) {
     let tokens = this.getTokensFromString(theString)
-    return this.typesetTokens(tokens)
+    return this.typesetTokens(tokens, defaultFontSize)
   }
   
   
-  typesetMarkdownString(theString) {
+  typesetMarkdownString(theString, defaultFontSize) {
     let tokens = this.getTokensFromMarkdownString(theString)
-    return this.typesetTokens(tokens)
+    return this.typesetTokens(tokens, defaultFontSize)
   }
   
   /**

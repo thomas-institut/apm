@@ -16,179 +16,140 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+/* global Typesetter */
+
 class EditionViewer {
   
-  constructor (tokens, notes, divId) {
+  constructor (tokens, notes, divId, rightToLeft = false) {
     console.log('Constructing Edition Viewer')
     this.tokens = tokens
     this.notes = notes
     this.container = $('#' + divId)
-    
     this.fontFamily = 'Times New Roman'
     
-    // em-square in pixels
-    this.fontSizeInPoints = 16
-    this.lineHeightInPoints = 22
+    this.lineWidthInCm = 11
+    this.fontSizeInPts = 14
+    this.lineHeightInPts = 20
     
-    this.lineWidthInEms = 40  
-    this.leftMargin = 3    // in ems
-    this.rightMargin = 3   // in ems
+    this.apparatusFontSizeInPts = 12
+    this.apparatusLineHeightInPts = 18
     
+    this.topMarginInCm = 0.5
+    this.leftMarginInCm = 2
     
-    this.emSize = this.getTextWidth('m', this.fontSizeInPoints + 'pt ' + this.fontFamily)
-    this.spaceWidth = this.getTextWidth(' ', this.fontSizeInPoints + 'pt ' + this.fontFamily)
-    this.lineNumbersWidth = this.getTextWidth('000', this.lineNumbersFontSizeInPoints + 'pt ' + this.fontFamily)
-    this.textWidth = this.lineWidthInEms*this.emSize
-    this.distanceToLineNumbers = this.emSize
-    this.distanceFromMarginToText = this.lineNumbersWidth + this.distanceToLineNumbers
+    this.bottomMarginInCm = 1
+    this.rightMarginInCm = 2
     
-    console.log(' - em-size: ' + this.emSize)
-    console.log(' - space width: ' + this.spaceWidth)
-    console.log(' - text width: ' + this.textWidth)
-    console.log(' - line numbers width: ' + this.lineNumbersWidth)
-    console.log(' - distance from line numbers to text: ' + this.distanceToLineNumbers)
+    this.textToLineNumbersInCm = 0.5
+    this.textToApparatusInCm = 1.5
     
-    this.fontSize = this.fontSizeInPoints*4/3
-    this.lineHeight = this.lineHeightInPoints*4/3
+    this.topMargin = Typesetter.cm2px(this.topMarginInCm)
+    this.leftMargin = Typesetter.cm2px(this.leftMarginInCm)
+    this.bottomMargin = Typesetter.cm2px(this.bottomMarginInCm)
+    this.rightMargin = Typesetter.cm2px(this.rightMarginInCm)
+    this.textToLineNumbers = Typesetter.cm2px(this.textToLineNumbersInCm)
+    this.textToApparatus = Typesetter.cm2px(this.textToApparatusInCm)
     
-    this.lineNumbersFontSize = this.fontSize*0.8
+    this.ts = new Typesetter({
+       lineWidth: Typesetter.cm2px(this.lineWidthInCm),
+       lineHeight: Typesetter.pt2px(this.lineHeightInPts),
+       defaultFontSize: Typesetter.pt2px(this.fontSizeInPts),
+       rightToLeft: rightToLeft,
+       defaultFontFamily: 'Times New Roman',
+       normalSpaceWidth: 0.32,
+    })
+    
+    this.tsApparatus = new Typesetter({
+       lineWidth: Typesetter.cm2px(this.lineWidthInCm),
+       lineHeight: Typesetter.pt2px(this.apparatusLineHeightInPts),
+       defaultFontSize: Typesetter.pt2px(this.apparatusFontSizeInPts),
+       rightToLeft: rightToLeft,
+       defaultFontFamily: 'Times New Roman',
+       normalSpaceWidth: 0.32,
+    })
+
+    // Some fake note text to test how it looks
+    this.fakeApparatusMds  = [ 
+        '**2** shown] _om._ A   with] wit C   **6** aperiamad] + iste A' ,
+        '**1** This] A:24r  B:141v  C:48   **10** qui] B:142r   iste] C:49   **12** Optio] A:24v' 
+    ]
     
     this.container.html(this.getHtml())
   }
   
   getHtml() {
-    let pxLeftMargin = this.distanceFromMarginToText
-    let pxRightMargin = this.distanceFromMarginToText
-    let svgWidth = this.textWidth + pxLeftMargin  + pxRightMargin
-    let placedTokens = this.placeTokensInLines(this.tokens)
-    let numLines = placedTokens[placedTokens.length-1].lineNumber
-    let lineNumbers = this.placeLineNumbers(numLines)
-    let svgHeight = this.lineHeight*numLines+(this.fontSize/2)
-    let html = '<svg class="editionsvg" height="' + svgHeight + '" width="' + svgWidth + '">'
     
-    for(const token of placedTokens) {
-      html += this.genTextSvg(pxLeftMargin+token.deltaX, token.deltaY, this.fontSize, token.text)
+    this.typesetTokens = this.ts.typesetTokens(this.tokens)
+    let lineNumbers = this.ts.typesetLineNumbers(this.typesetTokens,5)
+    let typesetApparatuses = []
+    for (const fakeApparatusMd of this.fakeApparatusMds) {
+      typesetApparatuses.push(this.tsApparatus.typesetMarkdownString(fakeApparatusMd))
     }
     
-    for(const lineNumber of lineNumbers) {
-      html += this.genTextSvg(pxLeftMargin+lineNumber.deltaX, lineNumber.deltaY, this.lineNumbersFontSize, lineNumber.text)
-    }
-    html += '</svg>'
+    let html = this.getSvgHtml(
+      this.typesetTokens, 
+      lineNumbers, 
+      typesetApparatuses,
+      'editionsvg', 
+      this.leftMargin, this.topMargin, 
+      this.rightMargin, this.bottomMargin, 
+      this.textToLineNumbers
+      )
+    
     return html
   }
   
-  placeLineNumbers(maxLineNumber, lineFrequency = 5) {
-    let lineNumbers = []
-    for(let i=1; i <=maxLineNumber; i++) {
-      if (i=== 1 || (i % lineFrequency) === 0 )
-        lineNumbers.push({
-          text: i.toString(),
-          deltaX: - this.distanceToLineNumbers - this.getStringWidth(i.toString(), this.lineNumbersFontSize),
-          deltaY: i*this.lineHeight
-        })
-          
-        
-    }
-    return lineNumbers
-  }
   
-  getStringWidth(someString, fontSizeInPixels) {
-    return  this.getTextWidth(someString, fontSizeInPixels + 'px  ' + this.fontFamily)
-  }
-  
-  getTextWidth(text, font) {
-    // re-use canvas object for better performance
-    if (typeof(this.canvas) === 'undefined') {
-      this.canvas = document.createElement("canvas")
-    }
-    let context = this.canvas.getContext("2d");
-    context.font = font;
-    var metrics = context.measureText(text);
-    return metrics.width;
-  }
-  
-  genTextSvg(x, y, fontsize, text) {
-    return '<text fill="#000000" font-size="' + fontsize + 'px" font-family="'  +
-            this.fontFamily + '" x="' + x + '" y="' + y + '">' +  text + '</text>'
-  }
-  
-  /**
-   * Calculates the line positions of the given tokens for a given line Width
-   * Returns a copy of the tokens adding or overwriting position information:
-   *   lineNumber (starting in 1)
-   *   deltaX  : relative X position 
-   *   deltaY  : relative Y position
-   * 
-   * @param {array} tokens
-   * @param {bool} rightToLeft
-   * @returns {array}
-   */
-  
-  placeTokensInLines(tokens, rightToLeft = false) {
-    
-    function isOutOfBounds(x, lineWidth, rightToLeft) {
-      if (rightToLeft) {
-        return x < 0
-      }
-      return x > lineWidth
-    }
-    
-    function advanceX(x, deltaX, rightToLeft) {
-      if (rightToLeft) {
-        return x - deltaX
-      }
-      return x + deltaX
-    }
-    
-    let newTokens = []
-    let lineWidth = this.textWidth
-    let currentLine = 1
-    let currentX = rightToLeft ? lineWidth : 0
-    let currentY = this.lineHeight
-    let pxSpaceWidth = this.spaceWidth
-    let pxLineHeight = this.lineHeight
-    
-    for(const token of tokens) {
-      let newToken = token
-      let tokenWidth = this.getStringWidth(token.text, this.fontSize) 
-      //console.log('Processing token: ')
-      //console.log(token)
-      //console.log('Current X:' +  currentX)
-      //console.log('Token Width: ' + tokenWidth)
-      let newX = advanceX(currentX, tokenWidth, rightToLeft)
-      //console.log('new X: ' + newX)
-      // check to see if the word fits in the line
-      if (isOutOfBounds(newX, lineWidth, rightToLeft)) {
-        //console.log('Word is out of bounds')
-        currentY += pxLineHeight
-        currentLine++
-        currentX = rightToLeft ? lineWidth : 0
-      } 
+   getSvgHtml(typesetTokens, typesetLineNumbers, typesetApparatuses, svgClass, leftMargin = 0, topMargin = 0, rightMargin = 0, bottomMargin = 0, textToLineNumbers = 10) {
+     
+      let typesetter = this.ts
+      let typesetterAparatus = this.tsApparatus
       
-      newToken.lineNumber = currentLine
-      newToken.deltaX = currentX
-      newToken.deltaY = currentY
-      
-      //console.log(newToken)
-      // now advance currentX adding an em-space
-      currentX = advanceX(currentX, tokenWidth + pxSpaceWidth, rightToLeft)
-      // check if currentX is out of bounds
-      if (isOutOfBounds(currentX, lineWidth, rightToLeft)) {
-        currentY += pxLineHeight
-        currentLine++
-        currentX = rightToLeft ? lineWidth : 0
+      let mainTextHeight = typesetter.getTextHeight(typesetTokens)
+      let mainTextWidth = typesetter.getTextWidth()
+      let apparatusHeights = []
+      let totalApparatusHeight = 0
+      for (const apparatus of typesetApparatuses) {
+        let height = typesetterAparatus.getTextHeight(apparatus)
+        apparatusHeights.push(height)
+        totalApparatusHeight += height
       }
-      newTokens.push(newToken)
-    }
-    
-    return newTokens
-    
+      
+     
+      let svgHeight = topMargin + mainTextHeight + this.textToApparatus * typesetApparatuses.length + totalApparatusHeight + bottomMargin
+      let svgWidth = leftMargin + mainTextWidth + rightMargin
+
+
+      let html = '<svg class="' + svgClass + '" height="' + svgHeight + '" width="' + svgWidth + '">'
+
+      for(const token of typesetTokens) {
+          html += typesetter.genTokenSvg(leftMargin, topMargin, token)
+      }
+      let lineNumbersX = leftMargin - textToLineNumbers
+      if (typesetter.options.rightToLeft) {
+          lineNumbersX = leftMargin + typesetter.getTextWidth() + textToLineNumbers
+      }
+      for(const token of typesetLineNumbers) {
+          html += typesetter.genTokenSvg(lineNumbersX, topMargin, token)
+      }
+      
+      let apparatusY = topMargin + mainTextHeight
+      for (const apparatus of typesetApparatuses) {
+        apparatusY += this.textToApparatus 
+        html += '<line x1="' + leftMargin + '" y1="' + (apparatusY - 5) + '" ' + 
+                'x2="' + (leftMargin+50) + '" y2="' +  (apparatusY - 5) + '" style="stroke: silver; stroke-width: 1" />'
+                
+        for(const token of apparatus) {
+          html += typesetter.genTokenSvg(leftMargin, apparatusY, token)
+        }
+      }
+
+      html += '</svg>'
+      return html
   }
- 
   
-  lineNotes(notes, placedTokens) {
-    
-  }
+  
+
   
   /**
    * Returns a list of tokens to be typeset for the given line range 

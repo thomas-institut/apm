@@ -20,14 +20,13 @@
 
 class EditionViewer {
   
-  constructor (collationTokens, aparatusArray, divId, rightToLeft = false) {
+  constructor (collationTokens, aparatusArray, rightToLeft = false, addGlue = true) {
     console.log('Constructing Edition Viewer')
     
     this.collationTokens = collationTokens  
     this.apparatusArray = aparatusArray
     this.rightToLeft = rightToLeft
 
-    this.container = $('#' + divId)
     this.fontFamily = 'Times New Roman'
     
     this.pageWidthInCm = 21
@@ -79,7 +78,7 @@ class EditionViewer {
        normalSpaceWidth: this.normalSpaceWidthInEms
     })
     
-    this.mainTextTokens = this.generateTokensToTypesetFromCollationTableTokens(this.collationTokens)
+    this.mainTextTokens = this.generateTokensToTypesetFromCollationTableTokens(this.collationTokens, addGlue)
     console.log('Main Text Tokens')
     console.log(this.mainTextTokens)
     
@@ -109,10 +108,9 @@ class EditionViewer {
       this.typesetApparatuses.push(this.tsApparatus.typesetTokens(apparatusToTypeset))
     }
     
-    this.container.html(this.getHtml())
   }
   
-  generateTokensToTypesetFromCollationTableTokens(collationTableTokens) {
+  generateTokensToTypesetFromCollationTableTokens(collationTableTokens, addGlue = true) {
     // for now, just add whitespace in between the tokens
     let tokensToTypeset = []
     let currentCollationTableTokenIndex = 0
@@ -120,10 +118,14 @@ class EditionViewer {
       collationTableToken.collationTableIndex = currentCollationTableTokenIndex
       currentCollationTableTokenIndex++
       tokensToTypeset.push(collationTableToken)
-      tokensToTypeset.push({type: 'glue', space: 'normal'})
+      if (addGlue) {
+        tokensToTypeset.push({type: 'glue', space: 'normal'})
+      }
     }
-    if (tokensToTypeset.length > 1) {
-      tokensToTypeset.pop()  // take out the last glue
+    if (addGlue) {
+      if (tokensToTypeset.length > 1) {
+        tokensToTypeset.pop()  // take out the last glue
+      }
     }
     return tokensToTypeset
   }

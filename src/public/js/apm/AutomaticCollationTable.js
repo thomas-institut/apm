@@ -204,6 +204,18 @@ class AutomaticCollationTable {
       thisObject.redoButton.prop('disabled', false)
       thisObject.updating = false
       thisObject.collationEngineDetails.html(thisObject.getCollationEngineDetailsHtml(data.collationEngineDetails))
+      
+      // EXPERIMENTAL
+      let ev = new EditionViewer(
+              data.quickEdition.mainTextTokens, 
+              data.quickEdition.apparatusArray , 
+              data.quickEdition.textDirection === 'rtl', // rightToLeft?
+              false  // don't add glue
+              
+      )
+      
+      $('#editionviewer').html(ev.getHtml())
+      
     })
     .fail(function(resp) {
       console.log('Error in automatic collation, resp:')

@@ -36,6 +36,8 @@ class QuickDerivativeWitness {
     
     const NO_GLUE_PUNCTUATION = '.,:?!';
     
+    const TOKEN_NOT_IN_MAINTEXT = -1;
+    
     /**
      *
      * @var CollationTable
@@ -120,8 +122,11 @@ class QuickDerivativeWitness {
         
         $ctTokens = $this->collationTable->getRow($baseSiglum);
         $firstWordAdded = false;
+        $ctToMainTextMap = [];
+        $currentMainTextIndex = -1;
         foreach($ctTokens as $i => $ctToken) {
             if ($ctToken->isEmpty() ) {
+                $ctToMainTextMap[] = self::TOKEN_NOT_IN_MAINTEXT;
                 continue;
             }
             $addGlue = true;
@@ -133,28 +138,91 @@ class QuickDerivativeWitness {
                 $addGlue = false;
             }
             if ($addGlue) {
+                $currentMainTextIndex++;
                 $mainTextTokens[] = [ 'type' => 'glue', 'space' => 'normal'];
             }
+            $currentMainTextIndex++;
             $mainTextTokens[] = [ 
                 'type' => 'text', 
                 'text' => $ctToken->getNormalization(),
                 'collationTableIndex' => $i
                 ];
             $firstWordAdded = true;
+            $ctToMainTextMap[] = $currentMainTextIndex;
         }
         
-//        for(const collationTableToken of collationTableTokens) {
-//      collationTableToken.collationTableIndex = currentCollationTableTokenIndex
-//      currentCollationTableTokenIndex++
-//      tokensToTypeset.push(collationTableToken)
-//      tokensToTypeset.push({type: 'glue', space: 'normal'})
-//    }
-//    if (tokensToTypeset.length > 1) {
-//      tokensToTypeset.pop()  // take out the last glue
-//    }
-//        
-        // 
-        $apparatusArray = [];
+        $criticalApparatus = [];
+        foreach($ctToMainTextMap as $i => $mainTextIndex) {
+            $row = $this->collationTable->getColumn($i);
+            if ($mainTextIndex === self::TOKEN_NOT_IN_MAINTEXT)  {
+                foreach($row as $siglum => $ctToken) {
+                    if ($siglum === $baseSiglum) {
+                        continue;
+                    }
+                    
+                    if ($ctToken->isEmpty()) {
+                        continue;
+                    }
+                    // find previous non-empty main text token
+                    $index = $i;
+                    while ($ctToMainTextMap[$index] === self::TOKEN_NOT_IN_MAINTEXT && $index >= 0) {
+                        $index--;
+                    }
+                    if ($index < 0) {
+                        // We are before the start of the main text
+                        // ignore for now
+                        continue;
+                    }
+                    
+                    $criticalApparatus[] = [
+                        'start' => $ctToMainTextMap[$index],
+                        'end' => $ctToMainTextMap[$index],
+                        'type' => 'add',
+                        'sigla' => [ $siglumToAbbr[$siglum]],
+                        'additions' => [$ctToken->getNormalization()],
+                        'markDown' => $ctToken->getNormalization() . ' _add._ ' . $siglumToAbbr[$siglum]
+                    ];
+                    
+                }
+                continue;
+            }
+            $mainText = $mainTextTokens[$ctToMainTextMap[$i]]['text'];
+            foreach($row as $siglum => $ctToken) {
+                if ($siglum === $baseSiglum) {
+                    continue;
+                }
+                if ($ctToken->isEmpty()) {
+                    $criticalApparatus[] = [ 
+                      'start' => $mainTextIndex,
+                      'end' => $mainTextIndex,
+                      'type' => 'om',
+                      'sigla' => [ $siglumToAbbr[$siglum]],
+                      'markDown' => '_om._ ' . $siglumToAbbr[$siglum]
+                    ];
+                    continue;
+                }
+                if ($ctToken->getNormalization() !== $mainText) {
+                    $criticalApparatus[] = [ 
+                        'start' => $mainTextIndex,
+                        'end' => $mainTextIndex,
+                        'type' => 'var',
+                        'sigla' => [ $siglumToAbbr[$siglum]],
+                        'variants' => [$ctToken->getNormalization()],
+                        'markDown' => $ctToken->getNormalization() . ' ' . 
+                              $siglumToAbbr[$siglum]                       
+                    ];
+                }
+            }
+        }
+        
+        // Optimize apparatus
+        
+        
+        
+        
+        
+        // Just one apparatus for now
+        $apparatusArray = [$criticalApparatus];
         
         $edition = [];
         $edition['mainTextTokens'] = $mainTextTokens;

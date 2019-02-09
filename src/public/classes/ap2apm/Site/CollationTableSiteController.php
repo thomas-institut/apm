@@ -96,6 +96,12 @@ class CollationTableSiteController extends SiteController
             $availableWitnesses[] = [ 'type' => 'doc', 'id' => intVal($witnessId), 'title' => $docInfo['title']];
         }
         
+        $canViewExperimentalData = 0;
+        if ($this->db->um->isUserAllowedTo($this->ci->userInfo['id'], 'act-view-experimental-data')) {
+            $canViewExperimentalData = 1;
+        }
+        
+        
         $profiler->log($this->ci->logger);
         
         return $this->ci->view->render($response, 'ap2apm/collationtable.twig', [
@@ -113,6 +119,7 @@ class CollationTableSiteController extends SiteController
                 'num_docs' => $partialCollation ? count($apiCallOptions['witnesses']) : count($validWitnesses),
                 'total_num_docs' => count($validWitnesses),
                 'availableWitnesses' => $availableWitnesses,
+                'canViewExperimentalData' => $canViewExperimentalData,
                 'warnings' => $warnings
             ]);
         

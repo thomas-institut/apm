@@ -26,7 +26,6 @@ class AutomaticCollationTable {
     this.rtlClass = 'rtltext'
     this.ltrClass = 'ltrtext'
     
-    
     this.options = this.getCleanOptionsObject(this.getDefaultOptions(), options)
     
     this.availableWitnesses = this.options.availableWitnesses
@@ -36,6 +35,8 @@ class AutomaticCollationTable {
     this.collationEngineDetails = $('#collationEngineDetails')
     this.redoButton = $('#redobutton')
     this.exportCsvButton = $('#exportcsvbutton')
+    this.quickEditionButton = $('#quickedbutton')
+    this.editionDiv = $('#editiondiv')
     this.apiCollationUrl = this.options.urlGen.apiAutomaticCollation()
     this.updating = false
     this.apiCallOptions = initialApiOptions
@@ -103,6 +104,15 @@ class AutomaticCollationTable {
     this.collationEngineDetails.html('')
     this.status.html('')
     this.actTitleElement.html(this.getTitleFromOptions())
+    this.editionDiv.addClass('hidden')
+    
+    this.quickEditionButton.on('click', function() {
+      if (thisObject.editionDiv.hasClass('hidden')) {
+        thisObject.editionDiv.removeClass('hidden')
+      } else {
+        thisObject.editionDiv.addClass('hidden')
+      }
+    })
     
     this.redoButton.on('click', function() { 
       console.log('redoButton clicked')
@@ -125,6 +135,7 @@ class AutomaticCollationTable {
     options.availableWitnesses = []
     options.loadNow = false
     options.urlGen = null
+    options.includeExperimental = false
     
     return options
   }
@@ -146,6 +157,10 @@ class AutomaticCollationTable {
     
     if(typeof(options.urlGen) === 'object'){
       cleanOptions.urlGen = options.urlGen
+    }
+    
+    if (typeof(options.includeExperimental) === 'boolean') {
+      cleanOptions.includeExperimental = options.includeExperimental
     }
     
     return cleanOptions
@@ -206,15 +221,17 @@ class AutomaticCollationTable {
       thisObject.collationEngineDetails.html(thisObject.getCollationEngineDetailsHtml(data.collationEngineDetails))
       
       // EXPERIMENTAL
-      let ev = new EditionViewer(
+      if (thisObject.options.includeExperimental) {
+        let ev = new EditionViewer(
               data.quickEdition.mainTextTokens, 
               data.quickEdition.apparatusArray , 
               data.quickEdition.textDirection === 'rtl', // rightToLeft?
               false  // don't add glue
               
-      )
+        )
       
-      $('#editionviewer').html(ev.getHtml())
+        thisObject.editionDiv.html(ev.getHtml())
+      }
       
     })
     .fail(function(resp) {

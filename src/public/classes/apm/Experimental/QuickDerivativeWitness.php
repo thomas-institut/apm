@@ -155,6 +155,20 @@ class QuickDerivativeWitness {
         foreach($ctToMainTextMap as $i => $mainTextIndex) {
             $row = $this->collationTable->getColumn($i);
             if ($mainTextIndex === self::TOKEN_NOT_IN_MAINTEXT)  {
+                // nothing on the main text for this token: 
+                //      find the previous token index that is in the main text,
+                //      this is where the apparatus entry will appear
+                $index = $i;
+                while ($index >= 0 && $ctToMainTextMap[$index] === self::TOKEN_NOT_IN_MAINTEXT) {
+                    $index--;
+                }
+                if ($index < 0) {
+                    // We are before the start of the main text
+                    // ignore for now
+                    continue;
+                }
+                $variants = [];
+                // collect variants in the row
                 foreach($row as $siglum => $ctToken) {
                     if ($siglum === $baseSiglum) {
                         continue;
@@ -163,55 +177,87 @@ class QuickDerivativeWitness {
                     if ($ctToken->isEmpty()) {
                         continue;
                     }
-                    // find previous non-empty main text token
-                    $index = $i;
-                    while ($ctToMainTextMap[$index] === self::TOKEN_NOT_IN_MAINTEXT && $index >= 0) {
-                        $index--;
-                    }
-                    if ($index < 0) {
-                        // We are before the start of the main text
-                        // ignore for now
-                        continue;
-                    }
                     
+                    if (!isset($variants[$ctToken->getNormalization()])) {
+                        $variants[$ctToken->getNormalization()] = [];
+                    }
+                    $variants[$ctToken->getNormalization()][] = $siglum;
+                }
+                // build apparatus entries for each variant
+                foreach($variants as $variant => $variantSigla) {
+                    $variantAbbreviations = [];
+                    $variantAbbreviationsStr = '';
+                    foreach ($variantSigla as $variantSiglum) {
+                        $variantAbbreviations[] = $siglumToAbbr[$variantSiglum];
+                        $variantAbbreviationsStr .= $siglumToAbbr[$variantSiglum];
+                    }
                     $criticalApparatus[] = [
                         'start' => $ctToMainTextMap[$index],
                         'end' => $ctToMainTextMap[$index],
                         'type' => 'add',
-                        'sigla' => [ $siglumToAbbr[$siglum]],
-                        'additions' => [$ctToken->getNormalization()],
-                        'markDown' => $ctToken->getNormalization() . ' _add._ ' . $siglumToAbbr[$siglum]
+                        'sigla' => $variantSigla,
+                        'addition' => $variant,
+                        'markDown' => '+ ' . $variant .  ' _' . $variantAbbreviationsStr . '_'
                     ];
-                    
                 }
                 continue;
             }
+            // token in main text
+            // collect variants and omissions
+            
             $mainText = $mainTextTokens[$ctToMainTextMap[$i]]['text'];
+            $variants = [];
+            $omissions = [];
             foreach($row as $siglum => $ctToken) {
                 if ($siglum === $baseSiglum) {
                     continue;
                 }
+                $ctTokenNormalization = $ctToken->getNormalization();
                 if ($ctToken->isEmpty()) {
-                    $criticalApparatus[] = [ 
-                      'start' => $mainTextIndex,
-                      'end' => $mainTextIndex,
-                      'type' => 'om',
-                      'sigla' => [ $siglumToAbbr[$siglum]],
-                      'markDown' => '_om._ ' . $siglumToAbbr[$siglum]
-                    ];
+                    if (!isset($omissions[$ctTokenNormalization])) {
+                        $omissions[$ctTokenNormalization] = [];
+                    }
+                    $omissions[$ctTokenNormalization][] = $siglum;
                     continue;
                 }
-                if ($ctToken->getNormalization() !== $mainText) {
-                    $criticalApparatus[] = [ 
-                        'start' => $mainTextIndex,
-                        'end' => $mainTextIndex,
-                        'type' => 'var',
-                        'sigla' => [ $siglumToAbbr[$siglum]],
-                        'variants' => [$ctToken->getNormalization()],
-                        'markDown' => $ctToken->getNormalization() . ' ' . 
-                              $siglumToAbbr[$siglum]                       
-                    ];
+                if ($ctTokenNormalization !== $mainText) {
+                    if (!isset($variants[$ctTokenNormalization])) {
+                        $variants[$ctTokenNormalization] = [];
+                    }
+                    $variants[$ctTokenNormalization][] = $siglum;
                 }
+            }
+            // generate entries
+            foreach($omissions as $omissionText => $omissionSigla) {
+                $omissionAbbreviations = [];
+                $omissionAbbreviationsStr = '';
+                foreach ($omissionSigla as $omissionSiglum) {
+                    $variantAbbreviations[] = $siglumToAbbr[$omissionSiglum];
+                    $variantAbbreviationsStr .= $siglumToAbbr[$omissionSiglum];
+                }
+                $criticalApparatus[] = [
+                    'start' => $ctToMainTextMap[$i],
+                    'end' => $ctToMainTextMap[$i],
+                    'type' => 'omission',
+                    'sigla' => $omissionSigla,
+                    'markDown' => '-  _' . $omissionAbbreviationsStr . '_'
+                ];
+            }
+            foreach($variants as $variant => $variantSigla) {
+                $variantAbbreviations = [];
+                $variantAbbreviationsStr = '';
+                foreach ($variantSigla as $variantSiglum) {
+                    $variantAbbreviations[] = $siglumToAbbr[$variantSiglum];
+                    $variantAbbreviationsStr .= $siglumToAbbr[$variantSiglum];
+                }
+                $criticalApparatus[] = [
+                    'start' => $ctToMainTextMap[$i],
+                    'end' => $ctToMainTextMap[$i],
+                    'type' => 'add',
+                    'sigla' => $variantSigla,
+                    'addition' => $variant,
+                    'markDown' => $variant .  ' _' . $variantAbbreviationsStr . '_'
+                ];
             }
         }
         

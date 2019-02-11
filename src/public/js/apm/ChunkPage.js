@@ -29,19 +29,19 @@ class ChunkPage {
     console.log(this.witnessInfo)
     this.collationLangs = collationLangs
     
-    $("#theWitnessTable").DataTable({ 
-        'paging': false, 
-        'searching' : false, 
-        'sDom':'t',
-        columns : [
-            null, //title
-            null, //type
-            null, //language
-            null, // pages
-            { orderable: false }, // include in collation
-            { orderable: false }, // show/hide text
-        ]
-    })
+//    $("#theWitnessTable").DataTable({ 
+//        'paging': false, 
+//        'searching' : false, 
+//        'sDom':'t',
+//        columns : [
+//            null, //title
+//            null, //type
+//            null, //language
+//            null, // pages
+//            { orderable: false }, // include in collation
+//            { orderable: false }, // show/hide text
+//        ]
+//    })
     
     this.langs = {}
     for (const lang of this.collationLangs) {

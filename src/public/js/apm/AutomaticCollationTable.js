@@ -36,7 +36,9 @@ class AutomaticCollationTable {
     this.redoButton = $('#redobutton')
     this.exportCsvButton = $('#exportcsvbutton')
     this.quickEditionButton = $('#quickedbutton')
-    this.editionDiv = $('#editiondiv')
+    this.editionContainer = $('#editiondiv')
+    this.editionDiv = $('#theedition')
+    this.siglaDiv = $('#sigla')
     this.apiCollationUrl = this.options.urlGen.apiAutomaticCollation()
     this.updating = false
     this.apiCallOptions = initialApiOptions
@@ -104,13 +106,13 @@ class AutomaticCollationTable {
     this.collationEngineDetails.html('')
     this.status.html('')
     this.actTitleElement.html(this.getTitleFromOptions())
-    this.editionDiv.addClass('hidden')
+    this.editionContainer.addClass('hidden')
     
     this.quickEditionButton.on('click', function() {
-      if (thisObject.editionDiv.hasClass('hidden')) {
-        thisObject.editionDiv.removeClass('hidden')
+      if (thisObject.editionContainer.hasClass('hidden')) {
+        thisObject.editionContainer.removeClass('hidden')
       } else {
-        thisObject.editionDiv.addClass('hidden')
+        thisObject.editionContainer.addClass('hidden')
       }
     })
     
@@ -196,6 +198,9 @@ class AutomaticCollationTable {
     this.status.html('Collating... <i class="fa fa-spinner fa-spin fa-fw"></i>')
     this.collationTableDiv.html('')
     this.collationEngineDetails.html('')
+    if (this.options.includeExperimental) {
+      this.editionContainer.addClass('hidden')
+    }
     
     let thisObject = this
     $.post(
@@ -207,6 +212,7 @@ class AutomaticCollationTable {
       console.log(data)
       thisObject.collationTableData = data
       thisObject.status.html('Collating... done, formatting table <i class="fa fa-spinner fa-spin fa-fw"></i>')
+
       if (thisObject.options.langDef[thisObject.apiCallOptions.lang].rtl) {
         thisObject.collationTableDiv.removeClass(thisObject.ltrClass)
         thisObject.collationTableDiv.addClass(thisObject.rtlClass)
@@ -227,10 +233,17 @@ class AutomaticCollationTable {
               data.quickEdition.apparatusArray , 
               data.quickEdition.textDirection === 'rtl', // rightToLeft?
               false  // don't add glue
-              
         )
       
         thisObject.editionDiv.html(ev.getHtml())
+        let siglaHtml = '<ul class="siglalist">'
+        siglaHtml += '<li>' + 'Base witness: ' + data.quickEdition.base + '</li>'
+        for(const abbr in data.quickEdition.abbrToSigla) {
+            siglaHtml += '<li>' + '<em>' + abbr + '</em>: ' + data.quickEdition.abbrToSigla[abbr] + '</li>'
+        }
+        siglaHtml += '</ul>'
+        thisObject.siglaDiv.html(siglaHtml)
+        //thisObject.editionContainer.removeClass('hidden')
       }
       
     })

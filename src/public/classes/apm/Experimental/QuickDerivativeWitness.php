@@ -34,7 +34,7 @@ class QuickDerivativeWitness {
     
     const SIGLA_STR_LATIN = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     
-    const NO_GLUE_PUNCTUATION = '.,:?!';
+    const NO_GLUE_PUNCTUATION = '.,:;?!';
     
     const TOKEN_NOT_IN_MAINTEXT = -1;
     
@@ -167,7 +167,7 @@ class QuickDerivativeWitness {
                     // ignore for now
                     continue;
                 }
-                $variants = [];
+                $additions = [];
                 // collect variants in the row
                 foreach($row as $siglum => $ctToken) {
                     if ($siglum === $baseSiglum) {
@@ -178,26 +178,26 @@ class QuickDerivativeWitness {
                         continue;
                     }
                     
-                    if (!isset($variants[$ctToken->getNormalization()])) {
-                        $variants[$ctToken->getNormalization()] = [];
+                    if (!isset($additions[$ctToken->getNormalization()])) {
+                        $additions[$ctToken->getNormalization()] = [];
                     }
-                    $variants[$ctToken->getNormalization()][] = $siglum;
+                    $additions[$ctToken->getNormalization()][] = $siglum;
                 }
-                // build apparatus entries for each variant
-                foreach($variants as $variant => $variantSigla) {
-                    $variantAbbreviations = [];
-                    $variantAbbreviationsStr = '';
-                    foreach ($variantSigla as $variantSiglum) {
-                        $variantAbbreviations[] = $siglumToAbbr[$variantSiglum];
-                        $variantAbbreviationsStr .= $siglumToAbbr[$variantSiglum];
+                // build apparatus entries for each addition
+                foreach($additions as $addition => $additionSigla) {
+                    $additionAbbreviations = [];
+                    $additionAbbreviationsStr = '';
+                    foreach ($additionSigla as $additionSiglum) {
+                        $additionAbbreviations[] = $siglumToAbbr[$additionSiglum];
+                        $additionAbbreviationsStr .= $siglumToAbbr[$additionSiglum];
                     }
                     $criticalApparatus[] = [
                         'start' => $ctToMainTextMap[$index],
                         'end' => $ctToMainTextMap[$index],
                         'type' => 'add',
-                        'sigla' => $variantSigla,
-                        'addition' => $variant,
-                        'markDown' => '+ ' . $variant .  ' _' . $variantAbbreviationsStr . '_'
+                        'sigla' => $additionSigla,
+                        'addition' => $addition,
+                        'markDown' => '+ ' . $addition .  ' _' . $additionAbbreviationsStr . '_'
                     ];
                 }
                 continue;
@@ -232,8 +232,8 @@ class QuickDerivativeWitness {
                 $omissionAbbreviations = [];
                 $omissionAbbreviationsStr = '';
                 foreach ($omissionSigla as $omissionSiglum) {
-                    $variantAbbreviations[] = $siglumToAbbr[$omissionSiglum];
-                    $variantAbbreviationsStr .= $siglumToAbbr[$omissionSiglum];
+                    $omissionAbbreviations[] = $siglumToAbbr[$omissionSiglum];
+                    $omissionAbbreviationsStr .= $siglumToAbbr[$omissionSiglum];
                 }
                 $criticalApparatus[] = [
                     'start' => $ctToMainTextMap[$i],
@@ -271,6 +271,7 @@ class QuickDerivativeWitness {
         $apparatusArray = [$criticalApparatus];
         
         $edition = [];
+        $edition['base'] = $baseSiglum;
         $edition['mainTextTokens'] = $mainTextTokens;
         $edition['abbrToSigla'] = $abbrToSiglum;
         $edition['textDirection'] = $this->rightToLeft ? 'rtl' : 'ltr';

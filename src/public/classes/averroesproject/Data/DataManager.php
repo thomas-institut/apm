@@ -1535,8 +1535,8 @@ class DataManager
                 $e = new \AverroesProject\ColumnElement\Substitution();
                 break;
 
-            default:
-                continue;
+//            default:
+//                continue;
         }
         $e->columnNumber = (int) $row[$fields['column_number']];
         $e->pageId = (int) $row[$fields['page_id']];
@@ -1720,8 +1720,8 @@ class DataManager
                         $row[$fields['text']]);
                 break;
 
-            default: 
-                continue;
+//            default: 
+//                continue;
         }
         $item->lang = $row[$fields['lang']];
         $item->handId = $row[$fields['hand_id']];

@@ -450,13 +450,13 @@ class TranscriptionReader {
                         // offline notes not supported yet
                         //$col['ednotes'][] = $theNote;
                         $ignore = true;
-                        continue;
+                        break;
                     }
                     if ($type === 'gloss') {
                         $element = new \AverroesProject\ColumnElement\Gloss();
                         $element->editorId = $pageDiv['defaultEditor'];
                         $readItems = true;
-                        continue;
+                        break;
                     }
                     // Not a valid note, ignore
                     $ignore = true;

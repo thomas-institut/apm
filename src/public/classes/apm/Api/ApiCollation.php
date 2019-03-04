@@ -290,6 +290,15 @@ class ApiCollation extends ApiController
         $userDirectory = new ApUserDirectory($db->um);
         $decorator = new TransitionalCollationTableDecorator($userDirectory);
         $decoratedCollationTable = $decorator->decorate($collationTable);
+        
+        $profiler->lap('Collation table decorated');
+        
+        // EXPERIMENTAL quick edition
+        
+        $qdw = new \APM\Experimental\QuickDerivativeWitness($collationTable, $language);
+        
+        $quickEdition = $qdw->generateEdition($collationTable->getSigla()[0]);
+        
 
         $profiler->log($this->logger);
         
@@ -299,7 +308,8 @@ class ApiCollation extends ApiController
         return $response->withJson([
             'collationEngineDetails' => $collationEngineDetails, 
             'collationTable' => $decoratedCollationTable,
-            'sigla' => $collationTable->getSigla()
+            'sigla' => $collationTable->getSigla(),
+            'quickEdition' => $quickEdition
             ]);
 
     }

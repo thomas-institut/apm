@@ -42,7 +42,7 @@ class ChunkPage {
             { orderable: false }, // show/hide text
         ]
     })
-    
+
     this.langs = {}
     for (const lang of this.collationLangs) {
       this.langs[lang.code] = {name: lang.name, code: lang.code, goodWitnesses: 0}

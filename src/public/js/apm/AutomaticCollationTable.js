@@ -26,7 +26,6 @@ class AutomaticCollationTable {
     this.rtlClass = 'rtltext'
     this.ltrClass = 'ltrtext'
     
-    
     this.options = this.getCleanOptionsObject(this.getDefaultOptions(), options)
     
     this.availableWitnesses = this.options.availableWitnesses
@@ -36,6 +35,10 @@ class AutomaticCollationTable {
     this.collationEngineDetails = $('#collationEngineDetails')
     this.redoButton = $('#redobutton')
     this.exportCsvButton = $('#exportcsvbutton')
+    this.quickEditionButton = $('#quickedbutton')
+    this.editionContainer = $('#editiondiv')
+    this.editionDiv = $('#theedition')
+    this.siglaDiv = $('#sigla')
     this.apiCollationUrl = this.options.urlGen.apiAutomaticCollation()
     this.updating = false
     this.apiCallOptions = initialApiOptions
@@ -103,6 +106,15 @@ class AutomaticCollationTable {
     this.collationEngineDetails.html('')
     this.status.html('')
     this.actTitleElement.html(this.getTitleFromOptions())
+    this.editionContainer.addClass('hidden')
+    
+    this.quickEditionButton.on('click', function() {
+      if (thisObject.editionContainer.hasClass('hidden')) {
+        thisObject.editionContainer.removeClass('hidden')
+      } else {
+        thisObject.editionContainer.addClass('hidden')
+      }
+    })
     
     this.redoButton.on('click', function() { 
       console.log('redoButton clicked')
@@ -125,6 +137,7 @@ class AutomaticCollationTable {
     options.availableWitnesses = []
     options.loadNow = false
     options.urlGen = null
+    options.includeExperimental = false
     
     return options
   }
@@ -146,6 +159,10 @@ class AutomaticCollationTable {
     
     if(typeof(options.urlGen) === 'object'){
       cleanOptions.urlGen = options.urlGen
+    }
+    
+    if (typeof(options.includeExperimental) === 'boolean') {
+      cleanOptions.includeExperimental = options.includeExperimental
     }
     
     return cleanOptions
@@ -181,6 +198,9 @@ class AutomaticCollationTable {
     this.status.html('Collating... <i class="fa fa-spinner fa-spin fa-fw"></i>')
     this.collationTableDiv.html('')
     this.collationEngineDetails.html('')
+    if (this.options.includeExperimental) {
+      this.editionContainer.addClass('hidden')
+    }
     
     let thisObject = this
     $.post(
@@ -192,6 +212,7 @@ class AutomaticCollationTable {
       console.log(data)
       thisObject.collationTableData = data
       thisObject.status.html('Collating... done, formatting table <i class="fa fa-spinner fa-spin fa-fw"></i>')
+
       if (thisObject.options.langDef[thisObject.apiCallOptions.lang].rtl) {
         thisObject.collationTableDiv.removeClass(thisObject.ltrClass)
         thisObject.collationTableDiv.addClass(thisObject.rtlClass)
@@ -204,6 +225,27 @@ class AutomaticCollationTable {
       thisObject.redoButton.prop('disabled', false)
       thisObject.updating = false
       thisObject.collationEngineDetails.html(thisObject.getCollationEngineDetailsHtml(data.collationEngineDetails))
+      
+      // EXPERIMENTAL
+      if (thisObject.options.includeExperimental) {
+        let ev = new EditionViewer(
+              data.quickEdition.mainTextTokens, 
+              data.quickEdition.apparatusArray , 
+              data.quickEdition.textDirection === 'rtl', // rightToLeft?
+              false  // don't add glue
+        )
+      
+        thisObject.editionDiv.html(ev.getHtml())
+        let siglaHtml = '<ul class="siglalist">'
+        siglaHtml += '<li>' + 'Base witness: ' + data.quickEdition.base + '</li>'
+        for(const abbr in data.quickEdition.abbrToSigla) {
+            siglaHtml += '<li>' + '<em>' + abbr + '</em>: ' + data.quickEdition.abbrToSigla[abbr] + '</li>'
+        }
+        siglaHtml += '</ul>'
+        thisObject.siglaDiv.html(siglaHtml)
+        //thisObject.editionContainer.removeClass('hidden')
+      }
+      
     })
     .fail(function(resp) {
       console.log('Error in automatic collation, resp:')

@@ -242,3 +242,7 @@ td.offline {
     color: #8a978b;
     font-size: 0.8em;
 }
+
+ul.siglalist {
+     list-style-type: none;
+}

@@ -18,7 +18,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-namespace Apm\Presets;
+namespace APM\Presets;
 
 /**
  * Basic class that represents a system preset
@@ -70,4 +70,26 @@ class Preset {
         return $this->data;
     }
     
+    public function getTool() : string {
+        return $this->toolId;
+    }
+    
+    public function getKey(string $key) {
+        if (!isset($this->keyArray[$key])) {
+            return false;
+        }
+        return $this->keyArray[$key];
+    }
+    
+    public function getKeyArray() : array {
+        return $this->keyArray;
+    }
+    
+    public function setKey(string $key, $value) {
+        $this->keyArray[$key] = $value;
+    }
+    
+    public function getUserId() : int {
+        return $this->userId;
+    }
 }

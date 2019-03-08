@@ -18,7 +18,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-namespace Apm\Presets;
+namespace APM\Presets;
 
 /**
  * A class to manage all things related to system presets
@@ -27,30 +27,44 @@ namespace Apm\Presets;
  */
 abstract class PresetManager {
     
-    /**
-     * Returns an array with all the presets associated with the given $tool
-     * whose keys match the given $keysToMatch array
-     * 
-     * Let $presetKeyArray be a preset's key array. $presetKeyArray matches
-     * $keysToMatch if all elements in $keysToMatch exist and have the same
-     * value independently of the value of all other keys not in $keysToMatch.
-     * This means, for example, that any $presetKeyArray matches an empty $keysToMatch
-     * 
-     */
-    abstract public function getPresetsByToolAndKeys(string $tool, array $keysToMatch) : array;
     abstract public function addPreset(Preset $preset) : bool;
     abstract public function erasePreset(Preset $preset) : bool;
     
+    /**
+     * Returns an array with all the presets associated with the given $tool
+     * whose keys match the given $keysToMatch array
+     */
+    abstract public function getPresetsByToolAndKeys(string $tool, array $keysToMatch) : array;
     
     /**
-     * Returns true is $presetKeyArray matches $keysToMatch  according
-     * to the rules given above
+     * Returns an array with all the presets associated with the given $tool and $userId
+     * whose keys match the given $keysToMatch array
+     */
+    abstract public function getPresetsByToolUserIdAndKeys(string $tool, int $userId, array $keysToMatch) : array;
+    
+ 
+    /**
+     * Returns true is $presetKeyArray matches $keysToMatch  
+     * 
+     * $presetKeyArray matches $keysToMatch if all elements in $keysToMatch 
+     * exist and have the same value independently of the value of all other 
+     * keys not in $keysToMatch.
+     * 
+     * This means, for example, that any $presetKeyArray matches an empty $keysToMatch
      * 
      * @param array $presetKeyArray
      * @param array $keysToMatch
      */
     protected function match(array $presetKeyArray, array $keysToMatch) : bool {
-        
+        foreach($keysToMatch as $key => $value) {
+            if (!isset($presetKeyArray[$key])) {
+                return false;
+            }
+            if ($presetKeyArray[$key] !== $value) {
+                return false;
+            }
+        }
+        return true;
     }
     
 }

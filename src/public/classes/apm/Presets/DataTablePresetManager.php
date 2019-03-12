@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (C) 2016-18 Universität zu Köln
+ * Copyright (C) 2016-19 Universität zu Köln
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -44,10 +44,7 @@ use DataTable\DataTable;
  */
 class DataTablePresetManager extends PresetManager {
     
-    /**
-     *
-     * @var  \DataTable\DataTable 
-     */
+    /** @var  \DataTable\DataTable */
     private $dataTable;
     
     /** @var array */
@@ -66,7 +63,7 @@ class DataTablePresetManager extends PresetManager {
      * an optional list of expanded Keys.
      * 
      * Expanded keys are components of a Preset's keyArray that are
-     * stored in their field in the DataTable rows. The $expandedKeys
+     * stored in their own field in the DataTable rows. The $expandedKeys
      * array must provide an association of keys from keyArray to
      * field names in the DataTable:
      *   $expandedKeys = [ 'key1' => 'dataTableFieldName1', 'key2 => 'fieldName2, ... ] 
@@ -79,46 +76,17 @@ class DataTablePresetManager extends PresetManager {
         $this->dataTable = $dt;
         $this->expandedKeys  = $expandedKeys;
     }
-   
-    
-    protected function createDataTableRowFromPreset(Preset $preset) : array {
-        // not storing expanded keys for now
-        return [ 
-            self::FIELD_TOOL => $preset->getTool(), 
-            self::FIELD_USERID => $preset->getUserId(),
-            self::FIELD_TITLE => $preset->getTitle(),
-            self::FIELD_KEYARRAY => $this->encodeArrayToString($preset->getKeyArray()),
-            self::FIELD_DATA => $this->encodeArrayToString($preset->getData())
-            ];
-    }
-    
-    protected function createPresetFromDataTableRow(array $theRow) {
-        return new Preset(
-                $theRow[self::FIELD_TOOL], 
-                $theRow[self::FIELD_USERID], 
-                $theRow[self::FIELD_TITLE],
-                $this->decodeStringToArray($theRow[self::FIELD_KEYARRAY]),
-                $this->decodeStringToArray($theRow[self::FIELD_DATA])
-            );
-    }
-    
-    protected function getPresetRow(string $tool, int $userId, string $title) {
-        $rowToFind = [ 
-            self::FIELD_TOOL => $tool, 
-            self::FIELD_USERID => $userId,
-            self::FIELD_TITLE => $title
-        ];
-        return $this->dataTable->findRow($rowToFind);
-    }
-   
-    protected function getRowIdForPreset(string $tool, int $userId, string $title) {
-        $row = $this->getPresetRow($tool, $userId, $title);
-        if ($row === false) {
-            return self::ROWID_NOTFOUND;
-        }
-        return $row['id'];
-    }
 
+     /**
+     * Adds a preset to the system.
+     * 
+     * Returns false if there is a preset in the system
+     * with the same tool, userid and title as the
+     * givel $preset
+     * 
+     * @param \APM\Presets\Preset $preset
+     * @return bool
+     */
     public function addPreset(Preset $preset): bool {
         if ($this->correspondingPresetExists($preset)) {
             return false;
@@ -126,6 +94,17 @@ class DataTablePresetManager extends PresetManager {
         return $this->dataTable->createRow($this->createDataTableRowFromPreset($preset)) !== false;
     }
 
+    /**
+     * Erases the preset identified by $tool, $userId and $title
+     * 
+     * Returns true if the preset was successfully erased from the 
+     * system or if it did not exist in the first place.
+     * 
+     * @param string $tool
+     * @param int $userId
+     * @param string $title
+     * @return bool
+     */
     public function erasePreset(string $tool, int $userId, string $title): bool {
         $id = $this->getRowIdForPreset($tool, $userId, $title);
         if ($id === self::ROWID_NOTFOUND) {
@@ -134,6 +113,15 @@ class DataTablePresetManager extends PresetManager {
         return $this->dataTable->deleteRow($id);
     }
 
+    /**
+     * Returns the Preset identified by $tool, $userId and $title or
+     * false if there's no such preset in the system.
+     * 
+     * @param string $tool
+     * @param int $userId
+     * @param string $title
+     * @return boolean
+     */
     public function getPreset(string $tool, int $userId, string $title) {
         $row = $this->getPresetRow($tool, $userId, $title);
         if ($row === false) {
@@ -142,6 +130,14 @@ class DataTablePresetManager extends PresetManager {
         return $this->createPresetFromDataTableRow($row);
     }
 
+     /**
+     * Returns an array containing all the Preset objects in the system
+     * that match the given $tool and $keysToMatch
+     * 
+     * @param string $tool
+     * @param array $keysToMatch
+     * @return array
+     */
     public function getPresetsByToolAndKeys(string $tool, array $keysToMatch): array {
         $matchedPresets = [];
         $rows = $this->dataTable->findRows([self::FIELD_TOOL => $tool]);
@@ -153,6 +149,15 @@ class DataTablePresetManager extends PresetManager {
         return $matchedPresets;
     }
 
+    /**
+     * Returns an array containing all the Preset objects in the system
+     * that match the given $tool, $userId and $keysToMatch
+     * 
+     * @param string $tool
+     * @param int $userId
+     * @param array $keysToMatch
+     * @return array
+     */
     public function getPresetsByToolUserIdAndKeys(string $tool, int $userId, array $keysToMatch): array {
         $matchedPresets = [];
         $rows = $this->dataTable->findRows([self::FIELD_TOOL => $tool, self::FIELD_USERID => $userId]);
@@ -164,16 +169,113 @@ class DataTablePresetManager extends PresetManager {
         return $matchedPresets;
     }
 
+    /**
+     * Returns true if the preset identified by $too, $userId and $title
+     * exists in the system
+     * 
+     * @param string $tool
+     * @param int $userId
+     * @param string $title
+     * @return bool
+     */
     public function presetExists(string $tool, int $userId, string $title): bool {
         return $this->getRowIdForPreset($tool, $userId, $title) !== self::ROWID_NOTFOUND;
     }
     
+    
+    /**
+     * PROTECTED METHODS
+     */
+    
+    
+    /**
+     * Encodes an array into a string
+     * 
+     * @param array $theArray
+     * @return string
+     */
     protected function encodeArrayToString(array $theArray) : string {
         return json_encode($theArray);
     }
     
+    /**
+     * Decodes a string into an array 
+     * 
+     * @param string $theString
+     * @return array
+     */
     protected function decodeStringToArray(string $theString) : array {
         return json_decode($theString, true);
+    }
+    
+    /**
+     * Returns an associative array that can be used to store a Preset
+     * as a row in a DataTable
+     * 
+     * @param \APM\Presets\Preset $preset
+     * @return array
+     */
+    protected function createDataTableRowFromPreset(Preset $preset) : array {
+        // not storing expanded keys for now
+        return [ 
+            self::FIELD_TOOL => $preset->getTool(), 
+            self::FIELD_USERID => $preset->getUserId(),
+            self::FIELD_TITLE => $preset->getTitle(),
+            self::FIELD_KEYARRAY => $this->encodeArrayToString($preset->getKeyArray()),
+            self::FIELD_DATA => $this->encodeArrayToString($preset->getData())
+            ];
+    }
+    
+    /**
+     * Creates a Preset object from a DataTable 
+     * 
+     * @param array $theRow
+     * @return \APM\Presets\Preset
+     */
+    protected function createPresetFromDataTableRow(array $theRow) : Preset {
+        return new Preset(
+                $theRow[self::FIELD_TOOL], 
+                $theRow[self::FIELD_USERID], 
+                $theRow[self::FIELD_TITLE],
+                $this->decodeStringToArray($theRow[self::FIELD_KEYARRAY]),
+                $this->decodeStringToArray($theRow[self::FIELD_DATA])
+            );
+    }
+    
+    /**
+     * Returns that row that contains the preset identified by 
+     * $tool, $userId and $title, or false if such preset does not
+     * exist 
+     * 
+     * @param string $tool
+     * @param int $userId
+     * @param string $title
+     * @return type
+     */
+    protected function getPresetRow(string $tool, int $userId, string $title) {
+        $rowToFind = [ 
+            self::FIELD_TOOL => $tool, 
+            self::FIELD_USERID => $userId,
+            self::FIELD_TITLE => $title
+        ];
+        return $this->dataTable->findRow($rowToFind);
+    }
+   
+    /**
+     * Returns the row id for the preset identified by $tool, $userId and $title
+     * or self::ROWID_NOTFOUND if such a preset does not exist
+     * 
+     * @param string $tool
+     * @param int $userId
+     * @param string $title
+     * @return type
+     */
+    protected function getRowIdForPreset(string $tool, int $userId, string $title) {
+        $row = $this->getPresetRow($tool, $userId, $title);
+        if ($row === false) {
+            return self::ROWID_NOTFOUND;
+        }
+        return $row['id'];
     }
 
 }

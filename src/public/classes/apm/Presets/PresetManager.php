@@ -1,7 +1,7 @@
 <?php
 
 /*
- * Copyright (C) 2016-18 Universität zu Köln
+ * Copyright (C) 2016-19 Universität zu Köln
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,14 +21,15 @@
 namespace APM\Presets;
 
 /**
- * A class to manage all things related to system presets
+ * A class to manage all things related to system presets.
  * 
- * Implementations of PresetManager should guarantee that preset are not
- * duplicate. A preset is uniquely identified by the combination 
- * of tool, userId and title, so, functions to search, erase and modify
- * presets use those three values for identification. The abstract
- * class provides alternative versions of those functions that take those
- * values from a Preset object. 
+ * A preset in the system is uniquely identified by the 
+ * triplet (tool, userId, title).  Implementations of PresetManager should 
+ * guarantee that presets are not duplicate in the system. 
+ * 
+ * Functions to search, erase and modify presets use those three values for 
+ * identification. The abstract class provides alternative versions of those 
+ * functions that take those values from a Preset object. 
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
@@ -38,10 +39,15 @@ abstract class PresetManager {
      * BASIC OPERATIONS
      */
     abstract public function presetExists(string $tool, int $userId, string $title) : bool;
+    
+    /**
+     * addPreset must return false if there is already a preset
+     * that corresponds to the given $preset. 
+     */
     abstract public function addPreset(Preset $preset) : bool;
     
     /**
-     * erasePreset returns true if the preset was erased or if it did not exist 
+     * erasePreset must return true if the preset was erased or if it did not exist 
      * in the first place  
      */
     abstract public function erasePreset(string $tool, int $userId, string $title) : bool;
@@ -52,12 +58,13 @@ abstract class PresetManager {
     
     /** getPreset returns false is the preset does not exist */
     abstract public function getPreset(string $tool, int $userId, string $title);
+    
     abstract public function getPresetsByToolAndKeys(string $tool, array $keysToMatch) : array;
     abstract public function getPresetsByToolUserIdAndKeys(string $tool, int $userId, array $keysToMatch) : array;
 
     
     /**
-     * Alternative versions of the basic operations with corresponding preset
+     * BASIC OPERATIONS (Alternative versions)
      */
     
     /**
@@ -96,6 +103,7 @@ abstract class PresetManager {
      * 
      * @param array $presetKeyArray
      * @param array $keysToMatch
+     * @return bool
      */
     protected function match(array $presetKeyArray, array $keysToMatch) : bool {
         foreach($keysToMatch as $key => $value) {

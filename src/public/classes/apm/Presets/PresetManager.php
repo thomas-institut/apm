@@ -22,26 +22,63 @@ namespace APM\Presets;
 
 /**
  * A class to manage all things related to system presets
+ * 
+ * Implementations of PresetManager should guarantee that preset are not
+ * duplicate. A preset is uniquely identified by the combination 
+ * of tool, userId and title, so, functions to search, erase and modify
+ * presets use those three values for identification. The abstract
+ * class provides alternative versions of those functions that take those
+ * values from a Preset object. 
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 abstract class PresetManager {
     
+    /**
+     * Basic operations with presets
+     */
+    abstract public function presetExists(string $tool, int $userId, string $title) : bool;
     abstract public function addPreset(Preset $preset) : bool;
-    abstract public function erasePreset(Preset $preset) : bool;
-    
+    abstract public function erasePreset(string $tool, int $userId, string $title) : bool;
+
     /**
-     * Returns an array with all the presets associated with the given $tool
-     * whose keys match the given $keysToMatch array
+     * Search methods
      */
+    
+    /** getPreset returns false is the preset does not exist */
+    abstract public function getPreset(string $tool, int $userId, string $title);
     abstract public function getPresetsByToolAndKeys(string $tool, array $keysToMatch) : array;
+    abstract public function getPresetsByToolUserIdAndKeys(string $tool, int $userId, array $keysToMatch) : array;
+
     
     /**
-     * Returns an array with all the presets associated with the given $tool and $userId
-     * whose keys match the given $keysToMatch array
+     * Alternative versions of the basic operations with corresponding preset
      */
-    abstract public function getPresetsByToolUserIdAndKeys(string $tool, int $userId, array $keysToMatch) : array;
     
+    /**
+     * Returns true if the preset with the same tool, userId and title as the
+     * given $preset exists in the system
+     * 
+     * @param \APM\Presets\Preset $preset
+     * @return bool
+     */
+    public function correspondingPresetExists(Preset $preset) : bool {
+        return $this->presetExists($preset->getTool(), $preset->getUserId(), $preset->getTitle());
+    }
+    
+    /**
+     * Erases the preset with the same tool, userId and title as the given $preset
+     * 
+     * @param \APM\Presets\Preset $preset
+     * @return bool
+     */
+    public function eraseCorrespondingPreset(Preset $preset) : bool {
+        return $this->erasePreset($preset->getTool(), $preset->getUserId(), $preset->getTitle());
+    }
+   
+    /**
+     * PROTECTED METHODS
+     */
  
     /**
      * Returns true is $presetKeyArray matches $keysToMatch  

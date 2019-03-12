@@ -42,29 +42,14 @@ class SimplePresetManager extends PresetManager {
         return true;
     }
 
-    public function erasePreset(Preset $preset): bool {
-        if (!isset($this->presets[$preset->getTool()])) {
+    public function erasePreset(string $tool, int $userId, string $title): bool {
+
+        $index = $this->getPresetIndex($tool, $userId, $title);
+        if ($index === false) {
             return false;
         }
         
-        $index = -1;
-        foreach ($this->presets[$preset->getTool()] as $i => $storedPreset) {
-            if ($storedPreset->getUserId() !== $preset->getUserId()) {
-                continue;
-            }
-            if ($storedPreset->getKeyArray() !== $preset->getKeyArray()) {
-                continue;
-            }
-            if ($storedPreset->getData() !== $preset->getData()) {
-                continue;
-            }
-            $index = $i;
-            break;
-        }
-        if ($index === -1) {
-            return false;
-        }
-        array_splice($this->presets[$preset->getTool()], $index, 1);
+        array_splice($this->presets[$tool], $index, 1);
         return true;
     }
 
@@ -92,6 +77,31 @@ class SimplePresetManager extends PresetManager {
             }
         }
         return $matchedPresets;
+    }
+
+    public function getPreset(string $tool, int $userId, string $title) {
+        $index = $this->getPresetIndex($tool, $userId, $title);
+        if ($index === false) {
+            return false;
+        }
+        return $this->presets[$tool][$index];
+    }
+
+    public function presetExists(string $tool, int $userId, string $title): bool {
+        return $this->getPresetIndex($tool, $userId, $title) !== false;
+    }
+    
+    private function getPresetIndex(string $tool, int $userId, string $title) {
+         if (!isset($this->presets[$tool])) {
+            return false;
+        }
+        
+        foreach($this->presets[$tool] as $i => $preset) {
+            if ($preset->getTitle() === $title && $preset->getUserId() === $userId) {
+                return $i;
+            }
+        }
+        return false;
     }
 
 }

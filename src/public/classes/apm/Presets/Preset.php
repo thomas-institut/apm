@@ -59,11 +59,18 @@ class Preset {
     private $toolId;
     
     
-    public function __construct(string $tool, int $userId, array $keys, array $theData) {
+    /**
+     *
+     * @var string
+     */
+    private $title;
+    
+    public function __construct(string $tool, int $userId, string $title, array $keys, array $theData) {
         $this->toolId = $tool;
         $this->userId = $userId;
         $this->keyArray = $keys;
         $this->data = $theData;
+        $this->title = $title;
     }
     
     public function getData() : array  {
@@ -91,5 +98,9 @@ class Preset {
     
     public function getUserId() : int {
         return $this->userId;
+    }
+    
+    public function getTitle() : string {
+        return $this->title;
     }
 }

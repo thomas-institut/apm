@@ -49,11 +49,8 @@ abstract class PresetManagerTest extends TestCase {
         $this->assertCount(0, $pm->getPresetsByToolAndKeys('any', []));
         $this->assertCount(0, $pm->getPresetsByToolUserIdAndKeys('any', -1, []));
         
-        $pr1 = new Preset($testTool01, $testUserId01, $testKeys, $testData);
-        $pr2 = new Preset($testTool01, $testUserId02, $testKeys, $testData);
-        
-        
-        
+        $pr1 = new Preset($testTool01, $testUserId01, 'pr1', $testKeys, $testData);
+        $pr2 = new Preset($testTool01, $testUserId02, 'pr2', $testKeys, $testData);
         
         $this->assertTrue($pm->addPreset($pr1));
         $this->assertTrue($pm->addPreset($pr2));
@@ -65,19 +62,17 @@ abstract class PresetManagerTest extends TestCase {
         $this->assertCount(1, $pm->getPresetsByToolUserIdAndKeys($testTool01, $testUserId02, []));
         
         // Erasing tests
-        $nonExistentPreset1 = new Preset($testTool03, $testUserId02, $testKeys, $testData);  // non existent tool
-        $nonExistentPreset2 = new Preset($testTool01, $testUserId02 + 1000, $testKeys, $testData); // non existent user Id
-        $nonExistentPreset3 = new Preset($testTool01, $testUserId01, [ 'somekey' => 'value'], $testData); // non existent keys
-        $nonExistentPreset4 = new Preset($testTool01, $testUserId01, $testKeys, [ 'nonexistent data']); // non existent data
+        $nonExistentPreset1 = new Preset($testTool03, $testUserId02, 'pr2',  $testKeys, $testData); // non existent tool
+        $nonExistentPreset2 = new Preset($testTool01, $testUserId02 + 1000, 'pr2', $testKeys, $testData); // non existent user Id
+        $nonExistentPreset3 = new Preset($testTool01, $testUserId01, 'pr3', $testKeys, $testData); // non existent title
+       
+        $this->assertFalse($pm->eraseCorrespondingPreset($nonExistentPreset1));
+        $this->assertFalse($pm->eraseCorrespondingPreset($nonExistentPreset2));
+        $this->assertFalse($pm->eraseCorrespondingPreset($nonExistentPreset3));
         
-        $this->assertFalse($pm->erasePreset($nonExistentPreset1));
-        $this->assertFalse($pm->erasePreset($nonExistentPreset2));
-        $this->assertFalse($pm->erasePreset($nonExistentPreset3));
-        $this->assertFalse($pm->erasePreset($nonExistentPreset4));
-        
-        $this->assertTrue($pm->erasePreset($pr2));
+        $this->assertTrue($pm->eraseCorrespondingPreset($pr2));
         $this->assertCount(1, $pm->getPresetsByToolAndKeys($testTool01, []));
-        $this->assertTrue($pm->erasePreset($pr1));
+        $this->assertTrue($pm->eraseCorrespondingPreset($pr1));
         $this->assertCount(0, $pm->getPresetsByToolAndKeys($testTool01, []));
     }
     
@@ -87,7 +82,7 @@ abstract class PresetManagerTest extends TestCase {
         $testKeyArray01 = [ 'k1' => 'v1', 'k2' => 'v2', 'k3' => 'v3'];
         $data = [ 'some string'];
         
-        $pr = new Preset($tool, $userId, $testKeyArray01, $data);
+        $pr = new Preset($tool, $userId, 'tk', $testKeyArray01, $data);
         $pm = $this->createEmptyPresetManager();
         $pm->addPreset($pr);
         

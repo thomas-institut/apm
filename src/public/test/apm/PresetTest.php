@@ -36,15 +36,17 @@ class PresetTest extends TestCase {
         
         $userId = 1000;
         $toolId = 'mytool';
+        $title = 'mytitle';
         $keyName = 'mykey';
         $testKeyValue = 'my value';
         $testData = [ 'field1' => 100, 'field2' => 'some string'];
         $keyName2 = 'someotherKey';
         $testKeyValue2 = 'my value 2';
         
-        $pr = new Preset($toolId, $userId, [ $keyName => $testKeyValue], $testData);
+        $pr = new Preset($toolId, $userId, $title, [ $keyName => $testKeyValue], $testData);
         $this->assertEquals($toolId, $pr->getTool());
         $this->assertEquals($userId, $pr->getUserId());
+        $this->assertEquals($title, $pr->getTitle());
         $this->assertFalse($pr->getKey($keyName . 'asdf'));
         
         $this->assertEquals($testData, $pr->getData());

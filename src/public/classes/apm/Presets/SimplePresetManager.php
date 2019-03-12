@@ -35,6 +35,10 @@ class SimplePresetManager extends PresetManager {
     }
     
     public function addPreset(Preset $preset): bool {
+        if ($this->correspondingPresetExists($preset)) {
+            return false;
+        }
+        
         if (!isset($this->presets[$preset->getTool()])) {
             $this->presets[$preset->getTool()] = [];
         }
@@ -46,7 +50,7 @@ class SimplePresetManager extends PresetManager {
 
         $index = $this->getPresetIndex($tool, $userId, $title);
         if ($index === false) {
-            return false;
+            return true;
         }
         
         array_splice($this->presets[$tool], $index, 1);

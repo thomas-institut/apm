@@ -48,12 +48,20 @@ abstract class PresetManagerTest extends TestCase {
 
         $this->assertCount(0, $pm->getPresetsByToolAndKeys('any', []));
         $this->assertCount(0, $pm->getPresetsByToolUserIdAndKeys('any', -1, []));
+        $this->assertFalse($pm->getPreset('anytool', 1000, 'any title'));
         
         $pr1 = new Preset($testTool01, $testUserId01, 'pr1', $testKeys, $testData);
         $pr2 = new Preset($testTool01, $testUserId02, 'pr2', $testKeys, $testData);
         
         $this->assertTrue($pm->addPreset($pr1));
         $this->assertTrue($pm->addPreset($pr2));
+        $this->assertFalse($pm->addPreset($pr2));
+        
+        $this->assertTrue($pm->presetExists($testTool01, $testUserId01, 'pr1'));
+        $foundPreset = $pm->getPreset($testTool01, $testUserId01, 'pr1');
+        $this->assertNotFalse($foundPreset);
+        $this->assertEquals($pr1->getKeyArray(), $foundPreset->getKeyArray());
+        $this->assertEquals($pr1->getData(), $foundPreset->getData());
         
         $this->assertCount(0, $pm->getPresetsByToolAndKeys('any', []));
         $this->assertCount(0, $pm->getPresetsByToolUserIdAndKeys('any', -1, []));
@@ -66,9 +74,9 @@ abstract class PresetManagerTest extends TestCase {
         $nonExistentPreset2 = new Preset($testTool01, $testUserId02 + 1000, 'pr2', $testKeys, $testData); // non existent user Id
         $nonExistentPreset3 = new Preset($testTool01, $testUserId01, 'pr3', $testKeys, $testData); // non existent title
        
-        $this->assertFalse($pm->eraseCorrespondingPreset($nonExistentPreset1));
-        $this->assertFalse($pm->eraseCorrespondingPreset($nonExistentPreset2));
-        $this->assertFalse($pm->eraseCorrespondingPreset($nonExistentPreset3));
+        $this->assertTrue($pm->eraseCorrespondingPreset($nonExistentPreset1));
+        $this->assertTrue($pm->eraseCorrespondingPreset($nonExistentPreset2));
+        $this->assertTrue($pm->eraseCorrespondingPreset($nonExistentPreset3));
         
         $this->assertTrue($pm->eraseCorrespondingPreset($pr2));
         $this->assertCount(1, $pm->getPresetsByToolAndKeys($testTool01, []));

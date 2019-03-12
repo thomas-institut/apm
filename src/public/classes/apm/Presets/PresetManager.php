@@ -35,10 +35,15 @@ namespace APM\Presets;
 abstract class PresetManager {
     
     /**
-     * Basic operations with presets
+     * BASIC OPERATIONS
      */
     abstract public function presetExists(string $tool, int $userId, string $title) : bool;
     abstract public function addPreset(Preset $preset) : bool;
+    
+    /**
+     * erasePreset returns true if the preset was erased or if it did not exist 
+     * in the first place  
+     */
     abstract public function erasePreset(string $tool, int $userId, string $title) : bool;
 
     /**

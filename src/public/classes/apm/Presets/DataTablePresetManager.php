@@ -140,7 +140,13 @@ class DataTablePresetManager extends PresetManager {
      */
     public function getPresetsByToolAndKeys(string $tool, array $keysToMatch): array {
         $matchedPresets = [];
-        $rows = $this->dataTable->findRows([self::FIELD_TOOL => $tool]);
+        $rowToFind = [self::FIELD_TOOL => $tool];
+        foreach($keysToMatch as $key => $value) {
+            if (isset($this->expandedKeys[$key])) {
+                $rowToFind[$this->expandedKeys[$key]] = $value;
+            }
+        }
+        $rows = $this->dataTable->findRows($rowToFind);
         foreach($rows as $theRow) {
             if ($this->match($this->decodeStringToArray($theRow[self::FIELD_KEYARRAY]), $keysToMatch)) {
                 $matchedPresets[] = $this->createPresetFromDataTableRow($theRow);
@@ -160,7 +166,13 @@ class DataTablePresetManager extends PresetManager {
      */
     public function getPresetsByToolUserIdAndKeys(string $tool, int $userId, array $keysToMatch): array {
         $matchedPresets = [];
-        $rows = $this->dataTable->findRows([self::FIELD_TOOL => $tool, self::FIELD_USERID => $userId]);
+        $rowToFind = [self::FIELD_TOOL => $tool, self::FIELD_USERID => $userId];
+        foreach($keysToMatch as $key => $value) {
+            if (isset($this->expandedKeys[$key])) {
+                $rowToFind[$this->expandedKeys[$key]] = $value;
+            }
+        }
+        $rows = $this->dataTable->findRows($rowToFind);
         foreach($rows as $theRow) {
             if ($this->match($this->decodeStringToArray($theRow[self::FIELD_KEYARRAY]), $keysToMatch)) {
                 $matchedPresets[] = $this->createPresetFromDataTableRow($theRow);
@@ -216,14 +228,22 @@ class DataTablePresetManager extends PresetManager {
      * @return array
      */
     protected function createDataTableRowFromPreset(Preset $preset) : array {
-        // not storing expanded keys for now
-        return [ 
+        // In this implemenation the preset's key array is stored full in
+        // the self::FIELD_KEYARRAY field, and then, copies of the expanded
+        // keys are stored in the own fields. 
+        $keyArray = $preset->getKeyArray();
+        $theRow = [ 
             self::FIELD_TOOL => $preset->getTool(), 
             self::FIELD_USERID => $preset->getUserId(),
             self::FIELD_TITLE => $preset->getTitle(),
-            self::FIELD_KEYARRAY => $this->encodeArrayToString($preset->getKeyArray()),
+            self::FIELD_KEYARRAY => $this->encodeArrayToString($keyArray),
             self::FIELD_DATA => $this->encodeArrayToString($preset->getData())
             ];
+        
+        foreach($this->expandedKeys as $key => $fieldName) {
+            $theRow[$fieldName] = $keyArray[$key];
+        }
+        return $theRow;
     }
     
     /**
@@ -233,6 +253,8 @@ class DataTablePresetManager extends PresetManager {
      * @return \APM\Presets\Preset
      */
     protected function createPresetFromDataTableRow(array $theRow) : Preset {
+        // There's no need to deal with expanded keys since all key information
+        // is stored in the self::FIELD_KEYARRAY field
         return new Preset(
                 $theRow[self::FIELD_TOOL], 
                 $theRow[self::FIELD_USERID], 

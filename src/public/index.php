@@ -40,6 +40,8 @@ use AverroesProject\Data\DatabaseChecker;
 use AverroesProject\Plugin\HookManager;
 use AverroesProject\Collatex\CollatexRunner;
 
+use APM\System\ApmSystemManager;
+
 
 // Application parameters
 $config['app_name'] = 'Averroes Project Manager';
@@ -68,48 +70,34 @@ function exitWithError($logger, $msg, $logMsg = '')
     exit();
 }
 
+function abort($msg) {
+    http_response_code(503);
+    print "ERROR: $msg";
+    exit();
+}
+
 
 // Set timezone
 date_default_timezone_set($config['default_timezone']);
 
-// Setup logger
-$logStream = new StreamHandler($config['logfilename'], 
-        Logger::DEBUG);
-$phpLog = new \Monolog\Handler\ErrorLogHandler();
-$logger = new Logger('APM');
-$logger->pushHandler($logStream);
-$logger->pushHandler($phpLog);
-$logger->pushProcessor(new \Monolog\Processor\WebProcessor);
 
-//
-// Set up database connection
-//
-try {
-    $dbh = new \PDO('mysql:dbname='. $config['db']['db'] . ';host=' . 
-               $config['db']['host'], $config['db']['user'], 
-               $config['db']['pwd']);
-    $dbh->query("set character set 'utf8'");
-    $dbh->query("set names 'utf8'");
-} catch (\PDOException $e) {
-    exitWithError($logger, 
-            "Database connection failed", 
-            "Database connection failed: " . $e->getMessage());
+$fatalErrorMessages[ApmSystemManager::ERROR_DATABASE_CONNECTION_FAILED] = 'Database connection failed';
+$fatalErrorMessages[ApmSystemManager::ERROR_DATABASE_CANNOT_READ_SETTINGS] = 'Cannot read settings from database';
+$fatalErrorMessages[ApmSystemManager::ERROR_DATABASE_IS_NOT_INITIALIZED] = 'Database is not initialized';
+$fatalErrorMessages[ApmSystemManager::ERROR_DATABASE_SCHEMA_NOT_UP_TO_DATE] = 'Database schema is not up to date';
+
+// System Manager 
+$systemManager = new ApmSystemManager($config);
+
+if ($systemManager->fatalErrorOccurred()) {
+    abort($fatalErrorMessages[$systemManager->getErrorCode()]);
 }
 
-//
-// Check database
-//
-$dbChecker = new DatabaseChecker($dbh, $config['tables']);
+$logger = $systemManager->getLogger();
+$dbh = $systemManager->getDbConnection();
+$hm = $systemManager->getHookManager();
+$cr = $systemManager->getCollationEngine();
 
-if (!$dbChecker->isDatabaseInitialized()) {
-    exitWithError($logger, "Database is not initialized");
-}
-
-if (!$dbChecker->isDatabaseUpToDate()) {
-    exitWithError($logger, "Database schema not up to date");
-}
-// Hook Manager
-$hm = new HookManager();
 
 // Load plugins (eventually this will be done by a PluginManager)
 if ((include_once 'plugins/LocalImageSource.php') === false) {
@@ -136,16 +124,13 @@ if ((include_once 'plugins/AverroesServerImageSource.php') === false) {
 $asisObject = new \AverroesServerImageSource($hm, $logger);
 $asisObject->init();
 
-// Data Manager
+
+// Data Manager (will be replaced completely by SystemManager at some point
 $db = new DataManager($dbh, $config['tables'], $logger, $hm, $config['langCodes']);
+
 
 // Collation Runner
 
-$cr = new \APM\CollationEngine\Collatex(
-        $config['collatex']['collatexJarFile'], 
-        $config['collatex']['tmp'], 
-        $config['collatex']['javaExecutable']
-        );
  
 // Initialize the Slim app
 $app = new \Slim\App(["settings" => $config]);
@@ -157,6 +142,7 @@ $container['dbh'] = $dbh;
 $container['logger'] = $logger;
 $container['hm'] = $hm;
 $container['cr'] = $cr;
+$container['sm'] = $systemManager;
 
 $container['userId'] = 0;  // The authentication module will update this with the correct Id 
 //

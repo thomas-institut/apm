@@ -18,12 +18,12 @@
  *  
  */
 
-namespace AverroesProject;
+namespace APM;
 
 require "../vendor/autoload.php";
 
 use PHPUnit\Framework\TestCase;
-use AverroesProject\Plugin\HookManager;
+use APM\Plugin\HookManager;
 
 /**
  * Description of SettingsManagerTest
@@ -69,7 +69,7 @@ class HookManagerTest extends TestCase {
         $result3 = $hm->attachToHook('test2', function($p1)  { return $p1 + 1;});
         $this->assertTrue($result3);
         
-        $result4 = $hm->attachToHook('test2', 'AverroesProject\HookManagerTest::someFunction');
+        $result4 = $hm->attachToHook('test2', 'APM\HookManagerTest::someFunction');
         $this->assertTrue($result4);
         $hmResult2 = $hm->callHookedMethods('test2', 0);
         $this->assertEquals(2, $hmResult2);

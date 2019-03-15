@@ -18,10 +18,11 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-namespace AverroesProject\Plugin;
+namespace APM\Plugin;
 
-use AverroesProject\Data\SettingsManager;
-use AverroesProject\Plugin\HookManager;
+use APM\System\SettingsManager;
+use APM\Plugin\HookManager;
+use APM\System\SystemManager;
 
 /**
  * Description of PluginManager
@@ -36,9 +37,7 @@ class PluginManager {
      */
     public $pluginDirs;
     
-    /*
-     * @var SettingsManager $sm
-     */
+
     public $sm;
     
     /**
@@ -59,6 +58,9 @@ class PluginManager {
      */
     public $hm;
     
+    
+    private $systemManager;
+    
     /**
      *
      * @var Plugin[] $pluginObjects
@@ -75,10 +77,13 @@ class PluginManager {
     
     const PM_ACTIVE_PLUGINS_SETTING = 'plugins-active';
     
+    
+    
    
-    public function __construct(SettingsManager $sm, HookManager $hm, $dirs = []) {
-        $this->sm = $sm;
-        $this->hm = $hm;
+    public function __construct(SystemManager $systemManager, $dirs = []) {
+        $this->systemManager = $systemManager;
+        $this->hm = $systemManager->getHookManager();
+        $this->sm = $systemManager->getSettingsManager();
         $this->resetErrorStatus();
         $this->pluginDirs = [];
         $this->pluginObjects = [];
@@ -132,7 +137,7 @@ class PluginManager {
                 $dirLoaded = false;
             }
             if ($dirLoaded) {
-                $pObject = new $pluginInfo['class']($this->hm);
+                $pObject = new $pluginInfo['class']($this->systemManager);
                 $this->pluginObjects[] = $pObject;
                 $pObject->init();
             }
@@ -201,7 +206,7 @@ class PluginManager {
         if ($this->loadPluginDir($dir, $class) === false) {
             return false;
         }
-        $pObject = new $class($this->hm);
+        $pObject = new $class($this->systemManager);
         $this->pluginObjects[] = $pObject;
         if ($pObject->activate() === false){
             return false; //@codeCoverageIgnore 
@@ -261,7 +266,7 @@ class PluginManager {
         $classes = get_declared_classes();
         $pluginClasses = [];
         foreach($classes as $class) {
-            if (get_parent_class($class) === 'AverroesProject\Plugin\Plugin') {
+            if (get_parent_class($class) === 'APM\Plugin\Plugin') {
                 $pluginClasses[] = $class;
             }
         }

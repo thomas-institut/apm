@@ -11,11 +11,11 @@
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class LocalImageSource extends \AverroesProject\Plugin\ImageSourcePlugin {
+class LocalImageSource extends \APM\Plugin\ImageSourcePlugin {
     
      
-    public function __construct($hm, $logger) {
-        parent::__construct($hm, $logger, 'local');
+    public function __construct($sm) {
+        parent::__construct($sm, 'local');
     }
     
     public function realGetImageUrl($imageSourceData, $imageNumber)  

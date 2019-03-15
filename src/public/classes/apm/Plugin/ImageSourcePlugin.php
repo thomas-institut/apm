@@ -18,21 +18,23 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-namespace AverroesProject\Plugin;
+namespace APM\Plugin;
 
 /**
  * Description of ImageSourcePlugin
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-abstract class ImageSourcePlugin extends \AverroesProject\Plugin\Plugin {
+abstract class ImageSourcePlugin extends \APM\Plugin\Plugin {
     
     public $logger;
     public $stub;
+    protected $hm;
     
-    public function __construct($hm, $logger, $stub) {
-        parent::__construct($hm);
-        $this->logger = $logger->withName('PLUGIN-IMGSRC-' . $stub);
+    public function __construct($sm, $stub) {
+        parent::__construct($sm);
+        $this->logger = $this->systemManager->getLogger()->withName('PLUGIN-IMGSRC-' . $stub);
+        $this->hm = $this->systemManager->getHookManager();
         $this->stub = $stub;
     }
     
@@ -88,8 +90,6 @@ abstract class ImageSourcePlugin extends \AverroesProject\Plugin\Plugin {
         }
         return $this->realGetImageUrl($param['imageSourceData'], $param['imageNumber']);
     }
-    
-    
     
     public function getDocInfoHtml($param) {
         if (!is_array($param)) {

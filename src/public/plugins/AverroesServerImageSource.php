@@ -11,11 +11,11 @@
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class AverroesServerImageSource extends \AverroesProject\Plugin\ImageSourcePlugin {
+class AverroesServerImageSource extends \APM\Plugin\ImageSourcePlugin {
     
      
-    public function __construct($hm, $logger) {
-        parent::__construct($hm, $logger, 'averroes-server');
+   public function __construct($sm) {
+        parent::__construct($sm, 'averroes-server');
     }
     
     public function realGetImageUrl($imageSourceData, $imageNumber)  

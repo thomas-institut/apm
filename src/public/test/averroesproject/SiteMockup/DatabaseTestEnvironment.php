@@ -11,7 +11,7 @@ require "../vendor/autoload.php";
 require '../test/testdbconfig.php';
 
 use AverroesProject\Data\DataManager;
-use AverroesProject\Plugin\HookManager;
+use APM\Plugin\HookManager;
 
 /**
  * Utility class to set up the test environment for database testing

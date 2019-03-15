@@ -66,7 +66,7 @@ class ApiControllerTest extends TestCase {
             Logger::DEBUG);
         $logger = new Logger('apm.APITEST');
         $logger->pushHandler($logStream);
-        $hm = new \AverroesProject\Plugin\HookManager();
+        $hm = new \APM\Plugin\HookManager();
         $cr = new \APM\CollationEngine\Collatex(
             $config['collatex']['collatexJarFile'], 
             $config['collatex']['tmp'], 

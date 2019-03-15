@@ -18,7 +18,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-class BasicPlugin2 extends AverroesProject\Plugin\Plugin 
+class BasicPlugin2 extends APM\Plugin\Plugin 
 {
    
     public function init() {

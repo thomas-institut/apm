@@ -52,6 +52,8 @@ abstract class SystemManager {
      */
     abstract public function getPresetsManager();
     abstract public function getLogger();
+    abstract public function getHookManager();
+    abstract public function getSettingsManager();
     
     
 }

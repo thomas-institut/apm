@@ -61,6 +61,9 @@ class ApmSystemManager extends SystemManager {
         $this->logger = $this->setUpLogger();
         $this->hookManager = new HookManager();
         
+        // Set timezone
+        date_default_timezone_set($config['default_timezone']);
+        
         try {
             $this->dbConn = $this->setUpDbConnection();
         } catch (\PDOException $e) {
@@ -146,6 +149,10 @@ class ApmSystemManager extends SystemManager {
     
     public function getHookManager() {
         return $this->hookManager;
+    }
+    
+    public function getSettingsManager() {
+        return $this->settingsMgr;
     }
     
     public function getCollationEngine() {

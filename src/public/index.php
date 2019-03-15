@@ -34,11 +34,7 @@ require 'setup.php';
 
 
 use AverroesProject\Data\DataManager;
-use Monolog\Logger;
-use Monolog\Handler\StreamHandler;
-use AverroesProject\Data\DatabaseChecker;
-use AverroesProject\Plugin\HookManager;
-use AverroesProject\Collatex\CollatexRunner;
+
 
 use APM\System\ApmSystemManager;
 
@@ -59,16 +55,6 @@ $config['collatex']['collatexJarFile'] = 'collatex/bin/collatex-tools-1.7.1.jar'
 // Slim parameters
 $config['addContentLengthHeader'] = false;
 
-function exitWithError($logger, $msg, $logMsg = '') 
-{
-    if ($logMsg === '') {
-        $logMsg = $msg;
-    }
-    $logger->error($logMsg);
-    http_response_code(503);
-    print "ERROR: $msg";
-    exit();
-}
 
 function abort($msg) {
     http_response_code(503);
@@ -76,9 +62,15 @@ function abort($msg) {
     exit();
 }
 
+function exitWithError($logger, $msg, $logMsg = '') 
+{
+    if ($logMsg === '') {
+        $logMsg = $msg;
+    }
+    $logger->error($logMsg);
+    abort($msg);
+}
 
-// Set timezone
-date_default_timezone_set($config['default_timezone']);
 
 
 $fatalErrorMessages[ApmSystemManager::ERROR_DATABASE_CONNECTION_FAILED] = 'Database connection failed';
@@ -100,38 +92,21 @@ $cr = $systemManager->getCollationEngine();
 
 
 // Load plugins (eventually this will be done by a PluginManager)
-if ((include_once 'plugins/LocalImageSource.php') === false) {
-    exitWithError($logger, "Can't load required plugin LocalImageSource");
-}
-$sisObject = new \LocalImageSource($hm, $logger);
-$sisObject->init();
 
-if ((include_once 'plugins/DareImageSource.php') === false) {
-    exitWithError($logger, "Can't load required plugin DareImageSource");
-}
-$disObject = new \DareImageSource($hm, $logger);
-$disObject->init();
 
-if ((include_once 'plugins/DareDeepZoomImageSource.php') === false) {
-    exitWithError($logger, "Can't load required plugin DareDeepZoomImageSource");
+foreach($config['plugins'] as $pluginName) {
+    $pluginPhpFile = "plugins/$pluginName.php";
+    include_once $pluginPhpFile;
+    $pluginClassName = '\\' . $pluginName;
+    $pluginObject = new $pluginClassName($systemManager);
+    $pluginObject->init();
 }
-$ddzisObject = new \DareDeepZoomImageSource($hm, $logger);
-$ddzisObject->init();
-
-if ((include_once 'plugins/AverroesServerImageSource.php') === false) {
-    exitWithError($logger, "Can't load required plugin AverroesServerImageSource");
-}
-$asisObject = new \AverroesServerImageSource($hm, $logger);
-$asisObject->init();
 
 
 // Data Manager (will be replaced completely by SystemManager at some point
 $db = new DataManager($dbh, $config['tables'], $logger, $hm, $config['langCodes']);
 
 
-// Collation Runner
-
- 
 // Initialize the Slim app
 $app = new \Slim\App(["settings" => $config]);
 

@@ -21,6 +21,8 @@
 
 namespace AverroesProject\Data;
 
+use APM\System\SettingsManager;
+
 /**
  * Basic integrity checker for the database
  *

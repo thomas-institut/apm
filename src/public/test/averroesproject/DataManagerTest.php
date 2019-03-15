@@ -32,7 +32,7 @@ use AverroesProject\ColumnElement\Addition;
 use AverroesProject\TxText\Deletion;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
-use AverroesProject\Plugin\HookManager;
+use APM\Plugin\HookManager;
 use AverroesProject\ItemStream\ItemStream;
 
 /**

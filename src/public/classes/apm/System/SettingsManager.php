@@ -19,7 +19,7 @@
  *  
  */
 
-namespace AverroesProject\Data;
+namespace APM\System;
 
 use DataTable\InMemoryDataTable;
 /**

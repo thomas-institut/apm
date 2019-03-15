@@ -18,14 +18,16 @@
  *  
  */
 
-namespace AverroesProject;
+namespace APM;
 
 require "../vendor/autoload.php";
 
+require_once 'SiteMockup/SystemManagerMockup.php';
+
 use PHPUnit\Framework\TestCase;
-use AverroesProject\Data\SettingsManager;
-use AverroesProject\Plugin\HookManager;
-use AverroesProject\Plugin\PluginManager;
+use APM\System\SettingsManager;
+use APM\Plugin\HookManager;
+use APM\Plugin\PluginManager;
 
 /**
  * Description of SettingsManagerTest
@@ -36,9 +38,8 @@ class PluginManagerTest extends TestCase {
     
     public function testBasic() 
     {
-        $sm = new SettingsManager();
-        $hm = new HookManager();
-        $pm = new PluginManager($sm, $hm, [__DIR__ . '/test-plugins/basic']);
+        $sm = new SystemManagerMockup();
+        $pm = new PluginManager($sm, [__DIR__ . '/test-plugins/basic']);
         
         $numInitialPluginClasses = count($pm->getPluginClasses());
         
@@ -64,9 +65,8 @@ class PluginManagerTest extends TestCase {
     
     public function testLoadDirs()
     {
-        $sm = new SettingsManager();
-        $hm = new HookManager();
-        $pm = new PluginManager($sm, $hm, [__DIR__ . '/test-plugins/basic']);
+        $sm = new SystemManagerMockup();
+        $pm = new PluginManager($sm, [__DIR__ . '/test-plugins/basic']);
         
         $numInitialPluginClasses = count($pm->getPluginClasses());
         
@@ -89,9 +89,10 @@ class PluginManagerTest extends TestCase {
     
     public function testActivate()
     {
-        $sm = new SettingsManager();
-        $hm = new HookManager();
-        $pm = new PluginManager($sm, $hm);
+        $sm = new SystemManagerMockup();
+        $pm = new PluginManager($sm);
+        
+        $hm = $sm->getHookManager();
         
         $badClassR = $pm->activatePlugin(__DIR__ . '/test-plugins/basic', 'BadClass');
         $this->assertFalse($badClassR);
@@ -123,9 +124,10 @@ class PluginManagerTest extends TestCase {
     
     public function testActivePluginSetting()
     {
-        $sm = new SettingsManager();
-        $hm = new HookManager();
-        $pm = new PluginManager($sm, $hm);
+        $systMgr = new SystemManagerMockup();
+        $pm = new PluginManager($systMgr);
+        
+        $sm = $systMgr->getSettingsManager();
         
         $result = $pm->getActivePluginArray();
         $this->assertEquals([], $result);
@@ -172,9 +174,11 @@ class PluginManagerTest extends TestCase {
     
     public function testLoadActivePlugins()
     {
-        $sm = new SettingsManager();
-        $hm = new HookManager();
-        $pm = new PluginManager($sm, $hm);
+        $systMgr = new SystemManagerMockup();
+        $pm = new PluginManager($systMgr);
+        
+        $sm = $systMgr->getSettingsManager();
+        $hm = $systMgr->getHookManager();
         
         $badPlugins = [];
         $badPlugins[] = ['dir' => 'somedir', 'class' => 'randomClassXYZ'];

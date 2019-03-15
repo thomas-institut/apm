@@ -37,7 +37,7 @@ class Ap2APMSiteControllerTest extends TestCase {
             Logger::DEBUG);
         $logger = new Logger('SITETEST');
         $logger->pushHandler($logStream);
-        $hm = new Plugin\HookManager();
+        $hm = new \APM\Plugin\HookManager();
 
         self::$ci = SiteTestEnvironment::getContainer($logger);
         self::$dataManager = DatabaseTestEnvironment::getDataManager($logger, $hm);

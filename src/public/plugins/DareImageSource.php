@@ -11,12 +11,12 @@
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class DareImageSource extends \AverroesProject\Plugin\ImageSourcePlugin {
+class DareImageSource extends \APM\Plugin\ImageSourcePlugin {
     
    
     
-    public function __construct($hm, $logger) {
-        parent::__construct($hm, $logger, 'dare');
+   public function __construct($sm) {
+        parent::__construct($sm, 'dare');
     }
        
     public function realGetImageUrl($imageSourceData, $imageNumber) 

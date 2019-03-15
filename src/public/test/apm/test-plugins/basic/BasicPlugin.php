@@ -18,14 +18,16 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-class BasicPlugin extends AverroesProject\Plugin\Plugin 
+class BasicPlugin extends APM\Plugin\Plugin 
 {
     public $myVar;
+    private $hm;
     
     const BP_HOOK_NAME = 'basicplugin-hook';
     
-    public function __construct($hm) {
-        parent::__construct($hm);
+    public function __construct($sm) {
+        parent::__construct($sm);
+        $this->hm = $sm->getHookManager();
         $this->myVar = -1000;
     }
  

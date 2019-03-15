@@ -11,12 +11,12 @@
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class DareDeepZoomImageSource extends \AverroesProject\Plugin\ImageSourcePlugin {
+class DareDeepZoomImageSource extends \APM\Plugin\ImageSourcePlugin {
     
    
     
-    public function __construct($hm, $logger) {
-        parent::__construct($hm, $logger, 'dare-deepzoom');
+   public function __construct($sm) {
+        parent::__construct($sm, 'dare-deepzoom');
     }
        
     public function realGetImageUrl($imageSourceData, $imageNumber) 

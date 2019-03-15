@@ -18,11 +18,11 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-namespace AverroesProject\Plugin;
+namespace APM\Plugin;
 
 /**
  * Class to manage hooks and plugin calls.
- * Normally there should be only one define per application
+ * Normally there should be only one defined per application
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */

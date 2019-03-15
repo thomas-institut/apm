@@ -27,7 +27,7 @@ use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 use AverroesProject\TxText\ItemArray;
 use AverroesProject\ColumnElement\Element;
-use AverroesProject\Plugin\HookManager;
+use APM\Plugin\HookManager;
 
 /**
  * Description of ElementTest

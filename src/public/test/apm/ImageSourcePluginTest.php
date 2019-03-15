@@ -18,17 +18,16 @@
  *  
  */
 
-namespace AverroesProject;
+namespace APM;
 
 require "../vendor/autoload.php";
 
+require_once 'SiteMockup/SystemManagerMockup.php';
 require_once 'ImageSourcePluginMockup.php';
 
 use PHPUnit\Framework\TestCase;
 
-use AverroesProject\Plugin\HookManager;
-use Monolog\Logger;
-use Monolog\Handler\StreamHandler;
+
 
 
 /**
@@ -40,13 +39,9 @@ class ImageSourcePluginTest extends TestCase {
     
     public function testBasic() 
     {
-        $hm = new HookManager();
-        $logStream = new StreamHandler('test.log', 
-            Logger::DEBUG);
-        $logger = new Logger('IMAGE_SOURCE_PLUGIN_TEST');
-        $logger->pushHandler($logStream);
+        $sm = new SystemManagerMockup();
         
-        $isp = new \ImageSourcePluginMockup($hm, $logger, 'testisp');
+        $isp = new \ImageSourcePluginMockup($sm, 'testisp');
         
         $isp->init();
         

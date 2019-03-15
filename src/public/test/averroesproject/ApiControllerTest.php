@@ -29,7 +29,7 @@ use AverroesProject\TxText\ItemArray;
 use GuzzleHttp\Psr7;
 use AverroesProject\ColumnElement\Element;
 use AverroesProject\TxText\Item;
-use AverroesProject\Plugin\HookManager;
+use APM\Plugin\HookManager;
 
 /**
  * Description of testApi

@@ -18,12 +18,12 @@
  *  
  */
 
-namespace AverroesProject;
+namespace APM;
 
 require "../vendor/autoload.php";
 
 use PHPUnit\Framework\TestCase;
-use AverroesProject\Data\SettingsManager;
+use APM\System\SettingsManager;
 
 /**
  * Description of SettingsManagerTest

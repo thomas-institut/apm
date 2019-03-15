@@ -44,3 +44,14 @@ $config['languages'] = [
 // COLLATEX
 $config['collatex']['tmp'] = 'collatex/tmp';
 $config['collatex']['javaExecutable'] = '/usr/bin/java';
+
+
+// PLUGINS
+// a plugin named 'PluginName' must be implemented as
+// a class with the fully qualified name '\PluginName' and its
+// code must reside in  ./plugins/PluginName.php
+
+$config['plugins'][] = 'LocalImageSource';
+$config['plugins'][] = 'DareImageSource';
+$config['plugins'][] = 'DareDeepZoomImageSource';
+$config['plugins'][] = 'AverroesServerImageSource';

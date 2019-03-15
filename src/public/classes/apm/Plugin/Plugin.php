@@ -18,26 +18,26 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-use AverroesProject\Plugin\ImageSourcePlugin;
+namespace APM\Plugin;
 
 /**
- * 
+ * Base class for plugins
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class ImageSourcePluginMockup extends ImageSourcePlugin {
+abstract class Plugin {
     
-    public function realGetImageUrl($imageSourceData, $imageNumber)
-    {
-        return 'ImageUrl';
-    }
+    /**
+     *
+     * @var AverroesProject\Plugin\HookManager $hm
+     */
+    protected $systemManager;
     
-    public function realGetOpenSeaDragonConfig($imageSourceData, $imageNumber){
-        return 'OpenSeaDragonConfig';
+    public function __construct($sm) {
+        $this->systemManager = $sm;
     }
-    
-    public function realGetDocInfoHtml($imageSourceData)
-    {
-        return 'DocInfoHtml';
-    }
+    abstract public function activate();
+    abstract public function deactivate();
+    abstract public function init();
+    abstract public function getMetadata();
 }

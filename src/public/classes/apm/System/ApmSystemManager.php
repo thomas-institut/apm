@@ -21,8 +21,8 @@
 namespace APM\System;
 
 use APM\Presets\DataTablePresetManager;
-use AverroesProject\Data\SettingsManager;
-use AverroesProject\Plugin\HookManager;
+use APM\System\SettingsManager;
+use APM\Plugin\HookManager;
 
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;

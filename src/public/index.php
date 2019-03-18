@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (C) 2016-18 Universität zu Köln
+ * Copyright (C) 2016-19 Universität zu Köln
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -23,66 +23,24 @@
  */
 namespace AverroesProject;
 
-
-require 'vendor/autoload.php';
-
-/**
- * Runtime configurations: DB credentials, base URL
- *  setup.php loads and process config.php
- */
-require 'setup.php';
-
-
 use AverroesProject\Data\DataManager;
-
-
 use APM\System\ApmSystemManager;
 
+require 'vendor/autoload.php';
+require 'setup.php';
+require 'version.php';
 
-// Application parameters
-$config['app_name'] = 'Averroes Project Manager';
-$config['version'] = '0.19.4 (2019-Mar-04)';
-$config['copyright_notice'] = <<<EOD
-        2016-19, 
-        <a href="http://www.thomasinstitut.uni-koeln.de/">
-            Thomas-Institut</a>, 
-        <a href="http://www.uni-koeln.de/">
-            Universität zu Köln
-        </a>
-EOD;
-
-$config['collatex']['collatexJarFile'] = 'collatex/bin/collatex-tools-1.7.1.jar';
-// Slim parameters
-$config['addContentLengthHeader'] = false;
-
-
-function abort($msg) {
+function exitWithErrorMessage($msg) {
     http_response_code(503);
     print "ERROR: $msg";
     exit();
 }
 
-function exitWithError($logger, $msg, $logMsg = '') 
-{
-    if ($logMsg === '') {
-        $logMsg = $msg;
-    }
-    $logger->error($logMsg);
-    abort($msg);
-}
-
-
-
-$fatalErrorMessages[ApmSystemManager::ERROR_DATABASE_CONNECTION_FAILED] = 'Database connection failed';
-$fatalErrorMessages[ApmSystemManager::ERROR_DATABASE_CANNOT_READ_SETTINGS] = 'Cannot read settings from database';
-$fatalErrorMessages[ApmSystemManager::ERROR_DATABASE_IS_NOT_INITIALIZED] = 'Database is not initialized';
-$fatalErrorMessages[ApmSystemManager::ERROR_DATABASE_SCHEMA_NOT_UP_TO_DATE] = 'Database schema is not up to date';
-
 // System Manager 
 $systemManager = new ApmSystemManager($config);
 
 if ($systemManager->fatalErrorOccurred()) {
-    abort($fatalErrorMessages[$systemManager->getErrorCode()]);
+    exitWithErrorMessage($systemManager->getErrorMsg());
 }
 
 $logger = $systemManager->getLogger();
@@ -91,21 +49,19 @@ $hm = $systemManager->getHookManager();
 $cr = $systemManager->getCollationEngine();
 
 
-// Load plugins (eventually this will be done by a PluginManager)
+// Load plugins
 
-
-foreach($config['plugins'] as $pluginName) {
-    $pluginPhpFile = "plugins/$pluginName.php";
-    include_once $pluginPhpFile;
-    $pluginClassName = '\\' . $pluginName;
-    $pluginObject = new $pluginClassName($systemManager);
-    $pluginObject->init();
-}
-
+//
+//foreach($config['plugins'] as $pluginName) {
+//    $pluginPhpFile = "plugins/$pluginName.php";
+//    include_once $pluginPhpFile;
+//    $pluginClassName = '\\' . $pluginName;
+//    $pluginObject = new $pluginClassName($systemManager);
+//    $pluginObject->init();
+//}
 
 // Data Manager (will be replaced completely by SystemManager at some point
 $db = new DataManager($dbh, $config['tables'], $logger, $hm, $config['langCodes']);
-
 
 // Initialize the Slim app
 $app = new \Slim\App(["settings" => $config]);

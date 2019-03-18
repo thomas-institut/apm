@@ -35,11 +35,13 @@ use Monolog\Handler\StreamHandler;
  */
 class ApmSystemManager extends SystemManager {
     
-    const ERROR_NO_ERROR = 0;
+
     const ERROR_DATABASE_CONNECTION_FAILED = 1001;
     const ERROR_DATABASE_CANNOT_READ_SETTINGS = 1002;
     const ERROR_DATABASE_IS_NOT_INITIALIZED = 1003;
     const ERROR_DATABASE_SCHEMA_NOT_UP_TO_DATE  = 1004;
+    const ERROR_CANNOT_READ_SETTINGS_FROM_DB = 1005;
+    const ERROR_CANNOT_LOAD_PLUGIN = 1006;
     
     const DB_VERSION = 16;
     
@@ -50,49 +52,45 @@ class ApmSystemManager extends SystemManager {
     
     private $dbConn;
     private $logger;
-    
-    private $config;
-    
-    private $errorCode;
+  
 
-    public function __construct($config) {
-        $this->config = $config;
-        $this->resetErrorCode();
-        $this->logger = $this->setUpLogger();
-        $this->hookManager = new HookManager();
-        
+    public function __construct(array $config) {
+        parent::__construct($config);
         // Set timezone
         date_default_timezone_set($config['default_timezone']);
+
+        $this->logger = $this->createLogger();
+        $this->hookManager = new HookManager();
         
+
+        // setup database connection
         try {
             $this->dbConn = $this->setUpDbConnection();
         } catch (\PDOException $e) {
-            $this->logger->error("Database connection failed: " . $e->getMessage());
-            $this->errorCode = self::ERROR_DATABASE_CONNECTION_FAILED;
+            $this->logAndSetError(self::ERROR_DATABASE_CONNECTION_FAILED, "Database connection failed: " . $e->getMessage());
             return;
         }
         
+        // setup settings manager, so that we can check the database
         $settingsTable = new \DataTable\MySqlDataTable($this->dbConn, 
                 $this->config['tables']['settings']);
         if (!$settingsTable->isDbTableValid()) {
-            $this->logger->error("Cannot read settings from database");
+            $this->logAndSetError(self::ERROR_CANNOT_READ_SETTINGS_FROM_DB, "Cannot read settings from database");
             return;
         }
-        
         $this->settingsMgr = new SettingsManager($settingsTable);
         
+        // Check that the database is initialized and up to date
         if (!$this->isDatabaseInitialized()) {
-            $this->logger->error("Database is not initialized");
-            $this->errorCode = self::ERROR_DATABASE_IS_NOT_INITIALIZED;
+            $this->logAndSetError(self::ERROR_DATABASE_IS_NOT_INITIALIZED, "Database is not initialized");
             return;
         }
-        
         if (!$this->isDatabaseUpToDate()) {
-            $this->logger->error("Database schema not up to date");
-            $this->errorCode = self::ERROR_DATABASE_SCHEMA_NOT_UP_TO_DATE;
+            $this->logAndSetError(self::ERROR_DATABASE_SCHEMA_NOT_UP_TO_DATE, "Database schema not up to date");
             return;
         }
         
+        // Set up Collatex
         $cr = new \APM\CollationEngine\Collatex(
             $config['collatex']['collatexJarFile'], 
             $config['collatex']['tmp'], 
@@ -102,25 +100,29 @@ class ApmSystemManager extends SystemManager {
         $this->collationEngine = $cr;
         
         $tableNames = $this->config['tables'];
-
+        
+        // Set up PresetsManager
         $presetsManagerDataTable = new \DataTable\MySqlDataTable($this->dbConn, $tableNames['presets']);
         $this->presetsManager = new DataTablePresetManager($presetsManagerDataTable);
         
+        // Load plugins
+        if (isset($config['plugins'])) {
+            foreach($config['plugins'] as $pluginName) {
+                $pluginPhpFile = $config['pluginDirectory'] . '/' . $pluginName . '.php';
+                if ((include_once $pluginPhpFile) === false) {
+                    $this->logAndSetError(self::ERROR_CANNOT_LOAD_PLUGIN, 'Cannot load plugin: ' . $pluginName);
+                    return;
+                }
+                $pluginClassName = '\\' . $pluginName;
+                $pluginObject = new $pluginClassName($this);
+                $pluginObject->init();
+            }
+        }
+        
+        
     }
     
-    public function resetErrorCode() {
-        $this->errorCode = self::ERROR_NO_ERROR;
-    }
-    
-    public function getErrorCode() {
-        return $this->errorCode;
-    }
-    
-    public function fatalErrorOccurred() : bool {
-        return $this->errorCode !== self::ERROR_NO_ERROR;
-    }
-    
-    public function setUpDbConnection() {
+    protected function setUpDbConnection() {
         $dbConfig = $this->config['db'];
         $dbh = new \PDO('mysql:dbname='. $dbConfig['db'] . ';host=' . 
                 $dbConfig['host'], $dbConfig['user'], 
@@ -130,11 +132,6 @@ class ApmSystemManager extends SystemManager {
         
         return $dbh;
     }
-    
-    public function checkSystemSetup() {
-        return true;
-    }
-
     public function getPresetsManager() {
         return $this->presetsManager;
     }
@@ -159,23 +156,22 @@ class ApmSystemManager extends SystemManager {
         return $this->collationEngine;
     }
     
-    protected function setUpLogger() {
-        $logStream = new StreamHandler($this->config['logfilename'], 
-        Logger::DEBUG);
+    protected function createLogger() {
+        $loggerLever = Logger::INFO;
+        if ($this->config['logDebugInfo']) {
+            $loggerLever = Logger::DEBUG;
+        }
+        $logStream = new StreamHandler($this->config['logfilename'], $loggerLever);
         $phpLog = new \Monolog\Handler\ErrorLogHandler();
-        $logger = new Logger('APM');
+        $logger = new Logger($this->config['loggerAppName']);
         $logger->pushHandler($logStream);
         $logger->pushHandler($phpLog);
         $logger->pushProcessor(new \Monolog\Processor\WebProcessor);
+        
         return $logger;
     }
 
-    public function setUpSystem() {
-
-    }
-    
-    
-    public function isDatabaseInitialized()
+    protected function isDatabaseInitialized()
     {
          $tables = $this->config['tables'];
         // Check that all tables exist
@@ -187,7 +183,7 @@ class ApmSystemManager extends SystemManager {
         return true;
     }
     
-    public function isDatabaseUpToDate()
+    protected function isDatabaseUpToDate()
     {
         
         $dbVersion = $this->settingsMgr->getSetting('dbversion');
@@ -211,6 +207,11 @@ class ApmSystemManager extends SystemManager {
         }
         
         return false;
+    }
+    
+    protected function logAndSetError(int $errorCode, $msg) {
+        $this->logger->error($msg, [ 'errorCode' => $errorCode]);
+        $this->setError($errorCode, $msg);
     }
 
 }

@@ -24,7 +24,7 @@ namespace APM\System;
 
 /**
  * Integration class for putting together all the elements necessary
- * to build and operate an APM system. 
+ * to build and operate the APM system. 
  * 
  * Having this as an abstract class makes it easy to create alternative data
  * storage schemes for testing and migration.
@@ -34,19 +34,39 @@ namespace APM\System;
  */
 abstract class SystemManager {
     
+    const ERROR_NO_ERROR = 0;
+    const MSG_ERROR_NO_ERROR = 'No error';
     
-    /**
-     * Checks the system to see if the different components
-     * are up to date and functional.  
-     */
-    abstract public function checkSystemSetup();
+    /** @var int */
+    private $errorCode;
     
+    /** @var string */
+    private $errorMsg;
     
-    /**
-     * Builds all the system components 
-     */
-    abstract public function setUpSystem();
+    /** @var array */
+    protected $config;
+        
+    public function __construct(array $config) {
+        $this->resetErrorCode();
+        $this->config = $config;
+    }
     
+    public function resetErrorCode() {
+        $this->setError(self::ERROR_NO_ERROR, self::MSG_ERROR_NO_ERROR);
+    }
+    
+    public function getErrorCode() : int {
+        return $this->errorCode;
+    }
+    
+    public function getErrorMsg() : string {
+        return $this->errorMsg;
+    }
+    
+    public function fatalErrorOccurred() : bool {
+        return $this->errorCode !== self::ERROR_NO_ERROR;
+    }
+
     /**
      * Get methods for the different components
      */
@@ -55,5 +75,8 @@ abstract class SystemManager {
     abstract public function getHookManager();
     abstract public function getSettingsManager();
     
-    
+    protected function setError(int $errorCode, string $msg = '') {
+        $this->errorCode = $errorCode;
+        $this->errorMsg = $msg;
+    }
 }

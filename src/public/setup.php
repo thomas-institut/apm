@@ -25,7 +25,6 @@
  * Performs common, required pre-processing of the configuration given in 
  * config.php
  * 
- * System files include this file instead of config.php directly
  *  
  */
 
@@ -54,3 +53,14 @@ $config['tables']['pages']      = $prefix . 'pages';
 $config['tables']['types_page'] = $prefix . 'types_page';
 $config['tables']['works']      = $prefix . 'works';
 $config['tables']['presets']    = $prefix . 'presets';
+
+
+// Collatex jar file
+$config['collatex']['collatexJarFile'] = 'collatex/bin/collatex-tools-1.7.1.jar';
+
+// Slim parameters
+$config['addContentLengthHeader'] = false;
+
+$config['pluginDirectory'] = 'plugins';
+
+$config['loggerAppName'] = 'APM';

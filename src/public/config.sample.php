@@ -31,7 +31,7 @@ $config['displayErrorDetails'] = true;
 // LOG FILE  
 // The web server user should be able to create and write to the given file
 $config['logfilename'] = '/var/log/apm/apm.log';
-
+$config['logDebugInfo'] = false;
 
 // LANGUAGES
 $config['languages'] = [

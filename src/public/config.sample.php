@@ -18,9 +18,6 @@ $config['db']['user'] = "MYSQL USER";
 $config['db']['pwd'] = "PASSWORD";
 $config['db']['db'] = "THE DATABASE";
 
-// TABLE NAME PREFIX
-$config['db']['tablePrefix'] = 'ap_';
-
 // BASE URL
 $config['baseurl']='http://localhost:8888/public';
 

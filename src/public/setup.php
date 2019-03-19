@@ -37,6 +37,8 @@ foreach ($config['languages'] as $lang) {
     $config['langCodes'][] = $lang['code'];
 }
 
+$config['db']['tablePrefix'] = 'ap_';
+
 // Generate table names 
 $prefix = $config['db']['tablePrefix'];
 

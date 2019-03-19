@@ -207,7 +207,7 @@ class EditorData {
           // 1.b.i. Insert non-textual item with attributes
           // the attributes will be ignored!
           processNonTextualItem(curOps)
-          continue // 1.b.i. 終
+          continue // 1.b.i
         }
         
         // 1.b.ii Insert text with attributes
@@ -237,7 +237,7 @@ class EditorData {
         item.id = parseInt(item.id)
         itemIds.push(item.id)
         curElement.items.push(item)
-        continue // 1.b.ii. 終
+        continue // 1.b.ii
       }
 
       // 2. Insert without attributes
@@ -257,20 +257,36 @@ class EditorData {
             previousElementType = -1
             continue
           }
-          // eat up all text up to the first newline and continue processing the string if not empty
+          
+          // Check the text inserted after the lineGap
+          // all text up to a required new line must be ignored, the rest must be processed 
+          // as if a normal "insert"
+          
+          // eat up all text up to the first newline 
           text = text.replace(/^.*\n/, '')
           if (text === '') {
-            //console.log("Found text + new line after lineGap, very odd. Skipping")
+            // after lineGap, there is some text plus a new line, ignore and continue
+            // to next entry
             previousElementType = -1
             continue
           }
+          // at this point, we know that the insert after the lineGap contains 
+          // possibly some text, the required new line plus some other text.
+          // Just move on to processing this text as if it was a normal insert,
+          // but remove any trailing new line so that there's no empty line elements
           previousElementType = -1
           //console.log("Found text + newline + additionalText after lineGap. Odd, but OK, will process additional text")
+          if (curOps.insert.match(/^\n.*/)) {
+            // remove any trailing new line
+            //console.log('Text after lineGap starts with a new line')
+            curOps.insert = curOps.insert.replace(/^\n/, '')
+          }
         }
           
         curElement.type = mainTextElementType
         let normalizedText = curOps.insert.replace(/\n+/g, '\n')
         text = normalizedText.replace(/\n$/, '')
+        //console.log('Normalized text: "' + text + '"')
         if (text !== '') {
           // curOps.insert !== '\n' , that is, there is text in the insert
           // that needs to be put in text items
@@ -321,12 +337,12 @@ class EditorData {
             curElement = createNewElement()
           }
         }
-        continue  // 2.a. 終
+        continue  // 2.a.
       }
       // 2.b. Insert non-textual item without attributes
       processNonTextualItem(curOps)
-      // 2.b. 終
-    } // processing of ops.entries 終
+      // 2.b.
+    } // processing of ops.entries
     
     // Check if there are elements to store
     if (curElement.items.length !== 0) {

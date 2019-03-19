@@ -30,6 +30,7 @@ require 'vendor/autoload.php';
 require 'setup.php';
 require 'version.php';
 
+
 function exitWithErrorMessage($msg) {
     http_response_code(503);
     print "ERROR: $msg";

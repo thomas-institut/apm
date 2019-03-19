@@ -321,6 +321,31 @@ describe("EditorData", function() {
       expect(theText).toBe('Line 8\nLine 9\nLine 10')
     })
     
+    
+    it("should support line break after line gap (issue #99)", function() {
+      let delta = {
+        ops: [
+          {attributes: {lang: 'he'}, insert: "לחוש"},
+          {insert: '\n'},
+          {insert: { linegap:{editorid:1, itemid: undefined, thelength: 7}}},
+          {insert: '\nasdfasdf\n'}
+        ]
+      }
+      
+      console.log("Debugging Issue #99")
+      console.log(delta)
+      let apiData = EditorData.getApiDataFromQuillDelta( delta, editorInfo)
+      
+      expect(apiData.elements).toBeDefined()
+      expect(apiData.people).toBeDefined()
+      expect(apiData.ednotes).toBeDefined()
+      expect(apiData.elements.length).toBe(3)
+      expect(apiData.elements[0].type).toBe(ELEMENT_LINE)
+      expect(apiData.elements[1].type).toBe(ELEMENT_LINE_GAP)
+      expect(apiData.elements[2].type).toBe(ELEMENT_LINE)
+    })
+    
+    
     it("should properly deal with inserts starting with newline (issues #20 and #32)", function () {
       let delta = { 
         ops: [ 

@@ -124,6 +124,7 @@ class ApmSystemManager extends SystemManager {
     
     protected function setUpDbConnection() {
         $dbConfig = $this->config['db'];
+        
         $dbh = new \PDO('mysql:dbname='. $dbConfig['db'] . ';host=' . 
                 $dbConfig['host'], $dbConfig['user'], 
                 $dbConfig['pwd']);
@@ -139,7 +140,7 @@ class ApmSystemManager extends SystemManager {
     public function getLogger() {
         return $this->logger;
     }
-    
+        
     public function getDbConnection() {
         return $this->dbConn;
     }
@@ -161,11 +162,17 @@ class ApmSystemManager extends SystemManager {
         if ($this->config['logDebugInfo']) {
             $loggerLever = Logger::DEBUG;
         }
-        $logStream = new StreamHandler($this->config['logfilename'], $loggerLever);
-        $phpLog = new \Monolog\Handler\ErrorLogHandler();
+        
         $logger = new Logger($this->config['loggerAppName']);
+        
+        $logStream = new StreamHandler($this->config['logfilename'], $loggerLever);
         $logger->pushHandler($logStream);
-        $logger->pushHandler($phpLog);
+        
+        if ($this->config['logInPhpErrorErrorHandler']) {
+            $phpLog = new \Monolog\Handler\ErrorLogHandler();
+            $logger->pushHandler($phpLog);
+        }
+        
         $logger->pushProcessor(new \Monolog\Processor\WebProcessor);
         
         return $logger;

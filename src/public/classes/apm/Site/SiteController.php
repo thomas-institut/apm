@@ -28,25 +28,66 @@ namespace APM\Site;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
+use APM\System\ApmSystemManager;
+use AverroesProject\Data\DataManager;
+
 /**
  * Site Controller class
  *
  */
 class SiteController
 {
-    protected $ci;
+    
+    /** @var ApmSystemManager */
+    protected $systemManager;
+    
+    /** @var \Slim\Views\Twig */
+    protected $view;
+    
+    /** @var array */
+    protected $config;
+    
+    /** @var DataManager */
+    protected $dataManager;
+    
+    /** @var bool */
+    protected $userAuthenticated;
+    
+    /** @var array */
+    protected $userInfo;
     
     //Constructor
-    public function __construct( $ci)
+    public function __construct($ci)
     {
-       $this->ci = $ci;
-       $this->db = $ci->db;
-       $this->hm = $ci->hm;
-       $config = $this->ci->settings;
-       $this->ci->copyrightNotice  = $config['app_name'] . " v" . 
-               $config['version'] . " &bull; &copy; " . 
-               $config['copyright_notice'] . " &bull; " .  
-               strftime("%d %b %Y, %H:%M:%S %Z");
+        $this->systemManager = $ci->sm;
+        $this->view = $ci->view;
+        $this->config = $ci->config;
+        $this->dataManager = $ci->db;
+        $this->logger = $this->systemManager->getLogger();
+        $this->userAuthenticated = false;
+        $this->userInfo = [];
+       
+       // Check if the user has been authenticated by the authentication middleware
+        if (isset($ci->userInfo)) {
+           $this->userAuthenticated = true;
+           $this->userInfo = $ci->userInfo;
+        }
     }
     
+    protected function renderPage(Response $response, string $template, array $data, $withBaseData = true) {
+        
+        if ($withBaseData) {
+            $data['copyright']  = $this->getCopyrightNotice();
+            $data['baseurl'] = $this->config['baseurl'];
+        }
+        
+        return $this->view->render($response, $template, $data);
+    }
+    
+    protected function getCopyrightNotice() : string {
+        return $this->config['app_name'] . " v" . 
+               $this->config['version'] . " &bull; &copy; " . 
+               $this->config['copyright_notice'] . " &bull; " .  
+               strftime("%d %b %Y, %H:%M:%S %Z");
+    }
 }

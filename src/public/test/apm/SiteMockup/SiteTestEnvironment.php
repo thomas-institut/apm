@@ -31,8 +31,8 @@ require_once 'SlimRouterMockup.php';
  */
 class SiteTestEnvironment extends DatabaseTestEnvironment {
     
-    public static function getContainer($logger) {
-        $container = parent::getContainer($logger);
+    public function getContainer() {
+        $container = parent::getContainer();
 
         $container['router'] = new SlimRouterMockup();
         

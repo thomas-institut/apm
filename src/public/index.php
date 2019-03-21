@@ -49,18 +49,6 @@ $dbh = $systemManager->getDbConnection();
 $hm = $systemManager->getHookManager();
 $cr = $systemManager->getCollationEngine();
 
-
-// Load plugins
-
-//
-//foreach($config['plugins'] as $pluginName) {
-//    $pluginPhpFile = "plugins/$pluginName.php";
-//    include_once $pluginPhpFile;
-//    $pluginClassName = '\\' . $pluginName;
-//    $pluginObject = new $pluginClassName($systemManager);
-//    $pluginObject->init();
-//}
-
 // Data Manager (will be replaced completely by SystemManager at some point
 $db = new DataManager($dbh, $config['tables'], $logger, $hm, $config['langCodes']);
 
@@ -69,6 +57,7 @@ $app = new \Slim\App(["settings" => $config]);
 
 $container = $app->getContainer();
 
+$container['config'] = $config;
 $container['db'] = $db;
 $container['dbh'] = $dbh;
 $container['logger'] = $logger;
@@ -83,9 +72,7 @@ $container['view'] = function ($container) {
     $view = new \Slim\Views\Twig('templates', [
         'cache' => false   // Change this eventually!
     ]);
-    // Instantiate and add Slim specific extension
-    $basePath = rtrim(str_ireplace('index.php', '', 
-            $container['request']->getUri()->getBasePath()), '/');
+    $basePath = $container['config']['baseurl'];
     $view->addExtension(new \Slim\Views\TwigExtension(
             $container['router'], $basePath));
     return $view;

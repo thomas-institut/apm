@@ -20,8 +20,9 @@
  */
 namespace APM;
 require "../vendor/autoload.php";
-require_once '../test/testdbconfig.php';
 require_once 'SiteMockup/DatabaseTestEnvironment.php';
+require_once 'SiteMockup/testconfig.php';
+
 
 use PHPUnit\Framework\TestCase;
 use Monolog\Logger;
@@ -36,12 +37,16 @@ use AverroesProject\TxText\ItemArray;
 use APM\Api\ApiController;
 use APM\Api\ApiCollation;
 
+
 /**
  * API call tests
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 class ApiControllerTest extends TestCase {
+    
+    
+    static $testEnvironment;
     
     static $ci;
     /**
@@ -55,38 +60,27 @@ class ApiControllerTest extends TestCase {
      */
     static $dataManager;
     
+    
     static $editor1;
     static $editor2;
     
     public static function setUpBeforeClass()
     {
-        global $config; 
+        global $apmTestConfig;
         
-        $logStream = new StreamHandler('test.log', 
-            Logger::DEBUG);
-        $logger = new Logger('apm.APITEST');
-        $logger->pushHandler($logStream);
-        $hm = new \APM\Plugin\HookManager();
-        $cr = new \APM\CollationEngine\Collatex(
-            $config['collatex']['collatexJarFile'], 
-            $config['collatex']['tmp'], 
-            $config['collatex']['javaExecutable']
-        );
-
-        self::$ci = DatabaseTestEnvironment::getContainer($logger);
-        self::$ci->cr = $cr;
-        self::$ci->settings = $config;
-        DatabaseTestEnvironment::emptyDatabase();
+        self::$testEnvironment = new DatabaseTestEnvironment($apmTestConfig);
+        self::$ci = self::$testEnvironment->getContainer();
+         
+        self::$testEnvironment->emptyDatabase();
         
-        self::$dataManager = DatabaseTestEnvironment::getDataManager($logger, $hm);
+        
+        self::$dataManager = self::$ci->db;
         self::$editor1 = self::$dataManager->um->createUserByUserName('testeditor1');
         self::$editor2 = self::$dataManager->um->createUserByUserName('testeditor2');
         
         
         // API controllers to test
         self::$apiCollation = new ApiCollation(self::$ci);
-        
-        $logger->debug('Finished setupbeforeclass', [ 'editor1' => self::$editor1, 'editor2' => self::$editor2]);
     }
     
 

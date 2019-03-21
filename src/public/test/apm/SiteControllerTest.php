@@ -20,7 +20,9 @@
 
 namespace APM;
 require "../vendor/autoload.php";
-require_once 'SiteMockup/SiteTestEnvironment.php';
+require 'SiteMockup/testconfig.php';
+require 'SiteMockup/SiteTestEnvironment.php';
+
 
 use PHPUnit\Framework\TestCase;
 use Monolog\Logger;
@@ -36,16 +38,18 @@ use APM\Site\SiteCollationTable;
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 class SiteControllerTest extends TestCase {
-     static $ci;
+    static $ci;
+    
+    static $testEnvironment;
+    
     
     public static function setUpBeforeClass()
-    {
-        $logStream = new StreamHandler('test.log', 
-            Logger::DEBUG);
-        $logger = new Logger('SITETEST');
-        $logger->pushHandler($logStream);
-
-        self::$ci = SiteTestEnvironment::getContainer($logger);
+    { 
+        global $apmTestConfig;
+        
+        
+        self::$testEnvironment = new SiteTestEnvironment($apmTestConfig);
+        self::$ci = self::$testEnvironment->getContainer();
     }
     
     public function testQuickCollationPage()

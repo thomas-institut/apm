@@ -244,23 +244,23 @@ class PluginManager {
         return is_dir($dir);
     }
     
-    public function loadPluginDir($dir, $class = '') 
-    {
-        $files = glob($dir . "/*.php");
-        foreach ($files as $file) {
-            if ((include_once $file) === false) {
-                return false;
-            }
-        }
-        if ($class === '') {
-            return true;
-        }
-        if (!class_exists($class, false)) {
-            return false;
-        }
-        return true;
-    }
-    
+//    public function loadPluginDir($dir, $class = '') 
+//    {
+//        $files = glob($dir . "/*.php");
+//        foreach ($files as $file) {
+//            if ((include_once $file) === false) {
+//                return false;
+//            }
+//        }
+//        if ($class === '') {
+//            return true;
+//        }
+//        if (!class_exists($class, false)) {
+//            return false;
+//        }
+//        return true;
+//    }
+//    
     public function getPluginClasses()
     {
         $classes = get_declared_classes();

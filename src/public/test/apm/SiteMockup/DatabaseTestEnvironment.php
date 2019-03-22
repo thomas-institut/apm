@@ -122,8 +122,8 @@ EOD;
         // array, except for database connection information
         
         // SUPPORT
-        $config['support-contact-name'] = 'John Doe';
-        $config['support-contact-email'] = 'john@doe.com';
+        $config['support_contact_name'] = 'John Doe';
+        $config['support_contact_email'] = 'john@doe.com';
 
 //            // DATABASE ACCESS
 //            // should be in $config array already!
@@ -144,9 +144,9 @@ EOD;
 
         // LOG FILE  
         // The web server user should be able to create and write to the given file
-        $config['logfilename'] = 'test.log';
-        $config['logDebugInfo'] = true;
-        $config['logInPhpErrorErrorHandler'] = false;
+        $config['log_filename'] = 'test.log';
+        $config['log_include_debug_info'] = true;
+        $config['log_in_php_error_handler'] = false;
 
         // LANGUAGES
         $config['languages'] = [
@@ -157,9 +157,9 @@ EOD;
         ];
 
         // COLLATEX
-        $config['collatex']['tmp'] = '../collatex/tmp';
-        $config['collatex']['javaExecutable'] = '/usr/bin/java';
-        $config['collatex']['collatexJarFile'] = '../collatex/bin/collatex-tools-1.7.1.jar';
+        $config['collatex_temp_dir'] = '../collatex/tmp';
+        $config['java_executable'] = '/usr/bin/java';
+        $config['collatex_jar_file'] = '../collatex/bin/collatex-tools-1.7.1.jar';
 
 
         // PLUGINS

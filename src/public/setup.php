@@ -36,33 +36,33 @@ foreach ($config['languages'] as $lang) {
     $config['langCodes'][] = $lang['code'];
 }
 
-$config['db']['tablePrefix'] = 'ap_';
+$config['db_table_prefix'] = 'ap_';
 
-// Generate table names 
-$prefix = 'ap_';
-
-$config['tables'] = [];
-$config['tables']['settings']   = $prefix . 'settings';
-$config['tables']['ednotes']    = $prefix . 'ednotes';
-$config['tables']['elements']   = $prefix . 'elements';
-$config['tables']['items']      = $prefix . 'items';
-$config['tables']['users']      = $prefix . 'users';
-$config['tables']['tokens']     = $prefix . 'tokens';
-$config['tables']['relations']  = $prefix . 'relations';
-$config['tables']['docs']       = $prefix . 'docs';
-$config['tables']['people']     = $prefix . 'people';
-$config['tables']['pages']      = $prefix . 'pages';
-$config['tables']['types_page'] = $prefix . 'types_page';
-$config['tables']['works']      = $prefix . 'works';
-$config['tables']['presets']    = $prefix . 'presets';
+//// Generate table names 
+//$prefix = 'ap_';
+//
+//$config['tables'] = [];
+//$config['tables']['settings']   = $prefix . 'settings';
+//$config['tables']['ednotes']    = $prefix . 'ednotes';
+//$config['tables']['elements']   = $prefix . 'elements';
+//$config['tables']['items']      = $prefix . 'items';
+//$config['tables']['users']      = $prefix . 'users';
+//$config['tables']['tokens']     = $prefix . 'tokens';
+//$config['tables']['relations']  = $prefix . 'relations';
+//$config['tables']['docs']       = $prefix . 'docs';
+//$config['tables']['people']     = $prefix . 'people';
+//$config['tables']['pages']      = $prefix . 'pages';
+//$config['tables']['types_page'] = $prefix . 'types_page';
+//$config['tables']['works']      = $prefix . 'works';
+//$config['tables']['presets']    = $prefix . 'presets';
 
 
 // Collatex jar file
-$config['collatex']['collatexJarFile'] = 'collatex/bin/collatex-tools-1.7.1.jar';
+$config['collatex_jar_file'] = 'collatex/bin/collatex-tools-1.7.1.jar';
 
 // Slim parameters
 $config['addContentLengthHeader'] = false;
 
-$config['pluginDirectory'] = 'plugins';
+$config['plugin_dir'] = 'plugins';
 
-$config['loggerAppName'] = 'APM';
+$config['log_appname'] = 'APM';

@@ -33,7 +33,7 @@ require 'version.php';
 
 function exitWithErrorMessage($msg) {
     http_response_code(503);
-    print "ERROR: $msg";
+    print "<pre>ERROR: $msg";
     exit();
 }
 
@@ -50,7 +50,7 @@ $hm = $systemManager->getHookManager();
 $cr = $systemManager->getCollationEngine();
 
 // Data Manager (will be replaced completely by SystemManager at some point
-$db = new DataManager($dbh, $config['tables'], $logger, $hm, $config['langCodes']);
+$db = new DataManager($dbh, $systemManager->getTableNames(), $logger, $hm, $config['langCodes']);
 
 // Initialize the Slim app
 $app = new \Slim\App(["settings" => $config]);

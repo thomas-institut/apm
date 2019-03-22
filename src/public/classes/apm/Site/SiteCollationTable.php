@@ -39,8 +39,8 @@ class SiteCollationTable extends SiteController
     public function quickCollationPage(Request $request, Response $response, $next)
     {
         return $this->renderPage($response, 'apm/collation.quick.twig', [
-            'contactName' => $this->config['support-contact-name'],
-            'contactEmail' => $this->config['support-contact-email']
+            'contactName' => $this->config['support_contact_name'],
+            'contactEmail' => $this->config['support_contact_email']
         ]);
 
     }

@@ -35,7 +35,7 @@ namespace APM\System;
 abstract class SystemManager {
     
     const ERROR_NO_ERROR = 0;
-    const MSG_ERROR_NO_ERROR = 'No error';
+    const MSG_ERROR_NO_ERROR = 'No Error';
     
     /** @var int */
     private $errorCode;
@@ -65,6 +65,10 @@ abstract class SystemManager {
     
     public function fatalErrorOccurred() : bool {
         return $this->errorCode !== self::ERROR_NO_ERROR;
+    }
+    
+    public function getConfig() : array {
+        return $this->config;
     }
 
     /**

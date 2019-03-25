@@ -87,9 +87,11 @@ EOD;
         if ($this->container !== false) {
             return $this->container;
         }
-        $config = $this->config;
         
-        $sm = new ApmSystemManager($config);
+        
+        $sm = new ApmSystemManager($this->config);
+        
+        $config = $sm->getConfig();
         
         
         $dbh = $sm->getDbConnection();
@@ -169,26 +171,9 @@ EOD;
 
         $config['addContentLengthHeader'] = false;
 
-        $config['pluginDirectory'] = 'plugins';
+        $config['plugin_dir'] = 'apm/test-plugins';
 
         $config['loggerAppName'] = 'APM';
-
-//        $prefix = 'ap_';
-//
-//        $config['tables'] = [];
-//        $config['tables']['settings']   = $prefix . 'settings';
-//        $config['tables']['ednotes']    = $prefix . 'ednotes';
-//        $config['tables']['elements']   = $prefix . 'elements';
-//        $config['tables']['items']      = $prefix . 'items';
-//        $config['tables']['users']      = $prefix . 'users';
-//        $config['tables']['tokens']     = $prefix . 'tokens';
-//        $config['tables']['relations']  = $prefix . 'relations';
-//        $config['tables']['docs']       = $prefix . 'docs';
-//        $config['tables']['people']     = $prefix . 'people';
-//        $config['tables']['pages']      = $prefix . 'pages';
-//        $config['tables']['types_page'] = $prefix . 'types_page';
-//        $config['tables']['works']      = $prefix . 'works';
-//        $config['tables']['presets']    = $prefix . 'presets';
 
         // Generate langCodes
         $config['langCodes'] = [];

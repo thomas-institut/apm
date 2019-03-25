@@ -107,8 +107,13 @@ class ApmSystemManagerTest extends TestCase {
         $this->assertEquals(ApmSystemManager::ERROR_CANNOT_LOAD_PLUGIN, $sm7->getErrorCode());
 
         // All good
-        $config[ApmSystemManager::CFG_PLUGINS] = [];
+        $config[ApmSystemManager::CFG_PLUGIN_DIR] = 'apm/test-plugins/basic';
+        $config[ApmSystemManager::CFG_PLUGINS] = [ 'BasicPlugin'];
         $sm8= new ApmSystemManager($config);
         $this->assertFalse($sm8->fatalErrorOccurred());
+        $this->assertEquals(System\SystemManager::MSG_ERROR_NO_ERROR, $sm8->getErrorMsg());
+        $this->assertTrue(is_a($sm8->getSettingsManager(), 'APM\System\SettingsManager'));
+        $this->assertTrue(is_a($sm8->getPresetsManager(), 'APM\Presets\PresetManager'));
+        
     }
 }

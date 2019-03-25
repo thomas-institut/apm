@@ -297,7 +297,7 @@ class ApmSystemManager extends SystemManager {
     public function getTableNames() : array {
         return $this->tableNames;
     }
-    
+
     protected function createLogger() {
         $loggerLevel = Logger::INFO;
         if ($this->config[self::CFG_LOG_DEBUG]) {

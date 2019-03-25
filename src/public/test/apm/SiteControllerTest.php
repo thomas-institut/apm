@@ -109,10 +109,14 @@ class SiteControllerTest extends TestCase {
         $docId3 = $dm->newDoc('Test site Doc 3', 'TA-3', $numPages, 'la', 
                 'mss', 'local', 'TESTSITE3');
         
+        $docId4 = $dm->newDoc('Test site Doc 4', 'TA-4', $numPages, 'la', 
+                'mss', 'local', 'TESTSITE4');
+        
         for ($i = 1; $i <= $numPages; $i++) {
             $dm->addNewColumn($docId, $i);
             $dm->addNewColumn($docId2, $i);
             $dm->addNewColumn($docId3, $i);
+            $dm->addNewColumn($docId4, $i);
         }
         $editor = $dm->um->createUserByUsername('anothereditor');
         $this->assertNotFalse($editor);
@@ -218,6 +222,26 @@ class SiteControllerTest extends TestCase {
         $this->assertEquals(200, $response3->getStatusCode());
         
         // Chunk page test
+        
+        // with 2 good witnesses
+        $pageId4 =  $dm->getPageIdByDocPage($docId4, 1);
+        $element4 = new Line();
+        $element4->pageId = $pageId4;
+        $element4->columnNumber = 1;
+        $element4->editorId = $editor;
+        $element4->lang = 'la';
+        $element4->handId = 0;
+        $element4->seq = 0;
+        $itemSeq2=0;
+        $itemId2 = 0;
+        ItemArray::addItem($element4->items, new ChunkMark($itemId2++, $itemSeq2++, $work, $chunkNo, 'start', 1));  
+        // Some items to try to hit all formatting cases too!
+        ItemArray::addItem($element4->items, new Text($itemId2++,$itemSeq2++,"The text of the chunk: "));  
+        ItemArray::addItem($element4->items, new Rubric($itemId2++,$itemSeq2++,"a rubric"));  
+        ItemArray::addItem($element4->items, new ChunkMark($itemId2++, $itemSeq2++, $work, $chunkNo, 'end', 1));  
+        $dm->insertNewElement($element4)->id;
+        
+        
         $request1_1 = (new ServerRequest('GET', ''))
                 ->withAttribute('work', $work)
                 ->withAttribute('chunk', $chunkNo);
@@ -225,7 +249,6 @@ class SiteControllerTest extends TestCase {
         
         
         $chunkPageObject4 = new Site\ChunkPage(self::$ci);
-        
         
         $response1_1 = $chunkPageObject4->singleChunkPage($request1_1, $inputResp1_1, 
                 NULL);

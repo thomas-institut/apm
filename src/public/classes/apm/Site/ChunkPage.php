@@ -60,8 +60,8 @@ class ChunkPage extends SiteController
         foreach ($witnessList as $witness) {
             try {
                 $doc = $this->buildWitnessDataFromDocData($witness, $workId, $chunkNumber, $dm, ++$witnessNumber);
-            } catch (\Exception $e) {
-                $this->logger->error('Error in build Witness Data', $e->getMessage());
+            } catch (\Exception $e) { // @codeCoverageIgnore
+                $this->logger->error('Error in build Witness Data', $e->getMessage()); // @codeCoverageIgnore
             }
             if ($doc['goodWitness']) {
                 $goodWitnessesPerLang[$doc['lang']]['numWitnesses']++;
@@ -239,10 +239,12 @@ class ChunkPage extends SiteController
                     '\'' . $token->getText() . '\'';
             
             if ($nonTokenItems[$i]['pre'] !== []) {
+                // @codeCoverageIgnoreStart
                 $output .= '   PRE: ';
                 foreach($nonTokenItems[$i]['pre'] as $index) {
                     $output .=  'Item_' . $index . ' ';
                 }
+                // @codeCoverageIgnoreEnd
             }
             if ($nonTokenItems[$i]['post'] !== []) {
                 $output .= '   POST: ';

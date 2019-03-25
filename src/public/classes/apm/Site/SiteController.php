@@ -78,7 +78,11 @@ class SiteController
         
         if ($withBaseData) {
             $data['copyright']  = $this->getCopyrightNotice();
-            $data['baseurl'] = $this->config['baseurl'];
+            $data['baseurl'] = $this->getBaseUrl();
+            $data['userAuthenticated'] = $this->userAuthenticated;
+            if ($this->userAuthenticated) {
+                $data['userinfo'] = $this->userInfo;
+            }
         }
         
         return $this->view->render($response, $template, $data);
@@ -89,5 +93,9 @@ class SiteController
                $this->config['version'] . " &bull; &copy; " . 
                $this->config['copyright_notice'] . " &bull; " .  
                strftime("%d %b %Y, %H:%M:%S %Z");
+    }
+    
+    protected function getBaseUrl() : string {
+        return $this->systemManager->getBaseUrl();
     }
 }

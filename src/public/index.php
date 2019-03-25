@@ -125,11 +125,11 @@ $app->get('/chunks','\AverroesProject\Site\SiteChunks:chunksPage')
         ->setName('chunks')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
-$app->get('/chunk/{work}/{chunk}','\AverroesProjectToApm\Site\ChunkPage:singleChunkPage')
+$app->get('/chunk/{work}/{chunk}','\APM\Site\ChunkPage:singleChunkPage')
         ->setName('chunk')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
-$app->get('/chunk/{work}/{chunk}/witness/{type}/{id}','\AverroesProjectToApm\Site\ChunkPage:witnessPage')
+$app->get('/chunk/{work}/{chunk}/witness/{type}/{id}','\APM\Site\ChunkPage:witnessPage')        
         ->setName('witness')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 

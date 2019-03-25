@@ -23,7 +23,7 @@
  */
 
 
-namespace AverroesProjectToApm\Site;
+namespace APM\Site;
 
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
@@ -41,17 +41,17 @@ class ChunkPage extends SiteController
     public function singleChunkPage(Request $request, Response $response, $next) 
     {
        
-        $db = $this->db;
+        $dm = $this->dataManager;
         $workId = $request->getAttribute('work');
         $chunkNumber = $request->getAttribute('chunk');
-        $profiler = new ApmProfiler("chunkPage-$workId-$chunkNumber", $db);
-        $workInfo = $db->getWorkInfo($workId);
-        $witnessList = $db->getDocsForChunk($workId, $chunkNumber);
+        $profiler = new ApmProfiler("chunkPage-$workId-$chunkNumber", $dm);
+        $workInfo = $dm->getWorkInfo($workId);
+        $witnessList = $dm->getDocsForChunk($workId, $chunkNumber);
 
         $docs = [];
         $witnessNumber = 0;
         $goodWitnessesPerLang = [];
-        foreach($this->ci->settings['languages'] as $lang) {
+        foreach($this->config['languages'] as $lang) {
             $goodWitnessesPerLang[$lang['code']]['numWitnesses'] = 0;
             $goodWitnessesPerLang[$lang['code']]['name'] = $lang['name'];
             $goodWitnessesPerLang[$lang['code']]['code'] = $lang['code'];
@@ -59,9 +59,9 @@ class ChunkPage extends SiteController
         
         foreach ($witnessList as $witness) {
             try {
-                $doc = $this->buildWitnessDataFromDocData($witness, $workId, $chunkNumber, $db, ++$witnessNumber);
+                $doc = $this->buildWitnessDataFromDocData($witness, $workId, $chunkNumber, $dm, ++$witnessNumber);
             } catch (\Exception $e) {
-                $this->ci->logger->error('Error in build Witness Data', $e->getMessage());
+                $this->logger->error('Error in build Witness Data', $e->getMessage());
             }
             if ($doc['goodWitness']) {
                 $goodWitnessesPerLang[$doc['lang']]['numWitnesses']++;
@@ -80,15 +80,12 @@ class ChunkPage extends SiteController
         }
         
         $canViewWitnessDetails = false;
-        if ($db->um->isUserAllowedTo($this->ci->userInfo['id'], 'witness-view-details')) {
+        if ($dm->um->isUserAllowedTo($this->userInfo['id'], 'witness-view-details')) {
             $canViewWitnessDetails = true;
         }
         
-        $profiler->log($this->ci->logger);
-        return $this->ci->view->render($response, 'ap2apm/chunkpage.twig', [
-            'userinfo' => $this->ci->userInfo, 
-            'copyright' => $this->ci->copyrightNotice,
-            'baseurl' => $this->ci->settings['baseurl'],
+        $profiler->log($this->logger);
+        return $this->renderPage($response, 'ap2apm/chunkpage.twig', [
             'work' => $workId,
             'chunk' => $chunkNumber,
             'work_info' => $workInfo,
@@ -102,19 +99,19 @@ class ChunkPage extends SiteController
     
     public function witnessPage(Request $request, Response $response, $next){
         
-        $db = $this->db;
+        $dm = $this->dataManager;
         $workId = $request->getAttribute('work');
         $chunkNumber = $request->getAttribute('chunk');
         $type = $request->getAttribute('type');
         //$profiler = new ApmProfiler("WitnessPage-$workId-$chunkNumber", $db);
-        $workInfo = $db->getWorkInfo($workId);
+        $workInfo = $dm->getWorkInfo($workId);
 
         // Assume, for the time being, that type==='doc'
         
         $witnessId = $request->getAttribute('id');
-        $docData = $db->getDocById($witnessId);
+        $docData = $dm->getDocById($witnessId);
         
-        $doc = $this->buildWitnessDataFromDocData($docData, $workId, $chunkNumber, $db, 1);
+        $doc = $this->buildWitnessDataFromDocData($docData, $workId, $chunkNumber, $dm, 1);
         if ($doc['goodWitness']) {
             $doc['itemStreamDump'] =  print_r($doc['itemStream'], true);
             $nonTokenItems = $doc['itemStreamWitness']->getNonTokenItemIndexes();
@@ -134,10 +131,7 @@ class ChunkPage extends SiteController
             $doc['segmentsJSON'] = json_encode($doc['segmentApItemStreams'] );
         }
 
-        return $this->ci->view->render($response, 'ap2apm/witness.twig', [
-            'userinfo' => $this->ci->userInfo, 
-            'copyright' => $this->ci->copyrightNotice,
-            'baseurl' => $this->ci->settings['baseurl'],
+        return $this->renderPage($response, 'ap2apm/witness.twig', [
             'work' => $workId,
             'chunk' => $chunkNumber,
             'type' => $type,
@@ -191,14 +185,14 @@ class ChunkPage extends SiteController
             $doc['plain_text'] .= ItemStream::getPlainText($apItemStream) . ' '; // CHECK: Space in between? 
         }
         
-        $this->ci->logger->debug('Doc ' . $docData['id'] . ' segment count: ' . count($doc['segmentApItemStreams']));
+        $this->logger->debug('Doc ' . $docData['id'] . ' segment count: ' . count($doc['segmentApItemStreams']));
         $edNoteArrayFromDb = $db->enm->rawGetEditorialNotesForListOfItems($itemIds);
-        $this->ci->logger->debug('Ednotes', $edNoteArrayFromDb);
+        $this->logger->debug('Ednotes', $edNoteArrayFromDb);
         $itemStream = new \AverroesProjectToApm\ItemStream($doc['id'], $doc['segmentApItemStreams'], $doc['lang'], $edNoteArrayFromDb);
         $itemStreamWitness = new \AverroesProjectToApm\ItemStreamWitness($workId, $chunkNumber, $itemStream);
         $doc['itemStreamWitness'] = $itemStreamWitness;
         $doc['tokens'] = $itemStreamWitness->getTokens();
-        $this->ci->logger->debug('Doc ' . $docData['id'] . ' token Count: ' . count($doc['tokens']));
+        $this->logger->debug('Doc ' . $docData['id'] . ' token Count: ' . count($doc['tokens']));
 
         $doc['itemStream'] = $itemStream;
         $edNotes = $db->enm->getEditorialNotesForListOfItems($itemIds);

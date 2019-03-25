@@ -26,10 +26,13 @@ class DatabaseTestEnvironment {
     
     protected $container;
     
+    protected $dataManager;
+    
     public function __construct($apmTestConfig) {
         $this->config = $this->createOptionsArray($apmTestConfig);
         $this->dbConn = false;
         $this->container = false;
+        $this->dataManager = false;
     }
     
     public function getPdo()
@@ -50,14 +53,9 @@ class DatabaseTestEnvironment {
     
     
     
-    public function getDataManager($logger, $hm)
+    public function getDataManager()
     {   
-        $config = $this->config;
-
-        return new DataManager($this->getPdo(), 
-                $config['tables'], 
-                $logger,
-                $hm, $config['langCodes']);
+        return $this->container->db;
     }
     
     
@@ -93,11 +91,12 @@ EOD;
         
         $sm = new ApmSystemManager($config);
         
+        
         $dbh = $sm->getDbConnection();
         $hm = $sm->getHookManager();
         $logger = $sm->getLogger();
         $cr = $sm->getCollationEngine();
-        $dataManager = new DataManager($dbh, $config['tables'], $logger, $hm, $config['langCodes']);
+        $dataManager = new DataManager($dbh, $sm->getTableNames(), $logger, $hm, $config['langCodes']);
         
         $container = new \Slim\Container();
         $container['db'] = $dataManager;
@@ -174,22 +173,22 @@ EOD;
 
         $config['loggerAppName'] = 'APM';
 
-        $prefix = 'ap_';
-
-        $config['tables'] = [];
-        $config['tables']['settings']   = $prefix . 'settings';
-        $config['tables']['ednotes']    = $prefix . 'ednotes';
-        $config['tables']['elements']   = $prefix . 'elements';
-        $config['tables']['items']      = $prefix . 'items';
-        $config['tables']['users']      = $prefix . 'users';
-        $config['tables']['tokens']     = $prefix . 'tokens';
-        $config['tables']['relations']  = $prefix . 'relations';
-        $config['tables']['docs']       = $prefix . 'docs';
-        $config['tables']['people']     = $prefix . 'people';
-        $config['tables']['pages']      = $prefix . 'pages';
-        $config['tables']['types_page'] = $prefix . 'types_page';
-        $config['tables']['works']      = $prefix . 'works';
-        $config['tables']['presets']    = $prefix . 'presets';
+//        $prefix = 'ap_';
+//
+//        $config['tables'] = [];
+//        $config['tables']['settings']   = $prefix . 'settings';
+//        $config['tables']['ednotes']    = $prefix . 'ednotes';
+//        $config['tables']['elements']   = $prefix . 'elements';
+//        $config['tables']['items']      = $prefix . 'items';
+//        $config['tables']['users']      = $prefix . 'users';
+//        $config['tables']['tokens']     = $prefix . 'tokens';
+//        $config['tables']['relations']  = $prefix . 'relations';
+//        $config['tables']['docs']       = $prefix . 'docs';
+//        $config['tables']['people']     = $prefix . 'people';
+//        $config['tables']['pages']      = $prefix . 'pages';
+//        $config['tables']['types_page'] = $prefix . 'types_page';
+//        $config['tables']['works']      = $prefix . 'works';
+//        $config['tables']['presets']    = $prefix . 'presets';
 
         // Generate langCodes
         $config['langCodes'] = [];

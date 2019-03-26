@@ -59,7 +59,7 @@ class ChunkPage {
           $('#formatted-' + w.id).html(w.formatted)
         } else {
           console.log('Getting delayed data for witness ' + w.id)
-          $('#formatted-' + w.id).html('Loading...')
+          $('#formatted-' + w.id).html('Loading text, this might take a while <i class="fa fa-spinner fa-spin fa-fw"></i> ...')
           $.get(this.pathFor.siteWitness(this.options.work, this.options.chunkno, 'doc', w.id, 'html'))
                   .done(function(data){
                      console.log('Got data for witness ' + w.id)
@@ -78,10 +78,11 @@ class ChunkPage {
     $('.' + this.includeInCollationButtonClass).on('click', this.genOnIicButtonClick())
     
     
-    $('body .withformatpopover').popover({
+    $('body').popover({
             container: 'body', 
             html: true,
             trigger: 'hover', 
+            selector: '.withformatpopover',
             delay: {show: 500, hide: 0},
             placement: 'auto'
          })

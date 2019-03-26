@@ -42,7 +42,7 @@ class ChunkPage extends SiteController
      * After this many pages in a witness, the witness is not rendered in 
      * the single chunk page. It will be asked separately via javascript
      */
-    const PAGE_SPAN_THRESHHOLD = 10;
+    const PAGE_SPAN_THRESHHOLD = 3;
     
     public function singleChunkPage(Request $request, Response $response, $next) 
     {

@@ -60,7 +60,7 @@ $(document).ready(function()
     </td>
     <td>
 
-        {% if userCanViewChunkDetails %}
+        {% if userCanViewChunkDetails and doc.goodWitness %}
             <a title="View Witness Details" href="{{path_for('witness', { 'work' : work, 'chunk': chunk, 'type': 'doc', 'id': doc.id})}}"><i class="fa fa-cogs" aria-hidden="true"></i></a>
         {% endif %}
 

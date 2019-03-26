@@ -61,6 +61,7 @@ class SiteCollationTable extends SiteController
             'work' => $workId,
             'chunk' => $chunkNumber,
             'lang' => $language,
+            'ignorePunctuation' => true,
             'witnesses' => []
         ];
         

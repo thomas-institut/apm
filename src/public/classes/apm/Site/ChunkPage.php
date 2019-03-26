@@ -85,7 +85,7 @@ class ChunkPage extends SiteController
         }
         
         $profiler->log($this->logger);
-        return $this->renderPage($response, 'ap2apm/chunkpage.twig', [
+        return $this->renderPage($response, 'apm/chunkpage.twig', [
             'work' => $workId,
             'chunk' => $chunkNumber,
             'work_info' => $workInfo,
@@ -131,7 +131,7 @@ class ChunkPage extends SiteController
             $doc['segmentsJSON'] = json_encode($doc['segmentApItemStreams'] );
         }
 
-        return $this->renderPage($response, 'ap2apm/witness.twig', [
+        return $this->renderPage($response, 'apm/witness.twig', [
             'work' => $workId,
             'chunk' => $chunkNumber,
             'type' => $type,

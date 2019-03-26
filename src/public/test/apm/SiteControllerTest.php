@@ -57,10 +57,6 @@ class SiteControllerTest extends TestCase {
     
     static $testEnvironment;
     
-    static $editor1;
-    static $editor2;
-    
-    
     public static function setUpBeforeClass()
     { 
         global $apmTestConfig;
@@ -69,10 +65,8 @@ class SiteControllerTest extends TestCase {
         self::$testEnvironment = new SiteTestEnvironment($apmTestConfig);
         self::$ci = self::$testEnvironment->getContainer();
         self::$dm = self::$ci->db;
-        self::$testEnvironment->emptyDatabase();
-        
-        self::$editor1 = self::$dm->um->createUserByUserName('testeditor1');
-        self::$editor2 = self::$dm->um->createUserByUserName('testeditor2');
+
+
         
     }
     
@@ -94,41 +88,52 @@ class SiteControllerTest extends TestCase {
     
     public function testChunkAndWitnessPage()
     {
-        $work = 'AW47';
-        $chunkNo = 1;
+        self::$testEnvironment->emptyDatabase();
+        $editor1 = self::$dm->um->createUserByUserName('testeditor1');
+        $editor2 = self::$dm->um->createUserByUserName('testeditor2');
+        $editor3 = self::$dm->um->createUserByUsername('anothereditor');
         
-        $numPages = 5;
+        $this->assertNotFalse($editor1);
+        $this->assertNotFalse($editor2);
+        $this->assertNotFalse($editor3);
+        self::$ci['userInfo'] = ['id' => $editor1];
         /* @var $dm \AverroesProject\Data\DataManager */
         $dm = self::$dm;
-        $docId = $dm->newDoc('Test site Doc', 'TA-1', $numPages, 'la', 
+        $dm->um->allowUserTo($editor1, 'witness-view-details');
+        
+        $work = 'AW47';
+        $chunkNo = 1;
+        $lang1 = 'la';
+        $lang2 = 'he';
+        $numPages = 5;
+
+        $docId = $dm->newDoc('Test site Doc', 'TA-1', $numPages, $lang1, 
                 'mss', 'local', 'TESTSITE1');
-        
-        $docId2 = $dm->newDoc('Test site Doc 2', 'TA-2', $numPages, 'la', 
+        $docId2 = $dm->newDoc('Test site Doc 2', 'TA-2', $numPages, $lang1, 
                 'mss', 'local', 'TESTSITE2');
-        
-        $docId3 = $dm->newDoc('Test site Doc 3', 'TA-3', $numPages, 'la', 
+        $docId3 = $dm->newDoc('Test site Doc 3', 'TA-3', $numPages, $lang1, 
                 'mss', 'local', 'TESTSITE3');
-        
-        $docId4 = $dm->newDoc('Test site Doc 4', 'TA-4', $numPages, 'la', 
+        $docId4 = $dm->newDoc('Test site Doc 4', 'TA-4', $numPages, $lang1, 
                 'mss', 'local', 'TESTSITE4');
+        // in a different language!
+        $docId5 = $dm->newDoc('Test site Doc 5', 'TA-5', $numPages, $lang2, 
+                'mss', 'local', 'TESTSITE5');
         
         for ($i = 1; $i <= $numPages; $i++) {
             $dm->addNewColumn($docId, $i);
             $dm->addNewColumn($docId2, $i);
             $dm->addNewColumn($docId3, $i);
             $dm->addNewColumn($docId4, $i);
+            $dm->addNewColumn($docId5, $i);
         }
-        $editor = $dm->um->createUserByUsername('anothereditor');
-        $this->assertNotFalse($editor);
-        $dm->um->allowUserTo(self::$editor1, 'witness-view-details');
         
         // A valid witness in doc 1
         $pageId =  $dm->getPageIdByDocPage($docId, 1);
         $element = new Line();
         $element->pageId = $pageId;
         $element->columnNumber = 1;
-        $element->editorId = $editor;
-        $element->lang = 'la';
+        $element->editorId = $editor3;
+        $element->lang = $lang1;
         $element->handId = 0;
         $element->seq = 0;
         $itemSeq=0;
@@ -149,9 +154,9 @@ class SiteControllerTest extends TestCase {
         $noteItemId = $itemId;
         ItemArray::addItem($element->items, new Mark($itemId++,$itemSeq++));  
         ItemArray::addItem($element->items, new ChunkMark($itemId++, $itemSeq++, $work, $chunkNo, 'end', 1));  
-        $dm->insertNewElement($element)->id;
+        $dm->insertNewElement($element);
         
-        $dm->enm->insertNote(EditorialNote::INLINE, $noteItemId, self::$editor2, 'this is a note');
+        $dm->enm->insertNote(EditorialNote::INLINE, $noteItemId, $editor2, 'this is a note');
         
         
         // An invalid witness in doc 2
@@ -159,27 +164,27 @@ class SiteControllerTest extends TestCase {
         $element2 = new Line();
         $element2->pageId = $pageId2;
         $element2->columnNumber = 1;
-        $element2->editorId = $editor;
-        $element2->lang = 'la';
+        $element2->editorId = $editor3;
+        $element2->lang = $lang1;
         $element2->handId = 0;
         $element2->seq = 0;
-        $itemSeq=0;
-        ItemArray::addItem($element2->items, new ChunkMark($itemId++,$itemSeq++, $work, $chunkNo, 'start', 1));  
-        ItemArray::addItem($element2->items, new Text($itemId++,$itemSeq++,"The text of the chunk"));  
-        $dm->insertNewElement($element2)->id;
+        $itemSeq2=0;
+        ItemArray::addItem($element2->items, new ChunkMark($itemId++,$itemSeq2++, $work, $chunkNo, 'start', 1));  
+        ItemArray::addItem($element2->items, new Text($itemId++,$itemSeq2++,"The text of the chunk"));  
+        $dm->insertNewElement($element2);
         
         // No witness at all in doc 3
         $pageId3 =  $dm->getPageIdByDocPage($docId3, 1);
         $element3 = new Line();
         $element3->pageId = $pageId3;
         $element3->columnNumber = 1;
-        $element3->editorId = $editor;
-        $element3->lang = 'la';
+        $element3->editorId = $editor3;
+        $element3->lang = $lang1;
         $element3->handId = 0;
         $element3->seq = 0;
-        $itemSeq=0;
-        ItemArray::addItem($element3->items, new Text($itemId++,$itemSeq++,"Text outside of the chunk"));  
-        $dm->insertNewElement($element3)->id;
+        $itemSeq3=0;
+        ItemArray::addItem($element3->items, new Text($itemId++,$itemSeq3++,"Text outside of the chunk"));  
+        $dm->insertNewElement($element3);
 
         // Witness Page Test
         // 1. With a good witness
@@ -189,7 +194,6 @@ class SiteControllerTest extends TestCase {
                 ->withAttribute('type', 'doc')
                 ->withAttribute('id', $docId);
         $inputResp = new \Slim\Http\Response();
-        self::$ci['userInfo'] = ['id' => self::$editor1];
         $chunkPageObject = new Site\ChunkPage(self::$ci);
         $response = $chunkPageObject->witnessPage($request, $inputResp, 
                 NULL);
@@ -202,7 +206,6 @@ class SiteControllerTest extends TestCase {
                 ->withAttribute('type', 'doc')
                 ->withAttribute('id', $docId2);
         $inputResp2 = new \Slim\Http\Response();
-        self::$ci['userInfo'] = ['id' => self::$editor1];
         $chunkPageObject2 = new Site\ChunkPage(self::$ci);
         $response2 = $chunkPageObject2->witnessPage($request2, $inputResp2, 
                 NULL);
@@ -215,7 +218,6 @@ class SiteControllerTest extends TestCase {
                 ->withAttribute('type', 'doc')
                 ->withAttribute('id', $docId3);
         $inputResp3 = new \Slim\Http\Response();
-        self::$ci['userInfo'] = ['id' => self::$editor1];
         $chunkPageObject3 = new Site\ChunkPage(self::$ci);
         $response3 = $chunkPageObject3->witnessPage($request3, $inputResp3, 
                 NULL);
@@ -223,24 +225,40 @@ class SiteControllerTest extends TestCase {
         
         // Chunk page test
         
-        // with 2 good witnesses
+        // with 3 good witnesses
         $pageId4 =  $dm->getPageIdByDocPage($docId4, 1);
         $element4 = new Line();
         $element4->pageId = $pageId4;
         $element4->columnNumber = 1;
-        $element4->editorId = $editor;
-        $element4->lang = 'la';
+        $element4->editorId = $editor3;
+        $element4->lang = $lang1;
         $element4->handId = 0;
         $element4->seq = 0;
-        $itemSeq2=0;
-        $itemId2 = 0;
-        ItemArray::addItem($element4->items, new ChunkMark($itemId2++, $itemSeq2++, $work, $chunkNo, 'start', 1));  
+        $itemSeq4=0;
+        $itemId4 = 0;
+        ItemArray::addItem($element4->items, new ChunkMark($itemId4++, $itemSeq4++, $work, $chunkNo, 'start', 1));  
         // Some items to try to hit all formatting cases too!
-        ItemArray::addItem($element4->items, new Text($itemId2++,$itemSeq2++,"The text of the chunk: "));  
-        ItemArray::addItem($element4->items, new Rubric($itemId2++,$itemSeq2++,"a rubric"));  
-        ItemArray::addItem($element4->items, new ChunkMark($itemId2++, $itemSeq2++, $work, $chunkNo, 'end', 1));  
-        $dm->insertNewElement($element4)->id;
+        ItemArray::addItem($element4->items, new Text($itemId4++,$itemSeq4++,"The text of the chunk: "));  
+        ItemArray::addItem($element4->items, new Rubric($itemId4++,$itemSeq4++,"a rubric"));  
+        ItemArray::addItem($element4->items, new ChunkMark($itemId4++, $itemSeq4++, $work, $chunkNo, 'end', 1));  
+        $dm->insertNewElement($element4);
         
+        $pageId5 =  $dm->getPageIdByDocPage($docId5, 1);
+        $element5 = new Line();
+        $element5->pageId = $pageId5;
+        $element5->columnNumber = 1;
+        $element5->editorId = $editor3;
+        $element5->lang = $lang2;
+        $element5->handId = 0;
+        $element5->seq = 0;
+        $itemSeq5=0;
+        $itemId5 = 0;
+        ItemArray::addItem($element5->items, new ChunkMark($itemId5++, $itemSeq5++, $work, $chunkNo, 'start', 1));  
+        // Some items to try to hit all formatting cases too!
+        ItemArray::addItem($element5->items, new Text($itemId5++,$itemSeq5++,"The text of the chunk: "));  
+        ItemArray::addItem($element5->items, new Rubric($itemId5++,$itemSeq5++,"a rubric"));  
+        ItemArray::addItem($element5->items, new ChunkMark($itemId5++, $itemSeq5++, $work, $chunkNo, 'end', 1));  
+        $dm->insertNewElement($element5);
         
         $request1_1 = (new ServerRequest('GET', ''))
                 ->withAttribute('work', $work)
@@ -254,6 +272,56 @@ class SiteControllerTest extends TestCase {
                 NULL);
         
         $this->assertEquals(200, $response1_1->getStatusCode());
+        
+        return [ 'work' => $work, 'chunk' => $chunkNo, 'lang' => $lang1, 'editors' => [ $editor1, $editor2, $editor3]];
+        
+    }
+    
+    /**
+     * @depends testChunkAndWitnessPage
+     */
+    public function testAutomaticCollationTable(array $witnessInfo) {
+        
+        $work = $witnessInfo['work'];
+        $chunkNo = $witnessInfo['chunk'];
+        $lang = $witnessInfo['lang'];
+        $editor1 = $witnessInfo['editors'][0];
+
+        self::$ci['userInfo'] = ['id' => $editor1];
+        self::$dm->um->allowUserTo($editor1, 'act-view-experimental-data');
+        
+        $collationTableControllerObject = new SiteCollationTable(self::$ci);
+        
+        // Bad language
+        $request1 = (new ServerRequest('GET', ''))
+                ->withAttribute('work', $work)
+                ->withAttribute('chunk', $chunkNo) 
+                ->withAttribute('lang', 'bad'  . $lang);
+        $inputResp1 = new \Slim\Http\Response();
+        
+        $response1 = $collationTableControllerObject->automaticCollationPage($request1, $inputResp1, 
+                NULL);
+        $this->assertEquals(200, $response1->getStatusCode());
+        
+        
+        $request2 = (new ServerRequest('GET', ''))
+                ->withAttribute('work', $work)
+                ->withAttribute('chunk', $chunkNo) 
+                ->withAttribute('lang', $lang);
+        $inputResp2 = new \Slim\Http\Response();
+        
+        
+        // a partial collation (with bad doc ids)
+        $docList = '45/24/34/35';
+        
+        $response2 = $collationTableControllerObject->automaticCollationPage($request2, $inputResp2, 
+                [ 'docs' => $docList]);
+        $this->assertEquals(200, $response2->getStatusCode());
+        
+        
+        $response3 = $collationTableControllerObject->automaticCollationPage($request2, $inputResp2, 
+                NULL);
+        $this->assertEquals(200, $response3->getStatusCode());
         
     }
     

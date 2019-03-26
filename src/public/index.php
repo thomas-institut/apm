@@ -135,7 +135,7 @@ $app->get('/chunk/{work}/{chunk}/witness/{type}/{id}','\APM\Site\ChunkPage:witne
 
 // COLLATION TABLES
 
-$app->get('/collation/auto/{work}/{chunk}/{lang}[/{docs:.*}]','\AverroesProjectToApm\Site\CollationTableSiteController:automaticCollationPage')
+$app->get('/collation/auto/{work}/{chunk}/{lang}[/{docs:.*}]','\APM\Site\SiteCollationTable:automaticCollationPage')
         ->setName('chunk.collationtable')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 

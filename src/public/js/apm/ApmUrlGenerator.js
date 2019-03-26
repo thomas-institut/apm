@@ -43,6 +43,10 @@ class ApmUrlGenerator {
   sitePageView(docId, pageNumber) {
     return this.base + '/doc/' + docId + '/page/' + pageNumber + 'view'
   }
+  
+  siteWitness(work, chunkno, type, witnessId, output) {
+    return this.base + '/chunk/' + work + '/' + chunkno + '/witness/' + type + '/' + witnessId + '/' + output
+  }
 
 }
 

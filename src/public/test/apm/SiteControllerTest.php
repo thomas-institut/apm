@@ -273,6 +273,33 @@ class SiteControllerTest extends TestCase {
         
         $this->assertEquals(200, $response1_1->getStatusCode());
         
+        // Good witness pages
+        $request4 = (new ServerRequest('GET', ''))
+                ->withAttribute('work', $work)
+                ->withAttribute('chunk', $chunkNo)
+                ->withAttribute('type', 'doc')
+                ->withAttribute('id', $docId5);
+        $inputResp4 = new \Slim\Http\Response();
+        $chunkPageObject4 = new Site\ChunkPage(self::$ci);
+        $response4 = $chunkPageObject4->witnessPage($request4, $inputResp4, 
+                NULL);
+        $this->assertEquals(200, $response4->getStatusCode());
+        
+        $request4_2 = $request4->withAttribute('output', 'html');
+        $response4_2 = $chunkPageObject4->witnessPage($request4_2, $inputResp4, 
+                NULL);
+        $this->assertEquals(200, $response4_2->getStatusCode());
+        
+        $request4_3 = $request4->withAttribute('output', 'text');
+        $response4_3 = $chunkPageObject4->witnessPage($request4_3, $inputResp4, 
+                NULL);
+        $this->assertEquals(200, $response4_3->getStatusCode());
+        
+        $request4_4 = $request4->withAttribute('output', 'badoutput');
+        $response4_4 = $chunkPageObject4->witnessPage($request4_4, $inputResp4, 
+                NULL);
+        $this->assertEquals(402, $response4_4->getStatusCode());
+        
         return [ 'work' => $work, 'chunk' => $chunkNo, 'lang' => $lang1, 'editors' => [ $editor1, $editor2, $editor3]];
         
     }

@@ -55,6 +55,22 @@ class ChunkPage {
       if (w.goodWitness) {
         this.langs[w.lang].goodWitnesses++
         let toggleButton = new CollapseToggleButton($('#texttoggle-' + w.id), $('#text-' + w.id))
+        if (!w.delayLoad) {
+          $('#formatted-' + w.id).html(w.formatted)
+        } else {
+          console.log('Getting delayed data for witness ' + w.id)
+          $('#formatted-' + w.id).html('Loading...')
+          $.get(this.pathFor.siteWitness(this.options.work, this.options.chunkno, 'doc', w.id, 'html'))
+                  .done(function(data){
+                     console.log('Got data for witness ' + w.id)
+                     $('#formatted-' + w.id).html(data)
+                  })
+                  .fail(function (resp){
+                    console.log('Error getting data for witness ' + w.id)
+                    console.log(resp)
+                     $('#formatted-' + w.id).html('Error loading text')
+                  }) 
+        }
       }
     }
     this.updateCollationTableLinks()

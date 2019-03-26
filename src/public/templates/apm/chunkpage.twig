@@ -61,7 +61,7 @@ $(document).ready(function()
     <td>
 
         {% if userCanViewChunkDetails %}
-            <a title="View Witness Detaisl" href="{{path_for('witness', { 'work' : work, 'chunk': chunk, 'type': 'doc', 'id': doc.id})}}"><i class="fa fa-cogs" aria-hidden="true"></i></a>
+            <a title="View Witness Details" href="{{path_for('witness', { 'work' : work, 'chunk': chunk, 'type': 'doc', 'id': doc.id})}}"><i class="fa fa-cogs" aria-hidden="true"></i></a>
         {% endif %}
 
     {% if doc.error %}
@@ -85,23 +85,8 @@ $(document).ready(function()
 <div class="chunktexts">
     
 {% for doc in docs %}
-    
-{#    {% if doc.plain_text %}
-    <div class="collapse in" id="plaintext-{{doc.id}}-{{work}}-{{chunk}}">
-        <div class="panel panel-default">
-            <div class="panel-heading">
-            <h3 class="panel-title">{{doc.title}}</h3>
-            </div>
-             <div class="panel-body">
-                     <p class="chunktext chunktext-{{doc.lang}}">{{doc.plain_text}}</p>
-            </div>
-        </div>
-    </div>
-    {% endif %}#}
-    
-        {% if doc.formatted %}
-   
-        <div class="panel panel-default">
+    {%  if doc.goodWitness %}
+    <div class="panel panel-default">
             <div class="panel-heading">
                 <h3 class="panel-title">{{doc.title}}
                     &nbsp;&nbsp;&nbsp;
@@ -111,11 +96,11 @@ $(document).ready(function()
             </div>
                      <div class="collapse in" id="text-{{doc.id}}">
              <div class="panel-body">
-                     <p class="formattedchunktext chunktext-{{doc.lang}}">{{doc.formatted|raw}}</p>
+                     <p class="formattedchunktext chunktext-{{doc.lang}}" id="formatted-{{doc.id}}"></p>
             </div>
         </div>
     </div>
-    {% endif %}
+    {%  endif %}
 {% endfor %}
 </div>
 {% endif %}

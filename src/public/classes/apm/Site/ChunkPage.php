@@ -38,6 +38,12 @@ use AverroesProject\ItemStream\ItemStream;
 class ChunkPage extends SiteController
 {
     
+    /**
+     * After this many pages in a witness, the witness is not rendered in 
+     * the single chunk page. It will be asked separately via javascript
+     */
+    const PAGE_SPAN_THRESHHOLD = 10;
+    
     public function singleChunkPage(Request $request, Response $response, $next) 
     {
        
@@ -59,10 +65,16 @@ class ChunkPage extends SiteController
         
         foreach ($witnessList as $witness) {
             try {
-                $doc = $this->buildWitnessDataFromDocData($witness, $workId, $chunkNumber, $dm, ++$witnessNumber);
+                $doc = $this->buildEssentialWitnessDataFromDocData($witness, $workId, $chunkNumber, $dm, ++$witnessNumber);
+                $doc['delayLoad'] = true;
+                if ($doc['pageSpan'] <= self::PAGE_SPAN_THRESHHOLD) {
+                    $doc = $this->buildWitnessDataFromDocData($doc, $workId, $chunkNumber, $dm, $witnessNumber);
+                    $doc['delayLoad'] = false;
+                }
             } catch (\Exception $e) { // @codeCoverageIgnore
                 $this->logger->error('Error in build Witness Data', $e->getMessage()); // @codeCoverageIgnore
             }
+            
             if ($doc['goodWitness']) {
                 $goodWitnessesPerLang[$doc['lang']]['numWitnesses']++;
             } else {
@@ -103,16 +115,23 @@ class ChunkPage extends SiteController
         $workId = $request->getAttribute('work');
         $chunkNumber = $request->getAttribute('chunk');
         $type = $request->getAttribute('type');
-        //$profiler = new ApmProfiler("WitnessPage-$workId-$chunkNumber", $db);
+        $profiler = new ApmProfiler("WitnessPage-$workId-$chunkNumber", $this->dataManager);
         $workInfo = $dm->getWorkInfo($workId);
-
-        // Assume, for the time being, that type==='doc'
         
         $witnessId = $request->getAttribute('id');
+        // Assume, for the time being, that type==='doc'
         $docData = $dm->getDocById($witnessId);
         
-        $doc = $this->buildWitnessDataFromDocData($docData, $workId, $chunkNumber, $dm, 1);
-        if ($doc['goodWitness']) {
+        $outputType = $request->getAttribute('output', 'full');
+        $this->logger->debug('Witness page with output type: ' . $outputType);
+        
+        $essentialDocData = $this->buildEssentialWitnessDataFromDocData($docData, $workId, $chunkNumber, $dm, 1);
+        if (!$essentialDocData['goodWitness']) {
+             return $response->write("Bad witness");
+        }
+        $doc = $this->buildWitnessDataFromDocData($essentialDocData, $workId, $chunkNumber, $dm, 1);
+        
+        if ($doc['goodWitness'] && $outputType === 'full') {
             $doc['itemStreamDump'] =  print_r($doc['itemStream'], true);
             $nonTokenItems = $doc['itemStreamWitness']->getNonTokenItemIndexes();
             //$doc['nonTokenItems'] = print_r($nonTokenItems, true);
@@ -129,22 +148,29 @@ class ChunkPage extends SiteController
             ob_end_clean();
             
             $doc['segmentsJSON'] = json_encode($doc['segmentApItemStreams'] );
+            $profiler->log($this->logger);
+            return $this->renderPage($response, 'apm/witness.twig', [
+                'work' => $workId,
+                'chunk' => $chunkNumber,
+                'type' => $type,
+                'witnessid' => $witnessId,
+                'work_info' => $workInfo,
+                'doc' => $doc
+            ]);
         }
-
-        return $this->renderPage($response, 'apm/witness.twig', [
-            'work' => $workId,
-            'chunk' => $chunkNumber,
-            'type' => $type,
-            'witnessid' => $witnessId,
-            'work_info' => $workInfo,
-            'doc' => $doc
-        ]);
+        
+        if ($outputType === 'text') {
+            return $response->write($doc['plain_text']);
+        }
+        
+        if ($outputType === 'html') {
+            return $response->write($doc['formatted']);
+        }
+        
+        return $response->withStatus(402)->write('ERROR: unrecognized output option');
     }
     
-   
-
-
-    protected function buildWitnessDataFromDocData(array $docData, $workId, $chunkNumber, $db, $witnessNumber) : array  {
+    protected function buildEssentialWitnessDataFromDocData(array $docData, $workId, $chunkNumber, $db, $witnessNumber) : array  {
         $doc = $docData;
         $doc['number'] = $witnessNumber;
         $doc['errors'] = [];
@@ -166,8 +192,8 @@ class ChunkPage extends SiteController
             // @codeCoverageIgnoreEnd
         }
         $doc['segments'] = $locations;
-        $itemIds = [];
 
+        $doc['pageSpan'] = 0;
         foreach($locations as $segLocation ) {
             if (!$segLocation['valid']) {
                 foreach($segLocation['warnings'] as $w) {
@@ -176,23 +202,36 @@ class ChunkPage extends SiteController
                 $doc['goodWitness'] = false;
                 continue;
             }
-            $apItemStream = $db->getItemStreamBetweenLocations((int) $doc['id'], $segLocation['start'], $segLocation['end']);
+            $doc['pageSpan'] += $this->pageSpan($segLocation);
+        }
+        return $doc;
+    }
 
-            foreach($apItemStream as $row) {
-                $itemIds[] = (int) $row['id'];
+
+    protected function buildWitnessDataFromDocData(array $docData, $workId, $chunkNumber, $db, $witnessNumber) : array  {
+        $doc = $docData;
+        $locations = $doc['segments'];
+        $itemIds = [];
+        
+        foreach($locations as $segLocation ) {
+            if ($segLocation['valid']) {
+                $apItemStream = $db->getItemStreamBetweenLocations((int) $doc['id'], $segLocation['start'], $segLocation['end']);
+                foreach($apItemStream as $row) {
+                    $itemIds[] = (int) $row['id'];
+                }
+                $doc['segmentApItemStreams'][] = $apItemStream;
+                $doc['plain_text'] .= ItemStream::getPlainText($apItemStream) . ' ';
             }
-            $doc['segmentApItemStreams'][] = $apItemStream;
-            $doc['plain_text'] .= ItemStream::getPlainText($apItemStream) . ' '; // CHECK: Space in between? 
         }
         
-        $this->logger->debug('Doc ' . $docData['id'] . ' segment count: ' . count($doc['segmentApItemStreams']));
+        //$this->logger->debug('Doc ' . $docData['id'] . ' segment count: ' . count($doc['segmentApItemStreams']));
         $edNoteArrayFromDb = $db->enm->rawGetEditorialNotesForListOfItems($itemIds);
-        $this->logger->debug('Ednotes', $edNoteArrayFromDb);
+        //$this->logger->debug('Ednotes', $edNoteArrayFromDb);
         $itemStream = new \AverroesProjectToApm\ItemStream($doc['id'], $doc['segmentApItemStreams'], $doc['lang'], $edNoteArrayFromDb);
         $itemStreamWitness = new \AverroesProjectToApm\ItemStreamWitness($workId, $chunkNumber, $itemStream);
         $doc['itemStreamWitness'] = $itemStreamWitness;
         $doc['tokens'] = $itemStreamWitness->getTokens();
-        $this->logger->debug('Doc ' . $docData['id'] . ' token Count: ' . count($doc['tokens']));
+        $this->logger->debug('Doc ' . $docData['id'] . ':: tokens: ' . count($doc['tokens']) . ', page span: ' . $docData['pageSpan']);
 
         $doc['itemStream'] = $itemStream;
         $edNotes = $db->enm->getEditorialNotesForListOfItems($itemIds);
@@ -212,8 +251,16 @@ class ChunkPage extends SiteController
         return $doc;
     }
     
+    /**
+     * Returns the page span of the given location
+     * @param array  $segLocation
+     * @return int
+     */
+    protected function pageSpan($segLocation) : int {
+        return $segLocation['end']['page_seq'] - $segLocation['start']['page_seq'] + 1;
+    }
     
-    protected function prettyPrintAddressInItemStream(\APM\Core\Address\Point $address) : string{
+    protected function prettyPrintAddressInItemStream(\APM\Core\Address\Point $address) : string {
         
         return $this->prettyPrintPoint($address);
     }

@@ -99,6 +99,11 @@ class AutomaticCollationTable {
         thisObject.editSettingsFormManager.hide()
         thisObject.getCollationTable()
     })
+    
+     this.editSettingsFormManager.on('options-change', function(e){
+        thisObject.actTitleElement.html(
+                thisObject.editSettingsFormManager.getTitleFromOptions(thisObject.options.langDef))
+    })
 
     
     
@@ -170,22 +175,9 @@ class AutomaticCollationTable {
   }
   
   getTitleFromOptions() {
-    let title = ''
     
-    let numWitnesses = this.apiCallOptions.witnesses.length
-    if (numWitnesses === 0) {
-      numWitnesses = this.availableWitnesses.length
-    }
-    
-    title += this.options.langDef[this.apiCallOptions.lang].name + ', '
-    title += numWitnesses  + ' of ' 
-    title += this.availableWitnesses.length + ' witnesses'
-    
-    if (this.apiCallOptions.ignorePunctuation) {
-      title += ', ignoring punctuation'
-    }
-        
-    return title
+    return this.editSettingsFormManager.getTitleFromOptions(this.options.langDef, this.availableWitnesses, this.apiCallOptions)
+
   }
   
   getCollationTable() {

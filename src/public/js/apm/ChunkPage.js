@@ -38,7 +38,6 @@ class ChunkPage {
             null, //type
             null, //language
             null, // pages
-            { orderable: false }, // include in collation
             { orderable: false }, // show/hide text
         ]
     })
@@ -89,7 +88,6 @@ class ChunkPage {
   }
   
   getWitnessesToIncludeInCollation() {
-    let iicButtons = $('input.' + this.includeInCollationButtonClass)
     let ids = {}
     for(const lang in this.langs) {
       ids[lang] =[]
@@ -106,43 +104,26 @@ class ChunkPage {
   }
   
   updateCollationTableLinks() {
-    let w = this.getWitnessesToIncludeInCollation()
     let urls = []
-    for (const l in w) {
-      if (w[l].length >= 2) {
-        if (w[l].length !== this.langs[l].goodWitnesses) {
-          urls.push(
-             { 
-               lang: l,
-               name: this.langs[l].name,
-               isPartial: true,
-               url:  this.pathFor.siteCollationTable(this.options.work, this.options.chunkno, l, w[l])
-             })
-        } else {
-           urls.push(
+    for(const l in this.langs) {
+      if (this.langs[l].goodWitnesses >= 2) {
+        urls.push(
              { 
                lang: l,
                name: this.langs[l].name,
                isPartial: false,
                url:  this.pathFor.siteCollationTable(this.options.work, this.options.chunkno, l)
              })
-        }
-
       }
     }
-    let html = '<h4>Automatic Collation Tables</h4>'
+    let html = ''
     if (urls.length === 0 ) {
-      html += '<i>Choose at least 2 witnesses in one language to generate collation table(s)</i>'
       this.ctLinksElement.html(html)
     } else {
       html += '<ul>'
       for(const u in urls) {
         let title="Open collation table in new tab"
         let urltext = urls[u].name + ', all witnesses'
-        if (urls[u].isPartial) {
-          title="Open partial collation table in new tab"
-          urltext = urls[u].name + ', marked witnesses'
-        }
         html += '<li><a href="' + urls[u].url + '" title="' + title + '" target="_blank">' + urltext + '</a></li>'
       }
       html += '</ul>'

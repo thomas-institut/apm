@@ -41,7 +41,7 @@ $(document).ready(function()
 {% if num_docs > 0 %}
     <div class="witnesslist">
 <table id="theWitnessTable">
-    <thead><tr><th>Title</th><th>Type</th><th>Language</th><th>Pages</th><th>Include in Collation</th><th/></tr></thead>
+    <thead><tr><th>Title</th><th>Type</th><th>Language</th><th>Pages</th><th/></tr></thead>
 {% for doc in docs %}
 <tr>
     <td><a href="{{path_for('doc.showdoc', {'id' : doc.id})}}" target="_blank" title="View Document in New Tab">{{doc.title}}</a></td>
@@ -52,11 +52,6 @@ $(document).ready(function()
         {% for seg in doc.segments %}
 <a href="{{path_for('pageviewer.docseq', {'doc' : doc.id, 'seq' : seg.start.page_seq})}}" target="_blank" title="View Page in New Tab">{{seg.start.foliation}}</a>{% if seg.end.foliation and seg.end.foliation != seg.start.foliation %}&ndash;<a href="{{path_for('pageviewer.docseq', {'doc' : doc.id, 'seq' : seg.end.page_seq})}}" target="_blank" title="View Page in New Tab">{{seg.end.foliation}}</a>{% endif %}{% if not loop.last %}, {% endif %}
         {% endfor %}
-    </td>
-    <td style="padding-left: 30px">
-        {% if doc.goodWitness %}
-          <input class="includeincollation" id="check-{{doc.id}}" type="checkbox" value="{{doc.id}}-{{doc.lang}}" checked>
-          {% endif %}
     </td>
     <td>
 
@@ -78,8 +73,10 @@ $(document).ready(function()
     </div>
 
 {% if collationLangs|length > 0 %}
-<div id="collationtablelinks">
-</div>
+    <h4>Automatic Collation Tables</h4>
+    <div id="collationtablelinks">
+    </div>
+
 {% endif %}
 
 <div class="chunktexts">

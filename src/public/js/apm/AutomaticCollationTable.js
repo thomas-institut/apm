@@ -42,6 +42,14 @@ class AutomaticCollationTable {
     this.apiCollationUrl = this.options.urlGen.apiAutomaticCollation()
     this.updating = false
     this.apiCallOptions = initialApiOptions
+    // if there are no witnesses in the initialApiOptions witnesses array, 
+    // it means that ALL witnesses should be included
+    if (this.apiCallOptions.witnesses.length === 0) {
+      for(const witness of this.availableWitnesses) {
+        this.apiCallOptions.witnesses.push({ type: witness.type, id: witness.id})
+      }
+    }
+    
     this.collationTableData = null
     this.ctf = new CollationTableFormatter({lang: initialApiOptions.lang})
     this.popoverClass = 'ctpopover'
@@ -78,17 +86,23 @@ class AutomaticCollationTable {
     })
     
     
-    this.editSettingsFormManager =  new AutomaticCollationTableSettingsForm(this.editSettingsFormSelector)
+    this.editSettingsFormManager =  new AutomaticCollationTableSettingsForm({
+        containerSelector : this.editSettingsFormSelector, 
+        availableWitnesses: this.availableWitnesses,
+        langDef: this.options.langDef
+      })
     
     this.editSettingsButton.on('click', function () { 
       if (thisObject.editSettingsFormManager.isHidden()) {
-        thisObject.editSettingsFormManager.show(thisObject.availableWitnesses, thisObject.apiCallOptions)
+        thisObject.editSettingsFormManager.show(thisObject.apiCallOptions)
       } else {
         thisObject.editSettingsFormManager.hide()
       }
     })
     
     this.editSettingsFormManager.on('cancel', function(){
+      thisObject.actTitleElement.html(
+                thisObject.editSettingsFormManager.getTitleFromSettings(thisObject.apiCallOptions))
         thisObject.editSettingsFormManager.hide()
     })
                 
@@ -102,7 +116,7 @@ class AutomaticCollationTable {
     
      this.editSettingsFormManager.on('settings-change', function(e){
         thisObject.actTitleElement.html(
-                thisObject.editSettingsFormManager.getTitleFromSettings(thisObject.options.langDef))
+                thisObject.editSettingsFormManager.getTitleFromSettings())
     })
 
     
@@ -176,7 +190,7 @@ class AutomaticCollationTable {
   
   getTitleFromOptions() {
     
-    return this.editSettingsFormManager.getTitleFromSettings(this.options.langDef, this.availableWitnesses, this.apiCallOptions)
+    return this.editSettingsFormManager.getTitleFromSettings(this.apiCallOptions)
 
   }
   

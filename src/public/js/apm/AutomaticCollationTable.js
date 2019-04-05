@@ -100,9 +100,9 @@ class AutomaticCollationTable {
         thisObject.getCollationTable()
     })
     
-     this.editSettingsFormManager.on('options-change', function(e){
+     this.editSettingsFormManager.on('settings-change', function(e){
         thisObject.actTitleElement.html(
-                thisObject.editSettingsFormManager.getTitleFromOptions(thisObject.options.langDef))
+                thisObject.editSettingsFormManager.getTitleFromSettings(thisObject.options.langDef))
     })
 
     
@@ -176,7 +176,7 @@ class AutomaticCollationTable {
   
   getTitleFromOptions() {
     
-    return this.editSettingsFormManager.getTitleFromOptions(this.options.langDef, this.availableWitnesses, this.apiCallOptions)
+    return this.editSettingsFormManager.getTitleFromSettings(this.options.langDef, this.availableWitnesses, this.apiCallOptions)
 
   }
   

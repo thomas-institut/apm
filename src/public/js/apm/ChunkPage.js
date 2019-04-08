@@ -20,12 +20,14 @@
 
 class ChunkPage {
   
-  constructor(options, urlGenerator) {
+  constructor(options) {
     
     this.options = this.getCleanOptions(options)
-    this.pathFor = this.options.urlGenerator
+    
     this.includeInCollationButtonClass = 'includeincollation'
     this.ctLinksElement = $('#collationtablelinks')
+    
+    this.pathFor = this.options.urlGenerator
     this.witnessInfo = this.options.witnessInfo
     console.log(this.witnessInfo)
     this.collationLangs = this.options.collationLanguages
@@ -99,28 +101,28 @@ class ChunkPage {
   
   getCleanOptions(inputOptions) {
     
-    let options = this.getDefaultOptions()
+    let cleanOptions = this.getDefaultOptions()
     
     if (typeof(inputOptions.work) === 'string') {
-      options.work = inputOptions.work
+      cleanOptions.work = inputOptions.work
     }
     
     if (typeof(inputOptions.chunk) === 'number' && inputOptions.chunk > 0) {
-      options.chunk = inputOptions.chunk
+      cleanOptions.chunk = inputOptions.chunk
     }
     
     if (typeof(inputOptions.witnessInfo) === 'object') {
-      options.witnessInfo = inputOptions.witnessInfo
+      cleanOptions.witnessInfo = inputOptions.witnessInfo
     }
     
     if (typeof(inputOptions.collationLanguages) === 'object') {
-      options.collationLanguages = inputOptions.collationLanguages
+      cleanOptions.collationLanguages = inputOptions.collationLanguages
     }
     
     if (typeof(inputOptions.urlGenerator) === 'object') {
-      options.urlGenerator = inputOptions.urlGenerator
+      cleanOptions.urlGenerator = inputOptions.urlGenerator
     }
-    return options
+    return cleanOptions
   }
   
   updateCollationTableLinks() {

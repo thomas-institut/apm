@@ -42,7 +42,7 @@ class AutomaticCollationTableSettingsForm {
             '<i class="fa fa-exclamation-triangle" aria-hidden="true"></i>' + 
             ' Please select 2 or more witnesses to include in the collation table</p>'
     
-    this.options = this.getCleanOptionsObject(this.getDefaultOptions(), options)
+    this.options = this.getCleanOptions(options)
     
     this.witnessList = []
     this.initialSettings = this.options.initialSettings
@@ -96,27 +96,27 @@ class AutomaticCollationTableSettingsForm {
     return options
   }
   
-  getCleanOptionsObject(defaultOptions, options) {
-    let cleanOptions = defaultOptions
+  getCleanOptions(inputOptions) {
+    let cleanOptions = this.getDefaultOptions()
     
-    if (typeof(options.langDef) === 'object') {
-      cleanOptions.langDef = options.langDef
+    if (typeof(inputOptions.langDef) === 'object') {
+      cleanOptions.langDef = inputOptions.langDef
     }
     
-    if (typeof(options.availableWitnesses) === 'object') {
-      cleanOptions.availableWitnesses = options.availableWitnesses
+    if (typeof(inputOptions.availableWitnesses) === 'object') {
+      cleanOptions.availableWitnesses = inputOptions.availableWitnesses
     }
     
-    if (typeof(options.initialSettings) === 'object') {
-      cleanOptions.initialSettings = options.initialSettings
+    if (typeof(inputOptions.initialSettings) === 'object') {
+      cleanOptions.initialSettings = inputOptions.initialSettings
     }
    
-    if (typeof(options.containerSelector) === 'string') {
-      cleanOptions.containerSelector = options.containerSelector
+    if (typeof(inputOptions.containerSelector) === 'string') {
+      cleanOptions.containerSelector = inputOptions.containerSelector
     }
     
-    if (typeof(options.noneIncludedMeansAll) === 'boolean') {
-      cleanOptions.noneIncludedMeansAll = options.noneIncludedMeansAll
+    if (typeof(inputOptions.noneIncludedMeansAll) === 'boolean') {
+      cleanOptions.noneIncludedMeansAll = inputOptions.noneIncludedMeansAll
     }
     
     return cleanOptions

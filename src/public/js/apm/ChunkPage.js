@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Universität zu Köln
+ * Copyright (C) 2018-19 Universität zu Köln
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -20,25 +20,26 @@
 
 class ChunkPage {
   
-  constructor(options, witnessInfo, collationLangs, urlGenerator) {
-    this.pathFor = urlGenerator
-    this.options = options
+  constructor(options, urlGenerator) {
+    
+    this.options = this.getCleanOptions(options)
+    this.pathFor = this.options.urlGenerator
     this.includeInCollationButtonClass = 'includeincollation'
     this.ctLinksElement = $('#collationtablelinks')
-    this.witnessInfo = witnessInfo
+    this.witnessInfo = this.options.witnessInfo
     console.log(this.witnessInfo)
-    this.collationLangs = collationLangs
-    
+    this.collationLangs = this.options.collationLanguages
+
     $("#theWitnessTable").DataTable({ 
-        'paging': false, 
-        'searching' : false, 
-        'sDom':'t',
+        paging: false, 
+        searching : false, 
+        sDom:'t',
         columns : [
             null, //title
             null, //type
             null, //language
             null, // pages
-            { orderable: false }, // show/hide text
+            { orderable: false } // show/hide text
         ]
     })
     
@@ -46,6 +47,7 @@ class ChunkPage {
     for (const lang of this.collationLangs) {
       this.langs[lang.code] = {name: lang.name, code: lang.code, goodWitnesses: 0}
     }
+    
     
     for (const w of this.witnessInfo) {
       if (this.langs[w.lang] === undefined) {
@@ -59,7 +61,7 @@ class ChunkPage {
         } else {
           console.log('Getting delayed data for witness ' + w.id)
           $('#formatted-' + w.id).html('Loading text, this might take a while <i class="fa fa-spinner fa-spin fa-fw"></i> ...')
-          $.get(this.pathFor.siteWitness(this.options.work, this.options.chunkno, 'doc', w.id, 'html'))
+          $.get(this.pathFor.siteWitness(this.options.work, this.options.chunk, 'doc', w.id, 'html'))
                   .done(function(data){
                      console.log('Got data for witness ' + w.id)
                      $('#formatted-' + w.id).html(data)
@@ -74,9 +76,6 @@ class ChunkPage {
     }
     this.updateCollationTableLinks()
     
-    $('.' + this.includeInCollationButtonClass).on('click', this.genOnIicButtonClick())
-    
-    
     $('body').popover({
             container: 'body', 
             html: true,
@@ -87,20 +86,41 @@ class ChunkPage {
          })
   }
   
-  getWitnessesToIncludeInCollation() {
-    let ids = {}
-    for(const lang in this.langs) {
-      ids[lang] =[]
+  getDefaultOptions() {
+    let options = {}
+    
+    options.work = 'no-work'
+    options.chunk = 0
+    options.witnessInfo = []
+    options.collationLanguages = []
+    options.urlGenerator = {}
+    return options
+  }
+  
+  getCleanOptions(inputOptions) {
+    
+    let options = this.getDefaultOptions()
+    
+    if (typeof(inputOptions.work) === 'string') {
+      options.work = inputOptions.work
     }
     
-    for(const button of iicButtons) {
-      let id = $(button).attr('value')
-      if ($(button).is(':checked')) {
-        let split = id.split('-')
-        ids[split[1]].push(parseInt(split[0]))
-      }
+    if (typeof(inputOptions.chunk) === 'number' && inputOptions.chunk > 0) {
+      options.chunk = inputOptions.chunk
     }
-    return ids
+    
+    if (typeof(inputOptions.witnessInfo) === 'object') {
+      options.witnessInfo = inputOptions.witnessInfo
+    }
+    
+    if (typeof(inputOptions.collationLanguages) === 'object') {
+      options.collationLanguages = inputOptions.collationLanguages
+    }
+    
+    if (typeof(inputOptions.urlGenerator) === 'object') {
+      options.urlGenerator = inputOptions.urlGenerator
+    }
+    return options
   }
   
   updateCollationTableLinks() {
@@ -112,7 +132,7 @@ class ChunkPage {
                lang: l,
                name: this.langs[l].name,
                isPartial: false,
-               url:  this.pathFor.siteCollationTable(this.options.work, this.options.chunkno, l)
+               url:  this.pathFor.siteCollationTable(this.options.work, this.options.chunk, l)
              })
       }
     }
@@ -131,11 +151,6 @@ class ChunkPage {
     }
   }
   
-  genOnIicButtonClick() {
-    let thisObject = this
-    return function(e) {
-      thisObject.updateCollationTableLinks()
-    }
-  }
+
   
 }

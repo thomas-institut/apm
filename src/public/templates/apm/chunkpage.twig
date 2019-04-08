@@ -19,12 +19,12 @@ $(document).ready(function()
 { 
     let cp = new ChunkPage(
             { 
-                chunkno: {{chunk}},
-                work: '{{work}}'
-            },
-            JSON.parse('{{docs|json_encode|e('js')}}'), 
-            JSON.parse('{{collationLangs|json_encode|e('js')}}'),
-            new ApmUrlGenerator('{{baseurl}}')
+                work: '{{work}}',
+                chunk: {{chunk}},
+                witnessInfo: JSON.parse('{{docs|json_encode|e('js')}}'),
+                collationLanguages: JSON.parse('{{collationLangs|json_encode|e('js')}}'),
+                urlGenerator:  new ApmUrlGenerator('{{baseurl}}')
+            }
     )
 } 
         

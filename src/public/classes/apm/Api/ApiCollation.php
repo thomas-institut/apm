@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (C) 2016-2018 Universität zu Köln
+ * Copyright (C) 2016-2019 Universität zu Köln
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License

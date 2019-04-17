@@ -53,6 +53,12 @@ class SiteCollationTable extends SiteController
         $workId = $request->getAttribute('work');
         $chunkNumber = $request->getAttribute('chunk');
         $language = $request->getAttribute('lang');
+        $ignorePunctuation = true;
+        
+        if (isset($args['ignore_punct'])) {
+            $ignorePunctuation = ($args['ignore_punct'] !== 'withpunct');
+        }
+        
         $profiler = new ApmProfiler("AutomaticCollation-$workId-$chunkNumber-$language", $dm);
         
         $warnings = [];
@@ -61,7 +67,7 @@ class SiteCollationTable extends SiteController
             'work' => $workId,
             'chunk' => $chunkNumber,
             'lang' => $language,
-            'ignorePunctuation' => true,
+            'ignorePunctuation' => $ignorePunctuation,
             'witnesses' => []
         ];
         

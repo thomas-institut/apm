@@ -53,6 +53,8 @@ class ChunkPage {
     
     for (const w of this.witnessInfo) {
       if (this.langs[w.lang] === undefined) {
+        // QUESTION: should this happen at all?
+        console.log('Undefined language un chunkpage langs: ' + w.lang)
         this.langs[w.lang] = { name: w.lang, code: w.lang, goodWitnesses:0 }  // TODO: pass all language info 
       }
       if (w.goodWitness) {
@@ -76,6 +78,7 @@ class ChunkPage {
         }
       }
     }
+    
     this.updateCollationTableLinks()
     
     $('body').popover({
@@ -136,6 +139,7 @@ class ChunkPage {
                isPartial: false,
                url:  this.pathFor.siteCollationTable(this.options.work, this.options.chunk, l)
              })
+        // TODO: retrieve applicable presets for this language and add links
       }
     }
     let html = ''

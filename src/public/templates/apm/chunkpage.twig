@@ -11,7 +11,9 @@
     </style>
     
     <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/witness.css"/>
+    <script type="text/javascript" src="{{baseurl}}/node_modules//twig/twig.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/apm/ApmUrlGenerator.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/apm/AutoCollTableSettingsForm.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/apm/CollapseToggleButton.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/apm/ChunkPage.js"></script>
 <script>
@@ -88,10 +90,10 @@ $(document).ready(function()
                 <h3 class="panel-title">{{doc.title}}
                     &nbsp;&nbsp;&nbsp;
                     <a role="button" title="Click to show/hide text" data-toggle="collapse" href="#text-{{doc.id}}" aria-expanded="true" aria-controls="text-{{doc.id}}">
-                        <span id="texttoggle-{{doc.id}}"><i class="fa fa-angle-down" aria-hidden="true"></i></span>
+                        <span id="texttoggle-{{doc.id}}"><i class="fa fa-angle-right" aria-hidden="true"></i></span>
                     </a></h3>
             </div>
-                     <div class="collapse in" id="text-{{doc.id}}">
+                     <div class="collapse" id="text-{{doc.id}}">
              <div class="panel-body">
                      <p class="formattedchunktext chunktext-{{doc.lang}}" id="formatted-{{doc.id}}"></p>
             </div>

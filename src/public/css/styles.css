@@ -287,3 +287,6 @@ ul.chunklist ul {
 }
 
 
+.noborder {
+    border: none;
+}

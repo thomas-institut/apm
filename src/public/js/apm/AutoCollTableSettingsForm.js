@@ -48,6 +48,8 @@ class AutomaticCollationTableSettingsForm {
     this.initialSettings = this.options.initialSettings
 
     let containerSelector = this.options.containerSelector
+    console.log('Building act setting form')
+    console.log(this.options)
     
     // Data for drag and drop
     this.dragSourceElement = null
@@ -554,8 +556,9 @@ class AutomaticCollationTableSettingsForm {
   //----------------------------------------------------------------
   
   getFormTemplate() {
-    return Twig.twig({
-       id: 'theForm',
+    let randomNumber = Math.floor(Math.random() * 10000) +1
+    return  Twig.twig({
+       id: 'theForm' + randomNumber,
       data: `
       <h3>Automatic Collation Settings</h3>
         <form>

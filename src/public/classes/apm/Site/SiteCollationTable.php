@@ -47,42 +47,113 @@ class SiteCollationTable extends SiteController
 
     }
     
-    public function automaticCollationPage(Request $request, Response $response, $args) 
+    
+    public function automaticCollationPageGet(Request $request, Response $response, $args) 
     {
-        $dm = $this->dataManager;
         $workId = $request->getAttribute('work');
         $chunkNumber = $request->getAttribute('chunk');
         $language = $request->getAttribute('lang');
         $ignorePunctuation = true;
-        
         if (isset($args['ignore_punct'])) {
             $ignorePunctuation = ($args['ignore_punct'] !== 'withpunct');
         }
-        
-        $profiler = new ApmProfiler("AutomaticCollation-$workId-$chunkNumber-$language", $dm);
-        
-        $warnings = [];
-        
-        $apiCallOptions = [
+        $collationPageOptions = [
             'work' => $workId,
             'chunk' => $chunkNumber,
             'lang' => $language,
             'ignorePunctuation' => $ignorePunctuation,
-            'witnesses' => []
+            'witnesses' => [], 
+            'partialCollation' => false
         ];
-        
-        // get witnesses to include
-        $partialCollation = false;
+         // get witnesses to include
         if (isset($args['docs'])) {
             $docsInArgs = explode('/', $args['docs']);
             foreach ($docsInArgs as $docId) {
                 $docId = intval($docId);
                 if ($docId !== 0) {
-                    $apiCallOptions['witnesses'][] = ['type' => 'doc', 'id' => $docId];
+                    $collationPageOptions['witnesses'][] = ['type' => 'doc', 'id' => $docId];
                 }
             }
-            $partialCollation = true;
+            $collationPageOptions['partialCollation'] = true;
         }
+        
+        return $this->getCollationTablePage($collationPageOptions, $response);
+    }
+    
+    public function automaticCollationPageCustom(Request $request, Response $response, $args)  {
+        
+        $rawData = $request->getBody()->getContents();
+        parse_str($rawData, $postData);
+        $inputData = null;
+        
+        if (isset($postData['data'])) {
+            $inputData = json_decode($postData['data'], true);
+        }
+        
+        // Some checks
+        if (is_null($inputData) ) {
+            $this->logger->error('Automatic Collation Table:  no data in input',
+                    [ 'rawdata' => $postData]);
+            $msg = 'Bad request: no data';
+            return $this->renderPage($response, 'chunk.collation.error.twig', [
+                'work' => '??',
+                'chunk' => '??',
+                'lang' => '??',
+                'isPartial' => false,
+                'message' => $msg
+            ]);
+        }
+        if (!isset($inputData['options'])) {
+            $this->logger->error('Automatic Collation Table:  no data in input',
+                    [ 'rawdata' => $postData]);
+            $msg = 'Bad request: no options';
+            return $this->renderPage($response, 'chunk.collation.error.twig', [
+                'work' => '??',
+                'chunk' => '??',
+                'lang' => '??',
+                'isPartial' => false,
+                'message' => $msg
+            ]);
+        }
+        
+        $collationPageOptions = $inputData['options'];
+        $requiredFields = ['work', 'chunk', 'lang', 'ignorePunctuation', 'witnesses', 'partialCollation'];
+        foreach ($requiredFields as $requiredField) {
+            if (!isset($collationPageOptions[$requiredField])) {
+                $msg = 'Bad request: missing required option ' . $requiredField ;
+                return $this->renderPage($response, 'chunk.collation.error.twig', [
+                    'work' => '??',
+                    'chunk' => '??',
+                    'lang' => '??',
+                    'isPartial' => false,
+                    'message' => $msg
+                ]);
+            }
+        }
+        return $this->getCollationTablePage($collationPageOptions, $response);
+    }
+    
+    private function getCollationTablePage($collationPageOptions, Response $response) {
+        $workId = $collationPageOptions['work'];
+        $chunkNumber = $collationPageOptions['chunk'];
+        $language = $collationPageOptions['lang'];
+        $partialCollation = $collationPageOptions['partialCollation'];
+       
+        
+        $apiCallOptions = [
+            'work' => $workId,
+            'chunk' => $chunkNumber,
+            'lang' => $language,
+            'ignorePunctuation' => $collationPageOptions['ignorePunctuation'],
+            'witnesses' => $collationPageOptions['witnesses']
+        ];
+        
+        $dm = $this->dataManager;
+        
+        $profiler = new ApmProfiler("AutomaticCollation-$workId-$chunkNumber-$language", $dm);
+        
+        $warnings = [];
+
         
         // check that language is valid
         $languages = $this->config['languages'];
@@ -138,8 +209,6 @@ class SiteCollationTable extends SiteController
                 'canViewExperimentalData' => $canViewExperimentalData,
                 'warnings' => $warnings
             ]);
-        
-        
     }
     
     protected function getValidWitnessDocIdsForWorkChunkLang($dm, $workId, $chunkNumber, $language) : array {

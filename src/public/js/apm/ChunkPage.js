@@ -47,7 +47,12 @@ class ChunkPage {
     
     this.langs = {}
     for (const lang of this.collationLangs) {
-      this.langs[lang.code] = {name: lang.name, code: lang.code, goodWitnesses: 0}
+      this.langs[lang.code] = {
+        name: lang.name, 
+        code: lang.code, 
+        goodWitnesses: 0,
+        availableWitnesses: []
+      }
     }
     
     
@@ -59,6 +64,7 @@ class ChunkPage {
       }
       if (w.goodWitness) {
         this.langs[w.lang].goodWitnesses++
+        this.langs[w.lang].availableWitnesses.push(w)
         let toggleButton = new CollapseToggleButton($('#texttoggle-' + w.id), $('#text-' + w.id))
         if (!w.delayLoad) {
           $('#formatted-' + w.id).html(w.formatted)
@@ -136,25 +142,51 @@ class ChunkPage {
              { 
                lang: l,
                name: this.langs[l].name,
-               isPartial: false,
-               url:  this.pathFor.siteCollationTable(this.options.work, this.options.chunk, l)
+               url:  this.pathFor.siteCollationTable(this.options.work, this.options.chunk, l),
+               urltext: this.langs[l].name + ', all witnesses',
+               availableWitnesses: this.langs[l].availableWitnesses,
+               preset: false
+               
              })
         // TODO: retrieve applicable presets for this language and add links
       }
     }
-    let html = ''
-    if (urls.length === 0 ) {
-      this.ctLinksElement.html(html)
-    } else {
+    this.ctLinksElement.html('')
+    
+    if (urls.length !== 0 ) {
+      let html = ''
       html += '<ul>'
       for(const u in urls) {
         let title="Open collation table in new tab"
-        let urltext = urls[u].name + ', all witnesses'
-        html += '<li><a href="' + urls[u].url + '" title="' + title + '" target="_blank">' + urltext + '</a></li>'
+        html += '<li id="ctlink-li-' + u + '">'
+        html += '<a href="' + urls[u].url + '" title="' + title + '" target="_blank">' + urls[u].urltext + '</a>'
+        html += '<button title="Click to edit the automatic collation settings" '
+        html += 'class="ctsettingsbutton btn btn-default btn-sm noborder">'
+        html += '<i class="fa fa-pencil" aria-hidden="true"></i></button>'
+        html += '<div class="ctsettingsform"></div>'
+        html += '</li>'
       }
       html += '</ul>'
       this.ctLinksElement.html(html)
+      
+      
+      for (const u in urls) {
+        let ctSettingsFormManager =  new AutomaticCollationTableSettingsForm({
+          containerSelector : '#ctlink-li-' + u + ' .ctsettingsform', 
+          availableWitnesses: urls[u].availableWitnesses
+        })
+        $('#ctlink-li-' + u +  ' .ctsettingsbutton').on('click', function() { 
+          if (ctSettingsFormManager.isHidden()) {
+            ctSettingsFormManager.show()
+          } else {
+            ctSettingsFormManager.hide()
+          }
+          
+        })
+      }
     }
+    
+    
   }
   
 

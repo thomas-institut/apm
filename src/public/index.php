@@ -141,7 +141,7 @@ $app->get('/collation/auto/{work}/{chunk}/{lang}[/{ignore_punct}[/{docs:.*}]]','
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
 // Collation table with full options in post
-$app->post('/collation/auto/{work}/{chunk}/{lang}/custom','\APM\Site\SiteCollationTable:automaticCollationPage')
+$app->post('/collation/auto/{work}/{chunk}/{lang}/custom','\APM\Site\SiteCollationTable:automaticCollationPageCustom')
         ->setName('chunk.collationtable')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 

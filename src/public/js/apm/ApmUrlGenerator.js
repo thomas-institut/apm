@@ -39,6 +39,11 @@ class ApmUrlGenerator {
     return this.base +  '/collation/auto/' + work + '/' + chunkno + '/' + lang + extra
   }
   
+  siteCollationTableCustom(work, chunkno, lang) {
+    return this.base + '/collation/auto/' + work + '/' + chunkno + '/' + lang + '/custom'
+  }
+  
+  
   
   sitePageView(docId, pageNumber) {
     return this.base + '/doc/' + docId + '/page/' + pageNumber + 'view'

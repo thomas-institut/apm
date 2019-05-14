@@ -57,6 +57,7 @@ class ChunkPage {
     
     
     for (const w of this.witnessInfo) {
+      w.type = 'doc' // eventually witnesses will be of different types
       if (this.langs[w.lang] === undefined) {
         // QUESTION: should this happen at all?
         console.log('Undefined language un chunkpage langs: ' + w.lang)
@@ -145,7 +146,14 @@ class ChunkPage {
                url:  this.pathFor.siteCollationTable(this.options.work, this.options.chunk, l),
                urltext: this.langs[l].name + ', all witnesses',
                availableWitnesses: this.langs[l].availableWitnesses,
-               preset: false
+               preset: false,
+               actSettings : { 
+                 lang: l,
+                 work: this.options.work,
+                 chunk: this.options.chunk,
+                 ignorePunctuation: true,
+                 witnesses: this.langs[l].availableWitnesses
+               }
                
              })
         // TODO: retrieve applicable presets for this language and add links
@@ -174,7 +182,9 @@ class ChunkPage {
       for (const u in urls) {
         let ctSettingsFormManager =  new AutomaticCollationTableSettingsForm({
           containerSelector : '#ctlink-div-' + u, 
+          initialSettings: urls[u].actSettings,
           availableWitnesses: urls[u].availableWitnesses,
+          noneIncludedMeansAll: true,
           hideTitle: true
         })
         $('#ctlink-li-' + u +  ' .ctsettingsbutton').on('click', function() { 
@@ -190,8 +200,18 @@ class ChunkPage {
           ctSettingsFormManager.hide()
           $('#ctlink-a-' + u).removeClass('disabled')
         })
-        ctSettingsFormManager.on('apply', function () {
-          console.log('apply button clicked for ' + u)
+        let thisObject = this
+        ctSettingsFormManager.on('apply', function (e) {
+          console.log('Opening automatic collations table')
+          console.log(e.detail)
+          $('body').append('<form id="theform" method="POST" target="_blank" action="' +  
+                  thisObject.pathFor.siteCollationTableCustom(thisObject.options.work, thisObject.options.chunk, urls[u].lang) + '">' +
+                  '<input type="text" name="data" value=\'' + JSON.stringify({options: e.detail})  + '\'></form>')
+          $('#theform').submit()
+          $('#theform').remove()
+          //ctSettingsFormManager.hide()
+          //$('#ctlink-a-' + u).removeClass('disabled')
+          
         })
       }
     }

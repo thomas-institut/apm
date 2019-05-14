@@ -100,7 +100,6 @@ class AutomaticCollationTableSettingsForm {
       witnesses: []
     }
     options.containerSelector = 'default-act-settings-form-selector'
-    options.noneIncludedMeansAll = true
     options.formTitle = 'Automatic Collation Settings'
     options.hideTitle = false
     return options
@@ -115,6 +114,12 @@ class AutomaticCollationTableSettingsForm {
     
     if (typeof(inputOptions.availableWitnesses) === 'object') {
       cleanOptions.availableWitnesses = inputOptions.availableWitnesses
+      for (const w of cleanOptions.availableWitnesses) {
+        if (typeof(w.id) !== 'number') {
+          console.error('Witness id not a number in ACT settings form options: ' + 
+                typeof(w.id) + ' ' + w.id)
+        }
+      }
     }
     
     if (typeof(inputOptions.initialSettings) === 'object') {
@@ -124,11 +129,7 @@ class AutomaticCollationTableSettingsForm {
     if (typeof(inputOptions.containerSelector) === 'string') {
       cleanOptions.containerSelector = inputOptions.containerSelector
     }
-    
-    if (typeof(inputOptions.noneIncludedMeansAll) === 'boolean') {
-      cleanOptions.noneIncludedMeansAll = inputOptions.noneIncludedMeansAll
-    }
-    
+
     if (typeof(inputOptions.formTitle) === 'string') {
       cleanOptions.formTitle = inputOptions.formTitle
     }
@@ -174,14 +175,6 @@ class AutomaticCollationTableSettingsForm {
         }
       }
     }
-//    if(this.options.noneIncludedMeansAll && settings.witnesses.length === 0) {
-//      // This means ALL witnesses are to be included
-//      console.log('ALL witness are to be included')
-//      for(const witness of this.witnessList) {
-//        witness.toInclude = true
-//        settings.witnesses.push({ type: witness.type, id: witness.id})
-//      }
-//    }
     
     // 2. Set up options
     this.ignorePunctuationCheckbox.prop('checked', settings.ignorePunctuation)
@@ -297,6 +290,7 @@ class AutomaticCollationTableSettingsForm {
         count++
       }
     }
+    //console.log('witnesses to include: ' + count)
     return count
   }
   
@@ -344,6 +338,10 @@ class AutomaticCollationTableSettingsForm {
         type: elem.getAttribute('type'),
         id: parseInt(elem.getAttribute('witnessid'))
       })
+    }
+    settings.partialCollation = true
+    if (settings.witnesses.length === this.options.availableWitnesses.length) {
+      settings.partialCollation = false
     }
     
     return settings
@@ -412,7 +410,7 @@ class AutomaticCollationTableSettingsForm {
   genOnClickAllButton() {
     let thisObject = this
     return function() {
-      console.log('ALL button clicked')
+      //console.log('ALL button clicked')
       let newSettings = thisObject.getSettings()
       newSettings.witnesses = []
       for(const witness of thisObject.witnessList) {
@@ -427,7 +425,7 @@ class AutomaticCollationTableSettingsForm {
   genOnClickNoneButton() {
     let thisObject = this
     return function() {
-      console.log('NONE button clicked')
+      //console.log('NONE button clicked')
       let newSettings = thisObject.getSettings()
       newSettings.witnesses = []
       thisObject.setSettings(newSettings)
@@ -444,31 +442,34 @@ class AutomaticCollationTableSettingsForm {
   genOnDragStartFunc() {
     let thisObject = this
     return function (e) {
-        console.log('drag start')
+        //console.log('drag start')
         // Target (this) element is the source node.
         thisObject.dragSourceElement = this
         thisObject.dragSourceParent = this.parentNode
         e.dataTransfer.effectAllowed = 'move'
         e.dataTransfer.setData('text/html', this.outerHTML)
         this.classList.add(thisObject.dragElementClass)
+        return false
       } 
   }
   
   genOnDragOver() {
     let thisObject = this
     return function (e) {
+      //console.log('drag over')
       if (e.preventDefault) {
-        e.preventDefault(); // Necessary. Allows us to drop.
+        e.preventDefault() // Necessary. Allows us to drop.
       }
-      this.classList.add(thisObject.overClass);
-      e.dataTransfer.dropEffect = 'move';  
-      return false;
+      this.classList.add(thisObject.overClass)
+      e.dataTransfer.dropEffect = 'move'
+      return false
     }
   }
   
   genOnDragEnter() {
     let thisObject = this
     return function (e) {
+      //console.log('drag enter')
       // this / e.target is the current hover target.
     }
   }
@@ -476,20 +477,23 @@ class AutomaticCollationTableSettingsForm {
   genOnDragLeave() {
     let thisObject = this
     return function (e) {
-      this.classList.remove(thisObject.overClass);  // this / e.target is previous target element.
+      //console.log('drag leave')
+      this.classList.remove(thisObject.overClass)  // this / e.target is previous target element.
+      return false
     }
   }
   
   genOnDrop() {
     let thisObject = this
     return function (e) {
+      //console.log('drop')
       // this/e.target is current target element.
       if (e.stopPropagation) {
         e.stopPropagation() // Stops some browsers from redirecting.
       }
-      // Don't do anything if dropping the same column we're dragging.
+      // Don't do anything if dropping the same element we're dragging.
       if (thisObject.dragSourceElement !== this) {
-        // Set the source column's HTML to the HTML of the column we dropped on.
+        // remove 
         thisObject.dragSourceParent.removeChild(thisObject.dragSourceElement)
         let dropHTML = e.dataTransfer.getData('text/html')
         this.insertAdjacentHTML('beforebegin',dropHTML)
@@ -501,13 +505,14 @@ class AutomaticCollationTableSettingsForm {
         thisObject.dispatchEvent(thisObject.settingsChangeEventName, thisObject.getSettings())
       }
       this.classList.remove(thisObject.overClass)
-      return false;
+      return false
     }
   }
   
   genOnDragEnd() {
     let thisObject = this
     return function (e) {
+      //console.log('drag end')
       this.classList.remove(thisObject.dragElementClass)
       thisObject.dispatchEvent(thisObject.settingsChangeEventName, thisObject.getSettings())
     }
@@ -517,6 +522,7 @@ class AutomaticCollationTableSettingsForm {
   genOnDropBox() {
     let thisObject = this
     return function(e) {
+      //console.log('drop box')
       e.preventDefault()
       let dropHtml = e.dataTransfer.getData('text/html')
       thisObject.dragSourceParent.removeChild(thisObject.dragSourceElement)
@@ -526,24 +532,27 @@ class AutomaticCollationTableSettingsForm {
       thisObject.updateWitnessListFromBoxes()
       thisObject.dealWithEmptyBoxes()
       thisObject.dealWithNotEnoughWitnessesToInclude()
+      return false
     }
   }
+  
   genOnDragOverBox() {
     let thisObject = this
     return function (e) {
+      //console.log('drag over box')
       if (e.preventDefault) {
-        e.preventDefault(); // Necessary. Allows us to drop.
+        e.preventDefault() // Necessary. Allows us to drop.
       }
-      this.classList.add(thisObject.overBoxClass);
-      e.dataTransfer.dropEffect = 'move';  
-      return false;
+      this.classList.add(thisObject.overBoxClass)
+      e.dataTransfer.dropEffect = 'move'
+      return false
     }
   }
   
   genOnDragLeaveBox() {
     let thisObject = this
     return function (e) {
-      console.log('DragLeave Box')
+      //console.log('drag leave Box')
       this.classList.remove(thisObject.overBoxClass)  // this / e.target is previous target element.
     }
   }
@@ -551,7 +560,7 @@ class AutomaticCollationTableSettingsForm {
   genOnDragEndBox() {
     let thisObject = this
     return function (e) {
-      console.log('DragEnd Box')
+      //console.log('drag end box')
       this.classList.remove(thisObject.overBoxClass)
     }
   }

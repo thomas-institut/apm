@@ -66,6 +66,7 @@ class ChunkPage extends SiteController
         foreach ($witnessList as $witness) {
             try {
                 $doc = $this->buildEssentialWitnessDataFromDocData($witness, $workId, $chunkNumber, $dm, ++$witnessNumber);
+                $doc['id'] = intval($doc['id']); // make sure Id is an integer
                 $doc['delayLoad'] = true;
                 if ($doc['pageSpan'] <= self::PAGE_SPAN_THRESHHOLD) {
                     $doc = $this->buildWitnessDataFromDocData($doc, $workId, $chunkNumber, $dm, $witnessNumber);

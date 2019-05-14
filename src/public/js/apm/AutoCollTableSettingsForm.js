@@ -57,7 +57,13 @@ class AutomaticCollationTableSettingsForm {
     
     this.container = $(containerSelector)
     this.container.addClass('hidden')
-    this.container.html(this.getFormTemplate().render())
+    this.container.html(this.getFormTemplate().render({
+      title: this.options.formTitle
+    }))
+    
+    if (this.options.hideTitle) {
+      $(containerSelector + ' .form-title').hide()
+    }
     
     this.cancelButton = $(containerSelector + ' .cancel-btn')
     this.applyButton = $(containerSelector + ' .apply-btn')
@@ -95,6 +101,8 @@ class AutomaticCollationTableSettingsForm {
     }
     options.containerSelector = 'default-act-settings-form-selector'
     options.noneIncludedMeansAll = true
+    options.formTitle = 'Automatic Collation Settings'
+    options.hideTitle = false
     return options
   }
   
@@ -119,6 +127,14 @@ class AutomaticCollationTableSettingsForm {
     
     if (typeof(inputOptions.noneIncludedMeansAll) === 'boolean') {
       cleanOptions.noneIncludedMeansAll = inputOptions.noneIncludedMeansAll
+    }
+    
+    if (typeof(inputOptions.formTitle) === 'string') {
+      cleanOptions.formTitle = inputOptions.formTitle
+    }
+    
+    if (typeof(inputOptions.hideTitle) === 'boolean') {
+      cleanOptions.hideTitle = inputOptions.hideTitle
     }
     
     return cleanOptions
@@ -560,7 +576,7 @@ class AutomaticCollationTableSettingsForm {
     return  Twig.twig({
        id: 'theForm' + randomNumber,
       data: `
-      <h3>Automatic Collation Settings</h3>
+      <h3 class="form-title">{{title}}</h3>
         <form>
           <table class="table">
           <tr>

@@ -157,31 +157,41 @@ class ChunkPage {
       let html = ''
       html += '<ul>'
       for(const u in urls) {
-        let title="Open collation table in new tab"
+        let title="Open automatic collation table in new tab"
         html += '<li id="ctlink-li-' + u + '">'
-        html += '<a href="' + urls[u].url + '" title="' + title + '" target="_blank">' + urls[u].urltext + '</a>'
-        html += '<button title="Click to edit the automatic collation settings" '
+        html += urls[u].urltext + ':'
+        html += '<a class="button btn btn-default btn-sm noborder" id="ctlink-a-' + u + '" href="' + urls[u].url + '" title="' + title + '" target="_blank">' 
+        html += '<span class="glyphicon glyphicon-new-window"></span>' + '</a>'
+        html += '<button title="Edit automatic collation settings" '
         html += 'class="ctsettingsbutton btn btn-default btn-sm noborder">'
         html += '<i class="fa fa-pencil" aria-hidden="true"></i></button>'
-        html += '<div class="ctsettingsform"></div>'
+        html += '<div id="ctlink-div-' + u + '" class="actsettings"></div>'
         html += '</li>'
       }
       html += '</ul>'
       this.ctLinksElement.html(html)
       
-      
       for (const u in urls) {
         let ctSettingsFormManager =  new AutomaticCollationTableSettingsForm({
-          containerSelector : '#ctlink-li-' + u + ' .ctsettingsform', 
-          availableWitnesses: urls[u].availableWitnesses
+          containerSelector : '#ctlink-div-' + u, 
+          availableWitnesses: urls[u].availableWitnesses,
+          hideTitle: true
         })
         $('#ctlink-li-' + u +  ' .ctsettingsbutton').on('click', function() { 
           if (ctSettingsFormManager.isHidden()) {
+            $('#ctlink-a-' + u).addClass('disabled')
             ctSettingsFormManager.show()
           } else {
             ctSettingsFormManager.hide()
+            $('#ctlink-a-' + u).removeClass('disabled')
           }
-          
+        })
+        ctSettingsFormManager.on('cancel', function (){
+          ctSettingsFormManager.hide()
+          $('#ctlink-a-' + u).removeClass('disabled')
+        })
+        ctSettingsFormManager.on('apply', function () {
+          console.log('apply button clicked for ' + u)
         })
       }
     }

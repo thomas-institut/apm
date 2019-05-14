@@ -290,3 +290,12 @@ ul.chunklist ul {
 .noborder {
     border: none;
 }
+
+
+/* For Chunk page */
+
+.actsettings {
+    margin-top: 20px;
+    margin-left: 20px;
+    margin-bottom: 40px;
+}

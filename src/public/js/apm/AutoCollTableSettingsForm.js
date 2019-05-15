@@ -48,8 +48,8 @@ class AutomaticCollationTableSettingsForm {
     this.initialSettings = this.options.initialSettings
 
     let containerSelector = this.options.containerSelector
-    console.log('Building act setting form')
-    console.log(this.options)
+    //console.log('Building act setting form')
+    //console.log(this.options)
     
     // Data for drag and drop
     this.dragSourceElement = null
@@ -58,13 +58,12 @@ class AutomaticCollationTableSettingsForm {
     this.container = $(containerSelector)
     this.container.addClass('hidden')
     this.container.html(this.getFormTemplate().render({
-      title: this.options.formTitle
+      title: this.options.formTitle,
+      applyButtonText: this.options.applyButtonText
     }))
     
-    if (this.options.hideTitle) {
-      $(containerSelector + ' .form-title').hide()
-    }
     
+    this.formTitle = $(containerSelector + ' .form-title')
     this.cancelButton = $(containerSelector + ' .cancel-btn')
     this.applyButton = $(containerSelector + ' .apply-btn')
     this.allButton = $(containerSelector + ' .all-btn')
@@ -74,6 +73,10 @@ class AutomaticCollationTableSettingsForm {
     this.witnessesAvailableSelectBox = $(containerSelector + ' .witnessesavailable-box')
     this.witnessesToIncludeBox = $(containerSelector + ' .witnessestoinclude-box')
     this.warningDiv = $(containerSelector + ' .warningdiv')
+    
+    if (this.options.hideTitle) {
+      this.formTitle.hide()
+    }
     
     this.cancelButton.on('click', this.genOnClickCancelButton())
     this.applyButton.on('click', this.genOnClickApplyButton())
@@ -101,6 +104,7 @@ class AutomaticCollationTableSettingsForm {
     }
     options.containerSelector = 'default-act-settings-form-selector'
     options.formTitle = 'Automatic Collation Settings'
+    options.applyButtonText = 'Apply'
     options.hideTitle = false
     return options
   }
@@ -136,6 +140,10 @@ class AutomaticCollationTableSettingsForm {
     
     if (typeof(inputOptions.hideTitle) === 'boolean') {
       cleanOptions.hideTitle = inputOptions.hideTitle
+    }
+    
+    if (typeof(inputOptions.applyButtonText) === 'string') {
+      cleanOptions.applyButtonText = inputOptions.applyButtonText
     }
     
     return cleanOptions
@@ -608,7 +616,7 @@ class AutomaticCollationTableSettingsForm {
             <label><input type="checkbox" class="ignorepunct-cb">Ignore Punctuation</label>
           </div>
           <button type="button" class="btn btn-primary btn-sm apply-btn">
-            Apply
+            {{applyButtonText}}
           </button>
           <button type="button" class="btn btn-default btn-sm cancel-btn">
             Cancel

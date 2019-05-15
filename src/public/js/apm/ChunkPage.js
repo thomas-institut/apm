@@ -29,7 +29,7 @@ class ChunkPage {
     
     this.pathFor = this.options.urlGenerator
     this.witnessInfo = this.options.witnessInfo
-    console.log(this.witnessInfo)
+    //console.log(this.witnessInfo)
     this.collationLangs = this.options.collationLanguages
 
     $("#theWitnessTable").DataTable({ 
@@ -184,8 +184,8 @@ class ChunkPage {
           containerSelector : '#ctlink-div-' + u, 
           initialSettings: urls[u].actSettings,
           availableWitnesses: urls[u].availableWitnesses,
-          noneIncludedMeansAll: true,
-          hideTitle: true
+          hideTitle: true,
+          applyButtonText: 'Generate Collation'
         })
         $('#ctlink-li-' + u +  ' .ctsettingsbutton').on('click', function() { 
           if (ctSettingsFormManager.isHidden()) {
@@ -202,15 +202,12 @@ class ChunkPage {
         })
         let thisObject = this
         ctSettingsFormManager.on('apply', function (e) {
-          console.log('Opening automatic collations table')
+          console.log('Opening automatic collation table')
           console.log(e.detail)
           $('body').append('<form id="theform" method="POST" target="_blank" action="' +  
                   thisObject.pathFor.siteCollationTableCustom(thisObject.options.work, thisObject.options.chunk, urls[u].lang) + '">' +
                   '<input type="text" name="data" value=\'' + JSON.stringify({options: e.detail})  + '\'></form>')
           $('#theform').submit()
-          $('#theform').remove()
-          //ctSettingsFormManager.hide()
-          //$('#ctlink-a-' + u).removeClass('disabled')
           
         })
       }

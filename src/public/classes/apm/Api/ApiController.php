@@ -55,6 +55,8 @@ abstract class ApiController
     const API_ERROR_NOT_AUTHORIZED  = 1100;
     
     const API_ERROR_DB_UPDATE_ERROR = 1200;
+    
+    const API_ERROR_WRONG_TYPE = 1300;
             
     
     

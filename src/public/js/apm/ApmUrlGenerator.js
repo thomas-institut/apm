@@ -30,6 +30,10 @@ class ApmUrlGenerator {
     return this.base + '/api/collation/auto'
   }
   
+  apiGetPresets() {
+    return this.base + '/api/presets/get'
+  }
+  
   siteCollationTable(work, chunkno, lang, ids=[]) {
     let extra = ''
     if (ids.length > 0) {
@@ -42,8 +46,6 @@ class ApmUrlGenerator {
   siteCollationTableCustom(work, chunkno, lang) {
     return this.base + '/collation/auto/' + work + '/' + chunkno + '/' + lang + '/custom'
   }
-  
-  
   
   sitePageView(docId, pageNumber) {
     return this.base + '/doc/' + docId + '/page/' + pageNumber + 'view'

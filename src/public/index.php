@@ -282,6 +282,11 @@ $app->group('/api', function (){
             )
         ->setName('api.collation.auto');
     
+    // ------- PRESETS -----------
+    $this->post('/presets/get', 
+        '\APM\Api\ApiPresets:getPresets'
+        )
+        ->setName('api.presets.get');
     // ------- ICONS -----------
     
     // API -> images : Mark Icon

@@ -31,6 +31,8 @@ class ChunkPage {
     this.witnessInfo = this.options.witnessInfo
     //console.log(this.witnessInfo)
     this.collationLangs = this.options.collationLanguages
+    
+    this.getPresetsUrl = this.pathFor.apiGetPresets()
 
     $("#theWitnessTable").DataTable({ 
         paging: false, 
@@ -136,15 +138,20 @@ class ChunkPage {
   }
   
   updateCollationTableLinks() {
-    let urls = []
+    this.ctLinksElement.html('<ul id="ctlinks-ul"></ul>')
     for(const l in this.langs) {
       if (this.langs[l].goodWitnesses >= 2) {
+        let urls = []
+        let langName = this.langs[l].name
+        let insideListId = 'ct-links-ul-' + l
+        $('#ctlinks-ul').append('<li>' + langName + '</li>')
+        $('#ctlinks-ul').append('<ul id="' + insideListId + '"></ul>')
         urls.push(
              { 
                lang: l,
-               name: this.langs[l].name,
+               name: langName,
                url:  this.pathFor.siteCollationTable(this.options.work, this.options.chunk, l),
-               urltext: this.langs[l].name + ', all witnesses',
+               urltext: 'All witnesses',
                availableWitnesses: this.langs[l].availableWitnesses,
                preset: false,
                actSettings : { 
@@ -156,49 +163,72 @@ class ChunkPage {
                }
                
              })
-        // TODO: retrieve applicable presets for this language and add links
+        // get applicable presets
+        let thisObject = this
+        let apiCallOptions = {
+          tool: 'automaticCollation',
+          userId: false,
+          matchArray: []
+        }
+        $.post(
+          this.getPresetsUrl, 
+          { data: JSON.stringify(apiCallOptions) }
+        )
+        .done(function (data) { 
+          console.log('Presets retrieved for ' + langName + ' in ' + data.runTime + 'ms')
+          console.log('Got ' + data.presets.length + ' presets')
+          thisObject.fillCollationTableLinks(urls, insideListId)
+        })
+        .fail(function(resp) {
+          console.log('Failed API call for presets for ' + langName, ' status: ' + resp.status)
+          console.log(resp)
+          thisObject.fillCollationTableLinks(urls, insideListId)
+        })
       }
     }
-    this.ctLinksElement.html('')
-    
+  }
+  
+  fillCollationTableLinks(urls, containerId) {
     if (urls.length !== 0 ) {
       let html = ''
       html += '<ul>'
       for(const u in urls) {
         let title="Open automatic collation table in new tab"
-        html += '<li id="ctlink-li-' + u + '">'
+        let liId = containerId + '-' +  u
+        html += '<li id="' + liId + '">'
         html += urls[u].urltext + ':'
-        html += '<a class="button btn btn-default btn-sm noborder" id="ctlink-a-' + u + '" href="' + urls[u].url + '" title="' + title + '" target="_blank">' 
+        html += '<a class="button btn btn-default btn-sm noborder" id="' + liId + '-a' + '" href="' + urls[u].url + '" title="' + title + '" target="_blank">' 
         html += '<span class="glyphicon glyphicon-new-window"></span>' + '</a>'
         html += '<button title="Edit automatic collation settings" '
         html += 'class="ctsettingsbutton btn btn-default btn-sm noborder">'
         html += '<i class="fa fa-pencil" aria-hidden="true"></i></button>'
-        html += '<div id="ctlink-div-' + u + '" class="actsettings"></div>'
+        html += '<div id="' + liId + '-div' + '" class="actsettings"></div>'
         html += '</li>'
       }
       html += '</ul>'
-      this.ctLinksElement.html(html)
       
+      $('#' + containerId).html(html)
       for (const u in urls) {
+        let liId = containerId + '-' +  u
         let ctSettingsFormManager =  new AutomaticCollationTableSettingsForm({
-          containerSelector : '#ctlink-div-' + u, 
+          containerSelector : '#' + liId + '-div', 
           initialSettings: urls[u].actSettings,
           availableWitnesses: urls[u].availableWitnesses,
           hideTitle: true,
           applyButtonText: 'Generate Collation'
         })
-        $('#ctlink-li-' + u +  ' .ctsettingsbutton').on('click', function() { 
+        $('#' + liId  + ' .ctsettingsbutton').on('click', function() { 
           if (ctSettingsFormManager.isHidden()) {
-            $('#ctlink-a-' + u).addClass('disabled')
+            $('#' + liId + '-a').addClass('disabled')
             ctSettingsFormManager.show()
           } else {
             ctSettingsFormManager.hide()
-            $('#ctlink-a-' + u).removeClass('disabled')
+            $('#' + liId + '-a').removeClass('disabled')
           }
         })
         ctSettingsFormManager.on('cancel', function (){
           ctSettingsFormManager.hide()
-          $('#ctlink-a-' + u).removeClass('disabled')
+          $('#' + liId + '-a').removeClass('disabled')
         })
         let thisObject = this
         ctSettingsFormManager.on('apply', function (e) {
@@ -212,8 +242,6 @@ class ChunkPage {
         })
       }
     }
-    
-    
   }
   
 

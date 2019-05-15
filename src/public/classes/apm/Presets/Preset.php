@@ -25,10 +25,6 @@ namespace APM\Presets;
  * 
  * A preset is essentially some data that is associated with 
  * a system tool, a user and some tool-dependent set of keys
- * 
- * For example, an automatic collation table preset may use 
- * the work id and the chunk number as keys.
- * 
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */

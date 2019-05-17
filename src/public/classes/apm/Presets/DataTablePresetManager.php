@@ -247,7 +247,7 @@ class DataTablePresetManager extends PresetManager {
     }
     
     /**
-     * Creates a Preset object from a DataTable 
+     * Creates a Preset object from a DataTable row
      * 
      * @param array $theRow
      * @return \APM\Presets\Preset
@@ -255,12 +255,13 @@ class DataTablePresetManager extends PresetManager {
     protected function createPresetFromDataTableRow(array $theRow) : Preset {
         // There's no need to deal with expanded keys since all key information
         // is stored in the self::FIELD_KEYARRAY field
-        return new Preset(
+        return new DataTablePreset(
                 $theRow[self::FIELD_TOOL], 
                 $theRow[self::FIELD_USERID], 
                 $theRow[self::FIELD_TITLE],
                 $this->decodeStringToArray($theRow[self::FIELD_KEYARRAY]),
-                $this->decodeStringToArray($theRow[self::FIELD_DATA])
+                $this->decodeStringToArray($theRow[self::FIELD_DATA]), 
+                $theRow['id']
             );
     }
     

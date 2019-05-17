@@ -49,6 +49,11 @@ class ApmSystemManager extends SystemManager {
     // Database version
     const DB_VERSION = 16;
     
+    // Tool Ids (for presets)
+    const TOOL_AUTOMATIC_COLLATION = 'automaticCollation';
+    
+    const VALID_TOOL_IDS = [ self::TOOL_AUTOMATIC_COLLATION];
+    
     
     // MySQL table names
     const TABLE_SETTINGS = 'settings';
@@ -262,8 +267,13 @@ class ApmSystemManager extends SystemManager {
         
         return $dbh;
     }
+    
     public function getPresetsManager() {
         return $this->presetsManager;
+    }
+    
+    public function isToolValid(string $tool) : bool {
+        return array_search($tool, self::VALID_TOOL_IDS) !== false;
     }
     
     public function getLogger() {

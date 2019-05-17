@@ -34,6 +34,10 @@ class ApmUrlGenerator {
     return this.base + '/api/presets/get'
   }
   
+  apiGetAutomaticCollationPresets() {
+    return this.base + '/api/presets/act/get'
+  }
+  
   siteCollationTable(work, chunkno, lang, ids=[]) {
     let extra = ''
     if (ids.length > 0) {

@@ -22,6 +22,8 @@ namespace APM\Api;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
+use APM\System\SystemManager;
+
 /**
  * API Controller class
  *
@@ -30,6 +32,11 @@ abstract class ApiController
 {
     protected $ci;
     protected $logger;
+    /**
+     *
+     * @var SystemManager 
+     */
+    protected $sm;
     
     // Error codes
     const API_NO_ERROR = 0;
@@ -66,6 +73,7 @@ abstract class ApiController
        $this->ci = $ci;
        $this->db = $ci->db;
        $this->logger = $ci->logger->withName('API-new');
+       $this->sm = $ci->sm;
     }
     
     /**

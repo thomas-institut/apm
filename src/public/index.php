@@ -287,6 +287,13 @@ $app->group('/api', function (){
         '\APM\Api\ApiPresets:getPresets'
         )
         ->setName('api.presets.get');
+    
+    $this->post('/presets/act/get', 
+        '\APM\Api\ApiPresets:getAutomaticCollationPresets'
+        )
+        ->setName('api.presets.act.get');
+    
+    
     // ------- ICONS -----------
     
     // API -> images : Mark Icon

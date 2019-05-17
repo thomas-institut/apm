@@ -32,7 +32,7 @@ class ChunkPage {
     //console.log(this.witnessInfo)
     this.collationLangs = this.options.collationLanguages
     
-    this.getPresetsUrl = this.pathFor.apiGetPresets()
+    this.getPresetsUrl = this.pathFor.apiGetAutomaticCollationPresets()
 
     $("#theWitnessTable").DataTable({ 
         paging: false, 
@@ -166,10 +166,15 @@ class ChunkPage {
         // get applicable presets
         let thisObject = this
         let apiCallOptions = {
-          tool: 'automaticCollation',
+          lang: this.langs[l].code,
           userId: false,
-          matchArray: []
+          witnesses: []
         }
+        for(const w of this.langs[l].availableWitnesses) {
+          apiCallOptions.witnesses.push(parseInt(w.id))
+        }
+        console.log('Calling presets API')
+        console.log(apiCallOptions)
         $.post(
           this.getPresetsUrl, 
           { data: JSON.stringify(apiCallOptions) }
@@ -177,6 +182,40 @@ class ChunkPage {
         .done(function (data) { 
           console.log('Presets retrieved for ' + langName + ' in ' + data.runTime + 'ms')
           console.log('Got ' + data.presets.length + ' presets')
+          console.log(data.presets)
+          for(const pr of data.presets) {
+            let witnessesToInclude = []
+            for (const wId of pr.data.witnesses) {
+              let witness = false
+              for(const w of thisObject.witnessInfo) {
+                if (w.id === wId) {
+                  witness = w
+                }
+              }
+              if (witness === false) {
+                console.error('Witness in preset not found in witnesses available, this must NEVER happen!')
+                return false
+              }
+              witnessesToInclude.push(witness)
+            }
+            urls.push(
+             { 
+               lang: l,
+               name: langName,
+               url:  thisObject.pathFor.siteCollationTable(thisObject.options.work, thisObject.options.chunk, l),
+               urltext: pr.title,
+               availableWitnesses: thisObject.langs[l].availableWitnesses,
+               preset: { id: pr.id, userId: pr.userId },
+               actSettings : { 
+                 lang: l,
+                 work: thisObject.options.work,
+                 chunk: thisObject.options.chunk,
+                 ignorePunctuation: pr.data.ignorePunctuation,
+                 witnesses: witnessesToInclude
+               }
+               
+             })
+          }
           thisObject.fillCollationTableLinks(urls, insideListId)
         })
         .fail(function(resp) {

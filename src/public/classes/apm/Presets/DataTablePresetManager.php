@@ -194,6 +194,16 @@ class DataTablePresetManager extends PresetManager {
         return $this->getRowIdForPreset($tool, $userId, $title) !== self::ROWID_NOTFOUND;
     }
     
+    public function getPresetById(int $id) {
+        $row = $this->dataTable->getRow($id);
+        
+        if ($row === false) {
+            return false;
+        }
+        
+        return $this->createPresetFromDataTableRow($row);
+    }
+    
     
     /**
      * PROTECTED METHODS

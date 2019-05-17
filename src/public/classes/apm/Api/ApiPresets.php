@@ -200,8 +200,10 @@ class ApiPresets extends ApiController
         }
         $presetsInArrayForm = [];
         foreach($filteredPresets as $preset) {
+            $userInfo = $this->db->um->getUserInfoByUserId($preset->getUserId());
             $presetsInArrayForm[] = [
                 'userId' => $preset->getUserId(),
+                'userName' => $userInfo['fullname'],
                 'presetId' => $preset->getId(),
                 'title' => $preset->getTitle(),
                 'data' => $preset->getData()

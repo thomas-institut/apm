@@ -135,6 +135,12 @@ $app->get('/chunk/{work}/{chunk}/witness/{type}/{id}[/{output}]','\APM\Site\Chun
 
 // COLLATION TABLES
 
+
+// Collation table with preset
+$app->get('/collation/auto/{work}/{chunk}/preset/{preset}','\APM\Site\SiteCollationTable:automaticCollationPagePreset')
+        ->setName('chunk.collationtable.preset')
+        ->add('\AverroesProject\Auth\Authenticator:authenticate');
+
 // Collation table with parameters in Url
 $app->get('/collation/auto/{work}/{chunk}/{lang}[/{ignore_punct}[/{docs:.*}]]','\APM\Site\SiteCollationTable:automaticCollationPageGet')
         ->setName('chunk.collationtable')
@@ -142,13 +148,9 @@ $app->get('/collation/auto/{work}/{chunk}/{lang}[/{ignore_punct}[/{docs:.*}]]','
 
 // Collation table with full options in post
 $app->post('/collation/auto/{work}/{chunk}/{lang}/custom','\APM\Site\SiteCollationTable:automaticCollationPageCustom')
-        ->setName('chunk.collationtable')
+        ->setName('chunk.collationtable.custom')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
-// Collation table with preset
-$app->get('/collation/auto/{work}/{chunk}/{lang}/preset/{preset}','\APM\Site\SiteCollationTable:automaticCollationPage')
-        ->setName('chunk.collationtable')
-        ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
 
 $app->get('/collation/quick', '\APM\Site\SiteCollationTable:quickCollationPage')

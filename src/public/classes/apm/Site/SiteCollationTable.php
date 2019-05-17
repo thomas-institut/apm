@@ -80,6 +80,56 @@ class SiteCollationTable extends SiteController
         return $this->getCollationTablePage($collationPageOptions, $response);
     }
     
+    public function automaticCollationPagePreset(Request $request, Response $response, $args) 
+    {
+        $this->logger->debug('Preset');
+        $workId = $request->getAttribute('work');
+        $chunkNumber = $request->getAttribute('chunk');
+        $presetId = $request->getAttribute('preset');
+        
+        $presetManager = $this->systemManager->getPresetsManager();
+        
+        $preset = $presetManager->getPresetById($presetId);
+        
+        if ($preset === false) {
+            $msg = 'Preset not found';
+            $this->logger->error($msg,
+                    [ 'presetId' => $presetId]);
+            
+            return $this->renderPage($response, 'chunk.collation.error.twig', [
+                'work' => $workId,
+                'chunk' => $chunkNumber,
+                'lang' => '??',
+                'isPartial' => false,
+                'message' => $msg
+            ]);
+        }
+        
+        $presetData = $preset->getData();
+        $lang =  $presetData['lang'];
+        $ignorePunctuation = $presetData['ignorePunctuation'];
+
+        $collationPageOptions = [
+            'work' => $workId,
+            'chunk' => $chunkNumber,
+            'lang' => $lang,
+            'ignorePunctuation' => $ignorePunctuation,
+            'witnesses' => [], 
+            'partialCollation' => false
+        ];
+         // get witnesses to include
+
+        foreach ($presetData['witnesses'] as $docId) {
+            $docId = intval($docId);
+            if ($docId !== 0) {
+                $collationPageOptions['witnesses'][] = ['type' => 'doc', 'id' => $docId];
+            }
+        }
+        $collationPageOptions['partialCollation'] = true;
+
+        return $this->getCollationTablePage($collationPageOptions, $response);
+    }
+    
     public function automaticCollationPageCustom(Request $request, Response $response, $args)  {
         
         $rawData = $request->getBody()->getContents();

@@ -299,3 +299,15 @@ ul.chunklist ul {
     margin-left: 20px;
     margin-bottom: 40px;
 }
+
+#collationtablelinks ul {
+    list-style-type: none;
+    padding: 0;
+    margin-left: 20px;
+    margin-bottom: 25px;
+}
+
+#collationtablelinks ul li {
+    padding: 0;
+    margin-left: 20px;
+}

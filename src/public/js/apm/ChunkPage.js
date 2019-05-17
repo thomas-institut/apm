@@ -108,6 +108,7 @@ class ChunkPage {
     options.witnessInfo = []
     options.collationLanguages = []
     options.urlGenerator = {}
+    options.userId = -1
     return options
   }
   
@@ -134,6 +135,11 @@ class ChunkPage {
     if (typeof(inputOptions.urlGenerator) === 'object') {
       cleanOptions.urlGenerator = inputOptions.urlGenerator
     }
+    
+    if (typeof(inputOptions.userId) === 'number') {
+      cleanOptions.userId = inputOptions.userId
+    }
+    
     return cleanOptions
   }
   
@@ -152,6 +158,7 @@ class ChunkPage {
                name: langName,
                url:  this.pathFor.siteCollationTable(this.options.work, this.options.chunk, l),
                urltext: 'All witnesses',
+               urltitle: 'Open automatic collation table in new tab',
                availableWitnesses: this.langs[l].availableWitnesses,
                preset: false,
                actSettings : { 
@@ -202,10 +209,11 @@ class ChunkPage {
              { 
                lang: l,
                name: langName,
-               url:  thisObject.pathFor.siteCollationTable(thisObject.options.work, thisObject.options.chunk, l),
-               urltext: pr.title,
+               url:  thisObject.pathFor.siteCollationTablePreset(thisObject.options.work, thisObject.options.chunk, pr.presetId),
+               urltext: pr.title + ' <small><i>(' + pr.userName + ')</i></small>',
+               urltitle:  'Open collation table in new tab', 
                availableWitnesses: thisObject.langs[l].availableWitnesses,
-               preset: { id: pr.id, userId: pr.userId },
+               preset: { id: pr.presetId, userId: pr.userId },
                actSettings : { 
                  lang: l,
                  work: thisObject.options.work,
@@ -232,15 +240,23 @@ class ChunkPage {
       let html = ''
       html += '<ul>'
       for(const u in urls) {
-        let title="Open automatic collation table in new tab"
         let liId = containerId + '-' +  u
         html += '<li id="' + liId + '">'
         html += urls[u].urltext + ':'
-        html += '<a class="button btn btn-default btn-sm noborder" id="' + liId + '-a' + '" href="' + urls[u].url + '" title="' + title + '" target="_blank">' 
+        html += '<a class="button btn btn-default btn-sm noborder" id="' + liId + '-a' + '" href="' + urls[u].url + '" title="' + urls[u].urltitle + '" target="_blank">' 
         html += '<span class="glyphicon glyphicon-new-window"></span>' + '</a>'
         html += '<button title="Edit automatic collation settings" '
         html += 'class="ctsettingsbutton btn btn-default btn-sm noborder">'
         html += '<i class="fa fa-pencil" aria-hidden="true"></i></button>'
+        if (urls[u].preset) {
+          if (urls[u].preset.userId === this.options.userId) {
+            html += '<button title="Erase preset" '
+            html += 'class="cterasepresetbutton btn btn-default btn-sm noborder">'
+          html += '<i class="fa fa-trash" aria-hidden="true"></i></button>'
+          html += '<div id="' + liId + '-erasediv' + '"></div>'
+          }
+        }
+        
         html += '<div id="' + liId + '-div' + '" class="actsettings"></div>'
         html += '</li>'
       }
@@ -256,18 +272,42 @@ class ChunkPage {
           hideTitle: true,
           applyButtonText: 'Generate Collation'
         })
+       $('#' + liId  + ' .cterasepresetbutton').on('click', function() { 
+            $('#' + liId + '-a').addClass('disabled')
+            $('#' + liId + ' .ctsettingsbutton').addClass('disabled')
+            $('#' + liId + ' .cterasepresetbutton').addClass('disabled')
+          let divSelector = '#' + liId + '-erasediv'
+          let eraseHtml = '<p class="bg-danger">Do you really want to erase this preset?'
+          eraseHtml += '<button class="btn btn-sm btn-default button-yes">Yes</button>'
+          eraseHtml += '<button class="btn btn-sm btn-default button-no">No</button>'
+          $(divSelector).html(eraseHtml)
+          $(divSelector +  ' .button-no').on('click', function(){
+            $(divSelector).html('')
+            $('#' + liId + '-a').removeClass('disabled')
+            $('#' + liId + ' .cterasepresetbutton').removeClass('disabled')
+            $('#' + liId + ' .ctsettingsbutton').removeClass('disabled')
+          })
+          $(divSelector +  ' .button-yes').on('click', function(){
+            thisObject.updateCollationTableLinks()
+          })
+          
+        })
+        
         $('#' + liId  + ' .ctsettingsbutton').on('click', function() { 
           if (ctSettingsFormManager.isHidden()) {
             $('#' + liId + '-a').addClass('disabled')
+            $('#' + liId + ' .cterasepresetbutton').addClass('disabled')
             ctSettingsFormManager.show()
           } else {
             ctSettingsFormManager.hide()
             $('#' + liId + '-a').removeClass('disabled')
+            $('#' + liId + ' .cterasepresetbutton').removeClass('disabled')
           }
         })
         ctSettingsFormManager.on('cancel', function (){
           ctSettingsFormManager.hide()
           $('#' + liId + '-a').removeClass('disabled')
+           $('#' + liId + ' .cterasepresetbutton').removeClass('disabled')
         })
         let thisObject = this
         ctSettingsFormManager.on('apply', function (e) {

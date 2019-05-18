@@ -73,6 +73,15 @@ class AutomaticCollationTableSettingsForm {
     this.witnessesAvailableSelectBox = $(containerSelector + ' .witnessesavailable-box')
     this.witnessesToIncludeBox = $(containerSelector + ' .witnessestoinclude-box')
     this.warningDiv = $(containerSelector + ' .warningdiv')
+    this.presetTitle = $(containerSelector + ' .preset-title')
+    this.editPresetButton = $(containerSelector + ' .edit-preset-btn')
+    this.editPresetDiv = $(containerSelector + ' .edit-preset-div')
+    this.presetInputText = $(containerSelector + ' .preset-input-text')
+    this.presetSaveButton = $(containerSelector + ' .preset-save-btn')
+    this.presetSave2Button = $(containerSelector + ' .preset-save2-btn')
+    this.presetCancelButton = $(containerSelector + ' .preset-cancel-btn')
+    this.presetErrorSpan = $(containerSelector + ' .preset-error-span')
+    this.presetErrorMsg = $(containerSelector + ' .preset-error-msg')
     
     if (this.options.hideTitle) {
       this.formTitle.hide()
@@ -83,6 +92,16 @@ class AutomaticCollationTableSettingsForm {
     this.allButton.on('click', this.genOnClickAllButton())
     this.noneButton.on('click', this.genOnClickNoneButton())
     this.ignorePunctuationCheckbox.on('click', this.genOnClickIgnorePunctuationCheckbox())
+    
+    if (this.options.isPreset) {
+      this.setPresetTitle()
+    }
+    this.editPresetButton.on('click', this.genOnClickEditPresetButton())
+    this.presetCancelButton.on('click', this.genOnClickPresetCancelButton())
+    this.presetInputText.on('keyup', this.genOnKeyUpPresetInputText())
+    this.presetSaveButton.on('click', this.genOnClickPresetSaveButton())
+    this.presetSave2Button.on('click', this.genOnClickPresetSave2Button())    
+    //this.on('settings-change', function() { console.log('Settings change')})
   }
   
   
@@ -106,6 +125,15 @@ class AutomaticCollationTableSettingsForm {
     options.formTitle = 'Automatic Collation Settings'
     options.applyButtonText = 'Apply'
     options.hideTitle = false
+    options.isPreset = false
+    options.preset = { 
+      id: -1, 
+      title: '', 
+      userId: -1, 
+      userName: 'nouser', 
+      editable: false
+    }
+    options.noPresetTitle = '--- [none] ---'
     return options
   }
   
@@ -146,6 +174,14 @@ class AutomaticCollationTableSettingsForm {
       cleanOptions.applyButtonText = inputOptions.applyButtonText
     }
     
+    if (typeof(inputOptions.isPreset) === 'boolean') {
+      cleanOptions.isPreset = inputOptions.isPreset
+    }
+    
+    if (typeof(inputOptions.preset) === 'object') {
+      cleanOptions.preset = inputOptions.preset
+    }
+    
     return cleanOptions
     
   }
@@ -165,6 +201,21 @@ class AutomaticCollationTableSettingsForm {
   
   isHidden() {
     return this.container.hasClass('hidden')
+  }
+  
+  setPresetTitle() {
+    if (this.options.isPreset) {
+      if (this.options.preset.editable) {
+        this.presetTitle.html(this.options.preset.title)
+      } else {
+        this.presetTitle.html(this.options.preset.title + ' <small><em>(' + 
+                this.options.preset.userName + ')</em></small>')
+      }
+    } else {
+      this.presetTitle.html(this.options.noPresetTitle)
+    }
+      
+    
   }
   
   setSettings(settings = false) {
@@ -442,6 +493,105 @@ class AutomaticCollationTableSettingsForm {
     }
   }
   
+  genOnClickEditPresetButton() {
+    let thisObject = this
+    return function() {
+      // set up mini form
+      thisObject.presetInputText.val(thisObject.options.preset.title)
+      thisObject.presetSaveButton.removeClass('disabled')
+      thisObject.presetSave2Button.addClass('hidden')
+      thisObject.presetErrorSpan.addClass('hidden')
+      if (thisObject.options.isPreset && thisObject.options.preset.editable) {
+        thisObject.presetSaveButton.html('Update Preset')
+      } else {
+        thisObject.presetInputText.val('My Preset ' + Math.floor(10000*Math.random()))
+        thisObject.presetSaveButton.html('Save as New Preset')
+      }
+      
+      // show edit preset mini form
+      thisObject.editPresetDiv.removeClass('hidden')
+      // hide title and edit button
+      thisObject.editPresetButton.addClass('hidden')
+      thisObject.presetTitle.addClass('hidden')
+    }
+  }
+  
+  genOnKeyUpPresetInputText() {
+    let thisObject = this
+    return function() {
+      let presetText = thisObject.normalizePresetTitle(thisObject.presetInputText.val())
+      
+      if (presetText === '') {
+        console.log('Empty preset title')
+        thisObject.presetSaveButton.addClass('disabled')
+        thisObject.presetSave2Button.addClass('disabled')
+        thisObject.presetErrorMsg.html('Preset name should not be empty')
+        thisObject.presetErrorSpan.removeClass('hidden')
+      } else {
+        thisObject.presetSaveButton.removeClass('disabled')
+        thisObject.presetSave2Button.removeClass('disabled')
+        thisObject.presetErrorSpan.addClass('hidden')
+      }
+      if (!thisObject.options.isPreset) {
+        return true
+      }
+      if (!thisObject.options.preset.editable) {
+        return true;
+      }
+      
+      if (presetText !== thisObject.options.preset.title) {
+        console.log('Change in preset title')
+        thisObject.presetSaveButton.html('Update and Rename Preset')
+        thisObject.presetSave2Button.removeClass('hidden')
+      } else {
+        console.log('Back to initial preset title')
+        thisObject.presetSaveButton.html('Update Preset')
+        thisObject.presetSave2Button.addClass('hidden')
+      }
+    }
+  }
+  
+  genOnClickPresetSaveButton() {
+    let thisObject = this
+    return function() {
+      let newPresetTitle = thisObject.normalizePresetTitle(thisObject.presetInputText.val())
+      
+      if (!thisObject.options.isPreset || !thisObject.options.preset.editable) {
+        console.log('Saving to a new preset: ' + newPresetTitle)
+        return false
+      }
+      console.log('Updating current preset')
+    }   
+  }
+  
+  genOnClickPresetSave2Button() {
+    let thisObject = this
+    return function() {
+      if (!thisObject.options.isPreset || !thisObject.options.preset.editable) {
+        console.error('Click on save 2 on non-editable or non-preset')
+        return false
+      }
+      console.log('Saving existing preset to a new one')
+    }   
+ }   
+    
+  genOnClickPresetCancelButton() {
+    let thisObject = this
+    return function() {
+      // hide edit preset mini form
+      thisObject.editPresetDiv.addClass('hidden')
+      // show title and edit button
+      thisObject.editPresetButton.removeClass('hidden')
+      thisObject.presetTitle.removeClass('hidden')
+    }
+  }
+  
+  normalizePresetTitle(title) {
+    let normalizedTitle = title
+    normalizedTitle = normalizedTitle.replace(/^\s+|\s+$/g, "")
+    normalizedTitle = normalizedTitle.replace(/\s+/g, " ")
+    return normalizedTitle
+  }
   
   //----------------------------------------------------------------
   // Drag and Drop Functions
@@ -615,6 +765,28 @@ class AutomaticCollationTableSettingsForm {
           <div class="checkbox">
             <label><input type="checkbox" class="ignorepunct-cb">Ignore Punctuation</label>
           </div>
+            <div class="preset-buttons-div">
+         <b>Preset</b>: <span class="preset-title">--- [ none ] ---</span>
+            <button type="button" class="btn btn-default btn-xs edit-preset-btn">
+            Edit
+            </button>
+
+      <span class="edit-preset-div hidden">
+            <input type="text" class="preset-input-text" value="--"></input>
+            <button type="button" class="btn btn-default btn-xs preset-save-btn">
+              Save as Preset
+            </button>
+      <button type="button" class="btn btn-default btn-xs preset-save2-btn hidden">
+              Save as New Preset
+            </button>
+      <button type="button" class="btn btn-default btn-xs preset-cancel-btn">
+              Cancel
+            </button>
+      <span class="text-danger preset-error-span hidden">
+        <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
+        <span class="preset-error-msg"></span></span>
+      </span>
+      </div>
           <button type="button" class="btn btn-primary btn-sm apply-btn">
             {{applyButtonText}}
           </button>
@@ -622,9 +794,7 @@ class AutomaticCollationTableSettingsForm {
             Cancel
           </button>
           &nbsp;&nbsp;&nbsp;
-      <button type="button" class="btn btn-default btn-xs save-preset-btn">
-        Save as Preset
-      </button>
+
         </form>
       <div class="warningdiv"></div>
 `

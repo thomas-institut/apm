@@ -160,7 +160,7 @@ class ChunkPage {
                urltext: 'All witnesses',
                urltitle: 'Open automatic collation table in new tab',
                availableWitnesses: this.langs[l].availableWitnesses,
-               preset: false,
+               isPreset: false,
                actSettings : { 
                  lang: l,
                  work: this.options.work,
@@ -180,16 +180,16 @@ class ChunkPage {
         for(const w of this.langs[l].availableWitnesses) {
           apiCallOptions.witnesses.push(parseInt(w.id))
         }
-        console.log('Calling presets API')
-        console.log(apiCallOptions)
+        //console.log('Calling presets API')
+        //console.log(apiCallOptions)
         $.post(
           this.getPresetsUrl, 
           { data: JSON.stringify(apiCallOptions) }
         )
         .done(function (data) { 
-          console.log('Presets retrieved for ' + langName + ' in ' + data.runTime + 'ms')
-          console.log('Got ' + data.presets.length + ' presets')
-          console.log(data.presets)
+          //console.log('Presets retrieved for ' + langName + ' in ' + data.runTime + 'ms')
+          //console.log('Got ' + data.presets.length + ' presets')
+          //console.log(data.presets)
           for(const pr of data.presets) {
             let witnessesToInclude = []
             for (const wId of pr.data.witnesses) {
@@ -210,10 +210,17 @@ class ChunkPage {
                lang: l,
                name: langName,
                url:  thisObject.pathFor.siteCollationTablePreset(thisObject.options.work, thisObject.options.chunk, pr.presetId),
-               urltext: pr.title + ' <small><i>(' + pr.userName + ')</i></small>',
+               urltext: pr.title + ' <small><i>(Preset by ' + pr.userName + ')</i></small>',
                urltitle:  'Open collation table in new tab', 
                availableWitnesses: thisObject.langs[l].availableWitnesses,
-               preset: { id: pr.presetId, userId: pr.userId },
+               isPreset: true,
+               preset: { 
+                 id: pr.presetId, 
+                 title: pr.title, 
+                 userId: pr.userId, 
+                 userName: pr.userName,
+                 editable: (pr.userId === thisObject.options.userId)
+               },
                actSettings : { 
                  lang: l,
                  work: thisObject.options.work,
@@ -270,6 +277,8 @@ class ChunkPage {
           initialSettings: urls[u].actSettings,
           availableWitnesses: urls[u].availableWitnesses,
           hideTitle: true,
+          isPreset: urls[u].isPreset,
+          preset: urls[u].preset,
           applyButtonText: 'Generate Collation'
         })
        $('#' + liId  + ' .cterasepresetbutton').on('click', function() { 

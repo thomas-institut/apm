@@ -204,6 +204,20 @@ class DataTablePresetManager extends PresetManager {
         return $this->createPresetFromDataTableRow($row);
     }
     
+    public function updatePresetById(int $id, Preset $updatedPreset) {
+        $currentPreset = $this->getPresetById($id);
+        if ($currentPreset === false) {
+            return false;
+        }
+        $updatedRow = $this->createDataTableRowFromPreset($updatedPreset);
+        $updatedRow['id'] = $currentPreset->getId();
+        return $this->dataTable->updateRow($updatedRow);
+    }
+    
+    public function erasePresetById(int $id) {
+        return $this->dataTable->deleteRow($id);
+    }
+    
     
     /**
      * PROTECTED METHODS
@@ -251,7 +265,7 @@ class DataTablePresetManager extends PresetManager {
             ];
         
         foreach($this->expandedKeys as $key => $fieldName) {
-            $theRow[$fieldName] = $keyArray[$key];
+            $theRow[$fieldName] = isset($keyArray[$key]) ? $keyArray[$key] : '';
         }
         return $theRow;
     }

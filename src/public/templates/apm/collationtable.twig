@@ -37,7 +37,9 @@ $(document).ready(function()
             {   urlGen: urlGenerator, 
                 availableWitnesses: availableWitnesses,
                 loadNow: true, 
-                includeExperimental: includeExperimental
+                includeExperimental: includeExperimental,
+                userId: parseInt({{userinfo.id}})
+                
             }, 
             apiCallOptions
     )

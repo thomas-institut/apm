@@ -290,11 +290,20 @@ $app->group('/api', function (){
         )
         ->setName('api.presets.get');
     
+    $this->get('/presets/delete/{id}', 
+        '\APM\Api\ApiPresets:deletePreset'
+        )
+        ->setName('api.presets.delete');
+    
     $this->post('/presets/act/get', 
         '\APM\Api\ApiPresets:getAutomaticCollationPresets'
         )
         ->setName('api.presets.act.get');
     
+    $this->post('/presets/post', 
+        '\APM\Api\ApiPresets:savePreset'
+        )
+        ->setName('api.presets.post');
     
     // ------- ICONS -----------
     

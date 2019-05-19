@@ -89,7 +89,9 @@ class AutomaticCollationTable {
     this.editSettingsFormManager =  new AutomaticCollationTableSettingsForm({
         containerSelector : this.editSettingsFormSelector, 
         availableWitnesses: this.availableWitnesses,
-        langDef: this.options.langDef
+        langDef: this.options.langDef,
+        urlGenerator: this.options.urlGen,
+        userId:  this.options.userId
       })
     
     this.editSettingsButton.on('click', function () { 
@@ -157,6 +159,7 @@ class AutomaticCollationTable {
     options.loadNow = false
     options.urlGen = null
     options.includeExperimental = false
+    options.userId = -1
     
     return options
   }
@@ -182,6 +185,10 @@ class AutomaticCollationTable {
     
     if (typeof(options.includeExperimental) === 'boolean') {
       cleanOptions.includeExperimental = options.includeExperimental
+    }
+    
+    if(typeof(options.userId) === 'number'){
+      cleanOptions.userId = options.userId
     }
     
     return cleanOptions

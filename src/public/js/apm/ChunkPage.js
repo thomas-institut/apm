@@ -279,7 +279,9 @@ class ChunkPage {
           hideTitle: true,
           isPreset: urls[u].isPreset,
           preset: urls[u].preset,
-          applyButtonText: 'Generate Collation'
+          applyButtonText: 'Generate Collation',
+          urlGenerator: this.options.urlGenerator,
+          userId: this.options.userId
         })
        $('#' + liId  + ' .cterasepresetbutton').on('click', function() { 
             $('#' + liId + '-a').addClass('disabled')
@@ -297,7 +299,17 @@ class ChunkPage {
             $('#' + liId + ' .ctsettingsbutton').removeClass('disabled')
           })
           $(divSelector +  ' .button-yes').on('click', function(){
-            thisObject.updateCollationTableLinks()
+            $.get(
+              thisObject.pathFor.apiDeletePreset(urls[u].preset.id)
+            )
+            .done( function (data){
+              thisObject.updateCollationTableLinks()
+            })
+            .fail(function(resp) {
+              console.error('Cannot delete preset')
+              console.log(resp)
+            })
+            
           })
           
         })
@@ -326,7 +338,9 @@ class ChunkPage {
                   thisObject.pathFor.siteCollationTableCustom(thisObject.options.work, thisObject.options.chunk, urls[u].lang) + '">' +
                   '<input type="text" name="data" value=\'' + JSON.stringify({options: e.detail})  + '\'></form>')
           $('#theform').submit()
-          
+        })
+        ctSettingsFormManager.on('preset-new', function(){
+          thisObject.updateCollationTableLinks()
         })
       }
     }

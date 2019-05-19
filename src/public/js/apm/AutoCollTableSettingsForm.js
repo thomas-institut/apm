@@ -101,7 +101,6 @@ class AutomaticCollationTableSettingsForm {
     this.presetInputText.on('keyup', this.genOnKeyUpPresetInputText())
     this.presetSaveButton.on('click', this.genOnClickPresetSaveButton())
     this.presetSave2Button.on('click', this.genOnClickPresetSave2Button())    
-    //this.on('settings-change', function() { console.log('Settings change')})
   }
   
   
@@ -134,6 +133,8 @@ class AutomaticCollationTableSettingsForm {
       editable: false
     }
     options.noPresetTitle = '--- [none] ---'
+    options.urlGenerator = {}
+    options.userId = -1
     return options
   }
   
@@ -182,6 +183,13 @@ class AutomaticCollationTableSettingsForm {
       cleanOptions.preset = inputOptions.preset
     }
     
+    if (typeof(inputOptions.urlGenerator) === 'object') {
+      cleanOptions.urlGenerator = inputOptions.urlGenerator
+    }
+    
+    if (typeof(inputOptions.userId) === 'number') {
+      cleanOptions.userId = inputOptions.userId
+    }
     return cleanOptions
     
   }
@@ -522,7 +530,7 @@ class AutomaticCollationTableSettingsForm {
       let presetText = thisObject.normalizePresetTitle(thisObject.presetInputText.val())
       
       if (presetText === '') {
-        console.log('Empty preset title')
+        //console.log('Empty preset title')
         thisObject.presetSaveButton.addClass('disabled')
         thisObject.presetSave2Button.addClass('disabled')
         thisObject.presetErrorMsg.html('Preset name should not be empty')
@@ -540,11 +548,11 @@ class AutomaticCollationTableSettingsForm {
       }
       
       if (presetText !== thisObject.options.preset.title) {
-        console.log('Change in preset title')
-        thisObject.presetSaveButton.html('Update and Rename Preset')
+        //console.log('Change in preset title')
+        thisObject.presetSaveButton.html('Update/Rename Preset')
         thisObject.presetSave2Button.removeClass('hidden')
       } else {
-        console.log('Back to initial preset title')
+        //console.log('Back to initial preset title')
         thisObject.presetSaveButton.html('Update Preset')
         thisObject.presetSave2Button.addClass('hidden')
       }
@@ -555,12 +563,89 @@ class AutomaticCollationTableSettingsForm {
     let thisObject = this
     return function() {
       let newPresetTitle = thisObject.normalizePresetTitle(thisObject.presetInputText.val())
-      
+      let currentSettings = thisObject.getSettings()
+      let witnessIdArray =[] 
+      for(const w of currentSettings.witnesses) {
+        witnessIdArray.push(parseInt(w.id))
+      }
       if (!thisObject.options.isPreset || !thisObject.options.preset.editable) {
         console.log('Saving to a new preset: ' + newPresetTitle)
+        let apiCallOptions = {
+          command: 'new',
+          tool: 'automaticCollation',
+          userId: thisObject.options.userId,
+          title: newPresetTitle,
+          presetId: -1,
+          presetData : {
+            lang: currentSettings.lang,
+            witnesses: witnessIdArray,
+            ignorePunctuation: currentSettings.ignorePunctuation
+          }
+        }
+        console.log(apiCallOptions)
+        $.post(
+          thisObject.options.urlGenerator.apiPostPresets(), 
+          { data: JSON.stringify(apiCallOptions) }
+        ).done(function(data){
+          console.log('New preset API call successful')
+          console.log(data)
+          thisObject.dispatchEvent('preset-new', data)
+          thisObject.presetTitle.html(newPresetTitle)
+          thisObject.options.isPreset = true
+          thisObject.options.preset = {
+            id: data.presetId,
+            title: newPresetTitle,
+            userId: thisObject.options.userId,
+            userName: 'current user', // TODO: change this
+            editable: true
+          }
+          // hide edit preset mini form
+          thisObject.editPresetDiv.addClass('hidden')
+          // show title and edit button
+          thisObject.editPresetButton.removeClass('hidden')
+          thisObject.presetTitle.removeClass('hidden')
+          thisObject.presetTitle.removeClass('hidden')
+          
+        }).fail(function(resp) {
+          console.error('New preset API call failed')
+          console.log(resp)
+        })
         return false
       }
       console.log('Updating current preset')
+      let apiCallOptions = {
+          command: 'update',
+          tool: 'automaticCollation',
+          userId: thisObject.options.userId,
+          title: newPresetTitle,
+          presetId: thisObject.options.preset.id,
+          presetData : {
+            lang: currentSettings.lang,
+            witnesses: witnessIdArray,
+            ignorePunctuation: currentSettings.ignorePunctuation
+          }
+        }
+        console.log(apiCallOptions)
+        $.post(
+          thisObject.options.urlGenerator.apiPostPresets(), 
+          { data: JSON.stringify(apiCallOptions) }
+        ).done(function(data){
+          console.log('Preset updated successfully')
+          console.log(data)
+          thisObject.dispatchEvent('preset-updated', data)
+          thisObject.presetTitle.html(newPresetTitle)
+          thisObject.options.preset.title = newPresetTitle
+          // hide edit preset mini form
+          thisObject.editPresetDiv.addClass('hidden')
+          // show title and edit button
+          thisObject.editPresetButton.removeClass('hidden')
+          thisObject.presetTitle.removeClass('hidden')
+          thisObject.presetTitle.removeClass('hidden')
+        }).fail(function(resp) {
+          console.error('Preset POST failed')
+          console.log(resp)
+        })
+      
     }   
   }
   
@@ -572,6 +657,45 @@ class AutomaticCollationTableSettingsForm {
         return false
       }
       console.log('Saving existing preset to a new one')
+      let newPresetTitle = thisObject.normalizePresetTitle(thisObject.presetInputText.val())
+      let currentSettings = thisObject.getSettings()
+      let witnessIdArray =[] 
+      for(const w of currentSettings.witnesses) {
+        witnessIdArray.push(parseInt(w.id))
+      }
+      let apiCallOptions = {
+        command: 'new',
+        tool: 'automaticCollation',
+        userId: thisObject.options.userId,
+        title: newPresetTitle,
+        presetId: -1,
+        presetData : {
+          lang: currentSettings.lang,
+          witnesses: witnessIdArray,
+          ignorePunctuation: currentSettings.ignorePunctuation
+        }
+      }
+      console.log(apiCallOptions)
+      $.post(
+        thisObject.options.urlGenerator.apiPostPresets(), 
+        { data: JSON.stringify(apiCallOptions) }
+      ).done(function(data){
+        console.log('New preset API call successful')
+        console.log(data)
+        thisObject.dispatchEvent('preset-new', data)
+        thisObject.presetTitle.html(newPresetTitle)
+        thisObject.options.preset.title = newPresetTitle
+          // hide edit preset mini form
+        thisObject.editPresetDiv.addClass('hidden')
+          // show title and edit button
+        thisObject.editPresetButton.removeClass('hidden')
+        thisObject.presetTitle.removeClass('hidden')
+        thisObject.presetTitle.removeClass('hidden')
+      }).fail(function(resp) {
+        console.error('New preset API call failed')
+        console.log(resp)
+      })
+      return false
     }   
  }   
     
@@ -739,7 +863,7 @@ class AutomaticCollationTableSettingsForm {
   //----------------------------------------------------------------
   
   getFormTemplate() {
-    let randomNumber = Math.floor(Math.random() * 10000) +1
+    let randomNumber = Math.floor(Math.random() * 1000000) +1
     return  Twig.twig({
        id: 'theForm' + randomNumber,
       data: `

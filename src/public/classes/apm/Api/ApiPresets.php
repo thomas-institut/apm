@@ -25,8 +25,9 @@ use \Psr\Http\Message\ResponseInterface as Response;
 
 use AverroesProject\Profiler\ApmProfiler;
 use APM\System\ApmSystemManager;
-use APM\Presets\DataTablePresetManager;
+use APM\Presets\Preset;
 use APM\Math\Set;
+use APM\System\PresetFactory;
 
 /**
  * Description of ApiPresets
@@ -38,6 +39,17 @@ class ApiPresets extends ApiController
     
     const API_ERROR_UNRECOGNIZED_TOOL = 4001;
     const API_ERROR_NOT_ENOUGH_WITNESSES = 4002;
+    const API_ERROR_UNKNOWN_COMMAND = 4003;
+    const API_ERROR_INVALID_PRESET_DATA = 4004;
+    const API_ERROR_PRESET_ALREADY_EXISTS = 4005;
+    const API_ERROR_CANNOT_SAVE_PRESET = 4006;
+    const API_ERROR_PRESET_DOES_NOT_EXIST = 4007;
+    const API_ERROR_PRESET_MISMATCH = 4008;
+    const API_ERROR_CANNOT_DELETE = 4009;
+    
+    
+    const COMMAND_NEW = 'new';
+    const COMMAND_UPDATE = 'update';
     
     /**
      * API call to get all the presets by tool 
@@ -218,4 +230,156 @@ class ApiPresets extends ApiController
             ]);
     }
     
+    public function  savePreset(Request $request, 
+            Response $response, $next) {
+        
+        $apiCall = 'savePreset';
+        $profiler = new ApmProfiler($apiCall, $this->db);
+        $inputData = $this->checkAndGetInputData($request, $response, $apiCall, ['command', 'tool',  'userId', 'title', 'presetId', 'presetData']);
+        if (!is_array($inputData)) {
+            return $inputData;
+        }
+        
+        $command = $inputData['command'];
+        
+        // check that command is valid
+        if ($command !== self::COMMAND_NEW && $command !== self::COMMAND_UPDATE) {
+            $this->logger->error("Unknown command " . $command,
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_UNKNOWN_COMMAND,
+                      'data' => $inputData ]);
+            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_UNKNOWN_COMMAND]);
+        }
+        
+        $userId = intval($inputData['userId']);
+        $tool = $inputData['tool'];
+        $title = $inputData['title'];
+        
+        // check that tool is valid
+        if (!$this->sm->isToolValid($tool)){
+            $this->logger->error("Unrecognized tool " . $tool,
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_UNRECOGNIZED_TOOL,
+                      'data' => $inputData ]);
+            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_UNRECOGNIZED_TOOL]);
+        }
+        
+        
+        $presetId = intval($inputData['presetId']);
+        $data = $inputData['presetData'];
+        
+        // check that preset data is an array and that is not empty
+        if (!is_array($data) || count($data)===0) {
+            $this->logger->error("Invalid preset data",
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_INVALID_PRESET_DATA,
+                      'data' => $inputData ]);
+            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_INVALID_PRESET_DATA]);
+        }
+        
+        $pm = $this->sm->getPresetsManager();
+        $pf = new PresetFactory();
+        if ($command === self::COMMAND_NEW) {
+            $preset = $pf->create($tool, $userId, $title, $data);
+            if ($pm->correspondingPresetExists($preset)) {
+                $this->logger->error("Preset already exists",
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_PRESET_ALREADY_EXISTS,
+                      'data' => $inputData ]);
+                return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_PRESET_ALREADY_EXISTS]);
+            }
+            if (!$pm->addPreset($preset)) {
+                $this->logger->error("Could not save new preset",
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_CANNOT_SAVE_PRESET,
+                      'data' => $inputData ]);
+                return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_CANNOT_SAVE_PRESET]);
+            }
+            // success
+            $newId = $pm->getPreset($tool, $userId, $title)->getId();
+            $profiler->log($this->logger);
+            return $response->withStatus(200)->withJson(['presetId' => $newId]);
+        }
+        
+        // command = update preset
+        
+        // check that userId is the same as the current preset's userId
+        if (intval($this->ci->userId) !== $userId) {
+            $this->logger->error("API user not authorized to update preset",
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_NOT_AUTHORIZED,
+                      'data' => $inputData ]);
+            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_NOT_AUTHORIZED]);
+        }
+        
+        $currentPreset = $pm->getPresetById($presetId);
+        if ($currentPreset === false) {
+            $this->logger->error("Preset with given Id does not exist",
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_PRESET_DOES_NOT_EXIST,
+                      'data' => $inputData ]);
+            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_PRESET_DOES_NOT_EXIST]);
+        }
+        if ($currentPreset->getTool() !== $tool || $currentPreset->getUserId() !== $userId) {
+            $this->logger->error("Preset to update does not match existing preset",
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_PRESET_MISMATCH,
+                      'data' => $inputData ]);
+            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_PRESET_MISMATCH]);
+        }
+        
+        
+        $updatedPreset = $pf->create($tool, $userId, $title, $data);
+        if (!$pm->updatePresetById($presetId, $updatedPreset)) {
+            $this->logger->error("Could not update preset",
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_CANNOT_SAVE_PRESET,
+                      'data' => $inputData ]);
+                return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_CANNOT_SAVE_PRESET]);
+        }
+        
+        // success
+        $profiler->log($this->logger);
+        return $response->withStatus(200)->withJson(['presetId' => $presetId]);
+    }
+    
+     public function deletePreset(Request $request, 
+            Response $response, $next) {
+        $apiCall = 'deletePreset';
+        $profiler = new ApmProfiler($apiCall, $this->db);
+        $presetId = intval($request->getAttribute('id'));
+        
+        $pm = $this->sm->getPresetsManager();
+        
+        $currentPreset = $pm->getPresetById($presetId);
+        if ($currentPreset === false) {
+            $this->logger->error("Preset with given Id does not exist",
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_PRESET_DOES_NOT_EXIST,
+                      'presetId'  => $presetId ]);
+            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_PRESET_DOES_NOT_EXIST]);
+        }
+        if ($currentPreset->getUserId() !== intval($this->ci->userId)) {
+            $this->logger->error("API user not authorized to delete preset",
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_NOT_AUTHORIZED,
+                      'presetUserId' => $currentPreset->getUserId()
+                    ]);
+            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_NOT_AUTHORIZED]);
+        }
+        
+        if (!$pm->erasePresetById($presetId)) {
+            $this->logger->error("Cannot delete preset",
+                    [ 'apiUserId' => $this->ci->userId, 
+                      'apiError' => self::API_ERROR_CANNOT_DELETE,
+                      'presetId'  => $presetId ]);
+            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_CANNOT_DELETE]);
+        }
+        // success
+        $profiler->log($this->logger);
+        return $response->withStatus(200)->withJson(['presetId' => $presetId]);
+    }
+    
 }
+
+

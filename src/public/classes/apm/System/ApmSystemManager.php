@@ -212,7 +212,7 @@ class ApmSystemManager extends SystemManager {
         $presetsManagerDataTable = new \DataTable\MySqlDataTable($this->dbConn, 
                         $this->tableNames[self::TABLE_PRESETS]);
         $this->presetsManager = 
-                new DataTablePresetManager($presetsManagerDataTable);
+                new DataTablePresetManager($presetsManagerDataTable, ['lang' => 'key1']);
         
         // Load plugins
         

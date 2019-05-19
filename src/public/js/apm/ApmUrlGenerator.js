@@ -34,6 +34,14 @@ class ApmUrlGenerator {
     return this.base + '/api/presets/get'
   }
   
+  apiPostPresets() {
+    return this.base + '/api/presets/post'
+  }
+  
+  apiDeletePreset(id) {
+    return this.base + '/api/presets/delete/' + id
+  }
+  
   apiGetAutomaticCollationPresets() {
     return this.base + '/api/presets/act/get'
   }

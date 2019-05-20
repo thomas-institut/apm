@@ -33,16 +33,20 @@ $(document).ready(function()
     let urlGenerator = new ApmUrlGenerator('{{baseurl}}')
     let includeExperimental = ({{canViewExperimentalData}} === 1)
     
-    let miniApp = new AutomaticCollationTable(
-            {   urlGen: urlGenerator, 
-                availableWitnesses: availableWitnesses,
-                loadNow: true, 
-                includeExperimental: includeExperimental,
-                userId: parseInt({{userinfo.id}})
-                
-            }, 
-            apiCallOptions
-    )
+    let actOptions =  {   
+        urlGen: urlGenerator, 
+        availableWitnesses: availableWitnesses,
+        loadNow: true, 
+        includeExperimental: includeExperimental,
+        userId: parseInt({{userinfo.id}}),
+        isPreset:  ({{isPreset}} !== 0)
+    }
+    
+    if (actOptions.isPreset) {
+        actOptions.preset = JSON.parse("{{preset|json_encode|e('js')}}")
+    }
+    
+    let miniApp = new AutomaticCollationTable(actOptions, apiCallOptions)
     
 } 
 );

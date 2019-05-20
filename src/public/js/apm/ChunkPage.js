@@ -210,7 +210,7 @@ class ChunkPage {
                lang: l,
                name: langName,
                url:  thisObject.pathFor.siteCollationTablePreset(thisObject.options.work, thisObject.options.chunk, pr.presetId),
-               urltext: pr.title + ' <small><i>(Preset by ' + pr.userName + ')</i></small>',
+               urltext: pr.title + ' <small><i>(' + pr.userName + ')</i></small>',
                urltitle:  'Open collation table in new tab', 
                availableWitnesses: thisObject.langs[l].availableWitnesses,
                isPreset: true,

@@ -604,11 +604,12 @@ class AutomaticCollationTableSettingsForm {
           // show title and edit button
           thisObject.editPresetButton.removeClass('hidden')
           thisObject.presetTitle.removeClass('hidden')
-          thisObject.presetTitle.removeClass('hidden')
           
         }).fail(function(resp) {
           console.error('New preset API call failed')
           console.log(resp)
+          thisObject.presetErrorMsg.html('Cannot create new preset')
+          thisObject.presetErrorSpan.removeClass('hidden')
         })
         return false
       }
@@ -642,6 +643,14 @@ class AutomaticCollationTableSettingsForm {
           thisObject.presetTitle.removeClass('hidden')
           thisObject.presetTitle.removeClass('hidden')
         }).fail(function(resp) {
+          if (resp.status === 409 && resp.responseJSON.error === 4007) {
+            console.error('Cannot update preset: preset not found')
+            thisObject.presetErrorMsg.html('Preset not in database, did you erase it?')
+            thisObject.presetErrorSpan.removeClass('hidden')
+            thisObject.options.isPreset = false
+            thisObject.setPresetTitle()
+            return false
+          }
           console.error('Preset POST failed')
           console.log(resp)
         })
@@ -694,6 +703,8 @@ class AutomaticCollationTableSettingsForm {
       }).fail(function(resp) {
         console.error('New preset API call failed')
         console.log(resp)
+        thisObject.presetErrorMsg.html('Cannot create new preset')
+        thisObject.presetErrorSpan.removeClass('hidden')
       })
       return false
     }   

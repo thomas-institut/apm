@@ -22,6 +22,8 @@ class AutomaticCollationTable {
     console.log('ACT mini app starting')
     console.log('Available Witnesses:')
     console.log(options.availableWitnesses)
+    console.log('ACT options')
+    console.log(options)
     
     this.rtlClass = 'rtltext'
     this.ltrClass = 'ltrtext'
@@ -86,13 +88,18 @@ class AutomaticCollationTable {
     })
     
     
-    this.editSettingsFormManager =  new AutomaticCollationTableSettingsForm({
-        containerSelector : this.editSettingsFormSelector, 
-        availableWitnesses: this.availableWitnesses,
-        langDef: this.options.langDef,
-        urlGenerator: this.options.urlGen,
-        userId:  this.options.userId
-      })
+    let actSettingsFormOptions = {
+      containerSelector : this.editSettingsFormSelector, 
+      availableWitnesses: this.availableWitnesses,
+      langDef: this.options.langDef,
+      urlGenerator: this.options.urlGen,
+      userId:  this.options.userId,
+      isPreset: this.options.isPreset,
+    }
+    if (this.options.isPreset) {
+      actSettingsFormOptions.preset = this.options.preset
+    }
+    this.editSettingsFormManager =  new AutomaticCollationTableSettingsForm(actSettingsFormOptions)
     
     this.editSettingsButton.on('click', function () { 
       if (thisObject.editSettingsFormManager.isHidden()) {
@@ -160,7 +167,14 @@ class AutomaticCollationTable {
     options.urlGen = null
     options.includeExperimental = false
     options.userId = -1
-    
+    options.isPreset = false
+    options.preset = { 
+      id: -1, 
+      title: '', 
+      userId: -1, 
+      userName: 'nouser', 
+      editable: false
+    }
     return options
   }
   
@@ -189,6 +203,14 @@ class AutomaticCollationTable {
     
     if(typeof(options.userId) === 'number'){
       cleanOptions.userId = options.userId
+    }
+    
+    if(typeof(options.isPreset) === 'boolean'){
+      cleanOptions.isPreset = options.isPreset
+    }
+    
+    if(typeof(options.preset) === 'object'){
+      cleanOptions.preset = options.preset
     }
     
     return cleanOptions

@@ -63,7 +63,8 @@ class SiteCollationTable extends SiteController
             'lang' => $language,
             'ignorePunctuation' => $ignorePunctuation,
             'witnesses' => [], 
-            'partialCollation' => false
+            'partialCollation' => false,
+            'isPreset' => false
         ];
          // get witnesses to include
         if (isset($args['docs'])) {
@@ -108,14 +109,24 @@ class SiteCollationTable extends SiteController
         $presetData = $preset->getData();
         $lang =  $presetData['lang'];
         $ignorePunctuation = $presetData['ignorePunctuation'];
-
+        
+        $presetUserName = $this->dataManager->um->getUserInfoByUserId($preset->getUserId())['fullname'];
+        
         $collationPageOptions = [
             'work' => $workId,
             'chunk' => $chunkNumber,
             'lang' => $lang,
             'ignorePunctuation' => $ignorePunctuation,
             'witnesses' => [], 
-            'partialCollation' => false
+            'partialCollation' => false,
+            'isPreset' => true,
+            'preset' => [ 
+                'id' => $preset->getId(), 
+                'title' => $preset->getTitle(),
+                'userId' => $preset->getUserId(),
+                'userName' => $presetUserName,
+                'editable' => ( intval($this->userInfo['id']) === $preset->getUserId())
+            ]
         ];
          // get witnesses to include
 
@@ -180,6 +191,9 @@ class SiteCollationTable extends SiteController
                 ]);
             }
         }
+        
+        $collationPageOptions['isPreset'] = false;
+        
         return $this->getCollationTablePage($collationPageOptions, $response);
     }
     
@@ -244,21 +258,27 @@ class SiteCollationTable extends SiteController
         
         $profiler->log($this->logger);
         
-        return $this->renderPage($response, 'apm/collationtable.twig', [
-                'work' => $workId,
-                'chunk' => $chunkNumber,
-                'lang' => $language,
-                'apiCallOptions' => $apiCallOptions,
-                'langName' => $langInfo['name'],
-                'isPartial' => $partialCollation,
-                'rtl' => $langInfo['rtl'],
-                'work_info' => $workInfo,
-                'num_docs' => $partialCollation ? count($apiCallOptions['witnesses']) : count($validWitnesses),
-                'total_num_docs' => count($validWitnesses),
-                'availableWitnesses' => $availableWitnesses,
-                'canViewExperimentalData' => $canViewExperimentalData,
-                'warnings' => $warnings
-            ]);
+        $templateOptions = [
+            'work' => $workId,
+            'chunk' => $chunkNumber,
+            'lang' => $language,
+            'apiCallOptions' => $apiCallOptions,
+            'langName' => $langInfo['name'],
+            'isPartial' => $partialCollation,
+            'isPreset' => $collationPageOptions['isPreset'],
+            'rtl' => $langInfo['rtl'],
+            'work_info' => $workInfo,
+            'num_docs' => $partialCollation ? count($apiCallOptions['witnesses']) : count($validWitnesses),
+            'total_num_docs' => count($validWitnesses),
+            'availableWitnesses' => $availableWitnesses,
+            'canViewExperimentalData' => $canViewExperimentalData,
+            'warnings' => $warnings
+        ];
+        if ($templateOptions['isPreset']) {
+            $templateOptions['preset'] = $collationPageOptions['preset'];
+        }
+        
+        return $this->renderPage($response, 'apm/collationtable.twig', $templateOptions);
     }
     
     protected function getValidWitnessDocIdsForWorkChunkLang($dm, $workId, $chunkNumber, $language) : array {

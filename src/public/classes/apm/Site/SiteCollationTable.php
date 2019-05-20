@@ -64,7 +64,7 @@ class SiteCollationTable extends SiteController
             'ignorePunctuation' => $ignorePunctuation,
             'witnesses' => [], 
             'partialCollation' => false,
-            'isPreset' => false
+            'isPreset' => 0
         ];
          // get witnesses to include
         if (isset($args['docs'])) {
@@ -119,7 +119,7 @@ class SiteCollationTable extends SiteController
             'ignorePunctuation' => $ignorePunctuation,
             'witnesses' => [], 
             'partialCollation' => false,
-            'isPreset' => true,
+            'isPreset' => 1,
             'preset' => [ 
                 'id' => $preset->getId(), 
                 'title' => $preset->getTitle(),
@@ -192,7 +192,7 @@ class SiteCollationTable extends SiteController
             }
         }
         
-        $collationPageOptions['isPreset'] = false;
+        $collationPageOptions['isPreset'] = 0;
         
         return $this->getCollationTablePage($collationPageOptions, $response);
     }
@@ -215,7 +215,7 @@ class SiteCollationTable extends SiteController
         $dm = $this->dataManager;
         
         $profiler = new ApmProfiler("AutomaticCollation-$workId-$chunkNumber-$language", $dm);
-        
+        $this->logger->debug('Automatic collation', [ 'options' => $collationPageOptions]);
         $warnings = [];
 
         

@@ -23,6 +23,8 @@ class ChunkPage {
   constructor(options) {
     
     this.options = this.getCleanOptions(options)
+    console.log('Chunk Page options')
+    console.log(options)
     
     this.includeInCollationButtonClass = 'includeincollation'
     this.ctLinksElement = $('#collationtablelinks')
@@ -244,6 +246,7 @@ class ChunkPage {
   
   fillCollationTableLinks(urls, containerId) {
     if (urls.length !== 0 ) {
+      $('#ctlinks-header').removeClass('hidden')
       let html = ''
       html += '<ul>'
       for(const u in urls) {

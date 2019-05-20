@@ -39,6 +39,7 @@ cp src/public/config.sample.php $TMP_DIR
 cp src/public/index.php $TMP_DIR
 cp src/public/package.json $TMP_DIR
 cp src/public/setup.php $TMP_DIR
+cp src/public/version.php $TMP_DIR
 
 cd $TMP
 tar cfz $TAR_NAME $DIST_NAME

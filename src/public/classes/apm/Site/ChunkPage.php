@@ -87,9 +87,9 @@ class ChunkPage extends SiteController
         
         $validCollationLangs = [];
         foreach ($goodWitnessesPerLang as $lang => $witnessLangInfo) {
-            if ($witnessLangInfo['numWitnesses'] >= 2) {
+            //if ($witnessLangInfo['numWitnesses'] >= 2) {
                 $validCollationLangs[] = $goodWitnessesPerLang[$lang];
-            }
+            //}
         }
         
         $canViewWitnessDetails = false;

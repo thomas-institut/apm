@@ -47,7 +47,7 @@ class ApmSystemManager extends SystemManager {
     const ERROR_NO_LOGFILENAME_GIVEN = 1009;
     
     // Database version
-    const DB_VERSION = 16;
+    const DB_VERSION = 17;
     
     // Tool Ids (for presets)
     const TOOL_AUTOMATIC_COLLATION = 'automaticCollation';

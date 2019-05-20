@@ -1,22 +1,14 @@
 <?php
-/**
- * Sample configuration file
- * 
- * All entries are required.
- * 
- * Edit and save to config.php
- * 
- */
 
 // SUPPORT
-$config['support-contact-name'] = 'John Doe';
-$config['support-contact-email'] = 'john@doe.com';
+$config['support_contact_name'] = '<CONTACT>';
+$config['support_contact_email'] = '<CONTACT_EMAIL>';
 
 // DATABASE ACCESS
-$config['db']['host'] = "localhost";
-$config['db']['user'] = "MYSQL USER";
+$config['db']['host'] = "HOST";
+$config['db']['user'] = "USER";
 $config['db']['pwd'] = "PASSWORD";
-$config['db']['db'] = "THE DATABASE";
+$config['db']['db'] = "DATABASE";
 
 // BASE URL
 $config['baseurl']='http://localhost:8888/public';
@@ -25,14 +17,12 @@ $config['baseurl']='http://localhost:8888/public';
 $config['default_timezone'] = "Europe/Berlin";
 
 // SLIM ERROR HANDLING
-// Might be set to false in production
 $config['displayErrorDetails'] = true;
 
-// LOG FILE  
-// The web server user should be able to create and write to the given file
-$config['logfilename'] = '/var/log/apm/apm.log';
-$config['logDebugInfo'] = false;
-$config['logInPhpErrorErrorHandler'] = true;
+// LOG FILE
+$config['log_filename'] = '/var/log/apm/apm.log';
+$config['log_include_debug_info'] = true;
+$config['log_in_php_error_handler'] = true;
 
 // LANGUAGES
 $config['languages'] = [
@@ -43,16 +33,14 @@ $config['languages'] = [
 ];
 
 // COLLATEX
-$config['collatex']['tmp'] = 'collatex/tmp';
-$config['collatex']['javaExecutable'] = '/usr/bin/java';
+$config['collatex_temp_dir'] = 'collatex/tmp';
+$config['java_executable'] = '/usr/bin/java';
 
 
-// PLUGINS
-// a plugin named 'PluginName' must be implemented as
-// a class with the fully qualified name '\PluginName' and its
-// code must reside in  ./plugins/PluginName.php
+// IMAGE SOURCE PLUGINS
 
 $config['plugins'][] = 'LocalImageSource';
 $config['plugins'][] = 'DareImageSource';
 $config['plugins'][] = 'DareDeepZoomImageSource';
 $config['plugins'][] = 'AverroesServerImageSource';
+

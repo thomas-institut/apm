@@ -44,6 +44,6 @@ $config['collatex_jar_file'] = 'collatex/bin/collatex-tools-1.7.1.jar';
 // Slim parameters
 $config['addContentLengthHeader'] = false;
 
-$config['plugin_dir'] = 'plugins';
+$config['plugin_dir'] = __DIR__ . '/plugins';
 
 $config['log_appname'] = 'APM';

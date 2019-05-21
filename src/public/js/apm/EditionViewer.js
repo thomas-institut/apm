@@ -89,6 +89,12 @@ class EditionViewer {
     
     this.typesetMainTextTokens = this.ts.typesetTokens(this.mainTextTokens)
     
+    console.log('ts Tokens')
+    console.log(this.typesetMainTextTokens)
+    
+    console.log('apparatus Array') 
+    console.log(this.apparatusArray)
+    
     for(const apparatus of this.apparatusArray) {
       for (const note of apparatus) {
         let lineNumbers = this.getLineNumbersForApparatusEntry(note, this.typesetMainTextTokens, this.ct2tsIndexMap)
@@ -145,6 +151,13 @@ class EditionViewer {
   
   
   getLineNumbersForApparatusEntry(note, tsTokens, map) {
+    if (typeof(tsTokens[map[note.start]]) === 'undefined') {
+      console.log('Found undefined')
+      console.log('note.start: ' + note.start)
+      console.log('map [note.start]: ' + map[note.start])
+      console.log('tsTokens[map[note.start] : ' + tsTokens[map[note.start]])
+      console.log('tsTokens.length: ' + tsTokens.length) 
+    }
     return { 
         start: tsTokens[map[note.start]].lineNumber, 
         end: tsTokens[map[note.end]].lineNumber

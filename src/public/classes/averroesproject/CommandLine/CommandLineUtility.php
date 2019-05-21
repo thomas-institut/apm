@@ -20,8 +20,7 @@
 
 namespace AverroesProject\CommandLine;
 
-
-use AverroesProject\Data\DatabaseChecker;
+use APM\System\ApmSystemManager;
 use AverroesProject\Data\UserManager;
 use AverroesProject\Data\DataManager;
 use Monolog\Logger;
@@ -59,13 +58,20 @@ abstract class CommandLineUtility {
         global $argv;
         
         $this->config = $config;
-        $processUser = posix_getpwuid(posix_geteuid());
+        $this->processUser = posix_getpwuid(posix_geteuid());
         $pid = posix_getpid();
         $cmd = $argv[0];
-        
-        // Logger
-        $logStream = new StreamHandler($config['logfilename'], Logger::DEBUG);
-        $this->logger = (new Logger('apm-logger'))->withName('CMD');
+
+        // System Manager 
+        $systemManager = new ApmSystemManager($config);
+
+        if ($systemManager->fatalErrorOccurred()) {
+            print "ERROR: " . $systemManager->getErrorMsg();
+            exit();
+        }
+
+        $this->logger = $systemManager->getLogger()->withName('CMD');
+        $processUser = $this->processUser;
         $this->logger->pushProcessor(
             function ($record) use($processUser, $pid, $cmd) { 
                 $record['extra']['unixuser'] = $processUser['name'];
@@ -73,37 +79,12 @@ abstract class CommandLineUtility {
                 $record['extra']['cmd'] = $cmd;
                 return $record;
         });
-        $this->logger->pushHandler($logStream);
-        $this->processUser = posix_getpwuid(posix_geteuid());
-        
-        try {
-            $this->dbh = new \PDO('mysql:dbname='. $config['db']['db'] . 
-                    ';host=' . $config['db']['host'], 
-                $config['db']['user'], 
-                $config['db']['pwd']);
-            $this->dbh->query("set character set 'utf8'");
-            $this->dbh->query("set names 'utf8'");
-        } catch (\PDOException $e) {
-            $this->exitWithError("Database connection failed: " . 
-                    $e->getMessage());
-        }
-        
-        //
-        // Check database
-        //
-        $dbChecker = new DatabaseChecker($this->dbh, $config['tables']);
+        $dbh = $systemManager->getDbConnection();
+        $hm = $systemManager->getHookManager();
 
-        if (!$dbChecker->isDatabaseInitialized()) {
-            $this->exitWithError("Database is not initialized");
-        }
-
-        if (!$dbChecker->isDatabaseUpToDate()) {
-            $this->exitWithError("Database schema not up to date");
-        }
+        // Data Manager (will be replaced completely by SystemManager at some point
+        $this->dm = new DataManager($dbh, $systemManager->getTableNames(), $this->logger, $hm, $config['langCodes']);
         
-        $hm = new \AverroesProject\Plugin\HookManager();
-        
-        $this->dm = new DataManager($this->dbh, $config['tables'], $this->logger, $hm, $config['langCodes']);
         $this->um = $this->dm->um;
     }
     

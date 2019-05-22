@@ -20,82 +20,70 @@
 
 class EditionViewer {
   
-  constructor (collationTokens, aparatusArray, rightToLeft = false, addGlue = true) {
+  constructor (userOptions) {
     console.log('Constructing Edition Viewer')
+    console.log('User options')
+    console.log(userOptions)
+    let options = this.getCleanOptions(userOptions)
+    this.options = options
     
-    this.collationTokens = collationTokens  
-    this.apparatusArray = aparatusArray
-    this.rightToLeft = rightToLeft
-
-    this.fontFamily = 'Times New Roman'
+    console.log('Options')
+    console.log(options)
     
-    this.pageWidthInCm = 21
-    
-    this.topMarginInCm = 2
-    this.leftMarginInCm = 3
-    
-    this.bottomMarginInCm = 1
-    this.rightMarginInCm = 3
-    
-    this.lineWidthInCm = this.pageWidthInCm - this.leftMarginInCm - this.rightMarginInCm 
-    
-    this.fontSizeInPts = 14
-    this.lineHeightInPts = 20
-    this.normalSpaceWidthInEms = 0.32
-    
-    this.apparatusFontSizeInPts = 11
-    this.apparatusLineHeightInPts = 15
-    
-
-    
-    this.textToLineNumbersInCm = 0.5
-    this.textToApparatusInCm = 1
-    
-    this.fontSize = Typesetter.pt2px(this.fontSizeInPts)
-    this.apparatusFontSize = Typesetter.pt2px(this.apparatusFontSizeInPts)
-    this.topMargin = Typesetter.cm2px(this.topMarginInCm)
-    this.leftMargin = Typesetter.cm2px(this.leftMarginInCm)
-    this.bottomMargin = Typesetter.cm2px(this.bottomMarginInCm)
-    this.rightMargin = Typesetter.cm2px(this.rightMarginInCm)
-    this.textToLineNumbers = Typesetter.cm2px(this.textToLineNumbersInCm)
-    this.textToApparatus = Typesetter.cm2px(this.textToApparatusInCm)
+    this.geometry = {
+      lineWidth: Typesetter.cm2px(options.pageWidthInCm - 
+              options.marginInCm.left - options.marginInCm.right),
+      mainTextLineHeight: Typesetter.pt2px(options.mainTextLineHeightInPts),
+      mainTextFontSize: Typesetter.pt2px(options.mainTextFontSizeInPts),
+      apparatusLineHeight: Typesetter.pt2px(options.apparatusLineHeightInPts),
+      apparatusFontSize: Typesetter.pt2px(options.apparatusFontSizeInPts),
+      margin: { 
+        top: Typesetter.cm2px(options.marginInCm.top),
+        left: Typesetter.cm2px(options.marginInCm.left),
+        bottom: Typesetter.cm2px(options.marginInCm.bottom),
+        right: Typesetter.cm2px(options.marginInCm.right)
+      },
+      textToLineNumbers: Typesetter.cm2px(options.textToLineNumbersInCm),
+      textToApparatus: Typesetter.cm2px(options.textToApparatusInCm),
+      normalSpaceWidthInEms: options.normalSpaceWidthInEms
+    }
     
     this.ts = new Typesetter({
-       lineWidth: Typesetter.cm2px(this.lineWidthInCm),
-       lineHeight: Typesetter.pt2px(this.lineHeightInPts),
-       defaultFontSize: this.fontSize,
-       rightToLeft: rightToLeft,
-       defaultFontFamily: 'Times New Roman',
-       normalSpaceWidth: this.normalSpaceWidthInEms
+       lineWidth: this.geometry.lineWidth,
+       lineHeight: this.geometry.mainTextLineHeight,
+       defaultFontSize: this.geometry.mainTextFontSize,
+       rightToLeft: options.isRightToLeft,
+       defaultFontFamily: options.fontFamily,
+       normalSpaceWidth: options.normalSpaceWidthInEms
     })
     
     this.tsApparatus = new Typesetter({
-       lineWidth: Typesetter.cm2px(this.lineWidthInCm),
-       lineHeight: Typesetter.pt2px(this.apparatusLineHeightInPts),
-       defaultFontSize: this.apparatusFontSize,
-       rightToLeft: rightToLeft,
-       defaultFontFamily: 'Times New Roman',
-       normalSpaceWidth: this.normalSpaceWidthInEms
+       lineWidth: this.geometry.lineWidth,
+       lineHeight: this.geometry.apparatusLineHeight,
+       defaultFontSize: this.geometry.apparatusFontSize,
+       rightToLeft: options.isRightToLeft,
+       defaultFontFamily: options.fontFamily,
+       normalSpaceWidth: options.normalSpaceWidthInEms
     })
     
-    this.mainTextTokens = this.generateTokensToTypesetFromCollationTableTokens(this.collationTokens, addGlue)
+    this.mainTextTokens = this.generateTokensToTypesetFromCollationTableTokens(options.collationTokens, options.addGlue)
     console.log('Main Text Tokens')
     console.log(this.mainTextTokens)
-    
-    this.ct2tsIndexMap = this.getCollationTableIndexToTypesetTokensMap(this.mainTextTokens)
-    
-    console.log('Index Map')
-    console.log(this.ct2tsIndexMap)
     
     this.typesetMainTextTokens = this.ts.typesetTokens(this.mainTextTokens)
     
     console.log('ts Tokens')
     console.log(this.typesetMainTextTokens)
     
-    console.log('apparatus Array') 
-    console.log(this.apparatusArray)
+    this.ct2tsIndexMap = this.getCollationTableIndexToTypesetTokensMap(this.typesetMainTextTokens)
     
-    for(const apparatus of this.apparatusArray) {
+    console.log('Index Map')
+    console.log(this.ct2tsIndexMap)
+    
+    console.log('apparatus Array') 
+    console.log(options.apparatusArray)
+    
+    for(const apparatus of options.apparatusArray) {
       for (const note of apparatus) {
         let lineNumbers = this.getLineNumbersForApparatusEntry(note, this.typesetMainTextTokens, this.ct2tsIndexMap)
         note.lineStart = lineNumbers.start
@@ -113,6 +101,58 @@ class EditionViewer {
     for (const apparatusToTypeset of this.apparatusTokensToTypeset) {
       this.typesetApparatuses.push(this.tsApparatus.typesetTokens(apparatusToTypeset))
     }
+  }
+  
+  getDefaultOptions() {
+    let options = {
+      collationTokens: [],
+      apparatusArray: [],
+      isRightToLeft: false,
+      addGlue: true,
+      fontFamily: 'Times New Roman',
+      pageWidthInCm: 21,
+      marginInCm: { 
+        top: 2,
+        left: 3,
+        bottom: 1,
+        right: 3
+      },
+      mainTextFontSizeInPts: 14,
+      apparatusFontSizeInPts: 11,
+      mainTextLineHeightInPts: 20,
+      apparatusLineHeightInPts: 15,
+      normalSpaceWidthInEms: 0.32,
+      textToLineNumbersInCm: 0.5,
+      textToApparatusInCm: 1
+    }
+    
+    return options
+  }
+  
+  getCleanOptions(options) {
+    let cleanOptions = this.getDefaultOptions()
+    
+    if (typeof(options.collationTokens) === 'object') {
+      cleanOptions.collationTokens = options.collationTokens
+    }
+    
+    if (typeof(options.apparatusArray) === 'object') {
+      cleanOptions.apparatusArray = options.apparatusArray
+    }
+    
+    if (typeof(options.isRightToLeft) === 'boolean') {
+      cleanOptions.isRightToLeft = options.isRightToLeft
+    }
+
+    if (typeof(options.addGlue) === 'boolean') {
+      cleanOptions.addGlue = options.addGlue
+    }
+    
+    if (typeof(options.fontFamily) === 'string') {
+      cleanOptions.fontFamily = options.fontFamily
+    }
+    
+    return cleanOptions
     
   }
   
@@ -123,7 +163,7 @@ class EditionViewer {
     for(const collationTableToken of collationTableTokens) {
       collationTableToken.collationTableIndex = currentCollationTableTokenIndex
       currentCollationTableTokenIndex++
-      tokensToTypeset.push(collationTableToken)
+      tokensToTypeset.push(Object.assign({}, collationTableToken)) // push a copy of the token
       if (addGlue) {
         tokensToTypeset.push({type: 'glue', space: 'normal'})
       }
@@ -136,15 +176,30 @@ class EditionViewer {
     return tokensToTypeset
   }
   
-  getCollationTableIndexToTypesetTokensMap(tokensToTypeset) {
+  /**
+   * Generates a map of collation table indexes to 
+   * typeset tokens 
+   * 
+   *  map[i] = index in the typeset tokens array of 
+   *          the i-th collation table token
+   *  
+   * @param {Array} typesetTokens
+   * @returns {Array}
+   */
+  getCollationTableIndexToTypesetTokensMap(typesetTokens) {
     
     let map = []
-    let currentTokenIndex = 0
-    for(const token of tokensToTypeset) {
-      if (typeof(token.collationTableIndex) === 'number') {
-        map[token.collationTableIndex] = currentTokenIndex
-      }
-      currentTokenIndex++
+//    let currentTokenIndex = 0
+//    
+//    for(const token of tokensToTypeset) {
+//      if (typeof(token.collationTableIndex) === 'number') {
+//        map[token.collationTableIndex] = currentTokenIndex
+//      }
+//      currentTokenIndex++
+//    }
+
+    for (let i=0; i < typesetTokens.length; i++) {
+      map[typesetTokens[i].collationTableIndex] = i
     }
     return map
   }
@@ -168,7 +223,7 @@ class EditionViewer {
     
     let apparatusToTypesetArray = []
     
-    for (const apparatus of this.apparatusArray) {
+    for (const apparatus of this.options.apparatusArray) {
       let apparatusToTypeset = []
       
       // 1. group notes by start-end
@@ -203,7 +258,7 @@ class EditionViewer {
         apparatusToTypeset.push({ type: 'glue', space: 'normal'} )
         
         for (const entry of pageGroup.entries) {
-          let entryLesson = this.collationTokens[entry.start].text 
+          let entryLesson = this.options.collationTokens[entry.start].text 
           if (entry.start !== entry.end) {
             entryLesson += ' '
             if (entry.end > (entry.start + 1)) {
@@ -237,9 +292,9 @@ class EditionViewer {
       this.lineNumbers, 
       this.typesetApparatuses,
       'editionsvg', 
-      this.leftMargin, this.topMargin, 
-      this.rightMargin, this.bottomMargin, 
-      this.textToLineNumbers
+      this.geometry.margin.left, this.geometry.margin.top, 
+      this.geometry.margin.right, this.geometry.margin.bottom, 
+      this.geometry.textToLineNumbers
       )
     
     return html
@@ -262,7 +317,7 @@ class EditionViewer {
       }
       
      
-      let svgHeight = topMargin + mainTextHeight + (this.textToApparatus * typesetApparatuses.length) + totalApparatusHeight + bottomMargin
+      let svgHeight = topMargin + mainTextHeight + (this.geometry.textToApparatus * typesetApparatuses.length) + totalApparatusHeight + bottomMargin
       let svgWidth = leftMargin + mainTextWidth + rightMargin
 
 
@@ -282,7 +337,7 @@ class EditionViewer {
       let apparatusY = topMargin + mainTextHeight
       let currentApparatusIndex = 0
       for (const apparatus of typesetApparatuses) {
-        apparatusY += this.textToApparatus  
+        apparatusY += this.geometry.textToApparatus  
         apparatusY += currentApparatusIndex !== 0 ? apparatusHeights[currentApparatusIndex-1] : 0
         
         if (this.rightToLeft) {

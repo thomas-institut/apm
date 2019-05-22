@@ -214,7 +214,7 @@ class AutomaticCollationTable {
     }
     
     return cleanOptions
-    
+   
   }
   
   getTitleFromOptions() {
@@ -263,12 +263,12 @@ class AutomaticCollationTable {
       
       // EXPERIMENTAL
       if (thisObject.options.includeExperimental) {
-        let ev = new EditionViewer(
-              data.quickEdition.mainTextTokens, 
-              data.quickEdition.apparatusArray , 
-              data.quickEdition.textDirection === 'rtl', // rightToLeft?
-              false  // don't add glue
-        )
+        let ev = new EditionViewer( {
+            collationTokens: data.quickEdition.mainTextTokens,
+            apparatusArray: data.quickEdition.apparatusArray,
+            isRightToLeft: (data.quickEdition.textDirection === 'rtl'),
+            addGlue: false
+        })
       
         thisObject.editionDiv.html(ev.getHtml())
         let siglaHtml = '<ul class="siglalist">'

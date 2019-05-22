@@ -72,6 +72,9 @@
  *    if type === 'glue'
  *       status: string, = 'set'
  *      
+ *  Not all input tokens to typeset will be present in the return array. Specifically, the return
+ *  array will not return glue tokens with negative space, empty text tokens and  possibly some
+ *  glue tokens that are not necessary.
  */
 
 class Typesetter {
@@ -434,8 +437,8 @@ class Typesetter {
     // NOTE: just estimating the descender height at this point
     // when browser support advanced text metrics this can be 
     // calculated automatically 
-    console.log('Getting text height: ')
-    console.log(tokens[tokens.length-1])
+    //console.log('Getting text height: ')
+    //console.log(tokens[tokens.length-1])
     return tokens[tokens.length-1].deltaY + (this.options.defaultFontSize * 0.4)
   }
   
@@ -446,11 +449,11 @@ class Typesetter {
   // Unit conversion methods
   
   static mm2px(mm) {
-    return mm * 3.779527559 //   = mm * 96 [px/in] / 25.4 [mm/in]
+    return mm * 3.7795275590551184 //   = mm * 96 [px/in] / 25.4 [mm/in]
   }
   
   static cm2px(cm) {
-    return cm * 37.79527559 //   = mm * 96 [px/in] / 2.54 [cm/in]
+    return cm * 37.795275590551184 //   = mm * 96 [px/in] / 2.54 [cm/in]
   }
   
   static pt2px(pt) {

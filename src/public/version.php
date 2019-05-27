@@ -21,7 +21,7 @@
 
 
 $config['app_name'] = 'Averroes Project Manager';
-$config['version'] = '0.20.2 (2019-May-21)';
+$config['version'] = '0.20.3 (2019-May-27)';
 
 
 $config['copyright_notice'] = <<<EOD

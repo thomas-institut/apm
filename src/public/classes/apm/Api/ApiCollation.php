@@ -278,7 +278,7 @@ class ApiCollation extends ApiController
             $this->logger->error($msg, 
                     [ 'apiUserId' => $this->ci->userId, 
                         'apiError' => self::ERROR_FAILED_COLLATION_ENGINE_PROCESSING,
-                        'data' => $inputData, 
+                        'data' => $inputDataObject, 
                          'collationEngineDetails' => $collationEngine->getRunDetails(),
                         'exceptionMessage' => $ex->getMessage()
                         ]);

@@ -21,6 +21,8 @@
 namespace APM;
 require "../vendor/autoload.php";
 
+require 'SiteMockup/testconfig.php';
+
 use PHPUnit\Framework\TestCase;
 use APM\CollationEngine\Collatex;
 /**
@@ -31,10 +33,19 @@ use APM\CollationEngine\Collatex;
 class CollatexEngineTest extends TestCase
 {
     const COLLATEX_JAR = '../collatex/bin/collatex-tools-1.7.1.jar';
+    
+    static $javaExec;
+    
+    public static function setUpBeforeClass()
+    { 
+        global $apmTestConfig;
         
+        self::$javaExec = $apmTestConfig['java_executable'];
+    }
+    
     public function createCollatexRunner()
     {
-        return new Collatex(self::COLLATEX_JAR, __DIR__ . '/tmp', '/usr/bin/java');
+        return new Collatex(self::COLLATEX_JAR, __DIR__ . '/tmp', self::$javaExec);
     }
     
     public function createSimpleCollatexInput() 
@@ -85,7 +96,7 @@ class CollatexEngineTest extends TestCase
     {
         $goodJson = json_encode($this->createSimpleCollatexInput());
         
-        $cr1 = new Collatex(__DIR__ . '/mock-collatex/exit1.bash', __DIR__ . '/tmp', '/usr/bin/java');
+        $cr1 = new Collatex(__DIR__ . '/mock-collatex/exit1.bash', __DIR__ . '/tmp', self::$javaExec);
         $this->assertTrue($cr1->runningEnvironmentOk());
         $result = $cr1->rawRun($goodJson);
         $this->assertFalse($result); 
@@ -105,7 +116,7 @@ class CollatexEngineTest extends TestCase
     public function testSimpleRun()
     {
         // Test case 1: error in collatex executable
-        $cr1 = new Collatex(__DIR__ . '/mock-collatex/exit1.bash', __DIR__ . '/tmp', '/usr/bin/java');
+        $cr1 = new Collatex(__DIR__ . '/mock-collatex/exit1.bash', __DIR__ . '/tmp', self::$javaExec);
         $result1 = $cr1->collate([]);
         $this->assertEquals([], $result1);
         $this->assertEquals(Collatex::CR_COLLATEX_EXIT_VALUE_NON_ZERO, $cr1->getErrorCode());
@@ -117,6 +128,7 @@ class CollatexEngineTest extends TestCase
         $this->assertEquals(Collatex::CR_COLLATEX_DID_NOT_RETURN_JSON, $cr2->getErrorCode());
         
         $cr3 = $this->createCollatexRunner();
+        
         $validWitnessList = [
             [ 'id' => 'A', 'content' => 'This is Sparta and this is not'],
             [ 'id' => 'B', 'content' => 'This is Athens and this is not'],

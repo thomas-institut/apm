@@ -65,9 +65,6 @@ class SiteControllerTest extends TestCase {
         self::$testEnvironment = new SiteTestEnvironment($apmTestConfig);
         self::$ci = self::$testEnvironment->getContainer();
         self::$dm = self::$ci->db;
-
-
-        
     }
     
     public function testQuickCollationPage()
@@ -80,6 +77,79 @@ class SiteControllerTest extends TestCase {
         $sc = new SiteCollationTable(self::$ci);
         
         $response = $sc->quickCollationPage($request, $inputResp, 
+                NULL);
+        
+        $this->assertEquals(200, $response->getStatusCode());
+    }
+    
+     public function testHomePage()
+    {
+        
+        $request = new ServerRequest('GET', '');
+        $inputResp = new \Slim\Http\Response();
+        self::$ci['userInfo'] = ['id' => 100];
+        
+        $sc = new \AverroesProject\Site\SiteHomePage(self::$ci);
+        $response = $sc->homePage($request, $inputResp, 
+                NULL);
+        
+        $this->assertEquals(302, $response->getStatusCode());
+    }
+    
+        public function testDashboardPage()
+    {
+        
+        $request = new ServerRequest('GET', '');
+        $inputResp = new \Slim\Http\Response();
+        self::$ci['userInfo'] = ['id' => 100, 'username' => 'testUser'];
+         
+        $sc = new \AverroesProject\Site\SiteDashboard(self::$ci);
+        
+        $response =$sc->dashboardPage($request, $inputResp, 
+                NULL);
+        
+        $this->assertEquals(200, $response->getStatusCode());
+    }
+    
+        public function testDocumentsPage()
+    {
+        
+        $request = new ServerRequest('GET', '');
+        $inputResp = new \Slim\Http\Response();
+        self::$ci['userInfo'] = ['id' => 100];
+        
+        $sc = new \AverroesProject\Site\SiteDocuments(self::$ci);
+        
+        $response = $sc->documentsPage($request, $inputResp, 
+                NULL);
+        
+        $this->assertEquals(200, $response->getStatusCode());
+    }
+    
+    public function testChunksPage()
+    {
+        
+        $request = new ServerRequest('GET', '');
+        $inputResp = new \Slim\Http\Response();
+        self::$ci['userInfo'] = ['id' => 100];
+        $sc = new \AverroesProject\Site\SiteChunks(self::$ci);
+        
+        $response = $sc->chunksPage($request, $inputResp, 
+                NULL);
+        
+        $this->assertEquals(200, $response->getStatusCode());
+    }
+    
+    public function testUserManagerPage()
+    {
+        
+        $request = new ServerRequest('GET', '');
+        $inputResp = new \Slim\Http\Response();
+        self::$ci['userInfo'] = ['id' => 100];
+        
+        $sc = new \AverroesProject\Site\SiteUserManager(self::$ci);
+        
+        $response =$sc->userManagerPage($request, $inputResp, 
                 NULL);
         
         $this->assertEquals(200, $response->getStatusCode());
@@ -326,7 +396,7 @@ class SiteControllerTest extends TestCase {
                 ->withAttribute('lang', 'bad'  . $lang);
         $inputResp1 = new \Slim\Http\Response();
         
-        $response1 = $collationTableControllerObject->automaticCollationPage($request1, $inputResp1, 
+        $response1 = $collationTableControllerObject->automaticCollationPageGet($request1, $inputResp1, 
                 NULL);
         $this->assertEquals(200, $response1->getStatusCode());
         
@@ -341,12 +411,12 @@ class SiteControllerTest extends TestCase {
         // a partial collation (with bad doc ids)
         $docList = '45/24/34/35';
         
-        $response2 = $collationTableControllerObject->automaticCollationPage($request2, $inputResp2, 
+        $response2 = $collationTableControllerObject->automaticCollationPageGet($request2, $inputResp2, 
                 [ 'docs' => $docList]);
         $this->assertEquals(200, $response2->getStatusCode());
         
         
-        $response3 = $collationTableControllerObject->automaticCollationPage($request2, $inputResp2, 
+        $response3 = $collationTableControllerObject->automaticCollationPageGet($request2, $inputResp2, 
                 NULL);
         $this->assertEquals(200, $response3->getStatusCode());
         

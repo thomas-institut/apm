@@ -68,6 +68,7 @@ class ApiControllerTest extends TestCase {
     {
         global $apmTestConfig;
         
+       
         self::$testEnvironment = new DatabaseTestEnvironment($apmTestConfig);
         self::$ci = self::$testEnvironment->getContainer();
          

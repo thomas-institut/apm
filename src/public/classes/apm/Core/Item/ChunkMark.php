@@ -20,17 +20,23 @@
 namespace APM\Core\Item;
 
 /**
- * A chunk mark, this deserves its own class!
+ * A chunk mark
+ * 
+ * The information about type (start/end), work, chunk number and segment is encoded
+ * in the mark's text:
+ *  <type>-<work>-<chunkNumber>-<segment>
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 class ChunkMark extends Mark {
     
+    const CHUNK_MARK_TYPE  = '__chunkmark';
+    
     const TYPE_START = 'START';
     const TYPE_END = 'END';
     
     public function __construct(string $type, string $work, int $chunkNumber, int $segment = 1) {
-        parent::__construct('__chunkmark');
+        parent::__construct(self::CHUNK_MARK_TYPE);
         $this->setMarkText(implode('-', [$type, $work, $chunkNumber, $segment]));
     }
     

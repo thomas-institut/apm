@@ -20,9 +20,9 @@
 
 namespace APM\Core\Witness;
 
-
 use APM\Core\Transcription\DocumentTranscription;
 use APM\Core\Transcription\ItemAddressInDocument;
+
 /**
  * A transcription witness that stores the DocumentTranscription 
  * inside

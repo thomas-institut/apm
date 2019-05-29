@@ -290,7 +290,6 @@ abstract class TranscriptionWitness extends Witness {
             }
         }
         
-        
         return $nonTokenIndexes;
     }
 

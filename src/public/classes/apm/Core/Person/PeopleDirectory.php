@@ -23,7 +23,7 @@ namespace APM\Core\Person;
  * Basic representation of a people directory.
  * 
  * The basic service of the directory is to take a Person object and 
- * determine useful information about the person possibly by consulting
+ * determine useful information about the person, possibly by consulting
  * a database.
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>

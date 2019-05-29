@@ -43,6 +43,7 @@ class SiteController
        $this->ci = $ci;
        $this->db = $ci->db;
        $this->hm = $ci->hm;
+       $this->systemManager = $ci->sm;
        $config = $this->ci->settings;
        $this->ci->copyrightNotice  = $config['app_name'] . " v" . 
                $config['version'] . " &bull; &copy; " . 

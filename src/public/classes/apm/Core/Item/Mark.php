@@ -30,6 +30,7 @@ namespace APM\Core\Item;
  */
 class Mark extends Item {
     
+    
     /** @var string */
     private $type;
     
@@ -44,7 +45,7 @@ class Mark extends Item {
     
     const NO_TYPE = '';
     const NO_TEXT = '';
-    const NO_LENGTH = '';
+    const NO_LENGTH = 0;
             
     
     public function __construct(string $type = self::NO_TYPE, string $text = self::NO_TEXT) {

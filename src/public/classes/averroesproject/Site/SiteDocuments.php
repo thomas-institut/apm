@@ -137,7 +137,7 @@ class SiteDocuments extends SiteController
         }
         
         $db = $this->db;
-        $availableImageSources = $this->ci->systemManager->callHookedMethods('get-image-sources', []);
+        $availableImageSources = $this->hm->callHookedMethods('get-image-sources', []);
         $imageSourceOptions = '';
         $docImageSourceIsImplemented = false;
         foreach($availableImageSources as $imageSource) {
@@ -186,7 +186,7 @@ class SiteDocuments extends SiteController
         $db = $this->db;
         $docInfo = $db->getDocById($docId);
         
-        $availableImageSources = $this->ci->systemManager->callHookedMethods('get-image-sources', []);
+        $availableImageSources = $this->hm->callHookedMethods('get-image-sources', []);
         
         $imageSourceOptions = '';
         $docImageSourceIsImplemented = false;

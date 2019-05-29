@@ -29,7 +29,7 @@ use APM\Core\Transcription\ItemInPage;
  
  * From a textual point of view, the transcription can be seen as a stream of 
  * transcription items (Item class), each one being located somewhere in those 
- * text boxes. The base class provides methods to get all or a some of those
+ * text boxes. The base class provides methods to get all or some of those
  * items.
  * 
  * Some of these text boxes contain main text and others contain marginalia. 
@@ -38,8 +38,6 @@ use APM\Core\Transcription\ItemInPage;
  * does not provide any such schema, but implements a general approach. The
  * specific schema can be implemented with a descendant class and a suitable
  * set of object factories for the different components.
- * 
- * 
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
@@ -108,10 +106,9 @@ abstract class PageTranscription {
      * Returns an array of ItemInPage objects with the items in the
      * given TextBox taking care of internal references. 
      * 
-     * That is, for example,if in the text box there is a mark that signals an 
-     * addition of the text
-     * in another text box, the items in that text box are included in the 
-     * resulting array in the right place. 
+     * That is, for example, if in the text box there is a mark that signals an 
+     * addition of the text in another text box, the items in that text box are 
+     * included in the resulting array in the right place. 
      * 
      * @param int $tbIndex
      * @return ItemInPage[]

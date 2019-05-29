@@ -27,7 +27,9 @@ namespace APM\Core\Item;
  */
 class NoWbMark extends Mark {
     
+    const NOWB_MARK_TYPE = '__nowb';
+    
     public function __construct() {
-        parent::__construct('__nowb');
+        parent::__construct(self::NOWB_MARK_TYPE);
     }
 }

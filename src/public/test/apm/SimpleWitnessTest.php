@@ -40,11 +40,11 @@ class SimpleWitnessTest extends TestCase {
         
         $sourceTokens = [ 
             new Token(Token::TOKEN_WORD, 'This'),
-            new Token(Token::TOKEN_WS, ' '),
+            new Token(Token::TOKEN_WHITESPACE, ' '),
             new Token(Token::TOKEN_WORD, 'is'),
-            new Token(Token::TOKEN_WS, ' '),
+            new Token(Token::TOKEN_WHITESPACE, ' '),
             new Token(Token::TOKEN_WORD, 'a'),
-            new Token(Token::TOKEN_WS, ' '),
+            new Token(Token::TOKEN_WHITESPACE, ' '),
             new Token(Token::TOKEN_WORD, 'test'),
             new Token(Token::TOKEN_PUNCT, '.'),
         ];

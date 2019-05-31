@@ -110,7 +110,7 @@ class TranscriptionWitnessTest extends TestCase {
         $n = 0;
         foreach($tokens as $token) {
             if ($n % 2) {
-                $this->assertEquals($token->getType(), Token::TOKEN_WS);
+                $this->assertEquals($token->getType(), Token::TOKEN_WHITESPACE);
             } else {
                 $this->assertEquals($token->getType(), Token::TOKEN_WORD);
             }

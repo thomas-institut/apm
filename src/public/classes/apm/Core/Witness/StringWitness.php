@@ -41,19 +41,11 @@ class StringWitness extends Witness {
     }
     
     public function getTokens() : array {
-        $rawTokens = StringTokenizer::getTokensFromString($this->sourceString);
-        $tokens = [];
-        // Filter out whitespace tokens
-        foreach ($rawTokens as $rt) {
-            if ($rt->getType() === Token::TOKEN_WORD || $rt->getType()===Token::TOKEN_PUNCT) {
-                $tokens[] = $rt;
-            }
-        }
-        return $tokens;
+        return StringTokenizer::getTokensFromString($this->sourceString);
     }
     
     public function getSourceString() : string {
         return $this->sourceString;
     }
-
+    
 }

@@ -31,7 +31,6 @@ use APM\Core\Token\Token;
  * tokens out of which different views can be constructed. This base class
  * provides a basic plain text view, either normalized or not normalized. 
  * Descendant classes can provide other kinds of views.
- * 
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
@@ -57,7 +56,7 @@ abstract class Witness {
     abstract public function getTokens() : array;
     
     /**
-     * Returns a plain text version of the witness
+     * Returns a plain text version of the witness.
      * 
      * @param bool $normalized
      * @return string
@@ -66,23 +65,16 @@ abstract class Witness {
         $tokens = $this->getTokens();
         
         $plainText  = '';
-        $lastType = Token::TOKEN_UNDEFINED;
+        //$lastType = Token::TOKEN_UNDEFINED;
         foreach ($tokens as $t) {
             /* @var $t StringToken */
-            $text = $normalized ? $t->getNormalization() : $t->getText();
-            $currentType = $t->getType();
-            if ($currentType === Token::TOKEN_WS) {
-                continue;
-            }
-            if ($lastType===Token::TOKEN_UNDEFINED || $currentType===Token::TOKEN_PUNCT) {
-                $plainText .= $text;
-            } else {
-                $plainText .= ' ' . $text;
-            }
-            $lastType = $currentType;
-            
+            $plainText .= $normalized ? $t->getNormalization() : $t->getText();
         }
         return $plainText;
+    }
+    
+    public function getNormalizedPlainText() : string {
+        return $this->getPlainText(true);
     }
     
     public function getWork() : string {

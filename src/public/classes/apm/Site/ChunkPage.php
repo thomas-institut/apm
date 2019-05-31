@@ -269,7 +269,7 @@ class ChunkPage extends SiteController
     
      protected  function prettyPrintTokens($tokens, $nonTokenItems) {
         $types[\APM\Core\Token\Token::TOKEN_WORD] = 'W';
-        $types[\APM\Core\Token\Token::TOKEN_WS] = 'S';
+        $types[\APM\Core\Token\Token::TOKEN_WHITESPACE] = 'S';
         $types[\APM\Core\Token\Token::TOKEN_PUNCT] = 'P';
         $types[\APM\Core\Token\Token::TOKEN_EMPTY] = 'E';
         $types[\APM\Core\Token\Token::TOKEN_UNDEFINED] = 'U';

@@ -104,7 +104,7 @@ class CollationTable {
     public function addWitness(string $siglum, Witness $witness) {
         
         $originalWitnessTokens = $witness->getTokens();
-        $tokenTypesToIgnore = [ Token::TOKEN_WS];
+        $tokenTypesToIgnore = [ Token::TOKEN_WHITESPACE];
         if ($this->ignorePunctuation) {
             $tokenTypesToIgnore[] = Token::TOKEN_PUNCT;
         }

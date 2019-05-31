@@ -146,7 +146,7 @@ abstract class TranscriptionWitness extends Witness {
                             $openWordToken = true;
                         }
                     } else { // i.e., not a word token
-                        if ($noWbItemOpen && $tToken->getType()=== Token::TOKEN_WS && $tToken->getText() === "\n") {
+                        if ($noWbItemOpen && $tToken->getType()=== Token::TOKEN_WHITESPACE && $tToken->getText() === "\n") {
                             // got a newline after a noWbItem, ignore
                         } else {
                             // Any other token type: "close" currentWordToken and

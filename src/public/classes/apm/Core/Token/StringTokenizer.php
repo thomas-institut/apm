@@ -85,7 +85,7 @@ class StringTokenizer {
                     // State 0: Initial state
                     if (mb_ereg($wsRegExp, $text[$i])) {
                         $currentTokenCharacters[] = $text[$i];
-                        $currentTokenType = Token::TOKEN_WS;
+                        $currentTokenType = Token::TOKEN_WHITESPACE;
                         if ($text[$i] === "\n") {
                             $currentLine++;
                         }
@@ -148,7 +148,7 @@ class StringTokenizer {
                         $currentTokenStartIndex = $i;
                         $currentTokenCharacters  = [];
                         $currentTokenCharacters[] = $text[$i];
-                        $currentTokenType = Token::TOKEN_WS;
+                        $currentTokenType = Token::TOKEN_WHITESPACE;
                         if ($text[$i] === "\n") {
                             $currentLine++;
                         }
@@ -191,7 +191,7 @@ class StringTokenizer {
                         $currentTokenStartIndex = $i;
                         $currentTokenCharacters  = [];
                         $currentTokenCharacters[] = $text[$i];
-                        $currentTokenType = Token::TOKEN_WS;
+                        $currentTokenType = Token::TOKEN_WHITESPACE;
                         if ($text[$i] === "\n") {
                             $currentLine++;
                         }

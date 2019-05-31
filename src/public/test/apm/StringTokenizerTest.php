@@ -67,7 +67,7 @@ class StringTokenizerTest extends TestCase {
             'title' => 'String starting with whitespace',
             'testString' => '   Text',
             'expectedTokens' => [
-                new StringToken(Token::TOKEN_WS, '   ', 0, 1),
+                new StringToken(Token::TOKEN_WHITESPACE, '   ', 0, 1),
                 new StringToken(Token::TOKEN_WORD, 'Text', 3, 1)
             ]
         ];
@@ -76,7 +76,7 @@ class StringTokenizerTest extends TestCase {
             'title' => 'String starting with whitespace with newline',
             'testString' => "\n  Text",
             'expectedTokens' => [
-                new StringToken(Token::TOKEN_WS, "\n  ", 0, 1),
+                new StringToken(Token::TOKEN_WHITESPACE, "\n  ", 0, 1),
                 new StringToken(Token::TOKEN_WORD, 'Text', 3, 2)
             ]
         ];
@@ -86,7 +86,7 @@ class StringTokenizerTest extends TestCase {
             'testString' => ".\n  Text",
             'expectedTokens' => [
                 new StringToken(Token::TOKEN_PUNCT, '.', 0, 1),
-                new StringToken(Token::TOKEN_WS, "\n  ", 2, 1),
+                new StringToken(Token::TOKEN_WHITESPACE, "\n  ", 2, 1),
                 new StringToken(Token::TOKEN_WORD, 'Text', 3, 2)
             ]
         ];
@@ -105,7 +105,7 @@ class StringTokenizerTest extends TestCase {
             'testString' => "Text \n text",
             'expectedTokens' => [
                 new StringToken(Token::TOKEN_WORD, 'Text', 0, 1),
-                new StringToken(Token::TOKEN_WS, " \n ", 4, 1),
+                new StringToken(Token::TOKEN_WHITESPACE, " \n ", 4, 1),
                 new StringToken(Token::TOKEN_WORD, 'text', 8, 2)
             ]
         ];
@@ -170,7 +170,7 @@ class StringTokenizerTest extends TestCase {
             if ($t->getType() === Token::TOKEN_WORD) {
                 $this->assertEquals($wordLength, strlen($t->getText()));
             }
-            if ($t->getType() === Token::TOKEN_WS) {
+            if ($t->getType() === Token::TOKEN_WHITESPACE) {
                 $this->assertEquals(1, strlen($t->getText()));
             }
             $this->assertEquals( intdiv($tCount,2*$numWords)+1,   $t->getLineRange()->getStart());

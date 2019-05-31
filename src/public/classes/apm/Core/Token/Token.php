@@ -39,11 +39,13 @@ class Token {
     
     const TOKEN_UNDEFINED = 0;
     const TOKEN_WORD = 1;
-    const TOKEN_WS = 2;
+    const TOKEN_WHITESPACE = 2;
     const TOKEN_PUNCT = 3;
     const TOKEN_EMPTY = 4;
     
     const __MAX_TYPE = 4;
+    
+    const DEFAULT_WHITESPACE_NORMALIZATION = ' ';
     
     
     /** @var int */
@@ -65,6 +67,9 @@ class Token {
         $this->setType($type);
         $this->setText($t);
         $this->setNormalization($n);
+        if ($n === '' && $type===self::TOKEN_WHITESPACE) {
+            $this->setNormalization(self::DEFAULT_WHITESPACE_NORMALIZATION);
+        }
         $this->alternateTexts = [];
     }
     

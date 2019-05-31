@@ -54,24 +54,35 @@ class CollationTest extends TestCase {
         return $out;
     }
     
+    private function countNonWhiteSpaceTokens(array $tokens) {
+        $count = 0;
+        foreach ($tokens as $t) {
+            if ($t->getType() !== Token::TOKEN_WHITESPACE) {
+                $count++;
+            }
+        }
+        return $count;
+    }
+    
     public function doSimpleCollationTests($collation) {
         
         $this->assertEquals(0, $collation->getTokenCount());
                 
         $w1 = new StringWitness('tw', 'tchunk', 'This is witness one');
         $w2 = new StringWitness('tw', 'tchunk', 'This is witness two with more text');
+
         $w3 = new StringWitness('tw', 'tchunk', 'This witness three');
         $w4 = new Core\Witness\SimpleWitness('tw', 'tchunk', []);
         
         // Add witnesses
         $collation->addWitness('A', $w1);
-        $this->assertEquals(count($w1->getTokens()), $collation->getTokenCount());
+        $this->assertEquals($this->countNonWhiteSpaceTokens($w1->getTokens()), $collation->getTokenCount());
         
         $collation->addWitness('B', $w2);
-        $this->assertEquals(count($w2->getTokens()), $collation->getTokenCount());
+        $this->assertEquals($this->countNonWhiteSpaceTokens($w2->getTokens()), $collation->getTokenCount());
        
         $collation->addWitness('C', $w3);
-        $expectedSize = count($w2->getTokens());
+        $expectedSize = $this->countNonWhiteSpaceTokens($w2->getTokens());
         $this->assertEquals($expectedSize, $collation->getTokenCount());
         
         $exceptionRaised = false;

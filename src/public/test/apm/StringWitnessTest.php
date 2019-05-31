@@ -24,6 +24,7 @@ require "../vendor/autoload.php";
 use PHPUnit\Framework\TestCase;
 
 use APM\Core\Witness\StringWitness;
+use APM\Core\Token\Token;
 
 /**
  * Description of testWitness
@@ -37,8 +38,8 @@ class StringWitnessTest extends TestCase {
         $workTitle = 'testWork';
         $chunkRef = 'testChunk';
         $witnessText = "This is \t a test  . The test of the witness.";
-        $normalizedText = "This is a test. The test of the witness.";
-        $numTokens = 11;
+        $normalizedText = "This is a test . The test of the witness.";
+        $numTokens = 20;
         
         $w = new StringWitness($workTitle, $chunkRef, $witnessText);
         $this->assertEquals($witnessText, $w->getSourceString());
@@ -47,10 +48,14 @@ class StringWitnessTest extends TestCase {
         $this->assertCount($numTokens, $tokens);
         
         foreach ($tokens as $t) {
-            $this->assertEquals($t->getText(), $t->getNormalization());
+            if ($t->getType() === Token::TOKEN_WHITESPACE) {
+                $this->assertEquals(' ', $t->getNormalization());
+            } else {
+                $this->assertEquals($t->getText(), $t->getNormalization());
+            } 
             $this->assertEquals(1, $t->getLineNumber());
         }
-        $this->assertEquals($normalizedText, $w->getPlainText());
+        $this->assertEquals($normalizedText, $w->getNormalizedPlainText());
     }
     
     public function testConstructor() {
@@ -62,4 +67,6 @@ class StringWitnessTest extends TestCase {
         }
         $this->assertTrue($exceptionRaised1);
     }
+    
+    
 }

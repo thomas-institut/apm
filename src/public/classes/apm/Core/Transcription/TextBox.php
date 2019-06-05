@@ -1,4 +1,4 @@
-<?php
+ <?php
 
 /* 
  *  Copyright (C) 2019 Universität zu Köln

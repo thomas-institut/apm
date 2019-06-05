@@ -251,10 +251,10 @@ class SiteCollationTable extends SiteController
             $availableWitnesses[] = [ 'type' => 'doc', 'id' => intVal($witnessId), 'title' => $docInfo['title']];
         }
         
-        $canViewExperimentalData = 0;
-        if ($dm->um->isUserAllowedTo($this->userInfo['id'], 'act-view-experimental-data')) {
-            $canViewExperimentalData = 1;
-        }
+        $canViewExperimentalData = 1;
+//        if ($dm->um->isUserAllowedTo($this->userInfo['id'], 'act-view-experimental-data')) {
+//            $canViewExperimentalData = 1;
+//        }
         
         
         $profiler->log($this->logger);

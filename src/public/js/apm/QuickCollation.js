@@ -56,7 +56,8 @@ class QuickCollation {
       selector: '.' + this.popoverClass, 
       trigger: 'hover', 
       delay: {show: 500, hide: 0},
-      placement: 'auto'
+      placement: 'auto',
+      sanitize: false
     })
     
   }

@@ -98,7 +98,8 @@ class ChunkPage {
             trigger: 'hover', 
             selector: '.withformatpopover',
             delay: {show: 500, hide: 0},
-            placement: 'auto'
+            placement: 'auto',
+            sanitize: false
          })
   }
   

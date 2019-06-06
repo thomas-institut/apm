@@ -2170,6 +2170,7 @@ class TranscriptionEditor
       delay: { 'show': 1500, 'hide': 0},
       html: true,
       placement: 'auto',
+      sanitize: false,
       trigger: 'hover'})
   }
 

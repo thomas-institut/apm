@@ -49,34 +49,20 @@ class PageViewer {
     
     this.osdViewer = OpenSeadragon(osdOptions)
     
-    //console.log('OSD constructed')
-    //console.log(this.osdViewer)
-    
     $('#pagenumber').popover({
       title:'Page List', 
       content: options.pagePopoverContent, 
       container: 'body', 
       html: true, 
       placement: 'auto', 
-      trigger: 'click'
+      trigger: 'click',
+      sanitize: false
     })
 
     let osd = this.osdViewer
     
     $('div.split-pane').on('dividerdragend', this.genOnDividerdragend())
     this.osdViewer.addHandler('zoom', this.genOnOsdZoom())
-//    this.osdViewer.addHandler('reset-size', function(d) {
-//      console.log('OSD reset image rize to ' + d.contentSize.x + ' x ' + d.contentSize.y)
-//    })
-    
-//    this.osdViewer.addHandler('resize', function(d) {
-//      console.log('OSD resize to ' +  d.newContainerSize.x + ' x ' + d.newContainerSize.y)
-//    })
-    
-//    this.osdViewer.addHandler('pan', function (s) {
-//      console.log('OSD pan to ( ' + s.center.x + ', ' + s.center.y + ' )')
-//    })
-    
     
     $('#realAddColumnButton').on('click', 
       this.genOnClickRealAddColumnButton())

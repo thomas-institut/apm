@@ -19,7 +19,7 @@
  */
 
 $config['app_name'] = 'APM';
-$config['version'] = '0.20.5 (2019-May-29)';
+$config['version'] = '0.20.6 (2019-Jun-06)';
 
 
 $config['copyright_notice'] = <<<EOD

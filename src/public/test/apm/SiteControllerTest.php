@@ -501,6 +501,7 @@ class SiteControllerTest extends TestCase {
         
         $response1 = $collationTableControllerObject->automaticCollationPagePreset($request1, $inputResp1,  NULL);
         $this->assertEquals(200, $response1->getStatusCode());
+        $this->assertNotFalse(strpos($response1->getBody(), SiteCollationTable::ERROR_SIGNATURE_PREFIX . SiteCollationTable::ERROR_UNKNOWN_PRESET));
         
         $presetManager = self::$ci->sm->getPresetsManager();
         $pf = new System\PresetFactory();

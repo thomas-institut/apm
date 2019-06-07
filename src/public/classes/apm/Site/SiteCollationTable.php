@@ -37,22 +37,30 @@ use AverroesProject\Profiler\ApmProfiler;
  */
 class SiteCollationTable extends SiteController
 {
-   
-    const ERROR_SIGNATURE_PREFIX = 'CollationTableError-';
+    // This will be added to the error pages within an HTML comment so
+    // that unit testing can check that the right error pages are 
+    // generated
+    const ERROR_SIGNATURE_PREFIX = 'CollationTableError_8kn7KjcyAp_';
     
     const ERROR_NO_DATA = 'NoData';
     const ERROR_NO_OPTIONS = 'NoOptions';
     const ERROR_MISSING_REQUIRED_OPTION = 'MissingRequiredOption';
+    const ERROR_UNKNOWN_PRESET = 'UnknownPreset';
+    const ERROR_INVALID_LANGUAGE = 'InvalidLanguage';
+    
+    const TEMPLATE_ERROR = 'chunk.collation.error.twig';
+    const TEMPLATE_QUICK_COLLATION = 'apm/collation.quick.twig';
+    const TEMPLATE_COLLATION_TABLE = 'apm/collationtable.twig';
+    
     
     public function quickCollationPage(Request $request, Response $response, $next)
     {
-        return $this->renderPage($response, 'apm/collation.quick.twig', [
+        return $this->renderPage($response, self::TEMPLATE_QUICK_COLLATION, [
             'contactName' => $this->config['support_contact_name'],
             'contactEmail' => $this->config['support_contact_email']
         ]);
 
     }
-    
     
     public function automaticCollationPageGet(Request $request, Response $response, $args) 
     {
@@ -103,10 +111,11 @@ class SiteCollationTable extends SiteController
             $this->logger->error($msg,
                     [ 'presetId' => $presetId]);
             
-            return $this->renderPage($response, 'chunk.collation.error.twig', [
+            return $this->renderPage($response, self::TEMPLATE_ERROR, [
                 'work' => $workId,
                 'chunk' => $chunkNumber,
                 'lang' => '??',
+                'errorSignature' => self::ERROR_SIGNATURE_PREFIX . self::ERROR_UNKNOWN_PRESET,
                 'message' => $msg
             ]);
         }
@@ -161,7 +170,7 @@ class SiteCollationTable extends SiteController
             $this->logger->error('Automatic Collation Table:  no data in input',
                     [ 'rawdata' => $postData]);
             $msg = 'Bad request: no data';
-            return $this->renderPage($response, 'chunk.collation.error.twig', [
+            return $this->renderPage($response, self::TEMPLATE_ERROR, [
                 'work' => '??',
                 'chunk' => '??',
                 'lang' => '??',
@@ -173,7 +182,7 @@ class SiteCollationTable extends SiteController
             $this->logger->error('Automatic Collation Table:  no options in input',
                     [ 'rawdata' => $postData]);
             $msg = 'Bad request: no options';
-            return $this->renderPage($response, 'chunk.collation.error.twig', [
+            return $this->renderPage($response, self::TEMPLATE_ERROR, [
                 'work' => '??',
                 'chunk' => '??',
                 'lang' => '??',
@@ -187,7 +196,7 @@ class SiteCollationTable extends SiteController
         foreach ($requiredFields as $requiredField) {
             if (!isset($collationPageOptions[$requiredField])) {
                 $msg = 'Bad request: missing required option ' . $requiredField ;
-                return $this->renderPage($response, 'chunk.collation.error.twig', [
+                return $this->renderPage($response, self::TEMPLATE_ERROR, [
                     'work' => '??',
                     'chunk' => '??',
                     'lang' => '??',
@@ -235,11 +244,11 @@ class SiteCollationTable extends SiteController
         
         if (is_null($langInfo)) {
             $msg = 'Invalid language <b>' . $language . '</b>';
-            return $this->renderPage($response, 'chunk.collation.error.twig', [
+            return $this->renderPage($response, self::TEMPLATE_ERROR, [
                 'work' => $workId,
                 'chunk' => $chunkNumber,
                 'lang' => $language,
-                'isPartial' => $partialCollation,
+                'errorSignature' => self::ERROR_SIGNATURE_PREFIX . self::ERROR_INVALID_LANGUAGE,
                 'message' => $msg
             ]);
         }
@@ -283,7 +292,7 @@ class SiteCollationTable extends SiteController
             $templateOptions['preset'] = $collationPageOptions['preset'];
         }
         
-        return $this->renderPage($response, 'apm/collationtable.twig', $templateOptions);
+        return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, $templateOptions);
     }
     
     protected function getValidWitnessDocIdsForWorkChunkLang($dm, $workId, $chunkNumber, $language) : array {

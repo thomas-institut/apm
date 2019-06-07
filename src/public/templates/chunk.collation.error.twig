@@ -2,8 +2,21 @@
 
 {% block title %}CT Error{% endblock %}
 
+{% block extraJS %}
+     <!-- {{ errorSignature }} -->
+    <script>
+        let signature = '{{errorSignature}}'
+        if (signature !== '') {
+            console.error('Collation Table Error: ' + signature.split('_')[2])
+        } else {
+            console.error('Unknown Error')
+        }
+    </script>   
+{% endblock %}
+
 {% block content %}
-    <!-- {{ errorSignature }} -->
+    
+    
     <ol class="breadcrumb">
          <li><a href="{{path_for('chunks')}}">Chunks</a></li>
          <li><a href="{{path_for('chunk', {'work' : work, 'chunk': chunk})}}">{{work}}-{{chunk}}</a></li>

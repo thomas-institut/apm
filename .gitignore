@@ -20,10 +20,10 @@ src/public/config.php
 /src/public/test/tmp/
 /src/docs/
 /npm-debug.log
-
 /src/npm-debug.log
 /dist/
 /src/public/test/apm/tmp/c*
 /src/public/package-lock.json
 /src/public/js/istanbul/
 /src/public/test/apm/SiteMockup/testconfig.php
+.idea/*

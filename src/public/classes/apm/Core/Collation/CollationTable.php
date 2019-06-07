@@ -24,6 +24,7 @@ namespace APM\Core\Collation;
 use APM\Core\Token\Token;
 use APM\Core\Apparatus\ApparatusGenerator;
 use APM\Core\Witness\Witness;
+use InvalidArgumentException;
 
 /**
  * Representation of a collation table
@@ -99,7 +100,7 @@ class CollationTable {
      * 
      * @param string $siglum
      * @param Witness $witness
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     public function addWitness(string $siglum, Witness $witness) {
         
@@ -112,7 +113,7 @@ class CollationTable {
         
         $tokenCount = count($tokenRefs);
         if ($tokenCount === 0) {
-            throw new \InvalidArgumentException('Cannot add empty witnesses');
+            throw new InvalidArgumentException('Cannot add empty witnesses');
         }
         
         $currentSize = $this->getTokenCount();
@@ -187,7 +188,7 @@ class CollationTable {
      * 
      * @param int $index
      * @return array
-     * @throws \InvalidArgumentException if the $index is out of range
+     * @throws InvalidArgumentException if the $index is out of range
      */
     public function getColumn(int $index) {
         $rawColumn = $this->getReferencesForColumn($index);
@@ -341,16 +342,16 @@ class CollationTable {
      * Sets up the collation table using the output of a collation engine
      * 
      * @param array $collationEngineOutput
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     public function setCollationTableFromCollationEngineOutput(array $collationEngineOutput) {
         // First, check that the input is a valid collation engine output
         if (!isset($collationEngineOutput['table']) || !isset($collationEngineOutput['witnesses'])) {
-            throw new \InvalidArgumentException('Not a valid collation engine output array');
+            throw new InvalidArgumentException('Not a valid collation engine output array');
         }
         
         if (count($collationEngineOutput['witnesses']) !== count($this->witnesses)) {
-            throw new \InvalidArgumentException('Invalid number of witnesses in collation engine data');
+            throw new InvalidArgumentException('Invalid number of witnesses in collation engine data');
         }
         
         // Build sigla to collation engine output index conversion table
@@ -364,7 +365,7 @@ class CollationTable {
         // Check consistency of witness data in Collatex output
         foreach (array_keys($this->witnesses) as $siglum){
             if ($s2ci[$siglum] === -1){
-                throw new \InvalidArgumentException("Witness " . $siglum . ' not in given collation engine output');
+                throw new InvalidArgumentException("Witness " . $siglum . ' not in given collation engine output');
             }
         }
         
@@ -381,14 +382,14 @@ class CollationTable {
         
         foreach ($table as $segment) {
             if (count($segment) !== $witnessCount) {
-                throw new \InvalidArgumentException('Found invalid number of witnesses in a Collatex output segment');
+                throw new InvalidArgumentException('Found invalid number of witnesses in a Collatex output segment');
             }
             $alignedSegment = $this->alignSegment($segment);
             foreach ($alignedSegment as $index => $witnessTokens) {
                 $siglum = $collationEngineOutput['witnesses'][$index];
                 foreach($witnessTokens as $segmentTokenIndex => $collationEngineToken) {
                     if (!isset($collationEngineToken['witnessRef'])) {
-                        throw new \InvalidArgumentException('Cannot found witnessRef in given collation engine output');
+                        throw new InvalidArgumentException('Cannot found witnessRef in given collation engine output');
                     }
                     $newCollationTable[$siglum][] = $collationEngineToken['witnessRef'];
                 }
@@ -452,12 +453,13 @@ class CollationTable {
         }
         return $variantTable;
     }
-    
+
     /**
      * Takes a Collatex output segment and aligns its token so that
      * all witness have exactly the same number of tokens
-     * 
+     *
      * @param array $segment
+     * @return array
      */
     
     protected function alignSegment(array $segment) : array {
@@ -503,7 +505,7 @@ class CollationTable {
     
     protected function getReferencesForColumn(int $index) : array {
         if ($index >= $this->getTokenCount()) {
-            throw new \InvalidArgumentException('Index out of range');
+            throw new InvalidArgumentException('Index out of range');
         }
         $rawColumn = [];
         foreach(array_keys($this->collationTable) as $siglum) {

@@ -34,7 +34,7 @@ use AverroesProject\TxText\ItemArray;
 
 use APM\Api\ApiController;
 use APM\Api\ApiCollation;
-
+use APM\Api\ApiPresets;
 
 /**
  * API call tests
@@ -52,6 +52,12 @@ class ApiControllerTest extends TestCase {
      * @var Api\ApiCollation
      */
     static $apiCollation;
+    
+    /**
+     *
+     * @var Api\ApiCollation
+     */
+    static $apiPresets;
     
     /*     
      * @var AverroesProject\Data\DataManager
@@ -80,6 +86,7 @@ class ApiControllerTest extends TestCase {
         
         // API controllers to test
         self::$apiCollation = new ApiCollation(self::$ci);
+        self::$apiPresets = new ApiPresets(self::$ci);
     }
     
 
@@ -367,6 +374,78 @@ class ApiControllerTest extends TestCase {
         }
         
         return $docIds;
+        
+    }
+    
+    
+    public function testGetPresets() {
+        
+        $request = (new \GuzzleHttp\Psr7\ServerRequest('POST', ''));
+        $inputResp = new \Slim\Http\Response();
+
+        $response1 = self::$apiPresets->getPresets($request, $inputResp, null);
+        
+        $this->assertEquals(409, $response1->getStatusCode());
+        
+        // Empty tool 
+        $request2 = self::requestWithData($request, 
+                ['tool' => '', 
+                 'userId' => self::$editor1, 
+                  'keyArrayToMatch' => []]);
+        
+        $response2 = self::$apiPresets->getPresets($request2, $inputResp, null);
+        
+        $this->assertEquals(409, $response2->getStatusCode());
+        $respData2 = json_decode($response2->getBody(true), true);
+        $this->assertEquals(ApiPresets::API_ERROR_WRONG_TYPE, $respData2['error']);
+        
+        // Invalid tool 
+        $request3 = self::requestWithData($request, 
+                ['tool' => 'sometool', 
+                 'userId' => self::$editor1, 
+                  'keyArrayToMatch' => []]);
+        
+        $response3 = self::$apiPresets->getPresets($request3, $inputResp, null);
+        
+        $this->assertEquals(409, $response3->getStatusCode());
+        $respData3 = json_decode($response3->getBody(true), true);
+        $this->assertEquals(ApiPresets::API_ERROR_UNRECOGNIZED_TOOL, $respData3['error']);
+        
+        // Invalid keyArraytoMatch
+        $request4 = self::requestWithData($request, 
+                ['tool' => System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION, 
+                 'userId' => self::$editor1, 
+                  'keyArrayToMatch' => 'not an array']);
+        
+        $response4 = self::$apiPresets->getPresets($request4, $inputResp, null);
+        
+        $this->assertEquals(409, $response4->getStatusCode());
+        $respData4 = json_decode($response4->getBody(true), true);
+        $this->assertEquals(ApiPresets::API_ERROR_WRONG_TYPE, $respData4['error']);
+        
+        // No presets returned
+        $request5 = self::requestWithData($request, 
+                ['tool' => System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION, 
+                 'userId' => self::$editor1, 
+                  'keyArrayToMatch' => []]);
+        
+        $response5 = self::$apiPresets->getPresets($request5, $inputResp, null);
+        
+        $this->assertEquals(200, $response5->getStatusCode());
+        $respData5 = json_decode($response5->getBody(true), true);
+        $this->assertEquals([], $respData5['presets']);
+        
+        // Get some presets in
+        $presetManager = self::$ci->sm->getPresetsManager();
+        $pf = new System\PresetFactory();
+        $presetTitle = 'MyTestPreset';
+        
+        $preset = $pf->create(System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION, $editor1, $presetTitle, 
+                ['lang' => $lang, 'ignorePunctuation' => true, 'witnesses' => [1,3,4]]);
+        $this->assertTrue($presetManager->addPreset($preset));
+        
+        
+        
         
     }
     

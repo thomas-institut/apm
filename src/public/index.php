@@ -27,17 +27,26 @@ namespace AverroesProject;
 
 use AverroesProject\Data\DataManager;
 use APM\System\ApmSystemManager;
+use Slim\App;
+use Slim\Views\Twig;
+use Slim\Views\TwigExtension;
 
 require 'vendor/autoload.php';
 require 'setup.php';
 require 'version.php';
 
 
-function exitWithErrorMessage($msg) {
+/**
+ * Exits with an error message
+ * @param $msg
+ */
+function exitWithErrorMessage(string $msg) {
     http_response_code(503);
     print "<pre>ERROR: $msg";
     exit();
 }
+
+global $config;
 
 // System Manager 
 $systemManager = new ApmSystemManager($config);
@@ -55,7 +64,7 @@ $cr = $systemManager->getCollationEngine();
 $db = new DataManager($dbh, $systemManager->getTableNames(), $logger, $hm, $config['langCodes']);
 
 // Initialize the Slim app
-$app = new \Slim\App(["settings" => $config]);
+$app = new App(["settings" => $config]);
 
 $container = $app->getContainer();
 
@@ -71,11 +80,11 @@ $container['userId'] = 0;  // The authentication module will update this with th
 //
 // Twig
 $container['view'] = function ($container) {
-    $view = new \Slim\Views\Twig('templates', [
+    $view = new Twig('templates', [
         'cache' => false   // Change this eventually!
     ]);
     $basePath = $container['config']['baseurl'];
-    $view->addExtension(new \Slim\Views\TwigExtension(
+    $view->addExtension(new TwigExtension(
             $container['router'], $basePath));
     return $view;
 };

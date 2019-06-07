@@ -38,6 +38,11 @@ use AverroesProject\Profiler\ApmProfiler;
 class SiteCollationTable extends SiteController
 {
    
+    const ERROR_SIGNATURE_PREFIX = 'CollationTableError-';
+    
+    const ERROR_NO_DATA = 'NoData';
+    const ERROR_NO_OPTIONS = 'NoOptions';
+    const ERROR_MISSING_REQUIRED_OPTION = 'MissingRequiredOption';
     
     public function quickCollationPage(Request $request, Response $response, $next)
     {
@@ -102,7 +107,6 @@ class SiteCollationTable extends SiteController
                 'work' => $workId,
                 'chunk' => $chunkNumber,
                 'lang' => '??',
-                'isPartial' => false,
                 'message' => $msg
             ]);
         }
@@ -161,19 +165,19 @@ class SiteCollationTable extends SiteController
                 'work' => '??',
                 'chunk' => '??',
                 'lang' => '??',
-                'isPartial' => false,
+                'errorSignature' => self::ERROR_SIGNATURE_PREFIX . self::ERROR_NO_DATA,
                 'message' => $msg
             ]);
         }
         if (!isset($inputData['options'])) {
-            $this->logger->error('Automatic Collation Table:  no data in input',
+            $this->logger->error('Automatic Collation Table:  no options in input',
                     [ 'rawdata' => $postData]);
             $msg = 'Bad request: no options';
             return $this->renderPage($response, 'chunk.collation.error.twig', [
                 'work' => '??',
                 'chunk' => '??',
                 'lang' => '??',
-                'isPartial' => false,
+                'errorSignature' => self::ERROR_SIGNATURE_PREFIX . self::ERROR_NO_OPTIONS,
                 'message' => $msg
             ]);
         }
@@ -187,7 +191,7 @@ class SiteCollationTable extends SiteController
                     'work' => '??',
                     'chunk' => '??',
                     'lang' => '??',
-                    'isPartial' => false,
+                    'errorSignature' => self::ERROR_SIGNATURE_PREFIX . self::ERROR_MISSING_REQUIRED_OPTION,
                     'message' => $msg
                 ]);
             }

@@ -18,29 +18,40 @@
  *  
  */
 
-namespace APM\System;
+namespace APM;
 
+require "../vendor/autoload.php";
+
+use PHPUnit\Framework\TestCase;
 use APM\Presets\Preset;
+use APM\System\PresetFactory;
+
 /**
- * Handles the creation of different kinds of presets
+ * Description of VectorTest
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class PresetFactory {
+class PresetFactoryTest extends TestCase {
     
-    public function create($toolId, int $userId, string $title, array $theData) {
+    public function testSimple() {
         
-        if ($toolId === ApmSystemManager::TOOL_AUTOMATIC_COLLATION) {
-                return new Preset(
-                        ApmSystemManager::TOOL_AUTOMATIC_COLLATION, 
-                        $userId, 
-                        $title, 
-                        ['lang' => $theData['lang'], 'witnesses' => $theData['witnesses']], 
-                        $theData
-                );
-        }
+       $factory = new PresetFactory();
+       
+       $someData = ['field1' => 'data1'];
+       
+       $preset1 = $factory->create('someTool', 100, 'preset1', $someData);
+       
+       $this->assertEquals($someData, $preset1->getData());
+       $this->assertEquals('someTool', $preset1->getTool());
+       
+       $myData = [ 'lang' => 'la', 'witnesses' => [1, 2]];
+       $preset2 = $factory->create(System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION, 100, 'myactpreset', $myData);
+       
+       $this->assertEquals($myData, $preset2->getData());
+       $this->assertEquals('la', $preset2->getKey('lang'));
+       
         
-        return new Preset($toolId, $userId, $title, $theData, $theData);
     }
+    
     
 }

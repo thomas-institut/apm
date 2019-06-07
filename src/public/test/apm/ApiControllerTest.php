@@ -25,8 +25,6 @@ require_once 'SiteMockup/testconfig.php';
 
 
 use PHPUnit\Framework\TestCase;
-use Monolog\Logger;
-use Monolog\Handler\StreamHandler;
 use GuzzleHttp\Psr7;
 
 use AverroesProject\TxText\ChunkMark;

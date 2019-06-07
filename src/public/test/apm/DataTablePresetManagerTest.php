@@ -130,5 +130,49 @@ class DataTablePresetManagerTest extends PresetManagerTest {
         }
         
     }
+    
+    public function testIdMethods() {
+        $pm = $this->createPM();
+        
+        $toolName = 'mytool';
+        $userId = 1000;
+        $title = 'test';
+        $data =  ['someField' => 'value'];
+        $data2 = ['someField' => 'value2'];
+        $preset = new Presets\Preset($toolName, $userId, $title, $data, $data);
+        
+        $addResult = $pm->addPreset($preset);
+        $this->assertTrue($addResult);
+        
+        $retrievedPreset = $pm->getPreset($toolName, $userId, $title);
+        
+        $this->assertEquals($data, $retrievedPreset->getData());
+        
+        $id = $retrievedPreset->getId();
+        
+        $retrieveResult1 = $pm->getPresetById(1000);
+        $this->assertFalse($retrieveResult1);
+        $retrievedPreset2 = $pm->getPresetById($id);
+        $this->assertEquals($data, $retrievedPreset2->getData());
+        
+        $preset2 = new Presets\Preset($toolName, $userId, $title, $data2, $data2);
+        
+        $updateResult1 =  $pm->updatePresetById(1000, $preset2);
+        $this->assertFalse($updateResult1);
+        
+        $updateResult2 = $pm->updatePresetById($id, $preset2);
+        $this->assertNotFalse($updateResult2);
+        
+        $retrievedPreset3 = $pm->getPresetById($id);
+        $this->assertEquals($data2, $retrievedPreset3->getData());
+        
+        $eraseResult1 = $pm->erasePresetById(1000);
+        $this->assertTrue($eraseResult1);
+        
+        $eraseResult2 = $pm->erasePresetById($id);
+        $this->assertTrue($eraseResult2);
+                
+    }
+    
 
 }

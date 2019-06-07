@@ -115,5 +115,7 @@ class ApmSystemManagerTest extends TestCase {
         $this->assertTrue(is_a($sm8->getSettingsManager(), 'APM\System\SettingsManager'));
         $this->assertTrue(is_a($sm8->getPresetsManager(), 'APM\Presets\PresetManager'));
         
+        $this->assertFalse($sm8->isToolValid('someToolNotInTheSystem'));
+        
     }
 }

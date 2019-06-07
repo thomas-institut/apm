@@ -25,7 +25,11 @@ require 'SiteMockup/SiteTestEnvironment.php';
 
 
 use PHPUnit\Framework\TestCase;
+
+
 use GuzzleHttp\Psr7\ServerRequest;
+use GuzzleHttp\Psr7;
+use Slim\Http\Response;
 
 use APM\Site\SiteCollationTable;
 
@@ -377,7 +381,7 @@ class SiteControllerTest extends TestCase {
     /**
      * @depends testChunkAndWitnessPage
      */
-    public function testAutomaticCollationTable(array $witnessInfo) {
+    public function testAutomaticCollationTableGet(array $witnessInfo) {
         
         $work = $witnessInfo['work'];
         $chunkNo = $witnessInfo['chunk'];
@@ -412,7 +416,7 @@ class SiteControllerTest extends TestCase {
         $docList = '45/24/34/35';
         
         $response2 = $collationTableControllerObject->automaticCollationPageGet($request2, $inputResp2, 
-                [ 'docs' => $docList]);
+                [ 'docs' => $docList, 'ignore_punct' => 'whatever']);
         $this->assertEquals(200, $response2->getStatusCode());
         
         
@@ -420,6 +424,113 @@ class SiteControllerTest extends TestCase {
                 NULL);
         $this->assertEquals(200, $response3->getStatusCode());
         
+    }
+    
+    
+    /**
+     * @depends testChunkAndWitnessPage
+     */
+    public function testAutomaticCollationTableCustom(array $witnessInfo) {
+        
+        $work = $witnessInfo['work'];
+        $chunkNo = $witnessInfo['chunk'];
+        $lang = $witnessInfo['lang'];
+        $editor1 = $witnessInfo['editors'][0];
+
+        self::$ci['userInfo'] = ['id' => $editor1];
+        self::$dm->um->allowUserTo($editor1, 'act-view-experimental-data');
+        
+        $collationTableControllerObject = new SiteCollationTable(self::$ci);
+        
+        // no data
+        $request1 =  new ServerRequest('POST', '');
+        $inputResp = new Response();
+        $response1 = $collationTableControllerObject->automaticCollationPageCustom($request1, $inputResp, NULL);
+        $this->assertEquals(200, $response1->getStatusCode());
+        $this->assertNotFalse(strpos($response1->getBody(), SiteCollationTable::ERROR_SIGNATURE_PREFIX . SiteCollationTable::ERROR_NO_DATA));
+        
+        // No options in data
+        $request2 = $this->requestWithData($request1, []);
+        $response2 = $collationTableControllerObject->automaticCollationPageCustom($request2, $inputResp, NULL);
+        $this->assertEquals(200, $response2->getStatusCode());
+        $this->assertNotFalse(strpos($response2->getBody(), SiteCollationTable::ERROR_SIGNATURE_PREFIX . SiteCollationTable::ERROR_NO_OPTIONS));
+        
+        // Incomplete options
+        $request3 = $this->requestWithData($request1, ['options' => []]);
+        $response3 = $collationTableControllerObject->automaticCollationPageCustom($request3, $inputResp, NULL);
+        $this->assertEquals(200, $response3->getStatusCode());
+        $this->assertNotFalse(strpos($response3->getBody(), SiteCollationTable::ERROR_SIGNATURE_PREFIX . SiteCollationTable::ERROR_MISSING_REQUIRED_OPTION));
+        
+        
+        // Enough options to go into the common collation table methods (tested above)
+        $request4 = $this->requestWithData($request1, ['options' => [
+            'work' => 'AW48',
+            'chunk' => 24,
+            'lang' => 'la',
+            'ignorePunctuation' => true,
+            'partialCollation' => true,
+            'witnesses' => [3,4,5]
+        ]]);
+        $response4 = $collationTableControllerObject->automaticCollationPageCustom($request4, $inputResp, NULL);
+        $this->assertEquals(200, $response4->getStatusCode());
+    }
+    
+    
+    /**
+     * @depends testChunkAndWitnessPage
+     */
+    public function testAutomaticCollationTablePreset(array $witnessInfo) {
+        
+        $work = $witnessInfo['work'];
+        $chunkNo = $witnessInfo['chunk'];
+        $lang = $witnessInfo['lang'];
+        $editor1 = $witnessInfo['editors'][0];
+
+        self::$ci['userInfo'] = ['id' => $editor1];
+        self::$dm->um->allowUserTo($editor1, 'act-view-experimental-data');
+        
+        $collationTableControllerObject = new SiteCollationTable(self::$ci);
+        
+        // Bad Preset
+        $request1 = (new ServerRequest('GET', ''))
+                ->withAttribute('work', $work)
+                ->withAttribute('chunk', $chunkNo) 
+                ->withAttribute('preset', 131312321);
+        
+        $inputResp1 = new \Slim\Http\Response();
+        
+        $response1 = $collationTableControllerObject->automaticCollationPagePreset($request1, $inputResp1,  NULL);
+        $this->assertEquals(200, $response1->getStatusCode());
+        
+        $presetManager = self::$ci->sm->getPresetsManager();
+        $pf = new System\PresetFactory();
+        $presetTitle = 'MyTestPreset';
+        
+        $preset = $pf->create(System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION, $editor1, $presetTitle, 
+                ['lang' => $lang, 'ignorePunctuation' => true, 'witnesses' => [1,3,4]]);
+        $this->assertTrue($presetManager->addPreset($preset));
+        
+        $presetId = $presetManager->getPreset(System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION, $editor1, $presetTitle)->getId();
+        
+        $request2 = (new ServerRequest('GET', ''))
+                ->withAttribute('work', $work)
+                ->withAttribute('chunk', $chunkNo) 
+                ->withAttribute('preset', $presetId);
+        $inputResp2 = new \Slim\Http\Response();
+        
+        $response2 = $collationTableControllerObject->automaticCollationPagePreset($request2, $inputResp2,  NULL);
+        $this->assertEquals(200, $response2->getStatusCode());
+        
+    }
+    
+    
+    public function requestWithData($request, $data) {
+        return $request->withBody(
+            Psr7\stream_for(
+                http_build_query(['data' => json_encode($data)])
+            )
+        );
+
     }
     
 }

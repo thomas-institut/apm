@@ -127,6 +127,7 @@ class ApiPresets extends ApiController
         $presetsInArrayForm = [];
         foreach($presets as $preset) {
             $presetsInArrayForm[] = [
+                'id' => $preset->getId(),
                 'userId' => $preset->getUserId(),
                 'data' => $preset->getData()
             ];

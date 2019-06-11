@@ -24,6 +24,8 @@ require_once 'SiteMockup/DatabaseTestEnvironment.php';
 require_once 'SiteMockup/testconfig.php';
 
 
+use APM\System\ApmSystemManager;
+use APM\System\PresetFactory;
 use PHPUnit\Framework\TestCase;
 use GuzzleHttp\Psr7;
 
@@ -55,7 +57,7 @@ class ApiControllerTest extends TestCase {
     
     /**
      *
-     * @var Api\ApiCollation
+     * @var Api\ApiPresets
      */
     static $apiPresets;
     
@@ -75,15 +77,10 @@ class ApiControllerTest extends TestCase {
        
         self::$testEnvironment = new DatabaseTestEnvironment($apmTestConfig);
         self::$ci = self::$testEnvironment->getContainer();
-         
-        self::$testEnvironment->emptyDatabase();
-        
-        
+
         self::$dataManager = self::$ci->db;
-        self::$editor1 = self::$dataManager->um->createUserByUserName('testeditor1');
-        self::$editor2 = self::$dataManager->um->createUserByUserName('testeditor2');
-        
-        
+
+
         // API controllers to test
         self::$apiCollation = new ApiCollation(self::$ci);
         self::$apiPresets = new ApiPresets(self::$ci);
@@ -92,6 +89,10 @@ class ApiControllerTest extends TestCase {
 
     public function testQuickCollation()
     {
+        self::$testEnvironment->emptyDatabase();
+        self::$editor1 = self::$dataManager->um->createUserByUserName('testeditor1');
+        self::$editor2 = self::$dataManager->um->createUserByUserName('testeditor2');
+
         $request = (new \GuzzleHttp\Psr7\ServerRequest('POST', ''));
         $inputResp = new \Slim\Http\Response();
         
@@ -178,7 +179,11 @@ class ApiControllerTest extends TestCase {
         $otherLang = 'he';
         $numGoodWitnesses = 5;
         $numBadWitnesses = 2;
-        
+
+        self::$testEnvironment->emptyDatabase();
+        self::$editor1 = self::$dataManager->um->createUserByUserName('testeditor1');
+        self::$editor2 = self::$dataManager->um->createUserByUserName('testeditor2');
+
         $request = (new \GuzzleHttp\Psr7\ServerRequest('POST', ''));
         $inputResp = new \Slim\Http\Response();
         
@@ -312,8 +317,176 @@ class ApiControllerTest extends TestCase {
         $this->assertEquals(409, $response->getStatusCode());
         $respData = json_decode($response->getBody(true), true);
         $this->assertEquals(ApiCollation::ERROR_NOT_ENOUGH_WITNESSES, $respData['error']);
-      
-        
+    }
+
+    public function testGetPresets() {
+
+        $lang = 'la';
+
+        self::$testEnvironment->emptyDatabase();
+        self::$editor1 = self::$dataManager->um->createUserByUserName('testeditor1');
+        self::$editor2 = self::$dataManager->um->createUserByUserName('testeditor2');
+        $request = (new \GuzzleHttp\Psr7\ServerRequest('POST', ''));
+        $inputResp = new \Slim\Http\Response();
+
+        $response1 = self::$apiPresets->getPresets($request, $inputResp, null);
+
+        $this->assertEquals(409, $response1->getStatusCode());
+
+        // Empty tool
+        $request2 = self::requestWithData($request,
+            ['tool' => '',
+                'userId' => self::$editor1,
+                'keyArrayToMatch' => []]);
+
+        $response2 = self::$apiPresets->getPresets($request2, $inputResp, null);
+
+        $this->assertEquals(409, $response2->getStatusCode());
+        $respData2 = json_decode($response2->getBody(true), true);
+        $this->assertEquals(ApiPresets::API_ERROR_WRONG_TYPE, $respData2['error']);
+
+        // Invalid tool
+        $request3 = self::requestWithData($request,
+            ['tool' => 'sometool',
+                'userId' => self::$editor1,
+                'keyArrayToMatch' => []]);
+
+        $response3 = self::$apiPresets->getPresets($request3, $inputResp, null);
+
+        $this->assertEquals(409, $response3->getStatusCode());
+        $respData3 = json_decode($response3->getBody(true), true);
+        $this->assertEquals(ApiPresets::API_ERROR_UNRECOGNIZED_TOOL, $respData3['error']);
+
+        // Invalid keyArraytoMatch
+        $request4 = self::requestWithData($request,
+            ['tool' => System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION,
+                'userId' => self::$editor1,
+                'keyArrayToMatch' => 'not an array']);
+
+        $response4 = self::$apiPresets->getPresets($request4, $inputResp, null);
+
+        $this->assertEquals(409, $response4->getStatusCode());
+        $respData4 = json_decode($response4->getBody(true), true);
+        $this->assertEquals(ApiPresets::API_ERROR_WRONG_TYPE, $respData4['error']);
+
+        // No presets returned
+        $request5 = self::requestWithData($request,
+            ['tool' => System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION,
+                'userId' => self::$editor1,
+                'keyArrayToMatch' => []]);
+
+        $response5 = self::$apiPresets->getPresets($request5, $inputResp, null);
+
+        $this->assertEquals(200, $response5->getStatusCode());
+        $respData5 = json_decode($response5->getBody(true), true);
+        $this->assertEquals([], $respData5['presets']);
+
+        // Get some presets in
+        $presetManager = self::$ci->sm->getPresetsManager();
+        $pf = new System\PresetFactory();
+        $presetTitle = 'MyTestPreset';
+
+        $witnesses = [1,3,4];
+        $preset = $pf->create(System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION, self::$editor1, $presetTitle,
+            ['lang' => $lang, 'ignorePunctuation' => true, 'witnesses' => $witnesses]);
+        $this->assertTrue($presetManager->addPreset($preset));
+
+        // try again with one preset in the database
+        $request6 = self::requestWithData($request,
+            ['tool' => System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION,
+                'userId' => self::$editor1,
+                'keyArrayToMatch' => []]);
+        $response6 = self::$apiPresets->getPresets($request6, $inputResp, null);
+        $this->assertEquals(200, $response6->getStatusCode());
+        $respData6 = json_decode($response6->getBody(true), true);
+        $this->assertCount(1, $respData6['presets']);
+
+        $this->assertEquals(self::$editor1, $respData6['presets'][0]['userId']);
+        $this->assertEquals($lang, $respData6['presets'][0]['data']['lang']);
+        $this->assertEquals($witnesses, $respData6['presets'][0]['data']['witnesses']);
+
+        //try again without userId
+        $request7 = self::requestWithData($request,
+            ['tool' => System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION,
+                'userId' => false,
+                'keyArrayToMatch' => []]);
+        $response7 = self::$apiPresets->getPresets($request7, $inputResp, null);
+        $this->assertEquals(200, $response7->getStatusCode());
+        $respData7 = json_decode($response7->getBody(true), true);
+        $this->assertCount(1, $respData7['presets']);
+
+        $this->assertEquals(self::$editor1, $respData7['presets'][0]['userId']);
+        $this->assertEquals($lang, $respData7['presets'][0]['data']['lang']);
+        $this->assertEquals($witnesses, $respData7['presets'][0]['data']['witnesses']);
+
+        return $respData7['presets'][0];
+    }
+
+    /**
+     * @depends testGetPresets
+     */
+    public function testGetAutomaticCollationPresets(array $presetData) {
+
+        $lang = 'la';
+
+        $request = (new \GuzzleHttp\Psr7\ServerRequest('POST', ''));
+        $inputResp = new \Slim\Http\Response();
+
+        $response1 = self::$apiPresets->getAutomaticCollationPresets($request, $inputResp, null);
+        $this->assertEquals(409, $response1->getStatusCode());
+
+
+        // Bad witnesses
+        $request2 = self::requestWithData($request,
+            [   'userId' => 0,
+                'lang' => $presetData['data']['lang'],
+                'witnesses' => 'somestring'
+            ]);
+
+        $response2 = self::$apiPresets->getAutomaticCollationPresets($request2, $inputResp, null);
+
+        $this->assertEquals(409, $response2->getStatusCode());
+        $respData2 = json_decode($response2->getBody(true), true);
+        $this->assertEquals(ApiPresets::API_ERROR_WRONG_TYPE, $respData2['error']);
+
+        // not enough witnesses
+        $request3 = self::requestWithData($request,
+            [   'userId' => 0,
+                'lang' => $presetData['data']['lang'],
+                'witnesses' => [1]
+            ]);
+        $response3 = self::$apiPresets->getAutomaticCollationPresets($request3, $inputResp, null);
+
+        $this->assertEquals(409, $response3->getStatusCode());
+        $respData3 = json_decode($response3->getBody(true), true);
+        $this->assertEquals(ApiPresets::API_ERROR_NOT_ENOUGH_WITNESSES, $respData3['error']);
+
+        $witnessesToMatch = $presetData['data']['witnesses'];
+        $request4 = self::requestWithData($request,
+            [   'userId' => 0,
+                'lang' => $presetData['data']['lang'],
+                'witnesses' => $witnessesToMatch
+            ]);
+        $response4 = self::$apiPresets->getAutomaticCollationPresets($request4, $inputResp, null);
+
+        $this->assertEquals(200, $response4->getStatusCode());
+        $respData4 = json_decode($response4->getBody(true), true);
+        $this->assertCount(1, $respData4['presets']);
+        $this->assertEquals($presetData['id'], $respData4['presets'][0]['presetId']);
+
+        // same, but with userId
+        $request5 = self::requestWithData($request,
+            [   'userId' => $presetData['userId'],
+                'lang' => $presetData['data']['lang'],
+                'witnesses' => $witnessesToMatch
+            ]);
+        $response5 = self::$apiPresets->getAutomaticCollationPresets($request5, $inputResp, null);
+
+        $this->assertEquals(200, $response5->getStatusCode());
+        $respData5 = json_decode($response5->getBody(true), true);
+        $this->assertCount(1, $respData5['presets']);
+        $this->assertEquals($presetData['id'], $respData5['presets'][0]['presetId']);
+
     }
     
     public static function requestWithData($request, $data) {
@@ -378,75 +551,6 @@ class ApiControllerTest extends TestCase {
     }
     
     
-    public function testGetPresets() {
-        
-        $request = (new \GuzzleHttp\Psr7\ServerRequest('POST', ''));
-        $inputResp = new \Slim\Http\Response();
 
-        $response1 = self::$apiPresets->getPresets($request, $inputResp, null);
-        
-        $this->assertEquals(409, $response1->getStatusCode());
-        
-        // Empty tool 
-        $request2 = self::requestWithData($request, 
-                ['tool' => '', 
-                 'userId' => self::$editor1, 
-                  'keyArrayToMatch' => []]);
-        
-        $response2 = self::$apiPresets->getPresets($request2, $inputResp, null);
-        
-        $this->assertEquals(409, $response2->getStatusCode());
-        $respData2 = json_decode($response2->getBody(true), true);
-        $this->assertEquals(ApiPresets::API_ERROR_WRONG_TYPE, $respData2['error']);
-        
-        // Invalid tool 
-        $request3 = self::requestWithData($request, 
-                ['tool' => 'sometool', 
-                 'userId' => self::$editor1, 
-                  'keyArrayToMatch' => []]);
-        
-        $response3 = self::$apiPresets->getPresets($request3, $inputResp, null);
-        
-        $this->assertEquals(409, $response3->getStatusCode());
-        $respData3 = json_decode($response3->getBody(true), true);
-        $this->assertEquals(ApiPresets::API_ERROR_UNRECOGNIZED_TOOL, $respData3['error']);
-        
-        // Invalid keyArraytoMatch
-        $request4 = self::requestWithData($request, 
-                ['tool' => System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION, 
-                 'userId' => self::$editor1, 
-                  'keyArrayToMatch' => 'not an array']);
-        
-        $response4 = self::$apiPresets->getPresets($request4, $inputResp, null);
-        
-        $this->assertEquals(409, $response4->getStatusCode());
-        $respData4 = json_decode($response4->getBody(true), true);
-        $this->assertEquals(ApiPresets::API_ERROR_WRONG_TYPE, $respData4['error']);
-        
-        // No presets returned
-        $request5 = self::requestWithData($request, 
-                ['tool' => System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION, 
-                 'userId' => self::$editor1, 
-                  'keyArrayToMatch' => []]);
-        
-        $response5 = self::$apiPresets->getPresets($request5, $inputResp, null);
-        
-        $this->assertEquals(200, $response5->getStatusCode());
-        $respData5 = json_decode($response5->getBody(true), true);
-        $this->assertEquals([], $respData5['presets']);
-        
-        // Get some presets in
-        $presetManager = self::$ci->sm->getPresetsManager();
-        $pf = new System\PresetFactory();
-        $presetTitle = 'MyTestPreset';
-        
-        $preset = $pf->create(System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION, $editor1, $presetTitle, 
-                ['lang' => $lang, 'ignorePunctuation' => true, 'witnesses' => [1,3,4]]);
-        $this->assertTrue($presetManager->addPreset($preset));
-        
-        
-        
-        
-    }
     
 }

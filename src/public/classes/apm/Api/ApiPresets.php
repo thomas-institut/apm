@@ -128,6 +128,7 @@ class ApiPresets extends ApiController
         foreach($presets as $preset) {
             $presetsInArrayForm[] = [
                 'id' => $preset->getId(),
+                'title' => $preset->getTitle(),
                 'userId' => $preset->getUserId(),
                 'data' => $preset->getData()
             ];
@@ -280,8 +281,11 @@ class ApiPresets extends ApiController
         
         $pm = $this->sm->getPresetsManager();
         $pf = new PresetFactory();
+        $apiUserId = $this->ci->userId;
         if ($command === self::COMMAND_NEW) {
-            $preset = $pf->create($tool, $userId, $title, $data);
+            // Notice: when creating a new preset, the API ignores the given userId and presetId and
+            // defaults to the user authenticated by the system and generates a new preset Id
+            $preset = $pf->create($tool, $apiUserId, $title, $data);
             if ($pm->correspondingPresetExists($preset)) {
                 $this->logger->error("Preset already exists",
                     [ 'apiUserId' => $this->ci->userId, 
@@ -290,53 +294,49 @@ class ApiPresets extends ApiController
                 return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_PRESET_ALREADY_EXISTS]);
             }
             if (!$pm->addPreset($preset)) {
+                // @codeCoverageIgnoreStart
                 $this->logger->error("Could not save new preset",
                     [ 'apiUserId' => $this->ci->userId, 
                       'apiError' => self::API_ERROR_CANNOT_SAVE_PRESET,
                       'data' => $inputData ]);
                 return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_CANNOT_SAVE_PRESET]);
+                // @codeCoverageIgnoreEnd
             }
             // success
-            $newId = $pm->getPreset($tool, $userId, $title)->getId();
+            $newId = $pm->getPreset($tool, $apiUserId, $title)->getId();
             $profiler->log($this->logger);
             return $response->withStatus(200)->withJson(['presetId' => $newId]);
         }
         
         // command = update preset
-        
+
+        $currentPreset = $pm->getPresetById($presetId);
+        if ($currentPreset === false) {
+            $this->logger->error("Preset with given Id does not exist",
+                [ 'apiUserId' => $this->ci->userId,
+                    'apiError' => self::API_ERROR_PRESET_DOES_NOT_EXIST,
+                    'data' => $inputData ]);
+            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_PRESET_DOES_NOT_EXIST]);
+        }
+
         // check that userId is the same as the current preset's userId
-        if (intval($this->ci->userId) !== $userId) {
+        if (intval($this->ci->userId) !== $currentPreset->getUserId()) {
             $this->logger->error("API user not authorized to update preset",
                     [ 'apiUserId' => $this->ci->userId, 
                       'apiError' => self::API_ERROR_NOT_AUTHORIZED,
                       'data' => $inputData ]);
             return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_NOT_AUTHORIZED]);
         }
-        
-        $currentPreset = $pm->getPresetById($presetId);
-        if ($currentPreset === false) {
-            $this->logger->error("Preset with given Id does not exist",
-                    [ 'apiUserId' => $this->ci->userId, 
-                      'apiError' => self::API_ERROR_PRESET_DOES_NOT_EXIST,
-                      'data' => $inputData ]);
-            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_PRESET_DOES_NOT_EXIST]);
-        }
-        if ($currentPreset->getTool() !== $tool || $currentPreset->getUserId() !== $userId) {
-            $this->logger->error("Preset to update does not match existing preset",
-                    [ 'apiUserId' => $this->ci->userId, 
-                      'apiError' => self::API_ERROR_PRESET_MISMATCH,
-                      'data' => $inputData ]);
-            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_PRESET_MISMATCH]);
-        }
-        
-        
-        $updatedPreset = $pf->create($tool, $userId, $title, $data);
+
+        $updatedPreset = $pf->create($tool, $this->ci->userId, $title, $data);
         if (!$pm->updatePresetById($presetId, $updatedPreset)) {
+            // @codeCoverageIgnoreStart
             $this->logger->error("Could not update preset",
                     [ 'apiUserId' => $this->ci->userId, 
                       'apiError' => self::API_ERROR_CANNOT_SAVE_PRESET,
                       'data' => $inputData ]);
-                return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_CANNOT_SAVE_PRESET]);
+            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_CANNOT_SAVE_PRESET]);
+            // @codeCoverageIgnoreEnd
         }
         
         // success
@@ -370,11 +370,13 @@ class ApiPresets extends ApiController
         }
         
         if (!$pm->erasePresetById($presetId)) {
+            // @codeCoverageIgnoreStart
             $this->logger->error("Cannot delete preset",
                     [ 'apiUserId' => $this->ci->userId, 
                       'apiError' => self::API_ERROR_CANNOT_DELETE,
                       'presetId'  => $presetId ]);
             return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_CANNOT_DELETE]);
+            // @codeCoverageIgnoreEnd
         }
         // success
         $profiler->log($this->logger);

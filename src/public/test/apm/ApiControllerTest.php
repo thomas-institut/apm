@@ -26,6 +26,7 @@ require_once 'SiteMockup/testconfig.php';
 
 use APM\System\ApmSystemManager;
 use APM\System\PresetFactory;
+use GuzzleHttp\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use GuzzleHttp\Psr7;
 
@@ -427,8 +428,6 @@ class ApiControllerTest extends TestCase {
      */
     public function testGetAutomaticCollationPresets(array $presetData) {
 
-        $lang = 'la';
-
         $request = (new \GuzzleHttp\Psr7\ServerRequest('POST', ''));
         $inputResp = new \Slim\Http\Response();
 
@@ -487,6 +486,175 @@ class ApiControllerTest extends TestCase {
         $this->assertCount(1, $respData5['presets']);
         $this->assertEquals($presetData['id'], $respData5['presets'][0]['presetId']);
 
+    }
+
+    /**
+     * @depends testGetPresets
+     */
+    public function testSavePreset($presetInfo) {
+        $request = (new \GuzzleHttp\Psr7\ServerRequest('POST', ''));
+        $inputResp = new \Slim\Http\Response();
+
+        $response1 = self::$apiPresets->savePreset($request, $inputResp, null);
+        $this->assertEquals(409, $response1->getStatusCode());
+
+        $lang = $presetInfo['data']['lang'];
+        $presetUserId = $presetInfo['userId'];
+        $presetId = $presetInfo['id'];
+        $presetTitle = $presetInfo['title'];
+        $presetData = $presetInfo['data'];
+
+        // bad command
+        $request2 = self::requestWithData($request,
+            [   'command' => ApiPresets::COMMAND_UPDATE .  'spurioussuffix',
+                'tool' => System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION,
+                'userId' => $presetUserId,
+                'title' => 'new title',
+                'presetId' => $presetId,
+                'presetData' => $presetData
+            ]);
+        $response2 = self::$apiPresets->savePreset($request2, $inputResp, null);
+        $this->assertEquals(409, $response2->getStatusCode());
+        $respData2 = json_decode($response2->getBody(true), true);
+        $this->assertEquals(ApiPresets::API_ERROR_UNKNOWN_COMMAND, $respData2['error']);
+
+        // bad tool
+        $request3 = self::requestWithData($request,
+            [   'command' => ApiPresets::COMMAND_UPDATE,
+                'tool' => System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION . 'spurioussuffix',
+                'userId' => $presetUserId,
+                'title' => 'new title',
+                'presetId' => $presetId,
+                'presetData' => $presetData
+            ]);
+        $response3 = self::$apiPresets->savePreset($request3, $inputResp, null);
+        $this->assertEquals(409, $response3->getStatusCode());
+        $respData3 = json_decode($response3->getBody(true), true);
+        $this->assertEquals(ApiPresets::API_ERROR_UNRECOGNIZED_TOOL, $respData3['error']);
+        
+        // invalid preset data
+        $request4 = self::requestWithData($request,
+            [   'command' => ApiPresets::COMMAND_UPDATE,
+                'tool' => System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION,
+                'userId' => $presetUserId,
+                'title' => 'new title',
+                'presetId' => $presetId,
+                'presetData' => []
+            ]);
+        $response4 = self::$apiPresets->savePreset($request4, $inputResp, null);
+        $this->assertEquals(409, $response4->getStatusCode());
+        $respData4 = json_decode($response4->getBody(true), true);
+        $this->assertEquals(ApiPresets::API_ERROR_INVALID_PRESET_DATA, $respData4['error']);
+        
+        // successful new preset
+        $request5 = self::requestWithData($request,
+            [   'command' => ApiPresets::COMMAND_NEW,
+                'tool' => System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION,
+                'userId' => 0, // this will be ignored by the API
+                'title' => $presetTitle,
+                'presetId' => 0,
+                'presetData' => $presetData
+            ]);
+        $response5 = self::$apiPresets->savePreset($request5, $inputResp, null);
+        $this->assertEquals(200, $response5->getStatusCode());
+        $respData5 = json_decode($response5->getBody(true), true);
+        $newPresetId = $respData5['presetId'];
+        $this->assertNotEquals($presetId, $newPresetId);
+
+        // new preset attempt on existing preset
+        $request6 = self::requestWithData($request,
+            [   'command' => ApiPresets::COMMAND_NEW,
+                'tool' => System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION,
+                'userId' => self::$ci->userId,
+                'title' => $presetTitle,
+                'presetId' => 0,
+                'presetData' => $presetData
+            ]);
+        $response6 = self::$apiPresets->savePreset($request6, $inputResp, null);
+        $this->assertEquals(409, $response6->getStatusCode());
+        $respData6 = json_decode($response6->getBody(true), true);
+        $this->assertEquals(ApiPresets::API_ERROR_PRESET_ALREADY_EXISTS, $respData6['error']);
+
+        
+        // update attempt, API user not authorized
+        $request7 = self::requestWithData($request,
+            [   'command' => ApiPresets::COMMAND_UPDATE,
+                'tool' => System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION,
+                'userId' => 0, // ignored by API on updates
+                'title' => $presetTitle . '_new',
+                'presetId' => $presetId,
+                'presetData' => $presetData
+            ]);
+        $response7 = self::$apiPresets->savePreset($request7, $inputResp, null);
+        $this->assertEquals(409, $response7->getStatusCode());
+        $respData7 = json_decode($response7->getBody(true), true);
+        $this->assertEquals(ApiPresets::API_ERROR_NOT_AUTHORIZED, $respData7['error']);
+        
+        // update attempt on non-existent preset
+        $request8 = self::requestWithData($request,
+            [   'command' => ApiPresets::COMMAND_UPDATE,
+                'tool' => System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION,
+                'userId' => 0, // ignored by API on updates
+                'title' => $presetTitle . '_new',
+                'presetId' => $presetId + 2000,
+                'presetData' => $presetData
+            ]);
+        $response8 = self::$apiPresets->savePreset($request8, $inputResp, null);
+        $this->assertEquals(409, $response8->getStatusCode());
+        $respData8 = json_decode($response8->getBody(true), true);
+        $this->assertEquals(ApiPresets::API_ERROR_PRESET_DOES_NOT_EXIST, $respData8['error']);
+    
+        // succesful update attempt
+        $request9 = self::requestWithData($request,
+            [   'command' => ApiPresets::COMMAND_UPDATE,
+                'tool' => System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION,
+                'userId' => 0, // ignored by API on updates
+                'title' => $presetTitle . '_new',
+                'presetId' => $newPresetId,
+                'presetData' => $presetData
+            ]);
+        $response9 = self::$apiPresets->savePreset($request9, $inputResp, null);
+        $this->assertEquals(200, $response9->getStatusCode());
+        $respData9 =  json_decode($response9->getBody(true), true);
+        $this->assertEquals($newPresetId, $respData9['presetId']);
+
+        return [ 'presetId1' => $presetId, 'presetId2' => $newPresetId] ;
+    }
+
+    /**
+     * @depends testSavePreset
+     */
+    public function testDeletePreset($presetIds) {
+        $presetId1 = $presetIds['presetId1']; // owned by self::$editor1
+        $presetId2 = $presetIds['presetId2']; // owned by the current api user
+
+        // delete attempt with non-existent preset
+        $request = (new ServerRequest('GET', ''))
+            ->withAttribute('id', $presetId2 + 1000);
+        $inputResp = new \Slim\Http\Response();
+
+        $response1 = self::$apiPresets->deletePreset($request, $inputResp, null);
+        $this->assertEquals(409, $response1->getStatusCode());
+        $respData1 = json_decode($response1->getBody(true), true);
+        $this->assertEquals(ApiPresets::API_ERROR_PRESET_DOES_NOT_EXIST, $respData1['error']);
+        
+        // delete attempt on preset by another user
+        $request2 = (new ServerRequest('GET', ''))
+            ->withAttribute('id', $presetId1);
+        $inputResp = new \Slim\Http\Response();
+
+        $response2 = self::$apiPresets->deletePreset($request2, $inputResp, null);
+        $this->assertEquals(409, $response2->getStatusCode());
+        $respData2 = json_decode($response2->getBody(true), true);
+        $this->assertEquals(ApiPresets::API_ERROR_NOT_AUTHORIZED, $respData2['error']);
+        
+        // successful delete attempt
+        $request3 = (new ServerRequest('GET', ''))
+            ->withAttribute('id', $presetId2);
+        $inputResp = new \Slim\Http\Response();
+
+        $response3 = self::$apiPresets->deletePreset($request3, $inputResp, null);
+        $this->assertEquals(200, $response3->getStatusCode());
     }
     
     public static function requestWithData($request, $data) {

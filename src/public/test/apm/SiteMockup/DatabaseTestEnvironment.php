@@ -23,6 +23,7 @@ require "../vendor/autoload.php";
 
 use AverroesProject\Data\DataManager;
 use APM\System\ApmSystemManager;
+use mysql_xdevapi\Exception;
 
 /**
  * Utility class to set up the test environment for database testing
@@ -85,12 +86,15 @@ class DatabaseTestEnvironment {
                 DELETE FROM ap_relations;
                 DELETE FROM ap_users;
                 DELETE FROM ap_people;
-                DELETE FROM ap_hands;
+                DELETE FROM ap_presets;
                 INSERT INTO `ap_hands` (`id`, `name`, `description`) VALUES
 (0, 'Unknown', 'Unknown hand');
 EOD;
-        $dbConn->query($query);
-        
+        $result = $dbConn->query($query);
+        if ($result === false) {
+            throw new Exception('Error in MySQL query trying to empty the database for testing');
+        }
+
     }
     
     public function getContainer()

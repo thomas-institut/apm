@@ -20,6 +20,7 @@
 
 namespace APM\Api;
 
+
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
@@ -27,6 +28,7 @@ use AverroesProject\Profiler\ApmProfiler;
 
 use APM\Core\Witness\StringWitness;
 use APM\Core\Collation\CollationTable;
+use APM\Experimental\EditionWitness;
 use APM\Decorators\QuickCollationTableDecorator;
 use AverroesProjectToApm\Decorators\TransitionalCollationTableDecorator;
 use AverroesProjectToApm\ApUserDirectory;
@@ -296,9 +298,9 @@ class ApiCollation extends ApiController
         
         // EXPERIMENTAL quick edition
         
-        $qdw = new \APM\Experimental\QuickDerivativeWitness($collationTable, $language);
+        $qdw = new EditionWitness($collationTable, $collationTable->getSigla()[0], $language);
         
-        $quickEdition = $qdw->generateEdition($collationTable->getSigla()[0]);
+        $quickEdition = $qdw->generateEdition();
         
 
         $profiler->log($this->logger);

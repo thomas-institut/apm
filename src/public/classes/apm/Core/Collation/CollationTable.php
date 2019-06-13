@@ -27,13 +27,13 @@ use APM\Core\Witness\Witness;
 use InvalidArgumentException;
 
 /**
- * Representation of a collation table
+ * Representation of a collation table.
  * 
  * A collation table is a matrix of witness tokens. Each row is an array
  * of tokens coming out of a single witness possibly interspersed with empty
  * tokens. 
  * 
- * Each column represents a series of aligned tokens accross the different witnesses.
+ * Each column represents a series of aligned tokens across the different witnesses.
  * 
  * Not all tokens from a witness are in the collation table. In fact, by default
  * the collation table class ignores all whitespace tokens. It can also be made
@@ -42,7 +42,15 @@ use InvalidArgumentException;
  * The CollationTable class by itself does not guarantee any "proper" alignment 
  * of the witnesses' tokens but provides suitable data to feed a collation engine 
  * to do the alignment work. It also provides a way to make itself reflect
- * the results of such an engine.
+ * the results of provided by such an engine.
+ *
+ * A collation table can also be used to define derivative witnesses. One non-derivative witness
+ * can be designated as the base witness and other rows are meant to represent differences to that base.
+ *
+ * The collation table class can also be used to define an edition witness: one of the witnesses is taken to be
+ * the edition text with the collation table itself representing how the source witnesses align with respect to
+ * the text of the edition.
+ *
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */

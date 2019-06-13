@@ -30,7 +30,7 @@ use APM\Core\Token\Token;
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class QuickDerivativeWitness {
+class EditionWitness {
     
     const SIGLA_STR_LATIN = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     
@@ -49,15 +49,19 @@ class QuickDerivativeWitness {
     
     /** @var bool */
     private $rightToLeft;
+
+    /** @var string */
+    private $baseSiglum;
     
     
-    public function __construct(CollationTable $ct, $lang = 'la') {
+    public function __construct(CollationTable $ct, string $baseSiglum, $lang = 'la') {
         $this->collationTable = $ct;
         $this->rightToLeft = false;
         $this->language = $lang;
         if ($lang === 'ar' || $lang === 'he') {
             $this->rightToLeft = true;
         }
+        $this->baseSiglum = $baseSiglum;
     }
     
     /**
@@ -88,12 +92,9 @@ class QuickDerivativeWitness {
      * 
      *   error: string,  non-empty if there's an error
      * 
-     * @param string $baseSiglum
      * @return  array
      */
-    public function generateEdition(string $baseSiglum) {
-        
-       
+    public function generateEdition() {
         // Associate sigla with abbreviations to use in the edition
         // TODO: support more than 26 witnesses!
         $abbrToSiglum = [];
@@ -101,6 +102,7 @@ class QuickDerivativeWitness {
         $currentSiglumIndex = 0;
         $siglaString = self::SIGLA_STR_LATIN;
         $sigla = $this->collationTable->getSigla();
+        $baseSiglum = $this->baseSiglum;
         
         if (count($sigla) > mb_strlen($siglaString)) {
             return [ 'error' => 'Cannot handle this many witnesses'];

@@ -26,12 +26,11 @@
 /* global Twig */
 
 class AutomaticCollationTableViewSettingsForm {
-  
+
   constructor(containerSelector) {
     this.cancelEventName = 'cancel'
     this.applyEventName = 'apply'
-   
-    this.initialOptions = {}
+
 
     this.containerSelector = containerSelector
     
@@ -122,6 +121,7 @@ class AutomaticCollationTableViewSettingsForm {
   getFormTemplate() {
     return Twig.twig({
        id: 'autocolltableviewsettingsform',
+      // language=HTML
       data: `
       <h3>View Settings</h3>
         <form>

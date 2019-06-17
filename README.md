@@ -2,16 +2,15 @@
 This is the web app running at http://averroes.uni-koeln.de/apm
 
 It requires 
-* PHP 7.2 with the following extensions enabled: dom (or xml), md, mbstring and zip
+* PHP 7.2 with the following extensions enabled: xml, gd, mbstring, mysql and zip
 * a running MySQL Server 5.7 configured with a database 
 and a user with access to that database.
-* Java running environment, e.g., Open JDK  (Note: Open JDK11 should not be used; it emits a deprecation warning that breaks Collatex normal output)
+* Java running environment, e.g., Open JDK  (Note: Open JDK11 should not be used; it emits 
+a deprecation warning that breaks Collatex normal output)
 
-It has been tested and has run for a 
-while without problems in an Ubuntu 16.04.1 server with PHP 7.2 installed
-from  Ondřej Surý's repository (see https://tecadmin.net/install-php-7-on-ubuntu/)
-
-It has been tested also in an Ubuntu 18.04.3 server with standard packages.
+It has been tested in an Ubuntu 16.04.1 server with PHP 7.2 installed
+from  Ondřej Surý's repository (see https://tecadmin.net/install-php-7-on-ubuntu/), 
+and in an Ubuntu 18.04.3 server with standard packages.
 
 ## Development
 

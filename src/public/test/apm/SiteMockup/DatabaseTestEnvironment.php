@@ -170,7 +170,7 @@ EOD;
         ];
 
         // COLLATEX
-        $config['collatex_temp_dir'] = '../collatex/tmp';
+        $config['collatex_temp_dir'] = '/tmp';
         //$config['java_executable'] = '/usr/bin/java';
         $config['collatex_jar_file'] = '../collatex/bin/collatex-tools-1.7.1.jar';
 

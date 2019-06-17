@@ -20,6 +20,8 @@
 
 namespace APM\Core\Transcription;
 
+use InvalidArgumentException;
+
 /**
  * TextBox is the basic unit of transcription. It consists essentially of 
  * an ordered set of textual items plus some metadata: 
@@ -98,7 +100,7 @@ class TextBox {
     public function setItems(array $items) {
         foreach ($items as $item) {
             if (!is_a($item, 'APM\Core\Item\Item' )) {
-                throw new \InvalidArgumentException('Trying to set text box items with non Item object');
+                throw new InvalidArgumentException('Trying to set text box items with non Item object');
             }
         }
         $this->items = $items;

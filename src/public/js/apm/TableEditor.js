@@ -76,6 +76,7 @@ class TableEditor {
     this.addBeforeButtonIcon = '<sup>+</sup><i class="fa fa-arrow-left" aria-hidden="true"></i>'
     this.addAfterButtonIcon = '<i class="fa fa-arrow-right" aria-hidden="true"><sup>+</sup></i>'
     this.rtlDirectionClass = 'rtltext'
+    this.activeHeaderClass = 'thactive'
 
     if (this.options.textDirection === 'rtl') {
       //flip icons for rtl text
@@ -90,22 +91,28 @@ class TableEditor {
     this.emptyCellHtml = '&mdash;'
 
     this.container = $(this.options.containerSelector)
+    this.setupTable()
+
+  }
+
+  setupTable() {
     this.container.html(this.getTableHtml())
 
-    for(let row = 0; row < this.values.length; row++) {
-      for (let col = 0; col < this.values[row].length; col++) {
-        this.setupEventHandlers(row, col)
+    for(let row = 0; row < this.numRows; row++) {
+      for (let col = 0; col < this.numColumns; col++) {
+        this.setupCellEventHandlers(row, col)
       }
+    }
+    for (let col=0; col < this.numColumns; col++) {
+      this.setupHeaderEventHandlers(col)
     }
   }
 
-  setupEventHandlers(row, column) {
+  setupCellEventHandlers(row, column) {
     let cellSelector = this.options.containerSelector +  ' .' + this.getTdClass(row, column)
     let cellButtonSelector = cellSelector +  ' .' + 'cellbutton'
     let moveBackwardButtonSelector = cellSelector +  ' .' + 'movebackward'
     let moveForwardButtonSelector = cellSelector +  ' .' + 'moveforward'
-    let addBeforeButtonSelector = cellSelector +  ' .' + 'addbefore'
-    let addAfterButtonSelector = cellSelector +  ' .' + 'addafter'
     $(cellButtonSelector).addClass('hidden')
     $(cellSelector).on('mouseenter', function(){
       $(cellButtonSelector).removeClass('hidden')
@@ -118,18 +125,54 @@ class TableEditor {
     })
     $(moveBackwardButtonSelector).on('click', this.genOnMove('backward', row, column))
     $(moveForwardButtonSelector).on('click', this.genOnMove('forward', row, column))
-    $(addBeforeButtonSelector).on('click', this.genOnAdd('before', row, column))
-    $(addAfterButtonSelector).on('click', this.genOnAdd('after', row, column))
+
   }
 
-  genOnAdd(type, row, column) {
-    let addAfter = true
-    if (type === 'before') {
-      addAfter = false
+  setupHeaderEventHandlers(column) {
+    let thSelector = this.options.containerSelector +  ' .' + this.getThClass(column)
+    let headerButtonSelector = thSelector +  ' .' + 'cellbutton'
+    $(headerButtonSelector).addClass('hidden')
+    $(thSelector).removeClass(this.activeHeaderClass)
+    let addBeforeButtonSelector = thSelector +  ' .' + 'addbefore'
+    let addAfterButtonSelector = thSelector +  ' .' + 'addafter'
+    let activeHeaderClass = this.activeHeaderClass
+    $(thSelector).on('mouseenter', function(){
+      $(headerButtonSelector).removeClass('hidden')
+      $(thSelector).addClass(activeHeaderClass)
+    })
+    $(thSelector).on('mouseleave', function(){
+      $(headerButtonSelector).addClass('hidden')
+      $(thSelector).removeClass(activeHeaderClass)
+    })
+    $(addBeforeButtonSelector).on('click', this.genOnAdd('before', column))
+    $(addAfterButtonSelector).on('click', this.genOnAdd('after', column))
+  }
+
+  genOnAdd(type, column) {
+    let firstColumnToShift = column
+    if (type === 'after') {
+      firstColumnToShift = column + 1
     }
     let thisObject = this
     return function () {
-      console.log('Add ' + type + ' on ' + row + ',' + column )
+      console.log('Add ' + type + ' on column ' + column )
+      // First take care of the values
+      for (let row = 0; row < thisObject.numRows; row++) {
+        // create a new empty element at the end of the row
+        thisObject.values[row].push('')
+        // shift values
+        // note that for this particular row thisObject.numColumns is the last column
+        for (let col=thisObject.numColumns; col > firstColumnToShift; col--) {
+          thisObject.setValue(row, col, thisObject.getValue(row, col-1))
+        }
+        // empty the first shifted column
+        thisObject.setEmpty(row, firstColumnToShift)
+      }
+      thisObject.numColumns++
+      // now take care of the table
+      // for now some brute force: redraw the whole table
+      thisObject.setupTable()
+
       return false
     }
   }
@@ -165,18 +208,18 @@ class TableEditor {
 
       // update the old and the new cells to reflect the new values
       $(thisObject.getCellSelector(row, column)).html(thisObject.getTdForRowColumn(row, column))
-      thisObject.setupEventHandlers(row, column)
+      thisObject.setupCellEventHandlers(row, column)
       $(thisObject.getCellSelector(row, newColumn)).html(thisObject.getTdForRowColumn(row, newColumn))
-      thisObject.setupEventHandlers(row, newColumn)
+      thisObject.setupCellEventHandlers(row, newColumn)
 
       // update also the cells adjacent to the old and new cells so that the proper control buttons are shown
       if (minColumn > 0) {
         $(thisObject.getCellSelector(row, minColumn - 1)).html(thisObject.getTdForRowColumn(row, minColumn - 1))
-        thisObject.setupEventHandlers(row, minColumn - 1)
+        thisObject.setupCellEventHandlers(row, minColumn - 1)
       }
       if (maxColumn < lastColumn) {
         $(thisObject.getCellSelector(row, maxColumn + 1)).html(thisObject.getTdForRowColumn(row, maxColumn + 1))
-        thisObject.setupEventHandlers(row, maxColumn + 1)
+        thisObject.setupCellEventHandlers(row, maxColumn + 1)
       }
 
       return false
@@ -189,6 +232,10 @@ class TableEditor {
 
   getTdClass(row, column) {
     return 'td-' + row + '-' + column
+  }
+
+  getThClass(column) {
+    return 'tr-' + column
   }
 
   getSanitizedOptions(options) {
@@ -232,12 +279,20 @@ class TableEditor {
     }
     if (this.options)
     html += '<table class="' + this.options.tableClass + ' ' + textDirectionClass + '">'
-    for (let row = 0; row < this.values.length; row++) {
+    html += '<tr>'
+    if (this.useRowTitles) {
+      html += '<th></th>'
+    }
+    for (let column = 0; column < this.numColumns; column++) {
+      html += '<th class="' + this.getThClass(column) + '">' + this.getThForColumn(column) + '</th>'
+    }
+    html += '</tr>'
+    for (let row = 0; row < this.numRows; row++) {
       html += '<tr>'
       if (this.useRowTitles) {
         html += '<td class="' + this.options.rowTitleClass + '">' + this.options.rowTitles[row] + '</td>'
       }
-      for (let column = 0; column < this.values[row].length; column++) {
+      for (let column = 0; column < this.numColumns; column++) {
         html += '<td class="'+ this.getTdClass(row, column) + '">' + this.getTdForRowColumn(row, column) + '</td>'
       }
     }
@@ -246,30 +301,31 @@ class TableEditor {
   }
 
   canMoveBackward(row, column) {
-    if (column !== 0 && this.isEmpty(row, column-1)) {
+    if (column !== 0 && !this.isEmpty(row, column) && this.isEmpty(row, column-1)) {
       return true
     }
     return false
   }
 
-  canAddBefore(row, column) {
-    if (column === 0) {
-      return true
-    }
-    return false
+  canAddBefore(column) {
+    return true
+    // if (column === 0) {
+    //   return true
+    // }
+    // return false
   }
 
-  canAddAfter(row, column) {
-    if (column !== this.numColumns-1 ) {
-      return true
-    }
-    return false
+  canAddAfter(column) {
+    return true
+    // if (column !== this.numColumns-1 ) {
+    //   return true
+    // }
+    // return false
   }
 
-
-  canMoveForward(row, column) {
+   canMoveForward(row, column) {
     let lastColumn = this.values[row].length - 1
-    if (column !== lastColumn && this.isEmpty(row, column+1)) {
+    if (column !== lastColumn && !this.isEmpty(row, column) && this.isEmpty(row, column+1)) {
       return true
     }
     return false
@@ -302,18 +358,22 @@ class TableEditor {
     let html = ''
     if (this.canMoveBackward(row, column)) {
       html += '<button class="cellbutton movebackward" title="Move backward">' + this.moveBackwardButtonIcon + '</button>'
-    } else {
-      if (this.canAddBefore(row, column)) {
-        html += '<button class="cellbutton addbefore" title="Add column before">' + this.addBeforeButtonIcon + '</button>'
-      }
     }
     html += this.getValueHtml(row, column)
     if (this.canMoveForward(row,column)) {
       html += '<button class="cellbutton moveforward" title="Move forward">' + this.moveForwardButtonIcon + '</button>'
-    } else {
-      if (this.canAddAfter(row, column)) {
-        html += '<button class="cellbutton addafter" title="Add column after">' + this.addAfterButtonIcon + '</button>'
-      }
+    }
+    return html
+  }
+
+  getThForColumn(column) {
+    let html=''
+    if (this.canAddBefore(column)) {
+      html += '<button class="cellbutton addbefore" title="Add column before">' + this.addBeforeButtonIcon + '</button>'
+    }
+    html += (column+1)
+    if (this.canAddAfter(column)) {
+      html += '<button class="cellbutton addafter" title="Add column after">' + this.addAfterButtonIcon + '</button>'
     }
     return html
   }

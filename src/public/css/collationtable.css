@@ -40,6 +40,11 @@ table.collationtable {
     margin-bottom: 20px;
 }
 
+table.collationtable th {
+    text-align: center;
+    font-weight: normal;
+}
+
 .ltrtext {
     direction: ltr;
 }

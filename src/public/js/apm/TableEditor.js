@@ -73,8 +73,20 @@ class TableEditor {
 
     this.moveBackwardButtonIcon = '<i class="fa fa-hand-o-left" aria-hidden="true"></i>'
     this.moveForwardButtonIcon = '<i class="fa fa-hand-o-right" aria-hidden="true"></i>'
-    this.addBeforeButtonIcon = '<i class="fa fa-angle-left" aria-hidden="true"></i><b>+</b>'
-    this.addAfterButtonIcon = '<b>+</b><i class="fa fa-angle-right" aria-hidden="true"></i>'
+    this.addBeforeButtonIcon = '<sup>+</sup><i class="fa fa-arrow-left" aria-hidden="true"></i>'
+    this.addAfterButtonIcon = '<i class="fa fa-arrow-right" aria-hidden="true"><sup>+</sup></i>'
+    this.rtlDirectionClass = 'rtltext'
+
+    if (this.options.textDirection === 'rtl') {
+      //flip icons for rtl text
+      let tmpIcon = this.moveBackwardButtonIcon
+      this.moveBackwardButtonIcon = this.moveForwardButtonIcon
+      this.moveForwardButtonIcon = tmpIcon
+      tmpIcon = this.addAfterButtonIcon
+      this.addAfterButtonIcon = this.addBeforeButtonIcon
+      this.addBeforeButtonIcon = tmpIcon
+    }
+
     this.emptyCellHtml = '&mdash;'
 
     this.container = $(this.options.containerSelector)
@@ -193,6 +205,9 @@ class TableEditor {
     if (typeof(options.rowTitleClass) === 'string') {
       sanitizedOptions.rowTitleClass = options.rowTitleClass
     }
+    if (typeof(options.textDirection) === 'string') {
+      sanitizedOptions.textDirection = options.textDirection
+    }
     return sanitizedOptions
   }
 
@@ -200,7 +215,8 @@ class TableEditor {
     return {
       containerSelector: '#mytable',
       tableClass: 'ted',
-      rowTitleClass: 'rowtitle'
+      rowTitleClass: 'rowtitle',
+      textDirection: 'ltr'
     }
   }
 
@@ -210,7 +226,12 @@ class TableEditor {
 
   getTableHtml() {
     let html = ''
-    html += '<table class="' + this.options.tableClass + '">'
+    let textDirectionClass = ''
+    if (this.options.textDirection === 'rtl') {
+      textDirectionClass = this.rtlDirectionClass
+    }
+    if (this.options)
+    html += '<table class="' + this.options.tableClass + ' ' + textDirectionClass + '">'
     for (let row = 0; row < this.values.length; row++) {
       html += '<tr>'
       if (this.useRowTitles) {

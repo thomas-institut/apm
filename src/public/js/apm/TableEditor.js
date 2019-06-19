@@ -75,6 +75,7 @@ class TableEditor {
     this.moveForwardButtonIcon = '<i class="fa fa-hand-o-right" aria-hidden="true"></i>'
     this.addBeforeButtonIcon = '<sup>+</sup><i class="fa fa-arrow-left" aria-hidden="true"></i>'
     this.addAfterButtonIcon = '<i class="fa fa-arrow-right" aria-hidden="true"><sup>+</sup></i>'
+    this.columnDeleteIcon = '<i class="fa fa-trash-o" aria-hidden="true"></i>'
     this.rtlDirectionClass = 'rtltext'
     this.activeHeaderClass = 'thactive'
 
@@ -129,23 +130,48 @@ class TableEditor {
   }
 
   setupHeaderEventHandlers(column) {
-    let thSelector = this.options.containerSelector +  ' .' + this.getThClass(column)
-    let headerButtonSelector = thSelector +  ' .' + 'cellbutton'
+    let headerSelector = this.getHeaderSelector(column)
+    let headerButtonSelector = headerSelector +  ' .' + 'cellbutton'
     $(headerButtonSelector).addClass('hidden')
-    $(thSelector).removeClass(this.activeHeaderClass)
-    let addBeforeButtonSelector = thSelector +  ' .' + 'addbefore'
-    let addAfterButtonSelector = thSelector +  ' .' + 'addafter'
+    $(headerSelector).removeClass(this.activeHeaderClass)
+    let addBeforeButtonSelector = headerSelector +  ' .' + 'addbefore'
+    let addAfterButtonSelector = headerSelector +  ' .' + 'addafter'
+    let deleteColumnButtonSelector = headerSelector + ' .' + 'deletecolumn'
     let activeHeaderClass = this.activeHeaderClass
-    $(thSelector).on('mouseenter', function(){
+    $(headerSelector).on('mouseenter', function(){
       $(headerButtonSelector).removeClass('hidden')
-      $(thSelector).addClass(activeHeaderClass)
+      $(headerSelector).addClass(activeHeaderClass)
     })
-    $(thSelector).on('mouseleave', function(){
+    $(headerSelector).on('mouseleave', function(){
       $(headerButtonSelector).addClass('hidden')
-      $(thSelector).removeClass(activeHeaderClass)
+      $(headerSelector).removeClass(activeHeaderClass)
     })
     $(addBeforeButtonSelector).on('click', this.genOnAdd('before', column))
     $(addAfterButtonSelector).on('click', this.genOnAdd('after', column))
+    $(deleteColumnButtonSelector).on('click', this.genOnDelete(column))
+  }
+
+  genOnDelete(column) {
+    let thisObject = this
+    return function() {
+      if (!thisObject.canDelete(column)) {
+        console.error('Cannot delete column ' + column)
+        return false
+      }
+      console.log('Delete column ' + column)
+      // first, shift values
+      for (let row = 0; row < thisObject.numRows; row++) {
+        for (let col = column; col < thisObject.numColumns -1; col++) {
+          thisObject.setValue(row, col, thisObject.getValue(row, col+1))
+        }
+        thisObject.values[row].pop()
+      }
+      thisObject.numColumns--
+      // now take care of the table
+      // for now some brute force: redraw the whole table
+      thisObject.setupTable()
+      return false
+    }
   }
 
   genOnAdd(type, column) {
@@ -208,9 +234,13 @@ class TableEditor {
 
       // update the old and the new cells to reflect the new values
       $(thisObject.getCellSelector(row, column)).html(thisObject.getTdForRowColumn(row, column))
+      $(thisObject.getHeaderSelector(column)).html(thisObject.getThForColumn(column))
       thisObject.setupCellEventHandlers(row, column)
+      thisObject.setupHeaderEventHandlers(column)
       $(thisObject.getCellSelector(row, newColumn)).html(thisObject.getTdForRowColumn(row, newColumn))
+      $(thisObject.getHeaderSelector(newColumn)).html(thisObject.getThForColumn(newColumn))
       thisObject.setupCellEventHandlers(row, newColumn)
+      thisObject.setupHeaderEventHandlers(newColumn)
 
       // update also the cells adjacent to the old and new cells so that the proper control buttons are shown
       if (minColumn > 0) {
@@ -228,6 +258,10 @@ class TableEditor {
 
   getCellSelector(row, column) {
     return this.options.containerSelector + ' .' + this.getTdClass(row, column)
+  }
+
+  getHeaderSelector(column) {
+    return this.options.containerSelector + ' .' + this.getThClass(column)
   }
 
   getTdClass(row, column) {
@@ -307,6 +341,15 @@ class TableEditor {
     return false
   }
 
+  canDelete(column) {
+    for (let row = 0; row < this.numRows; row++) {
+      if (!this.isEmpty(row, column)) {
+        return false
+      }
+    }
+    return true
+  }
+
   canAddBefore(column) {
     return true
     // if (column === 0) {
@@ -367,11 +410,18 @@ class TableEditor {
   }
 
   getThForColumn(column) {
+    let spacer = '&nbsp;&nbsp;'
     let html=''
+
     if (this.canAddBefore(column)) {
       html += '<button class="cellbutton addbefore" title="Add column before">' + this.addBeforeButtonIcon + '</button>'
     }
+    html += spacer
     html += (column+1)
+    if (this.canDelete(column)) {
+      html += '<button class="cellbutton deletecolumn" title="Delete this column">' + this.columnDeleteIcon + '</button>'
+    }
+    html += spacer
     if (this.canAddAfter(column)) {
       html += '<button class="cellbutton addafter" title="Add column after">' + this.addAfterButtonIcon + '</button>'
     }

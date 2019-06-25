@@ -74,13 +74,23 @@ class TableEditor {
       this.useRowTitles = true
     }
 
+    // Icon definitions
     this.moveBackwardButtonIcon = '<i class="fa fa-hand-o-left" aria-hidden="true"></i>'
     this.moveForwardButtonIcon = '<i class="fa fa-hand-o-right" aria-hidden="true"></i>'
     this.addBeforeButtonIcon = '<sup>+</sup><i class="fa fa-arrow-left" aria-hidden="true"></i>'
     this.addAfterButtonIcon = '<i class="fa fa-arrow-right" aria-hidden="true"><sup>+</sup></i>'
     this.columnDeleteIcon = '<i class="fa fa-trash-o" aria-hidden="true"></i>'
+    this.cellEditSaveButtonIcon = '<i class="fa fa-check" aria-hidden="true"></i>'
+    this.cellEditCancelButtonIcon = '<i class="fa fa-close" aria-hidden="true"></i>'
+
+    // classes
     this.rtlDirectionClass = 'rtltext'
     this.activeHeaderClass = 'thactive'
+    this.cellButtonClass = 'cellbutton'
+    this.confirmEditClass = 'confirmedit'
+    this.cancelEditClass = 'canceledit'
+    this.cellEditTextInputClass = 'ce-textinput'
+
 
     if (this.options.textDirection === 'rtl') {
       //flip icons for rtl text
@@ -111,7 +121,6 @@ class TableEditor {
     }
   }
 
-
   setupTable() {
     this.container.html(this.getTableHtml())
 
@@ -127,7 +136,7 @@ class TableEditor {
 
   setupCellEventHandlers(row, column) {
     let cellSelector = this.options.containerSelector +  ' .' + this.getTdClass(row, column)
-    let cellButtonSelector = cellSelector +  ' .' + 'cellbutton'
+    let cellButtonSelector = cellSelector +  ' .' + this.cellButtonClass
     let moveBackwardButtonSelector = cellSelector +  ' .' + 'movebackward'
     let moveForwardButtonSelector = cellSelector +  ' .' + 'moveforward'
     $(cellButtonSelector).addClass('hidden')
@@ -147,7 +156,7 @@ class TableEditor {
 
   setupHeaderEventHandlers(column) {
     let headerSelector = this.getHeaderSelector(column)
-    let headerButtonSelector = headerSelector +  ' .' + 'cellbutton'
+    let headerButtonSelector = headerSelector +  ' .' + this.cellButtonClass
     $(headerButtonSelector).addClass('hidden')
     $(headerSelector).removeClass(this.activeHeaderClass)
     let addBeforeButtonSelector = headerSelector +  ' .' + 'addbefore'
@@ -171,9 +180,6 @@ class TableEditor {
     let thisObject = this
     return function() {
       console.log('Click on ' + row + ', ' + column )
-      if (thisObject.editModeFlag[row][column]) {
-        console.log('... in edit mode!! This cannot be')
-      }
       let cellSelector =  thisObject.getCellSelector(row, column)
       $(cellSelector).off('click')
       $(cellSelector).off('mouseenter')
@@ -188,30 +194,72 @@ class TableEditor {
   setupCellEventHandlersEditMode(row, column) {
     let cellSelector = this.getCellSelector(row, column)
     let thisObject = this
-    $(cellSelector + ' .canceledit').on('click', function () {
-      console.log('Cancel edit on cell ' + row + ', ' + column)
-      $(cellSelector).html(thisObject.getTdForRowColumn(row, column))
-      thisObject.setupCellEventHandlers(row, column)
-      thisObject.editModeFlag[row][column] = false
+    $(cellSelector + ' .' + this.cancelEditClass).on('click', function () {
+      thisObject.cancelCellEdit(row, column)
       return false
     })
-    $(cellSelector + ' .confirmedit').on('click', function () {
-      console.log('Confirm edit on cell ' + row + ', ' + column)
-      thisObject.setValue(row, column, $(cellSelector + ' .textinput').val())
-      $(cellSelector).html(thisObject.getTdForRowColumn(row, column))
-      thisObject.setupCellEventHandlers(row, column)
-      thisObject.editModeFlag[row][column] = false
+    $(cellSelector + ' .' + this.confirmEditClass).on('click', function () {
+      thisObject.confirmCellEdit(row, column)
       return false
     })
+    let textInputSelector = cellSelector + ' .' + this.cellEditTextInputClass
+    $(textInputSelector).on('keydown', function(ev) {
+      if (ev.which === 13) {
+        // Enter key
+        console.log('Enter key pressed')
+        thisObject.confirmCellEdit(row, column)
+        return false
+      }
+      if (ev.which === 27) {
+        console.log('Escape key pressed')
+        thisObject.cancelCellEdit(row, column)
+        return false
+      }
+      return true
+    })
+    // put the cursor at the end of the text
+    $(textInputSelector).on('focus', function() {
+      this.selectionEnd = 10000
+      this.selectionStart = this.selectionEnd
+    })
+    $(textInputSelector).focus()
   }
 
+  confirmCellEdit(row, column) {
+    console.log('Confirm edit on cell ' + row + ', ' + column)
+    let cellSelector = this.getCellSelector(row, column)
+    this.setValue(row, column, $(cellSelector + ' .' + this.cellEditTextInputClass).val())
+    // refresh the cell in the browser
+    $(cellSelector).html(this.getTdForRowColumn(row, column))
+    this.setupCellEventHandlers(row, column)
+    // just in case the cell's value changed to or from an empty value
+    // refresh the column's header as well as the adjacent cells
+    $(this.getHeaderSelector(column)).html(this.getThForColumn(column))
+    this.setupHeaderEventHandlers(column)
+    if (column !== 0) {
+      $(this.getCellSelector(row, column-1 )).html(this.getTdForRowColumn(row, column-1))
+      this.setupCellEventHandlers(row, column-1)
+    }
+    if (column !== this.numColumns-1) {
+      $(this.getCellSelector(row, column+1 )).html(this.getTdForRowColumn(row, column+1))
+      this.setupCellEventHandlers(row, column+1)
+    }
+    this.editModeFlag[row][column] = false
+  }
+
+  cancelCellEdit(row, column) {
+    console.log('Cancel edit on cell ' + row + ', ' + column)
+    $(this.getCellSelector(row, column)).html(this.getTdForRowColumn(row, column))
+    this.setupCellEventHandlers(row, column)
+    this.editModeFlag[row][column] = false
+  }
 
   getTdForRowColumnEditMode(row, column) {
     let html = ''
     let value = this.getValue(row, column)
-    html += '<input type="text" class="textinput" value="' + value + '" ' + 'size="' + value.length + '">'
-    html += '<button class="confirmedit cellbutton" title="Save changes"><i class="fa fa-check" aria-hidden="true"></i></button>'
-    html += '<button class="canceledit cellbutton" title="Cancel"><i class="fa fa-close" aria-hidden="true"></i></button>'
+    html += '<input type="text" class="' +  this.cellEditTextInputClass + '" value="' + value + '" ' + 'size="' + value.length + '">'
+    html += '<button class="' + this.confirmEditClass + ' ' + this.cellButtonClass +'" title="Save changes">'+ this.cellEditSaveButtonIcon + '</button>'
+    html += '<button class="' + this.cancelEditClass + ' ' + this.cellButtonClass +'" title="Cancel">'+ this.cellEditCancelButtonIcon + '</button>'
     return html
   }
 

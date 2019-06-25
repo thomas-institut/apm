@@ -18,12 +18,13 @@
 
 
 /*
-   First version of simple table editor. The class takes a matrix
-   with values and creates a table that can be edited sort of in the way
-   that a collation table might be edited:
+   A generic table editor that allows for operations suitable for
+   editing a collation table. The class takes a matrix with values
+   and creates a set of tables that can be edited as a whole:
     - a cell can be moved to the left or to the right provided there's an
       empty cell where it will go
     - new columns can be created adding emtpy cells
+    - columns with empty values can be deleted
  */
 
 class TableEditor {
@@ -31,6 +32,8 @@ class TableEditor {
   constructor(options) {
 
     this.options = this.getSanitizedOptions(options)
+    console.log('Table Editor Options')
+    console.log(this.options)
 
     // check that options.values is a proper matrix
     this.values = this.options.values
@@ -121,9 +124,11 @@ class TableEditor {
     $(cellSelector).on('mouseleave', function(){
       $(cellButtonSelector).addClass('hidden')
     })
-    $(cellSelector).on('click', function () {
-      console.log('Click on ' + row + ', ' + column)
-    })
+    if (this.canEdit(row, column)) {
+      $(cellSelector).on('click', function () {
+        console.log('Click on ' + row + ', ' + column + ', edit will be implemented soon!')
+      })
+    }
     $(moveBackwardButtonSelector).on('click', this.genOnMove('backward', row, column))
     $(moveForwardButtonSelector).on('click', this.genOnMove('forward', row, column))
 
@@ -187,13 +192,15 @@ class TableEditor {
         // create a new empty element at the end of the row
         thisObject.values[row].push('')
         // shift values
-        // note that for this particular row thisObject.numColumns is the last column
+        // note that for this particular row, since we just added a new
+        // element, the last column is thisObject.numColumns, not thisObject.numColumns-1
         for (let col=thisObject.numColumns; col > firstColumnToShift; col--) {
           thisObject.setValue(row, col, thisObject.getValue(row, col-1))
         }
         // empty the first shifted column
         thisObject.setEmpty(row, firstColumnToShift)
       }
+      console.log('Increasing thisObject.numColumns from ' + thisObject.numColumns)
       thisObject.numColumns++
       // now take care of the table
       // for now some brute force: redraw the whole table
@@ -272,6 +279,10 @@ class TableEditor {
     return 'tr-' + column
   }
 
+  getTableClass(table) {
+    return 'tbl-' + table
+  }
+
   getSanitizedOptions(options) {
     let sanitizedOptions = this.getDefaultOptions()
     // pass values and row titles unchanged
@@ -289,6 +300,15 @@ class TableEditor {
     if (typeof(options.textDirection) === 'string') {
       sanitizedOptions.textDirection = options.textDirection
     }
+    if (typeof(options.columnsPerTable) === 'number' && options.columnsPerTable > 5 ) {
+      sanitizedOptions.columnsPerTable = options.columnsPerTable
+    }
+
+    if (typeof(options.cellEditMode) === 'string') {
+      if (TableEditor.cellEditAllowedModes.indexOf(options.cellEditMode) !== -1) {
+        sanitizedOptions.cellEditMode = options.cellEditMode
+      }
+    }
     return sanitizedOptions
   }
 
@@ -297,7 +317,9 @@ class TableEditor {
       containerSelector: '#mytable',
       tableClass: 'ted',
       rowTitleClass: 'rowtitle',
-      textDirection: 'ltr'
+      textDirection: 'ltr',
+      columnsPerTable: 10,
+      cellEditMode: TableEditor.cellEditModeNone // three options: editTopRow, editAllButTopRow, none
     }
   }
 
@@ -311,35 +333,41 @@ class TableEditor {
     if (this.options.textDirection === 'rtl') {
       textDirectionClass = this.rtlDirectionClass
     }
-    if (this.options)
-    html += '<table class="' + this.options.tableClass + ' ' + textDirectionClass + '">'
-    html += '<tr>'
-    if (this.useRowTitles) {
-      html += '<th></th>'
-    }
-    for (let column = 0; column < this.numColumns; column++) {
-      html += '<th class="' + this.getThClass(column) + '">' + this.getThForColumn(column) + '</th>'
-    }
-    html += '</tr>'
-    for (let row = 0; row < this.numRows; row++) {
+    let numTables = Math.ceil(this.numColumns / this.options.columnsPerTable)
+    //console.log('Numtables: '  + numTables)
+    for (let table = 0; table < numTables; table++) {
+      let fistColumnInTable = table * this.options.columnsPerTable
+      let lastColumnInTable = fistColumnInTable + this.options.columnsPerTable - 1
+      if (lastColumnInTable > this.numColumns -1) {
+        lastColumnInTable = this.numColumns - 1
+      }
+
+      //console.log('Table ' + table + ': ' + fistColumnInTable + ' to ' + lastColumnInTable)
+      html += '<table class="' + this.options.tableClass + ' ' + textDirectionClass + ' ' + this.getTableClass(table) + '">'
       html += '<tr>'
       if (this.useRowTitles) {
-        html += '<td class="' + this.options.rowTitleClass + '">' + this.options.rowTitles[row] + '</td>'
+        html += '<th></th>'
       }
-      for (let column = 0; column < this.numColumns; column++) {
-        html += '<td class="'+ this.getTdClass(row, column) + '">' + this.getTdForRowColumn(row, column) + '</td>'
+      for (let column = fistColumnInTable; column <= lastColumnInTable; column++) {
+        html += '<th class="' + this.getThClass(column) + '">' + this.getThForColumn(column) + '</th>'
       }
+      html += '</tr>'
+
+      for (let row = 0; row < this.numRows; row++) {
+        html += '<tr>'
+        if (this.useRowTitles) {
+          html += '<td class="' + this.options.rowTitleClass + '">' + this.options.rowTitles[row] + '</td>'
+        }
+        for (let column = fistColumnInTable; column <= lastColumnInTable; column++) {
+          html += '<td class="' + this.getTdClass(row, column) + '">' + this.getTdForRowColumn(row, column) + '</td>'
+        }
+      }
+      html += '</table>'
     }
-    html += '</table>'
     return html
   }
 
-  canMoveBackward(row, column) {
-    if (column !== 0 && !this.isEmpty(row, column) && this.isEmpty(row, column-1)) {
-      return true
-    }
-    return false
-  }
+
 
   canDelete(column) {
     for (let row = 0; row < this.numRows; row++) {
@@ -352,26 +380,38 @@ class TableEditor {
 
   canAddBefore(column) {
     return true
-    // if (column === 0) {
-    //   return true
-    // }
-    // return false
   }
 
   canAddAfter(column) {
     return true
-    // if (column !== this.numColumns-1 ) {
-    //   return true
-    // }
-    // return false
   }
 
-   canMoveForward(row, column) {
+  canMoveBackward(row, column) {
+    if (column !== 0 && !this.isEmpty(row, column) && this.isEmpty(row, column-1)) {
+      return true
+    }
+    return false
+  }
+
+  canMoveForward(row, column) {
     let lastColumn = this.values[row].length - 1
     if (column !== lastColumn && !this.isEmpty(row, column) && this.isEmpty(row, column+1)) {
       return true
     }
     return false
+  }
+
+  canEdit(row, column) {
+    switch(this.options.cellEditMode) {
+      case TableEditor.cellEditModeNone:
+        return false
+
+      case TableEditor.cellEditModeEditTopRow:
+        return (row === 0)
+
+      case TableEditor.cellEditModeEditAllButTopRow:
+        return (row !== 0)
+    }
   }
 
   isEmpty(row, column) {
@@ -429,3 +469,11 @@ class TableEditor {
   }
 
 }
+
+// Some constants
+
+TableEditor.cellEditModeNone = 'none'
+TableEditor.cellEditModeEditTopRow = 'topRow'
+TableEditor.cellEditModeEditAllButTopRow= 'allButTopRow'
+
+TableEditor.cellEditAllowedModes = [ TableEditor.cellEditModeNone, TableEditor.cellEditModeEditTopRow, TableEditor.cellEditModeEditAllButTopRow]

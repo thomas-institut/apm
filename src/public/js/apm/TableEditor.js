@@ -95,9 +95,22 @@ class TableEditor {
     this.emptyCellHtml = '&mdash;'
 
     this.container = $(this.options.containerSelector)
+
+    this.initEditModeFlagMatrix()
     this.setupTable()
 
   }
+
+  initEditModeFlagMatrix() {
+    this.editModeFlag = []
+    for (let row = 0; row < this.numRows; row++) {
+      this.editModeFlag.push([])
+      for (let column = 0; column < this.numColumns; column++) {
+        this.editModeFlag[row].push(false)
+      }
+    }
+  }
+
 
   setupTable() {
     this.container.html(this.getTableHtml())
@@ -125,9 +138,7 @@ class TableEditor {
       $(cellButtonSelector).addClass('hidden')
     })
     if (this.canEdit(row, column)) {
-      $(cellSelector).on('click', function () {
-        console.log('Click on ' + row + ', ' + column + ', edit will be implemented soon!')
-      })
+      $(cellSelector).on('click', this.genOnCellClick(row, column))
     }
     $(moveBackwardButtonSelector).on('click', this.genOnMove('backward', row, column))
     $(moveForwardButtonSelector).on('click', this.genOnMove('forward', row, column))
@@ -154,6 +165,54 @@ class TableEditor {
     $(addBeforeButtonSelector).on('click', this.genOnAdd('before', column))
     $(addAfterButtonSelector).on('click', this.genOnAdd('after', column))
     $(deleteColumnButtonSelector).on('click', this.genOnDelete(column))
+  }
+
+  genOnCellClick(row, column) {
+    let thisObject = this
+    return function() {
+      console.log('Click on ' + row + ', ' + column )
+      if (thisObject.editModeFlag[row][column]) {
+        console.log('... in edit mode!! This cannot be')
+      }
+      let cellSelector =  thisObject.getCellSelector(row, column)
+      $(cellSelector).off('click')
+      $(cellSelector).off('mouseenter')
+      $(cellSelector).off('mouseleave')
+      $(cellSelector).html(thisObject.getTdForRowColumnEditMode(row, column))
+      thisObject.setupCellEventHandlersEditMode(row, column)
+      thisObject.editModeFlag[row][column] = true
+      return false
+    }
+  }
+
+  setupCellEventHandlersEditMode(row, column) {
+    let cellSelector = this.getCellSelector(row, column)
+    let thisObject = this
+    $(cellSelector + ' .canceledit').on('click', function () {
+      console.log('Cancel edit on cell ' + row + ', ' + column)
+      $(cellSelector).html(thisObject.getTdForRowColumn(row, column))
+      thisObject.setupCellEventHandlers(row, column)
+      thisObject.editModeFlag[row][column] = false
+      return false
+    })
+    $(cellSelector + ' .confirmedit').on('click', function () {
+      console.log('Confirm edit on cell ' + row + ', ' + column)
+      thisObject.setValue(row, column, $(cellSelector + ' .textinput').val())
+      $(cellSelector).html(thisObject.getTdForRowColumn(row, column))
+      thisObject.setupCellEventHandlers(row, column)
+      thisObject.editModeFlag[row][column] = false
+      return false
+    })
+  }
+
+
+  getTdForRowColumnEditMode(row, column) {
+    let html = ''
+    let value = this.getValue(row, column)
+    html += '<input type="text" class="textinput" value="' + value + '" ' + 'size="' + value.length + '">'
+    html += '<button class="confirmedit cellbutton" title="Save changes"><i class="fa fa-check" aria-hidden="true"></i></button>'
+    html += '<button class="canceledit cellbutton" title="Cancel"><i class="fa fa-close" aria-hidden="true"></i></button>'
+    return html
   }
 
   genOnDelete(column) {

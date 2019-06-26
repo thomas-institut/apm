@@ -20,6 +20,7 @@
 
 namespace APM\CollationEngine;
 
+use APM\Engine\Engine;
 
 /**
  * Class that interfaces with the collatex executable in the server
@@ -166,7 +167,7 @@ class Collatex extends CollationEngine {
      *                  ]
      *               ]
      * @param array $witnessArray
-     * @return boolean
+     * @return array
      */
     public function collate(array $witnessArray) : array {
         
@@ -176,7 +177,7 @@ class Collatex extends CollationEngine {
         $this->input = $witnessArray;
         $this->rawOutput =  $this->rawRun($input);
         
-        if ($this->getErrorCode() !== self::ERROR_NOERROR) {
+        if ($this->getErrorCode() !== Engine::ERROR_NOERROR) {
             return [];
         }
         

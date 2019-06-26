@@ -20,31 +20,16 @@
 
 namespace APM\CollationEngine;
 
+use APM\Engine\Engine;
+
 /**
  * Abstraction of a collation engine such as Collatex
  * 
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-abstract class CollationEngine {
-    
-    const ERROR_NOERROR=0;
+abstract class CollationEngine extends Engine {
 
-    const DEFAULT_COLLATION_ENGINE = 'Generic Collation Engine';
-    
-    /** @var float */
-    private $duration;
-    /** @var int */
-    private $errorCode;
-    /** @var string */
-    private $errorContext;
-    /** @var float */
-    private $startMicroTime;
-    /** @var float */
-    private $endMicroTime;
-    /** @var string */
-    private $engineName;
-    
     
      /**
      * Runs the collation engine on an array of witneses
@@ -66,80 +51,10 @@ abstract class CollationEngine {
     abstract public function collate(array $witnessArray) : array;
 
     public function __construct(string $engineName) {
-        if ($engineName === '') {
-            $engineName = self::DEFAULT_COLLATION_ENGINE;
-        }
-        $this->engineName = $engineName;
-        $this->resetError();
-        $this->resetChronometer();
+        parent::__construct($engineName);
     }
     
-    public function reset() {
-        $this->resetChronometer();
-        $this->resetError();
-    }
-    
-    public function resetChronometer() {
-        $this->duration = 0;
-    }
-    
-    public function resetError() {
-        $this->errorCode = self::ERROR_NOERROR;
-        $this->errorContext = '';
-    }
 
-    public function getRunDateTime() : float {
-        return $this->startMicroTime;
-    }
-    
-    public function getRunDateTimeString() : string {
-        return strftime("%d %b %Y, %H:%M:%S %Z", $this->getRunDateTime());
-    }
-    
-    public function getDuration() : float {
-        return $this->duration;
-    }
-
-    public function getErrorCode() : int {
-        return $this->errorCode;
-    }
-
-    public function getErrorContext() : string{
-        return $this->errorContext;
-    }
-    
-    public function getRunDetails() : array {
-        return [ 
-            'engineName' => $this->getName(),
-            'errorCode' => $this->getErrorCode(),
-            'errorContext' => $this->getErrorContext(),
-            'runDateTime' => $this->getRunDateTimeString(),
-            'duration' => $this->getDuration()
-        ];
-    }
-    
-    public function getName() : string {
-        return $this->engineName;
-    }
-        
-    
-    //
-    // PROTECTED 
-    // 
-    protected function startChrono() {
-        $this->duration = 0;
-        $this->startMicroTime = microtime(true);
-    }
-    
-    protected function endChrono() {
-        $this->endMicroTime = microtime(true);
-        $this->duration = $this->endMicroTime - $this->startMicroTime;
-    }
-    
-    protected function setError(int $code, string $context='') {
-        $this->errorCode = $code;
-        $this->errorContext = $context;
-    }
     
     
 }

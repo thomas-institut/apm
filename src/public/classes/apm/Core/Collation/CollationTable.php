@@ -58,12 +58,16 @@ class CollationTable {
     
     const TOKENREF_NULL = -1;
     const COLLATIONENGINE_NULL_TOKEN = '---';
-    
-    /* @var array */
+
+    /**
+     * @var array Array of Witness objects, one for each siglum
+     */
     private $witnesses;
-    
-    
-    /* @var array */
+
+    /**
+     * @var array Array of arrays of Tokens, representing the tokens of a Witness present
+     * in the collation table
+     */
     private $tokens;
     
     /* @var array */

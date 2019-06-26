@@ -24,7 +24,7 @@ use APM\Core\Collation\CollationTableDecorator;
 use APM\Core\Collation\CollationTable;
 
 /**
- * Description of QuickCollationTableDecorator
+ * A CollationTableDecorator for displaying quick collations in the APM
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */

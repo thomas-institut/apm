@@ -22,27 +22,32 @@ namespace APM\Core\Collation;
 
 /**
  * Decorator for collation tables interface
- * 
- * 
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 interface CollationTableDecorator {
-    
+
     /**
-     * Takes collation object and returns a version
-     * of the collation table in which each token is 
-     * converted to an associative array with fields
-     * for desired data. 
-     * 
-     * For example, a simple decorator can just take the
-     * text and line numbers and, for each token, 
-     * generate a array like so:  [ 'text' => 'the text , 'line' => lineNumber]
-     * Another decorator might process token info and provide tokens
-     * with complete information about how they should be displayed
-     * on a website, for example: ['text'=> 'the text', 'cssClass' => 'someClass, 'popoverHtml' => ....]
-     * 
-     * @param \APM\Core\Collation\CollationTable $c
+     * Takes a CollationTable object and returns a decorated version of the table in the form of an array
+     * with the following structure:
+     *    $decoratedTable = [
+     *        'siglum1' => [ decoratedToken1, decoratedToken2, .... ],
+     *        'siglum2' => [ decoratedToken1, decoratedToken2, .... ],
+     *         ...
+     *    ]
+     *
+     * Each decoratedToken element is itself an associative array with information fields particular
+     * to each implementation of the decorator. For example, a simple decorator can just take the
+     * text and line numbers and, for each token, generate a array like so:
+     *
+     *       [ 'text' => 'the text , 'line' => lineNumber]
+     *
+     * Another decorator might process more token info and provide decorated tokens with complete information about
+     * how they should be displayed on a website, for example:
+     *   ['text'=> 'the text', 'cssClass' => 'someClass, 'popoverHtml' => ....]
+     *
+     * @param CollationTable $c
+     * @return array
      */
     public function decorate(CollationTable $c) : array;
 }

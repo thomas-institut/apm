@@ -32,7 +32,10 @@ use AverroesProjectToApm\ApUserDirectory;
 use AverroesProjectToApm\Formatter\WitnessPageFormatter;
 
 /**
- * Description of QuickCollationTableDecorator
+ * Decorator for AverroesProject collation tables
+ *
+ * It assumes that the CollationTable object contains ONLY witnesses of
+ * type ItemStreamWitness
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
@@ -188,17 +191,18 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
         }
         return false;
     }
-    
+
     /**
-     * Aggregates nonTokenIndexes taking care of missing token references in the 
+     * Aggregates nonTokenIndexes taking care of missing token references in the
      * given $tokenRefs array
-     * 
+     *
      * The returned array contains one element per element in $tokenRefs with
      * the same structure as $rawNonTokenItemIndexes
-     * 
+     *
      * @param type $rawNonTokenItemIndexes
      * @param type $tokenRefs
      * @param type $witnessTokens
+     * @return array
      */
     protected function aggregateNonTokenItemIndexes($rawNonTokenItemIndexes, $tokenRefs) {
         

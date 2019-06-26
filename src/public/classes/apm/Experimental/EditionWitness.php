@@ -21,7 +21,8 @@
 namespace APM\Experimental;
 
 use APM\Core\Collation\CollationTable;
-use APM\Core\Token\Token;
+use APM\EditionEngine\BasicEditionEngine;
+use APM\EditionEngine\EditionEngine;
 
 /**
  * Experimental class that provides methods to generate an
@@ -97,189 +98,51 @@ class EditionWitness {
     public function generateEdition() {
         // Associate sigla with abbreviations to use in the edition
         // TODO: support more than 26 witnesses!
-        $abbrToSiglum = [];
+
         $siglumToAbbr = [];
         $currentSiglumIndex = 0;
         $siglaString = self::SIGLA_STR_LATIN;
         $sigla = $this->collationTable->getSigla();
         $baseSiglum = $this->baseSiglum;
-        
+
         if (count($sigla) > mb_strlen($siglaString)) {
             return [ 'error' => 'Cannot handle this many witnesses'];
         }
-        
+
         foreach($sigla as $siglum) {
             if ($siglum === $baseSiglum) {
                 continue;
             }
             $abbr = mb_substr($siglaString, $currentSiglumIndex, 1);
-            $abbrToSiglum[$abbr] = $siglum;
             $siglumToAbbr[$siglum] = $abbr;
-            
             $currentSiglumIndex++;
         }
-        
-        //  Generate main text
-        $mainTextTokens = [];
-        
-        $ctTokens = $this->collationTable->getRow($baseSiglum);
-        $firstWordAdded = false;
-        $ctToMainTextMap = [];
-        $currentMainTextIndex = -1;
-        foreach($ctTokens as $i => $ctToken) {
-            if ($ctToken->isEmpty() ) {
-                $ctToMainTextMap[] = self::TOKEN_NOT_IN_MAINTEXT;
-                continue;
-            }
-            $addGlue = true;
-            if (!$firstWordAdded) {
-                $addGlue = false;
-            }
-            if (($ctToken->getType() ===Token::TOKEN_PUNCT) && 
-                   (mb_strstr(self::NO_GLUE_PUNCTUATION, $ctToken->getText()) !== false ) ) {
-                $addGlue = false;
-            }
-            if ($addGlue) {
-                $currentMainTextIndex++;
-                $mainTextTokens[] = [ 'type' => 'glue', 'space' => 'normal'];
-            }
-            $currentMainTextIndex++;
-            $mainTextTokens[] = [ 
-                'type' => 'text', 
-                'text' => $ctToken->getNormalization(),
-                'collationTableIndex' => $i
-                ];
-            $firstWordAdded = true;
-            $ctToMainTextMap[] = $currentMainTextIndex;
-        }
-        
-        $criticalApparatus = [];
-        foreach($ctToMainTextMap as $i => $mainTextIndex) {
-            $row = $this->collationTable->getColumn($i);
-            if ($mainTextIndex === self::TOKEN_NOT_IN_MAINTEXT)  {
-                // nothing on the main text for this token: 
-                //      find the previous token index that is in the main text,
-                //      this is where the apparatus entry will appear
-                $index = $i;
-                while ($index >= 0 && $ctToMainTextMap[$index] === self::TOKEN_NOT_IN_MAINTEXT) {
-                    $index--;
-                }
-                if ($index < 0) {
-                    // We are before the start of the main text
-                    // ignore for now
-                    continue;
-                }
-                $additions = [];
-                // collect variants in the row
-                foreach($row as $siglum => $ctToken) {
-                    if ($siglum === $baseSiglum) {
-                        continue;
-                    }
-                    
-                    if ($ctToken->isEmpty()) {
-                        continue;
-                    }
-                    
-                    if (!isset($additions[$ctToken->getNormalization()])) {
-                        $additions[$ctToken->getNormalization()] = [];
-                    }
-                    $additions[$ctToken->getNormalization()][] = $siglum;
-                }
-                // build apparatus entries for each addition
-                foreach($additions as $addition => $additionSigla) {
-                    $additionAbbreviations = [];
-                    $additionAbbreviationsStr = '';
-                    foreach ($additionSigla as $additionSiglum) {
-                        $additionAbbreviations[] = $siglumToAbbr[$additionSiglum];
-                        $additionAbbreviationsStr .= $siglumToAbbr[$additionSiglum];
-                    }
-                    $criticalApparatus[] = [
-                        'start' => $ctToMainTextMap[$index],
-                        'end' => $ctToMainTextMap[$index],
-                        'type' => 'add',
-                        'sigla' => $additionSigla,
-                        'addition' => $addition,
-                        'markDown' => '+ ' . $addition .  ' _' . $additionAbbreviationsStr . '_'
-                    ];
-                }
-                continue;
-            }
-            // token in main text
-            // collect variants and omissions
-            
-            $mainText = $mainTextTokens[$ctToMainTextMap[$i]]['text'];
-            $variants = [];
-            $omissions = [];
-            foreach($row as $siglum => $ctToken) {
-                if ($siglum === $baseSiglum) {
-                    continue;
-                }
-                $ctTokenNormalization = $ctToken->getNormalization();
-                if ($ctToken->isEmpty()) {
-                    if (!isset($omissions[$ctTokenNormalization])) {
-                        $omissions[$ctTokenNormalization] = [];
-                    }
-                    $omissions[$ctTokenNormalization][] = $siglum;
-                    continue;
-                }
-                if ($ctTokenNormalization !== $mainText) {
-                    if (!isset($variants[$ctTokenNormalization])) {
-                        $variants[$ctTokenNormalization] = [];
-                    }
-                    $variants[$ctTokenNormalization][] = $siglum;
-                }
-            }
-            // generate entries
-            foreach($omissions as $omissionText => $omissionSigla) {
-                $omissionAbbreviations = [];
-                $omissionAbbreviationsStr = '';
-                foreach ($omissionSigla as $omissionSiglum) {
-                    $omissionAbbreviations[] = $siglumToAbbr[$omissionSiglum];
-                    $omissionAbbreviationsStr .= $siglumToAbbr[$omissionSiglum];
-                }
-                $criticalApparatus[] = [
-                    'start' => $ctToMainTextMap[$i],
-                    'end' => $ctToMainTextMap[$i],
-                    'type' => 'omission',
-                    'sigla' => $omissionSigla,
-                    'markDown' => '-  _' . $omissionAbbreviationsStr . '_'
-                ];
-            }
-            foreach($variants as $variant => $variantSigla) {
-                $variantAbbreviations = [];
-                $variantAbbreviationsStr = '';
-                foreach ($variantSigla as $variantSiglum) {
-                    $variantAbbreviations[] = $siglumToAbbr[$variantSiglum];
-                    $variantAbbreviationsStr .= $siglumToAbbr[$variantSiglum];
-                }
-                $criticalApparatus[] = [
-                    'start' => $ctToMainTextMap[$i],
-                    'end' => $ctToMainTextMap[$i],
-                    'type' => 'add',
-                    'sigla' => $variantSigla,
-                    'addition' => $variant,
-                    'markDown' => $variant .  ' _' . $variantAbbreviationsStr . '_'
-                ];
+
+        $ctForEngine = [];
+        foreach ($sigla as $siglum ) {
+            $ctForEngine[$siglum] = [];
+            foreach($this->collationTable->getRow($siglum) as $ctToken) {
+                $tokenForEngine = [];
+                $tokenForEngine[EditionEngine::FIELD_TOKEN_TYPE] = $ctToken->getType();
+                $tokenForEngine[EditionEngine::FIELD_TEXT] = $ctToken->getNormalization();
+                $tokenForEngine[EditionEngine::FIELD_APPARATUS_HINT] = '';
+                $ctForEngine[$siglum][] = $tokenForEngine;
             }
         }
-        
-        // Optimize apparatus
-        
-        
-        
-        
-        
-        // Just one apparatus for now
-        $apparatusArray = [$criticalApparatus];
-        
-        $edition = [];
-        $edition['base'] = $baseSiglum;
-        $edition['mainTextTokens'] = $mainTextTokens;
-        $edition['abbrToSigla'] = $abbrToSiglum;
-        $edition['textDirection'] = $this->rightToLeft ? 'rtl' : 'ltr';
-        $edition['editionStyle'] = $this->language;
-        $edition['apparatusArray'] = $apparatusArray;
-        
+
+        $editionEngineInput = [];
+        $editionEngineInput[EditionEngine::FIELD_LANGUAGE] = $this->language;
+        $editionEngineInput[EditionEngine::FIELD_TEXT_DIRECTION] = $this->rightToLeft ? 'rtl' : 'ltr';
+        $editionEngineInput[EditionEngine::FIELD_BASE_SIGLUM] = $baseSiglum;
+        $editionEngineInput[EditionEngine::FIELD_SIGLA_ABBREVIATIONS] = $siglumToAbbr;
+        $editionEngineInput[EditionEngine::FIELD_COLLATION_TABLE] = $ctForEngine;
+
+        $engine = new BasicEditionEngine();
+
+        $edition = $engine->generateEdition($editionEngineInput);
+
+        $edition['extra'] = $engine->getRunDetails();
+
         return $edition;
     }
     

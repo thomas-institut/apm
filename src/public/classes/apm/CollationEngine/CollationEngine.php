@@ -29,6 +29,8 @@ namespace APM\CollationEngine;
 abstract class CollationEngine {
     
     const ERROR_NOERROR=0;
+
+    const DEFAULT_COLLATION_ENGINE = 'Generic Collation Engine';
     
     /** @var float */
     private $duration;
@@ -63,7 +65,10 @@ abstract class CollationEngine {
      */
     abstract public function collate(array $witnessArray) : array;
 
-    public function __construct(string $engineName = 'Generic Collation Engine') {
+    public function __construct(string $engineName) {
+        if ($engineName === '') {
+            $engineName = self::DEFAULT_COLLATION_ENGINE;
+        }
         $this->engineName = $engineName;
         $this->resetError();
         $this->resetChronometer();

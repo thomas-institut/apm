@@ -294,6 +294,13 @@ $app->group('/api', function (){
             '\APM\Api\ApiCollation:automaticCollation'
             )
         ->setName('api.collation.auto');
+
+    // ------ EDITION ENGINE ------
+
+    $this->post('/edition/auto',
+        '\APM\Api\ApiEditionEngine:basicEditionEngine'
+    )
+        ->setName('api.edition.auto');
     
     // ------- PRESETS -----------
     $this->post('/presets/get', 

@@ -211,7 +211,11 @@ class EditionViewer {
       console.log('note.start: ' + note.start)
       console.log('map [note.start]: ' + map[note.start])
       console.log('tsTokens[map[note.start] : ' + tsTokens[map[note.start]])
-      console.log('tsTokens.length: ' + tsTokens.length) 
+      console.log('tsTokens.length: ' + tsTokens.length)
+      return {
+        start: 'ERROR',
+        end: 'ERROR'
+      }
     }
     return { 
         start: tsTokens[map[note.start]].lineNumber, 

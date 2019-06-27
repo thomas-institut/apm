@@ -229,6 +229,8 @@ class TableEditor {
     console.log('Confirm edit on cell ' + row + ', ' + column)
     let cellSelector = this.getCellSelector(row, column)
     this.setValue(row, column, $(cellSelector + ' .' + this.cellEditTextInputClass).val())
+    // dispatch change event
+    this.dispatchEvent(TableEditor.tableChangeEvent, this.values)
     // refresh the cell in the browser
     $(cellSelector).html(this.getTdForRowColumn(row, column))
     this.setupCellEventHandlers(row, column)
@@ -279,6 +281,8 @@ class TableEditor {
         thisObject.values[row].pop()
       }
       thisObject.numColumns--
+      // dispatch change event
+      thisObject.dispatchEvent(TableEditor.tableChangeEvent, thisObject.values)
       // now take care of the table
       // for now some brute force: redraw the whole table
       thisObject.setupTable()
@@ -309,6 +313,8 @@ class TableEditor {
       }
       console.log('Increasing thisObject.numColumns from ' + thisObject.numColumns)
       thisObject.numColumns++
+      // dispatch change event
+      thisObject.dispatchEvent(TableEditor.tableChangeEvent, thisObject.values)
       // now take care of the table
       // for now some brute force: redraw the whole table
       thisObject.setupTable()
@@ -345,6 +351,9 @@ class TableEditor {
       // copy the current value to the new cell and empty the old cell
       thisObject.setValue(row, newColumn, thisObject.getValue(row, column))
       thisObject.setEmpty(row, column)
+
+      // dispatch change event
+      thisObject.dispatchEvent(TableEditor.tableChangeEvent, thisObject.values)
 
       // update the old and the new cells to reflect the new values
       $(thisObject.getCellSelector(row, column)).html(thisObject.getTdForRowColumn(row, column))
@@ -575,6 +584,23 @@ class TableEditor {
     return html
   }
 
+  dispatchEvent(eventName, data = {})
+  {
+    const event = new CustomEvent(eventName, {detail: data})
+    this.container.get()[0].dispatchEvent(event)
+  }
+
+  /**
+   * Attaches a callback function to an editor event
+   *
+   * @param {String} eventName
+   * @param {function} f
+   */
+  on(eventName, f)
+  {
+    this.container.on(eventName, f)
+  }
+
 }
 
 // Some constants
@@ -584,3 +610,5 @@ TableEditor.cellEditModeEditTopRow = 'topRow'
 TableEditor.cellEditModeEditAllButTopRow= 'allButTopRow'
 
 TableEditor.cellEditAllowedModes = [ TableEditor.cellEditModeNone, TableEditor.cellEditModeEditTopRow, TableEditor.cellEditModeEditAllButTopRow]
+
+TableEditor.tableChangeEvent = 'tablechange'

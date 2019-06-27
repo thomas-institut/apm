@@ -137,10 +137,10 @@ class BasicEditionEngine extends EditionEngine
                 }
                 $ctTokenText = $ctToken[EditionEngine::FIELD_TEXT];
                 if ($ctToken[EditionEngine::FIELD_TOKEN_TYPE] === Token::TOKEN_EMPTY) {
-                    if (!isset($omissions[$ctTokenText])) {
-                        $omissions[$ctTokenText] = [];
+                    if (!isset($omissions[$mainText])) {
+                        $omissions[$mainText] = [];
                     }
-                    $omissions[$ctTokenText][] = $siglum;
+                    $omissions[$mainText][] = $siglum;
                     continue;
                 }
                 if ($ctTokenText !== $mainText) {
@@ -176,7 +176,7 @@ class BasicEditionEngine extends EditionEngine
                 $criticalApparatus[] = [
                     'start' => $ctToMainTextMap[$i],
                     'end' => $ctToMainTextMap[$i],
-                    'type' => 'add',
+                    'type' => 'variant',
                     'sigla' => $variantSigla,
                     'addition' => $variant,
                     'markDown' => $variant .  ' _' . $variantAbbreviationsStr . '_'

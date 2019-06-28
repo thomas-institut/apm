@@ -44,7 +44,7 @@ use DataTable\DataTable;
  */
 class DataTablePresetManager extends PresetManager {
     
-    /** @var  \DataTable\DataTable */
+    /** @var  DataTable */
     private $dataTable;
     
     /** @var array */

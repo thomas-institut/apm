@@ -271,8 +271,10 @@ class ApiControllerTest extends TestCase {
             $inputResp, 
             null
         );
-        $this->assertEquals(200, $response->getStatusCode());
+
         $respData = json_decode($response->getBody(true), true);
+        $this->assertEquals(200, $response->getStatusCode());
+
         
         $this->assertTrue(isset($respData['collationTable']));
         $this->assertTrue(isset($respData['sigla']));
@@ -547,17 +549,24 @@ class ApiControllerTest extends TestCase {
         $this->assertEquals(ApiPresets::API_ERROR_INVALID_PRESET_DATA, $respData4['error']);
         
         // successful new preset
+        $apiUser = self::$dataManager->um->createUserByUserName('testApiUser');
+        $this->assertNotFalse($apiUser);
+        self::$testEnvironment->setUserId($apiUser);
+        $presetOwnedByNewApiUser = $presetData;
+        $presetOwnedByNewApiUser['userId'] = $apiUser;
+
         $request5 = self::requestWithData($request,
             [   'command' => ApiPresets::COMMAND_NEW,
                 'tool' => System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION,
-                'userId' => 0, // this will be ignored by the API
+                'userId' => 0, // this will be ignored by the API, what matter is the user in presetData
                 'title' => $presetTitle,
                 'presetId' => 0,
-                'presetData' => $presetData
+                'presetData' => $presetOwnedByNewApiUser
             ]);
         $response5 = self::$apiPresets->savePreset($request5, $inputResp, null);
-        $this->assertEquals(200, $response5->getStatusCode());
         $respData5 = json_decode($response5->getBody(true), true);
+        $this->assertEquals(200, $response5->getStatusCode());
+
         $newPresetId = $respData5['presetId'];
         $this->assertNotEquals($presetId, $newPresetId);
 
@@ -568,7 +577,7 @@ class ApiControllerTest extends TestCase {
                 'userId' => self::$ci->userId,
                 'title' => $presetTitle,
                 'presetId' => 0,
-                'presetData' => $presetData
+                'presetData' => $presetOwnedByNewApiUser
             ]);
         $response6 = self::$apiPresets->savePreset($request6, $inputResp, null);
         $this->assertEquals(409, $response6->getStatusCode());
@@ -611,22 +620,23 @@ class ApiControllerTest extends TestCase {
                 'userId' => 0, // ignored by API on updates
                 'title' => $presetTitle . '_new',
                 'presetId' => $newPresetId,
-                'presetData' => $presetData
+                'presetData' => $presetOwnedByNewApiUser
             ]);
         $response9 = self::$apiPresets->savePreset($request9, $inputResp, null);
         $this->assertEquals(200, $response9->getStatusCode());
         $respData9 =  json_decode($response9->getBody(true), true);
         $this->assertEquals($newPresetId, $respData9['presetId']);
 
-        return [ 'presetId1' => $presetId, 'presetId2' => $newPresetId] ;
+        return [ 'presetId1' => $presetId, 'presetId2' => $newPresetId, 'apiUserId' => $apiUser] ;
     }
 
     /**
      * @depends testSavePreset
      */
-    public function testDeletePreset($presetIds) {
-        $presetId1 = $presetIds['presetId1']; // owned by self::$editor1
-        $presetId2 = $presetIds['presetId2']; // owned by the current api user
+    public function testDeletePreset($presetData) {
+        self::$testEnvironment->setUserId($presetData['apiUserId']);
+        $presetId1 = $presetData['presetId1']; // owned by self::$editor1
+        $presetId2 = $presetData['presetId2']; // owned by the current api user
 
         // delete attempt with non-existent preset
         $request = (new ServerRequest('GET', ''))
@@ -654,6 +664,7 @@ class ApiControllerTest extends TestCase {
         $inputResp = new \Slim\Http\Response();
 
         $response3 = self::$apiPresets->deletePreset($request3, $inputResp, null);
+        //print_r(json_decode($response3->getBody(true), true));
         $this->assertEquals(200, $response3->getStatusCode());
     }
     

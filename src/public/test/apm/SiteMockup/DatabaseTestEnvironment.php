@@ -84,9 +84,9 @@ class DatabaseTestEnvironment {
                 DELETE FROM ap_pages;
                 DELETE FROM ap_docs;
                 DELETE FROM ap_relations;
+                DELETE FROM ap_presets;
                 DELETE FROM ap_users;
                 DELETE FROM ap_people;
-                DELETE FROM ap_presets;
                 INSERT INTO `ap_hands` (`id`, `name`, `description`) VALUES
 (0, 'Unknown', 'Unknown hand');
 EOD;
@@ -95,6 +95,10 @@ EOD;
             throw new Exception('Error in MySQL query trying to empty the database for testing');
         }
 
+    }
+
+    public function setUserId($userId) {
+        $this->container['userId'] = $userId;
     }
     
     public function getContainer()

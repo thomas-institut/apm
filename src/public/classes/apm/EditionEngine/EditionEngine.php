@@ -30,6 +30,10 @@ use APM\Engine\Engine;
  */
 abstract class EditionEngine extends Engine  {
 
+    // error codes
+    const ERROR_BAD_INPUT = 1001;
+
+
     // input array fields
     const FIELD_COLLATION_TABLE = 'collationTable';
     const FIELD_SIGLA_ABBREVIATIONS = 'siglaAbbreviations';
@@ -113,7 +117,17 @@ abstract class EditionEngine extends Engine  {
     abstract protected function realGenerateEdition(array $input) : array;
 
     protected function checkInput(array $input) : bool {
-        // TODO: Implement input checking
+
+        $requiredFields = [
+            self::FIELD_LANGUAGE,
+            self::FIELD_TEXT_DIRECTION,
+            self::FIELD_BASE_SIGLUM,
+            self::FIELD_SIGLA_ABBREVIATIONS,
+            self::FIELD_COLLATION_TABLE
+        ];
+
+
+
         return true;
     }
 

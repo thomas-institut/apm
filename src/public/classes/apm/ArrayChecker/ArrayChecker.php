@@ -81,7 +81,7 @@ class ArrayChecker
 
                 if (!isset($input[$requiredFieldName])) {
                     $this->setErrorCode(self::ERROR_MISSING_REQUIRED_FIELD);
-                    $this->setErrorMessage('Missing required field ' . $requiredFieldName);
+                    $this->setErrorMessage('Missing required field \'' . $requiredFieldName . '\'');
                     return false;
                 }
                 $theField = $input[$requiredFieldName];

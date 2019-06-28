@@ -41,6 +41,7 @@ class BasicEditionEngineTest extends TestCase
         $engineInput1 = [];
         $this->assertEquals([],$engine->generateEdition($engineInput1));
         $this->assertEquals(EditionEngine::ERROR_BAD_INPUT, $engine->getErrorCode());
+        //print($engine->getErrorContext());
 
         $engine->reset();
     }

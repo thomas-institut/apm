@@ -20,6 +20,7 @@
 
 namespace APM\EditionEngine;
 
+use APM\ArrayChecker\ArrayChecker;
 use APM\Engine\Engine;
 
 /**
@@ -118,17 +119,24 @@ abstract class EditionEngine extends Engine  {
 
     protected function checkInput(array $input) : bool {
 
-        $requiredFields = [
-            self::FIELD_LANGUAGE,
-            self::FIELD_TEXT_DIRECTION,
-            self::FIELD_BASE_SIGLUM,
-            self::FIELD_SIGLA_ABBREVIATIONS,
-            self::FIELD_COLLATION_TABLE
+        $checkRules = [
+            'requiredFields' => [
+                [ 'name' => self::FIELD_LANGUAGE, 'requiredType' => 'string'],
+                [ 'name' => self::FIELD_TEXT_DIRECTION, 'requiredType' => 'string'],
+                [ 'name' => self::FIELD_BASE_SIGLUM, 'requiredType' => 'string'],
+                [ 'name' => self::FIELD_SIGLA_ABBREVIATIONS, 'requiredType' => 'array'],
+                [ 'name' => self::FIELD_COLLATION_TABLE, 'requiredType' => 'array']
+            ]
         ];
 
+        $checker = new ArrayChecker();
 
+        if ($checker->isArrayValid($input, $checkRules)) {
+            return true;
+        }
 
-        return true;
+        $this->setError(self::ERROR_BAD_INPUT, 'ArrayChecker error ' . $checker->getErrorCode() . ': ' . $checker->getErrorMessage());
+        return false;
     }
 
 }

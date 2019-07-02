@@ -102,28 +102,9 @@ abstract class EditionEngine extends Engine  {
      *           'siglumB => [ .... ]
      *    -siglaAbbreviations => [  'siglumA' => 'abbrA, 'siglumB' => 'abbrB', ... ]
      *
-     *  tokenType uses the same constants as in the Token class, e.g., Token::TOKEN_EMPTY, etc
+     *      tokenType uses the same constants as in the Token class, e.g., Token::TOKEN_EMPTY, etc
      *
-     *
-     * @param array $input
-     * @return array
-     */
-    public function generateEdition(array $input) : array {
-        if (!$this->checkInput($input)) {
-            // checkInput sets engine errors, just return an empty array
-            return [];
-        }
-        $this->startChrono();
-        $this->reset();
-        $edition = $this->realGenerateEdition($input);
-        $this->endChrono();
-        return $edition;
-    }
-
-    /**
-     * Real implementation of edition generation, provided by a descendant
-     *
-     *  The returned array must contain:
+     *  The returned array contains the following elements:
      *   mainTextTokens : array of tokens to typeset, including spaces (a.k.a. glue)
      *       the tokens here are the kind of tokens the javascript typesetter
      *       expects to see.
@@ -144,6 +125,25 @@ abstract class EditionEngine extends Engine  {
      *
      *   error: string,  non-empty if there's an error
      *
+     * @param array $input
+     * @return array
+     */
+    public function generateEdition(array $input) : array {
+        if (!$this->checkInput($input)) {
+            // checkInput sets engine errors, just return an empty array
+            return [];
+        }
+        $this->reset();
+        $this->startChrono();
+        $edition = $this->realGenerateEdition($input);
+        $this->endChrono();
+        return $edition;
+    }
+
+    /**
+     * Real implementation of edition generation, provided by a descendant
+     *
+
      * @param array $input
      * @return array
      */

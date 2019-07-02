@@ -272,7 +272,7 @@ class AutomaticCollationTable {
       
         thisObject.editionDiv.html(ev.getHtml())
         let siglaHtml = '<ul class="siglalist">'
-        siglaHtml += '<li>' + 'Base witness: ' + data.quickEdition.base + '</li>'
+        siglaHtml += '<li>' + 'Base witness: ' + data.quickEdition.baseSiglum + '</li>'
         for(const abbr in data.quickEdition.abbrToSigla) {
             siglaHtml += '<li>' + '<em>' + abbr + '</em>: ' + data.quickEdition.abbrToSigla[abbr] + '</li>'
         }

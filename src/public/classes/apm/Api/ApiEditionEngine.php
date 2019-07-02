@@ -6,12 +6,16 @@ namespace APM\Api;
 
 use APM\EditionEngine\BasicEditionEngine;
 use APM\EditionEngine\EditionEngine;
+use APM\Engine\Engine;
 use AverroesProject\Profiler\ApmProfiler;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
 class ApiEditionEngine extends ApiController
 {
+
+    const API_ERROR_ENGINE_ERROR = 4001;
+
     public function basicEditionEngine(Request $request,
                                        Response $response, $next)
     {
@@ -34,6 +38,14 @@ class ApiEditionEngine extends ApiController
         $engine = new BasicEditionEngine();
 
         $edition = $engine->generateEdition($inputDataObject);
+
+        if ($engine->getErrorCode() !== Engine::ERROR_NOERROR) {
+            $this->logger->error("$apiCall: EditionEngine error",
+                [ 'apiUserId' => $this->ci->userId,
+                    'apiError' => self::API_ERROR_ENGINE_ERROR,
+                    'enginerError' => $engine->getErrorCode() . ': ' . $engine->getErrorMessage()]);
+            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_ENGINE_ERROR]);
+        }
 
         $profiler->log($this->logger);
 

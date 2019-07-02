@@ -22,7 +22,10 @@
  * 
  * The class provides a typesetting engine that allows for various typesetting scenarios.
  * The main method is typesetTokens, which takes an array of tokens and returns a copy
- * of those tokens with position information that can then be used to place them in an SVG element
+ * of those tokens with position information that can then be used to place them in an SVG-like element.
+ *
+ * At the moment the typesetter only aligns the left side margin for ltr text or the right side for rtl text. That is,
+ * it does not properly justifies the text.
  * 
  * 
  * A token is an object with the following properties:
@@ -38,16 +41,17 @@
  *    type === 'glue' 
  *       The term 'glue' is taken from Donald Knuth's the TeXbook, where it is explained in 
  *       chapter 12. Glue is meant to represent a potentially variable-length space that may or 
- *       may not eventually appear in the typeset text. 
+ *       may not eventually appear in the typeset text. It may not appear, for example, if it is an inter-word
+ *       space that falls at the end of the line.
  *       
  *       space: 'normal' | number,  if a number is given this is the space size in pixels; if 'normal'
  *              the normalSpaceWidth given in the constructor options is used
  *       stretch: number, extra pixels the space can have, this is only a suggestion, the typesetter
  *           algorithm may stretch spaces more than this in extreme situations.
- *       shrink: number , how many pixels less the space can have; space - shrink is the absolute minimum
+ *       shrink: number , how many pixels less the space can have; (space - shrink) is the absolute minimum
  *           for the space
  *           
- *       For the moment, stretch and shrink are ignored, stretch defaults to 10000 (esentially 
+ *       For the moment, stretch and shrink are ignored, stretch defaults to 10000 (essentially
  *       infinite) and shrink defaults to zero
  *      
  *  The typesetter returns tokens with the following properties added or overwritten
@@ -75,6 +79,8 @@
  *  Not all input tokens to typeset will be present in the return array. Specifically, the return
  *  array will not return glue tokens with negative space, empty text tokens and  possibly some
  *  glue tokens that are not necessary.
+ *
+ *  TODO: Change the return policy, the typesetter returns ALL input tokens, some of them marked as 'invisible'
  */
 
 class Typesetter {
@@ -153,9 +159,7 @@ class Typesetter {
     if (typeof(options.spaceBetweenParagraphs) === 'number')  {
       sanitizedOptions.spaceBetweenParagraphs = options.spaceBetweenParagraphs
     }
-    
-    // TODO: fill this up
-    
+
     return sanitizedOptions
   }
   
@@ -193,6 +197,13 @@ class Typesetter {
       }
       return x + deltaX
     }
+
+    function makeInvisible(token) {
+      let invisibleToken = token
+      invisibleToken.status = 'set'
+      invisibleToken.width = 0
+      return invisibleToken
+    }
     
     if (defaultFontSize === false) {
       defaultFontSize = this.options.defaultFontSize
@@ -211,10 +222,12 @@ class Typesetter {
         let spaceWidth = (token.space === 'normal') ? this.normalSpace : token.space
         if (token.space <= 0) {
           // ignore negative and zero space
+          typesetTokens.push(makeInvisible(token))
           continue
         }
         let newX = advanceX(currentX, spaceWidth, rightToLeft)
         if (isOutOfBounds(newX, lineWidth, rightToLeft)) {
+          typesetTokens.push(makeInvisible(token))
           // advance to the next line
           currentY += pxLineHeight
           currentLine++
@@ -236,11 +249,14 @@ class Typesetter {
       }
       // Token is of type text
       if (token.text === '') {
-        // ignore empty text
+        // Empty text, ignore and move on
+        typesetTokens.push(makeInvisible(token))
         continue
       }
       
       if (token.text === "\n") {
+        // newline means start a new paragraph
+        typesetTokens.push(makeInvisible(token))
         // new paragraph
         currentY += pxLineHeight + this.options.spaceBetweenParagraphs
         currentLine++
@@ -248,7 +264,8 @@ class Typesetter {
         currentX = advanceX(currentX, this.options.paragraphFirstLineIndent, rightToLeft)
         continue
       }
-      
+
+      // normal text token
       let fontDefString = ''
       if (token.fontWeight) {
         fontDefString += token.fontWeight + ' '
@@ -270,6 +287,7 @@ class Typesetter {
       newToken.fontFamily = this.options.defaultFontFamily
       newToken.fontSize = defaultFontSize
       newToken.width = tokenWidth
+      newToken.status = 'set'
       typesetTokens.push(newToken)
       
       currentX = advanceX(currentX, tokenWidth, rightToLeft)
@@ -320,6 +338,7 @@ class Typesetter {
           deltaY: lineNumbersDeltaYs[i],
           fontSize: this.options.defaultFontSize * this.options.lineNumbersFontSizeMultiplier,
           width: tokenWidth,
+          status: 'set',
           direction: 'ltr'
         }
         lineNumberTokens.push(newToken)
@@ -331,7 +350,7 @@ class Typesetter {
   genTokenSvg(left, top, token, showGlue = false) {
     
     if (token.type === 'glue') {
-      if (!showGlue) {
+      if (!showGlue || token.width===0) {
         return ''
       }
       let fontHeight = this.options.defaultFontSize
@@ -341,7 +360,8 @@ class Typesetter {
       return svg
       
     }
-    if (token.text === '') {
+    // text token
+    if (token.width === 0) {
       return ''
     }
     let fontSize = this.options.defaultFontSize
@@ -439,6 +459,9 @@ class Typesetter {
     // calculated automatically 
     //console.log('Getting text height: ')
     //console.log(tokens[tokens.length-1])
+    if (tokens.length === 0) {
+      return 0
+    }
     return tokens[tokens.length-1].deltaY + (this.options.defaultFontSize * 0.4)
   }
   

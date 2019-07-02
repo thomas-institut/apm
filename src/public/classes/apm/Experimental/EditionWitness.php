@@ -123,19 +123,19 @@ class EditionWitness {
             $ctForEngine[$siglum] = [];
             foreach($this->collationTable->getRow($siglum) as $ctToken) {
                 $tokenForEngine = [];
-                $tokenForEngine[EditionEngine::FIELD_TOKEN_TYPE] = $ctToken->getType();
-                $tokenForEngine[EditionEngine::FIELD_TEXT] = $ctToken->getNormalization();
-                $tokenForEngine[EditionEngine::FIELD_APPARATUS_HINT] = '';
+                $tokenForEngine[EditionEngine::TOKEN_FIELD_TYPE] = $ctToken->getType();
+                $tokenForEngine[EditionEngine::TOKEN_FIELD_TEXT] = $ctToken->getNormalization();
+                $tokenForEngine[EditionEngine::TOKEN_FIELD_APPARATUS_HINT] = '';
                 $ctForEngine[$siglum][] = $tokenForEngine;
             }
         }
 
         $editionEngineInput = [];
-        $editionEngineInput[EditionEngine::FIELD_LANGUAGE] = $this->language;
-        $editionEngineInput[EditionEngine::FIELD_TEXT_DIRECTION] = $this->rightToLeft ? 'rtl' : 'ltr';
-        $editionEngineInput[EditionEngine::FIELD_BASE_SIGLUM] = $baseSiglum;
-        $editionEngineInput[EditionEngine::FIELD_SIGLA_ABBREVIATIONS] = $siglumToAbbr;
-        $editionEngineInput[EditionEngine::FIELD_COLLATION_TABLE] = $ctForEngine;
+        $editionEngineInput[EditionEngine::INPUT_FIELD_LANGUAGE] = $this->language;
+        $editionEngineInput[EditionEngine::INPUT_FIELD_TEXT_DIRECTION] = $this->rightToLeft ? 'rtl' : 'ltr';
+        $editionEngineInput[EditionEngine::INPUT_FIELD_BASE_SIGLUM] = $baseSiglum;
+        $editionEngineInput[EditionEngine::INPUT_FIELD_SIGLA_ABBREVIATIONS] = $siglumToAbbr;
+        $editionEngineInput[EditionEngine::INPUT_FIELD_COLLATION_TABLE] = $ctForEngine;
 
         $engine = new BasicEditionEngine();
 

@@ -27,56 +27,24 @@ class BasicEditionEngine extends EditionEngine
      */
     protected function realGenerateEdition(array $input): array
     {
+        $baseSiglum = $input[EditionEngine::INPUT_FIELD_BASE_SIGLUM];
+        $abbrFromSiglum = $input[EditionEngine::INPUT_FIELD_SIGLA_ABBREVIATIONS];
+        $language = $input[EditionEngine::INPUT_FIELD_LANGUAGE];
+
 
         $siglumFromAbbr = [];
-        //$currentSiglumIndex = 0;
-
-        //$sigla = array_keys($input[EditionEngine::FIELD_COLLATION_TABLE]);
-        $baseSiglum = $input[EditionEngine::FIELD_BASE_SIGLUM];
-        $abbrFromSiglum = $input[EditionEngine::FIELD_SIGLA_ABBREVIATIONS];
-        $language = $input[EditionEngine::FIELD_LANGUAGE];
-
-
         foreach($abbrFromSiglum as $siglum => $abbr) {
             $siglumFromAbbr[$abbr] = $siglum;
         }
 
         //  Generate main text
-        $mainTextTokens = [];
-        $ctTokens = $input[EditionEngine::FIELD_COLLATION_TABLE][$baseSiglum];
-        $firstWordAdded = false;
-        $ctToMainTextMap = [];
-        $currentMainTextIndex = -1;
-        foreach($ctTokens as $i => $ctToken) {
-            if ($ctToken[EditionEngine::FIELD_TOKEN_TYPE] === Token::TOKEN_EMPTY ) {
-                $ctToMainTextMap[] = self::TOKEN_NOT_IN_MAINTEXT;
-                continue;
-            }
-            $addGlue = true;
-            if (!$firstWordAdded) {
-                $addGlue = false;
-            }
-            if (($ctToken[EditionEngine::FIELD_TOKEN_TYPE] ===Token::TOKEN_PUNCT) &&
-                (mb_strstr(self::NO_GLUE_PUNCTUATION, $ctToken[EditionEngine::FIELD_TEXT]) !== false ) ) {
-                $addGlue = false;
-            }
-            if ($addGlue) {
-                $currentMainTextIndex++;
-                $mainTextTokens[] = [ 'type' => EditionEngine::E_TOKEN_GLUE, 'space' => 'normal'];
-            }
-            $currentMainTextIndex++;
-            $mainTextTokens[] = [
-                'type' => EditionEngine::E_TOKEN_TEXT,
-                'text' => $ctToken[EditionEngine::FIELD_TEXT],
-                'collationTableIndex' => $i
-            ];
-            $firstWordAdded = true;
-            $ctToMainTextMap[] = $currentMainTextIndex;
-        }
+        list ($mainTextTokens, $ctToMainTextMap) =
+            $this->generateMainText($input[EditionEngine::INPUT_FIELD_COLLATION_TABLE][$baseSiglum]);
 
+        // Generate critical apparatus
         $criticalApparatus = [];
         foreach($ctToMainTextMap as $i => $mainTextIndex) {
-            $column = $this->getCollationTableColumn($input[EditionEngine::FIELD_COLLATION_TABLE], $i);
+            $column = $this->getCollationTableColumn($input[EditionEngine::INPUT_FIELD_COLLATION_TABLE], $i);
             if ($mainTextIndex === self::TOKEN_NOT_IN_MAINTEXT)  {
                 // nothing on the main text for this token:
                 //      find the previous token index that is in the main text,
@@ -97,14 +65,14 @@ class BasicEditionEngine extends EditionEngine
                         continue;
                     }
 
-                    if ($ctToken[EditionEngine::FIELD_TOKEN_TYPE] === Token::TOKEN_EMPTY) {
+                    if ($ctToken[EditionEngine::TOKEN_FIELD_TYPE] === Token::TOKEN_EMPTY) {
                         continue;
                     }
 
-                    if (!isset($additions[$ctToken[EditionEngine::FIELD_TEXT]])) {
-                        $additions[$ctToken[EditionEngine::FIELD_TEXT]] = [];
+                    if (!isset($additions[$ctToken[EditionEngine::TOKEN_FIELD_TEXT]])) {
+                        $additions[$ctToken[EditionEngine::TOKEN_FIELD_TEXT]] = [];
                     }
-                    $additions[$ctToken[EditionEngine::FIELD_TEXT]][] = $siglum;
+                    $additions[$ctToken[EditionEngine::TOKEN_FIELD_TEXT]][] = $siglum;
                 }
                 // build apparatus entries for each addition
                 foreach($additions as $addition => $additionSigla) {
@@ -115,12 +83,12 @@ class BasicEditionEngine extends EditionEngine
                         $additionAbbreviationsStr .= $abbrFromSiglum[$additionSiglum];
                     }
                     $criticalApparatus[] = [
-                        'start' => $ctToMainTextMap[$index],
-                        'end' => $ctToMainTextMap[$index],
-                        'type' => 'add',
-                        'sigla' => $additionSigla,
-                        'addition' => $addition,
-                        'markDown' => '+ ' . $addition .  ' _' . $additionAbbreviationsStr . '_'
+                        self::APPARATUS_ENTRY_FIELD_START => $ctToMainTextMap[$index],
+                        self::APPARATUS_ENTRY_FIELD_END => $ctToMainTextMap[$index],
+                        self::APPARATUS_ENTRY_FIELD_TYPE  => self::APPARATUS_ENTRY_TYPE_ADDITION,
+                        self::APPARATUS_ENTRY_FIELD_SIGLA => $additionSigla,
+                        self::APPARATUS_ENTRY_FIELD_TEXT => $addition,
+                        self::APPARATUS_ENTRY_FIELD_MARKDOWN => '+ ' . $addition .  ' _' . $additionAbbreviationsStr . '_'
                     ];
                 }
                 continue;
@@ -128,15 +96,15 @@ class BasicEditionEngine extends EditionEngine
             // token in main text
             // collect variants and omissions
 
-            $mainText = $mainTextTokens[$ctToMainTextMap[$i]][EditionEngine::FIELD_TEXT];
+            $mainText = $mainTextTokens[$ctToMainTextMap[$i]][EditionEngine::TOKEN_FIELD_TEXT];
             $variants = [];
             $omissions = [];
             foreach($column as $siglum => $ctToken) {
                 if ($siglum === $baseSiglum) {
                     continue;
                 }
-                $ctTokenText = $ctToken[EditionEngine::FIELD_TEXT];
-                if ($ctToken[EditionEngine::FIELD_TOKEN_TYPE] === Token::TOKEN_EMPTY) {
+                $ctTokenText = $ctToken[EditionEngine::TOKEN_FIELD_TEXT];
+                if ($ctToken[EditionEngine::TOKEN_FIELD_TYPE] === Token::TOKEN_EMPTY) {
                     if (!isset($omissions[$mainText])) {
                         $omissions[$mainText] = [];
                     }
@@ -159,11 +127,11 @@ class BasicEditionEngine extends EditionEngine
                     $omissionAbbreviationsStr .= $abbrFromSiglum[$omissionSiglum];
                 }
                 $criticalApparatus[] = [
-                    'start' => $ctToMainTextMap[$i],
-                    'end' => $ctToMainTextMap[$i],
-                    'type' => 'omission',
-                    'sigla' => $omissionSigla,
-                    'markDown' => '-  _' . $omissionAbbreviationsStr . '_'
+                    self::APPARATUS_ENTRY_FIELD_START => $ctToMainTextMap[$i],
+                    self::APPARATUS_ENTRY_FIELD_END => $ctToMainTextMap[$i],
+                    self::APPARATUS_ENTRY_FIELD_TYPE => self::APPARATUS_ENTRY_TYPE_OMMISION,
+                    self::APPARATUS_ENTRY_FIELD_SIGLA => $omissionSigla,
+                    self::APPARATUS_ENTRY_FIELD_MARKDOWN => '-  _' . $omissionAbbreviationsStr . '_'
                 ];
             }
             foreach($variants as $variant => $variantSigla) {
@@ -174,12 +142,12 @@ class BasicEditionEngine extends EditionEngine
                     $variantAbbreviationsStr .= $abbrFromSiglum[$variantSiglum];
                 }
                 $criticalApparatus[] = [
-                    'start' => $ctToMainTextMap[$i],
-                    'end' => $ctToMainTextMap[$i],
-                    'type' => 'variant',
-                    'sigla' => $variantSigla,
-                    'addition' => $variant,
-                    'markDown' => $variant .  ' _' . $variantAbbreviationsStr . '_'
+                    self::APPARATUS_ENTRY_FIELD_START => $ctToMainTextMap[$i],
+                    self::APPARATUS_ENTRY_FIELD_END => $ctToMainTextMap[$i],
+                    self::APPARATUS_ENTRY_FIELD_TYPE => self::APPARATUS_ENTRY_TYPE_VARIANT,
+                    self::APPARATUS_ENTRY_FIELD_SIGLA => $variantSigla,
+                    self::APPARATUS_ENTRY_FIELD_TEXT => $variant,
+                    self::APPARATUS_ENTRY_FIELD_MARKDOWN => $variant .  ' _' . $variantAbbreviationsStr . '_'
                 ];
             }
         }
@@ -190,13 +158,13 @@ class BasicEditionEngine extends EditionEngine
         $apparatusArray = [$criticalApparatus];
 
         $edition = [];
-        $edition['base'] = $baseSiglum;
-        $edition['mainTextTokens'] = $mainTextTokens;
-        $edition['abbrToSigla'] = $siglumFromAbbr;
-        $edition['textDirection'] = $input[EditionEngine::FIELD_TEXT_DIRECTION];
-        $edition['editionStyle'] = $language;
-        $edition['apparatusArray'] = $apparatusArray;
-        $edition['error'] = '';
+        $edition[self::EDITION_FIELD_BASE_SIGLUM] = $baseSiglum;
+        $edition[self::EDITION_FIELD_MAIN_TEXT_TOKENS] = $mainTextTokens;
+        $edition[self::EDITION_FIELD_ABBREVIATIONS_TO_SIGLA] = $siglumFromAbbr;
+        $edition[self::EDITION_FIELD_TEXT_DIRECTION] = $input[EditionEngine::INPUT_FIELD_TEXT_DIRECTION];
+        $edition[self::EDITION_FIELD_EDITION_STYLE] = $language;
+        $edition[self::EDITION_FIELD_APPARATUS_ARRAY] = $apparatusArray;
+        $edition[self::EDITION_FIELD_ERROR] = '';
 
         return $edition;
     }
@@ -207,5 +175,53 @@ class BasicEditionEngine extends EditionEngine
             $column[$siglum] = $tokens[$i];
         }
         return $column;
+    }
+
+    /**
+     * Generates an array with two elements:
+     *   0: an array of tokens to typeset representing the main text
+     *   1: an array of indices of the inputTokens to the array in 0
+     * @param $inputTokens
+     * @return array
+     */
+    public function generateMainText($inputTokens) : array {
+        $mainTextTokens = [];
+        $firstWordAdded = false;
+        $inputTokensToMainText = [];
+        $currentMainTextIndex = -1;
+        foreach($inputTokens as $i => $inputToken) {
+            if ($inputToken[EditionEngine::TOKEN_FIELD_TYPE] === Token::TOKEN_EMPTY ) {
+                $inputTokensToMainText[] = self::TOKEN_NOT_IN_MAINTEXT;
+                continue;
+            }
+            if ($inputToken[EditionEngine::TOKEN_FIELD_TYPE] === Token::TOKEN_WHITESPACE ) {
+                $inputTokensToMainText[] = self::TOKEN_NOT_IN_MAINTEXT;
+                continue;
+            }
+            $addGlue = true;
+            if (!$firstWordAdded) {
+                $addGlue = false;
+            }
+            if (($inputToken[EditionEngine::TOKEN_FIELD_TYPE] ===Token::TOKEN_PUNCT) &&
+                (mb_strstr(self::NO_GLUE_PUNCTUATION, $inputToken[EditionEngine::TOKEN_FIELD_TEXT]) !== false ) ) {
+                $addGlue = false;
+            }
+            if ($addGlue) {
+                $currentMainTextIndex++;
+                $mainTextTokens[] = [
+                    self::E_TOKEN_FIELD_TYPE => EditionEngine::E_TOKEN_TYPE_GLUE,
+                    self::E_TOKEN_FIELD_SPACE_WIDTH => self::SPACE_WIDTH_NORMAL
+                ];
+            }
+            $currentMainTextIndex++;
+            $mainTextTokens[] = [
+                self::E_TOKEN_FIELD_TYPE => EditionEngine::E_TOKEN_TYPE_TEXT,
+                self::E_TOKEN_FIELD_TEXT => $inputToken[EditionEngine::TOKEN_FIELD_TEXT],
+                self::E_TOKEN_FIELD_COLLATION_TABLE_INDEX => $i
+            ];
+            $firstWordAdded = true;
+            $inputTokensToMainText[] = $currentMainTextIndex;
+        }
+        return [ $mainTextTokens, $inputTokensToMainText];
     }
 }

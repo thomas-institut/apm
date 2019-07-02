@@ -77,6 +77,10 @@ abstract class Engine
         return $this->errorContext;
     }
 
+    public function getErrorMessage() : string {
+        return $this->getErrorContext();
+    }
+
     public function getRunDetails() : array {
         return [
             'engineName' => $this->getName(),

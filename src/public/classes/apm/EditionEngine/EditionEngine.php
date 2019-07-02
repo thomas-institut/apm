@@ -34,25 +34,56 @@ abstract class EditionEngine extends Engine  {
     // error codes
     const ERROR_BAD_INPUT = 1001;
 
-
     // input array fields
-    const FIELD_COLLATION_TABLE = 'collationTable';
-    const FIELD_SIGLA_ABBREVIATIONS = 'siglaAbbreviations';
-    const FIELD_BASE_SIGLUM = 'baseSiglum';
-    const FIELD_TEXT_DIRECTION = 'textDirection';
-    const FIELD_LANGUAGE = 'language';
+    const INPUT_FIELD_COLLATION_TABLE = 'collationTable';
+    const INPUT_FIELD_SIGLA_ABBREVIATIONS = 'siglaAbbreviations';
+    const INPUT_FIELD_BASE_SIGLUM = 'baseSiglum';
+    const INPUT_FIELD_TEXT_DIRECTION = 'textDirection';
+    const INPUT_FIELD_LANGUAGE = 'language';
 
+    // Token fields
+    const TOKEN_FIELD_TYPE = 'type';
+    const TOKEN_FIELD_TEXT = 'text';
+    const TOKEN_FIELD_APPARATUS_HINT = 'apparatusHint';
+
+    // edition fields
+    const EDITION_FIELD_MAIN_TEXT_TOKENS = 'mainTextTokens';
+    const EDITION_FIELD_BASE_SIGLUM = 'baseSiglum';
+    const EDITION_FIELD_ABBREVIATIONS_TO_SIGLA = 'abbrToSigla';
+    const EDITION_FIELD_TEXT_DIRECTION = 'textDirection';
+    const EDITION_FIELD_EDITION_STYLE = 'editionStyle';
+    const EDITION_FIELD_APPARATUS_ARRAY = 'apparatusArray';
+    const EDITION_FIELD_ERROR = 'error';
+
+    // edition token fields
+    const E_TOKEN_FIELD_TYPE = 'type';
+    const E_TOKEN_FIELD_TEXT = 'text';
+    const E_TOKEN_FIELD_SPACE_WIDTH = 'space';
+    const E_TOKEN_FIELD_COLLATION_TABLE_INDEX = 'collationTableIndex';
+
+    // apparatus entry fields
+    const APPARATUS_ENTRY_FIELD_START = 'start';
+    const APPARATUS_ENTRY_FIELD_END = 'end';
+    const APPARATUS_ENTRY_FIELD_TYPE = 'type';
+    const APPARATUS_ENTRY_FIELD_SIGLA = 'sigla';
+    const APPARATUS_ENTRY_FIELD_MARKDOWN = 'markDown';
+    const APPARATUS_ENTRY_FIELD_TEXT = 'text';
+
+    // text directions
     const TEXT_DIRECTION_RTL = 'rtl';
     const TEXT_DIRECTION_LTR = 'ltr';
 
-    // Token fields
-    const FIELD_TOKEN_TYPE = 'tokenType';
-    const FIELD_TEXT = 'text';
-    const FIELD_APPARATUS_HINT = 'apparatusHint';
-
     // Edition token types
-    const E_TOKEN_GLUE = 'glue';
-    const E_TOKEN_TEXT = 'text';
+    const E_TOKEN_TYPE_GLUE = 'glue';
+    const E_TOKEN_TYPE_TEXT = 'text';
+
+    // Space widths
+    const SPACE_WIDTH_NORMAL = 'normal';
+
+    // apparatus entry types
+    const APPARATUS_ENTRY_TYPE_VARIANT = 'variant';
+    const APPARATUS_ENTRY_TYPE_ADDITION = 'addition';
+    const APPARATUS_ENTRY_TYPE_OMMISION = 'omission';
 
 
 
@@ -71,6 +102,7 @@ abstract class EditionEngine extends Engine  {
      *           'siglumB => [ .... ]
      *    -siglaAbbreviations => [  'siglumA' => 'abbrA, 'siglumB' => 'abbrB', ... ]
      *
+     *  tokenType uses the same constants as in the Token class, e.g., Token::TOKEN_EMPTY, etc
      *
      *
      * @param array $input
@@ -119,24 +151,43 @@ abstract class EditionEngine extends Engine  {
 
     protected function checkInput(array $input) : bool {
 
-        $checkRules = [
+        $inputCheckRules = [
             'requiredFields' => [
-                [ 'name' => self::FIELD_LANGUAGE, 'requiredType' => 'string'],
-                [ 'name' => self::FIELD_TEXT_DIRECTION, 'requiredType' => 'string'],
-                [ 'name' => self::FIELD_BASE_SIGLUM, 'requiredType' => 'string'],
-                [ 'name' => self::FIELD_SIGLA_ABBREVIATIONS, 'requiredType' => 'array'],
-                [ 'name' => self::FIELD_COLLATION_TABLE, 'requiredType' => 'array']
+                [ 'name' => self::INPUT_FIELD_LANGUAGE, 'requiredType' => 'string'],
+                [ 'name' => self::INPUT_FIELD_TEXT_DIRECTION, 'requiredType' => 'string'],
+                [ 'name' => self::INPUT_FIELD_BASE_SIGLUM, 'requiredType' => 'string'],
+                [ 'name' => self::INPUT_FIELD_SIGLA_ABBREVIATIONS, 'requiredType' => 'array'],
+                [ 'name' => self::INPUT_FIELD_COLLATION_TABLE, 'requiredType' => 'array']
+            ]
+        ];
+
+        $tokenCheckRules = [
+            'requiredFields' => [
+                ['name' => self::TOKEN_FIELD_TYPE, 'requiredType' => 'int'],
+                ['name' => self::TOKEN_FIELD_TEXT, 'requiredType' => 'string']
             ]
         ];
 
         $checker = new ArrayChecker();
 
-        if ($checker->isArrayValid($input, $checkRules)) {
-            return true;
+        if (!$checker->isArrayValid($input, $inputCheckRules)) {
+            $this->setError(self::ERROR_BAD_INPUT, 'ArrayChecker error ' .
+                $checker->getErrorCode() . ': ' . $checker->getErrorMessage());
+            return false;
         }
 
-        $this->setError(self::ERROR_BAD_INPUT, 'ArrayChecker error ' . $checker->getErrorCode() . ': ' . $checker->getErrorMessage());
-        return false;
+        foreach ($input[self::INPUT_FIELD_COLLATION_TABLE] as $siglum => $tokens) {
+            foreach ($tokens as $token) {
+                if (!$checker->isArrayValid($token, $tokenCheckRules)) {
+                    $this->setError(self::ERROR_BAD_INPUT, 'ArrayChecker error in token array ' .
+                        $checker->getErrorCode() . ': ' . $checker->getErrorMessage());
+                    return false;
+                }
+            }
+
+        }
+        return true;
+
     }
 
 }

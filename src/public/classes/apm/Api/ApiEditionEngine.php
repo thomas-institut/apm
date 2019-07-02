@@ -18,11 +18,11 @@ class ApiEditionEngine extends ApiController
         $db = $this->db;
         $apiCall = 'EditionEngine';
         $requiredFields = [
-            EditionEngine::FIELD_COLLATION_TABLE,
-            EditionEngine::FIELD_SIGLA_ABBREVIATIONS,
-            EditionEngine::FIELD_BASE_SIGLUM,
-            EditionEngine::FIELD_TEXT_DIRECTION,
-            EditionEngine::FIELD_LANGUAGE
+            EditionEngine::INPUT_FIELD_COLLATION_TABLE,
+            EditionEngine::INPUT_FIELD_SIGLA_ABBREVIATIONS,
+            EditionEngine::INPUT_FIELD_BASE_SIGLUM,
+            EditionEngine::INPUT_FIELD_TEXT_DIRECTION,
+            EditionEngine::INPUT_FIELD_LANGUAGE
         ];
 
         $inputDataObject = $this->checkAndGetInputData($request, $response, $apiCall, $requiredFields);

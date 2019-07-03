@@ -66,6 +66,7 @@ abstract class EditionEngine extends Engine  {
     const APPARATUS_ENTRY_FIELD_END = 'end';
     const APPARATUS_ENTRY_FIELD_TYPE = 'type';
     const APPARATUS_ENTRY_FIELD_SIGLA = 'sigla';
+    const APPARATUS_ENTRY_FIELD_DETAILS = 'details';
     const APPARATUS_ENTRY_FIELD_MARKDOWN = 'markDown';
     const APPARATUS_ENTRY_FIELD_TEXT = 'text';
 
@@ -117,6 +118,12 @@ abstract class EditionEngine extends Engine  {
      *      information:
      *          start: index to the starting mainTextToken
      *          end: index to the final mainTextToken
+     *          type:  'addition' | 'omission' | 'variant' | 'custom'
+     *          details: an array with information about the phenomenon, per sigla. If the witness with
+     *               siglum X exhibits the phenomenom, there will be an element details[X] that is an array
+     *               with element specifying the details. For example, for a variant
+     *                 details['X'] => [ 'location' => 'above', 'clarity' => 'unclear' ]
+     *          text: text corresponding to the phenonemon, i.e. the variant or the addition text
      *          markDown: string, markDown formatted text of the entry
      *
      *   textDirection:  'ltr' | 'rtl'

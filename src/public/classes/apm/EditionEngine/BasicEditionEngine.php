@@ -78,15 +78,18 @@ class BasicEditionEngine extends EditionEngine
                 foreach($additions as $addition => $additionSigla) {
                     $additionAbbreviations = [];
                     $additionAbbreviationsStr = '';
+                    $details = [];
                     foreach ($additionSigla as $additionSiglum) {
                         $additionAbbreviations[] = $abbrFromSiglum[$additionSiglum];
                         $additionAbbreviationsStr .= $abbrFromSiglum[$additionSiglum];
+                        $details[$additionSiglum] = []; // TODO: fill details!
                     }
                     $criticalApparatus[] = [
                         self::APPARATUS_ENTRY_FIELD_START => $ctToMainTextMap[$index],
                         self::APPARATUS_ENTRY_FIELD_END => $ctToMainTextMap[$index],
                         self::APPARATUS_ENTRY_FIELD_TYPE  => self::APPARATUS_ENTRY_TYPE_ADDITION,
                         self::APPARATUS_ENTRY_FIELD_SIGLA => $additionSigla,
+                        self::APPARATUS_ENTRY_FIELD_DETAILS => $details,
                         self::APPARATUS_ENTRY_FIELD_TEXT => $addition,
                         self::APPARATUS_ENTRY_FIELD_MARKDOWN => '+ ' . $addition .  ' _' . $additionAbbreviationsStr . '_'
                     ];
@@ -122,30 +125,36 @@ class BasicEditionEngine extends EditionEngine
             foreach($omissions as $omissionText => $omissionSigla) {
                 $omissionAbbreviations = [];
                 $omissionAbbreviationsStr = '';
+                $details = [];
                 foreach ($omissionSigla as $omissionSiglum) {
                     $omissionAbbreviations[] = $abbrFromSiglum[$omissionSiglum];
                     $omissionAbbreviationsStr .= $abbrFromSiglum[$omissionSiglum];
+                    $details[$omissionSiglum] = []; // TODO: fill details!
                 }
                 $criticalApparatus[] = [
                     self::APPARATUS_ENTRY_FIELD_START => $ctToMainTextMap[$i],
                     self::APPARATUS_ENTRY_FIELD_END => $ctToMainTextMap[$i],
                     self::APPARATUS_ENTRY_FIELD_TYPE => self::APPARATUS_ENTRY_TYPE_OMMISION,
                     self::APPARATUS_ENTRY_FIELD_SIGLA => $omissionSigla,
+                    self::APPARATUS_ENTRY_FIELD_DETAILS => $details,
                     self::APPARATUS_ENTRY_FIELD_MARKDOWN => '-  _' . $omissionAbbreviationsStr . '_'
                 ];
             }
             foreach($variants as $variant => $variantSigla) {
                 $variantAbbreviations = [];
                 $variantAbbreviationsStr = '';
+                $details = [];
                 foreach ($variantSigla as $variantSiglum) {
                     $variantAbbreviations[] = $abbrFromSiglum[$variantSiglum];
                     $variantAbbreviationsStr .= $abbrFromSiglum[$variantSiglum];
+                    $details[$variantSiglum] = []; // TODO: fill details
                 }
                 $criticalApparatus[] = [
                     self::APPARATUS_ENTRY_FIELD_START => $ctToMainTextMap[$i],
                     self::APPARATUS_ENTRY_FIELD_END => $ctToMainTextMap[$i],
                     self::APPARATUS_ENTRY_FIELD_TYPE => self::APPARATUS_ENTRY_TYPE_VARIANT,
                     self::APPARATUS_ENTRY_FIELD_SIGLA => $variantSigla,
+                    self::APPARATUS_ENTRY_FIELD_DETAILS => $details,
                     self::APPARATUS_ENTRY_FIELD_TEXT => $variant,
                     self::APPARATUS_ENTRY_FIELD_MARKDOWN => $variant .  ' _' . $variantAbbreviationsStr . '_'
                 ];

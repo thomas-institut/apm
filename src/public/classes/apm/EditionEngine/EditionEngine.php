@@ -109,6 +109,8 @@ abstract class EditionEngine extends Engine  {
      *   mainTextTokens : array of tokens to typeset, including spaces (a.k.a. glue)
      *       the tokens here are the kind of tokens the javascript typesetter
      *       expects to see.
+     *       TODO: change to a 3-step approach, EditionEngine + Decorator + Typesetter
+     *
      *
      *   abbrToSigla: associative array that maps the abbreviations used in the
      *       edition to the witnesses' sigla in the collation table

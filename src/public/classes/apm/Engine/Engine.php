@@ -36,7 +36,7 @@ abstract class Engine
 
     public function __construct(string $engineName) {
         if ($engineName === '') {
-            $engineName = self::DEFAULT_ENGINE_NAMEgit ;
+            $engineName = self::DEFAULT_ENGINE_NAME; // @codeCoverageIgnore
         }
         $this->engineName = $engineName;
         $this->resetError();

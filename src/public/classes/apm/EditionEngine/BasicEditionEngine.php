@@ -14,6 +14,8 @@ class BasicEditionEngine extends EditionEngine
 
     const ENGINE_NAME = 'Basic Edition Engine v0.1';
 
+    const INDEX_BEFORE_MAIN_TEXT = -1;
+
     public function __construct()
     {
         parent::__construct(self::ENGINE_NAME);
@@ -54,9 +56,7 @@ class BasicEditionEngine extends EditionEngine
                     $index--;
                 }
                 if ($index < 0) {
-                    // We are before the start of the main text
-                    // ignore for now
-                    continue;
+                    $index = self::INDEX_BEFORE_MAIN_TEXT;
                 }
                 $additions = [];
                 // collect variants in the row
@@ -84,9 +84,10 @@ class BasicEditionEngine extends EditionEngine
                         $additionAbbreviationsStr .= $abbrFromSiglum[$additionSiglum];
                         $details[$additionSiglum] = []; // TODO: fill details!
                     }
+                    $entryMainTextIndex = ($index === self::INDEX_BEFORE_MAIN_TEXT) ? $index : $ctToMainTextMap[$index];
                     $criticalApparatus[] = [
-                        self::APPARATUS_ENTRY_FIELD_START => $ctToMainTextMap[$index],
-                        self::APPARATUS_ENTRY_FIELD_END => $ctToMainTextMap[$index],
+                        self::APPARATUS_ENTRY_FIELD_START => $entryMainTextIndex,
+                        self::APPARATUS_ENTRY_FIELD_END => $entryMainTextIndex,
                         self::APPARATUS_ENTRY_FIELD_TYPE  => self::APPARATUS_ENTRY_TYPE_ADDITION,
                         self::APPARATUS_ENTRY_FIELD_SIGLA => $additionSigla,
                         self::APPARATUS_ENTRY_FIELD_DETAILS => $details,

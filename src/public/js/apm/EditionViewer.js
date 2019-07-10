@@ -206,6 +206,9 @@ class EditionViewer {
   
   
   getLineNumbersForApparatusEntry(note, tsTokens, map) {
+    if (note.start === -1) {
+      return { start: 'pre', end: 'pre'}
+    }
     if (typeof(tsTokens[map[note.start]]) === 'undefined') {
       console.log('Found undefined')
       console.log('note.start: ' + note.start)
@@ -262,18 +265,26 @@ class EditionViewer {
         apparatusToTypeset.push({ type: 'glue', space: 'normal'} )
         
         for (const entry of pageGroup.entries) {
-          let entryLesson = this.options.collationTokens[entry.start].text 
-          if (entry.start !== entry.end) {
-            entryLesson += ' '
-            if (entry.end > (entry.start + 1)) {
-              entryLesson += '… '
+          let entryLesson = ''
+          if (entry.start === -1) {
+            entryLesson = ''
+            //console.log('Start = -1')
+            //console.log(entry)
+          } else {
+            entryLesson = this.options.collationTokens[entry.start].text
+            if (entry.start !== entry.end) {
+              entryLesson += ' '
+              if (entry.end > (entry.start + 1)) {
+                entryLesson += '… '
+              }
+              entryLesson += this.collationTokens[entry.end].text
             }
-            entryLesson += this.collationTokens[entry.end].text 
+            entryLesson += ']'
           }
-          entryLesson += ']'
-          apparatusToTypeset.push({ type: 'text', text: entryLesson})
-          apparatusToTypeset.push({ type: 'glue', space: 'normal'} )
-          
+          if (entryLesson !== '') {
+            apparatusToTypeset.push({ type: 'text', text: entryLesson})
+            apparatusToTypeset.push({ type: 'glue', space: 'normal'} )
+          }
           let entryTokens = this.tsApparatus.getTokensFromMarkdownString(entry.markDown)
           for (const entryToken of entryTokens ) {
             apparatusToTypeset.push(entryToken)

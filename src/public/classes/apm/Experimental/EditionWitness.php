@@ -100,20 +100,22 @@ class EditionWitness {
         // TODO: support more than 26 witnesses!
 
         $siglumToAbbr = [];
-        $currentSiglumIndex = 0;
+
         $siglaString = self::SIGLA_STR_LATIN;
         $sigla = $this->collationTable->getSigla();
         $baseSiglum = $this->baseSiglum;
 
-        if (count($sigla) > mb_strlen($siglaString)) {
-            return [ 'error' => 'Cannot handle this many witnesses'];
-        }
-
+        $currentSiglumIndex = 0;
+        $countAvailableAbbreviations = mb_strlen($siglaString);
         foreach($sigla as $siglum) {
             if ($siglum === $baseSiglum) {
                 continue;
             }
-            $abbr = mb_substr($siglaString, $currentSiglumIndex, 1);
+            $postFix = intdiv($currentSiglumIndex, $countAvailableAbbreviations);
+            if ($postFix === 0) {
+                $postFix = '';
+            }
+            $abbr = mb_substr($siglaString, $currentSiglumIndex % $countAvailableAbbreviations, 1) . $postFix ;
             $siglumToAbbr[$siglum] = $abbr;
             $currentSiglumIndex++;
         }

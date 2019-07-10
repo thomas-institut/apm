@@ -462,7 +462,12 @@ class Typesetter {
     if (tokens.length === 0) {
       return 0
     }
-    return tokens[tokens.length-1].deltaY + (this.options.defaultFontSize * 0.4)
+    // find the last token that is visible
+    let lastTokenIndex = tokens.length - 1
+    while (typeof(tokens[lastTokenIndex].deltaY) === 'undefined') {
+      lastTokenIndex--
+    }
+    return tokens[lastTokenIndex].deltaY + (this.options.defaultFontSize * 0.4)
   }
   
   getTextWidth() {

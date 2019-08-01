@@ -52,6 +52,8 @@ abstract class CommandLineUtility {
     protected $logger;
     
     protected $config;
+
+    protected  $systemManager;
     
     
     public function __construct($config) {
@@ -64,6 +66,7 @@ abstract class CommandLineUtility {
 
         // System Manager 
         $systemManager = new ApmSystemManager($config);
+        $this->systemManager = $systemManager;
 
         if ($systemManager->fatalErrorOccurred()) {
             print "ERROR: " . $systemManager->getErrorMsg();

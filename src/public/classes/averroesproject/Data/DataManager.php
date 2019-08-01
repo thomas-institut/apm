@@ -2096,4 +2096,8 @@ class DataManager
         }
         return true;
     }
+
+    public  function  getMySqlHelper() {
+        return $this->dbh;
+    }
  }

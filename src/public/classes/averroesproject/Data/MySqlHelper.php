@@ -87,4 +87,9 @@ class MySqlHelper {
         }
         return $r->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    function getSingleValue($query) {
+        $r = $this->getOneRow($query);
+        return array_pop($r);
+    }
 }

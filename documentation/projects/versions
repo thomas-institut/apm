@@ -1,20 +1,20 @@
 # Transcription Versions
 
-Updated:  26 Jul 2019
+Updated:  29 Jul 2019
 
 We need to have access to different versions of the transcriptions in the system so that 
 they can be associated with derivative witnesses.
  
 A derivative witness is a witness that is based on one or more transcription witnesses.
-It can be a manuscript for which the editor only needs to capture significant 
-differences with respect to another manuscript, or a hypothetical
-witness constructed out of a number of other witnesses. The former is, indeed, the
-basis for the implementation of critical editions.
+It can be a manuscripted that the editor decides not to transcribe fully and for which 
+only the relevant differences with respect to another manuscript are captured. 
+It can be also a hypothetical witness constructed by selecting lemmata from a number 
+of other witnesses. The former is, indeed, the basis for the implementation of 
+critical editions.
 
-Implementing transcription versions requires relatively important 
-changes to the codebase since it may affect the database schema, the transcription API and 
-editor, and any other code that depends
-on the database schema. This file documents the required changes, the migration 
+Implementing transcription versions requires relatively important changes to the 
+codebase since it may affect the database schema, the transcription API and 
+editor, and other subsystems. This file documents the required changes, the migration 
 strategy and the rationale behind it.
 
 ### Current Status
@@ -22,15 +22,18 @@ strategy and the rationale behind it.
 Transcriptions are associated with a page Id and a column number and are composed of 
 Elements, which themselves are composed of Items. 
 
-A page Id uniquely identifies  a page within a document in the system. In the `ap_pages` table for each valid page
-Id there is information about the page's position within the document (a sequence number), 
-which image to use (an image number), a page number (which may differ from the sequence 
-number when a document has pages in the wrong order), an optional foliation string, 
-the page's default language and how many columns it has.  `ap_pages` is a "unitemporal 
-table", meaning that different versions of the page Id information are stored together
-with the time range for which that information is valid. This, in essence, means that
-all changes to the information are stored and it is possible to reconstruct its
-history completely. The code, however, only accesses the last version available.
+A page Id uniquely identifies a page within a document in the system. In the `ap_pages` 
+table there is an entry for each valid page in the system, together with information 
+about the page's position within the document (a sequence number), which image to show
+in the transcription editor (an image number), a page number (which may differ from the 
+sequence number when a document has pages in the wrong order), an optional foliation 
+string, the page's default language and how many columns it has. 
+
+`ap_pages` is a so-called "unitemporal table", meaning that different versions of each
+page's information are stored together with the time range for which that information is 
+valid. This, in essence, means that all changes to the information are stored and it is 
+possible to reconstruct its history completely. The code, however, only accesses the 
+last version available.
 
 Elements represent things such as normal lines of text, marginal addition and glosses,
 custodes, and so on. They correspond very closely to how the transcription is presented
@@ -42,42 +45,51 @@ text with other alternate versions such a sics, abbreviations and so on. Markers
 things such as chunk start and chunk end markers, paragraph marks, etc.  Items
 are stored in `ap_items`, yet another unitemporal table.
 
-These schema, however, limits the complexity of transcriptions we can theoretically
-produce and store in the system. In particular, it makes it impossible to separate
+This schema, however, limits the complexity of transcriptions that can be theoretically
+produced and stored in the system. In particular, it makes it impossible to separate
 graphical and semantic aspects of the transcription in some cases, and does not
-allow for complex formatting and positioning to be properly captured. Because of
-this, a new conceptual framework was developed that does away with elements and items
-and introduces the concept of TextBox to represent an area of text in a page, and a
-different kind of Item which allows for a richer description of both text and markers
-within a TextBox. In the code, the old framework is contained in the `AverroesProject`
-namespace, while the new one is in `APM`.  
+allow for complex formatting and positioning to be properly captured. It has worked well
+so far because it is tailored to the project's needs, but it will make it harder to
+make the system suitable for other projects in the future.  Because of
+this, a new conceptual framework was developed that does away with elements and items. 
+In the new framework, the concept of _TextBox_ is used to represent an area of text in a 
+page, together with a different kind of Item which allows for a richer description of 
+both text and markers within a TextBox. In the code, the old framework is contained in 
+the `AverroesProject` namespace, while the new one is in `APM`.  
 
 It is possible to translate without loss of information from the old framework to the 
 new one, and, in fact, currently, the system makes that transformation when using 
-transcriptions as the source for witnesses. A witness is associated with work and a chunk
-number, and in essence, is a sequence of textual tokens: words, punctuation, whitespace
+transcriptions as the source for witnesses. A witness is associated with a work code 
+and a chunk number, and for the purposes of building collation tables and editions
+it needs to be accessed as a sequence of textual tokens: words, punctuation, whitespace
 and perhaps some other kinds needed in the future. When the source of a witness is
 a transcription, each token comes out of one or more Items in the system. In order
 to properly map the token, each Item in the system has to have a unique address. The 
-source for a transcription witness can be seen, therefore, as an array of system Items
+source for a transcription witness can be seen, therefore, as a set of Items
 each one with its system address. It is possible, in fact, to generate this array on the
 fly out of the locations of chunk start and end marks, and then, also on the fly, 
-to generate the witness tokens. A witness whose source is a transcription is defined
-completely, indeed, with a list of chunk start and chunk end addresses. 
+to generate the witness tokens. The only real complication here is the fact that the
+textual flow for a witness may include additions transcribed offline in other text boxes
+(or elements for that matter).  This, however, does not present a major problem since 
+together with the addition a reference to the place in which it must be inserted is stored
+as well.  In short, a witness whose source is a transcription can
+be completely defined by a list of chunk start and chunk end addresses.
 
-In the current code, the class `ItemStream` is introduced to capture this concept
+In the current codebase, the class `ItemStream` is introduced to capture this concept
 of an array of Items. Older code already included the notion, but using data arrays
-coming out of the database directly. The old `DataManager` class, in fact, has
-a method, `getItemStreamBetweenLocations` to retrieve such an array. The new `ItemStream`
+coming out of the database directly. The `AverroesProject\DataManager` class, in fact, has
+the method `getItemStreamBetweenLocations` to retrieve such an array. The new `ItemStream`
 class couples this mechanism to the new framework. It is located in a transitional 
 namespace, `AverroesProjectToApm`. An ItemStream is simply a sequence of 
 APM Items each one with an associated address in the system. The class 
 `AddressInItemStream` captures this system address with fields for page Id, 
-element Id, item Id, and so on, all mapping to current ids in the database. The class
+element Id, item Id, and so on, all mapping to current ids in the database. The 
+parent `Address` class in fact, abstracts from these details and allows many different
+addressing schemes to co-exist in the system.  The class `ItemStream` in any case
 provides a method that takes the ouput of `getItemStreamBetweenLocations` and converts
-each row from the database to a proper APM Item with a system address.
- 
-At some point, the idea is to completely do away with the old framework, but this
+each row from the database to a proper APM Item with a system address. 
+
+The intention is to completely do away with the old framework at some point, but this
 seems to require a fairly extensive revamp of the transcription editor and API, together
 with a new database schema. It does not seem necessary to do that in order to 
 implement transcription versions. In fact, all the information for versions, 
@@ -86,30 +98,112 @@ since the beginning of the system, is already in the database.
 ### Requirements
 
 It should be possible to define a TranscriptionWitness whose source is a transcription
-at a particular point in time. 
+at a particular point in time. Such a TranscriptionWitness can then be used as the
+proper source for an editable collation table, an edition or any other derivative
+witness. 
 
-A related feature we would like to have is the possibility to work with transcription 
-versions at the column level. A version is essentially the transcription of a column
-at a given point in time. It should be a matter of determining the different change
-times for a column, which can be derived from the data currently in the database, 
-showing them and allowing, for example, to load a previous version. We would also like
-to have some other  information associated with those time points. For example,
-* Who edited the data
+A derivative witness cannot rely on a source that might change. Conceptually a 
+derivative witness is basically an alignment of textual tokens with respect to one 
+or more base witnesses, that is, one row of a collation table. A change in the source
+of any base witness might render this alignment invalid and unfixable by automatic
+means. The base witness must be frozen, and this, in the case of transcription witnesses
+can be accomplished by pointing to specific versions of the transcription. It can also
+accomplished by storing the base witnesses together with the derivative witness but this 
+only adds extra storage.
+
+In order to keep proper track of versions, we need to be able to work with transcription 
+versions at the column level. A transcription version is essentially the transcription 
+of a column at a given point in time, and therefore it can be completely defined simply 
+by a timestamp. We would like also to be able to add certain information to versions,
+such as: 
+* Who saved it
 * An optional name or description for the version
 * version tags, e.g., whether is a minor modification, a supervisor revision, etc.
  
+With version support, for every column there will be a list of versions together
+with this extra information. The save button will now show a dialog asking where
+the transcriber can also enter the description for the version as well as
+any tags.  
+ 
 Since the source of a TranscriptionWitness can be more than one column, every change
-in any of the columns constitutes a new version of the Transcription witness. It should
-be possible, therefore, to list each one of these changes just by sorting the all the
-versions of all the columns. 
+in any of the columns constitutes a new version for the witness. However, getting a list 
+of the different timestamps in which there is a change in a witness is not as easy
+as just listing the version timestamps of the different columns. The witness is
+indeed defined by chunk start and end markers, and therefore it is possible that
+some version of the transcription simply do not have those markers. An exhaustive
+analysis of the contents of the transcriptions after every change is necessary. 
+As a first step towards supporting versions the system may only support accessing
+the last version of a transcription witness from the chunk page, with a list of 
+previous versions to be supported later. 
 
 
 ### Implementation
 
-1. Develop a way to list the different versions of a column and display that information
-in the transcription editor. 
-2. Develop a way to list the different versions of a witness in the chunk page and to 
-use different versions for collation tables.
-3. DESIRABLE: a diff mechanism for versions
-4. LIKELY NEEDED: a way to consolidate `valid_from` times in the database for changes
-in elements and items that occur within milliseconds of each other.
+#### 1. Data Analysis and Conforming
+
+It is necessary to analyze the current data and fix some inconsistencies in the 
+timestamps. In a previous version of the `DataManager` class, writes to the database
+were each done with individual timestamps. Even now there is a discrepancy between
+the timestamp of element vs item writes. This needs to be fixed.
+
+The idea is that every save from the transcription editor will result in a single
+timestamp in all relevant items and elements so that listing the versions is a matter
+of querying the database for the different timestamps for elements and item for a 
+particular page and colum.
+
+#### 2. Column Version Implementation
+
+1. Create a table of versions where information about each version of a page/column
+can be stored
+2. Change the column saving implementation so that together with storing items and 
+elements with a single timestamp, a new version is registered in the versions table.
+3. List the different versions in the info tab for each page.
+4. Perhaps later, allow a previous version of column to be loaded in the editor.
+ 
+  
+#### 3. Witness Versions
+
+1. For every transcription witness in the chunk page, list the time of the last version
+2. List the time of last version also in the automatic collation table.
+
+#### 4. Editable collation tables
+
+Allow the creation of editable collation tables out of automatic collation tables. 
+Each witness in an editable collation table is associated with a particular version
+of each of its column components. 
+
+> **Note 1**   
+>It should then be possible to detect a change in the transcription and, 
+>perhaps,  have some way of reflecting the change in the editable collation table, some 
+>sort of automatic, best-effort, attempt at reconciling the changes in the transcription. 
+Since presumably the editor will only start working on editing collation tables when
+transcriptions are fairly mature, change will be minimal and may not even change
+the actual tokens used for the collations
+
+> **Note 2**   
+> It seems necessary to store all information about every single token in an edited
+>collation table in order to avoid regenerating all the mappings every time. 
+
+> **Note 3**  
+>Edited collation tables can be integrated into the automatic collation table 
+>mechanism. If an automatic collation table involving the exact same versions of
+>some of the witnesses of an edited collation table is needed, the user may
+>want to use that edited table for those witnesses instead of the automatic
+>collation engine. The automatic collation engine would be run only between on 
+>given row in the edited collation table and the extra witnesses. Similarly, an edited 
+>collation table can be augmented with xtra witnesseses by running the automatic 
+>collation engine on, say, the top row of he edited table and the new witness or 
+>witnesses 
+ 
+#### 5. Derivative Witnesses
+Allow the creation of derivative witness either out of one base manuscript.
+
+This amounts to setting up an editable collation table where the top row is 
+the base witness. Multiple derivative witness can be added by adding new rows
+to the table.  The editor can then add variants in the derivative rows as well
+as markers such as page and column breaks, and tags or indications to the variants
+(for example, an addition's location) 
+
+#### 6. Edition Witness
+
+

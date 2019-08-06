@@ -174,8 +174,11 @@ inconsistency errors are detected also. When updating the database it is necessa
 to clear ALL errors before proceeding.
 
 2. Change the column saving implementation so that together with storing items and 
-elements with a single timestamp, a new version is registered in the versions table.
+elements with a single timestamp, a new version is registered in the versions table. 
+This is implemented in version 0.21.
+
 3. List the different versions in the info tab for each page.
+
 4. Perhaps later, allow a previous version of column to be loaded in the editor.
  
   

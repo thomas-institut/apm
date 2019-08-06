@@ -260,20 +260,22 @@ class ApiElements extends ApiController
             
         }
         $profiler->lap('Checks Done');
-        
+        $updateTime = \DataTable\MySqlUnitemporalDataTable::now();
         $this->logger->info("UPDATE elements", 
                             [ 'apiUserId' => $this->ci->userId, 
                               'pageId' => $pageId,
                               'docId' => $docId,
                               'pageNumber' => $pageNumber,
                               'columnNumber' => $columnNumber,
+                              'updateTime' => $updateTime
                             ]);
 
         $newElements = \AverroesProject\Data\DataManager::createElementArrayFromArray($newElementsArray);
         // Get the editorial notes
         $edNotes  = \AverroesProject\Data\EdNoteManager::editorialNoteArrayFromArray($inputDataObject['ednotes']);
+
         
-        $newItemIds = $this->ci->db->updateColumnElements($pageId, $columnNumber, $newElements, \DataTable\MySqlUnitemporalDataTable::now());
+        $newItemIds = $this->ci->db->updateColumnElements($pageId, $columnNumber, $newElements, $updateTime);
         $profiler->lap('Elements Updated');
         // Update targets
         for ($i = 0; $i < count($edNotes); $i++) {
@@ -287,6 +289,11 @@ class ApiElements extends ApiController
         }
         $this->logger->debug("Updating ednotes", $edNotes);
         $this->ci->db->enm->updateNotesFromArray($edNotes);
+
+        $versionId = $this->ci->db->registerTranscriptionVersion($pageId, $columnNumber, $updateTime, $this->ci->userId);
+        if ($versionId === false) {
+            $this->logger->error('Cannot register version');
+        }
         
         $profiler->log($this->logger);
         return $response->withStatus(200);
@@ -304,6 +311,10 @@ class ApiElements extends ApiController
         // Get the elements
         $elements = $this->db->getColumnElements($docId, $pageNumber, 
                 $columnNumber);
+
+        // Get a list of versions
+        $pageId = $this->db->getPageIdByDocPage($docId, $pageNumber);
+        $versions = $this->db->getTranscriptionVersionsWithAuthorInfo($pageId, $columnNumber);
 
         // Get the editorial notes
         $ednotes = $this->db->enm->getEditorialNotesByDocPageCol($docId, 
@@ -348,7 +359,8 @@ class ApiElements extends ApiController
                 'docId' => $pageInfo['doc_id'],
                 'pageId' => $pageInfo['id'],
                 'lang' => $pageInfo['lang'],
-                'numCols' => $pageInfo['num_cols']
+                'numCols' => $pageInfo['num_cols'],
+                'versions' => $versions
                 ]
          ]);
    }

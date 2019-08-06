@@ -180,6 +180,9 @@ class PageViewer {
               $(this).tab('show')
             })
           const theCol = respColData.info.col
+            const versions = respColData.info.versions
+            console.log(versions)
+            $('#versions-col' + col).html(thisObject.genVersionsDiv(col, versions))
           let theDiv = '<div class="textcol tab-pane'
           if (theCol === 1) {
               theDiv += ' active'
@@ -227,6 +230,9 @@ class PageViewer {
                   console.log(newColumnData)
                   te.saveSuccess(newColumnData)
                   console.log('... finished saving')
+                  const versions = newColumnData.info.versions
+                  console.log(versions)
+                  $('#versions-col' + col).html(thisObject.genVersionsDiv(col, versions))
                 })
             })
             .fail(function(resp) {
@@ -256,7 +262,27 @@ class PageViewer {
       }
     }
   }
-  
+
+  genVersionsDiv(col, versions) {
+    let html  = '<p style="margin-top: 20px"/>'
+    html += '<strong>Versions Column ' + col + ':</strong>'
+    html += '<table class="versiontable">'
+    html += '<tr><th>Id</th><th>Time</th><th>Author</th></tr>'
+    for (const v of versions) {
+      html+='<tr>'
+      html+='<td>' + v.id + '</td>'
+      html+='<td>' + this.formatVersionTime(v.time_from) + '</td>'
+      html+='<td>' + v.author_name + '</td>'
+      html += '</tr>'
+    }
+    html += '</table>'
+    return html
+  }
+
+  formatVersionTime(time) {
+    return time.split('.')[0]
+  }
+
   genOnClickEditPageSubmitButton(){
     let apiUpdatePageSettingsUrl = this.options.urlGenerator.apiUpdatePageSettings(this.options.pageSystemId)
     

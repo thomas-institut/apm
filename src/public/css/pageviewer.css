@@ -164,3 +164,11 @@ div.popoverinfo {
 .pageinfo {
     padding-left: 20px;
 }
+table.versiontable  td {
+    padding-right: 10px;
+}
+
+table.versiontable {
+    margin-top: 15px;
+    margin-left: 20px;
+}

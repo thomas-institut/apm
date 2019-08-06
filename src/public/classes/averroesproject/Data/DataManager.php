@@ -2107,13 +2107,20 @@ class DataManager
         return true;
     }
 
-    public function registerTranscriptionVersion(int $pageId, int $col, string $timeFrom, string $timeUntil, int $authorId) {
+    public function registerTranscriptionVersion(int $pageId, int $col, string $timeFrom, int $authorId) {
+
+        $currentVersions = $this->getTranscriptionVersions($pageId, $col);
+
+        if (count($currentVersions) !== 0 ) {
+            $lastVersion = $currentVersions[count($currentVersions)-1];
+            $this->updateVersionUntilTime(intval($lastVersion['id']), $timeFrom);
+        }
 
         return $this->txVersionsTable->createRow([
            'page_id' => $pageId,
            'col' => $col,
            'time_from' => $timeFrom,
-           'time_until' => $timeUntil,
+           'time_until' => \DataTable\MySqlUnitemporalDataTable::END_OF_TIMES,
            'author_id' => $authorId
         ]);
     }
@@ -2138,6 +2145,27 @@ class DataManager
         $timeFroms = array_column($rows, 'time_from');
         array_multisort($timeFroms, SORT_ASC, $rows);
         return $rows;
+    }
+
+    public function getTranscriptionVersionsWithAuthorInfo(int $pageId, int $col) {
+
+        $versions = $this->getTranscriptionVersions($pageId, $col);
+
+        $authors = array_unique(array_column($versions, 'author_id'));
+        $authorInfo = [];
+        foreach ($authors as $author) {
+            $authorInfo[$author] = $this->um->getUserInfoByUserId(intval($author));
+        }
+        //$this->logger->debug('Authors', $authorInfo);
+
+        foreach($versions as &$version) {
+            $version['author_name'] = $authorInfo[$version['author_id']]['fullname'];
+        }
+        return $versions;
+    }
+
+    public function updateVersionUntilTime(int $versionId, string $newTimeUntil) {
+        return $this->txVersionsTable->updateRow(['id' => $versionId, 'time_until' => $newTimeUntil]);
     }
 
     public  function  getMySqlHelper() {

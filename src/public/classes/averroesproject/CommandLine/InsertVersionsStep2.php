@@ -28,8 +28,9 @@ class InsertVersionsStep2 extends CommandLineUtility
         $db = $this->systemManager->getDbConnection();
         $dbh = $this->dm->getMySqlHelper();
 
-        print "# Insert versions, step 2";
+        print "# Insert versions, step 2\n";
         print "# start time = " . date(self::TIME_FORMAT) . "\n";
+        print "# Run insertversions first, fix all problems before changing the database\n";
 
         if ($argc === 3) {
             $pageCols= [
@@ -65,6 +66,7 @@ class InsertVersionsStep2 extends CommandLineUtility
 
                  if ($from < $minElementTime) {
                      $this->printMsg($version, 'ERROR', 'Version start occurs before any element is defined');
+                     print "DELETE FROM " . self::VERSIONS_TABLE . " WHERE id=$versionId;";
                      continue;
                  }
 
@@ -99,6 +101,8 @@ class InsertVersionsStep2 extends CommandLineUtility
                     $this->printMsg($version, 'WARNING', 'Cannot guess author');
                 } else {
                     $this->printMsg($version, 'AUTHOR', $guessedVersionAuthor);
+                    $version['author_id'] = $guessedVersionAuthor;
+                    $this->printUpdateAuthorSQL($version);
                 }
 
             }
@@ -133,6 +137,9 @@ class InsertVersionsStep2 extends CommandLineUtility
         return $theAuthor;
     }
 
+    protected  function printUpdateAuthorSQL($version) {
+        print "UPDATE " . self::VERSIONS_TABLE . " SET author_id=" . $version['author_id'] . " WHERE id=" . $version['id'] . ";\n";
+    }
     protected  function getInsertVersionSQL($version) {
 
         return sprintf("INSERT INTO `%s` (page_id, col, time_from, time_until) VALUES (%s);",

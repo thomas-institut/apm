@@ -19,6 +19,7 @@ class InsertVersions extends CommandLineUtility
     const EOT = '9999-12-31 23:59:59.999999';
 
     const THRESHHOLD_DIFF = 1.0;
+    const TOO_CLOSE_TIME = 5.0;
 
     const VERSIONS_TABLE = 'ap_versions_tx';
 
@@ -112,21 +113,51 @@ class InsertVersions extends CommandLineUtility
                 }
                 $thisColVersions[count($thisColVersions)-1]['until'] = self::EOT;
 
+                // filter versions skipping versions before the min element time
+                // and versions too close to each other
+                $thisColVersionsFiltered = [];
+                $minElementTime = $dbh->getSingleValue("SELECT min(valid_from) from ap_elements where page_id=$currrentPageId and column_number=$i");
                 foreach($thisColVersions as $version) {
+                    if ($version['from'] < $minElementTime) {
+                        continue;
+                    }
+                    if ($this->getTimeDiffInSeconds($version['from'], $version['until']) < self::TOO_CLOSE_TIME) {
+                        continue;
+                    }
+                    $thisColVersionsFiltered[] = $version;
+                }
+                if (count($thisColVersionsFiltered) === 0) {
+                    print "; ERROR: all versions for page $pageId col $i too close to each other or before the min elementTime\n";
+                    continue;
+                }
+                // fix  until times in filtered versions
+                if (count($thisColVersionsFiltered) > 1) {
+                    for ($j = 0; $j < count($thisColVersionsFiltered)-1; $j++) {
+                        $thisColVersionsFiltered[$j]['until'] = $thisColVersionsFiltered[$j+1]['from'];
+                    }
+                }
+                $thisColVersionsFiltered[count($thisColVersionsFiltered)-1]['until'] = self::EOT;
+
+                // save the filtered column versions to the main versions array
+                foreach($thisColVersionsFiltered as $version) {
                     $versions[] = $version;
                 }
             }
         }
 
         print "# Found " . count($versions) . " versions\n";
+        $versionId = 0;
         if ($partialAnalysis) {
             print 'DELETE FROM `' . self::VERSIONS_TABLE  . "` WHERE page_id=$pageId;\n";
+            $versionId = intval($dbh->getSingleValue('select MAX(id) from ap_versions_tx'))+1;
         } else {
             print 'TRUNCATE `' . self::VERSIONS_TABLE . "`;\n";
+
         }
 
         foreach($versions as $version) {
             //print "# " . implode(',', [ $version['page_id'], $version['col'], $version['from']]) . "\n";
+            $version['id'] = ++$versionId;
             print $this->getInsertVersionSQL($version);
             print "\n";
         }
@@ -140,9 +171,9 @@ class InsertVersions extends CommandLineUtility
             return "# (!!!) no page_id in version\n";
         }
 
-        return sprintf("INSERT INTO `%s` (page_id, col, time_from, time_until) VALUES (%s);",
+        return sprintf("INSERT INTO `%s` (id, page_id, col, time_from, time_until) VALUES (%s);",
             self::VERSIONS_TABLE,
-            implode(',', [ $version['page_id'], $version['col'], $this->inQuotes($version['from']), $this->inQuotes($version['until'])])
+            implode(',', [ $version['id'], $version['page_id'], $version['col'], $this->inQuotes($version['from']), $this->inQuotes($version['until'])])
         );
     }
 

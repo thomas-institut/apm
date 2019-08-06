@@ -78,6 +78,7 @@ class DatabaseTestEnvironment {
         
         // Can't TRUNCATE because of foreign keys
         $query = <<<EOD
+                DELETE FROM ap_versions_tx;
                 DELETE FROM ap_ednotes;
                 DELETE FROM ap_items;
                 DELETE FROM ap_elements;

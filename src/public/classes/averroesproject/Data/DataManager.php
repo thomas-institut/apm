@@ -118,6 +118,11 @@ class DataManager
      * @var DataTable\MySqlTable 
      */
     private $worksTable;
+
+    /**
+     * @var DataTable\MySqlTable
+     */
+    private $txVersionsTable;
     
     public $queryStats;
     
@@ -173,9 +178,10 @@ class DataManager
                 $tableNames['items']);
         $this->worksTable = new MySqlDataTable($this->dbConn, 
                 $tableNames['works']);
+
+        $this->txVersionsTable = new MySqlDataTable($this->dbConn, $tableNames['versions_tx']);
     }
-   
-    
+
     /**
      * @return array
      * Returns an array with the IDs of all the manuscripts with
@@ -1764,14 +1770,15 @@ class DataManager
         ];
         return self::createItemObjectFromArbitraryRow($fields, $theArray);
     }
-    
+
     /**
      * Updates column elements in the database
-     * 
+     *
      * @param array $newElements
      * @param array $oldElements
+     * @return array|bool
      */
-    public function updateColumnElements($pageId, $columnNumber, array $newElements) 
+    public function updateColumnElements($pageId, $columnNumber, array $newElements, $time = false)
     {
         $this->logger->debug("Updating column elements, pageId=$pageId, col=$columnNumber");
         // force pageId and columnNumber in the elements in $newElements
@@ -1786,8 +1793,10 @@ class DataManager
             $oldElements,
             $newElements
         );
-        
-        $time = \DataTable\MySqlUnitemporalDataTable::now();
+
+        if ($time === false) {
+            $time = \DataTable\MySqlUnitemporalDataTable::now();
+        }
         $newItemsIds = [];
         $newElementsIndex = 0;
         foreach ($editScript as $editInstruction) {
@@ -1868,18 +1877,19 @@ class DataManager
         }
         return $newItemsIds;
     }
-    
+
     /**
-     * Updates an element in the database. 
+     * Updates an element in the database.
      * If there's a change in the element's data besides the items, the current
      * version in the DB will be updated.
      *
      * The items will be updated as necessary.
      *
-     * Returns the id of the updated element and a list of 
+     * Returns the id of the updated element and a list of
      * ids for new items in the DB
-     * 
+     *
      * @param Element $newElement
+     * @return array
      */
     public function updateElement(Element $newElement, Element $oldElement, $itemIds = [], $time = false)
     {
@@ -2095,6 +2105,39 @@ class DataManager
             return false; // @codeCoverageIgnore 
         }
         return true;
+    }
+
+    public function registerTranscriptionVersion(int $pageId, int $col, string $timeFrom, string $timeUntil, int $authorId) {
+
+        return $this->txVersionsTable->createRow([
+           'page_id' => $pageId,
+           'col' => $col,
+           'time_from' => $timeFrom,
+           'time_until' => $timeUntil,
+           'author_id' => $authorId
+        ]);
+    }
+
+    /**
+     * Gets all the transcriptions versions associated with the given pageId and columns.
+     * Returns false if there's an error.
+     *
+     * @param int $pageId
+     * @param int $col
+     * @return array
+     */
+    public function getTranscriptionVersions(int $pageId, int $col) {
+        $rows =  $this->txVersionsTable->findRows(['page_id' => $pageId, 'col' => $col]);
+        if ($rows === false) {
+            $this->logger->error("Cannot get transcription versions for page $pageId column $col");
+            return false;
+        }
+        if (count($rows) === 0) {
+            return $rows;
+        }
+        $timeFroms = array_column($rows, 'time_from');
+        array_multisort($timeFroms, SORT_ASC, $rows);
+        return $rows;
     }
 
     public  function  getMySqlHelper() {

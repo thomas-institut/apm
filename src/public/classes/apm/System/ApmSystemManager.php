@@ -47,7 +47,7 @@ class ApmSystemManager extends SystemManager {
     const ERROR_NO_LOGFILENAME_GIVEN = 1009;
     
     // Database version
-    const DB_VERSION = 17;
+    const DB_VERSION = 18;
     
     // Tool Ids (for presets)
     const TOOL_AUTOMATIC_COLLATION = 'automaticCollation';
@@ -69,6 +69,7 @@ class ApmSystemManager extends SystemManager {
     const TABLE_PAGETYPES = 'types_page';
     const TABLE_WORKS = 'works';
     const TABLE_PRESETS = 'presets';
+    const TABLE_VERSIONS_TX = 'versions_tx';
 
     // Configuration parameters
     const CFG_DEFAULT_TIMEZONE = 'default_timezone';
@@ -246,7 +247,8 @@ class ApmSystemManager extends SystemManager {
             self::TABLE_PAGES,
             self::TABLE_PAGETYPES,
             self::TABLE_WORKS,
-            self::TABLE_PRESETS
+            self::TABLE_PRESETS,
+            self::TABLE_VERSIONS_TX,
         ];
         
         $tables = [];
@@ -453,9 +455,4 @@ class ApmSystemManager extends SystemManager {
         } 
         return $config;
     }
-    
-    
-    
-    
-
 }

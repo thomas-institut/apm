@@ -273,7 +273,7 @@ class ApiElements extends ApiController
         // Get the editorial notes
         $edNotes  = \AverroesProject\Data\EdNoteManager::editorialNoteArrayFromArray($inputDataObject['ednotes']);
         
-        $newItemIds = $this->ci->db->updateColumnElements($pageId, $columnNumber, $newElements);
+        $newItemIds = $this->ci->db->updateColumnElements($pageId, $columnNumber, $newElements, \DataTable\MySqlUnitemporalDataTable::now());
         $profiler->lap('Elements Updated');
         // Update targets
         for ($i = 0; $i < count($edNotes); $i++) {

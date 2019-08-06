@@ -161,13 +161,18 @@ designating the last time in the cluster as the version timestamp. Getting the
 column's version at that time means getting the version after all the changes in
 the save action have, so to speak, settled.   
 
-TODO: make sure that, from now on, a save from the transcription editor results
-in a unique timestamp for all changes to unitemporal tables.
 
 #### 2. Column Version Implementation
 
 1. Create a table of versions where information about each version of a page/column
-can be stored
+can be stored. This is done in database version 18. The utility classes `InsertVersions` and
+`InsertVersionsStep2` with the corresponding scripts in `utilities` take care of
+generating SQL files to populate this table with versions inferred from the current
+data. `InsertVersions` infers versions and prints out INSERT commands, while 
+`InsertVersionsStep2` infers the authors for each of those versions. Some data
+inconsistency errors are detected also. When updating the database it is necessary
+to clear ALL errors before proceeding.
+
 2. Change the column saving implementation so that together with storing items and 
 elements with a single timestamp, a new version is registered in the versions table.
 3. List the different versions in the info tab for each page.

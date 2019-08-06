@@ -98,9 +98,9 @@ since the beginning of the system, is already in the database.
 ### Requirements
 
 It should be possible to define a TranscriptionWitness whose source is a transcription
-at a particular point in time. Such a TranscriptionWitness can then be used as the
-proper source for an editable collation table, an edition or any other derivative
-witness. 
+at a particular point in time, that a version of a transcription. Such a 
+TranscriptionWitness can then be used as the proper source for an editable collation 
+table, an edition or any other derivative witness. 
 
 A derivative witness cannot rely on a source that might change. Conceptually a 
 derivative witness is basically an alignment of textual tokens with respect to one 
@@ -141,15 +141,28 @@ previous versions to be supported later.
 
 #### 1. Data Analysis and Conforming
 
-It is necessary to analyze the current data and fix some inconsistencies in the 
-timestamps. In a previous version of the `DataManager` class, writes to the database
-were each done with individual timestamps. Even now there is a discrepancy between
-the timestamp of element vs item writes. This needs to be fixed.
+It is necessary to analyze the current data and deal with the complications
+of the current timestamps. In a previous version of the `DataManager` class, writes to 
+the database were each done with individual timestamps. Even now there is a discrepancy 
+between the timestamp of element vs item writes. 
 
-The idea is that every save from the transcription editor will result in a single
-timestamp in all relevant items and elements so that listing the versions is a matter
-of querying the database for the different timestamps for elements and item for a 
-particular page and colum.
+The utility class `UnitemporalConsistency` checks, first of all, whether a unitemporal
+table has consistent values. For every id in the table, there's has to be a continuous
+history from the first `valid_from` to the last `valid_until`. It is still unclear
+what to make of the row where `valid_from` = `valid_until`; they appear to be glitches
+but do not seem to cause any problem. 
+
+The different timestamps for single saves from the trancription editor is an inconvenience
+but does not actually require changing the current data. It is possible with the 
+current data to get the version of any column in the system at any given time.  
+The strategy for generating version timestamps from the current data therefore
+amounts to detecting clusters of changes in the different page/column pairs and 
+designating the last time in the cluster as the version timestamp. Getting the
+column's version at that time means getting the version after all the changes in
+the save action have, so to speak, settled.   
+
+TODO: make sure that, from now on, a save from the transcription editor results
+in a unique timestamp for all changes to unitemporal tables.
 
 #### 2. Column Version Implementation
 

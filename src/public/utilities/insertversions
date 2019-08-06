@@ -25,4 +25,4 @@ require __DIR__ . '/../vendor/autoload.php';
 require __DIR__ . '/../setup.php';
 require __DIR__ . '/../version.php';
 
-(new CommandLine\VersionsAnalyzer($config))->run($argc, $argv);
+(new CommandLine\InsertVersions($config))->run($argc, $argv);

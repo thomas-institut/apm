@@ -267,10 +267,12 @@ class PageViewer {
     let html  = '<p style="margin-top: 20px"/>'
     html += '<strong>Versions Column ' + col + ':</strong>'
     html += '<table class="versiontable">'
-    html += '<tr><th>Id</th><th>Time</th><th>Author</th></tr>'
-    for (const v of versions) {
+    html += '<tr><th>N</th><th>Time</th><th>Author</th></tr>'
+    // put the versions in reverse chronological order
+    for (let i=versions.length-1; i >= 0; i--) {
+      let v = versions[i]
       html+='<tr>'
-      html+='<td>' + v.id + '</td>'
+      html+='<td>' + v.number + '</td>'
       html+='<td>' + this.formatVersionTime(v.time_from) + '</td>'
       html+='<td>' + v.author_name + '</td>'
       html += '</tr>'
@@ -280,7 +282,10 @@ class PageViewer {
   }
 
   formatVersionTime(time) {
-    return time.split('.')[0]
+    return moment(time).format('D MMM YYYY, H:mm:ss')
+
+    //return d.getDate() + ' ' + d.getMonth() + ' ' + d.getFullYear()
+    //return time.split('.')[0]
   }
 
   genOnClickEditPageSubmitButton(){

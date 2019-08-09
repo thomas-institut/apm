@@ -2158,8 +2158,10 @@ class DataManager
         }
         //$this->logger->debug('Authors', $authorInfo);
 
+        $versionNumber = 1;
         foreach($versions as &$version) {
             $version['author_name'] = $authorInfo[$version['author_id']]['fullname'];
+            $version['number'] = $versionNumber++;
         }
         return $versions;
     }

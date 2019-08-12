@@ -208,10 +208,14 @@ $app->get('/doc/{doc}/page/{seq}/view',
 $app->group('/api', function (){
     
     // API -> getElements
-    $this->get('/{document}/{page}/{column}/elements', 
+    $this->get('/{document}/{page}/{column}/elements',
             '\AverroesProject\Api\ApiElements:getElementsByDocPageCol')
         ->setName('api.getelements');
-    
+
+    //  API -> getElements (with version Id)
+    $this->get('/{document}/{page}/{column}/elements/version/{version}',
+        '\AverroesProject\Api\ApiElements:getElementsByDocPageCol')
+        ->setName('api.getelements.withversion');
     
     // API -> updateColumnElements
     $this->post('/{document}/{page}/{column}/elements/update', 

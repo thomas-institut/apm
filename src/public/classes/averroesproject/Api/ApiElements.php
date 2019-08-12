@@ -20,6 +20,7 @@
 
 namespace AverroesProject\Api;
 
+use DataTable\MySqlUnitemporalDataTable;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use AverroesProject\Profiler\ApmProfiler;
@@ -30,7 +31,7 @@ use AverroesProject\Profiler\ApmProfiler;
  */
 class ApiElements extends ApiController
 {
-    
+    const API_ERROR_INVALID_VERSION_REQUESTED = 5001;
     
     public function updateElementsByDocPageCol(Request $request, 
             Response $response, $next)
@@ -307,14 +308,51 @@ class ApiElements extends ApiController
         $docId = $request->getAttribute('document');
         $pageNumber = $request->getAttribute('page');
         $columnNumber = $request->getAttribute('column');
-
-        // Get the elements
-        $elements = $this->db->getColumnElements($docId, $pageNumber, 
-                $columnNumber);
+        $versionId = $request->getAttribute('version');
 
         // Get a list of versions
         $pageId = $this->db->getPageIdByDocPage($docId, $pageNumber);
         $versions = $this->db->getTranscriptionVersionsWithAuthorInfo($pageId, $columnNumber);
+
+        $versionTime = MySqlUnitemporalDataTable::now();
+        if (count($versions) === 0) {
+            $thisVersion = -1;
+        } else {
+            if (is_null($versionId)) {
+                // no version Id in request means get the latest version
+                $thisVersion = intval($versions[count($versions) - 1]['id']);
+                $this->logger->debug('No version requested, defaulting to last version, id = ' . $thisVersion);
+            } else {
+                // first, check that the version id requested is actually in this page/col versions
+                $versionId = intval($versionId);
+                $requestVersionIsAValidVersion = false;
+                $versionIndex = 0;
+                foreach($versions as $v) {
+                    if (intval($v['id']) === $versionId) {
+                        $requestVersionIsAValidVersion = true;
+                        break;
+                    }
+                    $versionIndex++;
+                }
+                if (!$requestVersionIsAValidVersion) {
+                    $this->logger->error("Requested version ID is not in this page/col versions",
+                        [ 'apiUserId' => $this->ci->userId,
+                            'apiError' => self::API_ERROR_INVALID_VERSION_REQUESTED,
+                            'docId' => $docId,
+                            'pageNumber' => $pageNumber,
+                            'columnNumber' => $columnNumber,
+                            'requestedVersion' => $versionId
+                        ]);
+                    return $response->withStatus(409)->withJson(['error' => self::API_ERROR_INVALID_VERSION_REQUESTED]);
+                }
+                // version is good, let's get the time
+                $versionTime = $versions[$versionIndex]['time_from'];
+            }
+        }
+
+        // Get the elements
+        $elements = $this->db->getColumnElements($docId, $pageNumber,
+            $columnNumber, $versionTime);
 
         // Get the editorial notes
         $ednotes = $this->db->enm->getEditorialNotesByDocPageCol($docId, 
@@ -349,7 +387,10 @@ class ApiElements extends ApiController
             'col' => (int) $columnNumber,
             'docId' => $docId,
             'pageNumber' => $pageNumber,
-            'pageId' => $pageInfo['id']]);
+            'pageId' => $pageInfo['id'],
+            'versionId' => $thisVersion,
+            'versionTime' => $versionTime
+            ]);
 
         return $response->withJson(['elements' => $elements, 
             'ednotes' => $ednotes, 
@@ -360,7 +401,8 @@ class ApiElements extends ApiController
                 'pageId' => $pageInfo['id'],
                 'lang' => $pageInfo['lang'],
                 'numCols' => $pageInfo['num_cols'],
-                'versions' => $versions
+                'versions' => $versions,
+                'thisVersion' => $thisVersion
                 ]
          ]);
    }

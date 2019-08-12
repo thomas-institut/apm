@@ -181,7 +181,6 @@ class PageViewer {
             })
           const theCol = respColData.info.col
             const versions = respColData.info.versions
-            console.log(versions)
             $('#versions-col' + col).html(thisObject.genVersionsDiv(col, versions))
           let theDiv = '<div class="textcol tab-pane'
           if (theCol === 1) {
@@ -195,7 +194,7 @@ class PageViewer {
               activeWorks: thisObject.options.activeWorks, 
               langDef: thisObject.options.langDef,
               defaultLang: thisObject.options.defaultLang,
-              containerId: 'editor-pane'
+              containerId: 'editor-pane',
             }
           )
           te.setData(respColData)

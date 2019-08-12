@@ -305,12 +305,14 @@ class TranscriptionEditor
     $('#linegap-button-' + id).on('click', this.genOnClickLineGapButton())
 
     // enable/disable
-    if (this.options.startEnabled) {
-      this.enable()
-    }
-    else {
-      this.disable()
-    }
+    // if (this.options.startEnabled) {
+    //   this.enable()
+    // }
+    // else {
+    //   this.disable()
+    // }
+
+    this.disable()
     // generate number lines when all elements are done
     
     //console.log('Number lines on TE constructor')
@@ -332,7 +334,7 @@ class TranscriptionEditor
     if (options === false) {
       options = {}
     }
-    
+
     if (options.activeWorks === undefined) {
       options.activeWorks = []
       options.activeWorks.push({
@@ -355,9 +357,9 @@ class TranscriptionEditor
     }
     
     // startEnabled:  true/false
-    if (options.startEnabled === undefined) {
-      options.startEnabled = false
-    }
+    // if (options.startEnabled === undefined) {
+    //   options.startEnabled = false
+    // }
 
     // langDef : language definitions
     if (options.langDef === undefined) {
@@ -771,6 +773,14 @@ class TranscriptionEditor
   * @event Emits the 'edit-enable' event when done.
   */
   enable() {
+    if (!this.isCurrentVersionLatest()) {
+      console.warn('Editing older version')
+    }
+   // disable dropdown if there are versions
+   if (typeof(this.versions[this.currentVersion]) !== "undefined" ) {
+     this.setVersionTitleButton(this.versions[this.currentVersion].buttonHtml, false)
+   }
+
     this.enabled = true
     $('#toolbar-'+ this.id).show()
     this.quillObject.enable(this.enabled)
@@ -822,6 +832,13 @@ class TranscriptionEditor
       return true
     }
     this.enabled = false
+
+    // allow dropdown if there are versions
+    if (typeof(this.versions[this.currentVersion]) !== "undefined" ) {
+      this.setVersionTitleButton(this.versions[this.currentVersion].buttonHtml, true)
+    }
+
+
     $('#toolbar-' + this.id).hide()
     $('#save-button-' + this.id).hide()
     $('#reset-button-' + this.id).hide()
@@ -846,12 +863,14 @@ class TranscriptionEditor
   setContentsChanged() {
     $('#save-button-' + this.id).prop('disabled', false)
     $('#reset-button-' + this.id).prop('disabled', false)
+    this.setVersionTitleButton(this.versions[this.currentVersion].buttonHtml + ' *', false)
     this.contentsChanged = true
   }
   
   setContentsNotChanged() {
     $('#save-button-' + this.id).prop('disabled', true)
     $('#reset-button-' + this.id).prop('disabled', true)
+    this.setVersionTitleButton(this.versions[this.currentVersion].buttonHtml, false)
     this.contentsChanged = false
   }
 
@@ -965,6 +984,8 @@ class TranscriptionEditor
       this.info.col = 1
       this.info.lang = this.defaultLang
       this.info.numCols = 1
+      this.versions = []
+      this.currentVersion = -1
       return true
     }
     
@@ -992,6 +1013,8 @@ class TranscriptionEditor
     if (!mainLang) {
       mainLang = this.pageDefaultLang
     }
+
+    this.setVersions(columnData)
     
     this.setDefaultLang(mainLang)
     
@@ -1003,7 +1026,83 @@ class TranscriptionEditor
     }, 200)
 
   }
-  
+
+  setVersions(columnData)
+  {
+    this.versions = columnData.info.versions
+    if (this.versions.length === 0) {
+      // no versions
+      return
+    }
+    // columnData.currentVersion contains the system version Id whereas
+    // this.currentVersion is the index to the version in the versions array
+    let i = 0
+    for (i = 0; i < this.versions.length; i++) {
+      if (this.versions[i].id === columnData.info.thisVersion) {
+        break;
+      }
+    }
+    this.currentVersion = i
+
+    for (let i = this.versions.length -1; i >= 0; i--) {
+      this.versions[i].buttonHtml = '<strong>v' + (i+1) + ':</strong> ' +
+        moment(this.versions[i].time_from).format('D MMM YYYY, H:mm:ss') + ', ' +
+        this.versions[i].author_name
+      if (i === this.versions.length -1) {
+        this.versions[i].buttonHtml += ' (latest)'
+      }
+    }
+
+    if (this.currentVersion === -1) {
+      // no versions, transcription is blank
+      this.setVersionTitleButton('<strong>v0:</strong> Empty transcription', false)
+      $('#versions-dropdown-ul-' + this.id).html('')
+    } else {
+      this.setVersionTitleButton(this.versions[this.currentVersion].buttonHtml, true)
+      let versionsUlHtml = ''
+      for(let i = this.versions.length-1; i>=0; i--) {
+        versionsUlHtml += '<li><button class="versionbutton" id="vbutton-' + this.columnNumber + '-' + i
+          + '">'  +  this.versions[i].buttonHtml + '</button></li>'
+      }
+      $('#versions-dropdown-ul-' + this.id).html(versionsUlHtml)
+      let thisObject = this
+      for(let i = this.versions.length-1; i>=0; i--) {
+        $('#vbutton-'+this.columnNumber+'-'+i).on('click', this.genOnClickVersionButton(i))
+      }
+    }
+  }
+
+  genOnClickVersionButton(versionIndex) {
+    let thisObject = this
+    return function() {
+      console.log('Click on version button for column ' + thisObject.columnNumber + ' version ' + versionIndex)
+      if (thisObject.currentVersion === versionIndex) {
+        console.log('Current version, nothing to do')
+        return
+      }
+    }
+  }
+
+  setVersionTitleButton(titleHtml, allowDropdown) {
+    let buttonHtml = ''
+    let buttonSelector ='#versions-dropdown-button-' + this.id
+    buttonHtml += titleHtml
+    if (allowDropdown) {
+      buttonHtml += '<span class="caret"></span>'
+      $(buttonSelector).attr('data-toggle', 'dropdown')
+    } else {
+      $(buttonSelector).removeAttr('data-toggle')
+    }
+    $(buttonSelector).html(buttonHtml)
+
+
+  }
+
+  isCurrentVersionLatest()
+  {
+    return this.currentVersion === (this.versions.length -1)
+  }
+
   getQuillData() 
   {
     return this.quillObject.getContents()
@@ -2448,7 +2547,14 @@ class TranscriptionEditor
       <button id="zoom-out-button-{{id}}" title="Make text smaller"><i class="fa fa-search-minus"></i></button>
       <button id="toggle-button-{{id}}" title="Edit"><i class="fa fa-pencil"></i></button>
       <button id="save-button-{{id}}" title="Save changes"><i class="fa fa-save"></i></button>
-      <button id="reset-button-{{id}}" title="Revert to last saved changes"><i class="fa fa-refresh"></i></button>
+      <button id="reset-button-{{id}}" title="Revert to saved version"><i class="fa fa-refresh"></i></button>
+      <span class="dropdown">
+        <button class="versionbutton" title="Transcription version currently shown below" 
+            id="versions-dropdown-button-{{id}}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        </button>
+         <ul class="dropdown-menu" id="versions-dropdown-ul-{{id}}" aria-labelledby="versions-dropdown-button-{{id}}"></ul>
+      </span>
+      
   </div>
       
   {#  BOTTOM TOOLBAR #}

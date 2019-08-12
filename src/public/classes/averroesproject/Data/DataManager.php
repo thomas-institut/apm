@@ -31,6 +31,7 @@ use AverroesProject\Algorithm\Utility;
 use AverroesProject\Plugin\HookManager;
 
 
+use DataTable\MySqlUnitemporalDataTable;
 use \PDO;
 
 /**
@@ -755,18 +756,26 @@ class DataManager
     }
     
     
-    public function getColumnElementsByPageId($pageId, $col) {
+    public function getColumnElementsByPageId($pageId, $col,$time = false) {
         $this->queryStats->countQuery('select');
-        $rows = $this->elementsDataTable->findRows([
+        if ($time === false) {
+            $time = MySqlUnitemporalDataTable::now();
+        }
+//        $rows = $this->elementsDataTable->findRows([
+//            'page_id' => $pageId,
+//            'column_number' => $col
+//        ]);
+        $rows = $this->elementsDataTable->realfindRowsWithTime([
             'page_id' => $pageId,
             'column_number' => $col
-        ]);
+        ], false, $time);
+
         Utility::arraySortByKey($rows, 'seq');
 
         $elements = [];
         foreach($rows as $row) {
             $e = $this->createElementObjectFromRow($row);
-            $e->items = $this->getItemsForElement($e);
+            $e->items = $this->getItemsForElement($e, $time);
             array_push($elements, $e);
         }
         return $elements;
@@ -779,22 +788,30 @@ class DataManager
      * @return array of ColumnElement properly initialized
      */
     
-    public function getColumnElements($docId, $page, $col){
+    public function getColumnElements($docId, $page, $col, $time = false){
+        if ($time === false) {
+            $time = MySqlUnitemporalDataTable::now();
+        }
+        //$this->logger->debug('Getting elements for time = ' . $time);
         $pageId = $this->getPageIdByDocPage($docId, $page);
         if ($pageId === false) {
             // Non-existent page
             return [];
         }
-        return $this->getColumnElementsByPageId($pageId, $col);
+        return $this->getColumnElementsByPageId($pageId, $col, $time);
         
     }
     
-    function getItemsForElement($element)
+    function getItemsForElement($element, $time = false)
     {
+        if ($time === false) {
+            $time = MySqlUnitemporalDataTable::now();
+        }
+
         $this->queryStats->countQuery('select');
-        $rows = $this->itemsDataTable->findRows([
+        $rows = $this->itemsDataTable->realfindRowsWithTime([
             'ce_id' => $element->id
-        ]);
+        ], false, $time);
         
         Utility::arraySortByKey($rows, 'seq');
         

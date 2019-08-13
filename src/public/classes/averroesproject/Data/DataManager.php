@@ -2133,6 +2133,7 @@ class DataManager
             $this->updateVersionUntilTime(intval($lastVersion['id']), $timeFrom);
         }
 
+        //print "Registering version for $pageId, $col, from $timeFrom, author $authorId\n";
         return $this->txVersionsTable->createRow([
            'page_id' => $pageId,
            'col' => $col,

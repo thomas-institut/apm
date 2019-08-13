@@ -79,11 +79,13 @@ class EdNoteManager {
         return self::editorialNoteArrayFromRows($rows);
     }
 
-    public function getEditorialNotesByPageIdColWithTime($pageId, $colNumber, $time){
+    public function getEditorialNotesByPageIdColWithTime(int $pageId, int $colNumber, string $time){
         $ted = $this->tNames['ednotes'];
         $ti = $this->tNames['items'];
         $te = $this->tNames['elements'];
         $tp = $this->tNames['pages'];
+
+
 
         $query = "SELECT  $ted.* from $ted, $ti, $te where $ted.target=$ti.id AND $te.id=$ti.ce_id AND $ti.valid_from<='$time' AND $ti.valid_until>'$time' " .
           " AND $te.valid_from<='$time' AND $te.valid_until>'$time' " .

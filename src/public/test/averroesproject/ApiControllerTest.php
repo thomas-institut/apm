@@ -54,6 +54,7 @@ class ApiControllerTest extends TestCase {
     
     static $editor1;
     static $editor2;
+    static $apiUserId;
     
     public static function setUpBeforeClass()
     {
@@ -71,6 +72,8 @@ class ApiControllerTest extends TestCase {
         self::$dataManager = DatabaseTestEnvironment::getDataManager($logger, $hm);
         self::$editor1 = self::$dataManager->um->createUserByUserName('testeditor1');
         self::$editor2 = self::$dataManager->um->createUserByUserName('testeditor2');
+        self::$apiUserId = self::$dataManager->um->createUserByUserName('someUser');
+        self::$ci['userId'] = self::$apiUserId;
     }
     
     public function testNumColumns()
@@ -91,6 +94,7 @@ class ApiControllerTest extends TestCase {
     
     public function testGetElements() 
     {
+        // test on a non-existent page
         $request = (new \GuzzleHttp\Psr7\ServerRequest('GET', ''))
                 ->withAttribute('document', 1)
                 ->withAttribute('page', 1) 
@@ -104,7 +108,7 @@ class ApiControllerTest extends TestCase {
         $data = json_decode($response->getBody(true), true);
         $this->assertEquals([], $data['elements']);
         $this->assertEquals([], $data['ednotes']);
-        $this->assertEquals([self::$ci->userId => false], $data['people']); // only test UserId
+        $this->assertEquals([self::$ci->userId], array_keys($data['people'])); // only test UserId
         $this->assertEquals(1, $data['info']['col']);
         
         

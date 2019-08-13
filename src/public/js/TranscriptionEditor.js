@@ -773,8 +773,41 @@ class TranscriptionEditor
   * @event Emits the 'edit-enable' event when done.
   */
   enable() {
+    let thisObject = this
     if (!this.isCurrentVersionLatest()) {
       console.warn('Editing older version')
+      $('#alert-modal-title-' + this.id).html('About to edit an older version!')
+      $('#alert-modal-text-' + this.id).html(
+        '<p>The editor is showing an older version of this transcription</p>' +
+        '<p>Your changes will become the latest version when you save!</p>' +
+        '<p class="text-danger"> Are you sure you want to edit this?</p>')
+      $('#alert-modal-submit-button-' + thisObject.id).html('Yes!')
+      $('#alert-modal-cancel-button-' + thisObject.id).html('No')
+      $('#alert-modal-submit-button-' + this.id).off()
+      $('#alert-modal-submit-button-' + this.id).on('click', function () {
+        //console.log("User wants to drop changes in editor")
+        $('#alert-modal-' + thisObject.id).modal('hide')
+        if (typeof(thisObject.versions[thisObject.currentVersion]) !== "undefined" ) {
+          thisObject.setVersionTitleButton(thisObject.versions[thisObject.currentVersion].buttonHtml, false)
+        }
+
+        thisObject.enabled = true
+        $('#toolbar-'+ thisObject.id).show()
+        thisObject.quillObject.enable(thisObject.enabled)
+        $('#save-button-' + thisObject.id).prop('disabled', true)
+        $('#reset-button-' + thisObject.id).prop('disabled', true)
+        $('#save-button-' + thisObject.id).show()
+        $('#reset-button-' + thisObject.id).show()
+        $('#toggle-button-' + thisObject.id).prop('title', 'Leave editor')
+        $('#toggle-button-' + thisObject.id).html('<i class="fa fa-power-off"></i>')
+        thisObject.lastSavedData = thisObject.quillObject.getContents()
+        thisObject.setContentsNotChanged()
+        thisObject.quillObject.setSelection(thisObject.quillObject.getLength())
+        thisObject.resizeContainer()
+        thisObject.dispatchEvent('editor-enable')
+      })
+      $('#alert-modal-' + this.id).modal('show')
+      return true
     }
    // disable dropdown if there are versions
    if (typeof(this.versions[this.currentVersion]) !== "undefined" ) {

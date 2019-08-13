@@ -912,7 +912,14 @@ class TranscriptionEditor
     $('#save-button-' + this.id).html('<span class="fa-stack"><i class="fa fa-save fa-stack-1x"></i><i class="fa fa-exclamation-triangle fa-stack-1x text-danger"></i></span>')
     this.quillObject.enable(true)
   }
-  
+
+  loadNewVersion(newData) {
+    this.lastSavedData = newData
+    this.setData(newData)
+    this.setContentsNotChanged()
+    this.setVersionTitleButton(this.versions[this.currentVersion].buttonHtml, true)
+  }
+
   reset() {
     this.quillObject.setContents(this.lastSavedData)
     $('#save-button-' + this.id).prop('title', 'Save changes')
@@ -1021,9 +1028,8 @@ class TranscriptionEditor
     // delay a little bit, wait for html elements to be ready 
     let thisObject = this
     window.setTimeout( function() {
-      //console.log('Number Lines on set data')
       thisObject.numberLines()
-    }, 200)
+    }, 50)
 
   }
 
@@ -1075,11 +1081,13 @@ class TranscriptionEditor
   genOnClickVersionButton(versionIndex) {
     let thisObject = this
     return function() {
-      console.log('Click on version button for column ' + thisObject.columnNumber + ' version ' + versionIndex)
       if (thisObject.currentVersion === versionIndex) {
-        console.log('Current version, nothing to do')
         return
       }
+      thisObject.dispatchEvent('version-request', {
+        versionIndex: versionIndex,
+        versionId: thisObject.versions[versionIndex].id
+      })
     }
   }
 
@@ -2537,6 +2545,7 @@ class TranscriptionEditor
     TranscriptionEditor.registerEvent('editor-disable')
     TranscriptionEditor.registerEvent('editor-save')
     TranscriptionEditor.registerEvent('editor-reset')
+    TranscriptionEditor.registerEvent('version-request')
     TranscriptionEditor.editorTemplate = Twig.twig({
       id: 'editor',
       data: `

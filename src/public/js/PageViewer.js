@@ -244,6 +244,28 @@ class PageViewer {
             })
           })
 
+            te.on('version-request', function(ev){
+              let versionId = ev.originalEvent.detail.versionId
+              console.log('Version request from editor, version ID = ' + versionId)
+              let apiGetColumnDataUrl = pathFor.apiGetColumnDataWithVersion(thisObject.options.docId, thePageNumber, col, versionId)
+              $.getJSON(apiGetColumnDataUrl, function (newColumnData){
+                console.log('API data received from server:')
+                console.log(newColumnData)
+                const versions = newColumnData.info.versions
+                console.log(versions)
+                $('#versions-col' + col).html(thisObject.genVersionsDiv(col, versions))
+                te.loadNewVersion(newColumnData)
+              })
+                // .fail(function(resp) {
+                //   let msg = 'Click to try again'
+                //   if (resp.responseJSON.msg !== undefined) {
+                //     msg = resp.responseJSON.msg
+                //   }
+                //   te.saveFail('Status: ' + resp.status + ' Error: ' + resp.responseJSON.error + ' ('
+                //     + msg + ')')
+                // })
+            })
+
           te.on('editor-reset',function(e){
             //console.log("Resetting...")
           });

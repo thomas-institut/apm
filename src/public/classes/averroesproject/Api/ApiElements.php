@@ -324,11 +324,11 @@ class ApiElements extends ApiController
                 $this->logger->debug('No version requested, defaulting to last version, id = ' . $thisVersion);
             } else {
                 // first, check that the version id requested is actually in this page/col versions
-                $versionId = intval($versionId);
+                $thisVersion = intval($versionId);
                 $requestVersionIsAValidVersion = false;
                 $versionIndex = 0;
                 foreach($versions as $v) {
-                    if (intval($v['id']) === $versionId) {
+                    if (intval($v['id']) === $thisVersion) {
                         $requestVersionIsAValidVersion = true;
                         break;
                     }
@@ -341,7 +341,7 @@ class ApiElements extends ApiController
                             'docId' => $docId,
                             'pageNumber' => $pageNumber,
                             'columnNumber' => $columnNumber,
-                            'requestedVersion' => $versionId
+                            'requestedVersion' => $thisVersion
                         ]);
                     return $response->withStatus(409)->withJson(['error' => self::API_ERROR_INVALID_VERSION_REQUESTED]);
                 }
@@ -355,8 +355,7 @@ class ApiElements extends ApiController
             $columnNumber, $versionTime);
 
         // Get the editorial notes
-        $ednotes = $this->db->enm->getEditorialNotesByDocPageCol($docId, 
-                $pageNumber, $columnNumber);
+        $ednotes = $this->db->enm->getEditorialNotesByPageIdColWithTime($pageId, $columnNumber, $versionTime);
         
         $pageInfo = $this->db->getPageInfoByDocPage($docId, $pageNumber);
 

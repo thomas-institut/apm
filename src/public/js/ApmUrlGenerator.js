@@ -30,6 +30,10 @@ class ApmUrlGenerator {
   apiGetColumnData(docId, pageNumber, col) {
     return this.base + '/api/' + docId + '/' + pageNumber + '/' + col + '/elements'
   }
+
+  apiGetColumnDataWithVersion(docId, pageNumber, col, versionID) {
+    return this.base + '/api/' + docId + '/' + pageNumber + '/' + col + '/elements/version/' + versionID
+  }
   
   apiUpdateColumnData(docId, pageNumber, col) {
     return this.apiGetColumnData(docId, pageNumber, col) + '/update'

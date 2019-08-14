@@ -1810,6 +1810,15 @@ class TranscriptionEditor
   {
     let thisObject = this
     return function(){
+      if (!thisObject.isCurrentVersionLatest()) {
+        $('#version-modal-text-'+ thisObject.id).addClass('text-danger')
+        $('#version-modal-text-'+ thisObject.id).html('<i class="fa fa-exclamation-triangle" aria-hidden="true"></i> Your changes are not based on the latest version')
+        $('#version-modal-descr-'+thisObject.id).val("Edited from version " + (thisObject.currentVersion+1))
+      } else {
+        $('#version-modal-text-'+ thisObject.id).removeClass('text-danger')
+        $('#version-modal-text-'+ thisObject.id).html('')
+        $('#version-modal-descr-'+thisObject.id).val('')
+      }
       $('#version-modal-submit-button-' + thisObject.id).off()
       $('#version-modal-submit-button-' + thisObject.id).on('click', function(){
         $('#version-modal-' + thisObject.id).modal('hide')

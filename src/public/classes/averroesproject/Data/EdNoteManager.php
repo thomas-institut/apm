@@ -56,7 +56,7 @@ class EdNoteManager {
         //$rows = $this->dbh->getAllRows($query);
         $rows = $this->edNotesDataTable->findRows(['type' => $type,
             'target' => $target]);
-        return self::editorialNoteArrayFromRows($rows);
+        return $this->editorialNoteArrayFromRows($rows);
     }
         
     public function getEditorialNotesByDocPageCol($docId, $pageNum, $colNumber=1){
@@ -76,7 +76,7 @@ class EdNoteManager {
                 "AND `$ti`.`valid_until`='9999-12-31 23:59:59.999999'";
         
         $rows = $this->dbh->getAllRows($query);
-        return self::editorialNoteArrayFromRows($rows);
+        return $this->editorialNoteArrayFromRows($rows);
     }
 
     public function getEditorialNotesByPageIdColWithTime(int $pageId, int $colNumber, string $time){
@@ -92,7 +92,7 @@ class EdNoteManager {
           " AND $te.page_id=$pageId AND $te.column_number=$colNumber ";
 
         $rows = $this->dbh->getAllRows($query);
-        return self::editorialNoteArrayFromRows($rows);
+        return $this->editorialNoteArrayFromRows($rows);
     }
     
     
@@ -114,15 +114,16 @@ class EdNoteManager {
         $rows = $this->dbh->getAllRows($query);
         return $rows;
     }
-    
-    
+
+
     /**
      * Inserts a new note for item $target
      * The item and the authorId must exist in the DB, they are not checked
-     * 
-     * @param type $target
-     * @param type $authorId
-     * @param type $text
+     *
+     * @param int $target
+     * @param int $authorId
+     * @param string $text
+     * @return int
      */
     public function insertInlineNote($target, $authorId, $text ) {
         return $this->insertNote(EditorialNote::INLINE, $target, $authorId, $text);
@@ -213,7 +214,7 @@ class EdNoteManager {
         return $dataA == $dataB;
     }
     
-    static public function editorialNoteArrayFromRows($rows) {
+    public function editorialNoteArrayFromRows($rows) {
         $notes = [];
         foreach ($rows as $row) {
             $edNote = EditorialNote::constructEdNoteFromRow($row);
@@ -226,12 +227,12 @@ class EdNoteManager {
         return $notes;
     }
     
-    static public function editorialNoteArrayFromArray(array $theArray) {
+    static public function editorialNoteArrayFromArray(array $theArray, $logger) {
         $notes = [];
         foreach ($theArray as $element) {
             $edNote = EditorialNote::constructEdNoteFromArray($element);
             if ($edNote === false) {
-                $this->logger->error('Bad editorial note in array', $element);
+                $logger->error('Bad editorial note in array', $element);
                 continue;
             }
             $notes[] = $edNote;

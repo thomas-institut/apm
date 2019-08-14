@@ -98,6 +98,23 @@ class ApiElements extends ApiController
             return $response->withStatus(409)->withJson( ['error' => ApiController::API_ERROR_ZERO_ELEMENTS]);
         }
 
+        $versionDescr = '';
+        $versionIsMinor = false;
+        $versionIsReview = false;
+
+        if (isset($inputDataObject['versionInfo'])) {
+            $versionInfo = $inputDataObject['versionInfo'];
+            if (isset($versionInfo['isMinor'])) {
+                $versionIsMinor = $versionInfo['isMinor'];
+            }
+            if (isset($versionInfo['isReview'])) {
+                $versionIsReview = $versionInfo['isReview'];
+            }
+            if (isset($versionInfo['descr'])) {
+                $versionDescr = $versionInfo['descr'];
+            }
+        }
+
         // Check elements and force hand Id on items
         $pageId = $this->db->getPageIdByDocPage($docId, $pageNumber);
         $newElementsArray = $inputDataObject['elements'];
@@ -273,7 +290,7 @@ class ApiElements extends ApiController
 
         $newElements = \AverroesProject\Data\DataManager::createElementArrayFromArray($newElementsArray);
         // Get the editorial notes
-        $edNotes  = \AverroesProject\Data\EdNoteManager::editorialNoteArrayFromArray($inputDataObject['ednotes']);
+        $edNotes  = \AverroesProject\Data\EdNoteManager::editorialNoteArrayFromArray($inputDataObject['ednotes'], $this->logger);
 
         
         $newItemIds = $this->ci->db->updateColumnElements($pageId, $columnNumber, $newElements, $updateTime);
@@ -291,7 +308,8 @@ class ApiElements extends ApiController
         $this->logger->debug("Updating ednotes", $edNotes);
         $this->ci->db->enm->updateNotesFromArray($edNotes);
 
-        $versionId = $this->ci->db->registerTranscriptionVersion($pageId, $columnNumber, $updateTime, $this->ci->userId);
+        $versionId = $this->ci->db->registerTranscriptionVersion($pageId, $columnNumber, $updateTime,
+            $this->ci->userId, $versionDescr, $versionIsMinor, $versionIsReview);
         if ($versionId === false) {
             $this->logger->error('Cannot register version');
         }

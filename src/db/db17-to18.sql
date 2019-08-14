@@ -27,7 +27,10 @@ CREATE TABLE `ap_versions_tx` (
                                   `col` int(11) NOT NULL,
                                   `time_from` datetime(6) NOT NULL,
                                   `time_until` datetime(6) DEFAULT NULL,
-                                  `author_id` int(11) DEFAULT NULL
+                                  `author_id` int(11) DEFAULT NULL,
+                                  `descr` varchar(512) NOT NULL DEFAULT '',
+                                  `minor` tinyint(4) NOT NULL DEFAULT '0',
+                                  `review` tinyint(4) NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 

@@ -845,8 +845,9 @@ class TranscriptionEditor
       $('#alert-modal-cancel-button-' + thisObject.id).html('Cancel')
       $('#alert-modal-submit-button-' + this.id).off()
       $('#alert-modal-submit-button-' + this.id).on('click', function () {
-          //console.log("User wants to drop changes in editor")
+          console.log("User wants to drop changes in editor")
           $('#alert-modal-' + thisObject.id).modal('hide')
+
           thisObject.enabled = false
           $('#toolbar-' + thisObject.id).hide()
           $('#save-button-' + thisObject.id).hide()
@@ -856,6 +857,9 @@ class TranscriptionEditor
           thisObject.quillObject.setContents(thisObject.lastSavedData)
           thisObject.quillObject.enable(thisObject.enabled)
           thisObject.setContentsNotChanged()
+          if (typeof(thisObject.versions[thisObject.currentVersion]) !== "undefined" ) {
+            thisObject.setVersionTitleButton(thisObject.versions[thisObject.currentVersion].buttonHtml, true)
+          }
           thisObject.resizeContainer()
           //console.object("Number lines on disable, after dialog")
           thisObject.numberLines()
@@ -917,7 +921,7 @@ class TranscriptionEditor
    * 
    * @returns {Boolean}
    */
-  save() {
+  save(versionInfo) {
     if (!this.contentsChanged) {
       // No changes, return
       return true
@@ -926,7 +930,7 @@ class TranscriptionEditor
     $('#save-button-' + this.id).prop('title', 'Saving changes...')
     $('#save-button-' + this.id).html('<i class="fa fa-spinner fa-spin fa-fw"></i>')
     this.quillObject.enable(false)
-    this.dispatchEvent('editor-save')
+    this.dispatchEvent('editor-save', versionInfo)
   }
   
   saveSuccess(newData) {
@@ -1087,9 +1091,20 @@ class TranscriptionEditor
       this.versions[i].buttonHtml = '<strong>v' + (i+1) + ':</strong> ' +
         moment(this.versions[i].time_from).format('D MMM YYYY, H:mm:ss') + ', ' +
         this.versions[i].author_name
+      if (this.versions[i].minor) {
+        this.versions[i].buttonHtml += '&nbsp;<em>[m]</em>'
+      }
+      if (this.versions[i].review) {
+        this.versions[i].buttonHtml += '&nbsp;<em>[r]</em>'
+      }
       if (i === this.versions.length -1) {
         this.versions[i].buttonHtml += ' (latest)'
       }
+      let descr = this.versions[i].descr
+      if (descr ==='') {
+        descr = '---'
+      }
+      this.versions[i].buttonTitle = '(v' + (i+1) + ') Description: ' + descr
     }
 
     if (this.currentVersion === -1) {
@@ -1100,8 +1115,8 @@ class TranscriptionEditor
       this.setVersionTitleButton(this.versions[this.currentVersion].buttonHtml, true)
       let versionsUlHtml = ''
       for(let i = this.versions.length-1; i>=0; i--) {
-        versionsUlHtml += '<li><button class="versionbutton" id="vbutton-' + this.columnNumber + '-' + i
-          + '">'  +  this.versions[i].buttonHtml + '</button></li>'
+        versionsUlHtml += '<li><button class="versionbutton" id="vbutton-' + this.columnNumber + '-' + i + '" ' +
+          'title="' +  this.versions[i].buttonTitle  + '">'  +  this.versions[i].buttonHtml + '</button></li>'
       }
       $('#versions-dropdown-ul-' + this.id).html(versionsUlHtml)
       let thisObject = this
@@ -1795,7 +1810,18 @@ class TranscriptionEditor
   {
     let thisObject = this
     return function(){
-      thisObject.save()
+      $('#version-modal-submit-button-' + thisObject.id).off()
+      $('#version-modal-submit-button-' + thisObject.id).on('click', function(){
+        $('#version-modal-' + thisObject.id).modal('hide')
+        let versionInfo = {
+          descr: $('#version-modal-descr-'+thisObject.id).val(),
+          isMinor: $('#version-modal-minor-cb-'+thisObject.id).prop('checked'),
+          isReview: $('#version-modal-review-cb-'+thisObject.id).prop('checked'),
+        }
+        thisObject.save(versionInfo)
+        return true
+      })
+      $('#version-modal-' + thisObject.id).modal('show')
       return true
     }
   }
@@ -2806,6 +2832,37 @@ class TranscriptionEditor
       </div>
     </div>
 </div>
+
+<!-- VERSION modal {{id}} -->             
+<div id="version-modal-{{id}}" class="modal" role="dialog">
+  <div class="modal-dialog modal-sm " role="document">
+    <div class="modal-content bg-info">
+        <div class="modal-header">
+            <h4 id="version-modal-title-{{id}}">Save New Version</h4>
+        </div>
+        <div class="modal-body" id="alert-modal-body-{{id}}">
+            <form>
+                <p id="version-modal-text-{{id}}"></p>
+                <div id="version-modal-descr-fg-{{id}}" class="form-group">
+                    <label for="version-modal-descr-{{id}}" id="version-modal-descr-label-{{id}}" class="control-label">Description (optional):</label>
+                    <input type="text" class="form-control" id="version-modal-descr-{{id}}">
+                </div>
+                <div class="checkbox">
+                    <label><input type="checkbox" id="version-modal-minor-cb-{{id}}">Minor changes <em>[m]</em></label>
+                </div>
+                <div class="checkbox">
+                    <label><input type="checkbox" id="version-modal-review-cb-{{id}}">Peer/Supervisor Review <em>[r]</em></label>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" id="version-modal-cancel-button-{{id}}" data-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-danger" id="version-modal-submit-button-{{id}}">Save</button>
+        </div>
+    </div>
+  </div>
+</div>
+
 <!-- TEXT measuring div -->
 <div id="text-measurement-{{id}}" style="position:absolute; visibility: hidden; height: auto; width: auto; white-space: nowrap; direction: ltr;">
    Some text

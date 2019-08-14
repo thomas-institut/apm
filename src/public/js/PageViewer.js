@@ -211,11 +211,12 @@ class PageViewer {
              te.numberLines()
           })
 
-          te.on('editor-save', function(){
+          te.on('editor-save', function(ev){
             console.log("Saving...")
             console.log('Quill data:')
             console.log(te.quillObject.getContents())
             const currentData = te.getData();
+            currentData.versionInfo = ev.originalEvent.detail
             console.log('API data uploaded to server:')
             console.log(currentData)
             $.post(
@@ -288,14 +289,18 @@ class PageViewer {
     let html  = '<p style="margin-top: 20px"/>'
     html += '<strong>Versions Column ' + col + ':</strong>'
     html += '<table class="versiontable">'
-    html += '<tr><th>N</th><th>Time</th><th>Author</th></tr>'
+    html += '<tr><th>N</th><th>Id</th></th><th>Time</th><th>Author</th><th>Description</th></tr>'
     // put the versions in reverse chronological order
     for (let i=versions.length-1; i >= 0; i--) {
       let v = versions[i]
       html+='<tr>'
       html+='<td>' + v.number + '</td>'
+      html+='<td>' + v.id + '</td>'
       html+='<td>' + this.formatVersionTime(v.time_from) + '</td>'
       html+='<td>' + v.author_name + '</td>'
+      html+='<td>' + (v.descr==='' ? '---' : v.descr)  + '</td>'
+      html+='<td>' + (v.minor ? '<em>[m]</em>&nbsp;' : '')
+      html+= (v.review ? '<em>[r]</em>&nbsp;' : '') + '</td>'
       html += '</tr>'
     }
     html += '</table>'

@@ -2056,11 +2056,12 @@ class DataManager
         }
         return true;
     }
-    
+
     /**
      * Returns true if the given page does not any transcription data
      * associated with it
      * @param int $pageId
+     * @return bool
      */
     public function isPageEmpty($pageId) 
     {
@@ -2124,7 +2125,7 @@ class DataManager
         return true;
     }
 
-    public function registerTranscriptionVersion(int $pageId, int $col, string $timeFrom, int $authorId) {
+    public function registerTranscriptionVersion(int $pageId, int $col, string $timeFrom, int $authorId, string $descr = '', bool $isMinor = false, bool $isReview= false) {
 
         $currentVersions = $this->getTranscriptionVersions($pageId, $col);
 
@@ -2135,11 +2136,14 @@ class DataManager
 
         //print "Registering version for $pageId, $col, from $timeFrom, author $authorId\n";
         return $this->txVersionsTable->createRow([
-           'page_id' => $pageId,
-           'col' => $col,
-           'time_from' => $timeFrom,
-           'time_until' => \DataTable\MySqlUnitemporalDataTable::END_OF_TIMES,
-           'author_id' => $authorId
+            'page_id' => $pageId,
+            'col' => $col,
+            'time_from' => $timeFrom,
+            'time_until' => \DataTable\MySqlUnitemporalDataTable::END_OF_TIMES,
+            'author_id' => $authorId,
+            'descr' => $descr,
+            'minor' => $isMinor ? 1 : 0,
+            'review' => $isReview ? 1 : 0
         ]);
     }
 
@@ -2180,6 +2184,8 @@ class DataManager
         foreach($versions as &$version) {
             $version['author_name'] = $authorInfo[$version['author_id']]['fullname'];
             $version['number'] = $versionNumber++;
+            $version['minor'] = intval($version['minor']) === 1 ? true : false;
+            $version['review'] = intval($version['review']) === 1 ? true : false;
         }
         return $versions;
     }

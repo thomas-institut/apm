@@ -787,9 +787,10 @@ class TranscriptionEditor
       $('#alert-modal-submit-button-' + this.id).on('click', function () {
         //console.log("User wants to drop changes in editor")
         $('#alert-modal-' + thisObject.id).modal('hide')
-        if (typeof(thisObject.versions[thisObject.currentVersion]) !== "undefined" ) {
-          thisObject.setVersionTitleButton(thisObject.versions[thisObject.currentVersion].buttonHtml, false)
-        }
+        thisObject.setVersionTitleButton(thisObject.currentVersion, false)
+        // if (typeof(thisObject.versions[thisObject.currentVersion]) !== "undefined" ) {
+        //   thisObject.setVersionTitleButtonRaw(thisObject.versions[thisObject.currentVersion].buttonHtml, false)
+        // }
 
         thisObject.enabled = true
         $('#toolbar-'+ thisObject.id).show()
@@ -810,9 +811,10 @@ class TranscriptionEditor
       return true
     }
    // disable dropdown if there are versions
-   if (typeof(this.versions[this.currentVersion]) !== "undefined" ) {
-     this.setVersionTitleButton(this.versions[this.currentVersion].buttonHtml, false)
-   }
+   // if (typeof(this.versions[this.currentVersion]) !== "undefined" ) {
+   //   this.setVersionTitleButtonRaw(this.versions[this.currentVersion].buttonHtml, false)
+   // }
+    this.setVersionTitleButton(this.currentVersion, false)
 
     this.enabled = true
     $('#toolbar-'+ this.id).show()
@@ -857,9 +859,10 @@ class TranscriptionEditor
           thisObject.quillObject.setContents(thisObject.lastSavedData)
           thisObject.quillObject.enable(thisObject.enabled)
           thisObject.setContentsNotChanged()
-          if (typeof(thisObject.versions[thisObject.currentVersion]) !== "undefined" ) {
-            thisObject.setVersionTitleButton(thisObject.versions[thisObject.currentVersion].buttonHtml, true)
-          }
+          // if (typeof(thisObject.versions[thisObject.currentVersion]) !== "undefined" ) {
+          //   thisObject.setVersionTitleButtonRaw(thisObject.versions[thisObject.currentVersion].buttonHtml, true)
+          // }
+          thisObject.setVersionTitleButton(thisObject.currentVersion, true)
           thisObject.resizeContainer()
           //console.object("Number lines on disable, after dialog")
           thisObject.numberLines()
@@ -871,9 +874,10 @@ class TranscriptionEditor
     this.enabled = false
 
     // allow dropdown if there are versions
-    if (typeof(this.versions[this.currentVersion]) !== "undefined" ) {
-      this.setVersionTitleButton(this.versions[this.currentVersion].buttonHtml, true)
-    }
+    // if (typeof(this.versions[this.currentVersion]) !== "undefined" ) {
+    //   this.setVersionTitleButtonRaw(this.versions[this.currentVersion].buttonHtml, true)
+    // }
+    this.setVersionTitleButton(this.currentVersion, true)
 
 
     $('#toolbar-' + this.id).hide()
@@ -900,14 +904,17 @@ class TranscriptionEditor
   setContentsChanged() {
     $('#save-button-' + this.id).prop('disabled', false)
     $('#reset-button-' + this.id).prop('disabled', false)
-    this.setVersionTitleButton(this.versions[this.currentVersion].buttonHtml + ' *', false)
+    //this.setVersionTitleButtonRaw(this.versions[this.currentVersion].buttonHtml + ' *', false)
+    this.setVersionTitleButton(this.currentVersion, false, true)
     this.contentsChanged = true
   }
   
   setContentsNotChanged() {
     $('#save-button-' + this.id).prop('disabled', true)
     $('#reset-button-' + this.id).prop('disabled', true)
-    this.setVersionTitleButton(this.versions[this.currentVersion].buttonHtml, false)
+
+    //this.setVersionTitleButtonRaw(this.versions[this.currentVersion].buttonHtml, false)
+    this.setVersionTitleButton(this.currentVersion, false, false)
     this.contentsChanged = false
   }
 
@@ -954,7 +961,8 @@ class TranscriptionEditor
     this.lastSavedData = newData
     this.setData(newData)
     this.setContentsNotChanged()
-    this.setVersionTitleButton(this.versions[this.currentVersion].buttonHtml, true)
+    //this.setVersionTitleButtonRaw(this.versions[this.currentVersion].buttonHtml, true)
+    this.setVersionTitleButton(this.currentVersion, true)
   }
 
   reset() {
@@ -1109,10 +1117,12 @@ class TranscriptionEditor
 
     if (this.currentVersion === -1) {
       // no versions, transcription is blank
-      this.setVersionTitleButton('<strong>v0:</strong> Empty transcription', false)
+      //this.setVersionTitleButtonRaw('<strong>v0:</strong> Empty transcription', false)
+      this.setVersionTitleButton(this.currentVersion, false)
       $('#versions-dropdown-ul-' + this.id).html('')
     } else {
-      this.setVersionTitleButton(this.versions[this.currentVersion].buttonHtml, true)
+      //this.setVersionTitleButtonRaw(this.versions[this.currentVersion].buttonHtml, true)
+      this.setVersionTitleButton(this.currentVersion, true)
       let versionsUlHtml = ''
       for(let i = this.versions.length-1; i>=0; i--) {
         versionsUlHtml += '<li><button class="versionbutton" id="vbutton-' + this.columnNumber + '-' + i + '" ' +
@@ -1139,7 +1149,7 @@ class TranscriptionEditor
     }
   }
 
-  setVersionTitleButton(titleHtml, allowDropdown) {
+  setVersionTitleButtonRaw(titleHtml, allowDropdown) {
     let buttonHtml = ''
     let buttonSelector ='#versions-dropdown-button-' + this.id
     buttonHtml += titleHtml
@@ -1150,8 +1160,15 @@ class TranscriptionEditor
       $(buttonSelector).removeAttr('data-toggle')
     }
     $(buttonSelector).html(buttonHtml)
+  }
 
-
+  setVersionTitleButton(version, allowDropdown, withChanges = false) {
+    let withChangesString = withChanges ? ' *' : ''
+    if (version === -1 || this.versions.length === 0) {
+      this.setVersionTitleButtonRaw('Empty Transcription' + withChangesString, false)
+      return true
+    }
+    this.setVersionTitleButtonRaw(this.versions[this.currentVersion].buttonHtml + withChangesString, allowDropdown)
   }
 
   isCurrentVersionLatest()

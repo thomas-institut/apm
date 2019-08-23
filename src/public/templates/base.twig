@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" type="text/css" href="{{baseurl}}/node_modules/bootstrap/dist/css/bootstrap.css"/>
 <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/styles.css"/>
-<link rel="stylesheet" href="{{baseurl}}/fonts/font-awesome-4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="{{baseurl}}/fonts/fontawesome-free-5.10.1-web/css/all.css">
 <link rel="stylesheet" type="text/css" href="{{baseurl}}/node_modules/datatables.net-dt/css/jquery.dataTables.min.css"/>
 <link href='{{baseurl}}/images/averroes-icon.png' rel='icon' sizes='16x16' type='image/png'>
 <title>{% block title %}{% endblock %}</title>
@@ -35,11 +35,11 @@
                     <li class="dropdown">
                         <a href="/" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Project Info<span class="caret"></span></a>
                         <ul class="dropdown-menu">
-                            <li><a href="https://thomas-institut.github.io/averroes-workflow-guidelines/">Worflow Guidelines &nbsp;<span class="glyphicon glyphicon-new-window"></span></a></li>
-                            <li><a href="https://thomas-institut.github.io/averroes-tei/averroes-guidelines.html">TEI Guidelines &nbsp;<span class="glyphicon glyphicon-new-window"></span></a></li>
-                            <li><a href="https://wiki.uni-koeln.de/averroes_project/">Wiki &nbsp;<span class="glyphicon glyphicon-new-window"></span></a></li>
-                            <li><a href="http://averroes.uni-koeln.de/legacy/">Legacy Files (e.g., old XML) &nbsp;<span class="glyphicon glyphicon-new-window"></span></a></li>
-                            <li><a href="http://averroes.uni-koeln.de/">Public Website &nbsp;<span class="glyphicon glyphicon-new-window"></span></a></li>
+                            <li><a href="https://thomas-institut.github.io/averroes-workflow-guidelines/">Worflow Guidelines &nbsp;<i class="fas fa-external-link-alt"></i></a></li>
+                            <li><a href="https://thomas-institut.github.io/averroes-tei/averroes-guidelines.html">TEI Guidelines &nbsp;<i class="fas fa-external-link-alt"></i></a></li>
+                            <li><a href="https://wiki.uni-koeln.de/averroes_project/">Wiki &nbsp;<i class="fas fa-external-link-alt"></i></a></li>
+                            <li><a href="http://averroes.uni-koeln.de/legacy/">Legacy Files (e.g., old XML) &nbsp;<i class="fas fa-external-link-alt"></i></a></li>
+                            <li><a href="http://averroes.uni-koeln.de/">Public Website &nbsp;<i class="fas fa-external-link-alt"></i></a></li>
                         </ul>
                     </li>
                 </ul>
@@ -47,7 +47,7 @@
                 <ul class="nav navbar-nav navbar-right">
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-                            <span class="glyphicon glyphicon-user" aria-hidden="true">&nbsp;</span>{{ userinfo.fullname }}<span class="caret"></span></a>
+                            <i class="fas fa-user"></i>&nbsp;</span>{{ userinfo.fullname }}<span class="caret"></span></a>
                         <ul class="dropdown-menu">
                             <li><a href="{{ path_for('user.profile', {'username' : userinfo.username}) }}">My Profile</a></li>
                             <li><a href="{{ path_for('user.settings', {'username' : userinfo.username}) }}">My Settings</a></li>

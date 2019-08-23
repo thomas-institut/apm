@@ -75,7 +75,7 @@ class ChunkPage {
           $('#formatted-' + w.id).html(w.formatted)
         } else {
           console.log('Getting delayed data for witness ' + w.id)
-          $('#formatted-' + w.id).html('Loading text, this might take a while <i class="fa fa-spinner fa-spin fa-fw"></i> ...')
+          $('#formatted-' + w.id).html('Loading text, this might take a while <i class="fas fa-spinner fa-spin fa-fw"></i> ...')
           $.get(this.pathFor.siteWitness(this.options.work, this.options.chunk, 'doc', w.id, 'html'))
                   .done(function(data){
                      console.log('Got data for witness ' + w.id)
@@ -255,15 +255,15 @@ class ChunkPage {
         html += '<li id="' + liId + '">'
         html += urls[u].urltext + ':'
         html += '<a class="button btn btn-default btn-sm noborder" id="' + liId + '-a' + '" href="' + urls[u].url + '" title="' + urls[u].urltitle + '" target="_blank">' 
-        html += '<span class="glyphicon glyphicon-new-window"></span>' + '</a>'
+        html += '<i class="fas fa-external-link-alt"></i>' + '</a>'
         html += '<button title="Edit automatic collation settings" '
         html += 'class="ctsettingsbutton btn btn-default btn-sm noborder">'
-        html += '<i class="fa fa-pencil" aria-hidden="true"></i></button>'
+        html += '<i class="fas fa-pencil-alt" aria-hidden="true"></i></button>'
         if (urls[u].preset) {
           if (urls[u].preset.userId === this.options.userId) {
             html += '<button title="Erase preset" '
             html += 'class="cterasepresetbutton btn btn-default btn-sm noborder">'
-          html += '<i class="fa fa-trash" aria-hidden="true"></i></button>'
+          html += '<i class="fas fa-trash" aria-hidden="true"></i></button>'
           html += '<div id="' + liId + '-erasediv' + '"></div>'
           }
         }

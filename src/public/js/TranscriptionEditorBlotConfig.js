@@ -57,7 +57,7 @@ TranscriptionEditor.registerFormatBlot(SicBlot, {
   type: ITEM_SIC, 
   name: 'sic', 
   title: 'Sic', 
-  icon: '<i class="fa fa-frown-o"></i>',
+  icon: '<i class="far fa-frown"></i>',
   alttext : { title: 'Correction' }
 })
 
@@ -66,7 +66,7 @@ TranscriptionEditor.registerFormatBlot(AbbrBlot, {
   type: ITEM_ABBREVIATION, 
   name: 'abbr', 
   title: 'Abbreviation', 
-  icon: '<i class="fa fa-hand-spock-o">',
+  icon: '<i class="far fa-hand-spock">',
   alttext : { title: 'Expansion' }
 })
 
@@ -75,7 +75,7 @@ TranscriptionEditor.registerFormatBlot(UnclearBlot, {
   type: ITEM_UNCLEAR, 
   name: 'unclear', 
   title: 'Unclear', 
-  icon: '<i class="fa fa-low-vision"></i>',
+  icon: '<i class="fas fa-low-vision"></i>',
   alttext : { title: 'Alt. Reading' },
   extrainfo: { title: 'Reason', options : Item.getValidUnclearReasons() }
 })
@@ -85,7 +85,7 @@ TranscriptionEditor.registerFormatBlot(AdditionBlot, {
   type: ITEM_ADDITION, 
   name: 'addition', 
   title: 'Addition', 
-  icon: '<i class="fa fa-plus-square"></i>',
+  icon: '<i class="fas fa-plus-square"></i>',
   target: { title: 'Replaces',  default: 0}, 
   buttonWithOptions: 'extrainfo',
   extrainfo: { title: 'Placement', options : Item.getValidAdditionPlaces() }
@@ -96,7 +96,7 @@ TranscriptionEditor.registerFormatBlot(DeletionBlot, {
   type: ITEM_DELETION, 
   name: 'deletion', 
   title: 'Deletion', 
-  icon: '<i class="fa fa-minus-square"></i>',
+  icon: '<i class="fas fa-minus-square"></i>',
   canBeTarget: true,
   buttonWithOptions: 'extrainfo',
   extrainfo: { title: 'Technique', options : Item.getValidDeletionTechniques() }
@@ -108,7 +108,7 @@ TranscriptionEditor.registerFormatBlot(MarginalMarkBlot, {
   name: 'marginalmark', 
   title: 'Mark', 
   canBeTarget: true,
-  icon: '<i class="fa fa-arrow-up" aria-hidden="true"></i>'
+  icon: '<i class="fas fa-arrow-up" aria-hidden="true"></i>'
 })
 
 
@@ -117,7 +117,7 @@ TranscriptionEditor.registerImageBlot(NoWordBreakBlot, {
   type: ITEM_NO_WORD_BREAK,
   name: 'nowb',
   title: 'Non word-breaking dash',
-  icon: '<i class="fa fa-minus"></i>',
+  icon: '<i class="fas fa-minus"></i>',
   imageAlt:'[-]',
   getImageUrl: function (baseUrl, size, value) { 
     return baseUrl + '/api/images/nowb/' + size 
@@ -141,7 +141,7 @@ TranscriptionEditor.registerImageBlot(CharacterGapBlot, {
   type: ITEM_CHARACTER_GAP,
   name: 'chgap',
   title: 'Character Gap',
-  icon: '<i class="fa fa-square-o"></i>',
+  icon: '<i class="far fa-square"></i>',
   imageAlt:'[...]',
   thelength: { default: 5 },
   getImageUrl: function (baseUrl, size, value) { 
@@ -171,7 +171,7 @@ TranscriptionEditor.registerImageBlot(IllegibleBlot, {
   type: ITEM_ILLEGIBLE,
   name: 'illegible',
   title: 'Illegible',
-  icon: '<i class="fa fa-eye-slash">',
+  icon: '<i class="fas fa-eye-slash">',
   imageAlt:'[illegible]',
   withPopover: true,
   //forceInputDialog: true,

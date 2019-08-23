@@ -60,14 +60,14 @@ $(document).ready(function()
     <td>
 
         {% if userCanViewChunkDetails and doc.goodWitness %}
-            <a title="View Witness Details" href="{{path_for('witness', { 'work' : work, 'chunk': chunk, 'type': 'doc', 'id': doc.id})}}"><i class="fa fa-cogs" aria-hidden="true"></i></a>
+            <a title="View Witness Details" href="{{path_for('witness', { 'work' : work, 'chunk': chunk, 'type': 'doc', 'id': doc.id})}}"><i class="fas fa-cogs" aria-hidden="true"></i></a>
         {% endif %}
 
     {% if doc.error %}
         <p class="text-danger">{{doc.error}}</p>
     {% endif %}
     {% for warning in doc.warnings %}
-        <p class="text-warning"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i> {{warning}}</p>
+        <p class="text-warning"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> {{warning}}</p>
     {% endfor %}
     </td>
     
@@ -92,7 +92,7 @@ $(document).ready(function()
                 <h3 class="panel-title">{{doc.title}}
                     &nbsp;&nbsp;&nbsp;
                     <a role="button" title="Click to show/hide text" data-toggle="collapse" href="#text-{{doc.id}}" aria-expanded="true" aria-controls="text-{{doc.id}}">
-                        <span id="texttoggle-{{doc.id}}"><i class="fa fa-angle-right" aria-hidden="true"></i></span>
+                        <span id="texttoggle-{{doc.id}}"><i class="fas fa-angle-right" aria-hidden="true"></i></span>
                     </a></h3>
             </div>
                      <div class="collapse" id="text-{{doc.id}}">

@@ -800,7 +800,7 @@ class TranscriptionEditor
         $('#save-button-' + thisObject.id).show()
         $('#reset-button-' + thisObject.id).show()
         $('#toggle-button-' + thisObject.id).prop('title', 'Leave editor')
-        $('#toggle-button-' + thisObject.id).html('<i class="fa fa-power-off"></i>')
+        $('#toggle-button-' + thisObject.id).html('<i class="fas fa-power-off"></i>')
         thisObject.lastSavedData = thisObject.quillObject.getContents()
         thisObject.setContentsNotChanged()
         thisObject.quillObject.setSelection(thisObject.quillObject.getLength())
@@ -824,7 +824,7 @@ class TranscriptionEditor
     $('#save-button-' + this.id).show()
     $('#reset-button-' + this.id).show()
     $('#toggle-button-' + this.id).prop('title', 'Leave editor')
-    $('#toggle-button-' + this.id).html('<i class="fa fa-power-off"></i>')
+    $('#toggle-button-' + this.id).html('<i class="fas fa-power-off"></i>')
     this.lastSavedData = this.quillObject.getContents()
     this.setContentsNotChanged()
     this.quillObject.setSelection(this.quillObject.getLength())
@@ -855,7 +855,7 @@ class TranscriptionEditor
           $('#save-button-' + thisObject.id).hide()
           $('#reset-button-' + thisObject.id).hide()
           $('#toggle-button-' + thisObject.id).prop('title', 'Edit')
-          $('#toggle-button-' + thisObject.id).html('<i class="fa fa-pencil"></i>')
+          $('#toggle-button-' + thisObject.id).html('<i class="fas fa-pencil-alt"></i>')
           thisObject.quillObject.setContents(thisObject.lastSavedData)
           thisObject.quillObject.enable(thisObject.enabled)
           thisObject.setContentsNotChanged()
@@ -884,7 +884,7 @@ class TranscriptionEditor
     $('#save-button-' + this.id).hide()
     $('#reset-button-' + this.id).hide()
     $('#toggle-button-' + this.id).prop('title', 'Edit')
-    $('#toggle-button-' + this.id).html('<i class="fa fa-pencil"></i>')
+    $('#toggle-button-' + this.id).html('<i class="fas fa-pencil-alt"></i>')
     this.quillObject.enable(this.enabled)
     this.contentsChanged = false
     this.resizeContainer()
@@ -935,7 +935,7 @@ class TranscriptionEditor
     }
     this.saving = true
     $('#save-button-' + this.id).prop('title', 'Saving changes...')
-    $('#save-button-' + this.id).html('<i class="fa fa-spinner fa-spin fa-fw"></i>')
+    $('#save-button-' + this.id).html('<i class="fas fa-spinner fa-spin fa-fw"></i>')
     this.quillObject.enable(false)
     this.dispatchEvent('editor-save', versionInfo)
   }
@@ -946,14 +946,14 @@ class TranscriptionEditor
     this.setContentsNotChanged()
     this.saving = false
     $('#save-button-' + this.id).prop('title', 'Save changes')
-    $('#save-button-' + this.id).html('<i class="fa fa-save"></i>')
+    $('#save-button-' + this.id).html('<i class="far fa-save"></i>')
     this.quillObject.enable(true)
   }
   
   saveFail(reason) {
     this.saving = false
     $('#save-button-' + this.id).prop('title', 'Could not save: ' + reason )
-    $('#save-button-' + this.id).html('<span class="fa-stack"><i class="fa fa-save fa-stack-1x"></i><i class="fa fa-exclamation-triangle fa-stack-1x text-danger"></i></span>')
+    $('#save-button-' + this.id).html('<span class="fa-stack"><i class="far fa-save fa-stack-1x"></i><i class="fas fa-exclamation-triangle fa-stack-1x text-danger"></i></span>')
     this.quillObject.enable(true)
   }
 
@@ -968,7 +968,7 @@ class TranscriptionEditor
   reset() {
     this.quillObject.setContents(this.lastSavedData)
     $('#save-button-' + this.id).prop('title', 'Save changes')
-    $('#save-button-' + this.id).html('<i class="fa fa-save"></i>')
+    $('#save-button-' + this.id).html('<i class="far fa-save"></i>')
     let thisObject = this
     window.setTimeout( function() {
       //console.log('Number Lines on reset')
@@ -1829,7 +1829,7 @@ class TranscriptionEditor
     return function(){
       if (!thisObject.isCurrentVersionLatest()) {
         $('#version-modal-text-'+ thisObject.id).addClass('text-danger')
-        $('#version-modal-text-'+ thisObject.id).html('<i class="fa fa-exclamation-triangle" aria-hidden="true"></i> Your changes are not based on the latest version')
+        $('#version-modal-text-'+ thisObject.id).html('<i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Your changes are not based on the latest version')
         $('#version-modal-descr-'+thisObject.id).val("Edited from version " + (thisObject.currentVersion+1))
       } else {
         $('#version-modal-text-'+ thisObject.id).removeClass('text-danger')
@@ -2637,11 +2637,11 @@ class TranscriptionEditor
 <div class="transcription-editor">
   {#  TOP TOOLBAR #}  
   <div id="editor-controls-{{id}}" class="editor-controlbar">
-      <button id="zoom-in-button-{{id}}" title="Make text bigger"><i class="fa fa-search-plus"></i></button>
-      <button id="zoom-out-button-{{id}}" title="Make text smaller"><i class="fa fa-search-minus"></i></button>
-      <button id="toggle-button-{{id}}" title="Edit"><i class="fa fa-pencil"></i></button>
-      <button id="save-button-{{id}}" title="Save changes"><i class="fa fa-save"></i></button>
-      <button id="reset-button-{{id}}" title="Revert to saved version"><i class="fa fa-refresh"></i></button>
+      <button id="zoom-in-button-{{id}}" title="Make text bigger"><i class="fas fa-search-plus"></i></button>
+      <button id="zoom-out-button-{{id}}" title="Make text smaller"><i class="fas fa-search-minus"></i></button>
+      <button id="toggle-button-{{id}}" title="Edit">E</button>
+      <button id="save-button-{{id}}" title="Save changes"><i class="far fa-save"></i></button>
+      <button id="reset-button-{{id}}" title="Revert to saved version"><i class="fas fa-sync"></i></button>
       <span class="dropdown">
         <button class="versionbutton" title="Transcription version currently shown below" 
             id="versions-dropdown-button-{{id}}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -2655,8 +2655,8 @@ class TranscriptionEditor
   <div class="toolbar" id="toolbar-{{id}}">
       
     {# Clear and Edit #}
-    <button id="clear-button-{{id}}" class="selFmtBtn" title="Clear formatting" disabled><i class="fa fa-eraser"></i></button>
-    <button id="edit-button-{{id}}" class="selFmtBtn" title="Edit" disabled><i class="fa fa-pencil"></i></button>
+    <button id="clear-button-{{id}}" class="selFmtBtn" title="Clear formatting" disabled><i class="fas fa-eraser"></i></button>
+    <button id="edit-button-{{id}}" class="selFmtBtn" title="Edit" disabled><i class="fas fa-pencil-alt"></i></button>
     <span class="separator"/>
 
     {# Languages #}
@@ -2678,7 +2678,7 @@ class TranscriptionEditor
     <span class="separator"/>
 
     {# Editorial Note #}
-    <button id="note-button-{{id}}" title="Editorial Note"><i class="fa fa-comment-o"></i></button>
+    <button id="note-button-{{id}}" title="Editorial Note"><i class="far fa-comment"></i></button>
     <span class="separator"/>
       
     {#Elements#}

@@ -45,7 +45,7 @@ $(document).ready(function()
 {% if num_docs > 0 %}
     <div class="witnesslist">
 <table id="theWitnessTable">
-    <thead><tr><th>Title</th><th>Type</th><th>Language</th><th>Pages</th><th/></tr></thead>
+    <thead><tr><th>Title</th><th>Type</th><th>Language</th><th>Pages</th><th>Last Change</th><th/></tr></thead>
 {% for doc in docs %}
 <tr>
     <td><a href="{{path_for('doc.showdoc', {'id' : doc.id})}}" target="_blank" title="View Document in New Tab">{{doc.title}}</a></td>
@@ -56,6 +56,11 @@ $(document).ready(function()
         {% for seg in doc.segments %}
 <a href="{{path_for('pageviewer.docseq', {'doc' : doc.id, 'seq' : seg.start.page_seq})}}" target="_blank" title="View Page in New Tab">{{seg.start.foliation}}</a>{% if seg.end.foliation and seg.end.foliation != seg.start.foliation %}&ndash;<a href="{{path_for('pageviewer.docseq', {'doc' : doc.id, 'seq' : seg.end.page_seq})}}" target="_blank" title="View Page in New Tab">{{seg.end.foliation}}</a>{% endif %}{% if not loop.last %}, {% endif %}
         {% endfor %}
+    </td>
+    <td>
+        {% if not doc.error and not doc.warnings %}
+            {{ doc.lastTimeFormatted}},  <a href="{{ path_for('user.profile', {'username' : doc.lastAuthorUsername}) }}">{{ doc.lastAuthorName }}</a>
+        {%  endif %}
     </td>
     <td>
 

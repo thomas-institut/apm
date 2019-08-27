@@ -921,10 +921,81 @@ class DataManager
     
     public function getChunkLocationsForDoc($docId, $workId, $chunkNumber) 
     {
-        $locations = $this->getChunkLocationsForDocRaw($docId, $workId, $chunkNumber);
-        return $this->getChunkLocationArrayFromRawLocations($locations);
+        $rawLocations = $this->getChunkLocationsForDocRaw($docId, $workId, $chunkNumber);
+
+        $locations = $this->getChunkLocationArrayFromRawLocations($rawLocations);
+
+        return $this->fillInColumnInfoForLocations($docId, $locations);
     }
-    
+
+    public function fillInColumnInfoForLocations(int $docId, array $locationArray) : array {
+
+        $returnArray = $locationArray;
+
+        // get columns for each location
+        foreach ($returnArray as $key => &$segmentLoc) {
+            $segmentLoc['columns'] = [];
+            if (!$segmentLoc['valid']) {
+                continue;
+            }
+            $startSeq = intval($segmentLoc['start']['page_seq']);
+            $startCol = intval($segmentLoc['start']['column_number']);
+            $endSeq = intval($segmentLoc['end']['page_seq']);
+            $endCol = intval($segmentLoc['end']['column_number']);
+            $pageInfo = $this->getPageInfoByDocSeq($docId, $startSeq);
+            if ($startSeq === $endSeq) {
+                for ($c = $startCol; $c <= $endCol; $c++) {
+                    $segmentLoc['columns'][] = [ 'pageId' => intval($pageInfo['id']), 'column' => $c];
+                }
+                continue;
+            }
+            // more than 1 page
+            for ($c = $startCol; $c <= $pageInfo['num_cols']; $c++) {
+                $segmentLoc['columns'][] = [ 'pageId' => intval($pageInfo['id']), 'column' => $c];
+            }
+            for ($pageSeq = $startSeq + 1; $pageSeq < $endSeq; $pageSeq++) {
+                $pageInfo = $this->getPageInfoByDocSeq($docId, $pageSeq);
+                for ($c = 1; $c <= $pageInfo['num_cols']; $c++) {
+                    $segmentLoc['columns'][] = [ 'pageId' => intval($pageInfo['id']), 'column' => $c];
+                }
+            }
+            $pageInfo = $this->getPageInfoByDocSeq($docId, $endSeq);
+            for ($c = 1; $c <= $endCol; $c++) {
+                $segmentLoc['columns'][] = [ 'pageId' => intval($pageInfo['id']), 'column' => $c];
+            }
+        }
+
+        $lastTime = '0000-00-00 00:00:00.000000';  // times will be compared as strings, this works because MySQL stores times as YYYY-MM-DD HH:MM:SS.mmmm
+        $lastAuthorName = '';
+        $lastAuthorId = 0;
+        $lastAuthorUsername = '';
+        foreach($returnArray as $key => &$segmentLoc) {
+            foreach($segmentLoc['columns'] as &$column) {
+                $column['versions'] = $this->getTranscriptionVersionsWithAuthorInfo($column['pageId'], $column['column']);
+                if (count($column['versions']) > 0) {
+                    $lastVersionTime = $column['versions'][count($column['versions'])-1]['time_from'];
+                    $column['lastTime'] = $lastVersionTime;
+                    $column['lastAuthorName'] = $column['versions'][count($column['versions'])-1]['author_name'];
+                    $column['lastAuthorId'] = intval($column['versions'][count($column['versions'])-1]['author_id']);
+                    $column['lastAuthorUsername'] = $column['versions'][count($column['versions'])-1]['author_username'];
+                    if (strcmp($lastTime, $lastVersionTime)<0) {
+                        $lastTime = $lastVersionTime;
+                        $lastAuthorName = $column['lastAuthorName'];
+                        $lastAuthorId = $column['lastAuthorId'];
+                        $lastAuthorUsername =$column['lastAuthorUsername'];
+                    }
+                }
+            }
+            $segmentLoc['lastTime'] = $lastTime;
+            $segmentLoc['lastAuthorName'] = $lastAuthorName;
+            $segmentLoc['lastAuthorId'] = $lastAuthorId;
+            $segmentLoc['lastAuthorUsername'] = $lastAuthorUsername;
+        }
+
+        return $returnArray;
+
+    }
+
     /**
      * Returns a an array with the chunk start and end locations
      * for the given document, work and chunk numbers
@@ -978,16 +1049,17 @@ class DataManager
         }
         return $rows;
     }
-    
+
     /**
      * Returns true if $loc1 represents
      * an item location that is located after
      * $loc2
-     * 
-     * 
-     * 
+     *
+     *
+     *
      * @param array $loc1
      * @param array $loc2
+     * @return bool
      */
     private function isAfter($loc1, $loc2) 
     {
@@ -1002,26 +1074,27 @@ class DataManager
         
          return $loc1Nr > $loc2Nr;
     }
-    
+
     /**
      * Returns an array containing the start and end locations
      * for every chunk segment in the given array of locations
      * ordered by segment
-     * 
-     * The given locations arrays is supposed to contain the 
-     * locations for a single chunk in a particular documents
-     * 
+     *
+     * The given locations arrays is supposed to contain the
+     * locations for a single chunk in a particular document
+     *
      * The returned array has the following structure:
-     * 
+     *
      *   $results[n] = [ 'valid' => is_this_segment_valid (boolean)
      *                   'start' => start_location (or null)
      *                   'end' => end_location (or null),
      *                   'warnings' => array of string messages ]
-     * 
+     *
      *  n = 0,1,2,... up to the number of segments found in the input array
-     *  
-     * 
+     *
+     *
      * @param array $locationRows
+     * @return array
      */
     public function getChunkLocationArrayFromRawLocations($locationRows)
     {
@@ -1050,7 +1123,8 @@ class DataManager
             }
             $chunkLocations[$chunkSegment][$locationRow['type']] = $locationRow;
         }
-        
+
+        // check for other inconsistencies
         foreach($chunkLocations as $key => &$segmentLoc) {
             if (!$segmentLoc['valid']) {
                 continue;
@@ -1072,6 +1146,8 @@ class DataManager
         }
         
         ksort($chunkLocations);
+
+
         return $chunkLocations;
     }
     
@@ -1243,6 +1319,15 @@ class DataManager
             return false;
         }
         return $row['id'];
+    }
+
+    public function getPageInfoByDocSeq($docId, $seq) {
+        $this->queryStats->countQuery('select');
+        $row = $this->pagesDataTable->findRow([
+            'doc_id' => $docId,
+            'seq'=> $seq
+        ]);
+        return $row;
     }
     
     /**
@@ -1572,11 +1657,12 @@ class DataManager
         $e->placement = $row[$fields['placement']];
         return $e;
     }
-    
+
     /**
      * Creates an array of Element objects from an array such
      * as the one created by the TranscriptionEditor
      * @param type $theArray
+     * @return array
      */
     public static function createElementArrayFromArray($theArray) {
         $elements = [];
@@ -2169,6 +2255,7 @@ class DataManager
         return $rows;
     }
 
+
     public function getTranscriptionVersionsWithAuthorInfo(int $pageId, int $col) {
 
         $versions = $this->getTranscriptionVersions($pageId, $col);
@@ -2186,6 +2273,7 @@ class DataManager
             $version['number'] = $versionNumber++;
             $version['minor'] = intval($version['minor']) === 1 ? true : false;
             $version['review'] = intval($version['review']) === 1 ? true : false;
+            $version['author_username'] = $authorInfo[$version['author_id']]['username'];
         }
         return $versions;
     }

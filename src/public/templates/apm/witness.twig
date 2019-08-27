@@ -47,6 +47,10 @@ $(document).ready(
         <p class="text-warning"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> {{warning}}</p>
     {% endfor %}
 </p>
+
+    <p><b>Last time: </b> {{ doc.lastTime }}</p>
+
+<p><pre>{{ doc.segmentsDump }}</pre></p>
     
 
 <div class="chunktexts">

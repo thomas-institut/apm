@@ -1,16 +1,16 @@
 # Transcription Versions
 
-Updated:  29 Jul 2019
+Document Updated:  26 Aug 2019
+
 
 We need to have access to different versions of the transcriptions in the system so that 
 they can be associated with derivative witnesses.
  
-A derivative witness is a witness that is based on one or more transcription witnesses.
-It can be a manuscripted that the editor decides not to transcribe fully and for which 
+A derivative witness is a witness that is based on one or more other witnesses.
+It can be a manuscript that the editor decides not to transcribe fully and for which 
 only the relevant differences with respect to another manuscript are captured. 
 It can be also a hypothetical witness constructed by selecting lemmata from a number 
-of other witnesses. The former is, indeed, the basis for the implementation of 
-critical editions.
+of other witnesses. The former is essentially a critical edition.
 
 Implementing transcription versions requires relatively important changes to the 
 codebase since it may affect the database schema, the transcription API and 
@@ -98,7 +98,7 @@ since the beginning of the system, is already in the database.
 ### Requirements
 
 It should be possible to define a TranscriptionWitness whose source is a transcription
-at a particular point in time, that a version of a transcription. Such a 
+at a particular point in time, that is, a version of a transcription. Such a 
 TranscriptionWitness can then be used as the proper source for an editable collation 
 table, an edition or any other derivative witness. 
 
@@ -107,9 +107,12 @@ derivative witness is basically an alignment of textual tokens with respect to o
 or more base witnesses, that is, one row of a collation table. A change in the source
 of any base witness might render this alignment invalid and unfixable by automatic
 means. The base witness must be frozen, and this, in the case of transcription witnesses
-can be accomplished by pointing to specific versions of the transcription. It can also
-accomplished by storing the base witnesses together with the derivative witness but this 
-only adds extra storage.
+can be accomplished by referring to specific versions of the transcription. 
+
+Note that this is independent of how the actual collation table that defines the
+derivative witness is stored. It could very well be that all the data from the 
+transcription is stored again. However, we need to be able to associate
+that information with a transcription version.
 
 In order to keep proper track of versions, we need to be able to work with transcription 
 versions at the column level. A transcription version is essentially the transcription 
@@ -148,18 +151,31 @@ between the timestamp of element vs item writes.
 
 The utility class `UnitemporalConsistency` checks, first of all, whether a unitemporal
 table has consistent values. For every id in the table, there's has to be a continuous
-history from the first `valid_from` to the last `valid_until`. It is still unclear
-what to make of the row where `valid_from` = `valid_until`; they appear to be glitches
-but do not seem to cause any problem. 
+history from the first `valid_from` to the last `valid_until`. For some rows
+`valid_from` === `valid_until`; this may be some sort of glitch, but it does not
+cause any problem.
 
-The different timestamps for single saves from the trancription editor is an inconvenience
-but does not actually require changing the current data. It is possible with the 
+The different timestamps for single saves from the trancription editor is an 
+inconvenience but does not actually require changing the current data. 
+It is possible with the 
 current data to get the version of any column in the system at any given time.  
 The strategy for generating version timestamps from the current data therefore
 amounts to detecting clusters of changes in the different page/column pairs and 
 designating the last time in the cluster as the version timestamp. Getting the
 column's version at that time means getting the version after all the changes in
-the save action have, so to speak, settled.   
+the save action have, so to speak, settled.  This is done with the command line
+utility `insertversions`, which generates an SQL file with the required insertion
+commands. This script also filters out versions too close together.
+
+From the data we can also guess who the author of the version is by looking at the 
+user id stored in the elements. Since only changes are stored, in some cases there
+are changes only in the element's items and therefore the element is left unchanged.
+If the author of this minor change is different from the one in the original element
+then the version will not be attributed correctly. The correct information about
+authorship can be gathered from the logs, but this requires some extra work, and
+it seems that the number of wrongly attributed versions is quite small.  This is
+done with the command utility `inserversions-step2`, which generates SQL commands
+with the required changes to the database.
 
 
 #### 2. Column Version Implementation
@@ -175,12 +191,14 @@ to clear ALL errors before proceeding.
 
 2. Change the column saving implementation so that together with storing items and 
 elements with a single timestamp, a new version is registered in the versions table. 
-This is implemented in version 0.21.
 
 3. List the different versions in the info tab for each page.
 
-4. Perhaps later, allow a previous version of column to be loaded in the editor.
+4. Allow an earlier version to be loaded in the editor. the API call to get the
+information about a column may now include a desired version and will also provide
+all the data from the different column versions.
  
+_**Status**: DONE, implemented in v0.21.0_ 
   
 #### 3. Witness Versions
 
@@ -198,7 +216,7 @@ of each of its column components.
 >perhaps,  have some way of reflecting the change in the editable collation table, some 
 >sort of automatic, best-effort, attempt at reconciling the changes in the transcription. 
 Since presumably the editor will only start working on editing collation tables when
-transcriptions are fairly mature, change will be minimal and may not even change
+transcriptions are fairly mature, changes will be minimal and may not even change
 the actual tokens used for the collations
 
 > **Note 2**   
@@ -212,7 +230,7 @@ the actual tokens used for the collations
 >want to use that edited table for those witnesses instead of the automatic
 >collation engine. The automatic collation engine would be run only between on 
 >given row in the edited collation table and the extra witnesses. Similarly, an edited 
->collation table can be augmented with xtra witnesseses by running the automatic 
+>collation table can be augmented with extra witnesseses by running the automatic 
 >collation engine on, say, the top row of he edited table and the new witness or 
 >witnesses 
  

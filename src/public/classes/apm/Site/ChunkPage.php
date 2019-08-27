@@ -26,6 +26,7 @@
 
 namespace APM\Site;
 
+use AverroesProject\Data\DataManager;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use AverroesProject\Profiler\ApmProfiler;
@@ -135,6 +136,7 @@ class ChunkPage extends SiteController
         
         if ($doc['goodWitness'] && $outputType === 'full') {
             $doc['itemStreamDump'] =  print_r($doc['itemStream'], true);
+            $doc['segmentsDump'] = print_r($doc['segments'], true);
             $nonTokenItems = $doc['itemStreamWitness']->getNonTokenItemIndexes();
             //$doc['nonTokenItems'] = print_r($nonTokenItems, true);
             $doc['tokenDump'] = $this->prettyPrintTokens($doc['tokens'], $nonTokenItems);
@@ -172,7 +174,7 @@ class ChunkPage extends SiteController
         return $response->withStatus(402)->write('ERROR: unrecognized output option');
     }
     
-    protected function buildEssentialWitnessDataFromDocData(array $docData, $workId, $chunkNumber, $db, $witnessNumber) : array  {
+    protected function buildEssentialWitnessDataFromDocData(array $docData, $workId, $chunkNumber, DataManager $db, $witnessNumber) : array  {
         $doc = $docData;
         $doc['number'] = $witnessNumber;
         $doc['errors'] = [];
@@ -196,6 +198,10 @@ class ChunkPage extends SiteController
         $doc['segments'] = $locations;
 
         $doc['pageSpan'] = 0;
+        $lastTime = '0000-00-00 00:00:00.000000';
+        $lastAuthorId = 0;
+        $lastAuthorName = '';
+        $lastAuthorUsername = '';
         foreach($locations as $segLocation ) {
             if (!$segLocation['valid']) {
                 foreach($segLocation['warnings'] as $w) {
@@ -205,7 +211,18 @@ class ChunkPage extends SiteController
                 continue;
             }
             $doc['pageSpan'] += $this->pageSpan($segLocation);
+            if (strcmp($lastTime, $segLocation['lastTime']) < 0) {
+                $lastTime = $segLocation['lastTime'];
+                $lastAuthorName = $segLocation['lastAuthorName'];
+                $lastAuthorId = $segLocation['lastAuthorId'];
+                $lastAuthorUsername = $segLocation['lastAuthorUsername'];
+            }
         }
+        $doc['lastTime'] = $lastTime;
+        $doc['lastTimeFormatted'] = explode('.', $lastTime)[0];
+        $doc['lastAuthorName'] = $lastAuthorName;
+        $doc['lastAuthorId'] = $lastAuthorId;
+        $doc['lastAuthorUsername'] = $lastAuthorUsername;
         return $doc;
     }
 
@@ -233,7 +250,7 @@ class ChunkPage extends SiteController
         $itemStreamWitness = new \AverroesProjectToApm\ItemStreamWitness($workId, $chunkNumber, $itemStream);
         $doc['itemStreamWitness'] = $itemStreamWitness;
         $doc['tokens'] = $itemStreamWitness->getTokens();
-        $this->logger->debug('Doc ' . $docData['id'] . ':: tokens: ' . count($doc['tokens']) . ', page span: ' . $docData['pageSpan']);
+        //$this->logger->debug('Doc ' . $docData['id'] . ':: tokens: ' . count($doc['tokens']) . ', page span: ' . $docData['pageSpan']);
 
         $doc['itemStream'] = $itemStream;
         $edNotes = $db->enm->getEditorialNotesForListOfItems($itemIds);

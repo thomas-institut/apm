@@ -45,6 +45,7 @@ class ChunkPage {
             null, //type
             null, //language
             null, // pages
+            null, // last changed
             { orderable: false } // show/hide text
         ]
     })

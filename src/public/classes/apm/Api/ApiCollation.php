@@ -231,10 +231,15 @@ class ApiCollation extends ApiController
         
         $collationTable = new CollationTable($ignorePunctuation);
         $itemIds = [];
+        $lastChangeInData = '0000-00-00 00:00:00.000000';
         foreach ($witnessesToInclude as $id => $witnessLocation)  {
+
             // Get the AverroesProject item streams
             $segmentStreams = [];
             foreach($witnessLocation as $segLocation) {
+                if ($segLocation['lastTime'] > $lastChangeInData) {
+                    $lastChangeInData = $segLocation['lastTime'];
+                }
                 $apItemStream = $db->getItemStreamBetweenLocations($id, $segLocation['start'], $segLocation['end']);
                 foreach($apItemStream as $row) {
                     $itemIds[] = (int) $row['id'];
@@ -312,6 +317,8 @@ class ApiCollation extends ApiController
             'collationEngineDetails' => $collationEngineDetails, 
             'collationTable' => $decoratedCollationTable,
             'sigla' => $collationTable->getSigla(),
+            'witnessInfo' => $witnessesToInclude,
+            'lastChangeInData' => $lastChangeInData,
             'quickEdition' => $quickEdition
             ]);
 

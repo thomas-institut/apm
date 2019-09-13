@@ -65,15 +65,24 @@ $(document).ready(function()
         <div class="col-md-9">
             <div id="collationtableinfo">
                 <p>{{work_info.author_name}}, <em>{{work_info.title}}</em>, chunk {{chunk}} ({{work}}-{{chunk}})</p>
+
                 <p><span id="act-title"></span>
                     <button title="Click to edit the automatic collation settings" 
                         id="editsettingsbutton" class="btn btn-default btn-sm noborder ">
                         <i class="fas fa-pencil-alt" aria-hidden="true"></i>
                     </button>
                 </p>
+                <div id="editsettingsform" class="inlineform">
+                </div>
+                <p>Last change in data: <span id="lastTimeLabel">{{ versionInfo.lastTime }}</span>
+                    <button title="Click to show/hide full version info" id="versioninfobutton" class="btn btn-default btn-sm noborder">
+                        <i class="fas fa-angle-right" aria-hidden="true"></i>
+                    </button>
+                 </p>
+                <div id="versioninfo" class="ct-versioninfo">
+                </div>
             </div>
-            <div id="editsettingsform" class="inlineform">
-            </div> 
+
         </div>
         <div class="col-md-3 text-right">
             <div id="collationtablebuttons" >

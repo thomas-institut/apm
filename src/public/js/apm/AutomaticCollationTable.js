@@ -38,6 +38,9 @@ class AutomaticCollationTable {
     this.redoButton = $('#redobutton')
     this.exportCsvButton = $('#exportcsvbutton')
     this.quickEditionButton = $('#quickedbutton')
+    this.versionInfoButton = $('#versioninfobutton')
+    this.versionInfoDiv = $('#versioninfo')
+    this.lastTimeLabel = $('#lastTimeLabel')
     this.editionContainer = $('#editiondiv')
     this.editionDiv = $('#theedition')
     this.siglaDiv = $('#sigla')
@@ -73,6 +76,18 @@ class AutomaticCollationTable {
         thisObject.viewSettingsFormManager.hide()
       }
     })
+
+    this.versionInfoDiv.addClass('hidden')
+    this.versionInfoButton.on('click', function () {
+      if (thisObject.versionInfoDiv.hasClass('hidden')) {
+        thisObject.versionInfoDiv.removeClass('hidden')
+        thisObject.versionInfoButton.html('<i class="fas fa-angle-down" aria-hidden="true"></i>')
+      } else {
+        thisObject.versionInfoDiv.addClass('hidden')
+        thisObject.versionInfoButton.html('<i class="fas fa-angle-right" aria-hidden="true"></i>')
+      }
+    })
+
     this.viewSettingsFormManager.on('cancel', function() {
       thisObject.viewSettingsFormManager.hide()
     })
@@ -254,6 +269,8 @@ class AutomaticCollationTable {
       }
       
       thisObject.collationTableDiv.html(thisObject.ctf.format(data, thisObject.popoverClass))
+      thisObject.lastTimeLabel.html(thisObject.formatDateTime(data.lastChangeInData))
+      thisObject.versionInfoDiv.html(thisObject.getVersionInfoHtml(data))
       thisObject.setCsvDownloadFile(data)
       
       thisObject.status.html('')
@@ -312,6 +329,41 @@ class AutomaticCollationTable {
   setCsvDownloadFile(data) {
     let href = 'data:text/csv,' + encodeURIComponent(this.ctf.generateCsv(data))
     this.exportCsvButton.attr('href', href)
+  }
+
+  getVersionInfoHtml(data) {
+
+    let html = ''
+    html += '<h3>Version Info</h3>'
+    let witnessInfo = data.witnessInfo
+
+    html += '<ul>'
+    for(const witness of this.availableWitnesses) {
+      html += '<li>'
+      html += '<h4>' + witness.title + '</h4>'
+      html += '<ul>'
+      for(const segmentNumber in witnessInfo[witness.id]) {
+        let segment = witnessInfo[witness.id][segmentNumber]
+        html += '<li>'
+        html += 'Segment ' + segmentNumber + ': '
+        for (const col of segment['columns']) {
+          html += '<ul>'
+          html += 'Page ' + col['foliation'] + ' column ' + col['column']
+          html += ' last edited ' + this.formatDateTime(col['lastTime']) + ' by ' + col['lastAuthorName']
+          html += '</ul>'
+        }
+        html += '</li>'
+      }
+      html += '</ul>'
+      html += '</li>'
+    }
+    html += '</ul>'
+
+    return html
+  }
+
+  formatDateTime(sqlDateTimeString) {
+    return sqlDateTimeString.split('.')[0]
   }
   
 }

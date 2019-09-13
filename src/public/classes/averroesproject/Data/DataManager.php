@@ -943,29 +943,32 @@ class DataManager
             $endSeq = intval($segmentLoc['end']['page_seq']);
             $endCol = intval($segmentLoc['end']['column_number']);
             $pageInfo = $this->getPageInfoByDocSeq($docId, $startSeq);
+            $pageFoliation = is_null($pageInfo['foliation']) ? $pageInfo['seq'] : $pageInfo['foliation'];
             if ($startSeq === $endSeq) {
                 for ($c = $startCol; $c <= $endCol; $c++) {
-                    $segmentLoc['columns'][] = [ 'pageId' => intval($pageInfo['id']), 'column' => $c];
+                    $segmentLoc['columns'][] = [ 'pageId' => intval($pageInfo['id']), 'foliation' => $pageFoliation,  'column' => $c];
                 }
                 continue;
             }
             // more than 1 page
             for ($c = $startCol; $c <= $pageInfo['num_cols']; $c++) {
-                $segmentLoc['columns'][] = [ 'pageId' => intval($pageInfo['id']), 'column' => $c];
+                $segmentLoc['columns'][] = [ 'pageId' => intval($pageInfo['id']), 'foliation' => $pageFoliation, 'column' => $c];
             }
             for ($pageSeq = $startSeq + 1; $pageSeq < $endSeq; $pageSeq++) {
                 $pageInfo = $this->getPageInfoByDocSeq($docId, $pageSeq);
+                $pageFoliation = is_null($pageInfo['foliation']) ? $pageInfo['seq'] : $pageInfo['foliation'];
                 for ($c = 1; $c <= $pageInfo['num_cols']; $c++) {
-                    $segmentLoc['columns'][] = [ 'pageId' => intval($pageInfo['id']), 'column' => $c];
+                    $segmentLoc['columns'][] = [ 'pageId' => intval($pageInfo['id']), 'foliation' => $pageFoliation, 'column' => $c];
                 }
             }
             $pageInfo = $this->getPageInfoByDocSeq($docId, $endSeq);
+            $pageFoliation = is_null($pageInfo['foliation']) ? $pageInfo['seq'] : $pageInfo['foliation'];
             for ($c = 1; $c <= $endCol; $c++) {
-                $segmentLoc['columns'][] = [ 'pageId' => intval($pageInfo['id']), 'column' => $c];
+                $segmentLoc['columns'][] = [ 'pageId' => intval($pageInfo['id']), 'foliation' => $pageFoliation,  'column' => $c];
             }
         }
 
-        $lastTime = '0000-00-00 00:00:00.000000';  // times will be compared as strings, this works because MySQL stores times as YYYY-MM-DD HH:MM:SS.mmmm
+        $lastTime = '0000-00-00 00:00:00.000000';  // times will be compared as strings, this works because MySQL stores times as 'YYYY-MM-DD HH:MM:SS.mmmmmmm'
         $lastAuthorName = '';
         $lastAuthorId = 0;
         $lastAuthorUsername = '';
@@ -1321,6 +1324,23 @@ class DataManager
         return $row['id'];
     }
 
+    /**
+     * Gets page information from the database for the given doc and sequences
+     * If there's an error, it returns false. Otherwise it returns an array with
+     * the following fields:
+     *   id
+     *   doc_id
+     *   page_number
+     *   img_number
+     *   seq
+     *   type
+     *   lang
+     *   num_cols
+     *   foliation  (a string or null)
+     * @param $docId
+     * @param $seq
+     * @return bool|array
+     */
     public function getPageInfoByDocSeq($docId, $seq) {
         $this->queryStats->countQuery('select');
         $row = $this->pagesDataTable->findRow([

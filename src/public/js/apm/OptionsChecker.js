@@ -35,48 +35,51 @@
 class OptionsChecker {
 
 
-  constructor(optionsDefinition, contextStr = '') {
-    this.optionsDefinition = optionsDefinition
+  constructor(options, contextStr) {
+    this.optionsDefinition = options
     this.contextStr = contextStr
   }
 
-  getCleanOptions(options) {
+  getCleanOptions(optionsObject) {
     let cleanOptions = {}
-    for(const option in this.optionsDefinition) {
-      //console.log('Processing ' + option )
-      let optionDef = this.optionsDefinition[option]
-      //console.log(optionDef)
-      if (typeof (options[option]) === 'undefined') {
-        if (optionDef.required) {
-          this.report('Required option ' + option + ' not found', true)
-          //continue
+    for(const optionName in this.optionsDefinition) {
+      let optionDefinition = this.optionsDefinition[optionName]
+
+      if (typeof (optionsObject[optionName]) === 'undefined') {
+        // optionName is NOT  in optionsObject
+        if (optionDefinition.required) {
+          this.error('Required option ' + optionName + ' not found')
         }
-        if (typeof (optionDef.default) === 'undefined') {
-          this.report('No default defined for option ' + option, true)
-          //continue
+        if (typeof (optionDefinition.default) === 'undefined') {
+          this.error('No default defined for option ' + optionName)
         }
-        cleanOptions[option] = optionDef.default
+        cleanOptions[optionName] = optionDefinition.default
         continue
       }
 
-      if (typeof (optionDef.default) !== 'undefined') {
-        cleanOptions[option] = optionDef.default
-      }
+      // optionName is present in optionsObject
+
 
       let typeOK = true
       let additionalCheckOk = true
-      if (typeof (optionDef.type) === 'string' && typeof (options[option]) !== optionDef.type) {
-        this.report('Option ' + option + ' must be of type ' + optionDef.type + ', ' + typeof (options[option]) + ' found, using default', false)
+      if (typeof (optionDefinition.type) === 'string' && typeof (optionsObject[optionName]) !== optionDefinition.type) {
+        this.warn('Option ' + optionName + ' must be of type ' + optionDefinition.type + ', ' + typeof (optionsObject[optionName]) + ' found, will use default')
         typeOK = false
       }
 
-      if (typeof (optionDef.checker) === 'function' && !optionDef.checker(options[option])) {
-        this.report('Option ' + option + ' does not pass checks: ' + optionDef.checkDescription + ', using default', false)
+      if (typeof (optionDefinition.checker) === 'function' && !optionDefinition.checker(optionsObject[optionName])) {
+        this.warn('Option ' + optionName + ' does not pass checks: ' + optionDefinition.checkDescription + ', will use default')
         additionalCheckOk = false
       }
 
       if (typeOK && additionalCheckOk) {
-        cleanOptions[option] = options[option]
+        cleanOptions[optionName] = optionsObject[optionName]
+      } else {
+        if (typeof (optionDefinition.default) !== 'undefined') {
+          cleanOptions[optionName] = optionDefinition.default
+        } else {
+          this.error('Given option ' + optionName + ' does not pass checks, but there is no default value defined')
+        }
       }
     }
     return cleanOptions
@@ -86,19 +89,17 @@ class OptionsChecker {
     return this.getCleanOptions({})
   }
 
-  report(message, isError = true) {
-    let msg = this.contextStr
+  errorMessage(msg) {
+    return this.contextStr + ': ' + msg
+  }
 
-     msg +=  ': ' + message
+  error(message) {
+    console.error(this.errorMessage(message))
+    throw this.errorMessage(message)
+  }
 
-
-
-    if (isError) {
-      console.error(msg)
-      throw msg
-    } else {
-      console.warn(msg)
-    }
+  warn(message) {
+    console.warn(this.errorMessage(message))
   }
 
 }

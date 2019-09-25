@@ -30,10 +30,12 @@ describe("OptionsChecker", function() {
       let oc = new OptionsChecker(optionsDef, 'Defaults Test')
 
       let defaults = oc.getDefaults()
-      //expect(defaults.option1).toBeDefined()
       expect(defaults.option1).toBe('defaultOption1')
-      //expect(defaults.option2).toBeDefined()
       expect(defaults.option2).toBe('defaultOption2')
+
+      let optionsDef2 = { option1: {}, option2: { default: 'defaultOption2'}}
+      let oc2 = new OptionsChecker(optionsDef2, 'No Default Test')
+      expect(function(){oc2.getDefaults()}).toThrow()
     })
 
     it('should throw error on missing required parameters', function () {
@@ -79,6 +81,15 @@ describe("OptionsChecker", function() {
       expect(d2.option1).toBe('myValue')
       expect(d2.option2).toBe(4)
     } )
+
+    it('should throw an error on undefined default for non-valid options', function () {
+      let optionsDef = {
+        option1 : { type: 'number'},
+      }
+
+      let oc = new OptionsChecker(optionsDef, 'Undefined Default Test')
+      expect(function(){oc.getCleanOptions({ option1: 'somestring' })}).toThrow()
+    })
 
   })
 

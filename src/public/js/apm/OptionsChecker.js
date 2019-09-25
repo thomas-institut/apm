@@ -48,7 +48,7 @@ class OptionsChecker {
       if (typeof (optionsObject[optionName]) === 'undefined') {
         // optionName is NOT  in optionsObject
         if (optionDefinition.required) {
-          this.error('Required option ' + optionName + ' not found')
+          this.error('Required option \'' + optionName + '\' not found')
         }
         if (typeof (optionDefinition.default) === 'undefined') {
           this.error('No default defined for option ' + optionName)

@@ -28,7 +28,7 @@ class AutomaticCollationTable {
     this.rtlClass = 'rtltext'
     this.ltrClass = 'ltrtext'
     
-    this.options = this.getCleanOptionsObject(this.getDefaultOptions(), options)
+    this.options = this.getCleanOptionsObject(options)
     
     this.availableWitnesses = this.options.availableWitnesses
     this.collationTableDiv = $('#collationtablediv')
@@ -193,8 +193,8 @@ class AutomaticCollationTable {
     return options
   }
   
-  getCleanOptionsObject(defaultOptions, options) {
-    let cleanOptions = defaultOptions
+  getCleanOptionsObject(options) {
+    let cleanOptions = this.getDefaultOptions()
     
     if (typeof(options.langDef) === 'object') {
       cleanOptions.langDef = options.langDef

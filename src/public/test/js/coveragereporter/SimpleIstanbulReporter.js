@@ -16,6 +16,9 @@
  *  
  */
 
+/**
+ * Class to generate a simple report from Istanbul's code coverage result object
+ */
 class SimpleIstanbulReporter {
   
   generateReport(c) {

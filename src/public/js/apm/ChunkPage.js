@@ -18,8 +18,56 @@
 
 /* eslint-env jquery */
 
+/**
+ * Mini JS app running in the Chunk Page
+ */
 class ChunkPage {
-  
+
+  getDefaultOptions() {
+    let options = {}
+
+    options.work = 'no-work'
+    options.chunk = 0
+    options.witnessInfo = []
+    options.collationLanguages = []
+    options.urlGenerator = {}
+    options.userId = -1
+    return options
+  }
+
+  getCleanOptions(inputOptions) {
+
+    let cleanOptions = this.getDefaultOptions()
+
+    if (typeof(inputOptions.work) === 'string') {
+      cleanOptions.work = inputOptions.work
+    }
+
+    if (typeof(inputOptions.chunk) === 'number' && inputOptions.chunk > 0) {
+      cleanOptions.chunk = inputOptions.chunk
+    }
+
+    if (typeof(inputOptions.witnessInfo) === 'object') {
+      cleanOptions.witnessInfo = inputOptions.witnessInfo
+    }
+
+    if (typeof(inputOptions.collationLanguages) === 'object') {
+      cleanOptions.collationLanguages = inputOptions.collationLanguages
+    }
+
+    if (typeof(inputOptions.urlGenerator) === 'object') {
+      cleanOptions.urlGenerator = inputOptions.urlGenerator
+    }
+
+    if (typeof(inputOptions.userId) === 'number') {
+      cleanOptions.userId = inputOptions.userId
+    }
+
+    return cleanOptions
+  }
+
+
+
   constructor(options) {
     
     this.options = this.getCleanOptions(options)
@@ -104,48 +152,7 @@ class ChunkPage {
          })
   }
   
-  getDefaultOptions() {
-    let options = {}
-    
-    options.work = 'no-work'
-    options.chunk = 0
-    options.witnessInfo = []
-    options.collationLanguages = []
-    options.urlGenerator = {}
-    options.userId = -1
-    return options
-  }
-  
-  getCleanOptions(inputOptions) {
-    
-    let cleanOptions = this.getDefaultOptions()
-    
-    if (typeof(inputOptions.work) === 'string') {
-      cleanOptions.work = inputOptions.work
-    }
-    
-    if (typeof(inputOptions.chunk) === 'number' && inputOptions.chunk > 0) {
-      cleanOptions.chunk = inputOptions.chunk
-    }
-    
-    if (typeof(inputOptions.witnessInfo) === 'object') {
-      cleanOptions.witnessInfo = inputOptions.witnessInfo
-    }
-    
-    if (typeof(inputOptions.collationLanguages) === 'object') {
-      cleanOptions.collationLanguages = inputOptions.collationLanguages
-    }
-    
-    if (typeof(inputOptions.urlGenerator) === 'object') {
-      cleanOptions.urlGenerator = inputOptions.urlGenerator
-    }
-    
-    if (typeof(inputOptions.userId) === 'number') {
-      cleanOptions.userId = inputOptions.userId
-    }
-    
-    return cleanOptions
-  }
+
   
   updateCollationTableLinks() {
     this.ctLinksElement.html('<ul id="ctlinks-ul"></ul>')

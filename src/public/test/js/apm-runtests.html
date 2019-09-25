@@ -24,7 +24,8 @@
   <!-- Things to test -->
   <!-- All files included here will be shown in the coverage report -->
   <script src="../../js/istanbul/apm/ApmUrlGenerator.js"></script>
-  <script src="../../js/istanbul/apm/QuickCollation.js"></script>
+<!--  <script src="../../js/istanbul/apm/QuickCollation.js"></script>-->
+  <script src="../../js/istanbul/apm/OptionsChecker.js"></script>
      
   <style>
       html {
@@ -40,7 +41,7 @@
   
   <script>
     
-    var myReporter = {
+    let myReporter = {
         jasmineDone: function(result) {
             console.log('Jasmine done!')
             console.log(window.__coverage__)
@@ -55,7 +56,8 @@
 
    <!-- SPEC files -->
    
-   <script src="apm-js-specs/ApmUrlGeneratorSpec.js"></script>
+  <script src="apm-js-specs/ApmUrlGeneratorSpec.js"></script>
+  <script src="apm-js-specs/OptionsCheckerSpec.js"></script>
 
 </head>
 <body>

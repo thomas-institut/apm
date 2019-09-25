@@ -33,6 +33,9 @@ class SimpleIstanbulReporter {
     let totalCoveredConditionCount = 0
     let totalCoveredFunctionCount = 0
     let totalCoveredStatementCount = 0
+
+    let nonCoveredStatements = {}
+
     
     for (const file in c) {
         let info = c[file]
@@ -66,9 +69,19 @@ class SimpleIstanbulReporter {
         }
 
         let coveredStatements = 0
+
         for (const snumber in info.s) {
             if (info.s[snumber]  > 0) {
                 coveredStatements++
+            } else {
+              let fileName = info.path
+              if (typeof(nonCoveredStatements[fileName]) === 'undefined') {
+                nonCoveredStatements[fileName] = []
+              }
+              nonCoveredStatements[fileName].push( {
+                snumber: snumber,
+                line: info.statementMap[snumber].start.line
+              })
             }
         }
 
@@ -95,7 +108,24 @@ class SimpleIstanbulReporter {
     html += this.generateTd(totalCoveredFunctionCount, totalFunctionCount)
     html += this.generateTd(totalCoveredStatementCount, totalStatementCount)
     html += '</tr>'
-    html += '</table></div>'
+    html += '</table>'
+
+    html += '<h3>Non-Covered Statements</h3>'
+    html += '<ul>'
+    for (const file in nonCoveredStatements) {
+      html += '<li>' + file
+      html += '<ul>'
+      for(const st of nonCoveredStatements[file]) {
+        html +=  '<li>Line ' + st.line + '</li> '
+      }
+      html += '</ul></li>'
+    }
+
+    html += '</ul> '
+
+    html += '</div>'
+
+    console.log(nonCoveredStatements)
     return html
   }
   

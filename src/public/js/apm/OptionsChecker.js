@@ -25,9 +25,17 @@
  * properties:
  *
  *   optionName:  {
- *     required: <true/false>  // optional, if not present it defaults to false
+ *     required: <true/false>  // optional, if not present it defaults to false (i.e., the option is not required)
  *     default:  <default Value> // if required===true, the default value will be ignored
- *     type: 'js type'   // optional type requirement for the option
+ *     type: 'type_string'   // optional type requirement for the option
+ *         type_string can be a Javascript type name:  'string', 'number', 'object', 'boolean', 'function'
+ *         it can also be one of the following:
+ *             'NonEmptyString'
+ *             'NumberGreaterThanZero'
+ *             'NonZeroNumber'
+ *             'Array'
+ *
+ *
  *     checker: function (v) { .... }  // optional function that performs additional checks on the given value
  *     checkDescription:  <string description of additional check>
  *   }
@@ -40,45 +48,75 @@ class OptionsChecker {
     this.contextStr = contextStr
   }
 
+  isOfType(value, type) {
+    switch (type) {
+      case 'string':
+      case 'number':
+      case 'object':
+      case 'boolean':
+      case 'function':
+        // normal javascript type
+        return (typeof(value) === type)
+
+      case 'NonEmptyString':
+        return typeof(value) === 'string' && value !== ''
+
+      case 'NumberGreaterThanZero':
+        return typeof(value) === 'number' && value > 0
+
+      case 'NonZeroNumber':
+        return typeof(value) === 'number' && value !== 0
+
+      case 'Array':
+        return Array.isArray(value)
+
+      default:
+        this.error('Unsupported type \'' + type + '\' found in options definition')
+
+    }
+  }
+
+  isUndefined(value) {
+    return typeof (value) === 'undefined'
+  }
+
   getCleanOptions(optionsObject) {
     let cleanOptions = {}
     for(const optionName in this.optionsDefinition) {
       let optionDefinition = this.optionsDefinition[optionName]
 
-      if (typeof (optionsObject[optionName]) === 'undefined') {
+      if (this.isUndefined(optionsObject[optionName])) {
         // optionName is NOT  in optionsObject
         if (optionDefinition.required) {
           this.error('Required option \'' + optionName + '\' not found')
         }
-        if (typeof (optionDefinition.default) === 'undefined') {
-          this.error('No default defined for option ' + optionName)
+        if (this.isUndefined( optionDefinition.default)) {
+          this.error('No default defined for ' + optionName)
         }
         cleanOptions[optionName] = optionDefinition.default
         continue
       }
 
       // optionName is present in optionsObject
-
-
       let typeOK = true
       let additionalCheckOk = true
-      if (typeof (optionDefinition.type) === 'string' && typeof (optionsObject[optionName]) !== optionDefinition.type) {
-        this.warn('Option ' + optionName + ' must be of type ' + optionDefinition.type + ', ' + typeof (optionsObject[optionName]) + ' found, will use default')
+      if (this.isOfType(optionDefinition.type, 'NonEmptyString') && !this.isOfType(optionsObject[optionName], optionDefinition.type)) {
+        this.warn(optionName + ' must be ' + optionDefinition.type + ', ' + optionsObject[optionName] + ' given, will assign default')
         typeOK = false
       }
 
-      if (typeof (optionDefinition.checker) === 'function' && !optionDefinition.checker(optionsObject[optionName])) {
-        this.warn('Option ' + optionName + ' does not pass checks: ' + optionDefinition.checkDescription + ', will use default')
+      if (this.isOfType(optionDefinition.checker, 'function') && !optionDefinition.checker(optionsObject[optionName])) {
+        this.warn(optionName + ' must be ' + optionDefinition.checkDescription + ', ' + optionsObject[optionName] + ' given, will assign default')
         additionalCheckOk = false
       }
 
       if (typeOK && additionalCheckOk) {
         cleanOptions[optionName] = optionsObject[optionName]
       } else {
-        if (typeof (optionDefinition.default) !== 'undefined') {
-          cleanOptions[optionName] = optionDefinition.default
+        if (this.isUndefined(optionDefinition.default))  {
+          this.error('Given ' + optionName + ' is not valid, but there is no default value defined')
         } else {
-          this.error('Given option ' + optionName + ' does not pass checks, but there is no default value defined')
+          cleanOptions[optionName] = optionDefinition.default
         }
       }
     }

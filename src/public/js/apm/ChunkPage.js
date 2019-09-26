@@ -27,9 +27,9 @@ class ChunkPage {
 
     let optionsDefinition = {
       work : { required: true, type: 'string'},
-      chunk : { required: true, type: 'number', checker: function(v){ return v>0 }},
-      witnessInfo : { type: 'object', default: []},
-      collationLanguages : { type: 'object', default: []},
+      chunk : { required: true, type: 'NumberGreaterThanZero' },
+      witnessInfo : { type: 'Array', default: []},
+      collationLanguages : { type: 'Array', default: []},
       urlGenerator: { required: true, type: 'object'},
       userId: { type: 'number', default: -1 }
     }

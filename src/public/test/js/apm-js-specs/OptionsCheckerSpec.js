@@ -49,24 +49,61 @@ describe("OptionsChecker", function() {
 
     })
 
+    it('should throw error on wrong type', function () {
+      let optionsDef = {
+         option2 : { type: 'someBadType', default: 'defaultOption2'}
+      }
+      let oc = new OptionsChecker(optionsDef, 'Wrong Type Test')
+
+      expect(function(){oc.getCleanOptions({ option2: 123 })}).toThrow()
+
+    })
+
     it ("should check types correctly", function () {
       let optionsDef = {
         option1 : { type: 'string', default: 'defaultOption1'},
-        option2 : { type: 'number', default: 2}
+        option2 : { type: 'number', default: 102},
+        option3 : { type: 'NonEmptyString', default: 'test'},
+        option4 : { type: 'NumberGreaterThanZero', default: 104},
+        option5 : { type: 'NonZeroNumber', default: 105},
+        option6 : { type: 'Array', default: []},
       }
 
       let oc = new OptionsChecker(optionsDef, 'Types Test')
 
-      let testOptions1 = { option1: 'myValue'}
+      let testOptions1 = {
+        option1: {},
+        option2: 'somestring',
+        option3: '',
+        option4: -1,
+        option5: 0,
+        option6: {}
+        }
       let d1 = oc.getCleanOptions(testOptions1)
-      expect(d1.option1).toBe('myValue')
-      expect(d1.option2).toBe(2)
+      expect(d1.option1).toBe('defaultOption1')
+      expect(d1.option2).toBe(102)
+      expect(d1.option3).toBe('test')
+      expect(d1.option4).toBe(104)
+      expect(d1.option5).toBe(105)
+      expect(d1.option6).toEqual([])
+
+      let testOptions2 = {
+        option1: 'myString',
+        option2: 1002,
+        option3: 'someString',
+        option4: 1004,
+        option5: 1005,
+        option6: [ 1, 2, 3 ]
+      }
+      let d2 = oc.getCleanOptions(testOptions2)
+      expect(d2).toEqual(testOptions2)
+
     } )
 
     it ("should call checker functions", function () {
       let optionsDef = {
         option1 : { type: 'string', default: 'defaultOption1'},
-        option2 : { type: 'number', default: 2, checker: function(v) { return v>0 }, checkDescription: 'value must be greater than 0'}
+        option2 : { type: 'number', default: 2, checker: function(v) { return v>0 }, checkDescription: 'greater than 0'}
       }
 
       let oc = new OptionsChecker(optionsDef, 'Checker Function Test')

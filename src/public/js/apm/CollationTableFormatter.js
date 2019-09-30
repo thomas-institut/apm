@@ -28,6 +28,18 @@ class CollationTableFormatter {
   
   
   constructor (options = {}){
+
+    let optionsDefinition = {
+      multipleRows: { type: 'boolean', default: true},
+      maxColumnsPerTable: { type: 'NumberGreaterThanZero', default: 15},
+      highlightVariants: { type: 'boolean', default: true},
+      showNormalizations: { type: 'boolean', default: false},
+      lang: { type: 'NonEmptyString', default: 'la'},
+    }
+
+    this.optionsChecker = new OptionsChecker(optionsDefinition, 'CollationTableFormatter')
+    this.options = this.optionsChecker.getCleanOptions(options)
+
     this.tokenNotPresent = '&mdash;'
     this.collationTableClass = 'collationtable'
     this.witnessTdClass = 'witness'
@@ -35,60 +47,12 @@ class CollationTableFormatter {
     this.normalizationPostfix = '<sub class="text-muted">&nbsp;<b>N</b></sub>'
     this.variantClassPrefix = 'variant'
     this.maxColumnsPerTable = 15
-    this.setOptions(options)
   }
-  
-  getDefaultOptions() {
-    let options = {}
-    
-    options.multipleRows = true
-    options.maxColumnsPerTable = 15
-    options.highlightVariants = true
-    options.showNormalizations = false
-    options.lang = 'la'
-    options.urlGenerator = null
-    
-    return options
-  }
-  
-  setOptions(options={}) {
-    this.options = this.getCleanOptionsObject(this.getDefaultOptions(), options)
-  }
-  
-  getOptions() {
+
+  getOptions () {
     return this.options
   }
-  
-  getCleanOptionsObject(defaultOptions, options) {
 
-    let cleanOptions = defaultOptions
-    
-    if (typeof(options.multipleRows) === 'boolean') {
-      cleanOptions.multipleRows = options.multipleRows
-    }
-    
-    if(typeof(options.maxColumnsPerTable) === 'number' && options.maxColumnsPerTable > 0) {
-      cleanOptions.maxColumnsPerTable = options.maxColumnsPerTable
-    }
-    
-    if (typeof(options.highlightVariants) === 'boolean') {
-      cleanOptions.highlightVariants = options.highlightVariants
-    }
-    
-    if (typeof(options.showNormalizations) === 'boolean') {
-      cleanOptions.showNormalizations = options.showNormalizations
-    }
-    
-    if (typeof(options.lang) === 'string') {
-      cleanOptions.lang = options.lang
-    }
-    
-    if (typeof(options.urlGenerator) === 'object') {
-      cleanOptions.urlGenerator = options.urlGenerator
-    }
-    return cleanOptions
-  }
-  
   generateCsv(data, sep = ',') {
     let sigla = data.sigla
     let collationTable = data.collationTable
@@ -116,13 +80,12 @@ class CollationTableFormatter {
     return '"' + text + '"'
   }
   
-  format(apiResponse, popoverClass, oneTimeOptions = {}) {
+  format(apiResponse, popoverClass) {
     
     let sigla = apiResponse.sigla
     let collationTable = apiResponse.collationTable
     let numWitnesses = sigla.length
-    let options = this.getCleanOptionsObject(this.options, oneTimeOptions)
-
+    let options = this.options
     let numColumns = collationTable[sigla[0]].length
     let numTables = 1
     let maxColumnsPerTable = numColumns

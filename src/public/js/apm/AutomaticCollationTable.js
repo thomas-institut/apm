@@ -28,7 +28,33 @@ class AutomaticCollationTable {
     this.rtlClass = 'rtltext'
     this.ltrClass = 'ltrtext'
     
-    this.options = this.getCleanOptionsObject(options)
+    //this.options = this.getCleanOptionsObject(options)
+
+    let optionsDefinition = {
+      langDef : { type: 'object', default: {
+          la: { code: 'la', name: 'Latin', rtl: false, fontsize: 3},
+          ar: { code: 'ar', name: 'Arabic', rtl: true, fontsize: 3},
+          he: { code: 'he', name: 'Hebrew', rtl: true, fontsize: 3}
+        }
+      },
+      availableWitnesses: { type: 'Array', default: [] },
+      loadNow: { type: 'boolean', default: false },
+      urlGen: { type: 'object', default: null},
+      includeExperimental: { type: 'boolean', default: false },
+      userId: { type: 'number', default: -1 },
+      isPreset: { type: 'boolean', default: false },
+      preset: { type: 'object', default: {
+          id: -1,
+          title: '',
+          userId: -1,
+          userName: 'nouser',
+          editable: false
+        }
+      },
+    }
+
+    let oc = new OptionsChecker(optionsDefinition, "AutomaticCollationTable")
+    this.options = oc.getCleanOptions(options)
     
     this.availableWitnesses = this.options.availableWitnesses
     this.collationTableDiv = $('#collationtablediv')
@@ -167,71 +193,7 @@ class AutomaticCollationTable {
         this.getCollationTable()
     }
   }
-  
-  
-  getDefaultOptions() {
-    let options = {}
-    
-    options.langDef = { 
-       la: { code: 'la', name: 'Latin', rtl: false, fontsize: 3},
-       ar: { code: 'ar', name: 'Arabic', rtl: true, fontsize: 3},
-       he: { code: 'he', name: 'Hebrew', rtl: true, fontsize: 3}
-     } 
-    options.availableWitnesses = []
-    options.loadNow = false
-    options.urlGen = null
-    options.includeExperimental = false
-    options.userId = -1
-    options.isPreset = false
-    options.preset = { 
-      id: -1, 
-      title: '', 
-      userId: -1, 
-      userName: 'nouser', 
-      editable: false
-    }
-    return options
-  }
-  
-  getCleanOptionsObject(options) {
-    let cleanOptions = this.getDefaultOptions()
-    
-    if (typeof(options.langDef) === 'object') {
-      cleanOptions.langDef = options.langDef
-    }
-    
-    if (typeof(options.availableWitnesses) === 'object') {
-      cleanOptions.availableWitnesses = options.availableWitnesses
-    }
-    
-    if (typeof(options.loadNow) === 'boolean') {
-      cleanOptions.loadNow = options.loadNow
-    }
-    
-    if(typeof(options.urlGen) === 'object'){
-      cleanOptions.urlGen = options.urlGen
-    }
-    
-    if (typeof(options.includeExperimental) === 'boolean') {
-      cleanOptions.includeExperimental = options.includeExperimental
-    }
-    
-    if(typeof(options.userId) === 'number'){
-      cleanOptions.userId = options.userId
-    }
-    
-    if(typeof(options.isPreset) === 'boolean'){
-      cleanOptions.isPreset = options.isPreset
-    }
-    
-    if(typeof(options.preset) === 'object'){
-      cleanOptions.preset = options.preset
-    }
-    
-    return cleanOptions
-   
-  }
-  
+
   getTitleFromOptions() {
     
     return this.editSettingsFormManager.getTitleFromSettings(this.apiCallOptions)

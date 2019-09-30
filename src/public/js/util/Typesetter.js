@@ -86,81 +86,28 @@
 class Typesetter {
   
   constructor(options = {}) {
-    //console.log('Constructing typesetter')
-    this.options = this.getSanitizedOptions(options)
+
+    let defaultFontSize = 16
+
+    let optionsDefinition = {
+      lineWidth: { type: 'NumberGreaterThanZero', default: 700},
+      defaultFontFamily: {type: 'NonEmptyString', default:'Helvetica' },
+      defaultFontSize: { type: 'NumberGreaterThanZero', default: defaultFontSize},
+      lineHeight: { type: 'NumberGreaterThanZero', default: defaultFontSize * 2},
+      rightToLeft: { type: 'boolean', default: false},
+      normalSpaceWidth: { type: 'number', default: 1}, // in ems
+      minSpaceWidth: { type: 'number', default: 0.8}, // in ems
+      justifyText: { type: 'boolean', default: false},
+      lineNumbersFontSizeMultiplier: { type: 'number', default: 0.8},
+      spaceBetweenParagraphs: { type: 'number', default: 0},
+      paragraphFirstLineIndent: { type: 'NumberGreaterThanZero', default: defaultFontSize * 2}
+    }
+
+    let oc = new OptionsChecker(optionsDefinition, 'Typesetter')
+    this.options = oc.getCleanOptions(options)
     
     this.emSize = this.getTextWidthWithDefaults('m')
     this.normalSpace = this.options.normalSpaceWidth * this.emSize
-    
-//    console.log(this.options)
-//    console.log('emSize = ' + this.emSize)
-//    console.log('normalSpace = ' + this.normalSpace)
-    
-  }
-  
-  getDefaultOptions() {
-    let options = {}
-    
-    options.lineWidth = 700
-    options.defaultFontFamily = 'Helvetica'
-    options.defaultFontSize = 16
-    options.lineHeight = options.defaultFontSize * 2
-    options.rightToLeft = false
-    options.normalSpaceWidth = 1  // in ems
-    options.minSpaceWidth = 0.8 // in ems
-    options.justifyText = false
-    options.lineNumbersFontSizeMultiplier = 0.8
-    options.spaceBetweenParagraphs = 0
-    options.paragraphFirstLineIndent = options.defaultFontSize * 2
-    
-    return options
-  }
-  
-  getSanitizedOptions(options = {}) {
-    
-    let sanitizedOptions = this.getDefaultOptions()
-    
-    if (typeof(options.lineWidth) === 'number') {
-      sanitizedOptions.lineWidth = options.lineWidth
-    }
-    
-    if (typeof(options.lineHeight) === 'number') {
-      sanitizedOptions.lineHeight = options.lineHeight
-    }
-    
-    if (typeof(options.defaultFontFamily) === 'string') {
-      sanitizedOptions.defaultFontFamily = options.defaultFontFamily
-    }
-    
-    if (typeof(options.defaultFontSize) === 'number') {
-      sanitizedOptions.defaultFontSize = options.defaultFontSize
-    }
-    
-    if (typeof(options.normalSpaceWidth) === 'number') {
-      sanitizedOptions.normalSpaceWidth = options.normalSpaceWidth
-    }
-    
-    if (typeof(options.minSpaceWidth) === 'number') {
-      sanitizedOptions.minSpaceWidth = options.minSpaceWidth
-    }
-    
-    if (typeof(options.rightToLeft === 'boolean')) {
-      sanitizedOptions.rightToLeft = options.rightToLeft
-    }
-    
-    if (typeof(options.lineNumbersFontSizeMultiplier) === 'number') {
-      sanitizedOptions.lineNumbersFontSizeMultiplier = options.lineNumbersFontSizeMultiplier
-    }
-    
-    if (typeof(options.paragraphFirstLineIndent) === 'number') {
-      sanitizedOptions.paragraphFirstLineIndent = options.paragraphFirstLineIndent
-    }
-    
-    if (typeof(options.spaceBetweenParagraphs) === 'number')  {
-      sanitizedOptions.spaceBetweenParagraphs = options.spaceBetweenParagraphs
-    }
-
-    return sanitizedOptions
   }
   
   getStringWidth(text, fontDefinitionString) {

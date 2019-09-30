@@ -63,7 +63,7 @@ class AutomaticCollationTableSettingsForm {
       applyButtonText: { type: 'string', default : 'Apply'},
       hideTitle: { type: 'boolean', default: false},
       isPreset: { type: 'boolean', default: false},
-      urlGen: { type: 'object', default: null},
+      urlGenerator: { type: 'object', objectClass: ApmUrlGenerator, required: true},
       userId: { type: 'number', default: -1 },
       noPresetTitle: { type: 'string', default : '--- [none] ---'},
       preset: { type: 'object', default: {

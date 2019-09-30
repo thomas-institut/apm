@@ -24,11 +24,35 @@ class EditionViewer {
     console.log('Constructing Edition Viewer')
     console.log('User options')
     console.log(userOptions)
-    let options = this.getCleanOptions(userOptions)
-    this.options = options
-    
+
+    let optionsDefinition = {
+      collationTokens: {type: 'Array', default: []},
+      apparatusArray:  {type: 'Array', default: []},
+      isRightToLeft: { type: 'boolean', default: false},
+      addGlue: { type: 'boolean', default: true},
+      fontFamily:  { type: 'NonEmptyString', default: 'Times New Roman'},
+      pageWidthInCm: { type: 'NumberGreaterThanZero', default: 21},
+      marginInCm: {type: 'object', default: {
+        top: 2,
+        left: 3,
+        bottom: 1,
+        right: 3
+      }},
+      mainTextFontSizeInPts: { type: 'NumberGreaterThanZero', default: 14},
+      apparatusFontSizeInPts: { type: 'NumberGreaterThanZero', default: 11},
+      mainTextLineHeightInPts: { type: 'NumberGreaterThanZero', default: 20},
+      apparatusLineHeightInPts: { type: 'NumberGreaterThanZero', default: 15},
+      normalSpaceWidthInEms: { type: 'NumberGreaterThanZero', default: 0.32},
+      textToLineNumbersInCm: { type: 'NumberGreaterThanZero', default: 0.5},
+      textToApparatusInCm: { type: 'NumberGreaterThanZero', default: 1}
+    }
+
+    let oc = new OptionsChecker(optionsDefinition, 'EditionViewer')
+    this.options = oc.getCleanOptions(userOptions)
+
     console.log('Options')
-    console.log(options)
+    console.log(this.options)
+    let options = this.options
     
     this.geometry = {
       lineWidth: Typesetter.cm2px(options.pageWidthInCm - 
@@ -102,60 +126,7 @@ class EditionViewer {
       this.typesetApparatuses.push(this.tsApparatus.typesetTokens(apparatusToTypeset))
     }
   }
-  
-  getDefaultOptions() {
-    let options = {
-      collationTokens: [],
-      apparatusArray: [],
-      isRightToLeft: false,
-      addGlue: true,
-      fontFamily: 'Times New Roman',
-      pageWidthInCm: 21,
-      marginInCm: { 
-        top: 2,
-        left: 3,
-        bottom: 1,
-        right: 3
-      },
-      mainTextFontSizeInPts: 14,
-      apparatusFontSizeInPts: 11,
-      mainTextLineHeightInPts: 20,
-      apparatusLineHeightInPts: 15,
-      normalSpaceWidthInEms: 0.32,
-      textToLineNumbersInCm: 0.5,
-      textToApparatusInCm: 1
-    }
-    
-    return options
-  }
-  
-  getCleanOptions(options) {
-    let cleanOptions = this.getDefaultOptions()
-    
-    if (typeof(options.collationTokens) === 'object') {
-      cleanOptions.collationTokens = options.collationTokens
-    }
-    
-    if (typeof(options.apparatusArray) === 'object') {
-      cleanOptions.apparatusArray = options.apparatusArray
-    }
-    
-    if (typeof(options.isRightToLeft) === 'boolean') {
-      cleanOptions.isRightToLeft = options.isRightToLeft
-    }
 
-    if (typeof(options.addGlue) === 'boolean') {
-      cleanOptions.addGlue = options.addGlue
-    }
-    
-    if (typeof(options.fontFamily) === 'string') {
-      cleanOptions.fontFamily = options.fontFamily
-    }
-    
-    return cleanOptions
-    
-  }
-  
   generateTokensToTypesetFromCollationTableTokens(collationTableTokens, addGlue = true) {
     // for now, just add whitespace in between the tokens
     let tokensToTypeset = []

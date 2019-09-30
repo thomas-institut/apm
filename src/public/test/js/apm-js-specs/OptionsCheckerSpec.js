@@ -128,6 +128,23 @@ describe("OptionsChecker", function() {
       expect(function(){oc.getCleanOptions({ option1: 'somestring' })}).toThrow()
     })
 
+    it ('should deal with object classes', function() {
+
+      let optionsDef = {
+        option1 : { type: 'object', objectClass: Date }
+      }
+
+      let oc = new OptionsChecker(optionsDef, 'objectClasses')
+
+      let d = oc.getCleanOptions({ option1: new Date()})
+
+      expect(d.option1).toBeDefined()
+      expect(d.option1 instanceof Date).toBeTrue()
+
+      expect(function(){oc.getCleanOptions({ option1: new String('test')})}).toThrow()
+
+    })
+
   })
 
 })

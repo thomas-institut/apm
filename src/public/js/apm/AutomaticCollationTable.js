@@ -39,7 +39,7 @@ class AutomaticCollationTable {
       },
       availableWitnesses: { type: 'Array', default: [] },
       loadNow: { type: 'boolean', default: false },
-      urlGen: { type: 'object', default: null},
+      urlGenerator: { type: 'object', objectClass: ApmUrlGenerator, required: true},
       includeExperimental: { type: 'boolean', default: false },
       userId: { type: 'number', default: -1 },
       isPreset: { type: 'boolean', default: false },
@@ -70,7 +70,7 @@ class AutomaticCollationTable {
     this.editionContainer = $('#editiondiv')
     this.editionDiv = $('#theedition')
     this.siglaDiv = $('#sigla')
-    this.apiCollationUrl = this.options.urlGen.apiAutomaticCollation()
+    this.apiCollationUrl = this.options.urlGenerator.apiAutomaticCollation()
     this.updating = false
     this.apiCallOptions = initialApiOptions
     // if there are no witnesses in the initialApiOptions witnesses array, 
@@ -133,7 +133,7 @@ class AutomaticCollationTable {
       containerSelector : this.editSettingsFormSelector, 
       availableWitnesses: this.availableWitnesses,
       langDef: this.options.langDef,
-      urlGenerator: this.options.urlGen,
+      urlGenerator: this.options.urlGenerator,
       userId:  this.options.userId,
       isPreset: this.options.isPreset,
     }

@@ -35,7 +35,7 @@
  *             'NonZeroNumber'
  *             'Array'
  *
- *
+ *     objectClass: SomeClass // if present and type==='object', the given value is checked to be a instance of this class
  *     checker: function (v) { .... }  // optional function that performs additional checks on the given value
  *     checkDescription:  <string description of additional check>
  *   }
@@ -100,9 +100,17 @@ class OptionsChecker {
       // optionName is present in optionsObject
       let typeOK = true
       let additionalCheckOk = true
+      // first, check just for the given type
       if (this.isOfType(optionDefinition.type, 'NonEmptyString') && !this.isOfType(optionsObject[optionName], optionDefinition.type)) {
         this.warn(optionName + ' must be ' + optionDefinition.type + ', ' + optionsObject[optionName] + ' given, will assign default')
         typeOK = false
+      }
+      // if we have an objectClass, check for it
+      if (typeOK && optionDefinition.type === 'object' && !this.isUndefined(optionDefinition.objectClass)) {
+        if (!(optionsObject[optionName] instanceof optionDefinition.objectClass )) {
+          this.warn(optionName + ' must be an object of class ' + optionDefinition.objectClass.name + ', ' + optionsObject[optionName].constructor.name  + ' given, will assign default')
+          typeOK = false
+        }
       }
 
       if (this.isOfType(optionDefinition.checker, 'function') && !optionDefinition.checker(optionsObject[optionName])) {

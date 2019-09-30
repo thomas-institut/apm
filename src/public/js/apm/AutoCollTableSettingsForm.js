@@ -41,16 +41,56 @@ class AutomaticCollationTableSettingsForm {
     this.notEnoughWitnessesWarningHtml = '<p class="text-danger">' + 
             '<i class="fa fa-exclamation-triangle" aria-hidden="true"></i>' + 
             ' Please select 2 or more witnesses to include in the collation table</p>'
-    
-    this.options = this.getCleanOptions(options)
+
+    let optionsDefinition = {
+      langDef : { type: 'object', default: {
+          la: { code: 'la', name: 'Latin', rtl: false, fontsize: 3},
+          ar: { code: 'ar', name: 'Arabic', rtl: true, fontsize: 3},
+          he: { code: 'he', name: 'Hebrew', rtl: true, fontsize: 3}
+        }
+      },
+      availableWitnesses: { type: 'Array', default: [] },
+      initialSettings: { type: 'object', default: {
+          work: 'no-work',
+          chunk: 0,
+          lang: 'la',
+          ignorePunctuation: true,
+          witnesses: []
+        }
+      },
+      containerSelector: { type: 'string', default : 'default-act-settings-form-selector'},
+      formTitle: { type: 'string', default : 'Automatic Collation Settings'},
+      applyButtonText: { type: 'string', default : 'Apply'},
+      hideTitle: { type: 'boolean', default: false},
+      isPreset: { type: 'boolean', default: false},
+      urlGen: { type: 'object', default: null},
+      userId: { type: 'number', default: -1 },
+      noPresetTitle: { type: 'string', default : '--- [none] ---'},
+      preset: { type: 'object', default: {
+          id: -1,
+          title: '',
+          userId: -1,
+          userName: 'nouser',
+          editable: false
+        }
+      },
+    }
+
+    let oc = new OptionsChecker(optionsDefinition, "AutoCollTableSettingsForm")
+    this.options = oc.getCleanOptions(options)
+
+    for (const w of this.options.availableWitnesses) {
+      if (typeof(w.id) !== 'number') {
+        console.error('Witness id not a number in ACT settings form options: ' +
+          typeof(w.id) + ' ' + w.id)
+      }
+    }
     
     this.witnessList = []
     this.initialSettings = this.options.initialSettings
 
     let containerSelector = this.options.containerSelector
-    //console.log('Building act setting form')
-    //console.log(this.options)
-    
+
     // Data for drag and drop
     this.dragSourceElement = null
     this.dragSourceParent = null 
@@ -101,97 +141,6 @@ class AutomaticCollationTableSettingsForm {
     this.presetInputText.on('keyup', this.genOnKeyUpPresetInputText())
     this.presetSaveButton.on('click', this.genOnClickPresetSaveButton())
     this.presetSave2Button.on('click', this.genOnClickPresetSave2Button())    
-  }
-  
-  
-  getDefaultOptions() {
-    let options = {}
-    
-    options.langDef = { 
-       la: { code: 'la', name: 'Latin', rtl: false, fontsize: 3},
-       ar: { code: 'ar', name: 'Arabic', rtl: true, fontsize: 3},
-       he: { code: 'he', name: 'Hebrew', rtl: true, fontsize: 3}
-     } 
-    options.availableWitnesses = []
-    options.initialSettings = {
-      work: 'no-work',
-      chunk: 0,
-      lang: 'la',
-      ignorePunctuation: true,
-      witnesses: []
-    }
-    options.containerSelector = 'default-act-settings-form-selector'
-    options.formTitle = 'Automatic Collation Settings'
-    options.applyButtonText = 'Apply'
-    options.hideTitle = false
-    options.isPreset = false
-    options.preset = { 
-      id: -1, 
-      title: '', 
-      userId: -1, 
-      userName: 'nouser', 
-      editable: false
-    }
-    options.noPresetTitle = '--- [none] ---'
-    options.urlGenerator = {}
-    options.userId = -1
-    return options
-  }
-  
-  getCleanOptions(inputOptions) {
-    let cleanOptions = this.getDefaultOptions()
-    
-    if (typeof(inputOptions.langDef) === 'object') {
-      cleanOptions.langDef = inputOptions.langDef
-    }
-    
-    if (typeof(inputOptions.availableWitnesses) === 'object') {
-      cleanOptions.availableWitnesses = inputOptions.availableWitnesses
-      for (const w of cleanOptions.availableWitnesses) {
-        if (typeof(w.id) !== 'number') {
-          console.error('Witness id not a number in ACT settings form options: ' + 
-                typeof(w.id) + ' ' + w.id)
-        }
-      }
-    }
-    
-    if (typeof(inputOptions.initialSettings) === 'object') {
-      cleanOptions.initialSettings = inputOptions.initialSettings
-    }
-   
-    if (typeof(inputOptions.containerSelector) === 'string') {
-      cleanOptions.containerSelector = inputOptions.containerSelector
-    }
-
-    if (typeof(inputOptions.formTitle) === 'string') {
-      cleanOptions.formTitle = inputOptions.formTitle
-    }
-    
-    if (typeof(inputOptions.hideTitle) === 'boolean') {
-      cleanOptions.hideTitle = inputOptions.hideTitle
-    }
-    
-    if (typeof(inputOptions.applyButtonText) === 'string') {
-      cleanOptions.applyButtonText = inputOptions.applyButtonText
-    }
-    
-    if (typeof(inputOptions.isPreset) === 'boolean') {
-      cleanOptions.isPreset = inputOptions.isPreset
-    }
-    
-    if (typeof(inputOptions.preset) === 'object') {
-      cleanOptions.preset = inputOptions.preset
-    }
-    
-    if (typeof(inputOptions.urlGenerator) === 'object') {
-      cleanOptions.urlGenerator = inputOptions.urlGenerator
-    }
-    
-    if (typeof(inputOptions.userId) === 'number') {
-      cleanOptions.userId = inputOptions.userId
-    }
-    return cleanOptions
-    
   }
   
   show(newSettings = false) {

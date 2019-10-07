@@ -33,24 +33,26 @@ use InvalidArgumentException;
  * of tokens coming out of a single witness possibly interspersed with empty
  * tokens. 
  * 
- * Each column represents a series of aligned tokens across the different witnesses.
+ * Each column represents a series of aligned tokens across the different
+ * witnesses.
  * 
- * Not all tokens from a witness are in the collation table. In fact, by default
- * the collation table class ignores all whitespace tokens. It can also be made
- * to ignore punctuation.
+ * Not all tokens from a witness are in the collation table. In fact, by
+ * default the collation table class ignores all whitespace tokens. It can
+ * also be made to ignore punctuation.
  * 
  * The CollationTable class by itself does not guarantee any "proper" alignment 
- * of the witnesses' tokens but provides suitable data to feed a collation engine 
- * to do the alignment work. It also provides a way to make itself reflect
- * the results of provided by such an engine.
+ * of the witnesses' tokens but provides suitable data to feed a collation
+ * engine to do the alignment work. It also provides a way to make itself
+ * reflect the results of provided by such an engine.
  *
- * A collation table can also be used to define derivative witnesses. One non-derivative witness
- * can be designated as the base witness and other rows are meant to represent differences to that base.
+ * A collation table can also be used to define derivative witnesses. One
+ * non-derivative witness can be designated as the base witness and other
+ * rows are meant to represent differences to that base.
  *
- * The collation table class can also be used to define an edition witness: one of the witnesses is taken to be
- * the edition text with the collation table itself representing how the source witnesses align with respect to
+ * The collation table class can also be used to define an edition witness:
+ * one of the witnesses is taken to be the edition text with the collation
+ * table itself representing how the source witnesses align with respect to
  * the text of the edition.
- *
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
@@ -65,10 +67,9 @@ class CollationTable {
     private $witnesses;
 
     /**
-     * @var array Array of arrays of Tokens, representing the tokens of a Witness present
-     * in the collation table
+     * @var array Array a cache for witness tokens, see getWitnessTokens()
      */
-    private $tokens;
+    private $witnessTokensCache;
     
     /* @var array */
     private $collationTable;
@@ -79,7 +80,7 @@ class CollationTable {
     
     public function __construct($ignorePunctuation = false) {
         $this->witnesses = [];
-        $this->tokens = [];
+        $this->witnessTokensCache = [];
         $this->collationTable = [];
         $this->ignorePunctuation = $ignorePunctuation;
     }
@@ -142,21 +143,8 @@ class CollationTable {
         }
         $this->collationTable[$siglum] = $tokenRefs;
         $this->witnesses[$siglum] = $witness;
-        // TODO: check if this is needed!
-        $this->tokens[$siglum]= $originalWitnessTokens;
     }
-    
-    
-    /**
-     * Returns the witness with the given $siglum
-     * 
-     * @param string $siglum
-     * @return type
-     */
-    public function getWitness(string $siglum) {
-        return $this->witnesses[$siglum];
-    }
-    
+
     /**
      * Returns a row of the collation table
      * @param string $siglum
@@ -211,23 +199,48 @@ class CollationTable {
                 $column[$siglum] = Token::emptyToken();
                 continue;
             }
-            $column[$siglum] = $this->tokens[$siglum][$ref];
+            $column[$siglum] = $this->getWitnessTokens($siglum)[$ref];
         }
         return $column;
     }
-    
+
     /**
-     * Returns the tokens for the witness identified by the given siglum that
-     * are present in the collation table.
-     * 
+     * Returns true if there is a witness with the given siglum
+     * in the collation table
+     *
+     * @param string $siglum
+     * @return bool
+     */
+    public function isSiglumInTable(string $siglum) {
+        return isset($this->witnesses[$siglum]);
+    }
+
+    /**
+     * Returns the witness with the given $siglum
+     *
+     * @param string $siglum
+     * @return Witness
+     */
+    public function getWitness(string $siglum) : Witness {
+        if ($this->isSiglumInTable($siglum)) {
+            return $this->witnesses[$siglum];
+        }
+        throw new InvalidArgumentException('Unknown witness');
+    }
+
+    /**
+     * Returns the tokens for the witness identified by the given siglum
+     *
      * @param string $siglum
      * @return Token[]
      */
     public function getWitnessTokens(string $siglum) : array {
-        if (isset($this->tokens[$siglum])) {
-            return $this->tokens[$siglum];
+
+        if (!isset($this->witnessTokensCache[$siglum])) {
+            $this->witnessTokensCache[$siglum] =$this->getWitness($siglum)->getTokens();
         }
-        return [];
+
+        return $this->witnessTokensCache[$siglum];
     }
     
     /**
@@ -254,7 +267,6 @@ class CollationTable {
      * @param string $siglum
      * @param int $index
      * @param int $count
-     * @return type
      */
     public function shiftToken(string $siglum, int $index, int $count) {
         $originalSize = count($this->collationTable[$siglum]);
@@ -322,7 +334,7 @@ class CollationTable {
         $collationEngineWitnesses = [];
         foreach($this->witnesses as $siglum => $witness) {
             $collationEngineTokens = [];
-            $witnessTokens = $this->tokens[$siglum];
+            $witnessTokens = $this->getWitnessTokens($siglum);
             foreach($this->collationTable[$siglum] as $columnNumber => $ref) {
                 $collationEngineToken = [];
                 $collationEngineToken['witnessRef'] = $ref;
@@ -467,7 +479,7 @@ class CollationTable {
     }
 
     /**
-     * Takes a Collatex output segment and aligns its token so that
+     * Takes a Collatex output segment and aligns its tokens so that
      * all witness have exactly the same number of tokens
      *
      * @param array $segment

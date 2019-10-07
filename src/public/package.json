@@ -7,7 +7,8 @@
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Use make test in js directory\"",
+    "run": "echo \"Use make run in js directory\""
   },
   "author": "Rafael Nájera <rafael.najera@uni-koeln.de>",
   "license": "GPL-3.0",

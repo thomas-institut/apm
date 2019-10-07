@@ -22,10 +22,12 @@ namespace APM;
 
 require "../vendor/autoload.php";
 
+use Complex\Exception;
 use PHPUnit\Framework\TestCase;
 use APM\Core\Collation\CollationTable;
 use APM\Core\Witness\StringWitness;
 use APM\Core\Token\Token;
+use Psr\Log\InvalidArgumentException;
 
 
 /**
@@ -117,8 +119,15 @@ class CollationTest extends TestCase {
         // Get witness tokens
         $tokens = $collation->getWitnessTokens('B');
         $this->assertEquals($w2->getTokens(), $tokens);
-        $tokens2 = $collation->getWitnessTokens('NonexistentSiglum');
-        $this->assertEquals([], $tokens2);
+
+        $exceptionRaised = false;
+        try {
+            $tokens2 = $collation->getWitnessTokens('NonexistentSiglum');
+        } catch (\InvalidArgumentException $e) {
+            $exceptionRaised = true;
+        }
+
+        $this->assertTrue($exceptionRaised);
 
         $expectedSize = $collation->getTokenCount();
         // Token shifting

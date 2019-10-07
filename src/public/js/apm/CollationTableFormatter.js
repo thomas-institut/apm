@@ -29,17 +29,7 @@ class CollationTableFormatter {
   
   constructor (options = {}){
 
-    let optionsDefinition = {
-      multipleRows: { type: 'boolean', default: true},
-      maxColumnsPerTable: { type: 'NumberGreaterThanZero', default: 15},
-      highlightVariants: { type: 'boolean', default: true},
-      showNormalizations: { type: 'boolean', default: false},
-      lang: { type: 'NonEmptyString', default: 'la'},
-    }
-
-    this.optionsChecker = new OptionsChecker(optionsDefinition, 'CollationTableFormatter')
-    this.options = this.optionsChecker.getCleanOptions(options)
-
+    this.setOptions(options)
     this.tokenNotPresent = '&mdash;'
     this.collationTableClass = 'collationtable'
     this.witnessTdClass = 'witness'
@@ -51,6 +41,20 @@ class CollationTableFormatter {
 
   getOptions () {
     return this.options
+  }
+
+  setOptions (options) {
+
+    let optionsDefinition = {
+      multipleRows: { type: 'boolean', default: true},
+      maxColumnsPerTable: { type: 'NumberGreaterThanZero', default: 15},
+      highlightVariants: { type: 'boolean', default: true},
+      showNormalizations: { type: 'boolean', default: false},
+      lang: { type: 'NonEmptyString', default: 'la'},
+    }
+
+    this.optionsChecker = new OptionsChecker(optionsDefinition, 'CollationTableFormatter')
+    this.options = this.optionsChecker.getCleanOptions(options)
   }
 
   generateCsv(data, sep = ',') {

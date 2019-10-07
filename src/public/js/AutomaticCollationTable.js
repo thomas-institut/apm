@@ -301,6 +301,9 @@ class AutomaticCollationTable {
 
     html += '<ul>'
     for(const witness of this.availableWitnesses) {
+      if (typeof(witnessInfo[witness.id]) === 'undefined') {
+        continue
+      }
       html += '<li>'
       html += '<h4>' + witness.title + '</h4>'
       html += '<ul>'

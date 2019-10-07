@@ -987,6 +987,11 @@ class DataManager
                         $lastAuthorId = $column['lastAuthorId'];
                         $lastAuthorUsername =$column['lastAuthorUsername'];
                     }
+                } else {
+                    $column['lastTime'] = '0000-00-00 00:00:00.000000';
+                    $column['lastAuthorName'] = 'nobody';
+                    $column['lastAuthorId'] = 0;
+                    $column['lastAuthorUsername'] = 'nobody';
                 }
             }
             $segmentLoc['lastTime'] = $lastTime;

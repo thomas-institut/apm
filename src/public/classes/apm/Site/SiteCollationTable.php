@@ -49,8 +49,8 @@ class SiteCollationTable extends SiteController
     const ERROR_INVALID_LANGUAGE = 'InvalidLanguage';
     
     const TEMPLATE_ERROR = 'chunk.collation.error.twig';
-    const TEMPLATE_QUICK_COLLATION = 'apm/collation.quick.twig';
-    const TEMPLATE_COLLATION_TABLE = 'apm/collationtable.twig';
+    const TEMPLATE_QUICK_COLLATION = 'collation.quick.twig';
+    const TEMPLATE_COLLATION_TABLE = 'collationtable.twig';
     
     
     public function quickCollationPage(Request $request, Response $response, $next)

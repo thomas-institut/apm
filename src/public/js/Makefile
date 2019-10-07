@@ -9,7 +9,7 @@ ISTANBUL_DIR=istanbul
 
 # JS files for testing
 TEST_JS=\
-	apm/OptionsChecker.js \
+	OptionsChecker.js \
 	ApmUrlGenerator.js \
 	Item.js \
 	Element.js \
@@ -22,7 +22,7 @@ TEST_JS=\
 
 # Typescript sources to be converted to JS
 TS_FILES=\
-	apm/OptionsChecker.ts
+	OptionsChecker.ts
 
 # Some parameters
 TSC=tsc

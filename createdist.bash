@@ -48,6 +48,10 @@ cp -R src/public/css $TMP_DIR
 cp -R src/public/fonts $TMP_DIR
 cp -R src/public/images $TMP_DIR
 cp -R src/public/js $TMP_DIR
+rm -fr $TMP_DIR/js/istanbul
+rm $TMP_DIR/js/*.bash
+rm $TMP_DIR/js/Makefile
+rm $TMP_DIR/js/.eslintrc.json
 cp -R src/public/node_modules $TMP_DIR
 cp -R src/public/plugins $TMP_DIR
 cp -R src/public/templates $TMP_DIR
@@ -63,6 +67,7 @@ cp src/public/setup.php $TMP_DIR
 cp src/public/version.php $TMP_DIR
 
 cd $TMP
+
 tar cfz $TAR_NAME $DIST_NAME
 rm -fr $DIST_NAME
 mv $TAR_NAME $CUR_DIR/$DIST_DIR/

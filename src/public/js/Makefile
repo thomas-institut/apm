@@ -18,7 +18,9 @@ TEST_JS=\
 	ApmUtil.js \
 	CollationTable.js \
 	ApmUrlGenerator.js \
-	CollationTableFormatter.js
+	CollationTableFormatter.js \
+	EditorData.js \
+	TranscriptionEditorBlots.js
 
 # Typescript sources to be converted to JS
 TS_FILES=\

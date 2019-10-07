@@ -83,15 +83,53 @@ class ApmUrlGenerator {
     return this.base + '/api/public/collation/quick'
   }
   
+
   siteCollationTable(work, chunkno, lang, ids=[]) {
-    
     let extra = ''
     if (ids.length > 0) {
       extra += '/'
       extra += ids.join('/')
     }
-    return this.base +  '/chunk/' + work + '/' + chunkno + '/collation/' + lang + extra
+    return this.base +  '/collation/auto/' + work + '/' + chunkno + '/' + lang + extra
   }
+
+  apiAutomaticCollation() {
+    return this.base + '/api/collation/auto'
+  }
+
+  apiGetPresets() {
+    return this.base + '/api/presets/get'
+  }
+
+  apiPostPresets() {
+    return this.base + '/api/presets/post'
+  }
+
+  apiDeletePreset(id) {
+    return this.base + '/api/presets/delete/' + id
+  }
+
+  apiGetAutomaticCollationPresets() {
+    return this.base + '/api/presets/act/get'
+  }
+
+  siteCollationTableCustom(work, chunkno, lang) {
+    return this.base + '/collation/auto/' + work + '/' + chunkno + '/' + lang + '/custom'
+  }
+
+  siteCollationTablePreset(work, chunkno, presetId) {
+    return this.base + '/collation/auto/' + work + '/' + chunkno + '/preset/' +  presetId
+  }
+
+  sitePageView(docId, pageNumber) {
+    return this.base + '/doc/' + docId + '/page/' + pageNumber + 'view'
+  }
+
+  siteWitness(work, chunkno, type, witnessId, output) {
+    return this.base + '/chunk/' + work + '/' + chunkno + '/witness/' + type + '/' + witnessId + '/' + output
+  }
+
+
 }
 
 

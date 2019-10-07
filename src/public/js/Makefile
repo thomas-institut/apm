@@ -10,7 +10,7 @@ ISTANBUL_DIR=istanbul
 # JS files for testing
 TEST_JS=\
 	apm/OptionsChecker.js \
-	apm/ApmUrlGenerator.js \
+	ApmUrlGenerator.js \
 	Item.js \
 	Element.js \
 	TranscriptionEditor.js \

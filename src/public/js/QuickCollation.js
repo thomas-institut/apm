@@ -31,11 +31,12 @@ class QuickCollation {
     this.textTitles = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
     this.updating = false
     this.ctf = new CollationTableFormatter()
+    this.popoverClass = 'ctpopover'
     
     this.collationTablesHtml = [ '']
     this.currentView = 0
    
-    
+    this.collationTableElement = $('#collationtablediv')
     this.collateButton = $('#collateButton')
     this.status = $('#status')
     this.collationTableDiv = $('#collationtablediv')
@@ -49,24 +50,18 @@ class QuickCollation {
     
     this.collationTableSection.addClass('hidden')
     
-  }
-  
-  // Simple tokenization
-  static tokenize(text) {
+    // Popovers
+    this.collationTableElement.popover({
+      container: 'body', 
+      selector: '.' + this.popoverClass, 
+      trigger: 'hover', 
+      delay: {show: 500, hide: 0},
+      placement: 'auto',
+      sanitize: false
+    })
     
-    let textTokens = text.split(' ')
+  }
 
-    let outputTokens = []
-    for (const token of textTokens) {
-      if (token !== '') {
-        outputTokens.push({t: token})
-      }
-    }
-    
-    return outputTokens
-  }
-  
-  
   genOnClickCollateButton()
   {
     let thisObject = this
@@ -80,12 +75,10 @@ class QuickCollation {
         if (theText === '') {
           continue
         }
-        let tokens = QuickCollation.tokenize(theText)
-        console.log(tokens)
         collatexInput.witnesses.push(
           { 
             id: textTitle, 
-            tokens: tokens
+            text: theText
           }
         )
       }
@@ -107,17 +100,15 @@ class QuickCollation {
         .done(function (data) { 
           thisObject.status.html('Collating... done, formatting table <i class="fa fa-spinner fa-spin fa-fw"></i>')
           console.log(data)
-          thisObject.collationTablesHtml = []
-          thisObject.collationTablesHtml.push(thisObject.ctf.format(data, false, 15))
-          thisObject.collationTablesHtml.push(thisObject.ctf.format(data, true, 8))
-          thisObject.collationTableDiv.html(thisObject.collationTablesHtml[0])
+
+          thisObject.collationTableDiv.html(thisObject.ctf.format(data, thisObject.popoverClass))
           thisObject.currentView = 0
           thisObject.updating = false
           thisObject.status.html('')
           thisObject.collationTableSection.removeClass('hidden')
         })
         .fail(function(resp) {
-          thisObject.status.html("Collating... fail with error code " + resp.status + ' :(')
+          thisObject.status.html("Collating... fail with error code " + resp.status + ' [' + resp.responseJSON.error + '] :(')
           thisObject.updating = false
         })
       

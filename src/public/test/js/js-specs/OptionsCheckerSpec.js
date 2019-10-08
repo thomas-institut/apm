@@ -72,7 +72,7 @@ describe("OptionsChecker", function() {
       let oc = new OptionsChecker(optionsDef, 'Types Test')
 
       let testOptions1 = {
-        option1: {},
+        option1: [1, 2, 3],
         option2: 'somestring',
         option3: '',
         option4: -1,

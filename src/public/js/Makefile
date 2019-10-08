@@ -31,8 +31,7 @@ TSC=tsc
 TSC_OPTIONS=--target ES6
 NYC=nyc
 
-all:
-	@echo "Please use make test or make run"
+all: run
 
 test: $(addprefix $(ISTANBUL_DIR)/,$(TEST_JS))
 

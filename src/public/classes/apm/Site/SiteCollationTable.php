@@ -263,13 +263,7 @@ class SiteCollationTable extends SiteController
             $docInfo = $dm->getDocById($witnessId);
             $availableWitnesses[] = [ 'type' => 'doc', 'id' => intVal($witnessId), 'title' => $docInfo['title']];
         }
-        
-        $canViewExperimentalData = 1;
-//        if ($dm->um->isUserAllowedTo($this->userInfo['id'], 'act-view-experimental-data')) {
-//            $canViewExperimentalData = 1;
-//        }
-        
-        
+
         $profiler->log($this->logger);
         
         $templateOptions = [
@@ -285,7 +279,6 @@ class SiteCollationTable extends SiteController
             'num_docs' => $partialCollation ? count($apiCallOptions['witnesses']) : count($validWitnesses),
             'total_num_docs' => count($validWitnesses),
             'availableWitnesses' => $availableWitnesses,
-            'canViewExperimentalData' => $canViewExperimentalData,
             'warnings' => $warnings
         ];
         if ($templateOptions['isPreset']) {

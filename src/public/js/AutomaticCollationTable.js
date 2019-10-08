@@ -40,7 +40,6 @@ class AutomaticCollationTable {
       availableWitnesses: { type: 'Array', default: [] },
       loadNow: { type: 'boolean', default: false },
       urlGenerator: { type: 'object', objectClass: ApmUrlGenerator, required: true},
-      includeExperimental: { type: 'boolean', default: false },
       userId: { type: 'number', default: -1 },
       isPreset: { type: 'boolean', default: false },
       preset: { type: 'object', default: {
@@ -210,9 +209,8 @@ class AutomaticCollationTable {
     this.status.html('Collating... <i class="fa fa-spinner fa-spin fa-fw"></i>')
     this.collationTableDiv.html('')
     this.collationEngineDetails.html('')
-    if (this.options.includeExperimental) {
-      this.editionContainer.addClass('hidden')
-    }
+     this.editionContainer.addClass('hidden')
+
     
     let thisObject = this
     $.post(
@@ -239,26 +237,23 @@ class AutomaticCollationTable {
       thisObject.redoButton.prop('disabled', false)
       thisObject.updating = false
       thisObject.collationEngineDetails.html(thisObject.getCollationEngineDetailsHtml(data.collationEngineDetails))
-      
-      // EXPERIMENTAL
-      if (thisObject.options.includeExperimental) {
-        let ev = new EditionViewer( {
-            collationTokens: data.quickEdition.mainTextTokens,
-            apparatusArray: data.quickEdition.apparatusArray,
-            isRightToLeft: (data.quickEdition.textDirection === 'rtl'),
-            addGlue: false
-        })
-      
-        thisObject.editionDiv.html(ev.getHtml())
-        let siglaHtml = '<ul class="siglalist">'
-        siglaHtml += '<li>' + 'Base witness: ' + data.quickEdition.baseSiglum + '</li>'
-        for(const abbr in data.quickEdition.abbrToSigla) {
-            siglaHtml += '<li>' + '<em>' + abbr + '</em>: ' + data.quickEdition.abbrToSigla[abbr] + '</li>'
-        }
-        siglaHtml += '</ul>'
-        thisObject.siglaDiv.html(siglaHtml)
-        //thisObject.editionContainer.removeClass('hidden')
+
+      let ev = new EditionViewer( {
+          collationTokens: data.quickEdition.mainTextTokens,
+          apparatusArray: data.quickEdition.apparatusArray,
+          isRightToLeft: (data.quickEdition.textDirection === 'rtl'),
+          addGlue: false
+      })
+
+      thisObject.editionDiv.html(ev.getHtml())
+      let siglaHtml = '<ul class="siglalist">'
+      siglaHtml += '<li>' + 'Base witness: ' + data.quickEdition.baseSiglum + '</li>'
+      for(const abbr in data.quickEdition.abbrToSigla) {
+          siglaHtml += '<li>' + '<em>' + abbr + '</em>: ' + data.quickEdition.abbrToSigla[abbr] + '</li>'
       }
+      siglaHtml += '</ul>'
+      thisObject.siglaDiv.html(siglaHtml)
+
       
     })
     .fail(function(resp) {

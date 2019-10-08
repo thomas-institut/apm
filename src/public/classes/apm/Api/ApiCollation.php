@@ -215,7 +215,7 @@ class ApiCollation extends ApiController
                 }
             }
             $partialCollation = true;
-            $this->ci->logger->debug('Partial collation', $witnessesToInclude);
+            //$this->ci->logger->debug('Partial collation', $witnessesToInclude);
             if (count($witnessesToInclude) < 2) {
                 $msg = 'Error in partial collation table request: need at least 2 witnesses to collate, got only ' . count($witnessesToInclude) . '.';
                 $this->logger->error($msg, $witnessesToInclude);

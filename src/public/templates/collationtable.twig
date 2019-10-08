@@ -30,13 +30,11 @@ $(document).ready(function()
     let apiCallOptions = JSON.parse("{{apiCallOptions|json_encode|e('js')}}")
     let availableWitnesses = JSON.parse("{{availableWitnesses|json_encode|e('js')}}")
     let urlGenerator = new ApmUrlGenerator('{{baseurl}}')
-    let includeExperimental = ({{canViewExperimentalData}} === 1)
-    
+
     let actOptions =  {   
         urlGenerator: urlGenerator,
         availableWitnesses: availableWitnesses,
         loadNow: true, 
-        includeExperimental: includeExperimental,
         userId: parseInt({{userinfo.id}}),
         isPreset:  ({{isPreset}} !== 0)
     }
@@ -85,13 +83,11 @@ $(document).ready(function()
         </div>
         <div class="col-md-3 text-right">
             <div id="collationtablebuttons" >
-                {% if canViewExperimentalData %}
-                <button title="Toggle Edition" 
+                <button title="Toggle Edition"
                     id="quickedbutton" class="btn btn-default btn-lg noborder">
                     <i class="fas fa-align-left" aria-hidden="true"></i>
                 </button>
-                {% endif %}
-                
+
                 <button title="Reload the collation table with the most recent data" 
                     id="redobutton" class="btn btn-default btn-lg noborder">
                     <i class="fas fa-sync" aria-hidden="true"></i>

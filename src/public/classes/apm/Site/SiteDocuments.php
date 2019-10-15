@@ -18,19 +18,21 @@
  */
 
 /**
- * @brief Site Controller class
+ * Site Documents class
+ *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 
 
-namespace AverroesProject\Site;
+namespace APM\Site;
 
+use AverroesProject\Data\DataManager;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use AverroesProject\Profiler\ApmProfiler;
 
 /**
- * Site Controller class
+ * SiteDocuments class
  *
  */
 class SiteDocuments extends SiteController
@@ -38,41 +40,39 @@ class SiteDocuments extends SiteController
 
     public function documentsPage(Request $request, Response $response, $next)
     {
-        $profiler = new ApmProfiler('documentsPage', $this->db);
-        $db = $this->db;
-        $docIds = $db->getDocIdList('title');
+        $profiler = new ApmProfiler('documentsPage', $this->dataManager);
+        $dataManager = $this->dataManager;
+        $docIds = $dataManager->getDocIdList('title');
         $profiler->lap('Doc Id List');
         $docs = array();
         foreach ($docIds as $docId){
             //$profiler->lap("Doc $docId - START");
             $doc = array();
-            $doc['numPages'] = $db->getPageCountByDocId($docId);
+            $doc['numPages'] = $dataManager->getPageCountByDocId($docId);
             //$profiler->lap("Doc $docId - getPageCount");
-            $transcribedPages = $db->getTranscribedPageListByDocId($docId);
+            $transcribedPages = $dataManager->getTranscribedPageListByDocId($docId);
             //$profiler->lap("Doc $docId - getTranscribedPageList");
             $doc['numTranscribedPages'] = count($transcribedPages);
-            $editorsIds = $db->getEditorsByDocId($docId);
+            $editorsIds = $dataManager->getEditorsByDocId($docId);
             //$profiler->lap("Doc $docId - getEditors");
             $doc['editors'] = [];
             foreach ($editorsIds as $edId){
                 $doc['editors'][] = 
-                        $this->db->userManager->getUserInfoByUserId($edId);
+                        $this->dataManager->userManager->getUserInfoByUserId($edId);
             }
-            $doc['docInfo'] = $db->getDocById($docId);
+            $doc['docInfo'] = $dataManager->getDocById($docId);
             $doc['tableId'] = "doc-$docId-table";
             array_push($docs, $doc);
             //$profiler->lap("Doc $docId - END");
         }
         
         $canManageDocuments = false;
-        if ($this->db->userManager->isUserAllowedTo($this->ci->userInfo['id'], 'docs-create-new')) {
+        if ($this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'docs-create-new')) {
             $canManageDocuments = true;
         }
-        $profiler->log($this->ci->logger);
-        return $this->ci->view->render($response, 'docs.twig', [
-            'userinfo' => $this->ci->userInfo, 
-            'copyright' => $this->ci->copyrightNotice,
-            'baseurl' => $this->ci->settings['baseurl'],
+        $profiler->log($this->logger);
+
+        return $this->renderPage($response, 'docs.twig', [
             'docs' => $docs,
             'canManageDocuments' => $canManageDocuments
         ]);
@@ -82,25 +82,25 @@ class SiteDocuments extends SiteController
     {
         
         $docId = $request->getAttribute('id');
-        $profiler = new ApmProfiler('showDocPage-' . $docId, $this->db);
-        $db = $this->db;
+        $profiler = new ApmProfiler('showDocPage-' . $docId, $this->dataManager);
+        $dataManager = $this->dataManager;
         $doc = [];
-        $doc['numPages'] = $db->getPageCountByDocId($docId);
-        $transcribedPages = $db->getTranscribedPageListByDocId($docId);
-        $pagesInfo = $db->getDocPageInfo($docId, \AverroesProject\Data\DataManager::ORDER_BY_SEQ);
+        $doc['numPages'] = $dataManager->getPageCountByDocId($docId);
+        $transcribedPages = $dataManager->getTranscribedPageListByDocId($docId);
+        $pagesInfo = $dataManager->getDocPageInfo($docId, DataManager::ORDER_BY_SEQ);
         $doc['numTranscribedPages'] = count($transcribedPages);
-        $editorsIds = $db->getEditorsByDocId($docId);
+        $editorsIds = $dataManager->getEditorsByDocId($docId);
         $doc['editors'] = array();
         foreach ($editorsIds as $edId){
             array_push($doc['editors'], 
-                    $this->db->userManager->getUserInfoByUserId($edId));
+                    $this->dataManager->userManager->getUserInfoByUserId($edId));
         }
-        $doc['docInfo'] = $db->getDocById($docId);
+        $doc['docInfo'] = $dataManager->getDocById($docId);
         $doc['tableId'] = "doc-$docId-table";
         $doc['pages'] = $this->buildPageArray($pagesInfo, 
                 $transcribedPages);
         
-        $docInfoHtml = $this->hm->callHookedMethods('get-docinfo-html-' . $doc['docInfo']['image_source'],
+        $docInfoHtml = $this->hookManager->callHookedMethods('get-docinfo-html-' . $doc['docInfo']['image_source'],
                 [ 'imageSourceData' => $doc['docInfo']['image_source_data']]);
 
         if (!is_string($docInfoHtml)) {
@@ -109,14 +109,12 @@ class SiteDocuments extends SiteController
         $doc['docInfoHtml'] = $docInfoHtml;
         
         $canDefinePages = false;
-        if ($this->db->userManager->isUserAllowedTo($this->ci->userInfo['id'], 'define-doc-pages')) {
+        if ($this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'define-doc-pages')) {
             $canDefinePages = true;
         }
-        $profiler->log($this->ci->logger);
-        return $this->ci->view->render($response, 'doc.showdoc.twig', [
-            'userinfo' => $this->ci->userInfo, 
-            'copyright' => $this->ci->copyrightNotice,
-            'baseurl' => $this->ci->settings['baseurl'],
+        $profiler->log($this->logger);
+
+        return $this->renderPage($response, 'doc.showdoc.twig', [
             'navByPage' => false,
             'canDefinePages' => $canDefinePages,
             'doc' => $doc
@@ -126,18 +124,14 @@ class SiteDocuments extends SiteController
     public function newDocPage(Request $request, Response $response, $next)
     {
      
-        if (!$this->db->userManager->isUserAllowedTo($this->ci->userInfo['id'], 'create-new-documents')){
-            $this->ci->logger->debug("User " . $this->ci->userInfo['id'] . ' tried to add new doc but is not allowed to do it');
-            return $this->ci->view->render($response, 'error.notallowed.twig', [
-                'userinfo' => $this->ci->userInfo, 
-                'copyright' => $this->ci->copyrightNotice,
-                'baseurl' => $this->ci->settings['baseurl'],
+        if (!$this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'create-new-documents')){
+            $this->logger->debug("User " . $this->userInfo['id'] . ' tried to add new doc but is not allowed to do it');
+            return $this->renderPage($response, 'error.notallowed.twig', [
                 'message' => 'You are not authorized to add new documents in the system'
             ]);
         }
-        
-        $db = $this->db;
-        $availableImageSources = $this->hm->callHookedMethods('get-image-sources', []);
+
+        $availableImageSources = $this->hookManager->callHookedMethods('get-image-sources', []);
         $imageSourceOptions = '';
         $docImageSourceIsImplemented = false;
         foreach($availableImageSources as $imageSource) {
@@ -160,10 +154,7 @@ class SiteDocuments extends SiteController
             $docTypesOptions .= '>' . $type[1] . '</option>';
         }
         
-        return $this->ci->view->render($response, 'doc.new.twig', [
-            'userinfo' => $this->ci->userInfo, 
-            'copyright' => $this->ci->copyrightNotice,
-            'baseurl' => $this->ci->settings['baseurl'],
+        return $this->renderPage($response, 'doc.new.twig', [
             'imageSourceOptions' => $imageSourceOptions,
             'langOptions' => $langOptions,
             'docTypesOptions' => $docTypesOptions
@@ -172,21 +163,18 @@ class SiteDocuments extends SiteController
     
     public function editDocPage(Request $request, Response $response, $next)
     {
-        if (!$this->db->userManager->isUserAllowedTo($this->ci->userInfo['id'], 'edit-documents')){
-            $this->ci->logger->debug("User " . $this->ci->userInfo['id'] . ' tried to edit a document but is not allowed to do it');
-            return $this->ci->view->render($response, 'error.notallowed.twig', [
-                'userinfo' => $this->ci->userInfo, 
-                'copyright' => $this->ci->copyrightNotice,
-                'baseurl' => $this->ci->settings['baseurl'],
+        if (!$this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'edit-documents')){
+            $this->logger->debug("User " . $this->userInfo['id'] . ' tried to edit a document but is not allowed to do it');
+            return $this->renderPage($response, 'error.notallowed.twig', [
                 'message' => 'You are not authorized to edit document settings'
             ]);
         }
         
         $docId = $request->getAttribute('id');
-        $db = $this->db;
-        $docInfo = $db->getDocById($docId);
+        $dataManager = $this->dataManager;
+        $docInfo = $dataManager->getDocById($docId);
         
-        $availableImageSources = $this->hm->callHookedMethods('get-image-sources', []);
+        $availableImageSources = $this->hookManager->callHookedMethods('get-image-sources', []);
         
         $imageSourceOptions = '';
         $docImageSourceIsImplemented = false;
@@ -221,17 +209,14 @@ class SiteDocuments extends SiteController
         }
         
         $canBeDeleted = false;
-        $nPages = $db->getPageCountByDocIdAllTime($docId);
-        $this->ci->logger->debug("nPages all time: " . $nPages);
+        $nPages = $dataManager->getPageCountByDocIdAllTime($docId);
+        $this->logger->debug("nPages all time: " . $nPages);
         if ($nPages === 0) {
             $canBeDeleted = true;
         }
         
-        return $this->ci->view->render($response, 'doc.edit.twig', [
-            'userinfo' => $this->ci->userInfo, 
-            'copyright' => $this->ci->copyrightNotice,
-            'baseurl' => $this->ci->settings['baseurl'],
-            'docInfo' => $docInfo, 
+        return $this->renderPage($response, 'doc.edit.twig', [
+            'docInfo' => $docInfo,
             'imageSourceOptions' => $imageSourceOptions,
             'langOptions' => $langOptions,
             'docTypesOptions' => $docTypesOptions,
@@ -243,36 +228,30 @@ class SiteDocuments extends SiteController
     
     public function defineDocPages(Request $request, Response $response, $next)
     {
-        $profiler = new ApmProfiler('defineDocPages', $this->db);
+        $profiler = new ApmProfiler('defineDocPages', $this->dataManager);
         
-        if (!$this->db->userManager->isUserAllowedTo($this->ci->userInfo['id'], 'define-doc-pages')){
-            $this->ci->logger->debug("User " . $this->ci->userInfo['id'] . ' tried to define document pages  but is not allowed to do it');
-            return $this->ci->view->render($response, 'error.notallowed.twig', [
-                'userinfo' => $this->ci->userInfo, 
-                'copyright' => $this->ci->copyrightNotice,
-                'baseurl' => $this->ci->settings['baseurl'],
+        if (!$this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'define-doc-pages')){
+            $this->logger->debug("User " . $this->userInfo['id'] . ' tried to define document pages  but is not allowed to do it');
+            return $this->renderPage($response, 'error.notallowed.twig', [
                 'message' => 'You are not authorized to edit document settings'
             ]);
         }
         
         $docId = $request->getAttribute('id');
-        $db = $this->db;
+        $db = $this->dataManager;
         $doc = [];
         $doc['numPages'] = $db->getPageCountByDocId($docId);
         $transcribedPages = $db->getTranscribedPageListByDocId($docId);
         $pagesInfo = $db->getDocPageInfo($docId);
-        $pageTypes  = $this->db->getPageTypeNames();
+        $pageTypes  = $this->dataManager->getPageTypeNames();
         $doc['numTranscribedPages'] = count($transcribedPages);
         $doc['docInfo'] = $db->getDocById($docId);
         $doc['tableId'] = "doc-$docId-table";
         $doc['pages'] = $this->buildPageArray($pagesInfo, 
                 $transcribedPages);
 
-        $profiler->log($this->ci->logger);
-        return $this->ci->view->render($response, 'doc.defdocpages.twig', [
-            'userinfo' => $this->ci->userInfo, 
-            'copyright' => $this->ci->copyrightNotice,
-            'baseurl' => $this->ci->settings['baseurl'],
+        $profiler->log($this->logger);
+        return $this->renderPage($response, 'doc.defdocpages.twig', [
             'pageTypes' => $pageTypes,
             'doc' => $doc
         ]);

@@ -41,7 +41,7 @@ class SiteChunks extends SiteController
     public function chunksPage(Request $request, Response $response, $next)
     {
        
-        $db = $this->db;
+        $db = $this->dataManager;
         $profiler = new ApmProfiler('chunksPage', $db);
 
         $workIds = $db->getWorksWithTranscriptions();

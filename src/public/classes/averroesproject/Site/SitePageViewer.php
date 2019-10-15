@@ -39,17 +39,17 @@ class SitePageViewer extends SiteController
         $docId = $request->getAttribute('doc');
         $pageNumber = $request->getAttribute('page');
 
-        $docInfo = $this->db->getDocById($docId);
-        $pageInfo = $this->db->getPageInfoByDocPage($docId, $pageNumber);
+        $docInfo = $this->dataManager->getDocById($docId);
+        $pageInfo = $this->dataManager->getPageInfoByDocPage($docId, $pageNumber);
         //$this->ci->logger->debug('Page info', $pageInfo);
-        $docPageCount = $this->db->getPageCountByDocId($docId);
-        $pagesInfo = $this->db->getDocPageInfo($docId, \AverroesProject\Data\DataManager::ORDER_BY_PAGE_NUMBER);
-        $transcribedPages = $this->db->getTranscribedPageListByDocId($docId);
+        $docPageCount = $this->dataManager->getPageCountByDocId($docId);
+        $pagesInfo = $this->dataManager->getDocPageInfo($docId, \AverroesProject\Data\DataManager::ORDER_BY_PAGE_NUMBER);
+        $transcribedPages = $this->dataManager->getTranscribedPageListByDocId($docId);
         $thePages = $this->buildPageArray($pagesInfo, $transcribedPages);
-        $imageUrl = $this->db->getImageUrl($docId, $pageInfo['img_number']);
-        $osdConfig = $this->db->getOpenSeaDragonConfig($docId, $pageInfo['img_number']);
-        $pageTypeNames  = $this->db->getPageTypeNames();
-        $activeWorks = $this->db->getActiveWorks();
+        $imageUrl = $this->dataManager->getImageUrl($docId, $pageInfo['img_number']);
+        $osdConfig = $this->dataManager->getOpenSeaDragonConfig($docId, $pageInfo['img_number']);
+        $pageTypeNames  = $this->dataManager->getPageTypeNames();
+        $activeWorks = $this->dataManager->getActiveWorks();
         $pageNumberFoliation = $pageNumber;
         $languagesArray = $this->ci->settings['languages'];
         if ($pageInfo['foliation'] !== NULL) {
@@ -82,18 +82,18 @@ class SitePageViewer extends SiteController
         $docId = $request->getAttribute('doc');
         $seq = $request->getAttribute('seq');
         
-        $docInfo = $this->db->getDocById($docId);
-        $pageId = $this->db->getPageIdByDocSeq($docId, $seq);
-        $pageInfo = $this->db->getPageInfo($pageId);
+        $docInfo = $this->dataManager->getDocById($docId);
+        $pageId = $this->dataManager->getPageIdByDocSeq($docId, $seq);
+        $pageInfo = $this->dataManager->getPageInfo($pageId);
         $pageNumber = $pageInfo['page_number'];
-        $docPageCount = $this->db->getPageCountByDocId($docId);
-        $pagesInfo = $this->db->getDocPageInfo($docId, \AverroesProject\Data\DataManager::ORDER_BY_SEQ);
-        $transcribedPages = $this->db->getTranscribedPageListByDocId($docId);
+        $docPageCount = $this->dataManager->getPageCountByDocId($docId);
+        $pagesInfo = $this->dataManager->getDocPageInfo($docId, \AverroesProject\Data\DataManager::ORDER_BY_SEQ);
+        $transcribedPages = $this->dataManager->getTranscribedPageListByDocId($docId);
         $thePages = $this->buildPageArray($pagesInfo, $transcribedPages);
-        $imageUrl = $this->db->getImageUrl($docId, $pageInfo['img_number']);
-        $osdConfig = $this->db->getOpenSeaDragonConfig($docId, $pageInfo['img_number']);
-        $pageTypeNames  = $this->db->getPageTypeNames();
-        $activeWorks = $this->db->getActiveWorks();
+        $imageUrl = $this->dataManager->getImageUrl($docId, $pageInfo['img_number']);
+        $osdConfig = $this->dataManager->getOpenSeaDragonConfig($docId, $pageInfo['img_number']);
+        $pageTypeNames  = $this->dataManager->getPageTypeNames();
+        $activeWorks = $this->dataManager->getActiveWorks();
         $languagesArray = $this->ci->settings['languages'];
         
         $pageNumberFoliation = $pageInfo['seq'];

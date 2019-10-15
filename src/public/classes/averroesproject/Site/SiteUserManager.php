@@ -41,8 +41,8 @@ class SiteUserManager extends SiteController
     {
         
         $profileUsername = $request->getAttribute('username');
-        $profiler = new ApmProfiler('userProfilePage-' . $profileUsername, $this->db);
-        if (!$this->db->um->userExistsByUsername($profileUsername)) {
+        $profiler = new ApmProfiler('userProfilePage-' . $profileUsername, $this->dataManager);
+        if (!$this->dataManager->um->userExistsByUsername($profileUsername)) {
             return $this->ci->view->render($response, 'user.notfound.twig', [
                         'userinfo' => $this->ci->userInfo,
                         'copyright' => $this->ci->copyrightNotice,
@@ -52,22 +52,22 @@ class SiteUserManager extends SiteController
         }
 
         $userProfileInfo = 
-                $this->db->um->getUserInfoByUsername($profileUsername);
+                $this->dataManager->um->getUserInfoByUsername($profileUsername);
         $currentUserId = $this->ci->userInfo['id'];
 
         $canEditProfile = $userProfileInfo['id'] === $currentUserId ||
-                $this->db->um->isUserAllowedTo($currentUserId, 'manageUsers');
+                $this->dataManager->um->isUserAllowedTo($currentUserId, 'manageUsers');
         $canMakeRoot = 
-                $this->db->um->isUserAllowedTo($currentUserId, 'makeRoot');
+                $this->dataManager->um->isUserAllowedTo($currentUserId, 'makeRoot');
         $userProfileInfo['isroot'] = 
-                $this->db->um->isRoot($userProfileInfo['id']);
+                $this->dataManager->um->isRoot($userProfileInfo['id']);
         $userProfileInfo['isreadonly'] = 
-                $this->db->um->userHasRole($userProfileInfo['id'], 'readOnly');
+                $this->dataManager->um->userHasRole($userProfileInfo['id'], 'readOnly');
         
 
         $profiler->lap("Basic Info");
         $userId = $userProfileInfo['id'];
-        $docIds = $this->db->getDocIdsTranscribedByUser($userId);
+        $docIds = $this->dataManager->getDocIdsTranscribedByUser($userId);
         
         $docListHtml = '';
         foreach($docIds as $docId) {
@@ -89,8 +89,8 @@ class SiteUserManager extends SiteController
     public function userManagerPage(Request $request, Response $response, 
             $next)
     {
-        $profiler = new ApmProfiler('userManagerPage', $this->db);
-        $um = $this->db->userManager;
+        $profiler = new ApmProfiler('userManagerPage', $this->dataManager);
+        $um = $this->dataManager->userManager;
         if (!$um->isUserAllowedTo($this->ci->userInfo['id'], 'manageUsers')){
             return $this->ci->view->render(
                     $response, 
@@ -104,7 +104,7 @@ class SiteUserManager extends SiteController
                 );
         }
         
-        $db = $this->db;
+        $db = $this->dataManager;
         $docIds = $db->getDocIdList('title');
         $users = $um->getUserInfoForAllUsers();
         
@@ -124,7 +124,7 @@ class SiteUserManager extends SiteController
         $curUserName = $this->ci->userInfo['username'];
         $userId = $this->ci->userInfo['id'];
         if ($username !== $curUserName && 
-                !$this->db->um->isUserAllowedTo($userId, 'edit-user-settings')){
+                !$this->dataManager->um->isUserAllowedTo($userId, 'edit-user-settings')){
             return $this->ci->view->render($response, 'error.notallowed.twig', [
                 'userinfo' => $this->ci->userInfo, 
                 'copyright' => $this->ci->copyrightNotice,
@@ -133,7 +133,7 @@ class SiteUserManager extends SiteController
             ]);
         }
         
-        if (!$this->db->um->userExistsByUsername($username)){
+        if (!$this->dataManager->um->userExistsByUsername($username)){
         return $this->ci->view->render($response, 'user.notfound.twig', [
             'userinfo' => $this->ci->userInfo, 
             'copyright' => $this->ci->copyrightNotice,
@@ -141,7 +141,7 @@ class SiteUserManager extends SiteController
             'theuser' => $username
         ]);
         }
-        $userInfo = $this->db->um->getUserInfoByUsername($username);
+        $userInfo = $this->dataManager->um->getUserInfoByUsername($username);
     
         return $this->ci->view->render($response, 'user.settings.twig', [
             'userinfo' => $this->ci->userInfo, 

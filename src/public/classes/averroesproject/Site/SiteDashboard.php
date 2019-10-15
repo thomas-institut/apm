@@ -40,7 +40,7 @@ class SiteDashboard extends SiteController
     public function dashboardPage(Request $request, Response $response, $next)
     {
         
-        $db = $this->db;
+        $db = $this->dataManager;
         $userId = (int) $this->ci->userInfo['id'];
         $profiler = new ApmProfiler('dashboardPage-' . $this->ci->userInfo['username'] . '-' . $userId, $db);
         $docIds = $db->getDocIdsTranscribedByUser($userId);

@@ -169,23 +169,23 @@ $app->get('/collation/quick', '\APM\Site\SiteCollationTable:quickCollationPage')
 
 
 // DOCS
-$app->get('/documents','\AverroesProject\Site\SiteDocuments:documentsPage')
+$app->get('/documents','\APM\Site\SiteDocuments:documentsPage')
         ->setName('docs')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
-$app->get('/doc/{id}/details','\AverroesProject\Site\SiteDocuments:showDocPage')
+$app->get('/doc/{id}/details','\APM\Site\SiteDocuments:showDocPage')
         ->setName('doc.showdoc')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
-$app->get('/doc/{id}/definepages','\AverroesProject\Site\SiteDocuments:defineDocPages')
+$app->get('/doc/{id}/definepages','\APM\Site\SiteDocuments:defineDocPages')
         ->setName('doc.definedocpages')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
-$app->get('/doc/{id}/edit','\AverroesProject\Site\SiteDocuments:editDocPage')
+$app->get('/doc/{id}/edit','\APM\Site\SiteDocuments:editDocPage')
         ->setName('doc.editdoc')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
-$app->get('/doc/new','\AverroesProject\Site\SiteDocuments:newDocPage')
+$app->get('/doc/new','\APM\Site\SiteDocuments:newDocPage')
         ->setName('doc.new')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 

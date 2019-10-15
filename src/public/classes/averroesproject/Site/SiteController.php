@@ -31,6 +31,7 @@ use APM\System\SystemManager;
 use AverroesProject\Data\DataManager;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
+use Slim\Container;
 
 /**
  * Site Controller class
@@ -39,17 +40,20 @@ use \Psr\Http\Message\ResponseInterface as Response;
 class SiteController
 {
 
+    /**
+     * @var Container
+     */
     protected $ci;
 
     /**
      * @var DataManager
      */
-    protected $db;
+    protected $dataManager;
 
     /**
      * @var HookManager
      */
-    protected $hm;
+    protected $hookManager;
 
     /**
      * @var SystemManager
@@ -60,8 +64,8 @@ class SiteController
     public function __construct( $ci)
     {
        $this->ci = $ci;
-       $this->db = $ci->db;
-       $this->hm = $ci->hm;
+       $this->dataManager = $ci->db;
+       $this->hookManager = $ci->hm;
        $this->systemManager = $ci->sm;
        $config = $this->ci->settings;
        $this->ci->copyrightNotice  = $config['app_name'] . " v" . 
@@ -72,13 +76,13 @@ class SiteController
 
     protected function genDocPagesListForUser($userId, $docId)
     {
-        $docInfo = $this->db->getDocById($docId);
+        $docInfo = $this->dataManager->getDocById($docId);
         $url = $this->ci->router->pathFor('doc.showdoc', ['id' => $docId]);
         $title = $docInfo['title'];
         $docListHtml = '<li>';
         $docListHtml .= "<a href=\"$url\" title=\"View Document\">$title</a>";
         $docListHtml .= '<br/><span style="font-size: 0.9em">';
-        $pageIds = $this->db->getPageIdsTranscribedByUser($userId, $docId);
+        $pageIds = $this->dataManager->getPageIdsTranscribedByUser($userId, $docId);
 
         $nPagesInLine = 0;
         $maxPagesInLine = 25;
@@ -88,7 +92,7 @@ class SiteController
                 $docListHtml .= "<br/>";
                 $nPagesInLine = 1;
             }
-            $pageInfo = $this->db->getPageInfo($pageId);
+            $pageInfo = $this->dataManager->getPageInfo($pageId);
             $pageNum = is_null($pageInfo['foliation']) ? $pageInfo['seq'] : $pageInfo['foliation'];
             $pageUrl = $this->ci->router->pathFor('pageviewer.docseq', ['doc' => $docId, 'seq'=>$pageInfo['seq']]);
             $docListHtml .= "<a href=\"$pageUrl\" title=\"View Page\">$pageNum</a>&nbsp;&nbsp;";

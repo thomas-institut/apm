@@ -26,11 +26,14 @@
 
 namespace APM\Site;
 
-use \Psr\Http\Message\ServerRequestInterface as Request;
+use APM\Plugin\HookManager;
+use Monolog\Logger;
 use \Psr\Http\Message\ResponseInterface as Response;
 
 use APM\System\ApmSystemManager;
 use AverroesProject\Data\DataManager;
+use Slim\Container;
+use Slim\Views\Twig;
 
 /**
  * Site Controller class
@@ -38,11 +41,15 @@ use AverroesProject\Data\DataManager;
  */
 class SiteController
 {
+    /**
+     * @var Container
+     */
+    protected $ci;
     
     /** @var ApmSystemManager */
     protected $systemManager;
     
-    /** @var \Slim\Views\Twig */
+    /** @var Twig */
     protected $view;
     
     /** @var array */
@@ -58,17 +65,24 @@ class SiteController
     protected $userInfo;
 
     /**
-     * @var \Monolog\Logger
+     * @var HookManager
+     */
+    protected $hookManager;
+
+    /**
+     * @var Logger
      */
     protected $logger;
     
     //Constructor
     public function __construct($ci)
     {
+        $this->ci = $ci;
         $this->systemManager = $ci->sm;
         $this->view = $ci->view;
         $this->config = $ci->config;
         $this->dataManager = $ci->db;
+        $this->hookManager = $ci->hm;
         $this->logger = $this->systemManager->getLogger();
         $this->userAuthenticated = false;
         $this->userInfo = [];
@@ -104,4 +118,30 @@ class SiteController
     protected function getBaseUrl() : string {
         return $this->systemManager->getBaseUrl();
     }
+
+    // Utility function
+    protected function buildPageArray($pagesInfo, $transcribedPages, $navByPage = true){
+        $thePages = array();
+        foreach ($pagesInfo as $page) {
+            $thePage = array();
+            $thePage['number'] = $page['page_number'];
+            $thePage['seq'] = $page['seq'];
+            $thePage['type'] = $page['type'];
+            if ($page['foliation'] === NULL) {
+                $thePage['foliation'] = '-';
+            } else {
+                $thePage['foliation'] = $page['foliation'];
+            }
+
+            $thePage['classes'] = '';
+            if (array_search($page['page_number'], $transcribedPages) === FALSE){
+                $thePage['classes'] =
+                    $thePage['classes'] . ' withouttranscription';
+            }
+            $thePage['classes'] .= ' type' . $page['type'];
+            array_push($thePages, $thePage);
+        }
+        return $thePages;
+    }
+
 }

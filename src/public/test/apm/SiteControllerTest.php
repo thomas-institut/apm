@@ -24,6 +24,7 @@ require 'SiteMockup/testconfig.php';
 require 'SiteMockup/SiteTestEnvironment.php';
 
 
+use AverroesProject\Data\DataManager;
 use PHPUnit\Framework\TestCase;
 
 
@@ -56,9 +57,20 @@ use AverroesProject\EditorialNote;
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 class SiteControllerTest extends TestCase {
+
+    /**
+     * @var bool|\Slim\Container
+     */
     static $ci;
+
+    /**
+     * @var DataManager
+     */
     static $dm;
-    
+
+    /**
+     * @var SiteTestEnvironment
+     */
     static $testEnvironment;
     
     public static function setUpBeforeClass()
@@ -163,9 +175,9 @@ class SiteControllerTest extends TestCase {
     public function testChunkAndWitnessPage()
     {
         self::$testEnvironment->emptyDatabase();
-        $editor1 = self::$dm->um->createUserByUserName('testeditor1');
-        $editor2 = self::$dm->um->createUserByUserName('testeditor2');
-        $editor3 = self::$dm->um->createUserByUsername('anothereditor');
+        $editor1 = self::$dm->userManager->createUserByUserName('testeditor1');
+        $editor2 = self::$dm->userManager->createUserByUserName('testeditor2');
+        $editor3 = self::$dm->userManager->createUserByUsername('anothereditor');
         
         $this->assertNotFalse($editor1);
         $this->assertNotFalse($editor2);
@@ -389,7 +401,7 @@ class SiteControllerTest extends TestCase {
         $editor1 = $witnessInfo['editors'][0];
 
         self::$ci['userInfo'] = ['id' => $editor1];
-        self::$dm->um->allowUserTo($editor1, 'act-view-experimental-data');
+        self::$dm->userManager->allowUserTo($editor1, 'act-view-experimental-data');
         
         $collationTableControllerObject = new SiteCollationTable(self::$ci);
         
@@ -438,7 +450,7 @@ class SiteControllerTest extends TestCase {
         $editor1 = $witnessInfo['editors'][0];
 
         self::$ci['userInfo'] = ['id' => $editor1];
-        self::$dm->um->allowUserTo($editor1, 'act-view-experimental-data');
+        self::$dm->userManager->allowUserTo($editor1, 'act-view-experimental-data');
         
         $collationTableControllerObject = new SiteCollationTable(self::$ci);
         
@@ -487,7 +499,7 @@ class SiteControllerTest extends TestCase {
         $editor1 = $witnessInfo['editors'][0];
 
         self::$ci['userInfo'] = ['id' => $editor1];
-        self::$dm->um->allowUserTo($editor1, 'act-view-experimental-data');
+        self::$dm->userManager->allowUserTo($editor1, 'act-view-experimental-data');
         
         $collationTableControllerObject = new SiteCollationTable(self::$ci);
         

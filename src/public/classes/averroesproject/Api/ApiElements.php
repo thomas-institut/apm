@@ -306,7 +306,7 @@ class ApiElements extends ApiController
             }
         }
         $this->logger->debug("Updating ednotes", $edNotes);
-        $this->ci->db->enm->updateNotesFromArray($edNotes);
+        $this->ci->db->edNoteManager->updateNotesFromArray($edNotes);
 
         $versionId = $this->ci->db->registerTranscriptionVersion($pageId, $columnNumber, $updateTime,
             $this->ci->userId, $versionDescr, $versionIsMinor, $versionIsReview);

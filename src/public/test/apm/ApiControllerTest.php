@@ -91,8 +91,8 @@ class ApiControllerTest extends TestCase {
     public function testQuickCollation()
     {
         self::$testEnvironment->emptyDatabase();
-        self::$editor1 = self::$dataManager->um->createUserByUserName('testeditor1');
-        self::$editor2 = self::$dataManager->um->createUserByUserName('testeditor2');
+        self::$editor1 = self::$dataManager->userManager->createUserByUserName('testeditor1');
+        self::$editor2 = self::$dataManager->userManager->createUserByUserName('testeditor2');
 
         $request = (new \GuzzleHttp\Psr7\ServerRequest('POST', ''));
         $inputResp = new \Slim\Http\Response();
@@ -182,8 +182,8 @@ class ApiControllerTest extends TestCase {
         $numBadWitnesses = 2;
 
         self::$testEnvironment->emptyDatabase();
-        self::$editor1 = self::$dataManager->um->createUserByUserName('testeditor1');
-        self::$editor2 = self::$dataManager->um->createUserByUserName('testeditor2');
+        self::$editor1 = self::$dataManager->userManager->createUserByUserName('testeditor1');
+        self::$editor2 = self::$dataManager->userManager->createUserByUserName('testeditor2');
 
         $request = (new \GuzzleHttp\Psr7\ServerRequest('POST', ''));
         $inputResp = new \Slim\Http\Response();
@@ -327,8 +327,8 @@ class ApiControllerTest extends TestCase {
         $lang = 'la';
 
         self::$testEnvironment->emptyDatabase();
-        self::$editor1 = self::$dataManager->um->createUserByUserName('testeditor1');
-        self::$editor2 = self::$dataManager->um->createUserByUserName('testeditor2');
+        self::$editor1 = self::$dataManager->userManager->createUserByUserName('testeditor1');
+        self::$editor2 = self::$dataManager->userManager->createUserByUserName('testeditor2');
         $request = (new \GuzzleHttp\Psr7\ServerRequest('POST', ''));
         $inputResp = new \Slim\Http\Response();
 
@@ -549,7 +549,7 @@ class ApiControllerTest extends TestCase {
         $this->assertEquals(ApiPresets::API_ERROR_INVALID_PRESET_DATA, $respData4['error']);
         
         // successful new preset
-        $apiUser = self::$dataManager->um->createUserByUserName('testApiUser');
+        $apiUser = self::$dataManager->userManager->createUserByUserName('testApiUser');
         $this->assertNotFalse($apiUser);
         self::$testEnvironment->setUserId($apiUser);
         $presetOwnedByNewApiUser = $presetData;

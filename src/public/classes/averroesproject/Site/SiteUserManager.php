@@ -90,7 +90,7 @@ class SiteUserManager extends SiteController
             $next)
     {
         $profiler = new ApmProfiler('userManagerPage', $this->db);
-        $um = $this->db->um;
+        $um = $this->db->userManager;
         if (!$um->isUserAllowedTo($this->ci->userInfo['id'], 'manageUsers')){
             return $this->ci->view->render(
                     $response, 

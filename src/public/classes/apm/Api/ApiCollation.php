@@ -230,9 +230,11 @@ class ApiCollation extends ApiController
         $collationTable = new CollationTable($ignorePunctuation);
         $itemIds = [];
         $lastChangeInData = '0000-00-00 00:00:00.000000';
+        $this->logger->debug('Witnesses to include', $witnessesToInclude);
         foreach ($witnessesToInclude as $id => $witnessLocInfo)  {
             $witnessType = $witnessLocInfo['type'];
             $witnessLocation = $witnessLocInfo['locations'];
+            $witnessId = $witnessLocInfo['id'];
 
             switch($witnessType) {
                 case DataManager::WITNESS_TRANSCRIPTION:
@@ -242,16 +244,17 @@ class ApiCollation extends ApiController
                         if ($segLocation['lastTime'] > $lastChangeInData) {
                             $lastChangeInData = $segLocation['lastTime'];
                         }
-                        $apItemStream = $dataManager->getItemStreamBetweenLocations($id, $segLocation['start'], $segLocation['end']);
+                        $apItemStream = $dataManager->getItemStreamBetweenLocations($witnessId, $segLocation['start'], $segLocation['end']);
                         foreach($apItemStream as $row) {
                             $itemIds[] = (int) $row['id'];
                         }
                         $segmentStreams[] = $apItemStream;
                     }
                     $edNoteArrayFromDb = $dataManager->edNoteManager->rawGetEditorialNotesForListOfItems($itemIds);
-                    $itemStream = new \AverroesProjectToApm\ItemStream($id, $segmentStreams, $language, $edNoteArrayFromDb);
+                    $itemStream = new \AverroesProjectToApm\ItemStream($witnessId, $segmentStreams, $language, $edNoteArrayFromDb);
                     $itemStrWitness = new \AverroesProjectToApm\ItemStreamWitness($workId, $chunkNumber, $itemStream);
-                    $docData = $dataManager->getDocById($id);
+                    $docData = $dataManager->getDocById($witnessId);
+                    $this->logger->debug('docData', [$id, $docData]);
                     $collationTable->addWitness($docData['title'], $itemStrWitness);
                     break;
 

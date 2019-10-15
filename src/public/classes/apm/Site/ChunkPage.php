@@ -95,7 +95,7 @@ class ChunkPage extends SiteController
         }
         
         $canViewWitnessDetails = false;
-        if ($dm->um->isUserAllowedTo($this->userInfo['id'], 'witness-view-details')) {
+        if ($dm->userManager->isUserAllowedTo($this->userInfo['id'], 'witness-view-details')) {
             $canViewWitnessDetails = true;
         }
         
@@ -227,11 +227,10 @@ class ChunkPage extends SiteController
     }
 
 
-    protected function buildWitnessDataFromDocData(array $docData, $workId, $chunkNumber, $db, $witnessNumber) : array  {
+    protected function buildWitnessDataFromDocData(array $docData, string $workId, int $chunkNumber, DataManager $db, $witnessNumber) : array  {
         $doc = $docData;
         $locations = $doc['segments'];
         $itemIds = [];
-        
         foreach($locations as $segLocation ) {
             if ($segLocation['valid']) {
                 $apItemStream = $db->getItemStreamBetweenLocations((int) $doc['id'], $segLocation['start'], $segLocation['end']);
@@ -244,7 +243,7 @@ class ChunkPage extends SiteController
         }
         
         //$this->logger->debug('Doc ' . $docData['id'] . ' segment count: ' . count($doc['segmentApItemStreams']));
-        $edNoteArrayFromDb = $db->enm->rawGetEditorialNotesForListOfItems($itemIds);
+        $edNoteArrayFromDb =    $db->edNoteManager->rawGetEditorialNotesForListOfItems($itemIds);
         //$this->logger->debug('Ednotes', $edNoteArrayFromDb);
         $itemStream = new \AverroesProjectToApm\ItemStream($doc['id'], $doc['segmentApItemStreams'], $doc['lang'], $edNoteArrayFromDb);
         $itemStreamWitness = new \AverroesProjectToApm\ItemStreamWitness($workId, $chunkNumber, $itemStream);
@@ -253,16 +252,16 @@ class ChunkPage extends SiteController
         //$this->logger->debug('Doc ' . $docData['id'] . ':: tokens: ' . count($doc['tokens']) . ', page span: ' . $docData['pageSpan']);
 
         $doc['itemStream'] = $itemStream;
-        $edNotes = $db->enm->getEditorialNotesForListOfItems($itemIds);
+        $edNotes = $db->edNoteManager->getEditorialNotesForListOfItems($itemIds);
         $noteAuthorIds = [];
         foreach($edNotes as $edNote) {
             $noteAuthorIds[$edNote->authorId] = 1;
         }
         $noteAuthorNames=[];
         foreach(array_keys($noteAuthorIds) as $authorId) {
-            $noteAuthorNames[$authorId] = $db->um->getUserInfoByUserId($authorId)['fullname'];
+            $noteAuthorNames[$authorId] = $db->userManager->getUserInfoByUserId($authorId)['fullname'];
         }
-        $userDirectory = new \AverroesProjectToApm\ApUserDirectory($db->um);
+        $userDirectory = new \AverroesProjectToApm\ApUserDirectory($db->userManager);
         $formatter = new \AverroesProjectToApm\Formatter\WitnessPageFormatter($userDirectory);
         $html = $formatter->formatItemStream($itemStream, $edNotes);
         $doc['formatted'] = $html;

@@ -21,6 +21,9 @@
 namespace AverroesProject\Api;
 
 
+use AverroesProject\Data\DataManager;
+use Monolog\Logger;
+
 /**
  * API Controller class
  *
@@ -28,7 +31,16 @@ namespace AverroesProject\Api;
 abstract class ApiController
 {
     protected $ci;
+
+    /**
+     * @var Logger
+     */
     protected $logger;
+
+    /**
+     * @var DataManager
+     */
+    protected $dataManager;
     
     // Error codes
     const API_NO_ERROR = 0;
@@ -60,7 +72,7 @@ abstract class ApiController
     public function __construct( $ci)
     {
        $this->ci = $ci;
-       $this->db = $ci->db;
+       $this->dataManager = $ci->db;
        $this->logger = $ci->logger->withName('API');
     }
 }

@@ -26,10 +26,12 @@
 
 namespace APM\Site;
 
+use AverroesProject\Data\DataManager;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
 use AverroesProject\Profiler\ApmProfiler;
+use APM\System\ApmSystemManager;
 
 /**
  * Site Controller class
@@ -47,6 +49,9 @@ class SiteCollationTable extends SiteController
     const ERROR_MISSING_REQUIRED_OPTION = 'MissingRequiredOption';
     const ERROR_UNKNOWN_PRESET = 'UnknownPreset';
     const ERROR_INVALID_LANGUAGE = 'InvalidLanguage';
+    const ERROR_INVALID_WITNESS_TYPE = 'InvalidWitnessType';
+    const ERROR_INVALID_WITNESS_ID = 'InvalidWitnessId';
+    const ERROR_UNRECOGNIZED_OPTION = 'UnrecognizedOption';
     
     const TEMPLATE_ERROR = 'chunk.collation.error.twig';
     const TEMPLATE_QUICK_COLLATION = 'collation.quick.twig';
@@ -80,14 +85,64 @@ class SiteCollationTable extends SiteController
             'partialCollation' => false,
             'isPreset' => 0
         ];
-         // get witnesses to include
-        if (isset($args['docs'])) {
-            $docsInArgs = explode('/', $args['docs']);
-            foreach ($docsInArgs as $docId) {
-                $docId = intval($docId);
-                if ($docId !== 0) {
-                    $collationPageOptions['witnesses'][] = ['type' => 'doc', 'id' => $docId];
+
+        // get witnesses to include
+        if (isset($args['witnesses'])) {
+            $witnessesInArgs = explode('/', $args['witnesses']);
+            foreach ($witnessesInArgs as $argWitnessSpec) {
+                if ($argWitnessSpec === '') {
+                    continue;
                 }
+                if (ctype_digit($argWitnessSpec)) {
+                    // for compatibility with existing API calls, if the argWitnessSpec is just a number,
+                    // it defaults to a transcription
+                    $docId = intval($argWitnessSpec);
+                    if ($docId !== 0) {
+                        $collationPageOptions['witnesses'][] = ['type' => DataManager::WITNESS_TRANSCRIPTION, 'id' => $docId];
+                    }
+                    continue;
+                }
+                $specs = explode('-', $argWitnessSpec);
+                if (count($specs) === 2) {
+                    $witnessType = $specs[0];
+
+                    if (!$this->dataManager->isWitnessTypeValid($witnessType)) {
+                        $msg = 'Invalid witness type given: ' . $witnessType;
+                        $this->logger->error($msg, [ 'args' => $args]);
+                        return $this->renderPage($response, self::TEMPLATE_ERROR, [
+                            'work' => $workId,
+                            'chunk' => $chunkNumber,
+                            'lang' => $language,
+                            'errorSignature' => self::ERROR_SIGNATURE_PREFIX . self::ERROR_INVALID_WITNESS_TYPE,
+                            'message' => $msg
+                        ]);
+                    }
+                    if (!ctype_digit($specs[1])) {
+                        $msg = 'Invalid witness id given: ' . $specs[1];
+                        $this->logger->error($msg, [ 'args' => $args]);
+                        return $this->renderPage($response, self::TEMPLATE_ERROR, [
+                            'work' => $workId,
+                            'chunk' => $chunkNumber,
+                            'lang' => $language,
+                            'errorSignature' => self::ERROR_SIGNATURE_PREFIX . self::ERROR_INVALID_WITNESS_ID,
+                            'message' => $msg
+                        ]);
+                    }
+                    $witnessId = intval($specs[1]);
+                    $collationPageOptions['witnesses'][] = ['type' =>  $witnessType, 'id' => $witnessId];
+                    continue;
+
+                }
+                //
+                $msg = 'Unrecognized option : ' . $argWitnessSpec;
+                $this->logger->error($msg, [ 'args' => $args]);
+                return $this->renderPage($response, self::TEMPLATE_ERROR, [
+                    'work' => $workId,
+                    'chunk' => $chunkNumber,
+                    'lang' => $language,
+                    'errorSignature' => self::ERROR_SIGNATURE_PREFIX . self::ERROR_UNRECOGNIZED_OPTION,
+                    'message' => $msg
+                ]);
             }
             $collationPageOptions['partialCollation'] = true;
         }
@@ -124,7 +179,7 @@ class SiteCollationTable extends SiteController
         $lang =  $presetData['lang'];
         $ignorePunctuation = $presetData['ignorePunctuation'];
         
-        $presetUserName = $this->dataManager->um->getUserInfoByUserId($preset->getUserId())['fullname'];
+        $presetUserName = $this->dataManager->userManager->getUserInfoByUserId($preset->getUserId())['fullname'];
         
         $collationPageOptions = [
             'work' => $workId,
@@ -142,8 +197,8 @@ class SiteCollationTable extends SiteController
                 'editable' => ( intval($this->userInfo['id']) === $preset->getUserId())
             ]
         ];
-         // get witnesses to include
 
+         // get witnesses to include
         foreach ($presetData['witnesses'] as $docId) {
             $docId = intval($docId);
             if ($docId !== 0) {

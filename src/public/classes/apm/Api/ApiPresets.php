@@ -50,13 +50,13 @@ class ApiPresets extends ApiController
     
     const COMMAND_NEW = 'new';
     const COMMAND_UPDATE = 'update';
-    
+
     /**
-     * API call to get all the presets by tool 
-     * 
+     * API call to get all the presets by tool
+     *
      * the data field inside the POST request must contain the following:
-     * 
-     *  tool: string, the name of the tool 
+     *
+     *  tool: string, the name of the tool
      *  userId: int or false, if an int is given the API will return the
      *      presets associated with the given userId. If false is given
      *      the API returns presets for all users
@@ -64,17 +64,18 @@ class ApiPresets extends ApiController
      *      to match the presets in the system. The given keys will be matched
      *      exactly. A key that is not present will be matched by any value
      *      of that key.
-     * 
-     *   
+     *
+     *
      * @param Request $request
      * @param Response $response
      * @param type $next
+     * @return type
      */
     public function  getPresets(Request $request, 
             Response $response, $next) {
         
         $apiCall = 'getPresets';
-        $profiler = new ApmProfiler($apiCall, $this->db);
+        $profiler = new ApmProfiler($apiCall, $this->dataManager);
         $inputData = $this->checkAndGetInputData($request, $response, $apiCall, ['tool','userId', 'keyArrayToMatch']);
         if (!is_array($inputData)) {
             return $inputData;
@@ -93,7 +94,7 @@ class ApiPresets extends ApiController
             return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_WRONG_TYPE]);
         }
         
-        if (!$this->sm->isToolValid($tool)) {
+        if (!$this->systemManager->isToolValid($tool)) {
             $this->logger->error("Unrecognized tool",
                     [ 'apiUserId' => $this->ci->userId, 
                       'apiError' => self::API_ERROR_UNRECOGNIZED_TOOL,
@@ -116,7 +117,7 @@ class ApiPresets extends ApiController
         
         $presets = [];
         
-        $presetManager = $this->sm->getPresetsManager();
+        $presetManager = $this->systemManager->getPresetsManager();
         
         if ($userId === false) {
             $presets = $presetManager->getPresetsByToolAndKeys($tool, $keyArrayToMatch);
@@ -141,28 +142,29 @@ class ApiPresets extends ApiController
             'runTime' => $profiler->getTotalTime()
             ]);
     }
-    
+
     /**
-     * API call to get all the presets for the automatic collation tool 
-     * 
+     * API call to get all the presets for the automatic collation tool
+     *
      * the data field inside the POST request must contain the following:
-     * 
+     *
      *  userId: int or false, if an int is given the API will return the
      *      presets associated with the given userId. If false is given
      *      the API returns presets for all users
      *  lang: string, a valid language code
      *  witnesses: 2 or more witnesses to match
-     * 
-     *   
+     *
+     *
      * @param Request $request
      * @param Response $response
      * @param type $next
+     * @return type
      */
     public function  getAutomaticCollationPresets(Request $request, 
             Response $response, $next) {
         
         $apiCall = 'getAutomaticCollationPresets';
-        $profiler = new ApmProfiler($apiCall, $this->db);
+        $profiler = new ApmProfiler($apiCall, $this->dataManager);
         $inputData = $this->checkAndGetInputData($request, $response, $apiCall, ['userId', 'lang', 'witnesses']);
         if (!is_array($inputData)) {
             return $inputData;
@@ -195,7 +197,7 @@ class ApiPresets extends ApiController
         // let's get those presets!
        
         
-        $presetManager = $this->sm->getPresetsManager();
+        $presetManager = $this->systemManager->getPresetsManager();
         $presets = [];
         if ($userId === false) {
             $presets = $presetManager->getPresetsByToolAndKeys($tool, ['lang' => $lang]);
@@ -214,7 +216,7 @@ class ApiPresets extends ApiController
         }
         $presetsInArrayForm = [];
         foreach($filteredPresets as $preset) {
-            $userInfo = $this->db->um->getUserInfoByUserId($preset->getUserId());
+            $userInfo = $this->dataManager->userManager->getUserInfoByUserId($preset->getUserId());
             $presetsInArrayForm[] = [
                 'userId' => $preset->getUserId(),
                 'userName' => $userInfo['fullname'],
@@ -236,7 +238,7 @@ class ApiPresets extends ApiController
             Response $response, $next) {
         
         $apiCall = 'savePreset';
-        $profiler = new ApmProfiler($apiCall, $this->db);
+        $profiler = new ApmProfiler($apiCall, $this->dataManager);
         $inputData = $this->checkAndGetInputData($request, $response, $apiCall, ['command', 'tool',  'userId', 'title', 'presetId', 'presetData']);
         if (!is_array($inputData)) {
             return $inputData;
@@ -258,7 +260,7 @@ class ApiPresets extends ApiController
         $title = $inputData['title'];
         
         // check that tool is valid
-        if (!$this->sm->isToolValid($tool)){
+        if (!$this->systemManager->isToolValid($tool)){
             $this->logger->error("Unrecognized tool " . $tool,
                     [ 'apiUserId' => $this->ci->userId, 
                       'apiError' => self::API_ERROR_UNRECOGNIZED_TOOL,
@@ -279,7 +281,7 @@ class ApiPresets extends ApiController
             return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_INVALID_PRESET_DATA]);
         }
         
-        $pm = $this->sm->getPresetsManager();
+        $pm = $this->systemManager->getPresetsManager();
         $pf = new PresetFactory();
         $apiUserId = $this->ci->userId;
         if ($command === self::COMMAND_NEW) {
@@ -347,10 +349,10 @@ class ApiPresets extends ApiController
      public function deletePreset(Request $request, 
             Response $response, $next) {
         $apiCall = 'deletePreset';
-        $profiler = new ApmProfiler($apiCall, $this->db);
+        $profiler = new ApmProfiler($apiCall, $this->dataManager);
         $presetId = intval($request->getAttribute('id'));
         
-        $pm = $this->sm->getPresetsManager();
+        $pm = $this->systemManager->getPresetsManager();
         
         $currentPreset = $pm->getPresetById($presetId);
         if ($currentPreset === false) {

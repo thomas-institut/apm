@@ -34,7 +34,7 @@ class ApiCollation extends ApiController
     public function quickCollation(Request $request, 
             Response $response, $next)
     {
-        $profiler = new ApmProfiler('quickCollation', $this->db);
+        $profiler = new ApmProfiler('quickCollation', $this->dataManager);
         
         $rawData = $request->getBody()->getContents();
         parse_str($rawData, $postData);

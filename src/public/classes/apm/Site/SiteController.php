@@ -56,6 +56,11 @@ class SiteController
     
     /** @var array */
     protected $userInfo;
+
+    /**
+     * @var \Monolog\Logger
+     */
+    protected $logger;
     
     //Constructor
     public function __construct($ci)

@@ -20,6 +20,8 @@
 
 namespace AverroesProject\Data;
 
+use APM\Core\Witness\Witness;
+use APM\System\ApmSystemManager;
 use AverroesProject\TxText\Item;
 use AverroesProject\TxText\ItemArray;
 use AverroesProject\ColumnElement\Element;
@@ -28,8 +30,8 @@ use DataTable\MySqlDataTable;
 use DataTable\MySqlDataTableWithRandomIds;
 use AverroesProject\Algorithm\MyersDiff;
 use AverroesProject\Algorithm\Utility;
-use AverroesProject\Plugin\HookManager;
-
+use APM\Plugin\HookManager;
+use Monolog\Logger;
 
 use DataTable\MySqlUnitemporalDataTable;
 use \PDO;
@@ -45,6 +47,12 @@ class DataManager
     
     const ORDER_BY_PAGE_NUMBER = 100;
     const ORDER_BY_SEQ = 101;
+
+    // Witness Types
+    const WITNESS_TRANSCRIPTION = 'transcription';
+    const WITNESS_PLAINTEXT = 'plaintext';
+
+    const VALID_WITNESS_TYPES = [ self::WITNESS_TRANSCRIPTION, self::WITNESS_PLAINTEXT];
     
     /**
      *
@@ -67,15 +75,14 @@ class DataManager
      *
      * @var MySqlHelper
      */
-    private $dbh;
+    private $databaseHelper;
     
     /**
      *
      * @var EdNoteManager 
      */
-    public $enm; 
-    
-    
+    public $edNoteManager;
+
     /**
      *
      * @var DataTable\MySqlUnitemporalDataTable
@@ -86,7 +93,7 @@ class DataManager
      *
      * @var Data\UserManager
      */
-    public $um;
+    public $userManager;
     
     
      /**
@@ -131,29 +138,36 @@ class DataManager
      *
      * @var HookManager
      */
-    public $hm;
+    public $hookManager;
     
     
     private $langCodes;
+
+
     /**
      * Tries to initialize and connect to the MySQL database.
-     * 
-     * Throws an error if there's no connection 
+     *
+     * Throws an error if there's no connection
      * or if the database is not setup properly.
+     * @param $dbConn
+     * @param array $tableNames
+     * @param Logger $logger
+     * @param HookManager $hm
+     * @param array $langCodes
      */
-    function __construct($dbConn, $tableNames, $logger, $hm, $langCodes = [])
+    function __construct(\PDO $dbConn, array $tableNames, Logger $logger, HookManager $hm, array $langCodes = [])
     {
         $this->dbConn = $dbConn;
         $this->tNames = $tableNames;
         $this->logger = $logger;
-        $this->hm = $hm;
+        $this->hookManager = $hm;
         $this->langCodes = $langCodes;
+
         $this->queryStats = new QueryStats();
-        
-        $this->dbh = new MySqlHelper($dbConn, $logger);
-        $this->enm = new EdNoteManager($dbConn, $this->dbh, $tableNames, 
+        $this->databaseHelper = new MySqlHelper($dbConn, $logger);
+        $this->edNoteManager = new EdNoteManager($dbConn, $this->databaseHelper, $tableNames,
                 $logger);
-        $this->um = new UserManager(
+        $this->userManager = new UserManager(
             new MySqlDataTable($dbConn, 
                     $tableNames['users']),
             new MySqlDataTable($dbConn, $tableNames['relations']), 
@@ -184,11 +198,14 @@ class DataManager
     }
 
     /**
-     * @return array
      * Returns an array with the IDs of all the manuscripts with
      * some data in the system and the number of pages with data
+     *
+     * @param string $order
+     * @param bool $asc
+     * @return array
      */
-    function getDocIdList($order = '', $asc=true)
+    public function getDocIdList($order = '', $asc=true)
     {
         switch ($order){
             case 'title':
@@ -200,7 +217,7 @@ class DataManager
         }
         $query = "SELECT `id` FROM  " . $this->tNames['docs'] . $orderby;
         $this->queryStats->countQuery('select');
-        $r = $this->dbh->query($query);
+        $r = $this->databaseHelper->query($query);
         
         $docIds = [];
         while ($row = $r->fetch(PDO::FETCH_ASSOC)){
@@ -363,7 +380,7 @@ class DataManager
         $query = 'SELECT COUNT(*) FROM ' . $this->tNames['pages'] . 
                 ' WHERE `doc_id`=' . $docId . 
                 ' AND `valid_until`=\'9999-12-31 23:59:59.999999\'';
-        $res = $this->dbh->query($query);
+        $res = $this->databaseHelper->query($query);
         if ($res === false) {
             // This means a database error
             // Can't reproduce in testing for now
@@ -378,7 +395,7 @@ class DataManager
         
         $query = 'SELECT COUNT(*) FROM ' . $this->tNames['pages'] . 
                 ' WHERE `doc_id`=' . $docId;
-        $res = $this->dbh->query($query);
+        $res = $this->databaseHelper->query($query);
         if ($res === false) {
             // This means a database error
             // Can't reproduce in testing for now
@@ -394,7 +411,7 @@ class DataManager
     {
         $query = 'SELECT * FROM ' . $this->tNames['types_page'];
         $this->queryStats->countQuery('select');
-        $res = $this->dbh->query($query);
+        $res = $this->databaseHelper->query($query);
         if ($res === false) {
             // This means a database error
             // Can't reproduce in testing for now
@@ -409,7 +426,7 @@ class DataManager
          $query = 'SELECT dare_id, p.fullname, short_title FROM ' . $this->tNames['works'] . 
                  ' AS w JOIN (' . $this->tNames['people'] . ' AS p) ON (p.id=w.author_id) WHERE enabled=1' ;
         $this->queryStats->countQuery('select');
-        $res = $this->dbh->query($query);
+        $res = $this->databaseHelper->query($query);
         if ($res === false) {
             // This means a database error
             // Can't reproduce in testing for now
@@ -553,7 +570,7 @@ class DataManager
             " AND $tp.`valid_until`='9999-12-31 23:59:59.999999'" .
             " AND $te.`valid_until`='9999-12-31 23:59:59.999999'";
         
-        $r = $this->dbh->query($query);
+        $r = $this->databaseHelper->query($query);
         
         $editors = [];
         while ($row = $r->fetch()) {
@@ -587,7 +604,7 @@ class DataManager
                 " AND `e`.`valid_until`='9999-12-31 23:59:59.999999'" . 
                 " AND `p`.`valid_until`='9999-12-31 23:59:59.999999'" . 
                 " ORDER BY p.`$orderby` ASC";
-        $r = $this->dbh->query($query);
+        $r = $this->databaseHelper->query($query);
         $pages = array();
          while ($row = $r->fetch(PDO::FETCH_ASSOC)){
             array_push($pages, $row['page_number']);
@@ -616,7 +633,7 @@ class DataManager
                  "ON (`$td`.id=`$tp`.doc_id) WHERE " . 
                  "`$tp`.`valid_until`='9999-12-31 23:59:59.999999' AND `$td`.id=$docId " . 
                  "ORDER BY `$tp`.$orderby ASC";
-        $res = $this->dbh->query($query);
+        $res = $this->databaseHelper->query($query);
         
         return $res->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -636,20 +653,21 @@ class DataManager
     function getDocById($docId)
     {
         $this->queryStats->countQuery('select');
-        return $this->dbh->getRowById($this->tNames['docs'], $docId);
+        return $this->databaseHelper->getRowById($this->tNames['docs'], $docId);
     }
     
     function getDocByDareId($dareId) {
         $this->queryStats->countQuery('select');
         return $this->docsDataTable->findRow(['image_source_data' => $dareId]);
     }
-    
+
     /**
      * Returns an array of document Ids for the documents
      * in which a user has done some transcription work
      * @param int $userId
+     * @return array
      */
-    public function getDocIdsTranscribedByUser(int $userId)
+    public function getDocIdsTranscribedByUser(int $userId) : array
     {
         $tp = $this->tNames['pages'];
         $td = $this->tNames['docs'];
@@ -664,7 +682,7 @@ class DataManager
                  "AND $te.valid_until='$eot' AND $tp.valid_until='$eot'" . 
                  "ORDER BY $td.title ASC";
 
-        $res = $this->dbh->query($query);
+        $res = $this->databaseHelper->query($query);
         if ($res === false) {
             return [];
         }
@@ -675,14 +693,15 @@ class DataManager
         }
         return $docIds;
     }
-    
+
     /**
      * Returns the page Ids transcribed by a user in a given document
-     * 
+     *
      * @param int $userId
      * @param int $docId
+     * @return array
      */
-    public function getPageIdsTranscribedByUser(int $userId, int $docId) 
+    public function getPageIdsTranscribedByUser(int $userId, int $docId) : array
     {
         $tp = $this->tNames['pages'];
         $td = $this->tNames['docs'];
@@ -698,7 +717,7 @@ class DataManager
                  "AND $te.valid_until='$eot' AND $tp.valid_until='$eot' " . 
                  "ORDER BY $tp.seq ASC";
 
-        $res = $this->dbh->query($query);
+        $res = $this->databaseHelper->query($query);
         if ($res === false) {
             return [];
         }
@@ -725,7 +744,7 @@ class DataManager
         
         $isd = $doc['image_source_data'];
         
-        $url = $this->hm->callHookedMethods('get-image-url-' . $doc['image_source'],
+        $url = $this->hookManager->callHookedMethods('get-image-url-' . $doc['image_source'],
                 [ 'imageSourceData' => $isd, 
                    'imageNumber' => $imageNumber]);
 
@@ -744,7 +763,7 @@ class DataManager
         
         $isd = $doc['image_source_data'];
         
-        $url = $this->hm->callHookedMethods('get-openseadragon-config-' . $doc['image_source'],
+        $url = $this->hookManager->callHookedMethods('get-openseadragon-config-' . $doc['image_source'],
                 [ 'imageSourceData' => $isd, 
                    'imageNumber' => $imageNumber]);
 
@@ -838,7 +857,7 @@ class DataManager
             " AND $te.`valid_until`='9999-12-31 23:59:59.999999'" . 
             " ORDER BY $ti.text";
         
-        $r = $this->dbh->query($query);
+        $r = $this->databaseHelper->query($query);
         
         $works = [];
         while ($row = $r->fetch()) {
@@ -860,13 +879,20 @@ class DataManager
             return false;
         }
         
-        $authorInfo = $this->um->getPersonInfo((int) $workInfo['author_id']);
+        $authorInfo = $this->userManager->getPersonInfo((int) $workInfo['author_id']);
         
         $workInfo['author_name'] = $authorInfo['fullname'];
         return $workInfo;
     }
-    
-    public function getChunksWithTranscriptionForWorkId($workId)
+
+    /**
+     * Gets an array of chunk Numbers with a transcription in the database for
+     * the given work id
+     *
+     * @param $workId
+     * @return string[]
+     */
+    public function getChunksWithTranscriptionForWorkId($workId) : array
     {
         $ti = $this->tNames['items'];
         $te = $this->tNames['elements'];
@@ -881,7 +907,7 @@ class DataManager
             " AND $te.`valid_until`='9999-12-31 23:59:59.999999'" . 
             " ORDER BY $ti.target ASC";
         
-        $r = $this->dbh->query($query);
+        $r = $this->databaseHelper->query($query);
         
         $chunks = [];
         while ($row = $r->fetch()) {
@@ -889,8 +915,47 @@ class DataManager
         }
         return $chunks;
     }
-    
-    public function getDocsForChunk($workId, $chunkNumber)
+
+    /**
+     * Returns a list of witnesses that include the given work and chunk numbers
+     *
+     * Each element of the resulting array contains two properties:
+     *   type:  witness Type (e.g., 'transcription')
+     *   id:   witness Id
+     *
+     * @param string $workId
+     * @param int $chunkNumber
+     * @return array
+     */
+    public function getWitnessesForChunk(string $workId, int $chunkNumber) : array {
+
+        // Get transcriptions
+        $transcriptionWitnesses = $this->getDocInfosForChunk($workId, $chunkNumber);
+
+        // Get texts
+
+        // Get other witness types
+
+        // Assemble return array
+        $witnessesForChunk = [];
+
+        foreach($transcriptionWitnesses as $tw) {
+            $witnessesForChunk[] =  [
+                'type' => self::WITNESS_TRANSCRIPTION,
+                'id' => $tw->id
+            ];
+        }
+        return $witnessesForChunk;
+    }
+
+    /**
+     * returns a list of docs
+     *
+     * @param string $workId
+     * @param int $chunkNumber
+     * @return array
+     */
+    public function getDocsForChunk(string $workId, int $chunkNumber) : array
     {
         $ti = $this->tNames['items'];
         $te = $this->tNames['elements'];
@@ -908,13 +973,35 @@ class DataManager
                 " AND $te.valid_until='9999-12-31 23:59:59.999999'".
                 " AND $tp.valid_until='9999-12-31 23:59:59.999999'";
         
-        $r = $this->dbh->query($query);
+        $r = $this->databaseHelper->query($query);
         
         $docs = [];
         while ($row = $r->fetch()) {
             $docs[] = $row;
         }
         return $docs;
+    }
+
+    /**
+     * Returns an array of DocInfo structures corresponding to the documents in the
+     * system whose transcription include some chunk mark for the given
+     * workId and chunk number
+     *
+     * @param string $workId
+     * @param int $chunkNumber
+     * @return DocInfo[]
+     */
+    public function getDocInfosForChunk(string $workId, int $chunkNumber) : array {
+
+        $docs = $this->getDocsForChunk($workId, $chunkNumber);
+
+        $docInfos = [];
+
+        foreach($docs as $row) {
+            $docInfos[] = $this->createDocInfoFromDbRow($row);
+        }
+
+        return $docInfos;
     }
     
     
@@ -1049,7 +1136,7 @@ class DataManager
             " AND $tp.valid_until='9999-12-31 23:59:59.999999'" . 
             " ORDER BY $tp.seq, $te.column_number, $te.seq, $ti.seq ASC";
         
-        $r = $this->dbh->query($query);
+        $r = $this->databaseHelper->query($query);
         
         $rows = [];
         while ($row = $r->fetch()) {
@@ -1164,7 +1251,7 @@ class DataManager
         $this->queryStats->countQuery('select');
         
         $query = "SELECT * from $ti WHERE type=" . Item::ADDITION . " AND target=$target AND valid_until='9999-12-31 23:59:59.999999' LIMIT 1";
-        $r = $this->dbh->query($query);
+        $r = $this->databaseHelper->query($query);
         
         return $r->fetch(PDO::FETCH_ASSOC);
     }
@@ -1173,7 +1260,7 @@ class DataManager
         $te = $this->tNames['elements'];
         $this->queryStats->countQuery('select');
         $query = "SELECT id from $te where type=" . Element::SUBSTITUTION . " AND reference=$reference AND valid_until='9999-12-31 23:59:59.999999' LIMIT 1";
-        $r = $this->dbh->query($query);
+        $r = $this->databaseHelper->query($query);
         $row = $r->fetch(PDO::FETCH_ASSOC);
         if ($row) {
             return (int) $row['id'];
@@ -1199,7 +1286,7 @@ class DataManager
             " AND $tp.valid_until='9999-12-31 23:59:59.999999'" . 
             " ORDER BY $ti.seq ASC";
         
-        $r = $this->dbh->query($query);
+        $r = $this->databaseHelper->query($query);
         
         $rows = [];
         while ($row = $r->fetch(PDO::FETCH_ASSOC)) {
@@ -1255,7 +1342,7 @@ class DataManager
             " AND $tp.valid_until='9999-12-31 23:59:59.999999'" . 
             " ORDER BY $tp.seq, $te.column_number, $te.seq, $ti.seq ASC";
         
-        $r = $this->dbh->query($query);
+        $r = $this->databaseHelper->query($query);
         
         $rows = [];
         while ($row = $r->fetch(PDO::FETCH_ASSOC)) {
@@ -1422,7 +1509,7 @@ class DataManager
             return false;
         }
         
-        if (!$this->um->userExistsById($element->editorId)) {
+        if (!$this->userManager->userExistsById($element->editorId)) {
             $this->logger->error('Element being inserted by '
                     . 'non-existent editor', 
                     ['pageid' => $element->pageId, 
@@ -1601,7 +1688,7 @@ class DataManager
         $sql = "SELECT MAX(seq) as m FROM $te "
                 . "WHERE page_id=$pageId AND column_number=$col " 
                 . "AND `valid_until`='9999-12-31 23:59:59.999999'";
-        $row = $this->dbh->getOneRow($sql);
+        $row = $this->databaseHelper->getOneRow($sql);
         if (isset($row['m'])) {
             return (int) $row['m'];
         }
@@ -2188,6 +2275,21 @@ class DataManager
         }
         return true;
     }
+
+    /**
+     *
+     * Returns the witness for the given work and chunk, of the given type an id.
+     * If the witness does not exist, throws an InvalidArgument exception
+     *
+     * @param string $workId
+     * @param int $chunkNumber
+     * @param string $witnessType
+     * @param int $witnessId
+     * @return Witness
+     */
+    public function getWitness(string $workId, int $chunkNumber, string $witnessType, int $witnessId) : Witness {
+
+    }
     
     public function deletePage($docId, $pageNum) 
     {
@@ -2288,7 +2390,7 @@ class DataManager
         $authors = array_unique(array_column($versions, 'author_id'));
         $authorInfo = [];
         foreach ($authors as $author) {
-            $authorInfo[$author] = $this->um->getUserInfoByUserId(intval($author));
+            $authorInfo[$author] = $this->userManager->getUserInfoByUserId(intval($author));
         }
         //$this->logger->debug('Authors', $authorInfo);
 
@@ -2308,6 +2410,74 @@ class DataManager
     }
 
     public  function  getMySqlHelper() {
-        return $this->dbh;
+        return $this->databaseHelper;
     }
- }
+
+    public function isWitnessTypeValid(string $witnessType) : bool {
+        return array_search($witnessType, self::VALID_WITNESS_TYPES) !== false;
+    }
+
+
+    public function getValidWitnessLocationsForWorkChunkLang(string $workId, int $chunkNumber, string $language) : array {
+
+        $witnessList = $this->getWitnessesForChunk($workId, $chunkNumber);
+
+        $witnessesForLang = [];
+
+        foreach($witnessList as $witness) {
+            switch($witness['type']) {
+                case DataManager::WITNESS_TRANSCRIPTION:
+                    $docInfo = $this->getDocById($witness['id']);
+                    if ($docInfo['lang'] !== $language) {
+                        // not the right language
+                        continue;
+                    }
+                    $locations = $this->getChunkLocationsForDoc($witness['id'], $workId, $chunkNumber);
+                    if (count($locations)===0) {
+                        // No data for this witness, this would only happen
+                        // if somebody erased the chunk marks from the document
+                        // in the few milliseconds between getDocsForChunk() and
+                        // getChunkLocationsForDoc()
+                        continue; // @codeCoverageIgnore
+                    }
+                    // Check if there's an invalid segment
+                    $invalidSegment = false;
+                    foreach($locations as $segment) {
+                        if (!$segment['valid']) {
+                            $invalidSegment = true;
+                            break;
+                        }
+                    }
+                    if ($invalidSegment) {
+                        continue; // nothing to do with this witness
+                    }
+                    $witnessesForLang[] = [
+                        'id' => $witness['id'],
+                        'type' => DataManager::WITNESS_TRANSCRIPTION,
+                        'locations' => $locations
+                    ];
+                    break;
+
+                case DataManager::WITNESS_PLAINTEXT:
+                    // TODO: support plain text witnesses
+            }
+        }
+        return $witnessesForLang;
+    }
+
+    //  Factory functions
+
+    public function createDocInfoFromDbRow(array $row) : DocInfo {
+        $di = new DocInfo();
+
+        $di->id = intval($row['id']);
+        $di->title = $row['title'];
+        $di->shortTitle = $row['short_title'];
+        $di->imageSource = $row['image_source'];
+        $di->imageSourceData = $row['image_source_data'];
+        $di->lang = $row['lang'];
+        $di->docType = $row['doc_type'];
+
+        return $di;
+    }
+}

@@ -26,6 +26,9 @@
 
 namespace AverroesProject\Site;
 
+use APM\Plugin\HookManager;
+use APM\System\SystemManager;
+use AverroesProject\Data\DataManager;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
@@ -35,7 +38,23 @@ use \Psr\Http\Message\ResponseInterface as Response;
  */
 class SiteController
 {
+
     protected $ci;
+
+    /**
+     * @var DataManager
+     */
+    protected $db;
+
+    /**
+     * @var HookManager
+     */
+    protected $hm;
+
+    /**
+     * @var SystemManager
+     */
+    protected $systemManager;
     
     //Constructor
     public function __construct( $ci)

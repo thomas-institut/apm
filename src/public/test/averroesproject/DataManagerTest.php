@@ -128,7 +128,7 @@ class DataManagerTest extends TestCase {
         $pageId = $dm->getPageIdByDocPage($docId, 1);
         $this->assertNotFalse($pageId);
         $this->assertTrue($dm->isPageEmpty($pageId));
-        $editor1 = $dm->um->createUserByUserName('testeditor1');
+        $editor1 = $dm->userManager->createUserByUserName('testeditor1');
         
         $lineElement = new Line();
         $lineElement->lang = 'la';
@@ -365,7 +365,7 @@ class DataManagerTest extends TestCase {
         }
         
         // Create an editor user id
-        $editor = $dm->um->createUserByUserName('testeditor');
+        $editor = $dm->userManager->createUserByUserName('testeditor');
         
         // Test case 1: simple item array, no references
         

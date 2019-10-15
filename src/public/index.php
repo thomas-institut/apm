@@ -153,7 +153,7 @@ $app->get('/collation/auto/{work}/{chunk}/preset/{preset}','\APM\Site\SiteCollat
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
 // Collation table with parameters in Url
-$app->get('/collation/auto/{work}/{chunk}/{lang}[/{ignore_punct}[/{docs:.*}]]','\APM\Site\SiteCollationTable:automaticCollationPageGet')
+$app->get('/collation/auto/{work}/{chunk}/{lang}[/{ignore_punct}[/{witnesses:.*}]]','\APM\Site\SiteCollationTable:automaticCollationPageGet')
         ->setName('chunk.collationtable')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 

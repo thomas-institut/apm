@@ -70,9 +70,9 @@ class ApiControllerTest extends TestCase {
         self::$apiUsers = new Api\ApiUsers(self::$ci);
         self::$apiDocuments = new Api\ApiDocuments(self::$ci);
         self::$dataManager = DatabaseTestEnvironment::getDataManager($logger, $hm);
-        self::$editor1 = self::$dataManager->um->createUserByUserName('testeditor1');
-        self::$editor2 = self::$dataManager->um->createUserByUserName('testeditor2');
-        self::$apiUserId = self::$dataManager->um->createUserByUserName('someUser');
+        self::$editor1 = self::$dataManager->userManager->createUserByUserName('testeditor1');
+        self::$editor2 = self::$dataManager->userManager->createUserByUserName('testeditor2');
+        self::$apiUserId = self::$dataManager->userManager->createUserByUserName('someUser');
         self::$ci['userId'] = self::$apiUserId;
     }
     
@@ -120,7 +120,7 @@ class ApiControllerTest extends TestCase {
         for ($i = 1; $i <= $numPages; $i++) {
             $dm->addNewColumn($docId, $i);
         }
-        $editor = $dm->um->createUserByUsername('apieditor');
+        $editor = $dm->userManager->createUserByUsername('apieditor');
         $pageId =  $dm->getPageIdByDocPage($docId, 1);
         $elementIds = [];
         for ($i=0; $i<$numElements; $i++) { 
@@ -583,7 +583,7 @@ class ApiControllerTest extends TestCase {
             null
         );
         $this->assertEquals(200, $response->getStatusCode());
-        $edNotesInDb = $dm->enm->getEditorialNotesByDocPageCol($docId, 1, 1);
+        $edNotesInDb = $dm->edNoteManager->getEditorialNotesByDocPageCol($docId, 1, 1);
         $this->assertCount(1, $edNotesInDb);
         $this->assertEquals($goodEditorialNote['authorId'], $edNotesInDb[0]->authorId);
         $this->assertEquals($goodEditorialNote['text'], $edNotesInDb[0]->text);
@@ -600,7 +600,7 @@ class ApiControllerTest extends TestCase {
             null
         );
         $this->assertEquals(200, $response->getStatusCode());
-        $edNotesInDb = $dm->enm->getEditorialNotesByDocPageCol($docId, 1, 1);
+        $edNotesInDb = $dm->edNoteManager->getEditorialNotesByDocPageCol($docId, 1, 1);
         $this->assertCount(1, $edNotesInDb);
         $this->assertEquals($goodEditorialNote['authorId'], $edNotesInDb[0]->authorId);
         $this->assertEquals($goodEditorialNote['text'], $edNotesInDb[0]->text);
@@ -620,7 +620,7 @@ class ApiControllerTest extends TestCase {
             null
         );
         $this->assertEquals(200, $response->getStatusCode());
-        $edNotesInDb = $dm->enm->getEditorialNotesByDocPageCol($docId, 1, 1);
+        $edNotesInDb = $dm->edNoteManager->getEditorialNotesByDocPageCol($docId, 1, 1);
         $this->assertCount(2, $edNotesInDb);
         $this->assertEquals($goodEditorialNote['authorId'], $edNotesInDb[0]->authorId);
         $this->assertEquals($goodEditorialNote['text'], $edNotesInDb[0]->text);

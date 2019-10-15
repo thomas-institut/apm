@@ -72,7 +72,7 @@ class ElementDatabaseTest extends TestCase {
         for ($i = 1; $i <= $numPages; $i++) {
             $dm->addNewColumn($docId, $i);
         }
-        $editorId = $dm->um->createUserByUsername('testeditor');
+        $editorId = $dm->userManager->createUserByUsername('testeditor');
         
         $goodElement = new ColumnElement\Line();
         $goodElement->id = 200; // this will be ignored!
@@ -172,7 +172,7 @@ class ElementDatabaseTest extends TestCase {
         for ($i = 0; $i < $numPages; $i++) {
             $dm->addNewColumn($docId, $i);
         }
-        $editorId = $dm->um->createUserByUsername('testeditor2');
+        $editorId = $dm->userManager->createUserByUsername('testeditor2');
         $pageId =  $dm->getPageIdByDocPage($docId, 2);
         
         for ($i=0; $i<$numElements; $i++) {
@@ -237,7 +237,7 @@ class ElementDatabaseTest extends TestCase {
         for ($i = 0; $i < $numPages; $i++) {
             $dm->addNewColumn($docId, $i);
         }
-        $editorId = $dm->um->createUserByUsername('testeditor3');
+        $editorId = $dm->userManager->createUserByUsername('testeditor3');
         $pageId =  $dm->getPageIdByDocPage($docId, 3);
         
         for ($i=0; $i<$numElements; $i++) {
@@ -279,7 +279,7 @@ class ElementDatabaseTest extends TestCase {
         for ($i = 1; $i <= $numPages; $i++) {
             $dm->addNewColumn($docId, $i);
         }
-        $editorId = $dm->um->createUserByUsername('testeditor4');
+        $editorId = $dm->userManager->createUserByUsername('testeditor4');
         $pageId =  $dm->getPageIdByDocPage($docId, 1);
         
         $elementIds = [];
@@ -437,11 +437,11 @@ class ElementDatabaseTest extends TestCase {
         for ($i = 1; $i <= $numPages; $i++) {
             $dm->addNewColumn($docId, $i);
         }
-        $originalEditor = $dm->um->createUserByUsername('testcoled');
-        $reviewer = $dm->um->createUserByUsername('testcolrev');
-        $reviewer2 = $dm->um->createUserByUsername('testcolrev2');
-        $reviewer3 = $dm->um->createUserByUsername('testcolrev3');
-        $reviewer4 = $dm->um->createUserByUsername('testcolrev5');
+        $originalEditor = $dm->userManager->createUserByUsername('testcoled');
+        $reviewer = $dm->userManager->createUserByUsername('testcolrev');
+        $reviewer2 = $dm->userManager->createUserByUsername('testcolrev2');
+        $reviewer3 = $dm->userManager->createUserByUsername('testcolrev3');
+        $reviewer4 = $dm->userManager->createUserByUsername('testcolrev5');
         $pageId =  $dm->getPageIdByDocPage($docId, 1);
         
         $elementIds = [];

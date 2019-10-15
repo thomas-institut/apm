@@ -167,7 +167,7 @@ class ImportXmlFile extends CommandLineUtility {
                         return false;
                     }
                 }
-                $this->dm->enm->updateNotesFromArray($edNotes);
+                $this->dm->edNoteManager->updateNotesFromArray($edNotes);
             }
             
             

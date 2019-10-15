@@ -49,7 +49,7 @@ class EdNoteManagerTest extends TestCase {
         $logger->pushHandler($logStream);
         $hm = new HookManager();
         self::$dataManager = DatabaseTestEnvironment::getDataManager($logger, $hm);
-        self::$edNoteManager = self::$dataManager->enm;
+        self::$edNoteManager = self::$dataManager->edNoteManager;
         
     }
     
@@ -64,8 +64,8 @@ class EdNoteManagerTest extends TestCase {
         for ($i = 1; $i <= $numPages; $i++) {
             $dm->addNewColumn($docId, $i);
         }
-        $editorId = $dm->um->createUserByUsername('testenmeditor');
-        $authorId = $dm->um->createUserByUsername('testenmauthor');
+        $editorId = $dm->userManager->createUserByUsername('testenmeditor');
+        $authorId = $dm->userManager->createUserByUsername('testenmauthor');
         $pageId =  $dm->getPageIdByDocPage($docId, 1);
         
         for ($i=0; $i<$numElements; $i++) {
@@ -134,8 +134,8 @@ class EdNoteManagerTest extends TestCase {
         for ($i = 1; $i <= $numPages; $i++) {
             $dm->addNewColumn($docId, $i);
         }
-        $editorId = $dm->um->createUserByUsername('testenmeditor2');
-        $authorId = $dm->um->createUserByUsername('testenmauthor2');
+        $editorId = $dm->userManager->createUserByUsername('testenmeditor2');
+        $authorId = $dm->userManager->createUserByUsername('testenmauthor2');
         $pageId =  $dm->getPageIdByDocPage($docId, 1);
         
         for ($i=0; $i<$numElements; $i++) {

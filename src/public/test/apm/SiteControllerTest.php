@@ -173,7 +173,7 @@ class SiteControllerTest extends TestCase {
         self::$ci['userInfo'] = ['id' => $editor1];
         /* @var $dm \AverroesProject\Data\DataManager */
         $dm = self::$dm;
-        $dm->um->allowUserTo($editor1, 'witness-view-details');
+        $dm->userManager->allowUserTo($editor1, 'witness-view-details');
         
         $work = 'AW47';
         $chunkNo = 1;
@@ -230,7 +230,7 @@ class SiteControllerTest extends TestCase {
         ItemArray::addItem($element->items, new ChunkMark($itemId++, $itemSeq++, $work, $chunkNo, 'end', 1));  
         $dm->insertNewElement($element);
         
-        $dm->enm->insertNote(EditorialNote::INLINE, $noteItemId, $editor2, 'this is a note');
+        $dm->edNoteManager->insertNote(EditorialNote::INLINE, $noteItemId, $editor2, 'this is a note');
         
         
         // An invalid witness in doc 2

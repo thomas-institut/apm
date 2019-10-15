@@ -37,9 +37,9 @@ class ApiElements extends ApiController
             Response $response, $next)
     {
         
-        $profiler = new ApmProfiler('updateElements', $this->db);
+        $profiler = new ApmProfiler('updateElements', $this->dataManager);
         
-        $um = $this->db->um;
+        $um = $this->dataManager->userManager;
          
         if ($um->userHasRole($this->ci->userId, 'readOnly')) {
             $this->logger->error("User is not authorized to update elements",
@@ -116,7 +116,7 @@ class ApiElements extends ApiController
         }
 
         // Check elements and force hand Id on items
-        $pageId = $this->db->getPageIdByDocPage($docId, $pageNumber);
+        $pageId = $this->dataManager->getPageIdByDocPage($docId, $pageNumber);
         $newElementsArray = $inputDataObject['elements'];
         $edNotes = $inputDataObject['ednotes'];
         
@@ -168,7 +168,7 @@ class ApiElements extends ApiController
                 return $response->withStatus(409)->withJson( ['error' => ApiController::API_ERROR_WRONG_COLUMN_NUMBER]);
             }
             // check EditorId
-            if (!$this->db->um->userExistsById($newElementsArray[$i]['editorId'])) {
+            if (!$this->dataManager->userManager->userExistsById($newElementsArray[$i]['editorId'])) {
                 $this->logger->error("Non existent editorId in input array",
                     [ 'apiUserId' => $this->ci->userId, 
                       'apiError' => ApiController::API_ERROR_WRONG_EDITOR_ID,
@@ -263,7 +263,7 @@ class ApiElements extends ApiController
                     ]);
                 return $response->withStatus(409)->withJson(['error' => ApiController::API_ERROR_WRONG_TARGET_FOR_EDNOTE]);
             }
-            if (!$this->db->um->userExistsById($edNotes[$i]['authorId'])) {
+            if (!$this->dataManager->userManager->userExistsById($edNotes[$i]['authorId'])) {
                 $this->logger->error("Inexisted author Id for editorial note: " . $edNotes[$i]['authorId'],
                     [ 'apiUserId' => $this->ci->userId, 
                       'apiError' => ApiController::API_ERROR_WRONG_AUTHOR_ID,
@@ -329,8 +329,8 @@ class ApiElements extends ApiController
         $versionId = $request->getAttribute('version');
 
         // Get a list of versions
-        $pageId = $this->db->getPageIdByDocPage($docId, $pageNumber);
-        $versions = $this->db->getTranscriptionVersionsWithAuthorInfo($pageId, $columnNumber);
+        $pageId = $this->dataManager->getPageIdByDocPage($docId, $pageNumber);
+        $versions = $this->dataManager->getTranscriptionVersionsWithAuthorInfo($pageId, $columnNumber);
 
         $versionTime = MySqlUnitemporalDataTable::now();
         if (count($versions) === 0) {
@@ -369,13 +369,13 @@ class ApiElements extends ApiController
         }
 
         // Get the elements
-        $elements = $this->db->getColumnElements($docId, $pageNumber,
+        $elements = $this->dataManager->getColumnElements($docId, $pageNumber,
             $columnNumber, $versionTime);
 
         // Get the editorial notes
-        $ednotes = $this->db->enm->getEditorialNotesByPageIdColWithTime($pageId, $columnNumber, $versionTime);
+        $ednotes = $this->dataManager->edNoteManager->getEditorialNotesByPageIdColWithTime($pageId, $columnNumber, $versionTime);
         
-        $pageInfo = $this->db->getPageInfoByDocPage($docId, $pageNumber);
+        $pageInfo = $this->dataManager->getPageInfoByDocPage($docId, $pageNumber);
 
         // Get the information about every person 
         // in the elements and editorial notes
@@ -383,20 +383,20 @@ class ApiElements extends ApiController
         foreach ($elements as $e){
             if (!isset($people[$e->editorId])){
                 $people[$e->editorId] = 
-                        $this->db->um->getUserInfoByUserId($e->editorId);
+                        $this->dataManager->userManager->getUserInfoByUserId($e->editorId);
             }
         }
         foreach($ednotes as $e){
             if (!isset($people[$e->authorId])){
                 $people[$e->authorId] = 
-                        $this->db->um->getUserInfoByUserId($e->authorId);
+                        $this->dataManager->userManager->getUserInfoByUserId($e->authorId);
             }
         }
         // Add API user info as well
         if (!isset($people[$this->ci->userId])){
             //print "API User ID: " . $this->ci->userId . "\n";
             $people[$this->ci->userId] = 
-                    $this->db->um->getUserInfoByUserId($this->ci->userId);
+                    $this->dataManager->userManager->getUserInfoByUserId($this->ci->userId);
         }
 
         $this->logger->info("QUERY Page Data", [ 

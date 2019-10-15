@@ -34,7 +34,7 @@ use Monolog\Handler\StreamHandler;
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 class ApmSystemManager extends SystemManager {
-    
+
     // Error codes
     const ERROR_DATABASE_CONNECTION_FAILED = 1001;
     const ERROR_DATABASE_CANNOT_READ_SETTINGS = 1002;
@@ -277,7 +277,7 @@ class ApmSystemManager extends SystemManager {
     public function isToolValid(string $tool) : bool {
         return array_search($tool, self::VALID_TOOL_IDS) !== false;
     }
-    
+
     public function getLogger() {
         return $this->logger;
     }

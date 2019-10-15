@@ -79,11 +79,11 @@ class Authenticator {
     /**
      * Logs a debug message in the logger
      * @codeCoverageIgnore
-     * 
-     * @param type $msg
-     * @param type $data
+     *
+     * @param string $msg
+     * @param array $data
      */
-    protected function debug($msg, $data=[])
+    protected function debug(string $msg, $data=[])
     {
         if ($this->debugMode){
             $this->logger->debug($msg, $data);
@@ -104,7 +104,7 @@ class Authenticator {
         } else {
             $userId = $_SESSION['userid'];
             $this->debug('SITE : Session is set, user id = ' . $userId);
-            if ($this->ci->db->um->userExistsById($userId)){
+            if ($this->ci->db->userManager->userExistsById($userId)){
                 $this->debug("User id exists!");
                 $success = true;
             } else {
@@ -115,8 +115,8 @@ class Authenticator {
         if ($success){
             $this->debug('SITE: Success, go ahead!');
             $_SESSION['userid'] = $userId;
-            $ui = $this->ci->db->um->getUserInfoByUserId($userId);
-            if ($this->ci->db->um->isUserAllowedTo($userId, 'manageUsers')){
+            $ui = $this->ci->db->userManager->getUserInfoByUserId($userId);
+            if ($this->ci->db->userManager->isUserAllowedTo($userId, 'manageUsers')){
                 $ui['manageUsers'] = 1;
             }
             $this->ci['userInfo'] = $ui;
@@ -150,16 +150,16 @@ class Authenticator {
                 $rememberme = 
                         isset($data['rememberme']) ? $data['rememberme'] : '';
                 $this->debug('Trying to log in user ' . $user);
-                if ($this->ci->db->um->verifyUserPassword($user, $pwd)){
+                if ($this->ci->db->userManager->verifyUserPassword($user, $pwd)){
                     $userAgent = $request->getHeader('User-Agent')[0];
                     $ipAddress = $request->getServerParam('REMOTE_ADDR');
                     $this->siteLogger->info("Login", ['user' => $user, 'user_agent' => $userAgent, 'ip_address' => $ipAddress ]);
                     // Success!
-                    $userId = $this->ci->db->um->getUserIdFromUsername($user);
+                    $userId = $this->ci->db->userManager->getUserIdFromUsername($user);
                     $_SESSION['userid'] = $userId;
                     $this->debug('Generating token cookie');
                     $token = $this->generateRandomToken();
-                    $this->ci->db->um->storeUserToken(
+                    $this->ci->db->userManager->storeUserToken(
                             $userId, 
                             $userAgent, 
                             $ipAddress,
@@ -204,7 +204,7 @@ class Authenticator {
                 $this->ci->router->pathFor('home'));
         }
         $userId = $_SESSION['userid'];
-        $userName = $this->ci->db->um->getUsernameFromUserId($userId);
+        $userName = $this->ci->db->userManager->getUsernameFromUserId($userId);
         if ($userName === false) {
             $this->siteLogger->error("Can't get username from user Id at "
                     . "logout attempt", ['userId' => $userId]);
@@ -239,7 +239,7 @@ class Authenticator {
             $cookieValue = $longTermCookie->getValue();
             list($userId, $token, $mac) = explode(':', $cookieValue);
             if (hash_equals($this->generateMac($userId . ':' . $token), $mac)) {
-                $userToken = $this->ci->db->um->getUserToken(
+                $userToken = $this->ci->db->userManager->getUserToken(
                         $userId, 
                         $request->getHeader('User-Agent')[0], 
                         $request->getServerParam('REMOTE_ADDR')

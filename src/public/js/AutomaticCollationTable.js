@@ -302,8 +302,8 @@ class AutomaticCollationTable {
       html += '<li>'
       html += '<h4>' + witness.title + '</h4>'
       html += '<ul>'
-      for(const segmentNumber in witnessInfo[witness.id]) {
-        let segment = witnessInfo[witness.id][segmentNumber]
+      for(const segmentNumber in witnessInfo[witness.id].locations) {
+        let segment = witnessInfo[witness.id].locations[segmentNumber]
         html += '<li>'
         html += 'Segment ' + segmentNumber + ': '
         for (const col of segment['columns']) {

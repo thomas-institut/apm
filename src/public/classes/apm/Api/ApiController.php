@@ -20,9 +20,11 @@
 
 namespace APM\Api;
 
+use Monolog\Logger;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
+use AverroesProject\Data\DataManager;
 use APM\System\SystemManager;
 
 /**
@@ -32,12 +34,20 @@ use APM\System\SystemManager;
 abstract class ApiController
 {
     protected $ci;
+
+    /**
+     * @var Logger
+     */
     protected $logger;
+
+    /** @var DataManager */
+    protected $dataManager;
+
     /**
      *
      * @var SystemManager 
      */
-    protected $sm;
+    protected $systemManager;
     
     // Error codes
     const API_NO_ERROR = 0;
@@ -72,9 +82,9 @@ abstract class ApiController
     public function __construct( $ci)
     {
        $this->ci = $ci;
-       $this->db = $ci->db;
+       $this->dataManager = $ci->db;
        $this->logger = $ci->logger->withName('API-new');
-       $this->sm = $ci->sm;
+       $this->systemManager = $ci->sm;
     }
     
     /**

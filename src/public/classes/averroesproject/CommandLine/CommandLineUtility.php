@@ -88,7 +88,7 @@ abstract class CommandLineUtility {
         // Data Manager (will be replaced completely by SystemManager at some point
         $this->dm = new DataManager($dbh, $systemManager->getTableNames(), $this->logger, $hm, $config['langCodes']);
         
-        $this->um = $this->dm->um;
+        $this->um = $this->dm->userManager;
     }
     
     public function run($argc, $argv) {

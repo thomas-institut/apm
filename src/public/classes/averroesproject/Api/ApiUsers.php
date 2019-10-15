@@ -33,8 +33,8 @@ class ApiUsers extends ApiController
     public function getUserProfileInfo(Request $request, Response $response, 
             $next)
     {
-        $um = $this->db->um;
-        $profiler = new ApmProfiler('getUserProfileInfo', $this->db);
+        $um = $this->dataManager->userManager;
+        $profiler = new ApmProfiler('getUserProfileInfo', $this->dataManager);
         $profileUserId =  (int) $request->getAttribute('userId');
         $userProfileInfo = $um->getUserInfoByUserId($profileUserId);
         if ($userProfileInfo === false ) {
@@ -52,7 +52,7 @@ class ApiUsers extends ApiController
     public function updateUserProfile(Request $request, Response $response, 
             $next)
     {
-        $um = $this->db->um;
+        $um = $this->dataManager->userManager;
         $profileUserId =  (int) $request->getAttribute('userId');
         $postData = $request->getParsedBody();
         $fullname = $postData['fullname'];
@@ -112,7 +112,7 @@ class ApiUsers extends ApiController
     public function changeUserPassword(Request $request, Response $response, 
            $next)
     {
-        $um = $this->db->um;
+        $um = $this->dataManager->userManager;
         $profileUserId =  (int) $request->getAttribute('userId');
         $postData = $request->getParsedBody();
         $password1 = $postData['password1'];
@@ -170,7 +170,7 @@ class ApiUsers extends ApiController
     
     public function makeUserRoot(Request $request, Response $response, $next)
     {
-        $um = $this->db->um;
+        $um = $this->dataManager->userManager;
         $profileUserId =  (int) $request->getAttribute('userId');
         $postData = $request->getParsedBody();
         $confirmroot = $postData['confirmroot'];
@@ -216,7 +216,7 @@ class ApiUsers extends ApiController
     
     public function createNewUser(Request $request, Response $response, $next)
     {
-        $um = $this->db->um;
+        $um = $this->dataManager->userManager;
         $postData = $request->getParsedBody();
         $username = $postData['username'];
         $fullname = $postData['fullname'];

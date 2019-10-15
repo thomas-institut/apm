@@ -56,7 +56,7 @@ class SiteDocuments extends SiteController
             $doc['editors'] = [];
             foreach ($editorsIds as $edId){
                 $doc['editors'][] = 
-                        $this->db->um->getUserInfoByUserId($edId);
+                        $this->db->userManager->getUserInfoByUserId($edId);
             }
             $doc['docInfo'] = $db->getDocById($docId);
             $doc['tableId'] = "doc-$docId-table";
@@ -65,7 +65,7 @@ class SiteDocuments extends SiteController
         }
         
         $canManageDocuments = false;
-        if ($this->db->um->isUserAllowedTo($this->ci->userInfo['id'], 'docs-create-new')) {
+        if ($this->db->userManager->isUserAllowedTo($this->ci->userInfo['id'], 'docs-create-new')) {
             $canManageDocuments = true;
         }
         $profiler->log($this->ci->logger);
@@ -93,7 +93,7 @@ class SiteDocuments extends SiteController
         $doc['editors'] = array();
         foreach ($editorsIds as $edId){
             array_push($doc['editors'], 
-                    $this->db->um->getUserInfoByUserId($edId));
+                    $this->db->userManager->getUserInfoByUserId($edId));
         }
         $doc['docInfo'] = $db->getDocById($docId);
         $doc['tableId'] = "doc-$docId-table";
@@ -109,7 +109,7 @@ class SiteDocuments extends SiteController
         $doc['docInfoHtml'] = $docInfoHtml;
         
         $canDefinePages = false;
-        if ($this->db->um->isUserAllowedTo($this->ci->userInfo['id'], 'define-doc-pages')) {
+        if ($this->db->userManager->isUserAllowedTo($this->ci->userInfo['id'], 'define-doc-pages')) {
             $canDefinePages = true;
         }
         $profiler->log($this->ci->logger);
@@ -126,7 +126,7 @@ class SiteDocuments extends SiteController
     public function newDocPage(Request $request, Response $response, $next)
     {
      
-        if (!$this->db->um->isUserAllowedTo($this->ci->userInfo['id'], 'create-new-documents')){
+        if (!$this->db->userManager->isUserAllowedTo($this->ci->userInfo['id'], 'create-new-documents')){
             $this->ci->logger->debug("User " . $this->ci->userInfo['id'] . ' tried to add new doc but is not allowed to do it');
             return $this->ci->view->render($response, 'error.notallowed.twig', [
                 'userinfo' => $this->ci->userInfo, 
@@ -172,7 +172,7 @@ class SiteDocuments extends SiteController
     
     public function editDocPage(Request $request, Response $response, $next)
     {
-        if (!$this->db->um->isUserAllowedTo($this->ci->userInfo['id'], 'edit-documents')){
+        if (!$this->db->userManager->isUserAllowedTo($this->ci->userInfo['id'], 'edit-documents')){
             $this->ci->logger->debug("User " . $this->ci->userInfo['id'] . ' tried to edit a document but is not allowed to do it');
             return $this->ci->view->render($response, 'error.notallowed.twig', [
                 'userinfo' => $this->ci->userInfo, 
@@ -245,7 +245,7 @@ class SiteDocuments extends SiteController
     {
         $profiler = new ApmProfiler('defineDocPages', $this->db);
         
-        if (!$this->db->um->isUserAllowedTo($this->ci->userInfo['id'], 'define-doc-pages')){
+        if (!$this->db->userManager->isUserAllowedTo($this->ci->userInfo['id'], 'define-doc-pages')){
             $this->ci->logger->debug("User " . $this->ci->userInfo['id'] . ' tried to define document pages  but is not allowed to do it');
             return $this->ci->view->render($response, 'error.notallowed.twig', [
                 'userinfo' => $this->ci->userInfo, 

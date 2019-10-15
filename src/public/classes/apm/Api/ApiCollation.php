@@ -21,6 +21,7 @@
 namespace APM\Api;
 
 
+use APM\System\ApmSystemManager;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
@@ -32,6 +33,7 @@ use APM\Experimental\EditionWitness;
 use APM\Decorators\QuickCollationTableDecorator;
 use AverroesProjectToApm\Decorators\TransitionalCollationTableDecorator;
 use AverroesProjectToApm\ApUserDirectory;
+use AverroesProject\Data\DataManager;
 
 /**
  * API Controller class
@@ -49,7 +51,7 @@ class ApiCollation extends ApiController
             Response $response, $next)
     {
         $apiCall = 'quickCollation';
-        $profiler = new ApmProfiler($apiCall, $this->db);
+        $profiler = new ApmProfiler($apiCall, $this->dataManager);
         $inputData = $this->checkAndGetInputData($request, $response, $apiCall, ['witnesses']);
         if (!is_array($inputData)) {
             return $inputData;
@@ -137,11 +139,11 @@ class ApiCollation extends ApiController
      *  work :  work code (e.g., 'AW47')
      *  chunk:  chunk number
      *  lang:  language code, e.g., 'la', 'he'
-     *  witnesses:  array of witness identifications, each element of
+     *  requestedWitnesses:  array of witness identifications, each element of
      *      the array must be of the form: 
      *          [ 'type' => <TYPE> , 'id' => <ID> ]
      *      where 
-     *          <TYPE> is a valid witness type  (currently only 'doc'  is implemented)
+     *          <TYPE> is a valid witness type
      *          <ID> is the witness system id (normally relative to its type)
      *               e.g, a system document id.
      *      If the witnesses array is empty, all valid witnesses for the
@@ -155,7 +157,7 @@ class ApiCollation extends ApiController
     public function automaticCollation(Request $request, 
             Response $response, $next)
     {
-        $db = $this->db;
+        $dataManager = $this->dataManager;
         $apiCall = 'Collation';
         $requiredFields = [ 'work', 'chunk', 'lang', 'witnesses'];
         
@@ -165,15 +167,15 @@ class ApiCollation extends ApiController
         }
         
         $workId = $inputDataObject['work'];
-        $chunkNumber = $inputDataObject['chunk'];
+        $chunkNumber = intval($inputDataObject['chunk']);
         $language = $inputDataObject['lang'];
-        $witnesses = $inputDataObject['witnesses'];
+        $requestedWitnesses = $inputDataObject['witnesses'];
         $ignorePunctuation = isset($inputDataObject['ignorePunctuation']) ?
                 $inputDataObject['ignorePunctuation'] : false;
         
-        $profiler = new ApmProfiler("CollationTable-$workId-$chunkNumber-$language", $db);
+        $profiler = new ApmProfiler("CollationTable-$workId-$chunkNumber-$language", $dataManager);
         
-        // Check language
+        // Check that language is valid
         $languages = $this->ci->settings['languages'];
         $langInfo = null;
         foreach($languages as $lang) {
@@ -187,15 +189,10 @@ class ApiCollation extends ApiController
             $this->logger->error($msg);
             return $response->withStatus(409)->withJson( ['error' => self::ERROR_INVALID_LANGUAGE, 'msg' => $msg]);
         }
-        
-        
-        
-        $workInfo = $db->getWorkInfo($workId);
-        
-        // Eventually, instead of just the docs for a chunk, we'll need
-        // to get a true list of witnesses, including, for example, derivative
-        // witnesses, text, etc.
-        $validWitnessLocations = $this->getValidWitnessLocationsForWorkChunkLang($db, $workId, $chunkNumber, $language);
+
+        $workInfo = $dataManager->getWorkInfo($workId);
+
+        $validWitnessLocations = $dataManager->getValidWitnessLocationsForWorkChunkLang($workId, $chunkNumber, $language);
         if (count($validWitnessLocations) < 2) {
             $msg = 'Not enough valid witnesses to collate';
             $this->logger->error($msg, $validWitnessLocations);
@@ -205,17 +202,18 @@ class ApiCollation extends ApiController
         $witnessesToInclude = [];
         $partialCollation = false;
         
-        if (count($witnesses) !== 0) {
-            foreach ($witnesses as $witness) {
-                // for the time being, actually, there is only 'doc' type witnesses
-                $witnessType = isset($witness['type']) ? $witness['type'] : 'doc';
+        if (count($requestedWitnesses) !== 0) {
+            foreach ($requestedWitnesses as $witness) {
                 $witnessId = isset($witness['id']) ? intVal($witness['id']) : 0;
-                if ($witnessId !== 0 && isset($validWitnessLocations[$witnessId])) {
-                    $witnessesToInclude[$witnessId] = $validWitnessLocations[$witnessId];
+                if ($witnessId !== 0) {
+                    foreach($validWitnessLocations as $witnessLocationInfo) {
+                        if ($witnessLocationInfo['id'] == $witnessId) {
+                            $witnessesToInclude[$witnessId] = $witnessLocationInfo;
+                        }
+                    }
                 }
             }
             $partialCollation = true;
-            //$this->ci->logger->debug('Partial collation', $witnessesToInclude);
             if (count($witnessesToInclude) < 2) {
                 $msg = 'Error in partial collation table request: need at least 2 witnesses to collate, got only ' . count($witnessesToInclude) . '.';
                 $this->logger->error($msg, $witnessesToInclude);
@@ -232,25 +230,35 @@ class ApiCollation extends ApiController
         $collationTable = new CollationTable($ignorePunctuation);
         $itemIds = [];
         $lastChangeInData = '0000-00-00 00:00:00.000000';
-        foreach ($witnessesToInclude as $id => $witnessLocation)  {
+        foreach ($witnessesToInclude as $id => $witnessLocInfo)  {
+            $witnessType = $witnessLocInfo['type'];
+            $witnessLocation = $witnessLocInfo['locations'];
 
-            // Get the AverroesProject item streams
-            $segmentStreams = [];
-            foreach($witnessLocation as $segLocation) {
-                if ($segLocation['lastTime'] > $lastChangeInData) {
-                    $lastChangeInData = $segLocation['lastTime'];
-                }
-                $apItemStream = $db->getItemStreamBetweenLocations($id, $segLocation['start'], $segLocation['end']);
-                foreach($apItemStream as $row) {
-                    $itemIds[] = (int) $row['id'];
-                }
-                $segmentStreams[] = $apItemStream;
+            switch($witnessType) {
+                case DataManager::WITNESS_TRANSCRIPTION:
+                    // Get the AverroesProject item streams
+                    $segmentStreams = [];
+                    foreach($witnessLocation as $segLocation) {
+                        if ($segLocation['lastTime'] > $lastChangeInData) {
+                            $lastChangeInData = $segLocation['lastTime'];
+                        }
+                        $apItemStream = $dataManager->getItemStreamBetweenLocations($id, $segLocation['start'], $segLocation['end']);
+                        foreach($apItemStream as $row) {
+                            $itemIds[] = (int) $row['id'];
+                        }
+                        $segmentStreams[] = $apItemStream;
+                    }
+                    $edNoteArrayFromDb = $dataManager->edNoteManager->rawGetEditorialNotesForListOfItems($itemIds);
+                    $itemStream = new \AverroesProjectToApm\ItemStream($id, $segmentStreams, $language, $edNoteArrayFromDb);
+                    $itemStrWitness = new \AverroesProjectToApm\ItemStreamWitness($workId, $chunkNumber, $itemStream);
+                    $docData = $dataManager->getDocById($id);
+                    $collationTable->addWitness($docData['title'], $itemStrWitness);
+                    break;
+
+                case DataManager::WITNESS_PLAINTEXT:
+                    // TODO: support plain text witnesses
+                    break;
             }
-            $edNoteArrayFromDb = $db->enm->rawGetEditorialNotesForListOfItems($itemIds);
-            $itemStream = new \AverroesProjectToApm\ItemStream($id, $segmentStreams, $language, $edNoteArrayFromDb);
-            $itemStrWitness = new \AverroesProjectToApm\ItemStreamWitness($workId, $chunkNumber, $itemStream);
-            $docData = $db->getDocById($id);
-            $collationTable->addWitness($docData['title'], $itemStrWitness);
         }
         
         $profiler->lap('Collation table built');
@@ -295,7 +303,7 @@ class ApiCollation extends ApiController
         // @codeCoverageIgnoreEnd
         
         $profiler->lap('Collation table built from collatex output');
-        $userDirectory = new ApUserDirectory($db->um);
+        $userDirectory = new ApUserDirectory($dataManager->userManager);
         $decorator = new TransitionalCollationTableDecorator($userDirectory);
         $decoratedCollationTable = $decorator->decorate($collationTable);
         
@@ -321,42 +329,6 @@ class ApiCollation extends ApiController
             'lastChangeInData' => $lastChangeInData,
             'quickEdition' => $quickEdition
             ]);
+    }
 
-    }
-    
-    
-    protected function getValidWitnessLocationsForWorkChunkLang($db, $workId, $chunkNumber, $language) : array {
-        $witnessList = $db->getDocsForChunk($workId, $chunkNumber);
-        
-        $witnessesForLang = [];
-        
-        foreach($witnessList as $witness) {
-            $docInfo = $db->getDocById($witness['id']);
-            if ($docInfo['lang'] !== $language) {
-                // not the right language
-                continue;
-            }
-            $locations = $db->getChunkLocationsForDoc($witness['id'], $workId, $chunkNumber);
-            if (count($locations)===0) {
-                // No data for this witness, this would only happen
-                // if somebody erased the chunk marks from the document
-                // in the few milliseconds between getDocsForChunk() and 
-                // getChunkLocationsForDoc() 
-                continue; // @codeCoverageIgnore
-            }
-            // Check if there's an invalid segment
-            $invalidSegment = false;
-            foreach($locations as $segment) {
-                if (!$segment['valid']) {
-                    $invalidSegment = true;
-                    break;
-                }
-            }
-            if ($invalidSegment) {
-                continue; // nothing to do with this witness
-            }
-            $witnessesForLang[$witness['id']] = $locations;
-        }
-        return $witnessesForLang;
-    }
 }

@@ -23,7 +23,7 @@
  */
 
 
-namespace AverroesProject\Site;
+namespace APM\Site;
 
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
@@ -40,21 +40,18 @@ class SiteDashboard extends SiteController
     public function dashboardPage(Request $request, Response $response, $next)
     {
         
-        $db = $this->dataManager;
-        $userId = (int) $this->ci->userInfo['id'];
-        $profiler = new ApmProfiler('dashboardPage-' . $this->ci->userInfo['username'] . '-' . $userId, $db);
-        $docIds = $db->getDocIdsTranscribedByUser($userId);
+        $dataManager = $this->dataManager;
+        $userId = (int) $this->userInfo['id'];
+        $profiler = new ApmProfiler('dashboardPage-' . $this->userInfo['username'] . '-' . $userId, $dataManager);
+        $docIds = $dataManager->getDocIdsTranscribedByUser($userId);
         
         $docListHtml = '';
         foreach($docIds as $docId) {
             $docListHtml .= $this->genDocPagesListForUser($userId, $docId);
         }
         
-        $profiler->log($this->ci->logger);
-        return $this->ci->view->render($response, 'dashboard.twig', [
-            'userinfo' => $this->ci->userInfo, 
-            'copyright' => $this->ci->copyrightNotice,
-            'baseurl' => $this->ci->settings['baseurl'],
+        $profiler->log($this->logger);
+        return $this->renderPage($response, 'dashboard.twig', [
             'doclist' => $docListHtml
         ]);
     }

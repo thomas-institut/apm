@@ -103,12 +103,12 @@ $app->any('/logout', '\AverroesProject\Auth\Authenticator:logout')
 
 
 // HOME
-$app->get('/','\AverroesProject\Site\SiteHomePage:homePage')
+$app->get('/','\APM\Site\SiteHomePage:homePage')
         ->setName('home')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 
 // DASHBOARD
-$app->get('/dashboard','\AverroesProject\Site\SiteDashboard:dashboardPage')
+$app->get('/dashboard','\APM\Site\SiteDashboard:dashboardPage')
         ->setName('dashboard')
         ->add('\AverroesProject\Auth\Authenticator:authenticate');
 

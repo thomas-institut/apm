@@ -23,7 +23,7 @@
  */
 
 
-namespace AverroesProject\Site;
+namespace APM\Site;
 
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
@@ -35,11 +35,10 @@ use \Psr\Http\Message\ResponseInterface as Response;
 class SiteHomePage extends SiteController
 {
   
-    public function homePage(Request $request, Response $response, $next)
+    public function homePage(Request $request, Response $response)
     {
         return $response->withHeader('Location', 
                 $this->ci->router->pathFor('dashboard'));
     }
-   
 
 }

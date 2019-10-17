@@ -20,54 +20,52 @@
 
 namespace APM\Api;
 
+use AverroesProject\Image\EditorImages;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
+
 /**
- * API Controller class
+ * Class ApiIcons
  *
+ * @package APM\Api
  */
 class ApiIcons extends ApiController
 {
-   
- 
-    public function generateMarkIcon(Request $request, 
-            Response $response, $next)
+
+    public function generateMarkIcon(Request $request, Response $response)
     {
         $size = $request->getAttribute('size');
         
-        $imageData = \AverroesProject\Image\EditorImages::markIcon($size);
+        $imageData = EditorImages::markIcon($size);
         
         $response->getBody()->write($imageData);
         return $response->withHeader('Content-Type', 'image/png');
     }
     
-     public function generateNoWordBreakIcon(Request $request, 
-            Response $response, $next)
+     public function generateNoWordBreakIcon(Request $request, Response $response)
     {
         $size = $request->getAttribute('size');
         
-        $imageData = \AverroesProject\Image\EditorImages::noWordBreakIcon($size);
+        $imageData = EditorImages::noWordBreakIcon($size);
         
         $response->getBody()->write($imageData);
         return $response->withHeader('Content-Type', 'image/png');
     }
     
-    public function generateIllegibleIcon(Request $request, 
-            Response $response, $next)
+    public function generateIllegibleIcon(Request $request, Response $response)
     {
         $size = $request->getAttribute('size');
         $length = $request->getAttribute('length');
         
-        $imageData = \AverroesProject\Image\EditorImages::illegibleIcon($size, $length);
+        $imageData = EditorImages::illegibleIcon($size, $length);
         
         $response->getBody()->write($imageData);
         return $response->withHeader('Content-Type', 'image/png');
         //return $response;
     }
     
-    public function generateChunkMarkIcon(Request $request, 
-            Response $response, $next)
+    public function generateChunkMarkIcon(Request $request, Response $response)
     {
         $dareId = $request->getAttribute('dareid');
         $chunkNumber = $request->getAttribute('chunkno');
@@ -76,42 +74,39 @@ class ApiIcons extends ApiController
         $segment = $request->getAttribute('segment');
         $dir = $request->getAttribute('dir');
         
-        $imageData = \AverroesProject\Image\EditorImages::ChunkMarkIcon($size, $dareId, $chunkNumber, $segment, $type, $dir);
+        $imageData = EditorImages::ChunkMarkIcon($size, $dareId, $chunkNumber, $segment, $type, $dir);
         
         $response->getBody()->write($imageData);
         return $response->withHeader('Content-Type', 'image/png');
     }
     
-    public function generateLineGapImage(Request $request, 
-            Response $response, $next)
+    public function generateLineGapImage(Request $request, Response $response)
     {
         $count = $request->getAttribute('count');
         $size = $request->getAttribute('size');
         
-        $imageData = \AverroesProject\Image\EditorImages::LineGapImage($size, $count);
+        $imageData = EditorImages::LineGapImage($size, $count);
         
         $response->getBody()->write($imageData);
         return $response->withHeader('Content-Type', 'image/png');
     }
     
-    public function generateCharacterGapImage(Request $request, 
-            Response $response, $next)
+    public function generateCharacterGapImage(Request $request,  Response $response)
     {
         $size = $request->getAttribute('size');
         $length = $request->getAttribute('length');
         
-        $imageData = \AverroesProject\Image\EditorImages::CharacterGapImage($size, $length);
+        $imageData = EditorImages::CharacterGapImage($size, $length);
         
         $response->getBody()->write($imageData);
         return $response->withHeader('Content-Type', 'image/png');
     }
     
-    public function generateParagraphMarkIcon(Request $request, 
-            Response $response, $next)
+    public function generateParagraphMarkIcon(Request $request, Response $response)
     {
         $size = $request->getAttribute('size');
         
-        $imageData = \AverroesProject\Image\EditorImages::paragraphMarkIcon($size);
+        $imageData = EditorImages::paragraphMarkIcon($size);
         
         $response->getBody()->write($imageData);
         return $response->withHeader('Content-Type', 'image/png');

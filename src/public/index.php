@@ -73,9 +73,6 @@ $cr = $systemManager->getCollationEngine();
 // Data Manager (will be replaced completely by SystemManager at some point
 $db = new DataManager($dbh, $systemManager->getTableNames(), $logger, $hm, $config['langCodes']);
 
-
-
-$container = new Container();
 $builder = new ContainerBuilder();
 $builder->addDefinitions([
     'settings' => $config,
@@ -100,33 +97,14 @@ AppFactory::setContainer($container);
 
 $app = AppFactory::create();
 
-$app->setBasePath($config['baseurl_subdir']);
+$subdir = $systemManager->getBaseUrlSubdir();
+if ($subdir !== '') {
+    $app->setBasePath($subdir);
+}
 
 $app->add(TwigMiddleware::createFromContainer($app));
+
 $container->set('router', $app->getRouteCollector()->getRouteParser());
-
-
-//$container['config'] = $config;
-//$container['db'] = $db;
-//$container['dbh'] = $dbh;
-//$container['logger'] = $logger;
-//$container['hm'] = $hm;
-//$container['cr'] = $cr;
-//$container['sm'] = $systemManager;
-//
-//$container['userId'] = 0;  // The authentication module will update this with the correct Id
-////
-// Twig
-//$container['view'] = function ($container) {
-//    $view = new Twig('templates', [
-//        'cache' => false   // Change this eventually!
-//    ]);
-//    $basePath = $container['config']['baseurl'];
-//    $view->addExtension(new TwigExtension(
-//            $container['router'], $basePath));
-//    return $view;
-//};
-
 
 
 

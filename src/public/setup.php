@@ -29,6 +29,8 @@
 
 require_once 'config.php';
 
+global $config;
+
 // Generate langCodes
 $config['langCodes'] = [];
 foreach ($config['languages'] as $lang) {
@@ -40,9 +42,7 @@ $config['db_table_prefix'] = 'ap_';
 // Collatex jar file
 $config['collatex_jar_file'] = 'collatex/bin/collatex-tools-1.7.1.jar';
 
-// Slim parameters
-$config['addContentLengthHeader'] = false;
-
 $config['plugin_dir'] = __DIR__ . '/plugins';
 
 $config['log_appname'] = 'APM';
+

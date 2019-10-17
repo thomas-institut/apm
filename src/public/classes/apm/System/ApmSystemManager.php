@@ -108,11 +108,9 @@ class ApmSystemManager extends SystemManager {
         self::CFG_SUPPORT_CONTACT_NAME,
         self::CFG_SUPPORT_CONTACT_EMAIL,
         self::CFG_BASE_URL,
-        'displayErrorDetails',
         self::CFG_LOG_FILENAME,
         'languages',
         'langCodes',
-        'addContentLengthHeader',
     ];
     
     const REQUIRED_CONFIG_VARIABLES_DB = [ 'host', 'db', 'user', 'pwd'];
@@ -455,4 +453,53 @@ class ApmSystemManager extends SystemManager {
         } 
         return $config;
     }
+
+    /**
+     * Returns the subdirectory part of a base Url
+     *
+     * The base url must be of the form:
+     *   http<s>://somewebsite</subdir>
+     *
+     * where strings in <> are optional.
+     *
+     * For examples:  http://my.com  (subdir = '')
+     *
+     * or  https:/my.com/web  (subdir = 'web')
+     *
+     * if the given base url is wrongly formed, the function throws an InvalidArgument exception
+     *
+     * @param string $baseUrl
+     * @return string
+     */
+    public function getBaseUrlSubdir() : string {
+
+        $baseUrl = $this->getBaseUrl();
+
+        $fields = explode('/', $baseUrl);
+
+        /// must have at least 3 fields
+        if (count($fields) <= 3) {
+            throw new \InvalidArgumentException('Badly formed url: ' . $baseUrl);
+        }
+
+        // $field[0] must be  http:  or https:
+        if ($fields[0] !== 'http:' && $fields[0] !== 'https:') {
+            throw new \InvalidArgumentException('Expected http:  or https: in base Url ' . $baseUrl);
+        }
+
+        // $field[1] must be empty
+        if ($fields[1] !== '') {
+            throw new \InvalidArgumentException('Expected // after http:');
+        }
+
+        // $field[2] is the website, not checking anything there
+
+        // everything after $field[2] is the subdir
+        if (!isset($fields[3])) {
+            return '';
+        }
+
+        return '/' . implode('/', array_slice($fields, 3));
+    }
+
 }

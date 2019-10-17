@@ -10,14 +10,11 @@ $config['db']['user'] = "USER";
 $config['db']['pwd'] = "PASSWORD";
 $config['db']['db'] = "DATABASE";
 
-// BASE URL
-$config['baseurl']='http://localhost:8888/public';
+// BASE URL  (do not add trailing slashes, e.g. https://mywebsite.com/ is wrong, use https://mywebsite.com)
+$config['baseurl'] = 'http://localhost:8888/public';
 
 // TIME ZONE
 $config['default_timezone'] = "Europe/Berlin";
-
-// SLIM ERROR HANDLING
-$config['displayErrorDetails'] = true;
 
 // LOG FILE
 $config['log_filename'] = '/var/log/apm/apm.log';

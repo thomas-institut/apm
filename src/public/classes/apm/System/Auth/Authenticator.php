@@ -250,7 +250,7 @@ class Authenticator {
             return $response->withStatus(401);
         }
         $this->debug('API : Success, go ahead!');
-        $this->container->set('userId', $userId);
+        $this->container->set('apiUserId', $userId);
         return $handler->handle($request);
     }
     

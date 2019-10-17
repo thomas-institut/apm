@@ -268,7 +268,7 @@ class ApmSystemManager extends SystemManager {
         return $this->presetsManager;
     }
 
-    public function getLogger() {
+    public function getLogger() : Logger {
         return $this->logger;
     }
         

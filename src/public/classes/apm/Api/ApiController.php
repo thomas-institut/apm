@@ -55,10 +55,9 @@ abstract class ApiController
     /**
      * @var int
      */
-    protected  $userId;
+    protected  $apiUserId;
     
     // Error codes
-    const API_NO_ERROR = 0;
     const API_ERROR_NO_DATA = 1000;
     const API_ERROR_NO_ELEMENT_ARRAY = 1001;
     const API_ERROR_NO_EDNOTES = 1002;
@@ -85,11 +84,6 @@ abstract class ApiController
     const API_ERROR_WRONG_TYPE = 1300;
 
     /**
-     * @var array
-     */
-    private $config;
-
-    /**
      * @var CollationEngine
      */
     protected $collationEngine;
@@ -103,12 +97,13 @@ abstract class ApiController
     public function __construct(Container $ci)
     {
        $this->dataManager = $ci->get('db');
-       $this->logger = $ci->get('logger')->withName('API-new');
        $this->systemManager = $ci->get('sm');
-       $this->userId = $ci->get('userId');
-       $this->config = $ci->get('settings');
+       $this->apiUserId = $ci->get('apiUserId'); // this should be set by the authenticator!
+       $this->languages =$ci->get('config')['languages'];
+
        $this->collationEngine = $this->systemManager->getCollationEngine();
-       $this->languages = $this->config['languages'];
+       $this->logger = $this->systemManager->getLogger()->withName('API');
+
     }
     
     /**
@@ -137,7 +132,7 @@ abstract class ApiController
         // Some checks
         if (is_null($inputData) ) {
             $this->logger->error("$apiCall: no data in input",
-                    [ 'apiUserId' => $this->userId,
+                    [ 'apiUserId' => $this->apiUserId,
                       'apiError' => self::API_ERROR_NO_DATA,
                       'rawdata' => $postData]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_NO_DATA], 409);
@@ -146,7 +141,7 @@ abstract class ApiController
         foreach ($requiredFields as $requiredField) {
             if (!isset($inputData[$requiredField])) {
                 $this->logger->error("$apiCall: missing required field $requiredField in input data",
-                    [ 'apiUserId' => $this->userId,
+                    [ 'apiUserId' => $this->apiUserId,
                       'apiError' => self::API_ERROR_MISSING_REQUIRED_FIELD,
                       'rawdata' => $postData]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_MISSING_REQUIRED_FIELD], 409);

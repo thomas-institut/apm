@@ -127,13 +127,13 @@ class SimplePresetManager extends PresetManager {
     /**
      * Returns the Preset identified by $tool, $userId and $title or
      * false if there's no such preset in the system.
-     * 
+     *
      * @param string $tool
      * @param int $userId
      * @param string $title
-     * @return boolean
+     * @return Preset|boolean
      */
-    public function getPreset(string $tool, int $userId, string $title) {
+    public function getPreset(string $tool, int $userId, string $title) : Preset {
         $index = $this->getPresetIndex($tool, $userId, $title);
         if ($index === false) {
             return false;

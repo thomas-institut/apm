@@ -76,9 +76,8 @@ if ($systemManager->fatalErrorOccurred()) {
 }
 
 $logger = $systemManager->getLogger();
-$dbh = $systemManager->getDbConnection();
 $hm = $systemManager->getHookManager();
-$cr = $systemManager->getCollationEngine();
+$dbh = $systemManager->getDbConnection();
 
 // Data Manager (will be replaced completely by SystemManager at some point
 $db = new DataManager($dbh, $systemManager->getTableNames(), $logger, $hm, $config['langCodes']);
@@ -91,7 +90,7 @@ $builder->addDefinitions([
     'dbh' => $dbh,
     'logger' => $logger,
     'hm' => $hm,
-    'cr' => $cr,
+    'cr' => $systemManager->getCollationEngine(),
     'sm' => $systemManager,
     'userId' => 0  // The authentication module will update this with the correct Id
 ]);

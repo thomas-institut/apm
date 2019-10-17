@@ -23,6 +23,7 @@ namespace APM\System;
 
 
 use APM\Presets\PresetManager;
+use Monolog\Logger;
 
 /**
  * Integration class for putting together all the elements necessary
@@ -39,6 +40,10 @@ abstract class SystemManager {
     
     const ERROR_NO_ERROR = 0;
     const MSG_ERROR_NO_ERROR = 'No Error';
+
+    // User roles
+    const ROLE_READ_ONLY = 'readOnly';
+
 
     // Tool Ids (for presets)
     const TOOL_AUTOMATIC_COLLATION = 'automaticCollation';
@@ -87,7 +92,7 @@ abstract class SystemManager {
      * Get methods for the different components
      */
     abstract public function getPresetsManager() : PresetManager;
-    abstract public function getLogger();
+    abstract public function getLogger() : Logger;
     abstract public function getHookManager();
     abstract public function getSettingsManager();
     abstract public function getCollationEngine();

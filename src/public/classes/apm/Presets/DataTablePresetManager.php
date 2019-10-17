@@ -120,9 +120,9 @@ class DataTablePresetManager extends PresetManager {
      * @param string $tool
      * @param int $userId
      * @param string $title
-     * @return boolean
+     * @return Preset|boolean
      */
-    public function getPreset(string $tool, int $userId, string $title) {
+    public function getPreset(string $tool, int $userId, string $title) : Preset {
         $row = $this->getPresetRow($tool, $userId, $title);
         if ($row === false) {
             return false;

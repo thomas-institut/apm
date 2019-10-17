@@ -82,7 +82,7 @@ class ApiPresets extends ApiController
         // Check that the input parameters make sense
         if (!is_string($tool) || $tool==='') {
             $this->logger->error("Field 'tool' must be a non-empty string",
-                    [ 'apiUserId' => $this->userId,
+                    [ 'apiUserId' => $this->apiUserId,
                       'apiError' => self::API_ERROR_WRONG_TYPE,
                       'data' => $inputData ]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_WRONG_TYPE], 409);
@@ -90,7 +90,7 @@ class ApiPresets extends ApiController
         
         if (!$this->systemManager->isToolValid($tool)) {
             $this->logger->error("Unrecognized tool",
-                    [ 'apiUserId' => $this->userId,
+                    [ 'apiUserId' => $this->apiUserId,
                       'apiError' => self::API_ERROR_UNRECOGNIZED_TOOL,
                       'data' => $inputData ]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_UNRECOGNIZED_TOOL], 409);
@@ -99,7 +99,7 @@ class ApiPresets extends ApiController
         
         if (!is_array($keyArrayToMatch)) {
             $this->logger->error("Field 'keyArrayToMatch' must be an array",
-                    [ 'apiUserId' => $this->userId,
+                    [ 'apiUserId' => $this->apiUserId,
                       'apiError' => self::API_ERROR_WRONG_TYPE,
                       'data' => $inputData ]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_WRONG_TYPE], 409);
@@ -168,7 +168,7 @@ class ApiPresets extends ApiController
         // Check that the input parameters make sense
         if (!is_array($witnesses)) {
             $this->logger->error("Field 'witnesses' must be an array",
-                    [ 'apiUserId' => $this->userId,
+                    [ 'apiUserId' => $this->apiUserId,
                       'apiError' => self::API_ERROR_WRONG_TYPE,
                       'data' => $inputData ]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_WRONG_TYPE], 409);
@@ -176,7 +176,7 @@ class ApiPresets extends ApiController
         
         if (count($witnesses) < 2) {
             $this->logger->error("Field 'witnesses' must have 2 or more elements",
-                    [ 'apiUserId' => $this->userId,
+                    [ 'apiUserId' => $this->apiUserId,
                       'apiError' => self::API_ERROR_NOT_ENOUGH_WITNESSES,
                       'data' => $inputData ]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_NOT_ENOUGH_WITNESSES], 409);
@@ -237,7 +237,7 @@ class ApiPresets extends ApiController
         // check that command is valid
         if ($command !== self::COMMAND_NEW && $command !== self::COMMAND_UPDATE) {
             $this->logger->error("Unknown command " . $command,
-                    [ 'apiUserId' => $this->userId,
+                    [ 'apiUserId' => $this->apiUserId,
                       'apiError' => self::API_ERROR_UNKNOWN_COMMAND,
                       'data' => $inputData ]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_UNKNOWN_COMMAND], 409);
@@ -249,7 +249,7 @@ class ApiPresets extends ApiController
         // check that tool is valid
         if (!$this->systemManager->isToolValid($tool)){
             $this->logger->error("Unrecognized tool " . $tool,
-                    [ 'apiUserId' => $this->userId,
+                    [ 'apiUserId' => $this->apiUserId,
                       'apiError' => self::API_ERROR_UNRECOGNIZED_TOOL,
                       'data' => $inputData ]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_UNRECOGNIZED_TOOL], 409);
@@ -262,7 +262,7 @@ class ApiPresets extends ApiController
         // check that preset data is an array and that is not empty
         if (!is_array($data) || count($data)===0) {
             $this->logger->error("Invalid preset data",
-                    [ 'apiUserId' => $this->userId,
+                    [ 'apiUserId' => $this->apiUserId,
                       'apiError' => self::API_ERROR_INVALID_PRESET_DATA,
                       'data' => $inputData ]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_INVALID_PRESET_DATA], 409);
@@ -270,14 +270,14 @@ class ApiPresets extends ApiController
         
         $pm = $this->systemManager->getPresetsManager();
         $pf = new PresetFactory();
-        $apiUserId = $this->userId;
+        $apiUserId = $this->apiUserId;
         if ($command === self::COMMAND_NEW) {
             // Notice: when creating a new preset, the API ignores the given userId and presetId,
             // defaults to the user authenticated by the system and generates a new preset Id
             $preset = $pf->create($tool, $apiUserId, $title, $data);
             if ($pm->correspondingPresetExists($preset)) {
                 $this->logger->error("Preset already exists",
-                    [ 'apiUserId' => $this->userId,
+                    [ 'apiUserId' => $this->apiUserId,
                       'apiError' => self::API_ERROR_PRESET_ALREADY_EXISTS,
                       'data' => $inputData ]);
                 return $this->responseWithJson($response, ['error' => self::API_ERROR_PRESET_ALREADY_EXISTS], 409);
@@ -285,7 +285,7 @@ class ApiPresets extends ApiController
             if (!$pm->addPreset($preset)) {
                 // @codeCoverageIgnoreStart
                 $this->logger->error("Could not save new preset",
-                    [ 'apiUserId' => $this->userId,
+                    [ 'apiUserId' => $this->apiUserId,
                       'apiError' => self::API_ERROR_CANNOT_SAVE_PRESET,
                       'data' => $inputData ]);
                 return $this->responseWithJson($response, ['error' => self::API_ERROR_CANNOT_SAVE_PRESET], 409);
@@ -302,26 +302,26 @@ class ApiPresets extends ApiController
         $currentPreset = $pm->getPresetById($presetId);
         if ($currentPreset === false) {
             $this->logger->error("Preset with given Id does not exist",
-                [ 'apiUserId' => $this->userId,
+                [ 'apiUserId' => $this->apiUserId,
                     'apiError' => self::API_ERROR_PRESET_DOES_NOT_EXIST,
                     'data' => $inputData ]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_PRESET_DOES_NOT_EXIST], 409);
         }
 
         // check that userId is the same as the current preset's userId
-        if (intval($this->userId) !== $currentPreset->getUserId()) {
+        if (intval($this->apiUserId) !== $currentPreset->getUserId()) {
             $this->logger->error("API user not authorized to update preset",
-                    [ 'apiUserId' => $this->userId,
+                    [ 'apiUserId' => $this->apiUserId,
                       'apiError' => self::API_ERROR_NOT_AUTHORIZED,
                       'data' => $inputData ]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_NOT_AUTHORIZED], 409);
         }
 
-        $updatedPreset = $pf->create($tool, $this->userId, $title, $data);
+        $updatedPreset = $pf->create($tool, $this->apiUserId, $title, $data);
         if (!$pm->updatePresetById($presetId, $updatedPreset)) {
             // @codeCoverageIgnoreStart
             $this->logger->error("Could not update preset",
-                    [ 'apiUserId' => $this->userId,
+                    [ 'apiUserId' => $this->apiUserId,
                       'apiError' => self::API_ERROR_CANNOT_SAVE_PRESET,
                       'data' => $inputData ]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_CANNOT_SAVE_PRESET], 409);
@@ -343,14 +343,14 @@ class ApiPresets extends ApiController
         $currentPreset = $presetsManager->getPresetById($presetId);
         if ($currentPreset === false) {
             $this->logger->error("Preset with given Id does not exist",
-                    [ 'apiUserId' => $this->userId,
+                    [ 'apiUserId' => $this->apiUserId,
                       'apiError' => self::API_ERROR_PRESET_DOES_NOT_EXIST,
                       'presetId'  => $presetId ]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_PRESET_DOES_NOT_EXIST], 409);
         }
-        if ($currentPreset->getUserId() !== intval($this->userId)) {
+        if ($currentPreset->getUserId() !== intval($this->apiUserId)) {
             $this->logger->error("API user not authorized to delete preset",
-                    [ 'apiUserId' => $this->userId,
+                    [ 'apiUserId' => $this->apiUserId,
                       'apiError' => self::API_ERROR_NOT_AUTHORIZED,
                       'presetUserId' => $currentPreset->getUserId()
                     ]);
@@ -360,7 +360,7 @@ class ApiPresets extends ApiController
         if (!$presetsManager->erasePresetById($presetId)) {
             // @codeCoverageIgnoreStart
             $this->logger->error("Cannot delete preset",
-                    [ 'apiUserId' => $this->userId,
+                    [ 'apiUserId' => $this->apiUserId,
                       'apiError' => self::API_ERROR_CANNOT_DELETE,
                       'presetId'  => $presetId ]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_CANNOT_DELETE], 409);

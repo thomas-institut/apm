@@ -20,7 +20,9 @@
 
 namespace APM\Api;
 
+use DI\Container;
 use Monolog\Logger;
+use Psr\Http\Message\ResponseInterface;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
@@ -33,7 +35,7 @@ use APM\System\SystemManager;
  */
 abstract class ApiController
 {
-    protected $ci;
+    protected $container;
 
     /**
      * @var Logger
@@ -48,6 +50,12 @@ abstract class ApiController
      * @var SystemManager 
      */
     protected $systemManager;
+
+
+    /**
+     * @var int
+     */
+    protected  $userId;
     
     // Error codes
     const API_NO_ERROR = 0;
@@ -75,16 +83,23 @@ abstract class ApiController
     const API_ERROR_DB_UPDATE_ERROR = 1200;
     
     const API_ERROR_WRONG_TYPE = 1300;
-            
-    
+
+    /**
+     * @var array
+     */
+    protected $config;
     
     //Constructor
-    public function __construct( $ci)
+
+
+    public function __construct( Container $ci)
     {
-       $this->ci = $ci;
-       $this->dataManager = $ci->db;
-       $this->logger = $ci->logger->withName('API-new');
-       $this->systemManager = $ci->sm;
+       $this->container = $ci;
+       $this->dataManager = $ci->get('db');
+       $this->logger = $ci->get('logger')->withName('API-new');
+       $this->systemManager = $ci->get('sm');
+       $this->userId = $ci->get('userId');
+       $this->config = $ci->get('settings');
     }
     
     /**
@@ -113,7 +128,7 @@ abstract class ApiController
         // Some checks
         if (is_null($inputData) ) {
             $this->logger->error("$apiCall: no data in input",
-                    [ 'apiUserId' => $this->ci->userId, 
+                    [ 'apiUserId' => $this->userId,
                       'apiError' => self::API_ERROR_NO_DATA,
                       'rawdata' => $postData]);
             return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_NO_DATA]);
@@ -122,7 +137,7 @@ abstract class ApiController
         foreach ($requiredFields as $requiredField) {
             if (!isset($inputData[$requiredField])) {
                 $this->logger->error("$apiCall: missing required field $requiredField in input data",
-                    [ 'apiUserId' => $this->ci->userId, 
+                    [ 'apiUserId' => $this->userId,
                       'apiError' => self::API_ERROR_MISSING_REQUIRED_FIELD,
                       'rawdata' => $postData]);
             return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_MISSING_REQUIRED_FIELD]);
@@ -130,5 +145,13 @@ abstract class ApiController
         }
         
         return $inputData;
+    }
+
+    protected function responseWithJson(ResponseInterface $response, $data, $status = 201) : ResponseInterface {
+        $payload = json_encode($data);
+        $response->getBody()->write($payload);
+        return $response
+            ->withHeader('Content-Type', 'application/json')
+            ->withStatus($status);
     }
 }

@@ -10,10 +10,10 @@
     $(document).ready(function () {
         docEditObj = new DocEditPage('de', 
         JSON.parse('{{docInfo|json_encode|raw}}'),
-        '{{path_for('api.doc.update', {'id': docInfo.id})}}',
-        '{{path_for('doc.showdoc', {'id' : docInfo.id })}}', 
-        '{{path_for('api.doc.delete', {'id' : docInfo.id })}}',
-        '{{path_for('docs')}}',
+        '{{url_for('api.doc.update', {'id': docInfo.id})}}',
+        '{{url_for('doc.showdoc', {'id' : docInfo.id })}}',
+        '{{url_for('api.doc.delete', {'id' : docInfo.id })}}',
+        '{{url_for('docs')}}',
         )
     })
     
@@ -22,8 +22,8 @@
 
 {% block content %}
      <ol class="breadcrumb">
-        <li><a href="{{path_for('docs')}}">Documents</a></li>
-        <li><a href="{{path_for('doc.showdoc', {'id' : docInfo.id })}}">{{ docInfo.title}}</a></li>
+        <li><a href="{{url_for('docs')}}">Documents</a></li>
+        <li><a href="{{url_for('doc.showdoc', {'id' : docInfo.id })}}">{{ docInfo.title}}</a></li>
         <li class="active">Edit Document</li>
     </ol>
 

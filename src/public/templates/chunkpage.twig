@@ -37,7 +37,7 @@ $(document).ready(function()
 {% endblock %}
 {% block content %}
      <ol class="breadcrumb">
-         <li><a href="{{path_for('chunks')}}">Chunks</a></li>
+         <li><a href="{{url_for('chunks')}}">Chunks</a></li>
         <li class="active">Chunk Details</li>
     </ol>
 <h1>{{work_info.author_name}}, <em>{{work_info.title}}</em>, chunk {{chunk}}</h1>
@@ -48,24 +48,24 @@ $(document).ready(function()
     <thead><tr><th>Title</th><th>Type</th><th>Language</th><th>Pages</th><th>Last Change</th><th/></tr></thead>
 {% for doc in docs %}
 <tr>
-    <td><a href="{{path_for('doc.showdoc', {'id' : doc.id})}}" target="_blank" title="View Document in New Tab">{{doc.title}}</a></td>
+    <td><a href="{{url_for('doc.showdoc', {'id' : doc.id})}}" target="_blank" title="View Document in New Tab">{{doc.title}}</a></td>
     <td>{{macros.docTypeName(doc.doc_type)}}</td>
     <td>{{macros.langName(doc.lang)}}</td>
     <td>
         
         {% for seg in doc.segments %}
-<a href="{{path_for('pageviewer.docseq', {'doc' : doc.id, 'seq' : seg.start.page_seq})}}" target="_blank" title="View Page in New Tab">{{seg.start.foliation}}</a>{% if seg.end.foliation and seg.end.foliation != seg.start.foliation %}&ndash;<a href="{{path_for('pageviewer.docseq', {'doc' : doc.id, 'seq' : seg.end.page_seq})}}" target="_blank" title="View Page in New Tab">{{seg.end.foliation}}</a>{% endif %}{% if not loop.last %}, {% endif %}
+<a href="{{url_for('pageviewer.docseq', {'doc' : doc.id, 'seq' : seg.start.page_seq})}}" target="_blank" title="View Page in New Tab">{{seg.start.foliation}}</a>{% if seg.end.foliation and seg.end.foliation != seg.start.foliation %}&ndash;<a href="{{url_for('pageviewer.docseq', {'doc' : doc.id, 'seq' : seg.end.page_seq})}}" target="_blank" title="View Page in New Tab">{{seg.end.foliation}}</a>{% endif %}{% if not loop.last %}, {% endif %}
         {% endfor %}
     </td>
     <td>
         {% if not doc.error and not doc.warnings %}
-            {{ doc.lastTimeFormatted}},  <a href="{{ path_for('user.profile', {'username' : doc.lastAuthorUsername}) }}">{{ doc.lastAuthorName }}</a>
+            {{ doc.lastTimeFormatted}},  <a href="{{ url_for('user.profile', {'username' : doc.lastAuthorUsername}) }}">{{ doc.lastAuthorName }}</a>
         {%  endif %}
     </td>
     <td>
 
         {% if userCanViewChunkDetails and doc.goodWitness %}
-            <a title="View Witness Details" href="{{path_for('witness', { 'work' : work, 'chunk': chunk, 'type': 'doc', 'id': doc.id})}}"><i class="fas fa-cogs" aria-hidden="true"></i></a>
+            <a title="View Witness Details" href="{{url_for('witness', { 'work' : work, 'chunk': chunk, 'type': 'doc', 'id': doc.id})}}"><i class="fas fa-cogs" aria-hidden="true"></i></a>
         {% endif %}
 
     {% if doc.error %}

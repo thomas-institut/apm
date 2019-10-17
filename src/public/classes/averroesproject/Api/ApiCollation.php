@@ -48,35 +48,35 @@ class ApiCollation extends ApiController
         // Some checks
         if (is_null($inputDataObject) ) {
             $this->logger->error("Quick Collation: no data in input",
-                    [ 'apiUserId' => $this->ci->userId, 
+                    [ 'apiUserId' => $this->userId,
                       'apiError' => ApiController::API_ERROR_NO_DATA,
                       'rawdata' => $postData]);
-            return $response->withStatus(409)->withJson( ['error' => ApiController::API_ERROR_NO_DATA]);
+            return$this->responseWithJson($response, ['error' => ApiController::API_ERROR_NO_DATA], 409);
         }
         
         if (!isset($inputDataObject['witnesses'])) {
             $this->logger->error("Quick Collation: no witnesses in input data",
-                    [ 'apiUserId' => $this->ci->userId, 
+                    [ 'apiUserId' => $this->userId,
                       'apiError' => ApiController::API_ERROR_NO_DATA,
                       'data' => $inputDataObject ]);
-            return $response->withStatus(409)->withJson( ['error' => ApiController::API_ERROR_NO_DATA]);
+            return$this->responseWithJson($response, ['error' => ApiController::API_ERROR_NO_DATA], 409);
         }
         
-        $cr = $this->ci->cr;
+        $cr = $this->ci->get('cr');
         
         $output = $cr->run($inputDataObject['witnesses']);
         if ($output === false) {
             $this->logger->error("Quick Collation: error running Collatex",
-                    [ 'apiUserId' => $this->ci->userId, 
+                    [ 'apiUserId' => $this->userId,
                       'apiError' => ApiController::API_ERROR_ERROR_RUNNING_COLLATEX,
                       'data' => $inputDataObject, 
                       'collatexRunnerError' => $cr->getErrorCode(), 
                       'rawOutput' => $cr->getRawOutput() ]);
-            return $response->withStatus(409)->withJson( ['error' => ApiController::API_ERROR_ERROR_RUNNING_COLLATEX]);
+            return$this->responseWithJson($response, ['error' => ApiController::API_ERROR_ERROR_RUNNING_COLLATEX], 409);
         }
         
         $profiler->log($this->logger);
-        return $response->withJson($output);
+        return $this->responseWithJson($response, $output);
     }
     
 }

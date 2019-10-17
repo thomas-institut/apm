@@ -19,7 +19,7 @@ class ApiEditionEngine extends ApiController
     public function basicEditionEngine(Request $request,
                                        Response $response, $next)
     {
-        $db = $this->dataManager;
+        $dataManager = $this->dataManager;
         $apiCall = 'EditionEngine';
         $requiredFields = [
             EditionEngine::INPUT_FIELD_COLLATION_TABLE,
@@ -33,7 +33,7 @@ class ApiEditionEngine extends ApiController
         if (!is_array($inputDataObject)) {
             return $inputDataObject;
         }
-        $profiler = new ApmProfiler("EditionEngine", $db);
+        $profiler = new ApmProfiler("EditionEngine", $dataManager);
 
         $engine = new BasicEditionEngine();
 
@@ -41,15 +41,15 @@ class ApiEditionEngine extends ApiController
 
         if ($engine->getErrorCode() !== Engine::ERROR_NOERROR) {
             $this->logger->error("$apiCall: EditionEngine error",
-                [ 'apiUserId' => $this->ci->userId,
+                [ 'apiUserId' => $this->container->userId,
                     'apiError' => self::API_ERROR_ENGINE_ERROR,
                     'enginerError' => $engine->getErrorCode() . ': ' . $engine->getErrorMessage()]);
-            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_ENGINE_ERROR]);
+            return $this->responseWithJson($response, ['error' => self::API_ERROR_ENGINE_ERROR], 409);
         }
 
         $profiler->log($this->logger);
 
-        return $response->withJson([
+        return $this->responseWithJson($response, [
             'engineDetails' => $engine->getRunDetails(),
             'edition' => $edition
         ]);

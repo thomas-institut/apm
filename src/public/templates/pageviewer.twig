@@ -66,30 +66,30 @@
     <table width="100%">
         <tr>
             <td width="280px">
-                <a href="{{path_for('home')}}" title="Back to main page"><img src="{{baseurl}}/images/averroes-logo-250.png"></a>
+                <a href="{{url_for('home')}}" title="Back to main page"><img src="{{baseurl}}/images/averroes-logo-250.png"></a>
             </td>
             <td>
-                <span class="textonly"><a href="{{path_for('doc.showdoc', {'id' : doc })}}">{{ docInfo.title}}</a></span>
+                <span class="textonly"><a href="{{url_for('doc.showdoc', {'id' : doc })}}">{{ docInfo.title}}</a></span>
             </td>
             <td>
                 {% if navByPage==true %}
                     <button class="textonly headerbutton {{ page==1?' disabled':''}}"
                             title="First Page" 
-                             onclick="window.location='{{path_for('pageviewer.docpage', {'doc': doc, 'page': 1})}}';" {{ page==1 ? ' disabled' : '' }}>
+                             onclick="window.location='{{url_for('pageviewer.docpage', {'doc': doc, 'page': 1})}}';" {{ page==1 ? ' disabled' : '' }}>
                {% else %}
                     <button class="textonly headerbutton {{ seq==1?' disabled':''}}"
-                                onclick="window.location='{{path_for('pageviewer.docseq', {'doc': doc, 'seq': 1})}}';" {{ seq==1 ? ' disabled' : '' }}>
+                                onclick="window.location='{{url_for('pageviewer.docseq', {'doc': doc, 'seq': 1})}}';" {{ seq==1 ? ' disabled' : '' }}>
                 {% endif %}
                         <i class="fas fa-step-backward"></i>
                 </button>
                 {% if navByPage==true %}
                     <button class="textonly headerbutton {{ page==1?' disabled':''}}" 
                         title="Previous Page" 
-                                onclick="window.location='{{path_for('pageviewer.docpage', {'doc': doc, 'page': page-1})}}';" {{ page==1 ? ' disabled' : '' }}>
+                                onclick="window.location='{{url_for('pageviewer.docpage', {'doc': doc, 'page': page-1})}}';" {{ page==1 ? ' disabled' : '' }}>
                 {% else %}
                     <button class="textonly headerbutton {{ seq==1?' disabled':''}}" 
                                 title="Previous Page" 
-                                onclick="window.location='{{path_for('pageviewer.docseq', {'doc': doc, 'seq': seq-1})}}';" {{ seq==1 ? ' disabled' : '' }}>
+                                onclick="window.location='{{url_for('pageviewer.docseq', {'doc': doc, 'seq': seq-1})}}';" {{ seq==1 ? ' disabled' : '' }}>
                 {% endif %}
                         <i class="fas fa-chevron-left"></i>
                     </button>
@@ -99,22 +99,22 @@
                {% if navByPage==true %}
                     <button class="textonly headerbutton {{ page==docPageCount?' disabled':''}}"
                                 title="Next Page" 
-                                onclick="window.location='{{path_for('pageviewer.docpage', {'doc': doc, 'page': page+1})}}';" {{ page==docPageCount ? ' disabled' : '' }}>
+                                onclick="window.location='{{url_for('pageviewer.docpage', {'doc': doc, 'page': page+1})}}';" {{ page==docPageCount ? ' disabled' : '' }}>
                 {% else %}
                     <button class="textonly headerbutton {{ seq==docPageCount?' disabled':''}}"
                                title="Next Page" 
-                                onclick="window.location='{{path_for('pageviewer.docseq', {'doc': doc, 'seq': seq+1})}}';" {{ seq==docPageCount ? ' disabled' : '' }}>
+                                onclick="window.location='{{url_for('pageviewer.docseq', {'doc': doc, 'seq': seq+1})}}';" {{ seq==docPageCount ? ' disabled' : '' }}>
                 {% endif %}
                         <i class="fas fa-chevron-right"></i>
                     </button>
                 {% if navByPage==true %}
                     <button class="textonly headerbutton {{ page==docPageCount?' disabled':''}}" 
                                 title="Last Page" 
-                                onclick="window.location='{{path_for('pageviewer.docpage', {'doc': doc, 'page': docPageCount})}}';" {{ page==docPageCount?' disabled':''}}>
+                                onclick="window.location='{{url_for('pageviewer.docpage', {'doc': doc, 'page': docPageCount})}}';" {{ page==docPageCount?' disabled':''}}>
                 {% else %}  
                     <button class="textonly headerbutton {{ seq==docPageCount?' disabled':''}}" 
                                 title="Last Page" 
-                                onclick="window.location='{{path_for('pageviewer.docseq', {'doc': doc, 'seq': docPageCount})}}';" {{ seq==docPageCount?' disabled':''}}>
+                                onclick="window.location='{{url_for('pageviewer.docseq', {'doc': doc, 'seq': docPageCount})}}';" {{ seq==docPageCount?' disabled':''}}>
                 {% endif %}
                         <i class="fas fa-step-forward"></i>
                     </button>
@@ -132,7 +132,7 @@
             <td style="text-align: right;">
                 
                 <button title="Exit Viewer" class="textonly headerbuttonright"
-                                onclick="window.location='{{path_for('home')}}';">
+                                onclick="window.location='{{url_for('home')}}';">
                     <i class="fas fa-power-off"></i>
                 </button>
             </td>

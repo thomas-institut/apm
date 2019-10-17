@@ -41,7 +41,7 @@ class SitePageViewer extends SiteController
 
         $docInfo = $this->dataManager->getDocById($docId);
         $pageInfo = $this->dataManager->getPageInfoByDocPage($docId, $pageNumber);
-        //$this->ci->logger->debug('Page info', $pageInfo);
+
         $docPageCount = $this->dataManager->getPageCountByDocId($docId);
         $pagesInfo = $this->dataManager->getDocPageInfo($docId, \AverroesProject\Data\DataManager::ORDER_BY_PAGE_NUMBER);
         $transcribedPages = $this->dataManager->getTranscribedPageListByDocId($docId);
@@ -51,15 +51,15 @@ class SitePageViewer extends SiteController
         $pageTypeNames  = $this->dataManager->getPageTypeNames();
         $activeWorks = $this->dataManager->getActiveWorks();
         $pageNumberFoliation = $pageNumber;
-        $languagesArray = $this->ci->settings['languages'];
+        $languagesArray = $this->config['languages'];
         if ($pageInfo['foliation'] !== NULL) {
             $pageNumberFoliation = $pageInfo['foliation'];
         }
 
-        return $this->ci->view->render($response, 'pageviewer.twig', [
-            'userinfo' => $this->ci->userInfo, 
-            'copyright' => $this->ci->copyrightNotice,
-            'baseurl' => $this->ci->settings['baseurl'],
+        return $this->view->render($response, 'pageviewer.twig', [
+            'userinfo' => $this->userInfo,
+            'copyright' => $this->copyrightNotice,
+            'baseurl' => $this->config['baseurl'],
             'navByPage' => true,
             'doc' => $docId,
             'docInfo' => $docInfo,
@@ -94,17 +94,17 @@ class SitePageViewer extends SiteController
         $osdConfig = $this->dataManager->getOpenSeaDragonConfig($docId, $pageInfo['img_number']);
         $pageTypeNames  = $this->dataManager->getPageTypeNames();
         $activeWorks = $this->dataManager->getActiveWorks();
-        $languagesArray = $this->ci->settings['languages'];
+        $languagesArray = $this->config['languages'];
         
         $pageNumberFoliation = $pageInfo['seq'];
         if ($pageInfo['foliation'] !== NULL) {
             $pageNumberFoliation = $pageInfo['foliation'];
         }
 
-        return $this->ci->view->render($response, 'pageviewer.twig', [
-            'userinfo' => $this->ci->userInfo, 
-            'copyright' => $this->ci->copyrightNotice,
-            'baseurl' => $this->ci->settings['baseurl'],
+        return $this->view->render($response, 'pageviewer.twig', [
+            'userinfo' => $this->userInfo,
+            'copyright' => $this->copyrightNotice,
+            'baseurl' => $this->config['baseurl'],
             'navByPage' => false,  // i.e., navigate by sequence
             'doc' => $docId,
             'docInfo' => $docInfo,

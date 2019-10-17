@@ -39,14 +39,14 @@ class ApiUsers extends ApiController
         $userProfileInfo = $um->getUserInfoByUserId($profileUserId);
         if ($userProfileInfo === false ) {
             $this->logger->error("Error getting info from user ID",
-                    [ 'apiUserId' => $this->ci->userId, 
+                    [ 'apiUserId' => $this->userId,
                       'userId' => $profileUserId]);
             return $response->withStatus(409);
         }
         
         $userProfileInfo['isroot'] = $um->isRoot($profileUserId);
         $profiler->log($this->logger);
-        return $response->withJson($userProfileInfo);
+        return $this->responseWithJson($response,$userProfileInfo);
     }
    
     public function updateUserProfile(Request $request, Response $response, 
@@ -61,26 +61,26 @@ class ApiUsers extends ApiController
         
         if ($profileUserInfo === false ) {
             $this->logger->error("Error getting info from user ID",
-                    [ 'apiUserId' => $this->ci->userId, 
+                    [ 'apiUserId' => $this->userId,
                       'userId' => $profileUserId]);
             return $response->withStatus(409);
         }
        
         if ($fullname == '') {
             $this->logger->warning("No fullname given", 
-                    [ 'apiUserId' => $this->ci->userId, 
+                    [ 'apiUserId' => $this->userId,
                       'userId' => $profileUserId]);
             return $response->withStatus(409);
         }
         
         $profileUserName = $profileUserInfo['username'];
-        $updaterInfo = $um->getUserInfoByUserId($this->ci->userId);
+        $updaterInfo = $um->getUserInfoByUserId($this->userId);
         $updater = $updaterInfo['username'];
         if ($updater != $profileUserName && 
                 !$um->isUserAllowedTo($updaterInfo['id'], 'manageUsers')) {
             $this->logger->warning("$updater tried to update "
                     . "$profileUserName's profile but she/he is not allowed", 
-                    [ 'apiUserId' => $this->ci->userId, 
+                    [ 'apiUserId' => $this->userId,
                       'userId' => profileUserId]);
             return $response->withStatus(403);
         }
@@ -88,7 +88,7 @@ class ApiUsers extends ApiController
                 $email === $profileUserInfo['email']) {
             $this->logger->notice("$updater tried to update "
                     . "$profileUserName's profile, but without new information", 
-                    [ 'apiUserId' => $this->ci->userId, 
+                    [ 'apiUserId' => $this->userId,
                       'userId' => $profileUserId]);
             return $response->withStatus(200);
         }
@@ -97,14 +97,14 @@ class ApiUsers extends ApiController
             
             $this->logger->info("$updater updated $profileUserName's "
                     . "profile with fullname '$fullname', email '$email'", 
-                    [ 'apiUserId' => $this->ci->userId, 
+                    [ 'apiUserId' => $this->userId,
                       'userId' => $profileUserId]);
             return $response->withStatus(200);
         }
         
         $this->logger->error("Could not update user $profileUserId with "
                 . "fullname '$fullname', email '$email'", 
-                [ 'apiUserId' => $this->ci->userId, 
+                [ 'apiUserId' => $this->userId,
                       'userId' => $profileUserId]);
         return $response->withStatus(409);       
     }
@@ -122,33 +122,33 @@ class ApiUsers extends ApiController
         
         if ($profileUserInfo === false ) {
             $this->logger->error("Error getting info for user ID", 
-                    [ 'apiUserId' => $this->ci->userId, 
+                    [ 'apiUserId' => $this->userId,
                       'userId' => $profileUserId]);
             return $response->withStatus(409);
         }
         $profileUserName = $profileUserInfo['username'];
          
-        $updaterInfo = $um->getUserInfoByUserId($this->ci->userId);
+        $updaterInfo = $um->getUserInfoByUserId($this->userId);
         $updater = $updaterInfo['username'];
         if ($updater != $profileUserName && 
                 !$um->isUserAllowedTo($updaterInfo['id'], 'manageUsers')) {
             $this->logger->warning("$updater tried to changer "
                     . "$profileUserName's password but she/he is not allowed", 
-                    [ 'apiUserId' => $this->ci->userId, 
+                    [ 'apiUserId' => $this->userId,
                       'userId' => $profileUserId]);
             return $response->withStatus(403);
         }
         if ($password1 == '') {
              $this->logger->warning("Empty password for user "
                      . "$profileUserName, change attempted by $updater", 
-                    [ 'apiUserId' => $this->ci->userId, 
+                    [ 'apiUserId' => $this->userId,
                       'userId' => $profileUserId]);
             return $response->withStatus(409);
         }
         if ($password1 !== $password2) {
             $this->logger->warning("Passwords do not match for user "
                     . "$profileUserName, change attempted by $updater", 
-                    [ 'apiUserId' => $this->ci->userId, 
+                    [ 'apiUserId' => $this->userId,
                       'userId' => $profileUserId]);
             return $response->withStatus(409);
         }
@@ -156,14 +156,14 @@ class ApiUsers extends ApiController
         if ($um->storeUserPassword($profileUserName, $password1)) {
             $this->logger->info("$updater changed "
                     . "$profileUserName's password", 
-                    [ 'apiUserId' => $this->ci->userId, 
+                    [ 'apiUserId' => $this->userId,
                       'userId' => $profileUserId]);
             return $response->withStatus(200);
         }
         
         $this->logger->error("Error storing new password for "
                 . "$profileUserName, change attempted by $updater", 
-                    [ 'apiUserId' => $this->ci->userId, 
+                    [ 'apiUserId' => $this->userId,
                       'userId' => $profileUserId]);
         return $response->withStatus(409);
     }
@@ -177,7 +177,7 @@ class ApiUsers extends ApiController
 
         if ($confirmroot !== 'on') {
             $this->logger->warning("No confirmation in make root request", 
-                    [ 'apiUserId' => $this->ci->userId, 
+                    [ 'apiUserId' => $this->userId,
                       'userId' => $profileUserId]);
             return $response->withStatus(409);
         }
@@ -185,31 +185,31 @@ class ApiUsers extends ApiController
         $profileUserInfo = $um->getUserInfoByUserId($profileUserId);
         if ($profileUserInfo === false ) {
             $this->logger->error("Error getting info for user ID", 
-                    [ 'apiUserId' => $this->ci->userId, 
+                    [ 'apiUserId' => $this->userId,
                       'userId' => $profileUserId]);
             return $response->withStatus(409);
         }
         $profileUserName = $profileUserInfo['username'];
-        $updaterInfo = $um->getUserInfoByUserId($this->ci->userId);
+        $updaterInfo = $um->getUserInfoByUserId($this->userId);
         $updater = $updaterInfo['username'];
         if (!$um->isRoot($updaterInfo['id'])) {
             $this->logger->warning("$updater tried to make $profileUserName "
                     . "root but she/he is not allowed", 
-                    [ 'apiUserId' => $this->ci->userId, 
+                    [ 'apiUserId' => $this->userId,
                       'userId' => $profileUserId]);
             return $response->withStatus(403);
         }
         
        if ($um->makeRoot($profileUserId)) {
             $this->logger->info("$updater gave root status to $profileUserName", 
-                    [ 'apiUserId' => $this->ci->userId, 
+                    [ 'apiUserId' => $this->userId,
                       'userId' => $profileUserId]);
             return $response->withStatus(200);
         }
         
         $this->logger->error("Error making $profileUserName root, change "
                 . "attempted by $updater", 
-                    [ 'apiUserId' => $this->ci->userId, 
+                    [ 'apiUserId' => $this->userId,
                       'userId' => $profileUserId]);
         return $response->withStatus(409);
     }
@@ -224,10 +224,10 @@ class ApiUsers extends ApiController
         $password1 = $postData['password1'];
         $password2 = $postData['password2'];
         
-        $updaterInfo = $um->getUserInfoByUserId($this->ci->userId);
+        $updaterInfo = $um->getUserInfoByUserId($this->userId);
         if ($updaterInfo === false) {
             $this->logger->error("Can't read updater info from DB", 
-                    ['apiUserId' => $this->ci->userId]);
+                    ['apiUserId' => $this->userId]);
             return $response->withStatus(404);
         }
         $updater = $updaterInfo['username'];
@@ -235,33 +235,33 @@ class ApiUsers extends ApiController
         if (!$um->isUserAllowedTo($updaterInfo['id'], 'manageUsers')) {
             $this->logger->warning("$updater tried to create a user, "
                     . "but she/he is not allowed", 
-                    ['apiUserId' => $this->ci->userId]);
+                    ['apiUserId' => $this->userId]);
             return $response->withStatus(401);
         }
         
         if ($username == '') {
             $this->logger->warning("No username given for user creation, "
                     . "change attempted by $updater", 
-                    ['apiUserId' => $this->ci->userId]);
+                    ['apiUserId' => $this->userId]);
             return $response->withStatus(409);
         }
         if ($fullname == '') {
             $this->logger->warning("No fullname given for user creation, "
                     . "change attempted by $updater", 
-                    ['apiUserId' => $this->ci->userId]);
+                    ['apiUserId' => $this->userId]);
             return $response->withStatus(409);
         }
         
         if ($password1 == '') {
             $this->logger->warning("No password given for user creation, "
                     . "change attempted by $updater", 
-                    ['apiUserId' => $this->ci->userId]);
+                    ['apiUserId' => $this->userId]);
             return $response->withStatus(409);
         }
         if ($password1 !== $password2) {
             $this->logger->warning("Passwords do not match for user creation, "
                     . "change attempted by $updater", 
-                    ['apiUserId' => $this->ci->userId]);
+                    ['apiUserId' => $this->userId]);
             return $response->withStatus(409);
         }
         
@@ -269,14 +269,14 @@ class ApiUsers extends ApiController
         if ($um->userExistsByUserName($username)) {
              $this->logger->error("$username already exists, "
                      . "creation attempted by $updater", 
-                    ['apiUserId' => $this->ci->userId]);
+                    ['apiUserId' => $this->userId]);
             return $response->withStatus(409);
         }
         $newUserId = $um->createUserByUserName($username);
         if ($newUserId === false) {
             $this->logger->error("Can't create user $username, "
                     . "creation attempted by $updater", 
-                    ['apiUserId' => $this->ci->userId]);
+                    ['apiUserId' => $this->userId]);
             return $response->withStatus(409);
         }
         
@@ -287,7 +287,7 @@ class ApiUsers extends ApiController
         if ($um->updateUserInfo($newUserId, $fullname, $email) === false) {
             $this->logger->error("Can't update info for user $username, "
                     . "change attempted by $updater", 
-                    ['apiUserId' => $this->ci->userId , 
+                    ['apiUserId' => $this->userId ,
                      'userId' => $newUserId]);
             return $response->withStatus(200);
         }
@@ -296,13 +296,13 @@ class ApiUsers extends ApiController
         if (!$um->storeUserPassword($username, $password1)) {
             $this->logger->error("Can't change password for user $username, "
                     . "change attempted by $updater", 
-                    ['apiUserId' => $this->ci->userId , 
+                    ['apiUserId' => $this->userId ,
                      'userId' => $newUserId]);
             return $response->withStatus(200);
         }
         
         $this->logger->info("$username successfully created by $updater", 
-                    ['apiUserId' => $this->ci->userId , 
+                    ['apiUserId' => $this->userId ,
                      'userId' => $newUserId]);
         return $response->withStatus(200);
     }

@@ -37,32 +37,32 @@ use AverroesProject\Profiler\ApmProfiler;
 class SiteUserManager extends SiteController
 {
 
-    public function userProfilePage(Request $request, Response $response, $next)
+    public function userProfilePage(Request $request, Response $response)
     {
         
         $profileUsername = $request->getAttribute('username');
         $profiler = new ApmProfiler('userProfilePage-' . $profileUsername, $this->dataManager);
-        if (!$this->dataManager->um->userExistsByUsername($profileUsername)) {
-            return $this->ci->view->render($response, 'user.notfound.twig', [
-                        'userinfo' => $this->ci->userInfo,
-                        'copyright' => $this->ci->copyrightNotice,
-                        'baseurl' => $this->ci->settings['baseurl'],
+        if (!$this->dataManager->userManager->userExistsByUsername($profileUsername)) {
+            return $this->view->render($response, 'user.notfound.twig', [
+                        'userinfo' => $this->userInfo,
+                        'copyright' => $this->copyrightNotice,
+                        'baseurl' => $this->getBaseUrl(),
                         'theuser' => $profileUsername
             ]);
         }
 
         $userProfileInfo = 
-                $this->dataManager->um->getUserInfoByUsername($profileUsername);
-        $currentUserId = $this->ci->userInfo['id'];
+                $this->dataManager->userManager->getUserInfoByUsername($profileUsername);
+        $currentUserId = $this->userInfo['id'];
 
         $canEditProfile = $userProfileInfo['id'] === $currentUserId ||
-                $this->dataManager->um->isUserAllowedTo($currentUserId, 'manageUsers');
+                $this->dataManager->userManager->isUserAllowedTo($currentUserId, 'manageUsers');
         $canMakeRoot = 
-                $this->dataManager->um->isUserAllowedTo($currentUserId, 'makeRoot');
+                $this->dataManager->userManager->isUserAllowedTo($currentUserId, 'makeRoot');
         $userProfileInfo['isroot'] = 
-                $this->dataManager->um->isRoot($userProfileInfo['id']);
+                $this->dataManager->userManager->isRoot($userProfileInfo['id']);
         $userProfileInfo['isreadonly'] = 
-                $this->dataManager->um->userHasRole($userProfileInfo['id'], 'readOnly');
+                $this->dataManager->userManager->userHasRole($userProfileInfo['id'], 'readOnly');
         
 
         $profiler->lap("Basic Info");
@@ -74,11 +74,11 @@ class SiteUserManager extends SiteController
             $docListHtml .= $this->genDocPagesListForUser($userId, $docId);
         }
         
-        $profiler->log($this->ci->logger);
-        return $this->ci->view->render($response, 'user.profile.twig', [
-                    'userinfo' => $this->ci->userInfo,
-                    'copyright' => $this->ci->copyrightNotice,
-                    'baseurl' => $this->ci->settings['baseurl'],
+        $profiler->log($this->logger);
+        return $this->view->render($response, 'user.profile.twig', [
+                    'userinfo' => $this->userInfo,
+                    'copyright' => $this->copyrightNotice,
+                    'baseurl' => $this->getBaseUrl(),
                     'theuser' => $userProfileInfo,
                     'canEditProfile' => $canEditProfile,
                     'canMakeRoot' => $canMakeRoot,
@@ -86,19 +86,18 @@ class SiteUserManager extends SiteController
         ]);
     }
 
-    public function userManagerPage(Request $request, Response $response, 
-            $next)
+    public function userManagerPage(Request $request, Response $response)
     {
         $profiler = new ApmProfiler('userManagerPage', $this->dataManager);
         $um = $this->dataManager->userManager;
-        if (!$um->isUserAllowedTo($this->ci->userInfo['id'], 'manageUsers')){
-            return $this->ci->view->render(
+        if (!$um->isUserAllowedTo($this->userInfo['id'], 'manageUsers')){
+            return $this->view->render(
                     $response, 
                     'error.notallowed.twig', 
                     [
-                        'userinfo' => $this->ci->userInfo, 
-                        'copyright' => $this->ci->copyrightNotice,
-                        'baseurl' => $this->ci->settings['baseurl'],
+                        'userinfo' => $this->userInfo,
+                        'copyright' => $this->copyrightNotice,
+                        'baseurl' => $this->getBaseUrl(),
                         'message' => 'You are not authorized to manage users.'
                     ]
                 );
@@ -108,45 +107,44 @@ class SiteUserManager extends SiteController
         $docIds = $db->getDocIdList('title');
         $users = $um->getUserInfoForAllUsers();
         
-        $profiler->log($this->ci->logger);
-        return $this->ci->view->render($response, 'user.manager.twig', [
-            'userinfo' => $this->ci->userInfo, 
-            'copyright' => $this->ci->copyrightNotice,
-            'baseurl' => $this->ci->settings['baseurl'],
+        $profiler->log($this->logger);
+        return $this->view->render($response, 'user.manager.twig', [
+            'userinfo' => $this->userInfo,
+            'copyright' => $this->copyrightNotice,
+            'baseurl' => $this->getBaseUrl(),
             'users' => $users
         ]);
     }
     
-    public function userSettingsPage(Request $request, Response $response, 
-            $next)
+    public function userSettingsPage(Request $request, Response $response)
     {
         $username = $request->getAttribute('username');
-        $curUserName = $this->ci->userInfo['username'];
-        $userId = $this->ci->userInfo['id'];
+        $curUserName = $this->userInfo['username'];
+        $userId = $this->userInfo['id'];
         if ($username !== $curUserName && 
-                !$this->dataManager->um->isUserAllowedTo($userId, 'edit-user-settings')){
-            return $this->ci->view->render($response, 'error.notallowed.twig', [
-                'userinfo' => $this->ci->userInfo, 
-                'copyright' => $this->ci->copyrightNotice,
-                'baseurl' => $this->ci->settings['baseurl'],
+                !$this->dataManager->userManager->isUserAllowedTo($userId, 'edit-user-settings')){
+            return $this->view->render($response, 'error.notallowed.twig', [
+                'userinfo' => $this->userInfo,
+                'copyright' => $this->copyrightNotice,
+                'baseurl' => $this->getBaseUrl(),
                 'message' => 'You are not authorized to change the settings for user ' . $username
             ]);
         }
         
-        if (!$this->dataManager->um->userExistsByUsername($username)){
-        return $this->ci->view->render($response, 'user.notfound.twig', [
-            'userinfo' => $this->ci->userInfo, 
-            'copyright' => $this->ci->copyrightNotice,
-            'baseurl' => $this->ci->settings['baseurl'],
+        if (!$this->dataManager->userManager->userExistsByUsername($username)){
+        return $this->view->render($response, 'user.notfound.twig', [
+            'userinfo' => $this->userInfo,
+            'copyright' => $this->copyrightNotice,
+            'baseurl' => $this->getBaseUrl(),
             'theuser' => $username
         ]);
         }
-        $userInfo = $this->dataManager->um->getUserInfoByUsername($username);
+        $userInfo = $this->dataManager->userManager->getUserInfoByUsername($username);
     
-        return $this->ci->view->render($response, 'user.settings.twig', [
-            'userinfo' => $this->ci->userInfo, 
-            'copyright' => $this->ci->copyrightNotice,
-            'baseurl' => $this->ci->settings['baseurl'],
+        return $this->view->render($response, 'user.settings.twig', [
+            'userinfo' => $this->userInfo,
+            'copyright' => $this->copyrightNotice,
+            'baseurl' => $this->getBaseUrl(),
             'canedit' => true,
             'theuser' => $userInfo
         ]);

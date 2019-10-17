@@ -18,15 +18,16 @@
  *  
  */
 
-namespace AverroesProject;
+namespace APM;
 require "../vendor/autoload.php";
+require_once 'SiteMockup/testconfig.php';
 require_once 'SiteMockup/SiteTestEnvironment.php';
 
 use PHPUnit\Framework\TestCase;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 use GuzzleHttp\Psr7\ServerRequest;
-use AverroesProject\Auth\Authenticator;
+use APM\System\Auth\Authenticator;
 
 
 /**
@@ -38,9 +39,15 @@ class AuthenticatorTest extends TestCase {
      static $ci;
     /**
      *
-     * @var Auth\Authenticator
+     * @var APM\System\Auth\Authenticator
      */
     static $authenticator;
+
+    /**
+     * @var SiteTestEnvironment
+     */
+    static $testEnvironment;
+
     
     public static function setUpBeforeClass()
     {
@@ -49,7 +56,9 @@ class AuthenticatorTest extends TestCase {
         $logger = new Logger('APITEST');
         $logger->pushHandler($logStream);
 
-        self::$ci = SiteTestEnvironment::getContainer($logger);
+        global $apmTestConfig;
+        self::$testEnvironment = new SiteTestEnvironment($apmTestConfig);
+        self::$ci = self::$testEnvironment->getContainer();
         self::$authenticator = new Authenticator(self::$ci);
     }
     

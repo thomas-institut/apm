@@ -29,9 +29,12 @@ namespace AverroesProject\Site;
 use APM\Plugin\HookManager;
 use APM\System\SystemManager;
 use AverroesProject\Data\DataManager;
+use DI\Container;
+use Monolog\Logger;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
-use Slim\Container;
+use Slim\Routing\RouteParser;
+use Slim\Views\Twig;
 
 /**
  * Site Controller class
@@ -61,23 +64,66 @@ class SiteController
     protected $systemManager;
     
     //Constructor
-    public function __construct( $ci)
+    /**
+     * @var RouteParser
+     */
+    protected $router;
+    /**
+     * @var string
+     */
+    protected $copyrightNotice;
+    /**
+     * @var array
+     */
+    protected $config;
+    /**
+     * @var Twig
+     */
+    protected $view;
+    /**
+     * @var bool
+     */
+    protected $userAuthenticated;
+    /**
+     * @var array
+     */
+    protected $userInfo;
+
+    /**
+     * @var Logger
+     */
+    protected $logger;
+
+    public function __construct(Container $ci)
     {
        $this->ci = $ci;
-       $this->dataManager = $ci->db;
-       $this->hookManager = $ci->hm;
-       $this->systemManager = $ci->sm;
-       $config = $this->ci->settings;
-       $this->ci->copyrightNotice  = $config['app_name'] . " v" . 
-               $config['version'] . " &bull; &copy; " . 
-               $config['copyright_notice'] . " &bull; " .  
-               strftime("%d %b %Y, %H:%M:%S %Z");
+       $this->dataManager = $ci->get('db');
+       $this->hookManager = $ci->get('hm');
+       $this->systemManager = $ci->get('sm');
+       $this->config =  $this->ci->get('settings');
+        $this->view = $ci->get('view');
+       $this->copyrightNotice = $this->config['app_name'] . " v" .
+           $this->config['version'] . " &bull; &copy; " .
+           $this->config['copyright_notice'] . " &bull; " .
+           strftime("%d %b %Y, %H:%M:%S %Z");
+
+       $this->ci->set('copyrightNotice', $this->copyrightNotice);
+
+       $this->router = $ci->get('router');
+        $this->logger = $this->systemManager->getLogger();
+
+        // Check if the user has been authenticated by the authentication middleware
+        //$this->logger->debug('Checking user authentication');
+        if ($ci->has('user_info')) {
+            $this->userAuthenticated = true;
+            $this->userInfo = $ci->get('user_info');
+        }
     }
 
     protected function genDocPagesListForUser($userId, $docId)
     {
         $docInfo = $this->dataManager->getDocById($docId);
-        $url = $this->ci->router->pathFor('doc.showdoc', ['id' => $docId]);
+        $url = $this->router->urlFor('doc.showdoc', ['id' => $docId]);
         $title = $docInfo['title'];
         $docListHtml = '<li>';
         $docListHtml .= "<a href=\"$url\" title=\"View Document\">$title</a>";
@@ -94,7 +140,7 @@ class SiteController
             }
             $pageInfo = $this->dataManager->getPageInfo($pageId);
             $pageNum = is_null($pageInfo['foliation']) ? $pageInfo['seq'] : $pageInfo['foliation'];
-            $pageUrl = $this->ci->router->pathFor('pageviewer.docseq', ['doc' => $docId, 'seq'=>$pageInfo['seq']]);
+            $pageUrl = $this->router->urlFor('pageviewer.docseq', ['doc' => $docId, 'seq'=>$pageInfo['seq']]);
             $docListHtml .= "<a href=\"$pageUrl\" title=\"View Page\">$pageNum</a>&nbsp;&nbsp;";
         }
         $docListHtml .= '</span></li>';
@@ -126,5 +172,8 @@ class SiteController
         }
         return $thePages;
     }
-    
+
+    protected function getBaseUrl() : string {
+        return $this->systemManager->getBaseUrl();
+    }
 }

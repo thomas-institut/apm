@@ -7,7 +7,7 @@
     <section>
         <h1>My Manuscripts / Prints </h1>
         <ul class="doclist">{{doclist|raw}}</ul>
-        <a href="{{path_for('docs')}}">View all documents</a>
+        <a href="{{url_for('docs')}}">View all documents</a>
     </section>
     <section>
         <h1>My Chunks</h1>
@@ -16,7 +16,7 @@
     <section>
         <h1>Admin</h1>
         <ul>
-            <li><a href="{{path_for('user.profile', {'username' : userinfo.username})}}">Edit profile / Change Password</a></li>
+            <li><a href="{{url_for('user.profile', {'username' : userinfo.username})}}">Edit profile / Change Password</a></li>
         </ul>
     </section>
 </div>

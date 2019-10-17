@@ -24,19 +24,19 @@ $(document).ready(
 {% endblock %}
 {% block content %}
      <ol class="breadcrumb">
-         <li><a href="{{path_for('chunks')}}">Chunks</a></li>
-         <li><a href="{{path_for('chunk', {'work' : work, 'chunk': chunk})}}" title="View chunk">{{work}}-{{chunk}}</a></li>
+         <li><a href="{{url_for('chunks')}}">Chunks</a></li>
+         <li><a href="{{url_for('chunk', {'work' : work, 'chunk': chunk})}}" title="View chunk">{{work}}-{{chunk}}</a></li>
         <li class="active">Witness {{type}}-{{witnessid}} Details </li>
     </ol>
 <h1>{{work_info.author_name}}, <em>{{work_info.title}}</em>, chunk {{chunk}}</h1>
-<p><b>Chunk code</b>: <a href="{{path_for('chunk', {'work' : work, 'chunk': chunk})}}" title="View chunk">{{work}}-{{chunk}}</a></p>
+<p><b>Chunk code</b>: <a href="{{url_for('chunk', {'work' : work, 'chunk': chunk})}}" title="View chunk">{{work}}-{{chunk}}</a></p>
 <p><b>Witness</b>: {{type}}-{{witnessid}} </p>
-<p><b>Document</b>: <a href="{{path_for('doc.showdoc', {'id' : doc.id})}}" target="_blank" title="View Document in New Tab">{{doc.title}}</a>, 
+<p><b>Document</b>: <a href="{{url_for('doc.showdoc', {'id' : doc.id})}}" target="_blank" title="View Document in New Tab">{{doc.title}}</a>,
     ({{macros.docTypeName(doc.doc_type)}} {{macros.langName(doc.lang)}})
 <p>
 <p><b>Segment Location(s)</b>: 
     {% for seg in doc.segments %}
-    <a href="{{path_for('pageviewer.docseq', {'doc' : doc.id, 'seq' : seg.start.page_seq})}}" target="_blank" title="View Page in New Tab">{{seg.start.foliation}}</a>{% if seg.end.foliation and seg.end.foliation != seg.start.foliation %}&ndash;<a href="{{path_for('pageviewer.docseq', {'doc' : doc.id, 'seq' : seg.end.page_seq})}}" target="_blank" title="View Page in New Tab">{{seg.end.foliation}}</a>{% endif %}{% if not loop.last %}, {% endif %}
+    <a href="{{url_for('pageviewer.docseq', {'doc' : doc.id, 'seq' : seg.start.page_seq})}}" target="_blank" title="View Page in New Tab">{{seg.start.foliation}}</a>{% if seg.end.foliation and seg.end.foliation != seg.start.foliation %}&ndash;<a href="{{url_for('pageviewer.docseq', {'doc' : doc.id, 'seq' : seg.end.page_seq})}}" target="_blank" title="View Page in New Tab">{{seg.end.foliation}}</a>{% endif %}{% if not loop.last %}, {% endif %}
     {% endfor %}
 </p>
 <p>

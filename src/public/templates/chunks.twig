@@ -11,7 +11,7 @@
                 <ul>
                     <li>
                     {% for chunk in work.chunks %}
-                        <a href="{{path_for('chunk', {'work' : work.work_info.dare_id, 'chunk': chunk})}}" title="View chunk">{{chunk}}</a>&nbsp;&nbsp;
+                        <a href="{{url_for('chunk', {'work' : work.work_info.dare_id, 'chunk': chunk})}}" title="View chunk">{{chunk}}</a>&nbsp;&nbsp;
                     {% endfor %}
                     </li>
                 </ul>

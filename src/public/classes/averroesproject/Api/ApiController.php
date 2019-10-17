@@ -22,7 +22,9 @@ namespace AverroesProject\Api;
 
 
 use AverroesProject\Data\DataManager;
+use DI\Container;
 use Monolog\Logger;
+use Psr\Http\Message\ResponseInterface;
 
 /**
  * API Controller class
@@ -30,6 +32,9 @@ use Monolog\Logger;
  */
 abstract class ApiController
 {
+    /**
+     * @var Container
+     */
     protected $ci;
 
     /**
@@ -69,10 +74,24 @@ abstract class ApiController
     
     
     //Constructor
-    public function __construct( $ci)
+    /**
+     * @var int
+     */
+    protected $userId;
+
+    public function __construct( Container $ci)
     {
        $this->ci = $ci;
-       $this->dataManager = $ci->db;
-       $this->logger = $ci->logger->withName('API');
+       $this->dataManager = $ci->get('db');
+       $this->logger = $ci->get('logger')->withName('API');
+       $this->userId = $ci->get('userId');
+    }
+
+    protected function responseWithJson(ResponseInterface $response, $data, $status = 201) : ResponseInterface {
+        $payload = json_encode($data);
+        $response->getBody()->write($payload);
+        return $response
+            ->withHeader('Content-Type', 'application/json')
+            ->withStatus($status);
     }
 }

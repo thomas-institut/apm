@@ -30,32 +30,49 @@
  * a randomly chosen secret key.
  */
 
-namespace AverroesProject\Auth;
+namespace APM\System\Auth;
 
+use DI\Container;
+use Psr\Container\ContainerInterface;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use \Dflydev\FigCookies\FigRequestCookies;
 use \Dflydev\FigCookies\SetCookie;
 use \Dflydev\FigCookies\FigResponseCookies;
+use Psr\Http\Server\RequestHandlerInterface;
+use Slim\Routing\RouteParser;
 
 /**
  * Middleware class for site authentication
  *
  */
 class Authenticator {
-    
-    protected $ci;
+
+
+    /**
+     * @var Container
+     */
+    protected $container;
+
     private $logger, $apiLogger, $siteLogger;
+
+    /**
+     * @var RouteParser
+     */
+    protected $router;
+
    
     private $cookieName = 'rme';
     private $secret = '1256106427895916503';
     private $debugMode = false;
    
     //Constructor
-    public function __construct($ci)
+    public function __construct(Container $ci)
     {
-        $this->ci = $ci;
-        $this->logger = $this->ci->logger->withName('AUTH');
+        $this->container = $ci;
+        $this->router = $ci->get('router');
+
+        $this->logger = $this->container->get('logger')->withName('AUTH');
         $this->apiLogger = $this->logger->withName('AUTH-API');
         $this->siteLogger = $this->logger->withName('AUTH-SITE');
     }
@@ -90,9 +107,12 @@ class Authenticator {
         }
     }
 
-    public function authenticate(Request $request, Response $response, $next)
+    public function authenticate(Request $request, RequestHandlerInterface $handler)
     {
         session_start();
+
+        $this->debug('Starting authenticator middleware');
+
         $success = false;
         if (!isset($_SESSION['userid'])){
             // Check for long term cookie
@@ -104,7 +124,7 @@ class Authenticator {
         } else {
             $userId = $_SESSION['userid'];
             $this->debug('SITE : Session is set, user id = ' . $userId);
-            if ($this->ci->db->userManager->userExistsById($userId)){
+            if ($this->container->get('db')->userManager->userExistsById($userId)){
                 $this->debug("User id exists!");
                 $success = true;
             } else {
@@ -115,25 +135,27 @@ class Authenticator {
         if ($success){
             $this->debug('SITE: Success, go ahead!');
             $_SESSION['userid'] = $userId;
-            $ui = $this->ci->db->userManager->getUserInfoByUserId($userId);
-            if ($this->ci->db->userManager->isUserAllowedTo($userId, 'manageUsers')){
+            $ui = $this->container->get('db')->userManager->getUserInfoByUserId($userId);
+            if ($this->container->get('db')->userManager->isUserAllowedTo($userId, 'manageUsers')){
                 $ui['manageUsers'] = 1;
             }
-            $this->ci['userInfo'] = $ui;
-            return $next($request, $response); 
+
+            $this->container->set('user_info', $ui);
+            return $handler->handle($request);
         } else {
             $this->debug("SITE : Authentication fail, logging out "
                     . "and redirecting to login");
             session_unset();
             session_destroy();
+            $response = new \Slim\Psr7\Response();
             $response = FigResponseCookies::expire($response, 
                     $this->cookieName);
-            return $response->withHeader('Location', 
-                    $this->ci->router->pathFor('login'));
+            return $response->withHeader('Location',
+                    $this->router->urlFor('login'));
         }
     }
     
-    public function login(Request $request, Response $response, $next)
+    public function login(Request $request, Response $response)
     {
         session_start();
         $this->debug('Showing login page');
@@ -150,16 +172,16 @@ class Authenticator {
                 $rememberme = 
                         isset($data['rememberme']) ? $data['rememberme'] : '';
                 $this->debug('Trying to log in user ' . $user);
-                if ($this->ci->db->userManager->verifyUserPassword($user, $pwd)){
+                if ($this->container->get('db')->userManager->verifyUserPassword($user, $pwd)){
                     $userAgent = $request->getHeader('User-Agent')[0];
-                    $ipAddress = $request->getServerParam('REMOTE_ADDR');
+                    $ipAddress = $request->getServerParams()['REMOTE_ADDR'];
                     $this->siteLogger->info("Login", ['user' => $user, 'user_agent' => $userAgent, 'ip_address' => $ipAddress ]);
                     // Success!
-                    $userId = $this->ci->db->userManager->getUserIdFromUsername($user);
+                    $userId = $this->container->get('db')->userManager->getUserIdFromUsername($user);
                     $_SESSION['userid'] = $userId;
                     $this->debug('Generating token cookie');
                     $token = $this->generateRandomToken();
-                    $this->ci->db->userManager->storeUserToken(
+                    $this->container->get('db')->userManager->storeUserToken(
                             $userId, 
                             $userAgent, 
                             $ipAddress,
@@ -181,7 +203,7 @@ class Authenticator {
                     
                     $response = FigResponseCookies::set($response, $cookie);
                     return $response->withHeader('Location', 
-                            $this->ci->router->pathFor('home'));
+                            $this->router->urlFor('home'));
                 }
                 else {
                     $this->siteLogger->notice('Wrong user/password', 
@@ -190,21 +212,21 @@ class Authenticator {
                 }
             }
         }
-        return $this->ci->view->render($response, 'login.twig', 
+        return $this->container->get('view')->render($response, 'login.twig',
                 [ 'message' => $msg, 
-                    'baseurl' => $this->ci->settings['baseurl']]);
+                    'baseurl' => $this->container->get('settings')['baseurl']]);
     }
     
-    public function logout(Request $request, Response $response, $next)
+    public function logout(Request $request, Response $response)
     {
         session_start();
         if (!isset($_SESSION['userid'])){
             $this->siteLogger->error("Logout attempt without a valid session");
             return $response->withHeader('Location', 
-                $this->ci->router->pathFor('home'));
+                $this->router->urlFor('home'));
         }
         $userId = $_SESSION['userid'];
-        $userName = $this->ci->db->userManager->getUsernameFromUserId($userId);
+        $userName = $this->container->get('db')->userManager->getUsernameFromUserId($userId);
         if ($userName === false) {
             $this->siteLogger->error("Can't get username from user Id at "
                     . "logout attempt", ['userId' => $userId]);
@@ -213,22 +235,23 @@ class Authenticator {
         session_unset();
         session_destroy();
         $response = FigResponseCookies::expire($response, $this->cookieName);
-        return $response->withHeader('Location', 
-                $this->ci->router->pathFor('home'));
+        return $response->withHeader('Location',
+            $this->router->urlFor('home'));
     }
     
     
-    public function authenticateApiRequest (Request $request, 
-            Response $response, $next)
+    public function authenticateApiRequest (Request $request, RequestHandlerInterface $handler)
     {
+
         $userId = $this->getUserIdFromLongTermCookie($request);
         if ($userId === false){
             $this->apiLogger->notice("Authentication fail");
+            $response = new \Slim\Psr7\Response();
             return $response->withStatus(401);
         }
         $this->debug('API : Success, go ahead!');
-        $this->ci['userId'] = $userId;
-        return $next($request, $response); 
+        $this->container->set('userId', $userId);
+        return $handler->handle($request);
     }
     
     private function getUserIdFromLongTermCookie(Request $request)
@@ -239,10 +262,10 @@ class Authenticator {
             $cookieValue = $longTermCookie->getValue();
             list($userId, $token, $mac) = explode(':', $cookieValue);
             if (hash_equals($this->generateMac($userId . ':' . $token), $mac)) {
-                $userToken = $this->ci->db->userManager->getUserToken(
+                $userToken = $this->container->get('db')->userManager->getUserToken(
                         $userId, 
                         $request->getHeader('User-Agent')[0], 
-                        $request->getServerParam('REMOTE_ADDR')
+                        $request->getServerParams()['REMOTE_ADDR']
                 );
                 if (hash_equals($userToken, $token)){
                     $this->debug('Cookie looks good, user = ' . $userId);

@@ -51,8 +51,8 @@ $(document).ready(function()
 {% endblock %}
 {% block content %}
      <ol class="breadcrumb">
-         <li><a href="{{path_for('chunks')}}">Chunks</a></li>
-         <li><a href="{{path_for('chunk', {'work' : work, 'chunk': chunk})}}">{{work}}-{{chunk}}</a></li>
+         <li><a href="{{url_for('chunks')}}">Chunks</a></li>
+         <li><a href="{{url_for('chunk', {'work' : work, 'chunk': chunk})}}">{{work}}-{{chunk}}</a></li>
          <li>Automatic Collation Table</li>
          <li class="active">{{langName}} {%if isPartial %}(partial){%endif%}</li>
     </ol>

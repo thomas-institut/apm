@@ -18,8 +18,8 @@
     
     
     <ol class="breadcrumb">
-         <li><a href="{{path_for('chunks')}}">Chunks</a></li>
-         <li><a href="{{path_for('chunk', {'work' : work, 'chunk': chunk})}}">{{work}}-{{chunk}}</a></li>
+         <li><a href="{{url_for('chunks')}}">Chunks</a></li>
+         <li><a href="{{url_for('chunk', {'work' : work, 'chunk': chunk})}}">{{work}}-{{chunk}}</a></li>
          <li>Collation Table</li>
          <li class="active">{{langName}}</li>
     </ol>

@@ -23,8 +23,8 @@
 
 {% block content %}
      <ol class="breadcrumb">
-        <li><a href="{{path_for('docs')}}">Documents</a></li>
-        <li><a href="{{path_for('doc.showdoc', {'id' : doc.docInfo.id })}}">{{ doc.docInfo.title}}</a></li>
+        <li><a href="{{url_for('docs')}}">Documents</a></li>
+        <li><a href="{{url_for('doc.showdoc', {'id' : doc.docInfo.id })}}">{{ doc.docInfo.title}}</a></li>
         <li class="active">Define Document Pages</li>
     </ol>
 

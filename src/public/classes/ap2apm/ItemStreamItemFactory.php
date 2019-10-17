@@ -166,11 +166,7 @@ class ItemStreamItemFactory {
                 }
                 break;
         }
-        
-        
-        
         return $item;
-        
     }
     
     public function createItemNoteFromRow($row) {

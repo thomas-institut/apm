@@ -49,7 +49,7 @@ class SiteDashboard extends SiteController
         foreach($docIds as $docId) {
             $docListHtml .= $this->genDocPagesListForUser($userId, $docId);
         }
-        
+
         $profiler->log($this->logger);
         return $this->renderPage($response, 'dashboard.twig', [
             'doclist' => $docListHtml

@@ -60,10 +60,10 @@ class ApiCollation extends ApiController
         $witnesses = $inputData['witnesses'];
         if (count($witnesses) < 2) {
             $this->logger->error("Quick Collation: not enough witnessess in data, got " . count($witnesses),
-                    [ 'apiUserId' => $this->ci->userId, 
+                    [ 'apiUserId' => $this->userId,
                       'apiError' => self::ERROR_NOT_ENOUGH_WITNESSES,
                       'data' => $inputData ]);
-            return $response->withStatus(409)->withJson( ['error' => self::ERROR_NOT_ENOUGH_WITNESSES]);
+            return $this->responseWithJson($response, ['error' => self::ERROR_NOT_ENOUGH_WITNESSES], 409);
         }
         
         
@@ -73,10 +73,10 @@ class ApiCollation extends ApiController
         foreach ($witnesses as $witness) {
             if (!isset($witness['id']) || !isset($witness['text'])) {
                 $this->logger->error("Quick Collation: bad witness in data",
-                    [ 'apiUserId' => $this->ci->userId, 
+                    [ 'apiUserId' => $this->userId,
                       'apiError' => self::ERROR_BAD_WITNESS,
                       'data' => $inputData ]);
-                return $response->withStatus(409)->withJson( ['error' => self::ERROR_BAD_WITNESS]);
+                return $this->responseWithJson($response, ['error' => self::ERROR_BAD_WITNESS], 409);
             }
             $sw =  new StringWitness('QuickCollation', 'no-chunk', $witness['text']);
             $collation->addWitness($witness['id'], $sw);
@@ -84,7 +84,7 @@ class ApiCollation extends ApiController
         
         $collatexInput = $collation->getCollationEngineInput();
         
-        $collationEngine = $this->ci->cr;
+        $collationEngine = $this->container->get('cr');
         
         // Run Collatex
         $collatexOutput = $collationEngine->collate($collatexInput);
@@ -92,12 +92,12 @@ class ApiCollation extends ApiController
         // Not worrying about testing CollatexErrors here
         if ($collatexOutput === false) {
             $this->logger->error("Quick Collation: error running Collatex",
-                        [ 'apiUserId' => $this->ci->userId, 
+                        [ 'apiUserId' => $this->userId,
                         'apiError' => ApiController::API_ERROR_COLLATION_ENGINE_ERROR,
                         'data' => $inputData, 
                         'collationEngineDetails' => $collationEngine->getRunDetails()
                     ]);
-            return $response->withStatus(409)->withJson( ['error' => ApiController::API_ERROR_COLLATION_ENGINE_ERROR]);
+            return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_COLLATION_ENGINE_ERROR], 409);
         }
         // @codeCoverageIgnoreEnd
         
@@ -108,13 +108,13 @@ class ApiCollation extends ApiController
         // Can't replicate this consistently in testing
         catch(\Exception $ex) {
             $this->logger->error('Error processing collatexOutput into collation object', 
-                    [ 'apiUserId' => $this->ci->userId, 
+                    [ 'apiUserId' => $this->userId,
                         'apiError' => self::ERROR_FAILED_COLLATION_ENGINE_PROCESSING,
                         'data' => $inputData, 
                          'collationEngineDetails' => $collationEngine->getRunDetails(),
                         'exceptionMessage' => $ex->getMessage()
                         ]);
-            return $response->withStatus(409)->withJson( ['error' => self::ERROR_FAILED_COLLATION_ENGINE_PROCESSING]);
+            return $this->responseWithJson($response, ['error' => self::ERROR_FAILED_COLLATION_ENGINE_PROCESSING], 409);
         }
         // @codeCoverageIgnoreEnd
         
@@ -122,7 +122,7 @@ class ApiCollation extends ApiController
 
         $profiler->log($this->logger);
         
-        return $response->withJson([
+        return $this->responseWithJson($response,[
             'collationEngineDetails' => $collationEngine->getRunDetails(), 
             'collationTable' => $decoratedCollationTable,
             'sigla' => $collation->getSigla()
@@ -176,7 +176,7 @@ class ApiCollation extends ApiController
         $profiler = new ApmProfiler("CollationTable-$workId-$chunkNumber-$language", $dataManager);
         
         // Check that language is valid
-        $languages = $this->ci->settings['languages'];
+        $languages = $this->config['languages'];
         $langInfo = null;
         foreach($languages as $lang) {
             if ($lang['code'] === $language) {
@@ -187,7 +187,7 @@ class ApiCollation extends ApiController
         if (is_null($langInfo)) {
             $msg = 'Invalid language <b>' . $language . '</b>';
             $this->logger->error($msg);
-            return $response->withStatus(409)->withJson( ['error' => self::ERROR_INVALID_LANGUAGE, 'msg' => $msg]);
+            return $this->responseWithJson($response, ['error' => self::ERROR_INVALID_LANGUAGE, 'msg' => $msg], 409);
         }
 
         $workInfo = $dataManager->getWorkInfo($workId);
@@ -196,7 +196,7 @@ class ApiCollation extends ApiController
         if (count($validWitnessLocations) < 2) {
             $msg = 'Not enough valid witnesses to collate';
             $this->logger->error($msg, $validWitnessLocations);
-            return $response->withStatus(409)->withJson( ['error' => self::ERROR_NOT_ENOUGH_WITNESSES, 'msg' => $msg]);
+            return $this->responseWithJson($response, ['error' => self::ERROR_NOT_ENOUGH_WITNESSES, 'msg' => $msg], 409);
         }
         
         $witnessesToInclude = [];
@@ -217,7 +217,7 @@ class ApiCollation extends ApiController
             if (count($witnessesToInclude) < 2) {
                 $msg = 'Error in partial collation table request: need at least 2 witnesses to collate, got only ' . count($witnessesToInclude) . '.';
                 $this->logger->error($msg, $witnessesToInclude);
-                return $response->withStatus(409)->withJson( ['error' => self::ERROR_NOT_ENOUGH_WITNESSES, 'msg' => $msg]);
+                return $this->responseWithJson($response, ['error' => self::ERROR_NOT_ENOUGH_WITNESSES, 'msg' => $msg], 409);
             }
         }
         
@@ -268,7 +268,7 @@ class ApiCollation extends ApiController
         $collatexInput = $collationTable->getCollationEngineInput();
         
         $profiler->lap('Collatex input built');
-        $collationEngine = $this->ci->cr;
+        $collationEngine = $this->container->get('cr');
         
         // Run Collatex
         $collatexOutput = $collationEngine->collate($collatexInput);
@@ -277,12 +277,12 @@ class ApiCollation extends ApiController
         if ($collatexOutput === false) {
             $msg = "Automatic Collation: error running Collation Engine";
             $this->logger->error($msg,
-                        [ 'apiUserId' => $this->ci->userId, 
+                        [ 'apiUserId' => $this->userId,
                         'apiError' => ApiController::API_ERROR_COLLATION_ENGINE_ERROR,
                         'data' => $collatexInput, 
                         'collationEngineDetails' => $collationEngine->getRunDetails()
                     ]);
-            return $response->withStatus(409)->withJson( ['error' => ApiController::API_ERROR_COLLATION_ENGINE_ERROR, 'msg' => $msg]);
+            return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_COLLATION_ENGINE_ERROR, 'msg' => $msg], 409);
         }
         // @codeCoverageIgnoreEnd
         
@@ -295,13 +295,13 @@ class ApiCollation extends ApiController
         catch(\Exception $ex) {
             $msg = 'Error processing collation Engine output into collation object';
             $this->logger->error($msg, 
-                    [ 'apiUserId' => $this->ci->userId, 
+                    [ 'apiUserId' => $this->userId,
                         'apiError' => self::ERROR_FAILED_COLLATION_ENGINE_PROCESSING,
                         'data' => $inputDataObject, 
                          'collationEngineDetails' => $collationEngine->getRunDetails(),
                         'exceptionMessage' => $ex->getMessage()
                         ]);
-            return $response->withStatus(409)->withJson( ['error' => self::ERROR_FAILED_COLLATION_ENGINE_PROCESSING]);
+            return $this->responseWithJson($response, ['error' => self::ERROR_FAILED_COLLATION_ENGINE_PROCESSING], 409);
         }
         // @codeCoverageIgnoreEnd
         
@@ -324,7 +324,7 @@ class ApiCollation extends ApiController
         $collationEngineDetails = $collationEngine->getRunDetails();
         $collationEngineDetails['totalDuration'] =  $profiler->getTotalTime() / 1000;
         
-        return $response->withJson([
+        return $this->responseWithJson($response,[
             'collationEngineDetails' => $collationEngineDetails, 
             'collationTable' => $decoratedCollationTable,
             'sigla' => $collationTable->getSigla(),

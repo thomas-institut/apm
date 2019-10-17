@@ -38,7 +38,7 @@ class SiteHomePage extends SiteController
     public function homePage(Request $request, Response $response)
     {
         return $response->withHeader('Location', 
-                $this->ci->router->pathFor('dashboard'));
+                $this->router->urlFor('dashboard'));
     }
 
 }

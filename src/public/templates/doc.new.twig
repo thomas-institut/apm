@@ -9,9 +9,9 @@
 <script>
     $(document).ready(function () {
         docEditObj = new NewDocPage('de', 
-        '{{path_for('api.doc.new')}}',
-        '{{path_for('docs')}}', 
-        '{{path_for('docs')}}' 
+        '{{url_for('api.doc.new')}}',
+        '{{url_for('docs')}}',
+        '{{url_for('docs')}}'
         )
     })
 </script>
@@ -19,7 +19,7 @@
 
 {% block content %}
      <ol class="breadcrumb">
-        <li><a href="{{path_for('docs')}}">Documents</a></li>
+        <li><a href="{{url_for('docs')}}">Documents</a></li>
         <li class="active">Add New Document</li>
     </ol>
 

@@ -24,9 +24,9 @@
             {% endif %}
         {% endif %}
     {%if navByPage == true %}
-        <td class="{{ page.classes }}"><a href="{{ path_for('pageviewer.docpage', {'doc' : doc, 'page' : page.number})}}" title="View Page (real page = {{page.number}})">{{foliation}}</a></td>
+        <td class="{{ page.classes }}"><a href="{{ url_for('pageviewer.docpage', {'doc' : doc, 'page' : page.number})}}" title="View Page (real page = {{page.number}})">{{foliation}}</a></td>
     {% else %}
-        <td class="{{ page.classes }}"><a href="{{ path_for('pageviewer.docseq', {'doc' : doc, 'seq' : page.seq})}}" title="View Page (Page {{page.seq}})">{{foliation}}</a></td>
+        <td class="{{ page.classes }}"><a href="{{ url_for('pageviewer.docseq', {'doc' : doc, 'seq' : page.seq})}}" title="View Page (Page {{page.seq}})">{{foliation}}</a></td>
     {% endif %}
 
         {% set n = n+1 %}                                   
@@ -59,9 +59,9 @@
         {% endif %}
 
         {%if navByPage == true %}
-        <td class="{{ page.classes }}"><a href="{{ path_for('pageviewer.docpage', {'doc' : doc, 'page' : page.number})}}" title="View Page">{{foliation}}</a></td>
+        <td class="{{ page.classes }}"><a href="{{ url_for('pageviewer.docpage', {'doc' : doc, 'page' : page.number})}}" title="View Page">{{foliation}}</a></td>
     {% else %}
-        <td class="{{ page.classes }}"><a href="{{ path_for('pageviewer.docseq', {'doc' : doc, 'seq' : page.seq})}}" title="View Page">{{foliation}}</a></td>
+        <td class="{{ page.classes }}"><a href="{{ url_for('pageviewer.docseq', {'doc' : doc, 'seq' : page.seq})}}" title="View Page">{{foliation}}</a></td>
     {% endif %}
 
         {% set n = n+1 %}                                   
@@ -84,7 +84,7 @@
             {% set n = 0 %}    
         {% endif%}
         <td class="{{ page.classes }}">
-            <a href="{{ path_for('pageviewer.docpage', {'doc' : doc, 'page' : page.number})}}" 
+            <a href="{{ url_for('pageviewer.docpage', {'doc' : doc, 'page' : page.number})}}"
                target="_blank" title="Page {{page.number}}, Seq={{page.seq}}, Fol: {{page.foliation}}">
                 {{page.seq}}
             </a>

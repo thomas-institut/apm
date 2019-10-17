@@ -27,12 +27,12 @@
 namespace APM\Site;
 
 use APM\Plugin\HookManager;
+use DI\Container;
 use Monolog\Logger;
 use \Psr\Http\Message\ResponseInterface as Response;
-
 use APM\System\ApmSystemManager;
 use AverroesProject\Data\DataManager;
-use Slim\Container;
+use Slim\Routing\RouteParser;
 use Slim\Views\Twig;
 
 /**
@@ -73,24 +73,33 @@ class SiteController
      * @var Logger
      */
     protected $logger;
+
+
+    /**
+     * @var RouteParser
+     */
+    protected  $router;
     
     //Constructor
-    public function __construct($ci)
+    public function __construct(Container $ci)
     {
         $this->ci = $ci;
-        $this->systemManager = $ci->sm;
-        $this->view = $ci->view;
-        $this->config = $ci->config;
-        $this->dataManager = $ci->db;
-        $this->hookManager = $ci->hm;
+        $this->systemManager = $ci->get('sm');
+        $this->view = $ci->get('view');
+        $this->config = $ci->get('config');
+        $this->dataManager = $ci->get('db');
+        $this->hookManager = $ci->get('hm');
         $this->logger = $this->systemManager->getLogger();
+        $this->router = $ci->get('router');
         $this->userAuthenticated = false;
         $this->userInfo = [];
+
        
        // Check if the user has been authenticated by the authentication middleware
-        if (isset($ci->userInfo)) {
+        //$this->logger->debug('Checking user authentication');
+        if ($ci->has('user_info')) {
            $this->userAuthenticated = true;
-           $this->userInfo = $ci->userInfo;
+           $this->userInfo = $ci->get('user_info');
         }
     }
     
@@ -147,7 +156,7 @@ class SiteController
     protected function genDocPagesListForUser($userId, $docId)
     {
         $docInfo = $this->dataManager->getDocById($docId);
-        $url = $this->ci->router->pathFor('doc.showdoc', ['id' => $docId]);
+        $url = $this->router->urlFor('doc.showdoc', ['id' => $docId]);
         $title = $docInfo['title'];
         $docListHtml = '<li>';
         $docListHtml .= "<a href=\"$url\" title=\"View Document\">$title</a>";
@@ -164,7 +173,7 @@ class SiteController
             }
             $pageInfo = $this->dataManager->getPageInfo($pageId);
             $pageNum = is_null($pageInfo['foliation']) ? $pageInfo['seq'] : $pageInfo['foliation'];
-            $pageUrl = $this->ci->router->pathFor('pageviewer.docseq', ['doc' => $docId, 'seq'=>$pageInfo['seq']]);
+            $pageUrl = $this->router->urlFor('pageviewer.docseq', ['doc' => $docId, 'seq'=>$pageInfo['seq']]);
             $docListHtml .= "<a href=\"$pageUrl\" title=\"View Page\">$pageNum</a>&nbsp;&nbsp;";
         }
         $docListHtml .= '</span></li>';

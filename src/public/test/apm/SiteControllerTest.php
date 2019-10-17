@@ -20,10 +20,13 @@
 
 namespace APM;
 require "../vendor/autoload.php";
-require 'SiteMockup/testconfig.php';
-require 'SiteMockup/SiteTestEnvironment.php';
+require_once 'SiteMockup/testconfig.php';
+require_once 'SiteMockup/SiteTestEnvironment.php';
 
 
+use APM\Site\SiteDashboard;
+use APM\Site\SiteDocuments;
+use APM\Site\SiteHomePage;
 use AverroesProject\Data\DataManager;
 use PHPUnit\Framework\TestCase;
 
@@ -105,7 +108,7 @@ class SiteControllerTest extends TestCase {
         $inputResp = new \Slim\Http\Response();
         self::$ci['userInfo'] = ['id' => 100];
         
-        $sc = new \AverroesProject\Site\SiteHomePage(self::$ci);
+        $sc = new  SiteHomePage(self::$ci);
         $response = $sc->homePage($request, $inputResp, 
                 NULL);
         
@@ -119,7 +122,7 @@ class SiteControllerTest extends TestCase {
         $inputResp = new \Slim\Http\Response();
         self::$ci['userInfo'] = ['id' => 100, 'username' => 'testUser'];
          
-        $sc = new \AverroesProject\Site\SiteDashboard(self::$ci);
+        $sc = new SiteDashboard(self::$ci);
         
         $response =$sc->dashboardPage($request, $inputResp, 
                 NULL);
@@ -134,7 +137,7 @@ class SiteControllerTest extends TestCase {
         $inputResp = new \Slim\Http\Response();
         self::$ci['userInfo'] = ['id' => 100];
         
-        $sc = new \AverroesProject\Site\SiteDocuments(self::$ci);
+        $sc = new SiteDocuments(self::$ci);
         
         $response = $sc->documentsPage($request, $inputResp, 
                 NULL);

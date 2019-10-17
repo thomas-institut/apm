@@ -41,31 +41,31 @@ class SiteChunks extends SiteController
     public function chunksPage(Request $request, Response $response, $next)
     {
        
-        $db = $this->dataManager;
-        $profiler = new ApmProfiler('chunksPage', $db);
+        $dataManager = $this->dataManager;
+        $profiler = new ApmProfiler('chunksPage', $dataManager);
 
-        $workIds = $db->getWorksWithTranscriptions();
+        $workIds = $dataManager->getWorksWithTranscriptions();
         
         $works = [];
         foreach($workIds as $workId) {
             $work = ['work_id' => $workId, 'is_valid' => true];
-            $workInfo = $db->getWorkInfo($workId);
+            $workInfo = $dataManager->getWorkInfo($workId);
             if ($workInfo === false) {
                 $work['is_valid'] = false;
                 $works[] = $work;
                 continue;
             }
             $work['work_info'] = $workInfo;
-            $chunks = $db->getChunksWithTranscriptionForWorkId($workId);
+            $chunks = $dataManager->getChunksWithTranscriptionForWorkId($workId);
             $work['chunks'] = $chunks;
             $works[] = $work;
         }
         
-        $profiler->log($this->ci->logger);
-        return $this->ci->view->render($response, 'chunks.twig', [
-            'userinfo' => $this->ci->userInfo, 
-            'copyright' => $this->ci->copyrightNotice,
-            'baseurl' => $this->ci->settings['baseurl'],
+        $profiler->log($this->logger);
+        return $this->view->render($response, 'chunks.twig', [
+            'userinfo' => $this->userInfo,
+            'copyright' => $this->copyrightNotice,
+            'baseurl' => $this->getBaseUrl(),
             'works' => $works
         ]);
     }

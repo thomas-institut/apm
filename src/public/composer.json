@@ -5,17 +5,18 @@
     "type": "application",
     "keywords": ["mss"],
     "homepage": "http://averroes.uni-koeln.de",
-    "license": "GPL",
+    "license": "GPL-3.0-or-later",
     
     "require": {
-        "slim/slim": "^3.9",
-        "slim/twig-view": "^2.3",
+        "slim/slim": "^4.3",
+        "slim/twig-view": "3.0.0-beta",
         "dflydev/fig-cookies": "^1.0",
         "rafaelnajera/xmlmatcher": "^0.4",
         "rafaelnajera/datatable" : "0.4.2",
         "monolog/monolog": "^1.23",
         "phpoffice/phpspreadsheet": "^1.4",
-        "phpoffice/phpword": "^0.15.0"
+        "phpoffice/phpword": "^0.15.0",
+        "slim/psr7": "^0.6.0"
     },
     
     "require-dev": {
@@ -26,7 +27,8 @@
         "psr-4": {
             "AverroesProject\\": "classes\\averroesproject",
             "APM\\": "classes\\apm",
-            "AverroesProjectToApm\\" : "classes\\ap2apm"
+            "AverroesProjectToApm\\" : "classes\\ap2apm",
+            "TestHelpers\\" : "test\\helperclasses"
         }
     }
 }

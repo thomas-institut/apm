@@ -25,26 +25,31 @@
  */
 namespace AverroesProject;
 
-use APM\Site\SiteDashboard;
-use APM\Site\SiteHomePage;
-use APM\System\Auth\Authenticator;
-use AverroesProject\Api\ApiElements;
-use AverroesProject\Data\DataManager;
-use APM\System\ApmSystemManager;
-use DI\Container;
+
+
+
 use DI\ContainerBuilder;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
-use Slim\App;
+
 use Slim\Factory\AppFactory;
 use Slim\Routing\RouteCollectorProxy;
 use Slim\Views\Twig;
 use Slim\Views\TwigMiddleware;
 
+use APM\System\ApmSystemManager;
+
+use APM\Site\SiteDashboard;
+use APM\Site\SiteHomePage;
+use APM\System\Auth\Authenticator;
 
 use APM\Api\ApiIcons;
 use APM\Api\ApiDocuments;
 use APM\Api\ApiUsers;
+use APM\Api\ApiCollation;
+use APM\Api\ApiPresets;
+use APM\Api\ApiEditionEngine;
+use APM\Api\ApiElements;
+
+use AverroesProject\Data\DataManager;
 
 require 'vendor/autoload.php';
 require 'setup.php';
@@ -236,14 +241,13 @@ $app->group('/api', function (RouteCollectorProxy $group){
 
     //  API -> getElements (with version Id)
     $group->get('/{document}/{page}/{column}/elements/version/{version}',
-        '\AverroesProject\Api\ApiElements:getElementsByDocPageCol')
+        ApiElements::class . ':getElementsByDocPageCol')
         ->setName('api.getelements.withversion');
 
     // API -> updateColumnElements
     $group->post('/{document}/{page}/{column}/elements/update',
-            '\AverroesProject\Api\ApiElements:updateElementsByDocPageCol')
+            ApiElements::class . ':updateElementsByDocPageCol')
         ->setName('api.updateelements');
-
 
     // --------- DOCUMENTS ---------
 
@@ -317,35 +321,35 @@ $app->group('/api', function (RouteCollectorProxy $group){
     // ------ COLLATION ------
 
     $group->post('/collation/auto',
-            '\APM\Api\ApiCollation:automaticCollation'
+            ApiCollation::class . ':automaticCollation'
             )
         ->setName('api.collation.auto');
 
     // ------ EDITION ENGINE ------
 
     $group->post('/edition/auto',
-        '\APM\Api\ApiEditionEngine:basicEditionEngine'
+        ApiEditionEngine::class . ':basicEditionEngine'
     )
         ->setName('api.edition.auto');
 
     // ------- PRESETS -----------
     $group->post('/presets/get',
-        '\APM\Api\ApiPresets:getPresets'
+        ApiPresets::class . ':getPresets'
         )
         ->setName('api.presets.get');
 
     $group->get('/presets/delete/{id}',
-        '\APM\Api\ApiPresets:deletePreset'
+        ApiPresets::class . ':deletePreset'
         )
         ->setName('api.presets.delete');
 
     $group->post('/presets/act/get',
-        '\APM\Api\ApiPresets:getAutomaticCollationPresets'
+        ApiPresets::class . ':getAutomaticCollationPresets'
         )
         ->setName('api.presets.act.get');
 
     $group->post('/presets/post',
-        '\APM\Api\ApiPresets:savePreset'
+        ApiPresets::class . ':savePreset'
         )
         ->setName('api.presets.post');
 
@@ -395,11 +399,9 @@ $app->group('/api', function (RouteCollectorProxy $group){
 $app->group('/api/public', function (RouteCollectorProxy $group){
 // API -> quick collation
     $group->post('/collation/quick',
-            '\APM\Api\ApiCollation:quickCollation')
+            ApiCollation::class . ':quickCollation')
         ->setName('api.collation.quick');
 });
-
-
 
 // All set, run!
 $app->run();

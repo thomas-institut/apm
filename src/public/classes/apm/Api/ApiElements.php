@@ -18,8 +18,11 @@
  *  
  */
 
-namespace AverroesProject\Api;
+namespace APM\Api;
 
+use AverroesProject\ColumnElement\Element;
+use AverroesProject\Data\DataManager;
+use AverroesProject\Data\EdNoteManager;
 use DataTable\MySqlUnitemporalDataTable;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
@@ -181,7 +184,7 @@ class ApiElements extends ApiController
             }
             
             // Check that there are items, no empty elements allowed
-            if ($newElementsArray[$i]['type'] !== \AverroesProject\ColumnElement\Element::LINE_GAP &&  count($newElementsArray[$i]['items']) === 0) {
+            if ($newElementsArray[$i]['type'] !== Element::LINE_GAP &&  count($newElementsArray[$i]['items']) === 0) {
                 $this->logger->error("Empty element in input array",
                     [ 'apiUserId' => $this->userId,
                         'apiError' => ApiController::API_ERROR_EMPTY_ELEMENT,
@@ -278,7 +281,7 @@ class ApiElements extends ApiController
             
         }
         $profiler->lap('Checks Done');
-        $updateTime = \DataTable\MySqlUnitemporalDataTable::now();
+        $updateTime = MySqlUnitemporalDataTable::now();
         $this->logger->info("UPDATE elements", 
                             [ 'apiUserId' => $this->userId,
                               'pageId' => $pageId,
@@ -288,9 +291,9 @@ class ApiElements extends ApiController
                               'updateTime' => $updateTime
                             ]);
 
-        $newElements = \AverroesProject\Data\DataManager::createElementArrayFromArray($newElementsArray);
+        $newElements = DataManager::createElementArrayFromArray($newElementsArray);
         // Get the editorial notes
-        $edNotes  = \AverroesProject\Data\EdNoteManager::editorialNoteArrayFromArray($inputDataObject['ednotes'], $this->logger);
+        $edNotes  = EdNoteManager::editorialNoteArrayFromArray($inputDataObject['ednotes'], $this->logger);
 
         
         $newItemIds = $this->dataManager->updateColumnElements($pageId, $columnNumber, $newElements, $updateTime);
@@ -320,8 +323,7 @@ class ApiElements extends ApiController
     
    
    
-    public function getElementsByDocPageCol(Request $request, 
-            Response $response, $next)
+    public function getElementsByDocPageCol(Request $request, Response $response)
     {
         $docId = $request->getAttribute('document');
         $pageNumber = $request->getAttribute('page');

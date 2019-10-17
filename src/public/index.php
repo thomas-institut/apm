@@ -43,6 +43,7 @@ use Slim\Views\TwigMiddleware;
 
 
 use APM\Api\ApiIcons;
+use APM\Api\ApiDocuments;
 
 require 'vendor/autoload.php';
 require 'setup.php';
@@ -247,41 +248,41 @@ $app->group('/api', function (RouteCollectorProxy $group){
 
      // API -> create new document
     $group->post('/doc/new',
-            '\AverroesProject\Api\ApiDocuments:newDocument')
+            ApiDocuments::class . ':newDocument')
         ->setName('api.doc.new');
 
     // API -> delete document
     $group->get('/doc/{id}/delete',
-            '\AverroesProject\Api\ApiDocuments:deleteDocument')
+            ApiDocuments::class . ':deleteDocument')
         ->setName('api.doc.delete');
 
     // API -> add pages to a document
      $group->post('/doc/{id}/addpages',
-            '\AverroesProject\Api\ApiDocuments:addPages')
+            ApiDocuments::class . ':addPages')
         ->setName('api.doc.addpages');
 
     // API -> update document settings
     $group->post('/doc/{id}/update',
-            '\AverroesProject\Api\ApiDocuments:updateDocSettings')
+            ApiDocuments::class . ':updateDocSettings')
         ->setName('api.doc.update');
 
     // API -> numColumns
     $group->get('/{document}/{page}/numcolumns',
-            '\AverroesProject\Api\ApiDocuments:getNumColumns')
+            ApiDocuments::class . ':getNumColumns')
         ->setName('api.numcolumns');
 
     // API -> updatePageSettings
     $group->post('/page/{pageId}/update',
-            '\AverroesProject\Api\ApiDocuments:updatePageSettings')
+            ApiDocuments::class . ':updatePageSettings')
         ->setName('api.updatepagesettings');
 
     $group->post('/page/bulkupdate',
-            '\AverroesProject\Api\ApiDocuments:updatePageSettingsBulk')
+            ApiDocuments::class . ':updatePageSettingsBulk')
         ->setName('api.updatepagesettings.bulk');
 
     // API -> numColumns
     $group->get('/{document}/{page}/newcolumn',
-            '\AverroesProject\Api\ApiDocuments:addNewColumn')
+            ApiDocuments::class . ':addNewColumn')
         ->setName('api.newcolumn');
 
 

@@ -18,10 +18,11 @@
  *  
  */
 
-namespace AverroesProject\Api;
+namespace APM\Api;
 
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
+
 use AverroesProject\Profiler\ApmProfiler;
 
 /**
@@ -30,8 +31,8 @@ use AverroesProject\Profiler\ApmProfiler;
  */
 class ApiDocuments extends ApiController
 {
-    
-    public function updatePageSettings(Request $request, Response $response, $next)
+
+    public function updatePageSettings(Request $request, Response $response)
     {
         $profiler = new ApmProfiler('updatePageSettings', $this->dataManager);
         
@@ -69,12 +70,12 @@ class ApiDocuments extends ApiController
     }
     
     
-    public function deleteDocument(Request $request, Response $response, $next) 
+    public function deleteDocument(Request $request, Response $response)
     {
         $profiler = new ApmProfiler('deleteDocument', $this->dataManager);
         $docId = (int) $request->getAttribute('id');
         //$this->logger->debug("Request to delete doc " . $docId);
-        if (!$this->dataManager->um->isUserAllowedTo($this->userId, 'delete-documents')){
+        if (!$this->dataManager->userManager->isUserAllowedTo($this->userId, 'delete-documents')){
             $this->logger->warning("deleteDocument: unauthorized request", 
                     [ 'apiUserId' => $this->userId, 'docId' => $docId]
                 );
@@ -113,11 +114,11 @@ class ApiDocuments extends ApiController
         return $response->withStatus(200);
     }
     
-    public function addPages(Request $request, Response $response, $next) 
+    public function addPages(Request $request, Response $response)
     {
         $profiler = new ApmProfiler('addPages', $this->dataManager);
         
-        if (!$this->dataManager->um->isUserAllowedTo($this->userId, 'add-pages')){
+        if (!$this->dataManager->userManager->isUserAllowedTo($this->userId, 'add-pages')){
             $this->logger->warning("addPages: unauthorized request", 
                     [ 'apiUserId' => $this->userId]
                 );
@@ -179,11 +180,11 @@ class ApiDocuments extends ApiController
         return $response->withStatus(200);
     }
     
-    public function newDocument(Request $request, Response $response, $next) 
+    public function newDocument(Request $request, Response $response)
     {
         $profiler = new ApmProfiler('New Doc', $this->dataManager);
         
-        if (!$this->dataManager->um->isUserAllowedTo($this->userId, 'create-new-document')){
+        if (!$this->dataManager->userManager->isUserAllowedTo($this->userId, 'create-new-document')){
             $this->logger->warning("New Doc: unauthorized request", 
                     [ 'apiUserId' => $this->userId]
                 );
@@ -229,14 +230,14 @@ class ApiDocuments extends ApiController
             return $this->responseWithJson($response,['error' => ApiController::API_ERROR_DB_UPDATE_ERROR], 409);
         }
         $profiler->log($this->logger);
-        return $response->withStatus(200)->withJson(['newDocId' => $docId]);
+        return  $this->responseWithJson($response, ['newDocId' => $docId], 200);
         
     }
     
-    public function updateDocSettings(Request $request, Response $response, $next)
+    public function updateDocSettings(Request $request, Response $response)
     {
         $profiler = new ApmProfiler('updateDocSettings', $this->dataManager);
-        if (!$this->dataManager->um->isUserAllowedTo($this->userId, 'update-doc-settings')){
+        if (!$this->dataManager->userManager->isUserAllowedTo($this->userId, 'update-doc-settings')){
             $this->logger->warning("updateDocSettings: unauthorized request", 
                     [ 'apiUserId' => $this->userId]
                 );
@@ -265,7 +266,7 @@ class ApiDocuments extends ApiController
         if ($result === false) {
              $this->logger->error("Error writing new doc settings to DB",
                     [ 'apiUserId' => $this->userId,
-                      'apiError' => ApiController::API_ERROR,
+                      'apiError' => ApiController::API_ERROR_DB_UPDATE_ERROR,
                       'data' => $postData]);
             return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_DB_UPDATE_ERROR], 409);
         }
@@ -279,11 +280,11 @@ class ApiDocuments extends ApiController
         
     }
     
-    public function updatePageSettingsBulk(Request $request, Response $response, $next)
+    public function updatePageSettingsBulk(Request $request, Response $response)
     {
         $profiler = new ApmProfiler('updatePageSettingsBulk', $this->dataManager);
         
-        if (!$this->dataManager->um->isUserAllowedTo($this->userId, 'update-page-settings-bulk')){
+        if (!$this->dataManager->userManager->isUserAllowedTo($this->userId, 'update-page-settings-bulk')){
             
             $this->logger->warning("updatePageSettingsBulk: unauthorized request", 
                     [ 'apiUserId' => $this->userId]
@@ -366,8 +367,7 @@ class ApiDocuments extends ApiController
             
             $dm->updatePageSettings($pageId, $newPageSettings);
         }
-        
-        $done = microtime(true);
+
         $this->logger->info("Bulk page settings", [
             'apiUserId'=> $this->userId,
             'count' => count($inputArray)
@@ -379,7 +379,7 @@ class ApiDocuments extends ApiController
         return $response->withStatus(200);
     }
    
-    public function getNumColumns(Request $request, Response $response, $next)
+    public function getNumColumns(Request $request, Response $response)
     {
         $docId = $request->getAttribute('document');
         $pageNumber = $request->getAttribute('page');
@@ -389,12 +389,12 @@ class ApiDocuments extends ApiController
         return $this->responseWithJson($response, $numColumns);
     }
    
-    public function addNewColumn(Request $request, Response $response, $next)
+    public function addNewColumn(Request $request, Response $response)
     {
         $docId = $request->getAttribute('document');
         $pageNumber = $request->getAttribute('page');
         
-        $um = $this->dataManager->um;
+        $um = $this->dataManager->userManager;
          
         if ($um->userHasRole($this->userId, 'readOnly')) {
             $this->logger->error("User is not authorized to add new column",
@@ -410,7 +410,7 @@ class ApiDocuments extends ApiController
         $this->dataManager->addNewColumn($docId, $pageNumber);
         
         $numColumns = $this->dataManager->getNumColumns($docId, $pageNumber);
-        $updaterInfo = $this->dataManager->um->getUserInfoByUserId($this->userId);
+        $updaterInfo = $this->dataManager->userManager->getUserInfoByUserId($this->userId);
         $userName = $updaterInfo['username'];
         $this->logger->info("$userName added a column to " . 
                 "doc $docId, page $pageNumber", 

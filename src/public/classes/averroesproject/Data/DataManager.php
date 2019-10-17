@@ -21,7 +21,6 @@
 namespace AverroesProject\Data;
 
 use APM\Core\Witness\Witness;
-use APM\System\ApmSystemManager;
 use AverroesProject\TxText\Item;
 use AverroesProject\TxText\ItemArray;
 use AverroesProject\ColumnElement\Element;
@@ -272,15 +271,6 @@ class DataManager
         return $docId;
     }
     
-    /**
-     * Creates a new page for document Id
-     * 
-     * @param type $docId
-     * @param type $pageNumber
-     * @param type $lang
-     * @param type $type
-     * @return boolean|int
-     */
     public function newPage($docId,  $pageNumber, $lang, $type=0)
     {
         
@@ -645,11 +635,7 @@ class DataManager
         }
         return $this->docsDataTable->deleteRow($docId);
     }
-    /**
-     * Returns the document information for the given document Id
-     * @param type $docId
-     * @return array
-     */
+
     function getDocById($docId)
     {
         $this->queryStats->countQuery('select');

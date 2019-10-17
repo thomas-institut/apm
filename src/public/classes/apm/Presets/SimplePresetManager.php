@@ -44,7 +44,7 @@ class SimplePresetManager extends PresetManager {
      * with the same tool, userid and title as the
      * givel $preset
      * 
-     * @param \APM\Presets\Preset $preset
+     * @param Preset $preset
      * @return bool
      */
     public function addPreset(Preset $preset): bool {
@@ -177,4 +177,8 @@ class SimplePresetManager extends PresetManager {
         return false;
     }
 
+    public function getPresetById(int $id)
+    {
+        // TODO: Implement getPresetById() method.
+    }
 }

@@ -30,9 +30,9 @@ class PresetFactory {
     
     public function create($toolId, int $userId, string $title, array $theData) {
         
-        if ($toolId === ApmSystemManager::TOOL_AUTOMATIC_COLLATION) {
+        if ($toolId === SystemManager::TOOL_AUTOMATIC_COLLATION) {
                 return new Preset(
-                        ApmSystemManager::TOOL_AUTOMATIC_COLLATION, 
+                        SystemManager::TOOL_AUTOMATIC_COLLATION,
                         $userId, 
                         $title, 
                         ['lang' => $theData['lang'], 'witnesses' => $theData['witnesses']], 

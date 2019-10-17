@@ -25,7 +25,9 @@ namespace APM\Presets;
  * 
  * A preset in the system is uniquely identified by the 
  * triplet (tool, userId, title).  Implementations of PresetManager should 
- * guarantee that presets are not duplicate in the system. 
+ * guarantee that presets are not duplicate in the system.
+ *
+ * Each preset has also a unique Id associated with it.
  * 
  * Functions to search, erase and modify presets use those three values for 
  * identification. The abstract class provides alternative versions of those 
@@ -70,11 +72,30 @@ abstract class PresetManager {
      * @param string $tool
      * @param int $userId
      * @param string $title
+     * @return Preset
      */
-    abstract public function getPreset(string $tool, int $userId, string $title);
-    
+    abstract public function getPreset(string $tool, int $userId, string $title) : Preset;
+
+    /**
+     * @param string $tool
+     * @param array $keysToMatch
+     * @return Preset[]
+     */
     abstract public function getPresetsByToolAndKeys(string $tool, array $keysToMatch) : array;
+
+    /**
+     * @param string $tool
+     * @param int $userId
+     * @param array $keysToMatch
+     * @return Preset[]
+     */
     abstract public function getPresetsByToolUserIdAndKeys(string $tool, int $userId, array $keysToMatch) : array;
+
+    /**
+     * @param int $id
+     * @return Preset
+     */
+    abstract public function getPresetById(int $id);
 
     
     /**

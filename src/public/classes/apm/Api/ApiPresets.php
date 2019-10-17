@@ -20,12 +20,11 @@
 
 namespace APM\Api;
 
+use APM\System\SystemManager;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
 use AverroesProject\Profiler\ApmProfiler;
-use APM\System\ApmSystemManager;
-use APM\Presets\Preset;
 use APM\Math\Set;
 use APM\System\PresetFactory;
 
@@ -43,8 +42,7 @@ class ApiPresets extends ApiController
     const API_ERROR_PRESET_ALREADY_EXISTS = 4005;
     const API_ERROR_CANNOT_SAVE_PRESET = 4006;
     const API_ERROR_PRESET_DOES_NOT_EXIST = 4007;
-    const API_ERROR_PRESET_MISMATCH = 4008;
-    const API_ERROR_CANNOT_DELETE = 4009;
+    const API_ERROR_CANNOT_DELETE = 4008;
 
     const COMMAND_NEW = 'new';
     const COMMAND_UPDATE = 'update';
@@ -66,7 +64,6 @@ class ApiPresets extends ApiController
      *
      * @param Request $request
      * @param Response $response
-     * @param type $next
      * @return Response
      */
     public function  getPresets(Request $request,  Response $response) {
@@ -110,10 +107,7 @@ class ApiPresets extends ApiController
         
         $this->logger->debug('Getting presets', [ 'tool' => $tool, 'userId' => $userId, 'keyArrayToMatch' => $keyArrayToMatch]);
         // let's get those presets!
-       
-        
-        $presets = [];
-        
+
         $presetManager = $this->systemManager->getPresetsManager();
         
         if ($userId === false) {
@@ -154,8 +148,7 @@ class ApiPresets extends ApiController
      *
      * @param Request $request
      * @param Response $response
-     * @param type $next
-     * @return type
+     * @return Response
      */
     public function  getAutomaticCollationPresets(Request $request, Response $response) {
         
@@ -166,7 +159,7 @@ class ApiPresets extends ApiController
             return $inputData;
         }
         
-        $tool = ApmSystemManager::TOOL_AUTOMATIC_COLLATION;
+        $tool = SystemManager::TOOL_AUTOMATIC_COLLATION;
         
         $userId = (is_int($inputData['userId']) && $inputData['userId'] > 0) ? $inputData['userId'] : false;
         $lang = $inputData['lang'];
@@ -194,7 +187,7 @@ class ApiPresets extends ApiController
        
         
         $presetManager = $this->systemManager->getPresetsManager();
-        $presets = [];
+        //$presets = [];
         if ($userId === false) {
             $presets = $presetManager->getPresetsByToolAndKeys($tool, ['lang' => $lang]);
         } else {
@@ -250,7 +243,6 @@ class ApiPresets extends ApiController
             return $this->responseWithJson($response, ['error' => self::API_ERROR_UNKNOWN_COMMAND], 409);
         }
         
-        $userId = intval($inputData['userId']);
         $tool = $inputData['tool'];
         $title = $inputData['title'];
         
@@ -280,7 +272,7 @@ class ApiPresets extends ApiController
         $pf = new PresetFactory();
         $apiUserId = $this->userId;
         if ($command === self::COMMAND_NEW) {
-            // Notice: when creating a new preset, the API ignores the given userId and presetId and
+            // Notice: when creating a new preset, the API ignores the given userId and presetId,
             // defaults to the user authenticated by the system and generates a new preset Id
             $preset = $pf->create($tool, $apiUserId, $title, $data);
             if ($pm->correspondingPresetExists($preset)) {
@@ -341,15 +333,14 @@ class ApiPresets extends ApiController
         return $this->responseWithJson($response, ['presetId' => $presetId], 200);
     }
     
-     public function deletePreset(Request $request, 
-            Response $response, $next) {
+     public function deletePreset(Request $request, Response $response) {
         $apiCall = 'deletePreset';
         $profiler = new ApmProfiler($apiCall, $this->dataManager);
         $presetId = intval($request->getAttribute('id'));
         
-        $pm = $this->systemManager->getPresetsManager();
+        $presetsManager = $this->systemManager->getPresetsManager();
 
-        $currentPreset = $pm->getPresetById($presetId);
+        $currentPreset = $presetsManager->getPresetById($presetId);
         if ($currentPreset === false) {
             $this->logger->error("Preset with given Id does not exist",
                     [ 'apiUserId' => $this->userId,
@@ -366,7 +357,7 @@ class ApiPresets extends ApiController
             return $this->responseWithJson($response, ['error' => self::API_ERROR_NOT_AUTHORIZED], 409);
         }
         
-        if (!$pm->erasePresetById($presetId)) {
+        if (!$presetsManager->erasePresetById($presetId)) {
             // @codeCoverageIgnoreStart
             $this->logger->error("Cannot delete preset",
                     [ 'apiUserId' => $this->userId,

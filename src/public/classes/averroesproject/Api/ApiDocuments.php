@@ -35,7 +35,7 @@ class ApiDocuments extends ApiController
     {
         $profiler = new ApmProfiler('updatePageSettings', $this->dataManager);
         
-        $um = $this->dataManager->um;
+        $um = $this->dataManager->userManager;
          
         if ($um->userHasRole($this->userId, 'readOnly')) {
             $this->logger->error("User is not authorized to update page settings",

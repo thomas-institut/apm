@@ -35,7 +35,7 @@ abstract class ApiController
     /**
      * @var Container
      */
-    protected $ci;
+    protected $container;
 
     /**
      * @var Logger
@@ -81,7 +81,7 @@ abstract class ApiController
 
     public function __construct( Container $ci)
     {
-       $this->ci = $ci;
+       $this->container = $ci;
        $this->dataManager = $ci->get('db');
        $this->logger = $ci->get('logger')->withName('API');
        $this->userId = $ci->get('userId');

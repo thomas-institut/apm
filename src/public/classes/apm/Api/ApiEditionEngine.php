@@ -41,7 +41,7 @@ class ApiEditionEngine extends ApiController
 
         if ($engine->getErrorCode() !== Engine::ERROR_NOERROR) {
             $this->logger->error("$apiCall: EditionEngine error",
-                [ 'apiUserId' => $this->container->userId,
+                [ 'apiUserId' => $this->userId,
                     'apiError' => self::API_ERROR_ENGINE_ERROR,
                     'enginerError' => $engine->getErrorCode() . ': ' . $engine->getErrorMessage()]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_ENGINE_ERROR], 409);

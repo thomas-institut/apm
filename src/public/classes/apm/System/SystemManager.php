@@ -24,11 +24,12 @@ namespace APM\System;
 
 /**
  * Integration class for putting together all the elements necessary
- * to build and operate the APM system. 
- * 
- * Having this as an abstract class makes it easy to create alternative data
- * storage schemes for testing and migration.
- * 
+ * to build and operate the APM system.
+ *
+ * Components such as API, Site and CLI controllers should,
+ * ideally, only depends on this class. This makes it possible to implement specific managers
+ * for different contexts: full web application, testing, etc.
+ *
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
@@ -78,6 +79,7 @@ abstract class SystemManager {
     abstract public function getLogger();
     abstract public function getHookManager();
     abstract public function getSettingsManager();
+    abstract public function getCollationEngine();
     
     protected function setError(int $errorCode, string $msg = '') {
         $this->errorCode = $errorCode;

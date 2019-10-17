@@ -62,7 +62,7 @@ class ApiCollation extends ApiController
             return$this->responseWithJson($response, ['error' => ApiController::API_ERROR_NO_DATA], 409);
         }
         
-        $cr = $this->ci->get('cr');
+        $cr = $this->container->get('cr');
         
         $output = $cr->run($inputDataObject['witnesses']);
         if ($output === false) {

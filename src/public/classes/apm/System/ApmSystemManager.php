@@ -29,7 +29,8 @@ use Monolog\Handler\StreamHandler;
 
 
 /**
- * Description of ApmSystemManager
+ * This is the "production" implementation of SystemManager, with a full blown MySql database
+ * and fully working sub-managers
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */

@@ -41,6 +41,9 @@ use Slim\Routing\RouteCollectorProxy;
 use Slim\Views\Twig;
 use Slim\Views\TwigMiddleware;
 
+
+use APM\Api\ApiIcons;
+
 require 'vendor/autoload.php';
 require 'setup.php';
 require 'version.php';
@@ -147,20 +150,20 @@ $app->get('/user/{username}/settings',
 
 $app->get('/users', '\AverroesProject\Site\SiteUserManager:userManagerPage')
         ->setName('user.manager')
-        ->add('\APM\System\Auth\Authenticator:authenticate');
+        ->add(Authenticator::class . ':authenticate');
 
 // CHUNKS
 $app->get('/chunks','\AverroesProject\Site\SiteChunks:chunksPage')
         ->setName('chunks')
-        ->add('\APM\System\Auth\Authenticator:authenticate');
+        ->add(Authenticator::class . ':authenticate');
 
 $app->get('/chunk/{work}/{chunk}','\APM\Site\ChunkPage:singleChunkPage')
         ->setName('chunk')
-        ->add('\APM\System\Auth\Authenticator:authenticate');
+        ->add(Authenticator::class . ':authenticate');
 
 $app->get('/chunk/{work}/{chunk}/witness/{type}/{id}[/{output}]','\APM\Site\ChunkPage:witnessPage')
         ->setName('witness')
-        ->add('\APM\System\Auth\Authenticator:authenticate');
+        ->add(Authenticator::class . ':authenticate');
 
 // COLLATION TABLES
 
@@ -168,18 +171,17 @@ $app->get('/chunk/{work}/{chunk}/witness/{type}/{id}[/{output}]','\APM\Site\Chun
 // Collation table with preset
 $app->get('/collation/auto/{work}/{chunk}/preset/{preset}','\APM\Site\SiteCollationTable:automaticCollationPagePreset')
         ->setName('chunk.collationtable.preset')
-        ->add('\APM\System\Auth\Authenticator:authenticate');
+        ->add(Authenticator::class . ':authenticate');
 
 // Collation table with parameters in Url
 $app->get('/collation/auto/{work}/{chunk}/{lang}[/{ignore_punct}[/{witnesses:.*}]]','\APM\Site\SiteCollationTable:automaticCollationPageGet')
         ->setName('chunk.collationtable')
-        ->add('\APM\System\Auth\Authenticator:authenticate');
+        ->add(Authenticator::class . ':authenticate');
 
 // Collation table with full options in post
 $app->post('/collation/auto/{work}/{chunk}/{lang}/custom','\APM\Site\SiteCollationTable:automaticCollationPageCustom')
         ->setName('chunk.collationtable.custom')
-        ->add('\APM\System\Auth\Authenticator:authenticate');
-
+        ->add(Authenticator::class . ':authenticate');
 
 
 $app->get('/collation/quick', '\APM\Site\SiteCollationTable:quickCollationPage')
@@ -189,34 +191,34 @@ $app->get('/collation/quick', '\APM\Site\SiteCollationTable:quickCollationPage')
 // DOCS
 $app->get('/documents','\APM\Site\SiteDocuments:documentsPage')
         ->setName('docs')
-        ->add('\APM\System\Auth\Authenticator:authenticate');
+        ->add(Authenticator::class . ':authenticate');
 
 $app->get('/doc/{id}/details','\APM\Site\SiteDocuments:showDocPage')
         ->setName('doc.showdoc')
-        ->add('\APM\System\Auth\Authenticator:authenticate');
+        ->add(Authenticator::class . ':authenticate');
 
 $app->get('/doc/{id}/definepages','\APM\Site\SiteDocuments:defineDocPages')
         ->setName('doc.definedocpages')
-        ->add('\APM\System\Auth\Authenticator:authenticate');
+        ->add(Authenticator::class . ':authenticate');
 
 $app->get('/doc/{id}/edit','\APM\Site\SiteDocuments:editDocPage')
         ->setName('doc.editdoc')
-        ->add('\APM\System\Auth\Authenticator:authenticate');
+        ->add(Authenticator::class . ':authenticate');
 
 $app->get('/doc/new','\APM\Site\SiteDocuments:newDocPage')
         ->setName('doc.new')
-        ->add('\APM\System\Auth\Authenticator:authenticate');
+        ->add(Authenticator::class . ':authenticate');
 
 // PAGEVIEWER
 $app->get('/doc/{doc}/realpage/{page}/view',
         '\AverroesProject\Site\SitePageViewer:pageViewerPageByDocPage')
         ->setName('pageviewer.docpage')
-        ->add('\APM\System\Auth\Authenticator:authenticate');
+        ->add(Authenticator::class . ':authenticate');
 
 $app->get('/doc/{doc}/page/{seq}/view',
         '\AverroesProject\Site\SitePageViewer:pageViewerPageByDocSeq')
         ->setName('pageviewer.docseq')
-        ->add('\APM\System\Auth\Authenticator:authenticate');
+        ->add(Authenticator::class . ':authenticate');
 
 
 // -----------------------------------------------------------------------------
@@ -349,37 +351,37 @@ $app->group('/api', function (RouteCollectorProxy $group){
 
     // API -> images : Mark Icon
     $group->get('/images/mark/{size}',
-            '\AverroesProject\Api\ApiIcons:generateMarkIcon')
+            ApiIcons::class . ':generateMarkIcon')
         ->setName('api.images.mark');
 
     // API -> images : No Word Break Icon
     $group->get('/images/nowb/{size}',
-            '\AverroesProject\Api\ApiIcons:generateNoWordBreakIcon')
+            ApiIcons::class . ':generateNoWordBreakIcon')
         ->setName('api.images.nowb');
 
     // API -> images : Illegible Icon
     $group->get('/images/illegible/{size}/{length}',
-            '\AverroesProject\Api\ApiIcons:generateIllegibleIcon')
+            ApiIcons::class . ':generateIllegibleIcon')
         ->setName('api.images.illegible');
 
     // API -> images : ChunkMark Icon
     $group->get('/images/chunkmark/{dareid}/{chunkno}/{segment}/{type}/{dir}/{size}',
-            '\AverroesProject\Api\ApiIcons:generateChunkMarkIcon')
+            ApiIcons::class . ':generateChunkMarkIcon')
         ->setName('api.images.chunkmark');
 
     // API -> images : Line Gap Mark
     $group->get('/images/linegap/{count}/{size}',
-            '\AverroesProject\Api\ApiIcons:generateLineGapImage')
+            ApiIcons::class . ':generateLineGapImage')
         ->setName('api.images.linegap');
 
     // API -> images : Character Gap Mark
     $group->get('/images/charactergap/{length}/{size}',
-            '\AverroesProject\Api\ApiIcons:generateCharacterGapImage')
+            ApiIcons::class . ':generateCharacterGapImage')
         ->setName('api.images.charactergap');
 
     // API -> images : Paragraph Mark
     $group->get('/images/paragraphmark/{size}',
-            '\AverroesProject\Api\ApiIcons:generateParagraphMarkIcon')
+            ApiIcons::class . ':generateParagraphMarkIcon')
         ->setName('api.images.charactergap');
 
 })->add(Authenticator::class . ':authenticateApiRequest');

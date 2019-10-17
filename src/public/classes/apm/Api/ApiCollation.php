@@ -22,6 +22,8 @@ namespace APM\Api;
 
 
 use APM\System\ApmSystemManager;
+use AverroesProjectToApm\ItemStream;
+use AverroesProjectToApm\ItemStreamWitness;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
@@ -47,8 +49,7 @@ class ApiCollation extends ApiController
     const ERROR_FAILED_COLLATION_ENGINE_PROCESSING = 2003;
     const ERROR_INVALID_LANGUAGE = 2004;
     
-    public function quickCollation(Request $request, 
-            Response $response, $next)
+    public function quickCollation(Request $request, Response $response)
     {
         $apiCall = 'quickCollation';
         $profiler = new ApmProfiler($apiCall, $this->dataManager);
@@ -84,7 +85,7 @@ class ApiCollation extends ApiController
         
         $collatexInput = $collation->getCollationEngineInput();
         
-        $collationEngine = $this->container->get('cr');
+        $collationEngine = $this->collationEngine;
         
         // Run Collatex
         $collatexOutput = $collationEngine->collate($collatexInput);
@@ -151,11 +152,9 @@ class ApiCollation extends ApiController
      * 
      * @param Request $request
      * @param Response $response
-     * @param type $next
-     * @return type
+     * @return Response
      */
-    public function automaticCollation(Request $request, 
-            Response $response, $next)
+    public function automaticCollation(Request $request, Response $response)
     {
         $dataManager = $this->dataManager;
         $apiCall = 'Collation';
@@ -251,8 +250,8 @@ class ApiCollation extends ApiController
                         $segmentStreams[] = $apItemStream;
                     }
                     $edNoteArrayFromDb = $dataManager->edNoteManager->rawGetEditorialNotesForListOfItems($itemIds);
-                    $itemStream = new \AverroesProjectToApm\ItemStream($witnessId, $segmentStreams, $language, $edNoteArrayFromDb);
-                    $itemStrWitness = new \AverroesProjectToApm\ItemStreamWitness($workId, $chunkNumber, $itemStream);
+                    $itemStream = new ItemStream($witnessId, $segmentStreams, $language, $edNoteArrayFromDb);
+                    $itemStrWitness = new ItemStreamWitness($workId, $chunkNumber, $itemStream);
                     $docData = $dataManager->getDocById($witnessId);
                     $this->logger->debug('docData', [$id, $docData]);
                     $collationTable->addWitness($docData['title'], $itemStrWitness);
@@ -268,7 +267,7 @@ class ApiCollation extends ApiController
         $collatexInput = $collationTable->getCollationEngineInput();
         
         $profiler->lap('Collatex input built');
-        $collationEngine = $this->container->get('cr');
+        $collationEngine = $this->collationEngine;
         
         // Run Collatex
         $collatexOutput = $collationEngine->collate($collatexInput);

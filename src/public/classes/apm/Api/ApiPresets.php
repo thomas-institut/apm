@@ -36,7 +36,6 @@ use APM\System\PresetFactory;
  */
 class ApiPresets extends ApiController
 {
-    
     const API_ERROR_UNRECOGNIZED_TOOL = 4001;
     const API_ERROR_NOT_ENOUGH_WITNESSES = 4002;
     const API_ERROR_UNKNOWN_COMMAND = 4003;
@@ -46,8 +45,7 @@ class ApiPresets extends ApiController
     const API_ERROR_PRESET_DOES_NOT_EXIST = 4007;
     const API_ERROR_PRESET_MISMATCH = 4008;
     const API_ERROR_CANNOT_DELETE = 4009;
-    
-    
+
     const COMMAND_NEW = 'new';
     const COMMAND_UPDATE = 'update';
 
@@ -307,7 +305,7 @@ class ApiPresets extends ApiController
             // success
             $newId = $pm->getPreset($tool, $apiUserId, $title)->getId();
             $profiler->log($this->logger);
-            return $response->withStatus(200)->withJson(['presetId' => $newId]);
+            return $this->responseWithJson($response, ['presetId' => $newId], 200);
         }
         
         // command = update preset
@@ -343,7 +341,7 @@ class ApiPresets extends ApiController
         
         // success
         $profiler->log($this->logger);
-        return $response->withStatus(200)->withJson(['presetId' => $presetId]);
+        return $this->responseWithJson($response, ['presetId' => $presetId], 200);
     }
     
      public function deletePreset(Request $request, 
@@ -382,7 +380,7 @@ class ApiPresets extends ApiController
         }
         // success
         $profiler->log($this->logger);
-        return $response->withStatus(200)->withJson(['presetId' => $presetId]);
+        return $this->responseWithJson($response, ['presetId' => $presetId], 200);
     }
     
 }

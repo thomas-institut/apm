@@ -20,6 +20,7 @@
 
 namespace APM\Api;
 
+use APM\CollationEngine\CollationEngine;
 use DI\Container;
 use Monolog\Logger;
 use Psr\Http\Message\ResponseInterface;
@@ -35,7 +36,7 @@ use APM\System\SystemManager;
  */
 abstract class ApiController
 {
-    protected $container;
+    private $container;
 
     /**
      * @var Logger
@@ -88,11 +89,14 @@ abstract class ApiController
      * @var array
      */
     protected $config;
-    
-    //Constructor
+
+    /**
+     * @var CollationEngine
+     */
+    protected $collationEngine;
 
 
-    public function __construct( Container $ci)
+    public function __construct(Container $ci)
     {
        $this->container = $ci;
        $this->dataManager = $ci->get('db');
@@ -100,6 +104,7 @@ abstract class ApiController
        $this->systemManager = $ci->get('sm');
        $this->userId = $ci->get('userId');
        $this->config = $ci->get('settings');
+       $this->collationEngine = $this->systemManager->getCollationEngine();
     }
     
     /**
@@ -131,7 +136,7 @@ abstract class ApiController
                     [ 'apiUserId' => $this->userId,
                       'apiError' => self::API_ERROR_NO_DATA,
                       'rawdata' => $postData]);
-            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_NO_DATA]);
+            return $this->responseWithJson($response, ['error' => self::API_ERROR_NO_DATA], 409);
         }
         
         foreach ($requiredFields as $requiredField) {
@@ -140,7 +145,7 @@ abstract class ApiController
                     [ 'apiUserId' => $this->userId,
                       'apiError' => self::API_ERROR_MISSING_REQUIRED_FIELD,
                       'rawdata' => $postData]);
-            return $response->withStatus(409)->withJson( ['error' => self::API_ERROR_MISSING_REQUIRED_FIELD]);
+            return $this->responseWithJson($response, ['error' => self::API_ERROR_MISSING_REQUIRED_FIELD], 409);
             }
         }
         

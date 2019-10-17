@@ -44,6 +44,7 @@ use Slim\Views\TwigMiddleware;
 
 use APM\Api\ApiIcons;
 use APM\Api\ApiDocuments;
+use APM\Api\ApiUsers;
 
 require 'vendor/autoload.php';
 require 'setup.php';
@@ -290,27 +291,27 @@ $app->group('/api', function (RouteCollectorProxy $group){
 
     // API -> user : get profile info
     $group->get('/user/{userId}/info',
-            '\AverroesProject\Api\ApiUsers:getUserProfileInfo')
+            ApiUsers::class . ':getUserProfileInfo')
         ->setName('api.user.info');
 
     // API -> user : update profile
     $group->post('/user/{userId}/update',
-            '\AverroesProject\Api\ApiUsers:updateUserProfile')
+            ApiUsers::class . ':updateUserProfile')
         ->setName('api.user.update');
 
     // API -> user : change password
     $group->post('/user/{userId}/changepassword',
-            '\AverroesProject\Api\ApiUsers:changeUserPassword')
+            ApiUsers::class . ':changeUserPassword')
         ->setName('api.user.changepassword');
 
     // API -> user : make root
     $group->post('/user/{userId}/makeroot',
-            '\AverroesProject\Api\ApiUsers:makeUserRoot')
+            ApiUsers::class . ':makeUserRoot')
         ->setName('api.user.makeroot');
 
     // API -> user : add new user
     $group->post('/user/new',
-            '\AverroesProject\Api\ApiUsers:createNewUser')
+            ApiUsers::class . ':createNewUser')
         ->setName('api.user.new');
 
     // ------ COLLATION ------

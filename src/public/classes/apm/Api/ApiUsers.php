@@ -18,7 +18,7 @@
  *  
  */
 
-namespace AverroesProject\Api;
+namespace APM\Api;
 
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
@@ -30,8 +30,7 @@ use AverroesProject\Profiler\ApmProfiler;
  */
 class ApiUsers extends ApiController
 {
-    public function getUserProfileInfo(Request $request, Response $response, 
-            $next)
+    public function getUserProfileInfo(Request $request, Response $response)
     {
         $um = $this->dataManager->userManager;
         $profiler = new ApmProfiler('getUserProfileInfo', $this->dataManager);
@@ -49,8 +48,7 @@ class ApiUsers extends ApiController
         return $this->responseWithJson($response,$userProfileInfo);
     }
    
-    public function updateUserProfile(Request $request, Response $response, 
-            $next)
+    public function updateUserProfile(Request $request, Response $response)
     {
         $um = $this->dataManager->userManager;
         $profileUserId =  (int) $request->getAttribute('userId');
@@ -81,7 +79,7 @@ class ApiUsers extends ApiController
             $this->logger->warning("$updater tried to update "
                     . "$profileUserName's profile but she/he is not allowed", 
                     [ 'apiUserId' => $this->userId,
-                      'userId' => profileUserId]);
+                      'userId' => $profileUserId]);
             return $response->withStatus(403);
         }
         if ($fullname === $profileUserInfo['fullname'] && 
@@ -109,8 +107,7 @@ class ApiUsers extends ApiController
         return $response->withStatus(409);       
     }
    
-    public function changeUserPassword(Request $request, Response $response, 
-           $next)
+    public function changeUserPassword(Request $request, Response $response)
     {
         $um = $this->dataManager->userManager;
         $profileUserId =  (int) $request->getAttribute('userId');
@@ -118,7 +115,6 @@ class ApiUsers extends ApiController
         $password1 = $postData['password1'];
         $password2 = $postData['password2'];
         $profileUserInfo = $um->getUserInfoByUserId($profileUserId);
-        
         
         if ($profileUserInfo === false ) {
             $this->logger->error("Error getting info for user ID", 
@@ -168,7 +164,7 @@ class ApiUsers extends ApiController
         return $response->withStatus(409);
     }
     
-    public function makeUserRoot(Request $request, Response $response, $next)
+    public function makeUserRoot(Request $request, Response $response)
     {
         $um = $this->dataManager->userManager;
         $profileUserId =  (int) $request->getAttribute('userId');
@@ -214,7 +210,7 @@ class ApiUsers extends ApiController
         return $response->withStatus(409);
     }
     
-    public function createNewUser(Request $request, Response $response, $next)
+    public function createNewUser(Request $request, Response $response)
     {
         $um = $this->dataManager->userManager;
         $postData = $request->getParsedBody();

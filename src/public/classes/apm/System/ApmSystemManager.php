@@ -20,13 +20,20 @@
 
 namespace APM\System;
 
+use APM\CollationEngine\Collatex;
 use APM\Presets\DataTablePresetManager;
 use APM\Presets\PresetManager;
 use APM\System\SettingsManager;
 use APM\Plugin\HookManager;
 
+use DataTable\MySqlDataTable;
+use InvalidArgumentException;
+use Monolog\Handler\ErrorLogHandler;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
+use Monolog\Processor\WebProcessor;
+use PDO;
+use PDOException;
 
 
 /**
@@ -163,7 +170,7 @@ class ApmSystemManager extends SystemManager {
         // Set up database connection
         try {
             $this->dbConn = $this->setUpDbConnection();
-        } catch (\PDOException $e) {
+        } catch (PDOException $e) {
             $this->logAndSetError(self::ERROR_DATABASE_CONNECTION_FAILED,
                     "Database connection failed: " . $e->getMessage());
             return;
@@ -177,7 +184,7 @@ class ApmSystemManager extends SystemManager {
         }
         
         // Set up SettingsManager
-        $settingsTable = new \DataTable\MySqlDataTable($this->dbConn, 
+        $settingsTable = new MySqlDataTable($this->dbConn,
                 $this->tableNames[self::TABLE_SETTINGS]);
         if (!$settingsTable->isDbTableValid()) {
             // Cannot replicate this in testing, yet
@@ -197,14 +204,14 @@ class ApmSystemManager extends SystemManager {
         }
         
         // Set up Collatex
-        $this->collationEngine = new \APM\CollationEngine\Collatex(
+        $this->collationEngine = new Collatex(
             $this->config[self::CFG_COLLATEX_JARFILE], 
             $this->config[self::CFG_COLLATEX_TMPDIR], 
             $this->config[self::CFG_JAVA_EXECUTABLE]
         );
        
         // Set up PresetsManager
-        $presetsManagerDataTable = new \DataTable\MySqlDataTable($this->dbConn, 
+        $presetsManagerDataTable = new MySqlDataTable($this->dbConn,
                         $this->tableNames[self::TABLE_PRESETS]);
         $this->presetsManager = 
                 new DataTablePresetManager($presetsManagerDataTable, ['lang' => 'key1']);
@@ -255,7 +262,7 @@ class ApmSystemManager extends SystemManager {
     protected function setUpDbConnection() {
         $dbConfig = $this->config[self::CFG_DB];
 
-        $dbh = new \PDO('mysql:dbname='. $dbConfig['db'] . ';host=' . 
+        $dbh = new PDO('mysql:dbname='. $dbConfig['db'] . ';host=' .
                 $dbConfig['host'], $dbConfig['user'], 
                 $dbConfig['pwd']);
         $dbh->query("set character set 'utf8'");
@@ -314,11 +321,11 @@ class ApmSystemManager extends SystemManager {
         
         if ($this->config[self::CFG_LOG_IN_PHP_ERROR_HANDLER]) {
             // Cannot set this in testing, so, let's ignore it
-            $phpLog = new \Monolog\Handler\ErrorLogHandler(); // @codeCoverageIgnore
+            $phpLog = new ErrorLogHandler(); // @codeCoverageIgnore
             $logger->pushHandler($phpLog); // @codeCoverageIgnore
         }
         
-        $logger->pushProcessor(new \Monolog\Processor\WebProcessor);
+        $logger->pushProcessor(new WebProcessor);
         
         return $logger;
     }
@@ -460,7 +467,6 @@ class ApmSystemManager extends SystemManager {
      *
      * if the given base url is wrongly formed, the function throws an InvalidArgument exception
      *
-     * @param string $baseUrl
      * @return string
      */
     public function getBaseUrlSubdir() : string {
@@ -471,17 +477,17 @@ class ApmSystemManager extends SystemManager {
 
         /// must have at least 3 fields
         if (count($fields) <= 3) {
-            throw new \InvalidArgumentException('Badly formed url: ' . $baseUrl);
+            throw new InvalidArgumentException('Badly formed url: ' . $baseUrl);
         }
 
         // $field[0] must be  http:  or https:
         if ($fields[0] !== 'http:' && $fields[0] !== 'https:') {
-            throw new \InvalidArgumentException('Expected http:  or https: in base Url ' . $baseUrl);
+            throw new InvalidArgumentException('Expected http:  or https: in base Url ' . $baseUrl);
         }
 
         // $field[1] must be empty
         if ($fields[1] !== '') {
-            throw new \InvalidArgumentException('Expected // after http:');
+            throw new InvalidArgumentException('Expected // after http:');
         }
 
         // $field[2] is the website, not checking anything there

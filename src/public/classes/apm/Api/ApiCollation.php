@@ -21,9 +21,9 @@
 namespace APM\Api;
 
 
-use APM\System\ApmSystemManager;
 use AverroesProjectToApm\ItemStream;
 use AverroesProjectToApm\ItemStreamWitness;
+use Exception;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
@@ -107,7 +107,7 @@ class ApiCollation extends ApiController
         }
         // @codeCoverageIgnoreStart
         // Can't replicate this consistently in testing
-        catch(\Exception $ex) {
+        catch(Exception $ex) {
             $this->logger->error('Error processing collatexOutput into collation object', 
                     [ 'apiUserId' => $this->userId,
                         'apiError' => self::ERROR_FAILED_COLLATION_ENGINE_PROCESSING,
@@ -175,7 +175,7 @@ class ApiCollation extends ApiController
         $profiler = new ApmProfiler("CollationTable-$workId-$chunkNumber-$language", $dataManager);
         
         // Check that language is valid
-        $languages = $this->config['languages'];
+        $languages = $this->languages;
         $langInfo = null;
         foreach($languages as $lang) {
             if ($lang['code'] === $language) {
@@ -189,7 +189,7 @@ class ApiCollation extends ApiController
             return $this->responseWithJson($response, ['error' => self::ERROR_INVALID_LANGUAGE, 'msg' => $msg], 409);
         }
 
-        $workInfo = $dataManager->getWorkInfo($workId);
+        //$workInfo = $dataManager->getWorkInfo($workId);
 
         $validWitnessLocations = $dataManager->getValidWitnessLocationsForWorkChunkLang($workId, $chunkNumber, $language);
         if (count($validWitnessLocations) < 2) {
@@ -291,7 +291,7 @@ class ApiCollation extends ApiController
         }
         // @codeCoverageIgnoreStart
         // Can't replicate this consistently in testing
-        catch(\Exception $ex) {
+        catch(Exception $ex) {
             $msg = 'Error processing collation Engine output into collation object';
             $this->logger->error($msg, 
                     [ 'apiUserId' => $this->userId,

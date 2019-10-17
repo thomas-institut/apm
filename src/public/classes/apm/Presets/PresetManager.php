@@ -34,29 +34,43 @@ namespace APM\Presets;
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 abstract class PresetManager {
-    
+
     /**
      * BASIC OPERATIONS
+     * @param string $tool
+     * @param int $userId
+     * @param string $title
+     * @return bool
      */
     abstract public function presetExists(string $tool, int $userId, string $title) : bool;
-    
+
     /**
      * addPreset must return false if there is already a preset
-     * that corresponds to the given $preset. 
+     * that corresponds to the given $preset.
+     * @param Preset $preset
+     * @return bool
      */
     abstract public function addPreset(Preset $preset) : bool;
-    
+
     /**
-     * erasePreset must return true if the preset was erased or if it did not exist 
-     * in the first place  
+     * erasePreset must return true if the preset was erased or if it did not exist
+     * in the first place
+     * @param string $tool
+     * @param int $userId
+     * @param string $title
+     * @return bool
      */
     abstract public function erasePreset(string $tool, int $userId, string $title) : bool;
 
     /**
      * Search methods
      */
-    
-    /** getPreset returns false is the preset does not exist */
+
+    /** getPreset returns false is the preset does not exist
+     * @param string $tool
+     * @param int $userId
+     * @param string $title
+     */
     abstract public function getPreset(string $tool, int $userId, string $title);
     
     abstract public function getPresetsByToolAndKeys(string $tool, array $keysToMatch) : array;
@@ -71,7 +85,7 @@ abstract class PresetManager {
      * Returns true if the preset with the same tool, userId and title as the
      * given $preset exists in the system
      * 
-     * @param \APM\Presets\Preset $preset
+     * @param Preset $preset
      * @return bool
      */
     public function correspondingPresetExists(Preset $preset) : bool {
@@ -81,7 +95,7 @@ abstract class PresetManager {
     /**
      * Erases the preset with the same tool, userId and title as the given $preset
      * 
-     * @param \APM\Presets\Preset $preset
+     * @param Preset $preset
      * @return bool
      */
     public function eraseCorrespondingPreset(Preset $preset) : bool {

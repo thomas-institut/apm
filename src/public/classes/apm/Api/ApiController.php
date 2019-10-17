@@ -36,7 +36,6 @@ use APM\System\SystemManager;
  */
 abstract class ApiController
 {
-    private $container;
 
     /**
      * @var Logger
@@ -88,23 +87,28 @@ abstract class ApiController
     /**
      * @var array
      */
-    protected $config;
+    private $config;
 
     /**
      * @var CollationEngine
      */
     protected $collationEngine;
 
+    /**
+     * @var array
+     */
+    protected $languages;
+
 
     public function __construct(Container $ci)
     {
-       $this->container = $ci;
        $this->dataManager = $ci->get('db');
        $this->logger = $ci->get('logger')->withName('API-new');
        $this->systemManager = $ci->get('sm');
        $this->userId = $ci->get('userId');
        $this->config = $ci->get('settings');
        $this->collationEngine = $this->systemManager->getCollationEngine();
+       $this->languages = $this->config['languages'];
     }
     
     /**
@@ -118,7 +122,7 @@ abstract class ApiController
      * @param Response $response
      * @param string $apiCall
      * @param array $requiredFields
-     * @return type
+     * @return Response|array
      */
     protected function checkAndGetInputData(Request $request, 
             Response $response, string $apiCall, array $requiredFields) {
@@ -152,6 +156,12 @@ abstract class ApiController
         return $inputData;
     }
 
+    /**
+     * @param Response $response
+     * @param mixed $data
+     * @param int $status
+     * @return Response
+     */
     protected function responseWithJson(ResponseInterface $response, $data, $status = 201) : ResponseInterface {
         $payload = json_encode($data);
         $response->getBody()->write($payload);

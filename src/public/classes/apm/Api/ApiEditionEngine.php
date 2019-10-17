@@ -16,8 +16,7 @@ class ApiEditionEngine extends ApiController
 
     const API_ERROR_ENGINE_ERROR = 4001;
 
-    public function basicEditionEngine(Request $request,
-                                       Response $response, $next)
+    public function basicEditionEngine(Request $request,  Response $response)
     {
         $dataManager = $this->dataManager;
         $apiCall = 'EditionEngine';

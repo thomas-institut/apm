@@ -67,10 +67,9 @@ class ApiPresets extends ApiController
      * @param Request $request
      * @param Response $response
      * @param type $next
-     * @return type
+     * @return Response
      */
-    public function  getPresets(Request $request, 
-            Response $response, $next) {
+    public function  getPresets(Request $request,  Response $response) {
         
         $apiCall = 'getPresets';
         $profiler = new ApmProfiler($apiCall, $this->dataManager);
@@ -158,8 +157,7 @@ class ApiPresets extends ApiController
      * @param type $next
      * @return type
      */
-    public function  getAutomaticCollationPresets(Request $request, 
-            Response $response, $next) {
+    public function  getAutomaticCollationPresets(Request $request, Response $response) {
         
         $apiCall = 'getAutomaticCollationPresets';
         $profiler = new ApmProfiler($apiCall, $this->dataManager);
@@ -232,8 +230,7 @@ class ApiPresets extends ApiController
             ]);
     }
     
-    public function  savePreset(Request $request, 
-            Response $response, $next) {
+    public function  savePreset(Request $request, Response $response) {
         
         $apiCall = 'savePreset';
         $profiler = new ApmProfiler($apiCall, $this->dataManager);
@@ -351,7 +348,7 @@ class ApiPresets extends ApiController
         $presetId = intval($request->getAttribute('id'));
         
         $pm = $this->systemManager->getPresetsManager();
-        
+
         $currentPreset = $pm->getPresetById($presetId);
         if ($currentPreset === false) {
             $this->logger->error("Preset with given Id does not exist",

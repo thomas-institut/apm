@@ -22,6 +22,8 @@
 namespace APM\System;
 
 
+use APM\Presets\PresetManager;
+
 /**
  * Integration class for putting together all the elements necessary
  * to build and operate the APM system.
@@ -75,7 +77,7 @@ abstract class SystemManager {
     /**
      * Get methods for the different components
      */
-    abstract public function getPresetsManager();
+    abstract public function getPresetsManager() : PresetManager;
     abstract public function getLogger();
     abstract public function getHookManager();
     abstract public function getSettingsManager();

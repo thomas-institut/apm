@@ -25,6 +25,9 @@
  */
 namespace AverroesProject;
 
+use APM\Site\ChunkPage;
+use APM\Site\SiteCollationTable;
+use APM\Site\SiteDocuments;
 use DI\ContainerBuilder;
 
 use Slim\Factory\AppFactory;
@@ -38,6 +41,7 @@ use APM\Site\SiteDashboard;
 use APM\Site\SiteHomePage;
 use APM\Site\SiteUserManager;
 use APM\Site\SiteChunks;
+use APM\Site\SitePageViewer;
 use APM\System\Auth\Authenticator;
 
 use APM\Api\ApiIcons;
@@ -161,11 +165,11 @@ $app->get('/chunks', SiteChunks::class . ':chunksPage')
         ->setName('chunks')
         ->add(Authenticator::class . ':authenticate');
 
-$app->get('/chunk/{work}/{chunk}','\APM\Site\ChunkPage:singleChunkPage')
+$app->get('/chunk/{work}/{chunk}',ChunkPage::class . ':singleChunkPage')
         ->setName('chunk')
         ->add(Authenticator::class . ':authenticate');
 
-$app->get('/chunk/{work}/{chunk}/witness/{type}/{id}[/{output}]','\APM\Site\ChunkPage:witnessPage')
+$app->get('/chunk/{work}/{chunk}/witness/{type}/{id}[/{output}]',ChunkPage::class . ':witnessPage')
         ->setName('witness')
         ->add(Authenticator::class . ':authenticate');
 
@@ -173,54 +177,54 @@ $app->get('/chunk/{work}/{chunk}/witness/{type}/{id}[/{output}]','\APM\Site\Chun
 
 
 // Collation table with preset
-$app->get('/collation/auto/{work}/{chunk}/preset/{preset}','\APM\Site\SiteCollationTable:automaticCollationPagePreset')
+$app->get('/collation/auto/{work}/{chunk}/preset/{preset}',SiteCollationTable::class . ':automaticCollationPagePreset')
         ->setName('chunk.collationtable.preset')
         ->add(Authenticator::class . ':authenticate');
 
 // Collation table with parameters in Url
-$app->get('/collation/auto/{work}/{chunk}/{lang}[/{ignore_punct}[/{witnesses:.*}]]','\APM\Site\SiteCollationTable:automaticCollationPageGet')
+$app->get('/collation/auto/{work}/{chunk}/{lang}[/{ignore_punct}[/{witnesses:.*}]]',SiteCollationTable::class . ':automaticCollationPageGet')
         ->setName('chunk.collationtable')
         ->add(Authenticator::class . ':authenticate');
 
 // Collation table with full options in post
-$app->post('/collation/auto/{work}/{chunk}/{lang}/custom','\APM\Site\SiteCollationTable:automaticCollationPageCustom')
+$app->post('/collation/auto/{work}/{chunk}/{lang}/custom',SiteCollationTable::class . ':automaticCollationPageCustom')
         ->setName('chunk.collationtable.custom')
         ->add(Authenticator::class . ':authenticate');
 
 
-$app->get('/collation/quick', '\APM\Site\SiteCollationTable:quickCollationPage')
+$app->get('/collation/quick', SiteCollationTable::class . ':quickCollationPage')
         ->setName('quickcollation');
 
 
 // DOCS
-$app->get('/documents','\APM\Site\SiteDocuments:documentsPage')
+$app->get('/documents',SiteDocuments::class . ':documentsPage')
         ->setName('docs')
         ->add(Authenticator::class . ':authenticate');
 
-$app->get('/doc/{id}/details','\APM\Site\SiteDocuments:showDocPage')
+$app->get('/doc/{id}/details',SiteDocuments::class . ':showDocPage')
         ->setName('doc.showdoc')
         ->add(Authenticator::class . ':authenticate');
 
-$app->get('/doc/{id}/definepages','\APM\Site\SiteDocuments:defineDocPages')
+$app->get('/doc/{id}/definepages',SiteDocuments::class . ':defineDocPages')
         ->setName('doc.definedocpages')
         ->add(Authenticator::class . ':authenticate');
 
-$app->get('/doc/{id}/edit','\APM\Site\SiteDocuments:editDocPage')
+$app->get('/doc/{id}/edit',SiteDocuments::class . ':editDocPage')
         ->setName('doc.editdoc')
         ->add(Authenticator::class . ':authenticate');
 
-$app->get('/doc/new','\APM\Site\SiteDocuments:newDocPage')
+$app->get('/doc/new',SiteDocuments::class . ':newDocPage')
         ->setName('doc.new')
         ->add(Authenticator::class . ':authenticate');
 
 // PAGEVIEWER
 $app->get('/doc/{doc}/realpage/{page}/view',
-        '\AverroesProject\Site\SitePageViewer:pageViewerPageByDocPage')
+        SitePageViewer::class . ':pageViewerPageByDocPage')
         ->setName('pageviewer.docpage')
         ->add(Authenticator::class . ':authenticate');
 
 $app->get('/doc/{doc}/page/{seq}/view',
-        '\AverroesProject\Site\SitePageViewer:pageViewerPageByDocSeq')
+    SitePageViewer::class . ':pageViewerPageByDocSeq')
         ->setName('pageviewer.docseq')
         ->add(Authenticator::class . ':authenticate');
 

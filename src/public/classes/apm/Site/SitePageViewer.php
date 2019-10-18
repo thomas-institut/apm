@@ -23,8 +23,9 @@
  */
 
 
-namespace AverroesProject\Site;
+namespace APM\Site;
 
+use AverroesProject\Data\DataManager;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
@@ -34,7 +35,7 @@ use \Psr\Http\Message\ResponseInterface as Response;
  */
 class SitePageViewer extends SiteController
 {
-    function pageViewerPageByDocPage(Request $request, Response $response, $next)
+    function pageViewerPageByDocPage(Request $request, Response $response)
     {
         $docId = $request->getAttribute('doc');
         $pageNumber = $request->getAttribute('page');
@@ -43,7 +44,7 @@ class SitePageViewer extends SiteController
         $pageInfo = $this->dataManager->getPageInfoByDocPage($docId, $pageNumber);
 
         $docPageCount = $this->dataManager->getPageCountByDocId($docId);
-        $pagesInfo = $this->dataManager->getDocPageInfo($docId, \AverroesProject\Data\DataManager::ORDER_BY_PAGE_NUMBER);
+        $pagesInfo = $this->dataManager->getDocPageInfo($docId, DataManager::ORDER_BY_PAGE_NUMBER);
         $transcribedPages = $this->dataManager->getTranscribedPageListByDocId($docId);
         $thePages = $this->buildPageArray($pagesInfo, $transcribedPages);
         $imageUrl = $this->dataManager->getImageUrl($docId, $pageInfo['img_number']);
@@ -58,7 +59,7 @@ class SitePageViewer extends SiteController
 
         return $this->view->render($response, 'pageviewer.twig', [
             'userinfo' => $this->userInfo,
-            'copyright' => $this->copyrightNotice,
+            'copyright' => $this->getCopyrightNotice(),
             'baseurl' => $this->config['baseurl'],
             'navByPage' => true,
             'doc' => $docId,
@@ -77,7 +78,7 @@ class SitePageViewer extends SiteController
         ]);
     }
     
-     function pageViewerPageByDocSeq(Request $request, Response $response, $next)
+     function pageViewerPageByDocSeq(Request $request, Response $response)
     {
         $docId = $request->getAttribute('doc');
         $seq = $request->getAttribute('seq');
@@ -87,7 +88,7 @@ class SitePageViewer extends SiteController
         $pageInfo = $this->dataManager->getPageInfo($pageId);
         $pageNumber = $pageInfo['page_number'];
         $docPageCount = $this->dataManager->getPageCountByDocId($docId);
-        $pagesInfo = $this->dataManager->getDocPageInfo($docId, \AverroesProject\Data\DataManager::ORDER_BY_SEQ);
+        $pagesInfo = $this->dataManager->getDocPageInfo($docId, DataManager::ORDER_BY_SEQ);
         $transcribedPages = $this->dataManager->getTranscribedPageListByDocId($docId);
         $thePages = $this->buildPageArray($pagesInfo, $transcribedPages);
         $imageUrl = $this->dataManager->getImageUrl($docId, $pageInfo['img_number']);
@@ -103,7 +104,7 @@ class SitePageViewer extends SiteController
 
         return $this->view->render($response, 'pageviewer.twig', [
             'userinfo' => $this->userInfo,
-            'copyright' => $this->copyrightNotice,
+            'copyright' => $this->getCopyrightNotice(),
             'baseurl' => $this->config['baseurl'],
             'navByPage' => false,  // i.e., navigate by sequence
             'doc' => $docId,

@@ -28,7 +28,7 @@ use \Slim\Views\TwigExtension;
  */
 class SlimTwigExtensionMockup extends TwigExtension {
     
-    public function pathFor($name, $data = [], $queryParams = [], $appName = 'default')
+    public function urlFor($name, $data = [], $queryParams = [], $appName = 'default')
     {
         return 'PATH' . $name;
     }

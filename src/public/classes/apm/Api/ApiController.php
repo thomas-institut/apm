@@ -52,7 +52,7 @@ abstract class ApiController
     /**
      * @var int
      */
-    protected  $apiUserId;
+    protected $apiUserId;
     
     // Error codes
     const API_ERROR_NO_DATA = 1000;
@@ -109,7 +109,7 @@ abstract class ApiController
        $this->logger = $this->systemManager->getLogger()->withName('API');
     }
 
-    protected  function getDataManager() : DataManager {
+    protected function getDataManager() : DataManager {
         return $this->container->get('dataManager');
     }
 
@@ -167,7 +167,7 @@ abstract class ApiController
         
         foreach ($requiredFields as $requiredField) {
             if (!isset($inputData[$requiredField])) {
-                $this->logger->error("$apiCall: missing required field $requiredField in input data",
+                $this->logger->error("$apiCall: missing required field '$requiredField' in input data",
                     [ 'apiUserId' => $this->apiUserId,
                       'apiError' => self::API_ERROR_MISSING_REQUIRED_FIELD,
                       'rawdata' => $postData]);
@@ -184,9 +184,11 @@ abstract class ApiController
      * @param int $status
      * @return Response
      */
-    protected function responseWithJson(ResponseInterface $response, $data, $status = 201) : ResponseInterface {
+    protected function responseWithJson(ResponseInterface $response, $data, $status = 200) : ResponseInterface {
+
         $payload = json_encode($data);
         $response->getBody()->write($payload);
+
         return $response
             ->withHeader('Content-Type', 'application/json')
             ->withStatus($status);

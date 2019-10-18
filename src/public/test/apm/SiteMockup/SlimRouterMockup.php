@@ -28,7 +28,7 @@ namespace APM;
  */
 class SlimRouterMockup extends \Slim\Router{
     
-    public function pathFor($name, array $data = [], array $queryParams = [])
+    public function urlFor($name, array $data = [], array $queryParams = [])
     {
         return "MOCKUP_URL:" . $name;
     }

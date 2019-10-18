@@ -38,7 +38,7 @@ class ApiElements extends ApiController
     const API_ERROR_INVALID_VERSION_REQUESTED = 5001;
     
     public function updateElementsByDocPageCol(Request $request, 
-            Response $response, $next)
+            Response $response)
     {
         $dataManager = $this->getDataManager();
         

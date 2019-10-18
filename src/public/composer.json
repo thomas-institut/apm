@@ -20,7 +20,8 @@
     },
     
     "require-dev": {
-        "guzzlehttp/guzzle": "6.3.0"
+        "guzzlehttp/guzzle": "6.3.0",
+        "phpunit/phpunit": "^8.4"
     },
     
     "autoload": {

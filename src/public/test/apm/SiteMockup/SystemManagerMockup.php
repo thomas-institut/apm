@@ -21,6 +21,7 @@
 namespace APM;
 
 
+use APM\Presets\PresetManager;
 use APM\System\SystemManager;
 use APM\System\SettingsManager;
 use APM\Plugin\HookManager;
@@ -53,11 +54,11 @@ class SystemManagerMockup extends SystemManager {
         return true;
     }
 
-    public function getLogger() {
+    public function getLogger() : Logger {
         return $this->logger;
     }
 
-    public function getPresetsManager() {
+    public function getPresetsManager() : PresetManager {
         return false;
     }
 
@@ -73,4 +74,8 @@ class SystemManagerMockup extends SystemManager {
         return $this->sm;
     }
 
+    public function getCollationEngine()
+    {
+        // TODO: Implement getCollationEngine() method.
+    }
 }

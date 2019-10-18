@@ -23,7 +23,9 @@ require "../vendor/autoload.php";
 
 use AverroesProject\Data\DataManager;
 use APM\System\ApmSystemManager;
+use DI\ContainerBuilder;
 use mysql_xdevapi\Exception;
+use Slim\Views\Twig;
 
 /**
  * Utility class to set up the test environment for database testing
@@ -99,7 +101,8 @@ EOD;
     }
 
     public function setUserId($userId) {
-        $this->container['userId'] = $userId;
+        $this->container->set('userId', $userId);
+
     }
     
     public function getContainer()
@@ -110,30 +113,31 @@ EOD;
         }
         
         
-        $sm = new ApmSystemManager($this->config);
+        $systemManager = new ApmSystemManager($this->config);
         
-        $config = $sm->getConfig();
-        
-        
-        $dbh = $sm->getDbConnection();
-        $hm = $sm->getHookManager();
-        $logger = $sm->getLogger();
-        $cr = $sm->getCollationEngine();
-        $dataManager = new DataManager($dbh, $sm->getTableNames(), $logger, $hm, $config['langCodes']);
-        
-        $container = new \Slim\Container();
-        $container['db'] = $dataManager;
-        $container['dbh'] = $dbh;
-        $container['cr'] = $cr;
-        $container['logger'] = $logger;
-        $container['userId'] = 50100100;
-        $container['hm'] = $hm;
-        $container['sm'] = $sm;
-        
-        $container['config'] = $config;
-        $container['settings'] = $config;
+        $config = $systemManager->getConfig();
         
         
+        $dbh = $systemManager->getDbConnection();
+        $hm = $systemManager->getHookManager();
+        $logger = $systemManager->getLogger();
+        $cr = $systemManager->getCollationEngine();
+        $dataManager = new DataManager($dbh, $systemManager->getTableNames(), $logger, $hm, $config['langCodes']);
+
+        $builder = new ContainerBuilder();
+        $builder->addDefinitions([
+            'config' => $config,
+            'dataManager' => $dataManager,
+            'logger' => $logger,
+            'systemManager' => $systemManager,
+            'userId' => 50100100,
+            'apiUserId' => 50100100
+        ]);
+
+
+        $container = $builder->build();
+
+
         $this->container = $container;
         return $container;
     }

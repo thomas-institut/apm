@@ -54,6 +54,7 @@ class ApiCollation extends ApiController
         $apiCall = 'quickCollation';
         $profiler = new ApmProfiler($apiCall, $this->getDataManager());
         $inputData = $this->checkAndGetInputData($request, $response, $apiCall, ['witnesses']);
+        $this->debug('Input data', [ $inputData ]);
         if (!is_array($inputData)) {
             return $inputData;
         }
@@ -159,7 +160,7 @@ class ApiCollation extends ApiController
         $dataManager = $this->getDataManager();
         $apiCall = 'Collation';
         $requiredFields = [ 'work', 'chunk', 'lang', 'witnesses'];
-        
+
         $inputDataObject = $this->checkAndGetInputData($request, $response, $apiCall, $requiredFields);
         if (!is_array($inputDataObject)) {
             return $inputDataObject;

@@ -34,19 +34,19 @@ class SiteTestEnvironment extends DatabaseTestEnvironment {
     public function getContainer() {
         $container = parent::getContainer();
 
-        $container['router'] = new SlimRouterMockup();
-        
+        $container->set('router',  new SlimRouterMockup());
+
+
         $view = new \Slim\Views\Twig('../templates', [
             'cache' => false
         ]);
         // Instantiate and add Slim specific extension
-        $basePath = rtrim(str_ireplace('index.php', '', 
-                $container['request']->getUri()->getBasePath()), '/');
-        $view->addExtension(new SlimTwigExtensionMockup(
-                $container['router'], $basePath));
+//        $basePath = rtrim(str_ireplace('index.php', '',
+//                $container['request']->getUri()->getBasePath()), '/');
+//        $view->addExtension(new SlimTwigExtensionMockup(
+//                $container['router'], $basePath));
 
-        $container['view'] = $view;
-        
+        $container->set('view', $view);
         return $container;
     }
 

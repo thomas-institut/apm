@@ -27,3 +27,4 @@ src/public/config.php
 /src/public/js/istanbul/
 /src/public/test/apm/SiteMockup/testconfig.php
 .idea/
+/src/public/test/.phpunit*

@@ -108,6 +108,8 @@ if ($subdir !== '') {
     $app->setBasePath($subdir);
 }
 
+$app->addErrorMiddleware(true, true, true);
+
 // Add Twig middleware and router
 $app->add(TwigMiddleware::createFromContainer($app));
 $container->set('router', $app->getRouteCollector()->getRouteParser());

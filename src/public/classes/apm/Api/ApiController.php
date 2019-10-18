@@ -42,9 +42,6 @@ abstract class ApiController
      */
     protected $logger;
 
-    /** @var DataManager */
-    protected $dataManager;
-
     /**
      *
      * @var SystemManager 
@@ -84,26 +81,33 @@ abstract class ApiController
     const API_ERROR_WRONG_TYPE = 1300;
 
     /**
-     * @var CollationEngine
-     */
-    protected $collationEngine;
-
-    /**
      * @var array
      */
     protected $languages;
 
 
+    /**
+     * @var Container
+     */
+    private $container;
+
+
     public function __construct(Container $ci)
     {
-       $this->dataManager = $ci->get('db');
+       $this->container = $ci;
+
        $this->systemManager = $ci->get('sm');
        $this->apiUserId = $ci->get('apiUserId'); // this should be set by the authenticator!
        $this->languages =$ci->get('config')['languages'];
-
-       $this->collationEngine = $this->systemManager->getCollationEngine();
        $this->logger = $this->systemManager->getLogger()->withName('API');
+    }
 
+    protected  function getDataManager() : DataManager {
+        return $this->container->get('db');
+    }
+
+    protected function getCollationEngine() : CollationEngine {
+        return $this->systemManager->getCollationEngine();
     }
     
     /**

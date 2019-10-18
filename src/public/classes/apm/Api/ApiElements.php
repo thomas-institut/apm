@@ -40,10 +40,11 @@ class ApiElements extends ApiController
     public function updateElementsByDocPageCol(Request $request, 
             Response $response, $next)
     {
+        $dataManager = $this->getDataManager();
         
-        $profiler = new ApmProfiler('updateElements', $this->dataManager);
+        $profiler = new ApmProfiler('updateElements', $dataManager);
         
-        $userManager = $this->dataManager->userManager;
+        $userManager = $dataManager->userManager;
          
         if ($userManager->userHasRole($this->apiUserId, SystemManager::ROLE_READ_ONLY)) {
             $this->logger->error("User is not authorized to update elements",
@@ -120,7 +121,7 @@ class ApiElements extends ApiController
         }
 
         // Check elements and force hand Id on items
-        $pageId = $this->dataManager->getPageIdByDocPage($docId, $pageNumber);
+        $pageId = $dataManager->getPageIdByDocPage($docId, $pageNumber);
         $newElementsArray = $inputDataObject['elements'];
         $edNotes = $inputDataObject['ednotes'];
         
@@ -172,7 +173,7 @@ class ApiElements extends ApiController
                 return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_WRONG_COLUMN_NUMBER], 409);
             }
             // check EditorId
-            if (!$this->dataManager->userManager->userExistsById($newElementsArray[$i]['editorId'])) {
+            if (!$dataManager->userManager->userExistsById($newElementsArray[$i]['editorId'])) {
                 $this->logger->error("Non existent editorId in input array",
                     [ 'apiUserId' => $this->apiUserId,
                       'apiError' => ApiController::API_ERROR_WRONG_EDITOR_ID,
@@ -267,7 +268,7 @@ class ApiElements extends ApiController
                     ]);
                 return $this->responseWithJson($response,['error' => ApiController::API_ERROR_WRONG_TARGET_FOR_EDNOTE], 409);
             }
-            if (!$this->dataManager->userManager->userExistsById($edNotes[$i]['authorId'])) {
+            if (!$dataManager->userManager->userExistsById($edNotes[$i]['authorId'])) {
                 $this->logger->error("Inexisted author Id for editorial note: " . $edNotes[$i]['authorId'],
                     [ 'apiUserId' => $this->apiUserId,
                       'apiError' => ApiController::API_ERROR_WRONG_AUTHOR_ID,
@@ -297,7 +298,7 @@ class ApiElements extends ApiController
         $edNotes  = EdNoteManager::editorialNoteArrayFromArray($inputDataObject['ednotes'], $this->logger);
 
         
-        $newItemIds = $this->dataManager->updateColumnElements($pageId, $columnNumber, $newElements, $updateTime);
+        $newItemIds = $dataManager->updateColumnElements($pageId, $columnNumber, $newElements, $updateTime);
         $profiler->lap('Elements Updated');
         // Update targets
         for ($i = 0; $i < count($edNotes); $i++) {
@@ -310,9 +311,9 @@ class ApiElements extends ApiController
             }
         }
         $this->logger->debug("Updating ednotes", $edNotes);
-        $this->dataManager->edNoteManager->updateNotesFromArray($edNotes);
+        $dataManager->edNoteManager->updateNotesFromArray($edNotes);
 
-        $versionId = $this->dataManager->registerTranscriptionVersion($pageId, $columnNumber, $updateTime,
+        $versionId = $dataManager->registerTranscriptionVersion($pageId, $columnNumber, $updateTime,
             $this->apiUserId, $versionDescr, $versionIsMinor, $versionIsReview);
         if ($versionId === false) {
             $this->logger->error('Cannot register version');
@@ -331,9 +332,11 @@ class ApiElements extends ApiController
         $columnNumber = $request->getAttribute('column');
         $versionId = $request->getAttribute('version');
 
+        $dataManager = $this->getDataManager();
+
         // Get a list of versions
-        $pageId = $this->dataManager->getPageIdByDocPage($docId, $pageNumber);
-        $versions = $this->dataManager->getTranscriptionVersionsWithAuthorInfo($pageId, $columnNumber);
+        $pageId = $dataManager->getPageIdByDocPage($docId, $pageNumber);
+        $versions = $dataManager->getTranscriptionVersionsWithAuthorInfo($pageId, $columnNumber);
 
         $versionTime = MySqlUnitemporalDataTable::now();
         if (count($versions) === 0) {
@@ -372,13 +375,13 @@ class ApiElements extends ApiController
         }
 
         // Get the elements
-        $elements = $this->dataManager->getColumnElements($docId, $pageNumber,
+        $elements = $dataManager->getColumnElements($docId, $pageNumber,
             $columnNumber, $versionTime);
 
         // Get the editorial notes
-        $ednotes = $this->dataManager->edNoteManager->getEditorialNotesByPageIdColWithTime($pageId, $columnNumber, $versionTime);
+        $ednotes = $dataManager->edNoteManager->getEditorialNotesByPageIdColWithTime($pageId, $columnNumber, $versionTime);
         
-        $pageInfo = $this->dataManager->getPageInfoByDocPage($docId, $pageNumber);
+        $pageInfo = $dataManager->getPageInfoByDocPage($docId, $pageNumber);
 
         // Get the information about every person 
         // in the elements and editorial notes
@@ -386,20 +389,20 @@ class ApiElements extends ApiController
         foreach ($elements as $e){
             if (!isset($people[$e->editorId])){
                 $people[$e->editorId] = 
-                        $this->dataManager->userManager->getUserInfoByUserId($e->editorId);
+                        $dataManager->userManager->getUserInfoByUserId($e->editorId);
             }
         }
         foreach($ednotes as $e){
             if (!isset($people[$e->authorId])){
                 $people[$e->authorId] = 
-                        $this->dataManager->userManager->getUserInfoByUserId($e->authorId);
+                        $dataManager->userManager->getUserInfoByUserId($e->authorId);
             }
         }
         // Add API user info as well
         if (!isset($people[$this->apiUserId])){
             //print "API User ID: " . $this->userId . "\n";
             $people[$this->apiUserId] =
-                    $this->dataManager->userManager->getUserInfoByUserId($this->apiUserId);
+                    $dataManager->userManager->getUserInfoByUserId($this->apiUserId);
         }
 
         $this->logger->info("QUERY Page Data", [ 

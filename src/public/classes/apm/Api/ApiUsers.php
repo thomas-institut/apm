@@ -32,8 +32,8 @@ class ApiUsers extends ApiController
 {
     public function getUserProfileInfo(Request $request, Response $response)
     {
-        $um = $this->dataManager->userManager;
-        $profiler = new ApmProfiler('getUserProfileInfo', $this->dataManager);
+        $um = $this->getDataManager()->userManager;
+        $profiler = new ApmProfiler('getUserProfileInfo', $this->getDataManager());
         $profileUserId =  (int) $request->getAttribute('userId');
         $userProfileInfo = $um->getUserInfoByUserId($profileUserId);
         if ($userProfileInfo === false ) {
@@ -50,7 +50,7 @@ class ApiUsers extends ApiController
    
     public function updateUserProfile(Request $request, Response $response)
     {
-        $um = $this->dataManager->userManager;
+        $um = $this->getDataManager()->userManager;
         $profileUserId =  (int) $request->getAttribute('userId');
         $postData = $request->getParsedBody();
         $fullname = $postData['fullname'];
@@ -109,7 +109,7 @@ class ApiUsers extends ApiController
    
     public function changeUserPassword(Request $request, Response $response)
     {
-        $um = $this->dataManager->userManager;
+        $um = $this->getDataManager()->userManager;
         $profileUserId =  (int) $request->getAttribute('userId');
         $postData = $request->getParsedBody();
         $password1 = $postData['password1'];
@@ -166,7 +166,7 @@ class ApiUsers extends ApiController
     
     public function makeUserRoot(Request $request, Response $response)
     {
-        $um = $this->dataManager->userManager;
+        $um = $this->getDataManager()->userManager;
         $profileUserId =  (int) $request->getAttribute('userId');
         $postData = $request->getParsedBody();
         $confirmroot = $postData['confirmroot'];
@@ -212,7 +212,7 @@ class ApiUsers extends ApiController
     
     public function createNewUser(Request $request, Response $response)
     {
-        $um = $this->dataManager->userManager;
+        $um = $this->getDataManager()->userManager;
         $postData = $request->getParsedBody();
         $username = $postData['username'];
         $fullname = $postData['fullname'];

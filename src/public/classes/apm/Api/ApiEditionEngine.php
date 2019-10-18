@@ -18,7 +18,7 @@ class ApiEditionEngine extends ApiController
 
     public function basicEditionEngine(Request $request,  Response $response)
     {
-        $dataManager = $this->dataManager;
+        $dataManager = $this->getDataManager();
         $apiCall = 'EditionEngine';
         $requiredFields = [
             EditionEngine::INPUT_FIELD_COLLATION_TABLE,

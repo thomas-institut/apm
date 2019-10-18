@@ -52,7 +52,7 @@ class ApiCollation extends ApiController
     public function quickCollation(Request $request, Response $response)
     {
         $apiCall = 'quickCollation';
-        $profiler = new ApmProfiler($apiCall, $this->dataManager);
+        $profiler = new ApmProfiler($apiCall, $this->getDataManager());
         $inputData = $this->checkAndGetInputData($request, $response, $apiCall, ['witnesses']);
         if (!is_array($inputData)) {
             return $inputData;
@@ -85,7 +85,7 @@ class ApiCollation extends ApiController
         
         $collatexInput = $collation->getCollationEngineInput();
         
-        $collationEngine = $this->collationEngine;
+        $collationEngine = $this->getCollationEngine();
         
         // Run Collatex
         $collatexOutput = $collationEngine->collate($collatexInput);
@@ -156,7 +156,7 @@ class ApiCollation extends ApiController
      */
     public function automaticCollation(Request $request, Response $response)
     {
-        $dataManager = $this->dataManager;
+        $dataManager = $this->getDataManager();
         $apiCall = 'Collation';
         $requiredFields = [ 'work', 'chunk', 'lang', 'witnesses'];
         
@@ -267,7 +267,7 @@ class ApiCollation extends ApiController
         $collatexInput = $collationTable->getCollationEngineInput();
         
         $profiler->lap('Collatex input built');
-        $collationEngine = $this->collationEngine;
+        $collationEngine = $this->getCollationEngine();
         
         // Run Collatex
         $collatexOutput = $collationEngine->collate($collatexInput);

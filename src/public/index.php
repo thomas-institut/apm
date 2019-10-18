@@ -25,9 +25,6 @@
  */
 namespace AverroesProject;
 
-
-
-
 use DI\ContainerBuilder;
 
 use Slim\Factory\AppFactory;
@@ -92,18 +89,17 @@ $builder->addDefinitions([
     'hm' => $hm,
     'cr' => $systemManager->getCollationEngine(),
     'sm' => $systemManager,
-    'userId' => 0  // The authentication module will update this with the correct Id
+    'userId' => 0,  // The authentication module will update this with the correct Id
+    'view' => function() {
+        return new Twig('templates', ['cache' => false]);
+    }
 ]);
 
 $container = $builder->build();
 
-$container->set('view', function() {
-    return new Twig('templates', ['cache' => false]);}
-    );
 
 // Initialize the Slim app
 AppFactory::setContainer($container);
-
 $app = AppFactory::create();
 
 $subdir = $systemManager->getBaseUrlSubdir();

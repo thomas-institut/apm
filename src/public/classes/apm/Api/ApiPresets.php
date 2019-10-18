@@ -69,7 +69,7 @@ class ApiPresets extends ApiController
     public function  getPresets(Request $request,  Response $response) {
         
         $apiCall = 'getPresets';
-        $profiler = new ApmProfiler($apiCall, $this->dataManager);
+        $profiler = new ApmProfiler($apiCall, $this->getDataManager());
         $inputData = $this->checkAndGetInputData($request, $response, $apiCall, ['tool','userId', 'keyArrayToMatch']);
         if (!is_array($inputData)) {
             return $inputData;
@@ -151,9 +151,10 @@ class ApiPresets extends ApiController
      * @return Response
      */
     public function  getAutomaticCollationPresets(Request $request, Response $response) {
-        
+
+        $dataManager = $this->getDataManager();
         $apiCall = 'getAutomaticCollationPresets';
-        $profiler = new ApmProfiler($apiCall, $this->dataManager);
+        $profiler = new ApmProfiler($apiCall, $dataManager);
         $inputData = $this->checkAndGetInputData($request, $response, $apiCall, ['userId', 'lang', 'witnesses']);
         if (!is_array($inputData)) {
             return $inputData;
@@ -205,7 +206,7 @@ class ApiPresets extends ApiController
         }
         $presetsInArrayForm = [];
         foreach($filteredPresets as $preset) {
-            $userInfo = $this->dataManager->userManager->getUserInfoByUserId($preset->getUserId());
+            $userInfo = $dataManager->userManager->getUserInfoByUserId($preset->getUserId());
             $presetsInArrayForm[] = [
                 'userId' => $preset->getUserId(),
                 'userName' => $userInfo['fullname'],
@@ -226,7 +227,7 @@ class ApiPresets extends ApiController
     public function  savePreset(Request $request, Response $response) {
         
         $apiCall = 'savePreset';
-        $profiler = new ApmProfiler($apiCall, $this->dataManager);
+        $profiler = new ApmProfiler($apiCall, $this->getDataManager());
         $inputData = $this->checkAndGetInputData($request, $response, $apiCall, ['command', 'tool',  'userId', 'title', 'presetId', 'presetData']);
         if (!is_array($inputData)) {
             return $inputData;
@@ -335,7 +336,7 @@ class ApiPresets extends ApiController
     
      public function deletePreset(Request $request, Response $response) {
         $apiCall = 'deletePreset';
-        $profiler = new ApmProfiler($apiCall, $this->dataManager);
+        $profiler = new ApmProfiler($apiCall, $this->getDataManager());
         $presetId = intval($request->getAttribute('id'));
         
         $presetsManager = $this->systemManager->getPresetsManager();

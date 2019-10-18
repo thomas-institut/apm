@@ -155,13 +155,13 @@ class ApiDocuments extends ApiController
         
         if ($numPages === 0) {
             // nothing to do!
-            $this->logger->debug("addPages: request for 0 pages, nothing to do");
+            $this->debug("addPages: request for 0 pages, nothing to do");
             $profiler->log($this->logger);
             return $response->withStatus(200);
         }
         
         
-        $this->logger->debug("addPages: request for " . $numPages . " new pages");
+        $this->debug("addPages: request for " . $numPages . " new pages");
         
         $curNumPages = $dataManager->getPageCountByDocId($docId);
         
@@ -211,7 +211,7 @@ class ApiDocuments extends ApiController
             return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_NO_DATA], 409);
         }
 
-        $this->logger->debug('New doc',[ 'apiUserId' => $this->apiUserId,
+        $this->debug('New doc',[ 'apiUserId' => $this->apiUserId,
                       'docSettings' => $docSettings] );
         
         $docId = $dataManager->newDoc(
@@ -362,13 +362,13 @@ class ApiDocuments extends ApiController
                         $dataManager->addNewColumn($pageDef['docId'], $pageDef['page']);
                     }
                 } else {
-                    $this->logger->debug("Asked for " . $pageDef['cols'] . " col(s), currently " . $pageInfo['num_cols'] . " col(s). Nothing done. ");
+                    $this->debug("Asked for " . $pageDef['cols'] . " col(s), currently " . $pageInfo['num_cols'] . " col(s). Nothing done. ");
                 }
             }
             
             if (count(array_keys($newPageSettings)) === 0) {
                 // nothing to do
-                $this->logger->debug("Nothing to update for doc " . $pageDef['docId'] . " page " . $pageDef['page']);
+                $this->debug("Nothing to update for doc " . $pageDef['docId'] . " page " . $pageDef['page']);
                 continue;
             }
             

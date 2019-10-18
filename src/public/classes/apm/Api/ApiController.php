@@ -91,25 +91,48 @@ abstract class ApiController
      */
     private $container;
 
+    /**
+     * @var bool
+     */
+    private $debugMode;
+
 
     public function __construct(Container $ci)
     {
        $this->container = $ci;
 
-       $this->systemManager = $ci->get('sm');
+       $this->debugMode = true;
+
+       $this->systemManager = $ci->get('systemManager');
        $this->apiUserId = $ci->get('apiUserId'); // this should be set by the authenticator!
        $this->languages =$ci->get('config')['languages'];
        $this->logger = $this->systemManager->getLogger()->withName('API');
     }
 
     protected  function getDataManager() : DataManager {
-        return $this->container->get('db');
+        return $this->container->get('dataManager');
     }
 
     protected function getCollationEngine() : CollationEngine {
         return $this->systemManager->getCollationEngine();
     }
-    
+
+
+    /**
+     * Logs a debug message in the logger
+     * @codeCoverageIgnore
+     *
+     * @param string $msg
+     * @param array $data
+     */
+    protected function debug(string $msg, array $data=[])
+    {
+        if ($this->debugMode){
+            $this->logger->debug($msg, $data);
+        }
+    }
+
+
     /**
      * Checks that the given request contains a 'data' field, which in 
      * turn contains the given $requiredFields. 

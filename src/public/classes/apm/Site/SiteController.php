@@ -44,7 +44,7 @@ class SiteController
     /**
      * @var Container
      */
-    protected $ci;
+    private $container;
     
     /** @var ApmSystemManager */
     protected $systemManager;
@@ -78,21 +78,26 @@ class SiteController
     /**
      * @var RouteParser
      */
-    protected  $router;
-    
-    //Constructor
+    protected $router;
+
+    /**
+     * @var array
+     */
+    protected $languages;
+
     public function __construct(Container $ci)
     {
-        $this->ci = $ci;
-        $this->systemManager = $ci->get('sm');
+        $this->container = $ci;
+        $this->systemManager = $ci->get('systemManager');
         $this->view = $ci->get('view');
         $this->config = $ci->get('config');
-        $this->dataManager = $ci->get('db');
-        $this->hookManager = $ci->get('hm');
+        $this->dataManager = $ci->get('dataManager');
+        $this->hookManager = $this->systemManager->getHookManager();
         $this->logger = $this->systemManager->getLogger();
         $this->router = $ci->get('router');
         $this->userAuthenticated = false;
         $this->userInfo = [];
+        $this->languages = $ci->get('config')['languages'];
 
        
        // Check if the user has been authenticated by the authentication middleware
@@ -113,7 +118,7 @@ class SiteController
                 $data['userinfo'] = $this->userInfo;
             }
         }
-        
+
         return $this->view->render($response, $template, $data);
     }
     

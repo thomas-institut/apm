@@ -289,7 +289,7 @@ class SiteCollationTable extends SiteController
 
         
         // check that language is valid
-        $languages = $this->config['languages'];
+        $languages = $this->languages;
         $langInfo = null;
         foreach($languages as $lang) {
             if ($lang['code'] === $language) {

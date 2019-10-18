@@ -229,7 +229,7 @@ class ApiCollation extends ApiController
         $collationTable = new CollationTable($ignorePunctuation);
         $itemIds = [];
         $lastChangeInData = '0000-00-00 00:00:00.000000';
-        $this->logger->debug('Witnesses to include', $witnessesToInclude);
+        $this->debug('Witnesses to include', $witnessesToInclude);
         foreach ($witnessesToInclude as $id => $witnessLocInfo)  {
             $witnessType = $witnessLocInfo['type'];
             $witnessLocation = $witnessLocInfo['locations'];
@@ -253,7 +253,7 @@ class ApiCollation extends ApiController
                     $itemStream = new ItemStream($witnessId, $segmentStreams, $language, $edNoteArrayFromDb);
                     $itemStrWitness = new ItemStreamWitness($workId, $chunkNumber, $itemStream);
                     $docData = $dataManager->getDocById($witnessId);
-                    $this->logger->debug('docData', [$id, $docData]);
+                    $this->debug('docData', [$id, $docData]);
                     $collationTable->addWitness($docData['title'], $itemStrWitness);
                     break;
 

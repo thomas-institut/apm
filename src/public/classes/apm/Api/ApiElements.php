@@ -310,7 +310,7 @@ class ApiElements extends ApiController
                 $this->logger->error('Editorial note without valid target Id: ' . $targetId, get_object_vars($edNotes[$i]));
             }
         }
-        $this->logger->debug("Updating ednotes", $edNotes);
+        $this->debug("Updating ednotes", $edNotes);
         $dataManager->edNoteManager->updateNotesFromArray($edNotes);
 
         $versionId = $dataManager->registerTranscriptionVersion($pageId, $columnNumber, $updateTime,
@@ -345,7 +345,7 @@ class ApiElements extends ApiController
             if (is_null($versionId)) {
                 // no version Id in request means get the latest version
                 $thisVersion = intval($versions[count($versions) - 1]['id']);
-                $this->logger->debug('No version requested, defaulting to last version, id = ' . $thisVersion);
+                $this->debug('No version requested, defaulting to last version, id = ' . $thisVersion);
             } else {
                 // first, check that the version id requested is actually in this page/col versions
                 $thisVersion = intval($versionId);

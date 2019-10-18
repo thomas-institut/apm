@@ -32,7 +32,11 @@
 
 namespace APM\System\Auth;
 
+use AverroesProject\Data\UserManager;
+use DateInterval;
+use DateTime;
 use DI\Container;
+use Monolog\Logger;
 use Psr\Container\ContainerInterface;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
@@ -52,8 +56,11 @@ class Authenticator {
     /**
      * @var Container
      */
-    protected $container;
+    private $container;
 
+    /**
+     * @var Logger
+     */
     private $logger, $apiLogger, $siteLogger;
 
     /**
@@ -67,21 +74,33 @@ class Authenticator {
     private $debugMode = false;
    
     //Constructor
+
+    /**
+     * @var UserManager
+     */
+    private $userManager;
+
     public function __construct(Container $ci)
     {
         $this->container = $ci;
         $this->router = $ci->get('router');
 
+        $this->userManager = $ci->get('dataManager')->userManager;
+
         $this->logger = $this->container->get('logger')->withName('AUTH');
         $this->apiLogger = $this->logger->withName('AUTH-API');
         $this->siteLogger = $this->logger->withName('AUTH-SITE');
+    }
+
+    private function getBaseUrl() : string {
+        return $this->container->get('config')['baseurl'];
     }
    
     private function generateRandomToken()
     {
         return bin2hex(random_bytes(20));
     }
-    
+
     private function generateLongTermCookieValue($token, $userId)
     {
         $v = $userId . ':' . $token;
@@ -100,7 +119,7 @@ class Authenticator {
      * @param string $msg
      * @param array $data
      */
-    protected function debug(string $msg, $data=[])
+    private function debug(string $msg, $data=[])
     {
         if ($this->debugMode){
             $this->logger->debug($msg, $data);
@@ -124,7 +143,7 @@ class Authenticator {
         } else {
             $userId = $_SESSION['userid'];
             $this->debug('SITE : Session is set, user id = ' . $userId);
-            if ($this->container->get('db')->userManager->userExistsById($userId)){
+            if ($this->userManager->userExistsById($userId)){
                 $this->debug("User id exists!");
                 $success = true;
             } else {
@@ -135,8 +154,8 @@ class Authenticator {
         if ($success){
             $this->debug('SITE: Success, go ahead!');
             $_SESSION['userid'] = $userId;
-            $ui = $this->container->get('db')->userManager->getUserInfoByUserId($userId);
-            if ($this->container->get('db')->userManager->isUserAllowedTo($userId, 'manageUsers')){
+            $ui = $this->userManager->getUserInfoByUserId($userId);
+            if ($this->userManager->isUserAllowedTo($userId, 'manageUsers')){
                 $ui['manageUsers'] = 1;
             }
 
@@ -172,16 +191,16 @@ class Authenticator {
                 $rememberme = 
                         isset($data['rememberme']) ? $data['rememberme'] : '';
                 $this->debug('Trying to log in user ' . $user);
-                if ($this->container->get('db')->userManager->verifyUserPassword($user, $pwd)){
+                if ($this->userManager->verifyUserPassword($user, $pwd)){
                     $userAgent = $request->getHeader('User-Agent')[0];
                     $ipAddress = $request->getServerParams()['REMOTE_ADDR'];
                     $this->siteLogger->info("Login", ['user' => $user, 'user_agent' => $userAgent, 'ip_address' => $ipAddress ]);
                     // Success!
-                    $userId = $this->container->get('db')->userManager->getUserIdFromUsername($user);
+                    $userId = $this->userManager->getUserIdFromUsername($user);
                     $_SESSION['userid'] = $userId;
                     $this->debug('Generating token cookie');
                     $token = $this->generateRandomToken();
-                    $this->container->get('db')->userManager->storeUserToken(
+                    $this->userManager->storeUserToken(
                             $userId, 
                             $userAgent, 
                             $ipAddress,
@@ -191,11 +210,11 @@ class Authenticator {
                             $userId);
                     if ($rememberme === 'on'){
                         $this->debug('User wants to be remembered for 2 weeks');
-                        $now = new \DateTime();
+                        $now = new DateTime();
                         $cookie = SetCookie::create($this->cookieName)
                                 ->withValue($cookieValue)
                                 ->withExpires($now->add(
-                                        new \DateInterval('P14D')));
+                                        new DateInterval('P14D')));
                     } else {
                         $cookie = SetCookie::create($this->cookieName)
                                 ->withValue($cookieValue);
@@ -214,7 +233,7 @@ class Authenticator {
         }
         return $this->container->get('view')->render($response, 'login.twig',
                 [ 'message' => $msg, 
-                    'baseurl' => $this->container->get('settings')['baseurl']]);
+                    'baseurl' => $this->getBaseUrl()]);
     }
     
     public function logout(Request $request, Response $response)
@@ -226,7 +245,7 @@ class Authenticator {
                 $this->router->urlFor('home'));
         }
         $userId = $_SESSION['userid'];
-        $userName = $this->container->get('db')->userManager->getUsernameFromUserId($userId);
+        $userName = $this->userManager->getUsernameFromUserId($userId);
         if ($userName === false) {
             $this->siteLogger->error("Can't get username from user Id at "
                     . "logout attempt", ['userId' => $userId]);
@@ -242,7 +261,6 @@ class Authenticator {
     
     public function authenticateApiRequest (Request $request, RequestHandlerInterface $handler)
     {
-
         $userId = $this->getUserIdFromLongTermCookie($request);
         if ($userId === false){
             $this->apiLogger->notice("Authentication fail");
@@ -262,7 +280,7 @@ class Authenticator {
             $cookieValue = $longTermCookie->getValue();
             list($userId, $token, $mac) = explode(':', $cookieValue);
             if (hash_equals($this->generateMac($userId . ':' . $token), $mac)) {
-                $userToken = $this->container->get('db')->userManager->getUserToken(
+                $userToken = $this->userManager->getUserToken(
                         $userId, 
                         $request->getHeader('User-Agent')[0], 
                         $request->getServerParams()['REMOTE_ADDR']

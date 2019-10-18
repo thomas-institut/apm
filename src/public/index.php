@@ -83,18 +83,14 @@ $hm = $systemManager->getHookManager();
 $dbh = $systemManager->getDbConnection();
 
 // Data Manager (will be replaced completely by SystemManager at some point
-$db = new DataManager($dbh, $systemManager->getTableNames(), $logger, $hm, $config['langCodes']);
+$dataManager = new DataManager($dbh, $systemManager->getTableNames(), $logger, $hm, $config['langCodes']);
 
 $builder = new ContainerBuilder();
 $builder->addDefinitions([
-    'settings' => $config,
     'config' => $config,
-    'db' => $db,
-    'dbh' => $dbh,
+    'dataManager' => $dataManager,
     'logger' => $logger,
-    'hm' => $hm,
-    'cr' => $systemManager->getCollationEngine(),
-    'sm' => $systemManager,
+    'systemManager' => $systemManager,
     'userId' => 0,  // The authentication module will update this with the correct Id
     'view' => function() {
         return new Twig('templates', ['cache' => false]);
@@ -102,7 +98,6 @@ $builder->addDefinitions([
 ]);
 
 $container = $builder->build();
-
 
 // Initialize the Slim app
 AppFactory::setContainer($container);
@@ -113,131 +108,139 @@ if ($subdir !== '') {
     $app->setBasePath($subdir);
 }
 
+// Add Twig middleware and router
 $app->add(TwigMiddleware::createFromContainer($app));
-
 $container->set('router', $app->getRouteCollector()->getRouteParser());
-
-
 
 // -----------------------------------------------------------------------------
 //  SITE ROUTES
 // -----------------------------------------------------------------------------
  
-// LOGIN
-$app->any('/login',  Authenticator::class . ':login')
-        ->setName('login');
+// LOGIN and LOGOUT
+$app->any('/login',
+    Authenticator::class . ':login')
+    ->setName('login');
 
-// LOGOUT
-$app->any('/logout', Authenticator::class  . ':logout')
-        ->setName('logout');
-
-
-// HOME
-$app->get('/',SiteHomePage::class . ':homePage')
-        ->setName('home')
-        ->add(Authenticator::class . ':authenticate');
-
-// DASHBOARD
-$app->get('/dashboard',SiteDashboard::class . ':dashboardPage')
-        ->setName('dashboard')
-    ->add(Authenticator::class . ':authenticate');
-
-//
-//
-// USER.PROFILE
-$app->get('/user/{username}',
-        SiteUserManager::class . ':userProfilePage')
-        ->setName('user.profile')
-        ->add(Authenticator::class . ':authenticate');
-
-// USER.SETTINGS
-$app->get('/user/{username}/settings',
-        SiteUserManager::class . ':userSettingsPage')
-        ->setName('user.settings')
-        ->add(Authenticator::class . ':authenticate');
-
-$app->get('/users', SiteUserManager::class . ':userManagerPage')
-        ->setName('user.manager')
-        ->add(Authenticator::class . ':authenticate');
-
-// CHUNKS
-$app->get('/chunks', SiteChunks::class . ':chunksPage')
-        ->setName('chunks')
-        ->add(Authenticator::class . ':authenticate');
-
-$app->get('/chunk/{work}/{chunk}',ChunkPage::class . ':singleChunkPage')
-        ->setName('chunk')
-        ->add(Authenticator::class . ':authenticate');
-
-$app->get('/chunk/{work}/{chunk}/witness/{type}/{id}[/{output}]',ChunkPage::class . ':witnessPage')
-        ->setName('witness')
-        ->add(Authenticator::class . ':authenticate');
-
-// COLLATION TABLES
+$app->any('/logout',
+    Authenticator::class  . ':logout')
+    ->setName('logout');
 
 
-// Collation table with preset
-$app->get('/collation/auto/{work}/{chunk}/preset/{preset}',SiteCollationTable::class . ':automaticCollationPagePreset')
-        ->setName('chunk.collationtable.preset')
-        ->add(Authenticator::class . ':authenticate');
-
-// Collation table with parameters in Url
-$app->get('/collation/auto/{work}/{chunk}/{lang}[/{ignore_punct}[/{witnesses:.*}]]',SiteCollationTable::class . ':automaticCollationPageGet')
-        ->setName('chunk.collationtable')
-        ->add(Authenticator::class . ':authenticate');
-
-// Collation table with full options in post
-$app->post('/collation/auto/{work}/{chunk}/{lang}/custom',SiteCollationTable::class . ':automaticCollationPageCustom')
-        ->setName('chunk.collationtable.custom')
-        ->add(Authenticator::class . ':authenticate');
-
+// PUBLIC ACCESS
 
 $app->get('/collation/quick', SiteCollationTable::class . ':quickCollationPage')
-        ->setName('quickcollation');
+    ->setName('quickcollation');
 
 
-// DOCS
-$app->get('/documents',SiteDocuments::class . ':documentsPage')
-        ->setName('docs')
-        ->add(Authenticator::class . ':authenticate');
+// AUTHENTICATED ACCESS
 
-$app->get('/doc/{id}/details',SiteDocuments::class . ':showDocPage')
-        ->setName('doc.showdoc')
-        ->add(Authenticator::class . ':authenticate');
+$app->group('', function (RouteCollectorProxy $group){
 
-$app->get('/doc/{id}/definepages',SiteDocuments::class . ':defineDocPages')
-        ->setName('doc.definedocpages')
-        ->add(Authenticator::class . ':authenticate');
+    // HOME
 
-$app->get('/doc/{id}/edit',SiteDocuments::class . ':editDocPage')
-        ->setName('doc.editdoc')
-        ->add(Authenticator::class . ':authenticate');
+    $group->get('/',
+        SiteHomePage::class . ':homePage')
+        ->setName('home');
 
-$app->get('/doc/new',SiteDocuments::class . ':newDocPage')
-        ->setName('doc.new')
-        ->add(Authenticator::class . ':authenticate');
+    // DASHBOARD
 
-// PAGEVIEWER
-$app->get('/doc/{doc}/realpage/{page}/view',
+    $group->get('/dashboard',
+        SiteDashboard::class . ':dashboardPage')
+        ->setName('dashboard');
+
+    // USER.PROFILE
+
+    $group->get('/user/{username}',
+        SiteUserManager::class . ':userProfilePage')
+        ->setName('user.profile');
+
+    // USER.SETTINGS
+
+    $group->get('/user/{username}/settings',
+        SiteUserManager::class . ':userSettingsPage')
+        ->setName('user.settings');
+
+    $group->get('/users',
+        SiteUserManager::class . ':userManagerPage')
+        ->setName('user.manager');
+
+    // CHUNKS
+
+    $group->get('/chunks',
+        SiteChunks::class . ':chunksPage')
+        ->setName('chunks');
+
+    $group->get('/chunk/{work}/{chunk}',
+        ChunkPage::class . ':singleChunkPage')
+        ->setName('chunk');
+
+    $group->get('/chunk/{work}/{chunk}/witness/{type}/{id}[/{output}]',
+        ChunkPage::class . ':witnessPage')
+        ->setName('witness');
+
+    // COLLATION TABLES
+
+    // Collation table with preset
+    $group->get('/collation/auto/{work}/{chunk}/preset/{preset}',
+        SiteCollationTable::class . ':automaticCollationPagePreset')
+        ->setName('chunk.collationtable.preset');
+
+    // Collation table with parameters in Url
+    $group->get('/collation/auto/{work}/{chunk}/{lang}[/{ignore_punct}[/{witnesses:.*}]]',
+        SiteCollationTable::class . ':automaticCollationPageGet')
+        ->setName('chunk.collationtable');
+
+    // Collation table with full options in post
+    $group->post('/collation/auto/{work}/{chunk}/{lang}/custom',
+        SiteCollationTable::class . ':automaticCollationPageCustom')
+        ->setName('chunk.collationtable.custom');
+
+    // DOCS
+
+    $group->get('/documents',
+        SiteDocuments::class . ':documentsPage')
+        ->setName('docs');
+
+    $group->get('/doc/{id}/details',
+        SiteDocuments::class . ':showDocPage')
+        ->setName('doc.showdoc');
+
+    $group->get('/doc/{id}/definepages',
+        SiteDocuments::class . ':defineDocPages')
+        ->setName('doc.definedocpages');
+
+    $group->get('/doc/{id}/edit',
+        SiteDocuments::class . ':editDocPage')
+        ->setName('doc.editdoc');
+
+    $group->get('/doc/new',
+        SiteDocuments::class . ':newDocPage')
+        ->setName('doc.new');
+
+    // PAGE VIEWER / TRANSCRIPTION EDITOR
+    $group->get('/doc/{doc}/realpage/{page}/view',
         SitePageViewer::class . ':pageViewerPageByDocPage')
-        ->setName('pageviewer.docpage')
-        ->add(Authenticator::class . ':authenticate');
+        ->setName('pageviewer.docpage');
 
-$app->get('/doc/{doc}/page/{seq}/view',
-    SitePageViewer::class . ':pageViewerPageByDocSeq')
-        ->setName('pageviewer.docseq')
-        ->add(Authenticator::class . ':authenticate');
+    $group->get('/doc/{doc}/page/{seq}/view',
+        SitePageViewer::class . ':pageViewerPageByDocSeq')
+        ->setName('pageviewer.docseq');
 
+})->add(Authenticator::class . ':authenticate');
 
 // -----------------------------------------------------------------------------
 //  API ROUTES
 // -----------------------------------------------------------------------------
 
+// AUTHENTICATED API
+
 $app->group('/api', function (RouteCollectorProxy $group){
+
+    // ELEMENTS
 
     // API -> getElements
     $group->get('/{document}/{page}/{column}/elements',
-            ApiElements::class .  ':getElementsByDocPageCol')
+        ApiElements::class .  ':getElementsByDocPageCol')
         ->setName('api.getelements');
 
     //  API -> getElements (with version Id)
@@ -247,66 +250,65 @@ $app->group('/api', function (RouteCollectorProxy $group){
 
     // API -> updateColumnElements
     $group->post('/{document}/{page}/{column}/elements/update',
-            ApiElements::class . ':updateElementsByDocPageCol')
+        ApiElements::class . ':updateElementsByDocPageCol')
         ->setName('api.updateelements');
 
-    // --------- DOCUMENTS ---------
+    // DOCUMENTS
 
      // API -> create new document
     $group->post('/doc/new',
-            ApiDocuments::class . ':newDocument')
+        ApiDocuments::class . ':newDocument')
         ->setName('api.doc.new');
 
     // API -> delete document
     $group->get('/doc/{id}/delete',
-            ApiDocuments::class . ':deleteDocument')
+        ApiDocuments::class . ':deleteDocument')
         ->setName('api.doc.delete');
 
     // API -> add pages to a document
      $group->post('/doc/{id}/addpages',
-            ApiDocuments::class . ':addPages')
+         ApiDocuments::class . ':addPages')
         ->setName('api.doc.addpages');
 
     // API -> update document settings
     $group->post('/doc/{id}/update',
-            ApiDocuments::class . ':updateDocSettings')
+        ApiDocuments::class . ':updateDocSettings')
         ->setName('api.doc.update');
 
     // API -> numColumns
     $group->get('/{document}/{page}/numcolumns',
-            ApiDocuments::class . ':getNumColumns')
+        ApiDocuments::class . ':getNumColumns')
         ->setName('api.numcolumns');
 
     // API -> updatePageSettings
     $group->post('/page/{pageId}/update',
-            ApiDocuments::class . ':updatePageSettings')
+        ApiDocuments::class . ':updatePageSettings')
         ->setName('api.updatepagesettings');
 
     $group->post('/page/bulkupdate',
-            ApiDocuments::class . ':updatePageSettingsBulk')
+        ApiDocuments::class . ':updatePageSettingsBulk')
         ->setName('api.updatepagesettings.bulk');
 
     // API -> numColumns
     $group->get('/{document}/{page}/newcolumn',
-            ApiDocuments::class . ':addNewColumn')
+        ApiDocuments::class . ':addNewColumn')
         ->setName('api.newcolumn');
 
-
-    // --------- USERS ---------
+    //  USERS
 
     // API -> user : get profile info
     $group->get('/user/{userId}/info',
-            ApiUsers::class . ':getUserProfileInfo')
+        ApiUsers::class . ':getUserProfileInfo')
         ->setName('api.user.info');
 
     // API -> user : update profile
     $group->post('/user/{userId}/update',
-            ApiUsers::class . ':updateUserProfile')
+        ApiUsers::class . ':updateUserProfile')
         ->setName('api.user.update');
 
     // API -> user : change password
     $group->post('/user/{userId}/changepassword',
-            ApiUsers::class . ':changeUserPassword')
+        ApiUsers::class . ':changeUserPassword')
         ->setName('api.user.changepassword');
 
     // API -> user : make root
@@ -316,93 +318,90 @@ $app->group('/api', function (RouteCollectorProxy $group){
 
     // API -> user : add new user
     $group->post('/user/new',
-            ApiUsers::class . ':createNewUser')
+        ApiUsers::class . ':createNewUser')
         ->setName('api.user.new');
 
-    // ------ COLLATION ------
+    // AUTOMATIC COLLATION
 
     $group->post('/collation/auto',
-            ApiCollation::class . ':automaticCollation'
-            )
+        ApiCollation::class . ':automaticCollation')
         ->setName('api.collation.auto');
 
-    // ------ EDITION ENGINE ------
+    //  EDITION ENGINE
 
     $group->post('/edition/auto',
-        ApiEditionEngine::class . ':basicEditionEngine'
-    )
+        ApiEditionEngine::class . ':basicEditionEngine')
         ->setName('api.edition.auto');
 
-    // ------- PRESETS -----------
+    //  PRESETS
+
     $group->post('/presets/get',
-        ApiPresets::class . ':getPresets'
-        )
+        ApiPresets::class . ':getPresets')
         ->setName('api.presets.get');
 
     $group->get('/presets/delete/{id}',
-        ApiPresets::class . ':deletePreset'
-        )
+        ApiPresets::class . ':deletePreset')
         ->setName('api.presets.delete');
 
     $group->post('/presets/act/get',
-        ApiPresets::class . ':getAutomaticCollationPresets'
-        )
+        ApiPresets::class . ':getAutomaticCollationPresets')
         ->setName('api.presets.act.get');
 
     $group->post('/presets/post',
-        ApiPresets::class . ':savePreset'
-        )
+        ApiPresets::class . ':savePreset')
         ->setName('api.presets.post');
 
-    // ------- ICONS -----------
+    //  ICONS
 
     // API -> images : Mark Icon
     $group->get('/images/mark/{size}',
-            ApiIcons::class . ':generateMarkIcon')
+        ApiIcons::class . ':generateMarkIcon')
         ->setName('api.images.mark');
 
     // API -> images : No Word Break Icon
     $group->get('/images/nowb/{size}',
-            ApiIcons::class . ':generateNoWordBreakIcon')
+        ApiIcons::class . ':generateNoWordBreakIcon')
         ->setName('api.images.nowb');
 
     // API -> images : Illegible Icon
     $group->get('/images/illegible/{size}/{length}',
-            ApiIcons::class . ':generateIllegibleIcon')
+        ApiIcons::class . ':generateIllegibleIcon')
         ->setName('api.images.illegible');
 
     // API -> images : ChunkMark Icon
     $group->get('/images/chunkmark/{dareid}/{chunkno}/{segment}/{type}/{dir}/{size}',
-            ApiIcons::class . ':generateChunkMarkIcon')
+        ApiIcons::class . ':generateChunkMarkIcon')
         ->setName('api.images.chunkmark');
 
     // API -> images : Line Gap Mark
     $group->get('/images/linegap/{count}/{size}',
-            ApiIcons::class . ':generateLineGapImage')
+        ApiIcons::class . ':generateLineGapImage')
         ->setName('api.images.linegap');
 
     // API -> images : Character Gap Mark
     $group->get('/images/charactergap/{length}/{size}',
-            ApiIcons::class . ':generateCharacterGapImage')
+        ApiIcons::class . ':generateCharacterGapImage')
         ->setName('api.images.charactergap');
 
     // API -> images : Paragraph Mark
     $group->get('/images/paragraphmark/{size}',
-            ApiIcons::class . ':generateParagraphMarkIcon')
+        ApiIcons::class . ':generateParagraphMarkIcon')
         ->setName('api.images.charactergap');
 
 })->add(Authenticator::class . ':authenticateApiRequest');
 
-// -----------------
 // PUBLIC API
-// -----------------
 
 $app->group('/api/public', function (RouteCollectorProxy $group){
-// API -> quick collation
+
+    // API -> quick collation
     $group->post('/collation/quick',
-            ApiCollation::class . ':quickCollation')
+        ApiCollation::class . ':quickCollation')
         ->setName('api.collation.quick');
 });
 
-// All set, run!
+// -----------------------------------------------------------------------------
+//  RUN!
+// -----------------------------------------------------------------------------
+
 $app->run();

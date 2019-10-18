@@ -52,7 +52,7 @@ class SitePageViewer extends SiteController
         $pageTypeNames  = $this->dataManager->getPageTypeNames();
         $activeWorks = $this->dataManager->getActiveWorks();
         $pageNumberFoliation = $pageNumber;
-        $languagesArray = $this->config['languages'];
+        $languagesArray = $this->languages;
         if ($pageInfo['foliation'] !== NULL) {
             $pageNumberFoliation = $pageInfo['foliation'];
         }
@@ -60,7 +60,7 @@ class SitePageViewer extends SiteController
         return $this->view->render($response, 'pageviewer.twig', [
             'userinfo' => $this->userInfo,
             'copyright' => $this->getCopyrightNotice(),
-            'baseurl' => $this->config['baseurl'],
+            'baseurl' => $this->getBaseUrl(),
             'navByPage' => true,
             'doc' => $docId,
             'docInfo' => $docInfo,
@@ -95,7 +95,7 @@ class SitePageViewer extends SiteController
         $osdConfig = $this->dataManager->getOpenSeaDragonConfig($docId, $pageInfo['img_number']);
         $pageTypeNames  = $this->dataManager->getPageTypeNames();
         $activeWorks = $this->dataManager->getActiveWorks();
-        $languagesArray = $this->config['languages'];
+        $languagesArray = $this->languages;
         
         $pageNumberFoliation = $pageInfo['seq'];
         if ($pageInfo['foliation'] !== NULL) {
@@ -105,7 +105,7 @@ class SitePageViewer extends SiteController
         return $this->view->render($response, 'pageviewer.twig', [
             'userinfo' => $this->userInfo,
             'copyright' => $this->getCopyrightNotice(),
-            'baseurl' => $this->config['baseurl'],
+            'baseurl' => $this->getBaseUrl(),
             'navByPage' => false,  // i.e., navigate by sequence
             'doc' => $docId,
             'docInfo' => $docInfo,

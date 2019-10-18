@@ -140,7 +140,7 @@ class SiteDocuments extends SiteController
         }
         
         
-        $languages = $this->ci->settings['languages'];
+        $languages = $this->languages;
         $langOptions = '';
         foreach($languages as $lang) {
             $langOptions .= '<option value="' . $lang['code'] . '"';
@@ -188,7 +188,7 @@ class SiteDocuments extends SiteController
         }
         
         
-        $languages = $this->ci->settings['languages'];
+        $languages = $this->languages;
         $langOptions = '';
         foreach($languages as $lang) {
             $langOptions .= '<option value="' . $lang['code'] . '"';

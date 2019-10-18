@@ -59,7 +59,7 @@ class ChunkPage extends SiteController
         $docs = [];
         $witnessNumber = 0;
         $goodWitnessesPerLang = [];
-        foreach($this->config['languages'] as $lang) {
+        foreach($this->languages as $lang) {
             $goodWitnessesPerLang[$lang['code']]['numWitnesses'] = 0;
             $goodWitnessesPerLang[$lang['code']]['name'] = $lang['name'];
             $goodWitnessesPerLang[$lang['code']]['code'] = $lang['code'];

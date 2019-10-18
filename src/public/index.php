@@ -37,6 +37,7 @@ use APM\System\ApmSystemManager;
 use APM\Site\SiteDashboard;
 use APM\Site\SiteHomePage;
 use APM\Site\SiteUserManager;
+use APM\Site\SiteChunks;
 use APM\System\Auth\Authenticator;
 
 use APM\Api\ApiIcons;
@@ -156,7 +157,7 @@ $app->get('/users', SiteUserManager::class . ':userManagerPage')
         ->add(Authenticator::class . ':authenticate');
 
 // CHUNKS
-$app->get('/chunks','\AverroesProject\Site\SiteChunks:chunksPage')
+$app->get('/chunks', SiteChunks::class . ':chunksPage')
         ->setName('chunks')
         ->add(Authenticator::class . ':authenticate');
 

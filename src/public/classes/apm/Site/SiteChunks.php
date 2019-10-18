@@ -24,7 +24,7 @@
  */
 
 
-namespace AverroesProject\Site;
+namespace APM\Site;
 
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
@@ -64,7 +64,7 @@ class SiteChunks extends SiteController
         $profiler->log($this->logger);
         return $this->view->render($response, 'chunks.twig', [
             'userinfo' => $this->userInfo,
-            'copyright' => $this->copyrightNotice,
+            'copyright' => $this->getCopyrightNotice(),
             'baseurl' => $this->getBaseUrl(),
             'works' => $works
         ]);

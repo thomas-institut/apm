@@ -24,7 +24,7 @@
  */
 
 
-namespace AverroesProject\Site;
+namespace APM\Site;
 
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
@@ -45,7 +45,7 @@ class SiteUserManager extends SiteController
         if (!$this->dataManager->userManager->userExistsByUsername($profileUsername)) {
             return $this->view->render($response, 'user.notfound.twig', [
                         'userinfo' => $this->userInfo,
-                        'copyright' => $this->copyrightNotice,
+                        'copyright' => $this->getCopyrightNotice(),
                         'baseurl' => $this->getBaseUrl(),
                         'theuser' => $profileUsername
             ]);
@@ -77,7 +77,7 @@ class SiteUserManager extends SiteController
         $profiler->log($this->logger);
         return $this->view->render($response, 'user.profile.twig', [
                     'userinfo' => $this->userInfo,
-                    'copyright' => $this->copyrightNotice,
+                    'copyright' => $this->getCopyrightNotice(),
                     'baseurl' => $this->getBaseUrl(),
                     'theuser' => $userProfileInfo,
                     'canEditProfile' => $canEditProfile,
@@ -96,21 +96,21 @@ class SiteUserManager extends SiteController
                     'error.notallowed.twig', 
                     [
                         'userinfo' => $this->userInfo,
-                        'copyright' => $this->copyrightNotice,
+                        'copyright' => $this->getCopyrightNotice(),
                         'baseurl' => $this->getBaseUrl(),
                         'message' => 'You are not authorized to manage users.'
                     ]
                 );
         }
         
-        $db = $this->dataManager;
-        $docIds = $db->getDocIdList('title');
+        //$db = $this->dataManager;
+        //$docIds = $db->getDocIdList('title');
         $users = $um->getUserInfoForAllUsers();
         
         $profiler->log($this->logger);
         return $this->view->render($response, 'user.manager.twig', [
             'userinfo' => $this->userInfo,
-            'copyright' => $this->copyrightNotice,
+            'copyright' => $this->getCopyrightNotice(),
             'baseurl' => $this->getBaseUrl(),
             'users' => $users
         ]);
@@ -125,7 +125,7 @@ class SiteUserManager extends SiteController
                 !$this->dataManager->userManager->isUserAllowedTo($userId, 'edit-user-settings')){
             return $this->view->render($response, 'error.notallowed.twig', [
                 'userinfo' => $this->userInfo,
-                'copyright' => $this->copyrightNotice,
+                'copyright' => $this->getCopyrightNotice(),
                 'baseurl' => $this->getBaseUrl(),
                 'message' => 'You are not authorized to change the settings for user ' . $username
             ]);
@@ -134,7 +134,7 @@ class SiteUserManager extends SiteController
         if (!$this->dataManager->userManager->userExistsByUsername($username)){
         return $this->view->render($response, 'user.notfound.twig', [
             'userinfo' => $this->userInfo,
-            'copyright' => $this->copyrightNotice,
+            'copyright' => $this->getCopyrightNotice(),
             'baseurl' => $this->getBaseUrl(),
             'theuser' => $username
         ]);
@@ -143,7 +143,7 @@ class SiteUserManager extends SiteController
     
         return $this->view->render($response, 'user.settings.twig', [
             'userinfo' => $this->userInfo,
-            'copyright' => $this->copyrightNotice,
+            'copyright' => $this->getCopyrightNotice(),
             'baseurl' => $this->getBaseUrl(),
             'canedit' => true,
             'theuser' => $userInfo

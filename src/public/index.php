@@ -36,6 +36,7 @@ use APM\System\ApmSystemManager;
 
 use APM\Site\SiteDashboard;
 use APM\Site\SiteHomePage;
+use APM\Site\SiteUserManager;
 use APM\System\Auth\Authenticator;
 
 use APM\Api\ApiIcons;
@@ -140,17 +141,17 @@ $app->get('/dashboard',SiteDashboard::class . ':dashboardPage')
 //
 // USER.PROFILE
 $app->get('/user/{username}',
-        '\AverroesProject\Site\SiteUserManager:userProfilePage')
+        SiteUserManager::class . ':userProfilePage')
         ->setName('user.profile')
-        ->add('\APM\System\Auth\Authenticator:authenticate');
+        ->add(Authenticator::class . ':authenticate');
 
 // USER.SETTINGS
 $app->get('/user/{username}/settings',
-        '\AverroesProject\Site\SiteUserManager:userSettingsPage')
+        SiteUserManager::class . ':userSettingsPage')
         ->setName('user.settings')
-        ->add('\APM\System\Auth\Authenticator:authenticate');
+        ->add(Authenticator::class . ':authenticate');
 
-$app->get('/users', '\AverroesProject\Site\SiteUserManager:userManagerPage')
+$app->get('/users', SiteUserManager::class . ':userManagerPage')
         ->setName('user.manager')
         ->add(Authenticator::class . ':authenticate');
 

@@ -25,7 +25,6 @@ use AverroesProject\Data\DataManager;
 use APM\System\ApmSystemManager;
 use DI\ContainerBuilder;
 use mysql_xdevapi\Exception;
-use Slim\Views\Twig;
 
 /**
  * Utility class to set up the test environment for database testing
@@ -70,7 +69,7 @@ class DatabaseTestEnvironment {
     
     public function getDataManager()
     {   
-        return $this->container->db;
+        return $this->container->get('dataManager');
     }
     
     

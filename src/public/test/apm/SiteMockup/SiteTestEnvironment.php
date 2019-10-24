@@ -20,6 +20,8 @@
 
 namespace APM;
 
+use Slim\Views\Twig;
+
 require_once 'DatabaseTestEnvironment.php';
 require_once 'SlimTwigExtensionMockup.php';
 require_once 'SlimRouterMockup.php';
@@ -37,12 +39,12 @@ class SiteTestEnvironment extends DatabaseTestEnvironment {
         $container->set('router',  new SlimRouterMockup());
 
 
-        $view = new \Slim\Views\Twig('../templates', [
-            'cache' => false
-        ]);
+        $view =  new Twig('../templates', ['cache' => false]);
+
         // Instantiate and add Slim specific extension
 //        $basePath = rtrim(str_ireplace('index.php', '',
 //                $container['request']->getUri()->getBasePath()), '/');
+        $view->addExtension(new SlimTwigExtensionMockup());
 //        $view->addExtension(new SlimTwigExtensionMockup(
 //                $container['router'], $basePath));
 

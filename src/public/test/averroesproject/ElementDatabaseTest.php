@@ -42,7 +42,8 @@ class ElementDatabaseTest extends TestCase {
     static $dataManager;
     static $logger;
     
-    public static function setUpBeforeClass() {
+    public static function setUpBeforeClass() : void
+    {
         $logStream = new StreamHandler('test.log', 
             Logger::DEBUG);
         self::$logger = new Logger(' ELEMENT-TEST');

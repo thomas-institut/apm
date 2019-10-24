@@ -21,15 +21,54 @@
 
 namespace APM;
 
+use InvalidArgumentException;
+use Psr\Http\Message\UriInterface;
+use RuntimeException;
+use Slim\Interfaces\RouteParserInterface;
+use Slim\Routing\RouteParser;
+
 /**
  * Description of SlimRouterMockup
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class SlimRouterMockup extends \Slim\Router{
+class SlimRouterMockup implements RouteParserInterface {
     
-    public function urlFor($name, array $data = [], array $queryParams = [])
+    public function urlFor($routeName, array $data = [], array $queryParams = []) : string
     {
-        return "MOCKUP_URL:" . $name;
+        return "MOCKUP_URL:" . $routeName;
+    }
+
+    /**
+     * Build the path for a named route excluding the base path
+     *
+     *
+     * @param string $routeName Route name
+     * @param array $data Named argument replacement data
+     * @param array $queryParams Optional query string parameters
+     *
+     * @return string
+     *
+     * @throws RuntimeException         If named route does not exist
+     * @throws InvalidArgumentException If required data not provided
+     */
+    public function relativeUrlFor(string $routeName, array $data = [], array $queryParams = []): string
+    {
+        return "MOCKUP_URL:" . $routeName;
+    }
+
+    /**
+     * Get fully qualified URL for named route
+     *
+     * @param UriInterface $uri
+     * @param string $routeName Route name
+     * @param array $data Named argument replacement data
+     * @param array $queryParams Optional query string parameters
+     *
+     * @return string
+     */
+    public function fullUrlFor(UriInterface $uri, string $routeName, array $data = [], array $queryParams = []): string
+    {
+        return "MOCKUP_FULL_URL:" . $routeName;
     }
 }

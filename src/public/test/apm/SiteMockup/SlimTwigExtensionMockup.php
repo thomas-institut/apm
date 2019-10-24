@@ -21,16 +21,22 @@
 
 namespace APM;
 use \Slim\Views\TwigExtension;
+
+use Twig\TwigFunction;
+
 /**
  * Description of TestTwigExtension
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 class SlimTwigExtensionMockup extends TwigExtension {
-    
-    public function urlFor($name, $data = [], $queryParams = [], $appName = 'default')
+
+    const PREFIX = 'http://TWIG_MOCKUP/';
+
+    public function getFunctions(): array
     {
-        return 'PATH' . $name;
+        return [
+            new TwigFunction('url_for', function ($name) { return self::PREFIX . $name;})
+        ];
     }
-    
 }

@@ -36,6 +36,8 @@ use AverroesProject\Data\UserManager;
 use DateInterval;
 use DateTime;
 use DI\Container;
+use DI\DependencyException;
+use DI\NotFoundException;
 use Monolog\Logger;
 use Psr\Container\ContainerInterface;
 use \Psr\Http\Message\ServerRequestInterface as Request;
@@ -45,6 +47,7 @@ use \Dflydev\FigCookies\SetCookie;
 use \Dflydev\FigCookies\FigResponseCookies;
 use Psr\Http\Server\RequestHandlerInterface;
 use Slim\Routing\RouteParser;
+use Slim\Views\Twig;
 
 /**
  * Middleware class for site authentication
@@ -53,6 +56,7 @@ use Slim\Routing\RouteParser;
 class Authenticator {
 
 
+    const LOGIN_PAGE_SIGNATURE = 'Login-8gRSSm23HPdStrEid5Wi';
     /**
      * @var Container
      */
@@ -71,7 +75,7 @@ class Authenticator {
    
     private $cookieName = 'rme';
     private $secret = '1256106427895916503';
-    private $debugMode = false;
+    private $debugMode = true;
    
     //Constructor
 
@@ -79,15 +83,19 @@ class Authenticator {
      * @var UserManager
      */
     private $userManager;
+    /**
+     * @var Twig
+     */
+    private $view;
 
     public function __construct(Container $ci)
     {
         $this->container = $ci;
+
         $this->router = $ci->get('router');
-
         $this->userManager = $ci->get('dataManager')->userManager;
-
         $this->logger = $this->container->get('logger')->withName('AUTH');
+        $this->view = $this->container->get('view');
         $this->apiLogger = $this->logger->withName('AUTH-API');
         $this->siteLogger = $this->logger->withName('AUTH-SITE');
     }
@@ -177,8 +185,9 @@ class Authenticator {
     public function login(Request $request, Response $response)
     {
         session_start();
-        $this->debug('Showing login page');
+        $this->debug('Login request');
         $this->debug("Login headers", $request->getHeaders());
+        $this->debug('Request method is ' . $request->getMethod());
         $msg = '';
         if ($request->getMethod() === 'POST') {
             $data = $request->getParsedBody();
@@ -209,7 +218,7 @@ class Authenticator {
                     $cookieValue = $this->generateLongTermCookieValue($token, 
                             $userId);
                     if ($rememberme === 'on'){
-                        $this->debug('User wants to be remembered for 2 weeks');
+                        $this->debug('User wants to be remembered');
                         $now = new DateTime();
                         $cookie = SetCookie::create($this->cookieName)
                                 ->withValue($cookieValue)
@@ -231,18 +240,24 @@ class Authenticator {
                 }
             }
         }
-        return $this->container->get('view')->render($response, 'login.twig',
-                [ 'message' => $msg, 
-                    'baseurl' => $this->getBaseUrl()]);
+        $this->debug('Showing login page');
+
+        return $this->view->render($response, 'login.twig',
+                [
+                    'message' => $msg,
+                    'baseurl' => $this->getBaseUrl(),
+                    'signature' => self::LOGIN_PAGE_SIGNATURE
+                ]);
     }
     
     public function logout(Request $request, Response $response)
     {
+        $this->debug('Logout request');
         session_start();
         if (!isset($_SESSION['userid'])){
             $this->siteLogger->error("Logout attempt without a valid session");
             return $response->withHeader('Location', 
-                $this->router->urlFor('home'));
+                $this->router->urlFor('home'))->withStatus(302);
         }
         $userId = $_SESSION['userid'];
         $userName = $this->userManager->getUsernameFromUserId($userId);
@@ -254,8 +269,8 @@ class Authenticator {
         session_unset();
         session_destroy();
         $response = FigResponseCookies::expire($response, $this->cookieName);
-        return $response->withHeader('Location',
-            $this->router->urlFor('home'));
+        return $response->withHeader('Location',$this->router->urlFor('home'))
+            ->withStatus(302);
     }
     
     

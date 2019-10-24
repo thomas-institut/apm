@@ -28,6 +28,7 @@ use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 use GuzzleHttp\Psr7\ServerRequest;
 use APM\System\Auth\Authenticator;
+use Slim\Psr7\Response;
 
 
 /**
@@ -39,7 +40,7 @@ class AuthenticatorTest extends TestCase {
      static $ci;
     /**
      *
-     * @var APM\System\Auth\Authenticator
+     * @var Authenticator
      */
     static $authenticator;
 
@@ -49,7 +50,7 @@ class AuthenticatorTest extends TestCase {
     static $testEnvironment;
 
     
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass() : void
     {
         $logStream = new StreamHandler('test.log', 
             Logger::DEBUG);
@@ -67,12 +68,9 @@ class AuthenticatorTest extends TestCase {
         $auth = self::$authenticator;
         
         $request = new ServerRequest('GET', '');
-        $inputResp = new \Slim\Http\Response();
-        
-        $response = $auth->login($request, $inputResp, 
-                NULL);
-        
-        $this->assertEquals(200, $response->getStatusCode());
+        $response = $auth->login($request,  new Response());
+
+        $this->assertGoodResponse($response, Authenticator::LOGIN_PAGE_SIGNATURE);
     }
     
     
@@ -81,11 +79,19 @@ class AuthenticatorTest extends TestCase {
         $auth = self::$authenticator;
         
         $request = new ServerRequest('GET', '');
-        $inputResp = new \Slim\Http\Response();
+        $inputResp = new Response();
         
-        $response = $auth->logout($request, $inputResp, 
-                NULL);
-        
+        $response = $auth->logout($request, $inputResp);
+
         $this->assertEquals(302, $response->getStatusCode());
+        $this->assertEquals('', $response->getBody()->getContents());
+    }
+
+    public function assertGoodResponse(Response $response, string $signature = '') {
+        $this->assertEquals(200, $response->getStatusCode());
+        $response->getBody()->rewind();
+        $contents = $response->getBody()->getContents();
+        $this->assertNotEquals('', $contents);
+        $this->assertStringContainsString($signature, $contents);
     }
 }

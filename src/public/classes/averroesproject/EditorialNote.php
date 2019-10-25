@@ -19,8 +19,7 @@
  */
 
 /**
- * Description of editorialnote
- * 
+ *
  * EditorialNote: 
  *      type:  offline | inline 
  *      target: offline note mark or inline node id
@@ -154,13 +153,14 @@ class EditorialNote {
 
         return $en;
     }
-    
+
     /**
      * Normalizes a string according to rules for textual items:
      *   - trims all whitespace at the beginning and end of the string
      *   - converts all whitespace inside the string to a single space
-     * 
+     *
      * @param string $str
+     * @return string|string[]|null
      */
     private function normalizeString(string $str)
     {

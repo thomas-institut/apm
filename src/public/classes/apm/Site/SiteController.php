@@ -107,6 +107,11 @@ class SiteController
            $this->userInfo = $ci->get('user_info');
         }
     }
+
+    protected function responseWithText(Response $response, string $text, int $status=200) : Response {
+        $response->getBody()->write($text);
+        return $response->withStatus($status);
+    }
     
     protected function renderPage(Response $response, string $template, array $data, $withBaseData = true) {
         

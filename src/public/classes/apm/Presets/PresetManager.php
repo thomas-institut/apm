@@ -20,6 +20,8 @@
 
 namespace APM\Presets;
 
+use InvalidArgumentException;
+
 /**
  * A class to manage all things related to system presets.
  * 
@@ -68,10 +70,14 @@ abstract class PresetManager {
      * Search methods
      */
 
-    /** getPreset returns false is the preset does not exist
+    /**
+     * Returns the Preset identified by $tool, $userId and $title
+     * Throws an exception is the preset is not found
+     *
      * @param string $tool
      * @param int $userId
      * @param string $title
+     * @throws InvalidArgumentException
      * @return Preset
      */
     abstract public function getPreset(string $tool, int $userId, string $title) : Preset;
@@ -150,6 +156,10 @@ abstract class PresetManager {
             }
         }
         return true;
+    }
+
+    protected function newPresetNotFoundException() : InvalidArgumentException {
+        return  new InvalidArgumentException('Preset not found');
     }
     
 }

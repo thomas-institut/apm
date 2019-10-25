@@ -18,16 +18,23 @@
  *  
  */
 
-namespace AverroesProject;
+namespace APM;
 require "../vendor/autoload.php";
 require_once 'SiteMockup/DatabaseTestEnvironment.php';
+require_once 'SiteMockup/testconfig.php';
 
+use AverroesProject\ColumnElement\Line;
+use AverroesProject\Data\DataManager;
+use AverroesProject\Data\EdNoteManager;
+use AverroesProject\EditorialNote;
+use AverroesProject\TxText\Abbreviation;
+use AverroesProject\TxText\Rubric;
+use AverroesProject\TxText\Text;
+use DI\Container;
 use PHPUnit\Framework\TestCase;
-use Monolog\Logger;
-use Monolog\Handler\StreamHandler;
-use AverroesProject\ColumnElement\Element;
+
 use AverroesProject\TxText\ItemArray;
-use APM\Plugin\HookManager;
+
 
 /**
  * Description of ElementTest
@@ -35,27 +42,38 @@ use APM\Plugin\HookManager;
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 class EdNoteManagerTest extends TestCase {
-        /**
-     *     
-     * @var AverroesProject\Data\DataManager
+    /**
+     *
+     * @var DataManager
      */
     static $dataManager;
-    static $edNoteManager;
-    
-    public static function setUpBeforeClass() {
-        $logStream = new StreamHandler('test.log', 
-            Logger::DEBUG);
-        $logger = new Logger('EDNOTE-TEST');
-        $logger->pushHandler($logStream);
-        $hm = new HookManager();
-        self::$dataManager = DatabaseTestEnvironment::getDataManager($logger, $hm);
+    /**
+     * @var Container
+     */
+    private static $container;
+    /**
+     * @var DatabaseTestEnvironment
+     */
+    private static $testEnvironment;
+    /**
+     * @var EdNoteManager
+     */
+    private static $edNoteManager;
+
+    public static function setUpBeforeClass() : void  {
+        global $apmTestConfig;
+
+        self::$testEnvironment = new DatabaseTestEnvironment($apmTestConfig);
+        self::$container = self::$testEnvironment->getContainer();
+
+        self::$dataManager = self::$container->get('dataManager');
         self::$edNoteManager = self::$dataManager->edNoteManager;
-        
+
     }
     
     public function testAddRetrieveEdNotes()
     {
-        DatabaseTestEnvironment::emptyDatabase();
+        self::$testEnvironment->emptyDatabase();
         $numElements = 10;
         $numPages = 1;
         $dm = self::$dataManager;
@@ -69,15 +87,15 @@ class EdNoteManagerTest extends TestCase {
         $pageId =  $dm->getPageIdByDocPage($docId, 1);
         
         for ($i=0; $i<$numElements; $i++) {
-            $element = new ColumnElement\Line();
+            $element = new Line();
             $element->pageId = $pageId;
             $element->columnNumber = 1;
             $element->editorId = $editorId;
             $element->lang = 'la';
             $element->handId = 0;
-            ItemArray::addItem($element->items, new TxText\Rubric($i*10+1, 0,"This is $i"));
-            ItemArray::addItem($element->items, new TxText\Text($i*10+2, 1,' with text and '));
-            ItemArray::addItem($element->items, new TxText\Abbreviation($i*10+3, 2,'LOL', 
+            ItemArray::addItem($element->items, new Rubric($i*10+1, 0,"This is $i"));
+            ItemArray::addItem($element->items, new Text($i*10+2, 1,' with text and '));
+            ItemArray::addItem($element->items, new Abbreviation($i*10+3, 2,'LOL',
                     'laughing out loud'));
             $newElement = $dm->insertNewElement($element);
             $this->assertNotFalse($newElement);
@@ -107,9 +125,9 @@ class EdNoteManagerTest extends TestCase {
         for ($i=0; $i<$numElements; $i++) {
             $element = clone $elements[$i];
             $element->items = [];
-            ItemArray::addItem($element->items, new TxText\Rubric($i*10+1, 0,"This is $i"));
-            ItemArray::addItem($element->items, new TxText\Text($i*10+2, 1,' with text and '));
-            ItemArray::addItem($element->items, new TxText\Abbreviation($i*10+3, 2,'Mr.', 
+            ItemArray::addItem($element->items, new Rubric($i*10+1, 0,"This is $i"));
+            ItemArray::addItem($element->items, new Text($i*10+2, 1,' with text and '));
+            ItemArray::addItem($element->items, new Abbreviation($i*10+3, 2,'Mr.',
                     'Mister'));
             ItemArray::setLang($element->items, 'la');
             ItemArray::setHandId($element->items, 0);
@@ -139,15 +157,15 @@ class EdNoteManagerTest extends TestCase {
         $pageId =  $dm->getPageIdByDocPage($docId, 1);
         
         for ($i=0; $i<$numElements; $i++) {
-            $element = new ColumnElement\Line();
+            $element = new Line();
             $element->pageId = $pageId;
             $element->columnNumber = 1;
             $element->editorId = $editorId;
             $element->lang = 'la';
             $element->handId = 0;
-            ItemArray::addItem($element->items, new TxText\Rubric($i*10+1, 0,"This is $i"));
-            ItemArray::addItem($element->items, new TxText\Text($i*10+2, 1,' with text and '));
-            ItemArray::addItem($element->items, new TxText\Abbreviation($i*10+3, 2,'LOL', 
+            ItemArray::addItem($element->items, new Rubric($i*10+1, 0,"This is $i"));
+            ItemArray::addItem($element->items, new Text($i*10+2, 1,' with text and '));
+            ItemArray::addItem($element->items, new Abbreviation($i*10+3, 2,'LOL',
                     'laughing out loud'));
             $newElement = $dm->insertNewElement($element);
             $this->assertNotFalse($newElement);

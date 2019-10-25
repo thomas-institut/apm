@@ -47,6 +47,8 @@ use APM\Api\ApiElements;
 use Slim\Psr7\Response;
 use GuzzleHttp\Psr7\ServerRequest;
 use DI\Container;
+use function GuzzleHttp\Psr7\stream_for;
+
 
 /**
  * API call tests
@@ -685,7 +687,7 @@ class ApiControllerTest extends TestCase {
     
     public static function requestWithData(ServerRequest $request, $data) : ServerRequest {
         return $request->withBody(
-            Psr7\stream_for(
+            stream_for(
                 http_build_query(['data' => json_encode($data)])
             )
         );
@@ -869,7 +871,7 @@ class ApiControllerTest extends TestCase {
 
         // TEST 2: unstructured data in request contents
         $response = self::$apiElements->updateElementsByDocPageCol(
-            $request->withBody(Psr7\stream_for('Some data')),
+            $request->withBody(stream_for('Some data')),
             new Response()
         );
         $this->assertEquals(409, $response->getStatusCode());
@@ -879,7 +881,7 @@ class ApiControllerTest extends TestCase {
         // TEST 3: wrong POST field
         $queryString = http_build_query([ 'somefield' => 'some data'], '', '&');
         $response = self::$apiElements->updateElementsByDocPageCol(
-            $request->withBody(Psr7\stream_for($queryString)),
+            $request->withBody(stream_for($queryString)),
             new Response()
         );
         $this->assertEquals(409, $response->getStatusCode());

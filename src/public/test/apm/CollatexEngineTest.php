@@ -36,7 +36,7 @@ class CollatexEngineTest extends TestCase
     
     static $javaExec;
     
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass() : void
     { 
         global $apmTestConfig;
         

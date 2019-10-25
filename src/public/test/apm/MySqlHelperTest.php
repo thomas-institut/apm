@@ -18,12 +18,13 @@
  *  
  */
 
-namespace AverroesProject\Data;
+namespace Apm;
 
 require "../vendor/autoload.php";
-require '../test/testdbconfig.php';
+require_once 'SiteMockup/testconfig.php';
 
 
+use AverroesProject\Data\MySqlHelper;
 use PHPUnit\Framework\TestCase;
 use Monolog\Logger;
 use Monolog\Handler\TestHandler;
@@ -39,12 +40,17 @@ class MySqlHelperTest extends TestCase{
     protected static $logger;
     protected static $handler;
     
-    public static function setUpBeforeClass(){
-        global $config;
+    public static function setUpBeforeClass() : void{
+        global $apmTestConfig;
+
+        $dbConfig = $apmTestConfig['db'];
+
+
+
         
-        self::$dbConn = new PDO('mysql:dbname=' . $config['db'] . 
-                ';host=' . $config['host'], $config['user'], 
-                $config['pwd']);
+        self::$dbConn = new PDO('mysql:dbname=' . $dbConfig['db'] .
+                ';host=' . $dbConfig['host'], $dbConfig['user'],
+                $dbConfig['pwd']);
         $tableSetupSQL =<<<EOD
             DROP TABLE IF EXISTS `mysqlhelpertest`;
             CREATE TABLE IF NOT EXISTS `mysqlhelpertest` (

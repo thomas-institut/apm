@@ -26,6 +26,8 @@
 
 namespace APM\Site;
 
+use APM\Core\Address\Point;
+use APM\Core\Address\PointRange;
 use AverroesProject\Data\DataManager;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
@@ -46,7 +48,7 @@ class ChunkPage extends SiteController
      */
     const PAGE_SPAN_THRESHHOLD = 3;
     
-    public function singleChunkPage(Request $request, Response $response, $next) 
+    public function singleChunkPage(Request $request, Response $response)
     {
        
         $dm = $this->dataManager;
@@ -112,7 +114,7 @@ class ChunkPage extends SiteController
     }
     
     
-    public function witnessPage(Request $request, Response $response, $next){
+    public function witnessPage(Request $request, Response $response){
         
         $dm = $this->dataManager;
         $workId = $request->getAttribute('work');
@@ -130,7 +132,7 @@ class ChunkPage extends SiteController
         
         $essentialDocData = $this->buildEssentialWitnessDataFromDocData($docData, $workId, $chunkNumber, $dm, 1);
         if (!$essentialDocData['goodWitness']) {
-             return $response->write("Bad witness");
+             return $this->responseWithText($response,"Bad witness");
         }
         $doc = $this->buildWitnessDataFromDocData($essentialDocData, $workId, $chunkNumber, $dm, 1);
         
@@ -164,14 +166,14 @@ class ChunkPage extends SiteController
         }
         
         if ($outputType === 'text') {
-            return $response->write($doc['plain_text']);
+            return $this->responseWithText($response,$doc['plain_text']);
         }
         
         if ($outputType === 'html') {
-            return $response->write($doc['formatted']);
+            return $this->responseWithText($response,$doc['formatted']);
         }
         
-        return $response->withStatus(402)->write('ERROR: unrecognized output option');
+        return $this->responseWithText($response, 'ERROR: unrecognized output option', 402);
     }
     
     protected function buildEssentialWitnessDataFromDocData(array $docData, $workId, $chunkNumber, DataManager $db, $witnessNumber) : array  {
@@ -278,7 +280,7 @@ class ChunkPage extends SiteController
         return $segLocation['end']['page_seq'] - $segLocation['start']['page_seq'] + 1;
     }
     
-    protected function prettyPrintAddressInItemStream(\APM\Core\Address\Point $address) : string {
+    protected function prettyPrintAddressInItemStream(Point $address) : string {
         
         return $this->prettyPrintPoint($address);
     }
@@ -323,14 +325,14 @@ class ChunkPage extends SiteController
         return $output;
     }
     
-    protected function prettyPrintLineRange(\APM\Core\Address\PointRange $lineRange) {
+    protected function prettyPrintLineRange(PointRange $lineRange) {
         $start = $lineRange->getStart();
         $end = $lineRange->getEnd();
         
         return $this->prettyPrintPoint($start) . ' -> ' . $this->prettyPrintPoint($end);
     }
     
-    protected function prettyPrintPoint(\APM\Core\Address\Point $point) {
+    protected function prettyPrintPoint(Point $point) {
         $dim = $point->getDimensionCount();
         $data = [];
         for ($i=0; $i< $dim; $i++) {

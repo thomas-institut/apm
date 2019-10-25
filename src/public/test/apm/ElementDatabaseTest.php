@@ -18,16 +18,36 @@
  *  
  */
 
-namespace AverroesProject;
+namespace APM;
 require "../vendor/autoload.php";
 require_once 'SiteMockup/DatabaseTestEnvironment.php';
+require_once 'SiteMockup/testconfig.php';
 
-use PHPUnit\Framework\TestCase;
+use AverroesProject\ColumnElement\Line;
+use AverroesProject\Data\DataManager;
+use AverroesProject\Data\EdNoteManager;
+use AverroesProject\TxText\Abbreviation;
+use AverroesProject\TxText\Addition;
+use AverroesProject\TxText\CharacterGap;
+use AverroesProject\TxText\ChunkMark;
+use AverroesProject\TxText\Deletion;
+use AverroesProject\TxText\Gliph;
+use AverroesProject\TxText\Illegible;
+use AverroesProject\TxText\Initial;
+use AverroesProject\TxText\Mark;
+use AverroesProject\TxText\MathText;
+use AverroesProject\TxText\NoWordBreak;
+use AverroesProject\TxText\ParagraphMark;
+use AverroesProject\TxText\Rubric;
+use AverroesProject\TxText\Sic;
+use AverroesProject\TxText\Text;
+use AverroesProject\TxText\Unclear;
+use DI\Container;
 use Monolog\Logger;
-use Monolog\Handler\StreamHandler;
+use PHPUnit\Framework\TestCase;
 use AverroesProject\TxText\ItemArray;
 use AverroesProject\ColumnElement\Element;
-use APM\Plugin\HookManager;
+
 
 /**
  * Description of ElementTest
@@ -35,27 +55,45 @@ use APM\Plugin\HookManager;
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 class ElementDatabaseTest extends TestCase {
-        /**
-     *     
-     * @var AverroesProject\Data\DataManager
+    /**
+     *
+     * @var DataManager
      */
     static $dataManager;
-    static $logger;
-    
-    public static function setUpBeforeClass() : void
-    {
-        $logStream = new StreamHandler('test.log', 
-            Logger::DEBUG);
-        self::$logger = new Logger(' ELEMENT-TEST');
-        self::$logger->pushHandler($logStream);
-        $hm = new HookManager();
-        self::$dataManager = DatabaseTestEnvironment::getDataManager(self::$logger, $hm);
+    /**
+     * @var Container
+     */
+    private static $container;
+    /**
+     * @var DatabaseTestEnvironment
+     */
+    private static $testEnvironment;
+    /**
+     * @var EdNoteManager
+     */
+    private static $edNoteManager;
+
+    /**
+     * @var Logger
+     */
+    private static $logger;
+
+    public static function setUpBeforeClass() : void  {
+        global $apmTestConfig;
+
+        self::$testEnvironment = new DatabaseTestEnvironment($apmTestConfig);
+        self::$container = self::$testEnvironment->getContainer();
+
+        self::$dataManager = self::$container->get('dataManager');
+        self::$edNoteManager = self::$dataManager->edNoteManager;
+        self::$logger = self::$container->get('logger');
+
     }
     
     public function testEmptyDatabase()
     {
         $dm = self::$dataManager;
-        DatabaseTestEnvironment::emptyDatabase();
+        self::$testEnvironment->emptyDatabase();
         
         $this->assertEquals([], $dm->getColumnElements(1, 1, 1));
         
@@ -75,29 +113,29 @@ class ElementDatabaseTest extends TestCase {
         }
         $editorId = $dm->userManager->createUserByUsername('testeditor');
         
-        $goodElement = new ColumnElement\Line();
+        $goodElement = new Line();
         $goodElement->id = 200; // this will be ignored!
         $goodElement->pageId = $dm->getPageIdByDocPage($docId, 1);
         $goodElement->columnNumber = 1;
         $goodElement->editorId = $editorId;
         $goodElement->handId = 0;
         // One of each item type, for good measure  (no item line break at the moment)
-        ItemArray::addItem($goodElement->items, new TxText\Text(0,-1,'Some text '));
-        ItemArray::addItem($goodElement->items, new TxText\Rubric(0,-1,'Rubric '));
-        ItemArray::addItem($goodElement->items, new TxText\Sic(0,-1,'loose', 'lose'));
-        ItemArray::addItem($goodElement->items, new TxText\Mark(0,-1));
-        ItemArray::addItem($goodElement->items, new TxText\Unclear(0, -1, 'unclear', 'Hey', 'Hey you'));
-        ItemArray::addItem($goodElement->items, new TxText\Illegible(0,-1,5));
-        ItemArray::addItem($goodElement->items, new TxText\Abbreviation(0,-1,'Mr.', 'Mister'));
-        ItemArray::addItem($goodElement->items, new TxText\Gliph(0,-1,'ā'));
-        ItemArray::addItem($goodElement->items, new TxText\Deletion(0,-1,'deleted', 'strikeout'));
-        ItemArray::addItem($goodElement->items, new TxText\Addition(0,-1,'added', 'above'));
-        ItemArray::addItem($goodElement->items, new TxText\ChunkMark(0, -1, 'AW', 1, TxText\ChunkMark::CHUNK_START));
-        ItemArray::addItem($goodElement->items, new TxText\NoWordBreak(0,-1));
-        ItemArray::addItem($goodElement->items, new TxText\Initial(0,-1, "I"));
-        ItemArray::addItem($goodElement->items, new TxText\CharacterGap(0,-1));
-        ItemArray::addItem($goodElement->items, new TxText\ParagraphMark(0,-1));
-        ItemArray::addItem($goodElement->items, new TxText\MathText(0,-1, 'some text'));
+        ItemArray::addItem($goodElement->items, new Text(0,-1,'Some text '));
+        ItemArray::addItem($goodElement->items, new Rubric(0,-1,'Rubric '));
+        ItemArray::addItem($goodElement->items, new Sic(0,-1,'loose', 'lose'));
+        ItemArray::addItem($goodElement->items, new Mark(0,-1));
+        ItemArray::addItem($goodElement->items, new Unclear(0, -1, 'unclear', 'Hey', 'Hey you'));
+        ItemArray::addItem($goodElement->items, new Illegible(0,-1,5));
+        ItemArray::addItem($goodElement->items, new Abbreviation(0,-1,'Mr.', 'Mister'));
+        ItemArray::addItem($goodElement->items, new Gliph(0,-1,'ā'));
+        ItemArray::addItem($goodElement->items, new Deletion(0,-1,'deleted', 'strikeout'));
+        ItemArray::addItem($goodElement->items, new Addition(0,-1,'added', 'above'));
+        ItemArray::addItem($goodElement->items, new ChunkMark(0, -1, 'AW', 1, ChunkMark::CHUNK_START));
+        ItemArray::addItem($goodElement->items, new NoWordBreak(0,-1));
+        ItemArray::addItem($goodElement->items, new Initial(0,-1, "I"));
+        ItemArray::addItem($goodElement->items, new CharacterGap(0,-1));
+        ItemArray::addItem($goodElement->items, new ParagraphMark(0,-1));
+        ItemArray::addItem($goodElement->items, new MathText(0,-1, 'some text'));
         $goodElement->lang = 'la';
         
         
@@ -177,16 +215,16 @@ class ElementDatabaseTest extends TestCase {
         $pageId =  $dm->getPageIdByDocPage($docId, 2);
         
         for ($i=0; $i<$numElements; $i++) {
-            $element = new ColumnElement\Line();
+            $element = new Line();
             $element->pageId = $pageId;
             $element->columnNumber = 1;
             $element->editorId = $editorId;
             $element->lang = 'la';
             $element->handId = 0;
-            ItemArray::addItem($element->items, new TxText\Text(0,-1,"This is $i "));
-            ItemArray::addItem($element->items, new TxText\Rubric(0,-1,'with rubric '));
-            ItemArray::addItem($element->items, new TxText\Text(0,-1,'and more text '));
-            ItemArray::addItem($element->items, new TxText\Abbreviation(0,-1,'LOL', 
+            ItemArray::addItem($element->items, new Text(0,-1,"This is $i "));
+            ItemArray::addItem($element->items, new Rubric(0,-1,'with rubric '));
+            ItemArray::addItem($element->items, new Text(0,-1,'and more text '));
+            ItemArray::addItem($element->items, new Abbreviation(0,-1,'LOL',
                     'laughing out loud'));
             $newElement = $dm->insertNewElement($element);
             $this->assertNotFalse($newElement);
@@ -242,16 +280,16 @@ class ElementDatabaseTest extends TestCase {
         $pageId =  $dm->getPageIdByDocPage($docId, 3);
         
         for ($i=0; $i<$numElements; $i++) {
-            $element = new ColumnElement\Line();
+            $element = new Line();
             $element->pageId = $pageId;
             $element->columnNumber = 1;
             $element->editorId = $editorId;
             $element->lang = 'la';
             $element->handId = 0;
-            ItemArray::addItem($element->items, new TxText\Text(0,-1,"This is $i "));
-            ItemArray::addItem($element->items, new TxText\Rubric(0,-1,'with rubric '));
-            ItemArray::addItem($element->items, new TxText\Text(0,-1,'and more text '));
-            ItemArray::addItem($element->items, new TxText\Abbreviation(0,-1,'LOL', 
+            ItemArray::addItem($element->items, new Text(0,-1,"This is $i "));
+            ItemArray::addItem($element->items, new Rubric(0,-1,'with rubric '));
+            ItemArray::addItem($element->items, new Text(0,-1,'and more text '));
+            ItemArray::addItem($element->items, new Abbreviation(0,-1,'LOL',
                     'laughing out loud'));
             $newElement = $dm->insertNewElement($element);
             $this->assertNotFalse($newElement);
@@ -285,16 +323,16 @@ class ElementDatabaseTest extends TestCase {
         
         $elementIds = [];
         for ($i=0; $i<$numElements; $i++) {
-            $element = new ColumnElement\Line();
+            $element = new Line();
             $element->pageId = $pageId;
             $element->columnNumber = 1;
             $element->editorId = $editorId;
             $element->lang = 'la';
             $element->handId = 0;
-            ItemArray::addItem($element->items, new TxText\Rubric(0,0,"Hello "));
-            ItemArray::addItem($element->items, new TxText\Text(0,1,'darkness '));
-            ItemArray::addItem($element->items, new TxText\Text(0,2,'my '));
-            ItemArray::addItem($element->items, new TxText\Abbreviation(0,3,'f. ', 
+            ItemArray::addItem($element->items, new Rubric(0,0,"Hello "));
+            ItemArray::addItem($element->items, new Text(0,1,'darkness '));
+            ItemArray::addItem($element->items, new Text(0,2,'my '));
+            ItemArray::addItem($element->items, new Abbreviation(0,3,'f. ',
                     'friend'));
             $elementIds[] = $dm->insertNewElement($element)->id;
         }
@@ -304,10 +342,10 @@ class ElementDatabaseTest extends TestCase {
         $currentElement = $dm->getElementById($testElementId);
         $newVersion = clone $currentElement;
         $newVersion->items = [];
-        ItemArray::addItem($newVersion->items, new TxText\Rubric(100,-1,"Hello "));
-        ItemArray::addItem($newVersion->items, new TxText\Text(101,-1,'darkness '));
-        ItemArray::addItem($newVersion->items, new TxText\Text(102,-1,'my '));
-        ItemArray::addItem($newVersion->items, new TxText\Abbreviation(103,-1,'f. ', 
+        ItemArray::addItem($newVersion->items, new Rubric(100,-1,"Hello "));
+        ItemArray::addItem($newVersion->items, new Text(101,-1,'darkness '));
+        ItemArray::addItem($newVersion->items, new Text(102,-1,'my '));
+        ItemArray::addItem($newVersion->items, new Abbreviation(103,-1,'f. ',
                 'friend'));
         ItemArray::setLang($newVersion->items, 'la');
         ItemArray::setHandId($newVersion->items, 0);
@@ -336,10 +374,10 @@ class ElementDatabaseTest extends TestCase {
         $newVersion2 = clone $currentElement2;
         $newVersion2->id = 0;
         $newVersion2->items = [];
-        ItemArray::addItem($newVersion2->items, new TxText\Rubric(100,-1,"Hello "));
-        ItemArray::addItem($newVersion2->items, new TxText\Text(101,-1,'darkness '));
-        ItemArray::addItem($newVersion2->items, new TxText\Text(102,-1,'my '));
-        ItemArray::addItem($newVersion2->items, new TxText\Abbreviation(103,-1,'f. ', 
+        ItemArray::addItem($newVersion2->items, new Rubric(100,-1,"Hello "));
+        ItemArray::addItem($newVersion2->items, new Text(101,-1,'darkness '));
+        ItemArray::addItem($newVersion2->items, new Text(102,-1,'my '));
+        ItemArray::addItem($newVersion2->items, new Abbreviation(103,-1,'f. ',
                 'friend'));
         ItemArray::setLang($newVersion2->items, 'la');
         ItemArray::setHandId($newVersion2->items, 0);
@@ -366,10 +404,10 @@ class ElementDatabaseTest extends TestCase {
         $newVersion3 = clone $currentElement3;
         $newVersion3->type = Element::HEAD;  // Different type!
         $newVersion3->items = [];
-        ItemArray::addItem($newVersion3->items, new TxText\Rubric(100,-1,"Hello "));
-        ItemArray::addItem($newVersion3->items, new TxText\Text(101,-1,'darkness '));
-        ItemArray::addItem($newVersion3->items, new TxText\Text(102,-1,'my '));
-        ItemArray::addItem($newVersion3->items, new TxText\Abbreviation(103,-1,'f. ', 
+        ItemArray::addItem($newVersion3->items, new Rubric(100,-1,"Hello "));
+        ItemArray::addItem($newVersion3->items, new Text(101,-1,'darkness '));
+        ItemArray::addItem($newVersion3->items, new Text(102,-1,'my '));
+        ItemArray::addItem($newVersion3->items, new Abbreviation(103,-1,'f. ',
                 'friend'));
         ItemArray::setLang($newVersion3->items, 'la');
         ItemArray::setHandId($newVersion3->items, 0);
@@ -393,10 +431,10 @@ class ElementDatabaseTest extends TestCase {
         $currentElement4 = $dm->getElementById($testElementId4);
         $newVersion4 = clone $currentElement4;
         $newVersion4->items = [];
-        ItemArray::addItem($newVersion4->items, new TxText\Rubric(-1001,-1,"Hello "));
-        ItemArray::addItem($newVersion4->items, new TxText\Text(-1,-1,'my '));
-        ItemArray::addItem($newVersion4->items, new TxText\Text(-1,-1,'darkness '));
-        ItemArray::addItem($newVersion4->items, new TxText\Abbreviation(-1003,-1,'f. ', 
+        ItemArray::addItem($newVersion4->items, new Rubric(-1001,-1,"Hello "));
+        ItemArray::addItem($newVersion4->items, new Text(-1,-1,'my '));
+        ItemArray::addItem($newVersion4->items, new Text(-1,-1,'darkness '));
+        ItemArray::addItem($newVersion4->items, new Abbreviation(-1003,-1,'f. ',
                 'friend'));
         ItemArray::setLang($newVersion4->items, 'la');
         ItemArray::setHandId($newVersion4->items, 0);
@@ -447,14 +485,14 @@ class ElementDatabaseTest extends TestCase {
         
         $elementIds = [];
         for ($i=0; $i<$numElements; $i++) { 
-            $element = new ColumnElement\Line();
+            $element = new Line();
             $element->pageId = $pageId;
             $element->columnNumber = 1;
             $element->editorId = $originalEditor;
             $element->lang = 'la';
             $element->handId = 0;
             $element->seq = $i;
-            ItemArray::addItem($element->items, new TxText\Text(0,-1,"Original Line ". (string)($i+1)));  
+            ItemArray::addItem($element->items, new Text(0,-1,"Original Line ". (string)($i+1)));
             $elementIds[] = $dm->insertNewElement($element)->id;
         }
         $originalElements = $dm->getColumnElementsByPageId($pageId, 1);
@@ -466,14 +504,14 @@ class ElementDatabaseTest extends TestCase {
         //print "\n\n========== TEST 1 ===============\n\n";
         $newElements = [];
         for ($i=0; $i<$numElements; $i++) { 
-            $element = new ColumnElement\Line();
+            $element = new Line();
             $element->pageId = $pageId;
             $element->columnNumber = 1;
             $element->editorId = $reviewer;
             $element->lang = 'la';
             $element->handId = 0;
             $element->seq = $i;
-            ItemArray::addItem($element->items, new TxText\Text($i+100,0,"Original Line ". (string)($i+1)));  
+            ItemArray::addItem($element->items, new Text($i+100,0,"Original Line ". (string)($i+1)));
             ItemArray::setLang($element->items, 'la');
             ItemArray::setHandId($element->items, 0);
             $newElements[] = $element;
@@ -491,14 +529,14 @@ class ElementDatabaseTest extends TestCase {
         //print "\n\n========== TEST 2 ===============\n\n";
         $newElements2 = [];
         for ($i=0; $i<$numElements; $i++) { 
-            $element = new ColumnElement\Line();
+            $element = new Line();
             $element->pageId = $pageId;
             $element->columnNumber = 1;
             $element->editorId = $reviewer;
             $element->lang = 'la';
             $element->handId = 0;
             $element->seq = $i;
-            ItemArray::addItem($element->items, new TxText\Text($i+200,0,"Test 2 Line ". (string)($i+1)));  
+            ItemArray::addItem($element->items, new Text($i+200,0,"Test 2 Line ". (string)($i+1)));
             ItemArray::setLang($element->items, 'la');
             ItemArray::setHandId($element->items, 0);
             $newElements2[] = $element;
@@ -521,7 +559,7 @@ class ElementDatabaseTest extends TestCase {
         $originalElements3 = $updatedElements2;
         $newElements3 = [];
         for ($i=0; $i<$numElements; $i++) { 
-            $element = new ColumnElement\Line();
+            $element = new Line();
             $element->id = $i+100;
             $element->pageId = $pageId;
             $element->columnNumber = 1;
@@ -529,7 +567,7 @@ class ElementDatabaseTest extends TestCase {
             $element->lang = 'la';
             $element->handId = 0;
             $element->seq = $i;
-            ItemArray::addItem($element->items, new TxText\Text($i+300,0,"Test 2 Line ". (string)($i+1)));  
+            ItemArray::addItem($element->items, new Text($i+300,0,"Test 2 Line ". (string)($i+1)));
             ItemArray::setLang($element->items, 'la');
             ItemArray::setHandId($element->items, 0);
             $newElements3[] = $element;
@@ -558,7 +596,7 @@ class ElementDatabaseTest extends TestCase {
         $originalElements4 = $updatedElements3;
         $newElements4 = [];
         for ($i=0; $i<$numElements; $i++) { 
-            $element = new ColumnElement\Line();
+            $element = new Line();
             $element->id = $i+1000;
             $element->pageId = $pageId;
             $element->columnNumber = 1;
@@ -566,7 +604,7 @@ class ElementDatabaseTest extends TestCase {
             $element->lang = 'la';
             $element->handId = 0;
             $element->seq = $i;
-            ItemArray::addItem($element->items, new TxText\Text($i+400,0,"Test 2 Line ". (string)($i+1)));  
+            ItemArray::addItem($element->items, new Text($i+400,0,"Test 2 Line ". (string)($i+1)));
             ItemArray::setLang($element->items, 'la');
             ItemArray::setHandId($element->items, 0);
             $newElements4[] = $element;
@@ -589,7 +627,7 @@ class ElementDatabaseTest extends TestCase {
         $givenItemId = -1000;
         $newElements5 = [];
         for ($i=0; $i<$numElements; $i++) { 
-            $element = new ColumnElement\Line();
+            $element = new Line();
             $element->id = $i+2000; // Irrelevant
             $element->pageId = $pageId;
             $element->columnNumber = 1;
@@ -597,8 +635,8 @@ class ElementDatabaseTest extends TestCase {
             $element->lang = 'la';
             $element->handId = 0;
             $element->seq = $i;
-            ItemArray::addItem($element->items, new TxText\Rubric($givenItemId--,0,"Test 5"));  
-            ItemArray::addItem($element->items, new TxText\Text($givenItemId--,1,": line". (string)($i+1)));  
+            ItemArray::addItem($element->items, new Rubric($givenItemId--,0,"Test 5"));
+            ItemArray::addItem($element->items, new Text($givenItemId--,1,": line". (string)($i+1)));
             ItemArray::setLang($element->items, 'la');
             ItemArray::setHandId($element->items, 0);
             $newElements5[] = $element;
@@ -614,6 +652,10 @@ class ElementDatabaseTest extends TestCase {
             $this->assertEquals($updatedItemIds5[$newElements5[$i]->items[0]->id], $updatedElements5[$i]->items[0]->id);
             $this->assertEquals($updatedItemIds5[$newElements5[$i]->items[1]->id], $updatedElements5[$i]->items[1]->id);
         }
+    }
+
+    public function debug(string $msg) {
+
     }
 }
 

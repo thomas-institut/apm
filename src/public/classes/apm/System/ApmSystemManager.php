@@ -120,13 +120,35 @@ class ApmSystemManager extends SystemManager {
     
     /** @var array */
     private $tableNames;
-    
+
+    /**
+     * @var DataTablePresetManager
+     */
     private $presetsManager;
+
+    /**
+     * @var \APM\System\SettingsManager
+     */
     private $settingsMgr;
+
+    /**
+     * @var HookManager
+     */
     private $hookManager;
+
+    /**
+     * @var Collatex
+     */
     private $collationEngine;
-    
+
+    /**
+     * @var PDO
+     */
     private $dbConn;
+
+    /**
+     * @var Logger
+     */
     private $logger;
   
 

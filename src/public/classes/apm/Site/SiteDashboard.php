@@ -37,7 +37,7 @@ use AverroesProject\Profiler\ApmProfiler;
 class SiteDashboard extends SiteController
 {
   
-    public function dashboardPage(Request $request, Response $response, $next)
+    public function dashboardPage(Request $request, Response $response)
     {
         
         $dataManager = $this->dataManager;

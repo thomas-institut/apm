@@ -18,21 +18,27 @@
  *  
  */
 
-namespace AverroesProject;
+namespace APM;
 require "../vendor/autoload.php";
 require_once 'SiteMockup/DatabaseTestEnvironment.php';
+require_once 'SiteMockup/testconfig.php';
 
+use AverroesProject\ColumnElement\Substitution;
+use AverroesProject\TxText\Addition;
+use AverroesProject\TxText\Item;
+use AverroesProject\TxText\MarginalMark;
+use AverroesProject\TxText\Rubric;
+use AverroesProject\TxText\Sic;
+use DI\Container;
 use PHPUnit\Framework\TestCase;
 use AverroesProject\Data\DataManager;
 use AverroesProject\TxText\ItemArray;
-use AverroesProject\ColumnElement\Element;
+
 use AverroesProject\ColumnElement\Line;
 use AverroesProject\TxText\Text;
-use AverroesProject\ColumnElement\Addition;
+
 use AverroesProject\TxText\Deletion;
-use Monolog\Logger;
-use Monolog\Handler\StreamHandler;
-use APM\Plugin\HookManager;
+
 use AverroesProject\ItemStream\ItemStream;
 
 /**
@@ -44,24 +50,32 @@ class DataManagerTest extends TestCase {
     
     /**
      *     
-     * @var Data\DataManager
+     * @var DataManager
      */
     static $dataManager;
-    
-    public static function setUpBeforeClass() {
-        $logStream = new StreamHandler('test.log', 
-            Logger::DEBUG);
-        $logger = new Logger('DM-TEST');
-        $logger->pushHandler($logStream);
-        $hm = new HookManager();
-        self::$dataManager = DatabaseTestEnvironment::getDataManager($logger, $hm);
+    /**
+     * @var Container
+     */
+    private static $container;
+    /**
+     * @var DatabaseTestEnvironment
+     */
+    private static $testEnvironment;
+
+    public static function setUpBeforeClass() : void  {
+        global $apmTestConfig;
+        self::$testEnvironment = new DatabaseTestEnvironment($apmTestConfig);
+        self::$container = self::$testEnvironment->getContainer();
+
+        self::$dataManager = self::$container->get('dataManager');
+
     }
     
     
     public function testEmptyDatabase() 
     {
         $dm = self::$dataManager;
-        DatabaseTestEnvironment::emptyDatabase();
+        self::$testEnvironment->emptyDatabase();
         
         // No docs at this point
         $this->assertEquals(0, $dm->getPageCountByDocId(100));
@@ -137,7 +151,7 @@ class DataManagerTest extends TestCase {
 
         ItemArray::addItem($lineElement->items, new Text(100, 0, 'sometext'));
         ItemArray::addItem($lineElement->items, new Deletion(101, 1, 'deleted', 'strikeout'));
-        ItemArray::addItem($lineElement->items, new TxText\Addition(102, 2, 'added', 'above', 101));
+        ItemArray::addItem($lineElement->items, new Addition(102, 2, 'added', 'above', 101));
         ItemArray::setHandId($lineElement->items, 0);
         ItemArray::setLang($lineElement->items, 'la');
         $newElements = [];
@@ -160,7 +174,7 @@ class DataManagerTest extends TestCase {
         
         // Add another "mod" 
         ItemArray::addItem($lineElement->items, new Deletion(103, 3, 'deleted2', 'strikeout'));
-        ItemArray::addItem($lineElement->items, new TxText\Addition(104, 4, 'added2', 'above', 103));
+        ItemArray::addItem($lineElement->items, new Addition(104, 4, 'added2', 'above', 103));
         ItemArray::setHandId($lineElement->items, 0);
         ItemArray::setLang($lineElement->items, 'la');
         $newItemIds = $dm->updateColumnElements($pageId, 1, $newElements); 
@@ -190,7 +204,7 @@ class DataManagerTest extends TestCase {
         $lineElement2->editorId = $editor1;
 
         ItemArray::addItem($lineElement2->items, new Text(106, 0, 'sometext2'));
-        ItemArray::addItem($lineElement2->items, new TxText\Addition(107, 1, 'added3', 'above', 105));
+        ItemArray::addItem($lineElement2->items, new Addition(107, 1, 'added3', 'above', 105));
         ItemArray::setHandId($lineElement2->items, 0);
         ItemArray::setLang($lineElement2->items, 'la');
         $newElements = [];
@@ -370,16 +384,16 @@ class DataManagerTest extends TestCase {
         // Test case 1: simple item array, no references
         
         $testCase1Array = [
-          [ 'type' => TxText\Item::TEXT, 'text' => 'One'],
-          [ 'type' => TxText\Item::TEXT, 'text' => "\n"],
-          [ 'type' => TxText\Item::RUBRIC, 'text' => 'Two'],
-          [ 'type' => TxText\Item::TEXT, 'text' => "\n"],
-          [ 'type' => TxText\Item::TEXT, 'text' => 'Three'],
-          [ 'type' => TxText\Item::TEXT, 'text' => "\n"],
-          [ 'type' => TxText\Item::SIC, 'text' => 'Four'],
-          [ 'type' => TxText\Item::TEXT, 'text' => "\n"],
-          [ 'type' => TxText\Item::TEXT, 'text' => "Five"],
-          [ 'type' => TxText\Item::TEXT, 'text' => "\n"],
+          [ 'type' => Item::TEXT, 'text' => 'One'],
+          [ 'type' => Item::TEXT, 'text' => "\n"],
+          [ 'type' => Item::RUBRIC, 'text' => 'Two'],
+          [ 'type' => Item::TEXT, 'text' => "\n"],
+          [ 'type' => Item::TEXT, 'text' => 'Three'],
+          [ 'type' => Item::TEXT, 'text' => "\n"],
+          [ 'type' => Item::SIC, 'text' => 'Four'],
+          [ 'type' => Item::TEXT, 'text' => "\n"],
+          [ 'type' => Item::TEXT, 'text' => "Five"],
+          [ 'type' => Item::TEXT, 'text' => "\n"],
         ];
         
         
@@ -391,16 +405,16 @@ class DataManagerTest extends TestCase {
         $itemSeq = 0;
         foreach($testCase1Array as $itemDef) {
             switch ($itemDef['type']) {
-                case TxText\Item::TEXT:
+                case Item::TEXT:
                     $item = new Text($itemId++, $itemSeq++, $itemDef['text']);
                     break;
                 
-                case TxText\Item::RUBRIC: 
-                    $item = new TxText\Rubric($itemId++, $itemSeq++, $itemDef['text']);
+                case Item::RUBRIC:
+                    $item = new Rubric($itemId++, $itemSeq++, $itemDef['text']);
                     break;
                 
-                case TxText\Item::SIC: 
-                    $item = new TxText\Sic($itemId++, $itemSeq++, $itemDef['text']);
+                case Item::SIC:
+                    $item = new Sic($itemId++, $itemSeq++, $itemDef['text']);
                     break;
             }
             ItemArray::addItem($mainTextElement->items, $item);
@@ -432,7 +446,7 @@ class DataManagerTest extends TestCase {
         $mainTextElement2->editorId = $editor;
         ItemArray::addItem($mainTextElement2->items, new Deletion(100, 0, 'deletion', 'strikeout'));
         ItemArray::addItem($mainTextElement2->items, new Text(101, 1, 'some text'));
-        ItemArray::addItem($mainTextElement2->items, new TxText\Addition(102, 2, 'addition', 'above', 100));
+        ItemArray::addItem($mainTextElement2->items, new Addition(102, 2, 'addition', 'above', 100));
         ItemArray::addItem($mainTextElement2->items, new Text(103, 3, 'another text'));
         ItemArray::setHandId($mainTextElement2->items, 0);
         ItemArray::setLang($mainTextElement2->items, 'la');
@@ -446,10 +460,10 @@ class DataManagerTest extends TestCase {
         $itemStream2 = $dm->getItemStreamBetweenLocations($docId, $loc1, $loc2);
         
         $this->assertCount(4, $itemStream2);
-        $this->assertEquals(TxText\Item::DELETION, $itemStream2[0]['type']);
-        $this->assertEquals(TxText\Item::ADDITION, $itemStream2[1]['type']);
-        $this->assertEquals(TxText\Item::TEXT, $itemStream2[2]['type']);
-        $this->assertEquals(TxText\Item::TEXT, $itemStream2[3]['type']);
+        $this->assertEquals(Item::DELETION, $itemStream2[0]['type']);
+        $this->assertEquals(Item::ADDITION, $itemStream2[1]['type']);
+        $this->assertEquals(Item::TEXT, $itemStream2[2]['type']);
+        $this->assertEquals(Item::TEXT, $itemStream2[3]['type']);
         
         
         // TEST CASE 3: some text, a mark and a marginal addition
@@ -458,12 +472,12 @@ class DataManagerTest extends TestCase {
         $mainTextElement3->handId = 0;
         $mainTextElement3->editorId = $editor;
         ItemArray::addItem($mainTextElement3->items, new Text(100, 0, 'Some text.'));
-        ItemArray::addItem($mainTextElement3->items, new TxText\MarginalMark(101, 1, '[A]'));
+        ItemArray::addItem($mainTextElement3->items, new MarginalMark(101, 1, '[A]'));
         ItemArray::addItem($mainTextElement3->items, new Text(102, 2, ' More text.'));
         ItemArray::setHandId($mainTextElement3->items, 0);
         ItemArray::setLang($mainTextElement3->items, 'la');
         
-        $marginalElement = new ColumnElement\Substitution();
+        $marginalElement = new Substitution();
         $marginalElement->reference = 101;
         $marginalElement->lang = 'la';
         $marginalElement->handId = 0;
@@ -479,11 +493,11 @@ class DataManagerTest extends TestCase {
         $loc2 = [ 'page_seq' => 3, 'column_number' => 1, 'e_seq' => 9999, 'item_seq' => 9999];
         $itemStream3 = $dm->getItemStreamBetweenLocations($docId, $loc1, $loc2);
         $this->assertCount(4, $itemStream3);
-        $this->assertEquals(TxText\Item::TEXT, $itemStream3[0]['type']);
-        $this->assertEquals(TxText\Item::MARGINAL_MARK, $itemStream3[1]['type']);
-        $this->assertEquals(TxText\Item::TEXT, $itemStream3[2]['type']);
+        $this->assertEquals(Item::TEXT, $itemStream3[0]['type']);
+        $this->assertEquals(Item::MARGINAL_MARK, $itemStream3[1]['type']);
+        $this->assertEquals(Item::TEXT, $itemStream3[2]['type']);
         $this->assertEquals('Marginal text.', $itemStream3[2]['text']);
-        $this->assertEquals(TxText\Item::TEXT, $itemStream3[3]['type']);
+        $this->assertEquals(Item::TEXT, $itemStream3[3]['type']);
         
         $plainText = ItemStream::getPlainText($itemStream3);
         

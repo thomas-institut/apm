@@ -20,6 +20,8 @@
 
 namespace APM\Presets;
 
+use InvalidArgumentException;
+
 /**
  * A Preset Manager implemented with an internal array containing all
  * presets by tool id
@@ -125,18 +127,19 @@ class SimplePresetManager extends PresetManager {
     }
 
     /**
-     * Returns the Preset identified by $tool, $userId and $title or
-     * false if there's no such preset in the system.
+     * Returns the Preset identified by $tool, $userId and $title
+     * Throws an exception is the preset is not found
      *
      * @param string $tool
      * @param int $userId
      * @param string $title
-     * @return Preset|boolean
+     * @return Preset
+     * @throws InvalidArgumentException
      */
     public function getPreset(string $tool, int $userId, string $title) : Preset {
         $index = $this->getPresetIndex($tool, $userId, $title);
         if ($index === false) {
-            return false;
+            throw $this->newPresetNotFoundException();
         }
         return $this->presets[$tool][$index];
     }

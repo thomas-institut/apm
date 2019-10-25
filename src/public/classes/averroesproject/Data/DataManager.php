@@ -291,8 +291,8 @@ class DataManager
     /**
      * Returns the number of columns a given page
      * 
-     * @param type $docId
-     * @param type $page
+     * @param int $docId
+     * @param int $page
      * @return int
      */
     function getNumColumns($docId, $page)
@@ -308,8 +308,8 @@ class DataManager
     /**
      * Adds a new column to a page
      * 
-     * @param type $docId
-     * @param type $pageNumber
+     * @param int $docId
+     * @param int $pageNumber
      * @return boolean
      */
     function addNewColumn($docId, $pageNumber)
@@ -360,7 +360,7 @@ class DataManager
     
     /**
      * Returns the number of pages of a document
-     * @param type $docId
+     * @param int $docId
      * @return boolean|int
      */
     function getPageCountByDocId($docId)

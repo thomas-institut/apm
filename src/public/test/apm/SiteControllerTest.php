@@ -27,13 +27,18 @@ require_once 'SiteMockup/SiteTestEnvironment.php';
 use APM\Site\SiteDashboard;
 use APM\Site\SiteDocuments;
 use APM\Site\SiteHomePage;
+use APM\Site\SiteChunks;
+
+use APM\Site\SiteUserManager;
+use APM\System\ApmSystemManager;
+use APM\System\PresetFactory;
 use AverroesProject\Data\DataManager;
+use DI\Container;
 use PHPUnit\Framework\TestCase;
 
-
 use GuzzleHttp\Psr7\ServerRequest;
-use GuzzleHttp\Psr7;
-use Slim\Http\Response;
+use Psr\Http\Message\ResponseInterface;
+use Slim\Psr7\Response;
 
 use APM\Site\SiteCollationTable;
 
@@ -52,6 +57,7 @@ use AverroesProject\TxText\Mark;
 use AverroesProject\ColumnElement\Line;
 
 use AverroesProject\EditorialNote;
+use function GuzzleHttp\Psr7\stream_for;
 
 
 /**
@@ -62,55 +68,56 @@ use AverroesProject\EditorialNote;
 class SiteControllerTest extends TestCase {
 
     /**
-     * @var bool|\Slim\Container
+     * @var bool|Container
      */
     static $ci;
 
     /**
      * @var DataManager
      */
-    static $dm;
+    static $dataManager;
 
     /**
      * @var SiteTestEnvironment
      */
     static $testEnvironment;
-    
-    public static function setUpBeforeClass()
+    /**
+     * @var ApmSystemManager
+     */
+    static $systemManager;
+
+    public static function setUpBeforeClass() : void
     { 
         global $apmTestConfig;
-        
-        
+
         self::$testEnvironment = new SiteTestEnvironment($apmTestConfig);
         self::$ci = self::$testEnvironment->getContainer();
-        self::$dm = self::$ci->db;
+        self::$dataManager = self::$ci->get('dataManager');
+        self::$systemManager = self::$testEnvironment->getSystemManager();
     }
     
     public function testQuickCollationPage()
     {
         
         $request = new ServerRequest('GET', '');
-        $inputResp = new \Slim\Http\Response();
-        self::$ci['userInfo'] = ['id' => 100];
-        
+
+        self::$ci->set('user_info', ['id' => 100]);
+
         $sc = new SiteCollationTable(self::$ci);
         
-        $response = $sc->quickCollationPage($request, $inputResp, 
-                NULL);
+        $response = $sc->quickCollationPage($request, new Response());
         
         $this->assertEquals(200, $response->getStatusCode());
     }
     
      public function testHomePage()
     {
-        
         $request = new ServerRequest('GET', '');
-        $inputResp = new \Slim\Http\Response();
-        self::$ci['userInfo'] = ['id' => 100];
+
+        self::$ci->set('user_info', ['id' => 100]);
         
         $sc = new  SiteHomePage(self::$ci);
-        $response = $sc->homePage($request, $inputResp, 
-                NULL);
+        $response = $sc->homePage($request, new Response());
         
         $this->assertEquals(302, $response->getStatusCode());
     }
@@ -119,13 +126,12 @@ class SiteControllerTest extends TestCase {
     {
         
         $request = new ServerRequest('GET', '');
-        $inputResp = new \Slim\Http\Response();
-        self::$ci['userInfo'] = ['id' => 100, 'username' => 'testUser'];
-         
+
+        self::$ci->set('user_info', ['id' => 100, 'username' => 'testUser']);
+
         $sc = new SiteDashboard(self::$ci);
         
-        $response =$sc->dashboardPage($request, $inputResp, 
-                NULL);
+        $response =$sc->dashboardPage($request, new Response());
         
         $this->assertEquals(200, $response->getStatusCode());
     }
@@ -134,13 +140,12 @@ class SiteControllerTest extends TestCase {
     {
         
         $request = new ServerRequest('GET', '');
-        $inputResp = new \Slim\Http\Response();
-        self::$ci['userInfo'] = ['id' => 100];
+
+        self::$ci->set('user_info', ['id' => 100, 'username' => 'testUser']);
         
         $sc = new SiteDocuments(self::$ci);
         
-        $response = $sc->documentsPage($request, $inputResp, 
-                NULL);
+        $response = $sc->documentsPage($request, new Response());
         
         $this->assertEquals(200, $response->getStatusCode());
     }
@@ -149,12 +154,11 @@ class SiteControllerTest extends TestCase {
     {
         
         $request = new ServerRequest('GET', '');
-        $inputResp = new \Slim\Http\Response();
-        self::$ci['userInfo'] = ['id' => 100];
-        $sc = new \AverroesProject\Site\SiteChunks(self::$ci);
+
+        self::$ci->set('user_info', ['id' => 100, 'username' => 'testUser']);
+        $sc = new SiteChunks(self::$ci);
         
-        $response = $sc->chunksPage($request, $inputResp, 
-                NULL);
+        $response = $sc->chunksPage($request, new Response());
         
         $this->assertEquals(200, $response->getStatusCode());
     }
@@ -163,13 +167,12 @@ class SiteControllerTest extends TestCase {
     {
         
         $request = new ServerRequest('GET', '');
-        $inputResp = new \Slim\Http\Response();
-        self::$ci['userInfo'] = ['id' => 100];
+
+        self::$ci->set('user_info', ['id' => 100, 'username' => 'testUser']);
         
-        $sc = new \AverroesProject\Site\SiteUserManager(self::$ci);
+        $sc = new SiteUserManager(self::$ci);
         
-        $response =$sc->userManagerPage($request, $inputResp, 
-                NULL);
+        $response =$sc->userManagerPage($request, new Response());
         
         $this->assertEquals(200, $response->getStatusCode());
     }
@@ -178,16 +181,16 @@ class SiteControllerTest extends TestCase {
     public function testChunkAndWitnessPage()
     {
         self::$testEnvironment->emptyDatabase();
-        $editor1 = self::$dm->userManager->createUserByUserName('testeditor1');
-        $editor2 = self::$dm->userManager->createUserByUserName('testeditor2');
-        $editor3 = self::$dm->userManager->createUserByUsername('anothereditor');
+        $editor1 = self::$dataManager->userManager->createUserByUserName('testeditor1');
+        $editor2 = self::$dataManager->userManager->createUserByUserName('testeditor2');
+        $editor3 = self::$dataManager->userManager->createUserByUsername('anothereditor');
         
         $this->assertNotFalse($editor1);
         $this->assertNotFalse($editor2);
         $this->assertNotFalse($editor3);
-        self::$ci['userInfo'] = ['id' => $editor1];
-        /* @var $dm \AverroesProject\Data\DataManager */
-        $dm = self::$dm;
+        self::$ci->set('user_info', ['id' => $editor1]);
+
+        $dm = self::$dataManager;
         $dm->userManager->allowUserTo($editor1, 'witness-view-details');
         
         $work = 'AW47';
@@ -225,7 +228,7 @@ class SiteControllerTest extends TestCase {
         $element->lang = $lang1;
         $element->handId = 0;
         $element->seq = 0;
-        $itemSeq=0;
+        $itemSeq = 0;
         $itemId = 0;
         ItemArray::addItem($element->items, new ChunkMark($itemId++, $itemSeq++, $work, $chunkNo, 'start', 1));  
         // Some items to try to hit all formatting cases too!
@@ -282,10 +285,9 @@ class SiteControllerTest extends TestCase {
                 ->withAttribute('chunk', $chunkNo)
                 ->withAttribute('type', 'doc')
                 ->withAttribute('id', $docId);
-        $inputResp = new \Slim\Http\Response();
+
         $chunkPageObject = new Site\ChunkPage(self::$ci);
-        $response = $chunkPageObject->witnessPage($request, $inputResp, 
-                NULL);
+        $response = $chunkPageObject->witnessPage($request, new Response());
         $this->assertEquals(200, $response->getStatusCode());
         
         // 2. with a bad witness
@@ -294,10 +296,8 @@ class SiteControllerTest extends TestCase {
                 ->withAttribute('chunk', $chunkNo)
                 ->withAttribute('type', 'doc')
                 ->withAttribute('id', $docId2);
-        $inputResp2 = new \Slim\Http\Response();
         $chunkPageObject2 = new Site\ChunkPage(self::$ci);
-        $response2 = $chunkPageObject2->witnessPage($request2, $inputResp2, 
-                NULL);
+        $response2 = $chunkPageObject2->witnessPage($request2, new Response());
         $this->assertEquals(200, $response2->getStatusCode());
         
         // 3. with a doc without any chunk text
@@ -306,10 +306,9 @@ class SiteControllerTest extends TestCase {
                 ->withAttribute('chunk', $chunkNo)
                 ->withAttribute('type', 'doc')
                 ->withAttribute('id', $docId3);
-        $inputResp3 = new \Slim\Http\Response();
+
         $chunkPageObject3 = new Site\ChunkPage(self::$ci);
-        $response3 = $chunkPageObject3->witnessPage($request3, $inputResp3, 
-                NULL);
+        $response3 = $chunkPageObject3->witnessPage($request3, new Response());
         $this->assertEquals(200, $response3->getStatusCode());
         
         // Chunk page test
@@ -352,13 +351,10 @@ class SiteControllerTest extends TestCase {
         $request1_1 = (new ServerRequest('GET', ''))
                 ->withAttribute('work', $work)
                 ->withAttribute('chunk', $chunkNo);
-        $inputResp1_1 = new \Slim\Http\Response();
-        
-        
+
         $chunkPageObject4 = new Site\ChunkPage(self::$ci);
         
-        $response1_1 = $chunkPageObject4->singleChunkPage($request1_1, $inputResp1_1, 
-                NULL);
+        $response1_1 = $chunkPageObject4->singleChunkPage($request1_1, new Response());
         
         $this->assertEquals(200, $response1_1->getStatusCode());
         
@@ -368,33 +364,29 @@ class SiteControllerTest extends TestCase {
                 ->withAttribute('chunk', $chunkNo)
                 ->withAttribute('type', 'doc')
                 ->withAttribute('id', $docId5);
-        $inputResp4 = new \Slim\Http\Response();
         $chunkPageObject4 = new Site\ChunkPage(self::$ci);
-        $response4 = $chunkPageObject4->witnessPage($request4, $inputResp4, 
-                NULL);
+        $response4 = $chunkPageObject4->witnessPage($request4, new Response());
         $this->assertEquals(200, $response4->getStatusCode());
         
         $request4_2 = $request4->withAttribute('output', 'html');
-        $response4_2 = $chunkPageObject4->witnessPage($request4_2, $inputResp4, 
-                NULL);
+        $response4_2 = $chunkPageObject4->witnessPage($request4_2, new Response());
         $this->assertEquals(200, $response4_2->getStatusCode());
         
         $request4_3 = $request4->withAttribute('output', 'text');
-        $response4_3 = $chunkPageObject4->witnessPage($request4_3, $inputResp4, 
-                NULL);
+        $response4_3 = $chunkPageObject4->witnessPage($request4_3, new Response());
         $this->assertEquals(200, $response4_3->getStatusCode());
         
         $request4_4 = $request4->withAttribute('output', 'badoutput');
-        $response4_4 = $chunkPageObject4->witnessPage($request4_4, $inputResp4, 
-                NULL);
+        $response4_4 = $chunkPageObject4->witnessPage($request4_4, new Response());
         $this->assertEquals(402, $response4_4->getStatusCode());
         
         return [ 'work' => $work, 'chunk' => $chunkNo, 'lang' => $lang1, 'editors' => [ $editor1, $editor2, $editor3]];
         
     }
-    
+
     /**
      * @depends testChunkAndWitnessPage
+     * @param array $witnessInfo
      */
     public function testAutomaticCollationTableGet(array $witnessInfo) {
         
@@ -403,8 +395,8 @@ class SiteControllerTest extends TestCase {
         $lang = $witnessInfo['lang'];
         $editor1 = $witnessInfo['editors'][0];
 
-        self::$ci['userInfo'] = ['id' => $editor1];
-        self::$dm->userManager->allowUserTo($editor1, 'act-view-experimental-data');
+        self::$ci->set('user_info', ['id' => $editor1]);
+        self::$dataManager->userManager->allowUserTo($editor1, 'act-view-experimental-data');
         
         $collationTableControllerObject = new SiteCollationTable(self::$ci);
         
@@ -413,10 +405,9 @@ class SiteControllerTest extends TestCase {
                 ->withAttribute('work', $work)
                 ->withAttribute('chunk', $chunkNo) 
                 ->withAttribute('lang', 'bad'  . $lang);
-        $inputResp1 = new \Slim\Http\Response();
+
         
-        $response1 = $collationTableControllerObject->automaticCollationPageGet($request1, $inputResp1, 
-                NULL);
+        $response1 = $collationTableControllerObject->automaticCollationPageGet($request1, new Response(), []);
         $this->assertEquals(200, $response1->getStatusCode());
         
         
@@ -424,57 +415,51 @@ class SiteControllerTest extends TestCase {
                 ->withAttribute('work', $work)
                 ->withAttribute('chunk', $chunkNo) 
                 ->withAttribute('lang', $lang);
-        $inputResp2 = new \Slim\Http\Response();
-        
-        
+
         // a partial collation (with bad doc ids)
         $docList = '45/24/34/35';
         
-        $response2 = $collationTableControllerObject->automaticCollationPageGet($request2, $inputResp2, 
+        $response2 = $collationTableControllerObject->automaticCollationPageGet($request2, new Response(),
                 [ 'docs' => $docList, 'ignore_punct' => 'whatever']);
         $this->assertEquals(200, $response2->getStatusCode());
         
         
-        $response3 = $collationTableControllerObject->automaticCollationPageGet($request2, $inputResp2, 
-                NULL);
+        $response3 = $collationTableControllerObject->automaticCollationPageGet($request2, new Response(), []);
         $this->assertEquals(200, $response3->getStatusCode());
         
     }
-    
-    
+
+
     /**
      * @depends testChunkAndWitnessPage
+     * @param array $witnessInfo
      */
     public function testAutomaticCollationTableCustom(array $witnessInfo) {
         
-        $work = $witnessInfo['work'];
-        $chunkNo = $witnessInfo['chunk'];
-        $lang = $witnessInfo['lang'];
+//        $work = $witnessInfo['work'];
+//        $chunkNo = $witnessInfo['chunk'];
+//        $lang = $witnessInfo['lang'];
         $editor1 = $witnessInfo['editors'][0];
 
-        self::$ci['userInfo'] = ['id' => $editor1];
-        self::$dm->userManager->allowUserTo($editor1, 'act-view-experimental-data');
+        self::$ci->set('user_info', ['id' => $editor1]);
+        self::$dataManager->userManager->allowUserTo($editor1, 'act-view-experimental-data');
         
         $collationTableControllerObject = new SiteCollationTable(self::$ci);
         
         // no data
         $request1 =  new ServerRequest('POST', '');
-        $inputResp = new Response();
-        $response1 = $collationTableControllerObject->automaticCollationPageCustom($request1, $inputResp, NULL);
-        $this->assertEquals(200, $response1->getStatusCode());
-        $this->assertNotFalse(strpos($response1->getBody(), SiteCollationTable::ERROR_SIGNATURE_PREFIX . SiteCollationTable::ERROR_NO_DATA));
-        
+        $response1 = $collationTableControllerObject->automaticCollationPageCustom($request1, new Response(), []);
+        $this->assertGoodResponse($response1, SiteCollationTable::ERROR_SIGNATURE_PREFIX . SiteCollationTable::ERROR_NO_DATA);
+
         // No options in data
         $request2 = $this->requestWithData($request1, []);
-        $response2 = $collationTableControllerObject->automaticCollationPageCustom($request2, $inputResp, NULL);
-        $this->assertEquals(200, $response2->getStatusCode());
-        $this->assertNotFalse(strpos($response2->getBody(), SiteCollationTable::ERROR_SIGNATURE_PREFIX . SiteCollationTable::ERROR_NO_OPTIONS));
+        $response2 = $collationTableControllerObject->automaticCollationPageCustom($request2, new Response(), []);
+        $this->assertGoodResponse($response2, SiteCollationTable::ERROR_SIGNATURE_PREFIX . SiteCollationTable::ERROR_NO_OPTIONS);
         
         // Incomplete options
         $request3 = $this->requestWithData($request1, ['options' => []]);
-        $response3 = $collationTableControllerObject->automaticCollationPageCustom($request3, $inputResp, NULL);
-        $this->assertEquals(200, $response3->getStatusCode());
-        $this->assertNotFalse(strpos($response3->getBody(), SiteCollationTable::ERROR_SIGNATURE_PREFIX . SiteCollationTable::ERROR_MISSING_REQUIRED_OPTION));
+        $response3 = $collationTableControllerObject->automaticCollationPageCustom($request3, new Response(), []);
+        $this->assertGoodResponse($response3, SiteCollationTable::ERROR_SIGNATURE_PREFIX . SiteCollationTable::ERROR_MISSING_REQUIRED_OPTION);
         
         
         // Enough options to go into the common collation table methods (tested above)
@@ -486,13 +471,14 @@ class SiteControllerTest extends TestCase {
             'partialCollation' => true,
             'witnesses' => [3,4,5]
         ]]);
-        $response4 = $collationTableControllerObject->automaticCollationPageCustom($request4, $inputResp, NULL);
+        $response4 = $collationTableControllerObject->automaticCollationPageCustom($request4, new Response(), NULL);
         $this->assertEquals(200, $response4->getStatusCode());
     }
-    
-    
+
+
     /**
      * @depends testChunkAndWitnessPage
+     * @param array $witnessInfo
      */
     public function testAutomaticCollationTablePreset(array $witnessInfo) {
         
@@ -501,8 +487,8 @@ class SiteControllerTest extends TestCase {
         $lang = $witnessInfo['lang'];
         $editor1 = $witnessInfo['editors'][0];
 
-        self::$ci['userInfo'] = ['id' => $editor1];
-        self::$dm->userManager->allowUserTo($editor1, 'act-view-experimental-data');
+        self::$ci->set('user_info', ['id' => $editor1]);
+        self::$dataManager->userManager->allowUserTo($editor1, 'act-view-experimental-data');
         
         $collationTableControllerObject = new SiteCollationTable(self::$ci);
         
@@ -512,41 +498,48 @@ class SiteControllerTest extends TestCase {
                 ->withAttribute('chunk', $chunkNo) 
                 ->withAttribute('preset', 131312321);
         
-        $inputResp1 = new \Slim\Http\Response();
+
         
-        $response1 = $collationTableControllerObject->automaticCollationPagePreset($request1, $inputResp1,  NULL);
-        $this->assertEquals(200, $response1->getStatusCode());
-        $this->assertNotFalse(strpos($response1->getBody(), SiteCollationTable::ERROR_SIGNATURE_PREFIX . SiteCollationTable::ERROR_UNKNOWN_PRESET));
+        $response1 = $collationTableControllerObject->automaticCollationPagePreset($request1, new Response(),  []);
+        $this->assertGoodResponse($response1, SiteCollationTable::ERROR_SIGNATURE_PREFIX . SiteCollationTable::ERROR_UNKNOWN_PRESET);
+
         
-        $presetManager = self::$ci->sm->getPresetsManager();
-        $pf = new System\PresetFactory();
+        $presetManager = self::$systemManager->getPresetsManager();
+        $pf = new PresetFactory();
         $presetTitle = 'MyTestPreset';
         
-        $preset = $pf->create(System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION, $editor1, $presetTitle, 
+        $preset = $pf->create(ApmSystemManager::TOOL_AUTOMATIC_COLLATION, $editor1, $presetTitle,
                 ['lang' => $lang, 'ignorePunctuation' => true, 'witnesses' => [1,3,4]]);
         $this->assertTrue($presetManager->addPreset($preset));
         
-        $presetId = $presetManager->getPreset(System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION, $editor1, $presetTitle)->getId();
+        $presetId = $presetManager->getPreset(ApmSystemManager::TOOL_AUTOMATIC_COLLATION, $editor1, $presetTitle)->getId();
         
         $request2 = (new ServerRequest('GET', ''))
                 ->withAttribute('work', $work)
                 ->withAttribute('chunk', $chunkNo) 
                 ->withAttribute('preset', $presetId);
-        $inputResp2 = new \Slim\Http\Response();
+
         
-        $response2 = $collationTableControllerObject->automaticCollationPagePreset($request2, $inputResp2,  NULL);
+        $response2 = $collationTableControllerObject->automaticCollationPagePreset($request2, new Response(),  []);
         $this->assertEquals(200, $response2->getStatusCode());
         
     }
-    
-    
-    public function requestWithData($request, $data) {
+
+    public function requestWithData(ServerRequest $request, $data) : ServerRequest {
         return $request->withBody(
-            Psr7\stream_for(
+            stream_for(
                 http_build_query(['data' => json_encode($data)])
             )
         );
 
+    }
+
+    public function assertGoodResponse(ResponseInterface $response, string $signature = '') {
+        $this->assertEquals(200, $response->getStatusCode());
+        $response->getBody()->rewind();
+        $contents = $response->getBody()->getContents();
+        $this->assertNotEquals('', $contents);
+        $this->assertStringContainsString($signature, $contents);
     }
     
 }

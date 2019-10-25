@@ -21,6 +21,7 @@
 namespace APM\Presets;
 
 use DataTable\DataTable;
+use InvalidArgumentException;
 
 /**
  * An implementation of a PresetManager using a DataTable as
@@ -114,18 +115,19 @@ class DataTablePresetManager extends PresetManager {
     }
 
     /**
-     * Returns the Preset identified by $tool, $userId and $title or
-     * false if there's no such preset in the system.
-     * 
+     * Returns the Preset identified by $tool, $userId and $title
+     * Throws an exception is the preset is not found
+     *
      * @param string $tool
      * @param int $userId
      * @param string $title
-     * @return Preset|boolean
+     * @return Preset
+     * @throws InvalidArgumentException
      */
     public function getPreset(string $tool, int $userId, string $title) : Preset {
         $row = $this->getPresetRow($tool, $userId, $title);
         if ($row === false) {
-            return false;
+            throw $this->newPresetNotFoundException();
         }
         return $this->createPresetFromDataTableRow($row);
     }

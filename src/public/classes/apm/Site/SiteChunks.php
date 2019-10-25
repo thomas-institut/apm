@@ -38,7 +38,7 @@ use AverroesProject\ItemStream\ItemStream;
  */
 class SiteChunks extends SiteController
 {
-    public function chunksPage(Request $request, Response $response, $next)
+    public function chunksPage(Request $request, Response $response)
     {
        
         $dataManager = $this->dataManager;

@@ -58,7 +58,7 @@ class SiteCollationTable extends SiteController
     const TEMPLATE_COLLATION_TABLE = 'collationtable.twig';
     
     
-    public function quickCollationPage(Request $request, Response $response, $next)
+    public function quickCollationPage(Request $request, Response $response)
     {
         return $this->renderPage($response, self::TEMPLATE_QUICK_COLLATION, [
             'contactName' => $this->config['support_contact_name'],

@@ -48,7 +48,14 @@ abstract class PresetManagerTest extends TestCase {
 
         $this->assertCount(0, $pm->getPresetsByToolAndKeys('any', []));
         $this->assertCount(0, $pm->getPresetsByToolUserIdAndKeys('any', -1, []));
-        $this->assertFalse($pm->getPreset('anytool', 1000, 'any title'));
+        $exceptionCaught = false;
+        try{
+            $preset = $pm->getPreset('anytool', 1000, 'any title');
+        }
+        catch (\InvalidArgumentException $e) {
+            $exceptionCaught = true;
+        }
+        $this->assertTrue($exceptionCaught);
         
         $pr1 = new Preset($testTool01, $testUserId01, 'pr1', $testKeys, $testData);
         $pr2 = new Preset($testTool01, $testUserId02, 'pr2', $testKeys, $testData);

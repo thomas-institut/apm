@@ -38,7 +38,7 @@ use AverroesProject\Profiler\ApmProfiler;
 class SiteDocuments extends SiteController
 {
 
-    public function documentsPage(Request $request, Response $response, $next)
+    public function documentsPage(Request $request, Response $response)
     {
         $profiler = new ApmProfiler('documentsPage', $this->dataManager);
         $dataManager = $this->dataManager;
@@ -78,7 +78,7 @@ class SiteDocuments extends SiteController
         ]);
     }
     
-    public function showDocPage(Request $request, Response $response, $next)
+    public function showDocPage(Request $request, Response $response)
     {
         
         $docId = $request->getAttribute('id');
@@ -121,7 +121,7 @@ class SiteDocuments extends SiteController
         ]);
     }
     
-    public function newDocPage(Request $request, Response $response, $next)
+    public function newDocPage(Request $request, Response $response)
     {
      
         if (!$this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'create-new-documents')){
@@ -161,7 +161,7 @@ class SiteDocuments extends SiteController
         ]);
     }
     
-    public function editDocPage(Request $request, Response $response, $next)
+    public function editDocPage(Request $request, Response $response)
     {
         if (!$this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'edit-documents')){
             $this->logger->debug("User " . $this->userInfo['id'] . ' tried to edit a document but is not allowed to do it');
@@ -226,7 +226,7 @@ class SiteDocuments extends SiteController
         
     }
     
-    public function defineDocPages(Request $request, Response $response, $next)
+    public function defineDocPages(Request $request, Response $response)
     {
         $profiler = new ApmProfiler('defineDocPages', $this->dataManager);
         

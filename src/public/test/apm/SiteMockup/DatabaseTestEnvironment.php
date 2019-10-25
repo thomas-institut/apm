@@ -21,6 +21,7 @@
 namespace APM;
 require "../vendor/autoload.php";
 
+use APM\System\SystemManager;
 use AverroesProject\Data\DataManager;
 use APM\System\ApmSystemManager;
 use DI\ContainerBuilder;
@@ -41,12 +42,17 @@ class DatabaseTestEnvironment {
     protected $container;
     
     protected $dataManager;
-    
+    /**
+     * @var ApmSystemManager
+     */
+    protected $systemManager;
+
     public function __construct($apmTestConfig) {
         $this->config = $this->createOptionsArray($apmTestConfig);
         $this->dbConn = false;
         $this->container = false;
         $this->dataManager = false;
+        $this->systemManager = false;
     }
     
     public function getPdo()
@@ -67,9 +73,13 @@ class DatabaseTestEnvironment {
     
     
     
-    public function getDataManager()
+    public function getDataManager() : DataManager
     {   
-        return $this->container->get('dataManager');
+        return $this->getContainer()->get('dataManager');
+    }
+
+    public function getSystemManager() : ApmSystemManager {
+        return $this->getContainer()->get('systemManager');
     }
     
     
@@ -100,7 +110,7 @@ EOD;
     }
 
     public function setUserId($userId) {
-        $this->container->set('userId', $userId);
+        $this->getContainer()->set('userId', $userId);
 
     }
     
@@ -110,9 +120,14 @@ EOD;
         if ($this->container !== false) {
             return $this->container;
         }
-        
-        
+
         $systemManager = new ApmSystemManager($this->config);
+
+        if ($systemManager->fatalErrorOccurred()) {
+            throw new \Exception($systemManager->getErrorMsg());
+        }
+
+        $this->systemManager = $systemManager;
         
         $config = $systemManager->getConfig();
         

@@ -25,8 +25,6 @@ use PHPUnit\Framework\TestCase;
 
 use AverroesProjectToApm\ItemStream;
 use AverroesProjectToApm\ItemStreamWitness;
-use AverroesProject\TxText\Item as APItem;
-use AverroesProject\ColumnElement\Element;
 
 /**
  * Description of ItemStreamWitnessTest

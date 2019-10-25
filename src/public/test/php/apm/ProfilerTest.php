@@ -18,7 +18,7 @@
  *  
  */
 
-namespace AverroesProject;
+namespace APM;
 require "autoload.php";
 
 use PHPUnit\Framework\TestCase;

@@ -18,15 +18,18 @@
  *  
  */
 
-namespace AverroesProject;
+namespace APM;
 require "autoload.php";
 
+
+use AverroesProject\Algorithm\MyersDiff;
+use AverroesProject\ColumnElement\Line;
 use PHPUnit\Framework\TestCase;
 use AverroesProject\TxText\Item;
 use AverroesProject\TxText\ItemArray;
 use AverroesProject\TxText\Text;
 use AverroesProject\TxText\Rubric;
-use AverroesProject\TxText\Abbreviation;
+
 /**
  * Description of ItemArrayTest
  *
@@ -39,7 +42,7 @@ class ItemArrayTest extends TestCase
     {
         $ia = [];
         $this->expectException(\InvalidArgumentException::class);
-        ItemArray::addItem($ia, new ColumnElement\Line());
+        ItemArray::addItem($ia, new Line());
     }
 
     public function testAddBadItem2()
@@ -54,7 +57,7 @@ class ItemArrayTest extends TestCase
         $ia = [];
         
         for ($i = 0; $i < 10; $i++) {
-            $item = new TxText\Text($i+100, $i+1, "Text" . $i);
+            $item = new Text($i+100, $i+1, "Text" . $i);
             ItemArray::addItem($ia, $item);
             $this->assertSame($item, $ia[$i]);
         }
@@ -65,7 +68,7 @@ class ItemArrayTest extends TestCase
     {
         $ia = [];
         for ($i = 0; $i < 10; $i++) {
-            $item = new TxText\Text($i+100, -1, "Text" . $i);
+            $item = new Text($i+100, -1, "Text" . $i);
             ItemArray::addItem($ia, $item);
             $this->assertSame($item, $ia[$i]);
             
@@ -75,9 +78,9 @@ class ItemArrayTest extends TestCase
     
     public function testAddToObject()
     {
-        $line = new ColumnElement\Line();
+        $line = new Line();
         for ($i = 0; $i < 10; $i++) {
-            $item = new TxText\Text($i+100, -1, "Text" . $i);
+            $item = new Text($i+100, -1, "Text" . $i);
             ItemArray::addItem($line->items, $item);
             $this->assertSame($item, $line->items[$i]);
         }
@@ -92,7 +95,7 @@ class ItemArrayTest extends TestCase
        $ia = [];
         
         for ($i = 0; $i < 10; $i++) {
-            $item = new TxText\Text($i+100, $i+1000, "Text" . $i . '-');
+            $item = new Text($i+100, $i+1000, "Text" . $i . '-');
             ItemArray::addItem($ia, $item, true);
             $this->assertSame($item, $ia[$i]);
         }
@@ -100,11 +103,12 @@ class ItemArrayTest extends TestCase
         
         return $ia;
     }
-    
+
     /**
      * @depends testAddOrderedItems
+     * @param array $ia
      */
-    public function testSetLang($ia) 
+    public function testSetLang(array $ia)
     {
         foreach($ia as $item) {
             $this->assertEquals(Item::LANG_NOT_SET, $item->lang);
@@ -124,11 +128,12 @@ class ItemArrayTest extends TestCase
             $this->assertEquals('he', $item->lang);
         }
     }
-    
+
     /**
      * @depends testAddOrderedItems
+     * @param array  $ia
      */
-    public function testSetHandId($ia) 
+    public function testSetHandId(array $ia)
     {
         foreach($ia as $item) {
             $this->assertEquals(Item::ID_NOT_SET, $item->handId);
@@ -153,8 +158,8 @@ class ItemArrayTest extends TestCase
     {
        $ia = [];
         
-        ItemArray::addItem($ia, new TxText\Text(100, Item::SEQ_NOT_SET, "Hello "));
-        ItemArray::addItem($ia, new TxText\Text(101, Item::SEQ_NOT_SET, "World"));
+        ItemArray::addItem($ia, new Text(100, Item::SEQ_NOT_SET, "Hello "));
+        ItemArray::addItem($ia, new Text(101, Item::SEQ_NOT_SET, "World"));
         
         $text = ItemArray::getText($ia);
         $this->assertEquals('Hello World', $text);
@@ -180,7 +185,7 @@ class ItemArrayTest extends TestCase
        $ia=[];
         
         for ($i = 0; $i < 10; $i++) {
-            $item = new TxText\Text($i+100, $i+1000, "Text" . $i . '-');
+            $item = new Text($i+100, $i+1000, "Text" . $i . '-');
             ItemArray::addItem($ia, $item, true);
             $this->assertSame($item, $ia[$i]);
         }
@@ -226,7 +231,7 @@ class ItemArrayTest extends TestCase
         
         $seq = 0;
         foreach ($script as $command) {
-            $this->assertEquals(Algorithm\MyersDiff::KEEP, $command[1]);
+            $this->assertEquals(MyersDiff::KEEP, $command[1]);
             $this->assertEquals($seq, $command[2]);
             $seq++;
         }
@@ -247,11 +252,11 @@ class ItemArrayTest extends TestCase
         $this->assertCount(10, $script2);
         // First five should be deletes, next 5 should be inserts
         for ($i = 0; $i < 5; $i++) {
-            $this->assertEquals(Algorithm\MyersDiff::DELETE, $script2[$i][1]);
+            $this->assertEquals(MyersDiff::DELETE, $script2[$i][1]);
             $this->assertEquals($i,$script2[$i][0]);
         }
         for ($i = 5; $i < 10; $i++) {
-            $this->assertEquals(Algorithm\MyersDiff::INSERT, $script2[$i][1]);
+            $this->assertEquals(MyersDiff::INSERT, $script2[$i][1]);
             $this->assertEquals($i-5,$script2[$i][0]);
             $this->assertEquals($i-5,$script2[$i][2]);
         }
@@ -265,12 +270,12 @@ class ItemArrayTest extends TestCase
         ItemArray::addItem($newItemArray3, new Text(0, 0, 'friend '), true);
         
         $expectedCommandSequence = [ 
-            Algorithm\MyersDiff::KEEP,
-            Algorithm\MyersDiff::KEEP,
-            Algorithm\MyersDiff::DELETE,
-            Algorithm\MyersDiff::KEEP,
-            Algorithm\MyersDiff::INSERT,
-            Algorithm\MyersDiff::KEEP
+            MyersDiff::KEEP,
+            MyersDiff::KEEP,
+            MyersDiff::DELETE,
+            MyersDiff::KEEP,
+            MyersDiff::INSERT,
+            MyersDiff::KEEP
         ];
         $script3 = ItemArray::getEditScript(
             $itemArray, 

@@ -21,7 +21,6 @@
 namespace APM;
 require "autoload.php";
 
-use APM\System\SystemManager;
 use AverroesProject\Data\DataManager;
 use APM\System\ApmSystemManager;
 use DI\ContainerBuilder;
@@ -132,11 +131,10 @@ EOD;
         $config = $systemManager->getConfig();
         
         
-        $dbh = $systemManager->getDbConnection();
+        $dbConnection = $systemManager->getDbConnection();
         $hm = $systemManager->getHookManager();
         $logger = $systemManager->getLogger();
-        $cr = $systemManager->getCollationEngine();
-        $dataManager = new DataManager($dbh, $systemManager->getTableNames(), $logger, $hm, $config['langCodes']);
+        $dataManager = new DataManager($dbConnection, $systemManager->getTableNames(), $logger, $hm, $config['langCodes']);
 
         $builder = new ContainerBuilder();
         $builder->addDefinitions([

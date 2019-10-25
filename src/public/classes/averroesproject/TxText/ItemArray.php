@@ -64,10 +64,10 @@ class ItemArray
 
     /**
      * Returns the textual representation of a whole Item array
-     * @param type $itemArray
+     * @param array $itemArray
      * @return string
      */
-    public static function getText($itemArray)
+    public static function getText(array $itemArray)
     {
         $text = '';
         foreach ($itemArray as $item) {

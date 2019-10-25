@@ -18,9 +18,10 @@
  *  
  */
 
-namespace AverroesProject;
+namespace APM;
 require "autoload.php";
 
+use AverroesProject\EditorialNote;
 use PHPUnit\Framework\TestCase;
 /**
  * Description of ItemsTest

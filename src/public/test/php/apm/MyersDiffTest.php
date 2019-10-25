@@ -18,7 +18,7 @@
  *  
  */
 
-namespace AverroesProject;
+namespace APM;
 
 require "autoload.php";
 
@@ -26,7 +26,7 @@ use AverroesProject\Algorithm\MyersDiff;
 use PHPUnit\Framework\TestCase;
 
 use AverroesProject\TxText\Text;
-use AverroesProject\TxText\Abbreviation;
+
 
 /**
  * Description of MyersDiffTest

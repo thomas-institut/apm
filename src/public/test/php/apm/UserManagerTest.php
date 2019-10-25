@@ -18,7 +18,7 @@
  *  
  */
 
-namespace AverroesProject;
+namespace APM;
 
 require "autoload.php";
 
@@ -84,11 +84,13 @@ class UserManagerTest extends TestCase {
         
         return $um;
     }
-     
+
     /**
      * @depends testUserCreation
+     * @param UserManager $um
+     * @return UserManager
      */
-    public function testExistentUserSearches($um)
+    public function testExistentUserSearches(UserManager $um)
     {
         // random searches, existent users
         
@@ -109,11 +111,13 @@ class UserManagerTest extends TestCase {
         }
         return $um;
     }
-    
+
     /**
      * @depends testUserCreation
+     * @param UserManager $um
+     * @return UserManager
      */
-    public function testNonExistentUserSearches($um)
+    public function testNonExistentUserSearches(UserManager $um)
     {
         // random searches, non existent users
         for ($i = 0 ; $i < $this->numUsers; $i++) {

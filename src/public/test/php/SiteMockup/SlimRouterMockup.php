@@ -25,7 +25,6 @@ use InvalidArgumentException;
 use Psr\Http\Message\UriInterface;
 use RuntimeException;
 use Slim\Interfaces\RouteParserInterface;
-use Slim\Routing\RouteParser;
 
 /**
  * Description of SlimRouterMockup

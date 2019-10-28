@@ -22,13 +22,13 @@ namespace APM\Core\Token;
 
 use APM\Core\Address\IntRange;
 /**
- * Description of Tokenizer
+ * Helper class to
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 class StringTokenizer {
     
-    public static function mbStringToArray ($string) { 
+    private static function mbStringToArray ($string) {
         $strlen = mb_strlen($string); 
         $array = [];
         while ($strlen) { 
@@ -43,27 +43,26 @@ class StringTokenizer {
         return mb_substr($theString, $range->getStart(), $range->getLength());
     }
     
-    private static function createToken($type, $text, $index1, $index2, $l1, $l2)
+    private static function createToken($type, $text, $index1, $index2, $l1, $l2) : StringToken
     {
-        /* @var $newToken StringToken */
         $newToken = new StringToken($type, $text, $index1, $l1, $l2);
         // Is there a case in which $index2 != $index + strlen($text) ? 
         // if so, this takes care of it
         $newToken->setCharRange(IntRange::RangeFromStartEnd($index1, $index2));
         return $newToken;
     }
-    
+
     /**
-     * Splits the given string into an array 
+     * Splits the given string into an array
      * of text tokens.
-     * 
+     *
      * Text tokens can be of the following kinds:
      *  - whitespace
      *  - punctuation
      *  - words
-     * 
+     *
      * @param string $theText
-     * @returns array of tokens
+     * @return StringToken[]
      */
     public static function getTokensFromString(string $theText) : array
     {

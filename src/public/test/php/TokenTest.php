@@ -40,10 +40,40 @@ class TokenTest extends TestCase {
       $token = new Token(Token::TOKEN_WORD, 'txt', 'text');
       
       $this->assertEquals('text', $token->getNormalization());
-      
-      $token->setType(20000);
-      $this->assertEquals(Token::TOKEN_UNDEFINED, $token->getType());
-      
-        
+
+
+        $exceptionCaught = false;
+        $exceptionCode = 0;
+        try {
+            $token->setType(20000);
+        } catch (\InvalidArgumentException $e) {
+            $exceptionCaught = true;
+            $exceptionCode = $e->getCode();
+        }
+        $this->assertTrue($exceptionCaught);
+        $this->assertEquals(Token::ERROR_INVALID_TYPE, $exceptionCode);
+
+      $exceptionCaught = false;
+      $exceptionCode = 0;
+      try {
+          $token->setText('Text with spaces');
+      } catch (\InvalidArgumentException $e) {
+          $exceptionCaught = true;
+          $exceptionCode = $e->getCode();
+      }
+      $this->assertTrue($exceptionCaught);
+      $this->assertEquals(Token::ERROR_WHITESPACE_IN_TEXT, $exceptionCode);
+
+        $exceptionCaught = false;
+        $exceptionCode = 0;
+        try {
+            $token->setNormalization('Text with spaces');
+        } catch (\InvalidArgumentException $e) {
+            $exceptionCaught = true;
+            $exceptionCode = $e->getCode();
+        }
+        $this->assertTrue($exceptionCaught);
+        $this->assertEquals(Token::ERROR_WHITESPACE_IN_TEXT, $exceptionCode);
     }
+
 }

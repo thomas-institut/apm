@@ -27,7 +27,7 @@ use APM\Core\Token\Token;
  * Base class for text witnesses
  * 
  * A witness is associated with a work and with a chunk, both identified
- * as strings, and can be tought of as being composed of an array of textual
+ * as strings, and can be thought of as being composed of an array of textual
  * tokens out of which different views can be constructed. This base class
  * provides a basic plain text view, either normalized or not normalized. 
  * Descendant classes can provide other kinds of views.

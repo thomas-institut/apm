@@ -22,7 +22,7 @@ namespace APM\Core\Token;
 
 use APM\Core\Address\IntRange;
 /**
- * A Token that is part of a string.
+ * A Token whose source is a string, as in a StringWitness
  * 
  * StringToken stores information about the position of its text within the
  * source string: character and line ranges.
@@ -39,8 +39,17 @@ class StringToken extends Token {
     
     /** @var IntRange */
     private $lineRange;
-    
-    
+
+
+    /**
+     * StringToken constructor.
+     *
+     * @param int $type
+     * @param string $t
+     * @param int $startCharIndex
+     * @param int $startLineNumber
+     * @param int $endLineNumber
+     */
     public function __construct(int $type, string $t, int $startCharIndex, 
             int $startLineNumber, int $endLineNumber = -1) {
         parent::__construct($type, $t);
@@ -51,24 +60,39 @@ class StringToken extends Token {
         $this->lineRange = 
                 IntRange::RangeFromStartEnd($startLineNumber, $endLineNumber);
     }
-    
-    public function getCharRange() {
+
+    /**
+     * @return IntRange
+     */
+    public function getCharRange() : IntRange {
         return $this->charRange;
     }
 
-    public function setCharRange(IntRange $r) {
+    /**
+     * @param IntRange $r
+     */
+    public function setCharRange(IntRange $r) : void {
         $this->charRange = $r;
     }
 
-    public function getLineRange() {
+    /**
+     * @return IntRange
+     */
+    public function getLineRange() : IntRange {
         return $this->lineRange;
     }
-    
-    public function setLineRange(IntRange $r) {
+
+    /**
+     * @param IntRange $r
+     */
+    public function setLineRange(IntRange $r) : void {
         $this->lineRange = $r;
     }
-    
-    public function getLineNumber() {
+
+    /**
+     * @return int
+     */
+    public function getLineNumber() : int {
         return $this->lineRange->getStart();
     }
    

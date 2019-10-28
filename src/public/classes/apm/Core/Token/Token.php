@@ -20,6 +20,8 @@
 
 namespace APM\Core\Token;
 
+use InvalidArgumentException;
+
 /**
  * A textual token from a witness.
  * 
@@ -37,15 +39,18 @@ namespace APM\Core\Token;
  */
 class Token {
     
-    const TOKEN_UNDEFINED = 0;
+    const TOKEN_EMPTY = 0;
     const TOKEN_WORD = 1;
     const TOKEN_WHITESPACE = 2;
     const TOKEN_PUNCT = 3;
-    const TOKEN_EMPTY = 4;
+    const TOKEN_UNDEFINED = 4;
     
-    const __MAX_TYPE = 4;
+    private  const __MAX_TYPE = 4;
     
     const DEFAULT_WHITESPACE_NORMALIZATION = ' ';
+
+    const ERROR_WHITESPACE_IN_TEXT = 101;
+    const ERROR_INVALID_TYPE = 102;
     
     
     /** @var int */
@@ -76,7 +81,7 @@ class Token {
     /**
      * Creates an empty token
      * 
-     * @return \APM\Core\Token\Token
+     * @return Token
      */
     static function emptyToken() {
         return new Token(self::TOKEN_EMPTY, '');
@@ -86,39 +91,75 @@ class Token {
      * Returns true if the token is empty
      * @return bool
      */
-    public function isEmpty() {
+    public function isEmpty() : bool {
         return $this->type===self::TOKEN_EMPTY;
     }
-    
-    public function setText(string $t) {
-        // TODO: check that there's no whitespace in the given text
-        $this->text = $t;
+
+    /**
+     * Set the token's text.
+     *
+     * @param string $str
+     * @throws InvalidArgumentException if there is whitespace in the given string
+     */
+    public function setText(string $str) : void {
+        if ($this->type === self::TOKEN_WORD && preg_match('/\s/', $str)) {
+            throw new InvalidArgumentException("Text must not have whitespace inside, given '$str'", self::ERROR_WHITESPACE_IN_TEXT);
+        }
+        $this->text = $str;
     }
-    
-    public function getText() {
+
+    /**
+     * Return's the token's text
+     *
+     * @return string
+     */
+    public function getText() : string {
         return $this->text;
     }
-    
-    public function getNormalization() {
+
+    /**
+     * Return's the token's normalization, which defaults to the token's text if no
+     * normalization has been set.
+     *
+     * @return string
+     */
+    public function getNormalization() : string {
         if ($this->normalizedText === '') {
             return $this->getText();
         }
         return $this->normalizedText;
     }
-    
-    public function setNormalization(string $n) {
-        $this->normalizedText = $n;
+
+    /**
+     * Sets the token's normalization
+     *
+     * @param string $str
+     * @throws InvalidArgumentException  if there is whitespace in the given string
+     */
+    public function setNormalization(string $str) : void {
+        if ($this->type === self::TOKEN_WORD && preg_match('/\s/', $str)) {
+            throw new InvalidArgumentException("Text must not have whitespace inside, given '$str'", self::ERROR_WHITESPACE_IN_TEXT);
+        }
+        $this->normalizedText = $str;
     }
-    
-    public function setType(int $t) {
+
+    /**
+     * Sets the token's type
+     * @param int $t
+     */
+    public function setType(int $t) : void {
         if ($t > self::__MAX_TYPE || $t < 0) {
-            $this->type = self::TOKEN_UNDEFINED;
-            return;
+            throw new InvalidArgumentException("Invalid type $t", self::ERROR_INVALID_TYPE);
         }
         $this->type = $t;
     }
-    
-    public function getType() {
+
+    /**
+     * Return's the token's type
+     *
+     * @return int
+     */
+    public function getType() : int {
         return $this->type;
     }
 }

@@ -48,7 +48,7 @@ class IntRange implements Range {
      * 
      * @param int $start
      * @param int $end
-     * @return \AverroesProject\Core\Range
+     * @return IntRange
      * @throws \RangeException
      */
     static public function RangeFromStartEnd(int $start, int $end) {

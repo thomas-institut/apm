@@ -23,7 +23,7 @@ namespace APM\Core\Token;
 use APM\Core\Address\PointRange;
 
 /**
- * A token in a transcription
+ * A token in a transcription witness
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */

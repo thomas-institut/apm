@@ -20,8 +20,10 @@
 
 namespace APM\Core\Witness;
 
+use APM\Core\Token\StringToken;
 use APM\Core\Token\StringTokenizer;
 use APM\Core\Token\Token;
+use InvalidArgumentException;
 
 /**
  * A Witness whose source is a single text string.
@@ -31,19 +33,33 @@ use APM\Core\Token\Token;
 class StringWitness extends Witness {
     
     private $sourceString;
-    
+
+    /**
+     * StringWitness constructor.
+     * @param string $work
+     * @param string $chunk
+     * @param string $text
+     */
     public function __construct(string $work, string $chunk, string $text) {
         parent::__construct($work, $chunk);
         if ($text === '') {
-            throw new \InvalidArgumentException('String cannot be empty');
+            throw new InvalidArgumentException('String cannot be empty');
         }
         $this->sourceString = $text;
     }
-    
+
+    /**
+     * @return StringToken[]
+     */
     public function getTokens() : array {
         return StringTokenizer::getTokensFromString($this->sourceString);
     }
-    
+
+    /**
+     * Returns the witness' source string
+     *
+     * @return string
+     */
     public function getSourceString() : string {
         return $this->sourceString;
     }

@@ -21,6 +21,7 @@
 namespace APM\Api;
 
 
+use APM\Engine\Engine;
 use AverroesProjectToApm\ItemStream;
 use AverroesProjectToApm\ItemStreamWitness;
 use Exception;
@@ -92,12 +93,13 @@ class ApiCollation extends ApiController
         $collatexOutput = $collationEngine->collate($collatexInput);
         // @codeCoverageIgnoreStart
         // Not worrying about testing CollatexErrors here
-        if ($collatexOutput === false) {
+        if ($collatexOutput === [] && $collationEngine->getErrorCode() !==  Engine::ERROR_NOERROR) {
             $this->logger->error("Quick Collation: error running Collatex",
                         [ 'apiUserId' => $this->apiUserId,
                         'apiError' => ApiController::API_ERROR_COLLATION_ENGINE_ERROR,
-                        'data' => $inputData, 
-                        'collationEngineDetails' => $collationEngine->getRunDetails()
+                        'collatexError' => $collationEngine->getErrorCode(),
+                        'collationEngineDetails' => $collationEngine->getRunDetails(),
+                        'data' => $inputData
                     ]);
             return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_COLLATION_ENGINE_ERROR], 409);
         }

@@ -70,21 +70,21 @@ class Collatex extends CollationEngine {
         $this->reset();
         
         if (!file_exists($this->collatexExecutable)){
-            $this->setError(self::CR_COLLATEX_EXECUTABLE_NOT_FOUND);
+            $this->setError(self::CR_COLLATEX_EXECUTABLE_NOT_FOUND, 'Executable not found');
             return false;
         }
         
         if (!file_exists($this->tempFolder)) {
-            $this->setError(self::CR_TEMP_FOLDER_NOT_FOUND);
+            $this->setError(self::CR_TEMP_FOLDER_NOT_FOUND, 'Temp folder not found');
             return false;
         }
         if (!is_writable($this->tempFolder)) {
-            $this->setError(self::CR_TEMP_FOLDER_NOT_WRITABLE);
+            $this->setError(self::CR_TEMP_FOLDER_NOT_WRITABLE, 'Temp folder not writable');
             return false;
         }
         
         if (!file_exists($this->javaExecutable)) {
-            $this->setError(self::CR_JAVA_EXECUTABLE_NOT_FOUND);
+            $this->setError(self::CR_JAVA_EXECUTABLE_NOT_FOUND, 'Java executable not found');
             return false;
         }
         

@@ -30,6 +30,7 @@ use DataTable\MySqlDataTableWithRandomIds;
 use AverroesProject\Algorithm\MyersDiff;
 use AverroesProject\Algorithm\Utility;
 use APM\Plugin\HookManager;
+use Exception;
 use Monolog\Logger;
 
 use DataTable\MySqlUnitemporalDataTable;
@@ -324,13 +325,25 @@ class DataManager
             return false;
         }
         $this->queryStats->countQuery('select');
-        $pageInfo = $this->pagesDataTable->getRow($pageId);
+        try {
+            $pageInfo = $this->pagesDataTable->getRow($pageId);
+        } catch (Exception $e) {
+            $this->reportException('addNewColumn, get row ' . $pageId, $e);
+            return false;
+        }
+
         $this->queryStats->countQuery('update');
-        $result = $this->pagesDataTable->updateRow([
-            'id' => $pageId,
-            'num_cols' => $pageInfo['num_cols']+1
-        ]);
-        return $result !== false;
+        try {
+            $this->pagesDataTable->updateRow([
+                'id' => $pageId,
+                'num_cols' => $pageInfo['num_cols']+1
+            ]);
+        } catch (Exception $e) {
+            $this->reportException('addNewColumn, updateRow ' . $pageId, $e);
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -356,10 +369,13 @@ class DataManager
     public function getPageInfo(int $pageId)
     {
         $this->queryStats->countQuery('select');
-        $row = $this->pagesDataTable->getRow($pageId);
-        if ($row === false) {
+        try {
+            $row = $this->pagesDataTable->getRow($pageId);
+        } catch (Exception $e) {
+            $this->reportException('getPageInfo ' . $pageId, $e );
             return false;
         }
+
         // Sanitize types!
         $row['id'] = (int) $row['id'];
         $row['page_number'] = (int) $row['page_number'];
@@ -491,14 +507,15 @@ class DataManager
         $this->queryStats->countQuery('update');
         return $this->docsDataTable->updateRow($row) === $docId;
     }
-    
+
     /**
      * Updates the page settings: lang, foliation and type
-     * 
+     *
      * Won't update anything else, e.g., num_cols, page_number, etc.
-     * 
+     *
      * @param int $pageId
      * @param array $settings
+     * @return bool
      */
     function updatePageSettings($pageId, $settings) {
         $row['id'] = $pageId;
@@ -518,8 +535,10 @@ class DataManager
         
         if (isset($settings['type'])) {
             $row['type'] = $settings['type'];
-            $typeInfo = $this->pageTypesTable->getRow($row['type']);
-            if ($typeInfo === false) {
+            try {
+                $typeInfo = $this->pageTypesTable->getRow($row['type']);
+            } catch (Exception $e) {
+                $this->reportException('updatePageSetting, get TypeInfo ' . $row['type'], $e);
                 return false;
             }
         }
@@ -531,7 +550,13 @@ class DataManager
         }
         
         $this->queryStats->countQuery('update');
-        return $this->pagesDataTable->updateRow($row) === $pageId;
+        try {
+            $this->pagesDataTable->updateRow($row);
+        } catch (Exception $e) {
+            $this->reportException('updatePageSetting, updateRow ' . $row['id'], $e);
+            return false;
+        }
+        return true;
     }
     
     /**
@@ -1697,21 +1722,28 @@ class DataManager
         return -1;
     }
     
-    public  function getItemById($itemId)
+    public function getItemById($itemId)
     {
         $this->queryStats->countQuery('select');
-        $row = $this->itemsDataTable->getRow($itemId);
-         if ($row=== false) {
+        try {
+            $row = $this->itemsDataTable->getRow($itemId);
+        } catch(Exception $e) {
+            $this->reportException('getItemById ' . $itemId, $e);
             return false;
         }
+
         return self::createItemObjectFromRow($row);
     }
 
 
     public function getElementById($elementId) {
         $this->queryStats->countQuery('select');
-        $row = $this->elementsDataTable->getRow($elementId);
-        
+
+        try {
+            $row = $this->elementsDataTable->getRow($elementId);
+        } catch (Exception $e) {
+            $this->reportException('getElementById, getRow ' . $elementId, $e);
+        }
         if ($row=== false) {
             return false;
         }
@@ -2465,6 +2497,11 @@ class DataManager
             }
         }
         return $witnessesForLang;
+    }
+
+
+    private function reportException(string $context, Exception $e) {
+        $this->logger->error('Exception caught in ' . $context, [ 'errorCode' => $e->getCode(), 'errorMessage' => $e->getMessage()]);
     }
 
     //  Factory functions

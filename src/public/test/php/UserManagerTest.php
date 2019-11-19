@@ -100,7 +100,6 @@ class UserManagerTest extends TestCase {
                      
             $this->assertTrue($um->userExistsByUserName($someUserName), 
                     $testMsg);
-            $this->assertFalse($um->isRoot($someUserName), $testMsg);
             $theUserId = $um->getUserIdFromUserName($someUserName);
             $this->assertTrue($um->userHasRole($theUserId, 'role1'), 
                     $testMsg);
@@ -128,7 +127,6 @@ class UserManagerTest extends TestCase {
                     $testMsg);
             $theUserId = $um->getUserIdFromUserName($someUserName);
             $this->assertFalse($theUserId);
-            $this->assertFalse($um->isRoot($someUserName), $testMsg);
         }
         return $um;
     }

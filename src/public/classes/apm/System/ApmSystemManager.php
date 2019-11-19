@@ -27,6 +27,7 @@ use APM\System\SettingsManager;
 use APM\Plugin\HookManager;
 
 use DataTable\MySqlDataTable;
+use Exception;
 use InvalidArgumentException;
 use Monolog\Handler\ErrorLogHandler;
 use Monolog\Logger;
@@ -206,16 +207,18 @@ class ApmSystemManager extends SystemManager {
         }
         
         // Set up SettingsManager
-        $settingsTable = new MySqlDataTable($this->dbConn,
+        try {
+            $settingsTable = new MySqlDataTable($this->dbConn,
                 $this->tableNames[self::TABLE_SETTINGS]);
-        if (!$settingsTable->isDbTableValid()) {
+        } catch (Exception $e) {
             // Cannot replicate this in testing, yet
             // @codeCoverageIgnoreStart
-            $this->logAndSetError(self::ERROR_CANNOT_READ_SETTINGS_FROM_DB, 
-                    "Cannot read settings from database"); 
-            return; 
+            $this->logAndSetError(self::ERROR_CANNOT_READ_SETTINGS_FROM_DB,
+                "Cannot read settings from database: [ " . $e->getCode() . '] ' . $e->getMessage());
+            return;
             // @codeCoverageIgnoreEnd
         }
+
         $this->settingsMgr = new SettingsManager($settingsTable);
         
         // Check that the database is up to date
@@ -336,9 +339,14 @@ class ApmSystemManager extends SystemManager {
         }
         
         $logger = new Logger($this->config[self::CFG_LOG_APPNAME]);
-        
-        $logStream = new StreamHandler($this->config[self::CFG_LOG_FILENAME], 
+
+        try {
+            $logStream = new StreamHandler($this->config[self::CFG_LOG_FILENAME],
                 $loggerLevel);
+        } catch (Exception $e) {
+            // TODO: Handle errors properly!
+            return $logger;
+        }
         $logger->pushHandler($logStream);
         
         if ($this->config[self::CFG_LOG_IN_PHP_ERROR_HANDLER]) {

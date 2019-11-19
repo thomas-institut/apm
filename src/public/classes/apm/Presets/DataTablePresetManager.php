@@ -21,6 +21,7 @@
 namespace APM\Presets;
 
 use DataTable\DataTable;
+use Exception;
 use InvalidArgumentException;
 
 /**
@@ -197,12 +198,12 @@ class DataTablePresetManager extends PresetManager {
     }
     
     public function getPresetById(int $id) {
-        $row = $this->dataTable->getRow($id);
-        
-        if ($row === false) {
+        try {
+            $row = $this->dataTable->getRow($id);
+        } catch (Exception $e) {
+            // TODO: properly report this error
             return false;
         }
-        
         return $this->createPresetFromDataTableRow($row);
     }
     

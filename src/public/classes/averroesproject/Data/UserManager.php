@@ -20,7 +20,10 @@
 
 namespace AverroesProject\Data;
 
+use DataTable\DataTable;
 use DataTable\InMemoryDataTable;
+use Exception;
+use Monolog\Logger;
 
 
 /**
@@ -80,10 +83,13 @@ class UserManager
      * Initializes UserManager with the given data tables.
      * If no tables are given, empty InMemoryDataTables are used.
      * The constructor does not check that the given data tables
-     * are properly set up. 
-     * 
+     * are properly set up.
+     *
      * @param DataTable $ut
      * @param DataTable $rt
+     * @param DataTable $pt
+     * @param DataTable $tt
+     * @param Logger $logger
      */
     public function __construct($ut = NULL, $rt = NULL, $pt = NULL, $tt = NULL, $logger = NULL)
     {
@@ -107,7 +113,7 @@ class UserManager
      * @param int $userId
      * @return boolean
      */
-    public function userExistsById($userId)
+    public function userExistsById(int $userId) : bool
     {
         return $this->getUsernameFromUserId($userId) !== false;
     }
@@ -118,7 +124,7 @@ class UserManager
      * @param string $userName
      * @return boolean
      */
-    public function userExistsByUserName($userName)
+    public function userExistsByUserName(string $userName)
     {
         return $this->getUserIdFromUserName($userName) !== false;
     }
@@ -130,9 +136,9 @@ class UserManager
      * @param int $userId
      * @return string
      */
-    public function getUsernameFromUserId($userId)
+    public function getUsernameFromUserId(int $userId)
     {
-        if ($this->userTable->rowExistsById($userId)) {
+        if ($this->userTable->rowExists($userId)) {
             return $this->userTable->getRow($userId)['username'];
         }
         return false;
@@ -144,27 +150,31 @@ class UserManager
      * @param string $userName
      * @return int
      */
-    public function getUserIdFromUserName($userName)
+    public function getUserIdFromUserName(string $userName)
     {
-        return $this->userTable->getIdForKeyValue('username', $userName);
+        $userId = $this->userTable->getIdForKeyValue('username', $userName);
+        return  $userId===DataTable::NULL_ROW_ID ? false : $userId;
     }
     
-    public function getPersonInfo($personId)
+    public function getPersonInfo(int $personId)
     {
         return $this->peopleTable->getRow($personId);
     }
-    
+
     /**
      * Gets the user info from the database
      * @param int $userid User ID
-     * @param array $userinfo Array where the information will be stored
+     * @return array|bool
      */
-    public function getUserInfoByUserId($userid)
+    public function getUserInfoByUserId(int $userid)
     {
-        $pi = $this->peopleTable->getRow($userid);
-        if ($pi=== false) {
+        try {
+            $pi = $this->peopleTable->getRow($userid);
+        } catch (Exception $e) {
             return false;
         }
+
+
         $ui = $this->userTable->getRow($userid);
         
         if (!isset($pi['email'])) {
@@ -188,7 +198,7 @@ class UserManager
                 ];
     }
     
-    public function updateUserInfo($userId, $fullName, $email = '')
+    public function updateUserInfo(int $userId, string $fullName, string $email = '')
     {
         if ($fullName === '') {
             return false;
@@ -204,13 +214,13 @@ class UserManager
         return false;
     }
     
-    public function getUserInfoByUsername($username)
+    public function getUserInfoByUsername(string $username)
     {
         $userid = $this->getUserIdFromUserName($username);
         return $this->getUserInfoByUserId($userid);
     }
     
-    public function getUserInfoForAllUsers()
+    public function getUserInfoForAllUsers() : array
     {
         $allUsers = $this->userTable->getAllRows();
         $allUserInfo = [];
@@ -230,7 +240,7 @@ class UserManager
      * @param string $userName
      * @return int
      */
-    public function createUserByUsername($userName)
+    public function createUserByUsername(string $userName)
     {
         if ($this->userExistsByUserName($userName)) {
             return false;
@@ -244,36 +254,37 @@ class UserManager
     /**
      * Creates a new entry in the people table. Returns the new id
      */
-    private function createPerson()
+    private function createPerson() : int
     {
         return $this->peopleTable->createRow(['fullname' => '']);
     }
     //
     // Allowed action methods
     //
-    
-     /**
+
+    /**
      * Returns true if a user is explicity allowed to do $action
-     * @param string $action, the action, normally a verb, 
+     * @param $userId
+     * @param string $action , the action, normally a verb,
      *                e.g.: 'edit-other-users'
      * @return boolean
      */
-    public function isUserAllowedTo($userId, $action)
+    public function isUserAllowedTo(int $userId, string $action) : bool
     {
         if ($this->isRoot($userId)){
             return true;
         }
-        return $this->relationsTable->findRow(['userId' => $userId, 
-            'relation' => 'isAllowed', 'attribute' => $action]) !== false;
+        return $this->relationsTable->findRows(['userId' => $userId,
+            'relation' => 'isAllowed', 'attribute' => $action]) !== [];
     }
     
     /**
      * Registers an action as allowed for a user
      * @param int $userId
-     * @param String $action
+     * @param string $action
      * @return boolean True if successful, false otherwise
      */
-    public function allowUserTo($userId, $action)
+    public function allowUserTo(int $userId, string $action) : bool
     {
         if ($this->isRoot($userId)){
             return true;
@@ -285,7 +296,7 @@ class UserManager
             'relation' => 'isAllowed', 'attribute' => $action]) !== false;
     }
     
-    public function disallowUserTo($userId, $action)
+    public function disallowUserTo(int $userId, string $action)
     {
         if (!$this->userExistsById($userId)) {
             return false;
@@ -293,26 +304,26 @@ class UserManager
         if ($this->isRoot($userId)) {
             return false;
         }
-        $row = $this->relationsTable->findRow(['userId' => $userId, 
+        $rows = $this->relationsTable->findRows(['userId' => $userId,
             'relation' => 'isAllowed', 'attribute' => $action]);
-        if ($row === false){
+        if ($rows === []){
             return true;
         }
-        return $this->relationsTable->deleteRow($row['id']);
+        return $this->relationsTable->deleteRow($rows[0]['id']) === 1;
     }
     
-    public function userHasRole($userId, $role)
+    public function userHasRole(int $userId, string $role)
     {
         
-        return $this->relationsTable->findRow(['userId' => $userId, 
-            'relation' => 'hasRole', 'attribute' => $role]) !== false;
+        return $this->relationsTable->findRows(['userId' => $userId,
+            'relation' => 'hasRole', 'attribute' => $role]) !== [];
     }
     
     //
     // Role methods
     //
     
-    public function setUserRole($userId, $role)
+    public function setUserRole(int $userId, string $role) : bool
     {
         
         if (!$this->userExistsById($userId)){
@@ -331,7 +342,7 @@ class UserManager
         
     }
     
-    public function revokeUserRole($userId, $role)
+    public function revokeUserRole(int $userId, string $role) : bool
     {
         if (!$this->userExistsById($userId)){
             return false;
@@ -341,43 +352,45 @@ class UserManager
             return false;
         }
         
-        $row = $this->relationsTable->findRow(['userId' => $userId, 
+        $rows = $this->relationsTable->findRows(['userId' => $userId,
             'relation' => 'hasRole', 'attribute' => $role]);
-        if ($row === false){
+        if ($rows === []){
             return true;
         }
-        return $this->relationsTable->deleteRow($row['id']);
+        return $this->relationsTable->deleteRow($rows[0]['id']) === 1;
     }
     
     //
     // root role methods
     //
     
-    public function isRoot($userId)
+    public function isRoot(int $userId)
     {
         return $this->userHasRole($userId, $this->rootRole);
     }
     
-    public function makeRoot($userId)
+    public function makeRoot(int $userId)
     {
         return $this->setUserRole($userId, $this->rootRole);
     }
     
-    public function revokeRootStatus($userId)
+    public function revokeRootStatus(int $userId)
     {
         return $this->revokeUserRole($userId, $this->rootRole);
     }
     
     // user tokens
-    
+
     /**
      * Return the token associated with a user Id
      * if there's no token, returns an empty string
      * if the user does not exist returns false
      * @param int $userId
+     * @param $userAgent
+     * @param $ipAddress
      * @return string
      */
-    public function getUserToken($userId, $userAgent, $ipAddress)
+    public function getUserToken(int $userId, string $userAgent, string $ipAddress)
     {
         if ($this->userExistsById($userId)){
             $tokenRows = $this->getUserTokenRows($userId, $userAgent, $ipAddress);
@@ -395,14 +408,15 @@ class UserManager
         return false;
     }
     
-    public function getUserTokenRows($userId, $userAgent, $ipAddress) {
+    public function getUserTokenRows(int $userId, string $userAgent, string $ipAddress) : array
+    {
         return $this->tokensTable->findRows( [
             'user_id' => $userId, 
             'user_agent' => $userAgent, 
             'ip_address' => $ipAddress
         ]);
     }
-    public function storeUserToken($userId, $userAgent, $ipAddress, $token)
+    public function storeUserToken(int $userId, string $userAgent, string $ipAddress, string $token)
     {
         //$this->logger->debug("Storing user token");
         if ($this->userExistsById($userId)){
@@ -433,7 +447,7 @@ class UserManager
     // Passwords
     //
     
-    public function verifyUserPassword($userName, $givenPassword)
+    public function verifyUserPassword(string $userName, string $givenPassword)
     {
         if (!$this->userExistsByUserName($userName)){
             return false;
@@ -442,11 +456,10 @@ class UserManager
         if (!isset($u['password']) || $u['password'] === '') {
             return false;
         }
-        //error_log("UM: Checking against hash " . $u['password']);
         return password_verify($givenPassword, $u['password']);
     }
     
-    public function storeUserPassword($userName, $password)
+    public function storeUserPassword(string $userName, string $password)
     {
         if ($password === '') {
             return false;
@@ -455,8 +468,12 @@ class UserManager
 
         if ($this->userExistsByUserName($userName)){
             $userId = $this->getUserIdFromUserName($userName);
-            return false !== $this->userTable->updateRow(['id' => $userId, 
+            if ($userId === DataTable::NULL_ROW_ID) {
+                return false;
+            }
+            $this->userTable->updateRow(['id' => $userId,
                 'password' => $hash]);
+            return true;
         }
         return false;
     }

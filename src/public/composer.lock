@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "95df58ce2b47f1d8d25c1c4123c71113",
+    "content-hash": "d34190ce3248546f4d648ebf44a6b56d",
     "packages": [
         {
             "name": "dflydev/fig-cookies",
@@ -1337,20 +1337,26 @@
         },
         {
             "name": "rafaelnajera/datatable",
-            "version": "0.4.2",
+            "version": "0.6.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/rafaelnajera/datatable.git",
-                "reference": "79b83401e41e1d5c3b58e586fc47eaa616b5a2c8"
+                "reference": "8e224884235fef84ed7d65d99d5e6efe98812cb8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/rafaelnajera/datatable/zipball/79b83401e41e1d5c3b58e586fc47eaa616b5a2c8",
-                "reference": "79b83401e41e1d5c3b58e586fc47eaa616b5a2c8",
+                "url": "https://api.github.com/repos/rafaelnajera/datatable/zipball/8e224884235fef84ed7d65d99d5e6efe98812cb8",
+                "reference": "8e224884235fef84ed7d65d99d5e6efe98812cb8",
                 "shasum": ""
             },
             "require": {
-                "php": ">=7.0"
+                "ext-pdo": "*",
+                "php": ">=7.1",
+                "psr/log": "^1.1"
+            },
+            "require-dev": {
+                "monolog/monolog": "^2.0",
+                "phpunit/phpunit": "^8.4"
             },
             "type": "library",
             "autoload": {
@@ -1374,7 +1380,7 @@
             "keywords": [
                 "data"
             ],
-            "time": "2017-05-22T14:10:22+00:00"
+            "time": "2019-11-18T15:39:02+00:00"
         },
         {
             "name": "rafaelnajera/matcher",
@@ -3712,6 +3718,9 @@
     },
     "prefer-stable": false,
     "prefer-lowest": false,
-    "platform": [],
+    "platform": {
+        "php": ">=7.1",
+        "ext-pdo": "*"
+    },
     "platform-dev": []
 }

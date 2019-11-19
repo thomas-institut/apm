@@ -23,8 +23,8 @@ namespace APM;
 require "autoload.php";
 use PHPUnit\Framework\TestCase;
 
-use AverroesProjectToApm\ItemStream;
-use AverroesProjectToApm\ItemStreamWitness;
+use AverroesProjectToApm\DatabaseItemStream;
+use AverroesProjectToApm\DatabaseItemStreamWitness;
 
 /**
  * Description of ItemStreamWitnessTest
@@ -40,8 +40,8 @@ class ItemStreamWitnessTest extends TestCase {
         
         $inputRows = json_decode($inputJSON, true);
         //var_dump($inputRows);
-        $is = new ItemStream(12, $inputRows);
-        $witness = new ItemStreamWitness('AW48', '20', $is);
+        $is = new DatabaseItemStream(12, $inputRows);
+        $witness = new DatabaseItemStreamWitness('AW48', '20', $is);
         
         $tokens = $witness->getTokens();
         

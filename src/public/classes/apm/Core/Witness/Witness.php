@@ -51,8 +51,11 @@ abstract class Witness {
         $this->work = $work;
         $this->chunk = $chunk;
     }
-    
 
+
+    /**
+     * @return Token[]
+     */
     abstract public function getTokens() : array;
     
     /**
@@ -65,9 +68,8 @@ abstract class Witness {
         $tokens = $this->getTokens();
         
         $plainText  = '';
-        //$lastType = Token::TOKEN_UNDEFINED;
         foreach ($tokens as $t) {
-            /* @var $t StringToken */
+            /* @var $t Token */
             $plainText .= $normalized ? $t->getNormalization() : $t->getText();
         }
         return $plainText;

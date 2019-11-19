@@ -24,7 +24,7 @@ use APM\Core\Item\TextualItem;
 use APM\Core\Item\Mark;
 use APM\Core\Item\Item;
 use APM\Core\Item\NoWbMark;
-use AverroesProjectToApm\ItemStream;
+use AverroesProjectToApm\DatabaseItemStream;
 
 
 use APM\Core\Person\PeopleDirectory;
@@ -99,7 +99,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
     }
     
     
-     public function formatItemStream(ItemStream $stream): string {
+     public function formatItemStream(DatabaseItemStream $stream): string {
         $html = '';
         $gotNoWb = false;
         $currentFoliation = '';

@@ -20,6 +20,8 @@
 
 namespace APM\Core\Transcription;
 
+use APM\Core\Item\ItemFactory;
+
 /**
  * Factory of set types of text box 
  *
@@ -42,7 +44,7 @@ class TextBoxFactory {
     public function createTextBoxesFromColumnTextArray(string $lang, int $hand, array $cols) : array {
         $textBoxes = [];
         $colNumber = 1;
-        $if = new \APM\Core\Item\ItemFactory($lang, $hand);
+        $if = new ItemFactory($lang, $hand);
         foreach($cols as $col) {
             $items = [];
             foreach($col as $text) {

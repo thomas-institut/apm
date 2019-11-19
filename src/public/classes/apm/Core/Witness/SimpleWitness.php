@@ -21,6 +21,8 @@
 namespace APM\Core\Witness;
 
 
+use APM\Core\Token\Token;
+
 /**
  * SimpleWitness class
  * 
@@ -30,7 +32,10 @@ namespace APM\Core\Witness;
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 class SimpleWitness extends Witness {
-   
+
+    /**
+     * @var Token[]
+     */
     private $tokens;
     
     public function __construct(string $work, string $chunk, array $tokens) {
@@ -38,7 +43,7 @@ class SimpleWitness extends Witness {
         $this->tokens = $tokens;
         
     }
-    
+
     public function getTokens() : array {
         return $this->tokens;
     }

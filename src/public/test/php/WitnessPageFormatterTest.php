@@ -25,9 +25,9 @@ require "autoload.php";
 use PHPUnit\Framework\TestCase;
 
 use APM\Core\Item\Item;
-use AverroesProjectToApm\AddressInItemStream;
-use AverroesProjectToApm\ItemStream;
-use AverroesProjectToApm\ItemInItemStream;
+use AverroesProjectToApm\AddressInDatabaseItemStream;
+use AverroesProjectToApm\DatabaseItemStream;
+use AverroesProjectToApm\ItemInDatabaseItemStream;
 use AverroesProjectToApm\Formatter\WitnessPageFormatter;
 use APM\Core\Person\FormatterPeopleDirectory;
 
@@ -46,11 +46,11 @@ class WitnessPageFormatterTest extends TestCase {
         $itemId = 100;
         $mark = new Core\Item\Mark('test', 'some text');
         $mark->setTextualFlow(Item::FLOW_GLOSS);
-        $address = new AddressInItemStream();
+        $address = new AddressInDatabaseItemStream();
         $address->setFromItemStreamRow($docId, ['id' => $itemId, 'seq'=> 0, 'ce_id' => 0, 'e.seq' => 0, 'col' => 1, 'page_id' => 20, 'p.seq' => 1, 'foliation' => null]);
         
-        $itemStream = new ItemStream($docId, []);
-        $itemStream->addItem(new ItemInItemStream($address, $mark));
+        $itemStream = new DatabaseItemStream($docId, []);
+        $itemStream->addItem(new ItemInDatabaseItemStream($address, $mark));
         $ud = new FormatterPeopleDirectory();
         
         $formatter = new WitnessPageFormatter($ud);
@@ -68,7 +68,7 @@ class WitnessPageFormatterTest extends TestCase {
         $noteText = 'This is a note';
         
         $noteMark = new Core\Item\Mark('note');
-        $address = new AddressInItemStream();
+        $address = new AddressInDatabaseItemStream();
         $address->setFromItemStreamRow($docId, ['id' => $itemId, 'seq'=> 0, 'ce_id' => 0, 'e.seq' => 0, 'col' => 1, 'page_id' => 20, 'p.seq' => 1, 'foliation' => null]);
         
         $edNote = new EditorialNote();
@@ -83,8 +83,8 @@ class WitnessPageFormatterTest extends TestCase {
         $edNote3 = clone $edNote;
         $edNote3->target = $itemId+1;
         
-        $itemStream = new ItemStream(1, []);
-        $itemStream->addItem(new ItemInItemStream($address, $noteMark));
+        $itemStream = new DatabaseItemStream(1, []);
+        $itemStream->addItem(new ItemInDatabaseItemStream($address, $noteMark));
         
         $ud = new FormatterPeopleDirectory();
         $formatter = new WitnessPageFormatter($ud);

@@ -74,7 +74,7 @@ class DocumentTranscriptionTest extends TestCase {
                 $texts[] = $i . ": Line " . ($j+1) . "\n";
             }
             $dt->setPageTranscription($i, $ptf->createPageTranscriptionFromColumnTextArray('la',0, [$texts]));
-            $items = $dt->getPageTranscription($i)->getAllItems();
+            $items = $dt->getPageTranscription($i)->getAllMainTextItemsInPage();
             $this->assertCount($itemsPerPage, $items);
         }
         

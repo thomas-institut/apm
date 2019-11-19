@@ -20,19 +20,19 @@
 
 namespace AverroesProjectToApm;
 
-use AverroesProjectToApm\ItemInItemStream;
+use APM\Core\Item\TextualItem;
+use AverroesProjectToApm\ItemInDatabaseItemStream;
 use APM\Core\Item\Note;
 
 /**
- * An APM representation of an AP stream of items
- * 
- * An AP stream of items is basically an array of rows coming straight
- * from the database. The main purpose of this class is to couple this
+ *
+ * In essence  an array of rows coming straight
+ * from the database in. The main purpose of this class is to couple this
  * raw data to the Witness abstractions in the new APM design.
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class ItemStream {
+class DatabaseItemStream {
     
     /**
      *
@@ -42,27 +42,27 @@ class ItemStream {
     
     public function __construct(int $docId, array $itemSegments, string $defaultLang = 'la', array $edNotes = []) {
         $this->items = [];
-        $factory = new ItemStreamItemFactory($defaultLang);
+        $itemFactory = new ItemStreamItemFactory($defaultLang);
         
         foreach($itemSegments as $itemRows){
             $previousElementId = -1;
             $previousTbIndex = -1;
             
             foreach ($itemRows as $row) {
-                $address = new AddressInItemStream();
+                $address = new AddressInDatabaseItemStream();
                 $address->setFromItemStreamRow($docId, $row);
                 
                 if ($row['ce_id'] !== $previousElementId && $address->getTbIndex() === $previousTbIndex) {
-                    $this->items[] = new ItemInItemStream($address, new \APM\Core\Item\TextualItem("\n"));
+                    $this->items[] = new ItemInDatabaseItemStream($address, new TextualItem("\n"));
                 }
-                $item = $factory->createItemFromRow($row);
+                $item = $itemFactory->createItemFromRow($row);
                 $itemId = $address->getItemId();
                 $noteIndexes = $this->findNoteIndexesById($edNotes, $itemId );
                 foreach ($noteIndexes as $noteIndex) {
-                    $note = $factory->createItemNoteFromRow($edNotes[$noteIndex]);
+                    $note = $itemFactory->createItemNoteFromRow($edNotes[$noteIndex]);
                     $item->addNote($note);
                 }
-                $this->items[] = new ItemInItemStream($address, $item);
+                $this->items[] = new ItemInDatabaseItemStream($address, $item);
                 $previousElementId = $row['ce_id'];
                 $previousTbIndex = $address->getTbIndex();
             }
@@ -73,7 +73,7 @@ class ItemStream {
         return $this->items;
     }
     
-    public function addItem(ItemInItemStream $item) {
+    public function addItem(ItemInDatabaseItemStream $item) {
         $this->items[] = $item;
     }
     

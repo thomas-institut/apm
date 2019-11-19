@@ -25,7 +25,7 @@ use APM\Core\Collation\CollationTable;
 
 use APM\Core\Item\ItemFactory;
 
-use AverroesProjectToApm\AddressInItemStream;
+use AverroesProjectToApm\AddressInDatabaseItemStream;
 use APM\Core\Item\TextualItem;
 use APM\Core\Item\Mark;
 use AverroesProjectToApm\ApUserDirectory;
@@ -68,7 +68,7 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
         
         $decoratedCollationTable['extra'] = [];
         
-        $addressInItemStreamClass  = get_class(new AddressInItemStream());
+        $addressInItemStreamClass  = get_class(new AddressInDatabaseItemStream());
         $textualItemClass = $this->textualItemClass;
         
         
@@ -86,7 +86,7 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
             $nonTokenItemIndexes = $this->aggregateNonTokenItemIndexes($rawNonTokenItemIndexes, $tokenRefs, $witnessTokens);
             
             $itemArray = $c->getWitness($siglum)->getItemArray();
-            $witnessItemStream = $c->getWitness($siglum)->getItemStream();
+            $witnessItemStream = $c->getWitness($siglum)->getDatabaseItemStream();
             foreach($tokenRefs as $i => $tokenRef) {
                 $decoratedToken = [];
                 if ($tokenRef === CollationTable::TOKENREF_NULL) {

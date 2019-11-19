@@ -23,7 +23,7 @@ namespace APM;
 
 require "autoload.php";
 use PHPUnit\Framework\TestCase;
-use AverroesProjectToApm\ItemStream;
+use AverroesProjectToApm\DatabaseItemStream;
 use AverroesProject\TxText\Item as APItem;
 use AverroesProject\ColumnElement\Element;
 
@@ -36,11 +36,11 @@ class ItemStreamTest extends TestCase {
     
     public function testConstructorBasic() {
         
-        $is = new ItemStream(1, []);
+        $is = new DatabaseItemStream(1, []);
         
         $this->assertEquals([], $is->getItems());
         
-        $is2 = new ItemStream(1, [ [], []]);
+        $is2 = new DatabaseItemStream(1, [ [], []]);
         $this->assertEquals([], $is2->getItems());
     }
     
@@ -148,7 +148,7 @@ class ItemStreamTest extends TestCase {
             
         ];
         
-        $is = new ItemStream(1,[$inputRows]);
+        $is = new DatabaseItemStream(1,[$inputRows]);
         $items = $is->getItems();
         
         $this->assertCount(13, $items);
@@ -163,7 +163,7 @@ class ItemStreamTest extends TestCase {
             $row['e.type']  = Element::ADDITION;
             $row['placement'] = 'margin left';
         }
-        $is2 = new ItemStream(1,[$inputRows]);
+        $is2 = new DatabaseItemStream(1,[$inputRows]);
         $items2 = $is2->getItems();
         
         $this->assertCount(13, $items2);
@@ -175,7 +175,7 @@ class ItemStreamTest extends TestCase {
             $row['e.type']  = Element::GLOSS;
             $row['placement'] = 'margin left';
         }
-        $is3 = new ItemStream(1,[$inputRows]);
+        $is3 = new DatabaseItemStream(1,[$inputRows]);
         $items3 = $is3->getItems();
         
         $this->assertCount(13, $items3);
@@ -188,7 +188,7 @@ class ItemStreamTest extends TestCase {
             $row['e.type']  = Element::SUBSTITUTION;
             $row['placement'] = 'margin left';
         }
-        $is4 = new ItemStream(1,[$inputRows]);
+        $is4 = new DatabaseItemStream(1,[$inputRows]);
         $items4 = $is4->getItems();
         
         $this->assertCount(13, $items4);
@@ -245,7 +245,7 @@ class ItemStreamTest extends TestCase {
             ]
         ];
         
-        $is = new ItemStream(1,[$inputRows]);
+        $is = new DatabaseItemStream(1,[$inputRows]);
         $items = $is->getItems();
         
         $this->assertCount(6, $items);

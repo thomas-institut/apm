@@ -20,6 +20,7 @@
 
 namespace APM\Core\Transcription;
 
+use APM\Core\Item\Item;
 use InvalidArgumentException;
 
 /**
@@ -28,17 +29,20 @@ use InvalidArgumentException;
  *   - textual type: main text, addition, gloss, ...
  *   - placement
  *   - (optionally) a reference to an item or another text box 
- * 
- * 
+ *
+ *
  * This class can be used to instantiate a wide variety of page schemes. For 
  * example, a page can be construed as having columns and marginalia, or as having right
- * and left folia also with marginalia, and so on. 
- * It is better to use a factory class to create a consistent set of TextBox
- * objects
+ * and left folia also with marginalia, and so on. This class does not enforce a
+ * particular set of valid text box types or placements. It is recommended to use a factory class to
+ * create a consistent set of TextBox objects
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 class TextBox {
+
+    const ERROR_INVALID_TYPE = 1001;
+    const ERROR_INVALID_ITEM_ARRAY = 1002;
 
     /** @var string */
     protected $placement;
@@ -54,7 +58,7 @@ class TextBox {
     
     /** @var bool */
     protected $mainTextFlag;
-    
+
     public function getPlacement() : string {
         return $this->placement;
     }
@@ -62,59 +66,103 @@ class TextBox {
     public function setPlacement(string $p){
         $this->placement = $p;
     }
-    
+
+    /**
+     * TextBox constructor.
+     *
+     * @param string $type
+     * @param string $placement
+     * @param bool $isMainText
+     * @param ItemAddressInPage $reference
+     * @param array $theItems
+     */
     public function __construct(string $type, string $placement, 
-            bool $isMainText = true, ItemAddressInPage $address = null, 
-            array $theItems = []) {
+            bool $isMainText, ItemAddressInPage $reference,
+                                array $theItems) {
         $this->setPlacement($placement);
         $this->setType($type);
         $this->setReference(ItemAddressInPage::NullAddress());
-        if (!is_null($address)) {
-            $this->setReference($address);
+        if (!is_null($reference)) {
+            $this->setReference($reference);
         }
         $this->mainTextFlag = $isMainText;
         $this->setItems($theItems);
+
     }
-    
-     public function setType(string $type) {
+
+    /**
+     * Sets the TextBox's type
+     *
+     * @param string $type
+     * @throws InvalidArgumentException
+     */
+    public function setType(string $type) {
+        if ($type === '') {
+            throw new InvalidArgumentException('TextBox type cannot be an empty string', self::ERROR_INVALID_TYPE);
+        }
         $this->type = $type;
     }
-    
+
+    /**
+     * @return string
+     */
     public function getType() {
         return $this->type;
     }
-    
+
+    /**
+     * @return ItemAddressInPage
+     */
     public function getReference() : ItemAddressInPage {
         return $this->reference;
     }
-    
+
+    /**
+     * @param ItemAddressInPage $address
+     */
     public function setReference(ItemAddressInPage $address) {
         $this->reference = $address;
     }
-    
-    public function getItems() {
+
+    /**
+     * Returns the TextBox's "raw" items (without address)
+     *
+     * @return Item[]
+     */
+    public function getItems() : array {
         return $this->items;
     }
-    
-    
+
+    /**
+     * Sets the TextBox's items
+     *
+     * @param Item[] $items
+     * @throws InvalidArgumentException  if there's a non-Item element in the given array
+     */
     public function setItems(array $items) {
         foreach ($items as $item) {
-            if (!is_a($item, 'APM\Core\Item\Item' )) {
-                throw new InvalidArgumentException('Trying to set text box items with non Item object');
+            if (!is_a($item, Item::class )) {
+                throw new InvalidArgumentException('Trying to set text box items with non Item object', self::ERROR_INVALID_ITEM_ARRAY);
             }
         }
         $this->items = $items;
     }
-    
-    public function isMainText() {
+
+    /**
+     * @return bool
+     */
+    public function isMainText() : bool {
         return $this->mainTextFlag;
     }
-    
-    public function setAsMainText() {
+
+    /**
+     * Sets the TextBox as main text
+     */
+    public function setAsMainText() : void {
         $this->mainTextFlag = true;
     }
     
-    public function setAsNotMainText() {
+    public function setAsNotMainText() : void {
         $this->mainTextFlag = false;
     }
 }

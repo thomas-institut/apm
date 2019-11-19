@@ -76,7 +76,7 @@ class PageTranscriptionTest extends TestCase {
         
         $this->assertEquals($nestingLevels+1, $pt->getTextBoxCount());
         
-        $items = $pt->getAllItems();
+        $items = $pt->getAllMainTextItemsInPage();
         $this->assertCount(($nestingLevels+1)*3, $items);
         //$this->prettyPrintItemArray($items);
     }
@@ -89,7 +89,7 @@ class PageTranscriptionTest extends TestCase {
      */
     protected function doComplianceTest(PageTranscription $pt) {
         $this->assertEquals(0, $pt->getTextBoxCount());
-        $this->assertEquals([], $pt->getAllItems());
+        $this->assertEquals([], $pt->getAllMainTextItemsInPage());
         
         $exceptionThrown = false;
         try {
@@ -113,7 +113,7 @@ class PageTranscriptionTest extends TestCase {
         $tbIndex = $pt->addTextBox($column);
         
         $this->assertEquals(1, $pt->getTextBoxCount());
-        $this->assertEquals([], $pt->getAllItems());
+        $this->assertEquals([], $pt->getAllMainTextItemsInPage());
         
         $exceptionThrown = false;
         try { 
@@ -138,7 +138,7 @@ class PageTranscriptionTest extends TestCase {
         $pt->replaceTextBox($tbIndex, $column);
         
         $this->assertEquals(1, $pt->getTextBoxCount());
-        $items = $pt->getAllItems();
+        $items = $pt->getAllMainTextItemsInPage();
         //$this->prettyPrintItemArray($items, 'Items');
         $this->assertCount(4, $items);
         $this->assertEquals($plainText1, $items[0]->getItem()->getPlainText());
@@ -157,7 +157,7 @@ class PageTranscriptionTest extends TestCase {
            ]);
         $gIndex = $pt->addTextBox($gloss);
         $this->assertEquals(2, $pt->getTextBoxCount());
-        $items2 = $pt->getAllItems();
+        $items2 = $pt->getAllMainTextItemsInPage();
         $this->assertEquals($items, $items2);
         
         // Add a marginal addition
@@ -168,7 +168,7 @@ class PageTranscriptionTest extends TestCase {
         $additionIndex = $pt->addTextBox($addition);
         $this->assertEquals(3, $pt->getTextBoxCount());
 
-        $items3 = $pt->getAllItems();
+        $items3 = $pt->getAllMainTextItemsInPage();
         //$this->prettyPrintItemArray($items3, 'Items3');
         
         $this->assertCount(5, $items3);

@@ -22,6 +22,7 @@ namespace APM\Core\Witness;
 
 use APM\Core\Transcription\DocumentTranscription;
 use APM\Core\Transcription\ItemAddressInDocument;
+use APM\Core\Transcription\ItemInDocument;
 
 /**
  * A transcription witness that stores the DocumentTranscription 
@@ -37,6 +38,7 @@ class SimpleTranscriptionWitness extends TranscriptionWitness {
     protected $sourceTranscription;
     
     public function __construct(string $work, string $chunk, DocumentTranscription $dt) {
+        // TODO: implements start and end addresses
         parent::__construct($work, $chunk);
         $this->sourceTranscription = $dt;
     }
@@ -47,4 +49,18 @@ class SimpleTranscriptionWitness extends TranscriptionWitness {
                 ItemAddressInDocument::NullAddress());
     }
 
+    /**
+     * Returns and array of ItemInDocument objects that
+     * represents the source transcription and from which
+     * the tokens will be constructed.
+     *
+     * This function is used to
+     *
+     * @return ItemInDocument[]
+     */
+    function getItemWithAddressArray(): array
+    {
+        // TODO: Implement getItemWithAddressArray() method.
+        return $this->getItemArray();
+    }
 }

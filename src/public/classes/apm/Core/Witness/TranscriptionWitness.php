@@ -20,6 +20,8 @@
 
 namespace APM\Core\Witness;
 
+use APM\Core\Item\ItemWithAddress;
+use APM\Core\Transcription\ItemAddressInDocument;
 use APM\Core\Transcription\ItemInDocument;
 use APM\Core\Item\TextualItem;
 use APM\Core\Item\NoWbMark;
@@ -29,24 +31,32 @@ use APM\Core\Token\StringToken;
 use APM\Core\Token\Token;
 use APM\Core\Address\PointRange;
 use APM\Core\Address\IntRange;
+use AverroesProject\TxText\Item;
 
 /**
- * A Witness whose source is a DocumentTranscription.
- * 
+ * A Witness whose source is a part of a DocumentTranscription.
+ *
+ * The witness source is an array of ItemInDocument objects, representing items located in
+ * a DocumentTranscription
+ *
  * It is up to the descendants of the class to decide whether to store
  * the whole source or some reference to a storage place.
+ *
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 abstract class TranscriptionWitness extends Witness {
+
     /**
-     * Returns and array of ItemInDocument objects that 
+     * Returns and array of ItemInDocument objects that
      * represents the source transcription and from which
-     * the tokens will be constructed
+     * the tokens will be constructed.
      *
-     * @return array
+     * This function is used to
+     *
+     * @return ItemInDocument[]
      */
-    abstract function getItemArray() : array;
+    abstract function getItemWithAddressArray() : array;
 
     /**
      * @param int $pageId
@@ -65,11 +75,11 @@ abstract class TranscriptionWitness extends Witness {
     public function getTokens() : array {
         
         // 1. Get some important class names
-        $textualItemClass = get_class(new TextualItem('n/a'));
-        $noWbItemClass = get_class(new NoWbMark());
+        $textualItemClass = TextualItem::class;
+        $noWbItemClass = NoWbMark::class;
         
         // 2. Get the items
-        $sourceItems = $this->getItemArray();
+        $sourceItems = $this->getItemWithAddressArray();
         if ($sourceItems === []) {
             return [];
         }
@@ -87,7 +97,9 @@ abstract class TranscriptionWitness extends Witness {
         // 4. Iterate over all items in the transcription
         foreach ($sourceItems as $itemIndex => $sourceItem) {
             /* @var $sourceItem ItemInDocument */
+
             $rawItem = $sourceItem->getItem();
+            /* @var $itemAddress ItemAddressInDocument */
             $itemAddress = $sourceItem->getAddress();
 
             if ($itemAddress->getPageId() !== $currentPage ||
@@ -114,7 +126,7 @@ abstract class TranscriptionWitness extends Witness {
                 $stringTokens = StringTokenizer::getTokensFromString($rawItemNormalizedText);
                 foreach($stringTokens as $stringToken) {
                     /* @var $stringToken StringToken */
-                    // Check if the stringtoken covers all the text's item
+                    // Check if the string token covers all the text's item
                     if ($stringToken->getText() === $rawItemNormalizedText) {
                         // this means that there is only one token in the item,
                         // so, we can use the item's plain text and normalization 
@@ -258,17 +270,14 @@ abstract class TranscriptionWitness extends Witness {
      *   5 => [ 'pre' => [], 'post' => [] ],
      *   6 => [ 'pre' => [], 'post' => [ notemark3] ]
      *
-     * @param array $itemArray
      * @return array
      */
     
     public function getNonTokenItemIndexes() : array {
-        return self::getNonTokenItemIndexesFromArrays($this->getItemArray(), $this->getTokens());
-    }
-    
-    static public function getNonTokenItemIndexesFromArrays(array $itemArray, array $tokenArray) : array {
+        $itemArray = $this->getItemWithAddressArray();
+        $tokenArray = $this->getTokens();
         $nonTokenIndexes = [];
-        
+
         $previousTokenMaxItemIndex = -1;
         foreach ($tokenArray as $i => $token) {
             $nonTokenIndexes[$i] = [ 'pre' => [], 'post' => []];
@@ -287,7 +296,7 @@ abstract class TranscriptionWitness extends Witness {
             }
             $previousTokenMaxItemIndex = max($token->getSourceItemIndexes());
         }
-        
+
         // all tokens are processed, but there might still be items beyond
         // the last item in the tokens
         $maxTokenIndex = count($tokenArray)-1;
@@ -298,8 +307,9 @@ abstract class TranscriptionWitness extends Witness {
                 $nonTokenIndexes[$maxTokenIndex]['post'][] = $j;
             }
         }
-        
         return $nonTokenIndexes;
+
     }
+
 
 }

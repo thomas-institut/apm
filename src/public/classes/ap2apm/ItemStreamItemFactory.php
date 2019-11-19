@@ -24,6 +24,8 @@ namespace AverroesProjectToApm;
 use APM\Core\Item\Item;
 
 use APM\Core\Item\ItemFactory;
+use APM\Core\Item\Mark;
+use APM\Core\Item\TextualItem;
 use AverroesProject\TxText\Item as AP_Item;
 use AverroesProject\ColumnElement\Element;
 use APM\Core\Item\Note as ItemNote;
@@ -48,8 +50,8 @@ class ItemStreamItemFactory {
     
     public function __construct(string $defaultLang) {
         $this->if = new ItemFactory($defaultLang, 0);
-        $this->textualItemClass = get_class(new \APM\Core\Item\TextualItem('stub'));
-        $this->markItemClass = get_class(new \APM\Core\Item\Mark());
+        $this->textualItemClass = get_class(new TextualItem('stub'));
+        $this->markItemClass = get_class(new Mark());
     }
     
     public function createItemFromRow($row) : Item {

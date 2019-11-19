@@ -72,7 +72,7 @@ class CollationTable {
     private $witnessTokensCache;
     
     /* @var array */
-    private $collationTable;
+    private $referenceMatrix;
     
     /* @var bool */
     private $ignorePunctuation;
@@ -81,7 +81,7 @@ class CollationTable {
     public function __construct($ignorePunctuation = false) {
         $this->witnesses = [];
         $this->witnessTokensCache = [];
-        $this->collationTable = [];
+        $this->referenceMatrix = [];
         $this->ignorePunctuation = $ignorePunctuation;
     }
     
@@ -105,7 +105,7 @@ class CollationTable {
         }
         $sigla = $this->getSigla();
         
-        return count($this->collationTable[$sigla[0]]);
+        return count($this->referenceMatrix[$sigla[0]]);
     }
     
     /**
@@ -141,7 +141,7 @@ class CollationTable {
             // Pad the existing witnesses
             $this->padCollationTableRowToSize($tokenCount);
         }
-        $this->collationTable[$siglum] = $tokenRefs;
+        $this->referenceMatrix[$siglum] = $tokenRefs;
         $this->witnesses[$siglum] = $witness;
     }
 
@@ -151,11 +151,11 @@ class CollationTable {
      * @return array
      */
     public function getRow(string $siglum) : array {
-        $rawCollationTokens = $this->getReferencesForRow($siglum);
+        $rowTokenReferences = $this->getReferencesForRow($siglum);
         $witnessTokens = $this->getWitnessTokens($siglum);
         
         $collationTokens = [];
-        foreach ($rawCollationTokens as $collationTokenRef) {
+        foreach ($rowTokenReferences as $collationTokenRef) {
             if ($collationTokenRef === self::TOKENREF_NULL) {
                 $collationTokens[] = Token::emptyToken();
                 continue;
@@ -253,7 +253,7 @@ class CollationTable {
      * @return array
      */
     public function getReferencesForRow(string $siglum) : array {
-        return $this->collationTable[$siglum];
+        return $this->referenceMatrix[$siglum];
     }
     
     
@@ -269,20 +269,20 @@ class CollationTable {
      * @param int $count
      */
     public function shiftToken(string $siglum, int $index, int $count) {
-        $originalSize = count($this->collationTable[$siglum]);
-        $firstPart = array_slice($this->collationTable[$siglum], 0, $index);
-        $secondPart = array_slice($this->collationTable[$siglum], $index);
+        $originalSize = count($this->referenceMatrix[$siglum]);
+        $firstPart = array_slice($this->referenceMatrix[$siglum], 0, $index);
+        $secondPart = array_slice($this->referenceMatrix[$siglum], $index);
         for($i=0; $i<$count; $i++) {
             $firstPart[] = self::TOKENREF_NULL;
         }
-        $this->collationTable[$siglum] = array_merge($firstPart, $secondPart);
+        $this->referenceMatrix[$siglum] = array_merge($firstPart, $secondPart);
         
-        $newSize = count($this->collationTable[$siglum]);;
+        $newSize = count($this->referenceMatrix[$siglum]);;
         // Deal with the extra tokens at the end
         for ($i = 0; $i < $count; $i++) {
-            if ($this->collationTable[$siglum][$newSize-1] === self::TOKENREF_NULL) {
+            if ($this->referenceMatrix[$siglum][$newSize-1] === self::TOKENREF_NULL) {
                 // Last token is null, just pop it and return
-                array_pop($this->collationTable[$siglum]);
+                array_pop($this->referenceMatrix[$siglum]);
                 $newSize--;
             } else {
                 // last token is not null, break the loop 
@@ -335,7 +335,7 @@ class CollationTable {
         foreach($this->witnesses as $siglum => $witness) {
             $collationEngineTokens = [];
             $witnessTokens = $this->getWitnessTokens($siglum);
-            foreach($this->collationTable[$siglum] as $columnNumber => $ref) {
+            foreach($this->referenceMatrix[$siglum] as $columnNumber => $ref) {
                 $collationEngineToken = [];
                 $collationEngineToken['witnessRef'] = $ref;
                 if ($ref === self::TOKENREF_NULL) {
@@ -386,7 +386,7 @@ class CollationTable {
         foreach($collationEngineOutput['witnesses'] as $index => $siglum) {
             $s2ci[$siglum] = $index;
         }
-        // Check consistency of witness data in Collatex output
+        // Check consistency of witness data in collation engine output
         foreach (array_keys($this->witnesses) as $siglum){
             if ($s2ci[$siglum] === -1){
                 throw new InvalidArgumentException("Witness " . $siglum . ' not in given collation engine output');
@@ -399,14 +399,14 @@ class CollationTable {
         // containing a sequence of tokens 
         $table = $collationEngineOutput['table'];
         $witnessCount = count($this->witnesses);
-        $newCollationTable = [];
+        $newReferenceMatrix = [];
         foreach (array_keys($this->witnesses) as $siglum) {
-            $newCollationTable[$siglum] = [];
+            $newReferenceMatrix[$siglum] = [];
         }
         
         foreach ($table as $segment) {
             if (count($segment) !== $witnessCount) {
-                throw new InvalidArgumentException('Found invalid number of witnesses in a Collatex output segment');
+                throw new InvalidArgumentException('Found invalid number of witnesses in a collation engine output segment');
             }
             $alignedSegment = $this->alignSegment($segment);
             foreach ($alignedSegment as $index => $witnessTokens) {
@@ -415,12 +415,12 @@ class CollationTable {
                     if (!isset($collationEngineToken['witnessRef'])) {
                         throw new InvalidArgumentException('Cannot found witnessRef in given collation engine output');
                     }
-                    $newCollationTable[$siglum][] = $collationEngineToken['witnessRef'];
+                    $newReferenceMatrix[$siglum][] = $collationEngineToken['witnessRef'];
                 }
             }
         }
         
-        $this->collationTable = $newCollationTable;
+        $this->referenceMatrix = $newReferenceMatrix;
         
     }
     
@@ -519,7 +519,7 @@ class CollationTable {
     }
     
     protected function padCollationTableRowToSize(int $newSize) {
-        foreach($this->collationTable as &$collationTableRow) {
+        foreach($this->referenceMatrix as &$collationTableRow) {
             $rowSize = count($collationTableRow);
             for ($i = $rowSize; $i < $newSize; $i++) {
                 $collationTableRow[] = self::TOKENREF_NULL;
@@ -532,14 +532,14 @@ class CollationTable {
             throw new InvalidArgumentException('Index out of range');
         }
         $rawColumn = [];
-        foreach(array_keys($this->collationTable) as $siglum) {
-            $rawColumn[$siglum] = $this->collationTable[$siglum][$index];
+        foreach(array_keys($this->referenceMatrix) as $siglum) {
+            $rawColumn[$siglum] = $this->referenceMatrix[$siglum][$index];
         }
         return $rawColumn;
     }
     
     private function removeColumn(int $index) {
-        foreach($this->collationTable as &$collationTableRow) {
+        foreach($this->referenceMatrix as &$collationTableRow) {
             array_splice($collationTableRow, $index, 1);
         }
     }

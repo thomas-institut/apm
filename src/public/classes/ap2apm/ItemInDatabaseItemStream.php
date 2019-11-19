@@ -20,13 +20,19 @@
 
 namespace AverroesProjectToApm;
 
-use APM\Core\Token\Token;
+use APM\Core\Item\ItemWithAddress;
+use APM\Core\Item\Item;
+use APM\Core\Transcription\ItemInDocument;
+use AverroesProjectToApm\AddressInDatabaseItemStream;
+
 /**
- * Description of ItemStreamToken
+ * An Item decorated with the address in a DatabaseItemStream
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class ItemStreamToken extends Token {
+class ItemInDatabaseItemStream extends ItemInDocument {
     
-    
+    public function __construct(AddressInDatabaseItemStream $address, Item $item) {
+        parent::__construct($address, $item);
+    }
 }

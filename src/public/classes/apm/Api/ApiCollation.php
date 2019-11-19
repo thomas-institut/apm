@@ -22,8 +22,8 @@ namespace APM\Api;
 
 
 use APM\Engine\Engine;
-use AverroesProjectToApm\ItemStream;
-use AverroesProjectToApm\ItemStreamWitness;
+use AverroesProjectToApm\DatabaseItemStream;
+use AverroesProjectToApm\DatabaseItemStreamWitness;
 use Exception;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
@@ -253,8 +253,8 @@ class ApiCollation extends ApiController
                         $segmentStreams[] = $apItemStream;
                     }
                     $edNoteArrayFromDb = $dataManager->edNoteManager->rawGetEditorialNotesForListOfItems($itemIds);
-                    $itemStream = new ItemStream($witnessId, $segmentStreams, $language, $edNoteArrayFromDb);
-                    $itemStrWitness = new ItemStreamWitness($workId, $chunkNumber, $itemStream);
+                    $itemStream = new DatabaseItemStream($witnessId, $segmentStreams, $language, $edNoteArrayFromDb);
+                    $itemStrWitness = new DatabaseItemStreamWitness($workId, $chunkNumber, $itemStream);
                     $docData = $dataManager->getDocById($witnessId);
                     $this->debug('docData', [$id, $docData]);
                     $collationTable->addWitness($docData['title'], $itemStrWitness);

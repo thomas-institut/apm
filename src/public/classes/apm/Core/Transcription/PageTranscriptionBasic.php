@@ -24,7 +24,8 @@ use APM\Core\Transcription\TextBox;
 
 /**
  * No frills implementation of PageTranscription using 
- * arrays
+ * arrays, for test purposes
+ *
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */

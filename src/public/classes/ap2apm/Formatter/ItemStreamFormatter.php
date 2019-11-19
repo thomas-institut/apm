@@ -20,7 +20,7 @@
 
 namespace AverroesProjectToApm\Formatter;
 
-use AverroesProjectToApm\ItemStream;
+use AverroesProjectToApm\DatabaseItemStream;
 
 /**
  * Description of ItemFormatter
@@ -28,5 +28,5 @@ use AverroesProjectToApm\ItemStream;
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 interface ItemStreamFormatter {
-    public function formatItemStream(ItemStream $stream) : string;
+    public function formatItemStream(DatabaseItemStream $stream) : string;
 }

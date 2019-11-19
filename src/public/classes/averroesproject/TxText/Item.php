@@ -201,15 +201,16 @@ class Item {
             
         }
     }
-    
+
     /**
      * Normalizes a string according to rules for textual items:
      *   - trims all whitespace at the beginning of the string
      *   - converts all whitespace at the end of the string to a
      *     single space
      *   - converts all whitespace inside the string to a single space
-     * 
+     *
      * @param string $str
+     * @return false|string
      */
     public static function normalizeString(string $str){
         $normalized = trim($str);

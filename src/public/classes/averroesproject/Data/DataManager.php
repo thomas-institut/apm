@@ -61,12 +61,12 @@ class DataManager
     private $tNames;
     /**
      *
-     * @var \PDO
+     * @var PDO
      */
     private $dbConn;
     /**
      *
-     * @var \Monolog\Logger
+     * @var Logger
      */
     private $logger;
     
@@ -84,53 +84,56 @@ class DataManager
 
     /**
      *
-     * @var DataTable\MySqlUnitemporalDataTable
+     * @var MySqlUnitemporalDataTable
      */
     private $pagesDataTable;
     
     /**
      *
-     * @var Data\UserManager
+     * @var UserManager
      */
     public $userManager;
     
     
      /**
      *
-     * @var DataTable\MySqlUnitemporalDataTable
+     * @var MySqlUnitemporalDataTable
      */
     private $docsDataTable;
     
     /**
      *
-     * @var DataTable\MySqlUnitemporalDataTable
+     * @var MySqlUnitemporalDataTable
      */
     private $elementsDataTable;
     
     /**
      *
-     * @var DataTable\MySqlUnitemporalDataTable 
+     * @var MySqlUnitemporalDataTable
      */
     private $itemsDataTable;
     
     
     /**
      *
-     * @var DataTable\MySqlTable
+     * @var MySqlDataTable
      */
     private $pageTypesTable;
     
     /**
      *
-     * @var DataTable\MySqlTable 
+     * @var MySqlDataTable
      */
     private $worksTable;
 
     /**
-     * @var DataTable\MySqlTable
+     * @var MySqlDataTable
      */
     private $txVersionsTable;
-    
+
+    /**
+     * @var QueryStats
+     */
     public $queryStats;
     
     /**
@@ -138,8 +141,10 @@ class DataManager
      * @var HookManager
      */
     public $hookManager;
-    
-    
+
+    /**
+     * @var array
+     */
     private $langCodes;
 
 
@@ -154,7 +159,7 @@ class DataManager
      * @param HookManager $hm
      * @param array $langCodes
      */
-    function __construct(\PDO $dbConn, array $tableNames, Logger $logger, HookManager $hm, array $langCodes = [])
+    function __construct(PDO $dbConn, array $tableNames, Logger $logger, HookManager $hm, array $langCodes = [])
     {
         $this->dbConn = $dbConn;
         $this->tNames = $tableNames;
@@ -181,13 +186,13 @@ class DataManager
                 $tableNames['docs']);
         $this->pageTypesTable = new MySqlDataTable($this->dbConn, 
                 $tableNames['types_page']);
-        $this->pagesDataTable = new \DataTable\MySqlUnitemporalDataTable(
+        $this->pagesDataTable = new MySqlUnitemporalDataTable(
                 $this->dbConn, 
                 $tableNames['pages']);
-        $this->elementsDataTable = new \DataTable\MySqlUnitemporalDataTable(
+        $this->elementsDataTable = new MySqlUnitemporalDataTable(
                 $this->dbConn, 
                 $tableNames['elements']);
-        $this->itemsDataTable = new \DataTable\MySqlUnitemporalDataTable(
+        $this->itemsDataTable = new MySqlUnitemporalDataTable(
                 $this->dbConn, 
                 $tableNames['items']);
         $this->worksTable = new MySqlDataTable($this->dbConn, 
@@ -327,14 +332,14 @@ class DataManager
         ]);
         return $result !== false;
     }
-    
+
     /**
      * Returns an associative array with the information about a page
-     * @param type $docId
-     * @param type $pageNumber
-     * @return array|boolean
+     * @param int $docId
+     * @param int $pageNumber
+     * @return array|bool
      */
-    function getPageInfoByDocPage($docId, $pageNumber)
+    function getPageInfoByDocPage(int $docId, int $pageNumber)
     {
         $id = $this->getPageIdByDocPage($docId, $pageNumber);
         if ($id === false) {
@@ -342,8 +347,13 @@ class DataManager
         }
         return $this->getPageInfo($id);
     }
-    
-    public function getPageInfo($pageId)
+
+
+    /**
+     * @param int $pageId
+     * @return array|bool
+     */
+    public function getPageInfo(int $pageId)
     {
         $this->queryStats->countQuery('select');
         $row = $this->pagesDataTable->getRow($pageId);
@@ -601,12 +611,13 @@ class DataManager
         }
         return $pages;
     }
-    
-    
+
+
     /**
      *  Returns the page information for each page for the given $docId
-     * 
+     *
      * @param int $docId
+     * @param int $order
      * @return array
      */
     function getDocPageInfo($docId, $order = self::ORDER_BY_PAGE_NUMBER) {
@@ -989,10 +1000,15 @@ class DataManager
 
         return $docInfos;
     }
-    
-    
-    
-    public function getChunkLocationsForDoc($docId, $workId, $chunkNumber) 
+
+
+    /**
+     * @param int $docId
+     * @param string $workId
+     * @param int $chunkNumber
+     * @return array
+     */
+    public function getChunkLocationsForDoc(int $docId, string $workId, int $chunkNumber) : array
     {
         $rawLocations = $this->getChunkLocationsForDocRaw($docId, $workId, $chunkNumber);
 
@@ -1446,7 +1462,7 @@ class DataManager
     {
         
         if (!$time) {
-            $time = \DataTable\MySqlUnitemporalDataTable::now();
+            $time = MySqlUnitemporalDataTable::now();
         }
         
         if (is_null($element->pageId)) {
@@ -1588,7 +1604,7 @@ class DataManager
     {
         
         if (!$time) {
-            $time = \DataTable\MySqlUnitemporalDataTable::now();
+            $time = MySqlUnitemporalDataTable::now();
         }
         $this->queryStats->countQuery('create-item');
         return $this->itemsDataTable->createRowWithTime([
@@ -1608,7 +1624,7 @@ class DataManager
     private function updateItemInDB($item, $time = false)
     {
         if (!$time) {
-            $time = \DataTable\MySqlUnitemporalDataTable::now();
+            $time = MySqlUnitemporalDataTable::now();
         }
         $this->queryStats->countQuery('update-item');
         return $this->itemsDataTable->realUpdateRowWithTime([
@@ -1628,7 +1644,7 @@ class DataManager
     private function createNewElementInDB($element, $time = false) 
     {
          if (!$time) {
-            $time = \DataTable\MySqlUnitemporalDataTable::now();
+            $time = MySqlUnitemporalDataTable::now();
         }
         
         $this->queryStats->countQuery('create-element');
@@ -1648,7 +1664,7 @@ class DataManager
     private function updateElementInDB($element,  $time = false) 
     {
         if (!$time) {
-            $time = \DataTable\MySqlUnitemporalDataTable::now();
+            $time = MySqlUnitemporalDataTable::now();
         }
         $this->queryStats->countQuery('update-element');
         return $this->elementsDataTable->realUpdateRowWithTime([
@@ -1996,7 +2012,7 @@ class DataManager
         );
 
         if ($time === false) {
-            $time = \DataTable\MySqlUnitemporalDataTable::now();
+            $time = MySqlUnitemporalDataTable::now();
         }
         $newItemsIds = [];
         $newElementsIndex = 0;
@@ -2095,7 +2111,7 @@ class DataManager
     public function updateElement(Element $newElement, Element $oldElement, $itemIds = [], $time = false)
     {
         if (!$time) {
-            $time = \DataTable\MySqlUnitemporalDataTable::now();
+            $time = MySqlUnitemporalDataTable::now();
         }
         // Force element IDs to be same, we're only dealing with the element's data
         if ($newElement->id !== $oldElement->id) {
@@ -2222,7 +2238,7 @@ class DataManager
          */
         
         if (!$time) {
-            $time = \DataTable\MySqlUnitemporalDataTable::now();
+            $time = MySqlUnitemporalDataTable::now();
         }
         $element = $this->getElementById($elementId);
         $this->queryStats->countQuery('delete-element');
@@ -2338,7 +2354,7 @@ class DataManager
             'page_id' => $pageId,
             'col' => $col,
             'time_from' => $timeFrom,
-            'time_until' => \DataTable\MySqlUnitemporalDataTable::END_OF_TIMES,
+            'time_until' => MySqlUnitemporalDataTable::END_OF_TIMES,
             'author_id' => $authorId,
             'descr' => $descr,
             'minor' => $isMinor ? 1 : 0,

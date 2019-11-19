@@ -175,8 +175,16 @@ class ChunkPage extends SiteController
         
         return $this->responseWithText($response, 'ERROR: unrecognized output option', 402);
     }
-    
-    protected function buildEssentialWitnessDataFromDocData(array $docData, $workId, $chunkNumber, DataManager $db, $witnessNumber) : array  {
+
+    /**
+     * @param array $docData
+     * @param string $workId
+     * @param int $chunkNumber
+     * @param DataManager $db
+     * @param int $witnessNumber
+     * @return array
+     */
+    protected function buildEssentialWitnessDataFromDocData(array $docData, string $workId, int $chunkNumber, DataManager $db, int $witnessNumber) : array  {
         $doc = $docData;
         $doc['number'] = $witnessNumber;
         $doc['errors'] = [];
@@ -247,8 +255,8 @@ class ChunkPage extends SiteController
         //$this->logger->debug('Doc ' . $docData['id'] . ' segment count: ' . count($doc['segmentApItemStreams']));
         $edNoteArrayFromDb =    $db->edNoteManager->rawGetEditorialNotesForListOfItems($itemIds);
         //$this->logger->debug('Ednotes', $edNoteArrayFromDb);
-        $itemStream = new \AverroesProjectToApm\ItemStream($doc['id'], $doc['segmentApItemStreams'], $doc['lang'], $edNoteArrayFromDb);
-        $itemStreamWitness = new \AverroesProjectToApm\ItemStreamWitness($workId, $chunkNumber, $itemStream);
+        $itemStream = new \AverroesProjectToApm\DatabaseItemStream($doc['id'], $doc['segmentApItemStreams'], $doc['lang'], $edNoteArrayFromDb);
+        $itemStreamWitness = new \AverroesProjectToApm\DatabaseItemStreamWitness($workId, $chunkNumber, $itemStream);
         $doc['itemStreamWitness'] = $itemStreamWitness;
         $doc['tokens'] = $itemStreamWitness->getTokens();
         //$this->logger->debug('Doc ' . $docData['id'] . ':: tokens: ' . count($doc['tokens']) . ', page span: ' . $docData['pageSpan']);

@@ -22,6 +22,7 @@ namespace APM;
 
 require "autoload.php";
 
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 use APM\Core\Transcription\TextBox;
@@ -36,19 +37,33 @@ class TextBoxTest extends TestCase {
     
     
     public function testSimple() {
-        
-        $tb = new TextBox('testType', 'somePlacement');
+
+        $exceptionThrown = false;
+        $errorCode = 0;
+        try {
+            $badBox = new TextBox('', 'somePlacement', false, ItemAddressInPage::NullAddress(), []);
+        } catch (InvalidArgumentException $ex) {
+            $exceptionThrown = true;
+            $errorCode = $ex->getCode();
+        }
+        $this->assertTrue($exceptionThrown);
+        $this->assertEquals(TextBox::ERROR_INVALID_TYPE, $errorCode);
+
+
+        $tb = new TextBox('testType', 'somePlacement', false, ItemAddressInPage::NullAddress(), []);
         
         $this->assertEquals([], $tb->getItems());
         
         $exceptionThrown = false;
         try {
             $tb->setItems([1, 2, 3]);
-        } catch (\InvalidArgumentException $ex) {
+        } catch (InvalidArgumentException $ex) {
             $exceptionThrown = true;
+            $errorCode = $ex->getCode();
         }
         $this->assertTrue($exceptionThrown);
-        
+        $this->assertEquals(TextBox::ERROR_INVALID_ITEM_ARRAY, $errorCode);
+
         $tb->setAsMainText();
         $this->assertTrue($tb->isMainText());
         $tb->setAsNotMainText();

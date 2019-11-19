@@ -21,6 +21,7 @@
 namespace APM\Core\Item;
 
 use APM\Core\Person\Person;
+use InvalidArgumentException;
 
 /**
  * Simple representation of an editorial note: a text by an author with a given 
@@ -54,7 +55,7 @@ class Note {
     
     public function setText($text) {
         if ($text === '') {
-            throw new \InvalidArgumentException('Cannot set a Note\'s text to an empty string');
+            throw new InvalidArgumentException('Cannot set a Note\'s text to an empty string');
         }
         $this->text = $text;
     }

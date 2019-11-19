@@ -20,39 +20,40 @@
 
 namespace AverroesProjectToApm;
 
+use APM\Core\Item\ItemWithAddress;
 use APM\Core\Witness\TranscriptionWitness;
 
 
 /**
- * Description of ItemStreamWitness
+ * A transcription witness whose source is a DatabaseItemStream
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class ItemStreamWitness extends TranscriptionWitness {
+class DatabaseItemStreamWitness extends TranscriptionWitness {
     /**
      *
-     * @var ItemStream
+     * @var DatabaseItemStream
      */
-    private $itemStream;
+    private $databaseItemStream;
     
     
     /** @var array */
     private $initialLineNumbers;
     
-    public function __construct(string $work, string $chunk, ItemStream $stream) {
+    public function __construct(string $work, string $chunk, DatabaseItemStream $stream) {
         parent::__construct($work, $chunk);
         
-        $this->itemStream = $stream;
+        $this->databaseItemStream = $stream;
         $this->initialLineNumbers = [];
         
     }
     
-    public function getItemStream() : ItemStream {
-        return $this->itemStream;
+    public function getDatabaseItemStream() : DatabaseItemStream {
+        return $this->databaseItemStream;
     }
 
     public function getItemArray(): array {
-        return $this->itemStream->getItems();
+        return $this->databaseItemStream->getItems();
     }
 
     
@@ -63,11 +64,25 @@ class ItemStreamWitness extends TranscriptionWitness {
         return 1;
     }
     
-    public function setInitialLineNumberForTextBox(int $textBox, int $lineNumber) {
+    public function setInitialLineNumberForTextBox(int $pageId, int $textBox, int $lineNumber) {
         if (!isset($this->initialLineNumbers[$pageId])) {
             $this->initialLineNumbers[$pageId] = [];
         }
         $this->initialLineNumbers[$pageId][$textBox] = $lineNumber;
     }
 
+    /**
+     * Returns and array of ItemWithAddress objects that
+     * represents the source transcription and from which
+     * the tokens will be constructed.
+     *
+     * This function is used to
+     *
+     * @return ItemWithAddress[]
+     */
+    function getItemWithAddressArray(): array
+    {
+        // TODO: Implement getItemWithAddressArray() method.
+        return $this->databaseItemStream->getItems();
+    }
 }

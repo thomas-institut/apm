@@ -41,7 +41,7 @@ use AverroesProject\ColumnElement\Element;
  *  
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class AddressInItemStream extends ItemAddressInDocument {
+class AddressInDatabaseItemStream extends ItemAddressInDocument {
     
     const COORD_ITEMID = 0;
     const COORD_ITEMSEQ = 1;

@@ -5,7 +5,7 @@ namespace AverroesProject\Data;
 
 /**
  *
- * Document information structure
+ * Data stored about a document in the database
  *
  */
 class DocInfo

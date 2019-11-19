@@ -20,13 +20,15 @@
 
 namespace APM\Core\Transcription;
 
+use OutOfBoundsException;
+
 /**
  * A transcription of a document 
  * 
  * Conceptually a document transcription is simply set of page transcriptions
  * retrievable by some page identifier. 
  * 
- * The transcription items within the page can be address with ItemAddressInDocument,
+ * The transcription items within the page can be addressed with ItemAddressInDocument,
  * which is simply the ItemAddressInPage plus the page id.
  * 
  *
@@ -39,27 +41,47 @@ abstract class DocumentTranscription {
      * Returns the number of pages with transcription 
      */
     abstract public function getPageCount() : int;
-    
+
+
     /**
-     * Returns the ids of the first and last pages
-     * or self::UNDEFINED_PAGE is there are no pages
+     * Returns the ids of the first transcribed page or
+     * self::UNDEFINED_PAGE if no pages are defined
+     *
+     * @return int
      */
     abstract public function getFirstTranscribedPageId() : int;
+
+    /**
+     * Returns the ids of the first transcribed page or
+     * self::UNDEFINED_PAGE if no pages are defined
+     *
+     * @return int
+     */
     abstract public function getLastTranscribedPageId() : int;
+
     /**
      * Gets the page transcription of the given pageId.
      * If the pageId is not defined, throws an OutOfBoundsException
+     * @param int $pageId
+     * @return PageTranscription
+     * @throws OutOfBoundsException
      */
     abstract public function getPageTranscription(int $pageId) : PageTranscription;
-    
-    /**
-     * Sets the page transcription for the given pageId
-     */
-    abstract public function setPageTranscription(int $pageId, PageTranscription $transcription);
-    
 
     /**
-     * Returns an array of ItemInDocument 
+     * Sets the page transcription for the given pageId
+     * @param int $pageId
+     * @param PageTranscription $transcription
+     */
+    abstract public function setPageTranscription(int $pageId, PageTranscription $transcription);
+
+
+    /**
+     * Returns an array of ItemInDocument
+     *
+     * @param ItemAddressInDocument $from
+     * @param ItemAddressInDocument $to
+     * @return ItemInDocument[]
      */
     abstract public function getItemRange(ItemAddressInDocument $from, ItemAddressInDocument $to) : array;
     

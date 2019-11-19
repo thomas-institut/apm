@@ -39,8 +39,12 @@ use InvalidArgumentException;
  */
 abstract class PresetManager {
 
+
+     // BASIC OPERATIONS
+
     /**
-     * BASIC OPERATIONS
+     * Returns true is the preset associated with the given tool, user Id and title exists
+     *
      * @param string $tool
      * @param int $userId
      * @param string $title
@@ -51,6 +55,7 @@ abstract class PresetManager {
     /**
      * addPreset must return false if there is already a preset
      * that corresponds to the given $preset.
+     *
      * @param Preset $preset
      * @return bool
      */
@@ -59,6 +64,7 @@ abstract class PresetManager {
     /**
      * erasePreset must return true if the preset was erased or if it did not exist
      * in the first place
+     *
      * @param string $tool
      * @param int $userId
      * @param string $title

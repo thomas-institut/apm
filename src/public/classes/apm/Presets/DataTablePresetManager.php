@@ -40,7 +40,7 @@ use InvalidArgumentException;
  * only possibly filtering by tool and user at the DataTable level, and then 
  * searching for matches using that array. A good choice of particular keys to
  * store in their own fields may greatly increase performance when the underlying
- * DataTable uses a SQL databaase.
+ * DataTable uses a SQL database.
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
@@ -83,17 +83,18 @@ class DataTablePresetManager extends PresetManager {
      * Adds a preset to the system.
      * 
      * Returns false if there is a preset in the system
-     * with the same tool, userid and title as the
-     * givel $preset
+     * with the same tool, user id and title as the
+     * given $preset
      * 
-     * @param \APM\Presets\Preset $preset
+     * @param Preset $preset
      * @return bool
      */
     public function addPreset(Preset $preset): bool {
         if ($this->correspondingPresetExists($preset)) {
             return false;
         }
-        return $this->dataTable->createRow($this->createDataTableRowFromPreset($preset)) !== false;
+        $this->dataTable->createRow($this->createDataTableRowFromPreset($preset));
+        return true;
     }
 
     /**
@@ -112,7 +113,7 @@ class DataTablePresetManager extends PresetManager {
         if ($id === self::ROWID_NOTFOUND) {
             return true;
         }
-        return $this->dataTable->deleteRow($id);
+        return $this->dataTable->deleteRow($id)===1;
     }
 
     /**
@@ -127,7 +128,7 @@ class DataTablePresetManager extends PresetManager {
      */
     public function getPreset(string $tool, int $userId, string $title) : Preset {
         $row = $this->getPresetRow($tool, $userId, $title);
-        if ($row === false) {
+        if ($row === []) {
             throw $this->newPresetNotFoundException();
         }
         return $this->createPresetFromDataTableRow($row);
@@ -214,11 +215,17 @@ class DataTablePresetManager extends PresetManager {
         }
         $updatedRow = $this->createDataTableRowFromPreset($updatedPreset);
         $updatedRow['id'] = $currentPreset->getId();
-        return $this->dataTable->updateRow($updatedRow);
+        try {
+            $this->dataTable->updateRow($updatedRow);
+        } catch (Exception $e) {
+            return false;
+        }
+        return true;
     }
     
-    public function erasePresetById(int $id) {
-        return $this->dataTable->deleteRow($id);
+    public function erasePresetById(int $id) : bool {
+        $this->dataTable->deleteRow($id);
+        return true;
     }
     
     
@@ -251,7 +258,7 @@ class DataTablePresetManager extends PresetManager {
      * Returns an associative array that can be used to store a Preset
      * as a row in a DataTable
      * 
-     * @param \APM\Presets\Preset $preset
+     * @param Preset $preset
      * @return array
      */
     protected function createDataTableRowFromPreset(Preset $preset) : array {
@@ -277,7 +284,7 @@ class DataTablePresetManager extends PresetManager {
      * Creates a Preset object from a DataTable row
      * 
      * @param array $theRow
-     * @return \APM\Presets\Preset
+     * @return Preset
      */
     protected function createPresetFromDataTableRow(array $theRow) : Preset {
         // There's no need to deal with expanded keys since all key information
@@ -300,15 +307,19 @@ class DataTablePresetManager extends PresetManager {
      * @param string $tool
      * @param int $userId
      * @param string $title
-     * @return type
+     * @return array
      */
-    protected function getPresetRow(string $tool, int $userId, string $title) {
+    protected function getPresetRow(string $tool, int $userId, string $title) : array {
         $rowToFind = [ 
             self::FIELD_TOOL => $tool, 
             self::FIELD_USERID => $userId,
             self::FIELD_TITLE => $title
         ];
-        return $this->dataTable->findRow($rowToFind);
+        $rows = $this->dataTable->findRows($rowToFind, 1);
+        if (count($rows) < 1) {
+            return [];
+        }
+        return $rows[0];
     }
    
     /**
@@ -318,11 +329,11 @@ class DataTablePresetManager extends PresetManager {
      * @param string $tool
      * @param int $userId
      * @param string $title
-     * @return type
+     * @return int
      */
-    protected function getRowIdForPreset(string $tool, int $userId, string $title) {
+    protected function getRowIdForPreset(string $tool, int $userId, string $title) : int {
         $row = $this->getPresetRow($tool, $userId, $title);
-        if ($row === false) {
+        if ($row === []) {
             return self::ROWID_NOTFOUND;
         }
         return $row['id'];

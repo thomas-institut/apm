@@ -23,7 +23,6 @@ namespace APM\System;
 use APM\CollationEngine\Collatex;
 use APM\Presets\DataTablePresetManager;
 use APM\Presets\PresetManager;
-use APM\System\SettingsManager;
 use APM\Plugin\HookManager;
 
 use DataTable\MySqlDataTable;

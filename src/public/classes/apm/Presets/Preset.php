@@ -68,34 +68,57 @@ class Preset {
         $this->data = $theData;
         $this->title = $title;
     }
-    
+
+    /**
+     * @return array
+     */
     public function getData() : array  {
         return $this->data;
     }
-    
+
+    /**
+     * @return string
+     */
     public function getTool() : string {
         return $this->toolId;
     }
-    
+
+    /**
+     * @param string $key
+     * @return bool|mixed
+     */
     public function getKey(string $key) {
         if (!isset($this->keyArray[$key])) {
             return false;
         }
         return $this->keyArray[$key];
     }
-    
+
+    /**
+     * @return array
+     */
     public function getKeyArray() : array {
         return $this->keyArray;
     }
-    
-    public function setKey(string $key, $value) {
+
+    /**
+     * @param string $key
+     * @param mixed $value
+     */
+    public function setKey(string $key, $value) : void {
         $this->keyArray[$key] = $value;
     }
-    
+
+    /**
+     * @return int
+     */
     public function getUserId() : int {
         return $this->userId;
     }
-    
+
+    /**
+     * @return string
+     */
     public function getTitle() : string {
         return $this->title;
     }

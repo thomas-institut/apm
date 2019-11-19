@@ -23,7 +23,6 @@ namespace APM;
 require "autoload.php";
 require_once 'PresetManagerTest.php';
 
-use PHPUnit\Framework\TestCase;
 use APM\Presets\DataTablePresetManager;
 use DataTable\InMemoryDataTable;
 

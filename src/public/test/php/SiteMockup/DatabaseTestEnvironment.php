@@ -21,10 +21,14 @@
 namespace APM;
 require "autoload.php";
 
+use APM\System\ApmConfigParameter;
+use APM\System\ApmContainerKey;
 use AverroesProject\Data\DataManager;
 use APM\System\ApmSystemManager;
 use DI\Container;
 use DI\ContainerBuilder;
+use DI\DependencyException;
+use DI\NotFoundException;
 use mysql_xdevapi\Exception;
 use PDO;
 
@@ -73,8 +77,8 @@ class DatabaseTestEnvironment {
         }
         $config = $this->config;
         
-        $pdo = new PDO('mysql:dbname=' . $config['db']['db'] .
-                ';host=' . $config['db']['host'], $config['db']['user'], $config['db']['pwd']);
+        $pdo = new PDO('mysql:dbname=' . $config[ApmConfigParameter::DB]['db'] .
+                ';host=' . $config[ApmConfigParameter::DB]['host'], $config[ApmConfigParameter::DB]['user'], $config[ApmConfigParameter::DB]['pwd']);
         $pdo->query("set character set 'utf8'");
         $pdo->query("set names 'utf8'");
         $this->dbConn = $pdo;
@@ -83,13 +87,19 @@ class DatabaseTestEnvironment {
     
     
     
-    public function getDataManager() : DataManager
-    {   
-        return $this->getContainer()->get('dataManager');
-    }
+//    public function getDataManager() : DataManager
+//    {
+//        return $this->getContainer()->get(ApmContainerKey::DATA_MANAGER);
+//    }
 
+    /**
+     * @return ApmSystemManager
+     * @throws DependencyException
+     * @throws NotFoundException
+     * @throws \Exception
+     */
     public function getSystemManager() : ApmSystemManager {
-        return $this->getContainer()->get('systemManager');
+        return $this->getContainer()->get(ApmContainerKey::SYSTEM_MANAGER);
     }
     
     
@@ -119,16 +129,26 @@ EOD;
 
     }
 
+    /**
+     * @param $userId
+     * @throws \Exception
+     */
     public function setUserId($userId) {
-        $this->getContainer()->set('userId', $userId);
-    }
-
-    public function getUserId() : int {
-        $this->getContainer()->get('userId');
+        $this->getContainer()->set(ApmContainerKey::USER_ID, $userId);
     }
 
     /**
-     * @return bool|\DI\Container
+     * @return int
+     * @throws DependencyException
+     * @throws NotFoundException
+     * @throws \Exception
+     */
+//    public function getUserId() : int {
+//        return $this->getContainer()->get(ApmContainerKey::USER_ID);
+//    }
+
+    /**
+     * @return bool|Container
      * @throws \Exception
      */
     public function getContainer()
@@ -156,12 +176,12 @@ EOD;
 
         $builder = new ContainerBuilder();
         $builder->addDefinitions([
-            'config' => $config,
-            'dataManager' => $dataManager,
-            'logger' => $logger,
-            'systemManager' => $systemManager,
-            'userId' => 0,  // invalid user Ids, must be set downstream for some API and Site operations
-            'apiUserId' => 0
+            ApmContainerKey::CONFIG => $config,
+            ApmContainerKey::DATA_MANAGER => $dataManager,
+            ApmContainerKey::LOGGER => $logger,
+            ApmContainerKey::SYSTEM_MANAGER => $systemManager,
+            ApmContainerKey::USER_ID => 0,  // invalid user Ids, must be set downstream for some API and Site operations
+            ApmContainerKey::API_USER_ID => 0
         ]);
 
 
@@ -254,7 +274,7 @@ EOD;
         $this->getContainer()->set('apiUserId', $userId);
     }
 
-    public function getApiUser() : int {
-        return $this->getContainer()->get('apiUserId');
-    }
+//    public function getApiUser() : int {
+//        return $this->getContainer()->get('apiUserId');
+//    }
 }

@@ -1,6 +1,6 @@
 <?php
 
-/* 
+/*
  *  Copyright (C) 2019 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -15,31 +15,24 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
- *  
+ *
  */
 
-namespace APM\Plugin;
-
-use APM\System\SystemManager;
+namespace APM\System;
 
 /**
- * Base class for plugins
+ * Constants for Container keys in APM
  *
- * @author Rafael Nájera <rafael.najera@uni-koeln.de>
+ * @package APM\System
  */
-abstract class Plugin {
-    
-    /**
-     *
-     * @var SystemManager $hm
-     */
-    protected $systemManager;
-    
-    public function __construct($sm) {
-        $this->systemManager = $sm;
-    }
-    abstract public function activate();
-    abstract public function deactivate();
-    abstract public function init();
-    abstract public function getMetadata();
+class ApmContainerKey
+{
+    const CONFIG = 'config';
+    const DATA_MANAGER = 'dataManager';
+    const LOGGER = 'logger';
+    const SYSTEM_MANAGER = 'systemManager';
+    const USER_ID = 'userId';
+    const API_USER_ID = 'apiUserId';
+    const VIEW = 'view';
+    const ROUTER = 'router';
 }

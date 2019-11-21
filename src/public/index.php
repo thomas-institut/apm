@@ -28,8 +28,10 @@ namespace AverroesProject;
 use APM\Site\ChunkPage;
 use APM\Site\SiteCollationTable;
 use APM\Site\SiteDocuments;
+use APM\System\ApmContainerKey;
 use DI\ContainerBuilder;
 
+use Exception;
 use Slim\Factory\AppFactory;
 use Slim\Routing\RouteCollectorProxy;
 use Slim\Views\Twig;
@@ -87,17 +89,21 @@ $dataManager = new DataManager($dbh, $systemManager->getTableNames(), $logger, $
 
 $builder = new ContainerBuilder();
 $builder->addDefinitions([
-    'config' => $config,
-    'dataManager' => $dataManager,
-    'logger' => $logger,
-    'systemManager' => $systemManager,
-    'userId' => 0,  // The authentication module will update this with the correct Id
-    'view' => function() {
+    ApmContainerKey::CONFIG => $config,
+    ApmContainerKey::DATA_MANAGER => $dataManager,
+    ApmContainerKey::LOGGER => $logger,
+    ApmContainerKey::SYSTEM_MANAGER => $systemManager,
+    ApmContainerKey::USER_ID => 0,  // The authentication module will update this with the correct Id
+    ApmContainerKey::VIEW => function() {
         return new Twig('templates', ['cache' => false]);
     }
 ]);
 
-$container = $builder->build();
+try {
+    $container = $builder->build();
+} catch (Exception $e) {
+    exitWithErrorMessage('Error creating container: '. $e->getMessage());
+}
 
 // Initialize the Slim app
 AppFactory::setContainer($container);
@@ -112,7 +118,7 @@ $app->addErrorMiddleware(true, true, true);
 
 // Add Twig middleware and router
 $app->add(TwigMiddleware::createFromContainer($app));
-$container->set('router', $app->getRouteCollector()->getRouteParser());
+$container->set(ApmContainerKey::ROUTER, $app->getRouteCollector()->getRouteParser());
 
 // -----------------------------------------------------------------------------
 //  SITE ROUTES

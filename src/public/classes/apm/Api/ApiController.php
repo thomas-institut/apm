@@ -22,6 +22,8 @@ namespace APM\Api;
 
 use APM\CollationEngine\CollationEngine;
 use DI\Container;
+use DI\DependencyException;
+use DI\NotFoundException;
 use Monolog\Logger;
 use Psr\Http\Message\ResponseInterface;
 use \Psr\Http\Message\ServerRequestInterface as Request;
@@ -97,6 +99,12 @@ abstract class ApiController
     private $debugMode;
 
 
+    /**
+     * ApiController constructor.
+     * @param Container $ci
+     * @throws DependencyException
+     * @throws NotFoundException
+     */
     public function __construct(Container $ci)
     {
        $this->container = $ci;
@@ -110,10 +118,18 @@ abstract class ApiController
        $this->debug('Api User ID: ' . $this->apiUserId);
     }
 
+    /**
+     * @return DataManager
+     * @throws DependencyException
+     * @throws NotFoundException
+     */
     protected function getDataManager() : DataManager {
         return $this->container->get('dataManager');
     }
 
+    /**
+     * @return CollationEngine
+     */
     protected function getCollationEngine() : CollationEngine {
         return $this->systemManager->getCollationEngine();
     }

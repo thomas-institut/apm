@@ -25,10 +25,13 @@ require_once 'SiteMockup/testconfig.php';
 
 
 use APM\Presets\PresetManager;
+use APM\System\ApmConfigParameter;
+use APM\System\ApmContainerKey;
 use AverroesProject\EditorialNote;
 use AverroesProject\TxText\Item;
 use DI\DependencyException;
 use DI\NotFoundException;
+use Exception;
 use PHPUnit\Framework\TestCase;
 use GuzzleHttp\Psr7;
 
@@ -93,6 +96,11 @@ class ApiControllerTest extends TestCase {
      */
     static $apiElements;
 
+    /**
+     * @throws DependencyException
+     * @throws NotFoundException
+     * @throws Exception
+     */
     public static function setUpBeforeClass() : void
     {
         global $apmTestConfig;
@@ -101,7 +109,7 @@ class ApiControllerTest extends TestCase {
         self::$testEnvironment = new DatabaseTestEnvironment($apmTestConfig);
         self::$container = self::$testEnvironment->getContainer();
 
-        self::$dataManager = self::$container->get('dataManager');
+        self::$dataManager = self::$container->get(ApmContainerKey::DATA_MANAGER);
 
         $apiUser = self::$dataManager->userManager->createUserByUserName('testApiUser');
         self::$testEnvironment->setApiUser($apiUser);
@@ -402,7 +410,7 @@ class ApiControllerTest extends TestCase {
 
         // Get some presets in
         /** @var PresetManager $presetManager */
-        $presetManager = self::$container->get('systemManager')->getPresetsManager();
+        $presetManager = self::$container->get(ApmContainerKey::SYSTEM_MANAGER)->getPresetsManager();
         $pf = new System\PresetFactory();
         $presetTitle = 'MyTestPreset';
 
@@ -595,7 +603,7 @@ class ApiControllerTest extends TestCase {
         $request6 = self::requestWithData($request,
             [   'command' => ApiPresets::COMMAND_NEW,
                 'tool' => System\ApmSystemManager::TOOL_AUTOMATIC_COLLATION,
-                'userId' => self::$container->get('userId'),
+                'userId' => self::$container->get(ApmContainerKey::USER_ID),
                 'title' => $presetTitle,
                 'presetId' => 0,
                 'presetData' => $presetOwnedByNewApiUser
@@ -783,7 +791,7 @@ class ApiControllerTest extends TestCase {
         $data = json_decode($response->getBody(), true);
         $this->assertEquals([], $data['elements']);
         $this->assertEquals([], $data['ednotes']);
-        $this->assertEquals([self::$container->get('userId')], array_keys($data['people'])); // only test UserId
+        $this->assertEquals([self::$container->get(ApmContainerKey::USER_ID)], array_keys($data['people'])); // only test UserId
         $this->assertEquals(1, $data['info']['col']);
 
         $numElements = 5;

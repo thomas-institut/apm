@@ -30,6 +30,8 @@ use AverroesProject\TxText\MarginalMark;
 use AverroesProject\TxText\Rubric;
 use AverroesProject\TxText\Sic;
 use DI\Container;
+use DI\DependencyException;
+use DI\NotFoundException;
 use PHPUnit\Framework\TestCase;
 use AverroesProject\Data\DataManager;
 use AverroesProject\TxText\ItemArray;
@@ -62,6 +64,11 @@ class DataManagerTest extends TestCase {
      */
     private static $testEnvironment;
 
+    /**
+     * @throws DependencyException
+     * @throws NotFoundException
+     * @throws \Exception
+     */
     public static function setUpBeforeClass() : void  {
         global $apmTestConfig;
         self::$testEnvironment = new DatabaseTestEnvironment($apmTestConfig);
@@ -113,11 +120,13 @@ class DataManagerTest extends TestCase {
         $this->assertNull($pageInfo['foliation']);
         return $newDocId;
     }
-    
+
     /**
      * @depends testNewDoc
+     * @param int $docId
+     * @return int
      */
-    public function testColumns($docId)
+    public function testColumns(int $docId)
     {
         $dm = self::$dataManager;
         $nCols = $dm->getNumColumns($docId, 1);
@@ -130,10 +139,13 @@ class DataManagerTest extends TestCase {
         
         return $docId;
     }
-    
+
     /**
-     * 
+     *
      * @depends testColumns
+     * @param int $docId
+     * @return
+     * @throws \Exception
      */
     public function testUpdateColumn($docId) {
         $dm = self::$dataManager;
@@ -314,9 +326,11 @@ class DataManagerTest extends TestCase {
         
         return $docId;
     }
-    
-     /**
+
+    /**
      * @depends testUpdatePageSettings
+     * @param int $docId
+     * @throws \Exception
      */
     public function testDeletePage($docId) 
     {
@@ -358,7 +372,10 @@ class DataManagerTest extends TestCase {
         }
         
     }
-    
+
+    /**
+     * @throws \Exception
+     */
     public function testGetItemStream()
     {
         

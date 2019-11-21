@@ -32,12 +32,14 @@
 
 namespace APM\System\Auth;
 
+use APM\System\ApmContainerKey;
 use AverroesProject\Data\UserManager;
 use DateInterval;
 use DateTime;
 use DI\Container;
 use DI\DependencyException;
 use DI\NotFoundException;
+use Exception;
 use Monolog\Logger;
 use Psr\Container\ContainerInterface;
 use \Psr\Http\Message\ServerRequestInterface as Request;
@@ -48,6 +50,9 @@ use \Dflydev\FigCookies\FigResponseCookies;
 use Psr\Http\Server\RequestHandlerInterface;
 use Slim\Routing\RouteParser;
 use Slim\Views\Twig;
+use Twig\Error\LoaderError;
+use Twig\Error\RuntimeError;
+use Twig\Error\SyntaxError;
 
 /**
  * Middleware class for site authentication
@@ -88,22 +93,37 @@ class Authenticator {
      */
     private $view;
 
+    /**
+     * Authenticator constructor.
+     * @param Container $ci
+     * @throws DependencyException
+     * @throws NotFoundException
+     */
     public function __construct(Container $ci)
     {
         $this->container = $ci;
 
-        $this->router = $ci->get('router');
-        $this->userManager = $ci->get('dataManager')->userManager;
-        $this->logger = $this->container->get('logger')->withName('AUTH');
-        $this->view = $this->container->get('view');
+        $this->router = $ci->get(ApmContainerKey::ROUTER);
+        $this->userManager = $ci->get(ApmContainerKey::DATA_MANAGER)->userManager;
+        $this->logger = $this->container->get(ApmContainerKey::LOGGER)->withName('AUTH');
+        $this->view = $this->container->get(ApmContainerKey::VIEW);
         $this->apiLogger = $this->logger->withName('AUTH-API');
         $this->siteLogger = $this->logger->withName('AUTH-SITE');
     }
 
+    /**
+     * @return string
+     * @throws DependencyException
+     * @throws NotFoundException
+     */
     private function getBaseUrl() : string {
-        return $this->container->get('config')['baseurl'];
+        return $this->container->get(ApmContainerKey::CONFIG)['baseurl'];
     }
-   
+
+    /**
+     * @return string
+     * @throws Exception
+     */
     private function generateRandomToken()
     {
         return bin2hex(random_bytes(20));
@@ -181,7 +201,18 @@ class Authenticator {
                     $this->router->urlFor('login'));
         }
     }
-    
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws DependencyException
+     * @throws NotFoundException
+     * @throws LoaderError
+     * @throws RuntimeError
+     * @throws SyntaxError
+     * @throws Exception
+     */
     public function login(Request $request, Response $response)
     {
         session_start();

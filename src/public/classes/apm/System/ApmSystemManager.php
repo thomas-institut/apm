@@ -21,6 +21,7 @@
 namespace APM\System;
 
 use APM\CollationEngine\Collatex;
+use APM\Plugin\Plugin;
 use APM\Presets\DataTablePresetManager;
 use APM\Presets\PresetManager;
 use APM\Plugin\HookManager;
@@ -74,26 +75,6 @@ class ApmSystemManager extends SystemManager {
     const TABLE_PRESETS = 'presets';
     const TABLE_VERSIONS_TX = 'versions_tx';
 
-    // Configuration parameters
-    const CFG_DEFAULT_TIMEZONE = 'default_timezone';
-    const CFG_LOG_FILENAME = 'log_filename';
-    const CFG_LOG_DEBUG = 'log_include_debug_info';
-    const CFG_LOG_APPNAME = 'log_appname';
-    const CFG_LOG_IN_PHP_ERROR_HANDLER = 'log_in_php_error_handler';
-    const CFG_DB = 'db';
-    const CFG_TABLE_PREFIX  = 'db_table_prefix';
-    const CFG_COLLATEX_JARFILE = 'collatex_jar_file';
-    const CFG_COLLATEX_TMPDIR = 'collatex_temp_dir';
-    const CFG_JAVA_EXECUTABLE = 'java_executable';
-    const CFG_PLUGIN_DIR = 'plugin_dir';
-    const CFG_PLUGINS = 'plugins';
-    const CFG_VERSION = 'version';
-    const CFG_APP_NAME = 'app_name';
-    const CFG_COPYRIGHT_NOTICE = 'copyright_notice';
-    const CFG_SUPPORT_CONTACT_NAME = 'support_contact_name';
-    const CFG_SUPPORT_CONTACT_EMAIL = 'support_contact_email';
-    const CFG_BASE_URL = 'baseurl';
-    
     const DEFAULT_LOG_APPNAME = 'APM';
     const DEFAULT_LOG_DEBUG = false;
     const DEFAULT_LOG_IN_PHP_ERROR_HANDLER = true;
@@ -104,16 +85,16 @@ class ApmSystemManager extends SystemManager {
     const DEFAULT_PLUGIN_DIR = 'plugins';
     
     const REQUIRED_CONFIG_VARIABLES = [ 
-        self::CFG_APP_NAME,
-        self::CFG_VERSION,
-        self::CFG_COPYRIGHT_NOTICE,
-        self::CFG_DB,
-        self::CFG_SUPPORT_CONTACT_NAME,
-        self::CFG_SUPPORT_CONTACT_EMAIL,
-        self::CFG_BASE_URL,
-        self::CFG_LOG_FILENAME,
-        'languages',
-        'langCodes',
+        ApmConfigParameter::APP_NAME,
+        ApmConfigParameter::VERSION,
+        ApmConfigParameter::COPYRIGHT_NOTICE,
+        ApmConfigParameter::DB,
+        ApmConfigParameter::SUPPORT_CONTACT_NAME,
+        ApmConfigParameter::SUPPORT_CONTACT_EMAIL,
+        ApmConfigParameter::BASE_URL,
+        ApmConfigParameter::LOG_FILENAME,
+        ApmConfigParameter::LANGUAGES,
+        ApmConfigParameter::LANG_CODES,
     ];
     
     const REQUIRED_CONFIG_VARIABLES_DB = [ 'host', 'db', 'user', 'pwd'];
@@ -156,9 +137,9 @@ class ApmSystemManager extends SystemManager {
 
         $config = $this->getSanitizedConfigArray($configArray);
         
-        if ($config['error']) {
+        if ($config[ApmConfigParameter::ERROR]) {
             $msg = "Configuration file is not valid:\n";
-            foreach($config['errorMsgs'] as $errorMsg) {
+            foreach($config[ApmConfigParameter::ERROR_MESSAGES] as $errorMsg) {
                 $msg .= $errorMsg . "\n";
             }
             $this->setError(self::ERROR_CONFIG_ARRAY_IS_NOT_VALID, $msg);
@@ -175,19 +156,19 @@ class ApmSystemManager extends SystemManager {
         $this->logger = $this->createLogger();
         
         // Dump configuration warnings in the log
-        foreach($this->config['warnings'] as $warning) {
+        foreach($this->config[ApmConfigParameter::WARNINGS] as $warning) {
             $this->logger->debug($warning);
         }
         
         // Set timezone
-        date_default_timezone_set($this->config[self::CFG_DEFAULT_TIMEZONE]);    
+        date_default_timezone_set($this->config[ApmConfigParameter::DEFAULT_TIMEZONE]);
         
         // Create HookManager
         $this->hookManager = new HookManager();
         
         // Create table names
         $this->tableNames = 
-                $this->createTableNames($this->config[self::CFG_TABLE_PREFIX]);
+                $this->createTableNames($this->config[ApmConfigParameter::TABLE_PREFIX]);
         
         // Set up database connection
         try {
@@ -229,9 +210,9 @@ class ApmSystemManager extends SystemManager {
         
         // Set up Collatex
         $this->collationEngine = new Collatex(
-            $this->config[self::CFG_COLLATEX_JARFILE], 
-            $this->config[self::CFG_COLLATEX_TMPDIR], 
-            $this->config[self::CFG_JAVA_EXECUTABLE]
+            $this->config[ApmConfigParameter::COLLATEX_JARFILE],
+            $this->config[ApmConfigParameter::COLLATEX_TMPDIR],
+            $this->config[ApmConfigParameter::JAVA_EXECUTABLE]
         );
        
         // Set up PresetsManager
@@ -241,9 +222,8 @@ class ApmSystemManager extends SystemManager {
                 new DataTablePresetManager($presetsManagerDataTable, ['lang' => 'key1']);
         
         // Load plugins
-        
-        foreach($this->config[self::CFG_PLUGINS] as $pluginName) {
-            $pluginPhpFile = $this->config[self::CFG_PLUGIN_DIR] . '/' . 
+        foreach($this->config[ApmConfigParameter::PLUGINS] as $pluginName) {
+            $pluginPhpFile = $this->config[ApmConfigParameter::PLUGIN_DIR] . '/' .
                     $pluginName . '.php';
             if ((@include_once $pluginPhpFile) === false) {
                 $this->logAndSetError(self::ERROR_CANNOT_LOAD_PLUGIN, 
@@ -252,7 +232,11 @@ class ApmSystemManager extends SystemManager {
             }
             $pluginClassName = '\\' . $pluginName;
             $pluginObject = new $pluginClassName($this);
-            $pluginObject->init();
+            if (is_a($pluginObject, Plugin::class)) {
+                /** @var Plugin $pluginObject */
+                $pluginObject->init();
+            }
+
         }
     }
     
@@ -284,7 +268,7 @@ class ApmSystemManager extends SystemManager {
     }
     
     protected function setUpDbConnection() {
-        $dbConfig = $this->config[self::CFG_DB];
+        $dbConfig = $this->config[ApmConfigParameter::DB];
 
         $dbh = new PDO('mysql:dbname='. $dbConfig['db'] . ';host=' .
                 $dbConfig['host'], $dbConfig['user'], 
@@ -324,7 +308,7 @@ class ApmSystemManager extends SystemManager {
     }
     
     public function getBaseUrl() : string {
-        return $this->config[self::CFG_BASE_URL];
+        return $this->config[ApmConfigParameter::BASE_URL];
     }
     
     public function getTableNames() : array {
@@ -333,14 +317,14 @@ class ApmSystemManager extends SystemManager {
 
     protected function createLogger() {
         $loggerLevel = Logger::INFO;
-        if ($this->config[self::CFG_LOG_DEBUG]) {
+        if ($this->config[ApmConfigParameter::LOG_DEBUG]) {
             $loggerLevel = Logger::DEBUG;
         }
         
-        $logger = new Logger($this->config[self::CFG_LOG_APPNAME]);
+        $logger = new Logger($this->config[ApmConfigParameter::LOG_APPNAME]);
 
         try {
-            $logStream = new StreamHandler($this->config[self::CFG_LOG_FILENAME],
+            $logStream = new StreamHandler($this->config[ApmConfigParameter::LOG_FILENAME],
                 $loggerLevel);
         } catch (Exception $e) {
             // TODO: Handle errors properly!
@@ -348,7 +332,7 @@ class ApmSystemManager extends SystemManager {
         }
         $logger->pushHandler($logStream);
         
-        if ($this->config[self::CFG_LOG_IN_PHP_ERROR_HANDLER]) {
+        if ($this->config[ApmConfigParameter::LOG_IN_PHP_ERROR_HANDLER]) {
             // Cannot set this in testing, so, let's ignore it
             $phpLog = new ErrorLogHandler(); // @codeCoverageIgnore
             $logger->pushHandler($phpLog); // @codeCoverageIgnore
@@ -412,63 +396,63 @@ class ApmSystemManager extends SystemManager {
     protected function getSanitizedConfigArray(array $originalConfig) : array {
         
         $config = $originalConfig;
-        $config['error'] = false;
-        $config['errorMsgs'] = [];
-        $config['warnings'] = [];
+        $config[ApmConfigParameter::ERROR] = false;
+        $config[ApmConfigParameter::ERROR_MESSAGES] = [];
+        $config[ApmConfigParameter::WARNINGS] = [];
         
         foreach (self::REQUIRED_CONFIG_VARIABLES as $requiredVariable) {
             if (!isset($config[$requiredVariable]) || ($config[$requiredVariable] === '')) {
-                $config['error'] = true;
-                $config['errorMsgs'][] = 'Missing required parameter "' . 
+                $config[ApmConfigParameter::ERROR] = true;
+                $config[ApmConfigParameter::ERROR_MESSAGES][] = 'Missing required parameter "' .
                         $requiredVariable . '"';
             }
         }
-        if ($config['error']) {
+        if ($config[ApmConfigParameter::ERROR]) {
             return $config;
         }
         
         $stringParametersWithDefaults = [
-            self::CFG_DEFAULT_TIMEZONE => date_default_timezone_get(),
-            self::CFG_LOG_APPNAME => self::DEFAULT_LOG_APPNAME,
-            self::CFG_TABLE_PREFIX => self::DEFAULT_TABLE_PREFIX,
-            self::CFG_COLLATEX_JARFILE => self::DEFAULT_COLLATEX_JARFILE,
-            self::CFG_COLLATEX_TMPDIR => self::DEFAULT_COLLATEX_TMPDIR,
-            self::CFG_JAVA_EXECUTABLE => self::DEFAULT_JAVA_EXECUTABLE,
-            self::CFG_PLUGIN_DIR => self::DEFAULT_PLUGIN_DIR
+            ApmConfigParameter::DEFAULT_TIMEZONE => date_default_timezone_get(),
+            ApmConfigParameter::LOG_APPNAME => self::DEFAULT_LOG_APPNAME,
+            ApmConfigParameter::TABLE_PREFIX => self::DEFAULT_TABLE_PREFIX,
+            ApmConfigParameter::COLLATEX_JARFILE => self::DEFAULT_COLLATEX_JARFILE,
+            ApmConfigParameter::COLLATEX_TMPDIR => self::DEFAULT_COLLATEX_TMPDIR,
+            ApmConfigParameter::JAVA_EXECUTABLE => self::DEFAULT_JAVA_EXECUTABLE,
+            ApmConfigParameter::PLUGIN_DIR => self::DEFAULT_PLUGIN_DIR
         ];
         
         foreach($stringParametersWithDefaults as $param => $default) {
             if (!isset($config[$param]) || !is_string($config[$param]) || ($config[$param] === '')) {
                 $config[$param] = $default;
-                $config['warnings'][] = 'Using default for "' . 
+                $config[ApmConfigParameter::WARNINGS][] = 'Using default for "' .
                         $param  . '" => "' . $default . '"';
             }
         }
         
         $boolParametersWithDefaults = [
-            self::CFG_LOG_DEBUG => self::DEFAULT_LOG_DEBUG,
-            self::CFG_LOG_IN_PHP_ERROR_HANDLER => self::DEFAULT_LOG_IN_PHP_ERROR_HANDLER
+            ApmConfigParameter::LOG_DEBUG => self::DEFAULT_LOG_DEBUG,
+            ApmConfigParameter::LOG_IN_PHP_ERROR_HANDLER => self::DEFAULT_LOG_IN_PHP_ERROR_HANDLER
         ];
         
         foreach($boolParametersWithDefaults as $param => $default) {
             if (!isset($config[$param]) || !is_bool($config[$param])) {
                 $config[$param] = $default;
-                $config['warnings'][] = 'Using default for "' . 
+                $config[ApmConfigParameter::WARNINGS][] = 'Using default for "' .
                         $param  . '" => ' . ( $default ? 'true' : 'false') ;
             }
         }
         
         // Check database configuration 
         foreach(self::REQUIRED_CONFIG_VARIABLES_DB as $requiredVariable) {
-            if (!isset($config[self::CFG_DB][$requiredVariable])) {
-                $config['error'] = true;
-                $config['errorMsgs'][] = 'Missing required DB parameter: "' . 
+            if (!isset($config[ApmConfigParameter::DB][$requiredVariable])) {
+                $config[ApmConfigParameter::ERROR] = true;
+                $config[ApmConfigParameter::ERROR_MESSAGES][] = 'Missing required DB parameter: "' .
                         $requiredVariable . '"';
             } else {
-                if (!is_string($config[self::CFG_DB][$requiredVariable]) || 
-                        $config['db'][$requiredVariable] === '') {
-                    $config['error'] = true;
-                    $config['errorMsgs'][] = 
+                if (!is_string($config[ApmConfigParameter::DB][$requiredVariable]) ||
+                        $config[ApmConfigParameter::DB][$requiredVariable] === '') {
+                    $config[ApmConfigParameter::ERROR] = true;
+                    $config[ApmConfigParameter::ERROR_MESSAGES][] =
                         'Required DB parameter must be an non-empty string: "' . 
                          $requiredVariable . '"';
                 }
@@ -476,8 +460,8 @@ class ApmSystemManager extends SystemManager {
         }
         
         // Make sure there's a plugins array
-        if (!isset($config[self::CFG_PLUGINS]) || !is_array($config)) {
-            $config[self::CFG_PLUGINS] = [];
+        if (!isset($config[ApmConfigParameter::PLUGINS]) || !is_array($config)) {
+            $config[ApmConfigParameter::PLUGINS] = [];
         } 
         return $config;
     }

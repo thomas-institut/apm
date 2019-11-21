@@ -20,6 +20,7 @@
 
 namespace APM;
 
+use APM\System\ApmContainerKey;
 use Slim\Views\Twig;
 
 require_once 'DatabaseTestEnvironment.php';
@@ -36,12 +37,12 @@ class SiteTestEnvironment extends DatabaseTestEnvironment {
     public function getContainer() {
         $container = parent::getContainer();
 
-        $container->set('router',  new SlimRouterMockup());
+        $container->set(ApmContainerKey::ROUTER,  new SlimRouterMockup());
 
         $view =  new Twig('../../templates', ['cache' => false]);
         $view->addExtension(new SlimTwigExtensionMockup());
 
-        $container->set('view', $view);
+        $container->set(ApmContainerKey::VIEW, $view);
         return $container;
     }
 

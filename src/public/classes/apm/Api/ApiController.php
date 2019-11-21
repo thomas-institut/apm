@@ -107,6 +107,7 @@ abstract class ApiController
        $this->apiUserId = $ci->get('apiUserId'); // this should be set by the authenticator!
        $this->languages =$ci->get('config')['languages'];
        $this->logger = $this->systemManager->getLogger()->withName('API');
+       $this->debug('Api User ID: ' . $this->apiUserId);
     }
 
     protected function getDataManager() : DataManager {

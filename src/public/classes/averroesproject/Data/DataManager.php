@@ -20,16 +20,40 @@
 
 namespace AverroesProject\Data;
 
-use APM\Core\Witness\Witness;
+use AverroesProject\ColumnElement\Custodes;
+use AverroesProject\ColumnElement\Gloss;
+use AverroesProject\ColumnElement\Head;
+use AverroesProject\ColumnElement\Line;
+use AverroesProject\ColumnElement\LineGap;
+use AverroesProject\ColumnElement\PageNumber;
+use AverroesProject\ColumnElement\Substitution;
+use AverroesProject\TxText\Abbreviation;
+use AverroesProject\TxText\Addition;
+use AverroesProject\TxText\CharacterGap;
+use AverroesProject\TxText\ChunkMark;
+use AverroesProject\TxText\Deletion;
+use AverroesProject\TxText\Gliph;
+use AverroesProject\TxText\Illegible;
+use AverroesProject\TxText\Initial;
 use AverroesProject\TxText\Item;
 use AverroesProject\TxText\ItemArray;
 use AverroesProject\ColumnElement\Element;
 use AverroesProject\ColumnElement\ElementArray;
+use AverroesProject\TxText\MarginalMark;
+use AverroesProject\TxText\Mark;
+use AverroesProject\TxText\MathText;
+use AverroesProject\TxText\NoWordBreak;
+use AverroesProject\TxText\ParagraphMark;
+use AverroesProject\TxText\Rubric;
+use AverroesProject\TxText\Sic;
+use AverroesProject\TxText\Text;
+use AverroesProject\TxText\Unclear;
 use DataTable\MySqlDataTable;
 use DataTable\MySqlDataTableWithRandomIds;
 use AverroesProject\Algorithm\MyersDiff;
 use AverroesProject\Algorithm\Utility;
 use APM\Plugin\HookManager;
+use DataTable\TimeString;
 use Exception;
 use Monolog\Logger;
 
@@ -517,7 +541,7 @@ class DataManager
      * @param array $settings
      * @return bool
      */
-    function updatePageSettings($pageId, $settings) {
+    function updatePageSettings(int $pageId, array $settings) : bool {
         $row['id'] = $pageId;
         
         if ($settings === []) {
@@ -536,11 +560,12 @@ class DataManager
         if (isset($settings['type'])) {
             $row['type'] = $settings['type'];
             try {
-                $typeInfo = $this->pageTypesTable->getRow($row['type']);
+                $this->pageTypesTable->getRow($row['type']);
             } catch (Exception $e) {
                 $this->reportException('updatePageSetting, get TypeInfo ' . $row['type'], $e);
                 return false;
             }
+            // so, the type is good, carry on
         }
         
         if (count(array_keys($row)) === 1) {
@@ -560,28 +585,11 @@ class DataManager
     }
     
     /**
-     * Returns the number of lines with transcription for a document
-     * @param type $docId
-     * @return int
-     */
-//    function getLineCountByDoc($docId){
-//        $this->queryStats->countQuery('select');
-//        return $this->dbh->getOneFieldQuery(
-//            'SELECT count(DISTINCT `page_id`, e.`seq`) as value from ' . 
-//                $this->tNames['elements'] . ' as e JOIN ' . 
-//                $this->tNames['pages'] . ' AS p ON e.page_id=p.id ' .
-//                ' WHERE p.doc_id=' . $docId . 
-//                ' AND e.type=' . Element::LINE . 
-//                " AND `e`.`valid_until`='9999-12-31 23:59:59.999999'", 
-//            'value'
-//        );
-//    }
-    /**
      * Returns the editors associated with a document as a list of usernames
      * @param int $docId
      * @return array
      */
-    function getEditorsByDocId($docId)
+    function getEditorsByDocId(int $docId)
     {
         $te = $this->tNames['elements'];
         $tu = $this->tNames['users'];
@@ -603,15 +611,15 @@ class DataManager
         }
         return $editors;
     }
-    
+
     /**
      * Returns the page numbers of the pages with transcription
      * data for a document Id
-     * @param type $docId
+     * @param int $docId
+     * @param int $order
      * @return array
-     * 
      */
-    function getTranscribedPageListByDocId($docId, $order = self::ORDER_BY_PAGE_NUMBER)
+    function getTranscribedPageListByDocId(int $docId, $order = self::ORDER_BY_PAGE_NUMBER)
     {
         $te = $this->tNames['elements'];
         $tp = $this->tNames['pages'];
@@ -628,7 +636,7 @@ class DataManager
                 ' WHERE p.doc_id=' . $docId . 
                 " AND `e`.`valid_until`='9999-12-31 23:59:59.999999'" . 
                 " AND `p`.`valid_until`='9999-12-31 23:59:59.999999'" . 
-                " ORDER BY p.`$orderby` ASC";
+                " ORDER BY p.`$orderby`";
         $r = $this->databaseHelper->query($query);
         $pages = array();
          while ($row = $r->fetch(PDO::FETCH_ASSOC)){
@@ -658,12 +666,17 @@ class DataManager
         $query = "SELECT `$tp`.* FROM `$tp` JOIN `$td` " .
                  "ON (`$td`.id=`$tp`.doc_id) WHERE " . 
                  "`$tp`.`valid_until`='9999-12-31 23:59:59.999999' AND `$td`.id=$docId " . 
-                 "ORDER BY `$tp`.$orderby ASC";
+                 "ORDER BY `$tp`.$orderby";
         $res = $this->databaseHelper->query($query);
         
         return $res->fetchAll(PDO::FETCH_ASSOC);
     }
-    
+
+    /**
+     * @param $docId
+     * @return bool|int
+     * @throws Exception
+     */
     function deleteDocById($docId) {
         $this->queryStats->countQuery('delete');
         if ($this->getPageCountByDocIdAllTime($docId) !== 0) {
@@ -680,7 +693,8 @@ class DataManager
     
     function getDocByDareId($dareId) {
         $this->queryStats->countQuery('select');
-        return $this->docsDataTable->findRow(['image_source_data' => $dareId]);
+
+        return $this->docsDataTable->findRows(['image_source_data' => $dareId], 1)[0];
     }
 
     /**
@@ -702,7 +716,7 @@ class DataManager
                  "JOIN ($te, $tp) ON ($te.page_id=$tp.id and $td.id=$tp.doc_id) " . 
                  "WHERE $te.editor_id=$userId " . 
                  "AND $te.valid_until='$eot' AND $tp.valid_until='$eot'" . 
-                 "ORDER BY $td.title ASC";
+                 "ORDER BY $td.title";
 
         $res = $this->databaseHelper->query($query);
         if ($res === false) {
@@ -737,7 +751,7 @@ class DataManager
                  "WHERE $te.editor_id=$userId " . 
                  "AND $td.id=$docId " .
                  "AND $te.valid_until='$eot' AND $tp.valid_until='$eot' " . 
-                 "ORDER BY $tp.seq ASC";
+                 "ORDER BY $tp.seq";
 
         $res = $this->databaseHelper->query($query);
         if ($res === false) {
@@ -750,15 +764,15 @@ class DataManager
         }
         return $pageIds;
     }
-    
+
     /**
      * Returns the image URL for a page or false if the page image source
      * is not recognized
      * @param int $docId
-     * @param int $page
+     * @param int $imageNumber
      * @return string|boolean
      */
-    public function getImageUrl($docId, $imageNumber){
+    public function getImageUrl($docId, int $imageNumber){
         $doc = $this->getDocById($docId);
         if ($doc === false) {
             return false;
@@ -800,16 +814,12 @@ class DataManager
     public function getColumnElementsByPageId($pageId, $col,$time = false) {
         $this->queryStats->countQuery('select');
         if ($time === false) {
-            $time = MySqlUnitemporalDataTable::now();
+            $time = TimeString::now();
         }
-//        $rows = $this->elementsDataTable->findRows([
-//            'page_id' => $pageId,
-//            'column_number' => $col
-//        ]);
-        $rows = $this->elementsDataTable->realfindRowsWithTime([
+        $rows = $this->elementsDataTable->findRowsWithTime([
             'page_id' => $pageId,
             'column_number' => $col
-        ], false, $time);
+        ], 0, $time);
 
         Utility::arraySortByKey($rows, 'seq');
 
@@ -831,7 +841,7 @@ class DataManager
     
     public function getColumnElements($docId, $page, $col, $time = false){
         if ($time === false) {
-            $time = MySqlUnitemporalDataTable::now();
+            $time = TimeString::now();
         }
         //$this->logger->debug('Getting elements for time = ' . $time);
         $pageId = $this->getPageIdByDocPage($docId, $page);
@@ -846,13 +856,13 @@ class DataManager
     function getItemsForElement($element, $time = false)
     {
         if ($time === false) {
-            $time = MySqlUnitemporalDataTable::now();
+            $time = TimeString::now();
         }
 
         $this->queryStats->countQuery('select');
-        $rows = $this->itemsDataTable->realfindRowsWithTime([
+        $rows = $this->itemsDataTable->findRowsWithTime([
             'ce_id' => $element->id
-        ], false, $time);
+        ], 0, $time);
         
         Utility::arraySortByKey($rows, 'seq');
         
@@ -896,11 +906,11 @@ class DataManager
      */
     public function getWorkInfo($work)
     {
-        $workInfo = $this->worksTable->findRow(['dare_id' => $work]);
-        if ($workInfo === false) {
+        $rows = $this->worksTable->findRows(['dare_id' => $work], 1);
+        if (count($rows)===0) {
             return false;
         }
-        
+        $workInfo = $rows[0];
         $authorInfo = $this->userManager->getPersonInfo((int) $workInfo['author_id']);
         
         $workInfo['author_name'] = $authorInfo['fullname'];
@@ -927,7 +937,7 @@ class DataManager
             " AND $ti.text='" . $workId . "'"  . 
             " AND $ti.`valid_until`='9999-12-31 23:59:59.999999'" . 
             " AND $te.`valid_until`='9999-12-31 23:59:59.999999'" . 
-            " ORDER BY $ti.target ASC";
+            " ORDER BY $ti.target";
         
         $r = $this->databaseHelper->query($query);
         
@@ -1420,27 +1430,27 @@ class DataManager
     public function getPageIdByDocPage($docId, $pageNum)
     {
         $this->queryStats->countQuery('select');
-        $row = $this->pagesDataTable->findRow([
+        $rows = $this->pagesDataTable->findRows([
             'doc_id' => $docId, 
             'page_number'=> $pageNum
-            ]);
-        if ($row === false) {
+            ],1);
+        if ($rows === []) {
             return false;
         }
-        return $row['id'];
+        return $rows[0]['id'];
     }
     
      public function getPageIdByDocSeq($docId, $seq)
     {
         $this->queryStats->countQuery('select');
-        $row = $this->pagesDataTable->findRow([
+        $rows = $this->pagesDataTable->findRows([
             'doc_id' => $docId, 
             'seq'=> $seq
-            ]);
-        if ($row === false) {
+            ],1);
+        if ($rows === []) {
             return false;
         }
-        return $row['id'];
+        return $rows[0]['id'];
     }
 
     /**
@@ -1462,32 +1472,36 @@ class DataManager
      */
     public function getPageInfoByDocSeq($docId, $seq) {
         $this->queryStats->countQuery('select');
-        $row = $this->pagesDataTable->findRow([
+        $rows = $this->pagesDataTable->findRows([
             'doc_id' => $docId,
             'seq'=> $seq
-        ]);
-        return $row;
+        ],1);
+        if ($rows === []) {
+            return false;
+        }
+        return $rows[0];
     }
-    
+
     /**
-     * Creates a new element in the database. 
+     * Creates a new element in the database.
      * Return the newly created element, which will be a copy of the
      * given element with system ids for itself and for its items.
-     * 
+     *
      * if $insertAtEnd is false, the given element's sequence will be
      * respected and the rest of the elements of the column will be
      * moved to accommodate the new element's position.
-     * 
+     *
      * @param Element $element
      * @param boolean $insertAtEnd
-     * @param array $itemIds  new Item Ids (so that addition targets can be set)
-     * @return Element
+     * @param array $itemIds new Item Ids (so that addition targets can be set)
+     * @param bool $time
+     * @return bool|Element
      */
     public function insertNewElement(Element $element, $insertAtEnd = true, $itemIds = [], $time = false) 
     {
         
         if (!$time) {
-            $time = MySqlUnitemporalDataTable::now();
+            $time = TimeString::now();
         }
         
         if (is_null($element->pageId)) {
@@ -1629,7 +1643,7 @@ class DataManager
     {
         
         if (!$time) {
-            $time = MySqlUnitemporalDataTable::now();
+            $time = TimeString::now();
         }
         $this->queryStats->countQuery('create-item');
         return $this->itemsDataTable->createRowWithTime([
@@ -1649,10 +1663,10 @@ class DataManager
     private function updateItemInDB($item, $time = false)
     {
         if (!$time) {
-            $time = MySqlUnitemporalDataTable::now();
+            $time = TimeString::now();
         }
         $this->queryStats->countQuery('update-item');
-        return $this->itemsDataTable->realUpdateRowWithTime([
+        $this->itemsDataTable->realUpdateRowWithTime([
             'id' => $item->id,
             'ce_id'=> $item->columnElementId,
             'type' => $item->type,
@@ -1665,11 +1679,12 @@ class DataManager
             'length' => $item->length,
             'target' => $item->target
         ], $time);
+        return true;
     }
     private function createNewElementInDB($element, $time = false) 
     {
          if (!$time) {
-            $time = MySqlUnitemporalDataTable::now();
+            $time = TimeString::now();
         }
         
         $this->queryStats->countQuery('create-element');
@@ -1689,10 +1704,10 @@ class DataManager
     private function updateElementInDB($element,  $time = false) 
     {
         if (!$time) {
-            $time = MySqlUnitemporalDataTable::now();
+            $time = TimeString::now();
         }
         $this->queryStats->countQuery('update-element');
-        return $this->elementsDataTable->realUpdateRowWithTime([
+        $this->elementsDataTable->realUpdateRowWithTime([
                 'id' => $element->id,
                 'type' => $element->type,
                 'page_id' => $element->pageId,
@@ -1704,6 +1719,7 @@ class DataManager
                 'reference' => $element->reference,
                 'placement' => $element->placement
             ], $time);
+        return true;
     }
     
        
@@ -1739,6 +1755,7 @@ class DataManager
     public function getElementById($elementId) {
         $this->queryStats->countQuery('select');
 
+        $row = false;
         try {
             $row = $this->elementsDataTable->getRow($elementId);
         } catch (Exception $e) {
@@ -1756,25 +1773,25 @@ class DataManager
         
         switch ($row[$fields['type']]){
             case Element::LINE:
-                $e = new \AverroesProject\ColumnElement\Line();
+                $e = new Line();
                 // the line number
                 //$e->setLineNumber($row[$fields['reference']]);
                 break;
 
             case Element::CUSTODES:
-                $e = new \AverroesProject\ColumnElement\Custodes();
+                $e = new Custodes();
                 break;
 
             case Element::HEAD:
-                $e = new \AverroesProject\ColumnElement\Head();
+                $e = new Head();
                 break;
 
             case Element::GLOSS:
-                $e = new \AverroesProject\ColumnElement\Gloss();
+                $e = new Gloss();
                 break;
             
             case Element::LINE_GAP:
-                $e = new \AverroesProject\ColumnElement\LineGap();
+                $e = new LineGap();
                 break;
             
             case Element::ADDITION:
@@ -1782,11 +1799,11 @@ class DataManager
                 break;
             
             case Element::PAGE_NUMBER:
-                $e = new \AverroesProject\ColumnElement\PageNumber();
+                $e = new PageNumber();
                 break;
             
             case Element::SUBSTITUTION:
-                $e = new \AverroesProject\ColumnElement\Substitution();
+                $e = new Substitution();
                 break;
 
 //            default:
@@ -1807,10 +1824,10 @@ class DataManager
     /**
      * Creates an array of Element objects from an array such
      * as the one created by the TranscriptionEditor
-     * @param type $theArray
+     * @param array $theArray
      * @return array
      */
-    public static function createElementArrayFromArray($theArray) {
+    public static function createElementArrayFromArray(array $theArray) {
         $elements = [];
         //print "Creating element array from array";
         foreach($theArray as $elementArray) {
@@ -1862,37 +1879,37 @@ class DataManager
     public static function createItemObjectFromArbitraryRow($fields, $row) {
         switch ($row[$fields['type']]){
             case Item::TEXT:
-                $item = new \AverroesProject\TxText\Text($row[$fields['id']], 
+                $item = new Text($row[$fields['id']],
                         $row[$fields['seq']], 
                         $row[$fields['text']]);
                 break;
 
             case Item::RUBRIC:
-                $item = new \AverroesProject\TxText\Rubric($row[$fields['id']], 
+                $item = new Rubric($row[$fields['id']],
                         $row[$fields['seq']], 
                         $row[$fields['text']]);
                 break;
             
             case Item::INITIAL:
-                $item = new \AverroesProject\TxText\Initial($row[$fields['id']], 
+                $item = new Initial($row[$fields['id']],
                         $row[$fields['seq']], 
                         $row[$fields['text']]);
                 break;
 
             case Item::SIC:
-                $item = new \AverroesProject\TxText\Sic($row[$fields['id']], 
+                $item = new Sic($row[$fields['id']],
                         $row[$fields['seq']], 
                         $row[$fields['text']], 
                         $row[$fields['alt_text']]);
                 break;
 
             case Item::MARK:
-                $item = new \AverroesProject\TxText\Mark($row[$fields['id']], 
+                $item = new Mark($row[$fields['id']],
                         $row[$fields['seq']]);
                 break;
 
             case Item::UNCLEAR:
-                $item = new \AverroesProject\TxText\Unclear($row[$fields['id']], 
+                $item = new Unclear($row[$fields['id']],
                         $row[$fields['seq']], 
                         $row[$fields['extra_info']], 
                         $row[$fields['text']], 
@@ -1900,34 +1917,34 @@ class DataManager
                 break;
 
             case Item::ILLEGIBLE:
-                $item = new \AverroesProject\TxText\Illegible($row[$fields['id']], 
+                $item = new Illegible($row[$fields['id']],
                         $row[$fields['seq']], 
                         $row[$fields['length']], 
                         $row[$fields['extra_info']]);
                 break;
 
             case Item::ABBREVIATION:
-                $item = new \AverroesProject\TxText\Abbreviation($row[$fields['id']], 
+                $item = new Abbreviation($row[$fields['id']],
                         $row[$fields['seq']], 
                         $row[$fields['text']], 
                         $row[$fields['alt_text']]);
                 break;
 
             case Item::GLIPH:
-                $item = new \AverroesProject\TxText\Gliph($row[$fields['id']], 
+                $item = new Gliph($row[$fields['id']],
                         $row[$fields['seq']], 
                         $row[$fields['text']]);
                 break;
 
             case Item::DELETION:
-                $item = new \AverroesProject\TxText\Deletion($row[$fields['id']], 
+                $item = new Deletion($row[$fields['id']],
                         $row[$fields['seq']], 
                         $row[$fields['text']], 
                         $row[$fields['extra_info']]);
                 break;
 
             case Item::ADDITION:
-                $item = new \AverroesProject\TxText\Addition($row[$fields['id']], 
+                $item = new Addition($row[$fields['id']],
                         $row[$fields['seq']], 
                         $row[$fields['text']], 
                         $row[$fields['extra_info']], 
@@ -1935,7 +1952,7 @@ class DataManager
                 break;
 
             case Item::NO_WORD_BREAK:
-                $item = new \AverroesProject\TxText\NoWordBreak($row[$fields['id']], 
+                $item = new NoWordBreak($row[$fields['id']],
                         $row[$fields['seq']]);
                 break;
             
@@ -1943,7 +1960,7 @@ class DataManager
                 if (!isset($row[$fields['length']])) {
                     $row[$fields['length']] = 1;
                 }
-                $item = new \AverroesProject\TxText\ChunkMark($row[$fields['id']],
+                $item = new ChunkMark($row[$fields['id']],
                     $row[$fields['seq']], 
                     $row[$fields['text']], 
                     (int) $row[$fields['target']], 
@@ -1952,25 +1969,25 @@ class DataManager
                 break;
             
             case Item::CHARACTER_GAP:
-                $item = new \AverroesProject\TxText\CharacterGap(
+                $item = new CharacterGap(
                         $row[$fields['id']], 
                         $row[$fields['seq']],
                         $row[$fields['length']]);
                 break;
             
             case Item::PARAGRAPH_MARK:
-                $item = new \AverroesProject\TxText\ParagraphMark($row[$fields['id']], 
+                $item = new ParagraphMark($row[$fields['id']],
                         $row[$fields['seq']]);
                 break;
             
             case Item::MATH_TEXT:
-                $item = new \AverroesProject\TxText\MathText($row[$fields['id']], 
+                $item = new MathText($row[$fields['id']],
                         $row[$fields['seq']], 
                         $row[$fields['text']]);
                 break;
             
             case Item::MARGINAL_MARK:
-                $item = new \AverroesProject\TxText\MarginalMark($row[$fields['id']], 
+                $item = new MarginalMark($row[$fields['id']],
                         $row[$fields['seq']], 
                         $row[$fields['text']]);
                 break;
@@ -2023,9 +2040,12 @@ class DataManager
     /**
      * Updates column elements in the database
      *
+     * @param $pageId
+     * @param $columnNumber
      * @param array $newElements
-     * @param array $oldElements
+     * @param bool $time
      * @return array|bool
+     * @throws Exception
      */
     public function updateColumnElements($pageId, $columnNumber, array $newElements, $time = false)
     {
@@ -2044,7 +2064,7 @@ class DataManager
         );
 
         if ($time === false) {
-            $time = MySqlUnitemporalDataTable::now();
+            $time = TimeString::now();
         }
         $newItemsIds = [];
         $newElementsIndex = 0;
@@ -2139,11 +2159,12 @@ class DataManager
      *
      * @param Element $newElement
      * @return array
+     * @throws Exception
      */
     public function updateElement(Element $newElement, Element $oldElement, $itemIds = [], $time = false)
     {
         if (!$time) {
-            $time = MySqlUnitemporalDataTable::now();
+            $time = TimeString::now();
         }
         // Force element IDs to be same, we're only dealing with the element's data
         if ($newElement->id !== $oldElement->id) {
@@ -2258,7 +2279,13 @@ class DataManager
         return [$newElement->id, $itemIds];
         
     }
-    
+
+    /**
+     * @param int $elementId
+     * @param bool $time
+     * @return bool
+     * @throws Exception
+     */
     public function deleteElement(int $elementId, $time=false)
     {
         /**
@@ -2270,7 +2297,7 @@ class DataManager
          */
         
         if (!$time) {
-            $time = MySqlUnitemporalDataTable::now();
+            $time = TimeString::now();
         }
         $element = $this->getElementById($elementId);
         $this->queryStats->countQuery('delete-element');
@@ -2311,20 +2338,11 @@ class DataManager
     }
 
     /**
-     *
-     * Returns the witness for the given work and chunk, of the given type an id.
-     * If the witness does not exist, throws an InvalidArgument exception
-     *
-     * @param string $workId
-     * @param int $chunkNumber
-     * @param string $witnessType
-     * @param int $witnessId
-     * @return Witness
+     * @param $docId
+     * @param $pageNum
+     * @return bool
+     * @throws Exception
      */
-    public function getWitness(string $workId, int $chunkNumber, string $witnessType, int $witnessId) : Witness {
-
-    }
-    
     public function deletePage($docId, $pageNum) 
     {
         $pageId = $this->getPageIdByDocPage($docId, $pageNum);
@@ -2350,21 +2368,16 @@ class DataManager
                 $newSeq = $page['seq'] - 1;
             }
             if ($newPageNum != $page['page_number'] || $newSeq != $page['seq']) {
-                $updateResult = $this->pagesDataTable->updateRow([
+                 $this->pagesDataTable->updateRow([
                     'id' => $page['id'],
                     'page_number' => $newPageNum,
                     'seq' => $newSeq
                 ]);
-                if ($updateResult !== $page['id']) {
-                    // This means a database error
-                    // Can't reproduce in testing for now
-                    return false; // @codeCoverageIgnore 
-                }
             }
         }
         
         // Delete page in pages table
-        if (!$this->pagesDataTable->deleteRow($pageId)) {
+        if ($this->pagesDataTable->deleteRow($pageId) !== 1) {
             // This means a database error
             // Can't reproduce in testing for now
             return false; // @codeCoverageIgnore 
@@ -2400,7 +2413,7 @@ class DataManager
      *
      * @param int $pageId
      * @param int $col
-     * @return array
+     * @return array|bool
      */
     public function getTranscriptionVersions(int $pageId, int $col) {
         $rows =  $this->txVersionsTable->findRows(['page_id' => $pageId, 'col' => $col]);
@@ -2440,7 +2453,8 @@ class DataManager
     }
 
     public function updateVersionUntilTime(int $versionId, string $newTimeUntil) {
-        return $this->txVersionsTable->updateRow(['id' => $versionId, 'time_until' => $newTimeUntil]);
+        $this->txVersionsTable->updateRow(['id' => $versionId, 'time_until' => $newTimeUntil]);
+        return true;
     }
 
     public  function  getMySqlHelper() {

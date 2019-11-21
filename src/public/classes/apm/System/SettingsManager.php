@@ -20,6 +20,7 @@
 
 namespace APM\System;
 
+use DataTable\DataTable;
 use DataTable\InMemoryDataTable;
 /**
  * Description of SettingsManager
@@ -30,7 +31,7 @@ class SettingsManager {
     
     /**
      *
-     * @var DataTable 
+     * @var DataTable
      */
     private $settingsTable;
     
@@ -42,24 +43,28 @@ class SettingsManager {
     
     public function getSetting(string $setting)
     {
-        $row = $this->settingsTable->findRow(['setting' => $setting]);
-        if ($row === false) {
+        $rows = $this->settingsTable->findRows(['setting' => $setting], 1);
+        if ($rows === []) {
             return false;
         }
-        return $row['value'];
+        return $rows[0]['value'];
     }
     
     public function setSetting(string $setting, string $value)
     {
-        $row = $this->settingsTable->findRow(['setting' => $setting]);
-        if ($row == false) {
+
+        $rows = $this->settingsTable->findRows(['setting' => $setting], 1);
+        if ($rows === []) {
             return false !== $this->settingsTable->createRow([
-                'setting' => $setting, 
-                'value' => $value]);
+                    'setting' => $setting,
+                    'value' => $value]);
         }
-        return false !== $this->settingsTable->updateRow([ 
-            'id' => $row['id'],
-            'setting' => $setting, 
+        $this->settingsTable->updateRow([
+            'id' => $rows[0]['id'],
+            'setting' => $setting,
             'value' => $value]);
+
+        return true;
+
     }
 }

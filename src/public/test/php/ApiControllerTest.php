@@ -103,6 +103,9 @@ class ApiControllerTest extends TestCase {
 
         self::$dataManager = self::$container->get('dataManager');
 
+        $apiUser = self::$dataManager->userManager->createUserByUserName('testApiUser');
+        self::$testEnvironment->setApiUser($apiUser);
+        self::$testEnvironment->setUserId($apiUser);
 
         // API controllers to test
         self::$apiCollation = new ApiCollation(self::$container);
@@ -567,7 +570,7 @@ class ApiControllerTest extends TestCase {
         $this->assertEquals(ApiPresets::API_ERROR_INVALID_PRESET_DATA, $respData4['error']);
         
         // successful new preset
-        $apiUser = self::$dataManager->userManager->createUserByUserName('testApiUser');
+        $apiUser = self::$dataManager->userManager->createUserByUserName('testApiUser2');
         $this->assertNotFalse($apiUser);
         self::$testEnvironment->setUserId($apiUser);
         $presetOwnedByNewApiUser = $presetData;
@@ -843,6 +846,8 @@ class ApiControllerTest extends TestCase {
 
         self::$editor1 = self::$dataManager->userManager->createUserByUserName('testeditor1');
         self::$editor2 = self::$dataManager->userManager->createUserByUserName('testeditor2');
+
+
         $numPages = 5;
         $dm = self::$dataManager;
         $docId = $dm->newDoc('Test API Doc 2', 'TA-2', $numPages, 'la',

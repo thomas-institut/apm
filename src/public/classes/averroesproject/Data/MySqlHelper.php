@@ -20,6 +20,7 @@
 
 namespace AverroesProject\Data;
 
+use Monolog\Logger;
 use \PDO;
 
 /**
@@ -28,10 +29,17 @@ use \PDO;
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 class MySqlHelper {
+
+    /**
+     * @var PDO
+     */
     private $dbConn;
+    /**
+     * @var Logger
+     */
     private $logger;
     
-    public function __construct($dbConn, $logger) {
+    public function __construct(PDO $dbConn, Logger $logger) {
         $this->dbConn = $dbConn;
         $this->logger = $logger;
     }
@@ -40,7 +48,7 @@ class MySqlHelper {
      * Performs a query with error handling
      */
 
-    function query($sql){
+    function query(string $sql){
         $r = $this->dbConn->query($sql);
         if ($r===false){
            $this->logger->error("Problem with query: $sql", $this->dbConn->errorInfo());
@@ -52,7 +60,7 @@ class MySqlHelper {
      * Gets the given field from the first row of the result
       * set of the given query
      */
-    function getOneFieldQuery($query, $field){
+    function getOneFieldQuery(string $query, string $field){
         $r = $this->query($query);
         if ($r === false) {
             return false;
@@ -67,7 +75,7 @@ class MySqlHelper {
         }
     }
 
-    function getOneRow($query){
+    function getOneRow(string $query){
         $r = $this->query($query);
         if ($r === false) {
             return false;
@@ -75,12 +83,12 @@ class MySqlHelper {
         return $r->fetch(PDO::FETCH_ASSOC);
     }
     
-    function getRowById($table, $id) 
+    function getRowById(string $table, int $id)
     {
         return $this->getOneRow("SELECT * FROM `$table` WHERE id=$id");
     }
     
-    function getAllRows($query) {
+    function getAllRows(string $query) {
         $r = $this->query($query);
         if ($r === false) {
             return false;

@@ -24,7 +24,7 @@ use APM\System\SystemManager;
 use AverroesProject\ColumnElement\Element;
 use AverroesProject\Data\DataManager;
 use AverroesProject\Data\EdNoteManager;
-use DataTable\MySqlUnitemporalDataTable;
+use DataTable\TimeString;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use AverroesProject\Profiler\ApmProfiler;
@@ -283,7 +283,7 @@ class ApiElements extends ApiController
             
         }
         $profiler->lap('Checks Done');
-        $updateTime = MySqlUnitemporalDataTable::now();
+        $updateTime = TimeString::now();
         $this->logger->info("UPDATE elements", 
                             [ 'apiUserId' => $this->apiUserId,
                               'pageId' => $pageId,
@@ -338,7 +338,7 @@ class ApiElements extends ApiController
         $pageId = $dataManager->getPageIdByDocPage($docId, $pageNumber);
         $versions = $dataManager->getTranscriptionVersionsWithAuthorInfo($pageId, $columnNumber);
 
-        $versionTime = MySqlUnitemporalDataTable::now();
+        $versionTime = TimeString::now();
         if (count($versions) === 0) {
             $thisVersion = -1;
         } else {

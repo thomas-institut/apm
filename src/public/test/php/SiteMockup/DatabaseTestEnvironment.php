@@ -23,8 +23,10 @@ require "autoload.php";
 
 use AverroesProject\Data\DataManager;
 use APM\System\ApmSystemManager;
+use DI\Container;
 use DI\ContainerBuilder;
 use mysql_xdevapi\Exception;
+use PDO;
 
 /**
  * Utility class to set up the test environment for database testing
@@ -35,11 +37,20 @@ class DatabaseTestEnvironment {
     
     /** @var array */
     protected $config;
-    
+
+    /**
+     * @var PDO
+     */
     protected $dbConn;
-    
+
+    /**
+     * @var Container
+     */
     protected $container;
-    
+
+    /**
+     * @var DataManager
+     */
     protected $dataManager;
     /**
      * @var ApmSystemManager
@@ -54,7 +65,7 @@ class DatabaseTestEnvironment {
         $this->systemManager = false;
     }
     
-    public function getPdo()
+    public function getPdo() : PDO
     {
         
         if ($this->dbConn !== false) {
@@ -62,7 +73,7 @@ class DatabaseTestEnvironment {
         }
         $config = $this->config;
         
-        $pdo = new \PDO('mysql:dbname=' . $config['db']['db'] .
+        $pdo = new PDO('mysql:dbname=' . $config['db']['db'] .
                 ';host=' . $config['db']['host'], $config['db']['user'], $config['db']['pwd']);
         $pdo->query("set character set 'utf8'");
         $pdo->query("set names 'utf8'");
@@ -110,9 +121,16 @@ EOD;
 
     public function setUserId($userId) {
         $this->getContainer()->set('userId', $userId);
-
     }
-    
+
+    public function getUserId() : int {
+        $this->getContainer()->get('userId');
+    }
+
+    /**
+     * @return bool|\DI\Container
+     * @throws \Exception
+     */
     public function getContainer()
     {
         
@@ -142,8 +160,8 @@ EOD;
             'dataManager' => $dataManager,
             'logger' => $logger,
             'systemManager' => $systemManager,
-            'userId' => 50100100,
-            'apiUserId' => 50100100
+            'userId' => 0,  // invalid user Ids, must be set downstream for some API and Site operations
+            'apiUserId' => 0
         ]);
 
 
@@ -226,5 +244,17 @@ EOD;
 
 
         return $config;
+    }
+
+    /**
+     * @param int $userId
+     * @throws \Exception
+     */
+    public function setApiUser(int $userId) {
+        $this->getContainer()->set('apiUserId', $userId);
+    }
+
+    public function getApiUser() : int {
+        return $this->getContainer()->get('apiUserId');
     }
 }

@@ -32,7 +32,8 @@
             "AverroesProject\\": "classes\\averroesproject",
             "APM\\": "classes\\apm",
             "AverroesProjectToApm\\" : "classes\\ap2apm",
-            "TestHelpers\\" : "test\\helperclasses"
+            "TestHelpers\\" : "test\\helperclasses",
+            "ThomasInstitut\\" : "classes\\thomasinstitut"
         }
     }
 }

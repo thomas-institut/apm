@@ -50,11 +50,11 @@ class ItemStreamItemFactory {
     
     public function __construct(string $defaultLang) {
         $this->if = new ItemFactory($defaultLang, 0);
-        $this->textualItemClass = get_class(new TextualItem('stub'));
-        $this->markItemClass = get_class(new Mark());
+        $this->textualItemClass =  TextualItem::class;
+        $this->markItemClass = Mark::class;
     }
     
-    public function createItemFromRow($row) : Item {
+    public function createItemFromRow(array $row) : Item {
         $itemType = $this->getGoodInt($row, 'type');
         $lang = $row['lang'];
         $text = $this->getGoodString($row, 'text');
@@ -171,7 +171,7 @@ class ItemStreamItemFactory {
         return $item;
     }
     
-    public function createItemNoteFromRow($row) {
+    public function createItemNoteFromRow(array $row) {
         $note = new ItemNote();
         
         if (isset($row['author_id'])) {

@@ -72,7 +72,7 @@ abstract class Item {
     }
     
     public function setNotes(array $notes) {
-        $noteClass = get_class(new Note());
+        $noteClass = Note::class;
         $this->notes = [];
         foreach($notes as $note) {
             if (!is_a($note, $noteClass)) {

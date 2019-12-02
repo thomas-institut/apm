@@ -20,7 +20,7 @@
 
 namespace APM\Core\Person;
 /**
- * Basic representation of a person: an entity with one or more identifiers
+ * Basic representation of a person: an entity with one or more ids
  * of different kinds, e.g. a system id, a url, a full name, etc
  * 
  * The idea is that this class can be the base of more specific classes that
@@ -44,13 +44,13 @@ class Person {
         $this->setId($idType, $id);
     }
     
-    public function setId(string $idType, $id) {
+    public function setId(string $idType, $id) : void {
         if ($idType === self::IDTYPE_NONE) {
-            return false;
+            return;
         }
         
         if ($id===self::ID_NULL) {
-            return false;
+            return;
         }
         
         $this->ids[$idType] = $id;

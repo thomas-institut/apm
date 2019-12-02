@@ -22,6 +22,8 @@
 namespace APM\System;
 
 
+use APM\CollationEngine\CollationEngine;
+use APM\Plugin\HookManager;
 use APM\Presets\PresetManager;
 use Monolog\Logger;
 
@@ -93,9 +95,9 @@ abstract class SystemManager {
      */
     abstract public function getPresetsManager() : PresetManager;
     abstract public function getLogger() : Logger;
-    abstract public function getHookManager();
-    abstract public function getSettingsManager();
-    abstract public function getCollationEngine();
+    abstract public function getHookManager() : HookManager;
+    abstract public function getSettingsManager() : SettingsManager;
+    abstract public function getCollationEngine() : CollationEngine;
     
     protected function setError(int $errorCode, string $msg = '') {
         $this->errorCode = $errorCode;

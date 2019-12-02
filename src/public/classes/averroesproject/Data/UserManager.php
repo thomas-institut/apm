@@ -24,6 +24,9 @@ use DataTable\DataTable;
 use DataTable\InMemoryDataTable;
 use Exception;
 use Monolog\Logger;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 
 /**
@@ -65,13 +68,17 @@ use Monolog\Logger;
  * 
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class UserManager 
+class UserManager implements LoggerAwareInterface
 {
     
     private $userTable;
     private $relationsTable;
     private $peopleTable;
     private $tokensTable;
+
+    /**
+     * @var Logger
+     */
     private $logger;
     
     var $rootRole = 'root';
@@ -89,17 +96,14 @@ class UserManager
      * @param DataTable $rt
      * @param DataTable $pt
      * @param DataTable $tt
-     * @param Logger $logger
      */
-    public function __construct($ut = NULL, $rt = NULL, $pt = NULL, $tt = NULL, $logger = NULL)
+    public function __construct($ut = NULL, $rt = NULL, $pt = NULL, $tt = NULL)
     {
         $this->userTable = ($ut===NULL) ? new InMemoryDataTable() : $ut;
         $this->relationsTable = ($rt===NULL) ? new InMemoryDataTable() : $rt;
         $this->peopleTable = ($pt===NULL) ? new InMemoryDataTable() : $pt;
         $this->tokensTable = ($tt===NULL) ? new InMemoryDataTable() : $tt;
-        if ($logger !== NULL) {
-            $this->logger = $logger;
-        }
+        $this->logger = new NullLogger();
     }
     
     // 
@@ -124,7 +128,7 @@ class UserManager
      * @param string $userName
      * @return boolean
      */
-    public function userExistsByUserName(string $userName)
+    public function userExistsByUserName(string $userName) : bool
     {
         return $this->getUserIdFromUserName($userName) !== false;
     }
@@ -136,7 +140,7 @@ class UserManager
      * @param int $userId
      * @return string
      */
-    public function getUsernameFromUserId(int $userId)
+    public function getUsernameFromUserId(int $userId) : bool
     {
         if ($this->userTable->rowExists($userId)) {
             return $this->userTable->getRow($userId)['username'];
@@ -477,5 +481,16 @@ class UserManager
         }
         return false;
     }
-    
+
+    /**
+     * Sets a logger instance on the object.
+     *
+     * @param LoggerInterface $logger
+     *
+     * @return void
+     */
+    public function setLogger(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
+    }
 }

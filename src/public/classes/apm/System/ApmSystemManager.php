@@ -21,6 +21,7 @@
 namespace APM\System;
 
 use APM\CollationEngine\Collatex;
+use APM\CollationEngine\CollationEngine;
 use APM\Plugin\Plugin;
 use APM\Presets\DataTablePresetManager;
 use APM\Presets\PresetManager;
@@ -291,15 +292,15 @@ class ApmSystemManager extends SystemManager {
         return $this->dbConn;
     }
     
-    public function getHookManager() {
+    public function getHookManager() : HookManager {
         return $this->hookManager;
     }
     
-    public function getSettingsManager() {
+    public function getSettingsManager() : SettingsManager {
         return $this->settingsMgr;
     }
     
-    public function getCollationEngine() {
+    public function getCollationEngine() : CollationEngine {
         return $this->collationEngine;
     }
     

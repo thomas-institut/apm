@@ -67,84 +67,92 @@ class DataStoreTest extends TestCase
 
     public function runAll(iDataStore $dataStore, string $testClassName) {
         $this->setDataStore($dataStore, $testClassName);
-        $this->testSimple();
+        $this->testEmtpyDataStore();
+        $this->testSetAndAdd();
+        $this->testBadJson();
     }
 
-    public function testSimple() {
+    public function testEmtpyDataStore() {
+        $dataStore = $this->dataStore;
+        $someKeys = [];
+        for ($i = 0; $i < 10; $i++) {
+            $someKeys[] = 'key' . random_int(0, 10000);
+        }
+        foreach($someKeys as $index => $key) {
+            $testTitle = $this->testClassName . " : Empty data store, iteration $index, key = '$key'";
+            $this->assertNull($dataStore->getValue($key), $testTitle);
+            $this->assertEquals(json_encode(null), $dataStore->getJson($key), $testTitle);
+            $this->assertFalse($dataStore->valueExists($key), $testTitle);
+        }
+    }
+
+    public function testSetAndAdd() {
         $dataStore = $this->dataStore;
 
-        $somePropertyName = 'someProperty';
-        $testKey = 'testKey';
-        $propertyValue1 = [ $testKey => 'value1'];
-        $propertyValue2 = [ $testKey => 'value2'];
+        $testTitlePrefix = $this->testClassName . ' : Set/Add : ';
 
-        $testName = $this->testClassName . ': testing InvalidArgumentExceptions on empty DataStore';
-        $exceptionCaught = false;
-        try {
-            $dataStore->getAllProperties(1);
-        } catch(InvalidArgumentException $e) {
-            $exceptionCaught = true;
+        $testCases = [
+            [ 'title' => 'Integer', 'keyPostfix' => 'int', 'value' => 25],
+            [ 'title' => 'Float', 'keyPostfix' => 'float', 'value' => 25.0],
+            [ 'title' => 'Boolean', 'keyPostfix' => 'boolean', 'value' => true],
+            [ 'title' => 'Null', 'keyPostfix' => 'nullvalue', 'value' => null],
+            [ 'title' => 'String', 'keyPostfix' => 'simplestring', 'value' => 'some string'],
+            [ 'title' => 'Numerical Index Array', 'keyPostfix' => 'array', 'value' => [ 43.0, 54, [], 'some string', null, true]],
+            [ 'title' => 'Associative Array', 'keyPostfix' => 'array2', 'value' => [ 'property1' => 0, 'property2' => 'somestring']]
+        ];
+
+        foreach($testCases as $testCase) {
+            $testTitle = $testTitlePrefix . $testCase['title'];
+            $key = 'testSetAndAdd:' . $testCase['keyPostfix'];
+            $value = $testCase['value'];
+            $json = json_encode($testCase['value']);
+
+            $this->assertFalse($dataStore->valueExists($key), $testTitle);
+
+            $dataStore->setValue($key, $value);
+            $this->assertValue($dataStore, $key, $value, $json, $testTitle);
+
+            $dataStore->deleteValue($key);
+            $this->assertFalse($dataStore->valueExists($key), $testTitle);
+
+            $this->assertTrue($dataStore->addValue($key, $value), $testTitle);
+            $this->assertValue($dataStore, $key, $value, $json, $testTitle);
+
+            $dataStore->deleteValue($key);
+            $this->assertFalse($dataStore->valueExists($key), $testTitle);
+
+            $dataStore->setJson($key, $json);
+            $this->assertValue($dataStore, $key, $value, $json, $testTitle);
+
+            $dataStore->deleteValue($key);
+            $this->assertFalse($dataStore->valueExists($key), $testTitle);
+
+            $this->assertTrue($dataStore->addJson($key, $json), $testTitle);
+            $this->assertValue($dataStore, $key, $value, $json, $testTitle);
         }
-        $this->assertTrue($exceptionCaught, $testName);
+    }
 
-        $exceptionCaught = false;
-        try {
-            $dataStore->getProperty(1, $somePropertyName);
-        } catch(InvalidArgumentException $e) {
-            $exceptionCaught = true;
+    public function testBadJson() {
+        $dataStore = $this->dataStore;
+
+        $badJsons = [ 'a', '123:123', '[[]' ];
+        foreach ($badJsons as $json) {
+            $exceptionCaught = false;
+            try {
+                $dataStore->setJson('somekey', $json);
+            } catch (InvalidArgumentException $e) {
+                $exceptionCaught = true;
+            }
+            $this->assertTrue($exceptionCaught);
         }
-        $this->assertTrue($exceptionCaught, $testName);
+    }
 
-        $exceptionCaught = false;
-        try {
-            $dataStore->setProperty(1, $somePropertyName, [ $propertyValue1 ]);
-        } catch(InvalidArgumentException $e) {
-            $exceptionCaught = true;
-        }
-        $this->assertTrue($exceptionCaught, $testName);
-
-        $exceptionCaught = false;
-        try {
-            $dataStore->addPropertyValue(1, $somePropertyName, $propertyValue1);
-        } catch(InvalidArgumentException $e) {
-            $exceptionCaught = true;
-        }
-        $this->assertTrue($exceptionCaught, $testName);
-
-        $testName = $this->testClassName . ': testing DataStore with one object';
-        $id = $dataStore->addNewObject();
-
-        $this->assertEquals([], $dataStore->getAllProperties($id), $testName);
-        $this->assertEquals([], $dataStore->getProperty($id, $somePropertyName), $testName);
-
-        $testName = $this->testClassName . ': testing DataStore with one object, adding property values';
-        $dataStore->addPropertyValue($id, $somePropertyName, $propertyValue1);
-        $this->assertCount(1, $dataStore->getAllProperties($id), $testName);
-        $retrievedProperty = $dataStore->getProperty($id, $somePropertyName);
-        $this->assertEquals([ $propertyValue1 ], $retrievedProperty, $testName);
-
-        $dataStore->addPropertyValue($id, $somePropertyName, $propertyValue2);
-        $this->assertCount(1, $dataStore->getAllProperties($id), $testName);
-        $retrievedProperty = $dataStore->getProperty($id, $somePropertyName);
-        $this->assertCount(2, $retrievedProperty, $testName);
-        $this->assertEquals($propertyValue1, $retrievedProperty[0], $testName);
-        $this->assertEquals($propertyValue2, $retrievedProperty[1], $testName);
-
-        $testName = $this->testClassName . ': testing DataStore with two objects, setting property values';
-        $id = $dataStore->addNewObject();
-
-        $dataStore->setProperty($id, $somePropertyName, [$propertyValue1]);
-        $this->assertCount(1, $dataStore->getAllProperties($id), $testName);
-        $retrievedProperty = $dataStore->getProperty($id, $somePropertyName);
-        $this->assertEquals([ $propertyValue1 ], $retrievedProperty , $testName);
-
-        $dataStore->addPropertyValue($id, $somePropertyName, $propertyValue2);
-        $this->assertCount(1, $dataStore->getAllProperties($id), $testName);
-        $retrievedProperty = $dataStore->getProperty($id, $somePropertyName);
-        $this->assertCount(2, $retrievedProperty, $testName);
-        $this->assertEquals($propertyValue1, $retrievedProperty[0], $testName);
-        $this->assertEquals($propertyValue2, $retrievedProperty[1], $testName);
-
+    protected function assertValue(iDataStore $dataStore, string $key, $value, string $json, string $testTitle) {
+        $this->assertTrue($dataStore->valueExists($key), $testTitle);
+        $this->assertEquals($value, $dataStore->getValue($key), $testTitle);
+        $this->assertFalse($dataStore->addValue($key, $value), $testTitle);
+        $this->assertFalse($dataStore->addJson($key, $json), $testTitle);
+        $this->assertEquals($value, json_decode($dataStore->getJson($key), true), $testTitle);
     }
 
 }

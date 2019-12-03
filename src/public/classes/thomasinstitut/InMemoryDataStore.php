@@ -21,6 +21,7 @@ namespace ThomasInstitut;
 
 
 use InvalidArgumentException;
+use RuntimeException;
 
 /**
  * Class InMemoryDataStore
@@ -32,10 +33,9 @@ class InMemoryDataStore implements iDataStore
 {
 
     /**
-     * @var array
+     * @var
      */
     private $data;
-
 
     public function __construct()
     {
@@ -45,65 +45,88 @@ class InMemoryDataStore implements iDataStore
     /**
      * @inheritDoc
      */
-    public function getProperty(int $objectId, string $propertyName): array
+    public function getValue(string $key)
     {
-        if (!isset($this->data[$objectId])) {
-            throw new InvalidArgumentException('Object not found', iDataStore::ERROR_OBJECT_NOT_FOUND);
+      if ($this->valueExists($key)) {
+          return $this->data[$key];
+      }
+      return null;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getJson(string $key): string
+    {
+        $json = json_encode($this->getValue($key));
+        if ($json === false) {
+            throw new RuntimeException("Error encoding Json: " . json_last_error_msg(), json_last_error()); // @codeCoverageIgnore
+        }
+        return $json;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function valueExists(string $key): bool
+    {
+        return array_key_exists($key, $this->data);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function setValue(string $key, $value): void
+    {
+        $this->data[$key] = $value;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function setJson(string $key, string $json): void
+    {
+        $value = json_decode($json, true);
+        if (is_null($value) && json_last_error() !== JSON_ERROR_NONE) {
+            throw new InvalidArgumentException('Error decoding Json: ' . json_last_error_msg(), json_last_error());
         }
 
-        if (!isset($this->data[$objectId][$propertyName])) {
-            return [];
+        $this->setValue($key, $value );
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function addValue(string $key, $value): bool
+    {
+        if ($this->valueExists($key)) {
+            return false;
         }
 
-        return $this->data[$objectId][$propertyName];
+        $this->setValue($key, $value);
+        return true;
 
     }
 
     /**
      * @inheritDoc
      */
-    public function setProperty(int $objectId, string $propertyName, array $propertyValues): void
+    public function addJson(string $key, string $json): bool
     {
-        if (!isset($this->data[$objectId])) {
-            throw new InvalidArgumentException('Object not found', iDataStore::ERROR_OBJECT_NOT_FOUND);
+        if ($this->valueExists($key)) {
+            return false;
         }
-
-        // get the values indexed numerically
-        $realPropertyValues = array_values($propertyValues);
-
-        $this->data[$objectId][$propertyName] = $realPropertyValues;
+        $this->setJson($key, $json);
+        return true;
     }
 
     /**
      * @inheritDoc
      */
-    public function getAllProperties(int $objectId): array
+    public function deleteValue(string $key)
     {
-        if (!isset($this->data[$objectId])) {
-            throw new InvalidArgumentException('Object not found', iDataStore::ERROR_OBJECT_NOT_FOUND);
+        if ($this->valueExists($key)) {
+            unset($this->data[$key]);
         }
-        return $this->data[$objectId];
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function addNewObject(int $objectId = -1): int
-    {
-        $this->data[] = [];
-        return count($this->data) - 1;
-    }
-
-    public function addPropertyValue(int $objectId, string $propertyName, array $propertyValue): void
-    {
-        if (!isset($this->data[$objectId])) {
-            throw new InvalidArgumentException('Object not found', iDataStore::ERROR_OBJECT_NOT_FOUND);
-        }
-
-        if (!isset($this->data[$objectId][$propertyName])) {
-            $this->data[$objectId][$propertyName] = [];
-        }
-
-        $this->data[$objectId][$propertyName][] = $propertyValue;
     }
 }

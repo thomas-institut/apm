@@ -20,79 +20,100 @@
 namespace ThomasInstitut;
 
 /**
- * Interface GenericDataStore
+ * Interface iDataStore
  *
- * A GenericDataStore allows storage and retrieval of generic properties for objects identified by
- * a unique integer id.
+ * A dataStore allows for the storage and retrieval of generic values.
  *
- * Different kinds of information, properties, for an object are identified by unique strings which could be anything.
- * In practice property names may be something meaningful, like 'fullName' or 'emailAddress'
+ * A value can be of any of the JSON data types:
  *
- * A property can have 0 or more values. Each value is itself an associate array of string values.
- * The data store provides methods to set and add property values
+ *   number :  no distinction between float and integer
+ *   string
+ *   boolean:  true or false
+ *   object: an unordered collection of key-value pairs, where keys are unique strings within the object
+ *           Note: an object is basically a PHP associative array.
+ *   array: an ordered list of zero or more values, each of which may be of any type
+ *   null:  empty value
  *
- * Properties are stored and retrieved as arrays (normal or associative) of string values.
- *
- * It is up to the application to decide on the meaning, format and validity of the values stored, and
- * whether the order of those values is relevant or not.
- *
- * New objects can be added, but they cannot be deleted. This ensures that object ids are not reused.
+ * Values in the DataStore are identified by a unique string Id, called a key.
+ * A DataStore can be thought of as a JSON object.
  *
  * @package ThomasInstitut
  */
 interface iDataStore
 {
-    const ERROR_OBJECT_NOT_FOUND = 100;
 
     /**
-     * If the given propertyName does not exist, returns an empty array.
-     * Errors are reported with exceptions
+     * Returns the data item with the given $id or null if not found
+     * Use dataItemExists to check whether the data item actually exists
      *
-     * @param int $objectId
-     * @param string $propertyName
-     * @return array
+     * @param string $key
+     * @return mixed
      */
-    public function getProperty(int $objectId, string $propertyName) : array;
-
+    public function getValue(string $key);
 
 
     /**
-     * Set a property for a given object.
+     * Returns a value as a Json string
      *
-     * If the property does not exist, it is initialized with the given value.
-     * If the property exists, its values are overwritten.
-     *
-     * @param int $objectId
-     * @param string $propertyName
-     * @param array $propertyValues
+     * @param string $key
+     * @return string
      */
-    public function setProperty(int $objectId, string $propertyName, array $propertyValues) : void;
-
-
-    public function addPropertyValue(int $objectId, string $propertyName, array $propertyValue) : void;
+    public function getJson(string $key) : string;
 
     /**
-     * Returns all the info for the given object as an associative array :
-     *  [ 'property1' => [ value1, value2, ...] , 'property2' => [...] ,  .... ]
-     *
-     * @param int $objectId
-     * @return array
+     * @param string $key
+     * @return bool
      */
-    public function getAllProperties(int $objectId) : array;
+    public function valueExists(string $key): bool;
 
 
     /**
-     * Adds a new object
+     * Sets the value of the data item with the given Id.
+     * Overwrites the current existing value, or creates the value if
+     * it doesn't exist.
      *
-     * If the given $personId is -1, a new unique Id will be generated. If not, the given
-     * Id will be used. If that Id already exists an InvalidArgumentException will be
-     * thrown.
-     *
-     * Returns the id of the newly added object.
-     *
-     * @param int $objectId
-     * @return int
+     * @param string $key
+     * @param $value
+     * @return void
      */
-    public function addNewObject(int $objectId = -1) : int;
+    public function setValue(string $key, $value) : void;
+
+
+    /**
+     * Sets a value from a Json string
+     *
+     * @param string $key
+     * @param string $json
+     */
+    public function setJson(string $key, string $json) : void;
+
+    /**
+     * Adds a value if it does not exist.
+     *
+     * Returns true if the value was added.
+     *
+     * @param string $key
+     * @param $value
+     * @return bool
+     */
+    public function addValue(string $key, $value) : bool;
+
+
+    /**
+     * Adds a value from a Json string
+     *
+     * @param string $key
+     * @param string $json
+     * @return bool
+     */
+    public function addJson(string $key, string $json): bool;
+
+    /**
+     * Deletes a value
+     *
+     * @param string $key
+     * @return mixed
+     */
+    public function deleteValue(string $key);
 
 }

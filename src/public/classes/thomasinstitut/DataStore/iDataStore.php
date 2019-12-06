@@ -17,7 +17,7 @@
  *
  */
 
-namespace ThomasInstitut;
+namespace ThomasInstitut\DataStore;
 
 /**
  * Interface iDataStore
@@ -64,7 +64,7 @@ interface iDataStore
      * @param string $key
      * @return bool
      */
-    public function valueExists(string $key): bool;
+    public function keyExists(string $key): bool;
 
 
     /**

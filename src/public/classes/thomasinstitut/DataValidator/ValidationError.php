@@ -17,19 +17,16 @@
  *  
  */
 
-namespace ThomasInstitut;
+namespace ThomasInstitut\DataValidator;
 
-require 'autoload.php';
 
-use PHPUnit\Framework\TestCase;
-use ThomasInstitut\DataStore\DataStoreTest;
-use ThomasInstitut\DataStore\InMemoryDataStore;
-
-class InMemoryDataStoreTest extends TestCase
+class ValidationError
 {
-    public  function testRunTests() {
-        $testCase = new DataStoreTest();
-        $dataStore = new InMemoryDataStore();
-        $testCase->runAll($dataStore, 'InMemoryDataStore');
-    }
+    const NO_ERROR = 0;
+    const DATA_MUST_NOT_BE_EMPTY = 101;
+    const DATA_MUST_BE_STRING = 102;
+    const DATA_MUST_BE_INTEGER = 103;
+    const DATA_MUST_BE_FLOAT = 104;
+    const DATA_MUST_BE_ARRAY = 105;
+
 }

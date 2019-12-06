@@ -17,7 +17,7 @@
  *  
  */
 
-namespace ThomasInstitut;
+namespace ThomasInstitut\DataStore;
 
 
 use InvalidArgumentException;
@@ -47,7 +47,7 @@ class InMemoryDataStore implements iDataStore
      */
     public function getValue(string $key)
     {
-      if ($this->valueExists($key)) {
+      if ($this->keyExists($key)) {
           return $this->data[$key];
       }
       return null;
@@ -68,7 +68,7 @@ class InMemoryDataStore implements iDataStore
     /**
      * @inheritDoc
      */
-    public function valueExists(string $key): bool
+    public function keyExists(string $key): bool
     {
         return array_key_exists($key, $this->data);
     }
@@ -99,7 +99,7 @@ class InMemoryDataStore implements iDataStore
      */
     public function addValue(string $key, $value): bool
     {
-        if ($this->valueExists($key)) {
+        if ($this->keyExists($key)) {
             return false;
         }
 
@@ -113,7 +113,7 @@ class InMemoryDataStore implements iDataStore
      */
     public function addJson(string $key, string $json): bool
     {
-        if ($this->valueExists($key)) {
+        if ($this->keyExists($key)) {
             return false;
         }
         $this->setJson($key, $json);
@@ -125,7 +125,7 @@ class InMemoryDataStore implements iDataStore
      */
     public function deleteValue(string $key)
     {
-        if ($this->valueExists($key)) {
+        if ($this->keyExists($key)) {
             unset($this->data[$key]);
         }
     }

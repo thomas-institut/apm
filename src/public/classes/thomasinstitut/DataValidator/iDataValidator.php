@@ -1,5 +1,5 @@
 <?php
-/* 
+/*
  *  Copyright (C) 2019 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -14,22 +14,22 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
- *  
+ *
  */
 
-namespace ThomasInstitut;
+namespace ThomasInstitut\DataValidator;
 
-require 'autoload.php';
+use ThomasInstitut\ErrorReporter\iErrorReporter;
 
-use PHPUnit\Framework\TestCase;
-use ThomasInstitut\DataStore\DataStoreTest;
-use ThomasInstitut\DataStore\InMemoryDataStore;
-
-class InMemoryDataStoreTest extends TestCase
+/**
+ * Interface iDataValidator
+ *
+ * A class that can determine whether a $data variable is valid or not, reporting errors if not.
+ *
+ * @package ThomasInstitut\DataValidator
+ */
+interface iDataValidator extends iErrorReporter
 {
-    public  function testRunTests() {
-        $testCase = new DataStoreTest();
-        $dataStore = new InMemoryDataStore();
-        $testCase->runAll($dataStore, 'InMemoryDataStore');
-    }
+    public function isValid($data) : bool;
+
 }

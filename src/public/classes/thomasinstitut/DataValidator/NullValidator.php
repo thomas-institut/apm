@@ -17,19 +17,21 @@
  *  
  */
 
-namespace ThomasInstitut;
+namespace ThomasInstitut\DataValidator;
 
-require 'autoload.php';
+use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
 
-use PHPUnit\Framework\TestCase;
-use ThomasInstitut\DataStore\DataStoreTest;
-use ThomasInstitut\DataStore\InMemoryDataStore;
-
-class InMemoryDataStoreTest extends TestCase
+class NullValidator implements iDataValidator
 {
-    public  function testRunTests() {
-        $testCase = new DataStoreTest();
-        $dataStore = new InMemoryDataStore();
-        $testCase->runAll($dataStore, 'InMemoryDataStore');
+    use SimpleErrorReporterTrait;
+
+    public function __construct()
+    {
+        $this->resetError();
+    }
+
+    public function isValid($data): bool
+    {
+        return true;
     }
 }

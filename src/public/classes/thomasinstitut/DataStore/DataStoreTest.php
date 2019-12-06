@@ -19,7 +19,7 @@
 
 
 
-namespace ThomasInstitut;
+namespace ThomasInstitut\DataStore;
 
 
 use InvalidArgumentException;
@@ -82,7 +82,7 @@ class DataStoreTest extends TestCase
             $testTitle = $this->testClassName . " : Empty data store, iteration $index, key = '$key'";
             $this->assertNull($dataStore->getValue($key), $testTitle);
             $this->assertEquals(json_encode(null), $dataStore->getJson($key), $testTitle);
-            $this->assertFalse($dataStore->valueExists($key), $testTitle);
+            $this->assertFalse($dataStore->keyExists($key), $testTitle);
         }
     }
 
@@ -107,25 +107,25 @@ class DataStoreTest extends TestCase
             $value = $testCase['value'];
             $json = json_encode($testCase['value']);
 
-            $this->assertFalse($dataStore->valueExists($key), $testTitle);
+            $this->assertFalse($dataStore->keyExists($key), $testTitle);
 
             $dataStore->setValue($key, $value);
             $this->assertValue($dataStore, $key, $value, $json, $testTitle);
 
             $dataStore->deleteValue($key);
-            $this->assertFalse($dataStore->valueExists($key), $testTitle);
+            $this->assertFalse($dataStore->keyExists($key), $testTitle);
 
             $this->assertTrue($dataStore->addValue($key, $value), $testTitle);
             $this->assertValue($dataStore, $key, $value, $json, $testTitle);
 
             $dataStore->deleteValue($key);
-            $this->assertFalse($dataStore->valueExists($key), $testTitle);
+            $this->assertFalse($dataStore->keyExists($key), $testTitle);
 
             $dataStore->setJson($key, $json);
             $this->assertValue($dataStore, $key, $value, $json, $testTitle);
 
             $dataStore->deleteValue($key);
-            $this->assertFalse($dataStore->valueExists($key), $testTitle);
+            $this->assertFalse($dataStore->keyExists($key), $testTitle);
 
             $this->assertTrue($dataStore->addJson($key, $json), $testTitle);
             $this->assertValue($dataStore, $key, $value, $json, $testTitle);
@@ -148,7 +148,7 @@ class DataStoreTest extends TestCase
     }
 
     protected function assertValue(iDataStore $dataStore, string $key, $value, string $json, string $testTitle) {
-        $this->assertTrue($dataStore->valueExists($key), $testTitle);
+        $this->assertTrue($dataStore->keyExists($key), $testTitle);
         $this->assertEquals($value, $dataStore->getValue($key), $testTitle);
         $this->assertFalse($dataStore->addValue($key, $value), $testTitle);
         $this->assertFalse($dataStore->addJson($key, $json), $testTitle);

@@ -203,7 +203,7 @@ class DataManager
             new MySqlDataTableWithRandomIds($dbConn, 
                     $tableNames['people'], 
                     self::MIN_USER_ID, self::MAX_USER_ID), 
-            new MySqlDataTable($dbConn, $tableNames['tokens']),
+            new MySqlDataTable($dbConn, $tableNames['tokens'])
         );
         $this->userManager->setLogger($this->logger);
         

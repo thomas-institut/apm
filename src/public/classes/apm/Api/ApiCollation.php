@@ -24,6 +24,8 @@ namespace APM\Api;
 use APM\Engine\Engine;
 use AverroesProjectToApm\DatabaseItemStream;
 use AverroesProjectToApm\DatabaseItemStreamWitness;
+use DI\DependencyException;
+use DI\NotFoundException;
 use Exception;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
@@ -133,29 +135,31 @@ class ApiCollation extends ApiController
             ]);
         
     }
-    
-    
+
+
     /**
      * Generates an automatic collation table from a POST request
-     * 
+     *
      * the POST request must contain a 'data' field with the following
      * subfields:
      *  work :  work code (e.g., 'AW47')
      *  chunk:  chunk number
      *  lang:  language code, e.g., 'la', 'he'
      *  requestedWitnesses:  array of witness identifications, each element of
-     *      the array must be of the form: 
+     *      the array must be of the form:
      *          [ 'type' => <TYPE> , 'id' => <ID> ]
-     *      where 
+     *      where
      *          <TYPE> is a valid witness type
      *          <ID> is the witness system id (normally relative to its type)
      *               e.g, a system document id.
      *      If the witnesses array is empty, all valid witnesses for the
      *      given work, chunk and language will be collated.
-     * 
+     *
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws DependencyException
+     * @throws NotFoundException
      */
     public function automaticCollation(Request $request, Response $response)
     {

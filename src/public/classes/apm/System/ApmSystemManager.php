@@ -109,7 +109,7 @@ class ApmSystemManager extends SystemManager {
     private $presetsManager;
 
     /**
-     * @var \APM\System\SettingsManager
+     * @var SettingsManager
      */
     private $settingsMgr;
 
@@ -143,7 +143,7 @@ class ApmSystemManager extends SystemManager {
             foreach($config[ApmConfigParameter::ERROR_MESSAGES] as $errorMsg) {
                 $msg .= $errorMsg . "\n";
             }
-            $this->setError(self::ERROR_CONFIG_ARRAY_IS_NOT_VALID, $msg);
+            $this->setError($msg, self::ERROR_CONFIG_ARRAY_IS_NOT_VALID);
             return;
         }
         
@@ -382,9 +382,9 @@ class ApmSystemManager extends SystemManager {
         return false;
     }
     
-    protected function logAndSetError(int $errorCode, $msg) {
+    protected function logAndSetError(int $errorCode, string $msg) {
         $this->logger->error($msg, [ 'errorCode' => $errorCode]);
-        $this->setError($errorCode, $msg);
+        $this->setError( $msg, $errorCode);
     }
     
     /**

@@ -38,7 +38,7 @@ trait SimpleErrorReporterTrait
      * @param string $message
      * @param int $code
      */
-    private function setError(string $message, int $code) : void
+    protected function setError(string $message, int $code) : void
     {
         $this->errorMessage = $message;
         $this->errorCode = $code;

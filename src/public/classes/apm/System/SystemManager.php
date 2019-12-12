@@ -26,6 +26,8 @@ use APM\CollationEngine\CollationEngine;
 use APM\Plugin\HookManager;
 use APM\Presets\PresetManager;
 use Monolog\Logger;
+use ThomasInstitut\ErrorReporter\iErrorReporter;
+use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
 
 /**
  * Integration class for putting together all the elements necessary
@@ -38,8 +40,10 @@ use Monolog\Logger;
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-abstract class SystemManager {
-    
+abstract class SystemManager implements  iErrorReporter {
+
+    use SimpleErrorReporterTrait;
+
     const ERROR_NO_ERROR = 0;
     const MSG_ERROR_NO_ERROR = 'No Error';
 
@@ -62,20 +66,8 @@ abstract class SystemManager {
     protected $config;
         
     public function __construct(array $config) {
-        $this->resetErrorCode();
+        $this->resetError();
         $this->config = $config;
-    }
-    
-    public function resetErrorCode() {
-        $this->setError(self::ERROR_NO_ERROR, self::MSG_ERROR_NO_ERROR);
-    }
-    
-    public function getErrorCode() : int {
-        return $this->errorCode;
-    }
-    
-    public function getErrorMsg() : string {
-        return $this->errorMsg;
     }
     
     public function fatalErrorOccurred() : bool {
@@ -99,8 +91,5 @@ abstract class SystemManager {
     abstract public function getSettingsManager() : SettingsManager;
     abstract public function getCollationEngine() : CollationEngine;
     
-    protected function setError(int $errorCode, string $msg = '') {
-        $this->errorCode = $errorCode;
-        $this->errorMsg = $msg;
-    }
+
 }

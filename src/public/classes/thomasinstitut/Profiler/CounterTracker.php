@@ -33,7 +33,7 @@ class CounterTracker implements iPropertyTracker, iCounter
 
     public function __construct(int $initialValue = 0)
     {
-        $this->initialValue = $initialValue;
+
         $this->reset($initialValue);
     }
     
@@ -53,7 +53,7 @@ class CounterTracker implements iPropertyTracker, iCounter
      */
     public function end()
     {
-        return $this->theInt;
+        return $this->getValue();
     }
 
     /**
@@ -61,7 +61,7 @@ class CounterTracker implements iPropertyTracker, iCounter
      */
     public function lap()
     {
-        return $this->theInt;
+        return $this->getValue();
     }
 
     /**
@@ -92,6 +92,17 @@ class CounterTracker implements iPropertyTracker, iCounter
 
     public function reset(int $initialValue)
     {
+        $this->initialValue = $initialValue;
         $this->theInt = $initialValue;
+    }
+
+    public function getValue() : int
+    {
+        return $this->theInt;
+    }
+
+    public function getInitialValue() : int
+    {
+        return $this->initialValue;
     }
 }

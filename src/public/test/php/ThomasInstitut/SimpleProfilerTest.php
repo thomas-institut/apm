@@ -22,6 +22,7 @@ namespace ThomasInstitut;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use ThomasInstitut\Profiler\AggregateCounterTracker;
 use ThomasInstitut\Profiler\CounterTracker;
 use ThomasInstitut\Profiler\iProfiler;
 use ThomasInstitut\Profiler\SimpleProfiler;
@@ -35,12 +36,18 @@ class SimpleProfilerTest extends TestCase
         $numLoops = 10;
         $incValue = 2;
         $initialCounterValue = 150;
+        $initialApples = 20;
 
         $profiler = new SimpleProfiler();
         $counter = new CounterTracker(150);
+        $aggregateCounter = new AggregateCounterTracker();
+        $aggregateCounter->registerCounter('apples', $initialApples);
+        $aggregateCounter->registerCounter('oranges');
+        $aggregateCounter->registerCounter('pears', 10);
 
         $profiler->registerProperty('time', new TimeTracker());
         $profiler->registerProperty('count', $counter);
+        $profiler->registerProperty('fruits', $aggregateCounter);
 
         $exceptionCaught = false;
         try {
@@ -102,6 +109,7 @@ class SimpleProfilerTest extends TestCase
         for ($i = 0; $i < $numLoops; $i++ ) {
             $counter->increment();
             $counter->add($incValue);
+            $aggregateCounter->increment('apples');
             $profiler->lap("Loop $i");
 
             $exceptionCaught = false;
@@ -136,17 +144,27 @@ class SimpleProfilerTest extends TestCase
             $lapInfo = $laps[$i+1];
             $counterDelta = $incValue +1;
             $counterCummulative = $counterDelta * ($i+1);
+            $deltaApples = 1;
+            $cummulativeApples = $initialApples + $deltaApples * ($i +1);
+
             $this->assertEquals("Loop $i", $lapInfo[iProfiler::FIELD_LAP_NAME]);
             $this->assertEquals($counterDelta, $lapInfo['count'][iProfiler::FIELD_DELTA]);
             $this->assertEquals($counterCummulative, $lapInfo['count'][iProfiler::FIELD_CUMMULATIVE]);
             $this->assertEquals($counterCummulative + $initialCounterValue, $lapInfo['count'][iProfiler::FIELD_ABSOLUTE]);
             $this->assertGreaterThan($initialTime, $lapInfo['time'][iProfiler::FIELD_ABSOLUTE]);
 
+            $this->assertTrue(isset($lapInfo['fruits']));
+            $fruitLapInfo = $lapInfo['fruits'];
+            $this->assertIsArray($fruitLapInfo);
+            foreach ( [ iProfiler::FIELD_ABSOLUTE, iProfiler::FIELD_CUMMULATIVE, iProfiler::FIELD_DELTA] as $fieldName) {
+                $this->assertTrue(isset($fruitLapInfo[$fieldName]));
+                foreach ( ['apples', 'oranges', 'pears'] as $fruitName) {
+                    $this->assertTrue(isset($fruitLapInfo[$fieldName][$fruitName]));
+                    $this->assertIsInt($fruitLapInfo[$fieldName][$fruitName]);
+                }
+            }
+            $this->assertEquals($cummulativeApples, $fruitLapInfo[iProfiler::FIELD_ABSOLUTE]['apples']);
         }
-
-
-
-
     }
 
 }

@@ -67,12 +67,10 @@ class SimpleProfiler implements iProfiler, iErrorReporter
     public function registerProperty(string $propertyName, iPropertyTracker $propertyTracker) : void
     {
         if ($propertyName === self::FIELD_LAP_NAME) {
-            $this->setError("Cannot use reserved name $propertyName", self::ERROR_CANNOT_USE_RESERVED_LAP_NAME);
-            throw new InvalidArgumentException($this->getErrorMessage(), $this->getErrorCode());
+            $this->throwInvalidArgumentException("Cannot use reserved name $propertyName", self::ERROR_CANNOT_USE_RESERVED_LAP_NAME);
         }
         if (isset($this->propertyTrackers[$propertyName])) {
-            $this->setError("Property name already in use", self::ERROR_PROPERTY_NAME_ALREADY_IN_USE);
-            throw new InvalidArgumentException($this->getErrorMessage(), $this->getErrorCode());
+            $this->throwInvalidArgumentException("Property name already in use", self::ERROR_PROPERTY_NAME_ALREADY_IN_USE);
         }
         $this->propertyTrackers[$propertyName] = $propertyTracker;
     }
@@ -90,8 +88,7 @@ class SimpleProfiler implements iProfiler, iErrorReporter
     {
         $this->resetError();
         if ($this->isRunning()) {
-            $this->setError("start() called when already started", self::ERROR_START_CALLED_WHEN_ALREADY_STARTED);
-            throw new RuntimeException($this->getErrorMessage(), $this->getErrorCode());
+            $this->throwRunTimeException("start() called when already started", self::ERROR_START_CALLED_WHEN_ALREADY_STARTED);
         }
         $lapArray = [ self::FIELD_LAP_NAME => $startLapName];
         foreach($this->propertyTrackers as $propertyName => $propertyTracker) {
@@ -108,14 +105,11 @@ class SimpleProfiler implements iProfiler, iErrorReporter
         $this->resetError();
 
         if (array_search($lapName, $this->lapNames) !== false) {
-            $this->setError("Lap name '$lapName' has been used already", self::ERROR_LAP_NAME_ALREADY_IN_USE);
-            throw new InvalidArgumentException($this->getErrorMessage(), $this->getErrorCode());
+            $this->throwInvalidArgumentException("Lap name '$lapName' has been used already", self::ERROR_LAP_NAME_ALREADY_IN_USE);
         }
 
-
         if (!$this->isRunning()) {
-            $this->setError("Lap() called when not running", self::ERROR_LAP_CALLED_WHEN_NOT_RUNNING);
-            throw new RuntimeException($this->getErrorMessage(), $this->getErrorCode());
+            $this->throwRunTimeException("Lap() called when not running", self::ERROR_LAP_CALLED_WHEN_NOT_RUNNING);
         }
 
         $lapArray = [ self::FIELD_LAP_NAME => $lapName];
@@ -132,12 +126,10 @@ class SimpleProfiler implements iProfiler, iErrorReporter
         $this->resetError();
 
         if (array_search($stopLapName, $this->lapNames) !== false) {
-            $this->setError("Lap name '$stopLapName' has been used already", self::ERROR_LAP_NAME_ALREADY_IN_USE);
-            throw new InvalidArgumentException($this->getErrorMessage(), $this->getErrorCode());
+            $this->throwInvalidArgumentException("Lap name '$stopLapName' has been used already", self::ERROR_LAP_NAME_ALREADY_IN_USE);
         }
         if (!$this->isRunning()) {
-            $this->setError("stop() called when not running", self::ERROR_STOP_CALLED_WHEN_NOT_RUNNING);
-            throw new RuntimeException($this->getErrorMessage(), $this->getErrorCode());
+            $this->throwRunTimeException("stop() called when not running", self::ERROR_STOP_CALLED_WHEN_NOT_RUNNING);
         }
         $lapArray = [ self::FIELD_LAP_NAME => $stopLapName];
         foreach($this->propertyTrackers as $propertyName => $propertyTracker) {
@@ -154,8 +146,7 @@ class SimpleProfiler implements iProfiler, iErrorReporter
         $this->resetError();
 
         if ($this->isRunning()) {
-            $this->setError("getLaps() called when still running", self::ERROR_GETLAPS_CALLED_WHEN_RUNNING);
-            throw new RuntimeException($this->getErrorMessage(), $this->getErrorCode());
+            $this->throwRunTimeException("getLaps() called when still running", self::ERROR_GETLAPS_CALLED_WHEN_RUNNING);
         }
 
         if ($this->calculatedLaps === []) {

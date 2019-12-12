@@ -20,6 +20,9 @@
 namespace ThomasInstitut\ErrorReporter;
 
 
+use InvalidArgumentException;
+use RuntimeException;
+
 trait SimpleErrorReporterTrait
 {
     /**
@@ -44,7 +47,7 @@ trait SimpleErrorReporterTrait
         $this->errorCode = $code;
     }
 
-    private function resetError() : void {
+    protected function resetError() : void {
         $this->setError('', 0);
     }
 
@@ -65,6 +68,26 @@ trait SimpleErrorReporterTrait
     public function getErrorCode() : int
     {
         return $this->errorCode;
+    }
+
+    /**
+     * Convenience method to throw an InvalidArgument Exception
+     * @param string $message
+     * @param int $code
+     */
+    protected function throwInvalidArgumentException(string $message, int $code) : void {
+        $this->setError($message, $code);
+        throw new InvalidArgumentException($message, $code);
+    }
+
+    /**
+     * Convenience method to throw an RunTime Exception
+     * @param string $message
+     * @param int $code
+     */
+    protected function throwRunTimeException(string $message, int $code) : void {
+        $this->setError($message, $code);
+        throw new RuntimeException($message, $code);
     }
 
 }

@@ -53,9 +53,16 @@ abstract class CommandLineUtility {
     
     protected $config;
 
+    /**
+     * @var ApmSystemManager
+     */
     protected  $systemManager;
-    
-    
+    /**
+     * @var DataManager
+     */
+    private $dm;
+
+
     public function __construct($config) {
         global $argv;
         
@@ -69,7 +76,7 @@ abstract class CommandLineUtility {
         $this->systemManager = $systemManager;
 
         if ($systemManager->fatalErrorOccurred()) {
-            print "ERROR: " . $systemManager->getErrorMsg();
+            print "ERROR: " . $systemManager->getErrorMessage();
             exit();
         }
 

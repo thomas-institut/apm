@@ -201,6 +201,7 @@ class ApmSystemManager extends SystemManager {
         }
 
         $this->settingsMgr = new SettingsManager($settingsTable);
+        $this->settingsMgr->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
         
         // Check that the database is up to date
         if (!$this->isDatabaseUpToDate()) {
@@ -221,6 +222,7 @@ class ApmSystemManager extends SystemManager {
                         $this->tableNames[self::TABLE_PRESETS]);
         $this->presetsManager = 
                 new DataTablePresetManager($presetsManagerDataTable, ['lang' => 'key1']);
+        $this->presetsManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
         
         // Load plugins
         foreach($this->config[ApmConfigParameter::PLUGINS] as $pluginName) {
@@ -239,6 +241,8 @@ class ApmSystemManager extends SystemManager {
             }
 
         }
+
+
     }
     
     

@@ -20,11 +20,13 @@
 
 namespace APM\Api;
 
+use APM\Presets\DataTablePreset;
 use APM\System\SystemManager;
+use DI\DependencyException;
+use DI\NotFoundException;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
-use AverroesProject\Profiler\ApmProfiler;
 use APM\Math\Set;
 use APM\System\PresetFactory;
 
@@ -65,11 +67,13 @@ class ApiPresets extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws DependencyException
+     * @throws NotFoundException
      */
     public function  getPresets(Request $request,  Response $response) {
         
         $apiCall = 'getPresets';
-        $profiler = new ApmProfiler($apiCall, $this->getDataManager());
+        $this->profiler->start();
         $inputData = $this->checkAndGetInputData($request, $response, $apiCall, ['tool','userId', 'keyArrayToMatch']);
         if (!is_array($inputData)) {
             return $inputData;
@@ -118,6 +122,7 @@ class ApiPresets extends ApiController
         
         $presetsInArrayForm = [];
         foreach($presets as $preset) {
+            /** @var DataTablePreset $preset */
             $presetsInArrayForm[] = [
                 'id' => $preset->getId(),
                 'title' => $preset->getTitle(),
@@ -125,12 +130,13 @@ class ApiPresets extends ApiController
                 'data' => $preset->getData()
             ];
         }
-        
-        $profiler->log($this->logger);
-        
+
+        $this->profiler->stop();
+        $this->logProfilerData($apiCall);
+
         return $this->responseWithJson($response,[
             'presets' => $presetsInArrayForm,
-            'runTime' => $profiler->getTotalTime()
+            'runTime' => $this->getProfilerTotalTime()
             ]);
     }
 
@@ -149,12 +155,14 @@ class ApiPresets extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws DependencyException
+     * @throws NotFoundException
      */
     public function  getAutomaticCollationPresets(Request $request, Response $response) {
 
         $dataManager = $this->getDataManager();
         $apiCall = 'getAutomaticCollationPresets';
-        $profiler = new ApmProfiler($apiCall, $dataManager);
+        $this->profiler->start();
         $inputData = $this->checkAndGetInputData($request, $response, $apiCall, ['userId', 'lang', 'witnesses']);
         if (!is_array($inputData)) {
             return $inputData;
@@ -215,19 +223,21 @@ class ApiPresets extends ApiController
                 'data' => $preset->getData()
             ];
         }
-        
-        $profiler->log($this->logger);
+
+        $this->profiler->stop();
+        $this->logProfilerData($apiCall);
+
         
         return $this->responseWithJson($response,[
             'presets' => $presetsInArrayForm,
-            'runTime' => $profiler->getTotalTime()
+            'runTime' => $this->getProfilerTotalTime()
             ]);
     }
     
     public function  savePreset(Request $request, Response $response) {
         
         $apiCall = 'savePreset';
-        $profiler = new ApmProfiler($apiCall, $this->getDataManager());
+        $this->profiler->start();
         $inputData = $this->checkAndGetInputData($request, $response, $apiCall, ['command', 'tool',  'userId', 'title', 'presetId', 'presetData']);
         if (!is_array($inputData)) {
             return $inputData;
@@ -294,7 +304,8 @@ class ApiPresets extends ApiController
             }
             // success
             $newId = $pm->getPreset($tool, $apiUserId, $title)->getId();
-            $profiler->log($this->logger);
+            $this->profiler->stop();
+            $this->logProfilerData($apiCall);
             return $this->responseWithJson($response, ['presetId' => $newId], 200);
         }
         
@@ -330,13 +341,14 @@ class ApiPresets extends ApiController
         }
         
         // success
-        $profiler->log($this->logger);
+        $this->profiler->stop();
+        $this->logProfilerData($apiCall);
         return $this->responseWithJson($response, ['presetId' => $presetId], 200);
     }
     
      public function deletePreset(Request $request, Response $response) {
         $apiCall = 'deletePreset';
-        $profiler = new ApmProfiler($apiCall, $this->getDataManager());
+        $this->profiler->start();
         $presetId = intval($request->getAttribute('id'));
         
         $presetsManager = $this->systemManager->getPresetsManager();
@@ -368,7 +380,8 @@ class ApiPresets extends ApiController
             // @codeCoverageIgnoreEnd
         }
         // success
-        $profiler->log($this->logger);
+         $this->profiler->stop();
+         $this->logProfilerData($apiCall);
         return $this->responseWithJson($response, ['presetId' => $presetId], 200);
     }
     

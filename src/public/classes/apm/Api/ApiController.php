@@ -31,6 +31,8 @@ use \Psr\Http\Message\ResponseInterface as Response;
 
 use AverroesProject\Data\DataManager;
 use APM\System\SystemManager;
+use ThomasInstitut\Profiler\SimpleProfiler;
+use ThomasInstitut\Profiler\TimeTracker;
 
 /**
  * API Controller class
@@ -55,6 +57,11 @@ abstract class ApiController
      * @var int
      */
     protected $apiUserId;
+
+    /**
+     * @var SimpleProfiler
+     */
+    protected $profiler;
     
     // Error codes
     const API_ERROR_NO_DATA = 1000;
@@ -116,6 +123,10 @@ abstract class ApiController
        $this->languages =$ci->get('config')['languages'];
        $this->logger = $this->systemManager->getLogger()->withName('API');
        $this->debug('Api User ID: ' . $this->apiUserId);
+
+        $this->profiler = new SimpleProfiler();
+        $this->profiler->registerProperty('time', new TimeTracker());
+        $this->profiler->registerProperty('mysql-queries', $this->systemManager->getSqlQueryCounterTracker());
     }
 
     /**
@@ -209,5 +220,19 @@ abstract class ApiController
         return $response
             ->withHeader('Content-Type', 'application/json')
             ->withStatus($status);
+    }
+
+    protected function logProfilerData(string $pageTitle) : void
+    {
+        $lapInfo = $this->profiler->getLaps();
+        $totalTimeInMs = $this->getProfilerTotalTime() * 1000;
+        $totalQueries = $lapInfo[count($lapInfo)-1]['mysql-queries']['cummulative']['Total'];
+        $this->logger->debug(sprintf("PROFILER %s, finished in %0.2f ms, %d MySql queries", $pageTitle, $totalTimeInMs, $totalQueries), $lapInfo);
+    }
+
+    protected function getProfilerTotalTime() : float
+    {
+        $lapInfo = $this->profiler->getLaps();
+        return $lapInfo[count($lapInfo)-1]['time']['cummulative'];
     }
 }

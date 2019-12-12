@@ -28,12 +28,16 @@ namespace APM\Site;
 
 use APM\Plugin\HookManager;
 use DI\Container;
+use DI\DependencyException;
+use DI\NotFoundException;
 use Monolog\Logger;
 use \Psr\Http\Message\ResponseInterface as Response;
 use APM\System\ApmSystemManager;
 use AverroesProject\Data\DataManager;
 use Slim\Routing\RouteParser;
 use Slim\Views\Twig;
+use ThomasInstitut\Profiler\SimpleProfiler;
+use ThomasInstitut\Profiler\TimeTracker;
 
 /**
  * Site Controller class
@@ -84,7 +88,17 @@ class SiteController
      * @var array
      */
     protected $languages;
+    /**
+     * @var SimpleProfiler
+     */
+    protected $profiler;
 
+    /**
+     * SiteController constructor.
+     * @param Container $ci
+     * @throws DependencyException
+     * @throws NotFoundException
+     */
     public function __construct(Container $ci)
     {
         $this->container = $ci;
@@ -99,6 +113,10 @@ class SiteController
         $this->userInfo = [];
         $this->languages = $ci->get('config')['languages'];
 
+        $this->profiler = new SimpleProfiler();
+        $this->profiler->registerProperty('time', new TimeTracker());
+        $this->profiler->registerProperty('mysql-queries', $this->systemManager->getSqlQueryCounterTracker());
+
        
        // Check if the user has been authenticated by the authentication middleware
         //$this->logger->debug('Checking user authentication');
@@ -107,6 +125,15 @@ class SiteController
            $this->userInfo = $ci->get('user_info');
         }
     }
+
+    protected function logProfilerData(string $pageTitle) : void
+    {
+        $lapInfo = $this->profiler->getLaps();
+        $totalTimeInMs = $lapInfo[count($lapInfo)-1]['time']['cummulative'] * 1000;
+        $totalQueries = $lapInfo[count($lapInfo)-1]['mysql-queries']['cummulative']['Total'];
+        $this->logger->debug(sprintf("PROFILER %s, finished in %0.2f ms, %d MySql queries", $pageTitle, $totalTimeInMs, $totalQueries), $lapInfo);
+    }
+
 
     protected function responseWithText(Response $response, string $text, int $status=200) : Response {
         $response->getBody()->write($text);

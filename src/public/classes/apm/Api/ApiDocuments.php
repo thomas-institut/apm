@@ -20,10 +20,11 @@
 
 namespace APM\Api;
 
+use DI\DependencyException;
+use DI\NotFoundException;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
-use AverroesProject\Profiler\ApmProfiler;
 
 /**
  * API Controller class
@@ -32,10 +33,17 @@ use AverroesProject\Profiler\ApmProfiler;
 class ApiDocuments extends ApiController
 {
 
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws DependencyException
+     * @throws NotFoundException
+     */
     public function updatePageSettings(Request $request, Response $response)
     {
         $dataManager = $this->getDataManager();
-        $profiler = new ApmProfiler('updatePageSettings', $dataManager);
+        $this->profiler->start();
         
         $userManager = $dataManager->userManager;
          
@@ -66,15 +74,23 @@ class ApiDocuments extends ApiController
             $this->logger->error("Can't update page settings for page $pageId", $newSettings);
             return $response->withStatus(409);
         }
-        $profiler->log($this->logger);
+        $this->profiler->stop();
+        $this->logProfilerData("UpdatePageSettings-$pageId");
         return $response->withStatus(200);
     }
-    
-    
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws DependencyException
+     * @throws NotFoundException
+     * @throws \Exception
+     */
     public function deleteDocument(Request $request, Response $response)
     {
         $dataManager = $this->getDataManager();
-        $profiler = new ApmProfiler('deleteDocument', $dataManager);
+        $this->profiler->start();
         $docId = (int) $request->getAttribute('id');
 
         if (!$dataManager->userManager->isUserAllowedTo($this->apiUserId, 'delete-documents')){
@@ -112,14 +128,22 @@ class ApiDocuments extends ApiController
                       'docId' => $docId]);
             return $this->responseWithJson($response,['error' => ApiController::API_ERROR_DB_UPDATE_ERROR, 'msg' => 'Database error'], 409);
         }
-        $profiler->log($this->logger);
+        $this->profiler->stop();
+        $this->logProfilerData("DeleteDoc-$docId");
         return $response->withStatus(200);
     }
-    
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws DependencyException
+     * @throws NotFoundException
+     */
     public function addPages(Request $request, Response $response)
     {
         $dataManager = $this->getDataManager();
-        $profiler = new ApmProfiler('addPages', $dataManager);
+        $this->profiler->start();
         
         if (!$dataManager->userManager->isUserAllowedTo($this->apiUserId, 'add-pages')){
             $this->logger->warning("addPages: unauthorized request", 
@@ -156,7 +180,7 @@ class ApiDocuments extends ApiController
         if ($numPages === 0) {
             // nothing to do!
             $this->debug("addPages: request for 0 pages, nothing to do");
-            $profiler->log($this->logger);
+            $this->logProfilerData('addPages');
             return $response->withStatus(200);
         }
         
@@ -178,15 +202,23 @@ class ApiDocuments extends ApiController
                 return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_DB_UPDATE_ERROR], 409);
             }
         }
-        
-        $profiler->log($this->logger);
+
+        $this->profiler->stop();
+        $this->logProfilerData('addPages');
         return $response->withStatus(200);
     }
-    
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws DependencyException
+     * @throws NotFoundException
+     */
     public function newDocument(Request $request, Response $response)
     {
         $dataManager = $this->getDataManager();
-        $profiler = new ApmProfiler('New Doc', $dataManager);
+        $this->profiler->start();
         
         if (!$dataManager->userManager->isUserAllowedTo($this->apiUserId, 'create-new-document')){
             $this->logger->warning("New Doc: unauthorized request", 
@@ -231,17 +263,23 @@ class ApiDocuments extends ApiController
                       'docSettings' => $docSettings]);
             return $this->responseWithJson($response,['error' => ApiController::API_ERROR_DB_UPDATE_ERROR], 409);
         }
-        $profiler->log($this->logger);
+        $this->logProfilerData('NewDocument');
         return  $this->responseWithJson($response, ['newDocId' => $docId], 200);
         
     }
-    
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws DependencyException
+     * @throws NotFoundException
+     */
     public function updateDocSettings(Request $request, Response $response)
     {
 
         $dataManager = $this->getDataManager();
 
-        $profiler = new ApmProfiler('updateDocSettings', $dataManager);
         if (!$dataManager->userManager->isUserAllowedTo($this->apiUserId, 'update-doc-settings')){
             $this->logger->warning("updateDocSettings: unauthorized request", 
                     [ 'apiUserId' => $this->apiUserId]
@@ -280,16 +318,24 @@ class ApiDocuments extends ApiController
             'newSettings' => $newSettings
             ]);
 
-        $profiler->log($this->logger);
+        $this->profiler->stop();
+        $this->logProfilerData("updateDocSettings-$docId");
         return $response->withStatus(200);
         
     }
-    
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws DependencyException
+     * @throws NotFoundException
+     */
     public function updatePageSettingsBulk(Request $request, Response $response)
     {
 
         $dataManager = $this->getDataManager();
-        $profiler = new ApmProfiler('updatePageSettingsBulk', $dataManager);
+        $this->profiler->start();
         
         if (!$dataManager->userManager->isUserAllowedTo($this->apiUserId, 'update-page-settings-bulk')){
             
@@ -382,10 +428,18 @@ class ApiDocuments extends ApiController
         if (count($errors) > 0) {
             $this->logger->notice("Bulk page settings update with errors", $errors);
         }
-        $profiler->log($this->logger);
+        $this->profiler->stop();
+        $this->logProfilerData("updatePageSettingsBulk-$pageId");
         return $response->withStatus(200);
     }
-   
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws DependencyException
+     * @throws NotFoundException
+     */
     public function getNumColumns(Request $request, Response $response)
     {
         $docId = $request->getAttribute('document');
@@ -395,7 +449,14 @@ class ApiDocuments extends ApiController
 
         return $this->responseWithJson($response, $numColumns);
     }
-   
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws DependencyException
+     * @throws NotFoundException
+     */
     public function addNewColumn(Request $request, Response $response)
     {
         $docId = $request->getAttribute('document');

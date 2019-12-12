@@ -42,8 +42,7 @@ class SiteChunks extends SiteController
     {
        
         $dataManager = $this->dataManager;
-        $profiler = new ApmProfiler('chunksPage', $dataManager);
-
+        $this->profiler->start();
         $workIds = $dataManager->getWorksWithTranscriptions();
         
         $works = [];
@@ -60,8 +59,8 @@ class SiteChunks extends SiteController
             $work['chunks'] = $chunks;
             $works[] = $work;
         }
-        
-        $profiler->log($this->logger);
+        $this->profiler->stop();
+        $this->logProfilerData('chunksPage');
         return $this->view->render($response, 'chunks.twig', [
             'userinfo' => $this->userInfo,
             'copyright' => $this->getCopyrightNotice(),

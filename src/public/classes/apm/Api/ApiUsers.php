@@ -20,6 +20,8 @@
 
 namespace APM\Api;
 
+use DI\DependencyException;
+use DI\NotFoundException;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use AverroesProject\Profiler\ApmProfiler;
@@ -30,10 +32,19 @@ use AverroesProject\Profiler\ApmProfiler;
  */
 class ApiUsers extends ApiController
 {
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws DependencyException
+     * @throws NotFoundException
+     */
     public function getUserProfileInfo(Request $request, Response $response)
     {
         $um = $this->getDataManager()->userManager;
-        $profiler = new ApmProfiler('getUserProfileInfo', $this->getDataManager());
+        $apiCall = 'getUserProfileInfo';
+        $this->profiler->start();
+
         $profileUserId =  (int) $request->getAttribute('userId');
         $userProfileInfo = $um->getUserInfoByUserId($profileUserId);
         if ($userProfileInfo === false ) {
@@ -44,10 +55,18 @@ class ApiUsers extends ApiController
         }
         
         $userProfileInfo['isroot'] = $um->isRoot($profileUserId);
-        $profiler->log($this->logger);
+        $this->profiler->stop();
+        $this->logProfilerData($apiCall);
         return $this->responseWithJson($response,$userProfileInfo);
     }
-   
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws DependencyException
+     * @throws NotFoundException
+     */
     public function updateUserProfile(Request $request, Response $response)
     {
         $um = $this->getDataManager()->userManager;
@@ -56,6 +75,9 @@ class ApiUsers extends ApiController
         $fullname = $postData['fullname'];
         $email = $postData['email'];
         $profileUserInfo = $um->getUserInfoByUserId($profileUserId);
+
+        $apiCall = 'updateUserProfile' . $profileUserId;
+        $this->profiler->start();
         
         if ($profileUserInfo === false ) {
             $this->logger->error("Error getting info from user ID",
@@ -99,6 +121,8 @@ class ApiUsers extends ApiController
                       'userId' => $profileUserId]);
             return $response->withStatus(200);
         }
+        $this->profiler->stop();
+        $this->logProfilerData($apiCall);
         
         $this->logger->error("Could not update user $profileUserId with "
                 . "fullname '$fullname', email '$email'", 
@@ -106,11 +130,21 @@ class ApiUsers extends ApiController
                       'userId' => $profileUserId]);
         return $response->withStatus(409);       
     }
-   
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws DependencyException
+     * @throws NotFoundException
+     */
     public function changeUserPassword(Request $request, Response $response)
     {
         $um = $this->getDataManager()->userManager;
+        $this->profiler->start();
+
         $profileUserId =  (int) $request->getAttribute('userId');
+        $apiCall = 'ChangeUserPassword-' . $profileUserId;
         $postData = $request->getParsedBody();
         $password1 = $postData['password1'];
         $password2 = $postData['password2'];
@@ -123,7 +157,8 @@ class ApiUsers extends ApiController
             return $response->withStatus(409);
         }
         $profileUserName = $profileUserInfo['username'];
-         
+
+
         $updaterInfo = $um->getUserInfoByUserId($this->apiUserId);
         $updater = $updaterInfo['username'];
         if ($updater != $profileUserName && 
@@ -150,20 +185,31 @@ class ApiUsers extends ApiController
         }
 
         if ($um->storeUserPassword($profileUserName, $password1)) {
+            $this->profiler->stop();
+            $this->logProfilerData($apiCall);
             $this->logger->info("$updater changed "
                     . "$profileUserName's password", 
                     [ 'apiUserId' => $this->apiUserId,
                       'userId' => $profileUserId]);
             return $response->withStatus(200);
         }
-        
+
+        $this->profiler->stop();
+        $this->logProfilerData($apiCall);
         $this->logger->error("Error storing new password for "
                 . "$profileUserName, change attempted by $updater", 
                     [ 'apiUserId' => $this->apiUserId,
                       'userId' => $profileUserId]);
         return $response->withStatus(409);
     }
-    
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws DependencyException
+     * @throws NotFoundException
+     */
     public function makeUserRoot(Request $request, Response $response)
     {
         $um = $this->getDataManager()->userManager;
@@ -209,7 +255,14 @@ class ApiUsers extends ApiController
                       'userId' => $profileUserId]);
         return $response->withStatus(409);
     }
-    
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws DependencyException
+     * @throws NotFoundException
+     */
     public function createNewUser(Request $request, Response $response)
     {
         $um = $this->getDataManager()->userManager;

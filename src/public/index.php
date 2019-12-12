@@ -77,7 +77,7 @@ global $config;
 $systemManager = new ApmSystemManager($config);
 
 if ($systemManager->fatalErrorOccurred()) {
-    exitWithErrorMessage($systemManager->getErrorMsg());
+    exitWithErrorMessage($systemManager->getErrorMessage());
 }
 
 $logger = $systemManager->getLogger();
@@ -86,6 +86,8 @@ $dbh = $systemManager->getDbConnection();
 
 // Data Manager (will be replaced completely by SystemManager at some point
 $dataManager = new DataManager($dbh, $systemManager->getTableNames(), $logger, $hm, $config['langCodes']);
+$dataManager->setSqlQueryCounterTracker($systemManager->getSqlQueryCounterTracker());
+$dataManager->userManager->setSqlQueryCounterTracker($systemManager->getSqlQueryCounterTracker());
 
 $builder = new ContainerBuilder();
 $builder->addDefinitions([

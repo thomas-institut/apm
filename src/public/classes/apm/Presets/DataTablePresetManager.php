@@ -20,6 +20,9 @@
 
 namespace APM\Presets;
 
+use APM\System\iSqlQueryCounterTrackerAware;
+use APM\System\SimpleSqlQueryCounterTrackerAware;
+use APM\System\SqlQueryCounterTracker;
 use DataTable\DataTable;
 use Exception;
 use InvalidArgumentException;
@@ -44,8 +47,10 @@ use InvalidArgumentException;
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class DataTablePresetManager extends PresetManager {
-    
+class DataTablePresetManager extends PresetManager implements iSqlQueryCounterTrackerAware {
+
+    use SimpleSqlQueryCounterTrackerAware;
+
     /** @var  DataTable */
     private $dataTable;
     
@@ -77,6 +82,7 @@ class DataTablePresetManager extends PresetManager {
     public function __construct(DataTable $dt, array $expandedKeys = []) {
         $this->dataTable = $dt;
         $this->expandedKeys  = $expandedKeys;
+        $this->initSqlQueryCounterTracker();
     }
 
      /**
@@ -93,6 +99,7 @@ class DataTablePresetManager extends PresetManager {
         if ($this->correspondingPresetExists($preset)) {
             return false;
         }
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::CREATE_COUNTER);
         $this->dataTable->createRow($this->createDataTableRowFromPreset($preset));
         return true;
     }
@@ -113,6 +120,7 @@ class DataTablePresetManager extends PresetManager {
         if ($id === self::ROWID_NOTFOUND) {
             return true;
         }
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::DELETE_COUNTER);
         return $this->dataTable->deleteRow($id)===1;
     }
 
@@ -150,6 +158,7 @@ class DataTablePresetManager extends PresetManager {
                 $rowToFind[$this->expandedKeys[$key]] = $value;
             }
         }
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         $rows = $this->dataTable->findRows($rowToFind);
         foreach($rows as $theRow) {
             if ($this->match($this->decodeStringToArray($theRow[self::FIELD_KEYARRAY]), $keysToMatch)) {
@@ -176,6 +185,7 @@ class DataTablePresetManager extends PresetManager {
                 $rowToFind[$this->expandedKeys[$key]] = $value;
             }
         }
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         $rows = $this->dataTable->findRows($rowToFind);
         foreach($rows as $theRow) {
             if ($this->match($this->decodeStringToArray($theRow[self::FIELD_KEYARRAY]), $keysToMatch)) {
@@ -200,6 +210,7 @@ class DataTablePresetManager extends PresetManager {
     
     public function getPresetById(int $id) {
         try {
+            $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
             $row = $this->dataTable->getRow($id);
         } catch (Exception $e) {
             // TODO: properly report this error
@@ -216,6 +227,7 @@ class DataTablePresetManager extends PresetManager {
         $updatedRow = $this->createDataTableRowFromPreset($updatedPreset);
         $updatedRow['id'] = $currentPreset->getId();
         try {
+            $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::UPDATE_COUNTER);
             $this->dataTable->updateRow($updatedRow);
         } catch (Exception $e) {
             return false;
@@ -224,6 +236,7 @@ class DataTablePresetManager extends PresetManager {
     }
     
     public function erasePresetById(int $id) : bool {
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::DELETE_COUNTER);
         $this->dataTable->deleteRow($id);
         return true;
     }
@@ -315,6 +328,7 @@ class DataTablePresetManager extends PresetManager {
             self::FIELD_USERID => $userId,
             self::FIELD_TITLE => $title
         ];
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         $rows = $this->dataTable->findRows($rowToFind, 1);
         if (count($rows) < 1) {
             return [];

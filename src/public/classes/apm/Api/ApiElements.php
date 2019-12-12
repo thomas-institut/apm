@@ -25,9 +25,10 @@ use AverroesProject\ColumnElement\Element;
 use AverroesProject\Data\DataManager;
 use AverroesProject\Data\EdNoteManager;
 use DataTable\TimeString;
+use DI\DependencyException;
+use DI\NotFoundException;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
-use AverroesProject\Profiler\ApmProfiler;
 
 /**
  * API Controller class
@@ -36,14 +37,21 @@ use AverroesProject\Profiler\ApmProfiler;
 class ApiElements extends ApiController
 {
     const API_ERROR_INVALID_VERSION_REQUESTED = 5001;
-    
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws DependencyException
+     * @throws NotFoundException
+     * @throws \Exception
+     */
     public function updateElementsByDocPageCol(Request $request, 
             Response $response)
     {
         $dataManager = $this->getDataManager();
         
-        $profiler = new ApmProfiler('updateElements', $dataManager);
-        
+
         $userManager = $dataManager->userManager;
          
         if ($userManager->userHasRole($this->apiUserId, SystemManager::ROLE_READ_ONLY)) {
@@ -282,7 +290,7 @@ class ApiElements extends ApiController
             }
             
         }
-        $profiler->lap('Checks Done');
+        $this->profiler->lap('Checks Done');
         $updateTime = TimeString::now();
         $this->logger->info("UPDATE elements", 
                             [ 'apiUserId' => $this->apiUserId,
@@ -299,7 +307,7 @@ class ApiElements extends ApiController
 
         
         $newItemIds = $dataManager->updateColumnElements($pageId, $columnNumber, $newElements, $updateTime);
-        $profiler->lap('Elements Updated');
+        $this->profiler->lap('Elements Updated');
         // Update targets
         for ($i = 0; $i < count($edNotes); $i++) {
             $targetId = $edNotes[$i]->target;
@@ -318,13 +326,20 @@ class ApiElements extends ApiController
         if ($versionId === false) {
             $this->logger->error('Cannot register version');
         }
-        
-        $profiler->log($this->logger);
+
+        $this->profiler->stop();
+        $this->logProfilerData('updateElements');
         return $response->withStatus(200);
     }
-    
-   
-   
+
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws DependencyException
+     * @throws NotFoundException
+     */
     public function getElementsByDocPageCol(Request $request, Response $response)
     {
         $docId = $request->getAttribute('document');

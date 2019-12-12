@@ -27,8 +27,9 @@ use DataTable\InMemoryDataTable;
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class SettingsManager {
-    
+class SettingsManager implements iSqlQueryCounterTrackerAware {
+
+    use SimpleSqlQueryCounterTrackerAware;
     /**
      *
      * @var DataTable
@@ -36,6 +37,7 @@ class SettingsManager {
     private $settingsTable;
     
     public function __construct($table = false) {
+        $this->initSqlQueryCounterTracker();
         $this->settingsTable = ($table === false) 
                 ? new InMemoryDataTable() 
                 : $table;
@@ -43,6 +45,7 @@ class SettingsManager {
     
     public function getSetting(string $setting)
     {
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         $rows = $this->settingsTable->findRows(['setting' => $setting], 1);
         if ($rows === []) {
             return false;
@@ -53,12 +56,15 @@ class SettingsManager {
     public function setSetting(string $setting, string $value)
     {
 
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         $rows = $this->settingsTable->findRows(['setting' => $setting], 1);
         if ($rows === []) {
+            $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::CREATE_COUNTER);
             return false !== $this->settingsTable->createRow([
                     'setting' => $setting,
                     'value' => $value]);
         }
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::UPDATE_COUNTER);
         $this->settingsTable->updateRow([
             'id' => $rows[0]['id'],
             'setting' => $setting,

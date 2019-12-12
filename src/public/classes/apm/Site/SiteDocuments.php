@@ -29,7 +29,6 @@ namespace APM\Site;
 use AverroesProject\Data\DataManager;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
-use AverroesProject\Profiler\ApmProfiler;
 
 /**
  * SiteDocuments class
@@ -40,21 +39,19 @@ class SiteDocuments extends SiteController
 
     public function documentsPage(Request $request, Response $response)
     {
-        $profiler = new ApmProfiler('documentsPage', $this->dataManager);
+
         $dataManager = $this->dataManager;
+        $this->profiler->start();
         $docIds = $dataManager->getDocIdList('title');
-        $profiler->lap('Doc Id List');
+        $this->profiler->lap('Doc Id List');
         $docs = array();
         foreach ($docIds as $docId){
             //$profiler->lap("Doc $docId - START");
             $doc = array();
             $doc['numPages'] = $dataManager->getPageCountByDocId($docId);
-            //$profiler->lap("Doc $docId - getPageCount");
             $transcribedPages = $dataManager->getTranscribedPageListByDocId($docId);
-            //$profiler->lap("Doc $docId - getTranscribedPageList");
             $doc['numTranscribedPages'] = count($transcribedPages);
             $editorsIds = $dataManager->getEditorsByDocId($docId);
-            //$profiler->lap("Doc $docId - getEditors");
             $doc['editors'] = [];
             foreach ($editorsIds as $edId){
                 $doc['editors'][] = 
@@ -63,14 +60,14 @@ class SiteDocuments extends SiteController
             $doc['docInfo'] = $dataManager->getDocById($docId);
             $doc['tableId'] = "doc-$docId-table";
             array_push($docs, $doc);
-            //$profiler->lap("Doc $docId - END");
-        }
+                    }
         
         $canManageDocuments = false;
         if ($this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'docs-create-new')) {
             $canManageDocuments = true;
         }
-        $profiler->log($this->logger);
+        $this->profiler->stop();
+        $this->logProfilerData('documentsPage');
 
         return $this->renderPage($response, 'docs.twig', [
             'docs' => $docs,
@@ -82,7 +79,8 @@ class SiteDocuments extends SiteController
     {
         
         $docId = $request->getAttribute('id');
-        $profiler = new ApmProfiler('showDocPage-' . $docId, $this->dataManager);
+
+        $this->profiler->start();
         $dataManager = $this->dataManager;
         $doc = [];
         $doc['numPages'] = $dataManager->getPageCountByDocId($docId);
@@ -112,7 +110,8 @@ class SiteDocuments extends SiteController
         if ($this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'define-doc-pages')) {
             $canDefinePages = true;
         }
-        $profiler->log($this->logger);
+        $this->profiler->stop();
+        $this->logProfilerData('showDocPage-' . $docId);
 
         return $this->renderPage($response, 'doc.showdoc.twig', [
             'navByPage' => false,
@@ -163,6 +162,7 @@ class SiteDocuments extends SiteController
     
     public function editDocPage(Request $request, Response $response)
     {
+        $this->profiler->start();
         if (!$this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'edit-documents')){
             $this->logger->debug("User " . $this->userInfo['id'] . ' tried to edit a document but is not allowed to do it');
             return $this->renderPage($response, 'error.notallowed.twig', [
@@ -214,7 +214,8 @@ class SiteDocuments extends SiteController
         if ($nPages === 0) {
             $canBeDeleted = true;
         }
-        
+        $this->profiler->stop();
+        $this->logProfilerData('editDocPage-' . $docId);
         return $this->renderPage($response, 'doc.edit.twig', [
             'docInfo' => $docInfo,
             'imageSourceOptions' => $imageSourceOptions,
@@ -228,7 +229,7 @@ class SiteDocuments extends SiteController
     
     public function defineDocPages(Request $request, Response $response)
     {
-        $profiler = new ApmProfiler('defineDocPages', $this->dataManager);
+        $this->profiler->start();
         
         if (!$this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'define-doc-pages')){
             $this->logger->debug("User " . $this->userInfo['id'] . ' tried to define document pages  but is not allowed to do it');
@@ -250,7 +251,8 @@ class SiteDocuments extends SiteController
         $doc['pages'] = $this->buildPageArray($pagesInfo, 
                 $transcribedPages);
 
-        $profiler->log($this->logger);
+        $this->profiler->stop();
+        $this->logProfilerData('defineDocPages-' . $docId);
         return $this->renderPage($response, 'doc.defdocpages.twig', [
             'pageTypes' => $pageTypes,
             'doc' => $doc

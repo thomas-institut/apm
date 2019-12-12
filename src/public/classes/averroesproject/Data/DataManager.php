@@ -20,6 +20,9 @@
 
 namespace AverroesProject\Data;
 
+use APM\System\iSqlQueryCounterTrackerAware;
+use APM\System\SimpleSqlQueryCounterTrackerAware;
+use APM\System\SqlQueryCounterTracker;
 use AverroesProject\ColumnElement\Custodes;
 use AverroesProject\ColumnElement\Gloss;
 use AverroesProject\ColumnElement\Head;
@@ -64,8 +67,11 @@ use \PDO;
  * @class AverroesProjectData
  * Provides access to data via helper functions.
  */
-class DataManager 
+class DataManager implements  iSqlQueryCounterTrackerAware
 {
+
+    use SimpleSqlQueryCounterTrackerAware;
+
     const MIN_USER_ID = 10000;
     const MAX_USER_ID = 100000;
     
@@ -156,11 +162,7 @@ class DataManager
      */
     private $txVersionsTable;
 
-    /**
-     * @var QueryStats
-     */
-    public $queryStats;
-    
+
     /**
      *
      * @var HookManager
@@ -172,8 +174,7 @@ class DataManager
      */
     private $langCodes;
 
-
-    /**
+   /**
      * Tries to initialize and connect to the MySQL database.
      *
      * Throws an error if there's no connection
@@ -192,7 +193,8 @@ class DataManager
         $this->hookManager = $hm;
         $this->langCodes = $langCodes;
 
-        $this->queryStats = new QueryStats();
+        $this->initSqlQueryCounterTracker();
+
         $this->databaseHelper = new MySqlHelper($dbConn, $logger);
         $this->edNoteManager = new EdNoteManager($dbConn, $this->databaseHelper, $tableNames,
                 $logger);
@@ -245,7 +247,7 @@ class DataManager
                 $orderby = '';
         }
         $query = "SELECT `id` FROM  " . $this->tNames['docs'] . $orderby;
-        $this->queryStats->countQuery('select');
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         $r = $this->databaseHelper->query($query);
         
         $docIds = [];
@@ -283,7 +285,7 @@ class DataManager
             'image_source_data' => $imageSourceData
             ];
         
-        $this->queryStats->countQuery('create');
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::CREATE_COUNTER);
         $docId = $this->docsDataTable->createRow($doc);
         if ($docId === false) {
             // This means a database error
@@ -314,7 +316,8 @@ class DataManager
             // foliation => defaults to null in DB
         ];
         
-        $this->queryStats->countQuery('create');
+
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::CREATE_COUNTER);
         return $this->pagesDataTable->createRow($page);
     }
     
@@ -348,7 +351,7 @@ class DataManager
         if ($pageId === false) {
             return false;
         }
-        $this->queryStats->countQuery('select');
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         try {
             $pageInfo = $this->pagesDataTable->getRow($pageId);
         } catch (Exception $e) {
@@ -356,7 +359,7 @@ class DataManager
             return false;
         }
 
-        $this->queryStats->countQuery('update');
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::UPDATE_COUNTER);
         try {
             $this->pagesDataTable->updateRow([
                 'id' => $pageId,
@@ -392,7 +395,7 @@ class DataManager
      */
     public function getPageInfo(int $pageId)
     {
-        $this->queryStats->countQuery('select');
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         try {
             $row = $this->pagesDataTable->getRow($pageId);
         } catch (Exception $e) {
@@ -415,7 +418,7 @@ class DataManager
      */
     function getPageCountByDocId($docId)
     {
-        $this->queryStats->countQuery('select');
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         
         $query = 'SELECT COUNT(*) FROM ' . $this->tNames['pages'] . 
                 ' WHERE `doc_id`=' . $docId . 
@@ -431,7 +434,8 @@ class DataManager
     
     function getPageCountByDocIdAllTime($docId)
     {
-        $this->queryStats->countQuery('select');
+
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         
         $query = 'SELECT COUNT(*) FROM ' . $this->tNames['pages'] . 
                 ' WHERE `doc_id`=' . $docId;
@@ -450,7 +454,8 @@ class DataManager
     function getPageTypeNames()
     {
         $query = 'SELECT * FROM ' . $this->tNames['types_page'];
-        $this->queryStats->countQuery('select');
+
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         $res = $this->databaseHelper->query($query);
         if ($res === false) {
             // This means a database error
@@ -465,7 +470,8 @@ class DataManager
     {
          $query = 'SELECT dare_id, p.fullname, short_title FROM ' . $this->tNames['works'] . 
                  ' AS w JOIN (' . $this->tNames['people'] . ' AS p) ON (p.id=w.author_id) WHERE enabled=1' ;
-        $this->queryStats->countQuery('select');
+
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         $res = $this->databaseHelper->query($query);
         if ($res === false) {
             // This means a database error
@@ -527,8 +533,8 @@ class DataManager
             // real setting, so there's nothing to do
             return true;
         }
-        
-        $this->queryStats->countQuery('update');
+
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::UPDATE_COUNTER);
         return $this->docsDataTable->updateRow($row) === $docId;
     }
 
@@ -574,7 +580,8 @@ class DataManager
             return true;
         }
         
-        $this->queryStats->countQuery('update');
+
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::UPDATE_COUNTER);
         try {
             $this->pagesDataTable->updateRow($row);
         } catch (Exception $e) {
@@ -595,7 +602,8 @@ class DataManager
         $tu = $this->tNames['users'];
         $tp = $this->tNames['pages'];
         
-        $this->queryStats->countQuery('select');
+
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         $query = "SELECT DISTINCT $tu.`id`" . 
             " FROM `$tu` JOIN (`$te`,  `$tp`)" . 
             " ON ($tu.id=$te.editor_id AND $tp.id=$te.page_id)" . 
@@ -629,7 +637,8 @@ class DataManager
             $orderby = 'seq';
         }
         
-        $this->queryStats->countQuery('select');
+
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         $query =  'SELECT DISTINCT p.`page_number` AS page_number FROM ' . 
                 $tp . ' AS p' .
                 ' JOIN ' . $te . ' AS e ON p.id=e.page_id' .
@@ -656,7 +665,8 @@ class DataManager
     function getDocPageInfo($docId, $order = self::ORDER_BY_PAGE_NUMBER) {
         $tp = $this->tNames['pages'];
         $td = $this->tNames['docs'];
-        $this->queryStats->countQuery('select');
+
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         
         $orderby = 'page_number';
         if ($order === self::ORDER_BY_SEQ) {
@@ -678,7 +688,7 @@ class DataManager
      * @throws Exception
      */
     function deleteDocById($docId) {
-        $this->queryStats->countQuery('delete');
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::DELETE_COUNTER);
         if ($this->getPageCountByDocIdAllTime($docId) !== 0) {
             return false;
         }
@@ -687,12 +697,14 @@ class DataManager
 
     function getDocById($docId)
     {
-        $this->queryStats->countQuery('select');
+
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         return $this->databaseHelper->getRowById($this->tNames['docs'], $docId);
     }
     
     function getDocByDareId($dareId) {
-        $this->queryStats->countQuery('select');
+
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
 
         return $this->docsDataTable->findRows(['image_source_data' => $dareId], 1)[0];
     }
@@ -710,7 +722,8 @@ class DataManager
         $te = $this->tNames['elements'];
         $eot = '9999-12-31 23:59:59.999999';
         
-        $this->queryStats->countQuery('select');
+
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         
         $query = "SELECT DISTINCT $td.id, $td.title FROM $td " . 
                  "JOIN ($te, $tp) ON ($te.page_id=$tp.id and $td.id=$tp.doc_id) " . 
@@ -744,7 +757,8 @@ class DataManager
         $te = $this->tNames['elements'];
         $eot = '9999-12-31 23:59:59.999999';
         
-        $this->queryStats->countQuery('select');
+
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         
         $query = "SELECT DISTINCT $tp.id, $tp.seq FROM $tp " . 
                  "JOIN ($td, $te) ON ($te.page_id=$tp.id and $td.id=$tp.doc_id) " . 
@@ -812,7 +826,8 @@ class DataManager
     
     
     public function getColumnElementsByPageId($pageId, $col,$time = false) {
-        $this->queryStats->countQuery('select');
+
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         if ($time === false) {
             $time = TimeString::now();
         }
@@ -831,11 +846,13 @@ class DataManager
         }
         return $elements;
     }
+
     /**
-     * 
+     *
      * @param string $docId
      * @param int $page
      * @param int $col
+     * @param bool $time
      * @return array of ColumnElement properly initialized
      */
     
@@ -859,7 +876,8 @@ class DataManager
             $time = TimeString::now();
         }
 
-        $this->queryStats->countQuery('select');
+
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         $rows = $this->itemsDataTable->findRowsWithTime([
             'ce_id' => $element->id
         ], 0, $time);
@@ -880,7 +898,8 @@ class DataManager
         $ti = $this->tNames['items'];
         $te = $this->tNames['elements'];
         
-        $this->queryStats->countQuery('select');
+
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         $query = "SELECT DISTINCT $ti.text " . 
             " FROM $ti " . 
             " JOIN $te ON ($ti.ce_id=$te.id) " .
@@ -929,7 +948,8 @@ class DataManager
         $ti = $this->tNames['items'];
         $te = $this->tNames['elements'];
         
-        $this->queryStats->countQuery('select');
+
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         $query = "SELECT DISTINCT $ti.target " . 
             " FROM $ti " . 
             " JOIN $te ON ($ti.ce_id=$te.id) " .
@@ -994,7 +1014,8 @@ class DataManager
         $td = $this->tNames['docs'];
         $tp = $this->tNames['pages'];
         
-        $this->queryStats->countQuery('select');
+
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         $query = "SELECT DISTINCT $td.* FROM $td" . 
                 " JOIN ($te, $ti, $tp)" . 
                 " ON ($te.id=$ti.ce_id AND $tp.id=$te.page_id AND $td.id=$tp.doc_id)" . 
@@ -1152,7 +1173,8 @@ class DataManager
         $te = $this->tNames['elements'];
         $tp = $this->tNames['pages'];
         
-        $this->queryStats->countQuery('select');
+
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         
         $query = "SELECT $tp.seq as 'page_seq'," .
             " $tp.foliation," . 
@@ -1285,7 +1307,8 @@ class DataManager
     
     public function getAdditionItemWithGivenTarget(int $target) {
         $ti = $this->tNames['items'];
-        $this->queryStats->countQuery('select');
+
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         
         $query = "SELECT * from $ti WHERE type=" . Item::ADDITION . " AND target=$target AND valid_until='9999-12-31 23:59:59.999999' LIMIT 1";
         $r = $this->databaseHelper->query($query);
@@ -1295,7 +1318,7 @@ class DataManager
     
     public function getAdditionElementIdWithGivenReference(int $reference) {
         $te = $this->tNames['elements'];
-        $this->queryStats->countQuery('select');
+
         $query = "SELECT id from $te where type=" . Element::SUBSTITUTION . " AND reference=$reference AND valid_until='9999-12-31 23:59:59.999999' LIMIT 1";
         $r = $this->databaseHelper->query($query);
         $row = $r->fetch(PDO::FETCH_ASSOC);
@@ -1310,6 +1333,8 @@ class DataManager
         $ti = $this->tNames['items'];
         $te = $this->tNames['elements'];
         $tp = $this->tNames['pages'];
+
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         
         $query = "SELECT $ti.id, $ti.type, $ti.seq, $ti.ce_id, $ti.lang, $ti.hand_id, $ti.text, $ti.alt_text, $ti.extra_info, $ti.length, $ti.target, " .
                 "$te.type as 'e.type', $te.page_id, $te.column_number as col, $te.seq as 'e.seq', $te.hand_id as 'e.hand_id', $te.reference, $te.placement, " .
@@ -1356,7 +1381,8 @@ class DataManager
         $te = $this->tNames['elements'];
         $tp = $this->tNames['pages'];
         
-        $this->queryStats->countQuery('select');
+
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         
         $seqNumberStart = $this->calcSeqNumber($loc1);
         $seqNumberEnd = $this->calcSeqNumber($loc2);
@@ -1429,7 +1455,8 @@ class DataManager
     
     public function getPageIdByDocPage($docId, $pageNum)
     {
-        $this->queryStats->countQuery('select');
+
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         $rows = $this->pagesDataTable->findRows([
             'doc_id' => $docId, 
             'page_number'=> $pageNum
@@ -1442,7 +1469,8 @@ class DataManager
     
      public function getPageIdByDocSeq($docId, $seq)
     {
-        $this->queryStats->countQuery('select');
+
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         $rows = $this->pagesDataTable->findRows([
             'doc_id' => $docId, 
             'seq'=> $seq
@@ -1471,7 +1499,8 @@ class DataManager
      * @return bool|array
      */
     public function getPageInfoByDocSeq($docId, $seq) {
-        $this->queryStats->countQuery('select');
+
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         $rows = $this->pagesDataTable->findRows([
             'doc_id' => $docId,
             'seq'=> $seq
@@ -1645,7 +1674,7 @@ class DataManager
         if (!$time) {
             $time = TimeString::now();
         }
-        $this->queryStats->countQuery('create-item');
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::CREATE_COUNTER);
         return $this->itemsDataTable->createRowWithTime([
             'ce_id'=> $item->columnElementId,
             'type' => $item->type,
@@ -1665,7 +1694,8 @@ class DataManager
         if (!$time) {
             $time = TimeString::now();
         }
-        $this->queryStats->countQuery('update-item');
+
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::UPDATE_COUNTER);
         $this->itemsDataTable->realUpdateRowWithTime([
             'id' => $item->id,
             'ce_id'=> $item->columnElementId,
@@ -1686,8 +1716,7 @@ class DataManager
          if (!$time) {
             $time = TimeString::now();
         }
-        
-        $this->queryStats->countQuery('create-element');
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::CREATE_COUNTER);
         return $this->elementsDataTable->createRowWithTime([
                 'type' => $element->type,
                 'page_id' => $element->pageId,
@@ -1706,7 +1735,8 @@ class DataManager
         if (!$time) {
             $time = TimeString::now();
         }
-        $this->queryStats->countQuery('update-element');
+
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::UPDATE_COUNTER);
         $this->elementsDataTable->realUpdateRowWithTime([
                 'id' => $element->id,
                 'type' => $element->type,
@@ -1727,7 +1757,8 @@ class DataManager
     {
        
         $te = $this->tNames['elements'];
-        $this->queryStats->countQuery('select');
+
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         $sql = "SELECT MAX(seq) as m FROM $te "
                 . "WHERE page_id=$pageId AND column_number=$col " 
                 . "AND `valid_until`='9999-12-31 23:59:59.999999'";
@@ -1740,7 +1771,8 @@ class DataManager
     
     public function getItemById($itemId)
     {
-        $this->queryStats->countQuery('select');
+
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         try {
             $row = $this->itemsDataTable->getRow($itemId);
         } catch(Exception $e) {
@@ -1753,7 +1785,8 @@ class DataManager
 
 
     public function getElementById($elementId) {
-        $this->queryStats->countQuery('select');
+
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
 
         $row = false;
         try {
@@ -2158,6 +2191,9 @@ class DataManager
      * ids for new items in the DB
      *
      * @param Element $newElement
+     * @param Element $oldElement
+     * @param array $itemIds
+     * @param bool $time
      * @return array
      * @throws Exception
      */
@@ -2226,7 +2262,7 @@ class DataManager
                     
                 case MyersDiff::DELETE:
                     $this->logger->debug("...deleting item @ pos $index");
-                    $this->queryStats->countQuery('delete-item');
+                    $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::DELETE_COUNTER);
                     $this->logger->debug("... .... time=" . $time);
                     $this->itemsDataTable->deleteRowWithTime(
                         $oldElement->items[$index]->id,
@@ -2300,14 +2336,14 @@ class DataManager
             $time = TimeString::now();
         }
         $element = $this->getElementById($elementId);
-        $this->queryStats->countQuery('delete-element');
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::DELETE_COUNTER);
         $res = $this->elementsDataTable->deleteRowWithTime($element->id, $time);
         if ($res === false) {
             return false;
         }
         
         foreach ($element->items as $item) {
-            $this->queryStats->countQuery('delete');
+            $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::DELETE_COUNTER);
             $res2 = $this->itemsDataTable->deleteRowWithTime($item->id, $time);
             if ($res2 === false) {
                 return false;
@@ -2377,6 +2413,7 @@ class DataManager
         }
         
         // Delete page in pages table
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::DELETE_COUNTER);
         if ($this->pagesDataTable->deleteRow($pageId) !== 1) {
             // This means a database error
             // Can't reproduce in testing for now
@@ -2394,7 +2431,8 @@ class DataManager
             $this->updateVersionUntilTime(intval($lastVersion['id']), $timeFrom);
         }
 
-        //print "Registering version for $pageId, $col, from $timeFrom, author $authorId\n";
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::CREATE_COUNTER);
+
         return $this->txVersionsTable->createRow([
             'page_id' => $pageId,
             'col' => $col,
@@ -2416,6 +2454,7 @@ class DataManager
      * @return array|bool
      */
     public function getTranscriptionVersions(int $pageId, int $col) {
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         $rows =  $this->txVersionsTable->findRows(['page_id' => $pageId, 'col' => $col]);
         if ($rows === false) {
             $this->logger->error("Cannot get transcription versions for page $pageId column $col");
@@ -2439,7 +2478,6 @@ class DataManager
         foreach ($authors as $author) {
             $authorInfo[$author] = $this->userManager->getUserInfoByUserId(intval($author));
         }
-        //$this->logger->debug('Authors', $authorInfo);
 
         $versionNumber = 1;
         foreach($versions as &$version) {
@@ -2453,6 +2491,7 @@ class DataManager
     }
 
     public function updateVersionUntilTime(int $versionId, string $newTimeUntil) {
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::UPDATE_COUNTER);
         $this->txVersionsTable->updateRow(['id' => $versionId, 'time_until' => $newTimeUntil]);
         return true;
     }

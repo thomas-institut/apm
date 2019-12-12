@@ -40,9 +40,10 @@ use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-abstract class SystemManager implements  iErrorReporter {
+abstract class SystemManager implements  iErrorReporter, iSqlQueryCounterTrackerAware {
 
     use SimpleErrorReporterTrait;
+    use SimpleSqlQueryCounterTrackerAware;
 
     const ERROR_NO_ERROR = 0;
     const MSG_ERROR_NO_ERROR = 'No Error';
@@ -68,6 +69,7 @@ abstract class SystemManager implements  iErrorReporter {
     public function __construct(array $config) {
         $this->resetError();
         $this->config = $config;
+        $this->initSqlQueryCounterTracker();
     }
     
     public function fatalErrorOccurred() : bool {

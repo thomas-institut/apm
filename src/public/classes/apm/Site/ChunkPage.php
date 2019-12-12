@@ -28,7 +28,13 @@ namespace APM\Site;
 
 use APM\Core\Address\Point;
 use APM\Core\Address\PointRange;
+use APM\Core\Token\Token;
+use APM\Core\Token\TranscriptionToken;
 use AverroesProject\Data\DataManager;
+use AverroesProjectToApm\ApUserDirectory;
+use AverroesProjectToApm\DatabaseItemStream;
+use AverroesProjectToApm\DatabaseItemStreamWitness;
+use AverroesProjectToApm\Formatter\WitnessPageFormatter;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use AverroesProject\Profiler\ApmProfiler;
@@ -54,7 +60,7 @@ class ChunkPage extends SiteController
         $dm = $this->dataManager;
         $workId = $request->getAttribute('work');
         $chunkNumber = $request->getAttribute('chunk');
-        $profiler = new ApmProfiler("chunkPage-$workId-$chunkNumber", $dm);
+        $this->profiler->start();
         $workInfo = $dm->getWorkInfo($workId);
         $witnessList = $dm->getDocsForChunk($workId, $chunkNumber);
 
@@ -86,7 +92,7 @@ class ChunkPage extends SiteController
                 $doc['plain_text'] = '';
             }
             $docs[] = $doc;
-            $profiler->lap('Doc '. $doc['id'] . ' END');
+            $this->profiler->lap('Doc '. $doc['id'] . ' END');
         }
         
         $validCollationLangs = [];
@@ -100,8 +106,9 @@ class ChunkPage extends SiteController
         if ($dm->userManager->isUserAllowedTo($this->userInfo['id'], 'witness-view-details')) {
             $canViewWitnessDetails = true;
         }
-        
-        $profiler->log($this->logger);
+
+        $this->profiler->stop();
+        $this->logProfilerData("ChunkPage-$workId-$chunkNumber");
         return $this->renderPage($response, 'chunkpage.twig', [
             'work' => $workId,
             'chunk' => $chunkNumber,
@@ -120,7 +127,7 @@ class ChunkPage extends SiteController
         $workId = $request->getAttribute('work');
         $chunkNumber = $request->getAttribute('chunk');
         $type = $request->getAttribute('type');
-        $profiler = new ApmProfiler("WitnessPage-$workId-$chunkNumber", $this->dataManager);
+        $this->profiler->start();
         $workInfo = $dm->getWorkInfo($workId);
         
         $witnessId = $request->getAttribute('id');
@@ -142,11 +149,7 @@ class ChunkPage extends SiteController
             $nonTokenItems = $doc['itemStreamWitness']->getNonTokenItemIndexes();
             //$doc['nonTokenItems'] = print_r($nonTokenItems, true);
             $doc['tokenDump'] = $this->prettyPrintTokens($doc['tokens'], $nonTokenItems);
-            
-//            ob_start();
-//                var_dump($doc['tokens']);
-//                $doc['tokenDump2'] = ob_get_contents();
-//            ob_end_clean();
+
             
             ob_start();
                 var_dump($doc['segmentApItemStreams']);
@@ -154,7 +157,8 @@ class ChunkPage extends SiteController
             ob_end_clean();
             
             $doc['segmentsJSON'] = json_encode($doc['segmentApItemStreams'] );
-            $profiler->log($this->logger);
+            $this->profiler->stop();
+            $this->logProfilerData("WitnessPage-$workId-$chunkNumber-$witnessId");
             return $this->renderPage($response, 'witness.twig', [
                 'work' => $workId,
                 'chunk' => $chunkNumber,
@@ -252,11 +256,11 @@ class ChunkPage extends SiteController
             }
         }
         
-        //$this->logger->debug('Doc ' . $docData['id'] . ' segment count: ' . count($doc['segmentApItemStreams']));
+
         $edNoteArrayFromDb =    $db->edNoteManager->rawGetEditorialNotesForListOfItems($itemIds);
-        //$this->logger->debug('Ednotes', $edNoteArrayFromDb);
-        $itemStream = new \AverroesProjectToApm\DatabaseItemStream($doc['id'], $doc['segmentApItemStreams'], $doc['lang'], $edNoteArrayFromDb);
-        $itemStreamWitness = new \AverroesProjectToApm\DatabaseItemStreamWitness($workId, $chunkNumber, $itemStream);
+
+        $itemStream = new DatabaseItemStream($doc['id'], $doc['segmentApItemStreams'], $doc['lang'], $edNoteArrayFromDb);
+        $itemStreamWitness = new DatabaseItemStreamWitness($workId, $chunkNumber, $itemStream);
         $doc['itemStreamWitness'] = $itemStreamWitness;
         $doc['tokens'] = $itemStreamWitness->getTokens();
         //$this->logger->debug('Doc ' . $docData['id'] . ':: tokens: ' . count($doc['tokens']) . ', page span: ' . $docData['pageSpan']);
@@ -271,8 +275,8 @@ class ChunkPage extends SiteController
         foreach(array_keys($noteAuthorIds) as $authorId) {
             $noteAuthorNames[$authorId] = $db->userManager->getUserInfoByUserId($authorId)['fullname'];
         }
-        $userDirectory = new \AverroesProjectToApm\ApUserDirectory($db->userManager);
-        $formatter = new \AverroesProjectToApm\Formatter\WitnessPageFormatter($userDirectory);
+        $userDirectory = new ApUserDirectory($db->userManager);
+        $formatter = new WitnessPageFormatter($userDirectory);
         $html = $formatter->formatItemStream($itemStream, $edNotes);
         $doc['formatted'] = $html;
         
@@ -294,14 +298,14 @@ class ChunkPage extends SiteController
     }
     
      protected  function prettyPrintTokens($tokens, $nonTokenItems) {
-        $types[\APM\Core\Token\Token::TOKEN_WORD] = 'W';
-        $types[\APM\Core\Token\Token::TOKEN_WHITESPACE] = 'S';
-        $types[\APM\Core\Token\Token::TOKEN_PUNCT] = 'P';
-        $types[\APM\Core\Token\Token::TOKEN_EMPTY] = 'E';
-        $types[\APM\Core\Token\Token::TOKEN_UNDEFINED] = 'U';
+        $types[Token::TOKEN_WORD] = 'W';
+        $types[Token::TOKEN_WHITESPACE] = 'S';
+        $types[Token::TOKEN_PUNCT] = 'P';
+        $types[Token::TOKEN_EMPTY] = 'E';
+        $types[Token::TOKEN_UNDEFINED] = 'U';
         $output = '';
         foreach($tokens as $i => $token) {
-            /* @var  $token \APM\Core\Token\TranscriptionToken */
+            /* @var  $token TranscriptionToken */
             $addresses = [];
             foreach($token->getSourceItemAddresses() as $address) {
                 $addresses[] = $this->prettyPrintAddressInItemStream($address->getFullAddress());

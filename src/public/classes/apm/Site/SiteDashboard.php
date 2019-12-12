@@ -29,6 +29,8 @@ use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use AverroesProject\ItemStream\ItemStream;
 use AverroesProject\Profiler\ApmProfiler;
+use ThomasInstitut\Profiler\SimpleProfiler;
+use ThomasInstitut\Profiler\TimeTracker;
 
 /**
  * Site Controller class
@@ -42,7 +44,8 @@ class SiteDashboard extends SiteController
         
         $dataManager = $this->dataManager;
         $userId = (int) $this->userInfo['id'];
-        $profiler = new ApmProfiler('dashboardPage-' . $this->userInfo['username'] . '-' . $userId, $dataManager);
+
+        $this->profiler->start();
         $docIds = $dataManager->getDocIdsTranscribedByUser($userId);
         
         $docListHtml = '';
@@ -50,7 +53,9 @@ class SiteDashboard extends SiteController
             $docListHtml .= $this->genDocPagesListForUser($userId, $docId);
         }
 
-        $profiler->log($this->logger);
+        $this->profiler->stop();
+        $this->logProfilerData('dashboardPage-' . $this->userInfo['username'] . '-' . $userId);
+
         return $this->renderPage($response, 'dashboard.twig', [
             'doclist' => $docListHtml
         ]);

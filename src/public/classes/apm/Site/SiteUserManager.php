@@ -41,7 +41,7 @@ class SiteUserManager extends SiteController
     {
         
         $profileUsername = $request->getAttribute('username');
-        $profiler = new ApmProfiler('userProfilePage-' . $profileUsername, $this->dataManager);
+        $this->profiler->start();
         if (!$this->dataManager->userManager->userExistsByUsername($profileUsername)) {
             return $this->view->render($response, 'user.notfound.twig', [
                         'userinfo' => $this->userInfo,
@@ -65,7 +65,7 @@ class SiteUserManager extends SiteController
                 $this->dataManager->userManager->userHasRole($userProfileInfo['id'], 'readOnly');
         
 
-        $profiler->lap("Basic Info");
+        $this->profiler->lap("Basic Info");
         $userId = $userProfileInfo['id'];
         $docIds = $this->dataManager->getDocIdsTranscribedByUser($userId);
         
@@ -74,7 +74,8 @@ class SiteUserManager extends SiteController
             $docListHtml .= $this->genDocPagesListForUser($userId, $docId);
         }
         
-        $profiler->log($this->logger);
+        $this->profiler->stop();
+        $this->logProfilerData('userProfilePage-' . $profileUsername);
         return $this->view->render($response, 'user.profile.twig', [
                     'userinfo' => $this->userInfo,
                     'copyright' => $this->getCopyrightNotice(),
@@ -88,7 +89,7 @@ class SiteUserManager extends SiteController
 
     public function userManagerPage(Request $request, Response $response)
     {
-        $profiler = new ApmProfiler('userManagerPage', $this->dataManager);
+        $this->profiler->start();
         $um = $this->dataManager->userManager;
         if (!$um->isUserAllowedTo($this->userInfo['id'], 'manageUsers')){
             return $this->view->render(
@@ -103,11 +104,10 @@ class SiteUserManager extends SiteController
                 );
         }
         
-        //$db = $this->dataManager;
-        //$docIds = $db->getDocIdList('title');
         $users = $um->getUserInfoForAllUsers();
         
-        $profiler->log($this->logger);
+        $this->profiler->stop();
+        $this->logProfilerData('userManagerPage');
         return $this->view->render($response, 'user.manager.twig', [
             'userinfo' => $this->userInfo,
             'copyright' => $this->getCopyrightNotice(),

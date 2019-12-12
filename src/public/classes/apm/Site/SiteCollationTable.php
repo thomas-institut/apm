@@ -150,7 +150,7 @@ class SiteCollationTable extends SiteController
         return $this->getCollationTablePage($collationPageOptions, $response);
     }
     
-    public function automaticCollationPagePreset(Request $request, Response $response, $args) 
+    public function automaticCollationPagePreset(Request $request, Response $response)
     {
         $this->logger->debug('Preset');
         $workId = $request->getAttribute('work');
@@ -210,7 +210,7 @@ class SiteCollationTable extends SiteController
         return $this->getCollationTablePage($collationPageOptions, $response);
     }
     
-    public function automaticCollationPageCustom(Request $request, Response $response, $args)  {
+    public function automaticCollationPageCustom(Request $request, Response $response)  {
         
         $rawData = $request->getBody()->getContents();
         parse_str($rawData, $postData);
@@ -282,8 +282,9 @@ class SiteCollationTable extends SiteController
         ];
         
         $dm = $this->dataManager;
+        $pageName = "AutomaticCollation-$workId-$chunkNumber-$language";
         
-        $profiler = new ApmProfiler("AutomaticCollation-$workId-$chunkNumber-$language", $dm);
+        $this->profiler->start();
         $this->logger->debug('Automatic collation', [ 'options' => $collationPageOptions]);
         $warnings = [];
 
@@ -319,7 +320,8 @@ class SiteCollationTable extends SiteController
             $availableWitnesses[] = [ 'type' => 'doc', 'id' => intVal($witnessId), 'title' => $docInfo['title']];
         }
 
-        $profiler->log($this->logger);
+        $this->profiler->stop();
+        $this->logProfilerData($pageName);
         
         $templateOptions = [
             'work' => $workId,
@@ -343,7 +345,7 @@ class SiteCollationTable extends SiteController
         return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, $templateOptions);
     }
     
-    protected function getValidWitnessDocIdsForWorkChunkLang($dm, $workId, $chunkNumber, $language) : array {
+    protected function getValidWitnessDocIdsForWorkChunkLang(DataManager $dm, $workId, $chunkNumber, $language) : array {
         $witnessList = $dm->getDocsForChunk($workId, $chunkNumber);
         
         $witnessesForLang = [];

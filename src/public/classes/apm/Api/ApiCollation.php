@@ -30,8 +30,6 @@ use Exception;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
-use AverroesProject\Profiler\ApmProfiler;
-
 use APM\Core\Witness\StringWitness;
 use APM\Core\Collation\CollationTable;
 use APM\Experimental\EditionWitness;
@@ -55,7 +53,7 @@ class ApiCollation extends ApiController
     public function quickCollation(Request $request, Response $response)
     {
         $apiCall = 'quickCollation';
-        $profiler = new ApmProfiler($apiCall, $this->getDataManager());
+        $this->profiler->start();
         $inputData = $this->checkAndGetInputData($request, $response, $apiCall, ['witnesses']);
         $this->debug('Input data', [ $inputData ]);
         if (!is_array($inputData)) {
@@ -126,7 +124,8 @@ class ApiCollation extends ApiController
         
         $decoratedCollationTable = (new QuickCollationTableDecorator())->decorate($collation);
 
-        $profiler->log($this->logger);
+        $this->profiler->stop();
+        $this->logProfilerData('quickCollation');
         
         return $this->responseWithJson($response,[
             'collationEngineDetails' => $collationEngine->getRunDetails(), 
@@ -178,9 +177,9 @@ class ApiCollation extends ApiController
         $requestedWitnesses = $inputDataObject['witnesses'];
         $ignorePunctuation = isset($inputDataObject['ignorePunctuation']) ?
                 $inputDataObject['ignorePunctuation'] : false;
-        
-        $profiler = new ApmProfiler("CollationTable-$workId-$chunkNumber-$language", $dataManager);
-        
+
+        $this->profiler->start();
+
         // Check that language is valid
         $languages = $this->languages;
         $langInfo = null;
@@ -231,7 +230,7 @@ class ApiCollation extends ApiController
             $witnessesToInclude = $validWitnessLocations;
         }
         
-        $profiler->lap('Checks done');
+        $this->profiler->lap('Checks done');
         
         $collationTable = new CollationTable($ignorePunctuation);
         $itemIds = [];
@@ -270,10 +269,10 @@ class ApiCollation extends ApiController
             }
         }
         
-        $profiler->lap('Collation table built');
+        $this->profiler->lap('Collation table built');
         $collatexInput = $collationTable->getCollationEngineInput();
         
-        $profiler->lap('Collatex input built');
+        $this->profiler->lap('Collatex input built');
         $collationEngine = $this->getCollationEngine();
         
         // Run Collatex
@@ -292,7 +291,7 @@ class ApiCollation extends ApiController
         }
         // @codeCoverageIgnoreEnd
         
-        $profiler->lap('Collatex done');
+        $this->profiler->lap('Collatex done');
         try {
             $collationTable->setCollationTableFromCollationEngineOutput($collatexOutput);
         }
@@ -311,12 +310,12 @@ class ApiCollation extends ApiController
         }
         // @codeCoverageIgnoreEnd
         
-        $profiler->lap('Collation table built from collatex output');
+        $this->profiler->lap('Collation table built from collatex output');
         $userDirectory = new ApUserDirectory($dataManager->userManager);
         $decorator = new TransitionalCollationTableDecorator($userDirectory);
         $decoratedCollationTable = $decorator->decorate($collationTable);
         
-        $profiler->lap('Collation table decorated');
+        $this->profiler->lap('Collation table decorated');
         
         // EXPERIMENTAL quick edition
         
@@ -325,10 +324,12 @@ class ApiCollation extends ApiController
         $quickEdition = $qdw->generateEdition();
         
 
-        $profiler->log($this->logger);
+        $this->profiler->stop();
+        $this->logProfilerData("CollationTable-$workId-$chunkNumber-$language");
         
         $collationEngineDetails = $collationEngine->getRunDetails();
-        $collationEngineDetails['totalDuration'] =  $profiler->getTotalTime() / 1000;
+
+        $collationEngineDetails['totalDuration'] =  $this->getProfilerTotalTime() * 1000;
         
         return $this->responseWithJson($response,[
             'collationEngineDetails' => $collationEngineDetails, 

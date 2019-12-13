@@ -8,9 +8,7 @@ and a user with access to that database.
 * Java running environment, e.g., Open JDK  (Note: Open JDK11 should not be used; it emits 
 a deprecation warning that breaks Collatex normal output)
 
-It has been tested in an Ubuntu 16.04.1 server with PHP 7.2 installed
-from  Ondřej Surý's repository (see https://tecadmin.net/install-php-7-on-ubuntu/), 
-and in an Ubuntu 18.04.3 server with standard packages.
+It has been developed and tested in an Ubuntu 18.04.3 server with standard packages.
 
 ## Development
 
@@ -20,7 +18,7 @@ Besides the general requirements given above, development requires:
 * an empty test database and a test user with access to it in MySQL
 * PHP xdebug extension (for code coverage)
 * PHP Composer 1.6.5+
-* PHPUnit 7.2.4+
+* PHPUnit 8.5
 * npm 6.4.1+
 * jasmine 3.2.1+ (included in source code)
 
@@ -37,36 +35,22 @@ Get all Javascript dependencies with npm:
 cd src/public
 npm install
 ```
-Create a ``testdbconfig.php`` file under ``src/public/test`` with the correct
-test database credentials. Use ``src/public/test/testdbconfig.sample.php`` as
-a starting point.
+Create a ``testconfig.php`` file under ``src/public/test/php/SiteMockup`` with the correct
+test database credentials. 
 
 Perform all PHP tests: 
 
 ```bash
-cd src/public/test
-phpunit .
+cd src/public/test/php
+./phpunit .
 ```
 If the installation is correct, all tests should pass in the master branch. 
 If not, create an issue in Github to discuss possible solutions. Don't just
 fix the issues and push your master branch to Github as this may break other
 people's environments. 
 
-Perform all Javascript tests:
-
-* Install the istanbul code coverage package globally (https://istanbul.js.org/) 
-```bash
-npm i nyc -g
-```
-* Before testing and after every change in the javascript code, generate Istanbul code coverage versions of javascript files
-```bash
-bash src/public/js/generateistanbuljs.bash
-```
-* browse to http://localhost:8888/public/test/js/runtests.html
-
-These tests should also all pass in the master branch.
-
 To run the app in development:
+
 * Create a configuration file in ``src/public`` 
 (see ```src/public/config.sample.php```). Notice especially the location
 of the log file and the temporary directory for Collatex, these may have to 
@@ -87,6 +71,24 @@ cd src/public/utilities;
 ./makeroot <someuser>
 ```
 * Browse to http://localhost:8888/public
+
+
+Perform all Javascript tests:
+
+* Install the istanbul code coverage package globally (https://istanbul.js.org/) 
+```bash
+npm i nyc -g
+```
+* Before testing and after every change in the javascript code, generate Istanbul code coverage versions of javascript files
+```bash
+cd src/public/js/
+make test
+```
+* browse to http://localhost:8888/public/test/js/runtests.html
+
+These tests should also all pass in the master branch.
+
+
 
 Once you are sure that the development environment is working, checkout or create
 a new branch for your changes. Don't work on the master branch.

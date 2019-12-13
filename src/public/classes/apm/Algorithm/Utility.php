@@ -18,7 +18,7 @@
  *  
  */
 
-namespace AverroesProject\Algorithm;
+namespace APM\Algorithm;
 
 /**
  * Utility Methods
@@ -33,7 +33,7 @@ class Utility {
      * @param array $rows
      * @param string $key
      */
-    public static function arraySortByKey(&$rows, $key) 
+    public static function arraySortByKey(array &$rows, string $key)
     {
         usort(
             $rows, 

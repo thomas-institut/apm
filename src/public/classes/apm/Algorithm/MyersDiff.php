@@ -21,7 +21,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-namespace AverroesProject\Algorithm;
+namespace APM\Algorithm;
 
 /**
  * Find the shortest edit sequence to transform one string into another.
@@ -54,7 +54,7 @@ class MyersDiff
      *
      * @return int[][]
      */
-    private static function extractSnakes(array $v_save, $x, $y)
+    private static function extractSnakes(array $v_save, $x, $y) : array
     {
         $snakes = array();
         for ($d = count($v_save) - 1; $x >= 0 && $y >= 0; --$d) {
@@ -77,13 +77,14 @@ class MyersDiff
     }
 
     /**
-     * Convert a list of "snakes" into a set of insert/keep/delete 
+     * Convert a list of "snakes" into a set of insert/keep/delete
      * instructions
      *
      * @param integer[][] $snakes Common subsequences
      *
+     * @return array
      */
-    private static function formatSolution(array $snakes)
+    private static function formatSolution(array $snakes) : array
     {
         $solution = [];
         $x = 0;
@@ -127,7 +128,7 @@ class MyersDiff
      *                    $command (-1 = DEL, 0 = KEEP, 1 = ADD),
      *                    $seq : $index in the edited array
      */
-    public static function calculate(array &$a, array &$b, callable $equals)
+    public static function calculate(array &$a, array &$b, callable $equals) : array
     {
         // The algorithm uses array keys numbered from zero.
         $n = count($a);

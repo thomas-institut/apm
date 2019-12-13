@@ -20,7 +20,7 @@
 
 namespace AverroesProject\ColumnElement;
 
-use AverroesProject\Algorithm\MyersDiff;
+use APM\Algorithm\MyersDiff;
 /**
  * Methods to manage an array of ColumnElements meant to be internally 
  * consistent (e.g., the kind of array interchanged with the 
@@ -31,22 +31,21 @@ use AverroesProject\Algorithm\MyersDiff;
 class ElementArray {
     /**
      * Gets the edit script that transform the array into the
-     * given array. 
+     * given array.
      *
-     * Assumes the elements (and their items) in both arrays are ordered according to 
-     * the desired sequences. 
-     * 
+     * Assumes the elements (and their items) in both arrays are ordered according to
+     * the desired sequences.
+     *
      * @param Element[] $oldArray
      * @param Element[] $newArray
+     * @return array|array[]
      */
     public static function getEditScript($oldArray, $newArray) 
     {
-        $editScript = MyersDiff::calculate(
+        return MyersDiff::calculate(
             $oldArray,
-            $newArray, 
+            $newArray,
             function ($a, $b) { return Element::isElementDataEqual($a, $b, true, true);}
         );
-
-        return $editScript;
     }
 }

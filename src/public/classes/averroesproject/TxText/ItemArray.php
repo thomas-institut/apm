@@ -28,8 +28,9 @@
 
 namespace AverroesProject\TxText;
 
-use AverroesProject\Algorithm\MyersDiff;
-use AverroesProject\Algorithm\Utility;
+use APM\Algorithm\MyersDiff;
+use APM\Algorithm\Utility;
+use InvalidArgumentException;
 
 class ItemArray
 {
@@ -47,7 +48,7 @@ class ItemArray
     public static function addItem(&$itemArray, $item, $atTheEnd=false)
     {
         if (!($item instanceof Item)) {
-             throw new \InvalidArgumentException(
+             throw new InvalidArgumentException(
                      "Objects added to an ItemArray should be of class Item");
         }
         $index = count($itemArray);
@@ -92,13 +93,13 @@ class ItemArray
             } 
         }
     }
-    
+
     /**
      * Sets the hand ID of the items in an array if not set or
      * if $force is true
      *
-     * @param Item[] $itemArray 
-     * @param int $handId 
+     * @param $theItems
+     * @param int $handId
      * @param boolean $force
      */
     public static function setHandId($theItems, $handId, $force = false)
@@ -121,27 +122,26 @@ class ItemArray
         }
         return $rtl > ($n - $rtl);
     }
-    
+
     /**
      * Gets the edit script that transform the array into the
-     * given array. The resulting indexes in the edit script 
+     * given array. The resulting indexes in the edit script
      * refer to sequence numbers (1,2,...), not array indexes (0,1,...)
      *
-     * Assumes the items in both arrays are ordered according to 
-     * the desired sequences. 
-     * 
+     * Assumes the items in both arrays are ordered according to
+     * the desired sequences.
+     *
      * @param Item[] $oldArray
      * @param Item[] $newArray
+     * @return array|array[]
      */
     public static function getEditScript($oldArray, $newArray) 
     {
-        $editScript = MyersDiff::calculate(
+        return MyersDiff::calculate(
             $oldArray,
-            $newArray, 
+            $newArray,
             function ($a, $b) { return Item::isItemDataEqual($a, $b);}
         );
-
-        return $editScript;
     }
     
 }

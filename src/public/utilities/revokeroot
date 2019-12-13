@@ -19,10 +19,11 @@
  *  
  */
 
-namespace AverroesProject;
+namespace APM;
 
+$config = [];
 require __DIR__ . '/../vendor/autoload.php';
 require __DIR__ . '/../config.php';
 require __DIR__ . '/../version.php';
 
-(new CommandLine\RevokeRootUtility($config))->run($argc, $argv);
+(new CommandLine\RevokeRootUtility($config, $argc, $argv))->run();

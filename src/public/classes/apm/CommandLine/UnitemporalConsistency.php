@@ -1,7 +1,7 @@
 <?php
 
 
-namespace AverroesProject\CommandLine;
+namespace APM\CommandLine;
 
 /**
  * Checks the consistency of a MySqlUnitemporal table

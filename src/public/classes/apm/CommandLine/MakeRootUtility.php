@@ -18,7 +18,7 @@
  *  
  */
 
-namespace AverroesProject\CommandLine;
+namespace APM\CommandLine;
 
 /**
  * Description of ChangePasswordUtility
@@ -26,9 +26,9 @@ namespace AverroesProject\CommandLine;
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 
-class ChangePasswordUtility extends CommandLineUtility {
+class MakeRootUtility extends CommandLineUtility {
     
-    const USAGE = "usage: changepassword.php <username>\n";
+    const USAGE = "usage: makeroot <username>\n";
     
     public function main($argc, $argv)
     {
@@ -40,38 +40,29 @@ class ChangePasswordUtility extends CommandLineUtility {
         $username = $argv[1];
 
         if (!$this->um->userExistsByUsername($username)) {
-            $msg = "$username is not a valid username in the system.";
+            $msg = "$username does not exist in the system";
             $this->logger->notice($msg, ['username' => $username]);
             $this->printErrorMsg($msg);
             return false;
         }
+        $userId = $this->um->getUserIdFromUserName($username);
         
-        print "Password: ";
-        system('stty -echo');
-        $password1 = trim(fgets(STDIN));
-        system('stty echo');
-        print "\n";
-        print "Type password again: ";
-        system('stty -echo');
-        $password2 = trim(fgets(STDIN));
-        system('stty echo');
-        print "\n";
-        if ($password1 !== $password2) {
-            $msg = "Passwords do not match!";
-            $this->logger->notice($msg, ['username' => $username]);
-            $this->printErrorMsg($msg);
-            return false;
-        }
-
-        if (!$this->um->storeUserPassword($username, $password1)) {
-            $msg = "Could not store password, I'm sorry :(";
+        if ($userId === false ) {
+            $msg = "Can't get userId for $username";
             $this->logger->error($msg, ['username' => $username]);
             $this->printErrorMsg($msg);
             return false;
         }
-
-        $this->logger->info("Password for $username changed from command line", ['username' => $username]);
-        print "Password changed successfully\n";
+        
+        if (!$this->um->makeRoot($userId)) {
+            $msg = "Can't make $username root";
+            $this->logger->error($msg, ['username' => $username]);
+            $this->printErrorMsg($msg);
+            return false;
+        }
+        
+        $this->logger->info("$username made root from command line", ['username' => $username]);
+        print "User $username is now root\n";
         return true;
     }
     

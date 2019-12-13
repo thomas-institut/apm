@@ -18,10 +18,12 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *  
  */
-namespace AverroesProject;
+namespace APM;
+
+$config = [];
 
 require __DIR__ . '/../vendor/autoload.php';
 require __DIR__ . '/../setup.php';
 require __DIR__ . '/../version.php';
 
-(new CommandLine\CreateUserUtility($config))->run($argc, $argv);
+(new CommandLine\CreateUserUtility($config, $argc, $argv))->run();

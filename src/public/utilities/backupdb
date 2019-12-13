@@ -19,10 +19,13 @@
  *  
  */
 
-namespace AverroesProject;
+namespace APM;
+
+$config = [];
 
 require __DIR__ . '/../vendor/autoload.php';
 require __DIR__ . '/../setup.php';
 require __DIR__ . '/../version.php';
 
-(new CommandLine\BackupDB($config))->run($argc, $argv);
+
+(new CommandLine\BackupDB($config, $argc, $argv))->run();

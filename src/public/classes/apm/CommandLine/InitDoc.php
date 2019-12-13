@@ -18,7 +18,7 @@
  *  
  */
 
-namespace AverroesProject\CommandLine;
+namespace APM\CommandLine;
 
 /**
  * Description of ChangePasswordUtility

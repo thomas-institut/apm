@@ -18,7 +18,7 @@
  *  
  */
 
-namespace AverroesProject\CommandLine;
+namespace APM\CommandLine;
 
 /**
  * Utility to perform a database backup with mysqldump 
@@ -30,8 +30,8 @@ class BackupDB extends CommandLineUtility {
     
     const USAGE = "USAGE: backupdb <output_directory>\n";
     
-    public function __construct($config) {
-        parent::__construct($config);
+    public function __construct(array $config, int $argc, array $argv) {
+        parent::__construct($config, $argc, $argv);
         $this->logger = $this->logger->withName('BACKUP');
     }
     

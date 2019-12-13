@@ -18,13 +18,13 @@
  *  
  */
 
-namespace AverroesProject\CommandLine;
+namespace APM\CommandLine;
 
 use APM\System\ApmSystemManager;
 use AverroesProject\Data\UserManager;
 use AverroesProject\Data\DataManager;
 use Monolog\Logger;
-use Monolog\Handler\StreamHandler;
+use PDO;
 
 /**
  * Description of CommandLineUtility
@@ -35,7 +35,7 @@ abstract class CommandLineUtility {
     
     /**
      *
-     * @var \PDO
+     * @var PDO
      */
     protected $dbh;
     
@@ -50,7 +50,10 @@ abstract class CommandLineUtility {
      * @var Logger 
      */
     protected $logger;
-    
+
+    /**
+     * @var array
+     */
     protected $config;
 
     /**
@@ -60,15 +63,29 @@ abstract class CommandLineUtility {
     /**
      * @var DataManager
      */
-    private $dm;
+    protected $dm;
+
+    /**
+     * @var int
+     */
+    private $processUser;
+    /**
+     * @var int
+     */
+    private $argc;
+    /**
+     * @var array
+     */
+    private $argv;
 
 
-    public function __construct($config) {
-        global $argv;
-        
+    public function __construct(array  $config, int $argc, array $argv) {
+
         $this->config = $config;
         $this->processUser = posix_getpwuid(posix_geteuid());
         $pid = posix_getpid();
+        $this->argc = $argc;
+        $this->argv = $argv;
         $cmd = $argv[0];
 
         // System Manager 
@@ -98,8 +115,8 @@ abstract class CommandLineUtility {
         $this->um = $this->dm->userManager;
     }
     
-    public function run($argc, $argv) {
-        $result = $this->main($argc, $argv);
+    public function run() {
+        $result = $this->main($this->argc, $this->argv);
         $status = $result ? 0 : 1;
         exit($status);
     }
@@ -117,10 +134,5 @@ abstract class CommandLineUtility {
 
     protected abstract function main($argc, $argv);
     
-    private function exitWithError($msg) 
-    {
-        $this->logger->error($msg);
-        $this->printErrorMsg($msg);
-        exit(0);
-    }
+
 }

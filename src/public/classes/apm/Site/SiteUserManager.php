@@ -28,7 +28,7 @@ namespace APM\Site;
 
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
-use AverroesProject\Profiler\ApmProfiler;
+
 
 /**
  * Site Controller class
@@ -37,16 +37,19 @@ use AverroesProject\Profiler\ApmProfiler;
 class SiteUserManager extends SiteController
 {
 
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+
+     */
     public function userProfilePage(Request $request, Response $response)
     {
         
         $profileUsername = $request->getAttribute('username');
         $this->profiler->start();
         if (!$this->dataManager->userManager->userExistsByUsername($profileUsername)) {
-            return $this->view->render($response, 'user.notfound.twig', [
-                        'userinfo' => $this->userInfo,
-                        'copyright' => $this->getCopyrightNotice(),
-                        'baseurl' => $this->getBaseUrl(),
+            return $this->renderPage($response, 'user.notfound.twig', [
                         'theuser' => $profileUsername
             ]);
         }
@@ -76,10 +79,7 @@ class SiteUserManager extends SiteController
         
         $this->profiler->stop();
         $this->logProfilerData('userProfilePage-' . $profileUsername);
-        return $this->view->render($response, 'user.profile.twig', [
-                    'userinfo' => $this->userInfo,
-                    'copyright' => $this->getCopyrightNotice(),
-                    'baseurl' => $this->getBaseUrl(),
+        return $this->renderPage($response, 'user.profile.twig', [
                     'theuser' => $userProfileInfo,
                     'canEditProfile' => $canEditProfile,
                     'canMakeRoot' => $canMakeRoot,
@@ -87,18 +87,20 @@ class SiteUserManager extends SiteController
         ]);
     }
 
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
     public function userManagerPage(Request $request, Response $response)
     {
         $this->profiler->start();
         $um = $this->dataManager->userManager;
         if (!$um->isUserAllowedTo($this->userInfo['id'], 'manageUsers')){
-            return $this->view->render(
+            return $this->renderPage(
                     $response, 
                     'error.notallowed.twig', 
                     [
-                        'userinfo' => $this->userInfo,
-                        'copyright' => $this->getCopyrightNotice(),
-                        'baseurl' => $this->getBaseUrl(),
                         'message' => 'You are not authorized to manage users.'
                     ]
                 );
@@ -108,14 +110,16 @@ class SiteUserManager extends SiteController
         
         $this->profiler->stop();
         $this->logProfilerData('userManagerPage');
-        return $this->view->render($response, 'user.manager.twig', [
-            'userinfo' => $this->userInfo,
-            'copyright' => $this->getCopyrightNotice(),
-            'baseurl' => $this->getBaseUrl(),
+        return $this->renderPage($response, 'user.manager.twig', [
             'users' => $users
         ]);
     }
-    
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
     public function userSettingsPage(Request $request, Response $response)
     {
         $username = $request->getAttribute('username');
@@ -123,28 +127,19 @@ class SiteUserManager extends SiteController
         $userId = $this->userInfo['id'];
         if ($username !== $curUserName && 
                 !$this->dataManager->userManager->isUserAllowedTo($userId, 'edit-user-settings')){
-            return $this->view->render($response, 'error.notallowed.twig', [
-                'userinfo' => $this->userInfo,
-                'copyright' => $this->getCopyrightNotice(),
-                'baseurl' => $this->getBaseUrl(),
+            return $this->renderPage($response, 'error.notallowed.twig', [
                 'message' => 'You are not authorized to change the settings for user ' . $username
             ]);
         }
         
         if (!$this->dataManager->userManager->userExistsByUsername($username)){
-        return $this->view->render($response, 'user.notfound.twig', [
-            'userinfo' => $this->userInfo,
-            'copyright' => $this->getCopyrightNotice(),
-            'baseurl' => $this->getBaseUrl(),
+        return $this->renderPage($response, 'user.notfound.twig', [
             'theuser' => $username
         ]);
         }
         $userInfo = $this->dataManager->userManager->getUserInfoByUsername($username);
     
-        return $this->view->render($response, 'user.settings.twig', [
-            'userinfo' => $this->userInfo,
-            'copyright' => $this->getCopyrightNotice(),
-            'baseurl' => $this->getBaseUrl(),
+        return $this->renderPage($response, 'user.settings.twig', [
             'canedit' => true,
             'theuser' => $userInfo
         ]);

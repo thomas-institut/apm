@@ -21,6 +21,8 @@
 namespace APM;
 
 
+use APM\CollationEngine\CollationEngine;
+use APM\CollationEngine\NullCollationEngine;
 use APM\Presets\DataTablePresetManager;
 use APM\Presets\PresetManager;
 use APM\System\SystemManager;
@@ -71,16 +73,16 @@ class SystemManagerMockup extends SystemManager {
         return true;
     }
     
-    public function getHookManager() {
+    public function getHookManager() : HookManager {
         return $this->hm;
     }
 
-    public function getSettingsManager() {
+    public function getSettingsManager() : SettingsManager {
         return $this->sm;
     }
 
-    public function getCollationEngine()
+    public function getCollationEngine() : CollationEngine
     {
-        // TODO: Implement getCollationEngine() method.
+        return new NullCollationEngine();
     }
 }

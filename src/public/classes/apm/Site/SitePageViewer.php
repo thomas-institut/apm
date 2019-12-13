@@ -28,6 +28,9 @@ namespace APM\Site;
 use AverroesProject\Data\DataManager;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
+use Twig\Error\LoaderError;
+use Twig\Error\RuntimeError;
+use Twig\Error\SyntaxError;
 
 /**
  * Site Controller class
@@ -35,6 +38,11 @@ use \Psr\Http\Message\ResponseInterface as Response;
  */
 class SitePageViewer extends SiteController
 {
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
     function pageViewerPageByDocPage(Request $request, Response $response)
     {
         $docId = $request->getAttribute('doc');
@@ -57,10 +65,7 @@ class SitePageViewer extends SiteController
             $pageNumberFoliation = $pageInfo['foliation'];
         }
 
-        return $this->view->render($response, 'pageviewer.twig', [
-            'userinfo' => $this->userInfo,
-            'copyright' => $this->getCopyrightNotice(),
-            'baseurl' => $this->getBaseUrl(),
+        return $this->renderPage($response, 'pageviewer.twig', [
             'navByPage' => true,
             'doc' => $docId,
             'docInfo' => $docInfo,
@@ -77,8 +82,13 @@ class SitePageViewer extends SiteController
             'languagesArray' => $languagesArray
         ]);
     }
-    
-     function pageViewerPageByDocSeq(Request $request, Response $response)
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    function pageViewerPageByDocSeq(Request $request, Response $response)
     {
         $docId = $request->getAttribute('doc');
         $seq = $request->getAttribute('seq');
@@ -102,10 +112,7 @@ class SitePageViewer extends SiteController
             $pageNumberFoliation = $pageInfo['foliation'];
         }
 
-        return $this->view->render($response, 'pageviewer.twig', [
-            'userinfo' => $this->userInfo,
-            'copyright' => $this->getCopyrightNotice(),
-            'baseurl' => $this->getBaseUrl(),
+        return $this->renderPage($response, 'pageviewer.twig', [
             'navByPage' => false,  // i.e., navigate by sequence
             'doc' => $docId,
             'docInfo' => $docInfo,
@@ -118,7 +125,7 @@ class SitePageViewer extends SiteController
             'activeWorks' => $activeWorks,
             'thePages' => $thePages,
             'imageUrl' => $imageUrl,
-           'openSeaDragonConfig' => $osdConfig,
+            'openSeaDragonConfig' => $osdConfig,
             'languagesArray' => $languagesArray
         ]);
     }

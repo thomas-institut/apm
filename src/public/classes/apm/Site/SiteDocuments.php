@@ -37,6 +37,11 @@ use \Psr\Http\Message\ResponseInterface as Response;
 class SiteDocuments extends SiteController
 {
 
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
     public function documentsPage(Request $request, Response $response)
     {
 
@@ -74,7 +79,12 @@ class SiteDocuments extends SiteController
             'canManageDocuments' => $canManageDocuments
         ]);
     }
-    
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
     public function showDocPage(Request $request, Response $response)
     {
         
@@ -119,7 +129,12 @@ class SiteDocuments extends SiteController
             'doc' => $doc
         ]);
     }
-    
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
     public function newDocPage(Request $request, Response $response)
     {
      
@@ -159,7 +174,12 @@ class SiteDocuments extends SiteController
             'docTypesOptions' => $docTypesOptions
         ]);
     }
-    
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
     public function editDocPage(Request $request, Response $response)
     {
         $this->profiler->start();
@@ -226,7 +246,12 @@ class SiteDocuments extends SiteController
         
         
     }
-    
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
     public function defineDocPages(Request $request, Response $response)
     {
         $this->profiler->start();

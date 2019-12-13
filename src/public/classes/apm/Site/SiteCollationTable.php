@@ -30,8 +30,6 @@ use AverroesProject\Data\DataManager;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
-use AverroesProject\Profiler\ApmProfiler;
-use APM\System\ApmSystemManager;
 
 /**
  * Site Controller class
@@ -56,8 +54,12 @@ class SiteCollationTable extends SiteController
     const TEMPLATE_ERROR = 'chunk.collation.error.twig';
     const TEMPLATE_QUICK_COLLATION = 'collation.quick.twig';
     const TEMPLATE_COLLATION_TABLE = 'collationtable.twig';
-    
-    
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
     public function quickCollationPage(Request $request, Response $response)
     {
         return $this->renderPage($response, self::TEMPLATE_QUICK_COLLATION, [
@@ -66,7 +68,13 @@ class SiteCollationTable extends SiteController
         ]);
 
     }
-    
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @param $args
+     * @return Response
+     */
     public function automaticCollationPageGet(Request $request, Response $response, $args) 
     {
         $workId = $request->getAttribute('work');
@@ -149,7 +157,12 @@ class SiteCollationTable extends SiteController
         
         return $this->getCollationTablePage($collationPageOptions, $response);
     }
-    
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
     public function automaticCollationPagePreset(Request $request, Response $response)
     {
         $this->logger->debug('Preset');
@@ -209,7 +222,12 @@ class SiteCollationTable extends SiteController
 
         return $this->getCollationTablePage($collationPageOptions, $response);
     }
-    
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
     public function automaticCollationPageCustom(Request $request, Response $response)  {
         
         $rawData = $request->getBody()->getContents();
@@ -265,7 +283,12 @@ class SiteCollationTable extends SiteController
         
         return $this->getCollationTablePage($collationPageOptions, $response);
     }
-    
+
+    /**
+     * @param $collationPageOptions
+     * @param Response $response
+     * @return Response
+     */
     private function getCollationTablePage($collationPageOptions, Response $response) {
         $workId = $collationPageOptions['work'];
         $chunkNumber = $collationPageOptions['chunk'];

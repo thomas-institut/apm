@@ -90,15 +90,6 @@ class SimpleProfilerTest extends TestCase
 
         $exceptionCaught = false;
         try {
-            $profiler->start();
-        } catch (RuntimeException $e) {
-            $exceptionCaught = true;
-        }
-        $this->assertTrue($exceptionCaught);
-        $this->assertEquals(SimpleProfiler::ERROR_START_CALLED_WHEN_ALREADY_STARTED, $profiler->getErrorCode());
-
-        $exceptionCaught = false;
-        try {
             $profiler->getLaps();
         } catch (RuntimeException $e) {
             $exceptionCaught = true;

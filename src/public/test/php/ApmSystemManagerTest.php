@@ -115,7 +115,7 @@ class ApmSystemManagerTest extends TestCase {
         $config[ApmConfigParameter::PLUGINS] = [ 'BasicPlugin'];
         $sm8= new ApmSystemManager($config);
         $this->assertFalse($sm8->fatalErrorOccurred());
-        $this->assertEquals(System\SystemManager::MSG_ERROR_NO_ERROR, $sm8->getErrorMsg());
+        $this->assertEquals('', $sm8->getErrorMessage());
         $this->assertTrue(is_a($sm8->getSettingsManager(), SettingsManager::class));
         $this->assertTrue(is_a($sm8->getPresetsManager(), PresetManager::class));
         

@@ -28,9 +28,12 @@ namespace APM\Site;
 
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
-use AverroesProject\Profiler\ApmProfiler;
+
 
 use AverroesProject\ItemStream\ItemStream;
+use Twig\Error\LoaderError;
+use Twig\Error\RuntimeError;
+use Twig\Error\SyntaxError;
 
 /**
  * Site Controller class
@@ -38,6 +41,11 @@ use AverroesProject\ItemStream\ItemStream;
  */
 class SiteChunks extends SiteController
 {
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
     public function chunksPage(Request $request, Response $response)
     {
        
@@ -61,10 +69,7 @@ class SiteChunks extends SiteController
         }
         $this->profiler->stop();
         $this->logProfilerData('chunksPage');
-        return $this->view->render($response, 'chunks.twig', [
-            'userinfo' => $this->userInfo,
-            'copyright' => $this->getCopyrightNotice(),
-            'baseurl' => $this->getBaseUrl(),
+        return $this->renderPage($response, 'chunks.twig', [
             'works' => $works
         ]);
     }

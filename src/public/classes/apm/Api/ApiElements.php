@@ -50,7 +50,7 @@ class ApiElements extends ApiController
             Response $response)
     {
         $dataManager = $this->getDataManager();
-        
+        $this->profiler->start();
 
         $userManager = $dataManager->userManager;
          

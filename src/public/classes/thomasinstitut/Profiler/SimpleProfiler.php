@@ -76,20 +76,23 @@ class SimpleProfiler implements iProfiler, iErrorReporter
     }
 
     public function reset() : void {
+        $this->forceStop();
+        $this->resetError();
         $this->propertyTrackers = [];
+    }
+
+    protected function forceStop() {
         $this->laps = [];
         $this->calculatedLaps = [];
         $this->running = false;
         $this->lapNames = [];
-        $this->resetError();
     }
 
     public function start(string $startLapName = self::DEFAULT_START_LAP_NAME): void
     {
+        $this->forceStop();
         $this->resetError();
-        if ($this->isRunning()) {
-            $this->throwRunTimeException("start() called when already started", self::ERROR_START_CALLED_WHEN_ALREADY_STARTED);
-        }
+
         $lapArray = [ self::FIELD_LAP_NAME => $startLapName];
         foreach($this->propertyTrackers as $propertyName => $propertyTracker) {
             /**@var $propertyTracker iPropertyTracker */

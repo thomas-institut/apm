@@ -180,6 +180,7 @@ class ApiDocuments extends ApiController
         if ($numPages === 0) {
             // nothing to do!
             $this->debug("addPages: request for 0 pages, nothing to do");
+            $this->profiler->stop();
             $this->logProfilerData('addPages');
             return $response->withStatus(200);
         }
@@ -263,6 +264,7 @@ class ApiDocuments extends ApiController
                       'docSettings' => $docSettings]);
             return $this->responseWithJson($response,['error' => ApiController::API_ERROR_DB_UPDATE_ERROR], 409);
         }
+        $this->profiler->stop();
         $this->logProfilerData('NewDocument');
         return  $this->responseWithJson($response, ['newDocId' => $docId], 200);
         

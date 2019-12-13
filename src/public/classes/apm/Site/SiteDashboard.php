@@ -27,10 +27,7 @@ namespace APM\Site;
 
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
-use AverroesProject\ItemStream\ItemStream;
-use AverroesProject\Profiler\ApmProfiler;
-use ThomasInstitut\Profiler\SimpleProfiler;
-use ThomasInstitut\Profiler\TimeTracker;
+
 
 /**
  * Site Controller class
@@ -38,7 +35,12 @@ use ThomasInstitut\Profiler\TimeTracker;
  */
 class SiteDashboard extends SiteController
 {
-  
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
     public function dashboardPage(Request $request, Response $response)
     {
         

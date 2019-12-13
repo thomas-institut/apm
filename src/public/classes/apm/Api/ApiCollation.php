@@ -62,6 +62,7 @@ class ApiCollation extends ApiController
         
         $witnesses = $inputData['witnesses'];
         if (count($witnesses) < 2) {
+
             $this->logger->error("Quick Collation: not enough witnessess in data, got " . count($witnesses),
                     [ 'apiUserId' => $this->apiUserId,
                       'apiError' => self::ERROR_NOT_ENOUGH_WITNESSES,
@@ -75,6 +76,7 @@ class ApiCollation extends ApiController
         // Check and get initial witness data
         foreach ($witnesses as $witness) {
             if (!isset($witness['id']) || !isset($witness['text'])) {
+                $this->profiler->stop();
                 $this->logger->error("Quick Collation: bad witness in data",
                     [ 'apiUserId' => $this->apiUserId,
                       'apiError' => self::ERROR_BAD_WITNESS,
@@ -94,6 +96,7 @@ class ApiCollation extends ApiController
         // @codeCoverageIgnoreStart
         // Not worrying about testing CollatexErrors here
         if ($collatexOutput === [] && $collationEngine->getErrorCode() !==  Engine::ERROR_NOERROR) {
+
             $this->logger->error("Quick Collation: error running Collatex",
                         [ 'apiUserId' => $this->apiUserId,
                         'apiError' => ApiController::API_ERROR_COLLATION_ENGINE_ERROR,
@@ -111,6 +114,7 @@ class ApiCollation extends ApiController
         // @codeCoverageIgnoreStart
         // Can't replicate this consistently in testing
         catch(Exception $ex) {
+
             $this->logger->error('Error processing collatexOutput into collation object', 
                     [ 'apiUserId' => $this->apiUserId,
                         'apiError' => self::ERROR_FAILED_COLLATION_ENGINE_PROCESSING,
@@ -190,6 +194,7 @@ class ApiCollation extends ApiController
         }
         
         if (is_null($langInfo)) {
+
             $msg = 'Invalid language <b>' . $language . '</b>';
             $this->logger->error($msg);
             return $this->responseWithJson($response, ['error' => self::ERROR_INVALID_LANGUAGE, 'msg' => $msg], 409);

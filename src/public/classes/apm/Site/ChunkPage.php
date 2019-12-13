@@ -35,11 +35,12 @@ use AverroesProjectToApm\ApUserDirectory;
 use AverroesProjectToApm\DatabaseItemStream;
 use AverroesProjectToApm\DatabaseItemStreamWitness;
 use AverroesProjectToApm\Formatter\WitnessPageFormatter;
+use Exception;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
-use AverroesProject\Profiler\ApmProfiler;
 
 use AverroesProject\ItemStream\ItemStream;
+
 
 /**
  * Site Controller class
@@ -82,8 +83,8 @@ class ChunkPage extends SiteController
                     $doc = $this->buildWitnessDataFromDocData($doc, $workId, $chunkNumber, $dm, $witnessNumber);
                     $doc['delayLoad'] = false;
                 }
-            } catch (\Exception $e) { // @codeCoverageIgnore
-                $this->logger->error('Error in build Witness Data', $e->getMessage()); // @codeCoverageIgnore
+            } catch (Exception $e) { // @codeCoverageIgnore
+                $this->logger->error('Error in build Witness Data', [$e->getMessage()]); // @codeCoverageIgnore
             }
             
             if ($doc['goodWitness']) {
@@ -119,8 +120,12 @@ class ChunkPage extends SiteController
             'userCanViewChunkDetails' => $canViewWitnessDetails
         ]);
     }
-    
-    
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
     public function witnessPage(Request $request, Response $response){
         
         $dm = $this->dataManager;
@@ -277,7 +282,8 @@ class ChunkPage extends SiteController
         }
         $userDirectory = new ApUserDirectory($db->userManager);
         $formatter = new WitnessPageFormatter($userDirectory);
-        $html = $formatter->formatItemStream($itemStream, $edNotes);
+        //$html = $formatter->formatItemStream($itemStream, $edNotes);
+        $html = $formatter->formatItemStream($itemStream);
         $doc['formatted'] = $html;
         
         return $doc;

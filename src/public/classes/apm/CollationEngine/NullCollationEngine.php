@@ -1,5 +1,4 @@
 <?php
-
 /* 
  *  Copyright (C) 2019 Universität zu Köln
  *
@@ -18,28 +17,21 @@
  *  
  */
 
-namespace APM;
-
-require "autoload.php";
-
-use PHPUnit\Framework\TestCase;
-
-use APM\Core\Person\Person;
+namespace APM\CollationEngine;
 
 /**
- * Description of PersonTest
+ * Class NullCollationEngine : a  collation engine that does nothing
  *
- * @author Rafael Nájera <rafael.najera@uni-koeln.de>
+ * @package APM\CollationEngine
  */
-class PersonTest extends TestCase {
-    
-    public function testSimple() {
-        $p = new Person();
-        
-        $this->assertEquals(Person::ID_NULL, $p->getId('some id'));
-        
-        $p->setId(Person::IDTYPE_NONE, '');
-        $p->setId(Person::IDTYPE_FULLNAME, Person::ID_NULL);
+class NullCollationEngine extends CollationEngine
+{
 
+    /**
+     * @inheritDoc
+     */
+    public function collate(array $witnessArray): array
+    {
+        return [];
     }
 }

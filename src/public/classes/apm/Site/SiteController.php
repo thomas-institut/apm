@@ -30,14 +30,19 @@ use APM\Plugin\HookManager;
 use DI\Container;
 use DI\DependencyException;
 use DI\NotFoundException;
+use Matrix\Exception;
 use Monolog\Logger;
 use \Psr\Http\Message\ResponseInterface as Response;
 use APM\System\ApmSystemManager;
 use AverroesProject\Data\DataManager;
+use Slim\Psr7\Stream;
 use Slim\Routing\RouteParser;
 use Slim\Views\Twig;
 use ThomasInstitut\Profiler\SimpleProfiler;
 use ThomasInstitut\Profiler\TimeTracker;
+use Twig\Error\LoaderError;
+use Twig\Error\RuntimeError;
+use Twig\Error\SyntaxError;
 
 /**
  * Site Controller class
@@ -139,7 +144,14 @@ class SiteController
         $response->getBody()->write($text);
         return $response->withStatus($status);
     }
-    
+
+    /**
+     * @param Response $response
+     * @param string $template
+     * @param array $data
+     * @param bool $withBaseData
+     * @return Response
+     */
     protected function renderPage(Response $response, string $template, array $data, $withBaseData = true) {
         
         if ($withBaseData) {
@@ -151,7 +163,37 @@ class SiteController
             }
         }
 
-        return $this->view->render($response, $template, $data);
+        $responseToReturn = new \Slim\Psr7\Response();
+        $twigExceptionRaised = false;
+        $errorMessage = '';
+        try {
+            $responseToReturn = $this->view->render($response, $template, $data);
+        } catch (LoaderError $e) {
+            $twigExceptionRaised = true;
+            $errorMessage = 'Twig LoaderError : ' . $e->getMessage();
+
+        } catch (RuntimeError $e) {
+            $twigExceptionRaised = true;
+            $errorMessage = 'Twig RuntimeError : ' . $e->getMessage();
+        } catch (SyntaxError $e) {
+            $twigExceptionRaised = true;
+            $errorMessage = 'Twig SyntaxError : ' . $e->getMessage();
+        }
+
+        if ($twigExceptionRaised) {
+            $this->logger->error("Error rendering page: " . $errorMessage);
+            return $this->getBasicErrorPage($response, 'APM Error', 'Page rendering error, please report to APM developers.')->withStatus(409);
+        }
+
+        return $responseToReturn;
+    }
+
+    protected function getBasicErrorPage(Response $response, string $title, string $errorMessage) : Response
+    {
+
+        $html = "<!DOCTYPE html><html lang='en'><head><title>$title</title></head><body><h1>APM Error</h1><p>$errorMessage</p></body></html>";
+        $response->getBody()->write($html);
+        return $response;
     }
     
     protected function getCopyrightNotice() : string {

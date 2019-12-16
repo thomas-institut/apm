@@ -93,6 +93,8 @@ abstract class TranscriptionWitness extends Witness {
         $openWordToken = false;
         $noWbItemOpen = false;
         $currentWordToken = new TranscriptionToken(Token::TOKEN_EMPTY, '');
+
+        $tokenizer = new StringTokenizer();
         
         // 4. Iterate over all items in the transcription
         foreach ($sourceItems as $itemIndex => $sourceItem) {
@@ -123,7 +125,7 @@ abstract class TranscriptionWitness extends Witness {
                 $rawItemPlainText = $rawItem->getPlainText();
                 // Notice that tokens are constructed out of the normalized 
                 // text, not the "original" text
-                $stringTokens = StringTokenizer::getTokensFromString($rawItemNormalizedText);
+                $stringTokens = $tokenizer->getTokensFromString($rawItemNormalizedText);
                 foreach($stringTokens as $stringToken) {
                     /* @var $stringToken StringToken */
                     // Check if the string token covers all the text's item
@@ -131,8 +133,8 @@ abstract class TranscriptionWitness extends Witness {
                         // this means that there is only one token in the item,
                         // so, we can use the item's plain text and normalization 
                         // to build the TranscriptionToken
-                        $tToken =  new TranscriptionToken($stringToken->getType(), 
-                            $rawItemPlainText, $rawItemNormalizedText);
+                            $tToken =  new TranscriptionToken($stringToken->getType(),
+                                $rawItemPlainText, $rawItemNormalizedText);
                     } else {
                         $tToken =  new TranscriptionToken($stringToken->getType(), 
                             $stringToken->getText(), $stringToken->getNormalization());

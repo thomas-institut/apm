@@ -99,12 +99,8 @@ class Token {
      * Set the token's text.
      *
      * @param string $str
-     * @throws InvalidArgumentException if there is whitespace in the given string
      */
     public function setText(string $str) : void {
-        if ($this->type === self::TOKEN_WORD && preg_match('/\s/', $str)) {
-            throw new InvalidArgumentException("Text must not have whitespace inside, given '$str'", self::ERROR_WHITESPACE_IN_TEXT);
-        }
         $this->text = $str;
     }
 

@@ -227,7 +227,7 @@ class BasicEditionEngineTest extends TestCase
     }
 
     protected function getEngineTokensFromString(string $text, $ignoreWhitespace = true, $useGaps = false) : array  {
-        $stringTokens = StringTokenizer::getTokensFromString($text);
+        $stringTokens = (new StringTokenizer())->getTokensFromString($text);
         return $this->stringTokensToEngineTokens($stringTokens, $ignoreWhitespace, $useGaps);
     }
 

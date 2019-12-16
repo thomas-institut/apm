@@ -41,8 +41,9 @@ class StringTokenizerTest extends TestCase {
                    'tést', 'with', 'شسيبش', 'and', 'שדגכש', 
                    'and', 'even', 'some', '日本語'];
         $testString = implode(' ', $words);
-        
-        $tokens = StringTokenizer::getTokensFromString($testString);
+
+        $tokenizer = new StringTokenizer();
+        $tokens = $tokenizer->getTokensFromString($testString);
         $this->assertCount(count($words)*2-1, $tokens);
         
         $reconstructedString = '';
@@ -50,7 +51,7 @@ class StringTokenizerTest extends TestCase {
             /* @var $t StringToken */
             $this->assertEquals($t->getText(), $t->getNormalization());
             if ($t->getType() === Token::TOKEN_WORD) {
-                $this->assertEquals($t->getText(), StringTokenizer::getStringRange($testString, $t->getCharRange()));
+                $this->assertEquals($t->getText(), $tokenizer->getStringRange($testString, $t->getCharRange()));
             }
             $reconstructedString .= $t->getText();
         }
@@ -120,9 +121,10 @@ class StringTokenizerTest extends TestCase {
                 new StringToken(Token::TOKEN_WORD, 'Text', 3, 1)
             ]
         ];
-        
+
+        $tokenizer = new StringTokenizer();
         foreach($testCases as $testCase) {
-            $tokens = StringTokenizer::getTokensFromString($testCase['testString']);
+            $tokens = $tokenizer->getTokensFromString($testCase['testString']);
             $this->assertCount(count($testCase['expectedTokens']), $tokens,$testCase['title']);
             foreach($testCase['expectedTokens'] as $index => $expectedToken) {
                 $this->assertEquals($expectedToken->getType(), 
@@ -131,7 +133,7 @@ class StringTokenizerTest extends TestCase {
                 $this->assertEquals($expectedToken->getLineNumber(), 
                         $tokens[$index]->getLineNumber(), 
                         $testCase['title'] . ', token ' . $index . ', lineNumber');
-                $this->assertEquals(StringTokenizer::getStringRange($testCase['testString'], $tokens[$index]->getCharRange()),
+                $this->assertEquals($tokenizer->getStringRange($testCase['testString'], $tokens[$index]->getCharRange()),
                         $tokens[$index]->getText(),
                         $testCase['title'] . ', token ' . $index . ', text');
             }
@@ -159,7 +161,9 @@ class StringTokenizerTest extends TestCase {
             }
             $testString .= $newLine;
         }
-        $tokens = StringTokenizer::getTokensFromString($testString);
+
+        $tokenizer =new StringTokenizer();
+        $tokens = $tokenizer->getTokensFromString($testString);
         
         
         $this->assertCount($numLines*2*$numWords, $tokens);

@@ -24,6 +24,7 @@ require "autoload.php";
 require_once 'PresetManagerTest.php';
 
 use APM\Presets\DataTablePresetManager;
+use APM\Presets\PresetManager;
 use DataTable\InMemoryDataTable;
 
 
@@ -148,9 +149,18 @@ class DataTablePresetManagerTest extends PresetManagerTest {
         $this->assertEquals($data, $retrievedPreset->getData());
         
         $id = $retrievedPreset->getId();
-        
-        $retrieveResult1 = $pm->getPresetById(1000);
-        $this->assertFalse($retrieveResult1);
+
+        $exceptionCaught = false;
+        $errorCode = 0;
+        try {
+            $pm->getPresetById(1000);
+        } catch (\InvalidArgumentException $e) {
+            $exceptionCaught = true;
+            $errorCode = $e->getCode();
+        }
+        $this->assertTrue($exceptionCaught);
+        $this->assertEquals(PresetManager::ERROR_PRESET_NOT_FOUND, $errorCode);
+
         $retrievedPreset2 = $pm->getPresetById($id);
         $this->assertEquals($data, $retrievedPreset2->getData());
         

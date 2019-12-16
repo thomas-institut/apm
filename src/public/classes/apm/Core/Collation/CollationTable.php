@@ -116,8 +116,13 @@ class CollationTable {
      * @throws InvalidArgumentException
      */
     public function addWitness(string $siglum, Witness $witness) {
-        
-        $originalWitnessTokens = $witness->getTokens();
+
+        try {
+            $originalWitnessTokens = $witness->getTokens();
+        } catch (\Exception $e) {
+            throw new \RuntimeException('Problems adding witness ' . $siglum . ': ' . $e->getMessage());
+        }
+
         $tokenTypesToIgnore = [ Token::TOKEN_WHITESPACE];
         if ($this->ignorePunctuation) {
             $tokenTypesToIgnore[] = Token::TOKEN_PUNCT;

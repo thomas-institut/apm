@@ -25,20 +25,21 @@ use InvalidArgumentException;
 /**
  * A class to manage all things related to system presets.
  * 
- * A preset in the system is uniquely identified by the 
- * triplet (tool, userId, title).  Implementations of PresetManager should 
- * guarantee that presets are not duplicate in the system.
+ * A preset in the system is uniquely identified by the  triplet (tool, userId, title) and by an integer Id
  *
- * Each preset has also a unique Id associated with it.
- * 
- * Functions to search, erase and modify presets use those three values for 
- * identification. The abstract class provides alternative versions of those 
+ * Implementations of PresetManager should guarantee that presets are not duplicate in the system.
+ *
+*
+ * Functions to search, erase and modify presets use those three values for identification.
+ * The abstract class provides alternative versions of those
  * functions that take those values from a Preset object. 
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 abstract class PresetManager {
 
+
+    const ERROR_PRESET_NOT_FOUND = 101;
 
      // BASIC OPERATIONS
 
@@ -52,9 +53,16 @@ abstract class PresetManager {
      */
     abstract public function presetExists(string $tool, int $userId, string $title) : bool;
 
+    abstract public function presetExistsById(int $id) : bool;
+
     /**
+     * Adds a preset to the system identified with the tool, userId and title in the given Preset.
+     * The given Preset's Id is ignored and a new one is assigned.
+     *
      * addPreset must return false if there is already a preset
      * that corresponds to the given $preset.
+     *
+     *
      *
      * @param Preset $preset
      * @return bool
@@ -104,10 +112,13 @@ abstract class PresetManager {
     abstract public function getPresetsByToolUserIdAndKeys(string $tool, int $userId, array $keysToMatch) : array;
 
     /**
+     * Returns the preset with the given $id.
+     * Throws an InvalidArgumentException if there's no such preset.
+     *
      * @param int $id
      * @return Preset
      */
-    abstract public function getPresetById(int $id);
+    abstract public function getPresetById(int $id) : Preset;
 
     
     /**
@@ -165,7 +176,7 @@ abstract class PresetManager {
     }
 
     protected function newPresetNotFoundException() : InvalidArgumentException {
-        return  new InvalidArgumentException('Preset not found');
+        return  new InvalidArgumentException('Preset not found', self::ERROR_PRESET_NOT_FOUND);
     }
     
 }

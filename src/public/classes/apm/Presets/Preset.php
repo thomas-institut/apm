@@ -20,16 +20,27 @@
 
 namespace APM\Presets;
 
+use InvalidArgumentException;
+
 /**
  * Basic class that represents a system preset
  * 
- * A preset is essentially some data that is associated with 
- * a system tool, a user and some tool-dependent set of keys
+ * A system preset is essentially some data (an associative array) that is associated with
+ * a system tool (identified by a string id), a user Id and some tool-dependent set of key/values. Additionally,
+ * it may have a system-wide integer Id.
+ *
+ * The tool-dependent set of key/values may be used to further identify or classify the preset among the presets associated
+ * with that tool.
+ *
+ * For example, automatic collation table presets (toolId = 'automaticCollation') have an array of witness identifiers
+ * as their data and the collation language ('lang') as their key.
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 class Preset {
-   
+
+    const NULL_ID = -1;
+
     /**
      *
      * @var array 
@@ -53,7 +64,11 @@ class Preset {
      * @var string 
      */
     private $toolId;
-    
+
+    /**
+     * @var int
+     */
+    private $id;
     
     /**
      *
@@ -61,12 +76,13 @@ class Preset {
      */
     private $title;
     
-    public function __construct(string $tool, int $userId, string $title, array $keys, array $theData) {
+    public function __construct(string $tool, int $userId, string $title, array $keys, array $theData, int $id = self::NULL_ID) {
         $this->toolId = $tool;
         $this->userId = $userId;
         $this->keyArray = $keys;
         $this->data = $theData;
         $this->title = $title;
+        $this->setId($id);
     }
 
     /**
@@ -85,11 +101,11 @@ class Preset {
 
     /**
      * @param string $key
-     * @return bool|mixed
+     * @return mixed
      */
     public function getKey(string $key) {
         if (!isset($this->keyArray[$key])) {
-            return false;
+            throw new InvalidArgumentException("Key does not exist");
         }
         return $this->keyArray[$key];
     }
@@ -121,5 +137,19 @@ class Preset {
      */
     public function getTitle() : string {
         return $this->title;
+    }
+
+    /**
+     * @return int
+     */
+    public function getId() : int {
+        return $this->id;
+    }
+
+    /**
+     * @param int $id
+     */
+    public function setId(int $id) {
+        $this->id = $id;
     }
 }

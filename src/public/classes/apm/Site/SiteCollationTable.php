@@ -171,10 +171,8 @@ class SiteCollationTable extends SiteController
         $presetId = $request->getAttribute('preset');
         
         $presetManager = $this->systemManager->getPresetsManager();
-        
-        $preset = $presetManager->getPresetById($presetId);
-        
-        if ($preset === false) {
+
+        if (!$presetManager->presetExistsById($presetId)) {
             $msg = 'Preset not found';
             $this->logger->error($msg,
                     [ 'presetId' => $presetId]);
@@ -187,7 +185,8 @@ class SiteCollationTable extends SiteController
                 'message' => $msg
             ]);
         }
-        
+
+        $preset = $presetManager->getPresetById($presetId);
         $presetData = $preset->getData();
         $lang =  $presetData['lang'];
         $ignorePunctuation = $presetData['ignorePunctuation'];

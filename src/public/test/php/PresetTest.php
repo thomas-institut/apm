@@ -47,7 +47,15 @@ class PresetTest extends TestCase {
         $this->assertEquals($toolId, $pr->getTool());
         $this->assertEquals($userId, $pr->getUserId());
         $this->assertEquals($title, $pr->getTitle());
-        $this->assertFalse($pr->getKey($keyName . 'asdf'));
+
+        $exceptionCaught = false;
+        try {
+            $pr->getKey($keyName . 'asdf');
+        } catch(\InvalidArgumentException $e) {
+            $exceptionCaught = true;
+        }
+
+        $this->assertTrue($exceptionCaught);
         
         $this->assertEquals($testData, $pr->getData());
         $this->assertEquals($testKeyValue, $pr->getKey($keyName));

@@ -20,10 +20,12 @@
 
 namespace APM\Api;
 
-use APM\Presets\DataTablePreset;
+use APM\Presets\Preset;
+use APM\Presets\PresetManager;
 use APM\System\SystemManager;
 use DI\DependencyException;
 use DI\NotFoundException;
+use InvalidArgumentException;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
@@ -67,8 +69,6 @@ class ApiPresets extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws DependencyException
-     * @throws NotFoundException
      */
     public function  getPresets(Request $request,  Response $response) {
         
@@ -122,7 +122,7 @@ class ApiPresets extends ApiController
         
         $presetsInArrayForm = [];
         foreach($presets as $preset) {
-            /** @var DataTablePreset $preset */
+            /** @var Preset $preset */
             $presetsInArrayForm[] = [
                 'id' => $preset->getId(),
                 'title' => $preset->getTitle(),
@@ -353,14 +353,20 @@ class ApiPresets extends ApiController
         
         $presetsManager = $this->systemManager->getPresetsManager();
 
-        $currentPreset = $presetsManager->getPresetById($presetId);
-        if ($currentPreset === false) {
-            $this->logger->error("Preset with given Id does not exist",
+        try {
+            $currentPreset = $presetsManager->getPresetById($presetId);
+        } catch( InvalidArgumentException $e) {
+            if ($e->getCode() === PresetManager::ERROR_PRESET_NOT_FOUND) {
+                $this->logger->error("Preset with given Id does not exist",
                     [ 'apiUserId' => $this->apiUserId,
-                      'apiError' => self::API_ERROR_PRESET_DOES_NOT_EXIST,
-                      'presetId'  => $presetId ]);
-            return $this->responseWithJson($response, ['error' => self::API_ERROR_PRESET_DOES_NOT_EXIST], 409);
+                        'apiError' => self::API_ERROR_PRESET_DOES_NOT_EXIST,
+                        'presetId'  => $presetId ]);
+                return $this->responseWithJson($response, ['error' => self::API_ERROR_PRESET_DOES_NOT_EXIST], 409);
+            }
+            // some other error, rethrow exception
+            throw $e;
         }
+
         if ($currentPreset->getUserId() !== intval($this->apiUserId)) {
             $this->logger->error("API user not authorized to delete preset",
                     [ 'apiUserId' => $this->apiUserId,

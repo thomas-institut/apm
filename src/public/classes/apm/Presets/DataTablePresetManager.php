@@ -24,12 +24,12 @@ use APM\System\iSqlQueryCounterTrackerAware;
 use APM\System\SimpleSqlQueryCounterTrackerAware;
 use APM\System\SqlQueryCounterTracker;
 use DataTable\DataTable;
+use DataTable\MySqlDataTable;
 use Exception;
 use InvalidArgumentException;
 
 /**
- * An implementation of a PresetManager using a DataTable as
- * the underlying storage. 
+ * An implementation of a PresetManager using a DataTable as the underlying storage.
  * 
  * The manager's dataTable must be configured with fields for
  *  - tool (string)
@@ -37,13 +37,10 @@ use InvalidArgumentException;
  *  - keyArray (JSON, i.e., string)
  *  - data  (JSON, i.e., string)
  * 
- * The dataTable may also contain fields for particular keys from
- * the keyArray that the manager will use to optimize queries into 
- * the DataTable. Otherwise, the manager will simply retrieve all rows
- * only possibly filtering by tool and user at the DataTable level, and then 
- * searching for matches using that array. A good choice of particular keys to
- * store in their own fields may greatly increase performance when the underlying
- * DataTable uses a SQL database.
+ * The dataTable may also contain fields for particular keys from the keyArray that the manager will use to optimize
+ * queries into the DataTable. Otherwise, the manager will simply retrieve all rows only possibly filtering by tool
+ * and user at the DataTable level, and then searching for matches using that array. A good choice of particular keys
+ * to store in their own fields may greatly increase performance when the underlying  DataTable uses a SQL database.
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
@@ -208,29 +205,32 @@ class DataTablePresetManager extends PresetManager implements iSqlQueryCounterTr
         return $this->getRowIdForPreset($tool, $userId, $title) !== self::ROWID_NOTFOUND;
     }
     
-    public function getPresetById(int $id) {
+    public function getPresetById(int $id) : Preset {
         try {
             $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
             $row = $this->dataTable->getRow($id);
-        } catch (Exception $e) {
-            // TODO: properly report this error
-            return false;
+        } catch (InvalidArgumentException $e) {
+            if ($e->getCode() === DataTable::ERROR_ROW_DOES_NOT_EXIST) {
+                throw $this->newPresetNotFoundException();
+            }
+            throw $e;
         }
         return $this->createPresetFromDataTableRow($row);
     }
     
     public function updatePresetById(int $id, Preset $updatedPreset) {
-        $currentPreset = $this->getPresetById($id);
-        if ($currentPreset === false) {
+        if (!$this->presetExistsById($id)) {
             return false;
         }
+        $currentPreset = $this->getPresetById($id);
+
         $updatedRow = $this->createDataTableRowFromPreset($updatedPreset);
         $updatedRow['id'] = $currentPreset->getId();
         try {
             $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::UPDATE_COUNTER);
             $this->dataTable->updateRow($updatedRow);
-        } catch (Exception $e) {
-            return false;
+        } catch (Exception $e) { // @codeCoverageIgnore
+            return false; // @codeCoverageIgnore
         }
         return true;
     }
@@ -302,7 +302,7 @@ class DataTablePresetManager extends PresetManager implements iSqlQueryCounterTr
     protected function createPresetFromDataTableRow(array $theRow) : Preset {
         // There's no need to deal with expanded keys since all key information
         // is stored in the self::FIELD_KEYARRAY field
-        return new DataTablePreset(
+        return new Preset(
                 $theRow[self::FIELD_TOOL], 
                 $theRow[self::FIELD_USERID], 
                 $theRow[self::FIELD_TITLE],
@@ -353,4 +353,8 @@ class DataTablePresetManager extends PresetManager implements iSqlQueryCounterTr
         return $row['id'];
     }
 
+    public function presetExistsById(int $id): bool
+    {
+        return $this->dataTable->rowExists($id);
+    }
 }

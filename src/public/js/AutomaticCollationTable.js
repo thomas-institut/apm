@@ -302,14 +302,23 @@ class AutomaticCollationTable {
       html += '<li>'
       html += '<h4>' + witness.title + '</h4>'
       html += '<ul>'
+      let numSegments = witnessInfo[witness.id].locations.length
       for(const segmentNumber in witnessInfo[witness.id].locations) {
         let segment = witnessInfo[witness.id].locations[segmentNumber]
         html += '<li>'
-        html += 'Segment ' + segmentNumber + ': '
+        if (numSegments > 1) {
+          html += 'Segment ' + segmentNumber + ': '
+        }
+
         for (const col of segment['columns']) {
           html += '<ul>'
-          html += 'Page ' + col['foliation'] + ' column ' + col['column']
-          html += ' last edited ' + this.formatDateTime(col['lastTime']) + ' by ' + col['lastAuthorName']
+          html += col['foliation'] + ' col ' + col['column']
+          if (col['lastTime'] === '0000-00-00 00:00:00.000000') {
+            html += ': empty'
+          } else {
+            html += ': ' + this.formatDateTime(col['lastTime']) + ' by ' + col['lastAuthorName']
+          }
+
           html += '</ul>'
         }
         html += '</li>'
@@ -323,7 +332,22 @@ class AutomaticCollationTable {
   }
 
   formatDateTime(sqlDateTimeString) {
-    return sqlDateTimeString.split('.')[0]
+    let dateTimeNoMicroseconds = sqlDateTimeString.split('.')[0];
+
+    let date = new Date(dateTimeNoMicroseconds)
+
+    let months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep' , 'Oct', 'Nov', 'Dec']
+
+
+
+    return date.getDay() + ' ' + months[date.getMonth()] + ' ' + date.getFullYear() + ', ' + date.getHours() + ':' + this.padMinutes(date.getMinutes())
+  }
+
+  padMinutes(minutes) {
+    if (minutes < 10) {
+      return '0' + minutes
+    }
+    return minutes
   }
   
 }

@@ -23,6 +23,7 @@ namespace APM\Core\Collation;
 
 use APM\Core\Token\Token;
 use APM\Core\Apparatus\ApparatusGenerator;
+use APM\Core\Token\TokenType;
 use APM\Core\Witness\Witness;
 use InvalidArgumentException;
 
@@ -119,9 +120,9 @@ class CollationTable {
 
         $originalWitnessTokens = $witness->getTokens();
 
-        $tokenTypesToIgnore = [ Token::TOKEN_WHITESPACE];
+        $tokenTypesToIgnore = [ TokenType::WHITESPACE];
         if ($this->ignorePunctuation) {
-            $tokenTypesToIgnore[] = Token::TOKEN_PUNCT;
+            $tokenTypesToIgnore[] = TokenType::PUNCTUATION;
         }
         $tokenRefs = $this->filterTokens($originalWitnessTokens, $tokenTypesToIgnore);
         

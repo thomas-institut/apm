@@ -21,6 +21,7 @@
 namespace APM\Api;
 
 use APM\CollationEngine\CollationEngine;
+use APM\System\ApmContainerKey;
 use DI\Container;
 use DI\DependencyException;
 use DI\NotFoundException;
@@ -118,15 +119,15 @@ abstract class ApiController
 
        $this->debugMode = true;
 
-       $this->systemManager = $ci->get('systemManager');
-       $this->apiUserId = $ci->get('apiUserId'); // this should be set by the authenticator!
-       $this->languages =$ci->get('config')['languages'];
+       $this->systemManager = $ci->get(ApmContainerKey::SYSTEM_MANAGER);
+       $this->apiUserId = $ci->get(ApmContainerKey::API_USER_ID); // this should be set by the authenticator!
+       $this->languages =$ci->get(ApmContainerKey::CONFIG)['languages'];
        $this->logger = $this->systemManager->getLogger()->withName('API');
        $this->debug('Api User ID: ' . $this->apiUserId);
 
-        $this->profiler = new SimpleProfiler();
-        $this->profiler->registerProperty('time', new TimeTracker());
-        $this->profiler->registerProperty('mysql-queries', $this->systemManager->getSqlQueryCounterTracker());
+       $this->profiler = new SimpleProfiler();
+       $this->profiler->registerProperty('time', new TimeTracker());
+       $this->profiler->registerProperty('mysql-queries', $this->systemManager->getSqlQueryCounterTracker());
     }
 
     /**
@@ -135,7 +136,7 @@ abstract class ApiController
      * @throws NotFoundException
      */
     protected function getDataManager() : DataManager {
-        return $this->container->get('dataManager');
+        return $this->container->get(ApmContainerKey::DATA_MANAGER);
     }
 
     /**

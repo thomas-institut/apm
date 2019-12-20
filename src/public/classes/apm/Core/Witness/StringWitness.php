@@ -33,6 +33,10 @@ use InvalidArgumentException;
 class StringWitness extends Witness {
     
     private $sourceString;
+    /**
+     * @var array
+     */
+    private $tokens;
 
     /**
      * StringWitness constructor.
@@ -46,13 +50,17 @@ class StringWitness extends Witness {
             throw new InvalidArgumentException('String cannot be empty');
         }
         $this->sourceString = $text;
+        $this->tokens = [];
     }
 
     /**
      * @return StringToken[]
      */
     public function getTokens() : array {
-        return StringTokenizer::getTokensFromString($this->sourceString);
+        if ($this->tokens === []) {
+            $this->tokens = (new StringTokenizer())->getTokensFromString($this->sourceString);
+        }
+        return $this->tokens;
     }
 
     /**

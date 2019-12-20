@@ -22,6 +22,7 @@ namespace APM;
 
 require "autoload.php";
 
+use APM\Core\Token\TokenType;
 use PHPUnit\Framework\TestCase;
 use APM\Core\Transcription\DocumentTranscriptionBasic;
 use APM\Core\Transcription\PageTranscriptionFactory;
@@ -110,9 +111,9 @@ class TranscriptionWitnessTest extends TestCase {
         $n = 0;
         foreach($tokens as $token) {
             if ($n % 2) {
-                $this->assertEquals($token->getType(), Token::TOKEN_WHITESPACE);
+                $this->assertEquals($token->getType(), TokenType::WHITESPACE);
             } else {
-                $this->assertEquals($token->getType(), Token::TOKEN_WORD);
+                $this->assertEquals($token->getType(), TokenType::WORD);
             }
             $n++;
         }

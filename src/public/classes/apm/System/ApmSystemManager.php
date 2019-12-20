@@ -331,9 +331,9 @@ class ApmSystemManager extends SystemManager {
         try {
             $logStream = new StreamHandler($this->config[ApmConfigParameter::LOG_FILENAME],
                 $loggerLevel);
-        } catch (Exception $e) {
+        } catch (Exception $e) { // @codeCoverageIgnore
             // TODO: Handle errors properly!
-            return $logger;
+            return $logger;  // @codeCoverageIgnore
         }
         $logger->pushHandler($logStream);
         

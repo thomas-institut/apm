@@ -311,8 +311,7 @@ class ApiPresets extends ApiController
         
         // command = update preset
 
-        $currentPreset = $pm->getPresetById($presetId);
-        if ($currentPreset === false) {
+        if (!$pm->presetExistsById($presetId)) {
             $this->logger->error("Preset with given Id does not exist",
                 [ 'apiUserId' => $this->apiUserId,
                     'apiError' => self::API_ERROR_PRESET_DOES_NOT_EXIST,
@@ -320,6 +319,7 @@ class ApiPresets extends ApiController
             return $this->responseWithJson($response, ['error' => self::API_ERROR_PRESET_DOES_NOT_EXIST], 409);
         }
 
+        $currentPreset = $pm->getPresetById($presetId);
         // check that userId is the same as the current preset's userId
         if (intval($this->apiUserId) !== $currentPreset->getUserId()) {
             $this->logger->error("API user not authorized to update preset",

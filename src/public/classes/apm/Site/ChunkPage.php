@@ -29,6 +29,7 @@ namespace APM\Site;
 use APM\Core\Address\Point;
 use APM\Core\Address\PointRange;
 use APM\Core\Token\Token;
+use APM\Core\Token\TokenType;
 use APM\Core\Token\TranscriptionToken;
 use AverroesProject\Data\DataManager;
 use AverroesProjectToApm\ApUserDirectory;
@@ -304,11 +305,11 @@ class ChunkPage extends SiteController
     }
     
      protected  function prettyPrintTokens($tokens, $nonTokenItems) {
-        $types[Token::TOKEN_WORD] = 'W';
-        $types[Token::TOKEN_WHITESPACE] = 'S';
-        $types[Token::TOKEN_PUNCT] = 'P';
-        $types[Token::TOKEN_EMPTY] = 'E';
-        $types[Token::TOKEN_UNDEFINED] = 'U';
+        $types[TokenType::WORD] = 'W';
+        $types[TokenType::WHITESPACE] = 'S';
+        $types[TokenType::PUNCTUATION] = 'P';
+        $types[TokenType::EMPTY] = 'E';
+        //$types[TokenType::] = 'U';
         $output = '';
         foreach($tokens as $i => $token) {
             /* @var  $token TranscriptionToken */

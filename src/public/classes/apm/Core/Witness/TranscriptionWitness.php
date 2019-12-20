@@ -21,6 +21,7 @@
 namespace APM\Core\Witness;
 
 use APM\Core\Item\ItemWithAddress;
+use APM\Core\Token\TokenType;
 use APM\Core\Transcription\ItemAddressInDocument;
 use APM\Core\Transcription\ItemInDocument;
 use APM\Core\Item\TextualItem;
@@ -52,7 +53,6 @@ abstract class TranscriptionWitness extends Witness {
      * represents the source transcription and from which
      * the tokens will be constructed.
      *
-     * This function is used to
      *
      * @return ItemInDocument[]
      */
@@ -92,7 +92,7 @@ abstract class TranscriptionWitness extends Witness {
         $pageTextBoxCurrentLines[$currentTextBox] = $this->getInitialLineNumberForTextBox($currentPage, $currentTextBox);
         $openWordToken = false;
         $noWbItemOpen = false;
-        $currentWordToken = new TranscriptionToken(Token::TOKEN_EMPTY, '');
+        $currentWordToken = new TranscriptionToken(TokenType::EMPTY, '');
 
         $tokenizer = new StringTokenizer();
         
@@ -155,7 +155,7 @@ abstract class TranscriptionWitness extends Witness {
                         ])
                     );
                     // Deal with open word tokens and NoWb
-                    if ($tToken->getType() === Token::TOKEN_WORD) {
+                    if ($tToken->getType() === TokenType::WORD) {
                         if ($openWordToken) {
                             // open word token : add text to currentWordToken
                             $currentWordToken = TranscriptionToken::addTokens($currentWordToken, $tToken);
@@ -168,7 +168,7 @@ abstract class TranscriptionWitness extends Witness {
                             $openWordToken = true;
                         }
                     } else { // i.e., not a word token
-                        if ($noWbItemOpen && $tToken->getType()=== Token::TOKEN_WHITESPACE && $tToken->getText() === "\n") {
+                        if ($noWbItemOpen && $tToken->getType()=== TokenType::WHITESPACE && $tToken->getText() === "\n") {
                             // got a newline after a noWbItem, ignore
                         } else {
                             // Any other token type: "close" currentWordToken and

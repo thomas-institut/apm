@@ -24,36 +24,38 @@ use APM\Core\Transcription\ItemInPage;
 use OutOfBoundsException;
 
 /**
- * The transcription of a page 
- * 
- * A page transcription consists of a set of text boxes containing textual items. Some
- * of these text boxes contain the main text and some contain marginalia that may or may not
- * be considered as belonging also to that main text. A text box, for instance, can be
- * an addition to the main text or simply a gloss.
+ * The transcription of a page
+ *
+ * A page transcription consists of a set of text boxes containing textual items. Some of
+ * these text boxes contain the main text and some contain marginalia that may or may not
+ * be considered as belonging also to that main text. A text box, for instance, can be an
+ * addition to the main text or simply a gloss.
  *
  * This model is a simplification of a more general model in which a page is construed as
- * a set of gliphs located in a surface, with the page transcription amounting to
- * a transcription of each of those gliphs together with some sort of ordering of
- * the gliphs to construct readable text.  Since most of the gliphs in a
- * manuscript stand for one or more letters arranged in lines of text in page regions ,
- * we can simply use text boxes to capture the physical location of the text
- * and textual items for the formatted text inside them. This has the advantage
- * of allowing an easier retrieval and arranging of the text.
+ * a set of gliphs located in a surface, with the page transcription amounting to a
+ * transcription of each of those gliphs together with some sort of ordering of the gliphs
+ * to construct readable text.  Since most of the gliphs in a manuscript stand for one or
+ * more letters arranged in lines of text in page regions, we can simply use text boxes to
+ * capture the physical location of the text and textual items for the formatted text
+ * inside them. This has the advantage of allowing an easier retrieval and arranging of
+ * the text.
  *
- * The most common situation is that a page is laid out in columns of main text, each with their
- * own set of marginalia. However, other schemas can occur. The base class
- * does not provide any such schema, but implements a general approach. The
- * specific schema can be implemented with a descendant class and a suitable
- * set of object factories for the different components. This class, however, models the
- * page as a set of indexed text boxes, some of which may refer or point to other text boxes
- * in the page. A marginal addition is, for example, a text box that points to a specific
- * textual item in another text box where the marginal text is to be included.
+ * The most common situation is that a page is laid out in columns of main text, each
+ * with their own set of marginalia. However, other schemas can occur. The base class does
+ * not provide any such schema, but implements a general approach. The specific schema can
+ * be implemented with a descendant class and a suitable set of object factories for the
+ * different components. This class, however, models the page as a set of indexed text
+ * boxes, some of which may refer or point to other text boxes in the page. A marginal
+ * addition is, for example, a text box that points to a specific textual item in another
+ * text box where the marginal text is to be included.
  *
  * One of the essential uses of a page transcription is indeed getting the main text, the
- * transcription can be construed as a stream of textual items each of them with an associated
- * location in the page's text boxes. It should be possible to extract an array of such
- * located textual items (ItemInPage class, which is simply Item with ItemAddressInPage) taking care of
- * inserting text from marginal text boxes as necessary.
+ * transcription can be construed as a stream of textual items each of them with an
+ * associated location in the page's text boxes. It should be possible to extract an array
+ * of such located textual items (ItemInPage class, which is simply Item with
+ * ItemAddressInPage) taking care of inserting text from marginal text boxes as necessary.
+ *
+
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */

@@ -213,7 +213,7 @@ class DataTablePresetManager extends PresetManager implements iSqlQueryCounterTr
             if ($e->getCode() === DataTable::ERROR_ROW_DOES_NOT_EXIST) {
                 throw $this->newPresetNotFoundException();
             }
-            throw $e;
+            throw $e; // @codeCoverageIgnore
         }
         return $this->createPresetFromDataTableRow($row);
     }

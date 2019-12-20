@@ -30,15 +30,15 @@ use APM\Core\Item\ItemFactory;
 class TextBoxFactory {
     
     public function createColumn(string $id, array $items = []) : TextBox {
-        return new TextBox('column', 'column-' . $id , true, ItemAddressInPage::NullAddress(), $items);
+        return new TextBox(TextBoxType::COLUMN, 'column-' . $id , true, ItemAddressInPage::NullAddress(), $items);
     }
     
     public function createMarginalAddition(string $placement, ItemAddressInPage $ref, array $items = []) : TextBox {
-        return new TextBox('addition', $placement, true, $ref, $items);
+        return new TextBox(TextBoxType::ADDITION, $placement, true, $ref, $items);
     }
     
     public function createMarginalGloss(string $placement, ItemAddressInPage $ref, array $items = []) : TextBox {
-        return new TextBox('gloss', $placement, false, $ref, $items);
+        return new TextBox(TextBoxType::GLOSS, $placement, false, $ref, $items);
     }
 
     public function createTextBoxesFromColumnTextArray(string $lang, int $hand, array $cols) : array {

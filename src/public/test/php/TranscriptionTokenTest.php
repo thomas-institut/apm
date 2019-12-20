@@ -21,6 +21,7 @@ namespace APM;
 
 require "autoload.php";
 
+use APM\Core\Token\TokenType;
 use PHPUnit\Framework\TestCase;
 
 use APM\Core\Token\Token;
@@ -39,10 +40,10 @@ class TranscriptionTokenTest extends TestCase {
     
     
     public function testAddTokens() {
-        $t1 = new TranscriptionToken(Token::TOKEN_WORD, 't1');
+        $t1 = new TranscriptionToken(TokenType::WORD, 't1');
         $t1->setSourceItemAddresses([new ItemAddressInDocument(1, 0, 0)]);
         $t1->setSourceItemCharRanges([new IntRange(0, 2)]);
-        $t2 = new TranscriptionToken(Token::TOKEN_WORD, 't2');
+        $t2 = new TranscriptionToken(TokenType::WORD, 't2');
         $t2->setSourceItemAddresses([new ItemAddressInDocument(1, 0, 1)]);
         $t2->setSourceItemCharRanges([new IntRange(0, 2)]);
         

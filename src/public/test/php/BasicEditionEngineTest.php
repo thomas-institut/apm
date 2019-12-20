@@ -22,6 +22,7 @@ namespace APM;
 
 use APM\Core\Token\StringTokenizer;
 use APM\Core\Token\Token;
+use APM\Core\Token\TokenType;
 use APM\Core\Witness\StringWitness;
 use APM\EditionEngine\EditionEngine;
 use PHPUnit\Framework\TestCase;
@@ -208,12 +209,12 @@ class BasicEditionEngineTest extends TestCase
     protected function stringTokensToEngineTokens(array $stringTokens, $ignoreWhiteSpace = true, $useGaps = false) : array  {
         $engineTokens = [];
         foreach($stringTokens as $t) {
-            if ($ignoreWhiteSpace && ($t->getType() === Token::TOKEN_WHITESPACE)) {
+            if ($ignoreWhiteSpace && ($t->getType() === TokenType::WHITESPACE)) {
                 continue;
             }
             if ($useGaps && $t->getText() === '---'){
                 $engineTokens[] = [
-                    EditionEngine::TOKEN_FIELD_TYPE => Token::TOKEN_EMPTY,
+                    EditionEngine::TOKEN_FIELD_TYPE => TokenType::EMPTY,
                     EditionEngine::TOKEN_FIELD_TEXT => ''
                 ];
                 continue;

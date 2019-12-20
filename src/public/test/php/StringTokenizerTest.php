@@ -21,6 +21,7 @@
 namespace APM;
 require "autoload.php";
 
+use APM\Core\Token\TokenType;
 use PHPUnit\Framework\TestCase;
 
 use APM\Core\Token\Token;
@@ -50,7 +51,7 @@ class StringTokenizerTest extends TestCase {
         foreach ($tokens as $t) {
             /* @var $t StringToken */
             $this->assertEquals($t->getText(), $t->getNormalization());
-            if ($t->getType() === Token::TOKEN_WORD) {
+            if ($t->getType() === TokenType::WORD) {
                 $this->assertEquals($t->getText(), $tokenizer->getStringRange($testString, $t->getCharRange()));
             }
             $reconstructedString .= $t->getText();
@@ -68,8 +69,8 @@ class StringTokenizerTest extends TestCase {
             'title' => 'String starting with whitespace',
             'testString' => '   Text',
             'expectedTokens' => [
-                new StringToken(Token::TOKEN_WHITESPACE, '   ', 0, 1),
-                new StringToken(Token::TOKEN_WORD, 'Text', 3, 1)
+                new StringToken(TokenType::WHITESPACE, '   ', 0, 1),
+                new StringToken(TokenType::WORD, 'Text', 3, 1)
             ]
         ];
         
@@ -77,8 +78,8 @@ class StringTokenizerTest extends TestCase {
             'title' => 'String starting with whitespace with newline',
             'testString' => "\n  Text",
             'expectedTokens' => [
-                new StringToken(Token::TOKEN_WHITESPACE, "\n  ", 0, 1),
-                new StringToken(Token::TOKEN_WORD, 'Text', 3, 2)
+                new StringToken(TokenType::WHITESPACE, "\n  ", 0, 1),
+                new StringToken(TokenType::WORD, 'Text', 3, 2)
             ]
         ];
         
@@ -86,9 +87,9 @@ class StringTokenizerTest extends TestCase {
             'title' => 'Punctuation followed by new line',
             'testString' => ".\n  Text",
             'expectedTokens' => [
-                new StringToken(Token::TOKEN_PUNCT, '.', 0, 1),
-                new StringToken(Token::TOKEN_WHITESPACE, "\n  ", 2, 1),
-                new StringToken(Token::TOKEN_WORD, 'Text', 3, 2)
+                new StringToken(TokenType::PUNCTUATION, '.', 0, 1),
+                new StringToken(TokenType::WHITESPACE, "\n  ", 2, 1),
+                new StringToken(TokenType::WORD, 'Text', 3, 2)
             ]
         ];
         
@@ -96,8 +97,8 @@ class StringTokenizerTest extends TestCase {
             'title' => 'String starting with punctuation',
             'testString' => ".Text",
             'expectedTokens' => [
-                new StringToken(Token::TOKEN_PUNCT, '.', 0, 1),
-                new StringToken(Token::TOKEN_WORD, 'Text', 1, 1)
+                new StringToken(TokenType::PUNCTUATION, '.', 0, 1),
+                new StringToken(TokenType::WORD, 'Text', 1, 1)
             ]
         ];
         
@@ -105,9 +106,9 @@ class StringTokenizerTest extends TestCase {
             'title' => 'String with lines within whitespace',
             'testString' => "Text \n text",
             'expectedTokens' => [
-                new StringToken(Token::TOKEN_WORD, 'Text', 0, 1),
-                new StringToken(Token::TOKEN_WHITESPACE, " \n ", 4, 1),
-                new StringToken(Token::TOKEN_WORD, 'text', 8, 2)
+                new StringToken(TokenType::WORD, 'Text', 0, 1),
+                new StringToken(TokenType::WHITESPACE, " \n ", 4, 1),
+                new StringToken(TokenType::WORD, 'text', 8, 2)
             ]
         ];
         
@@ -115,10 +116,10 @@ class StringTokenizerTest extends TestCase {
             'title' => 'Multiple punctuation characters followed by word',
             'testString' => ".;.Text",
             'expectedTokens' => [
-                new StringToken(Token::TOKEN_PUNCT, '.', 0, 1),
-                new StringToken(Token::TOKEN_PUNCT, ';', 1, 1),
-                new StringToken(Token::TOKEN_PUNCT, '.', 2, 1),
-                new StringToken(Token::TOKEN_WORD, 'Text', 3, 1)
+                new StringToken(TokenType::PUNCTUATION, '.', 0, 1),
+                new StringToken(TokenType::PUNCTUATION, ';', 1, 1),
+                new StringToken(TokenType::PUNCTUATION, '.', 2, 1),
+                new StringToken(TokenType::WORD, 'Text', 3, 1)
             ]
         ];
 
@@ -171,10 +172,10 @@ class StringTokenizerTest extends TestCase {
         
         foreach($tokens as $t) {
             /* @var $t StringToken */    
-            if ($t->getType() === Token::TOKEN_WORD) {
+            if ($t->getType() === TokenType::WORD) {
                 $this->assertEquals($wordLength, strlen($t->getText()));
             }
-            if ($t->getType() === Token::TOKEN_WHITESPACE) {
+            if ($t->getType() === TokenType::WHITESPACE) {
                 $this->assertEquals(1, strlen($t->getText()));
             }
             $this->assertEquals( intdiv($tCount,2*$numWords)+1,   $t->getLineRange()->getStart());

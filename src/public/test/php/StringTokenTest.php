@@ -22,6 +22,7 @@ namespace APM;
 
 require "autoload.php";
 
+use APM\Core\Token\TokenType;
 use PHPUnit\Framework\TestCase;
 
 use APM\Core\Token\Token;
@@ -41,7 +42,7 @@ class StringTokenTest extends TestCase {
    
     
     public function testSimple() {
-      $token = new StringToken(Token::TOKEN_WORD, 'text', 1,1);
+      $token = new StringToken(TokenType::WORD, 'text', 1,1);
       
       $this->assertEquals('text', $token->getNormalization());
       

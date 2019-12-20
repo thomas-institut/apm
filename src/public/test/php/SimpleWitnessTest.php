@@ -21,6 +21,7 @@
 namespace APM;
 require "autoload.php";
 
+use APM\Core\Token\TokenType;
 use PHPUnit\Framework\TestCase;
 
 use APM\Core\Witness\SimpleWitness;
@@ -39,14 +40,14 @@ class SimpleWitnessTest extends TestCase {
         $chunkRef = 'testChunk';
         
         $sourceTokens = [ 
-            new Token(Token::TOKEN_WORD, 'This'),
-            new Token(Token::TOKEN_WHITESPACE, ' '),
-            new Token(Token::TOKEN_WORD, 'is'),
-            new Token(Token::TOKEN_WHITESPACE, ' '),
-            new Token(Token::TOKEN_WORD, 'a'),
-            new Token(Token::TOKEN_WHITESPACE, ' '),
-            new Token(Token::TOKEN_WORD, 'test'),
-            new Token(Token::TOKEN_PUNCT, '.'),
+            new Token(TokenType::WORD, 'This'),
+            new Token(TokenType::WHITESPACE, ' '),
+            new Token(TokenType::WORD, 'is'),
+            new Token(TokenType::WHITESPACE, ' '),
+            new Token(TokenType::WORD, 'a'),
+            new Token(TokenType::WHITESPACE, ' '),
+            new Token(TokenType::WORD, 'test'),
+            new Token(TokenType::PUNCTUATION, '.'),
         ];
         
         $normalizedText = "This is a test.";

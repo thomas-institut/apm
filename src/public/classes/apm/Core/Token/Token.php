@@ -39,14 +39,6 @@ use InvalidArgumentException;
  */
 class Token {
     
-    const TOKEN_EMPTY = 0;
-    const TOKEN_WORD = 1;
-    const TOKEN_WHITESPACE = 2;
-    const TOKEN_PUNCT = 3;
-    const TOKEN_UNDEFINED = 4;
-    
-    private  const __MAX_TYPE = 4;
-    
     const DEFAULT_WHITESPACE_NORMALIZATION = ' ';
 
     const ERROR_WHITESPACE_IN_TEXT = 101;
@@ -67,12 +59,12 @@ class Token {
 
     public function __construct(int $type, string $t, string $n = '') {
         if ($t === '') {
-            $type = self::TOKEN_EMPTY;
+            $type = TokenType::EMPTY;
         }
         $this->setType($type);
         $this->setText($t);
         $this->setNormalization($n);
-        if ($n === '' && $type===self::TOKEN_WHITESPACE) {
+        if ($n === '' && $type===TokenType::WHITESPACE) {
             $this->setNormalization(self::DEFAULT_WHITESPACE_NORMALIZATION);
         }
         $this->alternateTexts = [];
@@ -84,7 +76,7 @@ class Token {
      * @return Token
      */
     static function emptyToken() {
-        return new Token(self::TOKEN_EMPTY, '');
+        return new Token(TokenType::EMPTY, '');
     }
     
     /**
@@ -92,7 +84,7 @@ class Token {
      * @return bool
      */
     public function isEmpty() : bool {
-        return $this->type===self::TOKEN_EMPTY;
+        return $this->type===TokenType::EMPTY;
     }
 
     /**
@@ -130,12 +122,11 @@ class Token {
      * Sets the token's normalization
      *
      * @param string $str
-     * @throws InvalidArgumentException  if there is whitespace in the given string
      */
     public function setNormalization(string $str) : void {
-        if ($this->type === self::TOKEN_WORD && preg_match('/\s/', $str)) {
-            throw new InvalidArgumentException("Text must not have whitespace inside, given '$str'", self::ERROR_WHITESPACE_IN_TEXT);
-        }
+//        if ($this->type === TokenType::WORD && preg_match('/\s/', $str)) {
+//            throw new InvalidArgumentException("Text must not have whitespace inside, given '$str'", self::ERROR_WHITESPACE_IN_TEXT);
+//        }
         $this->normalizedText = $str;
     }
 
@@ -144,7 +135,7 @@ class Token {
      * @param int $t
      */
     public function setType(int $t) : void {
-        if ($t > self::__MAX_TYPE || $t < 0) {
+        if (!TokenType::isValid($t)) {
             throw new InvalidArgumentException("Invalid type $t", self::ERROR_INVALID_TYPE);
         }
         $this->type = $t;

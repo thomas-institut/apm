@@ -5,6 +5,7 @@ namespace APM\EditionEngine;
 
 
 use APM\Core\Token\Token;
+use APM\Core\Token\TokenType;
 
 class BasicEditionEngine extends EditionEngine
 {
@@ -65,7 +66,7 @@ class BasicEditionEngine extends EditionEngine
                         continue;
                     }
 
-                    if ($ctToken[EditionEngine::TOKEN_FIELD_TYPE] === Token::TOKEN_EMPTY) {
+                    if ($ctToken[EditionEngine::TOKEN_FIELD_TYPE] === TokenType::EMPTY) {
                         continue;
                     }
 
@@ -108,7 +109,7 @@ class BasicEditionEngine extends EditionEngine
                     continue;
                 }
                 $ctTokenText = $ctToken[EditionEngine::TOKEN_FIELD_TEXT];
-                if ($ctToken[EditionEngine::TOKEN_FIELD_TYPE] === Token::TOKEN_EMPTY) {
+                if ($ctToken[EditionEngine::TOKEN_FIELD_TYPE] === TokenType::EMPTY) {
                     if (!isset($omissions[$mainText])) {
                         $omissions[$mainText] = [];
                     }
@@ -200,11 +201,11 @@ class BasicEditionEngine extends EditionEngine
         $inputTokensToMainText = [];
         $currentMainTextIndex = -1;
         foreach($inputTokens as $i => $inputToken) {
-            if ($inputToken[EditionEngine::TOKEN_FIELD_TYPE] === Token::TOKEN_EMPTY ) {
+            if ($inputToken[EditionEngine::TOKEN_FIELD_TYPE] === TokenType::EMPTY ) {
                 $inputTokensToMainText[] = self::TOKEN_NOT_IN_MAINTEXT;
                 continue;
             }
-            if ($inputToken[EditionEngine::TOKEN_FIELD_TYPE] === Token::TOKEN_WHITESPACE ) {
+            if ($inputToken[EditionEngine::TOKEN_FIELD_TYPE] === TokenType::WHITESPACE ) {
                 $inputTokensToMainText[] = self::TOKEN_NOT_IN_MAINTEXT;
                 continue;
             }
@@ -212,7 +213,7 @@ class BasicEditionEngine extends EditionEngine
             if (!$firstWordAdded) {
                 $addGlue = false;
             }
-            if (($inputToken[EditionEngine::TOKEN_FIELD_TYPE] ===Token::TOKEN_PUNCT) &&
+            if (($inputToken[EditionEngine::TOKEN_FIELD_TYPE] ===TokenType::PUNCTUATION) &&
                 (mb_strstr(self::NO_GLUE_PUNCTUATION, $inputToken[EditionEngine::TOKEN_FIELD_TEXT]) !== false ) ) {
                 $addGlue = false;
             }

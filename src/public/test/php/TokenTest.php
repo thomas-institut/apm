@@ -21,6 +21,7 @@ namespace APM;
 
 require "autoload.php";
 
+use APM\Core\Token\TokenType;
 use PHPUnit\Framework\TestCase;
 
 use APM\Core\Token\Token;
@@ -37,7 +38,7 @@ class TokenTest extends TestCase {
    
     
     public function testSimple() {
-      $token = new Token(Token::TOKEN_WORD, 'txt', 'text');
+      $token = new Token(TokenType::WORD, 'txt', 'text');
       
       $this->assertEquals('text', $token->getNormalization());
 
@@ -53,27 +54,16 @@ class TokenTest extends TestCase {
         $this->assertTrue($exceptionCaught);
         $this->assertEquals(Token::ERROR_INVALID_TYPE, $exceptionCode);
 
-      $exceptionCaught = false;
-      $exceptionCode = 0;
-      try {
-          $token->setText('Text with spaces');
-      } catch (\InvalidArgumentException $e) {
-          $exceptionCaught = true;
-          $exceptionCode = $e->getCode();
-      }
-      $this->assertTrue($exceptionCaught);
-      $this->assertEquals(Token::ERROR_WHITESPACE_IN_TEXT, $exceptionCode);
-
-        $exceptionCaught = false;
-        $exceptionCode = 0;
-        try {
-            $token->setNormalization('Text with spaces');
-        } catch (\InvalidArgumentException $e) {
-            $exceptionCaught = true;
-            $exceptionCode = $e->getCode();
-        }
-        $this->assertTrue($exceptionCaught);
-        $this->assertEquals(Token::ERROR_WHITESPACE_IN_TEXT, $exceptionCode);
+//        $exceptionCaught = false;
+//        $exceptionCode = 0;
+//        try {
+//            $token->setNormalization('Text with spaces');
+//        } catch (\InvalidArgumentException $e) {
+//            $exceptionCaught = true;
+//            $exceptionCode = $e->getCode();
+//        }
+//        $this->assertTrue($exceptionCaught);
+//        $this->assertEquals(Token::ERROR_WHITESPACE_IN_TEXT, $exceptionCode);
     }
 
 }

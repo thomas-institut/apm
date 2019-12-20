@@ -22,6 +22,7 @@ namespace APM;
 
 require "autoload.php";
 
+use APM\Core\Token\TokenType;
 use Complex\Exception;
 use PHPUnit\Framework\TestCase;
 use APM\Core\Collation\CollationTable;
@@ -59,14 +60,14 @@ class CollationTest extends TestCase {
     private function countNonWhiteSpaceTokens(array $tokens) {
         $count = 0;
         foreach ($tokens as $t) {
-            if ($t->getType() !== Token::TOKEN_WHITESPACE) {
+            if ($t->getType() !== TokenType::WHITESPACE) {
                 $count++;
             }
         }
         return $count;
     }
     
-    public function doSimpleCollationTests($collation) {
+    public function doSimpleCollationTests(CollationTable $collation) {
         
         $this->assertEquals(0, $collation->getTokenCount());
                 

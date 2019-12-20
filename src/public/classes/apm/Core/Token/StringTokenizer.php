@@ -68,7 +68,7 @@ class StringTokenizer {
     {
         $tokens = [];
         $currentTokenCharacters = [];
-        $currentTokenType = Token::TOKEN_UNDEFINED;
+        $currentTokenType = -1;
         $state = 0;
         $currentTokenStartIndex = 0;
         $currentTokenStartLine = 1;
@@ -85,7 +85,7 @@ class StringTokenizer {
                     // State 0: Initial state
                     if ($this->isWhiteSpace($currentChar)) {
                         $currentTokenCharacters[] = $currentChar;
-                        $currentTokenType = Token::TOKEN_WHITESPACE;
+                        $currentTokenType = TokenType::WHITESPACE;
                         if ($text[$i] === "\n") {
                             $currentLine++;
                         }
@@ -94,12 +94,12 @@ class StringTokenizer {
                     }
                     if ($this->isPunctuation($currentChar)) {
                         $currentTokenCharacters[] = $currentChar;
-                        $currentTokenType = Token::TOKEN_PUNCT;
+                        $currentTokenType = TokenType::PUNCTUATION;
                         $state = 2;
                         break;
                     }
                     $currentTokenCharacters[] = $currentChar;
-                    $currentTokenType = Token::TOKEN_WORD;
+                    $currentTokenType = TokenType::WORD;
                     $state = 3;
                     break;
                 
@@ -121,7 +121,7 @@ class StringTokenizer {
                         $currentTokenStartIndex = $i;
                         $currentTokenCharacters  = [];
                         $currentTokenCharacters[] = $currentChar;
-                        $currentTokenType = Token::TOKEN_PUNCT;
+                        $currentTokenType = TokenType::PUNCTUATION;
                         $state = 2;
                         break;
                     }
@@ -133,7 +133,7 @@ class StringTokenizer {
                     $currentTokenStartIndex = $i;
                     $currentTokenCharacters  = [];
                     $currentTokenCharacters[] = $currentChar;
-                    $currentTokenType = Token::TOKEN_WORD;
+                    $currentTokenType = TokenType::WORD;
                     $state = 3;
                     break;
                     
@@ -148,7 +148,7 @@ class StringTokenizer {
                         $currentTokenStartIndex = $i;
                         $currentTokenCharacters  = [];
                         $currentTokenCharacters[] = $currentChar;
-                        $currentTokenType = Token::TOKEN_WHITESPACE;
+                        $currentTokenType = TokenType::WHITESPACE;
                         if ($text[$i] === "\n") {
                             $currentLine++;
                         }
@@ -165,7 +165,7 @@ class StringTokenizer {
                         $currentTokenStartIndex = $i;
                         $currentTokenCharacters  = [];
                         $currentTokenCharacters[] = $currentChar;
-                        $currentTokenType = Token::TOKEN_PUNCT;
+                        $currentTokenType = TokenType::PUNCTUATION;
                         break;
                     }
                     $tokens[] = $this->createToken($currentTokenType,
@@ -176,7 +176,7 @@ class StringTokenizer {
                     $currentTokenStartIndex = $i;
                     $currentTokenCharacters  = [];
                     $currentTokenCharacters[] = $currentChar;
-                    $currentTokenType = Token::TOKEN_WORD;
+                    $currentTokenType = TokenType::WORD;
                     $state = 3;
                     break;
                     
@@ -191,7 +191,7 @@ class StringTokenizer {
                         $currentTokenStartIndex = $i;
                         $currentTokenCharacters  = [];
                         $currentTokenCharacters[] = $currentChar;
-                        $currentTokenType = Token::TOKEN_WHITESPACE;
+                        $currentTokenType = TokenType::WHITESPACE;
                         if ($text[$i] === "\n") {
                             $currentLine++;
                         }
@@ -207,7 +207,7 @@ class StringTokenizer {
                         $currentTokenStartIndex = $i;
                         $currentTokenCharacters  = [];
                         $currentTokenCharacters[] = $text[$i];
-                        $currentTokenType = Token::TOKEN_PUNCT;
+                        $currentTokenType = TokenType::PUNCTUATION;
                         $state = 2;
                         break;
                     }

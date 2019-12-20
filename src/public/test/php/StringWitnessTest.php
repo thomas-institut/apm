@@ -21,6 +21,7 @@
 namespace APM;
 require "autoload.php";
 
+use APM\Core\Token\TokenType;
 use PHPUnit\Framework\TestCase;
 
 use APM\Core\Witness\StringWitness;
@@ -48,7 +49,7 @@ class StringWitnessTest extends TestCase {
         $this->assertCount($numTokens, $tokens);
         
         foreach ($tokens as $t) {
-            if ($t->getType() === Token::TOKEN_WHITESPACE) {
+            if ($t->getType() === TokenType::WHITESPACE) {
                 $this->assertEquals(' ', $t->getNormalization());
             } else {
                 $this->assertEquals($t->getText(), $t->getNormalization());

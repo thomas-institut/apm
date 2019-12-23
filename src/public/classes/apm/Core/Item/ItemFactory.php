@@ -73,8 +73,7 @@ class ItemFactory {
     }
     
     public function createChunkMark(string $type, string $work, int $chunkNo, int $segment = 1) : ChunkMark {
-        $item = new ChunkMark($type, $work, $chunkNo, $segment);
-        return $item;
+        return new ChunkMark($type, $work, $chunkNo, $segment);
     }
     
     public function createPlainTextItem(string $text, string $lang = '') : TextualItem {

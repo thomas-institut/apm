@@ -37,23 +37,26 @@ use InvalidArgumentException;
  * Each column represents a series of aligned tokens across the different
  * witnesses.
  * 
- * Not all tokens from a witness are in the collation table. In fact, by
- * default the collation table class ignores all whitespace tokens. It can
- * also be made to ignore punctuation.
+ * Not all tokens from a witness are present in the collation table. Normally,
+ * only word tokens are taken into account.
  * 
- * The CollationTable class by itself does not guarantee any "proper" alignment 
- * of the witnesses' tokens but provides suitable data to feed a collation
+ * The CollationTable class by itself does not guarantee any proper alignment
+ * of the witnesses' tokens, whatever "proper alignment" may mean. The class
+ * provides, however, suitable data to feed a collation
  * engine to do the alignment work. It also provides a way to make itself
- * reflect the results of provided by such an engine.
+ * reflect the results provided by such an engine.
  *
- * A collation table can also be used to define derivative witnesses. One
+ * A collation table can be used to define derivative witnesses. One
  * non-derivative witness can be designated as the base witness and other
  * rows are meant to represent differences to that base.
  *
- * The collation table class can also be used to define an edition witness:
+ * The collation table class can also be used to define a composite witness,
+ * which is basically a critical edition:
  * one of the witnesses is taken to be the edition text with the collation
  * table itself representing how the source witnesses align with respect to
- * the text of the edition.
+ * the text of the edition. As is the case with transcription witnesses, a critical
+ * edition witness may have tokens that do not appear in the collation table, for example
+ * titles, paragraph breaks, punctuation, etc.
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */

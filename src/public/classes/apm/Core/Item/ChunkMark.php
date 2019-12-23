@@ -30,13 +30,12 @@ namespace APM\Core\Item;
  */
 class ChunkMark extends Mark {
     
-    const CHUNK_MARK_TYPE  = '__chunkmark';
-    
+
     const TYPE_START = 'START';
     const TYPE_END = 'END';
     
     public function __construct(string $type, string $work, int $chunkNumber, int $segment = 1) {
-        parent::__construct(self::CHUNK_MARK_TYPE);
+        parent::__construct(MarkType::CHUNK);
         $this->setMarkText(implode('-', [$type, $work, $chunkNumber, $segment]));
     }
     

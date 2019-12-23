@@ -1,5 +1,4 @@
 <?php
-
 /* 
  *  Copyright (C) 2019 Universität zu Köln
  *
@@ -20,14 +19,10 @@
 
 namespace APM\Core\Item;
 
-/**
- * Description of NoWbMark
- *
- * @author Rafael Nájera <rafael.najera@uni-koeln.de>
- */
-class NoWbMark extends Mark {
-    
-    public function __construct() {
-        parent::__construct(MarkType::NO_WB);
-    }
+
+class MarkType
+{
+    const NO_WB = '__nowb';
+    const CHUNK = '__chunkmark';
+
 }

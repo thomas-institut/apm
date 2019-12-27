@@ -25,6 +25,7 @@ use APM\Core\Collation\CollationTable;
 
 use APM\Core\Item\ItemFactory;
 
+use APM\Core\Item\MarkType;
 use AverroesProjectToApm\AddressInDatabaseItemStream;
 use APM\Core\Item\TextualItem;
 use APM\Core\Item\Mark;
@@ -186,7 +187,7 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
             return false;
         }
         
-        if (is_a($var, $this->markItemClass) && ($var->getMarkType() === ItemFactory::MARK_NOTE))  {
+        if (is_a($var, $this->markItemClass) && ($var->getMarkType() === MarkType::NOTE))  {
             return true;
         }
         return false;

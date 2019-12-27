@@ -29,12 +29,6 @@ class ItemFactory {
     private $defaultLanguage;
     private $defaultHand;
     
-    const MARK_REF = 'ref';
-    const MARK_PARAGRAPH = 'paragraph';
-    const MARK_NOTE = 'note';
-    const MARK_GAP = 'gap';
-    const MARK_CHUNK = 'chunk';
-    
     const NORM_ABBREVIATION = 'abbr';
     const NORM_SIC = 'sic';
     
@@ -51,15 +45,15 @@ class ItemFactory {
     }
     
     public function createReferenceMark(string $refText) : Mark {
-        return new Mark(self::MARK_REF, $refText);
+        return new Mark(MarkType::REF, $refText);
     }
 
     public function createParagraphMark() : Mark {
-        return new Mark(self::MARK_PARAGRAPH, '');
+        return new Mark(MarkType::PARAGRAPH, '');
     }    
     
     public function createNoteMark() : Mark {
-        return new Mark(self::MARK_NOTE, '');
+        return new Mark(MarkType::NOTE, '');
     }
     
     public function createNoWb() : NoWbMark {
@@ -67,7 +61,7 @@ class ItemFactory {
     }
     
     public function createCharacterGapItem(int $length = 1) : Mark {
-        $item = new Mark(self::MARK_GAP);
+        $item = new Mark(MarkType::GAP);
         $item->setLength($length);
         return $item;
     }

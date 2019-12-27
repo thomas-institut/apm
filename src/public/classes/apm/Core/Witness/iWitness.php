@@ -1,5 +1,4 @@
 <?php
-
 /* 
  *  Copyright (C) 2019 Universität zu Köln
  *
@@ -18,16 +17,13 @@
  *  
  */
 
-namespace AverroesProjectToApm;
+namespace APM\Core\Witness;
 
-/**
- * Converter from AverroesProject page transcriptions
- * to APM page transcriptions
- *
- * @author rafael
- */
-abstract class PageTranscriptionConverter {
-    
-    abstract public function convert(array $elements, array $ednotes = []);
-    
+
+interface iWitness
+{
+    public function getTokens() : array;
+    public function getPlainText(bool $normalized = false) : string;
+    public function getWorkId() : string;
+    public function getChunkId() : string;
 }

@@ -32,7 +32,7 @@ use InvalidArgumentException;
  * required to deal with that specific kind of witness. The SimpleWitness class 
  * implements a Witness that is composed of explicitly given Token objects.
  * 
- * A token can be a word, whitespace, punctuation or the empty token.  
+ * A token can be a word, whitespace, punctuation or the empty token. Type constants are in the TokenType class
  * Word tokens can have a normalized version and a number of alternate versions.
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>

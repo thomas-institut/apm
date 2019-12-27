@@ -21,7 +21,7 @@
 namespace APM\Core\Item;
 
 /**
- * Description of NoWbMark
+ * A mark meant to be used at the end of a line
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */

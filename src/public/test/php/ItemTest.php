@@ -22,6 +22,7 @@ namespace APM;
 
 require "autoload.php";
 
+use APM\Core\Item\MarkType;
 use PHPUnit\Framework\TestCase;
 
 use APM\Core\Item\TextualItem;
@@ -126,22 +127,22 @@ class ItemTest extends TestCase {
         
         $item4 = $if->createReferenceMark('someText');
         $this->assertEquals('someText', $item4->getMarkText());
-        $this->assertEquals(ItemFactory::MARK_REF, $item4->getMarkType());
+        $this->assertEquals(MarkType::REF, $item4->getMarkType());
         
         $item5 = $if->createParagraphMark();
         $this->assertEquals('', $item5->getMarkText());
-        $this->assertEquals(ItemFactory::MARK_PARAGRAPH, $item5->getMarkType());
+        $this->assertEquals(MarkType::PARAGRAPH, $item5->getMarkType());
         
         $item6 = $if->createNoteMark();
         $this->assertEquals('', $item6->getMarkText());
-        $this->assertEquals(ItemFactory::MARK_NOTE, $item6->getMarkType());
+        $this->assertEquals(MarkType::NOTE, $item6->getMarkType());
         
         $item7 = $if->createNoWb();
         $this->assertTrue(is_a($item7, get_class(new NoWbMark())));
         
         $item8 = $if->createCharacterGapItem(5);
         //$this->assertEquals('', $item8->getMarkText());
-        $this->assertEquals(ItemFactory::MARK_GAP, $item8->getMarkType());
+        $this->assertEquals(MarkType::GAP, $item8->getMarkType());
         $this->assertEquals(5, $item8->getLength());
         
         $item9 = $if->createChunkMark(ChunkMark::TYPE_START, 'AW38', 100, 1);

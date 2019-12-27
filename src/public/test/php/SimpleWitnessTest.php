@@ -59,7 +59,7 @@ class SimpleWitnessTest extends TestCase {
         $this->assertCount($numTokens, $tokens);
         $this->assertEquals($normalizedText, $w->getPlainText());
         
-        $this->assertEquals($workTitle, $w->getWork());
-        $this->assertEquals($chunkRef, $w->getChunk());
+        $this->assertEquals($workTitle, $w->getWorkId());
+        $this->assertEquals($chunkRef, $w->getChunkId());
     }
 }

@@ -20,9 +20,19 @@
 namespace APM\Core\Item;
 
 
+/**
+ *  Mark type constants
+ *
+ * @package APM\Core\Item
+ */
 class MarkType
 {
     const NO_WB = '__nowb';
     const CHUNK = '__chunkmark';
+
+    const REF = 'ref';
+    const PARAGRAPH = 'paragraph';
+    const NOTE = 'note';
+    const GAP = 'gap';
 
 }

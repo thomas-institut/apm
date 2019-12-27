@@ -20,6 +20,9 @@
 
 namespace APM\Core\Address;
 
+use InvalidArgumentException;
+use LogicException;
+
 /**
  * The coordinates of a point in n-dimensional space
  *
@@ -95,11 +98,11 @@ class Point extends Address {
     
     public function distanceTo(Point $p2) {
         if ($this->getDimensionCount() !== $p2->getDimensionCount()) {
-            throw new \InvalidArgumentException('given point must be of the same cardinality');
+            throw new InvalidArgumentException('given point must be of the same cardinality');
         }
         
         if ($this->isNull() || $p2->isNull()) {
-            throw  new \LogicException('One or both of the given points is null');
+            throw  new LogicException('One or both of the given points is null');
         }
         
         $squares = 0;

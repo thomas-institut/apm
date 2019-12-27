@@ -79,11 +79,11 @@ abstract class Witness {
         return $this->getPlainText(true);
     }
     
-    public function getWork() : string {
+    public function getWorkId() : string {
         return $this->work;
     }
     
-    public function getChunk() : string {
+    public function getChunkId() : string {
         return $this->chunk;
     }
 }

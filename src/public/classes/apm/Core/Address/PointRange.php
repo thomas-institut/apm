@@ -20,6 +20,8 @@
 
 namespace APM\Core\Address;
 
+use InvalidArgumentException;
+
 /**
  * A range between two points.
  *
@@ -37,11 +39,11 @@ class PointRange implements Range {
         $pointClass = get_class(new Point());
         
         if (!is_a($start, $pointClass) && !is_array($start)) {
-            throw new \InvalidArgumentException('First argument must be Point or array');
+            throw new InvalidArgumentException('First argument must be Point or array');
         }
         
         if (!is_a($end, $pointClass) && !is_array($end)) {
-            throw new \InvalidArgumentException('Second argument must be Point or array');
+            throw new InvalidArgumentException('Second argument must be Point or array');
         }
         $this->start = $start;
         if (is_array($start)) {
@@ -54,7 +56,7 @@ class PointRange implements Range {
         }
         
         if ($this->start->getDimensionCount() !== $this->end->getDimensionCount()){
-            throw  new \InvalidArgumentException('Given points must have the same number of dimensions');
+            throw  new InvalidArgumentException('Given points must have the same number of dimensions');
         }
     }
     

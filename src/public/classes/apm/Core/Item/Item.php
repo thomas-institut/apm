@@ -20,6 +20,8 @@
 
 namespace APM\Core\Item;
 
+use InvalidArgumentException;
+
 /**
  * Abstract class that represents a transcription item: a mark or a piece
  * of text that can appear in a document transcription.
@@ -72,11 +74,10 @@ abstract class Item {
     }
     
     public function setNotes(array $notes) {
-        $noteClass = Note::class;
         $this->notes = [];
         foreach($notes as $note) {
-            if (!is_a($note, $noteClass)) {
-                throw new \InvalidArgumentException('Expected Note object in array');
+            if (!is_a($note, Note::class)) {
+                throw new InvalidArgumentException('Expected Note object in array');
             }
             $this->notes[] = clone $note;
         }

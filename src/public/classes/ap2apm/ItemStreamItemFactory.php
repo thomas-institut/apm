@@ -62,7 +62,7 @@ class ItemStreamItemFactory {
         $extraInfo = $this->getGoodString($row, 'extra_info');
         $length =  $this->getGoodInt($row, 'length');
         $target = intval($row['target']);
-        $hand = $this->getGoodInt($row, 'hand_id');;
+        $hand = $this->getGoodInt($row, 'hand_id');
         
         $elementType = intval($row['e.type']);
         $elementPlacement = $this->getGoodString($row, 'placement');

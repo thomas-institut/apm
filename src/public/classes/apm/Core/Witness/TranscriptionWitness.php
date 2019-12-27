@@ -20,7 +20,6 @@
 
 namespace APM\Core\Witness;
 
-use APM\Core\Item\ItemWithAddress;
 use APM\Core\Token\TokenType;
 use APM\Core\Transcription\ItemAddressInDocument;
 use APM\Core\Transcription\ItemInDocument;
@@ -29,10 +28,8 @@ use APM\Core\Item\NoWbMark;
 use APM\Core\Token\StringTokenizer;
 use APM\Core\Token\TranscriptionToken;
 use APM\Core\Token\StringToken;
-use APM\Core\Token\Token;
 use APM\Core\Address\PointRange;
 use APM\Core\Address\IntRange;
-use AverroesProject\TxText\Item;
 
 /**
  * A Witness whose source is a part of a DocumentTranscription.

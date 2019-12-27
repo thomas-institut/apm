@@ -24,6 +24,9 @@ namespace APM\Core\Item;
  * A mark in the transcription: any kind of non-textual item that may or may
  * not represent text in the text box. For example: gaps, reference points, 
  * chunk marks, illegible characters, etc.
+ *
+ * Different types of marks are identified by a string (see MarkType class)
+ * Some special marks, such as NoWb or Chunk have their own subclass
  * 
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>

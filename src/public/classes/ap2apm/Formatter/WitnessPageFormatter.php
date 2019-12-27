@@ -21,6 +21,7 @@
 namespace AverroesProjectToApm\Formatter;
 
 use APM\Core\Item\ItemFactory;
+use APM\Core\Item\MarkType;
 use APM\Core\Item\TextualItem;
 use APM\Core\Item\Mark;
 use APM\Core\Item\Item;
@@ -135,7 +136,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
             
             $gotNoWb = false;
             if (is_a($theItem, $this->markClass)) {
-                if ($theItem->getMarkType() === ItemFactory::MARK_REF) {
+                if ($theItem->getMarkType() === MarkType::REF) {
                     $html .= ' ';
                     continue;
                 }

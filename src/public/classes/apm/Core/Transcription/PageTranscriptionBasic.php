@@ -21,6 +21,7 @@
 namespace APM\Core\Transcription;
 
 use APM\Core\Transcription\TextBox;
+use OutOfBoundsException;
 
 /**
  * No frills implementation of PageTranscription using 
@@ -45,7 +46,7 @@ class PageTranscriptionBasic extends PageTranscription {
 
     public function getTextBoxByIndex(int $index): TextBox {
         if (!isset($this->textBoxes[$index])) {
-            throw new \OutOfBoundsException('Index is out of bounds');
+            throw new OutOfBoundsException('Index is out of bounds');
         }
         return $this->textBoxes[$index];
     }
@@ -63,14 +64,14 @@ class PageTranscriptionBasic extends PageTranscription {
      */
     public function replaceTextBox(int $index, TextBox $tb) {
         if ($index >= $this->getTextBoxCount()) {
-            throw new \OutOfBoundsException('Index is out of bounds');
+            throw new OutOfBoundsException('Index is out of bounds');
         }
         $this->textBoxes[$index] = $tb;
     }
 
     public function getTextBoxReference(int $index): ItemAddressInPage {
         if (!isset($this->textBoxes[$index])) {
-            throw new \OutOfBoundsException('Index is out of bounds');
+            throw new OutOfBoundsException('Index is out of bounds');
         }
         return $this->textBoxes[$index]->getReference();
     }

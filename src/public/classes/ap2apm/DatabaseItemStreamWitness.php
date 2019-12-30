@@ -82,7 +82,6 @@ class DatabaseItemStreamWitness extends TranscriptionWitness {
      */
     function getItemWithAddressArray(): array
     {
-        // TODO: Implement getItemWithAddressArray() method.
         return $this->databaseItemStream->getItems();
     }
 }

@@ -1152,7 +1152,7 @@ class DataManager implements  iSqlQueryCounterTrackerAware
     /**
      * Returns a an array with the chunk start and end locations
      * for the given document, work and chunk numbers
-     * 
+     *
      * Each row has the following fields:
      *  page_seq : page sequence number within the document
      *  foliation: page foliation
@@ -1160,18 +1160,23 @@ class DataManager implements  iSqlQueryCounterTrackerAware
      *  e_seq: element sequence number within the column
      *  item_seq: item sequence number within the element
      *  type: 'start' or 'end'
-     *  segment: chunk segment number 
-     * 
+     *  segment: chunk segment number
+     *
      * @param int $docId
      * @param string $workId
      * @param int $chunkNumber
+     * @param string $timeString
      * @return array
      */
-    public function getChunkLocationsForDocRaw($docId, $workId, $chunkNumber)
+    public function getChunkLocationsForDocRaw($docId, $workId, $chunkNumber, $timeString = '')
     {
         $ti = $this->tNames['items'];
         $te = $this->tNames['elements'];
         $tp = $this->tNames['pages'];
+
+        if ($timeString === '') {
+            $timeString = TimeString::now();
+        }
         
 
         $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
@@ -1189,18 +1194,25 @@ class DataManager implements  iSqlQueryCounterTrackerAware
             " WHERE $ti.type=" . Item::CHUNK_MARK .  
             " AND $ti.text='$workId'" . 
             " AND $ti.target=$chunkNumber" . 
-            " AND $tp.doc_id=$docId" . 
-            " AND $ti.valid_until='9999-12-31 23:59:59.999999'" . 
-            " AND $te.valid_until='9999-12-31 23:59:59.999999'" .
-            " AND $tp.valid_until='9999-12-31 23:59:59.999999'" . 
+            " AND $tp.doc_id=$docId" .
+            " AND $ti.valid_from<='$timeString'" .
+            " AND $te.valid_from<='$timeString'" .
+            " AND $tp.valid_from<='$timeString'" .
+            " AND $ti.valid_until>'$timeString'" .
+            " AND $te.valid_until>'$timeString'" .
+            " AND $tp.valid_until>'$timeString'" .
+//            " AND $ti.valid_until='9999-12-31 23:59:59.999999'" .
+//            " AND $te.valid_until='9999-12-31 23:59:59.999999'" .
+//            " AND $tp.valid_until='9999-12-31 23:59:59.999999'" .
             " ORDER BY $tp.seq, $te.column_number, $te.seq, $ti.seq ASC";
         
         $r = $this->databaseHelper->query($query);
         
         $rows = [];
-        while ($row = $r->fetch()) {
+        while ($row = $r->fetch(PDO::FETCH_ASSOC)) {
             $rows[] = $row;
         }
+        $this->logger->debug("ChunkLocations for doc $docId, work $workId, chunk $chunkNumber", $rows);
         return $rows;
     }
 

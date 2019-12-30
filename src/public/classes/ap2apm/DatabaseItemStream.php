@@ -21,8 +21,6 @@
 namespace AverroesProjectToApm;
 
 use APM\Core\Item\TextualItem;
-use AverroesProjectToApm\ItemInDatabaseItemStream;
-use APM\Core\Item\Note;
 
 /**
  *
@@ -39,7 +37,23 @@ class DatabaseItemStream {
      * @var array 
      */
     private $items;
-    
+
+    /**
+     * DatabaseItemStream constructor
+     *
+     * Creates a DatabaseItemStream out of an array of database item segments.
+     * Chunks in APM transcriptions are made out of numbered segments. For each one of those segments
+     * $itemSegments has an array of item rows prepared by DataManager. Each row
+     * contains the item information plus page and ApElement info as well
+     *
+     *
+
+     *
+     * @param int $docId
+     * @param array $itemSegments
+     * @param string $defaultLang
+     * @param array $edNotes
+     */
     public function __construct(int $docId, array $itemSegments, string $defaultLang = 'la', array $edNotes = []) {
         $this->items = [];
         $itemFactory = new ItemStreamItemFactory($defaultLang);

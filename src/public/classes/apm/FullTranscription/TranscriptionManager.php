@@ -1,5 +1,4 @@
 <?php
-
 /* 
  *  Copyright (C) 2019 Universität zu Köln
  *
@@ -18,19 +17,21 @@
  *  
  */
 
-namespace AverroesProjectToApm;
+namespace APM\FullTranscription;
 
-use APM\Core\Item\Item;
-use APM\Core\Transcription\ItemInDocument;
+use AverroesProjectToApm\DatabaseItemStreamWitness;
 
 /**
- * An Item decorated with the address in a DatabaseItemStream
+ * Class TranscriptionManager
  *
- * @author Rafael Nájera <rafael.najera@uni-koeln.de>
+ * Class to deal with a database containing full transcriptions
+ *
+ * @package APM\FullTranscription
  */
-class ItemInDatabaseItemStream extends ItemInDocument {
-    
-    public function __construct(AddressInDatabaseItemStream $address, Item $item) {
-        parent::__construct($address, $item);
-    }
+abstract class TranscriptionManager
+{
+
+    abstract public function getTranscriptionWitness(int $docId, string $workId, int $chunkNumber, string $timeString) : DatabaseItemStreamWitness;
+
+    abstract public function getValidTranscriptionWitnessesInfoForDoc(int $docId) : array;
 }

@@ -21,11 +21,8 @@
 namespace APM\Core\Transcription;
 
 /**
- * The address of an item within a page transcription: indexes
- * to textBox and to item within that text box
+ * The address of an item within a document: an ItemAddressInPage plus a pageId
  * 
- * Notice that the class does not enforce a type for the index but normally
- * the indexes are simply integers referring to positions in arrays.
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */

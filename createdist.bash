@@ -49,7 +49,6 @@ cp -R src/public/fonts $TMP_DIR
 cp -R src/public/images $TMP_DIR
 cp -R src/public/js $TMP_DIR
 rm -fr $TMP_DIR/js/istanbul
-rm $TMP_DIR/js/*.bash
 rm $TMP_DIR/js/Makefile
 rm $TMP_DIR/js/.eslintrc.json
 cp -R src/public/node_modules $TMP_DIR

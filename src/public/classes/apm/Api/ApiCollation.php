@@ -334,7 +334,7 @@ class ApiCollation extends ApiController
         
         $collationEngineDetails = $collationEngine->getRunDetails();
 
-        $collationEngineDetails['totalDuration'] =  $this->getProfilerTotalTime() * 1000;
+        $collationEngineDetails['totalDuration'] =  $this->getProfilerTotalTime();
         
         return $this->responseWithJson($response,[
             'collationEngineDetails' => $collationEngineDetails, 

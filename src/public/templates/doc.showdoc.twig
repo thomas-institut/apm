@@ -3,6 +3,67 @@
 
 {% block title %}Doc: {{doc.docInfo.title}}{% endblock %}
 
+{% block extraJS %}
+    <script type="application/javascript" src="{{baseurl}}/js/ApmUtil.js"></script>
+    <script>
+
+        function getPageLink(urlGenerator, doc, segmentInfo ) {
+
+          let foliation = segmentInfo['foliation']
+          let pageSeq = segmentInfo['seq']
+          let title = 'View Page ' + segmentInfo['foliation'] + ' in new browser tab/window'
+          let label = foliation
+          if ( segmentInfo['numColumns'] > 1) {
+            label += ' c' + segmentInfo['column']
+          }
+
+          return '<a href="' + urlGenerator.sitePageView(doc,pageSeq) + '" target="_blank" title="' + title + '">' + label + '</a>'
+
+        }
+
+        function getChunkLink(urlGenerator, work, chunk, label) {
+          //return '<a href="' + urlGenerator.siteChunkPage(work, chunk) + '" target="_blank" title="View chunk ' + chunk + ' in new tab/window">' + label + '</a>'
+          return label
+        }
+      $(document).ready(function () {
+        let chunkInfo = JSON.parse('{{chunkInfo|json_encode|raw}}')
+        let works = JSON.parse('{{works|json_encode|raw}}')
+        let urlGenerator = new ApmUrlGenerator('{{baseurl}}')
+        let docId = {{ doc.docInfo.id }}
+        console.log(chunkInfo)
+        console.log(works)
+
+        let html = '<ul>'
+        for(const work in chunkInfo) {
+
+          html += '<li>' + works[work]['author_name'] + ', <em>' + works[work]['title'] + '</em> (' + work + ')'
+          html += '<ul><li>'
+          let chunksPerLine = 5
+          let tdArray = []
+          for(const chunkNumber in chunkInfo[work]) {
+            let tdHtml = ''
+            tdHtml += getChunkLink(urlGenerator, work, chunkNumber, + chunkNumber ) + ': '
+            for (const segmentNumber in chunkInfo[work][chunkNumber]) {
+              let segmentInfo = chunkInfo[work][chunkNumber][segmentNumber]
+              let startLabel = segmentInfo['start'] === '' ? '???' : getPageLink(urlGenerator, docId, segmentInfo['start'])
+              let endLabel = segmentInfo['end'] === '' ? '???' : getPageLink(urlGenerator, docId, segmentInfo['end'])
+              tdHtml +=  '<small>' + startLabel + ' &ndash; ' + endLabel
+              if (!segmentInfo['valid']) {
+                tdHtml += ' <a href="#" title="' + segmentInfo['errorMsg'] + '">*</a>'
+              }
+              tdHtml += '</small>'
+            }
+            tdArray.push(tdHtml)
+          }
+          html += ApmUtil.getTable(tdArray, 5, 'chunktable')
+          html += '</ul>'
+        }
+
+        $('#chunkinfo').html(html)
+      })
+    </script>
+{% endblock %}
+
 {% block content %}
      <ol class="breadcrumb">
          <li><a href="{{url_for('docs')}}">Documents</a></li>
@@ -20,10 +81,13 @@
         {% endfor %}
         {% endspaceless %}{% endif %}</p>
     <p class="docinfo">{{doc.docInfoHtml|raw}}</p>
-    <p class="docinfo">Pages:</p>
+    <h3 class="docinfo">Pages</h3>
 <div class="pagetablediv" id="{{doc.tableId}}">
     {{ macros.pageviewtable(doc.docInfo.id, doc.pages, navByPage)}}
 </div>
+
+    <h3 class="docinfo">Works</h3>
+    <div class="worksinfo" id="chunkinfo"></div>
     
 {% if canDefinePages %}
     <h3>Admin</h3>

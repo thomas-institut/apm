@@ -22,6 +22,7 @@ namespace AverroesProject\Data;
 
 use AverroesProject\EditorialNote;
 use DataTable\MySqlDataTable;
+use Psr\Log\LoggerInterface;
 
 /**
  * Manages editorial notes
@@ -35,7 +36,7 @@ class EdNoteManager {
     private $logger;
     private $edNotesDataTable;
             
-    public function __construct($dbConn, $dbh, $tableNames, \Monolog\Logger $logger) 
+    public function __construct($dbConn, $dbh, $tableNames, LoggerInterface $logger)
     {
         $this->dbh = $dbh;
         $this->tNames = $tableNames;

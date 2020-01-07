@@ -1068,9 +1068,9 @@ class DataManager implements  iSqlQueryCounterTrackerAware
     {
         $rawLocations = $this->getChunkLocationsForDocRaw($docId, $workId, $chunkNumber);
 
-        $locations = $this->getChunkLocationArrayFromRawLocations($rawLocations);
+        $locationArray = $this->getChunkLocationArrayFromRawLocations($rawLocations);
 
-        return $this->fillInColumnInfoForLocations($docId, $locations);
+        return $this->fillInColumnInfoForLocations($docId, $locationArray);
     }
 
     public function fillInColumnInfoForLocations(int $docId, array $locationArray) : array {
@@ -1521,6 +1521,14 @@ class DataManager implements  iSqlQueryCounterTrackerAware
             return false;
         }
         return $rows[0];
+    }
+
+    public function getPageFoliationByDocSeq(int $docId, int $pageSeq) : string {
+        $info = $this->getPageInfoByDocSeq($docId, $pageSeq);
+        if (is_null($info['foliation'])) {
+            return $info['page_number'];
+        }
+        return $info['foliation'];
     }
 
     /**

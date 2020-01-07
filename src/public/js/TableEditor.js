@@ -39,7 +39,7 @@ class TableEditor {
     this.values = this.options.values
     if (!Array.isArray(this.values)) {
       console.error('Table Editor Error: given values not an array')
-      return false
+      return
     }
     this.numRows = this.values.length
     let firstRow = true
@@ -48,7 +48,7 @@ class TableEditor {
       let theRow = this.values[row]
       if (!Array.isArray(theRow)) {
         console.error('Table Editor Error: row ' + row + ' in values array not an array')
-        return false
+        return
       }
       if (firstRow) {
         this.numColumns = theRow.length
@@ -56,12 +56,12 @@ class TableEditor {
       }
       if (theRow.length !== this.numColumns) {
         console.error('Table Editor Error: row ' + row + ' should be of length ' + this.numColumns)
-        return false
+        return
       }
     }
     if (this.numColumns === 0) {
       console.error('Table Editor Error: found 0 columns, need at least one to work with')
-      return false
+      return
     }
 
     // check that rowTitles, if present, makes sense
@@ -69,7 +69,7 @@ class TableEditor {
     if (Array.isArray(this.options.rowTitles)) {
       if (this.options.rowTitles.length !== this.numRows) {
         console.error('Table Editor Error: must have ' + this.numRows + ' row titles, got ' + this.options.rowTitles.length)
-        return false
+        return 
       }
       this.useRowTitles = true
     }

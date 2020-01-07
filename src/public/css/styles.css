@@ -346,3 +346,17 @@ div.ct-versioninfo {
     padding: 0;
     margin-left: 20px;
 }
+
+
+.worksinfo ul {
+    list-style: none;
+    margin-top: 10px;
+}
+.worksinfo li {
+
+     margin-top: 10px;
+ }
+
+table.chunktable td {
+    padding-right: 20px;
+}

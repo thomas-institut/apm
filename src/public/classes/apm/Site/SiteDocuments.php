@@ -26,6 +26,7 @@
 
 namespace APM\Site;
 
+use APM\FullTranscription\ApmChunkSegmentLocation;
 use AverroesProject\Data\DataManager;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
@@ -90,6 +91,13 @@ class SiteDocuments extends SiteController
         
         $docId = $request->getAttribute('id');
 
+        $chunkSegmentErrorMessages = [];
+        $chunkSegmentErrorMessages[ApmChunkSegmentLocation::VALID] = '';
+        $chunkSegmentErrorMessages[ApmChunkSegmentLocation::NO_CHUNK_START] = 'No chunk start found';
+        $chunkSegmentErrorMessages[ApmChunkSegmentLocation::NO_CHUNK_END] = 'No chunk end found';
+        $chunkSegmentErrorMessages[ApmChunkSegmentLocation::CHUNK_START_AFTER_END] = 'Chunk start after chunk end';
+
+
         $this->profiler->start();
         $dataManager = $this->dataManager;
         $doc = [];
@@ -115,6 +123,58 @@ class SiteDocuments extends SiteController
             $docInfoHtml = 'Image source not supported, please report to administrator.';
         }
         $doc['docInfoHtml'] = $docInfoHtml;
+
+        $transcriptionManager = $this->systemManager->getTranscriptionManager();
+
+        $chunkMarkLocations = $transcriptionManager->getChunkLocationsInDoc($docId, '');
+
+        $chunkInfo = [];
+
+        foreach($chunkMarkLocations as $workId => $chunkNumbers) {
+            foreach ($chunkNumbers as $chunkNumber => $segments) {
+                foreach($segments as $segmentNumber => $location) {
+                    /** @var $location ApmChunkSegmentLocation */
+                    if ( $location->start->isZero()) {
+                        $start  = '';
+                    } else {
+                        $pageInfo = $transcriptionManager->getPageInfoByDocSeq($docId, $location->start->pageSequence);
+                        $start = [
+                            'seq' => $location->start->pageSequence,
+                            'foliation' => $pageInfo->foliation,
+                            'column' => $location->start->columnNumber,
+                            'numColumns' => $pageInfo->numCols
+                        ];
+                    }
+                    if ( $location->end->isZero()) {
+                        $end  = '';
+                    } else {
+                        $pageInfo = $transcriptionManager->getPageInfoByDocSeq($docId, $location->end->pageSequence);
+                        $end = [
+                            'seq' => $location->end->pageSequence,
+                            'foliation' => $pageInfo->foliation,
+                            'column' => $location->end->columnNumber,
+                            'numColumns' => $pageInfo->numCols
+                        ];
+                    }
+
+                    $chunkInfo[$workId][$chunkNumber][$segmentNumber] =
+                        [
+                            'start' => $start,
+                            'end' => $end,
+                            'valid' => $location->isValid(),
+                            'errorCode' => $location->getChunkError(),
+                            'errorMsg' => $chunkSegmentErrorMessages[$location->getChunkError()]
+                        ];
+                }
+            }
+
+        }
+
+        $works = [];
+        foreach(array_keys($chunkMarkLocations) as $workId) {
+            $works[$workId] = $dataManager->getWorkInfo($workId);
+        }
+
         
         $canDefinePages = false;
         if ($this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'define-doc-pages')) {
@@ -126,7 +186,9 @@ class SiteDocuments extends SiteController
         return $this->renderPage($response, 'doc.showdoc.twig', [
             'navByPage' => false,
             'canDefinePages' => $canDefinePages,
-            'doc' => $doc
+            'doc' => $doc,
+            'chunkInfo' => $chunkInfo,
+            'works' => $works
         ]);
     }
 

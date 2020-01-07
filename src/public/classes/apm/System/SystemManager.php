@@ -23,6 +23,7 @@ namespace APM\System;
 
 
 use APM\CollationEngine\CollationEngine;
+use APM\FullTranscription\TranscriptionManager;
 use APM\Plugin\HookManager;
 use APM\Presets\PresetManager;
 use Monolog\Logger;
@@ -92,6 +93,7 @@ abstract class SystemManager implements  iErrorReporter, iSqlQueryCounterTracker
     abstract public function getHookManager() : HookManager;
     abstract public function getSettingsManager() : SettingsManager;
     abstract public function getCollationEngine() : CollationEngine;
+    abstract public function getTranscriptionManager() : TranscriptionManager;
     
 
 }

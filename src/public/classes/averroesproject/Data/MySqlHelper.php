@@ -22,6 +22,7 @@ namespace AverroesProject\Data;
 
 use Monolog\Logger;
 use \PDO;
+use Psr\Log\LoggerInterface;
 
 /**
  * Utility methods to handle MySQL queries
@@ -39,7 +40,7 @@ class MySqlHelper {
      */
     private $logger;
     
-    public function __construct(PDO $dbConn, Logger $logger) {
+    public function __construct(PDO $dbConn, LoggerInterface $logger) {
         $this->dbConn = $dbConn;
         $this->logger = $logger;
     }

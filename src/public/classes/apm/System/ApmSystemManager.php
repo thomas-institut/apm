@@ -22,6 +22,7 @@ namespace APM\System;
 
 use APM\CollationEngine\Collatex;
 use APM\CollationEngine\CollationEngine;
+use APM\FullTranscription\TranscriptionManager;
 use APM\Plugin\Plugin;
 use APM\Presets\DataTablePresetManager;
 use APM\Presets\PresetManager;
@@ -59,22 +60,6 @@ class ApmSystemManager extends SystemManager {
     
     // Database version
     const DB_VERSION = 18;
-
-    // MySQL table names
-    const TABLE_SETTINGS = 'settings';
-    const TABLE_EDNOTES = 'ednotes';
-    const TABLE_ELEMENTS = 'elements';
-    const TABLE_ITEMS = 'items';
-    const TABLE_USERS = 'users';
-    const TABLE_TOKENS = 'tokens';
-    const TABLE_RELATIONS = 'relations';
-    const TABLE_DOCS = 'docs';
-    const TABLE_PEOPLE = 'people';
-    const TABLE_PAGES = 'pages';
-    const TABLE_PAGETYPES = 'types_page';
-    const TABLE_WORKS = 'works';
-    const TABLE_PRESETS = 'presets';
-    const TABLE_VERSIONS_TX = 'versions_tx';
 
     const DEFAULT_LOG_APPNAME = 'APM';
     const DEFAULT_LOG_DEBUG = false;
@@ -132,7 +117,11 @@ class ApmSystemManager extends SystemManager {
      * @var Logger
      */
     private $logger;
-  
+    /**
+     * @var ApmTranscriptionManager
+     */
+    private $transcriptionManager;
+
 
     public function __construct(array $configArray) {
 
@@ -190,7 +179,7 @@ class ApmSystemManager extends SystemManager {
         // Set up SettingsManager
         try {
             $settingsTable = new MySqlDataTable($this->dbConn,
-                $this->tableNames[self::TABLE_SETTINGS]);
+                $this->tableNames[ApmMySqlTableName::TABLE_SETTINGS]);
         } catch (Exception $e) {
             // Cannot replicate this in testing, yet
             // @codeCoverageIgnoreStart
@@ -219,10 +208,14 @@ class ApmSystemManager extends SystemManager {
        
         // Set up PresetsManager
         $presetsManagerDataTable = new MySqlDataTable($this->dbConn,
-                        $this->tableNames[self::TABLE_PRESETS]);
+                        $this->tableNames[ApmMySqlTableName::TABLE_PRESETS]);
         $this->presetsManager = 
                 new DataTablePresetManager($presetsManagerDataTable, ['lang' => 'key1']);
         $this->presetsManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
+
+        // Set up TranscriptionManager
+        $this->transcriptionManager = new ApmTranscriptionManager($this->dbConn, $this->tableNames, $this->logger);
+        $this->transcriptionManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
         
         // Load plugins
         foreach($this->config[ApmConfigParameter::PLUGINS] as $pluginName) {
@@ -249,20 +242,20 @@ class ApmSystemManager extends SystemManager {
     protected function createTableNames(string $prefix) : array {
         
         $tableKeys = [
-            self::TABLE_SETTINGS,
-            self::TABLE_EDNOTES,
-            self::TABLE_ELEMENTS,
-            self::TABLE_ITEMS,
-            self::TABLE_USERS,
-            self::TABLE_TOKENS,
-            self::TABLE_RELATIONS,
-            self::TABLE_DOCS,
-            self::TABLE_PEOPLE,
-            self::TABLE_PAGES,
-            self::TABLE_PAGETYPES,
-            self::TABLE_WORKS,
-            self::TABLE_PRESETS,
-            self::TABLE_VERSIONS_TX,
+            ApmMySqlTableName::TABLE_SETTINGS,
+            ApmMySqlTableName::TABLE_EDNOTES,
+            ApmMySqlTableName::TABLE_ELEMENTS,
+            ApmMySqlTableName::TABLE_ITEMS,
+            ApmMySqlTableName::TABLE_USERS,
+            ApmMySqlTableName::TABLE_TOKENS,
+            ApmMySqlTableName::TABLE_RELATIONS,
+            ApmMySqlTableName::TABLE_DOCS,
+            ApmMySqlTableName::TABLE_PEOPLE,
+            ApmMySqlTableName::TABLE_PAGES,
+            ApmMySqlTableName::TABLE_PAGETYPES,
+            ApmMySqlTableName::TABLE_WORKS,
+            ApmMySqlTableName::TABLE_PRESETS,
+            ApmMySqlTableName::TABLE_VERSIONS_TX,
         ];
         
         $tables = [];
@@ -518,4 +511,8 @@ class ApmSystemManager extends SystemManager {
         return '/' . implode('/', array_slice($fields, 3));
     }
 
+    public function getTranscriptionManager(): TranscriptionManager
+    {
+        return $this->transcriptionManager;
+    }
 }

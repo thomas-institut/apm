@@ -130,6 +130,23 @@ class ApmUtil {
     }
     return langDef
   }
+
+  static getTable(tdArray, rowsPerColumn, tableClass) {
+    let html = '<table class="'+ tableClass + '">'
+    html += '<tr>'
+    for (let i=0; i < tdArray.length; i++) {
+      if (!(i % rowsPerColumn)) {
+        if (i !== 0) {
+          html += '</tr><tr>'
+        }
+      }
+      html += '<td>' + tdArray[i] + '</td>'
+    }
+    html += '</tr></table>'
+    return html
+
+  }
+
 }
 
 ApmUtil.someNum = 1

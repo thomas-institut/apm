@@ -5,74 +5,20 @@
 
 {% block extraJS %}
     <script type="application/javascript" src="{{baseurl}}/js/ApmUtil.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/DocShowPage.js"></script>
     <script>
+      let chunkInfo = JSON.parse('{{chunkInfo|json_encode|raw}}')
+      let works = JSON.parse('{{works|json_encode|raw}}')
+      let urlGenerator = new ApmUrlGenerator('{{baseurl}}')
+      let docId = parseInt({{ doc.docInfo.id }})
+      console.log(chunkInfo)
+      console.log(works)
 
-        function getPageLink(urlGenerator, doc, segmentInfo ) {
+      let docShowPage = new DocShowPage({{ doc.pages|json_encode|raw}}, chunkInfo, works, docId, urlGenerator)
 
-          let foliation = segmentInfo['foliation']
-          let pageSeq = segmentInfo['seq']
-          let title = 'View Page ' + segmentInfo['foliation'] + ' in new browser tab/window'
-          let label = foliation
-          if ( segmentInfo['numColumns'] > 1) {
-            label += ' c' + segmentInfo['column']
-          }
-
-          return '<a href="' + urlGenerator.sitePageView(doc,pageSeq) + '" target="_blank" title="' + title + '">' + label + '</a>'
-
-        }
-
-        function getChunkLink(urlGenerator, work, chunk, label) {
-          //return '<a href="' + urlGenerator.siteChunkPage(work, chunk) + '" target="_blank" title="View chunk ' + chunk + ' in new tab/window">' + label + '</a>'
-          return label
-        }
       $(document).ready(function () {
-        let chunkInfo = JSON.parse('{{chunkInfo|json_encode|raw}}')
-        let works = JSON.parse('{{works|json_encode|raw}}')
-        let urlGenerator = new ApmUrlGenerator('{{baseurl}}')
-        let docId = {{ doc.docInfo.id }}
-        console.log(chunkInfo)
-        console.log(works)
-
-        let html = '<ul>'
-        for(const work in chunkInfo) {
-
-          html += '<li>' + works[work]['author_name'] + ', <em>' + works[work]['title'] + '</em> (' + work + ')'
-          html += '<ul><li>'
-          let chunksPerLine = 5
-          let tdArray = []
-
-          for(const chunkNumber in chunkInfo[work]) {
-            let tdHtml = ''
-            tdHtml += getChunkLink(urlGenerator, work, chunkNumber, + chunkNumber ) + ': '
-            let segmentArray = []
-            for (const segmentNumber in chunkInfo[work][chunkNumber]) {
-              let segmentHtml = ''
-              let segmentInfo = chunkInfo[work][chunkNumber][segmentNumber]
-              let startLabel = segmentInfo['start'] === '' ? '???' : getPageLink(urlGenerator, docId, segmentInfo['start'])
-              let endLabel = segmentInfo['end'] === '' ? '???' : getPageLink(urlGenerator, docId, segmentInfo['end'])
-              segmentHtml +=  startLabel + ' &ndash; ' + endLabel
-              if (!segmentInfo['valid']) {
-                segmentHtml += ' <a href="#" title="' + segmentInfo['errorMsg'] + '">*</a>'
-              }
-              segmentArray.push( { seg: segmentNumber, html : segmentHtml })
-            }
-            if (segmentArray.length > 1 ) {
-              tdHtml += '<small>' + segmentArray.length + ' segments <br/>'
-              for(const i in segmentArray) {
-                tdHtml += '&nbsp;&nbsp;' + segmentArray[i].seg + ': ' + segmentArray[i].html + '<br/>'
-              }
-            } else {
-              tdHtml += '<small>' + segmentArray[0].html
-            }
-            tdHtml += '</small>'
-
-            tdArray.push(tdHtml)
-          }
-          html += ApmUtil.getTable(tdArray, 5, 'chunktable')
-          html += '</ul>'
-        }
-
-        $('#chunkinfo').html(html)
+        $('#chunkinfo').html(docShowPage.genWorkInfoHtml())
+        $('#pagetablediv').html(docShowPage.getPageTableHtml())
       })
     </script>
 {% endblock %}
@@ -95,8 +41,7 @@
         {% endspaceless %}{% endif %}</p>
     <p class="docinfo">{{doc.docInfoHtml|raw}}</p>
     <h3 class="docinfo">Pages</h3>
-<div class="pagetablediv" id="{{doc.tableId}}">
-    {{ macros.pageviewtable(doc.docInfo.id, doc.pages, navByPage)}}
+<div id="pagetablediv">
 </div>
 
     <h3 class="docinfo">Works</h3>

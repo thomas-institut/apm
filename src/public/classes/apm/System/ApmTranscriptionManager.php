@@ -25,6 +25,7 @@ use APM\FullTranscription\ApmChunkSegmentLocation;
 use APM\FullTranscription\ApmPageManager;
 use APM\FullTranscription\ApmTranscriptionWitness;
 use APM\FullTranscription\PageInfo;
+use APM\FullTranscription\PageManager;
 use APM\FullTranscription\TranscriptionManager;
 use AverroesProject\Data\EdNoteManager;
 use AverroesProject\Data\MySqlHelper;
@@ -283,6 +284,43 @@ class ApmTranscriptionManager extends TranscriptionManager implements  iSqlQuery
 
     }
 
+    /**
+     * Returns the page numbers of the pages with transcription
+     * data for a document Id
+     * @param int $docId
+     * @param int $order
+     * @return array
+     */
+    public function getTranscribedPageListByDocId(int $docId, int $order = self::ORDER_BY_PAGE_NUMBER) : array
+    {
+        $te = $this->tNames['elements'];
+        $tp = $this->tNames['pages'];
+
+        $orderby = 'page_number';
+        if ($order === self::ORDER_BY_SEQ) {
+            $orderby = 'seq';
+        }
 
 
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+        $query =  'SELECT DISTINCT p.`page_number` AS page_number FROM ' .
+            $tp . ' AS p' .
+            ' JOIN ' . $te . ' AS e ON p.id=e.page_id' .
+            ' WHERE p.doc_id=' . $docId .
+            " AND `e`.`valid_until`='9999-12-31 23:59:59.999999'" .
+            " AND `p`.`valid_until`='9999-12-31 23:59:59.999999'" .
+            " ORDER BY p.`$orderby`";
+        $r = $this->databaseHelper->query($query);
+        $pages = [];
+        while ($row = $r->fetch(PDO::FETCH_ASSOC)){
+            $pages[] = $row['page_number'];
+        }
+        return $pages;
+    }
+
+
+    public function getPageManager(): PageManager
+    {
+        return $this->pageManager;
+    }
 }

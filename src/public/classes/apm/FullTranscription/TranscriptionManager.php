@@ -30,6 +30,9 @@ use ThomasInstitut\ErrorReporter\iErrorReporter;
  */
 abstract class TranscriptionManager implements iErrorReporter
 {
+    const ORDER_BY_PAGE_NUMBER = 100;
+    const ORDER_BY_SEQ = 101;
+
 
     /**
      * Returns the ApmTranscriptionWitness contained in the given document for the given work and chunk number
@@ -99,4 +102,16 @@ abstract class TranscriptionManager implements iErrorReporter
 
 
     abstract public function getPageInfoByDocSeq(int $docId, int $seq) : PageInfo;
+
+    /**
+     * Returns the page numbers of the pages with transcription
+     * data for a document Id
+     *
+     * @param int $docId
+     * @param int $order
+     * @return array
+     */
+    abstract  public function getTranscribedPageListByDocId(int $docId, int $order = self::ORDER_BY_PAGE_NUMBER) : array;
+
+    abstract  public function getPageManager() : PageManager;
 }

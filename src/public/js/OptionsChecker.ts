@@ -20,7 +20,7 @@
 /**
  * Utility class to check and generate a "clean"  options object
  *
- * The optionsDefinition object passed to the constructor should have as properties the
+ * The optionsDefinition object passed to the  constructor should have as properties the
  * definition of each option to be checked. Each property, in turn, has the following
  * properties:
  *

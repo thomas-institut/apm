@@ -131,11 +131,11 @@ class ApmUtil {
     return langDef
   }
 
-  static getTable(tdArray, rowsPerColumn, tableClass) {
+  static getTable(tdArray, colsPerRow, tableClass) {
     let html = '<table class="'+ tableClass + '">'
     html += '<tr>'
     for (let i=0; i < tdArray.length; i++) {
-      if (!(i % rowsPerColumn)) {
+      if (!(i % colsPerRow)) {
         if (i !== 0) {
           html += '</tr><tr>'
         }
@@ -145,6 +145,37 @@ class ApmUtil {
     html += '</tr></table>'
     return html
 
+  }
+
+  static getTableFromRawTds(tdArray, colsPerRow, tableClass) {
+    let html = '<table class="'+ tableClass + '">'
+    html += '<tr>'
+    for (let i=0; i < tdArray.length; i++) {
+      if (!(i % colsPerRow)) {
+        if (i !== 0) {
+          html += '</tr><tr>'
+        }
+      }
+      html +=  tdArray[i]
+    }
+    html += '</tr></table>'
+    return html
+
+  }
+
+  static getPageTable(docId, pages, pagesPerRow, urlGenerator) {
+    let tds = []
+    for(const pageIndex in pages) {
+      let page = pages[pageIndex]
+      let classes = 'type' + page.type
+      if (!page.isTranscribed) {
+        classes += ' withouttranscription'
+      }
+      let url = urlGenerator.sitePageView(docId, page.seq)
+
+      tds.push('<td class="' + classes + '"><a href="' + url + '" title="View Page ' +  page.foliation + ' (n= ' + page.number + ', seq=' + page.seq + ')">' + page.foliation + '</a></td>')
+    }
+    return ApmUtil.getTableFromRawTds(tds, pagesPerRow, 'pagetable')
   }
 
 }

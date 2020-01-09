@@ -24,7 +24,9 @@ TEST_JS=\
 
 # Typescript sources to be converted to JS
 TS_FILES=\
-	OptionsChecker.ts
+	OptionsChecker.ts \
+	ApmUrlGenerator.ts \
+	DocShowPage.ts
 
 # Some parameters
 TSC=tsc

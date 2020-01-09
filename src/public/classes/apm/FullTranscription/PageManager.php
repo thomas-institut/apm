@@ -28,5 +28,16 @@ namespace APM\FullTranscription;
  */
 abstract class PageManager
 {
+    /**
+     * @param int $docId
+     * @param int $seq
+     * @return PageInfo
+     */
     abstract public function getPageInfoByDocSeq(int $docId, int $seq) : PageInfo;
+
+    /**
+     * @param int $docId
+     * @return PageInfo[]
+     */
+    abstract public function getPageInfoArrayForDoc(int $docId) : array;
 }

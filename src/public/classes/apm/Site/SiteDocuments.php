@@ -100,10 +100,16 @@ class SiteDocuments extends SiteController
 
         $this->profiler->start();
         $dataManager = $this->dataManager;
+        $transcriptionManager = $this->systemManager->getTranscriptionManager();
+        $pageManager = $transcriptionManager->getPageManager();
+
         $doc = [];
         $doc['numPages'] = $dataManager->getPageCountByDocId($docId);
-        $transcribedPages = $dataManager->getTranscribedPageListByDocId($docId);
-        $pagesInfo = $dataManager->getDocPageInfo($docId, DataManager::ORDER_BY_SEQ);
+        $transcribedPages = $transcriptionManager->getTranscribedPageListByDocId($docId);
+        //$pagesInfo = $dataManager->getDocPageInfo($docId, DataManager::ORDER_BY_SEQ);
+        $pageInfoArray = $pageManager->getPageInfoArrayForDoc($docId);
+
+
         $doc['numTranscribedPages'] = count($transcribedPages);
         $editorsIds = $dataManager->getEditorsByDocId($docId);
         $doc['editors'] = array();
@@ -113,8 +119,7 @@ class SiteDocuments extends SiteController
         }
         $doc['docInfo'] = $dataManager->getDocById($docId);
         $doc['tableId'] = "doc-$docId-table";
-        $doc['pages'] = $this->buildPageArray($pagesInfo, 
-                $transcribedPages);
+        $doc['pages'] = $this->buildPageArrayNew($pageInfoArray, $transcribedPages);
         
         $docInfoHtml = $this->hookManager->callHookedMethods('get-docinfo-html-' . $doc['docInfo']['image_source'],
                 [ 'imageSourceData' => $doc['docInfo']['image_source_data']]);
@@ -124,7 +129,7 @@ class SiteDocuments extends SiteController
         }
         $doc['docInfoHtml'] = $docInfoHtml;
 
-        $transcriptionManager = $this->systemManager->getTranscriptionManager();
+
 
         $chunkLocationMap = $transcriptionManager->getChunkLocationMapForDoc($docId, '');
 

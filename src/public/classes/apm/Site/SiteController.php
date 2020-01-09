@@ -26,6 +26,7 @@
 
 namespace APM\Site;
 
+use APM\FullTranscription\PageInfo;
 use APM\Plugin\HookManager;
 use DI\Container;
 use DI\DependencyException;
@@ -228,6 +229,30 @@ class SiteController
             }
             $thePage['classes'] .= ' type' . $page['type'];
             array_push($thePages, $thePage);
+        }
+        return $thePages;
+    }
+
+    // Utility function
+    protected function buildPageArrayNew(array $pagesInfo, array $transcribedPages){
+        $thePages = [];
+        foreach ($pagesInfo as $pageInfo) {
+            /** @var $pageInfo PageInfo */
+            $thePage = [];
+            $thePage['number'] = $pageInfo->pageNumber;
+            $thePage['seq'] = $pageInfo->sequence;
+            $thePage['type'] = $pageInfo->type;
+            $thePage['foliation'] = $pageInfo->foliation;
+
+            $thePage['classes'] = '';
+            $thePage['isTranscribed'] = true;
+            if (array_search($pageInfo->pageNumber, $transcribedPages) === false){
+                $thePage['classes'] =
+                    $thePage['classes'] . ' withouttranscription';
+                $thePage['isTranscribed'] = false;
+            }
+            $thePage['classes'] .= ' type' . $pageInfo->type;
+            $thePages[] = $thePage;
         }
         return $thePages;
     }

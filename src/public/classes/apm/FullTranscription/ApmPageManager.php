@@ -72,4 +72,36 @@ class ApmPageManager extends PageManager implements LoggerAwareInterface, iError
         $this->pageInfoCache[$docId][$seq] = PageInfo::createFromDatabaseRow($rows[0]);
         return $this->pageInfoCache[$docId][$seq];
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function getPageInfoArrayForDoc(int $docId): array
+    {
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+        $rows = $this->pagesDataTable->findRows([
+            'doc_id' => $docId
+        ]);
+
+        $pageInfoArray = [];
+
+        foreach($rows as $row) {
+            $pageInfo = PageInfo::createFromDatabaseRow($row);
+            $this->pageInfoCache[$docId][$pageInfo->sequence] = $pageInfo;
+            $pageInfoArray[] = $pageInfo;
+        }
+        uasort($pageInfoArray, function ($a, $b) {
+            /** @var $a PageInfo */
+            /** @var $b PageInfo */
+            return $this->compareInts($a->sequence, $b->sequence);
+        } );
+        return $pageInfoArray;
+    }
+
+    private function compareInts(int $a, int $b) : int {
+        if ($a === $b) {
+            return 0;
+        }
+        return ($a < $b) ? -1 : 1;
+    }
 }

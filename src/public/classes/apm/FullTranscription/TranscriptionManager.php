@@ -45,26 +45,38 @@ abstract class TranscriptionManager implements iErrorReporter
     abstract public function getTranscriptionWitness(int $docId, string $workId, int $chunkNumber, string $timeString) : ApmTranscriptionWitness;
 
     /**
-     * Returns an array of ApmChunkSegmentLocation containing the locations of all chunk segments in the given
-     * docId at the given time.
+     * Returns a "map" of chunk locations in a particular document at the given time.
      *
-     * The returned array is an associative array with workId as keys, each element is an array with an element for each
-     * chunk number present in the documents, and each one of these elements, in turn, is an array of ApmChunkSegmentLocation
+     * The returned array contains ApmChunkSegmentLocation objects arranged by work, chunk and document.
+     *
      *
      * $returnedArray = [
      *   'workId1' =>  [
      *         chunkA => [
-     *              segment1 => ApmChunkSegmentLocation1-1-1,
-     *              segment2 => ApmChunkSegmentLocation1-1-2, ...
+     *              docId1 => [
+     *                  segment1 => ApmChunkSegmentLocation1-1-1,
+     *                  segment2 => ApmChunkSegmentLocation1-1-2,
+     *                  ...
+     *             ],
+     *             docId2 => [
+     *                  segment1 => ApmChunkSegmentLocation1-1-1,
+     *                  segment2 => ApmChunkSegmentLocation1-1-2,
+     *                  ...
+     *             ],
+     *             ... // more docs
      *         ],
      *        chunkB => [
+     *          docId1 => [
      *              segment1 => ApmChunkSegmentLocation1-2-1,
      *              segment2 => ApmChunkSegmentLocation1-2-2, ...
+     *              ],
+     *         docId2 => [
+     *              ... segment locations ...
      *         ],
-     *        ...
+     *          ...  // more docs
      *   ],
-     *  'workId2' => [ ... ]
-     *   ...
+     *  'workId2' => [ ... ],
+     *   ... // more work Ids
      * ]
      *
      *
@@ -72,27 +84,18 @@ abstract class TranscriptionManager implements iErrorReporter
      * @param string $timeString
      * @return array
      */
-    abstract public function getChunkLocationsInDoc(int $docId, string $timeString) : array;
+    abstract public function getChunkLocationMapForDoc(int $docId, string $timeString) : array;
 
 
     /**
-     * Returns an array containing all chunk mark locations in the system for the given work and chunk
-     *
-     * The returned array has one element for each document with chunk marks in the system. Each element
-     * is an array of chunk mark locations
-     *
-     *     $returnedArray = [
-     *          docId1 => [ location1, location2, ... ],
-     *          docId2 => [ location1, location2, ... ],
-     *          ...
-     *    ]
+     * Returns a map of chunk locations for the given chunk (workId / chunkNumber) at the given time
      *
      * @param string $workId
      * @param int $chunkNumber
      * @param string $timeString
      * @return array
      */
-    abstract public function getAllChunkMarkLocationsForChunk(string $workId, int $chunkNumber, string $timeString) : array;
+    abstract public function getChunkLocationMapForChunk(string $workId, int $chunkNumber, string $timeString) : array;
 
 
     abstract public function getPageInfoByDocSeq(int $docId, int $seq) : PageInfo;

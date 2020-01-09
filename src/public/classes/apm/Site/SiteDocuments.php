@@ -126,52 +126,55 @@ class SiteDocuments extends SiteController
 
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
 
-        $chunkMarkLocations = $transcriptionManager->getChunkLocationsInDoc($docId, '');
+        $chunkLocationMap = $transcriptionManager->getChunkLocationMapForDoc($docId, '');
 
         $chunkInfo = [];
 
-        foreach($chunkMarkLocations as $workId => $chunkNumbers) {
-            foreach ($chunkNumbers as $chunkNumber => $segments) {
-                foreach($segments as $segmentNumber => $location) {
-                    /** @var $location ApmChunkSegmentLocation */
-                    if ( $location->start->isZero()) {
-                        $start  = '';
-                    } else {
-                        $pageInfo = $transcriptionManager->getPageInfoByDocSeq($docId, $location->start->pageSequence);
-                        $start = [
-                            'seq' => $location->start->pageSequence,
-                            'foliation' => $pageInfo->foliation,
-                            'column' => $location->start->columnNumber,
-                            'numColumns' => $pageInfo->numCols
-                        ];
-                    }
-                    if ( $location->end->isZero()) {
-                        $end  = '';
-                    } else {
-                        $pageInfo = $transcriptionManager->getPageInfoByDocSeq($docId, $location->end->pageSequence);
-                        $end = [
-                            'seq' => $location->end->pageSequence,
-                            'foliation' => $pageInfo->foliation,
-                            'column' => $location->end->columnNumber,
-                            'numColumns' => $pageInfo->numCols
-                        ];
-                    }
+        foreach($chunkLocationMap as $workId => $chunkArray) {
+            foreach ($chunkArray as $chunkNumber => $docArray) {
+                foreach($docArray as $docIdInMap => $segments) {
+                    foreach($segments as $segmentNumber => $location) {
+                        /** @var $location ApmChunkSegmentLocation */
+                        if ( $location->start->isZero()) {
+                            $start  = '';
+                        } else {
+                            $pageInfo = $transcriptionManager->getPageInfoByDocSeq($docId, $location->start->pageSequence);
+                            $start = [
+                                'seq' => $location->start->pageSequence,
+                                'foliation' => $pageInfo->foliation,
+                                'column' => $location->start->columnNumber,
+                                'numColumns' => $pageInfo->numCols
+                            ];
+                        }
+                        if ( $location->end->isZero()) {
+                            $end  = '';
+                        } else {
+                            $pageInfo = $transcriptionManager->getPageInfoByDocSeq($docId, $location->end->pageSequence);
+                            $end = [
+                                'seq' => $location->end->pageSequence,
+                                'foliation' => $pageInfo->foliation,
+                                'column' => $location->end->columnNumber,
+                                'numColumns' => $pageInfo->numCols
+                            ];
+                        }
 
-                    $chunkInfo[$workId][$chunkNumber][$segmentNumber] =
-                        [
-                            'start' => $start,
-                            'end' => $end,
-                            'valid' => $location->isValid(),
-                            'errorCode' => $location->getChunkError(),
-                            'errorMsg' => $chunkSegmentErrorMessages[$location->getChunkError()]
-                        ];
+                        $chunkInfo[$workId][$chunkNumber][$segmentNumber] =
+                            [
+                                'start' => $start,
+                                'end' => $end,
+                                'valid' => $location->isValid(),
+                                'errorCode' => $location->getChunkError(),
+                                'errorMsg' => $chunkSegmentErrorMessages[$location->getChunkError()]
+                            ];
+                    }
                 }
+
             }
 
         }
 
         $works = [];
-        foreach(array_keys($chunkMarkLocations) as $workId) {
+        foreach(array_keys($chunkLocationMap) as $workId) {
             $works[$workId] = $dataManager->getWorkInfo($workId);
         }
 

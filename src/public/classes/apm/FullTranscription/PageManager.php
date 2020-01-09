@@ -20,45 +20,13 @@
 namespace APM\FullTranscription;
 
 /**
- * Location and information about a chunk mark in the APM database
+ * Class that manages information about pages in the APM
+ *
+ * Normally there will be an underlying DataTable to store the data
  *
  * @package APM\FullTranscription
  */
-class ApmChunkMarkLocation extends ApmItemLocation
+abstract class PageManager
 {
-    /**
-     * @var string
-     */
-    public $workId;
-
-    /**
-     * @var int
-     */
-    public $chunkNumber;
-
-    /**
-     * @var int
-     */
-    public $segmentNumber;
-
-    /**
-     * @var int
-     */
-    public $docId;
-    /**
-     * @var string
-     */
-    public $type;
-
-
-    public function __construct()
-    {
-        parent::__construct();
-        $this->workId = '';
-        $this->chunkNumber = 0;
-        $this->segmentNumber = 0;
-        $this->docId = 0;
-        $this->type = '';
-    }
-
+    abstract public function getPageInfoByDocSeq(int $docId, int $seq) : PageInfo;
 }

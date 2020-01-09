@@ -358,5 +358,7 @@ div.ct-versioninfo {
  }
 
 table.chunktable td {
-    padding-right: 20px;
+    padding-right: 2ex;
+    padding-bottom: 0.5ex;
+    vertical-align: top;
 }

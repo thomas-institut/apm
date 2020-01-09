@@ -40,19 +40,32 @@
           html += '<ul><li>'
           let chunksPerLine = 5
           let tdArray = []
+
           for(const chunkNumber in chunkInfo[work]) {
             let tdHtml = ''
             tdHtml += getChunkLink(urlGenerator, work, chunkNumber, + chunkNumber ) + ': '
+            let segmentArray = []
             for (const segmentNumber in chunkInfo[work][chunkNumber]) {
+              let segmentHtml = ''
               let segmentInfo = chunkInfo[work][chunkNumber][segmentNumber]
               let startLabel = segmentInfo['start'] === '' ? '???' : getPageLink(urlGenerator, docId, segmentInfo['start'])
               let endLabel = segmentInfo['end'] === '' ? '???' : getPageLink(urlGenerator, docId, segmentInfo['end'])
-              tdHtml +=  '<small>' + startLabel + ' &ndash; ' + endLabel
+              segmentHtml +=  startLabel + ' &ndash; ' + endLabel
               if (!segmentInfo['valid']) {
-                tdHtml += ' <a href="#" title="' + segmentInfo['errorMsg'] + '">*</a>'
+                segmentHtml += ' <a href="#" title="' + segmentInfo['errorMsg'] + '">*</a>'
               }
-              tdHtml += '</small>'
+              segmentArray.push( { seg: segmentNumber, html : segmentHtml })
             }
+            if (segmentArray.length > 1 ) {
+              tdHtml += '<small>' + segmentArray.length + ' segments <br/>'
+              for(const i in segmentArray) {
+                tdHtml += '&nbsp;&nbsp;' + segmentArray[i].seg + ': ' + segmentArray[i].html + '<br/>'
+              }
+            } else {
+              tdHtml += '<small>' + segmentArray[0].html
+            }
+            tdHtml += '</small>'
+
             tdArray.push(tdHtml)
           }
           html += ApmUtil.getTable(tdArray, 5, 'chunktable')

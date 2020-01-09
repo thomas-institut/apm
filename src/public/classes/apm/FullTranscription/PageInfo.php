@@ -20,7 +20,8 @@
 namespace APM\FullTranscription;
 
 /**
- * Information about a page in the database
+ * Information about a page
+ *
  * @package APM\FullTranscription
  */
 class PageInfo

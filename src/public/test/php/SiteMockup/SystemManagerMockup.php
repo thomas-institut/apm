@@ -20,15 +20,18 @@
 
 namespace APM;
 
+require_once 'MockTranscriptionManager.php';
 
 use APM\CollationEngine\CollationEngine;
 use APM\CollationEngine\NullCollationEngine;
+use APM\FullTranscription\TranscriptionManager;
 use APM\Presets\DataTablePresetManager;
 use APM\Presets\PresetManager;
 use APM\System\SystemManager;
 use APM\System\SettingsManager;
 use APM\Plugin\HookManager;
 use DataTable\InMemoryDataTable;
+use MockTranscriptionManager;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 /**
@@ -42,7 +45,12 @@ class SystemManagerMockup extends SystemManager {
     private $hm;
     private $sm;
     private $pm;
-    
+
+    /**
+     * @var MockTranscriptionManager
+     */
+    private $tm;
+
     public function __construct() {
         parent::__construct([]);
         $logStream = new StreamHandler('test.log', 
@@ -55,6 +63,7 @@ class SystemManagerMockup extends SystemManager {
         $this->hm = new HookManager();
         $this->sm = new SettingsManager();
         $this->pm = new DataTablePresetManager(new InMemoryDataTable());
+        $this->tm = new MockTranscriptionManager();
     }
     
     public function checkSystemSetup() {
@@ -84,5 +93,10 @@ class SystemManagerMockup extends SystemManager {
     public function getCollationEngine() : CollationEngine
     {
         return new NullCollationEngine();
+    }
+
+    public function getTranscriptionManager(): TranscriptionManager
+    {
+        return $this->tm;
     }
 }

@@ -20,6 +20,8 @@
 
 namespace AverroesProject\TxText;
 
+use InvalidArgumentException;
+
 /**
  * Description of TtiDeletion
  *
@@ -34,7 +36,8 @@ class Deletion extends Item {
         'dots-underneath',
         'strikeout',
         'line-above',
-        'no-sign'
+        'no-sign',
+        'vacat'
     ];
     
     /**
@@ -58,10 +61,10 @@ class Deletion extends Item {
         if (self::isDeletionTechniqueAllowed($technique)){
             $this->extraInfo = $technique;
         } else {
-            throw new \InvalidArgumentException("Unrecognized technique for DELETION item, technique given: " . $technique);
+            throw new InvalidArgumentException("Unrecognized technique for DELETION item, technique given: " . $technique);
         }
         if ($text === NULL or $text === ''){
-            throw new \InvalidArgumentException("Transcription items of type DELETION need some deleted text");
+            throw new InvalidArgumentException("Transcription items of type DELETION need some deleted text");
         }
         $this->theText = $text;
         $this->modXmlId = '';

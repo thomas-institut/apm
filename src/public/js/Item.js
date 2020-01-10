@@ -48,7 +48,8 @@ class Item {
       'dots-underneath',
       'strikeout', 
       'line-above',
-      'no-sign'
+      'no-sign',
+      'vacat'
     ]
   }
 

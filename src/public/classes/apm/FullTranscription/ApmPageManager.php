@@ -1,6 +1,6 @@
 <?php
 /* 
- *  Copyright (C) 2019 Universität zu Köln
+ *  Copyright (C) 2020 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,11 +20,10 @@
 namespace APM\FullTranscription;
 
 
-use APM\System\ApmMySqlTableName;
 use APM\System\iSqlQueryCounterTrackerAware;
 use APM\System\SimpleSqlQueryCounterTrackerAware;
 use APM\System\SqlQueryCounterTracker;
-use DataTable\MySqlUnitemporalDataTable;
+use DataTable\UnitemporalDataTable;
 use InvalidArgumentException;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
@@ -39,7 +38,7 @@ class ApmPageManager extends PageManager implements LoggerAwareInterface, iError
     use SimpleSqlQueryCounterTrackerAware;
 
     /**
-     * @var MySqlUnitemporalDataTable
+     * @var UnitemporalDataTable
      */
     private $pagesDataTable;
 
@@ -48,7 +47,7 @@ class ApmPageManager extends PageManager implements LoggerAwareInterface, iError
      */
     private $pageInfoCache;
 
-    public function __construct(MySqlUnitemporalDataTable $pagesDataTable, LoggerInterface $logger)
+    public function __construct(UnitemporalDataTable $pagesDataTable, LoggerInterface $logger)
     {
         $this->setLogger($logger);
         $this->resetError();
@@ -62,6 +61,7 @@ class ApmPageManager extends PageManager implements LoggerAwareInterface, iError
             return $this->pageInfoCache[$docId][$seq];
         }
         $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+
         $rows = $this->pagesDataTable->findRows([
             'doc_id' => $docId,
             'seq'=> $seq

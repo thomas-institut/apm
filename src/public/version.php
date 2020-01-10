@@ -19,11 +19,11 @@
  */
 
 $config['app_name'] = 'APM';
-$config['version'] = '0.22.2 (2019-Dec-31)';
+$config['version'] = '0.23.0 (2020-Jan-10)';
 
 
 $config['copyright_notice'] = <<<EOD
-        2016-19, 
+        2016-20, 
         <a href="http://www.thomasinstitut.uni-koeln.de/">
             Thomas-Institut</a>, 
         <a href="http://www.uni-koeln.de/">

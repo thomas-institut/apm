@@ -30,7 +30,7 @@ namespace ThomasInstitut\ErrorReporter;
  * Describes a class that reports the last error that occurred during its operations
  *
  */
-interface iErrorReporter
+interface ErrorReporter
 {
     public function getErrorMessage() : string;
     public function getErrorCode() : int;

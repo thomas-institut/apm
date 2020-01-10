@@ -27,7 +27,7 @@ use DataTable\InMemoryDataTable;
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class SettingsManager implements iSqlQueryCounterTrackerAware {
+class SettingsManager implements SqlQueryCounterTrackerAware {
 
     use SimpleSqlQueryCounterTrackerAware;
     /**

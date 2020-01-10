@@ -19,7 +19,7 @@
 
 namespace ThomasInstitut\Profiler;
 
-class TimeTracker implements iPropertyTracker
+class TimeTracker implements PropertyTracker
 {
 
     public function start()

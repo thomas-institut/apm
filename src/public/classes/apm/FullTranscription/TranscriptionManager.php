@@ -19,7 +19,7 @@
 
 namespace APM\FullTranscription;
 
-use ThomasInstitut\ErrorReporter\iErrorReporter;
+use ThomasInstitut\ErrorReporter\ErrorReporter;
 
 /**
  * Class TranscriptionManager
@@ -28,7 +28,7 @@ use ThomasInstitut\ErrorReporter\iErrorReporter;
  *
  * @package APM\FullTranscription
  */
-abstract class TranscriptionManager implements iErrorReporter
+abstract class TranscriptionManager implements ErrorReporter
 {
     const ORDER_BY_PAGE_NUMBER = 100;
     const ORDER_BY_SEQ = 101;

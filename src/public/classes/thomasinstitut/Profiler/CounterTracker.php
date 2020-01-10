@@ -19,7 +19,7 @@
 
 namespace ThomasInstitut\Profiler;
 
-class CounterTracker implements iPropertyTracker, iCounter
+class CounterTracker implements PropertyTracker, Counter
 {
 
     /**

@@ -38,10 +38,10 @@ use PDO;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
-use ThomasInstitut\ErrorReporter\iErrorReporter;
+use ThomasInstitut\ErrorReporter\ErrorReporter;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
 
-class ApmTranscriptionManager extends TranscriptionManager implements  iSqlQueryCounterTrackerAware, iErrorReporter, LoggerAwareInterface
+class ApmTranscriptionManager extends TranscriptionManager implements  SqlQueryCounterTrackerAware, ErrorReporter, LoggerAwareInterface
 {
 
     use SimpleSqlQueryCounterTrackerAware {

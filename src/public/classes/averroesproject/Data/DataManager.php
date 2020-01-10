@@ -20,7 +20,7 @@
 
 namespace AverroesProject\Data;
 
-use APM\System\iSqlQueryCounterTrackerAware;
+use APM\System\SqlQueryCounterTrackerAware;
 use APM\System\SimpleSqlQueryCounterTrackerAware;
 use APM\System\SqlQueryCounterTracker;
 use AverroesProject\ColumnElement\Custodes;
@@ -67,7 +67,7 @@ use \PDO;
  * @class AverroesProjectData
  * Provides access to data via helper functions.
  */
-class DataManager implements  iSqlQueryCounterTrackerAware
+class DataManager implements  SqlQueryCounterTrackerAware
 {
 
     use SimpleSqlQueryCounterTrackerAware;

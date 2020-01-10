@@ -1,5 +1,5 @@
 <?php
-/*
+/* 
  *  Copyright (C) 2019 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -14,22 +14,40 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
- *
+ *  
  */
 
-namespace ThomasInstitut\DataValidator;
-
-use ThomasInstitut\ErrorReporter\iErrorReporter;
+namespace ThomasInstitut\Profiler;
 
 /**
- * Interface iDataValidator
+ * Interface iPropertyTracker
  *
- * A class that can determine whether a $data variable is valid or not, reporting errors if not.
+ * A PropertyTracker provides functions to track a profilable property: start tracking, lap, and end tracking
  *
- * @package ThomasInstitut\DataValidator
+ * @package ThomasInstitut\Profiler
  */
-interface iDataValidator extends iErrorReporter
+interface PropertyTracker
 {
-    public function isValid($data) : bool;
+    /**
+     * @return mixed
+     */
+    public function start();
+
+    /**
+     * @return mixed
+     */
+    public function end();
+
+    /**
+     * @return mixed
+     */
+    public function lap();
+
+    /**
+     * @param $value1
+     * @param $value2
+     * @return mixed
+     */
+    public function difference($value1, $value2);
 
 }

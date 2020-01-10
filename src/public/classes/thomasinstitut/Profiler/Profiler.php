@@ -30,7 +30,7 @@ namespace ThomasInstitut\Profiler;
  *
  * @package ThomasInstitut\Profiler
  */
-interface iProfiler
+interface Profiler
 {
     const DEFAULT_START_LAP_NAME = 'Start';
     const DEFAULT_END_LAP_NAME = 'End';
@@ -44,10 +44,10 @@ interface iProfiler
      * Registers a profilable property to use in the profiler.
      *
      * @param string $propertyName
-     * @param iPropertyTracker $propertyTracker
+     * @param PropertyTracker $propertyTracker
      * @return mixed
      */
-    public function registerProperty(string $propertyName, iPropertyTracker $propertyTracker) : void;
+    public function registerProperty(string $propertyName, PropertyTracker $propertyTracker) : void;
 
     /**
      * Start the profiler resetting all registered properties.

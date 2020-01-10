@@ -20,7 +20,7 @@
 namespace APM\FullTranscription;
 
 
-use APM\System\iSqlQueryCounterTrackerAware;
+use APM\System\SqlQueryCounterTrackerAware;
 use APM\System\SimpleSqlQueryCounterTrackerAware;
 use APM\System\SqlQueryCounterTracker;
 use DataTable\UnitemporalDataTable;
@@ -28,10 +28,10 @@ use InvalidArgumentException;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
-use ThomasInstitut\ErrorReporter\iErrorReporter;
+use ThomasInstitut\ErrorReporter\ErrorReporter;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
 
-class ApmPageManager extends PageManager implements LoggerAwareInterface, iErrorReporter, iSqlQueryCounterTrackerAware
+class ApmPageManager extends PageManager implements LoggerAwareInterface, ErrorReporter, SqlQueryCounterTrackerAware
 {
     use LoggerAwareTrait;
     use SimpleErrorReporterTrait;

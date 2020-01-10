@@ -27,7 +27,7 @@ use APM\FullTranscription\TranscriptionManager;
 use APM\Plugin\HookManager;
 use APM\Presets\PresetManager;
 use Monolog\Logger;
-use ThomasInstitut\ErrorReporter\iErrorReporter;
+use ThomasInstitut\ErrorReporter\ErrorReporter;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
 
 /**
@@ -41,7 +41,7 @@ use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-abstract class SystemManager implements  iErrorReporter, iSqlQueryCounterTrackerAware {
+abstract class SystemManager implements  ErrorReporter, SqlQueryCounterTrackerAware {
 
     use SimpleErrorReporterTrait;
     use SimpleSqlQueryCounterTrackerAware;

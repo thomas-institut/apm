@@ -17,14 +17,14 @@
  *  
  */
 
-namespace ThomasInstitut;
+namespace ThomasInstitut\UserManager;
 
 
 use Exception;
 use InvalidArgumentException;
 use RuntimeException;
-use ThomasInstitut\DataValidator\iDataValidator;
-use ThomasInstitut\DataStore\iDataStore;
+use ThomasInstitut\DataValidator\dataValidator;
+use ThomasInstitut\DataStore\DataStore;
 
 /**
  * Class PersonDirectory
@@ -54,7 +54,7 @@ class PersonDirectory
     const MIN_ID = 1;
     const MAX_ID = PHP_INT_MAX;
     /**
-     * @var iDataStore
+     * @var DataStore
      */
     private $dataStore;
     /**
@@ -67,14 +67,14 @@ class PersonDirectory
      */
     private $validators;
 
-    public function __construct(iDataStore $dataStore, string $keyPrefix = 'PERSON:')
+    public function __construct(DataStore $dataStore, string $keyPrefix = 'PERSON:')
     {
         $this->dataStore = $dataStore;
         $this->keyPrefix = $keyPrefix;
         $this->validators = [];
     }
 
-    public function registerDataField(string $dataField, iDataValidator $validator) : void {
+    public function registerDataField(string $dataField, dataValidator $validator) : void {
         $this->setValidator($dataField, $validator);
     }
 
@@ -82,11 +82,11 @@ class PersonDirectory
         return isset($this->validators[$dataField]);
     }
 
-    private function setValidator($dataField, iDataValidator $validator) : void {
+    private function setValidator($dataField, dataValidator $validator) : void {
         $this->validators[$dataField] = $validator;
     }
 
-    private function getValidator($dataField) : iDataValidator {
+    private function getValidator($dataField) : dataValidator {
         return $this->validators[$dataField];
     }
 

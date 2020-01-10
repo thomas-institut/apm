@@ -20,7 +20,7 @@
 
 namespace APM\Presets;
 
-use APM\System\iSqlQueryCounterTrackerAware;
+use APM\System\SqlQueryCounterTrackerAware;
 use APM\System\SimpleSqlQueryCounterTrackerAware;
 use APM\System\SqlQueryCounterTracker;
 use DataTable\DataTable;
@@ -44,7 +44,7 @@ use InvalidArgumentException;
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class DataTablePresetManager extends PresetManager implements iSqlQueryCounterTrackerAware {
+class DataTablePresetManager extends PresetManager implements SqlQueryCounterTrackerAware {
 
     use SimpleSqlQueryCounterTrackerAware;
 

@@ -51,7 +51,7 @@ class DataStoreTest extends TestCase
 {
 
     /**
-     * @var iDataStore
+     * @var DataStore
      */
     private $dataStore;
 
@@ -60,12 +60,12 @@ class DataStoreTest extends TestCase
      */
     private $testClassName;
 
-    protected function setDataStore(iDataStore $dataStore, string $testClassName) {
+    protected function setDataStore(DataStore $dataStore, string $testClassName) {
         $this->dataStore = $dataStore;
         $this->testClassName = $testClassName;
     }
 
-    public function runAll(iDataStore $dataStore, string $testClassName) {
+    public function runAll(DataStore $dataStore, string $testClassName) {
         $this->setDataStore($dataStore, $testClassName);
         $this->testEmtpyDataStore();
         $this->testSetAndAdd();
@@ -147,7 +147,7 @@ class DataStoreTest extends TestCase
         }
     }
 
-    protected function assertValue(iDataStore $dataStore, string $key, $value, string $json, string $testTitle) {
+    protected function assertValue(DataStore $dataStore, string $key, $value, string $json, string $testTitle) {
         $this->assertTrue($dataStore->keyExists($key), $testTitle);
         $this->assertEquals($value, $dataStore->getValue($key), $testTitle);
         $this->assertFalse($dataStore->addValue($key, $value), $testTitle);

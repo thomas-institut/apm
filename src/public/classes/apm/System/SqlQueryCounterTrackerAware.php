@@ -17,37 +17,11 @@
  *  
  */
 
-namespace ThomasInstitut\Profiler;
+namespace APM\System;
 
-/**
- * Interface iPropertyTracker
- *
- * A PropertyTracker provides functions to track a profilable property: start tracking, lap, and end tracking
- *
- * @package ThomasInstitut\Profiler
- */
-interface iPropertyTracker
+
+interface SqlQueryCounterTrackerAware
 {
-    /**
-     * @return mixed
-     */
-    public function start();
-
-    /**
-     * @return mixed
-     */
-    public function end();
-
-    /**
-     * @return mixed
-     */
-    public function lap();
-
-    /**
-     * @param $value1
-     * @param $value2
-     * @return mixed
-     */
-    public function difference($value1, $value2);
-
+    public function getSqlQueryCounterTracker() : SqlQueryCounterTracker;
+    public function setSqlQueryCounterTracker(SqlQueryCounterTracker $tracker) : void;
 }

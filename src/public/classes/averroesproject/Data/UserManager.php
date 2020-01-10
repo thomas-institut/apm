@@ -20,7 +20,7 @@
 
 namespace AverroesProject\Data;
 
-use APM\System\iSqlQueryCounterTrackerAware;
+use APM\System\SqlQueryCounterTrackerAware;
 use APM\System\SimpleSqlQueryCounterTrackerAware;
 use APM\System\SqlQueryCounterTracker;
 use DataTable\DataTable;
@@ -71,7 +71,7 @@ use Psr\Log\NullLogger;
  * 
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class UserManager implements LoggerAwareInterface, iSqlQueryCounterTrackerAware
+class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
 {
     use SimpleSqlQueryCounterTrackerAware;
     

@@ -18,7 +18,7 @@
  */
 namespace ThomasInstitut\Profiler;
 
-interface iCounter
+interface Counter
 {
 
     public function reset(int $initialValue);

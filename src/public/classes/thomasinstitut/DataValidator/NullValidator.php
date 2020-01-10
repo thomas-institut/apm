@@ -21,7 +21,7 @@ namespace ThomasInstitut\DataValidator;
 
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
 
-class NullValidator implements iDataValidator
+class NullValidator implements dataValidator
 {
     use SimpleErrorReporterTrait;
 

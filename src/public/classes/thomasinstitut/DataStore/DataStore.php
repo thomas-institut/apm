@@ -39,7 +39,7 @@ namespace ThomasInstitut\DataStore;
  *
  * @package ThomasInstitut
  */
-interface iDataStore
+interface DataStore
 {
 
     /**

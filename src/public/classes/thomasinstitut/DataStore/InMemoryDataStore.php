@@ -29,7 +29,7 @@ use RuntimeException;
  *
  * @package ThomasInstitut
  */
-class InMemoryDataStore implements iDataStore
+class InMemoryDataStore implements DataStore
 {
 
     /**

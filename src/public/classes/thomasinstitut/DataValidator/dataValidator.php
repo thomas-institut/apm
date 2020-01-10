@@ -1,5 +1,5 @@
 <?php
-/* 
+/*
  *  Copyright (C) 2019 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -14,14 +14,22 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
- *  
+ *
  */
 
-namespace APM\System;
+namespace ThomasInstitut\DataValidator;
 
+use ThomasInstitut\ErrorReporter\ErrorReporter;
 
-interface iSqlQueryCounterTrackerAware
+/**
+ * Interface iDataValidator
+ *
+ * A class that can determine whether a $data variable is valid or not, reporting errors if not.
+ *
+ * @package ThomasInstitut\DataValidator
+ */
+interface dataValidator extends ErrorReporter
 {
-    public function getSqlQueryCounterTracker() : SqlQueryCounterTracker;
-    public function setSqlQueryCounterTracker(SqlQueryCounterTracker $tracker) : void;
+    public function isValid($data) : bool;
+
 }

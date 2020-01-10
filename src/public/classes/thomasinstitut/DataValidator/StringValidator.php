@@ -25,7 +25,7 @@ use InvalidArgumentException;
 use RuntimeException;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
 
-class StringValidator implements iDataValidator
+class StringValidator implements dataValidator
 {
     use SimpleErrorReporterTrait;
 

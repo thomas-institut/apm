@@ -21,10 +21,10 @@ namespace ThomasInstitut\Profiler;
 
 use InvalidArgumentException;
 use RuntimeException;
-use ThomasInstitut\ErrorReporter\iErrorReporter;
+use ThomasInstitut\ErrorReporter\ErrorReporter;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
 
-class SimpleProfiler implements iProfiler, iErrorReporter
+class SimpleProfiler implements Profiler, ErrorReporter
 {
 
     use SimpleErrorReporterTrait;
@@ -64,7 +64,7 @@ class SimpleProfiler implements iProfiler, iErrorReporter
         $this->reset();
     }
 
-    public function registerProperty(string $propertyName, iPropertyTracker $propertyTracker) : void
+    public function registerProperty(string $propertyName, PropertyTracker $propertyTracker) : void
     {
         if ($propertyName === self::FIELD_LAP_NAME) {
             $this->throwInvalidArgumentException("Cannot use reserved name $propertyName", self::ERROR_CANNOT_USE_RESERVED_LAP_NAME);
@@ -95,7 +95,7 @@ class SimpleProfiler implements iProfiler, iErrorReporter
 
         $lapArray = [ self::FIELD_LAP_NAME => $startLapName];
         foreach($this->propertyTrackers as $propertyName => $propertyTracker) {
-            /**@var $propertyTracker iPropertyTracker */
+            /**@var $propertyTracker PropertyTracker */
             $lapArray[$propertyName] = $propertyTracker->start();
         }
         $this->laps[] = $lapArray;
@@ -117,7 +117,7 @@ class SimpleProfiler implements iProfiler, iErrorReporter
 
         $lapArray = [ self::FIELD_LAP_NAME => $lapName];
         foreach($this->propertyTrackers as $propertyName => $propertyTracker) {
-            /**@var $propertyTracker iPropertyTracker */
+            /**@var $propertyTracker PropertyTracker */
             $lapArray[$propertyName] = $propertyTracker->lap();
         }
         $this->laps[] = $lapArray;
@@ -136,7 +136,7 @@ class SimpleProfiler implements iProfiler, iErrorReporter
         }
         $lapArray = [ self::FIELD_LAP_NAME => $stopLapName];
         foreach($this->propertyTrackers as $propertyName => $propertyTracker) {
-            /**@var $propertyTracker iPropertyTracker */
+            /**@var $propertyTracker PropertyTracker */
             $lapArray[$propertyName] = $propertyTracker->end();
         }
         $this->laps[] = $lapArray;
@@ -172,7 +172,7 @@ class SimpleProfiler implements iProfiler, iErrorReporter
             $calculatedLaps[0][$propertyName][self::FIELD_CUMMULATIVE] = 0;
             $calculatedLaps[0][$propertyName][self::FIELD_DELTA] = 0;
             $previousValue = $initialValue;
-            /** @var iPropertyTracker $tracker */
+            /** @var PropertyTracker $tracker */
             $tracker = $this->propertyTrackers[$propertyName];
             for ($i = 1; $i < count($this->laps); $i++) {
                 $currentValue = $this->getAbsoluteValue($i, $propertyName);

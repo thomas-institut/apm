@@ -21,7 +21,7 @@ namespace ThomasInstitut\Profiler;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Constraint\Count;
-use ThomasInstitut\ErrorReporter\iErrorReporter;
+use ThomasInstitut\ErrorReporter\ErrorReporter;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
 
 /**
@@ -33,7 +33,7 @@ use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
  *
  * @package ThomasInstitut\Profiler
  */
-class AggregateCounterTracker implements iPropertyTracker, iErrorReporter
+class AggregateCounterTracker implements PropertyTracker, ErrorReporter
 {
     use SimpleErrorReporterTrait;
 

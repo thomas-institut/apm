@@ -27,7 +27,7 @@ use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
  *
  * @package ThomasInstitut\DataValidator
  */
-class EmailAddressValidator implements iDataValidator
+class EmailAddressValidator implements dataValidator
 {
     use SimpleErrorReporterTrait;
     const ERROR_MUST_BE_VALID_EMAIL_ADDRESS = 501;

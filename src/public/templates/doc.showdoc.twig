@@ -11,10 +11,19 @@
       let works = JSON.parse('{{works|json_encode|raw}}')
       let urlGenerator = new ApmUrlGenerator('{{baseurl}}')
       let docId = parseInt({{ doc.docInfo.id }})
+      let lastVersions = JSON.parse('{{lastVersions|json_encode|raw}}')
+      let authorInfo = JSON.parse('{{authorInfo|json_encode|raw}}')
+      console.log('Chunk Info: ')
       console.log(chunkInfo)
+      console.log('Last Version: ')
+      console.log(lastVersions)
+      console.log('Authors:')
+      console.log(authorInfo)
+      console.log('Works:')
       console.log(works)
 
-      let docShowPage = new DocShowPage({{ doc.pages|json_encode|raw}}, chunkInfo, works, docId, urlGenerator)
+
+      let docShowPage = new DocShowPage({{ doc.pages|json_encode|raw}}, chunkInfo, lastVersions, works, authorInfo, docId, urlGenerator)
 
       $(document).ready(function () {
         $('#chunkinfo').html(docShowPage.genWorkInfoHtml())

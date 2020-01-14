@@ -115,8 +115,8 @@ class ApiElements extends ApiController
         $versionIsMinor = false;
         $versionIsReview = false;
 
-        if (isset($inputDataObject['versionInfo'])) {
-            $versionInfo = $inputDataObject['versionInfo'];
+        if (isset($inputDataObject['lastVersions'])) {
+            $versionInfo = $inputDataObject['lastVersions'];
             if (isset($versionInfo['isMinor'])) {
                 $versionIsMinor = $versionInfo['isMinor'];
             }

@@ -133,12 +133,23 @@ class SiteDocuments extends SiteController
 
         $chunkLocationMap = $transcriptionManager->getChunkLocationMapForDoc($docId, '');
 
+        $versionMap = $transcriptionManager->getVersionsForChunkLocationMap($chunkLocationMap);
+        $lastChunkVersions = $transcriptionManager->getLastChunkVersionFromVersionMap($versionMap);
+        $this->logger->debug('Last Versions', $lastChunkVersions);
         $chunkInfo = [];
+
+        $lastVersions = [];
+        $authorInfo = [];
 
         foreach($chunkLocationMap as $workId => $chunkArray) {
             foreach ($chunkArray as $chunkNumber => $docArray) {
-                foreach($docArray as $docIdInMap => $segments) {
-                    foreach($segments as $segmentNumber => $location) {
+                foreach($docArray as $docIdInMap => $segmentArray) {
+                    $lastChunkVersion =  $lastChunkVersions[$workId][$chunkNumber][$docIdInMap];
+                    $lastVersions[$workId][$chunkNumber] = $lastChunkVersion;
+                    if (!isset($authorInfo[$lastChunkVersion->authorId])) {
+                        $authorInfo[$lastChunkVersion->authorId] = $dataManager->userManager->getUserInfoByUserId($lastChunkVersion->authorId);
+                    }
+                    foreach($segmentArray as $segmentNumber => $location) {
                         /** @var $location ApmChunkSegmentLocation */
                         if ( $location->start->isZero()) {
                             $start  = '';
@@ -183,7 +194,6 @@ class SiteDocuments extends SiteController
             $works[$workId] = $dataManager->getWorkInfo($workId);
         }
 
-        
         $canDefinePages = false;
         if ($this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'define-doc-pages')) {
             $canDefinePages = true;
@@ -196,7 +206,9 @@ class SiteDocuments extends SiteController
             'canDefinePages' => $canDefinePages,
             'doc' => $doc,
             'chunkInfo' => $chunkInfo,
-            'works' => $works
+            'works' => $works,
+            'lastVersions' => $lastVersions,
+            'authorInfo' => $authorInfo
         ]);
     }
 

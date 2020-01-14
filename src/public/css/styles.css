@@ -362,3 +362,7 @@ table.chunktable td {
     padding-bottom: 0.5ex;
     vertical-align: top;
 }
+
+a.alwaysblack {
+    color: black
+}

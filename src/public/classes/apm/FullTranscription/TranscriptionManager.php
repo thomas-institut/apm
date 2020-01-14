@@ -109,9 +109,55 @@ abstract class TranscriptionManager implements ErrorReporter
      *
      * @param int $docId
      * @param int $order
-     * @return array
+     * @return int[]
      */
     abstract  public function getTranscribedPageListByDocId(int $docId, int $order = self::ORDER_BY_PAGE_NUMBER) : array;
 
     abstract  public function getPageManager() : PageManager;
+
+    /**
+     * Returns an array with version information for the given location up to the given time with
+     * at most n elements.
+     *
+     * If $n === -1, returns all versions
+     *
+     * @param ApmItemLocation $location
+     * @param string $upToTimeString
+     * @param int $n
+     * @return ColumnVersionInfo[]
+     */
+    abstract public function getVersionsForLocation(ApmItemLocation $location, string $upToTimeString, int $n = 0): array;
+
+
+    /**
+     * Returns an array with version information about all the pages and columns in the chunk segment location
+     * grouped by page sequence and column number:
+     *
+     * $returnedArray = [
+     *      pageSeq1 => [ col1 => [ ... versions ...], col2 => [ ... versions ...] ... ],
+     *      pageSeq2 => [ col1 => [ ... versions ...], col2 => [ ... versions ...] ... ],
+     *     ...
+     * ]
+     *
+     * @param ApmChunkSegmentLocation $chunkSegmentLocation
+     * @return array
+     */
+    abstract public function getVersionsForSegmentLocation(ApmChunkSegmentLocation $chunkSegmentLocation) : array;
+
+
+    /**
+     * Returns all version information about every chunk segment location in the given location map
+     * the returned array contains an array with version information in the same position in the map
+     * as the relevant segment:
+     *
+     *  $map['workId'][chunkNumber][segment] => chunkSegmentLocation
+     *
+     * $returnedArray['workId'][chunkNumber][docId][segment] => [ pageSeq1 => [ col1 => [ ... versions ... ], col2 => ..
+     *
+     * @param array $chunkLocationMap
+     * @return array
+     */
+    abstract public function getVersionsForChunkLocationMap(array $chunkLocationMap) : array;
+
+    abstract  public function getLastChunkVersionFromVersionMap(array $versionMap): array;
 }

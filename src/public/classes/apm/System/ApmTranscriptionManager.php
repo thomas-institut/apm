@@ -22,8 +22,11 @@ namespace APM\System;
 
 use APM\FullTranscription\ApmChunkMarkLocation;
 use APM\FullTranscription\ApmChunkSegmentLocation;
+use APM\FullTranscription\ApmColumnVersionManager;
+use APM\FullTranscription\ApmItemLocation;
 use APM\FullTranscription\ApmPageManager;
 use APM\FullTranscription\ApmTranscriptionWitness;
+use APM\FullTranscription\ColumnVersionInfo;
 use APM\FullTranscription\PageInfo;
 use APM\FullTranscription\PageManager;
 use APM\FullTranscription\TranscriptionManager;
@@ -98,6 +101,10 @@ class ApmTranscriptionManager extends TranscriptionManager implements  SqlQueryC
      * @var ApmPageManager
      */
     private $pageManager;
+    /**
+     * @var ApmColumnVersionManager
+     */
+    private $columnVersionManager;
 
     public function __construct(PDO $dbConn, array $tableNames, LoggerInterface $logger)
     {
@@ -131,6 +138,8 @@ class ApmTranscriptionManager extends TranscriptionManager implements  SqlQueryC
 
 
         $this->txVersionsTable = new MySqlDataTable($this->dbConn, $tableNames[ApmMySqlTableName::TABLE_VERSIONS_TX]);
+        
+        $this->columnVersionManager = new ApmColumnVersionManager($this->txVersionsTable);
 
         $this->setLogger($logger);
     }
@@ -285,11 +294,7 @@ class ApmTranscriptionManager extends TranscriptionManager implements  SqlQueryC
     }
 
     /**
-     * Returns the page numbers of the pages with transcription
-     * data for a document Id
-     * @param int $docId
-     * @param int $order
-     * @return array
+     * @inheritDoc
      */
     public function getTranscribedPageListByDocId(int $docId, int $order = self::ORDER_BY_PAGE_NUMBER) : array
     {
@@ -323,4 +328,117 @@ class ApmTranscriptionManager extends TranscriptionManager implements  SqlQueryC
     {
         return $this->pageManager;
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function getVersionsForLocation(ApmItemLocation $location, string $upToTimeString, int $n = -1): array
+    {
+        $pageInfo = $this->pageManager->getPageInfoByDocSeq($location->docId, $location->pageSequence);
+
+        $versions = $this->columnVersionManager->getColumnVersionInfoByPageCol($pageInfo->pageId, $location->columnNumber);
+
+        $filteredVersions = [];
+        foreach($versions as $version) {
+            /** @var $version ColumnVersionInfo */
+            if (strcmp($version->timeUntil, $upToTimeString) <= 0 ){
+                $filteredVersions[] = $version;
+            }
+        }
+        if ($n > 0 && count($filteredVersions) >= $n) {
+            return array_slice($filteredVersions, count($filteredVersions) - $n, $n);
+        }
+
+        return $filteredVersions;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getVersionsForSegmentLocation(ApmChunkSegmentLocation $chunkSegmentLocation): array
+    {
+        if (!$chunkSegmentLocation->isValid()) {
+            return [];
+        }
+        $docId = $chunkSegmentLocation->start->docId;
+
+        $startPageSeq = $chunkSegmentLocation->start->pageSequence;
+        $startColumn = $chunkSegmentLocation->start->columnNumber;
+
+
+        $endPageSeq = $chunkSegmentLocation->end->pageSequence;
+        $endColumn = $chunkSegmentLocation->end->columnNumber;
+
+        $segmentVersions = [];
+        $startPageInfo = $this->pageManager->getPageInfoByDocSeq($docId, $startPageSeq);
+        if ($startPageSeq === $endPageSeq) {
+            $segmentVersions[$startPageSeq] = [];
+            for($col = $startColumn; $col <= $endColumn; $col++) {
+                $segmentVersions[$startPageSeq][$col] = $this->columnVersionManager->getColumnVersionInfoByPageCol($startPageInfo->pageId, $col);
+            }
+            return $segmentVersions;
+        }
+
+        $segmentVersions[$startPageSeq] = [];
+        for($col = $startColumn; $col <= $startPageInfo->numCols; $col++) {
+            $segmentVersions[$startPageSeq][$col] = $this->columnVersionManager->getColumnVersionInfoByPageCol($startPageInfo->pageId, $col);
+        }
+        for ($seq = $startPageSeq+1; $seq < $endPageSeq; $seq++) {
+            $pageInfo = $this->pageManager->getPageInfoByDocSeq($docId, $seq);
+            for($col = 1; $col <= $pageInfo->numCols; $col++) {
+                $segmentVersions[$seq][$col] = $this->columnVersionManager->getColumnVersionInfoByPageCol($pageInfo->pageId, $col);
+            }
+        }
+        $endPageInfo = $this->pageManager->getPageInfoByDocSeq($docId, $endPageSeq);
+        for($col = 1; $col <= $endPageInfo->numCols; $col++) {
+            $segmentVersions[$endPageSeq][$col] = $this->columnVersionManager->getColumnVersionInfoByPageCol($endPageInfo->pageId, $col);
+        }
+
+        return $segmentVersions;
+    }
+
+    public function getVersionsForChunkLocationMap(array $chunkLocationMap): array
+    {
+        $versionMap = [];
+        foreach ($chunkLocationMap as $workId => $chunkNumberMap) {
+            foreach($chunkNumberMap as $chunkNumber => $docMap) {
+                foreach ($docMap as $docId => $segmentArray) {
+                    foreach($segmentArray as $segmentNumber => $segmentLocation) {
+                        /** @var $segmentLocation ApmChunkSegmentLocation */
+                        $versionMap[$workId][$chunkNumber][$docId][$segmentNumber] = $this->getVersionsForSegmentLocation($segmentLocation);
+                    }
+                }
+            }
+        }
+        return $versionMap;
+    }
+
+    public function getLastChunkVersionFromVersionMap(array $versionMap) : array {
+        $lastVersions = [];
+        foreach ($versionMap as $workId => $chunkNumberMap) {
+            foreach($chunkNumberMap as $chunkNumber => $docMap) {
+                foreach ($docMap as $docId => $segmentArray) {
+                    $this->logger->debug("Processing version map: $workId-$chunkNumber, doc $docId");
+                    $lastVersion = new ColumnVersionInfo();
+                    foreach($segmentArray as $segmentNumber => $pageArray) {
+                        foreach($pageArray as $pageSeq => $columnArray) {
+                            foreach ($columnArray as $colNumber => $versionArray) {
+                                foreach ($versionArray as $versionInfo ) {
+                                    /** @var $versionInfo ColumnVersionInfo */
+                                    if ($versionInfo->timeUntil === MySqlUnitemporalDataTable::END_OF_TIMES) {
+                                        if ($versionInfo->timeFrom > $lastVersion->timeFrom) {
+                                            $lastVersion = $versionInfo;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    $lastVersions[$workId][$chunkNumber][$docId] = $lastVersion;
+                }
+            }
+        }
+        return $lastVersions;
+    }
+
 }

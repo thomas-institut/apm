@@ -25,15 +25,18 @@ class DocShowPage {
     private readonly docId: number;
     private readonly works: object;
     private readonly urlGenerator: object;
-    private pages: object;
+    private readonly pages: object;
+    private readonly versionInfo: object;
+    private readonly authors: object;
 
-    constructor(pages: object, chunkInfo : object, works : object, docId: number, urlGenerator : object) {
+    constructor(pages: object, chunkInfo : object, versionInfo: object, works : object, authors: object, docId: number, urlGenerator : object) {
         this.chunkInfo = chunkInfo
         this.docId = docId
         this.works = works
         this.urlGenerator = urlGenerator
         this.pages = pages
-        console.log(pages)
+        this.versionInfo = versionInfo
+        this.authors = authors
     }
 
     genWorkInfoHtml() {
@@ -51,7 +54,7 @@ class DocShowPage {
 
             for(const chunkNumber in chunkInfo[work]) {
                 let tdHtml = ''
-                tdHtml += this.getChunkLink(urlGenerator, work, chunkNumber, + chunkNumber ) + ': '
+                tdHtml += this.getChunkLink(work, chunkNumber) + ': '
                 let segmentArray = []
                 for (const segmentNumber in chunkInfo[work][chunkNumber]) {
                     let segmentHtml = ''
@@ -93,9 +96,14 @@ class DocShowPage {
         return ApmUtil.getPageTable(this.docId, this.pages, pagesPerRow, this.urlGenerator)
     }
 
-    getChunkLink(urlGenerator, work, chunk, label) {
+    getChunkLink(work, chunk) {
         //return '<a href="' + urlGenerator.siteChunkPage(work, chunk) + '" target="_blank" title="View chunk ' + chunk + ' in new tab/window">' + label + '</a>'
-        return label
+
+        return '<a class="alwaysblack" href="#" title="Last change: ' +
+            this.versionInfo[work][chunk].timeFrom + ' by ' +
+            this.authors[this.versionInfo[work][chunk].authorId].fullname + '">' +
+            chunk +
+            '</a>'
     }
 
     getPageLink(segmentInfo ) {

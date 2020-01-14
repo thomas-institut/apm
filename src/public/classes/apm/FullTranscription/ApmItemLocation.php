@@ -20,15 +20,22 @@
 namespace APM\FullTranscription;
 
 
+use InvalidArgumentException;
+
 /**
  * The location of an item in the APM database:
- *   page sequence, column number, element sequence, item sequence
+ *   doc_id, page sequence, column number, element sequence, item sequence
  *
  *
  * @package APM\FullTranscription
  */
 class ApmItemLocation
 {
+    /**
+     * @var int
+     */
+    public $docId;
+
     /**
      * @var int
      */
@@ -50,8 +57,10 @@ class ApmItemLocation
     public $itemSequence;
 
 
+
     public function __construct()
     {
+        $this->docId = 0;
         $this->pageSequence = 0;
         $this->columnNumber = 0;
         $this->elementSequence = 0;
@@ -59,7 +68,8 @@ class ApmItemLocation
     }
 
     /**
-     * Returns a single integer representing the location.
+     * Returns a single integer representing the location relative to the document.
+     *
      * This number can be used to determine the relative position of a location with respect
      * to another
      *
@@ -74,7 +84,11 @@ class ApmItemLocation
 
     public function isAfter(ApmItemLocation $loc2)
     {
-            return $this->getIntLocation() > $loc2->getIntLocation();
+        if ($this->docId !== $loc2->docId) {
+            throw new InvalidArgumentException("Cannot determine order of locations in different documents");
+        }
+
+        return $this->getIntLocation() > $loc2->getIntLocation();
 
     }
 

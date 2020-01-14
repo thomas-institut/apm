@@ -16,13 +16,14 @@
  *
  */
 class DocShowPage {
-    constructor(pages, chunkInfo, works, docId, urlGenerator) {
+    constructor(pages, chunkInfo, versionInfo, works, authors, docId, urlGenerator) {
         this.chunkInfo = chunkInfo;
         this.docId = docId;
         this.works = works;
         this.urlGenerator = urlGenerator;
         this.pages = pages;
-        console.log(pages);
+        this.versionInfo = versionInfo;
+        this.authors = authors;
     }
     genWorkInfoHtml() {
         let html = '<ul>';
@@ -37,7 +38,7 @@ class DocShowPage {
             let tdArray = [];
             for (const chunkNumber in chunkInfo[work]) {
                 let tdHtml = '';
-                tdHtml += this.getChunkLink(urlGenerator, work, chunkNumber, +chunkNumber) + ': ';
+                tdHtml += this.getChunkLink(work, chunkNumber) + ': ';
                 let segmentArray = [];
                 for (const segmentNumber in chunkInfo[work][chunkNumber]) {
                     let segmentHtml = '';
@@ -77,9 +78,13 @@ class DocShowPage {
         // @ts-ignore
         return ApmUtil.getPageTable(this.docId, this.pages, pagesPerRow, this.urlGenerator);
     }
-    getChunkLink(urlGenerator, work, chunk, label) {
+    getChunkLink(work, chunk) {
         //return '<a href="' + urlGenerator.siteChunkPage(work, chunk) + '" target="_blank" title="View chunk ' + chunk + ' in new tab/window">' + label + '</a>'
-        return label;
+        return '<a class="alwaysblack" href="#" title="Last change: ' +
+            this.versionInfo[work][chunk].timeFrom + ' by ' +
+            this.authors[this.versionInfo[work][chunk].authorId].fullname + '">' +
+            chunk +
+            '</a>';
     }
     getPageLink(segmentInfo) {
         let foliation = segmentInfo['foliation'];

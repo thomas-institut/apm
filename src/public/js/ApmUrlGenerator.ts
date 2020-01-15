@@ -19,7 +19,7 @@
 
 
 class ApmUrlGenerator {
-  private base: string;
+  private readonly base: string;
   
   constructor (baseUrl : string) {
     this.base = baseUrl

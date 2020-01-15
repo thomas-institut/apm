@@ -25,6 +25,7 @@
     "twig": "1.11.0"
   },
   "devDependencies": {
+    "@types/jquery": "^3.3.31",
     "nyc": "14.1.1",
     "standard": "^11.0"
   }

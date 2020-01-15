@@ -80,8 +80,13 @@ class DocShowPage {
     }
     getChunkLink(work, chunk) {
         //return '<a href="' + urlGenerator.siteChunkPage(work, chunk) + '" target="_blank" title="View chunk ' + chunk + ' in new tab/window">' + label + '</a>'
-        return '<a class="alwaysblack" href="#" title="Last change: ' +
-            this.versionInfo[work][chunk].timeFrom + ' by ' +
+        // @ts-ignore
+        let formattedTime = ApmUtil.formatVersionTime(this.versionInfo[work][chunk].timeFrom);
+        return '<a class="alwaysblack" href="#" data-toggle="popover" title="' +
+            work + '-' + chunk +
+            '" data-content="<b>Last change:</b><br/> ' +
+            formattedTime
+            + '<br/>' +
             this.authors[this.versionInfo[work][chunk].authorId].fullname + '">' +
             chunk +
             '</a>';

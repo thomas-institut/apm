@@ -178,6 +178,14 @@ class ApmUtil {
     return ApmUtil.getTableFromRawTds(tds, pagesPerRow, 'pagetable')
   }
 
+  static disableHyperlinks(selector) {
+    $(selector).on('click', function(e){e.preventDefault()})
+  }
+
+  static formatVersionTime(time) {
+    return moment(time).format('D MMM YYYY, H:mm:ss')
+  }
+
 }
 
 ApmUtil.someNum = 1

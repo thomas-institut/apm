@@ -26,8 +26,13 @@
       let docShowPage = new DocShowPage({{ doc.pages|json_encode|raw}}, chunkInfo, lastVersions, works, authorInfo, docId, urlGenerator)
 
       $(document).ready(function () {
+
         $('#chunkinfo').html(docShowPage.genWorkInfoHtml())
         $('#pagetablediv').html(docShowPage.getPageTableHtml())
+        $('[data-toggle="popover"]').popover({trigger:  'hover', html: true})
+        ApmUtil.disableHyperlinks('a.alwaysblack')
+
+
       })
     </script>
 {% endblock %}

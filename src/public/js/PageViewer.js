@@ -102,8 +102,7 @@ class PageViewer {
         //console.log('Number lines on dividerdragend')
         te.resizeContainer()
         te.numberLines()
-        let perc = 100*data.lastComponentSize / (data.lastComponentSize + data.firstComponentSize + 5)
-        thisObject.layout.percentage = perc
+        thisObject.layout.percentage = 100 * data.lastComponentSize / (data.lastComponentSize + data.firstComponentSize + 5)
         thisObject.storeViewerLayoutInCookie(thisObject.layout)
       }
     }

@@ -38,7 +38,7 @@ class DocShowPage {
             let tdArray = [];
             for (const chunkNumber in chunkInfo[work]) {
                 let tdHtml = '';
-                tdHtml += this.getChunkLink(work, chunkNumber) + ': ';
+                tdHtml += this.getChunkLabelHtml(work, chunkNumber) + ': ';
                 let segmentArray = [];
                 for (const segmentNumber in chunkInfo[work][chunkNumber]) {
                     let segmentHtml = '';
@@ -60,6 +60,8 @@ class DocShowPage {
                 else {
                     tdHtml += '<small>' + segmentArray[0].html;
                 }
+                tdHtml += '&nbsp;';
+                tdHtml += this.getChunkLink(work, chunkNumber);
                 tdHtml += '</small>';
                 tdArray.push(tdHtml);
             }
@@ -78,8 +80,7 @@ class DocShowPage {
         // @ts-ignore
         return ApmUtil.getPageTable(this.docId, this.pages, pagesPerRow, this.urlGenerator);
     }
-    getChunkLink(work, chunk) {
-        //return '<a href="' + urlGenerator.siteChunkPage(work, chunk) + '" target="_blank" title="View chunk ' + chunk + ' in new tab/window">' + label + '</a>'
+    getChunkLabelHtml(work, chunk) {
         // @ts-ignore
         let formattedTime = ApmUtil.formatVersionTime(this.versionInfo[work][chunk].timeFrom);
         return '<a class="alwaysblack" href="#" data-toggle="popover" title="' +
@@ -90,6 +91,13 @@ class DocShowPage {
             this.authors[this.versionInfo[work][chunk].authorId].fullname + '">' +
             chunk +
             '</a>';
+    }
+    getChunkLink(work, chunk) {
+        let icon = '<span class="glyphicon glyphicon-new-window"></span>';
+        // @ts-ignore
+        return '<a href="' + this.urlGenerator.siteChunkPage(work, chunk) + '" target="_blank" title="Open chunk page ' +
+            work + '-' + chunk + ' in new tab">' +
+            icon + '</a>';
     }
     getPageLink(segmentInfo) {
         let foliation = segmentInfo['foliation'];

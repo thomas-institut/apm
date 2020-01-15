@@ -243,6 +243,8 @@ class SiteController
             $thePage['seq'] = $pageInfo->sequence;
             $thePage['type'] = $pageInfo->type;
             $thePage['foliation'] = $pageInfo->foliation;
+            $thePage['pageId'] = $pageInfo->pageId;
+            $thePage['numCols'] = $pageInfo->numCols;
 
             $thePage['classes'] = '';
             $thePage['isTranscribed'] = true;
@@ -252,7 +254,7 @@ class SiteController
                 $thePage['isTranscribed'] = false;
             }
             $thePage['classes'] .= ' type' . $pageInfo->type;
-            $thePages[] = $thePage;
+            $thePages[$pageInfo->pageId] = $thePage;
         }
         return $thePages;
     }

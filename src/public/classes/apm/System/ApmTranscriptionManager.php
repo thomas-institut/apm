@@ -298,8 +298,8 @@ class ApmTranscriptionManager extends TranscriptionManager implements  SqlQueryC
      */
     public function getTranscribedPageListByDocId(int $docId, int $order = self::ORDER_BY_PAGE_NUMBER) : array
     {
-        $te = $this->tNames['elements'];
-        $tp = $this->tNames['pages'];
+        $te = $this->tNames[ApmMySqlTableName::TABLE_ELEMENTS];
+        $tp = $this->tNames[ApmMySqlTableName::TABLE_PAGES];
 
         $orderby = 'page_number';
         if ($order === self::ORDER_BY_SEQ) {
@@ -441,4 +441,28 @@ class ApmTranscriptionManager extends TranscriptionManager implements  SqlQueryC
         return $lastVersions;
     }
 
+    /**
+     * @inheritDoc
+     */
+    public function getLastSavesForDoc(int $docId, int $numSaves): array
+    {
+        $tv = $this->tNames[ApmMySqlTableName::TABLE_VERSIONS_TX];
+        $tp = $this->tNames[ApmMySqlTableName::TABLE_PAGES];
+        $eot = MySqlUnitemporalDataTable::END_OF_TIMES;
+
+        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+
+        $query = "SELECT `$tv`.* from `$tv` JOIN `$tp` ON ($tv.page_id=$tp.id) WHERE " .
+            "$tp.doc_id=$docId " .
+            " AND $tp.valid_until='$eot' ORDER BY $tv.time_from DESC LIMIT $numSaves";
+
+
+        $queryResult = $this->databaseHelper->query($query);
+
+        $versions = [];
+        while ($row = $queryResult->fetch(PDO::FETCH_ASSOC)){
+            $versions[] = ColumnVersionInfo::createFromDbRow($row);
+        }
+        return $versions;
+    }
 }

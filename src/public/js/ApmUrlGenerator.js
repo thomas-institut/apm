@@ -105,4 +105,7 @@ class ApmUrlGenerator {
     siteChunkPage(work, chunk) {
         return this.base + '/chunk/' + work + '/' + chunk;
     }
+    siteUserProfile(userName) {
+        return this.base + '/user/' + userName;
+    }
 }

@@ -13,6 +13,10 @@
       let docId = parseInt({{ doc.docInfo.id }})
       let lastVersions = JSON.parse('{{lastVersions|json_encode|raw}}')
       let authorInfo = JSON.parse('{{authorInfo|json_encode|raw}}')
+      let lastSaves = JSON.parse('{{lastSaves|json_encode|raw}}')
+      let pages = JSON.parse('{{doc.pages|json_encode|raw}}')
+      console.log('Pages:')
+      console.log(pages)
       console.log('Chunk Info: ')
       console.log(chunkInfo)
       console.log('Last Version: ')
@@ -21,14 +25,17 @@
       console.log(authorInfo)
       console.log('Works:')
       console.log(works)
+      console.log('Last Saves:')
+      console.log(lastSaves)
 
 
-      let docShowPage = new DocShowPage({{ doc.pages|json_encode|raw}}, chunkInfo, lastVersions, works, authorInfo, docId, urlGenerator)
+      let docShowPage = new DocShowPage(pages, chunkInfo, lastVersions, lastSaves, works, authorInfo, docId, urlGenerator)
 
       $(document).ready(function () {
 
         $('#chunkinfo').html(docShowPage.genWorkInfoHtml())
         $('#pagetablediv').html(docShowPage.getPageTableHtml())
+        $('#lastsaves').html(docShowPage.getLastSavesHtml())
         $('[data-toggle="popover"]').popover({trigger:  'hover', html: true})
         ApmUtil.disableHyperlinks('a.alwaysblack')
 
@@ -60,6 +67,8 @@
 
     <h3 class="docinfo">Works</h3>
     <div class="worksinfo" id="chunkinfo"></div>
+    <h3 class="docinfo">Last Saves </h3>
+    <div id="lastsaves"></div>
     
 {% if canDefinePages %}
     <h3>Admin</h3>
@@ -69,4 +78,5 @@
     </ul>
 {% endif %}    
 {% endblock %}
+
 

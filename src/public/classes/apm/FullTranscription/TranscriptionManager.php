@@ -160,4 +160,12 @@ abstract class TranscriptionManager implements ErrorReporter
     abstract public function getVersionsForChunkLocationMap(array $chunkLocationMap) : array;
 
     abstract  public function getLastChunkVersionFromVersionMap(array $versionMap): array;
+
+    /**
+     * Returns the last saved versions for page/col in the given document
+     * @param int $docId
+     * @param int $numSaves
+     * @return ColumnVersionInfo[]
+     */
+    abstract public function getLastSavesForDoc(int $docId, int $numSaves) : array;
 }

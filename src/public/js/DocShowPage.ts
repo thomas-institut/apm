@@ -17,8 +17,8 @@
  */
 
 
-declare var ApmUtil: object
 
+declare var ApmUtil: object
 
 class DocShowPage {
     private readonly chunkInfo: object;
@@ -28,8 +28,9 @@ class DocShowPage {
     private readonly pages: object;
     private readonly versionInfo: object;
     private readonly authors: object;
+    private readonly lastSaves: object;
 
-    constructor(pages: object, chunkInfo : object, versionInfo: object, works : object, authors: object, docId: number, urlGenerator : object) {
+    constructor(pages: object, chunkInfo : object, versionInfo: object, lastSaves: object, works : object, authors: object, docId: number, urlGenerator : object) {
         this.chunkInfo = chunkInfo
         this.docId = docId
         this.works = works
@@ -37,14 +38,20 @@ class DocShowPage {
         this.pages = pages
         this.versionInfo = versionInfo
         this.authors = authors
+        this.lastSaves = lastSaves
     }
 
     genWorkInfoHtml() {
+
+        if (Object.keys(this.chunkInfo).length === 0) {
+            return '<ul>No chunk start/end marks found</ul>'
+        }
         let html = '<ul>'
         let works = this.works
         let chunkInfo = this.chunkInfo
         let urlGenerator = this.urlGenerator
         let docId = this.docId
+
         for(const work in this.chunkInfo) {
 
             html += '<li>' + works[work]['author_name'] + ', <em>' + works[work]['title'] + '</em> (' + work + ')'
@@ -91,7 +98,7 @@ class DocShowPage {
     getPageTableHtml() {
         let pagesPerRow = 10
         // @ts-ignore
-        if (this.pages.length > 200) {
+        if (Object.keys(this.pages).length > 200) {
             pagesPerRow = 25
         }
         // @ts-ignore
@@ -99,17 +106,37 @@ class DocShowPage {
     }
 
     getChunkLabelHtml(work, chunk) {
-        // @ts-ignore
-        let formattedTime = ApmUtil.formatVersionTime(this.versionInfo[work][chunk].timeFrom)
+
+        let dataContent = ''
+        if (!this.isChunkValid(work,chunk)) {
+            dataContent = 'Not defined correctly'
+        } else {
+            // @ts-ignore
+            let formattedTime = ApmUtil.formatVersionTime(this.versionInfo[work][chunk].timeFrom)
+            let authorName = ''
+            if (this.versionInfo[work][chunk].authorId !== 0) {
+                authorName =  this.authors[this.versionInfo[work][chunk].authorId].fullname
+            }
+            dataContent = '<b>Last change:</b><br/>' +formattedTime + '<br/>' + authorName
+        }
+
 
         return '<a class="alwaysblack" href="#" data-toggle="popover" title="' +
             work + '-' + chunk +
-            '" data-content="<b>Last change:</b><br/> ' +
-            formattedTime
-             + '<br/>' +
-            this.authors[this.versionInfo[work][chunk].authorId].fullname + '">' +
+            '" data-content="' +
+            dataContent +
+            '">' +
             chunk +
             '</a>'
+    }
+
+    isChunkValid(work,chunk) {
+        for (const segmentNumber in this.chunkInfo[work][chunk]) {
+            if (!this.chunkInfo[work][chunk][segmentNumber].valid) {
+                return false
+            }
+        }
+        return true
     }
 
     getChunkLink(work, chunk) {
@@ -121,19 +148,56 @@ class DocShowPage {
              icon + '</a>'
     }
 
+    getAuthorLink(authorId : number) {
+        if (authorId == 0) {
+            return 'n/a'
+        }
+        // @ts-ignore
+        let url = this.urlGenerator.siteUserProfile(this.authors[authorId].username)
+
+        return '<a href="' + url + '" title="View user profile" target="_blank">' + this.authors[authorId].fullname + '</a>'
+    }
+
+    getLastSavesHtml() {
+        let html = '<ol>'
+        for(const i in this.lastSaves) {
+            let versionInfo = this.lastSaves[i]
+            // @ts-ignore
+            let formattedTime = ApmUtil.formatVersionTime(versionInfo.timeFrom)
+            let authorLink = this.getAuthorLink(versionInfo.authorId)
+
+            html += '<li> Page ' + this.getPageLink2(versionInfo.pageId, versionInfo.column) + ', ' +
+                formattedTime + ' by ' + authorLink + '</li>'
+        }
+        html += '</ol>'
+
+        return html
+    }
+
     getPageLink(segmentInfo ) {
 
         let foliation = segmentInfo['foliation']
         let pageSeq = segmentInfo['seq']
-        let title = 'View Page ' + segmentInfo['foliation'] + ' in new browser tab/window'
+        let title = 'View Page ' + segmentInfo['foliation'] + ' in new tab'
         let label = foliation
         if ( segmentInfo['numColumns'] > 1) {
             label += ' c' + segmentInfo['column']
         }
-
-
         // @ts-ignore
         return '<a href="' + this.urlGenerator.sitePageView(this.docId,pageSeq) + '" target="_blank" title="' + title + '">' + label + '</a>'
 
+    }
+
+    getPageLink2(pageId, col) {
+        let pageInfo = this.pages[pageId]
+        let foliation = pageInfo.foliation
+        let pageSeq = pageInfo.seq
+        let title = 'View Page ' + foliation + ' in new tab'
+        let label = foliation
+        if (pageInfo.numCols > 1) {
+            label += ' c' + col
+        }
+        // @ts-ignore
+        return '<a href="' + this.urlGenerator.sitePageView(this.docId,pageSeq) + '" target="_blank" title="' + title + '">' + label + '</a>'
     }
 }

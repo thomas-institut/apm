@@ -135,18 +135,25 @@ class SiteDocuments extends SiteController
 
         $versionMap = $transcriptionManager->getVersionsForChunkLocationMap($chunkLocationMap);
         $lastChunkVersions = $transcriptionManager->getLastChunkVersionFromVersionMap($versionMap);
+        $lastSaves = $transcriptionManager->getLastSavesForDoc($docId, 20);
         $this->logger->debug('Last Versions', $lastChunkVersions);
         $chunkInfo = [];
 
         $lastVersions = [];
         $authorInfo = [];
 
+        foreach($lastSaves as $saveVersionInfo) {
+            if (!isset($authorInfo[$saveVersionInfo->authorId])) {
+                $authorInfo[$saveVersionInfo->authorId] = $dataManager->userManager->getUserInfoByUserId($saveVersionInfo->authorId);
+            }
+        }
+
         foreach($chunkLocationMap as $workId => $chunkArray) {
             foreach ($chunkArray as $chunkNumber => $docArray) {
                 foreach($docArray as $docIdInMap => $segmentArray) {
                     $lastChunkVersion =  $lastChunkVersions[$workId][$chunkNumber][$docIdInMap];
                     $lastVersions[$workId][$chunkNumber] = $lastChunkVersion;
-                    if (!isset($authorInfo[$lastChunkVersion->authorId])) {
+                    if ($lastChunkVersion->authorId!==0  && !isset($authorInfo[$lastChunkVersion->authorId])) {
                         $authorInfo[$lastChunkVersion->authorId] = $dataManager->userManager->getUserInfoByUserId($lastChunkVersion->authorId);
                     }
                     foreach($segmentArray as $segmentNumber => $location) {
@@ -208,7 +215,8 @@ class SiteDocuments extends SiteController
             'chunkInfo' => $chunkInfo,
             'works' => $works,
             'lastVersions' => $lastVersions,
-            'authorInfo' => $authorInfo
+            'authorInfo' => $authorInfo,
+            'lastSaves' => $lastSaves
         ]);
     }
 

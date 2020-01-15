@@ -83,7 +83,7 @@ class ColumnVersionInfo
     }
 
     public function setFromDbRow(array $row) {
-        $this->id = $row['id'];
+        $this->id = intval($row['id']);
         $this->pageId = intval($row['page_id']);
         $this->column = intval($row['col']);
         $this->timeFrom = $row['time_from'];

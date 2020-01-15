@@ -28,6 +28,7 @@ use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 use GuzzleHttp\Psr7\ServerRequest;
 use APM\System\Auth\Authenticator;
+use Psr\Http\Message\ResponseInterface;
 use Slim\Psr7\Response;
 
 
@@ -87,7 +88,7 @@ class AuthenticatorTest extends TestCase {
         $this->assertEquals('', $response->getBody()->getContents());
     }
 
-    public function assertGoodResponse(Response $response, string $signature = '') {
+    public function assertGoodResponse(ResponseInterface $response, string $signature = '') {
         $this->assertEquals(200, $response->getStatusCode());
         $response->getBody()->rewind();
         $contents = $response->getBody()->getContents();

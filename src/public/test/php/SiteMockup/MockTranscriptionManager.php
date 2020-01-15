@@ -18,6 +18,7 @@
  */
 
 use APM\FullTranscription\ApmTranscriptionWitness;
+use APM\FullTranscription\PageInfo;
 use APM\FullTranscription\PageManager;
 use APM\FullTranscription\TranscriptionManager;
 
@@ -38,6 +39,7 @@ class MockTranscriptionManager extends TranscriptionManager
     public function getChunkLocationMapForDoc(int $docId, string $timeString): array
     {
         // TODO: Implement getChunkLocationMapForDoc() method.
+        return [];
     }
 
     /**
@@ -46,11 +48,13 @@ class MockTranscriptionManager extends TranscriptionManager
     public function getChunkLocationMapForChunk(string $workId, int $chunkNumber, string $timeString): array
     {
         // TODO: Implement getChunkLocationMapForChunk() method.
+        return [];
     }
 
-    public function getPageInfoByDocSeq(int $docId, int $seq): \APM\FullTranscription\PageInfo
+    public function getPageInfoByDocSeq(int $docId, int $seq): PageInfo
     {
         // TODO: Implement getPageInfoByDocSeq() method.
+        return new PageInfo();
     }
 
     /**
@@ -59,6 +63,7 @@ class MockTranscriptionManager extends TranscriptionManager
     public function getTranscribedPageListByDocId(int $docId, int $order = self::ORDER_BY_PAGE_NUMBER): array
     {
         // TODO: Implement getTranscribedPageListByDocId() method.
+        return [];
     }
 
     public function getPageManager(): PageManager
@@ -69,10 +74,45 @@ class MockTranscriptionManager extends TranscriptionManager
     public function getErrorMessage(): string
     {
         // TODO: Implement getErrorMessage() method.
+        return '';
     }
 
     public function getErrorCode(): int
     {
         // TODO: Implement getErrorCode() method.
+        return 0;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getVersionsForLocation(\APM\FullTranscription\ApmItemLocation $location, string $upToTimeString, int $n = 0): array
+    {
+        // TODO: Implement getVersionsForLocation() method.
+        return [];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getVersionsForSegmentLocation(\APM\FullTranscription\ApmChunkSegmentLocation $chunkSegmentLocation): array
+    {
+        // TODO: Implement getVersionsForSegmentLocation() method.
+        return [];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getVersionsForChunkLocationMap(array $chunkLocationMap): array
+    {
+        // TODO: Implement getVersionsForChunkLocationMap() method.
+        return [];
+    }
+
+    public function getLastChunkVersionFromVersionMap(array $versionMap): array
+    {
+        // TODO: Implement getLastChunkVersionFromVersionMap() method.
+        return [];
     }
 }

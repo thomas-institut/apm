@@ -19,7 +19,19 @@
     <script type="application/javascript" src="{{baseurl}}/js/ChunkPage.js"></script>
 <script>
 $(document).ready(function() 
-{ 
+{
+  let witnessInfoNew = JSON.parse('{{witnessInfoNew|json_encode|raw}}')
+  let authorInfo = JSON.parse('{{authorInfo|json_encode|raw}}')
+  let pageInfo = JSON.parse('{{pageInfo|json_encode|raw}}')
+
+  console.log('Witness Info New')
+  console.log(witnessInfoNew)
+  console.log('Author Info')
+  console.log(authorInfo)
+  console.log('Page Info')
+  console.log(pageInfo)
+
+
     let cp = new ChunkPage(
             { 
                 work: '{{work}}',

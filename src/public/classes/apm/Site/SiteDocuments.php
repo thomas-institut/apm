@@ -106,9 +106,7 @@ class SiteDocuments extends SiteController
         $doc = [];
         $doc['numPages'] = $dataManager->getPageCountByDocId($docId);
         $transcribedPages = $transcriptionManager->getTranscribedPageListByDocId($docId);
-        //$pagesInfo = $dataManager->getDocPageInfo($docId, DataManager::ORDER_BY_SEQ);
         $pageInfoArray = $pageManager->getPageInfoArrayForDoc($docId);
-
 
         $doc['numTranscribedPages'] = count($transcribedPages);
         $editorsIds = $dataManager->getEditorsByDocId($docId);

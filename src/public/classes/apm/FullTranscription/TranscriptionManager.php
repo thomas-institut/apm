@@ -33,6 +33,9 @@ abstract class TranscriptionManager implements ErrorReporter
     const ORDER_BY_PAGE_NUMBER = 100;
     const ORDER_BY_SEQ = 101;
 
+    abstract public function getPageManager() : PageManager;
+    abstract public function getDocManager() : DocManager;
+
 
     /**
      * Returns the ApmTranscriptionWitness contained in the given document for the given work and chunk number
@@ -113,7 +116,7 @@ abstract class TranscriptionManager implements ErrorReporter
      */
     abstract  public function getTranscribedPageListByDocId(int $docId, int $order = self::ORDER_BY_PAGE_NUMBER) : array;
 
-    abstract  public function getPageManager() : PageManager;
+
 
     /**
      * Returns an array with version information for the given location up to the given time with

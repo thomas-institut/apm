@@ -28,14 +28,16 @@ namespace APM\Site;
 
 use APM\Core\Address\Point;
 use APM\Core\Address\PointRange;
-use APM\Core\Token\Token;
 use APM\Core\Token\TokenType;
 use APM\Core\Token\TranscriptionToken;
+use APM\FullTranscription\ApmChunkSegmentLocation;
+use APM\FullTranscription\ColumnVersionInfo;
 use AverroesProject\Data\DataManager;
 use AverroesProjectToApm\ApUserDirectory;
 use AverroesProjectToApm\DatabaseItemStream;
 use AverroesProjectToApm\DatabaseItemStreamWitness;
 use AverroesProjectToApm\Formatter\WitnessPageFormatter;
+use DataTable\TimeString;
 use Exception;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
@@ -60,11 +62,74 @@ class ChunkPage extends SiteController
     {
        
         $dm = $this->dataManager;
+        $transcriptionManager = $this->systemManager->getTranscriptionManager();
         $workId = $request->getAttribute('work');
         $chunkNumber = $request->getAttribute('chunk');
         $this->profiler->start();
         $workInfo = $dm->getWorkInfo($workId);
         $witnessList = $dm->getDocsForChunk($workId, $chunkNumber);
+        $this->profiler->lap('After DM get docs for chunk');
+
+        // Info obtained with transcription manager
+        $chunkLocationMap = $transcriptionManager->getChunkLocationMapForChunk($workId, $chunkNumber, TimeString::now());
+        $versionMap = $transcriptionManager->getVersionsForChunkLocationMap($chunkLocationMap);
+        $lastVersions = $transcriptionManager->getLastChunkVersionFromVersionMap($versionMap);
+        $this->profiler->lap('After TM get chunk map and version info');
+
+        // build new witness info array
+        $witnessInfoNew = [];
+        $pageInfoArray = [];
+        $authorInfoArray = [];
+        $docManager = $transcriptionManager->getDocManager();
+        $pageManager = $transcriptionManager->getPageManager();
+        foreach($chunkLocationMap[$workId][$chunkNumber] as $docId => $segmentArray) {
+
+            $docInfo = $docManager->getDocInfoById($docId);
+            /** @var $lastVersion ColumnVersionInfo */
+            $lastVersion = $lastVersions[$workId][$chunkNumber][$docId];
+            if ($lastVersion->pageId !== 0 && !isset($pageInfoArray[$lastVersion->pageId])) {
+                $pageInfoArray[$lastVersion->pageId] = $pageManager->getPageInfoById($lastVersion->pageId);
+            }
+            if (!isset($authorInfoArray[$lastVersion->authorId])) {
+                $authorInfoArray[$lastVersion->authorId] = $this->dataManager->userManager->getUserInfoByUserId($lastVersion->authorId);
+            }
+
+            $witnessInfo = [];
+            $witnessInfo['type'] = 'doc';
+            $witnessInfo['systemId'] = [
+                'type' => 'doc',
+                'docId' => $docId,
+                'timeStamp' => $lastVersion->timeFrom
+            ];
+            $witnessInfo['typeSpecificInfo'] = [
+                'docInfo' => $docInfo,
+                'lastVersion' => $lastVersion,
+                'segments' => $segmentArray
+            ];
+            $isValid = true;
+            $invalidErrorCode = 0;
+            foreach($segmentArray as $segment) {
+                /** @var $segment ApmChunkSegmentLocation */
+                if ($segment->start->pageId !== 0 && !isset($pageInfoArray[$segment->start->pageId])) {
+                    $pageInfoArray[$segment->start->pageId] = $pageManager->getPageInfoById($segment->start->pageId);
+                }
+                if ($segment->end->pageId !== 0 && !isset($pageInfoArray[$segment->end->pageId])) {
+                    $pageInfoArray[$segment->end->pageId] = $pageManager->getPageInfoById($segment->end->pageId);
+                }
+                if (!$segment->isValid()) {
+                    $isValid = false;
+                    $invalidErrorCode =$segment->getChunkError();
+                    continue;
+                }
+
+            }
+            $witnessInfo['isValid'] = $isValid;
+            $witnessInfo['invalidErrorCode'] = $invalidErrorCode;
+
+            $witnessInfoNew[] = $witnessInfo;
+        }
+
+        // continue with old info
 
         $docs = [];
         $witnessNumber = 0;
@@ -80,10 +145,6 @@ class ChunkPage extends SiteController
                 $doc = $this->buildEssentialWitnessDataFromDocData($witness, $workId, $chunkNumber, $dm, ++$witnessNumber);
                 $doc['id'] = intval($doc['id']); // make sure Id is an integer
                 $doc['delayLoad'] = true;
-                if ($doc['pageSpan'] <= self::PAGE_SPAN_THRESHHOLD) {
-                    $doc = $this->buildWitnessDataFromDocData($doc, $workId, $chunkNumber, $dm, $witnessNumber);
-                    $doc['delayLoad'] = false;
-                }
             } catch (Exception $e) { // @codeCoverageIgnore
                 $this->logger->error('Error in build Witness Data', [$e->getMessage()]); // @codeCoverageIgnore
             }
@@ -94,7 +155,6 @@ class ChunkPage extends SiteController
                 $doc['plain_text'] = '';
             }
             $docs[] = $doc;
-            $this->profiler->lap('Doc '. $doc['id'] . ' END');
         }
         
         $validCollationLangs = [];
@@ -118,7 +178,10 @@ class ChunkPage extends SiteController
             'docs' => $docs,
             'num_docs' => count($docs),
             'collationLangs' => $validCollationLangs,
-            'userCanViewChunkDetails' => $canViewWitnessDetails
+            'userCanViewChunkDetails' => $canViewWitnessDetails,
+            'witnessInfoNew' => $witnessInfoNew,
+            'authorInfo' => $authorInfoArray,
+            'pageInfo' => $pageInfoArray
         ]);
     }
 
@@ -164,7 +227,7 @@ class ChunkPage extends SiteController
             
             $doc['segmentsJSON'] = json_encode($doc['segmentApItemStreams'] );
             $this->profiler->stop();
-            $this->logProfilerData("WitnessPage-$workId-$chunkNumber-$witnessId");
+            $this->logProfilerData("WitnessPage-$workId-$chunkNumber-$witnessId (full output)");
             return $this->renderPage($response, 'witness.twig', [
                 'work' => $workId,
                 'chunk' => $chunkNumber,
@@ -174,12 +237,15 @@ class ChunkPage extends SiteController
                 'doc' => $doc
             ]);
         }
-        
+        $this->profiler->stop();
         if ($outputType === 'text') {
+
+            $this->logProfilerData("WitnessPage-$workId-$chunkNumber-$witnessId (text output)");
             return $this->responseWithText($response,$doc['plain_text']);
         }
         
         if ($outputType === 'html') {
+            $this->logProfilerData("WitnessPage-$workId-$chunkNumber-$witnessId (html output)");
             return $this->responseWithText($response,$doc['formatted']);
         }
         

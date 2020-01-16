@@ -23,10 +23,12 @@ namespace APM\System;
 use APM\FullTranscription\ApmChunkMarkLocation;
 use APM\FullTranscription\ApmChunkSegmentLocation;
 use APM\FullTranscription\ApmColumnVersionManager;
+use APM\FullTranscription\ApmDocManager;
 use APM\FullTranscription\ApmItemLocation;
 use APM\FullTranscription\ApmPageManager;
 use APM\FullTranscription\ApmTranscriptionWitness;
 use APM\FullTranscription\ColumnVersionInfo;
+use APM\FullTranscription\DocManager;
 use APM\FullTranscription\PageInfo;
 use APM\FullTranscription\PageManager;
 use APM\FullTranscription\TranscriptionManager;
@@ -105,6 +107,10 @@ class ApmTranscriptionManager extends TranscriptionManager implements  SqlQueryC
      * @var ApmColumnVersionManager
      */
     private $columnVersionManager;
+    /**
+     * @var ApmDocManager
+     */
+    private $docManager;
 
     public function __construct(PDO $dbConn, array $tableNames, LoggerInterface $logger)
     {
@@ -118,6 +124,7 @@ class ApmTranscriptionManager extends TranscriptionManager implements  SqlQueryC
 
         $this->docsDataTable = new MySqlDataTable($this->dbConn,
             $tableNames[ApmMySqlTableName::TABLE_DOCS]);
+        $this->docManager = new ApmDocManager($this->docsDataTable, $logger);
         $this->pageTypesTable = new MySqlDataTable($this->dbConn,
             $tableNames[ApmMySqlTableName::TABLE_PAGETYPES]);
 
@@ -149,6 +156,7 @@ class ApmTranscriptionManager extends TranscriptionManager implements  SqlQueryC
     {
         $this->localSetSqlQueryCounterTracker($tracker);
         $this->pageManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
+        $this->docManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
     }
 
     public function getTranscriptionWitness(int $docId, string $workId, int $chunkNumber, string $timeString): ApmTranscriptionWitness
@@ -246,7 +254,7 @@ class ApmTranscriptionManager extends TranscriptionManager implements  SqlQueryC
 
         $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
 
-        $query = "SELECT $tp.doc_id as 'doc_id', $tp.seq as 'page_seq'," .
+        $query = "SELECT $tp.doc_id as 'doc_id', $tp.seq as 'page_seq', $tp.id as 'page_id'," .
             " $te.column_number," .
             " $te.seq as 'e_seq'," .
             " $ti.seq as 'item_seq'," .
@@ -283,6 +291,7 @@ class ApmTranscriptionManager extends TranscriptionManager implements  SqlQueryC
             $location->type = $row['type'];
 
             $location->pageSequence = (int) $row['page_seq'];
+            $location->pageId = (int) $row['page_id'];
             $location->columnNumber = (int) $row['column_number'];
             $location->elementSequence = (int) $row['e_seq'];
             $location->itemSequence = (int) $row['item_seq'];
@@ -327,6 +336,11 @@ class ApmTranscriptionManager extends TranscriptionManager implements  SqlQueryC
     public function getPageManager(): PageManager
     {
         return $this->pageManager;
+    }
+
+    public function getDocManager(): DocManager
+    {
+        return $this->docManager;
     }
 
     /**

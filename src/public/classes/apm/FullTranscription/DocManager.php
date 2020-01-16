@@ -1,6 +1,6 @@
 <?php
 /* 
- *  Copyright (C) 2019 Universität zu Köln
+ *  Copyright (C) 2020 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,34 +19,11 @@
 
 namespace APM\FullTranscription;
 
-/**
- * Class that manages information about pages in the APM
- *
- * Normally there will be an underlying DataTable to store the data
- *
- * @package APM\FullTranscription
- */
-abstract class PageManager
+
+abstract class DocManager
 {
-    const ERROR_PAGE_NOT_FOUND = 101;
+    const ERROR_DOC_NOT_FOUND = 101;
     const ERROR_UNKNOWN = 9999;
 
-    /**
-     * @param int $docId
-     * @param int $seq
-     * @return PageInfo
-     */
-    abstract public function getPageInfoByDocSeq(int $docId, int $seq) : PageInfo;
-
-    /**
-     * @param int $docId
-     * @return PageInfo[]
-     */
-    abstract public function getPageInfoArrayForDoc(int $docId) : array;
-
-    /**
-     * @param int $pageId
-     * @return PageInfo
-     */
-    abstract public function getPageInfoById(int $pageId) : PageInfo;
+    abstract public function getDocInfoById(int $docId) : DocInfo;
 }

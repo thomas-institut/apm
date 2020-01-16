@@ -72,8 +72,9 @@ class ChunkPage {
         availableWitnesses: []
       }
     }
-    
-    
+
+
+    // build witness data by language
     for (const w of this.witnessInfo) {
       w.type = 'doc' // eventually witnesses will be of different types
       if (this.langs[w.lang] === undefined) {
@@ -85,27 +86,31 @@ class ChunkPage {
         this.langs[w.lang].goodWitnesses++
         this.langs[w.lang].availableWitnesses.push(w)
         let toggleButton = new CollapseToggleButton($('#texttoggle-' + w.id), $('#text-' + w.id))
-        if (!w.delayLoad) {
-          $('#formatted-' + w.id).html(w.formatted)
-        } else {
-          console.log('Getting delayed data for witness ' + w.id)
-          $('#formatted-' + w.id).html('Loading text, this might take a while <i class="fas fa-spinner fa-spin fa-fw"></i> ...')
-          $.get(this.pathFor.siteWitness(this.options.work, this.options.chunk, 'doc', w.id, 'html'))
-                  .done(function(data){
-                     console.log('Got data for witness ' + w.id)
-                     $('#formatted-' + w.id).html(data)
-                  })
-                  .fail(function (resp){
-                    console.log('Error getting data for witness ' + w.id)
-                    console.log(resp)
-                     $('#formatted-' + w.id).html('Error loading text')
-                  }) 
-        }
       }
     }
-    
+
     this.updateCollationTableLinks()
-    
+
+    // load good witnesses
+    for(const l in this.langs) {
+      let witnessToLoad = this.langs[l].availableWitnesses
+      for(const i in witnessToLoad) {
+        let w = witnessToLoad[i]
+        console.log('Getting delayed data for witness ' + w.id)
+        $('#formatted-' + w.id).html('Loading text, this might take a while <i class="fas fa-spinner fa-spin fa-fw"></i> ...')
+        $.get(this.pathFor.siteWitness(this.options.work, this.options.chunk, 'doc', w.id, 'html'))
+          .done(function(data){
+            console.log('Got data for witness ' + w.id)
+            $('#formatted-' + w.id).html(data)
+          })
+          .fail(function (resp){
+            console.log('Error getting data for witness ' + w.id)
+            console.log(resp)
+            $('#formatted-' + w.id).html('Error loading text')
+          })
+      }
+    }
+
     $('body').popover({
             container: 'body', 
             html: true,
@@ -123,6 +128,7 @@ class ChunkPage {
     this.ctLinksElement.html('<ul id="ctlinks-ul"></ul>')
     for(const l in this.langs) {
       if (this.langs[l].goodWitnesses >= 2) {
+        $('#ctlinks-header').removeClass('hidden')
         let urls = []
         let langName = this.langs[l].name
         let insideListId = 'ct-links-ul-' + l
@@ -220,7 +226,7 @@ class ChunkPage {
   
   fillCollationTableLinks(urls, containerId) {
     if (urls.length !== 0 ) {
-      $('#ctlinks-header').removeClass('hidden')
+
       let html = ''
       html += '<ul>'
       for(const u in urls) {

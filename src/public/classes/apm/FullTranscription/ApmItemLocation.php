@@ -55,13 +55,17 @@ class ApmItemLocation
      * @var int
      */
     public $itemSequence;
-
+    /**
+     * @var int
+     */
+    public $pageId;
 
 
     public function __construct()
     {
         $this->docId = 0;
         $this->pageSequence = 0;
+        $this->pageId = 0;
         $this->columnNumber = 0;
         $this->elementSequence = 0;
         $this->itemSequence = 0;

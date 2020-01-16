@@ -67,7 +67,7 @@ class ApmPageManager extends PageManager implements LoggerAwareInterface, ErrorR
             'seq'=> $seq
         ],1);
         if ($rows === []) {
-            throw new InvalidArgumentException("No page info found for $docId : $seq");
+            $this->throwInvalidArgumentException("Page $docId:$seq not found", self::ERROR_PAGE_NOT_FOUND);
         }
         $this->pageInfoCache[$docId][$seq] = PageInfo::createFromDatabaseRow($rows[0]);
         return $this->pageInfoCache[$docId][$seq];
@@ -103,5 +103,24 @@ class ApmPageManager extends PageManager implements LoggerAwareInterface, ErrorR
             return 0;
         }
         return ($a < $b) ? -1 : 1;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getPageInfoById(int $pageId): PageInfo
+    {
+        $row = [];
+        try {
+            $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+            $row = $this->pagesDataTable->getRow($pageId);
+        } catch (\InvalidArgumentException $e) {
+            // no such document!
+            $this->throwInvalidArgumentException("Page $pageId not found", self::ERROR_PAGE_NOT_FOUND);
+        }
+        if ($row === []) {
+            $this->throwRunTimeException('Unknown error occured', self::ERROR_UNKNOWN);
+        }
+        return PageInfo::createFromDatabaseRow($row);
     }
 }

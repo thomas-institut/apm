@@ -23,35 +23,60 @@
  */
 class ChunkPage {
 
+
   constructor(options) {
 
     let optionsDefinition = {
       work : { required: true, type: 'string'},
       chunk : { required: true, type: 'NumberGreaterThanZero' },
+      showAdminInfo : { type: 'boolean', default: false},
       witnessInfo : { type: 'Array', default: []},
       collationLanguages : { type: 'Array', default: []},
       urlGenerator: { required: true, type: 'object'},
-      userId: { type: 'number', default: -1 }
+      userId: { type: 'number', default: -1 },
+      witnessInfoNew :{ type: 'Array', default: []},
+      authorInfo:  { type: 'object', default: []},
+      pageInfo:  { type: 'object', default: []},
+      languageInfo : { type: 'object', default: []},
+      workInfo : { type: 'object', default: []}
     }
 
     let optionsChecker = new OptionsChecker(optionsDefinition, 'ChunkPage')
     this.options = optionsChecker.getCleanOptions(options)
     console.log('Chunk Page options')
     console.log(this.options)
-    
+
+    // some constant labels
+    this.witnessTypes = {
+      'full_tx' : 'Full Transcription'
+    }
+
+    this.docTypes = {
+      'mss' : 'Manuscript',
+      'print' : 'Print'
+    }
+
+    // selectors and classes
     this.includeInCollationButtonClass = 'includeincollation'
     this.ctLinksElement = $('#collationtablelinks')
-    
+    this.chunkIdDiv = $('#chunkid')
+    this.witnessListNewDiv = $('#witnessListNew')
+
+    // shortcuts to options
     this.pathFor = this.options.urlGenerator
     this.witnessInfo = this.options.witnessInfo
-    console.log(this.witnessInfo)
     this.collationLangs = this.options.collationLanguages
     
     this.getPresetsUrl = this.pathFor.apiGetAutomaticCollationPresets()
 
-    $("#theWitnessTable").DataTable({ 
-        paging: false, 
-        searching : false, 
+    this.chunkIdDiv.html(this.generateChunkIdDivHtml())
+    this.witnessListNewDiv.html(this.generateWitnessListNew())
+
+
+
+    $("#theWitnessTable").DataTable({
+        paging: false,
+        searching : false,
         sDom:'t',
         columns : [
             null, //title
@@ -62,7 +87,22 @@ class ChunkPage {
             { orderable: false } // show/hide text
         ]
     })
-    
+
+    $("#witnessTableNew").DataTable({
+      paging: false,
+      searching : false,
+      info: false,
+      columns : [
+        null, //title
+        null, //wtype
+        null, //doctype
+        null, // language
+        { orderable: false}, //pages
+        { orderable: false}, // info
+        { orderable: false} // extra
+      ]
+    })
+
     this.langs = {}
     for (const lang of this.collationLangs) {
       this.langs[lang.code] = {
@@ -121,9 +161,152 @@ class ChunkPage {
             sanitize: false
          })
   }
+
+  generateWitnessListNew() {
+    let html = ''
+
+    html += '<table id="witnessTableNew">'
+    html += '<thead>'
+    html += '<tr>'
+    html += '<th>Title</th>'
+    html += '<th>Witness Type</th>'
+    html += '<th>Doc Type</th>'
+    html += '<th>Language</th>'
+    html += '<th>Pages</th>'
+    html += '<th>Info</th>'
+    html += '<th></th>'
+    html += '</tr>'
+    html += '</thead>'
+
+    for(const i in this.options.witnessInfoNew) {
+      let witnessInfo = this.options.witnessInfoNew[i]
+      html += '<tr>'
+      let docInfo = witnessInfo.typeSpecificInfo.docInfo
+      html += '<td>' + this.getDocLink(docInfo) + '</td>'
+      html += '<td>' + this.witnessTypes[witnessInfo.type] + '</td>'
+      html += '<td>' + this.docTypes[docInfo.type] + '</td>'
+      html += '<td>' + this.options.languageInfo[witnessInfo.languageCode]['name'] + '</td>'
+      let info = ''
+      switch (witnessInfo.type) {
+        case 'full_tx':
+          info = this.genFullTxInfo(witnessInfo)
+          break
+        default:
+          info = 'Unknown witness type'
+      }
+      html += '<td>'+ info['location'] + '</td>'
+      html += '<td>'+ info['essential'] + '</td>'
+      if (this.options.showAdminInfo) {
+        html += '<td>'+ info['admin'] + '</td>'
+      }
+      else {
+        html += '<td></td>'
+      }
+
+      html += '</tr>'
+    }
+
+    return html
+  }
+
+  genFullTxInfo(witnessInfo) {
+
+    let info = []
+    let html = ''
+    let docInfo = witnessInfo.typeSpecificInfo.docInfo
+    let segments = witnessInfo.typeSpecificInfo.segments
+
+    let segmentHtmlArray = []
+    for(const s in segments) {
+      let segmenthtml = this.genPageLink(docInfo.id, segments[s].start.pageId, segments[s].start.columnNumber)
+      if (segments[s].start.pageId !==segments[s].end.pageId ) {
+        segmenthtml +=  '&ndash;' +
+          this.genPageLink(docInfo.id, segments[s].end.pageId, segments[s].end.columnNumber)
+      }
+      segmentHtmlArray.push(segmenthtml)
+    }
+    info['location'] = segmentHtmlArray.join(' ,')
+
+    html = ''
+    let lastVersion = witnessInfo.typeSpecificInfo.lastVersion
+    info['essential'] = ApmUtil.formatVersionTime(lastVersion.timeFrom) + ' by ' + this.getAuthorLink(lastVersion.authorId)
+    info['admin'] = '<a href="' + this.pathFor.siteWitness(this.options.work, this.options.chunk,  'doc', docInfo.id, '')+ '"><i class="fas fa-cogs" aria-hidden="true"></i></a>'
+    return info
+  }
+
+  getAuthorLink(authorId) {
+    return '<a href="' + this.pathFor.siteUserProfile(this.options.authorInfo[authorId].username) +
+      '" title="View user profile" target="_blank">' +
+      this.options.authorInfo[authorId].fullname + '</a>'
+  }
+
+  genPageLink(docId, pageId, column) {
+    if (pageId === 0) {
+      return '???'
+    }
+    let numColumns = this.options.pageInfo[pageId].numCols
+    let foliation = this.options.pageInfo[pageId].foliation
+    let sequence = this.options.pageInfo[pageId].sequence
+
+    let label = foliation
+    if (numColumns > 1) {
+      label += ' c' + column
+    }
+    let url = this.pathFor.sitePageView(docId, sequence )
+
+    return '<a href="' + url + '" title="View page ' + foliation + ' in new tab">' + label + '</a>'
+  }
+
+  getDocLink(docInfo) {
+    return '<a href="' + this.pathFor.siteDocPage(docInfo.id) + '" title="View document page" target="_blank">' +
+      docInfo.title + '</a>'
+  }
+
+  generateChunkIdDivHtml() {
+    let html = ''
+
+    let numWitnesses = this.options.witnessInfoNew.length
+    let numValidWitnesses = this.calculateTotalValidWitnesses()
+    html += '<p>'
+    html += '<b>Chunk ID:</b> ' + this.options.workInfo['dare_id'] + '-' + this.options.chunk
+    html += '<br/>'
+    if (numWitnesses === 0) {
+      html += '<b>Witnesses:</b> none'
+    } else {
+      html += '<b>Witnesses:</b> ' + numWitnesses + ' total, '
+      html += (numValidWitnesses === numWitnesses ? ' all ' : numWitnesses ) + ' valid'
+
+      if (numValidWitnesses > 0) {
+
+        let langInfoLabels = []
+        let langInfo = this.options.languageInfo
+        for(const lang in langInfo) {
+          if (langInfo.hasOwnProperty(lang)) {
+            langInfoLabels.push((langInfo[lang]['validWitnesses'] === numValidWitnesses ? 'all' : langInfo[lang]['validWitnesses'] )+ ' ' + langInfo[lang]['name'])
+          }
+        }
+        html += (numValidWitnesses === numWitnesses ? ', ' : ' ( ' )
+        html += langInfoLabels.join(', ')
+        html += (numValidWitnesses === numWitnesses ? '' : ' ) ' )
+      }
+    }
+    html += '<br/>'
+    html += '</p>'
+    return html
+  }
+
+  calculateTotalValidWitnesses() {
+    let langInfo = this.options.languageInfo
+    let tvw = 0
+    for (const lang in langInfo) {
+      if (langInfo.hasOwnProperty(lang)) {
+        tvw += langInfo[lang]['validWitnesses']
+      }
+    }
+    return tvw
+  }
   
 
-  
   updateCollationTableLinks() {
     this.ctLinksElement.html('<ul id="ctlinks-ul"></ul>')
     for(const l in this.langs) {

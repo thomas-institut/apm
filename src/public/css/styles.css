@@ -108,7 +108,7 @@ p.logo{
     margin: 0;
     padding: 0;
     /* background-color:  #eee; */
-    font-family: 'PT Sans', Arial, Verdana;
+    font-family: 'PT Sans', Arial, Verdana, serif;
     font-size: 2em;
 }
 
@@ -366,3 +366,14 @@ table.chunktable td {
 a.alwaysblack {
     color: black
 }
+
+ul.witnesslistnew {
+    list-style: none;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+ul.witnesslistnew li {
+    margin-bottom: 10px;
+}
+

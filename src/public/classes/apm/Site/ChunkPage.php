@@ -81,10 +81,12 @@ class ChunkPage extends SiteController
         $pagesMentioned = [];
         $authorsMentioned = [];
         $witnessInfoNew = [];
+        $languageInfoArray = [];
 
         $docManager = $transcriptionManager->getDocManager();
+        $docArray = isset($chunkLocationMap[$workId][$chunkNumber]) ? $chunkLocationMap[$workId][$chunkNumber] : [];
 
-        foreach($chunkLocationMap[$workId][$chunkNumber] as $docId => $segmentArray) {
+        foreach($docArray as $docId => $segmentArray) {
 
             $docInfo = $docManager->getDocInfoById($docId);
             /** @var $lastVersion ColumnVersionInfo */
@@ -92,8 +94,16 @@ class ChunkPage extends SiteController
             $pagesMentioned[] = $lastVersion->pageId;
             $authorsMentioned[] = $lastVersion->authorId;
 
+            if (!isset($languageInfoArray[$docInfo->languageCode])) {
+                $languageInfoArray[$docInfo->languageCode] = $this->languagesByCode[$docInfo->languageCode];
+                $languageInfoArray[$docInfo->languageCode]['totalWitnesses'] = 0;
+                $languageInfoArray[$docInfo->languageCode]['validWitnesses'] = 0;
+            }
+
             $witnessInfo = [];
             $witnessInfo['type'] = WitnessType::FULL_TRANSCRIPTION;
+            $witnessInfo['languageCode'] = $docInfo->languageCode;
+            $languageInfoArray[$docInfo->languageCode]['totalWitnesses']++;
             $witnessInfo['systemId'] = [
                 'type' => WitnessType::FULL_TRANSCRIPTION,
                 'docId' => $docId,
@@ -119,9 +129,13 @@ class ChunkPage extends SiteController
             }
             $witnessInfo['isValid'] = $isValid;
             $witnessInfo['invalidErrorCode'] = $invalidErrorCode;
+            if ($isValid) {
+                $languageInfoArray[$docInfo->languageCode]['validWitnesses']++;
+            }
 
             $witnessInfoNew[] = $witnessInfo;
         }
+
 
         $pageInfoArray = $this->getPageInfoArrayFromList($pagesMentioned, $transcriptionManager->getPageManager());
         $authorInfoArray = $this->getAuthorInfoArrayFromList($authorsMentioned, $dm->userManager);
@@ -178,7 +192,8 @@ class ChunkPage extends SiteController
             'userCanViewChunkDetails' => $canViewWitnessDetails,
             'witnessInfoNew' => $witnessInfoNew,
             'authorInfo' => $authorInfoArray,
-            'pageInfo' => $pageInfoArray
+            'pageInfo' => $pageInfoArray,
+            'languageInfo' => $languageInfoArray
         ]);
     }
 

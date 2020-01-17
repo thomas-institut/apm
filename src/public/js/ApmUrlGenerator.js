@@ -100,12 +100,19 @@ class ApmUrlGenerator {
         return this.base + '/doc/' + docId + '/realpage/' + pageNumber + '/view';
     }
     siteWitness(work, chunkno, type, witnessId, output) {
-        return this.base + '/chunk/' + work + '/' + chunkno + '/witness/' + type + '/' + witnessId + '/' + output;
+        let url = this.base + '/chunk/' + work + '/' + chunkno + '/witness/' + type + '/' + witnessId;
+        if (output !== '') {
+            url += '/' + output;
+        }
+        return url;
     }
     siteChunkPage(work, chunk) {
         return this.base + '/chunk/' + work + '/' + chunk;
     }
     siteUserProfile(userName) {
         return this.base + '/user/' + userName;
+    }
+    siteDocPage(docId) {
+        return this.base + '/doc/' + docId + '/details';
     }
 }

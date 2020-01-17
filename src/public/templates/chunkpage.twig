@@ -8,43 +8,42 @@
         div#collationtablelinks {
             margin-bottom: 50px;
         }
+
+        div#witnessListNew {
+            margin-top: 50px;
+            margin-bottom: 50px;
+        }
     </style>
     
     <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/witness.css"/>
     <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/act-settingsform.css" />
     <script type="text/javascript" src="{{baseurl}}/node_modules//twig/twig.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/ApmUtil.js"></script>
 
     <script type="application/javascript" src="{{baseurl}}/js/AutoCollTableSettingsForm.js"></script>
+
     <script type="application/javascript" src="{{baseurl}}/js/CollapseToggleButton.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/ChunkPage.js"></script>
 <script>
-$(document).ready(function() 
-{
-  let witnessInfoNew = JSON.parse('{{witnessInfoNew|json_encode|raw}}')
-  let authorInfo = JSON.parse('{{authorInfo|json_encode|raw}}')
-  let pageInfo = JSON.parse('{{pageInfo|json_encode|raw}}')
-
-  console.log('Witness Info New')
-  console.log(witnessInfoNew)
-  console.log('Author Info')
-  console.log(authorInfo)
-  console.log('Page Info')
-  console.log(pageInfo)
-
-
-    let cp = new ChunkPage(
-            { 
-                work: '{{work}}',
-                chunk: {{chunk}},
-                witnessInfo: JSON.parse('{{docs|json_encode|e('js')}}'),
-                collationLanguages: JSON.parse('{{collationLangs|json_encode|e('js')}}'),
-                urlGenerator:  new ApmUrlGenerator('{{baseurl}}'),
-                userId: {{userinfo.id}}
-            }
-    )
-} 
+$(function()  {// .ready()
+    let showAdminInfo = {{ userCanViewChunkDetails }} === 1;
+    let cp = new ChunkPage({
+        work: '{{work}}',
+        chunk: {{chunk}},
+        witnessInfo: JSON.parse('{{docs|json_encode|e('js')}}'),
+        collationLanguages: JSON.parse('{{collationLangs|json_encode|e('js')}}'),
+        urlGenerator:  new ApmUrlGenerator('{{baseurl}}'),
+        userId: {{userinfo.id}},
+        witnessInfoNew: JSON.parse('{{witnessInfoNew|json_encode|raw}}'),
+        pageInfo: JSON.parse('{{pageInfo|json_encode|raw}}'),
+        authorInfo: JSON.parse('{{authorInfo|json_encode|raw}}'),
+        languageInfo : JSON.parse('{{languageInfo|json_encode|raw}}'),
+        workInfo: JSON.parse('{{work_info|json_encode|raw}}'),
+        showAdminInfo: showAdminInfo
+    })
+});
         
-);
+
 </script>
 {% endblock %}
 {% block content %}
@@ -53,52 +52,14 @@ $(document).ready(function()
         <li class="active">Chunk Details</li>
     </ol>
 <h1>{{work_info.author_name}}, <em>{{work_info.title}}</em>, chunk {{chunk}}</h1>
-<p class="chunkid">{{work}}-{{chunk}}, {{num_docs}} witness{%if num_docs!=1 %}es{%endif%}</p>
-{% if num_docs > 0 %}
-    <div class="witnesslist">
-<table id="theWitnessTable">
-    <thead><tr><th>Title</th><th>Type</th><th>Language</th><th>Pages</th><th>Last Change</th><th/></tr></thead>
-{% for doc in docs %}
-<tr>
-    <td><a href="{{url_for('doc.showdoc', {'id' : doc.id})}}" target="_blank" title="View Document in New Tab">{{doc.title}}</a></td>
-    <td>{{macros.docTypeName(doc.doc_type)}}</td>
-    <td>{{macros.langName(doc.lang)}}</td>
-    <td>
-        
-        {% for seg in doc.segments %}
-<a href="{{url_for('pageviewer.docseq', {'doc' : doc.id, 'seq' : seg.start.page_seq})}}" target="_blank" title="View Page in New Tab">{{seg.start.foliation}}</a>{% if seg.end.foliation and seg.end.foliation != seg.start.foliation %}&ndash;<a href="{{url_for('pageviewer.docseq', {'doc' : doc.id, 'seq' : seg.end.page_seq})}}" target="_blank" title="View Page in New Tab">{{seg.end.foliation}}</a>{% endif %}{% if not loop.last %}, {% endif %}
-        {% endfor %}
-    </td>
-    <td>
-        {% if not doc.error and not doc.warnings %}
-            {{ doc.lastTimeFormatted}},  <a href="{{ url_for('user.profile', {'username' : doc.lastAuthorUsername}) }}">{{ doc.lastAuthorName }}</a>
-        {%  endif %}
-    </td>
-    <td>
+    <div id="chunkid"></div>
+    <div id="witnessListNew"></div>
 
-        {% if userCanViewChunkDetails and doc.goodWitness %}
-            <a title="View Witness Details" href="{{url_for('witness', { 'work' : work, 'chunk': chunk, 'type': 'doc', 'id': doc.id})}}"><i class="fas fa-cogs" aria-hidden="true"></i></a>
-        {% endif %}
-
-    {% if doc.error %}
-        <p class="text-danger">{{doc.error}}</p>
-    {% endif %}
-    {% for warning in doc.warnings %}
-        <p class="text-warning"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> {{warning}}</p>
-    {% endfor %}
-    </td>
-    
-</tr>
-{% endfor %}
-</table>
-    </div>
-
-{#{% if collationLangs|length > 0 %}#}
     <h4 id="ctlinks-header" class="hidden">Automatic Collation Tables</h4>
     <div id="collationtablelinks">
     </div>
 
-{#{% endif %}#}
+{% if num_docs > 0 %}
 
 <div class="chunktexts">
     

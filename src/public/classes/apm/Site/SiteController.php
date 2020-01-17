@@ -100,6 +100,10 @@ class SiteController
      * @var SimpleProfiler
      */
     protected $profiler;
+    /**
+     * @var array
+     */
+    protected $languagesByCode;
 
     /**
      * SiteController constructor.
@@ -120,6 +124,7 @@ class SiteController
         $this->userAuthenticated = false;
         $this->userInfo = [];
         $this->languages = $ci->get('config')['languages'];
+        $this->languagesByCode = $this->buildLanguageByCodeArray($this->languages);
 
         $this->profiler = new SimpleProfiler();
         $this->profiler->registerProperty('time', new TimeTracker());
@@ -134,6 +139,13 @@ class SiteController
         }
     }
 
+    private function buildLanguageByCodeArray(array $languagesConfigArray) : array {
+        $langArrayByCode = [];
+        foreach($languagesConfigArray as $lang) {
+            $langArrayByCode[$lang['code']] = $lang;
+        }
+        return $langArrayByCode;
+    }
     protected function logProfilerData(string $pageTitle) : void
     {
         $lapInfo = $this->profiler->getLaps();

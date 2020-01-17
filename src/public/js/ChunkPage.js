@@ -56,8 +56,12 @@ class ChunkPage {
       'print' : 'Print'
     }
 
+    this.invalidErrorCodes = {
+      1: 'Chunk start not defined',
+      2: 'Chunk end not defined'
+    }
+
     // selectors and classes
-    this.includeInCollationButtonClass = 'includeincollation'
     this.ctLinksElement = $('#collationtablelinks')
     this.chunkIdDiv = $('#chunkid')
     this.witnessListNewDiv = $('#witnessListNew')
@@ -71,22 +75,6 @@ class ChunkPage {
 
     this.chunkIdDiv.html(this.generateChunkIdDivHtml())
     this.witnessListNewDiv.html(this.generateWitnessListNew())
-
-
-
-    $("#theWitnessTable").DataTable({
-        paging: false,
-        searching : false,
-        sDom:'t',
-        columns : [
-            null, //title
-            null, //type
-            null, //language
-            null, // pages
-            null, // last changed
-            { orderable: false } // show/hide text
-        ]
-    })
 
     $("#witnessTableNew").DataTable({
       paging: false,
@@ -131,23 +119,32 @@ class ChunkPage {
 
     this.updateCollationTableLinks()
 
-    // load good witnesses
-    for(const l in this.langs) {
-      let witnessToLoad = this.langs[l].availableWitnesses
-      for(const i in witnessToLoad) {
-        let w = witnessToLoad[i]
-        console.log('Getting delayed data for witness ' + w.id)
-        $('#formatted-' + w.id).html('Loading text, this might take a while <i class="fas fa-spinner fa-spin fa-fw"></i> ...')
-        $.get(this.pathFor.siteWitness(this.options.work, this.options.chunk, 'doc', w.id, 'html'))
-          .done(function(data){
-            console.log('Got data for witness ' + w.id)
-            $('#formatted-' + w.id).html(data)
-          })
-          .fail(function (resp){
-            console.log('Error getting data for witness ' + w.id)
-            console.log(resp)
-            $('#formatted-' + w.id).html('Error loading text')
-          })
+    // load good witnesses (with new structure)
+
+    for (const w in this.options.witnessInfoNew) {
+      let witnessInfo = this.options.witnessInfoNew[w]
+      if (!witnessInfo.isValid) {
+        continue
+      }
+      switch (witnessInfo.type) {
+        case 'full_tx':
+          let docId = witnessInfo.systemId.docId
+          let witnessUrl = this.pathFor.siteWitness(this.options.work, this.options.chunk, 'doc', docId, 'html')
+          console.log('Loading full_tx witness ' + docId  + ' timestamp ' + witnessInfo.systemId.timeStamp )
+          $('#formatted-' +docId).html('Loading text, this might take a while <i class="fas fa-spinner fa-spin fa-fw"></i> ...')
+          $.get(witnessUrl)
+            .done(function(data){
+              console.log('Got data for full tx witness ' + docId)
+              $('#formatted-' + docId).html(data)
+            })
+            .fail(function (resp){
+              console.log('Error getting data for full tx witness ' + docId)
+              console.log(resp)
+              $('#formatted-' + docId).html('Error loading text')
+            })
+          break
+        default:
+          console.warn('Unsupported witness type: ' + witnessInfo.type)
       }
     }
 
@@ -165,7 +162,7 @@ class ChunkPage {
   generateWitnessListNew() {
     let html = ''
 
-    html += '<table id="witnessTableNew">'
+    html += '<table id="witnessTableNew" class="stripe">'
     html += '<thead>'
     html += '<tr>'
     html += '<th>Title</th>'
@@ -225,11 +222,16 @@ class ChunkPage {
       }
       segmentHtmlArray.push(segmenthtml)
     }
-    info['location'] = segmentHtmlArray.join(' ,')
+    info['location'] = segmentHtmlArray.join(', ')
 
     html = ''
     let lastVersion = witnessInfo.typeSpecificInfo.lastVersion
-    info['essential'] = ApmUtil.formatVersionTime(lastVersion.timeFrom) + ' by ' + this.getAuthorLink(lastVersion.authorId)
+    if (witnessInfo.isValid) {
+      info['essential'] = '<small>Last change: ' + ApmUtil.formatVersionTime(lastVersion.timeFrom) + ' by ' + this.getAuthorLink(lastVersion.authorId) + '</small>'
+    } else {
+      info['essential'] = '<i class="fas fa-exclamation-triangle"></i> ' + this.invalidErrorCodes[witnessInfo.invalidErrorCode]
+    }
+
     info['admin'] = '<a href="' + this.pathFor.siteWitness(this.options.work, this.options.chunk,  'doc', docInfo.id, '')+ '"><i class="fas fa-cogs" aria-hidden="true"></i></a>'
     return info
   }
@@ -274,7 +276,7 @@ class ChunkPage {
       html += '<b>Witnesses:</b> none'
     } else {
       html += '<b>Witnesses:</b> ' + numWitnesses + ' total, '
-      html += (numValidWitnesses === numWitnesses ? ' all ' : numWitnesses ) + ' valid'
+      html += (numValidWitnesses === numWitnesses ? ' all ' : numValidWitnesses ) + ' valid'
 
       if (numValidWitnesses > 0) {
 

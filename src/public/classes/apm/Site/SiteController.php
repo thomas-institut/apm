@@ -27,7 +27,9 @@
 namespace APM\Site;
 
 use APM\FullTranscription\PageInfo;
+use APM\FullTranscription\PageManager;
 use APM\Plugin\HookManager;
+use AverroesProject\Data\UserManager;
 use DI\Container;
 use DI\DependencyException;
 use DI\NotFoundException;
@@ -286,5 +288,50 @@ class SiteController
 
         return $docListHtml;
     }
+
+    /**
+     * Returns an array with info by id retrieved by the given callable.
+     *
+     * It makes sure that the function is only called once per unique id in the list
+     *
+     *
+     * @param array $idList
+     * @param callable $getInfoCallable
+     * @param bool $callOnIdZero
+     * @return array
+     */
+    protected function getInfoFromIdList(array $idList, callable $getInfoCallable, bool $callOnIdZero = false) : array
+    {
+        $infoArray = [];
+        foreach($idList as $id) {
+            if (!$callOnIdZero and $id===0) {
+                continue;
+            }
+            if (!isset($infoArray[$id])) {
+                $infoArray[$id] = $getInfoCallable($id);
+            }
+        }
+        return $infoArray;
+    }
+
+    protected function getPageInfoArrayFromList(array $pageList, PageManager $pageManager) : array {
+        return $this->getInfoFromIdList(
+            $pageList,
+            function ($id) use ($pageManager) {
+                return $pageManager->getPageInfoById($id);
+            }
+        );
+    }
+
+    protected function getAuthorInfoArrayFromList(array $authorList, UserManager $userManager) : array {
+        return $this->getInfoFromIdList(
+            $authorList,
+            function ($id) use ($userManager) {
+                return $userManager->getUserInfoByUserId($id);
+            }
+        );
+    }
+
+
 
 }

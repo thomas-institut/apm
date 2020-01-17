@@ -32,6 +32,7 @@ use APM\Core\Token\TokenType;
 use APM\Core\Token\TranscriptionToken;
 use APM\FullTranscription\ApmChunkSegmentLocation;
 use APM\FullTranscription\ColumnVersionInfo;
+use APM\System\WitnessType;
 use AverroesProject\Data\DataManager;
 use AverroesProjectToApm\ApUserDirectory;
 use AverroesProjectToApm\DatabaseItemStream;
@@ -77,27 +78,24 @@ class ChunkPage extends SiteController
         $this->profiler->lap('After TM get chunk map and version info');
 
         // build new witness info array
+        $pagesMentioned = [];
+        $authorsMentioned = [];
         $witnessInfoNew = [];
-        $pageInfoArray = [];
-        $authorInfoArray = [];
+
         $docManager = $transcriptionManager->getDocManager();
-        $pageManager = $transcriptionManager->getPageManager();
+
         foreach($chunkLocationMap[$workId][$chunkNumber] as $docId => $segmentArray) {
 
             $docInfo = $docManager->getDocInfoById($docId);
             /** @var $lastVersion ColumnVersionInfo */
             $lastVersion = $lastVersions[$workId][$chunkNumber][$docId];
-            if ($lastVersion->pageId !== 0 && !isset($pageInfoArray[$lastVersion->pageId])) {
-                $pageInfoArray[$lastVersion->pageId] = $pageManager->getPageInfoById($lastVersion->pageId);
-            }
-            if (!isset($authorInfoArray[$lastVersion->authorId])) {
-                $authorInfoArray[$lastVersion->authorId] = $this->dataManager->userManager->getUserInfoByUserId($lastVersion->authorId);
-            }
+            $pagesMentioned[] = $lastVersion->pageId;
+            $authorsMentioned[] = $lastVersion->authorId;
 
             $witnessInfo = [];
-            $witnessInfo['type'] = 'doc';
+            $witnessInfo['type'] = WitnessType::FULL_TRANSCRIPTION;
             $witnessInfo['systemId'] = [
-                'type' => 'doc',
+                'type' => WitnessType::FULL_TRANSCRIPTION,
                 'docId' => $docId,
                 'timeStamp' => $lastVersion->timeFrom
             ];
@@ -110,12 +108,8 @@ class ChunkPage extends SiteController
             $invalidErrorCode = 0;
             foreach($segmentArray as $segment) {
                 /** @var $segment ApmChunkSegmentLocation */
-                if ($segment->start->pageId !== 0 && !isset($pageInfoArray[$segment->start->pageId])) {
-                    $pageInfoArray[$segment->start->pageId] = $pageManager->getPageInfoById($segment->start->pageId);
-                }
-                if ($segment->end->pageId !== 0 && !isset($pageInfoArray[$segment->end->pageId])) {
-                    $pageInfoArray[$segment->end->pageId] = $pageManager->getPageInfoById($segment->end->pageId);
-                }
+                $pagesMentioned[] = $segment->start->pageId;
+                $pagesMentioned[] = $segment->end->pageId;
                 if (!$segment->isValid()) {
                     $isValid = false;
                     $invalidErrorCode =$segment->getChunkError();
@@ -128,6 +122,9 @@ class ChunkPage extends SiteController
 
             $witnessInfoNew[] = $witnessInfo;
         }
+
+        $pageInfoArray = $this->getPageInfoArrayFromList($pagesMentioned, $transcriptionManager->getPageManager());
+        $authorInfoArray = $this->getAuthorInfoArrayFromList($authorsMentioned, $dm->userManager);
 
         // continue with old info
 

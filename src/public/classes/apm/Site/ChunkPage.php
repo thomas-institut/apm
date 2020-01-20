@@ -142,38 +142,38 @@ class ChunkPage extends SiteController
 
         // continue with old info
 
-        $docs = [];
-        $witnessNumber = 0;
-        $goodWitnessesPerLang = [];
-        foreach($this->languages as $lang) {
-            $goodWitnessesPerLang[$lang['code']]['numWitnesses'] = 0;
-            $goodWitnessesPerLang[$lang['code']]['name'] = $lang['name'];
-            $goodWitnessesPerLang[$lang['code']]['code'] = $lang['code'];
-        }
-        
-        foreach ($witnessList as $witness) {
-            try {
-                $doc = $this->buildEssentialWitnessDataFromDocData($witness, $workId, $chunkNumber, $dm, ++$witnessNumber);
-                $doc['id'] = intval($doc['id']); // make sure Id is an integer
-                $doc['delayLoad'] = true;
-            } catch (Exception $e) { // @codeCoverageIgnore
-                $this->logger->error('Error in build Witness Data', [$e->getMessage()]); // @codeCoverageIgnore
-            }
-            
-            if ($doc['goodWitness']) {
-                $goodWitnessesPerLang[$doc['lang']]['numWitnesses']++;
-            } else {
-                $doc['plain_text'] = '';
-            }
-            $docs[] = $doc;
-        }
-        
-        $validCollationLangs = [];
-        foreach ($goodWitnessesPerLang as $lang => $witnessLangInfo) {
-            //if ($witnessLangInfo['numWitnesses'] >= 2) {
-                $validCollationLangs[] = $goodWitnessesPerLang[$lang];
-            //}
-        }
+//        $docs = [];
+//        $witnessNumber = 0;
+//        $goodWitnessesPerLang = [];
+//        foreach($this->languages as $lang) {
+//            $goodWitnessesPerLang[$lang['code']]['numWitnesses'] = 0;
+//            $goodWitnessesPerLang[$lang['code']]['name'] = $lang['name'];
+//            $goodWitnessesPerLang[$lang['code']]['code'] = $lang['code'];
+//        }
+//
+//        foreach ($witnessList as $witness) {
+//            try {
+//                $doc = $this->buildEssentialWitnessDataFromDocData($witness, $workId, $chunkNumber, $dm, ++$witnessNumber);
+//                $doc['id'] = intval($doc['id']); // make sure Id is an integer
+//                $doc['delayLoad'] = true;
+//            } catch (Exception $e) { // @codeCoverageIgnore
+//                $this->logger->error('Error in build Witness Data', [$e->getMessage()]); // @codeCoverageIgnore
+//            }
+//
+//            if ($doc['goodWitness']) {
+//                $goodWitnessesPerLang[$doc['lang']]['numWitnesses']++;
+//            } else {
+//                $doc['plain_text'] = '';
+//            }
+//            $docs[] = $doc;
+//        }
+//
+//        $validCollationLangs = [];
+//        foreach ($goodWitnessesPerLang as $lang => $witnessLangInfo) {
+//            //if ($witnessLangInfo['numWitnesses'] >= 2) {
+//                $validCollationLangs[] = $goodWitnessesPerLang[$lang];
+//            //}
+//        }
         
         $canViewWitnessDetails = false;
         if ($dm->userManager->isUserAllowedTo($this->userInfo['id'], 'witness-view-details')) {
@@ -186,9 +186,9 @@ class ChunkPage extends SiteController
             'work' => $workId,
             'chunk' => $chunkNumber,
             'work_info' => $workInfo,
-            'docs' => $docs,
-            'num_docs' => count($docs),
-            'collationLangs' => $validCollationLangs,
+            //'docs' => $docs,
+            //'num_docs' => count($docs),
+            //'collationLangs' => $validCollationLangs,
             'userCanViewChunkDetails' => $canViewWitnessDetails,
             'witnessInfoNew' => $witnessInfoNew,
             'authorInfo' => $authorInfoArray,

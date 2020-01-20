@@ -41,7 +41,6 @@ use DI\DependencyException;
 use DI\NotFoundException;
 use Exception;
 use Monolog\Logger;
-use Psr\Container\ContainerInterface;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use \Dflydev\FigCookies\FigRequestCookies;
@@ -80,7 +79,7 @@ class Authenticator {
    
     private $cookieName = 'rme';
     private $secret = '1256106427895916503';
-    private $debugMode = true;
+    private $debugMode = false;
    
     //Constructor
 

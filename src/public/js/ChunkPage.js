@@ -30,8 +30,8 @@ class ChunkPage {
       work : { required: true, type: 'string'},
       chunk : { required: true, type: 'NumberGreaterThanZero' },
       showAdminInfo : { type: 'boolean', default: false},
-      witnessInfo : { type: 'Array', default: []},
-      collationLanguages : { type: 'Array', default: []},
+      //witnessInfo : { type: 'Array', default: []},
+      //collationLanguages : { type: 'Array', default: []},
       urlGenerator: { required: true, type: 'object'},
       userId: { type: 'number', default: -1 },
       witnessInfoNew :{ type: 'Array', default: []},
@@ -65,11 +65,12 @@ class ChunkPage {
     this.ctLinksElement = $('#collationtablelinks')
     this.chunkIdDiv = $('#chunkid')
     this.witnessListNewDiv = $('#witnessListNew')
+    this.witnessPanelsDiv = $('#witnesspanels')
 
     // shortcuts to options
     this.pathFor = this.options.urlGenerator
-    this.witnessInfo = this.options.witnessInfo
-    this.collationLangs = this.options.collationLanguages
+    //this.witnessInfo = this.options.witnessInfo
+    //this.collationLangs = this.options.collationLanguages
     
     this.getPresetsUrl = this.pathFor.apiGetAutomaticCollationPresets()
 
@@ -91,33 +92,63 @@ class ChunkPage {
       ]
     })
 
-    this.langs = {}
-    for (const lang of this.collationLangs) {
-      this.langs[lang.code] = {
-        name: lang.name, 
-        code: lang.code, 
-        goodWitnesses: 0,
-        availableWitnesses: []
-      }
-    }
+    // this.langs = {}
+    // for (const lang of this.collationLangs) {
+    //   this.langs[lang.code] = {
+    //     name: lang.name,
+    //     code: lang.code,
+    //     goodWitnesses: 0,
+    //     availableWitnesses: []
+    //   }
+    // }
 
 
     // build witness data by language
-    for (const w of this.witnessInfo) {
-      w.type = 'doc' // eventually witnesses will be of different types
-      if (this.langs[w.lang] === undefined) {
-        // QUESTION: should this happen at all?
-        console.log('Undefined language un chunkpage langs: ' + w.lang)
-        this.langs[w.lang] = { name: w.lang, code: w.lang, goodWitnesses:0 }  // TODO: pass all language info 
+    // for (const w of this.witnessInfo) {
+    //   w.type = 'doc' // eventually witnesses will be of different types
+    //   if (this.langs[w.lang] === undefined) {
+    //     // QUESTION: should this happen at all?
+    //     console.log('Undefined language un chunkpage langs: ' + w.lang)
+    //     this.langs[w.lang] = { name: w.lang, code: w.lang, goodWitnesses:0 }
+    //   }
+    //   if (w.goodWitness) {
+    //     this.langs[w.lang].goodWitnesses++
+    //     this.langs[w.lang].availableWitnesses.push(w)
+    //     let toggleButton = new CollapseToggleButton($('#texttoggle-' + w.id), $('#text-' + w.id))
+    //   }
+    // }
+
+    // build witness data by language (new)
+    this.witnessesByLang = {}
+    for (const w in this.options.witnessInfoNew) {
+      if (!this.options.witnessInfoNew.hasOwnProperty(w)){
+        continue
       }
-      if (w.goodWitness) {
-        this.langs[w.lang].goodWitnesses++
-        this.langs[w.lang].availableWitnesses.push(w)
+      let witnessInfo = this.options.witnessInfoNew[w]
+      if (witnessInfo.type !== 'full_tx') {
+        // TODO: support other witness types!
+        continue
+      }
+      let witness = {
+        index:  parseInt(w),
+        type: witnessInfo.type,
+        id: witnessInfo.systemId.docId,
+        title: witnessInfo.typeSpecificInfo.docInfo.title
+      }
+      if (witnessInfo.isValid) {
+        if (this.witnessesByLang[witnessInfo.languageCode] === undefined) {
+          this.witnessesByLang[witnessInfo.languageCode] = []
+        }
+        this.witnessesByLang[witnessInfo.languageCode].push(witness)
         let toggleButton = new CollapseToggleButton($('#texttoggle-' + w.id), $('#text-' + w.id))
       }
     }
+    console.log('Witnesses by lang')
+    console.log(this.witnessesByLang)
 
     this.updateCollationTableLinks()
+
+    this.witnessPanelsDiv.html(this.generateWitnessPanelHtml())
 
     // load good witnesses (with new structure)
 
@@ -157,6 +188,47 @@ class ChunkPage {
             placement: 'auto',
             sanitize: false
          })
+  }
+
+  generateWitnessPanelHtml() {
+
+    let twigTemplate = Twig.twig({
+      id: 'witnessPanels',
+      data: `
+  <div class="panel panel-default">
+      <div class="panel-heading">
+      <h3 class="panel-title">{{title}}
+        &nbsp;&nbsp;&nbsp;
+    <a role="button" title="Click to show/hide text" data-toggle="collapse" href="#text-{{id}}" aria-expanded="true" aria-controls="text-{{id}}">
+      <span id="texttoggle-{{id}}"><i class="fas fa-angle-right" aria-hidden="true"></i></span>
+    </a></h3>
+    </div>
+    <div class="collapse" id="text-{{id}}">
+      <div class="panel-body">
+      <p class="formattedchunktext chunktext-{{lang}}" id="formatted-{{id}}"></p>
+      </div>
+      </div>
+      </div>
+`
+    })
+
+    let html = ''
+    for (const w in this.options.witnessInfoNew) {
+      let witnessInfo = this.options.witnessInfoNew[w]
+      if (!witnessInfo.isValid) {
+        continue
+      }
+      switch (witnessInfo.type) {
+        case 'full_tx':
+          html += twigTemplate.render({
+            title: witnessInfo.typeSpecificInfo.docInfo.title,
+            id: witnessInfo.systemId.docId,
+            lang: witnessInfo.typeSpecificInfo.docInfo.languageCode
+          })
+          break
+      }
+    }
+    return html
   }
 
   generateWitnessListNew() {
@@ -311,14 +383,19 @@ class ChunkPage {
 
   updateCollationTableLinks() {
     this.ctLinksElement.html('<ul id="ctlinks-ul"></ul>')
-    for(const l in this.langs) {
-      if (this.langs[l].goodWitnesses >= 2) {
+    let langInfo = this.options.languageInfo
+    let ctLinksUl = $('#ctlinks-ul')
+    for(const l in langInfo) {
+      if (!langInfo.hasOwnProperty(l)) {
+        continue
+      }
+      if (langInfo[l].validWitnesses >= 2) {
         $('#ctlinks-header').removeClass('hidden')
         let urls = []
-        let langName = this.langs[l].name
+        let langName = langInfo[l].name
         let insideListId = 'ct-links-ul-' + l
-        $('#ctlinks-ul').append('<li>' + langName + '</li>')
-        $('#ctlinks-ul').append('<ul id="' + insideListId + '"></ul>')
+        ctLinksUl.append('<li>' + langName + '</li>')
+        ctLinksUl.append('<ul id="' + insideListId + '"></ul>')
         urls.push(
              { 
                lang: l,
@@ -326,42 +403,41 @@ class ChunkPage {
                url:  this.pathFor.siteCollationTable(this.options.work, this.options.chunk, l),
                urltext: 'All witnesses',
                urltitle: 'Open automatic collation table in new tab',
-               availableWitnesses: this.langs[l].availableWitnesses,
+               availableWitnesses: this.witnessesByLang[l],
                isPreset: false,
                actSettings : { 
                  lang: l,
                  work: this.options.work,
                  chunk: this.options.chunk,
                  ignorePunctuation: true,
-                 witnesses: this.langs[l].availableWitnesses
+                 witnesses: this.witnessesByLang[l]
                }
                
              })
         // get applicable presets
         let thisObject = this
         let apiCallOptions = {
-          lang: this.langs[l].code,
+          lang: langInfo[l].code,
           userId: false,
           witnesses: []
         }
-        for(const w of this.langs[l].availableWitnesses) {
-          apiCallOptions.witnesses.push(parseInt(w.id))
+        for(const w in this.witnessesByLang[l]) {
+          apiCallOptions.witnesses.push(parseInt(this.witnessesByLang[l][w].id))
         }
-        //console.log('Calling presets API')
-        //console.log(apiCallOptions)
         $.post(
           this.getPresetsUrl, 
           { data: JSON.stringify(apiCallOptions) }
         )
         .done(function (data) { 
-          //console.log('Presets retrieved for ' + langName + ' in ' + data.runTime + 'ms')
-          //console.log('Got ' + data.presets.length + ' presets')
-          //console.log(data.presets)
+          console.log('Presets retrieved for ' + langName + ' in ' + data.runTime + 'ms')
+          console.log('Got ' + data.presets.length + ' presets')
+          console.log(data.presets)
           for(const pr of data.presets) {
             let witnessesToInclude = []
             for (const wId of pr.data.witnesses) {
               let witness = false
-              for(const w of thisObject.witnessInfo) {
+
+              for(const w of thisObject.witnessesByLang[l]) {
                 if (w.id === wId) {
                   witness = w
                 }
@@ -379,7 +455,7 @@ class ChunkPage {
                url:  thisObject.pathFor.siteCollationTablePreset(thisObject.options.work, thisObject.options.chunk, pr.presetId),
                urltext: pr.title + ' <small><i>(' + pr.userName + ')</i></small>',
                urltitle:  'Open collation table in new tab', 
-               availableWitnesses: thisObject.langs[l].availableWitnesses,
+               availableWitnesses: thisObject.witnessesByLang[l],
                isPreset: true,
                preset: { 
                  id: pr.presetId, 

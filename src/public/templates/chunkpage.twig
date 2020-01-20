@@ -30,8 +30,8 @@ $(function()  {// .ready()
     let cp = new ChunkPage({
         work: '{{work}}',
         chunk: {{chunk}},
-        witnessInfo: JSON.parse('{{docs|json_encode|e('js')}}'),
-        collationLanguages: JSON.parse('{{collationLangs|json_encode|e('js')}}'),
+        //witnessInfo: JSON.parse('{{docs|json_encode|e('js')}}'),
+        //collationLanguages: JSON.parse('{{collationLangs|json_encode|e('js')}}'),
         urlGenerator:  new ApmUrlGenerator('{{baseurl}}'),
         userId: {{userinfo.id}},
         witnessInfoNew: JSON.parse('{{witnessInfoNew|json_encode|raw}}'),
@@ -56,31 +56,8 @@ $(function()  {// .ready()
     <div id="witnessListNew"></div>
 
     <h4 id="ctlinks-header" class="hidden">Automatic Collation Tables</h4>
-    <div id="collationtablelinks">
-    </div>
+    <div id="collationtablelinks">  </div>
 
-{% if num_docs > 0 %}
+    <div id="witnesspanels"></div>
 
-<div class="chunktexts">
-    
-{% for doc in docs %}
-    {%  if doc.goodWitness %}
-    <div class="panel panel-default">
-            <div class="panel-heading">
-                <h3 class="panel-title">{{doc.title}}
-                    &nbsp;&nbsp;&nbsp;
-                    <a role="button" title="Click to show/hide text" data-toggle="collapse" href="#text-{{doc.id}}" aria-expanded="true" aria-controls="text-{{doc.id}}">
-                        <span id="texttoggle-{{doc.id}}"><i class="fas fa-angle-right" aria-hidden="true"></i></span>
-                    </a></h3>
-            </div>
-                     <div class="collapse" id="text-{{doc.id}}">
-             <div class="panel-body">
-                     <p class="formattedchunktext chunktext-{{doc.lang}}" id="formatted-{{doc.id}}"></p>
-            </div>
-        </div>
-    </div>
-    {%  endif %}
-{% endfor %}
-</div>
-{% endif %}
 {% endblock %}

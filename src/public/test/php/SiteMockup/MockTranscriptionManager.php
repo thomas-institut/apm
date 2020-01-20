@@ -115,4 +115,18 @@ class MockTranscriptionManager extends TranscriptionManager
         // TODO: Implement getLastChunkVersionFromVersionMap() method.
         return [];
     }
+
+    public function getDocManager(): \APM\FullTranscription\DocManager
+    {
+        // TODO: Implement getDocManager() method.
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getLastSavesForDoc(int $docId, int $numSaves): array
+    {
+        // TODO: Implement getLastSavesForDoc() method.
+        return [];
+    }
 }

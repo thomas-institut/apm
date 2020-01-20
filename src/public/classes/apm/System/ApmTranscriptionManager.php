@@ -432,7 +432,7 @@ class ApmTranscriptionManager extends TranscriptionManager implements  SqlQueryC
         foreach ($versionMap as $workId => $chunkNumberMap) {
             foreach($chunkNumberMap as $chunkNumber => $docMap) {
                 foreach ($docMap as $docId => $segmentArray) {
-                    $this->logger->debug("Processing version map: $workId-$chunkNumber, doc $docId");
+                    //$this->logger->debug("Processing version map: $workId-$chunkNumber, doc $docId");
                     $lastVersion = new ColumnVersionInfo();
                     foreach($segmentArray as $segmentNumber => $pageArray) {
                         foreach($pageArray as $pageSeq => $columnArray) {

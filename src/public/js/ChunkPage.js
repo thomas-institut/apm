@@ -23,15 +23,12 @@
  */
 class ChunkPage {
 
-
   constructor(options) {
 
     let optionsDefinition = {
       work : { required: true, type: 'string'},
       chunk : { required: true, type: 'NumberGreaterThanZero' },
       showAdminInfo : { type: 'boolean', default: false},
-      //witnessInfo : { type: 'Array', default: []},
-      //collationLanguages : { type: 'Array', default: []},
       urlGenerator: { required: true, type: 'object'},
       userId: { type: 'number', default: -1 },
       witnessInfoNew :{ type: 'Array', default: []},
@@ -69,9 +66,7 @@ class ChunkPage {
 
     // shortcuts to options
     this.pathFor = this.options.urlGenerator
-    //this.witnessInfo = this.options.witnessInfo
-    //this.collationLangs = this.options.collationLanguages
-    
+
     this.getPresetsUrl = this.pathFor.apiGetAutomaticCollationPresets()
 
     this.chunkIdDiv.html(this.generateChunkIdDivHtml())
@@ -91,32 +86,6 @@ class ChunkPage {
         { orderable: false} // extra
       ]
     })
-
-    // this.langs = {}
-    // for (const lang of this.collationLangs) {
-    //   this.langs[lang.code] = {
-    //     name: lang.name,
-    //     code: lang.code,
-    //     goodWitnesses: 0,
-    //     availableWitnesses: []
-    //   }
-    // }
-
-
-    // build witness data by language
-    // for (const w of this.witnessInfo) {
-    //   w.type = 'doc' // eventually witnesses will be of different types
-    //   if (this.langs[w.lang] === undefined) {
-    //     // QUESTION: should this happen at all?
-    //     console.log('Undefined language un chunkpage langs: ' + w.lang)
-    //     this.langs[w.lang] = { name: w.lang, code: w.lang, goodWitnesses:0 }
-    //   }
-    //   if (w.goodWitness) {
-    //     this.langs[w.lang].goodWitnesses++
-    //     this.langs[w.lang].availableWitnesses.push(w)
-    //     let toggleButton = new CollapseToggleButton($('#texttoggle-' + w.id), $('#text-' + w.id))
-    //   }
-    // }
 
     // build witness data by language (new)
     this.witnessesByLang = {}
@@ -150,9 +119,12 @@ class ChunkPage {
 
     this.witnessPanelsDiv.html(this.generateWitnessPanelHtml())
 
-    // load good witnesses (with new structure)
+    // load good witnesses into panels
 
     for (const w in this.options.witnessInfoNew) {
+      if (!this.options.witnessInfoNew.hasOwnProperty(w)) {
+        continue
+      }
       let witnessInfo = this.options.witnessInfoNew[w]
       if (!witnessInfo.isValid) {
         continue
@@ -214,6 +186,9 @@ class ChunkPage {
 
     let html = ''
     for (const w in this.options.witnessInfoNew) {
+      if (!this.options.witnessInfoNew.hasOwnProperty(w)) {
+        continue
+      }
       let witnessInfo = this.options.witnessInfoNew[w]
       if (!witnessInfo.isValid) {
         continue
@@ -221,9 +196,9 @@ class ChunkPage {
       switch (witnessInfo.type) {
         case 'full_tx':
           html += twigTemplate.render({
-            title: witnessInfo.typeSpecificInfo.docInfo.title,
+            title: witnessInfo["typeSpecificInfo"].docInfo.title,
             id: witnessInfo.systemId.docId,
-            lang: witnessInfo.typeSpecificInfo.docInfo.languageCode
+            lang: witnessInfo["typeSpecificInfo"].docInfo.languageCode
           })
           break
       }
@@ -250,7 +225,7 @@ class ChunkPage {
     for(const i in this.options.witnessInfoNew) {
       let witnessInfo = this.options.witnessInfoNew[i]
       html += '<tr>'
-      let docInfo = witnessInfo.typeSpecificInfo.docInfo
+      let docInfo = witnessInfo["typeSpecificInfo"].docInfo
       html += '<td>' + this.getDocLink(docInfo) + '</td>'
       html += '<td>' + this.witnessTypes[witnessInfo.type] + '</td>'
       html += '<td>' + this.docTypes[docInfo.type] + '</td>'
@@ -281,12 +256,14 @@ class ChunkPage {
   genFullTxInfo(witnessInfo) {
 
     let info = []
-    let html = ''
-    let docInfo = witnessInfo.typeSpecificInfo.docInfo
-    let segments = witnessInfo.typeSpecificInfo.segments
+    let docInfo = witnessInfo["typeSpecificInfo"].docInfo
+    let segments = witnessInfo["typeSpecificInfo"].segments
 
     let segmentHtmlArray = []
     for(const s in segments) {
+      if (!segments.hasOwnProperty(s)) {
+        continue
+      }
       let segmenthtml = this.genPageLink(docInfo.id, segments[s].start.pageId, segments[s].start.columnNumber)
       if (segments[s].start.pageId !==segments[s].end.pageId ) {
         segmenthtml +=  '&ndash;' +
@@ -296,7 +273,6 @@ class ChunkPage {
     }
     info['location'] = segmentHtmlArray.join(', ')
 
-    html = ''
     let lastVersion = witnessInfo.typeSpecificInfo.lastVersion
     if (witnessInfo.isValid) {
       info['essential'] = '<small>Last change: ' + ApmUtil.formatVersionTime(lastVersion.timeFrom) + ' by ' + this.getAuthorLink(lastVersion.authorId) + '</small>'
@@ -422,6 +398,9 @@ class ChunkPage {
           witnesses: []
         }
         for(const w in this.witnessesByLang[l]) {
+          if (!this.witnessesByLang[l].hasOwnProperty(w)) {
+            continue
+          }
           apiCallOptions.witnesses.push(parseInt(this.witnessesByLang[l][w].id))
         }
         $.post(
@@ -491,6 +470,9 @@ class ChunkPage {
       let html = ''
       html += '<ul>'
       for(const u in urls) {
+        if (!urls.hasOwnProperty(u)) {
+          continue
+        }
         let liId = containerId + '-' +  u
         html += '<li id="' + liId + '">'
         html += urls[u].urltext + ':'
@@ -515,6 +497,9 @@ class ChunkPage {
       
       $('#' + containerId).html(html)
       for (const u in urls) {
+        if (!urls.hasOwnProperty(u)) {
+          continue
+        }
         let liId = containerId + '-' +  u
         let ctSettingsFormManager =  new AutomaticCollationTableSettingsForm({
           containerSelector : '#' + liId + '-div', 

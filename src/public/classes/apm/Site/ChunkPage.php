@@ -175,9 +175,9 @@ class ChunkPage extends SiteController
 //            //}
 //        }
         
-        $canViewWitnessDetails = false;
+        $showAdminInfo = false;
         if ($dm->userManager->isUserAllowedTo($this->userInfo['id'], 'witness-view-details')) {
-            $canViewWitnessDetails = true;
+            $showAdminInfo = true;
         }
 
         $this->profiler->stop();
@@ -186,10 +186,7 @@ class ChunkPage extends SiteController
             'work' => $workId,
             'chunk' => $chunkNumber,
             'work_info' => $workInfo,
-            //'docs' => $docs,
-            //'num_docs' => count($docs),
-            //'collationLangs' => $validCollationLangs,
-            'userCanViewChunkDetails' => $canViewWitnessDetails,
+            'showAdminInfo' => $showAdminInfo,
             'witnessInfoNew' => $witnessInfoNew,
             'authorInfo' => $authorInfoArray,
             'pageInfo' => $pageInfoArray,

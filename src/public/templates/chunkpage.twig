@@ -26,12 +26,10 @@
     <script type="application/javascript" src="{{baseurl}}/js/ChunkPage.js"></script>
 <script>
 $(function()  {// .ready()
-    let showAdminInfo = {{ userCanViewChunkDetails }} === 1;
+    let showAdminInfo = JSON.parse('{{showAdminInfo|json_encode|raw}}');
     let cp = new ChunkPage({
         work: '{{work}}',
         chunk: {{chunk}},
-        //witnessInfo: JSON.parse('{{docs|json_encode|e('js')}}'),
-        //collationLanguages: JSON.parse('{{collationLangs|json_encode|e('js')}}'),
         urlGenerator:  new ApmUrlGenerator('{{baseurl}}'),
         userId: {{userinfo.id}},
         witnessInfoNew: JSON.parse('{{witnessInfoNew|json_encode|raw}}'),

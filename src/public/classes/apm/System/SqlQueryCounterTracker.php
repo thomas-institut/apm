@@ -48,4 +48,8 @@ class SqlQueryCounterTracker extends AggregateCounterTracker
         $this->throwRunTimeException("Registering counters not allowed", self::ERROR_REGISTERING_COUNTERS_NOT_ALLOWED);
     }
 
+    public function countSelect() : void {
+        $this->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+    }
+
 }

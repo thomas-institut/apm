@@ -155,7 +155,7 @@ class DataTablePresetManager extends PresetManager implements SqlQueryCounterTra
                 $rowToFind[$this->expandedKeys[$key]] = $value;
             }
         }
-        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+        $this->getSqlQueryCounterTracker()->countSelect();
         $rows = $this->dataTable->findRows($rowToFind);
         foreach($rows as $theRow) {
             if ($this->match($this->decodeStringToArray($theRow[self::FIELD_KEYARRAY]), $keysToMatch)) {
@@ -182,7 +182,7 @@ class DataTablePresetManager extends PresetManager implements SqlQueryCounterTra
                 $rowToFind[$this->expandedKeys[$key]] = $value;
             }
         }
-        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+        $this->getSqlQueryCounterTracker()->countSelect();
         $rows = $this->dataTable->findRows($rowToFind);
         foreach($rows as $theRow) {
             if ($this->match($this->decodeStringToArray($theRow[self::FIELD_KEYARRAY]), $keysToMatch)) {
@@ -207,7 +207,7 @@ class DataTablePresetManager extends PresetManager implements SqlQueryCounterTra
     
     public function getPresetById(int $id) : Preset {
         try {
-            $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+            $this->getSqlQueryCounterTracker()->countSelect();
             $row = $this->dataTable->getRow($id);
         } catch (InvalidArgumentException $e) {
             if ($e->getCode() === DataTable::ERROR_ROW_DOES_NOT_EXIST) {
@@ -328,7 +328,7 @@ class DataTablePresetManager extends PresetManager implements SqlQueryCounterTra
             self::FIELD_USERID => $userId,
             self::FIELD_TITLE => $title
         ];
-        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+        $this->getSqlQueryCounterTracker()->countSelect();
         $rows = $this->dataTable->findRows($rowToFind, 1);
         if (count($rows) < 1) {
             return [];

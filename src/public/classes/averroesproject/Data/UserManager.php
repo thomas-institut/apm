@@ -147,9 +147,9 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
      */
     public function getUsernameFromUserId(int $userId) : bool
     {
-        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+        $this->getSqlQueryCounterTracker()->countSelect();
         if ($this->userTable->rowExists($userId)) {
-            $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+            $this->getSqlQueryCounterTracker()->countSelect();
             return $this->userTable->getRow($userId)['username'];
         }
         return false;
@@ -163,14 +163,14 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
      */
     public function getUserIdFromUserName(string $userName)
     {
-        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+        $this->getSqlQueryCounterTracker()->countSelect();
         $userId = $this->userTable->getIdForKeyValue('username', $userName);
         return  $userId===DataTable::NULL_ROW_ID ? false : $userId;
     }
     
     public function getPersonInfo(int $personId)
     {
-        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+        $this->getSqlQueryCounterTracker()->countSelect();
         return $this->peopleTable->getRow($personId);
     }
 
@@ -182,13 +182,13 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
     public function getUserInfoByUserId(int $userid)
     {
         try {
-            $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+            $this->getSqlQueryCounterTracker()->countSelect();
             $pi = $this->peopleTable->getRow($userid);
         } catch (Exception $e) {
             return false;
         }
 
-        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+        $this->getSqlQueryCounterTracker()->countSelect();
         $ui = $this->userTable->getRow($userid);
         
         if (!isset($pi['email'])) {
@@ -217,7 +217,7 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
         if ($fullName === '') {
             return false;
         }
-        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+        $this->getSqlQueryCounterTracker()->countSelect();
         if ($this->userExistsById($userId)) {
             $newInfo = [];
             $newInfo['id'] = $userId;
@@ -232,18 +232,18 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
     
     public function getUserInfoByUsername(string $username)
     {
-        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+        $this->getSqlQueryCounterTracker()->countSelect();
         $userid = $this->getUserIdFromUserName($username);
         return $this->getUserInfoByUserId($userid);
     }
     
     public function getUserInfoForAllUsers() : array
     {
-        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+        $this->getSqlQueryCounterTracker()->countSelect();
         $allUsers = $this->userTable->getAllRows();
         $allUserInfo = [];
         foreach($allUsers as $user){
-            $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+            $this->getSqlQueryCounterTracker()->countSelect();
             $allUserInfo[] = $this->getUserInfoByUserId($user['id']);
         }
         return $allUserInfo;
@@ -261,7 +261,7 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
      */
     public function createUserByUsername(string $userName)
     {
-        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+        $this->getSqlQueryCounterTracker()->countSelect();
         if ($this->userExistsByUserName($userName)) {
             return false;
         }
@@ -296,7 +296,7 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
         if ($this->isRoot($userId)){
             return true;
         }
-        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+        $this->getSqlQueryCounterTracker()->countSelect();
         return $this->relationsTable->findRows(['userId' => $userId,
             'relation' => 'isAllowed', 'attribute' => $action]) !== [];
     }
@@ -328,7 +328,7 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
         if ($this->isRoot($userId)) {
             return false;
         }
-        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+        $this->getSqlQueryCounterTracker()->countSelect();
         $rows = $this->relationsTable->findRows(['userId' => $userId,
             'relation' => 'isAllowed', 'attribute' => $action]);
         if ($rows === []){
@@ -340,7 +340,7 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
     
     public function userHasRole(int $userId, string $role)
     {
-        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+        $this->getSqlQueryCounterTracker()->countSelect();
         return $this->relationsTable->findRows(['userId' => $userId,
             'relation' => 'hasRole', 'attribute' => $role]) !== [];
     }
@@ -377,7 +377,7 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
         if ($this->isRoot($userId) && $role !== $this->rootRole) {
             return false;
         }
-        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+        $this->getSqlQueryCounterTracker()->countSelect();
         $rows = $this->relationsTable->findRows(['userId' => $userId,
             'relation' => 'hasRole', 'attribute' => $role]);
         if ($rows === []){
@@ -437,7 +437,7 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
     
     public function getUserTokenRows(int $userId, string $userAgent, string $ipAddress) : array
     {
-        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+        $this->getSqlQueryCounterTracker()->countSelect();
         return $this->tokensTable->findRows( [
             'user_id' => $userId, 
             'user_agent' => $userAgent, 
@@ -482,7 +482,7 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
         if (!$this->userExistsByUserName($userName)){
             return false;
         }
-        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+        $this->getSqlQueryCounterTracker()->countSelect();
         $u = $this->userTable->getRow($this->getUserIdFromUserName($userName));
         if (!isset($u['password']) || $u['password'] === '') {
             return false;

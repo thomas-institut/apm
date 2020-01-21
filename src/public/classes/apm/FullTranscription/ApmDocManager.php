@@ -56,7 +56,7 @@ class ApmDocManager extends DocManager implements LoggerAwareInterface, ErrorRep
     {
         $row = [];
         try {
-            $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+            $this->getSqlQueryCounterTracker()->countSelect();
             $row = $this->docDataTable->getRow($docId);
         } catch (\InvalidArgumentException $e) {
             // no such document!

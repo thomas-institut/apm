@@ -60,7 +60,7 @@ class ApmPageManager extends PageManager implements LoggerAwareInterface, ErrorR
         if (isset($this->pageInfoCache[$docId][$seq])) {
             return $this->pageInfoCache[$docId][$seq];
         }
-        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+        $this->getSqlQueryCounterTracker()->countSelect();
 
         $rows = $this->pagesDataTable->findRows([
             'doc_id' => $docId,
@@ -78,7 +78,7 @@ class ApmPageManager extends PageManager implements LoggerAwareInterface, ErrorR
      */
     public function getPageInfoArrayForDoc(int $docId): array
     {
-        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+        $this->getSqlQueryCounterTracker()->countSelect();
         $rows = $this->pagesDataTable->findRows([
             'doc_id' => $docId
         ]);
@@ -112,7 +112,7 @@ class ApmPageManager extends PageManager implements LoggerAwareInterface, ErrorR
     {
         $row = [];
         try {
-            $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+            $this->getSqlQueryCounterTracker()->countSelect();
             $row = $this->pagesDataTable->getRow($pageId);
         } catch (\InvalidArgumentException $e) {
             // no such document!

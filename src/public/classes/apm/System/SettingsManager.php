@@ -45,7 +45,8 @@ class SettingsManager implements SqlQueryCounterTrackerAware {
     
     public function getSetting(string $setting)
     {
-        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+
+        $this->getSqlQueryCounterTracker()->countSelect();
         $rows = $this->settingsTable->findRows(['setting' => $setting], 1);
         if ($rows === []) {
             return false;
@@ -56,7 +57,7 @@ class SettingsManager implements SqlQueryCounterTrackerAware {
     public function setSetting(string $setting, string $value)
     {
 
-        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+        $this->getSqlQueryCounterTracker()->countSelect();
         $rows = $this->settingsTable->findRows(['setting' => $setting], 1);
         if ($rows === []) {
             $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::CREATE_COUNTER);

@@ -251,8 +251,8 @@ class ApmTranscriptionManager extends TranscriptionManager implements  SqlQueryC
             $conditionsSqlString = '';
         }
 
+        $this->getSqlQueryCounterTracker()->countSelect();
 
-        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
 
         $query = "SELECT $tp.doc_id as 'doc_id', $tp.seq as 'page_seq', $tp.id as 'page_id'," .
             " $te.column_number," .
@@ -315,8 +315,8 @@ class ApmTranscriptionManager extends TranscriptionManager implements  SqlQueryC
             $orderby = 'seq';
         }
 
+        $this->getSqlQueryCounterTracker()->countSelect();
 
-        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
         $query =  'SELECT DISTINCT p.`page_number` AS page_number FROM ' .
             $tp . ' AS p' .
             ' JOIN ' . $te . ' AS e ON p.id=e.page_id' .
@@ -464,7 +464,7 @@ class ApmTranscriptionManager extends TranscriptionManager implements  SqlQueryC
         $tp = $this->tNames[ApmMySqlTableName::TABLE_PAGES];
         $eot = MySqlUnitemporalDataTable::END_OF_TIMES;
 
-        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+        $this->getSqlQueryCounterTracker()->countSelect();
 
         $query = "SELECT `$tv`.* from `$tv` JOIN `$tp` ON ($tv.page_id=$tp.id) WHERE " .
             "$tp.doc_id=$docId " .

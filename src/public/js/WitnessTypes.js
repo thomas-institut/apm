@@ -1,5 +1,4 @@
-<?php
-/* 
+/*
  *  Copyright (C) 2020 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -14,18 +13,25 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
- *  
+ *
  */
 
-namespace APM\System;
 
+// Constants to identify witness types in the system
 
-class WitnessType
-{
-    const FULL_TRANSCRIPTION = 'fullTx';
-    const PARTIAL_TRANSCRIPTION = 'partialTx';
-    const TEXT_TRANSCRIPTION_PLAIN = 'textTxPlain';
-    const TEXT_TRANSCRIPTION_MARK_DOWN = 'textTxMarkdown';
-    const TEXT_TRANSCRIPTION_FULL = 'textTxRich';
-    const CHUNK_EDITION = 'edition';
+class WitnessTypes {
+
+  static isTypeValid(type) {
+    switch(type) {
+      case WitnessTypes.FULL_TX:
+      case WitnessTypes.PARTIAL_TX:
+        return true
+
+      default:
+        return false
+    }
+  }
 }
+
+WitnessTypes.FULL_TX = 'fullTx'
+WitnessTypes.PARTIAL_TX = 'partialTx'

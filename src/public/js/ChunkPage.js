@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2019 Universität zu Köln
+ *  Copyright (C) 2020 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ class ChunkPage {
       showAdminInfo : { type: 'boolean', default: false},
       urlGenerator: { required: true, type: 'object'},
       userId: { type: 'number', default: -1 },
-      witnessInfoNew :{ type: 'Array', default: []},
+      witnessInfo :{ type: 'Array', default: []},
       authorInfo:  { type: 'object', default: []},
       pageInfo:  { type: 'object', default: []},
       languageInfo : { type: 'object', default: []},
@@ -43,10 +43,10 @@ class ChunkPage {
     console.log('Chunk Page options')
     console.log(this.options)
 
+
     // some constant labels
-    this.witnessTypes = {
-      'full_tx' : 'Full Transcription'
-    }
+    this.witnessTypeLabels = {}
+    this.witnessTypeLabels[WitnessTypes.FULL_TX] = 'Full Transcription'
 
     this.docTypes = {
       'mss' : 'Manuscript',
@@ -89,12 +89,12 @@ class ChunkPage {
 
     // build witness data by language (new)
     this.witnessesByLang = {}
-    for (const w in this.options.witnessInfoNew) {
-      if (!this.options.witnessInfoNew.hasOwnProperty(w)){
+    for (const w in this.options.witnessInfo) {
+      if (!this.options.witnessInfo.hasOwnProperty(w)){
         continue
       }
-      let witnessInfo = this.options.witnessInfoNew[w]
-      if (witnessInfo.type !== 'full_tx') {
+      let witnessInfo = this.options.witnessInfo[w]
+      if (witnessInfo.type !==WitnessTypes.FULL_TX) {
         // TODO: support other witness types!
         continue
       }
@@ -121,31 +121,36 @@ class ChunkPage {
 
     // load good witnesses into panels
 
-    for (const w in this.options.witnessInfoNew) {
-      if (!this.options.witnessInfoNew.hasOwnProperty(w)) {
+    for (const w in this.options.witnessInfo) {
+      if (!this.options.witnessInfo.hasOwnProperty(w)) {
         continue
       }
-      let witnessInfo = this.options.witnessInfoNew[w]
+      let witnessInfo = this.options.witnessInfo[w]
       if (!witnessInfo.isValid) {
         continue
       }
       switch (witnessInfo.type) {
-        case 'full_tx':
+        case WitnessTypes.FULL_TX:
           let docId = witnessInfo.systemId.docId
           let witnessUrl = this.pathFor.siteWitness(this.options.work, this.options.chunk, 'doc', docId, 'html')
-          console.log('Loading full_tx witness ' + docId  + ' timestamp ' + witnessInfo.systemId.timeStamp )
+          console.log('Loading fullTx witness ' + docId  + ' timestamp ' + witnessInfo.systemId.timeStamp )
           $('#formatted-' +docId).html('Loading text, this might take a while <i class="fas fa-spinner fa-spin fa-fw"></i> ...')
           $.get(witnessUrl)
             .done(function(data){
-              console.log('Got data for full tx witness ' + docId)
+              console.log('Got data for fullTx witness ' + docId)
               $('#formatted-' + docId).html(data)
             })
             .fail(function (resp){
-              console.log('Error getting data for full tx witness ' + docId)
+              console.log('Error getting data for fullTx witness ' + docId)
               console.log(resp)
               $('#formatted-' + docId).html('Error loading text')
             })
           break
+
+        case WitnessTypes.PARTIAL_TX:
+          console.log('Partial TX witness not supported yet!')
+          break
+
         default:
           console.warn('Unsupported witness type: ' + witnessInfo.type)
       }
@@ -185,16 +190,16 @@ class ChunkPage {
     })
 
     let html = ''
-    for (const w in this.options.witnessInfoNew) {
-      if (!this.options.witnessInfoNew.hasOwnProperty(w)) {
+    for (const w in this.options.witnessInfo) {
+      if (!this.options.witnessInfo.hasOwnProperty(w)) {
         continue
       }
-      let witnessInfo = this.options.witnessInfoNew[w]
+      let witnessInfo = this.options.witnessInfo[w]
       if (!witnessInfo.isValid) {
         continue
       }
       switch (witnessInfo.type) {
-        case 'full_tx':
+        case WitnessTypes.FULL_TX:
           html += twigTemplate.render({
             title: witnessInfo["typeSpecificInfo"].docInfo.title,
             id: witnessInfo.systemId.docId,
@@ -222,19 +227,27 @@ class ChunkPage {
     html += '</tr>'
     html += '</thead>'
 
-    for(const i in this.options.witnessInfoNew) {
-      let witnessInfo = this.options.witnessInfoNew[i]
+    for(const i in this.options.witnessInfo) {
+      if (!this.options.witnessInfo.hasOwnProperty(i)) {
+        continue
+      }
+      let witnessInfo = this.options.witnessInfo[i]
       html += '<tr>'
       let docInfo = witnessInfo["typeSpecificInfo"].docInfo
       html += '<td>' + this.getDocLink(docInfo) + '</td>'
-      html += '<td>' + this.witnessTypes[witnessInfo.type] + '</td>'
+      html += '<td>' + this.witnessTypeLabels[witnessInfo.type] + '</td>'
       html += '<td>' + this.docTypes[docInfo.type] + '</td>'
       html += '<td>' + this.options.languageInfo[witnessInfo.languageCode]['name'] + '</td>'
       let info = ''
       switch (witnessInfo.type) {
-        case 'full_tx':
+        case WitnessTypes.FULL_TX:
           info = this.genFullTxInfo(witnessInfo)
           break
+
+        case WitnessTypes.PARTIAL_TX:
+          info = { 'location' : 'tbd', 'essential': 'based on TBD', 'admin' : ''}
+          break
+
         default:
           info = 'Unknown witness type'
       }
@@ -315,7 +328,7 @@ class ChunkPage {
   generateChunkIdDivHtml() {
     let html = ''
 
-    let numWitnesses = this.options.witnessInfoNew.length
+    let numWitnesses = this.options.witnessInfo.length
     let numValidWitnesses = this.calculateTotalValidWitnesses()
     html += '<p>'
     html += '<b>Chunk ID:</b> ' + this.options.workInfo['dare_id'] + '-' + this.options.chunk

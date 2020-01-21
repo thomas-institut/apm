@@ -19,9 +19,8 @@
     <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/act-settingsform.css" />
     <script type="text/javascript" src="{{baseurl}}/node_modules//twig/twig.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/ApmUtil.js"></script>
-
+    <script type="application/javascript" src="{{baseurl}}/js/WitnessTypes.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/AutoCollTableSettingsForm.js"></script>
-
     <script type="application/javascript" src="{{baseurl}}/js/CollapseToggleButton.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/ChunkPage.js"></script>
 <script>
@@ -32,7 +31,7 @@ $(function()  {// .ready()
         chunk: {{chunk}},
         urlGenerator:  new ApmUrlGenerator('{{baseurl}}'),
         userId: {{userinfo.id}},
-        witnessInfoNew: JSON.parse('{{witnessInfoNew|json_encode|raw}}'),
+        witnessInfo: JSON.parse('{{witnessInfoArray|json_encode|raw}}'),
         pageInfo: JSON.parse('{{pageInfo|json_encode|raw}}'),
         authorInfo: JSON.parse('{{authorInfo|json_encode|raw}}'),
         languageInfo : JSON.parse('{{languageInfo|json_encode|raw}}'),

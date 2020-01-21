@@ -39,7 +39,6 @@ use AverroesProjectToApm\DatabaseItemStream;
 use AverroesProjectToApm\DatabaseItemStreamWitness;
 use AverroesProjectToApm\Formatter\WitnessPageFormatter;
 use DataTable\TimeString;
-use Exception;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
@@ -52,13 +51,7 @@ use AverroesProject\ItemStream\ItemStream;
  */
 class ChunkPage extends SiteController
 {
-    
-    /**
-     * After this many pages in a witness, the witness is not rendered in 
-     * the single chunk page. It will be asked separately via javascript
-     */
-    const PAGE_SPAN_THRESHHOLD = 3;
-    
+
     public function singleChunkPage(Request $request, Response $response)
     {
        
@@ -68,19 +61,16 @@ class ChunkPage extends SiteController
         $chunkNumber = $request->getAttribute('chunk');
         $this->profiler->start();
         $workInfo = $dm->getWorkInfo($workId);
-        $witnessList = $dm->getDocsForChunk($workId, $chunkNumber);
-        $this->profiler->lap('After DM get docs for chunk');
 
-        // Info obtained with transcription manager
         $chunkLocationMap = $transcriptionManager->getChunkLocationMapForChunk($workId, $chunkNumber, TimeString::now());
         $versionMap = $transcriptionManager->getVersionsForChunkLocationMap($chunkLocationMap);
         $lastVersions = $transcriptionManager->getLastChunkVersionFromVersionMap($versionMap);
         $this->profiler->lap('After TM get chunk map and version info');
 
-        // build new witness info array
+        // build witness info array
         $pagesMentioned = [];
         $authorsMentioned = [];
-        $witnessInfoNew = [];
+        $witnessInfoArray = [];
         $languageInfoArray = [];
 
         $docManager = $transcriptionManager->getDocManager();
@@ -125,7 +115,6 @@ class ChunkPage extends SiteController
                     $invalidErrorCode =$segment->getChunkError();
                     continue;
                 }
-
             }
             $witnessInfo['isValid'] = $isValid;
             $witnessInfo['invalidErrorCode'] = $invalidErrorCode;
@@ -133,48 +122,12 @@ class ChunkPage extends SiteController
                 $languageInfoArray[$docInfo->languageCode]['validWitnesses']++;
             }
 
-            $witnessInfoNew[] = $witnessInfo;
+            $witnessInfoArray[] = $witnessInfo;
         }
-
 
         $pageInfoArray = $this->getPageInfoArrayFromList($pagesMentioned, $transcriptionManager->getPageManager());
         $authorInfoArray = $this->getAuthorInfoArrayFromList($authorsMentioned, $dm->userManager);
 
-        // continue with old info
-
-//        $docs = [];
-//        $witnessNumber = 0;
-//        $goodWitnessesPerLang = [];
-//        foreach($this->languages as $lang) {
-//            $goodWitnessesPerLang[$lang['code']]['numWitnesses'] = 0;
-//            $goodWitnessesPerLang[$lang['code']]['name'] = $lang['name'];
-//            $goodWitnessesPerLang[$lang['code']]['code'] = $lang['code'];
-//        }
-//
-//        foreach ($witnessList as $witness) {
-//            try {
-//                $doc = $this->buildEssentialWitnessDataFromDocData($witness, $workId, $chunkNumber, $dm, ++$witnessNumber);
-//                $doc['id'] = intval($doc['id']); // make sure Id is an integer
-//                $doc['delayLoad'] = true;
-//            } catch (Exception $e) { // @codeCoverageIgnore
-//                $this->logger->error('Error in build Witness Data', [$e->getMessage()]); // @codeCoverageIgnore
-//            }
-//
-//            if ($doc['goodWitness']) {
-//                $goodWitnessesPerLang[$doc['lang']]['numWitnesses']++;
-//            } else {
-//                $doc['plain_text'] = '';
-//            }
-//            $docs[] = $doc;
-//        }
-//
-//        $validCollationLangs = [];
-//        foreach ($goodWitnessesPerLang as $lang => $witnessLangInfo) {
-//            //if ($witnessLangInfo['numWitnesses'] >= 2) {
-//                $validCollationLangs[] = $goodWitnessesPerLang[$lang];
-//            //}
-//        }
-        
         $showAdminInfo = false;
         if ($dm->userManager->isUserAllowedTo($this->userInfo['id'], 'witness-view-details')) {
             $showAdminInfo = true;
@@ -187,7 +140,7 @@ class ChunkPage extends SiteController
             'chunk' => $chunkNumber,
             'work_info' => $workInfo,
             'showAdminInfo' => $showAdminInfo,
-            'witnessInfoNew' => $witnessInfoNew,
+            'witnessInfoArray' => $witnessInfoArray,
             'authorInfo' => $authorInfoArray,
             'pageInfo' => $pageInfoArray,
             'languageInfo' => $languageInfoArray

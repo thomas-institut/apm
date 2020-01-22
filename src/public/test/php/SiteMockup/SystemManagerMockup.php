@@ -30,7 +30,7 @@ use APM\Presets\PresetManager;
 use APM\System\SystemManager;
 use APM\System\SettingsManager;
 use APM\Plugin\HookManager;
-use DataTable\InMemoryDataTable;
+use ThomasInstitut\DataTable\InMemoryDataTable;
 use MockTranscriptionManager;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;

@@ -23,8 +23,9 @@ namespace AverroesProject\Data;
 use APM\System\SqlQueryCounterTrackerAware;
 use APM\System\SimpleSqlQueryCounterTrackerAware;
 use APM\System\SqlQueryCounterTracker;
-use DataTable\DataTable;
-use DataTable\InMemoryDataTable;
+use ThomasInstitut\DataTable\DataTable;
+use ThomasInstitut\DataTable\GenericDataTable;
+use ThomasInstitut\DataTable\InMemoryDataTable;
 use Exception;
 use Monolog\Logger;
 use Psr\Log\LoggerAwareInterface;
@@ -165,7 +166,7 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
     {
         $this->getSqlQueryCounterTracker()->countSelect();
         $userId = $this->userTable->getIdForKeyValue('username', $userName);
-        return  $userId===DataTable::NULL_ROW_ID ? false : $userId;
+        return  $userId===GenericDataTable::NULL_ROW_ID ? false : $userId;
     }
     
     public function getPersonInfo(int $personId)
@@ -499,7 +500,7 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
 
         if ($this->userExistsByUserName($userName)){
             $userId = $this->getUserIdFromUserName($userName);
-            if ($userId === DataTable::NULL_ROW_ID) {
+            if ($userId === GenericDataTable::NULL_ROW_ID) {
                 return false;
             }
             $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::UPDATE_COUNTER);

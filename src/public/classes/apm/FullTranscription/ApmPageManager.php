@@ -22,7 +22,7 @@ namespace APM\FullTranscription;
 
 use APM\System\SqlQueryCounterTrackerAware;
 use APM\System\SimpleSqlQueryCounterTrackerAware;
-use DataTable\UnitemporalDataTable;
+use ThomasInstitut\DataTable\UnitemporalDataTable;
 use InvalidArgumentException;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;

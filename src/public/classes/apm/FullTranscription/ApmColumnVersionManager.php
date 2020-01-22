@@ -20,7 +20,7 @@
 namespace APM\FullTranscription;
 
 
-use DataTable\DataTable;
+use ThomasInstitut\DataTable\DataTable;
 
 class ApmColumnVersionManager extends ColumnVersionManager
 {

@@ -35,9 +35,9 @@ use APM\FullTranscription\TranscriptionManager;
 use AverroesProject\Data\EdNoteManager;
 use AverroesProject\Data\MySqlHelper;
 use AverroesProject\TxText\Item as ApItem;
-use DataTable\MySqlDataTable;
-use DataTable\MySqlUnitemporalDataTable;
-use DataTable\TimeString;
+use ThomasInstitut\DataTable\MySqlDataTable;
+use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
+use ThomasInstitut\TimeString\TimeString;
 use InvalidArgumentException;
 use PDO;
 use Psr\Log\LoggerAwareInterface;
@@ -439,7 +439,7 @@ class ApmTranscriptionManager extends TranscriptionManager implements  SqlQueryC
                             foreach ($columnArray as $colNumber => $versionArray) {
                                 foreach ($versionArray as $versionInfo ) {
                                     /** @var $versionInfo ColumnVersionInfo */
-                                    if ($versionInfo->timeUntil === MySqlUnitemporalDataTable::END_OF_TIMES) {
+                                    if ($versionInfo->timeUntil === TimeString::END_OF_TIMES) {
                                         if ($versionInfo->timeFrom > $lastVersion->timeFrom) {
                                             $lastVersion = $versionInfo;
                                         }
@@ -462,7 +462,7 @@ class ApmTranscriptionManager extends TranscriptionManager implements  SqlQueryC
     {
         $tv = $this->tNames[ApmMySqlTableName::TABLE_VERSIONS_TX];
         $tp = $this->tNames[ApmMySqlTableName::TABLE_PAGES];
-        $eot = MySqlUnitemporalDataTable::END_OF_TIMES;
+        $eot = TimeString::END_OF_TIMES;
 
         $this->getSqlQueryCounterTracker()->countSelect();
 

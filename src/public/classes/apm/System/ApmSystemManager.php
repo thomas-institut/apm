@@ -28,7 +28,7 @@ use APM\Presets\DataTablePresetManager;
 use APM\Presets\PresetManager;
 use APM\Plugin\HookManager;
 
-use DataTable\MySqlDataTable;
+use ThomasInstitut\DataTable\MySqlDataTable;
 use Exception;
 use InvalidArgumentException;
 use Monolog\Handler\ErrorLogHandler;

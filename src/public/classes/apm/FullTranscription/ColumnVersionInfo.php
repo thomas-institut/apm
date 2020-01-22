@@ -19,15 +19,14 @@
 
 namespace APM\FullTranscription;
 
+use ThomasInstitut\TimeString\TimeString;
+
 /**
  * Column version info as given in the APM database
  * @package APM\FullTranscription
  */
 class ColumnVersionInfo
 {
-
-    const TIME_ZERO = '0000-00-00 00:00:00.000000';
-
     /**
      * @var int
      */
@@ -70,8 +69,8 @@ class ColumnVersionInfo
         $this->id = 0;
         $this->pageId = 0;
         $this->column = 0;
-        $this->timeFrom = self::TIME_ZERO;
-        $this->timeUntil = self::TIME_ZERO;
+        $this->timeFrom = TimeString::TIME_ZERO;
+        $this->timeUntil = TimeString::TIME_ZERO;
         $this->authorId = 0;
         $this->description = '';
         $this->isMinor = false;

@@ -24,7 +24,7 @@ use APM\System\SystemManager;
 use AverroesProject\ColumnElement\Element;
 use AverroesProject\Data\DataManager;
 use AverroesProject\Data\EdNoteManager;
-use DataTable\TimeString;
+use ThomasInstitut\TimeString\TimeString;
 use DI\DependencyException;
 use DI\NotFoundException;
 use \Psr\Http\Message\ServerRequestInterface as Request;

@@ -51,16 +51,16 @@ use AverroesProject\TxText\Rubric;
 use AverroesProject\TxText\Sic;
 use AverroesProject\TxText\Text;
 use AverroesProject\TxText\Unclear;
-use DataTable\MySqlDataTable;
-use DataTable\MySqlDataTableWithRandomIds;
+use ThomasInstitut\DataTable\MySqlDataTable;
+use ThomasInstitut\DataTable\MySqlDataTableWithRandomIds;
 use APM\Algorithm\MyersDiff;
 use APM\Algorithm\Utility;
 use APM\Plugin\HookManager;
-use DataTable\TimeString;
+use ThomasInstitut\TimeString\TimeString;
 use Exception;
 use Monolog\Logger;
 
-use DataTable\MySqlUnitemporalDataTable;
+use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
 use \PDO;
 
 /**
@@ -2457,7 +2457,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
             'page_id' => $pageId,
             'col' => $col,
             'time_from' => $timeFrom,
-            'time_until' => MySqlUnitemporalDataTable::END_OF_TIMES,
+            'time_until' => TimeString::END_OF_TIMES,
             'author_id' => $authorId,
             'descr' => $descr,
             'minor' => $isMinor ? 1 : 0,

@@ -21,7 +21,7 @@
 namespace AverroesProject\Data;
 
 use AverroesProject\EditorialNote;
-use DataTable\MySqlDataTable;
+use ThomasInstitut\DataTable\MySqlDataTable;
 use Psr\Log\LoggerInterface;
 
 /**

@@ -23,8 +23,6 @@ namespace AverroesProjectToApm\Decorators;
 use APM\Core\Collation\CollationTableDecorator;
 use APM\Core\Collation\CollationTable;
 
-use APM\Core\Item\ItemFactory;
-
 use APM\Core\Item\MarkType;
 use AverroesProjectToApm\AddressInDatabaseItemStream;
 use APM\Core\Item\TextualItem;

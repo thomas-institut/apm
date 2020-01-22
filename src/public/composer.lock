@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c423627628c861f6208c629bc4aab882",
+    "content-hash": "9fac607096af9ad5661988a8195c017e",
     "packages": [
         {
             "name": "dflydev/fig-cookies",
@@ -1336,53 +1336,6 @@
             "time": "2017-10-23T01:57:42+00:00"
         },
         {
-            "name": "rafaelnajera/datatable",
-            "version": "0.6.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/rafaelnajera/datatable.git",
-                "reference": "8e224884235fef84ed7d65d99d5e6efe98812cb8"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/rafaelnajera/datatable/zipball/8e224884235fef84ed7d65d99d5e6efe98812cb8",
-                "reference": "8e224884235fef84ed7d65d99d5e6efe98812cb8",
-                "shasum": ""
-            },
-            "require": {
-                "ext-pdo": "*",
-                "php": ">=7.1",
-                "psr/log": "^1.1"
-            },
-            "require-dev": {
-                "monolog/monolog": "^2.0",
-                "phpunit/phpunit": "^8.4"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "DataTable\\": "DataTable"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Rafael Nájera",
-                    "email": "rafael@najera.ca",
-                    "homepage": "http://rafaelnajera.com"
-                }
-            ],
-            "description": "A simple data table interface",
-            "homepage": "http://rafaelnajera.com/datatable",
-            "keywords": [
-                "data"
-            ],
-            "time": "2019-11-18T15:39:02+00:00"
-        },
-        {
             "name": "rafaelnajera/matcher",
             "version": "0.5.0",
             "source": {
@@ -1952,6 +1905,96 @@
             "time": "2019-11-27T13:56:44+00:00"
         },
         {
+            "name": "thomas-institut/datatable",
+            "version": "0.7.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/thomas-institut/datatable.git",
+                "reference": "01d369b579ff84f0f7454284ebf537a90d0f9579"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/thomas-institut/datatable/zipball/01d369b579ff84f0f7454284ebf537a90d0f9579",
+                "reference": "01d369b579ff84f0f7454284ebf537a90d0f9579",
+                "shasum": ""
+            },
+            "require": {
+                "ext-pdo": "*",
+                "php": ">=7.1",
+                "psr/log": "^1.1",
+                "thomas-institut/timestring": "^1.0"
+            },
+            "require-dev": {
+                "monolog/monolog": "^2.0",
+                "phpunit/phpunit": "^8.4"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "ThomasInstitut\\DataTable\\": "DataTable"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Rafael Nájera",
+                    "email": "rafael@najera.ca",
+                    "homepage": "http://rafaelnajera.com"
+                }
+            ],
+            "description": "A simple data table interface",
+            "keywords": [
+                "data"
+            ],
+            "time": "2020-01-22T10:32:15+00:00"
+        },
+        {
+            "name": "thomas-institut/timestring",
+            "version": "v1.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/thomas-institut/timestring.git",
+                "reference": "8f000a83f6d1ae0b169abbe394f8e97a1d7eaa99"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/thomas-institut/timestring/zipball/8f000a83f6d1ae0b169abbe394f8e97a1d7eaa99",
+                "reference": "8f000a83f6d1ae0b169abbe394f8e97a1d7eaa99",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.1"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^8.4"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "ThomasInstitut\\TimeString\\": "TimeString"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-3.0-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "Rafael Nájera",
+                    "email": "rafael.najera@uni-koeln.de",
+                    "homepage": "http://rafaelnajera.com"
+                }
+            ],
+            "description": "Dealing with MySql datetime strings with microseconds",
+            "keywords": [
+                "data"
+            ],
+            "time": "2020-01-22T09:54:59+00:00"
+        },
+        {
             "name": "twig/twig",
             "version": "v2.12.3",
             "source": {
@@ -2309,16 +2352,16 @@
         },
         {
             "name": "myclabs/deep-copy",
-            "version": "1.9.4",
+            "version": "1.9.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/myclabs/DeepCopy.git",
-                "reference": "579bb7356d91f9456ccd505f24ca8b667966a0a7"
+                "reference": "b2c28789e80a97badd14145fda39b545d83ca3ef"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/myclabs/DeepCopy/zipball/579bb7356d91f9456ccd505f24ca8b667966a0a7",
-                "reference": "579bb7356d91f9456ccd505f24ca8b667966a0a7",
+                "url": "https://api.github.com/repos/myclabs/DeepCopy/zipball/b2c28789e80a97badd14145fda39b545d83ca3ef",
+                "reference": "b2c28789e80a97badd14145fda39b545d83ca3ef",
                 "shasum": ""
             },
             "require": {
@@ -2353,7 +2396,7 @@
                 "object",
                 "object graph"
             ],
-            "time": "2019-12-15T19:12:40+00:00"
+            "time": "2020-01-17T21:11:47+00:00"
         },
         {
             "name": "phar-io/manifest",
@@ -2610,24 +2653,24 @@
         },
         {
             "name": "phpspec/prophecy",
-            "version": "1.10.1",
+            "version": "v1.10.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpspec/prophecy.git",
-                "reference": "cbe1df668b3fe136bcc909126a0f529a78d4cbbc"
+                "reference": "b4400efc9d206e83138e2bb97ed7f5b14b831cd9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpspec/prophecy/zipball/cbe1df668b3fe136bcc909126a0f529a78d4cbbc",
-                "reference": "cbe1df668b3fe136bcc909126a0f529a78d4cbbc",
+                "url": "https://api.github.com/repos/phpspec/prophecy/zipball/b4400efc9d206e83138e2bb97ed7f5b14b831cd9",
+                "reference": "b4400efc9d206e83138e2bb97ed7f5b14b831cd9",
                 "shasum": ""
             },
             "require": {
                 "doctrine/instantiator": "^1.0.2",
                 "php": "^5.3|^7.0",
                 "phpdocumentor/reflection-docblock": "^2.0|^3.0.2|^4.0|^5.0",
-                "sebastian/comparator": "^1.2.3|^2.0|^3.0",
-                "sebastian/recursion-context": "^1.0|^2.0|^3.0"
+                "sebastian/comparator": "^1.2.3|^2.0|^3.0|^4.0",
+                "sebastian/recursion-context": "^1.0|^2.0|^3.0|^4.0"
             },
             "require-dev": {
                 "phpspec/phpspec": "^2.5 || ^3.2",
@@ -2669,7 +2712,7 @@
                 "spy",
                 "stub"
             ],
-            "time": "2019-12-22T21:05:45+00:00"
+            "time": "2020-01-20T15:57:02+00:00"
         },
         {
             "name": "phpunit/php-code-coverage",

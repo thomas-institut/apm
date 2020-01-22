@@ -38,7 +38,7 @@ use AverroesProjectToApm\ApUserDirectory;
 use AverroesProjectToApm\DatabaseItemStream;
 use AverroesProjectToApm\DatabaseItemStreamWitness;
 use AverroesProjectToApm\Formatter\WitnessPageFormatter;
-use DataTable\TimeString;
+use ThomasInstitut\TimeString\TimeString;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 

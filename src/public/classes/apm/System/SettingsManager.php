@@ -20,8 +20,8 @@
 
 namespace APM\System;
 
-use DataTable\DataTable;
-use DataTable\InMemoryDataTable;
+use ThomasInstitut\DataTable\DataTable;
+use ThomasInstitut\DataTable\InMemoryDataTable;
 /**
  * Description of SettingsManager
  *

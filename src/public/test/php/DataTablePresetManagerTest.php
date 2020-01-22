@@ -25,7 +25,7 @@ require_once 'PresetManagerTest.php';
 
 use APM\Presets\DataTablePresetManager;
 use APM\Presets\PresetManager;
-use DataTable\InMemoryDataTable;
+use ThomasInstitut\DataTable\InMemoryDataTable;
 
 
 /**

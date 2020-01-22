@@ -15,7 +15,7 @@
         "php-di/slim-bridge" : "3.0.0",
         "dflydev/fig-cookies": "^1.0",
         "rafaelnajera/xmlmatcher": "^0.4",
-        "rafaelnajera/datatable" : "0.6",
+        "thomas-institut/datatable" : "^0.7.0",
         "monolog/monolog": "^2.0",
         "phpoffice/phpspreadsheet": "1.10.1",
         "phpoffice/phpword": "^0.15.0",

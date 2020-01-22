@@ -23,10 +23,10 @@ namespace APM\Presets;
 use APM\System\SqlQueryCounterTrackerAware;
 use APM\System\SimpleSqlQueryCounterTrackerAware;
 use APM\System\SqlQueryCounterTracker;
-use DataTable\DataTable;
-use DataTable\MySqlDataTable;
+use ThomasInstitut\DataTable\DataTable;
 use Exception;
 use InvalidArgumentException;
+use ThomasInstitut\DataTable\GenericDataTable;
 
 /**
  * An implementation of a PresetManager using a DataTable as the underlying storage.
@@ -210,7 +210,7 @@ class DataTablePresetManager extends PresetManager implements SqlQueryCounterTra
             $this->getSqlQueryCounterTracker()->countSelect();
             $row = $this->dataTable->getRow($id);
         } catch (InvalidArgumentException $e) {
-            if ($e->getCode() === DataTable::ERROR_ROW_DOES_NOT_EXIST) {
+            if ($e->getCode() === GenericDataTable::ERROR_ROW_DOES_NOT_EXIST) {
                 throw $this->newPresetNotFoundException();
             }
             throw $e; // @codeCoverageIgnore

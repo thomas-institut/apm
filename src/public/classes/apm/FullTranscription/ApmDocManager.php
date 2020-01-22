@@ -23,7 +23,7 @@ namespace APM\FullTranscription;
 use APM\System\SimpleSqlQueryCounterTrackerAware;
 use APM\System\SqlQueryCounterTracker;
 use APM\System\SqlQueryCounterTrackerAware;
-use DataTable\DataTable;
+use ThomasInstitut\DataTable\DataTable;
 
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;

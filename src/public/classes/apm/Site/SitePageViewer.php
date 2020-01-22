@@ -47,7 +47,10 @@ class SitePageViewer extends SiteController
     {
         $docId = $request->getAttribute('doc');
         $pageNumber = $request->getAttribute('page');
-
+        $activeColumn = intval($request->getAttribute('col'));
+        if ($activeColumn === 0) {
+            $activeColumn = 1;
+        }
         $docInfo = $this->dataManager->getDocById($docId);
         $pageInfo = $this->dataManager->getPageInfoByDocPage($docId, $pageNumber);
 
@@ -61,6 +64,7 @@ class SitePageViewer extends SiteController
         $activeWorks = $this->dataManager->getActiveWorks();
         $pageNumberFoliation = $pageNumber;
         $languagesArray = $this->languages;
+
         if ($pageInfo['foliation'] !== NULL) {
             $pageNumberFoliation = $pageInfo['foliation'];
         }
@@ -74,6 +78,7 @@ class SitePageViewer extends SiteController
             'seq' => $pageInfo['seq'],
             'pageNumberFoliation' => $pageNumberFoliation,
             'pageInfo' => $pageInfo,
+            'activeColumn' => $activeColumn,
             'pageTypeNames' => $pageTypeNames,
             'activeWorks' => $activeWorks,
             'thePages' => $thePages,
@@ -92,6 +97,10 @@ class SitePageViewer extends SiteController
     {
         $docId = $request->getAttribute('doc');
         $seq = $request->getAttribute('seq');
+        $activeColumn = intval($request->getAttribute('col'));
+        if ($activeColumn === 0) {
+            $activeColumn = 1;
+        }
         
         $docInfo = $this->dataManager->getDocById($docId);
         $pageId = $this->dataManager->getPageIdByDocSeq($docId, $seq);
@@ -106,7 +115,7 @@ class SitePageViewer extends SiteController
         $pageTypeNames  = $this->dataManager->getPageTypeNames();
         $activeWorks = $this->dataManager->getActiveWorks();
         $languagesArray = $this->languages;
-        
+
         $pageNumberFoliation = $pageInfo['seq'];
         if ($pageInfo['foliation'] !== NULL) {
             $pageNumberFoliation = $pageInfo['foliation'];
@@ -119,6 +128,7 @@ class SitePageViewer extends SiteController
             'docPageCount' => $docPageCount,
             'page' => $pageNumber,
             'seq' => $seq,
+            'activeColumn' => $activeColumn,
             'pageNumberFoliation' => $pageNumberFoliation,
             'pageInfo' => $pageInfo,
             'pageTypeNames' => $pageTypeNames,

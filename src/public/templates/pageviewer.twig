@@ -50,6 +50,7 @@
             pageNumberFoliation:'{{ pageNumberFoliation }}',
             pageSystemId: {{pageInfo.id}},
             docId: {{ doc }},
+            activeColumn : JSON.parse('{{activeColumn|json_encode|raw}}'),
             userId: {{ userinfo.id }},
             defaultLang: '{{pageInfo.lang}}',
             activeWorks: JSON.parse("{{activeWorks|json_encode|e('js')}}"),

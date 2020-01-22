@@ -166,6 +166,9 @@ class ApmUtil {
   static getPageTable(docId, pages, pagesPerRow, urlGenerator) {
     let tds = []
     for(const pageIndex in pages) {
+      if (!pages.hasOwnProperty(pageIndex)) {
+        continue
+      }
       let page = pages[pageIndex]
       let classes = 'type' + page.type
       if (!page.isTranscribed) {
@@ -173,7 +176,10 @@ class ApmUtil {
       }
       let url = urlGenerator.sitePageView(docId, page.seq)
 
-      tds.push('<td class="' + classes + '"><a href="' + url + '" title="View Page ' +  page.foliation + ' (n= ' + page.number + ', seq=' + page.seq + ')">' + page.foliation + '</a></td>')
+      tds.push('<td class="' + classes + '"><a href="' + url + '"' +
+        ' target="_blank"' +
+        ' title="View Page ' +  page.foliation + ' (n= ' + page.number + ', seq=' + page.seq + ') in new tab">' +
+        page.foliation + '</a></td>')
     }
     return ApmUtil.getTableFromRawTds(tds, pagesPerRow, 'pagetable')
   }

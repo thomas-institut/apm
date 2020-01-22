@@ -347,9 +347,9 @@ class ChunkPage {
     if (numColumns > 1) {
       label += ' c' + column
     }
-    let url = this.pathFor.sitePageView(docId, sequence )
+    let url = this.pathFor.sitePageView(docId, sequence , column)
 
-    return '<a href="' + url + '" title="View page ' + foliation + ' in new tab">' + label + '</a>'
+    return '<a href="' + url + '" title="View page ' + foliation + ' col ' + column + ' in new tab" + target="_blank">' + label + '</a>'
   }
 
   getDocLink(docInfo) {

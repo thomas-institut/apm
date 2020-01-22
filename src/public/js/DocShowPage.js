@@ -36,15 +36,24 @@ class DocShowPage {
         let urlGenerator = this.urlGenerator;
         let docId = this.docId;
         for (const work in this.chunkInfo) {
+            if (!this.chunkInfo.hasOwnProperty(work)) {
+                continue;
+            }
             html += '<li>' + works[work]['author_name'] + ', <em>' + works[work]['title'] + '</em> (' + work + ')';
             html += '<ul><li>';
             let chunksPerLine = 5;
             let tdArray = [];
             for (const chunkNumber in chunkInfo[work]) {
+                if (!chunkInfo[work].hasOwnProperty(chunkNumber)) {
+                    continue;
+                }
                 let tdHtml = '';
                 tdHtml += this.getChunkLabelHtml(work, chunkNumber) + ': ';
                 let segmentArray = [];
                 for (const segmentNumber in chunkInfo[work][chunkNumber]) {
+                    if (!chunkInfo[work][chunkNumber].hasOwnProperty(segmentNumber)) {
+                        continue;
+                    }
                     let segmentHtml = '';
                     let segmentInfo = chunkInfo[work][chunkNumber][segmentNumber];
                     let startLabel = segmentInfo['start'] === '' ? '???' : this.getPageLink(segmentInfo['start']);
@@ -147,11 +156,16 @@ class DocShowPage {
         let pageSeq = segmentInfo['seq'];
         let title = 'View Page ' + segmentInfo['foliation'] + ' in new tab';
         let label = foliation;
+        // @ts-ignore
+        let url = this.urlGenerator.sitePageView(this.docId, pageSeq);
         if (segmentInfo['numColumns'] > 1) {
+            title = 'View Page ' + segmentInfo['foliation'] + ' column ' + segmentInfo['column'] + ' in new tab';
+            // @ts-ignore
+            url = this.urlGenerator.sitePageView(this.docId, pageSeq, segmentInfo['column']);
             label += ' c' + segmentInfo['column'];
         }
         // @ts-ignore
-        return '<a href="' + this.urlGenerator.sitePageView(this.docId, pageSeq) + '" target="_blank" title="' + title + '">' + label + '</a>';
+        return '<a href="' + url + '" target="_blank" title="' + title + '">' + label + '</a>';
     }
     getPageLink2(pageId, col) {
         let pageInfo = this.pages[pageId];
@@ -159,10 +173,15 @@ class DocShowPage {
         let pageSeq = pageInfo.seq;
         let title = 'View Page ' + foliation + ' in new tab';
         let label = foliation;
+        // @ts-ignore
+        let url = this.urlGenerator.sitePageView(this.docId, pageSeq);
         if (pageInfo.numCols > 1) {
+            title = 'View Page ' + foliation + ' col ' + col + ' in new tab';
+            // @ts-ignore
+            url = this.urlGenerator.sitePageView(this.docId, pageSeq, col);
             label += ' c' + col;
         }
         // @ts-ignore
-        return '<a href="' + this.urlGenerator.sitePageView(this.docId, pageSeq) + '" target="_blank" title="' + title + '">' + label + '</a>';
+        return '<a href="' + url + '" target="_blank" title="' + title + '">' + label + '</a>';
     }
 }

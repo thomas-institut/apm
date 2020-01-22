@@ -93,8 +93,12 @@ class ApmUrlGenerator {
     siteCollationTablePreset(work, chunkno, presetId) {
         return this.base + '/collation/auto/' + work + '/' + chunkno + '/preset/' + presetId;
     }
-    sitePageView(docId, pageSequence) {
-        return this.base + '/doc/' + docId + '/page/' + pageSequence + '/view';
+    sitePageView(docId, pageSequence, col = 0) {
+        let url = this.base + '/doc/' + docId + '/page/' + pageSequence + '/view';
+        if (col > 0) {
+            url += '/c/' + col;
+        }
+        return url;
     }
     sitePageViewRealPage(docId, pageNumber) {
         return this.base + '/doc/' + docId + '/realpage/' + pageNumber + '/view';

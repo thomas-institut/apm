@@ -24,7 +24,11 @@ class PageViewer {
   
   constructor (options){
     this.options = options
+    //console.log('Page Viewer options')
+    //console.log(options)
     this.cookieName = 'apm-pv2-' + this.options.userId + '-' + this.options.pageSystemId
+
+    this.splitPaneElements =  $('div.split-pane')
     
     this.getViewerLayoutFromCookie()
     let pathFor = options.urlGenerator
@@ -34,7 +38,7 @@ class PageViewer {
     } else {
       this.doHorizontalLayout(this.layout.percentage)
     }
-    $('div.split-pane').splitPane()
+    this.splitPaneElements.splitPane()
     
     let osdOptions = {
       id: "osd-pane",
@@ -60,8 +64,8 @@ class PageViewer {
     })
 
     let osd = this.osdViewer
-    
-    $('div.split-pane').on('dividerdragend', this.genOnDividerdragend())
+
+    this.splitPaneElements.on('dividerdragend', this.genOnDividerdragend())
     this.osdViewer.addHandler('zoom', this.genOnOsdZoom())
     
     $('#realAddColumnButton').on('click', 
@@ -175,14 +179,14 @@ class PageViewer {
         $.getJSON(
           apiGetColumnDataUrl, 
           function (respColData) {
-            $('.nav-tabs a').click(function () {
+            $('.nav-tabs a').on('click', function () {
               $(this).tab('show')
             })
           const theCol = respColData.info.col
             const versions = respColData.info.versions
             $('#versions-col' + col).html(thisObject.genVersionsDiv(col, versions))
           let theDiv = '<div class="textcol tab-pane'
-          if (theCol === 1) {
+          if (col === thisObject.options.activeColumn) {
               theDiv += ' active'
           }
           theDiv += '" id="col' + col + '"></div>'
@@ -276,7 +280,7 @@ class PageViewer {
               return false // make the browser show a message confirming leave
             }
           })
-          if (theCol === 1) {
+          if (col === thisObject.options.activeColumn) {
             $('#colheader' + theCol).tab('show')
           }
         })

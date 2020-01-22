@@ -232,7 +232,7 @@ $app->group('', function (RouteCollectorProxy $group){
         SitePageViewer::class . ':pageViewerPageByDocPage')
         ->setName('pageviewer.docpage');
 
-    $group->get('/doc/{doc}/page/{seq}/view',
+    $group->get('/doc/{doc}/page/{seq}/view[/c/{col}]',
         SitePageViewer::class . ':pageViewerPageByDocSeq')
         ->setName('pageviewer.docseq');
 

@@ -294,7 +294,7 @@ class SiteController
             $pageInfo = $this->dataManager->getPageInfo($pageId);
             $pageNum = is_null($pageInfo['foliation']) ? $pageInfo['seq'] : $pageInfo['foliation'];
             $pageUrl = $this->router->urlFor('pageviewer.docseq', ['doc' => $docId, 'seq'=>$pageInfo['seq']]);
-            $docListHtml .= "<a href=\"$pageUrl\" title=\"View Page\">$pageNum</a>&nbsp;&nbsp;";
+            $docListHtml .= "<a href=\"$pageUrl\" title=\"View page in new tab\" target=\"_blank\">$pageNum</a>&nbsp;&nbsp;";
         }
         $docListHtml .= '</span></li>';
 

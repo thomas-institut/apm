@@ -22,7 +22,11 @@ namespace ThomasInstitut\Profiler;
 /**
  * Interface iPropertyTracker
  *
- * A PropertyTracker provides functions to track a profilable property: start tracking, lap, and end tracking
+ * A PropertyTracker provides functions to track a property for a profiler.
+ * It should provide methods for starting, lapping and ending tracking, as well as a method
+ * for calculating the difference between two values.
+ *
+ * The property itself can be of any type.
  *
  * @package ThomasInstitut\Profiler
  */

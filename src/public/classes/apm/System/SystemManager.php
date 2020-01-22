@@ -29,6 +29,8 @@ use APM\Presets\PresetManager;
 use Monolog\Logger;
 use ThomasInstitut\ErrorReporter\ErrorReporter;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
+use ThomasInstitut\Profiler\SimpleSqlQueryCounterTrackerAware;
+use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
 
 /**
  * Integration class for putting together all the elements necessary

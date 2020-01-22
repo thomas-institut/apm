@@ -20,13 +20,12 @@
 
 namespace APM\Presets;
 
-use APM\System\SqlQueryCounterTrackerAware;
-use APM\System\SimpleSqlQueryCounterTrackerAware;
-use APM\System\SqlQueryCounterTracker;
 use ThomasInstitut\DataTable\DataTable;
 use Exception;
 use InvalidArgumentException;
 use ThomasInstitut\DataTable\GenericDataTable;
+use ThomasInstitut\Profiler\SimpleSqlQueryCounterTrackerAware;
+use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
 
 /**
  * An implementation of a PresetManager using a DataTable as the underlying storage.
@@ -96,7 +95,7 @@ class DataTablePresetManager extends PresetManager implements SqlQueryCounterTra
         if ($this->correspondingPresetExists($preset)) {
             return false;
         }
-        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::CREATE_COUNTER);
+        $this->getSqlQueryCounterTracker()->incrementCreate();
         $this->dataTable->createRow($this->createDataTableRowFromPreset($preset));
         return true;
     }
@@ -117,7 +116,7 @@ class DataTablePresetManager extends PresetManager implements SqlQueryCounterTra
         if ($id === self::ROWID_NOTFOUND) {
             return true;
         }
-        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::DELETE_COUNTER);
+        $this->getSqlQueryCounterTracker()->incrementDelete();
         return $this->dataTable->deleteRow($id)===1;
     }
 
@@ -155,7 +154,7 @@ class DataTablePresetManager extends PresetManager implements SqlQueryCounterTra
                 $rowToFind[$this->expandedKeys[$key]] = $value;
             }
         }
-        $this->getSqlQueryCounterTracker()->countSelect();
+        $this->getSqlQueryCounterTracker()->incrementSelect();
         $rows = $this->dataTable->findRows($rowToFind);
         foreach($rows as $theRow) {
             if ($this->match($this->decodeStringToArray($theRow[self::FIELD_KEYARRAY]), $keysToMatch)) {
@@ -182,7 +181,7 @@ class DataTablePresetManager extends PresetManager implements SqlQueryCounterTra
                 $rowToFind[$this->expandedKeys[$key]] = $value;
             }
         }
-        $this->getSqlQueryCounterTracker()->countSelect();
+        $this->getSqlQueryCounterTracker()->incrementSelect();
         $rows = $this->dataTable->findRows($rowToFind);
         foreach($rows as $theRow) {
             if ($this->match($this->decodeStringToArray($theRow[self::FIELD_KEYARRAY]), $keysToMatch)) {
@@ -207,7 +206,7 @@ class DataTablePresetManager extends PresetManager implements SqlQueryCounterTra
     
     public function getPresetById(int $id) : Preset {
         try {
-            $this->getSqlQueryCounterTracker()->countSelect();
+            $this->getSqlQueryCounterTracker()->incrementSelect();
             $row = $this->dataTable->getRow($id);
         } catch (InvalidArgumentException $e) {
             if ($e->getCode() === GenericDataTable::ERROR_ROW_DOES_NOT_EXIST) {
@@ -227,7 +226,7 @@ class DataTablePresetManager extends PresetManager implements SqlQueryCounterTra
         $updatedRow = $this->createDataTableRowFromPreset($updatedPreset);
         $updatedRow['id'] = $currentPreset->getId();
         try {
-            $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::UPDATE_COUNTER);
+            $this->getSqlQueryCounterTracker()->incrementUpdate();
             $this->dataTable->updateRow($updatedRow);
         } catch (Exception $e) { // @codeCoverageIgnore
             return false; // @codeCoverageIgnore
@@ -236,7 +235,7 @@ class DataTablePresetManager extends PresetManager implements SqlQueryCounterTra
     }
     
     public function erasePresetById(int $id) : bool {
-        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::DELETE_COUNTER);
+        $this->getSqlQueryCounterTracker()->incrementDelete();
         $this->dataTable->deleteRow($id);
         return true;
     }
@@ -328,7 +327,7 @@ class DataTablePresetManager extends PresetManager implements SqlQueryCounterTra
             self::FIELD_USERID => $userId,
             self::FIELD_TITLE => $title
         ];
-        $this->getSqlQueryCounterTracker()->countSelect();
+        $this->getSqlQueryCounterTracker()->incrementSelect();
         $rows = $this->dataTable->findRows($rowToFind, 1);
         if (count($rows) < 1) {
             return [];

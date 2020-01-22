@@ -17,7 +17,7 @@
  *  
  */
 
-namespace APM\System;
+namespace ThomasInstitut\Profiler;
 
 
 trait SimpleSqlQueryCounterTrackerAware

@@ -17,7 +17,7 @@
  *  
  */
 
-namespace APM\System;
+namespace ThomasInstitut\Profiler;
 
 
 interface SqlQueryCounterTrackerAware

@@ -20,9 +20,8 @@
 namespace APM\FullTranscription;
 
 
-use APM\System\SimpleSqlQueryCounterTrackerAware;
-use APM\System\SqlQueryCounterTracker;
-use APM\System\SqlQueryCounterTrackerAware;
+
+use InvalidArgumentException;
 use ThomasInstitut\DataTable\DataTable;
 
 use Psr\Log\LoggerAwareInterface;
@@ -30,6 +29,8 @@ use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
 use ThomasInstitut\ErrorReporter\ErrorReporter;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
+use ThomasInstitut\Profiler\SimpleSqlQueryCounterTrackerAware;
+use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
 
 class ApmDocManager extends DocManager implements LoggerAwareInterface, ErrorReporter, SqlQueryCounterTrackerAware
 {
@@ -56,9 +57,9 @@ class ApmDocManager extends DocManager implements LoggerAwareInterface, ErrorRep
     {
         $row = [];
         try {
-            $this->getSqlQueryCounterTracker()->countSelect();
+            $this->getSqlQueryCounterTracker()->incrementSelect();
             $row = $this->docDataTable->getRow($docId);
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             // no such document!
             $this->throwInvalidArgumentException("Document $docId not found in database", self::ERROR_DOC_NOT_FOUND);
         }

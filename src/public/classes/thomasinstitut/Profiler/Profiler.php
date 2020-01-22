@@ -20,9 +20,9 @@
 namespace ThomasInstitut\Profiler;
 
 /**
- * Interface iProfiler
+ * Interface Profiler
  *
- * A Profiler keeps track of a number of profilable properties.
+ * A Profiler keeps track of a number of properties.
  *
  * The user can start and end the profiler, mark laps with names and get information about the marked
  * laps in absolute, cumulative and delta values
@@ -41,7 +41,7 @@ interface Profiler
     const FIELD_DELTA = 'delta';
 
     /**
-     * Registers a profilable property to use in the profiler.
+     * Registers a property to use in the profiler.
      *
      * @param string $propertyName
      * @param PropertyTracker $propertyTracker

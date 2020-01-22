@@ -19,9 +19,6 @@
 
 namespace APM\FullTranscription;
 
-
-use APM\System\SqlQueryCounterTrackerAware;
-use APM\System\SimpleSqlQueryCounterTrackerAware;
 use ThomasInstitut\DataTable\UnitemporalDataTable;
 use InvalidArgumentException;
 use Psr\Log\LoggerAwareInterface;
@@ -29,6 +26,8 @@ use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
 use ThomasInstitut\ErrorReporter\ErrorReporter;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
+use ThomasInstitut\Profiler\SimpleSqlQueryCounterTrackerAware;
+use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
 
 class ApmPageManager extends PageManager implements LoggerAwareInterface, ErrorReporter, SqlQueryCounterTrackerAware
 {
@@ -59,7 +58,7 @@ class ApmPageManager extends PageManager implements LoggerAwareInterface, ErrorR
         if (isset($this->pageInfoCache[$docId][$seq])) {
             return $this->pageInfoCache[$docId][$seq];
         }
-        $this->getSqlQueryCounterTracker()->countSelect();
+        $this->getSqlQueryCounterTracker()->incrementSelect();
 
         $rows = $this->pagesDataTable->findRows([
             'doc_id' => $docId,
@@ -77,7 +76,7 @@ class ApmPageManager extends PageManager implements LoggerAwareInterface, ErrorR
      */
     public function getPageInfoArrayForDoc(int $docId): array
     {
-        $this->getSqlQueryCounterTracker()->countSelect();
+        $this->getSqlQueryCounterTracker()->incrementSelect();
         $rows = $this->pagesDataTable->findRows([
             'doc_id' => $docId
         ]);
@@ -111,7 +110,7 @@ class ApmPageManager extends PageManager implements LoggerAwareInterface, ErrorR
     {
         $row = [];
         try {
-            $this->getSqlQueryCounterTracker()->countSelect();
+            $this->getSqlQueryCounterTracker()->incrementSelect();
             $row = $this->pagesDataTable->getRow($pageId);
         } catch (InvalidArgumentException $e) {
             // no such document!

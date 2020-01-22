@@ -20,7 +20,6 @@
 namespace ThomasInstitut\Profiler;
 
 use InvalidArgumentException;
-use PHPUnit\Framework\Constraint\Count;
 use ThomasInstitut\ErrorReporter\ErrorReporter;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
 

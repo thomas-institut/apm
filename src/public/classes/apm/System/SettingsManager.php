@@ -22,6 +22,9 @@ namespace APM\System;
 
 use ThomasInstitut\DataTable\DataTable;
 use ThomasInstitut\DataTable\InMemoryDataTable;
+use ThomasInstitut\Profiler\SimpleSqlQueryCounterTrackerAware;
+use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
+
 /**
  * Description of SettingsManager
  *
@@ -46,7 +49,7 @@ class SettingsManager implements SqlQueryCounterTrackerAware {
     public function getSetting(string $setting)
     {
 
-        $this->getSqlQueryCounterTracker()->countSelect();
+        $this->getSqlQueryCounterTracker()->incrementSelect();
         $rows = $this->settingsTable->findRows(['setting' => $setting], 1);
         if ($rows === []) {
             return false;
@@ -57,15 +60,15 @@ class SettingsManager implements SqlQueryCounterTrackerAware {
     public function setSetting(string $setting, string $value)
     {
 
-        $this->getSqlQueryCounterTracker()->countSelect();
+        $this->getSqlQueryCounterTracker()->incrementSelect();
         $rows = $this->settingsTable->findRows(['setting' => $setting], 1);
         if ($rows === []) {
-            $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::CREATE_COUNTER);
+            $this->getSqlQueryCounterTracker()->incrementCreate();
             return false !== $this->settingsTable->createRow([
                     'setting' => $setting,
                     'value' => $value]);
         }
-        $this->getSqlQueryCounterTracker()->increment(SqlQueryCounterTracker::UPDATE_COUNTER);
+        $this->getSqlQueryCounterTracker()->incrementUpdate();
         $this->settingsTable->updateRow([
             'id' => $rows[0]['id'],
             'setting' => $setting,

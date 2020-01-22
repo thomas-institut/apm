@@ -19,6 +19,13 @@
 
 namespace ThomasInstitut\Profiler;
 
+/**
+ * Time tracker
+ *
+ * Takes a reading the current system micro-time time stamp
+ *
+ * @package ThomasInstitut\Profiler
+ */
 class TimeTracker implements PropertyTracker
 {
 

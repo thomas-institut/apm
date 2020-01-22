@@ -17,11 +17,16 @@
  *  
  */
 
-namespace APM\System;
+namespace ThomasInstitut\Profiler;
 
 
-use ThomasInstitut\Profiler\AggregateCounterTracker;
-
+/**
+ * A counter tracker for Sql queries.
+ *
+ * Provides an aggregate counter with counter for basic SQL queries: SELECT, CREATE, DELETE, UPDATE and "other"
+ *
+ * @package APM\System
+ */
 class SqlQueryCounterTracker extends AggregateCounterTracker
 {
     const SELECT_COUNTER = 'select';
@@ -44,12 +49,43 @@ class SqlQueryCounterTracker extends AggregateCounterTracker
 
     public function registerCounter(string $counterName, int $initialValue = 0)
     {
-        // do nothing!
+        // block registering other counters!
         $this->throwRunTimeException("Registering counters not allowed", self::ERROR_REGISTERING_COUNTERS_NOT_ALLOWED);
     }
 
-    public function countSelect() : void {
-        $this->increment(SqlQueryCounterTracker::SELECT_COUNTER);
+    /**
+     * Increments the SELECT query counter
+     */
+    public function incrementSelect() : void {
+        $this->increment(self::SELECT_COUNTER);
+    }
+
+    /**
+     * Increments the CREATE query counter
+     */
+    public function incrementCreate() : void {
+        $this->increment(self::CREATE_COUNTER);
+    }
+
+    /**
+     * Increments the DELETE query counter
+     */
+    public function incrementDelete() : void {
+        $this->increment(self::DELETE_COUNTER);
+    }
+
+    /**
+     * Increments the UPDATE query counter
+     */
+    public function incrementUpdate() : void {
+        $this->increment(self::UPDATE_COUNTER);
+    }
+
+    /**
+     * Increments the 'other' query counter
+     */
+    public function incrementOther() : void {
+        $this->increment(self::OTHER_COUNTER);
     }
 
 }

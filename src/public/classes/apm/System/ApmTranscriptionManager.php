@@ -37,6 +37,9 @@ use AverroesProject\Data\MySqlHelper;
 use AverroesProject\TxText\Item as ApItem;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
+use ThomasInstitut\Profiler\SimpleSqlQueryCounterTrackerAware;
+use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
+use ThomasInstitut\Profiler\SqlQueryCounterTracker;
 use ThomasInstitut\TimeString\TimeString;
 use InvalidArgumentException;
 use PDO;
@@ -46,7 +49,7 @@ use Psr\Log\LoggerInterface;
 use ThomasInstitut\ErrorReporter\ErrorReporter;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
 
-class ApmTranscriptionManager extends TranscriptionManager implements  SqlQueryCounterTrackerAware, ErrorReporter, LoggerAwareInterface
+class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCounterTrackerAware, ErrorReporter, LoggerAwareInterface
 {
 
     use SimpleSqlQueryCounterTrackerAware {
@@ -251,7 +254,7 @@ class ApmTranscriptionManager extends TranscriptionManager implements  SqlQueryC
             $conditionsSqlString = '';
         }
 
-        $this->getSqlQueryCounterTracker()->countSelect();
+        $this->getSqlQueryCounterTracker()->incrementSelect();
 
 
         $query = "SELECT $tp.doc_id as 'doc_id', $tp.seq as 'page_seq', $tp.id as 'page_id'," .
@@ -315,7 +318,7 @@ class ApmTranscriptionManager extends TranscriptionManager implements  SqlQueryC
             $orderby = 'seq';
         }
 
-        $this->getSqlQueryCounterTracker()->countSelect();
+        $this->getSqlQueryCounterTracker()->incrementSelect();
 
         $query =  'SELECT DISTINCT p.`page_number` AS page_number FROM ' .
             $tp . ' AS p' .
@@ -464,7 +467,7 @@ class ApmTranscriptionManager extends TranscriptionManager implements  SqlQueryC
         $tp = $this->tNames[ApmMySqlTableName::TABLE_PAGES];
         $eot = TimeString::END_OF_TIMES;
 
-        $this->getSqlQueryCounterTracker()->countSelect();
+        $this->getSqlQueryCounterTracker()->incrementSelect();
 
         $query = "SELECT `$tv`.* from `$tv` JOIN `$tp` ON ($tv.page_id=$tp.id) WHERE " .
             "$tp.doc_id=$docId " .

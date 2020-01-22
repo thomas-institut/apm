@@ -377,3 +377,15 @@ ul.witnesslistnew li {
     margin-bottom: 10px;
 }
 
+div.cpheader {
+    font-size: 2.4em;
+    margin-bottom: 30px;
+}
+
+div.cpheader a {
+    color: black;
+}
+
+.justifyright {
+    text-align: right;
+}

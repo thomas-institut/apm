@@ -63,12 +63,14 @@ class ChunkPage {
     this.chunkIdDiv = $('#chunkid')
     this.witnessListNewDiv = $('#witnessListNew')
     this.witnessPanelsDiv = $('#witnesspanels')
+    this.headerDiv = $('#chunkpageheader')
 
     // shortcuts to options
     this.pathFor = this.options.urlGenerator
 
     this.getPresetsUrl = this.pathFor.apiGetAutomaticCollationPresets()
 
+    this.headerDiv.html(this.generateHeaderDivHtml())
     this.chunkIdDiv.html(this.generateChunkIdDivHtml())
     this.witnessListNewDiv.html(this.generateWitnessListNew())
 
@@ -165,6 +167,36 @@ class ChunkPage {
             placement: 'auto',
             sanitize: false
          })
+  }
+
+  generateHeaderDivHtml() {
+    let html = ''
+    let arrowLeft = '<i class="fas fa-angle-left"></i>'
+    let arrowRight = '<i class="fas fa-angle-right"></i>'
+
+    html += '<div class="row row-no-gutters">'
+
+    html += '<div class="col-md-11 cpheader">'
+    let url = this.pathFor.siteChunkPage(this.options.work, this.options.chunk-1)
+
+    if (this.options.chunk > 1) {
+      html += '<a role="button" class="btn-default" title="Go to chunk ' + (this.options.chunk-1) + '" href="' + url +
+        '">'+ arrowLeft + '</a>'
+      html += '&nbsp;&nbsp;'
+    }
+
+    html += this.options.workInfo['author_name'] + ', <em>' +
+        this.options.workInfo['title'] + '</em>, chunk ' + this.options.chunk
+    html += '</div>'
+
+    html += '<div class="col-md1 cpheader justifyright">'
+    url = this.pathFor.siteChunkPage(this.options.work, this.options.chunk+1)
+    html += '<a role="button" class="btn-default" title="Go to chunk ' + (this.options.chunk+1) + '" href="' + url +
+      '">'+ arrowRight + '</a>'
+    html += '</div>'
+
+    html += '</div>'
+    return html
   }
 
   generateWitnessPanelHtml() {

@@ -22,7 +22,6 @@ namespace APM\FullTranscription;
 
 use APM\System\SqlQueryCounterTrackerAware;
 use APM\System\SimpleSqlQueryCounterTrackerAware;
-use APM\System\SqlQueryCounterTracker;
 use DataTable\UnitemporalDataTable;
 use InvalidArgumentException;
 use Psr\Log\LoggerAwareInterface;
@@ -114,7 +113,7 @@ class ApmPageManager extends PageManager implements LoggerAwareInterface, ErrorR
         try {
             $this->getSqlQueryCounterTracker()->countSelect();
             $row = $this->pagesDataTable->getRow($pageId);
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             // no such document!
             $this->throwInvalidArgumentException("Page $pageId not found", self::ERROR_PAGE_NOT_FOUND);
         }

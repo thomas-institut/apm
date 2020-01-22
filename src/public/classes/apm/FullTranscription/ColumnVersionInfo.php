@@ -19,10 +19,6 @@
 
 namespace APM\FullTranscription;
 
-
-use DataTable\MySqlUnitemporalDataTable;
-use DataTable\TimeString;
-
 /**
  * Column version info as given in the APM database
  * @package APM\FullTranscription

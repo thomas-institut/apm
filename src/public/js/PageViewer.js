@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2019 Universität zu Köln
+ *  Copyright (C) 2019-20 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -62,8 +62,6 @@ class PageViewer {
       trigger: 'click',
       sanitize: false
     })
-
-    let osd = this.osdViewer
 
     this.splitPaneElements.on('dividerdragend', this.genOnDividerdragend())
     this.osdViewer.addHandler('zoom', this.genOnOsdZoom())
@@ -138,7 +136,7 @@ class PageViewer {
     let pathFor = this.options.urlGenerator
     let apiAddColumnUrl = pathFor.apiAddColumn(this.options.docId, this.options.pageNumber)
     return function () {
-      $.getJSON(apiAddColumnUrl, function (resp) {
+      $.getJSON(apiAddColumnUrl, function () {
         location.replace('')
       })
       .fail( function (resp) {
@@ -201,14 +199,14 @@ class PageViewer {
             }
           )
           te.setData(respColData)
-          te.on('editor-enable',function (e) {
+          te.on('editor-enable',function () {
               $('#col-label-' + theCol).html('Column ' + theCol + ' (editing)')
           })
-          te.on('editor-disable', function (e) {
+          te.on('editor-disable', function () {
             $('#col-label-' + theCol).html('Column ' + theCol)
            })
 
-           $('#col-label-' + theCol).on('shown.bs.tab', function (e){
+           $('#col-label-' + theCol).on('shown.bs.tab', function (){
              //console.log("Number lines on shown.bs.tab")
              te.resizeContainer()
              te.numberLines()
@@ -274,7 +272,7 @@ class PageViewer {
             //console.log("Resetting...")
           });
 
-          $(window).on('beforeunload', function(e) {
+          $(window).on('beforeunload', function() {
             if (te.contentsChanged) {
               //console.log("There are changes in editor")
               return false // make the browser show a message confirming leave
@@ -347,25 +345,29 @@ class PageViewer {
   }
   
   doVerticalLayout(perc) {
-    $('#osd-pane').removeClass('horiz-top')
-      $('#osd-pane').addClass('vert-left')
-      $('#osd-pane').css('height', "100%")
-      $('#osd-pane').css('width', "")
-      $('#osd-pane').css('right', perc + "%")
-      $('#osd-pane').css('bottom', "")
+    let osdPane = $('#osd-pane')
+    osdPane.removeClass('horiz-top')
+    osdPane.addClass('vert-left')
+    osdPane.css('height', "100%")
+    osdPane.css('width', "")
+    osdPane.css('right', perc + "%")
+    osdPane.css('bottom', "")
 
-      $('#editor-pane').removeClass('horiz-bottom')
-      $('#editor-pane').addClass('vert-right')
-      $('#editor-pane').css('height', "100%")
-      $('#editor-pane').css('width', perc + "%")
-      
-      $('#divider').removeClass('horiz-divider')
-      $('#divider').addClass('vert-divider')
-      $('#divider').css('bottom', "")
-      $('#divider').css('right', perc + "%")
-      
-      $('#full-pane').removeClass('horizontal-percent')
-      $('#full-pane').addClass('vertical-percent')
+    let editorPane = $('#editor-pane')
+    editorPane.removeClass('horiz-bottom')
+    editorPane.addClass('vert-right')
+    editorPane.css('height', "100%")
+    editorPane.css('width', perc + "%")
+
+    let divider = $('#divider')
+    divider.removeClass('horiz-divider')
+    divider.addClass('vert-divider')
+    divider.css('bottom', "")
+    divider.css('right', perc + "%")
+
+    let fullPane = $('#full-pane')
+    fullPane.removeClass('horizontal-percent')
+    fullPane.addClass('vertical-percent')
       
       this.layout.vertical = true
       this.layout.percentage = perc
@@ -380,25 +382,29 @@ class PageViewer {
   }
   
   doHorizontalLayout(perc) {
-    $('#osd-pane').removeClass('vert-left')
-      $('#osd-pane').addClass('horiz-top')
-      $('#osd-pane').css('width', "100%")
-      $('#osd-pane').css('height', "")
-      $('#osd-pane').css('bottom', perc + "%")
-      $('#osd-pane').css('right', "")
-      
-      $('#editor-pane').removeClass('vert-right')
-      $('#editor-pane').addClass('horiz-bottom')
-      $('#editor-pane').css('width', "100%")
-      $('#editor-pane').css('height', perc + "%")
-      
-      $('#divider').removeClass('vert-divider')
-      $('#divider').addClass('horiz-divider')
-      $('#divider').css('right', "")
-      $('#divider').css('bottom', perc + "%")
-      
-      $('#full-pane').removeClass('vertical-percent')
-      $('#full-pane').addClass('horizontal-percent')
+    let osdPane = $('#osd-pane')
+    osdPane.removeClass('vert-left')
+    osdPane.addClass('horiz-top')
+    osdPane.css('width', "100%")
+    osdPane.css('height', "")
+    osdPane.css('bottom', perc + "%")
+    osdPane.css('right', "")
+
+    let editorPane = $('#editor-pane')
+    editorPane.removeClass('vert-right')
+    editorPane.addClass('horiz-bottom')
+    editorPane.css('width', "100%")
+    editorPane.css('height', perc + "%")
+
+    let divider = $('#divider')
+    divider.removeClass('vert-divider')
+    divider.addClass('horiz-divider')
+    divider.css('right', "")
+    divider.css('bottom', perc + "%")
+
+    let fullPane = $('#full-pane')
+    fullPane.removeClass('vertical-percent')
+    fullPane.addClass('horizontal-percent')
       
       this.layout.vertical = false
       this.layout.percentage = perc
@@ -440,6 +446,9 @@ class PageViewer {
       let optionsHtml = ''
       let langDef = thisObject.options.langDef
       for (const lang in langDef) {
+        if (!langDef.hasOwnProperty(lang)) {
+          continue
+        }
         optionsHtml += '<option value="' + lang + '"'
         if (thisObject.options.defaultLang === lang) {
           optionsHtml += ' selected'

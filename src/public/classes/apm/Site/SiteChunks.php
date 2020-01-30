@@ -52,6 +52,7 @@ class SiteChunks extends SiteController
         $dataManager = $this->dataManager;
         $this->profiler->start();
         $workIds = $dataManager->getWorksWithTranscriptions();
+        $this->profiler->lap('After getWorksWithTranscription');
         
         $works = [];
         foreach($workIds as $workId) {

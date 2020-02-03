@@ -64,6 +64,15 @@ class Matrix {
     this.theMatrix[row][col] = value
   }
 
+  isColumnEmpty(col, isCellEmptyFunction) {
+    for(let row = 0; row < this.nRows; row++) {
+      if (!isCellEmptyFunction(this.getValue(row, col))) {
+        return false
+      }
+    }
+    return true
+  }
+
   logMatrix(title) {
     console.log('Matrix ' + title + ': ' + this.nRows +  ' rows x ' + this.nCols + ' cols')
     console.log(this.theMatrix)

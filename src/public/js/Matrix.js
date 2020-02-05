@@ -34,7 +34,13 @@ class Matrix {
     }
     this.initializeMatrix()
     for(let row = 0; row < this.nRows; row++) {
-      for (let col = 0; col < theArray[row].length; col++) {
+      let maxCol = this.nCols
+      if (theArray[row].length !== this.nCols) {
+        console.warn('Setting matrix from array: row ' + row + ' should have ' +
+          this.nCols + ' elements, but has ' + theArray[row].length + ', clipping or padding will occur')
+        maxCol = Math.min(this.nCols,theArray[row].length )
+      }
+      for (let col = 0; col < maxCol; col++) {
         this.setValue(row, col, theArray[row][col])
       }
     }
@@ -85,6 +91,13 @@ class Matrix {
       console.error('Out of range row/col getting value: ' + row + ':' + col)
     }
     return this.theMatrix[row][col]
+  }
+
+  getRow(row) {
+    if (row < 0 || row >= this.nRows) {
+      console.error('Out of range row/col getting value: ' + row + ':' + col)
+    }
+    return this.theMatrix[row]
   }
 
   setValue(row, col, value) {

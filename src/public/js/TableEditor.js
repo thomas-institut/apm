@@ -104,8 +104,7 @@ class TableEditor {
     this.container = $('#' + this.options.id)
     this.icons = this.options.icons
 
-    this.container.html(this.generateTable())
-    this.setupTableEventHandlers()
+    this.redrawTable()
   }
 
   genTextIconSet() {
@@ -119,6 +118,16 @@ class TableEditor {
     }
   }
 
+  redrawTable() {
+    this.container.html(this.generateTable())
+    this.setupTableEventHandlers()
+    // dispatch redraw callbacks
+    for(let row = 0; row < this.matrix.nRows; row++) {
+      for (let col = 0; col < this.matrix.nCols; col++) {
+        this.dispatchCellDrawnEvent(row, col)
+      }
+    }
+  }
 
   generateTable() {
     let html = '<table class="te-table">'
@@ -243,7 +252,9 @@ class TableEditor {
         // setup cell button handlers
         thisObject.setupCellButtonEventHandlers(row,col-1)
         thisObject.setupCellButtonEventHandlers(row,col)
-
+        // dispatch cell redrawn events
+        thisObject.dispatchCellDrawnEvent(row, col-1)
+        thisObject.dispatchCellDrawnEvent(row, col)
       }
     }
   }
@@ -262,7 +273,9 @@ class TableEditor {
         // setup cell button handlers
         thisObject.setupCellButtonEventHandlers(row,col)
         thisObject.setupCellButtonEventHandlers(row,col+1)
-
+        // dispatch cell redrawn events
+        thisObject.dispatchCellDrawnEvent(row, col)
+        thisObject.dispatchCellDrawnEvent(row, col+1)
       }
     }
   }
@@ -274,14 +287,20 @@ class TableEditor {
   }
 
   genOnClickAddColumnRightButton(col) {
+    let thisObject = this
     return function() {
-      console.log('Add right button clicked on col ' + col)
+      console.log('Adding column RIGHT')
+      thisObject.matrix.addColumnAfter(col)
+      thisObject.redrawTable()
     }
   }
 
   genOnClickAddColumnLeftButton(col) {
+    let thisObject = this
     return function() {
-      console.log('Add left button clicked on col ' + col)
+      console.log('Adding column LEFT')
+      thisObject.matrix.addColumnAfter(col-1)
+      thisObject.redrawTable()
     }
   }
 
@@ -290,7 +309,9 @@ class TableEditor {
     return function() {
       console.log('Delete button clicked on col ' + col)
       if (thisObject.matrix.isColumnEmpty(col, thisObject.options.isEmptyValue)) {
-        console.log('Column is empty, can delete')
+        console.log('Deleting column ' + col)
+        thisObject.matrix.deleteColumn(col)
+        thisObject.redrawTable()
       } else {
         console.log('Column NOT empty, cannot delete')
       }
@@ -329,6 +350,17 @@ class TableEditor {
     return  col !== (this.matrix.nCols - 1) &&
       !this.options.isEmptyValue(this.matrix.getValue(row, col)) &&
       this.options.isEmptyValue(this.matrix.getValue(row, col+1));
+  }
+
+  dispatchCellDrawnEvent(row, col) {
+    this.dispatchEvent(
+      'cell-drawn',
+      {
+        row: row,
+        col: col,
+        selector: this.getCellContentSelector(row, col)
+      }
+    )
   }
 
   dispatchEvent(eventName, data = {})

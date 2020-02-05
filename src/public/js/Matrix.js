@@ -50,6 +50,36 @@ class Matrix {
     }
   }
 
+
+  deleteColumn(theCol) {
+    if (theCol < 0 || theCol >= this.nCols) {
+      console.error('Column to delete does not exist: ' + theCol)
+      return
+    }
+
+    for(let row=0; row < this.nRows; row++) {
+      this.theMatrix[row].splice(theCol, 1)
+    }
+    this.nCols--
+  }
+
+  addColumnAfter(afterCol, defaultValue = '') {
+    if (afterCol < -1 ||afterCol > (this.nCols - 1) ) {
+      console.error('Cannot add column after ' + afterCol)
+      return
+    }
+
+    for(let row=0; row < this.nRows; row++) {
+      this.theMatrix[row].push(defaultValue)
+      // at this point the row has this.nCols+1 elements
+      for(let col=this.nCols; col > afterCol+1; col--) {
+        this.theMatrix[row][col] = this.theMatrix[row][col-1]
+      }
+      this.theMatrix[row][afterCol+1] = defaultValue
+    }
+    this.nCols++
+  }
+
   getValue(row, col) {
     if (row < 0 || col < 0 || row >= this.nRows || col >= this.nCols) {
       console.error('Out of range row/col getting value: ' + row + ':' + col)

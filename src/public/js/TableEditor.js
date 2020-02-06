@@ -277,7 +277,6 @@ class TableEditor {
     return function(ev) {
       if (ev.which === 13) {
         // Enter key
-        //console.log('Enter key pressed')
         let newValue = $(thisObject.getTdSelector(row, col) + ' .te-input').val()
         thisObject.setValue(row, col, newValue)
         thisObject.leaveCellEditMode(row, col)
@@ -285,7 +284,7 @@ class TableEditor {
         return false
       }
       if (ev.which === 27) {
-        //console.log('Escape key pressed')
+        // Escape key
         thisObject.leaveCellEditMode(row, col)
         return false
       }

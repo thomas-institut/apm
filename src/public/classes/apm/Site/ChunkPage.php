@@ -63,6 +63,7 @@ class ChunkPage extends SiteController
         $workInfo = $dm->getWorkInfo($workId);
 
         $chunkLocationMap = $transcriptionManager->getChunkLocationMapForChunk($workId, $chunkNumber, TimeString::now());
+        $this->logger->debug("Chunk location map for chunk $chunkNumber", $chunkLocationMap);
         $versionMap = $transcriptionManager->getVersionsForChunkLocationMap($chunkLocationMap);
         $lastVersions = $transcriptionManager->getLastChunkVersionFromVersionMap($versionMap);
         $this->profiler->lap('After TM get chunk map and version info');

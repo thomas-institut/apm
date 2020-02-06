@@ -34,7 +34,8 @@ class ApmChunkSegmentLocation
     const NO_CHUNK_START = 1;
     const NO_CHUNK_END = 2;
     const CHUNK_START_AFTER_END = 3;
-
+    const DUPLICATE_CHUNK_START_MARKS = 4;
+    const DUPLICATE_CHUNK_END_MARKS = 5;
 
     /**
      * @var ApmChunkMarkLocation
@@ -67,6 +68,9 @@ class ApmChunkSegmentLocation
     }
 
     private function determineValidity() : int {
+        if ($this->validityError === self::DUPLICATE_CHUNK_START_MARKS || $this->validityError === self::DUPLICATE_CHUNK_END_MARKS) {
+            return $this->validityError;
+        }
         if ($this->start->isZero()){
             return self::NO_CHUNK_START;
         }
@@ -83,6 +87,15 @@ class ApmChunkSegmentLocation
 
     public function getChunkError() : int {
         return $this->validityError;
+    }
+
+    public function setDuplicateChunkMarkError(bool $isStart) {
+        if ($isStart) {
+            $this->validityError = self::DUPLICATE_CHUNK_START_MARKS;
+        } else {
+            $this->validityError = self::DUPLICATE_CHUNK_END_MARKS;
+        }
+
     }
 
 }

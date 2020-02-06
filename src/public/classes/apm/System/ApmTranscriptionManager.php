@@ -201,6 +201,7 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
         foreach ($chunkMarkLocations as $location) {
             /** @var ApmChunkMarkLocation $location */
             if (!isset($chunkLocations[$location->workId][$location->chunkNumber][$location->docId][$location->segmentNumber])) {
+                // Initialize the chunk segment location
                 $segmentLocation = new ApmChunkSegmentLocation();
                 if ($location->type === 'start') {
                     $segmentLocation->start = $location;
@@ -210,11 +211,31 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
                 $chunkLocations[$location->workId][$location->chunkNumber][$location->docId][$location->segmentNumber] = $segmentLocation;
                 continue;
             }
+            /** @var ApmChunkSegmentLocation $segmentLocation */
             $segmentLocation = $chunkLocations[$location->workId][$location->chunkNumber][$location->docId][$location->segmentNumber];
+            if ($segmentLocation->getChunkError() === ApmChunkSegmentLocation::DUPLICATE_CHUNK_START_MARKS ||
+                $segmentLocation->getChunkError() === ApmChunkSegmentLocation::DUPLICATE_CHUNK_END_MARKS) {
+                // there's already a duplicate chunk mark error in the segment, skip the current location
+                continue;
+            }
             if ($location->type === 'start') {
-                $segmentLocation->start = $location;
+                if ($segmentLocation->start->isZero()) {
+                    // start location not set, set it now
+                    $segmentLocation->start = $location;
+                } else {
+                    // start location already set, this means the current location is a duplicate start mark
+                    $this->logger->debug('Duplicate chunk start mark found', [ $location]);
+                    $segmentLocation->setDuplicateChunkMarkError(true);
+                }
             } else {
-                $segmentLocation->end = $location;
+                if ($segmentLocation->end->isZero()) {
+                    // end location not set, set it now
+                    $segmentLocation->end = $location;
+                } else {
+                    // end location already set, this means the current location is a duplicate end mark
+                    $this->logger->debug('Duplicate chunk end mark found', [ $location]);
+                    $segmentLocation->setDuplicateChunkMarkError(false);
+                }
             }
         }
 

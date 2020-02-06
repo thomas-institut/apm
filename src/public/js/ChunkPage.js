@@ -55,7 +55,10 @@ class ChunkPage {
 
     this.invalidErrorCodes = {
       1: 'Chunk start not defined',
-      2: 'Chunk end not defined'
+      2: 'Chunk end not defined',
+      3: 'Chunk start after chunk end',
+      4: 'Duplicate chunk start marks',
+      5: 'Duplicate chunk end marks'
     }
 
     // selectors and classes

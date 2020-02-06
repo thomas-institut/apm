@@ -115,8 +115,8 @@ class ApiElements extends ApiController
         $versionIsMinor = false;
         $versionIsReview = false;
 
-        if (isset($inputDataObject['lastVersions'])) {
-            $versionInfo = $inputDataObject['lastVersions'];
+        if (isset($inputDataObject['versionInfo'])) {
+            $versionInfo = $inputDataObject['versionInfo'];
             if (isset($versionInfo['isMinor'])) {
                 $versionIsMinor = $versionInfo['isMinor'];
             }
@@ -126,6 +126,7 @@ class ApiElements extends ApiController
             if (isset($versionInfo['descr'])) {
                 $versionDescr = $versionInfo['descr'];
             }
+
         }
 
         // Check elements and force hand Id on items

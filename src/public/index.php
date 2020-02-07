@@ -379,7 +379,7 @@ $app->group('/api', function (RouteCollectorProxy $group){
         ->setName('api.images.illegible');
 
     // API -> images : ChunkMark Icon
-    $group->get('/images/chunkmark/{dareid}/{chunkno}/{segment}/{type}/{dir}/{size}',
+    $group->get('/images/chunkmark/{dareid}/{chunkno}/{lwid}/{segment}/{type}/{dir}/{size}',
         ApiIcons::class . ':generateChunkMarkIcon')
         ->setName('api.images.chunkmark');
 

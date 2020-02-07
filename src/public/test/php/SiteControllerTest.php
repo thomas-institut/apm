@@ -230,7 +230,7 @@ class SiteControllerTest extends TestCase {
         $element->seq = 0;
         $itemSeq = 0;
         $itemId = 0;
-        ItemArray::addItem($element->items, new ChunkMark($itemId++, $itemSeq++, $work, $chunkNo, 'start', 1));  
+        ItemArray::addItem($element->items, new ChunkMark($itemId++, $itemSeq++, $work, $chunkNo, 'start', 'A',1));
         // Some items to try to hit all formatting cases too!
         ItemArray::addItem($element->items, new Text($itemId++,$itemSeq++,"The text of the chunk: "));  
         ItemArray::addItem($element->items, new Rubric($itemId++,$itemSeq++,"a rubric"));  
@@ -245,7 +245,7 @@ class SiteControllerTest extends TestCase {
         ItemArray::addItem($element->items, new Text($itemId++,$itemSeq++,"\ntinues in the next line"));  
         $noteItemId = $itemId;
         ItemArray::addItem($element->items, new Mark($itemId++,$itemSeq++));  
-        ItemArray::addItem($element->items, new ChunkMark($itemId++, $itemSeq++, $work, $chunkNo, 'end', 1));  
+        ItemArray::addItem($element->items, new ChunkMark($itemId++, $itemSeq++, $work, $chunkNo, 'end', 'A',1));
         $dm->insertNewElement($element);
         
         $dm->edNoteManager->insertNote(EditorialNote::INLINE, $noteItemId, $editor2, 'this is a note');
@@ -261,7 +261,7 @@ class SiteControllerTest extends TestCase {
         $element2->handId = 0;
         $element2->seq = 0;
         $itemSeq2=0;
-        ItemArray::addItem($element2->items, new ChunkMark($itemId++,$itemSeq2++, $work, $chunkNo, 'start', 1));  
+        ItemArray::addItem($element2->items, new ChunkMark($itemId++,$itemSeq2++, $work, $chunkNo, 'start', 'A',1));
         ItemArray::addItem($element2->items, new Text($itemId++,$itemSeq2++,"The text of the chunk"));  
         $dm->insertNewElement($element2);
         
@@ -324,7 +324,7 @@ class SiteControllerTest extends TestCase {
         $element4->seq = 0;
         $itemSeq4=0;
         $itemId4 = 0;
-        ItemArray::addItem($element4->items, new ChunkMark($itemId4++, $itemSeq4++, $work, $chunkNo, 'start', 1));  
+        ItemArray::addItem($element4->items, new ChunkMark($itemId4++, $itemSeq4++, $work, $chunkNo, 'start', 'A',1));
         // Some items to try to hit all formatting cases too!
         ItemArray::addItem($element4->items, new Text($itemId4++,$itemSeq4++,"The text of the chunk: "));  
         ItemArray::addItem($element4->items, new Rubric($itemId4++,$itemSeq4++,"a rubric"));  
@@ -341,11 +341,11 @@ class SiteControllerTest extends TestCase {
         $element5->seq = 0;
         $itemSeq5=0;
         $itemId5 = 0;
-        ItemArray::addItem($element5->items, new ChunkMark($itemId5++, $itemSeq5++, $work, $chunkNo, 'start', 1));  
+        ItemArray::addItem($element5->items, new ChunkMark($itemId5++, $itemSeq5++, $work, $chunkNo, 'start', 'A',1));
         // Some items to try to hit all formatting cases too!
         ItemArray::addItem($element5->items, new Text($itemId5++,$itemSeq5++,"The text of the chunk: "));  
         ItemArray::addItem($element5->items, new Rubric($itemId5++,$itemSeq5++,"a rubric"));  
-        ItemArray::addItem($element5->items, new ChunkMark($itemId5++, $itemSeq5++, $work, $chunkNo, 'end', 1));  
+        ItemArray::addItem($element5->items, new ChunkMark($itemId5++, $itemSeq5++, $work, $chunkNo, 'end', 'A',1));
         $dm->insertNewElement($element5);
         
         $request1_1 = (new ServerRequest('GET', ''))

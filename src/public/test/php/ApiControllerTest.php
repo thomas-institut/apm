@@ -724,9 +724,9 @@ class ApiControllerTest extends TestCase {
             $element->seq = 0;
             $itemSeq=0;
             $itemId = 0;
-            ItemArray::addItem($element->items, new ChunkMark($itemId++, $itemSeq++, $work, $chunk, 'start', 1));  
+            ItemArray::addItem($element->items, new ChunkMark($itemId++, $itemSeq++, $work, $chunk, 'start', 'A', 1));
             ItemArray::addItem($element->items, new Text($itemId++,$itemSeq++,"The text of the chunk, witness " . $witnessNumber));
-            ItemArray::addItem($element->items, new ChunkMark($itemId++, $itemSeq++, $work, $chunk, 'end', 1));  
+            ItemArray::addItem($element->items, new ChunkMark($itemId++, $itemSeq++, $work, $chunk, 'end', 'A',1));
             $dm->insertNewElement($element);
             $witnessNumber++;
             $docIds[] = $docId;
@@ -746,7 +746,7 @@ class ApiControllerTest extends TestCase {
             $element->seq = 0;
             $itemSeq=0;
             $itemId = 0;
-            ItemArray::addItem($element->items, new ChunkMark($itemId++, $itemSeq++, $work, $chunk, 'start', 1));  
+            ItemArray::addItem($element->items, new ChunkMark($itemId++, $itemSeq++, $work, $chunk, 'start', 'A',1));
             ItemArray::addItem($element->items, new Text($itemId++,$itemSeq++,"The text of the chunk, (bad) witness " . $witnessNumber));  
             $dm->insertNewElement($element);
             $witnessNumber++;

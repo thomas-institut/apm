@@ -51,6 +51,8 @@ class TranscriptionEditor
     this.containerId = containerId
     this.id = id
     this.options = TranscriptionEditor.getOptions(userOptions)
+    //console.log('Transcription editor options')
+    //console.log(this.options)
     this.people = this.options.people
     this.editorId = this.options.editorId
     this.activeWorks = this.options.activeWorks
@@ -132,7 +134,7 @@ class TranscriptionEditor
         dropdownHtml +=
             '<button id="' + buttonId +  '" ' + 
             'class="selFmtBtn" ' +
-            'title="' + formatBlot.title + '"' + 
+            'title="' + formatBlot.title + '" ' +
             'disabled data-toggle="dropdown" aria-haspopup="true" aria-expanded="true"' +
             '>' + 
             formatBlot.icon + '</button>'
@@ -1040,6 +1042,8 @@ class TranscriptionEditor
       this.currentVersion = -1
       return true
     }
+    console.log('Setting data in transcription editor')
+    console.log(columnData)
     
     this.edNotes = columnData.ednotes
     for (const note of this.edNotes) {

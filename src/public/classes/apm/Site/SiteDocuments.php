@@ -146,47 +146,50 @@ class SiteDocuments extends SiteController
             }
         }
 
+        // TODO: support different local Ids in chunk list
         foreach($chunkLocationMap as $workId => $chunkArray) {
             foreach ($chunkArray as $chunkNumber => $docArray) {
-                foreach($docArray as $docIdInMap => $segmentArray) {
-                    $lastChunkVersion =  $lastChunkVersions[$workId][$chunkNumber][$docIdInMap];
-                    $lastVersions[$workId][$chunkNumber] = $lastChunkVersion;
-                    if ($lastChunkVersion->authorId!==0  && !isset($authorInfo[$lastChunkVersion->authorId])) {
-                        $authorInfo[$lastChunkVersion->authorId] = $dataManager->userManager->getUserInfoByUserId($lastChunkVersion->authorId);
-                    }
-                    foreach($segmentArray as $segmentNumber => $location) {
-                        /** @var $location ApmChunkSegmentLocation */
-                        if ( $location->start->isZero()) {
-                            $start  = '';
-                        } else {
-                            $pageInfo = $transcriptionManager->getPageInfoByDocSeq($docId, $location->start->pageSequence);
-                            $start = [
-                                'seq' => $location->start->pageSequence,
-                                'foliation' => $pageInfo->foliation,
-                                'column' => $location->start->columnNumber,
-                                'numColumns' => $pageInfo->numCols
-                            ];
+                foreach($docArray as $docIdInMap => $witnessLocalIdArray) {
+                    foreach($witnessLocalIdArray as $witnessLocalId => $segmentArray) {
+                        $lastChunkVersion = $lastChunkVersions[$workId][$chunkNumber][$docIdInMap][$witnessLocalId];
+                        $lastVersions[$workId][$chunkNumber] = $lastChunkVersion;
+                        if ($lastChunkVersion->authorId !== 0 && !isset($authorInfo[$lastChunkVersion->authorId])) {
+                            $authorInfo[$lastChunkVersion->authorId] = $dataManager->userManager->getUserInfoByUserId($lastChunkVersion->authorId);
                         }
-                        if ( $location->end->isZero()) {
-                            $end  = '';
-                        } else {
-                            $pageInfo = $transcriptionManager->getPageInfoByDocSeq($docId, $location->end->pageSequence);
-                            $end = [
-                                'seq' => $location->end->pageSequence,
-                                'foliation' => $pageInfo->foliation,
-                                'column' => $location->end->columnNumber,
-                                'numColumns' => $pageInfo->numCols
-                            ];
-                        }
+                        foreach ($segmentArray as $segmentNumber => $location) {
+                            /** @var $location ApmChunkSegmentLocation */
+                            if ($location->start->isZero()) {
+                                $start = '';
+                            } else {
+                                $pageInfo = $transcriptionManager->getPageInfoByDocSeq($docId, $location->start->pageSequence);
+                                $start = [
+                                    'seq' => $location->start->pageSequence,
+                                    'foliation' => $pageInfo->foliation,
+                                    'column' => $location->start->columnNumber,
+                                    'numColumns' => $pageInfo->numCols
+                                ];
+                            }
+                            if ($location->end->isZero()) {
+                                $end = '';
+                            } else {
+                                $pageInfo = $transcriptionManager->getPageInfoByDocSeq($docId, $location->end->pageSequence);
+                                $end = [
+                                    'seq' => $location->end->pageSequence,
+                                    'foliation' => $pageInfo->foliation,
+                                    'column' => $location->end->columnNumber,
+                                    'numColumns' => $pageInfo->numCols
+                                ];
+                            }
 
-                        $chunkInfo[$workId][$chunkNumber][$segmentNumber] =
-                            [
-                                'start' => $start,
-                                'end' => $end,
-                                'valid' => $location->isValid(),
-                                'errorCode' => $location->getChunkError(),
-                                'errorMsg' => $chunkSegmentErrorMessages[$location->getChunkError()]
-                            ];
+                            $chunkInfo[$workId][$chunkNumber][$segmentNumber] =
+                                [
+                                    'start' => $start,
+                                    'end' => $end,
+                                    'valid' => $location->isValid(),
+                                    'errorCode' => $location->getChunkError(),
+                                    'errorMsg' => $chunkSegmentErrorMessages[$location->getChunkError()]
+                                ];
+                        }
                     }
                 }
 

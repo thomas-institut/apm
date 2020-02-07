@@ -130,7 +130,7 @@ class ElementDatabaseTest extends TestCase {
         ItemArray::addItem($goodElement->items, new Gliph(0,-1,'ā'));
         ItemArray::addItem($goodElement->items, new Deletion(0,-1,'deleted', 'strikeout'));
         ItemArray::addItem($goodElement->items, new Addition(0,-1,'added', 'above'));
-        ItemArray::addItem($goodElement->items, new ChunkMark(0, -1, 'AW', 1, ChunkMark::CHUNK_START));
+        ItemArray::addItem($goodElement->items, new ChunkMark(0, -1, 'AW', 1, ChunkMark::CHUNK_START,'A'));
         ItemArray::addItem($goodElement->items, new NoWordBreak(0,-1));
         ItemArray::addItem($goodElement->items, new Initial(0,-1, "I"));
         ItemArray::addItem($goodElement->items, new CharacterGap(0,-1));

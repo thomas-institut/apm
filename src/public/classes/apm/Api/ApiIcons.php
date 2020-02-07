@@ -73,8 +73,9 @@ class ApiIcons extends ApiController
         $size = $request->getAttribute('size');
         $segment = $request->getAttribute('segment');
         $dir = $request->getAttribute('dir');
+        $localWitnessId =$request->getAttribute('lwid');
         
-        $imageData = EditorImages::ChunkMarkIcon($size, $dareId, $chunkNumber, $segment, $type, $dir);
+        $imageData = EditorImages::ChunkMarkIcon($size, $dareId, $chunkNumber, $segment, $type, $dir, $localWitnessId);
         
         $response->getBody()->write($imageData);
         return $response->withHeader('Content-Type', 'image/png');

@@ -193,6 +193,7 @@ TranscriptionEditor.registerImageBlot(ChunkMarkBlot, {
   text: { default: 'AW1' },
   target: { default: 1 },
   alttext: { default: 'start' },
+  extrainfo: { title: 'Local Id', options: [ 'A', 'B', 'C'], default: 'A'},
   thelength: { default: 1 },
   noButton: true,
   getImageUrl: function (baseUrl, size, value) { 
@@ -200,6 +201,7 @@ TranscriptionEditor.registerImageBlot(ChunkMarkBlot, {
             '/api/images/chunkmark/' +
             value.text + '/' +
             value.target + '/' +
+            value.extrainfo + '/' +
             value.thelength + '/' +
             value.alttext + '/ltr/' +
             size

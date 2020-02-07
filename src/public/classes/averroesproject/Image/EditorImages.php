@@ -107,13 +107,16 @@ class EditorImages {
     }
     
     
-    public static function ChunkMarkIcon($size, $dareId, $chunkNumber, $segment, $type, $dir) {
+    public static function ChunkMarkIcon($size, $dareId, $chunkNumber, $segment, $type, $dir, $lwid='A') {
         $textsize = $size*0.7;
         $typeLabel = 'Start';
         if ($type === 'end') {
             $typeLabel = 'End';
         }
         $text = "$typeLabel $dareId-$chunkNumber-$segment";
+        if ($lwid !== 'A') {
+            $text .= ' (' . $lwid . ')';
+        }
        
 
         $fontpath = self::FONT_MONO;

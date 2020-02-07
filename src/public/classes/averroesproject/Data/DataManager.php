@@ -2016,7 +2016,8 @@ class DataManager implements  SqlQueryCounterTrackerAware
                     $row[$fields['seq']], 
                     $row[$fields['text']], 
                     (int) $row[$fields['target']], 
-                    $row[$fields['alt_text']], 
+                    $row[$fields['alt_text']],
+                    $row[$fields['extra_info']],
                     $row[$fields['length']]);
                 break;
             

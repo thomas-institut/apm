@@ -32,7 +32,7 @@ class ChunkMark extends Item {
    
     
     function __construct($id, $seq, string $dareId, int $chunkNumber, 
-            string $type, int $chunkSegment = 1)
+            string $type, string $witnessLocalId = 'A', int $chunkSegment = 1)
     {
         parent::__construct($id, $seq);
         
@@ -45,6 +45,7 @@ class ChunkMark extends Item {
         }
         $this->altText = $type;
         $this->length = $chunkSegment;
+        $this->extraInfo = $witnessLocalId;
     }
     
     function getDareId()
@@ -64,5 +65,9 @@ class ChunkMark extends Item {
     function getChunkSegment()
     {
         return $this->length;
+    }
+
+    function getWitnessLocalId() : string {
+        return $this->extraInfo;
     }
 }

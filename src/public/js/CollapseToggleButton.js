@@ -23,17 +23,17 @@
 class CollapseToggleButton {
   
   constructor (iconSpanElement, collapseElement, visibleIconHtml = '', hiddenIconHtml = '' ) {
-    
+
     this.iconSpan = iconSpanElement
     this.collapseElement = collapseElement
     this.visibleIconHtml = visibleIconHtml
     this.hiddenIconHtml = hiddenIconHtml
     if (this.visibleIconHtml === '' ) {
-      this.visibleIconHtml = '<i class="fa fa-angle-down" aria-hidden="true"></i>'
+      this.visibleIconHtml = '<i class="fas fa-angle-down" aria-hidden="true"></i>'
     }
     this.hiddenIconHtml = hiddenIconHtml
     if (this.hiddenIconHtml === '' ) {
-      this.hiddenIconHtml = '<i class="fa fa-angle-right" aria-hidden="true"></i>'
+      this.hiddenIconHtml = '<i class="fas fa-angle-right" aria-hidden="true"></i>'
     }
     
     this.collapseElement.on('show.bs.collapse', this.genOnShownFunction())

@@ -160,19 +160,50 @@ class ChunkPage extends SiteController
         
         $dm = $this->dataManager;
         $workId = $request->getAttribute('work');
-        $chunkNumber = $request->getAttribute('chunk');
+        $chunkNumber = intval($request->getAttribute('chunk'));
         $type = $request->getAttribute('type');
         $this->profiler->start();
         $workInfo = $dm->getWorkInfo($workId);
-        
-        $witnessId = $request->getAttribute('id');
-        // Assume, for the time being, that type==='doc'
-        $docData = $dm->getDocById($witnessId);
+
+        $witnessId =  $request->getAttribute('id');
+
+        if ($type !== WitnessType::FULL_TRANSCRIPTION) {
+            $this->logger->info('Unsupported witness type', [ 'type' => $type, 'workId' => $workId, 'chunk' => $chunkNumber, 'id' => $witnessId]);
+            return $this->responseWithText($response, 'Unsupported witness type ' . $type);
+        }
+        // Only full transcriptions are supported for the time being
+        $docId = 0;
+        $localWitnessId = 'A';
+        //$timeStamp = TimeString::now();
+        $timeStamp = '';
+        $wIdFields = explode('-', $witnessId);
+        if (isset($wIdFields[0])) {
+            $docId = intval($wIdFields[0]);
+        }
+        if (isset($wIdFields[1])) {
+            $localWitnessId = $wIdFields[1];
+        }
+
+        $this->logger->debug("Witness page ",
+            [
+                'type' => $type,
+                'workId' => $workId,
+                'chunk' => $chunkNumber,
+                'id' => $witnessId,
+                'docId' => $docId,
+                'localWitnessId' => $localWitnessId,
+                'timeStamp' => $timeStamp
+                ]);
+
+        // TODO: support timestamp
+
+
+        $docData = $dm->getDocById($docId);
         
         $outputType = $request->getAttribute('output', 'full');
         $this->logger->debug('Witness page with output type: ' . $outputType);
         
-        $essentialDocData = $this->buildEssentialWitnessDataFromDocData($docData, $workId, $chunkNumber, $dm, 1);
+        $essentialDocData = $this->buildEssentialWitnessDataFromDocData($docData, $workId, $chunkNumber, $dm, $localWitnessId, 1);
         if (!$essentialDocData['goodWitness']) {
              return $this->responseWithText($response,"Bad witness");
         }
@@ -193,12 +224,12 @@ class ChunkPage extends SiteController
             
             $doc['segmentsJSON'] = json_encode($doc['segmentApItemStreams'] );
             $this->profiler->stop();
-            $this->logProfilerData("WitnessPage-$workId-$chunkNumber-$witnessId (full output)");
+            $this->logProfilerData("WitnessPage-$workId-$chunkNumber-$docId (full output)");
             return $this->renderPage($response, 'witness.twig', [
                 'work' => $workId,
                 'chunk' => $chunkNumber,
                 'type' => $type,
-                'witnessid' => $witnessId,
+                'witnessid' => $docId . '-' . $localWitnessId,
                 'work_info' => $workInfo,
                 'doc' => $doc
             ]);
@@ -206,12 +237,12 @@ class ChunkPage extends SiteController
         $this->profiler->stop();
         if ($outputType === 'text') {
 
-            $this->logProfilerData("WitnessPage-$workId-$chunkNumber-$witnessId (text output)");
+            $this->logProfilerData("WitnessPage-$workId-$chunkNumber-$docId (text output)");
             return $this->responseWithText($response,$doc['plain_text']);
         }
         
         if ($outputType === 'html') {
-            $this->logProfilerData("WitnessPage-$workId-$chunkNumber-$witnessId (html output)");
+            $this->logProfilerData("WitnessPage-$workId-$chunkNumber-$docId (html output)");
             return $this->responseWithText($response,$doc['formatted']);
         }
         
@@ -226,7 +257,7 @@ class ChunkPage extends SiteController
      * @param int $witnessNumber
      * @return array
      */
-    protected function buildEssentialWitnessDataFromDocData(array $docData, string $workId, int $chunkNumber, DataManager $db, int $witnessNumber) : array  {
+    protected function buildEssentialWitnessDataFromDocData(array $docData, string $workId, int $chunkNumber, DataManager $db, string $localWitnessId, int $witnessNumber) : array  {
         $doc = $docData;
         $doc['number'] = $witnessNumber;
         $doc['errors'] = [];
@@ -234,7 +265,7 @@ class ChunkPage extends SiteController
         $doc['goodWitness'] = true;
         $doc['plain_text'] = '';
         $doc['segmentApItemStreams'] = [];
-        $locations = $db->getChunkLocationsForDoc($docData['id'], $workId, $chunkNumber);
+        $locations = $db->getChunkLocationsForDoc($docData['id'], $workId, $chunkNumber, $localWitnessId);
         if (count($locations)===0) {
             // @codeCoverageIgnoreStart
             // Can't reproduce this in testing, it's actually a very unlikely error!

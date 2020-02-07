@@ -1061,11 +1061,12 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param int $docId
      * @param string $workId
      * @param int $chunkNumber
+     * @param string $localWitnessId
      * @return array
      */
-    public function getChunkLocationsForDoc(int $docId, string $workId, int $chunkNumber) : array
+    public function getChunkLocationsForDoc(int $docId, string $workId, int $chunkNumber, string $localWitnessId = 'A') : array
     {
-        $rawLocations = $this->getChunkLocationsForDocRaw($docId, $workId, $chunkNumber);
+        $rawLocations = $this->getChunkLocationsForDocRaw($docId, $workId, $chunkNumber, $localWitnessId);
 
         $locationArray = $this->getChunkLocationArrayFromRawLocations($rawLocations);
 
@@ -1164,10 +1165,11 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param int $docId
      * @param string $workId
      * @param int $chunkNumber
+     * @param string $localWitnessId
      * @param string $timeString
      * @return array
      */
-    public function getChunkLocationsForDocRaw($docId, $workId, $chunkNumber, $timeString = '')
+    public function getChunkLocationsForDocRaw($docId, $workId, $chunkNumber, $localWitnessId = 'A', $timeString = '')
     {
         $ti = $this->tNames['items'];
         $te = $this->tNames['elements'];
@@ -1185,14 +1187,16 @@ class DataManager implements  SqlQueryCounterTrackerAware
             " $te.column_number," . 
             " $te.seq as 'e_seq'," . 
             " $ti.seq as 'item_seq'," . 
-            " $ti.alt_text as 'type'," . 
+            " $ti.alt_text as 'type'," .
+            " $ti.extra_info as 'lwid'," .
             " $ti.length as 'segment'" . 
             " FROM $tp" . 
             " JOIN ($te, $ti)" . 
             " ON ($te.id=$ti.ce_id AND $tp.id=$te.page_id)" . 
             " WHERE $ti.type=" . Item::CHUNK_MARK .  
             " AND $ti.text='$workId'" . 
-            " AND $ti.target=$chunkNumber" . 
+            " AND $ti.target=$chunkNumber" .
+            " AND $ti.extra_info='$localWitnessId'" .
             " AND $tp.doc_id=$docId" .
             " AND $ti.valid_from<='$timeString'" .
             " AND $te.valid_from<='$timeString'" .
@@ -1211,7 +1215,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
         while ($row = $r->fetch(PDO::FETCH_ASSOC)) {
             $rows[] = $row;
         }
-        $this->logger->debug("ChunkLocations for doc $docId, work $workId, chunk $chunkNumber", $rows);
+        $this->logger->debug("ChunkLocations for doc $docId, work $workId, chunk $chunkNumber, lwid $localWitnessId", $rows);
         return $rows;
     }
 

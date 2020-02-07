@@ -103,18 +103,24 @@ class ChunkPage {
         // TODO: support other witness types!
         continue
       }
+      let title = witnessInfo.typeSpecificInfo.docInfo.title
+      let lwid = witnessInfo.systemId.localWitnessId
+      if (lwid !== 'A') {
+        title += ' (' + lwid + ')'
+      }
       let witness = {
         index:  parseInt(w),
         type: witnessInfo.type,
         id: witnessInfo.systemId.docId,
-        title: witnessInfo.typeSpecificInfo.docInfo.title
+        lwid : lwid,
+        title: title
       }
       if (witnessInfo.isValid) {
         if (this.witnessesByLang[witnessInfo.languageCode] === undefined) {
           this.witnessesByLang[witnessInfo.languageCode] = []
         }
         this.witnessesByLang[witnessInfo.languageCode].push(witness)
-        let toggleButton = new CollapseToggleButton($('#texttoggle-' + w.id), $('#text-' + w.id))
+        let toggleButton = new CollapseToggleButton($('#texttoggle-' + witness.id + '-' + witness.lwid), $('#text-' + witness.id + '-' + witness.lwid))
       }
     }
     console.log('Witnesses by lang')
@@ -137,18 +143,21 @@ class ChunkPage {
       switch (witnessInfo.type) {
         case WitnessTypes.FULL_TX:
           let docId = witnessInfo.systemId.docId
-          let witnessUrl = this.pathFor.siteWitness(this.options.work, this.options.chunk, 'doc', docId, 'html')
-          console.log('Loading fullTx witness ' + docId  + ' timestamp ' + witnessInfo.systemId.timeStamp )
-          $('#formatted-' +docId).html('Loading text, this might take a while <i class="fas fa-spinner fa-spin fa-fw"></i> ...')
+          let localId = witnessInfo.systemId.localWitnessId
+
+          let witnessUrl = this.pathFor.siteWitness(this.options.work, this.options.chunk, 'fullTx', docId + '-' + localId, 'html')
+          console.log('Loading witness fullTx - ' + docId  +  ' - ' + localId + ' - ' + witnessInfo.systemId.timeStamp )
+          let formattedSelector = '#formatted-' + docId + '-' + localId
+          $(formattedSelector).html('Loading text, this might take a while <i class="fas fa-spinner fa-spin fa-fw"></i> ...')
           $.get(witnessUrl)
             .done(function(data){
-              console.log('Got data for fullTx witness ' + docId)
-              $('#formatted-' + docId).html(data)
+              console.log('Got data for fullTx witness ' + docId + ' ' + localId)
+              $(formattedSelector).html(data)
             })
             .fail(function (resp){
               console.log('Error getting data for fullTx witness ' + docId)
               console.log(resp)
-              $('#formatted-' + docId).html('Error loading text')
+              $(formattedSelector).html('Error loading text')
             })
           break
 
@@ -211,13 +220,13 @@ class ChunkPage {
       <div class="panel-heading">
       <h3 class="panel-title">{{title}}
         &nbsp;&nbsp;&nbsp;
-    <a role="button" title="Click to show/hide text" data-toggle="collapse" href="#text-{{id}}" aria-expanded="true" aria-controls="text-{{id}}">
-      <span id="texttoggle-{{id}}"><i class="fas fa-angle-right" aria-hidden="true"></i></span>
+    <a role="button" title="Click to show/hide text" data-toggle="collapse" href="#text-{{id}}-{{lwid}}" aria-expanded="true" aria-controls="text-{{id}}-{{lwid}}">
+      <span id="texttoggle-{{id}}-{{lwid}}"><i class="fas fa-angle-right" aria-hidden="true"></i></span>
     </a></h3>
     </div>
-    <div class="collapse" id="text-{{id}}">
+    <div class="collapse" id="text-{{id}}-{{lwid}}">
       <div class="panel-body">
-      <p class="formattedchunktext chunktext-{{lang}}" id="formatted-{{id}}"></p>
+      <p class="formattedchunktext chunktext-{{lang}}" id="formatted-{{id}}-{{lwid}}"></p>
       </div>
       </div>
       </div>
@@ -235,9 +244,15 @@ class ChunkPage {
       }
       switch (witnessInfo.type) {
         case WitnessTypes.FULL_TX:
+          let lwid = witnessInfo.systemId.localWitnessId
+          let title =  witnessInfo["typeSpecificInfo"].docInfo.title
+          if (lwid !== 'A') {
+            title += ' (' + lwid + ')'
+          }
           html += twigTemplate.render({
-            title: witnessInfo["typeSpecificInfo"].docInfo.title,
+            title: title,
             id: witnessInfo.systemId.docId,
+            lwid: lwid,
             lang: witnessInfo["typeSpecificInfo"].docInfo.languageCode
           })
           break
@@ -269,7 +284,12 @@ class ChunkPage {
       let witnessInfo = this.options.witnessInfo[i]
       html += '<tr>'
       let docInfo = witnessInfo["typeSpecificInfo"].docInfo
-      html += '<td>' + this.getDocLink(docInfo) + '</td>'
+      let lwid = witnessInfo.systemId.localWitnessId
+      html += '<td>' + this.getDocLink(docInfo)
+      if (lwid !== 'A') {
+        html += ' (' + lwid + ')'
+      }
+      html += '</td>'
       html += '<td>' + this.witnessTypeLabels[witnessInfo.type] + '</td>'
       html += '<td>' + this.docTypes[docInfo.type] + '</td>'
       html += '<td>' + this.options.languageInfo[witnessInfo.languageCode]['name'] + '</td>'
@@ -327,8 +347,10 @@ class ChunkPage {
     } else {
       info['essential'] = '<i class="fas fa-exclamation-triangle"></i> ' + this.invalidErrorCodes[witnessInfo.invalidErrorCode]
     }
+    let docId = docInfo.id
+    let lwid = witnessInfo.systemId.localWitnessId
 
-    info['admin'] = '<a href="' + this.pathFor.siteWitness(this.options.work, this.options.chunk,  'doc', docInfo.id, '')+ '"><i class="fas fa-cogs" aria-hidden="true"></i></a>'
+    info['admin'] = '<a href="' + this.pathFor.siteWitness(this.options.work, this.options.chunk,  'fullTx', docId + '-' + lwid, '')+ '"><i class="fas fa-cogs" aria-hidden="true"></i></a>'
     return info
   }
 

@@ -1404,27 +1404,48 @@ class TranscriptionEditor
            + work.title + '</option>'
       }
       $('#chunk-modal-dareid-' + thisObject.id).html(workOptionsHtml)
-      $('#chunk-modal-chunknumber-' + thisObject.id).attr('min', 1)
-      $('#chunk-modal-chunknumber-' + thisObject.id).attr('max', 9999)
-      $('#chunk-modal-chunknumber-' + thisObject.id).val(1)
-      
-      $('#chunk-modal-segment-' + thisObject.id).attr('min', 1)
-      $('#chunk-modal-segment-' + thisObject.id).attr('max', 100)
-      $('#chunk-modal-segment-' + thisObject.id).val(1)
 
-      $('#chunk-modal-submit-button-' + thisObject.id).off()
-      $('#chunk-modal-submit-button-' + thisObject.id).on('click', function () {
+      let chunkNumberSelector = '#chunk-modal-chunknumber-' + thisObject.id
+      $(chunkNumberSelector).attr('min', 1)
+      $(chunkNumberSelector).attr('max', 9999)
+      $(chunkNumberSelector).val(1)
+
+      let localIdOptionsHtml = ''
+      let localIdOptions = [ 'A', 'B', 'C', 'D', 'E']
+      for(const localIdOption of localIdOptions) {
+        localIdOptionsHtml += '<option value="' + localIdOption + '" '
+        if (localIdOption==='A') {
+          localIdOptionsHtml += 'selected'
+        }
+        localIdOptionsHtml += '>'
+        localIdOptionsHtml += localIdOption
+        localIdOptionsHtml += '</option>'
+      }
+      let localIdSelector = '#chunk-modal-localid-' + thisObject.id
+      $(localIdSelector).html(localIdOptionsHtml)
+
+      let segmentSelector = '#chunk-modal-segment-' + thisObject.id
+      $(segmentSelector).attr('min', 1)
+      $(segmentSelector).attr('max', 100)
+      $(segmentSelector).val(1)
+
+      let submitButtonSelector = '#chunk-modal-submit-button-' + thisObject.id
+
+      $(submitButtonSelector).off()
+      $(submitButtonSelector).on('click', function () {
         $('#chunk-modal-' + thisObject.id).modal('hide')
         const itemid = thisObject.getOneItemId()
         const dareid = $('#chunk-modal-dareid-' + thisObject.id).val()
         const chunkno = $('#chunk-modal-chunknumber-' + thisObject.id).val()
         const segment = $('#chunk-modal-segment-' + thisObject.id).val()
+        const localId = $('#chunk-modal-localid-' + thisObject.id).val()
         quillObject.insertEmbed(range.index, 'chunkmark', {
           alttext: type,
           target: chunkno,
           text: dareid,
           itemid: itemid,
           thelength: segment,
+          extrainfo: localId,
           editorid: thisObject.id
         })
         quillObject.setSelection(range.index + 1)
@@ -2819,6 +2840,11 @@ class TranscriptionEditor
                     <div id="chunk-modal-chunknumber-fg-{{id}}" class="form-group">
                         <label for="chunk-modal-chunknumber-{{id}}" id="chunk-modal-chunknumber-label-{{id}}" class="control-label">Chunk Number:</label>
                         <input type="number" name="chunk" class="form-control" id="chunk-modal-chunknumber-{{id}}"></input>
+                    </div>
+                    
+                    <div id="chunk-modal-localid-fg-{{id}}" class="form-group">
+                        <label for="chunk-modal-localid-{{id}}" id="chunk-modal-localid-label-{{id}}" class="control-label">Witness Id in document:</label>
+                        <select name="chunk-modal-localid" id="chunk-modal-localid-{{id}}"></select>
                     </div>
       
                     <div id="chunk-modal-segment-fg-{{id}}" class="form-group">

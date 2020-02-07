@@ -79,6 +79,9 @@ class AutomaticCollationTableSettingsForm {
     let oc = new OptionsChecker(optionsDefinition, "AutoCollTableSettingsForm")
     this.options = oc.getCleanOptions(options)
 
+    console.log('AutoCollTableSettingsFrom options')
+    console.log(this.options)
+
     for (const w of this.options.availableWitnesses) {
       if (typeof(w.id) !== 'number') {
         console.error('Witness id not a number in ACT settings form options: ' +
@@ -333,7 +336,7 @@ class AutomaticCollationTableSettingsForm {
   
   getWitnessDraggableHtml(witness) {
     return '<p class="btn-default btn-sm btn-witness wdraggable" draggable="true" ' + 
-            'type="' + witness.type + '" witnessid="' + witness.id + '">' + witness.title + '</p>'
+            'type="' + witness.type + '" witnessid="' + witness.id + '" lwid="'+  witness.lwid + '">' + witness.title + '</p>'
   }
   
   getSettings() {

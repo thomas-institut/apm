@@ -137,6 +137,8 @@ class ChunkPage extends SiteController
             $showAdminInfo = true;
         }
 
+        $validChunks = $this->dataManager->getChunksWithTranscriptionForWorkId($workId);
+
         $this->profiler->stop();
         $this->logProfilerData("ChunkPage-$workId-$chunkNumber");
         return $this->renderPage($response, 'chunkpage.twig', [
@@ -147,7 +149,8 @@ class ChunkPage extends SiteController
             'witnessInfoArray' => $witnessInfoArray,
             'authorInfo' => $authorInfoArray,
             'pageInfo' => $pageInfoArray,
-            'languageInfo' => $languageInfoArray
+            'languageInfo' => $languageInfoArray,
+            'validChunks' => $validChunks
         ]);
     }
 

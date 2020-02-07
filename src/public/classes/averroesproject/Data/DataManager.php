@@ -962,7 +962,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
         
         $chunks = [];
         while ($row = $r->fetch()) {
-            $chunks[] = $row['target'];
+            $chunks[] = intval($row['target']);
         }
         return $chunks;
     }

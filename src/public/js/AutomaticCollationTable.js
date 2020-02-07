@@ -332,15 +332,15 @@ class AutomaticCollationTable {
   }
 
   formatDateTime(sqlDateTimeString) {
-    let dateTimeNoMicroseconds = sqlDateTimeString.split('.')[0];
 
-    let date = new Date(dateTimeNoMicroseconds)
-
-    let months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep' , 'Oct', 'Nov', 'Dec']
-
-
-
-    return date.getDay() + ' ' + months[date.getMonth()] + ' ' + date.getFullYear() + ', ' + date.getHours() + ':' + this.padMinutes(date.getMinutes())
+    return moment(sqlDateTimeString).format('D MMM YYYY, H:mm:ss')
+    // let dateTimeNoMicroseconds = sqlDateTimeString.split('.')[0];
+    //
+    // let date = new Date(dateTimeNoMicroseconds)
+    //
+    // let months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep' , 'Oct', 'Nov', 'Dec']
+    //
+    // return date.getDay() + ' ' + months[date.getMonth()] + ' ' + date.getFullYear() + ', ' + date.getHours() + ':' + this.padMinutes(date.getMinutes())
   }
 
   padMinutes(minutes) {

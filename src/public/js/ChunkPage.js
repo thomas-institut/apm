@@ -35,7 +35,8 @@ class ChunkPage {
       authorInfo:  { type: 'object', default: []},
       pageInfo:  { type: 'object', default: []},
       languageInfo : { type: 'object', default: []},
-      workInfo : { type: 'object', default: []}
+      workInfo : { type: 'object', default: []},
+      validChunks : {type: 'Array', default: []}
     }
 
     let optionsChecker = new OptionsChecker(optionsDefinition, 'ChunkPage')
@@ -181,6 +182,22 @@ class ChunkPage {
          })
   }
 
+  getPreviousChunk(chunk, validChunks) {
+    let index = validChunks.findIndex(function(c) { return c===chunk })
+    if (index===0) {
+      return -1;
+    }
+    return validChunks[index-1]
+  }
+
+  getNextChunk(chunk, validChunks) {
+    let index = validChunks.findIndex(function(c) { return c===chunk })
+    if (index===(validChunks.length-1)) {
+      return -1;
+    }
+    return validChunks[index+1]
+  }
+
   generateHeaderDivHtml() {
     let html = ''
     let arrowLeft = '<i class="fas fa-angle-left"></i>'
@@ -189,10 +206,12 @@ class ChunkPage {
     html += '<div class="row row-no-gutters">'
 
     html += '<div class="col-md-11 cpheader">'
-    let url = this.pathFor.siteChunkPage(this.options.work, this.options.chunk-1)
+    //let url = this.pathFor.siteChunkPage(this.options.work, this.options.chunk-1)
 
-    if (this.options.chunk > 1) {
-      html += '<a role="button" class="btn-default" title="Go to chunk ' + (this.options.chunk-1) + '" href="' + url +
+    let prevChunk = this.getPreviousChunk(this.options.chunk, this.options.validChunks)
+    if (prevChunk !== -1) {
+      let url = this.pathFor.siteChunkPage(this.options.work, prevChunk)
+      html += '<a role="button" class="btn-default" title="Go to chunk ' + prevChunk + '" href="' + url +
         '">'+ arrowLeft + '</a>'
       html += '&nbsp;&nbsp;'
     }
@@ -202,9 +221,12 @@ class ChunkPage {
     html += '</div>'
 
     html += '<div class="col-md1 cpheader justifyright">'
-    url = this.pathFor.siteChunkPage(this.options.work, this.options.chunk+1)
-    html += '<a role="button" class="btn-default" title="Go to chunk ' + (this.options.chunk+1) + '" href="' + url +
-      '">'+ arrowRight + '</a>'
+    let nextChunk = this.getNextChunk(this.options.chunk, this.options.validChunks)
+    if (nextChunk !== -1) {
+      let url = this.pathFor.siteChunkPage(this.options.work, nextChunk)
+      html += '<a role="button" class="btn-default" title="Go to chunk ' + nextChunk + '" href="' + url +
+        '">'+ arrowRight + '</a>'
+    }
     html += '</div>'
 
     html += '</div>'

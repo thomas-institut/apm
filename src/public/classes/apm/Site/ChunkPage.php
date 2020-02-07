@@ -77,53 +77,56 @@ class ChunkPage extends SiteController
         $docManager = $transcriptionManager->getDocManager();
         $docArray = isset($chunkLocationMap[$workId][$chunkNumber]) ? $chunkLocationMap[$workId][$chunkNumber] : [];
 
-        foreach($docArray as $docId => $segmentArray) {
+        foreach($docArray as $docId => $localWitnessIdArray) {
+            foreach ($localWitnessIdArray as $localWitnessId => $segmentArray) {
 
-            $docInfo = $docManager->getDocInfoById($docId);
-            /** @var $lastVersion ColumnVersionInfo */
-            $lastVersion = $lastVersions[$workId][$chunkNumber][$docId];
-            $pagesMentioned[] = $lastVersion->pageId;
-            $authorsMentioned[] = $lastVersion->authorId;
+                $docInfo = $docManager->getDocInfoById($docId);
+                /** @var $lastVersion ColumnVersionInfo */
+                $lastVersion = $lastVersions[$workId][$chunkNumber][$docId][$localWitnessId];
+                $pagesMentioned[] = $lastVersion->pageId;
+                $authorsMentioned[] = $lastVersion->authorId;
 
-            if (!isset($languageInfoArray[$docInfo->languageCode])) {
-                $languageInfoArray[$docInfo->languageCode] = $this->languagesByCode[$docInfo->languageCode];
-                $languageInfoArray[$docInfo->languageCode]['totalWitnesses'] = 0;
-                $languageInfoArray[$docInfo->languageCode]['validWitnesses'] = 0;
-            }
-
-            $witnessInfo = [];
-            $witnessInfo['type'] = WitnessType::FULL_TRANSCRIPTION;
-            $witnessInfo['languageCode'] = $docInfo->languageCode;
-            $languageInfoArray[$docInfo->languageCode]['totalWitnesses']++;
-            $witnessInfo['systemId'] = [
-                'type' => WitnessType::FULL_TRANSCRIPTION,
-                'docId' => $docId,
-                'timeStamp' => $lastVersion->timeFrom
-            ];
-            $witnessInfo['typeSpecificInfo'] = [
-                'docInfo' => $docInfo,
-                'lastVersion' => $lastVersion,
-                'segments' => $segmentArray
-            ];
-            $isValid = true;
-            $invalidErrorCode = 0;
-            foreach($segmentArray as $segment) {
-                /** @var $segment ApmChunkSegmentLocation */
-                $pagesMentioned[] = $segment->start->pageId;
-                $pagesMentioned[] = $segment->end->pageId;
-                if (!$segment->isValid()) {
-                    $isValid = false;
-                    $invalidErrorCode =$segment->getChunkError();
-                    continue;
+                if (!isset($languageInfoArray[$docInfo->languageCode])) {
+                    $languageInfoArray[$docInfo->languageCode] = $this->languagesByCode[$docInfo->languageCode];
+                    $languageInfoArray[$docInfo->languageCode]['totalWitnesses'] = 0;
+                    $languageInfoArray[$docInfo->languageCode]['validWitnesses'] = 0;
                 }
-            }
-            $witnessInfo['isValid'] = $isValid;
-            $witnessInfo['invalidErrorCode'] = $invalidErrorCode;
-            if ($isValid) {
-                $languageInfoArray[$docInfo->languageCode]['validWitnesses']++;
-            }
 
-            $witnessInfoArray[] = $witnessInfo;
+                $witnessInfo = [];
+                $witnessInfo['type'] = WitnessType::FULL_TRANSCRIPTION;
+                $witnessInfo['languageCode'] = $docInfo->languageCode;
+                $languageInfoArray[$docInfo->languageCode]['totalWitnesses']++;
+                $witnessInfo['systemId'] = [
+                    'type' => WitnessType::FULL_TRANSCRIPTION,
+                    'docId' => $docId,
+                    'localWitnessId' => $localWitnessId,
+                    'timeStamp' => $lastVersion->timeFrom
+                ];
+                $witnessInfo['typeSpecificInfo'] = [
+                    'docInfo' => $docInfo,
+                    'lastVersion' => $lastVersion,
+                    'segments' => $segmentArray
+                ];
+                $isValid = true;
+                $invalidErrorCode = 0;
+                foreach ($segmentArray as $segment) {
+                    /** @var $segment ApmChunkSegmentLocation */
+                    $pagesMentioned[] = $segment->start->pageId;
+                    $pagesMentioned[] = $segment->end->pageId;
+                    if (!$segment->isValid()) {
+                        $isValid = false;
+                        $invalidErrorCode = $segment->getChunkError();
+                        continue;
+                    }
+                }
+                $witnessInfo['isValid'] = $isValid;
+                $witnessInfo['invalidErrorCode'] = $invalidErrorCode;
+                if ($isValid) {
+                    $languageInfoArray[$docInfo->languageCode]['validWitnesses']++;
+                }
+
+                $witnessInfoArray[] = $witnessInfo;
+            }
         }
 
         $pageInfoArray = $this->getPageInfoArrayFromList($pagesMentioned, $transcriptionManager->getPageManager());

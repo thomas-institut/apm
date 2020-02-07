@@ -200,7 +200,7 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
 
         foreach ($chunkMarkLocations as $location) {
             /** @var ApmChunkMarkLocation $location */
-            if (!isset($chunkLocations[$location->workId][$location->chunkNumber][$location->docId][$location->segmentNumber])) {
+            if (!isset($chunkLocations[$location->workId][$location->chunkNumber][$location->docId][$location->witnessLocalId][$location->segmentNumber])) {
                 // Initialize the chunk segment location
                 $segmentLocation = new ApmChunkSegmentLocation();
                 if ($location->type === 'start') {
@@ -208,11 +208,11 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
                 } else {
                     $segmentLocation->end = $location;
                 }
-                $chunkLocations[$location->workId][$location->chunkNumber][$location->docId][$location->segmentNumber] = $segmentLocation;
+                $chunkLocations[$location->workId][$location->chunkNumber][$location->docId][$location->witnessLocalId][$location->segmentNumber] = $segmentLocation;
                 continue;
             }
             /** @var ApmChunkSegmentLocation $segmentLocation */
-            $segmentLocation = $chunkLocations[$location->workId][$location->chunkNumber][$location->docId][$location->segmentNumber];
+            $segmentLocation = $chunkLocations[$location->workId][$location->chunkNumber][$location->docId][$location->witnessLocalId][$location->segmentNumber];
             if ($segmentLocation->getChunkError() === ApmChunkSegmentLocation::DUPLICATE_CHUNK_START_MARKS ||
                 $segmentLocation->getChunkError() === ApmChunkSegmentLocation::DUPLICATE_CHUNK_END_MARKS) {
                 // there's already a duplicate chunk mark error in the segment, skip the current location
@@ -282,6 +282,7 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
             " $te.column_number," .
             " $te.seq as 'e_seq'," .
             " $ti.seq as 'item_seq'," .
+            " $ti.extra_info as 'witness_local_id'," .
             " $ti.alt_text as 'type'," .
             " $ti.text as 'work_id'," .
             " $ti.target as 'chunk_number'," .
@@ -303,9 +304,16 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
 
         $chunkMarkLocations = [];
         while ($row = $r->fetch(PDO::FETCH_ASSOC)) {
+            $this->logger->debug('Chunk mark row', $row);
             $location = new ApmChunkMarkLocation();
             $location->docId = (int) $row['doc_id'];
             $location->workId = $row['work_id'];
+//            if (is_null($row['witness_local_id']) || $row['witness_local_id'] === '') {
+//                // old items in the db did not have a witness local id!
+//                $location->witnessLocalId = 'A';
+//            } else {
+            $location->witnessLocalId = $row['witness_local_id'];
+//            }
             $location->chunkNumber = (int) $row['chunk_number'];
             if (is_null($row['segment_number'])) {
                 $location->segmentNumber = 1;  // very old items in the db did not have a segment number!
@@ -321,6 +329,8 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
             $location->itemSequence = (int) $row['item_seq'];
             $chunkMarkLocations[] = $location;
         }
+
+        //$this->logger->debug('ChunkMark Locations', $chunkMarkLocations);
 
         return $this->createChunkLocationMapFromChunkMarkLocations($chunkMarkLocations);
 
@@ -440,10 +450,12 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
         $versionMap = [];
         foreach ($chunkLocationMap as $workId => $chunkNumberMap) {
             foreach($chunkNumberMap as $chunkNumber => $docMap) {
-                foreach ($docMap as $docId => $segmentArray) {
-                    foreach($segmentArray as $segmentNumber => $segmentLocation) {
-                        /** @var $segmentLocation ApmChunkSegmentLocation */
-                        $versionMap[$workId][$chunkNumber][$docId][$segmentNumber] = $this->getVersionsForSegmentLocation($segmentLocation);
+                foreach ($docMap as $docId => $localWitnessIdMap) {
+                    foreach($localWitnessIdMap as $localWitnessId => $segmentMap) {
+                        foreach($segmentMap as $segmentNumber => $segmentLocation) {
+                            /** @var $segmentLocation ApmChunkSegmentLocation */
+                            $versionMap[$workId][$chunkNumber][$docId][$localWitnessId][$segmentNumber] = $this->getVersionsForSegmentLocation($segmentLocation);
+                        }
                     }
                 }
             }
@@ -455,24 +467,26 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
         $lastVersions = [];
         foreach ($versionMap as $workId => $chunkNumberMap) {
             foreach($chunkNumberMap as $chunkNumber => $docMap) {
-                foreach ($docMap as $docId => $segmentArray) {
-                    //$this->logger->debug("Processing version map: $workId-$chunkNumber, doc $docId");
-                    $lastVersion = new ColumnVersionInfo();
-                    foreach($segmentArray as $segmentNumber => $pageArray) {
-                        foreach($pageArray as $pageSeq => $columnArray) {
-                            foreach ($columnArray as $colNumber => $versionArray) {
-                                foreach ($versionArray as $versionInfo ) {
-                                    /** @var $versionInfo ColumnVersionInfo */
-                                    if ($versionInfo->timeUntil === TimeString::END_OF_TIMES) {
-                                        if ($versionInfo->timeFrom > $lastVersion->timeFrom) {
-                                            $lastVersion = $versionInfo;
+                foreach ($docMap as $docId => $localWitnessIdMap) {
+                    foreach ($localWitnessIdMap as $localWitnessId => $segmentMap) {
+                        //$this->logger->debug("Processing version map: $workId-$chunkNumber, doc $docId");
+                        $lastVersion = new ColumnVersionInfo();
+                        foreach ($segmentMap as $segmentNumber => $pageArray) {
+                            foreach ($pageArray as $pageSeq => $columnArray) {
+                                foreach ($columnArray as $colNumber => $versionArray) {
+                                    foreach ($versionArray as $versionInfo) {
+                                        /** @var $versionInfo ColumnVersionInfo */
+                                        if ($versionInfo->timeUntil === TimeString::END_OF_TIMES) {
+                                            if ($versionInfo->timeFrom > $lastVersion->timeFrom) {
+                                                $lastVersion = $versionInfo;
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
+                        $lastVersions[$workId][$chunkNumber][$docId][$localWitnessId] = $lastVersion;
                     }
-                    $lastVersions[$workId][$chunkNumber][$docId] = $lastVersion;
                 }
             }
         }

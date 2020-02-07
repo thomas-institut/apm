@@ -40,9 +40,9 @@ class WitnessPageFormatter implements ItemStreamFormatter {
     
     const DATEFORMAT_DEFAULT = 'Y-m-d H:i:s';
     
-    const ICON_NOTE = '<i class="fa fa-comment-o" aria-hidden="true"></i>';
+    const ICON_NOTE = '<i class="far fa-comment"></i>';
     const ICON_PARAGRAPH = '¶';
-    const ICON_GAP = '<i class="fa fa-ellipsis-h" aria-hidden="true"></i>';
+    const ICON_GAP = '<i class="fas fa-ellipsis-h"></i>';
     
     const ICON_ORIGINALTEXT = '+';
     const ICON_EQUIV = '&equiv;';
@@ -171,7 +171,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
             $classes[] = $item->getClarityValue() > 0 ? self::CLASS_UNCLEAR : self::CLASS_ILLEGIBLE;
             $popoverHtml .= '<b>';
             $popoverHtml .= $item->getClarityValue() > 0 ? 'Unclear' : 'Illegible';
-            $popoverHtml .= '</b><br/><i class="fa fa-eye-slash" aria-hidden="true"></i></span> ';
+            $popoverHtml .= '</b><br/><i class="far fa-eye-slash" aria-hidden="true"></i></span> ';
             $popoverHtml .= $item->getClarityReason();
             $popoverHtml .= '<br/>';
         }
@@ -275,7 +275,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
     protected function formatLocation(Item $item, array &$classes, string &$popoverHtml) {
         if ($item->getLocation() !== Item::LOCATION_INLINE) {
             $classes[] = self::CLASS_OFFLINE;
-            $popoverHtml .= '<i class="fa fa-location-arrow" aria-hidden="true"></i> ' . $item->getLocation();
+            $popoverHtml .= '<i class="fas fa-location-arrow" aria-hidden="true"></i> ' . $item->getLocation();
             $popoverHtml .= '<br/>';
         }
     }

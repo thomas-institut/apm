@@ -59,7 +59,7 @@ class ApmSystemManager extends SystemManager {
     const ERROR_NO_LOGFILENAME_GIVEN = 1009;
     
     // Database version
-    const DB_VERSION = 18;
+    const DB_VERSION = 19;
 
     const DEFAULT_LOG_APPNAME = 'APM';
     const DEFAULT_LOG_DEBUG = false;

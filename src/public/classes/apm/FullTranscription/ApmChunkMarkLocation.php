@@ -49,6 +49,10 @@ class ApmChunkMarkLocation extends ApmItemLocation
      * @var string
      */
     public $type;
+    /**
+     * @var string
+     */
+    public $witnessLocalId;
 
 
     public function __construct()
@@ -56,6 +60,7 @@ class ApmChunkMarkLocation extends ApmItemLocation
         parent::__construct();
         $this->workId = '';
         $this->chunkNumber = 0;
+        $this->witnessLocalId = 'A';
         $this->segmentNumber = 0;
         $this->docId = 0;
         $this->type = '';

@@ -53,31 +53,55 @@ abstract class TranscriptionManager implements ErrorReporter
     /**
      * Returns a "map" of chunk locations in a particular document at the given time.
      *
-     * The returned array contains ApmChunkSegmentLocation objects arranged by work, chunk and document.
+     * The returned array contains ApmChunkSegmentLocation objects arranged by work, chunk, document and localWitnessId
      *
      *
      * $returnedArray = [
      *   'workId1' =>  [
      *         chunkA => [
      *              docId1 => [
-     *                  segment1 => ApmChunkSegmentLocation1-1-1,
-     *                  segment2 => ApmChunkSegmentLocation1-1-2,
-     *                  ...
+     *                  'A' => [
+     *                      segment1 => ApmChunkSegmentLocation1-1-A-1,
+     *                      segment2 => ApmChunkSegmentLocation1-1-A-2,
+     *                      ...  more segments ....
+     *                      ],
+     *                  'B' =>
+     *                      segment1 => ApmChunkSegmentLocation1-1-B-1,
+     *                      segment2 => ApmChunkSegmentLocation1-1-B-2,
+     *                      ...  more segments ....
+     *                      ],
+     *                  ... more local witness ids ....
      *             ],
      *             docId2 => [
-     *                  segment1 => ApmChunkSegmentLocation1-1-1,
-     *                  segment2 => ApmChunkSegmentLocation1-1-2,
-     *                  ...
+     *                  'A' => [
+     *                      segment1 => ApmChunkSegmentLocation1-1-A-1,
+     *                      segment2 => ApmChunkSegmentLocation1-1-A-2,
+     *                      ...  more segments ....
+     *                      ],
+     *                  'B' =>
+     *                      segment1 => ApmChunkSegmentLocation1-1-B-1,
+     *                      segment2 => ApmChunkSegmentLocation1-1-B-2,
+     *                      ...  more segments ....
+     *                      ],
+     *                  ... more local witness ids ....
      *             ],
      *             ... // more docs
      *         ],
      *        chunkB => [
      *          docId1 => [
-     *              segment1 => ApmChunkSegmentLocation1-2-1,
-     *              segment2 => ApmChunkSegmentLocation1-2-2, ...
-     *              ],
+     *                  'A' => [
+     *                      segment1 => ApmChunkSegmentLocation1-1-A-1,
+     *                      segment2 => ApmChunkSegmentLocation1-1-A-2,
+     *                      ...  more segments ....
+     *                      ],
+     *                  'B' =>
+     *                      segment1 => ApmChunkSegmentLocation1-1-B-1,
+     *                      segment2 => ApmChunkSegmentLocation1-1-B-2,
+     *                      ...  more segments ....
+     *                      ],
+     *                  ... more local witness ids ....
      *         docId2 => [
-     *              ... segment locations ...
+     *              ... local witness ids ...
      *         ],
      *          ...  // more docs
      *   ],

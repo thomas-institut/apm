@@ -27,8 +27,8 @@ use DI\DependencyException;
 use DI\NotFoundException;
 use Monolog\Logger;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ResponseInterface as Response;
 use \Psr\Http\Message\ServerRequestInterface as Request;
-use \Psr\Http\Message\ResponseInterface as Response;
 
 use AverroesProject\Data\DataManager;
 use APM\System\SystemManager;
@@ -123,7 +123,7 @@ abstract class ApiController
        $this->apiUserId = $ci->get(ApmContainerKey::API_USER_ID); // this should be set by the authenticator!
        $this->languages =$ci->get(ApmContainerKey::CONFIG)['languages'];
        $this->logger = $this->systemManager->getLogger()->withName('API');
-       $this->debug('Api User ID: ' . $this->apiUserId);
+       //$this->debug('Api User ID: ' . $this->apiUserId);
 
        $this->profiler = new SimpleProfiler();
        $this->profiler->registerProperty('time', new TimeTracker());
@@ -235,5 +235,10 @@ abstract class ApiController
     {
         $lapInfo = $this->profiler->getLaps();
         return $lapInfo[count($lapInfo)-1]['time']['cummulative'];
+    }
+
+    protected function responseWithText(Response $response, string $text, int $status=200) : Response {
+        $response->getBody()->write($text);
+        return $response->withStatus($status);
     }
 }

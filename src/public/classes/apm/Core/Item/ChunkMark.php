@@ -54,5 +54,15 @@ class ChunkMark extends Mark {
     public function getChunkSegment() : int {
         return intVal(explode('-', $this->getMarkText())[3]);
     }
-                
+
+    public function getData(): array
+    {
+        $data = parent::getData();
+        $data['type'] = 'ChunkMark';
+        $data['chunkNumber'] = $this->getChunkNumber();
+        $data['workId'] = $this->getWork();
+        $data['segment'] = $this->getChunkSegment();
+        return $data;
+    }
+
 }

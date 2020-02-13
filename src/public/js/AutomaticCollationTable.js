@@ -76,7 +76,10 @@ class AutomaticCollationTable {
     // it means that ALL witnesses should be included
     if (this.apiCallOptions.witnesses.length === 0) {
       for(const witness of this.availableWitnesses) {
-        this.apiCallOptions.witnesses.push({ type: witness.type, id: witness.id})
+        this.apiCallOptions.witnesses.push({
+          type: witness.type,
+          id: [ witness.docId, witness.lwid, '']
+        })
       }
     }
     

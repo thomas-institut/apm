@@ -26,9 +26,12 @@
 
 namespace APM\Site;
 
+use APM\FullTranscription\ApmChunkSegmentLocation;
+use APM\System\WitnessType;
 use AverroesProject\Data\DataManager;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
+use ThomasInstitut\TimeString\TimeString;
 
 
 /**
@@ -78,7 +81,7 @@ class SiteCollationTable extends SiteController
     public function automaticCollationPageGet(Request $request, Response $response, $args) 
     {
         $workId = $request->getAttribute('work');
-        $chunkNumber = $request->getAttribute('chunk');
+        $chunkNumber = intval($request->getAttribute('chunk'));
         $language = $request->getAttribute('lang');
         $ignorePunctuation = true;
         if (isset($args['ignore_punct'])) {
@@ -91,7 +94,7 @@ class SiteCollationTable extends SiteController
             'ignorePunctuation' => $ignorePunctuation,
             'witnesses' => [], 
             'partialCollation' => false,
-            'isPreset' => 0
+            'isPreset' => false
         ];
 
         // get witnesses to include
@@ -103,18 +106,21 @@ class SiteCollationTable extends SiteController
                 }
                 if (ctype_digit($argWitnessSpec)) {
                     // for compatibility with existing API calls, if the argWitnessSpec is just a number,
-                    // it defaults to a transcription
+                    // it defaults to a full transcription with local witness Id 'A'
                     $docId = intval($argWitnessSpec);
                     if ($docId !== 0) {
-                        $collationPageOptions['witnesses'][] = ['type' => DataManager::WITNESS_TRANSCRIPTION, 'id' => $docId];
+                        $collationPageOptions['witnesses'][] = [
+                            'type' => WitnessType::FULL_TRANSCRIPTION,
+                            'id' => $docId,
+                            'lwid' => 'A'
+                        ];
                     }
                     continue;
                 }
                 $specs = explode('-', $argWitnessSpec);
-                if (count($specs) === 2) {
+                if (count($specs) >= 2) {
                     $witnessType = $specs[0];
-
-                    if (!$this->dataManager->isWitnessTypeValid($witnessType)) {
+                    if (!WitnessType::isValid($witnessType)) {
                         $msg = 'Invalid witness type given: ' . $witnessType;
                         $this->logger->error($msg, [ 'args' => $args]);
                         return $this->renderPage($response, self::TEMPLATE_ERROR, [
@@ -125,8 +131,10 @@ class SiteCollationTable extends SiteController
                             'message' => $msg
                         ]);
                     }
+                    // for now, only full transcriptions are implemented, so the second field in
+                    // the witness spec must be a number
                     if (!ctype_digit($specs[1])) {
-                        $msg = 'Invalid witness id given: ' . $specs[1];
+                        $msg = 'Invalid doc id given: ' . $specs[1];
                         $this->logger->error($msg, [ 'args' => $args]);
                         return $this->renderPage($response, self::TEMPLATE_ERROR, [
                             'work' => $workId,
@@ -136,8 +144,16 @@ class SiteCollationTable extends SiteController
                             'message' => $msg
                         ]);
                     }
-                    $witnessId = intval($specs[1]);
-                    $collationPageOptions['witnesses'][] = ['type' =>  $witnessType, 'id' => $witnessId];
+                    $docId = intval($specs[1]);
+                    $lwid = 'A';
+                    if (isset($specs[2])) {
+                        $lwid = $specs[2];
+                    }
+                    $collationPageOptions['witnesses'][] = [
+                        'type' =>  $witnessType,
+                        'id' => $docId,
+                        'lwid' => $lwid
+                    ];
                     continue;
 
                 }
@@ -200,7 +216,7 @@ class SiteCollationTable extends SiteController
             'ignorePunctuation' => $ignorePunctuation,
             'witnesses' => [], 
             'partialCollation' => false,
-            'isPreset' => 1,
+            'isPreset' => true,
             'preset' => [ 
                 'id' => $preset->getId(), 
                 'title' => $preset->getTitle(),
@@ -278,7 +294,7 @@ class SiteCollationTable extends SiteController
             }
         }
         
-        $collationPageOptions['isPreset'] = 0;
+        $collationPageOptions['isPreset'] = false;
         
         return $this->getCollationTablePage($collationPageOptions, $response);
     }
@@ -290,7 +306,7 @@ class SiteCollationTable extends SiteController
      */
     private function getCollationTablePage($collationPageOptions, Response $response) {
         $workId = $collationPageOptions['work'];
-        $chunkNumber = $collationPageOptions['chunk'];
+        $chunkNumber = intval($collationPageOptions['chunk']);
         $language = $collationPageOptions['lang'];
         $partialCollation = $collationPageOptions['partialCollation'];
        
@@ -302,7 +318,8 @@ class SiteCollationTable extends SiteController
             'ignorePunctuation' => $collationPageOptions['ignorePunctuation'],
             'witnesses' => $collationPageOptions['witnesses']
         ];
-        
+
+        $this->logger->debug('Site ACT: apiCallOptions', $apiCallOptions);
         $dm = $this->dataManager;
         $pageName = "AutomaticCollation-$workId-$chunkNumber-$language";
         
@@ -335,12 +352,16 @@ class SiteCollationTable extends SiteController
         $workInfo = $dm->getWorkInfo($workId);
         
         // get total witness counts
+        $validWitnesses2 = $this->getValidWitnessesForChunkLang($workId, $chunkNumber, $language);
+        $this->logger->debug('Valid witnesses 2', $validWitnesses2);
         $validWitnesses = $this->getValidWitnessDocIdsForWorkChunkLang($dm, $workId, $chunkNumber, $language);
         $availableWitnesses = [];
         foreach($validWitnesses as $witnessId) {
             $docInfo = $dm->getDocById($witnessId);
             $availableWitnesses[] = [ 'type' => 'doc', 'id' => intVal($witnessId), 'title' => $docInfo['title']];
         }
+        $this->logger->debug('Valid witnesses', $validWitnesses);
+        $this->logger->debug('Valid witnesses 2', $validWitnesses2);
 
         $this->profiler->stop();
         $this->logProfilerData($pageName);
@@ -355,9 +376,10 @@ class SiteCollationTable extends SiteController
             'isPreset' => $collationPageOptions['isPreset'],
             'rtl' => $langInfo['rtl'],
             'work_info' => $workInfo,
-            'num_docs' => $partialCollation ? count($apiCallOptions['witnesses']) : count($validWitnesses),
-            'total_num_docs' => count($validWitnesses),
+            'num_docs' => $partialCollation ? count($apiCallOptions['witnesses']) : count($validWitnesses2),
+            'total_num_docs' => count($validWitnesses2),
             'availableWitnesses' => $availableWitnesses,
+            'availableWitnessesNew' => $validWitnesses2,
             'warnings' => $warnings
         ];
         if ($templateOptions['isPreset']) {
@@ -397,5 +419,48 @@ class SiteCollationTable extends SiteController
             $witnessesForLang[] = $witness['id'];
         }
         return $witnessesForLang;
+    }
+
+    protected function getValidWitnessesForChunkLang(string $workId, int $chunkNumber, string $langCode) : array {
+        $this->logger->debug("Getting valid witnesses for $workId, $chunkNumber, $langCode");
+        $tm = $this->systemManager->getTranscriptionManager();
+
+        $map = $tm->getChunkLocationMapForChunk($workId, $chunkNumber, TimeString::now());
+
+        $docArray = $map[$workId][$chunkNumber];
+        $witnesses = [];
+
+        foreach($docArray as $docId => $localWitnessIdArray) {
+            $docInfo = $tm->getDocManager()->getDocInfoById($docId);
+            if ($docInfo->languageCode !== $langCode) {
+                $this->logger->debug("$docId is not $langCode");
+                continue;
+            }
+            foreach($localWitnessIdArray as $lwid => $segmentArray) {
+                $isValid = true;
+                foreach($segmentArray as $segmentNumber => $segment) {
+                    /** @var $segment ApmChunkSegmentLocation */
+                    if (!$segment->isValid()) {
+                        $this->logger->debug("Doc $docId, lwid $lwid, segment $segmentNumber is not valid");
+                        $isValid = false;
+                    }
+                }
+                if ($isValid) {
+                    $title = $docInfo->title;
+                    if ($lwid !== 'A') {
+                        $title .= ' (' . $lwid . ')';
+                    }
+                    $witnesses[] = [
+                        'type' => WitnessType::FULL_TRANSCRIPTION,
+                        'docId' => $docId,
+                        'lwid' => $lwid,
+                        'title' => $title,
+                        'langCode' => $langCode
+                    ];
+                }
+            }
+        }
+        return $witnesses;
+
     }
 }

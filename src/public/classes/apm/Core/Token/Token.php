@@ -149,4 +149,12 @@ class Token {
     public function getType() : int {
         return $this->type;
     }
+
+    public function getData() : array {
+        return [
+            'type' => $this->getType(),
+            'text' => $this->getText(),
+            'normalizedText' => $this->getNormalization()
+        ];
+    }
 }

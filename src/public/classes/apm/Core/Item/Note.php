@@ -78,4 +78,10 @@ class Note {
         }
         $this->time = $time;
     }
+
+    public function getData() : array {
+        return [
+            'authorId' => $this->author->getId()
+        ];
+    }
 }

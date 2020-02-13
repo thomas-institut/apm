@@ -29,6 +29,7 @@ class MarkType
 {
     const NO_WB = '__nowb';
     const CHUNK = '__chunkmark';
+    const TEXT_BOX_BREAK = '__textBoxBreak';
 
     const REF = 'ref';
     const PARAGRAPH = 'paragraph';

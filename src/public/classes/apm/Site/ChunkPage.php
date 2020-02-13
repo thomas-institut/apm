@@ -38,7 +38,6 @@ use AverroesProjectToApm\ApUserDirectory;
 use AverroesProjectToApm\DatabaseItemStream;
 use AverroesProjectToApm\DatabaseItemStreamWitness;
 use AverroesProjectToApm\Formatter\WitnessPageFormatter;
-use ThomasInstitut\TimeString\TimeString;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
@@ -62,70 +61,40 @@ class ChunkPage extends SiteController
         $this->profiler->start();
         $workInfo = $dm->getWorkInfo($workId);
 
-        $chunkLocationMap = $transcriptionManager->getChunkLocationMapForChunk($workId, $chunkNumber, TimeString::now());
-        $this->logger->debug("Chunk location map for chunk $chunkNumber", $chunkLocationMap);
-        $versionMap = $transcriptionManager->getVersionsForChunkLocationMap($chunkLocationMap);
-        $lastVersions = $transcriptionManager->getLastChunkVersionFromVersionMap($versionMap);
-        $this->profiler->lap('After TM get chunk map and version info');
+        $witnessInfoArray = $transcriptionManager->getWitnessesForChunk($workId, $chunkNumber);
 
-        // build witness info array
+        // get pages, authors and languages from witnesses
         $pagesMentioned = [];
         $authorsMentioned = [];
-        $witnessInfoArray = [];
+
         $languageInfoArray = [];
 
-        $docManager = $transcriptionManager->getDocManager();
-        $docArray = isset($chunkLocationMap[$workId][$chunkNumber]) ? $chunkLocationMap[$workId][$chunkNumber] : [];
-
-        foreach($docArray as $docId => $localWitnessIdArray) {
-            foreach ($localWitnessIdArray as $localWitnessId => $segmentArray) {
-
-                $docInfo = $docManager->getDocInfoById($docId);
-                /** @var $lastVersion ColumnVersionInfo */
-                $lastVersion = $lastVersions[$workId][$chunkNumber][$docId][$localWitnessId];
-                $pagesMentioned[] = $lastVersion->pageId;
-                $authorsMentioned[] = $lastVersion->authorId;
-
-                if (!isset($languageInfoArray[$docInfo->languageCode])) {
-                    $languageInfoArray[$docInfo->languageCode] = $this->languagesByCode[$docInfo->languageCode];
-                    $languageInfoArray[$docInfo->languageCode]['totalWitnesses'] = 0;
-                    $languageInfoArray[$docInfo->languageCode]['validWitnesses'] = 0;
-                }
-
-                $witnessInfo = [];
-                $witnessInfo['type'] = WitnessType::FULL_TRANSCRIPTION;
-                $witnessInfo['languageCode'] = $docInfo->languageCode;
-                $languageInfoArray[$docInfo->languageCode]['totalWitnesses']++;
-                $witnessInfo['systemId'] = [
-                    'type' => WitnessType::FULL_TRANSCRIPTION,
-                    'docId' => $docId,
-                    'localWitnessId' => $localWitnessId,
-                    'timeStamp' => $lastVersion->timeFrom
-                ];
-                $witnessInfo['typeSpecificInfo'] = [
-                    'docInfo' => $docInfo,
-                    'lastVersion' => $lastVersion,
-                    'segments' => $segmentArray
-                ];
-                $isValid = true;
-                $invalidErrorCode = 0;
-                foreach ($segmentArray as $segment) {
-                    /** @var $segment ApmChunkSegmentLocation */
-                    $pagesMentioned[] = $segment->start->pageId;
-                    $pagesMentioned[] = $segment->end->pageId;
-                    if (!$segment->isValid()) {
-                        $isValid = false;
-                        $invalidErrorCode = $segment->getChunkError();
-                        continue;
+        foreach($witnessInfoArray as $witnessInfo) {
+            switch($witnessInfo->type) {
+                case WitnessType::FULL_TRANSCRIPTION:
+                    $docInfo = $witnessInfo->typeSpecificInfo['docInfo'];
+                    if (!isset($languageInfoArray[$docInfo->languageCode])) {
+                        $languageInfoArray[$docInfo->languageCode] = $this->languagesByCode[$docInfo->languageCode];
+                        $languageInfoArray[$docInfo->languageCode]['totalWitnesses'] = 0;
+                        $languageInfoArray[$docInfo->languageCode]['validWitnesses'] = 0;
                     }
-                }
-                $witnessInfo['isValid'] = $isValid;
-                $witnessInfo['invalidErrorCode'] = $invalidErrorCode;
-                if ($isValid) {
-                    $languageInfoArray[$docInfo->languageCode]['validWitnesses']++;
-                }
-
-                $witnessInfoArray[] = $witnessInfo;
+                    $languageInfoArray[$docInfo->languageCode]['totalWitnesses']++;
+                    if ($witnessInfo->isValid) {
+                        $languageInfoArray[$docInfo->languageCode]['validWitnesses']++;
+                    }
+                    $lastVersion = $witnessInfo->typeSpecificInfo['lastVersion'];
+                    /** @var $lastVersion ColumnVersionInfo */
+                    $authorsMentioned[] = $lastVersion->authorId;
+                    $pagesMentioned[] = $lastVersion->pageId;
+                    $segmentArray =  $witnessInfo->typeSpecificInfo['segments'];
+                    foreach ($segmentArray as $segment) {
+                        /** @var $segment ApmChunkSegmentLocation */
+                        $pagesMentioned[] = $segment->start->pageId;
+                        $pagesMentioned[] = $segment->end->pageId;
+                    }
+                    break;
+                default:
+                    $this->logger->error('Unsupported witness type');
             }
         }
 
@@ -329,7 +298,7 @@ class ChunkPage extends SiteController
         }
         
 
-        $edNoteArrayFromDb =    $db->edNoteManager->rawGetEditorialNotesForListOfItems($itemIds);
+        $edNoteArrayFromDb =  $db->edNoteManager->rawGetEditorialNotesForListOfItems($itemIds);
 
         $itemStream = new DatabaseItemStream($doc['id'], $doc['segmentApItemStreams'], $doc['lang'], $edNoteArrayFromDb);
         $itemStreamWitness = new DatabaseItemStreamWitness($workId, $chunkNumber, $itemStream);

@@ -86,5 +86,15 @@ abstract class Item {
     public function addNote(Note $note) {
         $this->notes[] = $note;
     }
+
+    public function getData() : array {
+        return [
+            'type' => 'Generic',
+            'text' => $this->getPlainText(),
+            'normalization' => $this->getNormalizedText(),
+            'textualFlow' => $this->getTextualFlow(),
+            'location' => $this->getLocation()
+        ];
+    }
     
 }

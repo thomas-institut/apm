@@ -1,4 +1,6 @@
 <?php
+
+
 /* 
  *  Copyright (C) 2020 Universität zu Köln
  *
@@ -17,21 +19,21 @@
  *  
  */
 
-namespace APM\System;
+
+namespace APM;
 
 
-class WitnessType
+use APM\System\WitnessSystemId;
+use PHPUnit\Framework\TestCase;
+
+require "autoload.php";
+
+
+class WitnessSystemIdTest extends TestCase
 {
-    const FULL_TRANSCRIPTION = 'fullTx';
-    const PARTIAL_TRANSCRIPTION = 'partialTx';
-    const TEXT_TRANSCRIPTION_PLAIN = 'textTxPlain';
-    const TEXT_TRANSCRIPTION_MARK_DOWN = 'textTxMarkdown';
-    const TEXT_TRANSCRIPTION_FULL = 'textTxRich';
-    const CHUNK_EDITION = 'edition';
 
-    static public function isValid(string $type) : bool {
-        $validTypes = [ self::FULL_TRANSCRIPTION, self::PARTIAL_TRANSCRIPTION, self::TEXT_TRANSCRIPTION_PLAIN];
-
-        return array_search($type, $validTypes) !== false;
+    public function testFullTxIds() {
+        $this->assertEquals('AW47-100-fullTx-34-A-20091225145927000000',
+            WitnessSystemId::buildFullTxId('AW47', 100, 34, 'A', '2009-12-25 14:59:27.000000'));
     }
 }

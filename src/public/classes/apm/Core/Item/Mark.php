@@ -86,4 +86,15 @@ class Mark extends Item {
         $this->length = $l;
     }
 
+    public function getData(): array
+    {
+        $data = parent::getData();
+
+        $data['type'] = 'Mark';
+        $data['markType'] = $this->getMarkType();
+        $data['markText'] = $this->getMarkText();
+        $data['length'] = $this->getLength();
+        return $data;
+    }
+
 }

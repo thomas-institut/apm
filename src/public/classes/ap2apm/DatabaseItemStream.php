@@ -20,6 +20,8 @@
 
 namespace AverroesProjectToApm;
 
+use APM\Core\Item\Mark;
+use APM\Core\Item\MarkType;
 use APM\Core\Item\TextualItem;
 
 /**
@@ -67,7 +69,9 @@ class DatabaseItemStream {
                 $address->setFromItemStreamRow($docId, $row);
                 
                 if ($row['ce_id'] !== $previousElementId && $address->getTbIndex() === $previousTbIndex) {
-                    $this->items[] = new ItemInDatabaseItemStream($address, new TextualItem("\n"));
+                    // change of textbox
+                    //$this->items[] = new ItemInDatabaseItemStream($address, new TextualItem("\n"));
+                    $this->items[] = new ItemInDatabaseItemStream($address, new Mark(MarkType::TEXT_BOX_BREAK));
                 }
                 $item = $itemFactory->createItemFromRow($row);
                 $itemId = $address->getItemId();

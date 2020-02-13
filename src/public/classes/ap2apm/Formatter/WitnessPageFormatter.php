@@ -140,6 +140,10 @@ class WitnessPageFormatter implements ItemStreamFormatter {
                     $html .= ' ';
                     continue;
                 }
+                if ($theItem->getMarkType() === MarkType::TEXT_BOX_BREAK) {
+                    $html .= ' ';
+                    continue;
+                }
                 $html .= $this->formatMark($theItem);
                 continue;
             }

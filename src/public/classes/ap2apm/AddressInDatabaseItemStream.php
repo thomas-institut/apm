@@ -91,6 +91,10 @@ class AddressInDatabaseItemStream extends ItemAddressInDocument {
         }
         
     }
+
+    public function getCeSeq() {
+        return $this->fullAddress->getCoord(self::COORD_ELEMENTSEQ);
+    }
     
     public function getFullAddress() {
         return $this->fullAddress;
@@ -138,6 +142,19 @@ class AddressInDatabaseItemStream extends ItemAddressInDocument {
     
     public function getItemSeq() {
         return $this->fullAddress->getCoord(self::COORD_ITEMSEQ);
+    }
+
+    public function getData(): array
+    {
+        $data = parent::getData();
+
+        $data['ceId'] = $this->getCeId();
+        $data['column'] = $this->getColumn();
+        $data['foliation'] = $this->getFoliation();
+        $data['itemSeq'] = $this->getItemSeq();
+        $data['itemId'] = $this->getItemId();
+        $data['ceSeq'] = $this->getCeSeq();
+        return $data;
     }
 
 }

@@ -25,6 +25,7 @@
  */
 namespace AverroesProject;
 
+use APM\Api\ApiWitness;
 use APM\Site\ChunkPage;
 use APM\Site\SiteCollationTable;
 use APM\Site\SiteDocuments;
@@ -330,6 +331,11 @@ $app->group('/api', function (RouteCollectorProxy $group){
     $group->post('/user/new',
         ApiUsers::class . ':createNewUser')
         ->setName('api.user.new');
+
+    // WITNESSES
+    $group->get('/witness/get/{witnessId}[/{outputType}]',
+        ApiWitness::class . ':getWitness')
+        ->setName('api.witness.get');
 
     // AUTOMATIC COLLATION
 

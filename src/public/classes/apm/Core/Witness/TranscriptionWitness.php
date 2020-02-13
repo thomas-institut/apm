@@ -166,7 +166,21 @@ abstract class TranscriptionWitness extends Witness {
                         }
                     } else { // i.e., not a word token
                         if ($noWbItemOpen && $tToken->getType()=== TokenType::WHITESPACE && $tToken->getText() === "\n") {
-                            // got a newline after a noWbItem, ignore
+                            // got a newline after a noWbItem
+                            // add the item index to the currenWord Token
+                            $currentWordToken->setSourceItemAddresses(array_merge(
+                                    $currentWordToken->getSourceItemAddresses(),
+                                    [$itemAddress]
+                                )
+                            );
+                            // add the item index
+                            $currentWordToken->setSourceItemIndexes(array_merge($currentWordToken->getSourceItemIndexes(), [$itemIndex]));
+                            // and a empty char range
+                            $currentWordToken->setSourceItemCharRanges(array_merge(
+                                    $currentWordToken->getSourceItemCharRanges(),
+                                    [new IntRange(0)]
+                                )
+                            );
                         } else {
                             // Any other token type: "close" currentWordToken and
                             // add it to the token array
@@ -199,6 +213,9 @@ abstract class TranscriptionWitness extends Witness {
                         [$itemAddress]
                         )
                     );
+                    // add the item index
+                    $currentWordToken->setSourceItemIndexes(array_merge($currentWordToken->getSourceItemIndexes(), [$itemIndex]));
+                    // and a empty char range
                     $currentWordToken->setSourceItemCharRanges(array_merge(
                         $currentWordToken->getSourceItemCharRanges(),
                         [new IntRange(0)]
@@ -215,6 +232,9 @@ abstract class TranscriptionWitness extends Witness {
             // TODO: handle "special items"
             //  - note mark
             //  - illegible mark
+            //  - TextBox break mark
+            //  - paragraph mark
+
             if ($openWordToken) {
                 // Close word token
                 $tokens[] = $currentWordToken;

@@ -32,9 +32,12 @@ use APM\FullTranscription\DocManager;
 use APM\FullTranscription\PageInfo;
 use APM\FullTranscription\PageManager;
 use APM\FullTranscription\TranscriptionManager;
+use AverroesProject\ColumnElement\Element;
 use AverroesProject\Data\EdNoteManager;
 use AverroesProject\Data\MySqlHelper;
+use AverroesProject\ItemStream\ItemStream;
 use AverroesProject\TxText\Item as ApItem;
+use AverroesProjectToApm\DatabaseItemStream;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
 use ThomasInstitut\Profiler\SimpleSqlQueryCounterTrackerAware;
@@ -162,9 +165,208 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
         $this->docManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
     }
 
-    public function getTranscriptionWitness(int $docId, string $workId, int $chunkNumber, string $timeString): ApmTranscriptionWitness
+    public function getTranscriptionWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeStamp) : ApmTranscriptionWitness
     {
-        // TODO: Implement getTranscriptionWitness() method.
+        $locations = $this->getSegmentLocationsForFullTxWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
+        $apStreams = [];
+        $itemIds = [];
+        $docInfo = $this->getDocManager()->getDocInfoById($docId);
+        foreach($locations as $segLocation ) {
+            /** @var ApmChunkSegmentLocation $segLocation */
+            if ($segLocation->isValid()) {
+                $apItemStream = $this->getItemStreamForSegmentLocation($segLocation, $timeStamp);
+                foreach($apItemStream as $row) {
+                    $itemIds[] = (int) $row['id'];
+                }
+                $apStreams[] = $apItemStream;
+            }
+        }
+
+        $edNoteArrayFromDb =  $this->edNoteManager->rawGetEditorialNotesForListOfItems($itemIds);
+        $itemStream = new DatabaseItemStream($docId, $apStreams, $docInfo->languageCode, $edNoteArrayFromDb);
+
+        $txWitness = new ApmTranscriptionWitness($docId, $workId, $chunkNumber, $timeStamp, $itemStream);
+        /** @var ApmChunkSegmentLocation $firstLocation */
+        $firstLocation = $locations[array_keys($locations)[0]];
+        $firstPageId = $firstLocation->start->pageId;
+        $firstColumn = $firstLocation->start->columnNumber;
+        $firstLineNumber = $this->getInitialLineNumberForStartLocation( $firstLocation, $timeStamp);
+        $this->logger->debug('First Line number: ' . $firstLineNumber);
+        $txWitness->setInitialLineNumberForTextBox($firstPageId, $firstColumn, $firstLineNumber);
+        return $txWitness;
+
+    }
+
+    private function calcSeqNumber(ApmChunkMarkLocation $loc)
+    {
+        //return $loc->pageSequence*1000000 + $loc->columnNumber * 10000 + $loc->elementSequence*100 + $loc->itemSequence;
+        return $this->calcSeqNumberGeneric($loc->pageSequence, $loc->columnNumber, $loc->elementSequence, $loc->itemSequence);
+    }
+
+    private function calcSeqNumberGeneric(int $pageSeq, int $colNumber, int $elementSeq, int $itemSeq) : int {
+        return $pageSeq*1000000 + $colNumber * 10000 + $elementSeq*100 + $itemSeq;
+    }
+
+    private function getInitialLineNumberForStartLocation(ApmChunkSegmentLocation $location, string $timeString) : int {
+        $seqNumberStart = $this->calcSeqNumber($location->start);
+        $seqNumberColumnStart = $this->calcSeqNumberGeneric($location->start->pageSequence, $location->start->columnNumber, 0 , 0);
+
+        $rows = $this->getItemRowsBetweenSeqNumbers($seqNumberColumnStart, $seqNumberStart, $timeString, $location->start->docId);
+        $lineNumber = 1;
+        foreach ($rows as $row) {
+            $lineNumber += substr_count($row['text'], "\n");
+        }
+        return $lineNumber;
+    }
+
+    private function getItemRowsBetweenSeqNumbers(int $seqNumberStart, int $seqNumberEnd, string $timeString, int $docId) : array {
+
+        // TODO: Deal with line gaps, probably they should be converted to a textual items with new lines in it.
+
+        if ($seqNumberStart >= $seqNumberEnd) {
+            return [];
+        }
+        $ti = $this->tNames['items'];
+        $te = $this->tNames['elements'];
+        $tp = $this->tNames['pages'];
+
+        $this->getSqlQueryCounterTracker()->incrementSelect();
+
+        $query = "SELECT $ti.id, $ti.type, $ti.seq, $ti.ce_id, $ti.lang, $ti.hand_id, $ti.text, $ti.alt_text, $ti.extra_info, $ti.length, $ti.target, " .
+            "$te.type as 'e.type', $te.page_id, $te.column_number as col, $te.seq as 'e.seq', $te.hand_id as 'e.hand_id', $te.reference, $te.placement, " .
+            "$tp.seq as 'p.seq', $tp.foliation" .
+            " FROM $ti" .
+            " JOIN ($te FORCE INDEX (page_id_2), $tp)" .
+            " ON ($te.id=$ti.ce_id AND $tp.id=$te.page_id)" .
+            " WHERE $tp.doc_id=" . $docId  .
+            " AND $te.type=" . Element::LINE .
+            " AND ($tp.seq*1000000 + $te.column_number*10000 + $te.seq * 100 + $ti.seq) > $seqNumberStart" .
+            " AND ($tp.seq*1000000 + $te.column_number*10000 + $te.seq * 100 + $ti.seq) < $seqNumberEnd" .
+            " AND $ti.valid_from<='$timeString'" .
+            " AND $te.valid_from<='$timeString'" .
+            " AND $tp.valid_from<='$timeString'" .
+            " AND $ti.valid_until>'$timeString'" .
+            " AND $te.valid_until>'$timeString'" .
+            " AND $tp.valid_until>'$timeString'" .
+            " ORDER BY $tp.seq, $te.column_number, $te.seq, $ti.seq ASC";
+
+        $r = $this->databaseHelper->query($query);
+
+        $rows = [];
+        while ($row = $r->fetch(PDO::FETCH_ASSOC)) {
+            $rows[] = $row;
+        }
+
+        return $rows;
+    }
+
+    private function getItemStreamForSegmentLocation(ApmChunkSegmentLocation $location, string $timeString) : array {
+        $seqNumberStart = $this->calcSeqNumber($location->start);
+        $seqNumberEnd = $this->calcSeqNumber($location->end);
+        $rows = $this->getItemRowsBetweenSeqNumbers($seqNumberStart, $seqNumberEnd, $timeString, $location->start->docId);
+
+        // Deal with targets and references
+        $items = [];
+        $additionItemsAlreadyInOutput = [];
+        foreach($rows as $inputRow) {
+            switch( (int) $inputRow['type']) {
+                case ApItem::DELETION:
+                case ApItem::UNCLEAR:
+                case ApItem::MARGINAL_MARK:
+                    $items[] = $inputRow;
+                    $additionItem  = $this->getAdditionItemWithGivenTarget((int) $inputRow['id'], $timeString);
+                    if ($additionItem) {
+                        $fieldsToCopy = ['e.type', 'page_id', 'col', 'e.seq', 'e.hand_id', 'reference', 'placement', 'p.seq', 'foliation'];
+                        foreach ($fieldsToCopy as $field) {
+                            $additionItem[$field] = $inputRow[$field];
+                        }
+                        $items[] = $additionItem;
+                        $additionItemsAlreadyInOutput[] = (int) $additionItem['id'];
+                    } else {
+                        $additionElementId = $this->getAdditionElementIdWithGivenReference((int) $inputRow['id'], $timeString);
+                        if ($additionElementId) {
+                            $additionElementItemStream = $this->getItemStreamForElementId($additionElementId, $timeString);
+                            foreach($additionElementItemStream as $additionItem) {
+                                $items[] = $additionItem;
+                            }
+                        }
+                    }
+                    break;
+
+                case ApItem::ADDITION:
+                    if (!in_array((int)$inputRow['id'], $additionItemsAlreadyInOutput)) {
+                        $items[] = $inputRow;
+                    }
+                    break;
+
+                default:
+                    $items[] = $inputRow;
+            }
+        }
+        return $items;
+    }
+
+    private function getAdditionItemWithGivenTarget(int $target, string $timeString) {
+        $ti = $this->tNames['items'];
+
+        $this->getSqlQueryCounterTracker()->incrementSelect();
+
+        $query = "SELECT * from $ti WHERE type=" . ApItem::ADDITION .
+            " AND target=$target " .
+            " AND valid_from<='$timeString' " .
+            " AND valid_until>'$timeString' " .
+            " LIMIT 1";
+
+        $r = $this->databaseHelper->query($query);
+
+        return $r->fetch(PDO::FETCH_ASSOC);
+    }
+
+    private function getAdditionElementIdWithGivenReference(int $reference, string $timeString) {
+        $te = $this->tNames['elements'];
+
+        $query = "SELECT id from $te where type=" . Element::SUBSTITUTION .
+            " AND reference=$reference" .
+            " AND valid_from<='$timeString' " .
+            " AND valid_until>'$timeString' " .
+            " LIMIT 1";
+        $r = $this->databaseHelper->query($query);
+        $row = $r->fetch(PDO::FETCH_ASSOC);
+        if ($row) {
+            return (int) $row['id'];
+        }
+        return false;
+    }
+
+    private function getItemStreamForElementId(int $elementId, string $timeString) {
+        $ti = $this->tNames['items'];
+        $te = $this->tNames['elements'];
+        $tp = $this->tNames['pages'];
+
+        $this->getSqlQueryCounterTracker()->incrementSelect();
+
+        $query = "SELECT $ti.id, $ti.type, $ti.seq, $ti.ce_id, $ti.lang, $ti.hand_id, $ti.text, $ti.alt_text, $ti.extra_info, $ti.length, $ti.target, " .
+            "$te.type as 'e.type', $te.page_id, $te.column_number as col, $te.seq as 'e.seq', $te.hand_id as 'e.hand_id', $te.reference, $te.placement, " .
+            "$tp.seq as 'p.seq', $tp.foliation" .
+            " FROM $ti" .
+            " JOIN ($te FORCE INDEX (page_id_2), $tp)" .
+            " ON ($te.id=$ti.ce_id AND $tp.id=$te.page_id)" .
+            " WHERE $te.id=$elementId" .
+            " AND $ti.valid_from<='$timeString'" .
+            " AND $te.valid_from<='$timeString'" .
+            " AND $tp.valid_from<='$timeString'" .
+            " AND $ti.valid_until>'$timeString'" .
+            " AND $te.valid_until>'$timeString'" .
+            " AND $tp.valid_until>'$timeString'" .
+            " ORDER BY $ti.seq ASC";
+
+        $r = $this->databaseHelper->query($query);
+
+        $rows = [];
+        while ($row = $r->fetch(PDO::FETCH_ASSOC)) {
+            $rows[] = $row;
+        }
+        return $rows;
     }
 
     public function getPageInfoByDocSeq(int $docId, int $seq) : PageInfo {
@@ -182,9 +384,27 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
     /**
      * @inheritDoc
      */
-    public function getChunkLocationMapForChunk(string $workId, int $chunkNumber, string  $timeString): array
+    public function getChunkLocationMapForChunk(string $workId, int $chunkNumber, string $timeString): array
     {
         return $this->getChunkLocationMapFromDatabase([ 'work_id' => "='$workId'", 'chunk_number' => "=$chunkNumber"], $timeString);
+    }
+
+    public function getSegmentLocationsForFullTxWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeString) : array
+    {
+        $chunkLocationMap = $this->getChunkLocationMapFromDatabase(
+            [
+                'work_id' => "='$workId'",
+                'doc_id' => "=$docId",
+                'chunk_number' => "=$chunkNumber",
+                'witness_local_id' => "='$localWitnessId'"
+
+            ],
+            $timeString);
+
+        if (!isset($chunkLocationMap[$workId][$chunkNumber][$docId][$localWitnessId])) {
+            return [];
+        }
+        return $chunkLocationMap[$workId][$chunkNumber][$docId][$localWitnessId];
     }
 
     /**
@@ -265,6 +485,9 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
                 case 'chunk_number':
                     $conditionsSql[] = "$ti.target" . $condition;
                     break;
+                case 'witness_local_id':
+                    $conditionsSql[] = "$ti.extra_info" . $condition;
+                    break;
                 default:
                     throw new InvalidArgumentException('Unrecognized field in conditions: ' . $field);
             }
@@ -304,16 +527,10 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
 
         $chunkMarkLocations = [];
         while ($row = $r->fetch(PDO::FETCH_ASSOC)) {
-            $this->logger->debug('Chunk mark row', $row);
             $location = new ApmChunkMarkLocation();
             $location->docId = (int) $row['doc_id'];
             $location->workId = $row['work_id'];
-//            if (is_null($row['witness_local_id']) || $row['witness_local_id'] === '') {
-//                // old items in the db did not have a witness local id!
-//                $location->witnessLocalId = 'A';
-//            } else {
             $location->witnessLocalId = $row['witness_local_id'];
-//            }
             $location->chunkNumber = (int) $row['chunk_number'];
             if (is_null($row['segment_number'])) {
                 $location->segmentNumber = 1;  // very old items in the db did not have a segment number!
@@ -516,5 +733,58 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
             $versions[] = ColumnVersionInfo::createFromDbRow($row);
         }
         return $versions;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getWitnessesForChunk(string $workId, int $chunkNumber): array
+    {
+        $chunkLocationMap = $this->getChunkLocationMapForChunk($workId, $chunkNumber, TimeString::now());
+        $versionMap = $this->getVersionsForChunkLocationMap($chunkLocationMap);
+        $lastVersions = $this->getLastChunkVersionFromVersionMap($versionMap);
+
+        $docArray = isset($chunkLocationMap[$workId][$chunkNumber]) ? $chunkLocationMap[$workId][$chunkNumber] : [];
+        $docManager = $this->getDocManager();
+        $witnessInfoArray = [];
+
+        foreach($docArray as $docId => $localWitnessIdArray) {
+            foreach ($localWitnessIdArray as $localWitnessId => $segmentArray) {
+
+                $docInfo = $docManager->getDocInfoById($docId);
+                /** @var $lastVersion ColumnVersionInfo */
+                $lastVersion = $lastVersions[$workId][$chunkNumber][$docId][$localWitnessId];
+
+                $witnessInfo = new WitnessInfo();
+                $witnessInfo->type = WitnessType::FULL_TRANSCRIPTION;
+                $witnessInfo->workId = $workId;
+                $witnessInfo->chunkNumber = $chunkNumber;
+                $witnessInfo->languageCode = $docInfo->languageCode;
+                $witnessInfo->systemId = WitnessSystemId::buildFullTxId($workId, $chunkNumber, $docId, $localWitnessId, $lastVersion->timeFrom);
+
+                $witnessInfo->typeSpecificInfo = [
+                    'docId' => $docId,
+                    'localWitnessId' => $localWitnessId,
+                    'timeStamp' => $lastVersion->timeFrom,
+                    'docInfo' => $docInfo,
+                    'lastVersion' => $lastVersion,
+                    'segments' => $segmentArray
+                ];
+                $isValid = true;
+                $invalidErrorCode = 0;
+                foreach ($segmentArray as $segment) {
+                    /** @var $segment ApmChunkSegmentLocation */
+                    if (!$segment->isValid()) {
+                        $isValid = false;
+                        $invalidErrorCode = $segment->getChunkError();
+                        continue;
+                    }
+                }
+                $witnessInfo->isValid = $isValid;
+                $witnessInfo->errorCode = $invalidErrorCode;
+                $witnessInfoArray[] = $witnessInfo;
+            }
+        }
+        return $witnessInfoArray;
     }
 }

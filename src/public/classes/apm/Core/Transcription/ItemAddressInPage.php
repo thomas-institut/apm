@@ -62,4 +62,11 @@ class ItemAddressInPage extends Point {
         $this->setCoord(self::ITEMINDEX_COORD, $index);
     }
 
+    public function getData() : array {
+        return [
+            'itemIndex' => $this->getItemIndex(),
+            'textBoxIndex' => $this->getTbIndex()
+        ];
+    }
+
 }

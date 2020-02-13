@@ -189,4 +189,19 @@ class TextualItem extends Item {
     public function getLength() : int {
         return mb_strlen($this->getPlainText());
     }
+
+    public function  getData(): array
+    {
+        $data =  parent::getData();
+
+        $data['type'] = 'TextualItem';
+        $data['normalizationType'] = $this->getNormalizationType();
+        $data['format'] = $this->getFormat();
+        $data['hand'] = $this->getHand();
+        $data['language'] = $this->getLanguage();
+        $data['clarity'] = $this->getClarityValue();
+        $data['clarityReason'] = $this->getClarityReason();
+        $data['deletion'] = $this->getDeletion();
+        return $data;
+    }
 }

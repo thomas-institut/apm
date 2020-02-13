@@ -110,6 +110,9 @@ class ApmUrlGenerator {
         }
         return url;
     }
+    apiWitnessGet(witnessId, output = 'full') {
+        return this.base + '/api/witness/get/' + witnessId + '/' + output;
+    }
     siteChunkPage(work, chunk) {
         return this.base + '/chunk/' + work + '/' + chunk;
     }

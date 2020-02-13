@@ -37,6 +37,7 @@ use APM\Decorators\QuickCollationTableDecorator;
 use AverroesProjectToApm\Decorators\TransitionalCollationTableDecorator;
 use AverroesProjectToApm\ApUserDirectory;
 use AverroesProject\Data\DataManager;
+use ThomasInstitut\TimeString\TimeString;
 
 /**
  * API Controller class
@@ -150,11 +151,14 @@ class ApiCollation extends ApiController
      *  lang:  language code, e.g., 'la', 'he'
      *  requestedWitnesses:  array of witness identifications, each element of
      *      the array must be of the form:
-     *          [ 'type' => <TYPE> , 'id' => <ID> ]
+     *          [ 'type' => <TYPE> , 'id' => <ID ARRAY>
      *      where
      *          <TYPE> is a valid witness type
-     *          <ID> is the witness system id (normally relative to its type)
-     *               e.g, a system document id.
+     *          <ID ARRAY> is the witness system id (normally relative to its type)
+     *                for full transcriptions it is an array with 1 to 3 elements containing
+     *                the document Id, an optional local witness Id (defaults to 'A') and an
+     *                optional timeStamp (defaults to TimeString::now())
+     *
      *      If the witnesses array is empty, all valid witnesses for the
      *      given work, chunk and language will be collated.
      *
@@ -167,6 +171,7 @@ class ApiCollation extends ApiController
     public function automaticCollation(Request $request, Response $response)
     {
         $dataManager = $this->getDataManager();
+        $transcriptionManager = $this->systemManager->getTranscriptionManager();
         $apiCall = 'Collation';
         $requiredFields = [ 'work', 'chunk', 'lang', 'witnesses'];
 
@@ -202,13 +207,15 @@ class ApiCollation extends ApiController
 
         //$workInfo = $dataManager->getWorkInfo($workId);
 
-        $validWitnessLocations = $dataManager->getValidWitnessLocationsForWorkChunkLang($workId, $chunkNumber, $language);
-        if (count($validWitnessLocations) < 2) {
-            $msg = 'Not enough valid witnesses to collate';
-            $this->logger->error($msg, $validWitnessLocations);
+        //$chunkLocationMap = $transcriptionManager->getChunkLocationMapForChunk($workId, $chunkNumber, TimeString::now());
+
+        if (count($requestedWitnesses) < 2) {
+            $msg = 'Not enough requested witnesses to collate';
+            $this->logger->error($msg, $requestedWitnesses);
             return $this->responseWithJson($response, ['error' => self::ERROR_NOT_ENOUGH_WITNESSES, 'msg' => $msg], 409);
         }
-        
+
+        $validWitnessLocations = $dataManager->getValidWitnessLocationsForWorkChunkLang($workId, $chunkNumber, $language);
         $witnessesToInclude = [];
         $partialCollation = false;
         

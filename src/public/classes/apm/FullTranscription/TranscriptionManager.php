@@ -19,6 +19,7 @@
 
 namespace APM\FullTranscription;
 
+use APM\System\WitnessInfo;
 use ThomasInstitut\ErrorReporter\ErrorReporter;
 
 /**
@@ -42,13 +43,14 @@ abstract class TranscriptionManager implements ErrorReporter
      * at the given time.
      * Throws an InvalidArgument exception if there's no valid witness.
      *
-     * @param int $docId
      * @param string $workId
      * @param int $chunkNumber
-     * @param string $timeString
+     * @param int $docId
+     * @param string $localWitnessId
+     * @param string $timeStamp
      * @return ApmTranscriptionWitness
      */
-    abstract public function getTranscriptionWitness(int $docId, string $workId, int $chunkNumber, string $timeString) : ApmTranscriptionWitness;
+    abstract public function getTranscriptionWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeStamp) : ApmTranscriptionWitness;
 
     /**
      * Returns a "map" of chunk locations in a particular document at the given time.
@@ -195,4 +197,25 @@ abstract class TranscriptionManager implements ErrorReporter
      * @return ColumnVersionInfo[]
      */
     abstract public function getLastSavesForDoc(int $docId, int $numSaves) : array;
+
+    /**
+     * Returns an array of WitnessInfo object with the available witnessess for given chunk
+     *
+     * @param string $workId
+     * @param int $chunkNumber
+     * @return WitnessInfo[]
+     */
+    abstract public function getWitnessesForChunk(string $workId, int $chunkNumber) : array;
+
+    /**
+     * Returns an array of ApmSegmentLocation object with the locations
+     * for the given fullTx witness
+     * @param string $workId
+     * @param int $chunkNumber
+     * @param int $docId
+     * @param string $localWitnessId
+     * @param string $timeString
+     * @return array
+     */
+    abstract public function getSegmentLocationsForFullTxWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeString) : array;
 }

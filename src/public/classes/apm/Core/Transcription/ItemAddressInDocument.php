@@ -47,4 +47,11 @@ class ItemAddressInDocument extends ItemAddressInPage {
     public function setPageId($pageId) {
         $this->setCoord(self::PAGEID_COORD, $pageId);
     }
+
+    public function getData(): array
+    {
+        $data = parent::getData();
+        $data['pageId'] = $this->getPageId();
+        return $data;
+    }
 }

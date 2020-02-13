@@ -213,7 +213,7 @@ class AutomaticCollationTableSettingsForm {
     }
     // 3.b arrange the elements of the toInclude box in the order given in the options 
     for(const witnessToInclude of settings.witnesses) {
-      witnessesToIncludeHtml += witnessesToIncludeHtmlElements[witnessToInclude.id]
+      witnessesToIncludeHtml += witnessesToIncludeHtmlElements[witnessToInclude.docId]
     }
     
     // 3.c set html in boxes
@@ -317,7 +317,7 @@ class AutomaticCollationTableSettingsForm {
     let wAvailableBoxChildren = this.witnessesAvailableSelectBox.children()
     for(const elem of wAvailableBoxChildren) {
       for(const witness of this.witnessList) {
-        if (witness.type === elem.getAttribute('type') && witness.id === parseInt(elem.getAttribute('witnessid'))) {
+        if (witness.type === elem.getAttribute('type') && witness.docId === parseInt(elem.getAttribute('witnessid'))) {
           witness.toInclude = false
           break
         }
@@ -326,7 +326,7 @@ class AutomaticCollationTableSettingsForm {
     let wToIncludeBoxChildren = this.witnessesToIncludeBox.children()
     for(const elem of wToIncludeBoxChildren) {
       for(const witness of this.witnessList) {
-        if (witness.type === elem.getAttribute('type') && witness.id === parseInt(elem.getAttribute('witnessid'))) {
+        if (witness.type === elem.getAttribute('type') && witness.docId === parseInt(elem.getAttribute('witnessid'))) {
           witness.toInclude = true
           break
         }

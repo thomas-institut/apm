@@ -32,6 +32,11 @@ use \Psr\Http\Message\ServerRequestInterface as Request;
 
 use AverroesProject\Data\DataManager;
 use APM\System\SystemManager;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
+use Psr\Log\LoggerInterface;
+use ThomasInstitut\CodeDebug\CodeDebugInterface;
+use ThomasInstitut\CodeDebug\CodeDebugTrait;
 use ThomasInstitut\Profiler\SimpleProfiler;
 use ThomasInstitut\Profiler\TimeTracker;
 
@@ -39,13 +44,11 @@ use ThomasInstitut\Profiler\TimeTracker;
  * API Controller class
  *
  */
-abstract class ApiController
+abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
 {
 
-    /**
-     * @var Logger
-     */
-    protected $logger;
+    use LoggerAwareTrait;
+    use CodeDebugTrait;
 
     /**
      *

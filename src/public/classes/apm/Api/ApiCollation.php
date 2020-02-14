@@ -22,6 +22,9 @@ namespace APM\Api;
 
 
 use APM\Engine\Engine;
+use APM\System\WitnessInfo;
+use APM\System\WitnessSystemId;
+use APM\System\WitnessType;
 use AverroesProjectToApm\DatabaseItemStream;
 use AverroesProjectToApm\DatabaseItemStreamWitness;
 use DI\DependencyException;
@@ -170,6 +173,7 @@ class ApiCollation extends ApiController
      */
     public function automaticCollation(Request $request, Response $response)
     {
+        $this->codeDebug('Starting automaticCollation');
         $dataManager = $this->getDataManager();
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
         $apiCall = 'Collation';
@@ -179,11 +183,13 @@ class ApiCollation extends ApiController
         if (!is_array($inputDataObject)) {
             return $inputDataObject;
         }
+        //$this->codeDebug('inputDataObject', $inputDataObject);
         
         $workId = $inputDataObject['work'];
         $chunkNumber = intval($inputDataObject['chunk']);
         $language = $inputDataObject['lang'];
         $requestedWitnesses = $inputDataObject['witnesses'];
+        $this->codeDebug('Requested witnesses', $requestedWitnesses);
         $ignorePunctuation = isset($inputDataObject['ignorePunctuation']) ?
                 $inputDataObject['ignorePunctuation'] : false;
 
@@ -199,15 +205,10 @@ class ApiCollation extends ApiController
         }
         
         if (is_null($langInfo)) {
-
             $msg = 'Invalid language <b>' . $language . '</b>';
             $this->logger->error($msg);
             return $this->responseWithJson($response, ['error' => self::ERROR_INVALID_LANGUAGE, 'msg' => $msg], 409);
         }
-
-        //$workInfo = $dataManager->getWorkInfo($workId);
-
-        //$chunkLocationMap = $transcriptionManager->getChunkLocationMapForChunk($workId, $chunkNumber, TimeString::now());
 
         if (count($requestedWitnesses) < 2) {
             $msg = 'Not enough requested witnesses to collate';
@@ -215,73 +216,48 @@ class ApiCollation extends ApiController
             return $this->responseWithJson($response, ['error' => self::ERROR_NOT_ENOUGH_WITNESSES, 'msg' => $msg], 409);
         }
 
-        $validWitnessLocations = $dataManager->getValidWitnessLocationsForWorkChunkLang($workId, $chunkNumber, $language);
-        $witnessesToInclude = [];
-        $partialCollation = false;
-        
-        if (count($requestedWitnesses) !== 0) {
-            foreach ($requestedWitnesses as $witness) {
-                $witnessId = isset($witness['id']) ? intVal($witness['id']) : 0;
-                if ($witnessId !== 0) {
-                    foreach($validWitnessLocations as $witnessLocationInfo) {
-                        if ($witnessLocationInfo['id'] == $witnessId) {
-                            $witnessesToInclude[$witnessId] = $witnessLocationInfo;
-                        }
-                    }
-                }
-            }
-            $partialCollation = true;
-            if (count($witnessesToInclude) < 2) {
-                $msg = 'Error in partial collation table request: need at least 2 witnesses to collate, got only ' . count($witnessesToInclude) . '.';
-                $this->logger->error($msg, $witnessesToInclude);
-                return $this->responseWithJson($response, ['error' => self::ERROR_NOT_ENOUGH_WITNESSES, 'msg' => $msg], 409);
-            }
-        }
-        
-        if (!$partialCollation) {
-            $witnessesToInclude = $validWitnessLocations;
-        }
-        
-        $this->profiler->lap('Checks done');
-        
+        $this->profiler->lap('Basic checks done');
+
         $collationTable = new CollationTable($ignorePunctuation);
+        foreach($requestedWitnesses as $requestedWitness) {
+            switch ($requestedWitness['type']) {
+                case WitnessType::FULL_TRANSCRIPTION:
+                    $witnessInfo = WitnessSystemId::getFullTxInfo($requestedWitness['systemId']);
+                    $fullTxWitness = $transcriptionManager->getTranscriptionWitness($witnessInfo->workId,
+                        $witnessInfo->chunkNumber, $witnessInfo->typeSpecificInfo['docId'],
+                        $witnessInfo->typeSpecificInfo['localWitnessId'], $witnessInfo->typeSpecificInfo['timeStamp']);
+                    try {
+                        $collationTable->addWitness($requestedWitness['title'], $fullTxWitness);
+                    } catch (\InvalidArgumentException $e) {
+                        $this->logger->warning('Cannot add fullTx witness to collation table', [$witnessInfo]);
+                    }
+
+                    break;
+
+                case WitnessType::PARTIAL_TRANSCRIPTION:
+                    $this->logger->info('Partial Transcription Witness requested, not implemented yet', $requestedWitnesses);
+                    break;
+
+                default:
+                    $this->logger->info("Unsupported witness type requested for collation", $requestedWitness);
+            }
+        }
+
+        if (count($collationTable->getSigla()) < 2) {
+            $msg = 'Need at least 2 witnesses to collate, got only ' . count($collationTable->getSigla()) . '.';
+            $this->logger->error($msg, $collationTable->getSigla());
+            return $this->responseWithJson($response, ['error' => self::ERROR_NOT_ENOUGH_WITNESSES, 'msg' => $msg], 409);
+        }
+
+        
+        $this->profiler->lap('Collation table build');
+        
+
         $itemIds = [];
         $lastChangeInData = '0000-00-00 00:00:00.000000';
-        $this->debug('Witnesses to include', $witnessesToInclude);
-        foreach ($witnessesToInclude as $id => $witnessLocInfo)  {
-            $witnessType = $witnessLocInfo['type'];
-            $witnessLocation = $witnessLocInfo['locations'];
-            $witnessId = $witnessLocInfo['id'];
 
-            switch($witnessType) {
-                case DataManager::WITNESS_TRANSCRIPTION:
-                    // Get the AverroesProject item streams
-                    $segmentStreams = [];
-                    foreach($witnessLocation as $segLocation) {
-                        if ($segLocation['lastTime'] > $lastChangeInData) {
-                            $lastChangeInData = $segLocation['lastTime'];
-                        }
-                        $apItemStream = $dataManager->getItemStreamBetweenLocations($witnessId, $segLocation['start'], $segLocation['end']);
-                        foreach($apItemStream as $row) {
-                            $itemIds[] = (int) $row['id'];
-                        }
-                        $segmentStreams[] = $apItemStream;
-                    }
-                    $edNoteArrayFromDb = $dataManager->edNoteManager->rawGetEditorialNotesForListOfItems($itemIds);
-                    $itemStream = new DatabaseItemStream($witnessId, $segmentStreams, $language, $edNoteArrayFromDb);
-                    $itemStrWitness = new DatabaseItemStreamWitness($workId, $chunkNumber, $itemStream);
-                    $docData = $dataManager->getDocById($witnessId);
-                    $this->debug('docData', [$id, $docData]);
-                    $collationTable->addWitness($docData['title'], $itemStrWitness);
-                    break;
-
-                case DataManager::WITNESS_PLAINTEXT:
-                    // TODO: support plain text witnesses
-                    break;
-            }
-        }
         
-        $this->profiler->lap('Collation table built');
+
         $collatexInput = $collationTable->getCollationEngineInput();
         
         $this->profiler->lap('Collatex input built');
@@ -325,6 +301,8 @@ class ApiCollation extends ApiController
         $this->profiler->lap('Collation table built from collatex output');
         $userDirectory = new ApUserDirectory($dataManager->userManager);
         $decorator = new TransitionalCollationTableDecorator($userDirectory);
+        $decorator->setLogger($this->logger);
+
         $decoratedCollationTable = $decorator->decorate($collationTable);
         
         $this->profiler->lap('Collation table decorated');
@@ -347,7 +325,6 @@ class ApiCollation extends ApiController
             'collationEngineDetails' => $collationEngineDetails, 
             'collationTable' => $decoratedCollationTable,
             'sigla' => $collationTable->getSigla(),
-            'witnessInfo' => $witnessesToInclude,
             'lastChangeInData' => $lastChangeInData,
             'quickEdition' => $quickEdition
             ]);

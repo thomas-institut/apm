@@ -26,7 +26,7 @@
 namespace AverroesProject;
 
 use APM\Api\ApiWitness;
-use APM\Site\ChunkPage;
+use APM\Site\SiteChunkPage;
 use APM\Site\SiteCollationTable;
 use APM\Site\SiteDocuments;
 use APM\System\ApmContainerKey;
@@ -182,12 +182,12 @@ $app->group('', function (RouteCollectorProxy $group){
         ->setName('chunks');
 
     $group->get('/chunk/{work}/{chunk}',
-        ChunkPage::class . ':singleChunkPage')
+        SiteChunkPage::class . ':singleChunkPage')
         ->setName('chunk');
 
-    $group->get('/chunk/{work}/{chunk}/witness/{type}/{id}[/{output}]',
-        ChunkPage::class . ':witnessPage')
-        ->setName('witness');
+//    $group->get('/chunk/{work}/{chunk}/witness/{type}/{id}[/{output}]',
+//        ChunkPage::class . ':witnessPage')
+//        ->setName('witness');
 
     // COLLATION TABLES
 

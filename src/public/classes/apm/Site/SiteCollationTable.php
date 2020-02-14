@@ -27,6 +27,8 @@
 namespace APM\Site;
 
 use APM\FullTranscription\ApmChunkSegmentLocation;
+use APM\System\WitnessInfo;
+use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
 use AverroesProject\Data\DataManager;
 use \Psr\Http\Message\ServerRequestInterface as Request;
@@ -112,7 +114,8 @@ class SiteCollationTable extends SiteController
                         $collationPageOptions['witnesses'][] = [
                             'type' => WitnessType::FULL_TRANSCRIPTION,
                             'id' => $docId,
-                            'lwid' => 'A'
+                            'lwid' => 'A',
+                            'systemId' => WitnessSystemId::buildFullTxId($workId, $chunkNumber, $docId, 'A')
                         ];
                     }
                     continue;
@@ -152,7 +155,8 @@ class SiteCollationTable extends SiteController
                     $collationPageOptions['witnesses'][] = [
                         'type' =>  $witnessType,
                         'id' => $docId,
-                        'lwid' => $lwid
+                        'lwid' => $lwid,
+                        'systemId' => WitnessSystemId::buildFullTxId($workId, $chunkNumber, $docId, $lwid)
                     ];
                     continue;
 
@@ -309,8 +313,7 @@ class SiteCollationTable extends SiteController
         $chunkNumber = intval($collationPageOptions['chunk']);
         $language = $collationPageOptions['lang'];
         $partialCollation = $collationPageOptions['partialCollation'];
-       
-        
+
         $apiCallOptions = [
             'work' => $workId,
             'chunk' => $chunkNumber,
@@ -319,7 +322,7 @@ class SiteCollationTable extends SiteController
             'witnesses' => $collationPageOptions['witnesses']
         ];
 
-        $this->logger->debug('Site ACT: apiCallOptions', $apiCallOptions);
+        $this->codeDebug('apiCallOptions', $apiCallOptions);
         $dm = $this->dataManager;
         $pageName = "AutomaticCollation-$workId-$chunkNumber-$language";
         
@@ -352,16 +355,9 @@ class SiteCollationTable extends SiteController
         $workInfo = $dm->getWorkInfo($workId);
         
         // get total witness counts
-        $validWitnesses2 = $this->getValidWitnessesForChunkLang($workId, $chunkNumber, $language);
-        $this->logger->debug('Valid witnesses 2', $validWitnesses2);
-        $validWitnesses = $this->getValidWitnessDocIdsForWorkChunkLang($dm, $workId, $chunkNumber, $language);
-        $availableWitnesses = [];
-        foreach($validWitnesses as $witnessId) {
-            $docInfo = $dm->getDocById($witnessId);
-            $availableWitnesses[] = [ 'type' => 'doc', 'id' => intVal($witnessId), 'title' => $docInfo['title']];
-        }
-        $this->logger->debug('Valid witnesses', $validWitnesses);
-        $this->logger->debug('Valid witnesses 2', $validWitnesses2);
+        $validWitnesses = $this->getValidWitnessesForChunkLang($workId, $chunkNumber, $language);
+        //$this->codeDebug('Valid witnesses', $validWitnesses);
+
 
         $this->profiler->stop();
         $this->logProfilerData($pageName);
@@ -376,10 +372,9 @@ class SiteCollationTable extends SiteController
             'isPreset' => $collationPageOptions['isPreset'],
             'rtl' => $langInfo['rtl'],
             'work_info' => $workInfo,
-            'num_docs' => $partialCollation ? count($apiCallOptions['witnesses']) : count($validWitnesses2),
-            'total_num_docs' => count($validWitnesses2),
-            'availableWitnesses' => $availableWitnesses,
-            'availableWitnessesNew' => $validWitnesses2,
+            'num_docs' => $partialCollation ? count($apiCallOptions['witnesses']) : count($validWitnesses),
+            'total_num_docs' => count($validWitnesses),
+            'availableWitnessesNew' => $validWitnesses,
             'warnings' => $warnings
         ];
         if ($templateOptions['isPreset']) {
@@ -425,42 +420,53 @@ class SiteCollationTable extends SiteController
         $this->logger->debug("Getting valid witnesses for $workId, $chunkNumber, $langCode");
         $tm = $this->systemManager->getTranscriptionManager();
 
-        $map = $tm->getChunkLocationMapForChunk($workId, $chunkNumber, TimeString::now());
+        $vw = $tm->getWitnessesForChunk($workId, $chunkNumber);
 
-        $docArray = $map[$workId][$chunkNumber];
-        $witnesses = [];
-
-        foreach($docArray as $docId => $localWitnessIdArray) {
-            $docInfo = $tm->getDocManager()->getDocInfoById($docId);
-            if ($docInfo->languageCode !== $langCode) {
-                $this->logger->debug("$docId is not $langCode");
-                continue;
-            }
-            foreach($localWitnessIdArray as $lwid => $segmentArray) {
-                $isValid = true;
-                foreach($segmentArray as $segmentNumber => $segment) {
-                    /** @var $segment ApmChunkSegmentLocation */
-                    if (!$segment->isValid()) {
-                        $this->logger->debug("Doc $docId, lwid $lwid, segment $segmentNumber is not valid");
-                        $isValid = false;
-                    }
-                }
-                if ($isValid) {
-                    $title = $docInfo->title;
-                    if ($lwid !== 'A') {
-                        $title .= ' (' . $lwid . ')';
-                    }
-                    $witnesses[] = [
-                        'type' => WitnessType::FULL_TRANSCRIPTION,
-                        'docId' => $docId,
-                        'lwid' => $lwid,
-                        'title' => $title,
-                        'langCode' => $langCode
-                    ];
-                }
+        $vWL = [];
+        foreach($vw as $witnessInfo) {
+            /** @var WitnessInfo $witnessInfo */
+            if ($witnessInfo->languageCode === $langCode) {
+                $vWL[] = $witnessInfo;
             }
         }
-        return $witnesses;
+        return $vWL;
+
+//        $map = $tm->getChunkLocationMapForChunk($workId, $chunkNumber, TimeString::now());
+//
+//        $docArray = $map[$workId][$chunkNumber];
+//        $witnesses = [];
+//
+//        foreach($docArray as $docId => $localWitnessIdArray) {
+//            $docInfo = $tm->getDocManager()->getDocInfoById($docId);
+//            if ($docInfo->languageCode !== $langCode) {
+//                $this->logger->debug("$docId is not $langCode");
+//                continue;
+//            }
+//            foreach($localWitnessIdArray as $lwid => $segmentArray) {
+//                $isValid = true;
+//                foreach($segmentArray as $segmentNumber => $segment) {
+//                    /** @var $segment ApmChunkSegmentLocation */
+//                    if (!$segment->isValid()) {
+//                        $this->logger->debug("Doc $docId, lwid $lwid, segment $segmentNumber is not valid");
+//                        $isValid = false;
+//                    }
+//                }
+//                if ($isValid) {
+//                    $title = $docInfo->title;
+//                    if ($lwid !== 'A') {
+//                        $title .= ' (' . $lwid . ')';
+//                    }
+//                    $witnesses[] = [
+//                        'type' => WitnessType::FULL_TRANSCRIPTION,
+//                        'docId' => $docId,
+//                        'lwid' => $lwid,
+//                        'title' => $title,
+//                        'langCode' => $langCode
+//                    ];
+//                }
+//            }
+//        }
+//        return $witnesses;
 
     }
 }

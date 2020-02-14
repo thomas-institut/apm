@@ -38,6 +38,8 @@ use AverroesProject\Data\MySqlHelper;
 use AverroesProject\ItemStream\ItemStream;
 use AverroesProject\TxText\Item as ApItem;
 use AverroesProjectToApm\DatabaseItemStream;
+use ThomasInstitut\CodeDebug\CodeDebugInterface;
+use ThomasInstitut\CodeDebug\CodeDebugTrait;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
 use ThomasInstitut\Profiler\SimpleSqlQueryCounterTrackerAware;
@@ -52,7 +54,7 @@ use Psr\Log\LoggerInterface;
 use ThomasInstitut\ErrorReporter\ErrorReporter;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
 
-class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCounterTrackerAware, ErrorReporter, LoggerAwareInterface
+class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCounterTrackerAware, ErrorReporter, LoggerAwareInterface, CodeDebugInterface
 {
 
     use SimpleSqlQueryCounterTrackerAware {
@@ -60,6 +62,7 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
     }
     use SimpleErrorReporterTrait;
     use LoggerAwareTrait;
+    use CodeDebugTrait;
 
     /**
      * @var PDO
@@ -167,7 +170,10 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
 
     public function getTranscriptionWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeStamp) : ApmTranscriptionWitness
     {
+
+        //$this->codeDebug('Getting Transcription witness', [ $workId, $chunkNumber, $docId, $localWitnessId, $timeStamp]);
         $locations = $this->getSegmentLocationsForFullTxWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
+        //$this->codeDebug('Locations', $locations);
         $apStreams = [];
         $itemIds = [];
         $docInfo = $this->getDocManager()->getDocInfoById($docId);
@@ -191,7 +197,7 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
         $firstPageId = $firstLocation->start->pageId;
         $firstColumn = $firstLocation->start->columnNumber;
         $firstLineNumber = $this->getInitialLineNumberForStartLocation( $firstLocation, $timeStamp);
-        $this->logger->debug('First Line number: ' . $firstLineNumber);
+        //$this->logger->debug('First Line number: ' . $firstLineNumber);
         $txWitness->setInitialLineNumberForTextBox($firstPageId, $firstColumn, $firstLineNumber);
         return $txWitness;
 

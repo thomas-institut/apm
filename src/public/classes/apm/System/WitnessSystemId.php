@@ -49,8 +49,11 @@ class WitnessSystemId
 
     const ERROR_INVALID_SYSTEM_ID = 101;
 
-    static public function buildFullTxId(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeString) : string {
-        return implode('-', [ $workId, $chunkNumber, WitnessType::FULL_TRANSCRIPTION, $docId, $localWitnessId, TimeString::compactEncode($timeString)]);
+    static public function buildFullTxId(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeString = '') : string {
+        if ($timeString !== '') {
+            return implode('-', [ $workId, $chunkNumber, WitnessType::FULL_TRANSCRIPTION, $docId, $localWitnessId, TimeString::compactEncode($timeString)]);
+        }
+        return implode('-', [ $workId, $chunkNumber, WitnessType::FULL_TRANSCRIPTION, $docId, $localWitnessId]);
     }
 
     static public function getType(string $witnessSystemId) : string {
@@ -76,7 +79,7 @@ class WitnessSystemId
         $witnessInfo->typeSpecificInfo = [
             'docId' => intval($fields[3]),
             'localWitnessId' => isset($fields[4]) ? $fields[4] : 'A',
-            'timeStamp' => isset($fields[5]) ? $fields[5] : '',
+            'timeStamp' => isset($fields[5]) ? TimeString::compactDecode($fields[5]) : '',
         ];
 
         return $witnessInfo;

@@ -286,7 +286,7 @@ class SiteControllerTest extends TestCase {
                 ->withAttribute('type', 'doc')
                 ->withAttribute('id', $docId);
 
-        $chunkPageObject = new Site\ChunkPage(self::$ci);
+        $chunkPageObject = new Site\SiteChunkPage(self::$ci);
         $response = $chunkPageObject->witnessPage($request, new Response());
         $this->assertEquals(200, $response->getStatusCode());
         
@@ -296,7 +296,7 @@ class SiteControllerTest extends TestCase {
                 ->withAttribute('chunk', $chunkNo)
                 ->withAttribute('type', 'doc')
                 ->withAttribute('id', $docId2);
-        $chunkPageObject2 = new Site\ChunkPage(self::$ci);
+        $chunkPageObject2 = new Site\SiteChunkPage(self::$ci);
         $response2 = $chunkPageObject2->witnessPage($request2, new Response());
         $this->assertEquals(200, $response2->getStatusCode());
         
@@ -307,7 +307,7 @@ class SiteControllerTest extends TestCase {
                 ->withAttribute('type', 'doc')
                 ->withAttribute('id', $docId3);
 
-        $chunkPageObject3 = new Site\ChunkPage(self::$ci);
+        $chunkPageObject3 = new Site\SiteChunkPage(self::$ci);
         $response3 = $chunkPageObject3->witnessPage($request3, new Response());
         $this->assertEquals(200, $response3->getStatusCode());
         
@@ -352,7 +352,7 @@ class SiteControllerTest extends TestCase {
                 ->withAttribute('work', $work)
                 ->withAttribute('chunk', $chunkNo);
 
-        $chunkPageObject4 = new Site\ChunkPage(self::$ci);
+        $chunkPageObject4 = new Site\SiteChunkPage(self::$ci);
         
         $response1_1 = $chunkPageObject4->singleChunkPage($request1_1, new Response());
         
@@ -364,7 +364,7 @@ class SiteControllerTest extends TestCase {
                 ->withAttribute('chunk', $chunkNo)
                 ->withAttribute('type', 'doc')
                 ->withAttribute('id', $docId5);
-        $chunkPageObject4 = new Site\ChunkPage(self::$ci);
+        $chunkPageObject4 = new Site\SiteChunkPage(self::$ci);
         $response4 = $chunkPageObject4->witnessPage($request4, new Response());
         $this->assertEquals(200, $response4->getStatusCode());
         

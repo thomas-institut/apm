@@ -136,13 +136,13 @@ class ApmUrlGenerator {
     return this.base + '/doc/' + docId + '/realpage/' + pageNumber + '/view'
   }
 
-  siteWitness(work, chunkno, type, witnessId, output) {
-    let url = this.base + '/chunk/' + work + '/' + chunkno + '/witness/' + type + '/' + witnessId
-    if (output !== '') {
-      url += '/' + output
-    }
-    return url
-  }
+  // siteWitness(work, chunkno, type, witnessId, output) {
+  //   let url = this.base + '/chunk/' + work + '/' + chunkno + '/witness/' + type + '/' + witnessId
+  //   if (output !== '') {
+  //     url += '/' + output
+  //   }
+  //   return url
+  // }
 
   apiWitnessGet(witnessId, output = 'full') {
     return this.base + '/api/witness/get/' + witnessId + '/' + output

@@ -20,15 +20,22 @@
 
 namespace AverroesProjectToApm\Decorators;
 
+use APM\Core\Address\IntRange;
 use APM\Core\Collation\CollationTableDecorator;
 use APM\Core\Collation\CollationTable;
 
+use APM\Core\Item\Item;
 use APM\Core\Item\MarkType;
+use APM\Core\Token\TranscriptionToken;
 use AverroesProjectToApm\AddressInDatabaseItemStream;
 use APM\Core\Item\TextualItem;
 use APM\Core\Item\Mark;
 use AverroesProjectToApm\ApUserDirectory;
 use AverroesProjectToApm\Formatter\WitnessPageFormatter;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
+use ThomasInstitut\CodeDebug\CodeDebugInterface;
+use ThomasInstitut\CodeDebug\CodeDebugTrait;
 
 /**
  * Decorator for AverroesProject collation tables
@@ -38,7 +45,10 @@ use AverroesProjectToApm\Formatter\WitnessPageFormatter;
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class TransitionalCollationTableDecorator implements CollationTableDecorator {
+class TransitionalCollationTableDecorator implements CollationTableDecorator, LoggerAwareInterface, CodeDebugInterface {
+
+    use LoggerAwareTrait;
+    use CodeDebugTrait;
     
     const CLASS_EMPTYTOKEN = 'tokennotpresent';
     const CLASS_NORMALTOKEN = 'normalToken';
@@ -62,7 +72,9 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
     }
     
     public function decorate(CollationTable $c): array {
+        //$this->codeDebug('Starting decoration');
         $sigla = $c->getSigla();
+        //$this->codeDebug('Sigla', $sigla);
         $decoratedCollationTable = [];
         
         $decoratedCollationTable['extra'] = [];
@@ -76,17 +88,19 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
         
         // 1. Put tokens in with basic classes
         foreach($sigla as $siglum) {
+            //$this->codeDebug("Processing siglum '$siglum'");
             $decoratedCollationTable[$siglum] = [];
             
             $tokenRefs = $c->getReferencesForRow($siglum);
             $witnessTokens = $c->getWitnessTokens($siglum);
             $rawNonTokenItemIndexes = $c->getWitness($siglum)->getNonTokenItemIndexes();
             
-            $nonTokenItemIndexes = $this->aggregateNonTokenItemIndexes($rawNonTokenItemIndexes, $tokenRefs, $witnessTokens);
+            $nonTokenItemIndexes = $this->aggregateNonTokenItemIndexes($rawNonTokenItemIndexes, $tokenRefs);
             
             $itemArray = $c->getWitness($siglum)->getItemArray();
             $witnessItemStream = $c->getWitness($siglum)->getDatabaseItemStream();
-            foreach($tokenRefs as $i => $tokenRef) {
+            foreach($tokenRefs as $tokenIndex => $tokenRef) {
+                //$this->codeDebug("Processing token $i");
                 $decoratedToken = [];
                 if ($tokenRef === CollationTable::TOKENREF_NULL) {
                     $decoratedToken['text'] = self::TEXT_EMPTYTOKEN;
@@ -97,10 +111,11 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
                     continue;
                 }
                 $token = $witnessTokens[$tokenRef];
+                /** @var TranscriptionToken $token */
                 $decoratedToken['text'] = $token->getText();
                 $decoratedToken['norm'] = $token->getNormalization();
                 $decoratedToken['classes'] = [self::CLASS_NORMALTOKEN];
-                $decoratedToken['classes'][] = self::CLASS_VARIANT_PREFIX .  $variantTable[$siglum][$i];
+                $decoratedToken['classes'][] = self::CLASS_VARIANT_PREFIX .  $variantTable[$siglum][$tokenIndex];
                 $decoratedToken['empty'] = false;
                 $decoratedToken['witnessTokenIndex'] = $tokenRef;
                 $decoratedToken['itemIndexes'] = $token->getSourceItemIndexes();
@@ -117,14 +132,16 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
                 $addresses = $token->getSourceItemAddresses();
                 $charRanges = $token->getSourceItemCharRanges();
                 $decoratedToken['itemFormats'] = [];
-                foreach($addresses as $i => $address) {
+                foreach($addresses as $addressIndex => $address) {
                     if (is_a($address, $addressInItemStreamClass)) {
+                        /** @var AddressInDatabaseItemStream  $address */
                         $sourceItem = $witnessItemStream->getItemById($address->getItemIndex());
+                        /** @var Item $sourceItem */
                         if ($sourceItem !== false && is_a($sourceItem, $textualItemClass)) {
                             list($itemText, $classes, $popover) = $formatter->getTextualItemFormat($sourceItem, false);
                             // $itemText contains the full item's text, we only need 
                             // the text that belongs to the token
-                            $text = $this->getSubstringFromItemAndRange($sourceItem, $charRanges[$i]);
+                            $text = $this->getSubstringFromItemAndRange($sourceItem, $charRanges[$addressIndex]);
                             $decoratedToken['itemFormats'][] = [ 
                                 'text' => $text, 
                                 'classes' => $classes, 
@@ -134,16 +151,32 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
                                 'ceId' => $address->getCeId()
                             ];
                         }
+//                        else {
+//                            $this->codeDebug('Non textual item found ', [$sourceItem->getData()]);
+//                        }
+                    } else {
+                        $this->codeDebug('Non supported address class found ' . get_class($address));
                     }
                 }
                 if (count($addresses) >= 1) {
                     // report only the first address
                     $address = $addresses[0];
-                    
-                    $classes =  $decoratedToken['itemFormats'][0]['classes'];
-                    $popoverHtml =  $decoratedToken['itemFormats'][0]['popoverHtml'];
+
+
+                    if (!isset($decoratedToken['itemFormats'][0])) {
+                        // happens when a TextboxBreak Mark creeps in!
+                        $addressCount = count($addresses);
+                        //$this->codeDebug("itemFormats[0] not defined in '$siglum', token $tokenIndex, address count $addressCount", $decoratedToken['itemFormats']);
+
+                        $classes = [];
+                        $popoverHtml = '';
+                    } else {
+                        $classes =  $decoratedToken['itemFormats'][0]['classes'];
+                        $popoverHtml =  $decoratedToken['itemFormats'][0]['popoverHtml'];
+                    }
+
                     // Add address to popover
-                    array_push($classes, \AverroesProjectToApm\Formatter\WitnessPageFormatter::CLASS_WITHPOPOVER);
+                    array_push($classes, WitnessPageFormatter::CLASS_WITHPOPOVER);
                     
                     $decoratedToken['addressHtml'] = '<b>Page:</b> ' . $address->getFoliation() . '<br/><b>Column:</b> ' . $address->getColumn() . '<br/>';
                     $decoratedToken['classes'] = array_merge($decoratedToken['classes'], $classes);
@@ -160,7 +193,7 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
     
    
     
-    protected function getSubstringFromItemAndRange($item, \APM\Core\Address\IntRange $range) : string {
+    protected function getSubstringFromItemAndRange($item, IntRange $range) : string {
         $sourceString = $item->getPlainText();
         $subStr = mb_substr($sourceString, $range->getStart(), $range->getLength());
         return $subStr;
@@ -198,12 +231,11 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator {
      * The returned array contains one element per element in $tokenRefs with
      * the same structure as $rawNonTokenItemIndexes
      *
-     * @param type $rawNonTokenItemIndexes
-     * @param type $tokenRefs
-     * @param type $witnessTokens
+     * @param array $rawNonTokenItemIndexes
+     * @param array $tokenRefs
      * @return array
      */
-    protected function aggregateNonTokenItemIndexes($rawNonTokenItemIndexes, $tokenRefs) {
+    protected function aggregateNonTokenItemIndexes(array $rawNonTokenItemIndexes, array $tokenRefs) {
         
         $aggregatedPost = [];
         $resultingArray = [];

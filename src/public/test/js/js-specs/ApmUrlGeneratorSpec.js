@@ -37,7 +37,7 @@ describe("ApmUrlGenerator", function() {
       expect(ug.siteCollationTableCustom('work', 1, 'la')).toMatch(matchRE)
       expect(ug.siteCollationTablePreset('work', 1, 123)).toMatch(matchRE)
       expect(ug.sitePageView('work', 1)).toMatch(matchRE)
-      expect(ug.siteWitness('work', 1, 'doc', 1)).toMatch(matchRE)
+      // expect(ug.siteWitness('work', 1, 'doc', 1)).toMatch(matchRE)
 
 
     })

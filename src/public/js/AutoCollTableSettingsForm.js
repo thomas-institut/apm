@@ -82,12 +82,12 @@ class AutomaticCollationTableSettingsForm {
     console.log('AutoCollTableSettingsFrom options')
     console.log(this.options)
 
-    for (const w of this.options.availableWitnesses) {
-      if (typeof(w.id) !== 'number') {
-        console.error('Witness id not a number in ACT settings form options: ' +
-          typeof(w.id) + ' ' + w.id)
-      }
-    }
+    // for (const w of this.options.availableWitnesses) {
+    //   if (typeof(w.id) !== 'number') {
+    //     console.error('Witness id not a number in ACT settings form options: ' +
+    //       typeof(w.id) + ' ' + w.id)
+    //   }
+    // }
     
     this.witnessList = []
     this.initialSettings = this.options.initialSettings

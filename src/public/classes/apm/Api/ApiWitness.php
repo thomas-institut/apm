@@ -92,7 +92,7 @@ class ApiWitness extends ApiController
         $chunkNumber = $witnessInfo->chunkNumber;
         $docId = $witnessInfo->typeSpecificInfo['docId'];
         $localWitnessId = $witnessInfo->typeSpecificInfo['localWitnessId'];
-        $compactTimeStamp = $witnessInfo->typeSpecificInfo['timeStamp'];
+        $timeStamp = $witnessInfo->typeSpecificInfo['timeStamp'];
 
         $returnData = [
             'status' => 'OK',
@@ -101,13 +101,12 @@ class ApiWitness extends ApiController
             'chunkNumber' => $chunkNumber,
             'docId' => $docId,
             'localWitnessId' => $localWitnessId,
-            'timeStamp' => $compactTimeStamp
+            'timeStamp' => $timeStamp
         ];
 
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
 
-        $timeStamp = '';
-        if ($compactTimeStamp === '') {
+        if ($timeStamp === '') {
             $chunkWitnesses = $transcriptionManager->getWitnessesForChunk($workId, $chunkNumber);
             $witnessFound = false;
             foreach ($chunkWitnesses as $chunkWitnessInfo) {
@@ -127,8 +126,6 @@ class ApiWitness extends ApiController
                 $this->debug($msg, $returnData);
                 return $this->responseWithJson($response, $returnData, 409);
             }
-        } else {
-            $timeStamp = TimeString::compactDecode($compactTimeStamp);
         }
 
         $returnData['timeStamp'] = $timeStamp;

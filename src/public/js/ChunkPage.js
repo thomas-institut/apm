@@ -145,8 +145,6 @@ class ChunkPage {
       }
       switch (witnessInfo.type) {
         case WitnessTypes.FULL_TX:
-
-          //let witnessUrl = this.pathFor.siteWitness(this.options.work, this.options.chunk, 'fullTx', docId + '-' + localId, 'html')
           let witnessUrl = this.pathFor.apiWitnessGet(witnessInfo.systemId, 'html')
           console.log('Loading witness ' + witnessInfo.systemId)
           let formattedSelector = '#formatted-' + witnessInfo.systemId
@@ -369,10 +367,8 @@ class ChunkPage {
     } else {
       info['essential'] = '<i class="fas fa-exclamation-triangle"></i> ' + this.invalidErrorCodes[witnessInfo.invalidErrorCode]
     }
-    let docId = docInfo.id
-    let lwid = witnessInfo.typeSpecificInfo.localWitnessId
 
-    info['admin'] = '<a href="' + this.pathFor.siteWitness(this.options.work, this.options.chunk,  'fullTx', docId + '-' + lwid, '')+ '"><i class="fas fa-cogs" aria-hidden="true"></i></a>'
+    info['admin'] = '<a href="' + this.pathFor.apiWitnessGet(witnessInfo.systemId, 'full') + '" target="_blank"><i class="fas fa-cogs" aria-hidden="true"></i></a>'
     return info
   }
 

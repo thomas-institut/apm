@@ -71,14 +71,31 @@ class AutomaticCollationTable {
     this.siglaDiv = $('#sigla')
     this.apiCollationUrl = this.options.urlGenerator.apiAutomaticCollation()
     this.updating = false
+
+    // Get witness titles and last change in data
+    this.lastChangeInData = ''
+    for(const witness of this.availableWitnesses) {
+      let title = witness.typeSpecificInfo.docInfo.title
+      if (witness.typeSpecificInfo.localWitnessId !== 'A') {
+        title += ' (' + witness.typeSpecificInfo.localWitnessId + ')'
+      }
+      witness.title = title
+      if (witness.typeSpecificInfo.timeStamp > this.lastChangeInData) {
+        this.lastChangeInData = witness.typeSpecificInfo.timeStamp
+      }
+    }
+
+
     this.apiCallOptions = initialApiOptions
     // if there are no witnesses in the initialApiOptions witnesses array, 
     // it means that ALL witnesses should be included
     if (this.apiCallOptions.witnesses.length === 0) {
       for(const witness of this.availableWitnesses) {
+
         this.apiCallOptions.witnesses.push({
           type: witness.type,
-          id: [ witness.docId, witness.lwid, '']
+          systemId: witness.systemId,
+          title: witness.title
         })
       }
     }
@@ -93,8 +110,13 @@ class AutomaticCollationTable {
     
     this.editSettingsFormSelector = '#editsettingsform'
     this.editSettingsButton = $('#editsettingsbutton')
+
+    this.lastTimeLabel.html(this.formatDateTime(this.lastChangeInData))
+    this.versionInfoDiv.html(this.getVersionInfoHtml())
     
     let thisObject = this
+
+
     
     this.viewSettingsFormManager = new AutomaticCollationTableViewSettingsForm(this.viewSettingsFormSelector)
     this.viewSettingsButton.on('click', function () { 
@@ -122,8 +144,7 @@ class AutomaticCollationTable {
     this.viewSettingsFormManager.on('apply', function(e) {
       thisObject.viewSettings = e.detail
       console.log('Got view settings from form')
-//      console.log(thisObject.viewSettings)
-//      
+
       thisObject.ctf.setOptions(thisObject.viewSettings)
       thisObject.collationTableDiv.html(thisObject.ctf.format(thisObject.collationTableData, thisObject.popoverClass))
       thisObject.setCsvDownloadFile(thisObject.collationTableData)
@@ -232,8 +253,7 @@ class AutomaticCollationTable {
       }
       
       thisObject.collationTableDiv.html(thisObject.ctf.format(data, thisObject.popoverClass))
-      thisObject.lastTimeLabel.html(thisObject.formatDateTime(data.lastChangeInData))
-      thisObject.versionInfoDiv.html(thisObject.getVersionInfoHtml(data))
+
       thisObject.setCsvDownloadFile(data)
       
       thisObject.status.html('')
@@ -291,43 +311,14 @@ class AutomaticCollationTable {
     this.exportCsvButton.attr('href', href)
   }
 
-  getVersionInfoHtml(data) {
+  getVersionInfoHtml() {
 
     let html = ''
-    html += '<h3>Version Info</h3>'
-    let witnessInfo = data.witnessInfo
-
     html += '<ul>'
     for(const witness of this.availableWitnesses) {
-      if (typeof(witnessInfo[witness.id]) === 'undefined') {
-        continue
+      if(witness.type === 'fullTx') {
+        html += '<li><b>' + witness.title + '</b>: ' +  this.formatDateTime(witness.typeSpecificInfo.timeStamp) + '</li>'
       }
-      html += '<li>'
-      html += '<h4>' + witness.title + '</h4>'
-      html += '<ul>'
-      let numSegments = witnessInfo[witness.id].locations.length
-      for(const segmentNumber in witnessInfo[witness.id].locations) {
-        let segment = witnessInfo[witness.id].locations[segmentNumber]
-        html += '<li>'
-        if (numSegments > 1) {
-          html += 'Segment ' + segmentNumber + ': '
-        }
-
-        for (const col of segment['columns']) {
-          html += '<ul>'
-          html += col['foliation'] + ' col ' + col['column']
-          if (col['lastTime'] === '0000-00-00 00:00:00.000000') {
-            html += ': empty'
-          } else {
-            html += ': ' + this.formatDateTime(col['lastTime']) + ' by ' + col['lastAuthorName']
-          }
-
-          html += '</ul>'
-        }
-        html += '</li>'
-      }
-      html += '</ul>'
-      html += '</li>'
     }
     html += '</ul>'
 

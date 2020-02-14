@@ -38,9 +38,13 @@ use Monolog\Logger;
 use \Psr\Http\Message\ResponseInterface as Response;
 use APM\System\ApmSystemManager;
 use AverroesProject\Data\DataManager;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 use Slim\Psr7\Stream;
 use Slim\Routing\RouteParser;
 use Slim\Views\Twig;
+use ThomasInstitut\CodeDebug\CodeDebugInterface;
+use ThomasInstitut\CodeDebug\CodeDebugTrait;
 use ThomasInstitut\Profiler\SimpleProfiler;
 use ThomasInstitut\Profiler\TimeTracker;
 use Twig\Error\LoaderError;
@@ -51,8 +55,11 @@ use Twig\Error\SyntaxError;
  * Site Controller class
  *
  */
-class SiteController
+class SiteController implements LoggerAwareInterface, CodeDebugInterface
 {
+
+    use LoggerAwareTrait;
+    use CodeDebugTrait;
     /**
      * @var Container
      */
@@ -81,10 +88,10 @@ class SiteController
      */
     protected $hookManager;
 
-    /**
-     * @var Logger
-     */
-    protected $logger;
+//    /**
+//     * @var Logger
+//     */
+//    protected $logger;
 
 
     /**
@@ -343,6 +350,7 @@ class SiteController
             }
         );
     }
+
 
 
 

@@ -506,9 +506,10 @@ class ChunkPage {
           // TODO: support other localWitnessId
           let witness = this.witnessesByLang[l][w]
           if (witness.type === 'fullTx') {
-            if (witness.typeSpecificInfo.localWitnessId === 'A') {
-              apiCallOptions.witnesses.push(witness.typeSpecificInfo.docId)
-            }
+            // if (witness.typeSpecificInfo.localWitnessId === 'A') {
+            //   apiCallOptions.witnesses.push(witness.typeSpecificInfo.docId)
+            // }
+            apiCallOptions.witnesses.push('fullTx-' + witness.typeSpecificInfo.docId + '-' +witness.typeSpecificInfo.localWitnessId)
           }
         }
         console.log('Getting presets')
@@ -523,12 +524,15 @@ class ChunkPage {
           console.log(data.presets)
           for(const pr of data.presets) {
             let witnessesToInclude = []
-            for (const wId of pr.data.witnesses) {
+            for (const presetWitness of pr.data.witnesses) {
               let witness = false
-
+              let fields = presetWitness.split('-')
+              let presetWitnessType = fields[0]
+              let presetWitnessDocId = parseInt(fields[1])
+              let presetWitnessLwid = fields[2]
               for(const w of thisObject.witnessesByLang[l]) {
                 // match only fullTx witnesses with localWitnessId === 'A'
-                if (w.type=== 'fullTx' && w.typeSpecificInfo.docId === wId && w.typeSpecificInfo.localWitnessId === 'A') {
+                if (w.type=== presetWitnessType && w.typeSpecificInfo.docId === presetWitnessDocId && w.typeSpecificInfo.localWitnessId === presetWitnessLwid) {
                   witness = w
                 }
               }

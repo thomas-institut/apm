@@ -172,10 +172,13 @@ class ApiPresets extends ApiController
         
         $userId = (is_int($inputData['userId']) && $inputData['userId'] > 0) ? $inputData['userId'] : false;
         $lang = $inputData['lang'];
-        $witnesses = $inputData['witnesses'];
+        $requestedWitnesses = $inputData['witnesses'];
+        $this->codeDebug("Getting presets for $lang", $requestedWitnesses);
+
+
         
         // Check that the input parameters make sense
-        if (!is_array($witnesses)) {
+        if (!is_array($requestedWitnesses)) {
             $this->logger->error("Field 'witnesses' must be an array",
                     [ 'apiUserId' => $this->apiUserId,
                       'apiError' => self::API_ERROR_WRONG_TYPE,
@@ -183,18 +186,27 @@ class ApiPresets extends ApiController
             return $this->responseWithJson($response, ['error' => self::API_ERROR_WRONG_TYPE], 409);
         }
         
-        if (count($witnesses) < 2) {
+        if (count($requestedWitnesses) < 2) {
             $this->logger->error("Field 'witnesses' must have 2 or more elements",
                     [ 'apiUserId' => $this->apiUserId,
                       'apiError' => self::API_ERROR_NOT_ENOUGH_WITNESSES,
                       'data' => $inputData ]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_NOT_ENOUGH_WITNESSES], 409);
         }
+        // deal with old code calling using only docIds as witnesses
+        $witnesses = [];
+        foreach($requestedWitnesses as $requestedWitness) {
+            if (is_int($requestedWitnesses)) {
+                $witnesses[] = 'fullTx-' . $requestedWitness . '-A';
+                $this->logger->warning('Old code requesting preset for doc ' . $requestedWitness);
+            } else {
+                $witnesses[] = $requestedWitness;
+            }
+        }
 
         $this->debug('Getting automatic collation presets', [ 'lang' => $lang, 'userId' => $userId, 'witnesses' => $witnesses]);
         // let's get those presets!
-       
-        
+
         $presetManager = $this->systemManager->getPresetsManager();
         //$presets = [];
         if ($userId === false) {

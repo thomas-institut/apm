@@ -551,11 +551,10 @@ class AutomaticCollationTableSettingsForm {
       console.log(currentSettings)
       let witnessIdArray =[] 
       for(const w of currentSettings.witnesses) {
-        // fullTx docIds only for the time being!
-        // TODO: support local witness Ids
         if (w.type === 'fullTx') {
           let docId = w.systemId.split('-')[3]
-          witnessIdArray.push(parseInt(docId))
+          let lwid = w.systemId.split('-')[4]
+          witnessIdArray.push('fullTx-' + docId + '-' + lwid)
         }
       }
       if (!thisObject.options.isPreset || !thisObject.options.preset.editable) {
@@ -658,9 +657,13 @@ class AutomaticCollationTableSettingsForm {
       console.log('Saving existing preset to a new one')
       let newPresetTitle = thisObject.normalizePresetTitle(thisObject.presetInputText.val())
       let currentSettings = thisObject.getSettings()
-      let witnessIdArray =[] 
+      let witnessIdArray =[]
       for(const w of currentSettings.witnesses) {
-        witnessIdArray.push(parseInt(w.id))
+        if (w.type === 'fullTx') {
+          let docId = w.systemId.split('-')[3]
+          let lwid = w.systemId.split('-')[4]
+          witnessIdArray.push('fullTx-' + docId + '-' + lwid)
+        }
       }
       let apiCallOptions = {
         command: 'new',

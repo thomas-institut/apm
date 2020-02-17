@@ -232,12 +232,27 @@ class SiteCollationTable extends SiteController
         ];
 
          // get witnesses to include
-        foreach ($presetData['witnesses'] as $docId) {
-            $docId = intval($docId);
-            if ($docId !== 0) {
+        foreach ($presetData['witnesses'] as $presetId) {
+            if (is_int($presetId)) {
+                // old preset!
+                $docId = intval($presetId);
+                if ($docId !== 0) {
+                    $collationPageOptions['witnesses'][] = [
+                        'type' => WitnessType::FULL_TRANSCRIPTION,
+                        'systemId' => WitnessSystemId::buildFullTxId($workId, $chunkNumber, $docId, 'A'),
+                    ];
+                }
+            } else {
+                $fields = explode('-', $presetId);
+                $witnessType = $fields[0];
+                if ($witnessType !== WitnessType::FULL_TRANSCRIPTION) {
+                    continue;
+                }
+                $docId = intval($fields[1]);
+                $lwid = $fields[2];
                 $collationPageOptions['witnesses'][] = [
                     'type' => WitnessType::FULL_TRANSCRIPTION,
-                    'systemId' => WitnessSystemId::buildFullTxId($workId, $chunkNumber, $docId, 'A'),
+                    'systemId' => WitnessSystemId::buildFullTxId($workId, $chunkNumber, $docId, $lwid)
                 ];
             }
         }

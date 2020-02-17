@@ -24,6 +24,8 @@ class AutomaticCollationTable {
     console.log(options.availableWitnesses)
     console.log('ACT options')
     console.log(options)
+    console.log('Initial API options')
+    console.log(initialApiOptions)
     
     this.rtlClass = 'rtltext'
     this.ltrClass = 'ltrtext'
@@ -89,9 +91,9 @@ class AutomaticCollationTable {
     this.apiCallOptions = initialApiOptions
     // if there are no witnesses in the initialApiOptions witnesses array, 
     // it means that ALL witnesses should be included
+
     if (this.apiCallOptions.witnesses.length === 0) {
       for(const witness of this.availableWitnesses) {
-
         this.apiCallOptions.witnesses.push({
           type: witness.type,
           systemId: witness.systemId,

@@ -356,8 +356,40 @@ class SiteCollationTable extends SiteController
         
         // get total witness counts
         $validWitnesses = $this->getValidWitnessesForChunkLang($workId, $chunkNumber, $language);
-        //$this->codeDebug('Valid witnesses', $validWitnesses);
 
+        // fix systemId in fullTx witnesses that don't have a proper timeStamp
+        for($i = 0; $i < count($apiCallOptions['witnesses']); $i++) {
+            if ($apiCallOptions['witnesses'][$i]['type'] === WitnessType::FULL_TRANSCRIPTION) {
+                $systemId = $apiCallOptions['witnesses'][$i]['systemId'];
+                $witnessInfo = WitnessSystemId::getFullTxInfo($systemId);
+                $apiCallWitnessTxInfo = $witnessInfo->typeSpecificInfo;
+                if ($apiCallWitnessTxInfo['timeStamp'] === '') {
+                    //$this->codeDebug('Found nullTimeSTamp', $apiCallOptions['witnesses'][$i]);
+                    // find the right WitnessInfo
+                    $found = false;
+                    foreach($validWitnesses as $validWitnessInfo) {
+                        /** @var WitnessInfo $validWitnessInfo */
+                        $validWitnessFullTxInfo = $validWitnessInfo->typeSpecificInfo;
+                        if ($validWitnessFullTxInfo['docId'] === $apiCallWitnessTxInfo['docId'] && $validWitnessFullTxInfo['localWitnessId'] === $apiCallWitnessTxInfo['localWitnessId']) {
+                            //$this->codeDebug('Found witness ', [$apiCallWitnessTxInfo, $validWitnessFullTxInfo]);
+                            $apiCallOptions['witnesses'][$i]['systemId'] = $validWitnessInfo->systemId;
+                            $found = true;
+                            break;
+                        }
+                    }
+                    if (!$found) {
+                        $msg = 'Requested witness not valid ' . $systemId;
+                        return $this->renderPage($response, self::TEMPLATE_ERROR, [
+                            'work' => $workId,
+                            'chunk' => $chunkNumber,
+                            'lang' => $language,
+                            'errorSignature' => self::ERROR_SIGNATURE_PREFIX . self::ERROR_INVALID_WITNESS_ID,
+                            'message' => $msg
+                        ]);
+                    }
+                }
+            }
+        }
 
         $this->profiler->stop();
         $this->logProfilerData($pageName);
@@ -416,6 +448,12 @@ class SiteCollationTable extends SiteController
         return $witnessesForLang;
     }
 
+    /**
+     * @param string $workId
+     * @param int $chunkNumber
+     * @param string $langCode
+     * @return WitnessInfo[]
+     */
     protected function getValidWitnessesForChunkLang(string $workId, int $chunkNumber, string $langCode) : array {
         $this->logger->debug("Getting valid witnesses for $workId, $chunkNumber, $langCode");
         $tm = $this->systemManager->getTranscriptionManager();

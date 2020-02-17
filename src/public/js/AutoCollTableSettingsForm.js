@@ -82,13 +82,7 @@ class AutomaticCollationTableSettingsForm {
     console.log('AutoCollTableSettingsFrom options')
     console.log(this.options)
 
-    // for (const w of this.options.availableWitnesses) {
-    //   if (typeof(w.id) !== 'number') {
-    //     console.error('Witness id not a number in ACT settings form options: ' +
-    //       typeof(w.id) + ' ' + w.id)
-    //   }
-    // }
-    
+
     this.witnessList = []
     this.initialSettings = this.options.initialSettings
 
@@ -179,6 +173,8 @@ class AutomaticCollationTableSettingsForm {
   }
   
   setSettings(settings = false) {
+    // console.log('Setting settings')
+    console.log(settings)
     if (settings === false) {
       settings = this.initialSettings
     }
@@ -186,14 +182,20 @@ class AutomaticCollationTableSettingsForm {
     this.witnessList = this.options.availableWitnesses
     for(const witness of this.witnessList) {
       witness.toInclude = false
+      witness.internalId = this.getInternalIdFromWitness(witness)
     }
     for(const witnessToInclude of settings.witnesses) {
       for (const witness of this.witnessList) {
-        if (witnessToInclude.type === witness.type && witnessToInclude.id === witness.id) {
+        if (witnessToInclude.type === witness.type && witnessToInclude.systemId === witness.systemId) {
+          // console.log('Including witness')
+          // console.log(witness)
           witness.toInclude = true
         }
       }
     }
+
+    // console.log('Witness list')
+    // console.log(this.witnessList)
     
     // 2. Set up options
     this.ignorePunctuationCheckbox.prop('checked', settings.ignorePunctuation)
@@ -201,19 +203,25 @@ class AutomaticCollationTableSettingsForm {
     // 3. Set up witness boxes
     
     // 3.a. Prepare html for boxes
+    // console.log('Preparing html for boxes')
     let witnessesAvailableHtml = ''
     let witnessesToIncludeHtml = ''
     let witnessesToIncludeHtmlElements = []
     for(const witness of this.witnessList) {
+      // console.log('Processing witness')
+      // console.log(witness)
+      let theHtml = this.getWitnessDraggableHtml(witness)
+      //console.log('The HTML:  ' + theHtml)
       if (!witness.toInclude) {
-        witnessesAvailableHtml += this.getWitnessDraggableHtml(witness)
+        witnessesAvailableHtml += theHtml
       } else {
-        witnessesToIncludeHtmlElements[witness.id] = this.getWitnessDraggableHtml(witness)
+        witnessesToIncludeHtmlElements[witness.internalId] = theHtml
       }
     }
     // 3.b arrange the elements of the toInclude box in the order given in the options 
     for(const witnessToInclude of settings.witnesses) {
-      witnessesToIncludeHtml += witnessesToIncludeHtmlElements[witnessToInclude.docId]
+      let theWitness = this.getWitnessFromSystemId(witnessToInclude.systemId)
+      witnessesToIncludeHtml += witnessesToIncludeHtmlElements[theWitness.internalId]
     }
     
     // 3.c set html in boxes
@@ -228,7 +236,21 @@ class AutomaticCollationTableSettingsForm {
     this.dealWithEmptyBoxes()
     this.dealWithNotEnoughWitnessesToInclude()
   }
-  
+
+  getInternalIdFromWitness(witness) {
+    return witness.type + '-' + witness.typeSpecificInfo.docId + '-' + witness.typeSpecificInfo.localWitnessId
+  }
+
+  getWitnessFromSystemId(systemId) {
+    let found = false
+    for(const witness of this.witnessList) {
+      if (systemId === witness.systemId) {
+        return witness
+      }
+    }
+    return false;
+  }
+
   dealWithNotEnoughWitnessesToInclude() {
     // if there are less than 2 witnesses to include
     // show a warning and disable apply button
@@ -317,7 +339,8 @@ class AutomaticCollationTableSettingsForm {
     let wAvailableBoxChildren = this.witnessesAvailableSelectBox.children()
     for(const elem of wAvailableBoxChildren) {
       for(const witness of this.witnessList) {
-        if (witness.type === elem.getAttribute('type') && witness.docId === parseInt(elem.getAttribute('witnessid'))) {
+        let witnessIndex = witness.internalId
+        if (witness.type === elem.getAttribute('type') && ( elem.getAttribute('witnessid') === witnessIndex)) {
           witness.toInclude = false
           break
         }
@@ -326,7 +349,8 @@ class AutomaticCollationTableSettingsForm {
     let wToIncludeBoxChildren = this.witnessesToIncludeBox.children()
     for(const elem of wToIncludeBoxChildren) {
       for(const witness of this.witnessList) {
-        if (witness.type === elem.getAttribute('type') && witness.docId === parseInt(elem.getAttribute('witnessid'))) {
+        let witnessIndex = witness.internalId
+        if (witness.type === elem.getAttribute('type') && ( elem.getAttribute('witnessid') === witnessIndex)) {
           witness.toInclude = true
           break
         }
@@ -335,10 +359,10 @@ class AutomaticCollationTableSettingsForm {
   }
   
   getWitnessDraggableHtml(witness) {
-    return '<p class="btn-default btn-sm btn-witness wdraggable" draggable="true" ' + 
-            'type="' + witness.type + '" witnessid="' + witness.id + '" lwid="'+  witness.lwid + '">' + witness.title + '</p>'
+    return '<p class="btn-default btn-sm btn-witness wdraggable" draggable="true" ' +
+            'type="' + witness.type + '" witnessid="' + witness.internalId + '">' + witness.title + '</p>'
   }
-  
+
   getSettings() {
     let settings = {}
     settings.work = this.initialSettings.work
@@ -353,10 +377,16 @@ class AutomaticCollationTableSettingsForm {
     // to be collated; it is up to the caller to handle this semantic difference.
     let wToIncludeBoxChildren = this.witnessesToIncludeBox.children()
     for(const elem of wToIncludeBoxChildren) {
-      settings.witnesses.push({
-        type: elem.getAttribute('type'),
-        id: parseInt(elem.getAttribute('witnessid'))
-      })
+      let internalId = elem.getAttribute('witnessid')
+      for(const witness of this.witnessList) {
+        if (witness.internalId === internalId) {
+          settings.witnesses.push({
+            type: witness.type,
+            systemId:  witness.systemId,
+            title: witness.title
+          })
+        }
+      }
     }
     settings.partialCollation = true
     if (settings.witnesses.length === this.options.availableWitnesses.length) {

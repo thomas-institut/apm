@@ -110,14 +110,17 @@ class ChunkPage {
       if (lwid !== 'A') {
         title += ' (' + lwid + ')'
       }
-      let witness = {
-        index:  parseInt(w),
-        type: witnessInfo.type,
-        id: witnessInfo["typeSpecificInfo"].docId,
-        lwid : lwid,
-        title: title,
-        systemId: witnessInfo.systemId
-      }
+      let witness = witnessInfo
+      witness.index = parseInt(w)
+      witness.title = title
+      // let witness = {
+      //   index:  parseInt(w),
+      //   type: witnessInfo.type,
+      //   id: witnessInfo["typeSpecificInfo"].docId,
+      //   lwid : lwid,
+      //   title: title,
+      //   systemId: witnessInfo.systemId
+      // }
       if (witnessInfo.isValid) {
         if (this.witnessesByLang[witnessInfo.languageCode] === undefined) {
           this.witnessesByLang[witnessInfo.languageCode] = []
@@ -365,10 +368,20 @@ class ChunkPage {
     if (witnessInfo.isValid) {
       info['essential'] = '<small>Last change: ' + ApmUtil.formatVersionTime(lastVersion.timeFrom) + ' by ' + this.getAuthorLink(lastVersion.authorId) + '</small>'
     } else {
-      info['essential'] = '<i class="fas fa-exclamation-triangle"></i> ' + this.invalidErrorCodes[witnessInfo.invalidErrorCode]
+      let errorMsg = this.invalidErrorCodes[witnessInfo.errorCode]
+      if (errorMsg === undefined) {
+        errorMsg = 'Error code ' + witnessInfo.errorCode
+      }
+      info['essential'] = '<i class="fas fa-exclamation-triangle"></i> ' + errorMsg
     }
 
-    info['admin'] = '<a href="' + this.pathFor.apiWitnessGet(witnessInfo.systemId, 'full') + '" target="_blank"><i class="fas fa-cogs" aria-hidden="true"></i></a>'
+     if (witnessInfo.isValid) {
+       info['admin'] = '<a href="' + this.pathFor.apiWitnessGet(witnessInfo.systemId, 'full') + '" target="_blank"><i class="fas fa-cogs" aria-hidden="true"></i></a>'
+     } else {
+       info['admin'] = ''
+     }
+
+
     return info
   }
 
@@ -589,6 +602,7 @@ class ChunkPage {
           continue
         }
         let liId = containerId + '-' +  u
+        console.log('Creating new ACTS form on html ID ' + liId)
         let ctSettingsFormManager =  new AutomaticCollationTableSettingsForm({
           containerSelector : '#' + liId + '-div', 
           initialSettings: urls[u].actSettings,
@@ -651,10 +665,17 @@ class ChunkPage {
         ctSettingsFormManager.on('apply', function (e) {
           console.log('Opening automatic collation table')
           console.log(e.detail)
-          $('body').append('<form id="theform" method="POST" target="_blank" action="' +  
+          let formElement = $('#theform')
+          if (formElement.length !== 0) {
+            //console.log('Removing hidden form')
+            formElement.remove()
+          }
+          //console.log('Adding hidden form')
+          $('body').append('<form id="theform" class="hidden" method="POST" target="_blank" action="' +
                   thisObject.pathFor.siteCollationTableCustom(thisObject.options.work, thisObject.options.chunk, urls[u].lang) + '">' +
                   '<input type="text" name="data" value=\'' + JSON.stringify({options: e.detail})  + '\'></form>')
-          $('#theform').submit()
+          //console.log('Submitting')
+          document.getElementById('theform').submit()
         })
         ctSettingsFormManager.on('preset-new', function(){
           thisObject.updateCollationTableLinks()

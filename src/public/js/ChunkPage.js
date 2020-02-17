@@ -502,8 +502,17 @@ class ChunkPage {
           if (!this.witnessesByLang[l].hasOwnProperty(w)) {
             continue
           }
-          apiCallOptions.witnesses.push(parseInt(this.witnessesByLang[l][w].id))
+          // try to match fullTx witnesses with localWitness Id === 'A'
+          // TODO: support other localWitnessId
+          let witness = this.witnessesByLang[l][w]
+          if (witness.type === 'fullTx') {
+            if (witness.typeSpecificInfo.localWitnessId === 'A') {
+              apiCallOptions.witnesses.push(witness.typeSpecificInfo.docId)
+            }
+          }
         }
+        console.log('Getting presets')
+        console.log(apiCallOptions)
         $.post(
           this.getPresetsUrl, 
           { data: JSON.stringify(apiCallOptions) }
@@ -518,7 +527,8 @@ class ChunkPage {
               let witness = false
 
               for(const w of thisObject.witnessesByLang[l]) {
-                if (w.id === wId) {
+                // match only fullTx witnesses with localWitnessId === 'A'
+                if (w.type=== 'fullTx' && w.typeSpecificInfo.docId === wId && w.typeSpecificInfo.localWitnessId === 'A') {
                   witness = w
                 }
               }

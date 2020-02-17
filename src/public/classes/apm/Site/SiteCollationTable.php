@@ -27,6 +27,7 @@
 namespace APM\Site;
 
 use APM\FullTranscription\ApmChunkSegmentLocation;
+use APM\FullTranscription\DocInfo;
 use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
@@ -185,7 +186,7 @@ class SiteCollationTable extends SiteController
      */
     public function automaticCollationPagePreset(Request $request, Response $response)
     {
-        $this->logger->debug('Preset');
+        $this->codeDebug('Preset request');
         $workId = $request->getAttribute('work');
         $chunkNumber = $request->getAttribute('chunk');
         $presetId = $request->getAttribute('preset');
@@ -234,7 +235,10 @@ class SiteCollationTable extends SiteController
         foreach ($presetData['witnesses'] as $docId) {
             $docId = intval($docId);
             if ($docId !== 0) {
-                $collationPageOptions['witnesses'][] = ['type' => 'doc', 'id' => $docId];
+                $collationPageOptions['witnesses'][] = [
+                    'type' => WitnessType::FULL_TRANSCRIPTION,
+                    'systemId' => WitnessSystemId::buildFullTxId($workId, $chunkNumber, $docId, 'A'),
+                ];
             }
         }
         $collationPageOptions['partialCollation'] = true;
@@ -358,35 +362,42 @@ class SiteCollationTable extends SiteController
         $validWitnesses = $this->getValidWitnessesForChunkLang($workId, $chunkNumber, $language);
 
         // fix systemId in fullTx witnesses that don't have a proper timeStamp
+        // put titles in
         for($i = 0; $i < count($apiCallOptions['witnesses']); $i++) {
             if ($apiCallOptions['witnesses'][$i]['type'] === WitnessType::FULL_TRANSCRIPTION) {
                 $systemId = $apiCallOptions['witnesses'][$i]['systemId'];
                 $witnessInfo = WitnessSystemId::getFullTxInfo($systemId);
                 $apiCallWitnessTxInfo = $witnessInfo->typeSpecificInfo;
-                if ($apiCallWitnessTxInfo['timeStamp'] === '') {
-                    //$this->codeDebug('Found nullTimeSTamp', $apiCallOptions['witnesses'][$i]);
-                    // find the right WitnessInfo
-                    $found = false;
-                    foreach($validWitnesses as $validWitnessInfo) {
-                        /** @var WitnessInfo $validWitnessInfo */
-                        $validWitnessFullTxInfo = $validWitnessInfo->typeSpecificInfo;
-                        if ($validWitnessFullTxInfo['docId'] === $apiCallWitnessTxInfo['docId'] && $validWitnessFullTxInfo['localWitnessId'] === $apiCallWitnessTxInfo['localWitnessId']) {
-                            //$this->codeDebug('Found witness ', [$apiCallWitnessTxInfo, $validWitnessFullTxInfo]);
+                //if ($apiCallWitnessTxInfo['timeStamp'] === '' || !isset($witnessInfo['title']) || $witnessInfo['title'] === '') {
+                $found = false;
+                foreach($validWitnesses as $validWitnessInfo) {
+                    /** @var WitnessInfo $validWitnessInfo */
+                    $validWitnessFullTxInfo = $validWitnessInfo->typeSpecificInfo;
+                    if ($validWitnessFullTxInfo['docId'] === $apiCallWitnessTxInfo['docId'] && $validWitnessFullTxInfo['localWitnessId'] === $apiCallWitnessTxInfo['localWitnessId']) {
+                        //$this->codeDebug('Found witness ', [$apiCallWitnessTxInfo, $validWitnessFullTxInfo]);
+                        if ($apiCallWitnessTxInfo['timeStamp'] === '') {
                             $apiCallOptions['witnesses'][$i]['systemId'] = $validWitnessInfo->systemId;
-                            $found = true;
-                            break;
                         }
-                    }
-                    if (!$found) {
-                        $msg = 'Requested witness not valid ' . $systemId;
-                        return $this->renderPage($response, self::TEMPLATE_ERROR, [
-                            'work' => $workId,
-                            'chunk' => $chunkNumber,
-                            'lang' => $language,
-                            'errorSignature' => self::ERROR_SIGNATURE_PREFIX . self::ERROR_INVALID_WITNESS_ID,
-                            'message' => $msg
-                        ]);
-                    }
+                        $docInfo = $validWitnessFullTxInfo['docInfo'];
+                        /** @var DocInfo $docInfo */
+                        $title = $docInfo->title;
+                        if ($validWitnessFullTxInfo['localWitnessId'] !== 'A') {
+                           $title .= ' (' . $validWitnessFullTxInfo['localWitnessId'] . ')';
+                        }
+                        $apiCallOptions['witnesses'][$i]['title'] = $title;
+                        $found = true;
+                        break;
+                     }
+                }
+                if (!$found) {
+                    $msg = 'Requested witness not valid ' . $systemId;
+                    return $this->renderPage($response, self::TEMPLATE_ERROR, [
+                        'work' => $workId,
+                         'chunk' => $chunkNumber,
+                         'lang' => $language,
+                         'errorSignature' => self::ERROR_SIGNATURE_PREFIX . self::ERROR_INVALID_WITNESS_ID,
+                         'message' => $msg
+                    ]);
                 }
             }
         }

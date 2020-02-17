@@ -544,11 +544,19 @@ class AutomaticCollationTableSettingsForm {
   genOnClickPresetSaveButton() {
     let thisObject = this
     return function() {
+      console.log('Saving preset')
       let newPresetTitle = thisObject.normalizePresetTitle(thisObject.presetInputText.val())
       let currentSettings = thisObject.getSettings()
+      console.log('Current settings')
+      console.log(currentSettings)
       let witnessIdArray =[] 
       for(const w of currentSettings.witnesses) {
-        witnessIdArray.push(parseInt(w.id))
+        // fullTx docIds only for the time being!
+        // TODO: support local witness Ids
+        if (w.type === 'fullTx') {
+          let docId = w.systemId.split('-')[3]
+          witnessIdArray.push(parseInt(docId))
+        }
       }
       if (!thisObject.options.isPreset || !thisObject.options.preset.editable) {
         console.log('Saving to a new preset: ' + newPresetTitle)

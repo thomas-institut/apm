@@ -131,6 +131,7 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator, Lo
                 }
                 $addresses = $token->getSourceItemAddresses();
                 $charRanges = $token->getSourceItemCharRanges();
+                $lineStart = $token->getTextBoxLineRange()->getStart()->getCoord(1);
                 $decoratedToken['itemFormats'] = [];
                 foreach($addresses as $addressIndex => $address) {
                     if (is_a($address, $addressInItemStreamClass)) {
@@ -138,6 +139,7 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator, Lo
                         $sourceItem = $witnessItemStream->getItemById($address->getItemIndex());
                         /** @var Item $sourceItem */
                         if ($sourceItem !== false && is_a($sourceItem, $textualItemClass)) {
+                            /** @var TextualItem $sourceItem */
                             list($itemText, $classes, $popover) = $formatter->getTextualItemFormat($sourceItem, false);
                             // $itemText contains the full item's text, we only need 
                             // the text that belongs to the token
@@ -178,7 +180,9 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator, Lo
                     // Add address to popover
                     array_push($classes, WitnessPageFormatter::CLASS_WITHPOPOVER);
                     
-                    $decoratedToken['addressHtml'] = '<b>Page:</b> ' . $address->getFoliation() . '<br/><b>Column:</b> ' . $address->getColumn() . '<br/>';
+                    $decoratedToken['addressHtml'] = '<b>Page: </b> ' . $address->getFoliation() . '<br/>' .
+                        '<b>Column: </b> ' . $address->getColumn() . '<br/>' .
+                        '<b>Line: </b>' . $lineStart;
                     $decoratedToken['classes'] = array_merge($decoratedToken['classes'], $classes);
                     $decoratedToken['popoverHtml'] = $popoverHtml;
                 }

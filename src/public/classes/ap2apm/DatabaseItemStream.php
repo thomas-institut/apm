@@ -63,15 +63,20 @@ class DatabaseItemStream {
         foreach($itemSegments as $itemRows){
             $previousElementId = -1;
             $previousTbIndex = -1;
+            $previousElementType = -1;
             
             foreach ($itemRows as $row) {
                 $address = new AddressInDatabaseItemStream();
                 $address->setFromItemStreamRow($docId, $row);
                 
                 if ($row['ce_id'] !== $previousElementId && $address->getTbIndex() === $previousTbIndex) {
-                    // change of textbox
-                    //$this->items[] = new ItemInDatabaseItemStream($address, new TextualItem("\n"));
-                    $this->items[] = new ItemInDatabaseItemStream($address, new Mark(MarkType::TEXT_BOX_BREAK));
+                    if ($previousElementType === $row['e.type']) {
+                        // two elements of the same type in a row = a line break within the same text box
+                        $this->items[] = new ItemInDatabaseItemStream($address, new TextualItem("\n"));
+                    } else {
+                        // change of text box, e.g. an addition
+                        $this->items[] = new ItemInDatabaseItemStream($address, new Mark(MarkType::TEXT_BOX_BREAK));
+                    }
                 }
                 $item = $itemFactory->createItemFromRow($row);
                 $itemId = $address->getItemId();
@@ -82,6 +87,7 @@ class DatabaseItemStream {
                 }
                 $this->items[] = new ItemInDatabaseItemStream($address, $item);
                 $previousElementId = $row['ce_id'];
+                $previousElementType = $row['e.type'];
                 $previousTbIndex = $address->getTbIndex();
             }
         }

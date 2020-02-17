@@ -100,13 +100,14 @@ table.collationtable td {
     border: solid 1px silver
  }
 
- table.collationtable td.he-td {
+ table.collationtable .he-td {
      font-size: 1.1em;
  }
  
- table.collationtable td.ar-td {
+ table.collationtable .ar-td {
      font-size: 1.3em;
  }
+
 
 table.collationtable td.witness {
     font-weight: bold;
@@ -121,7 +122,7 @@ table.collationtable td.addition.variant_1 {
 }
 
 
-table.collationtable td.variant_1 {
+table.collationtable .variant_1 {
     background-color: #fbedff;
 }
 

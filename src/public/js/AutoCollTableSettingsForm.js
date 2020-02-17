@@ -37,6 +37,8 @@ class AutomaticCollationTableSettingsForm {
     this.overClass = 'over'
     this.overBoxClass = 'overBox'
     this.witnessDraggableClass = 'wdraggable'
+
+    this.automaticCollationPresetTool = 'automaticCollation_v2'
     
     this.notEnoughWitnessesWarningHtml = '<p class="text-danger">' + 
             '<i class="fa fa-exclamation-triangle" aria-hidden="true"></i>' + 
@@ -561,7 +563,7 @@ class AutomaticCollationTableSettingsForm {
         console.log('Saving to a new preset: ' + newPresetTitle)
         let apiCallOptions = {
           command: 'new',
-          tool: 'automaticCollation',
+          tool: thisObject.automaticCollationPresetTool,
           userId: thisObject.options.userId,
           title: newPresetTitle,
           presetId: -1,
@@ -605,7 +607,7 @@ class AutomaticCollationTableSettingsForm {
       console.log('Updating current preset')
       let apiCallOptions = {
           command: 'update',
-          tool: 'automaticCollation',
+          tool: thisObject.automaticCollationPresetTool,
           userId: thisObject.options.userId,
           title: newPresetTitle,
           presetId: thisObject.options.preset.id,
@@ -667,7 +669,7 @@ class AutomaticCollationTableSettingsForm {
       }
       let apiCallOptions = {
         command: 'new',
-        tool: 'automaticCollation',
+        tool: thisObject.automaticCollationPresetTool,
         userId: thisObject.options.userId,
         title: newPresetTitle,
         presetId: -1,

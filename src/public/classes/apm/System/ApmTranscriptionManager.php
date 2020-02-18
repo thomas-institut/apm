@@ -39,7 +39,7 @@ use AverroesProject\ItemStream\ItemStream;
 use AverroesProject\TxText\Item as ApItem;
 use AverroesProjectToApm\DatabaseItemStream;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
-use ThomasInstitut\CodeDebug\CodeDebugTrait;
+use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
 use ThomasInstitut\Profiler\SimpleSqlQueryCounterTrackerAware;
@@ -62,7 +62,9 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
     }
     use SimpleErrorReporterTrait;
     use LoggerAwareTrait;
-    use CodeDebugTrait;
+    use CodeDebugWithLoggerTrait;
+
+    const ERROR_DOCUMENT_NOT_FOUND = 50;
 
     /**
      * @var PDO
@@ -171,12 +173,19 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
     public function getTranscriptionWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeStamp) : ApmTranscriptionWitness
     {
 
-        //$this->codeDebug('Getting Transcription witness', [ $workId, $chunkNumber, $docId, $localWitnessId, $timeStamp]);
+        $this->codeDebug('Getting Transcription witness', [ $workId, $chunkNumber, $docId, $localWitnessId, $timeStamp]);
         $locations = $this->getSegmentLocationsForFullTxWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
         //$this->codeDebug('Locations', $locations);
         $apStreams = [];
         $itemIds = [];
-        $docInfo = $this->getDocManager()->getDocInfoById($docId);
+        try {
+            $docInfo = $this->getDocManager()->getDocInfoById($docId);
+        } catch(InvalidArgumentException $e) {
+            // no such document!
+            $this->setError( "Document $docId not found", self::ERROR_DOCUMENT_NOT_FOUND);
+            throw new InvalidArgumentException($this->getErrorMessage(), $this->getErrorCode());
+        }
+
         foreach($locations as $segLocation ) {
             /** @var ApmChunkSegmentLocation $segLocation */
             if ($segLocation->isValid()) {
@@ -407,6 +416,7 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
             ],
             $timeString);
 
+        //$this->codeDebug('getSegmentLocations', [ $workId, $chunkNumber, $docId, $localWitnessId, $timeString, $chunkLocationMap]);
         if (!isset($chunkLocationMap[$workId][$chunkNumber][$docId][$localWitnessId])) {
             return [];
         }
@@ -529,6 +539,7 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
             " AND $tp.valid_until>'$timeString'" .
             " ORDER BY $tp.seq, $te.column_number, $te.seq, $ti.seq ASC";
 
+        //$this->codeDebug("SQL Query", [ $query]);
         $r = $this->databaseHelper->query($query);
 
         $chunkMarkLocations = [];
@@ -553,7 +564,7 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
             $chunkMarkLocations[] = $location;
         }
 
-        //$this->logger->debug('ChunkMark Locations', $chunkMarkLocations);
+        //$this->codeDebug('ChunkMark Locations', $chunkMarkLocations);
 
         return $this->createChunkLocationMapFromChunkMarkLocations($chunkMarkLocations);
 

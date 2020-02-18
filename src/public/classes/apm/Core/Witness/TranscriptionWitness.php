@@ -20,6 +20,7 @@
 
 namespace APM\Core\Witness;
 
+use APM\Core\Item\Mark;
 use APM\Core\Token\TokenType;
 use APM\Core\Transcription\ItemAddressInDocument;
 use APM\Core\Transcription\ItemInDocument;
@@ -30,6 +31,8 @@ use APM\Core\Token\TranscriptionToken;
 use APM\Core\Token\StringToken;
 use APM\Core\Address\PointRange;
 use APM\Core\Address\IntRange;
+use ThomasInstitut\CodeDebug\CodeDebugInterface;
+use ThomasInstitut\CodeDebug\PrintCodeDebugTrait;
 
 /**
  * A Witness whose source is a part of a DocumentTranscription.
@@ -43,8 +46,9 @@ use APM\Core\Address\IntRange;
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-abstract class TranscriptionWitness extends Witness {
+abstract class TranscriptionWitness extends Witness implements CodeDebugInterface {
 
+    use PrintCodeDebugTrait;
     /**
      * Returns and array of ItemInDocument objects that
      * represents the source transcription and from which
@@ -70,10 +74,14 @@ abstract class TranscriptionWitness extends Witness {
      * @return TranscriptionToken[]
      */
     public function getTokens() : array {
-        
+
+        $this->debugMode = false;
+
+        $this->codeDebug("\n*** Start getTokens() ***");
         // 1. Get some important class names
         $textualItemClass = TextualItem::class;
         $noWbItemClass = NoWbMark::class;
+        $markClass = Mark::class;
         
         // 2. Get the items
         $sourceItems = $this->getItemWithAddressArray();
@@ -87,14 +95,19 @@ abstract class TranscriptionWitness extends Witness {
         $currentTextBox = $sourceItems[0]->getAddress()->getTbIndex();
         $pageTextBoxCurrentLines = [];
         $pageTextBoxCurrentLines[$currentTextBox] = $this->getInitialLineNumberForTextBox($currentPage, $currentTextBox);
+        $this->codeDebug("Initial line numbers", $pageTextBoxCurrentLines);
         $openWordToken = false;
         $noWbItemOpen = false;
         $currentWordToken = new TranscriptionToken(TokenType::EMPTY, '');
 
         $tokenizer = new StringTokenizer();
+        $lastAddedItemIndex = -1;
+
+        //$this->codeDebug("Processing " . count($sourceItems) . " source items");
         
         // 4. Iterate over all items in the transcription
         foreach ($sourceItems as $itemIndex => $sourceItem) {
+            //$this->codeDebug("Processing item $itemIndex");
             /* @var $sourceItem ItemInDocument */
 
             $rawItem = $sourceItem->getItem();
@@ -104,27 +117,35 @@ abstract class TranscriptionWitness extends Witness {
             if ($itemAddress->getPageId() !== $currentPage ||
                     $itemAddress->getTbIndex() !== $currentTextBox) {
                 // new page or text box, reset all counters
+                //$this->codeDebug("New page or text box, resetting all counters");
                 $currentPage = $itemAddress->getPageId();
                 $currentTextBox = $itemAddress->getTbIndex();
                 $pageTextBoxCurrentLines = [];
                 $pageTextBoxCurrentLines[$currentTextBox] = $this->getInitialLineNumberForTextBox($currentPage, $currentTextBox);
                 if ($openWordToken) {
                     // Close open word token
+                    $this->codeDebug("Closing open word token: '" . $currentWordToken->getText() . "'");
                     $tokens[] = $currentWordToken;
+                    $this->codeDebug("There are now " . count($tokens) . " in the array");
                     $openWordToken = false;
                 }
             }
             
             // Handle a TextualItem
             if (is_a($rawItem, $textualItemClass)) {
+                $this->codeDebug("Got textual item, norm ='" . $rawItem->getNormalizedText() . "'");
+
                 // Textual item: get the internal tokens and process them
                 $rawItemNormalizedText = $rawItem->getNormalizedText();
                 $rawItemPlainText = $rawItem->getPlainText();
                 // Notice that tokens are constructed out of the normalized 
                 // text, not the "original" text
                 $stringTokens = $tokenizer->getTokensFromString($rawItemNormalizedText);
+                $this->codeDebug("processing " . count($stringTokens) . " string tokens");
                 foreach($stringTokens as $stringToken) {
                     /* @var $stringToken StringToken */
+
+                    $this->codeDebug("StringToken", [ $stringToken]);
                     // Check if the string token covers all the text's item
                     if ($stringToken->getText() === $rawItemNormalizedText) {
                         // this means that there is only one token in the item,
@@ -155,57 +176,74 @@ abstract class TranscriptionWitness extends Witness {
                     if ($tToken->getType() === TokenType::WORD) {
                         if ($openWordToken) {
                             // open word token : add text to currentWordToken
-                            $currentWordToken = TranscriptionToken::addTokens($currentWordToken, $tToken);
+                            if ($itemIndex === $lastAddedItemIndex) {
+                                // item already in source (which means there was a newline after the last NoWb
+                                // just add the texts
+                                $currentWordToken->setText($currentWordToken->getText() . $tToken->getText());
+                                $currentWordToken->setNormalization($currentWordToken->getNormalization() . $tToken->getNormalization());
+                                // add the current char range to the last char range in token
+                                $charRanges = $currentWordToken->getSourceItemCharRanges();
+                                $charRanges[count($charRanges)-1] = new IntRange(0, $tToken->getSourceItemCharRanges()[0]->getLength()+1);
+                                $currentWordToken->setSourceItemCharRanges($charRanges);
+                            } else {
+                                // full merge
+                                $currentWordToken = TranscriptionToken::addTokens($currentWordToken, $tToken);
+                                $lastAddedItemIndex = $itemIndex;
+                            }
+                            //$this->codeDebug("item indexes now" , $currentWordToken->getSourceItemIndexes());
                             // close noWbItem 
                             $noWbItemOpen = false;
+                            //$this->codeDebug("Current word token is now: " . $currentWordToken->getText());
                         }  else {
                             // closed word token : open a new currentWordToken
-                            //print "A word token, making it the currentWordToken: '" . $tToken->getText() . "'\n" ;
                             $currentWordToken = $tToken;
                             $openWordToken = true;
                         }
                     } else { // i.e., not a word token
                         if ($noWbItemOpen && $tToken->getType()=== TokenType::WHITESPACE && $tToken->getText() === "\n") {
                             // got a newline after a noWbItem
-                            // add the item index to the currenWord Token
+                            // add the item info the the currentWord token sources
                             $currentWordToken->setSourceItemAddresses(array_merge(
                                     $currentWordToken->getSourceItemAddresses(),
                                     [$itemAddress]
                                 )
                             );
-                            // add the item index
                             $currentWordToken->setSourceItemIndexes(array_merge($currentWordToken->getSourceItemIndexes(), [$itemIndex]));
-                            // and a empty char range
                             $currentWordToken->setSourceItemCharRanges(array_merge(
                                     $currentWordToken->getSourceItemCharRanges(),
-                                    [new IntRange(0)]
+                                    [new IntRange(0, 1)] // this newline can only happen at the very start of the item
                                 )
                             );
+                            // update the line range
+                            $lineRange = new PointRange($currentWordToken->getTextBoxLineRange()->getStart(),
+                                $tToken->getTextBoxLineRange()->getEnd());
+                            $currentWordToken->setTextBoxLineRange($lineRange);
+                            $lastAddedItemIndex = $itemIndex;
                         } else {
                             // Any other token type: "close" currentWordToken and
                             // add it to the token array
                             if ($openWordToken) {
+                                //$this->codeDebug("Closing word token");
                                 $tokens[] = $currentWordToken;
                                 $openWordToken = false;
                             }
                             $noWbItemOpen = false;
                             // Add the token just processed as well
+                            //$this->codeDebug("Adding new token to array");
                             $tokens[] = $tToken;
                         }
                     }
-                    // advance current line
+                    // update current line
                     $pageTextBoxCurrentLines[$currentTextBox] = 
                         $pageTextBoxCurrentLines[$currentTextBox] + $stringToken->getLineRange()->getEnd() - 1 ;
-//                    if ($pageTextBoxCurrentLines[$currentTextBox] < $stringToken->getLineRange()->getEnd() ) {
-//                        // Line change in text box
-//                        $pageTextBoxCurrentLines[$currentTextBox] = $stringToken->getLineRange()->getEnd();
-//                    }
+
                 }
                 continue; // next StringToken
             } // rawItem is a TextualItem
             
             // Handle a NoWb Item
             if (is_a($rawItem, $noWbItemClass)) {
+                //$this->codeDebug("Got NoWB item");
                 if ($openWordToken) {
                     // just add the item info to the item addresses of the current token
                     $currentWordToken->setSourceItemAddresses(array_merge(
@@ -215,7 +253,7 @@ abstract class TranscriptionWitness extends Witness {
                     );
                     // add the item index
                     $currentWordToken->setSourceItemIndexes(array_merge($currentWordToken->getSourceItemIndexes(), [$itemIndex]));
-                    // and a empty char range
+                    // and an empty char ranges
                     $currentWordToken->setSourceItemCharRanges(array_merge(
                         $currentWordToken->getSourceItemCharRanges(),
                         [new IntRange(0)]
@@ -235,8 +273,15 @@ abstract class TranscriptionWitness extends Witness {
             //  - TextBox break mark
             //  - paragraph mark
 
+//            if (is_a($rawItem, $markClass)) {
+//                /** @var Mark $rawItem */
+//                $this->codeDebug("Got mark item of type '" . $rawItem->getMarkType() . "'");
+//            }
+
+
             if ($openWordToken) {
                 // Close word token
+                //$this->codeDebug('Closing open word token');
                 $tokens[] = $currentWordToken;
                 $openWordToken = false;
             }
@@ -245,7 +290,9 @@ abstract class TranscriptionWitness extends Witness {
         } // foreach sourceIteam
         // All source items processed
         // If there's still an openToken, close it
+        //$this->codeDebug('All item processed');
         if ($openWordToken) {
+            //$this->codeDebug('Closing open word token');
             $tokens[] = $currentWordToken;
             $openWordToken = false;
         }

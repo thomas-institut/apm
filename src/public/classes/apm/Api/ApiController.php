@@ -36,7 +36,7 @@ use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
-use ThomasInstitut\CodeDebug\CodeDebugTrait;
+use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
 use ThomasInstitut\Profiler\SimpleProfiler;
 use ThomasInstitut\Profiler\TimeTracker;
 
@@ -48,7 +48,7 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
 {
 
     use LoggerAwareTrait;
-    use CodeDebugTrait;
+    use CodeDebugWithLoggerTrait;
 
     /**
      *

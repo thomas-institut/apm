@@ -35,7 +35,7 @@ use AverroesProjectToApm\Formatter\WitnessPageFormatter;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
-use ThomasInstitut\CodeDebug\CodeDebugTrait;
+use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
 
 /**
  * Decorator for AverroesProject collation tables
@@ -48,7 +48,7 @@ use ThomasInstitut\CodeDebug\CodeDebugTrait;
 class TransitionalCollationTableDecorator implements CollationTableDecorator, LoggerAwareInterface, CodeDebugInterface {
 
     use LoggerAwareTrait;
-    use CodeDebugTrait;
+    use CodeDebugWithLoggerTrait;
     
     const CLASS_EMPTYTOKEN = 'tokennotpresent';
     const CLASS_NORMALTOKEN = 'normalToken';

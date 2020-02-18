@@ -22,6 +22,7 @@ namespace APM\Api;
 
 
 use APM\Engine\Engine;
+use APM\FullTranscription\ApmTranscriptionWitness;
 use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
@@ -30,6 +31,7 @@ use AverroesProjectToApm\DatabaseItemStreamWitness;
 use DI\DependencyException;
 use DI\NotFoundException;
 use Exception;
+use InvalidArgumentException;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
@@ -53,6 +55,7 @@ class ApiCollation extends ApiController
     const ERROR_BAD_WITNESS = 2002;
     const ERROR_FAILED_COLLATION_ENGINE_PROCESSING = 2003;
     const ERROR_INVALID_LANGUAGE = 2004;
+
     
     public function quickCollation(Request $request, Response $response)
     {
@@ -220,15 +223,38 @@ class ApiCollation extends ApiController
 
         $collationTable = new CollationTable($ignorePunctuation);
         foreach($requestedWitnesses as $requestedWitness) {
+            if (!isset($requestedWitness['type'])) {
+                $msg = "Missing required parameter 'type' in requested witness";
+                $this->logger->error($msg);
+                return $this->responseWithJson($response, ['error' => self::API_ERROR_MISSING_REQUIRED_FIELD, 'msg' => $msg], 409);
+            }
             switch ($requestedWitness['type']) {
                 case WitnessType::FULL_TRANSCRIPTION:
+                    if (!isset($requestedWitness['systemId'])) {
+                        $msg = "Missing required parameter 'systemId' in requested witness";
+                        $this->logger->error($msg);
+                        return $this->responseWithJson($response, ['error' => self::API_ERROR_MISSING_REQUIRED_FIELD, 'msg' => $msg], 409);
+                    }
+                    if (!isset($requestedWitness['title'])) {
+                        $msg = "Missing required parameter 'title' in requested witness";
+                        $this->logger->error($msg);
+                        return $this->responseWithJson($response, ['error' => self::API_ERROR_MISSING_REQUIRED_FIELD, 'msg' => $msg], 409);
+                    }
                     $witnessInfo = WitnessSystemId::getFullTxInfo($requestedWitness['systemId']);
-                    $fullTxWitness = $transcriptionManager->getTranscriptionWitness($witnessInfo->workId,
-                        $witnessInfo->chunkNumber, $witnessInfo->typeSpecificInfo['docId'],
-                        $witnessInfo->typeSpecificInfo['localWitnessId'], $witnessInfo->typeSpecificInfo['timeStamp']);
+                    try {
+                        $fullTxWitness = $transcriptionManager->getTranscriptionWitness($witnessInfo->workId,
+                            $witnessInfo->chunkNumber, $witnessInfo->typeSpecificInfo['docId'],
+                            $witnessInfo->typeSpecificInfo['localWitnessId'], $witnessInfo->typeSpecificInfo['timeStamp']);
+                    } catch (InvalidArgumentException $e) {
+                        // cannot get witness
+                        $msg = "Requested witness '" . $requestedWitness['systemId'] . "' does not exist";
+                        $this->logger->error($msg, [ 'exceptionError' => $e->getCode(), 'exceptionMsg' => $e->getMessage(), 'witness'=> $requestedWitness]);
+                        return $this->responseWithJson($response, ['error' => self::ERROR_BAD_WITNESS, 'msg' => $msg], 409);
+                    }
+
                     try {
                         $collationTable->addWitness($requestedWitness['title'], $fullTxWitness);
-                    } catch (\InvalidArgumentException $e) {
+                    } catch (InvalidArgumentException $e) {
                         $this->logger->warning('Cannot add fullTx witness to collation table', [$witnessInfo]);
                     }
 

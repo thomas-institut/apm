@@ -28,7 +28,7 @@ class MockTranscriptionManager extends TranscriptionManager
     /**
      * @inheritDoc
      */
-    public function getTranscriptionWitness(int $docId, string $workId, int $chunkNumber, string $timeString): ApmTranscriptionWitness
+    public function getTranscriptionWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeStamp) : ApmTranscriptionWitness
     {
         // TODO: Implement getTranscriptionWitness() method.
     }
@@ -127,6 +127,24 @@ class MockTranscriptionManager extends TranscriptionManager
     public function getLastSavesForDoc(int $docId, int $numSaves): array
     {
         // TODO: Implement getLastSavesForDoc() method.
+        return [];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getWitnessesForChunk(string $workId, int $chunkNumber): array
+    {
+        // TODO: Implement getWitnessesForChunk() method.
+        return [];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getSegmentLocationsForFullTxWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeString): array
+    {
+        // TODO: Implement getSegmentLocationsForFullTxWitness() method.
         return [];
     }
 }

@@ -44,7 +44,7 @@ use Slim\Psr7\Stream;
 use Slim\Routing\RouteParser;
 use Slim\Views\Twig;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
-use ThomasInstitut\CodeDebug\CodeDebugTrait;
+use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
 use ThomasInstitut\Profiler\SimpleProfiler;
 use ThomasInstitut\Profiler\TimeTracker;
 use Twig\Error\LoaderError;
@@ -59,7 +59,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
 {
 
     use LoggerAwareTrait;
-    use CodeDebugTrait;
+    use CodeDebugWithLoggerTrait;
     /**
      * @var Container
      */

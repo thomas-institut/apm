@@ -161,7 +161,7 @@ EOD;
         $systemManager = new ApmSystemManager($this->config);
 
         if ($systemManager->fatalErrorOccurred()) {
-            throw new \Exception($systemManager->getErrorMsg());
+            throw new \Exception($systemManager->getErrorMessage());
         }
 
         $this->systemManager = $systemManager;

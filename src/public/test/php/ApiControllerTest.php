@@ -27,8 +27,10 @@ require_once 'SiteMockup/testconfig.php';
 use APM\Presets\PresetManager;
 use APM\System\ApmConfigParameter;
 use APM\System\ApmContainerKey;
+use APM\System\WitnessType;
 use AverroesProject\EditorialNote;
 use AverroesProject\TxText\Item;
+use Cassandra\Time;
 use DI\DependencyException;
 use DI\NotFoundException;
 use Exception;
@@ -47,9 +49,11 @@ use APM\Api\ApiPresets;
 use APM\Api\ApiDocuments;
 use APM\Api\ApiElements;
 
+use Psr\Log\LoggerInterface;
 use Slim\Psr7\Response;
 use GuzzleHttp\Psr7\ServerRequest;
 use DI\Container;
+use ThomasInstitut\TimeString\TimeString;
 use function GuzzleHttp\Psr7\stream_for;
 
 
@@ -96,6 +100,12 @@ class ApiControllerTest extends TestCase {
      */
     static $apiElements;
 
+
+    /**
+     * @var LoggerInterface
+     */
+    private static $logger;
+
     /**
      * @throws DependencyException
      * @throws NotFoundException
@@ -109,6 +119,12 @@ class ApiControllerTest extends TestCase {
         self::$testEnvironment = new DatabaseTestEnvironment($apmTestConfig);
         self::$container = self::$testEnvironment->getContainer();
 
+        self::$logger = self::$container->get(ApmContainerKey::LOGGER);
+
+
+        self::$logger->debug('Setting up before class');
+
+
         self::$dataManager = self::$container->get(ApmContainerKey::DATA_MANAGER);
 
         $apiUser = self::$dataManager->userManager->createUserByUserName('testApiUser');
@@ -121,13 +137,18 @@ class ApiControllerTest extends TestCase {
         self::$apiDocuments = new ApiDocuments(self::$container);
         self::$apiElements = new ApiElements(self::$container);
     }
-    
+
+    private function debug($msg, $data = []) {
+        self::$logger->debug($msg, $data);
+    }
 
     public function testQuickCollation()
     {
         self::$testEnvironment->emptyDatabase();
         self::$editor1 = self::$dataManager->userManager->createUserByUserName('testeditor1');
         self::$editor2 = self::$dataManager->userManager->createUserByUserName('testeditor2');
+
+        $this->debug('testQuickCollation');
 
         $request = new ServerRequest('POST', '');
 
@@ -199,147 +220,7 @@ class ApiControllerTest extends TestCase {
         
     }
     
-    public function testAutomaticCollation() {
-        
-        $work = 'AW47';
-        $chunk = 1;
-        $lang = 'la';
-        $otherLang = 'he';
-        $numGoodWitnesses = 5;
-        $numBadWitnesses = 2;
 
-        self::$testEnvironment->emptyDatabase();
-        self::$editor1 = self::$dataManager->userManager->createUserByUserName('testeditor1');
-        self::$editor2 = self::$dataManager->userManager->createUserByUserName('testeditor2');
-
-        $request = (new ServerRequest('POST', ''));
-
-        
-        // No data
-        $response = self::$apiCollation->automaticCollation(
-            $request,
-            new Response()
-        );
-        $this->assertEquals(409, $response->getStatusCode());
-        $respData = json_decode($response->getBody(), true);
-        $this->assertEquals(ApiController::API_ERROR_NO_DATA, $respData['error']);
-     
-        // No valid fields in data
-        $response = self::$apiCollation->automaticCollation(
-            self::requestWithData($request, [
-                'somekey' => 'somevalue'
-            ]),
-            new Response()
-        );
-        $this->assertEquals(409, $response->getStatusCode());
-        $respData = json_decode($response->getBody(), true);
-        $this->assertEquals(ApiController::API_ERROR_MISSING_REQUIRED_FIELD, $respData['error']);
-        
-        // Less than two witnesses in partial collation
-        $response = self::$apiCollation->automaticCollation(
-            self::requestWithData($request, [
-                'work' => $work,
-                'chunk' => $chunk,
-                'lang' => $lang,
-                'witnesses' => [ [ 'type' => 'doc',  'id' => 1]]
-            ]),
-            new Response()
-        );
-        $this->assertEquals(409, $response->getStatusCode());
-        $respData = json_decode($response->getBody(), true);
-        $this->assertEquals(ApiCollation::ERROR_NOT_ENOUGH_WITNESSES, $respData['error']);
-        
-        
-        // Invalid language
-        $response = self::$apiCollation->automaticCollation(
-            self::requestWithData($request, [
-                'work' => $work,
-                'chunk' => $chunk,
-                'lang' => 'tagalog',
-                'witnesses' => []  // i.e., collate ALL witnesses
-            ]),
-            new Response()
-        );
-        $this->assertEquals(409, $response->getStatusCode());
-        $respData = json_decode($response->getBody(), true);
-        $this->assertEquals(ApiCollation::ERROR_INVALID_LANGUAGE, $respData['error']);
-        
-        // Less than two witnesses in the database
-        $response = self::$apiCollation->automaticCollation(
-            self::requestWithData($request, [
-                'work' => $work,
-                'chunk' => $chunk,
-                'lang' => $lang,
-                'witnesses' => []  // i.e., collate ALL witnesses
-            ]),
-            new Response()
-        );
-        $this->assertEquals(409, $response->getStatusCode());
-        $respData = json_decode($response->getBody(), true);
-        $this->assertEquals(ApiCollation::ERROR_NOT_ENOUGH_WITNESSES, $respData['error']);
-        
-        
-        $docIds = $this->createWitnessesInDb($work, $chunk, $lang, self::$editor1, $numGoodWitnesses, $numBadWitnesses);
-        array_merge($docIds, $this->createWitnessesInDb($work, $chunk, $otherLang, self::$editor1, $numGoodWitnesses, $numBadWitnesses));
-        
-        // This one should work!
-        $response = self::$apiCollation->automaticCollation(
-            self::requestWithData($request, [
-                'work' => $work,
-                'chunk' => $chunk,
-                'lang' => $lang,
-                'witnesses' => []  // i.e., collate ALL witnesses
-            ]),
-            new Response()
-        );
-
-        $respData = json_decode($response->getBody(), true);
-        $this->assertEquals(200, $response->getStatusCode());
-
-        
-        $this->assertTrue(isset($respData['collationTable']));
-        $this->assertTrue(isset($respData['sigla']));
-        $this->assertTrue(isset($respData['collationEngineDetails']));
-        
-        // a partial collation
-        $response = self::$apiCollation->automaticCollation(
-            self::requestWithData($request, [
-                'work' => $work,
-                'chunk' => $chunk,
-                'lang' => $lang,
-                'witnesses' => [
-                    ['type' => 'doc', 'id'=> $docIds[1]],
-                    ['type' => 'doc', 'id'=> $docIds[2]],
-                    ['type' => 'doc', 'id'=> $docIds[3]],
-                    ]
-            ]),
-            new Response()
-        );
-        $this->assertEquals(200, $response->getStatusCode());
-        $respData = json_decode($response->getBody(), true);
-        $this->assertTrue(isset($respData['collationTable']));
-        $this->assertTrue(isset($respData['sigla']));
-        $this->assertTrue(isset($respData['collationEngineDetails']));
-        
-        // a partial collation with wrong doc ids
-        $badId = max($docIds)+1;
-        $response = self::$apiCollation->automaticCollation(
-            self::requestWithData($request, [
-                'work' => $work,
-                'chunk' => $chunk,
-                'lang' => $lang,
-                'witnesses' => [
-                    ['type' => 'doc', 'id'=> $docIds[1]],
-                    ['type' => 'doc', 'id'=> $badId++],
-                    ['type' => 'doc', 'id'=> $badId],
-                    ]
-            ]),
-            new Response()
-        );
-        $this->assertEquals(409, $response->getStatusCode());
-        $respData = json_decode($response->getBody(), true);
-        $this->assertEquals(ApiCollation::ERROR_NOT_ENOUGH_WITNESSES, $respData['error']);
-    }
 
     /**
      * @return mixed

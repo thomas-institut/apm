@@ -20,17 +20,14 @@
 namespace ThomasInstitut\CodeDebug;
 
 
-use Psr\Log\LoggerInterface;
-
-trait CodeDebugTrait
+trait PrintCodeDebugTrait
 {
-
-    /**
-     * @var LoggerInterface
-     */
-    protected $logger;
+    private $debugMode = false;
 
     public function codeDebug(string $msg, array $data = [], $fileNameDepth = 3) {
+        if (!$this->debugMode) {
+            return;
+        }
         $backTrace = debug_backtrace();
         $caller = array_shift($backTrace);
         $sourceCodeFilename = $caller['file'];
@@ -42,7 +39,12 @@ trait CodeDebugTrait
             }
         }
         $line = $caller['line'];
-        $this->logger->debug( "CODE $msg  [$sourceCodeFilename:$line]", $data);
+
+        print "CODE $msg  [$sourceCodeFilename:$line]\n";
+        if ($data !== []) {
+            print_r($data);
+            print "---------\n";
+        }
     }
 
 }

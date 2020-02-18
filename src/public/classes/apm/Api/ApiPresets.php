@@ -173,7 +173,7 @@ class ApiPresets extends ApiController
         $userId = (is_int($inputData['userId']) && $inputData['userId'] > 0) ? $inputData['userId'] : false;
         $lang = $inputData['lang'];
         $requestedWitnesses = $inputData['witnesses'];
-        $this->codeDebug("Getting presets for $lang", $requestedWitnesses);
+        $this->codeDebug("Getting presets for $lang", [ 'witnesses' => $requestedWitnesses]);
 
 
         

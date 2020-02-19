@@ -26,11 +26,13 @@
 
 namespace APM\Site;
 
+use APM\FullTranscription\ApmChunkSegmentLocation;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
 
 use AverroesProject\ItemStream\ItemStream;
+use ThomasInstitut\TimeString\TimeString;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
@@ -74,6 +76,95 @@ class SiteChunks extends SiteController
             'works' => $works
         ]);
     }
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function fullTxMapPage(Request $request, Response $response, $args)
+    {
+
+        if (isset($args['timestamp'])) {
+            $timeStamp  = TimeString::compactDecode($args['timestamp']);
+        } else {
+            $timeStamp = TimeString::now();
+        }
+
+        $this->profiler->start();
+
+        // get the map
+        $theMap = $this->systemManager->getTranscriptionManager()->getFullChunkMap($timeStamp);
+
+        $chunkMap = $theMap['chunkLocationMap'];
+
+        $numWitnesses = 0;
+        $numValidWitnesses = 0;
+        $numSegments = 0;
+        $numValidSegments = 0;
+        $numWorks = 0;
+        $numChunks = 0;
+        foreach($chunkMap as $workId => $chunkArray) {
+            $numWorks++;
+            foreach($chunkArray as $chunkNumber => $docArray) {
+                $numChunks++;
+                foreach($docArray as $docId => $lwidArray) {
+                    foreach($lwidArray as $lwid => $segmentArray) {
+                        $numWitnesses++;
+                        $isValid = true;
+                        foreach ($segmentArray as $segmentNumber => $location) {
+                            /** @var ApmChunkSegmentLocation $location */
+                            $numSegments++;
+                            if ($location->isValid()) {
+                                $numValidSegments++;
+                            } else {
+                                $isValid = false;
+                            }
+                        }
+                        if ($isValid) {
+                            $numValidWitnesses++;
+                        }
+                    }
+                }
+            }
+        }
+
+        $this->profiler->lap('full map done');
+        $printOut = $this->prettyPrintFullTxMap($chunkMap);
+        $this->profiler->stop();
+        $this->logProfilerData('fullTxMap');
+
+        $statsHtml = "Time: $timeStamp<br/>";
+        $statsHtml .= "$numWorks works, $numChunks chunks<br/>";
+        $statsHtml .= "$numWitnesses chunk witnesses, $numValidWitnesses valid<br/>";
+        $statsHtml .= "$numSegments chunk segments, $numValidSegments valid<br/>";
+
+
+        return $this->renderPage($response, 'chunks-map.twig', [ 'stats' => $statsHtml, 'theMap' => $printOut] );
+
+    }
+
+    private function prettyPrintFullTxMap(array $fullTxMap) : string {
+        $html = '';
+        $mapDump = print_r($fullTxMap, true);
+
+        foreach($fullTxMap as $workId => $chunkArray) {
+            $html .= '<h2>' . $workId . '</h2>';
+            foreach($chunkArray as $chunkNumber => $docArray) {
+                $html .= "$workId-$chunkNumber";
+                $html .= '<ul>';
+                foreach($docArray as $docId => $lwidArray) {
+                    foreach($lwidArray as $lwid => $segmentArray) {
+                        $html .= "<li>$docId-$lwid : " . count($segmentArray) . " segment(s)</li>";
+                    }
+                }
+                $html .= '</ul>';
+            }
+        }
+        return $html;
+    }
+
+
     
    
 }

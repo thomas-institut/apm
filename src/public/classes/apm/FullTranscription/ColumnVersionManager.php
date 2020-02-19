@@ -24,9 +24,16 @@ abstract class ColumnVersionManager
 {
 
     /**
+     * Returns an array with version information objects for the given pageId and column ordered by time
+     * from older to newer.
+     *
+     * if numVersions === 0, returns all versions
+     * if numVersions > 0, returns only numVersions objects, corresponding to the latest versions.
+     *
      * @param int $pageId
      * @param int $column
+     * @param int $numVersions
      * @return ColumnVersionInfo[]
      */
-    abstract public function getColumnVersionInfoByPageCol(int $pageId, int $column) : array;
+    abstract public function getColumnVersionInfoByPageCol(int $pageId, int $column, int $numVersions = 0) : array;
 }

@@ -143,12 +143,11 @@ abstract class TranscriptionManager implements ErrorReporter
     abstract  public function getTranscribedPageListByDocId(int $docId, int $order = self::ORDER_BY_PAGE_NUMBER) : array;
 
 
-
     /**
      * Returns an array with version information for the given location up to the given time with
      * at most n elements.
      *
-     * If $n === -1, returns all versions
+     * If $n <= 0, returns all versions
      *
      * @param ApmItemLocation $location
      * @param string $upToTimeString
@@ -175,8 +174,9 @@ abstract class TranscriptionManager implements ErrorReporter
 
 
     /**
-     * Returns all version information about every chunk segment location in the given location map
-     * the returned array contains an array with version information in the same position in the map
+     * Returns all version information about every chunk segment location in the given location map.
+     *
+     * The returned array contains an array with version information in the same position in the map
      * as the relevant segment:
      *
      *  $map['workId'][chunkNumber][segment] => chunkSegmentLocation
@@ -218,4 +218,13 @@ abstract class TranscriptionManager implements ErrorReporter
      * @return array
      */
     abstract public function getSegmentLocationsForFullTxWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeString) : array;
+
+
+    /**
+     * Returns a full map of the transcriptions in the system at the given time
+     *
+     * @param string $timeString
+     * @return array
+     */
+    abstract public function getFullChunkMap(string $timeString) : array;
 }

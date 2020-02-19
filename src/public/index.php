@@ -185,9 +185,10 @@ $app->group('', function (RouteCollectorProxy $group){
         SiteChunkPage::class . ':singleChunkPage')
         ->setName('chunk');
 
-//    $group->get('/chunk/{work}/{chunk}/witness/{type}/{id}[/{output}]',
-//        ChunkPage::class . ':witnessPage')
-//        ->setName('witness');
+
+    $group->get('/chunks/map[/{timestamp}]',
+        SiteChunks::class . ':fullTxMapPage')
+        ->setName('fullTxMap');
 
     // COLLATION TABLES
 

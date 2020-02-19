@@ -35,7 +35,6 @@ use APM\FullTranscription\TranscriptionManager;
 use AverroesProject\ColumnElement\Element;
 use AverroesProject\Data\EdNoteManager;
 use AverroesProject\Data\MySqlHelper;
-use AverroesProject\ItemStream\ItemStream;
 use AverroesProject\TxText\Item as ApItem;
 use AverroesProjectToApm\DatabaseItemStream;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
@@ -436,6 +435,7 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
 
         foreach ($chunkMarkLocations as $location) {
             /** @var ApmChunkMarkLocation $location */
+            $this->codeDebug('Processing location', [ $location]);
             if (!isset($chunkLocations[$location->workId][$location->chunkNumber][$location->docId][$location->witnessLocalId][$location->segmentNumber])) {
                 // Initialize the chunk segment location
                 $segmentLocation = new ApmChunkSegmentLocation();
@@ -481,6 +481,8 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
 
     private function getChunkLocationMapFromDatabase(array $conditions, string $timeString) : array
     {
+
+        $this->codeDebug('Getting chunk map from DB', [ $conditions, $timeString]);
         $ti = $this->tNames[ApmMySqlTableName::TABLE_ITEMS];
         $te = $this->tNames[ApmMySqlTableName::TABLE_ELEMENTS];
         $tp = $this->tNames[ApmMySqlTableName::TABLE_PAGES];
@@ -539,7 +541,7 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
             " AND $tp.valid_until>'$timeString'" .
             " ORDER BY $tp.seq, $te.column_number, $te.seq, $ti.seq ASC";
 
-        //$this->codeDebug("SQL Query", [ $query]);
+        $this->codeDebug("SQL Query", [ $query]);
         $r = $this->databaseHelper->query($query);
 
         $chunkMarkLocations = [];
@@ -614,7 +616,7 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
     /**
      * @inheritDoc
      */
-    public function getVersionsForLocation(ApmItemLocation $location, string $upToTimeString, int $n = -1): array
+    public function getVersionsForLocation(ApmItemLocation $location, string $upToTimeString, int $n = 0): array
     {
         $pageInfo = $this->pageManager->getPageInfoByDocSeq($location->docId, $location->pageSequence);
 
@@ -679,6 +681,9 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
         return $segmentVersions;
     }
 
+    /**
+     * @inheritDoc
+     */
     public function getVersionsForChunkLocationMap(array $chunkLocationMap): array
     {
         $versionMap = [];
@@ -697,6 +702,9 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
         return $versionMap;
     }
 
+    /**
+     * @inheritDoc
+     */
     public function getLastChunkVersionFromVersionMap(array $versionMap) : array {
         $lastVersions = [];
         foreach ($versionMap as $workId => $chunkNumberMap) {
@@ -803,5 +811,20 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
             }
         }
         return $witnessInfoArray;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getFullChunkMap(string $timeString): array
+    {
+
+        $chunkLocationMap = $this->getChunkLocationMapFromDatabase([], $timeString);
+
+        $versionMap = $this->getVersionsForChunkLocationMap($chunkLocationMap);
+        return [
+            'chunkLocationMap' => $chunkLocationMap,
+            'versionMap' => $versionMap
+        ];
     }
 }

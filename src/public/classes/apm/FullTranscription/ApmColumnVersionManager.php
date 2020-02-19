@@ -38,7 +38,7 @@ class ApmColumnVersionManager extends ColumnVersionManager
     /**
      * @inheritDoc
      */
-    public function getColumnVersionInfoByPageCol(int $pageId, int $column): array
+    public function getColumnVersionInfoByPageCol(int $pageId, int $column, int $numVersions = 0): array
     {
         $versionRows  = $this->dataTable->findRows([ 'page_id' => $pageId, 'col' => $column]);
 
@@ -53,7 +53,10 @@ class ApmColumnVersionManager extends ColumnVersionManager
             return strcmp($a->timeFrom, $b->timeFrom);
         } );
 
-        return $versions;
+        if ($numVersions <= 0) {
+            return $versions;
+        }
 
+        return array_slice($versions, -1 * $numVersions);
     }
 }

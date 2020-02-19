@@ -105,7 +105,8 @@ table.collationtable td {
  }
  
  table.collationtable .ar-td {
-     font-size: 1.3em;
+     font-family:  "Times", "Times New Roman", serif;
+     font-size: 1.7em;
  }
 
 

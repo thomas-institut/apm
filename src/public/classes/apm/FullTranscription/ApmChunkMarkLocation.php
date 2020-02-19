@@ -53,6 +53,14 @@ class ApmChunkMarkLocation extends ApmItemLocation
      * @var string
      */
     public $witnessLocalId;
+    /**
+     * @var string
+     */
+    public $validFrom;
+    /**
+     * @var string
+     */
+    public $validUntil;
 
 
     public function __construct()
@@ -64,6 +72,9 @@ class ApmChunkMarkLocation extends ApmItemLocation
         $this->segmentNumber = 0;
         $this->docId = 0;
         $this->type = '';
+        $this->validFrom = '';
+        $this->validUntil = '';
+
     }
 
 }

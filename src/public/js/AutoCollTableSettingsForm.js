@@ -60,6 +60,7 @@ class AutomaticCollationTableSettingsForm {
           witnesses: []
         }
       },
+      suppressTimestampsInSettings: { type: 'boolean', default: false},
       containerSelector: { type: 'string', default : 'default-act-settings-form-selector'},
       formTitle: { type: 'string', default : 'Automatic Collation Settings'},
       applyButtonText: { type: 'string', default : 'Apply'},
@@ -188,9 +189,9 @@ class AutomaticCollationTableSettingsForm {
     }
     for(const witnessToInclude of settings.witnesses) {
       for (const witness of this.witnessList) {
-        if (witnessToInclude.type === witness.type && witnessToInclude.systemId === witness.systemId) {
-          // console.log('Including witness')
-          // console.log(witness)
+        if (witnessToInclude.type === witness.type && this.systemIdsCorrespond(witnessToInclude.systemId,witness.systemId)) {
+          //console.log('Including witness')
+          //console.log(witness)
           witness.toInclude = true
         }
       }
@@ -239,6 +240,17 @@ class AutomaticCollationTableSettingsForm {
     this.dealWithNotEnoughWitnessesToInclude()
   }
 
+  /**
+   * return true if the given systemIds stripped of their
+   * timestamp part are equal
+   *
+   * @param sysId1
+   * @param sysId2
+   */
+  systemIdsCorrespond(sysId1, sysId2) {
+    return this.supressTimestampFromSystemId(sysId1) ===this.supressTimestampFromSystemId(sysId2);
+  }
+
   getInternalIdFromWitness(witness) {
     return witness.type + '-' + witness.typeSpecificInfo.docId + '-' + witness.typeSpecificInfo.localWitnessId
   }
@@ -246,7 +258,7 @@ class AutomaticCollationTableSettingsForm {
   getWitnessFromSystemId(systemId) {
     let found = false
     for(const witness of this.witnessList) {
-      if (systemId === witness.systemId) {
+      if (this.systemIdsCorrespond(systemId,witness.systemId)) {
         return witness
       }
     }
@@ -382,9 +394,13 @@ class AutomaticCollationTableSettingsForm {
       let internalId = elem.getAttribute('witnessid')
       for(const witness of this.witnessList) {
         if (witness.internalId === internalId) {
+          let sysId = witness.systemId
+          if (this.options.suppressTimestampsInSettings) {
+            sysId = this.supressTimestampFromSystemId(sysId)
+          }
           settings.witnesses.push({
             type: witness.type,
-            systemId:  witness.systemId,
+            systemId: sysId,
             title: witness.title
           })
         }
@@ -862,6 +878,14 @@ class AutomaticCollationTableSettingsForm {
     elem.addEventListener('dragleave', this.genOnDragLeave(), false);
     elem.addEventListener('drop', this.genOnDrop(), false);
     elem.addEventListener('dragend', this.genOnDragEnd(), false);
+  }
+
+  supressTimestampFromSystemId(systemId) {
+    let fields = systemId.split('-')
+    if (fields.length === 6 ) {
+      fields.pop()
+    }
+    return fields.join('-')
   }
   
   //----------------------------------------------------------------

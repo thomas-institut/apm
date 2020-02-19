@@ -27,16 +27,18 @@
             placement: 'auto'
          })
     let apiCallOptions = JSON.parse("{{apiCallOptions|json_encode|e('js')}}")
-    let availableWitnesses = JSON.parse("{{availableWitnessesNew|json_encode|e('js')}}")
+    let availableWitnesses = JSON.parse("{{availableWitnesses|json_encode|e('js')}}")
     let urlGenerator = new ApmUrlGenerator('{{baseurl}}')
     let isPreset = JSON.parse({{ isPreset|json_encode }})
+    let suppressTimeStampsInApiCalls = JSON.parse({{ suppressTimestampsInApiCalls|json_encode }})
 
     let actOptions =  {   
         urlGenerator: urlGenerator,
         availableWitnesses: availableWitnesses,
         loadNow: true, 
         userId: parseInt({{userinfo.id}}),
-        isPreset:  isPreset
+        isPreset:  isPreset,
+        suppressTimestampsInApiCalls: suppressTimeStampsInApiCalls
     }
     
     if (actOptions.isPreset) {

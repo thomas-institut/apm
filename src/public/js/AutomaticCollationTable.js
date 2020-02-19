@@ -40,6 +40,7 @@ class AutomaticCollationTable {
         }
       },
       availableWitnesses: { type: 'Array', default: [] },
+      suppressTimestampsInApiCalls: { type: 'boolean', default: false},
       loadNow: { type: 'boolean', default: false },
       urlGenerator: { type: 'object', objectClass: ApmUrlGenerator, required: true},
       userId: { type: 'number', default: -1 },
@@ -93,10 +94,15 @@ class AutomaticCollationTable {
     // it means that ALL witnesses should be included
 
     if (this.apiCallOptions.witnesses.length === 0) {
+      console.log('Including all witnesses in ApiCallOptions')
       for(const witness of this.availableWitnesses) {
+        let sysId = witness.systemId
+        if (this.options.suppressTimestampsInApiCalls) {
+          sysId = this.supressTimestampFromSystemId(sysId)
+        }
         this.apiCallOptions.witnesses.push({
           type: witness.type,
-          systemId: witness.systemId,
+          systemId: sysId,
           title: witness.title
         })
       }
@@ -161,6 +167,7 @@ class AutomaticCollationTable {
       urlGenerator: this.options.urlGenerator,
       userId:  this.options.userId,
       isPreset: this.options.isPreset,
+      suppressTimestampsInSettings:  this.options.suppressTimestampsInApiCalls
     }
     if (this.options.isPreset) {
       actSettingsFormOptions.preset = this.options.preset
@@ -344,6 +351,14 @@ class AutomaticCollationTable {
       return '0' + minutes
     }
     return minutes
+  }
+
+  supressTimestampFromSystemId(systemId) {
+    let fields = systemId.split('-')
+    if (fields.length === 6 ) {
+      fields.pop()
+    }
+    return fields.join('-')
   }
   
 }

@@ -415,7 +415,7 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
             ],
             $timeString);
 
-        //$this->codeDebug('getSegmentLocations', [ $workId, $chunkNumber, $docId, $localWitnessId, $timeString, $chunkLocationMap]);
+        $this->codeDebug('getSegmentLocations', [ $workId, $chunkNumber, $docId, $localWitnessId, $timeString, $chunkLocationMap]);
         if (!isset($chunkLocationMap[$workId][$chunkNumber][$docId][$localWitnessId])) {
             return [];
         }
@@ -435,7 +435,7 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
 
         foreach ($chunkMarkLocations as $location) {
             /** @var ApmChunkMarkLocation $location */
-            $this->codeDebug('Processing location', [ $location]);
+            //$this->codeDebug('Processing location', [ $location]);
             if (!isset($chunkLocations[$location->workId][$location->chunkNumber][$location->docId][$location->witnessLocalId][$location->segmentNumber])) {
                 // Initialize the chunk segment location
                 $segmentLocation = new ApmChunkSegmentLocation();
@@ -527,7 +527,9 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
             " $ti.alt_text as 'type'," .
             " $ti.text as 'work_id'," .
             " $ti.target as 'chunk_number'," .
-            " $ti.length as 'segment_number'" .
+            " $ti.length as 'segment_number'," .
+            " $ti.valid_from as 'from'," .
+            " $ti.valid_until as 'until'" .
             " FROM $tp" .
             " JOIN ($te, $ti)" .
             " ON ($te.id=$ti.ce_id AND $tp.id=$te.page_id)" .
@@ -563,6 +565,8 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
             $location->columnNumber = (int) $row['column_number'];
             $location->elementSequence = (int) $row['e_seq'];
             $location->itemSequence = (int) $row['item_seq'];
+            $location->validFrom = $row['from'];
+            $location->validUntil = $row['until'];
             $chunkMarkLocations[] = $location;
         }
 

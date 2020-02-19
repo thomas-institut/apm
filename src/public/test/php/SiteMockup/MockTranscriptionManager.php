@@ -147,4 +147,13 @@ class MockTranscriptionManager extends TranscriptionManager
         // TODO: Implement getSegmentLocationsForFullTxWitness() method.
         return [];
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function getFullChunkMap(string $timeString): array
+    {
+        // TODO: Implement getFullChunkMap() method.
+        return [];
+    }
 }

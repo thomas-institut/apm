@@ -327,7 +327,9 @@ class SiteCollationTable extends SiteController
      * @param Response $response
      * @return Response
      */
-    private function getCollationTablePage($collationPageOptions, Response $response) {
+    private function getCollationTablePage(array $collationPageOptions, Response $response) {
+        $this->codeDebug("Getting collation table page", $collationPageOptions);
+
         $workId = $collationPageOptions['work'];
         $chunkNumber = intval($collationPageOptions['chunk']);
         $language = $collationPageOptions['lang'];
@@ -346,7 +348,6 @@ class SiteCollationTable extends SiteController
         $pageName = "AutomaticCollation-$workId-$chunkNumber-$language";
         
         $this->profiler->start();
-        $this->logger->debug('Automatic collation', [ 'options' => $collationPageOptions]);
         $warnings = [];
 
         
@@ -376,23 +377,21 @@ class SiteCollationTable extends SiteController
         // get total witness counts
         $validWitnesses = $this->getValidWitnessesForChunkLang($workId, $chunkNumber, $language);
 
-        // fix systemId in fullTx witnesses that don't have a proper timeStamp
-        // put titles in
+        // put titles in fullTx witnesses that don't have one
+
+        // TODO: Check this default
+        $supressTimestampsInApiCalls = true;
+
         for($i = 0; $i < count($apiCallOptions['witnesses']); $i++) {
             if ($apiCallOptions['witnesses'][$i]['type'] === WitnessType::FULL_TRANSCRIPTION) {
                 $systemId = $apiCallOptions['witnesses'][$i]['systemId'];
                 $witnessInfo = WitnessSystemId::getFullTxInfo($systemId);
                 $apiCallWitnessTxInfo = $witnessInfo->typeSpecificInfo;
-                //if ($apiCallWitnessTxInfo['timeStamp'] === '' || !isset($witnessInfo['title']) || $witnessInfo['title'] === '') {
                 $found = false;
                 foreach($validWitnesses as $validWitnessInfo) {
                     /** @var WitnessInfo $validWitnessInfo */
                     $validWitnessFullTxInfo = $validWitnessInfo->typeSpecificInfo;
                     if ($validWitnessFullTxInfo['docId'] === $apiCallWitnessTxInfo['docId'] && $validWitnessFullTxInfo['localWitnessId'] === $apiCallWitnessTxInfo['localWitnessId']) {
-                        //$this->codeDebug('Found witness ', [$apiCallWitnessTxInfo, $validWitnessFullTxInfo]);
-                        if ($apiCallWitnessTxInfo['timeStamp'] === '') {
-                            $apiCallOptions['witnesses'][$i]['systemId'] = $validWitnessInfo->systemId;
-                        }
                         $docInfo = $validWitnessFullTxInfo['docInfo'];
                         /** @var DocInfo $docInfo */
                         $title = $docInfo->title;
@@ -400,6 +399,11 @@ class SiteCollationTable extends SiteController
                            $title .= ' (' . $validWitnessFullTxInfo['localWitnessId'] . ')';
                         }
                         $apiCallOptions['witnesses'][$i]['title'] = $title;
+                        // here would be a place to fix the timeStamp, but it's better to leave it blank
+                        // so that the system automatically gets the current version
+//                        if ($validWitnessFullTxInfo['timeStamp'] === '') {
+//                            $supressTimestampsInApiCalls = true;
+//                        }
                         $found = true;
                         break;
                      }
@@ -432,7 +436,8 @@ class SiteCollationTable extends SiteController
             'work_info' => $workInfo,
             'num_docs' => $partialCollation ? count($apiCallOptions['witnesses']) : count($validWitnesses),
             'total_num_docs' => count($validWitnesses),
-            'availableWitnessesNew' => $validWitnesses,
+            'availableWitnesses' => $validWitnesses,
+            'suppressTimestampsInApiCalls' => $supressTimestampsInApiCalls,
             'warnings' => $warnings
         ];
         if ($templateOptions['isPreset']) {
@@ -494,43 +499,5 @@ class SiteCollationTable extends SiteController
             }
         }
         return $vWL;
-
-//        $map = $tm->getChunkLocationMapForChunk($workId, $chunkNumber, TimeString::now());
-//
-//        $docArray = $map[$workId][$chunkNumber];
-//        $witnesses = [];
-//
-//        foreach($docArray as $docId => $localWitnessIdArray) {
-//            $docInfo = $tm->getDocManager()->getDocInfoById($docId);
-//            if ($docInfo->languageCode !== $langCode) {
-//                $this->logger->debug("$docId is not $langCode");
-//                continue;
-//            }
-//            foreach($localWitnessIdArray as $lwid => $segmentArray) {
-//                $isValid = true;
-//                foreach($segmentArray as $segmentNumber => $segment) {
-//                    /** @var $segment ApmChunkSegmentLocation */
-//                    if (!$segment->isValid()) {
-//                        $this->logger->debug("Doc $docId, lwid $lwid, segment $segmentNumber is not valid");
-//                        $isValid = false;
-//                    }
-//                }
-//                if ($isValid) {
-//                    $title = $docInfo->title;
-//                    if ($lwid !== 'A') {
-//                        $title .= ' (' . $lwid . ')';
-//                    }
-//                    $witnesses[] = [
-//                        'type' => WitnessType::FULL_TRANSCRIPTION,
-//                        'docId' => $docId,
-//                        'lwid' => $lwid,
-//                        'title' => $title,
-//                        'langCode' => $langCode
-//                    ];
-//                }
-//            }
-//        }
-//        return $witnesses;
-
     }
 }

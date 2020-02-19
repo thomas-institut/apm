@@ -221,6 +221,8 @@ class ApiCollation extends ApiController
 
         $this->profiler->lap('Basic checks done');
 
+        //$validFullTxWitnesses = $this->getValidWitnessesForChunkLang($workId, $chunkNumber, $language);
+
         $collationTable = new CollationTable($ignorePunctuation);
         foreach($requestedWitnesses as $requestedWitness) {
             if (!isset($requestedWitness['type'])) {
@@ -241,6 +243,9 @@ class ApiCollation extends ApiController
                         return $this->responseWithJson($response, ['error' => self::API_ERROR_MISSING_REQUIRED_FIELD, 'msg' => $msg], 409);
                     }
                     $witnessInfo = WitnessSystemId::getFullTxInfo($requestedWitness['systemId']);
+                    if ($witnessInfo->typeSpecificInfo['timeStamp'] === '') {
+                        $witnessInfo->typeSpecificInfo['timeStamp'] = TimeString::now();
+                    }
                     try {
                         $fullTxWitness = $transcriptionManager->getTranscriptionWitness($witnessInfo->workId,
                             $witnessInfo->chunkNumber, $witnessInfo->typeSpecificInfo['docId'],
@@ -338,6 +343,9 @@ class ApiCollation extends ApiController
         $qdw = new EditionWitness($collationTable, $collationTable->getSigla()[0], $language);
         
         $quickEdition = $qdw->generateEdition();
+
+
+
         
 
         $this->profiler->stop();
@@ -356,4 +364,26 @@ class ApiCollation extends ApiController
             ]);
     }
 
+
+    /**
+     * @param string $workId
+     * @param int $chunkNumber
+     * @param string $langCode
+     * @return WitnessInfo[]
+     */
+    protected function getValidWitnessesForChunkLang(string $workId, int $chunkNumber, string $langCode) : array {
+        $this->logger->debug("Getting valid witnesses for $workId, $chunkNumber, $langCode");
+        $tm = $this->systemManager->getTranscriptionManager();
+
+        $vw = $tm->getWitnessesForChunk($workId, $chunkNumber);
+
+        $vWL = [];
+        foreach($vw as $witnessInfo) {
+            /** @var WitnessInfo $witnessInfo */
+            if ($witnessInfo->languageCode === $langCode) {
+                $vWL[] = $witnessInfo;
+            }
+        }
+        return $vWL;
+    }
 }

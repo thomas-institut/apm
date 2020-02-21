@@ -20,6 +20,9 @@
 
 namespace APM\Core\Item;
 
+use APM\Algorithm\Utility;
+use InvalidArgumentException;
+
 /**
  * A piece of text 
  * 
@@ -84,10 +87,10 @@ class TextualItem extends Item {
     public function __construct(string $t) {
         
         if ($t === '') {
-            throw new \InvalidArgumentException('TextualItem text must not be empty');
+            throw new InvalidArgumentException('TextualItem text must not be empty');
         }
         parent::__construct();
-        $this->text=$t;
+        $this->setPlainText($t);
         $this->setNormalization('', self::NORMALIZATION_NONE);
         $this->setHand(self::DEFAULT_HAND);
         $this->setFormat(self::FORMAT_NONE);
@@ -100,7 +103,7 @@ class TextualItem extends Item {
     }
     
     public function getPlainText() {
-        return $this->text;
+        return $this->sanitizeText($this->text);
     }
     
     public function setPlainText(string $text) {
@@ -111,7 +114,7 @@ class TextualItem extends Item {
         if ($this->normalizationType === self::NORMALIZATION_NONE) {
             return $this->getPlainText();
         }
-        return $this->normalizedText;
+        return $this->sanitizeText($this->normalizedText);
     }
 
     public function getNormalizationType() {
@@ -203,5 +206,9 @@ class TextualItem extends Item {
         $data['clarityReason'] = $this->getClarityReason();
         $data['deletion'] = $this->getDeletion();
         return $data;
+    }
+
+    private function sanitizeText(string $text) : string {
+        return Utility::removeBOMsFromString($text);
     }
 }

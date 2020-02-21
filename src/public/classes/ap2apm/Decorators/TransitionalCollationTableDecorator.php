@@ -27,6 +27,7 @@ use APM\Core\Collation\CollationTable;
 use APM\Core\Item\Item;
 use APM\Core\Item\MarkType;
 use APM\Core\Token\TranscriptionToken;
+use APM\FullTranscription\ApmTranscriptionWitness;
 use AverroesProjectToApm\AddressInDatabaseItemStream;
 use APM\Core\Item\TextualItem;
 use APM\Core\Item\Mark;
@@ -79,26 +80,36 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator, Lo
         
         $decoratedCollationTable['extra'] = [];
         
-        $addressInItemStreamClass  = get_class(new AddressInDatabaseItemStream());
+        $addressInItemStreamClass  = AddressInDatabaseItemStream::class;
+        $apmTranscriptionWitnesClass = ApmTranscriptionWitness::class;
+
         $textualItemClass = $this->textualItemClass;
-        
+
+        $apmTranscriptionWitnesClass = ApmTranscriptionWitness::class;
         
         $formatter = new WitnessPageFormatter($this->ud);
         $variantTable = $c->getVariantTable();
         
         // 1. Put tokens in with basic classes
         foreach($sigla as $siglum) {
-            //$this->codeDebug("Processing siglum '$siglum'");
+            $this->codeDebug("Processing siglum '$siglum'");
             $decoratedCollationTable[$siglum] = [];
             
             $tokenRefs = $c->getReferencesForRow($siglum);
             $witnessTokens = $c->getWitnessTokens($siglum);
-            $rawNonTokenItemIndexes = $c->getWitness($siglum)->getNonTokenItemIndexes();
+            /** @var ApmTranscriptionWitness $witness */
+            $witness = $c->getWitness($siglum);
+            if (!is_a($witness, $apmTranscriptionWitnesClass)) {
+                $this->logger->warning("Found unsupported witness class in collation table: " . get_class($witness));
+                continue;
+            }
+
+            $rawNonTokenItemIndexes = $witness->getNonTokenItemIndexes();
             
             $nonTokenItemIndexes = $this->aggregateNonTokenItemIndexes($rawNonTokenItemIndexes, $tokenRefs);
             
-            $itemArray = $c->getWitness($siglum)->getItemArray();
-            $witnessItemStream = $c->getWitness($siglum)->getDatabaseItemStream();
+            $itemArray = $witness->getItemArray();
+            $witnessItemStream = $witness->getDatabaseItemStream();
             foreach($tokenRefs as $tokenIndex => $tokenRef) {
                 //$this->codeDebug("Processing token $i");
                 $decoratedToken = [];
@@ -144,13 +155,25 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator, Lo
                             // $itemText contains the full item's text, we only need 
                             // the text that belongs to the token
                             $text = $this->getSubstringFromItemAndRange($sourceItem, $charRanges[$addressIndex]);
+                            if ($text === '' and $sourceItem->getPlainText() !== '') {
+                                $theStr = $sourceItem->getPlainText();
+                                $itemData = $sourceItem->getData();
+                                $range = $charRanges[$addressIndex];
+                                $itemIndex = $address->getItemIndex();
+                                $this->codeDebug("Got empty substring from '$theStr', start " .
+                                    $range->getStart() . " length " . $range->getLength() .
+                                    ", itemIndex $itemIndex, tokenText: '" . $token->getText() . "'" ,
+                                    [ 'count addresses' => count($addresses), 'tokenIndex' => $tokenIndex]);
+                            }
                             $decoratedToken['itemFormats'][] = [ 
                                 'text' => $text, 
                                 'classes' => $classes, 
                                 'popoverHtml' => $popover, 
                                 'itemId' => $address->getItemIndex(),
                                 'itemSeq' => $address->getItemSeq(),
-                                'ceId' => $address->getCeId()
+                                'ceId' => $address->getCeId(),
+                                'startChar' => $charRanges[$addressIndex]->getStart(),
+                                'length' => $charRanges[$addressIndex]->getLength()
                             ];
                         }
 //                        else {
@@ -197,9 +220,13 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator, Lo
     
    
     
-    protected function getSubstringFromItemAndRange($item, IntRange $range) : string {
+    protected function getSubstringFromItemAndRange(Item $item, IntRange $range) : string {
         $sourceString = $item->getPlainText();
         $subStr = mb_substr($sourceString, $range->getStart(), $range->getLength());
+
+//        if ($sourceString !== '' && $subStr === '' && $range->getLength() !== 0) {
+//            $this->codeDebug("Got empty subtring from '$sourceString', start " . $range->getStart() . " length " . $range->getLength(), [$item]);
+//        }
         return $subStr;
     }
     

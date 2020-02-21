@@ -149,17 +149,39 @@ class CollationTableFormatter {
       let popoverPrefix = ' + ' + token.text + '<br/>'
       popoverPrefix += ' &equiv; ' + token.norm + '<br/><br/>'
       
-      popoverHtml = popoverPrefix + popoverHtml
+
+      let collectedText = ''
+      let lineBreakInText = false
+      let textWithDashes = ''
       for(const itemFormat of token.itemFormats) {
         let text = itemFormat.text
+
+        if (text === "\n") {
+          lineBreakInText = true
+          textWithDashes += ' - '
+          continue
+        }
         let classes = itemFormat.classes
         let popover = itemFormat.popoverHtml
+        collectedText += text
+        textWithDashes += text
         if (!showNormalization) {
           textHtml += '<span class=">'  + classes.join(' ') + '">' + text + '</span>'
         }
         popoverHtml += popover
       }
+      if (collectedText === token.text) {
+          // don't show normalization prefix in popover
+        popoverPrefix = ''
+      }
+
+      popoverHtml = popoverPrefix + popoverHtml
+      if (lineBreakInText) {
+        popoverHtml += '<em> = ' + textWithDashes + '</em>'
+      }
     }
+
+
     
     popoverHtml = this.addAddressesToPopoverHtml(token, popoverHtml)
     let filteredTokenClasses = this.getTokenClasses(token.classes, this.options.highlightVariants)

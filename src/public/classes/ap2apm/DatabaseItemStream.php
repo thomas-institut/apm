@@ -23,6 +23,7 @@ namespace AverroesProjectToApm;
 use APM\Core\Item\Mark;
 use APM\Core\Item\MarkType;
 use APM\Core\Item\TextualItem;
+use ThomasInstitut\TimeString\TimeString;
 
 /**
  *
@@ -49,7 +50,6 @@ class DatabaseItemStream {
      * contains the item information plus page and ApElement info as well
      *
      *
-
      *
      * @param int $docId
      * @param array $itemSegments
@@ -64,18 +64,28 @@ class DatabaseItemStream {
             $previousElementId = -1;
             $previousTbIndex = -1;
             $previousElementType = -1;
+            // the first fakeItemId to be used, it should be only relevant locally within the itemstream
+            // but in order to avoid unintended problems it's better to use a number that is unlikely
+            // to be used as an item id for real in a long time. For reference, after about 3 years of use,
+            // as of Feb 2020, the highest itemId in the production database is around 660 000
+            $fakeItemIdStart  = 999000000000;
             
             foreach ($itemRows as $row) {
                 $address = new AddressInDatabaseItemStream();
                 $address->setFromItemStreamRow($docId, $row);
                 
                 if ($row['ce_id'] !== $previousElementId && $address->getTbIndex() === $previousTbIndex) {
+                    // need to insert a "ghost" item into the item stream to account for line and text box breaks
+                    // the address should be fake
+                    $fakeAddress = new AddressInDatabaseItemStream();
+                    $fakeAddress->setFromItemStreamRow($docId, $row);
+                    $fakeAddress->setItemIndex($fakeItemIdStart++);
                     if ($previousElementType === $row['e.type']) {
                         // two elements of the same type in a row = a line break within the same text box
-                        $this->items[] = new ItemInDatabaseItemStream($address, new TextualItem("\n"));
+                        $this->items[] = new ItemInDatabaseItemStream($fakeAddress, new TextualItem("\n"));
                     } else {
                         // change of text box, e.g. an addition
-                        $this->items[] = new ItemInDatabaseItemStream($address, new Mark(MarkType::TEXT_BOX_BREAK));
+                        $this->items[] = new ItemInDatabaseItemStream($fakeAddress, new Mark(MarkType::TEXT_BOX_BREAK));
                     }
                 }
                 $item = $itemFactory->createItemFromRow($row);

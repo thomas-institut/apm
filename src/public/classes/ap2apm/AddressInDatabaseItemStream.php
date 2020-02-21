@@ -128,7 +128,7 @@ class AddressInDatabaseItemStream extends ItemAddressInDocument {
         return $this->fullAddress->getCoord(self::COORD_ITEMID);
     }
     
-    protected function setItemIndex($index) {
+    public function setItemIndex($index) {
         $this->fullAddress->setCoord(self::COORD_ITEMID, $index);
     }
     

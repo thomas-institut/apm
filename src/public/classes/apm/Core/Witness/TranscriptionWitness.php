@@ -76,6 +76,7 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
     public function getTokens() : array {
 
         $this->debugMode = false;
+        //print "<pre>";
 
         $this->codeDebug("\n*** Start getTokens() ***");
         // 1. Get some important class names
@@ -107,12 +108,13 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
         
         // 4. Iterate over all items in the transcription
         foreach ($sourceItems as $itemIndex => $sourceItem) {
-            //$this->codeDebug("Processing item $itemIndex");
+            $this->codeDebug("********** Processing item $itemIndex ************");
             /* @var $sourceItem ItemInDocument */
 
             $rawItem = $sourceItem->getItem();
             /* @var $itemAddress ItemAddressInDocument */
             $itemAddress = $sourceItem->getAddress();
+            $this->codeDebug("Item Address", [$itemAddress]);
 
             if ($itemAddress->getPageId() !== $currentPage ||
                     $itemAddress->getTbIndex() !== $currentTextBox) {
@@ -229,7 +231,7 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
                             }
                             $noWbItemOpen = false;
                             // Add the token just processed as well
-                            //$this->codeDebug("Adding new token to array");
+                            $this->codeDebug("Adding new token to array");
                             $tokens[] = $tToken;
                         }
                     }
@@ -243,7 +245,7 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
             
             // Handle a NoWb Item
             if (is_a($rawItem, $noWbItemClass)) {
-                //$this->codeDebug("Got NoWB item");
+                $this->codeDebug("Got NoWB item");
                 if ($openWordToken) {
                     // just add the item info to the item addresses of the current token
                     $currentWordToken->setSourceItemAddresses(array_merge(

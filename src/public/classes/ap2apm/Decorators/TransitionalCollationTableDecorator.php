@@ -127,6 +127,7 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator, Lo
                 $decoratedToken['norm'] = $token->getNormalization();
                 $decoratedToken['classes'] = [self::CLASS_NORMALTOKEN];
                 $decoratedToken['classes'][] = self::CLASS_VARIANT_PREFIX .  $variantTable[$siglum][$tokenIndex];
+                $decoratedToken['variant'] = $variantTable[$siglum][$tokenIndex];
                 $decoratedToken['empty'] = false;
                 $decoratedToken['witnessTokenIndex'] = $tokenRef;
                 $decoratedToken['itemIndexes'] = $token->getSourceItemIndexes();
@@ -151,9 +152,9 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator, Lo
                         /** @var Item $sourceItem */
                         if ($sourceItem !== false && is_a($sourceItem, $textualItemClass)) {
                             /** @var TextualItem $sourceItem */
-                            list($itemText, $classes, $popover) = $formatter->getTextualItemFormat($sourceItem, false);
-                            // $itemText contains the full item's text, we only need 
-                            // the text that belongs to the token
+                            $formattedItem = $formatter->getTextualItemFormat($sourceItem, false);
+                            $classes = $formattedItem['classes'];
+                            $popover = $formattedItem['popoverHtml'];
                             $text = $this->getSubstringFromItemAndRange($sourceItem, $charRanges[$addressIndex]);
                             if ($text === '' and $sourceItem->getPlainText() !== '') {
                                 $theStr = $sourceItem->getPlainText();
@@ -165,6 +166,7 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator, Lo
                                     ", itemIndex $itemIndex, tokenText: '" . $token->getText() . "'" ,
                                     [ 'count addresses' => count($addresses), 'tokenIndex' => $tokenIndex]);
                             }
+
                             $decoratedToken['itemFormats'][] = [ 
                                 'text' => $text, 
                                 'classes' => $classes, 
@@ -173,7 +175,14 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator, Lo
                                 'itemSeq' => $address->getItemSeq(),
                                 'ceId' => $address->getCeId(),
                                 'startChar' => $charRanges[$addressIndex]->getStart(),
-                                'length' => $charRanges[$addressIndex]->getLength()
+                                'length' => $charRanges[$addressIndex]->getLength(),
+                                'deletion' => $formattedItem['deletion'],
+                                'format' => $formattedItem['format'],
+                                'normalization' => $formattedItem['normalization'],
+                                'normalizationType' => $formattedItem['normalizationType'],
+                                'textualFlow' => $formattedItem['textualFlow'],
+                                'location' => $formattedItem['location'],
+                                'formattedItem' => $formattedItem
                             ];
                         }
 //                        else {
@@ -196,8 +205,10 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator, Lo
                         $classes = [];
                         $popoverHtml = '';
                     } else {
-                        $classes =  $decoratedToken['itemFormats'][0]['classes'];
-                        $popoverHtml =  $decoratedToken['itemFormats'][0]['popoverHtml'];
+                        //$classes =  $decoratedToken['itemFormats'][0]['classes'];
+                        //$popoverHtml =  $decoratedToken['itemFormats'][0]['popoverHtml'];
+                        $classes = [];
+                        $popoverHtml = '';
                     }
 
                     // Add address to popover

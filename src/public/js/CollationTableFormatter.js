@@ -118,73 +118,134 @@ class CollationTableFormatter {
     }
     return output
   }
+
+  getPopoverTextSpan(text, lang) {
+    return '<span class="popovertext-' + lang + '">' + text + '</span>'
+  }
   
   getTdFromToken(siglum, token, popoverClass, showNormalization = false) {
-    
+
+    // deal quickly with empty tokens
     if (token.empty) {
       return '<td class="' + token.classes.join(' ') + '">'+ token.text + '</td>'
-    }  
+    }
+
+    // if there's already html defined in the token, return that
+    // (normally not used)
     if (typeof(token.html) !== 'undefined') {
       if (token.html !== '') {
         return '<td>' + token.html + '</td>'
       }
     }
+
+
     let html = ''
-    
-    token.classes.push(this.options.lang + '-td')
+    let lang = this.options.lang
+
+    // language class
+    token.classes.push(lang + '-td')
+
     let popoverHtml = ''
+    // Add popover html if in token
+    // (not used normally)
     if (typeof(token.popoverHtml) === 'string' ) {
       popoverHtml = token.popoverHtml
     }
-    token.classes.push(popoverClass)
-    let textHtml = token.text 
-    if (showNormalization) {
-      textHtml = token.norm
-    }
-    if (token.itemFormats.length > 1) {
-      //multi-item token
-      if (!showNormalization) {
-        textHtml = ''
-      }
-      let popoverPrefix = ' + ' + token.text + '<br/>'
-      popoverPrefix += ' &equiv; ' + token.norm + '<br/><br/>'
-      
 
-      let collectedText = ''
+    let mainTextElementClasses = token.classes
+    mainTextElementClasses.push(popoverClass)
+    mainTextElementClasses.push(lang + '-td')
+
+    let popoverHeading = ''
+    let mainTextHtml = ''
+    let mainTextElement= ''
+    let itemsPopoverHtml = ''
+
+    if (token.itemFormats.length === 1) {
+      // simplest case, only one item
+      if (showNormalization) {
+        mainTextHtml = token.norm
+        popoverHeading = this.getPopoverTextSpan(token.norm, lang)
+        if (token.norm !== token.text)  {
+          popoverHeading += '<br/>'
+          popoverHeading += ' + ' + token.text
+        }
+      } else {
+        mainTextHtml = token.text
+        popoverHeading = this.getPopoverTextSpan(token.text, lang)
+        if (token.norm !== token.text)  {
+          popoverHeading += '<br/>'
+          popoverHeading += ' &equiv; ' + token.norm
+          popoverHeading += '<br/>'
+        }
+      }
+
+      itemsPopoverHtml = token.itemFormats[0]['popoverHtml']
+      if (itemsPopoverHtml === '') {
+        itemsPopoverHtml = '<ul>normal text</ul>'
+      }
+      let itemClasses = token.itemFormats[0]['classes']
+      for(const itemClass of itemClasses) {
+        mainTextElementClasses.push(itemClass)
+      }
+
+    } else {
+      //multi-item token
+      if (showNormalization) {
+        mainTextHtml = token.norm
+        popoverHeading = this.getPopoverTextSpan(token.norm, lang)
+        if (token.norm !== token.text)  {
+          popoverHeading += '<br/>'
+          popoverHeading += ' + ' + token.norm
+          popoverHeading += '<br/>'
+        }
+      } else {
+        mainTextHtml = ''
+        popoverHeading = this.getPopoverTextSpan(token.text, lang)
+        if (token.norm !== token.text)  {
+          popoverHeading += '<br/>'
+          popoverHeading += ' &equiv; ' + token.norm
+        }
+      }
+
+      let collectedItemText = ''
       let lineBreakInText = false
       let textWithDashes = ''
       for(const itemFormat of token.itemFormats) {
-        let text = itemFormat.text
-
-        if (text === "\n") {
+        let itemText = itemFormat.text
+        if (itemText === "\n") {
           lineBreakInText = true
-          textWithDashes += ' - '
+          textWithDashes += '&ndash;'
           continue
         }
         let classes = itemFormat.classes
-        let popover = itemFormat.popoverHtml
-        collectedText += text
-        textWithDashes += text
-        if (!showNormalization) {
-          textHtml += '<span class=">'  + classes.join(' ') + '">' + text + '</span>'
+        let itemPopoverHtml = itemFormat.popoverHtml
+        if (itemPopoverHtml === '') {
+          itemPopoverHtml = 'normal text'
         }
-        popoverHtml += popover
-      }
-      if (collectedText === token.text) {
-          // don't show normalization prefix in popover
-        popoverPrefix = ''
-      }
 
-      popoverHtml = popoverPrefix + popoverHtml
+        itemPopoverHtml = '<p>' + this.getPopoverTextSpan(itemFormat.text, this.options.lang)+ '<ul>' + itemPopoverHtml + '</ul></p>'
+        collectedItemText += itemText
+        textWithDashes += itemText
+        if (!showNormalization) {
+          mainTextHtml += '<span class=">'  + classes.join(' ') + '">' + itemText + '</span>'
+        }
+        itemsPopoverHtml += itemPopoverHtml
+      }
       if (lineBreakInText) {
-        popoverHtml += '<em> = ' + textWithDashes + '</em>'
+        popoverHeading += '<br/>'
+        popoverHeading += '<span class="textwithdashes"> = ' + textWithDashes + '</span>'
       }
     }
 
+    popoverHtml = '<p class="popoverheading popover-' +  lang + '">' +  popoverHeading + '</p>' + '<div class="itemspopover popover-' + lang + '">' + itemsPopoverHtml + '</div>'
+    if (typeof(token.addressHtml) !== 'undefined') {
+      popoverHtml += '<p class="popoveraddress">'
+      popoverHtml += token.addressHtml
+      popoverHtml += '</p>'
+    }
 
-    
-    popoverHtml = this.addAddressesToPopoverHtml(token, popoverHtml)
-    let filteredTokenClasses = this.getTokenClasses(token.classes, this.options.highlightVariants)
+    let filteredTokenClasses = this.getTokenClasses(mainTextElementClasses, this.options.highlightVariants)
    
     let elementType = 'td';
     if (token.postNotes.length > 0) { 
@@ -193,8 +254,8 @@ class CollationTableFormatter {
     html += '<' + elementType + ' class="' + filteredTokenClasses.join(' ') + '"' 
     html += 'data-content=\'' + this.escapeHtml(popoverHtml) + '\''
     html += '>'
-    html += textHtml
-    if (showNormalization && textHtml !== token.text) {
+    html += mainTextHtml
+    if (showNormalization && mainTextHtml !== token.text) {
       html += this.normalizationPostfix
     }
     if (token.lineBreak) {
@@ -251,15 +312,11 @@ class CollationTableFormatter {
       html += popoverHtml
     }
     if (typeof(token.addressHtml) !== 'undefined') {
-      if (html !== '') {
-        html += '<br/>'
-      }
+      html += '<p class="popoveraddress">'
       html += token.addressHtml
+      html += '</p>'
     }
-//    html += '<br/>Token ' + (token.witnessTokenIndex+1) 
-//    if (typeof(token.lineNumber) !== 'undefined') {
-//      html += ' , line ' + token.lineNumber
-//    }
+
     return html
   }
  

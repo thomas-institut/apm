@@ -75,19 +75,15 @@ class AutomaticCollationTable {
     this.apiCollationUrl = this.options.urlGenerator.apiAutomaticCollation()
     this.updating = false
 
-    // Get witness titles and last change in data
-    this.lastChangeInData = ''
+    // generate witness titles
     for(const witness of this.availableWitnesses) {
       let title = witness.typeSpecificInfo.docInfo.title
       if (witness.typeSpecificInfo.localWitnessId !== 'A') {
         title += ' (' + witness.typeSpecificInfo.localWitnessId + ')'
       }
       witness.title = title
-      if (witness.typeSpecificInfo.timeStamp > this.lastChangeInData) {
-        this.lastChangeInData = witness.typeSpecificInfo.timeStamp
-      }
-    }
 
+    }
 
     this.apiCallOptions = initialApiOptions
     // if there are no witnesses in the initialApiOptions witnesses array, 
@@ -107,6 +103,10 @@ class AutomaticCollationTable {
         })
       }
     }
+
+    // Get last change in data
+    this.lastChangeInData = this.getLastChangeInData(this.availableWitnesses, initialApiOptions)
+
     
     this.collationTableData = null
     this.ctf = new CollationTableFormatter({lang: initialApiOptions.lang})
@@ -224,6 +224,17 @@ class AutomaticCollationTable {
     if (this.options.loadNow) {
         this.getCollationTable()
     }
+  }
+
+
+  getLastChangeInData(availableWitnesses, apiCallOptions) {
+    let lastChangeInData = ''
+      for(const witness of availableWitnesses) {
+        if (witness.typeSpecificInfo.timeStamp > lastChangeInData) {
+          lastChangeInData = witness.typeSpecificInfo.timeStamp
+        }
+      }
+      return lastChangeInData
   }
 
   getTitleFromOptions() {

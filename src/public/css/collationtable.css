@@ -131,36 +131,6 @@ table.collationtable td.variant_2 {
     background-color: #ffcccc;
 }
 
-/*table.collationtable td.rubric {
-    color: blue;
-    font-weight: bold;
-}
-
-table.collationtable td.addition {
-   color: #8aa9e2;
-}
-
-table.collationtable td.deletion {
-    font-weight: normal;
-    text-decoration: line-through;
-    color: red;
-}
-
-table.collationtable td.sic {
-    color: #ad9c87
-} 
-
-table.collationtable td.abbr {
-    color: chocolate;
-}
-
-
-table.collationtable td.unclear {
-    color: #143382;
-}*/
-
-
-
 .textualitem {
     
 }
@@ -185,7 +155,7 @@ table.collationtable td.unclear {
 }
 
 .unclear {
-    color: #143382;
+    color: #0099ff;
 }
 
 .illegible {
@@ -227,6 +197,14 @@ td.offline {
     font-family: serif;
 }
 
+.hand_2 {
+    font-family: Arial, sans-serif;
+}
+
+.hand_3 {
+    font-family: Scheherazade, serif;
+}
+
 .popover p.noteheader {
     margin-left: 10px;
     font-size: 0.8em;
@@ -236,6 +214,11 @@ td.offline {
 .popover p.notetext {
     margin-left: 10px;
     margin-top: 10px;
+}
+
+.popover ul {
+    padding-left: 15px;
+    padding-right: 15px;
 }
 
 .foliation {
@@ -253,3 +236,35 @@ td.offline {
 ul.siglalist {
      list-style-type: none;
 }
+
+.popovertext-ar {
+    font-size: 1.5em;
+    direction: rtl;
+}
+.popovertext-he {
+    font-size: 1.2em;
+    direction: rtl;
+}
+
+.popoverheading {
+    font-weight: bold;
+}
+
+.textwithdashes {
+    font-weight: normal;
+}
+
+.popover-ar {
+    direction: rtl;
+}
+
+.popover-he {
+    direction: rtl;
+}
+
+div.itemspopover {
+    margin-bottom: 10px;
+}
+
+
+

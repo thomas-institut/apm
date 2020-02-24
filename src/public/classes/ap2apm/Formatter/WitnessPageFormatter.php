@@ -156,10 +156,14 @@ class WitnessPageFormatter implements ItemStreamFormatter {
 
     
     public function getTextualItemFormat(TextualItem $item, bool $gotNoWb) : array {
+
+        $itemFormat = [];
         $classes = [];
         $classes[] = self::CLASS_TEXTUALITEM;
         $popoverHtml = '';
-        
+
+
+        $itemFormat = $item->getData();
         $classes[] = self::CLASS_HAND . $item->getHand();
         
         if ($item->getHand() !== 0) {
@@ -209,13 +213,21 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         if ($popoverHtml !== '') {
             $classes[] = self::CLASS_WITHPOPOVER;
         }
-        
-        return [ $text, $classes, $popoverHtml];
+
+        $itemFormat['formattedText'] = $text;
+        $itemFormat['classes'] = $classes;
+        $itemFormat['popoverHtml'] = $popoverHtml;
+        return $itemFormat;
     }
    
     public function formatTextualItem(TextualItem $item, bool $gotNoWb): string {
         
-        list($text, $classes, $popoverHtml) = $this->getTextualItemFormat($item, $gotNoWb);
+        $itemFormat = $this->getTextualItemFormat($item, $gotNoWb);
+        $text = $itemFormat['formattedText'];
+        $classes =  $itemFormat['classes'];
+        $popoverHtml = $itemFormat['popoverHtml'];
+
+
         
         $html = '<span class="' . 
                 implode(' ', $classes) . '"';

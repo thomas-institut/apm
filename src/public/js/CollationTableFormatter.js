@@ -176,13 +176,12 @@ class CollationTableFormatter {
         if (token.norm !== token.text)  {
           popoverHeading += '<br/>'
           popoverHeading += ' &equiv; ' + token.norm
-          popoverHeading += '<br/>'
         }
       }
 
       itemsPopoverHtml = token.itemFormats[0]['popoverHtml']
       if (itemsPopoverHtml === '') {
-        itemsPopoverHtml = '<ul>normal text</ul>'
+        itemsPopoverHtml = 'Normal text'
       }
       let itemClasses = token.itemFormats[0]['classes']
       for(const itemClass of itemClasses) {
@@ -197,7 +196,6 @@ class CollationTableFormatter {
         if (token.norm !== token.text)  {
           popoverHeading += '<br/>'
           popoverHeading += ' + ' + token.norm
-          popoverHeading += '<br/>'
         }
       } else {
         mainTextHtml = ''
@@ -221,7 +219,7 @@ class CollationTableFormatter {
         let classes = itemFormat.classes
         let itemPopoverHtml = itemFormat.popoverHtml
         if (itemPopoverHtml === '') {
-          itemPopoverHtml = 'normal text'
+          itemPopoverHtml = 'Normal text'
         }
 
         itemPopoverHtml = '<p>' + this.getPopoverTextSpan(itemFormat.text, this.options.lang)+ '<ul>' + itemPopoverHtml + '</ul></p>'

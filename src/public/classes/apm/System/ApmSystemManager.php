@@ -228,6 +228,7 @@ class ApmSystemManager extends SystemManager {
         $this->transcriptionManager = new ApmTranscriptionManager($this->dbConn, $this->tableNames, $this->logger);
         $this->transcriptionManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
         $this->transcriptionManager->setCacheTracker($this->getCacheTracker());
+        $this->transcriptionManager->setWitnessCache($this->getSystemDataCache());
 
         // Load plugins
         foreach($this->config[ApmConfigParameter::PLUGINS] as $pluginName) {
@@ -268,7 +269,6 @@ class ApmSystemManager extends SystemManager {
             ApmMySqlTableName::TABLE_WORKS,
             ApmMySqlTableName::TABLE_PRESETS,
             ApmMySqlTableName::TABLE_VERSIONS_TX,
-            ApmMySqlTableName::TABLE_WITNESS_CACHE,
             ApmMySqlTableName::TABLE_SYSTEM_CACHE
         ];
         
@@ -357,7 +357,6 @@ class ApmSystemManager extends SystemManager {
 
     protected function isDatabaseInitialized()
     {
-    
         // Check that all tables exist
         foreach ($this->tableNames as $table){
             if (!$this->tableExists($table)){

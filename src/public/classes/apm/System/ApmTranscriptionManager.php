@@ -40,7 +40,7 @@ use AverroesProjectToApm\DatabaseItemStream;
 use RuntimeException;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
-use ThomasInstitut\DataCache\DataTableDataCache;
+use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\InMemoryDataCache;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\DataTable\MySqlDataTable;
@@ -76,6 +76,7 @@ class ApmTranscriptionManager extends TranscriptionManager
     use CodeDebugWithLoggerTrait;
 
     const ERROR_DOCUMENT_NOT_FOUND = 50;
+    const DEFAULT_CACHE_KEY_PREFIX = 'ApmTM-';
 
     /**
      * @var PDO
@@ -134,7 +135,7 @@ class ApmTranscriptionManager extends TranscriptionManager
      */
     private $docManager;
     /**
-     * @var DataTableDataCache
+     * @var DataCache
      */
     private $witnessCache;
 
@@ -142,6 +143,10 @@ class ApmTranscriptionManager extends TranscriptionManager
      * @var InMemoryDataCache
      */
     private $localMemCache;
+    /**
+     * @var string
+     */
+    private $cacheKeyPrefix;
 
     public function __construct(PDO $dbConn, array $tableNames, LoggerInterface $logger)
     {
@@ -179,9 +184,8 @@ class ApmTranscriptionManager extends TranscriptionManager
         
         $this->columnVersionManager = new ApmColumnVersionManager($this->txVersionsTable);
 
-        $witnessCacheDataTable = new MySqlDataTable($this->dbConn, $tableNames[ApmMySqlTableName::TABLE_WITNESS_CACHE]);
-
-        $this->witnessCache = new DataTableDataCache($witnessCacheDataTable);
+        $this->witnessCache = new InMemoryDataCache();
+        $this->cacheKeyPrefix = self::DEFAULT_CACHE_KEY_PREFIX;
 
         $this->localMemCache = new InMemoryDataCache();
 
@@ -202,8 +206,16 @@ class ApmTranscriptionManager extends TranscriptionManager
         // set trackers downstream here ...
     }
 
+    public function setWitnessCache(DataCache $cache) : void {
+        $this->witnessCache = $cache;
+    }
+
+    public function setCacheKeyPrefix(string $prefix): void {
+        $this->cacheKeyPrefix = $prefix;
+    }
+
     private function getCacheKeyForWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeStamp) : string {
-        return WitnessSystemId::buildFullTxId($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
+        return  $this->cacheKeyPrefix . 'w-' . WitnessSystemId::buildFullTxId($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
     }
 
     public function getTranscriptionWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeStamp) : ApmTranscriptionWitness

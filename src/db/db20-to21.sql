@@ -20,17 +20,6 @@
  * Created: 26 Feb 2020
  */
 
-
-CREATE TABLE `ap_witness_cache` (
-                                    `id` int(11) NOT NULL,
-                                    `cachekey` varchar(512) NOT NULL,
-                                    `value` longblob NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
-ALTER TABLE `ap_witness_cache`
-    ADD PRIMARY KEY (`cachekey`);
-
-
 CREATE TABLE `ap_system_cache` (
                                     `id` int(11) NOT NULL,
                                     `cachekey` varchar(512) NOT NULL,

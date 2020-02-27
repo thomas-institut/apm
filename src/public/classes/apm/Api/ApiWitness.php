@@ -22,6 +22,7 @@ namespace APM\Api;
 
 use APM\Core\Token\TranscriptionToken;
 use APM\Core\Transcription\ItemInDocument;
+use APM\FullTranscription\ApmTranscriptionWitness;
 use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
@@ -30,6 +31,7 @@ use AverroesProjectToApm\Formatter\WitnessPageFormatter;
 use InvalidArgumentException;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
+use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\TimeString\TimeString;
 
 
@@ -107,6 +109,7 @@ class ApiWitness extends ApiController
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
 
         if ($timeStamp === '') {
+            $this->codeDebug('Timestamp is empty');
             $chunkWitnesses = $transcriptionManager->getWitnessesForChunk($workId, $chunkNumber);
             $witnessFound = false;
             foreach ($chunkWitnesses as $chunkWitnessInfo) {
@@ -115,6 +118,7 @@ class ApiWitness extends ApiController
                 $witnessLocalWitnessId = $chunkWitnessInfo->typeSpecificInfo['localWitnessId'];
                 if ($witnessDocId === $docId && $witnessLocalWitnessId === $localWitnessId) {
                     $witnessFound = true;
+                    $this->codeDebug("Setting timestamp:  $timeStamp");
                     $timeStamp = $chunkWitnessInfo->typeSpecificInfo['timeStamp'];
                     break;
                 }
@@ -131,54 +135,123 @@ class ApiWitness extends ApiController
         $returnData['timeStamp'] = $timeStamp;
         $returnData['witnessId'] = WitnessSystemId::buildFullTxId($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
 
-        $locations = $transcriptionManager->getSegmentLocationsForFullTxWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
+        // at this point we can check the cache
+        $systemCache = $this->systemManager->getSystemDataCache();
+        $cacheTracker = $this->systemManager->getCacheTracker();
+        $cacheKey = 'ApiWitness-witnessdata-' . $returnData['witnessId'];
+        $cacheKeyHtmlOutput = $cacheKey . '-html';
 
-        //$this->debug('Locations', $locations);
-
-        $returnData['segments'] = $locations;
-
-        $apmWitness = $transcriptionManager->getTranscriptionWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
-
-        // Items
-        $itemArray = [];
-        $itemWithAddressArray = $apmWitness->getItemWithAddressArray();
-        foreach($itemWithAddressArray as $itemIndex => $itemWithAddress) {
-            /** @var ItemInDocument $itemWithAddress */
-            $theItem = $itemWithAddress->getItem();
-            $theAddress = $itemWithAddress->getAddress();
-            $itemData = [];
-            $itemData['address'] = $theAddress->getData();
-            $itemData['item'] = $theItem->getData();
-            $itemArray[] = $itemData;
-        }
-        $returnData['items'] = $itemArray;
-
-        // Tokens
-        $tokens = $apmWitness->getTokens();
-        $tokenArray = [];
-        foreach($tokens as $token) {
-            /** @var TranscriptionToken $token */
-            $tokenArray[] = $token->getData();
-        }
-        $returnData['tokens'] = $tokenArray;
-
-        if ($outputType === 'data') {
-            return $this->responseWithJson($response, $returnData, 200);
+        // if output is html it can be even faster
+        if ($outputType === 'html') {
+            //$this->codeDebug("Checking system cache for key $cacheKeyHtmlOutput");
+            $cacheMiss = false;
+            try {
+                $cachedHtml = $systemCache->get($cacheKeyHtmlOutput);
+            } catch (KeyNotInCacheException $e) {
+                //$this->codeDebug("Cache miss :(");
+                $cacheTracker->incrementMisses();
+                $cacheMiss = true;
+            }
+            if (!$cacheMiss) {
+                //$this->codeDebug("Cache hit!!");
+                $cacheTracker->incrementHits();
+                return $this->responseWithText($response, $cachedHtml);
+            }
         }
 
-        // HTML
-        $userDirectory = new ApUserDirectory($this->getDataManager()->userManager);
-        $formatter = new WitnessPageFormatter($userDirectory);
-        $html = $formatter->formatItemStream($apmWitness->getDatabaseItemStream());
-        $returnData['html'] = $html;
+
+        //$this->codeDebug("Checking system cache for key $cacheKey");
+        $cacheMiss = false;
+        try {
+            $cachedBlob = $systemCache->get($cacheKey);
+        } catch (KeyNotInCacheException $e) {
+            $cacheMiss = true;
+        }
+
+        if ($cacheMiss) {
+            //$this->codeDebug('Cache miss :(');
+            $cacheTracker->incrementMisses();
+            $locations = $transcriptionManager->getSegmentLocationsForFullTxWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
+
+            $returnData['segments'] = $locations;
+
+            $apmWitness = $transcriptionManager->getTranscriptionWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
+
+            // Items
+            $itemArray = [];
+            $itemWithAddressArray = $apmWitness->getItemWithAddressArray();
+            foreach($itemWithAddressArray as $itemIndex => $itemWithAddress) {
+                /** @var ItemInDocument $itemWithAddress */
+                $theItem = $itemWithAddress->getItem();
+                $theAddress = $itemWithAddress->getAddress();
+                $itemData = [];
+                $itemData['address'] = $theAddress->getData();
+                $itemData['item'] = $theItem->getData();
+                $itemArray[] = $itemData;
+            }
+            $returnData['items'] = $itemArray;
+
+            // Tokens
+            $tokens = $apmWitness->getTokens();
+            $tokenArray = [];
+            foreach($tokens as $token) {
+                /** @var TranscriptionToken $token */
+                $tokenArray[] = $token->getData();
+            }
+            $returnData['tokens'] = $tokenArray;
+
+            // Plain text version
+            $returnData['plainText'] = $apmWitness->getPlainText();
+
+            // HTML
+            $html = $this->getWitnessHtml($apmWitness);
+
+            $systemCache->set($cacheKey, serialize($returnData));
+            // save html on its own key in the cache to speed up html output later
+            $systemCache->set($cacheKeyHtmlOutput, $html);
+
+            $returnData['html'] = $html;
+
+            $returnData['cached'] = false;
+
+        } else {
+            //$this->codeDebug('Cache hit!');
+            $cacheTracker->incrementHits();
+            $requestedWitnessId = $returnData['requestedWitnessId'];
+            $returnData = unserialize($cachedBlob);
+
+            $cacheHit = true;
+            try {
+                $html = $systemCache->get($cacheKeyHtmlOutput);
+            } catch (KeyNotInCacheException $e) {
+                $cacheHit = false;
+            }
+
+            if (!$cacheHit) {
+                $cacheTracker->incrementMisses();
+                $this->codeDebug("Cache miss trying to get html output ");
+                $returnData['status'] = 'Error getting html from cache';
+            }
+            $cacheTracker->incrementHits();
+            $returnData['html']  = $html;
+
+            $returnData['requestedWitnessId'] = $requestedWitnessId;
+
+            $returnData['cached'] = true;
+        }
+
 
         if ($outputType === 'html') {
-            return $this->responseWithText($response, $html);
+            return $this->responseWithText($response, $returnData['html']);
         }
 
-        // Plain text version
-        $returnData['plainText'] = $apmWitness->getPlainText();
-
         return $this->responseWithJson($response, $returnData, 200);
+    }
+
+
+    private function getWitnessHtml(ApmTranscriptionWitness $apmWitness) : string {
+        $userDirectory = new ApUserDirectory($this->getDataManager()->userManager);
+        $formatter = new WitnessPageFormatter($userDirectory);
+        return $formatter->formatItemStream($apmWitness->getDatabaseItemStream());
     }
 }

@@ -28,6 +28,9 @@ use APM\Presets\DataTablePresetManager;
 use APM\Presets\PresetManager;
 use APM\Plugin\HookManager;
 
+use ThomasInstitut\DataCache\DataCache;
+use ThomasInstitut\DataCache\DataTableDataCache;
+use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use Exception;
 use InvalidArgumentException;
@@ -121,6 +124,10 @@ class ApmSystemManager extends SystemManager {
      * @var ApmTranscriptionManager
      */
     private $transcriptionManager;
+    /**
+     * @var DataTableDataCache
+     */
+    private $systemDataCache;
 
 
     public function __construct(array $configArray) {
@@ -198,6 +205,10 @@ class ApmSystemManager extends SystemManager {
                     "Database schema not up to date");
             return;
         }
+
+        // set up system data cache
+        $this->systemDataCache = new DataTableDataCache(new MySqlDataTable($this->dbConn,
+            $this->tableNames[ApmMySqlTableName::TABLE_SYSTEM_CACHE]));
         
         // Set up Collatex
         $this->collationEngine = new Collatex(
@@ -216,7 +227,8 @@ class ApmSystemManager extends SystemManager {
         // Set up TranscriptionManager
         $this->transcriptionManager = new ApmTranscriptionManager($this->dbConn, $this->tableNames, $this->logger);
         $this->transcriptionManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
-        
+        $this->transcriptionManager->setCacheTracker($this->getCacheTracker());
+
         // Load plugins
         foreach($this->config[ApmConfigParameter::PLUGINS] as $pluginName) {
             $pluginPhpFile = $this->config[ApmConfigParameter::PLUGIN_DIR] . '/' .
@@ -256,6 +268,8 @@ class ApmSystemManager extends SystemManager {
             ApmMySqlTableName::TABLE_WORKS,
             ApmMySqlTableName::TABLE_PRESETS,
             ApmMySqlTableName::TABLE_VERSIONS_TX,
+            ApmMySqlTableName::TABLE_WITNESS_CACHE,
+            ApmMySqlTableName::TABLE_SYSTEM_CACHE
         ];
         
         $tables = [];
@@ -514,5 +528,11 @@ class ApmSystemManager extends SystemManager {
     public function getTranscriptionManager(): TranscriptionManager
     {
         return $this->transcriptionManager;
+    }
+
+
+    public function getSystemDataCache(): DataCache
+    {
+        return $this->systemDataCache;
     }
 }

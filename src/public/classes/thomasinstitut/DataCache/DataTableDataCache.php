@@ -24,7 +24,7 @@ use ThomasInstitut\DataTable\DataTable;
 
 class DataTableDataCache implements DataCache
 {
-    const COLUMN_KEY = 'key';
+    const COLUMN_KEY = 'cachekey';
     const COLUMN_VALUE = 'value';
     /**
      * @var DataTable

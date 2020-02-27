@@ -244,7 +244,8 @@ class ApiCollation extends ApiController
                     }
                     $witnessInfo = WitnessSystemId::getFullTxInfo($requestedWitness['systemId']);
                     if ($witnessInfo->typeSpecificInfo['timeStamp'] === '') {
-                        $witnessInfo->typeSpecificInfo['timeStamp'] = TimeString::now();
+                        $this->codeDebug('Timestamp is empty ');
+                        //$witnessInfo->typeSpecificInfo['timeStamp'] = TimeString::now();
                     }
                     try {
                         $fullTxWitness = $transcriptionManager->getTranscriptionWitness($witnessInfo->workId,

@@ -27,8 +27,11 @@ use APM\FullTranscription\TranscriptionManager;
 use APM\Plugin\HookManager;
 use APM\Presets\PresetManager;
 use Monolog\Logger;
+use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\ErrorReporter\ErrorReporter;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
+use ThomasInstitut\Profiler\CacheTrackerAware;
+use ThomasInstitut\Profiler\SimpleCacheTrackerAware;
 use ThomasInstitut\Profiler\SimpleSqlQueryCounterTrackerAware;
 use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
 
@@ -43,10 +46,11 @@ use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-abstract class SystemManager implements  ErrorReporter, SqlQueryCounterTrackerAware {
+abstract class SystemManager implements  ErrorReporter, SqlQueryCounterTrackerAware, CacheTrackerAware {
 
     use SimpleErrorReporterTrait;
     use SimpleSqlQueryCounterTrackerAware;
+    use SimpleCacheTrackerAware;
 
     const ERROR_NO_ERROR = 0;
     const MSG_ERROR_NO_ERROR = 'No Error';
@@ -74,6 +78,7 @@ abstract class SystemManager implements  ErrorReporter, SqlQueryCounterTrackerAw
         $this->resetError();
         $this->config = $config;
         $this->initSqlQueryCounterTracker();
+        $this->initCacheTracker();
     }
     
     public function fatalErrorOccurred() : bool {
@@ -97,6 +102,6 @@ abstract class SystemManager implements  ErrorReporter, SqlQueryCounterTrackerAw
     abstract public function getSettingsManager() : SettingsManager;
     abstract public function getCollationEngine() : CollationEngine;
     abstract public function getTranscriptionManager() : TranscriptionManager;
-    
+    abstract public function getSystemDataCache() : DataCache;
 
 }

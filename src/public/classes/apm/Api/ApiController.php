@@ -131,6 +131,7 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
        $this->profiler = new SimpleProfiler();
        $this->profiler->registerProperty('time', new TimeTracker());
        $this->profiler->registerProperty('mysql-queries', $this->systemManager->getSqlQueryCounterTracker());
+       $this->profiler->registerProperty('cache', $this->systemManager->getCacheTracker());
     }
 
     /**
@@ -231,7 +232,10 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
         $lapInfo = $this->profiler->getLaps();
         $totalTimeInMs = $this->getProfilerTotalTime() * 1000;
         $totalQueries = $lapInfo[count($lapInfo)-1]['mysql-queries']['cummulative']['Total'];
-        $this->logger->debug(sprintf("PROFILER %s, finished in %0.2f ms, %d MySql queries", $pageTitle, $totalTimeInMs, $totalQueries), $lapInfo);
+        $cacheHits = $lapInfo[count($lapInfo)-1]['cache']['cummulative']['hits'];
+        $cacheMisses = $lapInfo[count($lapInfo)-1]['cache']['cummulative']['misses'];
+        $this->logger->debug(sprintf("PROFILER %s, finished in %0.2f ms, %d MySql queries, %d cache hits, %d misses",
+            $pageTitle, $totalTimeInMs, $totalQueries, $cacheHits, $cacheMisses), $lapInfo);
     }
 
     protected function getProfilerTotalTime() : float

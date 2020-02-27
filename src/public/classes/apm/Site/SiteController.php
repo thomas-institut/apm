@@ -136,6 +136,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         $this->profiler = new SimpleProfiler();
         $this->profiler->registerProperty('time', new TimeTracker());
         $this->profiler->registerProperty('mysql-queries', $this->systemManager->getSqlQueryCounterTracker());
+        $this->profiler->registerProperty('cache', $this->systemManager->getCacheTracker());
 
        
        // Check if the user has been authenticated by the authentication middleware

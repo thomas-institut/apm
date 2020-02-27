@@ -36,5 +36,7 @@ class ApmMySqlTableName
     const TABLE_WORKS = 'works';
     const TABLE_PRESETS = 'presets';
     const TABLE_VERSIONS_TX = 'versions_tx';
+    const TABLE_WITNESS_CACHE = 'witness_cache';
+    const TABLE_SYSTEM_CACHE = 'system_cache';
 
 }

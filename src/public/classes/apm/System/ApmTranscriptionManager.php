@@ -37,10 +37,17 @@ use AverroesProject\Data\EdNoteManager;
 use AverroesProject\Data\MySqlHelper;
 use AverroesProject\TxText\Item as ApItem;
 use AverroesProjectToApm\DatabaseItemStream;
+use RuntimeException;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
+use ThomasInstitut\DataCache\DataTableDataCache;
+use ThomasInstitut\DataCache\InMemoryDataCache;
+use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
+use ThomasInstitut\Profiler\CacheTracker;
+use ThomasInstitut\Profiler\CacheTrackerAware;
+use ThomasInstitut\Profiler\SimpleCacheTrackerAware;
 use ThomasInstitut\Profiler\SimpleSqlQueryCounterTrackerAware;
 use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
 use ThomasInstitut\Profiler\SqlQueryCounterTracker;
@@ -53,11 +60,16 @@ use Psr\Log\LoggerInterface;
 use ThomasInstitut\ErrorReporter\ErrorReporter;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
 
-class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCounterTrackerAware, ErrorReporter, LoggerAwareInterface, CodeDebugInterface
+class ApmTranscriptionManager extends TranscriptionManager
+    implements SqlQueryCounterTrackerAware, CacheTrackerAware, ErrorReporter, LoggerAwareInterface, CodeDebugInterface
 {
 
     use SimpleSqlQueryCounterTrackerAware {
         setSqlQueryCounterTracker as private localSetSqlQueryCounterTracker;
+    }
+
+    use SimpleCacheTrackerAware {
+        setCacheTracker as private localSetCacheTracker;
     }
     use SimpleErrorReporterTrait;
     use LoggerAwareTrait;
@@ -121,6 +133,15 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
      * @var ApmDocManager
      */
     private $docManager;
+    /**
+     * @var DataTableDataCache
+     */
+    private $witnessCache;
+
+    /**
+     * @var InMemoryDataCache
+     */
+    private $localMemCache;
 
     public function __construct(PDO $dbConn, array $tableNames, LoggerInterface $logger)
     {
@@ -158,6 +179,12 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
         
         $this->columnVersionManager = new ApmColumnVersionManager($this->txVersionsTable);
 
+        $witnessCacheDataTable = new MySqlDataTable($this->dbConn, $tableNames[ApmMySqlTableName::TABLE_WITNESS_CACHE]);
+
+        $this->witnessCache = new DataTableDataCache($witnessCacheDataTable);
+
+        $this->localMemCache = new InMemoryDataCache();
+
         $this->setLogger($logger);
     }
 
@@ -169,10 +196,64 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
         $this->docManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
     }
 
+    public function setCacheTracker(CacheTracker $tracker): void
+    {
+        $this->localSetCacheTracker($tracker);
+        // set trackers downstream here ...
+    }
+
+    private function getCacheKeyForWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeStamp) : string {
+        return WitnessSystemId::buildFullTxId($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
+    }
+
     public function getTranscriptionWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeStamp) : ApmTranscriptionWitness
     {
 
         $this->codeDebug('Getting Transcription witness', [ $workId, $chunkNumber, $docId, $localWitnessId, $timeStamp]);
+
+        if ($timeStamp === '') {
+            $this->codeDebug('Timestamp is empty');
+            $chunkWitnesses = $this->getWitnessesForChunk($workId, $chunkNumber);
+            $witnessFound = false;
+            foreach ($chunkWitnesses as $chunkWitnessInfo) {
+                /** @var WitnessInfo $chunkWitnessInfo */
+                $witnessDocId = $chunkWitnessInfo->typeSpecificInfo['docId'];
+                $witnessLocalWitnessId = $chunkWitnessInfo->typeSpecificInfo['localWitnessId'];
+                if ($witnessDocId === $docId && $witnessLocalWitnessId === $localWitnessId) {
+                    $witnessFound = true;
+                    $timeStamp = $chunkWitnessInfo->typeSpecificInfo['timeStamp'];
+                    $this->codeDebug("Setting timestamp:  $timeStamp");
+                    break;
+                }
+            }
+            if (!$witnessFound) {
+                $this->setError( "Document $docId not found", self::ERROR_DOCUMENT_NOT_FOUND);
+                throw new InvalidArgumentException($this->getErrorMessage(), $this->getErrorCode());
+            }
+        }
+
+
+        // first, check if it's in the cache
+        $cacheKey = $this->getCacheKeyForWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
+        $cacheValue = '';
+        try {
+            $cacheValue = $this->witnessCache->get($cacheKey);
+        } catch (KeyNotInCacheException $e) {
+        }
+
+        if ($cacheValue !== '') {
+            // cache hit!
+            $this->cacheTracker->incrementHits();
+            $txWitness = unserialize($cacheValue);
+            if ($txWitness === false) {
+                throw new RuntimeException('Error unserializing from witness cache');
+            }
+            return $txWitness;
+        }
+
+        // cache miss
+        $this->cacheTracker->incrementMisses();
+
         $locations = $this->getSegmentLocationsForFullTxWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
         //$this->codeDebug('Locations', $locations);
         $apStreams = [];
@@ -207,6 +288,10 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
         $firstLineNumber = $this->getInitialLineNumberForStartLocation( $firstLocation, $timeStamp);
         //$this->logger->debug('First Line number: ' . $firstLineNumber);
         $txWitness->setInitialLineNumberForTextBox($firstPageId, $firstColumn, $firstLineNumber);
+
+        $this->witnessCache->set($cacheKey, serialize($txWitness));
+        $this->cacheTracker->incrementCreate();
+
         return $txWitness;
 
     }
@@ -415,7 +500,7 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
             ],
             $timeString);
 
-        $this->codeDebug('getSegmentLocations', [ $workId, $chunkNumber, $docId, $localWitnessId, $timeString, $chunkLocationMap]);
+        //$this->codeDebug('getSegmentLocations', [ $workId, $chunkNumber, $docId, $localWitnessId, $timeString, $chunkLocationMap]);
         if (!isset($chunkLocationMap[$workId][$chunkNumber][$docId][$localWitnessId])) {
             return [];
         }
@@ -482,7 +567,7 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
     private function getChunkLocationMapFromDatabase(array $conditions, string $timeString) : array
     {
 
-        $this->codeDebug('Getting chunk map from DB', [ $conditions, $timeString]);
+        //$this->codeDebug('Getting chunk map from DB', [ $conditions, $timeString]);
         $ti = $this->tNames[ApmMySqlTableName::TABLE_ITEMS];
         $te = $this->tNames[ApmMySqlTableName::TABLE_ELEMENTS];
         $tp = $this->tNames[ApmMySqlTableName::TABLE_PAGES];
@@ -543,7 +628,7 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
             " AND $tp.valid_until>'$timeString'" .
             " ORDER BY $tp.seq, $te.column_number, $te.seq, $ti.seq ASC";
 
-        $this->codeDebug("SQL Query", [ $query]);
+        //$this->codeDebug("SQL Query", [ $query]);
         $r = $this->databaseHelper->query($query);
 
         $chunkMarkLocations = [];
@@ -769,6 +854,23 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
      */
     public function getWitnessesForChunk(string $workId, int $chunkNumber): array
     {
+
+        $this->codeDebug("Getting witnesses for chunk $workId-$chunkNumber");
+        $localCacheKey = 'getW4C:' . $workId . '-' . $chunkNumber;
+        $cacheMiss = false;
+        try {
+
+            $returnValue = unserialize($this->localMemCache->get($localCacheKey));
+        } catch (KeyNotInCacheException $e) {
+            $cacheMiss = true;
+        }
+
+        if (!$cacheMiss) {
+            $this->codeDebug("In local transcription manager cache with key $localCacheKey");
+            return $returnValue;
+        }
+        $this->codeDebug("Not in local transcription manager in cache");
+
         $chunkLocationMap = $this->getChunkLocationMapForChunk($workId, $chunkNumber, TimeString::now());
         $versionMap = $this->getVersionsForChunkLocationMap($chunkLocationMap);
         $lastVersions = $this->getLastChunkVersionFromVersionMap($versionMap);
@@ -814,6 +916,8 @@ class ApmTranscriptionManager extends TranscriptionManager implements SqlQueryCo
                 $witnessInfoArray[] = $witnessInfo;
             }
         }
+
+        $this->localMemCache->set($localCacheKey, serialize($witnessInfoArray));
         return $witnessInfoArray;
     }
 

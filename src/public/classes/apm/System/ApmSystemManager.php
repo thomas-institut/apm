@@ -30,7 +30,6 @@ use APM\Plugin\HookManager;
 
 use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\DataTableDataCache;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use Exception;
 use InvalidArgumentException;
@@ -228,7 +227,7 @@ class ApmSystemManager extends SystemManager {
         $this->transcriptionManager = new ApmTranscriptionManager($this->dbConn, $this->tableNames, $this->logger);
         $this->transcriptionManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
         $this->transcriptionManager->setCacheTracker($this->getCacheTracker());
-        $this->transcriptionManager->setWitnessCache($this->getSystemDataCache());
+        $this->transcriptionManager->setDataCache($this->getSystemDataCache());
 
         // Load plugins
         foreach($this->config[ApmConfigParameter::PLUGINS] as $pluginName) {

@@ -137,7 +137,7 @@ class ApmTranscriptionManager extends TranscriptionManager
     /**
      * @var DataCache
      */
-    private $witnessCache;
+    private $dataCache;
 
     /**
      * @var InMemoryDataCache
@@ -184,7 +184,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         
         $this->columnVersionManager = new ApmColumnVersionManager($this->txVersionsTable);
 
-        $this->witnessCache = new InMemoryDataCache();
+        $this->dataCache = new InMemoryDataCache();
         $this->cacheKeyPrefix = self::DEFAULT_CACHE_KEY_PREFIX;
 
         $this->localMemCache = new InMemoryDataCache();
@@ -206,8 +206,9 @@ class ApmTranscriptionManager extends TranscriptionManager
         // set trackers downstream here ...
     }
 
-    public function setWitnessCache(DataCache $cache) : void {
-        $this->witnessCache = $cache;
+    public function setDataCache(DataCache $cache) : void {
+        $this->dataCache = $cache;
+        // set caches downstream here
     }
 
     public function setCacheKeyPrefix(string $prefix): void {
@@ -244,12 +245,11 @@ class ApmTranscriptionManager extends TranscriptionManager
             }
         }
 
-
         // first, check if it's in the cache
         $cacheKey = $this->getCacheKeyForWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
         $cacheValue = '';
         try {
-            $cacheValue = $this->witnessCache->get($cacheKey);
+            $cacheValue = $this->dataCache->get($cacheKey);
         } catch (KeyNotInCacheException $e) {
         }
 
@@ -301,7 +301,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         //$this->logger->debug('First Line number: ' . $firstLineNumber);
         $txWitness->setInitialLineNumberForTextBox($firstPageId, $firstColumn, $firstLineNumber);
 
-        $this->witnessCache->set($cacheKey, serialize($txWitness));
+        $this->dataCache->set($cacheKey, serialize($txWitness));
         $this->cacheTracker->incrementCreate();
 
         return $txWitness;
@@ -310,7 +310,6 @@ class ApmTranscriptionManager extends TranscriptionManager
 
     private function calcSeqNumber(ApmChunkMarkLocation $loc)
     {
-        //return $loc->pageSequence*1000000 + $loc->columnNumber * 10000 + $loc->elementSequence*100 + $loc->itemSequence;
         return $this->calcSeqNumberGeneric($loc->pageSequence, $loc->columnNumber, $loc->elementSequence, $loc->itemSequence);
     }
 

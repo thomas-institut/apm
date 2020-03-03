@@ -1,6 +1,6 @@
 <?php
 /* 
- *  Copyright (C) 2019 Universität zu Köln
+ *  Copyright (C) 2020 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -20,10 +20,19 @@
 namespace APM\Core\Witness;
 
 
-interface iWitness
+/**
+ * Interface WitnessDecorator
+ *
+ * @package APM\Core\Witness
+ */
+
+interface WitnessDecorator
 {
-    public function getTokens() : array;
-    public function getPlainText(bool $normalized = false) : string;
-    public function getWorkId() : string;
-    public function getChunkId() : string;
+    /**
+     * Returns an array of decorated tokens
+     * Each decorator defines what this decorated token actually is.
+     * @param Witness $w
+     * @return array
+     */
+    public function getDecoratedTokens(Witness $w) : array;
 }

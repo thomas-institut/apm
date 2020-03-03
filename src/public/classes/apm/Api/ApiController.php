@@ -21,6 +21,7 @@
 namespace APM\Api;
 
 use APM\CollationEngine\CollationEngine;
+use APM\CollationEngine\DoNothingCollationEngine;
 use APM\System\ApmContainerKey;
 use DI\Container;
 use DI\DependencyException;
@@ -108,6 +109,10 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
      * @var bool
      */
     private $debugMode;
+    /**
+     * @var string
+     */
+    private $dataManager;
 
 
     /**
@@ -124,9 +129,9 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
 
        $this->systemManager = $ci->get(ApmContainerKey::SYSTEM_MANAGER);
        $this->apiUserId = $ci->get(ApmContainerKey::API_USER_ID); // this should be set by the authenticator!
-       $this->languages =$ci->get(ApmContainerKey::CONFIG)['languages'];
+       $this->languages = $ci->get(ApmContainerKey::CONFIG)['languages'];
        $this->logger = $this->systemManager->getLogger()->withName('API');
-       //$this->debug('Api User ID: ' . $this->apiUserId);
+       $this->dataManager = $ci->get(ApmContainerKey::DATA_MANAGER);
 
        $this->profiler = new SimpleProfiler();
        $this->profiler->registerProperty('time', new TimeTracker());
@@ -136,18 +141,17 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
 
     /**
      * @return DataManager
-     * @throws DependencyException
-     * @throws NotFoundException
      */
     protected function getDataManager() : DataManager {
-        return $this->container->get(ApmContainerKey::DATA_MANAGER);
+        return $this->dataManager;
     }
 
     /**
      * @return CollationEngine
      */
     protected function getCollationEngine() : CollationEngine {
-        return $this->systemManager->getCollationEngine();
+        //return $this->systemManager->getCollationEngine();
+        return new DoNothingCollationEngine();
     }
 
 

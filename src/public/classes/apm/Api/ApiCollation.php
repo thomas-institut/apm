@@ -26,6 +26,7 @@ use APM\FullTranscription\ApmTranscriptionWitness;
 use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
+use AverroesProject\Data\UserManagerUserInfoProvider;
 use AverroesProjectToApm\DatabaseItemStream;
 use AverroesProjectToApm\DatabaseItemStreamWitness;
 use DI\DependencyException;
@@ -310,6 +311,7 @@ class ApiCollation extends ApiController
             return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_COLLATION_ENGINE_ERROR, 'msg' => $msg], 409);
         }
         // @codeCoverageIgnoreEnd
+        $this->codeDebug('CollationEngine output', $collatexOutput);
         
         $this->profiler->lap('Collatex done');
         try {
@@ -331,8 +333,9 @@ class ApiCollation extends ApiController
         // @codeCoverageIgnoreEnd
         
         $this->profiler->lap('Collation table built from collatex output');
-        $userDirectory = new ApUserDirectory($dataManager->userManager);
-        $decorator = new TransitionalCollationTableDecorator($userDirectory);
+        $userDirectory = new UserManagerUserInfoProvider($dataManager->userManager);
+        $decorator = new TransitionalCollationTableDecorator();
+        $decorator->setUserInfoProvider($userDirectory);
         $decorator->setLogger($this->logger);
 
         $decoratedCollationTable = $decorator->decorate($collationTable);
@@ -344,10 +347,6 @@ class ApiCollation extends ApiController
         $qdw = new EditionWitness($collationTable, $collationTable->getSigla()[0], $language);
         
         $quickEdition = $qdw->generateEdition();
-
-
-
-        
 
         $this->profiler->stop();
         $this->logProfilerData("CollationTable-$workId-$chunkNumber-$language");

@@ -22,17 +22,18 @@ namespace APM\Api;
 
 use APM\Core\Token\TranscriptionToken;
 use APM\Core\Transcription\ItemInDocument;
+use APM\Core\Witness\SimpleHtmlWitnessDecorator;
+use APM\Decorators\Witness\ApmTxWitnessDecorator;
 use APM\FullTranscription\ApmTranscriptionWitness;
 use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
-use AverroesProjectToApm\ApUserDirectory;
+use AverroesProject\Data\UserManagerUserInfoProvider;
 use AverroesProjectToApm\Formatter\WitnessPageFormatter;
 use InvalidArgumentException;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
-use ThomasInstitut\TimeString\TimeString;
 
 
 class ApiWitness extends ApiController
@@ -47,12 +48,13 @@ class ApiWitness extends ApiController
         $witnessId = $request->getAttribute('witnessId');
         $this->profiler->start();
         $outputType = $request->getAttribute('outputType', 'full');
+        $useCache = $request->getAttribute('cache',  'usecache') === 'usecache';
 
         $witnessType = WitnessSystemId::getType($witnessId);
 
         switch ($witnessType) {
             case WitnessType::FULL_TRANSCRIPTION:
-                $newResponse =  $this->getFullTxWitness($witnessId, $outputType, $response);
+                $newResponse =  $this->getFullTxWitness($witnessId, $outputType, $response, $useCache);
                 $this->profiler->stop();
                 $this->logProfilerData('API-getWitness ' . $witnessId . ' output ' . $outputType);
                 return $newResponse;
@@ -75,8 +77,7 @@ class ApiWitness extends ApiController
         }
     }
 
-    private function getFullTxWitness(string $witnessId, string $outputType, Response $response) : Response {
-        //$witnessInfo = new WitnessInfo();
+    private function getFullTxWitness(string $witnessId, string $outputType, Response $response, bool $useCache) : Response {
         try {
             $witnessInfo = WitnessSystemId::getFullTxInfo($witnessId);
         } catch (InvalidArgumentException $e) {
@@ -96,6 +97,7 @@ class ApiWitness extends ApiController
         $localWitnessId = $witnessInfo->typeSpecificInfo['localWitnessId'];
         $timeStamp = $witnessInfo->typeSpecificInfo['timeStamp'];
 
+        $this->codeDebug('UseCache', [$useCache]);
         $returnData = [
             'status' => 'OK',
             'requestedWitnessId' => $witnessId,
@@ -103,7 +105,7 @@ class ApiWitness extends ApiController
             'chunkNumber' => $chunkNumber,
             'docId' => $docId,
             'localWitnessId' => $localWitnessId,
-            'timeStamp' => $timeStamp
+            'timeStamp' => $timeStamp,
         ];
 
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
@@ -142,7 +144,7 @@ class ApiWitness extends ApiController
         $cacheKeyHtmlOutput = $cacheKey . '-html';
 
         // if output is html it can be even faster
-        if ($outputType === 'html') {
+        if ($useCache && $outputType === 'html') {
             //$this->codeDebug("Checking system cache for key $cacheKeyHtmlOutput");
             $cacheMiss = false;
             try {
@@ -159,18 +161,19 @@ class ApiWitness extends ApiController
             }
         }
 
-
-        //$this->codeDebug("Checking system cache for key $cacheKey");
         $cacheMiss = false;
-        try {
-            $cachedBlob = $systemCache->get($cacheKey);
-        } catch (KeyNotInCacheException $e) {
-            $cacheMiss = true;
+        if ($useCache) {
+            //$this->codeDebug("Checking system cache for key $cacheKey");
+            try {
+                $cachedBlob = $systemCache->get($cacheKey);
+            } catch (KeyNotInCacheException $e) {
+                $cacheTracker->incrementMisses();
+                $cacheMiss = true;
+            }
         }
 
-        if ($cacheMiss) {
-            //$this->codeDebug('Cache miss :(');
-            $cacheTracker->incrementMisses();
+        if (!$useCache || $cacheMiss) {
+
             $locations = $transcriptionManager->getSegmentLocationsForFullTxWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
 
             $returnData['segments'] = $locations;
@@ -187,6 +190,7 @@ class ApiWitness extends ApiController
                 $itemData = [];
                 $itemData['address'] = $theAddress->getData();
                 $itemData['item'] = $theItem->getData();
+                $itemData['class'] = 'ItemInDocument';
                 $itemArray[] = $itemData;
             }
             $returnData['items'] = $itemArray;
@@ -213,6 +217,7 @@ class ApiWitness extends ApiController
             $returnData['html'] = $html;
 
             $returnData['cached'] = false;
+            $returnData['usingCache'] = $useCache;
 
         } else {
             //$this->codeDebug('Cache hit!');
@@ -238,11 +243,32 @@ class ApiWitness extends ApiController
             $returnData['requestedWitnessId'] = $requestedWitnessId;
 
             $returnData['cached'] = true;
+            $returnData['usingCache'] = $useCache;
         }
-
 
         if ($outputType === 'html') {
             return $this->responseWithText($response, $returnData['html']);
+        }
+
+        if ($outputType === 'deco1') {
+            $this->codeDebug("Output deco1");
+            $decorator = new SimpleHtmlWitnessDecorator();
+            $theWitness = $transcriptionManager->getTranscriptionWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
+            $theTokens = $decorator->getDecoratedTokens($theWitness);
+            $html = '';
+            foreach($theTokens as $decoratedToken) {
+                $html .=  $decoratedToken;
+            }
+            return $this->responseWithText($response, $html);
+        }
+
+        if ($outputType === 'deco2') {
+            $this->codeDebug("Output deco2");
+            $decorator = new ApmTxWitnessDecorator();
+            $decorator->setLogger($this->logger);
+            $theWitness = $transcriptionManager->getTranscriptionWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
+            $theTokens = $decorator->getDecoratedTokens($theWitness);
+            return $this->responseWithJson($response, $theTokens);
         }
 
         return $this->responseWithJson($response, $returnData, 200);
@@ -250,8 +276,9 @@ class ApiWitness extends ApiController
 
 
     private function getWitnessHtml(ApmTranscriptionWitness $apmWitness) : string {
-        $userDirectory = new ApUserDirectory($this->getDataManager()->userManager);
-        $formatter = new WitnessPageFormatter($userDirectory);
+        $formatter = new WitnessPageFormatter();
+        $uip = new UserManagerUserInfoProvider($this->getDataManager()->userManager);
+        $formatter->setPersonInfoProvider($uip);
         return $formatter->formatItemStream($apmWitness->getDatabaseItemStream());
     }
 }

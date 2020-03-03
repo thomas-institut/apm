@@ -334,7 +334,7 @@ $app->group('/api', function (RouteCollectorProxy $group){
         ->setName('api.user.new');
 
     // WITNESSES
-    $group->get('/witness/get/{witnessId}[/{outputType}]',
+    $group->get('/witness/get/{witnessId}[/{outputType}[/{cache}]]',
         ApiWitness::class . ':getWitness')
         ->setName('api.witness.get');
 

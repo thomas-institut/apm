@@ -32,19 +32,39 @@ abstract class CollationEngine extends Engine {
 
     
      /**
+
+     * @param array $witnessArray
+     * @return array
+     */
+
+
+    /**
      * Runs the collation engine on an array of witneses
-     * 
-     * The witnesses in the input array should be in the format expected by 
+     *
+     * The witnesses in the input array should be in the format expected by
      * Collatex:
-     * 
-     *    $witness = [ 
-     *                  'id' => 'WitnessID', 
-     *                  'tokens' => [ 
-     *                      ['t' => 'tokenText1', 'n' => 'normalization1', ...],
-     *                      ['t' => 'tokenText2', 'n' => 'normalization2', ...],
+     *
+     *    $witnessArray[]  = [
+     *                  'id' => 'witnessId-N',
+     *                  'tokens' => [
+     *                      ['t' => 'tokenText1', 'n' => 'normalization1', 'witnessRef' => ref1...],
+     *                      ['t' => 'tokenText2', 'n' => 'normalization2', 'witnessRef' => ref2...],
      *                      ...
      *                  ]
-     *               ]
+     *               ],
+     *              [
+     *
+     * The output is an array with two elements:  $output['witnesses']
+     * and $output['table']
+     * $output['witnesses'] is an array with one element for each witness
+     * processed
+     *    $output['witnesses'] = ['witnessId1', 'witnessId2', ....]
+     *
+     *
+     * $output['table'] is an array of segments.
+     * Each segment is an array with one element per witness, each element contains
+     * an array of tokens with a copy of one of the tokens given in the input.
+     *
      * @param array $witnessArray
      * @return array
      */
@@ -55,6 +75,4 @@ abstract class CollationEngine extends Engine {
     }
     
 
-    
-    
 }

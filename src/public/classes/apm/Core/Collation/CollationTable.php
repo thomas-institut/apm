@@ -42,7 +42,7 @@ use InvalidArgumentException;
  * 
  * The CollationTable class by itself does not guarantee any proper alignment
  * of the witnesses' tokens, whatever "proper alignment" may mean. The class
- * provides, however, suitable data to feed a collation
+ * provides, however, a method to generate suitable data to feed a collation
  * engine to do the alignment work. It also provides a way to make itself
  * reflect the results provided by such an engine.
  *

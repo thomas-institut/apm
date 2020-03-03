@@ -22,14 +22,15 @@ namespace AverroesProjectToApm\Formatter;
 
 use APM\Core\Item\ItemFactory;
 use APM\Core\Item\MarkType;
+use APM\Core\Item\Note;
 use APM\Core\Item\TextualItem;
 use APM\Core\Item\Mark;
 use APM\Core\Item\Item;
 use APM\Core\Item\NoWbMark;
+use AverroesProjectToApm\ApUserDirectory;
 use AverroesProjectToApm\DatabaseItemStream;
-
-
-use APM\Core\Person\PeopleDirectory;
+use ThomasInstitut\UserManager\PersonInfoProvider;
+use ThomasInstitut\UserManager\SimplePersonInfoProvider;
 
 /**
  * Description of WitnessPageFormatter
@@ -78,10 +79,12 @@ class WitnessPageFormatter implements ItemStreamFormatter {
     private $textualClass;
     
     private $dateFormat;
+    /**
+     * @var SimplePersonInfoProvider
+     */
+    private $personInfoProvider;
 
-    private $userDirectory;
-    
-    public function __construct(PeopleDirectory $userDirectory) {
+    public function __construct() {
         
         $this->markIcons['note'] = self::ICON_NOTE;
         $this->markIcons['paragraph'] = self::ICON_PARAGRAPH;
@@ -95,12 +98,14 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         $this->markClass = get_class(new Mark());
         $this->noWbClass = get_class(new NoWbMark());
         $this->textualClass = get_class(new TextualItem('stub'));
-        
-        $this->userDirectory = $userDirectory;
-     
+
+        $this->personInfoProvider = new SimplePersonInfoProvider();
     }
-    
-    
+
+    public function setPersonInfoProvider(PersonInfoProvider $infoProvider) {
+        $this->personInfoProvider = $infoProvider;
+    }
+
      public function formatItemStream(DatabaseItemStream $stream): string {
         $html = '';
         $gotNoWb = false;
@@ -303,9 +308,10 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         $html = '<b>Notes</b><br/>';
         
         foreach ($edNotes as $note) {
+            /** @var Note $note */
             $html .= '<p class="notetext">' . $note->getText() . '</p>';
             $html .= '<p class="noteheader"> --' . 
-                    $this->userDirectory->getInitialAndLastName($note->getAuthor()) . ' @ ' . 
+                    $this->personInfoProvider->getShortNameFromId($note->getAuthor()->getId(ApUserDirectory::IDTYPE_AP_PERSON_ID)) . ' @ ' .
                     date($this->dateFormat, $note->getTime()) . '</p>';
         }
         return $html;

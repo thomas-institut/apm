@@ -19,6 +19,8 @@
  */
 
 namespace APM\Core\Person;
+use APM\Algorithm\FullNameAnalysis;
+
 /**
  * A people directory that gets all info out of a full name, without
  * consulting any external resource
@@ -42,20 +44,7 @@ class FormatterPeopleDirectory extends PeopleDirectory {
         if ($fullName === Person::ID_NULL) {
             return self::NAME_UNKNOWN_DEFAULT;
         }
-        
-        $analyzedFullName = $this->analyzeFullName($fullName);
-        
-        $subStrings = [];
-        foreach($analyzedFullName['firstNames'] as $firstName) {
-            $subStrings[] = $this->getInitial($firstName);
-        }
-        
-        foreach($analyzedFullName['lastNames'] as $lastName) {
-            $subStrings[] = $lastName;
-        }
-        
-        return implode(' ', $subStrings);
-        
+       return FullNameAnalysis::getShortName($fullName);
     }
 
     public function getInitials(Person $person, $lang = self::LANG_DEFAULT): string {
@@ -86,45 +75,11 @@ class FormatterPeopleDirectory extends PeopleDirectory {
      * @return array
      */
     public function analyzeFullName(string $fullName) : array {
-        
-        $commonPrefixes = ['de', 'la', 'von', 'van', 'della', 'al', 'ben', 'bin'];
-        
-        $words = explode(' ', $fullName);
-        
-        // First, join common prefixes 
-        $names = [];
-        for ($i = 0; $i < count($words); $i++) {
-            $name = $words[$i];
-            if (array_search($words[$i], $commonPrefixes)!== false){
-                if (isset($words[$i+1])) {
-                    $name .= ' ' . $words[$i+1];
-                    $i++;
-                }
-            }
-            $names[] = $name;
-        }
-        
-        $analyzedName = [ 'firstNames' => [], 'lastNames' => []];
-        
-        // Case by case implementation for now!
-        if (count($names) === 1) {
-            // Assume that the only name in the full Name is the last name
-            $analyzedName['lastNames'][]= $names[0];
-            return $analyzedName;
-        }
-        
-        // Assume fullName = 'firstName lastName1 lastName2 lastName3'
-        $analyzedName['firstNames'][]= $names[0];
-        for ($i = 1; $i < count($names); $i++) {
-            $analyzedName['lastNames'][]= $names[$i];
-        }
-        return $analyzedName;
+      return FullNameAnalysis::analyzeFullName($fullName);
     }
     
     private function getInitial(string $name) : string {
-        
-        return mb_substr($name, 0, 1);
-        
+       return FullNameAnalysis::getInitial($name);
     }
 
 }

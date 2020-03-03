@@ -21,6 +21,7 @@
 namespace AverroesProjectToApm\Decorators;
 
 use APM\Core\Address\IntRange;
+use APM\Core\Address\Point;
 use APM\Core\Collation\CollationTableDecorator;
 use APM\Core\Collation\CollationTable;
 
@@ -31,12 +32,13 @@ use APM\FullTranscription\ApmTranscriptionWitness;
 use AverroesProjectToApm\AddressInDatabaseItemStream;
 use APM\Core\Item\TextualItem;
 use APM\Core\Item\Mark;
-use AverroesProjectToApm\ApUserDirectory;
 use AverroesProjectToApm\Formatter\WitnessPageFormatter;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
+use ThomasInstitut\UserManager\PersonInfoProvider;
+use ThomasInstitut\UserManager\SimplePersonInfoProvider;
 
 /**
  * Decorator for AverroesProject collation tables
@@ -56,20 +58,26 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator, Lo
     const CLASS_VARIANT_PREFIX = 'variant_';
     
     const TEXT_EMPTYTOKEN = '&mdash;';
-    
-    private $ud;
-    
+
     /** @var string */
     protected $textualItemClass;
     /** @var string */
     protected $markItemClass;
+    /**
+     * @var PersonInfoProvider
+     */
+    private $userInfoProvider;
 
 
-    public function __construct(ApUserDirectory $userDirectory) {
-        $this->ud = $userDirectory;
+    public function __construct() {
+        $this->userInfoProvider = new SimplePersonInfoProvider();
         
         $this->textualItemClass = get_class(new TextualItem('stub'));
         $this->markItemClass = get_class(new Mark());
+    }
+
+    public function setUserInfoProvider(PersonInfoProvider $provider) {
+        $this->userInfoProvider = $provider;
     }
     
     public function decorate(CollationTable $c): array {
@@ -87,7 +95,8 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator, Lo
 
         $apmTranscriptionWitnesClass = ApmTranscriptionWitness::class;
         
-        $formatter = new WitnessPageFormatter($this->ud);
+        $formatter = new WitnessPageFormatter();
+        $formatter->setPersonInfoProvider($this->userInfoProvider);
         $variantTable = $c->getVariantTable();
         
         // 1. Put tokens in with basic classes
@@ -233,20 +242,15 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator, Lo
     
     protected function getSubstringFromItemAndRange(Item $item, IntRange $range) : string {
         $sourceString = $item->getPlainText();
-        $subStr = mb_substr($sourceString, $range->getStart(), $range->getLength());
-
-//        if ($sourceString !== '' && $subStr === '' && $range->getLength() !== 0) {
-//            $this->codeDebug("Got empty subtring from '$sourceString', start " . $range->getStart() . " length " . $range->getLength(), [$item]);
-//        }
-        return $subStr;
+        return mb_substr($sourceString, $range->getStart(), $range->getLength());
     }
     
-    protected function prettyPrintAddressInItemStream(\APM\Core\Address\Point $address) : string {
+    protected function prettyPrintAddressInItemStream(Point $address) : string {
         
         return $this->prettyPrintPoint($address);
     }
     
-    protected function prettyPrintPoint(\APM\Core\Address\Point $point) {
+    protected function prettyPrintPoint(Point $point) {
         $dim = $point->getDimensionCount();
         $data = [];
         for ($i=0; $i< $dim; $i++) {

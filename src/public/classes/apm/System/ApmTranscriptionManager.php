@@ -254,6 +254,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         }
 
         if ($cacheValue !== '') {
+            $this->codeDebug("Getting witness from cache");
             // cache hit!
             $this->cacheTracker->incrementHits();
             $txWitness = unserialize($cacheValue);

@@ -22,6 +22,7 @@ namespace APM\System;
 
 use APM\CollationEngine\Collatex;
 use APM\CollationEngine\CollationEngine;
+use APM\CollationEngine\DoNothingCollationEngine;
 use APM\FullTranscription\TranscriptionManager;
 use APM\Plugin\Plugin;
 use APM\Presets\DataTablePresetManager;
@@ -71,6 +72,7 @@ class ApmSystemManager extends SystemManager {
     const DEFAULT_COLLATEX_TMPDIR = '/tmp';
     const DEFAULT_JAVA_EXECUTABLE = '/usr/bin/java';
     const DEFAULT_PLUGIN_DIR = 'plugins';
+    const DEFAULT_COLLATION_ENGINE = 'Collatex';
     
     const REQUIRED_CONFIG_VARIABLES = [ 
         ApmConfigParameter::APP_NAME,
@@ -209,12 +211,20 @@ class ApmSystemManager extends SystemManager {
         $this->systemDataCache = new DataTableDataCache(new MySqlDataTable($this->dbConn,
             $this->tableNames[ApmMySqlTableName::TABLE_SYSTEM_CACHE]));
         
-        // Set up Collatex
-        $this->collationEngine = new Collatex(
-            $this->config[ApmConfigParameter::COLLATEX_JARFILE],
-            $this->config[ApmConfigParameter::COLLATEX_TMPDIR],
-            $this->config[ApmConfigParameter::JAVA_EXECUTABLE]
-        );
+        // Set up Collation Engine
+        switch($this->config[ApmConfigParameter::COLLATION_ENGINE]) {
+            case ApmCollationEngine::COLLATEX:
+                $this->collationEngine = new Collatex(
+                    $this->config[ApmConfigParameter::COLLATEX_JARFILE],
+                    $this->config[ApmConfigParameter::COLLATEX_TMPDIR],
+                    $this->config[ApmConfigParameter::JAVA_EXECUTABLE]
+                );
+                break;
+            case ApmCollationEngine::DO_NOTHING:
+                $this->collationEngine = new DoNothingCollationEngine();
+                break;
+        }
+
        
         // Set up PresetsManager
         $presetsManagerDataTable = new MySqlDataTable($this->dbConn,
@@ -428,6 +438,7 @@ class ApmSystemManager extends SystemManager {
             ApmConfigParameter::COLLATEX_JARFILE => self::DEFAULT_COLLATEX_JARFILE,
             ApmConfigParameter::COLLATEX_TMPDIR => self::DEFAULT_COLLATEX_TMPDIR,
             ApmConfigParameter::JAVA_EXECUTABLE => self::DEFAULT_JAVA_EXECUTABLE,
+            ApmConfigParameter::COLLATION_ENGINE => self::DEFAULT_COLLATION_ENGINE,
             ApmConfigParameter::PLUGIN_DIR => self::DEFAULT_PLUGIN_DIR
         ];
         

@@ -150,8 +150,7 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
      * @return CollationEngine
      */
     protected function getCollationEngine() : CollationEngine {
-        //return $this->systemManager->getCollationEngine();
-        return new DoNothingCollationEngine();
+        return $this->systemManager->getCollationEngine();
     }
 
 

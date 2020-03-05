@@ -30,6 +30,7 @@ class ApmConfigParameter
     const LOG_IN_PHP_ERROR_HANDLER = 'log_in_php_error_handler';
     const DB = 'db';
     const TABLE_PREFIX  = 'db_table_prefix';
+    const COLLATION_ENGINE = 'collation_engine';
     const COLLATEX_JARFILE = 'collatex_jar_file';
     const COLLATEX_TMPDIR = 'collatex_temp_dir';
     const JAVA_EXECUTABLE = 'java_executable';

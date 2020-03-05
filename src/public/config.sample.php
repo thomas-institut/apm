@@ -29,6 +29,10 @@ $config['languages'] = [
     [ 'code' => 'la', 'name' => 'Latin', 'rtl' => false, 'fontsize' => 3] 
 ];
 
+// COLLATION ENGINE
+$config['collation_engine'] = 'Collatex';
+//$config['collation_engine'] = 'DoNothing';
+
 // COLLATEX
 $config['collatex_temp_dir'] = 'collatex/tmp';
 $config['java_executable'] = '/usr/bin/java';

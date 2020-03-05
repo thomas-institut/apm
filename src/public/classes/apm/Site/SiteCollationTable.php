@@ -186,7 +186,7 @@ class SiteCollationTable extends SiteController
      */
     public function automaticCollationPagePreset(Request $request, Response $response)
     {
-        $this->codeDebug('Preset request');
+        //$this->codeDebug('Preset request');
         $workId = $request->getAttribute('work');
         $chunkNumber = $request->getAttribute('chunk');
         $presetId = $request->getAttribute('preset');
@@ -328,7 +328,7 @@ class SiteCollationTable extends SiteController
      * @return Response
      */
     private function getCollationTablePage(array $collationPageOptions, Response $response) {
-        $this->codeDebug("Getting collation table page", $collationPageOptions);
+        //$this->codeDebug("Getting collation table page", $collationPageOptions);
 
         $workId = $collationPageOptions['work'];
         $chunkNumber = intval($collationPageOptions['chunk']);
@@ -343,7 +343,7 @@ class SiteCollationTable extends SiteController
             'witnesses' => $collationPageOptions['witnesses']
         ];
 
-        $this->codeDebug('apiCallOptions', $apiCallOptions);
+        //$this->codeDebug('apiCallOptions', $apiCallOptions);
         $dm = $this->dataManager;
         $pageName = "AutomaticCollation-$workId-$chunkNumber-$language";
         

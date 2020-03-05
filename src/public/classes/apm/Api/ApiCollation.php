@@ -177,7 +177,7 @@ class ApiCollation extends ApiController
      */
     public function automaticCollation(Request $request, Response $response)
     {
-        $this->codeDebug('Starting automaticCollation');
+        //$this->codeDebug('Starting automaticCollation');
         $dataManager = $this->getDataManager();
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
         $apiCall = 'Collation';
@@ -193,7 +193,7 @@ class ApiCollation extends ApiController
         $chunkNumber = intval($inputDataObject['chunk']);
         $language = $inputDataObject['lang'];
         $requestedWitnesses = $inputDataObject['witnesses'];
-        $this->codeDebug('Requested witnesses', $requestedWitnesses);
+        //$this->codeDebug('Requested witnesses', $requestedWitnesses);
         $ignorePunctuation = isset($inputDataObject['ignorePunctuation']) ?
                 $inputDataObject['ignorePunctuation'] : false;
 
@@ -244,10 +244,11 @@ class ApiCollation extends ApiController
                         return $this->responseWithJson($response, ['error' => self::API_ERROR_MISSING_REQUIRED_FIELD, 'msg' => $msg], 409);
                     }
                     $witnessInfo = WitnessSystemId::getFullTxInfo($requestedWitness['systemId']);
-                    if ($witnessInfo->typeSpecificInfo['timeStamp'] === '') {
-                        $this->codeDebug('Timestamp is empty ');
+                    //if ($witnessInfo->typeSpecificInfo['timeStamp'] === '') {
+                        // Do nothing,  TranscriptionManager will take care of it
+                        //$this->codeDebug('Timestamp is empty ');
                         //$witnessInfo->typeSpecificInfo['timeStamp'] = TimeString::now();
-                    }
+                    //}
                     try {
                         $fullTxWitness = $transcriptionManager->getTranscriptionWitness($witnessInfo->workId,
                             $witnessInfo->chunkNumber, $witnessInfo->typeSpecificInfo['docId'],
@@ -311,7 +312,7 @@ class ApiCollation extends ApiController
             return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_COLLATION_ENGINE_ERROR, 'msg' => $msg], 409);
         }
         // @codeCoverageIgnoreEnd
-        $this->codeDebug('CollationEngine output', $collatexOutput);
+        //$this->codeDebug('CollationEngine output', $collatexOutput);
         
         $this->profiler->lap('Collatex done');
         try {

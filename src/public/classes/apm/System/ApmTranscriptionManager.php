@@ -222,10 +222,10 @@ class ApmTranscriptionManager extends TranscriptionManager
     public function getTranscriptionWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeStamp) : ApmTranscriptionWitness
     {
 
-        $this->codeDebug('Getting Transcription witness', [ $workId, $chunkNumber, $docId, $localWitnessId, $timeStamp]);
+        //$this->codeDebug('Getting Transcription witness', [ $workId, $chunkNumber, $docId, $localWitnessId, $timeStamp]);
 
         if ($timeStamp === '') {
-            $this->codeDebug('Timestamp is empty');
+            //$this->codeDebug('Timestamp is empty');
             $chunkWitnesses = $this->getWitnessesForChunk($workId, $chunkNumber);
             $witnessFound = false;
             foreach ($chunkWitnesses as $chunkWitnessInfo) {
@@ -235,7 +235,7 @@ class ApmTranscriptionManager extends TranscriptionManager
                 if ($witnessDocId === $docId && $witnessLocalWitnessId === $localWitnessId) {
                     $witnessFound = true;
                     $timeStamp = $chunkWitnessInfo->typeSpecificInfo['timeStamp'];
-                    $this->codeDebug("Setting timestamp:  $timeStamp");
+                    //$this->codeDebug("Setting timestamp:  $timeStamp");
                     break;
                 }
             }
@@ -254,7 +254,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         }
 
         if ($cacheValue !== '') {
-            $this->codeDebug("Getting witness from cache");
+            //$this->codeDebug("Getting witness from cache");
             // cache hit!
             $this->cacheTracker->incrementHits();
             $txWitness = unserialize($cacheValue);
@@ -867,7 +867,7 @@ class ApmTranscriptionManager extends TranscriptionManager
     public function getWitnessesForChunk(string $workId, int $chunkNumber): array
     {
 
-        $this->codeDebug("Getting witnesses for chunk $workId-$chunkNumber");
+        //$this->codeDebug("Getting witnesses for chunk $workId-$chunkNumber");
         $localCacheKey = 'getW4C:' . $workId . '-' . $chunkNumber;
         $cacheMiss = false;
         try {
@@ -878,10 +878,10 @@ class ApmTranscriptionManager extends TranscriptionManager
         }
 
         if (!$cacheMiss) {
-            $this->codeDebug("In local transcription manager cache with key $localCacheKey");
+            //$this->codeDebug("In local transcription manager cache with key $localCacheKey");
             return $returnValue;
         }
-        $this->codeDebug("Not in local transcription manager in cache");
+        //$this->codeDebug("Not in local transcription manager in cache");
 
         $chunkLocationMap = $this->getChunkLocationMapForChunk($workId, $chunkNumber, TimeString::now());
         $versionMap = $this->getVersionsForChunkLocationMap($chunkLocationMap);

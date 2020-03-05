@@ -109,7 +109,7 @@ class ApiPresets extends ApiController
             return $this->responseWithJson($response, ['error' => self::API_ERROR_WRONG_TYPE], 409);
         }
         
-        $this->debug('Getting presets', [ 'tool' => $tool, 'userId' => $userId, 'keyArrayToMatch' => $keyArrayToMatch]);
+        //$this->debug('Getting presets', [ 'tool' => $tool, 'userId' => $userId, 'keyArrayToMatch' => $keyArrayToMatch]);
         // let's get those presets!
 
         $presetManager = $this->systemManager->getPresetsManager();
@@ -204,7 +204,7 @@ class ApiPresets extends ApiController
             }
         }
 
-        $this->debug('Getting automatic collation presets', [ 'lang' => $lang, 'userId' => $userId, 'witnesses' => $witnesses]);
+        //$this->debug('Getting automatic collation presets', [ 'lang' => $lang, 'userId' => $userId, 'witnesses' => $witnesses]);
         // let's get those presets!
 
         $presetManager = $this->systemManager->getPresetsManager();

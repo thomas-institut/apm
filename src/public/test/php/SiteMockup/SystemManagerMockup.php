@@ -23,6 +23,7 @@ namespace APM;
 require_once 'MockTranscriptionManager.php';
 
 use APM\CollationEngine\CollationEngine;
+use APM\CollationEngine\DoNothingCollationEngine;
 use APM\CollationEngine\NullCollationEngine;
 use APM\FullTranscription\TranscriptionManager;
 use APM\Presets\DataTablePresetManager;
@@ -30,6 +31,8 @@ use APM\Presets\PresetManager;
 use APM\System\SystemManager;
 use APM\System\SettingsManager;
 use APM\Plugin\HookManager;
+use ThomasInstitut\DataCache\DataCache;
+use ThomasInstitut\DataCache\InMemoryDataCache;
 use ThomasInstitut\DataTable\InMemoryDataTable;
 use MockTranscriptionManager;
 use Monolog\Logger;
@@ -92,11 +95,16 @@ class SystemManagerMockup extends SystemManager {
 
     public function getCollationEngine() : CollationEngine
     {
-        return new NullCollationEngine();
+        return new DoNothingCollationEngine();
     }
 
     public function getTranscriptionManager(): TranscriptionManager
     {
         return $this->tm;
+    }
+
+    public function getSystemDataCache(): DataCache
+    {
+        return new InMemoryDataCache();
     }
 }

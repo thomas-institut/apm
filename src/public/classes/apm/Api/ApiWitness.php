@@ -97,7 +97,7 @@ class ApiWitness extends ApiController
         $localWitnessId = $witnessInfo->typeSpecificInfo['localWitnessId'];
         $timeStamp = $witnessInfo->typeSpecificInfo['timeStamp'];
 
-        $this->codeDebug('UseCache', [$useCache]);
+        //$this->codeDebug('UseCache', [$useCache]);
         $returnData = [
             'status' => 'OK',
             'requestedWitnessId' => $witnessId,

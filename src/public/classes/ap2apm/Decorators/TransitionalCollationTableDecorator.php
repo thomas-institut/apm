@@ -101,7 +101,7 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator, Lo
         
         // 1. Put tokens in with basic classes
         foreach($sigla as $siglum) {
-            $this->codeDebug("Processing siglum '$siglum'");
+            //$this->codeDebug("Processing siglum '$siglum'");
             $decoratedCollationTable[$siglum] = [];
             
             $tokenRefs = $c->getReferencesForRow($siglum);

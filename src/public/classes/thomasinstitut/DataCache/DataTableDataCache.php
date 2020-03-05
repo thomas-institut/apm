@@ -85,6 +85,7 @@ class DataTableDataCache implements DataCache
         $this->dataTable->deleteRow($rowId);
     }
 
+
     private function getRowsForKey(string $key) : array {
         return $this->dataTable->findRows([ $this->keyColumn => $key]);
     }

@@ -43,6 +43,9 @@ class ApiWitness extends ApiController
     const ERROR_UNKNOWN_WITNESS_TYPE = 1002;
     const ERROR_SYSTEM_ID_ERROR = 1003;
 
+    const WITNESS_DATA_CACHE_KEY_PREFIX = 'ApiWitness-witnessdata-';
+    const WITNESS_HTML_CACHE_KEY_POSTFIX = '-html';
+
     public function getWitness(Request $request, Response $response) {
 
         $witnessId = $request->getAttribute('witnessId');
@@ -77,9 +80,9 @@ class ApiWitness extends ApiController
         }
     }
 
-    private function getFullTxWitness(string $witnessId, string $outputType, Response $response, bool $useCache) : Response {
+    private function getFullTxWitness(string $requestedWitnessId, string $outputType, Response $response, bool $useCache) : Response {
         try {
-            $witnessInfo = WitnessSystemId::getFullTxInfo($witnessId);
+            $witnessInfo = WitnessSystemId::getFullTxInfo($requestedWitnessId);
         } catch (InvalidArgumentException $e) {
             $msg = "Cannot get fullTx witness info from system Id. Error: " . $e->getMessage();
             $this->logger->error($msg, [
@@ -97,112 +100,53 @@ class ApiWitness extends ApiController
         $localWitnessId = $witnessInfo->typeSpecificInfo['localWitnessId'];
         $timeStamp = $witnessInfo->typeSpecificInfo['timeStamp'];
 
-        //$this->codeDebug('UseCache', [$useCache]);
-        $returnData = [
-            'status' => 'OK',
-            'requestedWitnessId' => $witnessId,
-            'workId' => $workId,
-            'chunkNumber' => $chunkNumber,
-            'docId' => $docId,
-            'localWitnessId' => $localWitnessId,
-            'timeStamp' => $timeStamp,
-        ];
-
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
-
-        if ($timeStamp === '') {
-            $this->codeDebug('Timestamp is empty');
-            $chunkWitnesses = $transcriptionManager->getWitnessesForChunk($workId, $chunkNumber);
-            $witnessFound = false;
-            foreach ($chunkWitnesses as $chunkWitnessInfo) {
-                /** @var WitnessInfo $chunkWitnessInfo */
-                $witnessDocId = $chunkWitnessInfo->typeSpecificInfo['docId'];
-                $witnessLocalWitnessId = $chunkWitnessInfo->typeSpecificInfo['localWitnessId'];
-                if ($witnessDocId === $docId && $witnessLocalWitnessId === $localWitnessId) {
-                    $witnessFound = true;
-                    $this->codeDebug("Setting timestamp:  $timeStamp");
-                    $timeStamp = $chunkWitnessInfo->typeSpecificInfo['timeStamp'];
-                    break;
-                }
-            }
-            if (!$witnessFound) {
-                $msg = 'No witness found';
-                $returnData['status'] = 'Error';
-                $returnData['errorMessage'] = $msg;
-                $this->debug($msg, $returnData);
-                return $this->responseWithJson($response, $returnData, 409);
-            }
-        }
-
-        $returnData['timeStamp'] = $timeStamp;
-        $returnData['witnessId'] = WitnessSystemId::buildFullTxId($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
 
         // at this point we can check the cache
         $systemCache = $this->systemManager->getSystemDataCache();
         $cacheTracker = $this->systemManager->getCacheTracker();
-        $cacheKey = 'ApiWitness-witnessdata-' . $returnData['witnessId'];
-        $cacheKeyHtmlOutput = $cacheKey . '-html';
 
         // if output is html it can be even faster
         if ($useCache && $outputType === 'html') {
-            //$this->codeDebug("Checking system cache for key $cacheKeyHtmlOutput");
-            $cacheMiss = false;
+            $cacheKeyHtmlOutput = $this->getWitnessHtmlCacheKey($requestedWitnessId);
+            $cacheHit = true;
             try {
                 $cachedHtml = $systemCache->get($cacheKeyHtmlOutput);
             } catch (KeyNotInCacheException $e) {
                 //$this->codeDebug("Cache miss :(");
                 $cacheTracker->incrementMisses();
-                $cacheMiss = true;
+                $cacheHit = false;
             }
-            if (!$cacheMiss) {
+            if ($cacheHit) {
                 //$this->codeDebug("Cache hit!!");
                 $cacheTracker->incrementHits();
                 return $this->responseWithText($response, $cachedHtml);
             }
         }
 
-        $cacheMiss = false;
+        $cacheHit = true;
         if ($useCache) {
-            //$this->codeDebug("Checking system cache for key $cacheKey");
+            $cacheKey = $this->getWitnessDataCacheKey($requestedWitnessId);
             try {
                 $cachedBlob = $systemCache->get($cacheKey);
             } catch (KeyNotInCacheException $e) {
                 $cacheTracker->incrementMisses();
-                $cacheMiss = true;
+                $cacheHit = false;
             }
         }
-
-        if (!$useCache || $cacheMiss) {
-
+        if (!$useCache || !$cacheHit) {
+            // need to build everything from scratch
             $locations = $transcriptionManager->getSegmentLocationsForFullTxWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
-
-            $returnData['segments'] = $locations;
-
             $apmWitness = $transcriptionManager->getTranscriptionWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
 
-            // Items
-            $itemArray = [];
-            $itemWithAddressArray = $apmWitness->getItemWithAddressArray();
-            foreach($itemWithAddressArray as $itemIndex => $itemWithAddress) {
-                /** @var ItemInDocument $itemWithAddress */
-                $theItem = $itemWithAddress->getItem();
-                $theAddress = $itemWithAddress->getAddress();
-                $itemData = [];
-                $itemData['address'] = $theAddress->getData();
-                $itemData['item'] = $theItem->getData();
-                $itemData['class'] = 'ItemInDocument';
-                $itemArray[] = $itemData;
-            }
-            $returnData['items'] = $itemArray;
 
-            // Tokens
-            $tokens = $apmWitness->getTokens();
-            $tokenArray = [];
-            foreach($tokens as $token) {
-                /** @var TranscriptionToken $token */
-                $tokenArray[] = $token->getData();
-            }
-            $returnData['tokens'] = $tokenArray;
+            $returnData = $apmWitness->getData();
+            $witnessId = WitnessSystemId::buildFullTxId($workId, $chunkNumber, $docId, $localWitnessId, $returnData['timeStamp']);
+            $returnData['witnessId'] = $witnessId;
+            $returnData['segments'] = $locations;
+
+            $returnData['apiStatus']  = 'OK';
+            $returnData['requestedWitnessId'] = $requestedWitnessId;
 
             // Plain text version
             $returnData['plainText'] = $apmWitness->getPlainText();
@@ -210,6 +154,10 @@ class ApiWitness extends ApiController
             // HTML
             $html = $this->getWitnessHtml($apmWitness);
 
+
+            // Save results in cache
+            $cacheKey = $this->getWitnessDataCacheKey($witnessId);
+            $cacheKeyHtmlOutput = $this->getWitnessHtmlCacheKey($witnessId);
             $systemCache->set($cacheKey, serialize($returnData));
             // save html on its own key in the cache to speed up html output later
             $systemCache->set($cacheKeyHtmlOutput, $html);
@@ -222,7 +170,6 @@ class ApiWitness extends ApiController
         } else {
             //$this->codeDebug('Cache hit!');
             $cacheTracker->incrementHits();
-            $requestedWitnessId = $returnData['requestedWitnessId'];
             $returnData = unserialize($cachedBlob);
 
             $cacheHit = true;
@@ -245,6 +192,8 @@ class ApiWitness extends ApiController
             $returnData['cached'] = true;
             $returnData['usingCache'] = $useCache;
         }
+
+        // at this point we have all data either from the cache or built from scratch
 
         if ($outputType === 'html') {
             return $this->responseWithText($response, $returnData['html']);
@@ -281,4 +230,14 @@ class ApiWitness extends ApiController
         $formatter->setPersonInfoProvider($uip);
         return $formatter->formatItemStream($apmWitness->getDatabaseItemStream());
     }
+
+
+    private function getWitnessDataCacheKey(string $witnessId) {
+        return self::WITNESS_DATA_CACHE_KEY_PREFIX . $witnessId;
+    }
+
+    private function getWitnessHtmlCacheKey(string $witnessId) {
+        return $this->getWitnessDataCacheKey($witnessId) . self::WITNESS_HTML_CACHE_KEY_POSTFIX;
+    }
+
 }

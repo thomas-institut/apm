@@ -222,8 +222,6 @@ class ApiCollation extends ApiController
 
         $this->profiler->lap('Basic checks done');
 
-        //$validFullTxWitnesses = $this->getValidWitnessesForChunkLang($workId, $chunkNumber, $language);
-
         $collationTable = new CollationTable($ignorePunctuation);
         foreach($requestedWitnesses as $requestedWitness) {
             if (!isset($requestedWitness['type'])) {
@@ -247,7 +245,6 @@ class ApiCollation extends ApiController
                     //if ($witnessInfo->typeSpecificInfo['timeStamp'] === '') {
                         // Do nothing,  TranscriptionManager will take care of it
                         //$this->codeDebug('Timestamp is empty ');
-                        //$witnessInfo->typeSpecificInfo['timeStamp'] = TimeString::now();
                     //}
                     try {
                         $fullTxWitness = $transcriptionManager->getTranscriptionWitness($witnessInfo->workId,
@@ -294,15 +291,15 @@ class ApiCollation extends ApiController
 
         $collatexInput = $collationTable->getCollationEngineInput();
         
-        $this->profiler->lap('Collatex input built');
+        $this->profiler->lap('Collation engine input built');
         $collationEngine = $this->getCollationEngine();
         
-        // Run Collatex
+        // Run collation engine
         $collatexOutput = $collationEngine->collate($collatexInput);
         // @codeCoverageIgnoreStart
         // Not worrying about testing CollatexErrors here
         if ($collatexOutput === false) {
-            $msg = "Automatic Collation: error running Collation Engine";
+            $msg = "Automatic Collation: error running collation engine";
             $this->logger->error($msg,
                         [ 'apiUserId' => $this->apiUserId,
                         'apiError' => ApiController::API_ERROR_COLLATION_ENGINE_ERROR,
@@ -314,14 +311,14 @@ class ApiCollation extends ApiController
         // @codeCoverageIgnoreEnd
         //$this->codeDebug('CollationEngine output', $collatexOutput);
         
-        $this->profiler->lap('Collatex done');
+        $this->profiler->lap('Collation engine done');
         try {
             $collationTable->setCollationTableFromCollationEngineOutput($collatexOutput);
         }
         // @codeCoverageIgnoreStart
         // Can't replicate this consistently in testing
         catch(Exception $ex) {
-            $msg = 'Error processing collation Engine output into collation object';
+            $msg = 'Error processing collation engine output into collation object';
             $this->logger->error($msg, 
                     [ 'apiUserId' => $this->apiUserId,
                         'apiError' => self::ERROR_FAILED_COLLATION_ENGINE_PROCESSING,
@@ -333,7 +330,7 @@ class ApiCollation extends ApiController
         }
         // @codeCoverageIgnoreEnd
         
-        $this->profiler->lap('Collation table built from collatex output');
+        $this->profiler->lap('Collation table built from collation engine output');
         $userDirectory = new UserManagerUserInfoProvider($dataManager->userManager);
         $decorator = new TransitionalCollationTableDecorator();
         $decorator->setUserInfoProvider($userDirectory);

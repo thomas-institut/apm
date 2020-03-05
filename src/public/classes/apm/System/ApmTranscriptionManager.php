@@ -293,7 +293,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         $edNoteArrayFromDb =  $this->edNoteManager->rawGetEditorialNotesForListOfItems($itemIds);
         $itemStream = new DatabaseItemStream($docId, $apStreams, $docInfo->languageCode, $edNoteArrayFromDb);
 
-        $txWitness = new ApmTranscriptionWitness($docId, $workId, $chunkNumber, $timeStamp, $itemStream);
+        $txWitness = new ApmTranscriptionWitness($docId, $workId, $chunkNumber, $localWitnessId, $timeStamp, $itemStream);
         /** @var ApmChunkSegmentLocation $firstLocation */
         $firstLocation = $locations[array_keys($locations)[0]];
         $firstPageId = $firstLocation->start->pageId;

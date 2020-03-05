@@ -60,6 +60,6 @@ class SimpleWitnessTest extends TestCase {
         $this->assertEquals($normalizedText, $w->getPlainText());
         
         $this->assertEquals($workTitle, $w->getWorkId());
-        $this->assertEquals($chunkRef, $w->getChunkId());
+        $this->assertEquals($chunkRef, $w->getChunk());
     }
 }

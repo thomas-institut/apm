@@ -22,6 +22,7 @@ namespace APM\FullTranscription;
 
 use APM\Core\Item\ItemWithAddress;
 use APM\Core\Witness\TranscriptionWitness;
+use APM\System\WitnessType;
 use AverroesProjectToApm\DatabaseItemStream;
 
 
@@ -49,8 +50,8 @@ class ApmTranscriptionWitness extends TranscriptionWitness {
      */
     private $timeStamp;
 
-    public function __construct(int $docId, string $work, string $chunk, string $timeString, DatabaseItemStream $stream) {
-        parent::__construct($work, $chunk);
+    public function __construct(int $docId, string $work, string $chunk, string $localWitnessId, string $timeString, DatabaseItemStream $stream) {
+        parent::__construct($work, $chunk, $localWitnessId);
         
         $this->docId = $docId;
         $this->timeStamp = $timeString;
@@ -95,5 +96,14 @@ class ApmTranscriptionWitness extends TranscriptionWitness {
     function getItemWithAddressArray(): array
     {
         return $this->databaseItemStream->getItems();
+    }
+
+    public function getData(): array {
+        $data = parent::getData();
+
+        $data['witnessType'] = WitnessType::FULL_TRANSCRIPTION;
+        $data['timeStamp'] = $this->timeStamp;
+
+        return $data;
     }
 }

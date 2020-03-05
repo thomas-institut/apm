@@ -49,6 +49,23 @@ use ThomasInstitut\CodeDebug\PrintCodeDebugTrait;
 abstract class TranscriptionWitness extends Witness implements CodeDebugInterface {
 
     use PrintCodeDebugTrait;
+
+    /**
+     * @var array
+     */
+    private $tokenArray;
+    /**
+     * @var bool
+     */
+    private $tokenArrayHasBeenCalculated;
+
+    public function __construct(string $work, string $chunk, string $localWitnessId = 'A')
+    {
+        parent::__construct($work, $chunk, $localWitnessId);
+        $this->tokenArray = [];
+        $this->tokenArrayHasBeenCalculated = false;
+    }
+
     /**
      * Returns and array of ItemInDocument objects that
      * represents the source transcription and from which
@@ -74,6 +91,10 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
      * @return TranscriptionToken[]
      */
     public function getTokens() : array {
+
+        if ($this->tokenArrayHasBeenCalculated) {
+            return $this->tokenArray;
+        }
 
         $this->debugMode = false;
         //print "<pre>";
@@ -298,6 +319,9 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
             $tokens[] = $currentWordToken;
             $openWordToken = false;
         }
+
+        $this->tokenArrayHasBeenCalculated;
+        $this->tokenArray = $tokens;
         return $tokens;
     }
 
@@ -377,6 +401,41 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
         }
         return $nonTokenIndexes;
 
+    }
+
+    public function getData(): array
+    {
+        $data =  parent::getData();
+        $data['items'] = $this->getItemDataArray();
+        $data['tokens'] = $this->getTokenDataArray();
+        return $data;
+    }
+
+    protected function getItemDataArray() : array {
+        $itemArray = [];
+        $itemWithAddressArray = $this->getItemWithAddressArray();
+        foreach($itemWithAddressArray as $itemIndex => $itemWithAddress) {
+            /** @var ItemInDocument $itemWithAddress */
+            $theItem = $itemWithAddress->getItem();
+            $theAddress = $itemWithAddress->getAddress();
+            $itemData = [];
+            $itemData['address'] = $theAddress->getData();
+            $itemData['item'] = $theItem->getData();
+            $itemData['class'] = 'ItemInDocument';
+            $itemArray[] = $itemData;
+        }
+        return $itemArray;
+    }
+
+    protected function getTokenDataArray() : array {
+        // Tokens
+        $tokens = $this->getTokens();
+        $tokenDataArray = [];
+        foreach($tokens as $token) {
+            /** @var TranscriptionToken $token */
+            $tokenDataArray[] = $token->getData();
+        }
+        return $tokenDataArray;
     }
 
 

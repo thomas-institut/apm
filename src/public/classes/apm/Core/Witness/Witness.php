@@ -43,13 +43,19 @@ abstract class Witness {
     
     /**
      *
-     * @var string
+     * @var int
      */
     protected $chunk;
-    
-    public function __construct(string $work, string $chunk) {
+    /**
+     * @var string
+     */
+    protected $localWitnessId;
+
+
+    public function __construct(string $work, string $chunk, string $localWitnessId = 'A') {
         $this->work = $work;
         $this->chunk = $chunk;
+        $this->localWitnessId = $localWitnessId;
     }
 
 
@@ -83,7 +89,20 @@ abstract class Witness {
         return $this->work;
     }
     
-    public function getChunkId() : string {
+    public function getChunk() : string {
         return $this->chunk;
     }
+
+    public function getLocalWitnessId() : string {
+        return $this->localWitnessId;
+    }
+
+    public function getData() : array {
+        return [
+            'workId' => $this->getWorkId(),
+            'chunk' => $this->getChunk(),
+            'localWitnessId' => $this->getLocalWitnessId(),
+        ];
+    }
+
 }

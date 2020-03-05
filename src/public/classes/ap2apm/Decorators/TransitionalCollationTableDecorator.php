@@ -71,9 +71,8 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator, Lo
 
     public function __construct() {
         $this->userInfoProvider = new SimplePersonInfoProvider();
-        
-        $this->textualItemClass = get_class(new TextualItem('stub'));
-        $this->markItemClass = get_class(new Mark());
+        $this->textualItemClass = TextualItem::class;
+        $this->markItemClass = Mark::class;
     }
 
     public function setUserInfoProvider(PersonInfoProvider $provider) {
@@ -81,18 +80,14 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator, Lo
     }
     
     public function decorate(CollationTable $c): array {
-        //$this->codeDebug('Starting decoration');
+
         $sigla = $c->getSigla();
-        //$this->codeDebug('Sigla', $sigla);
         $decoratedCollationTable = [];
         
         $decoratedCollationTable['extra'] = [];
         
         $addressInItemStreamClass  = AddressInDatabaseItemStream::class;
-        $apmTranscriptionWitnesClass = ApmTranscriptionWitness::class;
-
-        $textualItemClass = $this->textualItemClass;
-
+        $textualItemClass = TextualItem::class;
         $apmTranscriptionWitnesClass = ApmTranscriptionWitness::class;
         
         $formatter = new WitnessPageFormatter();
@@ -101,7 +96,6 @@ class TransitionalCollationTableDecorator implements CollationTableDecorator, Lo
         
         // 1. Put tokens in with basic classes
         foreach($sigla as $siglum) {
-            //$this->codeDebug("Processing siglum '$siglum'");
             $decoratedCollationTable[$siglum] = [];
             
             $tokenRefs = $c->getReferencesForRow($siglum);

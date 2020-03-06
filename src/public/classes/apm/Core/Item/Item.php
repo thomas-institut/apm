@@ -88,12 +88,18 @@ abstract class Item {
     }
 
     public function getData() : array {
+        $noteArray = [];
+        foreach($this->getNotes() as $note) {
+            /** @var Note $note */
+            $noteArray[] = $note->getData();
+        }
         return [
             'type' => 'Generic',
             'text' => $this->getPlainText(),
             'normalization' => $this->getNormalizedText(),
             'textualFlow' => $this->getTextualFlow(),
-            'location' => $this->getLocation()
+            'location' => $this->getLocation(),
+            'notes' => $noteArray
         ];
     }
     

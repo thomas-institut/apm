@@ -16,7 +16,7 @@
         "dflydev/fig-cookies": "^1.0",
         "rafaelnajera/xmlmatcher": "^0.4",
         "thomas-institut/datatable" : "^0.7.0",
-        "thomas-institut/timestring" : ">=1.1",
+        "thomas-institut/timestring" : ">=1.2",
         "monolog/monolog": "^2.0",
         "phpoffice/phpspreadsheet": "1.10.1",
         "phpoffice/phpword": "^0.15.0",

@@ -30,6 +30,8 @@ use AverroesProject\TxText\Item as AP_Item;
 use AverroesProject\ColumnElement\Element;
 use APM\Core\Item\Note as ItemNote;
 use APM\Core\Person\Person;
+use ThomasInstitut\TimeString\TimeString;
+
 /**
  * Factory of Items out of AP item stream rows
  *
@@ -172,22 +174,25 @@ class ItemStreamItemFactory {
     }
     
     public function createItemNoteFromRow(array $row) {
-        $note = new ItemNote();
-        
+
+        $authorId = -1;
+        $text = '[ No text ]';
+        $timeStamp = TimeString::TIME_ZERO;
+
+
         if (isset($row['author_id'])) {
-            // $note->setAuthor((int) $row['author_id']);    
-            $note->setAuthor(new Person(ApUserDirectory::IDTYPE_AP_PERSON_ID, (int) $row['author_id']));
+            $authorId = intval($row['author_id']);
         }
         
         if (isset($row['time'])) {
-            $note->setTime(strtotime((string) $row['time']));
+            $timeStamp = TimeString::fromString($row['time']);
         }
         
         if (isset($row['text'])) {
-            $note->setText($row['text']);
+            $text = $row['text'];
         }
         
-        return $note;
+        return new ItemNote($text, $authorId, $timeStamp);
     }
     
     private function getGoodString(array $someArray, string $someKey) : string {

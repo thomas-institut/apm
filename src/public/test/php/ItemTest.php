@@ -23,6 +23,7 @@ namespace APM;
 require "autoload.php";
 
 use APM\Core\Item\MarkType;
+use APM\Core\Item\Note;
 use PHPUnit\Framework\TestCase;
 
 use APM\Core\Item\TextualItem;
@@ -30,6 +31,7 @@ use APM\Core\Item\Mark;
 use APM\Core\Item\ItemFactory;
 use APM\Core\Item\NoWbMark;
 use APM\Core\Item\ChunkMark;
+use ThomasInstitut\TimeString\TimeString;
 
 /**
  * Item and descendants class test
@@ -62,7 +64,7 @@ class ItemTest extends TestCase {
             $exceptionRaised0 = true;
         }
         $this->assertTrue($exceptionRaised0);
-        $theNote = new Core\Item\Note('This is a note', 'Test User');
+        $theNote = new Note('This is a note', 1, TimeString::now());
         $item1->setNotes([$theNote, $theNote, $theNote]);
         $this->assertCount(3, $item1->getNotes());
         

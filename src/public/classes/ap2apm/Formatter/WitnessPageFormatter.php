@@ -29,6 +29,7 @@ use APM\Core\Item\Item;
 use APM\Core\Item\NoWbMark;
 use AverroesProjectToApm\ApUserDirectory;
 use AverroesProjectToApm\DatabaseItemStream;
+use ThomasInstitut\TimeString\TimeString;
 use ThomasInstitut\UserManager\PersonInfoProvider;
 use ThomasInstitut\UserManager\SimplePersonInfoProvider;
 
@@ -40,6 +41,7 @@ use ThomasInstitut\UserManager\SimplePersonInfoProvider;
 class WitnessPageFormatter implements ItemStreamFormatter {
     
     const DATEFORMAT_DEFAULT = 'Y-m-d H:i:s';
+    const DATEFORMAT_NOTE = 'm M Y, H:i:s';
     
     const ICON_NOTE = '<i class="far fa-comment"></i>';
     const ICON_PARAGRAPH = '¶';
@@ -310,9 +312,9 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         foreach ($edNotes as $note) {
             /** @var Note $note */
             $html .= '<p class="notetext">' . $note->getText() . '</p>';
-            $html .= '<p class="noteheader"> --' . 
-                    $this->personInfoProvider->getShortNameFromId($note->getAuthor()->getId(ApUserDirectory::IDTYPE_AP_PERSON_ID)) . ' @ ' .
-                    date($this->dateFormat, $note->getTime()) . '</p>';
+            $html .= '<p class="noteheader"> -- ' .
+                    $this->personInfoProvider->getShortNameFromId($note->getAuthorId()) . ', ' .
+                    TimeString::format($note->getTimestamp(), self::DATEFORMAT_NOTE) . '</p>';
         }
         return $html;
     }

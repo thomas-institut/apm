@@ -103,6 +103,7 @@ class ApmTranscriptionWitness extends TranscriptionWitness {
 
         $data['witnessType'] = WitnessType::FULL_TRANSCRIPTION;
         $data['timeStamp'] = $this->timeStamp;
+        $data['docId'] = $this->docId;
 
         return $data;
     }

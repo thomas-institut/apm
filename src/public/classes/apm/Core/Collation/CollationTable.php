@@ -483,6 +483,21 @@ class CollationTable {
         return $variantTable;
     }
 
+    public function getData() : array {
+        $data = [];
+        $sigla = $this->getSigla();
+        $data['sigla'] = $sigla;
+        $witnessDataArrays = [];
+        $matrix = [];
+        foreach($sigla as $i => $siglum) {
+            $witnessDataArrays[$i] = $this->getWitness($siglum)->getData();
+            $matrix[$i] = $this->getReferencesForRow($siglum);
+        }
+        $data['witnesses'] = $witnessDataArrays;
+        $data['collationMatrix'] = $matrix;
+        return $data;
+    }
+
     /**
      * Takes a Collatex output segment and aligns its tokens so that
      * all witness have exactly the same number of tokens

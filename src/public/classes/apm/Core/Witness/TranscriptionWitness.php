@@ -20,6 +20,7 @@
 
 namespace APM\Core\Witness;
 
+use APM\Core\Item\Item;
 use APM\Core\Item\Mark;
 use APM\Core\Token\TokenType;
 use APM\Core\Transcription\ItemAddressInDocument;
@@ -430,12 +431,27 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
     protected function getTokenDataArray() : array {
         // Tokens
         $tokens = $this->getTokens();
+        $items = $this->getItemWithAddressArray();
         $tokenDataArray = [];
         foreach($tokens as $token) {
             /** @var TranscriptionToken $token */
-            $tokenDataArray[] = $token->getData();
+            $tokenData =  $token->getData();
+            $itemIndexes =  $token->getSourceItemIndexes();
+            $charRanges = $token->getSourceItemCharRanges();
+            for ($i =0; $i< count($itemIndexes); $i++) {
+                $sourceItem = $items[$itemIndexes[$i]];
+                $charRange = $charRanges[$i];
+                $tokenData['itemData'][$i]['text'] = $this->getSubstringFromItemAndRange($sourceItem->getItem(), $charRange);
+            }
+
+            $tokenDataArray[] = $tokenData;
         }
         return $tokenDataArray;
+    }
+
+    protected function getSubstringFromItemAndRange(Item $item, IntRange $range) : string {
+        $sourceString = $item->getPlainText();
+        return mb_substr($sourceString, $range->getStart(), $range->getLength());
     }
 
 

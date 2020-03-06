@@ -21,7 +21,9 @@
 namespace APM\Core\Item;
 
 use APM\Core\Person\Person;
+use Cassandra\Time;
 use InvalidArgumentException;
+use ThomasInstitut\TimeString\TimeString;
 
 /**
  * Simple representation of an editorial note: a text by an author with a given 
@@ -30,22 +32,26 @@ use InvalidArgumentException;
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 class Note {
-    
-    /** @var Person */
-    protected $author;
-    const AUTHOR_UNDEFINED = false;
-    
+
+    const DEFAULT_TEXT = 'No text';
+    const DEFAULT_AUTHOR_ID = -1;
+    const DEFAULT_TIMESTAMP = TimeString::TIME_ZERO;
+
+    /**
+     * @var int
+     */
+    protected $authorId;
+
     /** @var string */
     protected $text;
-    const TEXT_NOTEXT = '[empty]';
-    
-    /** @var int */
+
+    /** @var string */
     protected $time;
-    const TIME_NOW = -1;
+
     
-    public function __construct($text = self::TEXT_NOTEXT, $author = self::AUTHOR_UNDEFINED, int $time = self::TIME_NOW) {
-        $this->setAuthor($author);
-        $this->setTime($time);
+    public function __construct(string $text = self::DEFAULT_TEXT, int $authorId = self::DEFAULT_AUTHOR_ID, string $timeStamp = self::DEFAULT_TIMESTAMP) {
+        $this->setAuthorId($authorId);
+        $this->setTime($timeStamp);
         $this->setText($text);
     }
     
@@ -53,35 +59,37 @@ class Note {
         return $this->text;
     }
     
-    public function setText($text) {
+    public function setText(string $text) : void {
         if ($text === '') {
             throw new InvalidArgumentException('Cannot set a Note\'s text to an empty string');
         }
         $this->text = $text;
     }
     
-    public function getAuthor() {
-        return $this->author;
+    public function getAuthorId() : int {
+        return $this->authorId;
     }
     
-    public function setAuthor($author) {
-        $this->author = $author;
+    public function setAuthorId(int $authorId): void{
+        $this->authorId = $authorId;
     }
     
-    public function getTime() : int {
+    public function getTimestamp() : string {
         return $this->time;
     }
     
-    public function setTime(int $time = self::TIME_NOW) {
-        if ($time === self::TIME_NOW) {
-            $time = time();
+    public function setTime(string $timeStamp) : void{
+        if (!TimeString::isValid($timeStamp)) {
+            throw new InvalidArgumentException('Invalid time given');
         }
-        $this->time = $time;
+        $this->time = $timeStamp;
     }
 
     public function getData() : array {
         return [
-            'authorId' => $this->author->getId()
+            'authorId' => $this->getAuthorId(),
+            'text' => $this->getText(),
+            'timeStamp' => $this->getTimestamp()
         ];
     }
 }

@@ -139,7 +139,6 @@ class ApiWitness extends ApiController
             $locations = $transcriptionManager->getSegmentLocationsForFullTxWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
             $apmWitness = $transcriptionManager->getTranscriptionWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
 
-
             $returnData = $apmWitness->getData();
             $witnessId = WitnessSystemId::buildFullTxId($workId, $chunkNumber, $docId, $localWitnessId, $returnData['timeStamp']);
             $returnData['witnessId'] = $witnessId;
@@ -172,6 +171,7 @@ class ApiWitness extends ApiController
             $cacheTracker->incrementHits();
             $returnData = unserialize($cachedBlob);
 
+            $cacheKeyHtmlOutput = $this->getWitnessHtmlCacheKey($requestedWitnessId);
             $cacheHit = true;
             try {
                 $html = $systemCache->get($cacheKeyHtmlOutput);

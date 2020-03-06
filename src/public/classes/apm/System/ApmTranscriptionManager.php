@@ -19,7 +19,6 @@
 
 namespace APM\System;
 
-
 use APM\FullTranscription\ApmChunkMarkLocation;
 use APM\FullTranscription\ApmChunkSegmentLocation;
 use APM\FullTranscription\ApmColumnVersionManager;
@@ -76,6 +75,7 @@ class ApmTranscriptionManager extends TranscriptionManager
     use CodeDebugWithLoggerTrait;
 
     const ERROR_DOCUMENT_NOT_FOUND = 50;
+
     const DEFAULT_CACHE_KEY_PREFIX = 'ApmTM-';
 
     /**
@@ -219,30 +219,49 @@ class ApmTranscriptionManager extends TranscriptionManager
         return  $this->cacheKeyPrefix . 'w-' . WitnessSystemId::buildFullTxId($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
     }
 
+    /**
+     * @param string $workId
+     * @param int $chunkNumber
+     * @param int $docId
+     * @param string $localWitnessId
+     * @return string
+     * @throws InvalidArgumentException
+     */
+    public function getLastChangeTimestampForWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId) : string {
+        $chunkWitnesses = $this->getWitnessesForChunk($workId, $chunkNumber);
+        $witnessFound = false;
+        $timeStamp = '';
+        foreach ($chunkWitnesses as $chunkWitnessInfo) {
+            /** @var WitnessInfo $chunkWitnessInfo */
+            $witnessDocId = $chunkWitnessInfo->typeSpecificInfo['docId'];
+            $witnessLocalWitnessId = $chunkWitnessInfo->typeSpecificInfo['localWitnessId'];
+            if ($witnessDocId === $docId && $witnessLocalWitnessId === $localWitnessId) {
+                $witnessFound = true;
+                $timeStamp = $chunkWitnessInfo->typeSpecificInfo['timeStamp'];
+                break;
+            }
+        }
+        if (!$witnessFound) {
+            $this->setError( "Document $docId not found", self::ERROR_DOCUMENT_NOT_FOUND);
+            throw new InvalidArgumentException($this->getErrorMessage(), $this->getErrorCode());
+        }
+        return $timeStamp;
+    }
+
+
+    /**
+     * @param string $workId
+     * @param int $chunkNumber
+     * @param int $docId
+     * @param string $localWitnessId
+     * @param string $timeStamp
+     * @return ApmTranscriptionWitness
+     */
     public function getTranscriptionWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeStamp) : ApmTranscriptionWitness
     {
 
-        //$this->codeDebug('Getting Transcription witness', [ $workId, $chunkNumber, $docId, $localWitnessId, $timeStamp]);
-
         if ($timeStamp === '') {
-            //$this->codeDebug('Timestamp is empty');
-            $chunkWitnesses = $this->getWitnessesForChunk($workId, $chunkNumber);
-            $witnessFound = false;
-            foreach ($chunkWitnesses as $chunkWitnessInfo) {
-                /** @var WitnessInfo $chunkWitnessInfo */
-                $witnessDocId = $chunkWitnessInfo->typeSpecificInfo['docId'];
-                $witnessLocalWitnessId = $chunkWitnessInfo->typeSpecificInfo['localWitnessId'];
-                if ($witnessDocId === $docId && $witnessLocalWitnessId === $localWitnessId) {
-                    $witnessFound = true;
-                    $timeStamp = $chunkWitnessInfo->typeSpecificInfo['timeStamp'];
-                    //$this->codeDebug("Setting timestamp:  $timeStamp");
-                    break;
-                }
-            }
-            if (!$witnessFound) {
-                $this->setError( "Document $docId not found", self::ERROR_DOCUMENT_NOT_FOUND);
-                throw new InvalidArgumentException($this->getErrorMessage(), $this->getErrorCode());
-            }
+            $timeStamp = $this->getLastChangeTimestampForWitness($workId, $chunkNumber, $docId, $localWitnessId);
         }
 
         // first, check if it's in the cache

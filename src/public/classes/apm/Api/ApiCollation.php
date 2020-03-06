@@ -23,6 +23,7 @@ namespace APM\Api;
 
 use APM\Engine\Engine;
 use APM\FullTranscription\ApmTranscriptionWitness;
+use APM\System\Decorators\ApmCollationTableDecorator;
 use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
@@ -335,8 +336,11 @@ class ApiCollation extends ApiController
         $decorator = new TransitionalCollationTableDecorator();
         $decorator->setUserInfoProvider($userDirectory);
         $decorator->setLogger($this->logger);
-
         $decoratedCollationTable = $decorator->decorate($collationTable);
+
+        $newDecorator = new ApmCollationTableDecorator();
+        $newDecorator->setLogger($this->logger);
+        $decoratedCollationTableNew = $newDecorator->decorate($collationTable);
         
         $this->profiler->lap('Collation table decorated');
         
@@ -356,6 +360,7 @@ class ApiCollation extends ApiController
         return $this->responseWithJson($response,[
             'collationEngineDetails' => $collationEngineDetails, 
             'collationTable' => $decoratedCollationTable,
+            'newCollationTable' => $decoratedCollationTableNew,
             'sigla' => $collationTable->getSigla(),
             'lastChangeInData' => $lastChangeInData,
             'quickEdition' => $quickEdition

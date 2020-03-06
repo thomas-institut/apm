@@ -21,6 +21,7 @@ namespace APM;
 
 require "autoload.php";
 
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 use APM\Core\Item\Note;
@@ -37,17 +38,14 @@ class NoteTest extends TestCase {
         $note1 = new Note();
         
         
-        $this->assertEquals(Note::AUTHOR_UNDEFINED, $note1->getAuthor());
-        $this->assertEquals(Note::TEXT_NOTEXT, $note1->getText());
-        
-        $now = time();
-        $this->assertTrue($now >= $note1->getTime());
+        $this->assertEquals(Note::DEFAULT_AUTHOR_ID, $note1->getAuthorId());
+        $this->assertEquals(Note::DEFAULT_TEXT, $note1->getText());
+        $this->assertEquals(Note::DEFAULT_TIMESTAMP, $note1->getTimestamp());
         
         $exceptionThrown = false;
-        
         try {
             $note1->setText('');
-        } catch (\InvalidArgumentException $ex) {
+        } catch (InvalidArgumentException $ex) {
             $exceptionThrown = true;
         }
         

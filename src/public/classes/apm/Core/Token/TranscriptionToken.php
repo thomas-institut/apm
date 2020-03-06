@@ -124,22 +124,39 @@ class TranscriptionToken extends Token {
     {
          $data = parent::getData();
 
-         $data['sourceItemIndexes'] = $this->getSourceItemIndexes();
+         $itemIndexes =  $this->getSourceItemIndexes();
+         $charRanges = $this->getSourceItemCharRanges();
+         //$addresses = $this->getSourceItemAddresses();
 
-         $data['sourceItemAddresses'] = [];
-         foreach($this->sourceItemAddresses as $sourceItemAddress) {
-             /** @var ItemAddressInDocument $sourceItemAddress */
-             $data['sourceItemAddresses'][] = $sourceItemAddress->getData();
-         }
-         $data['sourceItemCharRanges'] = [];
-         foreach($this->getSourceItemCharRanges() as $itemCharRange) {
-             /** @var  IntRange $itemCharRange */
-             $data['sourceItemCharRanges'][] = [
+
+         for($i = 0; $i < count($itemIndexes); $i++) {
+             $itemDataInToken = [];
+             $itemDataInToken['itemIndex'] = $itemIndexes[$i];
+             $itemCharRange = $charRanges[$i];
+             $itemDataInToken['charRange'] = [
                  'from' => $itemCharRange->getStart(),
                  'to' => $itemCharRange->getEnd(),
                  'length' => $itemCharRange->getLength()
-                 ];
+             ];
+             $data['itemData'][] = $itemDataInToken;
          }
+
+//         $data['sourceItemIndexes'] = $this->getSourceItemIndexes();
+//
+//         $data['sourceItemAddresses'] = [];
+//         foreach($this->sourceItemAddresses as $sourceItemAddress) {
+//             /** @var ItemAddressInDocument $sourceItemAddress */
+//             $data['sourceItemAddresses'][] = $sourceItemAddress->getData();
+//         }
+//         $data['sourceItemCharRanges'] = [];
+//         foreach($this->getSourceItemCharRanges() as $itemCharRange) {
+//             /** @var  IntRange $itemCharRange */
+//             $data['sourceItemCharRanges'][] = [
+//                 'from' => $itemCharRange->getStart(),
+//                 'to' => $itemCharRange->getEnd(),
+//                 'length' => $itemCharRange->getLength()
+//                 ];
+//         }
 
          $startLine = $this->getTextBoxLineRange()->getStart();
          $endLine = $this->getTextBoxLineRange()->getEnd();

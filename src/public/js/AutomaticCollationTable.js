@@ -105,7 +105,8 @@ class AutomaticCollationTable {
     }
 
     // Get last change in data
-    this.lastChangeInData = this.getLastChangeInData(this.availableWitnesses, initialApiOptions)
+    // (not yet, it will be done from API response data)
+    //this.lastChangeInData = this.getLastChangeInDataFromAvailableWitnesses(this.availableWitnesses, initialApiOptions)
 
     
     this.collationTableData = null
@@ -119,8 +120,8 @@ class AutomaticCollationTable {
     this.editSettingsFormSelector = '#editsettingsform'
     this.editSettingsButton = $('#editsettingsbutton')
 
-    this.lastTimeLabel.html(this.formatDateTime(this.lastChangeInData))
-    this.versionInfoDiv.html(this.getVersionInfoHtml())
+    this.lastTimeLabel.html('TBD')
+    this.versionInfoDiv.html('TBD')
     
     let thisObject = this
 
@@ -227,7 +228,7 @@ class AutomaticCollationTable {
   }
 
 
-  getLastChangeInData(availableWitnesses, apiCallOptions) {
+  getLastChangeInDataFromAvailableWitnesses(availableWitnesses, apiCallOptions) {
     let lastChangeInData = ''
       for(const witness of availableWitnesses) {
         if (witness.typeSpecificInfo.timeStamp > lastChangeInData) {
@@ -235,6 +236,18 @@ class AutomaticCollationTable {
         }
       }
       return lastChangeInData
+  }
+
+  getLastChangeInDataFromApiResponse(apiData) {
+    let ctData = apiData['newCollationTable']
+    let lastChangeInData = ''
+    for(const witness of ctData['witnesses']) {
+      if (witness['timeStamp'] > lastChangeInData) {
+        lastChangeInData = witness['timeStamp']
+      }
+    }
+    return lastChangeInData
+
   }
 
   getTitleFromOptions() {
@@ -254,6 +267,8 @@ class AutomaticCollationTable {
     this.collationTableDiv.html('')
     this.collationEngineDetails.html('')
      this.editionContainer.addClass('hidden')
+    this.lastTimeLabel.html('TBD...')
+    this.versionInfoDiv.html('TBD...')
 
     
     let thisObject = this
@@ -266,6 +281,9 @@ class AutomaticCollationTable {
       console.log(data)
       thisObject.collationTableData = data
       thisObject.status.html('Collating... done, formatting table <i class="fa fa-spinner fa-spin fa-fw"></i>')
+      thisObject.lastChangeInData = thisObject.getLastChangeInDataFromApiResponse(data)
+      thisObject.lastTimeLabel.html(thisObject.formatDateTime(thisObject.lastChangeInData))
+      thisObject.versionInfoDiv.html(thisObject.getVersionInfoHtml(data))
 
       if (thisObject.options.langDef[thisObject.apiCallOptions.lang].rtl) {
         thisObject.collationTableDiv.removeClass(thisObject.ltrClass)
@@ -331,13 +349,17 @@ class AutomaticCollationTable {
     this.exportCsvButton.attr('href', href)
   }
 
-  getVersionInfoHtml() {
-
+  getVersionInfoHtml(apiData) {
+    let ctData = apiData['newCollationTable']
+    let sigla = ctData['sigla']
+    let witnesses = ctData['witnesses']
     let html = ''
     html += '<ul>'
-    for(const witness of this.availableWitnesses) {
-      if(witness.type === 'fullTx') {
-        html += '<li><b>' + witness.title + '</b>: ' +  this.formatDateTime(witness.typeSpecificInfo.timeStamp) + '</li>'
+    for(let i=0; i < witnesses.length; i++) {
+      let witness = witnesses[i]
+      let siglum = sigla[i]
+      if(witness['witnessType'] === 'fullTx') {
+        html += '<li><b>' + siglum + '</b>: ' +  this.formatDateTime(witness['timeStamp']) + '</li>'
       }
     }
     html += '</ul>'
@@ -346,15 +368,7 @@ class AutomaticCollationTable {
   }
 
   formatDateTime(sqlDateTimeString) {
-
     return moment(sqlDateTimeString).format('D MMM YYYY, H:mm:ss')
-    // let dateTimeNoMicroseconds = sqlDateTimeString.split('.')[0];
-    //
-    // let date = new Date(dateTimeNoMicroseconds)
-    //
-    // let months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep' , 'Oct', 'Nov', 'Dec']
-    //
-    // return date.getDay() + ' ' + months[date.getMonth()] + ' ' + date.getFullYear() + ', ' + date.getHours() + ':' + this.padMinutes(date.getMinutes())
   }
 
   padMinutes(minutes) {

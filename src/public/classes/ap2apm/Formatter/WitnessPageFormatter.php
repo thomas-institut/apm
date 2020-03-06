@@ -20,14 +20,13 @@
 
 namespace AverroesProjectToApm\Formatter;
 
-use APM\Core\Item\ItemFactory;
 use APM\Core\Item\MarkType;
 use APM\Core\Item\Note;
 use APM\Core\Item\TextualItem;
 use APM\Core\Item\Mark;
 use APM\Core\Item\Item;
 use APM\Core\Item\NoWbMark;
-use AverroesProjectToApm\ApUserDirectory;
+use APM\Core\Transcription\ItemAddressInDocument;
 use AverroesProjectToApm\DatabaseItemStream;
 use ThomasInstitut\TimeString\TimeString;
 use ThomasInstitut\UserManager\PersonInfoProvider;
@@ -116,6 +115,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         foreach($stream->getItems() as $itemWithAddress) {
             $theItem = $itemWithAddress->getItem();
             $theAddress = $itemWithAddress->getAddress();
+            /** @var ItemAddressInDocument $theAddress */
            
             if ($theAddress->getFoliation() !== $currentFoliation) {
                 $currentFoliation = $theAddress->getFoliation();
@@ -143,6 +143,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
             
             $gotNoWb = false;
             if (is_a($theItem, $this->markClass)) {
+                /** @var Mark $theItem */
                 if ($theItem->getMarkType() === MarkType::REF) {
                     $html .= ' ';
                     continue;
@@ -168,7 +169,6 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         $classes = [];
         $classes[] = self::CLASS_TEXTUALITEM;
         $popoverHtml = '';
-
 
         $itemFormat = $item->getData();
         $classes[] = self::CLASS_HAND . $item->getHand();
@@ -234,8 +234,6 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         $classes =  $itemFormat['classes'];
         $popoverHtml = $itemFormat['popoverHtml'];
 
-
-        
         $html = '<span class="' . 
                 implode(' ', $classes) . '"';
         if ($popoverHtml !== '') {
@@ -318,8 +316,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         }
         return $html;
     }
-    
-    
+
     protected function generateSingleLineInfoItem(string $title, string $content) : string {
         $html = '<p class="'. self::CLASS_SECTIONHEADER . '">';
         $html .= '<b>' . $title . '</b>: ';

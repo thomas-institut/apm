@@ -40,10 +40,18 @@
 
         }
 
-        .te-tr-0 {
-            font-size: 1.2em;
-            color: darkblue;
+        td.variant1 {
+            background: pink;
         }
+
+        td.variant2 {
+            background: plum;
+        }
+
+        /*.te-tr-0 {*/
+        /*    font-size: 1.2em;*/
+        /*    color: darkblue;*/
+        /*}*/
 
         .te-rowtitle {
             font-weight: bold;
@@ -84,52 +92,164 @@
           return theArray
         }
 
-        function renderText(matrixArray) {
-          return matrixArray.join(' ')
+        function renderText(witness, refArray) {
+          let textArray = []
+          for(const ref of refArray) {
+            if (ref=== -1) {
+              textArray.push('&ndash;')
+            } else {
+              textArray.push(witness.tokens[ref].text)
+            }
+          }
+          return textArray.join(' ')
         }
 
-        let texts = [
+        function rankVariants(stringArray) {
+          let countsByString = []
+          for(const text of stringArray) {
+            if (text === '') {
+              continue
+            }
+            if (countsByString[text] === undefined) {
+              countsByString[text] = 1
+            } else {
+              countsByString[text]++
+            }
+          }
+
+          let countArray = []
+
+          for(const aKey of Object.keys(countsByString)) {
+            countArray.push({ text: aKey, count: countsByString[aKey]})
+          }
+          countArray.sort(function (a,b) { return b['count'] - a['count']})
+
+          let rankObject = {}
+          for(let i = 0; i < countArray.length; i++) {
+            rankObject[countArray[i]['text']] = i
+          }
+
+          let ranks = []
+          for(const text of stringArray) {
+            if (text === '') {
+              ranks.push(12345678)
+              continue
+            }
+            ranks.push(rankObject[text])
+          }
+          return ranks
+        }
+
+        function genVariantsMatrix(refMatrix, witnesses) {
+
+          let variantMatrix = new Matrix(refMatrix.nRows, refMatrix.nCols)
+
+          for (let col=0; col < refMatrix.nCols; col++) {
+            let refCol = refMatrix.getColumn(col)
+            //console.log('Col ' + col)
+            //console.log(refCol)
+            let textCol = []
+            for(let row=0; row < refMatrix.nRows; row++) {
+              let ref = refCol[row]
+              if (ref=== -1) {
+                textCol.push('')
+                continue
+              }
+              textCol.push(witnesses[row].tokens[ref].text)
+            }
+            //console.log(textCol)
+            let ranks = rankVariants(textCol)
+            //console.log(ranks)
+            for(let row=0; row < refMatrix.nRows; row++) {
+              variantMatrix.setValue(row, col, ranks[row])
+            }
+          }
+          return variantMatrix
+        }
+
+       let texts = [
           "Today is Wednesday February 5th, 2020. Surprisingly, it's a sunny day in Cologne, but it's only 4 degrees Celsius outside. Much more text in this witness.",
           "Today is Wednsday February 5, 2020. Luckily, is a sunny day in Cologne, it's only 4 degrees Celsius outside.",
           "Today is Wednesday February 5th, 2020. Surprisingly, it's a sunny day in Cologne, but it's only 4 degrees outside.",
           "Today is Thursday February 5th, 2020. Surprisingly, it's a sunny day in Köln, yet it's only 4 degrees",
         ]
 
+        let witnesses = []
+        let initialNumColumns = 28
+        let rowDefinition = []
+        let witnessNumber = 0
+        for(const text of texts) {
+          let textArray = getArrayFromText(text)
+          let refArray = []
+          witnesses[witnessNumber] = {
+            title: 'W' + (witnessNumber+1),
+            tokens: []
+          }
+          for(let i = 0; i < initialNumColumns; i++) {
+            if (textArray[i] !== undefined) {
+              refArray[i] = i
+              witnesses[witnessNumber].tokens.push({'text' : textArray[i]})
+            } else {
+              refArray[i] = -1
+            }
+          }
+          rowDefinition.push({
+            title: 'W' + (witnessNumber+1),
+            values: refArray
+          })
+          witnessNumber++
+        }
+
+        console.log(witnesses)
+
 
             let te = new TableEditor({
               id: 'thetable',
               showInMultipleRows: true,
               drawTableInConstructor: false,
-              rowDefinition: [
-                {
-                  title: 'Text',
-                  isEditable: true,
-                  values:  getArrayFromText(texts[0])
-                },
-                {
-                  title: 'A',
-                  values: getArrayFromText(texts[1])
-                },
-                {
-                  title: 'B',
-                  values: getArrayFromText(texts[2])
-                },
-                {
-                  title: 'C',
-                  values: getArrayFromText(texts[3])
-                }
-              ],
+              rowDefinition: rowDefinition,
+              // rowDefinition: [
+              //   {
+              //     title: 'T',
+              //     //isEditable: true,
+              //     values:  getArrayFromText(texts[0])
+              //   },
+              //   {
+              //     title: 'A',
+              //     values: getArrayFromText(texts[1])
+              //   },
+              //   {
+              //     title: 'B',
+              //     values: getArrayFromText(texts[2])
+              //   },
+              //   {
+              //     title: 'C',
+              //     values: getArrayFromText(texts[3])
+              //   }
+              // ],
               generateCellTdExtraAttributes: function(row, col, value) {
-                if (row === 0 || value==='') {
+                if ( value===-1) {
                   return ''
                 }
 
                 let popoverTitle = te.getRowTitle(row) + ', ' + (col+1)
-                let popoverText = '<b>' + value + '</b>'
+                let popoverText = '<b>' + witnesses[row].tokens[value].text + '</b>'
+                popoverText += '<br/>' + 'Variant: ' + (variantMatrix.getValue(row, col) + 1)
                 return 'title="' + popoverTitle + '" data-content="' + popoverText + '"'
               },
+              getEmptyValue: function() { return -1},
+              isEmptyValue: function(value) { return value === -1},
               generateCellClasses: function(row, col, value) {
-                return [ 'withpopover']
+                if (value === -1) {
+                  return []
+                }
+                return [ 'withpopover', ('variant' + variantMatrix.getValue(row,col))]
+              },
+              generateCellContent: function(row, col, value) {
+                if (value===-1) {
+                  return te.options.emptyCellHtml
+                }
+                return witnesses[row].tokens[value].text
               },
               // There's no need to assign popover every time the table is
               // redrawn. The popovers can be assigned to the whole container
@@ -169,7 +289,7 @@
               onContentChangedEventHandler: function(data) {
                 let row = data.detail.row
                 if (row === 0) {
-                  $('#thetext').html(renderText(te.getRow(0)))
+                  $('#thetext').html(renderText(witnesses[0], te.getRow(0)))
                 }
               }
             })
@@ -185,18 +305,40 @@
           container: 'body'
         })
 
+        let variantMatrix = genVariantsMatrix(te.getMatrix(), witnesses)
+
+        variantMatrix.logMatrix('Variant matrix')
         // hide popovers before cell movements
         te.on('cell-pre-move', function(data){
           $(data.detail.selector).popover('hide')
         })
-        //
-        // te.on('column-add', function(data){
-        //   console.log('New column index = ' + data.detail.col)
-        // })
-        //
-        // te.on('column-delete', function(data){
-        //   console.log('Deleted column index = ' + data.detail.col)
-        // })
+
+        // recalculate varians on cell moves
+        te.on('cell-post-move-right',function(data) {
+          //console.log('post move right : '+ data.detail.col)
+          variantMatrix = genVariantsMatrix(te.getMatrix(), witnesses)
+          //console.log(te.getColumn(data.detail.col))
+          //console.log(variantMatrix.getColumn(data.detail.col))
+          te.redrawColumn(data.detail.col)
+          te.redrawColumn(data.detail.col+1)
+        })
+
+        te.on('cell-post-move-left', function(data) {
+          //console.log('post move left : '+ data.detail.col)
+          variantMatrix = genVariantsMatrix(te.getMatrix(), witnesses)
+          //console.log(te.getColumn(data.detail.col))
+          //console.log(variantMatrix.getColumn(data.detail.col))
+          te.redrawColumn(data.detail.col)
+          te.redrawColumn(data.detail.col-1)
+        })
+
+        te.on('column-add', function(data){
+          $('#thetext').html(renderText(witnesses[0], te.getRow(0)))
+        })
+
+        te.on('column-delete', function(data){
+          $('#thetext').html(renderText(witnesses[0], te.getRow(0)))
+        })
 
         function getSingleRowToggleLabel() {
           if (te.isTableShownInMultipleRows()) {
@@ -231,7 +373,7 @@
         })
 
         te.redrawTable()
-        $('#thetext').html(renderText(te.getRow(0)))
+        $('#thetext').html(renderText(witnesses[0], te.getRow(0)))
 
       })
     </script>

@@ -184,7 +184,7 @@ class TableEditor {
       valueArray.push(cleanRowDefinition.values)
     }
 
-    this.matrix = new Matrix(0,0)
+    this.matrix = new Matrix(0,0, this.options.getEmptyValue())
     this.matrix.setFromArray(valueArray)
     this.matrix.logMatrix('TableEditor ' + this.options.id)
 
@@ -222,6 +222,14 @@ class TableEditor {
 
   getRow(row) {
     return this.matrix.getRow(row)
+  }
+
+  getColumn(col) {
+    return this.matrix.getColumn(col)
+  }
+
+  getMatrix() {
+    return this.matrix
   }
 
   getRowTitle(row) {
@@ -355,7 +363,7 @@ class TableEditor {
     let html = ''
     let value = this.matrix.getValue(row, col)
     let cellClasses = [ this.getTdClass(row,col)]
-    cellClasses.push(this.options.generateCellClasses(row, col, value ))
+    cellClasses = cellClasses.concat(this.options.generateCellClasses(row, col, value ))
     let tdExtra = this.options.generateCellTdExtraAttributes(row, col, value )
     html += '<td class="' +  cellClasses.join(' ') + '" ' + tdExtra + '>'
     html += this.generateTdHtml(row, col)
@@ -507,6 +515,17 @@ class TableEditor {
     }
   }
 
+  redrawCell(row, col) {
+    $(this.getTdSelector(row, col)).replaceWith(this.generateCellHtml(row, col))
+    this.setupCellEventHandlers(row, col)
+  }
+
+  redrawColumn(col) {
+    for(let row = 0; row < this.matrix.nRows; row++) {
+      this.redrawCell(row, col)
+    }
+  }
+
   genOnClickMoveCellLeftButton(row, col) {
     let thisObject = this
     return function() {
@@ -516,17 +535,21 @@ class TableEditor {
         thisObject.dispatchCellMoveEvents('pre', 'left', row, col)
         thisObject.matrix.setValue(row, col-1, thisObject.matrix.getValue(row, col))
         thisObject.matrix.setValue(row, col, thisObject.options.getEmptyValue())
+
         // refresh html table cells
-        $(thisObject.getTdSelector(row, col-1)).replaceWith(thisObject.generateCellHtml(row, col-1))
-        $(thisObject.getTdSelector(row, col)).replaceWith(thisObject.generateCellHtml(row, col))
-        // $(thisObject.getTdSelector(row, col-1)).html(thisObject.generateTdHtml(row, col-1))
-        // $(thisObject.getTdSelector(row, col)).html(thisObject.generateTdHtml(row, col))
+        thisObject.redrawCell(row, col-1)
+        thisObject.redrawCell(row, col)
+        // $(thisObject.getTdSelector(row, col-1)).replaceWith(thisObject.generateCellHtml(row, col-1))
+        // $(thisObject.getTdSelector(row, col)).replaceWith(thisObject.generateCellHtml(row, col))
+
         // setup cell button handlers
         thisObject.setupCellEventHandlers(row,col-1)
         thisObject.setupCellEventHandlers(row,col)
+
         // dispatch cell redrawn events
         thisObject.dispatchCellDrawnEvent(row, col-1)
         thisObject.dispatchCellDrawnEvent(row, col)
+
         // post move events
         thisObject.dispatchCellMoveEvents('post', 'left', row, col)
       }
@@ -543,10 +566,11 @@ class TableEditor {
         thisObject.matrix.setValue(row, col+1, thisObject.matrix.getValue(row, col))
         thisObject.matrix.setValue(row, col, thisObject.options.getEmptyValue())
         // refresh html table cells
-        $(thisObject.getTdSelector(row, col+1)).replaceWith(thisObject.generateCellHtml(row, col+1))
-        $(thisObject.getTdSelector(row, col)).replaceWith(thisObject.generateCellHtml(row, col))
-        // $(thisObject.getTdSelector(row, col+1)).html(thisObject.generateTdHtml(row, col+1))
-        // $(thisObject.getTdSelector(row, col)).html(thisObject.generateTdHtml(row, col))
+        thisObject.redrawCell(row, col+1)
+        thisObject.redrawCell(row, col)
+        // $(thisObject.getTdSelector(row, col+1)).replaceWith(thisObject.generateCellHtml(row, col+1))
+        // $(thisObject.getTdSelector(row, col)).replaceWith(thisObject.generateCellHtml(row, col))
+
         // setup cell button handlers
         thisObject.setupCellEventHandlers(row,col)
         thisObject.setupCellEventHandlers(row,col+1)
@@ -624,7 +648,7 @@ class TableEditor {
   genOnClickAddColumnRightButton(col) {
     let thisObject = this
     return function() {
-      thisObject.matrix.addColumnAfter(col)
+      thisObject.matrix.addColumnAfter(col,  thisObject.options.getEmptyValue())
       thisObject.dispatchColumnAddEvents(col+1)
       thisObject.redrawTable()
     }
@@ -634,7 +658,7 @@ class TableEditor {
     let thisObject = this
     return function() {
       //console.log('Adding column LEFT')
-      thisObject.matrix.addColumnAfter(col-1)
+      thisObject.matrix.addColumnAfter(col-1, thisObject.options.getEmptyValue())
       thisObject.dispatchColumnAddEvents(col)
       thisObject.redrawTable()
     }
@@ -711,6 +735,7 @@ class TableEditor {
       col: deletedColumn,
     })
   }
+
   dispatchColumnAddEvents(newCol) {
     this.dispatchEvent('column-add', {
       col: newCol,

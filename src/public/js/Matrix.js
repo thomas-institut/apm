@@ -95,9 +95,20 @@ class Matrix {
 
   getRow(row) {
     if (row < 0 || row >= this.nRows) {
-      console.error('Out of range row/col getting value: ' + row + ':' + col)
+      console.error('Out of range row : ' + row )
     }
     return this.theMatrix[row]
+  }
+
+  getColumn(col) {
+    if (col < 0 || col >= this.nCols) {
+      console.error('Out of range column : ' + col )
+    }
+    let theCol = []
+    for(let i = 0; i < this.nRows; i++) {
+      theCol.push(this.getValue(i, col))
+    }
+    return theCol
   }
 
   setValue(row, col, value) {
@@ -118,6 +129,7 @@ class Matrix {
 
   logMatrix(title) {
     console.log('Matrix ' + title + ': ' + this.nRows +  ' rows x ' + this.nCols + ' cols')
+    console.log('Default value: ' + this.defaultValue)
     console.log(this.theMatrix)
   }
 

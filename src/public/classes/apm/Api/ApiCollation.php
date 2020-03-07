@@ -286,7 +286,6 @@ class ApiCollation extends ApiController
         
 
         $itemIds = [];
-        $lastChangeInData = '0000-00-00 00:00:00.000000';
 
         
 
@@ -362,7 +361,6 @@ class ApiCollation extends ApiController
             'collationTable' => $decoratedCollationTable,
             'newCollationTable' => $decoratedCollationTableNew,
             'sigla' => $collationTable->getSigla(),
-            'lastChangeInData' => $lastChangeInData,
             'quickEdition' => $quickEdition
             ]);
     }

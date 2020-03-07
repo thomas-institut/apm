@@ -67,7 +67,7 @@ class AutomaticCollationTable {
     this.exportCsvButton = $('#exportcsvbutton')
     this.quickEditionButton = $('#quickedbutton')
     this.versionInfoButton = $('#versioninfobutton')
-    this.versionInfoDiv = $('#versioninfo')
+    this.witnessInfoDiv = $('#versioninfo')
     this.lastTimeLabel = $('#lastTimeLabel')
     this.editionContainer = $('#editiondiv')
     this.editionDiv = $('#theedition')
@@ -121,7 +121,7 @@ class AutomaticCollationTable {
     this.editSettingsButton = $('#editsettingsbutton')
 
     this.lastTimeLabel.html('TBD')
-    this.versionInfoDiv.html('TBD')
+    this.witnessInfoDiv.html('TBD')
     
     let thisObject = this
 
@@ -136,13 +136,13 @@ class AutomaticCollationTable {
       }
     })
 
-    this.versionInfoDiv.addClass('hidden')
+    this.witnessInfoDiv.addClass('hidden')
     this.versionInfoButton.on('click', function () {
-      if (thisObject.versionInfoDiv.hasClass('hidden')) {
-        thisObject.versionInfoDiv.removeClass('hidden')
+      if (thisObject.witnessInfoDiv.hasClass('hidden')) {
+        thisObject.witnessInfoDiv.removeClass('hidden')
         thisObject.versionInfoButton.html('<i class="fas fa-angle-down" aria-hidden="true"></i>')
       } else {
-        thisObject.versionInfoDiv.addClass('hidden')
+        thisObject.witnessInfoDiv.addClass('hidden')
         thisObject.versionInfoButton.html('<i class="fas fa-angle-right" aria-hidden="true"></i>')
       }
     })
@@ -268,7 +268,7 @@ class AutomaticCollationTable {
     this.collationEngineDetails.html('')
      this.editionContainer.addClass('hidden')
     this.lastTimeLabel.html('TBD...')
-    this.versionInfoDiv.html('TBD...')
+    this.witnessInfoDiv.html('TBD...')
 
     
     let thisObject = this
@@ -283,7 +283,7 @@ class AutomaticCollationTable {
       thisObject.status.html('Collating... done, formatting table <i class="fa fa-spinner fa-spin fa-fw"></i>')
       thisObject.lastChangeInData = thisObject.getLastChangeInDataFromApiResponse(data)
       thisObject.lastTimeLabel.html(thisObject.formatDateTime(thisObject.lastChangeInData))
-      thisObject.versionInfoDiv.html(thisObject.getVersionInfoHtml(data))
+      thisObject.witnessInfoDiv.html(thisObject.getVersionInfoHtml(data))
 
       if (thisObject.options.langDef[thisObject.apiCallOptions.lang].rtl) {
         thisObject.collationTableDiv.removeClass(thisObject.ltrClass)

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="../../../node_modules/bootstrap/dist/css/bootstrap.css"/>
+    <script type="text/javascript" src="../../../node_modules/jquery/dist/jquery.js"></script>
+    <script type="text/javascript" src="../../../node_modules/bootstrap/dist/js/bootstrap.js"></script>
+    <script type="text/javascript" src="../../../js/OptionsChecker.js"></script>
+    <script type="text/javascript" src="../../../js/Matrix.js"></script>
+    <script type="text/javascript" src="../../../js/TableEditor.js"></script>
+
+    <title>Table editor</title>
+
+    <style>
+
+
+        .te-table {
+            border-collapse: collapse;
+            margin-bottom: 3em;
+        }
+
+        .te-table a {
+            color: grey;
+            text-decoration: none;
+            padding: 0 5px;
+        }
+
+        .te-table th {
+            font-weight: normal;
+            border: none;
+            text-align: center;
+            color: white;
+        }
+
+        .te-table td {
+            border: 1px solid silver;
+            padding: 5px;
+
+        }
+
+        .te-tr-0 {
+            font-size: 1.2em;
+            color: darkblue;
+        }
+
+        .te-rowtitle {
+            font-weight: bold;
+        }
+
+        td.te-rowtitle {
+            border: none;
+        }
+
+        .table-edit-mode {
+            border-left: 1px solid red;
+            padding-left: 1em;
+        }
+
+        .table-edit-mode .te-table th {
+            font-weight: normal;
+            color: black;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+    </style>
+
+    <script>
+      $(function() {
+        function getArrayFromText(text) {
+          let splitText = text.split(' ')
+          let theArray = []
+          for(let i = 0; i < splitText.length; i++) {
+            if (splitText[i] === '-') {
+              theArray.push('')
+            } else {
+              theArray.push(splitText[i])
+            }
+          }
+          return theArray
+        }
+
+        function renderText(matrixArray) {
+          return matrixArray.join(' ')
+        }
+
+        let texts = [
+          "Today is Wednesday February 5th, 2020. Surprisingly, it's a sunny day in Cologne, but it's only 4 degrees Celsius outside. Much more text in this witness.",
+          "Today is Wednsday February 5, 2020. Luckily, is a sunny day in Cologne, it's only 4 degrees Celsius outside.",
+          "Today is Wednesday February 5th, 2020. Surprisingly, it's a sunny day in Cologne, but it's only 4 degrees outside.",
+          "Today is Thursday February 5th, 2020. Surprisingly, it's a sunny day in Köln, yet it's only 4 degrees",
+        ]
+
+
+            let te = new TableEditor({
+              id: 'thetable',
+              showInMultipleRows: true,
+              drawTableInConstructor: false,
+              rowDefinition: [
+                {
+                  title: 'Text',
+                  isEditable: true,
+                  values:  getArrayFromText(texts[0])
+                },
+                {
+                  title: 'A',
+                  values: getArrayFromText(texts[1])
+                },
+                {
+                  title: 'B',
+                  values: getArrayFromText(texts[2])
+                },
+                {
+                  title: 'C',
+                  values: getArrayFromText(texts[3])
+                }
+              ],
+              generateCellTdExtraAttributes: function(row, col, value) {
+                if (row === 0 || value==='') {
+                  return ''
+                }
+
+                let popoverTitle = te.getRowTitle(row) + ', ' + (col+1)
+                let popoverText = '<b>' + value + '</b>'
+                return 'title="' + popoverTitle + '" data-content="' + popoverText + '"'
+              },
+              generateCellClasses: function(row, col, value) {
+                return [ 'withpopover']
+              },
+              // There's no need to assign popover every time the table is
+              // redrawn. The popovers can be assigned to the whole container
+              // but including a selector class to restrict them to specific elements within
+              // it. This will take care of dynamically generated elements.
+              // In short, this handler code below is superfluous
+              // onTableDrawnEventHandler: function(data) {
+              //   console.log('Assigning popovers')
+              //   $('#thetable').popover({
+              //     trigger: "hover",
+              //     selector: '.withpopover',
+              //     delay: {show: 500 , hide:0},
+              //     html: true
+              //   })
+              // },
+              //
+              // Another way of putting popovers in cells is by assigning them after creation, only problem is that it
+              // slows down table drawing considerably. it's better to generate popover text with title
+              // and data-content attributes in the td's and assigning popovers to the whole table container
+              // onCellDrawnEventHandler: function(data) {
+              //   let row = data.detail.row
+              //   let col = data.detail.col
+              //   let cellContentSelector = data.detail.selector
+              //   if (row === 0) {
+              //     return
+              //   }
+              //   if (te.matrix.getValue(row, col) !== '') {
+              //     $(cellContentSelector).popover({
+              //       title: te.getRowTitle(row) + ', col ' + (col+1),
+              //       content: 'Value: ' +  te.getValue(row,col),
+              //       html: true,
+              //       trigger: 'hover',
+              //       delay: { show: 500, hide: 0}
+              //     })
+              //   }
+              // },
+              onContentChangedEventHandler: function(data) {
+                let row = data.detail.row
+                if (row === 0) {
+                  $('#thetext').html(renderText(te.getRow(0)))
+                }
+              }
+            })
+
+        // Assign popover to the whole container with an explicit selector.
+        // this can be done before the table is drawn
+        $('#thetable').popover({
+          trigger: "hover",
+          selector: '.withpopover',
+          delay: {show: 500 , hide:0},
+          placement: "auto top",
+          html: true,
+          container: 'body'
+        })
+
+        // hide popovers before cell movements
+        te.on('cell-pre-move', function(data){
+          $(data.detail.selector).popover('hide')
+        })
+        //
+        // te.on('column-add', function(data){
+        //   console.log('New column index = ' + data.detail.col)
+        // })
+        //
+        // te.on('column-delete', function(data){
+        //   console.log('Deleted column index = ' + data.detail.col)
+        // })
+
+        function getSingleRowToggleLabel() {
+          if (te.isTableShownInMultipleRows()) {
+            return 'Show in a single row'
+          }
+          return 'Show in multiple rows'
+        }
+
+        function getEditModeToggleLabel() {
+          if (te.isTableInEditMode()) {
+            return 'Stop editing'
+          }
+          return 'Edit table'
+        }
+
+        $('#str-label').html(getSingleRowToggleLabel())
+
+        $('#singlerowtoggle').on('click', function(){
+          // console.log("single row toggle")
+          if (te.isTableShownInMultipleRows()) {
+            te.showInSingleRow()
+          } else {
+            te.showInMultipleRows()
+          }
+          $('#str-label').html(getSingleRowToggleLabel())
+        })
+
+        $('#emt-label').html(getEditModeToggleLabel())
+        $('#editmodetoggle').on('click', function (){
+          te.toggleTableEditMode()
+          $('#emt-label').html(getEditModeToggleLabel())
+        })
+
+        te.redrawTable()
+        $('#thetext').html(renderText(te.getRow(0)))
+
+      })
+    </script>
+</head>
+<body>
+<div class="container">
+<h1>Table Editor</h1>
+    <p><button id="singlerowtoggle"><span id="str-label">...</span></button>
+    <button id="editmodetoggle"><span id="emt-label">...</span></button>
+    </p>
+<div id="thetable" style="overflow: auto">The table will be here...</div>
+
+    <h2>The Text</h2>
+    <div id="thetext">The text will be here...</div>
+</div>
+</body>
+</html>

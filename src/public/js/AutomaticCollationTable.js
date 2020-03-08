@@ -60,6 +60,7 @@ class AutomaticCollationTable {
     
     this.availableWitnesses = this.options.availableWitnesses
     this.collationTableDiv = $('#collationtablediv')
+    this.collationTableDivNew = $('#newcollationtablediv')
     this.actTitleElement = $('#act-title')
     this.status = $('#status')
     this.collationEngineDetails = $('#collationEngineDetails')
@@ -315,6 +316,26 @@ class AutomaticCollationTable {
       siglaHtml += '</ul>'
       thisObject.siglaDiv.html(siglaHtml)
 
+      // new table
+      let rowDefinition = []
+      for (let i = 0; i < data.newCollationTable.sigla.length; i++) {
+        let witness = data.newCollationTable.witnesses[i]
+        let siglum = data.newCollationTable.sigla[i]
+        let tokenArray = data.newCollationTable.collationMatrix[i]
+        rowDefinition.push({
+          title: siglum,
+          values: tokenArray,
+          isEditable: false
+        })
+      }
+      this.tableEditor = new TableEditor({
+        id: 'newcollationtablediv',
+        showInMultipleRows: true,
+        rowDefinition: rowDefinition,
+        getEmptyValue: function() { return -1},
+        isEmptyValue: function(value) { return value === -1},
+      })
+
       
     })
     .fail(function(resp) {
@@ -385,5 +406,8 @@ class AutomaticCollationTable {
     }
     return fields.join('-')
   }
+
+  // Functions for  Table Editor
+
   
 }

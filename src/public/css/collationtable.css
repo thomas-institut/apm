@@ -266,5 +266,67 @@ div.itemspopover {
     margin-bottom: 10px;
 }
 
+/*New Collation Table*/
+
+.te-table {
+    border-collapse: collapse;
+    margin-bottom: 3em;
+}
+
+.te-table a {
+    color: grey;
+    text-decoration: none;
+    padding: 0 5px;
+}
+
+.te-table th {
+    font-weight: normal;
+    border: none;
+    text-align: center;
+    color: white;
+}
+
+.te-table td {
+    border: 1px solid silver;
+    padding: 5px;
+
+}
+
+td.variant1 {
+    background: pink;
+}
+
+td.variant2 {
+    background: plum;
+}
+
+/*.te-tr-0 {*/
+/*    font-size: 1.2em;*/
+/*    color: darkblue;*/
+/*}*/
+
+.te-rowtitle {
+    font-weight: bold;
+}
+
+td.te-rowtitle {
+    border: none;
+}
+
+.table-edit-mode {
+    border-left: 1px solid red;
+    padding-left: 1em;
+}
+
+.table-edit-mode .te-table th {
+    font-weight: normal;
+    color: black;
+}
+
+.hidden {
+    display: none;
+}
+
+
 
 

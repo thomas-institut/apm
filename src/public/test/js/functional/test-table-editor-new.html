@@ -313,7 +313,7 @@
           $(data.detail.selector).popover('hide')
         })
 
-        // recalculate varians on cell moves
+        // recalculate variants on cell moves
         te.on('cell-post-move-right',function(data) {
           //console.log('post move right : '+ data.detail.col)
           variantMatrix = genVariantsMatrix(te.getMatrix(), witnesses)

@@ -76,7 +76,7 @@ class FullNameAnalysis
 
         $subStrings = [];
         foreach($analyzedFullName['firstNames'] as $firstName) {
-            $subStrings[] = self::getInitial($firstName);
+            $subStrings[] = self::getInitial($firstName) . '.';
         }
 
         foreach($analyzedFullName['lastNames'] as $lastName) {

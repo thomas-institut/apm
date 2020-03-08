@@ -16,6 +16,21 @@
  *  
  */
 
+/* Fonts */
+@font-face {
+    font-family: "KacstOffice";
+    src: url(../fonts/KacstOffice.ttf) format("truetype");
+}
+
+@font-face {
+    font-family: "FreeSerif";
+    src: url(../fonts/FreeSerif.ttf) format("truetype");
+}
+
+@font-face {
+    font-family: "Dejavu Sans";
+    src: url(../fonts/DejaVuSans.ttf) format("truetype");
+}
 
 body {
     font-family: Helvetica, sans-serif;

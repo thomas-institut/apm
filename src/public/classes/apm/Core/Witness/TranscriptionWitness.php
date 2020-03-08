@@ -409,6 +409,7 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
         $data =  parent::getData();
         $data['items'] = $this->getItemDataArray();
         $data['tokens'] = $this->getTokenDataArray();
+        $data['nonTokenItemIndexes'] = $this->getNonTokenItemIndexes();
         return $data;
     }
 
@@ -432,6 +433,7 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
         // Tokens
         $tokens = $this->getTokens();
         $items = $this->getItemWithAddressArray();
+        $textualItemClass = TextualItem::class;
         $tokenDataArray = [];
         foreach($tokens as $token) {
             /** @var TranscriptionToken $token */
@@ -440,8 +442,15 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
             $charRanges = $token->getSourceItemCharRanges();
             for ($i =0; $i< count($itemIndexes); $i++) {
                 $sourceItem = $items[$itemIndexes[$i]];
+                $rawItem = $sourceItem->getItem();
                 $charRange = $charRanges[$i];
-                $tokenData['itemData'][$i]['text'] = $this->getSubstringFromItemAndRange($sourceItem->getItem(), $charRange);
+                $tokenData['itemData'][$i]['text'] = $this->getSubstringFromItemAndRange($rawItem, $charRange);
+                if (is_a($rawItem, $textualItemClass)) {
+                    $tokenData['itemData'][$i]['lang'] = $rawItem->getLanguage();
+                } else {
+                    $tokenData['itemData'][$i]['lang'] = '';
+                }
+
             }
 
             $tokenDataArray[] = $tokenData;

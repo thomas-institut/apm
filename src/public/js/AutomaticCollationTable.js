@@ -60,7 +60,8 @@ class AutomaticCollationTable {
     
     this.availableWitnesses = this.options.availableWitnesses
     this.collationTableDiv = $('#collationtablediv')
-    this.collationTableDivNew = $('#newcollationtablediv')
+    this.collationTableNewDivId = 'newcollationtablediv'
+    this.collationTableDivNew = $('#' + this.collationTableNewDivId)
     this.actTitleElement = $('#act-title')
     this.status = $('#status')
     this.collationEngineDetails = $('#collationEngineDetails')
@@ -154,11 +155,20 @@ class AutomaticCollationTable {
     this.viewSettingsFormManager.on('apply', function(e) {
       thisObject.viewSettings = e.detail
       console.log('Got view settings from form')
+      console.log(thisObject.viewSettings)
 
       thisObject.ctf.setOptions(thisObject.viewSettings)
       thisObject.collationTableDiv.html(thisObject.ctf.format(thisObject.collationTableData, thisObject.popoverClass))
       thisObject.setCsvDownloadFile(thisObject.collationTableData)
       thisObject.viewSettingsFormManager.hide()
+
+      if (thisObject.viewSettings.multipleRows) {
+        thisObject.tableEditor.showInMultipleRows(thisObject.viewSettings.maxColumnsPerTable, false)
+      } else {
+        thisObject.tableEditor.showInSingleRow(false)
+      }
+
+      thisObject.tableEditor.redrawTable()
     })
     
     
@@ -317,25 +327,16 @@ class AutomaticCollationTable {
       thisObject.siglaDiv.html(siglaHtml)
 
       // new table
-      let rowDefinition = []
-      for (let i = 0; i < data.newCollationTable.sigla.length; i++) {
-        let witness = data.newCollationTable.witnesses[i]
-        let siglum = data.newCollationTable.sigla[i]
-        let tokenArray = data.newCollationTable.collationMatrix[i]
-        rowDefinition.push({
-          title: siglum,
-          values: tokenArray,
-          isEditable: false
-        })
-      }
-      this.tableEditor = new TableEditor({
-        id: 'newcollationtablediv',
-        showInMultipleRows: true,
-        rowDefinition: rowDefinition,
-        getEmptyValue: function() { return -1},
-        isEmptyValue: function(value) { return value === -1},
+     thisObject.collationTableDivNew.popover({
+        trigger: "hover",
+        selector: '.withpopover',
+        delay: {show: 500 , hide:0},
+        placement: "auto top",
+        html: true,
+        container: 'body'
       })
 
+      thisObject.setupTableEditorFromApiData()
       
     })
     .fail(function(resp) {
@@ -392,6 +393,10 @@ class AutomaticCollationTable {
     return moment(sqlDateTimeString).format('D MMM YYYY, H:mm:ss')
   }
 
+  formatNoteTime(timeStamp) {
+    return moment(timeStamp).format('D MMM YYYY, H:mm')
+  }
+
   padMinutes(minutes) {
     if (minutes < 10) {
       return '0' + minutes
@@ -408,6 +413,412 @@ class AutomaticCollationTable {
   }
 
   // Functions for  Table Editor
+  setupTableEditorFromApiData() {
+    let data = this.collationTableData
 
-  
+    // div text direction
+    if (this.options.langDef[data['newCollationTable']['lang']].rtl) {
+      this.collationTableDivNew.removeClass(this.ltrClass)
+      this.collationTableDivNew.addClass(this.rtlClass)
+    } else {
+      this.collationTableDivNew.removeClass(this.rtlClass)
+      this.collationTableDivNew.addClass(this.ltrClass)
+    }
+
+    let rowDefinition = []
+    for (let i = 0; i < data['newCollationTable']['sigla'].length; i++) {
+      let witness = data['newCollationTable'].witnesses[i]
+      let siglum = data['newCollationTable']['sigla'][i]
+      let tokenArray = data['newCollationTable']['collationMatrix'][i]
+      rowDefinition.push({
+        title: siglum,
+        values: tokenArray,
+        isEditable: false
+      })
+    }
+    this.tableEditor = new TableEditor({
+      id: this.collationTableNewDivId,
+      showInMultipleRows: true,
+      columnsPerRow: this.viewSettings.maxColumnsPerTable,
+      rowDefinition: rowDefinition,
+      drawTableInConstructor: false,
+      getEmptyValue: function() { return -1},
+      isEmptyValue: function(value) { return value === -1},
+      generateCellContent: this.genGenerateCellContentFunction(),
+      generateTableClasses: this.genGenerateTableClassesFunction(),
+      generateCellClasses: this.genGenerateCellClassesFunction(),
+      generateCellTdExtraAttributes: this.genGenerateCellTdExtraAttributesFunction()
+    })
+    this.variantsMatrix = this.genVariantsMatrix(this.tableEditor.getMatrix(), data['newCollationTable']['witnesses'])
+    this.tableEditor.redrawTable()
+  }
+
+  genGenerateCellTdExtraAttributesFunction() {
+    let thisObject = this
+    return function(row, col, value) {
+      if (value === -1) {
+        return ''
+      }
+      let peopleInfo =thisObject.collationTableData['newCollationTable']['people']
+      let tokenArray = thisObject.collationTableData['newCollationTable']['witnesses'][row]['tokens']
+      let token = tokenArray[value]
+      let lang = token['itemData'][0]['lang']
+      // console.log("Lang: " + lang)
+      let langClass = 'popover-' + lang
+      let popoverHtml = ''
+      popoverHtml += '<p class="popoverheading ' + langClass + '">' + token.text
+      if (token.normalizedText !== token.text) {
+        popoverHtml += '<br/>&equiv; ' + token.normalizedText + '<br/>'
+      }
+      popoverHtml += '</p>'
+      popoverHtml += '<p class="popoveriteminfo ' + langClass + '">'
+      if (token['itemData'].length === 1) {
+        popoverHtml += thisObject.getItemPopoverHtmlForToken(row, token,token['itemData'][0], peopleInfo, false)
+      } else {
+        for (const itemData of token['itemData']) {
+          popoverHtml += thisObject.getItemPopoverHtmlForToken(row, token, itemData, peopleInfo, true)
+        }
+      }
+      popoverHtml += '</p>'
+
+      popoverHtml += '<p class="popovertokenaddress">'
+      popoverHtml += thisObject.getTokenAddressHtml(row, token)
+      popoverHtml += '</p>'
+
+      let postNotes = thisObject.getPostNotes(row, col, value)
+      if (postNotes.length > 0) {
+        popoverHtml += '<p class="popoverpostnotes">'
+        popoverHtml += '<b>Notes:</b><br/>'
+        popoverHtml += thisObject.getNotesHtml(postNotes, peopleInfo)
+        popoverHtml += '</p>'
+      }
+
+
+      return 'data-content="' + thisObject.escapeHtml(popoverHtml) + '"'
+    }
+  }
+
+  getTokenAddressHtml(row, token) {
+    let html = ''
+    let itemWithAddressArray = this.collationTableData['newCollationTable']['witnesses'][row]['items']
+    let itemData = token['itemData'][0]
+    let itemWithAddress = itemWithAddressArray[itemData['itemIndex']]
+
+    let page = itemWithAddress.address.foliation
+    let column = token.lineRange.start['textBox']
+    let line = -1
+    if (column > 10) {
+      // this is a marginal really
+      column = 'margin'
+    } else {
+      line = token.lineRange.start['lineNumber']
+    }
+
+    html += '<b>Page: </b>' + page + '</br>'
+    html += '<b>Column: </b>' + column + '</br>'
+    if (line !== -1) {
+      html += '<b>Line: </b>' + line + '</br>'
+    }
+
+    return html
+  }
+
+  getItemPopoverHtmlForToken(row, token, itemData, peopleInfo, showItemText = false) {
+    let popoverHeadingClass = 'popoverheading'
+    let unclearIcon = ' <i class="far fa-eye-slash" aria-hidden="true"></i> '
+    let deletionIcon = ' &lowast; '
+    let additionIcon = ' + '
+    let locationIcon = ' <i class="fas fa-location-arrow" aria-hidden="true"></i> '
+    let oneIndentUnit = '&nbsp;&nbsp;'
+    let lineBreakHtml = '<br/>'
+    let itemBullet = ''
+    let normalizationLabels = {
+      'sic' : 'Sic',
+      'abbr' : 'Abbreviation'
+    }
+
+    let itemWithAddressArray = this.collationTableData['newCollationTable']['witnesses'][row]['items']
+    let item = itemWithAddressArray[itemData['itemIndex']]['item']
+
+    if (item.type !== 'TextualItem') {
+      return ''
+    }
+    if (itemData.text === "\n") {
+      return ''
+    }
+
+    let html = ''
+    let indentHtml = ''
+    if (showItemText) {
+      html += itemBullet + itemData.text + lineBreakHtml
+      indentHtml = oneIndentUnit
+    }
+    let isNormalText = true
+    if (item.format !== '') {
+      html += indentHtml + '<b>Format: </b>' + item.format + lineBreakHtml
+      isNormalText = false
+    }
+    if (item.clarity === 0) {
+      html += indentHtml + '<b>Illegible</b>' + lineBreakHtml
+      html += indentHtml + unclearIcon + item.clarityReason
+      isNormalText = false
+    }
+    if (item.clarity === 0.5) {
+      html += indentHtml + '<b>Unclear</b>' + lineBreakHtml
+      html += indentHtml + unclearIcon + item.clarityReason
+      isNormalText = false
+    }
+    if (item.textualFlow === 1) {
+      html += indentHtml + '<b>Addition</b>'+ lineBreakHtml
+      html += indentHtml + locationIcon + item.location
+      isNormalText = false
+    }
+    if (item.deletion !== '') {
+      html += indentHtml + '<b>Deletion</b>'+ lineBreakHtml
+      html += indentHtml + deletionIcon + item.deletion
+      isNormalText = false
+    }
+    if (item.normalizationType !== '') {
+      let normLabel = item.normalizationType
+      if (normalizationLabels[item.normalizationType] !== undefined) {
+        normLabel = normalizationLabels[item.normalizationType]
+      }
+
+      html += indentHtml +  '<b>' + normLabel + '</b>' + lineBreakHtml
+      html += '+ ' + itemData.text + lineBreakHtml
+      if (token.normalizedText === itemData.text) {
+        html += '= ' + '(no reading given)'
+      } else {
+        html += '= ' + token.normalizedText
+      }
+
+      isNormalText = false
+    }
+    if (isNormalText) {
+      html += indentHtml + 'Normal Text'+ lineBreakHtml
+    }
+    html += lineBreakHtml
+
+    // notes
+    if (item.notes.length > 0) {
+      html += indentHtml + '<b>Notes</b>' + lineBreakHtml
+      html += this.getNotesHtml(item.notes, peopleInfo)
+    }
+
+    return html
+
+  }
+
+  getNotesHtml(notes, peopleInfo) {
+    let html = ''
+    let lineBreakHtml = '<br/>'
+    let oneIndentUnit = '&nbsp;&nbsp;'
+    for(const note of notes) {
+      html +=  oneIndentUnit + note.text + lineBreakHtml
+      html +=  oneIndentUnit + '<span class="authorinfo">-- ' +
+        peopleInfo[note.authorId].shortName  + ', ' + this.formatNoteTime(note.timeStamp)  +
+        "</span>" + lineBreakHtml
+      html += lineBreakHtml
+    }
+    return html
+  }
+
+  genGenerateCellContentFunction() {
+    let thisObject = this
+    let noteIconSpan = ' <span class="noteicon"><i class="far fa-comment"></i></span>'
+    let normalizationSymbol = '<b><sub>N</sub></b>'
+    return function(row, col, value) {
+      if (value === -1) {
+        return '&mdash;'
+      }
+      let tokenArray = thisObject.collationTableData['newCollationTable']['witnesses'][row]['tokens']
+      let token = tokenArray[value]
+      let postNotes = thisObject.getPostNotes(row, col, value)
+      if (token['itemData'].length === 1 && postNotes.length === 0) {
+        if (thisObject.viewSettings.showNormalizations && token.text !== token.normalizedText) {
+          return token.normalizedText + normalizationSymbol
+        }
+        return token.text
+      }
+      // spans for different items
+      let itemWithAddressArray = thisObject.collationTableData['newCollationTable']['witnesses'][row]['items']
+      let cellHtml = ''
+      for (const itemData of token['itemData']) {
+        let theItem = itemWithAddressArray[itemData['itemIndex']]['item']
+        if (theItem.type === 'TextualItem' && itemData['text'] !== "\n") {
+          cellHtml += '<span class="' + thisObject.getClassesFromItem(theItem).join(' ') + '">'
+          cellHtml += itemData['text']
+          cellHtml += '</span>'
+        }
+      }
+      // if there are notes after the token, put the note icon
+
+      if (postNotes.length > 0) {
+        cellHtml += noteIconSpan
+      }
+      return cellHtml
+    }
+  }
+
+  getPostNotes(row, col, tokenIndex) {
+    //console.log('Get post notes: r' + row + ' c' + col + ' i' + tokenIndex)
+    let postItemIndexes = this.collationTableData['newCollationTable']['aggregatedNonTokenItemIndexes'][row][tokenIndex]['post']
+    let itemWithAddressArray = this.collationTableData['newCollationTable']['witnesses'][row]['items']
+    let notes = []
+    for(const itemIndex of postItemIndexes) {
+
+      let theItem = itemWithAddressArray[itemIndex]['item']
+      for(const note of theItem.notes) {
+        notes.push(note)
+      }
+    }
+    return notes
+  }
+
+  genGenerateCellClassesFunction() {
+    let thisObject = this
+    return function(row, col, value) {
+      if (value === -1) {
+        return [ 'emptytoken']
+      }
+      let tokenArray = thisObject.collationTableData['newCollationTable']['witnesses'][row]['tokens']
+      let itemWithAddressArray = thisObject.collationTableData['newCollationTable']['witnesses'][row]['items']
+
+      let token = tokenArray[value]
+      let classes = thisObject.getTokenClasses(token)
+      // popoverclass
+      classes.push('withpopover')
+      //variant class
+      if (thisObject.viewSettings.highlightVariants) {
+        classes.push('variant_' + thisObject.variantsMatrix.getValue(row, col))
+      }
+      // get itemZero
+      let itemZeroIndex = token['itemData'][0]['itemIndex']
+      let itemZero = itemWithAddressArray[itemZeroIndex]['item']
+
+
+      // language class
+      classes.push( itemZero['language'] + '-td')
+      if (token['itemData'].length === 1) {
+        // td inherits the classes from the single source item
+        return classes.concat(thisObject.getClassesFromItem(itemZero))
+      }
+      return classes
+    }
+  }
+
+  getClassesFromItem(item) {
+    let classes = []
+    classes.push( 'hand_' + item.hand)
+    if (item.format !== '') {
+      classes.push(item.format)
+    }
+    if (item.clarity !== 1) {
+      classes.push('unclear')
+    }
+    if (item.textualFlow === 1) {
+      classes.push('addition')
+    }
+    if (item.deletion !== '') {
+      classes.push('deletion')
+    }
+    if (item.normalizationType !== '') {
+      classes.push(item.normalizationType)
+    }
+    return classes
+  }
+
+  getTokenClasses(token) {
+    let classes = []
+    classes.push('tokentype_' + token.type)
+    return classes
+  }
+
+  genGenerateTableClassesFunction() {
+    let thisObject = this
+    return function() {
+      let langCode = thisObject.collationTableData['newCollationTable']['lang']
+      return [ ('te-table-' + langCode) ]
+    }
+  }
+
+   genVariantsMatrix(refMatrix, witnesses) {
+    let variantMatrix = new Matrix(refMatrix.nRows, refMatrix.nCols)
+
+    for (let col=0; col < refMatrix.nCols; col++) {
+      let refCol = refMatrix.getColumn(col)
+      let textCol = []
+      for(let row=0; row < refMatrix.nRows; row++) {
+        let ref = refCol[row]
+        if (ref=== -1) {
+          textCol.push('')
+          continue
+        }
+        textCol.push(witnesses[row].tokens[ref].normalizedText)
+      }
+      //console.log(textCol)
+      let ranks = this.rankVariants(textCol)
+      //console.log(ranks)
+      for(let row=0; row < refMatrix.nRows; row++) {
+        variantMatrix.setValue(row, col, ranks[row])
+      }
+    }
+    return variantMatrix
+  }
+
+  rankVariants(stringArray) {
+    let countsByString = []
+    for(const text of stringArray) {
+      if (text === '') {
+        continue
+      }
+      if (countsByString[text] === undefined) {
+        countsByString[text] = 1
+      } else {
+        countsByString[text]++
+      }
+    }
+
+    let countArray = []
+
+    for(const aKey of Object.keys(countsByString)) {
+      countArray.push({ text: aKey, count: countsByString[aKey]})
+    }
+    countArray.sort(function (a,b) { return b['count'] - a['count']})
+
+    let rankObject = {}
+    for(let i = 0; i < countArray.length; i++) {
+      rankObject[countArray[i]['text']] = i
+    }
+
+    let ranks = []
+    for(const text of stringArray) {
+      if (text === '') {
+        ranks.push(12345678)
+        continue
+      }
+      ranks.push(rankObject[text])
+    }
+    return ranks
+  }
+
+  escapeHtml(html) {
+    let entityMap = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+      '/': '&#x2F;',
+      '`': '&#x60;',
+      '=': '&#x3D;'
+    };
+
+    return String(html).replace(/[&<>"'`=\/]/g, function (s) {
+       return entityMap[s];
+    });
+
+  }
+
+
 }

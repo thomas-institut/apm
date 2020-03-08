@@ -81,151 +81,39 @@ class ApmCollationTableDecorator implements CollationTableDecorator, LoggerAware
     
     public function decorate(CollationTable $c): array {
 
-        //$addressInItemStreamClass  = AddressInDatabaseItemStream::class;
-        //$textualItemClass = TextualItem::class;
-        //$apmTranscriptionWitnesClass = ApmTranscriptionWitness::class;
-
         $decoratedCollationTable = $c->getData();
 
-//
-//        $formatter = new WitnessPageFormatter();
-//        $formatter->setPersonInfoProvider($this->userInfoProvider);
-//        $variantTable = $c->getVariantTable();
-//
-//        // 1. Put tokens in with basic classes
-//        foreach($sigla as $siglum) {
-//            $decoratedCollationTable[$siglum] = [];
-//
-//            $tokenRefs = $c->getReferencesForRow($siglum);
-//            $witnessTokens = $c->getWitnessTokens($siglum);
-//            /** @var ApmTranscriptionWitness $witness */
-//            $witness = $c->getWitness($siglum);
-//            if (!is_a($witness, $apmTranscriptionWitnesClass)) {
-//                $this->logger->warning("Found unsupported witness class in collation table: " . get_class($witness));
-//                continue;
-//            }
-//
-//            $rawNonTokenItemIndexes = $witness->getNonTokenItemIndexes();
-//
-//            $nonTokenItemIndexes = $this->aggregateNonTokenItemIndexes($rawNonTokenItemIndexes, $tokenRefs);
-//
-//            $itemArray = $witness->getItemArray();
-//            $witnessItemStream = $witness->getDatabaseItemStream();
-//            foreach($tokenRefs as $tokenIndex => $tokenRef) {
-//                //$this->codeDebug("Processing token $i");
-//                $decoratedToken = [];
-//                if ($tokenRef === CollationTable::TOKENREF_NULL) {
-//                    $decoratedToken['text'] = self::TEXT_EMPTYTOKEN;
-//                    $decoratedToken['norm'] = self::TEXT_EMPTYTOKEN;
-//                    $decoratedToken['classes'] = [self::CLASS_EMPTYTOKEN];
-//                    $decoratedToken['empty'] = true;
-//                    $decoratedCollationTable[$siglum][] = $decoratedToken;
-//                    continue;
-//                }
-//                $token = $witnessTokens[$tokenRef];
-//                /** @var TranscriptionToken $token */
-//                $decoratedToken['text'] = $token->getText();
-//                $decoratedToken['norm'] = $token->getNormalization();
-//                $decoratedToken['classes'] = [self::CLASS_NORMALTOKEN];
-//                $decoratedToken['classes'][] = self::CLASS_VARIANT_PREFIX .  $variantTable[$siglum][$tokenIndex];
-//                $decoratedToken['variant'] = $variantTable[$siglum][$tokenIndex];
-//                $decoratedToken['empty'] = false;
-//                $decoratedToken['witnessTokenIndex'] = $tokenRef;
-//                $decoratedToken['itemIndexes'] = $token->getSourceItemIndexes();
-//                $decoratedToken['postNotes'] = [];
-//                if ($nonTokenItemIndexes[$tokenRef]['post'] !== []) {
-//                    // There are non-token items after the token
-//                    // check if there are notes
-//                    foreach($nonTokenItemIndexes[$tokenRef]['post'] as $itemIndex)  {
-//                        if ($this->isNoteMark($itemArray[$itemIndex]->getItem())){
-//                            $decoratedToken['postNotes'][] = $formatter->formatMark($itemArray[$itemIndex]->getItem());
-//                        }
-//                    }
-//                }
-//                $addresses = $token->getSourceItemAddresses();
-//                $charRanges = $token->getSourceItemCharRanges();
-//                $lineStart = $token->getTextBoxLineRange()->getStart()->getCoord(1);
-//                $decoratedToken['itemFormats'] = [];
-//                foreach($addresses as $addressIndex => $address) {
-//                    if (is_a($address, $addressInItemStreamClass)) {
-//                        /** @var AddressInDatabaseItemStream  $address */
-//                        $sourceItem = $witnessItemStream->getItemById($address->getItemIndex());
-//                        /** @var Item $sourceItem */
-//                        if ($sourceItem !== false && is_a($sourceItem, $textualItemClass)) {
-//                            /** @var TextualItem $sourceItem */
-//                            $formattedItem = $formatter->getTextualItemFormat($sourceItem, false);
-//                            $classes = $formattedItem['classes'];
-//                            $popover = $formattedItem['popoverHtml'];
-//                            $text = $this->getSubstringFromItemAndRange($sourceItem, $charRanges[$addressIndex]);
-//                            if ($text === '' and $sourceItem->getPlainText() !== '') {
-//                                $theStr = $sourceItem->getPlainText();
-//                                $itemData = $sourceItem->getData();
-//                                $range = $charRanges[$addressIndex];
-//                                $itemIndex = $address->getItemIndex();
-//                                $this->codeDebug("Got empty substring from '$theStr', start " .
-//                                    $range->getStart() . " length " . $range->getLength() .
-//                                    ", itemIndex $itemIndex, tokenText: '" . $token->getText() . "'" ,
-//                                    [ 'count addresses' => count($addresses), 'tokenIndex' => $tokenIndex]);
-//                            }
-//
-//                            $decoratedToken['itemFormats'][] = [
-//                                'text' => $text,
-//                                'classes' => $classes,
-//                                'popoverHtml' => $popover,
-//                                'itemId' => $address->getItemIndex(),
-//                                'itemSeq' => $address->getItemSeq(),
-//                                'ceId' => $address->getCeId(),
-//                                'startChar' => $charRanges[$addressIndex]->getStart(),
-//                                'length' => $charRanges[$addressIndex]->getLength(),
-//                                'deletion' => $formattedItem['deletion'],
-//                                'format' => $formattedItem['format'],
-//                                'normalization' => $formattedItem['normalization'],
-//                                'normalizationType' => $formattedItem['normalizationType'],
-//                                'textualFlow' => $formattedItem['textualFlow'],
-//                                'location' => $formattedItem['location'],
-//                                'formattedItem' => $formattedItem
-//                            ];
-//                        }
-////                        else {
-////                            $this->codeDebug('Non textual item found ', [$sourceItem->getData()]);
-////                        }
-//                    } else {
-//                        $this->codeDebug('Non supported address class found ' . get_class($address));
-//                    }
-//                }
-//                if (count($addresses) >= 1) {
-//                    // report only the first address
-//                    $address = $addresses[0];
-//
-//
-//                    if (!isset($decoratedToken['itemFormats'][0])) {
-//                        // happens when a TextboxBreak Mark creeps in!
-//                        $addressCount = count($addresses);
-//                        //$this->codeDebug("itemFormats[0] not defined in '$siglum', token $tokenIndex, address count $addressCount", $decoratedToken['itemFormats']);
-//
-//                        $classes = [];
-//                        $popoverHtml = '';
-//                    } else {
-//                        //$classes =  $decoratedToken['itemFormats'][0]['classes'];
-//                        //$popoverHtml =  $decoratedToken['itemFormats'][0]['popoverHtml'];
-//                        $classes = [];
-//                        $popoverHtml = '';
-//                    }
-//
-//                    // Add address to popover
-//                    array_push($classes, WitnessPageFormatter::CLASS_WITHPOPOVER);
-//
-//                    $decoratedToken['addressHtml'] = '<b>Page: </b> ' . $address->getFoliation() . '<br/>' .
-//                        '<b>Column: </b> ' . $address->getColumn() . '<br/>' .
-//                        '<b>Line: </b>' . $lineStart;
-//                    $decoratedToken['classes'] = array_merge($decoratedToken['classes'], $classes);
-//                    $decoratedToken['popoverHtml'] = $popoverHtml;
-//                }
-//
-//                $decoratedCollationTable[$siglum][] = $decoratedToken;
-//            }
-//        }
-        
+        // collect data for userIds in notes
+        $people = [];
+
+        foreach($decoratedCollationTable['witnesses'] as $witness) {
+            foreach($witness['items'] as $itemWithAddress) {
+                $theItem = $itemWithAddress['item'];
+                foreach ($theItem['notes'] as $note) {
+                  if (!isset($people[$note['authorId']])) {
+                      $people[$note['authorId']] = [
+                          'fullName' => $this->userInfoProvider->getFullNameFromId($note['authorId']),
+                          'shortName'=> $this->userInfoProvider->getShortNameFromId($note['authorId'])
+                      ];
+                  }
+                }
+            }
+        }
+        $decoratedCollationTable['people'] = $people;
+
+        // aggregate non token indexes for each witness
+        // Attention: the keys of each aggregatedIndexes array refers to the
+        // an item index!
+
+        foreach($decoratedCollationTable['witnesses'] as $witnessIndex => $witnessData) {
+            $rawNonTokenItemIndexes = $witnessData['nonTokenItemIndexes'];
+            $tokenRefs = $decoratedCollationTable['collationMatrix'][$witnessIndex];
+            $aggregatedIndexes = $this->aggregateNonTokenItemIndexes($rawNonTokenItemIndexes, $tokenRefs);
+            $decoratedCollationTable['aggregatedNonTokenItemIndexes'][$witnessIndex] = $aggregatedIndexes;
+        }
+
+
+
         return $decoratedCollationTable;
     }
     

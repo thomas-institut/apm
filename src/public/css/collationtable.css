@@ -91,26 +91,29 @@ div.inlineform {
     margin-left: 20px;
 }
 
+div.ctdiv {
+    margin-top: 20px;
+    margin-bottom: 50px;
+}
+
 table.collationtable {
     border-collapse: collapse;
 }
 table.collationtable td {
-    padding-left: 5px;
-    padding-right: 5px;
+    padding: 0 5px;
     border: solid 1px silver
  }
 
- table.collationtable .he-td {
+td.he-td {
      font-size: 1.1em;
  }
  
- table.collationtable .ar-td {
-     font-family:  "Times", "Times New Roman", serif;
-     font-size: 1.7em;
- }
+td.ar-td {
+     font-family:  "Times New Roman", "Noto Naskh Arabic UI", "FreeSerif", serif;
+     font-size: 1.6em;
+}
 
-
-table.collationtable td.witness {
+td.witness {
     font-weight: bold;
 }
 
@@ -118,17 +121,22 @@ table.collationtable td.tokennotpresent {
     text-align: center;
     color: silver;
 }
-table.collationtable td.addition.variant_1 {
+td.addition.variant_1 {
     background-image: linear-gradient(to top, #ddecff, #fbedff);
 }
 
 
-table.collationtable .variant_1 {
+td.variant_1 {
     background-color: #fbedff;
 }
 
-table.collationtable td.variant_2 {
+td.variant_2 {
     background-color: #ffcccc;
+}
+
+td.emptytoken {
+    text-align: center;
+    color: silver;
 }
 
 .textualitem {
@@ -187,6 +195,13 @@ td.offline {
 
 .note {
     color: red;
+}
+.noteicon {
+    color: red;
+}
+
+.ar-td .noteicon {
+    font-size: 0.7em;
 }
 
 .mathtext {
@@ -262,6 +277,20 @@ ul.siglalist {
     direction: rtl;
 }
 
+.popoverheading.popover-ar {
+    font-size: 1.2em;
+    /*direction: rtl;*/
+}
+.popoverheading.popover-he {
+    font-size: 1.2em;
+    /*direction: rtl;*/
+}
+
+.authorinfo {
+    color: gray;
+    font-size: 0.8em;
+}
+
 div.itemspopover {
     margin-bottom: 10px;
 }
@@ -270,7 +299,6 @@ div.itemspopover {
 
 .te-table {
     border-collapse: collapse;
-    margin-bottom: 3em;
 }
 
 .te-table a {
@@ -287,31 +315,23 @@ div.itemspopover {
 }
 
 .te-table td {
-    border: 1px solid silver;
-    padding: 5px;
-
+    padding-left: 5px;
+    padding-right: 5px;
+    border: solid 1px silver
 }
 
 td.variant1 {
-    background: pink;
+    background-color: #fbedff;
 }
 
 td.variant2 {
     background: plum;
 }
 
-/*.te-tr-0 {*/
-/*    font-size: 1.2em;*/
-/*    color: darkblue;*/
-/*}*/
-
-.te-rowtitle {
+td.te-rowtitle {
     font-weight: bold;
 }
 
-td.te-rowtitle {
-    border: none;
-}
 
 .table-edit-mode {
     border-left: 1px solid red;

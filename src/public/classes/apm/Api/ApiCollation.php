@@ -223,7 +223,7 @@ class ApiCollation extends ApiController
 
         $this->profiler->lap('Basic checks done');
 
-        $collationTable = new CollationTable($ignorePunctuation);
+        $collationTable = new CollationTable($ignorePunctuation, $language);
         foreach($requestedWitnesses as $requestedWitness) {
             if (!isset($requestedWitness['type'])) {
                 $msg = "Missing required parameter 'type' in requested witness";
@@ -339,6 +339,7 @@ class ApiCollation extends ApiController
 
         $newDecorator = new ApmCollationTableDecorator();
         $newDecorator->setLogger($this->logger);
+        $newDecorator->setUserInfoProvider($userDirectory);
         $decoratedCollationTableNew = $newDecorator->decorate($collationTable);
         
         $this->profiler->lap('Collation table decorated');

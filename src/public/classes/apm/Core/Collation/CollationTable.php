@@ -65,6 +65,8 @@ class CollationTable {
     const TOKENREF_NULL = -1;
     const COLLATIONENGINE_NULL_TOKEN = '---';
 
+    const DEFAULT_LANGUAGE = 'la';
+
     /**
      * @var array Array of Witness objects, one for each siglum
      */
@@ -80,13 +82,29 @@ class CollationTable {
     
     /* @var bool */
     private $ignorePunctuation;
-    
-    
-    public function __construct($ignorePunctuation = false) {
+    /**
+     * @var string
+     */
+    private $language;
+
+
+    public function __construct($ignorePunctuation = false, $lang = self::DEFAULT_LANGUAGE) {
         $this->witnesses = [];
         $this->witnessTokensCache = [];
         $this->referenceMatrix = [];
         $this->ignorePunctuation = $ignorePunctuation;
+        $this->setLanguage($lang);
+    }
+
+    public function getLanguage(): string {
+        return $this->language;
+    }
+
+    public function setLanguage(string $lang) : void {
+        if ($lang === ''){
+            throw new InvalidArgumentException("Language cannot be blank");
+        }
+        $this->language = $lang;
     }
     
     /**
@@ -485,6 +503,7 @@ class CollationTable {
 
     public function getData() : array {
         $data = [];
+        $data['lang'] = $this->getLanguage();
         $sigla = $this->getSigla();
         $data['sigla'] = $sigla;
         $witnessDataArrays = [];

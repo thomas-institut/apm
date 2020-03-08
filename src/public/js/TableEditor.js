@@ -62,7 +62,7 @@ class TableEditor {
       columnsPerRow: {
         // columns to show per row if options.showInMultipleRows is true
         required: false,
-        type: 'int',
+        type: 'number',
         default: 10
       },
       drawTableInConstructor: {
@@ -101,6 +101,15 @@ class TableEditor {
         required: false,
         type: 'function',
         default: null
+      },
+      generateTableClasses: {
+        // a function to generate classes for the collation table
+        // the default function is an emtpy array
+        required: false,
+        type: 'function',
+        default: function () {
+          return []
+        }
       },
       generateCellClasses: {
         // a function to generate an array of html classes for a table cell
@@ -255,7 +264,7 @@ class TableEditor {
     return this.options.showInMultipleRows;
   }
 
-  showInMultipleRows(numCols = -1) {
+  showInMultipleRows(numCols = -1, redrawIfNeeded = true) {
     let redrawRequired = false
 
     if (!this.options.showInMultipleRows) {
@@ -270,18 +279,18 @@ class TableEditor {
     }
     this.options.showInMultipleRows = true
     this.options.columnsPerRow = newNumCols
-    if (redrawRequired) {
+    if (redrawIfNeeded && redrawRequired) {
       this.redrawTable()
     }
   }
 
-  showInSingleRow() {
+  showInSingleRow(redrawIfNeeded = true) {
     let redrawRequired = false
     if (this.options.showInMultipleRows) {
       redrawRequired = true
     }
     this.options.showInMultipleRows = false
-    if (redrawRequired) {
+    if (redrawIfNeeded && redrawRequired) {
       this.redrawTable()
     }
   }
@@ -328,7 +337,9 @@ class TableEditor {
 
       let currentTableFirstColumn  = tableNumber * columnsPerTable
       let currentTableLastColumnPlusOne = Math.min(this.matrix.nCols, currentTableFirstColumn + columnsPerTable)
-      html += '<table class="te-table ' + this.getTableClass(tableNumber) + '">'
+      let tableClasses = [ "te-table", this.getTableClass(tableNumber)].concat(this.options.generateTableClasses())
+
+      html += '<table class="' +  tableClasses.join(' ') + '">'
       html += '<tr class="te-tableheader">'
       html += '<th></th>'
       for (let col=currentTableFirstColumn; col < currentTableLastColumnPlusOne; col++) {

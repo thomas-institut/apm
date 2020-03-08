@@ -332,10 +332,10 @@ class ApiCollation extends ApiController
         
         $this->profiler->lap('Collation table built from collation engine output');
         $userDirectory = new UserManagerUserInfoProvider($dataManager->userManager);
-        $decorator = new TransitionalCollationTableDecorator();
-        $decorator->setUserInfoProvider($userDirectory);
-        $decorator->setLogger($this->logger);
-        $decoratedCollationTable = $decorator->decorate($collationTable);
+//        $decorator = new TransitionalCollationTableDecorator();
+//        $decorator->setUserInfoProvider($userDirectory);
+//        $decorator->setLogger($this->logger);
+//        $decoratedCollationTable = $decorator->decorate($collationTable);
 
         $newDecorator = new ApmCollationTableDecorator();
         $newDecorator->setLogger($this->logger);
@@ -359,9 +359,9 @@ class ApiCollation extends ApiController
         
         return $this->responseWithJson($response,[
             'collationEngineDetails' => $collationEngineDetails, 
-            'collationTable' => $decoratedCollationTable,
+            //'collationTable' => $decoratedCollationTable,
             'newCollationTable' => $decoratedCollationTableNew,
-            'sigla' => $collationTable->getSigla(),
+            //'sigla' => $collationTable->getSigla(),
             'quickEdition' => $quickEdition
             ]);
     }

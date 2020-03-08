@@ -154,12 +154,12 @@ class AutomaticCollationTable {
     })
     this.viewSettingsFormManager.on('apply', function(e) {
       thisObject.viewSettings = e.detail
-      console.log('Got view settings from form')
-      console.log(thisObject.viewSettings)
+      //console.log('Got view settings from form')
+      //console.log(thisObject.viewSettings)
 
-      thisObject.ctf.setOptions(thisObject.viewSettings)
-      thisObject.collationTableDiv.html(thisObject.ctf.format(thisObject.collationTableData, thisObject.popoverClass))
-      thisObject.setCsvDownloadFile(thisObject.collationTableData)
+      // thisObject.ctf.setOptions(thisObject.viewSettings)
+      // thisObject.collationTableDiv.html(thisObject.ctf.format(thisObject.collationTableData, thisObject.popoverClass))
+      //thisObject.setCsvDownloadFile(thisObject.collationTableData)
       thisObject.viewSettingsFormManager.hide()
 
       if (thisObject.viewSettings.multipleRows) {
@@ -239,15 +239,15 @@ class AutomaticCollationTable {
   }
 
 
-  getLastChangeInDataFromAvailableWitnesses(availableWitnesses, apiCallOptions) {
-    let lastChangeInData = ''
-      for(const witness of availableWitnesses) {
-        if (witness.typeSpecificInfo.timeStamp > lastChangeInData) {
-          lastChangeInData = witness.typeSpecificInfo.timeStamp
-        }
-      }
-      return lastChangeInData
-  }
+  // getLastChangeInDataFromAvailableWitnesses(availableWitnesses, apiCallOptions) {
+  //   let lastChangeInData = ''
+  //     for(const witness of availableWitnesses) {
+  //       if (witness.typeSpecificInfo.timeStamp > lastChangeInData) {
+  //         lastChangeInData = witness.typeSpecificInfo.timeStamp
+  //       }
+  //     }
+  //     return lastChangeInData
+  // }
 
   getLastChangeInDataFromApiResponse(apiData) {
     let ctData = apiData['newCollationTable']
@@ -276,6 +276,7 @@ class AutomaticCollationTable {
     this.actTitleElement.html(this.getTitleFromOptions())
     this.status.html('Collating... <i class="fa fa-spinner fa-spin fa-fw"></i>')
     this.collationTableDiv.html('')
+    this.collationTableDivNew.html('')
     this.collationEngineDetails.html('')
      this.editionContainer.addClass('hidden')
     this.lastTimeLabel.html('TBD...')
@@ -296,14 +297,15 @@ class AutomaticCollationTable {
       thisObject.lastTimeLabel.html(thisObject.formatDateTime(thisObject.lastChangeInData))
       thisObject.witnessInfoDiv.html(thisObject.getVersionInfoHtml(data))
 
-      if (thisObject.options.langDef[thisObject.apiCallOptions.lang].rtl) {
-        thisObject.collationTableDiv.removeClass(thisObject.ltrClass)
-        thisObject.collationTableDiv.addClass(thisObject.rtlClass)
-      }
+      // if (thisObject.options.langDef[thisObject.apiCallOptions.lang].rtl) {
+      //   thisObject.collationTableDiv.removeClass(thisObject.ltrClass)
+      //   thisObject.collationTableDiv.addClass(thisObject.rtlClass)
+      // }
       
-      thisObject.collationTableDiv.html(thisObject.ctf.format(data, thisObject.popoverClass))
+      //thisObject.collationTableDiv.html(thisObject.ctf.format(data, thisObject.popoverClass))
 
-      thisObject.setCsvDownloadFile(data)
+      // TODO: support CSV export again!
+      //thisObject.setCsvDownloadFile(data)
       
       thisObject.status.html('')
       thisObject.redoButton.prop('disabled', false)
@@ -360,12 +362,12 @@ class AutomaticCollationTable {
     return cedHtml
   }
   
-  setViewSettingsInForm(settings) {
-    if (settings.highlightVariants) {
-      
-    }
-  }
-  
+  // setViewSettingsInForm(settings) {
+  //   if (settings.highlightVariants) {
+  //
+  //   }
+  // }
+  //
   setCsvDownloadFile(data) {
     let href = 'data:text/csv,' + encodeURIComponent(this.ctf.generateCsv(data))
     this.exportCsvButton.attr('href', href)
@@ -397,12 +399,12 @@ class AutomaticCollationTable {
     return moment(timeStamp).format('D MMM YYYY, H:mm')
   }
 
-  padMinutes(minutes) {
-    if (minutes < 10) {
-      return '0' + minutes
-    }
-    return minutes
-  }
+  // padMinutes(minutes) {
+  //   if (minutes < 10) {
+  //     return '0' + minutes
+  //   }
+  //   return minutes
+  // }
 
   supressTimestampFromSystemId(systemId) {
     let fields = systemId.split('-')

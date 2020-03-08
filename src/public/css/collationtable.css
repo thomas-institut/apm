@@ -94,6 +94,9 @@ div.inlineform {
 div.ctdiv {
     margin-top: 20px;
     margin-bottom: 50px;
+    overflow: auto;
+    padding-left: 2px;
+    padding-right: 2px;
 }
 
 table.collationtable {
@@ -201,7 +204,7 @@ td.offline {
 }
 
 .ar-td .noteicon {
-    font-size: 0.7em;
+    font-size: 0.6em;
 }
 
 .mathtext {

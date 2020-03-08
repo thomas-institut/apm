@@ -356,9 +356,20 @@ class AutomaticCollationTable {
   
   getCollationEngineDetailsHtml(ced) {
     let cedHtml = '<b>Engine:</b> ' + ced.engineName + '<br/>'
-    cedHtml += '<b>Date/Time:</b> '  + ced.runDateTime + '<br/>'
-    cedHtml += '<b>Collation Runtime:</b> ' + Math.round(ced.duration*1000.0) + ' ms' + '<br/>'
-    cedHtml += '<b>Total Runtime:</b> ' + Math.round(ced.totalDuration*1000.0) + ' ms'
+
+    cedHtml += '<b>Cached:</b> ' + ced.cached + '<br/>'
+    if (!ced.cached) {
+      cedHtml += '<b>Date/Time:</b> '  + ced.runDateTime + '<br/>'
+      cedHtml += '<b>Collation Runtime:</b> ' + Math.round(ced.duration*1000.0) + ' ms' + '<br/>'
+      cedHtml += '<b>Total Runtime:</b> ' + Math.round(ced.totalDuration*1000.0) + ' ms'
+    } else {
+      cedHtml += '<b>Origial Date/Time:</b> '  + ced.runDateTime + '<br/>'
+      cedHtml += '<b>Original Collation Runtime:</b> ' + Math.round(ced.duration*1000.0) + ' ms' + '<br/>'
+      cedHtml += '<b>Original Total Runtime:</b> ' + Math.round(ced.totalDuration*1000.0) + ' ms' + '<br/>'
+      cedHtml += '<b>Cached Runtime:</b> ' + Math.round(ced.cachedRunTime *1000.0) + ' ms' + '<br/>'
+
+    }
+
     return cedHtml
   }
   

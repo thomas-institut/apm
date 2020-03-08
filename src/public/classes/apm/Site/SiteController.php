@@ -154,14 +154,30 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         }
         return $langArrayByCode;
     }
+//    protected function logProfilerData(string $pageTitle) : void
+//    {
+//        $lapInfo = $this->profiler->getLaps();
+//        $totalTimeInMs = $lapInfo[count($lapInfo)-1]['time']['cummulative'] * 1000;
+//        $totalQueries = $lapInfo[count($lapInfo)-1]['mysql-queries']['cummulative']['Total'];
+//        $this->logger->debug(sprintf("PROFILER %s, finished in %0.2f ms, %d MySql queries", $pageTitle, $totalTimeInMs, $totalQueries), $lapInfo);
+//    }
+
     protected function logProfilerData(string $pageTitle) : void
     {
         $lapInfo = $this->profiler->getLaps();
-        $totalTimeInMs = $lapInfo[count($lapInfo)-1]['time']['cummulative'] * 1000;
+        $totalTimeInMs = $this->getProfilerTotalTime() * 1000;
         $totalQueries = $lapInfo[count($lapInfo)-1]['mysql-queries']['cummulative']['Total'];
-        $this->logger->debug(sprintf("PROFILER %s, finished in %0.2f ms, %d MySql queries", $pageTitle, $totalTimeInMs, $totalQueries), $lapInfo);
+        $cacheHits = $lapInfo[count($lapInfo)-1]['cache']['cummulative']['hits'];
+        $cacheMisses = $lapInfo[count($lapInfo)-1]['cache']['cummulative']['misses'];
+        $this->logger->debug(sprintf("PROFILER %s, finished in %0.2f ms, %d MySql queries, %d cache hits, %d misses",
+            $pageTitle, $totalTimeInMs, $totalQueries, $cacheHits, $cacheMisses), $lapInfo);
     }
 
+    protected function getProfilerTotalTime() : float
+    {
+        $lapInfo = $this->profiler->getLaps();
+        return $lapInfo[count($lapInfo)-1]['time']['cummulative'];
+    }
 
     protected function responseWithText(Response $response, string $text, int $status=200) : Response {
         $response->getBody()->write($text);

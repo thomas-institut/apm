@@ -44,6 +44,7 @@ use APM\Decorators\QuickCollationTableDecorator;
 use AverroesProjectToApm\Decorators\TransitionalCollationTableDecorator;
 use AverroesProjectToApm\ApUserDirectory;
 use AverroesProject\Data\DataManager;
+use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\TimeString\TimeString;
 
 /**
@@ -283,11 +284,48 @@ class ApiCollation extends ApiController
 
         
         $this->profiler->lap('Collation table build');
-        
 
-        $itemIds = [];
+        // build unique Id from witness Ids
+        $sigla = $collationTable->getSigla();
+        $witnessIds = [];
+        $apmTxWitnessClass = ApmTranscriptionWitness::class;
+        foreach($sigla as $siglum) {
+            $witness = $collationTable->getWitness($siglum);
+            if (!is_a($witness, $apmTxWitnessClass)) {
+                $this->logger->warning("Found unsupported witness class in collation table: " . get_class($witness));
+                continue;
+            }
+            /** @var ApmTranscriptionWitness $witness */
+            $witnessIds[] = WitnessSystemId::buildFullTxId($witness->getWorkId(), $witness->getChunk(), $witness->getDocId(), $witness->getLocalWitnessId(), $witness->getTimeStamp());
+        }
+        $collationTableId = implode(':', $witnessIds);
+        $this->codeDebug('Collation table ID: ' . $collationTableId);
 
-        
+        $cacheKey = 'ApiCollation-ACT-' . $workId . '-' . $chunkNumber . '-' . $language . '-' . hash('sha256', $collationTableId);
+        $this->codeDebug("Cache key: $cacheKey");
+
+        $cache = $this->systemManager->getSystemDataCache();
+        $cacheHit = true;
+        try {
+            $cachedData = $cache->get($cacheKey);
+        } catch ( KeyNotInCacheException $e) {
+            $this->systemManager->getCacheTracker()->incrementMisses();
+            $cacheHit = false;
+        }
+
+        if ($cacheHit) {
+            $this->systemManager->getCacheTracker()->incrementHits();
+            $responseData = unserialize($cachedData);
+            $responseData['collationEngineDetails']['cached'] = true;
+            $this->profiler->stop();
+            $responseData['collationEngineDetails']['cachedRunTime'] = $this->getProfilerTotalTime();
+            $responseData['collationEngineDetails']['cachedTimestamp'] = time();
+            $this->logProfilerData("CollationTable-$workId-$chunkNumber-$language (cached)");
+            return $this->responseWithJson($response, $responseData);
+        }
+
+        // cache miss!
+
 
         $collatexInput = $collationTable->getCollationEngineInput();
         
@@ -354,16 +392,22 @@ class ApiCollation extends ApiController
         $this->logProfilerData("CollationTable-$workId-$chunkNumber-$language");
         
         $collationEngineDetails = $collationEngine->getRunDetails();
+        $collationEngineDetails['cached'] = false;
 
         $collationEngineDetails['totalDuration'] =  $this->getProfilerTotalTime();
-        
-        return $this->responseWithJson($response,[
-            'collationEngineDetails' => $collationEngineDetails, 
+
+        $responseData = [
+            'collationEngineDetails' => $collationEngineDetails,
             //'collationTable' => $decoratedCollationTable,
             'newCollationTable' => $decoratedCollationTableNew,
             //'sigla' => $collationTable->getSigla(),
             'quickEdition' => $quickEdition
-            ]);
+        ];
+
+        // let's cache it!
+        $cache->set($cacheKey, serialize($responseData));
+        
+        return $this->responseWithJson($response, $responseData);
     }
 
 

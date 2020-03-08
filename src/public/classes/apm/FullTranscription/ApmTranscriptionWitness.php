@@ -60,6 +60,14 @@ class ApmTranscriptionWitness extends TranscriptionWitness {
         $this->initialLineNumbers = [];
         
     }
+
+    public function getTimeStamp() : string {
+        return $this->timeStamp;
+    }
+
+    public function getDocId(): int {
+        return $this->docId;
+    }
     
     public function getDatabaseItemStream() : DatabaseItemStream {
         return $this->databaseItemStream;
@@ -102,8 +110,8 @@ class ApmTranscriptionWitness extends TranscriptionWitness {
         $data = parent::getData();
 
         $data['witnessType'] = WitnessType::FULL_TRANSCRIPTION;
-        $data['timeStamp'] = $this->timeStamp;
-        $data['docId'] = $this->docId;
+        $data['timeStamp'] = $this->getTimeStamp();
+        $data['docId'] = $this->getDocId();
 
         return $data;
     }

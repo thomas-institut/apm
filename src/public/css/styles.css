@@ -18,22 +18,27 @@
 
 /* Fonts */
 @font-face {
-    font-family: "KacstOffice";
+    font-family: "ApmKacstOffice";
     src: url(../fonts/KacstOffice.ttf) format("truetype");
 }
 
 @font-face {
-    font-family: "FreeSerif";
+    font-family: "ApmFreeSerif";
     src: url(../fonts/FreeSerif.ttf) format("truetype");
 }
 
 @font-face {
-    font-family: "Dejavu Sans";
+    font-family: "ApmDejavuSans";
     src: url(../fonts/DejaVuSans.ttf) format("truetype");
 }
 
+@font-face {
+    font-family: "ApmNotoNaskhArabicUI";
+    src: url(../fonts/NotoNaskhArabicUI-Regular.ttf) format("truetype");
+}
+
 body {
-    font-family: Helvetica, sans-serif;
+    font-family: "DejaVu Sans", "ApmDejavuSans", Arial, sans-serif;
 /*    font-size: 14px;*/
 }
 
@@ -284,7 +289,7 @@ ul.doclist li {
 
 .chunktext-ar {
     direction: rtl;
-    font-family: 'Scheherazade', serif;
+    font-family: "Noto Naskh Arabic UI", "ApmNotoNaskhArabicUI", FreeSerif, "ApmFreeSerif", serif;
     font-style: normal;
     font-size: 1.5em;
 }

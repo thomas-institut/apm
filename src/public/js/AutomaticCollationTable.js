@@ -567,6 +567,9 @@ class AutomaticCollationTable {
       indentHtml = oneIndentUnit
     }
     let isNormalText = true
+    if (item.hand !== 0) {
+      html += indentHtml + '<b>Hand: </b>' + (item.hand +1) + lineBreakHtml
+    }
     if (item.format !== '') {
       html += indentHtml + '<b>Format: </b>' + item.format + lineBreakHtml
       isNormalText = false

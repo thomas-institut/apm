@@ -112,8 +112,9 @@ td.he-td {
  }
  
 td.ar-td {
-     font-family:  "Times New Roman", "Noto Naskh Arabic UI", "FreeSerif", serif;
-     font-size: 1.6em;
+    font-family: "Noto Naskh Arabic UI", "ApmNotoNaskhArabicUI", FreeSerif, "ApmFreeSerif", serif;
+    font-style: normal;
+    font-size: 1.5em;
 }
 
 td.witness {

@@ -22,7 +22,7 @@
 
 
 p.formattedchunktext {
-    font-size: 1.2em;
+    /*font-size: 1.2em;*/
     line-height: 1.6em;
 }
 
@@ -92,7 +92,6 @@ p.formattedchunktext {
 
 .markitem.note {
     color: red;
-    font-size: 1em;
     border: none;
     margin-left: 2px;
 }

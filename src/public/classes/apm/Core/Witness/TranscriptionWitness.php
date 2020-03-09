@@ -392,14 +392,18 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
 
         // all tokens are processed, but there might still be items beyond
         // the last item in the tokens
-        $maxTokenIndex = count($tokenArray)-1;
-        $maxItemIndex = count($itemArray)-1;
-        $lastTokenMaxItemIndex = max($tokenArray[$maxTokenIndex]->getSourceItemIndexes());
-        if ($maxItemIndex > $lastTokenMaxItemIndex ) {
-            for ($j = $lastTokenMaxItemIndex+1; $j <= $maxItemIndex; $j++){
-                $nonTokenIndexes[$maxTokenIndex]['post'][] = $j;
+        if (count($tokenArray) !== 0 &&  count($itemArray) !== 0) {
+            $maxTokenIndex = count($tokenArray)-1;
+            $maxItemIndex = count($itemArray)-1;
+
+            $lastTokenMaxItemIndex = max($tokenArray[$maxTokenIndex]->getSourceItemIndexes());
+            if ($maxItemIndex > $lastTokenMaxItemIndex ) {
+                for ($j = $lastTokenMaxItemIndex+1; $j <= $maxItemIndex; $j++){
+                    $nonTokenIndexes[$maxTokenIndex]['post'][] = $j;
+                }
             }
         }
+
         return $nonTokenIndexes;
 
     }

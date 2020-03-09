@@ -74,6 +74,9 @@ class StringTokenizer {
         $currentTokenStartLine = 1;
         $currentLine = 1;
 
+        if ($theText === '') {
+            return [];
+        }
         mb_regex_encoding('UTF-8');
 
         $text = $this->mbStringToArray($theText);

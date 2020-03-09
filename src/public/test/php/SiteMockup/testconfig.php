@@ -21,8 +21,8 @@
 // The rest of the options will be filled in the test environment class
 
 $apmTestConfig['db']['host'] = "localhost";
-$apmTestConfig['db']['user'] = "test";
-$apmTestConfig['db']['pwd'] = "j0j0j0";
-$apmTestConfig['db']['db'] ="test";
+$apmTestConfig['db']['user'] = "apmtest";
+$apmTestConfig['db']['pwd'] = "8Wd6dMJKv4DJvHVH";
+$apmTestConfig['db']['db'] ="apmtest";
 
 $apmTestConfig['java_executable'] = '/usr/lib/jvm/java-8-openjdk-amd64/bin/java';

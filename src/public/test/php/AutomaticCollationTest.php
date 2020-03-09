@@ -244,8 +244,7 @@ class AutomaticCollationTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
 
 
-        $this->assertTrue(isset($respData['collationTable']));
-        $this->assertTrue(isset($respData['sigla']));
+        $this->assertTrue(isset($respData['newCollationTable']));
         $this->assertTrue(isset($respData['collationEngineDetails']));
 
         // a partial collation with wrong doc ids

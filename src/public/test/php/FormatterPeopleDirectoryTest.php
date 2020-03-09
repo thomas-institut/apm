@@ -49,13 +49,13 @@ class FormatterPeopleDirectoryTest extends TestCase {
         $p = new Person(Person::IDTYPE_FULLNAME, 'Jon Snow');
         
         $this->assertEquals('Jon Snow', $pd->getFullName($p));
-        $this->assertEquals('J Snow', $pd->getInitialAndLastName($p));
+        $this->assertEquals('J. Snow', $pd->getInitialAndLastName($p));
         $this->assertEquals('JS', $pd->getInitials($p));
         
         $p2 = new Person(Person::IDTYPE_FULLNAME, 'Ludwig van Beethoven');
         
         $this->assertEquals('Ludwig van Beethoven', $pd->getFullName($p2));
-        $this->assertEquals('L van Beethoven', $pd->getInitialAndLastName($p2));
+        $this->assertEquals('L. van Beethoven', $pd->getInitialAndLastName($p2));
         $this->assertEquals('Lv', $pd->getInitials($p2));  //  <--- THIS IS WRONG!
         
         $p3 = new Person(Person::IDTYPE_FULLNAME, 'Madonna');

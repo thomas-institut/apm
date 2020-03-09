@@ -72,11 +72,11 @@ abstract class CommandLineUtility {
     /**
      * @var int
      */
-    private $argc;
+    protected $argc;
     /**
      * @var array
      */
-    private $argv;
+    protected $argv;
 
 
     public function __construct(array  $config, int $argc, array $argv) {
@@ -107,6 +107,7 @@ abstract class CommandLineUtility {
                 return $record;
         });
         $dbh = $systemManager->getDbConnection();
+        $this->dbh = $dbh;
         $hm = $systemManager->getHookManager();
 
         // Data Manager (will be replaced completely by SystemManager at some point

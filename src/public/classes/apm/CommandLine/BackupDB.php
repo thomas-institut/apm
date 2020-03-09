@@ -32,7 +32,7 @@ class BackupDB extends CommandLineUtility {
     
     const USAGE = "USAGE: backupdb <output_directory>\n";
 
-    const CACHE_TABLES = [ ApmMySqlTableName::TABLE_SYSTEM_CACHE, ApmMySqlTableName::TABLE_WITNESS_CACHE];
+    const CACHE_TABLES = [ ApmMySqlTableName::TABLE_SYSTEM_CACHE];
     
     public function __construct(array $config, int $argc, array $argv) {
         parent::__construct($config, $argc, $argv);

@@ -25,7 +25,8 @@ src/public/config.php
 /src/public/test/apm/tmp/c*
 /src/public/package-lock.json
 /src/public/js/istanbul/
-/src/public/test/php/apm/SiteMockup/testconfig.php
+/src/public/test/php/SiteMockup/testconfig.php
 .idea/
 /src/public/test/.*
 src/public/test/php/.phpunit.result.cache
+/apm.log

@@ -23,6 +23,7 @@ require "autoload.php";
 
 require 'SiteMockup/testconfig.php';
 
+use APM\Engine\Engine;
 use PHPUnit\Framework\TestCase;
 use APM\CollationEngine\Collatex;
 /**
@@ -135,6 +136,7 @@ class CollatexEngineTest extends TestCase
             [ 'id' => 'C', 'content' => 'This is Athens and this is Sparta']
         ];
         $result3 = $cr3->collate($validWitnessList);
+        $this->assertEquals(Engine::ERROR_NOERROR, $cr3->getErrorCode());
         $this->assertTrue(is_array($result3));
         $this->assertArrayHasKey('witnesses', $result3);
         $this->assertArrayHasKey('table', $result3);

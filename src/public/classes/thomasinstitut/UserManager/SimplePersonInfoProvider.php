@@ -21,7 +21,8 @@ namespace ThomasInstitut\UserManager;
 
 
 /**
- * Class NullPersonInfoProvider
+ * Class SimplePersonInfoProvider
+ *
  * A PersonInfoProvider that just converts the given id to a simple string
  *
  * @package ThomasInstitut\UserManager
@@ -29,7 +30,7 @@ namespace ThomasInstitut\UserManager;
 class SimplePersonInfoProvider implements PersonInfoProvider
 {
 
-    const DEFAULT_PREFIX = 'Person';
+    const DEFAULT_PREFIX = 'Person ';
     /**
      * @var string
      */
@@ -42,17 +43,16 @@ class SimplePersonInfoProvider implements PersonInfoProvider
     public function __construct(string $prefix = self::DEFAULT_PREFIX)
     {
         $this->prefix = $prefix;
-        $initial = substr($prefix, 0, 1);
-        if ($initial === false) {
+        if ($this->prefix === '') {
             $this->prefixInitial = '';
         } else {
-            $this->prefixInitial = substr($prefix, 0, 1);
+            $this->prefixInitial = substr($this->prefix, 0, 1);
         }
     }
 
     public function getFullNameFromId(int $id): string
     {
-       return  $this->prefix . ' ' . $id;
+       return  $this->prefix  . $id;
     }
 
     public function getShortNameFromId(int $id): string

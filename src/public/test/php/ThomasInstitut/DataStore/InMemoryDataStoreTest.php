@@ -24,9 +24,9 @@ use PHPUnit\Framework\TestCase;
 
 class InMemoryDataStoreTest extends TestCase
 {
-    public  function testRunTests() {
-        $testCase = new DataStoreTest();
+    public function testRunTests() {
+        $tester = new DataStoreTest();
         $dataStore = new InMemoryDataStore();
-        $testCase->runAll($dataStore, 'InMemoryDataStore');
+        $tester->runAll($dataStore, 'InMemoryDataStore');
     }
 }

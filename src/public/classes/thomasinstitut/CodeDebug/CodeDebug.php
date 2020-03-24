@@ -3,8 +3,6 @@
 
 namespace ThomasInstitut\CodeDebug;
 
-use PHPUnit\Framework\StaticAnalysis\HappyPath\AssertNotInstanceOf\B;
-
 /**
  * Class CodeDebug
  * @package ThomasInstitut\CodeDebug

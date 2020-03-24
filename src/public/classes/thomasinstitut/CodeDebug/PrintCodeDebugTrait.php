@@ -20,25 +20,20 @@
 namespace ThomasInstitut\CodeDebug;
 
 
+/**
+ * @codeCoverageIgnore
+ */
 trait PrintCodeDebugTrait
 {
     private $debugMode = false;
 
-    public function codeDebug(string $msg, array $data = [], $fileNameDepth = 3) {
+    public function codeDebug(string $msg, array $data = [], $fileNameDepth = 3) : void  {
         if (!$this->debugMode) {
             return;
         }
-        $backTrace = debug_backtrace();
-        $caller = array_shift($backTrace);
-        $sourceCodeFilename = $caller['file'];
-        if ($fileNameDepth > 0) {
-            $parts = explode('/', $sourceCodeFilename);
-            if (count($parts) > $fileNameDepth) {
-                $goodParts = array_slice($parts,count($parts)-$fileNameDepth, $fileNameDepth);
-                $sourceCodeFilename = implode('/', $goodParts);
-            }
-        }
-        $line = $caller['line'];
+        $backTraceData = CodeDebug::getBackTraceData($fileNameDepth);
+        $sourceCodeFilename = $backTraceData['sourceCodeFilename'];
+        $line = $backTraceData['line'];
 
         print "CODE $msg  [$sourceCodeFilename:$line]\n";
         if ($data !== []) {

@@ -17,13 +17,10 @@
  *  
  */
 
-namespace ThomasInstitut;
-
-require 'autoload.php';
+namespace ThomasInstitut\DataStore;
 
 use PHPUnit\Framework\TestCase;
-use ThomasInstitut\DataStore\DataStoreTest;
-use ThomasInstitut\DataStore\InMemoryDataStore;
+
 
 class InMemoryDataStoreTest extends TestCase
 {

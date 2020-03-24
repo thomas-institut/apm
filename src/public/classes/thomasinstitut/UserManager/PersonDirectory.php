@@ -39,6 +39,9 @@ use ThomasInstitut\DataStore\DataStore;
  *
  *
  * @package ThomasInstitut
+ *
+ * This class is still in early development, will not worry about code coverage for the time being
+ * @codeCoverageIgnore
  */
 class PersonDirectory
 {

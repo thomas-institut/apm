@@ -19,7 +19,25 @@
 
 namespace ThomasInstitut\CodeDebug;
 
+/**
+ * Interface CodeDebugInterface
+ *
+ * @package ThomasInstitut\CodeDebug
+ */
 interface CodeDebugInterface
 {
-    function codeDebug(string $msg, array $data, $fileNameDepth);
+    /**
+     * Logs a debug message with the given message and data, including
+     * source file and line information.
+     *
+     * Only the last $fileNameDepth parts of the source file name must be logged
+     * (e.g., if the file name is /usr/share/myapp/classes/Package/SubPackage/MyClass.php
+     * and $fileNameDepth === 3, the file name must be reported as
+     *   Package/SubPackage/MyClass.php
+     * @param string $msg
+     * @param array $data
+     * @param $fileNameDepth
+     * @return void
+     */
+    public function codeDebug(string $msg, array $data, $fileNameDepth) : void;
 }

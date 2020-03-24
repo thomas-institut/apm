@@ -22,6 +22,10 @@ namespace ThomasInstitut\CodeDebug;
 
 use Psr\Log\LoggerInterface;
 
+
+/**
+ * @codeCoverageIgnore
+ */
 trait CodeDebugWithLoggerTrait
 {
 
@@ -30,18 +34,12 @@ trait CodeDebugWithLoggerTrait
      */
     protected $logger;
 
-    public function codeDebug(string $msg, array $data = [], $fileNameDepth = 3) {
-        $backTrace = debug_backtrace();
-        $caller = array_shift($backTrace);
-        $sourceCodeFilename = $caller['file'];
-        if ($fileNameDepth > 0) {
-            $parts = explode('/', $sourceCodeFilename);
-            if (count($parts) > $fileNameDepth) {
-                $goodParts = array_slice($parts,count($parts)-$fileNameDepth, $fileNameDepth);
-                $sourceCodeFilename = implode('/', $goodParts);
-            }
-        }
-        $line = $caller['line'];
+    public function codeDebug(string $msg, array $data = [], $fileNameDepth = 3) : void
+    {
+        $backTraceData = CodeDebug::getBackTraceData($fileNameDepth);
+        $sourceCodeFilename = $backTraceData['sourceCodeFilename'];
+        $line = $backTraceData['line'];
+
         $this->logger->debug( "CODE $msg  [$sourceCodeFilename:$line]", $data);
     }
 

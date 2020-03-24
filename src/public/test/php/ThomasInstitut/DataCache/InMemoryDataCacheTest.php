@@ -17,16 +17,9 @@
  *  
  */
 
-namespace APM;
+namespace ThomasInstitut\DataCache;
 
 use PHPUnit\Framework\TestCase;
-use ThomasInstitut\DataCache\DataCacheTest;
-use ThomasInstitut\DataCache\DataTableDataCache;
-use ThomasInstitut\DataCache\InMemoryDataCache;
-use ThomasInstitut\DataCache\KeyNotInCacheException;
-use ThomasInstitut\DataTable\InMemoryDataTable;
-
-require "autoload.php";
 
 
 class InMemoryDataCacheTest extends TestCase
@@ -40,7 +33,6 @@ class InMemoryDataCacheTest extends TestCase
         $tester = new DataCacheTest();
 
         $tester->runAllTests(new InMemoryDataCache(), 'InMemoryDataCache');
-        $tester->runAllTests(new DataTableDataCache(new InMemoryDataTable()), 'DataTableDataCache');
     }
 
 }

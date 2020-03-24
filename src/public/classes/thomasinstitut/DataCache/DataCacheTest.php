@@ -24,10 +24,20 @@ use Exception;
 use PHPUnit\Framework\TestCase;
 use ThomasInstitut\TimeString\TimeString;
 
+
+/**
+ * Class DataCacheTest
+ *
+ * Reference tests for any implementation of a DataCache
+ *
+ * @package ThomasInstitut\DataCache
+ */
 class DataCacheTest extends TestCase
 {
 
     const NUM_KEYS_TO_TEST = 100;
+    const READ_ITERATIONS = 500;
+
     /**
      * @var DataCache
      */
@@ -69,6 +79,7 @@ class DataCacheTest extends TestCase
      */
     public function basicTest() {
 
+        // try to get a value for a non-existent key
         $exceptionCaught= false;
         try {
             $this->dataCache->get($this->keyPrefix . 'somekey');
@@ -77,6 +88,7 @@ class DataCacheTest extends TestCase
         }
         $this->assertTrue($exceptionCaught, $this->testClassName);
 
+        // try to delete a non-existent key
         $exceptionCaught= false;
         try {
             $this->dataCache->delete($this->keyPrefix . 'somekey');
@@ -85,6 +97,7 @@ class DataCacheTest extends TestCase
         }
         $this->assertTrue($exceptionCaught);
 
+        // build the test set
         $valuesTestSet = [];
         for($i = 0; $i < self::NUM_KEYS_TO_TEST; $i++) {
             $valuesTestSet[] = [
@@ -99,9 +112,29 @@ class DataCacheTest extends TestCase
         }
 
         // read the cache randomly
-        $numIterations = 1000;
-        for($i = 0; $i < $numIterations; $i++){
+        for($i = 0; $i < self::READ_ITERATIONS; $i++){
             $testCase = $valuesTestSet[random_int(0, self::NUM_KEYS_TO_TEST-1)];
+            $cachedValue = $this->dataCache->get($testCase['key']);
+            $this->assertEquals($testCase['value'], $cachedValue, $this->testClassName . ", cache read, iteration $i");
+        }
+
+        //prepare new values
+        $newValuesTestSet = [];
+        for($i = 0; $i < self::NUM_KEYS_TO_TEST; $i++) {
+            $newValuesTestSet[] = [
+                'key' => $valuesTestSet[$i]['key'],
+                'value' => 'newvalue-' . random_int(1, 1000000)
+            ];
+        }
+
+        // rewrite keys with new values
+        foreach($newValuesTestSet as $testCase) {
+            $this->dataCache->set($testCase['key'], $testCase['value']);
+        }
+
+        // read the cache randomly
+        for($i = 0; $i < self::READ_ITERATIONS; $i++){
+            $testCase = $newValuesTestSet[random_int(0, self::NUM_KEYS_TO_TEST-1)];
             $cachedValue = $this->dataCache->get($testCase['key']);
             $this->assertEquals($testCase['value'], $cachedValue, $this->testClassName . ", cache read, iteration $i");
         }
@@ -112,8 +145,7 @@ class DataCacheTest extends TestCase
         }
 
         // read the cache randomly again
-        $numIterations = 1000;
-        for($i = 0; $i < $numIterations; $i++){
+        for($i = 0; $i < self::READ_ITERATIONS; $i++){
             $testCase = $valuesTestSet[random_int(0, self::NUM_KEYS_TO_TEST-1)];
             $exceptionCaught = false;
             try {

@@ -32,10 +32,8 @@ trait PrintCodeDebugTrait
             return;
         }
         $backTraceData = CodeDebug::getBackTraceData($fileNameDepth);
-        $sourceCodeFilename = $backTraceData['sourceCodeFilename'];
-        $line = $backTraceData['line'];
 
-        print "CODE $msg  [$sourceCodeFilename:$line]\n";
+        print "CODE $msg  [$backTraceData->sourceCodeFilename:$backTraceData->lineNumber]\n";
         if ($data !== []) {
             print_r($data);
             print "---------\n";

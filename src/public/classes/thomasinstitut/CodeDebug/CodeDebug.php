@@ -3,6 +3,8 @@
 
 namespace ThomasInstitut\CodeDebug;
 
+use PHPUnit\Framework\StaticAnalysis\HappyPath\AssertNotInstanceOf\B;
+
 /**
  * Class CodeDebug
  * @package ThomasInstitut\CodeDebug
@@ -11,9 +13,10 @@ namespace ThomasInstitut\CodeDebug;
  */
 class CodeDebug
 {
-    static public function getBackTraceData(int $fileNameDepth) : array {
+    static public function getBackTraceData(int $fileNameDepth) : BackTraceData {
         $backTrace = debug_backtrace();
-        $caller = array_shift($backTrace);
+        array_shift($backTrace); // first in array is trait function that called this function
+        $caller = array_shift($backTrace);  // this is the caller we're interested in
         $sourceCodeFilename = $caller['file'];
         if ($fileNameDepth > 0) {
             $parts = explode('/', $sourceCodeFilename);
@@ -24,6 +27,6 @@ class CodeDebug
         }
         $line = $caller['line'];
 
-        return [ 'sourceCodeFileName' => $sourceCodeFilename, 'line' => $line];
+        return new BackTraceData($sourceCodeFilename, $line);
     }
 }

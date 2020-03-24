@@ -37,10 +37,9 @@ trait CodeDebugWithLoggerTrait
     public function codeDebug(string $msg, array $data = [], $fileNameDepth = 3) : void
     {
         $backTraceData = CodeDebug::getBackTraceData($fileNameDepth);
-        $sourceCodeFilename = $backTraceData['sourceCodeFilename'];
-        $line = $backTraceData['line'];
 
-        $this->logger->debug( "CODE $msg  [$sourceCodeFilename:$line]", $data);
+
+        $this->logger->debug( "CODE $msg  [$backTraceData->sourceCodeFilename:$backTraceData->lineNumber]", $data);
     }
 
 }

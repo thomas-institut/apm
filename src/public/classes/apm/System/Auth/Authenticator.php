@@ -196,8 +196,11 @@ class Authenticator {
             $response = new \Slim\Psr7\Response();
             $response = FigResponseCookies::expire($response, 
                     $this->cookieName);
+
+            $loginUrl = $this->router->urlFor('login');
+            $this->logger->debug('Redirecting to ' . $loginUrl);
             return $response->withHeader('Location',
-                    $this->router->urlFor('login'));
+                    $loginUrl);
         }
     }
 

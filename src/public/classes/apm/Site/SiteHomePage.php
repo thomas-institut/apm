@@ -25,6 +25,7 @@
 
 namespace APM\Site;
 
+use APM\System\ApmContainerKey;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
@@ -37,7 +38,9 @@ class SiteHomePage extends SiteController
   
     public function homePage(Request $request, Response $response)
     {
-        return $response->withHeader('Location', $this->router->urlFor('dashboard'))->withStatus(302);
+        $dashBoardUrl =  $this->router->urlFor('dashboard');
+        $this->logger->debug('Rerouting to ' . $dashBoardUrl);
+        return $response->withHeader('Location', $dashBoardUrl)->withStatus(302);
     }
 
 }

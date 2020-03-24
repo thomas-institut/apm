@@ -35,4 +35,7 @@ class ApmContainerKey
     const API_USER_ID = 'apiUserId';
     const VIEW = 'view';
     const ROUTER = 'router';
+    const ROUTE_COLLECTOR = 'routeCollector';
+    const IS_PROXIED = 'isProxied';
+
 }

@@ -16,6 +16,8 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# Runs php as a webserver with home in ./src
+# Runs php as a webserver in src/public
 #
-php -d display_errors=on -S localhost:8888 -t src 
+cd src/public
+php -d display_errors=on -S localhost:8888
+cd ../..

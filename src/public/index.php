@@ -30,6 +30,7 @@ use APM\Site\SiteChunkPage;
 use APM\Site\SiteCollationTable;
 use APM\Site\SiteDocuments;
 use APM\System\ApmContainerKey;
+use APM\System\RouteMiddleware;
 use DI\ContainerBuilder;
 
 use Exception;
@@ -93,6 +94,7 @@ $dataManager->userManager->setSqlQueryCounterTracker($systemManager->getSqlQuery
 $builder = new ContainerBuilder();
 $builder->addDefinitions([
     ApmContainerKey::CONFIG => $config,
+    ApmContainerKey::IS_PROXIED => false,
     ApmContainerKey::DATA_MANAGER => $dataManager,
     ApmContainerKey::LOGGER => $logger,
     ApmContainerKey::SYSTEM_MANAGER => $systemManager,
@@ -117,11 +119,18 @@ if ($subdir !== '') {
     $app->setBasePath($subdir);
 }
 
+
+//$routeMW = new RouteMiddleware($container);
+//$routeMW->setLogger($logger->withName('ROUTING'));
+//$app->addMiddleware($routeMW);
+
 $app->addErrorMiddleware(true, true, true);
 
 // Add Twig middleware and router
 $app->add(TwigMiddleware::createFromContainer($app));
 $container->set(ApmContainerKey::ROUTER, $app->getRouteCollector()->getRouteParser());
+//$container->set(ApmContainerKey::ROUTE_COLLECTOR, $app->getRouteCollector());
+
 
 // -----------------------------------------------------------------------------
 //  SITE ROUTES

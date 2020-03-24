@@ -29,6 +29,7 @@ namespace APM\Site;
 use APM\FullTranscription\PageInfo;
 use APM\FullTranscription\PageManager;
 use APM\Plugin\HookManager;
+use APM\System\ApmContainerKey;
 use AverroesProject\Data\UserManager;
 use DI\Container;
 use DI\DependencyException;
@@ -63,7 +64,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     /**
      * @var Container
      */
-    private $container;
+    protected $container;
     
     /** @var ApmSystemManager */
     protected $systemManager;
@@ -121,7 +122,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     public function __construct(Container $ci)
     {
         $this->container = $ci;
-        $this->systemManager = $ci->get('systemManager');
+        $this->systemManager = $ci->get(ApmContainerKey::SYSTEM_MANAGER);
         $this->view = $ci->get('view');
         $this->config = $ci->get('config');
         $this->dataManager = $ci->get('dataManager');

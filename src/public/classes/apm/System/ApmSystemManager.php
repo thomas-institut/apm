@@ -510,7 +510,8 @@ class ApmSystemManager extends SystemManager {
         $fields = explode('/', $baseUrl);
 
         /// must have at least 3 fields
-        if (count($fields) <= 3) {
+        if (count($fields) < 3) {
+            $this->logger->debug("Fields", $fields);
             throw new InvalidArgumentException('Badly formed url: ' . $baseUrl);
         }
 

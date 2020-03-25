@@ -28,6 +28,7 @@ use ThomasInstitut\ErrorReporter\ErrorReporter;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
 use ThomasInstitut\Profiler\SimpleSqlQueryCounterTrackerAware;
 use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
+use ThomasInstitut\TimeString\TimeString;
 
 class ApmPageManager extends PageManager implements LoggerAwareInterface, ErrorReporter, SqlQueryCounterTrackerAware
 {
@@ -117,8 +118,17 @@ class ApmPageManager extends PageManager implements LoggerAwareInterface, ErrorR
             $this->throwInvalidArgumentException("Page $pageId not found", self::ERROR_PAGE_NOT_FOUND);
         }
         if ($row === []) {
-            $this->throwRunTimeException('Unknown error occured', self::ERROR_UNKNOWN);
+            $this->throwRunTimeException('Unknown error occurred', self::ERROR_UNKNOWN);
         }
         return PageInfo::createFromDatabaseRow($row);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function updatePageSettings(int $pageId, PageInfo $newSettings): void
+    {
+        $newSettings->pageId = $pageId;
+        $this->pagesDataTable->updateRow($newSettings->getDatabaseRow());
     }
 }

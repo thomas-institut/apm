@@ -49,4 +49,11 @@ abstract class PageManager
      * @return PageInfo
      */
     abstract public function getPageInfoById(int $pageId) : PageInfo;
+
+    /**
+     * @param int $pageId
+     * @param PageInfo $newSettings
+     */
+    abstract public function updatePageSettings(int $pageId, PageInfo $newSettings) : void;
+
 }

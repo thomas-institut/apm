@@ -273,7 +273,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         }
 
         if ($cacheValue !== '') {
-            //$this->codeDebug("Getting witness from cache");
+            $this->codeDebug("Getting witness from cache");
             // cache hit!
             $this->cacheTracker->incrementHits();
             $txWitness = unserialize($cacheValue);
@@ -374,10 +374,11 @@ class ApmTranscriptionManager extends TranscriptionManager
             " AND ($tp.seq*1000000 + $te.column_number*10000 + $te.seq * 100 + $ti.seq) < $seqNumberEnd" .
             " AND $ti.valid_from<='$timeString'" .
             " AND $te.valid_from<='$timeString'" .
-            " AND $tp.valid_from<='$timeString'" .
+            // " AND $tp.valid_from<='$timeString'" .
             " AND $ti.valid_until>'$timeString'" .
             " AND $te.valid_until>'$timeString'" .
-            " AND $tp.valid_until>'$timeString'" .
+            // " AND $tp.valid_until>'$timeString'" .
+            " AND $tp.valid_until='" . TimeString::END_OF_TIMES . "'" .
             " ORDER BY $tp.seq, $te.column_number, $te.seq, $ti.seq ASC";
 
         $r = $this->databaseHelper->query($query);
@@ -484,10 +485,11 @@ class ApmTranscriptionManager extends TranscriptionManager
             " WHERE $te.id=$elementId" .
             " AND $ti.valid_from<='$timeString'" .
             " AND $te.valid_from<='$timeString'" .
-            " AND $tp.valid_from<='$timeString'" .
+            //" AND $tp.valid_from<='$timeString'" .
             " AND $ti.valid_until>'$timeString'" .
             " AND $te.valid_until>'$timeString'" .
-            " AND $tp.valid_until>'$timeString'" .
+            //" AND $tp.valid_until>'$timeString'" .
+            " AND $tp.valid_until='" . TimeString::END_OF_TIMES . "'" .
             " ORDER BY $ti.seq ASC";
 
         $r = $this->databaseHelper->query($query);
@@ -965,5 +967,33 @@ class ApmTranscriptionManager extends TranscriptionManager
             'chunkLocationMap' => $chunkLocationMap,
             'versionMap' => $versionMap
         ];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function updatePageSettings(int $pageId, PageInfo $newSettings, int $userId): void
+    {
+        // check current settings
+        $currentSettings = $this->getPageManager()->getPageInfoById($pageId);
+
+        // if there are no changes, do nothing
+        if ($newSettings == $currentSettings) {
+            return;
+        }
+
+        // Update the database first
+        $this->getPageManager()->updatePageSettings($pageId, $newSettings);
+
+        // if there's a change in foliation, page number or sequence, generate a new version for each
+        // of the columns in the page
+
+        if ($currentSettings->foliation !== $newSettings->foliation ||
+        $currentSettings->pageNumber !== $newSettings->pageNumber ||
+        $currentSettings->sequence !== $newSettings->sequence) {
+
+        }
+
+
     }
 }

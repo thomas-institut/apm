@@ -37,7 +37,6 @@ abstract class TranscriptionManager implements ErrorReporter
     abstract public function getPageManager() : PageManager;
     abstract public function getDocManager() : DocManager;
 
-
     /**
      * Returns the ApmTranscriptionWitness contained in the given document for the given work and chunk number
      * at the given time.
@@ -227,4 +226,19 @@ abstract class TranscriptionManager implements ErrorReporter
      * @return array
      */
     abstract public function getFullChunkMap(string $timeString) : array;
+
+
+    /**
+     * Update a page's settings with the given information
+     *
+     * This needs to be done at the TranscriptionManager level and not necessarily
+     * only at the PageManager level because some of the page settings may influence the status
+     * of transcription witnesses. For example, a change in a page foliation makes the data for witnesses
+     * in that page obsolete.
+     *
+     * @param int $pageId
+     * @param PageInfo $newSettings
+     * @param int $userId
+     */
+    abstract public function updatePageSettings(int $pageId, PageInfo $newSettings, int $userId) : void;
 }

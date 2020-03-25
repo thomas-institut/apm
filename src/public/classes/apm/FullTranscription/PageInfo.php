@@ -99,4 +99,18 @@ class PageInfo
         return $pageInfo;
     }
 
+    public function getDatabaseRow() : array {
+        return [
+            'id' => $this->pageId,
+            'doc_id' => $this->docId,
+            'page_number' => $this->pageNumber,
+            'img_number' => $this->imageNumber,
+            'seq' => $this->sequence,
+            'type' => $this->type,
+            'lang' => $this->langCode,
+            'num_cols' => $this->numCols,
+            'foliation' => $this->foliation
+        ];
+    }
+
 }

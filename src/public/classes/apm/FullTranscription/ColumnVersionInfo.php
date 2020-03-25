@@ -95,4 +95,18 @@ class ColumnVersionInfo
         return $ci;
     }
 
+    public function getDatabaseRow() : array {
+        return [
+            'id' => $this->id,
+            'page_id' => $this->pageId,
+            'col' => $this->column,
+            'time_from' => $this->timeFrom,
+            'time_until' => $this->timeUntil,
+            'author_id' => $this->authorId,
+            'descr' => $this->description,
+            'minor' => $this->isMinor ? 1 : 0,
+            'review' => $this->isReview ? 1 : 0
+        ];
+    }
+
 }

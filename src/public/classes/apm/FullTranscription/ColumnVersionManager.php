@@ -36,4 +36,17 @@ abstract class ColumnVersionManager
      * @return ColumnVersionInfo[]
      */
     abstract public function getColumnVersionInfoByPageCol(int $pageId, int $column, int $numVersions = 0) : array;
+
+    /**
+     * Registers a column version with the given info.
+     *
+     * id and timeUntil in the given version are ignored. The manager will create a new version info with
+     * a new id, and will calculate the timeUntil by placing the given version in the appropriate place chronologically
+     * with the versions already in the system.
+     *
+     * @param int $pageId
+     * @param int $column
+     * @param ColumnVersionInfo $versionInfo
+     */
+    abstract public function registerNewColumnVersion(int $pageId, int $column, ColumnVersionInfo $versionInfo) : void;
 }

@@ -36,6 +36,7 @@ abstract class TranscriptionManager implements ErrorReporter
 
     abstract public function getPageManager() : PageManager;
     abstract public function getDocManager() : DocManager;
+    abstract public function getColumnVersionManager() : ColumnVersionManager;
 
     /**
      * Returns the ApmTranscriptionWitness contained in the given document for the given work and chunk number

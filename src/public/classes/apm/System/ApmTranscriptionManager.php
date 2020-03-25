@@ -27,6 +27,7 @@ use APM\FullTranscription\ApmItemLocation;
 use APM\FullTranscription\ApmPageManager;
 use APM\FullTranscription\ApmTranscriptionWitness;
 use APM\FullTranscription\ColumnVersionInfo;
+use APM\FullTranscription\ColumnVersionManager;
 use APM\FullTranscription\DocManager;
 use APM\FullTranscription\PageInfo;
 use APM\FullTranscription\PageManager;
@@ -995,5 +996,10 @@ class ApmTranscriptionManager extends TranscriptionManager
         }
 
 
+    }
+
+    public function getColumnVersionManager(): ColumnVersionManager
+    {
+        return $this->columnVersionManager;
     }
 }

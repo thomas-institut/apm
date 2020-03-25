@@ -1064,90 +1064,90 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param string $localWitnessId
      * @return array
      */
-    public function getChunkLocationsForDoc(int $docId, string $workId, int $chunkNumber, string $localWitnessId = 'A') : array
-    {
-        $rawLocations = $this->getChunkLocationsForDocRaw($docId, $workId, $chunkNumber, $localWitnessId);
+//    public function getChunkLocationsForDoc(int $docId, string $workId, int $chunkNumber, string $localWitnessId = 'A') : array
+//    {
+//        $rawLocations = $this->getChunkLocationsForDocRaw($docId, $workId, $chunkNumber, $localWitnessId);
+//
+//        $locationArray = $this->getChunkLocationArrayFromRawLocations($rawLocations);
+//
+//        return $this->fillInColumnInfoForLocations($docId, $locationArray);
+//    }
 
-        $locationArray = $this->getChunkLocationArrayFromRawLocations($rawLocations);
-
-        return $this->fillInColumnInfoForLocations($docId, $locationArray);
-    }
-
-    public function fillInColumnInfoForLocations(int $docId, array $locationArray) : array {
-
-        $returnArray = $locationArray;
-
-        // get columns for each location
-        foreach ($returnArray as $key => &$segmentLoc) {
-            $segmentLoc['columns'] = [];
-            if (!$segmentLoc['valid']) {
-                continue;
-            }
-            $startSeq = intval($segmentLoc['start']['page_seq']);
-            $startCol = intval($segmentLoc['start']['column_number']);
-            $endSeq = intval($segmentLoc['end']['page_seq']);
-            $endCol = intval($segmentLoc['end']['column_number']);
-            $pageInfo = $this->getPageInfoByDocSeq($docId, $startSeq);
-            $pageFoliation = is_null($pageInfo['foliation']) ? $pageInfo['seq'] : $pageInfo['foliation'];
-            if ($startSeq === $endSeq) {
-                for ($c = $startCol; $c <= $endCol; $c++) {
-                    $segmentLoc['columns'][] = [ 'pageId' => intval($pageInfo['id']), 'foliation' => $pageFoliation,  'column' => $c];
-                }
-                continue;
-            }
-            // more than 1 page
-            for ($c = $startCol; $c <= $pageInfo['num_cols']; $c++) {
-                $segmentLoc['columns'][] = [ 'pageId' => intval($pageInfo['id']), 'foliation' => $pageFoliation, 'column' => $c];
-            }
-            for ($pageSeq = $startSeq + 1; $pageSeq < $endSeq; $pageSeq++) {
-                $pageInfo = $this->getPageInfoByDocSeq($docId, $pageSeq);
-                $pageFoliation = is_null($pageInfo['foliation']) ? $pageInfo['seq'] : $pageInfo['foliation'];
-                for ($c = 1; $c <= $pageInfo['num_cols']; $c++) {
-                    $segmentLoc['columns'][] = [ 'pageId' => intval($pageInfo['id']), 'foliation' => $pageFoliation, 'column' => $c];
-                }
-            }
-            $pageInfo = $this->getPageInfoByDocSeq($docId, $endSeq);
-            $pageFoliation = is_null($pageInfo['foliation']) ? $pageInfo['seq'] : $pageInfo['foliation'];
-            for ($c = 1; $c <= $endCol; $c++) {
-                $segmentLoc['columns'][] = [ 'pageId' => intval($pageInfo['id']), 'foliation' => $pageFoliation,  'column' => $c];
-            }
-        }
-
-        $lastTime = '0000-00-00 00:00:00.000000';  // times will be compared as strings, this works because MySQL stores times as 'YYYY-MM-DD HH:MM:SS.mmmmmmm'
-        $lastAuthorName = '';
-        $lastAuthorId = 0;
-        $lastAuthorUsername = '';
-        foreach($returnArray as $key => &$segmentLoc) {
-            foreach($segmentLoc['columns'] as &$column) {
-                $column['versions'] = $this->getTranscriptionVersionsWithAuthorInfo($column['pageId'], $column['column']);
-                if (count($column['versions']) > 0) {
-                    $lastVersionTime = $column['versions'][count($column['versions'])-1]['time_from'];
-                    $column['lastTime'] = $lastVersionTime;
-                    $column['lastAuthorName'] = $column['versions'][count($column['versions'])-1]['author_name'];
-                    $column['lastAuthorId'] = intval($column['versions'][count($column['versions'])-1]['author_id']);
-                    $column['lastAuthorUsername'] = $column['versions'][count($column['versions'])-1]['author_username'];
-                    if (strcmp($lastTime, $lastVersionTime)<0) {
-                        $lastTime = $lastVersionTime;
-                        $lastAuthorName = $column['lastAuthorName'];
-                        $lastAuthorId = $column['lastAuthorId'];
-                        $lastAuthorUsername =$column['lastAuthorUsername'];
-                    }
-                } else {
-                    $column['lastTime'] = '0000-00-00 00:00:00.000000';
-                    $column['lastAuthorName'] = 'nobody';
-                    $column['lastAuthorId'] = 0;
-                    $column['lastAuthorUsername'] = 'nobody';
-                }
-            }
-            $segmentLoc['lastTime'] = $lastTime;
-            $segmentLoc['lastAuthorName'] = $lastAuthorName;
-            $segmentLoc['lastAuthorId'] = $lastAuthorId;
-            $segmentLoc['lastAuthorUsername'] = $lastAuthorUsername;
-        }
-
-        return $returnArray;
-
-    }
+//    public function fillInColumnInfoForLocations(int $docId, array $locationArray) : array {
+//
+//        $returnArray = $locationArray;
+//
+//        // get columns for each location
+//        foreach ($returnArray as $key => &$segmentLoc) {
+//            $segmentLoc['columns'] = [];
+//            if (!$segmentLoc['valid']) {
+//                continue;
+//            }
+//            $startSeq = intval($segmentLoc['start']['page_seq']);
+//            $startCol = intval($segmentLoc['start']['column_number']);
+//            $endSeq = intval($segmentLoc['end']['page_seq']);
+//            $endCol = intval($segmentLoc['end']['column_number']);
+//            $pageInfo = $this->getPageInfoByDocSeq($docId, $startSeq);
+//            $pageFoliation = is_null($pageInfo['foliation']) ? $pageInfo['seq'] : $pageInfo['foliation'];
+//            if ($startSeq === $endSeq) {
+//                for ($c = $startCol; $c <= $endCol; $c++) {
+//                    $segmentLoc['columns'][] = [ 'pageId' => intval($pageInfo['id']), 'foliation' => $pageFoliation,  'column' => $c];
+//                }
+//                continue;
+//            }
+//            // more than 1 page
+//            for ($c = $startCol; $c <= $pageInfo['num_cols']; $c++) {
+//                $segmentLoc['columns'][] = [ 'pageId' => intval($pageInfo['id']), 'foliation' => $pageFoliation, 'column' => $c];
+//            }
+//            for ($pageSeq = $startSeq + 1; $pageSeq < $endSeq; $pageSeq++) {
+//                $pageInfo = $this->getPageInfoByDocSeq($docId, $pageSeq);
+//                $pageFoliation = is_null($pageInfo['foliation']) ? $pageInfo['seq'] : $pageInfo['foliation'];
+//                for ($c = 1; $c <= $pageInfo['num_cols']; $c++) {
+//                    $segmentLoc['columns'][] = [ 'pageId' => intval($pageInfo['id']), 'foliation' => $pageFoliation, 'column' => $c];
+//                }
+//            }
+//            $pageInfo = $this->getPageInfoByDocSeq($docId, $endSeq);
+//            $pageFoliation = is_null($pageInfo['foliation']) ? $pageInfo['seq'] : $pageInfo['foliation'];
+//            for ($c = 1; $c <= $endCol; $c++) {
+//                $segmentLoc['columns'][] = [ 'pageId' => intval($pageInfo['id']), 'foliation' => $pageFoliation,  'column' => $c];
+//            }
+//        }
+//
+//        $lastTime = '0000-00-00 00:00:00.000000';  // times will be compared as strings, this works because MySQL stores times as 'YYYY-MM-DD HH:MM:SS.mmmmmmm'
+//        $lastAuthorName = '';
+//        $lastAuthorId = 0;
+//        $lastAuthorUsername = '';
+//        foreach($returnArray as $key => &$segmentLoc) {
+//            foreach($segmentLoc['columns'] as &$column) {
+//                $column['versions'] = $this->getTranscriptionVersionsWithAuthorInfo($column['pageId'], $column['column']);
+//                if (count($column['versions']) > 0) {
+//                    $lastVersionTime = $column['versions'][count($column['versions'])-1]['time_from'];
+//                    $column['lastTime'] = $lastVersionTime;
+//                    $column['lastAuthorName'] = $column['versions'][count($column['versions'])-1]['author_name'];
+//                    $column['lastAuthorId'] = intval($column['versions'][count($column['versions'])-1]['author_id']);
+//                    $column['lastAuthorUsername'] = $column['versions'][count($column['versions'])-1]['author_username'];
+//                    if (strcmp($lastTime, $lastVersionTime)<0) {
+//                        $lastTime = $lastVersionTime;
+//                        $lastAuthorName = $column['lastAuthorName'];
+//                        $lastAuthorId = $column['lastAuthorId'];
+//                        $lastAuthorUsername =$column['lastAuthorUsername'];
+//                    }
+//                } else {
+//                    $column['lastTime'] = '0000-00-00 00:00:00.000000';
+//                    $column['lastAuthorName'] = 'nobody';
+//                    $column['lastAuthorId'] = 0;
+//                    $column['lastAuthorUsername'] = 'nobody';
+//                }
+//            }
+//            $segmentLoc['lastTime'] = $lastTime;
+//            $segmentLoc['lastAuthorName'] = $lastAuthorName;
+//            $segmentLoc['lastAuthorId'] = $lastAuthorId;
+//            $segmentLoc['lastAuthorUsername'] = $lastAuthorUsername;
+//        }
+//
+//        return $returnArray;
+//
+//    }
 
     /**
      * Returns a an array with the chunk start and end locations
@@ -1169,55 +1169,55 @@ class DataManager implements  SqlQueryCounterTrackerAware
      * @param string $timeString
      * @return array
      */
-    public function getChunkLocationsForDocRaw($docId, $workId, $chunkNumber, $localWitnessId = 'A', $timeString = '')
-    {
-        $ti = $this->tNames['items'];
-        $te = $this->tNames['elements'];
-        $tp = $this->tNames['pages'];
-
-        if ($timeString === '') {
-            $timeString = TimeString::now();
-        }
-
-
-        $this->getSqlQueryCounterTracker()->incrementSelect();
-        
-        $query = "SELECT $tp.seq as 'page_seq'," .
-            " $tp.foliation," . 
-            " $te.column_number," . 
-            " $te.seq as 'e_seq'," . 
-            " $ti.seq as 'item_seq'," . 
-            " $ti.alt_text as 'type'," .
-            " $ti.extra_info as 'lwid'," .
-            " $ti.length as 'segment'" . 
-            " FROM $tp" . 
-            " JOIN ($te, $ti)" . 
-            " ON ($te.id=$ti.ce_id AND $tp.id=$te.page_id)" . 
-            " WHERE $ti.type=" . Item::CHUNK_MARK .  
-            " AND $ti.text='$workId'" . 
-            " AND $ti.target=$chunkNumber" .
-            " AND $ti.extra_info='$localWitnessId'" .
-            " AND $tp.doc_id=$docId" .
-            " AND $ti.valid_from<='$timeString'" .
-            " AND $te.valid_from<='$timeString'" .
-            " AND $tp.valid_from<='$timeString'" .
-            " AND $ti.valid_until>'$timeString'" .
-            " AND $te.valid_until>'$timeString'" .
-            " AND $tp.valid_until>'$timeString'" .
-//            " AND $ti.valid_until='9999-12-31 23:59:59.999999'" .
-//            " AND $te.valid_until='9999-12-31 23:59:59.999999'" .
-//            " AND $tp.valid_until='9999-12-31 23:59:59.999999'" .
-            " ORDER BY $tp.seq, $te.column_number, $te.seq, $ti.seq ASC";
-        
-        $r = $this->databaseHelper->query($query);
-        
-        $rows = [];
-        while ($row = $r->fetch(PDO::FETCH_ASSOC)) {
-            $rows[] = $row;
-        }
-        $this->logger->debug("ChunkLocations for doc $docId, work $workId, chunk $chunkNumber, lwid $localWitnessId", $rows);
-        return $rows;
-    }
+//    public function getChunkLocationsForDocRaw($docId, $workId, $chunkNumber, $localWitnessId = 'A', $timeString = '')
+//    {
+//        $ti = $this->tNames['items'];
+//        $te = $this->tNames['elements'];
+//        $tp = $this->tNames['pages'];
+//
+//        if ($timeString === '') {
+//            $timeString = TimeString::now();
+//        }
+//
+//
+//        $this->getSqlQueryCounterTracker()->incrementSelect();
+//
+//        $query = "SELECT $tp.seq as 'page_seq'," .
+//            " $tp.foliation," .
+//            " $te.column_number," .
+//            " $te.seq as 'e_seq'," .
+//            " $ti.seq as 'item_seq'," .
+//            " $ti.alt_text as 'type'," .
+//            " $ti.extra_info as 'lwid'," .
+//            " $ti.length as 'segment'" .
+//            " FROM $tp" .
+//            " JOIN ($te, $ti)" .
+//            " ON ($te.id=$ti.ce_id AND $tp.id=$te.page_id)" .
+//            " WHERE $ti.type=" . Item::CHUNK_MARK .
+//            " AND $ti.text='$workId'" .
+//            " AND $ti.target=$chunkNumber" .
+//            " AND $ti.extra_info='$localWitnessId'" .
+//            " AND $tp.doc_id=$docId" .
+//            " AND $ti.valid_from<='$timeString'" .
+//            " AND $te.valid_from<='$timeString'" .
+//            " AND $tp.valid_from<='$timeString'" .
+//            " AND $ti.valid_until>'$timeString'" .
+//            " AND $te.valid_until>'$timeString'" .
+//            " AND $tp.valid_until>'$timeString'" .
+////            " AND $ti.valid_until='9999-12-31 23:59:59.999999'" .
+////            " AND $te.valid_until='9999-12-31 23:59:59.999999'" .
+////            " AND $tp.valid_until='9999-12-31 23:59:59.999999'" .
+//            " ORDER BY $tp.seq, $te.column_number, $te.seq, $ti.seq ASC";
+//
+//        $r = $this->databaseHelper->query($query);
+//
+//        $rows = [];
+//        while ($row = $r->fetch(PDO::FETCH_ASSOC)) {
+//            $rows[] = $row;
+//        }
+//        $this->logger->debug("ChunkLocations for doc $docId, work $workId, chunk $chunkNumber, lwid $localWitnessId", $rows);
+//        return $rows;
+//    }
 
     /**
      * Returns true if $loc1 represents
@@ -2446,28 +2446,28 @@ class DataManager implements  SqlQueryCounterTrackerAware
         return true;
     }
 
-    public function registerTranscriptionVersion(int $pageId, int $col, string $timeFrom, int $authorId, string $descr = '', bool $isMinor = false, bool $isReview= false) {
-
-        $currentVersions = $this->getTranscriptionVersions($pageId, $col);
-
-        if (count($currentVersions) !== 0 ) {
-            $lastVersion = $currentVersions[count($currentVersions)-1];
-            $this->updateVersionUntilTime(intval($lastVersion['id']), $timeFrom);
-        }
-
-        $this->getSqlQueryCounterTracker()->incrementCreate();
-
-        return $this->txVersionsTable->createRow([
-            'page_id' => $pageId,
-            'col' => $col,
-            'time_from' => $timeFrom,
-            'time_until' => TimeString::END_OF_TIMES,
-            'author_id' => $authorId,
-            'descr' => $descr,
-            'minor' => $isMinor ? 1 : 0,
-            'review' => $isReview ? 1 : 0
-        ]);
-    }
+//    public function registerTranscriptionVersion(int $pageId, int $col, string $timeFrom, int $authorId, string $descr = '', bool $isMinor = false, bool $isReview= false) {
+//
+//        $currentVersions = $this->getTranscriptionVersions($pageId, $col);
+//
+//        if (count($currentVersions) !== 0 ) {
+//            $lastVersion = $currentVersions[count($currentVersions)-1];
+//            $this->updateVersionUntilTime(intval($lastVersion['id']), $timeFrom);
+//        }
+//
+//        $this->getSqlQueryCounterTracker()->incrementCreate();
+//
+//        return $this->txVersionsTable->createRow([
+//            'page_id' => $pageId,
+//            'col' => $col,
+//            'time_from' => $timeFrom,
+//            'time_until' => TimeString::END_OF_TIMES,
+//            'author_id' => $authorId,
+//            'descr' => $descr,
+//            'minor' => $isMinor ? 1 : 0,
+//            'review' => $isReview ? 1 : 0
+//        ]);
+//    }
 
     /**
      * Gets all the transcriptions versions associated with the given pageId and columns.
@@ -2529,52 +2529,52 @@ class DataManager implements  SqlQueryCounterTrackerAware
     }
 
 
-    public function getValidWitnessLocationsForWorkChunkLang(string $workId, int $chunkNumber, string $language) : array {
-
-        $witnessList = $this->getWitnessesForChunk($workId, $chunkNumber);
-
-        $witnessesForLang = [];
-
-        foreach($witnessList as $witness) {
-            switch($witness['type']) {
-                case DataManager::WITNESS_TRANSCRIPTION:
-                    $docInfo = $this->getDocById($witness['id']);
-                    if ($docInfo['lang'] !== $language) {
-                        // not the right language
-                        continue;
-                    }
-                    $locations = $this->getChunkLocationsForDoc($witness['id'], $workId, $chunkNumber);
-                    if (count($locations)===0) {
-                        // No data for this witness, this would only happen
-                        // if somebody erased the chunk marks from the document
-                        // in the few milliseconds between getDocsForChunk() and
-                        // getChunkLocationsForDoc()
-                        continue; // @codeCoverageIgnore
-                    }
-                    // Check if there's an invalid segment
-                    $invalidSegment = false;
-                    foreach($locations as $segment) {
-                        if (!$segment['valid']) {
-                            $invalidSegment = true;
-                            break;
-                        }
-                    }
-                    if ($invalidSegment) {
-                        continue; // nothing to do with this witness
-                    }
-                    $witnessesForLang[] = [
-                        'id' => $witness['id'],
-                        'type' => DataManager::WITNESS_TRANSCRIPTION,
-                        'locations' => $locations
-                    ];
-                    break;
-
-                case DataManager::WITNESS_PLAINTEXT:
-                    // TODO: support plain text witnesses
-            }
-        }
-        return $witnessesForLang;
-    }
+//    public function getValidWitnessLocationsForWorkChunkLang(string $workId, int $chunkNumber, string $language) : array {
+//
+//        $witnessList = $this->getWitnessesForChunk($workId, $chunkNumber);
+//
+//        $witnessesForLang = [];
+//
+//        foreach($witnessList as $witness) {
+//            switch($witness['type']) {
+//                case DataManager::WITNESS_TRANSCRIPTION:
+//                    $docInfo = $this->getDocById($witness['id']);
+//                    if ($docInfo['lang'] !== $language) {
+//                        // not the right language
+//                        continue;
+//                    }
+//                    $locations = $this->getChunkLocationsForDoc($witness['id'], $workId, $chunkNumber);
+//                    if (count($locations)===0) {
+//                        // No data for this witness, this would only happen
+//                        // if somebody erased the chunk marks from the document
+//                        // in the few milliseconds between getDocsForChunk() and
+//                        // getChunkLocationsForDoc()
+//                        continue; // @codeCoverageIgnore
+//                    }
+//                    // Check if there's an invalid segment
+//                    $invalidSegment = false;
+//                    foreach($locations as $segment) {
+//                        if (!$segment['valid']) {
+//                            $invalidSegment = true;
+//                            break;
+//                        }
+//                    }
+//                    if ($invalidSegment) {
+//                        continue; // nothing to do with this witness
+//                    }
+//                    $witnessesForLang[] = [
+//                        'id' => $witness['id'],
+//                        'type' => DataManager::WITNESS_TRANSCRIPTION,
+//                        'locations' => $locations
+//                    ];
+//                    break;
+//
+//                case DataManager::WITNESS_PLAINTEXT:
+//
+//            }
+//        }
+//        return $witnessesForLang;
+//    }
 
 
     private function reportException(string $context, Exception $e) {

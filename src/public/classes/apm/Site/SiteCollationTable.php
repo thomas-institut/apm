@@ -447,37 +447,37 @@ class SiteCollationTable extends SiteController
         return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, $templateOptions);
     }
     
-    protected function getValidWitnessDocIdsForWorkChunkLang(DataManager $dm, $workId, $chunkNumber, $language) : array {
-        $witnessList = $dm->getDocsForChunk($workId, $chunkNumber);
-        
-        $witnessesForLang = [];
-        
-        foreach($witnessList as $witness) {
-            $docInfo = $dm->getDocById($witness['id']);
-            if ($docInfo['lang'] !== $language) {
-                // not the right language
-                continue; 
-            }
-            $locations = $dm->getChunkLocationsForDoc($witness['id'], $workId, $chunkNumber);
-            if (count($locations)===0) {
-                // No data for this witness, normally this should not happen
-                continue; // @codeCoverageIgnore
-            }
-            // Check if there's an invalid segment
-            $invalidSegment = false;
-            foreach($locations as $segment) {
-                if (!$segment['valid']) {
-                    $invalidSegment = true;
-                    break;
-                }
-            }
-            if ($invalidSegment) {
-                continue; // nothing to do with this witness
-            }
-            $witnessesForLang[] = $witness['id'];
-        }
-        return $witnessesForLang;
-    }
+//    protected function getValidWitnessDocIdsForWorkChunkLang(DataManager $dm, $workId, $chunkNumber, $language) : array {
+//        $witnessList = $dm->getDocsForChunk($workId, $chunkNumber);
+//
+//        $witnessesForLang = [];
+//
+//        foreach($witnessList as $witness) {
+//            $docInfo = $dm->getDocById($witness['id']);
+//            if ($docInfo['lang'] !== $language) {
+//                // not the right language
+//                continue;
+//            }
+//            $locations = $dm->getChunkLocationsForDoc($witness['id'], $workId, $chunkNumber);
+//            if (count($locations)===0) {
+//                // No data for this witness, normally this should not happen
+//                continue; // @codeCoverageIgnore
+//            }
+//            // Check if there's an invalid segment
+//            $invalidSegment = false;
+//            foreach($locations as $segment) {
+//                if (!$segment['valid']) {
+//                    $invalidSegment = true;
+//                    break;
+//                }
+//            }
+//            if ($invalidSegment) {
+//                continue; // nothing to do with this witness
+//            }
+//            $witnessesForLang[] = $witness['id'];
+//        }
+//        return $witnessesForLang;
+//    }
 
     /**
      * @param string $workId

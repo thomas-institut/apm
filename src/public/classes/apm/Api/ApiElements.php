@@ -20,10 +20,12 @@
 
 namespace APM\Api;
 
+use APM\FullTranscription\ColumnVersionInfo;
 use APM\System\SystemManager;
 use AverroesProject\ColumnElement\Element;
 use AverroesProject\Data\DataManager;
 use AverroesProject\Data\EdNoteManager;
+use Exception;
 use ThomasInstitut\TimeString\TimeString;
 use DI\DependencyException;
 use DI\NotFoundException;
@@ -44,7 +46,7 @@ class ApiElements extends ApiController
      * @return Response
      * @throws DependencyException
      * @throws NotFoundException
-     * @throws \Exception
+     * @throws Exception
      */
     public function updateElementsByDocPageCol(Request $request, 
             Response $response)
@@ -322,11 +324,26 @@ class ApiElements extends ApiController
         $this->debug("Updating ednotes", $edNotes);
         $dataManager->edNoteManager->updateNotesFromArray($edNotes);
 
-        $versionId = $dataManager->registerTranscriptionVersion($pageId, $columnNumber, $updateTime,
-            $this->apiUserId, $versionDescr, $versionIsMinor, $versionIsReview);
-        if ($versionId === false) {
-            $this->logger->error('Cannot register version');
+        // Register version
+        $versionInfo = new ColumnVersionInfo();
+        $versionInfo->pageId = $pageId;
+        $versionInfo->column = $columnNumber;
+        $versionInfo->authorId = $this->apiUserId;
+        $versionInfo->description = $versionDescr;
+        $versionInfo->isMinor = $versionIsMinor;
+        $versionInfo->isReview = $versionIsReview;
+        $versionInfo->timeFrom = $updateTime;
+
+        try {
+            $this->systemManager->getTranscriptionManager()->getColumnVersionManager()->registerNewColumnVersion($pageId, $columnNumber, $versionInfo);
+        } catch (Exception $e) {
+            $this->logger->error("Cannot register version: " . $e->getMessage());
         }
+//        $versionId = $dataManager->registerTranscriptionVersion($pageId, $columnNumber, $updateTime,
+//            $this->apiUserId, $versionDescr, $versionIsMinor, $versionIsReview);
+//        if ($versionId === false) {
+//            $this->logger->error('Cannot register version');
+//        }
 
         $this->profiler->stop();
         $this->logProfilerData('updateElements');

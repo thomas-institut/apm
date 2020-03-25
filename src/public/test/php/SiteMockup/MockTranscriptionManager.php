@@ -156,4 +156,17 @@ class MockTranscriptionManager extends TranscriptionManager
         // TODO: Implement getFullChunkMap() method.
         return [];
     }
+
+    public function getColumnVersionManager(): \APM\FullTranscription\ColumnVersionManager
+    {
+        // TODO: Implement getColumnVersionManager() method.
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function updatePageSettings(int $pageId, PageInfo $newSettings, int $userId): void
+    {
+        // TODO: Implement updatePageSettings() method.
+    }
 }

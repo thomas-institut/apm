@@ -37,6 +37,7 @@ use AverroesProject\Data\EdNoteManager;
 use AverroesProject\Data\MySqlHelper;
 use AverroesProject\TxText\Item as ApItem;
 use AverroesProjectToApm\DatabaseItemStream;
+use Cassandra\Time;
 use RuntimeException;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
@@ -375,11 +376,11 @@ class ApmTranscriptionManager extends TranscriptionManager
             " AND ($tp.seq*1000000 + $te.column_number*10000 + $te.seq * 100 + $ti.seq) < $seqNumberEnd" .
             " AND $ti.valid_from<='$timeString'" .
             " AND $te.valid_from<='$timeString'" .
-            // " AND $tp.valid_from<='$timeString'" .
+            " AND $tp.valid_from<='$timeString'" .
             " AND $ti.valid_until>'$timeString'" .
             " AND $te.valid_until>'$timeString'" .
-            // " AND $tp.valid_until>'$timeString'" .
-            " AND $tp.valid_until='" . TimeString::END_OF_TIMES . "'" .
+            " AND $tp.valid_until>'$timeString'" .
+            //" AND $tp.valid_until='" . TimeString::END_OF_TIMES . "'" .
             " ORDER BY $tp.seq, $te.column_number, $te.seq, $ti.seq ASC";
 
         $r = $this->databaseHelper->query($query);
@@ -486,11 +487,11 @@ class ApmTranscriptionManager extends TranscriptionManager
             " WHERE $te.id=$elementId" .
             " AND $ti.valid_from<='$timeString'" .
             " AND $te.valid_from<='$timeString'" .
-            //" AND $tp.valid_from<='$timeString'" .
+            " AND $tp.valid_from<='$timeString'" .
             " AND $ti.valid_until>'$timeString'" .
             " AND $te.valid_until>'$timeString'" .
-            //" AND $tp.valid_until>'$timeString'" .
-            " AND $tp.valid_until='" . TimeString::END_OF_TIMES . "'" .
+            " AND $tp.valid_until>'$timeString'" .
+            //" AND $tp.valid_until='" . TimeString::END_OF_TIMES . "'" .
             " ORDER BY $ti.seq ASC";
 
         $r = $this->databaseHelper->query($query);
@@ -984,19 +985,38 @@ class ApmTranscriptionManager extends TranscriptionManager
             return;
         }
 
+        //$this->codeDebug("Updating page settings", $newSettings->getDatabaseRow());
+
         // Update the database first
         $this->getPageManager()->updatePageSettings($pageId, $newSettings);
 
-        // if there's a change in foliation, page number or sequence, generate a new version for each
-        // of the columns in the page
+        // deal with changes in foliation for the time being
 
-//        if ($currentSettings->foliation !== $newSettings->foliation ||
-//        $currentSettings->pageNumber !== $newSettings->pageNumber ||
-//        $currentSettings->sequence !== $newSettings->sequence) {
-//
-//        }
+        if ($currentSettings->foliation !== $newSettings->foliation) {
+            // add a new version to each column with transcription
+            for($i = 1; $i <= $newSettings->numCols; $i++) {
+                if ($this->hasTranscription($pageId, $i)) {
+                    $this->codeDebug("Page $pageId, col $i, has transcription, adding new version");
+                    $versionInfo = new ColumnVersionInfo();
+                    $versionInfo->pageId = $pageId;
+                    $versionInfo->column = $i;
+                    $versionInfo->isReview = false;
+                    $versionInfo->isMinor = true;
+                    $versionInfo->authorId = $userId;
+                    $versionInfo->description = 'New page foliation: ' . $newSettings->foliation;
+                    $versionInfo->timeFrom = TimeString::now();
+                    $this->codeDebug("VersionInfo", $versionInfo->getDatabaseRow());
+                    $this->getColumnVersionManager()->registerNewColumnVersion($pageId, $i, $versionInfo);
+                } else {
+                    $this->codeDebug("Page $pageId, col $i, does NOT have transcription, nothing to do");
+                }
+            }
 
+        }
+    }
 
+    private function hasTranscription(int $pageId, int $columnNumber) {
+        return $this->getColumnVersionManager()->getColumnVersionInfoByPageCol($pageId, $columnNumber, 1) !== [];
     }
 
     public function getColumnVersionManager(): ColumnVersionManager

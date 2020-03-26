@@ -156,6 +156,8 @@ class ColumnVersionManagerTest extends TestCase
             $versionInfo->column = $testColumnNumber;
             $versionInfo->description = "Initial test version $i";
             $versionInfo->authorId = $testAuthorId;
+            $versionInfo->isMinor = true;
+            $versionInfo->isReview = true;
             $versionInfo->timeFrom = TimeString::fromTimeStamp($initialTimestamp + ($timeStampFrequency * $i));
             $this->columnVersionManager->registerNewColumnVersion($testPageId, $testColumnNumber, $versionInfo);
             $versions = $this->columnVersionManager->getColumnVersionInfoByPageCol($testPageId, $testColumnNumber);
@@ -163,6 +165,13 @@ class ColumnVersionManagerTest extends TestCase
             $context = "TestRegistrations, after adding initial version $i";
             $this->assertCount($i+1, $versions, $context);
             $this->assertVersionSequenceIsCoherent($versions, $context);
+        }
+
+        // check all versions
+        $versions = $this->columnVersionManager->getColumnVersionInfoByPageCol($testPageId, $testColumnNumber);
+        foreach($versions as $version) {
+            $this->assertTrue($version->isReview);
+            $this->assertTrue($version->isMinor);
         }
 
         // add versions before the initial time

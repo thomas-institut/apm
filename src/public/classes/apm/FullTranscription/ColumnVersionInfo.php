@@ -85,8 +85,8 @@ class ColumnVersionInfo
         $this->timeUntil = $row['time_until'];
         $this->authorId = intval($row['author_id']);
         $this->description = $row['descr'];
-        $this->isMinor = $row['minor'] !== 0;
-        $this->isReview = $row['review'] !== 0;
+        $this->isMinor = intval($row['minor']) !== 0;
+        $this->isReview = intval($row['review']) !== 0;
     }
 
     public static function createFromDbRow(array $row) {

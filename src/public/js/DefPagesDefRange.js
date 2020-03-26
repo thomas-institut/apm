@@ -56,6 +56,8 @@ class DefPagesDefRange {
     this.createColsCheckbox = $(this.prefix + 'createcols')
     this.statusSpan = $(this.prefix + 'status')
     this.submitButton = $(this.prefix + 'submit-button')
+
+    this.lastPageField.val(this.numPages)
     
     this.firstPageField.on('click', this.genCheckFormFunction())
     this.lastPageField.on('click', this.genCheckFormFunction())

@@ -32,11 +32,24 @@ abstract class PageManager
     const ERROR_UNKNOWN = 9999;
 
     /**
+     * @param int $pageId
+     * @return PageInfo
+     */
+    abstract public function getPageInfoById(int $pageId) : PageInfo;
+
+    /**
      * @param int $docId
      * @param int $seq
      * @return PageInfo
      */
     abstract public function getPageInfoByDocSeq(int $docId, int $seq) : PageInfo;
+
+    /**
+     * @param int $docId
+     * @param int $pageNumber
+     * @return PageInfo
+     */
+    abstract public function getPageInfoByDocPage(int $docId, int $pageNumber) : PageInfo;
 
     /**
      * @param int $docId
@@ -46,14 +59,9 @@ abstract class PageManager
 
     /**
      * @param int $pageId
-     * @return PageInfo
+     * @param PageInfo $newPageInfo
      */
-    abstract public function getPageInfoById(int $pageId) : PageInfo;
+    abstract public function updatePageSettings(int $pageId, PageInfo $newPageInfo) : void;
 
-    /**
-     * @param int $pageId
-     * @param PageInfo $newSettings
-     */
-    abstract public function updatePageSettings(int $pageId, PageInfo $newSettings) : void;
-
+    // TODO: add new page method!
 }

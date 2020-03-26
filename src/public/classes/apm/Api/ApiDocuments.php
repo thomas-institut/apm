@@ -20,8 +20,10 @@
 
 namespace APM\Api;
 
+use APM\FullTranscription\PageInfo;
 use DI\DependencyException;
 use DI\NotFoundException;
+use InvalidArgumentException;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
@@ -37,8 +39,6 @@ class ApiDocuments extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws DependencyException
-     * @throws NotFoundException
      */
     public function updatePageSettings(Request $request, Response $response)
     {
@@ -63,17 +63,19 @@ class ApiDocuments extends ApiController
         $foliation = $postData['foliation'];
         $type = (int) $postData['type'];
         $lang = $postData['lang'];
-        $newSettings = [ 
-            'foliation' => $foliation, 
-            'type' => $type,
-            'lang' => $lang
-            ];
-        
-        $r = $dataManager->updatePageSettings($pageId, $newSettings);
-        if ($r === false) {
-            $this->logger->error("Can't update page settings for page $pageId", $newSettings);
+
+        $pageInfo = $this->systemManager->getTranscriptionManager()->getPageManager()->getPageInfoById($pageId);
+        $pageInfo->foliation = $foliation;
+        $pageInfo->type = $type;
+        $pageInfo->langCode = $lang;
+
+        try {
+            $this->systemManager->getTranscriptionManager()->updatePageSettings($pageId, $pageInfo, $this->apiUserId);
+        } catch (\Exception $e) {
+            $this->logger->error("Can't update page settings for page $pageId: " . $e->getMessage(), $pageInfo->getDatabaseRow());
             return $response->withStatus(409);
         }
+
         $this->profiler->stop();
         $this->logProfilerData("UpdatePageSettings-$pageId");
         return $response->withStatus(200);
@@ -337,6 +339,7 @@ class ApiDocuments extends ApiController
     {
 
         $dataManager = $this->getDataManager();
+        $transcriptionManager = $this->systemManager->getTranscriptionManager();
         $this->profiler->start();
         
         if (!$dataManager->userManager->isUserAllowedTo($this->apiUserId, 'update-page-settings-bulk')){
@@ -362,23 +365,35 @@ class ApiDocuments extends ApiController
             return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_NO_DATA], 409);
         }
         
-
         $errors = [];
         foreach($inputArray as $pageDef) {
             if (!isset($pageDef['docId']) && !isset($pageDef['page'])) {
                 $errors[] = "No docId or page in request" . print_r($pageDef, true);
                 continue;
             }
-            $pageId = $dataManager->getPageIdByDocPage($pageDef['docId'], $pageDef['page']);
-            if ($pageId === false) {
+
+            $docId = intval($pageDef['docId']);
+            $pageNumber = intval($pageDef['page']);
+
+            try {
+                $pageInfo = $transcriptionManager->getPageManager()->getPageInfoByDocPage($docId, $pageNumber);
+            } catch (InvalidArgumentException $e) {
                 $errors[] = "Page not found, doc " . $pageDef['docId'] . " page " . $pageDef['page'];
                 continue;
             }
-            
+
+            $pageId = $pageInfo->pageId;
+//            if ($pageId === false) {
+//                $errors[] = "Page not found, doc " . $pageDef['docId'] . " page " . $pageDef['page'];
+//                continue;
+//            }
+
+            $newPageInfo = clone $pageInfo;
             $newPageSettings = [];
             
             if (isset($pageDef['type'])) {
-                $newPageSettings['type'] = $pageDef['type'];
+                //$newPageSettings['type'] = $pageDef['type'];
+                $newPageInfo->type = $pageDef['type'];
             }
             
             if (isset($pageDef['foliation'])) {
@@ -388,39 +403,49 @@ class ApiDocuments extends ApiController
                 }
                 if (!$pageDef['overwriteFoliation']) {
                     // do not overwrite foliation if foliation already exists
-                    $pageInfo = $dataManager->getPageInfo($pageId);
-                    if ($pageInfo === null) {
-                        $errors[] = "Could not get page Info from DB, " . $pageDef['docId'] . " page " . $pageDef['page'];
-                        continue;
+
+//                    $pageInfo = $dataManager->getPageInfo($pageId);
+//                    if ($pageInfo === null) {
+//                        $errors[] = "Could not get page Info from DB, " . $pageDef['docId'] . " page " . $pageDef['page'];
+//                        continue;
+//                    }
+                    if ($pageInfo->foliation === '' || $pageInfo->foliation===$pageInfo->pageNumber) {
+                        $newPageInfo->foliation = $pageDef['foliation'];
                     }
-                    if (is_null($pageInfo['foliation'])) {
-                        // no page foliation exists, so, set the new one
-                        $newPageSettings['foliation'] = $pageDef['foliation'];
-                    }
+//                    if (is_null($pageInfo['foliation'])) {
+//                        // no page foliation exists, so, set the new one
+//                        $newPageSettings['foliation'] = $pageDef['foliation'];
+//                    }
                 } else {
-                    $newPageSettings['foliation'] = $pageDef['foliation'];
+                    //$newPageSettings['foliation'] = $pageDef['foliation'];
+                    $newPageInfo->foliation = $pageDef['foliation'];
                 }
             }
             
             if (isset($pageDef['cols'])) {
-                $pageInfo = $dataManager->getPageInfo($pageId);
-                if ($pageInfo['num_cols'] < $pageDef['cols']) {
-                    // Add columns
-                    for ($i = $pageInfo['num_cols']; $i < $pageDef['cols']; $i++) {
-                        $dataManager->addNewColumn($pageDef['docId'], $pageDef['page']);
-                    }
+                //$pageInfo = $dataManager->getPageInfo($pageId);
+                if ($pageInfo->numCols < $pageDef['cols']) {
+                    $newPageInfo->numCols = $pageDef['cols'];
+//                }
+//                if ($pageInfo['num_cols'] < $pageDef['cols']) {
+//                    // Add columns
+//                    for ($i = $pageInfo['num_cols']; $i < $pageDef['cols']; $i++) {
+//                        $dataManager->addNewColumn($pageDef['docId'], $pageDef['page']);
+//                    }
                 } else {
-                    $this->debug("Asked for " . $pageDef['cols'] . " col(s), currently " . $pageInfo['num_cols'] . " col(s). Nothing done. ");
+                    // nothing to be done if asking for less or equal number of columns than what's already in the page
+                    $this->debug("Asked for " . $pageDef['cols'] . " col(s), currently " . $pageInfo->numCols . " col(s). Nothing done. ");
                 }
             }
             
-            if (count(array_keys($newPageSettings)) === 0) {
-                // nothing to do
-                $this->debug("Nothing to update for doc " . $pageDef['docId'] . " page " . $pageDef['page']);
-                continue;
-            }
-            
-            $dataManager->updatePageSettings($pageId, $newPageSettings);
+//            if (count(array_keys($newPageSettings)) === 0) {
+//                // nothing to do
+//                $this->debug("Nothing to update for doc " . $pageDef['docId'] . " page " . $pageDef['page']);
+//                continue;
+//            }
+
+            $transcriptionManager->updatePageSettings($pageId, $newPageInfo, $this->apiUserId);
+            //$dataManager->updatePageSettings($pageId, $newPageSettings);
         }
 
         $this->logger->info("Bulk page settings", [

@@ -980,6 +980,7 @@ class ApmTranscriptionManager extends TranscriptionManager
 
         // if there are no changes, do nothing
         if ($newSettings == $currentSettings) {
+            $this->logger->info("UpdatePageSettings with no changes, nothing done.");
             return;
         }
 
@@ -989,11 +990,11 @@ class ApmTranscriptionManager extends TranscriptionManager
         // if there's a change in foliation, page number or sequence, generate a new version for each
         // of the columns in the page
 
-        if ($currentSettings->foliation !== $newSettings->foliation ||
-        $currentSettings->pageNumber !== $newSettings->pageNumber ||
-        $currentSettings->sequence !== $newSettings->sequence) {
-
-        }
+//        if ($currentSettings->foliation !== $newSettings->foliation ||
+//        $currentSettings->pageNumber !== $newSettings->pageNumber ||
+//        $currentSettings->sequence !== $newSettings->sequence) {
+//
+//        }
 
 
     }

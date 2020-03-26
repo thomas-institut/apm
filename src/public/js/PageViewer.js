@@ -319,8 +319,8 @@ class PageViewer {
     let apiUpdatePageSettingsUrl = this.options.urlGenerator.apiUpdatePageSettings(this.options.pageSystemId)
     
     return function () {
-      //console.log('Updating page settings')
-      //console.log($('#pageSettingsForm').serialize())
+      console.log('Updating page settings')
+      console.log($('#pageSettingsForm').serialize())
       $.post(
         apiUpdatePageSettingsUrl, 
         $('#pageSettingsForm').serialize())

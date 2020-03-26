@@ -19,6 +19,8 @@
 
 namespace APM\FullTranscription;
 
+use ThomasInstitut\DataCache\InMemoryDataCache;
+use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\DataTable\UnitemporalDataTable;
 use InvalidArgumentException;
 use Psr\Log\LoggerAwareInterface;
@@ -36,15 +38,19 @@ class ApmPageManager extends PageManager implements LoggerAwareInterface, ErrorR
     use SimpleErrorReporterTrait;
     use SimpleSqlQueryCounterTrackerAware;
 
+    const CACHE_TYPE_PAGE_ID = 'ID';
+    const CACHE_TYPE_PAGE_NUMBER = 'PN';
+    const CACHE_TYPE_PAGE_SEQUENCE = 'SEQ';
+
     /**
      * @var UnitemporalDataTable
      */
     private $pagesDataTable;
 
     /**
-     * @var array
+     * @var InMemoryDataCache
      */
-    private $pageInfoCache;
+    private $localMemCache;
 
     public function __construct(UnitemporalDataTable $pagesDataTable, LoggerInterface $logger)
     {
@@ -52,13 +58,25 @@ class ApmPageManager extends PageManager implements LoggerAwareInterface, ErrorR
         $this->resetError();
 
         $this->pagesDataTable = $pagesDataTable;
-        $this->pageInfoCache = [];
+
+        $this->localMemCache = new InMemoryDataCache();
     }
 
     public function getPageInfoByDocSeq(int $docId, int $seq) : PageInfo {
-        if (isset($this->pageInfoCache[$docId][$seq])) {
-            return $this->pageInfoCache[$docId][$seq];
+
+        $cacheKey = $this->getCacheKey(self::CACHE_TYPE_PAGE_SEQUENCE, $docId, $seq);
+
+        $cacheHit = true;
+        try {
+            $pageInfo = unserialize($this->localMemCache->get($cacheKey));
+        } catch (KeyNotInCacheException $e) {
+            $cacheHit = false;
         }
+
+        if ($cacheHit) {
+            return $pageInfo;
+        }
+
         $this->getSqlQueryCounterTracker()->incrementSelect();
 
         $rows = $this->pagesDataTable->findRows([
@@ -66,10 +84,40 @@ class ApmPageManager extends PageManager implements LoggerAwareInterface, ErrorR
             'seq'=> $seq
         ],1);
         if ($rows === []) {
-            $this->throwInvalidArgumentException("Page $docId:$seq not found", self::ERROR_PAGE_NOT_FOUND);
+            $this->throwInvalidArgumentException("Page $docId, seq $seq not found", self::ERROR_PAGE_NOT_FOUND);
         }
-        $this->pageInfoCache[$docId][$seq] = PageInfo::createFromDatabaseRow($rows[0]);
-        return $this->pageInfoCache[$docId][$seq];
+        $pageInfo = PageInfo::createFromDatabaseRow($rows[0]);
+        $this->storePageInfoInCache($pageInfo);
+        return $pageInfo;
+    }
+
+    public function getPageInfoByDocPage(int $docId, int $pageNumber) : PageInfo {
+        $cacheKey = $this->getCacheKey(self::CACHE_TYPE_PAGE_NUMBER, $docId, $pageNumber);
+
+        $cacheHit = true;
+        try {
+            $pageInfo = unserialize($this->localMemCache->get($cacheKey));
+        } catch (KeyNotInCacheException $e) {
+            $cacheHit = false;
+        }
+
+        if ($cacheHit) {
+            return $pageInfo;
+        }
+
+        $this->getSqlQueryCounterTracker()->incrementSelect();
+
+        $rows = $this->pagesDataTable->findRows([
+            'doc_id' => $docId,
+            'page_number'=> $pageNumber
+        ],1);
+        if ($rows === []) {
+            $this->throwInvalidArgumentException("Page $docId, page $pageNumber not found", self::ERROR_PAGE_NOT_FOUND);
+        }
+        $pageInfo = PageInfo::createFromDatabaseRow($rows[0]);
+        $this->storePageInfoInCache($pageInfo);
+
+        return $pageInfo;
     }
 
     /**
@@ -86,7 +134,7 @@ class ApmPageManager extends PageManager implements LoggerAwareInterface, ErrorR
 
         foreach($rows as $row) {
             $pageInfo = PageInfo::createFromDatabaseRow($row);
-            $this->pageInfoCache[$docId][$pageInfo->sequence] = $pageInfo;
+            $this->storePageInfoInCache($pageInfo);
             $pageInfoArray[] = $pageInfo;
         }
         uasort($pageInfoArray, function ($a, $b) {
@@ -109,26 +157,80 @@ class ApmPageManager extends PageManager implements LoggerAwareInterface, ErrorR
      */
     public function getPageInfoById(int $pageId): PageInfo
     {
+        $cacheKey = $this->getCacheKey(self::CACHE_TYPE_PAGE_ID, $pageId);
+
+        $cacheHit = true;
+        try {
+            $pageInfo = unserialize($this->localMemCache->get($cacheKey));
+        } catch (KeyNotInCacheException $e) {
+            $cacheHit = false;
+        }
+
+        if ($cacheHit) {
+            return $pageInfo;
+        }
+
         $row = [];
         try {
             $this->getSqlQueryCounterTracker()->incrementSelect();
             $row = $this->pagesDataTable->getRow($pageId);
         } catch (InvalidArgumentException $e) {
-            // no such document!
+            // no such page!
             $this->throwInvalidArgumentException("Page $pageId not found", self::ERROR_PAGE_NOT_FOUND);
         }
         if ($row === []) {
             $this->throwRunTimeException('Unknown error occurred', self::ERROR_UNKNOWN);
         }
-        return PageInfo::createFromDatabaseRow($row);
+        $pageInfo = PageInfo::createFromDatabaseRow($row);
+        $this->storePageInfoInCache($pageInfo);
+        return $pageInfo;
     }
 
     /**
      * @inheritDoc
      */
-    public function updatePageSettings(int $pageId, PageInfo $newSettings): void
+    public function updatePageSettings(int $pageId, PageInfo $newPageInfo): void
     {
-        $newSettings->pageId = $pageId;
-        $this->pagesDataTable->updateRow($newSettings->getDatabaseRow());
+        $newPageInfo->pageId = $pageId;
+        if ( $newPageInfo->pageNumber === 0 ||
+            $newPageInfo->sequence === 0 ||
+            $newPageInfo->langCode === ''
+        ) {
+            $this->logger->error("Invalid new page settings to update page $pageId", $newPageInfo->getDatabaseRow());
+            throw new InvalidArgumentException("Invalid new settings to update page $pageId");
+        }
+        $databaseRow = $newPageInfo->getDatabaseRow();
+        unset($databaseRow['doc_id']); // must not update doc id, it is set at creation time only
+        $this->pagesDataTable->updateRow($databaseRow);
+        $this->invalidatePageInfoInCache($newPageInfo);
+
+    }
+
+    private function getCacheKey(string $type, int $id, int $number = 0) {
+        $delimiter = '_';
+        return implode($delimiter, [ $type, $id, $number]);
+    }
+
+    private function storePageInfoInCache(PageInfo $pageInfo) {
+        $cacheKeyPN = $this->getCacheKey(self::CACHE_TYPE_PAGE_NUMBER, $pageInfo->docId, $pageInfo->pageNumber);
+        $cacheKeySeq = $this->getCacheKey(self::CACHE_TYPE_PAGE_SEQUENCE, $pageInfo->docId, $pageInfo->sequence);
+        $cacheKeyPageId = $this->getCacheKey(self::CACHE_TYPE_PAGE_ID, $pageInfo->pageId);
+        $serializedPageInfo = serialize($pageInfo);
+        $this->localMemCache->set($cacheKeyPN, $serializedPageInfo);
+        $this->localMemCache->set($cacheKeySeq, $serializedPageInfo);
+        $this->localMemCache->set($cacheKeyPageId, $serializedPageInfo);
+    }
+
+    private function invalidatePageInfoInCache(PageInfo $pageInfo) {
+        $cacheKeyPN = $this->getCacheKey(self::CACHE_TYPE_PAGE_NUMBER, $pageInfo->docId, $pageInfo->pageNumber);
+        $cacheKeySeq = $this->getCacheKey(self::CACHE_TYPE_PAGE_SEQUENCE, $pageInfo->docId, $pageInfo->sequence);
+        $cacheKeyPageId = $this->getCacheKey(self::CACHE_TYPE_PAGE_ID, $pageInfo->pageId);
+        try {
+            $this->localMemCache->delete($cacheKeyPN);
+            $this->localMemCache->delete($cacheKeySeq);
+            $this->localMemCache->delete($cacheKeyPageId);
+        } catch (KeyNotInCacheException $e) {
+            // not a problem if keys not in cache, do nothing
+        }
     }
 }

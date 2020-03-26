@@ -20,6 +20,8 @@
 namespace APM\FullTranscription;
 
 
+use ThomasInstitut\TimeString\TimeString;
+
 abstract class ColumnVersionManager
 {
 
@@ -49,4 +51,30 @@ abstract class ColumnVersionManager
      * @param ColumnVersionInfo $versionInfo
      */
     abstract public function registerNewColumnVersion(int $pageId, int $column, ColumnVersionInfo $versionInfo) : void;
+
+
+    /**
+     * Checks that the given version sequence is coherent
+     * returns an array with all problems found
+     * @param array $versions
+     * @return array
+     */
+    public function checkValueSequenceCoherence(array $versions) : array {
+
+        $issues = [];
+        $numVersions = count($versions);
+
+        if ($numVersions <=1) {
+            return []; // @codeCoverageIgnore
+        }
+
+        // check timeUntil's for the rest of versions
+        for ($i = 0; $i < $numVersions - 1; $i++) {
+            if ($versions[$i]->timeUntil !== $versions[$i+1]->timeFrom ) {
+                $issues[] = 'Broken sequence in version index ' . $i . ' timeUntil=' . $versions[$i]->timeUntil .
+                    ', next version\'s timeFrom is ' . $versions[$i+1]->timeFrom;
+            }
+        }
+        return $issues;
+    }
 }

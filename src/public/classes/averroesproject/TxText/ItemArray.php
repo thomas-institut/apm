@@ -28,8 +28,8 @@
 
 namespace AverroesProject\TxText;
 
-use APM\Algorithm\MyersDiff;
-use APM\Algorithm\Utility;
+use APM\ToolBox\MyersDiff;
+use APM\ToolBox\ArraySort;
 use InvalidArgumentException;
 
 class ItemArray
@@ -60,7 +60,9 @@ class ItemArray
         if ($item->seq == -1 || $atTheEnd) {
             $itemArray[$index]->seq = $maxSeq+1;
         }
-        Utility::arraySortByKey($itemArray, 'seq');
+        //Utility::arraySortByKey($itemArray, 'seq');
+        ArraySort::byKey($itemArray, 'seq');
+
     }
 
     /**

@@ -20,7 +20,7 @@
 
 namespace APM\Core\Item;
 
-use APM\Algorithm\Utility;
+use APM\ToolBox\StringFilter;
 use InvalidArgumentException;
 
 /**
@@ -209,6 +209,6 @@ class TextualItem extends Item {
     }
 
     private function sanitizeText(string $text) : string {
-        return Utility::removeBOMsFromString($text);
+        return StringFilter::removeBOMsFromString($text);
     }
 }

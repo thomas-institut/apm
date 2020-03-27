@@ -20,7 +20,7 @@
 
 namespace AverroesProject\ColumnElement;
 
-use APM\Algorithm\MyersDiff;
+use APM\ToolBox\MyersDiff;
 /**
  * Methods to manage an array of ColumnElements meant to be internally 
  * consistent (e.g., the kind of array interchanged with the 

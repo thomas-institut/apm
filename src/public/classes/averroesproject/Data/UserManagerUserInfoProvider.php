@@ -20,7 +20,7 @@
 namespace AverroesProject\Data;
 
 
-use APM\Algorithm\FullNameAnalysis;
+use APM\ToolBox\FullName;
 use ThomasInstitut\UserManager\PersonInfoProvider;
 
 class UserManagerUserInfoProvider implements PersonInfoProvider
@@ -45,6 +45,6 @@ class UserManagerUserInfoProvider implements PersonInfoProvider
     public function getShortNameFromId(int $id): string
     {
         $fullName = $this->getFullNameFromId($id);
-        return FullNameAnalysis::getShortName($fullName);
+        return FullName::getShortName($fullName);
     }
 }

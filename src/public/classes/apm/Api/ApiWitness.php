@@ -19,13 +19,9 @@
 
 namespace APM\Api;
 
-
-use APM\Core\Token\TranscriptionToken;
-use APM\Core\Transcription\ItemInDocument;
 use APM\Core\Witness\SimpleHtmlWitnessDecorator;
 use APM\Decorators\Witness\ApmTxWitnessDecorator;
 use APM\FullTranscription\ApmTranscriptionWitness;
-use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
 use AverroesProject\Data\UserManagerUserInfoProvider;
@@ -152,7 +148,6 @@ class ApiWitness extends ApiController
 
             // HTML
             $html = $this->getWitnessHtml($apmWitness);
-
 
             // Save results in cache
             $cacheKey = $this->getWitnessDataCacheKey($witnessId);

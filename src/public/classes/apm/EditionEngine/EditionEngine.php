@@ -20,7 +20,7 @@
 
 namespace APM\EditionEngine;
 
-use APM\ArrayChecker\ArrayChecker;
+use APM\ToolBox\ArrayChecker;
 use APM\Engine\Engine;
 
 /**

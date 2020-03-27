@@ -18,11 +18,9 @@
  *  
  */
 
-namespace APM;
+namespace APM\Test;
 
-require "autoload.php";
-
-use APM\Algorithm\MyersDiff;
+use APM\ToolBox\MyersDiff;
 use PHPUnit\Framework\TestCase;
 
 use AverroesProject\TxText\Text;

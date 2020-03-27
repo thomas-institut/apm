@@ -18,9 +18,9 @@
  *
  */
 
-namespace APM;
+namespace APM\Test;
 
-use APM\ArrayChecker\ArrayChecker;
+use APM\ToolBox\ArrayChecker;
 use PHPUnit\Framework\TestCase;
 
 

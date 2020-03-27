@@ -18,14 +18,18 @@
  *  
  */
 
-namespace APM\Math;
+namespace APM\ToolBox;
+
+use ArrayIterator;
+use IteratorAggregate;
+use Traversable;
 
 /**
  * Simple representation and basic functions related to finite sets
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class Set implements \IteratorAggregate {
+class Set implements IteratorAggregate {
     
     /**
      *
@@ -122,11 +126,10 @@ class Set implements \IteratorAggregate {
     static public function createFromArray(array $elements) : Set {
         return new Set($elements);
     }
-    
-    
+
     // Iterator implementation
-    public function getIterator(): \Traversable {
-        return new \ArrayIterator($this->elements);
+    public function getIterator(): Traversable {
+        return new ArrayIterator($this->elements);
     }
 
 }

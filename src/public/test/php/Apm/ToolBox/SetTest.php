@@ -18,12 +18,10 @@
  *  
  */
 
-namespace APM;
-
-require "autoload.php";
+namespace APM\Test;
 
 use PHPUnit\Framework\TestCase;
-use APM\Math\Set;
+use APM\ToolBox\Set;
 
 
 /**

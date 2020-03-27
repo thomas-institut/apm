@@ -17,10 +17,10 @@
  *  
  */
 
-namespace APM\Algorithm;
+namespace APM\ToolBox;
 
 
-class FullNameAnalysis
+class FullName
 {
     /**
      * Splits a full name into first and last names taking care of some
@@ -29,7 +29,7 @@ class FullNameAnalysis
      * @param string $fullName
      * @return array
      */
-    static public function analyzeFullName(string $fullName) : array {
+    static public function analyze(string $fullName) : array {
 
         $commonPrefixes = ['de', 'la', 'von', 'van', 'della', 'al', 'ben', 'bin'];
 
@@ -72,7 +72,7 @@ class FullNameAnalysis
 
     static public function getShortName(string $fullName) : string {
 
-        $analyzedFullName = self::analyzeFullName($fullName);
+        $analyzedFullName = self::analyze($fullName);
 
         $subStrings = [];
         foreach($analyzedFullName['firstNames'] as $firstName) {
@@ -88,7 +88,7 @@ class FullNameAnalysis
 
     public function getInitials($fullName): string {
 
-        $analyzedFullName = self::analyzeFullName($fullName);
+        $analyzedFullName = self::analyze($fullName);
 
         $subStrings = [];
         foreach($analyzedFullName['firstNames'] as $firstName) {

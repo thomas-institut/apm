@@ -22,7 +22,7 @@ namespace APM;
 require "autoload.php";
 
 
-use APM\Algorithm\MyersDiff;
+use APM\ToolBox\MyersDiff;
 use AverroesProject\ColumnElement\Line;
 use PHPUnit\Framework\TestCase;
 use AverroesProject\TxText\Item;

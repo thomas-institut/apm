@@ -21,7 +21,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-namespace APM\Algorithm;
+namespace APM\ToolBox;
 
 /**
  * Find the shortest edit sequence to transform one string into another.

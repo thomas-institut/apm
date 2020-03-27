@@ -28,24 +28,18 @@ use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
 use AverroesProject\Data\UserManagerUserInfoProvider;
-use AverroesProjectToApm\DatabaseItemStream;
-use AverroesProjectToApm\DatabaseItemStreamWitness;
 use DI\DependencyException;
 use DI\NotFoundException;
 use Exception;
 use InvalidArgumentException;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
-
 use APM\Core\Witness\StringWitness;
 use APM\Core\Collation\CollationTable;
 use APM\Experimental\EditionWitness;
 use APM\Decorators\QuickCollationTableDecorator;
-use AverroesProjectToApm\Decorators\TransitionalCollationTableDecorator;
-use AverroesProjectToApm\ApUserDirectory;
-use AverroesProject\Data\DataManager;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
-use ThomasInstitut\TimeString\TimeString;
+
 
 /**
  * API Controller class

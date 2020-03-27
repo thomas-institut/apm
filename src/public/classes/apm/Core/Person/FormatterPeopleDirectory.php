@@ -19,7 +19,7 @@
  */
 
 namespace APM\Core\Person;
-use APM\Algorithm\FullNameAnalysis;
+use APM\ToolBox\FullName;
 
 /**
  * A people directory that gets all info out of a full name, without
@@ -44,7 +44,7 @@ class FormatterPeopleDirectory extends PeopleDirectory {
         if ($fullName === Person::ID_NULL) {
             return self::NAME_UNKNOWN_DEFAULT;
         }
-       return FullNameAnalysis::getShortName($fullName);
+       return FullName::getShortName($fullName);
     }
 
     public function getInitials(Person $person, $lang = self::LANG_DEFAULT): string {
@@ -75,11 +75,11 @@ class FormatterPeopleDirectory extends PeopleDirectory {
      * @return array
      */
     public function analyzeFullName(string $fullName) : array {
-      return FullNameAnalysis::analyzeFullName($fullName);
+      return FullName::analyze($fullName);
     }
     
     private function getInitial(string $name) : string {
-       return FullNameAnalysis::getInitial($name);
+       return FullName::getInitial($name);
     }
 
 }

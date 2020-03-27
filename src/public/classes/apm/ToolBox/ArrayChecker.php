@@ -1,7 +1,7 @@
 <?php
 
 
-namespace APM\ArrayChecker;
+namespace APM\ToolBox;
 
 /*
  *  Copyright (C) 2019 Universität zu Köln
@@ -20,6 +20,8 @@ namespace APM\ArrayChecker;
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  */
+
+use InvalidArgumentException;
 
 
 /**
@@ -66,11 +68,11 @@ class ArrayChecker
         $this->resetError();
         if (isset($rules[self::RULE_REQUIRED_FIELDS])) {
             if (!is_array($rules[self::RULE_REQUIRED_FIELDS])) {
-                throw new \InvalidArgumentException('requiredFields rule must be an array');
+                throw new InvalidArgumentException('requiredFields rule must be an array');
             }
             foreach($rules[self::RULE_REQUIRED_FIELDS] as $requiredFieldSpec) {
                 if (!is_string($requiredFieldSpec) && !isset($requiredFieldSpec['name'])) {
-                    throw new \InvalidArgumentException('Required field must either be a string or an array with a  \'name\' field');
+                    throw new InvalidArgumentException('Required field must either be a string or an array with a  \'name\' field');
                 }
                 $requiredFieldName = '';
                 if (is_string($requiredFieldSpec)) {

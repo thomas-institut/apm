@@ -20,6 +20,7 @@
 
 namespace AverroesProject\Data;
 
+use APM\ToolBox\ArraySort;
 use AverroesProject\ColumnElement\Custodes;
 use AverroesProject\ColumnElement\Gloss;
 use AverroesProject\ColumnElement\Head;
@@ -50,8 +51,7 @@ use AverroesProject\TxText\Text;
 use AverroesProject\TxText\Unclear;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use ThomasInstitut\DataTable\MySqlDataTableWithRandomIds;
-use APM\Algorithm\MyersDiff;
-use APM\Algorithm\Utility;
+use APM\ToolBox\MyersDiff;
 use APM\Plugin\HookManager;
 use ThomasInstitut\Profiler\SimpleSqlQueryCounterTrackerAware;
 use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
@@ -835,7 +835,8 @@ class DataManager implements  SqlQueryCounterTrackerAware
             'column_number' => $col
         ], 0, $time);
 
-        Utility::arraySortByKey($rows, 'seq');
+        ArraySort::byKey($rows, 'seq');
+
 
         $elements = [];
         foreach($rows as $row) {
@@ -881,7 +882,8 @@ class DataManager implements  SqlQueryCounterTrackerAware
             'ce_id' => $element->id
         ], 0, $time);
         
-        Utility::arraySortByKey($rows, 'seq');
+        //Utility::arraySortByKey($rows, 'seq');
+        ArraySort::byKey($rows, 'seq');
         
         $tt=[];
         

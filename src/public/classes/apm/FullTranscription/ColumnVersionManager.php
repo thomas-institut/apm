@@ -59,7 +59,7 @@ abstract class ColumnVersionManager
      * @param array $versions
      * @return array
      */
-    public function checkValueSequenceCoherence(array $versions) : array {
+    public function checkVersionSequenceConsistency(array $versions) : array {
 
         $issues = [];
         $numVersions = count($versions);

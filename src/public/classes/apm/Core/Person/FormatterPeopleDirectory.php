@@ -79,7 +79,7 @@ class FormatterPeopleDirectory extends PeopleDirectory {
     }
     
     private function getInitial(string $name) : string {
-       return FullName::getInitial($name);
+       return FullName::getWordInitials($name);
     }
 
 }

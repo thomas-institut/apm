@@ -65,8 +65,13 @@ class FullName
         return $analyzedName;
     }
 
-    static public function getInitial(string $name) : string {
-        return mb_substr($name, 0, 1);
+    static public function getWordInitials(string $name) : string {
+        $initials = '';
+        $words = explode(' ', $name);
+        foreach($words as $word) {
+            $initials .= mb_substr($word, 0, 1);
+        }
+        return $initials;
     }
 
 
@@ -76,7 +81,7 @@ class FullName
 
         $subStrings = [];
         foreach($analyzedFullName['firstNames'] as $firstName) {
-            $subStrings[] = self::getInitial($firstName) . '.';
+            $subStrings[] = self::getWordInitials($firstName) . '.';
         }
 
         foreach($analyzedFullName['lastNames'] as $lastName) {
@@ -86,17 +91,17 @@ class FullName
         return implode(' ', $subStrings);
     }
 
-    public function getInitials($fullName): string {
+    static public function getInitials(string $fullName): string {
 
         $analyzedFullName = self::analyze($fullName);
 
         $subStrings = [];
         foreach($analyzedFullName['firstNames'] as $firstName) {
-            $subStrings[] = self::getInitial($firstName);
+            $subStrings[] = self::getWordInitials($firstName);
         }
 
         foreach($analyzedFullName['lastNames'] as $lastName) {
-            $subStrings[] = self::getInitial($lastName);
+            $subStrings[] = self::getWordInitials($lastName);
         }
 
         return implode('', $subStrings);

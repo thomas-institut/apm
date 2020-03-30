@@ -209,6 +209,6 @@ class TextualItem extends Item {
     }
 
     private function sanitizeText(string $text) : string {
-        return StringFilter::removeBOMsFromString($text);
+        return StringFilter::removeBOMs($text);
     }
 }

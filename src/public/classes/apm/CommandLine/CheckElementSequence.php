@@ -46,7 +46,7 @@ class CheckElementSequence extends CommandLineUtility {
         
         $query = "SELECT page_id, column_number, count(*) from $te where valid_until='9999-12-31 23:59:59.999999' GROUP BY page_id,column_number";
         
-        $r = $this->dbh->query($query);
+        $r = $this->dbConn->query($query);
         
         $cols = [];
         while ($row = $r->fetch(PDO::FETCH_ASSOC)){
@@ -66,7 +66,7 @@ class CheckElementSequence extends CommandLineUtility {
                 " AND column_number=" . $cols[$i]['column_number'] . 
                 " AND valid_until='9999-12-31 23:59:59.999999' ORDER BY seq ASC";
             
-            $r2 = $this->dbh->query($query2);
+            $r2 = $this->dbConn->query($query2);
             
             $rows = [];
             while ($row = $r2->fetch(PDO::FETCH_ASSOC)){
@@ -85,7 +85,7 @@ class CheckElementSequence extends CommandLineUtility {
                     if ($doFix) {
                         for ($k = 0; $k < count($rows); $k++) {
                             $updateQuery = "UPDATE $te SET seq=$k WHERE id=" . $rows[$k]['id'] . " AND  valid_until='9999-12-31 23:59:59.999999'";
-                            $r3 = $this->dbh->query($updateQuery);
+                            $r3 = $this->dbConn->query($updateQuery);
                             if ($r3 === false) {
                                 $allFixed = false;
                                 print "... ERROR: can't update DB\n";

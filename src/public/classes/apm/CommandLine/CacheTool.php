@@ -69,14 +69,14 @@ class CacheTool extends  CommandLineUtility
         }
 
         $query = 'TRUNCATE ' . $this->cacheTable;
-        $r = $this->dbh->query($query);
+        $r = $this->dbConn->query($query);
 
         $this->logger->info("Cache flushed");
 
     }
 
     private function  getSingleValue($query, $name) {
-        $r = $this->dbh->query($query);
+        $r = $this->dbConn->query($query);
 
         $rows = [];
         while ($row = $r->fetch(PDO::FETCH_ASSOC)){

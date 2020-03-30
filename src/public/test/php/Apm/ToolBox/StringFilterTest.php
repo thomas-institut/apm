@@ -40,7 +40,7 @@ class StringFilterTest extends TestCase
             $strings[] = $testString . StringFilter::BOM_UTF8_STRING;
 
             foreach($strings as $testCase) {
-                $this->assertEquals($testString, StringFilter::removeBOMsFromString($testCase), "Testing '$testString': '$testCase'");
+                $this->assertEquals($testString, StringFilter::removeBOMs($testCase), "Testing '$testString': '$testCase'");
             }
 
         }

@@ -163,7 +163,7 @@ class ColumnVersionFixTool extends CommandLineUtility {
 
         $query = "SELECT * FROM ap_pages WHERE id=$pageId  AND valid_until='" . TimeString::END_OF_TIMES . "'";
 
-        $result = $this->dbh->query($query);
+        $result = $this->dbConn->query($query);
 
         $row = $result->fetch(PDO::FETCH_ASSOC);
         return $row['valid_from'];

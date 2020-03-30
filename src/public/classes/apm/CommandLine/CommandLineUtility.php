@@ -37,7 +37,7 @@ abstract class CommandLineUtility {
      *
      * @var PDO
      */
-    protected $dbh;
+    protected $dbConn;
     
     /**
      *
@@ -106,12 +106,12 @@ abstract class CommandLineUtility {
                 $record['extra']['cmd'] = $cmd;
                 return $record;
         });
-        $dbh = $systemManager->getDbConnection();
-        $this->dbh = $dbh;
+        $dbConn = $systemManager->getDbConnection();
+        $this->dbConn = $dbConn;
         $hm = $systemManager->getHookManager();
 
         // Data Manager (will be replaced completely by SystemManager at some point
-        $this->dm = new DataManager($dbh, $systemManager->getTableNames(), $this->logger, $hm, $config['langCodes']);
+        $this->dm = new DataManager($dbConn, $systemManager->getTableNames(), $this->logger, $hm, $config['langCodes']);
         
         $this->um = $this->dm->userManager;
     }

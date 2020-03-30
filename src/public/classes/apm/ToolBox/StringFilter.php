@@ -14,7 +14,7 @@ class StringFilter
      * @param string $utf8EncodedString
      * @return string
      */
-    public static function removeBOMsFromString(string $utf8EncodedString) : string {
+    public static function removeBOMs(string $utf8EncodedString) : string {
         return str_replace(self::BOM_UTF8_STRING,'', $utf8EncodedString);
     }
 }

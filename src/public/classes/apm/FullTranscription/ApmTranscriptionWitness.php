@@ -22,6 +22,7 @@ namespace APM\FullTranscription;
 
 use APM\Core\Item\ItemWithAddress;
 use APM\Core\Witness\TranscriptionWitness;
+use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
 use AverroesProjectToApm\DatabaseItemStream;
 
@@ -113,7 +114,7 @@ class ApmTranscriptionWitness extends TranscriptionWitness {
         $data['timeStamp'] = $this->getTimeStamp();
         $data['docId'] = $this->getDocId();
         $data['localWitnessId'] = $this->getLocalWitnessId();
-
+        $data['ApmWitnessId'] = WitnessSystemId::buildFullTxId($this->getWorkId(), $this->getChunk(), $this->getDocId(), $this->getLocalWitnessId(), $this->getTimeStamp());
         return $data;
     }
 }

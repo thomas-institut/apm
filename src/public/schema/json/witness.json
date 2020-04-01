@@ -1,11 +1,18 @@
 {
-  "$id": "https://averroes.uni-koeln.de/apm/schema/json/witness.json",
+  "$id": "witness.json",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "description": "A witness",
   "type": "object",
   "properties": {
-
-
-  }
-
+    "witnessType": {
+      "type": "string"
+    },
+    "tokens": {
+      "type": "array"
+    }
+  },
+  "required": [
+    "witnessType",
+    "tokens"
+  ]
 }

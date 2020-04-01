@@ -1,0 +1,14 @@
+{
+  "$id": "https://averroes.uni-koeln.de/apm/schema/json/collation_table.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "A stand-alone collation table",
+  "type": "object",
+  "properties": {
+    "witnesses": {
+      "type": "array",
+      "items": {
+        "$ref": "witness.json"
+      }
+    }
+  }
+}

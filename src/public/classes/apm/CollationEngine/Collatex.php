@@ -197,9 +197,9 @@ class Collatex extends CollationEngine {
     public function getRunDetails() : array {
         $details = parent::getRunDetails();
         
-        $details['rawOutput'] = $this->rawOutput;
-        $details['collatexOutput'] = $this->getRawOutput();
-        $details['collatexInput'] = $this->input;
+        //$details['rawOutput'] = $this->rawOutput;
+        //$details['collatexOutput'] = $this->getRawOutput();
+        //$details['collatexInput'] = $this->input;
         return $details;
     }
 

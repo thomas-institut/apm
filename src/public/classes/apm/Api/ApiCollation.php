@@ -28,8 +28,6 @@ use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
 use AverroesProject\Data\UserManagerUserInfoProvider;
-use DI\DependencyException;
-use DI\NotFoundException;
 use Exception;
 use InvalidArgumentException;
 use \Psr\Http\Message\ServerRequestInterface as Request;
@@ -168,8 +166,6 @@ class ApiCollation extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws DependencyException
-     * @throws NotFoundException
      */
     public function automaticCollation(Request $request, Response $response)
     {
@@ -219,6 +215,7 @@ class ApiCollation extends ApiController
         $this->profiler->lap('Basic checks done');
 
         $collationTable = new CollationTable($ignorePunctuation, $language);
+        $witnessIds = [];
         foreach($requestedWitnesses as $requestedWitness) {
             if (!isset($requestedWitness['type'])) {
                 $msg = "Missing required parameter 'type' in requested witness";
@@ -252,6 +249,7 @@ class ApiCollation extends ApiController
                         $this->logger->error($msg, [ 'exceptionError' => $e->getCode(), 'exceptionMsg' => $e->getMessage(), 'witness'=> $requestedWitness]);
                         return $this->responseWithJson($response, ['error' => self::ERROR_BAD_WITNESS, 'msg' => $msg], 409);
                     }
+                    $witnessIds[] = $this->systemManager->getFullTxWitnessId($fullTxWitness);
 
                     try {
                         $collationTable->addWitness($requestedWitness['title'], $fullTxWitness);
@@ -279,23 +277,10 @@ class ApiCollation extends ApiController
         
         $this->profiler->lap('Collation table build');
 
-        // build unique Id from witness Ids
-        $sigla = $collationTable->getSigla();
-        $witnessIds = [];
-        $apmTxWitnessClass = ApmTranscriptionWitness::class;
-        foreach($sigla as $siglum) {
-            $witness = $collationTable->getWitness($siglum);
-            if (!is_a($witness, $apmTxWitnessClass)) {
-                $this->logger->warning("Found unsupported witness class in collation table: " . get_class($witness));
-                continue;
-            }
-            /** @var ApmTranscriptionWitness $witness */
-            $witnessIds[] = WitnessSystemId::buildFullTxId($witness->getWorkId(), $witness->getChunk(), $witness->getDocId(), $witness->getLocalWitnessId(), $witness->getTimeStamp());
-        }
-        $collationTableId = implode(':', $witnessIds);
-        $this->codeDebug('Collation table ID: ' . $collationTableId);
+        $collationTableCacheId = implode(':', $witnessIds);
+        $this->codeDebug('Collation table ID: ' . $collationTableCacheId);
 
-        $cacheKey = 'ApiCollation-ACT-' . $workId . '-' . $chunkNumber . '-' . $language . '-' . hash('sha256', $collationTableId);
+        $cacheKey = 'ApiCollation-ACT-' . $workId . '-' . $chunkNumber . '-' . $language . '-' . hash('sha256', $collationTableCacheId);
         $this->codeDebug("Cache key: $cacheKey");
 
         $cache = $this->systemManager->getSystemDataCache();
@@ -310,16 +295,27 @@ class ApiCollation extends ApiController
         if ($cacheHit) {
             $this->systemManager->getCacheTracker()->incrementHits();
             $responseData = unserialize($cachedData);
-            $responseData['collationEngineDetails']['cached'] = true;
-            $this->profiler->stop();
-            $responseData['collationEngineDetails']['cachedRunTime'] = $this->getProfilerTotalTime();
-            $responseData['collationEngineDetails']['cachedTimestamp'] = time();
-            $this->logProfilerData("CollationTable-$workId-$chunkNumber-$language (cached)");
-            return $this->responseWithJson($response, $responseData);
+            if (!isset($responseData['collationTableCacheId'])) {
+                // this will generate a cache key collision
+                $responseData['collationTableCacheId'] = 'collationTableCacheId not set';
+            }
+            if ($responseData['collationTableCacheId'] !== $collationTableCacheId) {
+                // this should almost never happen once the cached is cleared of entries without collationTableId
+                $this->logger->info("Cache key collision!", [
+                    'cacheKey' => $cacheKey,
+                    'requestedCollationTableCacheId' => $collationTableCacheId,
+                    'cachedCollationTableCacheId' => $responseData['collationTableCacheId']
+                    ]);
+            } else {
+                $responseData['collationEngineDetails']['cached'] = true;
+                $this->profiler->stop();
+                $responseData['collationEngineDetails']['cachedRunTime'] = $this->getProfilerTotalTime();
+                $responseData['collationEngineDetails']['cachedTimestamp'] = time();
+                $this->logProfilerData("CollationTable-$workId-$chunkNumber-$language (cached)");
+                return $this->responseWithJson($response, $responseData);
+            }
         }
-
-        // cache miss!
-
+        // cache miss! (or cache key collision)
 
         $collatexInput = $collationTable->getCollationEngineInput();
         
@@ -364,10 +360,6 @@ class ApiCollation extends ApiController
         
         $this->profiler->lap('Collation table built from collation engine output');
         $userDirectory = new UserManagerUserInfoProvider($dataManager->userManager);
-//        $decorator = new TransitionalCollationTableDecorator();
-//        $decorator->setUserInfoProvider($userDirectory);
-//        $decorator->setLogger($this->logger);
-//        $decoratedCollationTable = $decorator->decorate($collationTable);
 
         $newDecorator = new ApmCollationTableDecorator();
         $newDecorator->setLogger($this->logger);
@@ -391,10 +383,10 @@ class ApiCollation extends ApiController
         $collationEngineDetails['totalDuration'] =  $this->getProfilerTotalTime();
 
         $responseData = [
+            'type' => 'auto',
+            'collationTableCacheId' => $collationTableCacheId,
             'collationEngineDetails' => $collationEngineDetails,
-            //'collationTable' => $decoratedCollationTable,
-            'newCollationTable' => $decoratedCollationTableNew,
-            //'sigla' => $collationTable->getSigla(),
+            'collationTable' => $decoratedCollationTableNew,
             'quickEdition' => $quickEdition
         ];
 

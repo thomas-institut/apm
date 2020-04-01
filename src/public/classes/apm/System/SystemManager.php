@@ -23,6 +23,7 @@ namespace APM\System;
 
 
 use APM\CollationEngine\CollationEngine;
+use APM\FullTranscription\ApmTranscriptionWitness;
 use APM\FullTranscription\TranscriptionManager;
 use APM\Plugin\HookManager;
 use APM\Presets\PresetManager;
@@ -103,5 +104,15 @@ abstract class SystemManager implements  ErrorReporter, SqlQueryCounterTrackerAw
     abstract public function getCollationEngine() : CollationEngine;
     abstract public function getTranscriptionManager() : TranscriptionManager;
     abstract public function getSystemDataCache() : DataCache;
+
+    public function getFullTxWitnessId(ApmTranscriptionWitness $witness) : string {
+        return WitnessSystemId::buildFullTxId(
+            $witness->getWorkId(),
+            $witness->getChunk(),
+            $witness->getDocId(),
+            $witness->getLocalWitnessId(),
+            $witness->getTimeStamp()
+        );
+    }
 
 }

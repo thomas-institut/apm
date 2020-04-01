@@ -37,7 +37,6 @@ use AverroesProject\Data\EdNoteManager;
 use AverroesProject\Data\MySqlHelper;
 use AverroesProject\TxText\Item as ApItem;
 use AverroesProjectToApm\DatabaseItemStream;
-use Cassandra\Time;
 use RuntimeException;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
@@ -894,7 +893,6 @@ class ApmTranscriptionManager extends TranscriptionManager
         $localCacheKey = 'getW4C:' . $workId . '-' . $chunkNumber;
         $cacheMiss = false;
         try {
-
             $returnValue = unserialize($this->localMemCache->get($localCacheKey));
         } catch (KeyNotInCacheException $e) {
             $cacheMiss = true;

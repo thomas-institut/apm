@@ -22,24 +22,23 @@ namespace APM\ToolBox;
  */
 
 use InvalidArgumentException;
+use ThomasInstitut\ErrorReporter\ErrorReporter;
+use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
 
 
 /**
  * Utility class to check that an array structure has the proper elements
  * and types of elements
  */
-class ArrayChecker
+class ArrayChecker implements ErrorReporter
 {
+    use SimpleErrorReporterTrait;
+
     const ERROR_NO_ERROR = 0;
     const ERROR_MISSING_REQUIRED_FIELD = 101;
     const ERROR_WRONG_FIELD_TYPE = 102;
 
     const RULE_REQUIRED_FIELDS = 'requiredFields';
-
-    /** @var int */
-    protected $errorCode;
-    /** @var string  */
-    protected $errorMessage;
 
     public function __construct()
     {
@@ -72,18 +71,19 @@ class ArrayChecker
             }
             foreach($rules[self::RULE_REQUIRED_FIELDS] as $requiredFieldSpec) {
                 if (!is_string($requiredFieldSpec) && !isset($requiredFieldSpec['name'])) {
-                    throw new InvalidArgumentException('Required field must either be a string or an array with a  \'name\' field');
+                    throw new InvalidArgumentException("Required field must either be a string or an array with a 'name' field");
                 }
-                $requiredFieldName = '';
+                //$requiredFieldName = '';
                 if (is_string($requiredFieldSpec)) {
                     $requiredFieldName = $requiredFieldSpec;
                 } else {
+                    /** @var array $requiredFieldSpec*/
                     $requiredFieldName = $requiredFieldSpec['name'];
                 }
 
                 if (!isset($input[$requiredFieldName])) {
-                    $this->setErrorCode(self::ERROR_MISSING_REQUIRED_FIELD);
-                    $this->setErrorMessage('Missing required field \'' . $requiredFieldName . '\'');
+                    $this->setError("Missing required field '" . $requiredFieldName . "'",
+                        self::ERROR_MISSING_REQUIRED_FIELD);
                     return false;
                 }
                 $theField = $input[$requiredFieldName];
@@ -91,8 +91,8 @@ class ArrayChecker
                     switch($requiredFieldSpec['requiredType']) {
                         case 'string':
                             if (!is_string($theField)) {
-                                $this->setErrorCode(self::ERROR_WRONG_FIELD_TYPE);
-                                $this->setErrorMessage('Field \'' . $requiredFieldName . '\' must be a string, got a ' . gettype($theField));
+                                $this->setError("Field '" . $requiredFieldName . "' must be a string, got a " .
+                                    gettype($theField), self::ERROR_WRONG_FIELD_TYPE);
                                 return false;
                             }
                             break;
@@ -100,8 +100,8 @@ class ArrayChecker
                         case 'integer':
                         case 'int':
                             if (!is_integer($theField)) {
-                                $this->setErrorCode(self::ERROR_WRONG_FIELD_TYPE);
-                                $this->setErrorMessage('Field \'' . $requiredFieldName . '\' must be an integer, got a ' . gettype($theField));
+                                $this->setError("Field '" . $requiredFieldName . "' must be an integer, got a " .
+                                    gettype($theField), self::ERROR_WRONG_FIELD_TYPE);
                                 return false;
                             }
                             break;
@@ -109,8 +109,8 @@ class ArrayChecker
                         case 'bool':
                         case 'boolean':
                             if (!is_bool($theField)) {
-                                $this->setErrorCode(self::ERROR_WRONG_FIELD_TYPE);
-                                $this->setErrorMessage('Field \'' . $requiredFieldName . '\' must be a boolean, got a ' . gettype($theField));
+                                $this->setError("Field '" . $requiredFieldName . "' must be a boolean, got a " .
+                                    gettype($theField), self::ERROR_WRONG_FIELD_TYPE);
                                 return false;
                             }
                             break;
@@ -118,24 +118,24 @@ class ArrayChecker
                         case 'double':
                         case 'float':
                             if (!is_float($theField)) {
-                                $this->setErrorCode(self::ERROR_WRONG_FIELD_TYPE);
-                                $this->setErrorMessage('Field \'' . $requiredFieldName . '\' must be a float, got a ' . gettype($theField));
+                                $this->setError('Field \'' . $requiredFieldName . '\' must be a float, got a ' .
+                                    gettype($theField), self::ERROR_WRONG_FIELD_TYPE);
                                 return false;
                             }
                             break;
 
                         case 'array':
                             if (!is_array($theField)) {
-                                $this->setErrorCode(self::ERROR_WRONG_FIELD_TYPE);
-                                $this->setErrorMessage('Field \'' . $requiredFieldName . '\' must be an array, got a ' . gettype($theField));
+                                $this->setError('Field \'' . $requiredFieldName . '\' must be an array, got a ' .
+                                    gettype($theField), self::ERROR_WRONG_FIELD_TYPE);
                                 return false;
                             }
                             if (isset($requiredFieldSpec['arrayRules'])) {
                                 $checker = new ArrayChecker();
                                 $isValid = $checker->isArrayValid($theField, $requiredFieldSpec['arrayRules']);
                                 if (!$isValid) {
-                                    $this->setErrorCode($checker->getErrorCode());
-                                    $this->setErrorMessage($requiredFieldName . ': ' . $checker->getErrorMessage());
+                                    $this->setError($requiredFieldName . ': ' . $checker->getErrorMessage(),
+                                        $checker->getErrorCode());
                                     return false;
                                 }
                             }
@@ -146,42 +146,4 @@ class ArrayChecker
         }
         return true;
     }
-
-    /**
-     * @return int
-     */
-    public function getErrorCode()
-    {
-        return $this->errorCode;
-    }
-
-    /**
-     * @param int $errorCode
-     */
-    protected function setErrorCode(int $errorCode): void
-    {
-        $this->errorCode = $errorCode;
-    }
-
-    /**
-     * @return string
-     */
-    public function getErrorMessage(): string
-    {
-        return $this->errorMessage;
-    }
-
-    /**
-     * @param string $errorMessage
-     */
-    protected function setErrorMessage(string $errorMessage): void
-    {
-        $this->errorMessage = $errorMessage;
-    }
-
-    protected function resetError() {
-        $this->setErrorCode(self::ERROR_NO_ERROR);
-        $this->setErrorMessage('');
-    }
-
 }

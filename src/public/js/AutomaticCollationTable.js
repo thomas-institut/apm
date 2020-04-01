@@ -250,7 +250,7 @@ class AutomaticCollationTable {
   // }
 
   getLastChangeInDataFromApiResponse(apiData) {
-    let ctData = apiData['newCollationTable']
+    let ctData = apiData['collationTable']
     let lastChangeInData = ''
     for(const witness of ctData['witnesses']) {
       if (witness['timeStamp'] > lastChangeInData) {
@@ -385,7 +385,7 @@ class AutomaticCollationTable {
   }
 
   getVersionInfoHtml(apiData) {
-    let ctData = apiData['newCollationTable']
+    let ctData = apiData['collationTable']
     let sigla = ctData['sigla']
     let witnesses = ctData['witnesses']
     let html = ''
@@ -430,7 +430,7 @@ class AutomaticCollationTable {
     let data = this.collationTableData
 
     // div text direction
-    if (this.options.langDef[data['newCollationTable']['lang']].rtl) {
+    if (this.options.langDef[data['collationTable']['lang']].rtl) {
       this.collationTableDivNew.removeClass(this.ltrClass)
       this.collationTableDivNew.addClass(this.rtlClass)
     } else {
@@ -439,10 +439,10 @@ class AutomaticCollationTable {
     }
 
     let rowDefinition = []
-    for (let i = 0; i < data['newCollationTable']['sigla'].length; i++) {
-      let witness = data['newCollationTable'].witnesses[i]
-      let siglum = data['newCollationTable']['sigla'][i]
-      let tokenArray = data['newCollationTable']['collationMatrix'][i]
+    for (let i = 0; i < data['collationTable']['sigla'].length; i++) {
+      let witness = data['collationTable'].witnesses[i]
+      let siglum = data['collationTable']['sigla'][i]
+      let tokenArray = data['collationTable']['collationMatrix'][i]
       rowDefinition.push({
         title: siglum,
         values: tokenArray,
@@ -462,7 +462,7 @@ class AutomaticCollationTable {
       generateCellClasses: this.genGenerateCellClassesFunction(),
       generateCellTdExtraAttributes: this.genGenerateCellTdExtraAttributesFunction()
     })
-    this.variantsMatrix = this.genVariantsMatrix(this.tableEditor.getMatrix(), data['newCollationTable']['witnesses'])
+    this.variantsMatrix = this.genVariantsMatrix(this.tableEditor.getMatrix(), data['collationTable']['witnesses'])
     this.tableEditor.redrawTable()
   }
 
@@ -472,8 +472,8 @@ class AutomaticCollationTable {
       if (value === -1) {
         return ''
       }
-      let peopleInfo =thisObject.collationTableData['newCollationTable']['people']
-      let tokenArray = thisObject.collationTableData['newCollationTable']['witnesses'][row]['tokens']
+      let peopleInfo =thisObject.collationTableData['collationTable']['people']
+      let tokenArray = thisObject.collationTableData['collationTable']['witnesses'][row]['tokens']
       let token = tokenArray[value]
       let lang = token['itemData'][0]['lang']
       // console.log("Lang: " + lang)
@@ -513,7 +513,7 @@ class AutomaticCollationTable {
 
   getTokenAddressHtml(row, token) {
     let html = ''
-    let itemWithAddressArray = this.collationTableData['newCollationTable']['witnesses'][row]['items']
+    let itemWithAddressArray = this.collationTableData['collationTable']['witnesses'][row]['items']
     let itemData = token['itemData'][0]
     let itemWithAddress = itemWithAddressArray[itemData['itemIndex']]
 
@@ -550,7 +550,7 @@ class AutomaticCollationTable {
       'abbr' : 'Abbreviation'
     }
 
-    let itemWithAddressArray = this.collationTableData['newCollationTable']['witnesses'][row]['items']
+    let itemWithAddressArray = this.collationTableData['collationTable']['witnesses'][row]['items']
     let item = itemWithAddressArray[itemData['itemIndex']]['item']
 
     if (item.type !== 'TextualItem') {
@@ -647,7 +647,7 @@ class AutomaticCollationTable {
       if (value === -1) {
         return '&mdash;'
       }
-      let tokenArray = thisObject.collationTableData['newCollationTable']['witnesses'][row]['tokens']
+      let tokenArray = thisObject.collationTableData['collationTable']['witnesses'][row]['tokens']
       let token = tokenArray[value]
       let postNotes = thisObject.getPostNotes(row, col, value)
       if (token['itemData'].length === 1 && postNotes.length === 0) {
@@ -657,7 +657,7 @@ class AutomaticCollationTable {
         return token.text
       }
       // spans for different items
-      let itemWithAddressArray = thisObject.collationTableData['newCollationTable']['witnesses'][row]['items']
+      let itemWithAddressArray = thisObject.collationTableData['collationTable']['witnesses'][row]['items']
       let cellHtml = ''
       for (const itemData of token['itemData']) {
         let theItem = itemWithAddressArray[itemData['itemIndex']]['item']
@@ -678,8 +678,8 @@ class AutomaticCollationTable {
 
   getPostNotes(row, col, tokenIndex) {
     //console.log('Get post notes: r' + row + ' c' + col + ' i' + tokenIndex)
-    let postItemIndexes = this.collationTableData['newCollationTable']['aggregatedNonTokenItemIndexes'][row][tokenIndex]['post']
-    let itemWithAddressArray = this.collationTableData['newCollationTable']['witnesses'][row]['items']
+    let postItemIndexes = this.collationTableData['collationTable']['aggregatedNonTokenItemIndexes'][row][tokenIndex]['post']
+    let itemWithAddressArray = this.collationTableData['collationTable']['witnesses'][row]['items']
     let notes = []
     for(const itemIndex of postItemIndexes) {
 
@@ -697,8 +697,8 @@ class AutomaticCollationTable {
       if (value === -1) {
         return [ 'emptytoken']
       }
-      let tokenArray = thisObject.collationTableData['newCollationTable']['witnesses'][row]['tokens']
-      let itemWithAddressArray = thisObject.collationTableData['newCollationTable']['witnesses'][row]['items']
+      let tokenArray = thisObject.collationTableData['collationTable']['witnesses'][row]['tokens']
+      let itemWithAddressArray = thisObject.collationTableData['collationTable']['witnesses'][row]['items']
 
       let token = tokenArray[value]
       let classes = thisObject.getTokenClasses(token)
@@ -753,7 +753,7 @@ class AutomaticCollationTable {
   genGenerateTableClassesFunction() {
     let thisObject = this
     return function() {
-      let langCode = thisObject.collationTableData['newCollationTable']['lang']
+      let langCode = thisObject.collationTableData['collationTable']['lang']
       return [ ('te-table-' + langCode) ]
     }
   }

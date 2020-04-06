@@ -159,7 +159,7 @@ class AutomaticCollationTable {
 
       // thisObject.ctf.setOptions(thisObject.viewSettings)
       // thisObject.collationTableDiv.html(thisObject.ctf.format(thisObject.collationTableData, thisObject.popoverClass))
-      //thisObject.setCsvDownloadFile(thisObject.collationTableData)
+      thisObject.setCsvDownloadFile(thisObject.collationTableData)
       thisObject.viewSettingsFormManager.hide()
 
       if (thisObject.viewSettings.multipleRows) {
@@ -297,15 +297,7 @@ class AutomaticCollationTable {
       thisObject.lastTimeLabel.html(thisObject.formatDateTime(thisObject.lastChangeInData))
       thisObject.witnessInfoDiv.html(thisObject.getVersionInfoHtml(data))
 
-      // if (thisObject.options.langDef[thisObject.apiCallOptions.lang].rtl) {
-      //   thisObject.collationTableDiv.removeClass(thisObject.ltrClass)
-      //   thisObject.collationTableDiv.addClass(thisObject.rtlClass)
-      // }
-      
-      //thisObject.collationTableDiv.html(thisObject.ctf.format(data, thisObject.popoverClass))
-
-      // TODO: support CSV export again!
-      //thisObject.setCsvDownloadFile(data)
+      thisObject.setCsvDownloadFile(data)
       
       thisObject.status.html('')
       thisObject.redoButton.prop('disabled', false)

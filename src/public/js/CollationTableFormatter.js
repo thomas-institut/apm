@@ -58,15 +58,24 @@ class CollationTableFormatter {
   }
 
   generateCsv(data, sep = ',') {
-    let sigla = data.sigla
+
     let collationTable = data.collationTable
-    let numWitnesses = sigla.length
+    let sigla = collationTable.sigla
+    let numWitnesses = collationTable.witnesses.length
     
     let output = ''
-    for(const siglum of sigla) {
+    for (let i=0; i < numWitnesses; i++) {
+      let siglum = sigla[i]
       output += siglum + sep
-      for (const tkn of collationTable[siglum]) {
-        output += this.getCsvRepresentationForToken(tkn, this.options.showNormalizations) + sep
+      let ctRefRow = collationTable.collationMatrix[i]
+      for (let tkRefIndex = 0; tkRefIndex < ctRefRow.length; tkRefIndex++) {
+        let tokenRef = ctRefRow[tkRefIndex]
+        let tokenCsvRep = ''
+        if (tokenRef !== -1 ) {
+          let token = collationTable.witnesses[i].tokens[tokenRef]
+          tokenCsvRep = this.getCsvRepresentationForToken(token, this.options.showNormalizations)
+        }
+        output += tokenCsvRep + sep
       }
       output += "\n"
     }

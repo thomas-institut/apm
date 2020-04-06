@@ -56,7 +56,7 @@ class FormatterPeopleDirectoryTest extends TestCase {
         
         $this->assertEquals('Ludwig van Beethoven', $pd->getFullName($p2));
         $this->assertEquals('L. van Beethoven', $pd->getInitialAndLastName($p2));
-        $this->assertEquals('Lv', $pd->getInitials($p2));  //  <--- THIS IS WRONG!
+        $this->assertEquals('LvB', $pd->getInitials($p2));
         
         $p3 = new Person(Person::IDTYPE_FULLNAME, 'Madonna');
         

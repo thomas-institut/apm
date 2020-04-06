@@ -46,12 +46,12 @@ class SchemaTest extends TestCase
         $schemataToLoad = [
             'witness' => [
                 'url' => $this->baseUrl . "/schema/json/witness.json",
-                'goodJson' => '{"witnessType":"fullTx","tokens":[]}',
+                'goodJson' => '{"chunkId":"AW20-1","witnessType":"fullTx","tokens":[]}',
                 'badJson' => '{"other":"fullTx","tokens":[]}'
             ],
             'collationTable' => [
                 'url' => $this->baseUrl . "/schema/json/collation_table.json",
-                'goodJson' => '{"witnesses":[{"witnessType":"fullTx","tokens":[]},{"witnessType":"fullTx","tokens":[]}], "collationMatrix":[[],[]]}',
+                'goodJson' => '{"witnesses":[{"chunkId":"AW20-1","witnessType":"fullTx","tokens":[]},{"chunkId":"AW20-1","witnessType":"fullTx","tokens":[]}], "collationMatrix":[[],[]]}',
                 'badJson' => '{"other":"fullTx","tokens":[]}'
             ]
         ];

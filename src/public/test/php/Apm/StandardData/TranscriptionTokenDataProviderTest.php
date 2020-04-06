@@ -76,7 +76,7 @@ class TranscriptionTokenDataProviderTest extends TestCase
         foreach($testCases as $i => $token) {
             $exceptionRaised = false;
             $data = (new TranscriptionTokenDataProvider($token))->getStandardData();
-            print_r($data);
+            //print_r($data);
             try {
                 $schema->in($data);
             } catch (\Exception $e) {

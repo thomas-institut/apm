@@ -40,6 +40,10 @@ class DatabaseItemStream {
      * @var array 
      */
     private $items;
+    /**
+     * @var int|string
+     */
+    private $lang;
 
     /**
      * DatabaseItemStream constructor
@@ -59,6 +63,7 @@ class DatabaseItemStream {
     public function __construct(int $docId, array $itemSegments, string $defaultLang = 'la', array $edNotes = []) {
         $this->items = [];
         $itemFactory = new ItemStreamItemFactory($defaultLang);
+        $langs = [];
         
         foreach($itemSegments as $itemRows){
             $previousElementId = -1;
@@ -88,7 +93,16 @@ class DatabaseItemStream {
                         $this->items[] = new ItemInDatabaseItemStream($fakeAddress, new Mark(MarkType::TEXT_BOX_BREAK));
                     }
                 }
+
+                $lang = $row['lang'];
+                if (!isset($langs[$lang])) {
+                    $langs[$lang] = 0;
+                }
+                $langs[$lang]++;
+
                 $item = $itemFactory->createItemFromRow($row);
+
+
                 $itemId = $address->getItemId();
                 $noteIndexes = $this->findNoteIndexesById($edNotes, $itemId );
                 foreach ($noteIndexes as $noteIndex) {
@@ -101,6 +115,19 @@ class DatabaseItemStream {
                 $previousTbIndex = $address->getTbIndex();
             }
         }
+        $maxLang = 0;
+        $streamLang = '';
+        foreach($langs as $code => $itemCount) {
+            if ($itemCount > $maxLang) {
+                $streamLang = $code;
+                $maxLang = $itemCount;
+            }
+        }
+        $this->lang = $streamLang;
+    }
+
+    public function getLang(): string {
+        return $this->lang;
     }
     
     public function getItems() : array {

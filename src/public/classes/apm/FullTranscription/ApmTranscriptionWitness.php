@@ -58,6 +58,7 @@ class ApmTranscriptionWitness extends TranscriptionWitness {
         $this->timeStamp = $timeString;
         
         $this->databaseItemStream = $stream;
+        $this->setLang($stream->getLang());
         $this->initialLineNumbers = [];
         
     }

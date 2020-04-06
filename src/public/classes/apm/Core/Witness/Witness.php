@@ -50,12 +50,25 @@ abstract class Witness {
      * @var string
      */
     protected $localWitnessId;
+    /**
+     * @var string
+     */
+    protected $lang;
 
 
     public function __construct(string $work, string $chunk, string $localWitnessId = 'A') {
         $this->work = $work;
         $this->chunk = $chunk;
         $this->localWitnessId = $localWitnessId;
+        $this->setLang('');
+    }
+
+    public function setLang(string $langCode) {
+        $this->lang = $langCode;
+    }
+
+    public function getLang() : string {
+        return $this->lang;
     }
 
 
@@ -102,6 +115,7 @@ abstract class Witness {
             'workId' => $this->getWorkId(),
             'chunk' => $this->getChunk(),
             'localWitnessId' => $this->getLocalWitnessId(),
+            'lang' => $this->getLang()
         ];
     }
 

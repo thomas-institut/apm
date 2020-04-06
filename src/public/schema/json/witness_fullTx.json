@@ -1,0 +1,35 @@
+{
+  "$id": "witness_fullTx.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "A full transcription witness",
+  "type": "object",
+  "properties": {
+    "chunkId" : {
+      "type": "string"
+    },
+    "witnessType": {
+      "enum": [ "fullTx"]
+    },
+    "ApmWitnessId" : {
+      "type": "string"
+    },
+    "tokens": {
+      "type": "array",
+      "items": {
+        "$ref": "token.json"
+      }
+    },
+    "items" : {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  },
+  "required": [
+    "witnessType",
+    "chunkId",
+    "tokens",
+    "items"
+  ]
+}

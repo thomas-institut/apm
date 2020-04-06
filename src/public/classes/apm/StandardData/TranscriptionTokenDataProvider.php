@@ -49,29 +49,18 @@ class TranscriptionTokenDataProvider implements StandardDataProvider
         for($i = 0; $i < count($itemIndexes); $i++) {
             $itemData = new stdClass();
             $itemData->index = $itemIndexes[$i];
-            $itemData->charRange = new stdClass();
             $itemCharRange = $charRanges[$i];
-            $itemData->charRange->from = $itemCharRange->getStart();
-            $itemData->charRange->to = $itemCharRange->getEnd();
-            if ($itemCharRange->getLength() !== ($itemCharRange->getEnd()-$itemCharRange->getStart() +1)){
-                $itemData->charRange->length = $itemCharRange->getLength();
-            }
+            $itemData->charRange = StandardIntRange::getStandardIntRangeWithLength($itemCharRange->getStart(),
+                $itemCharRange->getEnd(), $itemCharRange->getLength());
             $data->sourceItems[] = $itemData;
         }
 
-//        $startLine = $this->token->getTextBoxLineRange()->getStart();
-//        $endLine = $this->token->getTextBoxLineRange()->getEnd();
-//        $data['lineRange'] = [
-//            'start' => [
-//                'textBox' => $startLine->getCoord(0),
-//                'lineNumber' => $startLine->getCoord(1)
-//            ],
-//            'end' => [
-//                'textBox' => $endLine->getCoord(0),
-//                'lineNumber' => $endLine->getCoord(1)
-//            ]
-//        ];
-
+        $startLine = $this->token->getTextBoxLineRange()->getStart();
+        $endLine = $this->token->getTextBoxLineRange()->getEnd();
+        $startTextBox = $startLine->getCoord(0);
+        $endTextBox = $endLine->getCoord(0);
+        $data->textBox = StandardIntRange::getStandardIntRange($startTextBox, $endTextBox);
+        $data->line = StandardIntRange::getStandardIntRange($startLine->getCoord(1), $endLine->getCoord(1));
 
         return $data;
     }

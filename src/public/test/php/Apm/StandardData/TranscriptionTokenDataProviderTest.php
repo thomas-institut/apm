@@ -22,6 +22,8 @@ namespace APM\Test;
 require "../../config.php";
 
 use APM\Core\Address\IntRange;
+use APM\Core\Address\Point;
+use APM\Core\Address\PointRange;
 use APM\Core\Token\Token;
 use APM\Core\Token\TokenType;
 use APM\Core\Token\TranscriptionToken;
@@ -67,6 +69,13 @@ class TranscriptionTokenDataProviderTest extends TestCase
         $token = new TranscriptionToken(TokenType::WORD, "someWord");
         $token->setSourceItemIndexes([1]);
         $token->setSourceItemCharRanges( [ new IntRange(0,5)]);
+        $startLine = new Point();
+        $startLine->setCoord(0, 1);
+        $startLine->setCoord(1, 3);
+        $endLine = new Point();
+        $endLine->setCoord(0, 1);
+        $endLine->setCoord(1, 4);
+        $token->setTextBoxLineRange(new PointRange($startLine, $endLine));
 
         $testCases[] = $token;
 
@@ -76,7 +85,7 @@ class TranscriptionTokenDataProviderTest extends TestCase
         foreach($testCases as $i => $token) {
             $exceptionRaised = false;
             $data = (new TranscriptionTokenDataProvider($token))->getStandardData();
-            //print_r($data);
+            print_r($data);
             try {
                 $schema->in($data);
             } catch (\Exception $e) {

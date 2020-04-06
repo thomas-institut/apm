@@ -4,15 +4,22 @@
   "description": "A witness",
   "type": "object",
   "properties": {
+    "chunkId" : {
+      "type": "string"
+    },
     "witnessType": {
       "type": "string"
     },
     "tokens": {
-      "type": "array"
+      "type": "array",
+      "items": {
+        "$ref": "token.json"
+      }
     }
   },
   "required": [
     "witnessType",
+    "chunkId",
     "tokens"
   ]
 }

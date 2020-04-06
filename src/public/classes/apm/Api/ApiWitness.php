@@ -22,6 +22,7 @@ namespace APM\Api;
 use APM\Core\Witness\SimpleHtmlWitnessDecorator;
 use APM\Decorators\Witness\ApmTxWitnessDecorator;
 use APM\FullTranscription\ApmTranscriptionWitness;
+use APM\StandardData\TranscriptionTokenDataProvider;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
 use AverroesProject\Data\UserManagerUserInfoProvider;
@@ -136,6 +137,14 @@ class ApiWitness extends ApiController
             $apmWitness = $transcriptionManager->getTranscriptionWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
 
             $returnData = $apmWitness->getData();
+
+            // temporary code to spit out standard token data
+            $theTokens = $apmWitness->getTokens();
+            $returnData['standardTokens'] = [];
+            foreach($theTokens as $token) {
+                $returnData['standardTokens'][] = (new TranscriptionTokenDataProvider($token))->getStandardData();
+            }
+
             $witnessId = WitnessSystemId::buildFullTxId($workId, $chunkNumber, $docId, $localWitnessId, $returnData['timeStamp']);
             $returnData['witnessId'] = $witnessId;
             $returnData['segments'] = $locations;

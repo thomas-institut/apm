@@ -26,7 +26,6 @@ use APM\System\ApmContainerKey;
 use DI\Container;
 use DI\DependencyException;
 use DI\NotFoundException;
-use Monolog\Logger;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use \Psr\Http\Message\ServerRequestInterface as Request;
@@ -35,7 +34,6 @@ use AverroesProject\Data\DataManager;
 use APM\System\SystemManager;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
-use Psr\Log\LoggerInterface;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
 use ThomasInstitut\Profiler\SimpleProfiler;
@@ -223,12 +221,24 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
     protected function responseWithJson(ResponseInterface $response, $data, $status = 200) : ResponseInterface {
 
         $payload = json_encode($data);
-        $response->getBody()->write($payload);
+        return $this->responseWithJsonRaw($response, $payload, $status);
+    }
+
+    /**
+     * @param Response $response
+     * @param mixed $data
+     * @param int $status
+     * @return Response
+     */
+    protected function responseWithJsonRaw(ResponseInterface $response, $json, $status = 200) : ResponseInterface {
+        $response->getBody()->write($json);
 
         return $response
             ->withHeader('Content-Type', 'application/json')
             ->withStatus($status);
     }
+
+
 
     protected function logProfilerData(string $pageTitle) : void
     {

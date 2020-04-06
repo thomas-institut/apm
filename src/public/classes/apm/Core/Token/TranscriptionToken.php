@@ -20,10 +20,7 @@
 
 namespace APM\Core\Token;
 
-use APM\Core\Address\IntRange;
 use APM\Core\Address\PointRange;
-use APM\Core\Transcription\ItemAddressInDocument;
-use APM\Core\Transcription\ItemAddressInPage;
 
 /**
  * A token in a transcription witness
@@ -126,7 +123,6 @@ class TranscriptionToken extends Token {
 
          $itemIndexes =  $this->getSourceItemIndexes();
          $charRanges = $this->getSourceItemCharRanges();
-         //$addresses = $this->getSourceItemAddresses();
 
 
          for($i = 0; $i < count($itemIndexes); $i++) {
@@ -140,23 +136,6 @@ class TranscriptionToken extends Token {
              ];
              $data['itemData'][] = $itemDataInToken;
          }
-
-//         $data['sourceItemIndexes'] = $this->getSourceItemIndexes();
-//
-//         $data['sourceItemAddresses'] = [];
-//         foreach($this->sourceItemAddresses as $sourceItemAddress) {
-//             /** @var ItemAddressInDocument $sourceItemAddress */
-//             $data['sourceItemAddresses'][] = $sourceItemAddress->getData();
-//         }
-//         $data['sourceItemCharRanges'] = [];
-//         foreach($this->getSourceItemCharRanges() as $itemCharRange) {
-//             /** @var  IntRange $itemCharRange */
-//             $data['sourceItemCharRanges'][] = [
-//                 'from' => $itemCharRange->getStart(),
-//                 'to' => $itemCharRange->getEnd(),
-//                 'length' => $itemCharRange->getLength()
-//                 ];
-//         }
 
          $startLine = $this->getTextBoxLineRange()->getStart();
          $endLine = $this->getTextBoxLineRange()->getEnd();
@@ -173,6 +152,5 @@ class TranscriptionToken extends Token {
 
          return $data;
     }
-
 
 }

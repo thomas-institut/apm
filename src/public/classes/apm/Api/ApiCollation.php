@@ -235,10 +235,6 @@ class ApiCollation extends ApiController
                         return $this->responseWithJson($response, ['error' => self::API_ERROR_MISSING_REQUIRED_FIELD, 'msg' => $msg], 409);
                     }
                     $witnessInfo = WitnessSystemId::getFullTxInfo($requestedWitness['systemId']);
-                    //if ($witnessInfo->typeSpecificInfo['timeStamp'] === '') {
-                        // Do nothing,  TranscriptionManager will take care of it
-                        //$this->codeDebug('Timestamp is empty ');
-                    //}
                     try {
                         $fullTxWitness = $transcriptionManager->getTranscriptionWitness($witnessInfo->workId,
                             $witnessInfo->chunkNumber, $witnessInfo->typeSpecificInfo['docId'],
@@ -275,7 +271,7 @@ class ApiCollation extends ApiController
         }
 
         
-        $this->profiler->lap('Collation table build');
+        $this->profiler->lap('Collation table built');
 
         $collationTableCacheId = implode(':', $witnessIds);
         $this->codeDebug('Collation table ID: ' . $collationTableCacheId);
@@ -294,28 +290,33 @@ class ApiCollation extends ApiController
 
         if ($cacheHit) {
             $this->systemManager->getCacheTracker()->incrementHits();
-            $responseData = unserialize($cachedData);
-            if (!isset($responseData['collationTableCacheId'])) {
-                // this will generate a cache key collision
-                $responseData['collationTableCacheId'] = 'collationTableCacheId not set';
-            }
-            if ($responseData['collationTableCacheId'] !== $collationTableCacheId) {
-                // this should almost never happen once the cached is cleared of entries without collationTableId
-                $this->logger->info("Cache key collision!", [
-                    'cacheKey' => $cacheKey,
-                    'requestedCollationTableCacheId' => $collationTableCacheId,
-                    'cachedCollationTableCacheId' => $responseData['collationTableCacheId']
+            $this->profiler->lap('Before decoding from cache');
+            $responseData = json_decode(gzuncompress($cachedData), true);
+            //$responseData = json_decode($cachedData, true);
+            $this->profiler->lap("Data decoded from cache");
+            if (!is_null($responseData)) {
+                if (!isset($responseData['collationTableCacheId'])) {
+                    // this will generate a cache key collision
+                    $responseData['collationTableCacheId'] = 'collationTableCacheId not set';
+                }
+                if ($responseData['collationTableCacheId'] !== $collationTableCacheId) {
+                    // this should almost never happen once the cached is cleared of entries without collationTableId
+                    $this->logger->info("Cache key collision!", [
+                        'cacheKey' => $cacheKey,
+                        'requestedCollationTableCacheId' => $collationTableCacheId,
+                        'cachedCollationTableCacheId' => $responseData['collationTableCacheId']
                     ]);
-            } else {
-                $responseData['collationEngineDetails']['cached'] = true;
-                $this->profiler->stop();
-                $responseData['collationEngineDetails']['cachedRunTime'] = $this->getProfilerTotalTime();
-                $responseData['collationEngineDetails']['cachedTimestamp'] = time();
-                $this->logProfilerData("CollationTable-$workId-$chunkNumber-$language (cached)");
-                return $this->responseWithJson($response, $responseData);
+                } else {
+                    $responseData['collationEngineDetails']['cached'] = true;
+                    $this->profiler->stop();
+                    $responseData['collationEngineDetails']['cachedRunTime'] = $this->getProfilerTotalTime();
+                    $responseData['collationEngineDetails']['cachedTimestamp'] = time();
+                    $this->logProfilerData("CollationTable-$workId-$chunkNumber-$language (cached)");
+                    return $this->responseWithJson($response, $responseData);
+                }
             }
         }
-        // cache miss! (or cache key collision)
+        // cache miss, or mismatch in cache keys, or bad cache data
 
         $collatexInput = $collationTable->getCollationEngineInput();
         
@@ -376,7 +377,7 @@ class ApiCollation extends ApiController
 
         $this->profiler->stop();
         $this->logProfilerData("CollationTable-$workId-$chunkNumber-$language");
-        
+
         $collationEngineDetails = $collationEngine->getRunDetails();
         $collationEngineDetails['cached'] = false;
 
@@ -391,9 +392,18 @@ class ApiCollation extends ApiController
         ];
 
         // let's cache it!
-        $cache->set($cacheKey, serialize($responseData));
-        
-        return $this->responseWithJson($response, $responseData);
+        $this->profiler->start();
+        $jsonToCache = json_encode($responseData, JSON_UNESCAPED_UNICODE);
+        // zip it, just for fun
+        $zipped = gzcompress($jsonToCache);
+        $this->logger->debug("Caching automatic collation, JSON size = " . strlen($jsonToCache) . " bytes; zipped : " . strlen($zipped));
+        //$cache->set($cacheKey,$jsonToCache);
+        $cache->set($cacheKey,$zipped);
+        $this->profiler->stop();
+
+        $this->logProfilerData("CollationTable-$workId-$chunkNumber-$language, encoding and storing in cache");
+
+        return $this->responseWithJsonRaw($response, $jsonToCache);
     }
 
 

@@ -15,10 +15,10 @@ A stored collation table can be used
 The data in a collation table should allow the table's manipulation autonomously. 
 Conceptually a collation table should be considered a stand alone document
 even if its data was derived and is associated with other data in the system
-(most prominently, manuscript transcriptions) and independently of how the
+(for example, most prominently, with manuscript transcriptions) and independently of how the
 data is actually stored in the system. Only in this way can the 
 stability of editions and derivative witnesses derived from a collation table
-can be guaranteed.
+be guaranteed.
 
 One scenario that should be avoided is that a stored collation table becomes inconsistent
 or its data no longer supports the decisions made by editors due to a malfunction or a
@@ -31,14 +31,14 @@ Most changes to witness data are protected by the fact that APM witnesses refer
 to the state of the transcription at a specific point in time. However, a change
 in the itemization and tokenization algorithms can provoke unexpected changes. For
 all intents and purposes, a change caused by a change in internal APM mechanisms
-may provoke the same kinds of changes as changing a witness version. 
+may provoke the same kinds of inconsistencies as changing a witness version. 
 
 Many of these potential changes are seemingly easy to cope with. For example, 
 a change in a token's information due to changes in the underlying items 
 should normally require only a display change in the collation table edition tool and
 some minor changes to whatever other information is generated out of the collation
-table itself such as automatically generated apparatus entries. This includes changes
-to the text of the token. In fact, a simple change in the text of the token might be
+table itself such as automatically generated apparatus entries. Even a change in a token's text 
+is not dangerous. In fact, a simple change in the text of the token might be
 the most common change caused by a version change since editors might just want
 to correct obvious mistakes in the transcription.
 
@@ -91,6 +91,7 @@ A  __collation table__ consists of:
 
 A __witness__ consists of:
 * id: e.g. the Apm system id
+* chunkId
 * tokens: array of witness tokens
 * type: e.g. simple, fullTx, edition
 * type-dependent data

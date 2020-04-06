@@ -20,6 +20,8 @@
 
 namespace APM\Core\Token;
 
+use APM\StandardData\StandardDataProvider;
+use APM\StandardData\StandardTokenType;
 use InvalidArgumentException;
 
 /**
@@ -124,9 +126,6 @@ class Token {
      * @param string $str
      */
     public function setNormalization(string $str) : void {
-//        if ($this->type === TokenType::WORD && preg_match('/\s/', $str)) {
-//            throw new InvalidArgumentException("Text must not have whitespace inside, given '$str'", self::ERROR_WHITESPACE_IN_TEXT);
-//        }
         $this->normalizedText = $str;
     }
 
@@ -157,4 +156,5 @@ class Token {
             'normalizedText' => $this->getNormalization()
         ];
     }
+
 }

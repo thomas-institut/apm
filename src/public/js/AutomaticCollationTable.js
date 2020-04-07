@@ -64,7 +64,7 @@ class AutomaticCollationTable {
     this.collationTableDivNew = $('#' + this.collationTableNewDivId)
     this.actTitleElement = $('#act-title')
     this.status = $('#status')
-    this.collationEngineDetails = $('#collationEngineDetails')
+    this.collationEngineDetailsElement = $('#collationEngineDetails')
     this.redoButton = $('#redobutton')
     this.exportCsvButton = $('#exportcsvbutton')
     this.quickEditionButton = $('#quickedbutton')
@@ -110,8 +110,9 @@ class AutomaticCollationTable {
     // (not yet, it will be done from API response data)
     //this.lastChangeInData = this.getLastChangeInDataFromAvailableWitnesses(this.availableWitnesses, initialApiOptions)
 
-    
-    this.collationTableData = null
+    // TODO: change this to a reasonable default
+    this.collationTable = null
+    this.peopleInfo = []
     this.ctf = new CollationTableFormatter({lang: initialApiOptions.lang})
     this.popoverClass = 'ctpopover'
     
@@ -154,12 +155,7 @@ class AutomaticCollationTable {
     })
     this.viewSettingsFormManager.on('apply', function(e) {
       thisObject.viewSettings = e.detail
-      //console.log('Got view settings from form')
-      //console.log(thisObject.viewSettings)
-
-      // thisObject.ctf.setOptions(thisObject.viewSettings)
-      // thisObject.collationTableDiv.html(thisObject.ctf.format(thisObject.collationTableData, thisObject.popoverClass))
-      thisObject.setCsvDownloadFile(thisObject.collationTableData)
+      thisObject.setCsvDownloadFile()
       thisObject.viewSettingsFormManager.hide()
 
       if (thisObject.viewSettings.multipleRows) {
@@ -216,7 +212,7 @@ class AutomaticCollationTable {
     
     
     this.collationTableDiv.html('')
-    this.collationEngineDetails.html('')
+    this.collationEngineDetailsElement.html('')
     this.status.html('')
     this.actTitleElement.html(this.getTitleFromOptions())
     this.editionContainer.addClass('hidden')
@@ -238,19 +234,8 @@ class AutomaticCollationTable {
     }
   }
 
-
-  // getLastChangeInDataFromAvailableWitnesses(availableWitnesses, apiCallOptions) {
-  //   let lastChangeInData = ''
-  //     for(const witness of availableWitnesses) {
-  //       if (witness.typeSpecificInfo.timeStamp > lastChangeInData) {
-  //         lastChangeInData = witness.typeSpecificInfo.timeStamp
-  //       }
-  //     }
-  //     return lastChangeInData
-  // }
-
-  getLastChangeInDataFromApiResponse(apiData) {
-    let ctData = apiData['collationTable']
+  getLastChangeInData() {
+    let ctData = this.collationTable
     let lastChangeInData = ''
     for(const witness of ctData['witnesses']) {
       if (witness['timeStamp'] > lastChangeInData) {
@@ -262,9 +247,7 @@ class AutomaticCollationTable {
   }
 
   getTitleFromOptions() {
-    
     return this.editSettingsFormManager.getTitleFromSettings(this.apiCallOptions)
-
   }
   
   getCollationTable() {
@@ -277,7 +260,7 @@ class AutomaticCollationTable {
     this.status.html('Collating... <i class="fa fa-spinner fa-spin fa-fw"></i>')
     this.collationTableDiv.html('')
     this.collationTableDivNew.html('')
-    this.collationEngineDetails.html('')
+    this.collationEngineDetailsElement.html('')
      this.editionContainer.addClass('hidden')
     this.lastTimeLabel.html('TBD...')
     this.witnessInfoDiv.html('TBD...')
@@ -288,34 +271,34 @@ class AutomaticCollationTable {
       this.apiCollationUrl, 
       { data: JSON.stringify(this.apiCallOptions) }
     )
-    .done(function (data) { 
+    .done(function (apiResponse) {
       console.log('Automatic collation successful. Data:')
-      console.log(data)
-      thisObject.collationTableData = data
-      thisObject.status.html('Collating... done, formatting table <i class="fa fa-spinner fa-spin fa-fw"></i>')
-      thisObject.lastChangeInData = thisObject.getLastChangeInDataFromApiResponse(data)
+      console.log(apiResponse)
+      thisObject.setDataFromApiResponse(apiResponse)
+      thisObject.status.html('Collating... done,<br/>Formatting table <i class="fa fa-spinner fa-spin fa-fw"></i>')
+      thisObject.lastChangeInData = thisObject.getLastChangeInData()
       thisObject.lastTimeLabel.html(thisObject.formatDateTime(thisObject.lastChangeInData))
-      thisObject.witnessInfoDiv.html(thisObject.getVersionInfoHtml(data))
+      thisObject.witnessInfoDiv.html(thisObject.getVersionInfoHtml())
 
-      thisObject.setCsvDownloadFile(data)
+      thisObject.setCsvDownloadFile()
       
       thisObject.status.html('')
       thisObject.redoButton.prop('disabled', false)
       thisObject.updating = false
-      thisObject.collationEngineDetails.html(thisObject.getCollationEngineDetailsHtml(data.collationEngineDetails))
+      thisObject.collationEngineDetailsElement.html(thisObject.getCollationEngineDetailsHtml())
 
       let ev = new EditionViewer( {
-          collationTokens: data.quickEdition.mainTextTokens,
-          apparatusArray: data.quickEdition.apparatusArray,
-          isRightToLeft: (data.quickEdition.textDirection === 'rtl'),
+          collationTokens: thisObject.quickEdition.mainTextTokens,
+          apparatusArray: thisObject.quickEdition.apparatusArray,
+          isRightToLeft: (thisObject.quickEdition.textDirection === 'rtl'),
           addGlue: false
       })
 
       thisObject.editionDiv.html(ev.getHtml())
       let siglaHtml = '<ul class="siglalist">'
-      siglaHtml += '<li>' + 'Base witness: ' + data.quickEdition.baseSiglum + '</li>'
-      for(const abbr in data.quickEdition.abbrToSigla) {
-          siglaHtml += '<li>' + '<em>' + abbr + '</em>: ' + data.quickEdition.abbrToSigla[abbr] + '</li>'
+      siglaHtml += '<li>' + 'Base witness: ' + thisObject.quickEdition.baseSiglum + '</li>'
+      for(const abbr in thisObject.quickEdition.abbrToSigla) {
+          siglaHtml += '<li>' + '<em>' + abbr + '</em>: ' + thisObject.quickEdition.abbrToSigla[abbr] + '</li>'
       }
       siglaHtml += '</ul>'
       thisObject.siglaDiv.html(siglaHtml)
@@ -330,7 +313,7 @@ class AutomaticCollationTable {
         container: 'body'
       })
 
-      thisObject.setupTableEditorFromApiData()
+      thisObject.setupTableEditor()
       
     })
     .fail(function(resp) {
@@ -345,8 +328,70 @@ class AutomaticCollationTable {
       thisObject.updating = false
     })
   }
+
+  setDataFromApiResponse(apiResponse) {
+    this.collationTable = apiResponse.collationTable
+    this.peopleInfo = apiResponse.people
+    this.quickEdition = apiResponse.quickEdition
+    this.collationEngineDetails = apiResponse.collationEngineDetails
+    this.aggregatedNonTokenItemIndexes = this.calculateAggregatedNonTokenItemIndexes()
+
+  }
+
+  aggregateNonTokenItemIndexes(witnessData, tokenRefArray) {
+    let rawNonTokenItemIndexes = witnessData['nonTokenItemIndexes']
+    let numTokens = witnessData['tokens'].length
+
+    let resultingArray = []
+
+    // aggregate post
+    let aggregatedPost = []
+    for (let i = numTokens -1; i >= 0; i--) {
+      let tokenPost = []
+      if (rawNonTokenItemIndexes[i] !== undefined && rawNonTokenItemIndexes[i]['post'] !== undefined) {
+        tokenPost = rawNonTokenItemIndexes[i]['post']
+      }
+      aggregatedPost = aggregatedPost.concat(tokenPost)
+      let tokenIndexRef = tokenRefArray.indexOf(i)
+      if (tokenIndexRef !== -1) {
+        // token i is in the collation table!
+        resultingArray[i] = { post: aggregatedPost }
+        aggregatedPost = []
+      }
+    }
+
+    // aggregate pre
+    let aggregatedPre = []
+    for (let i = 0; i < numTokens; i++ ) {
+      let tokenPre = []
+      if (rawNonTokenItemIndexes[i] !== undefined && rawNonTokenItemIndexes[i]['pre'] !== undefined) {
+        tokenPre = rawNonTokenItemIndexes[i]['pre']
+      }
+      aggregatedPre = aggregatedPre.concat(tokenPre)
+      let tokenIndexRef = tokenRefArray.indexOf(i)
+      if (tokenIndexRef !== -1) {
+        // token i is in the collation table!
+        resultingArray[i]['pre'] = aggregatedPre
+        aggregatedPre = []
+      }
+    }
+    return resultingArray
+  }
+
+
+  calculateAggregatedNonTokenItemIndexes() {
+    let indexes = []
+    for (let witnessIndex = 0; witnessIndex < this.collationTable['witnesses'].length; witnessIndex++) {
+      let tokenRefs = this.collationTable['collationMatrix'][witnessIndex]
+      let witness = this.collationTable['witnesses'][witnessIndex]
+      indexes[witnessIndex] = this.aggregateNonTokenItemIndexes(witness, tokenRefs)
+    }
+
+    return indexes
+  }
   
-  getCollationEngineDetailsHtml(ced) {
+  getCollationEngineDetailsHtml() {
+    let ced = this.collationEngineDetails
     let cedHtml = '<b>Engine:</b> ' + ced.engineName + '<br/>'
 
     cedHtml += '<b>Cached:</b> ' + ced.cached + '<br/>'
@@ -364,22 +409,52 @@ class AutomaticCollationTable {
 
     return cedHtml
   }
-  
-  // setViewSettingsInForm(settings) {
-  //   if (settings.highlightVariants) {
-  //
-  //   }
-  // }
-  //
-  setCsvDownloadFile(data) {
-    let href = 'data:text/csv,' + encodeURIComponent(this.ctf.generateCsv(data))
+
+  setCsvDownloadFile() {
+    let href = 'data:text/csv,' + encodeURIComponent(this.generateCsv())
     this.exportCsvButton.attr('href', href)
   }
 
-  getVersionInfoHtml(apiData) {
-    let ctData = apiData['collationTable']
-    let sigla = ctData['sigla']
-    let witnesses = ctData['witnesses']
+
+  generateCsv(sep = ',') {
+    let collationTable = this.collationTable
+    let sigla = collationTable.sigla
+    let numWitnesses = collationTable.witnesses.length
+
+    let output = ''
+    for (let i=0; i < numWitnesses; i++) {
+      let siglum = sigla[i]
+      output += siglum + sep
+      let ctRefRow = collationTable.collationMatrix[i]
+      for (let tkRefIndex = 0; tkRefIndex < ctRefRow.length; tkRefIndex++) {
+        let tokenRef = ctRefRow[tkRefIndex]
+        let tokenCsvRep = ''
+        if (tokenRef !== -1 ) {
+          let token = collationTable.witnesses[i].tokens[tokenRef]
+          tokenCsvRep = this.getCsvRepresentationForToken(token, this.options.showNormalizations)
+        }
+        output += tokenCsvRep + sep
+      }
+      output += "\n"
+    }
+    return output
+  }
+
+  getCsvRepresentationForToken(tkn, showNormalizations) {
+    if (tkn.empty) {
+      return ''
+    }
+    let text = tkn.text
+    if (showNormalizations) {
+      text = tkn.norm
+    }
+    return '"' + text + '"'
+  }
+
+
+  getVersionInfoHtml() {
+    let sigla = this.collationTable['sigla']
+    let witnesses = this.collationTable['witnesses']
     let html = ''
     html += '<ul>'
     for(let i=0; i < witnesses.length; i++) {
@@ -402,13 +477,6 @@ class AutomaticCollationTable {
     return moment(timeStamp).format('D MMM YYYY, H:mm')
   }
 
-  // padMinutes(minutes) {
-  //   if (minutes < 10) {
-  //     return '0' + minutes
-  //   }
-  //   return minutes
-  // }
-
   supressTimestampFromSystemId(systemId) {
     let fields = systemId.split('-')
     if (fields.length === 6 ) {
@@ -418,11 +486,11 @@ class AutomaticCollationTable {
   }
 
   // Functions for  Table Editor
-  setupTableEditorFromApiData() {
-    let data = this.collationTableData
+  setupTableEditor() {
+    let collationTable = this.collationTable
 
     // div text direction
-    if (this.options.langDef[data['collationTable']['lang']].rtl) {
+    if (this.options.langDef[collationTable['lang']].rtl) {
       this.collationTableDivNew.removeClass(this.ltrClass)
       this.collationTableDivNew.addClass(this.rtlClass)
     } else {
@@ -431,10 +499,10 @@ class AutomaticCollationTable {
     }
 
     let rowDefinition = []
-    for (let i = 0; i < data['collationTable']['sigla'].length; i++) {
-      let witness = data['collationTable'].witnesses[i]
-      let siglum = data['collationTable']['sigla'][i]
-      let tokenArray = data['collationTable']['collationMatrix'][i]
+    for (let i = 0; i < collationTable['sigla'].length; i++) {
+      //let witness = collationTable.witnesses[i]
+      let siglum = collationTable['sigla'][i]
+      let tokenArray = collationTable['collationMatrix'][i]
       rowDefinition.push({
         title: siglum,
         values: tokenArray,
@@ -454,7 +522,7 @@ class AutomaticCollationTable {
       generateCellClasses: this.genGenerateCellClassesFunction(),
       generateCellTdExtraAttributes: this.genGenerateCellTdExtraAttributesFunction()
     })
-    this.variantsMatrix = this.genVariantsMatrix(this.tableEditor.getMatrix(), data['collationTable']['witnesses'])
+    this.variantsMatrix = this.genVariantsMatrix(this.tableEditor.getMatrix(), collationTable['witnesses'])
     this.tableEditor.redrawTable()
   }
 
@@ -464,23 +532,29 @@ class AutomaticCollationTable {
       if (value === -1) {
         return ''
       }
-      let peopleInfo =thisObject.collationTableData['collationTable']['people']
-      let tokenArray = thisObject.collationTableData['collationTable']['witnesses'][row]['tokens']
+      let collationTable = thisObject.collationTable
+      let peopleInfo =thisObject.peopleInfo
+      let witness = collationTable['witnesses'][row]
+      let tokenArray = witness['tokens']
       let token = tokenArray[value]
-      let lang = token['itemData'][0]['lang']
+      let firstSourceItemIndex = token['sourceItems'][0]['index']
+      let lang = witness['lang']
+      if (witness['items'][firstSourceItemIndex]['lang'] !== undefined) {
+        lang = witness['items'][firstSourceItemIndex]['lang']
+      }
       // console.log("Lang: " + lang)
       let langClass = 'popover-' + lang
       let popoverHtml = ''
       popoverHtml += '<p class="popoverheading ' + langClass + '">' + token.text
-      if (token.normalizedText !== token.text) {
+      if (token.normalizedText !== undefined) {
         popoverHtml += '<br/>&equiv; ' + token.normalizedText + '<br/>'
       }
       popoverHtml += '</p>'
       popoverHtml += '<p class="popoveriteminfo ' + langClass + '">'
-      if (token['itemData'].length === 1) {
-        popoverHtml += thisObject.getItemPopoverHtmlForToken(row, token,token['itemData'][0], peopleInfo, false)
+      if (token['sourceItems'].length === 1) {
+        popoverHtml += thisObject.getItemPopoverHtmlForToken(row, token,token['sourceItems'][0], peopleInfo, false)
       } else {
-        for (const itemData of token['itemData']) {
+        for (const itemData of token['sourceItems']) {
           popoverHtml += thisObject.getItemPopoverHtmlForToken(row, token, itemData, peopleInfo, true)
         }
       }
@@ -505,18 +579,29 @@ class AutomaticCollationTable {
 
   getTokenAddressHtml(row, token) {
     let html = ''
-    let itemWithAddressArray = this.collationTableData['collationTable']['witnesses'][row]['items']
-    let itemData = token['itemData'][0]
-    let itemWithAddress = itemWithAddressArray[itemData['itemIndex']]
+    let itemWithAddressArray = this.collationTable['witnesses'][row]['items']
+    let itemData = token['sourceItems'][0]
+    let itemWithAddress = itemWithAddressArray[itemData['index']]
 
-    let page = itemWithAddress.address.foliation
-    let column = token.lineRange.start['textBox']
-    let line = -1
+    let page = itemWithAddress['address'].foliation
+    let column = 0
+    if (typeof(token['textBox']) === 'number') {
+      column = token['textBox']
+    } else {
+      console.info('Found a token with a textBox range in row ' + row)
+      console.log(token)
+      column = token['textBox'].from
+    }
+    let line = ''
     if (column > 10) {
       // this is a marginal really
       column = 'margin'
     } else {
-      line = token.lineRange.start['lineNumber']
+      if (typeof(token.line) === 'number') {
+        line = token.line
+      } else {
+        line = token.line.from + '-' + token.line.to
+      }
     }
 
     html += '<b>Page: </b>' + page + '</br>'
@@ -528,7 +613,7 @@ class AutomaticCollationTable {
     return html
   }
 
-  getItemPopoverHtmlForToken(row, token, itemData, peopleInfo, showItemText = false) {
+  getItemPopoverHtmlForToken(row, token, tokenSourceItemData, peopleInfo, showItemText = false) {
     let popoverHeadingClass = 'popoverheading'
     let unclearIcon = ' <i class="far fa-eye-slash" aria-hidden="true"></i> '
     let deletionIcon = ' &lowast; '
@@ -542,36 +627,39 @@ class AutomaticCollationTable {
       'abbr' : 'Abbreviation'
     }
 
-    let itemWithAddressArray = this.collationTableData['collationTable']['witnesses'][row]['items']
-    let item = itemWithAddressArray[itemData['itemIndex']]['item']
-
+    let itemWithAddressArray = this.collationTable['witnesses'][row]['items']
+    let item = itemWithAddressArray[tokenSourceItemData['index']]
+    let tokenItemText = ''
+    if (item['text'] !== undefined) {
+      tokenItemText = item['text'].substring(tokenSourceItemData.charRange.from, tokenSourceItemData.charRange.to+1)
+    }
     if (item.type !== 'TextualItem') {
       return ''
     }
-    if (itemData.text === "\n") {
+    if (tokenItemText === "\n") {
       return ''
     }
 
     let html = ''
     let indentHtml = ''
     if (showItemText) {
-      html += itemBullet + itemData.text + lineBreakHtml
+      html += itemBullet + tokenItemText + lineBreakHtml
       indentHtml = oneIndentUnit
     }
     let isNormalText = true
-    if (item.hand !== 0) {
+    if (item.hand !== undefined) {
       html += indentHtml + '<b>Hand: </b>' + (item.hand +1) + lineBreakHtml
     }
-    if (item.format !== '') {
+    if (item.format !== undefined) {
       html += indentHtml + '<b>Format: </b>' + item.format + lineBreakHtml
       isNormalText = false
     }
-    if (item.clarity === 0) {
+    if (item['clarity'] === 0) {
       html += indentHtml + '<b>Illegible</b>' + lineBreakHtml
-      html += indentHtml + unclearIcon + item.clarityReason
+      html += indentHtml + unclearIcon + item['clarityReason']
       isNormalText = false
     }
-    if (item.clarity === 0.5) {
+    if (item['clarity'] === 0.5) {
       html += indentHtml + '<b>Unclear</b>' + lineBreakHtml
       html += indentHtml + unclearIcon + item.clarityReason
       isNormalText = false
@@ -581,20 +669,20 @@ class AutomaticCollationTable {
       html += indentHtml + locationIcon + item.location
       isNormalText = false
     }
-    if (item.deletion !== '') {
+    if (item.deletion !== undefined) {
       html += indentHtml + '<b>Deletion</b>'+ lineBreakHtml
       html += indentHtml + deletionIcon + item.deletion
       isNormalText = false
     }
-    if (item.normalizationType !== '') {
+    if (item.normalizationType !== undefined) {
       let normLabel = item.normalizationType
       if (normalizationLabels[item.normalizationType] !== undefined) {
         normLabel = normalizationLabels[item.normalizationType]
       }
 
       html += indentHtml +  '<b>' + normLabel + '</b>' + lineBreakHtml
-      html += '+ ' + itemData.text + lineBreakHtml
-      if (token.normalizedText === itemData.text) {
+      html += '+ ' + tokenItemText + lineBreakHtml
+      if (token.normalizedText === tokenItemText) {
         html += '= ' + '(no reading given)'
       } else {
         html += '= ' + token.normalizedText
@@ -608,7 +696,7 @@ class AutomaticCollationTable {
     html += lineBreakHtml
 
     // notes
-    if (item.notes.length > 0) {
+    if (item.notes !== undefined && item.notes.length > 0) {
       html += indentHtml + '<b>Notes</b>' + lineBreakHtml
       html += this.getNotesHtml(item.notes, peopleInfo)
     }
@@ -639,23 +727,27 @@ class AutomaticCollationTable {
       if (value === -1) {
         return '&mdash;'
       }
-      let tokenArray = thisObject.collationTableData['collationTable']['witnesses'][row]['tokens']
+      let tokenArray = thisObject.collationTable['witnesses'][row]['tokens']
       let token = tokenArray[value]
       let postNotes = thisObject.getPostNotes(row, col, value)
-      if (token['itemData'].length === 1 && postNotes.length === 0) {
-        if (thisObject.viewSettings.showNormalizations && token.text !== token.normalizedText) {
+      if (token['sourceItems'].length === 1 && postNotes.length === 0) {
+        if (thisObject.viewSettings.showNormalizations && token.normalizedText !== undefined) {
           return token.normalizedText + normalizationSymbol
         }
         return token.text
       }
       // spans for different items
-      let itemWithAddressArray = thisObject.collationTableData['collationTable']['witnesses'][row]['items']
+      let itemWithAddressArray = thisObject.collationTable['witnesses'][row]['items']
       let cellHtml = ''
-      for (const itemData of token['itemData']) {
-        let theItem = itemWithAddressArray[itemData['itemIndex']]['item']
-        if (theItem.type === 'TextualItem' && itemData['text'] !== "\n") {
+      for (const itemData of token['sourceItems']) {
+        let theItem = itemWithAddressArray[itemData['index']]
+        let itemText = ''
+        if (theItem['text'] !== undefined) {
+          itemText = theItem['text'].substring(itemData.charRange.from, itemData.charRange.to + 1)
+        }
+        if (theItem.type === 'TextualItem' && itemText!== "\n") {
           cellHtml += '<span class="' + thisObject.getClassesFromItem(theItem).join(' ') + '">'
-          cellHtml += itemData['text']
+          cellHtml += itemText
           cellHtml += '</span>'
         }
       }
@@ -670,13 +762,16 @@ class AutomaticCollationTable {
 
   getPostNotes(row, col, tokenIndex) {
     //console.log('Get post notes: r' + row + ' c' + col + ' i' + tokenIndex)
-    let postItemIndexes = this.collationTableData['collationTable']['aggregatedNonTokenItemIndexes'][row][tokenIndex]['post']
-    let itemWithAddressArray = this.collationTableData['collationTable']['witnesses'][row]['items']
+    let postItemIndexes = this.aggregatedNonTokenItemIndexes[row][tokenIndex]['post']
+    let itemWithAddressArray = this.collationTable['witnesses'][row]['items']
     let notes = []
     for(const itemIndex of postItemIndexes) {
-
-      let theItem = itemWithAddressArray[itemIndex]['item']
-      for(const note of theItem.notes) {
+      let theItem = itemWithAddressArray[itemIndex]
+      let itemNotes = []
+      if (theItem.notes !== undefined) {
+        itemNotes = theItem.notes
+      }
+      for(const note of itemNotes) {
         notes.push(note)
       }
     }
@@ -689,10 +784,11 @@ class AutomaticCollationTable {
       if (value === -1) {
         return [ 'emptytoken']
       }
-      let tokenArray = thisObject.collationTableData['collationTable']['witnesses'][row]['tokens']
-      let itemWithAddressArray = thisObject.collationTableData['collationTable']['witnesses'][row]['items']
+      let tokenArray = thisObject.collationTable['witnesses'][row]['tokens']
+      let itemWithAddressArray = thisObject.collationTable['witnesses'][row]['items']
 
       let token = tokenArray[value]
+
       let classes = thisObject.getTokenClasses(token)
       // popoverclass
       classes.push('withpopover')
@@ -701,13 +797,16 @@ class AutomaticCollationTable {
         classes.push('variant_' + thisObject.variantsMatrix.getValue(row, col))
       }
       // get itemZero
-      let itemZeroIndex = token['itemData'][0]['itemIndex']
-      let itemZero = itemWithAddressArray[itemZeroIndex]['item']
-
+      let itemZeroIndex = token['sourceItems'][0]['index']
+      let itemZero = itemWithAddressArray[itemZeroIndex]
 
       // language class
-      classes.push( itemZero['language'] + '-td')
-      if (token['itemData'].length === 1) {
+      let lang = thisObject.collationTable['witnesses'][row]['lang']
+      if (itemZero['lang'] !== undefined) {
+        lang = itemZero['lang']
+      }
+      classes.push( lang + '-td')
+      if (token['sourceItems'].length === 1) {
         // td inherits the classes from the single source item
         return classes.concat(thisObject.getClassesFromItem(itemZero))
       }
@@ -717,20 +816,25 @@ class AutomaticCollationTable {
 
   getClassesFromItem(item) {
     let classes = []
-    classes.push( 'hand_' + item.hand)
-    if (item.format !== '') {
+    let hand = 0
+    if (item.hand !== undefined) {
+      hand = item.hand
+    }
+    classes.push( 'hand_' + hand)
+
+    if (item.format !== undefined && item.format !== '') {
       classes.push(item.format)
     }
-    if (item.clarity !== 1) {
+    if (item.clarity !== undefined && item.clarity !== 1) {
       classes.push('unclear')
     }
-    if (item.textualFlow === 1) {
+    if (item.textualFlow!== undefined && item.textualFlow === 1) {
       classes.push('addition')
     }
-    if (item.deletion !== '') {
+    if (item.deletion !== undefined && item.deletion !== '') {
       classes.push('deletion')
     }
-    if (item.normalizationType !== '') {
+    if (item.normalizationType !== undefined && item.normalizationType !== '') {
       classes.push(item.normalizationType)
     }
     return classes
@@ -738,14 +842,14 @@ class AutomaticCollationTable {
 
   getTokenClasses(token) {
     let classes = []
-    classes.push('tokentype_' + token.type)
+    classes.push('tokentype_' + token.tokenType)
     return classes
   }
 
   genGenerateTableClassesFunction() {
     let thisObject = this
     return function() {
-      let langCode = thisObject.collationTableData['collationTable']['lang']
+      let langCode = thisObject.collationTable['lang']
       return [ ('te-table-' + langCode) ]
     }
   }

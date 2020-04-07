@@ -37,6 +37,9 @@ class CollationTableFormatter {
     this.normalizationPostfix = '<sub class="text-muted">&nbsp;<b>N</b></sub>'
     this.variantClassPrefix = 'variant'
     this.maxColumnsPerTable = 15
+
+    this.collationTable = {}
+    this.peopleInfo = []
   }
 
   getOptions () {
@@ -58,7 +61,6 @@ class CollationTableFormatter {
   }
 
   generateCsv(data, sep = ',') {
-
     let collationTable = data.collationTable
     let sigla = collationTable.sigla
     let numWitnesses = collationTable.witnesses.length
@@ -92,11 +94,20 @@ class CollationTableFormatter {
     }
     return '"' + text + '"'
   }
+
+  setDataFromApiResponse(collationTable, peopleInfo) {
+    this.collationTable = collationTable
+    this.peopleInfo = peopleInfo
+  }
   
   format(apiResponse, popoverClass) {
-    
-    let sigla = apiResponse.sigla
-    let collationTable = apiResponse.collationTable
+
+   this.setDataFromApiResponse(apiResponse.standardData, apiResponse.people)
+
+    //let sigla = apiResponse.sigla
+    let sigla = this.collationTable.sigla
+    //let collationTable = apiResponse.collationTable
+    let collationTable = this.collationTable
     let numWitnesses = sigla.length
     let options = this.options
     let numColumns = collationTable[sigla[0]].length

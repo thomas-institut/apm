@@ -23,6 +23,7 @@ namespace APM\Api;
 
 use APM\Engine\Engine;
 use APM\FullTranscription\ApmTranscriptionWitness;
+use APM\StandardData\CollationTableDataProvider;
 use APM\System\Decorators\ApmCollationTableDecorator;
 use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
@@ -361,13 +362,26 @@ class ApiCollation extends ApiController
         
         $this->profiler->lap('Collation table built from collation engine output');
         $userDirectory = new UserManagerUserInfoProvider($dataManager->userManager);
+//
+//        $newDecorator = new ApmCollationTableDecorator();
+//        $newDecorator->setLogger($this->logger);
+//        $newDecorator->setUserInfoProvider($userDirectory);
+//        $decoratedCollationTableNew = $newDecorator->decorate($collationTable);
 
-        $newDecorator = new ApmCollationTableDecorator();
-        $newDecorator->setLogger($this->logger);
-        $newDecorator->setUserInfoProvider($userDirectory);
-        $decoratedCollationTableNew = $newDecorator->decorate($collationTable);
-        
-        $this->profiler->lap('Collation table decorated');
+
+//        $this->profiler->lap('Collation table decorated');
+
+        $ctStandardDataProvider = new CollationTableDataProvider($collationTable);
+        $standardData = $ctStandardDataProvider->getStandardData();
+        $userIds = $ctStandardDataProvider->getUserIdsFromData($standardData);
+        $people = [];
+        foreach($userIds as $userId) {
+            $people[$userId] = [
+                'fullName' => $userDirectory->getFullNameFromId($userId),
+                'shortName' => $userDirectory->getShortNameFromId($userId)
+                ];
+        }
+
         
         // EXPERIMENTAL quick edition
         
@@ -387,18 +401,24 @@ class ApiCollation extends ApiController
             'type' => 'auto',
             'collationTableCacheId' => $collationTableCacheId,
             'collationEngineDetails' => $collationEngineDetails,
-            'collationTable' => $decoratedCollationTableNew,
+//            'collationTable' => $decoratedCollationTableNew,
+            'collationTable' => $standardData,
+            'people' => $people,
             'quickEdition' => $quickEdition
         ];
 
         // let's cache it!
         $this->profiler->start();
         $jsonToCache = json_encode($responseData, JSON_UNESCAPED_UNICODE);
-        // zip it, just for fun
+        // gzip it, just for fun
         $zipped = gzcompress($jsonToCache);
-        $this->logger->debug("Caching automatic collation, JSON size = " . strlen($jsonToCache) . " bytes; zipped : " . strlen($zipped));
+        $this->logger->debug("Caching automatic collation, JSON size = " . strlen($jsonToCache) . " bytes; gzipped : " . strlen($zipped));
         //$cache->set($cacheKey,$jsonToCache);
         $cache->set($cacheKey,$zipped);
+
+//        $standardDataJson = json_encode($responseData['standardData'], JSON_UNESCAPED_UNICODE);
+//        $zippedStandardData = gzcompress($standardDataJson);
+//        $this->logger->debug("Standard data, JSON size = " . strlen($standardDataJson) . " bytes; zipped : " . strlen($zippedStandardData));
         $this->profiler->stop();
 
         $this->logProfilerData("CollationTable-$workId-$chunkNumber-$language, encoding and storing in cache");

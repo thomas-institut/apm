@@ -216,6 +216,11 @@ $app->group('', function (RouteCollectorProxy $group){
         SiteCollationTable::class . ':automaticCollationPageCustom')
         ->setName('chunk.collationtable.custom');
 
+    // edit collation table
+    $group->get('/collation/edit/{work}/{chunk}/{tableId}',
+        SiteCollationTable::class . ':editCollationTable')
+        ->setName('collationtable.edit');
+
     // DOCS
 
     $group->get('/documents',
@@ -347,11 +352,16 @@ $app->group('/api', function (RouteCollectorProxy $group){
         ApiWitness::class . ':getWitness')
         ->setName('api.witness.get');
 
-    // AUTOMATIC COLLATION
+    // COLLATION TABLES
 
     $group->post('/collation/auto',
         ApiCollation::class . ':automaticCollation')
         ->setName('api.collation.auto');
+
+
+    $group->post('/collation/save',
+        ApiCollation::class . ':saveCollationTable')
+        ->setName('api.collation.save');
 
     //  EDITION ENGINE
 

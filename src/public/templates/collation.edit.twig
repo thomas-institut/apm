@@ -1,0 +1,44 @@
+{% extends "base.twig" %}
+{% import 'macros.twig' as macros %}
+
+{% block title %}CT {{workId}}-{{chunkNumber}} ({{ tableId }}){% endblock %}
+
+{% block extraJS %}
+<link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/collationtable.css" />
+<link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/act-settingsform.css" />
+<script type="text/javascript" src="{{baseurl}}/node_modules//twig/twig.js"></script>
+<script type="application/javascript" src="{{baseurl}}/js/AutoCollTableSettingsForm.js"></script>
+<script type="application/javascript" src="{{baseurl}}/js/AutoCollTableViewSettingsForm.js"></script>
+<script type="application/javascript" src="{{baseurl}}/js/AutomaticCollationTable.js"></script>
+<script type="application/javascript" src="{{baseurl}}/js/CollationTableFormatter.js"></script>
+<script type="application/javascript" src="{{baseurl}}/js/Typesetter.js"></script>
+<script type="application/javascript" src="{{baseurl}}/js/EditionViewer.js"></script>
+<script type="text/javascript" src="{{baseurl}}/js/Matrix.js"></script>
+<script type="text/javascript" src="{{baseurl}}/js/TableEditor.js"></script>
+<style>
+
+</style>
+<script>
+  $(function() {// .ready()
+
+    console.log('Collation table edit')
+    })
+    </script>
+{% endblock %}
+
+{% block content %}
+
+    <ol class="breadcrumb">
+        <li><a href="{{url_for('chunks')}}">Chunks</a></li>
+        <li><a href="{{url_for('chunk', {'work' : workId, 'chunk': chunkNumber})}}">{{workId}}-{{chunkNumber}}</a></li>
+        <li>Collation table {{ tableId }}</li>
+    </ol>
+
+<h1>Collation table edit {{ tableId }}</h1>
+
+    <p> {{ workId }}-{{ chunkNumber }}</p>
+
+    <p> Coming soon...</p>
+
+{% endblock %}
+

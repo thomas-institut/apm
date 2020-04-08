@@ -60,6 +60,7 @@ class SiteCollationTable extends SiteController
     const TEMPLATE_ERROR = 'chunk.collation.error.twig';
     const TEMPLATE_QUICK_COLLATION = 'collation.quick.twig';
     const TEMPLATE_COLLATION_TABLE = 'collationtable.twig';
+    const TEMPLATE_EDIT_COLLATION_TABLE = 'collation.edit.twig';
 
     /**
      * @param Request $request
@@ -73,6 +74,22 @@ class SiteCollationTable extends SiteController
             'contactEmail' => $this->config['support_contact_email']
         ]);
 
+    }
+
+
+    public function editCollationTable(Request $request, Response $response) {
+        $workId = $request->getAttribute('work');
+        $chunkNumber = intval($request->getAttribute('chunk'));
+        $tableId = intval($request->getAttribute('tableId'));
+
+        $this->logger->info("Edit collation table $workId-$chunkNumber, id $tableId");
+
+
+        return $this->renderPage($response, self::TEMPLATE_EDIT_COLLATION_TABLE, [
+            'workId' => $workId,
+            'chunkNumber' => $chunkNumber,
+            'tableId' => $tableId
+        ]);
     }
 
     /**

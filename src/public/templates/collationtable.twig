@@ -34,7 +34,9 @@
     let isPreset = JSON.parse({{ isPreset|json_encode }})
     let suppressTimeStampsInApiCalls = JSON.parse({{ suppressTimestampsInApiCalls|json_encode }})
 
-    let actOptions =  {   
+    let actOptions =  {
+        workId: '{{ work }}',
+        chunkNumber : parseInt({{ chunk }}),
         urlGenerator: urlGenerator,
         availableWitnesses: availableWitnesses,
         loadNow: true, 
@@ -81,6 +83,9 @@
                  </p>
                 <div id="versioninfo" class="ct-versioninfo">
                 </div>
+                <div id="collationTableActions">
+                    <button id="savetablebutton" class="btn btn-primary" title="Save table to edit later">Save Table</button>
+                </div>
             </div>
 
         </div>
@@ -113,8 +118,7 @@
         <div id="theedition"></div>
         <div id="sigla"></div>
     </div>
-{#    <div id="collationtablediv" class="ctdiv ltrtext"></div>#}
-    <div id="newcollationtablediv" class="ctdiv">New collation table goes here</div>
+    <div id="collationtablediv" class="ctdiv">Collation table goes here</div>
     <div id="collationEngineDetails" class="text-muted small"> </div>
     
     

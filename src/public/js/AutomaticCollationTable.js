@@ -33,6 +33,8 @@ class AutomaticCollationTable {
     //this.options = this.getCleanOptionsObject(options)
 
     let optionsDefinition = {
+      workId : { type: 'string', required: true},
+      chunkNumber: {type: 'NonZeroNumber', required: true},
       langDef : { type: 'object', default: {
           la: { code: 'la', name: 'Latin', rtl: false, fontsize: 3},
           ar: { code: 'ar', name: 'Arabic', rtl: true, fontsize: 3},
@@ -60,7 +62,7 @@ class AutomaticCollationTable {
     
     this.availableWitnesses = this.options.availableWitnesses
     this.collationTableDiv = $('#collationtablediv')
-    this.collationTableNewDivId = 'newcollationtablediv'
+    this.collationTableNewDivId = 'collationtablediv'
     this.collationTableDivNew = $('#' + this.collationTableNewDivId)
     this.actTitleElement = $('#act-title')
     this.status = $('#status')
@@ -73,9 +75,12 @@ class AutomaticCollationTable {
     this.lastTimeLabel = $('#lastTimeLabel')
     this.editionContainer = $('#editiondiv')
     this.editionDiv = $('#theedition')
+    this.collationTableActionsDiv = $('#collationTableActions')
+    this.saveTableButton = $('#savetablebutton')
     this.siglaDiv = $('#sigla')
     this.apiCollationUrl = this.options.urlGenerator.apiAutomaticCollation()
     this.apiQuickEditionUrl = this.options.urlGenerator.apiAutomaticEdition()
+    this.apiSaveCollationUrl = this.options.urlGenerator.apiSaveCollation()
     this.updating = false
 
     // generate witness titles
@@ -107,10 +112,6 @@ class AutomaticCollationTable {
       }
     }
 
-    // Get last change in data
-    // (not yet, it will be done from API response data)
-    //this.lastChangeInData = this.getLastChangeInDataFromAvailableWitnesses(this.availableWitnesses, initialApiOptions)
-
     // TODO: change this to a reasonable default
     this.collationTable = null
     this.peopleInfo = []
@@ -130,6 +131,9 @@ class AutomaticCollationTable {
     let thisObject = this
 
 
+    // save table button
+    this.saveTableButton.on('click', this.genOnClickSaveTableButton())
+
     
     this.viewSettingsFormManager = new AutomaticCollationTableViewSettingsForm(this.viewSettingsFormSelector)
     this.viewSettingsButton.on('click', function () { 
@@ -139,6 +143,7 @@ class AutomaticCollationTable {
         thisObject.viewSettingsFormManager.hide()
       }
     })
+
 
     this.witnessInfoDiv.addClass('hidden')
     this.versionInfoButton.on('click', function () {
@@ -176,7 +181,8 @@ class AutomaticCollationTable {
       urlGenerator: this.options.urlGenerator,
       userId:  this.options.userId,
       isPreset: this.options.isPreset,
-      suppressTimestampsInSettings:  this.options.suppressTimestampsInApiCalls
+      suppressTimestampsInSettings:  this.options.suppressTimestampsInApiCalls,
+      applyButtonText: 'Redo collation'
     }
     if (this.options.isPreset) {
       actSettingsFormOptions.preset = this.options.preset
@@ -235,6 +241,38 @@ class AutomaticCollationTable {
     }
   }
 
+  genOnClickSaveTableButton() {
+    let thisObject = this
+    return function () {
+      if (this.tableSaved) {
+        console.log('Save table button clicked, but table is already saved')
+        return false
+      }
+      console.log('Saving table via API call to ' + thisObject.apiSaveCollationUrl)
+      let apiCallOptions = {
+        collationTable: thisObject.collationTable,
+        source: 'auto',
+        baseSiglum: thisObject.collationTable.sigla[0]
+      }
+      $.post(
+        thisObject.apiSaveCollationUrl,
+        {data: JSON.stringify(apiCallOptions)}
+      ).done( function (apiResponse){
+        console.log("Success saving table")
+        console.log(apiResponse)
+        let tableId = apiResponse['tableId']
+        let url = thisObject.options.urlGenerator.siteEditCollationTable(thisObject.options.workId, thisObject.options.chunkNumber, tableId)
+
+        thisObject.collationTableActionsDiv.html('Table saved: <a href="' + url + '">Edit table</a>')
+
+      }).fail(function(resp){
+        console.error("Cannot save table")
+        console.log(resp)
+      })
+
+    }
+  }
+
   fetchQuickEdition() {
     this.editionDiv.html("Querying the server... <i class=\"fa fa-spinner fa-spin fa-fw\"></i>")
     console.log('Calling API at ' + this.apiQuickEditionUrl)
@@ -286,8 +324,9 @@ class AutomaticCollationTable {
     this.redoButton.prop('disabled', true)
     this.actTitleElement.html(this.getTitleFromOptions())
     this.status.html('Collating... <i class="fa fa-spinner fa-spin fa-fw"></i>')
-    this.collationTableDiv.html('')
+    //this.collationTableDiv.html('')
     this.collationTableDivNew.html('')
+    this.collationTableActionsDiv.addClass('hidden')
     this.collationEngineDetailsElement.html('')
      this.editionContainer.addClass('hidden')
     this.lastTimeLabel.html('TBD...')
@@ -314,6 +353,7 @@ class AutomaticCollationTable {
       thisObject.redoButton.prop('disabled', false)
       thisObject.updating = false
       thisObject.collationEngineDetailsElement.html(thisObject.getCollationEngineDetailsHtml())
+      thisObject.collationTableActionsDiv.removeClass('hidden')
 
       // let ev = new EditionViewer( {
       //     collationTokens: thisObject.quickEdition.mainTextTokens,

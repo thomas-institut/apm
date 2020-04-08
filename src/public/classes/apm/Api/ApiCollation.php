@@ -408,6 +408,24 @@ class ApiCollation extends ApiController
         return $this->responseWithJsonRaw($response, $jsonToCache);
     }
 
+    public function saveCollationTable(Request $request, Response $response) {
+
+        $apiCall = 'CollationSave';
+        $requiredFields = [ ];
+
+        $inputDataObject = $this->checkAndGetInputData($request, $response, $apiCall, $requiredFields);
+        if (!is_array($inputDataObject)) {
+            return $inputDataObject;
+        }
+        $this->logger->debug("Save Collation api call");
+        $responseData = [
+            'status' => 'Faking it',
+            'tableId' => random_int(1,500)
+            ];
+
+        return $this->responseWithJson($response, $responseData);
+    }
+
 
     /**
      * @param string $workId

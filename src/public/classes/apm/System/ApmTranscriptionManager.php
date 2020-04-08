@@ -40,9 +40,11 @@ use AverroesProjectToApm\DatabaseItemStream;
 use RuntimeException;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
+use ThomasInstitut\DataCache\CacheAware;
 use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\InMemoryDataCache;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\DataCache\SimpleCacheAware;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
 use ThomasInstitut\Profiler\CacheTracker;
@@ -61,7 +63,8 @@ use ThomasInstitut\ErrorReporter\ErrorReporter;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
 
 class ApmTranscriptionManager extends TranscriptionManager
-    implements SqlQueryCounterTrackerAware, CacheTrackerAware, ErrorReporter, LoggerAwareInterface, CodeDebugInterface
+    implements SqlQueryCounterTrackerAware,
+                CacheAware, CacheTrackerAware, ErrorReporter, LoggerAwareInterface, CodeDebugInterface
 {
 
     use SimpleSqlQueryCounterTrackerAware {
@@ -74,6 +77,7 @@ class ApmTranscriptionManager extends TranscriptionManager
     use SimpleErrorReporterTrait;
     use LoggerAwareTrait;
     use CodeDebugWithLoggerTrait;
+    use SimpleCacheAware;
 
     const ERROR_DOCUMENT_NOT_FOUND = 50;
 
@@ -135,10 +139,6 @@ class ApmTranscriptionManager extends TranscriptionManager
      * @var ApmDocManager
      */
     private $docManager;
-    /**
-     * @var DataCache
-     */
-    private $dataCache;
 
     /**
      * @var InMemoryDataCache
@@ -148,6 +148,7 @@ class ApmTranscriptionManager extends TranscriptionManager
      * @var string
      */
     private $cacheKeyPrefix;
+
 
     public function __construct(PDO $dbConn, array $tableNames, LoggerInterface $logger)
     {
@@ -186,11 +187,12 @@ class ApmTranscriptionManager extends TranscriptionManager
         $this->columnVersionManager = new ApmColumnVersionManager($this->txVersionsTable);
 
         $this->dataCache = new InMemoryDataCache();
-        $this->cacheKeyPrefix = self::DEFAULT_CACHE_KEY_PREFIX;
+        $this->setCacheKeyPrefix( self::DEFAULT_CACHE_KEY_PREFIX);
 
         $this->localMemCache = new InMemoryDataCache();
 
         $this->setLogger($logger);
+        $this->cacheOn = true;
     }
 
 
@@ -205,11 +207,6 @@ class ApmTranscriptionManager extends TranscriptionManager
     {
         $this->localSetCacheTracker($tracker);
         // set trackers downstream here ...
-    }
-
-    public function setDataCache(DataCache $cache) : void {
-        $this->dataCache = $cache;
-        // set caches downstream here
     }
 
     public function setCacheKeyPrefix(string $prefix): void {
@@ -265,27 +262,29 @@ class ApmTranscriptionManager extends TranscriptionManager
             $timeStamp = $this->getLastChangeTimestampForWitness($workId, $chunkNumber, $docId, $localWitnessId);
         }
 
-        // first, check if it's in the cache
-        $cacheKey = $this->getCacheKeyForWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
-        $cacheValue = '';
-        try {
-            $cacheValue = $this->dataCache->get($cacheKey);
-        } catch (KeyNotInCacheException $e) {
-        }
-
-        if ($cacheValue !== '') {
-            $this->codeDebug("Getting witness from cache");
-            // cache hit!
-            $this->cacheTracker->incrementHits();
-            $txWitness = unserialize($cacheValue);
-            if ($txWitness === false) {
-                throw new RuntimeException('Error unserializing from witness cache');
+        if ($this->cacheOn) {
+            // first, check if it's in the cache
+            $cacheKey = $this->getCacheKeyForWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
+            $cacheValue = '';
+            try {
+                $cacheValue = $this->dataCache->get($cacheKey);
+            } catch (KeyNotInCacheException $e) {
             }
-            return $txWitness;
+
+            if ($cacheValue !== '') {
+                $this->codeDebug("Getting witness from cache");
+                // cache hit!
+                $this->cacheTracker->incrementHits();
+                $txWitness = unserialize($cacheValue);
+                if ($txWitness === false) {
+                    throw new RuntimeException('Error unserializing from witness cache');
+                }
+                return $txWitness;
+            }
+            // cache miss
+            $this->cacheTracker->incrementMisses();
         }
 
-        // cache miss
-        $this->cacheTracker->incrementMisses();
 
         $locations = $this->getSegmentLocationsForFullTxWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
         //$this->codeDebug('Locations', $locations);
@@ -319,14 +318,15 @@ class ApmTranscriptionManager extends TranscriptionManager
         $firstPageId = $firstLocation->start->pageId;
         $firstColumn = $firstLocation->start->columnNumber;
         $firstLineNumber = $this->getInitialLineNumberForStartLocation( $firstLocation, $timeStamp);
-        //$this->logger->debug('First Line number: ' . $firstLineNumber);
+        $this->logger->debug('First Line number: ' . $firstLineNumber);
         $txWitness->setInitialLineNumberForTextBox($firstPageId, $firstColumn, $firstLineNumber);
 
-        $this->dataCache->set($cacheKey, serialize($txWitness));
-        $this->cacheTracker->incrementCreate();
+        if ($this->cacheOn) {
+            $this->dataCache->set($cacheKey, serialize($txWitness));
+            $this->cacheTracker->incrementCreate();
+        }
 
         return $txWitness;
-
     }
 
     private function calcSeqNumber(ApmChunkMarkLocation $loc)
@@ -339,20 +339,30 @@ class ApmTranscriptionManager extends TranscriptionManager
     }
 
     private function getInitialLineNumberForStartLocation(ApmChunkSegmentLocation $location, string $timeString) : int {
+        $this->codeDebug("Getting initial line numbers for start location");
         $seqNumberStart = $this->calcSeqNumber($location->start);
         $seqNumberColumnStart = $this->calcSeqNumberGeneric($location->start->pageSequence, $location->start->columnNumber, 0 , 0);
 
         $rows = $this->getItemRowsBetweenSeqNumbers($seqNumberColumnStart, $seqNumberStart, $timeString, $location->start->docId);
+        $this->codeDebug("Got " . count($rows) . " rows");
         $lineNumber = 1;
-        foreach ($rows as $row) {
-            $lineNumber += substr_count($row['text'], "\n");
+        foreach ($rows as $i => $row) {
+            //$this->codeDebug("Row $i", $row);
+            if (intval($row['e.type']) === Element::LINE) {
+                $nNewLines = substr_count($row['text'], "\n");
+                //$this->codeDebug("Got $nNewLines new lines in line element, index $i");
+                $lineNumber +=  $nNewLines;
+
+            } else {
+                $this->codeDebug("Got element type " . $row['e.type'] );
+            }
         }
         return $lineNumber;
     }
 
     private function getItemRowsBetweenSeqNumbers(int $seqNumberStart, int $seqNumberEnd, string $timeString, int $docId) : array {
 
-        // TODO: Deal with line gaps, probably they should be converted to a textual items with new lines in it.
+        // TODO: Deal with line gaps, those will NOT appear in the results of the current query since they do not have items
 
         if ($seqNumberStart >= $seqNumberEnd) {
             return [];
@@ -370,7 +380,7 @@ class ApmTranscriptionManager extends TranscriptionManager
             " JOIN ($te FORCE INDEX (page_id_2), $tp)" .
             " ON ($te.id=$ti.ce_id AND $tp.id=$te.page_id)" .
             " WHERE $tp.doc_id=" . $docId  .
-            " AND $te.type=" . Element::LINE .
+         //   " AND $te.type=" . Element::LINE .
             " AND ($tp.seq*1000000 + $te.column_number*10000 + $te.seq * 100 + $ti.seq) > $seqNumberStart" .
             " AND ($tp.seq*1000000 + $te.column_number*10000 + $te.seq * 100 + $ti.seq) < $seqNumberEnd" .
             " AND $ti.valid_from<='$timeString'" .
@@ -379,7 +389,6 @@ class ApmTranscriptionManager extends TranscriptionManager
             " AND $ti.valid_until>'$timeString'" .
             " AND $te.valid_until>'$timeString'" .
             " AND $tp.valid_until>'$timeString'" .
-            //" AND $tp.valid_until='" . TimeString::END_OF_TIMES . "'" .
             " ORDER BY $tp.seq, $te.column_number, $te.seq, $ti.seq ASC";
 
         $r = $this->databaseHelper->query($query);
@@ -401,40 +410,56 @@ class ApmTranscriptionManager extends TranscriptionManager
         $items = [];
         $additionItemsAlreadyInOutput = [];
         foreach($rows as $inputRow) {
-            switch( (int) $inputRow['type']) {
-                case ApItem::DELETION:
-                case ApItem::UNCLEAR:
-                case ApItem::MARGINAL_MARK:
-                    $items[] = $inputRow;
-                    $additionItem  = $this->getAdditionItemWithGivenTarget((int) $inputRow['id'], $timeString);
-                    if ($additionItem) {
-                        $fieldsToCopy = ['e.type', 'page_id', 'col', 'e.seq', 'e.hand_id', 'reference', 'placement', 'p.seq', 'foliation'];
-                        foreach ($fieldsToCopy as $field) {
-                            $additionItem[$field] = $inputRow[$field];
-                        }
-                        $items[] = $additionItem;
-                        $additionItemsAlreadyInOutput[] = (int) $additionItem['id'];
-                    } else {
-                        $additionElementId = $this->getAdditionElementIdWithGivenReference((int) $inputRow['id'], $timeString);
-                        if ($additionElementId) {
-                            $additionElementItemStream = $this->getItemStreamForElementId($additionElementId, $timeString);
-                            foreach($additionElementItemStream as $additionItem) {
-                                $items[] = $additionItem;
+//            if ($inputRow['e.type'] === Element::LINE_GAP) {
+//                $items[] = $inputRow;
+//                continue;
+//            }
+
+            if (intval($inputRow['e.type']) === Element::LINE) {
+                switch( (int) $inputRow['type']) {
+                    case ApItem::DELETION:
+                    case ApItem::UNCLEAR:
+                    case ApItem::MARGINAL_MARK:
+                        $items[] = $inputRow;
+                        $additionItem  = $this->getAdditionItemWithGivenTarget((int) $inputRow['id'], $timeString);
+                        if ($additionItem) {
+                            // found an addition item that replaces the item
+                            // force the addition to be located in the same element as the item it replaces
+                            $fieldsToCopy = ['e.type', 'page_id', 'col', 'e.seq', 'e.hand_id', 'reference', 'placement', 'p.seq', 'foliation'];
+                            foreach ($fieldsToCopy as $field) {
+                                $additionItem[$field] = $inputRow[$field];
+                            }
+                            $items[] = $additionItem;
+                            $additionItemsAlreadyInOutput[] = (int) $additionItem['id'];
+                        } else {
+                            // not an item, it should be an addition element
+                            $additionElementId = $this->getAdditionElementIdWithGivenReference((int) $inputRow['id'], $timeString);
+                            if ($additionElementId) {
+                                $additionElementItemStream = $this->getItemStreamForElementId($additionElementId, $timeString);
+                                foreach($additionElementItemStream as $additionItem) {
+                                    $items[] = $additionItem;
+                                }
                             }
                         }
-                    }
-                    break;
+                        break;
 
-                case ApItem::ADDITION:
-                    if (!in_array((int)$inputRow['id'], $additionItemsAlreadyInOutput)) {
+                    case ApItem::ADDITION:
+                        if (!in_array((int)$inputRow['id'], $additionItemsAlreadyInOutput)) {
+                            $items[] = $inputRow;
+                        }
+                        break;
+
+                    default:
                         $items[] = $inputRow;
-                    }
-                    break;
-
-                default:
-                    $items[] = $inputRow;
+                }
+                continue;
             }
+            if (intval($inputRow['e.type']) === Element::GLOSS) {
+                $items[] = $inputRow;
+            }
+
         }
+        //$this->codeDebug("Processed " . count($rows) . " rows, generated " . count($items) . " item rows", $items);
         return $items;
     }
 

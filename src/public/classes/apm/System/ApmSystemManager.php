@@ -237,7 +237,7 @@ class ApmSystemManager extends SystemManager {
         $this->transcriptionManager = new ApmTranscriptionManager($this->dbConn, $this->tableNames, $this->logger);
         $this->transcriptionManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
         $this->transcriptionManager->setCacheTracker($this->getCacheTracker());
-        $this->transcriptionManager->setDataCache($this->getSystemDataCache());
+        $this->transcriptionManager->setCache($this->getSystemDataCache());
 
         // Load plugins
         foreach($this->config[ApmConfigParameter::PLUGINS] as $pluginName) {

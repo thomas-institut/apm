@@ -23,7 +23,14 @@ namespace AverroesProjectToApm;
 use APM\Core\Item\Mark;
 use APM\Core\Item\MarkType;
 use APM\Core\Item\TextualItem;
-use ThomasInstitut\TimeString\TimeString;
+use AverroesProject\ColumnElement\Element;
+use AverroesProject\TxText\Item as ApItem;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
+use ThomasInstitut\CodeDebug\CodeDebugInterface;
+use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
+use ThomasInstitut\CodeDebug\PrintCodeDebugTrait;
+
 
 /**
  *
@@ -33,8 +40,9 @@ use ThomasInstitut\TimeString\TimeString;
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class DatabaseItemStream {
-    
+class DatabaseItemStream implements  CodeDebugInterface{
+
+    use PrintCodeDebugTrait;
     /**
      *
      * @var array 
@@ -64,7 +72,9 @@ class DatabaseItemStream {
         $this->items = [];
         $itemFactory = new ItemStreamItemFactory($defaultLang);
         $langs = [];
-        
+
+        $this->debugMode = false;
+
         foreach($itemSegments as $itemRows){
             $previousElementId = -1;
             $previousTbIndex = -1;
@@ -75,23 +85,49 @@ class DatabaseItemStream {
             // as of Feb 2020, the highest itemId in the production database is around 660 000
             $fakeItemIdStart  = 999000000000;
             
-            foreach ($itemRows as $row) {
+            foreach ($itemRows as $i => $row) {
+                $this->codeDebug("ItemRow $i: pei $previousElementId, ptbi $previousTbIndex, pet $previousElementType, text='" . $row['text'] . "'") ;
                 $address = new AddressInDatabaseItemStream();
                 $address->setFromItemStreamRow($docId, $row);
                 
-                if ($row['ce_id'] !== $previousElementId && $address->getTbIndex() === $previousTbIndex) {
+                if (intval($row['ce_id']) !== $previousElementId && $address->getTbIndex() === $previousTbIndex) {
                     // need to insert a "ghost" item into the item stream to account for line and text box breaks
                     // the address should be fake
                     $fakeAddress = new AddressInDatabaseItemStream();
                     $fakeAddress->setFromItemStreamRow($docId, $row);
                     $fakeAddress->setItemIndex($fakeItemIdStart++);
-                    if ($previousElementType === $row['e.type']) {
+                    if ($previousElementType === intval($row['e.type']) && (
+                            $previousElementType === Element::LINE ||
+                            $previousElementType === Element::GLOSS ||
+                            $previousElementType === Element::ADDITION)) {
                         // two elements of the same type in a row = a line break within the same text box
+                        $this->codeDebug("Inserting ghost item: new line");
                         $this->items[] = new ItemInDatabaseItemStream($fakeAddress, new TextualItem("\n"));
                     } else {
-                        // change of text box, e.g. an addition
+                        // different element types in a row =  e.g. an addition
+                        $this->codeDebug("Inserting ghost item: TextBoxBreak (different elements in a row, same TB)");
                         $this->items[] = new ItemInDatabaseItemStream($fakeAddress, new Mark(MarkType::TEXT_BOX_BREAK));
                     }
+                }
+
+                if ($address->getTbIndex() !== $previousTbIndex && $previousTbIndex !== -1) {
+                    // change of text box from a marginal
+                    $fakeAddress = new AddressInDatabaseItemStream();
+                    $fakeAddress->setFromItemStreamRow($docId, $row);
+                    $fakeAddress->setItemIndex($fakeItemIdStart++);
+                    $this->codeDebug("Inserting ghost item: TextBoxBreak (change from a marginal)");
+                    $this->items[] = new ItemInDatabaseItemStream($fakeAddress, new Mark(MarkType::TEXT_BOX_BREAK));
+                }
+
+                if ( intval($row['type']) === ApItem::ADDITION && isset($row['target']) && !is_null($row['target'])) {
+                    // this is an item that replaces a previous item
+                    // add a "ghost" mark item to signal this
+                    $fakeAddress = new AddressInDatabaseItemStream();
+                    $fakeAddress->setFromItemStreamRow($docId, $row);
+                    $fakeAddress->setItemIndex($fakeItemIdStart++);
+                    $this->codeDebug("Inserting ghost item: itemBreak");
+                    $this->items[] = new ItemInDatabaseItemStream($fakeAddress, new Mark(MarkType::ITEM_BREAK));
+
                 }
 
                 $lang = $row['lang'];
@@ -102,17 +138,18 @@ class DatabaseItemStream {
 
                 $item = $itemFactory->createItemFromRow($row);
 
-
                 $itemId = $address->getItemId();
                 $noteIndexes = $this->findNoteIndexesById($edNotes, $itemId );
                 foreach ($noteIndexes as $noteIndex) {
                     $note = $itemFactory->createItemNoteFromRow($edNotes[$noteIndex]);
                     $item->addNote($note);
                 }
+                $this->codeDebug("Inserting item");
                 $this->items[] = new ItemInDatabaseItemStream($address, $item);
-                $previousElementId = $row['ce_id'];
-                $previousElementType = $row['e.type'];
+                $previousElementId = intval($row['ce_id']);
+                $previousElementType = intval($row['e.type']);
                 $previousTbIndex = $address->getTbIndex();
+                $this->codeDebug('---------');
             }
         }
         $maxLang = 0;

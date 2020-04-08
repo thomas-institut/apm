@@ -1,6 +1,6 @@
 <?php
 /* 
- *  Copyright (C) 2019 Universität zu Köln
+ *  Copyright (C) 2016-2020 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,24 +17,13 @@
  *  
  */
 
-namespace APM\Core\Item;
+namespace ThomasInstitut\DataCache;
 
 
-/**
- *  Mark type constants
- *
- * @package APM\Core\Item
- */
-class MarkType
+interface CacheAware
 {
-    const NO_WB = '__nowb';
-    const CHUNK = '__chunkmark';
-    const TEXT_BOX_BREAK = '__textBoxBreak';
-    const ITEM_BREAK = '__itemBreak';
-
-    const REF = 'ref';
-    const PARAGRAPH = 'paragraph';
-    const NOTE = 'note';
-    const GAP = 'gap';
-
+    public function useCache();
+    public function doNotUseCache();
+    public function setCache(DataCache $dataCache);
+    public function isCacheInUse() : bool;
 }

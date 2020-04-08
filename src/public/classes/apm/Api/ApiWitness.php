@@ -23,6 +23,7 @@ use APM\Core\Witness\SimpleHtmlWitnessDecorator;
 use APM\Decorators\Witness\ApmTxWitnessDecorator;
 use APM\FullTranscription\ApmTranscriptionWitness;
 use APM\StandardData\FullTxWitnessDataProvider;
+use APM\System\ApmTranscriptionManager;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
 use AverroesProject\Data\UserManagerUserInfoProvider;
@@ -97,7 +98,16 @@ class ApiWitness extends ApiController
         $localWitnessId = $witnessInfo->typeSpecificInfo['localWitnessId'];
         $timeStamp = $witnessInfo->typeSpecificInfo['timeStamp'];
 
+        /** @var ApmTranscriptionManager $transcriptionManager */
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
+
+        $txManagerIsUsingCache = $transcriptionManager->isCacheInUse();
+
+        if (!$useCache && $txManagerIsUsingCache) {
+            // only turn off tx manager's cache if it's in use
+            $this->codeDebug("Turning off tx manager's cache");
+            $transcriptionManager->doNotUseCache();
+        }
 
         // at this point we can check the cache
         $systemCache = $this->systemManager->getSystemDataCache();
@@ -195,6 +205,12 @@ class ApiWitness extends ApiController
         }
 
         // at this point we have all data either from the cache or built from scratch
+
+        if (!$useCache && $txManagerIsUsingCache) {
+            // turn on tx manager cache if we turned it off earlier
+            $this->codeDebug("Turning tx manager's cache back on");
+            $transcriptionManager->useCache();
+        }
 
         if ($outputType === 'html') {
             return $this->responseWithText($response, $returnData['html']);

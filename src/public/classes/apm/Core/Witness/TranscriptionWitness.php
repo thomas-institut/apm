@@ -138,14 +138,35 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
             $itemAddress = $sourceItem->getAddress();
             $this->codeDebug("Item Address", [$itemAddress]);
 
+            if ($rawItem->getTextualFlow() === Item::FLOW_GLOSS) {
+                // skip glosses!
+                $this->codeDebug("It's a gloss, skipping");
+                continue;
+            }
+
             if ($itemAddress->getPageId() !== $currentPage ||
                     $itemAddress->getTbIndex() !== $currentTextBox) {
-                // new page or text box, reset all counters
-                //$this->codeDebug("New page or text box, resetting all counters");
-                $currentPage = $itemAddress->getPageId();
-                $currentTextBox = $itemAddress->getTbIndex();
-                $pageTextBoxCurrentLines = [];
-                $pageTextBoxCurrentLines[$currentTextBox] = $this->getInitialLineNumberForTextBox($currentPage, $currentTextBox);
+                $this->codeDebug("New page or text box");
+                if ($itemAddress->getPageId() !== $currentPage) {
+
+                    $currentPage = $itemAddress->getPageId();
+                    $currentTextBox = $itemAddress->getTbIndex();
+                    $this->codeDebug("New page $currentPage, textBox $currentTextBox");
+                    $pageTextBoxCurrentLines = [];
+                    $pageTextBoxCurrentLines[$currentTextBox] = $this->getInitialLineNumberForTextBox($currentPage, $currentTextBox);
+                } elseif ($itemAddress->getTbIndex() !== $currentTextBox)  {
+                    $currentTextBox = $itemAddress->getTbIndex();
+                    $this->codeDebug("New textBox: $currentTextBox");
+                    if (!isset($pageTextBoxCurrentLines[$currentTextBox])) {
+                        $this->codeDebug("No line info for this text box yet ");
+                        $pageTextBoxCurrentLines[$currentTextBox] = $this->getInitialLineNumberForTextBox($currentPage, $currentTextBox);
+                        $this->codeDebug("Current line number: " . $pageTextBoxCurrentLines[$currentTextBox]);
+                    } else {
+                        $pageTextBoxCurrentLines[$currentTextBox]++;
+                        $this->codeDebug("Current line number: " . $pageTextBoxCurrentLines[$currentTextBox]);
+                    }
+                }
+
                 if ($openWordToken) {
                     // Close open word token
                     $this->codeDebug("Closing open word token: '" . $currentWordToken->getText() . "'");
@@ -166,10 +187,10 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
                 // text, not the "original" text
                 $stringTokens = $tokenizer->getTokensFromString($rawItemNormalizedText);
                 $this->codeDebug("processing " . count($stringTokens) . " string tokens");
-                foreach($stringTokens as $stringToken) {
+                foreach($stringTokens as $nStringToken => $stringToken) {
                     /* @var $stringToken StringToken */
 
-                    $this->codeDebug("StringToken", [ $stringToken]);
+                    $this->codeDebug("StringToken $nStringToken: '" . $stringToken->getText() . "'");
                     // Check if the string token covers all the text's item
                     if ($stringToken->getText() === $rawItemNormalizedText) {
                         // this means that there is only one token in the item,
@@ -185,6 +206,7 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
                     $tToken->setSourceItemIndexes([$itemIndex]);
                     $tToken->setSourceItemAddresses([$itemAddress]);
                     $tToken->setSourceItemCharRanges([$stringToken->getCharRange()]);
+                    $this->codeDebug(" line range from " . $stringToken->getLineRange()->getStart() . ' to ' . $stringToken->getLineRange()->getEnd());
                     $tToken->setTextBoxLineRange(
                         new PointRange(
                         [
@@ -257,10 +279,12 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
                             $tokens[] = $tToken;
                         }
                     }
-                    // update current line
-                    $pageTextBoxCurrentLines[$currentTextBox] = 
-                        $pageTextBoxCurrentLines[$currentTextBox] + $stringToken->getLineRange()->getEnd() - 1 ;
-
+                    // update current line on the last string token
+                    if ($nStringToken === (count($stringTokens)-1)) {
+                        $pageTextBoxCurrentLines[$currentTextBox] =
+                            $pageTextBoxCurrentLines[$currentTextBox] + ( $stringToken->getLineRange()->getEnd()- 1 ) ;
+                        $this->codeDebug("Current line number: " . $pageTextBoxCurrentLines[$currentTextBox]);
+                    }
                 }
                 continue; // next StringToken
             } // rawItem is a TextualItem

@@ -356,7 +356,7 @@ $app->group('/api', function (RouteCollectorProxy $group){
     //  EDITION ENGINE
 
     $group->post('/edition/auto',
-        ApiEditionEngine::class . ':basicEditionEngine')
+        ApiEditionEngine::class . ':automaticEditionEngine')
         ->setName('api.edition.auto');
 
     //  PRESETS

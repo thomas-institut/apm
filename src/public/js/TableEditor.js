@@ -37,7 +37,7 @@ class TableEditor {
 
   constructor(options) {
 
-    console.log("Constructing TableEditor")
+    //console.log("Constructing TableEditor")
     let thisObject = this
 
     let optionsDefinition = {
@@ -181,8 +181,8 @@ class TableEditor {
 
     let optionsChecker = new OptionsChecker(optionsDefinition, 'TableEditor')
     this.options = optionsChecker.getCleanOptions(options)
-    console.log('Table options')
-    console.log(this.options)
+    //console.log('Table options')
+    //console.log(this.options)
 
     this.rowDefinition = []
     let valueArray = []
@@ -195,7 +195,7 @@ class TableEditor {
 
     this.matrix = new Matrix(0,0, this.options.getEmptyValue())
     this.matrix.setFromArray(valueArray)
-    this.matrix.logMatrix('TableEditor ' + this.options.id)
+    //this.matrix.logMatrix('TableEditor ' + this.options.id)
 
     this.editFlagMatrix = new Matrix(this.matrix.nRows, this.matrix.nCols, false)
 
@@ -218,7 +218,7 @@ class TableEditor {
       this.redrawTable()
     }
 
-    console.log("Finished constructing TableEditor")
+    //console.log("Finished constructing TableEditor")
   }
 
   getValue(row, col) {

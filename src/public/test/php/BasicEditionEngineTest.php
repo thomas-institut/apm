@@ -26,7 +26,7 @@ use APM\Core\Token\TokenType;
 use APM\Core\Witness\StringWitness;
 use APM\EditionEngine\EditionEngine;
 use PHPUnit\Framework\TestCase;
-use APM\EditionEngine\BasicEditionEngine;
+use APM\EditionEngine\BasicAutomaticEditionEngine;
 
 require "autoload.php";
 
@@ -40,7 +40,7 @@ class BasicEditionEngineTest extends TestCase
 
     public function testBadInput() {
 
-        $engine = new BasicEditionEngine();
+        $engine = new BasicAutomaticEditionEngine();
         // empty input
         $engineInput1 = [];
         $this->assertEquals([],$engine->generateEdition($engineInput1));
@@ -78,7 +78,7 @@ class BasicEditionEngineTest extends TestCase
             'gaps', '!'
         ];
 
-        $engine = new BasicEditionEngine();
+        $engine = new BasicAutomaticEditionEngine();
         list ($mainTextTokens, $tokenMap) = $engine->generateMainText($this->getEngineTokensFromString($mainText,  false, true));
         //print_r($mainTextTokens);
 
@@ -96,7 +96,7 @@ class BasicEditionEngineTest extends TestCase
 
     public function testSimple() {
 
-        $engine = new BasicEditionEngine();
+        $engine = new BasicAutomaticEditionEngine();
 
         $w1 = 'This is a test';
         $w2 = 'That is a test';
@@ -128,7 +128,7 @@ class BasicEditionEngineTest extends TestCase
     }
 
     public  function testSimple2() {
-        $engine = new BasicEditionEngine();
+        $engine = new BasicAutomaticEditionEngine();
 
         $w1 = 'This is a ---';
         $w2 = 'This --- a test';
@@ -175,7 +175,7 @@ class BasicEditionEngineTest extends TestCase
 
     public function testSimple3() {
 
-        $engine = new BasicEditionEngine();
+        $engine = new BasicAutomaticEditionEngine();
 
         $w1 = '--- this is a test';
         $w2 = 'And this is a test';
@@ -193,8 +193,8 @@ class BasicEditionEngineTest extends TestCase
         $expectedApparatusEntry = [
             EditionEngine::APPARATUS_ENTRY_FIELD_TYPE => EditionEngine::APPARATUS_ENTRY_TYPE_ADDITION,
             EditionEngine::APPARATUS_ENTRY_FIELD_TEXT => 'And',
-            EditionEngine::APPARATUS_ENTRY_FIELD_START => BasicEditionEngine::INDEX_BEFORE_MAIN_TEXT,
-            EditionEngine::APPARATUS_ENTRY_FIELD_END => BasicEditionEngine::INDEX_BEFORE_MAIN_TEXT,
+            EditionEngine::APPARATUS_ENTRY_FIELD_START => BasicAutomaticEditionEngine::INDEX_BEFORE_MAIN_TEXT,
+            EditionEngine::APPARATUS_ENTRY_FIELD_END => BasicAutomaticEditionEngine::INDEX_BEFORE_MAIN_TEXT,
             EditionEngine::APPARATUS_ENTRY_FIELD_SIGLA => [ 'W2']
         ];
 

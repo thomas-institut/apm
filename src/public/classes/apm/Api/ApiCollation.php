@@ -362,14 +362,6 @@ class ApiCollation extends ApiController
         
         $this->profiler->lap('Collation table built from collation engine output');
         $userDirectory = new UserManagerUserInfoProvider($dataManager->userManager);
-//
-//        $newDecorator = new ApmCollationTableDecorator();
-//        $newDecorator->setLogger($this->logger);
-//        $newDecorator->setUserInfoProvider($userDirectory);
-//        $decoratedCollationTableNew = $newDecorator->decorate($collationTable);
-
-
-//        $this->profiler->lap('Collation table decorated');
 
         $ctStandardDataProvider = new CollationTableDataProvider($collationTable);
         $standardData = $ctStandardDataProvider->getStandardData();
@@ -383,11 +375,7 @@ class ApiCollation extends ApiController
         }
 
         
-        // EXPERIMENTAL quick edition
-        
-        $qdw = new EditionWitness($collationTable, $collationTable->getSigla()[0], $language);
-        
-        $quickEdition = $qdw->generateEdition();
+        // EXPERIMENTAL quick edition ===> done via API call
 
         $this->profiler->stop();
         $this->logProfilerData("CollationTable-$workId-$chunkNumber-$language");
@@ -401,10 +389,8 @@ class ApiCollation extends ApiController
             'type' => 'auto',
             'collationTableCacheId' => $collationTableCacheId,
             'collationEngineDetails' => $collationEngineDetails,
-//            'collationTable' => $decoratedCollationTableNew,
             'collationTable' => $standardData,
             'people' => $people,
-            'quickEdition' => $quickEdition
         ];
 
         // let's cache it!
@@ -413,12 +399,8 @@ class ApiCollation extends ApiController
         // gzip it, just for fun
         $zipped = gzcompress($jsonToCache);
         $this->logger->debug("Caching automatic collation, JSON size = " . strlen($jsonToCache) . " bytes; gzipped : " . strlen($zipped));
-        //$cache->set($cacheKey,$jsonToCache);
         $cache->set($cacheKey,$zipped);
 
-//        $standardDataJson = json_encode($responseData['standardData'], JSON_UNESCAPED_UNICODE);
-//        $zippedStandardData = gzcompress($standardDataJson);
-//        $this->logger->debug("Standard data, JSON size = " . strlen($standardDataJson) . " bytes; zipped : " . strlen($zippedStandardData));
         $this->profiler->stop();
 
         $this->logProfilerData("CollationTable-$workId-$chunkNumber-$language, encoding and storing in cache");

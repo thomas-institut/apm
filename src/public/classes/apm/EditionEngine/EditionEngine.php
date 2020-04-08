@@ -27,7 +27,7 @@ use APM\Engine\Engine;
  * Base class for edition engines
  *
  * An edition engine is a class that can automatically generate a traditional style edition
- * (i.e., main text plus apparatus) out of a collation table.
+ * out of a standard collation table and some extra options
  */
 abstract class EditionEngine extends Engine  {
 
@@ -93,25 +93,14 @@ abstract class EditionEngine extends Engine  {
      *
      * The input array should have following fields:
      *   - baseSiglum:  siglum corresponding to the main text
-     *   - textDirection: rtl | ltr
      *   - language: 'la' | 'ar' | 'he'
-     *   - collationTable : an array of arrays of token information:
-     *         [ 'siglumA' =>  [
-     *              ['tokenType' => <type>, 'text' => 'sometext, 'apparatusHint'  => <hint>, ... ],
-     *              ['tokenType' => <type>, 'text' => 'sometext, 'apparatusHint'  => <hint>, ... ],
-     *              ... ],
-     *           'siglumB => [ .... ]
+     *   - collationTable : a standard collation table object
      *    -siglaAbbreviations => [  'siglumA' => 'abbrA, 'siglumB' => 'abbrB', ... ]
-     *
-     *      tokenType uses the same constants as in the Token class, e.g., Token::TOKEN_EMPTY, etc
      *
      *  The returned array contains the following elements:
      *   mainTextTokens : array of tokens to typeset, including spaces (a.k.a. glue)
      *       the tokens here are the kind of tokens the javascript typesetter
      *       expects to see.
-     *       TODO: change to a 3-step approach, EditionEngine + Decorator + Typesetter
-     *
-     *
      *   abbrToSigla: associative array that maps the abbreviations used in the
      *       edition to the witnesses' sigla in the collation table
      *
@@ -163,17 +152,9 @@ abstract class EditionEngine extends Engine  {
         $inputCheckRules = [
             'requiredFields' => [
                 [ 'name' => self::INPUT_FIELD_LANGUAGE, 'requiredType' => 'string'],
-                [ 'name' => self::INPUT_FIELD_TEXT_DIRECTION, 'requiredType' => 'string'],
                 [ 'name' => self::INPUT_FIELD_BASE_SIGLUM, 'requiredType' => 'string'],
                 [ 'name' => self::INPUT_FIELD_SIGLA_ABBREVIATIONS, 'requiredType' => 'array'],
-                [ 'name' => self::INPUT_FIELD_COLLATION_TABLE, 'requiredType' => 'array']
-            ]
-        ];
-
-        $tokenCheckRules = [
-            'requiredFields' => [
-                ['name' => self::TOKEN_FIELD_TYPE, 'requiredType' => 'int'],
-                ['name' => self::TOKEN_FIELD_TEXT, 'requiredType' => 'string']
+                [ 'name' => self::INPUT_FIELD_COLLATION_TABLE, 'requiredType' => 'object']
             ]
         ];
 
@@ -185,16 +166,6 @@ abstract class EditionEngine extends Engine  {
             return false;
         }
 
-        foreach ($input[self::INPUT_FIELD_COLLATION_TABLE] as $siglum => $tokens) {
-            foreach ($tokens as $token) {
-                if (!$checker->isArrayValid($token, $tokenCheckRules)) {
-                    $this->setError(self::ERROR_BAD_INPUT, 'ArrayChecker error in token array ' .
-                        $checker->getErrorCode() . ': ' . $checker->getErrorMessage());
-                    return false;
-                }
-            }
-
-        }
         return true;
 
     }

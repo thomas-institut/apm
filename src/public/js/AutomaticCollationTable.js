@@ -19,13 +19,13 @@
 class AutomaticCollationTable {
   
   constructor(options, initialApiOptions) {
-    console.log('ACT mini app starting')
-    console.log('Available Witnesses:')
-    console.log(options.availableWitnesses)
-    console.log('ACT options')
-    console.log(options)
-    console.log('Initial API options')
-    console.log(initialApiOptions)
+    // console.log('ACT mini app starting')
+    // console.log('Available Witnesses:')
+    // console.log(options.availableWitnesses)
+    // console.log('ACT options')
+    // console.log(options)
+    // console.log('Initial API options')
+    // console.log(initialApiOptions)
     
     this.rtlClass = 'rtltext'
     this.ltrClass = 'ltrtext'
@@ -75,6 +75,7 @@ class AutomaticCollationTable {
     this.editionDiv = $('#theedition')
     this.siglaDiv = $('#sigla')
     this.apiCollationUrl = this.options.urlGenerator.apiAutomaticCollation()
+    this.apiQuickEditionUrl = this.options.urlGenerator.apiAutomaticEdition()
     this.updating = false
 
     // generate witness titles
@@ -92,7 +93,7 @@ class AutomaticCollationTable {
     // it means that ALL witnesses should be included
 
     if (this.apiCallOptions.witnesses.length === 0) {
-      console.log('Including all witnesses in ApiCallOptions')
+      //console.log('Including all witnesses in ApiCallOptions')
       for(const witness of this.availableWitnesses) {
         let sysId = witness.systemId
         if (this.options.suppressTimestampsInApiCalls) {
@@ -234,6 +235,33 @@ class AutomaticCollationTable {
     }
   }
 
+  fetchQuickEdition() {
+    this.editionDiv.html("Querying the server... <i class=\"fa fa-spinner fa-spin fa-fw\"></i>")
+    console.log('Calling API at ' + this.apiQuickEditionUrl)
+    let apiCallOptions = {
+      collationTable: this.collationTable,
+      baseSiglum: this.collationTable.sigla[0]
+    }
+    console.log('Base siglum: ' + apiCallOptions.baseSiglum)
+    let thisObject = this
+    $.post(
+      this.apiQuickEditionUrl,
+      {data: JSON.stringify(apiCallOptions)}
+    ).done( function (apiResponse) {
+      console.log("Quick edition API call successful")
+      thisObject.editionDiv.html("<i>Edition coming soon</i>")
+
+    }).fail(function(resp) {
+      console.error('Error in quick edition')
+      console.log(resp)
+      let failMsg = 'Error getting quick edition <i class="fa fa-frown-o" aria-hidden="true"></i><br/> '
+      failMsg += '<span class="small">HTTP code ' + resp.status + '</span>'
+      thisObject.editionDiv.html(failMsg)
+    })
+
+
+  }
+
   getLastChangeInData() {
     let ctData = this.collationTable
     let lastChangeInData = ''
@@ -251,9 +279,9 @@ class AutomaticCollationTable {
   }
   
   getCollationTable() {
-    console.log('All set to call API at ' + this.apiCollationUrl)
-    console.log('API call options:')
-    console.log(this.apiCallOptions)
+    //console.log('All set to call API at ' + this.apiCollationUrl)
+    //console.log('API call options:')
+    //console.log(this.apiCallOptions)
     this.updating = true
     this.redoButton.prop('disabled', true)
     this.actTitleElement.html(this.getTitleFromOptions())
@@ -287,21 +315,23 @@ class AutomaticCollationTable {
       thisObject.updating = false
       thisObject.collationEngineDetailsElement.html(thisObject.getCollationEngineDetailsHtml())
 
-      let ev = new EditionViewer( {
-          collationTokens: thisObject.quickEdition.mainTextTokens,
-          apparatusArray: thisObject.quickEdition.apparatusArray,
-          isRightToLeft: (thisObject.quickEdition.textDirection === 'rtl'),
-          addGlue: false
-      })
+      // let ev = new EditionViewer( {
+      //     collationTokens: thisObject.quickEdition.mainTextTokens,
+      //     apparatusArray: thisObject.quickEdition.apparatusArray,
+      //     isRightToLeft: (thisObject.quickEdition.textDirection === 'rtl'),
+      //     addGlue: false
+      // })
 
-      thisObject.editionDiv.html(ev.getHtml())
-      let siglaHtml = '<ul class="siglalist">'
-      siglaHtml += '<li>' + 'Base witness: ' + thisObject.quickEdition.baseSiglum + '</li>'
-      for(const abbr in thisObject.quickEdition.abbrToSigla) {
-          siglaHtml += '<li>' + '<em>' + abbr + '</em>: ' + thisObject.quickEdition.abbrToSigla[abbr] + '</li>'
-      }
-      siglaHtml += '</ul>'
-      thisObject.siglaDiv.html(siglaHtml)
+
+      thisObject.fetchQuickEdition()
+
+      // let siglaHtml = '<ul class="siglalist">'
+      // siglaHtml += '<li>' + 'Base witness: ' + thisObject.quickEdition.baseSiglum + '</li>'
+      // for(const abbr in thisObject.quickEdition.abbrToSigla) {
+      //     siglaHtml += '<li>' + '<em>' + abbr + '</em>: ' + thisObject.quickEdition.abbrToSigla[abbr] + '</li>'
+      // }
+      // siglaHtml += '</ul>'
+      // thisObject.siglaDiv.html(siglaHtml)
 
       // new table
      thisObject.collationTableDivNew.popover({

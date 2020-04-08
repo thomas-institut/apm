@@ -7,7 +7,7 @@ namespace APM\EditionEngine;
 use APM\Core\Token\Token;
 use APM\Core\Token\TokenType;
 
-class BasicEditionEngine extends EditionEngine
+class BasicAutomaticEditionEngine extends EditionEngine
 {
     const NO_GLUE_PUNCTUATION = '.,:;?!';
 

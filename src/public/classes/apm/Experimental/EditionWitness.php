@@ -21,7 +21,7 @@
 namespace APM\Experimental;
 
 use APM\Core\Collation\CollationTable;
-use APM\EditionEngine\BasicEditionEngine;
+use APM\EditionEngine\BasicAutomaticEditionEngine;
 use APM\EditionEngine\EditionEngine;
 
 /**
@@ -139,7 +139,7 @@ class EditionWitness {
         $editionEngineInput[EditionEngine::INPUT_FIELD_SIGLA_ABBREVIATIONS] = $siglumToAbbr;
         $editionEngineInput[EditionEngine::INPUT_FIELD_COLLATION_TABLE] = $ctForEngine;
 
-        $engine = new BasicEditionEngine();
+        $engine = new BasicAutomaticEditionEngine();
 
         $edition = $engine->generateEdition($editionEngineInput);
 

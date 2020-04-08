@@ -100,6 +100,10 @@ class ApmUrlGenerator {
     return this.base + '/api/collation/auto'
   }
 
+  apiAutomaticEdition() {
+    return this.base + '/api/edition/auto'
+  }
+
   apiGetPresets() {
     return this.base + '/api/presets/get'
   }
@@ -114,6 +118,10 @@ class ApmUrlGenerator {
 
   apiGetAutomaticCollationPresets() {
     return this.base + '/api/presets/act/get'
+  }
+
+  apiWitnessGet(witnessId, output = 'full') {
+    return this.base + '/api/witness/get/' + witnessId + '/' + output
   }
 
   siteCollationTableCustom(work, chunkno, lang) {
@@ -136,17 +144,6 @@ class ApmUrlGenerator {
     return this.base + '/doc/' + docId + '/realpage/' + pageNumber + '/view'
   }
 
-  // siteWitness(work, chunkno, type, witnessId, output) {
-  //   let url = this.base + '/chunk/' + work + '/' + chunkno + '/witness/' + type + '/' + witnessId
-  //   if (output !== '') {
-  //     url += '/' + output
-  //   }
-  //   return url
-  // }
-
-  apiWitnessGet(witnessId, output = 'full') {
-    return this.base + '/api/witness/get/' + witnessId + '/' + output
-  }
 
   siteChunkPage(work, chunk) {
     return this.base + '/chunk/' + work + '/' + chunk

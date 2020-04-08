@@ -82,8 +82,8 @@ class AutomaticCollationTableSettingsForm {
     let oc = new OptionsChecker(optionsDefinition, "AutoCollTableSettingsForm")
     this.options = oc.getCleanOptions(options)
 
-    console.log('AutoCollTableSettingsFrom options')
-    console.log(this.options)
+    //console.log('AutoCollTableSettingsFrom options')
+    //console.log(this.options)
 
 
     this.witnessList = []

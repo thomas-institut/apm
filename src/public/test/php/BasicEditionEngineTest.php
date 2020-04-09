@@ -38,7 +38,7 @@ require "autoload.php";
 class BasicEditionEngineTest extends TestCase
 {
 
-    public function testBadInput() {
+    public function xtestBadInput() {
 
         $engine = new BasicAutomaticEditionEngine();
         // empty input
@@ -63,7 +63,7 @@ class BasicEditionEngineTest extends TestCase
 
     }
 
-    public function testMainTextGenerator() {
+    public function xtestMainTextGenerator() {
         $mainText = 'This is some --- main text, with --- punctuation and gaps!';
 
         $expectedMainTextTokens = [
@@ -94,7 +94,7 @@ class BasicEditionEngineTest extends TestCase
         }
     }
 
-    public function testSimple() {
+    public function xtestSimple() {
 
         $engine = new BasicAutomaticEditionEngine();
 
@@ -127,7 +127,7 @@ class BasicEditionEngineTest extends TestCase
         }
     }
 
-    public  function testSimple2() {
+    public  function xtestSimple2() {
         $engine = new BasicAutomaticEditionEngine();
 
         $w1 = 'This is a ---';
@@ -173,7 +173,7 @@ class BasicEditionEngineTest extends TestCase
     }
 
 
-    public function testSimple3() {
+    public function xtestSimple3() {
 
         $engine = new BasicAutomaticEditionEngine();
 

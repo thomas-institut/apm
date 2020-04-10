@@ -29,11 +29,11 @@ abstract class CollationTableVersionManager
      * if numVersions === 0, returns all versions
      * if numVersions > 0, returns only numVersions objects, corresponding to the latest versions.
      *
-     * @param string $chunkId
+     * @param int $collationTableId
      * @param int $numVersions
      * @return CollationTableVersionInfo[]
      */
-    abstract public function getCollationTableVersionInfoByChunkId(string $chunkId, int $numVersions = 0) : array;
+    abstract public function getCollationTableVersionInfo(int $collationTableId, int $numVersions = 0) : array;
 
     /**
      * Registers a collation table version with the given info.
@@ -42,10 +42,10 @@ abstract class CollationTableVersionManager
      * a new id, and will calculate the timeUntil by placing the given version in the appropriate place chronologically
      * with the versions already in the system.
      *
-     * @param string $chunkId
+     * @param int $collationTableId
      * @param CollationTableVersionInfo $versionInfo
      */
-    abstract public function registerNewCollationTable(string $chunkId, CollationTableVersionInfo $versionInfo) : void;
+    abstract public function registerNewCollationTable(int $collationTableId, CollationTableVersionInfo $versionInfo) : void;
 
 
     /**

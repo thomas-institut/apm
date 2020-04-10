@@ -1,16 +1,14 @@
 {% extends "base.twig" %}
 {% import 'macros.twig' as macros %}
 
-{% block title %}CT {{workId}}-{{chunkNumber}} ({{ tableId }}){% endblock %}
+{% block title %}CT {{workId}}-{{chunkNumber}} table {{ tableId }}{% endblock %}
 
 {% block extraJS %}
 <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/collationtable.css" />
-<link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/act-settingsform.css" />
 <script type="text/javascript" src="{{baseurl}}/node_modules//twig/twig.js"></script>
-<script type="application/javascript" src="{{baseurl}}/js/AutoCollTableSettingsForm.js"></script>
 <script type="application/javascript" src="{{baseurl}}/js/AutoCollTableViewSettingsForm.js"></script>
-<script type="application/javascript" src="{{baseurl}}/js/AutomaticCollationTable.js"></script>
 <script type="application/javascript" src="{{baseurl}}/js/CollationTableFormatter.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/CollationTableEditor.js"></script>
 <script type="application/javascript" src="{{baseurl}}/js/Typesetter.js"></script>
 <script type="application/javascript" src="{{baseurl}}/js/EditionViewer.js"></script>
 <script type="text/javascript" src="{{baseurl}}/js/Matrix.js"></script>
@@ -21,7 +19,19 @@
 <script>
   $(function() {// .ready()
 
-    console.log('Collation table edit')
+    let ctData  = JSON.parse("{{collationTableData|json_encode|e('js')}}")
+
+    console.log(ctData)
+
+    let te = new CollationTableEditor({
+      collationTableData : ctData,
+      workId: '{{ workId }}',
+      chunkNumber: {{ chunkNumber }},
+      tableId: {{ tableId }},
+      urlGenerator: new ApmUrlGenerator('{{ base }}')
+    })
+
+
     })
     </script>
 {% endblock %}
@@ -31,14 +41,23 @@
     <ol class="breadcrumb">
         <li><a href="{{url_for('chunks')}}">Chunks</a></li>
         <li><a href="{{url_for('chunk', {'work' : workId, 'chunk': chunkNumber})}}">{{workId}}-{{chunkNumber}}</a></li>
-        <li>Collation table {{ tableId }}</li>
+        <li><span id="breadcrumb-cttitle"></span></li>
     </ol>
 
-<h1>Collation table edit {{ tableId }}</h1>
 
-    <p> {{ workId }}-{{ chunkNumber }}</p>
+    <div class="row">
+        <div id="collationtabletitle"></div>
+        <div id="collationtableinfo"></div>
+        <div id="collationtableactions"></div>
+    </div>
+    <div id="status" class="text-danger"></div>
+    <div id="editiondiv">
+        <div id="theedition"></div>
+        <div id="sigla"></div>
+    </div>
+    <div id="collationtablediv" class="ctdiv">Collation table goes here</div>
 
-    <p> Coming soon...</p>
+
 
 {% endblock %}
 

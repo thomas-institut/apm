@@ -23,6 +23,9 @@ namespace APM\System;
 use APM\CollationEngine\Collatex;
 use APM\CollationEngine\CollationEngine;
 use APM\CollationEngine\DoNothingCollationEngine;
+use APM\CollationTable\ApmCollationTableManager;
+use APM\CollationTable\ApmCollationTableVersionManager;
+use APM\CollationTable\CollationTableManager;
 use APM\FullTranscription\TranscriptionManager;
 use APM\Plugin\Plugin;
 use APM\Presets\DataTablePresetManager;
@@ -40,6 +43,7 @@ use Monolog\Handler\StreamHandler;
 use Monolog\Processor\WebProcessor;
 use PDO;
 use PDOException;
+use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
 
 
 /**
@@ -129,6 +133,10 @@ class ApmSystemManager extends SystemManager {
      * @var DataTableDataCache
      */
     private $systemDataCache;
+    /**
+     * @var ApmCollationTableManager
+     */
+    private $collationTableManager;
 
 
     public function __construct(array $configArray) {
@@ -239,6 +247,14 @@ class ApmSystemManager extends SystemManager {
         $this->transcriptionManager->setCacheTracker($this->getCacheTracker());
         $this->transcriptionManager->setCache($this->getSystemDataCache());
 
+        $ctTable = new MySqlUnitemporalDataTable($this->dbConn, $this->tableNames[ApmMySqlTableName::TABLE_COLLATION_TABLE]);
+        $ctVersionsTable = new MySqlDataTable($this->dbConn, $this->tableNames[ApmMySqlTableName::TABLE_VERSIONS_CT]);
+        $ctVersionManager = new ApmCollationTableVersionManager($ctVersionsTable);
+        $ctVersionManager->setLogger($this->logger);
+        $ctVersionManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
+        $this->collationTableManager = new ApmCollationTableManager($ctTable, $ctVersionManager, $this->logger);
+        $this->collationTableManager->setSqlQueryCounterTracker($this->getSqlQueryCounterTracker());
+
         // Load plugins
         foreach($this->config[ApmConfigParameter::PLUGINS] as $pluginName) {
             $pluginPhpFile = $this->config[ApmConfigParameter::PLUGIN_DIR] . '/' .
@@ -278,7 +294,9 @@ class ApmSystemManager extends SystemManager {
             ApmMySqlTableName::TABLE_WORKS,
             ApmMySqlTableName::TABLE_PRESETS,
             ApmMySqlTableName::TABLE_VERSIONS_TX,
-            ApmMySqlTableName::TABLE_SYSTEM_CACHE
+            ApmMySqlTableName::TABLE_SYSTEM_CACHE,
+            ApmMySqlTableName::TABLE_COLLATION_TABLE,
+            ApmMySqlTableName::TABLE_VERSIONS_CT
         ];
         
         $tables = [];
@@ -544,5 +562,10 @@ class ApmSystemManager extends SystemManager {
     public function getSystemDataCache(): DataCache
     {
         return $this->systemDataCache;
+    }
+
+    public function getCollationTableManager(): CollationTableManager
+    {
+        return $this->collationTableManager;
     }
 }

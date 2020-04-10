@@ -34,7 +34,7 @@ CREATE TABLE `ap_ctables` (
 
 CREATE TABLE `ap_versions_ct` (
    `id` int(11) NOT NULL,
-   `chunk_id` varchar(32),
+   `ct_id` int(11) NOT NULL,
    `time_from` datetime(6) NOT NULL,
    `time_until` datetime(6) DEFAULT NULL,
    `author_id` int(11) DEFAULT NULL,
@@ -47,7 +47,7 @@ CREATE TABLE `ap_versions_ct` (
 ALTER TABLE `ap_versions_ct`
     ADD PRIMARY KEY (`id`),
     ADD KEY `ap_versions_ct_author` (`author_id`),
-    ADD KEY `ap_versions_ct_chunkid` (`chunk_id`);
+    ADD KEY `ap_versions_ct_ctid` (`ct_id`);
 
 
 ALTER TABLE `ap_versions_ct`

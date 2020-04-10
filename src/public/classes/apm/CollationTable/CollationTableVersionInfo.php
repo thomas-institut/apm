@@ -34,7 +34,7 @@ class CollationTableVersionInfo
     /**
      * @var string
      */
-    public $chunkId;
+    public $collationTableId;
     /**
      * @var int
      */
@@ -67,7 +67,7 @@ class CollationTableVersionInfo
     public function __construct()
     {
         $this->id = 0;
-        $this->chunkId = 'AW00-0';
+        $this->collationTableId = 'AW00-0';
         $this->timeFrom = TimeString::TIME_ZERO;
         $this->timeUntil = TimeString::TIME_ZERO;
         $this->authorId = 0;
@@ -78,7 +78,7 @@ class CollationTableVersionInfo
 
     public function setFromDbRow(array $row) {
         $this->id = intval($row['id']);
-        $this->chunkId = $row['chunk_id'];
+        $this->collationTableId = intval($row['ct_id']);
         $this->timeFrom = $row['time_from'];
         $this->timeUntil = $row['time_until'];
         $this->authorId = intval($row['author_id']);
@@ -96,7 +96,7 @@ class CollationTableVersionInfo
     public function getDatabaseRow() : array {
         return [
             'id' => $this->id,
-            'chunk_id' => $this->chunkId,
+            'ct_id' => $this->collationTableId,
             'time_from' => $this->timeFrom,
             'time_until' => $this->timeUntil,
             'author_id' => $this->authorId,

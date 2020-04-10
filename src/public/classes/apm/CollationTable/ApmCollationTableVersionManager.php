@@ -21,12 +21,18 @@ namespace APM\CollationTable;
 
 
 use InvalidArgumentException;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 use ThomasInstitut\DataTable\DataTable;
+use ThomasInstitut\Profiler\SimpleSqlQueryCounterTrackerAware;
+use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
 use ThomasInstitut\TimeString\TimeString;
 
-class ApmCollationTableVersionManager extends CollationTableVersionManager
+class ApmCollationTableVersionManager extends CollationTableVersionManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
 {
 
+    use LoggerAwareTrait;
+    use SimpleSqlQueryCounterTrackerAware;
     /**
      * @var DataTable
      */
@@ -40,9 +46,10 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager
     /**
      * @inheritDoc
      */
-    public function getCollationTableVersionInfoByChunkId(string $chunkId, int $numVersions = 0): array
+    public function getCollationTableVersionInfo(int $collationTableId, int $numVersions = 0): array
     {
-        $versionRows  = $this->dataTable->findRows([ 'chunk_id' => $chunkId]);
+        $this->sqlQueryCounterTracker->incrementSelect();
+        $versionRows  = $this->dataTable->findRows([ 'ct_id' => $collationTableId]);
 
         $versions = [];
         foreach($versionRows as $row) {
@@ -65,10 +72,10 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager
     /**
      * @inheritDoc
      */
-    public function registerNewCollationTable(string $chunkId, CollationTableVersionInfo $versionInfo): void
+    public function registerNewCollationTable(int $collationTableId, CollationTableVersionInfo $versionInfo): void
     {
-        if ($versionInfo->chunkId !== $chunkId) {
-            throw new InvalidArgumentException("Chunk Id in info does not correspond to given chunk id");
+        if ($versionInfo->collationTableId !== $collationTableId) {
+            throw new InvalidArgumentException("Collation table Id in info does not correspond to given collation table id");
         }
         if ($versionInfo->authorId === 0) {
             throw new InvalidArgumentException("Version author must not be 0");
@@ -78,12 +85,13 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager
             throw new InvalidArgumentException("Time from cannot be zero in new version info");
         }
 
-        $currentVersions = $this->getCollationTableVersionInfoByChunkId($chunkId);
+        $currentVersions = $this->getCollationTableVersionInfo($collationTableId);
 
         if (count($currentVersions) === 0) {
             // first version
             // just create a new entry with timeUntil in the EndOfTimes
             $versionInfo->timeUntil = TimeString::END_OF_TIMES;
+            $this->sqlQueryCounterTracker->incrementCreate();
             $this->dataTable->createRow($versionInfo->getDatabaseRow());
             return;
         }
@@ -120,10 +128,12 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager
             $versionInfo->timeUntil = TimeString::END_OF_TIMES;
         }
 
+        $this->sqlQueryCounterTracker->incrementCreate();
         $this->dataTable->createRow($versionInfo->getDatabaseRow());
     }
 
     private function rawUpdateVersion(CollationTableVersionInfo $versionInfo) {
+        $this->sqlQueryCounterTracker->incrementUpdate();
         $this->dataTable->updateRow($versionInfo->getDatabaseRow());
     }
 

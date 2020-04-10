@@ -339,14 +339,14 @@ ul.chunklist ul {
     margin-bottom: 40px;
 }
 
-#collationtablelinks ul {
+.collationtablelinks ul {
     list-style-type: none;
     padding: 0;
     margin-left: 20px;
     margin-bottom: 25px;
 }
 
-#collationtablelinks ul li {
+.collationtablelinks ul li {
     padding: 0;
     margin-left: 20px;
 }
@@ -408,4 +408,9 @@ div.cpheader a {
 
 .justifyright {
     text-align: right;
+}
+
+
+.collationtablelinks li.smallpadding {
+    padding-bottom: 5px;
 }

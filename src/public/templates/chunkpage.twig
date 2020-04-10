@@ -37,6 +37,7 @@ $(function()  {// .ready()
         languageInfo : JSON.parse('{{languageInfo|json_encode|raw}}'),
         workInfo: JSON.parse('{{work_info|json_encode|raw}}'),
         validChunks: JSON.parse('{{validChunks|json_encode|raw}}'),
+        savedCollationTables : JSON.parse('{{savedCollationTables|json_encode|raw}}'),
         showAdminInfo: showAdminInfo
     })
 });
@@ -52,9 +53,9 @@ $(function()  {// .ready()
     <div id="chunkpageheader"></div>
     <div id="chunkid"></div>
     <div id="witnessListNew"></div>
-
+    <div id="savedcollationtables" class="collationtablelinks"></div>
     <h4 id="ctlinks-header" class="hidden">Automatic Collation Tables</h4>
-    <div id="collationtablelinks">  </div>
+    <div id="collationtablelinks" class="collationtablelinks">  </div>
 
     <div id="witnesspanels"></div>
 

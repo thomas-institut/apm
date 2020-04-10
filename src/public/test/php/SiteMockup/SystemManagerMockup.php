@@ -25,6 +25,9 @@ require_once 'MockTranscriptionManager.php';
 use APM\CollationEngine\CollationEngine;
 use APM\CollationEngine\DoNothingCollationEngine;
 use APM\CollationEngine\NullCollationEngine;
+use APM\CollationTable\ApmCollationTableManager;
+use APM\CollationTable\ApmCollationTableVersionManager;
+use APM\CollationTable\CollationTableManager;
 use APM\FullTranscription\TranscriptionManager;
 use APM\Presets\DataTablePresetManager;
 use APM\Presets\PresetManager;
@@ -53,6 +56,10 @@ class SystemManagerMockup extends SystemManager {
      * @var MockTranscriptionManager
      */
     private $tm;
+    /**
+     * @var \MockCollationTableManager
+     */
+    private $ctm;
 
     public function __construct() {
         parent::__construct([]);
@@ -67,6 +74,8 @@ class SystemManagerMockup extends SystemManager {
         $this->sm = new SettingsManager();
         $this->pm = new DataTablePresetManager(new InMemoryDataTable());
         $this->tm = new MockTranscriptionManager();
+        $this->ctm = new \MockCollationTableManager();
+
     }
     
     public function checkSystemSetup() {
@@ -106,5 +115,10 @@ class SystemManagerMockup extends SystemManager {
     public function getSystemDataCache(): DataCache
     {
         return new InMemoryDataCache();
+    }
+
+    public function getCollationTableManager(): CollationTableManager
+    {
+        return $this->ctm;
     }
 }

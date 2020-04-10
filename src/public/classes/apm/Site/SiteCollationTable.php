@@ -61,6 +61,7 @@ class SiteCollationTable extends SiteController
     const TEMPLATE_QUICK_COLLATION = 'collation.quick.twig';
     const TEMPLATE_COLLATION_TABLE = 'collationtable.twig';
     const TEMPLATE_EDIT_COLLATION_TABLE = 'collation.edit.twig';
+    const TEMPLATE_EDIT_COLLATION_TABLE_ERROR = 'collation.edit.error.twig';
 
     /**
      * @param Request $request
@@ -82,13 +83,29 @@ class SiteCollationTable extends SiteController
         $chunkNumber = intval($request->getAttribute('chunk'));
         $tableId = intval($request->getAttribute('tableId'));
 
-        $this->logger->info("Edit collation table $workId-$chunkNumber, id $tableId");
+        $this->profiler->start();
+        $this->logger->debug("Edit collation table $workId-$chunkNumber, id $tableId");
 
+        $ctManager = $this->systemManager->getCollationTableManager();
+        try {
+            $ctData = $ctManager->getCollationTableByIdWithTimestamp($tableId, TimeString::now());
+        } catch (\InvalidArgumentException $e) {
+            $this->logger->info("Table $tableId requested for editing not found");
+            return $this->renderPage($response,self::TEMPLATE_EDIT_COLLATION_TABLE_ERROR, [
+                'workId' => $workId,
+                'chunkNumber' => $chunkNumber,
+                'tableId' => $tableId,
+                'message' => 'Table not found'
+            ]);
+        }
 
+        $this->profiler->stop();
+        $this->logProfilerData("Edit Collation Table");
         return $this->renderPage($response, self::TEMPLATE_EDIT_COLLATION_TABLE, [
             'workId' => $workId,
             'chunkNumber' => $chunkNumber,
-            'tableId' => $tableId
+            'tableId' => $tableId,
+            'collationTableData' => $ctData
         ]);
     }
 

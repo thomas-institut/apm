@@ -36,7 +36,8 @@ class ChunkPage {
       pageInfo:  { type: 'object', default: []},
       languageInfo : { type: 'object', default: []},
       workInfo : { type: 'object', default: []},
-      validChunks : {type: 'Array', default: []}
+      validChunks : {type: 'Array', default: []},
+      savedCollationTables: { type: 'Array', default: []}
     }
 
     let optionsChecker = new OptionsChecker(optionsDefinition, 'ChunkPage')
@@ -68,6 +69,7 @@ class ChunkPage {
     this.witnessListNewDiv = $('#witnessListNew')
     this.witnessPanelsDiv = $('#witnesspanels')
     this.headerDiv = $('#chunkpageheader')
+    this.savedCollationTablesDiv = $('#savedcollationtables')
 
     // shortcuts to options
     this.pathFor = this.options.urlGenerator
@@ -132,6 +134,8 @@ class ChunkPage {
     console.log('Witnesses by lang')
     console.log(this.witnessesByLang)
 
+    this.savedCollationTablesDiv.html(this.genSavedCollationTablesDivHtml())
+
     this.updateCollationTableLinks()
 
     this.witnessPanelsDiv.html(this.generateWitnessPanelHtml())
@@ -182,6 +186,24 @@ class ChunkPage {
             placement: 'auto',
             sanitize: false
          })
+  }
+
+  genSavedCollationTablesDivHtml() {
+    let html = ''
+
+    if (this.options.savedCollationTables.length !== 0) {
+      html += '<h4>Saved Collation Tables</h4>'
+      html += '<ul>'
+      for(const ctInfo of this.options.savedCollationTables) {
+        let url = this.pathFor.siteEditCollationTable(this.options.work, this.options.chunk, ctInfo['tableId'])
+        html += '<li class="smallpadding"><a title="Open in new tab/window" target="_blank" href="' + url + '">' + ctInfo['title'] +
+          '</a>, <small>last change: ' + ApmUtil.formatVersionTime(ctInfo['lastSave']) +
+          ' by ' + this.getAuthorLink(ctInfo['authorId']) + '</small></li>'
+      }
+      html += '</ul>'
+
+    }
+    return html
   }
 
   getPreviousChunk(chunk, validChunks) {

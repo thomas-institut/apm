@@ -31,6 +31,7 @@ use APM\FullTranscription\ColumnVersionInfo;
 use APM\System\WitnessType;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
+use ThomasInstitut\TimeString\TimeString;
 
 
 /**
@@ -45,16 +46,37 @@ class SiteChunkPage extends SiteController
        
         $dm = $this->dataManager;
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
+        $ctManager = $this->systemManager->getCollationTableManager();
         $workId = $request->getAttribute('work');
         $chunkNumber = $request->getAttribute('chunk');
         $this->profiler->start();
         $workInfo = $dm->getWorkInfo($workId);
 
         $witnessInfoArray = $transcriptionManager->getWitnessesForChunk($workId, $chunkNumber);
+        $time =  TimeString::now();
+        $savedCollationTableIds = $ctManager->getCollationTableIdsForChunk("$workId-$chunkNumber", $time);
+
+        $savedCollationTableInfoArray = [];
+        $authorsMentioned = [];
+        foreach ($savedCollationTableIds as $tableId) {
+
+            $tableVersions = $ctManager->getCollationTableVersionManager()->getCollationTableVersionInfo($tableId, 1);
+
+            if (count($tableVersions) !== 0 ){
+                $authorsMentioned[] =  $tableVersions[0]->authorId;
+                $savedCollationTableInfoArray[] = [
+                    'tableId' => $tableId,
+                    'authorId' => $tableVersions[0]->authorId,
+                    'lastSave' => $tableVersions[0]->timeFrom,
+                    'title' => $ctManager->getCollationTableTitle($tableId, $time)
+                    ];
+            }
+        }
+        $this->codeDebug("Saved collation tables", $savedCollationTableInfoArray);
 
         // get pages, authors and languages from witnesses
         $pagesMentioned = [];
-        $authorsMentioned = [];
+
 
         $languageInfoArray = [];
 
@@ -108,7 +130,8 @@ class SiteChunkPage extends SiteController
             'authorInfo' => $authorInfoArray,
             'pageInfo' => $pageInfoArray,
             'languageInfo' => $languageInfoArray,
-            'validChunks' => $validChunks
+            'validChunks' => $validChunks,
+            'savedCollationTables' => $savedCollationTableInfoArray
         ]);
     }
 

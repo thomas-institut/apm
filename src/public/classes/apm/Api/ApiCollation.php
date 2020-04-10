@@ -21,6 +21,7 @@
 namespace APM\Api;
 
 
+use APM\CollationTable\CollationTableVersionInfo;
 use APM\Engine\Engine;
 use APM\FullTranscription\ApmTranscriptionWitness;
 use APM\StandardData\CollationTableDataProvider;
@@ -51,6 +52,8 @@ class ApiCollation extends ApiController
     const ERROR_BAD_WITNESS = 2002;
     const ERROR_FAILED_COLLATION_ENGINE_PROCESSING = 2003;
     const ERROR_INVALID_LANGUAGE = 2004;
+    const ERROR_INVALID_COLLATION_TABLE_ID = 2005;
+    const ERROR_COLLATION_TABLE_DOES_NOT_EXIST = 2006;
 
     
     public function quickCollation(Request $request, Response $response)
@@ -411,18 +414,75 @@ class ApiCollation extends ApiController
     public function saveCollationTable(Request $request, Response $response) {
 
         $apiCall = 'CollationSave';
-        $requiredFields = [ ];
+        $requiredFields = [ 'collationTable'];
+
+        $this->profiler->start();
 
         $inputDataObject = $this->checkAndGetInputData($request, $response, $apiCall, $requiredFields);
         if (!is_array($inputDataObject)) {
             return $inputDataObject;
         }
         $this->logger->debug("Save Collation api call");
-        $responseData = [
-            'status' => 'Faking it',
-            'tableId' => random_int(1,500)
+
+        $ctManager = $this->systemManager->getCollationTableManager();
+
+        $versionInfo = new CollationTableVersionInfo();
+        $versionInfo->authorId = $this->apiUserId;
+        $versionInfo->description = isset($inputDataObject['descr']) ? $inputDataObject['descr'] : '';
+        $versionInfo->isMinor = isset($inputDataObject['isMinor']) ? $inputDataObject['isMinor'] : false;
+        $versionInfo->isReview = isset($inputDataObject['isReview']) ? $inputDataObject['isReview'] : false;
+
+        $collationTableData = $inputDataObject['collationTable'];
+        $collationTableId = -1;
+        if (isset($inputDataObject['collationTableId'])) {
+            // save a new version
+            $collationTableId = intval($inputDataObject['collationTableId']);
+            $this->codeDebug("Saving collation table $collationTableId");
+            if ($collationTableId <= 0) {
+                $msg = 'Invalid collation table ID ' . $collationTableId;
+                $this->logger->error($msg,
+                    [ 'apiUserId' => $this->apiUserId,
+                        'apiError' => self::ERROR_INVALID_COLLATION_TABLE_ID,
+                        'data' => $inputDataObject,
+                    ]);
+                return $this->responseWithJson($response, ['error' => self::ERROR_INVALID_COLLATION_TABLE_ID], 409);
+            }
+            // check that the ct exists
+            $versions = $ctManager->getCollationTableVersions($collationTableId);
+            if (count($versions) === 0) {
+                // table Id does not exist!
+                $msg = "Collation table ID $collationTableId does not exist";
+                $this->logger->error($msg,
+                    [ 'apiUserId' => $this->apiUserId,
+                        'apiError' => self::ERROR_COLLATION_TABLE_DOES_NOT_EXIST,
+                        'data' => $inputDataObject,
+                    ]);
+                return $this->responseWithJson($response, ['error' => self::ERROR_COLLATION_TABLE_DOES_NOT_EXIST], 409);
+            }
+            // save
+            $ctManager->saveCollationTable($collationTableId, $collationTableData, $versionInfo);
+            $responseData = [
+                'status' => 'OK',
+                'tableId' => $collationTableId,
+                'versionInfo' => $ctManager->getCollationTableVersions($collationTableId)
             ];
 
+            $this->profiler->stop();
+            $this->logProfilerData('Api.SaveCollationTable');
+            return $this->responseWithJson($response, $responseData);
+        }
+
+        // new collation table
+        $this->codeDebug("Saving new collation table");
+        $collationTableId = $ctManager->saveNewCollationTable($collationTableData, $versionInfo);
+        $responseData = [
+            'status' => 'OK',
+            'tableId' => $collationTableId,
+            'versionInfo' => $ctManager->getCollationTableVersions($collationTableId)
+        ];
+
+        $this->profiler->stop();
+        $this->logProfilerData('Api.SaveCollationTable (new table');
         return $this->responseWithJson($response, $responseData);
     }
 

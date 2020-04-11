@@ -1,0 +1,17 @@
+#collationtableinfo {
+    margin-top: 20px;
+    margin-bottom: 25px;
+}
+
+table.witnesstable {
+    margin-top: 20px;
+    margin-left: 20px;
+}
+
+table.witnesstable td,th {
+    padding: 10px;
+}
+
+.breadcrumb {
+    margin-bottom: 5px;
+}

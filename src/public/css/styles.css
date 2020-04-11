@@ -414,3 +414,10 @@ div.cpheader a {
 .collationtablelinks li.smallpadding {
     padding-bottom: 5px;
 }
+
+.panetab {
+    padding: 5px;
+    border-bottom: 1px solid #ddd;
+    /*border-left: 1px solid #ddd;*/
+    /*border-right: 1px solid #ddd;*/
+}

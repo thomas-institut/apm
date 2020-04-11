@@ -26,6 +26,7 @@
 
 namespace APM\Site;
 
+use APM\FullTranscription\DocManager;
 use APM\FullTranscription\PageInfo;
 use APM\FullTranscription\PageManager;
 use APM\Plugin\HookManager;
@@ -360,11 +361,36 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         );
     }
 
+    protected function getDocInfoArrayFromList(array $docList, DocManager $docManager) : array {
+        return $this->getInfoFromIdList(
+            $docList,
+            function ($id) use ($docManager) {
+                return $docManager->getDocInfoById($id);
+            }
+        );
+    }
+
+
+
     protected function getAuthorInfoArrayFromList(array $authorList, UserManager $userManager) : array {
         return $this->getInfoFromIdList(
             $authorList,
             function ($id) use ($userManager) {
-                return $userManager->getUserInfoByUserId($id);
+
+                try {
+                    $info = $userManager->getUserInfoByUserId($id);
+                } catch (\Exception $e) {
+                    // not a user, let's try non-users
+                    try {
+                        $info = $userManager->getPersonInfo($id);
+                    } catch (\Exception $e) {
+                        // cannot get the info
+                        $this->logger->debug("Person info not found for id $id");
+                        return ['id' => $id, 'fullname' => "Person Unknown $id"];
+                    }
+                    return $info;
+                }
+                return $info;
             }
         );
     }

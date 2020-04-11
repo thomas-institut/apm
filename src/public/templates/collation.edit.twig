@@ -5,7 +5,10 @@
 
 {% block extraJS %}
 <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/collationtable.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/collation.edit.css" />
 <script type="text/javascript" src="{{baseurl}}/node_modules//twig/twig.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/ApmUtil.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/EditableTextField.js"></script>
 <script type="application/javascript" src="{{baseurl}}/js/AutoCollTableViewSettingsForm.js"></script>
 <script type="application/javascript" src="{{baseurl}}/js/CollationTableFormatter.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/CollationTableEditor.js"></script>
@@ -20,15 +23,24 @@
   $(function() {// .ready()
 
     let ctData  = JSON.parse("{{collationTableData|json_encode|e('js')}}")
+    let peopleInfo = JSON.parse("{{peopleInfo|json_encode|e('js')}}")
+    let workInfo = JSON.parse("{{workInfo|json_encode|e('js')}}")
+    let docInfo = JSON.parse("{{docInfo|json_encode|e('js')}}")
 
     console.log(ctData)
+    console.log(peopleInfo)
+    console.log(workInfo)
+    console.log(docInfo)
 
     let te = new CollationTableEditor({
       collationTableData : ctData,
       workId: '{{ workId }}',
       chunkNumber: {{ chunkNumber }},
       tableId: {{ tableId }},
-      urlGenerator: new ApmUrlGenerator('{{ base }}')
+      urlGenerator: new ApmUrlGenerator('{{ base }}'),
+      peopleInfo: peopleInfo,
+      workInfo: workInfo,
+      docInfo: docInfo
     })
 
 
@@ -44,18 +56,34 @@
         <li><span id="breadcrumb-cttitle"></span></li>
     </ol>
 
-
     <div class="row">
-        <div id="collationtabletitle"></div>
-        <div id="collationtableinfo"></div>
-        <div id="collationtableactions"></div>
+        <div class="col-md-9">
+            <div id="collationtabletitle">
+                <h1><span id="cttitletext"></span></h1>
+            </div>
+     <div id="collationtableinfo"></div>
+     <div id="collationtableactions"></div>
+        </div>
+        <div class="col-md-3 text-right" id="save-area">
+            <h1><button class="btn btn-primary" id="savebutton">Save Changes</button></h1>
+        </div>
     </div>
     <div id="status" class="text-danger"></div>
-    <div id="editiondiv">
-        <div id="theedition"></div>
-        <div id="sigla"></div>
+
+
+    <ul class="nav nav-tabs" role="tablist" id="tabsUl">
+        <li id="collationTableTabHeader" role="presentation" class="active"><a role="tab" data-toggle="tab" href="#collationtablediv">Collation Table</a></li>
+        <li id="editionTabHeader"  role="presentation"><a role="tab" data-toggle="tab" href="#editiondiv">Quick Edition</a></li>
+        <li id="witnessesTabHeader"  role="presentation"><a role="tab" data-toggle="tab" href="#witnessesdiv">Witness Info</a></li>
+        <li id="witnessesTabHeader"  role="presentation"><a role="tab" data-toggle="tab" href="#versionhistorydiv">Version History</a></li>
+    </ul>
+
+    <div class="tab-content">
+        <div role="tabpanel" class="tab-pane active panetab" id="collationtablediv"></div>
+        <div role="tabpanel" class="tab-pane panetab" id="editiondiv"></div>
+        <div role="tabpanel" class="tab-pane panetab" id="witnessesdiv"></div>
+        <div role="tabpanel" class="tab-pane panetab" id="versionhistorydiv">Version History coming soon....</div>
     </div>
-    <div id="collationtablediv" class="ctdiv">Collation table goes here</div>
 
 
 

@@ -34,17 +34,22 @@ class CollationTableEditor {
       },
       availableWitnesses: { type: 'Array', default: [] },
       urlGenerator: { type: 'object', objectClass: ApmUrlGenerator, required: true},
-      workInfo: { type: 'object', default: [] },
-      peopleInfo: { type: 'object', default: [] },
-      docInfo: { type: 'object', default: [] }
+      workInfo: { type: 'object', default: {} },
+      peopleInfo: { type: 'object', default: {} },
+      docInfo: { type: 'object', default: {} },
+      versionInfo: { type: 'object', default: {}}
     }
 
     let oc = new OptionsChecker(optionsDefinition, "EditCollationTable")
     this.options = oc.getCleanOptions(options)
 
+    this.apiSaveCollationUrl = this.options.urlGenerator.apiSaveCollation()
+
     this.ctData = this.options['collationTableData']
     this.lastSavedCtData = $.extend({}, this.ctData)
     this.tableId = this.options['tableId']
+    this.ctData['tableId'] = this.tableId
+    this.versionInfo = this.options.versionInfo
 
 
     // DOM elements
@@ -55,10 +60,12 @@ class CollationTableEditor {
     this.ctActionsDiv = $('#collationtableactions')
     this.breadcrumbCtTitleSpan = $('#breadcrumb-cttitle')
     this.witnessesDiv = $('#witnessesdiv')
+    this.versionInfoDiv = $('#versionhistorydiv')
     this.ctDiv = $('#collationtablediv')
     this.quickEditionDiv = $('#editiondiv')
     this.saveAreaDiv = $('#save-area')
     this.saveButton = $('#savebutton')
+    this.lastSaveSpan = $('#lastSave')
 
     let thisObject = this
     this.ctTitleDiv.on('mouseenter', function () {
@@ -81,17 +88,71 @@ class CollationTableEditor {
     this.ctInfoDiv.html(this.genCtInfoDiv())
 
     this.witnessesDiv.html(this.genWitnessesDivHtml())
+    this.updateVersionInfo()
     this.quickEditionDiv.html('Quick edition coming soon...')
     this.ctDiv.html('Collation table coming soon...')
 
     this.saveButton.on('click', this.genOnClickSaveButton())
   }
 
+  updateVersionInfo(){
+
+    let html = ''
+
+    html += '<table class="versioninfo">'
+    html += '<tr><th>N</th><th>Id</th><th>Author</th><th>Time</th><th>Description</th></tr>'
+
+    for(let i=this.versionInfo.length-1; i >= 0; i--)   {
+      let version = this.versionInfo[i]
+      html += '<tr>'
+      html += '<td>' + (i+1) + '</td>'
+      html += '<td>' + version['id'] + '</td>'
+      html += '<td>' + this.options.peopleInfo[version['authorId']].fullname + '</td>'
+      html += '<td>' + ApmUtil.formatVersionTime(version['timeFrom']) + '</td>'
+      html += '<td>' + version['description'] + '</td>'
+
+      html += '<td>'
+      if (version['isMinor']) { html += '[m]'}
+
+      if (version['isReview']) { html += ' [r]'}
+        html += '</td>'
+      html += '</tr>'
+    }
+
+    this.versionInfoDiv.html(html)
+  }
+
   genOnClickSaveButton() {
     let thisObject = this
     return function() {
-      if (thisObject.changesInCtData()) {
-        console.log('Saving changes...')
+      let changes = thisObject.changesInCtData()
+      if (changes.length !== 0) {
+        console.log('Saving table via API call to ' + thisObject.apiSaveCollationUrl)
+        let description = ''
+        for (let change of changes) {
+          description += change + '. '
+        }
+        let apiCallOptions = {
+          collationTableId: thisObject.tableId,
+          collationTable: thisObject.ctData,
+          descr: description,
+          source: 'edit',
+          baseSiglum: thisObject.ctData.sigla[0]
+        }
+        $.post(
+          thisObject.apiSaveCollationUrl,
+          {data: JSON.stringify(apiCallOptions)}
+        ).done( function (apiResponse){
+          console.log("Success saving table")
+          console.log(apiResponse)
+          thisObject.lastSavedCtData = $.extend({}, thisObject.ctData)
+          thisObject.versionInfo = apiResponse.versionInfo
+          thisObject.updateSaveArea()
+          thisObject.updateVersionInfo()
+        }).fail(function(resp){
+          console.error("Cannot save table")
+          console.log(resp)
+        })
 
       }
     }
@@ -117,27 +178,35 @@ class CollationTableEditor {
   }
 
   updateSaveArea() {
-    if (this.changesInCtData()) {
+    let changes = this.changesInCtData()
+    if (changes.length !== 0) {
       this.saveButton.removeClass('hidden')
     } else {
       this.saveButton.addClass('hidden')
     }
+
+    let lastVersion = this.versionInfo[this.versionInfo.length-1]
+    this.lastSaveSpan.html(ApmUtil.formatVersionTime(lastVersion['timeFrom']))
   }
 
   changesInCtData() {
+    //console.log('Checking data changes')
+    //console.log('Title')
     //console.log(this.ctData['title'])
     //console.log(this.lastSavedCtData['title'])
+
+    let changes = []
     if (this.ctData['title'] !== this.lastSavedCtData['title']) {
-      return true
+      changes.push("New title: '" + this.ctData['title'] + "'" )
     }
-    return false
+    return changes
   }
 
   genOnConfirmTitleField() {
     let thisObject = this
     return function (data) {
-      console.log('confirm title field')
-      console.log(data.detail)
+      //console.log('confirm title field')
+      //console.log(data.detail)
       if (data.detail.newText !== data.detail.oldText) {
         let normalizedNewTitle = thisObject.normalizeTitleString(data.detail.newText)
         if (normalizedNewTitle === '') {
@@ -145,7 +214,7 @@ class CollationTableEditor {
           thisObject.titleField.setText(thisObject.ctData['title'])
           return false
         }
-        console.debug('New title: ' + normalizedNewTitle)
+        //console.debug('New title: ' + normalizedNewTitle)
         thisObject.ctData['title'] = normalizedNewTitle
         thisObject.titleField.setText(normalizedNewTitle)
         thisObject.updateSaveArea()

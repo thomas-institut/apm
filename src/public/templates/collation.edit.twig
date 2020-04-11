@@ -26,11 +26,12 @@
     let peopleInfo = JSON.parse("{{peopleInfo|json_encode|e('js')}}")
     let workInfo = JSON.parse("{{workInfo|json_encode|e('js')}}")
     let docInfo = JSON.parse("{{docInfo|json_encode|e('js')}}")
-
+    let versionInfo = JSON.parse("{{versionInfo|json_encode|e('js')}}")
     console.log(ctData)
     console.log(peopleInfo)
     console.log(workInfo)
     console.log(docInfo)
+    console.log(versionInfo)
 
     let te = new CollationTableEditor({
       collationTableData : ctData,
@@ -40,7 +41,8 @@
       urlGenerator: new ApmUrlGenerator('{{ base }}'),
       peopleInfo: peopleInfo,
       workInfo: workInfo,
-      docInfo: docInfo
+      docInfo: docInfo,
+      versionInfo: versionInfo
     })
 
 
@@ -57,17 +59,19 @@
     </ol>
 
     <div class="row">
-        <div class="col-md-9">
+        <div class="col-md-8">
             <div id="collationtabletitle">
                 <h1><span id="cttitletext"></span></h1>
             </div>
-     <div id="collationtableinfo"></div>
-     <div id="collationtableactions"></div>
+            <div id="collationtableinfo"></div>
+            <div id="collationtableactions"></div>
         </div>
-        <div class="col-md-3 text-right" id="save-area">
+        <div class="col-md-4 text-right" id="save-area">
             <h1><button class="btn btn-primary" id="savebutton">Save Changes</button></h1>
+            <p><small>Last Save: <span id="lastSave"></span></small></p>
         </div>
     </div>
+
     <div id="status" class="text-danger"></div>
 
 
@@ -82,7 +86,7 @@
         <div role="tabpanel" class="tab-pane active panetab" id="collationtablediv"></div>
         <div role="tabpanel" class="tab-pane panetab" id="editiondiv"></div>
         <div role="tabpanel" class="tab-pane panetab" id="witnessesdiv"></div>
-        <div role="tabpanel" class="tab-pane panetab" id="versionhistorydiv">Version History coming soon....</div>
+        <div role="tabpanel" class="tab-pane panetab" id="versionhistorydiv"></div>
     </div>
 
 

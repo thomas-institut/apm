@@ -12,6 +12,15 @@ table.witnesstable td,th {
     padding: 10px;
 }
 
+table.versioninfo {
+    margin-top: 20px;
+    margin-left: 20px;
+}
+
+table.versioninfo td,th {
+    padding: 5px;
+}
+
 .breadcrumb {
     margin-bottom: 5px;
 }

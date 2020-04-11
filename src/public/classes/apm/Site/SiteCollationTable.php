@@ -99,6 +99,8 @@ class SiteCollationTable extends SiteController
             ]);
         }
 
+        $versionInfo = $ctManager->getCollationTableVersions($tableId);
+
         $dm = $this->dataManager;
         $rawWorkInfo = $dm->getWorkInfo($workId);
         $workInfo = [
@@ -114,6 +116,7 @@ class SiteCollationTable extends SiteController
         $docs = $this->getMentionedDocsFromCtData($ctData);
         $docInfo = $this->getDocInfoArrayFromList($docs, $this->systemManager->getTranscriptionManager()->getDocManager());
 
+
         $this->profiler->stop();
         $this->logProfilerData("Edit Collation Table");
         return $this->renderPage($response, self::TEMPLATE_EDIT_COLLATION_TABLE, [
@@ -123,7 +126,8 @@ class SiteCollationTable extends SiteController
             'collationTableData' => $ctData,
             'workInfo' => $workInfo,
             'peopleInfo' => $peopleInfo,
-            'docInfo' => $docInfo
+            'docInfo' => $docInfo,
+            'versionInfo' => $versionInfo
         ]);
     }
 

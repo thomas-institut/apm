@@ -54,6 +54,7 @@ class ApiCollation extends ApiController
     const ERROR_INVALID_LANGUAGE = 2004;
     const ERROR_INVALID_COLLATION_TABLE_ID = 2005;
     const ERROR_COLLATION_TABLE_DOES_NOT_EXIST = 2006;
+    const ERROR_MISSING_VERSION_INFO = 2007;
 
     
     public function quickCollation(Request $request, Response $response)
@@ -459,6 +460,9 @@ class ApiCollation extends ApiController
                     ]);
                 return $this->responseWithJson($response, ['error' => self::ERROR_COLLATION_TABLE_DOES_NOT_EXIST], 409);
             }
+
+            $versionInfo->collationTableId = $collationTableId;
+
             // save
             $ctManager->saveCollationTable($collationTableId, $collationTableData, $versionInfo);
             $responseData = [

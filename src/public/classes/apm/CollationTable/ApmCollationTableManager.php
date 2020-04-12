@@ -81,7 +81,14 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
             $dataJson = $dbData['data'];
         }
 
-        return json_decode($dataJson);
+        $ctData = json_decode($dataJson);
+
+        // inject titles, if not in $ctData
+        if (!isset($ctData->witnessTitles)) {
+            $ctData->witnessTitles = $ctData->sigla;
+        }
+
+        return $ctData;
 
 
     }

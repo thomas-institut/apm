@@ -5,6 +5,7 @@ namespace APM\Api;
 
 
 use APM\EditionEngine\BasicAutomaticEditionEngine;
+use APM\EditionEngine\BasicEditionEngine2;
 use APM\EditionEngine\EditionEngine;
 use APM\Engine\Engine;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -25,8 +26,7 @@ class ApiEditionEngine extends ApiController
 
         $apiCall = 'EditionEngine';
         $requiredFields = [
-            EditionEngine::INPUT_FIELD_COLLATION_TABLE,
-            EditionEngine::INPUT_FIELD_BASE_SIGLUM,
+            'collationTable',
         ];
 
         $inputDataObject = $this->checkAndGetInputData($request, $response, $apiCall, $requiredFields);
@@ -35,15 +35,16 @@ class ApiEditionEngine extends ApiController
         }
         $this->profiler->start();
 
-        // TODO: implement this!
+        $editionEngine = new BasicEditionEngine2('BasicEditionEngine2');
+
+        $responseData = $editionEngine->generateEdition($inputDataObject);
+
+        $responseData['engineRunDetails'] = $editionEngine->getRunDetails();
 
         $this->profiler->stop();
         $this->logProfilerData('editionEngine');
 
-        return $this->responseWithJson($response, [
-            'engineDetails' => [ 'error' => "Not implemented yet"],
-            'edition' => []
-        ]);
+        return $this->responseWithJson($response, $responseData);
     }
 
 }

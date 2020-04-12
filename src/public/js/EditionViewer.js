@@ -30,7 +30,7 @@ class EditionViewer {
       apparatusArray:  {type: 'Array', default: []},
       isRightToLeft: { type: 'boolean', default: false},
       addGlue: { type: 'boolean', default: true},
-      fontFamily:  { type: 'NonEmptyString', default: 'Times New Roman'},
+      fontFamily:  { type: 'NonEmptyString', default: 'Noto Naskh Arabic UI'},
       pageWidthInCm: { type: 'NumberGreaterThanZero', default: 21},
       marginInCm: {type: 'object', default: {
         top: 2,

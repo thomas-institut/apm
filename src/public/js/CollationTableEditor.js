@@ -27,9 +27,9 @@ class CollationTableEditor {
       chunkNumber: {type: 'NonZeroNumber', required: true},
       tableId: { type: 'NonZeroNumber', required: true},
       langDef : { type: 'object', default: {
-          la: { code: 'la', name: 'Latin', rtl: false, fontsize: 3},
-          ar: { code: 'ar', name: 'Arabic', rtl: true, fontsize: 3},
-          he: { code: 'he', name: 'Hebrew', rtl: true, fontsize: 3}
+          la: { code: 'la', name: 'Latin', rtl: false, fontsize: 3, editionFont: 'Times New Roman'},
+          ar: { code: 'ar', name: 'Arabic', rtl: true, fontsize: 3, editionFont: 'ApmNotoNaskhArabicUI'},
+          he: { code: 'he', name: 'Hebrew', rtl: true, fontsize: 3, editionFont: 'Times New Roman'}
         }
       },
       availableWitnesses: { type: 'Array', default: [] },
@@ -130,8 +130,8 @@ class CollationTableEditor {
 
     this.setupTableEditor()
     this.lastSavedEditorMatrix = this.tableEditor.getMatrix().clone()
-
     this.updateSaveArea()
+    this.fetchQuickEdition()
   }
 
   getCollationMatrixFromTableEditor() {
@@ -703,6 +703,7 @@ class CollationTableEditor {
           thisObject.versionInfo = apiResponse.versionInfo
           thisObject.updateSaveArea()
           thisObject.updateVersionInfo()
+          thisObject.fetchQuickEdition()
         }).fail(function(resp){
           console.error("Cannot save table")
           console.log(resp)
@@ -757,6 +758,52 @@ class CollationTableEditor {
       changes.push('Changes in collation alignment')
     }
     return changes
+  }
+
+  genEditionEngineDetailsHtml(engineDetails) {
+    let html = ''
+    for(const key in engineDetails) {
+      html += '<p>' + '<b>' + key + '</b>:' + engineDetails[key]
+    }
+    return html
+  }
+
+  fetchQuickEdition() {
+    this.quickEditionDiv.html("Requesting edition from the server... <i class=\"fa fa-spinner fa-spin fa-fw\"></i>")
+    let apiQuickEditionUrl = this.options.urlGenerator.apiAutomaticEdition()
+    console.log('Calling API at ' + apiQuickEditionUrl)
+    let apiCallOptions = {
+      collationTable: this.ctData,
+      baseWitnessIndex: 0
+    }
+    let thisObject = this
+    $.post(
+      apiQuickEditionUrl,
+      {data: JSON.stringify(apiCallOptions)}
+    ).done( function (apiResponse) {
+      console.log("Quick edition API call successful")
+      console.log(apiResponse)
+
+      let ev = new EditionViewer( {
+        collationTokens: apiResponse.mainTextTokens,
+        apparatusArray: apiResponse.apparatusArray,
+        isRightToLeft: (apiResponse.textDirection === 'rtl'),
+        fontFamily: thisObject.options.langDef[thisObject.ctData['lang']].editionFont,
+        addGlue: false
+      })
+
+      thisObject.quickEditionDiv.html(ev.getHtml())
+      //thisObject.quickEditionDiv.html(thisObject.genEditionEngineDetailsHtml(apiResponse['engineRunDetails']))
+
+    }).fail(function(resp) {
+      console.error('Error in quick edition')
+      console.log(resp)
+      let failMsg = 'Error getting quick edition <i class="fa fa-frown-o" aria-hidden="true"></i><br/> '
+      failMsg += '<span class="small">HTTP code ' + resp.status + '</span>'
+      thisObject.quickEditionDiv.html(failMsg)
+    })
+
+
   }
 
   genOnConfirmTitleField() {

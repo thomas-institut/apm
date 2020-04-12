@@ -36,9 +36,9 @@ class AutomaticCollationTable {
       workId : { type: 'string', required: true},
       chunkNumber: {type: 'NonZeroNumber', required: true},
       langDef : { type: 'object', default: {
-          la: { code: 'la', name: 'Latin', rtl: false, fontsize: 3},
-          ar: { code: 'ar', name: 'Arabic', rtl: true, fontsize: 3},
-          he: { code: 'he', name: 'Hebrew', rtl: true, fontsize: 3}
+          la: { code: 'la', name: 'Latin', rtl: false, fontsize: 3, editionFont: 'Times New Roman'},
+          ar: { code: 'ar', name: 'Arabic', rtl: true, fontsize: 3, editionFont: 'ApmNotoNaskhArabicUI'},
+          he: { code: 'he', name: 'Hebrew', rtl: true, fontsize: 3, editionFont: 'Times New Roman'}
         }
       },
       availableWitnesses: { type: 'Array', default: [] },
@@ -281,20 +281,41 @@ class AutomaticCollationTable {
   }
 
   fetchQuickEdition() {
-    this.editionDiv.html("Querying the server... <i class=\"fa fa-spinner fa-spin fa-fw\"></i>")
+    this.editionDiv.html("Requesting edition from the server... <i class=\"fa fa-spinner fa-spin fa-fw\"></i>")
     console.log('Calling API at ' + this.apiQuickEditionUrl)
     let apiCallOptions = {
       collationTable: this.collationTable,
-      baseSiglum: this.collationTable.sigla[0]
+      baseWitnessIndex: 0
     }
-    console.log('Base siglum: ' + apiCallOptions.baseSiglum)
     let thisObject = this
     $.post(
       this.apiQuickEditionUrl,
       {data: JSON.stringify(apiCallOptions)}
     ).done( function (apiResponse) {
       console.log("Quick edition API call successful")
-      thisObject.editionDiv.html("<i>Edition coming soon</i>")
+      console.log(apiResponse)
+      //thisObject.editionDiv.html("Edition Status: " + apiResponse['status'])
+
+
+      let ev = new EditionViewer( {
+        collationTokens: apiResponse.mainTextTokens,
+        apparatusArray: apiResponse.apparatusArray,
+        isRightToLeft: (apiResponse.textDirection === 'rtl'),
+        fontFamily: thisObject.options.langDef[thisObject.ctData['lang']].editionFont,
+        addGlue: false
+      })
+
+      thisObject.editionDiv.html(ev.getHtml())
+
+      // let siglaHtml = '<ul class="siglalist">'
+      // siglaHtml += '<li>' + 'Base witness: ' + data.quickEdition.baseSiglum + '</li>'
+      // for(const abbr in data.quickEdition.abbrToSigla) {
+      //   siglaHtml += '<li>' + '<em>' + abbr + '</em>: ' + data.quickEdition.abbrToSigla[abbr] + '</li>'
+      // }
+      // siglaHtml += '</ul>'
+      // thisObject.siglaDiv.html(siglaHtml)
+
+
 
     }).fail(function(resp) {
       console.error('Error in quick edition')

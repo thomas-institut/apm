@@ -52,6 +52,11 @@ class TableEditor {
         required: true,
         type: 'string'
       },
+      textDirection: {
+        type: 'string',
+        required: false,
+        default: 'ltr'
+      },
       showInMultipleRows: {
         // if true, the table will be split and shown in multiple
         // tables of  the number of rows given in options.columnsPerRow
@@ -257,7 +262,14 @@ class TableEditor {
     } else {
       this.container.removeClass('table-edit-mode')
     }
+  }
 
+  editModeOn(redraw = true) {
+    this.tableEditMode = true
+    this.container.addClass('table-edit-mode')
+    if (redraw) {
+     this.redrawTable()
+    }
   }
 
   isTableShownInMultipleRows() {
@@ -310,9 +322,11 @@ class TableEditor {
 
   redrawTable() {
     //console.log("Redrawing table")
-    let inittime = window.performance.now()
+    let profiler = new SimpleProfiler('TableRedraw')
     this.container.html(this.generateTable())
+    profiler.lap('GenTable')
     this.setupTableEventHandlers()
+    profiler.lap('SetupEventHandlers')
     // dispatch redraw callbacks
     for(let row = 0; row < this.matrix.nRows; row++) {
       for (let col = 0; col < this.matrix.nCols; col++) {
@@ -320,7 +334,7 @@ class TableEditor {
       }
     }
     this.dispatchTableDrawnEvent()
-    console.log('Done redrawing table in ' + (window.performance.now() - inittime) + ' ms')
+    profiler.stop()
   }
 
   generateTable() {
@@ -413,6 +427,7 @@ class TableEditor {
   }
 
   setupTableEventHandlers() {
+    let profiler = new SimpleProfiler('SetupEventHandlers')
     for (let col=0; col < this.matrix.nCols; col++) {
       if (this.tableEditMode) {
         $(this.getThSelector(col) + ' .add-column-left-button').on('click', this.genOnClickAddColumnLeftButton(col))
@@ -424,11 +439,13 @@ class TableEditor {
       $(this.getThSelector(col) + ' .header-button').addClass('hidden')
     }
 
+    profiler.lap('ColumnHandlers')
     for (let row = 0; row < this.matrix.nRows; row++) {
       for (let col = 0; col < this.matrix.nCols; col++) {
        this.setupCellEventHandlers(row, col)
       }
     }
+    profiler.stop()
   }
 
 

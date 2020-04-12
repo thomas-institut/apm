@@ -108,7 +108,7 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
     public function saveCollationTable(int $collationTableId, array $collationTableData, CollationTableVersionInfo $versionInfo)
     {
         $time = TimeString::now();
-        $dbRow = $this->getDbRowFromCollationData($collationTableData, false);
+        $dbRow = $this->getDbRowFromCollationData($collationTableData, true);
         $dbRow['id'] = $collationTableId;
         $this->ctTable->updateRowWithTime($dbRow, $time);
         $versionInfo->timeFrom = $time;

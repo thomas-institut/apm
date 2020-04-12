@@ -26,6 +26,7 @@
 
 namespace APM\Site;
 
+use APM\CollationTable\CollationTableVersionInfo;
 use APM\FullTranscription\ApmChunkSegmentLocation;
 use APM\FullTranscription\DocInfo;
 use APM\System\WitnessInfo;
@@ -111,6 +112,7 @@ class SiteCollationTable extends SiteController
         $people = [];
         $people[] = $workInfo['authorId'];
         $people = array_merge($people, $this->getMentionedAuthorsFromCtData($ctData));
+        $people = array_merge($people, $this->getMentionedPeopleFromVersionArray($versionInfo));
         $peopleInfo = $this->getAuthorInfoArrayFromList($people, $dm->userManager);
 
         $docs = $this->getMentionedDocsFromCtData($ctData);
@@ -131,6 +133,14 @@ class SiteCollationTable extends SiteController
         ]);
     }
 
+    protected function getMentionedPeopleFromVersionArray($versionArray) : array {
+        $people = [];
+        foreach($versionArray as $version) {
+            /** @var CollationTableVersionInfo $version */
+            $people[] = $version->authorId;
+        }
+        return $people;
+    }
 
     protected function getMentionedAuthorsFromCtData(\stdClass $ctData) : array {
         $authors = [];

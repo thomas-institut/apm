@@ -90,7 +90,7 @@ class CollationTableEditor {
 
 
     this.breadcrumbCtTitleSpan.html("Saved Collation Table")
-    this.updateSaveArea()
+
     this.ctInfoDiv.html(this.genCtInfoDiv())
 
     this.witnessesDiv.html(this.genWitnessesDivHtml())
@@ -101,7 +101,6 @@ class CollationTableEditor {
     this.saveButton.on('click', this.genOnClickSaveButton())
 
     this.textDirection = this.options.langDef[this.ctData['lang']].rtl ? 'rtl' : 'ltr'
-
 
     // viewSettings
     this.viewSettings = {
@@ -130,8 +129,22 @@ class CollationTableEditor {
 
 
     this.setupTableEditor()
+    this.lastSavedEditorMatrix = this.tableEditor.getMatrix().clone()
+
+    this.updateSaveArea()
   }
 
+  getCollationMatrixFromTableEditor() {
+    let matrix = this.tableEditor.getMatrix()
+    let cMatrix = []
+    for(let row = 0; row < matrix.nRows; row++) {
+      cMatrix[row] = []
+      for (let col =0; col < matrix.nCols; col++) {
+        cMatrix[row][col] = matrix.getValue(row, col)
+      }
+    }
+    return cMatrix
+  }
 
   setupTableEditor() {
 
@@ -171,10 +184,21 @@ class CollationTableEditor {
     this.tableEditor.on('table-drawn-pre', function () {
         thisObject.variantsMatrix = thisObject.genVariantsMatrix(thisObject.tableEditor.getMatrix(), collationTable['witnesses'])
     })
+
     this.tableEditor.editModeOn(false)
     this.tableEditor.redrawTable()
+
+
+    this.tableEditor.on('column-add column-delete cell-move', this.genOnCollationChanges())
   }
 
+  genOnCollationChanges() {
+    let thisObject = this
+    return function() {
+      console.log('collation change')
+      thisObject.updateSaveArea()
+    }
+  }
 
   genVariantsMatrix(refMatrix, witnesses) {
     let variantMatrix = new Matrix(refMatrix.nRows, refMatrix.nCols)
@@ -660,6 +684,7 @@ class CollationTableEditor {
         for (let change of changes) {
           description += change + '. '
         }
+        thisObject.ctData['collationMatrix'] = thisObject.getCollationMatrixFromTableEditor()
         let apiCallOptions = {
           collationTableId: thisObject.tableId,
           collationTable: thisObject.ctData,
@@ -674,6 +699,7 @@ class CollationTableEditor {
           console.log("Success saving table")
           console.log(apiResponse)
           thisObject.lastSavedCtData = $.extend({}, thisObject.ctData)
+          thisObject.lastSavedEditorMatrix = thisObject.tableEditor.getMatrix().clone()
           thisObject.versionInfo = apiResponse.versionInfo
           thisObject.updateSaveArea()
           thisObject.updateVersionInfo()
@@ -726,6 +752,9 @@ class CollationTableEditor {
     let changes = []
     if (this.ctData['title'] !== this.lastSavedCtData['title']) {
       changes.push("New title: '" + this.ctData['title'] + "'" )
+    }
+    if (!this.tableEditor.getMatrix().isEqualTo(this.lastSavedEditorMatrix)) {
+      changes.push('Changes in collation alignment')
     }
     return changes
   }

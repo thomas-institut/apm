@@ -133,4 +133,33 @@ class Matrix {
     console.log(this.theMatrix)
   }
 
+  isEqualTo(otherMatrix) {
+    if (this.nRows !== otherMatrix.nRows) {
+      return false
+    }
+
+    if (this.nCols !== otherMatrix.nCols) {
+      return false
+    }
+
+    for (let row = 0; row < this.nRows; row++) {
+      for (let col=0; col < this.nCols; col++) {
+        if (this.getValue(row,col) !== otherMatrix.getValue(row, col)) {
+          return false
+        }
+      }
+    }
+    return true
+  }
+
+  clone() {
+    let newMatrix = new Matrix(this.nRows, this.nCols, this.defaultValue)
+    for (let row = 0; row < this.nRows; row++) {
+      for (let col=0; col < this.nCols; col++) {
+        newMatrix.setValue(row, col, this.getValue(row, col))
+      }
+    }
+    return newMatrix
+  }
+
 }

@@ -323,6 +323,8 @@ class TableEditor {
   redrawTable() {
     //console.log("Redrawing table")
     let profiler = new SimpleProfiler('TableRedraw')
+    let containerCursor = this.container.css('cursor')
+    this.container.css('cursor', 'wait')
     this.dispatchTableDrawnPreEvent()
 
     this.container.html(this.generateTable())
@@ -336,6 +338,7 @@ class TableEditor {
       }
     }
     this.dispatchTableDrawnEvent()
+    this.container.css('cursor', containerCursor)
     profiler.stop()
   }
 

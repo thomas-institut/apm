@@ -119,7 +119,7 @@ class DatabaseItemStream implements  CodeDebugInterface{
                     $this->items[] = new ItemInDatabaseItemStream($fakeAddress, new Mark(MarkType::TEXT_BOX_BREAK));
                 }
 
-                if ( intval($row['type']) === ApItem::ADDITION && isset($row['target']) && !is_null($row['target'])) {
+                if ( intval($row['type']) === ApItem::ADDITION && isset($row['target']) && !is_null($row['target']) && intval($row['target']) !== 0) {
                     // this is an item that replaces a previous item
                     // add a "ghost" mark item to signal this
                     $fakeAddress = new AddressInDatabaseItemStream();

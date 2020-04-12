@@ -216,7 +216,14 @@ class AutomaticCollationTable {
                 thisObject.editSettingsFormManager.getTitleFromSettings())
     })
 
-    
+    this.collationTableDiv.popover({
+      trigger: "hover",
+      selector: '.withpopover',
+      delay: {show: 500 , hide:0},
+      placement: "auto top",
+      html: true,
+      container: 'body'
+    })
     
     this.collationTableDiv.html('')
     this.collationEngineDetailsElement.html('')

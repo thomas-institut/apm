@@ -15,19 +15,12 @@
     <script type="application/javascript" src="{{baseurl}}/js/EditionViewer.js"></script>
     <script type="text/javascript" src="{{baseurl}}/js/Matrix.js"></script>
     <script type="text/javascript" src="{{baseurl}}/js/TableEditor.js"></script>
+    <script type="text/javascript" src="{{baseurl}}/js/SimpleProfiler.js"></script>
     <style>
     
 </style>
 <script>
   $(function()  {// .ready()
-    $('#collationtablediv').popover({
-            container: 'body', 
-            html: true,
-            trigger: 'hover', 
-            selector: '.withformatpopover',
-            delay: {show: 500, hide: 0},
-            placement: 'auto'
-         })
     let apiCallOptions = JSON.parse("{{apiCallOptions|json_encode|e('js')}}")
     let availableWitnesses = JSON.parse("{{availableWitnesses|json_encode|e('js')}}")
     let urlGenerator = new ApmUrlGenerator('{{baseurl}}')

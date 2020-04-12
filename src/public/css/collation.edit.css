@@ -24,3 +24,9 @@ table.versioninfo td,th {
 .breadcrumb {
     margin-bottom: 5px;
 }
+
+
+.te-table {
+    border-collapse: collapse;
+    margin-bottom: 3em;
+}

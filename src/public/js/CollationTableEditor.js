@@ -100,6 +100,8 @@ class CollationTableEditor {
 
     this.saveButton.on('click', this.genOnClickSaveButton())
 
+    this.textDirection = this.options.langDef[this.ctData['lang']].rtl ? 'rtl' : 'ltr'
+
 
     // viewSettings
     this.viewSettings = {
@@ -108,7 +110,7 @@ class CollationTableEditor {
     }
 
     // popovers for collation table
-    thisObject.ctDiv.popover({
+    this.ctDiv.popover({
       trigger: "hover",
       selector: '.withpopover',
       delay: {show: 500 , hide:0},
@@ -117,7 +119,7 @@ class CollationTableEditor {
       container: 'body'
     })
     // text direction for collation table div
-    // div text direction
+
     if (this.options.langDef[this.ctData['lang']].rtl) {
       this.ctDiv.removeClass(this.ltrClass)
       this.ctDiv.addClass(this.rtlClass)
@@ -148,6 +150,7 @@ class CollationTableEditor {
 
     this.tableEditor = new TableEditor({
       id: this.ctDivId,
+      textDirection: this.textDirection,
       showInMultipleRows: true,
       columnsPerRow: 15, // TODO: change this
       rowDefinition: rowDefinition,
@@ -159,14 +162,19 @@ class CollationTableEditor {
       generateCellClasses: this.genGenerateCellClassesFunction(),
       generateCellTdExtraAttributes: this.genGenerateCellTdExtraAttributesFunction()
     })
-    this.variantsMatrix = this.genVariantsMatrix(this.tableEditor.getMatrix(), collationTable['witnesses'])
+    this.variantsMatrix = null // will be calculated before table draw
+    //this.variantsMatrix = this.genVariantsMatrix(this.tableEditor.getMatrix(), collationTable['witnesses'])
     this.tableEditor.on('cell-pre-move', function(data){
       $(data.detail.selector).popover('hide')
     })
+    let thisObject = this
+    this.tableEditor.on('table-drawn-pre', function () {
+        thisObject.variantsMatrix = thisObject.genVariantsMatrix(thisObject.tableEditor.getMatrix(), collationTable['witnesses'])
+    })
     this.tableEditor.editModeOn(false)
     this.tableEditor.redrawTable()
-
   }
+
 
   genVariantsMatrix(refMatrix, witnesses) {
     let variantMatrix = new Matrix(refMatrix.nRows, refMatrix.nCols)

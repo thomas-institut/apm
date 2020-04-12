@@ -337,14 +337,15 @@ td.te-rowtitle {
 }
 
 
-.table-edit-mode {
-    border-left: 1px solid red;
-    padding-left: 1em;
-}
+/*.table-edit-mode {*/
+/*    border-left: 1px solid red;*/
+/*    padding-left: 1em;*/
+/*}*/
 
 .table-edit-mode .te-table th {
+    font-size: 0.8em;
     font-weight: normal;
-    color: black;
+    color: #aaaaaa;
 }
 
 .hidden {

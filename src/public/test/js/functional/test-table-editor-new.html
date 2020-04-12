@@ -95,6 +95,7 @@
 
         function renderText(witness, refArray) {
           let textArray = []
+          console.log(refArray)
           for(const ref of refArray) {
             if (ref=== -1) {
               textArray.push('&ndash;')
@@ -317,6 +318,7 @@
         // recalculate variants on cell moves
         te.on('cell-post-move-right',function(data) {
           //console.log('post move right : '+ data.detail.col)
+          console.log('recalculating variants')
           variantMatrix = genVariantsMatrix(te.getMatrix(), witnesses)
           //console.log(te.getColumn(data.detail.col))
           //console.log(variantMatrix.getColumn(data.detail.col))
@@ -326,11 +328,17 @@
 
         te.on('cell-post-move-left', function(data) {
           //console.log('post move left : '+ data.detail.col)
+          console.log('recalculating variants')
           variantMatrix = genVariantsMatrix(te.getMatrix(), witnesses)
           //console.log(te.getColumn(data.detail.col))
           //console.log(variantMatrix.getColumn(data.detail.col))
           te.redrawColumn(data.detail.col)
           te.redrawColumn(data.detail.col-1)
+        })
+
+        te.on('table-drawn-pre', function () {
+            console.log('recalculating variants')
+            variantMatrix = genVariantsMatrix(te.getMatrix(), witnesses)
         })
 
         te.on('column-add', function(data){

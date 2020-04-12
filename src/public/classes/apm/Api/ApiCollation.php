@@ -23,12 +23,11 @@ namespace APM\Api;
 
 use APM\CollationTable\CollationTableVersionInfo;
 use APM\Engine\Engine;
-use APM\FullTranscription\ApmTranscriptionWitness;
 use APM\StandardData\CollationTableDataProvider;
-use APM\System\Decorators\ApmCollationTableDecorator;
 use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
+use APM\ToolBox\SiglumGenerator;
 use AverroesProject\Data\UserManagerUserInfoProvider;
 use Exception;
 use InvalidArgumentException;
@@ -36,7 +35,6 @@ use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use APM\Core\Witness\StringWitness;
 use APM\Core\Collation\CollationTable;
-use APM\Experimental\EditionWitness;
 use APM\Decorators\QuickCollationTableDecorator;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 
@@ -369,6 +367,18 @@ class ApiCollation extends ApiController
 
         $ctStandardDataProvider = new CollationTableDataProvider($collationTable);
         $standardData = $ctStandardDataProvider->getStandardData();
+
+        // generate witness titles and default sigla
+        $sigla = [];
+        $titles = [];
+        foreach($standardData->witnesses as $i => $witness) {
+            $sigla[$i] = SiglumGenerator::generateSiglaByIndex($i);
+            $titles[$i] = $standardData->sigla[$i];
+        }
+        $standardData->sigla = $sigla;
+        $standardData->witnessTitles = $titles;
+
+
         $userIds = $ctStandardDataProvider->getUserIdsFromData($standardData);
         $people = [];
         foreach($userIds as $userId) {
@@ -377,9 +387,6 @@ class ApiCollation extends ApiController
                 'shortName' => $userDirectory->getShortNameFromId($userId)
                 ];
         }
-
-        
-        // EXPERIMENTAL quick edition ===> done via API call
 
         $this->profiler->stop();
         $this->logProfilerData("CollationTable-$workId-$chunkNumber-$language");

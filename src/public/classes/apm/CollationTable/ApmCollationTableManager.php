@@ -81,14 +81,7 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
             $dataJson = $dbData['data'];
         }
 
-        $ctData = json_decode($dataJson);
-
-        // inject titles, if not in $ctData
-        if (!isset($ctData->witnessTitles)) {
-            $ctData->witnessTitles = $ctData->sigla;
-        }
-
-        return $ctData;
+        return json_decode($dataJson);
 
 
     }
@@ -101,7 +94,7 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
     public function saveNewCollationTable(array $collationTableData, CollationTableVersionInfo $versionInfo) : int
     {
         $time = TimeString::now();
-        $dbRow = $this->getDbRowFromCollationData($collationTableData, false);
+        $dbRow = $this->getDbRowFromCollationData($collationTableData, true);
         $collationTableId = $this->ctTable->createRowWithTime($dbRow, $time);
         $versionInfo->timeFrom = $time;
         $versionInfo->collationTableId = $collationTableId;

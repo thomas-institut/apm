@@ -152,10 +152,10 @@ class CollationTableEditor {
     let rowDefinition = []
     for (let i = 0; i < collationTable['sigla'].length; i++) {
       //let witness = collationTable.witnesses[i]
-      let siglum = collationTable['sigla'][i]
+      let title = collationTable['witnessTitles'][i]
       let tokenArray = collationTable['collationMatrix'][i]
       rowDefinition.push({
-        title: siglum,
+        title: title,
         values: tokenArray,
         isEditable: false
       })
@@ -722,7 +722,8 @@ class CollationTableEditor {
     for(let i = 0; i < this.ctData['witnesses'].length; i++) {
       let witness = this.ctData['witnesses'][i]
       let siglum = this.ctData['sigla'][i]
-      let docTitle = this.options.docInfo[witness['docId']]['title']
+      //let docTitle = this.options.docInfo[witness['docId']]['title']
+      let docTitle = this.ctData['witnessTitles'][i]
       html += '<tr>'
       html += '<td>' + docTitle + '</td>'
       html += '<td>' + ApmUtil.formatVersionTime(witness['timeStamp']) + '</td>'

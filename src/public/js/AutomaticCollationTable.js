@@ -301,7 +301,7 @@ class AutomaticCollationTable {
         collationTokens: apiResponse.mainTextTokens,
         apparatusArray: apiResponse.apparatusArray,
         isRightToLeft: (apiResponse.textDirection === 'rtl'),
-        fontFamily: thisObject.options.langDef[thisObject.ctData['lang']].editionFont,
+        fontFamily: thisObject.options.langDef[thisObject.collationTable['lang']].editionFont,
         addGlue: false
       })
 
@@ -599,7 +599,7 @@ class AutomaticCollationTable {
     let rowDefinition = []
     for (let i = 0; i < collationTable['sigla'].length; i++) {
       //let witness = collationTable.witnesses[i]
-      let siglum = collationTable['sigla'][i]
+      let siglum = collationTable['witnessTitles'][i]
       let tokenArray = collationTable['collationMatrix'][i]
       rowDefinition.push({
         title: siglum,

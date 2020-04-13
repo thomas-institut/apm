@@ -378,6 +378,10 @@ class ApiCollation extends ApiController
         $standardData->sigla = $sigla;
         $standardData->witnessTitles = $titles;
 
+        // add chunkId
+
+        $standardData->chunkId = $standardData->witnesses[0]->chunkId;
+
 
         $userIds = $ctStandardDataProvider->getUserIdsFromData($standardData);
         $people = [];

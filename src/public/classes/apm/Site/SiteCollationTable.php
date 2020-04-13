@@ -80,12 +80,12 @@ class SiteCollationTable extends SiteController
 
 
     public function editCollationTable(Request $request, Response $response) {
-        $workId = $request->getAttribute('work');
-        $chunkNumber = intval($request->getAttribute('chunk'));
+        //$workId = $request->getAttribute('work');
+        //$chunkNumber = intval($request->getAttribute('chunk'));
         $tableId = intval($request->getAttribute('tableId'));
 
         $this->profiler->start();
-        $this->logger->debug("Edit collation table $workId-$chunkNumber, id $tableId");
+        $this->logger->debug("Edit collation table id $tableId");
 
         $ctManager = $this->systemManager->getCollationTableManager();
         try {
@@ -93,14 +93,14 @@ class SiteCollationTable extends SiteController
         } catch (\InvalidArgumentException $e) {
             $this->logger->info("Table $tableId requested for editing not found");
             return $this->renderPage($response,self::TEMPLATE_EDIT_COLLATION_TABLE_ERROR, [
-                'workId' => $workId,
-                'chunkNumber' => $chunkNumber,
                 'tableId' => $tableId,
                 'message' => 'Table not found'
             ]);
         }
 
         $versionInfo = $ctManager->getCollationTableVersions($tableId);
+        $chunkId = isset($ctData->chunkId) ? $ctData->chunkId : $ctData->witnesses[0]->chunkId;
+        [ $workId, $chunkNumber] = explode('-', $chunkId);
 
         $dm = $this->dataManager;
         $rawWorkInfo = $dm->getWorkInfo($workId);

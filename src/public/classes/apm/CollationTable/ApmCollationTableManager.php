@@ -83,7 +83,6 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
 
         return json_decode($dataJson);
 
-
     }
 
     public function getCollationTableByIdWithVersion(int $id, int $versionId)

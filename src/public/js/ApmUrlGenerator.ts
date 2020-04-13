@@ -96,8 +96,8 @@ class ApmUrlGenerator {
     return this.base +  '/collation/auto/' + work + '/' + chunkno + '/' + lang + extra
   }
 
-  siteEditCollationTable(work, chunkno, tableId) {
-    return this.base + '/collation/edit/' + work + '/' + chunkno + '/' + tableId
+  siteEditCollationTable(tableId) {
+    return this.base + '/collation/edit/' + tableId
   }
 
   apiAutomaticCollation() {

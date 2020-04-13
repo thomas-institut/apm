@@ -47,6 +47,8 @@ abstract class CollationTableVersionManager
      */
     abstract public function registerNewCollationTable(int $collationTableId, CollationTableVersionInfo $versionInfo) : void;
 
+    abstract public function getActiveCollationTableIdsForUserId(int $userId) : array;
+
 
     /**
      * Checks that the given version sequence is coherent

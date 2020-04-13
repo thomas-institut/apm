@@ -27,6 +27,7 @@ namespace APM\Site;
 
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
+use ThomasInstitut\TimeString\TimeString;
 
 
 /**
@@ -55,11 +56,34 @@ class SiteDashboard extends SiteController
             $docListHtml .= $this->genDocPagesListForUser($userId, $docId);
         }
 
+        $ctManager = $this->systemManager->getCollationTableManager();
+
+        $tableIds = $ctManager->getCollationTableVersionManager()->getActiveCollationTableIdsForUserId($userId);
+
+        $tableInfo = [];
+        foreach($tableIds as $tableId) {
+            try {
+                $table = $ctManager->getCollationTableByIdWithTimestamp($tableId, TimeString::now());
+            } catch(\InvalidArgumentException $e) {
+                $this->logger->error("Table $tableId reported as being active does not exist. Is version table consistent?");
+                continue;
+            }
+            $chunkId = isset($table->chunkId) ? $table->chunkId : $table->witnesses[0]->chunkId;
+
+            $tableInfo[] = [
+                'id' => $tableId,
+                'title' => $table->title,
+                'chunkId' => $chunkId,
+            ];
+        }
+
+
         $this->profiler->stop();
         $this->logProfilerData('dashboardPage-' . $this->userInfo['username'] . '-' . $userId);
 
         return $this->renderPage($response, 'dashboard.twig', [
-            'doclist' => $docListHtml
+            'doclist' => $docListHtml,
+            'tableInfo' => $tableInfo
         ]);
     }
 }

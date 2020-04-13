@@ -1,17 +1,54 @@
 {% extends "base.twig" %}
 
 {% block title %}Dashboard{% endblock %}
+{% block extraJS %}
+
+<script>
+    $(function() {
+
+        let  tableInfo = JSON.parse("{{tableInfo|json_encode|e('js')}}")
+        let urlGenerator = new ApmUrlGenerator('{{ base }}')
+
+
+      function genCollationTableInfoHtml(tableInfo, urlGen) {
+        let html = ''
+
+        html += '<ul class="ctlist">'
+        for(const info of tableInfo) {
+          html += '<li><a target="_blank" href="' +  urlGen.siteEditCollationTable(info['id'])  + '">' + info['chunkId'] + ': ' + info['title'] + '</a></li>'
+        }
+        html += '</ul>'
+        return html
+      }
+
+      $('#mycollationtables').html(genCollationTableInfoHtml(tableInfo, urlGenerator))
+
+      $('#mymss').collapse('show')
+      $('#mycollationtables').collapse('show')
+
+    })
+</script>
+{%  endblock %}
 
 {% block content %}
 <div class="dashboard">
+
     <section>
-        <h1>My Manuscripts / Prints </h1>
-        <ul class="doclist">{{doclist|raw}}</ul>
-        <a href="{{url_for('docs')}}">View all documents</a>
+    <h1>My Manuscripts / Prints
+         <a role="button" title="Click to show/hide list" data-toggle="collapse" href="#mymss" aria-expanded="true" aria-controls="mymss">
+               <span><i class="fas fa-angle-right" aria-hidden="true"></i></span>
+          </a></h1>
+
+        <div class="collapse" id="mymss">
+                <ul class="doclist">{{doclist|raw}}</ul>
+                <a href="{{url_for('docs')}}">View all documents</a>
+        </div>
     </section>
+
     <section>
-        <h1>My Chunks</h1>
-        <p><i>Coming soon...</i></p>
+        <h1>My Collation Tables  <a role="button" title="Click to show/hide list" data-toggle="collapse" href="#mycollationtables" aria-expanded="true" aria-controls="mycollationtables">
+                <span><i class="fas fa-angle-right" aria-hidden="true"></i></span></a></h1>
+        <div class="collapse" id="mycollationtables"></div>
     </section>
     <section>
         <h1>Admin</h1>

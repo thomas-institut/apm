@@ -274,6 +274,19 @@ ul.doclist li {
     text-indent: -20px;
 }
 
+ul.ctlist {
+    list-style-type: none;
+    padding: 0;
+    margin-left: 20px;
+    margin-bottom: 25px;
+}
+
+ul.ctlist li {
+    padding: 0;
+    margin-bottom: 1em;
+    margin-left: 20px;
+    text-indent: -20px;
+}
 
 .chunktext {
     font-size: 1.2em;

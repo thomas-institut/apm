@@ -139,4 +139,16 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager imple
         $this->dataTable->updateRow($versionInfo->getDatabaseRow());
     }
 
+    public function getActiveCollationTableIdsForUserId(int $userId): array
+    {
+         $rows = $this->dataTable->findRows(['author_id' => $userId, 'time_until' => TimeString::END_OF_TIMES]);
+
+         $ids = [];
+         foreach($rows as $row) {
+             $ids[] = intval($row['ct_id']);
+         }
+
+         return $ids;
+
+    }
 }

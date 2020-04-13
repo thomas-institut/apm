@@ -7,7 +7,7 @@
     $(function() {
 
         let  tableInfo = JSON.parse("{{tableInfo|json_encode|e('js')}}")
-        let urlGenerator = new ApmUrlGenerator('{{ base }}')
+        let urlGenerator = new ApmUrlGenerator('{{ baseurl }}')
 
 
       function genCollationTableInfoHtml(tableInfo, urlGen) {

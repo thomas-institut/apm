@@ -34,7 +34,6 @@ CREATE TABLE `ap_ctables` (
 ALTER TABLE `ap_ctables`
     ADD PRIMARY KEY (`id`,`valid_from`,`valid_until`),
     ADD KEY `chunk_id` (`chunk_id`);
-COMMIT;
 
 CREATE TABLE `ap_versions_ct` (
                                  `id` int(11) NOT NULL,

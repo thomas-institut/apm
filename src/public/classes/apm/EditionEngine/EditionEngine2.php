@@ -50,6 +50,20 @@ abstract class EditionEngine2 extends  Engine
     const E_TOKEN_TYPE_GLUE = 'glue';
     const E_TOKEN_TYPE_TEXT = 'text';
 
+    // apparatus entry fields
+    const APPARATUS_ENTRY_FIELD_START = 'start';
+    const APPARATUS_ENTRY_FIELD_END = 'end';
+    const APPARATUS_ENTRY_FIELD_TYPE = 'type';
+    const APPARATUS_ENTRY_FIELD_SIGLA = 'sigla';
+    const APPARATUS_ENTRY_FIELD_DETAILS = 'details';
+    const APPARATUS_ENTRY_FIELD_MARKDOWN = 'markDown';
+    const APPARATUS_ENTRY_FIELD_TEXT = 'text';
+
+    // apparatus entry types
+    const APPARATUS_ENTRY_TYPE_VARIANT = 'variant';
+    const APPARATUS_ENTRY_TYPE_ADDITION = 'addition';
+    const APPARATUS_ENTRY_TYPE_OMMISION = 'omission';
+
     /**
      * Generate an edition out of a standard input array:
      *

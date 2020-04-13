@@ -29,6 +29,8 @@ class BasicEditionEngine2 extends EditionEngine2
 
     const NO_GLUE_PUNCTUATION = '.,:;?!';
 
+    const INDEX_BEFORE_MAIN_TEXT = -1;
+
     /**
      * @inheritDoc
      */
@@ -41,6 +43,7 @@ class BasicEditionEngine2 extends EditionEngine2
         // TODO: Implement generateEdition() method.
 
         $ctData = $input['collationTable'];
+        $sigla = $ctData['sigla'];
         $baseWitnessIndex = 0;
         if (!isset($input['baseWitnessIndex'])) {
             $baseWitnessIndex = intval($input['baseWitnessIndex']);
@@ -57,13 +60,133 @@ class BasicEditionEngine2 extends EditionEngine2
         list ($mainTextTokens, $ctToMainTextMap) =
             $this->generateMainText($mainTextInputTokens);
 
+        $criticalApparatus = [];
+        foreach($ctToMainTextMap as $i => $mainTextIndex) {
+            $column = $this->getCollationTableColumn($ctData, $i);
+            if ($mainTextIndex === self::TOKEN_NOT_IN_MAINTEXT)  {
+                // nothing on the main text for this token:
+                //      find the previous token index that is in the main text,
+                //      this is where the apparatus entry will appear
+                $index = $i;
+                while ($index >= 0 && $ctToMainTextMap[$index] === self::TOKEN_NOT_IN_MAINTEXT) {
+                    $index--;
+                }
+                if ($index < 0) {
+                    $index = self::INDEX_BEFORE_MAIN_TEXT;
+                }
+                $additions = [];
+                // collect variants in the row
+                foreach($column as $witnessIndex => $ctToken) {
+                    if ($witnessIndex === $baseWitnessIndex) {
+                        continue;
+                    }
 
-        $apparatusArray = [];
+                    if ($ctToken[self::INPUT_TOKEN_FIELD_TYPE] === TokenType::EMPTY) {
+                        continue;
+                    }
+
+                    if (!isset($additions[$ctToken[self::INPUT_TOKEN_FIELD_TEXT]])) {
+                        $additions[$ctToken[self::INPUT_TOKEN_FIELD_TEXT]] = [];
+                    }
+                    $additions[$ctToken[self::INPUT_TOKEN_FIELD_TEXT]][] = $witnessIndex;
+                }
+                // build apparatus entries for each addition
+                foreach($additions as $addition => $additionWitnessIndexes) {
+                    $additionAbbreviations = [];
+                    $additionAbbreviationsStr = '';
+                    $details = [];
+                    foreach ($additionWitnessIndexes as $additionWitnessIndex) {
+                        $additionAbbreviations[] = $sigla[$additionWitnessIndex];
+                        $additionAbbreviationsStr .= $sigla[$additionWitnessIndex];
+                        $details[$additionWitnessIndex] = []; // TODO: fill details!
+                    }
+                    $entryMainTextIndex = ($index === self::INDEX_BEFORE_MAIN_TEXT) ? $index : $ctToMainTextMap[$index];
+                    $criticalApparatus[] = [
+                        self::APPARATUS_ENTRY_FIELD_START => $entryMainTextIndex,
+                        self::APPARATUS_ENTRY_FIELD_END => $entryMainTextIndex,
+                        self::APPARATUS_ENTRY_FIELD_TYPE  => self::APPARATUS_ENTRY_TYPE_ADDITION,
+                        self::APPARATUS_ENTRY_FIELD_SIGLA => $additionWitnessIndexes, // TODO: change this, it's now an index, not a siglum
+                        self::APPARATUS_ENTRY_FIELD_DETAILS => $details,
+                        self::APPARATUS_ENTRY_FIELD_TEXT => $addition,
+                        self::APPARATUS_ENTRY_FIELD_MARKDOWN => '+ ' . $addition .  ' _' . $additionAbbreviationsStr . '_'
+                    ];
+                }
+                continue;
+            }
+            // token in main text
+            // collect variants and omissions
+
+            $mainText = $mainTextTokens[$ctToMainTextMap[$i]][self::INPUT_TOKEN_FIELD_TEXT];
+            $variants = [];
+            $omissions = [];
+            foreach($column as $witnessIndex => $ctToken) {
+                if ($witnessIndex === $baseWitnessIndex) {
+                    continue;
+                }
+                if ($ctToken[self::INPUT_TOKEN_FIELD_TYPE] === TokenType::EMPTY) {
+                    if (!isset($omissions[$mainText])) {
+                        $omissions[$mainText] = [];
+                    }
+                    $omissions[$mainText][] = $witnessIndex;
+                    continue;
+                }
+                $ctTokenText = $ctToken[self::INPUT_TOKEN_FIELD_TEXT];
+                if ($ctTokenText !== $mainText) {
+                    if (!isset($variants[$ctTokenText])) {
+                        $variants[$ctTokenText] = [];
+                    }
+                    $variants[$ctTokenText][] = $witnessIndex;
+                }
+            }
+            // generate entries
+            foreach($omissions as $omissionText => $omissionWitnessIndexes) {
+                $omissionAbbreviations = [];
+                $omissionAbbreviationsStr = '';
+                $details = [];
+                foreach ($omissionWitnessIndexes as $omissionWitnessIndex) {
+                    $omissionAbbreviations[] = $sigla[$omissionWitnessIndex];
+                    $omissionAbbreviationsStr .= $sigla[$omissionWitnessIndex];
+                    $details[$omissionWitnessIndex] = []; // TODO: fill details!
+                }
+                $criticalApparatus[] = [
+                    self::APPARATUS_ENTRY_FIELD_START => $ctToMainTextMap[$i],
+                    self::APPARATUS_ENTRY_FIELD_END => $ctToMainTextMap[$i],
+                    self::APPARATUS_ENTRY_FIELD_TYPE => self::APPARATUS_ENTRY_TYPE_OMMISION,
+                    self::APPARATUS_ENTRY_FIELD_SIGLA => $omissionWitnessIndexes, // TODO: change this, it's now an index, not a siglum
+                    self::APPARATUS_ENTRY_FIELD_DETAILS => $details,
+                    self::APPARATUS_ENTRY_FIELD_MARKDOWN => '-  _' . $omissionAbbreviationsStr . '_'
+                ];
+            }
+            foreach($variants as $variant => $variantWitnessIndexes) {
+                $variantAbbreviations = [];
+                $variantAbbreviationsStr = '';
+                $details = [];
+                foreach ($variantWitnessIndexes as $variantWitnessIndex) {
+                    $variantAbbreviations[] = $sigla[$variantWitnessIndex];
+                    $variantAbbreviationsStr .= $sigla[$variantWitnessIndex];
+                    $details[$variantWitnessIndex] = []; // TODO: fill details
+                }
+                $criticalApparatus[] = [
+                    self::APPARATUS_ENTRY_FIELD_START => $ctToMainTextMap[$i],
+                    self::APPARATUS_ENTRY_FIELD_END => $ctToMainTextMap[$i],
+                    self::APPARATUS_ENTRY_FIELD_TYPE => self::APPARATUS_ENTRY_TYPE_VARIANT,
+                    self::APPARATUS_ENTRY_FIELD_SIGLA => $variantWitnessIndexes, // TODO: change this, it's now an index, not a siglum
+                    self::APPARATUS_ENTRY_FIELD_DETAILS => $details,
+                    self::APPARATUS_ENTRY_FIELD_TEXT => $variant,
+                    self::APPARATUS_ENTRY_FIELD_MARKDOWN => $variant .  ' _' . $variantAbbreviationsStr . '_'
+                ];
+            }
+        }
+
+        // TODO: Optimize apparatus
+
+        // Just one apparatus for now
+        $apparatusArray = [$criticalApparatus];
 
         $edition = [];
-        //$edition[self::EDITION_FIELD_BASE_SIGLUM] = $baseSiglum;
+        $edition[self::EDITION_FIELD_BASE_SIGLUM] = $baseWitnessIndex; // TODO: check this
         $edition[self::EDITION_FIELD_MAIN_TEXT_TOKENS] = $mainTextTokens;
-        //$edition[self::EDITION_FIELD_ABBREVIATIONS_TO_SIGLA] = $siglumFromAbbr;
+        $edition[self::EDITION_FIELD_ABBREVIATIONS_TO_SIGLA] = $sigla; // TODO: check this, it's now index to sigla
         $edition[self::EDITION_FIELD_TEXT_DIRECTION] = $textDirection;
         $edition[self::EDITION_FIELD_EDITION_STYLE] = $language;
         $edition[self::EDITION_FIELD_APPARATUS_ARRAY] = $apparatusArray;
@@ -80,6 +203,8 @@ class BasicEditionEngine2 extends EditionEngine2
         foreach($ctData['collationMatrix'][$witnessIndex] as $tokenRef) {
             if ($tokenRef !== -1) {
                 $tokens[] = $ctData['witnesses'][$witnessIndex]['tokens'][$tokenRef];
+            } else {
+                $tokens[] = [ self::INPUT_TOKEN_FIELD_TYPE => TokenType::EMPTY];
             }
 
         }
@@ -132,5 +257,20 @@ class BasicEditionEngine2 extends EditionEngine2
             $inputTokensToMainText[] = $currentMainTextIndex;
         }
         return [ $mainTextTokens, $inputTokensToMainText];
+    }
+
+
+
+    protected function getCollationTableColumn(array $ctData, int $col) : array {
+        $column = [];
+        foreach($ctData['collationMatrix'] as $row => $tokenRefs) {
+            $ref = $tokenRefs[$col];
+            if ($ref === -1) {
+                $column[$row] = [ self::INPUT_TOKEN_FIELD_TYPE => TokenType::EMPTY];
+            } else {
+                $column[$row] = $ctData['witnesses'][$row]['tokens'][$ref];
+            }
+        }
+        return $column;
     }
 }

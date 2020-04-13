@@ -28,6 +28,7 @@ namespace APM\Site;
 
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
+use ThomasInstitut\TimeString\TimeString;
 
 
 /**
@@ -76,14 +77,35 @@ class SiteUserManager extends SiteController
         foreach($docIds as $docId) {
             $docListHtml .= $this->genDocPagesListForUser($userId, $docId);
         }
-        
+
+        $ctManager = $this->systemManager->getCollationTableManager();
+        $tableIds = $ctManager->getCollationTableVersionManager()->getActiveCollationTableIdsForUserId($userId);
+        $tableInfo = [];
+        foreach($tableIds as $tableId) {
+            try {
+                $table = $ctManager->getCollationTableByIdWithTimestamp($tableId, TimeString::now());
+            } catch(\InvalidArgumentException $e) {
+                $this->logger->error("Table $tableId reported as being active does not exist. Is version table consistent?");
+                continue;
+            }
+            $chunkId = isset($table->chunkId) ? $table->chunkId : $table->witnesses[0]->chunkId;
+
+            $tableInfo[] = [
+                'id' => $tableId,
+                'title' => $table->title,
+                'chunkId' => $chunkId,
+            ];
+        }
+
+
         $this->profiler->stop();
         $this->logProfilerData('userProfilePage-' . $profileUsername);
         return $this->renderPage($response, 'user.profile.twig', [
                     'theuser' => $userProfileInfo,
                     'canEditProfile' => $canEditProfile,
                     'canMakeRoot' => $canMakeRoot,
-                    'doclist' => $docListHtml
+                    'doclist' => $docListHtml,
+                    'tableInfo' => $tableInfo
         ]);
     }
 

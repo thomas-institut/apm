@@ -12,10 +12,30 @@ User profile template
 <script type="application/javascript" src="{{baseurl}}/js/ApmUtil.js"></script>
 <script type="application/javascript" src="{{baseurl}}/js/UserProfilePage.js"></script>
 <script>
-    $(document).ready(function () {
+  $(function() {
         let profileUserInfo = JSON.parse('{{theuser|json_encode|raw}}');
         let urlGenerator = new ApmUrlGenerator('{{baseurl}}')
         let up = new UserProfilePage(profileUserInfo, urlGenerator)
+    let  tableInfo = JSON.parse("{{tableInfo|json_encode|e('js')}}")
+
+
+    function genCollationTableInfoHtml(tableInfo, urlGen) {
+      let html = ''
+
+      if (tableInfo.length === 0) {
+        return '<p><i>None</i></p>'
+      }
+      html += '<ul class="ctlist">'
+      for(const info of tableInfo) {
+        html += '<li><a target="_blank" href="' +  urlGen.siteEditCollationTable(info['id'])  + '">' + info['chunkId'] + ': ' + info['title'] + '</a></li>'
+      }
+      html += '</ul>'
+      return html
+    }
+
+    $('#ctables').html(genCollationTableInfoHtml(tableInfo, urlGenerator))
+
+
     })
 </script>
 {% endblock %}
@@ -214,5 +234,8 @@ Make Root
 <div id="documents">
     
 </div>
+
+    <h3>Collation Tables</h3>
+    <div id="ctables"></div>
 
 {% endblock %}

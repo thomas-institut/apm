@@ -57,9 +57,7 @@ class SiteDashboard extends SiteController
         }
 
         $ctManager = $this->systemManager->getCollationTableManager();
-
         $tableIds = $ctManager->getCollationTableVersionManager()->getActiveCollationTableIdsForUserId($userId);
-
         $tableInfo = [];
         foreach($tableIds as $tableId) {
             try {

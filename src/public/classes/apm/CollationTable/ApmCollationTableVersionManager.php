@@ -25,6 +25,7 @@ use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use ThomasInstitut\DataTable\DataTable;
 use ThomasInstitut\Profiler\SimpleSqlQueryCounterTrackerAware;
+use ThomasInstitut\Profiler\SqlQueryCounterTracker;
 use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
 use ThomasInstitut\TimeString\TimeString;
 
@@ -41,6 +42,7 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager imple
     public function __construct(DataTable $columnVersionTable)
     {
         $this->dataTable = $columnVersionTable;
+        $this->setSqlQueryCounterTracker(new SqlQueryCounterTracker());
     }
 
     /**

@@ -59,4 +59,16 @@ class MockCollationTableManager extends CollationTableManager
     {
         // TODO: Implement getErrorCode() method.
     }
+
+    public function getCollationTableIdsForChunk(string $chunkId, string $timeString): array
+    {
+        // TODO: Implement getCollationTableIdsForChunk() method.
+        return [];
+    }
+
+    public function getCollationTableTitle(int $id, string $timeStamp): string
+    {
+        // TODO: Implement getCollationTableTitle() method.
+        return 'Test';
+    }
 }

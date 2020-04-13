@@ -21,6 +21,7 @@ namespace APM;
 
 require "autoload.php";
 
+require_once 'SiteMockup/MockCollationTableManager.php';
 require_once 'SiteMockup/SystemManagerMockup.php';
 require_once 'ImageSourcePluginMockup.php';
 

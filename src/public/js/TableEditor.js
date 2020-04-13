@@ -493,7 +493,7 @@ class TableEditor {
 
       if (elementClasses.indexOf('move-cell-left-button') !== -1) {
         // move cell left
-        console.log('move cell left button clicked')
+        //console.log('move cell left button clicked')
         if(thisObject.canMoveCellLeft(row, col)) {
           //console.log('Moving cell ' + row + ':' + col + ' left')
           // move values in matrix
@@ -520,9 +520,9 @@ class TableEditor {
 
       if (elementClasses.indexOf('move-cell-right-button') !== -1) {
         // move cell right
-        console.log('move cell right button clicked')
+        //console.log('move cell right button clicked')
         if(thisObject.canMoveCellRight(row, col)) {
-          console.log('Moving cell ' + row + ':' + col + ' right')
+          //console.log('Moving cell ' + row + ':' + col + ' right')
           thisObject.dispatchCellMoveEvents('pre', 'right', row, col)
           // move values in matrix
           thisObject.matrix.setValue(row, col+1, thisObject.matrix.getValue(row, col))

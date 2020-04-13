@@ -30,3 +30,8 @@ table.versioninfo td,th {
     border-collapse: collapse;
     margin-bottom: 3em;
 }
+
+div.edrundetails{
+    font-size: 0.8em;
+    margin-top: 2em;
+}

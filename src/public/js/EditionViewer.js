@@ -21,9 +21,9 @@
 class EditionViewer {
   
   constructor (userOptions) {
-    console.log('Constructing Edition Viewer')
-    console.log('User options')
-    console.log(userOptions)
+    //console.log('Constructing Edition Viewer')
+    //console.log('User options')
+    //console.log(userOptions)
 
     let optionsDefinition = {
       collationTokens: {type: 'Array', default: []},
@@ -50,8 +50,8 @@ class EditionViewer {
     let oc = new OptionsChecker(optionsDefinition, 'EditionViewer')
     this.options = oc.getCleanOptions(userOptions)
 
-    console.log('Options')
-    console.log(this.options)
+    //console.log('Options')
+    //console.log(this.options)
     let options = this.options
     
     this.geometry = {
@@ -91,21 +91,21 @@ class EditionViewer {
     })
     
     this.mainTextTokens = this.generateTokensToTypesetFromCollationTableTokens(options.collationTokens, options.addGlue)
-    console.log('Main Text Tokens')
-    console.log(this.mainTextTokens)
+    //console.log('Main Text Tokens')
+    //console.log(this.mainTextTokens)
     
     this.typesetMainTextTokens = this.ts.typesetTokens(this.mainTextTokens)
     
-    console.log('ts Tokens')
-    console.log(this.typesetMainTextTokens)
+    //console.log('ts Tokens')
+    //console.log(this.typesetMainTextTokens)
     
     this.ct2tsIndexMap = this.getCollationTableIndexToTypesetTokensMap(this.typesetMainTextTokens)
     
-    console.log('Index Map')
-    console.log(this.ct2tsIndexMap)
+    //console.log('Index Map')
+    //console.log(this.ct2tsIndexMap)
     
-    console.log('apparatus Array') 
-    console.log(options.apparatusArray)
+    //console.log('apparatus Array')
+    //console.log(options.apparatusArray)
     
     for(const apparatus of options.apparatusArray) {
       for (const note of apparatus) {
@@ -117,8 +117,8 @@ class EditionViewer {
     
     this.apparatusTokensToTypeset = this.getApparatusTokensToTypeset()
     
-    console.log('Apparatus to typeset')
-    console.log(this.apparatusTokensToTypeset)
+    //console.log('Apparatus to typeset')
+    //console.log(this.apparatusTokensToTypeset)
     
     this.lineNumbers = this.ts.typesetLineNumbers(this.typesetMainTextTokens,5)
     this.typesetApparatuses = []
@@ -221,8 +221,8 @@ class EditionViewer {
         }
         groups[pageGroup].entries.push(note)
       }
-      console.log('GROUPS')
-      console.log(groups)
+      //console.log('GROUPS')
+      //console.log(groups)
       // 2. TODO: order the groups
       
       // 3. build the pageGroup entries

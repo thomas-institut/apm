@@ -195,7 +195,7 @@ class ChunkPage {
       html += '<h4>Saved Collation Tables</h4>'
       html += '<ul>'
       for(const ctInfo of this.options.savedCollationTables) {
-        let url = this.pathFor.siteEditCollationTable(this.options.work, this.options.chunk, ctInfo['tableId'])
+        let url = this.pathFor.siteEditCollationTable(ctInfo['tableId'])
         html += '<li class="smallpadding"><a title="Open in new tab/window" target="_blank" href="' + url + '">' + ctInfo['title'] +
           '</a>, <small>last change: ' + ApmUtil.formatVersionTime(ctInfo['lastSave']) +
           ' by ' + this.getAuthorLink(ctInfo['authorId']) + '</small></li>'

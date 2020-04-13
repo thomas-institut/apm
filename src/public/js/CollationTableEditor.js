@@ -176,88 +176,52 @@ class CollationTableEditor {
       generateCellTdExtraAttributes: this.genGenerateCellTdExtraAttributesFunction()
     })
     this.variantsMatrix = null // will be calculated before table draw
-    //this.variantsMatrix = this.genVariantsMatrix(this.tableEditor.getMatrix(), collationTable['witnesses'])
+
+    let thisObject = this
+
+    // hide popovers before moving cells
     this.tableEditor.on('cell-pre-move', function(data){
       $(data.detail.selector).popover('hide')
     })
-    let thisObject = this
+
+    // recalculte variants before redrawing the table
     this.tableEditor.on('table-drawn-pre', function () {
-        thisObject.variantsMatrix = thisObject.genVariantsMatrix(thisObject.tableEditor.getMatrix(), collationTable['witnesses'])
+      thisObject.recalculateVariants()
+    })
+    // recalculate variants on cell moves
+    this.tableEditor.on('cell-post-move-right',function(data) {
+      //console.log('post move right : '+ data.detail.col)
+      //console.log('recalculating variants')
+      thisObject.recalculateVariants()
+      thisObject.tableEditor.redrawColumn(data.detail.col)
+      thisObject.tableEditor.redrawColumn(data.detail.col+1)
+    })
+
+    this.tableEditor.on('cell-post-move-left', function(data) {
+      //console.log('post move left : '+ data.detail.col)
+      //console.log('recalculating variants')
+      thisObject.recalculateVariants()
+      thisObject.tableEditor.redrawColumn(data.detail.col)
+      thisObject.tableEditor.redrawColumn(data.detail.col-1)
     })
 
     this.tableEditor.editModeOn(false)
     this.tableEditor.redrawTable()
+    this.tableEditor.on('column-add column-delete cell-post-move', this.genOnCollationChanges())
+  }
 
-
-    this.tableEditor.on('column-add column-delete cell-move', this.genOnCollationChanges())
+  recalculateVariants() {
+    this.variantsMatrix = CollationTableUtil.genVariantsMatrix(this.tableEditor.getMatrix(), this.ctData['witnesses'])
   }
 
   genOnCollationChanges() {
     let thisObject = this
     return function() {
-      console.log('collation change')
+      //console.log('collation change')
       thisObject.updateSaveArea()
+      thisObject.ctData['collationMatrix'] = thisObject.getCollationMatrixFromTableEditor()
+      thisObject.fetchQuickEdition()
     }
-  }
-
-  genVariantsMatrix(refMatrix, witnesses) {
-    let variantMatrix = new Matrix(refMatrix.nRows, refMatrix.nCols)
-
-    for (let col=0; col < refMatrix.nCols; col++) {
-      let refCol = refMatrix.getColumn(col)
-      let textCol = []
-      for(let row=0; row < refMatrix.nRows; row++) {
-        let ref = refCol[row]
-        if (ref=== -1) {
-          textCol.push('')
-          continue
-        }
-        textCol.push(witnesses[row].tokens[ref]['normalizedText'])
-      }
-      //console.log(textCol)
-      let ranks = this.rankVariants(textCol)
-      //console.log(ranks)
-      for(let row=0; row < refMatrix.nRows; row++) {
-        variantMatrix.setValue(row, col, ranks[row])
-      }
-    }
-    return variantMatrix
-  }
-
-  rankVariants(stringArray) {
-    let countsByString = []
-    for(const text of stringArray) {
-      if (text === '') {
-        continue
-      }
-      if (countsByString[text] === undefined) {
-        countsByString[text] = 1
-      } else {
-        countsByString[text]++
-      }
-    }
-
-    let countArray = []
-
-    for(const aKey of Object.keys(countsByString)) {
-      countArray.push({ text: aKey, count: countsByString[aKey]})
-    }
-    countArray.sort(function (a,b) { return b['count'] - a['count']})
-
-    let rankObject = {}
-    for(let i = 0; i < countArray.length; i++) {
-      rankObject[countArray[i]['text']] = i
-    }
-
-    let ranks = []
-    for(const text of stringArray) {
-      if (text === '') {
-        ranks.push(12345678)
-        continue
-      }
-      ranks.push(rankObject[text])
-    }
-    return ranks
   }
 
   genGenerateCellTdExtraAttributesFunction() {
@@ -746,11 +710,6 @@ class CollationTableEditor {
   }
 
   changesInCtData() {
-    //console.log('Checking data changes')
-    //console.log('Title')
-    //console.log(this.ctData['title'])
-    //console.log(this.lastSavedCtData['title'])
-
     let changes = []
     if (this.ctData['title'] !== this.lastSavedCtData['title']) {
       changes.push("New title: '" + this.ctData['title'] + "'" )
@@ -770,9 +729,10 @@ class CollationTableEditor {
   }
 
   fetchQuickEdition() {
+    let profiler = new SimpleProfiler('FetchQuickEdition')
     this.quickEditionDiv.html("Requesting edition from the server... <i class=\"fa fa-spinner fa-spin fa-fw\"></i>")
     let apiQuickEditionUrl = this.options.urlGenerator.apiAutomaticEdition()
-    console.log('Calling API at ' + apiQuickEditionUrl)
+    //console.log('Calling API at ' + apiQuickEditionUrl)
     let apiCallOptions = {
       collationTable: this.ctData,
       baseWitnessIndex: 0
@@ -782,8 +742,9 @@ class CollationTableEditor {
       apiQuickEditionUrl,
       {data: JSON.stringify(apiCallOptions)}
     ).done( function (apiResponse) {
-      console.log("Quick edition API call successful")
-      console.log(apiResponse)
+      //console.log("Quick edition API call successful")
+      profiler.stop()
+      //console.log(apiResponse)
 
       let ev = new EditionViewer( {
         collationTokens: apiResponse.mainTextTokens,
@@ -794,7 +755,8 @@ class CollationTableEditor {
       })
 
       thisObject.quickEditionDiv.html(ev.getHtml())
-      //thisObject.quickEditionDiv.html(thisObject.genEditionEngineDetailsHtml(apiResponse['engineRunDetails']))
+
+      thisObject.quickEditionDiv.append(thisObject.genEditionEngineRunDetailsHtml(apiResponse['engineRunDetails']))
 
     }).fail(function(resp) {
       console.error('Error in quick edition')
@@ -803,8 +765,18 @@ class CollationTableEditor {
       failMsg += '<span class="small">HTTP code ' + resp.status + '</span>'
       thisObject.quickEditionDiv.html(failMsg)
     })
+  }
 
+  genEditionEngineRunDetailsHtml(runDetails) {
+    let html = ''
 
+    html += '<div class="edrundetails">'
+    html += 'Engine Name: ' + runDetails['engineName'] + '<br/>'
+    html += 'Run Datetime: ' + runDetails['runDateTime']+ '<br/>'
+    html += 'Duration: ' +   (runDetails['duration'] * 1000.0).toFixed(2) + ' ms'
+    html += '</div>'
+
+    return html
   }
 
   genOnConfirmTitleField() {

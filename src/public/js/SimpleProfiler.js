@@ -15,11 +15,12 @@ class SimpleProfiler {
 
   lap(lapName) {
     let now = window.performance.now()
-    console.log('Profiler ' + this.name + ': ' + lapName + ': ' + (now - this.startTime) + ' ms')
+    console.log(this.name + ': lap ' + lapName + ' in ' + (now - this.startTime) + ' ms')
   }
 
   stop() {
-    this.lap('')
+    let now = window.performance.now()
+    console.log(this.name + ': finished in ' + (now - this.startTime) + ' ms')
   }
 
 }

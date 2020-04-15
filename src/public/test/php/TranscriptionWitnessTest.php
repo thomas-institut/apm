@@ -31,7 +31,6 @@ use APM\Core\Transcription\PageTranscriptionFactory;
 use APM\Core\Transcription\ItemAddressInDocument;
 use APM\Core\Witness\SimpleTranscriptionWitness;
 use APM\Core\Token\TranscriptionToken;
-use APM\Core\Token\Token;
 use APM\Core\Item\TextualItem;
 use APM\Core\Item\Mark;
 

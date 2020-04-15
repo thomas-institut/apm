@@ -29,7 +29,6 @@ use APM\Core\Item\TextualItem;
 use AverroesProject\TxText\Item as AP_Item;
 use AverroesProject\ColumnElement\Element;
 use APM\Core\Item\Note as ItemNote;
-use APM\Core\Person\Person;
 use ThomasInstitut\TimeString\TimeString;
 
 /**

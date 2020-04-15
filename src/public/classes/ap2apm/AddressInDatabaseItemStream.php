@@ -74,9 +74,10 @@ class AddressInDatabaseItemStream extends ItemAddressInDocument {
         $this->fullAddress->setCoord(self::COORD_COL, intval($itemStreamRow['col']));
         $this->fullAddress->setCoord(self::COORD_PAGE_ID, intval($itemStreamRow['page_id']));
         $this->fullAddress->setCoord(self::COORD_PAGESEQ, intval($itemStreamRow['p.seq']));
-        $this->fullAddress->setCoord(self::COORD_PAGEFOL, $itemStreamRow['foliation']);
-        if (!$itemStreamRow['foliation']) {
+        if (!isset($itemStreamRow['foliation'])  || $itemStreamRow['foliation'] === '') {
             $this->fullAddress->setCoord(self::COORD_PAGEFOL, strval($itemStreamRow['p.seq']));
+        } else {
+            $this->fullAddress->setCoord(self::COORD_PAGEFOL, $itemStreamRow['foliation']);
         }
         // Get tb index: if element is line, set it as col, if not, the element id
         $elementType = Element::LINE;
@@ -96,9 +97,9 @@ class AddressInDatabaseItemStream extends ItemAddressInDocument {
         return $this->fullAddress->getCoord(self::COORD_ELEMENTSEQ);
     }
     
-    public function getFullAddress() {
-        return $this->fullAddress;
-    }
+//    public function getFullAddress() {
+//        return $this->fullAddress;
+//    }
     
     public function getItemId()  {
         return $this->fullAddress->getCoord(self::COORD_ITEMID);

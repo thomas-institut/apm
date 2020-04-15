@@ -61,8 +61,6 @@ class DatabaseItemStream implements  CodeDebugInterface{
      * $itemSegments has an array of item rows prepared by DataManager. Each row
      * contains the item information plus page and ApElement info as well
      *
-     *
-     *
      * @param int $docId
      * @param array $itemSegments
      * @param string $defaultLang
@@ -89,8 +87,11 @@ class DatabaseItemStream implements  CodeDebugInterface{
                 $this->codeDebug("ItemRow $i: pei $previousElementId, ptbi $previousTbIndex, pet $previousElementType, text='" . $row['text'] . "'") ;
                 $address = new AddressInDatabaseItemStream();
                 $address->setFromItemStreamRow($docId, $row);
+                $ceId = intval($row['ce_id']);
                 
-                if (intval($row['ce_id']) !== $previousElementId && $address->getTbIndex() === $previousTbIndex) {
+                if ($ceId !== $previousElementId && $address->getTbIndex() === $previousTbIndex) {
+                    // a change of element within the same text box: most of the times
+                    // this is a change from a line to another line
                     // need to insert a "ghost" item into the item stream to account for line and text box breaks
                     // the address should be fake
                     $fakeAddress = new AddressInDatabaseItemStream();
@@ -104,7 +105,7 @@ class DatabaseItemStream implements  CodeDebugInterface{
                         $this->codeDebug("Inserting ghost item: new line");
                         $this->items[] = new ItemInDatabaseItemStream($fakeAddress, new TextualItem("\n"));
                     } else {
-                        // different element types in a row =  e.g. an addition
+                        // different element types in a row =  e.g. an addition after a line
                         $this->codeDebug("Inserting ghost item: TextBoxBreak (different elements in a row, same TB)");
                         $this->items[] = new ItemInDatabaseItemStream($fakeAddress, new Mark(MarkType::TEXT_BOX_BREAK));
                     }

@@ -1,0 +1,8 @@
+# TEST CASE 02:
+#   A line element followed by an addition and then another line element
+#
+#   Must result in   Element1 \n  Addition \n Element2
+#
+# id,seq,ce_id,e.seq,col,page_id,p.seq,foliation,type,text,lang,alt_text,extra_info,length,target,hand,e.type,placement
+100,1,250,1,1,300,1,,1,Element1,la,,,,,0,1,
+103,1,252,1,1,300,1,,1,Element2,la,,,,,0,1,

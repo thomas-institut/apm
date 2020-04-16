@@ -65,13 +65,15 @@ class DatabaseItemStream implements  CodeDebugInterface{
      * @param array $itemSegments
      * @param string $defaultLang
      * @param array $edNotes
+     * @param bool $debugMode
      */
-    public function __construct(int $docId, array $itemSegments, string $defaultLang = 'la', array $edNotes = []) {
+    public function __construct(int $docId, array $itemSegments, string $defaultLang = 'la', array $edNotes = [], $debugMode = false) {
         $this->items = [];
         $itemFactory = new ItemStreamItemFactory($defaultLang);
         $langs = [];
 
-        $this->debugMode = false;
+        $this->debugMode = $debugMode;
+        $this->codeDebug("Constructing DatabaseItemStream");
 
         foreach($itemSegments as $itemRows){
             $previousElementId = -1;
@@ -84,7 +86,7 @@ class DatabaseItemStream implements  CodeDebugInterface{
             $fakeItemIdStart  = 999000000000;
             
             foreach ($itemRows as $i => $row) {
-                $this->codeDebug("ItemRow $i: pei $previousElementId, ptbi $previousTbIndex, pet $previousElementType, text='" . $row['text'] . "'") ;
+                $this->codeDebug("** ItemRow $i: pei $previousElementId, ptbi $previousTbIndex, pet $previousElementType, text='" . $row['text'] . "'") ;
                 $address = new AddressInDatabaseItemStream();
                 $address->setFromItemStreamRow($docId, $row);
                 $ceId = intval($row['ce_id']);
@@ -116,7 +118,7 @@ class DatabaseItemStream implements  CodeDebugInterface{
                     $fakeAddress = new AddressInDatabaseItemStream();
                     $fakeAddress->setFromItemStreamRow($docId, $row);
                     $fakeAddress->setItemIndex($fakeItemIdStart++);
-                    $this->codeDebug("Inserting ghost item: TextBoxBreak (change from a marginal)");
+                    $this->codeDebug("Inserting ghost item: TextBoxBreak (change to or from a marginal)");
                     $this->items[] = new ItemInDatabaseItemStream($fakeAddress, new Mark(MarkType::TEXT_BOX_BREAK));
                 }
 
@@ -150,7 +152,6 @@ class DatabaseItemStream implements  CodeDebugInterface{
                 $previousElementId = intval($row['ce_id']);
                 $previousElementType = intval($row['e.type']);
                 $previousTbIndex = $address->getTbIndex();
-                $this->codeDebug('---------');
             }
         }
         $maxLang = 0;

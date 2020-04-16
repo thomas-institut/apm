@@ -1,0 +1,6 @@
+# TEST CASE 01:
+#   Two line elements in a row => must insert a new line between them
+#
+# id,seq,ce_id,e.seq,col,page_id,p.seq,foliation,type,text,lang,alt_text,extra_info,length,target,hand,e.type,placement
+100,1,250,1,1,300,1,,1,FirstLine,la,,,,,0,1,
+101,1,251,1,1,300,1,,1,SecondLine,la,,,,,0,1,

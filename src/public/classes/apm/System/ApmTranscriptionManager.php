@@ -380,7 +380,7 @@ class ApmTranscriptionManager extends TranscriptionManager
             " JOIN ($te FORCE INDEX (page_id_2), $tp)" .
             " ON ($te.id=$ti.ce_id AND $tp.id=$te.page_id)" .
             " WHERE $tp.doc_id=" . $docId  .
-         //   " AND $te.type=" . Element::LINE .
+            " AND $te.type=" . Element::LINE .    // just include line elements
             " AND ($tp.seq*1000000 + $te.column_number*10000 + $te.seq * 100 + $ti.seq) > $seqNumberStart" .
             " AND ($tp.seq*1000000 + $te.column_number*10000 + $te.seq * 100 + $ti.seq) < $seqNumberEnd" .
             " AND $ti.valid_from<='$timeString'" .
@@ -404,24 +404,26 @@ class ApmTranscriptionManager extends TranscriptionManager
     private function getItemStreamForSegmentLocation(ApmChunkSegmentLocation $location, string $timeString) : array {
         $seqNumberStart = $this->calcSeqNumber($location->start);
         $seqNumberEnd = $this->calcSeqNumber($location->end);
+
+        // get all rows between seq numbers
         $rows = $this->getItemRowsBetweenSeqNumbers($seqNumberStart, $seqNumberEnd, $timeString, $location->start->docId);
 
-        // Deal with targets and references
+        // Process the rows filtering out all but main text rows and including additions items at the proper
+        // places
         $items = [];
         $additionItemsAlreadyInOutput = [];
         foreach($rows as $inputRow) {
-//            if ($inputRow['e.type'] === Element::LINE_GAP) {
-//                $items[] = $inputRow;
-//                continue;
-//            }
-
-            if (intval($inputRow['e.type']) === Element::LINE) {
-                switch( (int) $inputRow['type']) {
+            $elementType = intval($inputRow['e.type']);
+            $itemType = intval($inputRow['type']);
+            $itemId = intval($inputRow['id']);
+            if ($elementType === Element::LINE) {
+                switch( $itemType) {
                     case ApItem::DELETION:
                     case ApItem::UNCLEAR:
                     case ApItem::MARGINAL_MARK:
+                        // these 3 item types can be replaced by an addition, let's see if there's one
                         $items[] = $inputRow;
-                        $additionItem  = $this->getAdditionItemWithGivenTarget((int) $inputRow['id'], $timeString);
+                        $additionItem  = $this->getAdditionItemWithGivenTarget($itemId, $timeString);
                         if ($additionItem) {
                             // found an addition item that replaces the item
                             // force the addition to be located in the same element as the item it replaces
@@ -430,11 +432,13 @@ class ApmTranscriptionManager extends TranscriptionManager
                                 $additionItem[$field] = $inputRow[$field];
                             }
                             $items[] = $additionItem;
-                            $additionItemsAlreadyInOutput[] = (int) $additionItem['id'];
+                            $additionItemsAlreadyInOutput[] = intval($additionItem['id']);
                         } else {
-                            // not an item, it should be an addition element
-                            $additionElementId = $this->getAdditionElementIdWithGivenReference((int) $inputRow['id'], $timeString);
+                            // did not find an addition item, so, if there's an addition that replaces the current
+                            // item, it may be an addition element
+                            $additionElementId = $this->getAdditionElementIdWithGivenReference($itemId, $timeString);
                             if ($additionElementId) {
+                                // found an addition element, just put its rows in the item list
                                 $additionElementItemStream = $this->getItemStreamForElementId($additionElementId, $timeString);
                                 foreach($additionElementItemStream as $additionItem) {
                                     $items[] = $additionItem;
@@ -444,7 +448,10 @@ class ApmTranscriptionManager extends TranscriptionManager
                         break;
 
                     case ApItem::ADDITION:
-                        if (!in_array((int)$inputRow['id'], $additionItemsAlreadyInOutput)) {
+                        // it could be that this addition item is already included in the item list
+                        // because it replaced a mark, deletion or unclear item
+                        if (!in_array($itemId, $additionItemsAlreadyInOutput)) {
+                            // not in the list already, so add it
                             $items[] = $inputRow;
                         }
                         break;
@@ -454,12 +461,13 @@ class ApmTranscriptionManager extends TranscriptionManager
                 }
                 continue;
             }
-            if (intval($inputRow['e.type']) === Element::GLOSS) {
-                $items[] = $inputRow;
-            }
+
+//            // Eventually we need to deal with glosses
+//            if (intval($inputRow['e.type']) === Element::GLOSS) {
+//                $items[] = $inputRow;
+//            }
 
         }
-        //$this->codeDebug("Processed " . count($rows) . " rows, generated " . count($items) . " item rows", $items);
         return $items;
     }
 

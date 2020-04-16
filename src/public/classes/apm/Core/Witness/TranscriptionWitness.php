@@ -97,10 +97,10 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
             return $this->tokenArray;
         }
 
-        $this->debugMode = false;
+        //$this->debugMode = false;
         //print "<pre>";
 
-        $this->codeDebug("\n*** Start getTokens() ***");
+        $this->codeDebug("========= Start getTokens() =========");
         // 1. Get some important class names
         $textualItemClass = TextualItem::class;
         $noWbItemClass = NoWbMark::class;
@@ -118,7 +118,7 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
         $currentTextBox = $sourceItems[0]->getAddress()->getTbIndex();
         $pageTextBoxCurrentLines = [];
         $pageTextBoxCurrentLines[$currentTextBox] = $this->getInitialLineNumberForTextBox($currentPage, $currentTextBox);
-        $this->codeDebug("Initial line numbers", $pageTextBoxCurrentLines);
+        //$this->codeDebug("Initial line numbers", $pageTextBoxCurrentLines);
         $openWordToken = false;
         $noWbItemOpen = false;
         $currentWordToken = new TranscriptionToken(TokenType::EMPTY, '');
@@ -126,7 +126,7 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
         $tokenizer = new StringTokenizer();
         $lastAddedItemIndex = -1;
 
-        //$this->codeDebug("Processing " . count($sourceItems) . " source items");
+        $this->codeDebug("Processing " . count($sourceItems) . " source items");
         
         // 4. Iterate over all items in the transcription
         foreach ($sourceItems as $itemIndex => $sourceItem) {
@@ -136,7 +136,7 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
             $rawItem = $sourceItem->getItem();
             /* @var $itemAddress ItemAddressInDocument */
             $itemAddress = $sourceItem->getAddress();
-            $this->codeDebug("Item Address", [$itemAddress]);
+            //$this->codeDebug("Item Address", [$itemAddress]);
 
             if ($rawItem->getTextualFlow() === Item::FLOW_GLOSS) {
                 // skip glosses!
@@ -171,7 +171,7 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
                     // Close open word token
                     $this->codeDebug("Closing open word token: '" . $currentWordToken->getText() . "'");
                     $tokens[] = $currentWordToken;
-                    $this->codeDebug("There are now " . count($tokens) . " in the array");
+                    $this->codeDebug("There are now " . count($tokens) . " token(s) in the array");
                     $openWordToken = false;
                 }
             }
@@ -186,11 +186,11 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
                 // Notice that tokens are constructed out of the normalized 
                 // text, not the "original" text
                 $stringTokens = $tokenizer->getTokensFromString($rawItemNormalizedText);
-                $this->codeDebug("processing " . count($stringTokens) . " string tokens");
+                $this->codeDebug("- Processing " . count($stringTokens) . " string tokens");
                 foreach($stringTokens as $nStringToken => $stringToken) {
                     /* @var $stringToken StringToken */
 
-                    $this->codeDebug("StringToken $nStringToken: '" . $stringToken->getText() . "'");
+                    $this->codeDebug("-- StringToken $nStringToken: '" . $stringToken->getText() . "'");
                     // Check if the string token covers all the text's item
                     if ($stringToken->getText() === $rawItemNormalizedText) {
                         // this means that there is only one token in the item,
@@ -206,7 +206,7 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
                     $tToken->setSourceItemIndexes([$itemIndex]);
                     $tToken->setSourceItemAddresses([$itemAddress]);
                     $tToken->setSourceItemCharRanges([$stringToken->getCharRange()]);
-                    $this->codeDebug(" line range from " . $stringToken->getLineRange()->getStart() . ' to ' . $stringToken->getLineRange()->getEnd());
+                    $this->codeDebug("   line range from " . $stringToken->getLineRange()->getStart() . ' to ' . $stringToken->getLineRange()->getEnd());
                     $tToken->setTextBoxLineRange(
                         new PointRange(
                         [
@@ -269,23 +269,28 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
                             // Any other token type: "close" currentWordToken and
                             // add it to the token array
                             if ($openWordToken) {
-                                //$this->codeDebug("Closing word token");
+                                $this->codeDebug("Closing open word token: '" . $currentWordToken->getText() . "'");
                                 $tokens[] = $currentWordToken;
+                                $this->codeDebug("There are now " . count($tokens) . " token(s) in the array");
                                 $openWordToken = false;
                             }
                             $noWbItemOpen = false;
                             // Add the token just processed as well
-                            $this->codeDebug("Adding new token to array");
+                            $this->codeDebug("Adding token just processed as well: '" . $tToken->getText() . "'");
                             $tokens[] = $tToken;
+                            $this->codeDebug("There are now " . count($tokens) . " token(s) in the array");
                         }
                     }
                     // update current line on the last string token
                     if ($nStringToken === (count($stringTokens)-1)) {
+                        $this->codeDebug("   Last string token");
+
                         $pageTextBoxCurrentLines[$currentTextBox] =
                             $pageTextBoxCurrentLines[$currentTextBox] + ( $stringToken->getLineRange()->getEnd()- 1 ) ;
-                        $this->codeDebug("Current line number: " . $pageTextBoxCurrentLines[$currentTextBox]);
+                        $this->codeDebug("   Current line number: " . $pageTextBoxCurrentLines[$currentTextBox]);
                     }
                 }
+                $this->codeDebug("Finished processing string tokens");
                 continue; // next StringToken
             } // rawItem is a TextualItem
             
@@ -321,16 +326,17 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
             //  - TextBox break mark
             //  - paragraph mark
 
-//            if (is_a($rawItem, $markClass)) {
-//                /** @var Mark $rawItem */
-//                $this->codeDebug("Got mark item of type '" . $rawItem->getMarkType() . "'");
-//            }
+            if (is_a($rawItem, $markClass)) {
+                /** @var Mark $rawItem */
+                $this->codeDebug("Got mark item of type '" . $rawItem->getMarkType() . "'");
+            }
 
 
             if ($openWordToken) {
                 // Close word token
-                //$this->codeDebug('Closing open word token');
+                $this->codeDebug("Closing open word token: '" . $currentWordToken->getText() . "'");
                 $tokens[] = $currentWordToken;
+                $this->codeDebug("There are now " . count($tokens) . " token(s) in the array");
                 $openWordToken = false;
             }
             
@@ -338,10 +344,11 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
         } // foreach sourceIteam
         // All source items processed
         // If there's still an openToken, close it
-        //$this->codeDebug('All item processed');
+        $this->codeDebug('********** All items processed **********');
         if ($openWordToken) {
-            //$this->codeDebug('Closing open word token');
+            $this->codeDebug("Closing open word token: '" . $currentWordToken->getText() . "'");
             $tokens[] = $currentWordToken;
+            $this->codeDebug("There are now " . count($tokens) . " token(s) in the array");
             $openWordToken = false;
         }
 

@@ -40,4 +40,8 @@ trait PrintCodeDebugTrait
         }
     }
 
+    public function setDebugMode(bool $debugMode) {
+        $this->debugMode = $debugMode;
+    }
+
 }

@@ -20,13 +20,14 @@
 namespace APM\StandardData;
 
 
-use stdClass;
 
 interface StandardDataProvider
 {
     /**
      * Returns data that conforms to a system's standard data schema
      * Normally some sort of object is returned
+     *
+     * TODO: change standard data to associative arrays
      *
      * @return mixed
      */

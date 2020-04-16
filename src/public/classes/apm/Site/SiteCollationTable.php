@@ -27,15 +27,13 @@
 namespace APM\Site;
 
 use APM\CollationTable\CollationTableVersionInfo;
-use APM\FullTranscription\ApmChunkSegmentLocation;
 use APM\FullTranscription\DocInfo;
 use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
-use AverroesProject\Data\DataManager;
+use InvalidArgumentException;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
-use ThomasInstitut\TimeString\TimeString;
 
 
 /**
@@ -89,8 +87,8 @@ class SiteCollationTable extends SiteController
 
         $ctManager = $this->systemManager->getCollationTableManager();
         try {
-            $ctData = $ctManager->getCollationTableByIdWithTimestamp($tableId, TimeString::now());
-        } catch (\InvalidArgumentException $e) {
+            $ctData = $ctManager->getCollationTableById($tableId);
+        } catch (InvalidArgumentException $e) {
             $this->logger->info("Table $tableId requested for editing not found");
             return $this->renderPage($response,self::TEMPLATE_EDIT_COLLATION_TABLE_ERROR, [
                 'tableId' => $tableId,
@@ -99,7 +97,7 @@ class SiteCollationTable extends SiteController
         }
 
         $versionInfo = $ctManager->getCollationTableVersions($tableId);
-        $chunkId = isset($ctData->chunkId) ? $ctData->chunkId : $ctData->witnesses[0]->chunkId;
+        $chunkId = isset($ctData['chunkId']) ? $ctData['chunkId'] : $ctData['witnesses'][0]['chunkId'];
         [ $workId, $chunkNumber] = explode('-', $chunkId);
 
         $dm = $this->dataManager;
@@ -142,14 +140,14 @@ class SiteCollationTable extends SiteController
         return $people;
     }
 
-    protected function getMentionedAuthorsFromCtData(\stdClass $ctData) : array {
+    protected function getMentionedAuthorsFromCtData(array $ctData) : array {
         $authors = [];
 
-        foreach($ctData->witnesses as $witness) {
-            foreach($witness->items as $item) {
-                if (isset($item->notes)) {
-                    foreach($item->notes as $note) {
-                        $authors[] = $note->authorId;
+        foreach($ctData['witnesses'] as $witness) {
+            foreach($witness['items']  as $item) {
+                if (isset($item['notes'])) {
+                    foreach($item['notes'] as $note) {
+                        $authors[] = $note['authorId'];
                     }
                 }
             }
@@ -158,10 +156,10 @@ class SiteCollationTable extends SiteController
         return $authors;
     }
 
-    protected function getMentionedDocsFromCtData(\stdClass $ctData) : array {
+    protected function getMentionedDocsFromCtData(array $ctData) : array {
         $docs = [];
-        foreach($ctData->witnesses as $witness) {
-            $docs[] = $witness->docId;
+        foreach($ctData['witnesses'] as $witness) {
+            $docs[] = $witness['docId'];
         }
         return $docs;
     }

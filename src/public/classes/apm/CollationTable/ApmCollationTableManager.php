@@ -20,10 +20,11 @@
 namespace APM\CollationTable;
 
 
+use InvalidArgumentException;
+use PDO;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
-use ThomasInstitut\DataTable\MySqlDataTable;
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
 use ThomasInstitut\DataTable\UnitemporalDataTable;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
@@ -64,12 +65,15 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
     }
 
 
-    public function getCollationTableByIdWithTimestamp(int $collationTableId, string $timeStamp)
+    public function getCollationTableById(int $collationTableId, string $timeStamp = '') : array
     {
+        if ($timeStamp === '') {
+            $timeStamp = TimeString::now();
+        }
         $rows = $this->ctTable->findRowsWithTime([ 'id' => $collationTableId], 1, $timeStamp);
 
         if (count($rows) === 0) {
-            throw new \InvalidArgumentException("Collation table id does not exist");
+            throw new InvalidArgumentException("Collation table id does not exist");
         }
 
         $dbData = $rows[0];
@@ -81,13 +85,8 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
             $dataJson = $dbData['data'];
         }
 
-        return json_decode($dataJson);
+        return json_decode($dataJson, true);
 
-    }
-
-    public function getCollationTableByIdWithVersion(int $id, int $versionId)
-    {
-        // TODO: Implement getCollationTableByIdWithVersion() method.
     }
 
     public function saveNewCollationTable(array $collationTableData, CollationTableVersionInfo $versionInfo) : int
@@ -104,7 +103,7 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
         return $collationTableId;
     }
 
-    public function saveCollationTable(int $collationTableId, array $collationTableData, CollationTableVersionInfo $versionInfo)
+    public function saveCollationTable(int $collationTableId, array $collationTableData, CollationTableVersionInfo $versionInfo) : void
     {
         $time = TimeString::now();
         $dbRow = $this->getDbRowFromCollationData($collationTableData, true);
@@ -112,25 +111,24 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
         $this->ctTable->updateRowWithTime($dbRow, $time);
         $versionInfo->timeFrom = $time;
         $this->versionManager->registerNewCollationTable($collationTableId, $versionInfo);
-        return $collationTableId;
     }
 
     protected function getDbRowFromCollationData(array $collationTableData, $compress = false) {
         if (!isset($collationTableData['witnesses'])) {
-            throw new \InvalidArgumentException("No witnesses in collation table");
+            throw new InvalidArgumentException("No witnesses in collation table");
         }
 
         $numWitnesses = count($collationTableData['witnesses']);
         if ( $numWitnesses < 2) {
-            throw new \InvalidArgumentException("Not enough witnesses in collation table");
+            throw new InvalidArgumentException("Not enough witnesses in collation table");
         }
 
         if (!isset($collationTableData['collationMatrix'])) {
-            throw new \InvalidArgumentException("No collation table matrix  in data");
+            throw new InvalidArgumentException("No collation table matrix  in data");
         }
 
         if (count($collationTableData['collationMatrix']) !== $numWitnesses) {
-            throw new \InvalidArgumentException("Invalid collation table matrix");
+            throw new InvalidArgumentException("Invalid collation table matrix");
         }
 
         $chunkId = $collationTableData['witnesses'][0]['chunkId'];
@@ -139,11 +137,11 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
         $witnessArray = [];
         foreach($collationTableData['witnesses'] as $i => $witness) {
             if (!isset($witness['ApmWitnessId'])) {
-                throw new \InvalidArgumentException("No witness id in witness $i");
+                throw new InvalidArgumentException("No witness id in witness $i");
             }
             $witnessArray[] = $witness['ApmWitnessId'];
             if ($witness['chunkId'] !== $chunkId) {
-                throw new \InvalidArgumentException("Invalid chunk Id found in witness $i");
+                throw new InvalidArgumentException("Invalid chunk Id found in witness $i");
             }
         }
 
@@ -185,7 +183,7 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
                 0,
                 '',
                 "getCollationTableIdsForChunk");
-            $rows = $result->fetchAll(\PDO::FETCH_ASSOC);
+            $rows = $result->fetchAll(PDO::FETCH_ASSOC);
         } else {
             $rows = $this->ctTable->findRowsWithTime(['chunk_id' => $chunkId], 0,  $timeString);
         }
@@ -214,13 +212,13 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
                 '',
                 "getCollationTableIdsForChunk");
 
-            $rows = $result->fetchAll(\PDO::FETCH_ASSOC);
+            $rows = $result->fetchAll(PDO::FETCH_ASSOC);
         } else {
             $rows = $this->ctTable->findRowsWithTime(['id' => $id], 0,  $timeString);
         }
 
         if (count($rows)=== 0) {
-            throw new \InvalidArgumentException("Table does not exist");
+            throw new InvalidArgumentException("Table does not exist");
         }
 
         return $rows[0]['title'];

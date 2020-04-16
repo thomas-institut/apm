@@ -18,6 +18,8 @@
  */
 
 use APM\CollationTable\CollationTableManager;
+use APM\CollationTable\CollationTableVersionInfo;
+use APM\CollationTable\CollationTableVersionManager;
 
 class MockCollationTableManager extends CollationTableManager
 {
@@ -25,27 +27,24 @@ class MockCollationTableManager extends CollationTableManager
     /**
      * @inheritDoc
      */
-    public function saveNewCollationTable(array $collationTableData, \APM\CollationTable\CollationTableVersionInfo $versionInfo): int
+    public function saveNewCollationTable(array $collationTableData, CollationTableVersionInfo $versionInfo): int
     {
         // TODO: Implement saveNewCollationTable() method.
+        return 1;
     }
 
-    public function saveCollationTable(int $collationTableId, array $collationTableData, \APM\CollationTable\CollationTableVersionInfo $versionInfo)
+    public function saveCollationTable(int $collationTableId, array $collationTableData, CollationTableVersionInfo $versionInfo) : void
     {
         // TODO: Implement saveCollationTable() method.
     }
 
-    public function getCollationTableByIdWithTimestamp(int $collationTableId, string $timeStamp)
+    public function getCollationTableById(int $collationTableId, string $timeStamp = '') : array
     {
         // TODO: Implement getCollationTableByIdWithTimestamp() method.
+        return [];
     }
 
-    public function getCollationTableByIdWithVersion(int $id, int $versionId)
-    {
-        // TODO: Implement getCollationTableByIdWithVersion() method.
-    }
-
-    public function getCollationTableVersionManager(): \APM\CollationTable\CollationTableVersionManager
+    public function getCollationTableVersionManager(): CollationTableVersionManager
     {
         // TODO: Implement getCollationTableVersionManager() method.
     }
@@ -53,11 +52,13 @@ class MockCollationTableManager extends CollationTableManager
     public function getErrorMessage(): string
     {
         // TODO: Implement getErrorMessage() method.
+        return '';
     }
 
     public function getErrorCode(): int
     {
         // TODO: Implement getErrorCode() method.
+        return 0;
     }
 
     public function getCollationTableIdsForChunk(string $chunkId, string $timeString): array

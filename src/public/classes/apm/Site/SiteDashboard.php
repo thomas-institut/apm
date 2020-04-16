@@ -25,9 +25,9 @@
 
 namespace APM\Site;
 
+use InvalidArgumentException;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
-use ThomasInstitut\TimeString\TimeString;
 
 
 /**
@@ -61,16 +61,16 @@ class SiteDashboard extends SiteController
         $tableInfo = [];
         foreach($tableIds as $tableId) {
             try {
-                $table = $ctManager->getCollationTableByIdWithTimestamp($tableId, TimeString::now());
-            } catch(\InvalidArgumentException $e) {
+                $ctData = $ctManager->getCollationTableById($tableId);
+            } catch(InvalidArgumentException $e) {
                 $this->logger->error("Table $tableId reported as being active does not exist. Is version table consistent?");
                 continue;
             }
-            $chunkId = isset($table->chunkId) ? $table->chunkId : $table->witnesses[0]->chunkId;
+            $chunkId = isset($ctData['chunkId']) ? $ctData['chunkId'] : $ctData['witnesses'][0]['chunkId'];
 
             $tableInfo[] = [
                 'id' => $tableId,
-                'title' => $table->title,
+                'title' => $ctData['title'],
                 'chunkId' => $chunkId,
             ];
         }

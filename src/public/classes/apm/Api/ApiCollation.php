@@ -379,7 +379,6 @@ class ApiCollation extends ApiController
         $standardData->witnessTitles = $titles;
 
         // add chunkId
-
         $standardData->chunkId = $standardData->witnesses[0]->chunkId;
 
 
@@ -445,7 +444,6 @@ class ApiCollation extends ApiController
         $versionInfo->isReview = isset($inputDataObject['isReview']) ? $inputDataObject['isReview'] : false;
 
         $collationTableData = $inputDataObject['collationTable'];
-        $collationTableId = -1;
         if (isset($inputDataObject['collationTableId'])) {
             // save a new version
             $collationTableId = intval($inputDataObject['collationTableId']);

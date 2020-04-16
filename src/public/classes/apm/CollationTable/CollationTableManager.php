@@ -21,8 +21,15 @@ namespace APM\CollationTable;
 
 
 use ThomasInstitut\ErrorReporter\ErrorReporter;
-use ThomasInstitut\TimeString\TimeString;
 
+/**
+ * Class CollationTableManager
+ *
+ * Manages stored collation table standard data structures in the system
+ *
+ *
+ * @package APM\CollationTable
+ */
 abstract class CollationTableManager implements ErrorReporter
 {
 
@@ -35,19 +42,34 @@ abstract class CollationTableManager implements ErrorReporter
      */
     abstract public function saveNewCollationTable(array $collationTableData, CollationTableVersionInfo $versionInfo) : int;
 
-    abstract public function saveCollationTable(int $collationTableId, array $collationTableData, CollationTableVersionInfo $versionInfo);
+    /**
+     * @param int $collationTableId
+     * @param array $collationTableData
+     * @param CollationTableVersionInfo $versionInfo
+     */
+    abstract public function saveCollationTable(int $collationTableId, array $collationTableData, CollationTableVersionInfo $versionInfo) : void;
 
+    /**
+     * Returns an array with the table Ids for tables for the given chunkId
+     * @param string $chunkId
+     * @param string $timeString
+     * @return int[]
+     */
     abstract public function getCollationTableIdsForChunk(string $chunkId, string $timeString) : array;
 
-    abstract public function getCollationTableByIdWithTimestamp(int $collationTableId, string $timeStamp);
-    abstract public function getCollationTableByIdWithVersion(int $id, int $versionId);
+    /**
+     * Get the collation table data array for the given table Id at the given time
+     *
+     * if $timeStamp is '', returns the latest version of the collation table
+     *
+     * @param int $collationTableId
+     * @param string $timeStamp
+     * @return array
+     */
+    abstract public function getCollationTableById(int $collationTableId, string $timeStamp = '') : array;
     abstract public function getCollationTableTitle(int $id, string $timeStamp) : string;
 
     abstract public function getCollationTableVersionManager() : CollationTableVersionManager;
-
-    public function getCollationTableById(int $id) {
-        return $this->getCollationTableByIdWithTimestamp($id, TimeString::now());
-    }
 
     public function getCollationTableVersions(int $ctId) {
         return $this->getCollationTableVersionManager()->getCollationTableVersionInfo($ctId);

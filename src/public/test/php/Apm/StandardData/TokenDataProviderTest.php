@@ -73,6 +73,7 @@ class TokenDataProviderTest extends TestCase
             $exceptionRaised = false;
             $data = (new TokenDataProvider($token))->getStandardData();
             //print_r($data);
+            // TODO: after changing standard data to assoc arrays, add json_encode/json_decode step here to please Schema::in
             try {
                 $schema->in($data);
             } catch (\Exception $e) {

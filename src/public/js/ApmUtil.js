@@ -192,6 +192,41 @@ class ApmUtil {
     return moment(time).format('D MMM YYYY, H:mm:ss')
   }
 
+  static getClassArrayFromJQueryObject(jqueryObject) {
+    return jqueryObject.attr('class').split(/\s+/);
+  }
+
+  static arraySwapElements(theArray, index1, index2) {
+    let element1 = theArray[index1]
+    theArray[index1] = theArray[index2]
+    theArray[index2] = element1
+    return theArray
+  }
+
+  static arraysAreEqual(array1, array2, comparisonFunction = function (a,b) { return a===b }, depth= 1) {
+    if (array1.length !== array2.length) {
+      return false
+    }
+    if (depth === 1) {
+      // simple element by element comparison
+      for(let i = 0; i < array1.length; i++ ) {
+        if (!comparisonFunction(array1[i], array2[i])) {
+          return false
+        }
+      }
+      return true
+    }
+    for (let i = 0; i < array1.length; i++) {
+      if (!this.arraysAreEqual(array1[i], array2[i], comparisonFunction, depth-1)) {
+        return false
+      }
+    }
+    return true
+  }
+
+  static deepCopy(someVariable) {
+    return JSON.parse(JSON.stringify(someVariable))
+  }
 }
 
 ApmUtil.someNum = 1

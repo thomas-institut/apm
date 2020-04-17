@@ -1,6 +1,8 @@
 class CollationTableUtil {
 
-  static  genVariantsMatrix(refMatrix, witnesses) {
+  static  genVariantsMatrix(refMatrix, witnesses, witnessOrder) {
+    //console.log('genVariantsMatrix')
+    //refMatrix.logMatrix('refMatrix')
     let variantMatrix = new Matrix(refMatrix.nRows, refMatrix.nCols)
 
     for (let col=0; col < refMatrix.nCols; col++) {
@@ -8,14 +10,16 @@ class CollationTableUtil {
       let textCol = []
       for(let row=0; row < refMatrix.nRows; row++) {
         let ref = refCol[row]
+        //console.log('row ' + row + ' col ' + col + ' ref ' +  ref)
         if (ref=== -1) {
           textCol.push('')
           continue
         }
-        if (witnesses[row].tokens[ref].normalizedText !== undefined) {
-          textCol.push(witnesses[row].tokens[ref].normalizedText)
+        let witness = witnesses[witnessOrder[row]]
+        if (witness.tokens[ref]['normalizedText'] !== undefined) {
+          textCol.push(witness.tokens[ref]['normalizedText'])
         } else {
-          textCol.push(witnesses[row].tokens[ref].text)
+          textCol.push(witness.tokens[ref].text)
         }
 
       }
@@ -63,6 +67,30 @@ class CollationTableUtil {
       ranks.push(rankObject[text])
     }
     return ranks
+  }
+
+  /**
+   * compares two arrays of arrays to see if they're equal
+   * @param matrix1
+   * @param matrix2
+   */
+  static collationMatricesAreEqual(matrix1, matrix2) {
+
+    return ApmUtil.arraysAreEqual(matrix1, matrix2, function(a,b){return a===b}, 2)
+    // if (matrix1.length !== matrix2.length) {
+    //   return false
+    // }
+    // for(let row = 0; row < matrix1.length; row++) {
+    //   if(matrix1[row].length !== matrix2[row].length) {
+    //     return false
+    //   }
+    //   for(let col= 0; col < matrix1[row].length; col++) {
+    //     if (matrix1[row][col] !== matrix2[row][col]) {
+    //       return false
+    //     }
+    //   }
+    // }
+    // return true
   }
 
 }

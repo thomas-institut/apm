@@ -49,7 +49,15 @@ class CollationTableEditor {
     this.apiSaveCollationUrl = this.options.urlGenerator.apiSaveCollation()
 
     this.ctData = this.options['collationTableData']
-    this.lastSavedCtData = $.extend({}, this.ctData)
+    // use default ordering if ctData does not have one
+    if (this.ctData['witnessOrder'] === undefined) {
+      this.ctData['witnessOrder'] = []
+      for(let i=0; i < this.ctData['witnesses'].length; i++) {
+        this.ctData['witnessOrder'][i] = i
+      }
+    }
+
+    this.lastSavedCtData = ApmUtil.deepCopy(this.ctData)
     this.tableId = this.options['tableId']
     this.ctData['tableId'] = this.tableId
     this.versionInfo = this.options.versionInfo
@@ -64,7 +72,8 @@ class CollationTableEditor {
     this.ctInfoDiv = $('#collationtableinfo')
     //this.ctActionsDiv = $('#collationtableactions')
     this.breadcrumbCtTitleSpan = $('#breadcrumb-cttitle')
-    this.witnessesDiv = $('#witnessesdiv')
+    this.witnessesDivSelector = '#witnessesdiv'
+    this.witnessesDiv = $(this.witnessesDivSelector)
     this.versionInfoDiv = $('#versionhistorydiv')
     this.ctDivId = 'collationtablediv'
     this.ctDiv = $('#' + this.ctDivId)
@@ -93,7 +102,7 @@ class CollationTableEditor {
 
     this.ctInfoDiv.html(this.genCtInfoDiv())
 
-    this.witnessesDiv.html(this.genWitnessesDivHtml())
+    this.updateWitnessInfoDiv()
     this.updateVersionInfo()
     this.quickEditionDiv.html('Quick edition coming soon...')
     this.ctDiv.html('Collation table coming soon...')
@@ -129,18 +138,21 @@ class CollationTableEditor {
 
 
     this.setupTableEditor()
-    this.lastSavedEditorMatrix = this.tableEditor.getMatrix().clone()
+    this.lastSavedCollationMatrix = this.getCollationMatrixFromTableEditor()
     this.updateSaveArea()
     this.fetchQuickEdition()
   }
+
+
 
   getCollationMatrixFromTableEditor() {
     let matrix = this.tableEditor.getMatrix()
     let cMatrix = []
     for(let row = 0; row < matrix.nRows; row++) {
-      cMatrix[row] = []
+      let witnessIndex = this.ctData['witnessOrder'][row]
+      cMatrix[witnessIndex] = []
       for (let col =0; col < matrix.nCols; col++) {
-        cMatrix[row][col] = matrix.getValue(row, col)
+        cMatrix[witnessIndex][col] = matrix.getValue(row, col)
       }
     }
     return cMatrix
@@ -150,10 +162,10 @@ class CollationTableEditor {
 
     let collationTable = this.ctData
     let rowDefinition = []
-    for (let i = 0; i < collationTable['sigla'].length; i++) {
-      //let witness = collationTable.witnesses[i]
-      let title = collationTable['witnessTitles'][i]
-      let tokenArray = collationTable['collationMatrix'][i]
+    for (let i = 0; i < collationTable['witnessOrder'].length; i++) {
+      let wIndex = collationTable['witnessOrder'][i]
+      let title = collationTable['witnessTitles'][wIndex]
+      let tokenArray = collationTable['collationMatrix'][wIndex]
       rowDefinition.push({
         title: title,
         values: tokenArray,
@@ -211,7 +223,8 @@ class CollationTableEditor {
   }
 
   recalculateVariants() {
-    this.variantsMatrix = CollationTableUtil.genVariantsMatrix(this.tableEditor.getMatrix(), this.ctData['witnesses'])
+    this.variantsMatrix = CollationTableUtil.genVariantsMatrix(this.tableEditor.getMatrix(),
+      this.ctData['witnesses'], this.ctData['witnessOrder'])
   }
 
   genOnCollationChanges() {
@@ -226,10 +239,11 @@ class CollationTableEditor {
 
   genGenerateCellTdExtraAttributesFunction() {
     let thisObject = this
-    return function(row, col, value) {
+    return function(tableRow, col, value) {
       if (value === -1) {
         return ''
       }
+      let row = thisObject.ctData['witnessOrder'][tableRow]
       let collationTable = thisObject.ctData
       let peopleInfo = thisObject.options.peopleInfo
       let witness = collationTable['witnesses'][row]
@@ -349,7 +363,7 @@ class CollationTableEditor {
   }
 
   getPostNotes(row, col, tokenIndex) {
-    //console.log('Get post notes: r' + row + ' c' + col + ' i' + tokenIndex)
+
     let postItemIndexes = this.aggregatedNonTokenItemIndexes[row][tokenIndex]['post']
     let itemWithAddressArray = this.ctData['witnesses'][row]['items']
     let notes = []
@@ -379,7 +393,6 @@ class CollationTableEditor {
       'sic' : 'Sic',
       'abbr' : 'Abbreviation'
     }
-
     let itemWithAddressArray = this.ctData['witnesses'][row]['items']
     let item = itemWithAddressArray[tokenSourceItemData['index']]
     let tokenItemText = ''
@@ -496,10 +509,11 @@ class CollationTableEditor {
 
   genGenerateCellClassesFunction() {
     let thisObject = this
-    return function(row, col, value) {
+    return function(tableRow, col, value) {
       if (value === -1) {
         return [ 'emptytoken']
       }
+      let row = thisObject.ctData['witnessOrder'][tableRow]
       let tokenArray = thisObject.ctData['witnesses'][row]['tokens']
       let itemWithAddressArray = thisObject.ctData['witnesses'][row]['items']
 
@@ -510,7 +524,8 @@ class CollationTableEditor {
       classes.push('withpopover')
       //variant class
       if (thisObject.viewSettings.highlightVariants) {
-        classes.push('variant_' + thisObject.variantsMatrix.getValue(row, col))
+        // Note that the variantsMatrix refers to the tableRow not to the witness row
+        classes.push('variant_' + thisObject.variantsMatrix.getValue(tableRow, col))
       }
       // get itemZero
       let itemZeroIndex = token['sourceItems'][0]['index']
@@ -548,10 +563,11 @@ class CollationTableEditor {
     let thisObject = this
     let noteIconSpan = ' <span class="noteicon"><i class="far fa-comment"></i></span>'
     let normalizationSymbol = '<b><sub>N</sub></b>'
-    return function(row, col, value) {
+    return function(tableRow, col, value) {
       if (value === -1) {
         return '&mdash;'
       }
+      let row = thisObject.ctData['witnessOrder'][tableRow]
       let tokenArray = thisObject.ctData['witnesses'][row]['tokens']
       let token = tokenArray[value]
       let postNotes = thisObject.getPostNotes(row, col, value)
@@ -677,21 +693,106 @@ class CollationTableEditor {
     }
   }
 
+  updateWitnessInfoDiv() {
+    $(this.witnessesDivSelector + ' .move-up-btn').off()
+    $(this.witnessesDivSelector + ' .move-down-btn').off()
+    this.witnessesDiv.html(this.genWitnessesDivHtml())
+    $(this.witnessesDivSelector + ' td.witnesspos-0 > .move-up-btn').addClass('disabled')
+    let lastPos = this.ctData['witnessOrder'].length -1
+    $(this.witnessesDivSelector + ' td.witnesspos-' + lastPos +  ' > .move-down-btn').addClass('disabled')
+    $(this.witnessesDivSelector + ' .move-up-btn').on('click', this.genOnClickUpDownWitnessInfoButton('up'))
+    $(this.witnessesDivSelector + ' .move-down-btn').on('click',this.genOnClickUpDownWitnessInfoButton('down') )
+  }
+
+  /**
+   * generates the on click function for the witness info move buttons
+   * Notice that the direction is from the point of view of the table: moving
+   * up in the table means actually moving to an lesser position in the witness
+   * order array. The top witness in the table is actually position 0.
+   * @param direction
+   * @returns {function(...[*]=)}
+   */
+  genOnClickUpDownWitnessInfoButton(direction) {
+    let thisObject = this
+    return function(ev) {
+      let classes = ApmUtil.getClassArrayFromJQueryObject($(ev.currentTarget.parentNode))
+      let index = thisObject.getWitnessIndexFromClasses(classes)
+      let position = thisObject.getWitnessPositionFromClasses(classes)
+      let numWitnesses = thisObject.ctData['witnesses'].length
+      console.log('Click move ' + direction + ' button on witness ' + index + ', position ' + position)
+
+
+      if (direction === 'down' && position === numWitnesses -1) {
+        // at the last position, cannot move up
+        console.log('Nowhere to move down the table')
+        return false
+      }
+
+      if (direction === 'up' && position === 0) {
+        // at the first position, cannot move down
+        console.log('Nowhere to move up')
+        return false
+      }
+
+      let indexOffset = direction === 'up' ? -1 : 1
+
+      ApmUtil.arraySwapElements(thisObject.ctData['witnessOrder'],position, position+indexOffset)
+
+      thisObject.witnessesDiv.html('Updating...')
+      thisObject.setupTableEditor()
+      thisObject.fetchQuickEdition()
+      thisObject.updateWitnessInfoDiv()
+      thisObject.updateSaveArea()
+
+    }
+  }
+
+  getWitnessIndexFromClasses(classes) {
+    let index = -1
+    for (let i = 0; i < classes.length; i++) {
+      let theClass = classes[i]
+      if (/^witness-/.test(theClass)) {
+        // noinspection TypeScriptValidateTypes
+        return parseInt(theClass.split('-')[1])
+      }
+    }
+    return index
+  }
+
+  getWitnessPositionFromClasses(classes) {
+    let index = -1
+    for (let i = 0; i < classes.length; i++) {
+      let theClass = classes[i]
+      if (/^witnesspos-/.test(theClass)) {
+        // noinspection TypeScriptValidateTypes
+        return parseInt(theClass.split('-')[1])
+      }
+    }
+    return index
+  }
+
   genWitnessesDivHtml() {
     let html = ''
 
     html+= '<table class="witnesstable">'
     html+= '<tr><th>Witness</th><th>Version used</th><th>Siglum</th></tr>'
 
-    for(let i = 0; i < this.ctData['witnesses'].length; i++) {
-      let witness = this.ctData['witnesses'][i]
-      let siglum = this.ctData['sigla'][i]
-      //let docTitle = this.options.docInfo[witness['docId']]['title']
-      let docTitle = this.ctData['witnessTitles'][i]
+    for(let i = 0; i < this.ctData['witnessOrder'].length; i++) {
+      let wIndex = this.ctData['witnessOrder'][i]
+      let witness = this.ctData['witnesses'][wIndex]
+      let siglum = this.ctData['sigla'][wIndex]
+      let witnessTitle = this.ctData['witnessTitles'][wIndex]
+      let witnessClass = 'witness-' + wIndex
+      witnessClass += ' witnesspos-' + i
       html += '<tr>'
-      html += '<td>' + docTitle + '</td>'
+      html += '<td>' + witnessTitle + '</td>'
       html += '<td>' + ApmUtil.formatVersionTime(witness['timeStamp']) + '</td>'
       html += '<td>'+ siglum + '</td>'
+      html += '<td class="' + witnessClass +  '">'
+      html += '<button class="btn btn-default btn-sm move-up-btn" title="Move Up"><i class="fas fa-arrow-up"></i></button>'
+      html += '&nbsp;&nbsp;&nbsp;'
+      html += '<button class="btn btn-default btn-sm move-down-btn"  title="Move Down"><i class="fas fa-arrow-down"></i></button>'
+      html += '</td>'
       html += '</tr>'
     }
     return html
@@ -700,8 +801,25 @@ class CollationTableEditor {
   updateSaveArea() {
     let changes = this.changesInCtData()
     if (changes.length !== 0) {
+      console.log('Detected changes in data')
+      console.log(changes)
+      this.buttonPopoverContent = '<p>'
+      this.buttonPopoverContent += '<ul>'
+      for (const change of changes){
+        this.buttonPopoverContent += '<li>' + change + '</li>'
+      }
+      this.buttonPopoverContent += '</ul></p>'
+      let thisObject = this
+      this.saveButton.popover({
+        trigger: 'hover',
+        placement: 'auto left',
+        title: "Click to save changes",
+        html: true,
+        content: function() { return thisObject.buttonPopoverContent}
+      })
       this.saveButton.removeClass('hidden')
     } else {
+      console.log('no changes in data')
       this.saveButton.addClass('hidden')
     }
 
@@ -714,19 +832,18 @@ class CollationTableEditor {
     if (this.ctData['title'] !== this.lastSavedCtData['title']) {
       changes.push("New title: '" + this.ctData['title'] + "'" )
     }
-    if (!this.tableEditor.getMatrix().isEqualTo(this.lastSavedEditorMatrix)) {
+    let currentCollationMatrix = this.getCollationMatrixFromTableEditor()
+    if (!CollationTableUtil.collationMatricesAreEqual(currentCollationMatrix, this.lastSavedCtData['collationMatrix'])) {
       changes.push('Changes in collation alignment')
+    }
+
+    if (!ApmUtil.arraysAreEqual(this.ctData['witnessOrder'], this.lastSavedCtData['witnessOrder'])) {
+      changes.push('New witness order')
     }
     return changes
   }
 
-  genEditionEngineDetailsHtml(engineDetails) {
-    let html = ''
-    for(const key in engineDetails) {
-      html += '<p>' + '<b>' + key + '</b>:' + engineDetails[key]
-    }
-    return html
-  }
+
 
   fetchQuickEdition() {
     let profiler = new SimpleProfiler('FetchQuickEdition')
@@ -735,8 +852,10 @@ class CollationTableEditor {
     //console.log('Calling API at ' + apiQuickEditionUrl)
     let apiCallOptions = {
       collationTable: this.ctData,
-      baseWitnessIndex: 0
+      baseWitnessIndex: this.ctData['witnessOrder'][0]
     }
+
+    console.log(apiCallOptions)
     let thisObject = this
     $.post(
       apiQuickEditionUrl,

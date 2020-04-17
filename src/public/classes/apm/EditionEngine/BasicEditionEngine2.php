@@ -40,12 +40,10 @@ class BasicEditionEngine2 extends EditionEngine2
         $this->reset();
         $this->startChrono();
 
-        // TODO: Implement generateEdition() method.
-
         $ctData = $input['collationTable'];
         $sigla = $ctData['sigla'];
         $baseWitnessIndex = 0;
-        if (!isset($input['baseWitnessIndex'])) {
+        if (isset($input['baseWitnessIndex'])) {
             $baseWitnessIndex = intval($input['baseWitnessIndex']);
         }
 

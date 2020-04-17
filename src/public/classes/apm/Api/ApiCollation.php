@@ -371,12 +371,15 @@ class ApiCollation extends ApiController
         // generate witness titles and default sigla
         $sigla = [];
         $titles = [];
+        $witnessOrder = [];
         foreach($standardData->witnesses as $i => $witness) {
             $sigla[$i] = SiglumGenerator::generateSiglaByIndex($i);
             $titles[$i] = $standardData->sigla[$i];
+            $witnessOrder[$i] = $i;
         }
         $standardData->sigla = $sigla;
         $standardData->witnessTitles = $titles;
+        $standardData->witnessOrder = $witnessOrder;
 
         // add chunkId
         $standardData->chunkId = $standardData->witnesses[0]->chunkId;

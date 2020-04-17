@@ -855,15 +855,13 @@ class CollationTableEditor {
       baseWitnessIndex: this.ctData['witnessOrder'][0]
     }
 
-    console.log(apiCallOptions)
     let thisObject = this
     $.post(
       apiQuickEditionUrl,
       {data: JSON.stringify(apiCallOptions)}
     ).done( function (apiResponse) {
-      //console.log("Quick edition API call successful")
       profiler.stop()
-      //console.log(apiResponse)
+      console.log(apiResponse)
 
       let ev = new EditionViewer( {
         collationTokens: apiResponse.mainTextTokens,

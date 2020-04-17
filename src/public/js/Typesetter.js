@@ -94,6 +94,7 @@ class Typesetter {
       defaultFontFamily: {type: 'NonEmptyString', default:'Helvetica' },
       defaultFontSize: { type: 'NumberGreaterThanZero', default: defaultFontSize},
       lineHeight: { type: 'NumberGreaterThanZero', default: defaultFontSize * 2},
+      lineNumberStyle: { type: 'string', default: 'latin'},
       rightToLeft: { type: 'boolean', default: false},
       normalSpaceWidth: { type: 'number', default: 1}, // in ems
       minSpaceWidth: { type: 'number', default: 0.8}, // in ems
@@ -109,6 +110,7 @@ class Typesetter {
     this.emSize = this.getTextWidthWithDefaults('m')
     this.normalSpace = this.options.normalSpaceWidth * this.emSize
   }
+
   
   getStringWidth(text, fontDefinitionString) {
     // re-use canvas object for better performance
@@ -253,7 +255,14 @@ class Typesetter {
     let tokens = this.getTokensFromMarkdownString(theString)
     return this.typesetTokens(tokens, defaultFontSize)
   }
-  
+
+  getNumberString(number, style= '') {
+    switch(style) {
+      case 'arabic':
+      default: return number.toString()
+    }
+  }
+
   /**
    * Takes an array of typeset tokens and generates
    * typeset token for line numbers 
@@ -280,7 +289,7 @@ class Typesetter {
         let tokenWidth = this.getStringWidth(i.toString(), lineNumbersFontDefinition)
         let newToken = {
           type: 'text',
-          text: i.toString(),
+          text: this.getNumberString(i, this.options.lineNumberStyle),
           deltaX: this.options.rightToLeft ? 0 : -tokenWidth,  //left-align on rtl text and right-align on ltr text
           deltaY: lineNumbersDeltaYs[i],
           fontSize: this.options.defaultFontSize * this.options.lineNumbersFontSizeMultiplier,

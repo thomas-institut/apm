@@ -160,14 +160,6 @@ class EditionViewer {
   getCollationTableIndexToTypesetTokensMap(typesetTokens) {
     
     let map = []
-//    let currentTokenIndex = 0
-//    
-//    for(const token of tokensToTypeset) {
-//      if (typeof(token.collationTableIndex) === 'number') {
-//        map[token.collationTableIndex] = currentTokenIndex
-//      }
-//      currentTokenIndex++
-//    }
 
     for (let i=0; i < typesetTokens.length; i++) {
       map[typesetTokens[i].collationTableIndex] = i

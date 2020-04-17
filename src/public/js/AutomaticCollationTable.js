@@ -620,7 +620,7 @@ class AutomaticCollationTable {
       generateCellClasses: this.genGenerateCellClassesFunction(),
       generateCellTdExtraAttributes: this.genGenerateCellTdExtraAttributesFunction()
     })
-    this.variantsMatrix = CollationTableUtil.genVariantsMatrix(this.tableEditor.getMatrix(), collationTable['witnesses'])
+    this.variantsMatrix = CollationTableUtil.genVariantsMatrix(this.tableEditor.getMatrix(), collationTable['witnesses'], collationTable['witnessOrder'])
     this.tableEditor.redrawTable()
   }
 

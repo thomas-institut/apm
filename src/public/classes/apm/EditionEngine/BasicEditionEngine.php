@@ -22,7 +22,7 @@ namespace APM\EditionEngine;
 
 use APM\Core\Token\TokenType;
 
-class BasicEditionEngine2 extends EditionEngine2
+class BasicEditionEngine extends EditionEngine
 {
 
     const TOKEN_NOT_IN_MAINTEXT = -1;
@@ -168,7 +168,7 @@ class BasicEditionEngine2 extends EditionEngine2
                     self::APPARATUS_ENTRY_FIELD_START => $ctToMainTextMap[$i],
                     self::APPARATUS_ENTRY_FIELD_END => $ctToMainTextMap[$i],
                     self::APPARATUS_ENTRY_FIELD_TYPE => self::APPARATUS_ENTRY_TYPE_VARIANT,
-                    self::APPARATUS_ENTRY_FIELD_SIGLA => $variantWitnessIndexes, // TODO: change this, it's now an index, not a siglum
+                    self::APPARATUS_ENTRY_FIELD_SIGLA => $variantWitnessIndexes, // it's indexes to the edition's sigla now
                     self::APPARATUS_ENTRY_FIELD_DETAILS => $details,
                     self::APPARATUS_ENTRY_FIELD_TEXT => $variant,
                     self::APPARATUS_ENTRY_FIELD_MARKDOWN => $variant .  ' _' . $variantAbbreviationsStr . '_'
@@ -182,14 +182,14 @@ class BasicEditionEngine2 extends EditionEngine2
         $apparatusArray = [$criticalApparatus];
 
         $edition = [];
-        $edition[self::EDITION_FIELD_BASE_SIGLUM] = $baseWitnessIndex; // TODO: check this
+        $edition[self::EDITION_FIELD_BASE_WITNESS_INDEX] = $baseWitnessIndex;
         $edition[self::EDITION_FIELD_MAIN_TEXT_TOKENS] = $mainTextTokens;
-        $edition[self::EDITION_FIELD_ABBREVIATIONS_TO_SIGLA] = $sigla; // TODO: check this, it's now index to sigla
+        $edition[self::EDITION_FIELD_SIGLA] = $sigla;
         $edition[self::EDITION_FIELD_TEXT_DIRECTION] = $textDirection;
         $edition[self::EDITION_FIELD_EDITION_STYLE] = $language;
         $edition[self::EDITION_FIELD_APPARATUS_ARRAY] = $apparatusArray;
         $edition[self::EDITION_FIELD_ERROR] = '';
-        $edition['status'] = 'Almost there!';
+        $edition['status'] = 'OK';
 
         $this->endChrono();
         return $edition;

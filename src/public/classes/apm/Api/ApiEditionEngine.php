@@ -5,7 +5,7 @@ namespace APM\Api;
 
 
 use APM\EditionEngine\BasicAutomaticEditionEngine;
-use APM\EditionEngine\BasicEditionEngine2;
+use APM\EditionEngine\BasicEditionEngine;
 use APM\EditionEngine\EditionEngine;
 use APM\Engine\Engine;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -35,7 +35,7 @@ class ApiEditionEngine extends ApiController
         }
         $this->profiler->start();
 
-        $editionEngine = new BasicEditionEngine2('BasicEditionEngine2');
+        $editionEngine = new BasicEditionEngine('BasicEditionEngine2');
 
         $responseData = $editionEngine->generateEdition($inputDataObject);
 

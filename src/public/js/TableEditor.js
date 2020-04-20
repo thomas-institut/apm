@@ -784,9 +784,12 @@ class TableEditor {
         return true
       }
       console.log('Add column right, col = ' + col)
+      let wScrollY = window.scrollY
+      let wScrollX = window.scrollX
       thisObject.matrix.addColumnAfter(col,  thisObject.options.getEmptyValue())
       thisObject.dispatchColumnAddEvents(col+1)
       thisObject.redrawTable()
+      thisObject.restoreScroll(wScrollX, wScrollY)
     }
   }
 
@@ -799,11 +802,25 @@ class TableEditor {
       }
       //console.log('Adding column LEFT')
       console.log('Add column left, col = ' + col)
+      let wScrollY = window.scrollY
+      let wScrollX = window.scrollX
       thisObject.matrix.addColumnAfter(col-1, thisObject.options.getEmptyValue())
       thisObject.dispatchColumnAddEvents(col)
       thisObject.redrawTable()
+      thisObject.restoreScroll(wScrollX, wScrollY)
     }
   }
+
+  restoreScroll(x, y)  {
+    // TODO: use a different strategy to deal with adding and deleting columns.
+    // TODO: for example, add a column to the table and redraw columns appropriately
+
+    setTimeout(function() {
+      window.scrollTo(x, y)
+    }, 250)
+  }
+
+
 
   genOnClickDeleteColumnButton() {
     let thisObject = this
@@ -814,9 +831,12 @@ class TableEditor {
       }
       if (thisObject.matrix.isColumnEmpty(col, thisObject.options.isEmptyValue)) {
         //console.log('Deleting column ' + col)
+        let wScrollY = window.scrollY
+        let wScrollX = window.scrollX
         thisObject.matrix.deleteColumn(col)
         thisObject.redrawTable()
         thisObject.dispatchColumnDeleteEvents(col)
+        thisObject.restoreScroll(wScrollX, wScrollY)
       } else {
         console.log('Column NOT empty, cannot delete')
       }
@@ -827,6 +847,20 @@ class TableEditor {
   getTableClass(tableNumber) {
     return 'te-table-' + tableNumber
   }
+
+  getTableSelector(tableNumber) {
+    return '#' + this.options.id + ' .' + this.getTableClass(tableNumber)
+  }
+
+  getTableNumberForColumn(col) {
+    if (this.options.showInMultipleRows) {
+      return Math.floor(col / this.options.columnsPerRow)
+    } else {
+      return 0
+    }
+
+  }
+
   getTdClass(row, col) {
     return 'te-cell-' + row + '-' + col
   }

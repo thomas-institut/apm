@@ -35,3 +35,30 @@ div.edrundetails{
     font-size: 0.8em;
     margin-top: 2em;
 }
+
+#collationtablepanel {
+    margin: 0;
+    padding: 0;
+}
+
+.ct-toolbar {
+    padding: 10px 5px;
+    margin: 0 0 1em;
+    background: #fbfbfb;
+    color: grey;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    /*border-bottom: solid 1px #e0e0e0;*/
+}
+
+.ct-toolbar.tb-button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 3px;
+}
+
+a.tb-button {
+    color: grey;
+}

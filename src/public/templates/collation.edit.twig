@@ -78,14 +78,28 @@
 
 
     <ul class="nav nav-tabs" role="tablist" id="tabsUl">
-        <li id="collationTableTabHeader" role="presentation" class="active"><a role="tab" data-toggle="tab" href="#collationtablediv">Collation Table</a></li>
+        <li id="collationTableTabHeader" role="presentation" class="active"><a role="tab" data-toggle="tab" href="#collationtablepanel">Collation Table</a></li>
         <li id="editionTabHeader"  role="presentation"><a role="tab" data-toggle="tab" href="#editiondiv">Quick Edition</a></li>
         <li id="witnessesTabHeader"  role="presentation"><a role="tab" data-toggle="tab" href="#witnessesdiv">Witness Info</a></li>
         <li id="witnessesTabHeader"  role="presentation"><a role="tab" data-toggle="tab" href="#versionhistorydiv">Version History</a></li>
     </ul>
 
     <div class="tab-content">
-        <div role="tabpanel" class="tab-pane active panetab" id="collationtablediv"></div>
+        <div role="tabpanel" class="tab-pane active panetab" id="collationtablepanel">
+            <div class="ct-toolbar">
+                <div>
+
+                </div>
+                <div>
+                    <a id="export-csv-button" class="tb-button"  download="apm-collationtable.csv"
+                       title="Download CSV"><small>CSV</small><i class="fas fa-download"></i></a>
+                </div>
+
+
+
+            </div>
+            <div id="collationtablediv"></div>
+        </div>
         <div role="tabpanel" class="tab-pane panetab" id="editiondiv"></div>
         <div role="tabpanel" class="tab-pane panetab" id="witnessesdiv"></div>
         <div role="tabpanel" class="tab-pane panetab" id="versionhistorydiv"></div>

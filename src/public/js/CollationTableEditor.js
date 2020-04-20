@@ -81,6 +81,7 @@ class CollationTableEditor {
     //this.saveAreaDiv = $('#save-area')
     this.saveButton = $('#savebutton')
     this.lastSaveSpan = $('#lastSave')
+    this.exportCsvButton = $('#export-csv-button')
 
     let thisObject = this
     this.ctTitleDiv.on('mouseenter', function () {
@@ -140,6 +141,7 @@ class CollationTableEditor {
     this.setupTableEditor()
     this.lastSavedCollationMatrix = this.getCollationMatrixFromTableEditor()
     this.updateSaveArea()
+    this.setCsvDownloadFile()
     this.fetchQuickEdition()
   }
 
@@ -233,6 +235,7 @@ class CollationTableEditor {
       //console.log('collation change')
       thisObject.updateSaveArea()
       thisObject.ctData['collationMatrix'] = thisObject.getCollationMatrixFromTableEditor()
+      thisObject.setCsvDownloadFile()
       thisObject.fetchQuickEdition()
     }
   }
@@ -743,6 +746,7 @@ class CollationTableEditor {
       thisObject.fetchQuickEdition()
       thisObject.updateWitnessInfoDiv()
       thisObject.updateSaveArea()
+      thisObject.setCsvDownloadFile()
 
     }
   }
@@ -934,6 +938,54 @@ class CollationTableEditor {
     html += '<p>Chunk ID: ' + this.options.workId + '-' + this.options.chunkNumber + '</p>'
     html += '<p>Table ID: ' + this.tableId + '</p>'
     return html
+  }
+
+  setCsvDownloadFile() {
+    let href = 'data:text/csv,' + encodeURIComponent(this.generateCsv())
+    this.exportCsvButton.attr('href', href)
+  }
+
+  /**
+   * Generates a CSV string from the collation table
+   * @returns {string}
+   */
+  generateCsv() {
+    let sep = ','
+    let collationTable = this.ctData
+    let titles = collationTable['witnessTitles']
+    let numWitnesses = collationTable['witnesses'].length
+    let collationMatrix = collationTable['collationMatrix']
+    let order = collationTable['witnessOrder']
+
+    let output = ''
+    for (let i=0; i < numWitnesses; i++) {
+      let witnessIndex = order[i]
+      let title = titles[witnessIndex]
+      output += title + sep
+      let ctRefRow = collationMatrix[witnessIndex]
+      for (let tkRefIndex = 0; tkRefIndex < ctRefRow.length; tkRefIndex++) {
+        let tokenRef = ctRefRow[tkRefIndex]
+        let tokenCsvRep = ''
+        if (tokenRef !== -1 ) {
+          let token = collationTable.witnesses[witnessIndex].tokens[tokenRef]
+          tokenCsvRep = this.getCsvRepresentationForToken(token, this.viewSettings.showNormalizations)
+        }
+        output += tokenCsvRep + sep
+      }
+      output += "\n"
+    }
+    return output
+  }
+
+  getCsvRepresentationForToken(tkn, showNormalizations) {
+    if (tkn.empty) {
+      return ''
+    }
+    let text = tkn.text
+    if (showNormalizations) {
+      text = tkn.norm
+    }
+    return '"' + text + '"'
   }
 
   escapeHtml(html) {

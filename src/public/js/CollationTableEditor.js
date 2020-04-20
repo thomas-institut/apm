@@ -631,7 +631,6 @@ class CollationTableEditor {
   }
 
   updateVersionInfo(){
-
     let html = ''
 
     html += '<table class="versioninfo">'
@@ -648,7 +647,6 @@ class CollationTableEditor {
 
       html += '<td>'
       if (version['isMinor']) { html += '[m]'}
-
       if (version['isReview']) { html += ' [r]'}
         html += '</td>'
       html += '</tr>'
@@ -662,6 +660,8 @@ class CollationTableEditor {
     return function() {
       let changes = thisObject.changesInCtData()
       if (changes.length !== 0) {
+        thisObject.saveButton.popover('hide')
+        thisObject.saveButton.html('Saving...')
         console.log('Saving table via API call to ' + thisObject.apiSaveCollationUrl)
         let description = ''
         for (let change of changes) {
@@ -681,7 +681,7 @@ class CollationTableEditor {
         ).done( function (apiResponse){
           console.log("Success saving table")
           console.log(apiResponse)
-          thisObject.lastSavedCtData = $.extend({}, thisObject.ctData)
+          thisObject.lastSavedCtData = ApmUtil.deepCopy(thisObject.ctData)
           thisObject.lastSavedEditorMatrix = thisObject.tableEditor.getMatrix().clone()
           thisObject.versionInfo = apiResponse.versionInfo
           thisObject.updateSaveArea()
@@ -691,7 +691,6 @@ class CollationTableEditor {
           console.error("Cannot save table")
           console.log(resp)
         })
-
       }
     }
   }
@@ -807,6 +806,7 @@ class CollationTableEditor {
     if (changes.length !== 0) {
       console.log('Detected changes in data')
       console.log(changes)
+      this.saveButton.html('Save Changes')
       this.buttonPopoverContent = '<p>'
       this.buttonPopoverContent += '<ul>'
       for (const change of changes){

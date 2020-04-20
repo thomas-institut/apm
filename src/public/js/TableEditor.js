@@ -391,6 +391,22 @@ class TableEditor {
     return html
   }
 
+  /**
+   * Erases one column from the table set
+   */
+  chopTable() {
+    let columnToChop = this.matrix.nCols - 1
+
+    let thSelector = this.getThSelector(columnToChop)
+    console.log("Removing th '" + thSelector + "'")
+    $(thSelector).remove()
+    for(let row = 0; row < this.matrix.nRows; row++) {
+      let tdSelector = this.getTdSelector(row, columnToChop)
+      console.log("Removing td '" + tdSelector + "'")
+      $(tdSelector).remove()
+    }
+  }
+
   generateCellHtml(row, col) {
     let html = ''
     let value = this.matrix.getValue(row, col)
@@ -830,10 +846,14 @@ class TableEditor {
         return true
       }
       if (thisObject.matrix.isColumnEmpty(col, thisObject.options.isEmptyValue)) {
-        //console.log('Deleting column ' + col)
+        console.log('Deleting column ' + col)
+        // thisObject.chopTable()
         let wScrollY = window.scrollY
         let wScrollX = window.scrollX
         thisObject.matrix.deleteColumn(col)
+        // for (let c =col; c < thisObject.matrix.nCols; c++) {
+        //   thisObject.redrawColumn(c)
+        // }
         thisObject.redrawTable()
         thisObject.dispatchColumnDeleteEvents(col)
         thisObject.restoreScroll(wScrollX, wScrollY)

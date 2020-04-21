@@ -108,6 +108,8 @@ class Authenticator {
         $this->view = $this->container->get(ApmContainerKey::VIEW);
         $this->apiLogger = $this->logger->withName('AUTH-API');
         $this->siteLogger = $this->logger->withName('AUTH-SITE');
+
+        $this->debugMode = true;
     }
 
     /**
@@ -158,6 +160,8 @@ class Authenticator {
         session_start();
 
         $this->debug('Starting authenticator middleware');
+        $this->debug("Login headers", $request->getHeaders());
+        $this->debug('Request method is ' . $request->getMethod());
 
         $success = false;
         if (!isset($_SESSION['userid'])){

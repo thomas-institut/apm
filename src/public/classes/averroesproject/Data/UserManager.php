@@ -20,13 +20,12 @@
 
 namespace AverroesProject\Data;
 
+use Psr\Log\LoggerAwareTrait;
 use ThomasInstitut\DataTable\DataTable;
 use ThomasInstitut\DataTable\GenericDataTable;
 use ThomasInstitut\DataTable\InMemoryDataTable;
 use Exception;
-use Monolog\Logger;
 use Psr\Log\LoggerAwareInterface;
-use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use ThomasInstitut\Profiler\SimpleSqlQueryCounterTrackerAware;
 use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
@@ -74,22 +73,15 @@ use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
 class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
 {
     use SimpleSqlQueryCounterTrackerAware;
+    use LoggerAwareTrait;
     
     private $userTable;
     private $relationsTable;
     private $peopleTable;
     private $tokensTable;
 
-    /**
-     * @var Logger
-     */
-    private $logger;
-    
-    var $rootRole = 'root';
+    const ROLE_ROOT = 'root';
 
-    //
-    // Constructor
-    // 
     /**
      * Initializes UserManager with the given data tables.
      * If no tables are given, empty InMemoryDataTables are used.
@@ -374,7 +366,7 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
             return false;
         }
         // root cannot be revoked any role except the root role
-        if ($this->isRoot($userId) && $role !== $this->rootRole) {
+        if ($this->isRoot($userId) && $role !== self::ROLE_ROOT) {
             return false;
         }
         $this->getSqlQueryCounterTracker()->incrementSelect();
@@ -393,17 +385,17 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
     
     public function isRoot(int $userId)
     {
-        return $this->userHasRole($userId, $this->rootRole);
+        return $this->userHasRole($userId, self::ROLE_ROOT);
     }
     
     public function makeRoot(int $userId)
     {
-        return $this->setUserRole($userId, $this->rootRole);
+        return $this->setUserRole($userId, self::ROLE_ROOT);
     }
     
     public function revokeRootStatus(int $userId)
     {
-        return $this->revokeUserRole($userId, $this->rootRole);
+        return $this->revokeUserRole($userId, self::ROLE_ROOT);
     }
     
     // user tokens
@@ -437,11 +429,13 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
     
     public function getUserTokenRows(int $userId, string $userAgent, string $ipAddress) : array
     {
+        // ignoring IP address to see if that gets rid of unwanted logouts for
+        // people on unstable wifi
         $this->getSqlQueryCounterTracker()->incrementSelect();
         return $this->tokensTable->findRows( [
             'user_id' => $userId, 
-            'user_agent' => $userAgent, 
-            'ip_address' => $ipAddress
+            'user_agent' => $userAgent
+            //'ip_address' => $ipAddress
         ]);
     }
     public function storeUserToken(int $userId, string $userAgent, string $ipAddress, string $token)
@@ -458,11 +452,13 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
                     $this->tokensTable->deleteRow($tokenRow['id']);
                 }
             }
-            
+            // ignoring IP address to see if that gets rid of unwanted logouts for
+            // people on unstable wifi
             $row = [
                 'user_id' => $userId, 
                 'user_agent' => $userAgent, 
-                'ip_address' => $ipAddress,
+                //'ip_address' => $ipAddress,
+                'ip_address' => '0.0.0.0',
                 'token' => $token,
                 'creation_time' => date('Y-m-d H:i:s')
             ];
@@ -510,15 +506,4 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
         return false;
     }
 
-    /**
-     * Sets a logger instance on the object.
-     *
-     * @param LoggerInterface $logger
-     *
-     * @return void
-     */
-    public function setLogger(LoggerInterface $logger)
-    {
-        $this->logger = $logger;
-    }
 }

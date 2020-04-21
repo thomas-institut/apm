@@ -365,7 +365,8 @@ class TableEditor {
       html += '<tr class="te-tableheader">'
       html += '<th></th>'
       for (let col=currentTableFirstColumn; col < currentTableLastColumnPlusOne; col++) {
-        html += '<th class="'+ this.getThClass(col)  +'">'
+        let thClasses = [ this.getThClass(col), this.getColClass(col)]
+        html += '<th class="'+ thClasses.join(' ')  +'">'
         let addColumnBeforeIcon = this.options.textDirection === 'ltr' ? this.icons.addColumnLeft : this.icons.addColumnRight
         let addColumnAfterIcon = this.options.textDirection === 'ltr' ? this.icons.addColumnRight : this.icons.addColumnLeft
         if (this.tableEditMode) {
@@ -397,7 +398,7 @@ class TableEditor {
   generateCellHtml(row, col) {
     let html = ''
     let value = this.matrix.getValue(row, col)
-    let cellClasses = [ 'te-cell', this.getTdClass(row,col)]
+    let cellClasses = [ 'te-cell', this.getTdClass(row,col), this.getColClass(col)]
     cellClasses = cellClasses.concat(this.options.generateCellClasses(row, col, value ))
     let tdExtra = this.options.generateCellTdExtraAttributes(row, col, value )
     html += '<td class="' +  cellClasses.join(' ') + '" ' + tdExtra + '>'
@@ -875,6 +876,10 @@ class TableEditor {
 
   getThClass(col) {
     return 'te-th-' + col
+  }
+
+  getColClass(col) {
+    return 'te-col-' + col
   }
 
   getTdSelector(row, col) {

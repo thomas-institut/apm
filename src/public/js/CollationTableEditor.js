@@ -591,7 +591,10 @@ class CollationTableEditor {
         }
         if (theItem.type === 'TextualItem' && itemText!== "\n") {
           cellHtml += '<span class="' + thisObject.getClassesFromItem(theItem).join(' ') + '">'
-          cellHtml += itemText
+          // TODO: check to see if this is a bug in itemization! see I-DE-BER-SB-4o.Inc.4619, AW47-47
+          // filter out leading new lines
+          let theText = itemText.replace(/^\n/, '')
+          cellHtml += theText
           cellHtml += '</span>'
         }
       }

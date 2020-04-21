@@ -38,8 +38,7 @@
 }
 
 body {
-    font-family: "DejaVu Sans", "ApmDejavuSans", Arial, sans-serif;
-/*    font-size: 14px;*/
+    font-family:  -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
 }
 
 a, a:visited {
@@ -50,12 +49,10 @@ a:hover{
     color: blue;
 }
 header {
-    /* background-color: #eee;*/
     margin: auto;
     padding: 0;
     border: 0;
     height: 58px;
-    padding-top: 0px;
     border-bottom: solid 1px #ddd;
 }
 
@@ -73,8 +70,7 @@ div#nav {
 section{
     clear: both;
     width: 1000px;
-    margin: auto;
-    margin-top: 25px;
+    margin: 25px auto auto;
     min-height: 200px;
 }
 
@@ -100,34 +96,27 @@ article.mssfeedentry{
 }
 
 article.mssfeedentry p {
-    padding: 0;
     margin: 0;
-    padding-bottom: 10px;
+    padding: 0 0 10px;
 }
 
 article.mssfeedentry ul {
     list-style: none;
-    padding: 0;
     margin: 0;
-    padding-left: 30px;
+    padding: 0 0 0 30px;
 }
 
 article.mssfeedentry li  {
-
     padding: 0;
-
 }
 footer {
     margin-top: 40px;
-
 }
-
 
 p.logo{
     float: left;
     margin: 0;
     padding: 0;
-    /* background-color:  #eee; */
     font-family: 'PT Sans', Arial, Verdana, serif;
     font-size: 2em;
 }
@@ -158,16 +147,7 @@ ul.horizontal li {
     font-weight: bold;
 }
 
-#login{
-    width: 450px;
-    height: 500px;
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    margin: auto;
-}
+
 
 .logininput {
     font-size: 1.5em;
@@ -243,11 +223,9 @@ p.docinfo {
 
 
 .dashboard section {
-    margin: 0;
-    margin-bottom: 50px;
+    margin: 0 0 50px;
     padding: 0;
     min-height: 0;
-    
 }
 
 .dashboard section h1 {

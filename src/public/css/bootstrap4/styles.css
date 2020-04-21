@@ -1,0 +1,70 @@
+
+/* Dimmed down links*/
+a, a:visited {
+    text-decoration: none;
+    color: #337ab7;
+}
+a:hover{
+    color: blue;
+}
+
+.bottom-border-light {
+    border-bottom: 1px solid #e7e7e7;
+}
+
+body {
+    font-size: 14px;  /* To make it compatible with bootstrap3 version, bs4 will have it a 1rem = 16px */
+}
+
+/*  Section styles  (for dashboard)*/
+
+section{
+    margin: 0.5rem 0 3rem 0;
+}
+section h1 {
+    font-size: 1.2rem;
+}
+
+section h2 {
+    font-size: 1rem;
+}
+
+article {
+    margin: 0;
+    padding-top: 5rem;
+}
+
+article h2 {
+    padding: 0;
+    margin-top: 1rem;
+}
+
+/* List of documents and chunks (e.g. in the dashboard) */
+
+ul.doclist {
+    list-style-type: none;
+    padding: 0;
+    margin-left: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+ul.doclist li {
+    padding: 0;
+    margin-bottom: 1rem;
+    margin-left: 1.5rem;
+    text-indent: -1.5rem;
+}
+
+ul.ctlist {
+    list-style-type: none;
+    padding: 0;
+    margin-left: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+ul.ctlist li {
+    padding: 0;
+    margin-bottom: 1rem;
+    margin-left: 1.5rem;
+    text-indent: -1.5rem;
+}

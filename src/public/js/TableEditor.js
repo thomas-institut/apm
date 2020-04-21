@@ -17,7 +17,6 @@
  */
 
 
-
 /*
    A generic table editor that allows for operations suitable for
    editing a collation table. The class takes a matrix with values
@@ -31,7 +30,6 @@
    to generate the table's contents and to detect empty values
 
  */
-
 
 class TableEditor {
 
@@ -396,22 +394,6 @@ class TableEditor {
     return html
   }
 
-  /**
-   * Erases one column from the table set
-   */
-  chopTable() {
-    let columnToChop = this.matrix.nCols - 1
-
-    let thSelector = this.getThSelector(columnToChop)
-    console.log("Removing th '" + thSelector + "'")
-    $(thSelector).remove()
-    for(let row = 0; row < this.matrix.nRows; row++) {
-      let tdSelector = this.getTdSelector(row, columnToChop)
-      console.log("Removing td '" + tdSelector + "'")
-      $(tdSelector).remove()
-    }
-  }
-
   generateCellHtml(row, col) {
     let html = ''
     let value = this.matrix.getValue(row, col)
@@ -479,6 +461,7 @@ class TableEditor {
     }
     //profiler.stop()
   }
+
   setupCellEventHandlersAll() {
     let tdSelector = this.getTdSelectorAll()
     //console.log('Setting up cell event handlers, selector: "' + tdSelector + '"')
@@ -493,7 +476,6 @@ class TableEditor {
     }
     $(tdSelector + ' .cell-button').addClass('hidden')
   }
-
 
   genOnClickCell() {
     let thisObject = this
@@ -590,7 +572,6 @@ class TableEditor {
     $(tdSelector + ' .confirm-edit-button').on('click', this.genOnClickConfirmEditButton(row, col))
     $(tdSelector + ' .te-input').on('keydown', this.genOnKeyPressCellInputField(row, col))
   }
-
 
   genButtonHtml(icon, classes, title='') {
     return '<a href="#" class="' + classes.join(' ') + '" title="'+ title + '">' + icon + '</a>'
@@ -766,7 +747,6 @@ class TableEditor {
     this.dispatchCellDrawnEvent(row, col)
   }
 
-
   genOnClickEditableCell(row, col) {
     let thisObject = this
     return function() {
@@ -849,8 +829,6 @@ class TableEditor {
     window.scrollTo(this.currentXScroll, this.currentYScroll)
   }
 
-
-
   genOnClickDeleteColumnButton() {
     let thisObject = this
     return function(ev) {
@@ -919,7 +897,6 @@ class TableEditor {
     return this.getTdSelector(row, col) + ' .te-cell-content'
   }
 
-
   canMoveCellLeft(row, col) {
     return col!== 0 &&
       !this.options.isEmptyValue(this.matrix.getValue(row, col)) &&
@@ -942,6 +919,7 @@ class TableEditor {
       }
     )
   }
+
   dispatchTableDrawnEvent() {
     this.dispatchEvent('table-drawn', {})
   }
@@ -1001,8 +979,7 @@ class TableEditor {
     )
   }
 
-  dispatchEvent(eventName, data = {})
-  {
+  dispatchEvent(eventName, data = {}){
     const event = new CustomEvent(eventName, {detail: data})
     this.container.get()[0].dispatchEvent(event)
   }
@@ -1013,10 +990,8 @@ class TableEditor {
    * @param {String} eventName
    * @param {function} f
    */
-  on(eventName, f)
-  {
+  on(eventName, f)  {
     this.container.on(eventName, f)
   }
-
 
 }

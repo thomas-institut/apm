@@ -37,6 +37,8 @@ use \Psr\Http\Message\ResponseInterface as Response;
 class SiteDashboard extends SiteController
 {
 
+    const TEMPLATE_DASHBOARD = 'bootstrap4/dashboard.twig';
+
     /**
      * @param Request $request
      * @param Response $response
@@ -79,7 +81,7 @@ class SiteDashboard extends SiteController
         $this->profiler->stop();
         $this->logProfilerData('dashboardPage-' . $this->userInfo['username'] . '-' . $userId);
 
-        return $this->renderPage($response, 'dashboard.twig', [
+        return $this->renderPage($response, self::TEMPLATE_DASHBOARD, [
             'doclist' => $docListHtml,
             'tableInfo' => $tableInfo
         ]);

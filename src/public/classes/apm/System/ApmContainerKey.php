@@ -32,6 +32,7 @@ class ApmContainerKey
     const LOGGER = 'logger';
     const SYSTEM_MANAGER = 'systemManager';
     const USER_ID = 'userId';
+    const USER_INFO = 'userInfo';
     const API_USER_ID = 'apiUserId';
     const VIEW = 'view';
     const ROUTER = 'router';

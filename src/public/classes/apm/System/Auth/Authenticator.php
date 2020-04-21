@@ -79,7 +79,7 @@ class Authenticator {
    
     private $cookieName = 'rme';
     private $secret = '1256106427895916503';
-    private $debugMode = false;
+    private $debugMode;
    
     //Constructor
 
@@ -160,8 +160,8 @@ class Authenticator {
         session_start();
 
         $this->debug('Starting authenticator middleware');
-        $this->debug("Login headers", $request->getHeaders());
-        $this->debug('Request method is ' . $request->getMethod());
+        //$this->debug("Login headers", $request->getHeaders());
+        //$this->debug('Request method is ' . $request->getMethod());
 
         $success = false;
         if (!isset($_SESSION['userid'])){
@@ -190,7 +190,7 @@ class Authenticator {
                 $ui['manageUsers'] = 1;
             }
 
-            $this->container->set('user_info', $ui);
+            $this->container->set(ApmContainerKey::USER_INFO, $ui);
             return $handler->handle($request);
         } else {
             $this->debug("SITE : Authentication fail, logging out "
@@ -320,13 +320,13 @@ class Authenticator {
             return $response->withStatus(401);
         }
         $this->debug('API : Success, go ahead!');
-        $this->container->set('apiUserId', $userId);
+        $this->container->set(ApmContainerKey::API_USER_ID, $userId);
         return $handler->handle($request);
     }
     
     private function getUserIdFromLongTermCookie(Request $request)
     {
-        $this->debug('Checking long term cookie');
+        //$this->debug('Checking long term cookie');
         $longTermCookie = FigRequestCookies::get($request, $this->cookieName);
         if ($longTermCookie !== NULL and $longTermCookie->getValue()){
             $cookieValue = $longTermCookie->getValue();
@@ -338,7 +338,7 @@ class Authenticator {
                         $request->getServerParams()['REMOTE_ADDR']
                 );
                 if (hash_equals($userToken, $token)){
-                    $this->debug('Cookie looks good, user = ' . $userId);
+                    //$this->debug('Cookie looks good, user = ' . $userId);
                     return $userId;
                 }
                 $this->debug('User tokens do not match -> ' . $userToken . 
@@ -348,7 +348,7 @@ class Authenticator {
             $this->debug('Macs do not match!');
             return false;
         }
-        $this->debug('... there is no cookie. Fail!');
+        $this->debug('There is no long term cookie. Fail!');
         return false;
     }
     

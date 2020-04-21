@@ -124,15 +124,15 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     {
         $this->container = $ci;
         $this->systemManager = $ci->get(ApmContainerKey::SYSTEM_MANAGER);
-        $this->view = $ci->get('view');
-        $this->config = $ci->get('config');
-        $this->dataManager = $ci->get('dataManager');
+        $this->view = $ci->get(ApmContainerKey::VIEW);
+        $this->config = $ci->get(ApmContainerKey::CONFIG);
+        $this->dataManager = $ci->get(ApmContainerKey::DATA_MANAGER);
         $this->hookManager = $this->systemManager->getHookManager();
         $this->logger = $this->systemManager->getLogger();
-        $this->router = $ci->get('router');
+        $this->router = $ci->get(ApmContainerKey::ROUTER);
         $this->userAuthenticated = false;
         $this->userInfo = [];
-        $this->languages = $ci->get('config')['languages'];
+        $this->languages = $this->config['languages'];
         $this->languagesByCode = $this->buildLanguageByCodeArray($this->languages);
 
         $this->profiler = new SimpleProfiler();
@@ -143,9 +143,9 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
        
        // Check if the user has been authenticated by the authentication middleware
         //$this->logger->debug('Checking user authentication');
-        if ($ci->has('user_info')) {
+        if ($ci->has(ApmContainerKey::USER_INFO)) {
            $this->userAuthenticated = true;
-           $this->userInfo = $ci->get('user_info');
+           $this->userInfo = $ci->get(ApmContainerKey::USER_INFO);
         }
     }
 

@@ -1,6 +1,12 @@
 {% extends "bootstrap4/base.twig" %}
 
 {% block title %}Dashboard{% endblock %}
+
+{% block extraCSS %}
+    <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/bootstrap4/dashboard.css"/>
+{% endblock %}
+
+
 {% block extraJS %}
 
 <script>
@@ -13,7 +19,7 @@
       function genCollationTableInfoHtml(tableInfo, urlGen) {
         let html = ''
 
-        html += '<ul class="ctlist">'
+        html += '<ul class="list-indented">'
         for(const info of tableInfo) {
           html += '<li><a target="_blank" href="' +  urlGen.siteEditCollationTable(info['id'])  + '">' + info['chunkId'] + ': ' + info['title'] + '</a></li>'
         }
@@ -40,7 +46,7 @@
         </h1>
 
         <div class="collapse show" id="mymss">
-            <ul class="doclist">{{doclist|raw}}</ul>
+            <ul class="list-indented">{{doclist|raw}}</ul>
             <a href="{{url_for('docs')}}">View all documents</a>
         </div>
     </section>

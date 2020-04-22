@@ -7,15 +7,15 @@
 
 
 .bottom-border-light {
-    border-bottom: 1px solid #e7e7e7;  /* To make it the same as bs3 */
+    border-bottom: 1px solid #e7e7e7;  /* To make it the same as bs3, no border in bs4*/
 }
 
 body {
-    font-size: 14px;  /* To make it compatible with bootstrap3 version, bs4 will have it at 1rem ( = 16px) */
+    font-size: 14px;  /* To make it the same as bs3, bs4 will have it at 1rem ( = 16px) */
 }
 
 .navbar {
-    margin-bottom: 20px;
+    margin-bottom: 20px;  /* To make it the same as bs3, in bs4 it's 0 */
 }
 
 /* Dimmed down links*/
@@ -28,7 +28,7 @@ a:hover{
     color: blue;
 }
 
-/* List of documents and chunks (e.g. in the dashboard) */
+/* Indented list, for example for documents and chunks in the dashboard */
 
 ul.list-indented {
     list-style-type: none;
@@ -41,33 +41,5 @@ ul.list-indented li {
     padding: 0;
     margin-bottom: 1rem;
     margin-left: 1.5rem;
-    text-indent: -1.5rem;
+    text-indent: -1.5rem;  /* Hanging indentation on list items */
 }
-
-/*ul.doclist {*/
-/*    list-style-type: none;*/
-/*    padding: 0;*/
-/*    margin-left: 2rem;*/
-/*    margin-bottom: 1.5rem;*/
-/*}*/
-
-/*ul.doclist li {*/
-/*    padding: 0;*/
-/*    margin-bottom: 1rem;*/
-/*    margin-left: 1.5rem;*/
-/*    text-indent: -1.5rem;*/
-/*}*/
-
-/*ul.ctlist {*/
-/*    list-style-type: none;*/
-/*    padding: 0;*/
-/*    margin-left: 2rem;*/
-/*    margin-bottom: 1.5rem;*/
-/*}*/
-
-/*ul.ctlist li {*/
-/*    padding: 0;*/
-/*    margin-bottom: 1rem;*/
-/*    margin-left: 1.5rem;*/
-/*    text-indent: -1.5rem;*/
-/*}*/

@@ -61,16 +61,13 @@ class CollationTableEditor {
     this.tableId = this.options['tableId']
     this.ctData['tableId'] = this.tableId
     this.versionInfo = this.options.versionInfo
-
     this.aggregatedNonTokenItemIndexes = this.calculateAggregatedNonTokenItemIndexes()
-
 
     // DOM elements
     this.ctTitleDiv = $('#collationtabletitle')
     this.ctTitleEditButton = $('#cttitleedit')
 
     this.ctInfoDiv = $('#collationtableinfo')
-    //this.ctActionsDiv = $('#collationtableactions')
     this.breadcrumbCtTitleSpan = $('#breadcrumb-cttitle')
     this.witnessesDivSelector = '#witnessesdiv'
     this.witnessesDiv = $(this.witnessesDivSelector)
@@ -78,19 +75,11 @@ class CollationTableEditor {
     this.ctDivId = 'collationtablediv'
     this.ctDiv = $('#' + this.ctDivId)
     this.quickEditionDiv = $('#editiondiv')
-    //this.saveAreaDiv = $('#save-area')
     this.saveButton = $('#savebutton')
     this.lastSaveSpan = $('#lastSave')
     this.exportCsvButton = $('#export-csv-button')
 
     let thisObject = this
-    this.ctTitleDiv.on('mouseenter', function () {
-      thisObject.ctTitleEditButton.removeClass('hidden')
-    })
-    this.ctTitleDiv.on('mouseleave', function () {
-      thisObject.ctTitleEditButton.addClass('hidden')
-    })
-
 
     this.titleField = new EditableTextField({
       containerSelector: '#cttitletext',
@@ -139,7 +128,6 @@ class CollationTableEditor {
 
 
     this.setupTableEditor()
-    this.lastSavedCollationMatrix = this.getCollationMatrixFromTableEditor()
     this.updateSaveArea()
     this.setCsvDownloadFile()
     this.fetchQuickEdition()
@@ -387,7 +375,6 @@ class CollationTableEditor {
     let popoverHeadingClass = 'popoverheading'
     let unclearIcon = ' <i class="far fa-eye-slash" aria-hidden="true"></i> '
     let deletionIcon = ' &lowast; '
-    let additionIcon = ' + '
     let locationIcon = ' <i class="fas fa-location-arrow" aria-hidden="true"></i> '
     let oneIndentUnit = '&nbsp;&nbsp;'
     let lineBreakHtml = '<br/>'
@@ -699,15 +686,55 @@ class CollationTableEditor {
   }
 
   updateWitnessInfoDiv() {
+    // Turn off current event handlers
     $(this.witnessesDivSelector + ' .move-up-btn').off()
     $(this.witnessesDivSelector + ' .move-down-btn').off()
+
+    // set Html in container
     this.witnessesDiv.html(this.genWitnessesDivHtml())
-    $(this.witnessesDivSelector + ' td.witnesspos-0 > .move-up-btn').addClass('disabled')
+
+    // set up witness move buttons
+    $(this.witnessesDivSelector + ' td.witnesspos-0 > .move-up-btn').addClass('disabled').addClass('opacity-0')
     let lastPos = this.ctData['witnessOrder'].length -1
-    $(this.witnessesDivSelector + ' td.witnesspos-' + lastPos +  ' > .move-down-btn').addClass('disabled')
+    $(this.witnessesDivSelector + ' td.witnesspos-' + lastPos +  ' > .move-down-btn').addClass('disabled').addClass('opacity-0')
     $(this.witnessesDivSelector + ' .move-up-btn').on('click', this.genOnClickUpDownWitnessInfoButton('up'))
     $(this.witnessesDivSelector + ' .move-down-btn').on('click',this.genOnClickUpDownWitnessInfoButton('down') )
+
+    // set up siglum editors
+    for (let i = 0; i < this.ctData['witnesses'].length; i++) {
+      let siglumEditor = new EditableTextField({
+        containerSelector:  this.witnessesDivSelector + ' .siglum-' + i,
+        initialText: this.ctData['sigla'][i],
+        onConfirm: this.genOnConfirmSiglumEdit(i)
+      })
+    }
   }
+
+  genOnConfirmSiglumEdit(witnessIndex) {
+    let thisObject = this
+    return function(ev) {
+      let newText = ApmUtil.removeWhiteSpace(ev.detail['newText'])
+      let oldText = ev.detail['oldText']
+      let editor = ev.detail['editor']
+      if (oldText === newText || newText === '') {
+        // just reset the editor's text in case the edited text contained whitespace
+        editor.setText(thisObject.ctData['sigla'][witnessIndex])
+        return false
+      }
+      //console.log('Change in siglum for witness index ' + witnessIndex +  ' to ' + newText)
+      if (thisObject.ctData['sigla'].indexOf(newText) !== -1) {
+        ApmUtil.transientAlert($(thisObject.witnessesDivSelector + ' .warning-td-' + witnessIndex), '',
+          "Given siglum '" + newText + "' already exists, no changes made", 2000, 'slow')
+        editor.setText(thisObject.ctData['sigla'][witnessIndex])
+      }
+      // Change the siglum
+      thisObject.ctData['sigla'][witnessIndex] = newText
+      thisObject.fetchQuickEdition()
+      thisObject.updateSaveArea()
+
+    }
+  }
+
 
   /**
    * generates the on click function for the witness info move buttons
@@ -781,7 +808,7 @@ class CollationTableEditor {
     let html = ''
 
     html+= '<table class="witnesstable">'
-    html+= '<tr><th>Witness</th><th>Version used</th><th>Siglum</th></tr>'
+    html+= '<tr><th></th><th>Witness</th><th>Version used</th><th>Siglum</th></tr>'
 
     for(let i = 0; i < this.ctData['witnessOrder'].length; i++) {
       let wIndex = this.ctData['witnessOrder'][i]
@@ -789,18 +816,29 @@ class CollationTableEditor {
       let siglum = this.ctData['sigla'][wIndex]
       let witnessTitle = this.ctData['witnessTitles'][wIndex]
       let witnessClass = 'witness-' + wIndex
+      let siglumClass = 'siglum-' + wIndex
+      let warningTdClass = 'warning-td-' + wIndex
       witnessClass += ' witnesspos-' + i
       html += '<tr>'
+
+      html += '<td class="' + witnessClass +  '">'
+      // html += '<button class="btn btn-default btn-sm move-up-btn" title="Move Up"><i class="fas fa-arrow-up"></i></button>'
+      // html += '&nbsp;&nbsp;&nbsp;'
+      // html += '<button class="btn btn-default btn-sm move-down-btn"  title="Move Down"><i class="fas fa-arrow-down"></i></button>'
+
+      html += '<span class="btn move-up-btn" title="Move up"><i class="fas fa-caret-up"></i></span>'
+      html += '<span class="btn move-down-btn" title="Move down"><i class="fas fa-caret-down"></i></span>'
+      html += '</td>'
+
       html += '<td>' + witnessTitle + '</td>'
       html += '<td>' + ApmUtil.formatVersionTime(witness['timeStamp']) + '</td>'
-      html += '<td>'+ siglum + '</td>'
-      html += '<td class="' + witnessClass +  '">'
-      html += '<button class="btn btn-default btn-sm move-up-btn" title="Move Up"><i class="fas fa-arrow-up"></i></button>'
-      html += '&nbsp;&nbsp;&nbsp;'
-      html += '<button class="btn btn-default btn-sm move-down-btn"  title="Move Down"><i class="fas fa-arrow-down"></i></button>'
-      html += '</td>'
+      html += '<td class="' + siglumClass + '">'+ siglum + '</td>'
+
+      html += '<td class="' + warningTdClass + '"></td>'
       html += '</tr>'
     }
+    html += '</table>'
+    html += '<div class="warning-area-1"></div>'
     return html
   }
 
@@ -847,6 +885,12 @@ class CollationTableEditor {
     if (!ApmUtil.arraysAreEqual(this.ctData['witnessOrder'], this.lastSavedCtData['witnessOrder'])) {
       changes.push('New witness order')
     }
+
+    if (!ApmUtil.arraysAreEqual(this.ctData['sigla'], this.lastSavedCtData['sigla'])) {
+      changes.push('Changes in sigla')
+    }
+
+
     return changes
   }
 
@@ -868,7 +912,7 @@ class CollationTableEditor {
       {data: JSON.stringify(apiCallOptions)}
     ).done( function (apiResponse) {
       profiler.stop()
-      console.log(apiResponse)
+      //console.log(apiResponse)
 
       let ev = new EditionViewer( {
         collationTokens: apiResponse.mainTextTokens,

@@ -412,3 +412,17 @@ div.cpheader a {
     /*border-left: 1px solid #ddd;*/
     /*border-right: 1px solid #ddd;*/
 }
+
+
+.slow-fade {
+    transition: opacity 500ms linear;
+}
+
+.opacity-0 {
+    opacity: 0;
+}
+
+.opacity-1 {
+    opacity: 100%;
+}
+

@@ -227,6 +227,46 @@ class ApmUtil {
   static deepCopy(someVariable) {
     return JSON.parse(JSON.stringify(someVariable))
   }
+
+  static removeWhiteSpace(someString) {
+    return someString.replace(/\s/g, '')
+  }
+
+  static randomHtmlId(prefix, numDigits = 6) {
+    return prefix + Math.floor( Math.pow(10, numDigits-1) * Math.random() )
+  }
+
+
+  static transientAlert(container, title, msg, timeOn = 2000, fadeSpeed = 'normal') {
+    let randomId =  this.randomHtmlId('transient-alert-')
+    let fadeClass = 'fade'
+    let fadeWaitTime = 200
+    if (fadeSpeed === 'slow') {
+      fadeClass = 'slow-fade'
+      fadeWaitTime = 550
+    }
+    container.html(this.getAlertHtml(title, msg, randomId))
+    let alertElement = $('#' + randomId)
+    alertElement.addClass('opacity-1').addClass(fadeClass)
+    window.setTimeout(function() {
+      alertElement.removeClass('opacity-1').addClass('opacity-0')
+      window.setTimeout(function() {
+        container.html('')
+      }, fadeWaitTime)
+    }, timeOn)
+  }
+
+
+  static getAlertHtml(title, msg, id) {
+    let html=''
+    html+= '<span id="' + id  + '"class="text-warning" role="alert">'
+    html += '<strong>' + title + '</strong> '
+    html +=  msg
+    html += '</div>'
+    return html
+  }
+
+
 }
 
 ApmUtil.someNum = 1

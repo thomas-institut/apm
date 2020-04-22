@@ -36,7 +36,7 @@ class EditableTextField {
       }
     }
 
-    let oc = new OptionsChecker(optionsDefinition, "EditCollationTable")
+    let oc = new OptionsChecker(optionsDefinition, "EditableTextField")
     this.options = oc.getCleanOptions(options)
     this.currentText = this.options.initialText
     this.container = $(this.options.containerSelector)
@@ -44,6 +44,7 @@ class EditableTextField {
     this.container.removeClass(this.options.editingClass)
 
     this.editing = false
+    this.confirmEnabled = true
     this.setNormalContainer()
     if (this.options.onConfirm !== null){
       this.on('confirm', this.options.onConfirm)
@@ -66,8 +67,17 @@ class EditableTextField {
       this.currentText = text
       this.setNormalContainer()
     }
-
   }
+
+  disableConfirm() {
+    this.confirmEnabled = false
+  }
+
+  enableConfirm() {
+    this.confirmEnabled = true
+  }
+
+
 
   getTextInEditor() {
     if (this.editing) {
@@ -151,7 +161,7 @@ class EditableTextField {
 
   confirmEdit() {
     //console.log('confirm'+ this.options.containerSelector)
-    this.dispatchEvent('confirm', { newText: this.getTextInEditor(), oldText: this.getCurrentText() })
+    this.dispatchEvent('confirm', { editor: this, newText: this.getTextInEditor(), oldText: this.getCurrentText() })
     this.currentText = this.getTextInEditor()
     this.editing = false
     this.setNormalContainer()
@@ -194,7 +204,7 @@ class EditableTextField {
       if (!thisObject.editing) {
         return false
       }
-      if (ev.which === 13) {
+      if (ev.which === 13 && thisObject.confirmEnabled) {
         // Enter key
         thisObject.confirmEdit()
         return false

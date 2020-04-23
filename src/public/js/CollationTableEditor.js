@@ -108,14 +108,22 @@ class CollationTableEditor {
     }
 
     // popovers for collation table
-    this.ctDiv.popover({
-      trigger: "hover",
-      selector: '.withpopover',
-      delay: {show: 500 , hide:0},
-      placement: "auto top",
-      html: true,
-      container: 'body'
+    this.popoversOn()
+
+    this.popoversToggle = new NiceToggle({
+      containerSelector: '#popovers-toggle',
+      title: 'Popovers: ',
+      onIcon: '<i class="fas fa-toggle-on"></i>',
+      offIcon: '<i class="fas fa-toggle-off"></i>'
     })
+    this.popoversToggle.on('toggle', function (ev) {
+      if (ev.detail.toggleStatus) {
+        thisObject.popoversOn()
+      } else {
+        thisObject.popoversOff()
+      }
+    })
+
     // text direction for collation table div
 
     if (this.options.langDef[this.ctData['lang']].rtl) {
@@ -133,6 +141,22 @@ class CollationTableEditor {
     this.fetchQuickEdition()
   }
 
+  popoversOn() {
+    this.popoversAreOn = true
+    this.ctDiv.popover({
+      trigger: "hover",
+      selector: '.withpopover',
+      delay: {show: 500 , hide:0},
+      placement: "auto top",
+      html: true,
+      container: 'body'
+    })
+  }
+
+  popoversOff() {
+    this.popoversAreOn = false
+    this.ctDiv.popover('destroy')
+  }
 
 
   getCollationMatrixFromTableEditor() {

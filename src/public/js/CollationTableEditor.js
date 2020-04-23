@@ -182,34 +182,37 @@ class CollationTableEditor {
     let thisObject = this
 
     // hide popovers before moving cells
-    this.tableEditor.on('cell-pre-move', function(data){
-      $(data.detail.selector).popover('hide')
+    this.tableEditor.on('cell-pre-shift', function(data){
+      for(const selector of data.detail.selectors) {
+        $(selector).popover('hide')
+      }
     })
 
     // recalculte variants before redrawing the table
     this.tableEditor.on('table-drawn-pre', function () {
       thisObject.recalculateVariants()
     })
-    // recalculate variants on cell moves
-    this.tableEditor.on('cell-post-move-right',function(data) {
-      //console.log('post move right : '+ data.detail.col)
-      //console.log('recalculating variants')
+    // recalculate variants on cell shifts
+    this.tableEditor.on('cell-post-shift',function(data) {
+      let direction = data.detail.direction
+      let numCols = data.detail.numCols
+      let firstCol = data.detail.firstCol
+      let lastCol = data.detail.lastCol
+      console.log(`Post move ${direction} from ${firstCol} to ${lastCol}, ${numCols} column(s)`)
+      console.log('recalculating variants')
       thisObject.recalculateVariants()
-      thisObject.tableEditor.redrawColumn(data.detail.col)
-      thisObject.tableEditor.redrawColumn(data.detail.col+1)
-    })
 
-    this.tableEditor.on('cell-post-move-left', function(data) {
-      //console.log('post move left : '+ data.detail.col)
-      //console.log('recalculating variants')
-      thisObject.recalculateVariants()
-      thisObject.tableEditor.redrawColumn(data.detail.col)
-      thisObject.tableEditor.redrawColumn(data.detail.col-1)
+      let firstColToRedraw = direction === 'right' ? firstCol : firstCol-numCols
+      let lastColToRedraw = direction === 'right' ? lastCol+numCols : lastCol
+
+      for (let col = firstColToRedraw; col <= lastColToRedraw; col++) {
+        thisObject.tableEditor.redrawColumn(col)
+      }
     })
 
     this.tableEditor.editModeOn(false)
     this.tableEditor.redrawTable()
-    this.tableEditor.on('column-add column-delete cell-post-move', this.genOnCollationChanges())
+    this.tableEditor.on('column-add column-delete cell-shift', this.genOnCollationChanges())
   }
 
   recalculateVariants() {
@@ -845,8 +848,8 @@ class CollationTableEditor {
   updateSaveArea() {
     let changes = this.changesInCtData()
     if (changes.length !== 0) {
-      console.log('Detected changes in data')
-      console.log(changes)
+      //console.log('Detected changes in data')
+      //console.log(changes)
       this.saveButton.html('Save Changes')
       this.buttonPopoverContent = '<p>'
       this.buttonPopoverContent += '<ul>'
@@ -864,7 +867,7 @@ class CollationTableEditor {
       })
       this.saveButton.removeClass('hidden')
     } else {
-      console.log('no changes in data')
+      //console.log('no changes in data')
       this.saveButton.addClass('hidden')
     }
 

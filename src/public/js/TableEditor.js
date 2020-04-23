@@ -314,6 +314,8 @@ class TableEditor {
     return {
       moveCellLeft: '&#x25c1;',
       moveCellRight: '&#x25b7;',
+      pushCellsRight: '<i class="fas fa-angle-double-right"></i>',
+      pushCellsLeft: '<i class="fas fa-angle-double-left"></i>',
       editCell: '&#x270D;',
       addColumnLeft: '<sup>&#x25c3;</sup>+',
       addColumnRight: '+<sup>&#x25b9;',
@@ -413,10 +415,22 @@ class TableEditor {
 
   generateTdHtml(row, col) {
     let html = ''
-    let moveCellBackwardIcon = this.options.textDirection === 'ltr' ? this.icons.moveCellLeft :  this.icons.moveCellRight
-    let moveCellForwardIcon = this.options.textDirection === 'ltr' ? this.icons.moveCellRight :  this.icons.moveCellLeft
+
+    let moveCellBackwardIcon = this.icons.moveCellLeft
+    let pushCellsBackwardIcon = this.icons.pushCellsLeft
+    let moveCellForwardIcon = this.icons.moveCellRight
+    let pushCellsForwardIcon = this.icons.pushCellsRight
+
+    if (this.options.textDirection === 'rtl') {
+      moveCellBackwardIcon = this.icons.moveCellRight
+      pushCellsBackwardIcon = this.icons.pushCellsRight
+      moveCellForwardIcon = this.icons.moveCellLeft
+      pushCellsForwardIcon = this.icons.pushCellsLeft
+    }
+
     if (this.tableEditMode) {
       html += this.genButtonHtml(moveCellBackwardIcon, [ 'move-cell-left-button', 'cell-button' ], 'Move backward')
+      html += this.genButtonHtml(pushCellsBackwardIcon, [ 'push-cells-left-button', 'cell-button' ], 'Push backward')
     }
     html += '<span class="te-cell-content">'
     html += this.options.generateCellContent(row,col, this.matrix.getValue(row,col))
@@ -425,6 +439,8 @@ class TableEditor {
       html += this.genButtonHtml(this.icons.editCell, [ 'edit-cell-button', 'cell-button' ] , 'Edit')
     }
     if (this.tableEditMode) {
+
+      html += this.genButtonHtml(pushCellsForwardIcon, [ 'push-cells-right-button', 'cell-button' ], 'Push forward')
       html += this.genButtonHtml(moveCellForwardIcon, [ 'move-cell-right-button' , 'cell-button' ] , 'Move forward')
     }
     return html
@@ -492,58 +508,35 @@ class TableEditor {
       let col = cellIndex.col
 
       //console.log('Edit mode click on cell ' + row + ':' + col)
-      // console.log(ev.target)
+
       let elementClasses = thisObject.getClassList($(ev.target))
+
+      if (elementClasses.indexOf('cell-button') === -1) {
+        // not a button, surely an icon with an <i> element, like Fontawesome icons, let's try the parent
+        elementClasses = thisObject.getClassList($(ev.target).parent())
+      }
 
       if (elementClasses.indexOf('move-cell-left-button') !== -1) {
         // move cell left
         //console.log('move cell left button clicked')
-        if(thisObject.canMoveCellLeft(row, col)) {
-          //console.log('Moving cell ' + row + ':' + col + ' left')
-          // move values in matrix
-          thisObject.dispatchCellMoveEvents('pre', 'left', row, col)
-          thisObject.matrix.setValue(row, col-1, thisObject.matrix.getValue(row, col))
-          thisObject.matrix.setValue(row, col, thisObject.options.getEmptyValue())
-
-          // refresh html table cells
-          thisObject.redrawCell(row, col-1)
-          thisObject.redrawCell(row, col)
-
-          // setup cell button handlers
-          thisObject.setupCellEventHandlers(row,col-1)
-          thisObject.setupCellEventHandlers(row,col)
-
-          // dispatch cell redrawn events
-          thisObject.dispatchCellDrawnEvent(row, col-1)
-          thisObject.dispatchCellDrawnEvent(row, col)
-
-          // post move events
-          thisObject.dispatchCellMoveEvents('post', 'left', row, col)
-        }
+        thisObject.shiftCells(row, col, col, 'left', 1)
+      }
+      if (elementClasses.indexOf('push-cells-left-button') !== -1) {
+       // console.log('PUSH cells LEFT button clicked')
+        let emptyCol = thisObject.getFirstEmptyCellToTheLeft(row, col)
+        thisObject.shiftCells(row, emptyCol+1, col, 'left', 1)
       }
 
       if (elementClasses.indexOf('move-cell-right-button') !== -1) {
         // move cell right
         //console.log('move cell right button clicked')
-        if(thisObject.canMoveCellRight(row, col)) {
-          //console.log('Moving cell ' + row + ':' + col + ' right')
-          thisObject.dispatchCellMoveEvents('pre', 'right', row, col)
-          // move values in matrix
-          thisObject.matrix.setValue(row, col+1, thisObject.matrix.getValue(row, col))
-          thisObject.matrix.setValue(row, col, thisObject.options.getEmptyValue())
-          // refresh html table cells
-          thisObject.redrawCell(row, col+1)
-          thisObject.redrawCell(row, col)
+        thisObject.shiftCells(row, col, col, 'right', 1)
+      }
 
-          // setup cell button handlers
-          thisObject.setupCellEventHandlers(row,col)
-          thisObject.setupCellEventHandlers(row,col+1)
-          // dispatch cell redrawn events
-          thisObject.dispatchCellDrawnEvent(row, col)
-          thisObject.dispatchCellDrawnEvent(row, col+1)
-          // post move events
-          thisObject.dispatchCellMoveEvents('post', 'right', row, col)
-        }
+      if (elementClasses.indexOf('push-cells-right-button') !== -1) {
+        //console.log('PUSH cells RIGHT button clicked')
+        let emptyCol = thisObject.getFirstEmptyCellToTheRight(row, col)
+        thisObject.shiftCells(row, col, emptyCol-1, 'right', 1)
       }
 
       if (elementClasses.indexOf('edit-cell-button') !== -1) {
@@ -554,6 +547,58 @@ class TableEditor {
       }
       return false
     }
+  }
+
+  shiftCells(row, firstCol, lastCol, direction, numCols = 1) {
+    console.log(`Shifting cells ${firstCol} to ${lastCol} ${direction} ${numCols} column(s)`)
+
+    // Check if the shift makes sense
+    if (firstCol > lastCol || firstCol < 0 || lastCol >= this.matrix.nCols || numCols < 1) {
+      console.log('Given columns do not make sense')
+      return false
+    }
+    if (direction==='right' && lastCol+numCols >= this.matrix.nCols) {
+      console.log(`This ${direction} shift overflows the matrix ;)` )
+      return false
+    }
+    if (direction==='left' && firstCol-numCols < 0) {
+      console.log(`This ${direction} shift underflows the matrix ;)` )
+      return false
+    }
+    // dispatch pre cell shift events
+    this.dispatchCellShiftEvents('pre', direction, row, firstCol, lastCol, numCols)
+    // move values in matrix
+    let emptyValue = this.options.getEmptyValue()
+    let currentValues = []
+    for (let col = firstCol; col <= lastCol; col++) {
+      currentValues[col] = this.matrix.getValue(row, col)
+    }
+    if (direction === 'right') {
+      for (let i = 0; i < numCols; i++) {
+        this.matrix.setValue(row, firstCol+i, emptyValue)
+      }
+      for (let col=firstCol+numCols; col <= lastCol+numCols; col++) {
+        this.matrix.setValue(row, col, currentValues[col-numCols])
+      }
+    } else {
+      for (let i = 0; i < numCols; i++) {
+        this.matrix.setValue(row, lastCol - i, emptyValue)
+      }
+      for (let col=lastCol-numCols; col >=firstCol-numCols; col--) {
+        this.matrix.setValue(row, col, currentValues[col+numCols])
+      }
+    }
+    // refresh html table cells
+    let firstColToRedraw = direction === 'right' ? firstCol : firstCol-numCols
+    let lastColToRedraw = direction === 'right' ? lastCol+numCols : lastCol
+    for (let col = firstColToRedraw; col <= lastColToRedraw; col++) {
+      this.redrawCell(row, col)
+      this.setupCellEventHandlers(row,col)
+      this.dispatchCellDrawnEvent(row, col)
+    }
+    // dispatch post move events
+    this.dispatchCellShiftEvents('post', direction, row, firstCol, lastCol, numCols)
+
   }
 
   setupCellEventHandlers(row, col) {
@@ -679,9 +724,23 @@ class TableEditor {
       if (thisObject.canMoveCellLeft(row, col)) {
         $(tdSelector +  ' .move-cell-left-button').removeClass('hidden')
       }
+      if (thisObject.canPushCellsLeft(row, col)) {
+        let firstCol = thisObject.getFirstEmptyCellToTheLeft(row, col)+1
+
+        $(tdSelector +  ' .push-cells-left-button')
+          .removeClass('hidden')
+          .attr('title', `Push ${firstCol+1}-${col+1} back 1 column`)
+      }
       if (thisObject.canMoveCellRight(row, col)) {
         $(tdSelector + ' .move-cell-right-button').removeClass('hidden')
       }
+      if (thisObject.canPushCellsRight(row, col)) {
+        let lastCol = thisObject.getFirstEmptyCellToTheRight(row, col)-1
+        $(tdSelector + ' .push-cells-right-button')
+          .removeClass('hidden')
+          .attr('title', `Push ${col+1}-${lastCol+1} forward 1 column`)
+      }
+
       if (thisObject.isRowEditable(row)) {
         $(tdSelector + ' .edit-cell-button').removeClass('hidden')
       }
@@ -908,11 +967,69 @@ class TableEditor {
       this.options.isEmptyValue(this.matrix.getValue(row, col-1));
   }
 
+  canPushCellsLeft(row, col) {
+    if (this.options.isEmptyValue(this.matrix.getValue(row, col)) || this.canMoveCellLeft(row, col)) {
+      // no pushing a cell that is empty or that can be simply moved
+      return false
+    }
+    return this.getFirstEmptyCellToTheLeft(row, col) !== -1;
+
+  }
+
+  /**
+   * Get the index of the first empty cell to the left
+   * of the given cell position. Returns -1 if no such cell
+   * could be found
+   * @param row
+   * @param col
+   */
+  getFirstEmptyCellToTheLeft(row, col) {
+    if (col === 0) {
+      return -1
+    }
+    for (let i = col-1; i >= 0; i--) {
+      if (this.options.isEmptyValue(this.matrix.getValue(row, i))) {
+        return i
+      }
+    }
+    return -1
+  }
+
   canMoveCellRight(row, col) {
     return  col !== (this.matrix.nCols - 1) &&
       !this.options.isEmptyValue(this.matrix.getValue(row, col)) &&
       this.options.isEmptyValue(this.matrix.getValue(row, col+1));
   }
+
+  canPushCellsRight(row, col) {
+    if (this.options.isEmptyValue(this.matrix.getValue(row, col)) || this.canMoveCellRight(row, col)) {
+      // no pushing a cell that is empty or that can be simply moved
+      return false
+    }
+    return  this.getFirstEmptyCellToTheRight(row, col) !== -1;
+
+  }
+
+  /**
+   * Get the index of the first empty cell to the left
+   * of the given cell position. Returns -1 if no such cell
+   * could be found
+   * @param row
+   * @param col
+   */
+  getFirstEmptyCellToTheRight(row, col) {
+    if (col === (this.matrix.nCols - 1) ) {
+      return -1
+    }
+    for (let i = col+1; i < this.matrix.nCols; i++) {
+      if (this.options.isEmptyValue(this.matrix.getValue(row, i))) {
+        return i
+      }
+    }
+    return -1
+  }
+
+
 
   dispatchCellDrawnEvent(row, col) {
     this.dispatchEvent(
@@ -945,33 +1062,40 @@ class TableEditor {
     })
   }
 
-  dispatchCellMoveEvents(type, direction, row, col) {
-    let selector = this.getTdSelector(row, col)
+  dispatchCellShiftEvents(type, direction, row, firstCol, lastCol, numCols) {
+    let selectors = []
+    for(let c = firstCol; c <= lastCol; c++) {
+      selectors.push(this.getTdSelector(row, c))
+    }
     // 1st event: specific type/direction
-    this.dispatchEvent('cell-' + type + '-move-' + direction, {
+    this.dispatchEvent('cell-' + type + '-shift-' + direction, {
       row: row,
-      col: col,
-      selector: selector
+      firstCol: firstCol,
+      lastCol: lastCol,
+      numCols: numCols,
+      selectors: selectors
     })
     // 2nd event: generic type, cell-pre-move or cell-post-move
-    this.dispatchEvent('cell-' + type + '-move', {
+    this.dispatchEvent('cell-' + type + '-shift', {
       row: row,
-      col: col,
-      selector: selector,
-      direction: direction
+      firstCol: firstCol,
+      lastCol: lastCol,
+      numCols: numCols,
+      direction: direction,
+      selectors: selectors
     })
 
-    // 3rd event: generic move: cell-move, only in post
+    // 3rd event: generic move: cell-shift, only for type 'post'
     if (type==='post') {
-      this.dispatchEvent('cell-move', {
+      this.dispatchEvent('cell-shift', {
         row: row,
-        col: col,
-        selector: selector,
+        firstCol: firstCol,
+        lastCol: lastCol,
+        numCols: numCols,
         direction: direction,
-        type: type
+        selectors: selectors
       })
     }
-
   }
 
   dispatchContentChangedEvent(row, col) {

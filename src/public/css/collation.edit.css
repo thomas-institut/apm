@@ -1,3 +1,4 @@
+
 #collationtableinfo {
     margin-top: 20px;
     margin-bottom: 25px;
@@ -63,3 +64,16 @@ a.tb-button {
     color: grey;
 }
 
+.loading {
+    margin-top: 30px;
+    margin-bottom: 30px;
+    font-size: 3rem;
+}
+
+th.te-deleting {
+    background: silver;
+}
+
+.te-adding {
+    background: #00FFFF;
+}

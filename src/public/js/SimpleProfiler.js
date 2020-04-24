@@ -10,17 +10,24 @@ class SimpleProfiler {
 
   start() {
     this.startTime = window.performance.now()
+    this.lastLap = this.startTime
     //console.log('Profiler ' + this.name + ': started ' + this.startTime)
   }
 
   lap(lapName) {
     let now = window.performance.now()
-    console.log(this.name + ': lap ' + lapName + ' in ' + (now - this.startTime) + ' ms')
+    console.log(`${this.name} : ${lapName} in ${now - this.lastLap} ms (at ${now - this.startTime} ms)`)
+    this.lastLap = now
   }
 
-  stop() {
+  stop(lastLapName = 'last lap') {
     let now = window.performance.now()
-    console.log(this.name + ': finished in ' + (now - this.startTime) + ' ms')
+    if (this.lastLap !== this.startTime) {
+      // there were laps
+      console.log(`${this.name} : finished in ${now - this.startTime} ms (${lastLapName} in ${now - this.lastLap} ms)`)
+    } else {
+      console.log(`${this.name} : finished in ${now - this.startTime} ms`)
+    }
   }
 
 }

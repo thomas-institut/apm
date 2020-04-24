@@ -62,6 +62,7 @@ class CollationTableEditor {
     this.ctData['tableId'] = this.tableId
     this.versionInfo = this.options.versionInfo
     this.aggregatedNonTokenItemIndexes = this.calculateAggregatedNonTokenItemIndexes()
+    this.resetTokenDataCache()
 
     // DOM elements
     this.ctTitleDiv = $('#collationtabletitle')
@@ -190,6 +191,7 @@ class CollationTableEditor {
     this.tableEditor = new TableEditor({
       id: this.ctDivId,
       textDirection: this.textDirection,
+      redrawOnCellShift: false,
       showInMultipleRows: true,
       columnsPerRow: 15, // TODO: change this
       rowDefinition: rowDefinition,
@@ -218,20 +220,33 @@ class CollationTableEditor {
     })
     // recalculate variants on cell shifts
     this.tableEditor.on('cell-post-shift',function(data) {
+      // let profiler = new SimpleProfiler('CellPostShiftEventHandler')
       let direction = data.detail.direction
       let numCols = data.detail.numCols
       let firstCol = data.detail.firstCol
       let lastCol = data.detail.lastCol
-      console.log(`Post move ${direction} from ${firstCol} to ${lastCol}, ${numCols} column(s)`)
-      console.log('recalculating variants')
+      let theRow = data.detail.row
+      //console.log(`Post move ${direction} from ${firstCol} to ${lastCol}, ${numCols} column(s)`)
+      //console.log('recalculating variants')
       thisObject.recalculateVariants()
+      // profiler.lap('variants recalculated')
 
       let firstColToRedraw = direction === 'right' ? firstCol : firstCol-numCols
       let lastColToRedraw = direction === 'right' ? lastCol+numCols : lastCol
 
       for (let col = firstColToRedraw; col <= lastColToRedraw; col++) {
-        thisObject.tableEditor.redrawColumn(col)
+        //thisObject.tableEditor.refreshColumn(col)
+        for (let row = 0; row < thisObject.variantsMatrix.nRows; row++) {
+          if (row === theRow) {
+            thisObject.tableEditor.refreshCell(row, col)
+          } else {
+            thisObject.tableEditor.refreshCellClasses(row, col)
+          }
+          //profiler.lap(`row ${row} refreshed`)
+        }
+        // profiler.lap(`col ${col} refreshed`)
       }
+      // profiler.stop()
     })
 
     this.tableEditor.editModeOn(false)
@@ -247,24 +262,38 @@ class CollationTableEditor {
   genOnCollationChanges() {
     let thisObject = this
     return function() {
-      //console.log('collation change')
-      thisObject.updateSaveArea()
-      thisObject.ctData['collationMatrix'] = thisObject.getCollationMatrixFromTableEditor()
-      thisObject.setCsvDownloadFile()
-      thisObject.fetchQuickEdition()
+      // delay this a bit to make changes a bit more responsive
+      window.setTimeout(function(){
+        //console.log('collation change')
+        thisObject.updateSaveArea()
+        thisObject.ctData['collationMatrix'] = thisObject.getCollationMatrixFromTableEditor()
+        thisObject.setCsvDownloadFile()
+        thisObject.fetchQuickEdition()
+      }, 50)
     }
   }
 
   genGenerateCellTdExtraAttributesFunction() {
     let thisObject = this
     return function(tableRow, col, value) {
+      // just to profile without automatic popovers
+      //return []
+
       if (value === -1) {
-        return ''
+        return []
       }
-      let row = thisObject.ctData['witnessOrder'][tableRow]
+      let witnessIndex = thisObject.ctData['witnessOrder'][tableRow]
+
+      let popoverHtml  = thisObject.getPopoverHtmlFromCache(witnessIndex, value)
+      if (popoverHtml !== undefined) {
+        //console.log(`Popover cache hit for tableRow ${tableRow}, row ${row}, col ${col}, tokenRef ${value}`)
+        return [ {attr: 'data-content', val : popoverHtml }]
+      }
+      //console.log(`Popover cache miss for tableRow ${tableRow}, row ${row}, col ${col}, tokenRef ${value}`)
+
       let collationTable = thisObject.ctData
       let peopleInfo = thisObject.options.peopleInfo
-      let witness = collationTable['witnesses'][row]
+      let witness = collationTable['witnesses'][witnessIndex]
       let tokenArray = witness['tokens']
       let token = tokenArray[value]
       let firstSourceItemIndex = token['sourceItems'][0]['index']
@@ -274,7 +303,7 @@ class CollationTableEditor {
       }
       // console.log("Lang: " + lang)
       let langClass = 'popover-' + lang
-      let popoverHtml = ''
+      popoverHtml = ''
       popoverHtml += '<p class="popoverheading ' + langClass + '">' + token.text
       if (token['normalizedText'] !== undefined) {
         popoverHtml += '<br/>&equiv; ' + token['normalizedText'] + '<br/>'
@@ -282,19 +311,19 @@ class CollationTableEditor {
       popoverHtml += '</p>'
       popoverHtml += '<p class="popoveriteminfo ' + langClass + '">'
       if (token['sourceItems'].length === 1) {
-        popoverHtml += thisObject.getItemPopoverHtmlForToken(row, token,token['sourceItems'][0], peopleInfo, false)
+        popoverHtml += thisObject.getItemPopoverHtmlForToken(witnessIndex, token,token['sourceItems'][0], peopleInfo, false)
       } else {
         for (const itemData of token['sourceItems']) {
-          popoverHtml += thisObject.getItemPopoverHtmlForToken(row, token, itemData, peopleInfo, true)
+          popoverHtml += thisObject.getItemPopoverHtmlForToken(witnessIndex, token, itemData, peopleInfo, true)
         }
       }
       popoverHtml += '</p>'
 
       popoverHtml += '<p class="popovertokenaddress">'
-      popoverHtml += thisObject.getTokenAddressHtml(row, token)
+      popoverHtml += thisObject.getTokenAddressHtml(witnessIndex, token)
       popoverHtml += '</p>'
 
-      let postNotes = thisObject.getPostNotes(row, col, value)
+      let postNotes = thisObject.getPostNotes(witnessIndex, col, value)
       if (postNotes.length > 0) {
         popoverHtml += '<p class="popoverpostnotes">'
         popoverHtml += '<b>Notes:</b><br/>'
@@ -302,9 +331,42 @@ class CollationTableEditor {
         popoverHtml += '</p>'
       }
 
-      return 'data-content="' + thisObject.escapeHtml(popoverHtml) + '"'
+      thisObject.storePopoverHtmlInCache(witnessIndex, value, popoverHtml)
+      return [ {attr: 'data-content', val : popoverHtml }]
     }
   }
+
+  getPopoverHtmlFromCache(witnessIndex, tokenIndex) {
+    return this.getDataFieldFromTokenDataCache('popoverHtml', witnessIndex, tokenIndex)
+  }
+
+  storePopoverHtmlInCache(witnessIndex, tokenIndex, popoverHtml){
+    this.storeDataFieldInTokenDataCache('popoverHtml', witnessIndex, tokenIndex, popoverHtml)
+  }
+
+  resetTokenDataCache() {
+    this.tokenDataCache = {}
+  }
+
+  getDataFieldFromTokenDataCache(fieldName, witnessIndex, tokenIndex) {
+    if (this.tokenDataCache[witnessIndex] !== undefined && this.tokenDataCache[witnessIndex][tokenIndex] !== undefined) {
+      return this.tokenDataCache[witnessIndex][tokenIndex][fieldName]
+    }
+    return undefined
+  }
+
+  storeDataFieldInTokenDataCache(fieldName, witnessIndex, tokenIndex, data) {
+    if (this.tokenDataCache[witnessIndex] === undefined) {
+      this.tokenDataCache[witnessIndex] = {}
+
+    }
+    if (this.tokenDataCache[witnessIndex][tokenIndex] === undefined) {
+      this.tokenDataCache[witnessIndex][tokenIndex] = {}
+    }
+    this.tokenDataCache[witnessIndex][tokenIndex][fieldName] = data
+  }
+
+
 
   getNotesHtml(notes, peopleInfo) {
     let html = ''
@@ -530,9 +592,9 @@ class CollationTableEditor {
       if (value === -1) {
         return [ 'emptytoken']
       }
-      let row = thisObject.ctData['witnessOrder'][tableRow]
-      let tokenArray = thisObject.ctData['witnesses'][row]['tokens']
-      let itemWithAddressArray = thisObject.ctData['witnesses'][row]['items']
+      let witnessIndex = thisObject.ctData['witnessOrder'][tableRow]
+      let tokenArray = thisObject.ctData['witnesses'][witnessIndex]['tokens']
+      let itemWithAddressArray = thisObject.ctData['witnesses'][witnessIndex]['items']
 
       let token = tokenArray[value]
 
@@ -549,7 +611,7 @@ class CollationTableEditor {
       let itemZero = itemWithAddressArray[itemZeroIndex]
 
       // language class
-      let lang = thisObject.ctData['witnesses'][row]['lang']
+      let lang = thisObject.ctData['witnesses'][witnessIndex]['lang']
       if (itemZero['lang'] !== undefined) {
         lang = itemZero['lang']
       }
@@ -581,21 +643,31 @@ class CollationTableEditor {
     let noteIconSpan = ' <span class="noteicon"><i class="far fa-comment"></i></span>'
     let normalizationSymbol = '<b><sub>N</sub></b>'
     return function(tableRow, col, value) {
+      //let profiler = new SimpleProfiler(`cc-tr${tableRow}-c${col}-v${value}`)
       if (value === -1) {
         return '&mdash;'
       }
-      let row = thisObject.ctData['witnessOrder'][tableRow]
-      let tokenArray = thisObject.ctData['witnesses'][row]['tokens']
+
+      let witnessIndex = thisObject.ctData['witnessOrder'][tableRow]
+
+      let cellCachedContent = thisObject.getDataFieldFromTokenDataCache('cellContent', witnessIndex, value)
+      if (cellCachedContent !== undefined) {
+        //profiler.lap('cache hit')
+        return cellCachedContent
+      }
+
+      let tokenArray = thisObject.ctData['witnesses'][witnessIndex]['tokens']
       let token = tokenArray[value]
-      let postNotes = thisObject.getPostNotes(row, col, value)
+      let postNotes = thisObject.getPostNotes(witnessIndex, col, value)
       if (token['sourceItems'].length === 1 && postNotes.length === 0) {
         if (thisObject.viewSettings.showNormalizations && token['normalizedText'] !== undefined) {
           return token['normalizedText'] + normalizationSymbol
         }
+        //thisObject.storeDataFieldInTokenDataCache('cellContent', witnessIndex, value, token.text)
         return token.text
       }
       // spans for different items
-      let itemWithAddressArray = thisObject.ctData['witnesses'][row]['items']
+      let itemWithAddressArray = thisObject.ctData['witnesses'][witnessIndex]['items']
       let cellHtml = ''
       for (const itemData of token['sourceItems']) {
         let theItem = itemWithAddressArray[itemData['index']]
@@ -617,6 +689,9 @@ class CollationTableEditor {
       if (postNotes.length > 0) {
         cellHtml += noteIconSpan
       }
+
+      thisObject.storeDataFieldInTokenDataCache('cellContent', witnessIndex, value, cellHtml)
+      //profiler.lap('Cache miss')
       return cellHtml
     }
   }
@@ -1062,23 +1137,7 @@ class CollationTableEditor {
     return '"' + text + '"'
   }
 
-  escapeHtml(html) {
-    let entityMap = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#39;',
-      '/': '&#x2F;',
-      '`': '&#x60;',
-      '=': '&#x3D;'
-    };
 
-    return String(html).replace(/[&<>"'`=\/]/g, function (s) {
-      return entityMap[s];
-    });
-
-  }
 
 
 

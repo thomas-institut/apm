@@ -266,6 +266,23 @@ class ApmUtil {
     return html
   }
 
+  static escapeHtml(html) {
+    let entityMap = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+      '/': '&#x2F;',
+      '`': '&#x60;',
+      '=': '&#x3D;'
+    };
+
+    return String(html).replace(/[&<>"'`=\/]/g, function (s) {
+      return entityMap[s];
+    });
+
+  }
 
 }
 

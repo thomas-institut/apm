@@ -55,6 +55,10 @@ class TableEditor {
         required: false,
         default: 'ltr'
       },
+      // if true, the editor will redraw every cell that has moved when the
+      // user clicks the move/shift buttons. If false, it is up to the
+      // external event handlers to redraw
+      redrawOnCellShift: { type: 'boolean', required: false, default: true },
       showInMultipleRows: {
         // if true, the table will be split and shown in multiple
         // tables of  the number of rows given in options.columnsPerRow
@@ -328,22 +332,25 @@ class TableEditor {
   redrawTable() {
     //console.log("Redrawing table")
     let profiler = new SimpleProfiler('TableRedraw')
-    let containerCursor = this.container.css('cursor')
-    this.container.css('cursor', 'wait')
     this.dispatchTableDrawnPreEvent()
-
-    this.container.html(this.generateTable())
-    //profiler.lap('GenTable')
+    let tableHtml = this.generateTable()
+    console.log(`Table html is ${tableHtml.length} bytes long`)
+    profiler.lap('table generated')
+    this.container.html(tableHtml)
+    profiler.lap('container filled')
     this.setupTableEventHandlers()
-    //profiler.lap('SetupEventHandlers')
+    profiler.lap('event handlers setup')
     // dispatch redraw callbacks
-    for(let row = 0; row < this.matrix.nRows; row++) {
-      for (let col = 0; col < this.matrix.nCols; col++) {
-        this.dispatchCellDrawnEvent(row, col)
+    if (this.options.onCellDrawnEventHandler !== null) {
+      for(let row = 0; row < this.matrix.nRows; row++) {
+        for (let col = 0; col < this.matrix.nCols; col++) {
+          this.dispatchCellDrawnEvent(row, col)
+        }
       }
     }
-    this.dispatchTableDrawnEvent()
-    this.container.css('cursor', containerCursor)
+    if (this.options.onTableDrawnEventHandler !== null) {
+      this.dispatchTableDrawnEvent()
+    }
     profiler.stop()
   }
 
@@ -402,11 +409,22 @@ class TableEditor {
     let value = this.matrix.getValue(row, col)
     let cellClasses = [ 'te-cell', this.getTdClass(row,col), this.getColClass(col)]
     cellClasses = cellClasses.concat(this.options.generateCellClasses(row, col, value ))
-    let tdExtra = this.options.generateCellTdExtraAttributes(row, col, value )
-    html += '<td class="' +  cellClasses.join(' ') + '" ' + tdExtra + '>'
+    let tdExtraArray = this.options.generateCellTdExtraAttributes(row, col, value )
+
+    html += '<td class="' +  cellClasses.join(' ') + '" ' + this.getTdExtraStringFromArray(tdExtraArray) + '>'
     html += this.generateTdHtml(row, col)
     html += '</td>'
     return html
+  }
+
+  getTdExtraStringFromArray(tdExtraArray) {
+    let tdExtraStringArray = []
+    for(let i = 0; i < tdExtraArray.length; i++) {
+      let attr = tdExtraArray[i]['attr']
+      let val = tdExtraArray[i]['val']
+      tdExtraStringArray.push(`${attr}="${ApmUtil.escapeHtml(val)}"`)
+    }
+    return tdExtraStringArray.join(' ')
   }
 
   isRowEditable(row) {
@@ -509,6 +527,11 @@ class TableEditor {
 
       //console.log('Edit mode click on cell ' + row + ':' + col)
 
+      // for safety reasons, don't do anything on empty cells
+      if(thisObject.options.isEmptyValue(thisObject.matrix.getValue(row, col))) {
+        return true
+      }
+
       let elementClasses = thisObject.getClassList($(ev.target))
 
       if (elementClasses.indexOf('cell-button') === -1) {
@@ -550,7 +573,8 @@ class TableEditor {
   }
 
   shiftCells(row, firstCol, lastCol, direction, numCols = 1) {
-    console.log(`Shifting cells ${firstCol} to ${lastCol} ${direction} ${numCols} column(s)`)
+    let profiler = new SimpleProfiler('ShiftCells')
+    //console.log(`Shifting cells ${firstCol} to ${lastCol} ${direction} ${numCols} column(s)`)
 
     // Check if the shift makes sense
     if (firstCol > lastCol || firstCol < 0 || lastCol >= this.matrix.nCols || numCols < 1) {
@@ -565,8 +589,11 @@ class TableEditor {
       console.log(`This ${direction} shift underflows the matrix ;)` )
       return false
     }
+    //profiler.lap('checks done')
     // dispatch pre cell shift events
     this.dispatchCellShiftEvents('pre', direction, row, firstCol, lastCol, numCols)
+
+    //profiler.lap('pre shift events dispatched')
     // move values in matrix
     let emptyValue = this.options.getEmptyValue()
     let currentValues = []
@@ -588,17 +615,23 @@ class TableEditor {
         this.matrix.setValue(row, col, currentValues[col+numCols])
       }
     }
+    //profiler.lap('matrix updated')
     // refresh html table cells
-    let firstColToRedraw = direction === 'right' ? firstCol : firstCol-numCols
-    let lastColToRedraw = direction === 'right' ? lastCol+numCols : lastCol
-    for (let col = firstColToRedraw; col <= lastColToRedraw; col++) {
-      this.redrawCell(row, col)
-      this.setupCellEventHandlers(row,col)
-      this.dispatchCellDrawnEvent(row, col)
+    if (this.options.redrawOnCellShift) {
+      //console.log('Redrawing cells')
+      let firstColToRedraw = direction === 'right' ? firstCol : firstCol-numCols
+      let lastColToRedraw = direction === 'right' ? lastCol+numCols : lastCol
+      for (let col = firstColToRedraw; col <= lastColToRedraw; col++) {
+        this.redrawCell(row, col)
+        this.setupCellEventHandlers(row,col)
+        this.dispatchCellDrawnEvent(row, col)
+      }
+      //profiler.lap('cells redrawn')
     }
     // dispatch post move events
     this.dispatchCellShiftEvents('post', direction, row, firstCol, lastCol, numCols)
 
+    profiler.stop()
   }
 
   setupCellEventHandlers(row, col) {
@@ -643,7 +676,7 @@ class TableEditor {
     }
   }
 
-   getClassList(element) {
+  getClassList(element) {
     if (element.attr('class') === undefined) {
       return []
     }
@@ -713,6 +746,7 @@ class TableEditor {
   genOnMouseEnterCell() {
     let thisObject = this
     return function(ev) {
+      //console.log('cell enter')
       let cellIndex = thisObject.getCellIndexFromElement($(ev.currentTarget))
       if (cellIndex === null) {
         return true
@@ -778,9 +812,52 @@ class TableEditor {
 
   }
 
+  refreshCell(row, col) {
+    // let profiler = new SimpleProfiler(`refresh-r${row}-c${col}`)
+    // profiler.start()
+    let tdSelector = this.getTdSelector(row, col)
+    let td = $(tdSelector)
+    this.refreshCellContent(row, col)
+    this.refreshCellClassesTd(td, row, col)
+    this.refreshCellAttributes(row, col)
+    $(tdSelector + ' .cell-button').addClass('hidden')
+    // profiler.stop()
+  }
+
+
+  refreshCellContent(row, col) {
+    let tdSelector = this.getTdSelector(row, col)
+    $(tdSelector + ' .te-cell-content').html(this.options.generateCellContent(row,col, this.matrix.getValue(row,col)))
+  }
+
+  refreshCellClassesTd(td, row, col) {
+    let newClasses = this.options.generateCellClasses(row, col, this.matrix.getValue(row, col) )
+    let standardCellClasses = [ 'te-cell', this.getTdClass(row,col), this.getColClass(col)]
+    td.attr('class', (standardCellClasses.concat(newClasses)).join(' '))
+  }
+  refreshCellClasses(row, col) {
+    this.refreshCellClassesTd($(this.getTdSelector(row, col)), row, col)
+  }
+
+  refreshCellAttributes(row, col) {
+    let tdExtraArray = this.options.generateCellTdExtraAttributes(row, col, this.matrix.getValue(row, col))
+    let td = $(this.getTdSelector(row, col))
+    for (let i = 0; i < tdExtraArray.length; i++) {
+      let attr = tdExtraArray[i]['attr']
+      let val = tdExtraArray[i]['val']
+      td.attr(attr, val)
+    }
+  }
+
   redrawColumn(col) {
     for(let row = 0; row < this.matrix.nRows; row++) {
       this.redrawCell(row, col)
+    }
+  }
+
+  refreshColumn(col) {
+    for(let row = 0; row < this.matrix.nRows; row++) {
+      this.refreshCell(row, col)
     }
   }
 
@@ -862,7 +939,6 @@ class TableEditor {
       if (col === -1) {
         return true
       }
-      //console.log('Adding column LEFT')
       console.log('Add column left, col = ' + col)
       thisObject.currentYScroll = window.scrollY
       thisObject.currentXScroll = window.scrollX
@@ -897,6 +973,7 @@ class TableEditor {
         return true
       }
       if (thisObject.matrix.isColumnEmpty(col, thisObject.options.isEmptyValue)) {
+        $(thisObject.getThSelector(col)).addClass('te-deleting')
         console.log('Deleting column ' + col)
         thisObject.currentYScroll = window.scrollY
         thisObject.currentXScroll = window.scrollX
@@ -1063,20 +1140,25 @@ class TableEditor {
   }
 
   dispatchCellShiftEvents(type, direction, row, firstCol, lastCol, numCols) {
+    //let profiler = new SimpleProfiler('DispatchCellShiftEvents')
     let selectors = []
     for(let c = firstCol; c <= lastCol; c++) {
       selectors.push(this.getTdSelector(row, c))
     }
+    // profiler.lap('selectors calculated')
     // 1st event: specific type/direction
-    this.dispatchEvent('cell-' + type + '-shift-' + direction, {
+    let eventName = 'cell-' + type + '-shift-' + direction
+    this.dispatchEvent(eventName, {
       row: row,
       firstCol: firstCol,
       lastCol: lastCol,
       numCols: numCols,
       selectors: selectors
     })
+    // profiler.lap(`Event '${eventName}' dispatched`)
     // 2nd event: generic type, cell-pre-move or cell-post-move
-    this.dispatchEvent('cell-' + type + '-shift', {
+    eventName = 'cell-' + type + '-shift'
+    this.dispatchEvent(eventName, {
       row: row,
       firstCol: firstCol,
       lastCol: lastCol,
@@ -1084,6 +1166,7 @@ class TableEditor {
       direction: direction,
       selectors: selectors
     })
+    // profiler.lap(`Event '${eventName}' dispatched`)
 
     // 3rd event: generic move: cell-shift, only for type 'post'
     if (type==='post') {
@@ -1096,6 +1179,7 @@ class TableEditor {
         selectors: selectors
       })
     }
+    // profiler.stop()
   }
 
   dispatchContentChangedEvent(row, col) {

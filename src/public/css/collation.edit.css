@@ -77,3 +77,7 @@ th.te-deleting {
 .te-adding {
     background: #00FFFF;
 }
+
+.cte-witness-move-td {
+    color: #383838;
+}

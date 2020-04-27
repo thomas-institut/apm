@@ -4,7 +4,6 @@
 {% block title %}Doc: {{doc.docInfo.title}}{% endblock %}
 
 {% block extraJS %}
-    <script type="application/javascript" src="{{baseurl}}/js/ApmUtil.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/DocShowPage.js"></script>
     <script>
       let chunkInfo = JSON.parse('{{chunkInfo|json_encode|raw}}')

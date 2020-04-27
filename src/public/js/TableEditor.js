@@ -316,14 +316,16 @@ class TableEditor {
 
   genTextIconSet() {
     return {
-      moveCellLeft: '&#x25c1;',
-      moveCellRight: '&#x25b7;',
-      pushCellsRight: '<i class="fas fa-angle-double-right"></i>',
-      pushCellsLeft: '<i class="fas fa-angle-double-left"></i>',
+      moveCellLeft: '&#x25c1;', // ◁
+      moveCellRight: '&#x25b7;', // ▷
+      pushCellsRight: '&#x21a3;',   // ↣
+      //pushCellsRight: '&#x29d0;',   // ⧐
+      pushCellsLeft: '&#x21a2;', // ↢
+      //pushCellsLeft: '&#x29cf;', // ⧏
       editCell: '&#x270D;',
       addColumnLeft: '<sup>&#x25c3;</sup>+',
       addColumnRight: '+<sup>&#x25b9;',
-      deleteColumn: '&#x2715;',
+      deleteColumn: '&#x2715;', // ✕
       confirmCellEdit: '<small>OK</small>',
       cancelCellEdit: '<small>Cancel</small>'
     }

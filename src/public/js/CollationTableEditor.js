@@ -43,6 +43,12 @@ class CollationTableEditor {
     let oc = new OptionsChecker(optionsDefinition, "EditCollationTable")
     this.options = oc.getCleanOptions(options)
 
+    // icons
+    this.icons = {
+      moveUp: '&#x1f861;',
+      moveDown: '&#x1f863;'
+    }
+
     this.rtlClass = 'rtltext'
     this.ltrClass = 'ltrtext'
 
@@ -109,6 +115,7 @@ class CollationTableEditor {
     }
 
     // popovers for collation table
+    this.setUpPopovers()
     this.popoversOn()
 
     this.popoversToggle = new NiceToggle({
@@ -142,21 +149,51 @@ class CollationTableEditor {
     this.fetchQuickEdition()
   }
 
-  popoversOn() {
-    this.popoversAreOn = true
+  setUpPopovers() {
     this.ctDiv.popover({
       trigger: "hover",
       selector: '.withpopover',
       delay: {show: 500 , hide:0},
       placement: "auto top",
       html: true,
-      container: 'body'
+      container: 'body',
+      content: this.genPopoverContentFunction()
     })
+  }
+
+  genPopoverContentFunction() {
+    let thisObject = this
+    return function() {
+      if (!thisObject.popoversAreOn) {
+        return ''
+      }
+
+      let cellIndex = thisObject.tableEditor.getCellIndexFromElement($(this))
+      if (cellIndex === null) {
+        console.error('Popover requested on a non-cell element!')
+      }
+      let witnessIndex = thisObject.ctData['witnessOrder'][cellIndex.row]
+      let tokenIndex = thisObject.tableEditor.getValue(cellIndex.row, cellIndex.col)
+      return thisObject.getPopoverHtml(witnessIndex, tokenIndex, cellIndex.col)
+    }
+
+  }
+
+  popoversOn() {
+    this.popoversAreOn = true
+    // this.ctDiv.popover({
+    //   trigger: "hover",
+    //   selector: '.withpopover',
+    //   delay: {show: 500 , hide:0},
+    //   placement: "auto top",
+    //   html: true,
+    //   container: 'body'
+    // })
   }
 
   popoversOff() {
     this.popoversAreOn = false
-    this.ctDiv.popover('destroy')
+    // this.ctDiv.popover('destroy')
   }
 
 
@@ -201,7 +238,7 @@ class CollationTableEditor {
       generateCellContent: this.genGenerateCellContentFunction(),
       generateTableClasses: this.genGenerateTableClassesFunction(),
       generateCellClasses: this.genGenerateCellClassesFunction(),
-      generateCellTdExtraAttributes: this.genGenerateCellTdExtraAttributesFunction()
+      //generateCellTdExtraAttributes: this.genGenerateCellTdExtraAttributesFunction()
     })
     this.variantsMatrix = null // will be calculated before table draw
 
@@ -273,66 +310,70 @@ class CollationTableEditor {
     }
   }
 
+  getPopoverHtml(witnessIndex, tokenIndex, col) {
+    if (tokenIndex === -1) {
+      return ''
+    }
+
+    let popoverHtml  = this.getPopoverHtmlFromCache(witnessIndex, tokenIndex)
+    if (popoverHtml !== undefined) {
+      //console.log(`Popover cache hit for tableRow ${tableRow}, row ${row}, col ${col}, tokenRef ${value}`)
+      return popoverHtml
+    }
+    //console.log(`Popover cache miss for tableRow ${tableRow}, row ${row}, col ${col}, tokenRef ${value}`)
+
+    let collationTable = this.ctData
+    let peopleInfo = this.options.peopleInfo
+    let witness = collationTable['witnesses'][witnessIndex]
+    let tokenArray = witness['tokens']
+    let token = tokenArray[tokenIndex]
+    let firstSourceItemIndex = token['sourceItems'][0]['index']
+    let lang = witness['lang']
+    if (witness['items'][firstSourceItemIndex]['lang'] !== undefined) {
+      lang = witness['items'][firstSourceItemIndex]['lang']
+    }
+    // console.log("Lang: " + lang)
+    let langClass = 'popover-' + lang
+    popoverHtml = ''
+    popoverHtml += '<p class="popoverheading ' + langClass + '">' + token.text
+    if (token['normalizedText'] !== undefined) {
+      popoverHtml += '<br/>&equiv; ' + token['normalizedText'] + '<br/>'
+    }
+    popoverHtml += '</p>'
+    popoverHtml += '<p class="popoveriteminfo ' + langClass + '">'
+    if (token['sourceItems'].length === 1) {
+      popoverHtml += this.getItemPopoverHtmlForToken(witnessIndex, token,token['sourceItems'][0], peopleInfo, false)
+    } else {
+      for (const itemData of token['sourceItems']) {
+        popoverHtml += this.getItemPopoverHtmlForToken(witnessIndex, token, itemData, peopleInfo, true)
+      }
+    }
+    popoverHtml += '</p>'
+
+    popoverHtml += '<p class="popovertokenaddress">'
+    popoverHtml += this.getTokenAddressHtml(witnessIndex, token)
+    popoverHtml += '</p>'
+
+    let postNotes = this.getPostNotes(witnessIndex, col, tokenIndex)
+    if (postNotes.length > 0) {
+      popoverHtml += '<p class="popoverpostnotes">'
+      popoverHtml += '<b>Notes:</b><br/>'
+      popoverHtml += this.getNotesHtml(postNotes, peopleInfo)
+      popoverHtml += '</p>'
+    }
+
+    this.storePopoverHtmlInCache(witnessIndex, tokenIndex, popoverHtml)
+    return popoverHtml
+  }
+
   genGenerateCellTdExtraAttributesFunction() {
     let thisObject = this
     return function(tableRow, col, value) {
-      // just to profile without automatic popovers
-      //return []
-
       if (value === -1) {
         return []
       }
       let witnessIndex = thisObject.ctData['witnessOrder'][tableRow]
-
-      let popoverHtml  = thisObject.getPopoverHtmlFromCache(witnessIndex, value)
-      if (popoverHtml !== undefined) {
-        //console.log(`Popover cache hit for tableRow ${tableRow}, row ${row}, col ${col}, tokenRef ${value}`)
-        return [ {attr: 'data-content', val : popoverHtml }]
-      }
-      //console.log(`Popover cache miss for tableRow ${tableRow}, row ${row}, col ${col}, tokenRef ${value}`)
-
-      let collationTable = thisObject.ctData
-      let peopleInfo = thisObject.options.peopleInfo
-      let witness = collationTable['witnesses'][witnessIndex]
-      let tokenArray = witness['tokens']
-      let token = tokenArray[value]
-      let firstSourceItemIndex = token['sourceItems'][0]['index']
-      let lang = witness['lang']
-      if (witness['items'][firstSourceItemIndex]['lang'] !== undefined) {
-        lang = witness['items'][firstSourceItemIndex]['lang']
-      }
-      // console.log("Lang: " + lang)
-      let langClass = 'popover-' + lang
-      popoverHtml = ''
-      popoverHtml += '<p class="popoverheading ' + langClass + '">' + token.text
-      if (token['normalizedText'] !== undefined) {
-        popoverHtml += '<br/>&equiv; ' + token['normalizedText'] + '<br/>'
-      }
-      popoverHtml += '</p>'
-      popoverHtml += '<p class="popoveriteminfo ' + langClass + '">'
-      if (token['sourceItems'].length === 1) {
-        popoverHtml += thisObject.getItemPopoverHtmlForToken(witnessIndex, token,token['sourceItems'][0], peopleInfo, false)
-      } else {
-        for (const itemData of token['sourceItems']) {
-          popoverHtml += thisObject.getItemPopoverHtmlForToken(witnessIndex, token, itemData, peopleInfo, true)
-        }
-      }
-      popoverHtml += '</p>'
-
-      popoverHtml += '<p class="popovertokenaddress">'
-      popoverHtml += thisObject.getTokenAddressHtml(witnessIndex, token)
-      popoverHtml += '</p>'
-
-      let postNotes = thisObject.getPostNotes(witnessIndex, col, value)
-      if (postNotes.length > 0) {
-        popoverHtml += '<p class="popoverpostnotes">'
-        popoverHtml += '<b>Notes:</b><br/>'
-        popoverHtml += thisObject.getNotesHtml(postNotes, peopleInfo)
-        popoverHtml += '</p>'
-      }
-
-      thisObject.storePopoverHtmlInCache(witnessIndex, value, popoverHtml)
-      return [ {attr: 'data-content', val : popoverHtml }]
+      return [ {attr: 'data-content', val : thisObject.getPopoverHtml(witnessIndex, value, col) }]
     }
   }
 
@@ -923,13 +964,10 @@ class CollationTableEditor {
       witnessClass += ' witnesspos-' + i
       html += '<tr>'
 
-      html += '<td class="' + witnessClass +  '">'
-      // html += '<button class="btn btn-default btn-sm move-up-btn" title="Move Up"><i class="fas fa-arrow-up"></i></button>'
-      // html += '&nbsp;&nbsp;&nbsp;'
-      // html += '<button class="btn btn-default btn-sm move-down-btn"  title="Move Down"><i class="fas fa-arrow-down"></i></button>'
+      html += `<td class="${witnessClass} cte-witness-move-td">`
 
-      html += '<span class="btn move-up-btn" title="Move up"><i class="fas fa-caret-up"></i></span>'
-      html += '<span class="btn move-down-btn" title="Move down"><i class="fas fa-caret-down"></i></span>'
+      html += `<span class="btn move-up-btn" title="Move up">${this.icons.moveUp}</span>`
+      html += `<span class="btn move-down-btn" title="Move down">${this.icons.moveDown}</span>`
       html += '</td>'
 
       html += '<td>' + witnessTitle + '</td>'

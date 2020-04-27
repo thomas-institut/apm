@@ -426,3 +426,10 @@ div.cpheader a {
     opacity: 100%;
 }
 
+
+.flip_H{
+    transform: scale(-1, 1);
+}
+.flip_V{
+    transform: scale(1, -1);
+}

@@ -30,6 +30,7 @@ use APM\Site\SiteHomePage;
 use APM\Site\SiteChunks;
 
 use APM\Site\SiteUserManager;
+use APM\System\ApmContainerKey;
 use APM\System\ApmSystemManager;
 use APM\System\PresetFactory;
 use AverroesProject\Data\DataManager;
@@ -92,7 +93,7 @@ class SiteControllerTest extends TestCase {
 
         self::$testEnvironment = new SiteTestEnvironment($apmTestConfig);
         self::$ci = self::$testEnvironment->getContainer();
-        self::$dataManager = self::$ci->get('dataManager');
+        self::$dataManager = self::$ci->get(ApmContainerKey::DATA_MANAGER);
         self::$systemManager = self::$testEnvironment->getSystemManager();
     }
     
@@ -101,7 +102,7 @@ class SiteControllerTest extends TestCase {
         
         $request = new ServerRequest('GET', '');
 
-        self::$ci->set('user_info', ['id' => 100]);
+        self::$ci->set(ApmContainerKey::USER_INFO, ['id' => 100]);
 
         $sc = new SiteCollationTable(self::$ci);
         
@@ -114,7 +115,7 @@ class SiteControllerTest extends TestCase {
     {
         $request = new ServerRequest('GET', '');
 
-        self::$ci->set('user_info', ['id' => 100]);
+        self::$ci->set(ApmContainerKey::USER_INFO, ['id' => 100]);
         
         $sc = new  SiteHomePage(self::$ci);
         $response = $sc->homePage($request, new Response());
@@ -127,7 +128,7 @@ class SiteControllerTest extends TestCase {
         
         $request = new ServerRequest('GET', '');
 
-        self::$ci->set('user_info', ['id' => 100, 'username' => 'testUser']);
+        self::$ci->set(ApmContainerKey::USER_INFO, ['id' => 100, 'username' => 'testUser']);
 
         $sc = new SiteDashboard(self::$ci);
         
@@ -141,7 +142,7 @@ class SiteControllerTest extends TestCase {
         
         $request = new ServerRequest('GET', '');
 
-        self::$ci->set('user_info', ['id' => 100, 'username' => 'testUser']);
+        self::$ci->set(ApmContainerKey::USER_INFO, ['id' => 100, 'username' => 'testUser']);
         
         $sc = new SiteDocuments(self::$ci);
         
@@ -155,7 +156,7 @@ class SiteControllerTest extends TestCase {
         
         $request = new ServerRequest('GET', '');
 
-        self::$ci->set('user_info', ['id' => 100, 'username' => 'testUser']);
+        self::$ci->set(ApmContainerKey::USER_INFO, ['id' => 100, 'username' => 'testUser']);
         $sc = new SiteChunks(self::$ci);
         
         $response = $sc->chunksPage($request, new Response());
@@ -168,7 +169,7 @@ class SiteControllerTest extends TestCase {
         
         $request = new ServerRequest('GET', '');
 
-        self::$ci->set('user_info', ['id' => 100, 'username' => 'testUser']);
+        self::$ci->set(ApmContainerKey::USER_INFO, ['id' => 100, 'username' => 'testUser']);
         
         $sc = new SiteUserManager(self::$ci);
         
@@ -188,7 +189,7 @@ class SiteControllerTest extends TestCase {
         $this->assertNotFalse($editor1);
         $this->assertNotFalse($editor2);
         $this->assertNotFalse($editor3);
-        self::$ci->set('user_info', ['id' => $editor1]);
+        self::$ci->set(ApmContainerKey::USER_INFO, ['id' => $editor1]);
 
         $dm = self::$dataManager;
         $dm->userManager->allowUserTo($editor1, 'witness-view-details');
@@ -395,7 +396,7 @@ class SiteControllerTest extends TestCase {
         $lang = $witnessInfo['lang'];
         $editor1 = $witnessInfo['editors'][0];
 
-        self::$ci->set('user_info', ['id' => $editor1]);
+        self::$ci->set(ApmContainerKey::USER_INFO, ['id' => $editor1]);
         self::$dataManager->userManager->allowUserTo($editor1, 'act-view-experimental-data');
         
         $collationTableControllerObject = new SiteCollationTable(self::$ci);
@@ -441,7 +442,7 @@ class SiteControllerTest extends TestCase {
 //        $lang = $witnessInfo['lang'];
         $editor1 = $witnessInfo['editors'][0];
 
-        self::$ci->set('user_info', ['id' => $editor1]);
+        self::$ci->set(ApmContainerKey::USER_INFO, ['id' => $editor1]);
         self::$dataManager->userManager->allowUserTo($editor1, 'act-view-experimental-data');
         
         $collationTableControllerObject = new SiteCollationTable(self::$ci);
@@ -487,7 +488,7 @@ class SiteControllerTest extends TestCase {
         $lang = $witnessInfo['lang'];
         $editor1 = $witnessInfo['editors'][0];
 
-        self::$ci->set('user_info', ['id' => $editor1]);
+        self::$ci->set(ApmContainerKey::USER_INFO, ['id' => $editor1]);
         self::$dataManager->userManager->allowUserTo($editor1, 'act-view-experimental-data');
         
         $collationTableControllerObject = new SiteCollationTable(self::$ci);

@@ -99,6 +99,9 @@ class ApmUrlGenerator {
     apiWitnessGet(witnessId, output = 'full') {
         return this.base + '/api/witness/get/' + witnessId + '/' + output;
     }
+    apiWitnessCheckUpdates() {
+        return this.base + '/api/witness/check/updates';
+    }
     siteCollationTableCustom(work, chunkno, lang) {
         return this.base + '/collation/auto/' + work + '/' + chunkno + '/' + lang + '/custom';
     }

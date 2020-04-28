@@ -352,6 +352,10 @@ $app->group('/api', function (RouteCollectorProxy $group){
         ApiWitness::class . ':getWitness')
         ->setName('api.witness.get');
 
+    $group->post('/witness/check/updates',
+        ApiWitness::class . ':checkWitnessUpdates')
+        ->setName('api.witness.check.updates');
+
     // COLLATION TABLES
 
     $group->post('/collation/auto',

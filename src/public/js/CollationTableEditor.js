@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2019 Universität zu Köln
+ *  Copyright (C) 2019-20 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,7 +46,10 @@ class CollationTableEditor {
     // icons
     this.icons = {
       moveUp: '&#x1f861;',
-      moveDown: '&#x1f863;'
+      moveDown: '&#x1f863;',
+      busy: '<i class="fas fa-circle-notch fa-spin"></i>',
+      checkOK: '<i class="far fa-check-circle"></i>',
+      checkFail: '<i class="fas fa-exclamation-triangle"></i>'
     }
 
     this.rtlClass = 'rtltext'
@@ -99,7 +102,16 @@ class CollationTableEditor {
 
     this.ctInfoDiv.html(this.genCtInfoDiv())
 
+    // Witness info div
+    this.lastWitnessUpdateCheckResponse = null
     this.updateWitnessInfoDiv()
+    this.checkForWitnessUpdates()
+    $(this.witnessesDivSelector + ' .check-witness-update-btn').on('click', function(){
+      if (!thisObject.checkingForWitnessUpdates) {
+        thisObject.checkForWitnessUpdates()
+      }
+    })
+
     this.updateVersionInfo()
     this.quickEditionDiv.html('Quick edition coming soon...')
     this.ctDiv.html('Collation table coming soon...')
@@ -142,11 +154,71 @@ class CollationTableEditor {
       this.ctDiv.addClass(this.ltrClass)
     }
 
-
     this.setupTableEditor()
     this.updateSaveArea()
     this.setCsvDownloadFile()
     this.fetchQuickEdition()
+  }
+
+  checkForWitnessUpdates() {
+    let profiler = new SimpleProfiler('Check-Witness-Updates')
+    this.checkingForWitnessUpdates = true
+    let button = $(this.witnessesDivSelector + ' .check-witness-update-btn')
+    button.html('Checking... ' + this.icons.busy)
+    button.attr('title', '')
+    let thisObject = this
+
+    let apiUrl = this.options.urlGenerator.apiWitnessCheckUpdates()
+    let apiCallOptions = {
+      witnesses: []
+    }
+    for (let i = 0; i < this.ctData['witnesses'].length; i++) {
+      apiCallOptions.witnesses[i] = {
+        id: this.ctData['witnesses'][i]['ApmWitnessId']
+      }
+    }
+    $.post(apiUrl, { data: JSON.stringify(apiCallOptions)})
+      .done(function(apiResponse){
+        console.log('Got witness updates info from server')
+        console.log(apiResponse)
+        thisObject.lastWitnessUpdateCheckResponse = apiResponse
+        thisObject.checkingForWitnessUpdates = false
+        thisObject.updateWitnessUpdateCheckInfo(apiResponse)
+        profiler.stop()
+      })
+      .fail( function(resp) {
+        console.error('Error checking witness updates')
+        console.log(resp)
+    })
+  }
+
+  updateWitnessUpdateCheckInfo(apiResponse) {
+    let infoSpan = $(this.witnessesDivSelector + ' .witness-update-info')
+    let button = $(this.witnessesDivSelector + ' .check-witness-update-btn')
+    let witnessesUpToDate = true
+    for(let i=0; i < apiResponse['witnesses'].length; i++) {
+      let witnessUpdateInfo = apiResponse['witnesses'][i]
+      if (!witnessUpdateInfo['upToDate']) {
+        witnessesUpToDate = false
+        let warningTd = $(`${this.witnessesDivSelector} td.outofdate-td-${i}`)
+        warningTd.html(
+          `<span class="text-warning">${this.icons.checkFail} Last version:  ` +
+          `${ApmUtil.formatVersionTime(witnessUpdateInfo['lastUpdate'])}.`
+        )
+      }
+    }
+    if (witnessesUpToDate) {
+      infoSpan.removeClass('text-warning')
+      infoSpan.addClass('text-success')
+      infoSpan.html(`${this.icons.checkOK} All witnesses are up to date (last checked ${ApmUtil.formatVersionTime(apiResponse.timeStamp)})`)
+    } else {
+      infoSpan.removeClass('text-success')
+      infoSpan.addClass('text-warning')
+      infoSpan.html(`${this.icons.checkFail} One or more witnesses out of date (last checked ${ApmUtil.formatVersionTime(apiResponse.timeStamp)})`)
+    }
+
+    button.html('Check now')
+    button.attr('title', 'Click to check for updates to witness transcriptions')
   }
 
   setUpPopovers() {
@@ -176,26 +248,15 @@ class CollationTableEditor {
       let tokenIndex = thisObject.tableEditor.getValue(cellIndex.row, cellIndex.col)
       return thisObject.getPopoverHtml(witnessIndex, tokenIndex, cellIndex.col)
     }
-
   }
 
   popoversOn() {
     this.popoversAreOn = true
-    // this.ctDiv.popover({
-    //   trigger: "hover",
-    //   selector: '.withpopover',
-    //   delay: {show: 500 , hide:0},
-    //   placement: "auto top",
-    //   html: true,
-    //   container: 'body'
-    // })
   }
 
   popoversOff() {
     this.popoversAreOn = false
-    // this.ctDiv.popover('destroy')
   }
-
 
   getCollationMatrixFromTableEditor() {
     let matrix = this.tableEditor.getMatrix()
@@ -211,7 +272,6 @@ class CollationTableEditor {
   }
 
   setupTableEditor() {
-
     let collationTable = this.ctData
     let rowDefinition = []
     for (let i = 0; i < collationTable['witnessOrder'].length; i++) {
@@ -238,7 +298,6 @@ class CollationTableEditor {
       generateCellContent: this.genGenerateCellContentFunction(),
       generateTableClasses: this.genGenerateTableClassesFunction(),
       generateCellClasses: this.genGenerateCellClassesFunction(),
-      //generateCellTdExtraAttributes: this.genGenerateCellTdExtraAttributesFunction()
     })
     this.variantsMatrix = null // will be calculated before table draw
 
@@ -251,44 +310,59 @@ class CollationTableEditor {
       }
     })
 
-    // recalculte variants before redrawing the table
+    // recalculate variants before redrawing the table
     this.tableEditor.on('table-drawn-pre', function () {
       thisObject.recalculateVariants()
     })
-    // recalculate variants on cell shifts
-    this.tableEditor.on('cell-post-shift',function(data) {
-      // let profiler = new SimpleProfiler('CellPostShiftEventHandler')
+    // handle cell shifts
+    this.tableEditor.on('cell-post-shift',this.genOnCellPostShift())
+
+    this.tableEditor.editModeOn(false)
+    this.tableEditor.redrawTable()
+    this.tableEditor.on('column-add column-delete cell-shift', this.genOnCollationChanges())
+  }
+
+  genOnCellPostShift() {
+    let thisObject = this
+    return function(data) {
+      let profiler = new SimpleProfiler('Cell-Post-Shift')
       let direction = data.detail.direction
       let numCols = data.detail.numCols
       let firstCol = data.detail.firstCol
       let lastCol = data.detail.lastCol
       let theRow = data.detail.row
-      //console.log(`Post move ${direction} from ${firstCol} to ${lastCol}, ${numCols} column(s)`)
-      //console.log('recalculating variants')
+
       thisObject.recalculateVariants()
-      // profiler.lap('variants recalculated')
 
       let firstColToRedraw = direction === 'right' ? firstCol : firstCol-numCols
       let lastColToRedraw = direction === 'right' ? lastCol+numCols : lastCol
 
-      for (let col = firstColToRedraw; col <= lastColToRedraw; col++) {
-        //thisObject.tableEditor.refreshColumn(col)
-        for (let row = 0; row < thisObject.variantsMatrix.nRows; row++) {
-          if (row === theRow) {
-            thisObject.tableEditor.refreshCell(row, col)
-          } else {
-            thisObject.tableEditor.refreshCellClasses(row, col)
+      new Promise( (resolve) => {
+        // TODO: somehow tell the user that something is happening!
+        resolve()
+      })
+        .then( () => {
+          // refresh the cells in the row being shifted
+          for (let col = firstColToRedraw; col <= lastColToRedraw; col++) {
+            thisObject.tableEditor.refreshCell(theRow, col)
           }
-          //profiler.lap(`row ${row} refreshed`)
-        }
-        // profiler.lap(`col ${col} refreshed`)
-      }
-      // profiler.stop()
-    })
-
-    this.tableEditor.editModeOn(false)
-    this.tableEditor.redrawTable()
-    this.tableEditor.on('column-add column-delete cell-shift', this.genOnCollationChanges())
+          //profiler.lap('theRow cells refreshed')
+        })
+        .then( () => {
+          // refresh cell classes of the other cells so that variants are shown
+          for (let col = firstColToRedraw; col <= lastColToRedraw; col++) {
+            for (let row = 0; row < thisObject.variantsMatrix.nRows; row++) {
+              if (row !== theRow) {
+                thisObject.tableEditor.refreshCellClasses(row, col)
+              }
+            }
+          }
+          //profiler.lap('classes refreshed')
+        })
+        .finally( () => {
+          profiler.stop()
+        })
+    }
   }
 
   recalculateVariants() {
@@ -299,14 +373,13 @@ class CollationTableEditor {
   genOnCollationChanges() {
     let thisObject = this
     return function() {
-      // delay this a bit to make changes a bit more responsive
-      window.setTimeout(function(){
-        //console.log('collation change')
+      new Promise( resolve => {
         thisObject.updateSaveArea()
-        thisObject.ctData['collationMatrix'] = thisObject.getCollationMatrixFromTableEditor()
-        thisObject.setCsvDownloadFile()
-        thisObject.fetchQuickEdition()
-      }, 50)
+        resolve()
+      })
+      .then( () => { thisObject.ctData['collationMatrix'] = thisObject.getCollationMatrixFromTableEditor() })
+      .then( () => { thisObject.setCsvDownloadFile() })
+      .then( () => { thisObject.fetchQuickEdition() })
     }
   }
 
@@ -366,17 +439,6 @@ class CollationTableEditor {
     return popoverHtml
   }
 
-  genGenerateCellTdExtraAttributesFunction() {
-    let thisObject = this
-    return function(tableRow, col, value) {
-      if (value === -1) {
-        return []
-      }
-      let witnessIndex = thisObject.ctData['witnessOrder'][tableRow]
-      return [ {attr: 'data-content', val : thisObject.getPopoverHtml(witnessIndex, value, col) }]
-    }
-  }
-
   getPopoverHtmlFromCache(witnessIndex, tokenIndex) {
     return this.getDataFieldFromTokenDataCache('popoverHtml', witnessIndex, tokenIndex)
   }
@@ -407,8 +469,6 @@ class CollationTableEditor {
     this.tokenDataCache[witnessIndex][tokenIndex][fieldName] = data
   }
 
-
-
   getNotesHtml(notes, peopleInfo) {
     let html = ''
     let lineBreakHtml = '<br/>'
@@ -422,10 +482,6 @@ class CollationTableEditor {
     }
     return html
   }
-
-  // formatDateTime(sqlDateTimeString) {
-  //   return moment(sqlDateTimeString).format('D MMM YYYY, H:mm:ss')
-  // }
 
   formatNoteTime(timeStamp) {
     return moment(timeStamp).format('D MMM YYYY, H:mm')
@@ -645,7 +701,12 @@ class CollationTableEditor {
       //variant class
       if (thisObject.viewSettings.highlightVariants) {
         // Note that the variantsMatrix refers to the tableRow not to the witness row
-        classes.push('variant_' + thisObject.variantsMatrix.getValue(tableRow, col))
+        let variant  = thisObject.variantsMatrix.getValue(tableRow, col)
+        if (variant !== 0) {
+          // no class for variant 0
+          classes.push('variant_' + variant )
+        }
+
       }
       // get itemZero
       let itemZeroIndex = token['sourceItems'][0]['index']
@@ -743,7 +804,10 @@ class CollationTableEditor {
     if (item.hand !== undefined) {
       hand = item.hand
     }
-    classes.push( 'hand_' + hand)
+    if (hand !== 0) {
+      // no class for hand 0
+      classes.push( 'hand_' + hand)
+    }
 
     if (item.format !== undefined && item.format !== '') {
       classes.push(item.format)
@@ -833,13 +897,13 @@ class CollationTableEditor {
     $(this.witnessesDivSelector + ' .move-up-btn').off()
     $(this.witnessesDivSelector + ' .move-down-btn').off()
 
-    // set Html in container
-    this.witnessesDiv.html(this.genWitnessesDivHtml())
+    // set table html
+    $(this.witnessesDivSelector + ' .witnessinfotable').html(this.genWitnessTableHtml())
 
     // set up witness move buttons
     $(this.witnessesDivSelector + ' td.witnesspos-0 > .move-up-btn').addClass('disabled').addClass('opacity-0')
     let lastPos = this.ctData['witnessOrder'].length -1
-    $(this.witnessesDivSelector + ' td.witnesspos-' + lastPos +  ' > .move-down-btn').addClass('disabled').addClass('opacity-0')
+    $(this.witnessesDivSelector + ' td.witnesspos-' + lastPos +  ' > .move-down-btn').addClass('disabled')
     $(this.witnessesDivSelector + ' .move-up-btn').on('click', this.genOnClickUpDownWitnessInfoButton('up'))
     $(this.witnessesDivSelector + ' .move-down-btn').on('click',this.genOnClickUpDownWitnessInfoButton('down') )
 
@@ -850,6 +914,10 @@ class CollationTableEditor {
         initialText: this.ctData['sigla'][i],
         onConfirm: this.genOnConfirmSiglumEdit(i)
       })
+    }
+    // update witness update check info
+    if (this.lastWitnessUpdateCheckResponse !== null){
+      this.updateWitnessUpdateCheckInfo(this.lastWitnessUpdateCheckResponse)
     }
   }
 
@@ -913,7 +981,7 @@ class CollationTableEditor {
 
       ApmUtil.arraySwapElements(thisObject.ctData['witnessOrder'],position, position+indexOffset)
 
-      thisObject.witnessesDiv.html('Updating...')
+      $(this.witnessesDivSelector + ' .witnessinfotable').html('Updating...')
       thisObject.setupTableEditor()
       thisObject.fetchQuickEdition()
       thisObject.updateWitnessInfoDiv()
@@ -947,7 +1015,7 @@ class CollationTableEditor {
     return index
   }
 
-  genWitnessesDivHtml() {
+  genWitnessTableHtml() {
     let html = ''
 
     html+= '<table class="witnesstable">'
@@ -961,6 +1029,7 @@ class CollationTableEditor {
       let witnessClass = 'witness-' + wIndex
       let siglumClass = 'siglum-' + wIndex
       let warningTdClass = 'warning-td-' + wIndex
+      let outOfDateWarningTdClass = 'outofdate-td-' + wIndex
       witnessClass += ' witnesspos-' + i
       html += '<tr>'
 
@@ -975,10 +1044,11 @@ class CollationTableEditor {
       html += '<td class="' + siglumClass + '">'+ siglum + '</td>'
 
       html += '<td class="' + warningTdClass + '"></td>'
+      html += '<td class="' + outOfDateWarningTdClass + '"></td>'
       html += '</tr>'
     }
     html += '</table>'
-    html += '<div class="warning-area-1"></div>'
+    //html += '<div class="warning-area-1"></div>'
     return html
   }
 
@@ -1029,12 +1099,8 @@ class CollationTableEditor {
     if (!ApmUtil.arraysAreEqual(this.ctData['sigla'], this.lastSavedCtData['sigla'])) {
       changes.push('Changes in sigla')
     }
-
-
     return changes
   }
-
-
 
   fetchQuickEdition() {
     let profiler = new SimpleProfiler('FetchQuickEdition')

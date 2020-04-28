@@ -7,7 +7,6 @@
 <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/collationtable.css" />
     <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/collation.edit.css" />
 <script type="text/javascript" src="{{baseurl}}/node_modules//twig/twig.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/ApmUtil.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/EditableTextField.js"></script>
 <script type="application/javascript" src="{{baseurl}}/js/AutoCollTableViewSettingsForm.js"></script>
 <script type="application/javascript" src="{{baseurl}}/js/CollationTableFormatter.js"></script>
@@ -104,7 +103,13 @@
             <div id="collationtablediv"><div class="loading">Loading table...  <i class="fas fa-circle-notch fa-spin"></i></div></div>
         </div>
         <div role="tabpanel" class="tab-pane panetab" id="editiondiv"></div>
-        <div role="tabpanel" class="tab-pane panetab" id="witnessesdiv"></div>
+        <div role="tabpanel" class="tab-pane panetab" id="witnessesdiv">
+            <div class="witnessinfotable"></div>
+            <div class="witness-update-div">
+                <span class="witness-update-info"></span>
+                <button class="btn btn-sm btn-default check-witness-update-btn"  title="Click to check for updates to witness transcriptions">Check Now</button>
+            </div>
+        </div>
         <div role="tabpanel" class="tab-pane panetab" id="versionhistorydiv"></div>
     </div>
 

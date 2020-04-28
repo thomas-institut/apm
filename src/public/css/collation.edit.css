@@ -70,14 +70,13 @@ a.tb-button {
     font-size: 3rem;
 }
 
-th.te-deleting {
-    background: silver;
+div.witness-update-div {
+    margin: 2rem;
+
 }
 
-.te-adding {
-    background: #00FFFF;
+span.witness-update-info {
+    margin-right: 2rem;
 }
 
-.cte-witness-move-td {
-    color: #383838;
-}
+

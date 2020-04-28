@@ -32,6 +32,7 @@ use InvalidArgumentException;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\TimeString\TimeString;
 
 
 class ApiWitness extends ApiController
@@ -76,6 +77,85 @@ class ApiWitness extends ApiController
                 ]);
                 return $this->responseWithJson($response, [ 'error' => $msg ], 409);
         }
+    }
+
+    public function checkWitnessUpdates(Request $request, Response $response) {
+        $apiCall = 'checkWitnessUpdates';
+        $this->profiler->start();
+        $inputData = $this->checkAndGetInputData($request, $response, $apiCall, ['witnesses']);
+        //$this->debug('Input data', [ $inputData ]);
+        if (!is_array($inputData)) {
+            return $inputData;
+        }
+
+        $witnessArray = $inputData['witnesses'];
+        $responseData = [];
+        $responseData['status'] = 'OK';
+        $responseData['timeStamp'] = TimeString::now();
+        $responseData['witnesses'] = [];
+        foreach($witnessArray as $i => $witness) {
+            if (!isset($witness['id'])) {
+                $msg = 'No witness id given in witness $i';
+                $this->logger->error($msg, [
+                    'apiUserId' => $this->apiUserId,
+                    'apiError' => self::ERROR_UNKNOWN_WITNESS_TYPE
+                ]);
+                return $this->responseWithJson($response, [ 'error' => $msg ], 409);
+            }
+            $witnessId = $witness['id'];
+            $witnessType = WitnessSystemId::getType($witnessId);
+            switch ($witnessType) {
+                case WitnessType::FULL_TRANSCRIPTION:
+                    $witnessInfo = WitnessSystemId::getFullTxInfo($witnessId);
+                    $lastUpdate = $this->systemManager->getTranscriptionManager()->getLastChangeTimestampForWitness(
+                      $witnessInfo->workId,
+                      $witnessInfo->chunkNumber,
+                      $witnessInfo->typeSpecificInfo['docId'],
+                      $witnessInfo->typeSpecificInfo['localWitnessId']
+                    );
+                    $upToDate = true;
+                    if ($lastUpdate !== $witnessInfo->typeSpecificInfo['timeStamp']) {
+                        $upToDate = false;
+                    }
+                    $updatedWitnessId = WitnessSystemId::buildFullTxId(
+                        $witnessInfo->workId,
+                        $witnessInfo->chunkNumber,
+                        $witnessInfo->typeSpecificInfo['docId'],
+                        $witnessInfo->typeSpecificInfo['localWitnessId'],
+                        $lastUpdate
+                    );
+                    $responseData['witnesses'][] = [
+                        'id' => $witnessId,
+                        'upToDate' => $upToDate,
+                        'lastUpdate' => $lastUpdate,
+                        'updatedWitnessId'=> $updatedWitnessId
+                    ];
+                    break;
+
+                case WitnessType::PARTIAL_TRANSCRIPTION:
+                    $msg = 'Witness type ' . WitnessType::PARTIAL_TRANSCRIPTION . ' not implemented yet';
+                    $this->logger->error($msg, [
+                        'apiUserId' => $this->apiUserId,
+                        'apiError' => self::ERROR_WITNESS_TYPE_NOT_IMPLEMENTED
+                    ]);
+                    $this->profiler->stop();
+                    $this->logProfilerData($apiCall . '-error');
+                    return $this->responseWithJson($response, [ 'error' => $msg ], 409);
+
+                default:
+                    $msg = "Unknown witness type $witnessType";
+                    $this->logger->error($msg, [
+                        'apiUserId' => $this->apiUserId,
+                        'apiError' => self::ERROR_UNKNOWN_WITNESS_TYPE
+                    ]);
+                    $this->profiler->stop();
+                    $this->logProfilerData($apiCall . '-error');
+                    return $this->responseWithJson($response, [ 'error' => $msg ], 409);
+            }
+        }
+        $this->profiler->stop();
+        $this->logProfilerData($apiCall);
+        return $this->responseWithJson($response, $responseData, 200);
     }
 
     private function getFullTxWitness(string $requestedWitnessId, string $outputType, Response $response, bool $useCache) : Response {

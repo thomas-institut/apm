@@ -219,6 +219,14 @@ abstract class TranscriptionManager implements ErrorReporter
      */
     abstract public function getSegmentLocationsForFullTxWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeString) : array;
 
+    /**
+     * @param string $workId
+     * @param int $chunkNumber
+     * @param int $docId
+     * @param string $localWitnessId
+     * @return string
+     */
+    abstract public function getLastChangeTimestampForWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId) : string;
 
     /**
      * Returns a full map of the transcriptions in the system at the given time

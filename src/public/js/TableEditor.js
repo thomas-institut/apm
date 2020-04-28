@@ -575,7 +575,7 @@ class TableEditor {
   }
 
   shiftCells(row, firstCol, lastCol, direction, numCols = 1) {
-    let profiler = new SimpleProfiler('ShiftCells')
+    //let profiler = new SimpleProfiler('ShiftCells')
     //console.log(`Shifting cells ${firstCol} to ${lastCol} ${direction} ${numCols} column(s)`)
 
     // Check if the shift makes sense
@@ -633,7 +633,7 @@ class TableEditor {
     // dispatch post move events
     this.dispatchCellShiftEvents('post', direction, row, firstCol, lastCol, numCols)
 
-    profiler.stop()
+    //profiler.stop()
   }
 
   setupCellEventHandlers(row, col) {

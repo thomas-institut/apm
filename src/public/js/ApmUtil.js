@@ -281,7 +281,20 @@ class ApmUtil {
     return String(html).replace(/[&<>"'`=\/]/g, function (s) {
       return entityMap[s];
     });
+  }
 
+  static delayExecution(timeInMs, someFunction) {
+    return new Promise( (resolve, reject) => {
+        window.setTimeout(() => {
+          let result = undefined
+          try {
+            result = someFunction()
+          } catch(e) {
+            reject(e)
+          }
+          resolve(result)
+        }, timeInMs)
+    })
   }
 
 }

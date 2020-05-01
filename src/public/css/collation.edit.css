@@ -79,4 +79,37 @@ span.witness-update-info {
     margin-right: 2rem;
 }
 
+/* Update modal */
+
+div.info {
+    margin-bottom: 2rem;
+}
+
+.status-waiting {
+    color: silver;
+}
+
+.status-running {
+    color: black;
+    font-weight: bold;
+    transition: font-weight 250ms;
+}
+
+.status-done {
+    font-weight: normal;
+    color: green;
+}
+
+.status-fail {
+    color: red;
+}
+
+div.changes {
+    padding: 1rem;
+    border: solid 1px #e0e0e0;
+    margin: 2rem;
+    max-height: 15rem;
+    overflow-y: scroll;
+}
+
 

@@ -49,7 +49,8 @@ class CollationTableEditor {
       moveDown: '&#x1f863;',
       busy: '<i class="fas fa-circle-notch fa-spin"></i>',
       checkOK: '<i class="far fa-check-circle"></i>',
-      checkFail: '<i class="fas fa-exclamation-triangle"></i>'
+      checkFail: '<i class="fas fa-exclamation-triangle"></i>',
+      checkCross: '<i class="fas fa-times"></i>'
     }
 
     this.rtlClass = 'rtltext'
@@ -103,7 +104,7 @@ class CollationTableEditor {
     this.ctInfoDiv.html(this.genCtInfoDiv())
 
     // Witness info div
-    this.lastWitnessUpdateCheckResponse = null
+    this.lastWitnessUpdateCheckResponse = ''
     this.updateWitnessInfoDiv()
     this.checkForWitnessUpdates()
     $(this.witnessesDivSelector + ' .check-witness-update-btn').on('click', function(){
@@ -192,6 +193,257 @@ class CollationTableEditor {
     })
   }
 
+  genOnClickWitnessUpdate(witnessIndex) {
+    let thisObject = this
+    return function() {
+      let profiler = new SimpleProfiler('Witness-Update')
+      let twigTemplate = thisObject.getUpdateDialogTemplate(witnessIndex)
+      let currentWitness = thisObject.ctData['witnesses'][witnessIndex]
+      let newWitnessInfo = thisObject.lastWitnessUpdateCheckResponse['witnesses'][witnessIndex]
+      if (newWitnessInfo['upToDate']) {
+        console.error(`Attempt to update witness ${witnessIndex}, which is up to date`)
+        return false
+      }
+
+      $('body').append(twigTemplate.render({
+        witnessTitle: thisObject.ctData['witnessTitles'][witnessIndex],
+        currentVersion: ApmUtil.formatVersionTime(currentWitness['timeStamp']),
+        newVersion: ApmUtil.formatVersionTime(newWitnessInfo['lastUpdate']),
+      }))
+      let modalSelector = `#update-modal-${witnessIndex}`
+      let cancelButton = $(`${modalSelector} .cancel-btn`)
+      let acceptButton = $(`${modalSelector} .accept-btn`)
+      let loadP = $(modalSelector + ' .load')
+      let calcP = $(modalSelector + ' .calc-changes')
+      let reviewP = $(modalSelector + ' .review-changes')
+      let doChangesP = $(modalSelector + ' .do-changes')
+      let changesDiv = $(modalSelector + ' .changes')
+
+      // Set step titles
+      let loadStepTitle = '1. Load New Version'
+      let calcChangesStepTitle = '2. Calculate Changes'
+      let reviewChangesStepTitle = '3. Review Changes'
+      let doChangesStepTitle = '4. Update Collation Table'
+      loadP.html(loadStepTitle)
+      calcP.html(calcChangesStepTitle)
+      reviewP.html(reviewChangesStepTitle)
+      doChangesP.html(doChangesStepTitle)
+
+      cancelButton.on('click', function(){
+        $(modalSelector).modal('hide')
+        $(modalSelector).remove()
+        thisObject.updateWitnessModalOn = false
+      })
+      $(modalSelector).modal({
+        backdrop: 'static',
+        keyboard: false,
+        show: false
+      })
+      $(modalSelector).on('shown.bs.modal', function () {
+        profiler.lap('all set to start process')
+        thisObject.updateWitnessModalOn = true
+        // 1. Load new version
+        // 1.1. move to step 1 in the UI
+        loadP.html(`${loadStepTitle} ${thisObject.icons.busy}`)
+        loadP.removeClass('status-waiting')
+        loadP.addClass('status-running')
+        // 1.2. actually load the new version
+        let apiUrl = thisObject.options.urlGenerator.apiWitnessGet(newWitnessInfo['updatedWitnessId'], 'standardData')
+        $.get(apiUrl)
+          .then(
+            // Load new version success
+            serverResponse => {
+              // 2. Calculate changes
+              profiler.lap('witness loaded')
+              console.log('Loaded witness')
+              console.log(serverResponse)
+
+              // 2.1 move to step 2 in the UI
+              loadP.html(`${loadStepTitle} ${thisObject.icons.checkOK}`)
+              loadP.removeClass('status-running')
+              loadP.addClass('status-done')
+              calcP.html(`${calcChangesStepTitle} ${thisObject.icons.busy}`)
+              calcP.removeClass('status-waiting')
+              calcP.addClass('status-running')
+
+              // 2.2 the actual calculation
+
+              return thisObject.getChangesBetweenWitnesses(currentWitness, serverResponse['witnessData'], witnessIndex)
+            },
+            //  Load new version fail
+            reason => {
+              loadP.removeClass('status-running')
+              loadP.addClass('status-fail')
+              let errorMsg = 'FAIL:'
+              errorMsg += `Server status ${reason.status}`
+              if (reason.responseJSON !== undefined) {
+                errorMsg += `, error message: '${reason.responseJSON.error}'`
+              }
+              loadP.html(`${loadStepTitle} ${thisObject.icons.checkCross} ${errorMsg}`)
+              console.error('Could not load new version from server')
+              console.log(reason)
+              throw reason //stop the chain
+            }
+          )
+          .then(
+            changes => {
+              profiler.lap('changes calculated')
+              console.log(changes)
+              // 3. Review Changes
+              calcP.html(`${calcChangesStepTitle} ${thisObject.icons.checkOK}`)
+              calcP.removeClass('status-running')
+              calcP.addClass('status-done')
+
+              // show changes
+              let html = ''
+
+              if (changes.ctChanges.length !== 0) {
+                html += '<h5>Changes to the Collation Table:</h5>'
+                html += '<ul>'
+                for(const ctChange of changes.ctChanges) {
+                  html += '<li>'
+                  if (ctChange.type === 'empty') {
+                    html += `Column ${ctChange.col+1} will be emptied, currently contains the word '${ctChange.token.text}'`
+                  } else {
+                    html += `New column will be added after column ${ctChange.afterCol+1} with word '${ctChange.token.text}'`
+                  }
+                  html += '</li>'
+                }
+
+                html += '</ul>'
+              }
+              // put some lines to simulate lots of changes
+              // for (let i = 0; i < 100; i++) {
+              //   html += `<p>Extra fake change ${i+1}</p>`
+              // }
+
+              changesDiv.html(html)
+
+
+              reviewP.removeClass('status-waiting')
+              reviewP.addClass('status-running')
+              acceptButton.removeClass('hidden')
+              acceptButton.on('click', function () {
+                // 4. Do Changes!!
+                profiler.lap('user clicked the accept button')
+                console.log('Changes accepted')
+                reviewP.html(`${reviewChangesStepTitle} ${thisObject.icons.checkOK}`)
+                reviewP.removeClass('status-running')
+                reviewP.addClass('status-done')
+                acceptButton.addClass('hidden')
+                cancelButton.prop('disabled', true)
+
+                doChangesP.removeClass('status-waiting')
+                doChangesP.addClass('status-running')
+                doChangesP.html(`${doChangesStepTitle} ${thisObject.icons.busy}`)
+
+                // actually do the changes!
+
+                // changes done!
+
+                doChangesP.removeClass('status-running')
+                doChangesP.addClass('status-done')
+                doChangesP.html(`${doChangesStepTitle} ${thisObject.icons.checkOK}`)
+                cancelButton.html('Done!')
+                cancelButton.prop('disabled', false)
+                profiler.stop()
+              })
+            })
+          .catch( reason => {
+            console.log('errors detected')
+        })
+      })
+      // go!
+      $(modalSelector).modal('show')
+    }
+  }
+
+  getChangesBetweenWitnesses(oldWitness, newWitness, witnessIndex) {
+    let changes = {}
+
+    let editScript = MyersDiff.calculate(oldWitness['tokens'], newWitness['tokens'], function(a,b) {
+      if (a['tokenType'] === b['tokenType']) {
+        if (a['tokenType'] === 'whitespace') {
+          return true  // all whitespace is the same !
+        }
+        if (a['text'] === b['text']) {
+          return true
+        }
+      }
+      return false
+    })
+
+    changes.tokenConversionArray = []
+    changes.insertsAndDeletes = []
+    changes.ctChanges = []
+    let collationRowIndex = this.ctData['witnessOrder'][witnessIndex]
+    let collationRow = this.tableEditor.getRow(collationRowIndex)
+
+    let lastCtColumn = -1
+    let ctColumn = -1
+
+    for(const scriptItem of editScript) {
+      switch(scriptItem['command']) {
+        case 0:
+          changes.tokenConversionArray[scriptItem.index] = scriptItem.seq
+          ctColumn = collationRow.indexOf(scriptItem.index)
+          if (ctColumn !== -1) {
+            lastCtColumn = ctColumn
+          }
+          break
+
+        case 1:
+          // insert
+          let tokenToInsert = newWitness['tokens'][scriptItem.seq]
+          let insertChange = {
+            type: 'insert',
+            scriptItem: scriptItem,
+            token: tokenToInsert,
+            ctChange: false
+          }
+          if (tokenToInsert['tokenType'] === 'word') {
+            // add word tokens to collation table by adding a new empty column and setting the  ctRowIndex to the inserted token's seq
+            changes.ctChanges.push({
+              type: 'addColumn',
+              row: collationRowIndex,
+              afterCol: lastCtColumn,
+              ref: scriptItem.seq,
+              token: tokenToInsert
+            })
+            insertChange.ctChange = true
+          }
+          changes.insertsAndDeletes.push(insertChange)
+          break
+
+        case -1:
+          // delete
+          let tokenToDelete = oldWitness['tokens'][scriptItem.index]
+          let deleteChange = {
+            type: 'delete',
+            scriptItem: scriptItem,
+            token: tokenToDelete,
+            ctChange: false
+          }
+          ctColumn = collationRow.indexOf(scriptItem.index)
+          if (ctColumn !== -1) {
+            // token is in collation table, we need to empty that cell
+            changes.ctChanges.push({
+              type: 'empty',
+              row: collationRowIndex,
+              col: ctColumn,
+              token: tokenToDelete
+            })
+            deleteChange.ctChange = true
+            lastCtColumn = ctColumn
+          }
+          changes.insertsAndDeletes.push(deleteChange)
+          changes.tokenConversionArray[scriptItem.index] = -1
+      }
+    }
+
+    return changes
+  }
+
   updateWitnessUpdateCheckInfo(apiResponse) {
     let infoSpan = $(this.witnessesDivSelector + ' .witness-update-info')
     let button = $(this.witnessesDivSelector + ' .check-witness-update-btn')
@@ -200,12 +452,13 @@ class CollationTableEditor {
       let witnessUpdateInfo = apiResponse['witnesses'][i]
       if (!witnessUpdateInfo['upToDate']) {
         witnessesUpToDate = false
+        let warningHtml =  `<span>${this.icons.checkFail} Last version:  `
+        warningHtml += `${ApmUtil.formatVersionTime(witnessUpdateInfo['lastUpdate'])}. `
+        warningHtml += `<a title="Click to update witness" class="witness-update-btn-${i}">Update.</a>`
         let warningTd = $(`${this.witnessesDivSelector} td.outofdate-td-${i}`)
-        warningTd.html(
-          `<span class="text-warning">${this.icons.checkFail} Last version:  ` +
-          `${ApmUtil.formatVersionTime(witnessUpdateInfo['lastUpdate'])}.`
-        )
+        warningTd.html(warningHtml)
       }
+      $(`${this.witnessesDivSelector} .witness-update-btn-${i}`).on('click', this.genOnClickWitnessUpdate(i))
     }
     if (witnessesUpToDate) {
       infoSpan.removeClass('text-warning')
@@ -916,7 +1169,7 @@ class CollationTableEditor {
       })
     }
     // update witness update check info
-    if (this.lastWitnessUpdateCheckResponse !== null){
+    if (this.lastWitnessUpdateCheckResponse !== ''){
       this.updateWitnessUpdateCheckInfo(this.lastWitnessUpdateCheckResponse)
     }
   }
@@ -1239,6 +1492,40 @@ class CollationTableEditor {
       text = tkn.norm
     }
     return '"' + text + '"'
+  }
+
+  getUpdateDialogTemplate(witnessIndex) {
+    return Twig.twig( {
+      // id: `update-witness-dialog-${witnessIndex}`,
+      data: `
+<div id="update-modal-${witnessIndex}" class="modal" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content bg-info">
+            <div class="modal-header">
+                <h3>Update witness {{witnessTitle}}</h3>
+            </div>
+            <div class="modal-body">
+                <div class="info">
+                    <p><b>Current version:</b> {{currentVersion}}</p>
+                    <p style="margin-left: 30px"><i class="fas fa-long-arrow-alt-down"></i></p>
+                    <p><b>New version:</b> {{newVersion}}</p>
+                </div>
+                <div class="process">
+                    <p class="load status-waiting"></p>
+                    <p class="calc-changes status-waiting"></p>
+                    <p class="review-changes status-waiting"></p>
+                    <div class="changes"></div>
+                    <p class="do-changes status-waiting"></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger accept-btn hidden">Accept Changes and Update</button>
+                <button type="button" class="btn btn-primary cancel-btn">Cancel</button>
+            </div>
+      </div>
+    </div>
+</div>    
+    `})
   }
 
 

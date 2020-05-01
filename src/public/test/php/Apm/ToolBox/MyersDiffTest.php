@@ -72,6 +72,21 @@ class MyersDiffTest extends TestCase {
         $this->assertEquals([0, 2, 3, 4, 6], $keeps);
         $this->assertEquals([1,3,7,8,9,10], $adds);
     }
+
+    public function testSimple2() {
+
+        $testCases = [
+            [ 'array1' => [4,5,6,7], 'array2' => [4,5,8,7], 'scriptLength' => 5 ]
+            ];
+
+        foreach($testCases as $i => $testCase) {
+            $script = MyersDiff::calculate($testCase['array1'], $testCase['array2'], function ($x,$y) {
+                return $x === $y;
+            });
+            //print "\n" . $this->prettyPrintScript($script);
+            $this->assertCount($testCase['scriptLength'], $script, "Test case " . ($i+1));
+        }
+    }
     
     public function testItems()
     {
@@ -100,7 +115,27 @@ class MyersDiffTest extends TestCase {
         $this->assertEquals(MyersDiff::INSERT, $editScript[2][1]);
         $this->assertEquals(MyersDiff::INSERT, $editScript[3][1]);
         $this->assertEquals(MyersDiff::KEEP, $editScript[4][1]);
-        
-        
     }
+
+    protected function prettyPrintScript(array $script): string {
+        $output = '';
+        foreach($script as $scriptItem) {
+            list( $index, $cmd, $seq) = $scriptItem;
+            switch($cmd) {
+                case 0:
+                    $output .=  'KEEP ' . $index . ' ( =  ' . $seq . ")\n";
+                    break;
+
+                case 1:
+                    $output .=  'ADD after ' . $index . ' element  ' . $seq . "\n";
+                    break;
+
+                case -1:
+                    $output .=  'DEL ' . $index . "\n";
+                    break;
+            }
+        }
+        return $output;
+    }
+
 }

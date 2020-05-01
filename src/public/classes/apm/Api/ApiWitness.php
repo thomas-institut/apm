@@ -262,24 +262,29 @@ class ApiWitness extends ApiController
             $cacheTracker->incrementHits();
             $returnData = unserialize($cachedBlob);
 
-            $cacheKeyHtmlOutput = $this->getWitnessHtmlCacheKey($requestedWitnessId);
-            $cacheHit = true;
-            try {
-                $html = $systemCache->get($cacheKeyHtmlOutput);
-            } catch (KeyNotInCacheException $e) {
-                $cacheHit = false;
-            }
+            if ($outputType === 'standardData') {
+                // no need to get html data if we're just serving standardData
+                $returnData = [ 'witnessData' => $returnData['standardData']];
+                $returnData['apiStatus']  = 'OK';
+            } else {
+                $cacheKeyHtmlOutput = $this->getWitnessHtmlCacheKey($requestedWitnessId);
+                $cacheHit = true;
+                try {
+                    $html = $systemCache->get($cacheKeyHtmlOutput);
+                } catch (KeyNotInCacheException $e) {
+                    $cacheHit = false;
+                }
 
-            if (!$cacheHit) {
-                $cacheTracker->incrementMisses();
-                $this->codeDebug("Cache miss trying to get html output ");
-                $returnData['status'] = 'Error getting html from cache';
-            }
-            $cacheTracker->incrementHits();
-            $returnData['html']  = $html;
+                if (!$cacheHit) {
+                    $cacheTracker->incrementMisses();
+                    $this->codeDebug("Cache miss trying to get html output ");
+                    $returnData['status'] = 'Error getting html from cache';
+                }
+                $cacheTracker->incrementHits();
+                $returnData['html']  = $html;
 
+            }
             $returnData['requestedWitnessId'] = $requestedWitnessId;
-
             $returnData['cached'] = true;
             $returnData['usingCache'] = $useCache;
         }

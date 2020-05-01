@@ -56,6 +56,7 @@ class MyersDiff
      */
     private static function extractSnakes(array $v_save, $x, $y) : array
     {
+        //print_r($v_save);
         $snakes = array();
         for ($d = count($v_save) - 1; $x >= 0 && $y >= 0; --$d) {
                 array_unshift($snakes, array($x, $y));
@@ -64,9 +65,9 @@ class MyersDiff
                 $k = $x - $y;
 
                 if ($k === -$d || $k !== $d && $v[$k - 1] < $v[$k + 1]) {
-                        $k_prev = $k + 1;
+                    $k_prev = $k + 1;
                 } else {
-                        $k_prev = $k - 1;
+                    $k_prev = $k - 1;
                 }
 
                 $x = $v[$k_prev];

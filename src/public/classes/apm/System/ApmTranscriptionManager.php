@@ -80,6 +80,7 @@ class ApmTranscriptionManager extends TranscriptionManager
     use SimpleCacheAware;
 
     const ERROR_DOCUMENT_NOT_FOUND = 50;
+    const ERROR_CACHE_ERROR = 51;
 
     const DEFAULT_CACHE_KEY_PREFIX = 'ApmTM-';
 
@@ -254,6 +255,7 @@ class ApmTranscriptionManager extends TranscriptionManager
      * @param string $localWitnessId
      * @param string $timeStamp
      * @return ApmTranscriptionWitness
+     * @throws \Exception
      */
     public function getTranscriptionWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeStamp) : ApmTranscriptionWitness
     {
@@ -265,23 +267,26 @@ class ApmTranscriptionManager extends TranscriptionManager
         if ($this->cacheOn) {
             // first, check if it's in the cache
             $cacheKey = $this->getCacheKeyForWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
+            $this->codeDebug("Getting witness from cache (key='$cacheKey')");
             $cacheValue = '';
+            $inCache = true;
             try {
                 $cacheValue = $this->dataCache->get($cacheKey);
             } catch (KeyNotInCacheException $e) {
+                $inCache = false;
             }
 
-            if ($cacheValue !== '') {
-                $this->codeDebug("Getting witness from cache");
+            if ($inCache) {
                 // cache hit!
                 $this->cacheTracker->incrementHits();
-                $txWitness = unserialize($cacheValue);
+                $txWitness = unserialize(gzuncompress($cacheValue));
                 if ($txWitness === false) {
                     throw new RuntimeException('Error unserializing from witness cache');
                 }
                 return $txWitness;
             }
             // cache miss
+            $this->codeDebug('Not in cache');
             $this->cacheTracker->incrementMisses();
         }
 
@@ -322,7 +327,18 @@ class ApmTranscriptionManager extends TranscriptionManager
         $txWitness->setInitialLineNumberForTextBox($firstPageId, $firstColumn, $firstLineNumber);
 
         if ($this->cacheOn) {
-            $this->dataCache->set($cacheKey, serialize($txWitness));
+            $this->codeDebug("Saving witness to cache with cache key '$cacheKey'");
+            $serialized = serialize($txWitness);
+            $this->codeDebug("Size of serialized witness data: " . strlen($serialized));
+            $dataToSave = gzcompress($serialized);
+            $this->codeDebug("Size of compressed witness data: " . strlen($dataToSave));
+            try {
+                $this->dataCache->set($cacheKey, $dataToSave);
+            } catch(\Exception $e) {
+                $this->setError( "Cannot set cache for key $cacheKey : " . $e->getMessage(), self::ERROR_CACHE_ERROR);
+                throw $e;
+            }
+
             $this->cacheTracker->incrementCreate();
         }
 

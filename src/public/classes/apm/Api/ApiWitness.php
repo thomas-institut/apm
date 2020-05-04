@@ -195,17 +195,18 @@ class ApiWitness extends ApiController
 
         // if output is html it can be even faster
         if ($useCache && $outputType === 'html') {
+            $this->codeDebug("Fast tracking html output: trying to get html from cache");
             $cacheKeyHtmlOutput = $this->getWitnessHtmlCacheKey($requestedWitnessId);
             $cacheHit = true;
             try {
                 $cachedHtml = $systemCache->get($cacheKeyHtmlOutput);
             } catch (KeyNotInCacheException $e) {
-                //$this->codeDebug("Cache miss :(");
+                $this->codeDebug("Cache miss :(");
                 $cacheTracker->incrementMisses();
                 $cacheHit = false;
             }
             if ($cacheHit) {
-                //$this->codeDebug("Cache hit!!");
+                $this->codeDebug("Cache hit!!");
                 $cacheTracker->incrementHits();
                 return $this->responseWithText($response, $cachedHtml);
             }
@@ -213,6 +214,7 @@ class ApiWitness extends ApiController
 
         $cacheHit = true;
         if ($useCache) {
+            $this->codeDebug("Trying to get full witness info from cache");
             $cacheKey = $this->getWitnessDataCacheKey($requestedWitnessId);
             try {
                 $cachedBlob = $systemCache->get($cacheKey);
@@ -222,11 +224,18 @@ class ApiWitness extends ApiController
             }
         }
         if (!$useCache || !$cacheHit) {
+            $this->codeDebug("Need to build witness info from scratch");
             // need to build everything from scratch
             $locations = $transcriptionManager->getSegmentLocationsForFullTxWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
             $apmWitness = $transcriptionManager->getTranscriptionWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
 
             $returnData = $apmWitness->getData();
+
+            // erase unneeded data
+            // TODO: do not calculate this data in the first place!
+            unset($returnData['tokens']);
+            unset($returnData['items']);
+            unset($returnData['nonTokenItemIndexes']);
 
             // temporary code to spit out standard token data
             $returnData['standardData'] = (new FullTxWitnessDataProvider($apmWitness))->getStandardData();
@@ -240,7 +249,7 @@ class ApiWitness extends ApiController
             $returnData['requestedWitnessId'] = $requestedWitnessId;
 
             // Plain text version
-            $returnData['plainText'] = $apmWitness->getPlainText();
+            //$returnData['plainText'] = $apmWitness->getPlainText();
 
             // HTML
             $html = $this->getWitnessHtml($apmWitness);
@@ -248,9 +257,25 @@ class ApiWitness extends ApiController
             // Save results in cache
             $cacheKey = $this->getWitnessDataCacheKey($witnessId);
             $cacheKeyHtmlOutput = $this->getWitnessHtmlCacheKey($witnessId);
-            $systemCache->set($cacheKey, serialize($returnData));
+            $this->codeDebug("Saving API response data to cache with key '$cacheKey'");
+            $serializedReturnData = serialize($returnData);
+            $this->codeDebug("Size of serialized return data: " . strlen($serializedReturnData));
+            $dataToSave = gzcompress($serializedReturnData);
+            $this->codeDebug("Size of compressed witness data: " . strlen($dataToSave));
+            try {
+                $systemCache->set($cacheKey, $dataToSave);
+            } catch (\Exception $e) {
+                $this->codeDebug("Error saving data to cache: " . substr($e->getMessage(), 1, 1000) . '...' );
+            }
+
             // save html on its own key in the cache to speed up html output later
-            $systemCache->set($cacheKeyHtmlOutput, $html);
+            $this->codeDebug("Saving html data to cache with key '$cacheKeyHtmlOutput'");
+            $this->codeDebug("Size of html data: " . strlen($html));
+            try {
+                $systemCache->set($cacheKeyHtmlOutput, $html);
+            } catch(\Exception $e) {
+                $this->codeDebug("Error saving data to cache: " . substr($e->getMessage(), 1, 1000) . '...' );
+            }
 
             $returnData['html'] = $html;
 
@@ -260,7 +285,7 @@ class ApiWitness extends ApiController
         } else {
             //$this->codeDebug('Cache hit!');
             $cacheTracker->incrementHits();
-            $returnData = unserialize($cachedBlob);
+            $returnData = unserialize(gzuncompress($cachedBlob));
 
             if ($outputType === 'standardData') {
                 // no need to get html data if we're just serving standardData

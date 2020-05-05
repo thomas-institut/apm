@@ -68,6 +68,7 @@ class CollationTableEditor {
     }
 
     this.lastSavedCtData = ApmUtil.deepCopy(this.ctData)
+    this.witnessUpdates = []
     this.tableId = this.options['tableId']
     this.ctData['tableId'] = this.tableId
     this.versionInfo = this.options.versionInfo
@@ -224,6 +225,7 @@ class CollationTableEditor {
       let calcChangesStepTitle = '2. Calculate Changes'
       let reviewChangesStepTitle = '3. Review Changes'
       let doChangesStepTitle = '4. Update Collation Table'
+
       loadP.html(loadStepTitle)
       calcP.html(calcChangesStepTitle)
       reviewP.html(reviewChangesStepTitle)
@@ -257,6 +259,7 @@ class CollationTableEditor {
               profiler.lap('witness loaded')
               console.log('Loaded witness')
               console.log(serverResponse)
+              let newWitness = serverResponse['witnessData']
 
               // 2.1 move to step 2 in the UI
               loadP.html(`${loadStepTitle} ${thisObject.icons.checkOK}`)
@@ -267,8 +270,9 @@ class CollationTableEditor {
               calcP.addClass('status-running')
 
               // 2.2 the actual calculation
+              let changes =  thisObject.getChangesBetweenWitnesses(currentWitness, newWitness, witnessIndex)
 
-              return thisObject.getChangesBetweenWitnesses(currentWitness, serverResponse['witnessData'], witnessIndex)
+              return { changes: changes, newWitness: newWitness}
             },
             //  Load new version fail
             reason => {
@@ -286,8 +290,9 @@ class CollationTableEditor {
             }
           )
           .then(
-            changes => {
+            changeData => {
               profiler.lap('changes calculated')
+              let changes = changeData.changes
               console.log(changes)
               // 3. Review Changes
               calcP.html(`${calcChangesStepTitle} ${thisObject.icons.checkOK}`)
@@ -296,29 +301,48 @@ class CollationTableEditor {
 
               // show changes
               let html = ''
-
+              html += '<h5>Changes:</h5>'
+              html += '<ul>'
               if (changes.ctChanges.length !== 0) {
-                html += '<h5>Changes to the Collation Table:</h5>'
-                html += '<ul>'
+
+                function tokenText(token) {
+                  let text = `'${token.text}'`
+                  if (token['normalizedText'] !== undefined) {
+                    text += ` (normalization: '${token['normalizedText']}')`
+                  }
+                  return text
+                }
+
                 for(const ctChange of changes.ctChanges) {
                   html += '<li>'
-                  if (ctChange.type === 'empty') {
-                    html += `Column ${ctChange.col+1} will be emptied, currently contains the word '${ctChange.token.text}'`
-                  } else {
-                    html += `New column will be added after column ${ctChange.afterCol+1} with word '${ctChange.token.text}'`
+                  switch (ctChange.type) {
+                    case 'insertColAfter':
+                      html += `New column will be added after column ${ctChange.afterCol+1} (${tokenText(ctChange.currentToken)}) with the word ${tokenText(ctChange.newToken)}`
+                      break
+
+                    case 'emptyCell':
+                      html += `Column ${ctChange.col+1} will be emptied, currently contains the word ${tokenText(ctChange.currentToken)}`
+                      break
+
+                    case 'replace':
+                      html += `Column ${ctChange.col+1} will change from ${tokenText(ctChange.currentToken)} to ${tokenText(ctChange.newToken)}`
+                      break
+
+                    default:
+                      console.log('Unsupported change found in collation table changes')
+                      console.log(ctChange)
                   }
                   html += '</li>'
                 }
-
-                html += '</ul>'
               }
-              // put some lines to simulate lots of changes
-              // for (let i = 0; i < 100; i++) {
-              //   html += `<p>Extra fake change ${i+1}</p>`
-              // }
-
+              if (changes.nonCtChanges.length !== 0) {
+                html += '<li>Minor changes in the transcription that do not affect the collation table, e.g., added spaces, punctuation, etc.</li>'
+              }
+              if (changes.ctChanges.length === 0 && changes.nonCtChanges.length === 0) {
+                html += '<li>Minor changes in underlying data that do not affect the collation table, e.g., internal APM data, line numbers, etc.'
+              }
+              html += '</ul>'
               changesDiv.html(html)
-
 
               reviewP.removeClass('status-waiting')
               reviewP.addClass('status-running')
@@ -338,7 +362,7 @@ class CollationTableEditor {
                 doChangesP.html(`${doChangesStepTitle} ${thisObject.icons.busy}`)
 
                 // actually do the changes!
-
+                thisObject.updateWitness(witnessIndex, changeData)
                 // changes done!
 
                 doChangesP.removeClass('status-running')
@@ -358,87 +382,242 @@ class CollationTableEditor {
     }
   }
 
+  updateWitness(witnessIndex, changeData) {
+    let collationRowIndex = this.ctData['witnessOrder'][witnessIndex]
+    let profiler =new SimpleProfiler('updateWitness')
+    let changes = changeData.changes
+    console.log(`About to update witness ${witnessIndex}, ctRow = ${collationRowIndex} `)
+    console.log(changeData)
+
+    //1. update the current references in the collation table row
+    // this will take care of 'emptyCell'  and 'replace' changes in changes.ctChanges
+    let currentCtRow = this.tableEditor.getRow(collationRowIndex)
+    for(let i = 0; i < currentCtRow.length; i++) {
+      let currentRef = this.tableEditor.getValue(collationRowIndex, i)
+      if (currentRef !== -1) {
+        this.tableEditor.setValue(collationRowIndex, i, changes['tokenConversionArray'][currentRef])
+      }
+    }
+
+    // 2. insert columns as needed
+    let columnsInserted = 0
+    for (const change of changes.ctChanges) {
+      if (change.type === 'insertColAfter') {
+        this.tableEditor.insertColumnAfter(change.afterCol)
+        columnsInserted++
+        this.tableEditor.setValue(collationRowIndex, change.afterCol + columnsInserted, change.tokenIndexInNewWitness)
+      }
+    }
+
+    // 3. replace witness in ctData
+    this.ctData['witnesses'][witnessIndex] = changeData.newWitness
+
+    // 4. Reflect changes in user interface
+    this.witnessUpdates.push({witnessIndex: witnessIndex, changeData: changeData})
+    this.lastWitnessUpdateCheckResponse['witnesses'][witnessIndex]['upToDate'] = true
+    this.lastWitnessUpdateCheckResponse['witnesses'][witnessIndex]['justUpdated'] = true
+    this.resetTokenDataCache()
+    this.ctData['collationMatrix'] = this.getCollationMatrixFromTableEditor()
+    this.aggregatedNonTokenItemIndexes = this.calculateAggregatedNonTokenItemIndexes()
+    this.recalculateVariants()
+    this.tableEditor.redrawTable()
+    this.updateWitnessInfoDiv()
+    this.updateSaveArea()
+    this.setCsvDownloadFile()
+    this.fetchQuickEdition()
+
+    profiler.stop()
+  }
+
   getChangesBetweenWitnesses(oldWitness, newWitness, witnessIndex) {
     let changes = {}
 
+    // 1. Find changes in the tokens
     let editScript = MyersDiff.calculate(oldWitness['tokens'], newWitness['tokens'], function(a,b) {
       if (a['tokenType'] === b['tokenType']) {
-        if (a['tokenType'] === 'whitespace') {
-          return true  // all whitespace is the same !
-        }
-        if (a['text'] === b['text']) {
-          return true
+        switch(a['tokenType']) {
+          case 'whitespace':
+            // all whitespace is the same!
+            return true
+
+          case 'punctuation':
+            return a['text'] === b['text']
+
+          case 'word':
+            if (a['text'] !== b['text']) {
+              return false
+            }
+            return a['normalizedText'] === b['normalizedText'];
+
         }
       }
       return false
     })
 
     changes.tokenConversionArray = []
-    changes.insertsAndDeletes = []
+    changes.nonCtChanges = []
     changes.ctChanges = []
     let collationRowIndex = this.ctData['witnessOrder'][witnessIndex]
     let collationRow = this.tableEditor.getRow(collationRowIndex)
 
     let lastCtColumn = -1
-    let ctColumn = -1
+    let lastCtColumnTokenIndex = -1
+    let lastDel = {}
+    let state = 0
 
-    for(const scriptItem of editScript) {
-      switch(scriptItem['command']) {
+    function getFsmEvent(editScript, ctIndex, newTokens) {
+      switch(editScript.command) {
         case 0:
-          changes.tokenConversionArray[scriptItem.index] = scriptItem.seq
-          ctColumn = collationRow.indexOf(scriptItem.index)
-          if (ctColumn !== -1) {
-            lastCtColumn = ctColumn
+          if (ctIndex === -1) {
+            return 'KEEP'
+          } else {
+            return 'KEEP-CT'
           }
-          break
-
-        case 1:
-          // insert
-          let tokenToInsert = newWitness['tokens'][scriptItem.seq]
-          let insertChange = {
-            type: 'insert',
-            scriptItem: scriptItem,
-            token: tokenToInsert,
-            ctChange: false
-          }
-          if (tokenToInsert['tokenType'] === 'word') {
-            // add word tokens to collation table by adding a new empty column and setting the  ctRowIndex to the inserted token's seq
-            changes.ctChanges.push({
-              type: 'addColumn',
-              row: collationRowIndex,
-              afterCol: lastCtColumn,
-              ref: scriptItem.seq,
-              token: tokenToInsert
-            })
-            insertChange.ctChange = true
-          }
-          changes.insertsAndDeletes.push(insertChange)
-          break
 
         case -1:
-          // delete
-          let tokenToDelete = oldWitness['tokens'][scriptItem.index]
-          let deleteChange = {
-            type: 'delete',
-            scriptItem: scriptItem,
-            token: tokenToDelete,
-            ctChange: false
+          if (ctIndex === -1) {
+            return 'DEL'
+          } else {
+            return 'DEL-CT'
           }
-          ctColumn = collationRow.indexOf(scriptItem.index)
-          if (ctColumn !== -1) {
-            // token is in collation table, we need to empty that cell
-            changes.ctChanges.push({
-              type: 'empty',
-              row: collationRowIndex,
-              col: ctColumn,
-              token: tokenToDelete
-            })
-            deleteChange.ctChange = true
-            lastCtColumn = ctColumn
+
+        case 1:
+          // only insert words into the collation table
+          let newToken = newTokens[editScript.seq]
+          if (newToken['tokenType'] === 'word') {
+            return 'INS-CT'
+          } else {
+            return 'INS'
           }
-          changes.insertsAndDeletes.push(deleteChange)
-          changes.tokenConversionArray[scriptItem.index] = -1
       }
+    }
+
+    for(let i=0; i < editScript.length; i++) {
+      let scriptItem = editScript[i]
+      // determine the FSM event
+      let ctIndex = collationRow.indexOf(scriptItem.index)
+      let event = getFsmEvent(scriptItem, ctIndex, newWitness['tokens'])
+      console.log(`Event ${i}: ${event}, state ${state}, ctIndex ${ctIndex}`)
+
+      // State Machine
+      if (state === 0) {
+        switch(event) {
+          case 'KEEP-CT':
+            changes.tokenConversionArray[scriptItem.index] = scriptItem.seq
+            lastCtColumn = ctIndex
+            lastCtColumnTokenIndex = scriptItem.index
+            break
+
+          case 'KEEP':
+            // TODO: is this necessary?
+            changes.tokenConversionArray[scriptItem.index] = scriptItem.seq
+            break
+
+          case 'INS-CT':
+            changes.ctChanges.push({
+              type: 'insertColAfter',
+              row: collationRowIndex,
+              afterCol: lastCtColumn,
+              tokenIndexInNewWitness: scriptItem.seq,
+              newToken: newWitness['tokens'][ scriptItem.seq],
+              currentToken: oldWitness['tokens'][lastCtColumnTokenIndex]
+            })
+            break
+
+          case 'INS':
+            changes.nonCtChanges.push({
+              type: 'insert',
+              index: scriptItem.seq
+            })
+            break
+
+          case 'DEL-CT':
+            lastDel = scriptItem
+            lastCtColumn = ctIndex
+            lastCtColumnTokenIndex = scriptItem.index
+            state = 1
+            break
+
+          case 'DEL':
+            changes.tokenConversionArray[scriptItem.index] = -1
+            changes.nonCtChanges.push({
+              type: 'delete',
+              index: scriptItem.index
+            })
+            break
+        }
+      } else if (state === 1) {
+        switch(event) {
+          case 'KEEP-CT':
+            changes.tokenConversionArray[scriptItem.index] = scriptItem.seq
+            changes.ctChanges.push({
+              type: 'emptyCell',
+              row: collationRowIndex,
+              col: lastCtColumn,
+              currentToken: oldWitness['tokens'][lastCtColumnTokenIndex]
+            })
+            lastCtColumn = ctIndex
+            lastCtColumnTokenIndex = scriptItem.index
+            state = 0
+            break
+
+          case 'KEEP':
+            changes.tokenConversionArray[scriptItem.index] = scriptItem.seq
+            break
+
+          case 'INS-CT':
+            changes.tokenConversionArray[lastDel.index] = scriptItem.seq
+            changes.ctChanges.push({
+              type: 'replace',
+              row: collationRowIndex,
+              col: lastCtColumn,
+              oldIndex: lastDel.index,
+              newIndex: scriptItem.seq,
+              currentToken: oldWitness['tokens'][lastDel.index],
+              newToken: newWitness['tokens'][scriptItem.seq]
+            })
+            lastCtColumn = ctIndex
+            lastCtColumnTokenIndex = scriptItem.index
+            state = 0
+            break
+
+          case 'INS':
+            changes.nonCtChanges.push({
+              type: 'insert',
+              index: scriptItem.seq
+            })
+            break
+
+          case 'DEL-CT':
+            changes.tokenConversionArray[lastDel.index] = -1
+            changes.ctChanges.push({
+              type: 'emptyCell',
+              row: collationRowIndex,
+              col: lastCtColumn,
+              currentToken: oldWitness['tokens'][lastDel.index]
+            })
+            lastCtColumn = ctIndex
+            lastCtColumnTokenIndex = scriptItem.index
+            lastDel = scriptItem
+            break
+
+          case 'DEL':
+            changes.tokenConversionArray[lastDel.index] = -1
+            changes.nonCtChanges.push({
+              type: 'delete',
+              index: scriptItem.index
+            })
+        }
+      }
+    }
+    // no more scriptItem ===> 'END' event
+    if (state === 1) {
+      changes.tokenConversionArray[lastDel.index] = -1
+      changes.ctChanges.push({
+        type: 'emptyCell',
+        row: collationRowIndex,
+        col: lastCtColumn
+      })
     }
 
     return changes
@@ -455,6 +634,11 @@ class CollationTableEditor {
         let warningHtml =  `<span>${this.icons.checkFail} Last version:  `
         warningHtml += `${ApmUtil.formatVersionTime(witnessUpdateInfo['lastUpdate'])}. `
         warningHtml += `<a title="Click to update witness" class="witness-update-btn-${i}">Update.</a>`
+        let warningTd = $(`${this.witnessesDivSelector} td.outofdate-td-${i}`)
+        warningTd.html(warningHtml)
+      }
+      if (witnessUpdateInfo['justUpdated']) {
+        let warningHtml =  `<span>${this.icons.checkOK} Just updated. Don't forget to save!`
         let warningTd = $(`${this.witnessesDivSelector} td.outofdate-td-${i}`)
         warningTd.html(warningHtml)
       }
@@ -794,6 +978,10 @@ class CollationTableEditor {
 
   getPostNotes(row, col, tokenIndex) {
 
+    if (this.aggregatedNonTokenItemIndexes[row][tokenIndex] === undefined) {
+      console.log(`Undefined aggregate non-token item index for row ${row}, tokenIndex ${tokenIndex}`)
+      return []
+    }
     let postItemIndexes = this.aggregatedNonTokenItemIndexes[row][tokenIndex]['post']
     let itemWithAddressArray = this.ctData['witnesses'][row]['items']
     let notes = []
@@ -1134,6 +1322,13 @@ class CollationTableEditor {
           thisObject.lastSavedCtData = ApmUtil.deepCopy(thisObject.ctData)
           thisObject.lastSavedEditorMatrix = thisObject.tableEditor.getMatrix().clone()
           thisObject.versionInfo = apiResponse.versionInfo
+          thisObject.witnessUpdates = []
+          for(let i=0; i < thisObject.lastWitnessUpdateCheckResponse['witnesses'].length; i++) {
+            if (thisObject.lastWitnessUpdateCheckResponse['witnesses'][i]['justUpdated']) {
+              thisObject.lastWitnessUpdateCheckResponse['witnesses'][i]['justUpdated'] = false
+            }
+          }
+          thisObject.updateWitnessInfoDiv()
           thisObject.updateSaveArea()
           thisObject.updateVersionInfo()
           thisObject.fetchQuickEdition()
@@ -1351,6 +1546,13 @@ class CollationTableEditor {
 
     if (!ApmUtil.arraysAreEqual(this.ctData['sigla'], this.lastSavedCtData['sigla'])) {
       changes.push('Changes in sigla')
+    }
+
+    if (this.witnessUpdates.length !== 0) {
+      for(const witnessUpdate of this.witnessUpdates) {
+        changes.push(`Witness ${this.ctData['witnessTitles'][witnessUpdate.witnessIndex]} updated`)
+      }
+
     }
     return changes
   }

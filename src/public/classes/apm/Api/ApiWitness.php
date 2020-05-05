@@ -279,9 +279,14 @@ class ApiWitness extends ApiController
 
             $returnData['html'] = $html;
 
+            if ($outputType === 'standardData') {
+                // no need to get html data if we're just serving standardData
+                $returnData = [ 'witnessData' => $returnData['standardData']];
+                $returnData['apiStatus']  = 'OK';
+            }
+
             $returnData['cached'] = false;
             $returnData['usingCache'] = $useCache;
-
         } else {
             //$this->codeDebug('Cache hit!');
             $cacheTracker->incrementHits();

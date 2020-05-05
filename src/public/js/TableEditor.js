@@ -927,7 +927,8 @@ class TableEditor {
       thisObject.currentYScroll = window.scrollY
       thisObject.currentXScroll = window.scrollX
       thisObject.waitingForScrollZero = true
-      thisObject.matrix.addColumnAfter(col,  thisObject.options.getEmptyValue())
+      //thisObject.matrix.addColumnAfter(col,  thisObject.options.getEmptyValue())
+      thisObject.insertColumnAfter(col)
       thisObject.dispatchColumnAddEvents(col+1)
       thisObject.redrawTable()
       thisObject.forceRestoreScroll(250)
@@ -945,11 +946,16 @@ class TableEditor {
       thisObject.currentYScroll = window.scrollY
       thisObject.currentXScroll = window.scrollX
       thisObject.waitingForScrollZero = true
-      thisObject.matrix.addColumnAfter(col-1, thisObject.options.getEmptyValue())
+      //thisObject.matrix.addColumnAfter(col-1, thisObject.options.getEmptyValue())
+      thisObject.insertColumnAfter(col-1)
       thisObject.dispatchColumnAddEvents(col)
       thisObject.redrawTable()
       thisObject.forceRestoreScroll(250)
     }
+  }
+
+  insertColumnAfter(col) {
+    this.matrix.addColumnAfter(col, this.options.getEmptyValue())
   }
 
   forceRestoreScroll(timeOut = 250)  {

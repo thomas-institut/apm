@@ -105,11 +105,16 @@ div.info {
 }
 
 div.changes {
-    padding: 1rem;
-    border: solid 1px #e0e0e0;
+    padding-left: 1rem;
+    /*border: solid 1px #e0e0e0;*/
     margin: 2rem;
-    max-height: 15rem;
+    max-height: 18rem;
     overflow-y: scroll;
+}
+
+div.changes h5 {
+    padding: 0;
+    margin: 0 0 0.5rem;
 }
 
 

@@ -383,19 +383,19 @@ class CollationTableEditor {
   }
 
   updateWitness(witnessIndex, changeData) {
-    let collationRowIndex = this.ctData['witnessOrder'][witnessIndex]
+    let ctRow = this.ctData['witnessOrder'].indexOf(witnessIndex)
     let profiler =new SimpleProfiler('updateWitness')
     let changes = changeData.changes
-    console.log(`About to update witness ${witnessIndex}, ctRow = ${collationRowIndex} `)
+    console.log(`About to update witness ${witnessIndex}, ctRow = ${ctRow} `)
     console.log(changeData)
 
     //1. update the current references in the collation table row
     // this will take care of 'emptyCell'  and 'replace' changes in changes.ctChanges
-    let currentCtRow = this.tableEditor.getRow(collationRowIndex)
+    let currentCtRow = this.tableEditor.getRow(ctRow)
     for(let i = 0; i < currentCtRow.length; i++) {
-      let currentRef = this.tableEditor.getValue(collationRowIndex, i)
+      let currentRef = this.tableEditor.getValue(ctRow, i)
       if (currentRef !== -1) {
-        this.tableEditor.setValue(collationRowIndex, i, changes['tokenConversionArray'][currentRef])
+        this.tableEditor.setValue(ctRow, i, changes['tokenConversionArray'][currentRef])
       }
     }
 
@@ -405,7 +405,10 @@ class CollationTableEditor {
       if (change.type === 'insertColAfter') {
         this.tableEditor.insertColumnAfter(change.afterCol)
         columnsInserted++
-        this.tableEditor.setValue(collationRowIndex, change.afterCol + columnsInserted, change.tokenIndexInNewWitness)
+        for(let row = 0; row < this.tableEditor.matrix.nRows; row ++) {
+          this.tableEditor.setValue(row, change.afterCol + columnsInserted,-1)
+        }
+        this.tableEditor.setValue(ctRow, change.afterCol + columnsInserted, change.tokenIndexInNewWitness)
       }
     }
 
@@ -457,8 +460,8 @@ class CollationTableEditor {
     changes.tokenConversionArray = []
     changes.nonCtChanges = []
     changes.ctChanges = []
-    let collationRowIndex = this.ctData['witnessOrder'][witnessIndex]
-    let collationRow = this.tableEditor.getRow(collationRowIndex)
+    let ctRowIndex = this.ctData['witnessOrder'].indexOf(witnessIndex)
+    let collationRow = this.tableEditor.getRow(ctRowIndex)
 
     let lastCtColumn = -1
     let lastCtColumnTokenIndex = -1
@@ -495,16 +498,16 @@ class CollationTableEditor {
     for(let i=0; i < editScript.length; i++) {
       let scriptItem = editScript[i]
       // determine the FSM event
-      let ctIndex = collationRow.indexOf(scriptItem.index)
-      let event = getFsmEvent(scriptItem, ctIndex, newWitness['tokens'])
-      console.log(`Event ${i}: ${event}, state ${state}, ctIndex ${ctIndex}`)
+      let ctColIndex = collationRow.indexOf(scriptItem.index)
+      let event = getFsmEvent(scriptItem, ctColIndex, newWitness['tokens'])
+      console.log(`Event ${i}: ${event}, state ${state}, index ${scriptItem.index}, ctIndex ${ctColIndex}, seq ${scriptItem.seq}`)
 
       // State Machine
       if (state === 0) {
         switch(event) {
           case 'KEEP-CT':
             changes.tokenConversionArray[scriptItem.index] = scriptItem.seq
-            lastCtColumn = ctIndex
+            lastCtColumn = ctColIndex
             lastCtColumnTokenIndex = scriptItem.index
             break
 
@@ -516,7 +519,7 @@ class CollationTableEditor {
           case 'INS-CT':
             changes.ctChanges.push({
               type: 'insertColAfter',
-              row: collationRowIndex,
+              row: ctRowIndex,
               afterCol: lastCtColumn,
               tokenIndexInNewWitness: scriptItem.seq,
               newToken: newWitness['tokens'][ scriptItem.seq],
@@ -533,7 +536,7 @@ class CollationTableEditor {
 
           case 'DEL-CT':
             lastDel = scriptItem
-            lastCtColumn = ctIndex
+            lastCtColumn = ctColIndex
             lastCtColumnTokenIndex = scriptItem.index
             state = 1
             break
@@ -552,11 +555,11 @@ class CollationTableEditor {
             changes.tokenConversionArray[scriptItem.index] = scriptItem.seq
             changes.ctChanges.push({
               type: 'emptyCell',
-              row: collationRowIndex,
+              row: ctRowIndex,
               col: lastCtColumn,
               currentToken: oldWitness['tokens'][lastCtColumnTokenIndex]
             })
-            lastCtColumn = ctIndex
+            lastCtColumn = ctColIndex
             lastCtColumnTokenIndex = scriptItem.index
             state = 0
             break
@@ -569,14 +572,14 @@ class CollationTableEditor {
             changes.tokenConversionArray[lastDel.index] = scriptItem.seq
             changes.ctChanges.push({
               type: 'replace',
-              row: collationRowIndex,
+              row: ctRowIndex,
               col: lastCtColumn,
               oldIndex: lastDel.index,
               newIndex: scriptItem.seq,
               currentToken: oldWitness['tokens'][lastDel.index],
               newToken: newWitness['tokens'][scriptItem.seq]
             })
-            lastCtColumn = ctIndex
+            lastCtColumn = ctColIndex
             lastCtColumnTokenIndex = scriptItem.index
             state = 0
             break
@@ -592,11 +595,11 @@ class CollationTableEditor {
             changes.tokenConversionArray[lastDel.index] = -1
             changes.ctChanges.push({
               type: 'emptyCell',
-              row: collationRowIndex,
+              row: ctRowIndex,
               col: lastCtColumn,
               currentToken: oldWitness['tokens'][lastDel.index]
             })
-            lastCtColumn = ctIndex
+            lastCtColumn = ctColIndex
             lastCtColumnTokenIndex = scriptItem.index
             lastDel = scriptItem
             break
@@ -615,7 +618,7 @@ class CollationTableEditor {
       changes.tokenConversionArray[lastDel.index] = -1
       changes.ctChanges.push({
         type: 'emptyCell',
-        row: collationRowIndex,
+        row: ctRowIndex,
         col: lastCtColumn
       })
     }

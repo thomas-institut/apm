@@ -10,12 +10,19 @@ class CollationTableUtil {
       let textCol = []
       for(let row=0; row < refMatrix.nRows; row++) {
         let ref = refCol[row]
+        if (ref === undefined) {
+          console.error(`Found undefined reference in collation table, row ${row}, col ${col}, ref ${ref}`)
+        }
         //console.log('row ' + row + ' col ' + col + ' ref ' +  ref)
         if (ref=== -1) {
           textCol.push('')
           continue
         }
-        let witness = witnesses[witnessOrder[row]]
+        let witnessIndex = witnessOrder[row]
+        let witness = witnesses[witnessIndex]
+        if (witness.tokens[ref] === undefined) {
+          console.error(`Found undefined token for reference, witness ${witnessIndex}, row ${row}, col ${col}, ref ${ref}`)
+        }
         if (witness.tokens[ref]['normalizedText'] !== undefined) {
           textCol.push(witness.tokens[ref]['normalizedText'])
         } else {

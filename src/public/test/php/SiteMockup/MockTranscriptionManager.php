@@ -21,6 +21,7 @@ use APM\FullTranscription\ApmTranscriptionWitness;
 use APM\FullTranscription\PageInfo;
 use APM\FullTranscription\PageManager;
 use APM\FullTranscription\TranscriptionManager;
+use ThomasInstitut\TimeString\TimeString;
 
 class MockTranscriptionManager extends TranscriptionManager
 {
@@ -168,5 +169,10 @@ class MockTranscriptionManager extends TranscriptionManager
     public function updatePageSettings(int $pageId, PageInfo $newSettings, int $userId): void
     {
         // TODO: Implement updatePageSettings() method.
+    }
+
+    public function getLastChangeTimestampForWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId): string
+    {
+        return TimeString::now();
     }
 }

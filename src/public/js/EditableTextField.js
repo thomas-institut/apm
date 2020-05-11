@@ -1,14 +1,60 @@
-class EditableTextField {
+/*
+ *  Copyright (C) 2020 Universität zu Köln
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ */
+
+// Events
+
+export const confirmEvent = 'confirm'
+export const editChangeEvent = 'edit-change'
+
+// Internal Defaults
+const defaultNormalClass = 'etf-normal'
+const defaultEditingClass = 'etf-editing'
+const defaultHoverClass =  'etf-hover'
+
+const defaultMinTextFormSize = 5
+const defaultMaxTextFormSize = 15
+
+const defaultEditIcon =  '<i class="fas fa-pen"></i>'
+const defaultConfirmIcon = '<i class="fas fa-check"></i>'
+const defaultCancelIcon = '<i class="fas fa-times"></i>'
+
+// Internal Constants
+
+const theTextClass = 'theText'
+const editButtonClass = 'editButton'
+const textInputClass = 'textInput'
+const cancelButtonClass = 'cancelButton'
+const confirmButtonClass = 'confirmButton'
+
+const confirmButtonTitle = 'Confirm'
+const cancelButtonTitle = 'Cancel'
+
+export class EditableTextField {
 
   constructor (options) {
     let optionsDefinition = {
       containerSelector : { type: 'string', required: true},
-      normalClass: { type: 'string', required: false, default: 'etf-normal'},
-      editingClass: { type: 'string', required: false, default: 'etf-editing'},
-      hoverClass: {type: 'string', required: false, default: 'etf-hover'},
+      normalClass: { type: 'string', required: false, default: defaultNormalClass},
+      editingClass: { type: 'string', required: false, default: defaultEditingClass},
+      hoverClass: {type: 'string', required: false, default: defaultHoverClass},
       initialText: { type: 'string', required: true},
-      minTextFormSize: { type: 'PositiveInteger', required: false, default: 5},
-      maxTextFormSize: { type: 'PositiveInteger', required: false, default: 15},
+      minTextFormSize: { type: 'PositiveInteger', required: false, default: defaultMinTextFormSize},
+      maxTextFormSize: { type: 'PositiveInteger', required: false, default: defaultMaxTextFormSize},
       onConfirm : {
         type: 'function',
         required: false,
@@ -22,17 +68,17 @@ class EditableTextField {
       editIcon: {
         type: 'string',
         required: false,
-        default : '<i class="fas fa-pen"></i>'
+        default : defaultEditIcon
       },
       confirmIcon: {
         type: 'string',
         required: false,
-        default : '<i class="fas fa-check"></i>'
+        default : defaultConfirmIcon
       },
       cancelIcon: {
         type: 'string',
         required: false,
-        default: '<i class="fas fa-times"></i>'
+        default: defaultCancelIcon
       }
     }
 
@@ -47,11 +93,11 @@ class EditableTextField {
     this.confirmEnabled = true
     this.setNormalContainer()
     if (this.options.onConfirm !== null){
-      this.on('confirm', this.options.onConfirm)
+      this.on(confirmEvent, this.options.onConfirm)
     }
 
     if (this.options.onEditInputChange !== null) {
-      this.on('edit-change', this.options.onEditInputChange)
+      this.on(editChangeEvent, this.options.onEditInputChange)
     }
 
   }
@@ -69,13 +115,13 @@ class EditableTextField {
     }
   }
 
-  disableConfirm() {
-    this.confirmEnabled = false
-  }
+  // disableConfirm() {
+  //   this.confirmEnabled = false
+  // }
 
-  enableConfirm() {
-    this.confirmEnabled = true
-  }
+  // enableConfirm() {
+  //   this.confirmEnabled = true
+  // }
 
 
 
@@ -92,22 +138,20 @@ class EditableTextField {
     this.container.off('mouseenter')
     this.container.off('mouseleave')
     let html = ''
-    html += '<span title="Click to edit" class="theText">' + this.currentText + '</span>'
+    html += `<span title="Click to edit" class="${theTextClass}">${this.currentText}</span>`
     html += '&nbsp;'
-    html += '<span title="Edit" class="editbutton hidden">' + this.options.editIcon + '</span>'
+    html += `<span title="Edit" class="${editButtonClass} hidden">${this.options.editIcon}</span>`
 
     this.container.removeClass(this.options.editingClass)
     this.container.removeClass(this.options.hoverClass)
     this.container.html(html)
     this.container.addClass(this.options.normalClass)
 
-    this.textSpan = $(this.options.containerSelector + ' .theText')
-    this.editIconSpan =  $(this.options.containerSelector + ' .editbutton')
+    //this.textSpan = $(this.options.containerSelector + ' .' + theTextClass)
+    this.editIconSpan =  $(this.options.containerSelector + ' .' + editButtonClass)
     this.container.on('mouseenter', this.genOnMouseEnter())
     this.container.on('mouseleave', this.genOnMouseLeave())
     this.container.on('click', this.genOnClick())
-
-
   }
 
   setEditContainer() {
@@ -124,17 +168,17 @@ class EditableTextField {
       size = this.options.maxTextFormSize
     }
     let html = ''
-    html += '<input type="text" class="textInput" value="' +  this.currentText + '" size="' + size + '">'
+    html += `<input type="text" class="${textInputClass}" value="${this.currentText}" size="${size}">`
     html += '&nbsp;'
-    html += '<span class="confirmButton" title="Confirm">' + this.options.confirmIcon + '</span>'
+    html += `<span class="${confirmButtonClass}" title="${confirmButtonTitle}">${this.options.confirmIcon}</span>`
     html += '&nbsp;'
-    html += '<span class="cancelButton" title="Cancel">' + this.options.cancelIcon  + '</span>'
+    html += `<span class="${cancelButtonClass}" title="${cancelButtonTitle}">${this.options.cancelIcon}</span>`
 
     this.container.html(html)
     this.container.addClass(this.options.editingClass)
-    this.textInput = $(this.options.containerSelector + ' input.textInput')
-    this.confirmButton = $(this.options.containerSelector + ' span.confirmButton')
-    this.cancelButton = $(this.options.containerSelector + ' span.cancelButton')
+    this.textInput = $(this.options.containerSelector + ' input.' + textInputClass)
+    this.confirmButton = $(this.options.containerSelector + ' span.' + confirmButtonClass)
+    this.cancelButton = $(this.options.containerSelector + ' span.' + cancelButtonClass)
 
     let thisObject = this
     this.confirmButton.on('click', function() {
@@ -148,6 +192,7 @@ class EditableTextField {
     this.textInput.on('keydown', this.genOnKeyDown())
     this.textInput.on('keyup', this.genOnKeyUp())
     this.textInput.on('focus', function() {
+      // send cursor to the end
       thisObject.textInput.get(0).setSelectionRange(10000, 10000)
     })
     this.textInput.trigger('focus')
@@ -161,7 +206,7 @@ class EditableTextField {
 
   confirmEdit() {
     //console.log('confirm'+ this.options.containerSelector)
-    this.dispatchEvent('confirm', { editor: this, newText: this.getTextInEditor(), oldText: this.getCurrentText() })
+    this.dispatchEvent(confirmEvent, { editor: this, newText: this.getTextInEditor(), oldText: this.getCurrentText() })
     this.currentText = this.getTextInEditor()
     this.editing = false
     this.setNormalContainer()
@@ -221,15 +266,14 @@ class EditableTextField {
 
   genOnKeyUp() {
     let thisObject = this
-    return function(ev) {
+    return function() {
       // generate an edit change event
-      thisObject.dispatchEvent('edit-change', { textInEditor: thisObject.getTextInEditor()})
+      thisObject.dispatchEvent(editChangeEvent, { textInEditor: thisObject.getTextInEditor()})
       return true
     }
   }
 
-  dispatchEvent(eventName, data = {})
-  {
+  dispatchEvent(eventName, data = {}) {
     const event = new CustomEvent(eventName, {detail: data})
     this.container.get()[0].dispatchEvent(event)
   }
@@ -240,8 +284,7 @@ class EditableTextField {
    * @param {String} eventName
    * @param {function} f
    */
-  on(eventName, f)
-  {
+  on(eventName, f){
     this.container.on(eventName, f)
   }
 

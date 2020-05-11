@@ -81,6 +81,7 @@ class ApmTranscriptionManager extends TranscriptionManager
 
     const ERROR_DOCUMENT_NOT_FOUND = 50;
     const ERROR_CACHE_ERROR = 51;
+    const ERROR_NO_LOCATIONS = 52;
 
     const DEFAULT_CACHE_KEY_PREFIX = 'ApmTM-';
 
@@ -292,6 +293,11 @@ class ApmTranscriptionManager extends TranscriptionManager
 
 
         $locations = $this->getSegmentLocationsForFullTxWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
+
+        if (count($locations) === 0) {
+            $this->setError( "No locations found for $workId-$chunkNumber, doc $docId - $localWitnessId", self::ERROR_NO_LOCATIONS);
+            throw new InvalidArgumentException($this->getErrorMessage(), $this->getErrorCode());
+        }
         //$this->codeDebug('Locations', $locations);
         $apStreams = [];
         $itemIds = [];

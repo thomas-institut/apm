@@ -1,27 +1,29 @@
 {% extends "base.twig" %}
 {% import 'macros.twig' as macros %}
 
-{% block title %}ACT {{work}}-{{chunk}}-{{lang}}{%if isPartial %}-partial{%endif%}{% endblock %}
+{% block title %}
+    ACT {{work}}-{{chunk}}-{{lang}}{%if isPartial %}-partial{%endif%}
+{% endblock %}
 
-{% block extraJS %}
+{% block extraCSS %}
     <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/collationtable.css" />
     <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/act-settingsform.css" />
-    <script type="text/javascript" src="{{baseurl}}/node_modules//twig/twig.js"></script>
+{% endblock %}
+
+{% block extraJS %}
+    <script type="text/javascript" src="{{baseurl}}/node_modules/twig/twig.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/AutoCollTableSettingsForm.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/AutoCollTableViewSettingsForm.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/AutomaticCollationTable.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/CollationTableFormatter.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/CollationTableUtil.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/Typesetter.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/EditionViewer.js"></script>
-    <script type="text/javascript" src="{{baseurl}}/js/Matrix.js"></script>
-    <script type="text/javascript" src="{{baseurl}}/js/TableEditor.js"></script>
+{% endblock %}
 
-    <style>
-    
-</style>
-<script>
-  $(function()  {// .ready()
+{% block finalBodyJS %}
+<script type="module">
+  import { AutomaticCollationTable } from '{{baseurl}}/js/AutomaticCollationTable.js'
+
+  $(function()  {
     let apiCallOptions = JSON.parse("{{apiCallOptions|json_encode|e('js')}}")
     let availableWitnesses = JSON.parse("{{availableWitnesses|json_encode|e('js')}}")
     let urlGenerator = new ApmUrlGenerator('{{baseurl}}')
@@ -44,7 +46,7 @@
     }
     
     let miniApp = new AutomaticCollationTable(actOptions, apiCallOptions)
-})
+  })
 
 </script>
 {% endblock %}
@@ -114,7 +116,5 @@
     </div>
     <div id="collationtablediv" class="ctdiv">Collation table goes here</div>
     <div id="collationEngineDetails" class="text-muted small"> </div>
-    
-    
 
 {% endblock %}

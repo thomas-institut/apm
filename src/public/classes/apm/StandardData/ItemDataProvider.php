@@ -79,6 +79,9 @@ class ItemDataProvider implements StandardDataProvider
         if (isset($itemData->notes) && $itemData->notes===[]) {
             unset($itemData->notes);
         }
+        if (isset($itemData->alternateTexts) && $itemData->alternateTexts===[]) {
+            unset($itemData->alternateTexts);
+        }
 
         // reduce nowb and note marks to a minimum
         if ($itemData->type === "Mark" && ($itemData->markType === '__nowb' ||$itemData->markType==='note')) {

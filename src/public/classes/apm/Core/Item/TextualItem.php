@@ -205,6 +205,7 @@ class TextualItem extends Item {
         $data['clarity'] = $this->getClarityValue();
         $data['clarityReason'] = $this->getClarityReason();
         $data['deletion'] = $this->getDeletion();
+        $data['alternateTexts'] = $this->getAlternateTexts();
         return $data;
     }
 

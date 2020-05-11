@@ -16,7 +16,15 @@
  *
  */
 
-class CollationTableEditor {
+import { TableEditor } from './TableEditor.js'
+import  *  as CollationTableUtil from './CollationTableUtil.js'
+import { EditableTextField } from './EditableTextField.js'
+import { defaultLanguageDefinition } from './defaults/languages.js'
+import { NiceToggle, toggleEvent} from './widgets/NiceToggle.js'
+
+import * as PopoverFormatter from './CollationTablePopovers.js'
+
+export class CollationTableEditor {
   collationTable;
 
   constructor(options) {
@@ -26,12 +34,7 @@ class CollationTableEditor {
       workId : { type: 'string', required: true},
       chunkNumber: {type: 'NonZeroNumber', required: true},
       tableId: { type: 'NonZeroNumber', required: true},
-      langDef : { type: 'object', default: {
-          la: { code: 'la', name: 'Latin', rtl: false, fontsize: 3, editionFont: 'Times New Roman'},
-          ar: { code: 'ar', name: 'Arabic', rtl: true, fontsize: 3, editionFont: 'ApmNotoNaskhArabicUI'},
-          he: { code: 'he', name: 'Hebrew', rtl: true, fontsize: 3, editionFont: 'Times New Roman'}
-        }
-      },
+      langDef : { type: 'object', default: defaultLanguageDefinition },
       availableWitnesses: { type: 'Array', default: [] },
       urlGenerator: { type: 'object', objectClass: ApmUrlGenerator, required: true},
       workInfo: { type: 'object', default: {} },
@@ -138,7 +141,7 @@ class CollationTableEditor {
       onIcon: '<i class="fas fa-toggle-on"></i>',
       offIcon: '<i class="fas fa-toggle-off"></i>'
     })
-    this.popoversToggle.on('toggle', function (ev) {
+    this.popoversToggle.on(toggleEvent, function (ev) {
       if (ev.detail.toggleStatus) {
         thisObject.popoversOn()
       } else {
@@ -374,7 +377,7 @@ class CollationTableEditor {
               })
             })
           .catch( reason => {
-            console.log('errors detected')
+            console.log(`Errors detected, reason: ${reason}`)
         })
       })
       // go!
@@ -827,53 +830,18 @@ class CollationTableEditor {
     if (tokenIndex === -1) {
       return ''
     }
-
     let popoverHtml  = this.getPopoverHtmlFromCache(witnessIndex, tokenIndex)
     if (popoverHtml !== undefined) {
-      //console.log(`Popover cache hit for tableRow ${tableRow}, row ${row}, col ${col}, tokenRef ${value}`)
       return popoverHtml
     }
-    //console.log(`Popover cache miss for tableRow ${tableRow}, row ${row}, col ${col}, tokenRef ${value}`)
 
-    let collationTable = this.ctData
-    let peopleInfo = this.options.peopleInfo
-    let witness = collationTable['witnesses'][witnessIndex]
-    let tokenArray = witness['tokens']
-    let token = tokenArray[tokenIndex]
-    let firstSourceItemIndex = token['sourceItems'][0]['index']
-    let lang = witness['lang']
-    if (witness['items'][firstSourceItemIndex]['lang'] !== undefined) {
-      lang = witness['items'][firstSourceItemIndex]['lang']
-    }
-    // console.log("Lang: " + lang)
-    let langClass = 'popover-' + lang
-    popoverHtml = ''
-    popoverHtml += '<p class="popoverheading ' + langClass + '">' + token.text
-    if (token['normalizedText'] !== undefined) {
-      popoverHtml += '<br/>&equiv; ' + token['normalizedText'] + '<br/>'
-    }
-    popoverHtml += '</p>'
-    popoverHtml += '<p class="popoveriteminfo ' + langClass + '">'
-    if (token['sourceItems'].length === 1) {
-      popoverHtml += this.getItemPopoverHtmlForToken(witnessIndex, token,token['sourceItems'][0], peopleInfo, false)
-    } else {
-      for (const itemData of token['sourceItems']) {
-        popoverHtml += this.getItemPopoverHtmlForToken(witnessIndex, token, itemData, peopleInfo, true)
-      }
-    }
-    popoverHtml += '</p>'
-
-    popoverHtml += '<p class="popovertokenaddress">'
-    popoverHtml += this.getTokenAddressHtml(witnessIndex, token)
-    popoverHtml += '</p>'
-
-    let postNotes = this.getPostNotes(witnessIndex, col, tokenIndex)
-    if (postNotes.length > 0) {
-      popoverHtml += '<p class="popoverpostnotes">'
-      popoverHtml += '<b>Notes:</b><br/>'
-      popoverHtml += this.getNotesHtml(postNotes, peopleInfo)
-      popoverHtml += '</p>'
-    }
+    popoverHtml = PopoverFormatter.getPopoverHtml(
+      witnessIndex,
+      tokenIndex,
+      this.ctData['witnesses'][witnessIndex],
+      this.getPostNotes(witnessIndex, col, tokenIndex),
+      this.options.peopleInfo
+    )
 
     this.storePopoverHtmlInCache(witnessIndex, tokenIndex, popoverHtml)
     return popoverHtml
@@ -907,24 +875,6 @@ class CollationTableEditor {
       this.tokenDataCache[witnessIndex][tokenIndex] = {}
     }
     this.tokenDataCache[witnessIndex][tokenIndex][fieldName] = data
-  }
-
-  getNotesHtml(notes, peopleInfo) {
-    let html = ''
-    let lineBreakHtml = '<br/>'
-    let oneIndentUnit = '&nbsp;&nbsp;'
-    for(const note of notes) {
-      html +=  oneIndentUnit + note.text + lineBreakHtml
-      html +=  oneIndentUnit + '<span class="authorinfo">-- ' +
-        peopleInfo[note.authorId]['fullname']  + ', ' + this.formatNoteTime(note.timeStamp)  +
-        "</span>" + lineBreakHtml
-      html += lineBreakHtml
-    }
-    return html
-  }
-
-  formatNoteTime(timeStamp) {
-    return moment(timeStamp).format('D MMM YYYY, H:mm')
   }
 
   aggregateNonTokenItemIndexes(witnessData, tokenRefArray) {
@@ -1001,131 +951,6 @@ class CollationTableEditor {
     return notes
   }
 
-  getItemPopoverHtmlForToken(row, token, tokenSourceItemData, peopleInfo, showItemText = false) {
-    let popoverHeadingClass = 'popoverheading'
-    let unclearIcon = ' <i class="far fa-eye-slash" aria-hidden="true"></i> '
-    let deletionIcon = ' &lowast; '
-    let locationIcon = ' <i class="fas fa-location-arrow" aria-hidden="true"></i> '
-    let oneIndentUnit = '&nbsp;&nbsp;'
-    let lineBreakHtml = '<br/>'
-    let itemBullet = ''
-    let normalizationLabels = {
-      'sic' : 'Sic',
-      'abbr' : 'Abbreviation'
-    }
-    let itemWithAddressArray = this.ctData['witnesses'][row]['items']
-    let item = itemWithAddressArray[tokenSourceItemData['index']]
-    let tokenItemText = ''
-    if (item['text'] !== undefined) {
-      tokenItemText = item['text'].substring(tokenSourceItemData['charRange'].from, tokenSourceItemData['charRange'].to+1)
-    }
-    if (item.type !== 'TextualItem') {
-      return ''
-    }
-    if (tokenItemText === "\n") {
-      return ''
-    }
-
-    let html = ''
-    let indentHtml = ''
-    if (showItemText) {
-      html += itemBullet + tokenItemText + lineBreakHtml
-      indentHtml = oneIndentUnit
-    }
-    let isNormalText = true
-    if (item.hand !== undefined) {
-      html += indentHtml + '<b>Hand: </b>' + (item.hand +1) + lineBreakHtml
-    }
-    if (item.format !== undefined) {
-      html += indentHtml + '<b>Format: </b>' + item.format + lineBreakHtml
-      isNormalText = false
-    }
-    if (item['clarity'] === 0) {
-      html += indentHtml + '<b>Illegible</b>' + lineBreakHtml
-      html += indentHtml + unclearIcon + item['clarityReason']
-      isNormalText = false
-    }
-    if (item['clarity'] === 0.5) {
-      html += indentHtml + '<b>Unclear</b>' + lineBreakHtml
-      html += indentHtml + unclearIcon + item['clarityReason']
-      isNormalText = false
-    }
-    if (item['textualFlow'] === 1) {
-      html += indentHtml + '<b>Addition</b>'+ lineBreakHtml
-      html += indentHtml + locationIcon + item.location
-      isNormalText = false
-    }
-    if (item.deletion !== undefined) {
-      html += indentHtml + '<b>Deletion</b>'+ lineBreakHtml
-      html += indentHtml + deletionIcon + item.deletion
-      isNormalText = false
-    }
-    if (item['normalizationType'] !== undefined) {
-      let normLabel = item['normalizationType']
-      if (normalizationLabels[item['normalizationType']] !== undefined) {
-        normLabel = normalizationLabels[item['normalizationType']]
-      }
-
-      html += indentHtml +  '<b>' + normLabel + '</b>' + lineBreakHtml
-      html += '+ ' + tokenItemText + lineBreakHtml
-      if (token['normalizedText'] === tokenItemText) {
-        html += '= ' + '(no reading given)'
-      } else {
-        html += '= ' + token['normalizedText']
-      }
-
-      isNormalText = false
-    }
-    if (isNormalText) {
-      html += indentHtml + 'Normal Text'+ lineBreakHtml
-    }
-    html += lineBreakHtml
-
-    // notes
-    if (item['notes'] !== undefined && item['notes'].length > 0) {
-      html += indentHtml + '<b>Notes</b>' + lineBreakHtml
-      html += this.getNotesHtml(item['notes'], peopleInfo)
-    }
-
-    return html
-
-  }
-
-  getTokenAddressHtml(row, token) {
-    let html = ''
-    let itemWithAddressArray = this.ctData['witnesses'][row]['items']
-    let itemData = token['sourceItems'][0]
-    let itemWithAddress = itemWithAddressArray[itemData['index']]
-
-    let page = itemWithAddress['address'].foliation
-    let column = 0
-    if (typeof(token['textBox']) === 'number') {
-      column = token['textBox']
-    } else {
-      console.info('Found a token with a textBox range in row ' + row)
-      console.log(token)
-      column = token['textBox'].from
-    }
-    let line = ''
-    if (column > 10) {
-      // this is a marginal really
-      column = 'margin'
-    } else {
-      if (typeof(token.line) === 'number') {
-        line = token.line
-      } else {
-        line = token.line.from + '-' + token.line.to
-      }
-    }
-
-    html += '<b>Page: </b>' + page + '</br>'
-    html += '<b>Column: </b>' + column + '</br>'
-    if (line !== -1) {
-      html += '<b>Line: </b>' + line + '</br>'
-    }
-
-    return html
-  }
 
   genGenerateCellClassesFunction() {
     let thisObject = this
@@ -1732,9 +1557,4 @@ class CollationTableEditor {
 </div>    
     `})
   }
-
-
-
-
-
 }

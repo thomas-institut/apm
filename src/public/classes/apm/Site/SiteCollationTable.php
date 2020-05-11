@@ -417,7 +417,7 @@ class SiteCollationTable extends SiteController
      * @return Response
      */
     private function getCollationTablePage(array $collationPageOptions, Response $response) {
-        //$this->codeDebug("Getting collation table page", $collationPageOptions);
+        $this->codeDebug("Getting collation table page", $collationPageOptions);
 
         $workId = $collationPageOptions['work'];
         $chunkNumber = intval($collationPageOptions['chunk']);
@@ -466,6 +466,8 @@ class SiteCollationTable extends SiteController
         // get total witness counts
         $validWitnesses = $this->getValidWitnessesForChunkLang($workId, $chunkNumber, $language);
 
+        //$this->codeDebug('Found ' . count($validWitnesses) . " valid witnesses");
+
         // put titles in fullTx witnesses that don't have one
 
         // TODO: Check this default
@@ -478,7 +480,6 @@ class SiteCollationTable extends SiteController
                 $apiCallWitnessTxInfo = $witnessInfo->typeSpecificInfo;
                 $found = false;
                 foreach($validWitnesses as $validWitnessInfo) {
-                    /** @var WitnessInfo $validWitnessInfo */
                     $validWitnessFullTxInfo = $validWitnessInfo->typeSpecificInfo;
                     if ($validWitnessFullTxInfo['docId'] === $apiCallWitnessTxInfo['docId'] && $validWitnessFullTxInfo['localWitnessId'] === $apiCallWitnessTxInfo['localWitnessId']) {
                         $docInfo = $validWitnessFullTxInfo['docInfo'];
@@ -551,8 +552,7 @@ class SiteCollationTable extends SiteController
 
         $vWL = [];
         foreach($vw as $witnessInfo) {
-            /** @var WitnessInfo $witnessInfo */
-            if ($witnessInfo->languageCode === $langCode) {
+            if ($witnessInfo->languageCode === $langCode && $witnessInfo->isValid) {
                 $vWL[] = $witnessInfo;
             }
         }

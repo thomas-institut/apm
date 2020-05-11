@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2019 Universität zu Köln
+ *  Copyright (C) 2019-2020 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,31 +16,29 @@
  *  
  */
 
-class AutomaticCollationTable {
+import { TableEditor } from './TableEditor.js'
+import  *  as CollationTableUtil from './CollationTableUtil.js'
+import {defaultLanguageDefinition} from './defaults/languages.js'
+import * as PopoverFormatter from './CollationTablePopovers.js'
+
+export class AutomaticCollationTable {
   
   constructor(options, initialApiOptions) {
-    // console.log('ACT mini app starting')
-    // console.log('Available Witnesses:')
-    // console.log(options.availableWitnesses)
-    // console.log('ACT options')
-    // console.log(options)
-    // console.log('Initial API options')
-    // console.log(initialApiOptions)
+    console.log('ACT mini app starting')
+    console.log('Available Witnesses:')
+    console.log(options.availableWitnesses)
+    console.log('ACT options')
+    console.log(options)
+    console.log('Initial API options')
+    console.log(initialApiOptions)
     
     this.rtlClass = 'rtltext'
     this.ltrClass = 'ltrtext'
-    
-    //this.options = this.getCleanOptionsObject(options)
 
     let optionsDefinition = {
       workId : { type: 'string', required: true},
       chunkNumber: {type: 'NonZeroNumber', required: true},
-      langDef : { type: 'object', default: {
-          la: { code: 'la', name: 'Latin', rtl: false, fontsize: 3, editionFont: 'Times New Roman'},
-          ar: { code: 'ar', name: 'Arabic', rtl: true, fontsize: 3, editionFont: 'ApmNotoNaskhArabicUI'},
-          he: { code: 'he', name: 'Hebrew', rtl: true, fontsize: 3, editionFont: 'Times New Roman'}
-        }
-      },
+      langDef : { type: 'object', default: defaultLanguageDefinition },
       availableWitnesses: { type: 'Array', default: [] },
       suppressTimestampsInApiCalls: { type: 'boolean', default: false},
       loadNow: { type: 'boolean', default: false },
@@ -630,191 +628,15 @@ class AutomaticCollationTable {
       if (value === -1) {
         return ''
       }
-      let collationTable = thisObject.collationTable
-      let peopleInfo =thisObject.peopleInfo
-      let witness = collationTable['witnesses'][row]
-      let tokenArray = witness['tokens']
-      let token = tokenArray[value]
-      let firstSourceItemIndex = token['sourceItems'][0]['index']
-      let lang = witness['lang']
-      if (witness['items'][firstSourceItemIndex]['lang'] !== undefined) {
-        lang = witness['items'][firstSourceItemIndex]['lang']
-      }
-      // console.log("Lang: " + lang)
-      let langClass = 'popover-' + lang
-      let popoverHtml = ''
-      popoverHtml += '<p class="popoverheading ' + langClass + '">' + token.text
-      if (token.normalizedText !== undefined) {
-        popoverHtml += '<br/>&equiv; ' + token.normalizedText + '<br/>'
-      }
-      popoverHtml += '</p>'
-      popoverHtml += '<p class="popoveriteminfo ' + langClass + '">'
-      if (token['sourceItems'].length === 1) {
-        popoverHtml += thisObject.getItemPopoverHtmlForToken(row, token,token['sourceItems'][0], peopleInfo, false)
-      } else {
-        for (const itemData of token['sourceItems']) {
-          popoverHtml += thisObject.getItemPopoverHtmlForToken(row, token, itemData, peopleInfo, true)
-        }
-      }
-      popoverHtml += '</p>'
-
-      popoverHtml += '<p class="popovertokenaddress">'
-      popoverHtml += thisObject.getTokenAddressHtml(row, token)
-      popoverHtml += '</p>'
-
-      let postNotes = thisObject.getPostNotes(row, col, value)
-      if (postNotes.length > 0) {
-        popoverHtml += '<p class="popoverpostnotes">'
-        popoverHtml += '<b>Notes:</b><br/>'
-        popoverHtml += thisObject.getNotesHtml(postNotes, peopleInfo)
-        popoverHtml += '</p>'
-      }
-
-
-      return 'data-content="' + thisObject.escapeHtml(popoverHtml) + '"'
+      let popoverHtml = PopoverFormatter.getPopoverHtml(
+        row,
+        value,
+        thisObject.collationTable['witnesses'][row],
+        thisObject.getPostNotes(row, col, value),
+        thisObject.peopleInfo
+      )
+      return [{ attr: 'data-content', val: popoverHtml}]
     }
-  }
-
-  getTokenAddressHtml(row, token) {
-    let html = ''
-    let itemWithAddressArray = this.collationTable['witnesses'][row]['items']
-    let itemData = token['sourceItems'][0]
-    let itemWithAddress = itemWithAddressArray[itemData['index']]
-
-    let page = itemWithAddress['address'].foliation
-    let column = 0
-    if (typeof(token['textBox']) === 'number') {
-      column = token['textBox']
-    } else {
-      console.info('Found a token with a textBox range in row ' + row)
-      console.log(token)
-      column = token['textBox'].from
-    }
-    let line = ''
-    if (column > 10) {
-      // this is a marginal really
-      column = 'margin'
-    } else {
-      if (typeof(token.line) === 'number') {
-        line = token.line
-      } else {
-        line = token.line.from + '-' + token.line.to
-      }
-    }
-
-    html += '<b>Page: </b>' + page + '</br>'
-    html += '<b>Column: </b>' + column + '</br>'
-    if (line !== -1) {
-      html += '<b>Line: </b>' + line + '</br>'
-    }
-
-    return html
-  }
-
-  getItemPopoverHtmlForToken(row, token, tokenSourceItemData, peopleInfo, showItemText = false) {
-    let popoverHeadingClass = 'popoverheading'
-    let unclearIcon = ' <i class="far fa-eye-slash" aria-hidden="true"></i> '
-    let deletionIcon = ' &lowast; '
-    let additionIcon = ' + '
-    let locationIcon = ' <i class="fas fa-location-arrow" aria-hidden="true"></i> '
-    let oneIndentUnit = '&nbsp;&nbsp;'
-    let lineBreakHtml = '<br/>'
-    let itemBullet = ''
-    let normalizationLabels = {
-      'sic' : 'Sic',
-      'abbr' : 'Abbreviation'
-    }
-
-    let itemWithAddressArray = this.collationTable['witnesses'][row]['items']
-    let item = itemWithAddressArray[tokenSourceItemData['index']]
-    let tokenItemText = ''
-    if (item['text'] !== undefined) {
-      tokenItemText = item['text'].substring(tokenSourceItemData.charRange.from, tokenSourceItemData.charRange.to+1)
-    }
-    if (item.type !== 'TextualItem') {
-      return ''
-    }
-    if (tokenItemText === "\n") {
-      return ''
-    }
-
-    let html = ''
-    let indentHtml = ''
-    if (showItemText) {
-      html += itemBullet + tokenItemText + lineBreakHtml
-      indentHtml = oneIndentUnit
-    }
-    let isNormalText = true
-    if (item.hand !== undefined) {
-      html += indentHtml + '<b>Hand: </b>' + (item.hand +1) + lineBreakHtml
-    }
-    if (item.format !== undefined) {
-      html += indentHtml + '<b>Format: </b>' + item.format + lineBreakHtml
-      isNormalText = false
-    }
-    if (item['clarity'] === 0) {
-      html += indentHtml + '<b>Illegible</b>' + lineBreakHtml
-      html += indentHtml + unclearIcon + item['clarityReason']
-      isNormalText = false
-    }
-    if (item['clarity'] === 0.5) {
-      html += indentHtml + '<b>Unclear</b>' + lineBreakHtml
-      html += indentHtml + unclearIcon + item.clarityReason
-      isNormalText = false
-    }
-    if (item.textualFlow === 1) {
-      html += indentHtml + '<b>Addition</b>'+ lineBreakHtml
-      html += indentHtml + locationIcon + item.location
-      isNormalText = false
-    }
-    if (item.deletion !== undefined) {
-      html += indentHtml + '<b>Deletion</b>'+ lineBreakHtml
-      html += indentHtml + deletionIcon + item.deletion
-      isNormalText = false
-    }
-    if (item.normalizationType !== undefined) {
-      let normLabel = item.normalizationType
-      if (normalizationLabels[item.normalizationType] !== undefined) {
-        normLabel = normalizationLabels[item.normalizationType]
-      }
-
-      html += indentHtml +  '<b>' + normLabel + '</b>' + lineBreakHtml
-      html += '+ ' + tokenItemText + lineBreakHtml
-      if (token.normalizedText === tokenItemText) {
-        html += '= ' + '(no reading given)'
-      } else {
-        html += '= ' + token.normalizedText
-      }
-
-      isNormalText = false
-    }
-    if (isNormalText) {
-      html += indentHtml + 'Normal Text'+ lineBreakHtml
-    }
-    html += lineBreakHtml
-
-    // notes
-    if (item.notes !== undefined && item.notes.length > 0) {
-      html += indentHtml + '<b>Notes</b>' + lineBreakHtml
-      html += this.getNotesHtml(item.notes, peopleInfo)
-    }
-
-    return html
-
-  }
-
-  getNotesHtml(notes, peopleInfo) {
-    let html = ''
-    let lineBreakHtml = '<br/>'
-    let oneIndentUnit = '&nbsp;&nbsp;'
-    for(const note of notes) {
-      html +=  oneIndentUnit + note.text + lineBreakHtml
-      html +=  oneIndentUnit + '<span class="authorinfo">-- ' +
-        peopleInfo[note.authorId].shortName  + ', ' + this.formatNoteTime(note.timeStamp)  +
-        "</span>" + lineBreakHtml
-      html += lineBreakHtml
-    }
-    return html
   }
 
   genGenerateCellContentFunction() {

@@ -37,7 +37,7 @@
     src: url(../fonts/NotoNaskhArabicUI-Regular.ttf) format("truetype");
 }
 
-body {
+body, .popover {
     font-family:  -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
 }
 
@@ -432,4 +432,13 @@ div.cpheader a {
 }
 .flip_V{
     transform: scale(1, -1);
+}
+
+
+.text-icon {
+    font-size: 0.8em;
+    font-weight: bold;
+    padding: 1px;
+    border: 2px solid grey;
+    border-radius: 25%;
 }

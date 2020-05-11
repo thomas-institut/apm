@@ -1,29 +1,28 @@
 {% extends "base.twig" %}
-{% import 'macros.twig' as macros %}
 
-{% block title %}CT {{workId}}-{{chunkNumber}} table {{ tableId }}{% endblock %}
+{% block title %}
+    CT {{workId}}-{{chunkNumber}} table {{ tableId }}
+{% endblock %}
+
+{% block extraCSS %}
+    <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/collationtable.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/collation.edit.css" />
+{% endblock %}
 
 {% block extraJS %}
-<link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/collationtable.css" />
-    <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/collation.edit.css" />
-<script type="text/javascript" src="{{baseurl}}/node_modules//twig/twig.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/EditableTextField.js"></script>
-<script type="application/javascript" src="{{baseurl}}/js/AutoCollTableViewSettingsForm.js"></script>
-<script type="application/javascript" src="{{baseurl}}/js/CollationTableFormatter.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/CollationTableUtil.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/CollationTableEditor.js"></script>
-<script type="application/javascript" src="{{baseurl}}/js/Typesetter.js"></script>
-<script type="application/javascript" src="{{baseurl}}/js/EditionViewer.js"></script>
-<script type="text/javascript" src="{{baseurl}}/js/Matrix.js"></script>
-<script type="text/javascript" src="{{baseurl}}/js/TableEditor.js"></script>
-    <script type="text/javascript" src="{{baseurl}}/js/widgets/NiceToggle.js"></script>
+    <script type="text/javascript" src="{{baseurl}}/node_modules//twig/twig.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/AutoCollTableViewSettingsForm.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/CollationTableFormatter.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/Typesetter.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/EditionViewer.js"></script>
     <script type="text/javascript" src="{{baseurl}}/js/MyersDiff.js"></script>
-<style>
+{% endblock %}
 
-</style>
-<script>
-  $(function() {// .ready()
+{% block finalBodyJS %}
+<script type="module">
+  import { CollationTableEditor } from "{{baseurl}}/js/CollationTableEditor.js"
 
+  $(function() {
     let ctData  = JSON.parse("{{collationTableData|json_encode|e('js')}}")
     let peopleInfo = JSON.parse("{{peopleInfo|json_encode|e('js')}}")
     let workInfo = JSON.parse("{{workInfo|json_encode|e('js')}}")
@@ -46,14 +45,11 @@
       docInfo: docInfo,
       versionInfo: versionInfo
     })
-
-
-    })
-    </script>
+  })
+</script>
 {% endblock %}
 
 {% block content %}
-
     <ol class="breadcrumb">
         <li><a href="{{url_for('chunks')}}">Chunks</a></li>
         <li><a href="{{url_for('chunk', {'work' : workId, 'chunk': chunkNumber})}}">{{workId}}-{{chunkNumber}}</a></li>
@@ -98,8 +94,6 @@
                        title="Download CSV"><small>CSV</small><i class="fas fa-download"></i></a>
                 </div>
 
-
-
             </div>
             <div id="collationtablediv"><div class="loading">Loading table...  <i class="fas fa-circle-notch fa-spin"></i></div></div>
         </div>
@@ -113,8 +107,6 @@
         </div>
         <div role="tabpanel" class="tab-pane panetab" id="versionhistorydiv"></div>
     </div>
-
-
 
 {% endblock %}
 

@@ -31,7 +31,9 @@
 
  */
 
-class TableEditor {
+import { Matrix } from './Matrix.js'
+
+export class TableEditor {
 
   constructor(options) {
 
@@ -131,7 +133,7 @@ class TableEditor {
         // a function to generate html attributes to be included in a cell's
         // td element.
         // This can be used to generate Bootstrap popover data for a cell,
-        // by returning 'data-content="popover text"'
+        // by returning  { attr='data-content', val:"popover text"}
         required: false,
         type: 'function',
         default: function(row, col, value) {

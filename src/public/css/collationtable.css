@@ -353,5 +353,49 @@ td.te-rowtitle {
 }
 
 
+/* Popovers */
 
+.ctPopover {
+
+}
+
+.ctPopover .fas, .text-icon {
+    color: grey;
+}
+
+.ctPopover .item-info {
+    margin-bottom: 1em;
+}
+.ctPopover .item-text {
+    font-size: 1.2em;
+}
+
+.ctPopover .heading {
+    font-weight: bold;
+    font-size: 1.5em;
+}
+
+.ctPopover .notes h1 {
+    font-weight: bold;
+    font-size: 1em;
+}
+
+
+.ctPopover .note {
+    color: black;
+    margin-left: 1em;
+}
+
+.ctPopover .note .note-caption {
+    font-size: 0.8em;
+    color: grey;
+}
+
+.ctPopover .ctlang-ar {
+    direction: rtl;
+}
+
+.ctPopover .ctlang-he {
+    direction: rtl;
+}
 

@@ -16,7 +16,7 @@
  *
  */
 
-class Matrix {
+export class Matrix {
 
   constructor(nRows, nCols, defaultValue = '') {
     this.nRows = nRows

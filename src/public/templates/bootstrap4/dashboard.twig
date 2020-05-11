@@ -7,14 +7,12 @@
 {% endblock %}
 
 
-{% block extraJS %}
+{% block finalBodyJS %}
 
 <script>
     $(function() {
-
         let  tableInfo = JSON.parse("{{tableInfo|json_encode|e('js')}}")
         let urlGenerator = new ApmUrlGenerator('{{ baseurl }}')
-
 
       function genCollationTableInfoHtml(tableInfo, urlGen) {
         let html = ''
@@ -28,10 +26,6 @@
       }
 
       $('#mycollationtables').html(genCollationTableInfoHtml(tableInfo, urlGenerator))
-
-      //$('#mymss').collapse('show')
-      //$('#mycollationtables').collapse('show')
-
     })
 </script>
 {%  endblock %}

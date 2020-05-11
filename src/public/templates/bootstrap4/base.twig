@@ -18,12 +18,12 @@
 
     <script type="text/javascript" src="{{baseurl}}/node_modules/jquery/dist/jquery.js"></script>
     <script type="text/javascript" src="{{baseurl}}/node_modules/bootstrap4/dist/js/bootstrap.bundle.js"></script>
-{#    <script type="text/javascript" src="{{baseurl}}/node_modules/bootstrap-validator/dist/validator.js"></script>#}
     <script type="text/javascript" src="{{baseurl}}/node_modules/moment/moment.js"></script>
     <script type="text/javascript" src="{{baseurl}}/node_modules/datatables.net/js/jquery.dataTables.min.js"></script>
     <script type="text/javascript" src="{{baseurl}}/node_modules/datatables.net-dt/js/dataTables.dataTables.min.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/ApmUrlGenerator.js"></script>
     <script type="text/javascript" src="{{baseurl}}/js/OptionsChecker.js"></script>
+    <script type="text/javascript" src="{{baseurl}}/js/SimpleProfiler.js"></script>
 
     {% block extraJS %}{% endblock %}
 </head>
@@ -77,5 +77,6 @@
     <p class="text-muted">{% block copyright %}{{ copyright|raw }}{% endblock %}</p>
     </div>
 </footer>
+{% block finalBodyJS %}{% endblock %}
 </body>
 </html>

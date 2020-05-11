@@ -217,7 +217,7 @@ export function getItemPopoverHtmlForToken(row, token, tokenSourceItemData, peop
     let subLines = []
 
     subLines.push( '+ ' + tokenItemText)
-    if (token['normalizedText'] === tokenItemText) {
+    if (token['normalizedText'] === undefined || token['normalizedText'] === tokenItemText) {
       subLines.push('= ' + '(no reading given)')
     } else {
       subLines.push('= ' + token['normalizedText'])

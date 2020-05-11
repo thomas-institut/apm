@@ -22,3 +22,37 @@
 export function deepCopy(someVariable) {
   return JSON.parse(JSON.stringify(someVariable))
 }
+
+export function formatVersionTime(time) {
+  return moment(time).format('D MMM YYYY, H:mm:ss')
+}
+
+export function removeWhiteSpace(someString) {
+  return someString.replace(/\s/g, '')
+}
+
+export function getClassArrayFromJQueryObject(jqueryObject) {
+  return jqueryObject.attr('class').split(/\s+/);
+}
+
+/**
+ * Substitutes some characters like '&', '<', etc, into html entities ('&amp;', ...)
+ * @param html
+ * @returns {string}
+ */
+export function escapeHtml(html) {
+  let entityMap = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+    '/': '&#x2F;',
+    '`': '&#x60;',
+    '=': '&#x3D;'
+  };
+
+  return String(html).replace(/[&<>"'`=\/]/g, function (s) {
+    return entityMap[s];
+  });
+}

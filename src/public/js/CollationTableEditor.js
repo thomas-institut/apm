@@ -16,13 +16,20 @@
  *
  */
 
+import { defaultLanguageDefinition } from './defaults/languages.js'
 import { TableEditor } from './TableEditor.js'
 import  *  as CollationTableUtil from './CollationTableUtil.js'
-import { EditableTextField } from './EditableTextField.js'
-import { defaultLanguageDefinition } from './defaults/languages.js'
+import * as PopoverFormatter from './CollationTablePopovers.js'
+
+// widgets
+import { EditableTextField } from './widgets/EditableTextField.js'
+import { transientAlert} from './widgets/TransientAlert.js'
 import { NiceToggle, toggleEvent} from './widgets/NiceToggle.js'
 
-import * as PopoverFormatter from './CollationTablePopovers.js'
+// utilities
+import * as Util from './toolbox/Util.js'
+import * as ArrayUtil from './toolbox/ArrayUtil.js'
+import * as MyersDiff from './toolbox/MyersDiff.js'
 
 export class CollationTableEditor {
   collationTable;
@@ -70,7 +77,7 @@ export class CollationTableEditor {
       }
     }
 
-    this.lastSavedCtData = ApmUtil.deepCopy(this.ctData)
+    this.lastSavedCtData = Util.deepCopy(this.ctData)
     this.witnessUpdates = []
     this.tableId = this.options['tableId']
     this.ctData['tableId'] = this.tableId
@@ -211,8 +218,8 @@ export class CollationTableEditor {
 
       $('body').append(twigTemplate.render({
         witnessTitle: thisObject.ctData['witnessTitles'][witnessIndex],
-        currentVersion: ApmUtil.formatVersionTime(currentWitness['timeStamp']),
-        newVersion: ApmUtil.formatVersionTime(newWitnessInfo['lastUpdate']),
+        currentVersion: Util.formatVersionTime(currentWitness['timeStamp']),
+        newVersion: Util.formatVersionTime(newWitnessInfo['lastUpdate']),
       }))
       let modalSelector = `#update-modal-${witnessIndex}`
       let cancelButton = $(`${modalSelector} .cancel-btn`)
@@ -638,7 +645,7 @@ export class CollationTableEditor {
       if (!witnessUpdateInfo['upToDate']) {
         witnessesUpToDate = false
         let warningHtml =  `<span>${this.icons.checkFail} Last version:  `
-        warningHtml += `${ApmUtil.formatVersionTime(witnessUpdateInfo['lastUpdate'])}. `
+        warningHtml += `${Util.formatVersionTime(witnessUpdateInfo['lastUpdate'])}. `
         warningHtml += `<a title="Click to update witness" class="witness-update-btn-${i}">Update.</a>`
         let warningTd = $(`${this.witnessesDivSelector} td.outofdate-td-${i}`)
         warningTd.html(warningHtml)
@@ -653,11 +660,11 @@ export class CollationTableEditor {
     if (witnessesUpToDate) {
       infoSpan.removeClass('text-warning')
       infoSpan.addClass('text-success')
-      infoSpan.html(`${this.icons.checkOK} All witnesses are up to date (last checked ${ApmUtil.formatVersionTime(apiResponse.timeStamp)})`)
+      infoSpan.html(`${this.icons.checkOK} All witnesses are up to date (last checked ${Util.formatVersionTime(apiResponse.timeStamp)})`)
     } else {
       infoSpan.removeClass('text-success')
       infoSpan.addClass('text-warning')
-      infoSpan.html(`${this.icons.checkFail} One or more witnesses out of date (last checked ${ApmUtil.formatVersionTime(apiResponse.timeStamp)})`)
+      infoSpan.html(`${this.icons.checkFail} One or more witnesses out of date (last checked ${Util.formatVersionTime(apiResponse.timeStamp)})`)
     }
 
     button.html('Check now')
@@ -1108,7 +1115,7 @@ export class CollationTableEditor {
       html += '<td>' + (i+1) + '</td>'
       html += '<td>' + version['id'] + '</td>'
       html += '<td>' + this.options.peopleInfo[version['authorId']].fullname + '</td>'
-      html += '<td>' + ApmUtil.formatVersionTime(version['timeFrom']) + '</td>'
+      html += '<td>' + Util.formatVersionTime(version['timeFrom']) + '</td>'
       html += '<td>' + version['description'] + '</td>'
 
       html += '<td>'
@@ -1147,7 +1154,7 @@ export class CollationTableEditor {
         ).done( function (apiResponse){
           console.log("Success saving table")
           console.log(apiResponse)
-          thisObject.lastSavedCtData = ApmUtil.deepCopy(thisObject.ctData)
+          thisObject.lastSavedCtData = Util.deepCopy(thisObject.ctData)
           thisObject.lastSavedEditorMatrix = thisObject.tableEditor.getMatrix().clone()
           thisObject.versionInfo = apiResponse.versionInfo
           thisObject.witnessUpdates = []
@@ -1200,7 +1207,7 @@ export class CollationTableEditor {
   genOnConfirmSiglumEdit(witnessIndex) {
     let thisObject = this
     return function(ev) {
-      let newText = ApmUtil.removeWhiteSpace(ev.detail['newText'])
+      let newText = Util.removeWhiteSpace(ev.detail['newText'])
       let oldText = ev.detail['oldText']
       let editor = ev.detail['editor']
       if (oldText === newText || newText === '') {
@@ -1210,7 +1217,7 @@ export class CollationTableEditor {
       }
       //console.log('Change in siglum for witness index ' + witnessIndex +  ' to ' + newText)
       if (thisObject.ctData['sigla'].indexOf(newText) !== -1) {
-        ApmUtil.transientAlert($(thisObject.witnessesDivSelector + ' .warning-td-' + witnessIndex), '',
+        transientAlert($(thisObject.witnessesDivSelector + ' .warning-td-' + witnessIndex), '',
           "Given siglum '" + newText + "' already exists, no changes made", 2000, 'slow')
         editor.setText(thisObject.ctData['sigla'][witnessIndex])
       }
@@ -1234,7 +1241,7 @@ export class CollationTableEditor {
   genOnClickUpDownWitnessInfoButton(direction) {
     let thisObject = this
     return function(ev) {
-      let classes = ApmUtil.getClassArrayFromJQueryObject($(ev.currentTarget.parentNode))
+      let classes = Util.getClassArrayFromJQueryObject($(ev.currentTarget.parentNode))
       let index = thisObject.getWitnessIndexFromClasses(classes)
       let position = thisObject.getWitnessPositionFromClasses(classes)
       let numWitnesses = thisObject.ctData['witnesses'].length
@@ -1255,7 +1262,7 @@ export class CollationTableEditor {
 
       let indexOffset = direction === 'up' ? -1 : 1
 
-      ApmUtil.arraySwapElements(thisObject.ctData['witnessOrder'],position, position+indexOffset)
+      ArrayUtil.swapElements(thisObject.ctData['witnessOrder'],position, position+indexOffset)
 
       $(this.witnessesDivSelector + ' .witnessinfotable').html('Updating...')
       thisObject.setupTableEditor()
@@ -1316,7 +1323,7 @@ export class CollationTableEditor {
       html += '</td>'
 
       html += '<td>' + witnessTitle + '</td>'
-      html += '<td>' + ApmUtil.formatVersionTime(witness['timeStamp']) + '</td>'
+      html += '<td>' + Util.formatVersionTime(witness['timeStamp']) + '</td>'
       html += '<td class="' + siglumClass + '">'+ siglum + '</td>'
 
       html += '<td class="' + warningTdClass + '"></td>'
@@ -1355,7 +1362,7 @@ export class CollationTableEditor {
     }
 
     let lastVersion = this.versionInfo[this.versionInfo.length-1]
-    this.lastSaveSpan.html(ApmUtil.formatVersionTime(lastVersion['timeFrom']))
+    this.lastSaveSpan.html(Util.formatVersionTime(lastVersion['timeFrom']))
   }
 
   changesInCtData() {
@@ -1368,11 +1375,11 @@ export class CollationTableEditor {
       changes.push('Changes in collation alignment')
     }
 
-    if (!ApmUtil.arraysAreEqual(this.ctData['witnessOrder'], this.lastSavedCtData['witnessOrder'])) {
+    if (!ArrayUtil.arraysAreEqual(this.ctData['witnessOrder'], this.lastSavedCtData['witnessOrder'])) {
       changes.push('New witness order')
     }
 
-    if (!ApmUtil.arraysAreEqual(this.ctData['sigla'], this.lastSavedCtData['sigla'])) {
+    if (!ArrayUtil.arraysAreEqual(this.ctData['sigla'], this.lastSavedCtData['sigla'])) {
       changes.push('Changes in sigla')
     }
 

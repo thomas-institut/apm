@@ -32,6 +32,7 @@
  */
 
 import { Matrix } from './Matrix.js'
+import {escapeHtml} from './toolbox/Util.js'
 
 export class TableEditor {
 
@@ -426,7 +427,7 @@ export class TableEditor {
     for(let i = 0; i < tdExtraArray.length; i++) {
       let attr = tdExtraArray[i]['attr']
       let val = tdExtraArray[i]['val']
-      tdExtraStringArray.push(`${attr}="${ApmUtil.escapeHtml(val)}"`)
+      tdExtraStringArray.push(`${attr}="${escapeHtml(val)}"`)
     }
     return tdExtraStringArray.join(' ')
   }

@@ -105,10 +105,7 @@ class PageRange {
   }
   
   isInRange(n) {
-    if (n >= this.a && n <= this.b) {
-      return true
-    }
-    return false
+    return n >= this.a && n <= this.b;
   }
   
   foliate(pageNumber, type = FOLIATION_RECTOVERSO, start=FOLIATION_START_SAME_AS_RANGE, prefix = '', suffix='') {
@@ -141,7 +138,6 @@ class PageRange {
         
       default:
         return ''
-        break
     }
     
     return prefix + foliationNumber + suffix

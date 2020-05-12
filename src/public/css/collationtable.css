@@ -368,6 +368,16 @@ td.te-rowtitle {
 }
 .ctPopover .item-text {
     font-size: 1.2em;
+    text-decoration: underline grey dotted;
+}
+
+.ctPopover .item-info-line {
+    margin-bottom: 0;
+}
+
+.ctPopover .item-info-sub-line {
+    padding: 0;
+    margin: 0;
 }
 
 .ctPopover .heading {

@@ -73,6 +73,7 @@ export function collationMatricesAreEqual(matrix1, matrix2) {
 }
 
 function rankVariants(stringArray) {
+  const someVeryLargeNumber = 999888777
   let countsByString = []
   for(const text of stringArray) {
     if (text === '') {
@@ -100,7 +101,7 @@ function rankVariants(stringArray) {
   let ranks = []
   for(const text of stringArray) {
     if (text === '') {
-      ranks.push(12345678)
+      ranks.push(someVeryLargeNumber)
       continue
     }
     ranks.push(rankObject[text])

@@ -23,7 +23,7 @@ abstract class CollationTableVersionManager
 {
 
     /**
-     * Returns an array with version information objects for the given chunkId ordered by time
+     * Returns an array with version information objects for the given collation table id ordered by time
      * from older to newer.
      *
      * if numVersions === 0, returns all versions
@@ -39,14 +39,20 @@ abstract class CollationTableVersionManager
      * Registers a collation table version with the given info.
      *
      * id and timeUntil in the given version are ignored. The manager will create a new version info with
-     * a new id, and will calculate the timeUntil by placing the given version in the appropriate place chronologically
+     * a new version id, and will calculate the timeUntil by placing the given version in the appropriate place chronologically
      * with the versions already in the system.
      *
      * @param int $collationTableId
      * @param CollationTableVersionInfo $versionInfo
      */
-    abstract public function registerNewCollationTable(int $collationTableId, CollationTableVersionInfo $versionInfo) : void;
+    abstract public function registerNewCollationTableVersion(int $collationTableId, CollationTableVersionInfo $versionInfo) : void;
 
+    /**
+     * Returns an array with the collation table ids of the tables currently active for the given
+     * user Id
+     * @param int $userId
+     * @return int[]
+     */
     abstract public function getActiveCollationTableIdsForUserId(int $userId) : array;
 
 

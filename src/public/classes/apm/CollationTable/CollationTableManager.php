@@ -27,6 +27,9 @@ use ThomasInstitut\ErrorReporter\ErrorReporter;
  *
  * Manages stored collation table standard data structures in the system
  *
+ * Each collation table has an integer Id and a number of versions identified by
+ * a TimeString
+ *
  *
  * @package APM\CollationTable
  */
@@ -67,12 +70,22 @@ abstract class CollationTableManager implements ErrorReporter
      * @return array
      */
     abstract public function getCollationTableById(int $collationTableId, string $timeStamp = '') : array;
-    abstract public function getCollationTableTitle(int $id, string $timeStamp) : string;
+
+    /**
+     * Get the collation table title for the given table Id at the given time
+     *
+     * if $timeStamp is '', returns the title of the latest version of the collation table
+     *
+     * @param int $id
+     * @param string $timeStamp
+     * @return string
+     */
+    abstract public function getCollationTableTitle(int $id, string $timeStamp = '') : string;
 
     abstract public function getCollationTableVersionManager() : CollationTableVersionManager;
 
-    public function getCollationTableVersions(int $ctId) {
-        return $this->getCollationTableVersionManager()->getCollationTableVersionInfo($ctId);
+    public function getCollationTableVersions(int $collationTableId) {
+        return $this->getCollationTableVersionManager()->getCollationTableVersionInfo($collationTableId);
     }
 
 }

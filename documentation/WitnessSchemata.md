@@ -3,7 +3,7 @@
 ## Foreword
 
 There must be a data schema for the storage and exchange of collation tables and
-their derivates for the purpose of editing, exporting and importing. 
+their derivatives for the purpose of editing, exporting and importing. 
 The APM's API should only serve and accept objects that use this schema.
 
 A stored collation table can be used
@@ -13,12 +13,12 @@ A stored collation table can be used
 * on its own as an intermediate step before constructing an edition
 
 The data in a collation table should allow the table's manipulation autonomously. 
-Conceptually a collation table should be considered a stand alone document
-even if its data was derived and is associated with other data in the system
-(for example, most prominently, with manuscript transcriptions) and independently of how the
-data is actually stored in the system. Only in this way can the 
-stability of editions and derivative witnesses derived from a collation table
-be guaranteed.
+Conceptually a collation table should be considered a stand-alone document
+even if its data was derived from and is associated with other data in the system
+(for example, most prominently, with manuscript transcriptions). The standard data 
+that complies with the schema should be independent of how the data is actually
+stored in the system. Only in this way can we guarantee the 
+stability of editions and derivative witnesses.
 
 One scenario that should be avoided is that a stored collation table becomes inconsistent
 or its data no longer supports the decisions made by editors due to a malfunction or a
@@ -31,7 +31,7 @@ Most changes to witness data are protected by the fact that APM witnesses refer
 to the state of the transcription at a specific point in time. However, a change
 in the itemization and tokenization algorithms can provoke unexpected changes. For
 all intents and purposes, a change caused by a change in internal APM mechanisms
-may provoke the same kinds of inconsistencies as changing a witness version. 
+may provoke the same kind of inconsistencies that a version change may provoke. 
 
 Many of these potential changes are seemingly easy to cope with. For example, 
 a change in a token's information due to changes in the underlying items 
@@ -52,18 +52,18 @@ audit the witnesses underlying data using the latest APM data generation algorit
 for updates in transcriptions. An update tool would then take over and calculate the 
 potential changes to the collation table. The tool would determine and inform the user
 of the changes to be made and ask the user to approve them. The most radical solution
-would be to delete a witness from the table and then add it again losing all of the user's work 
+would be to delete a witness from the table and then add it again losing all the user's work 
 for that witness.
 
 ## Informal Description
 
 A  __collation table__ consists of:
-* chunk ID: an identifier of the chunk in question. In the APM this is a 
+* chunk ID: an identifier of the chunk in question. In APM this is a 
   string of the form *AWxx-nnn* where *AWxx* is the work and *nnn* is the chunk
   number. Other applications can allow a different chunk identification 
   scheme.
 * witnesses: an array of *m* witnesses where *m >= 2*, each one consisting at least of 
-  a non-empty array of tokens (see description below). 
+  a non-empty array of tokens (see description below).  
   * If the witness data includes a chunk ID, it must match the collation table's
     chunk ID.
 * sigla: an array of *m* strings corresponding to each of the witnesses in the
@@ -73,9 +73,12 @@ A  __collation table__ consists of:
       in the context of a collation table or one of its derived objects. Witness
       data must be only the data necessary to specify the witness on its own,
       independent of whether it is used in a collation table or not. 
+* witnessOrder: an array that specifies the order of witness in the collation table.
+   *witnessOrder[i]* is the witness index of the witness that appears in row *i* of the 
+   collation table.
 * a collation matrix consisting of *m* rows and *n* columns, where 
     element *[i][j]* is either an integer that refers to token *j* of witness 
-    *witnesses[i]* or the number -1 which is a reference to nothing 
+    *witnesses[witnessOrder[i]]* or the number -1 which is a reference to nothing 
     (an empty reference)
 * title : a non-emtpy string
 * author: author info, either a name or a standard author information

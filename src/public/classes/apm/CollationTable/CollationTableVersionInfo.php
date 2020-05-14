@@ -28,17 +28,19 @@ use ThomasInstitut\TimeString\TimeString;
 class CollationTableVersionInfo
 {
     /**
+     * The version Id
      * @var int
      */
     public $id;
     /**
+     * Collation table Id
      * @var string
      */
     public $collationTableId;
-    /**
-     * @var int
-     */
-    public $column;
+//    /**
+//     * @var int
+//     */
+//    public $column;
     /**
      * @var string
      */

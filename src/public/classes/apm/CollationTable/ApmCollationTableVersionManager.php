@@ -74,7 +74,7 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager imple
     /**
      * @inheritDoc
      */
-    public function registerNewCollationTable(int $collationTableId, CollationTableVersionInfo $versionInfo): void
+    public function registerNewCollationTableVersion(int $collationTableId, CollationTableVersionInfo $versionInfo): void
     {
         if ($versionInfo->collationTableId !== $collationTableId) {
             throw new InvalidArgumentException("Collation table Id in info does not correspond to given collation table id");

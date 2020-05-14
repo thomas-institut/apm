@@ -57,7 +57,7 @@ class CollationTableVersionManagerTest extends TestCase
         $versionInfo1->description = 'Test version';
         $versionInfo1->authorId = 1;
 
-        $this->collationTableVersionManager->registerNewCollationTable($testCollationTableId, $versionInfo1);
+        $this->collationTableVersionManager->registerNewCollationTableVersion($testCollationTableId, $versionInfo1);
 
         $versions = $this->collationTableVersionManager->getCollationTableVersionInfo($testCollationTableId);
         $this->assertCount(1, $versions, $this->className);
@@ -87,7 +87,7 @@ class CollationTableVersionManagerTest extends TestCase
         // wrong  chunk id
         $exceptionCaught = false;
         try {
-            $this->collationTableVersionManager->registerNewCollationTable($testCollationTableId + 1, $goodVersionInfo);
+            $this->collationTableVersionManager->registerNewCollationTableVersion($testCollationTableId + 1, $goodVersionInfo);
         } catch (InvalidArgumentException $e) {
             $exceptionCaught = true;
         }
@@ -98,7 +98,7 @@ class CollationTableVersionManagerTest extends TestCase
         $badVersionInfo->authorId = 0;
         $exceptionCaught = false;
         try {
-            $this->collationTableVersionManager->registerNewCollationTable($testCollationTableId, $badVersionInfo);
+            $this->collationTableVersionManager->registerNewCollationTableVersion($testCollationTableId, $badVersionInfo);
         } catch (InvalidArgumentException $e) {
             $exceptionCaught = true;
         }
@@ -109,17 +109,17 @@ class CollationTableVersionManagerTest extends TestCase
         $badVersionInfo->timeFrom = TimeString::TIME_ZERO;
         $exceptionCaught = false;
         try {
-            $this->collationTableVersionManager->registerNewCollationTable($testCollationTableId, $badVersionInfo);
+            $this->collationTableVersionManager->registerNewCollationTableVersion($testCollationTableId, $badVersionInfo);
         } catch (InvalidArgumentException $e) {
             $exceptionCaught = true;
         }
         $this->assertTrue($exceptionCaught);
 
         // duplicate time (try to register the same version again)
-        $this->collationTableVersionManager->registerNewCollationTable($testCollationTableId, $goodVersionInfo);
+        $this->collationTableVersionManager->registerNewCollationTableVersion($testCollationTableId, $goodVersionInfo);
         $exceptionCaught = false;
         try {
-            $this->collationTableVersionManager->registerNewCollationTable($testCollationTableId, $goodVersionInfo);
+            $this->collationTableVersionManager->registerNewCollationTableVersion($testCollationTableId, $goodVersionInfo);
         } catch (InvalidArgumentException $e) {
             $exceptionCaught = true;
         }
@@ -145,7 +145,7 @@ class CollationTableVersionManagerTest extends TestCase
             $versionInfo->isMinor = true;
             $versionInfo->isReview = true;
             $versionInfo->timeFrom = TimeString::fromTimeStamp($initialTimestamp + ($timeStampFrequency * $i));
-            $this->collationTableVersionManager->registerNewCollationTable($testCollationTableId, $versionInfo);
+            $this->collationTableVersionManager->registerNewCollationTableVersion($testCollationTableId, $versionInfo);
             $versions = $this->collationTableVersionManager->getCollationTableVersionInfo($testCollationTableId);
 
             $context = "TestRegistrations, after adding initial version $i";
@@ -167,7 +167,7 @@ class CollationTableVersionManagerTest extends TestCase
             $versionInfo->description = "Pre-version $i";
             $versionInfo->authorId = $testAuthorId;
             $versionInfo->timeFrom = TimeString::fromTimeStamp($initialTimestamp - ($timeStampFrequency * ($i+1)));
-            $this->collationTableVersionManager->registerNewCollationTable($testCollationTableId, $versionInfo);
+            $this->collationTableVersionManager->registerNewCollationTableVersion($testCollationTableId, $versionInfo);
             $versions = $this->collationTableVersionManager->getCollationTableVersionInfo($testCollationTableId);
 
             $context = "TestRegistrations, after adding pre-version $i";
@@ -182,7 +182,7 @@ class CollationTableVersionManagerTest extends TestCase
             $versionInfo->description = "In the middle version $i";
             $versionInfo->authorId = $testAuthorId;
             $versionInfo->timeFrom = TimeString::fromTimeStamp($initialTimestamp + ($timeStampFrequency*$i) + $timeStampFrequency/2);
-            $this->collationTableVersionManager->registerNewCollationTable($testCollationTableId, $versionInfo);
+            $this->collationTableVersionManager->registerNewCollationTableVersion($testCollationTableId, $versionInfo);
             $versions = $this->collationTableVersionManager->getCollationTableVersionInfo($testCollationTableId);
             $this->assertCount($initialVersionCount + $nVersionsToAddBefore + $i+1, $versions);
             $this->assertVersionSequenceIsCoherent($versions, "TestRegistrations, after adding in the middle version $i");

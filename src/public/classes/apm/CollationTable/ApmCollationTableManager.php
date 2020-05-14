@@ -99,7 +99,7 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
         if ($versionInfo->description === '') {
             $versionInfo->description = "Saved from automatic collation table";
         }
-        $this->versionManager->registerNewCollationTable($collationTableId, $versionInfo);
+        $this->versionManager->registerNewCollationTableVersion($collationTableId, $versionInfo);
         return $collationTableId;
     }
 
@@ -110,7 +110,7 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
         $dbRow['id'] = $collationTableId;
         $this->ctTable->updateRowWithTime($dbRow, $time);
         $versionInfo->timeFrom = $time;
-        $this->versionManager->registerNewCollationTable($collationTableId, $versionInfo);
+        $this->versionManager->registerNewCollationTableVersion($collationTableId, $versionInfo);
     }
 
     protected function getDbRowFromCollationData(array $collationTableData, $compress = false) {
@@ -196,9 +196,12 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
         return $idArray;
     }
 
-    public function getCollationTableTitle(int $id, string $timeString): string
+    public function getCollationTableTitle(int $id, string $timeString = ''): string
     {
         $mySqlDataTableClass = MySqlUnitemporalDataTable::class;
+        if ($timeString === '') {
+            $timeString = TimeString::now();
+        }
 
         if (is_a($this->ctTable, $mySqlDataTableClass) ) {
             //$this->logger->debug("Using MySql datatable optimization");

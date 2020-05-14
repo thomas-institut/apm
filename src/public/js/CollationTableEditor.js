@@ -26,6 +26,8 @@ import { EditableTextField } from './widgets/EditableTextField.js'
 import { transientAlert} from './widgets/TransientAlert.js'
 import { NiceToggle, toggleEvent} from './widgets/NiceToggle.js'
 
+import * as HttpStatusCode from './toolbox/HttpStatusCode.js'
+
 // utilities
 import * as Util from './toolbox/Util.js'
 import * as ArrayUtil from './toolbox/ArrayUtil.js'
@@ -60,7 +62,8 @@ export class CollationTableEditor {
       busy: '<i class="fas fa-circle-notch fa-spin"></i>',
       checkOK: '<i class="far fa-check-circle"></i>',
       checkFail: '<i class="fas fa-exclamation-triangle"></i>',
-      checkCross: '<i class="fas fa-times"></i>'
+      checkCross: '<i class="fas fa-times"></i>',
+      alert: '<i class="fas fa-exclamation-triangle"></i>'
     }
 
     this.rtlClass = 'rtltext'
@@ -98,6 +101,7 @@ export class CollationTableEditor {
     this.ctDiv = $('#' + this.ctDivId)
     this.quickEditionDiv = $('#editiondiv')
     this.saveButton = $('#savebutton')
+    this.saveMsg = $('#save-msg')
     this.lastSaveSpan = $('#lastSave')
     this.exportCsvButton = $('#export-csv-button')
 
@@ -165,11 +169,19 @@ export class CollationTableEditor {
       this.ctDiv.removeClass(this.rtlClass)
       this.ctDiv.addClass(this.ltrClass)
     }
+    this.unsavedChanges = false
 
     this.setupTableEditor()
     this.updateSaveArea()
     this.setCsvDownloadFile()
     this.fetchQuickEdition()
+
+    $(window).on('beforeunload', function() {
+      if (thisObject.unsavedChanges) {
+        //console.log("There are changes in editor")
+        return false // make the browser ask if the user wants to leave
+      }
+    })
   }
 
   checkForWitnessUpdates() {
@@ -1133,6 +1145,7 @@ export class CollationTableEditor {
     return function() {
       let changes = thisObject.changesInCtData()
       if (changes.length !== 0) {
+        thisObject.unsavedChanges = true
         thisObject.saveButton.popover('hide')
         thisObject.saveButton.html('Saving...')
         console.log('Saving table via API call to ' + thisObject.apiSaveCollationUrl)
@@ -1163,11 +1176,18 @@ export class CollationTableEditor {
               thisObject.lastWitnessUpdateCheckResponse['witnesses'][i]['justUpdated'] = false
             }
           }
+          thisObject.unsavedChanges = false
           thisObject.updateWitnessInfoDiv()
           thisObject.updateSaveArea()
           thisObject.updateVersionInfo()
           thisObject.fetchQuickEdition()
         }).fail(function(resp){
+          let saveMsgHtml = ''
+          saveMsgHtml += `<p class="text-danger">${thisObject.icons['alert']} Cannot save table!</p>`
+          saveMsgHtml += `<p class="text-warning">Status ${resp.status}: ${HttpStatusCode.getText(resp.status)}</p>`
+          thisObject.saveMsg.html(saveMsgHtml)
+          thisObject.saveButton.html('Save Changes')
+          thisObject.saveMsg.removeClass('hidden')
           console.error("Cannot save table")
           console.log(resp)
         })
@@ -1340,6 +1360,7 @@ export class CollationTableEditor {
     if (changes.length !== 0) {
       //console.log('Detected changes in data')
       //console.log(changes)
+      this.unsavedChanges = true
       this.saveButton.html('Save Changes')
       this.buttonPopoverContent = '<p>'
       this.buttonPopoverContent += '<ul>'
@@ -1356,9 +1377,13 @@ export class CollationTableEditor {
         content: function() { return thisObject.buttonPopoverContent}
       })
       this.saveButton.removeClass('hidden')
+      this.saveMsg.addClass('hidden')
+
     } else {
       //console.log('no changes in data')
+      this.unsavedChanges = false
       this.saveButton.addClass('hidden')
+      this.saveMsg.addClass('hidden')
     }
 
     let lastVersion = this.versionInfo[this.versionInfo.length-1]

@@ -67,7 +67,7 @@ class MockCollationTableManager extends CollationTableManager
         return [];
     }
 
-    public function getCollationTableTitle(int $id, string $timeStamp): string
+    public function getCollationTableTitle(int $id, string $timeStamp = ''): string
     {
         // TODO: Implement getCollationTableTitle() method.
         return 'Test';

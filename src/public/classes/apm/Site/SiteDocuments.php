@@ -50,7 +50,9 @@ class SiteDocuments extends SiteController
         $this->profiler->start();
         $docIds = $dataManager->getDocIdList('title');
         $this->profiler->lap('Doc Id List');
-        $docs = array();
+        $docs = [];
+        $usersMentioned = [];
+
         foreach ($docIds as $docId){
             //$profiler->lap("Doc $docId - START");
             $doc = array();
@@ -60,6 +62,7 @@ class SiteDocuments extends SiteController
             $editorsIds = $dataManager->getEditorsByDocId($docId);
             $doc['editors'] = [];
             foreach ($editorsIds as $edId){
+                $usersMentioned[] = $edId;
                 $doc['editors'][] = 
                         $this->dataManager->userManager->getUserInfoByUserId($edId);
             }
@@ -72,11 +75,13 @@ class SiteDocuments extends SiteController
         if ($this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'docs-create-new')) {
             $canManageDocuments = true;
         }
+        $peopleInfoArray = $this->getAuthorInfoArrayFromList($usersMentioned, $dataManager->userManager);
         $this->profiler->stop();
         $this->logProfilerData('documentsPage');
 
-        return $this->renderPage($response, 'docs.twig', [
+        return $this->renderPage($response, 'bootstrap4/documents.twig', [
             'docs' => $docs,
+            'peopleInfo' => $peopleInfoArray,
             'canManageDocuments' => $canManageDocuments
         ]);
     }
@@ -211,7 +216,7 @@ class SiteDocuments extends SiteController
         $this->profiler->stop();
         $this->logProfilerData('showDocPage-' . $docId);
 
-        return $this->renderPage($response, 'doc.showdoc.twig', [
+        return $this->renderPage($response, 'bootstrap4/doc.details.twig', [
             'navByPage' => false,
             'canDefinePages' => $canDefinePages,
             'doc' => $doc,

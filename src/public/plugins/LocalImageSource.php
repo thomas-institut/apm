@@ -18,35 +18,38 @@
  *  
  */
 
+use APM\Plugin\ImageSourcePlugin;
+use APM\System\SystemManager;
+
 /**
  * Description of SimpleImageSource
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class LocalImageSource extends \APM\Plugin\ImageSourcePlugin {
-    
+class LocalImageSource extends ImageSourcePlugin {
+
+    const URL_LOCAL_REP = 'localrep';
      
-    public function __construct($sm) {
-        parent::__construct($sm, 'local');
+    public function __construct(SystemManager $systemManager) {
+        parent::__construct($systemManager, 'local');
     }
-    
-    public function realGetImageUrl($imageSourceData, $imageNumber)  
-    {
-        return sprintf("/localrep/%s/%s-%04d.jpg", 
-                    $imageSourceData, 
-                    $imageSourceData, 
-                    $imageNumber);
+
+    public function realGetImageUrl($imageSourceData, $imageNumber)  {
+        return sprintf( self::URL_LOCAL_REP . "/%s/%s-%04d.jpg",
+            $imageSourceData,
+            $imageSourceData,
+            $imageNumber);
     }
     
     public function realGetOpenSeaDragonConfig($imageSourceData, $imageNumber) {
         return sprintf("tileSources: {type: 'image', url:  '%s', buildPyramid: false,homeFillsViewer: true}", 
                 $this->realGetImageUrl($imageSourceData, $imageNumber));
     }
-    
+
     public function realGetDocInfoHtml($imageSourceData) {
-        return 'Images stored locally &nbsp;&nbsp;&nbsp;'. 
-          '<a href="/localrep/' . $imageSourceData . '/" ' . 
-                ' target="_blank"> Image Folder <span class="glyphicon glyphicon-new-window"></span></a>';
+        return 'Images stored in local repository '. self::HTML_INFO_SEPARATOR .
+            '<a href="' . self::URL_LOCAL_REP . '/' . $imageSourceData . '/"' .
+            ' target="_blank"> Image Folder '. self::ICON_EXTERNAL_URL .  '</a>';
     }
    
 }

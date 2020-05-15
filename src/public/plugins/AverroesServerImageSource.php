@@ -18,21 +18,23 @@
  *  
  */
 
+use APM\Plugin\ImageSourcePlugin;
+
 /**
  * Description of SimpleImageSource
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class AverroesServerImageSource extends \APM\Plugin\ImageSourcePlugin {
-    
-     
-   public function __construct($sm) {
-        parent::__construct($sm, 'averroes-server');
+class AverroesServerImageSource extends ImageSourcePlugin {
+
+   const URL_AVERROES_SERVER_REP = 'https://averroes.uni-koeln.de/localrep';
+
+   public function __construct($systemManager) {
+        parent::__construct($systemManager, 'averroes-server');
     }
     
-    public function realGetImageUrl($imageSourceData, $imageNumber)  
-    {
-        return sprintf("http://averroes.uni-koeln.de/localrep/%s/%s-%04d.jpg", 
+    public function realGetImageUrl($imageSourceData, $imageNumber)  {
+        return sprintf( self::URL_AVERROES_SERVER_REP . "/%s/%s-%04d.jpg",
                     $imageSourceData, 
                     $imageSourceData, 
                     $imageNumber);
@@ -44,9 +46,9 @@ class AverroesServerImageSource extends \APM\Plugin\ImageSourcePlugin {
     }
     
     public function realGetDocInfoHtml($imageSourceData) {
-        return 'Images stored in the Averroes Project server &nbsp;&nbsp;&nbsp;'. 
-          '<a href="http://averroes.uni-koeln.de/localrep/' . $imageSourceData . '/" ' . 
-                ' target="_blank"> Image Folder <span class="glyphicon glyphicon-new-window"></span></a>';
+        return 'Images stored in the Averroes Project server '. self::HTML_INFO_SEPARATOR .
+          '<a href="' . self::URL_AVERROES_SERVER_REP . '/' . $imageSourceData . '/"' .
+                ' target="_blank"> Image Folder '. self::ICON_EXTERNAL_URL .  '</a>';
     }
    
 }

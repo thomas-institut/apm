@@ -1,0 +1,112 @@
+{# Some useful macros #}
+
+{% macro pageviewtable(doc, pages, navByPage) %}
+{% spaceless %}
+    {% set pagesPerRow = 10 %}
+    {% if pages|length > 200 %}
+        {% set pagesPerRow = 25 %}
+    {% endif %}
+    {% set n=0 %}
+<table class="pagetable">
+    <tr>
+    {% for page in pages %}
+        {% if n==pagesPerRow %}
+    </tr>
+    <tr>
+            {% set n = 0 %}    
+        {% endif%}
+        {% set foliation = page.foliation %}
+        {% if foliation == '-' %} 
+            {%if navByPage == true %} 
+            {% set foliation = page.number %}
+            {% else %}
+            {% set foliation = page.seq %}
+            {% endif %}
+        {% endif %}
+    {%if navByPage == true %}
+        <td class="{{ page.classes }}"><a href="{{ url_for('pageviewer.docpage', {'doc' : doc, 'page' : page.number})}}" title="View Page (real page = {{page.number}})">{{foliation}}</a></td>
+    {% else %}
+        <td class="{{ page.classes }}"><a href="{{ url_for('pageviewer.docseq', {'doc' : doc, 'seq' : page.seq})}}" title="View Page (Page {{page.seq}})">{{foliation}}</a></td>
+    {% endif %}
+
+        {% set n = n+1 %}                                   
+    {% endfor %}
+    </tr>    
+</table>
+{% endspaceless %}
+{% endmacro %}
+
+{% macro pageviewtablepv(doc, pages, navByPage) %}
+{% spaceless %}
+    {% set pagesPerRow = 20 %}
+    {% set n=0 %}
+<table class="pagetable" style="font-size: 0.9em">
+    <tr>
+    {% for page in pages %}
+        {% if n==pagesPerRow %}
+    </tr>
+    <tr>
+            {% set n = 0 %}    
+        {% endif%}
+        
+        {% set foliation = page.foliation %}
+        {% if foliation == '-' %} 
+            {%if navByPage == true %} 
+            {% set foliation = page.number %}
+            {% else %}
+            {% set foliation = page.seq %}
+            {% endif %}
+        {% endif %}
+
+        {%if navByPage == true %}
+        <td class="{{ page.classes }}"><a href="{{ url_for('pageviewer.docpage', {'doc' : doc, 'page' : page.number})}}" title="View Page">{{foliation}}</a></td>
+    {% else %}
+        <td class="{{ page.classes }}"><a href="{{ url_for('pageviewer.docseq', {'doc' : doc, 'seq' : page.seq})}}" title="View Page">{{foliation}}</a></td>
+    {% endif %}
+
+        {% set n = n+1 %}                                   
+    {% endfor %}
+    </tr>    
+</table>
+{% endspaceless %}
+{% endmacro %}
+
+{% macro pageviewtable2(doc, pages) %}
+{% spaceless %}
+    {% set pagesPerRow = 25 %}
+    {% set n=0 %}
+<table class="pagetable">
+    <tr>
+    {% for page in pages %}
+        {% if n==pagesPerRow %}
+    </tr>
+    <tr>
+            {% set n = 0 %}    
+        {% endif%}
+        <td class="{{ page.classes }}">
+            <a href="{{ url_for('pageviewer.docpage', {'doc' : doc, 'page' : page.number})}}"
+               target="_blank" title="Page {{page.number}}, Seq={{page.seq}}, Fol: {{page.foliation}}">
+                {{page.seq}}
+            </a>
+        </td>
+        {% set n = n+1 %}                                   
+    {% endfor %}
+    </tr>    
+</table>
+{% endspaceless %}
+{% endmacro %}
+
+
+{% macro langName(lang) %}
+{% spaceless %}
+{% set names = { 'la' : 'Latin', 'he' : 'Hebrew', 'ar': 'Arabic', 'en' : 'English', 'jrb': 'Judeo Arabic' } %}
+{{names[lang]}}
+{% endspaceless %}
+{% endmacro %}
+
+{% macro docTypeName(type) %}
+{% spaceless %}
+{% set names = { 'mss' : 'Manuscript', 'print' : 'Print' } %}
+{{names[type]}}
+{% endspaceless %}
+{% endmacro %}

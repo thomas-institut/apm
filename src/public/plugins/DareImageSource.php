@@ -18,17 +18,17 @@
  *  
  */
 
+use APM\Plugin\ImageSourcePlugin;
+
 /**
  * Description of DareImageSource
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class DareImageSource extends \APM\Plugin\ImageSourcePlugin {
-    
-   
-    
-   public function __construct($sm) {
-        parent::__construct($sm, 'dare');
+class DareImageSource extends ImageSourcePlugin {
+
+   public function __construct($systemManager) {
+        parent::__construct($systemManager, 'dare');
     }
        
     public function realGetImageUrl($imageSourceData, $imageNumber) 
@@ -45,19 +45,26 @@ class DareImageSource extends \APM\Plugin\ImageSourcePlugin {
     }
     
     public function realGetDocInfoHtml($imageSourceData) {
-        $html = '= Bilderberg ' . $imageSourceData . ' &nbsp;&nbsp;';
-        $html .= '<a href=" http://dare.uni-koeln.de/dare-cgi/permalinks.pas?darepurl=scana-' .
-                $imageSourceData . 
-                '-0001" target="_blank" title="View document in DARE">' . 
-                'DARE <span class="glyphicon glyphicon-new-window"></span></a>' ;
-        $html .= '&nbsp;&nbsp;';
-        $html .= '<a href="https://bilderberg.uni-koeln.de/cgi-bin/berg.pas?page=book&book=' . 
-                $imageSourceData . 
-                '" target="_blank" title="View document in Bilderberg">' . 
-                'Bilderberg <span class="glyphicon glyphicon-new-window"></span></a>';
+
+        $html = "= <em>$imageSourceData</em>";
+        $html .= self::HTML_INFO_SEPARATOR;
+        $html .= '<a href="' . $this->getDareDocumentUrl($imageSourceData) . '" target="_blank" title="View document in DARE">' .
+                'DARE ' . self::ICON_EXTERNAL_URL .  '</a>' ;
+        $html .= self::HTML_INFO_SEPARATOR;
+        $html .= '<a href="' . $this->getBilderbergDocumentUrl($imageSourceData) .
+                '" target="_blank" title="View document in Bilderberg">' .
+            'Bilderberg ' . self::ICON_EXTERNAL_URL .  '</a>' ;
         
         return $html;
 
+    }
+
+    private function getDareDocumentUrl(string $dareId) : string {
+       return "https://dare.uni-koeln.de/app/manuscripts/$dareId";
+    }
+
+    private function getBilderbergDocumentUrl(string $dareId) : string {
+       return "https://bilderberg.uni-koeln.de/cgi-bin/berg.pas?page=book&book=$dareId";
     }
    
 }

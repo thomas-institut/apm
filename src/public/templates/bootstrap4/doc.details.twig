@@ -1,10 +1,12 @@
-{% extends "base.twig" %}
-{% import 'macros.twig' as macros %}
+{% extends "bootstrap4/base.twig" %}
+{% import 'bootstrap4/macros.twig' as macros %}
 
 {% block title %}Doc: {{doc.docInfo.title}}{% endblock %}
 
 {% block extraJS %}
     <script type="application/javascript" src="{{baseurl}}/js/DocShowPage.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/ApmUtil.js"></script>
+
     <script>
       let chunkInfo = JSON.parse('{{chunkInfo|json_encode|raw}}')
       let works = JSON.parse('{{works|json_encode|raw}}')
@@ -30,7 +32,7 @@
 
       let docShowPage = new DocShowPage(pages, chunkInfo, lastVersions, lastSaves, works, authorInfo, docId, urlGenerator)
 
-      $(document).ready(function () {
+      $(function () {
 
         $('#chunkinfo').html(docShowPage.genWorkInfoHtml())
         $('#pagetablediv').html(docShowPage.getPageTableHtml())
@@ -44,11 +46,12 @@
 {% endblock %}
 
 {% block content %}
+<nav aria-label="breadcumb">
      <ol class="breadcrumb">
-         <li><a href="{{url_for('docs')}}">Documents</a></li>
-        <li class="active">Document Details</li>
+         <li class="breadcrumb-item"><a href="{{url_for('docs')}}">Documents</a></li>
+        <li class="breadcrumb-item active">Document Details</li>
     </ol>
-
+</nav>
 <h1>{{doc.docInfo.title}}</h1>
     <p class="docinfo">{{macros.langName(doc.docInfo.lang)}} {{macros.docTypeName(doc.docInfo.doc_type)}}, 
         {{doc.numTranscribedPages}} of {{doc.numPages}} pages transcribed

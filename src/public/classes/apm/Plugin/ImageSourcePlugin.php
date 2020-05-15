@@ -20,21 +20,37 @@
 
 namespace APM\Plugin;
 
+use APM\System\SystemManager;
+use Psr\Log\LoggerInterface;
+
 /**
  * Description of ImageSourcePlugin
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-abstract class ImageSourcePlugin extends \APM\Plugin\Plugin {
-    
+abstract class ImageSourcePlugin extends Plugin
+{
+
+    const ICON_EXTERNAL_URL = '<i class="fas fa-external-link-alt"></i>';
+    const HTML_INFO_SEPARATOR = '&nbsp;&nbsp;';
+
+    /**
+     * @var LoggerInterface
+     */
     public $logger;
+    /**
+     * @var string
+     */
     public $stub;
-    protected $hm;
+    /**
+     * @var HookManager
+     */
+    protected $hookManager;
     
-    public function __construct($sm, $stub) {
-        parent::__construct($sm);
+    public function __construct(SystemManager $systemManager, string $stub) {
+        parent::__construct($systemManager);
         $this->logger = $this->systemManager->getLogger()->withName('PLUGIN-IMGSRC-' . $stub);
-        $this->hm = $this->systemManager->getHookManager();
+        $this->hookManager = $this->systemManager->getHookManager();
         $this->stub = $stub;
     }
     
@@ -55,19 +71,19 @@ abstract class ImageSourcePlugin extends \APM\Plugin\Plugin {
         
         // @codeCoverageIgnoreStart
         // Cannot reproduce these errors in testing
-        if (! $this->hm->attachToHook($hookGetImageUrl, array($this, 'getImageUrl')) ) {
+        if (! $this->hookManager->attachToHook($hookGetImageUrl, array($this, 'getImageUrl')) ) {
             $this->logger->error("Cannot attach to hook $hookGetImageUrl");
             return false;
         }
-        if (! $this->hm->attachToHook($hookGetDocInfoHtml, array($this, 'getDocInfoHtml')) ) {
+        if (! $this->hookManager->attachToHook($hookGetDocInfoHtml, array($this, 'getDocInfoHtml')) ) {
             $this->logger->error("Cannot attach to hook $hookGetDocInfoHtml");
             return false;
         }
-        if (! $this->hm->attachToHook($hookGetImageSources, array($this, 'getImageSource')) ) {
+        if (! $this->hookManager->attachToHook($hookGetImageSources, array($this, 'getImageSource')) ) {
             $this->logger->error("Cannot attach to hook $hookGetImageSources");
             return false;
         }
-        if (! $this->hm->attachToHook($hookGetOpenSeaDragonConfig, array($this, 'getOpenSeaDragonConfig')) ) {
+        if (! $this->hookManager->attachToHook($hookGetOpenSeaDragonConfig, array($this, 'getOpenSeaDragonConfig')) ) {
             $this->logger->error("Cannot attach to hook $hookGetOpenSeaDragonConfig");
             return false;
         }

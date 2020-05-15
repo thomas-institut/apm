@@ -18,6 +18,10 @@ body {
     margin-bottom: 20px;  /* To make it the same as bs3, in bs4 it's 0 */
 }
 
+.breadcrumb {
+    background: white; /* to make it the same as bs3, in bs4 it's some sort of gray */
+}
+
 /* Dimmed down links*/
 
 a, a:visited {
@@ -42,4 +46,37 @@ ul.list-indented li {
     margin-bottom: 1rem;
     margin-left: 1.5rem;
     text-indent: -1.5rem;  /* Hanging indentation on list items */
+}
+
+/* PAGE TABLES, e.g. in document pages */
+table.pagetable td {
+    padding: 3px;
+}
+
+/* Not set */
+table.pagetable td.type0 {
+    background-color: #EFFEEF;
+}
+
+/* Normal text */
+table.pagetable td.type1 {
+    background-color: white;
+}
+
+/* Front Matter */
+table.pagetable td.type2 {
+    background-color: #f9f9f9;
+}
+
+/* Back Matter */
+table.pagetable td.type3 {
+    background-color: #f9f9f9;
+
+}
+table.pagetable a {
+    color: black;
+}
+
+table.pagetable td.withouttranscription a{
+    color: silver;
 }

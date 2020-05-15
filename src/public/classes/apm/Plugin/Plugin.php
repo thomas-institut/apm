@@ -35,8 +35,8 @@ abstract class Plugin {
      */
     protected $systemManager;
     
-    public function __construct($sm) {
-        $this->systemManager = $sm;
+    public function __construct($systemManager) {
+        $this->systemManager = $systemManager;
     }
     abstract public function activate();
     abstract public function deactivate();

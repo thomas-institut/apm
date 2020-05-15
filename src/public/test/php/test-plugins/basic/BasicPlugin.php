@@ -24,9 +24,9 @@ class BasicPlugin extends APM\Plugin\Plugin
     
     const BP_HOOK_NAME = 'basicplugin-hook';
     
-    public function __construct($sm) {
-        parent::__construct($sm);
-        $this->hm = $sm->getHookManager();
+    public function __construct($systemManager) {
+        parent::__construct($systemManager);
+        $this->hm = $systemManager->getHookManager();
         $this->myVar = -1000;
     }
  

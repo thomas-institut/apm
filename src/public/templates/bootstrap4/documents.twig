@@ -1,11 +1,15 @@
-{% extends "base.twig" %}
-{% import 'macros.twig' as macros %}
+{% extends "bootstrap4/base.twig" %}
+{% import 'bootstrap4/macros.twig' as macros %}
 
 {% block title %}Documents{% endblock %}
 
-{% block extraJS %}
+{% block finalBodyJS %}
 <script>
-$(document).ready(function() 
+    let docs = JSON.parse("{{docs|json_encode|e('js')}}")
+    let peopleInfo = JSON.parse("{{peopleInfo|json_encode|e('js')}}")
+    console.log(docs)
+    console.log(peopleInfo)
+$(function()
 { 
     $("#theDocTable").DataTable({ 
         paging: true, 
@@ -23,7 +27,7 @@ $(document).ready(function()
         ]
     }); 
 } 
-);
+)
 </script>
 {% endblock %}
 

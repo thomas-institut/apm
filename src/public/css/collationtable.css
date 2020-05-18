@@ -26,7 +26,7 @@
     }
     
 div.texttitle {
-    font-weight: bold;
+    font-weight: 600;
     text-align: center;
     height: 5em;
     padding-top: 1.5em;
@@ -108,17 +108,18 @@ table.collationtable td {
  }
 
 td.he-td {
-     font-size: 1.1em;
+    font-family: var(--hebrew-font-family);
+    font-size: var(--hebrew-font-size);
  }
  
 td.ar-td {
-    font-family: "Noto Naskh Arabic UI", "ApmNotoNaskhArabicUI", FreeSerif, "ApmFreeSerif", serif;
+    font-family: var(--arabic-font-family);
     font-style: normal;
-    font-size: 1.5em;
+    font-size: var(--arabic-font-size);
 }
 
 td.witness {
-    font-weight: bold;
+    font-weight: 600;
 }
 
 table.collationtable td.tokennotpresent {
@@ -266,7 +267,7 @@ ul.siglalist {
 }
 
 .popoverheading {
-    font-weight: bold;
+    font-weight: 600;
 }
 
 .textwithdashes {
@@ -333,7 +334,7 @@ td.variant2 {
 }
 
 td.te-rowtitle {
-    font-weight: bold;
+    font-weight: 600;
 }
 
 
@@ -344,7 +345,7 @@ td.te-rowtitle {
 
 .table-edit-mode .te-table th {
     font-size: 0.8em;
-    font-weight: normal;
+    font-weight: 400;
     color: #aaaaaa;
 }
 

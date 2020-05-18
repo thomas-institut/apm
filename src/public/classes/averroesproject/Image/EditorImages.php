@@ -27,8 +27,7 @@ namespace AverroesProject\Image;
  */
 class EditorImages {
     const FONT_AWESOME_PATH = './fonts/fontawesome-webfont.ttf';
-    const FONT_ARIAL_PATH = './fonts/arialbd.ttf';
-    const FONT_MONO = './fonts/cour.ttf';
+    const FONT_MONO = './fonts/noto/NotoMono-hinted/NotoMono-Regular.ttf';
 
     public static function markIcon($size) {
         $height = $size;
@@ -64,8 +63,8 @@ class EditorImages {
         imagecolortransparent($im, $background);
         $textcolor = imagecolorallocate($im, 200, 200, 200);
         $textsize = $size*0.8;
-        $text = "‒";
-        $fontpath = self::FONT_ARIAL_PATH;
+        $text = "-";
+        $fontpath = self::FONT_MONO;
         $bbox = imagettfbbox($textsize, 0, $fontpath, $text);
         $textWidth = $bbox[2]-$bbox[0];
         $textHeight = $bbox[5]-$bbox[3];

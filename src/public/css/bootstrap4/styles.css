@@ -1,3 +1,51 @@
+/*
+ *  Copyright (C) 2019-20 Universität zu Köln
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ */
+
+/* Variables */
+
+:root {
+    --default-font-family: "ApmNotoSans", "Noto Sans", Arial, sans-serif;
+    --default-font-size: 14px;
+    --default-font-color: #323232;
+    --small-font-size: 0.8rem;
+    --light-border: 1px solid #e7e7e7;
+    --dimmed-blue-color: #337ab7;  /* For dimmed links*/
+}
+
+/* Font-Faces */
+
+@font-face {
+    font-family: "ApmFreeSerif";
+    src: url(../../fonts/FreeSerif.ttf) format("truetype");
+}
+
+@font-face {
+    font-family: "ApmNotoNaskhArabicUI";
+    src: url(../../fonts/NotoNaskhArabicUI-Regular.ttf) format("truetype");
+}
+
+
+body, .popover {
+    font-family:  var(--default-font-family);
+    font-size: var(--default-font-size);
+    color: var(--default-font-color);
+}
+
 
 @media (min-width: 1200px) {
     .container {
@@ -7,11 +55,7 @@
 
 
 .bottom-border-light {
-    border-bottom: 1px solid #e7e7e7;  /* To make it the same as bs3, no border in bs4*/
-}
-
-body {
-    font-size: 14px;  /* To make it the same as bs3, bs4 will have it at 1rem ( = 16px) */
+    border-bottom: var(--light-border);  /* To make it the same as bs3, no border in bs4*/
 }
 
 .navbar {
@@ -26,7 +70,7 @@ body {
 
 a, a:visited {
     text-decoration: none;
-    color: #337ab7;
+    color: var(--dimmed-blue-color);
 }
 a:hover{
     color: blue;
@@ -53,30 +97,30 @@ table.pagetable td {
     padding: 3px;
 }
 
-/* Not set */
+/* Page Type: Not set */
 table.pagetable td.type0 {
     background-color: #EFFEEF;
 }
 
-/* Normal text */
+/* Page Type: Normal text */
 table.pagetable td.type1 {
     background-color: white;
 }
 
-/* Front Matter */
+/* Page Type: Front Matter */
 table.pagetable td.type2 {
     background-color: #f9f9f9;
 }
 
-/* Back Matter */
+/* Page Type: Back Matter */
 table.pagetable td.type3 {
     background-color: #f9f9f9;
 
 }
 table.pagetable a {
-    color: black;
+    color: var(--default-font-color);
 }
 
-table.pagetable td.withouttranscription a{
+table.pagetable td.withouttranscription a {
     color: silver;
 }

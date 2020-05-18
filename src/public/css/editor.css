@@ -360,19 +360,7 @@ img.chunkmark  {
 
 /* LANGUAGES */
 
-@font-face {
-    font-family: "Linux Libertine";
-    src: url(../fonts/LinLibertine_Rah.ttf) format("truetype");
-}
 
-@font-face {
-    font-family: "Scheherazade";
-    src: url(../fonts/Scheherazade-Regular.woff);
-}
-@font-face {
-    font-family: "Ezra";
-    src: url(../fonts/SILEOT.woff);
-}
 
 .he-text {
     direction: rtl;
@@ -384,7 +372,7 @@ img.chunkmark  {
 .ar-text {
     direction: rtl;
     unicode-bidi: isolate;
-    font-family: 'Scheherazade', serif;
+    font-family: var(--arabic-font-family);
     font-style: normal;
 }
 
@@ -392,7 +380,6 @@ img.chunkmark  {
     direction: ltr;
     unicode-bidi: isolate;
     font-style: normal;
-    font-family: Arial, sans-serif;
 }
 
 .jrb-text {

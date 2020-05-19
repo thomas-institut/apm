@@ -159,7 +159,7 @@
 }
 
 .modal-ednotes > blockquote > footer {
-    margin-top: 0px;
+    margin-top: 0;
 }
 
 .popover blockquote {
@@ -167,7 +167,7 @@
 }
 
 .popover blockquote > footer {
-    margin-top: 0px;
+    margin-top: 0;
 }
 
 .popover .editor-popover-title {
@@ -224,20 +224,20 @@
 }
 
 .editor-container p.gloss {
-    margin: 0px 20px;
-    padding: 0px 5px;
+    margin: 0 20px;
+    padding: 0 5px;
     background: #f0ffe5;
 }
 
 .editor-container p.substelement {
-    margin: 0px 20px;
-    padding: 0px 5px;
+    margin: 0 20px;
+    padding: 0 5px;
     background: #eaf3ff;
 }
 
 .editor-container p.additionelement {
-    margin: 0px 20px;
-    padding: 0px 5px;
+    margin: 0 20px;
+    padding: 0 5px;
     background: #eaf3ff;
 }
 
@@ -324,7 +324,7 @@ b.marginalmark {
    border: solid 1px #c5d4e5;
 }
 .mark {
-    font-family: FontAwesome;
+    font-family: FontAwesome, sans-serif;
     background: transparent;
 
 }
@@ -337,7 +337,7 @@ b.marginalmark {
 
 
 img.chunkmark  {
-    margin: 0px;
+    margin: 0;
     margin-left: 5px;
     margin-right: 5px;
 }
@@ -347,7 +347,7 @@ img.chunkmark  {
 
 .linenumber {
     color: gray;
-    font-family: monospace;
+    font-family: var(--monospace-font-family);
 }
 
 .linenumber a:hover {

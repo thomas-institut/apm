@@ -1,0 +1,114 @@
+/*
+ *  Copyright (C) 2020 Universität zu Köln
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ */
+
+
+/* Font face definitions for GNU Free fonts hosted by APM*/
+
+/**
+ *  Free versions of Helvetica, Times  and Courier, with almost full character support
+ */
+
+/* Free Sans */
+
+@font-face {
+    font-family: ApmFreeSans;
+    src: url(../../fonts/freefont/FreeSans.woff) format("woff");
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: ApmFreeSans;
+    src: url(../../fonts/freefont/FreeSansOblique.woff) format("woff");
+    font-weight: 400;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: ApmFreeSans;
+    src: url(../../fonts/freefont/FreeSansBold.woff) format("woff");
+    font-weight: 700;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: ApmFreeSans;
+    src: url(../../fonts/freefont/FreeSansBoldOblique.woff) format("woff");
+    font-weight: 700;
+    font-style: italic;
+}
+
+/* Free Serif */
+
+@font-face {
+    font-family: ApmFreeSerif;
+    src: url(../../fonts/freefont/FreeSerif.woff) format("woff");
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: ApmFreeSerif;
+    src: url(../../fonts/freefont/FreeSerifItalic.woff) format("woff");
+    font-weight: 400;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: ApmFreeSerif;
+    src: url(../../fonts/freefont/FreeSerifBold.woff) format("woff");
+    font-weight: 700;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: ApmFreeSerif;
+    src: url(../../fonts/freefont/FreeSerifBoldItalic.woff) format("woff");
+    font-weight: 700;
+    font-style: italic;
+}
+
+/* Free Mono */
+
+@font-face {
+    font-family: ApmFreeMono;
+    src: url(../../fonts/freefont/FreeMono.woff) format("woff");
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: ApmFreeMono;
+    src: url(../../fonts/freefont/FreeMonoOblique.woff) format("woff");
+    font-weight: 400;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: ApmFreeMono;
+    src: url(../../fonts/freefont/FreeMonoBold.woff) format("woff");
+    font-weight: 700;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: ApmFreeMono;
+    src: url(../../fonts/freefont/FreeMonoBoldOblique.woff) format("woff");
+    font-weight: 700;
+    font-style: italic;
+}

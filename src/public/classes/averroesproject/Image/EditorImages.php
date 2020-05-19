@@ -26,7 +26,8 @@ namespace AverroesProject\Image;
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 class EditorImages {
-    const FONT_AWESOME_PATH = './fonts/fontawesome-webfont.ttf';
+
+    const FONT_AWESOME_PATH = './fonts/fontawesome-free-5.10.1-web/webfonts/fa-regular-400.ttf';
     const FONT_MONO = './fonts/noto/NotoMono-hinted/NotoMono-Regular.ttf';
 
     public static function markIcon($size) {
@@ -37,7 +38,7 @@ class EditorImages {
         imagecolortransparent($im, $background);
         $textcolor = imagecolorallocate($im, 255, 0, 0);
         $textsize = $size*0.8;
-        $text = "\u{f0e5}";
+        $text = "\u{f075}";
         $fontpath = self::FONT_AWESOME_PATH;
         $bbox = imagettfbbox($textsize, 0, $fontpath, $text);
         //$bboxStr = print_r($bbox, true);
@@ -56,13 +57,14 @@ class EditorImages {
     }
     
     public static function noWordBreakIcon($size) {
+        $widthMultiplier = 0.9;
         $height = $size;
-        $width = $size*0.8;
+        $width = $size*$widthMultiplier;
         $im = imagecreatetruecolor($width, $height);
         $background = imagecolorallocate($im, 255, 255, 255);
         imagecolortransparent($im, $background);
         $textcolor = imagecolorallocate($im, 200, 200, 200);
-        $textsize = $size*0.8;
+        $textsize = $size*$widthMultiplier;
         $text = "-";
         $fontpath = self::FONT_MONO;
         $bbox = imagettfbbox($textsize, 0, $fontpath, $text);
@@ -107,32 +109,50 @@ class EditorImages {
     
     
     public static function ChunkMarkIcon($size, $dareId, $chunkNumber, $segment, $type, $dir, $lwid='A') {
-        $textsize = $size*0.7;
-        $typeLabel = 'Start';
-        if ($type === 'end') {
-            $typeLabel = 'End';
-        }
-        $text = "$typeLabel $dareId-$chunkNumber-$segment";
+
+        // TODO: Properly support text direction, right now the editor only asks for LTR images
+        $startLtr = 'START:';
+        $endLtr = 'END:';
+        $startRtl = 'START';
+        $endRtl = 'END';
+        $sizeFactorStart = 0.7;
+        $sizeFactorEnd= 0.5;
+
+        $textSize = $type === 'start' ? $size * $sizeFactorStart : $size * $sizeFactorEnd;
+        $segmentText = "$dareId-$chunkNumber-$segment";
         if ($lwid !== 'A') {
-            $text .= ' (' . $lwid . ')';
+            $segmentText .= ' (' . $lwid . ')';
         }
-       
+
+        if ($dir === 'ltr') {
+            if ($type === 'start') {
+                $text = "$startLtr $segmentText";
+            } else {
+                $text = "$endLtr $segmentText";
+            }
+        } else {
+            if ($type === 'start') {
+                $text = "$segmentText $startRtl";
+            } else {
+                $text = "$endRtl $segmentText";
+            }
+        }
 
         $fontpath = self::FONT_MONO;
-        $bbox = imagettfbbox($textsize, 0, $fontpath, $text);
+        $bbox = imagettfbbox($textSize, 0, $fontpath, $text);
         $textWidth = $bbox[2]-$bbox[0];
         $textHeight = $bbox[5]-$bbox[3];
         
         $height = $size+5;
-        $width = $textWidth + 5;
+        $width = $textWidth + 7;
         $im = imagecreatetruecolor($width, $height);
-        $background = imagecolorallocate($im, 229, 238, 252);
-        //imagecolortransparent($im, $background);
-        $textcolor = imagecolorallocate($im, 50, 50, 50);
+        $background = imagecolorallocate($im, 165, 208, 255);
+        //$background = imagecolorallocate($im, 51, 122, 183);
+        $textcolor = imagecolorallocate($im, 50, 50, 60);
         $x = ($width / 2) - ($textWidth/2) - $bbox[0];
         $y = ($height / 2) - ($textHeight/ 2) - $bbox[1];
         imagefilledrectangle($im, 0, 0, $width-1, $height-1, $background);
-        imagettftext($im, $textsize, 0, $x, $y, $textcolor, $fontpath, $text);
+        imagettftext($im, $textSize, 0, $x, $y, $textcolor, $fontpath, $text);
         ob_start();
         imagepng($im);
         $image_data = ob_get_contents();
@@ -151,7 +171,7 @@ class EditorImages {
         $textWidth = $bbox[2]-$bbox[0];
         $textHeight = $bbox[5]-$bbox[3];
         
-        $height = $size;
+        $height = $size + 8;
         $width = $textWidth + 5;
         $im = imagecreatetruecolor($width, $height);
         $background = imagecolorallocate($im, 244, 245, 247);

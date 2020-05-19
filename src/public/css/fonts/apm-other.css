@@ -1,8 +1,9 @@
 /* Fonts */
 
+
 @font-face {
-    font-family: ApmFreeSerif;
-    src: url(../../fonts/FreeSerif.ttf) format("truetype");
+    font-family: ApmDejaVuSans;
+    src: url(../../fonts/DejaVuSans.ttf) format("truetype");
 }
 
 @font-face {

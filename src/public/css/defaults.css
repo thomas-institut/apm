@@ -18,29 +18,34 @@
 
 :root {
     /* DEFAULT FONT */
-    --default-font-family: ApmNotoSans, "Noto Sans", Arial, sans-serif;
+    --default-font-family: ApmNotoSans, "Noto Sans", serif;
     --default-font-size: 14px;
     --default-font-color: #323232;
 
+    --monospace-font-family: ApmNotoMono, "Noto Mono", monospace;
+
     /* TEXT ICON FONT */
-    --text-icon-font-family: ApmNotoSans;
+    --text-icon-font-family: ApmFreeSans;
 
     /* LATIN FONTS */
-    --latin-font-family: ApmNotoSans, "Noto Sans", sans-serif;
-    --latin-hand1-font-family: ApmFreeSerif, serif;
-    --latin-hand2-font-family: Arial, serif;
+    --latin-font-family: ApmFreeSans, "Free Sans", sans-serif;
+    --latin-font-size: 110%;
+
+    --latin-hand1-font-family: ApmFreeSerif, "Free Serif", serif;
+    --latin-hand1-font-size: 100%;
+
+    --latin-hand2-font-family: ApmNotoSans, "Noto Sans", sans-serif;
+    --latin-hand2-font-size: 100%;
 
     /* ARABIC FONTS */
     --arabic-font-family: ApmNotoNaskhArabic, "Noto Naskh Arabic", serif;
     --arabic-font-size: 130%;
 
-    --arabic-hand1-font-family: ApmNotoSans, sans-serif;
+    --arabic-hand1-font-family: ApmNotoSans, "Noto Sans", sans-serif;
     --arabic-hand1-font-size: 130%;
 
     --arabic-hand2-font-family: Scheherazade, serif;
     --arabic-hand2-font-size: 140%;
-
-
 
     /* JUDEO ARABIC FONTS */
     --judeoarabic-font-family: Ezra, serif;
@@ -108,6 +113,7 @@
 .text-la, .text-la.hand-0 {
     direction: ltr;
     font-family: var(--latin-font-family);
+    font-size: var(--latin-font-size);
 }
 
 .text-la.hand-1 {

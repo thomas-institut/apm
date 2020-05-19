@@ -107,17 +107,6 @@ table.collationtable td {
     border: solid 1px silver
  }
 
-td.he-td {
-    font-family: var(--hebrew-font-family);
-    font-size: var(--hebrew-font-size);
- }
- 
-td.ar-td {
-    font-family: var(--arabic-font-family);
-    font-style: normal;
-    font-size: var(--arabic-font-size);
-}
-
 td.witness {
     font-weight: 600;
 }
@@ -126,16 +115,16 @@ table.collationtable td.tokennotpresent {
     text-align: center;
     color: silver;
 }
-td.addition.variant_1 {
+td.addition.variant-1 {
     background-image: linear-gradient(to top, #ddecff, #fbedff);
 }
 
 
-td.variant_1 {
+td.variant-1 {
     background-color: #fbedff;
 }
 
-td.variant_2 {
+td.variant-2 {
     background-color: #ffcccc;
 }
 
@@ -203,26 +192,12 @@ td.offline {
 }
 .noteicon {
     color: red;
+    font-size: var(--default-font-size)
 }
 
-.ar-td .noteicon {
-    font-size: 0.6em;
-}
 
 .mathtext {
     color: #990099;
-}
-
-.hand_1 {
-    font-family: serif;
-}
-
-.hand_2 {
-    font-family: Arial, sans-serif;
-}
-
-.hand_3 {
-    font-family: Scheherazade, serif;
 }
 
 .popover p.noteheader {
@@ -325,11 +300,11 @@ div.itemspopover {
     border: solid 1px silver
 }
 
-td.variant1 {
+td.variant-1 {
     background-color: #fbedff;
 }
 
-td.variant2 {
+td.variant-2 {
     background: plum;
 }
 
@@ -360,8 +335,8 @@ td.te-rowtitle {
 
 }
 
-.ctPopover .fas, .text-icon {
-    color: grey;
+.ctPopover .fas, .ctPopover .far, .ctPopover .text-icon {
+    color: var(--dimmed-text-color);
 }
 
 .ctPopover .item-info {
@@ -382,31 +357,26 @@ td.te-rowtitle {
 }
 
 .ctPopover .heading {
-    font-weight: bold;
+    font-weight: 600;
     font-size: 1.5em;
 }
 
+.ctPopover b {
+    font-weight: 600;
+}
+
 .ctPopover .notes h1 {
-    font-weight: bold;
+    font-weight: 600;
     font-size: 1em;
 }
 
-
 .ctPopover .note {
-    color: black;
+    color: var(--default-font-color);
     margin-left: 1em;
 }
 
 .ctPopover .note .note-caption {
-    font-size: 0.8em;
-    color: grey;
-}
-
-.ctPopover .ctlang-ar {
-    direction: rtl;
-}
-
-.ctPopover .ctlang-he {
-    direction: rtl;
+    font-size: var(--small-font-size);
+    color: var(--dimmed-text-color);
 }
 

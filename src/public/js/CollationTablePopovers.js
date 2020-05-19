@@ -28,7 +28,7 @@ const noteDivClass = 'note'
 const noteTextClass = 'note-text'
 const noteCaptionClass = 'note-caption'
 const tokenAddressClass = 'tokenaddress'
-const langClassPrefix = 'ctlang-'
+const langClassPrefix = 'text-'
 
 // Icons
 const equivalentIcon = '&equiv;'
@@ -162,8 +162,6 @@ export function getItemPopoverHtmlForToken(row, token, tokenSourceItemData, peop
   let indentHtml = ''
   if (showItemText) {
     html += `<p class="${itemTextClass}">${tokenItemText}</p>`
-    // html += itemBullet + tokenItemText + lineBreakHtml
-    // indentHtml = oneIndentUnit
   }
   let isNormalText = true
 
@@ -175,38 +173,37 @@ export function getItemPopoverHtmlForToken(row, token, tokenSourceItemData, peop
     return html
   }
   if (item.hand !== undefined) {
-    html += getItemInfoLineP( '<b>Hand: </b>' + (item.hand +1) )
+    html += getItemInfoLineP( genEnglishTextSpan('<b>Hand: </b>' + (item.hand +1)))
   }
   if (item.format !== undefined) {
-    html += getItemInfoLineP(`${formatIcon} ${item.format}`)
+    html += getItemInfoLineP(`${formatIcon} ${genEnglishTextSpan(item.format)}`)
     isNormalText = false
   }
   if (item['clarity'] === 0) {
-    html += getItemInfoLineP('<b>Illegible</b>', [ unclearIcon + item['clarityReason'] ])
+    html += getItemInfoLineP(
+      `<b>${genEnglishTextSpan('Illegible')}</b>`,
+      [ unclearIcon + genEnglishTextSpan(item['clarityReason']) ]
+    )
     isNormalText = false
   }
   if (item['clarity'] === 0.5) {
     let subLines = []
-    subLines.push(unclearIcon + item['clarityReason'] )
+    subLines.push(unclearIcon + genEnglishTextSpan(item['clarityReason']) )
     if (item['alternateTexts'] !== undefined) {
       for(const altText of item['alternateTexts']) {
         subLines.push(`${altTextIcon} ${altText}`)
       }
     }
-    html += getItemInfoLineP('<b>Unclear</b>', subLines)
+    html += getItemInfoLineP(`<b>${genEnglishTextSpan('Unclear')}</b>`, subLines)
     isNormalText = false
   }
 
   if (item['textualFlow'] === 1) {
-    html += getItemInfoLineP('<b>Addition</b>', [  `${locationIcon} ${item.location}` ])
-    // html += indentHtml + '<b>Addition</b>'+ lineBreakHtml
-    // html += indentHtml + locationIcon + item.location
+    html += getItemInfoLineP(`<b>${genEnglishTextSpan('Addition')}</b>`, [  `${locationIcon} ${genEnglishTextSpan(item.location)}` ])
     isNormalText = false
   }
   if (item.deletion !== undefined) {
-    html += getItemInfoLineP('<b>Deletion</b>', [  deletionIcon + item.deletion])
-    // html += indentHtml + '<b>Deletion</b>'+ lineBreakHtml
-    // html += indentHtml + deletionIcon + item.deletion
+    html += getItemInfoLineP(`<b>${genEnglishTextSpan('Deletion')}</b>`, [  deletionIcon + genEnglishTextSpan(item.deletion)])
     isNormalText = false
   }
   if (item['normalizationType'] !== undefined) {
@@ -226,7 +223,8 @@ export function getItemPopoverHtmlForToken(row, token, tokenSourceItemData, peop
     isNormalText = false
   }
   if (isNormalText) {
-    html += getItemInfoLineP('Normal Text')
+    html += getItemInfoLineP(genEnglishTextSpan('Normal Text'))
+
   }
 
   // notes
@@ -238,10 +236,14 @@ export function getItemPopoverHtmlForToken(row, token, tokenSourceItemData, peop
 
 }
 
+function genEnglishTextSpan(text) {
+  return `<span class="${langClassPrefix}en">${text}</span>`
+}
+
 function getNotesHtml(notes, peopleInfo, title = 'Notes') {
   let html = ''
   html += `<div class="${notesDivClass}">`
-  html += `<h1>${title}</h1>`
+  html += `<h1>${genEnglishTextSpan(title)}</h1>`
   for(const note of notes) {
     html += getNoteHtml(note, peopleInfo)
   }
@@ -250,9 +252,15 @@ function getNotesHtml(notes, peopleInfo, title = 'Notes') {
 }
 
 function getNoteHtml(note, peopleInfo) {
-  let html = `<div class="${noteDivClass}">`
+  let html = `<div class="${noteDivClass} ${langClassPrefix}en">`
+  let authorShortName = peopleInfo[note.authorId]['shortName']
+  if (authorShortName === undefined) {
+    console.error(`No short name defined for author ${note.authorId}`)
+    authorShortName = peopleInfo[note.authorId]['fullname']
+  }
+
   html += `<p class="${noteTextClass}">${note.text}</p>`
-  html += `<p class="${noteCaptionClass}">-- ${peopleInfo[note.authorId]['shortName']}, ${formatNoteTime(note.timeStamp)}</p>`
+  html += `<p class="${noteCaptionClass}">-- ${authorShortName}, ${formatNoteTime(note.timeStamp)}</p>`
   html += '</div>'
   return html
 }

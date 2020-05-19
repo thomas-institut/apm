@@ -272,7 +272,7 @@ class ChunkPage {
     </div>
     <div class="collapse" id="text-{{witnessSystemId}}">
       <div class="panel-body">
-      <p class="formattedchunktext chunktext-{{lang}}" id="formatted-{{witnessSystemId}}"></p>
+      <p class="formattedchunktext text-{{lang}}" id="formatted-{{witnessSystemId}}"></p>
       </div>
       </div>
       </div>

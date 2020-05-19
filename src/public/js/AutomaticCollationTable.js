@@ -725,7 +725,7 @@ export class AutomaticCollationTable {
       if (itemZero['lang'] !== undefined) {
         lang = itemZero['lang']
       }
-      classes.push( lang + '-td')
+      classes.push( 'text-' + lang)
       if (token['sourceItems'].length === 1) {
         // td inherits the classes from the single source item
         return classes.concat(thisObject.getClassesFromItem(itemZero))
@@ -740,7 +740,7 @@ export class AutomaticCollationTable {
     if (item.hand !== undefined) {
       hand = item.hand
     }
-    classes.push( 'hand_' + hand)
+    classes.push( 'hand-' + hand)
 
     if (item.format !== undefined && item.format !== '') {
       classes.push(item.format)

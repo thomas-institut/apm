@@ -56,7 +56,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
     
     const CLASS_TEXTUALITEM = 'textualitem';
     const CLASS_MARKITEM = 'markitem';
-    const CLASS_HAND = 'hand_';
+    const CLASS_HAND = 'hand-';
     const CLASS_UNCLEAR = 'unclear';
     const CLASS_ILLEGIBLE = 'illegible';
     const CLASS_DELETION = 'deletion';

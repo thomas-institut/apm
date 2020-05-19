@@ -992,7 +992,7 @@ export class CollationTableEditor {
         let variant  = thisObject.variantsMatrix.getValue(tableRow, col)
         if (variant !== 0) {
           // no class for variant 0
-          classes.push('variant_' + variant )
+          classes.push('variant-' + variant )
         }
 
       }
@@ -1005,7 +1005,7 @@ export class CollationTableEditor {
       if (itemZero['lang'] !== undefined) {
         lang = itemZero['lang']
       }
-      classes.push( lang + '-td')
+      classes.push('text-' + lang)
       if (token['sourceItems'].length === 1) {
         // td inherits the classes from the single source item
         return classes.concat(thisObject.getClassesFromItem(itemZero))
@@ -1094,7 +1094,7 @@ export class CollationTableEditor {
     }
     if (hand !== 0) {
       // no class for hand 0
-      classes.push( 'hand_' + hand)
+      classes.push( 'hand-' + hand)
     }
 
     if (item.format !== undefined && item.format !== '') {

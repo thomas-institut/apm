@@ -1,0 +1,20 @@
+/* Fonts */
+
+@font-face {
+    font-family: ApmFreeSerif;
+    src: url(../../fonts/FreeSerif.ttf) format("truetype");
+}
+
+@font-face {
+    font-family: "Linux Libertine";
+    src: url(../../fonts/LinLibertine_Rah.ttf) format("truetype");
+}
+
+@font-face {
+    font-family: Scheherazade;
+    src: url(../../fonts/Scheherazade-Regular.woff);
+}
+@font-face {
+    font-family: Ezra;
+    src: url(../../fonts/SILEOT.woff);
+}

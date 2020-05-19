@@ -344,14 +344,10 @@ img.chunkmark  {
 
 
 /* LINE NUMBERS */
-@font-face {
-    font-family: 'PT Mono';
-    src: url(../fonts/PTMono.woff);
-}
 
 .linenumber {
     color: gray;
-    font-family: 'PT Mono', monospace;
+    font-family: monospace;
 }
 
 .linenumber a:hover {
@@ -365,7 +361,7 @@ img.chunkmark  {
 .he-text {
     direction: rtl;
     unicode-bidi: isolate;
-    font-family: 'Linux Libertine', serif;
+    font-family: var(--hebrew-font-family);
     font-style: normal;
 }
 
@@ -378,6 +374,7 @@ img.chunkmark  {
 
 .la-text {
     direction: ltr;
+    font-family: var(--latin-font-family);
     unicode-bidi: isolate;
     font-style: normal;
 }
@@ -385,41 +382,34 @@ img.chunkmark  {
 .jrb-text {
     direction: rtl;
     unicode-bidi: isolate;
-    font-family: Ezra, serif;
+    font-family: var(--judeoarabic-font-family);
     font-style: normal;
 }
 
 /* HANDS */
 
-.hand1 .la-text, b.hand1 {
-    font-family: 'Times New Roman', Times, serif;
+.la-text .hand1 {
+    font-family: var(--latin-hand1-font-family);
 }
 
-.hand2 .la-text, b.hand2 {
-    font-family: cursive, sans-serif ;
+.la-text .hand2  {
+    font-family: var(--latin-hand2-font-family) ;
 }
 
-.hand1 .ar-text, b.hand1 {
-    font-family: 'Times New Roman', Times, serif;
+.ar-text .hand1  {
+    font-family: var(--arabic-hand1-font-family);
 }
 
-.hand2 .ar-text, b.hand2 {
-    font-family: cursive, sans-serif ;
+.ar-text .hand2 {
+    font-family:var(--arabic-hand2-font-family);
 }
 
-.hand1 .he-text, b.hand1 {
-    font-family: cursive, sans-serif ;
+.he-text .hand1 {
+    font-family: var(--hebrew-hand1-font-family);
 }
 
-.hand2 .he-text, b.hand2 {
-    font-family: 'Times New Roman', Times, serif;
+.he-text .hand2 {
+    font-family: var(--hebrew-hand2-font-family);
 }
 
-.hand1 .jrb-text, b.hand1 {
-    font-family: cursive, sans-serif ;
-}
-
-.hand2 .jrb-text, b.hand2 {
-    font-family: 'Times New Roman', Times, serif;
-}
-
+/* No alt hands for Judeo Arabic */

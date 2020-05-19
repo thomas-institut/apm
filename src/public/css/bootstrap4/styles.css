@@ -16,28 +16,10 @@
  *
  */
 
-/* Variables */
-
-:root {
-    --default-font-family: "ApmNotoSans", "Noto Sans", Arial, sans-serif;
-    --default-font-size: 14px;
-    --default-font-color: #323232;
-    --small-font-size: 0.8rem;
-    --light-border: 1px solid #e7e7e7;
-    --dimmed-blue-color: #337ab7;  /* For dimmed links*/
-}
-
-/* Font-Faces */
-
-@font-face {
-    font-family: "ApmFreeSerif";
-    src: url(../../fonts/FreeSerif.ttf) format("truetype");
-}
-
-@font-face {
-    font-family: "ApmNotoNaskhArabicUI";
-    src: url(../../fonts/NotoNaskhArabicUI-Regular.ttf) format("truetype");
-}
+@import url(../fonts/apm-noto-sans.css);
+@import url(../fonts/apm-noto-naskh-arabic.css);
+@import url(../fonts/apm-other.css);
+@import url('../defaults.css');
 
 
 body, .popover {
@@ -53,9 +35,10 @@ body, .popover {
     }
 }
 
-
-.bottom-border-light {
-    border-bottom: var(--light-border);  /* To make it the same as bs3, no border in bs4*/
+.bottom-border-light { /* To make it the same as bs3, no border in bs4*/
+    border-bottom-color: var(--very-light-gray);
+    border-bottom-width: 1px;
+    border-bottom-style: solid;
 }
 
 .navbar {

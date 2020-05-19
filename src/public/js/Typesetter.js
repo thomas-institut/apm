@@ -108,7 +108,9 @@ class Typesetter {
     this.options = oc.getCleanOptions(options)
     
     this.emSize = this.getTextWidthWithDefaults('m')
+    console.log(`Typesetter: em size: ${this.emSize}`)
     this.normalSpace = this.options.normalSpaceWidth * this.emSize
+    console.log(`Typesetter: normal space size: ${this.normalSpace}`)
   }
 
   

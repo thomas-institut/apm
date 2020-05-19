@@ -16,46 +16,10 @@
  *  
  */
 
-/* Variables */
-
-:root {
-    --default-font-family: ApmNotoSans, "Noto Sans", Arial, sans-serif;
-    --default-font-size: 14px;
-    --default-font-color: #323232;
-    --arabic-font-family: "Noto Naskh Arabic UI", "ApmNotoNaskhArabicUI", serif;
-    --arabic-font-size: 130%;
-    --hebrew-font-family: ApmNotoSans, "Noto Sans", sans-serif;
-    --hebrew-font-size: 110%;
-    --small-font-size: 0.8rem;
-    --light-border: 1px solid #e7e7e7;
-    --dimmed-blue-color: #337ab7;  /* For dimmed links*/
-}
-
-/* Fonts */
-
-@font-face {
-    font-family: ApmFreeSerif;
-    src: url(../fonts/FreeSerif.ttf) format("truetype");
-}
-
-@font-face {
-    font-family: ApmNotoNaskhArabicUI;
-    src: url(../fonts/NotoNaskhArabicUI-Regular.ttf) format("truetype");
-}
-
-@font-face {
-    font-family: "Linux Libertine";
-    src: url(../fonts/LinLibertine_Rah.ttf) format("truetype");
-}
-
-@font-face {
-    font-family: "Scheherazade";
-    src: url(../fonts/Scheherazade-Regular.woff);
-}
-@font-face {
-    font-family: "Ezra";
-    src: url(../fonts/SILEOT.woff);
-}
+@import url(./fonts/apm-noto-sans.css);
+@import url(./fonts/apm-noto-naskh-arabic.css);
+@import url(./fonts/apm-other.css);
+@import url(defaults.css);
 
 
 body, .popover {
@@ -138,19 +102,6 @@ article.mssfeedentry li  {
 footer {
     margin-top: 40px;
 }
-
-/*p.logo{*/
-/*    float: left;*/
-/*    margin: 0;*/
-/*    padding: 0;*/
-/*    font-family: 'PT Sans', Arial, Verdana, serif;*/
-/*    font-size: 2em;*/
-/*}*/
-
-/*p.logo a:hover {*/
-/*    font-weight: normal;*/
-/*    color: inherit;*/
-/*}*/
 
 ul.horizontal {
     margin: 0;
@@ -439,9 +390,11 @@ div.cpheader a {
 
 
 .text-icon {
-    font-size: 0.8em;
+    font-family: var(--text-icon-font-family);
+    font-size: 0.75em;
     font-weight: bold;
+    color: var(--default-font-color);
     padding: 1px;
-    border: 2px solid grey;
+    border: 2px solid;
     border-radius: 25%;
 }

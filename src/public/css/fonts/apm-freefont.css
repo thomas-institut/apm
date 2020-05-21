@@ -26,29 +26,37 @@
 /* Free Sans */
 
 @font-face {
-    font-family: ApmFreeSans;
-    src: url(../../fonts/freefont/FreeSans.woff) format("woff");
+    font-family: FreeSans;
+    src: local(FreeSans),
+        url(../../fonts/freefont/FreeSans.woff) format("woff"),
+        url(../../fonts/freefont/FreeSans.ttf) format("truetype");
     font-weight: 400;
     font-style: normal;
 }
 
 @font-face {
-    font-family: ApmFreeSans;
-    src: url(../../fonts/freefont/FreeSansOblique.woff) format("woff");
+    font-family: FreeSans;
+    src: local(FreeSans),
+        url(../../fonts/freefont/FreeSansOblique.woff) format("woff"),
+        url(../../fonts/freefont/FreeSansOblique.ttf) format("truetype");
     font-weight: 400;
     font-style: italic;
 }
 
 @font-face {
-    font-family: ApmFreeSans;
-    src: url(../../fonts/freefont/FreeSansBold.woff) format("woff");
+    font-family: FreeSans;
+    src: local(FreeSans),
+        url(../../fonts/freefont/FreeSansBold.woff) format("woff"),
+    url(../../fonts/freefont/FreeSansBold.ttf) format("truetype");
     font-weight: 700;
     font-style: normal;
 }
 
 @font-face {
-    font-family: ApmFreeSans;
-    src: url(../../fonts/freefont/FreeSansBoldOblique.woff) format("woff");
+    font-family: FreeSans;
+    src: local(FreeSans),
+        url(../../fonts/freefont/FreeSansBoldOblique.woff) format("woff"),
+        url(../../fonts/freefont/FreeSansBoldOblique.ttf) format("truetype");
     font-weight: 700;
     font-style: italic;
 }
@@ -56,29 +64,37 @@
 /* Free Serif */
 
 @font-face {
-    font-family: ApmFreeSerif;
-    src: url(../../fonts/freefont/FreeSerif.woff) format("woff");
+    font-family: FreeSerif;
+    src: local(FreeSerif),
+        url(../../fonts/freefont/FreeSerif.woff) format("woff"),
+        url(../../fonts/freefont/FreeSerif.ttf) format("truetype");
     font-weight: 400;
     font-style: normal;
 }
 
 @font-face {
-    font-family: ApmFreeSerif;
-    src: url(../../fonts/freefont/FreeSerifItalic.woff) format("woff");
+    font-family: FreeSerif;
+    src: local(FreeSerifItalic),
+        url(../../fonts/freefont/FreeSerifItalic.woff) format("woff"),
+        url(../../fonts/freefont/FreeSerifItalic.ttf) format("truetype");
     font-weight: 400;
     font-style: italic;
 }
 
 @font-face {
-    font-family: ApmFreeSerif;
-    src: url(../../fonts/freefont/FreeSerifBold.woff) format("woff");
+    font-family: FreeSerif;
+    src: local(FreeSerifBold),
+    url(../../fonts/freefont/FreeSerifBold.woff) format("woff"),
+    url(../../fonts/freefont/FreeSerifBold.ttf) format("truetype");
     font-weight: 700;
     font-style: normal;
 }
 
 @font-face {
-    font-family: ApmFreeSerif;
-    src: url(../../fonts/freefont/FreeSerifBoldItalic.woff) format("woff");
+    font-family: FreeSerif;
+    src: local(FreeSerifBoldItalic),
+        url(../../fonts/freefont/FreeSerifBoldItalic.woff) format("woff"),
+        url(../../fonts/freefont/FreeSerifBoldItalic.ttf) format("truetype");
     font-weight: 700;
     font-style: italic;
 }
@@ -86,29 +102,37 @@
 /* Free Mono */
 
 @font-face {
-    font-family: ApmFreeMono;
-    src: url(../../fonts/freefont/FreeMono.woff) format("woff");
+    font-family: FreeMono;
+    src: local(FreeMono),
+        url(../../fonts/freefont/FreeMono.woff) format("woff"),
+        url(../../fonts/freefont/FreeMono.ttf) format("truetype");
     font-weight: 400;
     font-style: normal;
 }
 
 @font-face {
-    font-family: ApmFreeMono;
-    src: url(../../fonts/freefont/FreeMonoOblique.woff) format("woff");
+    font-family: FreeMono;
+    src: local(FreeMonoOblique),
+        url(../../fonts/freefont/FreeMonoOblique.woff) format("woff"),
+        url(../../fonts/freefont/FreeMonoOblique.ttf) format("truetype");
     font-weight: 400;
     font-style: italic;
 }
 
 @font-face {
-    font-family: ApmFreeMono;
-    src: url(../../fonts/freefont/FreeMonoBold.woff) format("woff");
+    font-family: FreeMono;
+    src: local(FreeSans),
+        url(../../fonts/freefont/FreeMonoBold.woff) format("woff"),
+        url(../../fonts/freefont/FreeMonoBold.ttf) format("truetype");
     font-weight: 700;
     font-style: normal;
 }
 
 @font-face {
-    font-family: ApmFreeMono;
-    src: url(../../fonts/freefont/FreeMonoBoldOblique.woff) format("woff");
+    font-family: FreeMono;
+    src: local(FreeMonoBoldOblique),
+        url(../../fonts/freefont/FreeMonoBoldOblique.woff) format("woff"),
+        url(../../fonts/freefont/FreeMonoBoldOblique.ttf) format("truetype");
     font-weight: 700;
     font-style: italic;
 }

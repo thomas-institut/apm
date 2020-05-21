@@ -2,20 +2,16 @@
 
 
 @font-face {
-    font-family: ApmDejaVuSans;
-    src: url(../../fonts/DejaVuSans.ttf) format("truetype");
-}
-
-@font-face {
-    font-family: "Linux Libertine";
-    src: url(../../fonts/LinLibertine_Rah.ttf) format("truetype");
+    font-family: "DejaVu Sans";
+    src: local("DejaVu Sans"),
+        url(../../fonts/DejaVuSans.ttf) format("truetype");
 }
 
 @font-face {
     font-family: Scheherazade;
-    src: url(../../fonts/Scheherazade-Regular.woff);
+    src: local(Scheherazade), url(../../fonts/Scheherazade-Regular.woff);
 }
 @font-face {
     font-family: Ezra;
-    src: url(../../fonts/SILEOT.woff);
+    src: local(Ezra), url(../../fonts/Ezra.woff);
 }

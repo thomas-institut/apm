@@ -75,19 +75,16 @@
 
     <ul class="nav nav-tabs" role="tablist" id="tabsUl">
         <li id="collationTableTabHeader" role="presentation" class="active"><a role="tab" data-toggle="tab" href="#collationtablepanel">Collation Table</a></li>
-        <li id="editionTabHeader"  role="presentation"><a role="tab" data-toggle="tab" href="#editiondiv">Quick Edition</a></li>
+        <li id="editionTabHeader"  role="presentation"><a role="tab" data-toggle="tab" href="#editiondiv-panel">Quick Edition</a></li>
         <li id="witnessesTabHeader"  role="presentation"><a role="tab" data-toggle="tab" href="#witnessesdiv">Witness Info</a></li>
         <li id="witnessesTabHeader"  role="presentation"><a role="tab" data-toggle="tab" href="#versionhistorydiv">Version History</a></li>
     </ul>
 
     <div class="tab-content">
-        <div role="tabpanel" class="tab-pane active panetab" id="collationtablepanel">
+        <div role="tabpanel" class="tab-pane active panetab nomargin-panel" id="collationtablepanel">
             <div class="ct-toolbar">
                 <div>
-                    <span id="popovers-toggle">
-
-                    </span>
-
+                    <span id="popovers-toggle"></span>
                 </div>
                 <div>
                     <a id="export-csv-button" class="tb-button"  download="apm-collationtable.csv"
@@ -97,7 +94,17 @@
             </div>
             <div id="collationtablediv"><div class="loading">Loading table...  <i class="fas fa-circle-notch fa-spin"></i></div></div>
         </div>
-        <div role="tabpanel" class="tab-pane panetab" id="editiondiv"></div>
+        <div role="tabpanel" class="tab-pane panetab nomargin-panel" id="editiondiv-panel">
+            <div class="ct-toolbar">
+                <div>
+                </div>
+                <div>
+                    <a id="export-svg-button" class="tb-button"  download="apm-quick-edition.svg"
+                       title="Download SVG"><small>SVG</small> <i class="fas fa-download"></i></a>
+                </div>
+            </div>
+            <div id="editiondiv"></div>
+        </div>
         <div role="tabpanel" class="tab-pane panetab" id="witnessesdiv">
             <div class="witnessinfotable"></div>
             <div class="witness-update-div">

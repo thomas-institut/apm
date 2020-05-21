@@ -23,8 +23,10 @@
 /*  NORMAL */
 
 @font-face {
-    font-family: "ApmNotoMono";
-    src: url(../../fonts/noto/NotoMono-hinted/NotoMono-Regular.ttf) format("truetype");
+    font-family: "Noto Mono";
+    src:  local("Noto Mono"),
+          local("Noto Mono Regular"),
+            url(../../fonts/noto/NotoMono-hinted/NotoMono-Regular.ttf) format("truetype");
     font-weight: 400;  /* normal */
     font-style: normal;
     font-stretch: normal;

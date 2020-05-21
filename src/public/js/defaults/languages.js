@@ -23,14 +23,14 @@ export const defaultLanguageDefinition = {
     name: 'Latin',
     rtl: false,
     fontsize: 3,
-    editionFont: 'ApmFreeSerif'
+    editionFont: 'FreeSerif'
   },
   ar: {
     code: 'ar',
     name: 'Arabic',
     rtl: true,
     fontsize: 3,
-    editionFont: 'ApmNotoNaskhArabic'
+    editionFont: 'Noto Naskh Arabic'
   },
   he: {
     code: 'he',

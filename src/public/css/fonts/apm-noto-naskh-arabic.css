@@ -23,8 +23,10 @@
 /*  NORMAL */
 
 @font-face {
-    font-family: "ApmNotoNaskhArabic";
-    src: url(../../fonts/noto/NotoNaskhArabic-hinted/NotoNaskhArabic-Regular.ttf) format("truetype");
+    font-family: "Noto Naskh Arabic";
+    src: local("Noto Naskh Arabic"),
+        local("Noto Naskh Arabic Regular"),
+        url(../../fonts/noto/NotoNaskhArabic-hinted/NotoNaskhArabic-Regular.ttf) format("truetype");
     font-weight: 400;  /* normal */
     font-style: normal;
     font-stretch: normal;
@@ -32,8 +34,9 @@
 
 /* BOLD */
 @font-face {
-    font-family: "ApmNotoNaskhArabic";
-    src: url(../../fonts/noto/NotoNaskhArabic-hinted/NotoNaskhArabic-Bold.ttf) format("truetype");
+    font-family: "Noto Naskh Arabic";
+    src: local("Noto Naskh Arabic Bold"),
+        url(../../fonts/noto/NotoNaskhArabic-hinted/NotoNaskhArabic-Bold.ttf) format("truetype");
     font-weight: 700;  /* bold */
     font-style: normal;
     font-stretch: normal;
@@ -42,8 +45,10 @@
 /*  UI NORMAL */
 
 @font-face {
-    font-family: "ApmNotoNaskhArabicUI";
-    src: url(../../fonts/noto/NotoNaskhArabic-hinted/NotoNaskhArabicUI-Regular.ttf) format("truetype");
+    font-family: "Noto Naskh Arabic UI";
+    src: local("Noto Naskh Arabic UI"),
+        local("Noto Naskh Arabic UI Regular"),
+        url(../../fonts/noto/NotoNaskhArabic-hinted/NotoNaskhArabicUI-Regular.ttf) format("truetype");
     font-weight: 400;  /* normal */
     font-style: normal;
     font-stretch: normal;
@@ -51,8 +56,9 @@
 
 /* UI BOLD */
 @font-face {
-    font-family: "ApmNotoNaskhArabicUI";
-    src: url(../../fonts/noto/NotoNaskhArabic-hinted/NotoNaskhArabicUI-Bold.ttf) format("truetype");
+    font-family: "Noto Naskh Arabic UI";
+    src: local("Noto Naskh Arabic UI Bold"),
+        url(../../fonts/noto/NotoNaskhArabic-hinted/NotoNaskhArabicUI-Bold.ttf) format("truetype");
     font-weight: 700;  /* bold */
     font-style: normal;
     font-stretch: normal;

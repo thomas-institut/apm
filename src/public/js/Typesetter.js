@@ -305,7 +305,7 @@ class Typesetter {
     return lineNumberTokens
   }
   
-  genTokenSvg(left, top, token, showGlue = false) {
+  genTokenSvg(left, top, token, showGlue = false, showFontBasicInfo = true) {
     
     if (token.type === 'glue') {
       if (!showGlue || token.width===0) {
@@ -339,15 +339,19 @@ class Typesetter {
     if (token.fontSize) {
       fontSize = token.fontSize
     }
-    
-    let svgString = '<text fill="' +  fillColor + '" font-size="' + fontSize + '" '
-    svgString += 'font-family="' + fontfamily + '" '
-    if (fontWeight) {
-      svgString += 'font-weight="' + fontWeight +'" '
+
+    let svgString = "<text "
+    if (showFontBasicInfo) {
+      svgString += 'fill="' +  fillColor + '" font-size="' + fontSize + '" '
+      svgString += 'font-family="' + fontfamily + '" '
     }
-    
+
     if (fontStyle) {
       svgString += 'font-style="' + fontStyle +'" '
+    }
+
+    if (fontWeight) {
+      svgString += 'font-weight="' + fontWeight +'" '
     }
     
     if ((!token.direction && this.options.rightToLeft) || (token.direction === 'rtl')) {

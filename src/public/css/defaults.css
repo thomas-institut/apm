@@ -18,34 +18,35 @@
 
 :root {
     /* DEFAULT FONT */
-    --default-font-family: ApmNotoSans, "Noto Sans", serif;
+    --default-font-family: "Noto Sans", sans-serif;
+    /*--default-font-family: "Linux Libertine", serif;*/
     --default-font-size: 14px;
     --default-font-color: #323232;
 
-    --monospace-font-family: ApmNotoMono, "Noto Mono", monospace;
+    --monospace-font-family: "Noto Mono", monospace;
 
     /* TEXT ICON FONT */
-    --text-icon-font-family: ApmFreeSans;
+    --text-icon-font-family: FreeSans;
 
     /* LATIN FONTS */
-    --latin-font-family: ApmFreeSans, "Free Sans", sans-serif;
+    --latin-font-family: FreeSans, sans-serif;
     --latin-font-size: 110%;
 
-    --latin-hand1-font-family: ApmFreeSerif, "Free Serif", serif;
+    --latin-hand1-font-family: FreeSerif, serif;
     --latin-hand1-font-size: 100%;
 
-    --latin-hand2-font-family: ApmNotoSans, "Noto Sans", sans-serif;
+    --latin-hand2-font-family: "Noto Sans", sans-serif;
     --latin-hand2-font-size: 100%;
 
     /* ARABIC FONTS */
-    --arabic-font-family: ApmNotoNaskhArabic, "Noto Naskh Arabic", serif;
+    --arabic-font-family: "Noto Naskh Arabic", serif;
     --arabic-font-size: 130%;
 
-    --arabic-hand1-font-family: ApmNotoSans, "Noto Sans", sans-serif;
+    --arabic-hand1-font-family: "Noto Sans", sans-serif;
     --arabic-hand1-font-size: 130%;
 
     --arabic-hand2-font-family: Scheherazade, serif;
-    --arabic-hand2-font-size: 140%;
+    --arabic-hand2-font-size: 150%;
 
     /* JUDEO ARABIC FONTS */
     --judeoarabic-font-family: Ezra, serif;
@@ -55,10 +56,10 @@
     --hebrew-font-family: ApmNotoSerifHebrew, "Noto Serif Hebrew", serif;
     --hebrew-font-size: 110%;
 
-    --hebrew-hand1-font-family: ApmNotoSans, sans-serif;
+    --hebrew-hand1-font-family: "Noto Sans", sans-serif;
     --hebrew-hand1-font-size: 110%;
 
-    --hebrew-hand2-font-family: ApmFreeSerif, serif;
+    --hebrew-hand2-font-family: FreeSerif, serif;
     --hebrew-hand2-font-size: 110%;
 
     /* COLORS */
@@ -130,4 +131,10 @@
 }
 
 
+.padding-0 {
+    padding: 0;
+}
 
+.margin-0 {
+    margin: 0;
+}

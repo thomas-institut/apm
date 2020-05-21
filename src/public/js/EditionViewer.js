@@ -39,6 +39,7 @@ class EditionViewer {
         right: 3
       }},
       mainTextFontSizeInPts: { type: 'NumberGreaterThanZero', default: 14},
+      lineNumbersFontSizeMultiplier: { type: 'NumberGreaterThanZero', default: 0.8},
       apparatusFontSizeInPts: { type: 'NumberGreaterThanZero', default: 11},
       mainTextLineHeightInPts: { type: 'NumberGreaterThanZero', default: 20},
       apparatusLineHeightInPts: { type: 'NumberGreaterThanZero', default: 15},
@@ -76,6 +77,7 @@ class EditionViewer {
        lineWidth: this.geometry.lineWidth,
        lineHeight: this.geometry.mainTextLineHeight,
        defaultFontSize: this.geometry.mainTextFontSize,
+       lineNumbersFontSizeMultiplier:  this.options.lineNumbersFontSizeMultiplier,
        rightToLeft: options.isRightToLeft,
        defaultFontFamily: options.fontFamily,
        normalSpaceWidth: options.normalSpaceWidthInEms
@@ -280,60 +282,79 @@ class EditionViewer {
   
   
    getSvgHtml(typesetTokens, typesetLineNumbers, typesetApparatuses, svgClass, leftMargin = 0, topMargin = 0, rightMargin = 0, bottomMargin = 0, textToLineNumbers = 10) {
-     
-      let typesetter = this.ts
-      let typesetterAparatus = this.tsApparatus
-      
-      let mainTextHeight = typesetter.getTextHeight(typesetTokens)
-      let mainTextWidth = typesetter.getTextWidth()
-      let apparatusHeights = []
-      let totalApparatusHeight = 0
-      for (const apparatus of typesetApparatuses) {
-        let height = typesetterAparatus.getTextHeight(apparatus)
-        apparatusHeights.push(height)
-        totalApparatusHeight += height
-      }
-      
-     
-      let svgHeight = topMargin + mainTextHeight + (this.geometry.textToApparatus * typesetApparatuses.length) + totalApparatusHeight + bottomMargin
-      let svgWidth = leftMargin + mainTextWidth + rightMargin
+
+     let typesetter = this.ts
+     let typesetterAparatus = this.tsApparatus
+
+     let mainTextHeight = typesetter.getTextHeight(typesetTokens)
+     let mainTextWidth = typesetter.getTextWidth()
+     let apparatusHeights = []
+     let totalApparatusHeight = 0
+     for (const apparatus of typesetApparatuses) {
+       let height = typesetterAparatus.getTextHeight(apparatus)
+       apparatusHeights.push(height)
+       totalApparatusHeight += height
+     }
 
 
-      let html = '<svg class="' + svgClass + '" height="' + svgHeight + '" width="' + svgWidth + '">'
+     let svgHeight = topMargin + mainTextHeight + (this.geometry.textToApparatus * typesetApparatuses.length) + totalApparatusHeight + bottomMargin
+     let svgWidth = leftMargin + mainTextWidth + rightMargin
 
-      for(const token of typesetTokens) {
-          html += typesetter.genTokenSvg(leftMargin, topMargin, token)
-      }
-      let lineNumbersX = leftMargin - textToLineNumbers
-      if (typesetter.options.rightToLeft) {
-          lineNumbersX = leftMargin + typesetter.getTextWidth() + textToLineNumbers
-      }
-      for(const token of typesetLineNumbers) {
-          html += typesetter.genTokenSvg(lineNumbersX, topMargin, token)
-      }
-      
-      let apparatusY = topMargin + mainTextHeight
-      let currentApparatusIndex = 0
-      for (const apparatus of typesetApparatuses) {
-        apparatusY += this.geometry.textToApparatus  
-        apparatusY += currentApparatusIndex !== 0 ? apparatusHeights[currentApparatusIndex-1] : 0
-        
-        if (this.rightToLeft) {
-          html += '<line x1="' + (typesetter.getTextWidth() + leftMargin) + '" y1="' + (apparatusY - 5) + '" ' + 
-                'x2="' + (typesetter.getTextWidth() + leftMargin - 50) + '" y2="' +  (apparatusY - 5) + '" style="stroke: silver; stroke-width: 1" />'         
-        } else {
-          html += '<line x1="' + leftMargin + '" y1="' + (apparatusY - 5) + '" ' + 
-                'x2="' + (leftMargin+50) + '" y2="' +  (apparatusY - 5) + '" style="stroke: silver; stroke-width: 1" />'
-        }
-                
-        for(const token of apparatus) {
-          html += typesetter.genTokenSvg(leftMargin, apparatusY, token)
-        }
-        currentApparatusIndex++
-      }
 
-      html += '</svg>'
-      return html
+     let svg = '<svg class="' + svgClass + '" height="' + svgHeight + '" width="' + svgWidth + '">' + "\n"
+
+     // text tokens
+     svg += `<g font-size="${this.geometry.mainTextFontSize}" font-family="${this.options.fontFamily}" fill="#000000">\n`
+     for(const token of typesetTokens) {
+       let tokenSvg = typesetter.genTokenSvg(leftMargin, topMargin, token, false, false)
+        if (tokenSvg !== '') {
+         svg += "\t" +  tokenSvg + "\n"
+       }
+     }
+     svg += "</g>\n"
+
+     // line numbers
+     let lineNumbersX = leftMargin - textToLineNumbers
+     if (typesetter.options.rightToLeft) {
+       lineNumbersX = leftMargin + typesetter.getTextWidth() + textToLineNumbers
+     }
+     svg += `<g font-size="${this.geometry.mainTextFontSize * this.options.lineNumbersFontSizeMultiplier} " font-family="${this.options.fontFamily}" fill="#000000">\n`
+     for(const token of typesetLineNumbers) {
+       let tokenSvg = typesetter.genTokenSvg(lineNumbersX, topMargin, token, false, false)
+       if (tokenSvg !== '') {
+         svg += "\t" +  tokenSvg + "\n"
+       }
+     }
+     svg += "</g>\n"
+
+     // apparatus
+
+     let apparatusY = topMargin + mainTextHeight
+     let currentApparatusIndex = 0
+     for (const apparatus of typesetApparatuses) {
+       apparatusY += this.geometry.textToApparatus
+       apparatusY += currentApparatusIndex !== 0 ? apparatusHeights[currentApparatusIndex-1] : 0
+
+       if (this.rightToLeft) {
+         svg += '<line x1="' + (typesetter.getTextWidth() + leftMargin) + '" y1="' + (apparatusY - 5) + '" ' +
+           'x2="' + (typesetter.getTextWidth() + leftMargin - 50) + '" y2="' +  (apparatusY - 5) + '" style="stroke: silver; stroke-width: 1" />'
+       } else {
+         svg += '<line x1="' + leftMargin + '" y1="' + (apparatusY - 5) + '" ' +
+           'x2="' + (leftMargin+50) + '" y2="' +  (apparatusY - 5) + '" style="stroke: silver; stroke-width: 1" />'
+       }
+       svg += "\n"
+       svg += `<g font-size="${this.geometry.apparatusFontSize}" font-family="${this.options.fontFamily}" fill="#000000">\n`
+       for(const token of apparatus) {
+         let tokenSvg = typesetter.genTokenSvg(leftMargin, apparatusY, token, false, false)
+         if (tokenSvg !== '') {
+           svg += "\t" + typesetter.genTokenSvg(leftMargin, apparatusY, token, false, false) + "\n"
+         }
+       }
+       svg += "</g>\n"
+       currentApparatusIndex++
+     }
+     svg += '</svg>'
+     return svg
   }
   
   

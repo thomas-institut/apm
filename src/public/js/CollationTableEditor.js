@@ -104,6 +104,7 @@ export class CollationTableEditor {
     this.saveMsg = $('#save-msg')
     this.lastSaveSpan = $('#lastSave')
     this.exportCsvButton = $('#export-csv-button')
+    this.exportSvgButton = $('#export-svg-button')
 
     let thisObject = this
 
@@ -1442,8 +1443,10 @@ export class CollationTableEditor {
         fontFamily: thisObject.options.langDef[thisObject.ctData['lang']].editionFont,
         addGlue: false
       })
+      let svg = ev.getHtml()
 
-      thisObject.quickEditionDiv.html(ev.getHtml())
+      thisObject.quickEditionDiv.html(svg)
+      thisObject.setSvgDownloadFile()
 
       thisObject.quickEditionDiv.append(thisObject.genEditionEngineRunDetailsHtml(apiResponse['engineRunDetails']))
 
@@ -1511,6 +1514,11 @@ export class CollationTableEditor {
   setCsvDownloadFile() {
     let href = 'data:text/csv,' + encodeURIComponent(this.generateCsv())
     this.exportCsvButton.attr('href', href)
+  }
+
+  setSvgDownloadFile() {
+    let href = 'data:image/svg+xml,' + encodeURIComponent(this.quickEditionDiv.html())
+    this.exportSvgButton.attr('href', href)
   }
 
   /**

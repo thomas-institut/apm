@@ -279,7 +279,7 @@ class Authenticator {
         }
         $this->debug('Showing login page');
 
-        return $this->view->render($response, 'login.twig',
+        return $this->view->render($response, 'bootstrap4/login.twig',
                 [
                     'message' => $msg,
                     'baseurl' => $this->getBaseUrl(),

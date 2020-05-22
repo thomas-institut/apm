@@ -117,4 +117,9 @@ div.changes h5 {
     margin: 0 0 0.5rem;
 }
 
+svg.edition-svg {
+    border: solid 1px;
+    border-color: var(--very-light-gray);
+}
+
 

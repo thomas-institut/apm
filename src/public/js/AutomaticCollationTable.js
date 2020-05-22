@@ -303,7 +303,7 @@ export class AutomaticCollationTable {
         addGlue: false
       })
 
-      thisObject.editionDiv.html(ev.getHtml())
+      thisObject.editionDiv.html(ev.getSvg())
 
       // let siglaHtml = '<ul class="siglalist">'
       // siglaHtml += '<li>' + 'Base witness: ' + data.quickEdition.baseSiglum + '</li>'

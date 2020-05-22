@@ -99,12 +99,16 @@ export class CollationTableEditor {
     this.versionInfoDiv = $('#versionhistorydiv')
     this.ctDivId = 'collationtablediv'
     this.ctDiv = $('#' + this.ctDivId)
-    this.quickEditionDiv = $('#editiondiv')
+    this.editionSvgDiv = $('#edition-svg-div')
+    this.editionEngineInfoDiv = $('#edition-engine-info-div')
     this.saveButton = $('#savebutton')
     this.saveMsg = $('#save-msg')
     this.lastSaveSpan = $('#lastSave')
     this.exportCsvButton = $('#export-csv-button')
     this.exportSvgButton = $('#export-svg-button')
+
+    this.exportCsvButton.attr("download", `ApmCT_${this.options.workId}-${this.options.chunkNumber}.csv`)
+    this.exportSvgButton.attr("download", `ApmQuickEdition_${this.options.workId}-${this.options.chunkNumber}.svg`)
 
     let thisObject = this
 
@@ -130,7 +134,7 @@ export class CollationTableEditor {
     })
 
     this.updateVersionInfo()
-    this.quickEditionDiv.html('Quick edition coming soon...')
+    this.editionSvgDiv.html('Quick edition coming soon...')
     this.ctDiv.html('Collation table coming soon...')
 
     this.saveButton.on('click', this.genOnClickSaveButton())
@@ -1420,7 +1424,7 @@ export class CollationTableEditor {
 
   fetchQuickEdition() {
     let profiler = new SimpleProfiler('FetchQuickEdition')
-    this.quickEditionDiv.html("Requesting edition from the server... <i class=\"fa fa-spinner fa-spin fa-fw\"></i>")
+    this.editionSvgDiv.html("Requesting edition from the server... <i class=\"fa fa-spinner fa-spin fa-fw\"></i>")
     let apiQuickEditionUrl = this.options.urlGenerator.apiAutomaticEdition()
     //console.log('Calling API at ' + apiQuickEditionUrl)
     let apiCallOptions = {
@@ -1443,19 +1447,19 @@ export class CollationTableEditor {
         fontFamily: thisObject.options.langDef[thisObject.ctData['lang']].editionFont,
         addGlue: false
       })
-      let svg = ev.getHtml()
+      let svg = ev.getSvg()
 
-      thisObject.quickEditionDiv.html(svg)
+      thisObject.editionSvgDiv.html(svg)
       thisObject.setSvgDownloadFile()
 
-      thisObject.quickEditionDiv.append(thisObject.genEditionEngineRunDetailsHtml(apiResponse['engineRunDetails']))
+      thisObject.editionEngineInfoDiv.html(thisObject.genEditionEngineRunDetailsHtml(apiResponse['engineRunDetails']))
 
     }).fail(function(resp) {
       console.error('Error in quick edition')
       console.log(resp)
       let failMsg = 'Error getting quick edition <i class="fa fa-frown-o" aria-hidden="true"></i><br/> '
       failMsg += '<span class="small">HTTP code ' + resp.status + '</span>'
-      thisObject.quickEditionDiv.html(failMsg)
+      thisObject.editionSvgDiv.html(failMsg)
     })
   }
 
@@ -1463,9 +1467,9 @@ export class CollationTableEditor {
     let html = ''
 
     html += '<div class="edrundetails">'
-    html += 'Engine Name: ' + runDetails['engineName'] + '<br/>'
-    html += 'Run Datetime: ' + runDetails['runDateTime']+ '<br/>'
-    html += 'Duration: ' +   (runDetails['duration'] * 1000.0).toFixed(2) + ' ms'
+    html += '<b>Engine Name:</b> ' + runDetails['engineName'] + '<br/>'
+    html += '<b>Run Datetime:</b> ' + runDetails['runDateTime']+ '<br/>'
+    html += '<b>Duration:</b> ' +   (runDetails['duration'] * 1000.0).toFixed(2) + ' ms'
     html += '</div>'
 
     return html
@@ -1517,8 +1521,9 @@ export class CollationTableEditor {
   }
 
   setSvgDownloadFile() {
-    let href = 'data:image/svg+xml,' + encodeURIComponent(this.quickEditionDiv.html())
+    let href = 'data:image/svg+xml,' + encodeURIComponent(this.editionSvgDiv.html())
     this.exportSvgButton.attr('href', href)
+
   }
 
   /**

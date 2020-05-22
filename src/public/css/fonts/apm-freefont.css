@@ -45,7 +45,7 @@
 
 @font-face {
     font-family: FreeSans;
-    src: local(FreeSans),
+    src: local("FreeSans Bold"),
         url(../../fonts/freefont/FreeSansBold.woff) format("woff"),
     url(../../fonts/freefont/FreeSansBold.ttf) format("truetype");
     font-weight: 700;
@@ -54,7 +54,7 @@
 
 @font-face {
     font-family: FreeSans;
-    src: local(FreeSans),
+    src: local("FreeSans Oblique"),
         url(../../fonts/freefont/FreeSansBoldOblique.woff) format("woff"),
         url(../../fonts/freefont/FreeSansBoldOblique.ttf) format("truetype");
     font-weight: 700;
@@ -74,7 +74,7 @@
 
 @font-face {
     font-family: FreeSerif;
-    src: local(FreeSerifItalic),
+    src: local(FreeSerif Italic),
         url(../../fonts/freefont/FreeSerifItalic.woff) format("woff"),
         url(../../fonts/freefont/FreeSerifItalic.ttf) format("truetype");
     font-weight: 400;
@@ -83,7 +83,7 @@
 
 @font-face {
     font-family: FreeSerif;
-    src: local(FreeSerifBold),
+    src: local(FreeSerif Bold),
     url(../../fonts/freefont/FreeSerifBold.woff) format("woff"),
     url(../../fonts/freefont/FreeSerifBold.ttf) format("truetype");
     font-weight: 700;

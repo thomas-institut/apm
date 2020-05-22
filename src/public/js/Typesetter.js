@@ -108,9 +108,9 @@ class Typesetter {
     this.options = oc.getCleanOptions(options)
     
     this.emSize = this.getTextWidthWithDefaults('m')
-    console.log(`Typesetter: em size: ${this.emSize}`)
+    // console.log(`Typesetter: em size: ${this.emSize}`)
     this.normalSpace = this.options.normalSpaceWidth * this.emSize
-    console.log(`Typesetter: normal space size: ${this.normalSpace}`)
+    // console.log(`Typesetter: normal space size: ${this.normalSpace}`)
   }
 
   
@@ -312,10 +312,9 @@ class Typesetter {
         return ''
       }
       let fontHeight = this.options.defaultFontSize
-      let svg = '<rect x="' + (left+token.deltaX) + '" y="' + (top+token.deltaY - fontHeight ) + '" '+
-              'width="' + token.width + '" height="' + fontHeight + '" ' +
-              'style="fill:silver;"/>'
-      return svg
+      return '<rect x="' + (left + token.deltaX) + '" y="' + (top + token.deltaY - fontHeight) + '" ' +
+        'width="' + token.width + '" height="' + fontHeight + '" ' +
+        'style="fill:silver;"/>'
       
     }
     // text token
@@ -324,7 +323,7 @@ class Typesetter {
     }
     let fontSize = this.options.defaultFontSize
     let fillColor = '#000000'
-    let fontfamily = this.options.defaultFontFamily
+    let fontFamily = this.options.defaultFontFamily
     let fontWeight = ''
     let fontStyle = ''
 
@@ -340,10 +339,10 @@ class Typesetter {
       fontSize = token.fontSize
     }
 
-    let svgString = "<text "
+    let svgString = "<tspan "
     if (showFontBasicInfo) {
       svgString += 'fill="' +  fillColor + '" font-size="' + fontSize + '" '
-      svgString += 'font-family="' + fontfamily + '" '
+      svgString += 'font-family="' + fontFamily + '" '
     }
 
     if (fontStyle) {
@@ -353,11 +352,8 @@ class Typesetter {
     if (fontWeight) {
       svgString += 'font-weight="' + fontWeight +'" '
     }
-    
-    if ((!token.direction && this.options.rightToLeft) || (token.direction === 'rtl')) {
-      svgString += 'direction="rtl" writing-mode="rl" '
-    }
-    svgString += ' x="' + (left + token.deltaX) + '" y="' + (top + token.deltaY) + '">' +  token.text + '</text>'
+
+    svgString += ' x="' + (left + token.deltaX) + '" y="' + (top + token.deltaY) + '">' +  token.text + '</tspan>'
     return svgString
   }
   
@@ -444,6 +440,9 @@ class Typesetter {
   
   static cm2px(cm) {
     return cm * 37.795275590551184 //   = mm * 96 [px/in] / 2.54 [cm/in]
+  }
+  static px2cm(px) {
+    return px / 37.795275590551184 //   = px * 1/96 [in/px] * 2.54 [cm/in]
   }
   
   static pt2px(pt) {

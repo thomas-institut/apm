@@ -106,6 +106,7 @@ export class CollationTableEditor {
     this.lastSaveSpan = $('#lastSave')
     this.exportCsvButton = $('#export-csv-button')
     this.exportSvgButton = $('#export-svg-button')
+    this.exportPdfButton = $('#export-pdf-button')
 
     this.exportCsvButton.attr("download", `ApmCT_${this.options.workId}-${this.options.chunkNumber}.csv`)
     this.exportSvgButton.attr("download", `ApmQuickEdition_${this.options.workId}-${this.options.chunkNumber}.svg`)
@@ -176,6 +177,10 @@ export class CollationTableEditor {
     }
     this.unsavedChanges = false
 
+    // Export PDF
+    this.exportPdfButton.on('click', this.genOnClickExportPdfButton())
+
+
     this.setupTableEditor()
     this.updateSaveArea()
     this.setCsvDownloadFile()
@@ -187,6 +192,38 @@ export class CollationTableEditor {
         return false // make the browser ask if the user wants to leave
       }
     })
+  }
+
+  genOnClickExportPdfButton() {
+    let thisObject = this
+    return function() {
+      console.log('Export PDF clicked')
+      let buttonHtml = thisObject.exportPdfButton.html()
+      thisObject.exportPdfButton.html(`Generating PDF...` + thisObject.icons.busy)
+      let svg = thisObject.editionSvgDiv.html()
+      if (svg === '') {
+        return true
+      }
+      console.log('Calling API')
+      let apiUrl = thisObject.options.urlGenerator.apiConvertSvg()
+      $.post(
+        apiUrl,
+        {data: JSON.stringify({
+            pdfId: `ct-${thisObject.options.tableId}`,
+            svg: svg
+        })}
+      ).done(
+        apiResponse => {
+          let newWindow = window.open(apiResponse.url)
+          thisObject.exportPdfButton.html(buttonHtml)
+        }
+      ).fail (
+        error => {
+          console.error('API error')
+          console.log(error)
+        }
+      )
+    }
   }
 
   checkForWitnessUpdates() {

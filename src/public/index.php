@@ -25,6 +25,7 @@
  */
 namespace AverroesProject;
 
+use APM\Api\ApiPdfConversion;
 use APM\Api\ApiWitness;
 use APM\Site\SiteChunkPage;
 use APM\Site\SiteCollationTable;
@@ -119,17 +120,11 @@ if ($subdir !== '') {
     $app->setBasePath($subdir);
 }
 
-
-//$routeMW = new RouteMiddleware($container);
-//$routeMW->setLogger($logger->withName('ROUTING'));
-//$app->addMiddleware($routeMW);
-
 $app->addErrorMiddleware(true, true, true);
 
 // Add Twig middleware and router
 $app->add(TwigMiddleware::createFromContainer($app));
 $container->set(ApmContainerKey::ROUTER, $app->getRouteCollector()->getRouteParser());
-//$container->set(ApmContainerKey::ROUTE_COLLECTOR, $app->getRouteCollector());
 
 
 // -----------------------------------------------------------------------------
@@ -372,6 +367,11 @@ $app->group('/api', function (RouteCollectorProxy $group){
     $group->post('/edition/auto',
         ApiEditionEngine::class . ':automaticEditionEngine')
         ->setName('api.edition.auto');
+
+    // SVG CONVERSION
+    $group->post('/convert/svg2pdf',
+        ApiPdfConversion::class . ':convertSVGtoPDF')
+        ->setName('api.convert.svg2pdf');
 
     //  PRESETS
 

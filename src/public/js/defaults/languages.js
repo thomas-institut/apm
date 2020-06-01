@@ -37,6 +37,6 @@ export const defaultLanguageDefinition = {
     name: 'Hebrew',
     rtl: true,
     fontsize: 3,
-    editionFont: 'ApmNotoSerifHebrew'
+    editionFont: 'Noto Serif Hebrew'
   }
 }

@@ -71,6 +71,8 @@ cp src/public/package.json "$TMP_DIR"
 cp src/public/setup.php "$TMP_DIR"
 cp src/public/version.php "$TMP_DIR"
 
+mkdir "$TMP_DIR"/downloads/pdf
+
 cd "$TMP" || exit
 
 tar cfz "$TAR_NAME" "$DIST_NAME"

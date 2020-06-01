@@ -45,6 +45,10 @@ class ApmConfigParameter
     const LANGUAGES = 'languages';
     const LANG_CODES = 'langCodes';
 
+    const INKSCAPE_EXECUTABLE = 'inkscape_executable';
+    const INKSCAPE_VERSION = 'inkscape_version';
+    const INKSCAPE_TEMP_DIR = 'inkscape_temp_dir';
+
     const ERROR = 'error';
     const ERROR_MESSAGES = 'errorMsgs';
     const WARNINGS = 'warnings';

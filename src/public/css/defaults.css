@@ -53,7 +53,7 @@
     --judeoarabic-font-size: 100%;
 
     /* HEBREW FONTS */
-    --hebrew-font-family: ApmNotoSerifHebrew, "Noto Serif Hebrew", serif;
+    --hebrew-font-family: "Noto Serif Hebrew", serif;
     --hebrew-font-size: 110%;
 
     --hebrew-hand1-font-family: "Noto Sans", sans-serif;

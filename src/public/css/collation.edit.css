@@ -58,10 +58,15 @@ div.edrundetails{
     border: none;
     cursor: pointer;
     padding: 3px;
+
 }
 
 a.tb-button {
     color: grey;
+}
+
+.margin-left-med {
+    margin-left: 10px;
 }
 
 .loading {

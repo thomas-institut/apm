@@ -85,6 +85,10 @@ class ApmUrlGenerator {
   apiQuickCollation() {
     return this.base + '/api/public/collation/quick'
   }
+
+  apiConvertSvg() {
+    return this.base + '/api/convert/svg2pdf'
+  }
   
 
   siteCollationTable(work, chunkno, lang, ids=[]) {

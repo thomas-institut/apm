@@ -9,6 +9,7 @@ src/public/config.php
 *.bak
 /src/public/node_modules/
 /src/public/log/
+/src/public/downloads
 /src/public/scratch/
 /src/public/test/php/coverage/
 .~lock*

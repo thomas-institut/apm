@@ -30,7 +30,7 @@
 /*  EXTRA LIGHT */
 
 @font-face {
-    font-family: "ApmNotoSerifHebrew";
+    font-family: "Noto Serif Hebrew";
     src: local("Noto Serif Hebrew ExtraLight"),
         url(../../fonts/noto/NotoSerifHebrew-hinted/NotoSerifHebrew-ExtraLight.ttf) format("truetype");
     font-weight: 200;  /* normal */
@@ -41,7 +41,7 @@
 /*  LIGHT */
 
 @font-face {
-    font-family: "ApmNotoSerifHebrew";
+    font-family: "Noto Serif Hebrew";
     src: local("Noto Serif Hebrew Light"),
         url(../../fonts/noto/NotoSerifHebrew-hinted/NotoSerifHebrew-Light.ttf) format("truetype");
     font-weight: 300;  /* normal */
@@ -52,7 +52,7 @@
 /*  NORMAL */
 
 @font-face {
-    font-family: "ApmNotoSerifHebrew";
+    font-family: "Noto Serif Hebrew";
     src: local("Noto Serif Hebrew"),
         local("Noto Serif Hebrew Regular"),
         url(../../fonts/noto/NotoSerifHebrew-hinted/NotoSerifHebrew-Regular.ttf) format("truetype");
@@ -64,7 +64,7 @@
 /* MEDIUM */
 
 @font-face {
-    font-family: "ApmNotoSerifHebrew";
+    font-family: "Noto Serif Hebrew";
     src: local("Noto Serif Hebrew Medium"),
         url(../../fonts/noto/NotoSerifHebrew-hinted/NotoSerifHebrew-Medium.ttf) format("truetype");
     font-weight: 500;  /* medium */
@@ -75,7 +75,7 @@
 /* SEMI BOLD */
 
 @font-face {
-    font-family: "ApmNotoSerifHebrew";
+    font-family: "Noto Serif Hebrew";
     src: local("Noto Serif Hebrew SemiBold"),
         url(../../fonts/noto/NotoSerifHebrew-hinted/NotoSerifHebrew-SemiBold.ttf) format("truetype");
     font-weight: 600;  /* medium */
@@ -86,7 +86,7 @@
 /* BOLD */
 
 @font-face {
-    font-family: "ApmNotoSerifHebrew";
+    font-family: "Noto Serif Hebrew";
     src: local("Noto Serif Hebrew Bold"),
         url(../../fonts/noto/NotoSerifHebrew-hinted/NotoSerifHebrew-Bold.ttf) format("truetype");
     font-weight: 700;  /* bold */
@@ -97,7 +97,7 @@
 /* EXTRA BOLD */
 
 @font-face {
-    font-family: "ApmNotoSerifHebrew";
+    font-family: "Noto Serif Hebrew";
     src: local("Noto Serif Hebrew ExtraBold"),
         url(../../fonts/noto/NotoSerifHebrew-hinted/NotoSerifHebrew-ExtraBold.ttf) format("truetype");
     font-weight: 800;  /* extra bold */
@@ -108,7 +108,7 @@
 /* BLACK  */
 
 @font-face {
-    font-family: "ApmNotoSerifHebrew";
+    font-family: "Noto Serif Hebrew";
     src: local("Noto Serif Hebrew Black"),
         url(../../fonts/noto/NotoSerifHebrew-hinted/NotoSerifHebrew-Black.ttf) format("truetype");
     font-weight: 900;  /* black */

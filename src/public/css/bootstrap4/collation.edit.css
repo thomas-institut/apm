@@ -1,4 +1,9 @@
 
+#collationtablediv {
+    line-height: 1.2;
+}
+
+
 #collationtableinfo {
     margin-top: 20px;
     margin-bottom: 25px;
@@ -16,6 +21,7 @@ table.witnesstable td,th {
 table.versioninfo {
     margin-top: 20px;
     margin-left: 20px;
+    margin-bottom: 2rem;
 }
 
 table.versioninfo td,th {
@@ -84,6 +90,10 @@ span.witness-update-info {
     margin-right: 2rem;
 }
 
+
+.witness-update-btn{
+    font-size: 0.8em;
+}
 /* Update modal */
 
 div.info {
@@ -127,4 +137,10 @@ svg.edition-svg {
     border-color: var(--very-light-gray);
 }
 
+.edrundetails {
+    margin-bottom: 2rem;
+}
 
+.check-witness-update-btn {
+    font-size: 0.8em;
+}

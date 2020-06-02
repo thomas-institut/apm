@@ -1,12 +1,12 @@
-{% extends "base.twig" %}
+{% extends "bootstrap4/base.twig" %}
 
 {% block title %}
     CT {{workId}}-{{chunkNumber}} table {{ tableId }}
 {% endblock %}
 
 {% block extraCSS %}
-    <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/collationtable.css" />
-    <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/collation.edit.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/bootstrap4/collationtable.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/bootstrap4/collation.edit.css" />
 {% endblock %}
 
 {% block extraJS %}
@@ -49,11 +49,13 @@
 {% endblock %}
 
 {% block content %}
+<nav aria-label="breadcumb">
     <ol class="breadcrumb">
-        <li><a href="{{url_for('chunks')}}">Chunks</a></li>
-        <li><a href="{{url_for('chunk', {'work' : workId, 'chunk': chunkNumber})}}">{{workId}}-{{chunkNumber}}</a></li>
-        <li><span id="breadcrumb-cttitle"></span></li>
+        <li class="breadcrumb-item"><a href="{{url_for('chunks')}}">Chunks</a></li>
+        <li class="breadcrumb-item"><a href="{{url_for('chunk', {'work' : workId, 'chunk': chunkNumber})}}">{{workId}}-{{chunkNumber}}</a></li>
+        <li class="breadcrumb-item active"><span id="breadcrumb-cttitle"></span></li>
     </ol>
+</nav>
 
     <div class="row">
         <div class="col-md-8">
@@ -64,7 +66,7 @@
             <div id="collationtableactions"></div>
         </div>
         <div class="col-md-4 text-right" id="save-area">
-            <h1><button class="btn btn-primary hidden" id="savebutton">Save Changes</button></h1>
+            <h1><button class="btn btn-primary btn-sm hidden" id="savebutton">Save Changes</button></h1>
             <p><small>Last Save: <span id="lastSave">...</span></small></p>
             <div class="hidden" id="save-msg"></div>
         </div>
@@ -74,10 +76,10 @@
 
 
     <ul class="nav nav-tabs" role="tablist" id="tabsUl">
-        <li id="collationTableTabHeader" role="presentation" class="active"><a role="tab" data-toggle="tab" href="#collationtablepanel">Collation Table</a></li>
-        <li id="editionTabHeader"  role="presentation"><a role="tab" data-toggle="tab" href="#editiondiv-panel">Quick Edition</a></li>
-        <li id="witnessesTabHeader"  role="presentation"><a role="tab" data-toggle="tab" href="#witnessesdiv">Witness Info</a></li>
-        <li id="witnessesTabHeader"  role="presentation"><a role="tab" data-toggle="tab" href="#versionhistorydiv">Version History</a></li>
+        <li id="collationTableTabHeader" role="presentation" class="nav-item"><a role="tab" class="nav-link active" data-toggle="tab" href="#collationtablepanel">Collation Table</a></li>
+        <li id="editionTabHeader" class="nav-item" role="presentation"><a role="tab" class="nav-link" data-toggle="tab" href="#editiondiv-panel">Quick Edition</a></li>
+        <li id="witnessesTabHeader" class="nav-item" role="presentation"><a role="tab" class="nav-link" data-toggle="tab" href="#witnessesdiv">Witness Info</a></li>
+        <li id="witnessesTabHeader"  class="nav-item" role="presentation"><a role="tab" class="nav-link" data-toggle="tab" href="#versionhistorydiv">Version History</a></li>
     </ul>
 
     <div class="tab-content">
@@ -114,7 +116,7 @@
             <div class="witnessinfotable"></div>
             <div class="witness-update-div">
                 <span class="witness-update-info"></span>
-                <button class="btn btn-sm btn-default check-witness-update-btn"  title="Click to check for updates to witness transcriptions">Check Now</button>
+                <button class="btn  btn-outline-secondary btn-sm check-witness-update-btn"  title="Click to check for updates to witness transcriptions">Check Now</button>
             </div>
         </div>
         <div role="tabpanel" class="tab-pane panetab" id="versionhistorydiv"></div>

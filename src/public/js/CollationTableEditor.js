@@ -699,8 +699,8 @@ export class CollationTableEditor {
       if (!witnessUpdateInfo['upToDate']) {
         witnessesUpToDate = false
         let warningHtml =  `<span>${this.icons.checkFail} Last version:  `
-        warningHtml += `${Util.formatVersionTime(witnessUpdateInfo['lastUpdate'])}. `
-        warningHtml += `<a title="Click to update witness" class="witness-update-btn-${i}">Update.</a>`
+        warningHtml += `${Util.formatVersionTime(witnessUpdateInfo['lastUpdate'])} `
+        warningHtml += `<a title="Click to update witness" class="btn btn-outline-secondary btn-sm witness-update-btn witness-update-btn-${i}">Update</a>`
         let warningTd = $(`${this.witnessesDivSelector} td.outofdate-td-${i}`)
         warningTd.html(warningHtml)
       }
@@ -730,7 +730,7 @@ export class CollationTableEditor {
       trigger: "hover",
       selector: '.withpopover',
       delay: {show: 500 , hide:0},
-      placement: "auto top",
+      placement: 'top',
       html: true,
       container: 'body',
       content: this.genPopoverContentFunction()
@@ -1611,10 +1611,10 @@ export class CollationTableEditor {
       // id: `update-witness-dialog-${witnessIndex}`,
       data: `
 <div id="update-modal-${witnessIndex}" class="modal" role="dialog">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content bg-info">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
             <div class="modal-header">
-                <h3>Update witness {{witnessTitle}}</h3>
+                <h5 class="modal-title">Update witness {{witnessTitle}}</h5>
             </div>
             <div class="modal-body">
                 <div class="info">

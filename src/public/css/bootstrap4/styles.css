@@ -53,6 +53,10 @@ body, .popover {
     background: white; /* to make it the same as bs3, in bs4 it's some sort of gray */
 }
 
+.text-warning {
+    color: #8a6d3b !important;
+}
+
 /* Dimmed down links*/
 
 a, a:visited {

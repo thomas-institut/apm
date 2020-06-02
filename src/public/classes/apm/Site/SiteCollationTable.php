@@ -59,7 +59,7 @@ class SiteCollationTable extends SiteController
     const TEMPLATE_ERROR = 'chunk.collation.error.twig';
     const TEMPLATE_QUICK_COLLATION = 'collation.quick.twig';
     const TEMPLATE_COLLATION_TABLE = 'collationtable.twig';
-    const TEMPLATE_EDIT_COLLATION_TABLE = 'collation.edit.twig';
+    const TEMPLATE_EDIT_COLLATION_TABLE = 'bootstrap4/collation.edit.twig';
     const TEMPLATE_EDIT_COLLATION_TABLE_ERROR = 'collation.edit.error.twig';
 
     /**

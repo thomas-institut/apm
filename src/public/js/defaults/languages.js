@@ -16,7 +16,6 @@
  *
  */
 
-
 export const defaultLanguageDefinition = {
   la: {
     code: 'la',

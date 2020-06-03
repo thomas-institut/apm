@@ -77,6 +77,15 @@ class SiteCollationTable extends SiteController
     }
 
 
+    /**
+     * Serves the collation table editor.
+     * The collation table editor handles both saved collation tables and chunk editions,
+     * the difference is made by the JS application
+     *
+     * @param Request $request
+     * @param Response $response
+     * @return Response|\Slim\Psr7\Response
+     */
     public function editCollationTable(Request $request, Response $response) {
         //$workId = $request->getAttribute('work');
         //$chunkNumber = intval($request->getAttribute('chunk'));

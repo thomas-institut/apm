@@ -216,6 +216,11 @@ $app->group('', function (RouteCollectorProxy $group){
         SiteCollationTable::class . ':editCollationTable')
         ->setName('collationtable.edit');
 
+    // EDITION
+    $group->get('/edition/chunk/edit/{tableId}',
+        SiteCollationTable::class . ':editCollationTable')
+        ->setName('collationtable.edit');
+
     // DOCS
 
     $group->get('/documents',

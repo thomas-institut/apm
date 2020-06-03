@@ -38,6 +38,15 @@ table.versioninfo td,th {
     margin-bottom: 3em;
 }
 
+td.te-rowtitle {
+    /*
+     * This is to try to avoid that the title gets splits in two line in the cell,
+     * which causes the table rows to grow bigger and ocassionally makes the mouse
+     * pointer to "move" to another cell
+     */
+    min-width: 12rem;
+}
+
 div.edrundetails{
     font-size: 0.8em;
     margin-top: 2em;

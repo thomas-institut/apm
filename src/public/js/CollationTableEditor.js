@@ -97,6 +97,7 @@ export class CollationTableEditor {
     this.witnessesDivSelector = '#witnessesdiv'
     this.witnessesDiv = $(this.witnessesDivSelector)
     this.versionInfoDiv = $('#versionhistorydiv')
+    this.editionTabTitle = $('#edition-tab-title')
     this.ctDivId = 'collationtablediv'
     this.ctDiv = $('#' + this.ctDivId)
     this.editionSvgDiv = $('#edition-svg-div')
@@ -119,8 +120,15 @@ export class CollationTableEditor {
       onConfirm: this.genOnConfirmTitleField()
     })
 
+    if (this.ctData.type === 'ctable') {
+      this.breadcrumbCtTitleSpan.html("Saved Collation Table")
+      this.editionTabTitle.html('Quick Edition')
+    } else {
+      this.breadcrumbCtTitleSpan.html("Edition")
+      this.editionTabTitle.html("Edition Preview")
+    }
 
-    this.breadcrumbCtTitleSpan.html("Saved Collation Table")
+
 
     this.ctInfoDiv.html(this.genCtInfoDiv())
 
@@ -732,6 +740,7 @@ export class CollationTableEditor {
       delay: {show: 500 , hide:0},
       placement: 'top',
       html: true,
+      title: '',
       container: 'body',
       content: this.genPopoverContentFunction()
     })
@@ -756,10 +765,12 @@ export class CollationTableEditor {
 
   popoversOn() {
     this.popoversAreOn = true
+    this.setUpPopovers()
   }
 
   popoversOff() {
     this.popoversAreOn = false
+    this.ctDiv.popover('dispose')
   }
 
   getCollationMatrixFromTableEditor() {
@@ -1413,7 +1424,7 @@ export class CollationTableEditor {
       let thisObject = this
       this.saveButton.popover({
         trigger: 'hover',
-        placement: 'auto left',
+        placement: 'left',
         title: "Click to save changes",
         html: true,
         content: function() { return thisObject.buttonPopoverContent}

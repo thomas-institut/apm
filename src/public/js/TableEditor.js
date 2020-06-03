@@ -783,6 +783,7 @@ export class TableEditor {
       if (thisObject.isRowEditable(row)) {
         $(tdSelector + ' .edit-cell-button').removeClass('hidden')
       }
+      return true
     }
   }
 

@@ -85,7 +85,14 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
             $dataJson = $dbData['data'];
         }
 
-        return json_decode($dataJson, true);
+        $ctData = json_decode($dataJson, true);
+
+        // Fill in type!
+        if (!isset($ctData['type'])) {
+            $ctData['type'] = CollationTableType::COLLATION_TABLE;
+        }
+
+        return $ctData;
 
     }
 

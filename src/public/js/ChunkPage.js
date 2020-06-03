@@ -70,6 +70,7 @@ class ChunkPage {
     this.witnessPanelsDiv = $('#witnesspanels')
     this.headerDiv = $('#chunkpageheader')
     this.savedCollationTablesDiv = $('#savedcollationtables')
+    this.editionsDiv = $('#editions')
 
     // shortcuts to options
     this.pathFor = this.options.urlGenerator
@@ -134,7 +135,9 @@ class ChunkPage {
     console.log('Witnesses by lang')
     console.log(this.witnessesByLang)
 
-    this.savedCollationTablesDiv.html(this.genSavedCollationTablesDivHtml())
+    this.savedCollationTablesDiv.html(this.genSavedCollationTablesDivHtml('ctable'))
+    this.editionsDiv.html(this.genSavedCollationTablesDivHtml('edition'))
+
 
     this.updateCollationTableLinks()
 
@@ -188,13 +191,20 @@ class ChunkPage {
          })
   }
 
-  genSavedCollationTablesDivHtml() {
+  genSavedCollationTablesDivHtml(type) {
     let html = ''
 
-    if (this.options.savedCollationTables.length !== 0) {
-      html += '<h4>Saved Collation Tables</h4>'
+    const titles = {
+      ctable : 'Saved Collation Tables',
+      edition : 'Editions'
+    }
+
+    let tables = this.options.savedCollationTables.filter( savedCt => savedCt.type === type)
+
+    if (tables.length !== 0) {
+      html += `<h4>${titles[type]}</h4>`
       html += '<ul>'
-      for(const ctInfo of this.options.savedCollationTables) {
+      for(const ctInfo of tables) {
         let url = this.pathFor.siteEditCollationTable(ctInfo['tableId'])
         html += '<li class="smallpadding"><a title="Open in new tab/window" target="_blank" href="' + url + '">' + ctInfo['title'] +
           '</a>, <small>last change: ' + ApmUtil.formatVersionTime(ctInfo['lastSave']) +
@@ -262,16 +272,16 @@ class ChunkPage {
     let twigTemplate = Twig.twig({
       id: 'witnessPanels',
       data: `
-  <div class="panel panel-default">
-      <div class="panel-heading">
-      <h3 class="panel-title">{{title}}
+  <div class="card witness-card">
+      <div class="card-header">
+      <p>{{title}}
         &nbsp;&nbsp;&nbsp;
     <a role="button" title="Click to show/hide text" data-toggle="collapse" href="#text-{{witnessSystemId}}" aria-expanded="true" aria-controls="text-{{witnessSystemId}}">
       <span id="texttoggle-{{id}}-{{lwid}}"><i class="fas fa-angle-right" aria-hidden="true"></i></span>
-    </a></h3>
+    </a></p>
     </div>
     <div class="collapse" id="text-{{witnessSystemId}}">
-      <div class="panel-body">
+      <div class="card-body">
       <p class="formattedchunktext text-{{lang}}" id="formatted-{{witnessSystemId}}"></p>
       </div>
       </div>

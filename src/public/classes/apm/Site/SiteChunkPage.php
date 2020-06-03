@@ -41,6 +41,8 @@ use ThomasInstitut\TimeString\TimeString;
 class SiteChunkPage extends SiteController
 {
 
+    const TEMPLATE_CHUNK_PAGE = 'bootstrap4/chunkpage.twig';
+
     public function singleChunkPage(Request $request, Response $response)
     {
        
@@ -59,25 +61,23 @@ class SiteChunkPage extends SiteController
         $savedCollationTableInfoArray = [];
         $authorsMentioned = [];
         foreach ($savedCollationTableIds as $tableId) {
-
             $tableVersions = $ctManager->getCollationTableVersionManager()->getCollationTableVersionInfo($tableId, 1);
-
             if (count($tableVersions) !== 0 ){
                 $authorsMentioned[] =  $tableVersions[0]->authorId;
+                $ctInfo = $ctManager->getCollationTableInfo($tableId, $time);
                 $savedCollationTableInfoArray[] = [
                     'tableId' => $tableId,
                     'authorId' => $tableVersions[0]->authorId,
                     'lastSave' => $tableVersions[0]->timeFrom,
-                    'title' => $ctManager->getCollationTableTitle($tableId, $time)
+                    'title' => $ctInfo->title,
+                    'type' => $ctInfo->type
                     ];
             }
         }
-        $this->codeDebug("Saved collation tables", $savedCollationTableInfoArray);
+        //$this->codeDebug("Saved collation tables", $savedCollationTableInfoArray);
 
         // get pages, authors and languages from witnesses
         $pagesMentioned = [];
-
-
         $languageInfoArray = [];
 
         foreach($witnessInfoArray as $witnessInfo) {
@@ -121,7 +121,7 @@ class SiteChunkPage extends SiteController
 
         $this->profiler->stop();
         $this->logProfilerData("ChunkPage-$workId-$chunkNumber");
-        return $this->renderPage($response, 'chunkpage.twig', [
+        return $this->renderPage($response, self::TEMPLATE_CHUNK_PAGE, [
             'work' => $workId,
             'chunk' => $chunkNumber,
             'work_info' => $workInfo,

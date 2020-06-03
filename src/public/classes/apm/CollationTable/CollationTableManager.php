@@ -80,7 +80,8 @@ abstract class CollationTableManager implements ErrorReporter
      * @param string $timeStamp
      * @return string
      */
-    abstract public function getCollationTableTitle(int $id, string $timeStamp = '') : string;
+    abstract public function getCollationTableInfo(int $id, string $timeStamp = '') : CollationTableInfo;
+
 
     abstract public function getCollationTableVersionManager() : CollationTableVersionManager;
 

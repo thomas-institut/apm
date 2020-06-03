@@ -196,7 +196,7 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
         return $idArray;
     }
 
-    public function getCollationTableTitle(int $id, string $timeString = ''): string
+    public function getCollationTableInfo(int $id, string $timeString = ''): CollationTableInfo
     {
         $mySqlDataTableClass = MySqlUnitemporalDataTable::class;
         if ($timeString === '') {
@@ -209,7 +209,7 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
             /** @var MySqlUnitemporalDataTable $ctTable */
             $ctTable = $this->ctTable;
 
-            $result = $ctTable->select('id, title',
+            $result = $ctTable->select('id, title, type',
                 "id='$id' AND valid_from <='$timeString' and valid_until>'$timeString'",
                 0,
                 '',
@@ -224,6 +224,13 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
             throw new InvalidArgumentException("Table does not exist");
         }
 
-        return $rows[0]['title'];
+        return CollationTableInfo::createFromDbRow($rows[0]);
     }
+
+    public function getCollationTableType(int $id, string $timeStamp = ''): string
+    {
+        // TODO: Implement getCollationTableType() method.
+    }
+
+
 }

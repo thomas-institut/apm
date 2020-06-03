@@ -20,6 +20,8 @@
  * Created: 27 April 2020
  */
 
-
+# Add a type column to ctables with default 'ctable'
+ALTER TABLE `ap_ctables` ADD `type` VARCHAR(16) NOT NULL AFTER `chunk_id`;
+UPDATE ap_ctables set type='ctable';
 
 UPDATE `ap_settings` SET `value` = '23' WHERE `ap_settings`.`setting` = 'dbversion';

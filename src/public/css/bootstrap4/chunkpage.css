@@ -1,0 +1,33 @@
+div.cpheader {
+    font-size: 2.4em;
+    margin-bottom: 30px;
+}
+
+div.cpheader a {
+    color: black;
+}
+
+
+.collationtablelinks ul {
+    list-style-type: none;
+    padding: 0;
+    margin-left: 20px;
+    margin-bottom: 25px;
+}
+
+.collationtablelinks ul li {
+    padding: 0;
+    margin-left: 20px;
+}
+
+.collationtablelinks li.smallpadding {
+    padding-bottom: 5px;
+}
+
+.witness-card {
+    margin-bottom: 1rem;
+}
+
+.card-header p {
+    margin: 0;
+}

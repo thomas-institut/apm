@@ -1,7 +1,13 @@
-{% extends "base.twig" %}
-{% import 'macros.twig' as macros %}
+{% extends "bootstrap4/base.twig" %}
+{#{% import 'macros.twig' as macros %}#}
 
 {% block title %}Chunk {{work}}-{{chunk}}{% endblock %}
+
+{% block extraCSS %}
+    <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/bootstrap4/witness.css"/>
+    <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/act-settingsform.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/bootstrap4/chunkpage.css" />
+{% endblock %}
 {% block extraJS %}
     <style>
         
@@ -15,9 +21,9 @@
         }
     </style>
     
-    <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/witness.css"/>
-    <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/act-settingsform.css" />
+
     <script type="text/javascript" src="{{baseurl}}/node_modules/twig/twig.min.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/ApmUtil.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/WitnessTypes.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/AutoCollTableSettingsForm.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/CollapseToggleButton.js"></script>
@@ -45,17 +51,19 @@ $(function()  {// .ready()
 </script>
 {% endblock %}
 {% block content %}
+<nav aria-label="breadcumb">
      <ol class="breadcrumb">
-         <li><a href="{{url_for('chunks')}}">Chunks</a></li>
-        <li class="active">Chunk Details</li>
+         <li class="breadcrumb-item"><a href="{{url_for('chunks')}}">Chunks</a></li>
+        <li class="breadcrumb-item active">Chunk Details</li>
     </ol>
+</nav>
     <div id="chunkpageheader"></div>
     <div id="chunkid"></div>
     <div id="witnessListNew"></div>
+    <div id="editions" class="collationtablelinks"></div>
     <div id="savedcollationtables" class="collationtablelinks"></div>
     <h4 id="ctlinks-header" class="hidden">Automatic Collation Tables</h4>
     <div id="collationtablelinks" class="collationtablelinks">  </div>
-
     <div id="witnesspanels"></div>
 
 {% endblock %}

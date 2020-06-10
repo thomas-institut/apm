@@ -20,6 +20,9 @@
 namespace APM\CollationTable;
 
 
+use APM\StandardData\StandardTokenClass;
+use APM\System\WitnessSystemId;
+use APM\System\WitnessType;
 use ThomasInstitut\ErrorReporter\ErrorReporter;
 
 /**
@@ -35,6 +38,14 @@ use ThomasInstitut\ErrorReporter\ErrorReporter;
  */
 abstract class CollationTableManager implements ErrorReporter
 {
+
+    const ERROR_ALREADY_AN_EDITION = 101;
+    const ERROR_DOES_NOT_EXIST = 102;
+    const ERROR_INVALID_TIME_FROM = 103;
+    const ERROR_STRATEGY_NOT_SUPPORTED = 104;
+
+    const INIT_STRATEGY_TOP_WITNESS = 'topWitness';
+    const INIT_STRATEGY_MOST_COMMON_VARIANT = 'mostCommonVariant';
 
     /**
      * Saves a new collation table in the system. Returns the Id of the new collation table
@@ -83,10 +94,99 @@ abstract class CollationTableManager implements ErrorReporter
     abstract public function getCollationTableInfo(int $id, string $timeStamp = '') : CollationTableInfo;
 
 
+
     abstract public function getCollationTableVersionManager() : CollationTableVersionManager;
 
     public function getCollationTableVersions(int $collationTableId) {
         return $this->getCollationTableVersionManager()->getCollationTableVersionInfo($collationTableId);
+    }
+
+    public function convertToEdition(int $collationTableId, string $strategy, int $authorId, string $timeStampFrom ='') {
+        $info  = $this->getCollationTableInfo($collationTableId);
+        if ($info->type === CollationTableType::EDITION) {
+            throw new \InvalidArgumentException("Collation table $collationTableId already an edition",
+                self::ERROR_ALREADY_AN_EDITION);
+        }
+
+        $lastVersionInfoArray = $this->getCollationTableVersionManager()
+            ->getCollationTableVersionInfo($collationTableId, 1);
+        if (count($lastVersionInfoArray) === 0) {
+            throw new \InvalidArgumentException("Collation table $collationTableId does not exist",
+                self::ERROR_DOES_NOT_EXIST);
+        }
+        $lastVersion = $lastVersionInfoArray[0];
+        if ($lastVersion->timeFrom > $timeStampFrom) {
+            throw new \InvalidArgumentException("Requested timeFrom $timeStampFrom is before last version for "
+               . "collation table $collationTableId, " .
+                $lastVersion->timeFrom, self::ERROR_INVALID_TIME_FROM);
+        }
+
+        $newVersionInfo = new CollationTableVersionInfo();
+        $newVersionInfo->collationTableId = $collationTableId;
+        $newVersionInfo->authorId = $authorId;
+        $newVersionInfo->description = "Converted to edition using " . $strategy;
+        $newVersionInfo->isMinor = false;
+        $newVersionInfo->isReview = false;
+        $ctData = $this->getCollationTableById($collationTableId);
+        $editionData = $this->convertDataToEdition($collationTableId, $ctData, $strategy, $timeStampFrom);
+
+        $this->saveCollationTable($collationTableId, $editionData, $newVersionInfo);
+    }
+
+    protected function convertDataToEdition(int $tableId, array $collationTableData,  string $strategy, string $timeStamp) : array {
+        $newData = $collationTableData;
+
+        $newData['type'] = CollationTableType::EDITION;
+
+        $editionWitnessIndex = count($collationTableData['sigla']);
+        $newData['sigla'][] = '-';
+        $newData['witnessTitles'][] = 'Edition';
+        $newOrder = [ $editionWitnessIndex];
+        foreach($collationTableData['witnessOrder'] as $index) {
+            $newOrder[] = $index;
+        }
+        $newData['witnessOrder'] = $newOrder;
+        $editionWitness = [];
+        $editionWitness['ApmWitnessId'] = WitnessSystemId::buildEditionId($collationTableData['chunkId'], $tableId, $timeStamp);
+        $editionWitness['chunkId'] = $collationTableData['chunkId'];
+        $editionWitness['lang'] = $collationTableData['lang'];
+        $editionWitness['witnessType'] = WitnessType::CHUNK_EDITION;
+        switch($strategy) {
+            case self::INIT_STRATEGY_TOP_WITNESS:
+                // copy tokens from the top witness in the collation table
+                $topWitness = $collationTableData['witnesses'][$collationTableData['witnessOrder'][0]];
+                $topCtRow = $collationTableData['collationMatrix'][$collationTableData['witnessOrder'][0]];
+                $newCtRow = [];
+                $tokens = [];
+                $currentTokenIndex = -1;
+                for ($i = 0; $i < count($topCtRow); $i++) {
+                    $ref = $topCtRow[$i];
+                    if ($ref === -1) {
+                        $newCtRow[] = -1;
+                        continue;
+                    }
+                    $witnessToken = $topWitness['tokens'][$ref];
+                    $tokens[] = [
+                        'tokenClass' => StandardTokenClass::EDITION,
+                        'tokenType' => $witnessToken['tokenType'],
+                        'text' => $witnessToken['text']
+                    ];
+                    $currentTokenIndex++;
+                    $newCtRow[] = $currentTokenIndex;
+                }
+                break;
+
+            default:
+                throw new \InvalidArgumentException("Conversion init strategy '$strategy' not supported",
+                    self::ERROR_STRATEGY_NOT_SUPPORTED);
+        }
+        $editionWitness['tokens'] = $tokens;
+        $editionWitness['timeStamp'] = $timeStamp;
+        $newData['witnesses'][] = $editionWitness;
+        $newData['collationMatrix'][] = $newCtRow;
+        $newData['editionWitnessIndex'] = $editionWitnessIndex;
+
+        return $newData;
     }
 
 }

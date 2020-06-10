@@ -17,9 +17,13 @@
  */
 
 import { defaultLanguageDefinition } from './defaults/languages.js'
+import * as CollationTableType from './constants/CollationTableType.js'
+import * as CollationTableInitStrategy from './constants/CollationTableConversionInitStrategy.js'
+
 import { TableEditor } from './TableEditor.js'
-import  *  as CollationTableUtil from './CollationTableUtil.js'
+import * as CollationTableUtil from './CollationTableUtil.js'
 import * as PopoverFormatter from './CollationTablePopovers.js'
+
 
 // widgets
 import { EditableTextField } from './widgets/EditableTextField.js'
@@ -108,6 +112,8 @@ export class CollationTableEditor {
     this.exportCsvButton = $('#export-csv-button')
     this.exportSvgButton = $('#export-svg-button')
     this.exportPdfButton = $('#export-pdf-button')
+    this.convertToEditionDiv = $('#convert-to-edition-div')
+    this.convertToEditionButton = $('#convert-to-edition-btn')
 
     this.exportCsvButton.attr("download", `ApmCT_${this.options.workId}-${this.options.chunkNumber}.csv`)
     this.exportSvgButton.attr("download", `ApmQuickEdition_${this.options.workId}-${this.options.chunkNumber}.svg`)
@@ -120,15 +126,13 @@ export class CollationTableEditor {
       onConfirm: this.genOnConfirmTitleField()
     })
 
-    if (this.ctData.type === 'ctable') {
+      if (this.ctData.type === CollationTableType.COLLATION_TABLE) {
       this.breadcrumbCtTitleSpan.html("Saved Collation Table")
       this.editionTabTitle.html('Quick Edition')
     } else {
       this.breadcrumbCtTitleSpan.html("Edition")
       this.editionTabTitle.html("Edition Preview")
     }
-
-
 
     this.ctInfoDiv.html(this.genCtInfoDiv())
 
@@ -141,8 +145,16 @@ export class CollationTableEditor {
         thisObject.checkForWitnessUpdates()
       }
     })
-
     this.updateVersionInfo()
+    this.convertingToEdition = false
+    if (this.ctData.type === CollationTableType.COLLATION_TABLE) {
+      this.convertToEditionDiv.removeClass('hidden')
+      this.convertToEditionButton.on('click', this.genOnClickConvertToEditionButton())
+    } else {
+      this.convertToEditionDiv.addClass('hidden')
+    }
+
+
     this.editionSvgDiv.html('Quick edition coming soon...')
     this.ctDiv.html('Collation table coming soon...')
 
@@ -195,7 +207,7 @@ export class CollationTableEditor {
     this.fetchQuickEdition()
 
     $(window).on('beforeunload', function() {
-      if (thisObject.unsavedChanges) {
+      if (thisObject.unsavedChanges || thisObject.convertingToEdition) {
         //console.log("There are changes in editor")
         return false // make the browser ask if the user wants to leave
       }
@@ -264,6 +276,71 @@ export class CollationTableEditor {
         console.error('Error checking witness updates')
         console.log(resp)
     })
+  }
+
+  genOnClickConvertToEditionButton() {
+    let thisObject = this
+    return function() {
+      if (thisObject.ctData.type === CollationTableType.EDITION) {
+        return true
+      }
+
+      let modalSelector = '#convert-to-edition-modal'
+
+      let twigTemplate = thisObject.getConvertToEditionDialogTemplate()
+      $('body').remove(modalSelector)
+        .append(twigTemplate.render({ firstWitnessTitle: thisObject.ctData.witnessTitles[thisObject.ctData.witnessOrder[0]]}))
+      let cancelButton = $(`${modalSelector} .cancel-btn`)
+      let submitButton = $(`${modalSelector} .submit-btn`)
+      let resultSpan = $(`${modalSelector} .result`)
+      let mostCommonVariantCheck = $(`${modalSelector} .most-common-variant-check`)
+      let topWitnessCheck = $(`${modalSelector} .top-witness-check`)
+
+      cancelButton.on('click', function(){
+        $(modalSelector).modal('hide')
+      })
+      submitButton.on('click', function(){
+        cancelButton.addClass('hidden')
+        submitButton.addClass('hidden')
+        mostCommonVariantCheck.prop('disabled', true)
+        topWitnessCheck.prop('disabled', true)
+        let initStrategy = topWitnessCheck.prop('checked') ?
+          CollationTableInitStrategy.TOP_WITNESS :
+          CollationTableInitStrategy.MOST_COMMON_VARIANT
+        $(modalSelector + ' .modal-body').addClass('text-muted')
+        resultSpan.html(`Waiting for server's response... ${thisObject.icons.busy}`).addClass('text-warning')
+        thisObject.convertingToEdition = true
+        $.post(
+            thisObject.options.urlGenerator.apiConvertCollationTable(thisObject.tableId),
+            { data: JSON.stringify({
+                tableId: thisObject.tableId,
+                initStrategy: initStrategy
+              }) }
+        )
+          .then( (apiResponse) => {
+            resultSpan.html(`<b>Done!</b> The new edition is available <b><a href="${apiResponse.url}">here</a></b>`)
+            resultSpan.removeClass('text-warning')
+              .addClass('text-success')
+            thisObject.convertingToEdition = false
+          })
+          .fail( (resp) => {
+            resultSpan.html(`<b>Error! Please report to administrator.<br/>Status code ${resp.status}`)
+              .removeClass('text-warning')
+              .addClass('text-danger')
+            cancelButton.removeClass('hidden')
+            thisObject.convertingToEdition = false
+            console.error('Cannot convert to edition')
+            console.log(resp)
+          })
+
+      })
+      $(modalSelector).modal({
+        backdrop: 'static',
+        keyboard: false,
+        show: false
+      })
+      $(modalSelector).modal('show')
+    }
   }
 
   genOnClickWitnessUpdate(witnessIndex) {
@@ -1179,8 +1256,8 @@ export class CollationTableEditor {
       html += '<tr>'
       html += '<td>' + (i+1) + '</td>'
       html += '<td>' + version['id'] + '</td>'
-      html += '<td>' + this.options.peopleInfo[version['authorId']].fullname + '</td>'
-      html += '<td>' + Util.formatVersionTime(version['timeFrom']) + '</td>'
+      html += '<td class="author">' + this.options.peopleInfo[version['authorId']].fullname + '</td>'
+      html += '<td class="time">' + Util.formatVersionTime(version['timeFrom']) + '</td>'
       html += '<td>' + version['description'] + '</td>'
 
       html += '<td>'
@@ -1619,7 +1696,6 @@ export class CollationTableEditor {
 
   getUpdateDialogTemplate(witnessIndex) {
     return Twig.twig( {
-      // id: `update-witness-dialog-${witnessIndex}`,
       data: `
 <div id="update-modal-${witnessIndex}" class="modal" role="dialog">
     <div class="modal-dialog modal-lg">
@@ -1650,4 +1726,41 @@ export class CollationTableEditor {
 </div>    
     `})
   }
+
+  getConvertToEditionDialogTemplate() {
+    return Twig.twig( {
+      data: `
+<div id="convert-to-edition-modal" class="modal" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Main Text</h5>
+            </div>
+            <div class="modal-body">
+                <div class="info">
+                    <p>This will convert this saved collation table into an edition.</p>
+                </div>
+               <div class="form">
+                    <p>Choose how to initialize the main text:</p>
+                    <div class="form-group form-check">
+                        <input type="radio" name="init-edition" class="form-check-input most-common-variant-check">
+                        <label class="form-check-label" for="exampleCheck1">Use the most common variant in each column</label>
+                    </div>
+                    <div class="form-group form-check">
+                        <input type="radio" name="init-edition" class="form-check-input top-witness-check" checked>
+                        <label class="form-check-label" for="exampleCheck1">Copy current top witness: <b>{{firstWitnessTitle}}</b></label>
+                    </div>
+               </div>
+            </div>
+            <div class="modal-footer">
+                <span class="result"></span>
+                <button type="button" class="btn btn-danger submit-btn">Submit</button>
+                <button type="button" class="btn btn-primary cancel-btn">Cancel</button>
+            </div>
+      </div>
+    </div>
+</div>    
+    `})
+  }
+
 }

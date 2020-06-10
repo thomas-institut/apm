@@ -153,10 +153,12 @@ class SiteCollationTable extends SiteController
         $authors = [];
 
         foreach($ctData['witnesses'] as $witness) {
-            foreach($witness['items']  as $item) {
-                if (isset($item['notes'])) {
-                    foreach($item['notes'] as $note) {
-                        $authors[] = $note['authorId'];
+            if ($witness['witnessType'] === WitnessType::FULL_TRANSCRIPTION) {
+                foreach($witness['items']  as $item) {
+                    if (isset($item['notes'])) {
+                        foreach($item['notes'] as $note) {
+                            $authors[] = $note['authorId'];
+                        }
                     }
                 }
             }
@@ -168,7 +170,9 @@ class SiteCollationTable extends SiteController
     protected function getMentionedDocsFromCtData(array $ctData) : array {
         $docs = [];
         foreach($ctData['witnesses'] as $witness) {
-            $docs[] = $witness['docId'];
+            if ($witness['witnessType'] === WitnessType::FULL_TRANSCRIPTION) {
+                $docs[] = $witness['docId'];
+            }
         }
         return $docs;
     }

@@ -1,6 +1,5 @@
-<?php
-/* 
- *  Copyright (C) 2016-2020 Universität zu Köln
+/*
+ *  Copyright (C) 2019-20 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,15 +13,8 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
- *  
+ *
  */
 
-namespace APM\StandardData;
-
-
-class StandardTokenClass
-{
-    const BASIC = 'basic';
-    const FULL_TX = 'fullTx';
-    const EDITION = 'edition';
-}
+export const COLLATION_TABLE = 'ctable'
+export const EDITION = 'edition'

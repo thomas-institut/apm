@@ -49,6 +49,13 @@ class WitnessSystemId
 
     const ERROR_INVALID_SYSTEM_ID = 101;
 
+    static public function buildEditionId(string $chunkId,  int $tableId, string $timeString = '') : string {
+        if ($timeString !== '') {
+            return implode('-', [$chunkId, WitnessType::CHUNK_EDITION, $tableId, TimeString::compactEncode($timeString)]);
+        }
+        return implode('-', [$chunkId, WitnessType::CHUNK_EDITION, $tableId]);
+    }
+
     static public function buildFullTxId(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeString = '') : string {
         if ($timeString !== '') {
             return implode('-', [ $workId, $chunkNumber, WitnessType::FULL_TRANSCRIPTION, $docId, $localWitnessId, TimeString::compactEncode($timeString)]);

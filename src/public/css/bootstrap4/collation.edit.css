@@ -153,3 +153,32 @@ svg.edition-svg {
 .check-witness-update-btn {
     font-size: 0.8em;
 }
+
+table.versioninfo td {
+    vertical-align: top;
+}
+
+table.versioninfo td.author {
+    min-width: 10em;
+}
+
+table.versioninfo td.time {
+    min-width: 11em;
+}
+
+#convert-to-edition-div {
+    padding: 20px;
+}
+
+#convert-to-edition-modal .info {
+    font-size: 1.2em;
+}
+
+#convert-to-edition-modal .form-check {
+    margin-left: 2rem;
+}
+
+#convert-to-edition-modal .form {
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+}

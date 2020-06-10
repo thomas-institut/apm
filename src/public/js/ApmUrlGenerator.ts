@@ -89,6 +89,10 @@ class ApmUrlGenerator {
   apiConvertSvg() {
     return this.base + '/api/convert/svg2pdf'
   }
+
+  apiConvertCollationTable(tableId) {
+    return `${this.base}/api/collation/convert/${tableId}`
+  }
   
 
   siteCollationTable(work, chunkno, lang, ids=[]) {

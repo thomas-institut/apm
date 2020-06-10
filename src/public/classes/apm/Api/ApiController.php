@@ -34,6 +34,7 @@ use AverroesProject\Data\DataManager;
 use APM\System\SystemManager;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
+use Slim\Routing\RouteParser;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
 use ThomasInstitut\Profiler\SimpleProfiler;
@@ -112,6 +113,11 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
      */
     private $dataManager;
 
+    /**
+     * @var RouteParser
+     */
+    protected $router;
+
 
     /**
      * ApiController constructor.
@@ -130,6 +136,7 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
        $this->languages = $ci->get(ApmContainerKey::CONFIG)['languages'];
        $this->logger = $this->systemManager->getLogger()->withName('API');
        $this->dataManager = $ci->get(ApmContainerKey::DATA_MANAGER);
+       $this->router = $ci->get(ApmContainerKey::ROUTER);
 
        $this->profiler = new SimpleProfiler();
        $this->profiler->registerProperty('time', new TimeTracker());

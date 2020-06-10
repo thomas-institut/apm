@@ -159,6 +159,10 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
         }
 
         $title =  $collationTableData['title'];
+        if (!isset($collationTableData['type'])) {
+            $collationTableData['type'] = CollationTableType::COLLATION_TABLE;
+        }
+
         $dataToSave = json_encode($collationTableData);
         if ($compress) {
             $dataToSave = gzcompress($dataToSave);
@@ -166,6 +170,7 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
 
         return [
             'title' => $title,
+            'type' => $collationTableData['type'],
             'chunk_id' => $chunkId,
             'witnesses_json' => $witnessJson,
             'compressed' => $compress ? 1 : 0,

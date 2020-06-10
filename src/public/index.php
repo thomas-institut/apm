@@ -25,28 +25,30 @@
  */
 namespace AverroesProject;
 
-use APM\Api\ApiPdfConversion;
-use APM\Api\ApiWitness;
-use APM\Site\SiteChunkPage;
-use APM\Site\SiteCollationTable;
-use APM\Site\SiteDocuments;
-use APM\System\ApmContainerKey;
-use APM\System\RouteMiddleware;
-use DI\ContainerBuilder;
 
+
+
+
+use DI\ContainerBuilder;
 use Exception;
 use Slim\Factory\AppFactory;
 use Slim\Routing\RouteCollectorProxy;
 use Slim\Views\Twig;
 use Slim\Views\TwigMiddleware;
 
+use APM\System\ApmContainerKey;
 use APM\System\ApmSystemManager;
+use AverroesProject\Data\DataManager;
 
 use APM\Site\SiteDashboard;
 use APM\Site\SiteHomePage;
 use APM\Site\SiteUserManager;
 use APM\Site\SiteChunks;
 use APM\Site\SitePageViewer;
+use APM\Site\SiteChunkPage;
+use APM\Site\SiteCollationTable;
+use APM\Site\SiteDocuments;
+
 use APM\System\Auth\Authenticator;
 
 use APM\Api\ApiIcons;
@@ -56,8 +58,11 @@ use APM\Api\ApiCollation;
 use APM\Api\ApiPresets;
 use APM\Api\ApiEditionEngine;
 use APM\Api\ApiElements;
+use APM\Api\ApiCollationTableConversion;
+use APM\Api\ApiPdfConversion;
+use APM\Api\ApiWitness;
 
-use AverroesProject\Data\DataManager;
+
 
 require 'vendor/autoload.php';
 require 'setup.php';
@@ -219,7 +224,7 @@ $app->group('', function (RouteCollectorProxy $group){
     // EDITION
     $group->get('/edition/chunk/edit/{tableId}',
         SiteCollationTable::class . ':editCollationTable')
-        ->setName('collationtable.edit');
+        ->setName('chunkedition.edit');
 
     // DOCS
 
@@ -366,6 +371,10 @@ $app->group('/api', function (RouteCollectorProxy $group){
     $group->post('/collation/save',
         ApiCollation::class . ':saveCollationTable')
         ->setName('api.collation.save');
+
+    $group->post('/collation/convert/{tableId}',
+        ApiCollationTableConversion::class
+    )->setName('api.collation.convert');
 
     //  EDITION ENGINE
 

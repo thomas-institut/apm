@@ -1435,7 +1435,9 @@ export class CollationTableEditor {
     $(this.witnessesDivSelector + ' .witnessinfotable').html(this.genWitnessTableHtml())
 
     // set up witness move buttons
-    $(this.witnessesDivSelector + ' td.witness-pos-0 > .move-up-btn').addClass('disabled').addClass('opacity-0')
+    let firstPos = this.ctData['type'] === CollationTableType.COLLATION_TABLE ? 0 : 1
+    let firstMoveUpButton = $(`${this.witnessesDivSelector} td.witness-pos-${firstPos} > .move-up-btn`)
+    firstMoveUpButton.addClass('opacity-0').addClass('disabled')
     let lastPos = this.ctData['witnessOrder'].length -1
     $(this.witnessesDivSelector + ' td.witness-pos-' + lastPos +  ' > .move-down-btn').addClass('disabled')
     $(this.witnessesDivSelector + ' .move-up-btn').on('click', this.genOnClickUpDownWitnessInfoButton('up'))
@@ -1492,20 +1494,28 @@ export class CollationTableEditor {
   genOnClickUpDownWitnessInfoButton(direction) {
     let thisObject = this
     return function(ev) {
+      if ($(ev.currentTarget).hasClass('disabled')) {
+        return false
+      }
       let classes = Util.getClassArrayFromJQueryObject($(ev.currentTarget.parentNode))
+      console.log('Parent Classes')
+      console.log(classes)
+
       let index = thisObject.getWitnessIndexFromClasses(classes)
       let position = thisObject.getWitnessPositionFromClasses(classes)
       let numWitnesses = thisObject.ctData['witnesses'].length
       console.log('Click move ' + direction + ' button on witness ' + index + ', position ' + position)
 
+      let firstPos = thisObject.ctData['type'] === CollationTableType.COLLATION_TABLE ? 0 : 1
+      let lastPos = numWitnesses - 1
 
-      if (direction === 'down' && position === numWitnesses -1) {
+      if (direction === 'down' && position === lastPos) {
         // at the last position, cannot move up
         console.log('Nowhere to move down the table')
         return false
       }
 
-      if (direction === 'up' && position === 0) {
+      if (direction === 'up' && position === firstPos) {
         // at the first position, cannot move down
         console.log('Nowhere to move up')
         return false
@@ -1543,7 +1553,7 @@ export class CollationTableEditor {
       let theClass = classes[i]
       if (/^witness-pos-/.test(theClass)) {
         // noinspection TypeScriptValidateTypes
-        return parseInt(theClass.split('-')[1])
+        return parseInt(theClass.split('-')[2])
       }
     }
     return index

@@ -28,6 +28,7 @@ abstract class EditionEngine extends  Engine
     // edition token fields
     const INPUT_TOKEN_FIELD_TYPE = 'tokenType';
     const INPUT_TOKEN_FIELD_TEXT = 'text';
+    const INPUT_TOKEN_FIELD_NORMALIZED_TEXT = 'normalizedText';
 
     const E_TOKEN_FIELD_TYPE = 'type';
     const E_TOKEN_FIELD_TEXT = 'text';

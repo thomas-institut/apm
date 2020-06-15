@@ -27,6 +27,7 @@ class StandardTokenType
     const WORD = 'word';
     const WHITESPACE = 'whitespace';
     const PUNCTUATION = 'punctuation';
+    const EMPTY = 'empty';
 
     const UNDEFINED = '';
 

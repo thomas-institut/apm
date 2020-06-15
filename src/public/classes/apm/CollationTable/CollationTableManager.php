@@ -20,7 +20,9 @@
 namespace APM\CollationTable;
 
 
+use APM\Core\Token\TokenType;
 use APM\StandardData\StandardTokenClass;
+use APM\StandardData\StandardTokenType;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
 use ThomasInstitut\ErrorReporter\ErrorReporter;
@@ -162,15 +164,22 @@ abstract class CollationTableManager implements ErrorReporter
                 for ($i = 0; $i < count($topCtRow); $i++) {
                     $ref = $topCtRow[$i];
                     if ($ref === -1) {
-                        $newCtRow[] = -1;
-                        continue;
+                        // generate an empty token
+                        $tokens[] = [
+                            'tokenClass' => StandardTokenClass::EDITION,
+                            'tokenType' => StandardTokenType::EMPTY,
+                            'text' => ''
+                        ];
+                    } else {
+                        // copy the top witness token
+                        $witnessToken = $topWitness['tokens'][$ref];
+                        $tokens[] = [
+                            'tokenClass' => StandardTokenClass::EDITION,
+                            'tokenType' => $witnessToken['tokenType'],
+                            'text' => isset($witnessToken['normalizedText']) ? $witnessToken['normalizedText'] : $witnessToken['text']
+                        ];
                     }
-                    $witnessToken = $topWitness['tokens'][$ref];
-                    $tokens[] = [
-                        'tokenClass' => StandardTokenClass::EDITION,
-                        'tokenType' => $witnessToken['tokenType'],
-                        'text' => $witnessToken['text']
-                    ];
+
                     $currentTokenIndex++;
                     $newCtRow[] = $currentTokenIndex;
                 }

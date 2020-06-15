@@ -90,12 +90,42 @@ export class TableEditor {
         // the default function simply prints the value if it's not empty
         required: false,
         type: 'function',
-        default: function (row,col,value) {
-          if (thisObject.options.isEmptyValue(value)) {
-            return thisObject.options.emptyCellHtml
-          }
-          return value
-        }
+        default: (row,col,value) => thisObject.options.isEmptyValue(value) ? thisObject.options.emptyCellHtml : value
+      },
+      generateCellContentEditMode: {
+        // a function to be called to generate the text to be edited in edit mode
+        // the default function simply prints the value
+        required: false,
+        type: 'function',
+        default: (row, col, value) => thisObject.options.isEmptyValue(value) ? '' : value
+      },
+      onCellConfirmEdit: {
+        // a function to be called when the user clicks on the confirm edit button in edit mode
+        // return the new value for the cell
+        //   (row, col, newText) => { ... do something...  return newValue }
+        // the default function returns the emptyValue on an empty string or the newText
+        required: false,
+        type: 'function',
+        default: (row, col, newText) => newText === '' ? thisObject.options.getEmptyValue() : newText
+      },
+      onCellCancelEdit: {
+        // a function to be called when the user clicks on the cancel edit button in edit mode
+        //   (row, col, newText) => { ... do something, return nothing... }
+        required: false,
+        type: 'function',
+        default: null
+      },
+      cellValidationFunction: {
+        // a function to be called in edit mode every time there is a change in the edited text.
+        // (row, col, currentTxt) => { ... check, return resultObject }
+        // the resultObject is of the form:
+        //     result = {
+        //         isValid:  true|false
+        //         warnings: [ 'some warning text', 'another warning', ... ]
+        //         errors: [ 'some error text', 'another error', ... ]
+        required: false,
+        type: 'function',
+        default: (row, col, currentText) => { return {isValid: true, warnings:[], errors: []} }
       },
       onCellDrawnEventHandler: {
         required: false,
@@ -117,18 +147,14 @@ export class TableEditor {
         // the default function is an emtpy array
         required: false,
         type: 'function',
-        default: function () {
-          return []
-        }
+        default: () => []
       },
       generateCellClasses: {
         // a function to generate an array of html classes for a table cell
         // the default function returns an empty array
         required: false,
         type: 'function',
-        default : function(row, col, value) {
-          return [];
-        }
+        default : (row, col, value) => []
       },
       generateCellTdExtraAttributes : {
         // a function to generate html attributes to be included in a cell's
@@ -137,26 +163,20 @@ export class TableEditor {
         // by returning  { attr='data-content', val:"popover text"}
         required: false,
         type: 'function',
-        default: function(row, col, value) {
-          return ''
-        }
+        default: (row, col, value) => ''
       },
       getEmptyValue: {
         // a function to get an empty value
         required: false,
         type: 'function',
-        default: function() {
-          return ''
-        }
+        default: (row, col, value) => ''
       },
       isEmptyValue: {
         // a function to test whether a table value is empty
         // the default function returns true if the value is an empty string
         required: false,
         type: 'function',
-        default: function (value) {
-          return value === ''
-        }
+        default: (value) => value === ''
       },
       emptyCellHtml: {
         // html to use as the content of an empty cell
@@ -472,7 +492,14 @@ export class TableEditor {
   generateTdHtmlCellEditMode(row, col) {
     let html  = ''
     let value = this.getValue(row, col)
-    html += '<input type="text" class="te-input" value="' + value + '" ' + 'size="' + value.length + '">'
+    let textToEdit = this.options.generateCellContentEditMode(row, col, value)
+    let inputSize = Math.min(textToEdit.length, 8)
+    if (textToEdit === '') {
+      inputSize = 5
+    }
+
+    html += `<input type="text" class="te-input" value="${textToEdit}" size="${inputSize}">`
+
     html += this.genButtonHtml(this.icons.confirmCellEdit, ['confirm-edit-button'], 'Confirm edit')
     html += this.genButtonHtml(this.icons.cancelCellEdit, ['cancel-edit-button'], 'Cancel edit')
     return html
@@ -530,7 +557,7 @@ export class TableEditor {
       let row = cellIndex.row
       let col = cellIndex.col
 
-      //console.log('Edit mode click on cell ' + row + ':' + col)
+      console.log('Edit mode click on cell ' + row + ':' + col)
 
       // for safety reasons, don't do anything on empty cells
       if(thisObject.options.isEmptyValue(thisObject.matrix.getValue(row, col))) {
@@ -540,37 +567,39 @@ export class TableEditor {
       let elementClasses = thisObject.getClassList($(ev.target))
 
       if (elementClasses.indexOf('cell-button') === -1) {
+        console.log('Not a button')
         // not a button, surely an icon with an <i> element, like Fontawesome icons, let's try the parent
         elementClasses = thisObject.getClassList($(ev.target).parent())
+        console.log('Parent classes:')
+        console.log(elementClasses)
       }
 
       if (elementClasses.indexOf('move-cell-left-button') !== -1) {
         // move cell left
-        //console.log('move cell left button clicked')
+        console.log('move cell left button clicked')
         thisObject.shiftCells(row, col, col, 'left', 1)
       }
       if (elementClasses.indexOf('push-cells-left-button') !== -1) {
-       // console.log('PUSH cells LEFT button clicked')
+        console.log('PUSH cells LEFT button clicked')
         let emptyCol = thisObject.getFirstEmptyCellToTheLeft(row, col)
         thisObject.shiftCells(row, emptyCol+1, col, 'left', 1)
       }
 
       if (elementClasses.indexOf('move-cell-right-button') !== -1) {
         // move cell right
-        //console.log('move cell right button clicked')
+        console.log('move cell right button clicked')
         thisObject.shiftCells(row, col, col, 'right', 1)
       }
 
       if (elementClasses.indexOf('push-cells-right-button') !== -1) {
-        //console.log('PUSH cells RIGHT button clicked')
+        console.log('PUSH cells RIGHT button clicked')
         let emptyCol = thisObject.getFirstEmptyCellToTheRight(row, col)
         thisObject.shiftCells(row, col, emptyCol-1, 'right', 1)
       }
 
       if (elementClasses.indexOf('edit-cell-button') !== -1) {
         //edit cell
-        console.log('Edit cell button clicked')
-        //console.log('Edit cell button clicked on row ' + row + ' col ' + col)
+        console.log(`Edit cell button clicked on ${row}:${col}`)
         thisObject.enterCellEditMode(row, col)
       }
       return false
@@ -666,7 +695,9 @@ export class TableEditor {
     return function(ev) {
       if (ev.which === 13) {
         // Enter key
-        let newValue = $(thisObject.getTdSelector(row, col) + ' .te-input').val()
+        console.log(`Enter key press on ${row}:${col}`)
+        let newText = $(thisObject.getTdSelector(row, col) + ' .te-input').val()
+        let newValue = thisObject.options.onCellConfirmEdit(row, col, newText)
         thisObject.setValue(row, col, newValue)
         thisObject.leaveCellEditMode(row, col)
         thisObject.dispatchContentChangedEvent(row, col)
@@ -674,7 +705,12 @@ export class TableEditor {
       }
       if (ev.which === 27) {
         // Escape key
+        let newText = $(thisObject.getTdSelector(row, col) + ' .te-input').val()
+        console.log(`Escape key press on ${row}:${col}`)
         thisObject.leaveCellEditMode(row, col)
+        if (thisObject.options.onCellCancelEdit !== null) {
+          this.options.onCellCancelEdit(row, col, newText )
+        }
         return false
       }
       return true
@@ -873,6 +909,7 @@ export class TableEditor {
     let inputSelector = tdSelector + ' .te-input'
     this.editFlagMatrix.setValue(row, col, true)
     $(tdSelector).html(this.generateTdHtmlCellEditMode(row, col))
+    $(tdSelector).addClass('edit-mode')
     this.setupCellEventHandlersCellEditMode(row, col)
     $(inputSelector).on('focus', function() {
       $(inputSelector).get(0).setSelectionRange(10000, 10000)
@@ -881,19 +918,23 @@ export class TableEditor {
   }
 
   leaveCellEditMode(row, col) {
-    //console.log('Leaving edit mode, ' + row + ':' + col)
+    console.log('Leaving edit mode, ' + row + ':' + col)
     let tdSelector = this.getTdSelector(row, col)
     this.editFlagMatrix.setValue(row, col, false)
     $(tdSelector).html(this.generateTdHtml(row, col))
+    $(tdSelector).removeClass('edit-mode')
+    $(tdSelector + ' .cell-button').addClass('hidden')
     this.setupCellEventHandlers(row,col)
-    $(tdSelector).on('click', this.genOnClickEditableCell(row, col))
+    // reinstate mouseenter and mouseleave events
+    $(tdSelector).on('mouseenter', this.genOnMouseEnterCell())
+    $(tdSelector).on('mouseleave', this.genOnMouseLeaveCell())
     this.dispatchCellDrawnEvent(row, col)
   }
 
   genOnClickEditableCell(row, col) {
     let thisObject = this
     return function() {
-      //console.log('Editable cell clicked, row ' + row + ' col ' + col)
+      console.log('Editable cell clicked, row ' + row + ' col ' + col)
       thisObject.enterCellEditMode(row, col)
       return false
     }
@@ -902,8 +943,12 @@ export class TableEditor {
   genOnClickCancelEditButton(row, col) {
     let thisObject = this
     return function() {
-      //console.log('Cancel edit button clicked')
+      let newText = $(thisObject.getTdSelector(row, col) + ' .te-input').val()
+      console.log(`Cancel button clicked on ${row}:${col}`)
       thisObject.leaveCellEditMode(row, col)
+      if (thisObject.options.onCellCancelEdit !== null) {
+        this.options.onCellCancelEdit(row, col, newText )
+      }
       return false
     }
   }
@@ -911,8 +956,9 @@ export class TableEditor {
   genOnClickConfirmEditButton(row, col) {
     let thisObject = this
     return function() {
-      //console.log('Confirm edit button clicked')
-      let newValue = $(thisObject.getTdSelector(row, col) + ' .te-input').val()
+      console.log(`Confirm button clicked on ${row}:${col}`)
+      let newText = $(thisObject.getTdSelector(row, col) + ' .te-input').val()
+      let newValue = thisObject.options.onCellConfirmEdit(row, col, newText)
       thisObject.setValue(row, col, newValue)
       thisObject.leaveCellEditMode(row, col)
       thisObject.dispatchContentChangedEvent(row, col)

@@ -31,6 +31,10 @@ export function removeWhiteSpace(someString) {
   return someString.replace(/\s/g, '')
 }
 
+export function trimWhiteSpace(someString) {
+  return someString.replace(/^\s+/, '').replace(/\s+$/, '')
+}
+
 export function getClassArrayFromJQueryObject(jqueryObject) {
   return jqueryObject.attr('class').split(/\s+/);
 }
@@ -55,4 +59,16 @@ export function escapeHtml(html) {
   return String(html).replace(/[&<>"'`=\/]/g, function (s) {
     return entityMap[s];
   });
+}
+
+export function isWordToken(text) {
+ return !hasSpaces(text) && !hasPunctuation(text)
+}
+
+export function hasPunctuation(text) {
+  return /\.,;:\(\)\[]¶⊙!/.test(text);
+}
+
+export function hasSpaces(text) {
+  return /\s/.test(text)
 }

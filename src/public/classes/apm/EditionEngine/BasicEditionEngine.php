@@ -21,6 +21,7 @@ namespace APM\EditionEngine;
 
 
 use APM\Core\Token\TokenType;
+use APM\StandardData\StandardTokenType;
 
 class BasicEditionEngine extends EditionEngine
 {
@@ -79,7 +80,7 @@ class BasicEditionEngine extends EditionEngine
                         continue;
                     }
 
-                    if ($ctToken[self::INPUT_TOKEN_FIELD_TYPE] === TokenType::EMPTY) {
+                    if ($ctToken[self::INPUT_TOKEN_FIELD_TYPE] === StandardTokenType::EMPTY) {
                         continue;
                     }
 
@@ -121,14 +122,14 @@ class BasicEditionEngine extends EditionEngine
                 if ($witnessIndex === $baseWitnessIndex) {
                     continue;
                 }
-                if ($ctToken[self::INPUT_TOKEN_FIELD_TYPE] === TokenType::EMPTY) {
+                if ($ctToken[self::INPUT_TOKEN_FIELD_TYPE] === StandardTokenType::EMPTY) {
                     if (!isset($omissions[$mainText])) {
                         $omissions[$mainText] = [];
                     }
                     $omissions[$mainText][] = $witnessIndex;
                     continue;
                 }
-                $ctTokenText = $ctToken[self::INPUT_TOKEN_FIELD_TEXT];
+                $ctTokenText = $this->getTextFromInputToken($ctToken);
                 if ($ctTokenText !== $mainText) {
                     if (!isset($variants[$ctTokenText])) {
                         $variants[$ctTokenText] = [];
@@ -202,7 +203,7 @@ class BasicEditionEngine extends EditionEngine
             if ($tokenRef !== -1) {
                 $tokens[] = $ctData['witnesses'][$witnessIndex]['tokens'][$tokenRef];
             } else {
-                $tokens[] = [ self::INPUT_TOKEN_FIELD_TYPE => TokenType::EMPTY];
+                $tokens[] = [ self::INPUT_TOKEN_FIELD_TYPE => StandardTokenType::EMPTY];
             }
 
         }
@@ -222,7 +223,7 @@ class BasicEditionEngine extends EditionEngine
         $inputTokensToMainText = [];
         $currentMainTextIndex = -1;
         foreach($inputTokens as $i => $inputToken) {
-            if ($inputToken[self::INPUT_TOKEN_FIELD_TYPE] === TokenType::EMPTY ) {
+            if ($inputToken[self::INPUT_TOKEN_FIELD_TYPE] === StandardTokenType::EMPTY ) {
                 $inputTokensToMainText[] = self::TOKEN_NOT_IN_MAINTEXT;
                 continue;
             }
@@ -248,13 +249,19 @@ class BasicEditionEngine extends EditionEngine
             $currentMainTextIndex++;
             $mainTextTokens[] = [
                 self::E_TOKEN_FIELD_TYPE => self::E_TOKEN_TYPE_TEXT,
-                self::E_TOKEN_FIELD_TEXT => $inputToken[self::INPUT_TOKEN_FIELD_TEXT],
+                self::E_TOKEN_FIELD_TEXT => $this->getTextFromInputToken($inputToken),
                 self::E_TOKEN_FIELD_COLLATION_TABLE_INDEX => $i
             ];
             $firstWordAdded = true;
             $inputTokensToMainText[] = $currentMainTextIndex;
         }
         return [ $mainTextTokens, $inputTokensToMainText];
+    }
+
+    protected function getTextFromInputToken(array $token): string {
+        return isset($token[self::INPUT_TOKEN_FIELD_NORMALIZED_TEXT]) ?
+            $token[self::INPUT_TOKEN_FIELD_NORMALIZED_TEXT] :
+            $token[self::INPUT_TOKEN_FIELD_TEXT];
     }
 
 
@@ -264,7 +271,7 @@ class BasicEditionEngine extends EditionEngine
         foreach($ctData['collationMatrix'] as $row => $tokenRefs) {
             $ref = $tokenRefs[$col];
             if ($ref === -1) {
-                $column[$row] = [ self::INPUT_TOKEN_FIELD_TYPE => TokenType::EMPTY];
+                $column[$row] = [ self::INPUT_TOKEN_FIELD_TYPE => StandardTokenType::EMPTY];
             } else {
                 $column[$row] = $ctData['witnesses'][$row]['tokens'][$ref];
             }

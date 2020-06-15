@@ -105,6 +105,11 @@ class ApiWitness extends ApiController
             $witnessId = $witness['id'];
             $witnessType = WitnessSystemId::getType($witnessId);
             switch ($witnessType) {
+                case WitnessType::CHUNK_EDITION:
+                    $this->profiler->stop();
+                    $this->logProfilerData($apiCall);
+                    return $this->responseWithJson($response, [ 'status' => 'Not Applicable'], 200);
+
                 case WitnessType::FULL_TRANSCRIPTION:
                     $witnessInfo = WitnessSystemId::getFullTxInfo($witnessId);
                     $lastUpdate = $this->systemManager->getTranscriptionManager()->getLastChangeTimestampForWitness(

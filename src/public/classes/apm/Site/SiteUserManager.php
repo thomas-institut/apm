@@ -94,6 +94,7 @@ class SiteUserManager extends SiteController
             $tableInfo[] = [
                 'id' => $tableId,
                 'title' => $ctData['title'],
+                'type' => $ctData['type'],
                 'chunkId' => $chunkId,
             ];
         }

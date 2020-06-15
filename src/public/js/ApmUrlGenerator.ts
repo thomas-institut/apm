@@ -108,6 +108,10 @@ class ApmUrlGenerator {
     return this.base + '/collation/edit/' + tableId
   }
 
+  siteChunkEdition(tableId) {
+    return this.base + '/edition/chunk/edit/' + tableId
+  }
+
   apiAutomaticCollation() {
     return this.base + '/api/collation/auto'
   }

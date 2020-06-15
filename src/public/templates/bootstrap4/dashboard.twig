@@ -14,24 +14,65 @@
         let  tableInfo = JSON.parse("{{tableInfo|json_encode|e('js')}}")
         let urlGenerator = new ApmUrlGenerator('{{ baseurl }}')
 
-      function genCollationTableInfoHtml(tableInfo, urlGen) {
+      function genCollationTableInfoHtml(tableInfo, urlGen, type) {
         let html = ''
 
+        let tables = tableInfo.filter(info => info.type === type)
+        if (tables.length === 0) {
+          return ''
+        }
+
+
         html += '<ul class="list-indented">'
-        for(const info of tableInfo) {
-          html += '<li><a target="_blank" href="' +  urlGen.siteEditCollationTable(info['id'])  + '">' + info['chunkId'] + ': ' + info['title'] + '</a></li>'
+        for(const info of tables) {
+          let url =  urlGen.siteEditCollationTable(info['id'])
+          if (type === 'edition') {
+            url = urlGen.siteChunkEdition(info['id'])
+          }
+          html += '<li><a target="_blank" href="' +  url + '">' + info['chunkId'] + ': ' + info['title'] + '</a></li>'
         }
         html += '</ul>'
         return html
       }
 
-      $('#mycollationtables').html(genCollationTableInfoHtml(tableInfo, urlGenerator))
+      let html = genCollationTableInfoHtml(tableInfo, urlGenerator, 'edition')
+      if (html === '') {
+        $('#myeditions').addClass('hidden')
+      } else {
+        $('#myeditions').html(html)
+      }
+
+      html = genCollationTableInfoHtml(tableInfo, urlGenerator, 'ctable')
+      if (html === '') {
+        $('#mycollationtables').addClass('hidden')
+      } else {
+        $('#mycollationtables').html(html)
+      }
+
     })
 </script>
 {%  endblock %}
 
 {% block content %}
 <div class="dashboard">
+    <section id="section-ctables">
+        <h1>
+            <a role="button" title="Click to show/hide list" data-toggle="collapse" href="#mycollationtables" aria-expanded="true" aria-controls="mycollationtables">
+                <i class="fas fa-caret-right"></i></a>
+            My Collation Tables
+        </h1>
+        <div class="collapse show" id="mycollationtables"></div>
+    </section>
+
+    <section id="section-editions">
+        <h1>
+            <a role="button" title="Click to show/hide list" data-toggle="collapse" href="#mycollationtables" aria-expanded="true" aria-controls="mycollationtables">
+                <i class="fas fa-caret-right"></i></a>
+            My Editions
+        </h1>
+        <div class="collapse show" id="myeditions"></div>
+    </section>
+
     <section>
         <h1>
             <a role="button" title="Click to show/hide list" data-toggle="collapse" href="#mymss" aria-expanded="true" aria-controls="mymss">
@@ -45,14 +86,7 @@
         </div>
     </section>
 
-    <section>
-        <h1>
-            <a role="button" title="Click to show/hide list" data-toggle="collapse" href="#mycollationtables" aria-expanded="true" aria-controls="mycollationtables">
-                <i class="fas fa-caret-right"></i></a>
-            My Collation Tables
-        </h1>
-        <div class="collapse show" id="mycollationtables"></div>
-    </section>
+
 
     <section>
         <h1>Admin</h1>

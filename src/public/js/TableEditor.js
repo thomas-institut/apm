@@ -692,7 +692,7 @@ export class TableEditor {
     //profiler.lap('matrix updated')
     // refresh html table cells
     if (this.options.redrawOnCellShift) {
-      console.log('Redrawing cells')
+      //console.log('Redrawing cells')
       let firstColToRedraw = direction === 'right' ? firstCol : firstCol-numCols
       let lastColToRedraw = direction === 'right' ? lastCol+numCols : lastCol
       for (let col = firstColToRedraw; col <= lastColToRedraw; col++) {
@@ -702,10 +702,10 @@ export class TableEditor {
       }
       //profiler.lap('cells redrawn')
     } else {
-      console.log('Not redrawing cells')
+      //console.log('Not redrawing cells')
     }
     // dispatch post move events
-    console.log('Dispatching post move events')
+    //console.log('Dispatching post move events')
     this.dispatchCellShiftEvents('post', direction, row, firstCol, lastCol, numCols)
 
     //profiler.stop()

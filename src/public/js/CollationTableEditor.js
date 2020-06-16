@@ -945,7 +945,7 @@ export class CollationTableEditor {
     this.tableEditor.redrawTable()
     this.tableEditor.on('column-delete', this.genOnColumnDelete())
     this.tableEditor.on('column-add', this.genOnColumnAdd())
-    this.tableEditor.on('column-add column-delete cell-shift', this.genOnCollationChanges())
+    this.tableEditor.on('column-add column-delete cell-shift content-changed', this.genOnCollationChanges())
   }
 
   genOnColumnAdd() {
@@ -1038,8 +1038,8 @@ export class CollationTableEditor {
       let lastCol = data.detail.lastCol
       let theRow = data.detail.row
 
-      console.log(`Cell post shift event`)
-      console.log(data.detail)
+      //console.log(`Cell post shift event`)
+      //console.log(data.detail)
 
       // deal with shifts in edition witness
       if (thisObject.ctData['type'] === CollationTableType.EDITION && theRow === 0) {
@@ -1058,7 +1058,7 @@ export class CollationTableEditor {
         .then( () => {
           // refresh the cells in the row being shifted
           for (let col = firstColToRedraw; col <= lastColToRedraw; col++) {
-            console.log(`Refreshing cell ${theRow}:${col}`)
+            //console.log(`Refreshing cell ${theRow}:${col}`)
             thisObject.tableEditor.refreshCell(theRow, col)
             thisObject.tableEditor.setupCellEventHandlers(theRow,col)
           }
@@ -1069,7 +1069,7 @@ export class CollationTableEditor {
           for (let col = firstColToRedraw; col <= lastColToRedraw; col++) {
             for (let row = 0; row < thisObject.variantsMatrix.nRows; row++) {
               if (row !== theRow) {
-                console.log(`Refreshing classes for ${theRow}:${col}`)
+                //console.log(`Refreshing classes for ${theRow}:${col}`)
                 thisObject.tableEditor.refreshCellClasses(row, col)
               }
             }
@@ -1760,12 +1760,22 @@ export class CollationTableEditor {
       changes.push('Changes in sigla')
     }
 
+    if(this.ctData['type'] === CollationTableType.EDITION) {
+      let editionWitnessIndex = this.ctData['witnessOrder'][0]
+      let oldText = this.lastSavedCtData['witnesses'][editionWitnessIndex]['tokens'].map(token => token.text).join(' ')
+      let newText = this.ctData['witnesses'][editionWitnessIndex]['tokens'].map(token => token.text).join(' ')
+      if (oldText !== newText) {
+        changes.push('Changes in edition text')
+      }
+    }
+
     if (this.witnessUpdates.length !== 0) {
       for(const witnessUpdate of this.witnessUpdates) {
         changes.push(`Witness ${this.ctData['witnessTitles'][witnessUpdate.witnessIndex]} updated`)
       }
-
     }
+
+
     return changes
   }
 

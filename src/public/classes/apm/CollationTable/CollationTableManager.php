@@ -126,7 +126,7 @@ abstract class CollationTableManager implements ErrorReporter
         $newVersionInfo = new CollationTableVersionInfo();
         $newVersionInfo->collationTableId = $collationTableId;
         $newVersionInfo->authorId = $authorId;
-        $newVersionInfo->description = "Converted to edition using " . $strategy;
+        $newVersionInfo->description = "Converted to edition getting text from " . $strategy;
         $newVersionInfo->isMinor = false;
         $newVersionInfo->isReview = false;
         $ctData = $this->getCollationTableById($collationTableId);

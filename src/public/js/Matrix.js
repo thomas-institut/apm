@@ -120,7 +120,7 @@ export class Matrix {
 
   isColumnEmpty(col, isCellEmptyFunction) {
     for(let row = 0; row < this.nRows; row++) {
-      if (!isCellEmptyFunction(this.getValue(row, col))) {
+      if (!isCellEmptyFunction(row, col, this.getValue(row, col))) {
         return false
       }
     }

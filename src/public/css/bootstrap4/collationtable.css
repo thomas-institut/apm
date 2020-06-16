@@ -128,15 +128,15 @@ td.variant-2 {
     background-color: #ffcccc;
 }
 
-td.emptytoken, td.token-type-empty {
-    text-align: center;
-    color: silver;
-}
+/*td.emptytoken, td.token-type-empty {*/
+/*    text-align: center;*/
+/*    color: silver;*/
+/*}*/
 
-td.token-type-empty.edit-mode {
-    text-align: inherit;
-    color: black;
-}
+/*td.token-type-empty.edit-mode {*/
+/*    text-align: inherit;*/
+/*    color: black;*/
+/*}*/
 
 .te-table td.token-class-edition {
     border-bottom: solid 2px silver;

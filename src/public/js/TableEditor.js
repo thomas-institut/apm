@@ -90,14 +90,14 @@ export class TableEditor {
         // the default function simply prints the value if it's not empty
         required: false,
         type: 'function',
-        default: (row,col,value) => thisObject.options.isEmptyValue(value) ? thisObject.options.emptyCellHtml : value
+        default: (row,col,value) => thisObject.options.isEmptyValue(row, col,value) ? thisObject.options.emptyCellHtml : value
       },
       generateCellContentEditMode: {
         // a function to be called to generate the text to be edited in edit mode
         // the default function simply prints the value
         required: false,
         type: 'function',
-        default: (row, col, value) => thisObject.options.isEmptyValue(value) ? '' : value
+        default: (row, col, value) => thisObject.options.isEmptyValue(row, col,value) ? '' : value
       },
       onCellConfirmEdit: {
         // a function to be called when the user clicks on the confirm edit button in edit mode
@@ -133,6 +133,14 @@ export class TableEditor {
         default: null
       },
       onTableDrawnEventHandler: {
+        required: false,
+        type: 'function',
+        default: null
+      },
+      onColumnAddHandler: {
+        // a function to be called when a column is added before any redrawing of cells
+        // it can be used to change the value matrix
+        //   (newCol) => { .. return nothing ... }
         required: false,
         type: 'function',
         default: null
@@ -176,7 +184,14 @@ export class TableEditor {
         // the default function returns true if the value is an empty string
         required: false,
         type: 'function',
-        default: (value) => value === ''
+        default: (row, col, value) => value === ''
+      },
+      canDeleteColumn: {
+        // a function to test whether a given column can be deleted
+        // (col) => { return true/false }
+        required: false,
+        type: 'function',
+        default : null
       },
       emptyCellHtml: {
         // html to use as the content of an empty cell
@@ -188,7 +203,7 @@ export class TableEditor {
         // html for the different icons, see genTextIconSet() below
         required: false,
         type: 'object',
-        default: this.genTextIconSet()
+        default: TableEditor.genTextIconSet()
       }
     }
 
@@ -241,6 +256,10 @@ export class TableEditor {
       this.on('table-drawn', this.options.onTableDrawnEventHandler )
     }
 
+    if (this.options.onColumnAddHandler !== null) {
+      this.on('column-add', this.options.onColumnAddHandler)
+    }
+
     if (this.options.onContentChangedEventHandler !== null) {
       this.on('content-changed', this.options.onContentChangedEventHandler )
     }
@@ -262,6 +281,11 @@ export class TableEditor {
 
   setValue(row, col, value) {
     this.matrix.setValue(row, col, value)
+  }
+
+  setOption(optionName, value) {
+    // TODO: validate the value!
+    this.options[optionName] = value
   }
 
   getRow(row) {
@@ -337,20 +361,18 @@ export class TableEditor {
     }
   }
 
-  genTextIconSet() {
+  static genTextIconSet() {
     return {
       moveCellLeft: '&#x25c1;', // ◁
       moveCellRight: '&#x25b7;', // ▷
       pushCellsRight: '&#x21a3;',   // ↣
-      //pushCellsRight: '&#x29d0;',   // ⧐
       pushCellsLeft: '&#x21a2;', // ↢
-      //pushCellsLeft: '&#x29cf;', // ⧏
-      editCell: '&#x270D;',
+      editCell: '&#x270D;', //	✍
       addColumnLeft: '<sup>&#x25c3;</sup>+',
       addColumnRight: '+<sup>&#x25b9;',
       deleteColumn: '&#x2715;', // ✕
-      confirmCellEdit: '<small>OK</small>',
-      cancelCellEdit: '<small>Cancel</small>'
+      confirmCellEdit: '&#x2714;', // ✔
+      cancelCellEdit: ' &#x2718;'  // ✘
     }
   }
 
@@ -523,7 +545,7 @@ export class TableEditor {
     this.setupCellEventHandlersAll()
     for (let row = 0; row < this.matrix.nRows; row++) {
       for (let col = 0; col < this.matrix.nCols; col++) {
-       this.setupCellEventHandlers(row, col)
+       this.setupCellEventHandlers(row, col, false)
       }
     }
     //profiler.stop()
@@ -559,50 +581,68 @@ export class TableEditor {
 
       console.log('Edit mode click on cell ' + row + ':' + col)
 
-      // for safety reasons, don't do anything on empty cells
-      if(thisObject.options.isEmptyValue(thisObject.matrix.getValue(row, col))) {
+      let theElement = $(ev.target)
+      let depth = 5
+      while (depth > 0) {
+        //console.log(`Testing element's node name, depth ${depth}, nodeName '${theElement.prop('nodeName')}'`)
+        if (theElement.prop('nodeName') === 'TD' || theElement.prop('nodeName') ===  'A')
+          break
+        theElement = theElement.parent()
+        depth--
+      }
+      if (depth === 0) {
+        console.error(`Max depth reached trying to get A or TD in cell ${row}:${col}`)
         return true
       }
 
-      let elementClasses = thisObject.getClassList($(ev.target))
-
-      if (elementClasses.indexOf('cell-button') === -1) {
+      if (theElement.prop('nodeName') === 'TD') {
         console.log('Not a button')
-        // not a button, surely an icon with an <i> element, like Fontawesome icons, let's try the parent
-        elementClasses = thisObject.getClassList($(ev.target).parent())
-        console.log('Parent classes:')
-        console.log(elementClasses)
+        if (thisObject.isRowEditable(row)) {
+          console.log('Editable cell clicked, row ' + row + ' col ' + col)
+          thisObject.enterCellEditMode(row, col)
+          return false
+        }
       }
+
+      // click on an 'A'  node
+      let elementClasses = thisObject.getClassList(theElement)
+      //console.log(elementClasses)
 
       if (elementClasses.indexOf('move-cell-left-button') !== -1) {
         // move cell left
         console.log('move cell left button clicked')
         thisObject.shiftCells(row, col, col, 'left', 1)
+        return false
       }
       if (elementClasses.indexOf('push-cells-left-button') !== -1) {
         console.log('PUSH cells LEFT button clicked')
         let emptyCol = thisObject.getFirstEmptyCellToTheLeft(row, col)
         thisObject.shiftCells(row, emptyCol+1, col, 'left', 1)
+        return false
       }
 
       if (elementClasses.indexOf('move-cell-right-button') !== -1) {
         // move cell right
         console.log('move cell right button clicked')
         thisObject.shiftCells(row, col, col, 'right', 1)
+        return false
       }
 
       if (elementClasses.indexOf('push-cells-right-button') !== -1) {
         console.log('PUSH cells RIGHT button clicked')
         let emptyCol = thisObject.getFirstEmptyCellToTheRight(row, col)
         thisObject.shiftCells(row, col, emptyCol-1, 'right', 1)
+        return false
       }
 
       if (elementClasses.indexOf('edit-cell-button') !== -1) {
         //edit cell
         console.log(`Edit cell button clicked on ${row}:${col}`)
         thisObject.enterCellEditMode(row, col)
+        return false
       }
-      return false
+      console.warn(`Click on an unknown cell button on ${row}:${col}`)
+      return true
     }
   }
 
@@ -652,28 +692,32 @@ export class TableEditor {
     //profiler.lap('matrix updated')
     // refresh html table cells
     if (this.options.redrawOnCellShift) {
-      //console.log('Redrawing cells')
+      console.log('Redrawing cells')
       let firstColToRedraw = direction === 'right' ? firstCol : firstCol-numCols
       let lastColToRedraw = direction === 'right' ? lastCol+numCols : lastCol
       for (let col = firstColToRedraw; col <= lastColToRedraw; col++) {
         this.redrawCell(row, col)
-        this.setupCellEventHandlers(row,col)
+        this.setupCellEventHandlers(row,col, true)
         this.dispatchCellDrawnEvent(row, col)
       }
       //profiler.lap('cells redrawn')
+    } else {
+      console.log('Not redrawing cells')
     }
     // dispatch post move events
+    console.log('Dispatching post move events')
     this.dispatchCellShiftEvents('post', direction, row, firstCol, lastCol, numCols)
 
     //profiler.stop()
   }
 
-  setupCellEventHandlers(row, col) {
+  setupCellEventHandlers(row, col, restoreClickEvent = true) {
     let tdSelector = this.getTdSelector(row, col)
-    //$(tdSelector).off()
-    if (this.tableEditMode) {
+    //console.log(`setting up event handlers for cell ${row}:${col}, restoreClick = ${restoreClickEvent}`)
+    if (this.tableEditMode && restoreClickEvent) {
       if (this.isRowEditable(row)) {
-        $(tdSelector).on('click', this.genOnClickEditableCell(row, col))
+        $(tdSelector).off('click')
+        $(tdSelector).on('click', this.genOnClickCell(row, col))
       }
     }
   }
@@ -766,7 +810,7 @@ export class TableEditor {
 
         $(thSelector + ' .add-column-left-button').removeClass('hidden')
         $(thSelector + ' .add-column-right-button').removeClass('hidden')
-        if (thisObject.matrix.isColumnEmpty(col, thisObject.options.isEmptyValue)) {
+        if (thisObject.canDeleteColumn(col)) {
           $(thSelector + ' .delete-column-button').removeClass('hidden')
         }
       }
@@ -846,9 +890,6 @@ export class TableEditor {
     if (this.tableEditMode) {
       $(tdSelector).on('mouseenter', this.genOnMouseEnterCell())
       $(tdSelector).on('mouseleave', this.genOnMouseLeaveCell())
-      //if (this.isRowEditable(row)) {
-      //   $(tdSelector).on('click', this.genOnClickEditableCell(row, col))
-      // }
     }
     $(tdSelector + ' .cell-button').addClass('hidden')
 
@@ -918,13 +959,13 @@ export class TableEditor {
   }
 
   leaveCellEditMode(row, col) {
-    console.log('Leaving edit mode, ' + row + ':' + col)
+    //console.log('Leaving edit mode, ' + row + ':' + col)
     let tdSelector = this.getTdSelector(row, col)
     this.editFlagMatrix.setValue(row, col, false)
     $(tdSelector).html(this.generateTdHtml(row, col))
     $(tdSelector).removeClass('edit-mode')
     $(tdSelector + ' .cell-button').addClass('hidden')
-    this.setupCellEventHandlers(row,col)
+    this.setupCellEventHandlers(row,col, true)
     // reinstate mouseenter and mouseleave events
     $(tdSelector).on('mouseenter', this.genOnMouseEnterCell())
     $(tdSelector).on('mouseleave', this.genOnMouseLeaveCell())
@@ -944,7 +985,7 @@ export class TableEditor {
     let thisObject = this
     return function() {
       let newText = $(thisObject.getTdSelector(row, col) + ' .te-input').val()
-      console.log(`Cancel button clicked on ${row}:${col}`)
+      //console.log(`Cancel button clicked on ${row}:${col}`)
       thisObject.leaveCellEditMode(row, col)
       if (thisObject.options.onCellCancelEdit !== null) {
         this.options.onCellCancelEdit(row, col, newText )
@@ -1030,20 +1071,19 @@ export class TableEditor {
       if (col === -1) {
         return true
       }
-      if (thisObject.matrix.isColumnEmpty(col, thisObject.options.isEmptyValue)) {
+      if (thisObject.canDeleteColumn(col)) {
         $(thisObject.getThSelector(col)).addClass('te-deleting')
         console.log('Deleting column ' + col)
         thisObject.currentYScroll = window.scrollY
         thisObject.currentXScroll = window.scrollX
         thisObject.waitingForScrollZero = true
         thisObject.matrix.deleteColumn(col)
-        thisObject.redrawTable()
         thisObject.dispatchColumnDeleteEvents(col)
+        thisObject.redrawTable()
         thisObject.forceRestoreScroll(250)
       } else {
         console.log('Column NOT empty, cannot delete')
       }
-
     }
   }
 
@@ -1096,14 +1136,23 @@ export class TableEditor {
     return this.getTdSelector(row, col) + ' .te-cell-content'
   }
 
-  canMoveCellLeft(row, col) {
-    return col!== 0 &&
-      !this.options.isEmptyValue(this.matrix.getValue(row, col)) &&
-      this.options.isEmptyValue(this.matrix.getValue(row, col-1));
+  isColumnEmpty(col) {
+    return this.matrix.isColumnEmpty(col, this.options.isEmptyValue)
   }
 
+  canDeleteColumn(col) {
+      return this.options.canDeleteColumn !== null ?  this.options.canDeleteColumn(col) : this.isColumnEmpty(col)
+  }
+
+  canMoveCellLeft(row, col) {
+    return col!== 0 &&
+      !this.options.isEmptyValue(row, col,this.matrix.getValue(row, col)) &&
+      this.options.isEmptyValue(row, col,this.matrix.getValue(row, col-1));
+  }
+
+
   canPushCellsLeft(row, col) {
-    if (this.options.isEmptyValue(this.matrix.getValue(row, col)) || this.canMoveCellLeft(row, col)) {
+    if (this.options.isEmptyValue(row, col,this.matrix.getValue(row, col)) || this.canMoveCellLeft(row, col)) {
       // no pushing a cell that is empty or that can be simply moved
       return false
     }
@@ -1123,7 +1172,7 @@ export class TableEditor {
       return -1
     }
     for (let i = col-1; i >= 0; i--) {
-      if (this.options.isEmptyValue(this.matrix.getValue(row, i))) {
+      if (this.options.isEmptyValue(row, col,this.matrix.getValue(row, i))) {
         return i
       }
     }
@@ -1132,12 +1181,12 @@ export class TableEditor {
 
   canMoveCellRight(row, col) {
     return  col !== (this.matrix.nCols - 1) &&
-      !this.options.isEmptyValue(this.matrix.getValue(row, col)) &&
-      this.options.isEmptyValue(this.matrix.getValue(row, col+1));
+      !this.options.isEmptyValue(row, col,this.matrix.getValue(row, col)) &&
+      this.options.isEmptyValue(row, col,this.matrix.getValue(row, col+1));
   }
 
   canPushCellsRight(row, col) {
-    if (this.options.isEmptyValue(this.matrix.getValue(row, col)) || this.canMoveCellRight(row, col)) {
+    if (this.options.isEmptyValue(row, col,this.matrix.getValue(row, col)) || this.canMoveCellRight(row, col)) {
       // no pushing a cell that is empty or that can be simply moved
       return false
     }
@@ -1157,7 +1206,7 @@ export class TableEditor {
       return -1
     }
     for (let i = col+1; i < this.matrix.nCols; i++) {
-      if (this.options.isEmptyValue(this.matrix.getValue(row, i))) {
+      if (this.options.isEmptyValue(row, col,this.matrix.getValue(row, i))) {
         return i
       }
     }

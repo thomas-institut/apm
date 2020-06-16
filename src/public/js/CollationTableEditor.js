@@ -70,6 +70,9 @@ export class CollationTableEditor {
       checkOK: '<i class="far fa-check-circle"></i>',
       checkFail: '<i class="fas fa-exclamation-triangle"></i>',
       checkCross: '<i class="fas fa-times"></i>',
+      editText: '<small><i class="fas fa-pen"></i></small>',
+      confirmEdit: '<i class="fas fa-check"></i>',
+      cancelEdit: '<i class="fas fa-times"></i>',
       alert: '<i class="fas fa-exclamation-triangle"></i>'
     }
 
@@ -894,6 +897,10 @@ export class CollationTableEditor {
         isEditable: isEditable
       })
     }
+    let icons = TableEditor.genTextIconSet()
+    icons.editCell = this.icons.editText
+    icons.confirmCellEdit = this.icons.confirmEdit
+    icons.cancelCellEdit = this.icons.cancelEdit
 
     this.tableEditor = new TableEditor({
       id: this.ctDivId,
@@ -903,18 +910,22 @@ export class CollationTableEditor {
       columnsPerRow: 15, // TODO: change this
       rowDefinition: rowDefinition,
       drawTableInConstructor: false,
-      getEmptyValue: function() { return -1},
-      isEmptyValue: function(value) { return value === -1},
+      getEmptyValue: () => -1,
+      isEmptyValue: this.genIsEmpty(),
       generateCellContent: this.genGenerateCellContentFunction(),
       generateCellContentEditMode: this.genGenerateCellContentEditModeFunction(),
       onCellConfirmEdit: this.genOnCellConfirmEditFunction(),
+      // onColumnAddHandler: this.genOnColumnAdd(),
       cellValidationFunction: this.genCellValidationFunction(),
       generateTableClasses: this.genGenerateTableClassesFunction(),
       generateCellClasses: this.genGenerateCellClassesFunction(),
+      icons: icons
     })
     this.variantsMatrix = null // will be calculated before table draw
 
     let thisObject = this
+
+    this.tableEditor.setOption('canDeleteColumn', this.genCanDeleteColumn())
 
     // hide popovers before moving cells
     this.tableEditor.on('cell-pre-shift', function(data){
@@ -932,7 +943,89 @@ export class CollationTableEditor {
 
     this.tableEditor.editModeOn(false)
     this.tableEditor.redrawTable()
+    this.tableEditor.on('column-delete', this.genOnColumnDelete())
+    this.tableEditor.on('column-add', this.genOnColumnAdd())
     this.tableEditor.on('column-add column-delete cell-shift', this.genOnCollationChanges())
+  }
+
+  genOnColumnAdd() {
+    let thisObject = this
+    return (data) => {
+      if (thisObject.ctData['type']===CollationTableType.EDITION) {
+        thisObject.syncEditionWitnessAndTableEditorFirstRow()
+      }
+    }
+  }
+
+  syncEditionWitnessAndTableEditorFirstRow() {
+    let editionWitnessIndex = this.ctData['witnessOrder'][0]
+    this.ctData['witnesses'][editionWitnessIndex].tokens = this.getEditionWitnessTokensFromMatrixRow(
+      this.ctData['witnesses'][editionWitnessIndex].tokens,
+      this.tableEditor.matrix.getRow(0)
+    )
+    for (let i = 0; i < this.tableEditor.matrix.nCols; i++) {
+      this.tableEditor.matrix.setValue(0, i, i)
+    }
+  }
+
+  genOnColumnDelete() {
+    let thisObject = this
+    return (data) => {
+      if (thisObject.ctData['type'] === CollationTableType.COLLATION_TABLE) {
+        // nothing to do for regular collation tables
+        return
+      }
+      thisObject.syncEditionWitnessAndTableEditorFirstRow()
+    }
+  }
+
+  genCanDeleteColumn() {
+    let thisObject = this
+    return (col) => {
+      switch(thisObject.ctData['type']) {
+        case CollationTableType.COLLATION_TABLE:
+          return thisObject.tableEditor.isColumnEmpty(col)
+
+        case CollationTableType.EDITION:
+          let theMatrixCol = thisObject.tableEditor.getMatrix().getColumn(col)
+          let editionWitnessIndex = thisObject.ctData['witnessOrder'][0]
+          let editionToken = thisObject.ctData['witnesses'][editionWitnessIndex]['tokens'][theMatrixCol[0]]
+          if (editionToken.tokenType !== TokenType.EMPTY) {
+            return false
+          }
+          for(let i = 1; i < theMatrixCol.length; i++) {
+            if (theMatrixCol[i] !== -1) {
+              return false
+            }
+          }
+          return true
+
+        default:
+          console.warn('Unknown collation table type!')
+          return false
+      }
+    }
+  }
+
+  getEditionWitnessTokensFromMatrixRow(currentTokens, matrixRow) {
+    return matrixRow.map(
+      ref => ref === -1 ?  { tokenClass: TokenClass.EDITION, tokenType: TokenType.EMPTY,text: ''} : currentTokens[ref]
+    )
+  }
+
+
+
+  genIsEmpty() {
+    let thisObject = this
+    return (row, col, ref) => {
+      if (ref === -1) {
+        return true
+      }
+
+      let witnessIndex = thisObject.ctData['witnessOrder'][row]
+      let token = thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]
+      return token.tokenType === TokenType.EMPTY
+    }
   }
 
   genOnCellPostShift() {
@@ -944,6 +1037,14 @@ export class CollationTableEditor {
       let firstCol = data.detail.firstCol
       let lastCol = data.detail.lastCol
       let theRow = data.detail.row
+
+      console.log(`Cell post shift event`)
+      console.log(data.detail)
+
+      // deal with shifts in edition witness
+      if (thisObject.ctData['type'] === CollationTableType.EDITION && theRow === 0) {
+        thisObject.syncEditionWitnessAndTableEditorFirstRow()
+      }
 
       thisObject.recalculateVariants()
 
@@ -957,7 +1058,9 @@ export class CollationTableEditor {
         .then( () => {
           // refresh the cells in the row being shifted
           for (let col = firstColToRedraw; col <= lastColToRedraw; col++) {
+            console.log(`Refreshing cell ${theRow}:${col}`)
             thisObject.tableEditor.refreshCell(theRow, col)
+            thisObject.tableEditor.setupCellEventHandlers(theRow,col)
           }
           //profiler.lap('theRow cells refreshed')
         })
@@ -966,6 +1069,7 @@ export class CollationTableEditor {
           for (let col = firstColToRedraw; col <= lastColToRedraw; col++) {
             for (let row = 0; row < thisObject.variantsMatrix.nRows; row++) {
               if (row !== theRow) {
+                console.log(`Refreshing classes for ${theRow}:${col}`)
                 thisObject.tableEditor.refreshCellClasses(row, col)
               }
             }
@@ -1498,8 +1602,8 @@ export class CollationTableEditor {
         return false
       }
       let classes = Util.getClassArrayFromJQueryObject($(ev.currentTarget.parentNode))
-      console.log('Parent Classes')
-      console.log(classes)
+      //console.log('Parent Classes')
+      //console.log(classes)
 
       let index = thisObject.getWitnessIndexFromClasses(classes)
       let position = thisObject.getWitnessPositionFromClasses(classes)

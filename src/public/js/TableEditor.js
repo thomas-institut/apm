@@ -727,7 +727,7 @@ export class TableEditor {
     $(tdSelector).off()
     $(tdSelector + ' .cancel-edit-button').on('click', this.genOnClickCancelEditButton(row, col))
     $(tdSelector + ' .confirm-edit-button').on('click', this.genOnClickConfirmEditButton(row, col))
-    $(tdSelector + ' .te-input').on('keydown', this.genOnKeyPressCellInputField(row, col))
+    $(tdSelector + ' .te-input').on('keyup', this.genOnKeyPressCellInputField(row, col))
   }
 
   genButtonHtml(icon, classes, title='') {
@@ -737,11 +737,12 @@ export class TableEditor {
   genOnKeyPressCellInputField(row, col) {
     let thisObject = this
     return function(ev) {
+      let currentText = $(thisObject.getTdSelector(row, col) + ' .te-input').val()
       if (ev.which === 13) {
         // Enter key
         console.log(`Enter key press on ${row}:${col}`)
-        let newText = $(thisObject.getTdSelector(row, col) + ' .te-input').val()
-        let newValue = thisObject.options.onCellConfirmEdit(row, col, newText)
+
+        let newValue = thisObject.options.onCellConfirmEdit(row, col, currentText)
         thisObject.setValue(row, col, newValue)
         thisObject.leaveCellEditMode(row, col)
         thisObject.dispatchContentChangedEvent(row, col)
@@ -749,13 +750,26 @@ export class TableEditor {
       }
       if (ev.which === 27) {
         // Escape key
-        let newText = $(thisObject.getTdSelector(row, col) + ' .te-input').val()
         console.log(`Escape key press on ${row}:${col}`)
         thisObject.leaveCellEditMode(row, col)
         if (thisObject.options.onCellCancelEdit !== null) {
-          this.options.onCellCancelEdit(row, col, newText )
+          this.options.onCellCancelEdit(row, col, currentText )
         }
         return false
+      }
+      // validate!
+      let validationResult = thisObject.options.cellValidationFunction(row, col, currentText)
+      let confirmEditButton =  $(thisObject.getTdSelector(row, col) + ' .confirm-edit-button')
+      if (validationResult.isValid) {
+        confirmEditButton.removeClass('invalid')
+        confirmEditButton.attr('title', 'Click to confirm')
+      } else {
+        confirmEditButton.addClass('invalid')
+        let warningText = '!!! ' + validationResult.errors.join('. ') + validationResult.warnings.join('. ')
+        if (warningText !== '') {
+          confirmEditButton.attr('title', warningText)
+        }
+        console.log(validationResult)
       }
       return true
     }
@@ -998,6 +1012,9 @@ export class TableEditor {
     let thisObject = this
     return function() {
       console.log(`Confirm button clicked on ${row}:${col}`)
+      if ($(this).hasClass('invalid')) {
+        return false
+      }
       let newText = $(thisObject.getTdSelector(row, col) + ' .te-input').val()
       let newValue = thisObject.options.onCellConfirmEdit(row, col, newText)
       thisObject.setValue(row, col, newValue)

@@ -915,7 +915,6 @@ export class CollationTableEditor {
       generateCellContent: this.genGenerateCellContentFunction(),
       generateCellContentEditMode: this.genGenerateCellContentEditModeFunction(),
       onCellConfirmEdit: this.genOnCellConfirmEditFunction(),
-      // onColumnAddHandler: this.genOnColumnAdd(),
       cellValidationFunction: this.genCellValidationFunction(),
       generateTableClasses: this.genGenerateTableClassesFunction(),
       generateCellClasses: this.genGenerateCellClassesFunction(),
@@ -1318,11 +1317,12 @@ export class CollationTableEditor {
   genCellValidationFunction() {
     let thisObject = this
     return (tableRow, col, currentText) => {
-        let returnObject = { valid: true, warnings: [], errors: [] }
-        if (Util.isWordToken(currentText)) {
+        let returnObject = { isValid: true, warnings: [], errors: [] }
+        console.log(`Validating text '${currentText}'`)
+        if (Util.isWordToken(Util.trimWhiteSpace(currentText))) {
           return returnObject
         }
-        returnObject.valid = false
+        returnObject.isValid = false
         returnObject.errors.push('Only single words supported for now')
         return returnObject
     }
@@ -1342,6 +1342,7 @@ export class CollationTableEditor {
         // no change!
         return ref
       }
+      newText = Util.trimWhiteSpace(newText)
       if (newText === '') {
         // empty token
         thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = newText

@@ -182,3 +182,7 @@ table.versioninfo td.time {
     margin-top: 2rem;
     margin-bottom: 2rem;
 }
+
+a.invalid {
+    color: red;
+}

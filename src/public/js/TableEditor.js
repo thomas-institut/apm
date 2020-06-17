@@ -102,11 +102,13 @@ export class TableEditor {
       onCellConfirmEdit: {
         // a function to be called when the user clicks on the confirm edit button in edit mode
         // return the new value for the cell
-        //   (row, col, newText) => { ... do something...  return newValue }
+        //   (row, col, newText) => { ... do something...  return { valueChange: true|false, value: someValue} }
         // the default function returns the emptyValue on an empty string or the newText
         required: false,
         type: 'function',
-        default: (row, col, newText) => newText === '' ? thisObject.options.getEmptyValue() : newText
+        default: (row, col, newText) => newText === '' ?
+              { valueChange: true, value: thisObject.options.getEmptyValue()} :
+              { valueChange: true, value: newText }
       },
       onCellCancelEdit: {
         // a function to be called when the user clicks on the cancel edit button in edit mode
@@ -579,7 +581,7 @@ export class TableEditor {
       let row = cellIndex.row
       let col = cellIndex.col
 
-      console.log('Edit mode click on cell ' + row + ':' + col)
+      //console.log('Edit mode click on cell ' + row + ':' + col)
 
       let theElement = $(ev.target)
       let depth = 5
@@ -596,9 +598,9 @@ export class TableEditor {
       }
 
       if (theElement.prop('nodeName') === 'TD') {
-        console.log('Not a button')
+        //console.log('Not a button')
         if (thisObject.isRowEditable(row)) {
-          console.log('Editable cell clicked, row ' + row + ' col ' + col)
+          //console.log('Editable cell clicked, row ' + row + ' col ' + col)
           thisObject.enterCellEditMode(row, col)
           return false
         }
@@ -637,7 +639,7 @@ export class TableEditor {
 
       if (elementClasses.indexOf('edit-cell-button') !== -1) {
         //edit cell
-        console.log(`Edit cell button clicked on ${row}:${col}`)
+        //console.log(`Edit cell button clicked on ${row}:${col}`)
         thisObject.enterCellEditMode(row, col)
         return false
       }
@@ -740,17 +742,12 @@ export class TableEditor {
       let currentText = $(thisObject.getTdSelector(row, col) + ' .te-input').val()
       if (ev.which === 13) {
         // Enter key
-        console.log(`Enter key press on ${row}:${col}`)
-
-        let newValue = thisObject.options.onCellConfirmEdit(row, col, currentText)
-        thisObject.setValue(row, col, newValue)
-        thisObject.leaveCellEditMode(row, col)
-        thisObject.dispatchContentChangedEvent(row, col)
-        return false
+        //console.log(`Enter key press on ${row}:${col}`)
+        return thisObject.confirmEdit(row, col)
       }
       if (ev.which === 27) {
         // Escape key
-        console.log(`Escape key press on ${row}:${col}`)
+        //console.log(`Escape key press on ${row}:${col}`)
         thisObject.leaveCellEditMode(row, col)
         if (thisObject.options.onCellCancelEdit !== null) {
           this.options.onCellCancelEdit(row, col, currentText )
@@ -769,7 +766,7 @@ export class TableEditor {
         if (warningText !== '') {
           confirmEditButton.attr('title', warningText)
         }
-        console.log(validationResult)
+        //console.log(validationResult)
       }
       return true
     }
@@ -1008,19 +1005,28 @@ export class TableEditor {
     }
   }
 
+  confirmEdit(row, col) {
+    let tdSelector = this.getTdSelector(row, col)
+    if ($(tdSelector + ' .confirm-edit-button').hasClass('invalid')) {
+      return false
+    }
+    let newText = $(tdSelector + ' .te-input').val()
+    let confirmResult = this.options.onCellConfirmEdit(row, col, newText)
+    this.leaveCellEditMode(row, col)
+    if (confirmResult.valueChange) {
+      //console.log('Change in value')
+      this.setValue(row, col, confirmResult.value)
+      this.dispatchContentChangedEvent(row, col)
+    }
+    return false
+
+  }
+
   genOnClickConfirmEditButton(row, col) {
     let thisObject = this
     return function() {
-      console.log(`Confirm button clicked on ${row}:${col}`)
-      if ($(this).hasClass('invalid')) {
-        return false
-      }
-      let newText = $(thisObject.getTdSelector(row, col) + ' .te-input').val()
-      let newValue = thisObject.options.onCellConfirmEdit(row, col, newText)
-      thisObject.setValue(row, col, newValue)
-      thisObject.leaveCellEditMode(row, col)
-      thisObject.dispatchContentChangedEvent(row, col)
-      return false
+      //console.log(`Confirm button clicked on ${row}:${col}`)
+      return thisObject.confirmEdit(row, col)
     }
   }
 

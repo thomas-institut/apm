@@ -1318,7 +1318,7 @@ export class CollationTableEditor {
     let thisObject = this
     return (tableRow, col, currentText) => {
         let returnObject = { isValid: true, warnings: [], errors: [] }
-        console.log(`Validating text '${currentText}'`)
+        //console.log(`Validating text '${currentText}'`)
         if (Util.isWordToken(Util.trimWhiteSpace(currentText))) {
           return returnObject
         }
@@ -1331,16 +1331,16 @@ export class CollationTableEditor {
   genOnCellConfirmEditFunction() {
     let thisObject = this
     return (tableRow, col, newText) => {
-      console.log(`Confirm edit on  ${tableRow}:${col}`)
-      console.log(`New text = '${newText}'`)
+      //console.log(`Confirm edit on  ${tableRow}:${col}`)
+      //console.log(`New text = '${newText}'`)
       let witnessIndex = thisObject.ctData['witnessOrder'][tableRow]
-      console.log(`Witness index: ${witnessIndex}` )
+      //console.log(`Witness index: ${witnessIndex}` )
       let ref = thisObject.ctData['collationMatrix'][witnessIndex][col]
-      console.log(`Current ref: ${ref}`)
+      //console.log(`Current ref: ${ref}`)
       let currentText = thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['text']
       if (currentText === newText) {
         // no change!
-        return ref
+        return { valueChange: false, value: ref}
       }
       newText = Util.trimWhiteSpace(newText)
       if (newText === '') {
@@ -1353,10 +1353,10 @@ export class CollationTableEditor {
         thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] = TokenType.WORD
       }
 
-      console.log('tokens')
+      console.log('Edition Witness updated')
       console.log(thisObject.ctData['witnesses'][witnessIndex]['tokens'])
       // ref stays the same
-      return ref
+      return { valueChange: true, value: ref}
     }
   }
 

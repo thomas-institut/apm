@@ -762,7 +762,7 @@ export class TableEditor {
         confirmEditButton.attr('title', 'Click to confirm')
       } else {
         confirmEditButton.addClass('invalid')
-        let warningText = '!!! ' + validationResult.errors.join('. ') + validationResult.warnings.join('. ')
+        let warningText = 'ERROR: ' + validationResult.errors.join('. ') + validationResult.warnings.join('. ')
         if (warningText !== '') {
           confirmEditButton.attr('title', warningText)
         }

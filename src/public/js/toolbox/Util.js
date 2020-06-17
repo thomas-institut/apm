@@ -65,8 +65,12 @@ export function isWordToken(text) {
  return !hasSpaces(text) && !hasPunctuation(text)
 }
 
+export function isPunctuationToken(text) {
+  return /^[.,;:()\[\]¶⊙!]+$/.test(text);
+}
+
 export function hasPunctuation(text) {
-  return /[.,;:()\[\]¶⊙!]/.test(text);
+  return /[.,;:()\[\]¶⊙!]/.test(text)
 }
 
 export function hasSpaces(text) {

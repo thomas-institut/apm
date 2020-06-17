@@ -1315,16 +1315,38 @@ export class CollationTableEditor {
   }
 
   genCellValidationFunction() {
+
+    function areAllOtherRowsEmpty(theCol, theRow) {
+      for (let i = 0; i < theCol.length; i++) {
+        if (i !== theRow && theCol[i]!== -1) {
+          return false
+        }
+      }
+      return true
+    }
+
     let thisObject = this
     return (tableRow, col, currentText) => {
         let returnObject = { isValid: true, warnings: [], errors: [] }
-        //console.log(`Validating text '${currentText}'`)
-        if (Util.isWordToken(Util.trimWhiteSpace(currentText))) {
+
+      //console.log(`Validating text '${currentText}'`)
+      let trimmedText = Util.trimWhiteSpace(currentText)
+      if (Util.isWordToken(trimmedText)) {
+          // TODO: do not allow words when the rest of the witnesses only have punctuation
           return returnObject
-        }
-        returnObject.isValid = false
-        returnObject.errors.push('Only single words supported for now')
-        return returnObject
+      }
+      let isPunctuationAllowed = areAllOtherRowsEmpty(thisObject.tableEditor.getMatrix().getColumn(col), tableRow)
+      if (Util.isPunctuationToken(trimmedText) && isPunctuationAllowed) {
+          return returnObject
+      }
+      returnObject.isValid = false
+      if (isPunctuationAllowed) {
+        returnObject.errors.push(`Please enter either a single word, punctuation or leave blank`)
+      } else {
+        returnObject.errors.push(`Please enter a single word or leave blank`)
+      }
+
+      return returnObject
     }
   }
 

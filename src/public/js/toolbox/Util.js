@@ -70,7 +70,7 @@ export function isPunctuationToken(text) {
 }
 
 export function hasPunctuation(text) {
-  return /[.,;:()\[\]¶⊙!]/.test(text)
+  return /[.,;:()\[\]¶⊙!=+]/.test(text)
 }
 
 export function hasSpaces(text) {

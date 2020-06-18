@@ -17,6 +17,7 @@
  *  
  */
 
+use APM\CollationTable\CollationTableInfo;
 use APM\CollationTable\CollationTableManager;
 use APM\CollationTable\CollationTableVersionInfo;
 use APM\CollationTable\CollationTableVersionManager;
@@ -67,9 +68,9 @@ class MockCollationTableManager extends CollationTableManager
         return [];
     }
 
-    public function getCollationTableInfo(int $id, string $timeStamp = ''): string
+    public function getCollationTableInfo(int $id, string $timeStamp = ''): CollationTableInfo
     {
         // TODO: Implement getCollationTableTitle() method.
-        return 'Test';
+        return new CollationTableInfo();
     }
 }

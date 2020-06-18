@@ -21,6 +21,8 @@
 namespace APM\Core\Token;
 
 use APM\Core\Address\IntRange;
+use APM\ToolBox\StringType;
+
 /**
  * Helper class to get tokens out of string
  *
@@ -86,7 +88,7 @@ class StringTokenizer {
             switch($state) {
                 case 0: 
                     // State 0: Initial state
-                    if ($this->isWhiteSpace($currentChar)) {
+                    if (StringType::isWhiteSpace($currentChar)) {
                         $currentTokenCharacters[] = $currentChar;
                         $currentTokenType = TokenType::WHITESPACE;
                         if ($text[$i] === "\n") {
@@ -95,7 +97,7 @@ class StringTokenizer {
                         $state = 1;
                         break;
                     }
-                    if ($this->isPunctuation($currentChar)) {
+                    if (StringType::isPunctuation($currentChar)) {
                         $currentTokenCharacters[] = $currentChar;
                         $currentTokenType = TokenType::PUNCTUATION;
                         $state = 2;
@@ -108,14 +110,14 @@ class StringTokenizer {
                 
                 case 1:
                     // State 1: Processing white space
-                    if ($this->isWhiteSpace($currentChar)) {
+                    if (StringType::isWhiteSpace($currentChar)) {
                         $currentTokenCharacters[] = $currentChar;
                         if ($currentChar === "\n") {
                             $currentLine++;
                         }
                         break;
                     }
-                    if ($this->isPunctuation($currentChar)) {
+                    if (StringType::isPunctuation($currentChar)) {
                         $tokens[] = self::createToken($currentTokenType, 
                                 implode($currentTokenCharacters), 
                                 $currentTokenStartIndex, $i-1, 
@@ -142,7 +144,7 @@ class StringTokenizer {
                     
                 case 2:
                     // State 2: processing punctuation
-                    if ($this->isWhiteSpace($currentChar)) {
+                    if (StringType::isWhiteSpace($currentChar)) {
                         $tokens[] = $this->createToken($currentTokenType,
                             implode($currentTokenCharacters), 
                             $currentTokenStartIndex, $i-1, 
@@ -158,7 +160,7 @@ class StringTokenizer {
                         $state = 1;
                         break;
                     }
-                    if ($this->isPunctuation($currentChar)) {
+                    if (StringType::isPunctuation($currentChar)) {
                         // punctuation characters generate one token per character
                         $tokens[] = $this->createToken($currentTokenType,
                             implode($currentTokenCharacters), 
@@ -185,7 +187,7 @@ class StringTokenizer {
                     
                 case 3: 
                     // State 3: processing a word
-                    if ($this->isWhiteSpace($currentChar)) {
+                    if (StringType::isWhiteSpace($currentChar)) {
                         $tokens[] = $this->createToken($currentTokenType,
                             implode($currentTokenCharacters), 
                             $currentTokenStartIndex, $i-1, 
@@ -201,7 +203,7 @@ class StringTokenizer {
                         $state = 1;
                         break;
                     }
-                    if ($this->isPunctuation($currentChar)) {
+                    if (StringType::isPunctuation($currentChar)) {
                         $tokens[] = $this->createToken($currentTokenType,
                             implode($currentTokenCharacters), 
                             $currentTokenStartIndex, $i-1, 
@@ -226,16 +228,4 @@ class StringTokenizer {
         return $tokens;
     }
 
-
-    private function isWhiteSpace(string $char) {
-        $wsRegExp = '\s+';
-        return mb_ereg($wsRegExp, $char);
-    }
-
-    private function isPunctuation(string $char) {
-        $puntRegExp = '[\.,;:\(\)\[\]¶⊙!]+';
-        return mb_ereg($puntRegExp, $char);
-    }
-    
-    
 }

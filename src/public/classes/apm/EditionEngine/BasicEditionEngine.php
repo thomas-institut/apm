@@ -19,9 +19,8 @@
 
 namespace APM\EditionEngine;
 
-
-use APM\Core\Token\TokenType;
 use APM\StandardData\StandardTokenType;
+use APM\ToolBox\StringType;
 
 class BasicEditionEngine extends EditionEngine
 {
@@ -67,7 +66,8 @@ class BasicEditionEngine extends EditionEngine
                 //      find the previous token index that is in the main text,
                 //      this is where the apparatus entry will appear
                 $index = $i;
-                while ($index >= 0 && $ctToMainTextMap[$index] === self::TOKEN_NOT_IN_MAINTEXT) {
+                while ($index >= 0 && ($ctToMainTextMap[$index] === self::TOKEN_NOT_IN_MAINTEXT ||
+                        StringType::isPunctuation($mainTextTokens[$ctToMainTextMap[$index]][self::INPUT_TOKEN_FIELD_TEXT])) ) {
                     $index--;
                 }
                 if ($index < 0) {
@@ -118,23 +118,25 @@ class BasicEditionEngine extends EditionEngine
             $mainText = $mainTextTokens[$ctToMainTextMap[$i]][self::INPUT_TOKEN_FIELD_TEXT];
             $variants = [];
             $omissions = [];
-            foreach($column as $witnessIndex => $ctToken) {
-                if ($witnessIndex === $baseWitnessIndex) {
-                    continue;
-                }
-                if ($ctToken[self::INPUT_TOKEN_FIELD_TYPE] === StandardTokenType::EMPTY) {
-                    if (!isset($omissions[$mainText])) {
-                        $omissions[$mainText] = [];
+            if (!StringType::isPunctuation($mainText)) {
+                foreach($column as $witnessIndex => $ctToken) {
+                    if ($witnessIndex === $baseWitnessIndex) {
+                        continue;
                     }
-                    $omissions[$mainText][] = $witnessIndex;
-                    continue;
-                }
-                $ctTokenText = $this->getTextFromInputToken($ctToken);
-                if ($ctTokenText !== $mainText) {
-                    if (!isset($variants[$ctTokenText])) {
-                        $variants[$ctTokenText] = [];
+                    if ($ctToken[self::INPUT_TOKEN_FIELD_TYPE] === StandardTokenType::EMPTY) {
+                        if (!isset($omissions[$mainText])) {
+                            $omissions[$mainText] = [];
+                        }
+                        $omissions[$mainText][] = $witnessIndex;
+                        continue;
                     }
-                    $variants[$ctTokenText][] = $witnessIndex;
+                    $ctTokenText = $this->getTextFromInputToken($ctToken);
+                    if ($ctTokenText !== $mainText) {
+                        if (!isset($variants[$ctTokenText])) {
+                            $variants[$ctTokenText] = [];
+                        }
+                        $variants[$ctTokenText][] = $witnessIndex;
+                    }
                 }
             }
             // generate entries
@@ -227,7 +229,7 @@ class BasicEditionEngine extends EditionEngine
                 $inputTokensToMainText[] = self::TOKEN_NOT_IN_MAINTEXT;
                 continue;
             }
-            if ($inputToken[self::INPUT_TOKEN_FIELD_TYPE] === TokenType::WHITESPACE ) {
+            if ($inputToken[self::INPUT_TOKEN_FIELD_TYPE] === StandardTokenType::WHITESPACE ) {
                 $inputTokensToMainText[] = self::TOKEN_NOT_IN_MAINTEXT;
                 continue;
             }
@@ -235,7 +237,7 @@ class BasicEditionEngine extends EditionEngine
             if (!$firstWordAdded) {
                 $addGlue = false;
             }
-            if (($inputToken[self::INPUT_TOKEN_FIELD_TYPE] === TokenType::PUNCTUATION) &&
+            if (($inputToken[self::INPUT_TOKEN_FIELD_TYPE] === StandardTokenType::PUNCTUATION) &&
                 (mb_strstr(self::NO_GLUE_PUNCTUATION, $inputToken[self::INPUT_TOKEN_FIELD_TEXT]) !== false ) ) {
                 $addGlue = false;
             }

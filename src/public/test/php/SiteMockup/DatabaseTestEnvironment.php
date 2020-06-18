@@ -181,7 +181,8 @@ EOD;
             ApmContainerKey::LOGGER => $logger,
             ApmContainerKey::SYSTEM_MANAGER => $systemManager,
             ApmContainerKey::USER_ID => 0,  // invalid user Ids, must be set downstream for some API and Site operations
-            ApmContainerKey::API_USER_ID => 0
+            ApmContainerKey::API_USER_ID => 0,
+            ApmContainerKey::ROUTER => null
         ]);
 
 

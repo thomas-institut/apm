@@ -232,7 +232,7 @@ export class CollationTableEditor {
       thisObject.exportPdfButton.html(`Generating PDF...` + thisObject.icons.busy)
       let svg = thisObject.editionSvgDiv.html()
       if (svg === '') {
-        return true
+        return false
       }
       console.log('Calling API')
       let apiUrl = thisObject.options.urlGenerator.apiConvertSvg()
@@ -253,6 +253,7 @@ export class CollationTableEditor {
           console.log(error)
         }
       )
+      return false
     }
   }
 
@@ -1370,9 +1371,9 @@ export class CollationTableEditor {
         thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = newText
         thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] = TokenType.EMPTY
       } else  {
-        // TODO: Detect punctuation!
         thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = newText
-        thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] = TokenType.WORD
+        thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] =
+          Util.isPunctuationToken(newText) ? TokenType.PUNCTUATION : TokenType.WORD
       }
 
       console.log('Edition Witness updated')

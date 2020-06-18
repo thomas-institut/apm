@@ -89,6 +89,9 @@ class ApiWitness extends ApiController
         }
 
         $witnessArray = $inputData['witnesses'];
+        if ($witnessArray === []) {
+            $this->logger->warning("$apiCall: no witnesses in request");
+        }
         $responseData = [];
         $responseData['status'] = 'OK';
         $responseData['timeStamp'] = TimeString::now();

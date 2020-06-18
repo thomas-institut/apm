@@ -270,7 +270,7 @@ export class CollationTableEditor {
       witnesses: []
     }
     for (let i = 0; i < this.ctData['witnesses'].length; i++) {
-      if (this.ctData['witnesses'][i].type === WitnessType.FULL_TX) {
+      if (this.ctData['witnesses'][i]['witnessType'] === WitnessType.FULL_TX) {
         apiCallOptions.witnesses[i] = {
           id: this.ctData['witnesses'][i]['ApmWitnessId']
         }
@@ -664,7 +664,7 @@ export class CollationTableEditor {
       // determine the FSM event
       let ctColIndex = collationRow.indexOf(scriptItem.index)
       let event = getFsmEvent(scriptItem, ctColIndex, newWitness['tokens'])
-      console.log(`Event ${i}: ${event}, state ${state}, index ${scriptItem.index}, ctIndex ${ctColIndex}, seq ${scriptItem.seq}`)
+      //console.log(`Event ${i}: ${event}, state ${state}, index ${scriptItem.index}, ctIndex ${ctColIndex}, seq ${scriptItem.seq}`)
 
       // State Machine
       if (state === 0) {

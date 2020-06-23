@@ -71,7 +71,12 @@ cp src/public/package.json "$TMP_DIR"
 cp src/public/setup.php "$TMP_DIR"
 cp src/public/version.php "$TMP_DIR"
 
+mkdir "$TMP_DIR"/downloads
 mkdir "$TMP_DIR"/downloads/pdf
+
+chmod a+w "$TMP_DIR"/downloads
+chmod a+w "$TMP_DIR"/downloads/pdf
+
 
 cd "$TMP" || exit
 

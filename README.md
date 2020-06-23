@@ -2,7 +2,7 @@
 This is the web app running at http://averroes.uni-koeln.de/apm
 
 It requires 
-* PHP 7.2 with the following extensions enabled: xml, gd, mbstring, mysql and zip
+* PHP 7.2 with the following extensions enabled: xml, gd, mbstring, mysql, intl and zip
 * a running MySQL Server 5.7 configured with a database 
 and a user with access to that database.
 * Java running environment, e.g., Open JDK  (Note: Open JDK11 should not be used; it emits 
@@ -18,7 +18,6 @@ Besides the general requirements given above, development requires:
 * an empty test database and a test user with access to it in MySQL
 * PHP xdebug extension (for code coverage)
 * PHP Composer 1.6.5+
-* PHPUnit 8.5
 * npm 6.4.1+
 * jasmine 3.2.1+ (included in source code)
 

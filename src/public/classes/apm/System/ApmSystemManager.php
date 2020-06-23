@@ -165,7 +165,8 @@ class ApmSystemManager extends SystemManager {
         foreach($this->config[ApmConfigParameter::WARNINGS] as $warning) {
             $this->logger->debug($warning);
         }
-        
+
+
         // Set timezone
         date_default_timezone_set($this->config[ApmConfigParameter::DEFAULT_TIMEZONE]);
         

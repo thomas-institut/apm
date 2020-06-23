@@ -68,11 +68,11 @@ class ApiPdfConversion extends ApiController
         $inkscapeExec = $this->systemManager->getConfig()[ApmConfigParameter::INKSCAPE_EXECUTABLE];
         $inkscapeVersion = $this->systemManager->getConfig()[ApmConfigParameter::INKSCAPE_VERSION];
         $tempDir = $this->systemManager->getConfig()[ApmConfigParameter::INKSCAPE_TEMP_DIR];
-
-
+        $apmFullPath = $this->systemManager->getConfig()[ApmConfigParameter::BASE_FULL_PATH];
 
         // 1. Create a temporary file and put the SVG in it
         $tmpInputFileName =  $tempDir . '/' . self::TEMP_SVG_FILE_PREFIX .  $svgHash . '.svg';
+        $outputFileName = "$apmFullPath/$fileToDownload";
 
         $handle = fopen($tmpInputFileName, "w");
         if ($handle === false) {
@@ -89,12 +89,12 @@ class ApiPdfConversion extends ApiController
         fwrite($handle, $inputData['svg']);
         fclose($handle);
 
-        $this->codeDebug("About to call inkscape, input: $tmpInputFileName, output $fileToDownload");
+        $this->codeDebug("About to call inkscape, input: $tmpInputFileName, output $outputFileName");
 
         if ($inkscapeVersion >= 1) {
-            $commandLine = "$inkscapeExec --export-filename=$fileToDownload $tmpInputFileName 2>&1";
+            $commandLine = "$inkscapeExec --export-filename=$outputFileName $tmpInputFileName 2>&1";
         } else {
-            $commandLine = "$inkscapeExec --export-pdf=$fileToDownload $tmpInputFileName 2>&1";
+            $commandLine = "$inkscapeExec --export-pdf=$outputFileName $tmpInputFileName 2>&1";
         }
 
         $returnValue = false;
@@ -104,6 +104,7 @@ class ApiPdfConversion extends ApiController
         exec($commandLine, $returnArray, $returnValue);
 
 
+        $this->logger->debug('Inkscape return', $returnArray);
 
         $inkscapeErrors = [];
         foreach($returnArray as $returnLine) {

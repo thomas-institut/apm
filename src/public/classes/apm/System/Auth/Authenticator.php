@@ -109,7 +109,7 @@ class Authenticator {
         $this->apiLogger = $this->logger->withName('AUTH-API');
         $this->siteLogger = $this->logger->withName('AUTH-SITE');
 
-        $this->debugMode = true;
+        $this->debugMode = false;
     }
 
     /**

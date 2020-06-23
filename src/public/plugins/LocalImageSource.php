@@ -28,7 +28,7 @@ use APM\System\SystemManager;
  */
 class LocalImageSource extends ImageSourcePlugin {
 
-    const URL_LOCAL_REP = 'localrep';
+    const URL_LOCAL_REP = '/localrep';
      
     public function __construct(SystemManager $systemManager) {
         parent::__construct($systemManager, 'local');

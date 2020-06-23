@@ -66,13 +66,46 @@ export function isWordToken(text) {
 }
 
 export function isPunctuationToken(text) {
-  return /^[.,;:()\[\]¶⊙!]+$/.test(text);
+  let punctuationArray = getValidPunctuationArray()
+  for (let i = 0; i < text.length; i++) {
+    if (punctuationArray.indexOf(text.substr(i, 1)) === -1) {
+      return false
+    }
+  }
+  return true
 }
 
 export function hasPunctuation(text) {
-  return /[.,;:()\[\]¶⊙!=+]/.test(text)
+  let punctuationArray = getValidPunctuationArray()
+  for (let i = 0; i < text.length; i++) {
+    if (punctuationArray.indexOf(text.substr(i, 1)) !== -1) {
+      return true
+    }
+  }
+  return false
 }
 
 export function hasSpaces(text) {
   return /\s/.test(text)
+}
+
+function getValidPunctuationArray() {
+  return [
+    '.',
+    ',',
+    ';',
+    ':',
+    '?',
+    '!',
+    '⊙',
+    String.fromCodePoint(0x61B), // Arabic semi-colon
+    String.fromCodePoint(0x61F), // Arabic question mark
+    String.fromCodePoint(0x60C), // Arabic comma
+    String.fromCodePoint(0x60D), // Arabic date separator
+    String.fromCodePoint(0x5BE), // Hebrew maqaf
+    String.fromCodePoint(0x5C0), // Hebrew paseq
+    String.fromCodePoint(0x5C3), // Hebrew soft pasuq
+    String.fromCodePoint(0x5F3), // Hebrew geresh
+    String.fromCodePoint(0x5F4), // Hebrew gershayim
+  ]
 }

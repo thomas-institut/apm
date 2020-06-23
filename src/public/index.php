@@ -29,6 +29,7 @@ namespace AverroesProject;
 
 
 
+use APM\System\ApmConfigParameter;
 use DI\ContainerBuilder;
 use Exception;
 use Slim\Factory\AppFactory;
@@ -81,6 +82,8 @@ function exitWithErrorMessage(string $msg) {
 
 global $config;
 
+$config[ApmConfigParameter::BASE_FULL_PATH] = __DIR__;
+
 // System Manager 
 $systemManager = new ApmSystemManager($config);
 
@@ -91,6 +94,7 @@ if ($systemManager->fatalErrorOccurred()) {
 $logger = $systemManager->getLogger();
 $hm = $systemManager->getHookManager();
 $dbh = $systemManager->getDbConnection();
+
 
 // Data Manager (will be replaced completely by SystemManager at some point
 $dataManager = new DataManager($dbh, $systemManager->getTableNames(), $logger, $hm, $config['langCodes']);

@@ -143,8 +143,15 @@ abstract class CollationTableManager implements ErrorReporter
         $editionWitnessIndex = count($collationTableData['sigla']);
         $newData['sigla'][] = '-';
         $newData['witnessTitles'][] = 'Edition';
-        $newOrder = [ $editionWitnessIndex];
-        foreach($collationTableData['witnessOrder'] as $index) {
+        $oldOrder = isset($collationTableData['witnessOrder']) ? $collationTableData['witnessOrder'] : [];
+        if ($oldOrder === []) {
+            for($i=0; $i<count($collationTableData['witnesses']); $i++){
+                $oldOrder[] = $i;
+            }
+        }
+
+        $newOrder = [ $editionWitnessIndex ];
+        foreach($oldOrder as $index) {
             $newOrder[] = $index;
         }
         $newData['witnessOrder'] = $newOrder;
@@ -156,8 +163,8 @@ abstract class CollationTableManager implements ErrorReporter
         switch($strategy) {
             case self::INIT_STRATEGY_TOP_WITNESS:
                 // copy tokens from the top witness in the collation table
-                $topWitness = $collationTableData['witnesses'][$collationTableData['witnessOrder'][0]];
-                $topCtRow = $collationTableData['collationMatrix'][$collationTableData['witnessOrder'][0]];
+                $topWitness = $collationTableData['witnesses'][$oldOrder[0]];
+                $topCtRow = $collationTableData['collationMatrix'][$oldOrder[0]];
                 $newCtRow = [];
                 $tokens = [];
                 $currentTokenIndex = -1;

@@ -84,10 +84,15 @@ export class CollationTableEditor {
     this.ctData = this.options['collationTableData']
     // use default ordering if ctData does not have one
     if (this.ctData['witnessOrder'] === undefined) {
+      console.log('Providing default witnessOrder')
       this.ctData['witnessOrder'] = []
       for(let i=0; i < this.ctData['witnesses'].length; i++) {
         this.ctData['witnessOrder'][i] = i
       }
+    }
+    if (this.ctData['witnessOrder'].length !== this.ctData['witnesses'].length) {
+      console.error('Not enough witnesses in witnessOrder')
+      console.log(this.ctData['witnessOrder'])
     }
     // default type is collation table
     if (this.ctData['type'] === undefined) {

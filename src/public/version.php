@@ -18,11 +18,18 @@
  *  
  */
 
-$config['app_name'] = 'APM';
-$config['version'] = '0.33.1 (2020-Jun-23)';
+use APM\System\ApmConfigParameter;
+
+require_once 'config.php';
+
+global $config;
 
 
-$config['copyright_notice'] = <<<EOD
+$config[ApmConfigParameter::APP_NAME] = 'APM';
+$config[ApmConfigParameter::VERSION] = '0.33.1 (2020-Jun-23)';
+
+
+$config[ApmConfigParameter::COPYRIGHT_NOTICE] = <<<EOD
         2016-20, 
         <a href="http://www.thomasinstitut.uni-koeln.de/">
             Thomas-Institut</a>, 

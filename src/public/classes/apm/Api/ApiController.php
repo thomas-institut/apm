@@ -21,11 +21,9 @@
 namespace APM\Api;
 
 use APM\CollationEngine\CollationEngine;
-use APM\CollationEngine\DoNothingCollationEngine;
+use APM\System\ApmConfigParameter;
 use APM\System\ApmContainerKey;
-use DI\Container;
-use DI\DependencyException;
-use DI\NotFoundException;
+use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use \Psr\Http\Message\ServerRequestInterface as Request;
@@ -100,7 +98,7 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
 
 
     /**
-     * @var Container
+     * @var ContainerInterface
      */
     private $container;
 
@@ -121,19 +119,16 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
 
     /**
      * ApiController constructor.
-     * @param Container $ci
-     * @throws DependencyException
-     * @throws NotFoundException
+     * @param ContainerInterface $ci
      */
-    public function __construct(Container $ci)
+    public function __construct(ContainerInterface $ci)
     {
        $this->container = $ci;
-
        $this->debugMode = true;
 
        $this->systemManager = $ci->get(ApmContainerKey::SYSTEM_MANAGER);
        $this->apiUserId = $ci->get(ApmContainerKey::API_USER_ID); // this should be set by the authenticator!
-       $this->languages = $ci->get(ApmContainerKey::CONFIG)['languages'];
+       $this->languages = $this->systemManager->getConfig()[ApmConfigParameter::LANGUAGES];
        $this->logger = $this->systemManager->getLogger()->withName('API');
        $this->dataManager = $ci->get(ApmContainerKey::DATA_MANAGER);
        $this->router = $ci->get(ApmContainerKey::ROUTER);
@@ -226,14 +221,13 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
      * @return Response
      */
     protected function responseWithJson(ResponseInterface $response, $data, $status = 200) : ResponseInterface {
-
         $payload = json_encode($data);
         return $this->responseWithJsonRaw($response, $payload, $status);
     }
 
     /**
      * @param Response $response
-     * @param mixed $data
+     * @param $json
      * @param int $status
      * @return Response
      */
@@ -244,7 +238,6 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
             ->withHeader('Content-Type', 'application/json')
             ->withStatus($status);
     }
-
 
 
     protected function logProfilerData(string $pageTitle) : void

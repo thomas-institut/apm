@@ -82,7 +82,6 @@ function exitWithErrorMessage(string $msg) {
 
 global $config;
 
-$config[ApmConfigParameter::BASE_FULL_PATH] = __DIR__;
 
 // System Manager 
 $systemManager = new ApmSystemManager($config);
@@ -97,7 +96,7 @@ $dbh = $systemManager->getDbConnection();
 
 
 // Data Manager (will be replaced completely by SystemManager at some point
-$dataManager = new DataManager($dbh, $systemManager->getTableNames(), $logger, $hm, $config['langCodes']);
+$dataManager = new DataManager($dbh, $systemManager->getTableNames(), $logger, $hm, $config[ApmConfigParameter::LANG_CODES]);
 $dataManager->setSqlQueryCounterTracker($systemManager->getSqlQueryCounterTracker());
 $dataManager->userManager->setSqlQueryCounterTracker($systemManager->getSqlQueryCounterTracker());
 

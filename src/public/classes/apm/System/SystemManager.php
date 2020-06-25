@@ -42,13 +42,13 @@ use ThomasInstitut\Profiler\SqlQueryCounterTrackerAware;
  * to build and operate the APM system.
  *
  * Components such as API, Site and CLI controllers should,
- * ideally, only depends on this class. This makes it possible to implement specific managers
+ * ideally, only depend on this class. This makes it possible to implement specific managers
  * for different contexts: full web application, testing, etc.
  *
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-abstract class SystemManager implements  ErrorReporter, SqlQueryCounterTrackerAware, CacheTrackerAware {
+abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAware, CacheTrackerAware {
 
     use SimpleErrorReporterTrait;
     use SimpleSqlQueryCounterTrackerAware;

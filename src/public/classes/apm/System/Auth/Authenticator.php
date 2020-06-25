@@ -32,6 +32,7 @@
 
 namespace APM\System\Auth;
 
+use APM\System\ApmConfigParameter;
 use APM\System\ApmContainerKey;
 use AverroesProject\Data\UserManager;
 use DateInterval;
@@ -41,6 +42,7 @@ use DI\DependencyException;
 use DI\NotFoundException;
 use Exception;
 use Monolog\Logger;
+use Psr\Container\ContainerInterface;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use \Dflydev\FigCookies\FigRequestCookies;
@@ -62,7 +64,7 @@ class Authenticator {
 
     const LOGIN_PAGE_SIGNATURE = 'Login-8gRSSm23HPdStrEid5Wi';
     /**
-     * @var Container
+     * @var ContainerInterface
      */
     private $container;
 
@@ -93,15 +95,18 @@ class Authenticator {
     private $view;
 
     /**
-     * Authenticator constructor.
-     * @param Container $ci
-     * @throws DependencyException
-     * @throws NotFoundException
+     * @var array
      */
-    public function __construct(Container $ci)
+    private $config;
+
+    /**
+     * Authenticator constructor.
+     * @param ContainerInterface $ci
+     */
+    public function __construct(ContainerInterface $ci)
     {
         $this->container = $ci;
-
+        $this->config = $ci->get(ApmContainerKey::CONFIG);
         $this->router = $ci->get(ApmContainerKey::ROUTER);
         $this->userManager = $ci->get(ApmContainerKey::DATA_MANAGER)->userManager;
         $this->logger = $this->container->get(ApmContainerKey::LOGGER)->withName('AUTH');
@@ -114,11 +119,9 @@ class Authenticator {
 
     /**
      * @return string
-     * @throws DependencyException
-     * @throws NotFoundException
      */
     private function getBaseUrl() : string {
-        return $this->container->get(ApmContainerKey::CONFIG)['baseurl'];
+        return $this->config[ApmConfigParameter::BASE_URL];
     }
 
     /**

@@ -33,12 +33,10 @@
 namespace APM\System\Auth;
 
 use APM\System\ApmContainerKey;
-use APM\System\ApmSystemManager;
 use APM\System\SystemManager;
 use AverroesProject\Data\UserManager;
 use DateInterval;
 use DateTime;
-use DI\Container;
 use DI\DependencyException;
 use DI\NotFoundException;
 use Exception;
@@ -100,7 +98,7 @@ class Authenticator {
      */
     private $config;
     /**
-     * @var ApmSystemManager
+     * @var SystemManager
      */
     private $systemManager;
 

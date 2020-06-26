@@ -121,4 +121,9 @@ class SystemManagerMockup extends SystemManager {
     {
         return $this->ctm;
     }
+
+    public function getBaseUrl(): string
+    {
+        return "http://test";
+    }
 }

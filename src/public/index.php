@@ -98,10 +98,9 @@ $dataManager->userManager->setSqlQueryCounterTracker($systemManager->getSqlQuery
 $twig = new Twig('templates', ['cache' => false]);
 
 $container = new MinimalContainer();
-$container->set(ApmContainerKey::CONFIG, $config);
-$container->set(ApmContainerKey::IS_PROXIED, false);
+//$container->set(ApmContainerKey::CONFIG, $config);
 $container->set(ApmContainerKey::DATA_MANAGER, $dataManager);
-$container->set(ApmContainerKey::LOGGER, $logger);
+//$container->set(ApmContainerKey::LOGGER, $logger);
 $container->set(ApmContainerKey::SYSTEM_MANAGER, $systemManager);
 $container->set(ApmContainerKey::USER_ID, 0);  // The authentication module will update this with the correct Id
 $container->set(ApmContainerKey::VIEW, $twig);

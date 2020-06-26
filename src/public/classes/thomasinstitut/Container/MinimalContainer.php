@@ -63,4 +63,10 @@ class MinimalContainer implements ContainerInterface
     {
         $this->theArray[$id] = $value;
     }
+
+    public function addDefinitions(array $definitionsArray) : void {
+        foreach($definitionsArray as $id => $value) {
+            $this->set($id, $value);
+        }
+    }
 }

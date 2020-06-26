@@ -25,12 +25,10 @@ use APM\System\ApmConfigParameter;
 use APM\System\ApmContainerKey;
 use AverroesProject\Data\DataManager;
 use APM\System\ApmSystemManager;
-use DI\Container;
-use DI\ContainerBuilder;
-use DI\DependencyException;
-use DI\NotFoundException;
 use mysql_xdevapi\Exception;
 use PDO;
+use Psr\Container\ContainerInterface;
+use ThomasInstitut\Container\MinimalContainer;
 
 /**
  * Utility class to set up the test environment for database testing
@@ -48,7 +46,7 @@ class DatabaseTestEnvironment {
     protected $dbConn;
 
     /**
-     * @var Container
+     * @var ContainerInterface
      */
     protected $container;
 
@@ -85,24 +83,15 @@ class DatabaseTestEnvironment {
         return $pdo;
     }
     
-    
-    
-//    public function getDataManager() : DataManager
-//    {
-//        return $this->getContainer()->get(ApmContainerKey::DATA_MANAGER);
-//    }
 
     /**
      * @return ApmSystemManager
-     * @throws DependencyException
-     * @throws NotFoundException
      * @throws \Exception
      */
     public function getSystemManager() : ApmSystemManager {
         return $this->getContainer()->get(ApmContainerKey::SYSTEM_MANAGER);
     }
-    
-    
+
     public function emptyDatabase()
     {
         $dbConn = $this->getPdo();
@@ -138,17 +127,7 @@ EOD;
     }
 
     /**
-     * @return int
-     * @throws DependencyException
-     * @throws NotFoundException
-     * @throws \Exception
-     */
-//    public function getUserId() : int {
-//        return $this->getContainer()->get(ApmContainerKey::USER_ID);
-//    }
-
-    /**
-     * @return bool|Container
+     * @return bool|ContainerInterface
      * @throws \Exception
      */
     public function getContainer()
@@ -172,22 +151,17 @@ EOD;
         $dbConnection = $systemManager->getDbConnection();
         $hm = $systemManager->getHookManager();
         $logger = $systemManager->getLogger();
-        $dataManager = new DataManager($dbConnection, $systemManager->getTableNames(), $logger, $hm, $config['langCodes']);
-
-        $builder = new ContainerBuilder();
-        $builder->addDefinitions([
-            ApmContainerKey::CONFIG => $config,
+        $dataManager = new DataManager($dbConnection, $systemManager->getTableNames(), $logger, $hm, $config[ApmConfigParameter::LANG_CODES]);
+        $container = new MinimalContainer();
+        $container->addDefinitions([
+            //ApmContainerKey::CONFIG => $config,
             ApmContainerKey::DATA_MANAGER => $dataManager,
-            ApmContainerKey::LOGGER => $logger,
+            //ApmContainerKey::LOGGER => $logger,
             ApmContainerKey::SYSTEM_MANAGER => $systemManager,
             ApmContainerKey::USER_ID => 0,  // invalid user Ids, must be set downstream for some API and Site operations
             ApmContainerKey::API_USER_ID => 0,
-            ApmContainerKey::ROUTER => null
+            ApmContainerKey::ROUTER => false
         ]);
-
-
-        $container = $builder->build();
-
 
         $this->container = $container;
         return $container;
@@ -275,7 +249,4 @@ EOD;
         $this->getContainer()->set('apiUserId', $userId);
     }
 
-//    public function getApiUser() : int {
-//        return $this->getContainer()->get('apiUserId');
-//    }
 }

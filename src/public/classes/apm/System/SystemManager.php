@@ -106,6 +106,7 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
     abstract public function getTranscriptionManager() : TranscriptionManager;
     abstract public function getCollationTableManager() : CollationTableManager;
     abstract public function getSystemDataCache() : DataCache;
+    abstract public function getBaseUrl(): string;
 
     public function getFullTxWitnessId(ApmTranscriptionWitness $witness) : string {
         return WitnessSystemId::buildFullTxId(

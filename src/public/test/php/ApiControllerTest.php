@@ -27,6 +27,7 @@ require_once 'SiteMockup/testconfig.php';
 use APM\Presets\PresetManager;
 use APM\System\ApmConfigParameter;
 use APM\System\ApmContainerKey;
+use APM\System\SystemManager;
 use APM\System\WitnessType;
 use AverroesProject\EditorialNote;
 use AverroesProject\TxText\Item;
@@ -118,8 +119,10 @@ class ApiControllerTest extends TestCase {
        
         self::$testEnvironment = new DatabaseTestEnvironment($apmTestConfig);
         self::$container = self::$testEnvironment->getContainer();
+        /** @var SystemManager $systemManager */
+        $systemManager = self::$container->get(ApmContainerKey::SYSTEM_MANAGER);
 
-        self::$logger = self::$container->get(ApmContainerKey::LOGGER);
+        self::$logger = $systemManager->getLogger();
 
 
         self::$logger->debug('Setting up before class');

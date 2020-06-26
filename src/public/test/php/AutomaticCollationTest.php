@@ -28,6 +28,7 @@ use APM\Api\ApiDocuments;
 use APM\Api\ApiElements;
 use APM\Api\ApiPresets;
 use APM\System\ApmContainerKey;
+use APM\System\SystemManager;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
 use AverroesProject\ColumnElement\Line;
@@ -104,9 +105,10 @@ class AutomaticCollationTest extends TestCase
         self::$testEnvironment = new DatabaseTestEnvironment($apmTestConfig);
         self::$container = self::$testEnvironment->getContainer();
 
-        /** @var Logger $containerLogger */
-        $containerLogger = self::$container->get(ApmContainerKey::LOGGER);
-        self::$logger = $containerLogger->withName('TEST');
+        /** @var SystemManager $systemManager */
+        $systemManager = self::$container->get(ApmContainerKey::SYSTEM_MANAGER);
+
+        self::$logger = $systemManager->getLogger()->withName('TEST');
 
         self::$logger->debug('Setting up before class');
 

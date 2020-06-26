@@ -27,16 +27,18 @@ namespace APM\System;
  */
 class ApmContainerKey
 {
-    const CONFIG = 'config';
+
     const DATA_MANAGER = 'dataManager';
-    const LOGGER = 'logger';
     const SYSTEM_MANAGER = 'systemManager';
     const USER_ID = 'userId';
     const USER_INFO = 'userInfo';
     const API_USER_ID = 'apiUserId';
     const VIEW = 'view';
     const ROUTER = 'router';
-    const ROUTE_COLLECTOR = 'routeCollector';
+
+    // Not used in APM
+    const CONFIG = 'config';
+    const LOGGER = 'logger';
     const IS_PROXIED = 'isProxied';
 
 }

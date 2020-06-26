@@ -35,6 +35,8 @@ use AverroesProject\Data\UserManager;
 use DI\Container;
 use DI\DependencyException;
 use DI\NotFoundException;
+use Exception;
+use Psr\Container\ContainerInterface;
 use \Psr\Http\Message\ResponseInterface as Response;
 use APM\System\ApmSystemManager;
 use AverroesProject\Data\DataManager;
@@ -60,7 +62,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     use LoggerAwareTrait;
     use CodeDebugWithLoggerTrait;
     /**
-     * @var Container
+     * @var ContainerInterface
      */
     protected $container;
     
@@ -113,16 +115,14 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
 
     /**
      * SiteController constructor.
-     * @param Container $ci
-     * @throws DependencyException
-     * @throws NotFoundException
+     * @param ContainerInterface $ci
      */
-    public function __construct(Container $ci)
+    public function __construct(ContainerInterface $ci)
     {
         $this->container = $ci;
         $this->systemManager = $ci->get(ApmContainerKey::SYSTEM_MANAGER);
         $this->view = $ci->get(ApmContainerKey::VIEW);
-        $this->config = $ci->get(ApmContainerKey::CONFIG);
+        $this->config = $this->systemManager->getConfig();
         $this->dataManager = $ci->get(ApmContainerKey::DATA_MANAGER);
         $this->hookManager = $this->systemManager->getHookManager();
         $this->logger = $this->systemManager->getLogger();
@@ -376,11 +376,11 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
 
                 try {
                     $info = $userManager->getUserInfoByUserId($id);
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     // not a user, let's try non-users
                     try {
                         $info = $userManager->getPersonInfo($id);
-                    } catch (\Exception $e) {
+                    } catch (Exception $e) {
                         // cannot get the info
                         $this->logger->debug("Person info not found for id $id");
                         return ['id' => $id, 'fullname' => "Person Unknown $id"];

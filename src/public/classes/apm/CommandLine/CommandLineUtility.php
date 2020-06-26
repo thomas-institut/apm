@@ -79,7 +79,7 @@ abstract class CommandLineUtility {
     protected $argv;
 
 
-    public function __construct(array  $config, int $argc, array $argv) {
+    public function __construct(array $config, int $argc, array $argv) {
 
         $this->config = $config;
         $this->processUser = posix_getpwuid(posix_geteuid());

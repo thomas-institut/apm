@@ -23,22 +23,18 @@
  * @brief Dispatcher for site and API
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-namespace AverroesProject;
+namespace APM;
 
-
-
-
-
-use APM\System\ApmConfigParameter;
-use DI\ContainerBuilder;
-use Exception;
-use Slim\Factory\AppFactory;
+use Slim\App;
+use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Routing\RouteCollectorProxy;
 use Slim\Views\Twig;
 use Slim\Views\TwigMiddleware;
 
 use APM\System\ApmContainerKey;
 use APM\System\ApmSystemManager;
+use APM\System\ApmConfigParameter;
+
 use AverroesProject\Data\DataManager;
 
 use APM\Site\SiteDashboard;
@@ -63,6 +59,7 @@ use APM\Api\ApiCollationTableConversion;
 use APM\Api\ApiPdfConversion;
 use APM\Api\ApiWitness;
 
+use ThomasInstitut\Container\MinimalContainer;
 
 
 require 'vendor/autoload.php';
@@ -82,7 +79,6 @@ function exitWithErrorMessage(string $msg) {
 
 global $config;
 
-
 // System Manager 
 $systemManager = new ApmSystemManager($config);
 
@@ -94,34 +90,25 @@ $logger = $systemManager->getLogger();
 $hm = $systemManager->getHookManager();
 $dbh = $systemManager->getDbConnection();
 
-
 // Data Manager (will be replaced completely by SystemManager at some point
 $dataManager = new DataManager($dbh, $systemManager->getTableNames(), $logger, $hm, $config[ApmConfigParameter::LANG_CODES]);
 $dataManager->setSqlQueryCounterTracker($systemManager->getSqlQueryCounterTracker());
 $dataManager->userManager->setSqlQueryCounterTracker($systemManager->getSqlQueryCounterTracker());
 
-$builder = new ContainerBuilder();
-$builder->addDefinitions([
-    ApmContainerKey::CONFIG => $config,
-    ApmContainerKey::IS_PROXIED => false,
-    ApmContainerKey::DATA_MANAGER => $dataManager,
-    ApmContainerKey::LOGGER => $logger,
-    ApmContainerKey::SYSTEM_MANAGER => $systemManager,
-    ApmContainerKey::USER_ID => 0,  // The authentication module will update this with the correct Id
-    ApmContainerKey::VIEW => function() {
-        return new Twig('templates', ['cache' => false]);
-    }
-]);
+$twig = new Twig('templates', ['cache' => false]);
 
-try {
-    $container = $builder->build();
-} catch (Exception $e) {
-    exitWithErrorMessage('Error creating container: '. $e->getMessage());
-}
+$container = new MinimalContainer();
+$container->set(ApmContainerKey::CONFIG, $config);
+$container->set(ApmContainerKey::IS_PROXIED, false);
+$container->set(ApmContainerKey::DATA_MANAGER, $dataManager);
+$container->set(ApmContainerKey::LOGGER, $logger);
+$container->set(ApmContainerKey::SYSTEM_MANAGER, $systemManager);
+$container->set(ApmContainerKey::USER_ID, 0);  // The authentication module will update this with the correct Id
+$container->set(ApmContainerKey::VIEW, $twig);
 
-// Initialize the Slim app
-AppFactory::setContainer($container);
-$app = AppFactory::create();
+$responseFactory = new ResponseFactory();
+$app = new App($responseFactory, $container);
+
 
 $subdir = $systemManager->getBaseUrlSubdir();
 if ($subdir !== '') {
@@ -129,11 +116,11 @@ if ($subdir !== '') {
 }
 
 $app->addErrorMiddleware(true, true, true);
+$router = $app->getRouteCollector()->getRouteParser();
 
 // Add Twig middleware and router
-$app->add(TwigMiddleware::createFromContainer($app));
-$container->set(ApmContainerKey::ROUTER, $app->getRouteCollector()->getRouteParser());
-
+$app->add(new TwigMiddleware($twig, $router, $app->getBasePath()));
+$container->set(ApmContainerKey::ROUTER, $router);
 
 // -----------------------------------------------------------------------------
 //  SITE ROUTES

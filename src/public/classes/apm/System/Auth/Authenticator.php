@@ -32,8 +32,9 @@
 
 namespace APM\System\Auth;
 
-use APM\System\ApmConfigParameter;
 use APM\System\ApmContainerKey;
+use APM\System\ApmSystemManager;
+use APM\System\SystemManager;
 use AverroesProject\Data\UserManager;
 use DateInterval;
 use DateTime;
@@ -98,6 +99,10 @@ class Authenticator {
      * @var array
      */
     private $config;
+    /**
+     * @var ApmSystemManager
+     */
+    private $systemManager;
 
     /**
      * Authenticator constructor.
@@ -106,10 +111,11 @@ class Authenticator {
     public function __construct(ContainerInterface $ci)
     {
         $this->container = $ci;
-        $this->config = $ci->get(ApmContainerKey::CONFIG);
+        $this->systemManager = $ci->get(ApmContainerKey::SYSTEM_MANAGER);
+        $this->config = $this->systemManager->getConfig();
         $this->router = $ci->get(ApmContainerKey::ROUTER);
         $this->userManager = $ci->get(ApmContainerKey::DATA_MANAGER)->userManager;
-        $this->logger = $this->container->get(ApmContainerKey::LOGGER)->withName('AUTH');
+        $this->logger = $this->systemManager->getLogger()->withName('AUTH');
         $this->view = $this->container->get(ApmContainerKey::VIEW);
         $this->apiLogger = $this->logger->withName('AUTH-API');
         $this->siteLogger = $this->logger->withName('AUTH-SITE');
@@ -121,7 +127,7 @@ class Authenticator {
      * @return string
      */
     private function getBaseUrl() : string {
-        return $this->config[ApmConfigParameter::BASE_URL];
+        return $this->systemManager->getBaseUrl();
     }
 
     /**

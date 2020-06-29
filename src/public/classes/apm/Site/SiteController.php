@@ -116,17 +116,18 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     /**
      * SiteController constructor.
      * @param ContainerInterface $ci
+     * @throws LoaderError
      */
     public function __construct(ContainerInterface $ci)
     {
         $this->container = $ci;
         $this->systemManager = $ci->get(ApmContainerKey::SYSTEM_MANAGER);
-        $this->view = $ci->get(ApmContainerKey::VIEW);
+        $this->view = $this->systemManager->getTwig();
         $this->config = $this->systemManager->getConfig();
-        $this->dataManager = $ci->get(ApmContainerKey::DATA_MANAGER);
+        $this->dataManager = $this->systemManager->getDataManager();
         $this->hookManager = $this->systemManager->getHookManager();
         $this->logger = $this->systemManager->getLogger();
-        $this->router = $ci->get(ApmContainerKey::ROUTER);
+        $this->router = $this->systemManager->getRouter();
         $this->userAuthenticated = false;
         $this->userInfo = [];
         $this->languages = $this->config['languages'];

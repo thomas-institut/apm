@@ -32,6 +32,8 @@ use APM\Presets\DataTablePresetManager;
 use APM\Presets\PresetManager;
 use APM\Plugin\HookManager;
 
+use Slim\Interfaces\RouteParserInterface;
+use Slim\Views\Twig;
 use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\DataTableDataCache;
 use ThomasInstitut\DataTable\MySqlDataTable;
@@ -44,6 +46,7 @@ use Monolog\Processor\WebProcessor;
 use PDO;
 use PDOException;
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
+use Twig\Error\LoaderError;
 
 
 /**
@@ -137,6 +140,15 @@ class ApmSystemManager extends SystemManager {
      * @var ApmCollationTableManager
      */
     private $collationTableManager;
+
+    /**
+     * @var Twig
+     */
+    private $twig;
+    /**
+     * @var RouteParserInterface
+     */
+    private $router;
 
 
     public function __construct(array $configArray) {
@@ -248,6 +260,7 @@ class ApmSystemManager extends SystemManager {
         $this->transcriptionManager->setCacheTracker($this->getCacheTracker());
         $this->transcriptionManager->setCache($this->getSystemDataCache());
 
+        // Set up collation table manager
         $ctTable = new MySqlUnitemporalDataTable($this->dbConn, $this->tableNames[ApmMySqlTableName::TABLE_COLLATION_TABLE]);
         $ctVersionsTable = new MySqlDataTable($this->dbConn, $this->tableNames[ApmMySqlTableName::TABLE_VERSIONS_CT]);
         $ctVersionManager = new ApmCollationTableVersionManager($ctVersionsTable);
@@ -271,10 +284,11 @@ class ApmSystemManager extends SystemManager {
                 /** @var Plugin $pluginObject */
                 $pluginObject->init();
             }
-
         }
 
+        // Twig
 
+        $this->twig = null;
     }
     
     
@@ -569,4 +583,28 @@ class ApmSystemManager extends SystemManager {
     {
         return $this->collationTableManager;
     }
+
+    /**
+     * @return Twig
+     * @throws LoaderError
+     */
+    public function getTwig(): Twig
+    {
+        if (is_null($this->twig)) {
+            $this->twig = new Twig($this->config[ApmConfigParameter::TWIG_TEMPLATE_DIR],
+                ['cache' => $this->config[ApmConfigParameter::TWIG_USE_CACHE]]);
+        }
+        return $this->twig;
+    }
+
+    public function setRouter(RouteParserInterface $router): void
+    {
+        $this->router = $router;
+    }
+
+    public function getRouter(): RouteParserInterface
+    {
+        return $this->router;
+    }
+
 }

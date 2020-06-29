@@ -24,6 +24,7 @@ require_once 'SiteMockup/DatabaseTestEnvironment.php';
 require_once 'SiteMockup/testconfig.php';
 
 use APM\System\ApmContainerKey;
+use APM\System\SystemManager;
 use AverroesProject\ColumnElement\Line;
 use AverroesProject\Data\DataManager;
 use AverroesProject\Data\EdNoteManager;
@@ -85,10 +86,13 @@ class ElementDatabaseTest extends TestCase {
         self::$testEnvironment = new DatabaseTestEnvironment($apmTestConfig);
         self::$container = self::$testEnvironment->getContainer();
 
+        /** @var SystemManager $systemManager */
+        $systemManager = self::$container->get(ApmContainerKey::SYSTEM_MANAGER);
 
-        self::$dataManager = self::$container->get(ApmContainerKey::DATA_MANAGER);
+
+        self::$dataManager = $systemManager->getDataManager();
         self::$edNoteManager = self::$dataManager->edNoteManager;
-        self::$logger = self::$container->get(ApmContainerKey::SYSTEM_MANAGER)->getLogger();
+        self::$logger = $systemManager->getLogger();
 
     }
     

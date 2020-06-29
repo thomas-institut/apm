@@ -50,3 +50,7 @@ $config[ApmConfigParameter::PLUGIN_DIR] = __DIR__ . '/plugins';
 
 $config[ApmConfigParameter::LOG_APPNAME] = 'APM';
 
+// Twig templates
+
+$config[ApmConfigParameter::TWIG_TEMPLATE_DIR] = 'templates';
+$config[ApmConfigParameter::TWIG_USE_CACHE] = false;

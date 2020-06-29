@@ -46,6 +46,9 @@ class ApmConfigParameter
     const LANGUAGES = 'languages';
     const LANG_CODES = 'langCodes';
 
+    const TWIG_TEMPLATE_DIR = 'twigTemplateDir';
+    const TWIG_USE_CACHE = 'twigUseCache';
+
     const INKSCAPE_EXECUTABLE = 'inkscape_executable';
     const INKSCAPE_VERSION = 'inkscape_version';
     const INKSCAPE_TEMP_DIR = 'inkscape_temp_dir';

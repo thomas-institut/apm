@@ -23,6 +23,7 @@ require "autoload.php";
 require_once 'SiteMockup/DatabaseTestEnvironment.php';
 require_once 'SiteMockup/testconfig.php';
 
+use APM\System\ApmContainerKey;
 use AverroesProject\ColumnElement\Substitution;
 use AverroesProject\TxText\Addition;
 use AverroesProject\TxText\Item;
@@ -74,7 +75,7 @@ class DataManagerTest extends TestCase {
         self::$testEnvironment = new DatabaseTestEnvironment($apmTestConfig);
         self::$container = self::$testEnvironment->getContainer();
 
-        self::$dataManager = self::$container->get('dataManager');
+        self::$dataManager = self::$container->get(ApmContainerKey::SYSTEM_MANAGER)->getDataManager();
 
     }
     

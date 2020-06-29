@@ -19,8 +19,8 @@
 
 namespace APM;
 require  "autoload.php";
-require_once 'SiteMockup/DatabaseTestEnvironment.php';
 require_once 'SiteMockup/testconfig.php';
+require_once 'SiteMockup/SiteTestEnvironment.php';
 
 use APM\Api\ApiCollation;
 use APM\Api\ApiController;
@@ -102,7 +102,7 @@ class AutomaticCollationTest extends TestCase
         global $apmTestConfig;
 
 
-        self::$testEnvironment = new DatabaseTestEnvironment($apmTestConfig);
+        self::$testEnvironment = new SiteTestEnvironment($apmTestConfig);
         self::$container = self::$testEnvironment->getContainer();
 
         /** @var SystemManager $systemManager */
@@ -112,7 +112,7 @@ class AutomaticCollationTest extends TestCase
 
         self::$logger->debug('Setting up before class');
 
-        self::$dataManager = self::$container->get(ApmContainerKey::DATA_MANAGER);
+        self::$dataManager = $systemManager->getDataManager();
 
         $apiUser = self::$dataManager->userManager->createUserByUserName('testApiUser');
         self::$testEnvironment->setApiUser($apiUser);

@@ -93,23 +93,23 @@ class SiteControllerTest extends TestCase {
 
         self::$testEnvironment = new SiteTestEnvironment($apmTestConfig);
         self::$ci = self::$testEnvironment->getContainer();
-        self::$dataManager = self::$ci->get(ApmContainerKey::DATA_MANAGER);
         self::$systemManager = self::$testEnvironment->getSystemManager();
+        self::$dataManager = self::$systemManager->getDataManager();
     }
     
-    public function testQuickCollationPage()
-    {
-        
-        $request = new ServerRequest('GET', '');
-
-        self::$ci->set(ApmContainerKey::USER_INFO, ['id' => 100]);
-
-        $sc = new SiteCollationTable(self::$ci);
-        
-        $response = $sc->quickCollationPage($request, new Response());
-        
-        $this->assertEquals(200, $response->getStatusCode());
-    }
+//    public function testQuickCollationPage()
+//    {
+//
+//        $request = new ServerRequest('GET', '');
+//
+//        self::$ci->set(ApmContainerKey::USER_INFO, ['id' => 100]);
+//
+//        $sc = new SiteCollationTable(self::$ci);
+//
+//        $response = $sc->quickCollationPage($request, new Response());
+//
+//        $this->assertEquals(200, $response->getStatusCode());
+//    }
     
      public function testHomePage()
     {

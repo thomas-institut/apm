@@ -33,7 +33,7 @@ use Slim\Interfaces\RouteParserInterface;
  */
 class SlimRouterMockup implements RouteParserInterface {
     
-    public function urlFor($routeName, array $data = [], array $queryParams = []) : string
+    public function urlFor(string $routeName, array $data = [], array $queryParams = []) : string
     {
         return "MOCKUP_URL:" . $routeName;
     }

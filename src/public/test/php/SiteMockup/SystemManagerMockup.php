@@ -31,9 +31,13 @@ use APM\CollationTable\CollationTableManager;
 use APM\FullTranscription\TranscriptionManager;
 use APM\Presets\DataTablePresetManager;
 use APM\Presets\PresetManager;
+use APM\System\ApmConfigParameter;
 use APM\System\SystemManager;
 use APM\System\SettingsManager;
 use APM\Plugin\HookManager;
+use MockCollationTableManager;
+use Slim\Interfaces\RouteParserInterface;
+use Slim\Views\Twig;
 use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\InMemoryDataCache;
 use ThomasInstitut\DataTable\InMemoryDataTable;
@@ -51,15 +55,24 @@ class SystemManagerMockup extends SystemManager {
     private $hm;
     private $sm;
     private $pm;
+    /**
+     * @var Twig
+     */
+    private $twig;
 
     /**
      * @var MockTranscriptionManager
      */
     private $tm;
     /**
-     * @var \MockCollationTableManager
+     * @var MockCollationTableManager
      */
     private $ctm;
+
+    /**
+     * @var RouteParserInterface
+     */
+    private $router;
 
     public function __construct() {
         parent::__construct([]);
@@ -74,7 +87,7 @@ class SystemManagerMockup extends SystemManager {
         $this->sm = new SettingsManager();
         $this->pm = new DataTablePresetManager(new InMemoryDataTable());
         $this->tm = new MockTranscriptionManager();
-        $this->ctm = new \MockCollationTableManager();
+        $this->ctm = new MockCollationTableManager();
 
     }
     
@@ -126,4 +139,26 @@ class SystemManagerMockup extends SystemManager {
     {
         return "http://test";
     }
+
+    public function setRouter(RouteParserInterface $router): void
+    {
+        $this->router = $router;
+    }
+
+    public function getRouter(): RouteParserInterface
+    {
+        return $this->router;
+    }
+
+    public function getTwig(): Twig
+    {
+
+        if (is_null($this->twig)) {
+            $this->twig = new Twig($this->config[ApmConfigParameter::TWIG_TEMPLATE_DIR],
+                ['cache' => $this->config[ApmConfigParameter::TWIG_USE_CACHE]]);
+        }
+        return $this->twig;
+    }
+
+
 }

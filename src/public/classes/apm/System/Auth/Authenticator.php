@@ -111,10 +111,10 @@ class Authenticator {
         $this->container = $ci;
         $this->systemManager = $ci->get(ApmContainerKey::SYSTEM_MANAGER);
         $this->config = $this->systemManager->getConfig();
-        $this->router = $ci->get(ApmContainerKey::ROUTER);
-        $this->userManager = $ci->get(ApmContainerKey::DATA_MANAGER)->userManager;
+        $this->router = $this->systemManager->getRouter();
+        $this->userManager = $this->systemManager->getDataManager()->userManager;
         $this->logger = $this->systemManager->getLogger()->withName('AUTH');
-        $this->view = $this->container->get(ApmContainerKey::VIEW);
+        $this->view = $this->systemManager->getTwig();
         $this->apiLogger = $this->logger->withName('AUTH-API');
         $this->siteLogger = $this->logger->withName('AUTH-SITE');
 

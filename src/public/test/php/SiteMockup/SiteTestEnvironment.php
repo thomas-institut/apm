@@ -21,6 +21,7 @@
 namespace APM;
 
 use APM\System\ApmContainerKey;
+use APM\System\SystemManager;
 use Slim\Views\Twig;
 
 require_once 'DatabaseTestEnvironment.php';
@@ -33,16 +34,38 @@ require_once 'SlimRouterMockup.php';
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 class SiteTestEnvironment extends DatabaseTestEnvironment {
-    
+
+    /**
+     * @var bool
+     */
+    private $routerSetup;
+    /**
+     * @var bool
+     */
+    private $twigExtensionSetup;
+
+    public function __construct($apmTestConfig)
+    {
+        parent::__construct($apmTestConfig);
+        $this->routerSetup = false;
+        $this->twigExtensionSetup = false;
+    }
+
     public function getContainer() {
         $container = parent::getContainer();
 
-        $container->set(ApmContainerKey::ROUTER,  new SlimRouterMockup());
+        /** @var SystemManager $systemManager */
+        $systemManager = $container->get(ApmContainerKey::SYSTEM_MANAGER);
+        if (!$this->routerSetup) {
+            $systemManager->setRouter( new SlimRouterMockup());
+            $this->routerSetup = true;
+        }
 
-        $view =  new Twig('../../templates', ['cache' => false]);
-        $view->addExtension(new SlimTwigExtensionMockup());
-
-        $container->set(ApmContainerKey::VIEW, $view);
+        if (!$this->twigExtensionSetup) {
+            $view =  $systemManager->getTwig();
+            $view->addExtension(new SlimTwigExtensionMockup());
+            $this->twigExtensionSetup = true;
+        }
         return $container;
     }
 

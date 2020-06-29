@@ -152,15 +152,12 @@ EOD;
         $hm = $systemManager->getHookManager();
         $logger = $systemManager->getLogger();
         $dataManager = new DataManager($dbConnection, $systemManager->getTableNames(), $logger, $hm, $config[ApmConfigParameter::LANG_CODES]);
+        $systemManager->setDataManager($dataManager);
         $container = new MinimalContainer();
         $container->addDefinitions([
-            //ApmContainerKey::CONFIG => $config,
-            ApmContainerKey::DATA_MANAGER => $dataManager,
-            //ApmContainerKey::LOGGER => $logger,
             ApmContainerKey::SYSTEM_MANAGER => $systemManager,
             ApmContainerKey::USER_ID => 0,  // invalid user Ids, must be set downstream for some API and Site operations
             ApmContainerKey::API_USER_ID => 0,
-            ApmContainerKey::ROUTER => false
         ]);
 
         $this->container = $container;
@@ -235,7 +232,10 @@ EOD;
         $config['version'] = '(develop)';
 
 
-        $config['copyright_notice'] = '(C) Thomas Institut';    
+        $config['copyright_notice'] = '(C) Thomas Institut';
+
+        $config[ApmConfigParameter::TWIG_USE_CACHE] = false;
+        $config[ApmConfigParameter::TWIG_TEMPLATE_DIR] = '../../templates';
 
 
         return $config;
@@ -246,7 +246,7 @@ EOD;
      * @throws \Exception
      */
     public function setApiUser(int $userId) {
-        $this->getContainer()->set('apiUserId', $userId);
+        $this->getContainer()->set(ApmContainerKey::API_USER_ID, $userId);
     }
 
 }

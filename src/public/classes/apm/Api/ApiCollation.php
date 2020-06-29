@@ -55,94 +55,94 @@ class ApiCollation extends ApiController
     const ERROR_MISSING_VERSION_INFO = 2007;
 
     
-    public function quickCollation(Request $request, Response $response)
-    {
-        $apiCall = 'quickCollation';
-        $this->profiler->start();
-        $inputData = $this->checkAndGetInputData($request, $response, $apiCall, ['witnesses']);
-        $this->debug('Input data', [ $inputData ]);
-        if (!is_array($inputData)) {
-            return $inputData;
-        }
-        
-        $witnesses = $inputData['witnesses'];
-        if (count($witnesses) < 2) {
-
-            $this->logger->error("Quick Collation: not enough witnessess in data, got " . count($witnesses),
-                    [ 'apiUserId' => $this->apiUserId,
-                      'apiError' => self::ERROR_NOT_ENOUGH_WITNESSES,
-                      'data' => $inputData ]);
-            return $this->responseWithJson($response, ['error' => self::ERROR_NOT_ENOUGH_WITNESSES], 409);
-        }
-        
-        
-        $collation = new CollationTable();
-        
-        // Check and get initial witness data
-        foreach ($witnesses as $witness) {
-            if (!isset($witness['id']) || !isset($witness['text'])) {
-                $this->profiler->stop();
-                $this->logger->error("Quick Collation: bad witness in data",
-                    [ 'apiUserId' => $this->apiUserId,
-                      'apiError' => self::ERROR_BAD_WITNESS,
-                      'data' => $inputData ]);
-                return $this->responseWithJson($response, ['error' => self::ERROR_BAD_WITNESS], 409);
-            }
-            $sw =  new StringWitness('QuickCollation', 'no-chunk', $witness['text']);
-            $collation->addWitness($witness['id'], $sw);
-        }
-        
-        $collatexInput = $collation->getCollationEngineInput();
-        
-        $collationEngine = $this->getCollationEngine();
-        
-        // Run Collatex
-        $collatexOutput = $collationEngine->collate($collatexInput);
-        // @codeCoverageIgnoreStart
-        // Not worrying about testing CollatexErrors here
-        if ($collatexOutput === [] && $collationEngine->getErrorCode() !==  Engine::ERROR_NOERROR) {
-
-            $this->logger->error("Quick Collation: error running Collatex",
-                        [ 'apiUserId' => $this->apiUserId,
-                        'apiError' => ApiController::API_ERROR_COLLATION_ENGINE_ERROR,
-                        'collatexError' => $collationEngine->getErrorCode(),
-                        'collationEngineDetails' => $collationEngine->getRunDetails(),
-                        'data' => $inputData
-                    ]);
-            return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_COLLATION_ENGINE_ERROR], 409);
-        }
-        // @codeCoverageIgnoreEnd
-        
-        try {
-            $collation->setCollationTableFromCollationEngineOutput($collatexOutput);
-        }
-        // @codeCoverageIgnoreStart
-        // Can't replicate this consistently in testing
-        catch(Exception $ex) {
-
-            $this->logger->error('Error processing collatexOutput into collation object', 
-                    [ 'apiUserId' => $this->apiUserId,
-                        'apiError' => self::ERROR_FAILED_COLLATION_ENGINE_PROCESSING,
-                        'data' => $inputData, 
-                         'collationEngineDetails' => $collationEngine->getRunDetails(),
-                        'exceptionMessage' => $ex->getMessage()
-                        ]);
-            return $this->responseWithJson($response, ['error' => self::ERROR_FAILED_COLLATION_ENGINE_PROCESSING], 409);
-        }
-        // @codeCoverageIgnoreEnd
-        
-        $decoratedCollationTable = (new QuickCollationTableDecorator())->decorate($collation);
-
-        $this->profiler->stop();
-        $this->logProfilerData('quickCollation');
-        
-        return $this->responseWithJson($response,[
-            'collationEngineDetails' => $collationEngine->getRunDetails(), 
-            'collationTable' => $decoratedCollationTable,
-            'sigla' => $collation->getSigla()
-            ]);
-        
-    }
+//    public function quickCollation(Request $request, Response $response)
+//    {
+//        $apiCall = 'quickCollation';
+//        $this->profiler->start();
+//        $inputData = $this->checkAndGetInputData($request, $response, $apiCall, ['witnesses']);
+//        $this->debug('Input data', [ $inputData ]);
+//        if (!is_array($inputData)) {
+//            return $inputData;
+//        }
+//
+//        $witnesses = $inputData['witnesses'];
+//        if (count($witnesses) < 2) {
+//
+//            $this->logger->error("Quick Collation: not enough witnessess in data, got " . count($witnesses),
+//                    [ 'apiUserId' => $this->apiUserId,
+//                      'apiError' => self::ERROR_NOT_ENOUGH_WITNESSES,
+//                      'data' => $inputData ]);
+//            return $this->responseWithJson($response, ['error' => self::ERROR_NOT_ENOUGH_WITNESSES], 409);
+//        }
+//
+//
+//        $collation = new CollationTable();
+//
+//        // Check and get initial witness data
+//        foreach ($witnesses as $witness) {
+//            if (!isset($witness['id']) || !isset($witness['text'])) {
+//                $this->profiler->stop();
+//                $this->logger->error("Quick Collation: bad witness in data",
+//                    [ 'apiUserId' => $this->apiUserId,
+//                      'apiError' => self::ERROR_BAD_WITNESS,
+//                      'data' => $inputData ]);
+//                return $this->responseWithJson($response, ['error' => self::ERROR_BAD_WITNESS], 409);
+//            }
+//            $sw =  new StringWitness('QuickCollation', 'no-chunk', $witness['text']);
+//            $collation->addWitness($witness['id'], $sw);
+//        }
+//
+//        $collatexInput = $collation->getCollationEngineInput();
+//
+//        $collationEngine = $this->getCollationEngine();
+//
+//        // Run Collatex
+//        $collatexOutput = $collationEngine->collate($collatexInput);
+//        // @codeCoverageIgnoreStart
+//        // Not worrying about testing CollatexErrors here
+//        if ($collatexOutput === [] && $collationEngine->getErrorCode() !==  Engine::ERROR_NOERROR) {
+//
+//            $this->logger->error("Quick Collation: error running Collatex",
+//                        [ 'apiUserId' => $this->apiUserId,
+//                        'apiError' => ApiController::API_ERROR_COLLATION_ENGINE_ERROR,
+//                        'collatexError' => $collationEngine->getErrorCode(),
+//                        'collationEngineDetails' => $collationEngine->getRunDetails(),
+//                        'data' => $inputData
+//                    ]);
+//            return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_COLLATION_ENGINE_ERROR], 409);
+//        }
+//        // @codeCoverageIgnoreEnd
+//
+//        try {
+//            $collation->setCollationTableFromCollationEngineOutput($collatexOutput);
+//        }
+//        // @codeCoverageIgnoreStart
+//        // Can't replicate this consistently in testing
+//        catch(Exception $ex) {
+//
+//            $this->logger->error('Error processing collatexOutput into collation object',
+//                    [ 'apiUserId' => $this->apiUserId,
+//                        'apiError' => self::ERROR_FAILED_COLLATION_ENGINE_PROCESSING,
+//                        'data' => $inputData,
+//                         'collationEngineDetails' => $collationEngine->getRunDetails(),
+//                        'exceptionMessage' => $ex->getMessage()
+//                        ]);
+//            return $this->responseWithJson($response, ['error' => self::ERROR_FAILED_COLLATION_ENGINE_PROCESSING], 409);
+//        }
+//        // @codeCoverageIgnoreEnd
+//
+//        $decoratedCollationTable = (new QuickCollationTableDecorator())->decorate($collation);
+//
+//        $this->profiler->stop();
+//        $this->logProfilerData('quickCollation');
+//
+//        return $this->responseWithJson($response,[
+//            'collationEngineDetails' => $collationEngine->getRunDetails(),
+//            'collationTable' => $decoratedCollationTable,
+//            'sigla' => $collation->getSigla()
+//            ]);
+//
+//    }
 
 
     /**

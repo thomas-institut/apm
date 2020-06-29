@@ -36,8 +36,6 @@ class ApiUsers extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws DependencyException
-     * @throws NotFoundException
      */
     public function getUserProfileInfo(Request $request, Response $response)
     {

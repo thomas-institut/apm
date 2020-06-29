@@ -130,9 +130,8 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
        $this->apiUserId = $ci->get(ApmContainerKey::API_USER_ID); // this should be set by the authenticator!
        $this->languages = $this->systemManager->getConfig()[ApmConfigParameter::LANGUAGES];
        $this->logger = $this->systemManager->getLogger()->withName('API');
-       $this->dataManager = $ci->get(ApmContainerKey::DATA_MANAGER);
-       $this->router = $ci->get(ApmContainerKey::ROUTER);
-
+       $this->dataManager = $this->systemManager->getDataManager();
+       $this->router = $this->systemManager->getRouter();
        $this->profiler = new SimpleProfiler();
        $this->profiler->registerProperty('time', new TimeTracker());
        $this->profiler->registerProperty('mysql-queries', $this->systemManager->getSqlQueryCounterTracker());

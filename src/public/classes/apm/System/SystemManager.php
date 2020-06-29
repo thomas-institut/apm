@@ -28,7 +28,10 @@ use APM\FullTranscription\ApmTranscriptionWitness;
 use APM\FullTranscription\TranscriptionManager;
 use APM\Plugin\HookManager;
 use APM\Presets\PresetManager;
+use AverroesProject\Data\DataManager;
 use Monolog\Logger;
+use Slim\Interfaces\RouteParserInterface;
+use Slim\Views\Twig;
 use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\ErrorReporter\ErrorReporter;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
@@ -75,7 +78,12 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
     
     /** @var array */
     protected $config;
-        
+
+    /**
+     * @var DataManager
+     */
+    private $dataManager;
+
     public function __construct(array $config) {
         $this->resetError();
         $this->config = $config;
@@ -96,6 +104,31 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
     }
 
     /**
+     * Set and get method for DataManager
+     * Eventually this will be replaced by proper subcomponents. The idea for the
+     * time being is to make SystemManager the only dependancy for system operation
+     */
+
+    /**
+     * @param DataManager $dm
+     */
+    public function setDataManager(DataManager $dm): void {
+        $this->dataManager = $dm;
+    }
+
+    public function getDataManager() : DataManager {
+        return $this->dataManager;
+    }
+
+    /**
+     * Set methods
+     */
+
+
+    abstract public function setRouter(RouteParserInterface $router) : void;
+
+
+    /**
      * Get methods for the different components
      */
     abstract public function getPresetsManager() : PresetManager;
@@ -107,6 +140,8 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
     abstract public function getCollationTableManager() : CollationTableManager;
     abstract public function getSystemDataCache() : DataCache;
     abstract public function getBaseUrl(): string;
+    abstract public function getTwig() : Twig;
+    abstract public function getRouter() : RouteParserInterface;
 
     public function getFullTxWitnessId(ApmTranscriptionWitness $witness) : string {
         return WitnessSystemId::buildFullTxId(

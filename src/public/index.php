@@ -25,6 +25,7 @@
  */
 namespace APM;
 
+
 use Slim\App;
 use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Routing\RouteCollectorProxy;
@@ -94,16 +95,11 @@ $dbh = $systemManager->getDbConnection();
 $dataManager = new DataManager($dbh, $systemManager->getTableNames(), $logger, $hm, $config[ApmConfigParameter::LANG_CODES]);
 $dataManager->setSqlQueryCounterTracker($systemManager->getSqlQueryCounterTracker());
 $dataManager->userManager->setSqlQueryCounterTracker($systemManager->getSqlQueryCounterTracker());
-
-$twig = new Twig('templates', ['cache' => false]);
+$systemManager->setDataManager($dataManager);
 
 $container = new MinimalContainer();
-//$container->set(ApmContainerKey::CONFIG, $config);
-$container->set(ApmContainerKey::DATA_MANAGER, $dataManager);
-//$container->set(ApmContainerKey::LOGGER, $logger);
 $container->set(ApmContainerKey::SYSTEM_MANAGER, $systemManager);
 $container->set(ApmContainerKey::USER_ID, 0);  // The authentication module will update this with the correct Id
-$container->set(ApmContainerKey::VIEW, $twig);
 
 $responseFactory = new ResponseFactory();
 $app = new App($responseFactory, $container);
@@ -117,9 +113,10 @@ if ($subdir !== '') {
 $app->addErrorMiddleware(true, true, true);
 $router = $app->getRouteCollector()->getRouteParser();
 
-// Add Twig middleware and router
-$app->add(new TwigMiddleware($twig, $router, $app->getBasePath()));
-$container->set(ApmContainerKey::ROUTER, $router);
+$systemManager->setRouter($router);
+
+// Add Twig middleware
+$app->add(new TwigMiddleware($systemManager->getTwig(), $router, $app->getBasePath()));
 
 // -----------------------------------------------------------------------------
 //  SITE ROUTES
@@ -435,13 +432,13 @@ $app->group('/api', function (RouteCollectorProxy $group){
 
 // PUBLIC API
 
-$app->group('/api/public', function (RouteCollectorProxy $group){
-
-    // API -> quick collation
-    $group->post('/collation/quick',
-        ApiCollation::class . ':quickCollation')
-        ->setName('api.collation.quick');
-});
+//$app->group('/api/public', function (RouteCollectorProxy $group){
+//
+//    // API -> quick collation
+//    $group->post('/collation/quick',
+//        ApiCollation::class . ':quickCollation')
+//        ->setName('api.collation.quick');
+//});
 
 // -----------------------------------------------------------------------------
 //  RUN!

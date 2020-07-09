@@ -22,7 +22,6 @@ namespace APM;
 
 use APM\System\ApmContainerKey;
 use APM\System\SystemManager;
-use Slim\Views\Twig;
 
 require_once 'DatabaseTestEnvironment.php';
 require_once 'SlimTwigExtensionMockup.php';

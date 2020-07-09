@@ -389,8 +389,8 @@ class ApiCollation extends ApiController
         $people = [];
         foreach($userIds as $userId) {
             $people[$userId] = [
-                'fullName' => $userDirectory->getFullNameFromId($userId),
-                'shortName' => $userDirectory->getShortNameFromId($userId)
+                'fullName' => $userDirectory->getNormalizedName($userId),
+                'shortName' => $userDirectory->getShortName($userId)
                 ];
         }
 

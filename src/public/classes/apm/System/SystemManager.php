@@ -106,7 +106,7 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
     /**
      * Set and get method for DataManager
      * Eventually this will be replaced by proper subcomponents. The idea for the
-     * time being is to make SystemManager the only dependancy for system operation
+     * time being is to make SystemManager the only dependency for system operation
      */
 
     /**
@@ -124,7 +124,9 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
      * Set methods
      */
 
-
+    /**
+     * @param RouteParserInterface $router
+     */
     abstract public function setRouter(RouteParserInterface $router) : void;
 
 

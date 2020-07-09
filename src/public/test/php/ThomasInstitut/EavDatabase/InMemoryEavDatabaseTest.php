@@ -1,6 +1,6 @@
 <?php
 /* 
- *  Copyright (C) 2020 Universität zu Köln
+ *  Copyright (C) 2016-2020 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,34 +17,23 @@
  *  
  */
 
-namespace AverroesProject\Data;
+namespace ThomasInstitut\EavDatabase;
 
 
-use APM\ToolBox\FullName;
-use ThomasInstitut\UserManager\PersonInfoProvider;
 
-class UserManagerUserInfoProvider implements PersonInfoProvider
+use Exception;
+use PHPUnit\Framework\TestCase;
+
+class InMemoryEavDatabaseTest extends TestCase
 {
 
     /**
-     * @var UserManager
+     * @throws Exception
      */
-    private $userManager;
-
-    public function __construct(UserManager $um)
-    {
-        $this->userManager = $um;
+    public function testRunTests() {
+        $tester = new EavDatabaseTest();
+        $dataStore = new InMemoryEavDatabase();
+        $tester->runAllTests($dataStore, 'InMemoryEavDatabase');
     }
 
-    public function getNormalizedName(int $id): string
-    {
-        $userInfo = $this->userManager->getUserInfoByUserId($id);
-        return $userInfo['fullname'];
-    }
-
-    public function getShortName(int $id): string
-    {
-        $fullName = $this->getNormalizedName($id);
-        return FullName::getShortName($fullName);
-    }
 }

@@ -50,12 +50,12 @@ class SimplePersonInfoProvider implements PersonInfoProvider
         }
     }
 
-    public function getFullNameFromId(int $id): string
+    public function getNormalizedName(int $id): string
     {
        return  $this->prefix  . $id;
     }
 
-    public function getShortNameFromId(int $id): string
+    public function getShortName(int $id): string
     {
         return $this->prefixInitial . $id;
     }

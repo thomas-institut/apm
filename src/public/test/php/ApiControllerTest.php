@@ -26,18 +26,14 @@ require_once 'SiteMockup/SiteTestEnvironment.php';
 
 
 use APM\Presets\PresetManager;
-use APM\System\ApmConfigParameter;
 use APM\System\ApmContainerKey;
 use APM\System\SystemManager;
-use APM\System\WitnessType;
 use AverroesProject\EditorialNote;
 use AverroesProject\TxText\Item;
-use Cassandra\Time;
 use DI\DependencyException;
 use DI\NotFoundException;
 use Exception;
 use PHPUnit\Framework\TestCase;
-use GuzzleHttp\Psr7;
 
 use AverroesProject\TxText\ChunkMark;
 use AverroesProject\TxText\Text;
@@ -45,7 +41,6 @@ use AverroesProject\ColumnElement\Line;
 use AverroesProject\TxText\ItemArray;
 use AverroesProject\ColumnElement\Element;
 
-use APM\Api\ApiController;
 use APM\Api\ApiCollation;
 use APM\Api\ApiPresets;
 use APM\Api\ApiDocuments;
@@ -55,7 +50,6 @@ use Psr\Log\LoggerInterface;
 use Slim\Psr7\Response;
 use GuzzleHttp\Psr7\ServerRequest;
 use DI\Container;
-use ThomasInstitut\TimeString\TimeString;
 use function GuzzleHttp\Psr7\stream_for;
 
 

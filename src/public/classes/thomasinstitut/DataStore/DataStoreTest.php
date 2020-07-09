@@ -32,7 +32,7 @@ use PHPUnit\Framework\TestCase;
  * Validation test for DataStore implementations.
  *
  * To run with phpunit, create a class that extends PHPUnit\Framework\TestCase
- * with a methods that sets up the iDataStore implementation to test, calls
+ * with a methods that sets up the DataStore implementation to test, calls
  * setDataStore and
  * For example:
 

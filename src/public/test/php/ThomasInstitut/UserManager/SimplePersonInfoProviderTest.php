@@ -15,10 +15,10 @@ class SimplePersonInfoProviderTest extends TestCase
 
         foreach($testPrefixes as $prefix) {
             $pip = new SimplePersonInfoProvider($prefix);
-            $this->assertNotEquals('', $pip->getFullNameFromId(10));
-            $this->assertNotEquals('', $pip->getShortNameFromId(10));
+            $this->assertNotEquals('', $pip->getNormalizedName(10));
+            $this->assertNotEquals('', $pip->getShortName(10));
 
-            $this->assertNotEquals($pip->getFullNameFromId(10), $pip->getFullNameFromId(11));
+            $this->assertNotEquals($pip->getNormalizedName(10), $pip->getNormalizedName(11));
         }
 
 

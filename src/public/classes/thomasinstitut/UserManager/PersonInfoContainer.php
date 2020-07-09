@@ -1,6 +1,6 @@
 <?php
 /* 
- *  Copyright (C) 2020 Universität zu Köln
+ *  Copyright (C) 2016-2020 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,32 +19,27 @@
 
 namespace ThomasInstitut\UserManager;
 
+
 /**
- * Interface PersonInfoProvider
+ * Interface PersonInfoStore
  *
- * An interface that provides get methods for different kinds of data related to a Person
- *
- * Persons are ident
  * @package ThomasInstitut\UserManager
  */
-
-interface PersonInfoProvider
+interface PersonInfoContainer
 {
     /**
-     * Returns the normalized version of a person's name
-     * @param int $id
+     * Returns the value for the given key for the given person Id
+     * @param string $personId
+     * @param string $key
      * @return string
      */
-    public function getNormalizedName(int $id) : string;
+    public function get(string $personId, string $key) : string;
 
     /**
-     * Returns a short version of a person's name.
-     * Normally this is the given name initial and the last name
-     * e.g. "J. Smith"  for "Joseph Smith" but it could be something else
-     * like "Arist."  for "Aristotle"
-     * @param int $id
-     * @return string
+     * Returns an array with all the information available for
+     * the given person
+     * @param string $personId
+     * @return array
      */
-    public function getShortName(int $id) : string;
-
+    public function getAllInfo(string $personId) : array;
 }

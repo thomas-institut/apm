@@ -92,8 +92,8 @@ class ApmCollationTableDecorator implements CollationTableDecorator, LoggerAware
                 foreach ($theItem['notes'] as $note) {
                   if (!isset($people[$note['authorId']])) {
                       $people[$note['authorId']] = [
-                          'fullName' => $this->userInfoProvider->getFullNameFromId($note['authorId']),
-                          'shortName'=> $this->userInfoProvider->getShortNameFromId($note['authorId'])
+                          'fullName' => $this->userInfoProvider->getNormalizedName($note['authorId']),
+                          'shortName'=> $this->userInfoProvider->getShortName($note['authorId'])
                       ];
                   }
                 }

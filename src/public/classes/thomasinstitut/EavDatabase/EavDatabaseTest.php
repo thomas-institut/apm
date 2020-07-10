@@ -21,6 +21,8 @@ namespace ThomasInstitut\EavDatabase;
 
 use Exception;
 use PHPUnit\Framework\TestCase;
+use ThomasInstitut\Profiler\SimpleProfiler;
+use ThomasInstitut\Profiler\TimeTracker;
 
 /**
  * Class EavDatabaseTest
@@ -120,13 +122,17 @@ class EavDatabaseTest extends TestCase
         $numEntities = 50;
         $totalNumAttributes = 50;
         $attributesToAdd = 20;
-        $randomReads = 5000;
-        $randomDeletions = 1000;
+        $randomReads = 50;
+        $randomDeletions = 50;
 
         $entityIdPrefix = 'Entity_';
         $attributePrefix = 'Attribute_';
 
+        $profiler = new SimpleProfiler();
+        $profiler->registerProperty('dur', new TimeTracker());
         // populate the database and the testData array
+
+        $profiler->start();
         $testData = [];
         for ($i = 0; $i < $numEntities; $i++) {
             $entityId = $entityIdPrefix . ($i+1);
@@ -138,6 +144,9 @@ class EavDatabaseTest extends TestCase
                 $this->assertEquals($testData[$entityId][$attribute], $this->database->get($entityId, $attribute), $testTitle);
             }
         }
+        $profiler->lap('Populating');
+
+
 
         // do a bunch of random reads
         for($i=0; $i<$randomReads; $i++) {
@@ -156,6 +165,7 @@ class EavDatabaseTest extends TestCase
                 $this->assertTrue($exceptionCaught, $testTitle);
             }
         }
+        $profiler->lap('Random reads');
 
         // validate the data for each entity
         for ($i = 0; $i < $numEntities; $i++) {
@@ -164,6 +174,7 @@ class EavDatabaseTest extends TestCase
             $entityData = $this->database->getEntityData($entityId);
             $this->assertEqualData($testData[$entityId], $entityData, $testTitle);
         }
+        $profiler->lap('Data validation');
 
         // delete some attributes
         for ($i = 0; $i < $numEntities; $i++) {
@@ -181,6 +192,7 @@ class EavDatabaseTest extends TestCase
             }
             $this->assertTrue($exceptionCaught, $testTitle);
         }
+        $profiler->lap('Delete attributes');
 
         // delete all attributes of an entity one by one
         $entityId = $entityIdPrefix . random_int(1, $numEntities);
@@ -196,6 +208,7 @@ class EavDatabaseTest extends TestCase
         }
         $this->assertTrue($exceptionCaught, $testPrefix . ' : delete attributes one by one');
 
+        $profiler->lap('Delete all atributes');
 
         // random deletions
         for($i=0; $i<$randomDeletions; $i++) {
@@ -212,6 +225,7 @@ class EavDatabaseTest extends TestCase
             }
             $this->assertTrue($exceptionCaught, $testTitle);
         }
+        $profiler->lap('Random deletions');
 
         // delete entities
         for ($i=0; $i < $numEntities; $i++) {
@@ -226,6 +240,11 @@ class EavDatabaseTest extends TestCase
             }
             $this->assertTrue($exceptionCaught, $testTitle);
         }
+
+
+        $profiler->stop();
+        //print_r($profiler->getLaps());
+
     }
 
     /**

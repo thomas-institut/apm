@@ -277,7 +277,7 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
     //
 
     /**
-     * Returns true if a user is explicity allowed to do $action
+     * Returns true if a user is explicitly allowed to do $action
      * @param $userId
      * @param string $action , the action, normally a verb,
      *                e.g.: 'edit-other-users'

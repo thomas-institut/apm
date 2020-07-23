@@ -17,12 +17,10 @@
  *  
  */
 
-namespace ThomasInstitut\UserManager;
+namespace ThomasInstitut\PersonManager;
 
 
-class PersonDataField
+class PersonDoesNotExist extends PersonManagerException
 {
-    const FULL_NAME = 'fullName';
-    const FIRST_NAME = 'firstName';
-    const LAST_NAME = 'lastName';
+
 }

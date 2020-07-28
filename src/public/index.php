@@ -26,6 +26,7 @@
 namespace APM;
 
 
+use APM\Api\ApiTranscription;
 use Slim\App;
 use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Routing\RouteCollectorProxy;
@@ -249,7 +250,7 @@ $app->group('', function (RouteCollectorProxy $group){
 //  API ROUTES
 // -----------------------------------------------------------------------------
 
-// AUTHENTICATED API
+// USER AUTHENTICATED API
 
 $app->group('/api', function (RouteCollectorProxy $group){
 
@@ -429,6 +430,16 @@ $app->group('/api', function (RouteCollectorProxy $group){
         ->setName('api.images.charactergap');
 
 })->add(Authenticator::class . ':authenticateApiRequest');
+
+//  API for DARE
+
+$app->group('/api/data', function(RouteCollectorProxy $group){
+    // get list of transcriptions available for download
+    $group->get('/transcription/list', ApiTranscription::class . ':getList');
+
+    // get the transcription for a given document and page
+    $group->get('/transcription/get/{docId}/{page}', ApiTranscription::class . ':getTranscription');
+})->add(Authenticator::class . ':authenticateDataApiRequest');;
 
 // PUBLIC API
 

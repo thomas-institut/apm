@@ -316,6 +316,11 @@ class Authenticator {
         return $response->withHeader('Location',$this->router->urlFor('home'))
             ->withStatus(302);
     }
+
+    public function authenticateDataApiRequest(Request $request, RequestHandlerInterface $handler) {
+        $this->container->set(ApmContainerKey::API_USER_ID, 0);
+        return $handler->handle($request);
+    }
     
     
     public function authenticateApiRequest (Request $request, RequestHandlerInterface $handler)

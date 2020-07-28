@@ -16,6 +16,7 @@
       let authorInfo = JSON.parse('{{authorInfo|json_encode|raw}}')
       let lastSaves = JSON.parse('{{lastSaves|json_encode|raw}}')
       let pages = JSON.parse('{{doc.pages|json_encode|raw}}')
+      let metaData = JSON.parse('{{metaData|json_encode|raw}}')
       console.log('Pages:')
       console.log(pages)
       console.log('Chunk Info: ')
@@ -28,6 +29,8 @@
       console.log(works)
       console.log('Last Saves:')
       console.log(lastSaves)
+      console.log('Metadata:')
+      console.log(metaData)
 
 
       let docShowPage = new DocShowPage(pages, chunkInfo, lastVersions, lastSaves, works, authorInfo, docId, urlGenerator)

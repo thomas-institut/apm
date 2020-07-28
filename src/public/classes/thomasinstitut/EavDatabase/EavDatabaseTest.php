@@ -103,6 +103,8 @@ class EavDatabaseTest extends TestCase
         $exceptionCaught = false;
         try {
             $this->database->get('someEntity', 'someAttribute');
+        } catch (AttributeNotFoundException $e) {
+            $exceptionCaught = true;
         } catch (EntityNotFoundException $e) {
             $exceptionCaught = true;
         }

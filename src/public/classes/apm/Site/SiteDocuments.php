@@ -26,8 +26,8 @@
 
 namespace APM\Site;
 
+use APM\DareInterface\ManuscriptData;
 use APM\FullTranscription\ApmChunkSegmentLocation;
-use AverroesProject\Data\DataManager;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
@@ -213,6 +213,13 @@ class SiteDocuments extends SiteController
         if ($this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'define-doc-pages')) {
             $canDefinePages = true;
         }
+
+        $metaData = [];
+//        if ($doc['docInfo']['image_source'] === 'dare') {
+//            $this->logger->debug("Getting metadata from DARE");
+//            $metaData = ManuscriptData::get($doc['docInfo']['image_source_data']);
+//        }
+
         $this->profiler->stop();
         $this->logProfilerData('showDocPage-' . $docId);
 
@@ -224,7 +231,8 @@ class SiteDocuments extends SiteController
             'works' => $works,
             'lastVersions' => $lastVersions,
             'authorInfo' => $authorInfo,
-            'lastSaves' => $lastSaves
+            'lastSaves' => $lastSaves,
+            'metaData' => $metaData
         ]);
     }
 

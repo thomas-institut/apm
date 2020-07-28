@@ -26,7 +26,7 @@
 
 namespace APM\Site;
 
-use APM\DareInterface\ManuscriptData;
+use APM\DareInterface\DareMssMetadataSource;
 use APM\FullTranscription\ApmChunkSegmentLocation;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
@@ -134,6 +134,15 @@ class SiteDocuments extends SiteController
         }
         $doc['docInfoHtml'] = $docInfoHtml;
 
+        $metaData = $this->hookManager->callHookedMethods('get-doc-metadata-' . $doc['docInfo']['image_source'],
+            [ 'imageSourceData' => $doc['docInfo']['image_source_data']]);
+
+        if (!is_array($metaData)) {
+            $this->logger->debug('Invalid metadata returned for hook get-doc-metadata-' . $doc['docInfo']['image_source'],
+                [ 'returnedMetadata' =>$metaData]);
+            $metaData = [];
+        }
+
 
 
         $chunkLocationMap = $transcriptionManager->getChunkLocationMapForDoc($docId, '');
@@ -214,11 +223,6 @@ class SiteDocuments extends SiteController
             $canDefinePages = true;
         }
 
-        $metaData = [];
-//        if ($doc['docInfo']['image_source'] === 'dare') {
-//            $this->logger->debug("Getting metadata from DARE");
-//            $metaData = ManuscriptData::get($doc['docInfo']['image_source_data']);
-//        }
 
         $this->profiler->stop();
         $this->logProfilerData('showDocPage-' . $docId);

@@ -67,6 +67,7 @@ abstract class ImageSourcePlugin extends Plugin
         $hookGetImageUrl = 'get-image-url-' . $this->stub;
         $hookGetDocInfoHtml = 'get-docinfo-html-' . $this->stub;
         $hookGetOpenSeaDragonConfig = 'get-openseadragon-config-' . $this->stub;
+        $hookGetDocMetadata = 'get-doc-metadata-' . $this->stub;
         $hookGetImageSources = 'get-image-sources';
         
         // @codeCoverageIgnoreStart
@@ -87,12 +88,21 @@ abstract class ImageSourcePlugin extends Plugin
             $this->logger->error("Cannot attach to hook $hookGetOpenSeaDragonConfig");
             return false;
         }
+        if (! $this->hookManager->attachToHook($hookGetDocMetadata, array($this, 'getMetadata')) ) {
+            $this->logger->error("Cannot attach to hook $hookGetDocMetadata");
+            return false;
+        }
         // @codeCoverageIgnoreEnd
         return true;
     }
     
-    public function getMetadata() {
-        return [];
+    public function getMetadata($param) : array {
+        $sourceId = $param['imageSourceData'];
+        $this->logger->debug('Getting metadata for source ID ' . $sourceId );
+        return [
+            'sourceId' => $sourceId,
+            'source' => $this->stub
+        ];
     }
     
     public function getImageUrl($param)

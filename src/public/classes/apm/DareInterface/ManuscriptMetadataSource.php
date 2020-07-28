@@ -1,7 +1,6 @@
 <?php
-
 /* 
- *  Copyright (C) 2019 Universität zu Köln
+ *  Copyright (C) 2016-2020 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,27 +17,10 @@
  *  
  */
 
-namespace APM\Plugin;
+namespace APM\DareInterface;
 
-use APM\System\SystemManager;
 
-/**
- * Base class for plugins
- *
- * @author Rafael Nájera <rafael.najera@uni-koeln.de>
- */
-abstract class Plugin {
-    
-    /**
-     *
-     * @var SystemManager $hm
-     */
-    protected $systemManager;
-    
-    public function __construct($systemManager) {
-        $this->systemManager = $systemManager;
-    }
-    abstract public function activate();
-    abstract public function deactivate();
-    abstract public function init();
+interface ManuscriptMetadataSource
+{
+    public function getMetadata(string $dareId) : array;
 }

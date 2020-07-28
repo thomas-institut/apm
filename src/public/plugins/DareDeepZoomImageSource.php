@@ -18,6 +18,7 @@
  *  
  */
 
+use APM\DareInterface\DareMssMetadataSource;
 use APM\Plugin\ImageSourcePlugin;
 
 /**
@@ -60,6 +61,18 @@ class DareDeepZoomImageSource extends ImageSourcePlugin {
         return $html;
 
     }
+
+    public function getMetadata($param): array
+    {
+        $data =  parent::getMetadata($param);
+
+        $dareApiUrl = $this->systemManager->getConfig()['dareApiBaseUri'];
+        $metadata = (new DareMssMetadataSource($dareApiUrl))->getMetadata($data['sourceId']);
+
+        return array_merge($data, $metadata);
+    }
+
+
 
     private function getDareDocumentUrl(string $dareId) : string {
         return "https://dare.uni-koeln.de/app/manuscripts/$dareId";

@@ -18,6 +18,7 @@
  *  
  */
 
+use APM\DareInterface\DareMssMetadataSource;
 use APM\Plugin\ImageSourcePlugin;
 
 /**
@@ -43,7 +44,17 @@ class DareImageSource extends ImageSourcePlugin {
         return sprintf("tileSources: {type: 'image', url:  '%s', buildPyramid: false,homeFillsViewer: true}", 
                 $this->realGetImageUrl($imageSourceData, $imageNumber));
     }
-    
+
+    public function getMetadata($param): array
+    {
+        $data =  parent::getMetadata($param);
+
+        $dareApiUrl = $this->systemManager->getConfig()['dareApiBaseUri'];
+        $metadata = (new DareMssMetadataSource($dareApiUrl))->getMetadata($data['sourceId']);
+
+        return array_merge($data, $metadata);
+    }
+
     public function realGetDocInfoHtml($imageSourceData) {
 
         $html = "= <em>$imageSourceData</em>";
@@ -66,5 +77,7 @@ class DareImageSource extends ImageSourcePlugin {
     private function getBilderbergDocumentUrl(string $dareId) : string {
        return "https://bilderberg.uni-koeln.de/cgi-bin/berg.pas?page=book&book=$dareId";
     }
+
+
    
 }

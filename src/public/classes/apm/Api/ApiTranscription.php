@@ -38,15 +38,18 @@ class ApiTranscription extends ApiController
         parent::__construct($ci);
 
         $this->fakeAvailableTranscriptions = [
-            [ 'docId' => 4, 'dareId' => 'BOOK-DARE-FAKE_01', 'pages' => [ 2,4,5,6]],
-            [ 'docId' => 128, 'dareId' => 'BOOK-DARE-FAKE_02','pages' => [ 12,24,25,26]],
-            [ 'docId' => 130, 'dareId' => 'BOOK-DARE-FAKE_03','pages' => [ 100,101]],
-            [ 'docId' => 131, 'dareId' => 'BOOK-DARE-FAKE_04','pages' => [ 4,5,6]],
+            [ 'docId' => 4, 'dareId' => 'BOOK-DARE-M-AT-GRZ-UB-II.482', 'pages' => [ 2,4,5,6]],
+            [ 'docId' => 128, 'dareId' => 'BOOK-DARE-M-AT-ADO-STB-480','pages' => [ 12,24,25,26]],
+            [ 'docId' => 130, 'dareId' => 'BOOK-DARE-M-BE-LEU-KUL-1515','pages' => [ 100,101]],
+            [ 'docId' => 131, 'dareId' => 'BOOK-DARE-M-FR-PAR-BNF-lat.16088','pages' => [ 4,5,6]],
             ];
     }
 
     public function getList(Request $request, Response $response) {
-        return $this->responseWithJson($response, [ 'status' => 'OK', 'list' => $this->fakeAvailableTranscriptions, 'timeStamp' => TimeString::now() ]);
+        return $this->responseWithJson($response, [
+            'status' => 'FakeData',
+            'list' => $this->fakeAvailableTranscriptions,
+            'apiCallDateTime' => date(DATE_ATOM) ]);
     }
 
     public function getTranscription(Request $request, Response $response) {
@@ -64,7 +67,7 @@ class ApiTranscription extends ApiController
         return $this->responseWithJson($response, [
             'docId' => $docId,
             'pageNumber' => $pageNumber,
-            'status' => 'FakeText',
+            'status' => 'FakeData',
             'transcribers' => [ [ 'id' => 0, 'fullName' => 'Ghost Transcriber']],
             'text' =>  $this->getFakeText($docId, $pageNumber)
      ]);

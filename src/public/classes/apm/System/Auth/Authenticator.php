@@ -319,6 +319,7 @@ class Authenticator {
 
     public function authenticateDataApiRequest(Request $request, RequestHandlerInterface $handler) {
         $this->container->set(ApmContainerKey::API_USER_ID, 0);
+        //$this->logger->debug("DataApi headers", $request->getHeaders());
         return $handler->handle($request);
     }
     

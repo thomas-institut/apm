@@ -186,3 +186,11 @@ table.versioninfo td.time {
 a.invalid {
     color: red;
 }
+
+.info-div {
+    margin-bottom: 1rem;
+}
+
+.active-label {
+    font-weight: bold;
+}

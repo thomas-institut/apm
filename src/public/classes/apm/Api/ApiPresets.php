@@ -23,6 +23,8 @@ namespace APM\Api;
 use APM\Presets\Preset;
 use APM\Presets\PresetManager;
 use APM\System\SystemManager;
+use APM\System\WitnessSystemId;
+use APM\System\WitnessType;
 use DI\DependencyException;
 use DI\NotFoundException;
 use InvalidArgumentException;
@@ -245,6 +247,258 @@ class ApiPresets extends ApiController
             'runTime' => $this->getProfilerTotalTime()
             ]);
     }
+
+
+    /**
+     * API call to get all the presets for sigla
+     *
+     * the data field inside the POST request MUST contain the following:
+     *  lang: string, a valid language code
+     *  witnesses: 2 or more witnesses to match
+     *
+     * it MAY also contain
+     *  userId:  int,  if different than 0, the call will return the presets
+     *                 for that user only
+     *
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function  getSiglaPresets(Request $request, Response $response) {
+
+        $dataManager = $this->getDataManager();
+        $apiCall = 'getSiglaPresets';
+        $this->profiler->start();
+        $inputData = $this->checkAndGetInputData($request, $response, $apiCall, ['lang', 'witnesses']);
+        if (!is_array($inputData)) {
+            return $inputData;
+        }
+
+        $tool = SystemManager::TOOL_SIGLA;
+        $userId = isset($inputData['userId']) ? intval($inputData['userId']) : 0;
+        $lang = $inputData['lang'];
+        $requestedWitnesses = $inputData['witnesses'];
+
+        // Check that the input parameters make sense
+        if (!is_array($requestedWitnesses)) {
+            $this->logger->error("Field 'witnesses' must be an array",
+                [ 'apiUserId' => $this->apiUserId,
+                    'apiError' => self::API_ERROR_WRONG_TYPE,
+                    'data' => $inputData ]);
+            return $this->responseWithJson($response, ['error' => self::API_ERROR_WRONG_TYPE], 409);
+        }
+
+        $this->codeDebug('Getting sigla presets', [ 'lang' => $lang, 'userId' => $userId, 'witnesses' => $requestedWitnesses]);
+
+        // convert requestedWitnesses Ids to short form
+        $witnessesToLookUp  = [];
+        foreach($requestedWitnesses as $witnessId) {
+            $witnessType = WitnessSystemId::getType($witnessId);
+            // only fullTx for now
+            if ($witnessType === WitnessType::FULL_TRANSCRIPTION) {
+                $witnessesToLookUp[] = $this->convertFullTxIdToSiglaPresetId($witnessId);
+            }
+        }
+        $this->codeDebug('Witnesses to look up', $witnessesToLookUp);
+        if (count($witnessesToLookUp) < 2) {
+            $this->logger->error("Field 'witnesses' must have 2 or more elements",
+                [ 'apiUserId' => $this->apiUserId,
+                    'apiError' => self::API_ERROR_NOT_ENOUGH_WITNESSES,
+                    'data' => $inputData ]);
+            return $this->responseWithJson($response, ['error' => self::API_ERROR_NOT_ENOUGH_WITNESSES], 409);
+        }
+
+        // let's get those presets!
+
+        $presetManager = $this->systemManager->getPresetsManager();
+
+        if ($userId === 0) {
+            $presets = $presetManager->getPresetsByToolAndKeys($tool, ['lang' => $lang]);
+        } else {
+            $presets = $presetManager->getPresetsByToolUserIdAndKeys($tool, $userId, ['lang' => $lang]);
+        }
+
+        // filter using the witness list
+        $filteredPresets = [];
+        $witnessSet = new Set($witnessesToLookUp);
+        foreach($presets as $preset) {
+            $presetWitnessesSet = new Set(array_keys($preset->getData()['witnesses']));
+            if ($presetWitnessesSet->isSubsetOf($witnessSet)) {
+                $filteredPresets[] = $preset;
+            }
+        }
+        $presetsInArrayForm = [];
+        foreach($filteredPresets as $preset) {
+            $userInfo = $dataManager->userManager->getUserInfoByUserId($preset->getUserId());
+            $presetsInArrayForm[] = [
+                'userId' => $preset->getUserId(),
+                'userName' => $userInfo['fullname'],
+                'presetId' => $preset->getId(),
+                'title' => $preset->getTitle(),
+                'data' => $preset->getData()
+            ];
+        }
+
+        $this->profiler->stop();
+        $this->logProfilerData($apiCall);
+
+
+        return $this->responseWithJson($response,[
+            'presets' => $presetsInArrayForm,
+            'runTime' => $this->getProfilerTotalTime()
+        ]);
+    }
+
+    private function convertFullTxIdToSiglaPresetId(string $longFormId) : string {
+        $info = WitnessSystemId::getFullTxInfo($longFormId);
+        return implode('-', [ 'fullTx', $info->typeSpecificInfo['docId'], $info->typeSpecificInfo['localWitnessId']]);
+    }
+
+    /**
+     * Saves/Updates a sigla preset
+     *
+     * the data field inside the POST request MUST contain the following:
+     *  command:  'new' | 'update'
+     *  lang: string, a valid language code, e.g. 'ar', 'la', etc.
+     *  witnesses: an array of strings of the form
+     *      witnesses['someWitnessId'] = 'someSiglum'
+     *
+     * if command === 'new', the following field is required
+     *    title:  string
+     *
+     * if command === 'update', the following fields is required
+     *   presetId: int
+     *
+     *  if there is a title field, it will be used to overwrite the current preset's title.
+     * A preset update will fail if the api user is not the original creator of the preset.
+     *
+     *
+     * @param Request $request
+     * @param Response $response
+     * @return array|Response
+     */
+    public function saveSiglaPreset(Request $request, Response $response) {
+        $apiCall = 'saveSiglaPreset';
+        $this->profiler->start();
+        $inputData = $this->checkAndGetInputData($request, $response, $apiCall, ['command', 'lang', 'witnesses']);
+        if (!is_array($inputData)) {
+            return $inputData;
+        }
+
+        $pm = $this->systemManager->getPresetsManager();
+        $pf = new PresetFactory();
+        $apiUserId = $this->apiUserId;
+        $lang = $inputData['lang'];
+        // get short form witnesses
+        $witnesses = [];
+        foreach($inputData['witnesses'] as $witnessId => $siglum) {
+            if (WitnessSystemId::getType($witnessId) === WitnessType::FULL_TRANSCRIPTION) {
+                $witnesses[$this->convertFullTxIdToSiglaPresetId($witnessId)] = $siglum;
+            }
+        }
+        $presetData = [ 'lang' => $lang, 'witnesses' => $witnesses];
+
+        switch($inputData['command']) {
+            case self::COMMAND_NEW:
+                if (!isset($inputData['title'])) {
+                    $this->logger->error("Required field 'title' not present",
+                        [ 'apiUserId' => $this->apiUserId,
+                            'apiError' => self::API_ERROR_INVALID_PRESET_DATA,
+                            'data' => $inputData ]);
+                    return $this->responseWithJson($response, ['error' => self::API_ERROR_INVALID_PRESET_DATA], 409);
+                }
+                if (!is_string($inputData['title']) || $inputData['title'] === '' ){
+                    $this->logger->error("Required field 'title' is not a string or is empty",
+                        [ 'apiUserId' => $this->apiUserId,
+                            'apiError' => self::API_ERROR_INVALID_PRESET_DATA,
+                            'data' => $inputData ]);
+                    return $this->responseWithJson($response, ['error' => self::API_ERROR_INVALID_PRESET_DATA], 409);
+                }
+                $title = $inputData['title'];
+
+                $this->codeDebug('New Sigla Preset', [ 'apiUserId' => $apiUserId, 'title' => $title, 'presetData' => $presetData]);
+
+
+                $preset = $pf->create(SystemManager::TOOL_SIGLA, $apiUserId, $title, $presetData);
+                if ($pm->correspondingPresetExists($preset)) {
+                    $this->logger->error("Preset already exists",
+                        [ 'apiUserId' => $this->apiUserId,
+                            'apiError' => self::API_ERROR_PRESET_ALREADY_EXISTS,
+                            'data' => $inputData ]);
+                    return $this->responseWithJson($response, ['error' => self::API_ERROR_PRESET_ALREADY_EXISTS], 409);
+                }
+                if (!$pm->addPreset($preset)) {
+                    // @codeCoverageIgnoreStart
+                    $this->logger->error("Could not save new preset",
+                        [ 'apiUserId' => $this->apiUserId,
+                            'apiError' => self::API_ERROR_CANNOT_SAVE_PRESET,
+                            'data' => $inputData ]);
+                    return $this->responseWithJson($response, ['error' => self::API_ERROR_CANNOT_SAVE_PRESET], 409);
+                    // @codeCoverageIgnoreEnd
+                }
+                // success
+                $newId = $pm->getPreset(SystemManager::TOOL_SIGLA, $apiUserId, $title)->getId();
+                $this->profiler->stop();
+                $this->logProfilerData($apiCall);
+                return $this->responseWithJson($response, ['presetId' => $newId], 200);
+
+            case self::COMMAND_UPDATE:
+                if (!isset($inputData['presetId'])) {
+                    $this->logger->error("Required field 'presetId' not present",
+                        [ 'apiUserId' => $this->apiUserId,
+                            'apiError' => self::API_ERROR_INVALID_PRESET_DATA,
+                            'data' => $inputData ]);
+                    return $this->responseWithJson($response, ['error' => self::API_ERROR_INVALID_PRESET_DATA], 409);
+                }
+                $presetId = intval($inputData['presetId']);
+                if ($presetId === 0) {
+                    $this->logger->error("Required field 'presetId' not a valid Id",
+                        [ 'apiUserId' => $this->apiUserId,
+                            'apiError' => self::API_ERROR_INVALID_PRESET_DATA,
+                            'data' => $inputData ]);
+                    return $this->responseWithJson($response, ['error' => self::API_ERROR_INVALID_PRESET_DATA], 409);
+                }
+                $currentPreset = $pm->getPresetById($presetId);
+                // check that userId is the same as the current preset's userId
+                if (intval($this->apiUserId) !== $currentPreset->getUserId()) {
+                    $this->logger->error("API user not authorized to update preset",
+                        [ 'apiUserId' => $this->apiUserId,
+                            'apiError' => self::API_ERROR_NOT_AUTHORIZED,
+                            'data' => $inputData ]);
+                    return $this->responseWithJson($response, ['error' => self::API_ERROR_NOT_AUTHORIZED], 409);
+                }
+                $title = $currentPreset->getTitle();
+                if (isset($inputData['title']) && is_string($inputData['title']) && $inputData['title'] !== 0) {
+                    $title = $inputData['title'];
+                }
+
+                $updatedPreset = $pf->create(SystemManager::TOOL_SIGLA, $this->apiUserId, $title, $presetData);
+                if (!$pm->updatePresetById($presetId, $updatedPreset)) {
+                    // @codeCoverageIgnoreStart
+                    $this->logger->error("Could not update preset",
+                        [ 'apiUserId' => $this->apiUserId,
+                            'apiError' => self::API_ERROR_CANNOT_SAVE_PRESET,
+                            'data' => $inputData ]);
+                    return $this->responseWithJson($response, ['error' => self::API_ERROR_CANNOT_SAVE_PRESET], 409);
+                    // @codeCoverageIgnoreEnd
+                }
+
+                // success
+                $this->profiler->stop();
+                $this->logProfilerData($apiCall);
+                return $this->responseWithJson($response, ['presetId' => $presetId], 200);
+
+                break;
+
+            default:
+                $this->logger->error("Unknown command " . $inputData['command'],
+                    [ 'apiUserId' => $this->apiUserId,
+                        'apiError' => self::API_ERROR_UNKNOWN_COMMAND,
+                        'data' => $inputData ]);
+                return $this->responseWithJson($response, ['error' => self::API_ERROR_UNKNOWN_COMMAND], 409);
+        }
+    }
+
     
     public function  savePreset(Request $request, Response $response) {
         

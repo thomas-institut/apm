@@ -384,6 +384,14 @@ $app->group('/api', function (RouteCollectorProxy $group){
         ApiPresets::class . ':deletePreset')
         ->setName('api.presets.delete');
 
+    $group->post('/presets/sigla/get',
+        ApiPresets::class . ':getSiglaPresets')
+        ->setName('api.presets.sigla.get');
+
+    $group->post('/presets/sigla/save',
+        ApiPresets::class . ':saveSiglaPreset')
+        ->setName('api.presets.sigla.save');
+
     $group->post('/presets/act/get',
         ApiPresets::class . ':getAutomaticCollationPresets')
         ->setName('api.presets.act.get');

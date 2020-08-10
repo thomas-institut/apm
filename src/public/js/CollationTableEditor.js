@@ -46,6 +46,7 @@ export class CollationTableEditor {
   constructor(options) {
 
     let optionsDefinition = {
+      userId: { type:'NonZeroNumber', required: true},
       collationTableData : { type: 'object', required: true},
       workId : { type: 'string', required: true},
       chunkNumber: {type: 'NonZeroNumber', required: true},
@@ -73,7 +74,9 @@ export class CollationTableEditor {
       editText: '<small><i class="fas fa-pen"></i></small>',
       confirmEdit: '<i class="fas fa-check"></i>',
       cancelEdit: '<i class="fas fa-times"></i>',
-      alert: '<i class="fas fa-exclamation-triangle"></i>'
+      alert: '<i class="fas fa-exclamation-triangle"></i>',
+      savePreset:'<i class="fas fa-save"></i>',
+      loadPreset: '<i class="fas fa-upload"></i>'
     }
 
     this.rtlClass = 'rtltext'
@@ -106,6 +109,7 @@ export class CollationTableEditor {
     this.versionInfo = this.options.versionInfo
     this.aggregatedNonTokenItemIndexes = this.calculateAggregatedNonTokenItemIndexes()
     this.resetTokenDataCache()
+    this.siglaPresets = []
 
     // DOM elements
     this.ctTitleDiv = $('#collationtabletitle')
@@ -1588,7 +1592,156 @@ export class CollationTableEditor {
     if (this.lastWitnessUpdateCheckResponse !== ''){
       this.updateWitnessUpdateCheckInfo(this.lastWitnessUpdateCheckResponse)
     }
+
+    // set up sigla presets buttons
+    $(this.witnessesDivSelector + ' .save-sigla-btn').on('click', this.genOnClickSaveSiglaPreset())
+    $(this.witnessesDivSelector + ' .load-sigla-btn').on('click', this.genOnClickLoadSiglaPreset())
+
+    if (this.siglaPresets.length === 0)  {
+      $(this.witnessesDivSelector + ' .load-sigla-btn').addClass('hidden')
+    }
+
+    this.fetchSiglaPresets()
+
   }
+
+
+  genOnClickLoadSiglaPreset() {
+    let thisObject = this
+    return function(ev) {
+      console.log('Click on load sigla preset')
+      if (thisObject.siglaPresets.length === 0) {
+        console.log('No sigla presets to apply')
+      }
+    }
+  }
+  genOnClickSaveSiglaPreset() {
+    let thisObject = this
+    return function(ev) {
+      console.log('Click on save sigla')
+      const overWritePresetButtonLabel = 'Overwrite Preset'
+      const createPresetButtonLabel = 'Create New Preset'
+      let dialogTemplate = thisObject.getSaveSiglaPresetTemplate()
+      $('body').append(dialogTemplate.render())
+
+      let modalSelector= '#save-sigla-preset-modal'
+      let cancelButton = $(`${modalSelector} .cancel-btn`)
+      let saveButton = $(`${modalSelector} .save-btn`)
+      let titleInput = $(`${modalSelector} .title-input`)
+      let titleLabel = $(`${modalSelector} .create-new-label`)
+      let footInfoLabel = $(`${modalSelector} .foot-info-label`)
+      let presetSelect = $(`${modalSelector} .preset-select`)
+      let presetSelectLabel = $(`${modalSelector} .preset-select-label`)
+
+      let presetOverwriteMode = false   // true if there are presets that can be overwritten
+      let apiCommand = 'new'
+
+      // get user presets
+      let userPresets = thisObject.siglaPresets.filter( (p) => {
+        return p.userId === thisObject.options.userId
+      })
+
+      if (userPresets.length === 0) {
+        // no user presets, just show the create new area
+        $(`${modalSelector} .select-p`).addClass('hidden')
+        titleLabel.html("New preset title:")
+        saveButton.html(createPresetButtonLabel)
+        saveButton.attr('disabled', true)
+      } else {
+        presetSelect.html(
+          userPresets.map((p) => {
+            return `<option value="${p.presetId}">${p.title}</option>`
+          }).join(''))
+        saveButton.html(overWritePresetButtonLabel)
+        presetSelectLabel.addClass('active-label')
+        presetOverwriteMode = true
+      }
+
+      // build witness sigla table
+      let siglaTableBody = thisObject.ctData.witnesses.filter( (w) => {
+        return w.witnessType === 'fullTx'
+      }).map( (w, i) => {
+        return `<tr></tr><td>${thisObject.ctData.witnessTitles[i]}</td><td>${thisObject.ctData.sigla[i]}</td></tr>`
+      }).join('')
+      $(`${modalSelector} .sigla-table-body`).html(siglaTableBody)
+
+      cancelButton.on('click', () => {
+        $(modalSelector).modal('hide')
+        $(modalSelector).remove()
+      })
+
+
+      titleInput.on('keyup', () => {
+        if (titleInput.val() === '') {
+          if (presetOverwriteMode) {
+            saveButton.html(overWritePresetButtonLabel)
+            presetSelectLabel.addClass('active-label')
+            titleLabel.removeClass('active-label')
+          } else {
+            saveButton.attr('disabled', true)
+          }
+        } else {
+          if (presetOverwriteMode) {
+            saveButton.html(createPresetButtonLabel)
+            presetSelectLabel.removeClass('active-label')
+            titleLabel.addClass('active-label')
+          } else {
+            saveButton.attr('disabled', false)
+          }
+        }
+      })
+
+      saveButton.on('click', () => {
+        // build preset
+        let lang = thisObject.ctData.lang
+        let witnessSiglaArray = {}
+        thisObject.ctData.witnesses.forEach( (w, i) => {
+          if (w.witnessType === 'fullTx') {
+            witnessSiglaArray[w.ApmWitnessId] = thisObject.ctData.sigla[i]
+          }
+        })
+        let apiCallData = {
+          lang: lang,
+          witnesses: witnessSiglaArray,
+          command: apiCommand,
+          title: titleInput.val()
+        }
+
+        console.log('About to call save preset API')
+        console.log(apiCallData)
+        let apiUrl = thisObject.options.urlGenerator.apiSaveSiglaPreset()
+        footInfoLabel.html('Saving....')
+        saveButton.addClass('hidden')
+        $.post(apiUrl, { data: JSON.stringify(apiCallData)}).done( (resp) =>{
+          console.log('Save preset success')
+          if (apiCommand === 'new') {
+            footInfoLabel.html('New preset created ')
+          } else {
+            footInfoLabel.html('Preset overwritten')
+          }
+          cancelButton.html('Close')
+          // reload presets
+          thisObject.fetchSiglaPresets()
+        }).fail( (resp) => {
+           if (apiCommand === 'new') {}
+           footInfoLabel.html('Error: could not save new preset')
+           saveButton.removeClass('hidden')
+        })
+
+      })
+
+      // go!
+      //$(modalSelector).modal('show')
+      $(modalSelector).modal({
+        backdrop: 'static',
+        keyboard: false,
+        show: true
+      })
+    }
+  }
+
+
+
 
   genOnConfirmSiglumEdit(witnessIndex) {
     let thisObject = this
@@ -1696,7 +1849,12 @@ export class CollationTableEditor {
     let html = ''
 
     html+= '<table class="witnesstable">'
-    html+= '<tr><th></th><th>Witness</th><th>Version used</th><th>Siglum</th></tr>'
+    html+= '<tr><th></th><th>Witness</th><th>Version used</th>'
+    html += `<th>Siglum &nbsp;`
+    html += `<a class="tb-button load-sigla-btn" title="Load sigla from preset">${this.icons.loadPreset}</a>&nbsp;`
+    html += `<a class="tb-button save-sigla-btn" title="Save current sigla as preset">${this.icons.savePreset}</a>`
+    html += `</th>`
+    html += '</tr>'
 
     for(let i = 0; i < this.ctData['witnessOrder'].length; i++) {
       let wIndex = this.ctData['witnessOrder'][i]
@@ -1806,6 +1964,30 @@ export class CollationTableEditor {
 
 
     return changes
+  }
+
+  fetchSiglaPresets() {
+    console.log('Fetching sigla presets')
+    let apiSiglaPresetsUrl = this.options.urlGenerator.apiGetSiglaPresets()
+    let apiCallOptions = {
+      lang: this.ctData['lang'],
+      witnesses: this.ctData['witnesses'].filter( w => { return w['witnessType'] === 'fullTx'}).map( w => w['ApmWitnessId'])
+    }
+    let thisObject = this
+    $.post(apiSiglaPresetsUrl, { data: JSON.stringify(apiCallOptions)}
+    ).done( apiResponse => {
+      console.log(apiResponse)
+      if (apiResponse['presets'] !== undefined) {
+        thisObject.siglaPresets = apiResponse['presets']
+        if (thisObject.siglaPresets.length !== 0) {
+          // show load sigla button
+          $(thisObject.witnessesDivSelector + ' .load-sigla-btn').removeClass('hidden')
+        }
+      }
+    }).fail( resp => {
+      console.log('Error loading sigla presets')
+      console.log(resp)
+    })
   }
 
   fetchEditionPreview() {
@@ -1952,6 +2134,80 @@ export class CollationTableEditor {
       text = tkn.norm
     }
     return '"' + text + '"'
+  }
+
+  getSaveSiglaPresetTemplate() {
+    return Twig.twig({
+      data: `
+<div id="save-sigla-preset-modal" class="modal" role="dialog">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Save Sigla Preset</h5>
+            </div>
+            <div class="modal-body">
+                <div class="info-div">
+                    <table class="sigla-table witnesstable">
+                        <tr><th>Witness</th><th>Siglum</th></tr>
+                        <tbody class="sigla-table-body">
+                        </tbody>
+                    </table>
+                </div>
+                <p class="select-p">
+                    <label class="preset-select-label">Overwrite Preset: </label>
+                    <select class="preset-select">
+                    </select> 
+                </p>
+                <p>
+                    <label class="create-new-label">... or enter a title to create new preset: </label>
+                    <input type="text" class="title-input"> </input>
+                </p>
+            </div>
+            <div class="modal-footer">
+            <label class="foot-info-label"></label>
+                <button type="button" class="btn btn-danger save-btn">Save Sigla</button>
+                <button type="button" class="btn btn-primary cancel-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>      
+      `
+    })
+  }
+  
+
+
+  getLoadSiglaPresetTemplate() {
+    return Twig.twig({
+      data: `
+<div id="load-sigla-preset-modal" class="modal" role="dialog">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Load Sigla Preset</h5>
+            </div>
+            <div class="modal-body">
+                <p>
+                    <label>Preset</label>
+                    <select id="preset-select">
+                        <option value="id02020">Preset02020, <em>J. Doe</em></option>
+                        <option value="id02021">Preset020202, <em>D. Corleone</em></option>
+                        <option value="id02021">Preset020202, <em>F. Bergoglio</em></option>
+                    </select> 
+                </p>
+                <div class="info-div">
+                
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger accept-btn hidden">Load Sigla</button>
+                <button type="button" class="btn btn-primary cancel-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>      
+      `
+    })
   }
 
   getUpdateDialogTemplate(witnessIndex) {

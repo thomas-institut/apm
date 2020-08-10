@@ -129,6 +129,7 @@ class SiteCollationTable extends SiteController
         $this->profiler->stop();
         $this->logProfilerData("Edit Collation Table");
         return $this->renderPage($response, self::TEMPLATE_EDIT_COLLATION_TABLE, [
+            'userId' => $this->userInfo['id'],
             'workId' => $workId,
             'chunkNumber' => $chunkNumber,
             'tableId' => $tableId,

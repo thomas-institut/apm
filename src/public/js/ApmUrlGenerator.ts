@@ -140,6 +140,14 @@ class ApmUrlGenerator {
     return this.base + '/api/presets/act/get'
   }
 
+  apiGetSiglaPresets() {
+    return this.base + '/api/presets/sigla/get'
+  }
+
+  apiSaveSiglaPreset() {
+    return this.base + '/api/presets/sigla/save'
+  }
+
   apiWitnessGet(witnessId, output = 'full') {
     return this.base + '/api/witness/get/' + witnessId + '/' + output
   }

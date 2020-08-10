@@ -27,13 +27,16 @@
     let workInfo = JSON.parse("{{workInfo|json_encode|e('js')}}")
     let docInfo = JSON.parse("{{docInfo|json_encode|e('js')}}")
     let versionInfo = JSON.parse("{{versionInfo|json_encode|e('js')}}")
+    let userId = {{ userId }}
     console.log(ctData)
     console.log(peopleInfo)
     console.log(workInfo)
     console.log(docInfo)
     console.log(versionInfo)
+    console.log('User ID: ' + userId )
 
     let te = new CollationTableEditor({
+      userId: userId,
       collationTableData : ctData,
       workId: '{{ workId }}',
       chunkNumber: {{ chunkNumber }},

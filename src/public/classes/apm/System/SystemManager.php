@@ -67,6 +67,7 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
     // Tool Ids (for presets)
     const TOOL_AUTOMATIC_COLLATION_V1 = 'automaticCollation';
     const TOOL_AUTOMATIC_COLLATION = 'automaticCollation_v2';
+    const TOOL_SIGLA = 'sigla';
 
     const VALID_TOOL_IDS = [ self::TOOL_AUTOMATIC_COLLATION];
     

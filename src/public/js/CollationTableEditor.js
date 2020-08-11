@@ -110,6 +110,7 @@ export class CollationTableEditor {
     this.aggregatedNonTokenItemIndexes = this.calculateAggregatedNonTokenItemIndexes()
     this.resetTokenDataCache()
     this.siglaPresets = []
+    this.siglaPresetLoaded = ''
 
     // DOM elements
     this.ctTitleDiv = $('#collationtabletitle')
@@ -1612,9 +1613,80 @@ export class CollationTableEditor {
       console.log('Click on load sigla preset')
       if (thisObject.siglaPresets.length === 0) {
         console.log('No sigla presets to apply')
+        return
       }
+      let dialogTemplate = thisObject.getLoadSiglaPresetTemplate()
+      $('body').append(dialogTemplate.render())
+      let modalSelector= '#load-sigla-preset-modal'
+      let cancelButton = $(`${modalSelector} .cancel-btn`)
+      let loadButton = $(`${modalSelector} .load-btn`)
+      let presetSelect =  $(`${modalSelector} .preset-select`)
+      let siglaTableBody =  $(`${modalSelector} .sigla-table-body`)
+
+      presetSelect.html(
+        thisObject.siglaPresets.map((p) => {
+          return `<option value="${p.presetId}">${p.title}, <em>${p.userName}</em></option>`
+        }).join('')
+      )
+      let p = thisObject.siglaPresets[0]
+      siglaTableBody.html(thisObject.getWitnessSiglaArrayFromPreset(p).map( w => {
+        return `<tr></tr><td>${w.title}</td><td>${w.currentSiglum}</td><td>${w.presetSiglum}</td></tr>`
+      }).join(''))
+
+      presetSelect.on('change', () => {
+        let id = parseInt(presetSelect.val())
+        let p =  thisObject.siglaPresets.filter( (p) => { return p.presetId === id})[0]
+        siglaTableBody.html(thisObject.getWitnessSiglaArrayFromPreset(p).map( w => {
+          return `<tr></tr><td>${w.title}</td><td>${w.currentSiglum}</td><td>${w.presetSiglum}</td></tr>`
+        }).join(''))
+      })
+
+      loadButton.on('click', () => {
+        let id = parseInt(presetSelect.val())
+        let p =  thisObject.siglaPresets.filter( (p) => { return p.presetId === id})[0]
+        thisObject.getWitnessSiglaArrayFromPreset(p).forEach( (w) => {
+          thisObject.ctData.sigla[w.index] = w.presetSiglum
+        })
+        thisObject.siglaPresetLoaded = p.title
+        $(modalSelector).modal('hide')
+        $(modalSelector).remove()
+        thisObject.updateWitnessInfoDiv()
+        thisObject.updateSaveArea()
+      })
+
+      cancelButton.on('click', () => {
+        $(modalSelector).modal('hide')
+        $(modalSelector).remove()
+      })
+
+      // go!
+      $(modalSelector).modal({
+        backdrop: 'static',
+        keyboard: false,
+        show: true
+      })
     }
   }
+
+  getWitnessSiglaArrayFromPreset(preset) {
+    return this.ctData.witnesses
+      .filter( w => {  return w.witnessType === 'fullTx'})
+      .map( (w, i) => {
+          let shortId = w.ApmWitnessId.split('-').slice(2,5).join('-')
+
+          return {
+            title : this.ctData.witnessTitles[i],
+            id: shortId,
+            index: i,
+            currentSiglum: this.ctData.sigla[i],
+            presetSiglum: preset.data.witnesses[shortId]
+          }
+      })
+  }
+
+
+
+
   genOnClickSaveSiglaPreset() {
     let thisObject = this
     return function(ev) {
@@ -1731,7 +1803,6 @@ export class CollationTableEditor {
       })
 
       // go!
-      //$(modalSelector).modal('show')
       $(modalSelector).modal({
         backdrop: 'static',
         keyboard: false,
@@ -1944,7 +2015,14 @@ export class CollationTableEditor {
     }
 
     if (!ArrayUtil.arraysAreEqual(this.ctData['sigla'], this.lastSavedCtData['sigla'])) {
-      changes.push('Changes in sigla')
+      if (this.siglaPresetLoaded !== '') {
+        changes.push(`Changes in sigla. Preset '${this.siglaPresetLoaded}' loaded`)
+      } else {
+        changes.push('Changes in sigla')
+      }
+    } else {
+      // no changes, this cancels any loaded preset
+      this.siglaPresetLoaded = ''
     }
 
     if(this.ctData['type'] === CollationTableType.EDITION) {
@@ -1961,6 +2039,8 @@ export class CollationTableEditor {
         changes.push(`Witness ${this.ctData['witnessTitles'][witnessUpdate.witnessIndex]} updated`)
       }
     }
+
+
 
 
     return changes
@@ -2188,19 +2268,19 @@ export class CollationTableEditor {
             </div>
             <div class="modal-body">
                 <p>
-                    <label>Preset</label>
-                    <select id="preset-select">
-                        <option value="id02020">Preset02020, <em>J. Doe</em></option>
-                        <option value="id02021">Preset020202, <em>D. Corleone</em></option>
-                        <option value="id02021">Preset020202, <em>F. Bergoglio</em></option>
-                    </select> 
+                    <label>Preset: </label>
+                    <select class="preset-select"></select> 
                 </p>
                 <div class="info-div">
-                
+                 <table class="sigla-table witnesstable">
+                        <tr><th>Witness</th><th>Current Siglum</th><th>Preset Siglum</th></tr>
+                        <tbody class="sigla-table-body">
+                        </tbody>
+                    </table>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-danger accept-btn hidden">Load Sigla</button>
+                <button type="button" class="btn btn-danger load-btn">Load Sigla</button>
                 <button type="button" class="btn btn-primary cancel-btn">Cancel</button>
             </div>
         </div>

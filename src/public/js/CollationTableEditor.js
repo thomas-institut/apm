@@ -1719,6 +1719,8 @@ export class CollationTableEditor {
         titleLabel.html("New preset title:")
         saveButton.html(createPresetButtonLabel)
         saveButton.attr('disabled', true)
+        presetOverwriteMode = false
+        apiCommand = 'new'
       } else {
         presetSelect.html(
           userPresets.map((p) => {
@@ -1727,6 +1729,7 @@ export class CollationTableEditor {
         saveButton.html(overWritePresetButtonLabel)
         presetSelectLabel.addClass('active-label')
         presetOverwriteMode = true
+        apiCommand = 'update'
       }
 
       // build witness sigla table
@@ -1745,7 +1748,9 @@ export class CollationTableEditor {
 
       titleInput.on('keyup', () => {
         if (titleInput.val() === '') {
+          // title is empty
           if (presetOverwriteMode) {
+            apiCommand = 'update'
             saveButton.html(overWritePresetButtonLabel)
             presetSelectLabel.addClass('active-label')
             titleLabel.removeClass('active-label')
@@ -1753,7 +1758,9 @@ export class CollationTableEditor {
             saveButton.attr('disabled', true)
           }
         } else {
+          // there is something in the title input
           if (presetOverwriteMode) {
+            apiCommand = 'new'
             saveButton.html(createPresetButtonLabel)
             presetSelectLabel.removeClass('active-label')
             titleLabel.addClass('active-label')
@@ -1772,11 +1779,16 @@ export class CollationTableEditor {
             witnessSiglaArray[w.ApmWitnessId] = thisObject.ctData.sigla[i]
           }
         })
+
         let apiCallData = {
           lang: lang,
           witnesses: witnessSiglaArray,
           command: apiCommand,
-          title: titleInput.val()
+        }
+        if (apiCommand === 'new') {
+          apiCallData.title = titleInput.val()
+        } else {
+          apiCallData.presetId = parseInt(presetSelect.val())
         }
 
         console.log('About to call save preset API')

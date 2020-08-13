@@ -48,7 +48,7 @@ class ImageSourcePluginTest extends TestCase {
         // Activate and deactivate dont' do anything really
         $this->assertTrue($isp->activate());
         $this->assertTrue($isp->deactivate());
-        $this->assertEquals([], $isp->getMetadata());
+        $this->assertEquals([ 'source' => 'testisp', 'sourceId' => ''], $isp->getMetadata([ 'imageSourceData' => '']));
         
         
         // non array parameters 

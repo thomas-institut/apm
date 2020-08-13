@@ -8,15 +8,15 @@
     <script type="application/javascript" src="{{baseurl}}/js/ApmUtil.js"></script>
 
     <script>
-      let chunkInfo = JSON.parse('{{chunkInfo|json_encode|raw}}')
-      let works = JSON.parse('{{works|json_encode|raw}}')
+      let chunkInfo = JSON.parse('{{chunkInfo|json_encode|e('js')}}')
+      let works = JSON.parse('{{works|json_encode|e('js')}}')
       let urlGenerator = new ApmUrlGenerator('{{baseurl}}')
       let docId = parseInt({{ doc.docInfo.id }})
-      let lastVersions = JSON.parse('{{lastVersions|json_encode|raw}}')
-      let authorInfo = JSON.parse('{{authorInfo|json_encode|raw}}')
-      let lastSaves = JSON.parse('{{lastSaves|json_encode|raw}}')
-      let pages = JSON.parse('{{doc.pages|json_encode|raw}}')
-      let metaData = JSON.parse('{{metaData|json_encode|raw}}')
+      let lastVersions = JSON.parse('{{lastVersions|json_encode|e('js')}}')
+      let authorInfo = JSON.parse('{{authorInfo|json_encode|e('js')}}')
+      let lastSaves = JSON.parse('{{lastSaves|json_encode|e('js')}}')
+      let pages = JSON.parse('{{doc.pages|json_encode|e('js')}}')
+      let metaData = JSON.parse('{{metaData|json_encode|e('js')}}')
       console.log('Pages:')
       console.log(pages)
       console.log('Chunk Info: ')

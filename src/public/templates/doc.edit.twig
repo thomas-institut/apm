@@ -8,7 +8,7 @@
 <script>
     $(document).ready(function () {
         docEditObj = new DocEditPage('de', 
-        JSON.parse('{{docInfo|json_encode|raw}}'),
+        JSON.parse('{{docInfo|json_encode|e('js')}}'),
         '{{url_for('api.doc.update', {'id': docInfo.id})}}',
         '{{url_for('doc.showdoc', {'id' : docInfo.id })}}',
         '{{url_for('api.doc.delete', {'id' : docInfo.id })}}',

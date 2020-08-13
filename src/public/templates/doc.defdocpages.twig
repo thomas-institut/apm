@@ -10,7 +10,7 @@
 <script type="application/javascript" src="{{baseurl}}/js/DefPagesAddPages.js"></script>
 <script>
     $(document).ready(function () {
-        let pageTypes = JSON.parse('{{pageTypes|json_encode|raw}}')
+        let pageTypes = JSON.parse('{{pageTypes|json_encode|e('js')}}')
         let urlGenerator = new ApmUrlGenerator('{{baseurl}}')
         let dapObject = new DefPagesDefAll({{doc.numPages}}, 'dap-', {{doc.docInfo.id}}, urlGenerator)
         let drObject = new DefPagesDefRange({{doc.numPages}}, 'dr-', {{doc.docInfo.id}}, pageTypes, urlGenerator)

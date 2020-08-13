@@ -30,19 +30,19 @@
     <script type="application/javascript" src="{{baseurl}}/js/ChunkPage.js"></script>
 <script>
 $(function()  {// .ready()
-    let showAdminInfo = JSON.parse('{{showAdminInfo|json_encode|raw}}');
+    let showAdminInfo = JSON.parse('{{showAdminInfo|json_encode|e('js')}}');
     let cp = new ChunkPage({
         work: '{{work}}',
         chunk: {{chunk}},
         urlGenerator:  new ApmUrlGenerator('{{baseurl}}'),
         userId: {{userinfo.id}},
-        witnessInfo: JSON.parse('{{witnessInfoArray|json_encode|raw}}'),
-        pageInfo: JSON.parse('{{pageInfo|json_encode|raw}}'),
-        authorInfo: JSON.parse('{{authorInfo|json_encode|raw}}'),
-        languageInfo : JSON.parse('{{languageInfo|json_encode|raw}}'),
-        workInfo: JSON.parse('{{work_info|json_encode|raw}}'),
-        validChunks: JSON.parse('{{validChunks|json_encode|raw}}'),
-        savedCollationTables : JSON.parse('{{savedCollationTables|json_encode|raw}}'),
+        witnessInfo: JSON.parse('{{witnessInfoArray|json_encode|e('js')}}'),
+        pageInfo: JSON.parse('{{pageInfo|json_encode|e('js')}}'),
+        authorInfo: JSON.parse('{{authorInfo|json_encode|e('js')}}'),
+        languageInfo : JSON.parse('{{languageInfo|json_encode|e('js')}}'),
+        workInfo: JSON.parse('{{work_info|json_encode|e('js')}}'),
+        validChunks: JSON.parse('{{validChunks|json_encode|e('js')}}'),
+        savedCollationTables : JSON.parse('{{savedCollationTables|json_encode|e('js')}}'),
         showAdminInfo: showAdminInfo
     })
 });

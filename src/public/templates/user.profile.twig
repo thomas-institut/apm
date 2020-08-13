@@ -12,7 +12,7 @@ User profile template
 <script type="application/javascript" src="{{baseurl}}/js/UserProfilePage.js"></script>
 <script>
   $(function() {
-        let profileUserInfo = JSON.parse('{{theuser|json_encode|raw}}');
+        let profileUserInfo = JSON.parse('{{theuser|json_encode|e('js')}}');
         let urlGenerator = new ApmUrlGenerator('{{baseurl}}')
         let up = new UserProfilePage(profileUserInfo, urlGenerator)
     let  tableInfo = JSON.parse("{{tableInfo|json_encode|e('js')}}")

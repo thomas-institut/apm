@@ -51,12 +51,12 @@
             pageNumberFoliation:'{{ pageNumberFoliation }}',
             pageSystemId: {{pageInfo.id}},
             docId: {{ doc }},
-            activeColumn : JSON.parse('{{activeColumn|json_encode|raw}}'),
+            activeColumn : JSON.parse('{{activeColumn|json_encode|e('js')}}'),
             userId: {{ userinfo.id }},
             defaultLang: '{{pageInfo.lang}}',
             activeWorks: JSON.parse("{{activeWorks|json_encode|e('js')}}"),
             langDef: ApmUtil.getLangDefFromLanguagesArray(JSON.parse("{{languagesArray|json_encode|e('js')}}")),
-            pageTypeNames : JSON.parse('{{pageTypeNames|json_encode|raw}}'),
+            pageTypeNames : JSON.parse('{{pageTypeNames|json_encode|e('js')}}'),
             pagePopoverContent : '{{macros.pageviewtablepv(doc, thePages, navByPage)|escape('js')}}',
             osdConfig: { {{openSeaDragonConfig|raw}} }
         })

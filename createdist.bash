@@ -51,7 +51,6 @@ mkdir "$TMP_DIR" || exit
 cp -R src/public/classes "$TMP_DIR"
 cp -R src/public/collatex "$TMP_DIR"
 cp -R src/public/css "$TMP_DIR"
-cp -R src/public/fonts "$TMP_DIR"
 cp -R src/public/images "$TMP_DIR"
 cp -R src/public/js "$TMP_DIR"
 rm -fr "$TMP_DIR"/js/istanbul

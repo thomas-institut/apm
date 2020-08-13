@@ -16,13 +16,7 @@
  *  
  */
 
-@import url(./fonts/apm-noto-sans.css);
-@import url(./fonts/apm-noto-naskh-arabic.css);
-@import url(./fonts/apm-noto-mono.css);
-@import url(./fonts/apm-noto-serif-hebrew.css);
-@import url(./fonts/apm-freefont.css);
-@import url(./fonts/apm-linux-libertine.css);
-@import url(./fonts/apm-other.css);
+@import url('./fonts.css');
 @import url('./defaults.css');
 
 

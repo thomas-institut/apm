@@ -61,7 +61,7 @@ cp -R src/public/plugins "$TMP_DIR"
 cp -R src/public/templates "$TMP_DIR"
 cp -R src/public/utilities "$TMP_DIR"
 cp -R src/public/vendor "$TMP_DIR"
-
+cp -R src/public/fonts "$TMP_DIR"
 cp src/public/composer.json "$TMP_DIR"
 cp src/public/composer.lock "$TMP_DIR"
 cp src/public/config.sample.php "$TMP_DIR"

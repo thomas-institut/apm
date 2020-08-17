@@ -27,8 +27,8 @@ namespace AverroesProject\Image;
  */
 class EditorImages {
 
-    const FONT_AWESOME_PATH = './fonts/fontawesome-free-5.10.1-web/webfonts/fa-regular-400.ttf';
-    const FONT_MONO = './fonts/noto/NotoMono-hinted/NotoMono-Regular.ttf';
+    const FONT_AWESOME_PATH = './fonts/fa-regular-400.ttf';
+    const FONT_MONO = './fonts/NotoMono-Regular.ttf';
 
     public static function markIcon($size) {
         $height = $size;

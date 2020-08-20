@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://averroes.uni-koeln.de/fonts/fontawesome-free-5.10.1-web/css/all.css">
+    <link rel="stylesheet" type="text/css" href="../../../node_modules/bootstrap/dist/css/bootstrap.css"/>
+    <script type="text/javascript" src="../../../node_modules/jquery/dist/jquery.js"></script>
+    <script type="text/javascript" src="../../../node_modules/bootstrap/dist/js/bootstrap.js"></script>
+    <script type="text/javascript" src="../../../js/OptionsChecker.js"></script>
+
+    <title>Multi Toggle Test</title>
+
+    <style>
+         .mode-btn {
+            border: 1px solid silver;
+            border-radius: 5px;
+            padding: 5px;
+            transition: all 0.3s ease;
+         }
+
+         a.mode-btn, a.mode-btn:visited {
+             color: black;
+             text-decoration: none;
+         }
+         a.mode-btn.multitoggle-on, a.mode-btn.multitoggle-on:visited {
+             color: white;
+             background: grey;
+             text-decoration: none;
+         }
+
+         div.toolbar {
+             display: flex;
+             flex-direction: row;
+             background: #ececec;
+             padding: 10px;
+         }
+
+         div.toolbar-group {
+             display: flex;
+             flex-direction: row;
+             margin-right: 10px;
+         }
+
+         div.toolbar-item {
+             margin-right: 5px;
+         }
+
+    </style>
+
+
+</head>
+<body>
+<h1>Multi Toggle Test</h1>
+
+<div class="toolbar">
+    <div id="toggle-1" class="toolbar-group"></div>
+    <div class="toolbar-item">ToolbarItem2</div>
+    <div class="toolbar-item">ToolbarItem3</div>
+</div>
+
+<p>Current mode: <b><span id="current-mode">m3</span></b></p>
+
+<script type="module">
+
+  import { MultiToggle, toggleEvent } from '../../../js/widgets/MultiToggle.js'
+
+  $(function () {
+    let toggle1 = new MultiToggle({
+      containerSelector: '#toggle-1',
+      title: '<b>Mode: </b>',
+      buttonClass: 'mode-btn',
+      initialOption: 'm3',
+      wrapButtonsInDiv: true,
+      buttonsDivClass: 'toolbar-item',
+      buttonDef: [
+        { label: 'Mode 1', name: 'm1', helpText: 'Click to set mode m1'},
+        { label: 'Mode 2', name: 'm2', helpText: 'Click to set mode m2'},
+        { label: 'Mode 3', name: 'm3', helpText: 'Click to set mode m3'},
+      ]
+    })
+    toggle1.on(toggleEvent, function(ev) {
+      $('#current-mode').html(ev.detail.currentOption)
+    })
+  })
+</script>
+</body>
+</html>

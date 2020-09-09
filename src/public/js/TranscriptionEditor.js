@@ -1337,7 +1337,7 @@ class TranscriptionEditor
       }
       //console.log("Selection: @" + range.index + ", l=" + range.length)
       const hasFormat = TranscriptionEditor.selectionHasFormat(quillObject, range)
-      //console.log("Has format: " + hasFormat)
+      console.log("Has format: " + hasFormat)
       let toolbarSelector = '#toolbar-' + id
       if (range.length === 0) {
         $(toolbarSelector + ' .selFmtBtn').prop('disabled', true)
@@ -2340,7 +2340,7 @@ class TranscriptionEditor
   }
 
   static formatHasItem (format) {
-    for (const type of ['rubric', 'gliph', 'initial', 'sic', 'abbr', 'deletion', 'addition', 'unclear', 'nowb', 'mathtext', 'marginalmark']) {
+    for (const type of ['rubric', 'gliph', 'initial', 'sic', 'abbr', 'deletion', 'addition', 'unclear', 'nowb', 'mathtext', 'marginalmark', 'boldtext']) {
       if (type in format) {
         return type
       }

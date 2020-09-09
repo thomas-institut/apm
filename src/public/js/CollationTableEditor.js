@@ -32,6 +32,7 @@ import * as PopoverFormatter from './CollationTablePopovers.js'
 import { EditableTextField } from './widgets/EditableTextField.js'
 import { transientAlert} from './widgets/TransientAlert.js'
 import { NiceToggle, toggleEvent} from './widgets/NiceToggle.js'
+import { MultiToggle, optionChange} from './widgets/MultiToggle.js'
 
 import * as HttpStatusCode from './toolbox/HttpStatusCode.js'
 
@@ -206,6 +207,24 @@ export class CollationTableEditor {
       }
     })
 
+    this.modeToggle = new MultiToggle({
+      containerSelector: '#mode-toggle',
+      title: '<b>Edit Mode:</b>',
+      buttonClass: 'tb-button',
+      initialOption: 'off',
+      wrapButtonsInDiv: true,
+      buttonsDivClass: 'ct-toolbar-item',
+      buttonDef: [
+        { label: 'Off', name: 'off', helpText: 'Turn off editing'},
+        { label: 'Move', name: 'move', helpText: 'Show controls to move cells'},
+        { label: 'Group', name: 'group', helpText: 'Show controls to group columns'},
+      ]
+    })
+
+    this.modeToggle.on(optionChange, (ev) => {
+      console.log('New Edit Mode: ' + ev.detail.currentOption)
+    })
+
     // text direction for collation table div
 
     if (this.options.langDef[this.ctData['lang']].rtl) {
@@ -232,6 +251,10 @@ export class CollationTableEditor {
         return false // make the browser ask if the user wants to leave
       }
     })
+  }
+
+  editMode() {
+    return this.modeToggle.getOption()
   }
 
   genOnClickExportPdfButton() {

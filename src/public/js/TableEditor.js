@@ -34,6 +34,49 @@
 import { Matrix } from './Matrix.js'
 import {escapeHtml} from './toolbox/Util.js'
 
+// Table Edit Modes
+export const editModeOff = 'off'
+export const editModeMove = 'move'
+export const editModeGroup = 'group'
+
+// events
+export const cellDrawnEvent = 'cell-drawn'
+export const tableDrawnEvent = 'table-drawn'
+export const columnAddEvent = 'column-add'
+export const contentChangedEvent = 'content-changed'
+
+// classes
+const hiddenClass = 'hidden'
+const headerButtonClass = 'header-button'
+const moveModeButtonClass = 'button-move-mode'
+const cellButtonClass = 'cell-button'
+const editCellButtonClass = 'edit-cell-button'
+const moveCellLeftButtonClass = 'move-cell-left-button'
+const moveCellRightButtonClass = 'move-cell-right-button'
+const pushCellsLeftButtonClass = 'push-cells-left-button'
+const pushCellsRightButtonClass = 'push-cells-right-button'
+const addColumnLeftButtonClass = 'add-column-left-button'
+const addColumnRightButtonClass = 'add-column-right-button'
+const deleteColumnButtonClass = 'delete-column-button'
+const tableEditModeClassPrefix = 'table-edit-mode-'
+const tablesDivClass = 'tables-div'
+const tableClass = 'te-table'
+const headerClass = 'te-th'
+const specificHeaderClassPrefix = 'te-th-'
+const cellClass = 'te-cell'
+const specificCellClassPrefix = 'te-cell-'
+const cellContentClass = 'te-cell-content'
+const tableRowClass = 'te-tr'
+const tableSpecificRowClassPrefix = 'te-tr-'
+const tableRowTitleClass = 'te-row-title'
+const columnLinksDivClass = 'column-links'
+const linkButtonClass = 'link-button'
+const specificColumnLinkButtonClassPrefix = 'link-button-'
+const inputClass = 'te-input'
+const confirmEditButtonClass = 'confirm-edit-button'
+const cancelEditButtonClass = 'cancel-edit-button'
+
+
 export class TableEditor {
 
   constructor(options) {
@@ -246,24 +289,25 @@ export class TableEditor {
 
     this.editFlagMatrix = new Matrix(this.matrix.nRows, this.matrix.nCols, false)
 
-    this.container = $('#' + this.options.id)
+    this.containerSelector = '#' + this.options.id
+    this.container = $(this.containerSelector)
     this.icons = this.options.icons
-    this.tableEditMode = false
+    this.tableEditMode = editModeOff
 
     if (this.options.onCellDrawnEventHandler !== null) {
-      this.on('cell-drawn', this.options.onCellDrawnEventHandler )
+      this.on(cellDrawnEvent, this.options.onCellDrawnEventHandler )
     }
 
     if (this.options.onTableDrawnEventHandler !== null) {
-      this.on('table-drawn', this.options.onTableDrawnEventHandler )
+      this.on(tableDrawnEvent, this.options.onTableDrawnEventHandler )
     }
 
     if (this.options.onColumnAddHandler !== null) {
-      this.on('column-add', this.options.onColumnAddHandler)
+      this.on(columnAddEvent, this.options.onColumnAddHandler)
     }
 
     if (this.options.onContentChangedEventHandler !== null) {
-      this.on('content-changed', this.options.onContentChangedEventHandler )
+      this.on(contentChangedEvent, this.options.onContentChangedEventHandler )
     }
     if (this.options.drawTableInConstructor) {
       this.redrawTable()
@@ -307,25 +351,63 @@ export class TableEditor {
   }
 
   isTableInEditMode() {
+    return this.tableEditMode !== editModeOff
+  }
+
+  getTableEditMode() {
     return this.tableEditMode
   }
 
   toggleTableEditMode() {
-    this.tableEditMode = !this.tableEditMode
-    this.redrawTable()
-    if (this.tableEditMode) {
-      this.container.addClass('table-edit-mode')
+   if (this.tableEditMode === editModeOff) {
+     this.setEditMode(editModeMove)
+   } else {
+     this.setEditMode(editModeOff)
+   }
+  }
+
+
+  setEditMode(newEditMode, redraw = false) {
+    if (this._getValidEditModes().indexOf(newEditMode) === -1) {
+      console.error('Invalid edit mode: ' + newEditMode)
+      return
+    }
+
+    this.tableEditMode = newEditMode
+    this.container.removeClass( this._getValidEditModes().map( (m) => { return tableEditModeClassPrefix + m}).join(' '))
+    this.container.addClass(tableEditModeClassPrefix + newEditMode)
+    if (redraw) {
+      this.redrawTable()
     } else {
-      this.container.removeClass('table-edit-mode')
+     this._setupTableForEditMode(this.tableEditMode)
     }
   }
 
-  editModeOn(redraw = true) {
-    this.tableEditMode = true
-    this.container.addClass('table-edit-mode')
-    if (redraw) {
-     this.redrawTable()
+  _setupTableForEditMode(mode) {
+
+    let linkDivLinks = $(this.containerSelector + ' div.links a')
+    switch(mode) {
+      case editModeOff:
+        linkDivLinks.addClass(hiddenClass)
+        break
+
+      case editModeMove:
+        linkDivLinks.addClass(hiddenClass)
+        break
+
+      case editModeGroup:
+        linkDivLinks.removeClass(hiddenClass)
+        break
     }
+
+  }
+
+  _getValidEditModes() {
+    return [ editModeOff, editModeMove, editModeGroup]
+  }
+
+  editModeOn(redraw = true) {
+    this.setEditMode(editModeMove)
   }
 
   isTableShownInMultipleRows() {
@@ -374,7 +456,9 @@ export class TableEditor {
       addColumnRight: '+<sup>&#x25b9;',
       deleteColumn: '&#x2715;', // ✕
       confirmCellEdit: '&#x2714;', // ✔
-      cancelCellEdit: ' &#x2718;'  // ✘
+      cancelCellEdit: ' &#x2718;',  // ✘
+      groupedColumn: '&lowast;',
+      ungroupedColumn: '&mdash;'
     }
   }
 
@@ -382,11 +466,12 @@ export class TableEditor {
     //console.log("Redrawing table")
     let profiler = new SimpleProfiler('TableRedraw')
     this.dispatchTableDrawnPreEvent()
-    let tableHtml = this.generateTable()
+    let tableHtml = this._genTableHtml()
     console.log(`Table html is ${tableHtml.length} bytes long`)
     profiler.lap('table generated')
     this.container.html(tableHtml)
     profiler.lap('container filled')
+    this._setupTableForEditMode(this.tableEditMode)
     this.setupTableEventHandlers()
     profiler.lap('event handlers setup')
     // dispatch redraw callbacks
@@ -403,9 +488,10 @@ export class TableEditor {
     profiler.stop()
   }
 
-  generateTable() {
+  _genTableHtml() {
     let html = ''
 
+    html +=   `<div class="${tablesDivClass}">`
     let numTables = 1
     let columnsPerTable = this.matrix.nCols
     if (this.options.showInMultipleRows) {
@@ -417,32 +503,32 @@ export class TableEditor {
 
       let currentTableFirstColumn  = tableNumber * columnsPerTable
       let currentTableLastColumnPlusOne = Math.min(this.matrix.nCols, currentTableFirstColumn + columnsPerTable)
-      let tableClasses = [ "te-table", this.getTableClass(tableNumber)].concat(this.options.generateTableClasses())
+      let tableClasses = [ tableClass, this.getTableClass(tableNumber)].concat(this.options.generateTableClasses())
 
-      html += '<table class="' +  tableClasses.join(' ') + '">'
-      html += '<tr class="te-tableheader">'
+      html += `<table class="${tableClasses.join(' ')}">`
+      html += `<tr class="${headerClass}">`
       html += '<th></th>'
       for (let col=currentTableFirstColumn; col < currentTableLastColumnPlusOne; col++) {
         let thClasses = [ this.getThClass(col), this.getColClass(col)]
-        html += '<th class="'+ thClasses.join(' ')  +'">'
+        html += `<th class="${thClasses.join(' ')}">`
         let addColumnBeforeIcon = this.options.textDirection === 'ltr' ? this.icons.addColumnLeft : this.icons.addColumnRight
         let addColumnAfterIcon = this.options.textDirection === 'ltr' ? this.icons.addColumnRight : this.icons.addColumnLeft
-        if (this.tableEditMode) {
-          html += this.genButtonHtml(addColumnBeforeIcon, ['add-column-left-button', 'header-button'], 'Add column before')
-        }
+        //if (this.tableEditMode !== editModeOff) {
+          html += this.genButtonHtml(addColumnBeforeIcon, [addColumnLeftButtonClass, headerButtonClass, moveModeButtonClass], 'Add column before')
+        //}
 
         html += (col + 1)
-        if (this.tableEditMode) {
-          html += this.genButtonHtml(this.icons.deleteColumn, ['delete-column-button', 'header-button'], 'Delete this column')
-          html += this.genButtonHtml(addColumnAfterIcon, ['add-column-right-button', 'header-button'], 'Add column after')
-        }
+        //if (this.tableEditMode !== editModeOff) {
+          html += this.genButtonHtml(this.icons.deleteColumn, [deleteColumnButtonClass, headerButtonClass, moveModeButtonClass], 'Delete this column')
+          html += this.genButtonHtml(addColumnAfterIcon, [addColumnRightButtonClass, headerButtonClass, moveModeButtonClass], 'Add column after')
+        //}
         html += '</th>'
       }
 
       html += '</tr>'
       for (let row = 0; row < this.matrix.nRows; row++) {
-        html += '<tr class="te-tablerow te-tr-' + row + '">'
-        html += '<td class="te-rowtitle">' + this.rowDefinition[row].title + '</td>'
+        html += `<tr class="${tableRowClass} ${tableSpecificRowClassPrefix}${row}'">`
+        html += `<td class="${tableRowTitleClass}">${this.rowDefinition[row].title}</td>`
         for (let col = currentTableFirstColumn; col < currentTableLastColumnPlusOne; col++) {
           html += this.generateCellHtml(row, col)
         }
@@ -450,13 +536,19 @@ export class TableEditor {
       }
       html += '</table>'
     }
+    html += '</div>'
+
+    html += `<div class="${columnLinksDivClass}">`
+    html += ['l1', 'l2'].map( (l,i) => {
+      return `<a href="#" class="${linkButtonClass} ${specificColumnLinkButtonClassPrefix}${i}">${l}</a>`}).join(' ')
+    html + '</div>'
     return html
   }
 
   generateCellHtml(row, col) {
     let html = ''
     let value = this.matrix.getValue(row, col)
-    let cellClasses = [ 'te-cell', this.getTdClass(row,col), this.getColClass(col)]
+    let cellClasses = [ cellClass, this.getTdClass(row,col), this.getColClass(col)]
     cellClasses = cellClasses.concat(this.options.generateCellClasses(row, col, value ))
     let tdExtraArray = this.options.generateCellTdExtraAttributes(row, col, value )
 
@@ -495,20 +587,20 @@ export class TableEditor {
       pushCellsForwardIcon = this.icons.pushCellsLeft
     }
 
-    if (this.tableEditMode) {
-      html += this.genButtonHtml(moveCellBackwardIcon, [ 'move-cell-left-button', 'cell-button' ], 'Move backward')
-      html += this.genButtonHtml(pushCellsBackwardIcon, [ 'push-cells-left-button', 'cell-button' ], 'Push backward')
+    if (this.tableEditMode !== editModeOff) {
+      html += this.genButtonHtml(moveCellBackwardIcon, [ moveCellLeftButtonClass, cellButtonClass, moveModeButtonClass], 'Move backward')
+      html += this.genButtonHtml(pushCellsBackwardIcon, [pushCellsLeftButtonClass, cellButtonClass , moveModeButtonClass], 'Push backward')
     }
-    html += '<span class="te-cell-content">'
+    html += `<span class="${cellContentClass}">`
     html += this.options.generateCellContent(row,col, this.matrix.getValue(row,col))
     html += '</span>'
-    if (this.tableEditMode && this.isRowEditable(row)) {
-      html += this.genButtonHtml(this.icons.editCell, [ 'edit-cell-button', 'cell-button' ] , 'Edit')
+    if (this.tableEditMode !== editModeOff && this.isRowEditable(row)) {
+      html += this.genButtonHtml(this.icons.editCell, [ editCellButtonClass, cellButtonClass ] , 'Edit')
     }
-    if (this.tableEditMode) {
+    if (this.tableEditMode !== editModeOff) {
 
-      html += this.genButtonHtml(pushCellsForwardIcon, [ 'push-cells-right-button', 'cell-button' ], 'Push forward')
-      html += this.genButtonHtml(moveCellForwardIcon, [ 'move-cell-right-button' , 'cell-button' ] , 'Move forward')
+      html += this.genButtonHtml(pushCellsForwardIcon, [ pushCellsRightButtonClass, cellButtonClass, moveModeButtonClass], 'Push forward')
+      html += this.genButtonHtml(moveCellForwardIcon, [ moveCellRightButtonClass , cellButtonClass, moveModeButtonClass] , 'Move forward')
     }
     return html
   }
@@ -522,10 +614,10 @@ export class TableEditor {
       inputSize = 5
     }
 
-    html += `<input type="text" class="te-input" value="${textToEdit}" size="${inputSize}">`
+    html += `<input type="text" class="${inputClass}" value="${textToEdit}" size="${inputSize}">`
 
-    html += this.genButtonHtml(this.icons.confirmCellEdit, ['confirm-edit-button'], 'Confirm edit')
-    html += this.genButtonHtml(this.icons.cancelCellEdit, ['cancel-edit-button'], 'Cancel edit')
+    html += this.genButtonHtml(this.icons.confirmCellEdit, [confirmEditButtonClass], 'Confirm edit')
+    html += this.genButtonHtml(this.icons.cancelCellEdit, [cancelEditButtonClass], 'Cancel edit')
     return html
   }
 
@@ -534,14 +626,15 @@ export class TableEditor {
 
     let thSelector = this.getThSelectorAll()
 
-    if (this.tableEditMode) {
+    if (this.tableEditMode !== editModeOff) {
       $(thSelector).on('mouseenter', this.genOnMouseEnterHeader())
       $(thSelector).on('mouseleave', this.genOnMouseLeaveHeader())
-      $(thSelector + ' .add-column-left-button').on('click', this.genOnClickAddColumnLeftButton())
-      $(thSelector + ' .add-column-right-button').on('click', this.genOnClickAddColumnRightButton())
-      $(thSelector + ' .delete-column-button').on('click', this.genOnClickDeleteColumnButton())
+      $(`${thSelector} .${addColumnLeftButtonClass}`).on('click', this.genOnClickAddColumnLeftButton())
+
+      $(`${thSelector} .${addColumnRightButtonClass}`).on('click', this.genOnClickAddColumnRightButton())
+      $(`${thSelector} .${deleteColumnButtonClass}`).on('click', this.genOnClickDeleteColumnButton())
     }
-    $(thSelector + ' .header-button').addClass('hidden')
+    $(`${thSelector} .${headerButtonClass}`).addClass(hiddenClass)
 
     //profiler.lap('ColumnHandlers')
     this.setupCellEventHandlersAll()
@@ -555,23 +648,19 @@ export class TableEditor {
 
   setupCellEventHandlersAll() {
     let tdSelector = this.getTdSelectorAll()
-    //console.log('Setting up cell event handlers, selector: "' + tdSelector + '"')
     $(tdSelector).off()
     $(tdSelector).on('click', this.genOnClickCell())
-    if (this.tableEditMode) {
+    if (this.tableEditMode !== editModeOff) {
       $(tdSelector).on('mouseenter', this.genOnMouseEnterCell())
       $(tdSelector).on('mouseleave', this.genOnMouseLeaveCell())
-      //if (this.isRowEditable(row)) {
-      //   $(tdSelector).on('click', this.genOnClickEditableCell(row, col))
-      // }
     }
-    $(tdSelector + ' .cell-button').addClass('hidden')
+    $(`${tdSelector} .${cellButtonClass}`).addClass(hiddenClass)
   }
 
   genOnClickCell() {
     let thisObject = this
     return function(ev) {
-      if (!thisObject.tableEditMode) {
+      if (thisObject.tableEditMode === editModeOff) {
         return true
       }
       let cellIndex = thisObject.getCellIndexFromElement($(ev.currentTarget))
@@ -610,34 +699,34 @@ export class TableEditor {
       let elementClasses = thisObject.getClassList(theElement)
       //console.log(elementClasses)
 
-      if (elementClasses.indexOf('move-cell-left-button') !== -1) {
+      if (elementClasses.indexOf(moveCellLeftButtonClass) !== -1) {
         // move cell left
         console.log('move cell left button clicked')
         thisObject.shiftCells(row, col, col, 'left', 1)
         return false
       }
-      if (elementClasses.indexOf('push-cells-left-button') !== -1) {
+      if (elementClasses.indexOf(pushCellsLeftButtonClass) !== -1) {
         console.log('PUSH cells LEFT button clicked')
         let emptyCol = thisObject.getFirstEmptyCellToTheLeft(row, col)
         thisObject.shiftCells(row, emptyCol+1, col, 'left', 1)
         return false
       }
 
-      if (elementClasses.indexOf('move-cell-right-button') !== -1) {
+      if (elementClasses.indexOf(moveCellRightButtonClass) !== -1) {
         // move cell right
         console.log('move cell right button clicked')
         thisObject.shiftCells(row, col, col, 'right', 1)
         return false
       }
 
-      if (elementClasses.indexOf('push-cells-right-button') !== -1) {
+      if (elementClasses.indexOf(pushCellsRightButtonClass) !== -1) {
         console.log('PUSH cells RIGHT button clicked')
         let emptyCol = thisObject.getFirstEmptyCellToTheRight(row, col)
         thisObject.shiftCells(row, col, emptyCol-1, 'right', 1)
         return false
       }
 
-      if (elementClasses.indexOf('edit-cell-button') !== -1) {
+      if (elementClasses.indexOf(editCellButtonClass) !== -1) {
         //edit cell
         //console.log(`Edit cell button clicked on ${row}:${col}`)
         thisObject.enterCellEditMode(row, col)
@@ -716,7 +805,7 @@ export class TableEditor {
   setupCellEventHandlers(row, col, restoreClickEvent = true) {
     let tdSelector = this.getTdSelector(row, col)
     //console.log(`setting up event handlers for cell ${row}:${col}, restoreClick = ${restoreClickEvent}`)
-    if (this.tableEditMode && restoreClickEvent) {
+    if (this.tableEditMode !== editModeOff && restoreClickEvent) {
       if (this.isRowEditable(row)) {
         $(tdSelector).off('click')
         $(tdSelector).on('click', this.genOnClickCell(row, col))
@@ -727,19 +816,19 @@ export class TableEditor {
   setupCellEventHandlersCellEditMode(row, col) {
     let tdSelector = this.getTdSelector(row, col)
     $(tdSelector).off()
-    $(tdSelector + ' .cancel-edit-button').on('click', this.genOnClickCancelEditButton(row, col))
-    $(tdSelector + ' .confirm-edit-button').on('click', this.genOnClickConfirmEditButton(row, col))
-    $(tdSelector + ' .te-input').on('keyup', this.genOnKeyPressCellInputField(row, col))
+    $(`${tdSelector} .${cancelEditButtonClass}`).on('click', this.genOnClickCancelEditButton(row, col))
+    $(`${tdSelector} .${confirmEditButtonClass}`).on('click', this.genOnClickConfirmEditButton(row, col))
+    $(`${tdSelector} .${inputClass}`).on('keyup', this.genOnKeyPressCellInputField(row, col))
   }
 
   genButtonHtml(icon, classes, title='') {
-    return '<a href="#" class="' + classes.join(' ') + '" title="'+ title + '">' + icon + '</a>'
+    return `<a href="#" class="${classes.join(' ')}" title="${title}">${icon}</a>`
   }
 
   genOnKeyPressCellInputField(row, col) {
     let thisObject = this
     return function(ev) {
-      let currentText = $(thisObject.getTdSelector(row, col) + ' .te-input').val()
+      let currentText = $(`${thisObject.getTdSelector(row, col)} .${inputClass}`).val()
       if (ev.which === 13) {
         // Enter key
         //console.log(`Enter key press on ${row}:${col}`)
@@ -756,7 +845,7 @@ export class TableEditor {
       }
       // validate!
       let validationResult = thisObject.options.cellValidationFunction(row, col, currentText)
-      let confirmEditButton =  $(thisObject.getTdSelector(row, col) + ' .confirm-edit-button')
+      let confirmEditButton =  $(`${thisObject.getTdSelector(row, col)} .${confirmEditButtonClass}`)
       if (validationResult.isValid) {
         confirmEditButton.removeClass('invalid')
         confirmEditButton.attr('title', 'Click to confirm')
@@ -819,10 +908,10 @@ export class TableEditor {
       if (col !== -1) {
         let thSelector = thisObject.getThSelector(col)
 
-        $(thSelector + ' .add-column-left-button').removeClass('hidden')
-        $(thSelector + ' .add-column-right-button').removeClass('hidden')
+        $(thSelector + ' .add-column-left-button').removeClass(hiddenClass)
+        $(thSelector + ' .add-column-right-button').removeClass(hiddenClass)
         if (thisObject.canDeleteColumn(col)) {
-          $(thSelector + ' .delete-column-button').removeClass('hidden')
+          $(thSelector + ' .delete-column-button').removeClass(hiddenClass)
         }
       }
     }
@@ -834,7 +923,7 @@ export class TableEditor {
       //console.log('Mouse leave')
       let col = thisObject.getThIndexFromElement($(ev.currentTarget))
       if (col !== -1) {
-        $(thisObject.getThSelector(col) + ' .header-button').addClass('hidden')
+        $(thisObject.getThSelector(col) + ' .header-button').addClass(hiddenClass)
       }
     }
   }
@@ -852,27 +941,27 @@ export class TableEditor {
       //console.log('Mouse enter cell ' + row + ':' + col)
       let tdSelector = thisObject.getTdSelector(row, col)
       if (thisObject.canMoveCellLeft(row, col)) {
-        $(tdSelector +  ' .move-cell-left-button').removeClass('hidden')
+        $(tdSelector +  ' .move-cell-left-button').removeClass(hiddenClass)
       }
       if (thisObject.canPushCellsLeft(row, col)) {
         let firstCol = thisObject.getFirstEmptyCellToTheLeft(row, col)+1
 
         $(tdSelector +  ' .push-cells-left-button')
-          .removeClass('hidden')
+          .removeClass(hiddenClass)
           .attr('title', `Push ${firstCol+1}-${col+1} back 1 column`)
       }
       if (thisObject.canMoveCellRight(row, col)) {
-        $(tdSelector + ' .move-cell-right-button').removeClass('hidden')
+        $(tdSelector + ' .move-cell-right-button').removeClass(hiddenClass)
       }
       if (thisObject.canPushCellsRight(row, col)) {
         let lastCol = thisObject.getFirstEmptyCellToTheRight(row, col)-1
         $(tdSelector + ' .push-cells-right-button')
-          .removeClass('hidden')
+          .removeClass(hiddenClass)
           .attr('title', `Push ${col+1}-${lastCol+1} forward 1 column`)
       }
 
       if (thisObject.isRowEditable(row)) {
-        $(tdSelector + ' .edit-cell-button').removeClass('hidden')
+        $(tdSelector + ' .edit-cell-button').removeClass(hiddenClass)
       }
       return true
     }
@@ -888,7 +977,7 @@ export class TableEditor {
       let row = cellIndex.row
       let col = cellIndex.col
       //console.log('Mouse leave cell ' + row + ':' + col)
-      $(thisObject.getTdSelector(row, col) + ' .cell-button').addClass('hidden')
+      $(thisObject.getTdSelector(row, col) + ' .cell-button').addClass(hiddenClass)
     }
   }
 
@@ -898,11 +987,11 @@ export class TableEditor {
     $(tdSelector).replaceWith(this.generateCellHtml(row,col))
     // re-establish the cell's event handlers
     $(tdSelector).on('click', this.genOnClickCell())
-    if (this.tableEditMode) {
+    if (this.tableEditMode !== editModeOff) {
       $(tdSelector).on('mouseenter', this.genOnMouseEnterCell())
       $(tdSelector).on('mouseleave', this.genOnMouseLeaveCell())
     }
-    $(tdSelector + ' .cell-button').addClass('hidden')
+    $(tdSelector + ' .cell-button').addClass(hiddenClass)
 
   }
 
@@ -914,7 +1003,7 @@ export class TableEditor {
     this.refreshCellContent(row, col)
     this.refreshCellClassesTd(td, row, col)
     this.refreshCellAttributes(row, col)
-    $(tdSelector + ' .cell-button').addClass('hidden')
+    $(tdSelector + ' .cell-button').addClass(hiddenClass)
     // profiler.stop()
   }
 
@@ -975,7 +1064,7 @@ export class TableEditor {
     this.editFlagMatrix.setValue(row, col, false)
     $(tdSelector).html(this.generateTdHtml(row, col))
     $(tdSelector).removeClass('edit-mode')
-    $(tdSelector + ' .cell-button').addClass('hidden')
+    $(tdSelector + ' .cell-button').addClass(hiddenClass)
     this.setupCellEventHandlers(row,col, true)
     // reinstate mouseenter and mouseleave events
     $(tdSelector).on('mouseenter', this.genOnMouseEnterCell())
@@ -1128,15 +1217,15 @@ export class TableEditor {
   }
 
   getTdClass(row, col) {
-    return 'te-cell-' + row + '-' + col
+    return specificCellClassPrefix + row + '-' + col
   }
 
   getThClass(col) {
-    return 'te-th-' + col
+    return specificHeaderClassPrefix + col
   }
 
   getColClass(col) {
-    return 'te-col-' + col
+    return  'te-col-' + col
   }
 
   getTdSelector(row, col) {
@@ -1144,7 +1233,7 @@ export class TableEditor {
   }
 
   getTdSelectorAll() {
-    return '#' + this.options.id + ' .te-cell'
+    return '#' + this.options.id + ' .' + cellClass
   }
 
   getThSelector(col) {
@@ -1152,11 +1241,11 @@ export class TableEditor {
   }
 
   getThSelectorAll() {
-    return '#' + this.options.id + ' .te-table th'
+    return '#' + this.options.id + ' .'+ tableClass +  ' th'
   }
 
   getCellContentSelector(row, col) {
-    return this.getTdSelector(row, col) + ' .te-cell-content'
+    return this.getTdSelector(row, col) + ' .' + cellContentClass
   }
 
   isColumnEmpty(col) {
@@ -1240,7 +1329,7 @@ export class TableEditor {
 
   dispatchCellDrawnEvent(row, col) {
     this.dispatchEvent(
-      'cell-drawn',
+      cellDrawnEvent,
       {
         row: row,
         col: col,
@@ -1250,7 +1339,7 @@ export class TableEditor {
   }
 
   dispatchTableDrawnEvent() {
-    this.dispatchEvent('table-drawn', {})
+    this.dispatchEvent(tableDrawnEvent, {})
   }
 
   dispatchTableDrawnPreEvent() {
@@ -1264,7 +1353,7 @@ export class TableEditor {
   }
 
   dispatchColumnAddEvents(newCol) {
-    this.dispatchEvent('column-add', {
+    this.dispatchEvent(columnAddEvent, {
       col: newCol,
     })
   }
@@ -1314,7 +1403,7 @@ export class TableEditor {
 
   dispatchContentChangedEvent(row, col) {
     this.dispatchEvent(
-      'content-changed',
+      contentChangedEvent,
       {
         row: row,
         col: col

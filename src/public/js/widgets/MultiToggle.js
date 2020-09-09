@@ -23,7 +23,7 @@
  *
  */
 
-export const toggleEvent = 'toggle'
+export const optionChange = 'toggle'
 
 const defaultHoverClass = 'multitoggle-hover'
 const defaultOnClass = 'multitoggle-on'
@@ -127,9 +127,10 @@ export class MultiToggle {
       let lastOption = thisObject.currentOptionIndex
       thisObject.currentOptionIndex = index
       thisObject.buttonDef[thisObject.currentOptionIndex].element.addClass(thisObject.options.onClass)
-      thisObject.dispatchEvent(toggleEvent, {
+      thisObject.dispatchEvent(optionChange, {
         currentOption: thisObject.getOption(),
         previousOption: thisObject.buttonDef[lastOption].name })
+      return false
     }
   }
 

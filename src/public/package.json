@@ -13,6 +13,7 @@
   "author": "Rafael Nájera <rafael.najera@uni-koeln.de>",
   "license": "GPL-3.0",
   "dependencies": {
+    "@popperjs/core": "^2.4.4",
     "bootstrap": "3.4.1",
     "bootstrap-validator": "0.11.9",
     "bootstrap4": "npm:bootstrap@^4.5",

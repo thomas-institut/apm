@@ -8,9 +8,7 @@
     <script type="text/javascript" src="../../../node_modules/jquery/dist/jquery.js"></script>
     <script type="text/javascript" src="../../../node_modules/bootstrap/dist/js/bootstrap.js"></script>
     <script type="text/javascript" src="../../../js/OptionsChecker.js"></script>
-    <script type="text/javascript" src="../../../js/Matrix.js"></script>
     <script type="text/javascript" src="../../../js/SimpleProfiler.js"></script>
-    <script type="text/javascript" src="../../../js/TableEditor.js"></script>
 
     <title>Table editor</title>
 
@@ -78,69 +76,76 @@
 
     </style>
 
-    <script>
+    <script type="module">
+
+      import { Matrix } from '../../../js/Matrix.js'
+      import { TableEditor } from '../../../js/TableEditor.js'
+
+      function getArrayFromText(text) {
+        let splitText = text.split(' ')
+        let theArray = []
+        for(let i = 0; i < splitText.length; i++) {
+          if (splitText[i] === '-') {
+            theArray.push('')
+          } else {
+            theArray.push(splitText[i])
+          }
+        }
+        return theArray
+      }
+
+      function renderText(witness, refArray) {
+        let textArray = []
+        console.log(refArray)
+        for(const ref of refArray) {
+          if (ref=== -1) {
+            textArray.push('&ndash;')
+          } else {
+            textArray.push(witness.tokens[ref].text)
+          }
+        }
+        return textArray.join(' ')
+      }
+
+      function rankVariants(stringArray) {
+        let countsByString = []
+        for(const text of stringArray) {
+          if (text === '') {
+            continue
+          }
+          if (countsByString[text] === undefined) {
+            countsByString[text] = 1
+          } else {
+            countsByString[text]++
+          }
+        }
+
+        let countArray = []
+
+        for(const aKey of Object.keys(countsByString)) {
+          countArray.push({ text: aKey, count: countsByString[aKey]})
+        }
+        countArray.sort(function (a,b) { return b['count'] - a['count']})
+
+        let rankObject = {}
+        for(let i = 0; i < countArray.length; i++) {
+          rankObject[countArray[i]['text']] = i
+        }
+
+        let ranks = []
+        for(const text of stringArray) {
+          if (text === '') {
+            ranks.push(12345678)
+            continue
+          }
+          ranks.push(rankObject[text])
+        }
+        return ranks
+      }
+
       $(function() {
-        function getArrayFromText(text) {
-          let splitText = text.split(' ')
-          let theArray = []
-          for(let i = 0; i < splitText.length; i++) {
-            if (splitText[i] === '-') {
-              theArray.push('')
-            } else {
-              theArray.push(splitText[i])
-            }
-          }
-          return theArray
-        }
 
-        function renderText(witness, refArray) {
-          let textArray = []
-          console.log(refArray)
-          for(const ref of refArray) {
-            if (ref=== -1) {
-              textArray.push('&ndash;')
-            } else {
-              textArray.push(witness.tokens[ref].text)
-            }
-          }
-          return textArray.join(' ')
-        }
 
-        function rankVariants(stringArray) {
-          let countsByString = []
-          for(const text of stringArray) {
-            if (text === '') {
-              continue
-            }
-            if (countsByString[text] === undefined) {
-              countsByString[text] = 1
-            } else {
-              countsByString[text]++
-            }
-          }
-
-          let countArray = []
-
-          for(const aKey of Object.keys(countsByString)) {
-            countArray.push({ text: aKey, count: countsByString[aKey]})
-          }
-          countArray.sort(function (a,b) { return b['count'] - a['count']})
-
-          let rankObject = {}
-          for(let i = 0; i < countArray.length; i++) {
-            rankObject[countArray[i]['text']] = i
-          }
-
-          let ranks = []
-          for(const text of stringArray) {
-            if (text === '') {
-              ranks.push(12345678)
-              continue
-            }
-            ranks.push(rankObject[text])
-          }
-          return ranks
-        }
 
         function genVariantsMatrix(refMatrix, witnesses) {
 

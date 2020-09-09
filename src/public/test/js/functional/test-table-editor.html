@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="../../../node_modules/bootstrap4/dist/css/bootstrap.css"/>
+    <script type="text/javascript" src="../../../node_modules/jquery/dist/jquery.js"></script>
+    <script type="text/javascript" src="../../../node_modules/bootstrap4/dist/js/bootstrap.js"></script>
+    <script type="text/javascript" src="../../../js/OptionsChecker.js"></script>
+    <script type="text/javascript" src="../../../js/SimpleProfiler.js"></script>
+
+    <title>Table editor</title>
+
+    <style>
+        .te-table {
+            border-collapse: collapse;
+            margin-bottom: 3em;
+        }
+
+        .te-table a {
+            color: grey;
+            text-decoration: none;
+            padding: 0 5px;
+        }
+
+        .te-table th {
+            font-weight: normal;
+            border: none;
+            text-align: center;
+            color: white;
+        }
+
+        .te-table td {
+            border: 1px solid silver;
+            padding: 5px;
+
+        }
+
+        .te-row-title {
+            font-weight: bold;
+        }
+
+        td.te-row-title {
+            border: none;
+        }
+
+        .table-edit-mode-move {
+            border-left: 1px solid red;
+            padding-left: 1em;
+        }
+        .table-edit-mode-group {
+            border-left: 1px solid blue;
+            padding-left: 1em;
+        }
+
+        .table-edit-mode-move .te-table th, .table-edit-mode-group .te-table th {
+            font-weight: normal;
+            color: gray;
+        }
+
+
+        .hidden {
+            display: none;
+        }
+
+    </style>
+
+    <script type="module">
+
+      import { Matrix } from '../../../js/Matrix.js'
+      import { TableEditor } from '../../../js/TableEditor.js'
+
+      function getArrayFromText(text) {
+        return text.split(' ').map( (s) => { return s==='-' ? '' : s})
+      }
+
+      let texts = [
+        "Today is Wednesday February 5th, 2020. Surprisingly, it's a sunny day in Cologne, but it's only 4 degrees Celsius outside. Lorem ipsum dolor sit amet, consectetur adipiscing elit",
+        "Today is Wednsday February 5, 2020. Luckily, is a sunny day in Cologne, it's only 4 degrees Celsius outside. Lorem ipsum dolor sit amet, consectetur adipiscing elit",
+        "Today is Wednesday February 5th, 2020. Surprisingly, it's a sunny day in Cologne, but it's only 4 degrees outside. Lorem ipsum dolor sit amet, consectetur adipiscing elit",
+        "Today is Thursday February 5th, 2020. Surprisingly, it's a sunny day in Köln, yet it's only 4 degrees Lorem ipsum dolor sit amet, consectetur adipiscing elit"
+      ]
+
+      $(function() {
+
+
+            let te = new TableEditor({
+              id: 'thetable',
+              showInMultipleRows: true,
+              drawTableInConstructor: false,
+              rowDefinition: texts.map((text, i) => {
+                return {
+                  title: `Text ${i + 1}`,
+                  isEditable: false,
+                  values: getArrayFromText(text)
+                }
+              })
+            })
+
+        te.on('column-add', function(data){
+          console.log('Column added')
+        })
+
+        te.on('column-delete', function(data){
+          console.log('Column deleted')
+        })
+
+        function getSingleRowToggleLabel() {
+          if (te.isTableShownInMultipleRows()) {
+            return 'Show in a single row'
+          }
+          return 'Show in multiple rows'
+        }
+
+        function getEditModeToggleLabel() {
+          switch (te.getTableEditMode()) {
+            case 'off':
+              return 'Not editing'
+            case 'move':
+              return 'Edit (move)'
+
+            case 'group':
+              return 'Edit (group)'
+          }
+        }
+
+
+        $('#str-label').html(getSingleRowToggleLabel())
+
+        $('#singlerowtoggle').on('click', function(){
+          // console.log("single row toggle")
+          if (te.isTableShownInMultipleRows()) {
+            te.showInSingleRow()
+          } else {
+            te.showInMultipleRows()
+          }
+          $('#str-label').html(getSingleRowToggleLabel())
+        })
+
+        $('#emt-label').html(getEditModeToggleLabel())
+        $('#editmodetoggle').on('click', function (){
+          let currentMode = te.getTableEditMode()
+          let newMode = 'off'
+          switch (currentMode) {
+            case 'off':
+              newMode = 'move'
+              break
+
+            case 'move':
+              newMode = 'group'
+              break;
+          }
+          te.setEditMode(newMode)
+          $('#emt-label').html(getEditModeToggleLabel())
+        })
+
+        te.redrawTable()
+      })
+    </script>
+</head>
+<body>
+<div class="container">
+<h1>Table Editor</h1>
+    <p><button id="singlerowtoggle" class="btn btn-primary"><span id="str-label">...</span></button>
+    <button id="editmodetoggle" class="btn btn-primary"><span id="emt-label">...</span></button>
+    </p>
+<div id="thetable" style="overflow: auto">The table will be here...</div>
+
+    <h2>The Text</h2>
+    <div id="thetext">The text will be here...</div>
+</div>
+</body>
+</html>

@@ -79,6 +79,7 @@ class Item {
     const PARAGRAPH_MARK = 16;
     const MATH_TEXT = 17;
     const MARGINAL_MARK = 18;
+    const BOLD_TEXT = 19;
 
 
     /**

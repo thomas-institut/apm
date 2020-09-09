@@ -27,6 +27,14 @@ TranscriptionEditor.registerFormatBlot(RubricBlot, {
   icon: 'R'
 })
 
+class BoldBlot extends SimpleFormatBlot {}
+TranscriptionEditor.registerFormatBlot(BoldBlot, {
+  type: ITEM_BOLD,
+  name: 'boldtext',
+  title: 'Bold',
+  icon: 'B'
+})
+
 class InitialBlot extends SimpleFormatBlot {}
 TranscriptionEditor.registerFormatBlot(InitialBlot, {
   type: ITEM_INITIAL, 

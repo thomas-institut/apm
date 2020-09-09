@@ -259,6 +259,9 @@
     border: solid 1px #e8eaed;
     border-radius: 3px;
 }
+b.boldtext {
+    font-weight: bold;
+}
 
 b.rubric {
     color: blue;

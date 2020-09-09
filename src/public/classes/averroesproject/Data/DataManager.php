@@ -30,6 +30,7 @@ use AverroesProject\ColumnElement\PageNumber;
 use AverroesProject\ColumnElement\Substitution;
 use AverroesProject\TxText\Abbreviation;
 use AverroesProject\TxText\Addition;
+use AverroesProject\TxText\BoldText;
 use AverroesProject\TxText\CharacterGap;
 use AverroesProject\TxText\ChunkMark;
 use AverroesProject\TxText\Deletion;
@@ -2051,8 +2052,13 @@ class DataManager implements  SqlQueryCounterTrackerAware
                         $row[$fields['text']]);
                 break;
 
-//            default: 
-//                continue;
+            case Item::BOLD_TEXT:
+                $item = new BoldText($row[$fields['id']],
+                    $row[$fields['seq']],
+                    $row[$fields['text']]);
+                break;
+
+
         }
         $item->lang = $row[$fields['lang']];
         $item->handId = $row[$fields['hand_id']];

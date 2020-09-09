@@ -68,11 +68,35 @@ div.edrundetails{
     /*border-bottom: solid 1px #e0e0e0;*/
 }
 
+.ct-toolbar-section {
+    display: flex;
+    flex-direction: row;
+}
+
+.ct-toolbar-group {
+    display: flex;
+    flex-direction: row;
+    margin-right: 2rem;
+}
+.ct-toolbar-item {
+    display: flex;
+    flex-direction: row;
+    margin-right: 1rem;
+}
+
 .ct-toolbar.tb-button {
     background: transparent;
     border: none;
     cursor: pointer;
     padding: 3px;
+}
+
+.ct-toolbar a.tb-button.multitoggle-on, a.tb-button.multitoggle-on:hover {
+    border: 1px solid grey;
+    border-radius: 3px;
+    padding-left: 5px;
+    padding-right: 5px;
+    text-decoration: none;
 
 }
 

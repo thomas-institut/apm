@@ -64,7 +64,7 @@
 
 <script type="module">
 
-  import { MultiToggle, toggleEvent } from '../../../js/widgets/MultiToggle.js'
+  import { MultiToggle, optionChange } from '../../../js/widgets/MultiToggle.js'
 
   $(function () {
     let toggle1 = new MultiToggle({
@@ -80,7 +80,7 @@
         { label: 'Mode 3', name: 'm3', helpText: 'Click to set mode m3'},
       ]
     })
-    toggle1.on(toggleEvent, function(ev) {
+    toggle1.on(optionChange, function(ev) {
       $('#current-mode').html(ev.detail.currentOption)
     })
   })

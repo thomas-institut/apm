@@ -18,6 +18,32 @@
 
 /* global TranscriptionEditor, ITEM_RUBRIC, ITEM_INITIAL, ITEM_GLIPH, ITEM_MATH_TEXT, ELEMENT_HEAD, ELEMENT_PAGE_NUMBER, ELEMENT_CUSTODES, ITEM_SIC, ITEM_ABBREVIATION, ITEM_UNCLEAR, Item, ITEM_DELETION, ITEM_NO_WORD_BREAK, ITEM_CHARACTER_GAP, ITEM_PARAGRAPH_MARK, ITEM_ILLEGIBLE, ITEM_CHUNK_MARK, ITEM_ADDITION */
 
+class Heading1Blot extends SimpleFormatBlot {}
+TranscriptionEditor.registerFormatBlot(Heading1Blot, {
+  type: ITEM_HEADING_1,
+  name: 'heading1',
+  title: 'Heading 1',
+  icon: '<b>H<sub>1</sub></b>'
+})
+
+
+class BoldBlot extends SimpleFormatBlot {}
+TranscriptionEditor.registerFormatBlot(BoldBlot, {
+  type: ITEM_BOLD,
+  name: 'boldtext',
+  title: 'Bold',
+  icon: '<b>B</b>'
+})
+
+class ItalicBlot extends SimpleFormatBlot {}
+TranscriptionEditor.registerFormatBlot(ItalicBlot, {
+  type: ITEM_ITALIC,
+  name: 'italictext',
+  title: 'Italic',
+  icon: '<em>It</em>'
+})
+
+
 
 class RubricBlot extends SimpleFormatBlot {}
 TranscriptionEditor.registerFormatBlot(RubricBlot, {
@@ -27,13 +53,7 @@ TranscriptionEditor.registerFormatBlot(RubricBlot, {
   icon: 'R'
 })
 
-class BoldBlot extends SimpleFormatBlot {}
-TranscriptionEditor.registerFormatBlot(BoldBlot, {
-  type: ITEM_BOLD,
-  name: 'boldtext',
-  title: 'Bold',
-  icon: 'B'
-})
+
 
 class InitialBlot extends SimpleFormatBlot {}
 TranscriptionEditor.registerFormatBlot(InitialBlot, {
@@ -222,7 +242,7 @@ class HeadBlot extends SimpleBlockBlot {}
 TranscriptionEditor.registerBlockBlot(HeadBlot, {
   type: ELEMENT_HEAD, 
   name: 'headelement', 
-  title: 'Head', 
+  title: 'Page Head Line',
   icon: 'H'
 })
 
@@ -231,7 +251,7 @@ class PageNumberBlot extends SimpleBlockBlot{}
 TranscriptionEditor.registerBlockBlot(PageNumberBlot, {
   type: ELEMENT_PAGE_NUMBER, 
   name: 'pagenumber', 
-  title: 'Page Number', 
+  title: 'Page Number Line',
   icon: 'P'
 })
 
@@ -239,7 +259,7 @@ class CustodesBlot extends SimpleBlockBlot{}
 TranscriptionEditor.registerBlockBlot(CustodesBlot, {
   type: ELEMENT_CUSTODES, 
   name: 'custodes', 
-  title: 'Custodes', 
+  title: 'Custodes Line',
   icon: 'C'
 })
 

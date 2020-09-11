@@ -37,6 +37,8 @@ const ITEM_PARAGRAPH_MARK = 16
 const ITEM_MATH_TEXT = 17
 const ITEM_MARGINAL_MARK = 18
 const ITEM_BOLD = 19
+const ITEM_ITALIC = 20
+const ITEM_HEADING_1 = 21
 const ITEM_UNSUPPORTED = 9999
 
 class Item {

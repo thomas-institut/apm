@@ -301,7 +301,8 @@ class PageViewer {
       html+='<td>' + v.author_name + '</td>'
       html+='<td>' + (v.descr==='' ? '---' : v.descr)  + '</td>'
       html+='<td>' + (v.minor ? '<em>[m]</em>&nbsp;' : '')
-      html+= (v.review ? '<em>[r]</em>&nbsp;' : '') + '</td>'
+      html+= (v.review ? '<em>[r]</em>&nbsp;' : '')
+      html += `${v.is_published ? '[Published]' : ''}</td>`
       html += '</tr>'
     }
     html += '</table>'

@@ -2523,6 +2523,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
             $version['number'] = $versionNumber++;
             $version['minor'] = intval($version['minor']) === 1 ? true : false;
             $version['review'] = intval($version['review']) === 1 ? true : false;
+            $version['is_published'] = intval($version['is_published']) === 1 ? true : false;
             $version['author_username'] = $authorInfo[$version['author_id']]['username'];
         }
         return $versions;

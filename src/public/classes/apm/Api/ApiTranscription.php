@@ -20,6 +20,9 @@
 namespace APM\Api;
 
 
+use APM\FullTranscription\ColumnVersionInfo;
+use AverroesProject\TxText\Item;
+use phpDocumentor\Reflection\Element;
 use Psr\Container\ContainerInterface;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
@@ -46,60 +49,212 @@ class ApiTranscription extends ApiController
     }
 
     public function getList(Request $request, Response $response) {
+        $publishedVersions = $this->systemManager->getTranscriptionManager()->getColumnVersionManager()->getPublishedVersions();
+
+        $docs = $this->getDocsFromVersions($publishedVersions);
+        $list = [];
+        foreach($docs as $docId => $pageNumbers) {
+
+            $docInfo = $this->getDataManager()->getDocById($docId);
+            $this->debug('Doc Info', $docInfo);
+            $listEntry = [ 'docId' => $docId, 'pages' => $pageNumbers];
+            $listEntry['title'] = $docInfo['title'];
+            if ($docInfo['image_source'] === 'dare' || $docInfo['image_source'] === 'dare-deepzoom') {
+                $listEntry['source'] = 'DARE';
+                $listEntry['dareId'] = $docInfo['image_source_data'];
+            } else {
+                $listEntry['source'] = 'APM';
+            }
+
+            $list[] = $listEntry;
+
+        }
+
         return $this->responseWithJson($response, [
-            'status' => 'FakeData',
-            'list' => $this->fakeAvailableTranscriptions,
+            'list' => $list,
             'apiCallDateTime' => date(DATE_ATOM) ]);
+    }
+
+    /**
+     * Returns an array with keys corresponding to docIds populated with
+     * arrays that list the page numbers in the given versions
+     *
+     * @param array $versions
+     * @return array
+     */
+    protected function getDocsFromVersions(array $versions) : array {
+        $docIds = [];
+        $dm = $this->getDataManager();
+        foreach($versions as $version) {
+            /**@var $version ColumnVersionInfo */
+            $pageInfo = $dm->getPageInfo($version->pageId);
+            $docId = intval($pageInfo['doc_id']);
+            if (!isset($docIds[$docId])) {
+                $docIds[$docId] = [];
+            }
+            $docIds[$docId][] = intval($pageInfo['page_number']);
+        }
+
+        return $docIds;
+
     }
 
     public function getTranscription(Request $request, Response $response) {
         $docId = intval($request->getAttribute('docId'));
         $pageNumber = intval($request->getAttribute('page'));
 
-        // FAKE answer for now
 
-        if (!$this->isDocPageValid($docId, $pageNumber)) {
+
+        $dm = $this->getDataManager();
+        $pageId = $dm->getPageIdByDocPage($docId, $pageNumber);
+        $pageInfo = $dm->getPageInfo($pageId);
+        $numCols = $pageInfo['num_cols'];
+        if ($numCols === 0) {
+            return $this->responseWithJson($response, [
+                [ 'error' => "Doc $docId page $pageNumber does not have any columns defined"]
+            ], 409);
+        }
+
+        $responseData =  [
+            'docId' => $docId,
+            'pageId' => $pageId,
+            'pageNumber' => $pageNumber,
+            'pageSequence' => intval($pageInfo['seq']),
+            'numColumns' => $numCols
+        ];
+        $this->debug('Page info', $pageInfo);
+        if (isset($pageInfo['foliation']) && !is_null($pageInfo['foliation'])) {
+            $responseData['foliation'] = $pageInfo['foliation'];
+        }
+        $docInfo = $this->getDataManager()->getDocById($docId);
+
+        if ($docInfo['image_source'] === 'dare' || $docInfo['image_source'] === 'dare-deepzoom') {
+            $responseData['source'] = 'DARE';
+            $responseData['dareId'] = $docInfo['image_source_data'];
+        } else {
+            $responseData['source'] = 'APM';
+        }
+
+
+        $transcriberIds = [];
+        $columns = [];
+
+        $versionManager = $this->systemManager->getTranscriptionManager()->getColumnVersionManager();
+        for ($col = 1; $col <= $numCols; $col++) {
+            $versions = $versionManager->getColumnVersionInfoByPageCol($pageId, $col);
+            // for the moment, find the first published version in the array
+            foreach($versions as $version) {
+                $transcriberIds[$version->authorId] = 1;
+                if ($version->isPublished) {
+                    $columnData = [ 'column' => $col];
+                    $elements = $this->getDataManager()->getColumnElementsByPageId($pageId, $col, $version->timeFrom);
+                    $columnData['plainText'] = $this->getPlainTextFromElements($elements);
+                    $columnData['text'] = $this->getExportDataFromElements($elements);
+                    $columnData['version'] = $version->timeFrom;
+                    $columnData['isLatestVersion'] = $version->timeUntil === TimeString::END_OF_TIMES;
+                    $columnData['versionTranscriberId'] = $version->authorId;
+                    $columns[] = $columnData;
+                }
+            }
+        }
+
+        if (count($columns) === 0) {
+            // nothing is published!
             return $this->responseWithJson($response, [
                 [ 'error' => "Doc $docId page $pageNumber not available for download"]
             ], 409);
         }
 
-        return $this->responseWithJson($response, [
-            'docId' => $docId,
-            'pageNumber' => $pageNumber,
-            'status' => 'FakeData',
-            'transcribers' => [ [ 'id' => 0, 'fullName' => 'Ghost Transcriber']],
-            'text' =>  $this->getFakeText($docId, $pageNumber)
-     ]);
+        // get transcriber info
+        $transcriberInfo = [];
+        foreach(array_keys($transcriberIds) as $userId) {
+            $userInfo = $this->getDataManager()->userManager->getUserInfoByUserId($userId);
+            $transcriberInfo[] = [
+                'ApmId' => $userId,
+                'FullName' => $userInfo['fullname']
+                ];
+        }
+
+        $responseData['status'] = 'OK';
+        $responseData['transcribers'] = $transcriberInfo;
+        $responseData['columns'] = $columns;
+        $responseData['apiCallDateTime'] = date(DATE_ATOM);
+
+
+        return $this->responseWithJson($response, $responseData);
     }
 
-    private function getFakeText($docId, $page) : string {
-        $loremIpsum = <<<EOT
-Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, 
-totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae 
-dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, 
-sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam 
-est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius m
-odi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, 
-quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi 
-consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil 
-molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?
-EOT;
+    private function getPlainTextFromElements($elements) : string {
+        $text = '';
+        foreach($elements as $element) {
+            if ($element->type === \AverroesProject\ColumnElement\Element::LINE) {
+                foreach($element->items as $item) {
+                    switch($item->type) {
+                        case Item::TEXT:
+                            $text .= $item->theText;
+                            break;
 
-        return "--- Doc $docId, page $page---\n$loremIpsum";
-    }
-
-    private function isDocPageValid($docId, $page) : bool {
-        foreach($this->fakeAvailableTranscriptions as $availableDoc) {
-            if ($docId === $availableDoc['docId']) {
-                foreach($availableDoc['pages'] as $availablePage) {
-                    if ($page === $availablePage) {
-                        return true;
+                        case Item::NO_WORD_BREAK:
+                            $text .= '-';
+                            break;
                     }
+
                 }
             }
         }
-        return false;
+        return $text;
+    }
+
+    private function getExportDataFromElements($elements) {
+        // only main text for the time being
+        $mainText = [];
+        $itemToType = [
+            Item::TEXT => 'text',
+            Item::BOLD_TEXT => 'bold',
+            Item::RUBRIC => 'rubric',
+            Item::ITALIC => 'italic',
+            Item::HEADING => 'heading',
+            Item::INITIAL => 'initial',
+            Item::GLIPH => 'gliph',
+            Item::MATH_TEXT => 'math',
+            Item::PARAGRAPH_MARK => 'paragraph_mark'
+        ];
+        foreach ($elements as $element) {
+            if ($element->type === \AverroesProject\ColumnElement\Element::LINE){
+                foreach($element->items as $item) {
+                    if (array_search($item->type, array_keys($itemToType)) !== false) {
+                        $mainText[] = [
+                            'type' => $itemToType[$item->type],
+                            'text' => $item->getText(),
+                            'lang' => $item->getLang()
+                        ];
+                        continue;
+                    }
+
+                    switch($item->type) {
+
+                        case Item::NO_WORD_BREAK:
+                            $mainText[] = [ 'type' => 'wb' ];
+                            break;
+
+                        case Item::CHUNK_MARK:
+                            $mainText[] = [
+                                'type' => 'chunk',
+                                'subtype' => $item->getType(),
+                                'workId' => $item->getDareId(),
+                                'chunkNumber' => $item->getChunkNumber(),
+                                'segment' => $item->getChunkSegment(),
+                                'localId' => $item->getWitnessLocalId()
+                            ];
+                            break;
+
+                    }
+
+                }
+            }
+
+        }
+        return $mainText;
     }
 
 }

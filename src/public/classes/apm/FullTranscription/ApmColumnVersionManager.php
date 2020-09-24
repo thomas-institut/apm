@@ -128,6 +128,15 @@ class ApmColumnVersionManager extends ColumnVersionManager
         $this->dataTable->createRow($versionInfo->getDatabaseRow());
     }
 
+    public function getPublishedVersions() : array {
+        $rows = $this->dataTable->findRows([ 'is_published' => 1]);
+        $versions = [];
+        foreach($rows as $row) {
+            $versions[] = ColumnVersionInfo::createFromDbRow($row);
+        }
+        return $versions;
+    }
+
     private function rawUpdateVersion(ColumnVersionInfo $versionInfo) {
         $this->dataTable->updateRow($versionInfo->getDatabaseRow());
     }

@@ -52,6 +52,12 @@ abstract class ColumnVersionManager
      */
     abstract public function registerNewColumnVersion(int $pageId, int $column, ColumnVersionInfo $versionInfo) : void;
 
+    /**
+     * Returns an array with all the version that are published
+     * @return ColumnVersionInfo[]
+     */
+    abstract  public function getPublishedVersions() : array;
+
 
     /**
      * Checks that the given version sequence is coherent

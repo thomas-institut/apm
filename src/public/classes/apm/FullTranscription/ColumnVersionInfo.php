@@ -64,6 +64,11 @@ class ColumnVersionInfo
      */
     public $isReview;
 
+    /**
+     * @var
+     */
+    public $isPublished;
+
     public function __construct()
     {
         $this->id = 0;
@@ -75,6 +80,7 @@ class ColumnVersionInfo
         $this->description = '';
         $this->isMinor = false;
         $this->isReview = false;
+        $this->isPublished = false;
     }
 
     public function setFromDbRow(array $row) {
@@ -87,6 +93,7 @@ class ColumnVersionInfo
         $this->description = $row['descr'];
         $this->isMinor = intval($row['minor']) !== 0;
         $this->isReview = intval($row['review']) !== 0;
+        $this->isPublished = intval($row['is_published']) !== 0;
     }
 
     public static function createFromDbRow(array $row) {
@@ -105,7 +112,8 @@ class ColumnVersionInfo
             'author_id' => $this->authorId,
             'descr' => $this->description,
             'minor' => $this->isMinor ? 1 : 0,
-            'review' => $this->isReview ? 1 : 0
+            'review' => $this->isReview ? 1 : 0,
+            'is_published' => $this->isPublished ? 1 : 0
         ];
     }
 

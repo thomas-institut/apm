@@ -20,7 +20,7 @@
 
 class Heading1Blot extends SimpleFormatBlot {}
 TranscriptionEditor.registerFormatBlot(Heading1Blot, {
-  type: ITEM_HEADING_1,
+  type: ITEM_HEADING,
   name: 'heading1',
   title: 'Heading 1',
   icon: '<b>H<sub>1</sub></b>'

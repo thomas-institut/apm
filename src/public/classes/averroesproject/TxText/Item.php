@@ -73,13 +73,15 @@ class Item {
     const NO_WORD_BREAK =   10;
     const ABBREVIATION =   11;
     const LINEBREAK    =   12;
-    const INITIAL  = 13;
+    const INITIAL  =   13;
     const CHUNK_MARK = 14;
     const CHARACTER_GAP = 15;
     const PARAGRAPH_MARK = 16;
     const MATH_TEXT = 17;
     const MARGINAL_MARK = 18;
     const BOLD_TEXT = 19;
+    const ITALIC = 20;
+    const HEADING = 21;
 
 
     /**

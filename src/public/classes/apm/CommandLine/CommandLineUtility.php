@@ -124,16 +124,20 @@ abstract class CommandLineUtility {
     
     protected function printErrorMsg($msg) 
     {
-        print "ERROR: $msg \n";
+        $this->printStdErr("ERROR: $msg \n");
     }
     
     protected function printWarningMsg($msg) 
     {
-        print "WARNING: $msg \n";
+        $this->printStdErr("WARNING: $msg \n");
+    }
+
+    protected function printStdErr($str) {
+        fwrite(STDERR, $str);
     }
 
 
     protected abstract function main($argc, $argv);
-    
+
 
 }

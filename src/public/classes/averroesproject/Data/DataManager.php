@@ -35,6 +35,7 @@ use AverroesProject\TxText\CharacterGap;
 use AverroesProject\TxText\ChunkMark;
 use AverroesProject\TxText\Deletion;
 use AverroesProject\TxText\Gliph;
+use AverroesProject\TxText\Heading;
 use AverroesProject\TxText\Illegible;
 use AverroesProject\TxText\Initial;
 use AverroesProject\TxText\Item;
@@ -2057,6 +2058,11 @@ class DataManager implements  SqlQueryCounterTrackerAware
                     $row[$fields['seq']],
                     $row[$fields['text']]);
                 break;
+
+            case Item::HEADING:
+                $item = new Heading($row[$fields['id']],
+                    $row[$fields['seq']],
+                    $row[$fields['text']]);
 
 
         }

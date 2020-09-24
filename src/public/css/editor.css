@@ -291,6 +291,11 @@ b.sic {
 b.abbr {
     color: chocolate;
 }
+b.heading1 {
+    color: #2b542c;
+    font-weight: bold;
+    font-size: 1.1em;
+}
 
 b.marginalmark {
     background: #666666;

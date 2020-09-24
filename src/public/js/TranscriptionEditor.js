@@ -2340,7 +2340,10 @@ class TranscriptionEditor
   }
 
   static formatHasItem (format) {
-    for (const type of ['rubric', 'gliph', 'initial', 'sic', 'abbr', 'deletion', 'addition', 'unclear', 'nowb', 'mathtext', 'marginalmark', 'boldtext']) {
+    for (const type of
+      ['rubric', 'gliph', 'initial', 'sic', 'abbr', 'deletion',
+        'addition', 'unclear', 'nowb', 'mathtext', 'marginalmark',
+        'boldtext', 'heading1']) {
       if (type in format) {
         return type
       }

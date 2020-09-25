@@ -27,7 +27,7 @@ p.formattedchunktext {
 }
 
 .textualitem {
-    
+
 }
 .abbr {
     color: chocolate;
@@ -38,6 +38,11 @@ p.formattedchunktext {
 }
 .rubric {
     color: blue;
+    font-weight: bold;
+}
+
+.heading {
+    color: #2b542c;
     font-weight: bold;
 }
 

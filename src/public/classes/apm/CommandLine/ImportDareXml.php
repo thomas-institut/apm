@@ -76,6 +76,7 @@ class ImportDareXml extends CommandLineUtility
                         $this->printStdErr(" - $error\n");
                     }
                 }
+
                 $this->outputJson($apmData);
                 break;
         }
@@ -84,9 +85,8 @@ class ImportDareXml extends CommandLineUtility
     }
 
 
-    private function getApmDataFromDareData($dareData) : array {
+    private function getApmDataFromDareData(array $dareData) : array {
         $apmData = [];
-
         foreach($dareData['columns'] as $dareColumnData) {
             $apmData[] = [
                 'page' => $dareColumnData['darePage'],
@@ -96,6 +96,7 @@ class ImportDareXml extends CommandLineUtility
                     $this->getApmColumnNumberFromDareColumnN($dareColumnData['dareColumn']),
                     $dareData['lang'],
                     0,
+                    $dareData['workId'],
                     $dareColumnData['lines'])
             ];
         }
@@ -104,7 +105,7 @@ class ImportDareXml extends CommandLineUtility
 
     }
 
-    private function getElementDataFromDareLines(int $pageId, int $col, string $lang, int $userId, array $lines) : array {
+    private function getElementDataFromDareLines(int $pageId, int $col, string $lang, int $userId, string $workId, array $lines) : array {
         $elements = [];
         $currentElementId = 0;
         $currentItemId = 1;
@@ -184,10 +185,11 @@ class ImportDareXml extends CommandLineUtility
                             'type' => Item::CHUNK_MARK,
                             'seq' => $currentSeq++,
                             'lang' => $lang,
-                            'theText' => $dareItem['value'],
+                            'theText' => $workId,
                             'altText' => $dareItem['subtype'],
                             'extraInfo' => 'A',
-                            'target' => -1,
+                            'target' => $dareItem['n'],
+                            'handId'=> 0,
                             'columnElementId' => -1,
                             'length' => 1
                         ];
@@ -306,6 +308,7 @@ class ImportDareXml extends CommandLineUtility
                                             $currentLine[] = [
                                                 'type' => 'chunk_mark',
                                                 'value' => $chunkId,
+                                                'n' => $reader->getAttribute('n'),
                                                 'subtype' => $subtype
                                             ];
                                             break;
@@ -421,7 +424,7 @@ class ImportDareXml extends CommandLineUtility
         }
 
 
-        return [  'errors' => $errors, 'columns' => $columns, 'lang' => $lang];
+        return [  'errors' => $errors, 'columns' => $columns, 'lang' => $lang, 'workId' => $work];
     }
 
     /**

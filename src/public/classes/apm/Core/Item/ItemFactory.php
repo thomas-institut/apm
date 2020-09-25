@@ -36,6 +36,9 @@ class ItemFactory {
     const FORMAT_MATH = 'mathtext';
     const FORMAT_GLIPH = 'gliph';
     const FORMAT_INITIAL = 'initial';
+    const FORMAT_BOLD = 'bold';
+    const FORMAT_ITALIC = 'italic';
+    const FORMAT_HEADING = 'heading';
     
     const ILLEGIBLE_CHARACTER = 'ø';
     
@@ -43,7 +46,7 @@ class ItemFactory {
         $this->defaultLanguage = $lang;
         $this->defaultHand = $hand;
     }
-    
+
     public function createReferenceMark(string $refText) : Mark {
         return new Mark(MarkType::REF, $refText);
     }
@@ -109,6 +112,18 @@ class ItemFactory {
     
     public function createRubricItem(string $text, string $lang='') : TextualItem {
         return $this->createSimpleFormatItem(self::FORMAT_RUBRIC, $text, $lang);
+    }
+
+    public function createBoldTextItem(string $text, string $lang='') : TextualItem {
+        return $this->createSimpleFormatItem(self::FORMAT_BOLD, $text, $lang);
+    }
+
+    public function createItalicTextItem(string $text, string $lang='') : TextualItem {
+        return $this->createSimpleFormatItem(self::FORMAT_ITALIC, $text, $lang);
+    }
+
+    public function createHeadingItem(string $text, string $lang='') : TextualItem {
+        return $this->createSimpleFormatItem(self::FORMAT_HEADING, $text, $lang);
     }
     
     public function createMathTextItem(string $text, string $lang='') : TextualItem {

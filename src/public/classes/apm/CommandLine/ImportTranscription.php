@@ -45,9 +45,10 @@ class ImportTranscription extends CommandLineUtility
         $docId = -1;
         $pageMapFileName = '';
         $pageMapString = '';
-        $options = getopt('', ['userId:', 'docId:', 'pageMap:', 'pageMapFile:'], $index);
+        $options = getopt('', ['userId:', 'docId:', 'pageMap:', 'pageMapFile:', 'dryRun'], $index);
         $userId = isset($options['userId']) ? intval($options['userId']) : -1;
         $docId = isset($options['docId']) ? intval($options['docId']) : -1;
+        $dryRun = isset($options['dryRun']);
         if ($index < count($argv)) {
             $fileName = $argv[$index];
         }
@@ -71,7 +72,6 @@ class ImportTranscription extends CommandLineUtility
             $this->printErrorMsg($e->getMessage());
             return false;
         }
-
 
         // check user
         if ($userId <= 0) {
@@ -119,7 +119,7 @@ class ImportTranscription extends CommandLineUtility
 
         $this->logger->info("Importing " . count($data) .
             " columns into document $docId (" . $docInfo['title'] . ")" .
-            " using userId $userId (" . $userInfo['username'] . ")\n");
+            " using userId $userId (" . $userInfo['username'] . ")" .  ($dryRun ?  ' DRY RUN ' : '') . "\n");
 
 
         foreach($data as $columnData) {
@@ -165,31 +165,44 @@ class ImportTranscription extends CommandLineUtility
 
             $newElements = DataManager::createElementArrayFromArray($newElementsData);
 
-            try {
-                $newItemIds = $this->dm->updateColumnElements($pageId, $col, $newElements, $updateTime);
-            } catch (Exception $e) {
-                $this->logger->error("Error updating elements: " . $e->getMessage());
-            }
-            $this->logger->info("Elements updated", [ 'newItemIds' => $newItemIds]);
+            if ($dryRun) {
+                $this->logger->info("Dry run, nothing changed in database");
+            } else {
+                try {
+                    $newItemIds = $this->dm->updateColumnElements($pageId, $col, $newElements, $updateTime);
+                } catch (Exception $e) {
+                    $this->logger->error("Error updating elements: " . $e->getMessage());
+                }
+                $this->logger->info("Elements updated", [ 'newItemIds' => $newItemIds]);
+                // Register version
+                $versionInfo = new ColumnVersionInfo();
+                $versionInfo->pageId = $pageId;
+                $versionInfo->column = $col;
+                $versionInfo->authorId = $userId;
+                $versionInfo->description = 'Imported from command line';
+                $versionInfo->isMinor = false;
+                $versionInfo->isReview = false;
+                $versionInfo->timeFrom = $updateTime;
 
-            // Register version
-            $versionInfo = new ColumnVersionInfo();
-            $versionInfo->pageId = $pageId;
-            $versionInfo->column = $col;
-            $versionInfo->authorId = $userId;
-            $versionInfo->description = 'Imported from command line';
-            $versionInfo->isMinor = false;
-            $versionInfo->isReview = false;
-            $versionInfo->timeFrom = $updateTime;
-
-            try {
-                $this->systemManager->getTranscriptionManager()->getColumnVersionManager()->registerNewColumnVersion($pageId, $col, $versionInfo);
-            } catch (Exception $e) {
-                $this->logger->error("Cannot register version: " . $e->getMessage());
+                try {
+                    $this->systemManager->getTranscriptionManager()->getColumnVersionManager()->registerNewColumnVersion($pageId, $col, $versionInfo);
+                } catch (Exception $e) {
+                    $this->logger->error("Cannot register version: " . $e->getMessage());
+                }
             }
         }
     }
 
+    /**
+     * Returns a page map from a page map string
+     * Page map string is a list of entries delimited by whitespace
+     * An entry can be:
+     *    'xx=yy'   ==> page xx in the input corresponds to page yy in Apm
+     *    'xx=yy++zz'  ==> page xx is page yy, xx+1 is yy+1, .... until page zz in the input
+     *
+     * @param $pageMapString
+     * @return array
+     */
     private function getPageMapFromString($pageMapString) : array {
         $entries = preg_split("/[\s,]+/", $pageMapString);
         $map = [];
@@ -201,9 +214,25 @@ class ImportTranscription extends CommandLineUtility
             if (count($fields) !== 2) {
                 throw new InvalidArgumentException("Invalid entry in page Map: '$entry', need something like '36r=123'");
             }
-            $map[$fields[0]] = intval($fields[1]);
+            $inputPage = $fields[0];
+            $equivalentPage = $fields[1];
+            $epFields = explode('++', $equivalentPage);
+            if (count($epFields) === 2 && $this->isIntegerString($inputPage)) {
+                //   ii=oo++ll     input = output ++ lastpage
+                $firstPage = intval($inputPage);
+                $equivalentPage = intval($epFields[0]);
+                $lastPage = intval($epFields[1]);
+                for($p = $firstPage; $p <= $lastPage; $p++) {
+                    $map[$p] = $equivalentPage++;
+                }
+            } else {
+                $map[$inputPage] = $equivalentPage;
+            }
         }
-
         return $map;
+    }
+
+    private function isIntegerString(string $str): bool {
+        return preg_match('/\d+/', $str);
     }
 }

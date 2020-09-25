@@ -243,7 +243,7 @@ class WitnessPageFormatter implements ItemStreamFormatter {
         if ($popoverHtml !== '') {
             $html .=  " data-content='" . htmlspecialchars($popoverHtml, ENT_QUOTES|ENT_HTML5) . "'";
         }
-        $html .= '>' .  $text .  '</span>';
+        $html .= '>' .  htmlspecialchars($text) .  '</span>';
         return $html;
     }
     

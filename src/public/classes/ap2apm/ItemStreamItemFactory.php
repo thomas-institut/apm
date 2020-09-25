@@ -78,7 +78,19 @@ class ItemStreamItemFactory {
             case AP_Item::RUBRIC: // @codeCoverageIgnore
                 $item = $this->if->createRubricItem($text, $lang);
                 break;
-                
+
+            case AP_Item::BOLD_TEXT:
+                $item = $this->if->createBoldTextItem($text, $lang);
+                break;
+
+            case AP_Item::ITALIC:
+                $item = $this->if->createItalicTextItem($text, $lang);
+                break;
+
+            case AP_Item::HEADING:
+                $item = $this->if->createHeadingItem($text, $lang);
+                break;
+
             case AP_Item::SIC: // @codeCoverageIgnore
                 $item = $this->if->createSicItem($text, $altText, $lang);
                 break;

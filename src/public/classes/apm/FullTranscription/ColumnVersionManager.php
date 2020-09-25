@@ -52,11 +52,27 @@ abstract class ColumnVersionManager
      */
     abstract public function registerNewColumnVersion(int $pageId, int $column, ColumnVersionInfo $versionInfo) : void;
 
+    abstract public function getVersionInfo(int $versionId) : ColumnVersionInfo;
+
     /**
      * Returns an array with all the version that are published
      * @return ColumnVersionInfo[]
      */
     abstract  public function getPublishedVersions() : array;
+
+
+    /**
+     * Marks a version as published
+     * @param int $versionId
+     * @return mixed
+     */
+    abstract public function publishVersion(int $versionId) : void;
+
+    /**
+     * Marks a version as unpulished
+     * @param int $versionId
+     */
+    abstract public function unpublishVersion(int $versionId) : void;
 
 
     /**

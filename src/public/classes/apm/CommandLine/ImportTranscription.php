@@ -121,6 +121,7 @@ class ImportTranscription extends CommandLineUtility
             " columns into document $docId (" . $docInfo['title'] . ")" .
             " using userId $userId (" . $userInfo['username'] . ")" .  ($dryRun ?  ' DRY RUN ' : '') . "\n");
 
+        $updateTime = TimeString::now();
 
         foreach($data as $columnData) {
             $givenPage = $columnData['page'];
@@ -161,7 +162,7 @@ class ImportTranscription extends CommandLineUtility
                 $this->logger->error("  ERROR: column $col is not defined in this page\n");
                 continue;
             }
-            $updateTime = TimeString::now();
+
 
             $newElements = DataManager::createElementArrayFromArray($newElementsData);
 
@@ -173,7 +174,7 @@ class ImportTranscription extends CommandLineUtility
                 } catch (Exception $e) {
                     $this->logger->error("Error updating elements: " . $e->getMessage());
                 }
-                $this->logger->info("Elements updated", [ 'newItemIds' => $newItemIds]);
+                //$this->logger->info("Elements updated", [ 'newItemIds' => $newItemIds]);
                 // Register version
                 $versionInfo = new ColumnVersionInfo();
                 $versionInfo->pageId = $pageId;

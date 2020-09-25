@@ -137,9 +137,51 @@ class ApmColumnVersionManager extends ColumnVersionManager
         return $versions;
     }
 
+
+
     private function rawUpdateVersion(ColumnVersionInfo $versionInfo) {
         $this->dataTable->updateRow($versionInfo->getDatabaseRow());
     }
 
 
+    /**
+     * Marks a version as published
+     * @param int $versionId
+     * @return mixed
+     */
+    public function publishVersion(int $versionId): void
+    {
+        $versionInfo = $this->getVersionInfo($versionId);
+        if ($versionInfo->isPublished) {
+            return;
+        }
+        $versionInfo->isPublished= true;
+        $this->rawUpdateVersion($versionInfo);
+
+    }
+
+    /**
+     * Marks a version as unpublished
+     * @param int $versionId
+     */
+    public function unpublishVersion(int $versionId): void
+    {
+        $versionInfo = $this->getVersionInfo($versionId);
+        if (!$versionInfo->isPublished) {
+            return;
+        }
+        $versionInfo->isPublished= false;
+        $this->rawUpdateVersion($versionInfo);
+    }
+
+    public function getVersionInfo(int $versionId): ColumnVersionInfo
+    {
+        try {
+            $row = $this->dataTable->getRow($versionId);
+        } catch( \InvalidArgumentException $e) {
+            throw new \InvalidArgumentException("Version $versionId does not exist");
+        }
+        return ColumnVersionInfo::createFromDbRow($row);
+
+    }
 }

@@ -191,15 +191,24 @@ class ApiTranscription extends ApiController
                 foreach($element->items as $item) {
                     switch($item->type) {
                         case Item::TEXT:
+                        case Item::HEADING:
+                        case Item::RUBRIC:
+                        case Item::BOLD_TEXT:
+                        case Item::ITALIC:
+                        case Item::MATH_TEXT:
+                        case Item::GLIPH:
+                        case Item::INITIAL:
                             $text .= $item->theText;
                             break;
 
                         case Item::NO_WORD_BREAK:
                             $text .= '-';
                             break;
-                    }
 
+
+                    }
                 }
+                $text .=  "\n";
             }
         }
         return $text;
@@ -251,6 +260,7 @@ class ApiTranscription extends ApiController
                     }
 
                 }
+                $mainText[] = [ 'type' => 'lb'];
             }
 
         }

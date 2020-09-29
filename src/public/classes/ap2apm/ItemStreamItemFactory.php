@@ -26,6 +26,7 @@ use APM\Core\Item\Item;
 use APM\Core\Item\ItemFactory;
 use APM\Core\Item\Mark;
 use APM\Core\Item\TextualItem;
+use AverroesProject\TxText\ChapterMark as AP_ChapterMark;
 use AverroesProject\TxText\Item as AP_Item;
 use AverroesProject\ColumnElement\Element;
 use APM\Core\Item\Note as ItemNote;
@@ -141,7 +142,14 @@ class ItemStreamItemFactory {
             case AP_Item::CHUNK_MARK: // @codeCoverageIgnore
                 $item = $this->if->createChunkMark($altText, $text, $target, $length);
                 break;
-                
+
+            case AP_Item::CHAPTER_MARK: // @codeCoverageIgnore
+                $fields = explode(AP_ChapterMark::SEPARATOR, $text);
+                $appellation = $fields[0];
+                $title = $fields[1];
+                $item = $this->if->createChapterMark($altText, $extraInfo, $target, $length,$appellation, $title);
+                break;
+
             case AP_Item::CHARACTER_GAP: // @codeCoverageIgnore
                 $item = $this->if->createCharacterGapItem($length);
                 break;

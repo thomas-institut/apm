@@ -20,6 +20,7 @@
 namespace APM\CommandLine;
 
 use AverroesProject\ColumnElement\Element;
+use AverroesProject\TxText\ChapterMark;
 use AverroesProject\TxText\Item;
 use InvalidArgumentException;
 use XMLReader;
@@ -194,6 +195,23 @@ class ImportDareXml extends CommandLineUtility
                             'length' => 1
                         ];
                         break;
+
+                    case 'chapter_mark':
+
+                        $element['items'][] = [
+                            'id' => $currentItemId++,
+                            'type' => Item::CHAPTER_MARK,
+                            'seq' => $currentSeq++,
+                            'lang' => $lang,
+                            'theText' => $dareItem['appellation'] . ChapterMark::SEPARATOR . $dareItem['title'],
+                            'altText' => $dareItem['subtype'],
+                            'extraInfo' => $workId,
+                            'target' => $dareItem['number'],
+                            'handId'=> 0,
+                            'columnElementId' => -1,
+                            'length' => $dareItem['level']
+                        ];
+                        break;
                 }
             }
             $elements[] = $element;
@@ -231,6 +249,9 @@ class ImportDareXml extends CommandLineUtility
         $errors = [];
         $openElement = '';
         $rend = '';
+        // for the time being just increase numbers for all levels
+        // TODO: deal with chapter structure properly
+        $chapterNumber = 0;
 
         while($reader->read()){
             if ($reader->nodeType === XMLReader::SIGNIFICANT_WHITESPACE) {
@@ -308,7 +329,7 @@ class ImportDareXml extends CommandLineUtility
                                             $currentLine[] = [
                                                 'type' => 'chunk_mark',
                                                 'value' => $chunkId,
-                                                'n' => $reader->getAttribute('n'),
+                                                'n' => intval($reader->getAttribute('n')),
                                                 'subtype' => $subtype
                                             ];
                                             break;
@@ -316,10 +337,32 @@ class ImportDareXml extends CommandLineUtility
                                         case 'chapter':
                                             $subtype = explode('_', $reader->getAttribute('subtype'))[1];
                                             $chapterTitle = $reader->getAttribute('n');
+                                            $chapterLevel = intval($reader->getAttribute('lvl'));
+                                            if ($subtype === 'start') {
+                                                // just increase the number when a chapter starts
+                                                // TODO: deal with chapter numbering properly
+                                                $chapterNumber++;
+                                            }
+                                            switch($lang) {
+                                                case 'ar':
+                                                    $appellation = 'كتاب';
+                                                    break;
+
+                                                case 'he':
+                                                    $appellation = 'ספר';
+                                                    break;
+
+                                                default:
+                                                    $appellation = 'Capitulum';
+                                            }
+
                                             $currentLine[] = [
                                                 'type' => 'chapter_mark',
-                                                'value' => $chapterTitle,
-                                                'subtype' => $subtype
+                                                'title' => $this->normalizeText($chapterTitle),
+                                                'appellation' => $appellation,
+                                                'subtype' => $subtype,
+                                                'level' => $chapterLevel,
+                                                'number'=> $chapterNumber
                                             ];
                                             break;
 
@@ -508,7 +551,8 @@ class ImportDareXml extends CommandLineUtility
                         case 'chapter_mark':
                             $markType = $item['subtype'];
                             $subtypeLabel = $markType === 'start' ? "Start" : "End";
-                            print "<span class=\"chaptermark $markType\">$subtypeLabel Chapter " .  $item['value'] . '</span>';
+                            $levelClass = 'chapter-level' . $item['level'];
+                            print "<span class=\"chaptermark $markType $levelClass\">$subtypeLabel Chapter " .  $item['title'] . '</span>';
                             if ($lang === 'ar' || $lang === 'he') {
                                 print "&rlm;";
                             }

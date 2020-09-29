@@ -82,6 +82,7 @@ class Item {
     const BOLD_TEXT = 19;
     const ITALIC = 20;
     const HEADING = 21;
+    const CHAPTER_MARK = 22;
 
 
     /**

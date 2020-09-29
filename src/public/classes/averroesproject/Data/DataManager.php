@@ -31,6 +31,7 @@ use AverroesProject\ColumnElement\Substitution;
 use AverroesProject\TxText\Abbreviation;
 use AverroesProject\TxText\Addition;
 use AverroesProject\TxText\BoldText;
+use AverroesProject\TxText\ChapterMark;
 use AverroesProject\TxText\CharacterGap;
 use AverroesProject\TxText\ChunkMark;
 use AverroesProject\TxText\Deletion;
@@ -2027,6 +2028,22 @@ class DataManager implements  SqlQueryCounterTrackerAware
                     $row[$fields['alt_text']],
                     $row[$fields['extra_info']],
                     $row[$fields['length']]);
+                break;
+
+            case Item::CHAPTER_MARK:
+                $textFields = explode(ChapterMark::SEPARATOR, $row[$fields['text']]);
+                $appellation = $textFields[0];
+                $title = $textFields[1];
+                $item = new ChapterMark(
+                    $row[$fields['id']],
+                    $row[$fields['seq']],
+                    $row[$fields['extra_info']],
+                    (int) $row[$fields['target']],
+                    $row[$fields['alt_text']],
+                    $appellation,
+                    $title,
+                    $row[$fields['length']]
+                );
                 break;
             
             case Item::CHARACTER_GAP:

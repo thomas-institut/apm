@@ -25,35 +25,38 @@ namespace AverroesProject\TxText;
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class ChunkMark extends Item {
+class ChapterMark extends Item {
     
-    const CHUNK_START = 'start';
-    const CHUNK_END = 'end';
+    const CHAPTER_START = 'start';
+    const CHAPTER_END = 'end';
+
+    const SEPARATOR = "\t";
    
     
     function __construct($id, $seq, string $workId, int $chapterNumber,
-                         string $type, string $appellationAndTitle = 'A', int $chapterLevel = 1)
+                         string $type, string $appellation, string $title, int $chapterLevel)
     {
         parent::__construct($id, $seq);
         
-        $this->type = Item::CHUNK_MARK;
-        $this->theText = $workId;
+        $this->type = Item::CHAPTER_MARK;
+
+        $this->theText = implode(self::SEPARATOR, [self::normalizeString($appellation), self::normalizeString($title)]);
         $this->target = $chapterNumber;
-        if ($type !== self::CHUNK_START && $type !== self::CHUNK_END) {
+        if ($type !== self::CHAPTER_START && $type !== self::CHAPTER_END) {
              throw new \InvalidArgumentException("Wrong type, must be 'start' "
                      . "or 'end'");
         }
         $this->altText = $type;
         $this->length = $chapterLevel;
-        $this->extraInfo = $appellationAndTitle;
+        $this->extraInfo = $workId;
     }
     
-    function getDareId()
+    function getWorkId()
     {
-        return $this->theText;
+        return $this->extraInfo;
     }
     
-    function getChunkNumber() 
+    function getChapterNumber()
     {
         return $this->target;
     }
@@ -62,12 +65,16 @@ class ChunkMark extends Item {
         return $this->altText;
     }
     
-    function getChunkSegment()
+    function getChapterLevel()
     {
         return $this->length;
     }
 
-    function getWitnessLocalId() : string {
-        return $this->extraInfo;
+    function getAppellation() : string {
+        return explode(self::SEPARATOR,$this->theText)[0];
+    }
+
+    function getTitle(): string {
+        return explode(self::SEPARATOR,$this->theText)[1];
     }
 }

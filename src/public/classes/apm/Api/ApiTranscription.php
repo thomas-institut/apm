@@ -22,7 +22,6 @@ namespace APM\Api;
 
 use APM\FullTranscription\ColumnVersionInfo;
 use AverroesProject\TxText\Item;
-use phpDocumentor\Reflection\Element;
 use Psr\Container\ContainerInterface;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
@@ -254,6 +253,18 @@ class ApiTranscription extends ApiController
                                 'chunkNumber' => $item->getChunkNumber(),
                                 'segment' => $item->getChunkSegment(),
                                 'localId' => $item->getWitnessLocalId()
+                            ];
+                            break;
+
+                        case Item::CHAPTER_MARK:
+                            $mainText[] = [
+                                'type' => 'chapter',
+                                'subtype' => $item->getType(),
+                                'workId' => $item->getWorkId(),
+                                'chapterNumber' => $item->getChapterNumber(),
+                                'chapterLevel' => $item->getChapterLevel(),
+                                'appellation' => $item->getAppellation(),
+                                'title' => $item->getTitle()
                             ];
                             break;
 

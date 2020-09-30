@@ -21,6 +21,7 @@ namespace APM\Api;
 
 
 use APM\FullTranscription\ColumnVersionInfo;
+use AverroesProject\ColumnElement\Element;
 use AverroesProject\TxText\Item;
 use Psr\Container\ContainerInterface;
 use \Psr\Http\Message\ServerRequestInterface as Request;
@@ -30,21 +31,9 @@ use ThomasInstitut\TimeString\TimeString;
 class ApiTranscription extends ApiController
 {
 
-    /**
-     * @var array[]
-     */
-    private $fakeAvailableTranscriptions;
-
     public function __construct(ContainerInterface $ci)
     {
         parent::__construct($ci);
-
-        $this->fakeAvailableTranscriptions = [
-            [ 'docId' => 4, 'dareId' => 'BOOK-DARE-M-AT-GRZ-UB-II.482', 'pages' => [ 2,4,5,6]],
-            [ 'docId' => 128, 'dareId' => 'BOOK-DARE-M-AT-ADO-STB-480','pages' => [ 12,24,25,26]],
-            [ 'docId' => 130, 'dareId' => 'BOOK-DARE-M-BE-LEU-KUL-1515','pages' => [ 100,101]],
-            [ 'docId' => 131, 'dareId' => 'BOOK-DARE-M-FR-PAR-BNF-lat.16088','pages' => [ 4,5,6]],
-            ];
     }
 
     public function getList(Request $request, Response $response) {
@@ -186,7 +175,7 @@ class ApiTranscription extends ApiController
     private function getPlainTextFromElements($elements) : string {
         $text = '';
         foreach($elements as $element) {
-            if ($element->type === \AverroesProject\ColumnElement\Element::LINE) {
+            if ($element->type === Element::LINE) {
                 foreach($element->items as $item) {
                     switch($item->type) {
                         case Item::TEXT:
@@ -228,52 +217,138 @@ class ApiTranscription extends ApiController
             Item::PARAGRAPH_MARK => 'paragraph_mark'
         ];
         foreach ($elements as $element) {
-            if ($element->type === \AverroesProject\ColumnElement\Element::LINE){
-                foreach($element->items as $item) {
-                    if (array_search($item->type, array_keys($itemToType)) !== false) {
-                        $mainText[] = [
-                            'type' => $itemToType[$item->type],
-                            'text' => $item->getText(),
-                            'lang' => $item->getLang()
-                        ];
-                        continue;
-                    }
-
-                    switch($item->type) {
-
-                        case Item::NO_WORD_BREAK:
-                            $mainText[] = [ 'type' => 'wb' ];
-                            break;
-
-                        case Item::CHUNK_MARK:
+            switch($element->type) {
+                case Element::LINE:
+                    foreach($element->items as $item) {
+                        if (array_search($item->type, array_keys($itemToType)) !== false) {
                             $mainText[] = [
-                                'type' => 'chunk',
-                                'subtype' => $item->getType(),
-                                'workId' => $item->getDareId(),
-                                'chunkNumber' => $item->getChunkNumber(),
-                                'segment' => $item->getChunkSegment(),
-                                'localId' => $item->getWitnessLocalId()
+                                'type' => $itemToType[$item->type],
+                                'text' => $item->getText(),
+                                'lang' => $item->getLang(),
+                                'hand' => $item->getHandId()
                             ];
-                            break;
+                            continue;
+                        }
 
-                        case Item::CHAPTER_MARK:
-                            $mainText[] = [
-                                'type' => 'chapter',
-                                'subtype' => $item->getType(),
-                                'workId' => $item->getWorkId(),
-                                'chapterNumber' => $item->getChapterNumber(),
-                                'chapterLevel' => $item->getChapterLevel(),
-                                'appellation' => $item->getAppellation(),
-                                'title' => $item->getTitle()
-                            ];
-                            break;
+                        switch($item->type) {
 
+                            case Item::NO_WORD_BREAK:
+                                $mainText[] = [ 'type' => 'wb' ];
+                                break;
+
+                            case Item::SIC:
+                                $mainText[] = [
+                                    'type' => 'sic',
+                                    'text' => $item->getText(),
+                                    'correction' => $item->getCorrection(),
+                                    'lang' => $item->getLang(),
+                                    'hand' => $item->getHandId()
+                                ];
+                                break;
+
+                            case Item::ABBREVIATION:
+                                $mainText[] = [
+                                    'type' => 'abbreviation',
+                                    'text' => $item->getText(),
+                                    'expansion' => $item->getExpansion(),
+                                    'lang' => $item->getLang(),
+                                    'hand' => $item->getHandId()
+                                ];
+                                break;
+
+                            case Item::ADDITION:
+                                $mainText[] = [
+                                    'type' => 'addition',
+                                    'text' => $item->getText(),
+                                    'placement' => $item->getPlace(),
+                                    'lang' => $item->getLang(),
+                                    'hand' => $item->getHandId()
+                                ];
+                                break;
+
+                            case Item::CHARACTER_GAP:
+                                $mainText[] = [
+                                    'type' => 'character-gap',
+                                    'text' => $item->getPlainText(),
+                                    'length' => $item->length,
+                                    'lang' => $item->getLang(),
+                                    'hand' => $item->getHandId()
+                                ];
+                                break;
+
+                            case Item::DELETION:
+                                $mainText[] = [
+                                    'type' => 'deletion',
+                                    'text' => $item->getText(),
+                                    'technique' => $item->getTechnique(),
+                                    'lang' => $item->getLang(),
+                                    'hand' => $item->getHandId()
+                                ];
+                                break;
+
+                            case Item::ILLEGIBLE:
+                                $mainText[] = [
+                                    'type' => 'illegible',
+                                    'text' => $item->getText(),
+                                    'length' => $item->length,
+                                    'reason' => $item->getReason(),
+                                    'lang' => $item->getLang(),
+                                    'hand' => $item->getHandId()
+                                ];
+                                break;
+
+                            case Item::PARAGRAPH_MARK:
+                                $mainText[] = [
+                                    'type' => 'paragraph-mark',
+                                ];
+                                break;
+
+                            case Item::UNCLEAR:
+                                $mainText[] = [
+                                    'type' => 'unclear',
+                                    'text' => $item->getText(),
+                                    'reason' => $item->getReason(),
+                                    'alternateReading' => $item->altText,
+                                    'lang' => $item->getLang(),
+                                    'hand' => $item->getHandId()
+                                ];
+                                break;
+
+                            case Item::CHUNK_MARK:
+                                $mainText[] = [
+                                    'type' => 'chunk',
+                                    'subtype' => $item->getType(),
+                                    'workId' => $item->getDareId(),
+                                    'chunkNumber' => $item->getChunkNumber(),
+                                    'segment' => $item->getChunkSegment(),
+                                    'localId' => $item->getWitnessLocalId()
+                                ];
+                                break;
+
+                            case Item::CHAPTER_MARK:
+                                $mainText[] = [
+                                    'type' => 'chapter',
+                                    'subtype' => $item->getType(),
+                                    'workId' => $item->getWorkId(),
+                                    'chapterNumber' => $item->getChapterNumber(),
+                                    'chapterLevel' => $item->getChapterLevel(),
+                                    'appellation' => $item->getAppellation(),
+                                    'title' => $item->getTitle()
+                                ];
+                                break;
+
+                        }
                     }
+                    $mainText[] = [ 'type' => 'lb'];
+                    break;
 
-                }
-                $mainText[] = [ 'type' => 'lb'];
+                case Element::LINE_GAP:
+                    $numLines = $element->reference;
+                    for ($i=0; $i< $numLines; $i++) {
+                        $mainText[] = [ 'type' => 'lb'];
+                    }
+                    break;
             }
-
         }
         return $mainText;
     }

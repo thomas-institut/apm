@@ -49,7 +49,7 @@ class Illegible extends Item {
         $this->length = (int) $length;
         
         if (!self::isReasonValid($reason)) {
-            throw new InvalidArgumentException("Unrecognized reason for ILLEGIBLE item, reason given: " . $reason);
+            throw new \InvalidArgumentException("Unrecognized reason for ILLEGIBLE item, reason given: " . $reason);
         }
         $this->extraInfo = $reason;
     }

@@ -37,7 +37,7 @@ class Sic extends Item {
         parent::__construct($id, $s);
         $this->type = parent::SIC;
         if ($theText === NULL or $theText ===''){
-            throw new InvalidArgumentException("SIC items need non-empty text");
+            throw new \InvalidArgumentException("SIC items need non-empty text");
         }
         $this->theText = $theText;
         $this->altText = $correction;

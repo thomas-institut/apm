@@ -216,6 +216,8 @@ class ApiTranscription extends ApiController
             Item::MATH_TEXT => 'math',
             Item::PARAGRAPH_MARK => 'paragraph_mark'
         ];
+        $lastLang = '';
+        $lastHand = -1;
         foreach ($elements as $element) {
             switch($element->type) {
                 case Element::LINE:
@@ -227,6 +229,8 @@ class ApiTranscription extends ApiController
                                 'lang' => $item->getLang(),
                                 'hand' => $item->getHandId()
                             ];
+                            $lastLang = $item->getLang();
+                            $lastHand = $item->getHandId();
                             continue;
                         }
 
@@ -339,18 +343,112 @@ class ApiTranscription extends ApiController
 
                         }
                     }
-                    $mainText[] = [ 'type' => 'lb'];
+                    $mainText[] = [
+                        'type' => 'lb',
+                        ];
                     break;
 
                 case Element::LINE_GAP:
                     $numLines = $element->reference;
                     for ($i=0; $i< $numLines; $i++) {
-                        $mainText[] = [ 'type' => 'lb'];
+                        $mainText[] =  [
+                            'type' => 'lb',
+                        ];
                     }
                     break;
             }
         }
-        return $mainText;
+
+        return $this->consolidateTextItems($mainText);
+    }
+
+    private function consolidateTextItems(array $itemArray) : array {
+        $outputItems = [];
+
+        $collectingText = false;
+        $currentText = '';
+        $currentLang = '';
+        $currentHand = -1;
+
+        foreach($itemArray as $inputItem) {
+            $this->codeDebug("Processing item", [ 'item' => $inputItem, 'collecting' => $collectingText]);
+            if ($collectingText) {
+                if ($inputItem['type'] === 'text' && $inputItem['lang'] === $currentLang && $inputItem['hand'] === $currentHand) {
+                    $currentText .= $inputItem['text'];
+                } else {
+                    $outputItems[] = [
+                        'type' => 'text',
+                        'text' => $currentText,
+                        'lang' => $currentLang,
+                        'hand' => $currentHand
+                    ];
+                    $outputItems[] = $inputItem;
+                    $collectingText = false;
+                }
+            } else {
+                if ($inputItem['type'] !== 'text') {
+                    $outputItems[] = $inputItem;
+                    $collectingText = false;
+                } else {
+                    $currentText = $inputItem['text'];
+                    $currentLang = $inputItem['lang'];
+                    $currentHand = $inputItem['hand'];
+                    $collectingText = true;
+                }
+            }
+        }
+        if ($collectingText) {
+            $outputItems[] = [
+                'type' => 'text',
+                'text' => $currentText,
+                'lang' => $currentLang,
+                'hand' => $currentHand
+            ];
+        }
+        return $this->expandLineBreaks($outputItems);
+    }
+
+    /**
+     * Converts newlines in textual items
+     * @param $items
+     * @return array
+     */
+    private function expandLineBreaks($items) : array {
+
+        $output = [];
+        foreach($items as $item) {
+            if ($item['type'] === 'text') {
+                $lineText = '';
+                foreach(str_split($item['text']) as $ch) {
+                    if ($ch === "\n") {
+                        if ($lineText !== '') {
+                            $output[] = [
+                                'type' => 'text',
+                                'text' => $lineText,
+                                'lang' => $item['lang'],
+                                'hand' => $item['hand']
+                                ];
+
+                        }
+                        $output[] = [ 'type' => 'lb'];
+                        $lineText = '';
+                    } else {
+                        $lineText .= $ch;
+                    }
+                }
+                if ($lineText !== '') {
+                    $output[] = [
+                        'type' => 'text',
+                        'text' => $lineText,
+                        'lang' => $item['lang'],
+                        'hand' => $item['hand']
+                    ];
+                }
+            } else {
+                $output[] = $item;
+            }
+        }
+        return $output;
     }
 
 }

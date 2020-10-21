@@ -216,8 +216,6 @@ class ApiTranscription extends ApiController
             Item::MATH_TEXT => 'math',
             Item::PARAGRAPH_MARK => 'paragraph_mark'
         ];
-        $lastLang = '';
-        $lastHand = -1;
         foreach ($elements as $element) {
             switch($element->type) {
                 case Element::LINE:
@@ -229,8 +227,6 @@ class ApiTranscription extends ApiController
                                 'lang' => $item->getLang(),
                                 'hand' => $item->getHandId()
                             ];
-                            $lastLang = $item->getLang();
-                            $lastHand = $item->getHandId();
                             continue;
                         }
 
@@ -350,11 +346,8 @@ class ApiTranscription extends ApiController
 
                 case Element::LINE_GAP:
                     $numLines = $element->reference;
-                    for ($i=0; $i< $numLines; $i++) {
-                        $mainText[] =  [
-                            'type' => 'lb',
-                        ];
-                    }
+                    $mainText[] = [ 'type' => 'linegap', 'numLines' => $numLines];
+
                     break;
             }
         }
@@ -371,7 +364,7 @@ class ApiTranscription extends ApiController
         $currentHand = -1;
 
         foreach($itemArray as $inputItem) {
-            $this->codeDebug("Processing item", [ 'item' => $inputItem, 'collecting' => $collectingText]);
+            //$this->codeDebug("Processing item", [ 'item' => $inputItem, 'collecting' => $collectingText]);
             if ($collectingText) {
                 if ($inputItem['type'] === 'text' && $inputItem['lang'] === $currentLang && $inputItem['hand'] === $currentHand) {
                     $currentText .= $inputItem['text'];

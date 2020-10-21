@@ -16,7 +16,7 @@
  *
  */
 
-import { Matrix } from './Matrix.js'
+import { Matrix } from '../node_modules/@thomas-inst/matrix/Matrix.js'
 import * as ArrayUtil from './toolbox/ArrayUtil.js'
 /**
  * Generates a matrix with all the textual variants in all columns ranked

@@ -31,7 +31,7 @@
 
  */
 
-import { Matrix } from './Matrix.js'
+import { Matrix } from '../node_modules/@thomas-inst/matrix/Matrix.js'
 import {escapeHtml} from './toolbox/Util.js'
 
 // Table Edit Modes

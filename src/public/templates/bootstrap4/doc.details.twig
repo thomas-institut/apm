@@ -4,10 +4,10 @@
 {% block title %}Doc: {{doc.docInfo.title}}{% endblock %}
 
 {% block extraJS %}
-    <script type="application/javascript" src="{{baseurl}}/js/DocShowPage.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/ApmUtil.js"></script>
-
+    <script type="application/javascript" src="{{baseurl}}/js/dist/DocPage.bundle.js"></script>
     <script>
+
       let chunkInfo = JSON.parse('{{chunkInfo|json_encode|e('js')}}')
       let works = JSON.parse('{{works|json_encode|e('js')}}')
       let urlGenerator = new ApmUrlGenerator('{{baseurl}}')
@@ -32,18 +32,14 @@
       console.log('Metadata:')
       console.log(metaData)
 
-
-      let docShowPage = new DocShowPage(pages, chunkInfo, lastVersions, lastSaves, works, authorInfo, docId, urlGenerator)
+      let docShowPage = new DocPage(pages, chunkInfo, lastVersions, lastSaves, works, authorInfo, docId, urlGenerator)
 
       $(function () {
-
         $('#chunkinfo').html(docShowPage.genWorkInfoHtml())
         $('#pagetablediv').html(docShowPage.getPageTableHtml())
         $('#lastsaves').html(docShowPage.getLastSavesHtml())
         $('[data-toggle="popover"]').popover({trigger:  'hover', html: true})
         ApmUtil.disableHyperlinks('a.alwaysblack')
-
-
       })
     </script>
 {% endblock %}

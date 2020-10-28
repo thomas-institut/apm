@@ -26,14 +26,13 @@
 class NewDocPage {
   
   
-  constructor(prefix, newDocApiUrl, cancelUrl, successUrl) {
+  constructor(prefix, baseUrl) {
     
     this.docInfoFields = ['title', 'short_title', 'doc_type', 'lang', 'image_source', 'image_source_data']
-    
-    this.newDocApiUrl = newDocApiUrl
-    this.successUrl = successUrl
-   
-    
+    this.urlGen = new ApmUrlGenerator(baseUrl)
+
+    this.newDocApiUrl = this.urlGen.apiNewDoc()
+
     this.titleField = $('#' + prefix + '-title')
     this.shortTitleField = $('#' + prefix + '-shorttitle')
     this.typeSelect = $('#' + prefix + '-type')
@@ -65,7 +64,8 @@ class NewDocPage {
     
     
     this.submitButton.on('click', this.genSubmitFunction())
-    this.cancelButton.on('click', function (){ location.replace(cancelUrl)})
+    let thisObject = this
+    this.cancelButton.on('click', function (){ location.replace(thisObject.urlGen.siteDocs())})
     
     this.submitButton.hide()
     this.submitButton.removeClass('hidden')
@@ -81,10 +81,11 @@ class NewDocPage {
           thisObject.newDocApiUrl, 
           { data: JSON.stringify(newInfo) }
         )
-        .done(function () { 
+        .done(function (resp) {
+          let newDocId = resp.newDocId
           thisObject.statusDiv.html("Creating... done")
           thisObject.updating = false
-          location.replace(thisObject.successUrl)
+          location.replace(thisObject.urlGen.siteDocPage(newDocId))
         })
         .fail(function(resp) {
           thisObject.statusDiv.html("Creating... fail with error code " + resp.status + ' :(')

@@ -70,6 +70,10 @@ class ApmUrlGenerator {
     apiConvertCollationTable(tableId) {
         return `${this.base}/api/collation/convert/${tableId}`;
     }
+
+    apiNewDoc() {
+        return `${this.base}/api/doc/new`
+    }
     siteCollationTable(work, chunkno, lang, ids = []) {
         let extra = '';
         if (ids.length > 0) {
@@ -131,15 +135,19 @@ class ApmUrlGenerator {
         return url;
     }
     sitePageViewRealPage(docId, pageNumber) {
-        return this.base + '/doc/' + docId + '/realpage/' + pageNumber + '/view';
+        return this.base + '/doc/' + docId + '/realpage/' + pageNumber + '/view'
     }
     siteChunkPage(work, chunk) {
-        return this.base + '/chunk/' + work + '/' + chunk;
+        return this.base + '/chunk/' + work + '/' + chunk
     }
     siteUserProfile(userName) {
-        return this.base + '/user/' + userName;
+        return this.base + '/user/' + userName
     }
     siteDocPage(docId) {
-        return this.base + '/doc/' + docId + '/details';
+        return this.base + '/doc/' + docId + '/details'
+    }
+
+    siteDocs() {
+        return this.base + '/documents'
     }
 }

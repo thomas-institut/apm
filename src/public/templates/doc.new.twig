@@ -6,12 +6,8 @@
 {% block extraJS %}
 <script type="application/javascript" src="{{baseurl}}/js/NewDocPage.js"></script>
 <script>
-    $(document).ready(function () {
-        docEditObj = new NewDocPage('de', 
-        '{{url_for('api.doc.new')}}',
-        '{{url_for('docs')}}',
-        '{{url_for('docs')}}'
-        )
+    $( () => {
+        let docEditObj = new NewDocPage('de', '{{baseurl}}')
     })
 </script>
 {% endblock %}

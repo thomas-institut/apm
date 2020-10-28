@@ -207,23 +207,24 @@ export class CollationTableEditor {
       }
     })
 
-    this.modeToggle = new MultiToggle({
-      containerSelector: '#mode-toggle',
-      title: '<b>Edit Mode:</b>',
-      buttonClass: 'tb-button',
-      initialOption: 'off',
-      wrapButtonsInDiv: true,
-      buttonsDivClass: 'ct-toolbar-item',
-      buttonDef: [
-        { label: 'Off', name: 'off', helpText: 'Turn off editing'},
-        { label: 'Move', name: 'move', helpText: 'Show controls to move cells'},
-        { label: 'Group', name: 'group', helpText: 'Show controls to group columns'},
-      ]
-    })
-
-    this.modeToggle.on(optionChange, (ev) => {
-      console.log('New Edit Mode: ' + ev.detail.currentOption)
-    })
+    // TODO: uncomment this when ready to continue developing "group" mode
+    // this.modeToggle = new MultiToggle({
+    //   containerSelector: '#mode-toggle',
+    //   title: '<b>Edit Mode:</b>',
+    //   buttonClass: 'tb-button',
+    //   initialOption: 'off',
+    //   wrapButtonsInDiv: true,
+    //   buttonsDivClass: 'ct-toolbar-item',
+    //   buttonDef: [
+    //     { label: 'Off', name: 'off', helpText: 'Turn off editing'},
+    //     { label: 'Move', name: 'move', helpText: 'Show controls to move cells'},
+    //     { label: 'Group', name: 'group', helpText: 'Show controls to group columns'},
+    //   ]
+    // })
+    //
+    // this.modeToggle.on(optionChange, (ev) => {
+    //   console.log('New Edit Mode: ' + ev.detail.currentOption)
+    // })
 
     // text direction for collation table div
 
@@ -2374,8 +2375,8 @@ export class CollationTableEditor {
                <div class="form">
                     <p>Choose how to initialize the main text:</p>
                     <div class="form-group form-check">
-                        <input type="radio" name="init-edition" class="form-check-input most-common-variant-check">
-                        <label class="form-check-label" for="exampleCheck1">Use the most common variant in each column</label>
+                        <input type="radio" name="init-edition" class="form-check-input most-common-variant-check" disabled>
+                        <label class="form-check-label" for="exampleCheck1">Use the most common variant in each column (coming soon...)</label>
                     </div>
                     <div class="form-group form-check">
                         <input type="radio" name="init-edition" class="form-check-input top-witness-check" checked>

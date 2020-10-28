@@ -22,26 +22,15 @@ TEST_JS=\
 	EditorData.js \
 	TranscriptionEditorBlots.js
 
-# Typescript sources to be converted to JS
-TS_FILES=\
-	OptionsChecker.ts \
-	DocShowPage.ts
 
 # Some parameters
-TSC=tsc
-TSC_OPTIONS=--target ES6
 NYC=nyc
 
-all: run
+all: test
 
 test: $(addprefix $(ISTANBUL_DIR)/,$(TEST_JS))
-
-TS_FILE_JS=$(addsuffix .js,$(basename $(TS_FILES)))
-
-run: $(TS_FILE_JS)
 
 $(ISTANBUL_DIR)/%.js : %.js
 	$(NYC) instrument $< $(ISTANBUL_DIR)
 
-%.js: %.ts
-	$(TSC) $(TSC_OPTIONS) $<
+

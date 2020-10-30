@@ -106,8 +106,7 @@ class EditorImages {
         //return $bboxStr;
         return $image_data;
     }
-    
-    
+
     public static function ChunkMarkIcon($size, $dareId, $chunkNumber, $segment, $type, $dir, $lwid='A') {
 
         // TODO: Properly support text direction, right now the editor only asks for LTR images
@@ -142,12 +141,63 @@ class EditorImages {
         $bbox = imagettfbbox($textSize, 0, $fontpath, $text);
         $textWidth = $bbox[2]-$bbox[0];
         $textHeight = $bbox[5]-$bbox[3];
-        
+
         $height = $size+5;
         $width = $textWidth + 7;
         $im = imagecreatetruecolor($width, $height);
         $background = imagecolorallocate($im, 165, 208, 255);
         //$background = imagecolorallocate($im, 51, 122, 183);
+        $textcolor = imagecolorallocate($im, 50, 50, 60);
+        $x = ($width / 2) - ($textWidth/2) - $bbox[0];
+        $y = ($height / 2) - ($textHeight/ 2) - $bbox[1];
+        imagefilledrectangle($im, 0, 0, $width-1, $height-1, $background);
+        imagettftext($im, $textSize, 0, $x, $y, $textcolor, $fontpath, $text);
+        ob_start();
+        imagepng($im);
+        $image_data = ob_get_contents();
+        ob_end_clean();
+        //return $bboxStr;
+        return $image_data;
+    }
+
+
+
+    public static function ChapterMarkIcon($size, $work, $level, $chapterNumber, $type, $dir) {
+
+        // TODO: Properly support text direction, right now the editor only asks for LTR images
+        $startLtr = 'START CH:';
+        $endLtr = 'END CH:';
+        $startRtl = 'START CH';
+        $endRtl = 'END CH';
+        $sizeFactorStart = 0.7;
+        $sizeFactorEnd= 0.5;
+
+        $textSize = $type === 'start' ? $size * $sizeFactorStart : $size * $sizeFactorEnd;
+        $segmentText = "$work Lvl $level, n $chapterNumber";
+
+        if ($dir === 'ltr') {
+            if ($type === 'start') {
+                $text = "$startLtr $segmentText";
+            } else {
+                $text = "$endLtr $segmentText";
+            }
+        } else {
+            if ($type === 'start') {
+                $text = "$segmentText $startRtl";
+            } else {
+                $text = "$endRtl $segmentText";
+            }
+        }
+
+        $fontpath = self::FONT_MONO;
+        $bbox = imagettfbbox($textSize, 0, $fontpath, $text);
+        $textWidth = $bbox[2]-$bbox[0];
+        $textHeight = $bbox[5]-$bbox[3];
+        
+        $height = $size+5;
+        $width = $textWidth + 7;
+        $im = imagecreatetruecolor($width, $height);
+        $background = imagecolorallocate($im, 147, 186, 149);
         $textcolor = imagecolorallocate($im, 50, 50, 60);
         $x = ($width / 2) - ($textWidth/2) - $bbox[0];
         $y = ($height / 2) - ($textHeight/ 2) - $bbox[1];

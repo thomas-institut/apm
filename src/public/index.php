@@ -422,6 +422,11 @@ $app->group('/api', function (RouteCollectorProxy $group){
         ApiIcons::class . ':generateChunkMarkIcon')
         ->setName('api.images.chunkmark');
 
+    // API -> images : ChapterMark Icon
+    $group->get('/images/chaptermark/{work}/{level}/{number}/{type}/{dir}/{size}',
+        ApiIcons::class . ':generateChapterMarkIcon')
+        ->setName('api.images.chaptermark');
+
     // API -> images : Line Gap Mark
     $group->get('/images/linegap/{count}/{size}',
         ApiIcons::class . ':generateLineGapImage')

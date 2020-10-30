@@ -2618,12 +2618,16 @@ class TranscriptionEditor
     if (options.getImageUrl === undefined) {
       options.getImageUrl = function () { return 'urlnotset'}
     }
+    if (options.getPopoverText === undefined) {
+      options.getPopoverText = false
+    }
     theBlot.className = options.className
     theBlot.title = options.title
     theBlot.imageAlt = options.imageAlt
     theBlot.withPopover = options.withPopover
     theBlot.renumberLinesOnImageLoad = options.renumberLinesOnImageLoad
     theBlot.getImageUrl = options.getImageUrl
+    theBlot.getPopoverText = options.getPopoverText
     
     if (options.text) {
       theBlot.text = options.text

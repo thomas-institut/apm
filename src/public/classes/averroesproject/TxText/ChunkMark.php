@@ -31,21 +31,21 @@ class ChunkMark extends Item {
     const CHUNK_END = 'end';
    
     
-    function __construct($id, $seq, string $workId, int $chapterNumber,
-                         string $type, string $appellationAndTitle = 'A', int $chapterLevel = 1)
+    function __construct($id, $seq, string $workId, int $chunkNumber,
+                         string $type, string $localId = 'A', int $segment = 1)
     {
         parent::__construct($id, $seq);
         
         $this->type = Item::CHUNK_MARK;
         $this->theText = $workId;
-        $this->target = $chapterNumber;
+        $this->target = $chunkNumber;
         if ($type !== self::CHUNK_START && $type !== self::CHUNK_END) {
              throw new \InvalidArgumentException("Wrong type, must be 'start' "
                      . "or 'end'");
         }
         $this->altText = $type;
-        $this->length = $chapterLevel;
-        $this->extraInfo = $appellationAndTitle;
+        $this->length = $segment;
+        $this->extraInfo = $localId;
     }
     
     function getDareId()

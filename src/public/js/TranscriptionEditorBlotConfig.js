@@ -215,10 +215,15 @@ class ChunkMarkBlot extends SimpleImgBlot {}
 TranscriptionEditor.registerImageBlot(ChunkMarkBlot, { 
   type: ITEM_CHUNK_MARK,
   name: 'chunkmark',
-  title: 'Chunk',
+  title: 'Chunk Mark',
   icon: '{}',
   imageAlt:'[Chunk]',
   text: { default: 'AW1' },
+  multiPartText: false,
+  withPopover: true,
+  getPopoverText: function(value) {
+    return  `<b>Type:</b> ${value.alttext}<br/><b>Work Id:</b> ${value.text}<br/><b>Chunk Number:</b> ${value.target}
+<br/><b>Local ID:</b> ${value.extrainfo}<br/><b>Segment Number:</b> ${value.thelength}` },
   target: { default: 1 },
   alttext: { default: 'start' },
   extrainfo: { title: 'Local Id', options: [ 'A', 'B', 'C'], default: 'A'},
@@ -233,6 +238,43 @@ TranscriptionEditor.registerImageBlot(ChunkMarkBlot, {
             value.thelength + '/' +
             value.alttext + '/ltr/' +
             size
+  }
+})
+
+
+class ChapterMarkBlot extends SimpleImgBlot {}
+TranscriptionEditor.registerImageBlot(ChapterMarkBlot, {
+  type: ITEM_CHAPTER_MARK,
+  name: 'chaptermark',
+  title: 'Chapter Mark',
+  icon: 'Ch',
+  imageAlt:'[Chapter]',
+  withPopover: true,
+  getPopoverText: function(value) {
+    let fields = value.text.split("\t")
+    let appellation = fields[0]
+    let chapterTitle = fields[1]
+    return  `<b>Type:</b> ${value.alttext}<br/><b>Work Id:</b> ${value.extrainfo}<br/><b>Title:</b> ${appellation} ${chapterTitle}
+<br/><b>Level:</b> ${value.thelength}<br/><b>Number:</b> ${value.target}` },
+  text: { default: "Chapter\tChapterTitle"},
+  multiPartText: true,
+  multiPartTextSeparator: "\t",
+  target: { default: 1 },
+  alttext: { default: 'start' },
+  extrainfo: { title: 'Local Id', options: [ 'A', 'B', 'C'], default: 'A'},
+  thelength: { default: 1 },
+  noButton: true,
+  getImageUrl: function (baseUrl, size, value) {
+    let fields = value.text.split("\t")
+    let appellation = fields[0]
+    let chapterTitle = fields[1]
+    return baseUrl +
+      '/api/images/chaptermark/' +
+      value.extrainfo + '/' +
+      value.thelength + '/' +
+      value.target + '/' +
+      value.alttext + '/ltr/' +
+      size
   }
 })
 

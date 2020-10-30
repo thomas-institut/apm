@@ -80,6 +80,21 @@ class ApiIcons extends ApiController
         $response->getBody()->write($imageData);
         return $response->withHeader('Content-Type', 'image/png');
     }
+
+    public function generateChapterMarkIcon(Request $request, Response $response)
+    {
+        $work = $request->getAttribute('work');
+        $level = intval($request->getAttribute('level'));
+        $chapterNumber = intval($request->getAttribute('number'));
+        $type = $request->getAttribute('type');
+        $dir = $request->getAttribute('dir');
+        $size = $request->getAttribute('size');
+
+        $imageData = EditorImages::ChapterMarkIcon($size, $work, $level, $chapterNumber, $type, $dir);
+
+        $response->getBody()->write($imageData);
+        return $response->withHeader('Content-Type', 'image/png');
+    }
     
     public function generateLineGapImage(Request $request, Response $response)
     {

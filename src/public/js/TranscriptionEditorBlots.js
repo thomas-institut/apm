@@ -187,17 +187,21 @@ class SimpleImgBlot extends BlockEmbed {
     node.setAttribute('src', this.getImageUrl(TranscriptionEditor.baseUrl, size, value))
     if (this.withPopover) {
       let popoverSecondaryHtml = ''
-      if (value.alttext !== undefined) {
-        if (value.alttext !== '') {
-          popoverSecondaryHtml += '<br/><b>' + this.alttext.title + '</b>: <br/><span class="prominent">' +
-                value.alttext + '</span><br/>'
+      if (this.getPopoverText !== false) {
+        popoverSecondaryHtml = this.getPopoverText(value)
+      } else {
+        if (value.alttext !== undefined) {
+          if (value.alttext !== '') {
+            popoverSecondaryHtml += '<br/><b>' + this.alttext.title + '</b>: <br/><span class="prominent">' +
+              value.alttext + '</span><br/>'
+          }
         }
-      }
-      if (value.thelength !== undefined) {
-        popoverSecondaryHtml += '<b>' + this.thelength.title + '</b>: ' + value.thelength + '<br/>'
-      }
-      if (value.extrainfo !== undefined) {
-        popoverSecondaryHtml += '<b>' + this.extrainfo.title + '</b>: ' + value.extrainfo + '<br/>'
+        if (value.thelength !== undefined) {
+          popoverSecondaryHtml += '<b>' + this.thelength.title + '</b>: ' + value.thelength + '<br/>'
+        }
+        if (value.extrainfo !== undefined) {
+          popoverSecondaryHtml += '<b>' + this.extrainfo.title + '</b>: ' + value.extrainfo + '<br/>'
+        }
       }
       TranscriptionEditor.setUpPopover(node, this.title, popoverSecondaryHtml, value.editorid, value.itemid, true)
     }

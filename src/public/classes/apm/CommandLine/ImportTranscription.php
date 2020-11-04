@@ -140,6 +140,11 @@ class ImportTranscription extends CommandLineUtility
             }
             // prepare element data
             $newElementsData = [];
+            if (count($columnData['data']['elements']) === 0) {
+                $this->logger->debug("No elements for page $givenPage col $col, ignoring");
+                continue;
+            }
+
             $errorInElement = false;
             foreach($columnData['data']['elements'] as $element) {
                 $newElement = $element;
@@ -151,7 +156,6 @@ class ImportTranscription extends CommandLineUtility
                     $errorInElement = true;
                     continue;
                 }
-
             }
             if ($errorInElement) {
                 continue;

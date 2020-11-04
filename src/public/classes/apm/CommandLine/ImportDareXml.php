@@ -29,19 +29,35 @@ use function json_encode;
 class ImportDareXml extends CommandLineUtility
 {
 
-    const USAGE = "usage: importdarexml [--output html|json ] [<filename>]\n";
+    const USAGE = "usage: importdarexml [--output html|json ] [--pages xx-yy] [<filename>]\n";
 
     protected function main($argc, $argv)
     {
 
         $fileName = 'php://stdin';
         $outputType = 'html';
-        $options = getopt('', [ 'output:'], $index);
+        $options = getopt('', [ 'output:', 'pages:'], $index);
         if (isset($options['output'])) {
             $outputType = $options['output'];
         }
         if ($index < count($argv)) {
             $fileName = $argv[$index];
+        }
+
+        $firstPage = 0;
+        $lastPage = 1000000;
+        if (isset($options['pages'])) {
+            $range = explode('-', $options['pages']);
+            if (count($range) !== 2) {
+                $this->printErrorMsg("pages option must be of the form mmm-nnn, where mmm and nnn are integers");
+                return false;
+            }
+            $firstPage = intval($range[0]);
+            $lastPage = intval($range[1]);
+            if ($lastPage < $firstPage) {
+                $this->printErrorMsg("Invalid page range: $firstPage-$lastPage, last page must be greater or equal than last page");
+                return false;
+            }
         }
 
 
@@ -56,7 +72,7 @@ class ImportDareXml extends CommandLineUtility
 
 
         try {
-            $dareData = $this->getDareData($xmlString);
+            $dareData = $this->getDareData($xmlString, $firstPage, $lastPage);
         } catch( InvalidArgumentException $e) {
             $this->printErrorMsg($e->getMessage());
             return false;
@@ -219,7 +235,7 @@ class ImportDareXml extends CommandLineUtility
         return [ 'elements' => $elements, 'ednotes' => []];
     }
 
-    private function getDareData(string $xmlString) : array {
+    private function getDareData(string $xmlString, int $firstPage, int $lastPage) : array {
 
         libxml_use_internal_errors(true);
         $sXml = simplexml_load_string($xmlString);
@@ -271,6 +287,16 @@ class ImportDareXml extends CommandLineUtility
 
                 case 1:
                     if ($reader->nodeType === XMLReader::ELEMENT && $reader->name === 'pb') {
+                        $intPageNumber = intval($reader->getAttribute('n'));
+                        $this->printStdErr("Got page $intPageNumber in state 1\n");
+                        if ($intPageNumber !== 0 && ($intPageNumber < $firstPage || $intPageNumber > $lastPage)) {
+                            // ignore this page if it's out of range
+                            // Note: only numeric ranges can be checked at the moment
+                            $this->printStdErr("Ignoring this page\n");
+                            $state = 7;
+                            break;
+                        }
+
                         $columns[] = [
                             'darePage' =>$reader->getAttribute('n'),
                             'dareColumn' => 'a',
@@ -292,6 +318,16 @@ class ImportDareXml extends CommandLineUtility
                                     if (count($currentLine) !== 0) {
                                         $columns[count($columns)-1]['lines'][] = $this->optimizeLine($currentLine);
                                     }
+                                    $intPageNumber = intval($reader->getAttribute('n'));
+                                    $this->printStdErr("Got page $intPageNumber in state 2\n");
+                                    if ($intPageNumber !== 0 && ($intPageNumber < $firstPage || $intPageNumber > $lastPage)) {
+                                        // ignore this page if it's out of range
+                                        // Note: only numeric ranges can be checked at the moment
+                                        $this->printStdErr("Ignoring this page\n");
+                                        $state = 7;
+                                        break;
+                                    }
+
                                     $columns[] =  [
                                         'darePage' =>$reader->getAttribute('n'),
                                         'dareColumn' => 'a',
@@ -443,6 +479,31 @@ class ImportDareXml extends CommandLineUtility
                         break 2;
                     }
                     break;
+
+                case 7:
+                    // ignoring a page
+                    if ($reader->nodeType === XMLReader::ELEMENT && $reader->name === 'pb') {
+                        $intPageNumber = intval($reader->getAttribute('n'));
+                        $this->printStdErr("Got page $intPageNumber in state 7\n");
+                        if ($intPageNumber !== 0 && ($intPageNumber < $firstPage || $intPageNumber > $lastPage)) {
+                            // keep ignoring
+                            $this->printStdErr("Ignoring this page\n");
+                            $state = 7;
+                            break;
+                        }
+                        // set up new page
+                        $columns[] = [
+                            'darePage' =>$reader->getAttribute('n'),
+                            'dareColumn' => 'a',
+                            'lines' => []
+                        ];
+                        $currentLine = [];
+                        // go to read page
+                        $state = 2;
+                        break;
+                    }
+                    break;
+
 
 
                 default:

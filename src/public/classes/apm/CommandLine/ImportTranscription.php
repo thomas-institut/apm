@@ -152,8 +152,12 @@ class ImportTranscription extends CommandLineUtility
                 $newElement['editorId'] = $userId;
                 $newElementsData[] = $newElement;
                 if ($newElement['type'] !== Element::LINE_GAP &&  count($newElement['items']) === 0) {
-                    $this->logger->error("  ERROR: empty element found");
-                    $errorInElement = true;
+                    if ($newElement['type'] === Element::LINE) {
+                        $this->logger->info("  Found empty line, ignoring");
+                    } else {
+                        $this->logger->error("  ERROR: empty element found", [ 'element' => $newElement] );
+                        $errorInElement = true;
+                    }
                     continue;
                 }
             }

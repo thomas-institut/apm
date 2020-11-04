@@ -1335,7 +1335,7 @@ class TranscriptionEditor
       if (!thisObject.enabled) {
         return false
       }
-      //console.log("Selection: @" + range.index + ", l=" + range.length)
+      console.log("Selection: @" + range.index + ", l=" + range.length)
       const hasFormat = TranscriptionEditor.selectionHasFormat(quillObject, range)
       console.log("Has format: " + hasFormat)
       let toolbarSelector = '#toolbar-' + id
@@ -1366,16 +1366,19 @@ class TranscriptionEditor
       const text = quillObject.getText(range)
       if (text.search('\n') !== -1) {
         // Selection includes new lines
+        //console.log("Selection includes new lines")
         $(toolbarSelector + ' .selFmtBtn').prop('disabled', true)
         thisObject.setDisableLangButtons(false)
         return false
       }
       // Selection does not include new lines
       thisObject.setDisableLangButtons(false)
+      //console.log("Selection does not include new lines")
       if (hasFormat) {
         $(toolbarSelector + ' .selFmtBtn').prop('disabled', true)
         $('#clear-button-' + id).prop('disabled', false)
         if (TranscriptionEditor.rangeIsInMidItem(quillObject, range)) {
+          //console.log("Selection is mid item, disabling clear button")
           $('#edit-button-' + id).prop('disabled', false)
           $('#clear-button-' + id).prop('disabled', true)
           return false
@@ -2343,7 +2346,7 @@ class TranscriptionEditor
     for (const type of
       ['rubric', 'gliph', 'initial', 'sic', 'abbr', 'deletion',
         'addition', 'unclear', 'nowb', 'mathtext', 'marginalmark',
-        'boldtext', 'heading1']) {
+        'boldtext', 'italic', 'heading1']) {
       if (type in format) {
         return type
       }
@@ -2463,11 +2466,16 @@ class TranscriptionEditor
     const nextFormat = quillObject.getFormat(range.index + range.length + 1, 0)
     const prevItem = TranscriptionEditor.formatHasItem(prevFormat)
     const nextItem = TranscriptionEditor.formatHasItem(nextFormat)
+    console.log(`rangeIsInMidItem prev=${prevItem}, next=${nextItem}`)
     if (prevItem === nextItem) {
+      // same format
       if (prevItem === false) {
         return false
       }
-      return true
+      if (prevFormat[prevItem]['itemid'] === nextFormat[prevItem]['itemid']) {
+        console.log("Diferent item ids")
+        return true
+      }
     }
     return false
   }

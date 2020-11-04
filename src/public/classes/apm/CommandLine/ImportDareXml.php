@@ -164,6 +164,38 @@ class ImportDareXml extends CommandLineUtility
                         ];
                         break;
 
+                    case 'bold':
+                        $element['items'][] = [
+                            'id' =>  $currentItemId++,
+                            'type' => Item::BOLD_TEXT,
+                            'seq' => $currentSeq++,
+                            'lang' => $lang,
+                            'theText' => $dareItem['value'],
+                            'handId'=> 0,
+                            'altText' => '',
+                            'extraInfo' => '',
+                            'target' => -1,
+                            'columnElementId' => -1,
+                            'length' => 0
+                        ];
+                        break;
+
+                    case 'italic':
+                        $element['items'][] = [
+                            'id' =>  $currentItemId++,
+                            'type' => Item::ITALIC,
+                            'seq' => $currentSeq++,
+                            'lang' => $lang,
+                            'theText' => $dareItem['value'],
+                            'handId'=> 0,
+                            'altText' => '',
+                            'extraInfo' => '',
+                            'target' => -1,
+                            'columnElementId' => -1,
+                            'length' => 0
+                        ];
+                        break;
+
                     case 'head':
                         $element['items'][] = [
                             'id' => $currentItemId++,

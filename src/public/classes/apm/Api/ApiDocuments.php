@@ -283,6 +283,7 @@ class ApiDocuments extends ApiController
     {
 
         $dataManager = $this->getDataManager();
+        $this->profiler->start();
 
         if (!$dataManager->userManager->isUserAllowedTo($this->apiUserId, 'update-doc-settings')){
             $this->logger->warning("updateDocSettings: unauthorized request", 
@@ -309,14 +310,18 @@ class ApiDocuments extends ApiController
         }
         
 
-        $result = $dataManager->updateDocSettings($docId, $newSettings);
-        if ($result === false) {
-             $this->logger->error("Error writing new doc settings to DB",
-                    [ 'apiUserId' => $this->apiUserId,
-                      'apiError' => ApiController::API_ERROR_DB_UPDATE_ERROR,
-                      'data' => $postData]);
+        try {
+            $dataManager->updateDocSettings($docId, $newSettings);
+        } catch (\Exception $e) {
+            $this->logger->error("Error writing new doc settings to DB",
+                [ 'apiUserId' => $this->apiUserId,
+                    'apiError' => ApiController::API_ERROR_DB_UPDATE_ERROR,
+                    'exception' => $e->getCode(),
+                    'exceptionMsg' => $e->getMessage(),
+                    'data' => $postData]);
             return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_DB_UPDATE_ERROR], 409);
         }
+
         $this->logger->info("Doc update settings", [
             'apiUserId'=> $this->apiUserId,
             'newSettings' => $newSettings

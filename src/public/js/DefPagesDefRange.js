@@ -36,6 +36,13 @@ class DefPagesDefRange {
     this.pathFor = urlGenerator
     
     this.updating = false
+
+    this.foliationTypeStringToInt = {
+      'c' : FOLIATION_CONSECUTIVE,
+      'rv' : FOLIATION_RECTOVERSO,
+      'lr' : FOLIATION_LEFTRIGHT,
+      'ab' : FOLIATION_AB
+    }
     
     this.dapForm = $(this.prefix + 'form')
     this.firstPageField = $(this.prefix + 'fp')
@@ -128,10 +135,8 @@ class DefPagesDefRange {
         if(thisObject.foliateCheckbox.is(':checked')) {
           thisObject.overwriteFoliationFormGroup.show()
           let foliationTypeString = thisObject.foliationTypeSelect.val()
-          let foliationType = FOLIATION_RECTOVERSO
-          if (foliationTypeString === 'c') {
-            foliationType = FOLIATION_CONSECUTIVE
-          }
+
+          let foliationType = thisObject.foliationTypeStringToInt[foliationTypeString]
           let prefix = thisObject.foliationPrefixField.val().replace(/\s+/g, '')
           let suffix = thisObject.foliationSuffixField.val().replace(/\s+/g, '')
           thisObject.foliationLabel.html(
@@ -173,10 +178,10 @@ class DefPagesDefRange {
       
       let pageDefs = []
        
-      for (const page of textPagesRange.toArray()) {
+      for (const pageNumber of textPagesRange.toArray()) {
         let thePageDef = { 
           docId: thisObject.docId, 
-          page: page
+          page: pageNumber
         }
         if (setPageTypes) {
           thePageDef.type = thisObject.pageTypesSelect.val()
@@ -188,13 +193,10 @@ class DefPagesDefRange {
 
         if (foliateTextPages) {
           let foliationTypeString = thisObject.foliationTypeSelect.val()
-          let foliationType = FOLIATION_RECTOVERSO
-          if (foliationTypeString === 'c') {
-            foliationType = FOLIATION_CONSECUTIVE
-          }
+          let foliationType = thisObject.foliationTypeStringToInt[foliationTypeString]
           let prefix = thisObject.foliationPrefixField.val().replace(/\s+/g, '')
           let suffix = thisObject.foliationSuffixField.val().replace(/\s+/g, '')
-          thePageDef.foliation = textPagesRange.foliate(page, 
+          thePageDef.foliation = textPagesRange.foliate(pageNumber,
               foliationType, 
               parseInt(thisObject.foliationStartField.val()), 
               prefix, 
@@ -205,14 +207,14 @@ class DefPagesDefRange {
       }
       
       thisObject.statusSpan.html('Updating, this might take a few seconds ... <i class="fa fa-refresh fa-spin"></i>')
-      console.log(pageDefs)
+      //console.log(pageDefs)
       thisObject.updating = true
       
       $.post(
-        thisObject.pathFor.apiBulkPageSettings(), 
+        thisObject.pathFor.apiBulkPageSettings(),
         { data: JSON.stringify(pageDefs) }
       )
-      .done(function () { 
+      .done(function () {
         thisObject.statusSpan.html("Updating... done")
         thisObject.updating = false
         location.replace('')

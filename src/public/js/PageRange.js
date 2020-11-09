@@ -22,8 +22,18 @@
 /*eslint default-case: "error"*/
 /*eslint no-console: ["error", { allow: ["warn", "error"] }] */
 
-const FOLIATION_RECTOVERSO = 1
-const FOLIATION_CONSECUTIVE = 2 
+
+const FOLIATION_CONSECUTIVE = 1
+const FOLIATION_RECTOVERSO = 2
+const FOLIATION_LEFTRIGHT = 3
+const FOLIATION_AB = 4
+
+const foliationAffixes = {
+  1: { a: '', b: ''},
+  2: { a: 'r', b: 'v'},
+  3: { a: 'l', b: 'r'},
+  4: { a: 'a', b: 'b'}
+}
 
 const FOLIATION_START_SAME_AS_RANGE = -1
 
@@ -47,7 +57,7 @@ class PageRange {
       this.setRange(first, last, upperBound)
     }
   }
-  
+
   setRange(first = 0, last = 0) {
     
     if (first < 0 || last < 0) {
@@ -109,13 +119,16 @@ class PageRange {
   }
   
   foliate(pageNumber, type = FOLIATION_RECTOVERSO, start=FOLIATION_START_SAME_AS_RANGE, prefix = '', suffix='') {
+    //console.log(`Foliating page number ${pageNumber}`)
     if (!this.isInRange(pageNumber)) {
+      //console.log(`Not in range`)
       return ''
     }
     
     if (start === FOLIATION_START_SAME_AS_RANGE) {
       start = this.a
     }
+    //console.log(`Start = ${start}`)
     
     if (start < 0) {
       return ''
@@ -128,10 +141,12 @@ class PageRange {
         break
       
       case FOLIATION_RECTOVERSO:
+      case FOLIATION_AB:
+      case FOLIATION_LEFTRIGHT:
         let pagePos = pageNumber - this.a
-        let rectoVerso = 'r'
+        let rectoVerso = foliationAffixes[type].a
         if (pagePos % 2) {
-          rectoVerso = 'v'
+          rectoVerso = foliationAffixes[type].b
         }
         foliationNumber = (Math.floor(pagePos/2) + start) + rectoVerso
         break

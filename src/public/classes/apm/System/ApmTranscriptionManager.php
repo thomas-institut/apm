@@ -1029,17 +1029,20 @@ class ApmTranscriptionManager extends TranscriptionManager
      */
     public function updatePageSettings(int $pageId, PageInfo $newSettings, int $userId): void
     {
+
+
         // check current settings
         $currentSettings = $this->getPageManager()->getPageInfoById($pageId);
+        //$this->codeDebug('Update page settings', [ 'newSettings' => $newSettings, 'currentSettings' => $currentSettings]);
+
 
         // if there are no changes, do nothing
-        if ($newSettings == $currentSettings) {
+        if ($newSettings === $currentSettings) {
             $this->logger->info("UpdatePageSettings with no changes, nothing done.");
             return;
         }
 
         //$this->codeDebug("Updating page settings", $newSettings->getDatabaseRow());
-
         // Update the database first
         $this->getPageManager()->updatePageSettings($pageId, $newSettings);
 

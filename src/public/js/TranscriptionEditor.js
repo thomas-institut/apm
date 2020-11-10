@@ -1550,12 +1550,25 @@ class TranscriptionEditor
       let appellationsSelector = '#chapter-modal-appellation-' + thisObject.id
       $(appellationsSelector).html(appellationsOptionsHtml)
 
-      let segmentSelector = '#chapter-modal-number-' + thisObject.id
-      $(segmentSelector).attr('min', 1)
-      $(segmentSelector).attr('max', 100)
-      $(segmentSelector).val(1)
+      let numberSelector = '#chapter-modal-number-' + thisObject.id
+      $(numberSelector).attr('min', 1)
+        .attr('max', 100)
+        .val(1)
 
       let submitButtonSelector = '#chapter-modal-submit-button-' + thisObject.id
+
+      let titleElement = $('#chapter-modal-title-' + thisObject.id)
+      titleElement.on('keyup', () => {
+        let title = titleElement.val()
+        title = thisObject.trimWhiteSpace(title)
+        if (title === '') {
+          $(submitButtonSelector).attr('disabled', true)
+        } else {
+          $(submitButtonSelector).attr('disabled', false)
+        }
+      })
+
+
 
       $(submitButtonSelector).off()
       $(submitButtonSelector).on('click', function () {
@@ -1565,13 +1578,14 @@ class TranscriptionEditor
         const chapterNumber = $('#chapter-modal-number-' + thisObject.id).val()
         const chapterLevel = $('#chapter-modal-level-' + thisObject.id).val()
         const chapterAppellation = $('#chapter-modal-appellation-' + thisObject.id).val()
-        const chapterTitle = $('#chapter-modal-title-' + thisObject.id).val()
-        let text = [ chapterAppellation, chapterTitle].join("\t")
-        console.log(`Text :  '${text}'`)
+        let chapterTitle = $('#chapter-modal-title-' + thisObject.id).val()
+        chapterTitle = thisObject.trimWhiteSpace(chapterTitle)
+
         if (chapterTitle === '') {
           console.warn('Empty chapter title!')
           return false
         }
+        let text = [ chapterAppellation, chapterTitle].join("\t")
         quillObject.insertEmbed(range.index, 'chaptermark', {
           alttext: type,
           target: chapterNumber,
@@ -2555,6 +2569,10 @@ class TranscriptionEditor
       }
     }
     return latestNote
+  }
+
+  trimWhiteSpace(someString) {
+    return someString.replace(/^\s+/, '').replace(/\s+$/, '')
   }
 
   static getMySqlDate (d) {

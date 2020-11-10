@@ -255,7 +255,7 @@ TranscriptionEditor.registerImageBlot(ChapterMarkBlot, {
     let appellation = fields[0]
     let chapterTitle = fields[1]
     let typeLabel = value.alttext === 'start' ? 'Start' : 'End'
-    return  `<b>Type:</b> ${typeLabel}<br/><b>Work Id:</b> ${value.extrainfo}<br/><b>Appellation:</b> ${appellation}<br/><b>Title:</b>${chapterTitle}
+    return  `<b>Type:</b> ${typeLabel}<br/><b>Work Id:</b> ${value.extrainfo}<br/><b>Appellation:</b> ${appellation}<br/><b>Title:</b> ${chapterTitle}
 <br/><b>Level:</b> ${value.thelength}<br/><b>Number:</b> ${value.target}` },
   text: { default: "Chapter\tChapterTitle"},
   multiPartText: true,

@@ -254,14 +254,15 @@ TranscriptionEditor.registerImageBlot(ChapterMarkBlot, {
     let fields = value.text.split("\t")
     let appellation = fields[0]
     let chapterTitle = fields[1]
-    return  `<b>Type:</b> ${value.alttext}<br/><b>Work Id:</b> ${value.extrainfo}<br/><b>Title:</b> ${appellation} ${chapterTitle}
+    let typeLabel = value.alttext === 'start' ? 'Start' : 'End'
+    return  `<b>Type:</b> ${typeLabel}<br/><b>Work Id:</b> ${value.extrainfo}<br/><b>Appellation:</b> ${appellation}<br/><b>Title:</b>${chapterTitle}
 <br/><b>Level:</b> ${value.thelength}<br/><b>Number:</b> ${value.target}` },
   text: { default: "Chapter\tChapterTitle"},
   multiPartText: true,
   multiPartTextSeparator: "\t",
   target: { default: 1 },
   alttext: { default: 'start' },
-  extrainfo: { title: 'Local Id', options: [ 'A', 'B', 'C'], default: 'A'},
+  extrainfo: {  default: 'AW00'},
   thelength: { default: 1 },
   noButton: true,
   getImageUrl: function (baseUrl, size, value) {

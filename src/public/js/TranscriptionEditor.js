@@ -25,6 +25,53 @@
 
 /* global Twig, Quill, _, EditorData, NoWordBreakBlot */
 
+const validAppellations = {
+  la: [
+    'Canon',
+    'Capitulum',
+    'Commentum',
+    'Differentia',
+    'Divisio',
+    'Liber',
+    'Pars',
+    'Summa',
+    'Textus'
+  ],
+  he: [
+    'באור',
+    'חלק',
+    'כלל',
+    'מאמר',
+    'ספר',
+    'פרוש',
+    'פרק'
+  ],
+  ar: [
+    'كتاب',
+    'تفسير',
+    'جزء',
+    'جملة',
+    'شرح',
+    'فصل',
+    'قسم',
+    'قول',
+    'لفظ',
+    'مقالة'
+  ],
+  jrb: [
+    'كتاب',
+    'تفسير',
+    'جزء',
+    'جملة',
+    'شرح',
+    'فصل',
+    'قسم',
+    'قول',
+    'لفظ',
+    'مقالة'
+  ]
+}
+
 /**
  * 
  * Implementation of the transcription editor
@@ -220,10 +267,14 @@ class TranscriptionEditor
     }
     
     // Special image buttons
-    $('#chunk-start-button-' + id).click(
+    $('#chunk-start-button-' + id).on('click',
             this.genChunkButtonFunction('start'))
-    $('#chunk-end-button-' + id).click(
+    $('#chunk-end-button-' + id).on('click',
             this.genChunkButtonFunction('end'))
+    $('#chapter-start-button-' + id).on('click',
+      this.genChapterMarkButtonFunction('start'))
+    $('#chapter-end-button-' + id).on('click',
+      this.genChapterMarkButtonFunction('end'))
     
     // Special Characters
     for (const char of TranscriptionEditor.specialCharacters) {
@@ -1335,9 +1386,9 @@ class TranscriptionEditor
       if (!thisObject.enabled) {
         return false
       }
-      console.log("Selection: @" + range.index + ", l=" + range.length)
+      //console.log("Selection: @" + range.index + ", l=" + range.length)
       const hasFormat = TranscriptionEditor.selectionHasFormat(quillObject, range)
-      console.log("Has format: " + hasFormat)
+      //console.log("Has format: " + hasFormat)
       let toolbarSelector = '#toolbar-' + id
       if (range.length === 0) {
         $(toolbarSelector + ' .selFmtBtn').prop('disabled', true)
@@ -1400,7 +1451,7 @@ class TranscriptionEditor
       if (range.length > 0) {
         return false
       }
-      $('#chunk-modal-title-' + thisObject.id).html('Chunk ' + type)
+      $('#chapter-modal-title-' + thisObject.id).html('Chunk ' + type)
       let workOptionsHtml = ''
       for (const work of thisObject.activeWorks) {
         workOptionsHtml += '<option value="' + work.dareId + '">'
@@ -1438,14 +1489,14 @@ class TranscriptionEditor
       $(submitButtonSelector).on('click', function () {
         $('#chunk-modal-' + thisObject.id).modal('hide')
         const itemid = thisObject.getOneItemId()
-        const dareid = $('#chunk-modal-dareid-' + thisObject.id).val()
+        const workId = $('#chapter-modal-dareid-' + thisObject.id).val()
         const chunkno = $('#chunk-modal-chunknumber-' + thisObject.id).val()
         const segment = $('#chunk-modal-segment-' + thisObject.id).val()
         const localId = $('#chunk-modal-localid-' + thisObject.id).val()
         quillObject.insertEmbed(range.index, 'chunkmark', {
           alttext: type,
           target: chunkno,
-          text: dareid,
+          text: workId,
           itemid: itemid,
           thelength: segment,
           extrainfo: localId,
@@ -1459,6 +1510,85 @@ class TranscriptionEditor
         }
       })
       $('#chunk-modal-' + thisObject.id).modal('show')
+    }
+  }
+
+  genChapterMarkButtonFunction(type) {
+    let thisObject = this
+    let quillObject = this.quillObject
+    let typeLabel = type === 'start' ?  'Start' : 'End'
+    return function () {
+      const range = quillObject.getSelection()
+      if (range === null || range.length > 0) {
+        return false
+      }
+      $('#chapter-modal-dialogtitle-' + thisObject.id).html('Chapter ' + typeLabel)
+      let workOptionsHtml = ''
+      for (const work of thisObject.activeWorks) {
+        workOptionsHtml += '<option value="' + work.dareId + '">'
+          + work.title + '</option>'
+      }
+      $('#chapter-modal-dareid-' + thisObject.id).html(workOptionsHtml)
+
+      let levelSelector = '#chapter-modal-level-' + thisObject.id
+      $(levelSelector).attr('min', 1)
+        .attr('max', 5)
+        .val(1)
+
+      let appellationsOptionsHtml = ''
+      let appellations = validAppellations[thisObject.defaultLang]
+      for (let i = 0; i < appellations.length; i++) {
+        appellationsOptionsHtml += '<option value="' + appellations[i] + '" '
+        if (i===0) {
+          appellationsOptionsHtml += 'selected'
+        }
+        appellationsOptionsHtml += '>'
+        appellationsOptionsHtml += appellations[i]
+        appellationsOptionsHtml += '</option>'
+      }
+
+      let appellationsSelector = '#chapter-modal-appellation-' + thisObject.id
+      $(appellationsSelector).html(appellationsOptionsHtml)
+
+      let segmentSelector = '#chapter-modal-number-' + thisObject.id
+      $(segmentSelector).attr('min', 1)
+      $(segmentSelector).attr('max', 100)
+      $(segmentSelector).val(1)
+
+      let submitButtonSelector = '#chapter-modal-submit-button-' + thisObject.id
+
+      $(submitButtonSelector).off()
+      $(submitButtonSelector).on('click', function () {
+        $('#chapter-modal-' + thisObject.id).modal('hide')
+        const itemid = thisObject.getOneItemId()
+        const workId = $('#chapter-modal-dareid-' + thisObject.id).val()
+        const chapterNumber = $('#chapter-modal-number-' + thisObject.id).val()
+        const chapterLevel = $('#chapter-modal-level-' + thisObject.id).val()
+        const chapterAppellation = $('#chapter-modal-appellation-' + thisObject.id).val()
+        const chapterTitle = $('#chapter-modal-title-' + thisObject.id).val()
+        let text = [ chapterAppellation, chapterTitle].join("\t")
+        console.log(`Text :  '${text}'`)
+        if (chapterTitle === '') {
+          console.warn('Empty chapter title!')
+          return false
+        }
+        quillObject.insertEmbed(range.index, 'chaptermark', {
+          alttext: type,
+          target: chapterNumber,
+          text: text ,
+          itemid: itemid,
+          thelength: chapterLevel,
+          extrainfo: workId,
+          editorid: thisObject.id
+        })
+        quillObject.setSelection(range.index + 1)
+        // Take care of notes!
+        const noteText = $('#chapter-note-' + thisObject.id).val()
+        if (noteText !== '') {
+          thisObject.addNewNote(itemid, noteText)
+        }
+      })
+      $('#chapter-modal-' + thisObject.id).modal('show')
     }
   }
   
@@ -2466,7 +2596,7 @@ class TranscriptionEditor
     const nextFormat = quillObject.getFormat(range.index + range.length + 1, 0)
     const prevItem = TranscriptionEditor.formatHasItem(prevFormat)
     const nextItem = TranscriptionEditor.formatHasItem(nextFormat)
-    console.log(`rangeIsInMidItem prev=${prevItem}, next=${nextItem}`)
+    //console.log(`rangeIsInMidItem prev=${prevItem}, next=${nextItem}`)
     if (prevItem === nextItem) {
       // same format
       if (prevItem === false) {
@@ -2711,6 +2841,8 @@ class TranscriptionEditor
     <span id="simpleImageButtons-{{id}}"></span>
     <button id="chunk-start-button-{{id}}" class="imgFmtBtn chunkButton"  title="Chunk Start">{</button>
     <button id="chunk-end-button-{{id}}" class="imgFmtBtn chunkButton"  title="Chunk End">}</button>
+    <button id="chapter-start-button-{{id}}" class="imgFmtBtn chapterButton"  title="Chapter Start">[</button>
+    <button id="chapter-end-button-{{id}}" class="imgFmtBtn chapterButton"  title="Chapter End">]</button>
     <span class="separator"/>
       
     {# Special characters #}
@@ -2884,7 +3016,61 @@ class TranscriptionEditor
             </div>
         </div>
     </div>
-</div>            
+</div>           
+
+
+<!-- CHAPTER modal {{id}} -->            
+<div id="chapter-modal-{{id}}" class="modal" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 id="chapter-modal-dialogtitle-{{id}}" class="modal-title">Chapter</h4>
+            </div>
+            <div class="modal-body" id="chunk-modal-body-{{id}}">
+                <form>
+                    <div id="chapter-modal-work-fg-{{id}}" class="form-group">
+                        <label for="chapter-modal-work-{{id}}" class="control-label">Work:</label>
+                        <select name="chapter-modal-dareid" id="chapter-modal-dareid-{{id}}"></select>
+                    </div>
+      
+                    <div id="chapter-modal-level-fg-{{id}}" class="form-group">
+                        <label for="chapter-modal-level-{{id}}" id="chapter-modal-level-label-{{id}}" class="control-label">Chapter Level:</label>
+                        <input type="number" name="chunk" class="form-control" id="chapter-modal-level-{{id}}"> </input>
+                    </div>
+      
+                    <div id="chapter-modal-number-fg-{{id}}" class="form-group">
+                        <label for="chapter-modal-number-{{id}}" id="chapter-modal-number-label-{{id}}" class="control-label">Chapter Number:</label>
+                        <input type="number" name="segment" class="form-control" id="chapter-modal-number-{{id}}"> </input>
+                    </div>
+                    
+                      <div id="chapter-modal-appellation-fg-{{id}}" class="form-group">
+                        <label for="chapter-modal-appellation-{{id}}" id="chapter-modal-appellation-label-{{id}}" class="control-label">Appellation:</label>
+                        <select name="chapter-modal-appellation" id="chapter-modal-appellation-{{id}}"></select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="chapter-modal-title-{{id}}" class="control-label">Chapter Title:</label>
+                        <input type="text" class="form-control" id="chapter-modal-title-{{id}}">
+                    </div>
+
+                    <input id="chapter-note-id-{{id}}" type="hidden" name="note-id" value=""/>
+                    <div class="form-group">
+                        <label for="chapter-note-{{id}}" class="control-label">Note:</label>
+                        <input type="text" class="form-control" id="chapter-note-{{id}}">
+                        <p class="chapter-note-edit-time" id="chapter-note-time-{{id}}"></p>
+                    </div>
+                    <div class="modal-ednotes" id="chapter-modal-ednotes-{{id}}">
+                    </div>
+               </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" id="chapter-modal-cancel-button-{{id}}" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="chapter-modal-submit-button-{{id}}">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>           
             
 <!-- ALERT modal {{id}} -->             
 <div id="alert-modal-{{id}}" class="modal" role="dialog">

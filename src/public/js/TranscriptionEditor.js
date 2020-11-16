@@ -1489,7 +1489,7 @@ class TranscriptionEditor
       $(submitButtonSelector).on('click', function () {
         $('#chunk-modal-' + thisObject.id).modal('hide')
         const itemid = thisObject.getOneItemId()
-        const workId = $('#chapter-modal-dareid-' + thisObject.id).val()
+        const workId = $('#chunk-modal-dareid-' + thisObject.id).val()
         const chunkno = $('#chunk-modal-chunknumber-' + thisObject.id).val()
         const segment = $('#chunk-modal-segment-' + thisObject.id).val()
         const localId = $('#chunk-modal-localid-' + thisObject.id).val()

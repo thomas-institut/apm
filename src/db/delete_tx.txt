@@ -1,0 +1,17 @@
+Delete TX for page
+----------------------
+
+
+DELETE `ap_ednotes` FROM `ap_ednotes` JOIN (`ap_items`, `ap_elements`) ON (`ap_elements`.`id`=`ap_items`.`ce_id` AND `ap_ednotes`.`target`=`ap_items`.`id`) WHERE `ap_elements`.`page_id`=49802;
+DELETE `ap_items` FROM `ap_items` JOIN `ap_elements` ON `ap_elements`.`id`=`ap_items`.`ce_id` WHERE `ap_elements`.`page_id`=49802;
+DELETE FROM `ap_elements` WHERE `page_id`=49802;
+DELETE FROM `ap_versions_tx` WHERE `page_id`=49802
+
+
+Delete TX for doc
+------------------
+
+DELETE `ap_ednotes` FROM `ap_ednotes` JOIN (`ap_items`, `ap_elements`, `ap_pages`) ON (`ap_elements`.`id`=`ap_items`.`ce_id` AND `ap_ednotes`.`target`=`ap_items`.`id` AND `ap_elements`.`page_id`=`ap_pages`.`id`) WHERE `ap_pages`.`doc_id`=132;
+DELETE `ap_items` FROM `ap_items` JOIN (`ap_elements`, `ap_pages`) ON (`ap_elements`.`id`=`ap_items`.`ce_id` AND `ap_elements`.`page_id`=`ap_pages`.`id`) WHERE `ap_pages`.`doc_id`=132;
+DELETE `ap_elements` FROM `ap_elements` JOIN `ap_pages` ON `ap_elements`.`page_id`=`ap_pages`.`id` WHERE `ap_pages`.`doc_id`=132;
+DELETE `ap_versions_tx` FROM `ap_versions_tx` JOIN `ap_pages` ON `ap_versions_tx`.`page_id`=`ap_pages`.`id` WHERE `ap_pages`.`doc_id`=132;

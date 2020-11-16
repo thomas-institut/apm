@@ -150,7 +150,6 @@ class ImportTranscription extends CommandLineUtility
                 $newElement = $element;
                 $newElement['pageId'] = $pageId;
                 $newElement['editorId'] = $userId;
-                $newElementsData[] = $newElement;
                 if ($newElement['type'] !== Element::LINE_GAP &&  count($newElement['items']) === 0) {
                     if ($newElement['type'] === Element::LINE) {
                         $this->logger->info("  Found empty line, ignoring");
@@ -160,6 +159,7 @@ class ImportTranscription extends CommandLineUtility
                     }
                     continue;
                 }
+                $newElementsData[] = $newElement;
             }
             if ($errorInElement) {
                 continue;

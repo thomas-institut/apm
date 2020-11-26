@@ -23,7 +23,7 @@ import * as WitnessType from './constants/WitnessType.js'
 import * as TokenType from './constants/TokenType.js'
 import * as TokenClass from './constants/TokenClass.js'
 
-import { TableEditor } from './TableEditor.js'
+import { editModeOff, TableEditor } from './TableEditor.js'
 import * as CollationTableUtil from './CollationTableUtil.js'
 import * as PopoverFormatter from './CollationTablePopovers.js'
 
@@ -207,24 +207,25 @@ export class CollationTableEditor {
       }
     })
 
-    // TODO: uncomment this when ready to continue developing "group" mode
-    // this.modeToggle = new MultiToggle({
-    //   containerSelector: '#mode-toggle',
-    //   title: '<b>Edit Mode:</b>',
-    //   buttonClass: 'tb-button',
-    //   initialOption: 'off',
-    //   wrapButtonsInDiv: true,
-    //   buttonsDivClass: 'ct-toolbar-item',
-    //   buttonDef: [
-    //     { label: 'Off', name: 'off', helpText: 'Turn off editing'},
-    //     { label: 'Move', name: 'move', helpText: 'Show controls to move cells'},
-    //     { label: 'Group', name: 'group', helpText: 'Show controls to group columns'},
-    //   ]
-    // })
-    //
-    // this.modeToggle.on(optionChange, (ev) => {
-    //   console.log('New Edit Mode: ' + ev.detail.currentOption)
-    // })
+    this.modeToggle = new MultiToggle({
+      containerSelector: '#mode-toggle',
+      title: '<b>Edit Mode:</b>',
+      buttonClass: 'tb-button',
+      initialOption: 'off',
+      wrapButtonsInDiv: true,
+      buttonsDivClass: 'ct-toolbar-item',
+      buttonDef: [
+        { label: 'Off', name: 'off', helpText: 'Turn off editing'},
+        { label: 'Move', name: 'move', helpText: 'Show controls to move cells'},
+        { label: 'Group', name: 'group', helpText: 'Show controls to group columns'},
+      ]
+    })
+
+    this.modeToggle.on(optionChange, (ev) => {
+      console.log('New Edit Mode: ' + ev.detail.currentOption)
+      thisObject.tableEditor.setEditMode(ev.detail.currentOption)
+
+    })
 
     // text direction for collation table div
 
@@ -955,6 +956,7 @@ export class CollationTableEditor {
       generateCellClasses: this.genGenerateCellClassesFunction(),
       icons: icons
     })
+
     this.variantsMatrix = null // will be calculated before table draw
 
     let thisObject = this
@@ -980,6 +982,7 @@ export class CollationTableEditor {
     this.tableEditor.on('column-delete', this.genOnColumnDelete())
     this.tableEditor.on('column-add', this.genOnColumnAdd())
     this.tableEditor.on('column-add column-delete cell-shift content-changed', this.genOnCollationChanges())
+    this.tableEditor.setEditMode(editModeOff)
   }
 
   genOnColumnAdd() {

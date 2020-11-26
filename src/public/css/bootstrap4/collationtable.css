@@ -298,9 +298,10 @@ div.itemspopover {
 
 .te-table th {
     font-weight: normal;
+    font-size: 0.8rem;
     border: none;
     text-align: center;
-    color: white;
+    color: silver;
 }
 
 .te-table td {

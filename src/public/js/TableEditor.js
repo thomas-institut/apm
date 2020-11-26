@@ -904,16 +904,25 @@ export class TableEditor {
     let thisObject = this
     return function(ev) {
       //console.log('Mouse enter')
+      if (thisObject.tableEditMode === editModeOff) {
+        return true
+      }
       let col = thisObject.getThIndexFromElement($(ev.currentTarget))
-      if (col !== -1) {
-        let thSelector = thisObject.getThSelector(col)
-
+      if (col === -1) {
+        return true
+      }
+      let thSelector = thisObject.getThSelector(col)
+      if (thisObject.tableEditMode === editModeMove) {
         $(thSelector + ' .add-column-left-button').removeClass(hiddenClass)
         $(thSelector + ' .add-column-right-button').removeClass(hiddenClass)
         if (thisObject.canDeleteColumn(col)) {
           $(thSelector + ' .delete-column-button').removeClass(hiddenClass)
         }
+        return true
       }
+      // move mode
+      console.log(`MouseEnterHeader: Current edit mode '${thisObject.tableEditMode}' not implemented yet`)
+
     }
   }
 
@@ -921,6 +930,9 @@ export class TableEditor {
     let thisObject = this
     return function(ev) {
       //console.log('Mouse leave')
+      if (thisObject.tableEditMode === editModeOff) {
+        return true
+      }
       let col = thisObject.getThIndexFromElement($(ev.currentTarget))
       if (col !== -1) {
         $(thisObject.getThSelector(col) + ' .header-button').addClass(hiddenClass)
@@ -932,6 +944,10 @@ export class TableEditor {
     let thisObject = this
     return function(ev) {
       //console.log('cell enter')
+      if (thisObject.tableEditMode === editModeOff) {
+        // nothing to do!
+        return true
+      }
       let cellIndex = thisObject.getCellIndexFromElement($(ev.currentTarget))
       if (cellIndex === null) {
         return true
@@ -940,29 +956,34 @@ export class TableEditor {
       let col = cellIndex.col
       //console.log('Mouse enter cell ' + row + ':' + col)
       let tdSelector = thisObject.getTdSelector(row, col)
-      if (thisObject.canMoveCellLeft(row, col)) {
-        $(tdSelector +  ' .move-cell-left-button').removeClass(hiddenClass)
-      }
-      if (thisObject.canPushCellsLeft(row, col)) {
-        let firstCol = thisObject.getFirstEmptyCellToTheLeft(row, col)+1
+      if (thisObject.tableEditMode === editModeMove) {
+        if (thisObject.canMoveCellLeft(row, col)) {
+          $(tdSelector +  ' .move-cell-left-button').removeClass(hiddenClass)
+        }
+        if (thisObject.canPushCellsLeft(row, col)) {
+          let firstCol = thisObject.getFirstEmptyCellToTheLeft(row, col)+1
 
-        $(tdSelector +  ' .push-cells-left-button')
-          .removeClass(hiddenClass)
-          .attr('title', `Push ${firstCol+1}-${col+1} back 1 column`)
-      }
-      if (thisObject.canMoveCellRight(row, col)) {
-        $(tdSelector + ' .move-cell-right-button').removeClass(hiddenClass)
-      }
-      if (thisObject.canPushCellsRight(row, col)) {
-        let lastCol = thisObject.getFirstEmptyCellToTheRight(row, col)-1
-        $(tdSelector + ' .push-cells-right-button')
-          .removeClass(hiddenClass)
-          .attr('title', `Push ${col+1}-${lastCol+1} forward 1 column`)
-      }
+          $(tdSelector +  ' .push-cells-left-button')
+            .removeClass(hiddenClass)
+            .attr('title', `Push ${firstCol+1}-${col+1} back 1 column`)
+        }
+        if (thisObject.canMoveCellRight(row, col)) {
+          $(tdSelector + ' .move-cell-right-button').removeClass(hiddenClass)
+        }
+        if (thisObject.canPushCellsRight(row, col)) {
+          let lastCol = thisObject.getFirstEmptyCellToTheRight(row, col)-1
+          $(tdSelector + ' .push-cells-right-button')
+            .removeClass(hiddenClass)
+            .attr('title', `Push ${col+1}-${lastCol+1} forward 1 column`)
+        }
 
-      if (thisObject.isRowEditable(row)) {
-        $(tdSelector + ' .edit-cell-button').removeClass(hiddenClass)
+        if (thisObject.isRowEditable(row)) {
+          $(tdSelector + ' .edit-cell-button').removeClass(hiddenClass)
+        }
+        return true
       }
+      // move mode
+      console.log(`MouseEnterCell: Current edit mode '${thisObject.tableEditMode}' not implemented yet`)
       return true
     }
   }
@@ -970,6 +991,9 @@ export class TableEditor {
   genOnMouseLeaveCell() {
     let thisObject = this
     return function(ev) {
+      if (thisObject.tableEditMode === editModeOff) {
+        return true
+      }
       let cellIndex = thisObject.getCellIndexFromElement($(ev.currentTarget))
       if (cellIndex === null) {
         return true

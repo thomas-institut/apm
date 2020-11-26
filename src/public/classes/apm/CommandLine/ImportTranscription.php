@@ -33,7 +33,7 @@ use function json_encode;
 class ImportTranscription extends CommandLineUtility
 {
 
-    const USAGE = "usage: importranscription --userId <userId> --docId <docId> [--pageMap <1=2,2=3,>] [--pageMapFile <filename>] [<json filename>]\n";
+    const USAGE = "usage: importranscription --userId <userId> --docId <docId> [--pageMap <1=70v,2=71r,...||<1=20++10>] [--pageMapFile <filename>] [<json filename>]\n";
 
     protected function main($argc, $argv)
     {

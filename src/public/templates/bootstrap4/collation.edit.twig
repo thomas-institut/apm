@@ -11,15 +11,14 @@
 
 {% block extraJS %}
     <script type="text/javascript" src="{{baseurl}}/node_modules/twig/twig.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/AutoCollTableViewSettingsForm.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/CollationTableFormatter.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/Typesetter.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/EditionViewer.js"></script>
+{#    <script type="application/javascript" src="{{baseurl}}/js/AutoCollTableViewSettingsForm.js"></script>#}
+
+    <script type="application/javascript" src="{{baseurl}}/js/dist/CollationTableEdit.bundle.js"></script>
 {% endblock %}
 
 {% block finalBodyJS %}
 <script type="module">
-  import { CollationTableEditor } from "{{baseurl}}/js/CollationTableEditor.js"
+  //import { CollationTableEditor } from "{{baseurl}}/js/CollationTableEditor.js"
 
   $(function() {
     let ctData  = JSON.parse("{{collationTableData|json_encode|e('js')}}")

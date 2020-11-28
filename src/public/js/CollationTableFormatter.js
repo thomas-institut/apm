@@ -16,15 +16,9 @@
  *  
  */
 
-/*eslint-env es6*/
-/*eslint-env jquery*/
+import {OptionsChecker} from '@thomas-inst/optionschecker'
 
-/*eslint no-var: "error"*/
-/*eslint default-case: "error"*/
-/*eslint no-console: ["error", { allow: ["warn", "error"] }] */
-
-
-class CollationTableFormatter {
+export class CollationTableFormatter {
   
   
   constructor (options = {}){

@@ -16,33 +16,35 @@
  *
  */
 
-import { defaultLanguageDefinition } from './defaults/languages.js'
-import * as CollationTableType from './constants/CollationTableType.js'
-import * as CollationTableInitStrategy from './constants/CollationTableConversionInitStrategy.js'
-import * as WitnessType from './constants/WitnessType.js'
-import * as TokenType from './constants/TokenType.js'
-import * as TokenClass from './constants/TokenClass.js'
+import { defaultLanguageDefinition } from './defaults/languages'
+import * as CollationTableType from './constants/CollationTableType'
+import * as CollationTableInitStrategy from './constants/CollationTableConversionInitStrategy'
+import * as WitnessType from './constants/WitnessType'
+import * as TokenType from './constants/TokenType'
+import * as TokenClass from './constants/TokenClass'
 
-import { editModeOff, TableEditor } from './TableEditor.js'
-import * as CollationTableUtil from './CollationTableUtil.js'
-import * as PopoverFormatter from './CollationTablePopovers.js'
+import { editModeOff, TableEditor } from './TableEditor'
+import * as CollationTableUtil from './CollationTableUtil'
+import * as PopoverFormatter from './CollationTablePopovers'
 
+import {EditionViewer} from './EditionViewer'
 
 // widgets
-import { EditableTextField } from './widgets/EditableTextField.js'
-import { transientAlert} from './widgets/TransientAlert.js'
-import { NiceToggle, toggleEvent} from './widgets/NiceToggle.js'
-import { MultiToggle, optionChange} from './widgets/MultiToggle.js'
+import { EditableTextField } from './widgets/EditableTextField'
+import { transientAlert} from './widgets/TransientAlert'
+import { NiceToggle, toggleEvent} from './widgets/NiceToggle'
+import { MultiToggle, optionChange} from './widgets/MultiToggle'
 
-import * as HttpStatusCode from './toolbox/HttpStatusCode.js'
+import * as HttpStatusCode from './toolbox/HttpStatusCode'
 
 // utilities
-import * as Util from './toolbox/Util.js'
-import * as ArrayUtil from './toolbox/ArrayUtil.js'
-import * as MyersDiff from './toolbox/MyersDiff.js'
+import * as Util from './toolbox/Util'
+import * as ArrayUtil from './toolbox/ArrayUtil'
+import * as MyersDiff from './toolbox/MyersDiff'
+import {OptionsChecker} from '@thomas-inst/optionschecker'
 
 export class CollationTableEditor {
-  collationTable;
+  //collationTable;
 
   constructor(options) {
 

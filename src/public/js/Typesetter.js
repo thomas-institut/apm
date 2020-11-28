@@ -83,7 +83,9 @@
  *  TODO: Change the return policy, the typesetter returns ALL input tokens, some of them marked as 'invisible'
  */
 
-class Typesetter {
+import {OptionsChecker} from '@thomas-inst/optionschecker'
+
+export class Typesetter {
   
   constructor(options = {}) {
 

@@ -6,6 +6,10 @@ module.exports = {
     DocPage: {
       import: './DocPageLoader.js',
       filename: 'DocPage.bundle.js',
+    },
+    CollationTableEdit: {
+      import: './CollationTableEditLoader.js',
+      filename: 'CollationTableEdit.bundle.js'
     }
   },
   externals: {

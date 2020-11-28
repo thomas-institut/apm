@@ -18,7 +18,10 @@
 
 /* global Typesetter */
 
-class EditionViewer {
+import {OptionsChecker } from '@thomas-inst/optionschecker'
+import {Typesetter} from './Typesetter'
+
+export class EditionViewer {
   
   constructor (userOptions) {
     //console.log('Constructing Edition Viewer')
@@ -243,7 +246,7 @@ class EditionViewer {
               if (entry.end > (entry.start + 1)) {
                 entryLesson += '… '
               }
-              entryLesson += this.collationTokens[entry.end].text
+              entryLesson += this.options.collationTokens[entry.end].text
             }
             entryLesson += ']'
           }

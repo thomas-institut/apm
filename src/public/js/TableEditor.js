@@ -1031,7 +1031,6 @@ export class TableEditor {
     // profiler.stop()
   }
 
-
   refreshCellContent(row, col) {
     let tdSelector = this.getTdSelector(row, col)
     $(tdSelector + ' .te-cell-content').html(this.options.generateCellContent(row,col, this.matrix.getValue(row,col)))

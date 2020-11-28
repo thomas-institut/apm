@@ -16,10 +16,12 @@
  *  
  */
 
-import { TableEditor } from './TableEditor.js'
-import  *  as CollationTableUtil from './CollationTableUtil.js'
-import {defaultLanguageDefinition} from './defaults/languages.js'
-import * as PopoverFormatter from './CollationTablePopovers.js'
+import { TableEditor } from './TableEditor'
+import  *  as CollationTableUtil from './CollationTableUtil'
+import {defaultLanguageDefinition} from './defaults/languages'
+import * as PopoverFormatter from './CollationTablePopovers'
+import {OptionsChecker} from '@thomas-inst/optionschecker'
+import {CollationTableFormatter} from './CollationTableFormatter'
 
 export class AutomaticCollationTable {
   

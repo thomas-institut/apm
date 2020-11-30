@@ -14,15 +14,14 @@
     <script type="text/javascript" src="{{baseurl}}/node_modules/twig/twig.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/AutoCollTableSettingsForm.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/AutoCollTableViewSettingsForm.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/CollationTableFormatter.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/Typesetter.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/EditionViewer.js"></script>
+{#    <script type="application/javascript" src="{{baseurl}}/js/CollationTableFormatter.js"></script>#}
+{#    <script type="application/javascript" src="{{baseurl}}/js/Typesetter.js"></script>#}
+{#    <script type="application/javascript" src="{{baseurl}}/js/EditionViewer.js"></script>#}
+    <script type="application/javascript" src="{{baseurl}}/js/dist/AutomaticCollationTable.bundle.js"></script>
 {% endblock %}
 
 {% block finalBodyJS %}
 <script type="module">
-  import { AutomaticCollationTable } from '{{baseurl}}/js/AutomaticCollationTable.js'
-
   $(function()  {
     let apiCallOptions = JSON.parse("{{apiCallOptions|json_encode|e('js')}}")
     let availableWitnesses = JSON.parse("{{availableWitnesses|json_encode|e('js')}}")

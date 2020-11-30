@@ -22,6 +22,7 @@ import {defaultLanguageDefinition} from './defaults/languages'
 import * as PopoverFormatter from './CollationTablePopovers'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import {CollationTableFormatter} from './CollationTableFormatter'
+import {EditionViewer} from './EditionViewer'
 
 export class AutomaticCollationTable {
   

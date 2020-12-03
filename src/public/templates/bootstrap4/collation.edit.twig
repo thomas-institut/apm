@@ -1,61 +1,73 @@
-{% extends "bootstrap4/base.twig" %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-{% block title %}
-    CT {{workId}}-{{chunkNumber}} table {{ tableId }}
-{% endblock %}
-
-{% block extraCSS %}
+    <link rel="stylesheet" type="text/css" href="{{baseurl}}/node_modules/bootstrap4/dist/css/bootstrap.css"/>
+    <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/bootstrap4/styles.css"/>
+{#    <link rel="stylesheet" type="text/css" href="{{baseurl}}/node_modules/datatables.net-dt/css/jquery.dataTables.min.css"/>#}
     <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/bootstrap4/collationtable.css" />
     <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/bootstrap4/collation.edit.css" />
-{% endblock %}
 
-{% block extraJS %}
+    <link href='{{baseurl}}/images/averroes-icon.png' rel='icon' sizes='16x16' type='image/png'>
+
+    <title></title>
+
+    <script type="text/javascript" src="{{baseurl}}/node_modules/jquery/dist/jquery.js"></script>
+    <script type="text/javascript" src="{{baseurl}}/node_modules/bootstrap4/dist/js/bootstrap.bundle.js"></script>
+    <script type="text/javascript" src="{{baseurl}}/node_modules/moment/moment.js"></script>
+{#    <script type="text/javascript" src="{{baseurl}}/node_modules/datatables.net/js/jquery.dataTables.min.js"></script>#}
+{#    <script type="text/javascript" src="{{baseurl}}/node_modules/datatables.net-dt/js/dataTables.dataTables.min.js"></script>#}
+    <script type="application/javascript" src="{{baseurl}}/js/ApmUrlGenerator.js"></script>
+{#    <script type="text/javascript" src="{{baseurl}}/js/OptionsChecker.js"></script>#}
+    <script type="text/javascript" src="{{baseurl}}/js/SimpleProfiler.js"></script>
     <script type="text/javascript" src="{{baseurl}}/node_modules/twig/twig.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/dist/CollationTableEdit.bundle.js"></script>
-{% endblock %}
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-white bottom-border-light py-0">
+    <div class="container">
+        <a class="navbar-brand" style="padding:0;" href="{{ url_for('home') }}"><img src="{{baseurl}}/images/averroes-logo-250.png" height="50" ></a>
+        <div id="navbar" class="collapse navbar-collapse">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item"><a class="nav-link" href="{{url_for('dashboard')}}" title="Dashboard">Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{url_for('docs')}}" title="Documents">Documents</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{url_for('chunks')}}" title="Chunks">Chunks</a></li>
+                {% if userinfo.manageUsers %}
+                    <li class="nav-item"><a class="nav-link" href="{{url_for('user.manager')}}" title="Users">Users</a></li>
+                {% endif %}
+                <li class="nav-item dropdown">
+                    <a href="/" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Project Info</a>
+                    <ul class="dropdown-menu">
+                        <li><a class="nav-link" href="https://thomas-institut.github.io/averroes-workflow-guidelines/">Worflow Guidelines &nbsp;<i class="fas fa-external-link-alt"></i></a></li>
+                        <li><a class="nav-link" href="https://thomas-institut.github.io/averroes-tei/averroes-guidelines.html">TEI Guidelines &nbsp;<i class="fas fa-external-link-alt"></i></a></li>
+                        <li><a class="nav-link" href="https://wiki.uni-koeln.de/averroes_project/">Wiki &nbsp;<i class="fas fa-external-link-alt"></i></a></li>
+                        <li><a class="nav-link" href="http://averroes.uni-koeln.de/legacy/">Legacy Files (e.g., old XML) &nbsp;<i class="fas fa-external-link-alt"></i></a></li>
+                        <li><a class="nav-link" href="http://averroes.uni-koeln.de/">Public Website &nbsp;<i class="fas fa-external-link-alt"></i></a></li>
+                    </ul>
+                </li>
+            </ul>
 
-{% block finalBodyJS %}
-<script type="module">
-  $(function() {
-    let ctData  = JSON.parse("{{collationTableData|json_encode|e('js')}}")
-    let peopleInfo = JSON.parse("{{peopleInfo|json_encode|e('js')}}")
-    let workInfo = JSON.parse("{{workInfo|json_encode|e('js')}}")
-    let docInfo = JSON.parse("{{docInfo|json_encode|e('js')}}")
-    let versionInfo = JSON.parse("{{versionInfo|json_encode|e('js')}}")
-    let userId = {{ userId }}
-
-    console.log(ctData)
-    console.log(peopleInfo)
-    console.log(workInfo)
-    console.log(docInfo)
-    console.log(versionInfo)
-    console.log('User ID: ' + userId )
-
-    let te = new CollationTableEditor({
-      userId: userId,
-      collationTableData : ctData,
-      workId: '{{ workId }}',
-      chunkNumber: {{ chunkNumber }},
-      tableId: {{ tableId }},
-      urlGenerator: new ApmUrlGenerator('{{ baseurl }}'),
-      peopleInfo: peopleInfo,
-      workInfo: workInfo,
-      docInfo: docInfo,
-      versionInfo: versionInfo
-    })
-  })
-</script>
-{% endblock %}
-
-{% block content %}
-<nav aria-label="breadcumb">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{{url_for('chunks')}}">Chunks</a></li>
-        <li class="breadcrumb-item"><a href="{{url_for('chunk', {'work' : workId, 'chunk': chunkNumber})}}">{{workId}}-{{chunkNumber}}</a></li>
-        <li class="breadcrumb-item active"><span id="breadcrumb-cttitle"></span></li>
-    </ol>
+            <ul class="navbar-nav">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#"  data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                        <i class="fas fa-user"></i>&nbsp;{{ userinfo.fullname }}</a>
+                    <ul class="dropdown-menu">
+                        <li><a class="nav-link" href="{{ url_for('user.profile', {'username' : userinfo.username}) }}">My Profile</a></li>
+                        <li><a class="nav-link" href="{{ url_for('user.settings', {'username' : userinfo.username}) }}">My Settings</a></li>
+                        <li role="separator" class="divider"></li>
+                        <li><a class="nav-link" href="{{ url_for('logout') }}" title="Logout">Logout</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
 </nav>
+{#</div>#}
 
+<div class="container">
     <div class="row">
         <div class="col-md-8">
             <div id="collationtabletitle">
@@ -135,6 +147,41 @@
         </div>
         <div role="tabpanel" class="tab-pane panetab" id="versionhistorydiv"></div>
     </div>
+</div>
+{#<footer class="footer">#}
+{#    <div class="container">#}
+{#        <p class="text-muted">{% block copyright %}{{ copyright|raw }}{% endblock %}</p>#}
+{#    </div>#}
+{#</footer>#}
+<script type="module">
+  $(function() {
+    let ctData  = JSON.parse("{{collationTableData|json_encode|e('js')}}")
+    let peopleInfo = JSON.parse("{{peopleInfo|json_encode|e('js')}}")
+    let workInfo = JSON.parse("{{workInfo|json_encode|e('js')}}")
+    let docInfo = JSON.parse("{{docInfo|json_encode|e('js')}}")
+    let versionInfo = JSON.parse("{{versionInfo|json_encode|e('js')}}")
+    let userId = {{ userId }}
 
-{% endblock %}
+      console.log(ctData)
+    console.log(peopleInfo)
+    console.log(workInfo)
+    console.log(docInfo)
+    console.log(versionInfo)
+    console.log('User ID: ' + userId )
 
+    let te = new CollationTableEditor({
+      userId: userId,
+      collationTableData : ctData,
+      workId: '{{ workId }}',
+      chunkNumber: {{ chunkNumber }},
+      tableId: {{ tableId }},
+      urlGenerator: new ApmUrlGenerator('{{ baseurl }}'),
+      peopleInfo: peopleInfo,
+      workInfo: workInfo,
+      docInfo: docInfo,
+      versionInfo: versionInfo
+    })
+  })
+</script>
+</body>
+</html>

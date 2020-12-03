@@ -25,14 +25,17 @@
       empty cell where it will go
     - new columns can be created adding empty cells
     - columns with empty values can be deleted
+    - columns can be grouped with contiguous columns
 
-   The editor is agnostic to actual matrix values as it can be provided with functions
+   The editor is agnostic to actual matrix values. The user can provide functions
    to generate the table's contents and to detect empty values
 
  */
 
-import { Matrix } from '../node_modules/@thomas-inst/matrix/Matrix.js'
 import {escapeHtml} from './toolbox/Util.js'
+import { Matrix } from '@thomas-inst/matrix'
+import { SequenceWithGroups } from './SequenceWithGroups'
+import {OptionsChecker} from '@thomas-inst/optionschecker'
 
 // Table Edit Modes
 export const editModeOff = 'off'
@@ -44,6 +47,26 @@ export const cellDrawnEvent = 'cell-drawn'
 export const tableDrawnEvent = 'table-drawn'
 export const columnAddEvent = 'column-add'
 export const contentChangedEvent = 'content-changed'
+
+
+//icons
+const defaultIcons = {
+  moveCellLeft: '&#x25c1;', // ◁
+  moveCellRight: '&#x25b7;', // ▷
+  pushCellsRight: '&#x21a3;',   // ↣
+  pushCellsLeft: '&#x21a2;', // ↢
+  editCell: '&#x270D;', //	✍
+  addColumnLeft: '<sup>&#x25c3;</sup>+',
+  addColumnRight: '+<sup>&#x25b9;',
+  deleteColumn: '&#x2715;', // ✕
+  confirmCellEdit: '&#x2714;', // ✔
+  cancelCellEdit: ' &#x2718;',  // ✘
+  // groupedColumn: '&diams;', // ♦
+  // ungroupedColumn: '&#9826;' // ♢
+  groupedColumn: '&nbsp;&ndash;',
+  ungroupedColumn: '&nbsp;&vert;'
+}
+
 
 // classes
 const hiddenClass = 'hidden'
@@ -69,12 +92,19 @@ const cellContentClass = 'te-cell-content'
 const tableRowClass = 'te-tr'
 const tableSpecificRowClassPrefix = 'te-tr-'
 const tableRowTitleClass = 'te-row-title'
-const columnLinksDivClass = 'column-links'
+const tableRowTitleEdition = 'te-row-title-edition'
+const tableFirstColClass = 'te-table-first-col'
 const linkButtonClass = 'link-button'
 const specificColumnLinkButtonClassPrefix = 'link-button-'
 const inputClass = 'te-input'
 const confirmEditButtonClass = 'confirm-edit-button'
 const cancelEditButtonClass = 'cancel-edit-button'
+
+const groupNoneClass = 'group-none'
+const groupNextClass = 'group-next'
+const groupPreviousClass = 'group-previous'
+const groupBothClass = 'group-both'
+
 
 
 export class TableEditor {
@@ -91,6 +121,12 @@ export class TableEditor {
         required: true,
         type: 'Array'
       },
+      groupedColumns: {
+        // list of columns that are grouped with the next
+        required: false,
+        type: 'Array',
+        default: [3,4,10]
+      },
       id: {
         // the html id of the container where the table will appear
         required: true,
@@ -104,7 +140,11 @@ export class TableEditor {
       // if true, the editor will redraw every cell that has moved when the
       // user clicks the move/shift buttons. If false, it is up to the
       // external event handlers to redraw
-      redrawOnCellShift: { type: 'boolean', required: false, default: true },
+      redrawOnCellShift: {
+        type: 'boolean',
+        required: false,
+        default: true
+      },
       showInMultipleRows: {
         // if true, the table will be split and shown in multiple
         // tables of  the number of rows given in options.columnsPerRow
@@ -121,7 +161,7 @@ export class TableEditor {
       drawTableInConstructor: {
         // if false, the table will not be drawn in the constructor,
         // the user would have to redraw it manually later.
-        // If the user attaches event handlers that reference the TableEditor
+        // If the user attaches event handlers that reference the TableEditor,
         // drawing the table before the object is constructed will cause
         // an error. Setting this option to false avoids that.
         required: false,
@@ -170,7 +210,7 @@ export class TableEditor {
         //         errors: [ 'some error text', 'another error', ... ]
         required: false,
         type: 'function',
-        default: (row, col, currentText) => { return {isValid: true, warnings:[], errors: []} }
+        default: () => { return {isValid: true, warnings:[], errors: []} }
       },
       onCellDrawnEventHandler: {
         required: false,
@@ -197,7 +237,7 @@ export class TableEditor {
       },
       generateTableClasses: {
         // a function to generate classes for the collation table
-        // the default function is an emtpy array
+        // the default function is an empty array
         required: false,
         type: 'function',
         default: () => []
@@ -205,24 +245,26 @@ export class TableEditor {
       generateCellClasses: {
         // a function to generate an array of html classes for a table cell
         // the default function returns an empty array
+        //  (row, col, value) => { ... return someArray }
         required: false,
         type: 'function',
-        default : (row, col, value) => []
+        default : () => []
       },
       generateCellTdExtraAttributes : {
         // a function to generate html attributes to be included in a cell's
         // td element.
         // This can be used to generate Bootstrap popover data for a cell,
         // by returning  { attr='data-content', val:"popover text"}
+        //  (row, col, value) => { .... return someString }
         required: false,
         type: 'function',
-        default: (row, col, value) => ''
+        default: () => ''
       },
       getEmptyValue: {
         // a function to get an empty value
         required: false,
         type: 'function',
-        default: (row, col, value) => ''
+        default: () => ''
       },
       isEmptyValue: {
         // a function to test whether a table value is empty
@@ -245,10 +287,10 @@ export class TableEditor {
         default: '&mdash;'
       },
       icons: {
-        // html for the different icons, see genTextIconSet() below
+        // html for the different icons
         required: false,
         type: 'object',
-        default: TableEditor.genTextIconSet()
+        default: defaultIcons
       }
     }
 
@@ -286,6 +328,7 @@ export class TableEditor {
     this.matrix = new Matrix(0,0, this.options.getEmptyValue())
     this.matrix.setFromArray(valueArray)
     //this.matrix.logMatrix('TableEditor ' + this.options.id)
+    this.columnSequence = new SequenceWithGroups(this.matrix.nCols, this.options.groupedColumns)
 
     this.editFlagMatrix = new Matrix(this.matrix.nRows, this.matrix.nCols, false)
 
@@ -385,18 +428,18 @@ export class TableEditor {
 
   _setupTableForEditMode(mode) {
 
-    let linkDivLinks = $(this.containerSelector + ' div.links a')
+    let groupColumnButtons = $(`${this.containerSelector} a.${linkButtonClass}`)
     switch(mode) {
       case editModeOff:
-        linkDivLinks.addClass(hiddenClass)
+        groupColumnButtons.addClass(hiddenClass)
         break
 
       case editModeMove:
-        linkDivLinks.addClass(hiddenClass)
+        groupColumnButtons.addClass(hiddenClass)
         break
 
       case editModeGroup:
-        linkDivLinks.removeClass(hiddenClass)
+        groupColumnButtons.removeClass(hiddenClass)
         break
     }
 
@@ -407,7 +450,7 @@ export class TableEditor {
   }
 
   editModeOn(redraw = true) {
-    this.setEditMode(editModeMove)
+    this.setEditMode(editModeMove, redraw)
   }
 
   isTableShownInMultipleRows() {
@@ -446,20 +489,7 @@ export class TableEditor {
   }
 
   static genTextIconSet() {
-    return {
-      moveCellLeft: '&#x25c1;', // ◁
-      moveCellRight: '&#x25b7;', // ▷
-      pushCellsRight: '&#x21a3;',   // ↣
-      pushCellsLeft: '&#x21a2;', // ↢
-      editCell: '&#x270D;', //	✍
-      addColumnLeft: '<sup>&#x25c3;</sup>+',
-      addColumnRight: '+<sup>&#x25b9;',
-      deleteColumn: '&#x2715;', // ✕
-      confirmCellEdit: '&#x2714;', // ✔
-      cancelCellEdit: ' &#x2718;',  // ✘
-      groupedColumn: '&lowast;',
-      ungroupedColumn: '&mdash;'
-    }
+    return defaultIcons
   }
 
   redrawTable() {
@@ -500,7 +530,6 @@ export class TableEditor {
     }
 
     for(let tableNumber = 0; tableNumber < numTables; tableNumber++) {
-
       let currentTableFirstColumn  = tableNumber * columnsPerTable
       let currentTableLastColumnPlusOne = Math.min(this.matrix.nCols, currentTableFirstColumn + columnsPerTable)
       let tableClasses = [ tableClass, this.getTableClass(tableNumber)].concat(this.options.generateTableClasses())
@@ -508,47 +537,61 @@ export class TableEditor {
       html += `<table class="${tableClasses.join(' ')}">`
       html += `<tr class="${headerClass}">`
       html += '<th></th>'
+      let tableColumnNumber = 0
       for (let col=currentTableFirstColumn; col < currentTableLastColumnPlusOne; col++) {
         let thClasses = [ this.getThClass(col), this.getColClass(col)]
         html += `<th class="${thClasses.join(' ')}">`
         let addColumnBeforeIcon = this.options.textDirection === 'ltr' ? this.icons.addColumnLeft : this.icons.addColumnRight
         let addColumnAfterIcon = this.options.textDirection === 'ltr' ? this.icons.addColumnRight : this.icons.addColumnLeft
-        //if (this.tableEditMode !== editModeOff) {
-          html += this.genButtonHtml(addColumnBeforeIcon, [addColumnLeftButtonClass, headerButtonClass, moveModeButtonClass], 'Add column before')
-        //}
-
+        html += this.genButtonHtml(addColumnBeforeIcon, [addColumnLeftButtonClass, headerButtonClass, moveModeButtonClass], 'Add column before')
         html += (col + 1)
-        //if (this.tableEditMode !== editModeOff) {
-          html += this.genButtonHtml(this.icons.deleteColumn, [deleteColumnButtonClass, headerButtonClass, moveModeButtonClass], 'Delete this column')
-          html += this.genButtonHtml(addColumnAfterIcon, [addColumnRightButtonClass, headerButtonClass, moveModeButtonClass], 'Add column after')
-        //}
+        html += this.genButtonHtml(this.icons.deleteColumn, [deleteColumnButtonClass, headerButtonClass, moveModeButtonClass], 'Delete this column')
+        html += this.genButtonHtml(addColumnAfterIcon, [addColumnRightButtonClass, headerButtonClass, moveModeButtonClass], 'Add column after')
+
+        if (col !== this.matrix.nCols-1) {
+          let linkIcon = this.icons.ungroupedColumn
+          let groupClass = groupNoneClass
+          let title = "Click to group with next column"
+          if (this.isColumnGroupedWithNext(col)) {
+            groupClass = groupNextClass
+            linkIcon = this.icons.groupedColumn
+            title = "Click to ungroup with next column"
+          }
+          html += this.genButtonHtml(linkIcon, [ linkButtonClass, `${specificColumnLinkButtonClassPrefix}${col}`, groupClass], title)
+        }
         html += '</th>'
+        tableColumnNumber++
       }
 
       html += '</tr>'
       for (let row = 0; row < this.matrix.nRows; row++) {
         html += `<tr class="${tableRowClass} ${tableSpecificRowClassPrefix}${row}'">`
-        html += `<td class="${tableRowTitleClass}">${this.rowDefinition[row].title}</td>`
+        let rowTitleClasses = [tableRowTitleClass ]
+        if (this.rowDefinition[row].title === 'Edition') {
+          rowTitleClasses.push(tableRowTitleEdition)
+        }
+        html += `<td class="${rowTitleClasses.join(' ')}">${this.rowDefinition[row].title}</td>`
+        tableColumnNumber = 0
         for (let col = currentTableFirstColumn; col < currentTableLastColumnPlusOne; col++) {
-          html += this.generateCellHtml(row, col)
+          html += this.generateCellHtml(row, col, tableColumnNumber)
+          tableColumnNumber++
         }
         html += '</tr>'
       }
       html += '</table>'
     }
     html += '</div>'
-
-    html += `<div class="${columnLinksDivClass}">`
-    html += ['l1', 'l2'].map( (l,i) => {
-      return `<a href="#" class="${linkButtonClass} ${specificColumnLinkButtonClassPrefix}${i}">${l}</a>`}).join(' ')
-    html + '</div>'
     return html
   }
 
-  generateCellHtml(row, col) {
+  generateCellHtml(row, col, tableColumnNumber = -1) {
     let html = ''
     let value = this.matrix.getValue(row, col)
     let cellClasses = [ cellClass, this.getTdClass(row,col), this.getColClass(col)]
+    if (tableColumnNumber === 0) {
+      cellClasses.push(tableFirstColClass)
+    }
+    cellClasses = cellClasses.concat(this._getGroupClasses(col))
     cellClasses = cellClasses.concat(this.options.generateCellClasses(row, col, value ))
     let tdExtraArray = this.options.generateCellTdExtraAttributes(row, col, value )
 
@@ -598,7 +641,6 @@ export class TableEditor {
       html += this.genButtonHtml(this.icons.editCell, [ editCellButtonClass, cellButtonClass ] , 'Edit')
     }
     if (this.tableEditMode !== editModeOff) {
-
       html += this.genButtonHtml(pushCellsForwardIcon, [ pushCellsRightButtonClass, cellButtonClass, moveModeButtonClass], 'Push forward')
       html += this.genButtonHtml(moveCellForwardIcon, [ moveCellRightButtonClass , cellButtonClass, moveModeButtonClass] , 'Move forward')
     }
@@ -623,20 +665,15 @@ export class TableEditor {
 
   setupTableEventHandlers() {
     //let profiler = new SimpleProfiler('SetupEventHandlers')
-
     let thSelector = this.getThSelectorAll()
-
-    if (this.tableEditMode !== editModeOff) {
-      $(thSelector).on('mouseenter', this.genOnMouseEnterHeader())
-      $(thSelector).on('mouseleave', this.genOnMouseLeaveHeader())
-      $(`${thSelector} .${addColumnLeftButtonClass}`).on('click', this.genOnClickAddColumnLeftButton())
-
-      $(`${thSelector} .${addColumnRightButtonClass}`).on('click', this.genOnClickAddColumnRightButton())
-      $(`${thSelector} .${deleteColumnButtonClass}`).on('click', this.genOnClickDeleteColumnButton())
-    }
+    $(thSelector).on('mouseenter', this.genOnMouseEnterHeader())
+    $(thSelector).on('mouseleave', this.genOnMouseLeaveHeader())
+    $(`${thSelector} .${addColumnLeftButtonClass}`).on('click', this.genOnClickAddColumnLeftButton())
+    $(`${thSelector} .${addColumnRightButtonClass}`).on('click', this.genOnClickAddColumnRightButton())
+    $(`${thSelector} .${deleteColumnButtonClass}`).on('click', this.genOnClickDeleteColumnButton())
     $(`${thSelector} .${headerButtonClass}`).addClass(hiddenClass)
+    $(`${thSelector} .${linkButtonClass}`).on('click', this.genOnClickGroupColumnButton())
 
-    //profiler.lap('ColumnHandlers')
     this.setupCellEventHandlersAll()
     for (let row = 0; row < this.matrix.nRows; row++) {
       for (let col = 0; col < this.matrix.nCols; col++) {
@@ -663,7 +700,7 @@ export class TableEditor {
       if (thisObject.tableEditMode === editModeOff) {
         return true
       }
-      let cellIndex = thisObject.getCellIndexFromElement($(ev.currentTarget))
+      let cellIndex = thisObject._getCellIndexFromElement($(ev.currentTarget))
       if (cellIndex === null) {
         return true
       }
@@ -751,7 +788,7 @@ export class TableEditor {
       return false
     }
     if (direction==='left' && firstCol-numCols < 0) {
-      console.log(`This ${direction} shift underflows the matrix ;)` )
+      console.log(`This ${direction} shift under flows the matrix ;)` )
       return false
     }
     //profiler.lap('checks done')
@@ -868,10 +905,11 @@ export class TableEditor {
     return element.attr("class").split(/\s+/)
   }
 
-  getThIndexFromElement(element) {
+  _getThIndexFromElement(element) {
     let thIndex = -1
     let classes = this.getClassList(element)
     for(const theClass of classes) {
+      // TODO: use class constant in regex
       if (theClass.search(/^te-th-/) !== -1) {
         thIndex = parseInt(theClass.replace('te-th-', ''))
         break
@@ -880,11 +918,12 @@ export class TableEditor {
     return thIndex
   }
 
-  getCellIndexFromElement(element) {
+  _getCellIndexFromElement(element) {
     let cellIndex = null
     let classes = this.getClassList(element)
     for(const theClass of classes) {
       if (theClass.search(/^te-cell-/) !== -1) {
+        // TODO: use class constant in regex
         let cellIndexArray = theClass.replace('te-cell-', '').split('-')
         if (cellIndexArray.length !== 2) {
           console.error('Found cell class with invalid cell index, class: ' +  theClass)
@@ -903,26 +942,28 @@ export class TableEditor {
   genOnMouseEnterHeader() {
     let thisObject = this
     return function(ev) {
-      //console.log('Mouse enter')
-      if (thisObject.tableEditMode === editModeOff) {
-        return true
-      }
-      let col = thisObject.getThIndexFromElement($(ev.currentTarget))
-      if (col === -1) {
-        return true
-      }
-      let thSelector = thisObject.getThSelector(col)
-      if (thisObject.tableEditMode === editModeMove) {
-        $(thSelector + ' .add-column-left-button').removeClass(hiddenClass)
-        $(thSelector + ' .add-column-right-button').removeClass(hiddenClass)
-        if (thisObject.canDeleteColumn(col)) {
-          $(thSelector + ' .delete-column-button').removeClass(hiddenClass)
-        }
-        return true
-      }
-      // move mode
-      console.log(`MouseEnterHeader: Current edit mode '${thisObject.tableEditMode}' not implemented yet`)
+      switch(thisObject.tableEditMode) {
+        case editModeOff:
+        case editModeGroup:
+          return true
 
+        case editModeMove:
+          let col = thisObject._getThIndexFromElement($(ev.currentTarget))
+          if (col === -1) {
+            return true
+          }
+          let thSelector = thisObject.getThSelector(col)
+          $(thSelector + ' .add-column-left-button').removeClass(hiddenClass)
+          $(thSelector + ' .add-column-right-button').removeClass(hiddenClass)
+          if (thisObject.canDeleteColumn(col)) {
+            $(thSelector + ' .delete-column-button').removeClass(hiddenClass)
+          }
+          return true
+
+        default:
+          console.error(`Unknown tableEditMode in MouseEnterHeader:  ${thisObject.tableEditMode}`)
+          return false
+      }
     }
   }
 
@@ -930,12 +971,21 @@ export class TableEditor {
     let thisObject = this
     return function(ev) {
       //console.log('Mouse leave')
-      if (thisObject.tableEditMode === editModeOff) {
-        return true
-      }
-      let col = thisObject.getThIndexFromElement($(ev.currentTarget))
-      if (col !== -1) {
-        $(thisObject.getThSelector(col) + ' .header-button').addClass(hiddenClass)
+      switch(thisObject.tableEditMode) {
+        case editModeOff:
+        case editModeGroup:
+          return true
+
+        case editModeMove:
+          let col = thisObject._getThIndexFromElement($(ev.currentTarget))
+          if (col !== -1) {
+            $(thisObject.getThSelector(col) + ' .header-button').addClass(hiddenClass)
+          }
+          return true
+
+        default:
+          console.error(`Unknown tableEditMode in MouseLeaveHeader:  ${thisObject.tableEditMode}`)
+          return false
       }
     }
   }
@@ -943,65 +993,73 @@ export class TableEditor {
   genOnMouseEnterCell() {
     let thisObject = this
     return function(ev) {
-      //console.log('cell enter')
-      if (thisObject.tableEditMode === editModeOff) {
-        // nothing to do!
-        return true
-      }
-      let cellIndex = thisObject.getCellIndexFromElement($(ev.currentTarget))
-      if (cellIndex === null) {
-        return true
-      }
-      let row = cellIndex.row
-      let col = cellIndex.col
-      //console.log('Mouse enter cell ' + row + ':' + col)
-      let tdSelector = thisObject.getTdSelector(row, col)
-      if (thisObject.tableEditMode === editModeMove) {
-        if (thisObject.canMoveCellLeft(row, col)) {
-          $(tdSelector +  ' .move-cell-left-button').removeClass(hiddenClass)
-        }
-        if (thisObject.canPushCellsLeft(row, col)) {
-          let firstCol = thisObject.getFirstEmptyCellToTheLeft(row, col)+1
+      switch (thisObject.tableEditMode) {
+        case editModeOff:
+        case editModeGroup:
+          return true
 
-          $(tdSelector +  ' .push-cells-left-button')
-            .removeClass(hiddenClass)
-            .attr('title', `Push ${firstCol+1}-${col+1} back 1 column`)
-        }
-        if (thisObject.canMoveCellRight(row, col)) {
-          $(tdSelector + ' .move-cell-right-button').removeClass(hiddenClass)
-        }
-        if (thisObject.canPushCellsRight(row, col)) {
-          let lastCol = thisObject.getFirstEmptyCellToTheRight(row, col)-1
-          $(tdSelector + ' .push-cells-right-button')
-            .removeClass(hiddenClass)
-            .attr('title', `Push ${col+1}-${lastCol+1} forward 1 column`)
-        }
+        case editModeMove:
+          let cellIndex = thisObject._getCellIndexFromElement($(ev.currentTarget))
+          if (cellIndex === null) {
+            return true
+          }
+          let row = cellIndex.row
+          let col = cellIndex.col
+          //console.log('Mouse enter cell ' + row + ':' + col)
+          let tdSelector = thisObject.getTdSelector(row, col)
+          if (thisObject.canMoveCellLeft(row, col)) {
+            $(tdSelector + ' .move-cell-left-button').removeClass(hiddenClass)
+          }
+          if (thisObject.canPushCellsLeft(row, col)) {
+            let firstCol = thisObject.getFirstEmptyCellToTheLeft(row, col) + 1
+            $(tdSelector + ' .push-cells-left-button')
+              .removeClass(hiddenClass)
+              .attr('title', `Push ${firstCol + 1}-${col + 1} back 1 column`)
+          }
+          if (thisObject.canMoveCellRight(row, col)) {
+            $(tdSelector + ' .move-cell-right-button').removeClass(hiddenClass)
+          }
+          if (thisObject.canPushCellsRight(row, col)) {
+            let lastCol = thisObject.getFirstEmptyCellToTheRight(row, col) - 1
+            $(tdSelector + ' .push-cells-right-button')
+              .removeClass(hiddenClass)
+              .attr('title', `Push ${col + 1}-${lastCol + 1} forward 1 column`)
+          }
+          if (thisObject.isRowEditable(row)) {
+            $(tdSelector + ' .edit-cell-button').removeClass(hiddenClass)
+          }
+          return true
 
-        if (thisObject.isRowEditable(row)) {
-          $(tdSelector + ' .edit-cell-button').removeClass(hiddenClass)
-        }
-        return true
+        default:
+          console.error(`Unknown tableEditMode in MouseEnterCell:  ${thisObject.tableEditMode}`)
+          return false
+
       }
-      // move mode
-      console.log(`MouseEnterCell: Current edit mode '${thisObject.tableEditMode}' not implemented yet`)
-      return true
     }
   }
 
   genOnMouseLeaveCell() {
     let thisObject = this
     return function(ev) {
-      if (thisObject.tableEditMode === editModeOff) {
-        return true
+      switch(thisObject.tableEditMode) {
+        case editModeOff:
+        case editModeGroup:
+          return true
+
+        case editModeMove:
+          let cellIndex = thisObject._getCellIndexFromElement($(ev.currentTarget))
+          if (cellIndex === null) {
+            return true
+          }
+          let row = cellIndex.row
+          let col = cellIndex.col
+          $(thisObject.getTdSelector(row, col) + ' .cell-button').addClass(hiddenClass)
+          return true
+
+        default:
+          console.error(`Unknown tableEditMode in MouseLeaveCell:  ${thisObject.tableEditMode}`)
+          return false
       }
-      let cellIndex = thisObject.getCellIndexFromElement($(ev.currentTarget))
-      if (cellIndex === null) {
-        return true
-      }
-      let row = cellIndex.row
-      let col = cellIndex.col
-      //console.log('Mouse leave cell ' + row + ':' + col)
-      $(thisObject.getTdSelector(row, col) + ' .cell-button').addClass(hiddenClass)
     }
   }
 
@@ -1031,6 +1089,30 @@ export class TableEditor {
     // profiler.stop()
   }
 
+  isColumnGroupedWithNext(col) {
+    return this.columnSequence.isGroupedWithNext(col)
+  }
+
+  isColumnGroupedWithPrevious(col) {
+    return this.columnSequence.isGroupedWithPrevious(col)
+  }
+
+  _getGroupClasses(col) {
+    let isGroupNext = this.isColumnGroupedWithNext(col)
+    let isGroupPrev = this.isColumnGroupedWithPrevious(col)
+
+    if (!isGroupNext && !isGroupPrev) {
+      return [groupNoneClass]
+    }
+    if (isGroupNext && isGroupPrev) {
+      return [groupBothClass]
+    }
+    if (isGroupNext) {
+      return [groupNextClass]
+    }
+    return [groupPreviousClass]
+  }
+
   refreshCellContent(row, col) {
     let tdSelector = this.getTdSelector(row, col)
     $(tdSelector + ' .te-cell-content').html(this.options.generateCellContent(row,col, this.matrix.getValue(row,col)))
@@ -1038,11 +1120,23 @@ export class TableEditor {
 
   refreshCellClassesTd(td, row, col) {
     let newClasses = this.options.generateCellClasses(row, col, this.matrix.getValue(row, col) )
+    if ( td.hasClass(tableFirstColClass)) {
+      // preserve first col class
+      newClasses.push(tableFirstColClass)
+    }
     let standardCellClasses = [ 'te-cell', this.getTdClass(row,col), this.getColClass(col)]
+    standardCellClasses = standardCellClasses.concat(this._getGroupClasses(col))
     td.attr('class', (standardCellClasses.concat(newClasses)).join(' '))
   }
+
   refreshCellClasses(row, col) {
     this.refreshCellClassesTd($(this.getTdSelector(row, col)), row, col)
+  }
+
+  refreshColumnClasses(col) {
+    for(let r = 0; r < this.matrix.nRows; r++) {
+      this.refreshCellClasses(r, col)
+    }
   }
 
   refreshCellAttributes(row, col) {
@@ -1142,12 +1236,55 @@ export class TableEditor {
     }
   }
 
+  genOnClickGroupColumnButton() {
+    let thisObject = this
+    return (ev) => {
+      if (thisObject.tableEditMode !== editModeGroup) {
+        return false
+      }
+      let col = thisObject._getColFromGroupColumnButton(ev.currentTarget)
+      console.log(`Click on groupColumn Button, col = ${col}`)
+      if (thisObject.isColumnGroupedWithNext(col)) {
+        // ungroup
+        console.log(`Ungrouping`)
+        thisObject.columnSequence.ungroupWithNext(col)
+        $(ev.currentTarget).html(thisObject.icons.ungroupedColumn)
+      } else {
+        // group with next
+        console.log(`Grouping with next`)
+        thisObject.columnSequence.groupWithNext(col)
+        $(ev.currentTarget).html(thisObject.icons.groupedColumn)
+      }
+      let columnGroup = this.columnSequence.getGroupForNumber(col)
+      console.log(columnGroup)
+      let minC = columnGroup.from > 0 ? columnGroup.from-1 : 0
+      let maxC = columnGroup.to < thisObject.matrix.nCols - 1 ? columnGroup.to +1:  thisObject.matrix.nCols - 1
+      for (let c = minC; c <= maxC; c++) {
+        thisObject.refreshColumnClasses(c)
+      }
+      return false
+    }
+  }
+
+  _getColFromGroupColumnButton(domElement) {
+    let classes = this.getClassList($(domElement))
+    let col = -1
+    for(const theClass of classes) {
+      // TODO: use class constant in regex
+      if (theClass.search(/^link-button-/) !== -1) {
+        col = parseInt(theClass.replace('link-button-', ''))
+        break
+      }
+    }
+    return col
+  }
+
   genOnClickAddColumnRightButton() {
     let thisObject = this
     return function(ev) {
-      let col = thisObject.getThIndexFromElement($(ev.currentTarget).parent())
+      let col = thisObject._getThIndexFromElement($(ev.currentTarget).parent())
       if (col === -1) {
-        return true
+        return false
       }
       console.log('Add column right, col = ' + col)
       thisObject.currentYScroll = window.scrollY
@@ -1164,9 +1301,9 @@ export class TableEditor {
   genOnClickAddColumnLeftButton() {
     let thisObject = this
     return function(ev) {
-      let col = thisObject.getThIndexFromElement($(ev.currentTarget).parent())
+      let col = thisObject._getThIndexFromElement($(ev.currentTarget).parent())
       if (col === -1) {
-        return true
+        return false
       }
       console.log('Add column left, col = ' + col)
       thisObject.currentYScroll = window.scrollY
@@ -1202,7 +1339,7 @@ export class TableEditor {
   genOnClickDeleteColumnButton() {
     let thisObject = this
     return function(ev) {
-      let col = thisObject.getThIndexFromElement($(ev.currentTarget).parent())
+      let col = thisObject._getThIndexFromElement($(ev.currentTarget).parent())
       if (col === -1) {
         return true
       }

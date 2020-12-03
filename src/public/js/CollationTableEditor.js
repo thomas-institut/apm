@@ -138,6 +138,8 @@ export class CollationTableEditor {
     this.convertToEditionDiv = $('#convert-to-edition-div')
     this.convertToEditionButton = $('#convert-to-edition-btn')
 
+    document.title = `${this.ctData.title} (${this.ctData.chunkId})`
+
     this.exportCsvButton.attr("download", `ApmCT_${this.options.workId}-${this.options.chunkNumber}.csv`)
     this.exportSvgButton.attr("download", `ApmQuickEdition_${this.options.workId}-${this.options.chunkNumber}.svg`)
 
@@ -180,6 +182,7 @@ export class CollationTableEditor {
 
     this.editionSvgDiv.html('Quick edition coming soon...')
     this.ctDiv.html('Collation table coming soon...')
+    this.fitCtDivToViewPort()
 
     this.saveButton.on('click', this.genOnClickSaveButton())
 
@@ -255,6 +258,21 @@ export class CollationTableEditor {
         return false // make the browser ask if the user wants to leave
       }
     })
+
+    $(window).on('resize',
+      () => { thisObject.fitCtDivToViewPort()}
+      )
+  }
+
+  fitCtDivToViewPort() {
+    let ctDivTop = this.ctDiv.offset().top
+    let windowHeight = document.defaultView.innerHeight
+    let currentHeight = this.ctDiv.height()
+    let newHeight = windowHeight - ctDivTop - 10
+    if (newHeight !== currentHeight) {
+      console.log(`Current H: ${currentHeight}, newHeight: ${newHeight}`)
+      this.ctDiv.height(newHeight)
+    }
   }
 
   editMode() {
@@ -281,7 +299,7 @@ export class CollationTableEditor {
         })}
       ).done(
         apiResponse => {
-          let newWindow = window.open(apiResponse.url)
+          window.open(apiResponse.url)
           thisObject.exportPdfButton.html(buttonHtml)
         }
       ).fail (
@@ -882,7 +900,7 @@ export class CollationTableEditor {
         return ''
       }
 
-      let cellIndex = thisObject.tableEditor.getCellIndexFromElement($(this))
+      let cellIndex = thisObject.tableEditor._getCellIndexFromElement($(this))
       if (cellIndex === null) {
         console.error('Popover requested on a non-cell element!')
       }
@@ -989,7 +1007,7 @@ export class CollationTableEditor {
 
   genOnColumnAdd() {
     let thisObject = this
-    return (data) => {
+    return () => {
       if (thisObject.ctData['type']===CollationTableType.EDITION) {
         thisObject.syncEditionWitnessAndTableEditorFirstRow()
       }
@@ -1009,7 +1027,7 @@ export class CollationTableEditor {
 
   genOnColumnDelete() {
     let thisObject = this
-    return (data) => {
+    return () => {
       if (thisObject.ctData['type'] === CollationTableType.COLLATION_TABLE) {
         // nothing to do for regular collation tables
         return
@@ -1249,7 +1267,7 @@ export class CollationTableEditor {
   }
 
   getPostNotes(row, col, tokenIndex) {
-    let theToken = this.ctData
+    //let theToken = this.ctData
 
     if (this.aggregatedNonTokenItemIndexes[row][tokenIndex] === undefined) {
       console.log(`Undefined aggregate non-token item index for row ${row}, tokenIndex ${tokenIndex}`)
@@ -1638,7 +1656,7 @@ export class CollationTableEditor {
 
   genOnClickLoadSiglaPreset() {
     let thisObject = this
-    return function(ev) {
+    return function() {
       console.log('Click on load sigla preset')
       if (thisObject.siglaPresets.length === 0) {
         console.log('No sigla presets to apply')
@@ -1718,7 +1736,7 @@ export class CollationTableEditor {
 
   genOnClickSaveSiglaPreset() {
     let thisObject = this
-    return function(ev) {
+    return function() {
       console.log('Click on save sigla')
       const overWritePresetButtonLabel = 'Overwrite Preset'
       const createPresetButtonLabel = 'Create New Preset'
@@ -1825,7 +1843,7 @@ export class CollationTableEditor {
         let apiUrl = thisObject.options.urlGenerator.apiSaveSiglaPreset()
         footInfoLabel.html('Saving....')
         saveButton.addClass('hidden')
-        $.post(apiUrl, { data: JSON.stringify(apiCallData)}).done( (resp) =>{
+        $.post(apiUrl, { data: JSON.stringify(apiCallData)}).done( () =>{
           console.log('Save preset success')
           if (apiCommand === 'new') {
             footInfoLabel.html('New preset created ')
@@ -1835,7 +1853,7 @@ export class CollationTableEditor {
           cancelButton.html('Close')
           // reload presets
           thisObject.fetchSiglaPresets()
-        }).fail( (resp) => {
+        }).fail( () => {
            if (apiCommand === 'new') {}
            footInfoLabel.html('Error: could not save new preset')
            saveButton.removeClass('hidden')
@@ -2179,6 +2197,7 @@ export class CollationTableEditor {
         thisObject.ctData['title'] = normalizedNewTitle
         thisObject.titleField.setText(normalizedNewTitle)
         thisObject.updateSaveArea()
+        document.title = `${thisObject.ctData.title} (${thisObject.ctData.chunkId})`
       }
       return false
     }
@@ -2197,8 +2216,7 @@ export class CollationTableEditor {
     let workAuthorId = this.options.workInfo['authorId']
     let workAuthorName = this.options.peopleInfo[workAuthorId]['fullname']
 
-    html += '<p>' + workAuthorName + ', <i>' + workTitle + '</i>, chunk ' +  this.options.chunkNumber + '</p>'
-    html += '<p>Chunk ID: ' + this.options.workId + '-' + this.options.chunkNumber + '</p>'
+    html += `<p>${workAuthorName}, <i>${workTitle}</i>, chunk ${this.options.chunkNumber}  (${this.options.workId}-${this.options.chunkNumber})`
     html += '<p>Table ID: ' + this.tableId + '</p>'
     return html
   }

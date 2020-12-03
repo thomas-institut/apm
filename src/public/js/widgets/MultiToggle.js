@@ -23,6 +23,8 @@
  *
  */
 
+import {OptionsChecker} from '@thomas-inst/optionschecker'
+
 export const optionChange = 'toggle'
 
 const defaultHoverClass = 'multitoggle-hover'

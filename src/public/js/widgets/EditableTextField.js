@@ -16,6 +16,8 @@
  *
  */
 
+import {OptionsChecker} from '@thomas-inst/optionschecker'
+
 // Events
 
 export const confirmEvent = 'confirm'

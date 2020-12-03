@@ -134,7 +134,7 @@ td.linenumber {
 }
 
 .tooltip-notes > blockquote > footer {
-    margin-top: 0px;
+    margin-top: 0;
 }
 /*button.headerbutton{
     margin-left: 10px; 

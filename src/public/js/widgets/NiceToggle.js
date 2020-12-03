@@ -16,6 +16,8 @@
  *
  */
 
+import {OptionsChecker} from '@thomas-inst/optionschecker'
+
 export const toggleEvent = 'toggle'
 
 const defaultHoverClass = 'nicetoggle-hover'

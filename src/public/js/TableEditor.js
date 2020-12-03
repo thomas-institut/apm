@@ -47,6 +47,8 @@ export const cellDrawnEvent = 'cell-drawn'
 export const tableDrawnEvent = 'table-drawn'
 export const columnAddEvent = 'column-add'
 export const contentChangedEvent = 'content-changed'
+export const columnGroupEvent = 'column-group'
+export const columnUngroupEvent = 'column-ungroup'
 
 
 //icons
@@ -125,7 +127,7 @@ export class TableEditor {
         // list of columns that are grouped with the next
         required: false,
         type: 'Array',
-        default: [3,4,10]
+        default: []
       },
       id: {
         // the html id of the container where the table will appear
@@ -231,6 +233,16 @@ export class TableEditor {
         default: null
       },
       onContentChangedEventHandler: {
+        required: false,
+        type: 'function',
+        default: null
+      },
+      onColumnGroupEventHandler: {
+        required: false,
+        type: 'function',
+        default: null
+      },
+      onColumnUngroupEventHandler: {
         required: false,
         type: 'function',
         default: null
@@ -351,6 +363,13 @@ export class TableEditor {
 
     if (this.options.onContentChangedEventHandler !== null) {
       this.on(contentChangedEvent, this.options.onContentChangedEventHandler )
+    }
+
+    if (this.options.onColumnGroupEventHandler !== null) {
+      this.on(columnGroupEvent, this.options.onColumnGroupEventHandler )
+    }
+    if (this.options.onColumnUngroupEventHandler !== null) {
+      this.on(columnGroupEvent, this.options.onColumnUngroupEventHandler )
     }
     if (this.options.drawTableInConstructor) {
       this.redrawTable()
@@ -1244,9 +1263,11 @@ export class TableEditor {
       }
       let col = thisObject._getColFromGroupColumnButton(ev.currentTarget)
       console.log(`Click on groupColumn Button, col = ${col}`)
+      let grouped = true
       if (thisObject.isColumnGroupedWithNext(col)) {
         // ungroup
         console.log(`Ungrouping`)
+        grouped = false
         thisObject.columnSequence.ungroupWithNext(col)
         $(ev.currentTarget).html(thisObject.icons.ungroupedColumn)
       } else {
@@ -1256,6 +1277,7 @@ export class TableEditor {
         $(ev.currentTarget).html(thisObject.icons.groupedColumn)
       }
       let columnGroup = this.columnSequence.getGroupForNumber(col)
+      thisObject.dispatchColumnGroupChangeEvent(col, grouped)
       console.log(columnGroup)
       let minC = columnGroup.from > 0 ? columnGroup.from-1 : 0
       let maxC = columnGroup.to < thisObject.matrix.nCols - 1 ? columnGroup.to +1:  thisObject.matrix.nCols - 1
@@ -1500,6 +1522,18 @@ export class TableEditor {
 
   dispatchTableDrawnEvent() {
     this.dispatchEvent(tableDrawnEvent, {})
+  }
+
+  dispatchColumnGroupChangeEvent(col, grouped) {
+    let event = grouped ? columnGroupEvent : columnUngroupEvent
+    this.dispatchEvent(event, {
+      col: col,
+      groupedColumns: this.getGroupedColumns()
+    })
+  }
+
+  getGroupedColumns() {
+    return this.columnSequence.getGroupedNumbers()
   }
 
   dispatchTableDrawnPreEvent() {

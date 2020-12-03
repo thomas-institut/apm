@@ -23,7 +23,7 @@ import * as WitnessType from './constants/WitnessType'
 import * as TokenType from './constants/TokenType'
 import * as TokenClass from './constants/TokenClass'
 
-import { editModeOff, TableEditor } from './TableEditor'
+import { editModeOff, columnGroupEvent, columnUngroupEvent, TableEditor } from './TableEditor'
 import * as CollationTableUtil from './CollationTableUtil'
 import * as PopoverFormatter from './CollationTablePopovers'
 
@@ -103,6 +103,10 @@ export class CollationTableEditor {
     // default type is collation table
     if (this.ctData['type'] === undefined) {
       this.ctData['type'] = CollationTableType.COLLATION_TABLE
+    }
+    // no group, if ctData does not have it
+    if (this.ctData['groupedColumns'] === undefined) {
+      this.ctData['groupedColumns'] = []
     }
 
     this.lastSavedCtData = Util.deepCopy(this.ctData)
@@ -968,6 +972,7 @@ export class CollationTableEditor {
       drawTableInConstructor: false,
       getEmptyValue: () => -1,
       isEmptyValue: this.genIsEmpty(),
+      groupedColumns: this.ctData.groupedColumns,
       generateCellContent: this.genGenerateCellContentFunction(),
       generateCellContentEditMode: this.genGenerateCellContentEditModeFunction(),
       onCellConfirmEdit: this.genOnCellConfirmEditFunction(),
@@ -1002,6 +1007,8 @@ export class CollationTableEditor {
     this.tableEditor.on('column-delete', this.genOnColumnDelete())
     this.tableEditor.on('column-add', this.genOnColumnAdd())
     this.tableEditor.on('column-add column-delete cell-shift content-changed', this.genOnCollationChanges())
+    this.tableEditor.on(columnGroupEvent, this.genOnGroupUngroupColumn(true))
+    this.tableEditor.on(columnUngroupEvent, this.genOnGroupUngroupColumn(false))
     this.tableEditor.setEditMode(editModeOff)
   }
 
@@ -1069,8 +1076,6 @@ export class CollationTableEditor {
       ref => ref === -1 ?  { tokenClass: TokenClass.EDITION, tokenType: TokenType.EMPTY,text: ''} : currentTokens[ref]
     )
   }
-
-
 
   genIsEmpty() {
     let thisObject = this
@@ -2099,8 +2104,9 @@ export class CollationTableEditor {
       }
     }
 
-
-
+    if (!ArrayUtil.arraysAreEqual(this.ctData['groupedColumns'], this.lastSavedCtData['groupedColumns'])) {
+      changes.push(`Changes in column grouping`)
+    }
 
     return changes
   }
@@ -2180,6 +2186,17 @@ export class CollationTableEditor {
 
     return html
   }
+
+  genOnGroupUngroupColumn(isGrouped) {
+    let thisObject = this
+    return (data) => {
+      console.log(`Column ${data.detail.col} ${isGrouped ? 'grouped' : 'ungrouped'}`)
+      thisObject.ctData['groupedColumns'] = data.detail.groupedColumns
+      thisObject.updateSaveArea()
+    }
+  }
+
+
 
   genOnConfirmTitleField() {
     let thisObject = this

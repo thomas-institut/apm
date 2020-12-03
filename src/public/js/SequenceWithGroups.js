@@ -37,6 +37,10 @@ export class SequenceWithGroups {
     })
   }
 
+  getGroupedNumbers() {
+    return this.groupedWithNextNumbers
+  }
+
   isGroupedWithNext(number) {
     return this.groupedWithNextNumbers.indexOf(number) !== -1
   }

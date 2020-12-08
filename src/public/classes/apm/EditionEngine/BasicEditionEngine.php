@@ -58,14 +58,15 @@ class BasicEditionEngine extends EditionEngine
         list ($mainTextTokens, $ctToMainTextMap) =
             $this->generateMainText($mainTextInputTokens);
 
+
         $criticalApparatus = [];
-        foreach($ctToMainTextMap as $i => $mainTextIndex) {
-            $column = $this->getCollationTableColumn($ctData, $i);
+        foreach($ctToMainTextMap as $ctColumn => $mainTextIndex) {
+            $column = $this->getCollationTableColumn($ctData, $ctColumn);
             if ($mainTextIndex === self::TOKEN_NOT_IN_MAINTEXT)  {
                 // nothing on the main text for this token:
                 //      find the previous token index that is in the main text,
                 //      this is where the apparatus entry will appear
-                $index = $i;
+                $index = $ctColumn;
                 while ($index >= 0 && ($ctToMainTextMap[$index] === self::TOKEN_NOT_IN_MAINTEXT ||
                         StringType::isPunctuation($mainTextTokens[$ctToMainTextMap[$index]][self::INPUT_TOKEN_FIELD_TEXT])) ) {
                     $index--;
@@ -115,7 +116,7 @@ class BasicEditionEngine extends EditionEngine
             // token in main text
             // collect variants and omissions
 
-            $mainText = $mainTextTokens[$ctToMainTextMap[$i]][self::INPUT_TOKEN_FIELD_TEXT];
+            $mainText = $mainTextTokens[$ctToMainTextMap[$ctColumn]][self::INPUT_TOKEN_FIELD_TEXT];
             $variants = [];
             $omissions = [];
             if (!StringType::isPunctuation($mainText)) {
@@ -150,8 +151,8 @@ class BasicEditionEngine extends EditionEngine
                     $details[$omissionWitnessIndex] = []; // TODO: fill details!
                 }
                 $criticalApparatus[] = [
-                    self::APPARATUS_ENTRY_FIELD_START => $ctToMainTextMap[$i],
-                    self::APPARATUS_ENTRY_FIELD_END => $ctToMainTextMap[$i],
+                    self::APPARATUS_ENTRY_FIELD_START => $ctToMainTextMap[$ctColumn],
+                    self::APPARATUS_ENTRY_FIELD_END => $ctToMainTextMap[$ctColumn],
                     self::APPARATUS_ENTRY_FIELD_TYPE => self::APPARATUS_ENTRY_TYPE_OMMISION,
                     self::APPARATUS_ENTRY_FIELD_SIGLA => $omissionWitnessIndexes, // TODO: change this, it's now an index, not a siglum
                     self::APPARATUS_ENTRY_FIELD_DETAILS => $details,
@@ -168,8 +169,8 @@ class BasicEditionEngine extends EditionEngine
                     $details[$variantWitnessIndex] = []; // TODO: fill details
                 }
                 $criticalApparatus[] = [
-                    self::APPARATUS_ENTRY_FIELD_START => $ctToMainTextMap[$i],
-                    self::APPARATUS_ENTRY_FIELD_END => $ctToMainTextMap[$i],
+                    self::APPARATUS_ENTRY_FIELD_START => $ctToMainTextMap[$ctColumn],
+                    self::APPARATUS_ENTRY_FIELD_END => $ctToMainTextMap[$ctColumn],
                     self::APPARATUS_ENTRY_FIELD_TYPE => self::APPARATUS_ENTRY_TYPE_VARIANT,
                     self::APPARATUS_ENTRY_FIELD_SIGLA => $variantWitnessIndexes, // it's indexes to the edition's sigla now
                     self::APPARATUS_ENTRY_FIELD_DETAILS => $details,
@@ -224,7 +225,7 @@ class BasicEditionEngine extends EditionEngine
         $firstWordAdded = false;
         $inputTokensToMainText = [];
         $currentMainTextIndex = -1;
-        foreach($inputTokens as $i => $inputToken) {
+        foreach($inputTokens as $inputIndex => $inputToken) {
             if ($inputToken[self::INPUT_TOKEN_FIELD_TYPE] === StandardTokenType::EMPTY ) {
                 $inputTokensToMainText[] = self::TOKEN_NOT_IN_MAINTEXT;
                 continue;
@@ -252,7 +253,7 @@ class BasicEditionEngine extends EditionEngine
             $mainTextTokens[] = [
                 self::E_TOKEN_FIELD_TYPE => self::E_TOKEN_TYPE_TEXT,
                 self::E_TOKEN_FIELD_TEXT => $this->getTextFromInputToken($inputToken),
-                self::E_TOKEN_FIELD_COLLATION_TABLE_INDEX => $i
+                self::E_TOKEN_FIELD_COLLATION_TABLE_INDEX => $inputIndex
             ];
             $firstWordAdded = true;
             $inputTokensToMainText[] = $currentMainTextIndex;

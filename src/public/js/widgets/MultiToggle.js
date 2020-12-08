@@ -86,7 +86,7 @@ export class MultiToggle {
       def.element = $(this.getButtonSelectorWithIndex(i))
       return def
     })
-    console.log(this.buttonDef)
+    //console.log(this.buttonDef)
 
     this.buttonDef.forEach( (def, i) => {
       def.element.on('click', this.genOnClickButton(i))

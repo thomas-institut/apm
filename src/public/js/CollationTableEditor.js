@@ -28,6 +28,7 @@ import * as CollationTableUtil from './CollationTableUtil'
 import * as PopoverFormatter from './CollationTablePopovers'
 
 import {EditionViewer} from './EditionViewer'
+import {PrintedEditionGenerator} from './PrintedEditionGenerator'
 
 // widgets
 import { EditableTextField } from './widgets/EditableTextField'
@@ -274,7 +275,7 @@ export class CollationTableEditor {
     let currentHeight = this.ctDiv.height()
     let newHeight = windowHeight - ctDivTop - 10
     if (newHeight !== currentHeight) {
-      console.log(`Current H: ${currentHeight}, newHeight: ${newHeight}`)
+      //console.log(`Current H: ${currentHeight}, newHeight: ${newHeight}`)
       this.ctDiv.height(newHeight)
     }
   }
@@ -337,8 +338,8 @@ export class CollationTableEditor {
     }
     $.post(apiUrl, { data: JSON.stringify(apiCallOptions)})
       .done(function(apiResponse){
-        console.log('Got witness updates info from server')
-        console.log(apiResponse)
+        //console.log('Got witness updates info from server')
+        //console.log(apiResponse)
         thisObject.lastWitnessUpdateCheckResponse = apiResponse
         thisObject.checkingForWitnessUpdates = false
         thisObject.updateWitnessUpdateCheckInfo(apiResponse)
@@ -2121,7 +2122,7 @@ export class CollationTableEditor {
     let thisObject = this
     $.post(apiSiglaPresetsUrl, { data: JSON.stringify(apiCallOptions)}
     ).done( apiResponse => {
-      console.log(apiResponse)
+      //console.log(apiResponse)
       if (apiResponse['presets'] !== undefined) {
         thisObject.siglaPresets = apiResponse['presets']
         if (thisObject.siglaPresets.length !== 0) {
@@ -2136,56 +2137,64 @@ export class CollationTableEditor {
   }
 
   fetchEditionPreview() {
-    let profiler = new SimpleProfiler('FetchQuickEdition')
-    this.editionSvgDiv.html("Requesting edition from the server... <i class=\"fa fa-spinner fa-spin fa-fw\"></i>")
-    let apiQuickEditionUrl = this.options.urlGenerator.apiAutomaticEdition()
-    let apiCallOptions = {
-      collationTable: this.ctData,
-      baseWitnessIndex: this.ctData['witnessOrder'][0]
-    }
+    //let profiler = new SimpleProfiler('FetchQuickEdition')
+    this.editionSvgDiv.html("Generating printed edition preview... <i class=\"fa fa-spinner fa-spin fa-fw\"></i>")
+    // let apiQuickEditionUrl = this.options.urlGenerator.apiAutomaticEdition()
+    // let apiCallOptions = {
+    //   collationTable: this.ctData,
+    //   baseWitnessIndex: this.ctData['witnessOrder'][0]
+    // }
 
-    let thisObject = this
-    $.post(
-      apiQuickEditionUrl,
-      {data: JSON.stringify(apiCallOptions)}
-    ).done( function (apiResponse) {
-      profiler.stop()
-      //console.log(apiResponse)
+    // let thisObject = this
+    // $.post(
+    //   apiQuickEditionUrl,
+    //   {data: JSON.stringify(apiCallOptions)}
+    // ).done( function (apiResponse) {
+    //   profiler.stop()
+
+
+      let peg = new PrintedEditionGenerator()
+      let localEdition = peg.generateEdition(this.ctData, this.ctData['witnessOrder'][0])
+       //
+       // console.log("ApparatusArray --- API")
+       // console.log(apiResponse.apparatusArray)
+       // console.log("--- Local ---")
+       // console.log(localEdition.apparatusArray)
 
       let ev = new EditionViewer( {
-        collationTokens: apiResponse.mainTextTokens,
-        apparatusArray: apiResponse.apparatusArray,
-        isRightToLeft: (apiResponse.textDirection === 'rtl'),
-        fontFamily: thisObject.options.langDef[thisObject.ctData['lang']].editionFont,
+        collationTokens: localEdition.mainTextTokens,
+        apparatusArray: localEdition.apparatusArray,
+        isRightToLeft: (localEdition.textDirection === 'rtl'),
+        fontFamily: this.options.langDef[this.ctData['lang']].editionFont,
         addGlue: false
       })
       let svg = ev.getSvg()
 
-      thisObject.editionSvgDiv.html(svg)
-      thisObject.setSvgDownloadFile()
+      this.editionSvgDiv.html(svg)
+      this.setSvgDownloadFile()
 
-      thisObject.editionEngineInfoDiv.html(thisObject.genEditionEngineRunDetailsHtml(apiResponse['engineRunDetails']))
+      //thisObject.editionEngineInfoDiv.html(thisObject.genEditionEngineRunDetailsHtml(apiResponse['engineRunDetails']))
 
-    }).fail(function(resp) {
-      console.error('Error in quick edition')
-      console.log(resp)
-      let failMsg = 'Error getting quick edition <i class="fa fa-frown-o" aria-hidden="true"></i><br/> '
-      failMsg += '<span class="small">HTTP code ' + resp.status + '</span>'
-      thisObject.editionSvgDiv.html(failMsg)
-    })
+    // }).fail(function(resp) {
+    //   console.error('Error in quick edition')
+    //   console.log(resp)
+    //   let failMsg = 'Error getting quick edition <i class="fa fa-frown-o" aria-hidden="true"></i><br/> '
+    //   failMsg += '<span class="small">HTTP code ' + resp.status + '</span>'
+    //   thisObject.editionSvgDiv.html(failMsg)
+    // })
   }
 
-  genEditionEngineRunDetailsHtml(runDetails) {
-    let html = ''
-
-    html += '<div class="edrundetails">'
-    html += '<b>Engine Name:</b> ' + runDetails['engineName'] + '<br/>'
-    html += '<b>Run Datetime:</b> ' + runDetails['runDateTime']+ '<br/>'
-    html += '<b>Duration:</b> ' +   (runDetails['duration'] * 1000.0).toFixed(2) + ' ms'
-    html += '</div>'
-
-    return html
-  }
+  // genEditionEngineRunDetailsHtml(runDetails) {
+  //   let html = ''
+  //
+  //   html += '<div class="edrundetails">'
+  //   html += '<b>Engine Name:</b> ' + runDetails['engineName'] + '<br/>'
+  //   html += '<b>Run Datetime:</b> ' + runDetails['runDateTime']+ '<br/>'
+  //   html += '<b>Duration:</b> ' +   (runDetails['duration'] * 1000.0).toFixed(2) + ' ms'
+  //   html += '</div>'
+  //
+  //   return html
+  // }
 
   genOnGroupUngroupColumn(isGrouped) {
     let thisObject = this

@@ -16,17 +16,15 @@
  *  
  */
 
-/* global Typesetter */
-
 import {OptionsChecker } from '@thomas-inst/optionschecker'
 import {Typesetter} from './Typesetter'
 
 export class EditionViewer {
   
   constructor (userOptions) {
-    //console.log('Constructing Edition Viewer')
-    //console.log('User options')
-    //console.log(userOptions)
+    console.log('Constructing Edition Viewer')
+    console.log('User options')
+    console.log(userOptions)
 
     let optionsDefinition = {
       collationTokens: {type: 'Array', default: []},
@@ -138,9 +136,12 @@ export class EditionViewer {
     let tokensToTypeset = []
     let currentCollationTableTokenIndex = 0
     for(const collationTableToken of collationTableTokens) {
-      collationTableToken.collationTableIndex = currentCollationTableTokenIndex
+      //collationTableToken.collationTableIndex = currentCollationTableTokenIndex
+      let ctToken = Object.assign({}, collationTableToken)
+      ctToken.collationTableIndex = currentCollationTableTokenIndex
       currentCollationTableTokenIndex++
-      tokensToTypeset.push(Object.assign({}, collationTableToken)) // push a copy of the token
+      //tokensToTypeset.push(Object.assign({}, collationTableToken)) // push a copy of the token
+      tokensToTypeset.push(ctToken)
       if (addGlue) {
         tokensToTypeset.push({type: 'glue', space: 'normal'})
       }
@@ -166,7 +167,6 @@ export class EditionViewer {
   getCollationTableIndexToTypesetTokensMap(typesetTokens) {
     
     let map = []
-
     for (let i=0; i < typesetTokens.length; i++) {
       map[typesetTokens[i].collationTableIndex] = i
     }

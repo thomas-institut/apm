@@ -66,6 +66,9 @@ export function isWordToken(text) {
 }
 
 export function isPunctuationToken(text) {
+  if (text === undefined) {
+    return false
+  }
   let punctuationArray = getValidPunctuationArray()
   for (let i = 0; i < text.length; i++) {
     if (punctuationArray.indexOf(text.substr(i, 1)) === -1) {
@@ -98,6 +101,7 @@ function getValidPunctuationArray() {
     '?',
     '!',
     '⊙',
+    '¶',
     String.fromCodePoint(0x61B), // Arabic semi-colon
     String.fromCodePoint(0x61F), // Arabic question mark
     String.fromCodePoint(0x60C), // Arabic comma

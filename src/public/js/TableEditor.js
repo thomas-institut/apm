@@ -383,6 +383,10 @@ export class TableEditor {
     })
   }
 
+  getColumnGroups() {
+    return this.columnSequence.getGroups()
+  }
+
   getValue(row, col) {
     return this.matrix.getValue(row, col)
   }

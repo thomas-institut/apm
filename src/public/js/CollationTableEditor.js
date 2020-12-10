@@ -226,13 +226,13 @@ export class CollationTableEditor {
       buttonsDivClass: 'ct-toolbar-item',
       buttonDef: [
         { label: 'Off', name: 'off', helpText: 'Turn off editing'},
-        { label: 'Move', name: 'move', helpText: 'Show controls to move cells'},
+        { label: 'Move', name: 'move', helpText: 'Show controls to move/add/delete cells'},
         { label: 'Group', name: 'group', helpText: 'Show controls to group columns'},
       ]
     })
 
     this.modeToggle.on(optionChange, (ev) => {
-      console.log('New Edit Mode: ' + ev.detail.currentOption)
+      //console.log('New Edit Mode: ' + ev.detail.currentOption)
       thisObject.tableEditor.setEditMode(ev.detail.currentOption)
 
     })
@@ -255,7 +255,7 @@ export class CollationTableEditor {
     this.setupTableEditor()
     this.updateSaveArea()
     this.setCsvDownloadFile()
-    this.fetchEditionPreview()
+    this.updateEditionPreview()
 
     $(window).on('beforeunload', function() {
       if (thisObject.unsavedChanges || thisObject.convertingToEdition) {
@@ -649,7 +649,7 @@ export class CollationTableEditor {
     this.updateWitnessInfoDiv()
     this.updateSaveArea()
     this.setCsvDownloadFile()
-    this.fetchEditionPreview()
+    this.updateEditionPreview()
 
     profiler.stop()
   }
@@ -1160,7 +1160,7 @@ export class CollationTableEditor {
       })
       .then( () => { thisObject.ctData['collationMatrix'] = thisObject.getCollationMatrixFromTableEditor() })
       .then( () => { thisObject.setCsvDownloadFile() })
-      .then( () => { thisObject.fetchEditionPreview() })
+      .then( () => { thisObject.updateEditionPreview() })
     }
   }
 
@@ -1602,7 +1602,7 @@ export class CollationTableEditor {
           thisObject.updateWitnessInfoDiv()
           thisObject.updateSaveArea()
           thisObject.updateVersionInfo()
-          thisObject.fetchEditionPreview()
+          thisObject.updateEditionPreview()
         }).fail(function(resp){
           let saveMsgHtml = ''
           saveMsgHtml += `<p class="text-danger">${thisObject.icons['alert']} Cannot save table!</p>`
@@ -1898,7 +1898,7 @@ export class CollationTableEditor {
       }
       // Change the siglum
       thisObject.ctData['sigla'][witnessIndex] = newText
-      thisObject.fetchEditionPreview()
+      thisObject.updateEditionPreview()
       thisObject.updateSaveArea()
 
     }
@@ -1949,7 +1949,7 @@ export class CollationTableEditor {
 
       $(this.witnessesDivSelector + ' .witnessinfotable').html('Updating...')
       thisObject.setupTableEditor()
-      thisObject.fetchEditionPreview()
+      thisObject.updateEditionPreview()
       thisObject.updateWitnessInfoDiv()
       thisObject.updateSaveArea()
       thisObject.setCsvDownloadFile()
@@ -2136,65 +2136,24 @@ export class CollationTableEditor {
     })
   }
 
-  fetchEditionPreview() {
-    //let profiler = new SimpleProfiler('FetchQuickEdition')
-    this.editionSvgDiv.html("Generating printed edition preview... <i class=\"fa fa-spinner fa-spin fa-fw\"></i>")
-    // let apiQuickEditionUrl = this.options.urlGenerator.apiAutomaticEdition()
-    // let apiCallOptions = {
-    //   collationTable: this.ctData,
-    //   baseWitnessIndex: this.ctData['witnessOrder'][0]
-    // }
-
-    // let thisObject = this
-    // $.post(
-    //   apiQuickEditionUrl,
-    //   {data: JSON.stringify(apiCallOptions)}
-    // ).done( function (apiResponse) {
-    //   profiler.stop()
-
-
-      let peg = new PrintedEditionGenerator()
-      let localEdition = peg.generateEdition(this.ctData, this.ctData['witnessOrder'][0])
-       //
-       // console.log("ApparatusArray --- API")
-       // console.log(apiResponse.apparatusArray)
-       // console.log("--- Local ---")
-       // console.log(localEdition.apparatusArray)
-
-      let ev = new EditionViewer( {
-        collationTokens: localEdition.mainTextTokens,
-        apparatusArray: localEdition.apparatusArray,
-        isRightToLeft: (localEdition.textDirection === 'rtl'),
-        fontFamily: this.options.langDef[this.ctData['lang']].editionFont,
-        addGlue: false
-      })
-      let svg = ev.getSvg()
-
-      this.editionSvgDiv.html(svg)
-      this.setSvgDownloadFile()
-
-      //thisObject.editionEngineInfoDiv.html(thisObject.genEditionEngineRunDetailsHtml(apiResponse['engineRunDetails']))
-
-    // }).fail(function(resp) {
-    //   console.error('Error in quick edition')
-    //   console.log(resp)
-    //   let failMsg = 'Error getting quick edition <i class="fa fa-frown-o" aria-hidden="true"></i><br/> '
-    //   failMsg += '<span class="small">HTTP code ' + resp.status + '</span>'
-    //   thisObject.editionSvgDiv.html(failMsg)
-    // })
+  getColumnGroups() {
+    this.tableEditor.getColumnGroups()
   }
 
-  // genEditionEngineRunDetailsHtml(runDetails) {
-  //   let html = ''
-  //
-  //   html += '<div class="edrundetails">'
-  //   html += '<b>Engine Name:</b> ' + runDetails['engineName'] + '<br/>'
-  //   html += '<b>Run Datetime:</b> ' + runDetails['runDateTime']+ '<br/>'
-  //   html += '<b>Duration:</b> ' +   (runDetails['duration'] * 1000.0).toFixed(2) + ' ms'
-  //   html += '</div>'
-  //
-  //   return html
-  // }
+  updateEditionPreview() {
+    this.editionSvgDiv.html("Generating printed edition preview... <i class=\"fa fa-spinner fa-spin fa-fw\"></i>")
+    let peg = new PrintedEditionGenerator()
+    let edition = peg.generateEdition(this.ctData, this.ctData['witnessOrder'][0])
+    let ev = new EditionViewer( {
+      collationTokens: edition.mainTextTokens,
+      apparatusArray: edition.apparatusArray,
+      isRightToLeft: (edition.textDirection === 'rtl'),
+      fontFamily: this.options.langDef[this.ctData['lang']].editionFont,
+      addGlue: false
+    })
+    this.editionSvgDiv.html(ev.getSvg())
+    this.setSvgDownloadFile()
+  }
 
   genOnGroupUngroupColumn(isGrouped) {
     let thisObject = this

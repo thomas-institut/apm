@@ -52,9 +52,6 @@ export class EditionViewer {
 
     let oc = new OptionsChecker(optionsDefinition, 'EditionViewer')
     this.options = oc.getCleanOptions(userOptions)
-
-    //console.log('Options')
-    //console.log(this.options)
     let options = this.options
     
     this.geometry = {
@@ -121,8 +118,8 @@ export class EditionViewer {
     
     this.apparatusTokensToTypeset = this.getApparatusTokensToTypeset()
     
-    //console.log('Apparatus to typeset')
-    //console.log(this.apparatusTokensToTypeset)
+    console.log('Apparatus to typeset')
+    console.log(this.apparatusTokensToTypeset)
     
     this.lineNumbers = this.ts.typesetLineNumbers(this.typesetMainTextTokens,5)
     this.typesetApparatuses = []
@@ -132,15 +129,12 @@ export class EditionViewer {
   }
 
   generateTokensToTypesetFromCollationTableTokens(collationTableTokens, addGlue = true) {
-    // for now, just add whitespace in between the tokens
     let tokensToTypeset = []
     let currentCollationTableTokenIndex = 0
     for(const collationTableToken of collationTableTokens) {
-      //collationTableToken.collationTableIndex = currentCollationTableTokenIndex
-      let ctToken = Object.assign({}, collationTableToken)
+       let ctToken = Object.assign({}, collationTableToken)
       ctToken.collationTableIndex = currentCollationTableTokenIndex
       currentCollationTableTokenIndex++
-      //tokensToTypeset.push(Object.assign({}, collationTableToken)) // push a copy of the token
       tokensToTypeset.push(ctToken)
       if (addGlue) {
         tokensToTypeset.push({type: 'glue', space: 'normal'})
@@ -165,15 +159,13 @@ export class EditionViewer {
    * @returns {Array}
    */
   getCollationTableIndexToTypesetTokensMap(typesetTokens) {
-    
     let map = []
     for (let i=0; i < typesetTokens.length; i++) {
       map[typesetTokens[i].collationTableIndex] = i
     }
     return map
   }
-  
-  
+
   getLineNumbersForApparatusEntry(note, tsTokens, map) {
     if (note.start === -1) {
       return { start: 'pre', end: 'pre'}
@@ -196,13 +188,12 @@ export class EditionViewer {
   }
   
   getApparatusTokensToTypeset() {
-    
     let apparatusToTypesetArray = []
     
     for (const apparatus of this.options.apparatusArray) {
       let apparatusToTypeset = []
       
-      // 1. group notes by start-end
+      // 1. group notes by start-end lines
       let groups = []
       for (const note of apparatus) {
         let pageGroup = 'g_' + note.lineStart.toString() 
@@ -210,7 +201,7 @@ export class EditionViewer {
           pageGroup += '_' + note.lineEnd.toString()
         }
         
-        if (typeof(groups[pageGroup]) === 'undefined' ) {
+        if (groups[pageGroup] === undefined ) {
           groups[pageGroup] = { 
             lineStart: note.lineStart,
             lineEnd: note.lineEnd,
@@ -219,8 +210,8 @@ export class EditionViewer {
         }
         groups[pageGroup].entries.push(note)
       }
-      //console.log('GROUPS')
-      //console.log(groups)
+      // console.log('GROUPS')
+      // console.log(groups)
       // 2. TODO: order the groups
       
       // 3. build the pageGroup entries
@@ -237,16 +228,28 @@ export class EditionViewer {
           let entryLesson = ''
           if (entry.start === -1) {
             entryLesson = ''
-            //console.log('Start = -1')
-            //console.log(entry)
           } else {
             entryLesson = this.options.collationTokens[entry.start].text
             if (entry.start !== entry.end) {
-              entryLesson += ' '
-              if (entry.end > (entry.start + 1)) {
-                entryLesson += '… '
+              // more than one word in the lesson
+              let fullLessonWords = this.options.collationTokens
+                .filter( (t,i) => { return i>=entry.start && i<=entry.end})
+                .filter(t => t.type === 'text')
+                .filter ( t => t.text !== '')
+                .map ( t => t.text)
+              let fullLesson = fullLessonWords.join(' ')
+              if (fullLessonWords.length <= 2) {  // TODO: parametrize this, probably per language
+                entryLesson = fullLesson
+              } else {
+                //console.log(`Multi-word lesson: '${fullLesson}' (length: ${fullLesson.length})`)
+                if (fullLesson.length > 25) { // TODO: parametrize this, probably per language
+                  entryLesson = fullLessonWords
+                    .filter( (w,i,a) => {return i===0 || i === a.length-1 })
+                    .join(' … ')
+                } else {
+                  entryLesson = fullLesson
+                }
               }
-              entryLesson += this.options.collationTokens[entry.end].text
             }
             entryLesson += ']'
           }
@@ -266,8 +269,8 @@ export class EditionViewer {
       
       apparatusToTypesetArray.push(apparatusToTypeset)
     }
-    console.log('Apparatus to Typeset')
-    console.log(apparatusToTypesetArray)
+    //console.log('Apparatus to Typeset')
+    //console.log(apparatusToTypesetArray)
     return apparatusToTypesetArray
     
   }

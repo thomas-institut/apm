@@ -1146,9 +1146,12 @@ export class CollationTableEditor {
   }
 
   recalculateVariants() {
-    // TODO: use a different genVariantsMatrix for editions
+    let refWitness = -1
+    if (this.ctData.type === 'edition') {
+      refWitness = this.ctData.editionWitnessIndex
+    }
     this.variantsMatrix = CollationTableUtil.genVariantsMatrix(this.tableEditor.getMatrix(),
-      this.ctData['witnesses'], this.ctData['witnessOrder'])
+      this.ctData['witnesses'], this.ctData['witnessOrder'], refWitness)
   }
 
   genOnCollationChanges() {
@@ -2161,6 +2164,7 @@ export class CollationTableEditor {
       console.log(`Column ${data.detail.col} ${isGrouped ? 'grouped' : 'ungrouped'}`)
       thisObject.ctData['groupedColumns'] = data.detail.groupedColumns
       thisObject.updateSaveArea()
+      thisObject.updateEditionPreview()
     }
   }
 

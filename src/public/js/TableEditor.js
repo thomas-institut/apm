@@ -1266,23 +1266,23 @@ export class TableEditor {
         return false
       }
       let col = thisObject._getColFromGroupColumnButton(ev.currentTarget)
-      console.log(`Click on groupColumn Button, col = ${col}`)
+      //console.log(`Click on groupColumn Button, col = ${col}`)
       let grouped = true
       if (thisObject.isColumnGroupedWithNext(col)) {
         // ungroup
-        console.log(`Ungrouping`)
+        //console.log(`Ungrouping`)
         grouped = false
         thisObject.columnSequence.ungroupWithNext(col)
         $(ev.currentTarget).html(thisObject.icons.ungroupedColumn)
       } else {
         // group with next
-        console.log(`Grouping with next`)
+        //console.log(`Grouping with next`)
         thisObject.columnSequence.groupWithNext(col)
         $(ev.currentTarget).html(thisObject.icons.groupedColumn)
       }
       let columnGroup = this.columnSequence.getGroupForNumber(col)
       thisObject.dispatchColumnGroupChangeEvent(col, grouped)
-      console.log(columnGroup)
+      //console.log(columnGroup)
       let minC = columnGroup.from > 0 ? columnGroup.from-1 : 0
       let maxC = columnGroup.to < thisObject.matrix.nCols - 1 ? columnGroup.to +1:  thisObject.matrix.nCols - 1
       for (let c = minC; c <= maxC; c++) {

@@ -22,9 +22,9 @@ import {Typesetter} from './Typesetter'
 export class EditionViewer {
   
   constructor (userOptions) {
-    console.log('Constructing Edition Viewer')
-    console.log('User options')
-    console.log(userOptions)
+    // console.log('Constructing Edition Viewer')
+    // console.log('User options')
+    // console.log(userOptions)
 
     let optionsDefinition = {
       collationTokens: {type: 'Array', default: []},
@@ -109,17 +109,17 @@ export class EditionViewer {
     //console.log(options.apparatusArray)
     
     for(const apparatus of options.apparatusArray) {
-      for (const note of apparatus) {
-        let lineNumbers = this.getLineNumbersForApparatusEntry(note, this.typesetMainTextTokens, this.ct2tsIndexMap)
-        note.lineStart = lineNumbers.start
-        note.lineEnd = lineNumbers.end
+      for (const apparatusEntry of apparatus) {
+        let lineNumbers = this.getLineNumbersForApparatusEntry(apparatusEntry, this.typesetMainTextTokens, this.ct2tsIndexMap)
+        apparatusEntry.lineStart = lineNumbers.start
+        apparatusEntry.lineEnd = lineNumbers.end
       }
     }
     
     this.apparatusTokensToTypeset = this.getApparatusTokensToTypeset()
     
-    console.log('Apparatus to typeset')
-    console.log(this.apparatusTokensToTypeset)
+    // console.log('Apparatus to typeset')
+    // console.log(this.apparatusTokensToTypeset)
     
     this.lineNumbers = this.ts.typesetLineNumbers(this.typesetMainTextTokens,5)
     this.typesetApparatuses = []
@@ -166,15 +166,15 @@ export class EditionViewer {
     return map
   }
 
-  getLineNumbersForApparatusEntry(note, tsTokens, map) {
-    if (note.start === -1) {
+  getLineNumbersForApparatusEntry(entry, tsTokens, map) {
+    if (entry.start === -1) {
       return { start: 'pre', end: 'pre'}
     }
-    if (typeof(tsTokens[map[note.start]]) === 'undefined') {
+    if (typeof(tsTokens[map[entry.start]]) === 'undefined') {
       console.log('Found undefined')
-      console.log('note.start: ' + note.start)
-      console.log('map [note.start]: ' + map[note.start])
-      console.log('tsTokens[map[note.start] : ' + tsTokens[map[note.start]])
+      console.log('note.start: ' + entry.start)
+      console.log('map [note.start]: ' + map[entry.start])
+      console.log('tsTokens[map[note.start] : ' + tsTokens[map[entry.start]])
       console.log('tsTokens.length: ' + tsTokens.length)
       return {
         start: 'ERROR',
@@ -182,8 +182,8 @@ export class EditionViewer {
       }
     }
     return { 
-        start: tsTokens[map[note.start]].lineNumber, 
-        end: tsTokens[map[note.end]].lineNumber
+        start: tsTokens[map[entry.start]].lineNumber,
+        end: tsTokens[map[entry.end]].lineNumber
     } 
   }
   
@@ -193,47 +193,47 @@ export class EditionViewer {
     for (const apparatus of this.options.apparatusArray) {
       let apparatusToTypeset = []
       
-      // 1. group notes by start-end lines
-      let groups = []
-      for (const note of apparatus) {
-        let pageGroup = 'g_' + note.lineStart.toString() 
-        if (note.lineStart !== note.lineEnd) {
-          pageGroup += '_' + note.lineEnd.toString()
+      // 1. group entries by start-end lines
+      let lineGroups = []
+      for (const apparatusEntry of apparatus) {
+        let lineGroupTitle = 'g_' + apparatusEntry.lineStart.toString()
+        if (apparatusEntry.lineStart !== apparatusEntry.lineEnd) {
+          lineGroupTitle += '_' + apparatusEntry.lineEnd.toString()
         }
         
-        if (groups[pageGroup] === undefined ) {
-          groups[pageGroup] = { 
-            lineStart: note.lineStart,
-            lineEnd: note.lineEnd,
+        if (lineGroups[lineGroupTitle] === undefined ) {
+          lineGroups[lineGroupTitle] = {
+            lineStart: apparatusEntry.lineStart,
+            lineEnd: apparatusEntry.lineEnd,
             entries: []
           }
         }
-        groups[pageGroup].entries.push(note)
+        lineGroups[lineGroupTitle].entries.push(apparatusEntry)
       }
-      // console.log('GROUPS')
-      // console.log(groups)
+      // console.log('LINE GROUPS')
+      // console.log(lineGroups)
       // 2. TODO: order the groups
       
       // 3. build the pageGroup entries
-      for(const pageGroupKey in groups) {
-        let pageGroup = groups[pageGroupKey]
-        let pageString = pageGroup.lineStart.toString() 
-        if (pageGroup.lineEnd !== pageGroup.lineStart) {
-          pageString += '–' + pageGroup.lineEnd.toString()
+      for(const lineGroupTitle in lineGroups) {
+        let lineGroup = lineGroups[lineGroupTitle]
+        let lineString = lineGroup.lineStart.toString()
+        if (lineGroup.lineEnd !== lineGroup.lineStart) {
+          lineString += '–' + lineGroup.lineEnd.toString()
         }
-        apparatusToTypeset.push({ type: 'text', text: pageString, fontWeight: 'bold'})
+        apparatusToTypeset.push({ type: 'text', text: lineString, fontWeight: 'bold'})
         apparatusToTypeset.push({ type: 'glue', space: 'normal'} )
         
-        for (const entry of pageGroup.entries) {
+        for (const apparatusEntry of lineGroup.entries) {
           let entryLesson = ''
-          if (entry.start === -1) {
+          if (apparatusEntry.start === -1) {
             entryLesson = ''
           } else {
-            entryLesson = this.options.collationTokens[entry.start].text
-            if (entry.start !== entry.end) {
+            entryLesson = this.options.collationTokens[apparatusEntry.start].text
+            if (apparatusEntry.start !== apparatusEntry.end) {
               // more than one word in the lesson
               let fullLessonWords = this.options.collationTokens
-                .filter( (t,i) => { return i>=entry.start && i<=entry.end})
+                .filter( (t,i) => { return i>=apparatusEntry.start && i<=apparatusEntry.end})
                 .filter(t => t.type === 'text')
                 .filter ( t => t.text !== '')
                 .map ( t => t.text)
@@ -257,16 +257,15 @@ export class EditionViewer {
             apparatusToTypeset.push({ type: 'text', text: entryLesson})
             apparatusToTypeset.push({ type: 'glue', space: 'normal'} )
           }
-          let entryTokens = this.tsApparatus.getTokensFromMarkdownString(entry.markDown)
-          for (const entryToken of entryTokens ) {
-            apparatusToTypeset.push(entryToken)
-          }
-          apparatusToTypeset.push({ type: 'glue', space: 15 })  // TODO: parametrize this!
+          apparatusEntry.entries.forEach( (subEntry) => {
+            let subEntryTokens = this.tsApparatus.getTokensFromMarkdownString(subEntry.markDown)
+            for (const subEntryToken of subEntryTokens ) {
+              apparatusToTypeset.push(subEntryToken)
+            }
+            apparatusToTypeset.push({ type: 'glue', space: 15 })  // TODO: parametrize this!
+          })
         }
-                
       }
-      
-      
       apparatusToTypesetArray.push(apparatusToTypeset)
     }
     //console.log('Apparatus to Typeset')

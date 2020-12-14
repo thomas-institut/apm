@@ -16,21 +16,24 @@
  *
  */
 
-import { Matrix } from '../node_modules/@thomas-inst/matrix/Matrix.js'
+import { Matrix } from '@thomas-inst/matrix'
 import * as ArrayUtil from './toolbox/ArrayUtil.js'
+
 /**
  * Generates a matrix with all the textual variants in all columns ranked
  * @param refMatrix matrix of references (i.e., from a collation table)
  * @param witnesses array of witnesses
  * @param witnessOrder  array that maps the row indexes in refMatrix to the indexes in the witnesses array;  order[refMatrixRow] = witnessIndex
+ * @param refWitness if other than -1, the variant for this witness will have the highest rank
  * @returns {Matrix}
  */
-export function genVariantsMatrix(refMatrix, witnesses, witnessOrder) {
+export function genVariantsMatrix(refMatrix, witnesses, witnessOrder, refWitness = -1) {
   let variantMatrix = new Matrix(refMatrix.nRows, refMatrix.nCols)
 
   for (let col=0; col < refMatrix.nCols; col++) {
     let refCol = refMatrix.getColumn(col)
     let textCol = []
+    let referenceString = ''
     for(let row=0; row < refMatrix.nRows; row++) {
       let ref = refCol[row]
       if (ref === undefined) {
@@ -46,15 +49,19 @@ export function genVariantsMatrix(refMatrix, witnesses, witnessOrder) {
       if (witness.tokens[ref] === undefined) {
         console.error(`Found undefined token for reference, witness ${witnessIndex}, row ${row}, col ${col}, ref ${ref}`)
       }
+      let rowText = witness.tokens[ref].text
       if (witness.tokens[ref]['normalizedText'] !== undefined) {
-        textCol.push(witness.tokens[ref]['normalizedText'])
-      } else {
-        textCol.push(witness.tokens[ref].text)
+        rowText = witness.tokens[ref]['normalizedText']
       }
+      if (witnessIndex === refWitness) {
+        referenceString = rowText
+      }
+
+      textCol.push(rowText)
 
     }
     //console.log(textCol)
-    let ranks = rankVariants(textCol)
+    let ranks = rankVariants(textCol, referenceString)
     for(let row=0; row < refMatrix.nRows; row++) {
       variantMatrix.setValue(row, col, ranks[row])
     }
@@ -72,7 +79,7 @@ export function collationMatricesAreEqual(matrix1, matrix2) {
   return ArrayUtil.arraysAreEqual(matrix1, matrix2, function(a,b){return a===b}, 2)
 }
 
-function rankVariants(stringArray) {
+function rankVariants(stringArray, referenceString) {
   const someVeryLargeNumber = 999888777
   let countsByString = []
   for(const text of stringArray) {
@@ -80,7 +87,7 @@ function rankVariants(stringArray) {
       continue
     }
     if (countsByString[text] === undefined) {
-      countsByString[text] = 1
+      countsByString[text] = text === referenceString ? someVeryLargeNumber : 1
     } else {
       countsByString[text]++
     }
@@ -91,12 +98,10 @@ function rankVariants(stringArray) {
   for(const aKey of Object.keys(countsByString)) {
     countArray.push({ text: aKey, count: countsByString[aKey]})
   }
-  countArray.sort(function (a,b) { return b['count'] - a['count']})
+  countArray.sort((a,b) => { return b['count'] - a['count']})
 
   let rankObject = {}
-  for(let i = 0; i < countArray.length; i++) {
-    rankObject[countArray[i]['text']] = i
-  }
+  countArray.forEach( (countObject, i) => { rankObject[countObject.text] = i })
 
   let ranks = []
   for(const text of stringArray) {

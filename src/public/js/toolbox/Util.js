@@ -113,3 +113,4 @@ function getValidPunctuationArray() {
     String.fromCodePoint(0x5F4), // Hebrew gershayim
   ]
 }
+

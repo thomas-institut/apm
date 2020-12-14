@@ -128,18 +128,25 @@ table.collationtable td.tokennotpresent {
     color: silver;
 }
 td.addition.variant-1 {
-    background-image: linear-gradient(to top, #ddecff, #fbedff);
+    background-image: linear-gradient(to top, #ddecff, #f3e7ff);
 }
 
 
 td.variant-1 {
-    background-color: #fbedff;
+    background-color: #f3e7ff;
 }
 
 td.variant-2 {
-    background-color: #ffcccc;
+    background-color: #dac9fa;
 }
 
+td.variant-3 {
+    background-color: #c9b5f3;
+}
+
+td.variant-4 {
+    background-color: #b5a9ff;
+}
 
 .te-table td.token-class-edition {
     border-bottom: var(--cell-edition-row-border);
@@ -312,14 +319,6 @@ div.itemspopover {
     padding-right: 5px;
     border-top: var(--cell-border);
     border-bottom: var(--cell-border);
-}
-
-td.variant-1 {
-    background-color: #fbedff;
-}
-
-td.variant-2 {
-    background: plum;
 }
 
 td.te-row-title {

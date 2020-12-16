@@ -65,8 +65,8 @@ const defaultIcons = {
   cancelCellEdit: ' &#x2718;',  // ✘
   // groupedColumn: '&diams;', // ♦
   // ungroupedColumn: '&#9826;' // ♢
-  groupedColumn: '&nbsp;&ndash;',
-  ungroupedColumn: '&nbsp;&vert;'
+  groupedColumn: '&ndash;',
+  ungroupedColumn: '&vert;'
 }
 
 
@@ -106,6 +106,9 @@ const groupNoneClass = 'group-none'
 const groupNextClass = 'group-next'
 const groupPreviousClass = 'group-previous'
 const groupBothClass = 'group-both'
+
+const groupIconFloatLeftClass = 'group-icon-float-left'
+const groupIconFloatRightClass = 'group-icon-float-right'
 
 
 
@@ -575,12 +578,13 @@ export class TableEditor {
           let linkIcon = this.icons.ungroupedColumn
           let groupClass = groupNoneClass
           let title = "Click to group with next column"
+          let floatClass = this.options.textDirection === 'ltr' ? groupIconFloatRightClass : groupIconFloatLeftClass
           if (this.isColumnGroupedWithNext(col)) {
             groupClass = groupNextClass
             linkIcon = this.icons.groupedColumn
             title = "Click to ungroup with next column"
           }
-          html += this.genButtonHtml(linkIcon, [ linkButtonClass, `${specificColumnLinkButtonClassPrefix}${col}`, groupClass], title)
+          html += this.genButtonHtml(linkIcon, [ linkButtonClass, `${specificColumnLinkButtonClassPrefix}${col}`, groupClass, floatClass], title)
         }
         html += '</th>'
         tableColumnNumber++

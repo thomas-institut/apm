@@ -218,3 +218,15 @@ a.invalid {
 .active-label {
     font-weight: bold;
 }
+
+.te-table a.group-icon-float-left {
+    float: left;
+    padding: 0 1rem 0 0;
+    margin-left: -0.5em;
+}
+
+.te-table a.group-icon-float-right {
+    float: right;
+    padding: 0 0 0 1rem;
+    margin-right: -0.5em;
+}

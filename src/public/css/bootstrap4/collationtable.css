@@ -319,6 +319,7 @@ div.itemspopover {
     padding-right: 5px;
     border-top: var(--cell-border);
     border-bottom: var(--cell-border);
+    min-width: 3rem;
 }
 
 td.te-row-title {

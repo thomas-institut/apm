@@ -1016,6 +1016,7 @@ export class CollationTableEditor {
   genOnColumnAdd() {
     let thisObject = this
     return () => {
+      thisObject.ctData['groupedColumns'] = thisObject.tableEditor.columnSequence.groupedWithNextNumbers
       if (thisObject.ctData['type']===CollationTableType.EDITION) {
         thisObject.syncEditionWitnessAndTableEditorFirstRow()
       }
@@ -1036,8 +1037,9 @@ export class CollationTableEditor {
   genOnColumnDelete() {
     let thisObject = this
     return () => {
+      thisObject.ctData['groupedColumns'] = thisObject.tableEditor.columnSequence.groupedWithNextNumbers
       if (thisObject.ctData['type'] === CollationTableType.COLLATION_TABLE) {
-        // nothing to do for regular collation tables
+        // nothing else to do for regular collation tables
         return
       }
       thisObject.syncEditionWitnessAndTableEditorFirstRow()
@@ -2162,6 +2164,7 @@ export class CollationTableEditor {
     let thisObject = this
     return (data) => {
       console.log(`Column ${data.detail.col} ${isGrouped ? 'grouped' : 'ungrouped'}`)
+      console.log('New sequence grouped with next')
       thisObject.ctData['groupedColumns'] = data.detail.groupedColumns
       thisObject.updateSaveArea()
       thisObject.updateEditionPreview()

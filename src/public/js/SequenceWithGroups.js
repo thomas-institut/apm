@@ -41,6 +41,68 @@ export class SequenceWithGroups {
     return this.groupedWithNextNumbers
   }
 
+  /**
+   * Removes a number from the sequence preserving group consistency
+   * @param number
+   */
+  removeNumber(number) {
+    let currentGroups = this.getGroups()
+
+    // find groups that include the given number, there should be exactly one of them
+    let numberGroups = currentGroups.filter( (g) => { return g.from<=number && g.to >=number })
+    if (numberGroups.length !== 1) {
+      console.error(`Inconsistent groups, found more than one group for number ${number}`)
+    }
+    let numberGroup = numberGroups[0]
+
+    // initialize new groups with groups before the given number, these groups are passed intact to the new set
+    let newGroups = currentGroups.filter( (g) => { return g.to < number })
+
+    if (numberGroup.to !== numberGroup.from) {
+      // if the group to which the given number belongs represents an interval longer than one,
+      // replace that group with one adjusted to exclude the given number
+      let newNumberGroup = { from: numberGroup.from, to: numberGroup.to - 1 }
+      if (number === numberGroup.from) {
+        newNumberGroup.from++
+      }
+      newGroups.push(newNumberGroup)
+    }
+    // adjust the groups that come after the given number and add them to the new groups
+    let groupsAfter = currentGroups.filter( (g) => {return g.from > number }).map( (g) => { return {from: g.from-1, to: g.to - 1}})
+    newGroups = newGroups.concat(groupsAfter)
+    // update the sequence
+    this.groupedWithNextNumbers = this.getGroupedNumbersFromGroupArray(newGroups)
+    this.length--
+  }
+
+  addNumberAfter(number) {
+
+    let currentGroups = this.getGroups()
+
+    let groupsBefore = currentGroups.filter( (g) => { return g.from < number && g.to < number})
+    let numberGroups = currentGroups.filter( (g) => { return g.from<=number && g.to >=number })
+    let groupsAfter = currentGroups.filter( (g) => {return g.from > number && g.to > number})
+
+    if (numberGroups.length !== 1) {
+      console.error(`Inconsistent groups, found more than one group for number ${number}`)
+    }
+    let numberGroup = numberGroups[0]
+    let newGroups = groupsBefore
+    let newNumberGroup = { from: numberGroup.from, to: numberGroup.to}
+    if (numberGroup.to !== numberGroup.from) {
+      // only extend the number's group if the group represents an interval larger than 1
+      newNumberGroup.to++
+    }
+    newGroups.push(newNumberGroup)
+    groupsAfter = groupsAfter
+      .map( (g) => { return {from: g.from+1, to: g.to + 1}})  // update group boundaries
+      .filter( (g) => { return g.from !== newNumberGroup.from && g.to !== newNumberGroup.to}) // remove possible duplicate
+    newGroups = newGroups.concat(groupsAfter)
+    // update the sequence
+    this.groupedWithNextNumbers = this.getGroupedNumbersFromGroupArray(newGroups)
+    this.length++
+  }
+
   isGroupedWithNext(number) {
     return this.groupedWithNextNumbers.indexOf(number) !== -1
   }
@@ -123,6 +185,17 @@ export class SequenceWithGroups {
       i++
     }
     return groups
+  }
+
+
+  getGroupedNumbersFromGroupArray(groupArray) {
+    let groupedNumbers = []
+    groupArray.forEach( (group) => {
+      for (let i = group.from; i < group.to; i++) {
+        groupedNumbers.push(i)
+      }
+    })
+    return groupedNumbers
   }
 
 }

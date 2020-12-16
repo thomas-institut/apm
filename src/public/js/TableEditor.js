@@ -1349,6 +1349,7 @@ export class TableEditor {
 
   insertColumnAfter(col) {
     this.matrix.addColumnAfter(col, this.options.getEmptyValue())
+    this.columnSequence.addNumberAfter(col)
   }
 
   forceRestoreScroll(timeOut = 250)  {
@@ -1380,6 +1381,7 @@ export class TableEditor {
         thisObject.currentXScroll = window.scrollX
         thisObject.waitingForScrollZero = true
         thisObject.matrix.deleteColumn(col)
+        thisObject.columnSequence.removeNumber(col)
         thisObject.dispatchColumnDeleteEvents(col)
         thisObject.redrawTable()
         thisObject.forceRestoreScroll(250)

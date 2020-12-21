@@ -1,12 +1,8 @@
-<phpunit colors="true" processIsolation="true">
-    <filter>
-        <whitelist processUncoveredFilesFromWhitelist="true">
-            <directory suffix=".php">../../classes</directory>
-<!--            <exclude>
-                <directory suffix=".php">/path/to/files</directory>
-                <file>/path/to/file</file>
-            </exclude>-->
-        </whitelist>
-    </filter>    
-    
+<?xml version="1.0"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" colors="true" processIsolation="true" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd">
+  <coverage processUncoveredFiles="true">
+    <include>
+      <directory suffix=".php">../../classes</directory>
+    </include>
+  </coverage>
 </phpunit>

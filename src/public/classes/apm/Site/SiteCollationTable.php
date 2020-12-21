@@ -369,7 +369,8 @@ class SiteCollationTable extends SiteController
      * @return Response
      */
     public function automaticCollationPageCustom(Request $request, Response $response)  {
-        
+
+        $this->codeDebug('automaticCollationPageCustom API call');
         $rawData = $request->getBody()->getContents();
         parse_str($rawData, $postData);
         $inputData = null;
@@ -420,6 +421,8 @@ class SiteCollationTable extends SiteController
         }
         
         $collationPageOptions['isPreset'] = false;
+
+        $this->codeDebug('Options', $collationPageOptions);
         
         return $this->getCollationTablePage($collationPageOptions, $response);
     }
@@ -445,7 +448,7 @@ class SiteCollationTable extends SiteController
             'witnesses' => $collationPageOptions['witnesses']
         ];
 
-        //$this->codeDebug('apiCallOptions', $apiCallOptions);
+        $this->codeDebug('apiCallOptions', $apiCallOptions);
         $dm = $this->dataManager;
         $pageName = "AutomaticCollation-$workId-$chunkNumber-$language";
         

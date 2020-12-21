@@ -416,6 +416,8 @@ class ApiElements extends ApiController
         
         $pageInfo = $dataManager->getPageInfoByDocPage($docId, $pageNumber);
 
+        $goodPageInfo = $pageInfo === false ?  [ 'doc_id' => -1,  'id' => -1, 'lang' => '', 'num_cols' => 0] : $pageInfo;
+
         // Get the information about every person 
         // in the elements and editorial notes
         $people = [];
@@ -443,7 +445,7 @@ class ApiElements extends ApiController
             'col' => (int) $columnNumber,
             'docId' => $docId,
             'pageNumber' => $pageNumber,
-            'pageId' => $pageInfo['id'],
+            'pageId' => $goodPageInfo['id'],
             'versionId' => $thisVersion,
             'versionTime' => $versionTime
             ]);
@@ -453,10 +455,10 @@ class ApiElements extends ApiController
             'people' => $people, 
             'info' => [
                 'col' => (int) $columnNumber,
-                'docId' => $pageInfo['doc_id'],
-                'pageId' => $pageInfo['id'],
-                'lang' => $pageInfo['lang'],
-                'numCols' => $pageInfo['num_cols'],
+                'docId' => $goodPageInfo['doc_id'],
+                'pageId' => $goodPageInfo['id'],
+                'lang' => $goodPageInfo['lang'],
+                'numCols' => $goodPageInfo['num_cols'],
                 'versions' => $versions,
                 'thisVersion' => $thisVersion
                 ]

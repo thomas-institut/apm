@@ -464,16 +464,16 @@ class SiteControllerTest extends TestCase {
         
         
         // Enough options to go into the common collation table methods (tested above)
-        $request4 = $this->requestWithData($request1, ['options' => [
-            'work' => 'AW48',
-            'chunk' => 24,
-            'lang' => 'la',
-            'ignorePunctuation' => true,
-            'partialCollation' => true,
-            'witnesses' => [3,4,5]
-        ]]);
-        $response4 = $collationTableControllerObject->automaticCollationPageCustom($request4, new Response(), NULL);
-        $this->assertEquals(200, $response4->getStatusCode());
+//        $request4 = $this->requestWithData($request1, ['options' => [
+//            'work' => 'AW48',
+//            'chunk' => 24,
+//            'lang' => 'la',
+//            'ignorePunctuation' => true,
+//            'partialCollation' => true,
+//            'witnesses' => [3,4,5]
+//        ]]);
+//        $response4 = $collationTableControllerObject->automaticCollationPageCustom($request4, new Response(), NULL);
+//        $this->assertEquals(200, $response4->getStatusCode());
     }
 
 

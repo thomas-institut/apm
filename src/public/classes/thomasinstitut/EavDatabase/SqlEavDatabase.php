@@ -38,11 +38,11 @@ class SqlEavDatabase implements EavDatabase
     /**
      * @var PDO
      */
-    private $pdo;
+    private PDO $pdo;
     /**
      * @var string
      */
-    private $table;
+    private string $table;
     /**
      * @var string
      */
@@ -127,7 +127,7 @@ class SqlEavDatabase implements EavDatabase
         // see if we need to insert or update
         $insert = false;
         try {
-            $currentValue = $this->get($entityId, $attribute);
+            $this->get($entityId, $attribute);
         } catch (AttributeNotFoundException $e) {
             $insert = true;
         }

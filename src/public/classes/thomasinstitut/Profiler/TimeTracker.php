@@ -29,17 +29,17 @@ namespace ThomasInstitut\Profiler;
 class TimeTracker implements PropertyTracker
 {
 
-    public function start()
+    public function start(): float
     {
         return $this->getCurrentTimeStamp();
     }
 
-    public function end()
+    public function end(): float
     {
         return $this->getCurrentTimeStamp();
     }
 
-    public function lap()
+    public function lap(): float
     {
         return $this->getCurrentTimeStamp();
     }
@@ -51,7 +51,7 @@ class TimeTracker implements PropertyTracker
     /**
      * @inheritDoc
      */
-    public function difference($value1, $value2)
+    public function difference($value1, $value2): float
     {
         return (float) $value1 - (float) $value2;
     }

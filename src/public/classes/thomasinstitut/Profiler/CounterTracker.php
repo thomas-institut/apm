@@ -25,11 +25,11 @@ class CounterTracker implements PropertyTracker, Counter
     /**
      * @var int
      */
-    private $theInt;
+    private int $theInt;
     /**
      * @var int
      */
-    private $initialValue;
+    private int $initialValue;
 
     public function __construct(int $initialValue = 0)
     {
@@ -42,7 +42,7 @@ class CounterTracker implements PropertyTracker, Counter
     /**
      * @inheritDoc
      */
-    public function start()
+    public function start(): int
     {
         $this->reset($this->initialValue);
         return $this->initialValue;
@@ -51,7 +51,7 @@ class CounterTracker implements PropertyTracker, Counter
     /**
      * @inheritDoc
      */
-    public function end()
+    public function end(): int
     {
         return $this->getValue();
     }
@@ -59,7 +59,7 @@ class CounterTracker implements PropertyTracker, Counter
     /**
      * @inheritDoc
      */
-    public function lap()
+    public function lap(): int
     {
         return $this->getValue();
     }
@@ -67,7 +67,7 @@ class CounterTracker implements PropertyTracker, Counter
     /**
      * @inheritDoc
      */
-    public function difference($value1, $value2)
+    public function difference($value1, $value2): int
     {
         return (int) $value1 - (int) $value2;
     }
@@ -75,7 +75,7 @@ class CounterTracker implements PropertyTracker, Counter
     /**
      * @inheritDoc
      */
-    public function increment()
+    public function increment(): int
     {
         $this->theInt++;
         return $this->theInt;
@@ -84,7 +84,7 @@ class CounterTracker implements PropertyTracker, Counter
     /**
      * @inheritDoc
      */
-    public function add($value)
+    public function add($value): int
     {
         $this->theInt += $value;
         return $this->theInt;

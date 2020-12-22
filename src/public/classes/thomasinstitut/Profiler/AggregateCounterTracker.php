@@ -45,7 +45,7 @@ class AggregateCounterTracker implements PropertyTracker, ErrorReporter
     /**
      * @var CounterTracker[]
      */
-    private $counterTrackers;
+    private array $counterTrackers;
 
     public function __construct()
     {
@@ -70,7 +70,7 @@ class AggregateCounterTracker implements PropertyTracker, ErrorReporter
     /**
      * @inheritDoc
      */
-    public function start()
+    public function start(): array
     {
         $values = [];
         foreach($this->counterTrackers as $name => $tracker) {
@@ -82,7 +82,7 @@ class AggregateCounterTracker implements PropertyTracker, ErrorReporter
     /**
      * @inheritDoc
      */
-    public function end()
+    public function end(): array
     {
         $values = [];
         foreach($this->counterTrackers as $name => $tracker) {
@@ -94,7 +94,7 @@ class AggregateCounterTracker implements PropertyTracker, ErrorReporter
     /**
      * @inheritDoc
      */
-    public function lap()
+    public function lap(): array
     {
         $values = [];
         foreach($this->counterTrackers as $name => $tracker) {
@@ -106,7 +106,7 @@ class AggregateCounterTracker implements PropertyTracker, ErrorReporter
     /**
      * @inheritDoc
      */
-    public function difference($value1, $value2)
+    public function difference($value1, $value2): array
     {
         $diffValues = [];
         foreach($value1 as $name => $value) {
@@ -116,9 +116,6 @@ class AggregateCounterTracker implements PropertyTracker, ErrorReporter
         return $diffValues;
     }
 
-    /**
-     * @inheritDoc
-     */
     public function increment(string $counterName)
     {
         if (!isset($this->counterTrackers[$counterName])) {
@@ -128,9 +125,6 @@ class AggregateCounterTracker implements PropertyTracker, ErrorReporter
         $this->getTotalTracker()->increment();
     }
 
-    /**
-     * @inheritDoc
-     */
     public function add(string $counterName, int $value)
     {
         if (!isset($this->counterTrackers[$counterName])) {

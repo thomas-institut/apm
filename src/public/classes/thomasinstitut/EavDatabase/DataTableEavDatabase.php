@@ -36,12 +36,12 @@ class DataTableEavDatabase implements EavDatabase, CacheAware
     /**
      * @var array
      */
-    private $fieldMap;
+    private array $fieldMap;
 
     /**
      * @var DataTable
      */
-    private $dataTable;
+    private DataTable $dataTable;
 
 
     /**
@@ -280,7 +280,7 @@ class DataTableEavDatabase implements EavDatabase, CacheAware
 
     }
 
-    private function dtRowsToArray($rows) {
+    private function dtRowsToArray($rows) : array {
         $theArray = [];
         foreach($rows as $row) {
             $entity = $row[$this->fieldMap[self::FIELD_ENTITY]];

@@ -169,14 +169,14 @@ class SimpleProfiler implements Profiler, ErrorReporter
 
         foreach(array_keys($this->propertyTrackers) as $propertyName) {
             $initialValue = $this->getAbsoluteValue(0, $propertyName);
-            $calculatedLaps[0][$propertyName][self::FIELD_CUMMULATIVE] = 0;
+            $calculatedLaps[0][$propertyName][self::FIELD_CUMULATIVE] = 0;
             $calculatedLaps[0][$propertyName][self::FIELD_DELTA] = 0;
             $previousValue = $initialValue;
             /** @var PropertyTracker $tracker */
             $tracker = $this->propertyTrackers[$propertyName];
             for ($i = 1; $i < count($this->laps); $i++) {
                 $currentValue = $this->getAbsoluteValue($i, $propertyName);
-                $calculatedLaps[$i][$propertyName][self::FIELD_CUMMULATIVE] =
+                $calculatedLaps[$i][$propertyName][self::FIELD_CUMULATIVE] =
                     $tracker->difference($currentValue, $initialValue);
                 $calculatedLaps[$i][$propertyName][self::FIELD_DELTA] =
                     $tracker->difference($currentValue, $previousValue);

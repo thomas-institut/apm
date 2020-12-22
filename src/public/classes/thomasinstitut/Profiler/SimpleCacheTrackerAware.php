@@ -26,7 +26,7 @@ trait SimpleCacheTrackerAware
     /**
      * @var CacheTracker
      */
-    protected $cacheTracker;
+    protected CacheTracker $cacheTracker;
 
     public function getCacheTracker() : CacheTracker {
         return $this->cacheTracker;

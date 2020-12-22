@@ -140,14 +140,14 @@ class SimpleProfilerTest extends TestCase
 
             $this->assertEquals("Loop $i", $lapInfo[Profiler::FIELD_LAP_NAME]);
             $this->assertEquals($counterDelta, $lapInfo['count'][Profiler::FIELD_DELTA]);
-            $this->assertEquals($counterCummulative, $lapInfo['count'][Profiler::FIELD_CUMMULATIVE]);
+            $this->assertEquals($counterCummulative, $lapInfo['count'][Profiler::FIELD_CUMULATIVE]);
             $this->assertEquals($counterCummulative + $initialCounterValue, $lapInfo['count'][Profiler::FIELD_ABSOLUTE]);
             $this->assertGreaterThan($initialTime, $lapInfo['time'][Profiler::FIELD_ABSOLUTE]);
 
             $this->assertTrue(isset($lapInfo['fruits']));
             $fruitLapInfo = $lapInfo['fruits'];
             $this->assertIsArray($fruitLapInfo);
-            foreach ([ Profiler::FIELD_ABSOLUTE, Profiler::FIELD_CUMMULATIVE, Profiler::FIELD_DELTA] as $fieldName) {
+            foreach ([ Profiler::FIELD_ABSOLUTE, Profiler::FIELD_CUMULATIVE, Profiler::FIELD_DELTA] as $fieldName) {
                 $this->assertTrue(isset($fruitLapInfo[$fieldName]));
                 foreach ( ['apples', 'oranges', 'pears'] as $fruitName) {
                     $this->assertTrue(isset($fruitLapInfo[$fieldName][$fruitName]));

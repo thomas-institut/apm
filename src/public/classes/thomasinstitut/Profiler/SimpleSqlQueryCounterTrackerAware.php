@@ -25,7 +25,7 @@ trait SimpleSqlQueryCounterTrackerAware
     /**
      * @var SqlQueryCounterTracker
      */
-    protected $sqlQueryCounterTracker;
+    protected SqlQueryCounterTracker $sqlQueryCounterTracker;
 
     public function getSqlQueryCounterTracker() : SqlQueryCounterTracker
     {

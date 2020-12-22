@@ -22,7 +22,9 @@
         "phpoffice/phpword": "^0.15.0",
         "slim/psr7": "^0.6.0",
         "swaggest/json-schema": "^0.12.29",
-        "ext-json": "*"
+        "ext-json": "*",
+      "ext-intl": "*",
+        "ext-mbstring": "*"
     },
     
     "require-dev": {

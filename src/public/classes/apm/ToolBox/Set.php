@@ -35,7 +35,7 @@ class Set implements IteratorAggregate {
      *
      * @var array
      */
-    private $elements;
+    private array $elements;
     
     public function __construct(array $elementArray) {
         // keys in $elementArray are lost, the set's elements
@@ -70,11 +70,13 @@ class Set implements IteratorAggregate {
         return self::isEqual($this, $b);
     }
     
-    public function isSubsetOf(Set $b) {
+    public function isSubsetOf(Set $b): bool
+    {
         return self::isSubset($this, $b);
     }
     
-    public function contains($value) {
+    public function contains($value): bool
+    {
         // Notice: strict comparison for the search
         return array_search($value, $this->elements, true) !== false;
     }

@@ -150,7 +150,7 @@ class SiteDocuments extends SiteController
         $versionMap = $transcriptionManager->getVersionsForChunkLocationMap($chunkLocationMap);
         $lastChunkVersions = $transcriptionManager->getLastChunkVersionFromVersionMap($versionMap);
         $lastSaves = $transcriptionManager->getLastSavesForDoc($docId, 20);
-        $this->logger->debug('Last Versions', $lastChunkVersions);
+        //$this->logger->debug('Last Versions', $lastChunkVersions);
         $chunkInfo = [];
 
         $lastVersions = [];

@@ -541,7 +541,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
     }
 
     /**
-     * Updates the page settings: lang, foliation and type
+     * Updates the page settings: lang, foliation, type and seq
      *
      * Won't update anything else, e.g., num_cols, page_number, etc.
      *
@@ -574,6 +574,10 @@ class DataManager implements  SqlQueryCounterTrackerAware
                 return false;
             }
             // so, the type is good, carry on
+        }
+
+        if (isset($settings['seq'])) {
+            $row['seq'] = $settings['seq'];
         }
         
         if (count(array_keys($row)) === 1) {

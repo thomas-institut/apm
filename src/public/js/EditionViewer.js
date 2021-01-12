@@ -171,7 +171,7 @@ export class EditionViewer {
       return { start: 'pre', end: 'pre'}
     }
     if (typeof(tsTokens[map[entry.start]]) === 'undefined') {
-      console.log('Found undefined')
+      console.log('Found undefined start')
       console.log('note.start: ' + entry.start)
       console.log('map [note.start]: ' + map[entry.start])
       console.log('tsTokens[map[note.start] : ' + tsTokens[map[entry.start]])
@@ -181,9 +181,21 @@ export class EditionViewer {
         end: 'ERROR'
       }
     }
+    if (entry.end !== -1 && typeof(tsTokens[map[entry.end]]) === 'undefined') {
+      console.log('Found undefined end')
+      console.log(entry)
+      console.log('note.end: ' + entry.end)
+      console.log('map [note.end]: ' + map[entry.end])
+      console.log('tsTokens[map[note.end] : ' + tsTokens[map[entry.end]])
+      console.log('tsTokens.length: ' + tsTokens.length)
+      return {
+        start: 'ERROR',
+        end: 'ERROR'
+      }
+    }
     return { 
         start: tsTokens[map[entry.start]].lineNumber,
-        end: tsTokens[map[entry.end]].lineNumber
+        end: entry.end === -1 ? tsTokens[map[entry.start]].lineNumber :  tsTokens[map[entry.end]].lineNumber
     } 
   }
   

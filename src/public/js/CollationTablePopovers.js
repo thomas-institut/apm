@@ -231,6 +231,7 @@ export function getItemPopoverHtmlForToken(row, token, tokenSourceItemData, peop
   if (item['notes'] !== undefined && item['notes'].length > 0) {
     html += getNotesHtml(item['notes'], peopleInfo, 'Notes')
   }
+  //console.log(`Generated popover html: '${html}'`)
 
   return html
 
@@ -255,7 +256,7 @@ function getNoteHtml(note, peopleInfo) {
   let html = `<div class="${noteDivClass} ${langClassPrefix}en">`
   let authorShortName = peopleInfo[note.authorId]['shortName']
   if (authorShortName === undefined) {
-    console.error(`No short name defined for author ${note.authorId}`)
+    //console.error(`No short name defined for author ${note.authorId}`)
     authorShortName = peopleInfo[note.authorId]['fullname']
   }
 

@@ -914,6 +914,7 @@ export class CollationTableEditor {
         let tokenIndex = thisObject.tableEditor.getValue(cellIndex.row, cellIndex.col)
         return thisObject.getPopoverHtml(witnessIndex, tokenIndex, cellIndex.col)
       }
+      console.log(`No popover text on witness ${witnessIndex}, row ${cellIndex.row}, col ${cellIndex.col}`)
       return ''
     }
   }

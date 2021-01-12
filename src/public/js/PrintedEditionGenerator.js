@@ -138,11 +138,24 @@ export class PrintedEditionGenerator {
         }
       }
       let mainTextIndexFrom = generatedMainText.ctToMainTextMap[columnGroup.from]
+      if (mainTextIndexFrom === -1) {
+        // need to find first non-empty main text token in
+        console.log('Finding non empty main text token forward')
+        mainTextIndexFrom = this._findNonEmptyMainTextToken(columnGroup.from,
+          generatedMainText.ctToMainTextMap, generatedMainText.mainTextTokens, true)
+      }
       let mainTextIndexTo = generatedMainText.ctToMainTextMap[columnGroup.to]
+      if (mainTextIndexTo === -1) {
+        console.log(`Finding non empty main text token backwards from ${columnGroup.to}, from = ${columnGroup.from}`)
+        mainTextIndexTo = this._findNonEmptyMainTextToken(columnGroup.to,
+          generatedMainText.ctToMainTextMap, generatedMainText.mainTextTokens, false)
+      }
+
       let entries =  this._genApparatusEntryFromArray([],groupOmissions, sigla, 'omission')
       entries = this._genApparatusEntryFromArray(entries,groupVariants, sigla, 'variant')
       if (entries.length !== 0) {
         criticalApparatus.push({
+          mainText: mainText,
           start: mainTextIndexFrom,
           end: mainTextIndexTo,
           entries: entries
@@ -168,6 +181,18 @@ export class PrintedEditionGenerator {
       status: 'OK'
     }
 
+  }
+
+  _findNonEmptyMainTextToken(ctIndex, ctToMainTextMap, mainTextTokens, forward) {
+    while (ctIndex >= 0 && ctIndex < ctToMainTextMap.length && (
+      ctToMainTextMap[ctIndex] === -1 ||
+      isPunctuationToken(mainTextTokens[ctToMainTextMap[ctIndex]]['text'])) ) {
+      ctIndex = forward ? ctIndex + 1 : ctIndex -1
+    }
+    if (ctIndex < 0 || ctIndex >= ctToMainTextMap.length) {
+      return -1
+    }
+    return ctToMainTextMap[ctIndex]
   }
 
   _getMainTextForGroup(group, mainTextInputTokens) {

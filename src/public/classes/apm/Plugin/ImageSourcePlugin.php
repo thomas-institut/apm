@@ -37,15 +37,15 @@ abstract class ImageSourcePlugin extends Plugin
     /**
      * @var LoggerInterface
      */
-    public $logger;
+    public LoggerInterface  $logger;
     /**
      * @var string
      */
-    public $stub;
+    public string $stub;
     /**
      * @var HookManager
      */
-    protected $hookManager;
+    protected HookManager $hookManager;
     
     public function __construct(SystemManager $systemManager, string $stub) {
         parent::__construct($systemManager);
@@ -54,15 +54,18 @@ abstract class ImageSourcePlugin extends Plugin
         $this->stub = $stub;
     }
     
-    public function activate() {
+    public function activate(): bool
+    {
         return true;
     }
     
-    public function deactivate() {
+    public function deactivate(): bool
+    {
         return true;
     }
     
-    public function init() {
+    public function init(): bool
+    {
         
         $hookGetImageUrl = 'get-image-url-' . $this->stub;
         $hookGetDocInfoHtml = 'get-docinfo-html-' . $this->stub;

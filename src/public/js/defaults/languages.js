@@ -36,6 +36,7 @@ export const defaultLanguageDefinition = {
     name: 'Hebrew',
     rtl: true,
     fontsize: 3,
-    editionFont: 'Noto Serif Hebrew'
+    editionFont: 'Noto Serif Hebrew, Noto Serif'
+    // editionFont: 'Arial'
   }
 }

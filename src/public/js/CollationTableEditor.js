@@ -2151,6 +2151,7 @@ export class CollationTableEditor {
     let peg = new PrintedEditionGenerator()
     let edition = peg.generateEdition(this.ctData, this.ctData['witnessOrder'][0])
     let ev = new EditionViewer( {
+      lang: edition.lang,
       collationTokens: edition.mainTextTokens,
       apparatusArray: edition.apparatusArray,
       isRightToLeft: (edition.textDirection === 'rtl'),

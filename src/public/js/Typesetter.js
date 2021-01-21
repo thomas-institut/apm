@@ -92,6 +92,7 @@ export class Typesetter {
     let defaultFontSize = 16
 
     let optionsDefinition = {
+      lang: { type: 'string'},
       lineWidth: { type: 'NumberGreaterThanZero', default: 700},
       defaultFontFamily: {type: 'NonEmptyString', default:'Helvetica' },
       defaultFontSize: { type: 'NumberGreaterThanZero', default: defaultFontSize},
@@ -109,10 +110,14 @@ export class Typesetter {
     let oc = new OptionsChecker(optionsDefinition, 'Typesetter')
     this.options = oc.getCleanOptions(options)
     
-    this.emSize = this.getTextWidthWithDefaults('m')
-    // console.log(`Typesetter: em size: ${this.emSize}`)
-    this.normalSpace = this.options.normalSpaceWidth * this.emSize
-    // console.log(`Typesetter: normal space size: ${this.normalSpace}`)
+    //this.emSize = this.getTextWidthWithDefaults('m')
+    this.emSize = this.options.defaultFontSize
+    this.normalSpace = this.getNormalSpaceWidth()
+    console.log(`Typesetter: normal space size: ${this.normalSpace}`)
+  }
+
+  getNormalSpaceWidth() {
+    return this.emSize * this.options.normalSpaceWidth
   }
 
   
@@ -124,13 +129,17 @@ export class Typesetter {
     let context = this.canvas.getContext("2d");
     context.font = fontDefinitionString;
     let metrics = context.measureText(text);
+    // if (text === ' ' || text === 'm') {
+    //   console.log(`Measuring string '${text}'`)
+    //   console.log(metrics)
+    // }
     return metrics.width
   }
   
   getTextWidthWithDefaults(text) {
     if (typeof(this.defaultFontDefinitionString) === 'undefined') {
-      this.defaultFontDefinitionString = this.options.defaultFontSize  + 'px ' + this.options.defaultFontFamily
-      //console.log('Default string def: ' + this.defaultFontDefinitionString)
+      this.defaultFontDefinitionString = this.options.defaultFontSize  + 'px ' + '"' + this.options.defaultFontFamily + '"'
+      console.log('Default string def: ' + this.defaultFontDefinitionString)
     }
     return this.getStringWidth(text, this.defaultFontDefinitionString) 
   }
@@ -241,6 +250,7 @@ export class Typesetter {
       newToken.fontSize = defaultFontSize
       newToken.width = tokenWidth
       newToken.status = 'set'
+      newToken.lang = this.options.lang
       typesetTokens.push(newToken)
       
       currentX = advanceX(currentX, tokenWidth, rightToLeft)
@@ -341,7 +351,10 @@ export class Typesetter {
       fontSize = token.fontSize
     }
 
-    let svgString = "<tspan "
+    let posX = left + token.deltaX
+    // testing RTL
+
+    let svgString = "<text "
     if (showFontBasicInfo) {
       svgString += 'fill="' +  fillColor + '" font-size="' + fontSize + '" '
       svgString += 'font-family="' + fontFamily + '" '
@@ -355,7 +368,11 @@ export class Typesetter {
       svgString += 'font-weight="' + fontWeight +'" '
     }
 
-    svgString += ' x="' + (left + token.deltaX) + '" y="' + (top + token.deltaY) + '">' +  token.text + '</tspan>'
+    if (token.lang === 'he') {
+      svgString += 'direction="rtl" '
+    }
+
+    svgString += ' x="' + posX + '" y="' + (top + token.deltaY) + '">' +  token.text + '</text>'
     return svgString
   }
   

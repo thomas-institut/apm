@@ -171,6 +171,7 @@ export class PrintedEditionGenerator {
     profiler.stop()
 
     return {
+      lang: language,
       baseWitnessIndex: baseWitnessIndex,
       mainTextTokens: generatedMainText.mainTextTokens,
       sigla: sigla,
@@ -180,7 +181,6 @@ export class PrintedEditionGenerator {
       error: '',
       status: 'OK'
     }
-
   }
 
   _findNonEmptyMainTextToken(ctIndex, ctToMainTextMap, mainTextTokens, forward) {

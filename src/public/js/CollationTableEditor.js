@@ -959,7 +959,7 @@ export class CollationTableEditor {
       let witnessIndex = thisObject.ctData['witnessOrder'][cellIndex.row]
       if (thisObject.ctData['witnesses'][witnessIndex]['witnessType'] === WitnessType.FULL_TX) {
         let tokenIndex = thisObject.tableEditor.getValue(cellIndex.row, cellIndex.col)
-        console.log(`Getting popover for witness index ${witnessIndex}, token ${tokenIndex}, col ${cellIndex.col}`)
+        /console.log(`Getting popover for witness index ${witnessIndex}, token ${tokenIndex}, col ${cellIndex.col}`)
         return thisObject.getPopoverHtml(witnessIndex, tokenIndex, cellIndex.col)
       }
       console.log(`No popover text on witness ${witnessIndex}, row ${cellIndex.row}, col ${cellIndex.col}`)
@@ -1227,7 +1227,7 @@ export class CollationTableEditor {
     // this function is never called for those cells
     let popoverHtml  = this.getPopoverHtmlFromCache(witnessIndex, tokenIndex)
     if (popoverHtml !== undefined) {
-      console.log(`Popover from cache: '${popoverHtml}'`)
+      // console.log(`Popover from cache: '${popoverHtml}'`)
       return popoverHtml
     }
 

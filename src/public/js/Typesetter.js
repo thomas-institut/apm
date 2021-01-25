@@ -368,7 +368,7 @@ export class Typesetter {
       svgString += 'font-weight="' + fontWeight +'" '
     }
 
-    if (token.lang === 'he') {
+    if (token.lang === 'he' || token.lang === 'ar') {
       svgString += 'direction="rtl" '
     }
 

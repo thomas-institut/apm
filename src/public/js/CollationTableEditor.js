@@ -109,6 +109,10 @@ export class CollationTableEditor {
     if (this.ctData['groupedColumns'] === undefined) {
       this.ctData['groupedColumns'] = []
     }
+    // fix -1 references in edition witness
+    if (this.ctData['type'] === CollationTableType.EDITION) {
+      this.fixEditionWitnessReferences()
+    }
 
     this.lastSavedCtData = Util.deepCopy(this.ctData)
     this.witnessUpdates = []
@@ -267,6 +271,43 @@ export class CollationTableEditor {
     $(window).on('resize',
       () => { thisObject.fitCtDivToViewPort()}
       )
+  }
+
+  fixEditionWitnessReferences() {
+    let editionWitnessIndex = this.ctData['editionWitnessIndex']
+    let editionWitnessTokens = this.ctData.witnesses[editionWitnessIndex]['tokens']
+    let ctEditionRow = this.ctData.collationMatrix[editionWitnessIndex]
+
+    let foundNullRef = false
+    let newEditionWitnessTokens = ctEditionRow.map ( (ref, i) => {
+      if (ref === -1) {
+        console.log(`Adding empty token in edition witness at column ${i}`)
+        foundNullRef = true
+        return { 'tokenClass':  TokenClass.EDITION, 'tokenType': TokenType.EMPTY, 'text': ''}
+      }
+      return editionWitnessTokens[ref]
+    })
+
+    if (foundNullRef) {
+      let newCtEditionRow = ctEditionRow.map( (ref, i) => {
+        return i
+      })
+      console.log('Old Edition Witness Tokens')
+      console.log(editionWitnessTokens)
+      console.log('New Edition Witness Tokens')
+      console.log(newEditionWitnessTokens)
+      console.log('Old CT edition row')
+      console.log(ctEditionRow)
+      console.log('New CT Edition Row')
+      console.log(newCtEditionRow)
+
+      this.ctData.witnesses[editionWitnessIndex]['tokens'] = newEditionWitnessTokens
+      this.ctData.collationMatrix[editionWitnessIndex] = newCtEditionRow
+
+    } else {
+      console.log('No -1 references found edition witness')
+    }
+
   }
 
   fitCtDivToViewPort() {
@@ -627,7 +668,7 @@ export class CollationTableEditor {
       if (change.type === 'insertColAfter') {
         this.tableEditor.insertColumnAfter(change.afterCol)
         columnsInserted++
-        for(let row = 0; row < this.tableEditor.matrix.nRows; row ++) {
+        for (let row = 0; row < this.tableEditor.matrix.nRows; row++) {
           this.tableEditor.setValue(row, change.afterCol + columnsInserted,-1)
         }
         this.tableEditor.setValue(ctRow, change.afterCol + columnsInserted, change.tokenIndexInNewWitness)
@@ -641,11 +682,17 @@ export class CollationTableEditor {
     this.witnessUpdates.push({witnessIndex: witnessIndex, changeData: changeData})
     this.lastWitnessUpdateCheckResponse['witnesses'][witnessIndex]['upToDate'] = true
     this.lastWitnessUpdateCheckResponse['witnesses'][witnessIndex]['justUpdated'] = true
-    this.resetTokenDataCache()
     this.ctData['collationMatrix'] = this.getCollationMatrixFromTableEditor()
+    console.log('New ctData')
+    console.log(this.ctData)
+    this.fixEditionWitnessReferences()
+    console.log('After fix references')
+    console.log(this.ctData)
     this.aggregatedNonTokenItemIndexes = this.calculateAggregatedNonTokenItemIndexes()
-    this.recalculateVariants()
-    this.tableEditor.redrawTable()
+    this.resetTokenDataCache()
+    this.setupTableEditor()
+    //this.recalculateVariants()
+    //this.tableEditor.redrawTable()
     this.updateWitnessInfoDiv()
     this.updateSaveArea()
     this.setCsvDownloadFile()
@@ -912,6 +959,7 @@ export class CollationTableEditor {
       let witnessIndex = thisObject.ctData['witnessOrder'][cellIndex.row]
       if (thisObject.ctData['witnesses'][witnessIndex]['witnessType'] === WitnessType.FULL_TX) {
         let tokenIndex = thisObject.tableEditor.getValue(cellIndex.row, cellIndex.col)
+        console.log(`Getting popover for witness index ${witnessIndex}, token ${tokenIndex}, col ${cellIndex.col}`)
         return thisObject.getPopoverHtml(witnessIndex, tokenIndex, cellIndex.col)
       }
       console.log(`No popover text on witness ${witnessIndex}, row ${cellIndex.row}, col ${cellIndex.col}`)
@@ -1058,7 +1106,8 @@ export class CollationTableEditor {
           let theMatrixCol = thisObject.tableEditor.getMatrix().getColumn(col)
           let editionWitnessIndex = thisObject.ctData['witnessOrder'][0]
           let editionToken = thisObject.ctData['witnesses'][editionWitnessIndex]['tokens'][theMatrixCol[0]]
-          if (editionToken.tokenType !== TokenType.EMPTY) {
+          if (editionToken !== undefined && editionToken.tokenType !== TokenType.EMPTY) {
+            // an undefined editionToken means that the edition token is empty
             return false
           }
           for(let i = 1; i < theMatrixCol.length; i++) {
@@ -1178,6 +1227,7 @@ export class CollationTableEditor {
     // this function is never called for those cells
     let popoverHtml  = this.getPopoverHtmlFromCache(witnessIndex, tokenIndex)
     if (popoverHtml !== undefined) {
+      console.log(`Popover from cache: '${popoverHtml}'`)
       return popoverHtml
     }
 
@@ -1374,6 +1424,10 @@ export class CollationTableEditor {
   genGenerateCellContentEditModeFunction() {
     let thisObject = this
     return (tableRow, col, value) => {
+      if (value === -1) {
+        console.warn(`Editing a null cell (value = -1) at row ${tableRow}, col ${col}`)
+        return ''
+      }
       let witnessIndex = thisObject.ctData['witnessOrder'][tableRow]
       let tokenArray = thisObject.ctData['witnesses'][witnessIndex]['tokens']
       let token = tokenArray[value]
@@ -1429,6 +1483,12 @@ export class CollationTableEditor {
       //console.log(`Witness index: ${witnessIndex}` )
       let ref = thisObject.ctData['collationMatrix'][witnessIndex][col]
       //console.log(`Current ref: ${ref}`)
+      if (ref === -1) {
+        // TODO: deal with null refs in edition witness
+        console.warn(`Trying to edit a -1 ref at witness ${witnessIndex}, row ${tableRow}, col ${col}`)
+        return { valueChange: false, value: ref}
+      }
+
       let currentText = thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['text']
       if (currentText === newText) {
         // no change!

@@ -235,7 +235,14 @@ class ApiWitness extends ApiController
             $this->codeDebug("Need to build witness info from scratch");
             // need to build everything from scratch
             $locations = $transcriptionManager->getSegmentLocationsForFullTxWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
-            $apmWitness = $transcriptionManager->getTranscriptionWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
+            try {
+                $apmWitness = $transcriptionManager->getTranscriptionWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
+            } catch (\Exception $e) {
+                $msg = $e->getMessage();
+                $this->logger->error("Exception trying to get transcription witness. Msg = '$msg'",
+                    [ 'locations' => $locations ] );
+                return $this->responseWithJson($response, [ 'error' => $msg ], 409);
+            }
 
             $returnData = $apmWitness->getData();
 

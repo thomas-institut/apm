@@ -24,7 +24,8 @@
         "swaggest/json-schema": "^0.12.29",
         "ext-json": "*",
       "ext-intl": "*",
-        "ext-mbstring": "*"
+        "ext-mbstring": "*",
+      "ext-zlib": "*"
     },
     
     "require-dev": {

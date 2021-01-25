@@ -589,7 +589,7 @@ class ApmTranscriptionManager extends TranscriptionManager
             ],
             $timeString);
 
-        //$this->codeDebug('getSegmentLocations', [ $workId, $chunkNumber, $docId, $localWitnessId, $timeString, $chunkLocationMap]);
+        $this->codeDebug('getSegmentLocations', [ $workId, $chunkNumber, $docId, $localWitnessId, $timeString, $chunkLocationMap]);
         if (!isset($chunkLocationMap[$workId][$chunkNumber][$docId][$localWitnessId])) {
             return [];
         }
@@ -656,7 +656,7 @@ class ApmTranscriptionManager extends TranscriptionManager
     private function getChunkLocationMapFromDatabase(array $conditions, string $timeString) : array
     {
 
-        //$this->codeDebug('Getting chunk map from DB', [ $conditions, $timeString]);
+//        $this->codeDebug('Getting chunk map from DB', [ $conditions, $timeString]);
         $ti = $this->tNames[ApmMySqlTableName::TABLE_ITEMS];
         $te = $this->tNames[ApmMySqlTableName::TABLE_ELEMENTS];
         $tp = $this->tNames[ApmMySqlTableName::TABLE_PAGES];
@@ -717,7 +717,7 @@ class ApmTranscriptionManager extends TranscriptionManager
             " AND $tp.valid_until>'$timeString'" .
             " ORDER BY $tp.seq, $te.column_number, $te.seq, $ti.seq ASC";
 
-        //$this->codeDebug("SQL Query", [ $query]);
+//        $this->codeDebug("SQL Query", [ $query]);
         $r = $this->databaseHelper->query($query);
 
         $chunkMarkLocations = [];
@@ -744,7 +744,7 @@ class ApmTranscriptionManager extends TranscriptionManager
             $chunkMarkLocations[] = $location;
         }
 
-        //$this->codeDebug('ChunkMark Locations', $chunkMarkLocations);
+//        $this->codeDebug('ChunkMark Locations', $chunkMarkLocations);
 
         return $this->createChunkLocationMapFromChunkMarkLocations($chunkMarkLocations);
 

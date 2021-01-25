@@ -16,6 +16,8 @@
  *
  */
 
+import * as Util from './toolbox/Util'
+
 // Classes
 const popoverDivClass = 'ctPopover'
 const headingClass = 'heading'
@@ -260,7 +262,7 @@ function getNoteHtml(note, peopleInfo) {
     authorShortName = peopleInfo[note.authorId]['fullname']
   }
 
-  html += `<p class="${noteTextClass}">${note.text}</p>`
+  html += `<p class="${noteTextClass}">${Util.escapeHtml(note.text)}</p>`
   html += `<p class="${noteCaptionClass}">-- ${authorShortName}, ${formatNoteTime(note.timeStamp)}</p>`
   html += '</div>'
   return html

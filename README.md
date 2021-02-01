@@ -2,8 +2,8 @@
 This is the web app running at http://averroes.uni-koeln.de/apm
 
 It requires 
-* PHP 7.2 with the following extensions enabled: xml, gd, mbstring, mysql, intl and zip
-* a running MySQL Server 5.7 configured with a database 
+* PHP 7.4 with the following extensions enabled: xml, gd, mbstring, mysql, intl and zip
+* a running MySQL Server 5.7+ configured with a database 
 and a user with access to that database.
 * Java running environment, e.g., Open JDK  (Note: Open JDK11 should not be used; it emits 
 a deprecation warning that breaks Collatex normal output)

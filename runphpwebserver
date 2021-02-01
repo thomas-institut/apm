@@ -19,5 +19,5 @@
 # Runs php as a webserver in src/public
 #
 cd src/public
-php -d display_errors=on -S localhost:8888
+php -d display_errors=on -S 0.0.0.0:8888
 cd ../..

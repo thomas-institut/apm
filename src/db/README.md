@@ -6,7 +6,7 @@ detailed specification of the tables, indexes and foreign keys.
 
 ## Systems Settings
 
-Currently the only system setting stored in the database is the database
+Currently, the only system setting stored in the database is the database
 version number in the table ```ap_settings```
 
 ## System Users

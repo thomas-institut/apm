@@ -8,7 +8,7 @@ and a user with access to that database.
 * Java running environment, e.g., Open JDK  (Note: Open JDK11 should not be used; it emits 
 a deprecation warning that breaks Collatex normal output)
 
-It has been developed and tested in an Ubuntu 18.04.3 server with standard packages.
+It has been developed and tested in an Ubuntu 20.04.3 server with standard packages.
 
 ## Development
 

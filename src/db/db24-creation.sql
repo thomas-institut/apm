@@ -516,4 +516,14 @@ ALTER TABLE `ap_versions_tx`
 --
 ALTER TABLE `ap_works`
     ADD CONSTRAINT `ap_works_ibfk_1` FOREIGN KEY (`author_id`) REFERENCES `ap_people` (`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+
+
+INSERT INTO `ap_types_page` (`id`, `name`, `descr`) VALUES
+(0, 'notset', 'Type not set'),
+(1, 'text', 'Regular page with text'),
+(2, 'frontmatter', 'Front matter'),
+(3, 'backmatter', 'Back matter');
+
 COMMIT;
+
+

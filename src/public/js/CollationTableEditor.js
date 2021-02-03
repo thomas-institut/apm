@@ -116,6 +116,9 @@ export class CollationTableEditor {
       this.fixEditionWitnessReferences()
     }
 
+    // consistency check
+    this.checkCollationTableConsistency()
+
     this.lastSavedCtData = Util.deepCopy(this.ctData)
     this.witnessUpdates = []
     this.tableId = this.options['tableId']
@@ -273,6 +276,37 @@ export class CollationTableEditor {
     $(window).on('resize',
       () => { thisObject.fitCtDivToViewPort()}
       )
+  }
+
+  checkCollationTableConsistency() {
+
+    for (let wIndex = 0; wIndex < this.ctData['witnesses'].length; wIndex++) {
+      let ctRow = this.ctData['witnessOrder'].indexOf(wIndex)
+      let title = this.ctData['witnessTitles'][wIndex]
+      let errorsFound = false
+      console.log(`Checking witness consistency for witness ${wIndex} (${title}), ctRow = ${ctRow}`)
+      // check that the collation table has all text tokens present
+      if (this.ctData['type'] === CollationTableType.EDITION && wIndex === this.ctData['editionWitnessIndex']) {
+        console.log(`... edition witness, skipping`)
+        continue
+      }
+      let row = this.ctData['collationMatrix'][wIndex];
+      this.ctData['witnesses'][wIndex]['tokens'].forEach( (t, i) => {
+        if (t.type === TokenType.WORD) {
+          if (row.indexOf(i) === -1) {
+            errorsFound = true
+            console.log(`- text token ${i} not in collation table, text = '${t.text}'`)
+          }
+        }
+      })
+      if (!errorsFound) {
+        console.log(`... no problems found`)
+      }
+    }
+
+
+
+
   }
 
   fixEditionWitnessReferences() {
@@ -713,6 +747,7 @@ export class CollationTableEditor {
   getChangesBetweenWitnesses(oldWitness, newWitness, witnessIndex) {
     let changes = {}
 
+    console.log(`Calculating changes`)
     // 1. Find changes in the tokens
     let editScript = MyersDiff.calculate(oldWitness['tokens'], newWitness['tokens'], function(a,b) {
       if (a['tokenType'] === b['tokenType']) {
@@ -737,6 +772,8 @@ export class CollationTableEditor {
       return false
     })
 
+    console.log('Edit Script')
+    console.log(editScript)
     changes.tokenConversionArray = []
     changes.nonCtChanges = []
     changes.ctChanges = []
@@ -780,7 +817,7 @@ export class CollationTableEditor {
       // determine the FSM event
       let ctColIndex = collationRow.indexOf(scriptItem.index)
       let event = getFsmEvent(scriptItem, ctColIndex, newWitness['tokens'])
-      //console.log(`Event ${i}: ${event}, state ${state}, index ${scriptItem.index}, ctIndex ${ctColIndex}, seq ${scriptItem.seq}`)
+      console.log(`Event ${i}: ${event}, state ${state}, index ${scriptItem.index}, ctIndex ${ctColIndex}, seq ${scriptItem.seq}, lastCtColumn ${lastCtColumn}`)
 
       // State Machine
       if (state === 0) {
@@ -859,7 +896,10 @@ export class CollationTableEditor {
               currentToken: oldWitness['tokens'][lastDel.index],
               newToken: newWitness['tokens'][scriptItem.seq]
             })
-            lastCtColumn = ctColIndex
+            if (ctColIndex !== -1) {
+              lastCtColumn = ctColIndex
+            }
+
             lastCtColumnTokenIndex = scriptItem.index
             state = 0
             break

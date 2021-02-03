@@ -41,8 +41,8 @@ class StringType
         $theArray[] = IntlChar::chr(0x5BE); // Hebrew maqaf
         $theArray[] = IntlChar::chr(0x5C0); // Hebrew paseq
         $theArray[] = IntlChar::chr(0x5C3); // Hebrew soft pasuq
-        $theArray[] = IntlChar::chr(0x5F3); // Hebrew geresh
-        $theArray[] = IntlChar::chr(0x5F4); // Hebrew gershayim
+//        $theArray[] = IntlChar::chr(0x5F3); // Hebrew geresh
+//        $theArray[] = IntlChar::chr(0x5F4); // Hebrew gershayim
 
         return $theArray;
     }

@@ -108,9 +108,9 @@ function getValidPunctuationArray() {
     String.fromCodePoint(0x60D), // Arabic date separator
     String.fromCodePoint(0x5BE), // Hebrew maqaf
     String.fromCodePoint(0x5C0), // Hebrew paseq
-    String.fromCodePoint(0x5C3), // Hebrew soft pasuq
-    String.fromCodePoint(0x5F3), // Hebrew geresh
-    String.fromCodePoint(0x5F4), // Hebrew gershayim
+    String.fromCodePoint(0x5C3) // Hebrew soft pasuq
+    // String.fromCodePoint(0x5F3), // Hebrew geresh
+    // String.fromCodePoint(0x5F4), // Hebrew gershayim
   ]
 }
 

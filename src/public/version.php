@@ -26,7 +26,7 @@ global $config;
 
 
 $config[ApmConfigParameter::APP_NAME] = 'APM';
-$config[ApmConfigParameter::VERSION] = '0.37.6 (2021-Jan-25)';
+$config[ApmConfigParameter::VERSION] = '0.37.7 (2021-Feb-03)';
 
 
 $config[ApmConfigParameter::COPYRIGHT_NOTICE] = <<<EOD

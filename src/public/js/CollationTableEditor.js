@@ -69,8 +69,10 @@ export class CollationTableEditor {
 
     // icons
     this.icons = {
-      moveUp: '&#x1f861;',
-      moveDown: '&#x1f863;',
+      // moveUp: '&#x1f861;',
+      moveUp: '&uarr;',
+      // moveDown: '&#x1f863;',
+      moveDown: '&darr;',
       busy: '<i class="fas fa-circle-notch fa-spin"></i>',
       checkOK: '<i class="far fa-check-circle"></i>',
       checkFail: '<i class="fas fa-exclamation-triangle"></i>',
@@ -658,6 +660,7 @@ export class CollationTableEditor {
     for(let i = 0; i < currentCtRow.length; i++) {
       let currentRef = this.tableEditor.getValue(ctRow, i)
       if (currentRef !== -1) {
+        console.log(`Changing ref in table editor row ${ctRow}, col ${i}, from ${currentRef} to ${changes['tokenConversionArray'][currentRef]} `)
         this.tableEditor.setValue(ctRow, i, changes['tokenConversionArray'][currentRef])
       }
     }
@@ -666,12 +669,18 @@ export class CollationTableEditor {
     let columnsInserted = 0
     for (const change of changes.ctChanges) {
       if (change.type === 'insertColAfter') {
-        this.tableEditor.insertColumnAfter(change.afterCol)
+        console.log(`Processing column insert`)
+        this.tableEditor.insertColumnAfter(change.afterCol + columnsInserted)
         columnsInserted++
+        console.log(`Columns inserted: ${columnsInserted}`)
         for (let row = 0; row < this.tableEditor.matrix.nRows; row++) {
+          console.log(`Setting reference at row ${row}, col ${change.afterCol+columnsInserted} to -1`)
           this.tableEditor.setValue(row, change.afterCol + columnsInserted,-1)
         }
+        console.log(`Updating reference in tableEditor row ${ctRow}, col ${change.afterCol + columnsInserted}, new ref=${change.tokenIndexInNewWitness}`)
         this.tableEditor.setValue(ctRow, change.afterCol + columnsInserted, change.tokenIndexInNewWitness)
+        let clonedMatrix = this.tableEditor.matrix.clone()
+        clonedMatrix.logMatrix('Table editor Matrix (cloned)')
       }
     }
 
@@ -959,7 +968,7 @@ export class CollationTableEditor {
       let witnessIndex = thisObject.ctData['witnessOrder'][cellIndex.row]
       if (thisObject.ctData['witnesses'][witnessIndex]['witnessType'] === WitnessType.FULL_TX) {
         let tokenIndex = thisObject.tableEditor.getValue(cellIndex.row, cellIndex.col)
-        /console.log(`Getting popover for witness index ${witnessIndex}, token ${tokenIndex}, col ${cellIndex.col}`)
+        console.log(`Getting popover for witness index ${witnessIndex}, token ${tokenIndex}, col ${cellIndex.col}`)
         return thisObject.getPopoverHtml(witnessIndex, tokenIndex, cellIndex.col)
       }
       console.log(`No popover text on witness ${witnessIndex}, row ${cellIndex.row}, col ${cellIndex.col}`)
@@ -995,7 +1004,13 @@ export class CollationTableEditor {
     let rowDefinition = []
     for (let i = 0; i < collationTable['witnessOrder'].length; i++) {
       let wIndex = collationTable['witnessOrder'][i]
-      let title = collationTable['witnessTitles'][wIndex]
+      let title = ''
+      // if (collationTable.type === CollationTableType.EDITION && wIndex === collationTable['editionWitnessIndex']) {
+        title = collationTable['witnessTitles'][wIndex]
+      // } else {
+      //   title = `${collationTable['witnessTitles'][wIndex]} (${collationTable['sigla'][wIndex]})`
+      // }
+
       let tokenArray = collationTable['collationMatrix'][wIndex]
       let isEditable = false
       if (collationTable['witnesses'][wIndex]['witnessType'] === WitnessType.EDITION) {

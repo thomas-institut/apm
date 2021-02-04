@@ -43,6 +43,7 @@ import * as Util from './toolbox/Util'
 import * as ArrayUtil from './toolbox/ArrayUtil'
 import * as MyersDiff from './toolbox/MyersDiff'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
+import { Matrix } from '@thomas-inst/matrix'
 
 export class CollationTableEditor {
   //collationTable;
@@ -284,29 +285,68 @@ export class CollationTableEditor {
       let ctRow = this.ctData['witnessOrder'].indexOf(wIndex)
       let title = this.ctData['witnessTitles'][wIndex]
       let errorsFound = false
-      console.log(`Checking witness consistency for witness ${wIndex} (${title}), ctRow = ${ctRow}`)
+      console.log(`* Checking witness consistency for witness ${wIndex} (${title}), ctRow = ${ctRow}`)
       // check that the collation table has all text tokens present
       if (this.ctData['type'] === CollationTableType.EDITION && wIndex === this.ctData['editionWitnessIndex']) {
         console.log(`... edition witness, skipping`)
         continue
       }
-      let row = this.ctData['collationMatrix'][wIndex];
+      let ctMatrix = new Matrix(0,0,-1)
+      ctMatrix.setFromArray(this.ctData['collationMatrix'])
+      let row = ctMatrix.getRow(wIndex);
+      let lastTokenInCt = -1
+      let lastGoodCtCol = -1
       this.ctData['witnesses'][wIndex]['tokens'].forEach( (t, i) => {
-        if (t.type === TokenType.WORD) {
-          if (row.indexOf(i) === -1) {
+        if (t.tokenType === TokenType.WORD) {
+          let ctIndex = row.indexOf(i)
+          if (ctIndex === -1) {
             errorsFound = true
-            console.log(`- text token ${i} not in collation table, text = '${t.text}'`)
+            console.log(`- text token ${i} not in collation table, text = '${t.text}', last token in CT: ${lastTokenInCt} @ col ${lastGoodCtCol+1}`)
+            // fix it!
+            let nextNullRefIndex = this.findNextNullRefInArray(row, lastGoodCtCol)
+            if (nextNullRefIndex === -1) {
+              console.log(`--- No room for token in CT, need to add a new column (not implemented yet)`)
+            } else {
+                // shift may be needed
+                let nColsToShift = nextNullRefIndex - lastGoodCtCol - 1
+                for (let c = 0; c < nColsToShift; c++) {
+                  ctMatrix.setValue(wIndex, nextNullRefIndex-c, ctMatrix.getValue(wIndex, nextNullRefIndex-c-1))
+                }
+                ctMatrix.setValue(wIndex,lastGoodCtCol+1, i)
+                row = ctMatrix.getRow(wIndex)
+                lastGoodCtCol = lastGoodCtCol+1
+                lastTokenInCt = i
+                console.log(`--- Fixed, ${ nColsToShift !== 0 ? 'shifted ' + nColsToShift + ' cols' : ' no shift needed'}, token now in ct col ${lastGoodCtCol+1}`)
+            }
+          } else {
+            lastTokenInCt = i
+            lastGoodCtCol = ctIndex
           }
         }
       })
-      if (!errorsFound) {
+      if (errorsFound) {
+        // replace fixed collation table
+        this.ctData['collationMatrix'] = this.matrixToArray(ctMatrix)
+      } else {
         console.log(`... no problems found`)
       }
     }
+  }
 
-
-
-
+  matrixToArray(matrix) {
+    let theArray = []
+    for (let i = 0; i < matrix.nRows; i++) {
+      theArray[i] = matrix.getRow(i)
+    }
+    return theArray
+  }
+  findNextNullRefInArray(theArray, startingIndex) {
+    for (let i = startingIndex; i < theArray.length; i++) {
+      if (theArray[i] === -1) {
+        return i
+      }
+    }
+    return -1
   }
 
   fixEditionWitnessReferences() {

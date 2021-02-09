@@ -1451,7 +1451,10 @@ class TranscriptionEditor
       if (range.length > 0) {
         return false
       }
-      $('#chapter-modal-title-' + thisObject.id).html('Chunk ' + type)
+      console.log(`Current quill object contents`)
+      console.log(quillObject.getContents())
+      let typeLabel = type === 'start' ?  'Start' : 'End'
+      $('#chunk-modal-title-' + thisObject.id).html('Chunk ' + typeLabel)
       let workOptionsHtml = ''
       for (const work of thisObject.activeWorks) {
         workOptionsHtml += '<option value="' + work.dareId + '">'

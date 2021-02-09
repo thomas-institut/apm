@@ -280,7 +280,6 @@ export class CollationTableEditor {
   }
 
   checkCollationTableConsistency() {
-
     for (let wIndex = 0; wIndex < this.ctData['witnesses'].length; wIndex++) {
       let ctRow = this.ctData['witnessOrder'].indexOf(wIndex)
       let title = this.ctData['witnessTitles'][wIndex]
@@ -350,7 +349,12 @@ export class CollationTableEditor {
   }
 
   fixEditionWitnessReferences() {
+
     let editionWitnessIndex = this.ctData['editionWitnessIndex']
+    if (editionWitnessIndex === undefined) {
+      // not an edition, nothing to do
+      return
+    }
     let editionWitnessTokens = this.ctData.witnesses[editionWitnessIndex]['tokens']
     let ctEditionRow = this.ctData.collationMatrix[editionWitnessIndex]
 
@@ -734,7 +738,7 @@ export class CollationTableEditor {
     for(let i = 0; i < currentCtRow.length; i++) {
       let currentRef = this.tableEditor.getValue(ctRow, i)
       if (currentRef !== -1) {
-        console.log(`Changing ref in table editor row ${ctRow}, col ${i}, from ${currentRef} to ${changes['tokenConversionArray'][currentRef]} `)
+        //console.log(`Changing ref in table editor row ${ctRow}, col ${i}, from ${currentRef} to ${changes['tokenConversionArray'][currentRef]} `)
         this.tableEditor.setValue(ctRow, i, changes['tokenConversionArray'][currentRef])
       }
     }
@@ -743,15 +747,15 @@ export class CollationTableEditor {
     let columnsInserted = 0
     for (const change of changes.ctChanges) {
       if (change.type === 'insertColAfter') {
-        console.log(`Processing column insert`)
+        //console.log(`Processing column insert`)
         this.tableEditor.insertColumnAfter(change.afterCol + columnsInserted)
         columnsInserted++
         console.log(`Columns inserted: ${columnsInserted}`)
         for (let row = 0; row < this.tableEditor.matrix.nRows; row++) {
-          console.log(`Setting reference at row ${row}, col ${change.afterCol+columnsInserted} to -1`)
+          //console.log(`Setting reference at row ${row}, col ${change.afterCol+columnsInserted} to -1`)
           this.tableEditor.setValue(row, change.afterCol + columnsInserted,-1)
         }
-        console.log(`Updating reference in tableEditor row ${ctRow}, col ${change.afterCol + columnsInserted}, new ref=${change.tokenIndexInNewWitness}`)
+        //console.log(`Updating reference in tableEditor row ${ctRow}, col ${change.afterCol + columnsInserted}, new ref=${change.tokenIndexInNewWitness}`)
         this.tableEditor.setValue(ctRow, change.afterCol + columnsInserted, change.tokenIndexInNewWitness)
         let clonedMatrix = this.tableEditor.matrix.clone()
         clonedMatrix.logMatrix('Table editor Matrix (cloned)')
@@ -787,7 +791,7 @@ export class CollationTableEditor {
   getChangesBetweenWitnesses(oldWitness, newWitness, witnessIndex) {
     let changes = {}
 
-    console.log(`Calculating changes`)
+    //console.log(`Calculating changes`)
     // 1. Find changes in the tokens
     let editScript = MyersDiff.calculate(oldWitness['tokens'], newWitness['tokens'], function(a,b) {
       if (a['tokenType'] === b['tokenType']) {
@@ -857,7 +861,7 @@ export class CollationTableEditor {
       // determine the FSM event
       let ctColIndex = collationRow.indexOf(scriptItem.index)
       let event = getFsmEvent(scriptItem, ctColIndex, newWitness['tokens'])
-      console.log(`Event ${i}: ${event}, state ${state}, index ${scriptItem.index}, ctIndex ${ctColIndex}, seq ${scriptItem.seq}, lastCtColumn ${lastCtColumn}`)
+      //console.log(`Event ${i}: ${event}, state ${state}, index ${scriptItem.index}, ctIndex ${ctColIndex}, seq ${scriptItem.seq}, lastCtColumn ${lastCtColumn}`)
 
       // State Machine
       if (state === 0) {

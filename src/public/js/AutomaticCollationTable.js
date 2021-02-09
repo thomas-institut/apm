@@ -23,6 +23,7 @@ import * as PopoverFormatter from './CollationTablePopovers'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import {CollationTableFormatter} from './CollationTableFormatter'
 import {EditionViewer} from './EditionViewer'
+import { PrintedEditionGenerator } from './PrintedEditionGenerator'
 
 export class AutomaticCollationTable {
   
@@ -283,30 +284,33 @@ export class AutomaticCollationTable {
 
   fetchQuickEdition() {
     this.editionDiv.html("Requesting edition from the server... <i class=\"fa fa-spinner fa-spin fa-fw\"></i>")
-    console.log('Calling API at ' + this.apiQuickEditionUrl)
-    let apiCallOptions = {
-      collationTable: this.collationTable,
-      baseWitnessIndex: 0
-    }
-    let thisObject = this
-    $.post(
-      this.apiQuickEditionUrl,
-      {data: JSON.stringify(apiCallOptions)}
-    ).done( function (apiResponse) {
-      console.log("Quick edition API call successful")
-      console.log(apiResponse)
-      //thisObject.editionDiv.html("Edition Status: " + apiResponse['status'])
+    let peg = new PrintedEditionGenerator()
+    let edition = peg.generateEdition(this.collationTable, this.collationTable['witnessOrder'][0])
+    // console.log('Calling API at ' + this.apiQuickEditionUrl)
+    // let apiCallOptions = {
+    //   collationTable: this.collationTable,
+    //   baseWitnessIndex: 0
+    // }
+    // let thisObject = this
+    // $.post(
+    //   this.apiQuickEditionUrl,
+    //   {data: JSON.stringify(apiCallOptions)}
+    // ).done( function (apiResponse) {
+    //   console.log("Quick edition API call successful")
+    //   console.log(apiResponse)
+    //   //thisObject.editionDiv.html("Edition Status: " + apiResponse['status'])
 
 
       let ev = new EditionViewer( {
-        collationTokens: apiResponse.mainTextTokens,
-        apparatusArray: apiResponse.apparatusArray,
-        isRightToLeft: (apiResponse.textDirection === 'rtl'),
-        fontFamily: thisObject.options.langDef[thisObject.collationTable['lang']].editionFont,
-        addGlue: false
+        collationTokens: edition.mainTextTokens,
+        apparatusArray: edition.apparatusArray,
+        isRightToLeft: (edition.textDirection === 'rtl'),
+        fontFamily: this.options.langDef[this.collationTable['lang']].editionFont,
+        addGlue: false,
+        lang: this.collationTable.lang
       })
 
-      thisObject.editionDiv.html(ev.getSvg())
+      this.editionDiv.html(ev.getSvg())
 
       // let siglaHtml = '<ul class="siglalist">'
       // siglaHtml += '<li>' + 'Base witness: ' + data.quickEdition.baseSiglum + '</li>'
@@ -318,13 +322,13 @@ export class AutomaticCollationTable {
 
 
 
-    }).fail(function(resp) {
-      console.error('Error in quick edition')
-      console.log(resp)
-      let failMsg = 'Error getting quick edition <i class="fa fa-frown-o" aria-hidden="true"></i><br/> '
-      failMsg += '<span class="small">HTTP code ' + resp.status + '</span>'
-      thisObject.editionDiv.html(failMsg)
-    })
+    // }).fail(function(resp) {
+    //   console.error('Error in quick edition')
+    //   console.log(resp)
+    //   let failMsg = 'Error getting quick edition <i class="fa fa-frown-o" aria-hidden="true"></i><br/> '
+    //   failMsg += '<span class="small">HTTP code ' + resp.status + '</span>'
+    //   thisObject.editionDiv.html(failMsg)
+    // })
 
 
   }
@@ -717,7 +721,7 @@ export class AutomaticCollationTable {
       classes.push('withpopover')
       //variant class
       if (thisObject.viewSettings.highlightVariants) {
-        classes.push('variant_' + thisObject.variantsMatrix.getValue(row, col))
+        classes.push('variant-' + thisObject.variantsMatrix.getValue(row, col))
       }
       // get itemZero
       let itemZeroIndex = token['sourceItems'][0]['index']

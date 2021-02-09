@@ -390,7 +390,7 @@ export class Typesetter {
   getTokensFromMarkdownString(theString) {
     
     // TODO: parse markdown properly. At this point only bold and italics on single
-    // words are supported
+    //  words are supported
     
     let stringTokens = this.getTokensFromString(theString)
     

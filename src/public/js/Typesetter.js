@@ -87,6 +87,7 @@
  */
 
 import {OptionsChecker} from '@thomas-inst/optionschecker'
+import { NumeralStyles } from './NumeralStyles'
 
 export class Typesetter {
   
@@ -276,8 +277,10 @@ export class Typesetter {
 
   getNumberString(number, style= '') {
     switch(style) {
-      case 'arabic':
-      default: return number.toString()
+      case 'ar':
+        return NumeralStyles.toDecimalArabic(number)
+      default:
+        return NumeralStyles.toDecimalWestern(number)
     }
   }
 

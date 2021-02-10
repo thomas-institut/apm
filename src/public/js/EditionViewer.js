@@ -19,6 +19,7 @@
 import {OptionsChecker } from '@thomas-inst/optionschecker'
 import {Typesetter} from './Typesetter'
 import { MarkdownProcessor } from './MarkdownProcessor'
+import { NumeralStyles } from './NumeralStyles'
 
 export class EditionViewer {
   
@@ -82,7 +83,8 @@ export class EditionViewer {
        lineNumbersFontSizeMultiplier:  this.options.lineNumbersFontSizeMultiplier,
        rightToLeft: options.isRightToLeft,
        defaultFontFamily: options.fontFamily,
-       normalSpaceWidth: options.normalSpaceWidthInEms
+       normalSpaceWidth: options.normalSpaceWidthInEms,
+       lineNumberStyle: this.options.lang
     })
     
     this.tsApparatus = new Typesetter({
@@ -202,6 +204,13 @@ export class EditionViewer {
         end: entry.end === -1 ? tsTokens[map[entry.start]].lineNumber :  tsTokens[map[entry.end]].lineNumber
     } 
   }
+
+  getLineNumberString(lineNumber) {
+    if (this.options.lang === 'ar') {
+      return NumeralStyles.toDecimalArabic(lineNumber)
+    }
+    return NumeralStyles.toDecimalWestern(lineNumber)
+  }
   
   getApparatusTokensToTypeset() {
     let apparatusToTypesetArray = []
@@ -233,9 +242,9 @@ export class EditionViewer {
       // 3. build the pageGroup entries
       for(const lineGroupTitle in lineGroups) {
         let lineGroup = lineGroups[lineGroupTitle]
-        let lineString = lineGroup.lineStart.toString()
+        let lineString = this.getLineNumberString(lineGroup.lineStart)
         if (lineGroup.lineEnd !== lineGroup.lineStart) {
-          lineString += '–' + lineGroup.lineEnd.toString()
+          lineString += '–' + this.getLineNumberString(lineGroup.lineEnd)
         }
         apparatusToTypeset.push({ type: 'text', text: lineString, fontWeight: 'bold'})
         apparatusToTypeset.push({ type: 'glue', space: 'normal'} )

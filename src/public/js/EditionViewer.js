@@ -18,6 +18,7 @@
 
 import {OptionsChecker } from '@thomas-inst/optionschecker'
 import {Typesetter} from './Typesetter'
+import { MarkdownProcessor } from './MarkdownProcessor'
 
 export class EditionViewer {
   
@@ -273,7 +274,8 @@ export class EditionViewer {
             apparatusToTypeset.push({ type: 'glue', space: 'normal'} )
           }
           apparatusEntry.entries.forEach( (subEntry) => {
-            let subEntryTokens = this.tsApparatus.getTokensFromMarkdownString(subEntry.markDown)
+            let mdProcessor = new MarkdownProcessor({normalSpace: this.tsApparatus.getNormalSpaceWidth()})
+            let subEntryTokens = mdProcessor.getTokensFromMarkdownString(subEntry.markDown)
             for (const subEntryToken of subEntryTokens ) {
               apparatusToTypeset.push(subEntryToken)
             }

@@ -26,6 +26,9 @@
  *
  * At the moment the typesetter only aligns the left side margin for ltr text or the right side for rtl text. That is,
  * it does not properly justifies the text.
+ *
+ * The typesetter assumes that the text will be placed in 2D area of a certain width given as a parameter,
+ * but of indeterminate length.
  * 
  * 
  * A token is an object with the following properties:
@@ -37,6 +40,8 @@
  *      fontStyle: 'normal' | 'italic',  defaults to 'normal'
  *      fontSize:  number, font size in pixels
  *      fontWeight: 'normal' | 'bold', defaults to 'normal'
+ *      position: 'normal' | 'subscript' | 'superscript'
+ *
  *    
  *    type === 'glue' 
  *       The term 'glue' is taken from Donald Knuth's the TeXbook, where it is explained in 
@@ -48,7 +53,7 @@
  *              the normalSpaceWidth given in the constructor options is used
  *       stretch: number, extra pixels the space can have, this is only a suggestion, the typesetter
  *           algorithm may stretch spaces more than this in extreme situations.
- *       shrink: number , how many pixels less the space can have; (space - shrink) is the absolute minimum
+ *       shrink: number, how many pixels less the space can have; (space - shrink) is the absolute minimum
  *           for the space
  *           
  *       For the moment, stretch and shrink are ignored, stretch defaults to 10000 (essentially
@@ -77,10 +82,8 @@
  *       status: string, = 'set'
  *      
  *  Not all input tokens to typeset will be present in the return array. Specifically, the return
- *  array will not return glue tokens with negative space, empty text tokens and  possibly some
+ *  array will not return glue tokens with negative space, empty text tokens and possibly some
  *  glue tokens that are not necessary.
- *
- *  TODO: Change the return policy, the typesetter returns ALL input tokens, some of them marked as 'invisible'
  */
 
 import {OptionsChecker} from '@thomas-inst/optionschecker'
@@ -94,7 +97,7 @@ export class Typesetter {
     let optionsDefinition = {
       lang: { type: 'string'},
       lineWidth: { type: 'NumberGreaterThanZero', default: 700},
-      defaultFontFamily: {type: 'NonEmptyString', default:'Helvetica' },
+      defaultFontFamily: {type: 'NonEmptyString', default: 'Helvetica' },
       defaultFontSize: { type: 'NumberGreaterThanZero', default: defaultFontSize},
       lineHeight: { type: 'NumberGreaterThanZero', default: defaultFontSize * 2},
       lineNumberStyle: { type: 'string', default: 'latin'},
@@ -248,6 +251,7 @@ export class Typesetter {
       newToken.deltaY = currentY
       newToken.fontFamily = this.options.defaultFontFamily
       newToken.fontSize = defaultFontSize
+      newToken.fontWeight = token.fontWeight
       newToken.width = tokenWidth
       newToken.status = 'set'
       newToken.lang = this.options.lang
@@ -259,16 +263,16 @@ export class Typesetter {
     return typesetTokens
   }
   
-  typesetString(theString, defaultFontSize = false) {
-    let tokens = this.getTokensFromString(theString)
-    return this.typesetTokens(tokens, defaultFontSize)
-  }
+  // typesetString(theString, defaultFontSize = false) {
+  //   let tokens = this.getTokensFromString(theString)
+  //   return this.typesetTokens(tokens, defaultFontSize)
+  // }
   
   
-  typesetMarkdownString(theString, defaultFontSize) {
-    let tokens = this.getTokensFromMarkdownString(theString)
-    return this.typesetTokens(tokens, defaultFontSize)
-  }
+  // typesetMarkdownString(theString, defaultFontSize) {
+  //   let tokens = this.getTokensFromMarkdownString(theString)
+  //   return this.typesetTokens(tokens, defaultFontSize)
+  // }
 
   getNumberString(number, style= '') {
     switch(style) {
@@ -279,8 +283,9 @@ export class Typesetter {
 
   /**
    * Takes an array of typeset tokens and generates
-   * typeset token for line numbers 
-   * if rightToLeft, line numbers will have all deltaX = 0 
+   * typeset tokens for line numbers placed at the same y coordinate as
+   * the lines in the typeset text.
+   * if rightToLeft, line numbers will have all deltaX = 0
    * which will make them left-aligned
    * if not rightToLeft, line numbers will be right aligned,
    * so all their deltaX will be negative
@@ -377,59 +382,59 @@ export class Typesetter {
   }
   
   
-  getTokensFromString(theString) {
-    let tokensText = theString.split(' ')
-    let tokens = []
-    for (const tokenText of tokensText) {
-      tokens.push({type: 'text', text: tokenText})
-      tokens.push({type: 'glue',  space: this.normalSpace })
-    }
-    return tokens
-  }
+  // getTokensFromString(theString) {
+  //   let tokensText = theString.split(' ')
+  //   let tokens = []
+  //   for (const tokenText of tokensText) {
+  //     tokens.push({type: 'text', text: tokenText})
+  //     tokens.push({type: 'glue',  space: this.normalSpace })
+  //   }
+  //   return tokens
+  // }
   
-  getTokensFromMarkdownString(theString) {
-    
-    // TODO: parse markdown properly. At this point only bold and italics on single
-    //  words are supported
-    
-    let stringTokens = this.getTokensFromString(theString)
-    
-    let boldRegExp = RegExp('^\\*\\*(.*)\\*\\*([.,;:?!]*)$')
-    let italicsRegExp = RegExp('^_(.*)_([.,;:?!]*)$')
-    let mdTokens = []
-    for (const stringToken of stringTokens) {
-      if (stringToken.type === 'glue') {
-        mdTokens.push(stringToken)
-        continue
-      }
-      if (boldRegExp.test(stringToken.text)) {
-        let regExpArray = boldRegExp.exec(stringToken.text)
-        stringToken.text = regExpArray[1]
-        stringToken.fontWeight = 'bold'
-        mdTokens.push(stringToken)
-        if (regExpArray[2]) {
-          mdTokens.push({ type: 'text', text: regExpArray[2]})
-        }
-        continue
-      }
-      if (italicsRegExp.test(stringToken.text)) {
-        let regExpArray = italicsRegExp.exec(stringToken.text)
-        stringToken.text = regExpArray[1]
-        stringToken.fontStyle = 'italic'
-        mdTokens.push(stringToken)
-        if (regExpArray[2]) {
-          mdTokens.push({ type: 'text', text: regExpArray[2]})
-        }
-        continue
-      }
-      
-      mdTokens.push(stringToken)
-      
-    }
-    
-    return mdTokens
-  }
-  
+  // getTokensFromMarkdownString(theString) {
+  //
+  //   // TODO: parse markdown properly. At this point only bold and italics on single
+  //   //  words are supported
+  //
+  //   let stringTokens = this.getTokensFromString(theString)
+  //
+  //   let boldRegExp = RegExp('^\\*\\*(.*)\\*\\*([.,;:?!]*)$')
+  //   let italicsRegExp = RegExp('^_(.*)_([.,;:?!]*)$')
+  //   let mdTokens = []
+  //   for (const stringToken of stringTokens) {
+  //     if (stringToken.type === 'glue') {
+  //       mdTokens.push(stringToken)
+  //       continue
+  //     }
+  //     if (boldRegExp.test(stringToken.text)) {
+  //       let regExpArray = boldRegExp.exec(stringToken.text)
+  //       stringToken.text = regExpArray[1]
+  //       stringToken.fontWeight = 'bold'
+  //       mdTokens.push(stringToken)
+  //       if (regExpArray[2]) {
+  //         mdTokens.push({ type: 'text', text: regExpArray[2]})
+  //       }
+  //       continue
+  //     }
+  //     if (italicsRegExp.test(stringToken.text)) {
+  //       let regExpArray = italicsRegExp.exec(stringToken.text)
+  //       stringToken.text = regExpArray[1]
+  //       stringToken.fontStyle = 'italic'
+  //       mdTokens.push(stringToken)
+  //       if (regExpArray[2]) {
+  //         mdTokens.push({ type: 'text', text: regExpArray[2]})
+  //       }
+  //       continue
+  //     }
+  //
+  //     mdTokens.push(stringToken)
+  //
+  //   }
+  //
+  //   return mdTokens
+  // }
+  //
   getTextHeight(tokens) {
     // NOTE: just estimating the descender height at this point
     // when browser support advanced text metrics this can be 

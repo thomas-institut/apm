@@ -21,6 +21,7 @@
 namespace APM\Api;
 
 use APM\CollationEngine\CollationEngine;
+use APM\StandardData\StandardTokenClass;
 use APM\System\ApmConfigParameter;
 use APM\System\ApmContainerKey;
 use Psr\Container\ContainerInterface;
@@ -136,6 +137,15 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
        $this->profiler->registerProperty('time', new TimeTracker());
        $this->profiler->registerProperty('mysql-queries', $this->systemManager->getSqlQueryCounterTracker());
        $this->profiler->registerProperty('cache', $this->systemManager->getCacheTracker());
+    }
+
+    public function setApiUserId(int $userId=0) {
+        if ($userId === 0) {
+            $this->apiUserId = $this->container->get(ApmContainerKey::API_USER_ID);
+        } else {
+            $this->container->set(ApmContainerKey::API_USER_ID, $userId);
+            $this->apiUserId = $userId;
+        }
     }
 
     /**

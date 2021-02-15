@@ -28,6 +28,7 @@ require_once 'SiteMockup/SiteTestEnvironment.php';
 use APM\Presets\PresetManager;
 use APM\System\ApmContainerKey;
 use APM\System\SystemManager;
+use AverroesProject\Data\DataManager;
 use AverroesProject\EditorialNote;
 use AverroesProject\TxText\Item;
 use DI\DependencyException;
@@ -61,7 +62,7 @@ use function GuzzleHttp\Psr7\stream_for;
 class ApiControllerTest extends TestCase {
     
     
-    static $testEnvironment;
+    static SiteTestEnvironment $testEnvironment;
 
     /**
      * @var Container
@@ -71,18 +72,18 @@ class ApiControllerTest extends TestCase {
      *
      * @var Api\ApiCollation
      */
-    static $apiCollation;
+    static ApiCollation $apiCollation;
     
     /**
      *
      * @var Api\ApiPresets
      */
-    static $apiPresets;
+    static ApiPresets $apiPresets;
     
     /*     
      * @var AverroesProject\Data\DataManager
      */
-    static $dataManager;
+    static DataManager $dataManager;
     
     
     static $editor1;
@@ -400,6 +401,7 @@ class ApiControllerTest extends TestCase {
      * @return array
      * @throws DependencyException
      * @throws NotFoundException
+     * @throws Exception
      */
     public function testSavePreset($presetInfo) {
         $request = (new ServerRequest('POST', ''));
@@ -459,7 +461,8 @@ class ApiControllerTest extends TestCase {
         // successful new preset
         $apiUser = self::$dataManager->userManager->createUserByUserName('testApiUser2');
         $this->assertNotFalse($apiUser);
-        self::$testEnvironment->setUserId($apiUser);
+        self::$testEnvironment->setApiUser($apiUser);
+        self::$apiPresets->setApiUserId($apiUser);
         $presetOwnedByNewApiUser = $presetData;
         $presetOwnedByNewApiUser['userId'] = $apiUser;
 
@@ -544,6 +547,7 @@ class ApiControllerTest extends TestCase {
      */
     public function testDeletePreset($presetData) {
         self::$testEnvironment->setUserId($presetData['apiUserId']);
+        self::$apiPresets->setApiUserId($presetData['apiUserId']);
         $presetId1 = $presetData['presetId1']; // owned by self::$editor1
         $presetId2 = $presetData['presetId2']; // owned by the current api user
 

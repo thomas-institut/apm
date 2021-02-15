@@ -552,6 +552,7 @@ class ApiPresets extends ApiController
             // Notice: when creating a new preset, the API ignores the given userId and presetId,
             // defaults to the user authenticated by the system and generates a new preset Id
             $preset = $pf->create($tool, $apiUserId, $title, $data);
+            //print_r($preset);
             if ($pm->correspondingPresetExists($preset)) {
                 $this->logger->error("Preset already exists",
                     [ 'apiUserId' => $this->apiUserId,

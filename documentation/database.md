@@ -18,12 +18,13 @@ At the MySql prompt:
 
 ### 3. Initialize the database
 
-Locate the appropriate database creation SQL file (under ```src/db```)
+Locate the appropriate database creation SQL file (under ```src/db```) or use a full backup from
+an existing, up to date APM installation
 
 At the MySql prompt:
 
 ``use apm;``
 
-``source /file/path/dbXX-creation.sql``
+``source /file/path/thefile .sql``
 
 Extra

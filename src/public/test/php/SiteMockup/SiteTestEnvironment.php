@@ -37,7 +37,7 @@ class SiteTestEnvironment extends DatabaseTestEnvironment {
     /**
      * @var bool
      */
-    private $routerSetup;
+    private bool $routerSetup;
     /**
      * @var bool
      */

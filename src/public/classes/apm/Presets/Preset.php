@@ -45,36 +45,36 @@ class Preset {
      *
      * @var array 
      */
-    private $keyArray;
+    private array $keyArray;
     
     /**
      *
      * @var array
      */
-    private $data;
+    private array $data;
     
     /**
      *
      * @var int 
      */
-    private $userId;
+    private int $userId;
     
     /**
      *
      * @var string 
      */
-    private $toolId;
+    private string $toolId;
 
     /**
      * @var int
      */
-    private $id;
+    private int $id;
     
     /**
      *
      * @var string
      */
-    private $title;
+    private string $title;
     
     public function __construct(string $tool, int $userId, string $title, array $keys, array $theData, int $id = self::NULL_ID) {
         $this->toolId = $tool;

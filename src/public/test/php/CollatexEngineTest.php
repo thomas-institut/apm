@@ -35,21 +35,23 @@ class CollatexEngineTest extends TestCase
 {
     const COLLATEX_JAR = '../../collatex/bin/collatex-tools-1.7.1.jar';
     
-    static $javaExec;
+    static string $javaExec;
+    static string $tmpDir;
     
     public static function setUpBeforeClass() : void
     { 
         global $apmTestConfig;
         
         self::$javaExec = $apmTestConfig['java_executable'];
+        self::$tmpDir = $apmTestConfig['collatex_temp_dir'];
     }
     
-    public function createCollatexRunner()
+    public function createCollatexRunner(): Collatex
     {
-        return new Collatex(self::COLLATEX_JAR, __DIR__ . '/tmp', self::$javaExec);
+        return new Collatex(self::COLLATEX_JAR, self::$tmpDir, self::$javaExec);
     }
     
-    public function createSimpleCollatexInput() 
+    public function createSimpleCollatexInput(): array
     {
         return [
             "witnesses" => [
@@ -83,7 +85,7 @@ class CollatexEngineTest extends TestCase
         $this->assertFalse($result3);
         $this->assertEquals(Collatex::CR_TEMP_FOLDER_NOT_WRITABLE, $cr3->getErrorCode());
         
-        $cr4 = new Collatex(self::COLLATEX_JAR, __DIR__ . '/tmp', 'badjava');
+        $cr4 = new Collatex(self::COLLATEX_JAR, self::$tmpDir, 'badjava');
         $result4 = $cr4->runningEnvironmentOk();
         $this->assertFalse($result4);
         $this->assertEquals(Collatex::CR_JAVA_EXECUTABLE_NOT_FOUND, $cr4->getErrorCode());
@@ -97,7 +99,7 @@ class CollatexEngineTest extends TestCase
     {
         $goodJson = json_encode($this->createSimpleCollatexInput());
         
-        $cr1 = new Collatex(__DIR__ . '/mock-collatex/exit1.bash', __DIR__ . '/tmp', self::$javaExec);
+        $cr1 = new Collatex(__DIR__ . '/mock-collatex/exit1.bash', self::$tmpDir, self::$javaExec);
         $this->assertTrue($cr1->runningEnvironmentOk());
         $result = $cr1->rawRun($goodJson);
         $this->assertFalse($result); 
@@ -117,7 +119,7 @@ class CollatexEngineTest extends TestCase
     public function testSimpleRun()
     {
         // Test case 1: error in collatex executable
-        $cr1 = new Collatex(__DIR__ . '/mock-collatex/exit1.bash', __DIR__ . '/tmp', self::$javaExec);
+        $cr1 = new Collatex(__DIR__ . '/mock-collatex/exit1.bash', self::$tmpDir, self::$javaExec);
         $result1 = $cr1->collate([]);
         $this->assertEquals([], $result1);
         $this->assertEquals(Collatex::CR_COLLATEX_EXIT_VALUE_NON_ZERO, $cr1->getErrorCode());

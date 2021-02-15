@@ -247,6 +247,7 @@ EOD;
      */
     public function setApiUser(int $userId) {
         $this->getContainer()->set(ApmContainerKey::API_USER_ID, $userId);
+
     }
 
 }

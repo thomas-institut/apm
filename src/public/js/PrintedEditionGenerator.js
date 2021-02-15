@@ -20,6 +20,7 @@ import * as TokenType from './constants/TokenType'
 import { isPunctuationToken } from './toolbox/Util'
 import { SequenceWithGroups } from './SequenceWithGroups'
 import { Matrix } from '@thomas-inst/matrix'
+import * as TypesetterTokenFactory from './TypesetterTokenFactory'
 
 const INPUT_TOKEN_FIELD_TYPE = 'tokenType'
 const INPUT_TOKEN_FIELD_TEXT = 'text'
@@ -30,6 +31,8 @@ const noGluePunctuation = '.,:;?!'
    + String.fromCodePoint(0x61F) // Arabic question mark
 
 
+const thinSpace = String.fromCodePoint(0x2009)
+
 // Space widths
 const SPACE_WIDTH_NORMAL = 'normal'
 
@@ -37,6 +40,10 @@ const SPACE_WIDTH_NORMAL = 'normal'
 // Edition token types
 const E_TOKEN_TYPE_GLUE = 'glue'
 const E_TOKEN_TYPE_TEXT = 'text'
+
+const ENTRY_TYPE_ADDITION = 'addition'
+const ENTRY_TYPE_OMISSION = 'omission'
+const ENTRY_TYPE_VARIANT = 'variant'
 
 
 export class PrintedEditionGenerator {
@@ -75,7 +82,7 @@ export class PrintedEditionGenerator {
       // a row in groupMatrix is one collation table column
       // this means that a groupMatrix column is a row in the CT
       if (mainTextIndices.every( i => i === -1)) {
-        // Nothing on the main text for this token
+        // 1. Nothing on the main text for this token
         // First find the previous token index that is in the main text,
         // this is where the apparatus entry will appear
         let ctIndex = columnGroup.from
@@ -99,9 +106,9 @@ export class PrintedEditionGenerator {
             // ignore empty witness text
             continue
           }
-          this._addWitnessIndexToArray(additions, theText, witnessIndex)
+          this._addWitnessIndexToVariantArray(additions, theText, witnessIndex)
         }
-        let entries = this._genApparatusEntryFromArray([], additions, sigla, 'addition')
+        let entries = this._genApparatusEntryFromArray([], additions, sigla, ENTRY_TYPE_ADDITION, language)
         if (entries.length !== 0) {
           criticalApparatus.push({
             start: mainTextIndex,
@@ -111,7 +118,7 @@ export class PrintedEditionGenerator {
         }
         return
       }
-      // There's main text, we need to find omissions and variants
+      // 2. There's main text, we need to find omissions and variants
       let mainText = this._getMainTextForGroup(columnGroup, mainTextInputTokens)
       if (mainText === '') {
         // ignore empty string (normally main text consisting only of punctuation)
@@ -129,12 +136,12 @@ export class PrintedEditionGenerator {
         let theText = this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex)
         if (theText === '') {
           // omission
-          this._addWitnessIndexToArray(groupOmissions, theText, witnessIndex)
+          this._addWitnessIndexToVariantArray(groupOmissions, theText, witnessIndex)
           continue
         }
         if (theText !== mainText) {
           // variant
-          this._addWitnessIndexToArray(groupVariants, theText, witnessIndex)
+          this._addWitnessIndexToVariantArray(groupVariants, theText, witnessIndex)
         }
       }
       let mainTextIndexFrom = generatedMainText.ctToMainTextMap[columnGroup.from]
@@ -151,8 +158,8 @@ export class PrintedEditionGenerator {
           generatedMainText.ctToMainTextMap, generatedMainText.mainTextTokens, false)
       }
 
-      let entries =  this._genApparatusEntryFromArray([],groupOmissions, sigla, 'omission')
-      entries = this._genApparatusEntryFromArray(entries,groupVariants, sigla, 'variant')
+      let entries =  this._genApparatusEntryFromArray([],groupOmissions, sigla, ENTRY_TYPE_OMISSION, language)
+      entries = this._genApparatusEntryFromArray(entries, groupVariants, sigla, ENTRY_TYPE_VARIANT, language)
       if (entries.length !== 0) {
         criticalApparatus.push({
           mainText: mainText,
@@ -216,45 +223,214 @@ export class PrintedEditionGenerator {
     return seq.getGroups()
   }
 
-  _addWitnessIndexToArray(theArray, text, witnessIndex) {
+  /**
+   * Adds a witness index to a variant array
+   *
+   * The variant array is array of objects of the form:
+   *   {  text: 'someText', witnessIndices: [ i1, i2, ... ]}
+   *
+   * This method simply places the given witness index in the element with the given
+   * text or creates such an element if the text is not in any element of the array
+   *
+   * @param theArray
+   * @param text
+   * @param witnessIndex
+   * @private
+   */
+  _addWitnessIndexToVariantArray(theArray, text, witnessIndex) {
     let textIndex = theArray.map( v => v.text ).indexOf(text)
     if (textIndex === -1) {
+      // the text is not in the array, create a new element
       theArray.push( { text:text, witnessIndices: [ witnessIndex]})
     } else {
+      // add the witness index to the appropriate element
       theArray[textIndex].witnessIndices.push(witnessIndex)
     }
   }
 
-  _genApparatusEntryFromArray (entries, witnessArray, sigla, apparatusType) {
-
+  /**
+   * Generates an apparatus entry of the given type with the given variant array and sigla
+   *
+   * @param entries
+   * @param variantArray
+   * @param sigla
+   * @param apparatusType
+   * @param style: controls the look of the generated entries, normally just the language
+   * @returns {*}
+   * @private
+   */
+  _genApparatusEntryFromArray (entries, variantArray, sigla, apparatusType, style) {
     const symbols = {
       addition: '+',
       omission: '-',
       variant: ''
     }
-    witnessArray.forEach( (arrayElement) => {
+    variantArray.forEach( (variant) => {
       let siglaString = ''
       let details = []
-      arrayElement.witnessIndices.forEach( (index) => {
+      variant.witnessIndices.forEach( (index) => {
         siglaString += sigla[index]
         if (details[index] === undefined) {
           details[index] = []
         }
-        // TODO: fill some details
+        // TODO: add hand details
       })
       let apparatusEntrySymbol = symbols[apparatusType]
-      let theText = apparatusType ==='omission' ? '' : arrayElement.text
+      let theText = apparatusType ==='omission' ? '' : variant.text
+
+      let typesetterTokens = []
+
+      switch (style) {
+        case 'la':
+          switch (apparatusType) {
+            case ENTRY_TYPE_OMISSION:
+              typesetterTokens = this.genOmissionEntryLatin(theText, variant.witnessIndices, sigla)
+              break
+
+            case ENTRY_TYPE_ADDITION:
+              typesetterTokens = this.genAdditionEntryLatin(theText, variant.witnessIndices, sigla)
+              break
+
+            case ENTRY_TYPE_VARIANT:
+              typesetterTokens = this.genVariantEntryLatin(theText, variant.witnessIndices, sigla)
+              break
+          }
+          break
+
+        case 'he':
+          switch(apparatusType) {
+            case ENTRY_TYPE_OMISSION:
+              typesetterTokens = this.genOmissionEntryHebrew(theText, variant.witnessIndices, sigla)
+              break
+
+            case ENTRY_TYPE_ADDITION:
+              typesetterTokens = this.genAdditionEntryHebrew(theText, variant.witnessIndices, sigla)
+              break
+
+            case ENTRY_TYPE_VARIANT:
+              typesetterTokens = this.genVariantEntryHebrew(theText, variant.witnessIndices, sigla)
+              break
+          }
+          break
+
+        case 'ar':
+          switch(apparatusType) {
+            case ENTRY_TYPE_OMISSION:
+              typesetterTokens = this.genOmissionEntryArabic(theText, variant.witnessIndices, sigla)
+              break
+
+            case ENTRY_TYPE_ADDITION:
+              typesetterTokens = this.genAdditionEntryArabic(theText, variant.witnessIndices, sigla)
+              break
+
+            case ENTRY_TYPE_VARIANT:
+              typesetterTokens = this.genVariantEntryArabic(theText, variant.witnessIndices, sigla)
+              break
+          }
+          break
+
+      }
+
 
       entries.push({
         type: apparatusType,
-        witnesses: arrayElement.witnessIndices,
+        witnesses: variant.witnessIndices,
         details: details,
-        text: arrayElement.text,
-        markDown: `${apparatusEntrySymbol} ${theText} _${siglaString}_`
+        text: variant.text,
+        markDown: `${apparatusEntrySymbol} ${theText} _${siglaString}_`,
+        typesetterTokens: typesetterTokens
       })
     })
 
     return entries
+  }
+
+  genOmissionEntryHebrew(theText, witnessIndices, sigla) {
+    let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join(' ')
+    return [
+      TypesetterTokenFactory.simpleText('חסר').setFontSize(0.8),
+      TypesetterTokenFactory.normalSpace(),
+      TypesetterTokenFactory.simpleText(siglaString).setBold()
+    ]
+  }
+
+  genAdditionEntryHebrew(theText, witnessIndices, sigla) {
+    let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join(' ')
+    return [
+      TypesetterTokenFactory.simpleText('נוסף').setFontSize(0.8),
+      TypesetterTokenFactory.normalSpace(),
+      TypesetterTokenFactory.simpleText(theText),
+      TypesetterTokenFactory.normalSpace(),
+      TypesetterTokenFactory.simpleText(siglaString).setBold()
+    ]
+  }
+
+  genVariantEntryHebrew(theText, witnessIndices, sigla) {
+    let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join(' ')
+    return [
+      TypesetterTokenFactory.simpleText(theText),
+      TypesetterTokenFactory.normalSpace(),
+      TypesetterTokenFactory.simpleText(siglaString).setBold()
+    ]
+  }
+
+  genOmissionEntryArabic(theText, witnessIndices, sigla) {
+    let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join(thinSpace)
+    return [
+      TypesetterTokenFactory.simpleText('نقص').setFontSize(0.8),
+      TypesetterTokenFactory.normalSpace(),
+      TypesetterTokenFactory.simpleText(siglaString)
+    ]
+  }
+
+  genAdditionEntryArabic(theText, witnessIndices, sigla) {
+    let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join(thinSpace)
+    return [
+      TypesetterTokenFactory.simpleText('ز').setFontSize(0.8),
+      TypesetterTokenFactory.normalSpace(),
+      TypesetterTokenFactory.simpleText(theText),
+      TypesetterTokenFactory.normalSpace(),
+      TypesetterTokenFactory.simpleText(siglaString)
+    ]
+  }
+
+  genVariantEntryArabic(theText, witnessIndices, sigla) {
+    let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join(thinSpace)
+    return [
+      TypesetterTokenFactory.simpleText(theText),
+      TypesetterTokenFactory.normalSpace(),
+      TypesetterTokenFactory.simpleText(siglaString)
+    ]
+  }
+
+
+  genOmissionEntryLatin(theText, witnessIndices, sigla) {
+    let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join('')
+    return [
+      TypesetterTokenFactory.simpleText('om.').setItalic(),
+      TypesetterTokenFactory.normalSpace(),
+      TypesetterTokenFactory.simpleText(siglaString)
+    ]
+  }
+
+  genAdditionEntryLatin(theText, witnessIndices, sigla) {
+    let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join('')
+    return [
+      TypesetterTokenFactory.simpleText('add.').setItalic(),
+      TypesetterTokenFactory.normalSpace(),
+      TypesetterTokenFactory.simpleText(theText),
+      TypesetterTokenFactory.normalSpace(),
+      TypesetterTokenFactory.simpleText(siglaString)
+    ]
+  }
+
+  genVariantEntryLatin(theText, witnessIndices, sigla) {
+    let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join('')
+    return [
+      TypesetterTokenFactory.simpleText(theText),
+      TypesetterTokenFactory.normalSpace(),
+      TypesetterTokenFactory.simpleText(siglaString)
+    ]
   }
 
   getWitnessTokensFromReferenceRow(ctData, witnessIndex) {

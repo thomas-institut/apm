@@ -16,7 +16,9 @@
  *
  */
 
-import {OptionsChecker } from '@thomas-inst/optionschecker'
+import { OptionsChecker } from '@thomas-inst/optionschecker'
+import * as TypesetterTokenFactory from './TypesetterTokenFactory'
+import * as TypesetterTokenType from './TypesetterTokenType'
 
 export class MarkdownProcessor {
 
@@ -40,27 +42,29 @@ export class MarkdownProcessor {
     let italicsRegExp = RegExp('^_(.*)_([.,;:?!]*)$')
     let mdTokens = []
     for (const stringToken of stringTokens) {
-      if (stringToken.type === 'glue') {
+      if (stringToken.type === TypesetterTokenType.GLUE) {
         mdTokens.push(stringToken)
         continue
       }
       if (boldRegExp.test(stringToken.text)) {
         let regExpArray = boldRegExp.exec(stringToken.text)
-        stringToken.text = regExpArray[1]
-        stringToken.fontWeight = 'bold'
+        stringToken.setText(regExpArray[1]).setBold()
+        // stringToken.text = regExpArray[1]
+        // stringToken.fontWeight = 'bold'
         mdTokens.push(stringToken)
         if (regExpArray[2]) {
-          mdTokens.push({ type: 'text', text: regExpArray[2]})
+          mdTokens.push(TypesetterTokenFactory.simpleText(regExpArray[2]))
         }
         continue
       }
       if (italicsRegExp.test(stringToken.text)) {
         let regExpArray = italicsRegExp.exec(stringToken.text)
-        stringToken.text = regExpArray[1]
-        stringToken.fontStyle = 'italic'
+        stringToken.setText(regExpArray[1]).setItalic()
+        // stringToken.text = regExpArray[1]
+        // stringToken.fontStyle = 'italic'
         mdTokens.push(stringToken)
         if (regExpArray[2]) {
-          mdTokens.push({ type: 'text', text: regExpArray[2]})
+          mdTokens.push(TypesetterTokenFactory.simpleText(regExpArray[2]))
         }
         continue
       }
@@ -76,8 +80,8 @@ export class MarkdownProcessor {
     let tokensText = theString.split(' ')
     let tokens = []
     for (const tokenText of tokensText) {
-      tokens.push({type: 'text', text: tokenText})
-      tokens.push({type: 'glue',  space: this.options.normalSpace })
+      tokens.push(TypesetterTokenFactory.simpleText(tokenText))
+      tokens.push(TypesetterTokenFactory.normalSpace())
     }
     return tokens
   }

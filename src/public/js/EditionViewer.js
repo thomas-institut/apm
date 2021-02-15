@@ -21,6 +21,9 @@ import {Typesetter} from './Typesetter'
 import { MarkdownProcessor } from './MarkdownProcessor'
 import { NumeralStyles } from './NumeralStyles'
 
+import * as TypesetterTokenFactory from './TypesetterTokenFactory'
+import * as TypesetterTokenType from './TypesetterTokenType'
+
 export class EditionViewer {
   
   constructor (userOptions) {
@@ -206,6 +209,9 @@ export class EditionViewer {
   }
 
   getLineNumberString(lineNumber) {
+    if (isNaN(lineNumber)) {
+      return lineNumber
+    }
     if (this.options.lang === 'ar') {
       return NumeralStyles.toDecimalArabic(lineNumber)
     }
@@ -240,25 +246,32 @@ export class EditionViewer {
       // 2. TODO: order the groups
       
       // 3. build the pageGroup entries
-      for(const lineGroupTitle in lineGroups) {
+      let numLineGroups = Object.keys(lineGroups).length
+      Object.keys(lineGroups).forEach( (lineGroupTitle, i) => {
+
         let lineGroup = lineGroups[lineGroupTitle]
         let lineString = this.getLineNumberString(lineGroup.lineStart)
         if (lineGroup.lineEnd !== lineGroup.lineStart) {
           lineString += '–' + this.getLineNumberString(lineGroup.lineEnd)
         }
-        apparatusToTypeset.push({ type: 'text', text: lineString, fontWeight: 'bold'})
-        apparatusToTypeset.push({ type: 'glue', space: 'normal'} )
-        
-        for (const apparatusEntry of lineGroup.entries) {
+
+        // line number
+        apparatusToTypeset.push(TypesetterTokenFactory.simpleText(lineString).setBold())
+        apparatusToTypeset.push(TypesetterTokenFactory.normalSpace())
+
+        let numEntries = lineGroup.entries.length
+        lineGroup.entries.forEach( (lineGroupEntry, entryIndex) => {
+          // console.log(`Processing entry ${lineGroupTitle}:${entryIndex} of ${numEntries}`)
           let entryLesson = ''
-          if (apparatusEntry.start === -1) {
+          // build entry lesson
+          if (lineGroupEntry.start === -1) {
             entryLesson = ''
           } else {
-            entryLesson = this.options.collationTokens[apparatusEntry.start].text
-            if (apparatusEntry.start !== apparatusEntry.end) {
+            entryLesson = this.options.collationTokens[lineGroupEntry.start].text
+            if (lineGroupEntry.start !== lineGroupEntry.end) {
               // more than one word in the lesson
               let fullLessonWords = this.options.collationTokens
-                .filter( (t,i) => { return i>=apparatusEntry.start && i<=apparatusEntry.end})
+                .filter( (t,i) => { return i>=lineGroupEntry.start && i<=lineGroupEntry.end})
                 .filter(t => t.type === 'text')
                 .filter ( t => t.text !== '')
                 .map ( t => t.text)
@@ -276,22 +289,42 @@ export class EditionViewer {
                 }
               }
             }
+            // TODO: if there's only one entry, no ] should be added
             entryLesson += ']'
           }
+          // add lesson if not empty
           if (entryLesson !== '') {
-            apparatusToTypeset.push({ type: 'text', text: entryLesson})
-            apparatusToTypeset.push({ type: 'glue', space: 'normal'} )
+            apparatusToTypeset.push(TypesetterTokenFactory.simpleText(entryLesson))
+            apparatusToTypeset.push(TypesetterTokenFactory.normalSpace())
           }
-          apparatusEntry.entries.forEach( (subEntry) => {
+          // add subEntries
+          let numSubEntries = lineGroupEntry.entries.length
+          lineGroupEntry.entries.forEach( (subEntry, subEntryIndex) => {
+            // console.log(`Processing subEntry ${subEntryIndex}`)
             let mdProcessor = new MarkdownProcessor({normalSpace: this.tsApparatus.getNormalSpaceWidth()})
-            let subEntryTokens = mdProcessor.getTokensFromMarkdownString(subEntry.markDown)
+            let subEntryTokens = []
+            if (subEntry.typesetterTokens.length !== 0) {
+              subEntryTokens = subEntry.typesetterTokens
+            } else {
+              // console.log(`No typesetter tokens, processing markdown: ${subEntry.markDown}`)
+              subEntryTokens = mdProcessor.getTokensFromMarkdownString(subEntry.markDown)
+            }
             for (const subEntryToken of subEntryTokens ) {
               apparatusToTypeset.push(subEntryToken)
             }
-            apparatusToTypeset.push({ type: 'glue', space: 15 })  // TODO: parametrize this!
+            if (subEntryIndex !==(numSubEntries -1 )) {
+              apparatusToTypeset.push(TypesetterTokenFactory.normalSpace().setLength(10))
+            }
           })
-        }
-      }
+          // insert double bars, but not if it's the last entry
+          if (entryIndex !== (numEntries - 1)) {
+            apparatusToTypeset.push(TypesetterTokenFactory.normalSpace().setLength(10))  // TODO: parametrize this!
+            apparatusToTypeset.push(TypesetterTokenFactory.simpleText(String.fromCodePoint(0x2016)))
+            apparatusToTypeset.push(TypesetterTokenFactory.normalSpace().setLength(10))  // TODO: parametrize this!
+          }
+        })
+        apparatusToTypeset.push(TypesetterTokenFactory.normalSpace().setLength(10))
+      })
       apparatusToTypesetArray.push(apparatusToTypeset)
     }
     //console.log('Apparatus to Typeset')

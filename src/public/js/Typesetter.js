@@ -236,7 +236,13 @@ export class Typesetter {
       if (token.fontWeight) {
         fontDefString += token.fontWeight + ' '
       }
-      fontDefString += defaultFontSize + 'px ' + this.options.defaultFontFamily
+      let fontSize = defaultFontSize
+      if (token.fontSize) {
+        // font size is a factor of the default fontSize
+        // TODO: process numbers and 'em'  differently in fontSize
+        fontSize = token.fontSize * defaultFontSize
+      }
+      fontDefString += fontSize + 'px ' + this.options.defaultFontFamily
       
       let tokenWidth = this.getStringWidth(token.text, fontDefString) 
       let newX = advanceX(currentX, tokenWidth, rightToLeft)
@@ -251,7 +257,7 @@ export class Typesetter {
       newToken.deltaX = currentX
       newToken.deltaY = currentY
       newToken.fontFamily = this.options.defaultFontFamily
-      newToken.fontSize = defaultFontSize
+      newToken.fontSize = fontSize
       newToken.fontWeight = token.fontWeight
       newToken.width = tokenWidth
       newToken.status = 'set'
@@ -354,8 +360,10 @@ export class Typesetter {
     if (token.fontStyle) {
       fontStyle = token.fontStyle
     }
-    
+
+    let addFontSize = false
     if (token.fontSize) {
+      addFontSize = true
       fontSize = token.fontSize
     }
 
@@ -366,7 +374,13 @@ export class Typesetter {
     if (showFontBasicInfo) {
       svgString += 'fill="' +  fillColor + '" font-size="' + fontSize + '" '
       svgString += 'font-family="' + fontFamily + '" '
+    } else {
+      if (addFontSize) {
+        svgString += 'font-size="' + fontSize + '" '
+      }
     }
+
+
 
     if (fontStyle) {
       svgString += 'font-style="' + fontStyle +'" '
@@ -383,61 +397,7 @@ export class Typesetter {
     svgString += ' x="' + posX + '" y="' + (top + token.deltaY) + '">' +  token.text + '</text>'
     return svgString
   }
-  
-  
-  // getTokensFromString(theString) {
-  //   let tokensText = theString.split(' ')
-  //   let tokens = []
-  //   for (const tokenText of tokensText) {
-  //     tokens.push({type: 'text', text: tokenText})
-  //     tokens.push({type: 'glue',  space: this.normalSpace })
-  //   }
-  //   return tokens
-  // }
-  
-  // getTokensFromMarkdownString(theString) {
-  //
-  //   // TODO: parse markdown properly. At this point only bold and italics on single
-  //   //  words are supported
-  //
-  //   let stringTokens = this.getTokensFromString(theString)
-  //
-  //   let boldRegExp = RegExp('^\\*\\*(.*)\\*\\*([.,;:?!]*)$')
-  //   let italicsRegExp = RegExp('^_(.*)_([.,;:?!]*)$')
-  //   let mdTokens = []
-  //   for (const stringToken of stringTokens) {
-  //     if (stringToken.type === 'glue') {
-  //       mdTokens.push(stringToken)
-  //       continue
-  //     }
-  //     if (boldRegExp.test(stringToken.text)) {
-  //       let regExpArray = boldRegExp.exec(stringToken.text)
-  //       stringToken.text = regExpArray[1]
-  //       stringToken.fontWeight = 'bold'
-  //       mdTokens.push(stringToken)
-  //       if (regExpArray[2]) {
-  //         mdTokens.push({ type: 'text', text: regExpArray[2]})
-  //       }
-  //       continue
-  //     }
-  //     if (italicsRegExp.test(stringToken.text)) {
-  //       let regExpArray = italicsRegExp.exec(stringToken.text)
-  //       stringToken.text = regExpArray[1]
-  //       stringToken.fontStyle = 'italic'
-  //       mdTokens.push(stringToken)
-  //       if (regExpArray[2]) {
-  //         mdTokens.push({ type: 'text', text: regExpArray[2]})
-  //       }
-  //       continue
-  //     }
-  //
-  //     mdTokens.push(stringToken)
-  //
-  //   }
-  //
-  //   return mdTokens
-  // }
-  //
+
   getTextHeight(tokens) {
     // NOTE: just estimating the descender height at this point
     // when browser support advanced text metrics this can be 

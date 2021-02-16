@@ -32,7 +32,7 @@
 
  */
 
-import {escapeHtml} from './toolbox/Util.js'
+import {escapeHtml} from './toolbox/Util.mjs'
 import { Matrix } from '@thomas-inst/matrix'
 import { SequenceWithGroups } from './SequenceWithGroups'
 import {OptionsChecker} from '@thomas-inst/optionschecker'

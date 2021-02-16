@@ -16,7 +16,7 @@
  *
  */
 
-import * as Util from './toolbox/Util'
+import * as Util from './toolbox/Util.mjs'
 
 // Classes
 const popoverDivClass = 'ctPopover'

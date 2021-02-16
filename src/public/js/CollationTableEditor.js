@@ -39,9 +39,9 @@ import { MultiToggle, optionChange} from './widgets/MultiToggle'
 import * as HttpStatusCode from './toolbox/HttpStatusCode'
 
 // utilities
-import * as Util from './toolbox/Util'
+import * as Util from './toolbox/Util.mjs'
 import * as ArrayUtil from './toolbox/ArrayUtil'
-import * as MyersDiff from './toolbox/MyersDiff'
+import * as MyersDiff from './toolbox/MyersDiff.mjs'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { Matrix } from '@thomas-inst/matrix'
 

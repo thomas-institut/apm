@@ -17,7 +17,7 @@
  */
 
 import * as TokenType from './constants/TokenType'
-import { isPunctuationToken } from './toolbox/Util'
+import { isPunctuationToken } from './toolbox/Util.mjs'
 import { SequenceWithGroups } from './SequenceWithGroups'
 import { Matrix } from '@thomas-inst/matrix'
 import * as TypesetterTokenFactory from './TypesetterTokenFactory'

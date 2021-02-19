@@ -230,3 +230,44 @@ a.invalid {
     padding: 0 0 0 1rem;
     margin-right: -0.5em;
 }
+
+
+/*Edition Preview HTML*/
+
+div#edition-html-container {
+    font-size: 11pt;
+    display: flex;
+    flex-direction: column;
+}
+
+#edition-html-container .main-text {
+    overflow-y: auto;
+    padding: 2em 5em;
+    height: 50%;
+}
+
+#edition-html-container .apparatuses {
+    overflow-y: scroll;
+    border-top: 1px dotted silver;
+    padding: 2em 5em;
+    margin-top: 10px;
+    height: 45%;
+}
+
+
+.htmlEdition .text-la {
+    font-family: "Times New Roman", Times, serif;
+}
+
+.htmlEdition .main-text {
+    line-height: 1.5em;
+}
+
+.htmlEdition div.apparatus p {
+    padding: 0;
+    margin: 0;
+}
+
+.htmlEdition .hover {
+    background: #efdf7c;
+}

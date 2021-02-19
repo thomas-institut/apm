@@ -27,7 +27,7 @@ import { editModeOff, columnGroupEvent, columnUngroupEvent, TableEditor } from '
 import * as CollationTableUtil from './CollationTableUtil'
 import * as PopoverFormatter from './CollationTablePopovers'
 
-import {EditionViewer} from './EditionViewer'
+import {EditionViewerSvg} from './EditionViewerSvg'
 import {PrintedEditionGenerator} from './PrintedEditionGenerator'
 
 // widgets
@@ -44,6 +44,8 @@ import * as ArrayUtil from './toolbox/ArrayUtil'
 import * as MyersDiff from './toolbox/MyersDiff.mjs'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { Matrix } from '@thomas-inst/matrix'
+import { CriticalApparatusGenerator } from './CriticalApparatusGenerator'
+import { EditionViewerHtml } from './EditionViewerHtml'
 
 export class CollationTableEditor {
   //collationTable;
@@ -143,6 +145,7 @@ export class CollationTableEditor {
     this.ctDivId = 'collationtablediv'
     this.ctDiv = $('#' + this.ctDivId)
     this.editionSvgDiv = $('#edition-svg-div')
+    this.editionHtmlDiv = $('#edition-html-container')
     this.editionEngineInfoDiv = $('#edition-engine-info-div')
     this.saveButton = $('#savebutton')
     this.saveMsg = $('#save-msg')
@@ -198,6 +201,7 @@ export class CollationTableEditor {
     this.editionSvgDiv.html('Quick edition coming soon...')
     this.ctDiv.html('Collation table coming soon...')
     this.fitCtDivToViewPort()
+    this.fitEditionDivToViewPort()
 
     this.saveButton.on('click', this.genOnClickSaveButton())
 
@@ -267,6 +271,15 @@ export class CollationTableEditor {
     this.setCsvDownloadFile()
     this.updateEditionPreview()
 
+    $('#edition-tab-title-new').on('click', (ev) => {
+      console.log('New Panel clicked')
+      if (thisObject.editionViewerHtml !== undefined) {
+        thisObject.editionViewerHtml.renderApparatuses()
+        setTimeout(() => {
+        thisObject.fitEditionDivToViewPort() }, 250)
+      }
+    })
+
     $(window).on('beforeunload', function() {
       if (thisObject.unsavedChanges || thisObject.convertingToEdition) {
         //console.log("There are changes in editor")
@@ -275,8 +288,10 @@ export class CollationTableEditor {
     })
 
     $(window).on('resize',
-      () => { thisObject.fitCtDivToViewPort()}
-      )
+      () => {
+        thisObject.fitCtDivToViewPort()
+        thisObject.fitEditionDivToViewPort()
+      })
   }
 
   checkCollationTableConsistency() {
@@ -398,6 +413,17 @@ export class CollationTableEditor {
     if (newHeight !== currentHeight) {
       //console.log(`Current H: ${currentHeight}, newHeight: ${newHeight}`)
       this.ctDiv.height(newHeight)
+    }
+  }
+
+  fitEditionDivToViewPort() {
+    let ctDivTop = this.editionHtmlDiv.offset().top
+    let windowHeight = document.defaultView.innerHeight
+    let currentHeight = this.editionHtmlDiv.height()
+    let newHeight = windowHeight - ctDivTop - 20
+    if (newHeight !== currentHeight) {
+      //console.log(`Current H: ${currentHeight}, newHeight: ${newHeight}`)
+      this.editionHtmlDiv.height(newHeight)
     }
   }
 
@@ -2307,9 +2333,23 @@ export class CollationTableEditor {
 
   updateEditionPreview() {
     this.editionSvgDiv.html("Generating printed edition preview... <i class=\"fa fa-spinner fa-spin fa-fw\"></i>")
+
+    // TESTING THE NEW GENERATOR
+    let apparatusGenerator = new CriticalApparatusGenerator()
+    let genCriticalApp =apparatusGenerator.generateCriticalApparatus(this.ctData, this.ctData['witnessOrder'][0])
+    console.log(`Generated critical apparatus (NEW)`)
+    console.log(genCriticalApp)
+    this.editionViewerHtml = new EditionViewerHtml({
+      ctData: this.ctData,
+      mainTextTokens: genCriticalApp.mainTextTokens,
+      containerSelector: '#edition-html-container',
+      apparatusArray: [ { type: 'critical', entries: genCriticalApp.criticalApparatus} ]
+    })
+    this.editionViewerHtml.renderMainText()
+
     let peg = new PrintedEditionGenerator()
     let edition = peg.generateEdition(this.ctData, this.ctData['witnessOrder'][0])
-    let ev = new EditionViewer( {
+    let ev = new EditionViewerSvg( {
       lang: edition.lang,
       collationTokens: edition.mainTextTokens,
       apparatusArray: edition.apparatusArray,

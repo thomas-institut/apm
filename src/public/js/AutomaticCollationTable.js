@@ -22,7 +22,7 @@ import {defaultLanguageDefinition} from './defaults/languages'
 import * as PopoverFormatter from './CollationTablePopovers'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import {CollationTableFormatter} from './CollationTableFormatter'
-import {EditionViewer} from './EditionViewer'
+import {EditionViewerSvg} from './EditionViewerSvg'
 import { PrintedEditionGenerator } from './PrintedEditionGenerator'
 
 export class AutomaticCollationTable {
@@ -301,7 +301,7 @@ export class AutomaticCollationTable {
     //   //thisObject.editionDiv.html("Edition Status: " + apiResponse['status'])
 
 
-      let ev = new EditionViewer( {
+      let ev = new EditionViewerSvg( {
         collationTokens: edition.mainTextTokens,
         apparatusArray: edition.apparatusArray,
         isRightToLeft: (edition.textDirection === 'rtl'),

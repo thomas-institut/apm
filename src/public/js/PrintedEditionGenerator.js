@@ -21,6 +21,7 @@ import { isPunctuationToken } from './toolbox/Util.mjs'
 import { SequenceWithGroups } from './SequenceWithGroups'
 import { Matrix } from '@thomas-inst/matrix'
 import * as TypesetterTokenFactory from './TypesetterTokenFactory'
+import { CriticalApparatusGenerator } from './CriticalApparatusGenerator'
 
 const INPUT_TOKEN_FIELD_TYPE = 'tokenType'
 const INPUT_TOKEN_FIELD_TEXT = 'text'
@@ -49,6 +50,7 @@ const ENTRY_TYPE_VARIANT = 'variant'
 export class PrintedEditionGenerator {
 
   generateEdition(ctData, baseWitnessIndex = 0) {
+
     let profiler = new SimpleProfiler('generateEdition')
     let sigla = ctData['sigla']
     let language = ctData['lang'];

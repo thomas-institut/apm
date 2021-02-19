@@ -24,7 +24,7 @@ import { NumeralStyles } from './NumeralStyles'
 import * as TypesetterTokenFactory from './TypesetterTokenFactory'
 import * as TypesetterTokenType from './TypesetterTokenType'
 
-export class EditionViewer {
+export class EditionViewerSvg {
   
   constructor (userOptions) {
     // console.log('Constructing Edition Viewer')

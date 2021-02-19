@@ -31,7 +31,7 @@ class ImportDareXml extends CommandLineUtility
 
     const USAGE = "usage: importdarexml [--output html|json ] [--pages xx-yy] [<filename>]\n";
 
-    protected function main($argc, $argv)
+    protected function main($argc, $argv): bool
     {
 
         $fileName = 'php://stdin';
@@ -600,7 +600,7 @@ class ImportDareXml extends CommandLineUtility
         $columns = $data['columns'];
         $lang = $data['lang'];
 
-        print '<html><head><link rel="stylesheet" type="text/css" href="darexml.css"/></head>';
+        print '<html lang="en"><head><link rel="stylesheet" type="text/css" href="darexml.css"/><title>XML Import</title></head>';
        if ($errors !== []) {
             print "<h1>Errors</h1><ul>";
             foreach($errors as $error) {

@@ -86,6 +86,9 @@
         <li id="collationTableTabHeader" role="presentation" class="nav-item">
             <a role="tab" class="nav-link active" data-toggle="tab" href="#collationtablepanel">Collation Table</a>
         </li>
+        <li id="editionTabHeaderNew" class="nav-item" role="presentation">
+            <a role="tab" class="nav-link" data-toggle="tab" id="edition-tab-title-new" href="#editiondiv-panel-new">Edition (beta)</a>
+        </li>
         <li id="editionTabHeader" class="nav-item" role="presentation">
             <a role="tab" class="nav-link" data-toggle="tab" id="edition-tab-title" href="#editiondiv-panel">Quick Edition</a>
         </li>
@@ -130,6 +133,21 @@
 
             </div>
             <div id="edition-engine-info-div"></div>
+        </div>
+        <div role="tabpanel" class="tab-pane panetab nomargin-panel" id="editiondiv-panel-new">
+{#            <div class="ct-toolbar">#}
+{#                <div>#}
+{#                </div>#}
+{#                <div>#}
+{#                    <a id="export-svg-button" class="tb-button"  download="apm-quick-edition.svg"#}
+{#                       title="Download SVG"><small>SVG</small> <i class="fas fa-download"></i></a>#}
+{#                    <a id="export-pdf-button" class="tb-button margin-left-med" href="#" download="apm-quick-edition.pdf"#}
+{#                       title="Download PDF"><small>PDF</small> <i class="fas fa-download"></i></a>#}
+{#                </div>#}
+{#            </div>#}
+            <div id="edition-html-container">
+                <div class="loading">Loading edition...  <i class="fas fa-circle-notch fa-spin"></i></div>
+            </div>
         </div>
         <div role="tabpanel" class="tab-pane panetab" id="witnessesdiv">
             <div class="witnessinfotable"></div>

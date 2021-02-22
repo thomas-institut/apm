@@ -1349,7 +1349,7 @@ export class TableEditor {
 
   insertColumnAfter(col) {
     this.matrix.addColumnAfter(col, this.options.getEmptyValue())
-    this.columnSequence.addNumberAfter(col)
+    this.columnSequence.insertNumberAfter(col)
   }
 
   forceRestoreScroll(timeOut = 250)  {

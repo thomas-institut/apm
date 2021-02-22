@@ -75,8 +75,27 @@ export class SequenceWithGroups {
     this.length--
   }
 
-  addNumberAfter(number) {
+  /**
+   * Grows the sequence by one with the new element in position zero
+   * This amounts to shifting all the current groups by one. The new element
+   * is not grouped with anything
+   */
+  insertNumberZero() {
+    this.groupedWithNextNumbers = this.groupedWithNextNumbers.map( (n) => { return n+1})
+    this.length++
+  }
 
+  /**
+   * Grows the sequence by one, with new element in the position after the given number
+   * Extends an existing group if the new element is in the middle of the group.
+   * @param number
+   */
+  insertNumberAfter(number) {
+
+    if (number < 0) {
+      this.insertNumberZero()
+      return
+    }
     let currentGroups = this.getGroups()
 
     let groupsBefore = currentGroups.filter( (g) => { return g.from < number && g.to < number})
@@ -85,6 +104,7 @@ export class SequenceWithGroups {
 
     if (numberGroups.length !== 1) {
       console.error(`Inconsistent groups, found more than one group for number ${number}`)
+      console.log(numberGroups)
     }
     let numberGroup = numberGroups[0]
     let newGroups = groupsBefore

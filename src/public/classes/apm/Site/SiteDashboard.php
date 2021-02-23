@@ -68,6 +68,9 @@ class SiteDashboard extends SiteController
                 $this->logger->error("Table $tableId reported as being active does not exist. Is version table consistent?");
                 continue;
             }
+            if ($ctData['archived']) {
+                continue;
+            }
             $chunkId = isset($ctData['chunkId']) ? $ctData['chunkId'] : $ctData['witnesses'][0]['chunkId'];
 
             $tableInfo[] = [

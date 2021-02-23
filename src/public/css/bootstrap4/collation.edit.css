@@ -271,3 +271,17 @@ div#edition-html-container {
 .htmlEdition .hover {
     background: #efdf7c;
 }
+
+#admindiv h3 {
+    margin-top: 1em;
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+}
+
+#adminopsdiv {
+    margin-bottom: 2rem;
+}
+
+#admindiv ul {
+    list-style: none;
+}

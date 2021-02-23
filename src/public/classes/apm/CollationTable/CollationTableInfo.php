@@ -26,22 +26,27 @@ namespace APM\CollationTable;
 class CollationTableInfo
 {
     /** @var string */
-    public $type;
+    public string $type;
     /** @var string */
-    public $title;
+    public string $title;
+
+    public bool $archived;
 
     public function __construct()
     {
         $this->title = '';
         $this->type = '';
+        $this->archived = false;
     }
 
     public function setFromDbRow(array $row) {
         $this->title = $row['title'];
         $this->type = $row['type'];
+        $this->archived = $row['archived'] === '1';
     }
 
-    public static function createFromDbRow(array $row) {
+    public static function createFromDbRow(array $row): CollationTableInfo
+    {
         $ci = new CollationTableInfo();
         $ci->setFromDbRow($row);
         return $ci;

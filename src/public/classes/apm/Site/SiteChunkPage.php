@@ -65,6 +65,9 @@ class SiteChunkPage extends SiteController
             if (count($tableVersions) !== 0 ){
                 $authorsMentioned[] =  $tableVersions[0]->authorId;
                 $ctInfo = $ctManager->getCollationTableInfo($tableId, $time);
+                if ($ctInfo->archived) {
+                    continue;
+                }
                 $savedCollationTableInfoArray[] = [
                     'tableId' => $tableId,
                     'authorId' => $tableVersions[0]->authorId,

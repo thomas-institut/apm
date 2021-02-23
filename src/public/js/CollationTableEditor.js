@@ -46,6 +46,10 @@ import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { Matrix } from '@thomas-inst/matrix'
 import { CriticalApparatusGenerator } from './CriticalApparatusGenerator'
 import { EditionViewerHtml } from './EditionViewerHtml'
+import { ConfirmDialog } from './ConfirmDialog'
+
+
+// constants
 
 export class CollationTableEditor {
   //collationTable;
@@ -122,6 +126,11 @@ export class CollationTableEditor {
     // consistency check
     this.checkCollationTableConsistency()
 
+    // by default, the table is not archived
+    if (this.ctData['archived']  === undefined) {
+      this.ctData['archived'] = false
+    }
+
     this.lastSavedCtData = Util.deepCopy(this.ctData)
     this.witnessUpdates = []
     this.tableId = this.options['tableId']
@@ -155,6 +164,7 @@ export class CollationTableEditor {
     this.exportPdfButton = $('#export-pdf-button')
     this.convertToEditionDiv = $('#convert-to-edition-div')
     this.convertToEditionButton = $('#convert-to-edition-btn')
+    this.archiveTableButton = $('#archive-table-btn')
 
     document.title = `${this.ctData.title} (${this.ctData.chunkId})`
 
@@ -265,6 +275,15 @@ export class CollationTableEditor {
     // Export PDF
     this.exportPdfButton.on('click', this.genOnClickExportPdfButton())
 
+    let label = this.ctData.type === CollationTableType.EDITION ? 'Edition' : 'Collation Table'
+    this.archiveTableButton.html(`Archive This ${label}`)
+    if (this.ctData['archived'] === false) {
+      this.archiveTableButton.on('click', this._genOnClickArchiveTable())
+    } else {
+      this.archiveTableButton.addClass('disabled')
+        .prop('disabled', true)
+    }
+
 
     this.setupTableEditor()
     this.updateSaveArea()
@@ -292,6 +311,61 @@ export class CollationTableEditor {
         thisObject.fitCtDivToViewPort()
         thisObject.fitEditionDivToViewPort()
       })
+  }
+
+  _genOnClickArchiveTable() {
+    let thisObject = this
+    let label = this.ctData.type === CollationTableType.EDITION ? 'edition' : 'collation table'
+    return () => {
+      if (thisObject.ctData['archived'] || thisObject.unsavedChanges) {
+        return
+      }
+      let confirmDialog = new ConfirmDialog({
+        body: `
+<p>Are you sure you want to archive this ${label}?</p>
+<p>The ${label} will no longer be accessible and only an administrator can restore it.</p>`,
+        acceptButtonLabel: 'Archive',
+        cancelButtonLabel: 'Cancel',
+        acceptFunction: (id) => {
+          console.log(`About to archive ${label}`)
+          thisObject.ctData['archived'] = true
+          let apiCallOptions = {
+            collationTableId: thisObject.tableId,
+            collationTable: thisObject.ctData,
+            descr: 'Archived',
+            source: 'edit',
+            baseSiglum: thisObject.ctData['sigla'][0]
+          }
+          $.post(
+            thisObject.apiSaveCollationUrl,
+            {data: JSON.stringify(apiCallOptions)}
+          ).done( function (apiResponse){
+            console.log("Success archiving table")
+            console.log(apiResponse)
+            thisObject.lastSavedCtData = Util.deepCopy(thisObject.ctData)
+            thisObject.lastSavedEditorMatrix = thisObject.tableEditor.getMatrix().clone()
+            thisObject.versionInfo = apiResponse.versionInfo
+            thisObject.witnessUpdates = []
+            for(let i=0; i < thisObject.lastWitnessUpdateCheckResponse['witnesses'].length; i++) {
+              if (thisObject.lastWitnessUpdateCheckResponse['witnesses'][i]['justUpdated']) {
+                thisObject.lastWitnessUpdateCheckResponse['witnesses'][i]['justUpdated'] = false
+              }
+            }
+            thisObject.unsavedChanges = false
+            thisObject.updateWitnessInfoDiv()
+            thisObject.updateSaveArea()
+            thisObject.updateVersionInfo()
+            thisObject.updateEditionPreview()
+          }).fail(function(resp){
+            thisObject.archiveTableButton.html(`Error archiving, click to try again`)
+            console.error("Cannot archive table")
+            thisObject.ctData['archived'] = false
+            console.log(resp)
+          })
+        }
+      })
+      confirmDialog.show()
+    }
   }
 
   checkCollationTableConsistency() {
@@ -1023,12 +1097,17 @@ export class CollationTableEditor {
     for(let i=0; i < apiResponse['witnesses'].length; i++) {
       let witnessUpdateInfo = apiResponse['witnesses'][i]
       if (!witnessUpdateInfo['upToDate']) {
-        witnessesUpToDate = false
-        let warningHtml =  `<span>${this.icons.checkFail} Last version:  `
-        warningHtml += `${Util.formatVersionTime(witnessUpdateInfo['lastUpdate'])} `
-        warningHtml += `<a title="Click to update witness" class="btn btn-outline-secondary btn-sm witness-update-btn witness-update-btn-${i}">Update</a>`
         let warningTd = $(`${this.witnessesDivSelector} td.outofdate-td-${i}`)
-        warningTd.html(warningHtml)
+        if (witnessUpdateInfo['lastUpdate'] === -1) {
+          // witness no longer defined
+          warningTd.html(`<span>${this.icons.checkFail} Chunk no longer present in this witness`)
+        } else {
+          witnessesUpToDate = false
+          let warningHtml =  `<span>${this.icons.checkFail} Last version:  `
+          warningHtml += `${Util.formatVersionTime(witnessUpdateInfo['lastUpdate'])} `
+          warningHtml += `<a title="Click to update witness" class="btn btn-outline-secondary btn-sm witness-update-btn witness-update-btn-${i}">Update</a>`
+          warningTd.html(warningHtml)
+        }
       }
       if (witnessUpdateInfo['justUpdated']) {
         let warningHtml =  `<span>${this.icons.checkOK} Just updated. Don't forget to save!`
@@ -2222,11 +2301,25 @@ export class CollationTableEditor {
   }
 
   updateSaveArea() {
+    if (this.ctData['archived']) {
+      this.saveButton.addClass('hidden')
+      this.saveMsg.html('Archived').removeClass('hidden').addClass('text-info')
+      this.archiveTableButton
+        .attr('title', 'Already archived')
+        .addClass('disabled')
+      let lastVersion = this.versionInfo[this.versionInfo.length-1]
+      this.lastSaveSpan.html(Util.formatVersionTime(lastVersion['timeFrom']))
+      return
+    }
     let changes = this.changesInCtData()
     if (changes.length !== 0) {
       //console.log('Detected changes in data')
       //console.log(changes)
       this.unsavedChanges = true
+      this.archiveTableButton
+        .attr('title', 'Save or discard changes before attempting to archive this table/edition')
+        .addClass('disabled')
+
       this.saveButton.html('Save Changes')
       this.buttonPopoverContent = '<p>'
       this.buttonPopoverContent += '<ul>'
@@ -2248,6 +2341,9 @@ export class CollationTableEditor {
     } else {
       //console.log('no changes in data')
       this.unsavedChanges = false
+      this.archiveTableButton
+        .attr('title', 'Click to archive this table/edition')
+        .removeClass('disabled')
       this.saveButton.addClass('hidden')
       this.saveMsg.addClass('hidden')
     }

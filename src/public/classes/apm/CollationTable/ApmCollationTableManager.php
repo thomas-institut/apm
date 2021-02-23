@@ -92,6 +92,9 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
             $ctData['type'] = CollationTableType::COLLATION_TABLE;
         }
 
+        // Handle archived tables
+        $ctData['archived'] = $dbData['archived'] === '1';
+
         return $ctData;
 
     }
@@ -163,6 +166,10 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
             $collationTableData['type'] = CollationTableType::COLLATION_TABLE;
         }
 
+        if (!isset($collationTableData['archived'])) {
+            $collationTableData['archived'] = false;
+        }
+
         $dataToSave = json_encode($collationTableData);
         if ($compress) {
             $dataToSave = gzcompress($dataToSave);
@@ -174,6 +181,7 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
             'chunk_id' => $chunkId,
             'witnesses_json' => $witnessJson,
             'compressed' => $compress ? 1 : 0,
+            'archived' => $collationTableData['archived'] ? 1 : 0,
             'data' => $dataToSave
         ];
 
@@ -221,7 +229,7 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
             /** @var MySqlUnitemporalDataTable $ctTable */
             $ctTable = $this->ctTable;
 
-            $result = $ctTable->select('id, title, type',
+            $result = $ctTable->select('id, title, type, archived',
                 "id='$id' AND valid_from <='$timeString' and valid_until>'$timeString'",
                 0,
                 '',

@@ -28,6 +28,7 @@ use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
 use AverroesProject\Data\UserManagerUserInfoProvider;
 use AverroesProjectToApm\Formatter\WitnessPageFormatter;
+use Exception;
 use InvalidArgumentException;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
@@ -115,29 +116,53 @@ class ApiWitness extends ApiController
 
                 case WitnessType::FULL_TRANSCRIPTION:
                     $witnessInfo = WitnessSystemId::getFullTxInfo($witnessId);
-                    $lastUpdate = $this->systemManager->getTranscriptionManager()->getLastChangeTimestampForWitness(
-                      $witnessInfo->workId,
-                      $witnessInfo->chunkNumber,
-                      $witnessInfo->typeSpecificInfo['docId'],
-                      $witnessInfo->typeSpecificInfo['localWitnessId']
-                    );
-                    $upToDate = true;
-                    if ($lastUpdate !== $witnessInfo->typeSpecificInfo['timeStamp']) {
-                        $upToDate = false;
+                    $witnessStillDefined = true;
+                    try {
+                        $lastUpdate = $this->systemManager->getTranscriptionManager()->getLastChangeTimestampForWitness(
+                            $witnessInfo->workId,
+                            $witnessInfo->chunkNumber,
+                            $witnessInfo->typeSpecificInfo['docId'],
+                            $witnessInfo->typeSpecificInfo['localWitnessId']
+                        );
+                    } catch (Exception $e) {
+                        if ($e->getCode() === ApmTranscriptionManager::ERROR_DOCUMENT_NOT_FOUND) {
+                           $witnessStillDefined = false;
+                        } else {
+                            $this->debug("Exception getting last change time for witness", [
+                                'msg' => $e->getMessage(),
+                                'witnessInfo' => get_object_vars($witnessInfo)
+                            ]);
+                            return $this->responseWithJson($response, [ 'error' => 'Problem getting info', 'code' => 0], 409);
+                        }
                     }
-                    $updatedWitnessId = WitnessSystemId::buildFullTxId(
-                        $witnessInfo->workId,
-                        $witnessInfo->chunkNumber,
-                        $witnessInfo->typeSpecificInfo['docId'],
-                        $witnessInfo->typeSpecificInfo['localWitnessId'],
-                        $lastUpdate
-                    );
-                    $responseData['witnesses'][] = [
-                        'id' => $witnessId,
-                        'upToDate' => $upToDate,
-                        'lastUpdate' => $lastUpdate,
-                        'updatedWitnessId'=> $updatedWitnessId
-                    ];
+                    if ($witnessStillDefined) {
+                        $upToDate = true;
+                        if ($lastUpdate !== $witnessInfo->typeSpecificInfo['timeStamp']) {
+                            $upToDate = false;
+                        }
+                        $updatedWitnessId = WitnessSystemId::buildFullTxId(
+                            $witnessInfo->workId,
+                            $witnessInfo->chunkNumber,
+                            $witnessInfo->typeSpecificInfo['docId'],
+                            $witnessInfo->typeSpecificInfo['localWitnessId'],
+                            $lastUpdate
+                        );
+                        $responseData['witnesses'][] = [
+                            'id' => $witnessId,
+                            'upToDate' => $upToDate,
+                            'lastUpdate' => $lastUpdate,
+                            'updatedWitnessId'=> $updatedWitnessId
+                        ];
+                    }else {
+                        $responseData['witnesses'][] = [
+                            'id' => $witnessId,
+                            'upToDate' => false,
+                            'lastUpdate' => -1
+                        ];
+                        $this->debug("Witness $witnessId no longer defined in the system");
+                    }
+
+
                     break;
 
                 case WitnessType::PARTIAL_TRANSCRIPTION:
@@ -237,7 +262,7 @@ class ApiWitness extends ApiController
             $locations = $transcriptionManager->getSegmentLocationsForFullTxWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
             try {
                 $apmWitness = $transcriptionManager->getTranscriptionWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $msg = $e->getMessage();
                 $this->logger->error("Exception trying to get transcription witness. Msg = '$msg'",
                     [ 'locations' => $locations ] );
@@ -279,7 +304,7 @@ class ApiWitness extends ApiController
             $this->codeDebug("Size of compressed witness data: " . strlen($dataToSave));
             try {
                 $systemCache->set($cacheKey, $dataToSave);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->codeDebug("Error saving data to cache: " . substr($e->getMessage(), 1, 1000) . '...' );
             }
 
@@ -288,7 +313,7 @@ class ApiWitness extends ApiController
             $this->codeDebug("Size of html data: " . strlen($html));
             try {
                 $systemCache->set($cacheKeyHtmlOutput, $html);
-            } catch(\Exception $e) {
+            } catch(Exception $e) {
                 $this->codeDebug("Error saving data to cache: " . substr($e->getMessage(), 1, 1000) . '...' );
             }
 

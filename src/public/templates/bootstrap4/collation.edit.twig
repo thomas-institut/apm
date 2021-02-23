@@ -96,7 +96,7 @@
             <a role="tab" class="nav-link" data-toggle="tab" href="#witnessesdiv">Witness Info</a>
         </li>
         <li id="versionHistoryTabHeader"  class="nav-item" role="presentation">
-            <a role="tab" class="nav-link" data-toggle="tab" href="#versionhistorydiv">Version History</a>
+            <a role="tab" class="nav-link" data-toggle="tab" href="#admindiv">Admin</a>
         </li>
     </ul>
 
@@ -135,16 +135,6 @@
             <div id="edition-engine-info-div"></div>
         </div>
         <div role="tabpanel" class="tab-pane panetab nomargin-panel" id="editiondiv-panel-new">
-{#            <div class="ct-toolbar">#}
-{#                <div>#}
-{#                </div>#}
-{#                <div>#}
-{#                    <a id="export-svg-button" class="tb-button"  download="apm-quick-edition.svg"#}
-{#                       title="Download SVG"><small>SVG</small> <i class="fas fa-download"></i></a>#}
-{#                    <a id="export-pdf-button" class="tb-button margin-left-med" href="#" download="apm-quick-edition.pdf"#}
-{#                       title="Download PDF"><small>PDF</small> <i class="fas fa-download"></i></a>#}
-{#                </div>#}
-{#            </div>#}
             <div id="edition-html-container">
                 <div class="loading">Loading edition...  <i class="fas fa-circle-notch fa-spin"></i></div>
             </div>
@@ -159,7 +149,17 @@
                 <button id="convert-to-edition-btn" class="btn btn-primary" title="Click to add a main text">Add Main Text</button>
             </div>
         </div>
-        <div role="tabpanel" class="tab-pane panetab" id="versionhistorydiv"></div>
+        <div role="tabpanel" class="tab-pane panetab" id="admindiv">
+            <div id="adminopsdiv">
+                <h3>Admin</h3>
+                <ul>
+                    <li><button id="archive-table-btn" class="btn btn-danger" title="Click to archive this table/edition">Archive This Table</button></li>
+                </ul>
+            </div>
+            <h3>Versions</h3>
+            <div id="versionhistorydiv"></div>
+
+        </div>
     </div>
 </div>
 {#<footer class="footer">#}

@@ -242,7 +242,7 @@ class ApmTranscriptionManager extends TranscriptionManager
             }
         }
         if (!$witnessFound) {
-            $this->setError( "Document $docId not found", self::ERROR_DOCUMENT_NOT_FOUND);
+            $this->setError( "Document $docId not found not found among witnesses for work $workId chunk $chunkNumber", self::ERROR_DOCUMENT_NOT_FOUND);
             throw new InvalidArgumentException($this->getErrorMessage(), $this->getErrorCode());
         }
         return $timeStamp;

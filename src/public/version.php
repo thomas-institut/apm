@@ -26,11 +26,11 @@ global $config;
 
 
 $config[ApmConfigParameter::APP_NAME] = 'APM';
-$config[ApmConfigParameter::VERSION] = '0.37.9 (2021-Feb-09)';
+$config[ApmConfigParameter::VERSION] = '0.38.0 (2021-Feb-25)';
 
 
 $config[ApmConfigParameter::COPYRIGHT_NOTICE] = <<<EOD
-        2016-20, 
+        2016-21, 
         <a href="http://www.thomasinstitut.uni-koeln.de/">
             Thomas-Institut</a>, 
         <a href="http://www.uni-koeln.de/">

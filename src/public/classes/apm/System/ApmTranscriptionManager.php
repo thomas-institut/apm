@@ -37,11 +37,11 @@ use AverroesProject\Data\EdNoteManager;
 use AverroesProject\Data\MySqlHelper;
 use AverroesProject\TxText\Item as ApItem;
 use AverroesProjectToApm\DatabaseItemStream;
+use Exception;
 use RuntimeException;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
 use ThomasInstitut\DataCache\CacheAware;
-use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\InMemoryDataCache;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
 use ThomasInstitut\DataCache\SimpleCacheAware;
@@ -88,68 +88,68 @@ class ApmTranscriptionManager extends TranscriptionManager
     /**
      * @var PDO
      */
-    private $dbConn;
+    private PDO $dbConn;
     /**
      * @var MySqlDataTable
      */
-    private $docsDataTable;
+    private MySqlDataTable $docsDataTable;
     /**
      * @var MySqlDataTable
      */
-    private $pageTypesTable;
+    private MySqlDataTable $pageTypesTable;
     /**
      * @var MySqlUnitemporalDataTable
      */
-    private $pagesDataTable;
+    private MySqlUnitemporalDataTable $pagesDataTable;
     /**
      * @var MySqlUnitemporalDataTable
      */
-    private $elementsDataTable;
+    private MySqlUnitemporalDataTable $elementsDataTable;
     /**
      * @var MySqlUnitemporalDataTable
      */
-    private $itemsDataTable;
+    private MySqlUnitemporalDataTable $itemsDataTable;
     /**
      * @var MySqlDataTable
      */
-    private $worksTable;
+    private MySqlDataTable $worksTable;
     /**
      * @var MySqlDataTable
      */
-    private $txVersionsTable;
+    private MySqlDataTable $txVersionsTable;
     /**
      * @var MySqlHelper
      */
-    private $databaseHelper;
+    private MySqlHelper $databaseHelper;
     /**
      * @var EdNoteManager
      */
-    private $edNoteManager;
+    private EdNoteManager $edNoteManager;
     /**
      * @var array
      */
-    private $tNames;
+    private array $tNames;
     /**
      * @var ApmPageManager
      */
-    private $pageManager;
+    private ApmPageManager $pageManager;
     /**
      * @var ApmColumnVersionManager
      */
-    private $columnVersionManager;
+    private ApmColumnVersionManager $columnVersionManager;
     /**
      * @var ApmDocManager
      */
-    private $docManager;
+    private ApmDocManager $docManager;
 
     /**
      * @var InMemoryDataCache
      */
-    private $localMemCache;
+    private InMemoryDataCache $localMemCache;
     /**
      * @var string
      */
-    private $cacheKeyPrefix;
+    private string $cacheKeyPrefix;
 
 
     public function __construct(PDO $dbConn, array $tableNames, LoggerInterface $logger)
@@ -256,7 +256,7 @@ class ApmTranscriptionManager extends TranscriptionManager
      * @param string $localWitnessId
      * @param string $timeStamp
      * @return ApmTranscriptionWitness
-     * @throws \Exception
+     * @throws Exception
      */
     public function getTranscriptionWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeStamp) : ApmTranscriptionWitness
     {
@@ -268,7 +268,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         if ($this->cacheOn) {
             // first, check if it's in the cache
             $cacheKey = $this->getCacheKeyForWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
-            $this->codeDebug("Getting witness from cache (key='$cacheKey')");
+            //$this->codeDebug("Getting witness from cache (key='$cacheKey')");
             $cacheValue = '';
             $inCache = true;
             try {
@@ -309,8 +309,14 @@ class ApmTranscriptionManager extends TranscriptionManager
             throw new InvalidArgumentException($this->getErrorMessage(), $this->getErrorCode());
         }
 
-        foreach($locations as $segLocation ) {
+        // make sure segments are processed in the right order
+        $segmentNumbers = array_keys($locations);
+        sort($segmentNumbers);
+
+        foreach($segmentNumbers as $segmentNumber) {
+            $segLocation = $locations[$segmentNumber];
             /** @var ApmChunkSegmentLocation $segLocation */
+            //$this->codeDebug("Processing segment Number $segmentNumber");
             if ($segLocation->isValid()) {
                 $apItemStream = $this->getItemStreamForSegmentLocation($segLocation, $timeStamp);
                 foreach($apItemStream as $row) {
@@ -333,14 +339,14 @@ class ApmTranscriptionManager extends TranscriptionManager
         $txWitness->setInitialLineNumberForTextBox($firstPageId, $firstColumn, $firstLineNumber);
 
         if ($this->cacheOn) {
-            $this->codeDebug("Saving witness to cache with cache key '$cacheKey'");
+            //$this->codeDebug("Saving witness to cache with cache key '$cacheKey'");
             $serialized = serialize($txWitness);
-            $this->codeDebug("Size of serialized witness data: " . strlen($serialized));
+            //$this->codeDebug("Size of serialized witness data: " . strlen($serialized));
             $dataToSave = gzcompress($serialized);
-            $this->codeDebug("Size of compressed witness data: " . strlen($dataToSave));
+            //$this->codeDebug("Size of compressed witness data: " . strlen($dataToSave));
             try {
                 $this->dataCache->set($cacheKey, $dataToSave);
-            } catch(\Exception $e) {
+            } catch(Exception $e) {
                 $this->setError( "Cannot set cache for key $cacheKey : " . $e->getMessage(), self::ERROR_CACHE_ERROR);
                 throw $e;
             }
@@ -351,7 +357,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         return $txWitness;
     }
 
-    private function calcSeqNumber(ApmChunkMarkLocation $loc)
+    private function calcSeqNumber(ApmChunkMarkLocation $loc): int
     {
         return $this->calcSeqNumberGeneric($loc->pageSequence, $loc->columnNumber, $loc->elementSequence, $loc->itemSequence);
     }
@@ -525,7 +531,8 @@ class ApmTranscriptionManager extends TranscriptionManager
         return false;
     }
 
-    private function getItemStreamForElementId(int $elementId, string $timeString) {
+    private function getItemStreamForElementId(int $elementId, string $timeString): array
+    {
         $ti = $this->tNames['items'];
         $te = $this->tNames['elements'];
         $tp = $this->tNames['pages'];
@@ -579,6 +586,7 @@ class ApmTranscriptionManager extends TranscriptionManager
 
     public function getSegmentLocationsForFullTxWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeString) : array
     {
+        //$this->codeDebug('getSegmentLocations', [ $workId, $chunkNumber, $docId, $localWitnessId, $timeString]);
         $chunkLocationMap = $this->getChunkLocationMapFromDatabase(
             [
                 'work_id' => "='$workId'",
@@ -589,10 +597,12 @@ class ApmTranscriptionManager extends TranscriptionManager
             ],
             $timeString);
 
-        $this->codeDebug('getSegmentLocations', [ $workId, $chunkNumber, $docId, $localWitnessId, $timeString, $chunkLocationMap]);
+
         if (!isset($chunkLocationMap[$workId][$chunkNumber][$docId][$localWitnessId])) {
+            //$this->codeDebug("No segment locations found");
             return [];
         }
+        //$this->codeDebug("Segment locations for $workId-$chunkNumber, doc $docId, local witness Id $localWitnessId", $chunkLocationMap[$workId][$chunkNumber][$docId][$localWitnessId] );
         return $chunkLocationMap[$workId][$chunkNumber][$docId][$localWitnessId];
     }
 
@@ -608,7 +618,6 @@ class ApmTranscriptionManager extends TranscriptionManager
         $chunkLocations = [];
 
         foreach ($chunkMarkLocations as $location) {
-            /** @var ApmChunkMarkLocation $location */
             //$this->codeDebug('Processing location', [ $location]);
             if (!isset($chunkLocations[$location->workId][$location->chunkNumber][$location->docId][$location->witnessLocalId][$location->segmentNumber])) {
                 // Initialize the chunk segment location
@@ -880,9 +889,6 @@ class ApmTranscriptionManager extends TranscriptionManager
         return $versionMap;
     }
 
-    /**
-     * @inheritDoc
-     */
     public function getLastChunkVersionFromVersionMap(array $versionMap) : array {
         $lastVersions = [];
         foreach ($versionMap as $workId => $chunkNumberMap) {
@@ -1071,7 +1077,8 @@ class ApmTranscriptionManager extends TranscriptionManager
         }
     }
 
-    private function hasTranscription(int $pageId, int $columnNumber) {
+    private function hasTranscription(int $pageId, int $columnNumber): bool
+    {
         return $this->getColumnVersionManager()->getColumnVersionInfoByPageCol($pageId, $columnNumber, 1) !== [];
     }
 

@@ -202,7 +202,8 @@ class ApiTranscription extends ApiController
         return $text;
     }
 
-    private function getExportDataFromElements($elements) {
+    private function getExportDataFromElements($elements): array
+    {
         // only main text for the time being
         $mainText = [];
         $itemToType = [

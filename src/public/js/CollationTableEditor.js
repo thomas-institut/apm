@@ -412,6 +412,19 @@ export class CollationTableEditor {
           }
         }
       })
+      // check that tokens in CT are in the right order
+      let lastTokenRef = -1
+      let lastColumn = -1
+      row.forEach( (tokenRef,ctIndex) => {
+        if (tokenRef === -1) {
+          return
+        }
+        if (tokenRef <= lastTokenRef) {
+          console.log(`Token at column ${ctIndex+1} is in the wrong order, ref = ${tokenRef}, last ref = ${lastTokenRef} at col ${lastColumn+1}`)
+        }
+        lastTokenRef = tokenRef
+        lastColumn = ctIndex
+      })
       if (errorsFound) {
         // replace fixed collation table
         this.ctData['collationMatrix'] = this.matrixToArray(ctMatrix)

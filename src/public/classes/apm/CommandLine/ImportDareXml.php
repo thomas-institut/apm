@@ -624,7 +624,7 @@ class ImportDareXml extends CommandLineUtility
                             break;
 
                         case 'head':
-                            print "<b>" . htmlspecialchars($item['value']) . '</b>';
+                            print "<b class='head'>" . htmlspecialchars($item['value']) . '</b>';
                             break;
 
                         case 'nowb':
@@ -653,6 +653,12 @@ class ImportDareXml extends CommandLineUtility
 
                         case 'italic':
                             print '<em>' . htmlspecialchars($item['value']) . '</em>';
+                            break;
+
+                        case 'bold':
+                            print '<b>' . htmlspecialchars($item['value']) . '</b>';
+                            break;
+
                     }
                 }
                 print "</p>\n";

@@ -41,12 +41,12 @@ import * as HttpStatusCode from './toolbox/HttpStatusCode'
 // utilities
 import * as Util from './toolbox/Util.mjs'
 import * as ArrayUtil from './toolbox/ArrayUtil'
-import * as MyersDiff from './toolbox/MyersDiff.mjs'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { Matrix } from '@thomas-inst/matrix'
 import { CriticalApparatusGenerator } from './CriticalApparatusGenerator'
 import { EditionViewerHtml } from './EditionViewerHtml'
 import { ConfirmDialog } from './ConfirmDialog'
+import { VERBOSITY_DEBUG_PLUS, WitnessDiffCalculator } from './WitnessDiffCalculator'
 
 
 // constants
@@ -369,14 +369,16 @@ export class CollationTableEditor {
   }
 
   checkCollationTableConsistency() {
+    console.log(`Checking collation table consistency`)
+    let inconsistenciesFound = false
     for (let wIndex = 0; wIndex < this.ctData['witnesses'].length; wIndex++) {
       let ctRow = this.ctData['witnessOrder'].indexOf(wIndex)
       let title = this.ctData['witnessTitles'][wIndex]
       let errorsFound = false
-      console.log(`* Checking witness consistency for witness ${wIndex} (${title}), ctRow = ${ctRow}`)
+      // console.log(`* Checking witness consistency for witness ${wIndex} (${title}), ctRow = ${ctRow}`)
       // check that the collation table has all text tokens present
       if (this.ctData['type'] === CollationTableType.EDITION && wIndex === this.ctData['editionWitnessIndex']) {
-        console.log(`... edition witness, skipping`)
+        // console.log(`... edition witness, skipping`)
         continue
       }
       let ctMatrix = new Matrix(0,0,-1)
@@ -389,6 +391,8 @@ export class CollationTableEditor {
           let ctIndex = row.indexOf(i)
           if (ctIndex === -1) {
             errorsFound = true
+            inconsistenciesFound = true
+            console.warn(`Inconsistency in witness ${wIndex} (${title}), ctRow = ${ctRow}`)
             console.log(`- text token ${i} not in collation table, text = '${t.text}', last token in CT: ${lastTokenInCt} @ col ${lastGoodCtCol+1}`)
             // fix it!
             let nextNullRefIndex = this.findNextNullRefInArray(row, lastGoodCtCol)
@@ -415,23 +419,55 @@ export class CollationTableEditor {
       // check that tokens in CT are in the right order
       let lastTokenRef = -1
       let lastColumn = -1
+      let columnsInWrongOrder = false
+      row = ctMatrix.getRow(wIndex)
       row.forEach( (tokenRef,ctIndex) => {
         if (tokenRef === -1) {
           return
         }
         if (tokenRef <= lastTokenRef) {
-          console.log(`Token at column ${ctIndex+1} is in the wrong order, ref = ${tokenRef}, last ref = ${lastTokenRef} at col ${lastColumn+1}`)
+          console.warn(`Inconsistency in witness ${wIndex} (${title}), ctRow = ${ctRow}`)
+          console.log(` - Token at column ${ctIndex+1} is in the wrong order, ref = ${tokenRef}, last ref = ${lastTokenRef} at col ${lastColumn+1}`)
+          columnsInWrongOrder = true
         }
         lastTokenRef = tokenRef
         lastColumn = ctIndex
       })
+      if (columnsInWrongOrder) {
+        errorsFound = true
+        inconsistenciesFound = true
+        // re-order the columns
+        let orderedTokenRefs = row.filter( (ref) => {return ref!==-1}).sort( (a,b) => { return a > b ? 1 : 0})
+        // console.log(`Sorted refs`)
+        // console.log(orderedTokenRefs)
+        let goodRefIndex = -1
+        row.forEach( (ref, i) => {
+          if (ref === -1) {
+            ctMatrix.setValue(wIndex, i, -1)
+          } else {
+            goodRefIndex++
+            ctMatrix.setValue(wIndex, i, orderedTokenRefs[goodRefIndex])
+          }
+        })
+        console.log(`-- Order problems fixed`)
+        // console.log(`Original row`)
+        // console.log(row)
+        // console.log(`Fixed row`)
+        // console.log(ctMatrix.getRow(wIndex))
+      }
       if (errorsFound) {
         // replace fixed collation table
         this.ctData['collationMatrix'] = this.matrixToArray(ctMatrix)
       } else {
-        console.log(`... no problems found`)
+        // console.log(`... no problems found`)
       }
     }
+    if (inconsistenciesFound) {
+      console.log(`... finished, inconsistencies fixed.`)
+    } else {
+      console.log(`... all good, no inconsistencies found`)
+    }
+
   }
 
   matrixToArray(matrix) {
@@ -452,6 +488,7 @@ export class CollationTableEditor {
 
   fixEditionWitnessReferences() {
 
+    console.log(`Checking for -1 references in edition witness`)
     let editionWitnessIndex = this.ctData['editionWitnessIndex']
     if (editionWitnessIndex === undefined) {
       // not an edition, nothing to do
@@ -474,20 +511,20 @@ export class CollationTableEditor {
       let newCtEditionRow = ctEditionRow.map( (ref, i) => {
         return i
       })
-      console.log('Old Edition Witness Tokens')
-      console.log(editionWitnessTokens)
-      console.log('New Edition Witness Tokens')
-      console.log(newEditionWitnessTokens)
-      console.log('Old CT edition row')
-      console.log(ctEditionRow)
-      console.log('New CT Edition Row')
-      console.log(newCtEditionRow)
+      // console.log('Old Edition Witness Tokens')
+      // console.log(editionWitnessTokens)
+      // console.log('New Edition Witness Tokens')
+      // console.log(newEditionWitnessTokens)
+      // console.log('Old CT edition row')
+      // console.log(ctEditionRow)
+      // console.log('New CT Edition Row')
+      // console.log(newCtEditionRow)
 
       this.ctData.witnesses[editionWitnessIndex]['tokens'] = newEditionWitnessTokens
       this.ctData.collationMatrix[editionWitnessIndex] = newCtEditionRow
 
     } else {
-      console.log('No -1 references found edition witness')
+      console.log('...all good, none found')
     }
 
   }
@@ -726,7 +763,10 @@ export class CollationTableEditor {
               calcP.addClass('status-running')
 
               // 2.2 the actual calculation
-              let changes =  thisObject.getChangesBetweenWitnesses(currentWitness, newWitness, witnessIndex)
+              let witnessDiffCalculator = new WitnessDiffCalculator({ verbosity: VERBOSITY_DEBUG_PLUS })
+              let ctRowIndex = thisObject.ctData['witnessOrder'].indexOf(witnessIndex)
+              let collationRow = thisObject.tableEditor.getRow(ctRowIndex)
+              let changes =  witnessDiffCalculator.getChangesBetweenWitnesses(ctRowIndex, collationRow, currentWitness, newWitness)
 
               return { changes: changes, newWitness: newWitness}
             },
@@ -851,8 +891,13 @@ export class CollationTableEditor {
     for(let i = 0; i < currentCtRow.length; i++) {
       let currentRef = this.tableEditor.getValue(ctRow, i)
       if (currentRef !== -1) {
+        let newRef = changes['tokenConversionArray'][currentRef]
+        if (newRef === undefined) {
+          newRef = -1
+          console.warn(`Found undefined new ref in token conversion array, currentRef = ${currentRef}, setting to -1 for now`)
+        }
         //console.log(`Changing ref in table editor row ${ctRow}, col ${i}, from ${currentRef} to ${changes['tokenConversionArray'][currentRef]} `)
-        this.tableEditor.setValue(ctRow, i, changes['tokenConversionArray'][currentRef])
+        this.tableEditor.setValue(ctRow, i, newRef)
       }
     }
 
@@ -860,15 +905,15 @@ export class CollationTableEditor {
     let columnsInserted = 0
     for (const change of changes.ctChanges) {
       if (change.type === 'insertColAfter') {
-        //console.log(`Processing column insert`)
+        console.log(`Processing column insert`)
         this.tableEditor.insertColumnAfter(change.afterCol + columnsInserted)
         columnsInserted++
         console.log(`Columns inserted: ${columnsInserted}`)
         for (let row = 0; row < this.tableEditor.matrix.nRows; row++) {
-          //console.log(`Setting reference at row ${row}, col ${change.afterCol+columnsInserted} to -1`)
+          console.log(`Setting reference at row ${row}, col ${change.afterCol+columnsInserted} to -1`)
           this.tableEditor.setValue(row, change.afterCol + columnsInserted,-1)
         }
-        //console.log(`Updating reference in tableEditor row ${ctRow}, col ${change.afterCol + columnsInserted}, new ref=${change.tokenIndexInNewWitness}`)
+        console.log(`Updating reference in tableEditor row ${ctRow}, col ${change.afterCol + columnsInserted}, new ref=${change.tokenIndexInNewWitness}`)
         this.tableEditor.setValue(ctRow, change.afterCol + columnsInserted, change.tokenIndexInNewWitness)
         let clonedMatrix = this.tableEditor.matrix.clone()
         clonedMatrix.logMatrix('Table editor Matrix (cloned)')
@@ -886,8 +931,9 @@ export class CollationTableEditor {
     console.log('New ctData')
     console.log(this.ctData)
     this.fixEditionWitnessReferences()
-    console.log('After fix references')
-    console.log(this.ctData)
+    // console.log('After fix references')
+    // console.log(this.ctData)
+    this.checkCollationTableConsistency()
     this.aggregatedNonTokenItemIndexes = this.calculateAggregatedNonTokenItemIndexes()
     this.resetTokenDataCache()
     this.setupTableEditor()
@@ -901,207 +947,219 @@ export class CollationTableEditor {
     profiler.stop()
   }
 
-  getChangesBetweenWitnesses(oldWitness, newWitness, witnessIndex) {
-    let changes = {}
-
-    //console.log(`Calculating changes`)
-    // 1. Find changes in the tokens
-    let editScript = MyersDiff.calculate(oldWitness['tokens'], newWitness['tokens'], function(a,b) {
-      if (a['tokenType'] === b['tokenType']) {
-        switch(a['tokenType']) {
-          case TokenType.WHITESPACE:
-          case TokenType.EMPTY:
-            // all whitespace and all empty tokens are equal
-            return true
-
-
-          case TokenType.PUNCTUATION:
-            return a['text'] === b['text']
-
-          case TokenType.WORD:
-            if (a['text'] !== b['text']) {
-              return false
-            }
-            return a['normalizedText'] === b['normalizedText'];
-
-        }
-      }
-      return false
-    })
-
-    console.log('Edit Script')
-    console.log(editScript)
-    changes.tokenConversionArray = []
-    changes.nonCtChanges = []
-    changes.ctChanges = []
-    let ctRowIndex = this.ctData['witnessOrder'].indexOf(witnessIndex)
-    let collationRow = this.tableEditor.getRow(ctRowIndex)
-
-    let lastCtColumn = -1
-    let lastCtColumnTokenIndex = -1
-    let lastDel = {}
-    let state = 0
-
-    function getFsmEvent(editScript, ctIndex, newTokens) {
-      switch(editScript.command) {
-        case 0:
-          if (ctIndex === -1) {
-            return 'KEEP'
-          } else {
-            return 'KEEP-CT'
-          }
-
-        case -1:
-          if (ctIndex === -1) {
-            return 'DEL'
-          } else {
-            return 'DEL-CT'
-          }
-
-        case 1:
-          // only insert words into the collation table
-          let newToken = newTokens[editScript.seq]
-          if (newToken['tokenType'] === TokenType.WORD) {
-            return 'INS-CT'
-          } else {
-            return 'INS'
-          }
-      }
-    }
-
-    for(let i=0; i < editScript.length; i++) {
-      let scriptItem = editScript[i]
-      // determine the FSM event
-      let ctColIndex = collationRow.indexOf(scriptItem.index)
-      let event = getFsmEvent(scriptItem, ctColIndex, newWitness['tokens'])
-      //console.log(`Event ${i}: ${event}, state ${state}, index ${scriptItem.index}, ctIndex ${ctColIndex}, seq ${scriptItem.seq}, lastCtColumn ${lastCtColumn}`)
-
-      // State Machine
-      if (state === 0) {
-        switch(event) {
-          case 'KEEP-CT':
-            changes.tokenConversionArray[scriptItem.index] = scriptItem.seq
-            lastCtColumn = ctColIndex
-            lastCtColumnTokenIndex = scriptItem.index
-            break
-
-          case 'KEEP':
-            // TODO: is this necessary?
-            changes.tokenConversionArray[scriptItem.index] = scriptItem.seq
-            break
-
-          case 'INS-CT':
-            changes.ctChanges.push({
-              type: 'insertColAfter',
-              row: ctRowIndex,
-              afterCol: lastCtColumn,
-              tokenIndexInNewWitness: scriptItem.seq,
-              newToken: newWitness['tokens'][ scriptItem.seq],
-              currentToken: oldWitness['tokens'][lastCtColumnTokenIndex]
-            })
-            break
-
-          case 'INS':
-            changes.nonCtChanges.push({
-              type: 'insert',
-              index: scriptItem.seq
-            })
-            break
-
-          case 'DEL-CT':
-            lastDel = scriptItem
-            lastCtColumn = ctColIndex
-            lastCtColumnTokenIndex = scriptItem.index
-            state = 1
-            break
-
-          case 'DEL':
-            changes.tokenConversionArray[scriptItem.index] = -1
-            changes.nonCtChanges.push({
-              type: 'delete',
-              index: scriptItem.index
-            })
-            break
-        }
-      } else if (state === 1) {
-        switch(event) {
-          case 'KEEP-CT':
-            changes.tokenConversionArray[scriptItem.index] = scriptItem.seq
-            changes.ctChanges.push({
-              type: 'emptyCell',
-              row: ctRowIndex,
-              col: lastCtColumn,
-              currentToken: oldWitness['tokens'][lastCtColumnTokenIndex]
-            })
-            lastCtColumn = ctColIndex
-            lastCtColumnTokenIndex = scriptItem.index
-            state = 0
-            break
-
-          case 'KEEP':
-            changes.tokenConversionArray[scriptItem.index] = scriptItem.seq
-            break
-
-          case 'INS-CT':
-            changes.tokenConversionArray[lastDel.index] = scriptItem.seq
-            changes.ctChanges.push({
-              type: 'replace',
-              row: ctRowIndex,
-              col: lastCtColumn,
-              oldIndex: lastDel.index,
-              newIndex: scriptItem.seq,
-              currentToken: oldWitness['tokens'][lastDel.index],
-              newToken: newWitness['tokens'][scriptItem.seq]
-            })
-            if (ctColIndex !== -1) {
-              lastCtColumn = ctColIndex
-            }
-
-            lastCtColumnTokenIndex = scriptItem.index
-            state = 0
-            break
-
-          case 'INS':
-            changes.nonCtChanges.push({
-              type: 'insert',
-              index: scriptItem.seq
-            })
-            break
-
-          case 'DEL-CT':
-            changes.tokenConversionArray[lastDel.index] = -1
-            changes.ctChanges.push({
-              type: 'emptyCell',
-              row: ctRowIndex,
-              col: lastCtColumn,
-              currentToken: oldWitness['tokens'][lastDel.index]
-            })
-            lastCtColumn = ctColIndex
-            lastCtColumnTokenIndex = scriptItem.index
-            lastDel = scriptItem
-            break
-
-          case 'DEL':
-            changes.tokenConversionArray[lastDel.index] = -1
-            changes.nonCtChanges.push({
-              type: 'delete',
-              index: scriptItem.index
-            })
-        }
-      }
-    }
-    // no more scriptItem ===> 'END' event
-    if (state === 1) {
-      changes.tokenConversionArray[lastDel.index] = -1
-      changes.ctChanges.push({
-        type: 'emptyCell',
-        row: ctRowIndex,
-        col: lastCtColumn
-      })
-    }
-
-    return changes
-  }
+  // getChangesBetweenWitnesses(oldWitness, newWitness, witnessIndex) {
+  //   let changes = {}
+  //
+  //   //console.log(`Calculating changes`)
+  //   // 1. Find changes in the tokens
+  //   let editScript = MyersDiff.calculate(oldWitness['tokens'], newWitness['tokens'], function(a,b) {
+  //     if (a['tokenType'] === b['tokenType']) {
+  //       switch(a['tokenType']) {
+  //         case TokenType.WHITESPACE:
+  //         case TokenType.EMPTY:
+  //           // all whitespace and all empty tokens are equal
+  //           return true
+  //
+  //
+  //         case TokenType.PUNCTUATION:
+  //           return a['text'] === b['text']
+  //
+  //         case TokenType.WORD:
+  //           if (a['text'] !== b['text']) {
+  //             return false
+  //           }
+  //           return a['normalizedText'] === b['normalizedText'];
+  //
+  //       }
+  //     }
+  //     return false
+  //   })
+  //
+  //   console.log('Edit Script')
+  //   console.log(editScript)
+  //   changes.tokenConversionArray = []
+  //   changes.nonCtChanges = []
+  //   changes.ctChanges = []
+  //   let ctRowIndex = this.ctData['witnessOrder'].indexOf(witnessIndex)
+  //   let collationRow = this.tableEditor.getRow(ctRowIndex)
+  //
+  //   let lastCtColumn = -1
+  //   let lastCtColumnTokenIndex = -1
+  //   let lastDel = {}
+  //   let state = 0
+  //
+  //   function getFsmEvent(editScript, ctIndex, newTokens) {
+  //     switch(editScript.command) {
+  //       case 0:
+  //         if (ctIndex === -1) {
+  //           return 'KEEP'
+  //         } else {
+  //           return 'KEEP-CT'
+  //         }
+  //
+  //       case -1:
+  //         if (ctIndex === -1) {
+  //           return 'DEL'
+  //         } else {
+  //           return 'DEL-CT'
+  //         }
+  //
+  //       case 1:
+  //         // only insert words into the collation table
+  //         let newToken = newTokens[editScript.seq]
+  //         if (newToken['tokenType'] === TokenType.WORD) {
+  //           return 'INS-CT'
+  //         } else {
+  //           return 'INS'
+  //         }
+  //     }
+  //   }
+  //
+  //   for(let i=0; i < editScript.length; i++) {
+  //     let scriptItem = editScript[i]
+  //     // determine the FSM event
+  //     let ctColIndex = collationRow.indexOf(scriptItem.index)
+  //     let event = getFsmEvent(scriptItem, ctColIndex, newWitness['tokens'])
+  //     console.log(`Event ${i}: ${event}, state ${state}, index ${scriptItem.index}, ctIndex ${ctColIndex}, seq ${scriptItem.seq}, lastCtColumn ${lastCtColumn}`)
+  //
+  //     // State Machine
+  //     if (state === 0) {
+  //       switch(event) {
+  //         case 'KEEP-CT':
+  //           changes.tokenConversionArray[scriptItem.index] = scriptItem.seq
+  //           lastCtColumn = ctColIndex
+  //           lastCtColumnTokenIndex = scriptItem.index
+  //           break
+  //
+  //         case 'KEEP':
+  //           // TODO: is this necessary?
+  //           changes.tokenConversionArray[scriptItem.index] = scriptItem.seq
+  //           break
+  //
+  //         case 'INS-CT':
+  //           let change = {
+  //             type: 'insertColAfter',
+  //             row: ctRowIndex,
+  //             afterCol: lastCtColumn,
+  //             tokenIndexInNewWitness: scriptItem.seq,
+  //             newToken: newWitness['tokens'][ scriptItem.seq],
+  //             currentToken: oldWitness['tokens'][lastCtColumnTokenIndex]
+  //           }
+  //           console.log(`Pushing insertColAfter change`)
+  //           console.log(change)
+  //           changes.ctChanges.push(change)
+  //           break
+  //
+  //         case 'INS':
+  //           changes.nonCtChanges.push({
+  //             type: 'insert',
+  //             index: scriptItem.seq
+  //           })
+  //           break
+  //
+  //         case 'DEL-CT':
+  //           lastDel = scriptItem
+  //           lastCtColumn = ctColIndex
+  //           lastCtColumnTokenIndex = scriptItem.index
+  //           state = 1
+  //           break
+  //
+  //         case 'DEL':
+  //           changes.tokenConversionArray[scriptItem.index] = -1
+  //           changes.nonCtChanges.push({
+  //             type: 'delete',
+  //             index: scriptItem.index
+  //           })
+  //           break
+  //       }
+  //     } else if (state === 1) {
+  //       switch(event) {
+  //         case 'KEEP-CT':
+  //           changes.tokenConversionArray[scriptItem.index] = scriptItem.seq
+  //           let emptyCellChange = {
+  //             type: 'emptyCell',
+  //             row: ctRowIndex,
+  //             col: lastCtColumn,
+  //             currentToken: oldWitness['tokens'][lastCtColumnTokenIndex]
+  //           }
+  //           console.log(`Pushing change`)
+  //           console.log(emptyCellChange)
+  //           changes.ctChanges.push(emptyCellChange)
+  //           lastCtColumn = ctColIndex
+  //           lastCtColumnTokenIndex = scriptItem.index
+  //           state = 0
+  //           break
+  //
+  //         case 'KEEP':
+  //           changes.tokenConversionArray[scriptItem.index] = scriptItem.seq
+  //           break
+  //
+  //         case 'INS-CT':
+  //           changes.tokenConversionArray[lastDel.index] = scriptItem.seq
+  //           let replaceChange ={
+  //             type: 'replace',
+  //             row: ctRowIndex,
+  //             col: lastCtColumn,
+  //             oldIndex: lastDel.index,
+  //             newIndex: scriptItem.seq,
+  //             currentToken: oldWitness['tokens'][lastDel.index],
+  //             newToken: newWitness['tokens'][scriptItem.seq]
+  //           }
+  //           console.log(`Pushing replace change`)
+  //           console.log(replaceChange)
+  //           changes.ctChanges.push(replaceChange)
+  //           if (ctColIndex !== -1) {
+  //             lastCtColumn = ctColIndex
+  //           }
+  //
+  //           lastCtColumnTokenIndex = scriptItem.index
+  //           state = 0
+  //           break
+  //
+  //         case 'INS':
+  //           changes.nonCtChanges.push({
+  //             type: 'insert',
+  //             index: scriptItem.seq
+  //           })
+  //           break
+  //
+  //         case 'DEL-CT':
+  //           changes.tokenConversionArray[lastDel.index] = -1
+  //           let change = {
+  //             type: 'emptyCell',
+  //             row: ctRowIndex,
+  //             col: lastCtColumn,
+  //             currentToken: oldWitness['tokens'][lastDel.index]
+  //           }
+  //           console.log(`Pushing emptyCell change`)
+  //           console.log(change)
+  //           changes.ctChanges.push(change)
+  //           lastCtColumn = ctColIndex
+  //           lastCtColumnTokenIndex = scriptItem.index
+  //           lastDel = scriptItem
+  //           break
+  //
+  //         case 'DEL':
+  //           changes.tokenConversionArray[lastDel.index] = -1
+  //           changes.nonCtChanges.push({
+  //             type: 'delete',
+  //             index: scriptItem.index
+  //           })
+  //       }
+  //     }
+  //   }
+  //   // no more scriptItem ===> 'END' event
+  //   if (state === 1) {
+  //     changes.tokenConversionArray[lastDel.index] = -1
+  //     changes.ctChanges.push({
+  //       type: 'emptyCell',
+  //       row: ctRowIndex,
+  //       col: lastCtColumn
+  //     })
+  //   }
+  //
+  //   return changes
+  // }
 
   updateWitnessUpdateCheckInfo(apiResponse) {
     let infoSpan = $(this.witnessesDivSelector + ' .witness-update-info')

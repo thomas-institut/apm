@@ -16,6 +16,7 @@
  *
  */
 
+let debugMode = false
 
 /**
  * Calculate the shortest edit sequence to convert arrayA into arrayB
@@ -32,7 +33,10 @@
  *        }
  */
 export function calculate(arrayA, arrayB, isEqual) {
-  //console.log('Start MyersDiff')
+  if(debugMode) {
+    console.groupCollapsed('MyersDiff')
+  }
+
   let n = arrayA.length
   let m = arrayB.length
   let max = m + n
@@ -78,11 +82,29 @@ export function calculate(arrayA, arrayB, isEqual) {
       break
     }
   }
+
+  if (debugMode) {
+    console.log(`v_save`)
+    console.log(v_save)
+  }
+
   // Extract the solution by back-tracking through the saved results.
   let snakes = extractSnakes(v_save, n, m);
 
+  if (debugMode) {
+    console.log(`Snakes`)
+    console.log(snakes)
+  }
+  let solution = formatSolution(snakes)
+
+  if (debugMode) {
+    console.log(`Solution`)
+    console.log(solution)
+    console.groupEnd()
+  }
+
   // Format the snakes as a set of instructions.
-  return formatSolution(snakes);
+  return solution
 }
 
 function formatSolution(snakes) {
@@ -96,12 +118,18 @@ function formatSolution(snakes) {
     let snake = snakes[i]
     while ( (snake[0] - snake[1]) > (x - y)) {
       // delete
+      if (debugMode) {
+        console.log(`Snake ${i}, index ${x}, command -1, seq -1`)
+      }
       solution.push({ index: x, command: -1, seq: -1 })
       x++;
     }
     // Verticals
     while (snake[0] - snake[1] < x - y) {
       // insert
+      if (debugMode) {
+        console.log(`Snake ${i}, index ${y}, command 1, seq ${seq}`)
+      }
       solution.push({ index: y, command: 1, seq: seq })
       y++
       seq++
@@ -109,6 +137,9 @@ function formatSolution(snakes) {
     // Diagonals
     while (x < snake[0]) {
       // keep
+      if (debugMode) {
+        console.log(`Snake ${i}, index ${x}, command 0, seq ${seq}`)
+      }
       solution.push({ index: x, command: 0, seq: seq })
       x++
       y++
@@ -140,5 +171,10 @@ function extractSnakes(v_save, x, y) {
   }
 
   return snakes;
+}
+
+
+export function setDebugMode() {
+  debugMode = true
 }
 

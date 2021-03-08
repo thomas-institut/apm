@@ -23,6 +23,7 @@ import * as WitnessType from './constants/WitnessType'
 import * as TokenType from './constants/TokenType'
 import * as TokenClass from './constants/TokenClass'
 
+
 import { editModeOff, columnGroupEvent, columnUngroupEvent, TableEditor } from './TableEditor'
 import * as CollationTableUtil from './CollationTableUtil'
 import * as PopoverFormatter from './CollationTablePopovers'
@@ -48,6 +49,7 @@ import { EditionViewerHtml } from './EditionViewerHtml'
 import { ConfirmDialog } from './ConfirmDialog'
 import { VERBOSITY_DEBUG_PLUS, WitnessDiffCalculator } from './WitnessDiffCalculator'
 
+/** @namespace Twig */
 
 // constants
 
@@ -119,7 +121,7 @@ export class CollationTableEditor {
       this.ctData['groupedColumns'] = []
     }
 
-    let originalCtData = Util.deepCopy(this.ctData)
+    // let originalCtData = Util.deepCopy(this.ctData)
 
     console.groupCollapsed(`CT Data Consistency Check`)
     // fix -1 references in edition witness
@@ -152,20 +154,20 @@ export class CollationTableEditor {
     this.siglaPresetLoaded = ''
 
     // DOM elements
-    this.ctTitleDiv = $('#collationtabletitle')
-    this.ctTitleEditButton = $('#cttitleedit')
+    // this.ctTitleDiv = $('#collationtabletitle')
+    // this.ctTitleEditButton = $('#cttitleedit')
 
     this.ctInfoDiv = $('#collationtableinfo')
     this.breadcrumbCtTitleSpan = $('#breadcrumb-cttitle')
     this.witnessesDivSelector = '#witnessesdiv'
-    this.witnessesDiv = $(this.witnessesDivSelector)
+    // this.witnessesDiv = $(this.witnessesDivSelector)
     this.versionInfoDiv = $('#versionhistorydiv')
     this.editionTabTitle = $('#edition-tab-title')
     this.ctDivId = 'collationtablediv'
     this.ctDiv = $('#' + this.ctDivId)
     this.editionSvgDiv = $('#edition-svg-div')
     this.editionHtmlDiv = $('#edition-html-container')
-    this.editionEngineInfoDiv = $('#edition-engine-info-div')
+    // this.editionEngineInfoDiv = $('#edition-engine-info-div')
     this.saveButton = $('#savebutton')
     this.saveMsg = $('#save-msg')
     this.lastSaveSpan = $('#lastSave')
@@ -176,7 +178,7 @@ export class CollationTableEditor {
     this.convertToEditionButton = $('#convert-to-edition-btn')
     this.archiveTableButton = $('#archive-table-btn')
 
-    document.title = `${this.ctData.title} (${this.ctData.chunkId})`
+    document.title = `${this.ctData.title} (${this.ctData['chunkId']})`
 
     this.exportCsvButton.attr("download", `ApmCT_${this.options.workId}-${this.options.chunkNumber}.csv`)
     this.exportSvgButton.attr("download", `ApmQuickEdition_${this.options.workId}-${this.options.chunkNumber}.svg`)
@@ -300,7 +302,7 @@ export class CollationTableEditor {
     this.setCsvDownloadFile()
     this.updateEditionPreview()
 
-    $('#edition-tab-title-new').on('click', (ev) => {
+    $('#edition-tab-title-new').on('click', () => {
       console.log('New Panel clicked')
       if (thisObject.editionViewerHtml !== undefined) {
         thisObject.editionViewerHtml.renderApparatuses()
@@ -337,7 +339,7 @@ export class CollationTableEditor {
         acceptButtonLabel: 'Archive',
         cancelButtonLabel: 'Cancel',
         acceptFunction: (id) => {
-          console.log(`About to archive ${label}`)
+          console.log(`About to archive ${label}, id ${id}`)
           thisObject.ctData['archived'] = true
           let apiCallOptions = {
             collationTableId: thisObject.tableId,
@@ -568,10 +570,10 @@ export class CollationTableEditor {
       this.editionHtmlDiv.height(newHeight)
     }
   }
-
-  editMode() {
-    return this.modeToggle.getOption()
-  }
+  //
+  // editMode() {
+  //   return this.modeToggle.getOption()
+  // }
 
   genOnClickExportPdfButton() {
     let thisObject = this
@@ -651,7 +653,7 @@ export class CollationTableEditor {
 
       let twigTemplate = thisObject.getConvertToEditionDialogTemplate()
       $('body').remove(modalSelector)
-        .append(twigTemplate.render({ firstWitnessTitle: thisObject.ctData.witnessTitles[thisObject.ctData.witnessOrder[0]]}))
+        .append(twigTemplate.render({ firstWitnessTitle: thisObject.ctData['witnessTitles'][thisObject.ctData.witnessOrder[0]]}))
       let cancelButton = $(`${modalSelector} .cancel-btn`)
       let submitButton = $(`${modalSelector} .submit-btn`)
       let resultSpan = $(`${modalSelector} .result`)
@@ -806,7 +808,7 @@ export class CollationTableEditor {
           .then(
             changeData => {
               profiler.lap('changes calculated')
-              let changes = changeData.changes
+              let changes = changeData['changes']
               console.log(changes)
               // 3. Review Changes
               calcP.html(`${calcChangesStepTitle} ${thisObject.icons.checkOK}`)
@@ -1493,7 +1495,7 @@ export class CollationTableEditor {
   recalculateVariants() {
     let refWitness = -1
     if (this.ctData.type === 'edition') {
-      refWitness = this.ctData.editionWitnessIndex
+      refWitness = this.ctData['editionWitnessIndex']
     }
     this.variantsMatrix = CollationTableUtil.genVariantsMatrix(this.tableEditor.getMatrix(),
       this.ctData['witnesses'], this.ctData['witnessOrder'], refWitness)
@@ -1661,7 +1663,6 @@ export class CollationTableEditor {
 
       switch(token.tokenClass) {
         case TokenClass.FULL_TX:
-          // popoverclass
           classes.push('withpopover')
 
           //variant class
@@ -1995,8 +1996,8 @@ export class CollationTableEditor {
 
     // set up siglum editors
     for (let i = 0; i < this.ctData['witnesses'].length; i++) {
-      let siglumEditor = new EditableTextField({
-        containerSelector:  this.witnessesDivSelector + ' .siglum-' + i,
+      new EditableTextField({
+        containerSelector: this.witnessesDivSelector + ' .siglum-' + i,
         initialText: this.ctData['sigla'][i],
         onConfirm: this.genOnConfirmSiglumEdit(i)
       })
@@ -2046,7 +2047,7 @@ export class CollationTableEditor {
       }).join(''))
 
       presetSelect.on('change', () => {
-        let id = parseInt(presetSelect.val())
+        let id =  Util.safeGetIntVal(presetSelect, 'presetSelect')
         let p =  thisObject.siglaPresets.filter( (p) => { return p.presetId === id})[0]
         siglaTableBody.html(thisObject.getWitnessSiglaArrayFromPreset(p).map( w => {
           return `<tr></tr><td>${w.title}</td><td>${w.currentSiglum}</td><td>${w.presetSiglum}</td></tr>`
@@ -2054,7 +2055,7 @@ export class CollationTableEditor {
       })
 
       loadButton.on('click', () => {
-        let id = parseInt(presetSelect.val())
+        let id =  Util.safeGetIntVal(presetSelect, 'presetSelect')
         let p =  thisObject.siglaPresets.filter( (p) => { return p.presetId === id})[0]
         thisObject.getWitnessSiglaArrayFromPreset(p).forEach( (w) => {
           thisObject.ctData.sigla[w.index] = w.presetSiglum
@@ -2082,12 +2083,12 @@ export class CollationTableEditor {
 
   getWitnessSiglaArrayFromPreset(preset) {
     return this.ctData.witnesses
-      .filter( w => {  return w.witnessType === 'fullTx'})
+      .filter( w => {  return w['witnessType'] === 'fullTx'})
       .map( (w, i) => {
-          let shortId = w.ApmWitnessId.split('-').slice(2,5).join('-')
+          let shortId = w['ApmWitnessId'].split('-').slice(2,5).join('-')
 
           return {
-            title : this.ctData.witnessTitles[i],
+            title : this.ctData['witnessTitles'][i],
             id: shortId,
             index: i,
             currentSiglum: this.ctData.sigla[i],
@@ -2130,7 +2131,7 @@ export class CollationTableEditor {
         $(`${modalSelector} .select-p`).addClass('hidden')
         titleLabel.html("New preset title:")
         saveButton.html(createPresetButtonLabel)
-        saveButton.attr('disabled', true)
+        saveButton.prop('disabled', true)
         presetOverwriteMode = false
         apiCommand = 'new'
       } else {
@@ -2146,9 +2147,9 @@ export class CollationTableEditor {
 
       // build witness sigla table
       let siglaTableBody = thisObject.ctData.witnesses.filter( (w) => {
-        return w.witnessType === 'fullTx'
+        return w['witnessType'] === 'fullTx'
       }).map( (w, i) => {
-        return `<tr></tr><td>${thisObject.ctData.witnessTitles[i]}</td><td>${thisObject.ctData.sigla[i]}</td></tr>`
+        return `<tr></tr><td>${thisObject.ctData['witnessTitles'][i]}</td><td>${thisObject.ctData.sigla[i]}</td></tr>`
       }).join('')
       $(`${modalSelector} .sigla-table-body`).html(siglaTableBody)
 
@@ -2167,7 +2168,7 @@ export class CollationTableEditor {
             presetSelectLabel.addClass('active-label')
             titleLabel.removeClass('active-label')
           } else {
-            saveButton.attr('disabled', true)
+            saveButton.prop('disabled', true)
           }
         } else {
           // there is something in the title input
@@ -2177,7 +2178,7 @@ export class CollationTableEditor {
             presetSelectLabel.removeClass('active-label')
             titleLabel.addClass('active-label')
           } else {
-            saveButton.attr('disabled', false)
+            saveButton.prop('disabled', false)
           }
         }
       })
@@ -2187,8 +2188,8 @@ export class CollationTableEditor {
         let lang = thisObject.ctData.lang
         let witnessSiglaArray = {}
         thisObject.ctData.witnesses.forEach( (w, i) => {
-          if (w.witnessType === 'fullTx') {
-            witnessSiglaArray[w.ApmWitnessId] = thisObject.ctData.sigla[i]
+          if (w['witnessType'] === 'fullTx') {
+            witnessSiglaArray[w['ApmWitnessId']] = thisObject.ctData.sigla[i]
           }
         })
 
@@ -2200,7 +2201,7 @@ export class CollationTableEditor {
         if (apiCommand === 'new') {
           apiCallData.title = titleInput.val()
         } else {
-          apiCallData.presetId = parseInt(presetSelect.val())
+          apiCallData.presetId = Util.safeGetIntVal(presetSelect, 'presetSelect')
         }
 
         console.log('About to call save preset API')
@@ -2512,9 +2513,9 @@ export class CollationTableEditor {
     })
   }
 
-  getColumnGroups() {
-    this.tableEditor.getColumnGroups()
-  }
+  // getColumnGroups() {
+  //   this.tableEditor.getColumnGroups()
+  // }
 
   updateEditionPreview() {
     this.editionSvgDiv.html("Generating printed edition preview... <i class=\"fa fa-spinner fa-spin fa-fw\"></i>")
@@ -2575,7 +2576,7 @@ export class CollationTableEditor {
         thisObject.ctData['title'] = normalizedNewTitle
         thisObject.titleField.setText(normalizedNewTitle)
         thisObject.updateSaveArea()
-        document.title = `${thisObject.ctData.title} (${thisObject.ctData.chunkId})`
+        document.title = `${thisObject.ctData.title} (${thisObject.ctData['chunkId']})`
       }
       return false
     }
@@ -2648,7 +2649,7 @@ export class CollationTableEditor {
     }
     let text = tkn.text
     if (showNormalizations) {
-      text = tkn.norm
+      text = tkn['norm']
     }
     return '"' + text + '"'
   }
@@ -2677,7 +2678,7 @@ export class CollationTableEditor {
                 </p>
                 <p>
                     <label class="create-new-label">... or enter a title to create new preset: </label>
-                    <input type="text" class="title-input"> </input>
+                    <input type="text" class="title-input"> 
                 </p>
             </div>
             <div class="modal-footer">

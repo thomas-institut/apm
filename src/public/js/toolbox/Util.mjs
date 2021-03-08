@@ -114,3 +114,14 @@ function getValidPunctuationArray() {
   ]
 }
 
+export function safeGetIntVal(element, title) {
+  let val = element.val()
+  if (val === undefined) {
+    console.error(`safeGetIntVal: Undefined value for ${title}`)
+  }
+  if (typeof val === 'object') {
+    console.error(`safeGetIntVal: Value for ${title} is object/array`)
+  }
+  return parseInt(val)
+}
+

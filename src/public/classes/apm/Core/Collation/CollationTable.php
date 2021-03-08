@@ -21,11 +21,19 @@
 namespace APM\Core\Collation;
 
 
+use APM\CollationTable\ToLowerCaseNormalizer;
+use APM\CollationTable\WitnessTokenNormalizer;
 use APM\Core\Token\Token;
 use APM\Core\Apparatus\ApparatusGenerator;
 use APM\Core\Token\TokenType;
+use APM\Core\Witness\TokenNormalizationsDecorator;
 use APM\Core\Witness\Witness;
 use InvalidArgumentException;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
+use Psr\Log\NullLogger;
+use ThomasInstitut\CodeDebug\CodeDebugInterface;
+use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
 
 /**
  * Representation of a collation table.
@@ -60,8 +68,11 @@ use InvalidArgumentException;
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class CollationTable {
-    
+class CollationTable implements LoggerAwareInterface, CodeDebugInterface {
+
+
+    use LoggerAwareTrait, CodeDebugWithLoggerTrait;
+
     const TOKENREF_NULL = -1;
     const COLLATIONENGINE_NULL_TOKEN = '---';
 
@@ -70,30 +81,36 @@ class CollationTable {
     /**
      * @var array Array of Witness objects, one for each siglum
      */
-    private $witnesses;
+    private array $witnesses;
 
     /**
      * @var array Array a cache for witness tokens, see getWitnessTokens()
      */
-    private $witnessTokensCache;
+    private array $witnessTokensCache;
     
     /* @var array */
-    private $referenceMatrix;
+    private array $referenceMatrix;
     
     /* @var bool */
-    private $ignorePunctuation;
+    private bool $ignorePunctuation;
     /**
      * @var string
      */
-    private $language;
+    private string $language;
+    /**
+     * @var bool
+     */
+    private bool $applyStandardNormalization;
 
 
-    public function __construct($ignorePunctuation = false, $lang = self::DEFAULT_LANGUAGE) {
+    public function __construct(bool $ignorePunctuation = false, string $lang = self::DEFAULT_LANGUAGE, bool $applyStandardNormalization = true) {
         $this->witnesses = [];
         $this->witnessTokensCache = [];
         $this->referenceMatrix = [];
         $this->ignorePunctuation = $ignorePunctuation;
+        $this->applyStandardNormalization = $applyStandardNormalization;
         $this->setLanguage($lang);
+        $this->setLogger(new NullLogger());
     }
 
     public function getLanguage(): string {
@@ -112,7 +129,8 @@ class CollationTable {
      * 
      * @return string[]
      */
-    public function getSigla() {
+    public function getSigla(): array
+    {
         return array_keys($this->witnesses);
     }
     
@@ -121,13 +139,20 @@ class CollationTable {
      * 
      * @return int
      */
-    public function getTokenCount() {
+    public function getTokenCount(): int
+    {
         if (count($this->witnesses) === 0) {
             return 0;
         }
         $sigla = $this->getSigla();
         
         return count($this->referenceMatrix[$sigla[0]]);
+    }
+
+    private function getTokensForLog($witness) : array {
+        $decorator = new TokenNormalizationsDecorator();
+
+        return $decorator->getDecoratedTokens($witness);
     }
     
     /**
@@ -138,6 +163,13 @@ class CollationTable {
      * @throws InvalidArgumentException
      */
     public function addWitness(string $siglum, Witness $witness) {
+
+
+        //$this->codeDebug("Adding witness $siglum", [ 'tokens' =>  $this->getTokensForLog($witness)]);
+
+        $this->applyNormalizations($witness);
+
+        $this->codeDebug("After normalizations", [ 'tokens' => $this->getTokensForLog($witness)]);
 
         $originalWitnessTokens = $witness->getTokens();
 
@@ -213,7 +245,8 @@ class CollationTable {
      * @return array
      * @throws InvalidArgumentException if the $index is out of range
      */
-    public function getColumn(int $index) {
+    public function getColumn(int $index): array
+    {
         $rawColumn = $this->getReferencesForColumn($index);
         $column = [];
         foreach(array_keys($rawColumn) as $siglum) {
@@ -234,7 +267,8 @@ class CollationTable {
      * @param string $siglum
      * @return bool
      */
-    public function isSiglumInTable(string $siglum) {
+    public function isSiglumInTable(string $siglum): bool
+    {
         return isset($this->witnesses[$siglum]);
     }
 
@@ -257,15 +291,52 @@ class CollationTable {
      * @param string $siglum
      * @return Token[]
      */
-    public function getWitnessTokens(string $siglum) : array {
+    public function getWitnessTokens(string $siglum) : array
+    {
 
         if (!isset($this->witnessTokensCache[$siglum])) {
-            $this->witnessTokensCache[$siglum] =$this->getWitness($siglum)->getTokens();
+            $this->witnessTokensCache[$siglum] = $this->getWitness($siglum)->getTokens();
         }
 
         return $this->witnessTokensCache[$siglum];
     }
-    
+
+
+
+    private function applyNormalizations(Witness $witness) : void {
+
+        if (!$this->applyStandardNormalization) {
+            return;
+        }
+
+        /** @var WitnessTokenNormalizer[] $normalizers */
+        $normalizers = [];
+
+        switch($this->language) {
+            case 'la':
+                $normalizers[] = new ToLowerCaseNormalizer();
+                break;
+
+            case 'ar':
+                // TODO: Arabic normalizer
+                break;
+
+            case 'he':
+                // TODO: Hebrew normalizer
+                break;
+
+            default:
+                $this->logger->warning("Unknown language in collation table: " . $this->language);
+
+        }
+
+        foreach($normalizers as $normalizer) {
+            $witness->applyTokenNormalization($normalizer, true);
+        }
+
+    }
+
+
     /**
      * Returns an array of index references to the token array for a witness
      * Each element of this array corresponds to a column in the collation table.
@@ -300,7 +371,7 @@ class CollationTable {
         }
         $this->referenceMatrix[$siglum] = array_merge($firstPart, $secondPart);
         
-        $newSize = count($this->referenceMatrix[$siglum]);;
+        $newSize = count($this->referenceMatrix[$siglum]);
         // Deal with the extra tokens at the end
         for ($i = 0; $i < $count; $i++) {
             if ($this->referenceMatrix[$siglum][$newSize-1] === self::TOKENREF_NULL) {
@@ -342,7 +413,8 @@ class CollationTable {
         }
     }
     
-    public function getApparatusEntryForColumn(int $columnIndex, string $mainReading, string $lemma = '') {
+    public function getApparatusEntryForColumn(int $columnIndex, string $mainReading, string $lemma = ''): string
+    {
         $column = $this->getColumn($columnIndex);
         return ApparatusGenerator::genEntryForColumn($column, $mainReading, $lemma);
     }
@@ -583,7 +655,8 @@ class CollationTable {
         }
     }
     
-    private function filterTokens(array $tokens, array $tokenTypesToIgnore) {
+    private function filterTokens(array $tokens, array $tokenTypesToIgnore): array
+    {
         $tokenRefs = [];
         foreach($tokens as $index => $token) {
             if (array_search($token->getType(), $tokenTypesToIgnore) !== false) {

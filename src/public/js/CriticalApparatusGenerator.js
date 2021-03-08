@@ -52,7 +52,12 @@ export class CriticalApparatusGenerator {
     let mainTextTokens = ctData['collationMatrix'][baseWitnessIndex]
       .map( tokenRef => tokenRef === -1 ? { tokenType : TokenType.EMPTY } : ctData['witnesses'][baseWitnessIndex]['tokens'][tokenRef])
 
-    let generatedMainText = generateMainText(mainTextTokens)
+    let generatedNormalizedMainText = generateMainText(mainTextTokens, true)
+    console.log(`Normalized main text`)
+    console.log(generatedNormalizedMainText)
+    let generatedMainText = generateMainText(mainTextTokens, false)
+    console.log(`Main text`)
+    console.log(generatedMainText)
 
     let columnGroups = this._getGroupsFromCtData(ctData)
     // TODO: detect a series of empty main text tokens at the beginning of the text and create a group with them
@@ -66,7 +71,7 @@ export class CriticalApparatusGenerator {
       let mainTextIndices = []
       for (let c = columnGroup.from; c<= columnGroup.to; c++) {
         ctColumns.push(this.getCollationTableColumn(ctData, c))
-        mainTextIndices.push(generatedMainText.ctToMainTextMap[c])
+        mainTextIndices.push(generatedNormalizedMainText.ctToMainTextMap[c])
       }
       if (ctColumns.every( col => this.isCtTableColumnEmpty(col))) {
         return
@@ -82,13 +87,13 @@ export class CriticalApparatusGenerator {
         // this is where the apparatus entry will appear
         let ctIndex = columnGroup.from
         while (ctIndex >= 0 && (
-          generatedMainText.ctToMainTextMap[ctIndex] === -1 ||
-          isPunctuationToken(generatedMainText.mainTextTokens[generatedMainText.ctToMainTextMap[ctIndex]]['text'])) ) {
+          generatedNormalizedMainText.ctToMainTextMap[ctIndex] === -1 ||
+          isPunctuationToken(generatedNormalizedMainText.mainTextTokens[generatedNormalizedMainText.ctToMainTextMap[ctIndex]]['text'])) ) {
           ctIndex--
         }
         // a mainTextIndex of -1 means that the apparatus entry comes before the text, normally with the lesson 'pre'
         // in the printed edition
-        let mainTextIndex = ctIndex < 0 ? -1 : generatedMainText.ctToMainTextMap[ctIndex]
+        let mainTextIndex = ctIndex < 0 ? -1 : generatedNormalizedMainText.ctToMainTextMap[ctIndex]
         // collect additions
         let additions = []
         for (let witnessIndex = 0; witnessIndex < ctColumns[0].length; witnessIndex++) {
@@ -112,7 +117,7 @@ export class CriticalApparatusGenerator {
           criticalApparatus.push({
             start: mainTextIndex,
             end: mainTextIndex,
-            lemma: this.getTextFromInputToken(generatedMainText.mainTextTokens[mainTextIndex]),
+            lemma: this.getTextFromInputToken(generatedNormalizedMainText.mainTextTokens[mainTextIndex]),
             entries:entries
           })
         }
@@ -148,18 +153,18 @@ export class CriticalApparatusGenerator {
           this._addWitnessDataToVariantArray(groupVariants, theText, witnessData)
         }
       }
-      let mainTextIndexFrom = generatedMainText.ctToMainTextMap[columnGroup.from]
+      let mainTextIndexFrom = generatedNormalizedMainText.ctToMainTextMap[columnGroup.from]
       if (mainTextIndexFrom === -1) {
         // need to find first non-empty main text token in
         //console.log('Finding non empty main text token forward')
         mainTextIndexFrom = this._findNonEmptyMainTextToken(columnGroup.from,
-          generatedMainText.ctToMainTextMap, generatedMainText.mainTextTokens, true)
+          generatedNormalizedMainText.ctToMainTextMap, generatedNormalizedMainText.mainTextTokens, true)
       }
-      let mainTextIndexTo = generatedMainText.ctToMainTextMap[columnGroup.to]
+      let mainTextIndexTo = generatedNormalizedMainText.ctToMainTextMap[columnGroup.to]
       if (mainTextIndexTo === -1) {
         //console.log(`Finding non empty main text token backwards from ${columnGroup.to}, from = ${columnGroup.from}`)
         mainTextIndexTo = this._findNonEmptyMainTextToken(columnGroup.to,
-          generatedMainText.ctToMainTextMap, generatedMainText.mainTextTokens, false)
+          generatedNormalizedMainText.ctToMainTextMap, generatedNormalizedMainText.mainTextTokens, false)
       }
 
       let entries =  this._genApparatusEntryFromArray([],groupOmissions, ENTRY_TYPE_OMISSION)

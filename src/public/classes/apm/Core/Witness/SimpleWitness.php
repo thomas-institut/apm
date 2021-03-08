@@ -21,6 +21,7 @@
 namespace APM\Core\Witness;
 
 
+use APM\CollationTable\WitnessTokenNormalizer;
 use APM\Core\Token\Token;
 
 /**
@@ -36,7 +37,7 @@ class SimpleWitness extends Witness {
     /**
      * @var Token[]
      */
-    private $tokens;
+    private array $tokens;
     
     public function __construct(string $work, string $chunk, array $tokens) {
         parent::__construct($work, $chunk);
@@ -47,5 +48,9 @@ class SimpleWitness extends Witness {
     public function getTokens() : array {
         return $this->tokens;
     }
-    
+
+    public function applyTokenNormalization(WitnessTokenNormalizer $normalizer, bool $overWriteCurrentNormalizations)
+    {
+        $this->tokens = WitnessTokenNormalizer::normalizeTokenArray($this->tokens, $normalizer, $overWriteCurrentNormalizations);
+    }
 }

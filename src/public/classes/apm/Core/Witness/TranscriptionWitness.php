@@ -35,6 +35,8 @@ use APM\Core\Address\IntRange;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\PrintCodeDebugTrait;
 
+use APM\CollationTable\WitnessTokenNormalizer;
+
 /**
  * A Witness whose source is a part of a DocumentTranscription.
  *
@@ -54,11 +56,11 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
     /**
      * @var array
      */
-    private $tokenArray;
+    private array $tokenArray;
     /**
      * @var bool
      */
-    private $tokenArrayHasBeenCalculated;
+    private bool $tokenArrayHasBeenCalculated;
 
     public function __construct(string $work, string $chunk, string $localWitnessId = 'A')
     {
@@ -131,8 +133,6 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
         // 4. Iterate over all items in the transcription
         foreach ($sourceItems as $itemIndex => $sourceItem) {
             $this->codeDebug("********** Processing item $itemIndex ************");
-            /* @var $sourceItem ItemInDocument */
-
             $rawItem = $sourceItem->getItem();
             /* @var $itemAddress ItemAddressInDocument */
             $itemAddress = $sourceItem->getAddress();
@@ -188,8 +188,6 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
                 $stringTokens = $tokenizer->getTokensFromString($rawItemNormalizedText);
                 $this->codeDebug("- Processing " . count($stringTokens) . " string tokens");
                 foreach($stringTokens as $nStringToken => $stringToken) {
-                    /* @var $stringToken StringToken */
-
                     $this->codeDebug("-- StringToken $nStringToken: '" . $stringToken->getText() . "'");
                     // Check if the string token covers all the text's item
                     if ($stringToken->getText() === $rawItemNormalizedText) {
@@ -352,7 +350,7 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
             $openWordToken = false;
         }
 
-        $this->tokenArrayHasBeenCalculated;
+        $this->tokenArrayHasBeenCalculated = true;
         $this->tokenArray = $tokens;
         return $tokens;
     }
@@ -452,7 +450,6 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
         $itemArray = [];
         $itemWithAddressArray = $this->getItemWithAddressArray();
         foreach($itemWithAddressArray as $itemIndex => $itemWithAddress) {
-            /** @var ItemInDocument $itemWithAddress */
             $theItem = $itemWithAddress->getItem();
             $theAddress = $itemWithAddress->getAddress();
             $itemData = [];
@@ -471,7 +468,6 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
         $textualItemClass = TextualItem::class;
         $tokenDataArray = [];
         foreach($tokens as $token) {
-            /** @var TranscriptionToken $token */
             $tokenData =  $token->getData();
             $itemIndexes =  $token->getSourceItemIndexes();
             $charRanges = $token->getSourceItemCharRanges();
@@ -497,6 +493,12 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
         $sourceString = $item->getPlainText();
         return mb_substr($sourceString, $range->getStart(), $range->getLength());
     }
+
+    public function applyTokenNormalization(WitnessTokenNormalizer $normalizer, bool $overWriteCurrentNormalizations)
+    {
+        $this->tokenArray = WitnessTokenNormalizer::normalizeTokenArray($this->getTokens(), $normalizer, $overWriteCurrentNormalizations);
+    }
+
 
 
 }

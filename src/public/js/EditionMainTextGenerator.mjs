@@ -36,10 +36,11 @@ const INPUT_TOKEN_FIELD_NORMALIZED_TEXT = 'normalizedText'
  *
  *
  * @param witnessTokens
+ * @param normalized
  * @returns {{mainTextTokens: [], ctToMainTextMap: []}}
  */
 
-export function generateMainText(witnessTokens) {
+export function generateMainText(witnessTokens, normalized = true) {
   let mainTextTokens = []
   let ctTokensToMainText = []
   let currentMainTextIndex = -1
@@ -60,7 +61,7 @@ export function generateMainText(witnessTokens) {
     // TODO: implement proper edition text tokens, which will just be copied into the return array
     mainTextTokens.push({
       type: E_TOKEN_TYPE_TEXT,
-      text: getTextFromInputToken(witnessToken),
+      text: getTextFromInputToken(witnessToken, normalized),
       collationTableIndex: i
     })
     ctTokensToMainText.push(currentMainTextIndex)
@@ -76,9 +77,13 @@ export function generateMainText(witnessTokens) {
  *  Gets the text for the given token, the normal text or
  *  the normalized text if there is one
  * @param token
+ * @param normalized
  * @returns {*}
  */
-function getTextFromInputToken(token){
+function getTextFromInputToken(token, normalized = true){
+  if (!normalized) {
+    return token[INPUT_TOKEN_FIELD_TEXT]
+  }
   return token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT] !== undefined ?
     token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT] :
     token[INPUT_TOKEN_FIELD_TEXT]

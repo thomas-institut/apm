@@ -192,11 +192,13 @@ class SiteCollationTable extends SiteController
         if (isset($args['ignore_punct'])) {
             $ignorePunctuation = ($args['ignore_punct'] !== 'withpunct');
         }
+        $applyStandardNormalization = true;
         $collationPageOptions = [
             'work' => $workId,
             'chunk' => $chunkNumber,
             'lang' => $language,
             'ignorePunctuation' => $ignorePunctuation,
+            'applyStandardNormalization' => $applyStandardNormalization,
             'witnesses' => [], 
             'partialCollation' => false,
             'isPreset' => false
@@ -313,6 +315,10 @@ class SiteCollationTable extends SiteController
         $presetData = $preset->getData();
         $lang =  $presetData['lang'];
         $ignorePunctuation = $presetData['ignorePunctuation'];
+        $applyStandardNormalization = true;
+        if (isset($presetData['applyStandardNormalization'])) {
+            $applyStandardNormalization = $presetData['applyStandardNormalization'];
+        }
         
         $presetUserName = $this->dataManager->userManager->getUserInfoByUserId($preset->getUserId())['fullname'];
         
@@ -321,6 +327,7 @@ class SiteCollationTable extends SiteController
             'chunk' => $chunkNumber,
             'lang' => $lang,
             'ignorePunctuation' => $ignorePunctuation,
+            'applyStandardNormalization' => $applyStandardNormalization,
             'witnesses' => [], 
             'partialCollation' => false,
             'isPreset' => true,
@@ -419,7 +426,10 @@ class SiteCollationTable extends SiteController
                 ]);
             }
         }
-        
+
+        if (!isset($collationPageOptions['applyStandardNormalization'])) {
+            $collationPageOptions['applyStandardNormalization'] = true;
+        }
         $collationPageOptions['isPreset'] = false;
 
         $this->codeDebug('Options', $collationPageOptions);
@@ -445,6 +455,7 @@ class SiteCollationTable extends SiteController
             'chunk' => $chunkNumber,
             'lang' => $language,
             'ignorePunctuation' => $collationPageOptions['ignorePunctuation'],
+            'applyStandardNormalization' => $collationPageOptions['applyStandardNormalization'],
             'witnesses' => $collationPageOptions['witnesses']
         ];
 

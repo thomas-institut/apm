@@ -48,16 +48,16 @@ class Token {
     
     
     /** @var int */
-    private $type;
+    private int $type;
     
     /** @var string */
-    private $text;
+    private string $text;
     
     /** @var string */
-    private $normalizedText;
+    private string $normalizedText;
     
     /** @var array */
-    private $alternateTexts;
+    private array $alternateTexts;
 
     public function __construct(int $type, string $t, string $n = '') {
         if ($t === '') {
@@ -77,7 +77,8 @@ class Token {
      * 
      * @return Token
      */
-    static function emptyToken() {
+    static function emptyToken(): Token
+    {
         return new Token(TokenType::EMPTY, '');
     }
     

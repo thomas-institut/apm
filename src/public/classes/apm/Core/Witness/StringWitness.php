@@ -24,6 +24,7 @@ use APM\Core\Token\StringToken;
 use APM\Core\Token\StringTokenizer;
 use APM\Core\Token\Token;
 use InvalidArgumentException;
+use APM\CollationTable\WitnessTokenNormalizer;
 
 /**
  * A Witness whose source is a single text string.
@@ -32,11 +33,12 @@ use InvalidArgumentException;
  */
 class StringWitness extends Witness {
     
-    private $sourceString;
+    private string $sourceString;
+
     /**
-     * @var array
+     * @var Token[]
      */
-    private $tokens;
+    private array $tokens;
 
     /**
      * StringWitness constructor.
@@ -71,5 +73,23 @@ class StringWitness extends Witness {
     public function getSourceString() : string {
         return $this->sourceString;
     }
-    
+
+    public function applyTokenNormalization(WitnessTokenNormalizer $normalizer, bool $overWriteCurrentNormalizations)
+    {
+        $this->tokens = WitnessTokenNormalizer::normalizeTokenArray($this->getTokens(), $normalizer, $overWriteCurrentNormalizations);
+    }
+
+    public function getData(): array
+    {
+        $data =  parent::getData();
+
+        $data['tokens'] = [];
+
+        foreach($this->tokens as $token) {
+            $data['tokens'][] = $token->getData();
+        }
+
+        return $data;
+    }
+
 }

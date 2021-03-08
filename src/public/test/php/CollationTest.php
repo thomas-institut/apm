@@ -29,6 +29,7 @@ use APM\Core\Collation\CollationTable;
 use APM\Core\Witness\StringWitness;
 use APM\Core\Token\Token;
 use Psr\Log\InvalidArgumentException;
+use Psr\Log\NullLogger;
 
 
 /**
@@ -303,6 +304,7 @@ class CollationTest extends TestCase {
     
     public function testSegmentPadding() {
         $collation = new CollationTable();
+        $collation->setLogger(new NullLogger());
         
                
         $w1 = new StringWitness('tw', 'tchunk', 'This is witness one');

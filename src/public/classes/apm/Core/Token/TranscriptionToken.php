@@ -33,25 +33,25 @@ class TranscriptionToken extends Token {
      *
      * @var array Array of indexes to the transcription's item array
      */
-    protected $sourceItemIndexes;
+    protected array $sourceItemIndexes;
     
     /**
      *
      * @var array Array of ItemInDocumentAddress objects
      */
-    protected $sourceItemAddresses;
+    protected array $sourceItemAddresses;
     
     /**
      *
      * @var array Array of IntRange objects
      */
-    protected $sourceItemCharRanges;
+    protected array $sourceItemCharRanges;
     
     /**
      * line:char range with respect to the token's text box
      * @var PointRange
      */
-    protected $textBoxLineRange;
+    protected PointRange $textBoxLineRange;
     
     
     public function getTextBoxLineRange() : PointRange {

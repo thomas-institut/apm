@@ -35,7 +35,7 @@ use APM\Core\Transcription\ItemInDocument;
 class SimpleTranscriptionWitness extends TranscriptionWitness {
     
     /** @var DocumentTranscription */
-    protected $sourceTranscription;
+    protected DocumentTranscription $sourceTranscription;
     
     public function __construct(string $work, string $chunk, DocumentTranscription $dt) {
         // TODO: implements start and end addresses

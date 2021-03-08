@@ -20,6 +20,7 @@
 
 namespace APM\Core\Witness;
 
+use APM\CollationTable\WitnessTokenNormalizer;
 use APM\Core\Token\Token;
 
 
@@ -39,7 +40,7 @@ abstract class Witness {
      *
      * @var string
      */
-    protected $work;
+    protected string $work;
     
     /**
      *
@@ -49,11 +50,11 @@ abstract class Witness {
     /**
      * @var string
      */
-    protected $localWitnessId;
+    protected string $localWitnessId;
     /**
      * @var string
      */
-    protected $lang;
+    protected string $lang;
 
 
     public function __construct(string $work, string $chunk, string $localWitnessId = 'A') {
@@ -118,5 +119,7 @@ abstract class Witness {
             'lang' => $this->getLang()
         ];
     }
+
+    abstract public function applyTokenNormalization(WitnessTokenNormalizer  $normalizer, bool $overWriteCurrentNormalizations);
 
 }

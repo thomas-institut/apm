@@ -191,6 +191,8 @@ class ApiCollation extends ApiController
         //$this->codeDebug('Requested witnesses', $requestedWitnesses);
         $ignorePunctuation = isset($inputDataObject['ignorePunctuation']) ?
                 $inputDataObject['ignorePunctuation'] : false;
+        $applyStandardNormalization = isset($inputDataObject['applyStandardNormalization']) ?
+            $inputDataObject['ignorePunctuation'] : true;
 
         $this->profiler->start();
 
@@ -217,7 +219,8 @@ class ApiCollation extends ApiController
 
         $this->profiler->lap('Basic checks done');
 
-        $collationTable = new CollationTable($ignorePunctuation, $language);
+        $collationTable = new CollationTable($ignorePunctuation, $language, $applyStandardNormalization);
+        //$collationTable->setLogger($this->logger);
         $witnessIds = [];
         foreach($requestedWitnesses as $requestedWitness) {
             if (!isset($requestedWitness['type'])) {
@@ -255,6 +258,8 @@ class ApiCollation extends ApiController
                     } catch (InvalidArgumentException $e) {
                         $this->logger->warning('Cannot add fullTx witness to collation table', [$witnessInfo]);
                     }
+//                    $this->codeDebug('Added witness ' . $requestedWitness['title']);
+//                    $this->codeDebug('Collation table', $collationTable->getData()['witnesses']);
 
                     break;
 
@@ -275,6 +280,7 @@ class ApiCollation extends ApiController
 
         
         $this->profiler->lap('Collation table built');
+//        $this->codeDebug('Collation table built', $collationTable->getData());
 
         $collationTableCacheId = implode(':', $witnessIds);
         $this->codeDebug('Collation table ID: ' . $collationTableCacheId);

@@ -118,6 +118,10 @@ export class CollationTableEditor {
     if (this.ctData['groupedColumns'] === undefined) {
       this.ctData['groupedColumns'] = []
     }
+
+    let originalCtData = Util.deepCopy(this.ctData)
+
+    console.groupCollapsed(`CT Data Consistency Check`)
     // fix -1 references in edition witness
     if (this.ctData['type'] === CollationTableType.EDITION) {
       this.fixEditionWitnessReferences()
@@ -125,6 +129,12 @@ export class CollationTableEditor {
 
     // consistency check
     this.checkCollationTableConsistency()
+
+    // console.log(`Original CT Data`)
+    // console.log(originalCtData)
+    // console.log(`CT Data after fixes`)
+    // console.log(this.ctData)
+    console.groupEnd()
 
     // by default, the table is not archived
     if (this.ctData['archived']  === undefined) {
@@ -437,7 +447,15 @@ export class CollationTableEditor {
         errorsFound = true
         inconsistenciesFound = true
         // re-order the columns
-        let orderedTokenRefs = row.filter( (ref) => {return ref!==-1}).sort( (a,b) => { return a > b ? 1 : 0})
+        let orderedTokenRefs = row.filter( (ref) => {return ref!==-1}).sort( (a,b) => {
+          if (a>b) {
+            return 1
+          }
+          if (a < b) {
+            return -1
+          }
+          return  0
+        })
         // console.log(`Sorted refs`)
         // console.log(orderedTokenRefs)
         let goodRefIndex = -1

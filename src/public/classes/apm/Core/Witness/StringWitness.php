@@ -24,7 +24,7 @@ use APM\Core\Token\StringToken;
 use APM\Core\Token\StringTokenizer;
 use APM\Core\Token\Token;
 use InvalidArgumentException;
-use APM\CollationTable\WitnessTokenNormalizer;
+use APM\Core\Token\Normalizer\WitnessTokenNormalizer;
 
 /**
  * A Witness whose source is a single text string.

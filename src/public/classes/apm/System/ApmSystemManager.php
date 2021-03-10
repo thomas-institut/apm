@@ -107,12 +107,12 @@ class ApmSystemManager extends SystemManager {
     /**
      * @var SettingsManager
      */
-    private $settingsMgr;
+    private SettingsManager $settingsMgr;
 
     /**
      * @var HookManager
      */
-    private $hookManager;
+    private HookManager $hookManager;
 
     /**
      * @var Collatex
@@ -122,33 +122,33 @@ class ApmSystemManager extends SystemManager {
     /**
      * @var PDO
      */
-    private $dbConn;
+    private PDO $dbConn;
 
     /**
      * @var Logger
      */
-    private $logger;
+    private Logger $logger;
     /**
      * @var ApmTranscriptionManager
      */
-    private $transcriptionManager;
+    private ApmTranscriptionManager $transcriptionManager;
     /**
      * @var DataTableDataCache
      */
-    private $systemDataCache;
+    private DataTableDataCache $systemDataCache;
     /**
      * @var ApmCollationTableManager
      */
-    private $collationTableManager;
+    private ApmCollationTableManager $collationTableManager;
 
     /**
      * @var Twig
      */
-    private $twig;
+    private ?Twig $twig;
     /**
      * @var RouteParserInterface
      */
-    private $router;
+    private RouteParserInterface $router;
 
 
     public function __construct(array $configArray) {

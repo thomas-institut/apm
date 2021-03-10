@@ -1,8 +1,7 @@
 <?php
 
-require "autoload.php";
 
-use APM\CollationTable\ToLowerCaseNormalizer;
+use APM\Core\Token\Normalizer\ToLowerCaseNormalizer;
 use APM\Core\Token\Token;
 use APM\Core\Token\TokenType;
 use APM\Core\Witness\StringWitness;

@@ -20,7 +20,7 @@
 
 namespace APM\Core\Witness;
 
-use APM\CollationTable\WitnessTokenNormalizer;
+use APM\Core\Token\Normalizer\WitnessTokenNormalizer;
 use APM\Core\Token\Token;
 
 

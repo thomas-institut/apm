@@ -170,7 +170,7 @@ class ApiCollation extends ApiController
      * @param Response $response
      * @return Response
      */
-    public function automaticCollation(Request $request, Response $response)
+    public function automaticCollation(Request $request, Response $response): Response
     {
         //$this->codeDebug('Starting automaticCollation');
         $dataManager = $this->getDataManager();
@@ -523,7 +523,6 @@ class ApiCollation extends ApiController
 
         $vWL = [];
         foreach($vw as $witnessInfo) {
-            /** @var WitnessInfo $witnessInfo */
             if ($witnessInfo->languageCode === $langCode) {
                 $vWL[] = $witnessInfo;
             }

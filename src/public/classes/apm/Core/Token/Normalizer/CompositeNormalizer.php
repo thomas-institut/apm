@@ -48,10 +48,15 @@ class CompositeNormalizer extends WitnessTokenNormalizer
      */
     public function normalizeToken(Token $token, bool $overwriteCurrentNormalization = false): array
     {
-        $newToken = clone $token;
-        foreach($this->normalizers as $normalizer) {
-            $newToken = $normalizer->normalizeToken($newToken, $overwriteCurrentNormalization);
+        $newTokenArray = [clone $token];
+        foreach($this->normalizers as $i => $normalizer) {
+            $overwrite = false;
+            if ($overwriteCurrentNormalization && $i === 0) {
+                // only overwrite for the first normalizer, all the rest should work on this new normalization
+                $overwrite = true;
+            }
+            $newTokenArray = WitnessTokenNormalizer::normalizeTokenArray($newTokenArray, $normalizer, $overwrite);
         }
-        return $newToken;
+        return $newTokenArray;
     }
 }

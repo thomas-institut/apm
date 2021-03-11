@@ -22,7 +22,7 @@ class ToLowerNormalizerTest extends TestCase
 
         $testToken = new Token(TokenType::WORD, 'ABC');
 
-        $normTokens = $norm->normalizeToken($testToken, true);
+        $normTokens = $norm->normalizeToken($testToken);
 
         $this->assertCount(1, $normTokens);
         $this->assertEquals('abc', $normTokens[0]->getNormalization());
@@ -30,7 +30,10 @@ class ToLowerNormalizerTest extends TestCase
         $testToken2 = new Token(TokenType::WORD, 'ABC', 'customNormalization');
         $normTokens2 = $norm->normalizeToken($testToken2);
         $this->assertCount(1, $normTokens2);
-        $this->assertEquals('customNormalization', $normTokens2[0]->getNormalization());
+        $this->assertEquals('customnormalization', $normTokens2[0]->getNormalization());
+
+        $normTokens3 = $norm->normalizeToken($testToken2, true);
+        $this->assertEquals('abc', $normTokens3[0]->getNormalization());
     }
 
 
@@ -47,10 +50,6 @@ class ToLowerNormalizerTest extends TestCase
 
         $normTokens = $w->getTokens();
         $this->assertEquals('this', $normTokens[0]->getNormalization());
-
-        print_r($w->getData());
-
-
 
     }
 }

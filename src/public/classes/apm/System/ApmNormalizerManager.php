@@ -31,6 +31,7 @@ const FIELD_NAME = 'name';
 const FIELD_LANG = 'lang';
 const FIELD_CATEGORY = 'category';
 const FIELD_NORMALIZER_OBJECT = 'normalizerObject';
+const FIELD_METADATA = 'metadata';
 
 class ApmNormalizerManager extends NormalizerManager
 {
@@ -56,15 +57,17 @@ class ApmNormalizerManager extends NormalizerManager
             FIELD_NAME => $name,
             FIELD_LANG => $lang,
             FIELD_CATEGORY => $category,
-            FIELD_NORMALIZER_OBJECT => $normalizer
+            FIELD_NORMALIZER_OBJECT => $normalizer,
+            FIELD_METADATA => []
         ]);
+
     }
 
     /**
      * @param Token $token
      * @param string[] $normalizerNames
      */
-    public function applyNormalizerList(Token $token, array $normalizerNames)
+    public function applyNormalizerList(Token $token, array $normalizerNames): array
     {
         $normalizers = [];
         foreach($normalizerNames as $name) {
@@ -72,13 +75,19 @@ class ApmNormalizerManager extends NormalizerManager
                 $normalizers[] = $this->getNormalizerByName($name);
             }
         }
-        return (new CompositeNormalizer($normalizers))->normalizeToken($token, true);
+        return (new CompositeNormalizer($normalizers))->normalizeToken($token);
     }
 
-    public function applyNormalizersByLangAndCategory(Token $token, string $lang, string $category)
+    /**
+     * @param Token $token
+     * @param string $lang
+     * @param string $category
+     * @return Token[]
+     */
+    public function applyNormalizersByLangAndCategory(Token $token, string $lang, string $category): array
     {
         $normalizers = $this->getNormalizersByLangAndCategory($lang, $category);
-        return (new CompositeNormalizer($normalizers))->normalizeToken($token, true);
+        return (new CompositeNormalizer($normalizers))->normalizeToken($token);
     }
 
     private function getNormalizerByName(string $name) : WitnessTokenNormalizer {
@@ -100,4 +109,28 @@ class ApmNormalizerManager extends NormalizerManager
         return array_map( fn($row) =>  $row[FIELD_NORMALIZER_OBJECT], $rows);
     }
 
+    /**
+     * @inheritDoc
+     */
+    public function setNormalizerMetadata(string $name, array $metaData): void
+    {
+        $rows = $this->dt->findRows([ FIELD_NAME => $name]);
+        if (count($rows) === 0){
+            throw new InvalidArgumentException("Normalized with name '$name' does not exist");
+        }
+        $id = $rows[0]['id'];
+        $this->dt->updateRow( [
+            'id' => $id,
+            FIELD_METADATA => $metaData
+        ]);
+    }
+
+    public function getNormalizerMetadata(string $name): array
+    {
+        $rows = $this->dt->findRows([ FIELD_NAME => $name]);
+        if (count($rows) === 0){
+            throw new InvalidArgumentException("Normalized with name '$name' does not exist");
+        }
+        return $rows[0][FIELD_METADATA];
+    }
 }

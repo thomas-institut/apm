@@ -39,10 +39,11 @@ abstract class WitnessTokenNormalizer
      * Normalizes an array of tokens with the given normalizer
      * @param array $tokenArray
      * @param WitnessTokenNormalizer $normalizer
-     * @param bool $overwriteCurrentNormalizations
+     * @param bool $overwriteCurrentNormalizations  if true, the normalizer will act on the token's text, otherwise it will
+     *     act on the token's current normalization, if any.
      * @return array
      */
-    static public function normalizeTokenArray(array $tokenArray, WitnessTokenNormalizer $normalizer, bool $overwriteCurrentNormalizations) : array {
+    static public function normalizeTokenArray(array $tokenArray, WitnessTokenNormalizer $normalizer, bool $overwriteCurrentNormalizations = false) : array {
 
         $normalizedTokens = [];
 

@@ -145,6 +145,7 @@ abstract class SystemManager implements ErrorReporter, SqlQueryCounterTrackerAwa
     abstract public function getBaseUrl(): string;
     abstract public function getTwig() : Twig;
     abstract public function getRouter() : RouteParserInterface;
+    abstract public function getNormalizerManager() : NormalizerManager;
 
     public function getFullTxWitnessId(ApmTranscriptionWitness $witness) : string {
         return WitnessSystemId::buildFullTxId(

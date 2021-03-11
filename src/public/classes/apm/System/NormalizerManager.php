@@ -28,6 +28,14 @@ use Psr\Log\LoggerAwareTrait;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
 
+/**
+ * Class NormalizerManager
+ *
+ * Maintains a list of normalizers by language and category and provides utility functions to apply
+ * normalizers in bulk
+ *
+ * @package APM\System
+ */
 abstract class NormalizerManager implements LoggerAwareInterface, CodeDebugInterface {
 
     const ERROR_NAME_ALREADY_IN_USE = 1001;
@@ -38,5 +46,15 @@ abstract class NormalizerManager implements LoggerAwareInterface, CodeDebugInter
     abstract public function registerNormalizer(string $lang, string $category, string $name, WitnessTokenNormalizer $normalizer);
     abstract public function applyNormalizerList(Token $token, array $normalizerNames);
     abstract public function applyNormalizersByLangAndCategory(Token $token, string $lang, string $category);
+
+    /**
+     * Stores metadata for the given named normalizer, e.g:
+     *   [ 'title' => 'Some nice title', 'help' => 'A more thorough explanation' ]
+     * @param string $name
+     * @param array $metaData  any array with standard types (string, int, float)
+     * @return void
+     */
+    abstract public function setNormalizerMetadata(string $name, array $metaData) : void;
+    abstract public function getNormalizerMetadata(string $name) : array;
 
 }

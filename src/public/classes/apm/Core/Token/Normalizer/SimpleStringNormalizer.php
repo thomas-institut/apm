@@ -37,13 +37,13 @@ abstract class SimpleStringNormalizer extends WitnessTokenNormalizer
             // don't do anything to non-word tokens
             return [ $token];
         }
-        if (!$overwriteCurrentNormalization && $token->getText() !== $token->getNormalization()) {
-            // do not overwrite
-            return [ $token];
+        $stringToNormalize = $token->getNormalization();
+        if ($overwriteCurrentNormalization) {
+            $stringToNormalize = $token->getText();
         }
 
         $normalizedToken = clone $token;
-        $normalizedToken->setNormalization($this->normalizeString($token->getText()));
+        $normalizedToken->setNormalization($this->normalizeString($stringToNormalize));
         return [ $normalizedToken ];
     }
 

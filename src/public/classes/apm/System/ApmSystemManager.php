@@ -26,6 +26,7 @@ use APM\CollationEngine\DoNothingCollationEngine;
 use APM\CollationTable\ApmCollationTableManager;
 use APM\CollationTable\ApmCollationTableVersionManager;
 use APM\CollationTable\CollationTableManager;
+use APM\Core\Token\Normalizer\ToLowerCaseNormalizer;
 use APM\FullTranscription\TranscriptionManager;
 use APM\Plugin\Plugin;
 use APM\Presets\DataTablePresetManager;
@@ -97,12 +98,12 @@ class ApmSystemManager extends SystemManager {
     const REQUIRED_CONFIG_VARIABLES_DB = [ 'host', 'db', 'user', 'pwd'];
     
     /** @var array */
-    private $tableNames;
+    private array $tableNames;
 
     /**
      * @var DataTablePresetManager
      */
-    private $presetsManager;
+    private DataTablePresetManager $presetsManager;
 
     /**
      * @var SettingsManager
@@ -142,13 +143,16 @@ class ApmSystemManager extends SystemManager {
     private ApmCollationTableManager $collationTableManager;
 
     /**
-     * @var Twig
+     * @var ?Twig
      */
     private ?Twig $twig;
     /**
      * @var RouteParserInterface
      */
     private RouteParserInterface $router;
+
+
+    private ?ApmNormalizerManager $normalizerManager;
 
 
     public function __construct(array $configArray) {
@@ -289,6 +293,8 @@ class ApmSystemManager extends SystemManager {
         // Twig
 
         $this->twig = null;
+
+        $this->normalizerManager = null;
     }
     
     
@@ -341,7 +347,8 @@ class ApmSystemManager extends SystemManager {
         return $this->logger;
     }
         
-    public function getDbConnection() {
+    public function getDbConnection(): PDO
+    {
         return $this->dbConn;
     }
     
@@ -369,7 +376,8 @@ class ApmSystemManager extends SystemManager {
         return $this->tableNames;
     }
 
-    protected function createLogger() {
+    protected function createLogger(): Logger
+    {
         $loggerLevel = Logger::INFO;
         if ($this->config[ApmConfigParameter::LOG_DEBUG]) {
             $loggerLevel = Logger::DEBUG;
@@ -596,6 +604,21 @@ class ApmSystemManager extends SystemManager {
         }
         return $this->twig;
     }
+
+    public function getNormalizerManager(): NormalizerManager
+    {
+        if (is_null($this->normalizerManager)) {
+            $this->normalizerManager = new ApmNormalizerManager();
+            // Add standard normalizers
+            $this->normalizerManager->registerNormalizer('la', 'standard', 'toLowerCase', new ToLowerCaseNormalizer());
+            $this->normalizerManager->setNormalizerMetadata('toLowerCase', [
+                'automaticCollation' => [ 'label' => 'Convert to lowercase', 'help' => "E.g. 'Unum' -> 'unum'"]
+            ]);
+
+        }
+        return $this->normalizerManager;
+    }
+
 
     public function setRouter(RouteParserInterface $router): void
     {

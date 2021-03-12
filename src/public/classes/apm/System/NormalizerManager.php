@@ -46,6 +46,10 @@ abstract class NormalizerManager implements LoggerAwareInterface, CodeDebugInter
     abstract public function registerNormalizer(string $lang, string $category, string $name, WitnessTokenNormalizer $normalizer);
     abstract public function applyNormalizerList(Token $token, array $normalizerNames);
     abstract public function applyNormalizersByLangAndCategory(Token $token, string $lang, string $category);
+    abstract public function getNormalizersByLangAndCategory(string $lang, string $category) : array;
+    abstract public function getNormalizerNamesByLangAndCategory(string $lang, string $category) : array;
+
+    abstract public function getNormalizerByName(string $name) : WitnessTokenNormalizer;
 
     /**
      * Stores metadata for the given named normalizer, e.g:

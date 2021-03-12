@@ -112,6 +112,13 @@ class SiteChunkPage extends SiteController
             }
         }
 
+        // Fill in normalizer data for chunk page languages
+        $fullLanguageInfo = [];
+        foreach($languageInfoArray as $lang => $langInfo) {
+            $langInfo['normalizerData'] = $this->getNormalizerData($lang, 'standard');
+            $fullLanguageInfo[$lang] = $langInfo;
+        }
+
         $pageInfoArray = $this->getPageInfoArrayFromList($pagesMentioned, $transcriptionManager->getPageManager());
         $authorInfoArray = $this->getAuthorInfoArrayFromList($authorsMentioned, $dm->userManager);
 
@@ -121,6 +128,8 @@ class SiteChunkPage extends SiteController
         }
 
         $validChunks = $this->dataManager->getChunksWithTranscriptionForWorkId($workId);
+
+
 
         $this->profiler->stop();
         $this->logProfilerData("ChunkPage-$workId-$chunkNumber");
@@ -132,8 +141,9 @@ class SiteChunkPage extends SiteController
             'witnessInfoArray' => $witnessInfoArray,
             'authorInfo' => $authorInfoArray,
             'pageInfo' => $pageInfoArray,
-            'languageInfo' => $languageInfoArray,
+            'languageInfo' => $fullLanguageInfo,
             'validChunks' => $validChunks,
+
             'savedCollationTables' => $savedCollationTableInfoArray
         ]);
     }

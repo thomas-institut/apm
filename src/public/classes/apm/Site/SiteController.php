@@ -394,6 +394,19 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     }
 
 
+    protected function getNormalizerData(string $language, string $category) : array {
+        $normalizerManager = $this->systemManager->getNormalizerManager();
+
+        $standardNormalizerNames = $normalizerManager->getNormalizerNamesByLangAndCategory($language, $category);
+        $normalizerData = [];
+        foreach($standardNormalizerNames as $normalizerName) {
+            $normalizerData[] = [
+                'name' => $normalizerName,
+                'metadata' => $normalizerManager->getNormalizerMetadata($normalizerName)
+            ];
+        }
+        return $normalizerData;
+    }
 
 
 }

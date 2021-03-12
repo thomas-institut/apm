@@ -44,3 +44,13 @@ export function arraysAreEqual(array1, array2, comparisonFunction = function (a,
   }
   return true
 }
+
+/**
+ * Returns true if both arrays have the same values
+ * Only works if the arrays are composed of values that can be represented as strings
+ * @param array1
+ * @param array2
+ */
+export function arraysHaveTheSameValues(array1, array2) {
+  return array1.sort().join(' ') === array2.sort().join(' ')
+}

@@ -191,8 +191,7 @@ class ApiCollation extends ApiController
         //$this->codeDebug('Requested witnesses', $requestedWitnesses);
         $ignorePunctuation = isset($inputDataObject['ignorePunctuation']) ?
                 $inputDataObject['ignorePunctuation'] : false;
-        $applyStandardNormalization = isset($inputDataObject['applyStandardNormalization']) ?
-            $inputDataObject['ignorePunctuation'] : true;
+
 
         $this->profiler->start();
 
@@ -217,9 +216,28 @@ class ApiCollation extends ApiController
             return $this->responseWithJson($response, ['error' => self::ERROR_NOT_ENOUGH_WITNESSES, 'msg' => $msg], 409);
         }
 
+        // Checking normalizers
+        $normalizerManager = $this->systemManager->getNormalizerManager();
+        $normalizerNames = [];
+        $normalizers = [];
+        if (isset($inputDataObject['normalizers'])) {
+            foreach($inputDataObject['normalizers'] as $normalizerName) {
+                try {
+                    $normalizer = $normalizerManager->getNormalizerByName($normalizerName);
+                } catch(InvalidArgumentException $e) {
+                    $this->codeDebug("Unknown normalizer name found: $normalizerName");
+                }
+                $normalizers[] = $normalizer;
+                $normalizerNames[] = $normalizerName;
+            }
+        } else {
+            $normalizerNames = $normalizerManager->getNormalizerNamesByLangAndCategory($language, 'standard');
+            $normalizers = $normalizerManager->getNormalizersByLangAndCategory($language, 'standard');
+        }
+
         $this->profiler->lap('Basic checks done');
 
-        $collationTable = new CollationTable($ignorePunctuation, $language, $applyStandardNormalization);
+        $collationTable = new CollationTable($ignorePunctuation, $language, $normalizers);
         //$collationTable->setLogger($this->logger);
         $witnessIds = [];
         foreach($requestedWitnesses as $requestedWitness) {
@@ -282,7 +300,7 @@ class ApiCollation extends ApiController
         $this->profiler->lap('Collation table built');
 //        $this->codeDebug('Collation table built', $collationTable->getData());
 
-        $collationTableCacheId = implode(':', $witnessIds);
+        $collationTableCacheId = implode(':', $witnessIds) . '-' . implode(':', $normalizerNames);
         $this->codeDebug('Collation table ID: ' . $collationTableCacheId);
 
         $cacheKey = 'ApiCollation-ACT-' . $workId . '-' . $chunkNumber . '-' . $language . '-' . hash('sha256', $collationTableCacheId);
@@ -413,6 +431,7 @@ class ApiCollation extends ApiController
             'collationTableCacheId' => $collationTableCacheId,
             'collationEngineDetails' => $collationEngineDetails,
             'collationTable' => $standardData,
+            'appliedNormalizers' => $normalizerNames,
             'people' => $people,
         ];
 

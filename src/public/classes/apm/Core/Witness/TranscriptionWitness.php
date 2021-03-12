@@ -35,7 +35,7 @@ use APM\Core\Address\IntRange;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\PrintCodeDebugTrait;
 
-use APM\CollationTable\WitnessTokenNormalizer;
+use APM\Core\Token\Normalizer\WitnessTokenNormalizer;
 
 /**
  * A Witness whose source is a part of a DocumentTranscription.

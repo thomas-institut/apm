@@ -28,6 +28,7 @@
     let urlGenerator = new ApmUrlGenerator('{{baseurl}}')
     let isPreset = JSON.parse({{ isPreset|json_encode }})
     let suppressTimeStampsInApiCalls = JSON.parse({{ suppressTimestampsInApiCalls|json_encode }})
+    let normalizerData = JSON.parse("{{ normalizerData|json_encode|e('js') }}")
 
     let actOptions =  {
         workId: '{{ work }}',
@@ -37,7 +38,8 @@
         loadNow: true, 
         userId: parseInt({{userinfo.id}}),
         isPreset:  isPreset,
-        suppressTimestampsInApiCalls: suppressTimeStampsInApiCalls
+        suppressTimestampsInApiCalls: suppressTimeStampsInApiCalls,
+        normalizerData: normalizerData
     }
     
     if (actOptions.isPreset) {

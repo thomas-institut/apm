@@ -658,7 +658,8 @@ class ChunkPage {
           preset: urls[u].preset,
           applyButtonText: 'Generate Collation',
           urlGenerator: this.options.urlGenerator,
-          userId: this.options.userId
+          userId: this.options.userId,
+          normalizerData: this.options.languageInfo[urls[u].lang]['normalizerData']
         })
        $('#' + liId  + ' .cterasepresetbutton').on('click', function() { 
             $('#' + liId + '-a').addClass('disabled')

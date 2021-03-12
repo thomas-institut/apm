@@ -58,3 +58,18 @@ div.preset-buttons-div {
     margin-top: 10px;
     margin-bottom: 10px;
 }
+
+div.normalizersDiv {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+div.normalizersDiv ul {
+    list-style: none;
+}
+
+div.normalizersDiv h5 {
+    font-size: 1em;
+    font-weight: bold;
+}
+

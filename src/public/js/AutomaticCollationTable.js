@@ -57,6 +57,7 @@ export class AutomaticCollationTable {
           editable: false
         }
       },
+      normalizerData: { type: 'Array', default: []}
     }
 
     let oc = new OptionsChecker(optionsDefinition, "AutomaticCollationTable")
@@ -184,7 +185,8 @@ export class AutomaticCollationTable {
       userId:  this.options.userId,
       isPreset: this.options.isPreset,
       suppressTimestampsInSettings:  this.options.suppressTimestampsInApiCalls,
-      applyButtonText: 'Redo collation'
+      applyButtonText: 'Redo collation',
+      normalizerData: this.options.normalizerData
     }
     if (this.options.isPreset) {
       actSettingsFormOptions.preset = this.options.preset

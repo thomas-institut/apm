@@ -21,8 +21,9 @@
 namespace APM\Core\Collation;
 
 
-use APM\CollationTable\ToLowerCaseNormalizer;
-use APM\CollationTable\WitnessTokenNormalizer;
+
+use APM\Core\Token\Normalizer\CompositeNormalizer;
+use APM\Core\Token\Normalizer\WitnessTokenNormalizer;
 use APM\Core\Token\Token;
 use APM\Core\Apparatus\ApparatusGenerator;
 use APM\Core\Token\TokenType;
@@ -97,18 +98,19 @@ class CollationTable implements LoggerAwareInterface, CodeDebugInterface {
      * @var string
      */
     private string $language;
+
     /**
-     * @var bool
+     * @var WitnessTokenNormalizer[]
      */
-    private bool $applyStandardNormalization;
+    private array $normalizers;
 
 
-    public function __construct(bool $ignorePunctuation = false, string $lang = self::DEFAULT_LANGUAGE, bool $applyStandardNormalization = true) {
+    public function __construct(bool $ignorePunctuation = false, string $lang = self::DEFAULT_LANGUAGE, array $normalizers = []) {
         $this->witnesses = [];
         $this->witnessTokensCache = [];
         $this->referenceMatrix = [];
         $this->ignorePunctuation = $ignorePunctuation;
-        $this->applyStandardNormalization = $applyStandardNormalization;
+        $this->normalizers = $normalizers;
         $this->setLanguage($lang);
         $this->setLogger(new NullLogger());
     }
@@ -304,36 +306,8 @@ class CollationTable implements LoggerAwareInterface, CodeDebugInterface {
 
 
     private function applyNormalizations(Witness $witness) : void {
-
-        if (!$this->applyStandardNormalization) {
-            return;
-        }
-
-        /** @var WitnessTokenNormalizer[] $normalizers */
-        $normalizers = [];
-
-        switch($this->language) {
-            case 'la':
-                $normalizers[] = new ToLowerCaseNormalizer();
-                break;
-
-            case 'ar':
-                // TODO: Arabic normalizer
-                break;
-
-            case 'he':
-                // TODO: Hebrew normalizer
-                break;
-
-            default:
-                $this->logger->warning("Unknown language in collation table: " . $this->language);
-
-        }
-
-        foreach($normalizers as $normalizer) {
-            $witness->applyTokenNormalization($normalizer, true);
-        }
-
+       $compositeNormalizer = new CompositeNormalizer($this->normalizers);
+       $witness->applyTokenNormalization($compositeNormalizer, false);
     }
 
 

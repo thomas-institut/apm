@@ -26,6 +26,9 @@ use APM\CollationEngine\DoNothingCollationEngine;
 use APM\CollationTable\ApmCollationTableManager;
 use APM\CollationTable\ApmCollationTableVersionManager;
 use APM\CollationTable\CollationTableManager;
+use APM\Core\Token\Normalizer\IgnoreArabicVocalizationNormalizer;
+use APM\Core\Token\Normalizer\IgnoreShaddaNormalizer;
+use APM\Core\Token\Normalizer\RemoveHamzahMaddahFromAlifWawYahNormalizer;
 use APM\Core\Token\Normalizer\ToLowerCaseNormalizer;
 use APM\FullTranscription\TranscriptionManager;
 use APM\Plugin\Plugin;
@@ -610,11 +613,50 @@ class ApmSystemManager extends SystemManager {
         if (is_null($this->normalizerManager)) {
             $this->normalizerManager = new ApmNormalizerManager();
             // Add standard normalizers
-            $this->normalizerManager->registerNormalizer('la', 'standard', 'toLowerCase', new ToLowerCaseNormalizer());
+            $this->normalizerManager->registerNormalizer('la', 'standard',
+                'toLowerCase', new ToLowerCaseNormalizer());
             $this->normalizerManager->setNormalizerMetadata('toLowerCase', [
-                'automaticCollation' => [ 'label' => 'Convert to lowercase', 'help' => "E.g. 'Unum' -> 'unum'"]
+                'automaticCollation' => [
+                    'label' => 'Ignore Letter Case',
+                    'help' => "E.g., 'Et' and 'et' will be taken to be the same word"
+                ]
             ]);
 
+            $this->normalizerManager->registerNormalizer('ar', 'standard',
+                'removeHamzahMaddahFromAlifWawYah', new RemoveHamzahMaddahFromAlifWawYahNormalizer());
+            $this->normalizerManager->setNormalizerMetadata('removeHamzahMaddahFromAlifWawYah', [
+                'automaticCollation' => [
+                    'label' => 'Ignore hamzah and maddah in ʾalif, wāw and yāʾ',
+                    'help' => "آ , أ, إ &larr; ا      ؤ &larr; و      ئ &larr; ي"
+                ]
+            ]);
+
+            $this->normalizerManager->registerNormalizer('ar', 'standard',
+                'ignoreVocalization', new IgnoreArabicVocalizationNormalizer());
+            $this->normalizerManager->setNormalizerMetadata('ignoreVocalization', [
+                'automaticCollation' => [
+                    'label' => 'Ignore Vocalization',
+                    'help' => "Ignore vocal diacritics, e.g., الْحُرُوف &larr; الحروف"
+                ]
+            ]);
+
+            $this->normalizerManager->registerNormalizer('ar', 'standard',
+                'ignoreShadda', new IgnoreShaddaNormalizer());
+            $this->normalizerManager->setNormalizerMetadata('ignoreShadda', [
+                'automaticCollation' => [
+                    'label' => 'Ignore Shaddah',
+                    'help' => "Ignore shaddah, e.g., درّس &larr; درس"
+                ]
+            ]);
+
+            $this->normalizerManager->registerNormalizer('ar', 'standard',
+                'ignoreTatwil', new IgnoreShaddaNormalizer());
+            $this->normalizerManager->setNormalizerMetadata('ignoreTatwil', [
+                'automaticCollation' => [
+                    'label' => 'Ignore taṭwīl',
+                    'help' => "Ignore taṭwīl"
+                ]
+            ]);
         }
         return $this->normalizerManager;
     }

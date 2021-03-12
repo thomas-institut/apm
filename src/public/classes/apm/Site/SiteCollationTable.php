@@ -183,7 +183,7 @@ class SiteCollationTable extends SiteController
      * @param $args
      * @return Response
      */
-    public function automaticCollationPageGet(Request $request, Response $response, $args) 
+    public function automaticCollationPageGet(Request $request, Response $response, $args): Response
     {
         $workId = $request->getAttribute('work');
         $chunkNumber = intval($request->getAttribute('chunk'));
@@ -192,17 +192,17 @@ class SiteCollationTable extends SiteController
         if (isset($args['ignore_punct'])) {
             $ignorePunctuation = ($args['ignore_punct'] !== 'withpunct');
         }
-        $applyStandardNormalization = true;
+
         $collationPageOptions = [
             'work' => $workId,
             'chunk' => $chunkNumber,
             'lang' => $language,
             'ignorePunctuation' => $ignorePunctuation,
-            'applyStandardNormalization' => $applyStandardNormalization,
             'witnesses' => [], 
             'partialCollation' => false,
             'isPreset' => false
         ];
+        // no 'normalizers' in $collationPageOptions, which will cause the standard normalizers to be applied
 
         // get witnesses to include
         if (isset($args['witnesses'])) {
@@ -288,7 +288,7 @@ class SiteCollationTable extends SiteController
      * @param Response $response
      * @return Response
      */
-    public function automaticCollationPagePreset(Request $request, Response $response)
+    public function automaticCollationPagePreset(Request $request, Response $response): Response
     {
         //$this->codeDebug('Preset request');
         $workId = $request->getAttribute('work');
@@ -315,11 +315,7 @@ class SiteCollationTable extends SiteController
         $presetData = $preset->getData();
         $lang =  $presetData['lang'];
         $ignorePunctuation = $presetData['ignorePunctuation'];
-        $applyStandardNormalization = true;
-        if (isset($presetData['applyStandardNormalization'])) {
-            $applyStandardNormalization = $presetData['applyStandardNormalization'];
-        }
-        
+
         $presetUserName = $this->dataManager->userManager->getUserInfoByUserId($preset->getUserId())['fullname'];
         
         $collationPageOptions = [
@@ -327,7 +323,6 @@ class SiteCollationTable extends SiteController
             'chunk' => $chunkNumber,
             'lang' => $lang,
             'ignorePunctuation' => $ignorePunctuation,
-            'applyStandardNormalization' => $applyStandardNormalization,
             'witnesses' => [], 
             'partialCollation' => false,
             'isPreset' => true,
@@ -339,6 +334,9 @@ class SiteCollationTable extends SiteController
                 'editable' => ( intval($this->userInfo['id']) === $preset->getUserId())
             ]
         ];
+        if (isset($presetData['normalizers'])) {
+            $collationPageOptions = $presetData['normalizers'];
+        }
 
          // get witnesses to include
         foreach ($presetData['witnesses'] as $presetId) {
@@ -375,7 +373,8 @@ class SiteCollationTable extends SiteController
      * @param Response $response
      * @return Response
      */
-    public function automaticCollationPageCustom(Request $request, Response $response)  {
+    public function automaticCollationPageCustom(Request $request, Response $response): Response
+    {
 
         $this->codeDebug('automaticCollationPageCustom API call');
         $rawData = $request->getBody()->getContents();
@@ -414,6 +413,7 @@ class SiteCollationTable extends SiteController
         
         $collationPageOptions = $inputData['options'];
         $requiredFields = ['work', 'chunk', 'lang', 'ignorePunctuation', 'witnesses', 'partialCollation'];
+        // 'normalizers' is not required, defaults to applying standard normalizers
         foreach ($requiredFields as $requiredField) {
             if (!isset($collationPageOptions[$requiredField])) {
                 $msg = 'Bad request: missing required option ' . $requiredField ;
@@ -426,13 +426,9 @@ class SiteCollationTable extends SiteController
                 ]);
             }
         }
-
-        if (!isset($collationPageOptions['applyStandardNormalization'])) {
-            $collationPageOptions['applyStandardNormalization'] = true;
-        }
         $collationPageOptions['isPreset'] = false;
 
-        $this->codeDebug('Options', $collationPageOptions);
+        //$this->codeDebug('Options', $collationPageOptions);
         
         return $this->getCollationTablePage($collationPageOptions, $response);
     }
@@ -442,22 +438,29 @@ class SiteCollationTable extends SiteController
      * @param Response $response
      * @return Response
      */
-    private function getCollationTablePage(array $collationPageOptions, Response $response) {
-        $this->codeDebug("Getting collation table page", $collationPageOptions);
+    private function getCollationTablePage(array $collationPageOptions, Response $response): Response
+    {
+//        $this->codeDebug("Getting collation table page", $collationPageOptions);
 
         $workId = $collationPageOptions['work'];
         $chunkNumber = intval($collationPageOptions['chunk']);
         $language = $collationPageOptions['lang'];
         $partialCollation = $collationPageOptions['partialCollation'];
 
+
+
         $apiCallOptions = [
             'work' => $workId,
             'chunk' => $chunkNumber,
             'lang' => $language,
             'ignorePunctuation' => $collationPageOptions['ignorePunctuation'],
-            'applyStandardNormalization' => $collationPageOptions['applyStandardNormalization'],
             'witnesses' => $collationPageOptions['witnesses']
         ];
+
+        if (isset($collationPageOptions['normalizers'])) {
+            $this->codeDebug("Custom normalizers", $collationPageOptions['normalizers']);
+            $apiCallOptions['normalizers'] = $collationPageOptions['normalizers'];
+        }
 
         $this->codeDebug('apiCallOptions', $apiCallOptions);
         $dm = $this->dataManager;
@@ -506,14 +509,14 @@ class SiteCollationTable extends SiteController
                 $witnessInfo = WitnessSystemId::getFullTxInfo($systemId);
                 $apiCallWitnessTxInfo = $witnessInfo->typeSpecificInfo;
                 $found = false;
-                foreach($validWitnesses as $validWitnessInfo) {
+                foreach ($validWitnesses as $validWitnessInfo) {
                     $validWitnessFullTxInfo = $validWitnessInfo->typeSpecificInfo;
                     if ($validWitnessFullTxInfo['docId'] === $apiCallWitnessTxInfo['docId'] && $validWitnessFullTxInfo['localWitnessId'] === $apiCallWitnessTxInfo['localWitnessId']) {
                         $docInfo = $validWitnessFullTxInfo['docInfo'];
                         /** @var DocInfo $docInfo */
                         $title = $docInfo->title;
                         if ($validWitnessFullTxInfo['localWitnessId'] !== 'A') {
-                           $title .= ' (' . $validWitnessFullTxInfo['localWitnessId'] . ')';
+                            $title .= ' (' . $validWitnessFullTxInfo['localWitnessId'] . ')';
                         }
                         $apiCallOptions['witnesses'][$i]['title'] = $title;
                         // here would be a place to fix the timeStamp, but it's better to leave it blank
@@ -523,16 +526,16 @@ class SiteCollationTable extends SiteController
 //                        }
                         $found = true;
                         break;
-                     }
+                    }
                 }
                 if (!$found) {
                     $msg = 'Requested witness not valid ' . $systemId;
                     return $this->renderPage($response, self::TEMPLATE_ERROR, [
                         'work' => $workId,
-                         'chunk' => $chunkNumber,
-                         'lang' => $language,
-                         'errorSignature' => self::ERROR_SIGNATURE_PREFIX . self::ERROR_INVALID_WITNESS_ID,
-                         'message' => $msg
+                        'chunk' => $chunkNumber,
+                        'lang' => $language,
+                        'errorSignature' => self::ERROR_SIGNATURE_PREFIX . self::ERROR_INVALID_WITNESS_ID,
+                        'message' => $msg
                     ]);
                 }
             }
@@ -555,6 +558,7 @@ class SiteCollationTable extends SiteController
             'total_num_docs' => count($validWitnesses),
             'availableWitnesses' => $validWitnesses,
             'suppressTimestampsInApiCalls' => $supressTimestampsInApiCalls,
+            'normalizerData' => $this->getNormalizerData($language, 'standard'),
             'warnings' => $warnings
         ];
         if ($templateOptions['isPreset']) {

@@ -90,7 +90,7 @@ class ApmNormalizerManager extends NormalizerManager
         return (new CompositeNormalizer($normalizers))->normalizeToken($token);
     }
 
-    private function getNormalizerByName(string $name) : WitnessTokenNormalizer {
+    public function getNormalizerByName(string $name) : WitnessTokenNormalizer {
         $rows = $this->dt->findRows([ FIELD_NAME => $name]);
         if (count($rows) === 0){
             throw new InvalidArgumentException("Normalized with name '$name' does not exist");
@@ -104,10 +104,11 @@ class ApmNormalizerManager extends NormalizerManager
         return count($rows) !== 0;
     }
 
-    private function getNormalizersByLangAndCategory(string $lang, string $category) : array {
+    public function getNormalizersByLangAndCategory(string $lang, string $category) : array {
         $rows = $this->dt->findRows([ FIELD_LANG => $lang, FIELD_CATEGORY => $category]);
         return array_map( fn($row) =>  $row[FIELD_NORMALIZER_OBJECT], $rows);
     }
+
 
     /**
      * @inheritDoc
@@ -132,5 +133,11 @@ class ApmNormalizerManager extends NormalizerManager
             throw new InvalidArgumentException("Normalized with name '$name' does not exist");
         }
         return $rows[0][FIELD_METADATA];
+    }
+
+    public function getNormalizerNamesByLangAndCategory(string $lang, string $category): array
+    {
+        $rows = $this->dt->findRows([ FIELD_LANG => $lang, FIELD_CATEGORY => $category]);
+        return array_map( fn($row) =>  $row[FIELD_NAME], $rows);
     }
 }

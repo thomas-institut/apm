@@ -20,7 +20,7 @@
  * Implements a collapsible panel that includes the toggle button
  */
 
-class CollapseToggleButton {
+export class CollapseToggleButton {
   
   constructor (iconSpanElement, collapseElement, visibleIconHtml = '', hiddenIconHtml = '' ) {
 

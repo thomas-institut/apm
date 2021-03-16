@@ -24,6 +24,7 @@ import {OptionsChecker} from '@thomas-inst/optionschecker'
 import {CollationTableFormatter} from './CollationTableFormatter'
 import {EditionViewerSvg} from './EditionViewerSvg'
 import { PrintedEditionGenerator } from './PrintedEditionGenerator'
+import { AutomaticCollationTableSettingsForm} from './AutoCollTableSettingsForm'
 
 export class AutomaticCollationTable {
   

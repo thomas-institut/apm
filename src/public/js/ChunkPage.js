@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2020 Universität zu Köln
+ *  Copyright (C) 2020-21 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,10 +18,19 @@
 
 /* eslint-env jquery */
 
+/** @namespace Twig */
+/** @namespace DataTable */
+
+import { AutomaticCollationTableSettingsForm } from './AutoCollTableSettingsForm'
+import {OptionsChecker} from '@thomas-inst/optionschecker'
+import * as WitnessType from './constants/WitnessType'
+
+import {CollapseToggleButton} from './widgets/CollapseToggleButton'
+
 /**
  * Mini JS app running in the Chunk Page
  */
-class ChunkPage {
+export class ChunkPage {
 
   constructor(options) {
 
@@ -48,7 +57,7 @@ class ChunkPage {
 
     // some constant labels
     this.witnessTypeLabels = {}
-    this.witnessTypeLabels[WitnessTypes.FULL_TX] = 'Full Transcription'
+    this.witnessTypeLabels[WitnessType.FULL_TX] = 'Full Transcription'
 
     this.docTypes = {
       'mss' : 'Manuscript',
@@ -103,7 +112,7 @@ class ChunkPage {
         continue
       }
       let witnessInfo = this.options.witnessInfo[w]
-      if (witnessInfo.type !==WitnessTypes.FULL_TX) {
+      if (witnessInfo.type !==WitnessType.FULL_TX) {
         // TODO: support other witness types!
         continue
       }
@@ -129,7 +138,7 @@ class ChunkPage {
           this.witnessesByLang[witnessInfo.languageCode] = []
         }
         this.witnessesByLang[witnessInfo.languageCode].push(witness)
-        let toggleButton = new CollapseToggleButton($('#texttoggle-' + witness.systemId), $('#text-' + witness.systemId))
+        new CollapseToggleButton($('#texttoggle-' + witness.systemId), $('#text-' + witness.systemId))
       }
     }
     console.log('Witnesses by lang')
@@ -154,7 +163,7 @@ class ChunkPage {
         continue
       }
       switch (witnessInfo.type) {
-        case WitnessTypes.FULL_TX:
+        case WitnessType.FULL_TX:
           let witnessUrl = this.pathFor.apiWitnessGet(witnessInfo.systemId, 'html')
           console.log('Loading witness ' + witnessInfo.systemId)
           let formattedSelector = '#formatted-' + witnessInfo.systemId
@@ -171,7 +180,7 @@ class ChunkPage {
             })
           break
 
-        case WitnessTypes.PARTIAL_TX:
+        case WitnessType.PARTIAL_TX:
           console.log('Partial TX witness not supported yet!')
           break
 
@@ -299,7 +308,7 @@ class ChunkPage {
         continue
       }
       switch (witnessInfo.type) {
-        case WitnessTypes.FULL_TX:
+        case WitnessType.FULL_TX:
           let lwid = witnessInfo.typeSpecificInfo.localWitnessId
           let title =  witnessInfo["typeSpecificInfo"].docInfo.title
           if (lwid !== 'A') {
@@ -350,11 +359,11 @@ class ChunkPage {
       html += '<td>' + this.options.languageInfo[witnessInfo.languageCode]['name'] + '</td>'
       let info = ''
       switch (witnessInfo.type) {
-        case WitnessTypes.FULL_TX:
+        case WitnessType.FULL_TX:
           info = this.genFullTxInfo(witnessInfo)
           break
 
-        case WitnessTypes.PARTIAL_TX:
+        case WitnessType.PARTIAL_TX:
           info = { 'location' : 'tbd', 'essential': 'based on TBD', 'admin' : ''}
           break
 
@@ -595,6 +604,7 @@ class ChunkPage {
                  work: thisObject.options.work,
                  chunk: thisObject.options.chunk,
                  ignorePunctuation: pr.data.ignorePunctuation,
+                 normalizers: pr.data.normalizers !== undefined ? pr.data.normalizers : null,
                  witnesses: witnessesToInclude
                }
                
@@ -648,7 +658,7 @@ class ChunkPage {
           continue
         }
         let liId = containerId + '-' +  u
-        console.log('Creating new ACTS form on html ID ' + liId)
+        //console.log('Creating new ACTS form on html ID ' + liId)
         let ctSettingsFormManager =  new AutomaticCollationTableSettingsForm({
           containerSelector : '#' + liId + '-div', 
           initialSettings: urls[u].actSettings,
@@ -680,7 +690,7 @@ class ChunkPage {
             $.get(
               thisObject.pathFor.apiDeletePreset(urls[u].preset.id)
             )
-            .done( function (data){
+            .done( function (){
               thisObject.updateCollationTableLinks()
             })
             .fail(function(resp) {

@@ -14,6 +14,10 @@ module.exports = {
     AutomaticCollationTable: {
       import: './AutomaticCollationTableLoader.js',
       filename: 'AutomaticCollationTable.bundle.js'
+    },
+    ChunkPage: {
+      import: './ChunkPageLoader.js',
+      filename: 'ChunkPage.bundle.js'
     }
 
   },

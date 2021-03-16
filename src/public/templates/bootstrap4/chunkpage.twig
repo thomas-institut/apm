@@ -7,10 +7,8 @@
     <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/bootstrap4/witness.css"/>
     <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/act-settingsform.css" />
     <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/bootstrap4/chunkpage.css" />
-{% endblock %}
-{% block extraJS %}
     <style>
-        
+
         div#collationtablelinks {
             margin-bottom: 50px;
         }
@@ -20,36 +18,15 @@
             margin-bottom: 50px;
         }
     </style>
-    
 
+{% endblock %}
+
+{% block extraJS %}
     <script type="text/javascript" src="{{baseurl}}/node_modules/twig/twig.min.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/ApmUtil.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/WitnessTypes.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/AutoCollTableSettingsForm.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/CollapseToggleButton.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/ChunkPage.js"></script>
-<script>
-$(function()  {// .ready()
-    let showAdminInfo = JSON.parse('{{showAdminInfo|json_encode|e('js')}}');
-    let cp = new ChunkPage({
-        work: '{{work}}',
-        chunk: {{chunk}},
-        urlGenerator:  new ApmUrlGenerator('{{baseurl}}'),
-        userId: {{userinfo.id}},
-        witnessInfo: JSON.parse('{{witnessInfoArray|json_encode|e('js')}}'),
-        pageInfo: JSON.parse('{{pageInfo|json_encode|e('js')}}'),
-        authorInfo: JSON.parse('{{authorInfo|json_encode|e('js')}}'),
-        languageInfo : JSON.parse('{{languageInfo|json_encode|e('js')}}'),
-        workInfo: JSON.parse('{{work_info|json_encode|e('js')}}'),
-        validChunks: JSON.parse('{{validChunks|json_encode|e('js')}}'),
-        savedCollationTables : JSON.parse('{{savedCollationTables|json_encode|e('js')}}'),
-        showAdminInfo: showAdminInfo
-    })
-});
-        
-
-</script>
+    <script type="application/javascript" src="{{baseurl}}/js/dist/ChunkPage.bundle.js"></script>
 {% endblock %}
+
 {% block content %}
 <nav aria-label="breadcumb">
      <ol class="breadcrumb">
@@ -65,5 +42,26 @@ $(function()  {// .ready()
     <h4 id="ctlinks-header" class="hidden">Automatic Collation Tables</h4>
     <div id="collationtablelinks" class="collationtablelinks">  </div>
     <div id="witnesspanels"></div>
+{% endblock %}
 
+{% block finalBodyJS %}
+<script type="module">
+  $(function()  {// .ready()
+    let showAdminInfo = JSON.parse('{{showAdminInfo|json_encode|e('js')}}');
+    let cp = new ChunkPage({
+      work: '{{work}}',
+      chunk: {{chunk}},
+      urlGenerator:  new ApmUrlGenerator('{{baseurl}}'),
+      userId: {{userinfo.id}},
+      witnessInfo: JSON.parse('{{witnessInfoArray|json_encode|e('js')}}'),
+      pageInfo: JSON.parse('{{pageInfo|json_encode|e('js')}}'),
+      authorInfo: JSON.parse('{{authorInfo|json_encode|e('js')}}'),
+      languageInfo : JSON.parse('{{languageInfo|json_encode|e('js')}}'),
+      workInfo: JSON.parse('{{work_info|json_encode|e('js')}}'),
+      validChunks: JSON.parse('{{validChunks|json_encode|e('js')}}'),
+      savedCollationTables : JSON.parse('{{savedCollationTables|json_encode|e('js')}}'),
+      showAdminInfo: showAdminInfo
+    })
+  });
+</script>
 {% endblock %}

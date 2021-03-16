@@ -160,7 +160,8 @@ class ApiPresets extends ApiController
      * @throws DependencyException
      * @throws NotFoundException
      */
-    public function  getAutomaticCollationPresets(Request $request, Response $response) {
+    public function  getAutomaticCollationPresets(Request $request, Response $response): Response
+    {
 
         $dataManager = $this->getDataManager();
         $apiCall = 'getAutomaticCollationPresets';
@@ -264,7 +265,8 @@ class ApiPresets extends ApiController
      * @param Response $response
      * @return Response
      */
-    public function  getSiglaPresets(Request $request, Response $response) {
+    public function  getSiglaPresets(Request $request, Response $response): Response
+    {
 
         $dataManager = $this->getDataManager();
         $apiCall = 'getSiglaPresets';
@@ -597,6 +599,7 @@ class ApiPresets extends ApiController
         }
 
         $updatedPreset = $pf->create($tool, $this->apiUserId, $title, $data);
+        $this->codeDebug('Updated preset', [ 'id' => $currentPreset->getId(), 'data' => $updatedPreset->getData()]);
         if (!$pm->updatePresetById($presetId, $updatedPreset)) {
             // @codeCoverageIgnoreStart
             $this->logger->error("Could not update preset",

@@ -26,7 +26,7 @@
 const defaultHelpIcon = '<i class="fas fa-info"></i>'
 /* global Twig */
 
-class AutomaticCollationTableSettingsForm {
+export class AutomaticCollationTableSettingsForm {
 
 
   constructor(options) {
@@ -81,7 +81,7 @@ class AutomaticCollationTableSettingsForm {
           id: -1,
           title: '',
           userId: -1,
-          userName: 'nouser',
+          userName: 'noUser',
           editable: false
         }
       },
@@ -90,8 +90,8 @@ class AutomaticCollationTableSettingsForm {
     let oc = new OptionsChecker(optionsDefinition, "AutoCollTableSettingsForm")
     this.options = oc.getCleanOptions(options)
 
-    console.log('AutoCollTableSettingsFrom options')
-    console.log(this.options)
+    // console.log('AutoCollTableSettingsFrom options')
+    // console.log(this.options)
 
 
     this.witnessList = []
@@ -117,7 +117,7 @@ class AutomaticCollationTableSettingsForm {
     this.applyButton = $(containerSelector + ' .apply-btn')
     this.allButton = $(containerSelector + ' .all-btn')
     this.noneButton = $(containerSelector + ' .none-btn')
-    this.savePresetButton = $(containerSelector + ' .save-preset-btn')
+    // this.savePresetButton = $(containerSelector + ' .save-preset-btn')
     this.ignorePunctuationCheckbox = $(containerSelector + ' .ignorepunct-cb')
     this.witnessesAvailableSelectBox = $(containerSelector + ' .witnessesavailable-box')
     this.witnessesToIncludeBox = $(containerSelector + ' .witnessestoinclude-box')
@@ -132,7 +132,7 @@ class AutomaticCollationTableSettingsForm {
     this.presetErrorSpan = $(containerSelector + ' .preset-error-span')
     this.presetErrorMsg = $(containerSelector + ' .preset-error-msg')
 
-    this.allNormalizerCheckBoxes = $(containerSelector + ' .normalizer-checkbox')
+    // this.allNormalizerCheckBoxes = $(containerSelector + ' .normalizer-checkbox')
     
     if (this.options.hideTitle) {
       this.formTitle.hide()
@@ -194,7 +194,7 @@ class AutomaticCollationTableSettingsForm {
     }
     let html = '<h5>Standard Normalizations</h5><ul class="normalization-list">'
     this.options.normalizerData.forEach( (data) => {
-      console.log(`Setting up ${data['name']}`)
+      //console.log(`Setting up ${data['name']}`)
       let info = data['metadata']['automaticCollation']
       html += `<li><input type="checkbox" class="normalizer-checkbox normalizer-${data['name']}" title="${info['help']}">&nbsp;&nbsp;${info['label']}</li>`
     })
@@ -204,7 +204,7 @@ class AutomaticCollationTableSettingsForm {
   
   setSettings(settings = false) {
     // console.log('Setting settings')
-    console.log(settings)
+    // console.log(settings)
     if (settings === false) {
       settings = this.initialSettings
     }
@@ -230,10 +230,14 @@ class AutomaticCollationTableSettingsForm {
     // 2. Set up options
     this.ignorePunctuationCheckbox.prop('checked', settings.ignorePunctuation)
 
-    let normalizerCheckBoxes= $(`${this.options.containerSelector} .normalizer-checkbox`)
-    if (settings.normalizers === undefined) {
-      console.log(`No normalizers defined in setting, defaulting to all checked`)
-      normalizerCheckBoxes.prop('checked', true)
+
+    if (settings.normalizers === undefined || settings.normalizers === null) {
+      //console.log(`No normalizers defined in setting, defaulting to all checked`)
+      $(`${this.options.containerSelector} .normalizer-checkbox`).prop('checked', true)
+    } else {
+      settings.normalizers.forEach( (name) => {
+        $(`${this.options.containerSelector} .normalizer-${name}`).prop('checked', true)
+      })
     }
 
     // 3. Set up witness boxes
@@ -281,15 +285,14 @@ class AutomaticCollationTableSettingsForm {
    * @param sysId2
    */
   systemIdsCorrespond(sysId1, sysId2) {
-    return this.supressTimestampFromSystemId(sysId1) ===this.supressTimestampFromSystemId(sysId2);
+    return this.suppressTimestampFromSystemId(sysId1) ===this.suppressTimestampFromSystemId(sysId2);
   }
 
   getInternalIdFromWitness(witness) {
-    return witness.type + '-' + witness.typeSpecificInfo.docId + '-' + witness.typeSpecificInfo.localWitnessId
+    return witness.type + '-' + witness['typeSpecificInfo']['docId'] + '-' + witness['typeSpecificInfo']['localWitnessId']
   }
 
   getWitnessFromSystemId(systemId) {
-    let found = false
     for(const witness of this.witnessList) {
       if (this.systemIdsCorrespond(systemId,witness.systemId)) {
         return witness
@@ -311,51 +314,50 @@ class AutomaticCollationTableSettingsForm {
     this.applyButton.prop('disabled', false)
     this.warningDiv.html('')
   }
-  
+
+  _saveEventListeners() {
+    this.onDropBoxFunctionForAvailableWitnesses = this.genOnDropBox()
+    this.onDragOverFunctionForAvailableWitnesses = this.genOnDragOverBox()
+    this.onDragLeaveFunctionForAvailableWitnesses = this.genOnDragLeaveBox()
+    this.onDragEndFunctionForAvailableWitnesses = this.genOnDragEndBox()
+    this.witnessesAvailableSelectBox.get(0).addEventListener('drop', this.onDropBoxFunctionForAvailableWitnesses, false)
+    this.witnessesAvailableSelectBox.get(0).addEventListener('dragover', this.onDragOverFunctionForAvailableWitnesses, false)
+    this.witnessesAvailableSelectBox.get(0).addEventListener('dragleave', this.onDragLeaveFunctionForAvailableWitnesses, false)
+    this.witnessesAvailableSelectBox.get(0).addEventListener('dragend', this.onDragEndFunctionForAvailableWitnesses, false)
+  }
+
+  _removeEventListeners() {
+    this.witnessesAvailableSelectBox.get(0).removeEventListener('drop', this.onDropBoxFunctionForAvailableWitnesses, false)
+    this.witnessesAvailableSelectBox.get(0).removeEventListener('dragover', this.onDragOverFunctionForAvailableWitnesses, false)
+    this.witnessesAvailableSelectBox.get(0).removeEventListener('dragleave', this.onDragLeaveFunctionForAvailableWitnesses, false)
+    this.witnessesAvailableSelectBox.get(0).removeEventListener('dragend', this.onDragEndFunctionForAvailableWitnesses, false)
+  }
+
   dealWithEmptyBoxes() {
+
     if (this.getAvailableWitnessesCount() === 0) {
       // Available witness box is empty, make 
       // save the functions so that we can remove the event listeners later on
-      this.onDropBoxFunctionForAvailableWitnesses = this.genOnDropBox()
-      this.onDragOverFunctionForAvailableWitnesses = this.genOnDragOverBox()
-      this.onDragLeaveFunctionForAvailableWitnesses = this.genOnDragLeaveBox()
-      this.onDragEndFunctionForAvailableWitnesses = this.genOnDragEndBox()
-      this.witnessesAvailableSelectBox.get(0).addEventListener('drop', this.onDropBoxFunctionForAvailableWitnesses, false)
-      this.witnessesAvailableSelectBox.get(0).addEventListener('dragover', this.onDragOverFunctionForAvailableWitnesses, false)
-      this.witnessesAvailableSelectBox.get(0).addEventListener('dragleave', this.onDragLeaveFunctionForAvailableWitnesses, false)
-      this.witnessesAvailableSelectBox.get(0).addEventListener('dragend', this.onDragEndFunctionForAvailableWitnesses, false)
+     this._saveEventListeners()
       // make the box bigger, so that it can actually be seen
       // NOTE: the form container must be visible for this work
       this.witnessesAvailableSelectBox.css('height', this.witnessesToIncludeBox.height() +  'px')
     } else {
       // There are items in the box, so we don't need to whole box itself 
       // to be able to receive items
-      this.witnessesAvailableSelectBox.get(0).removeEventListener('drop', this.onDropBoxFunctionForAvailableWitnesses, false)
-      this.witnessesAvailableSelectBox.get(0).removeEventListener('dragover', this.onDragOverFunctionForAvailableWitnesses, false)
-      this.witnessesAvailableSelectBox.get(0).removeEventListener('dragleave', this.onDragLeaveFunctionForAvailableWitnesses, false)
-      this.witnessesAvailableSelectBox.get(0).removeEventListener('dragend', this.onDragEndFunctionForAvailableWitnesses, false)
+      this._removeEventListeners()
       this.witnessesAvailableSelectBox.css('height', 'auto')
     }
     if(this.getToIncludeWitnessesCount() === 0) {
       // save the functions so that we can remove the event listeners later on
-      this.onDropBoxFunctionForToIncludeWitnesses = this.genOnDropBox()
-      this.onDragOverFunctionForToIncludeWitnesses = this.genOnDragOverBox()
-      this.onDragLeaveFunctionForToIncludeWitnesses = this.genOnDragLeaveBox()
-      this.onDragEndFunctionForToIncludeWitnesses = this.genOnDragEndBox()
-      this.witnessesToIncludeBox.get(0).addEventListener('drop', this.onDropBoxFunctionForToIncludeWitnesses, false)
-      this.witnessesToIncludeBox.get(0).addEventListener('dragover', this.onDragOverFunctionForToIncludeWitnesses, false)
-      this.witnessesToIncludeBox.get(0).addEventListener('dragleave', this.onDragLeaveFunctionForToIncludeWitnesses, false)
-      this.witnessesToIncludeBox.get(0).addEventListener('dragend', this.onDragEndFunctionForToIncludeWitnesses, false)
+      this._saveEventListeners()
       // make the box bigger, so that it can actually be seen
       // NOTE: the form container must be visible for this work
       this.witnessesToIncludeBox.css('height', this.witnessesAvailableSelectBox.height() +  'px')
     } else {
       // There are items in the box, so we don't need to whole box itself 
       // to be able to receive items
-      this.witnessesToIncludeBox.get(0).removeEventListener('drop', this.onDropBoxFunctionForToIncludeWitnesses, false)
-      this.witnessesToIncludeBox.get(0).removeEventListener('dragover', this.onDragOverFunctionForToIncludeWitnesses, false)
-      this.witnessesToIncludeBox.get(0).removeEventListener('dragleave', this.onDragLeaveFunctionForToIncludeWitnesses, false)
-      this.witnessesToIncludeBox.get(0).removeEventListener('dragend', this.onDragEndFunctionForToIncludeWitnesses, false)
+      this._removeEventListeners()
       this.witnessesToIncludeBox.css('height', 'auto')
     }
   }
@@ -431,9 +433,9 @@ class AutomaticCollationTableSettingsForm {
     let normalizers = this.getNormalizerNamesFromCheckBoxes()
 
     if (arraysHaveTheSameValues(normalizers, this.getNormalizerNamesFromOptions())){
-      console.log(`All standard normalizers checked`)
+      //console.log(`All standard normalizers checked`)
     }else {
-      console.log(`Custom normalizers in settings: [${normalizers.join(', ')}]`)
+      //console.log(`Custom normalizers in settings: [${normalizers.join(', ')}]`)
       settings.normalizers = normalizers
     }
 
@@ -450,7 +452,7 @@ class AutomaticCollationTableSettingsForm {
         if (witness.internalId === internalId) {
           let sysId = witness.systemId
           if (this.options.suppressTimestampsInSettings) {
-            sysId = this.supressTimestampFromSystemId(sysId)
+            sysId = this.suppressTimestampFromSystemId(sysId)
           }
           settings.witnesses.push({
             type: witness.type,
@@ -638,7 +640,8 @@ class AutomaticCollationTableSettingsForm {
           presetData : {
             lang: currentSettings.lang,
             witnesses: witnessIdArray,
-            ignorePunctuation: currentSettings.ignorePunctuation
+            ignorePunctuation: currentSettings.ignorePunctuation,
+            normalizers: currentSettings.normalizers !== undefined ? currentSettings.normalizers : null
           }
         }
         console.log(apiCallOptions)
@@ -682,7 +685,8 @@ class AutomaticCollationTableSettingsForm {
           presetData : {
             lang: currentSettings.lang,
             witnesses: witnessIdArray,
-            ignorePunctuation: currentSettings.ignorePunctuation
+            ignorePunctuation: currentSettings.ignorePunctuation,
+            normalizers: currentSettings.normalizers !== undefined ? currentSettings.normalizers : null
           }
         }
         console.log(apiCallOptions)
@@ -744,7 +748,8 @@ class AutomaticCollationTableSettingsForm {
         presetData : {
           lang: currentSettings.lang,
           witnesses: witnessIdArray,
-          ignorePunctuation: currentSettings.ignorePunctuation
+          ignorePunctuation: currentSettings.ignorePunctuation,
+          normalizers: currentSettings.normalizers !== undefined ? currentSettings.normalizers : null
         }
       }
       console.log(apiCallOptions)
@@ -823,7 +828,7 @@ class AutomaticCollationTableSettingsForm {
   }
   
   genOnDragEnter() {
-    let thisObject = this
+    // let thisObject = this
     return function (e) {
       //console.log('drag enter')
       // this / e.target is the current hover target.
@@ -832,7 +837,7 @@ class AutomaticCollationTableSettingsForm {
   
   genOnDragLeave() {
     let thisObject = this
-    return function (e) {
+    return function () {
       //console.log('drag leave')
       this.classList.remove(thisObject.overClass)  // this / e.target is previous target element.
       return false
@@ -852,7 +857,7 @@ class AutomaticCollationTableSettingsForm {
         // remove 
         thisObject.dragSourceParent.removeChild(thisObject.dragSourceElement)
         let dropHTML = e.dataTransfer.getData('text/html')
-        this.insertAdjacentHTML('beforebegin',dropHTML)
+        this.insertAdjacentHTML('beforebegin', dropHTML)
         let dropElem = this.previousSibling
         thisObject.addWitnessBoxDnDHandlers(dropElem)
         thisObject.updateWitnessListFromBoxes()
@@ -867,7 +872,7 @@ class AutomaticCollationTableSettingsForm {
   
   genOnDragEnd() {
     let thisObject = this
-    return function (e) {
+    return function () {
       //console.log('drag end')
       this.classList.remove(thisObject.dragElementClass)
       thisObject.dispatchEvent(thisObject.settingsChangeEventName, thisObject.getSettings())
@@ -882,7 +887,7 @@ class AutomaticCollationTableSettingsForm {
       e.preventDefault()
       let dropHtml = e.dataTransfer.getData('text/html')
       thisObject.dragSourceParent.removeChild(thisObject.dragSourceElement)
-      this.insertAdjacentHTML('beforeend',dropHtml)
+      this.insertAdjacentHTML('beforeend', dropHtml)
       thisObject.addWitnessBoxDnDHandlers(this.lastElementChild)
       this.classList.remove(thisObject.overBoxClass)
       thisObject.updateWitnessListFromBoxes()
@@ -907,7 +912,7 @@ class AutomaticCollationTableSettingsForm {
   
   genOnDragLeaveBox() {
     let thisObject = this
-    return function (e) {
+    return function () {
       //console.log('drag leave Box')
       this.classList.remove(thisObject.overBoxClass)  // this / e.target is previous target element.
     }
@@ -915,7 +920,7 @@ class AutomaticCollationTableSettingsForm {
   
   genOnDragEndBox() {
     let thisObject = this
-    return function (e) {
+    return function () {
       //console.log('drag end box')
       this.classList.remove(thisObject.overBoxClass)
     }
@@ -932,7 +937,7 @@ class AutomaticCollationTableSettingsForm {
     elem.addEventListener('dragend', this.genOnDragEnd(), false);
   }
 
-  supressTimestampFromSystemId(systemId) {
+  suppressTimestampFromSystemId(systemId) {
     let fields = systemId.split('-')
     if (fields.length === 6 ) {
       fields.pop()
@@ -981,7 +986,7 @@ class AutomaticCollationTableSettingsForm {
             </button>
 
       <span class="edit-preset-div hidden">
-            <input type="text" class="preset-input-text" value="--"> </input>
+            <input type="text" class="preset-input-text" value="--">
             <button type="button" class="btn btn-default btn-xs preset-save-btn">
               Save as Preset
             </button>

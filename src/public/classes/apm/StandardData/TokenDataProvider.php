@@ -28,6 +28,7 @@ class TokenDataProvider implements StandardDataProvider
     const PROPERTY_TOKEN_TYPE = 'tokenType';
     const PROPERTY_TEXT = 'text';
     const PROPERTY_NORMALIZED_TEXT = 'normalizedText';
+    const PROPERTY_NORMALIZATION_SOURCE = 'normalizationSource';
 
     /**
      * @var Token
@@ -49,6 +50,7 @@ class TokenDataProvider implements StandardDataProvider
 
         if ($this->token->getNormalization() !== $this->token->getText()) {
             $data[self::PROPERTY_NORMALIZED_TEXT] = $this->token->getNormalization();
+            $data[self::PROPERTY_NORMALIZATION_SOURCE] = $this->token->getNormalizationSource();
         }
         return (object) $data;
     }

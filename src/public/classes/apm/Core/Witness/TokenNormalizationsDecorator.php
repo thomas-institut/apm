@@ -16,7 +16,15 @@ class TokenNormalizationsDecorator implements WitnessDecorator
         $decoratedTokens = [];
 
         foreach($tokens as $token) {
-            $decoratedTokens[] = $token->getText() . " [" . $token->getNormalization() . "]";
+            $text = $token->getText();
+            $norm = $token->getNormalization();
+            $source = $token->getNormalizationSource();
+            if ($text === $norm) {
+                $decoratedTokens[] = $text;
+            } else {
+                $decoratedTokens[] = "$text = $norm ($source)";
+            }
+
          }
 
         return $decoratedTokens;

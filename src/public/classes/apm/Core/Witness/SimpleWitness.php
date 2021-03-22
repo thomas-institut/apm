@@ -21,7 +21,8 @@
 namespace APM\Core\Witness;
 
 
-use APM\CollationTable\WitnessTokenNormalizer;
+use APM\Core\Token\NormalizationSource;
+use APM\Core\Token\Normalizer\WitnessTokenNormalizer;
 use APM\Core\Token\Token;
 
 /**
@@ -49,8 +50,8 @@ class SimpleWitness extends Witness {
         return $this->tokens;
     }
 
-    public function applyTokenNormalization(WitnessTokenNormalizer $normalizer, bool $overWriteCurrentNormalizations)
+    public function applyTokenNormalization(WitnessTokenNormalizer $normalizer, bool $overWriteCurrentNormalizations, string $source = NormalizationSource::DEFAULT)
     {
-        $this->tokens = WitnessTokenNormalizer::normalizeTokenArray($this->tokens, $normalizer, $overWriteCurrentNormalizations);
+        $this->tokens = WitnessTokenNormalizer::normalizeTokenArray($this->tokens, $normalizer, $overWriteCurrentNormalizations, $source);
     }
 }

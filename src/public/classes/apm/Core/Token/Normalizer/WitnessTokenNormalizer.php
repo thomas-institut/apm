@@ -20,6 +20,7 @@
 namespace APM\Core\Token\Normalizer;
 
 
+use APM\Core\Token\NormalizationSource;
 use APM\Core\Token\Token;
 
 abstract class WitnessTokenNormalizer
@@ -30,25 +31,28 @@ abstract class WitnessTokenNormalizer
      * there might be cases where a single token has to be expanded into multiple ones
      * @param Token $token
      * @param bool $overwriteCurrentNormalization
+     * @param string $source
      * @return array
      */
-    abstract public function normalizeToken(Token $token, bool $overwriteCurrentNormalization = false ) : array;
+    abstract public function normalizeToken(Token $token, bool $overwriteCurrentNormalization = false,
+                                            string $source = NormalizationSource::DEFAULT) : array;
 
 
     /**
      * Normalizes an array of tokens with the given normalizer
      * @param array $tokenArray
      * @param WitnessTokenNormalizer $normalizer
-     * @param bool $overwriteCurrentNormalizations  if true, the normalizer will act on the token's text, otherwise it will
+     * @param bool $overwriteCurrentNormalizations if true, the normalizer will act on the token's text, otherwise it will
      *     act on the token's current normalization, if any.
+     * @param string $source
      * @return array
      */
-    static public function normalizeTokenArray(array $tokenArray, WitnessTokenNormalizer $normalizer, bool $overwriteCurrentNormalizations = false) : array {
+    static public function normalizeTokenArray(array $tokenArray, WitnessTokenNormalizer $normalizer, bool $overwriteCurrentNormalizations = false, string $source = NormalizationSource::DEFAULT) : array {
 
         $normalizedTokens = [];
 
         foreach($tokenArray as $token) {
-            $normalizedArray = $normalizer->normalizeToken($token, $overwriteCurrentNormalizations);
+            $normalizedArray = $normalizer->normalizeToken($token, $overwriteCurrentNormalizations, $source);
             foreach($normalizedArray as $newToken) {
                 $normalizedTokens[] = $newToken;
             }

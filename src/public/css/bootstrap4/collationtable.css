@@ -497,3 +497,7 @@ div#collationtablediv.rtltext.table-edit-mode-group
     color: var(--dimmed-text-color);
 }
 
+
+.ctPopover .standard-norm {
+    color: var(--dimmed-text-color);
+}

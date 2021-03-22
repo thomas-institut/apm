@@ -238,7 +238,7 @@ class ApiCollation extends ApiController
         $this->profiler->lap('Basic checks done');
 
         $collationTable = new CollationTable($ignorePunctuation, $language, $normalizers);
-        //$collationTable->setLogger($this->logger);
+        $collationTable->setLogger($this->logger);
         $witnessIds = [];
         foreach($requestedWitnesses as $requestedWitness) {
             if (!isset($requestedWitness['type'])) {

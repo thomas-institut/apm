@@ -22,6 +22,7 @@ namespace APM\Core\Collation;
 
 
 
+use APM\Core\Token\NormalizationSource;
 use APM\Core\Token\Normalizer\CompositeNormalizer;
 use APM\Core\Token\Normalizer\WitnessTokenNormalizer;
 use APM\Core\Token\Token;
@@ -156,7 +157,7 @@ class CollationTable implements LoggerAwareInterface, CodeDebugInterface {
 
         return $decorator->getDecoratedTokens($witness);
     }
-    
+
     /**
      * Adds a witness to the collation with the given siglum
      * 
@@ -307,7 +308,7 @@ class CollationTable implements LoggerAwareInterface, CodeDebugInterface {
 
     private function applyNormalizations(Witness $witness) : void {
        $compositeNormalizer = new CompositeNormalizer($this->normalizers);
-       $witness->applyTokenNormalization($compositeNormalizer, false);
+       $witness->applyTokenNormalization($compositeNormalizer, false, NormalizationSource::AUTOMATIC_COLLATION);
     }
 
 

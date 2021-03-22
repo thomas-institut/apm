@@ -20,6 +20,7 @@
 
 namespace APM\Core\Witness;
 
+use APM\Core\Token\NormalizationSource;
 use APM\Core\Token\Normalizer\WitnessTokenNormalizer;
 use APM\Core\Token\Token;
 
@@ -120,6 +121,6 @@ abstract class Witness {
         ];
     }
 
-    abstract public function applyTokenNormalization(WitnessTokenNormalizer  $normalizer, bool $overWriteCurrentNormalizations);
+    abstract public function applyTokenNormalization(WitnessTokenNormalizer  $normalizer, bool $overWriteCurrentNormalizations, string $source = NormalizationSource::DEFAULT);
 
 }

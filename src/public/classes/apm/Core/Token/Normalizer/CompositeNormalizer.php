@@ -20,6 +20,7 @@
 namespace APM\Core\Token\Normalizer;
 
 
+use APM\Core\Token\NormalizationSource;
 use APM\Core\Token\Token;
 
 /**
@@ -46,7 +47,8 @@ class CompositeNormalizer extends WitnessTokenNormalizer
     /**
      * @inheritDoc
      */
-    public function normalizeToken(Token $token, bool $overwriteCurrentNormalization = false): array
+    public function normalizeToken(Token $token, bool $overwriteCurrentNormalization = false,
+                                   string $source = NormalizationSource::DEFAULT): array
     {
         $newTokenArray = [clone $token];
         foreach($this->normalizers as $i => $normalizer) {
@@ -55,7 +57,7 @@ class CompositeNormalizer extends WitnessTokenNormalizer
                 // only overwrite for the first normalizer, all the rest should work on this new normalization
                 $overwrite = true;
             }
-            $newTokenArray = WitnessTokenNormalizer::normalizeTokenArray($newTokenArray, $normalizer, $overwrite);
+            $newTokenArray = WitnessTokenNormalizer::normalizeTokenArray($newTokenArray, $normalizer, $overwrite, $source);
         }
         return $newTokenArray;
     }

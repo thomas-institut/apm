@@ -187,6 +187,19 @@ export class TableEditor {
         type: 'function',
         default: (row, col, value) => thisObject.options.isEmptyValue(row, col,value) ? '' : value
       },
+      onCellEnterEditMode: {
+        // a function to be called when the user clicks on an editable cell, before any cell editing setup
+        // is done. If the function returns false, editing will not occur
+        require: false,
+        type: 'function',
+        default : (row, col) => { return true }
+      },
+      onCellLeaveEditMode: {
+        // a function to be called before leaving cell edit mode
+        require: false,
+        type: 'function',
+        default: (row, col) => {}
+      },
       onCellConfirmEdit: {
         // a function to be called when the user clicks on the confirm edit button in edit mode
         // return the new value for the cell
@@ -945,6 +958,7 @@ export class TableEditor {
     return thIndex
   }
 
+
   _getCellIndexFromElement(element) {
     let cellIndex = null
     let classes = this.getClassList(element)
@@ -1190,6 +1204,9 @@ export class TableEditor {
 
   enterCellEditMode(row, col) {
     //console.log('Entering edit mode, ' + row + ':' + col)
+    if (!this.options.onCellEnterEditMode(row, col)) {
+      return
+    }
     let tdSelector = this.getTdSelector(row, col)
     let inputSelector = tdSelector + ' .te-input'
     this.editFlagMatrix.setValue(row, col, true)
@@ -1200,6 +1217,10 @@ export class TableEditor {
       $(inputSelector).get(0).setSelectionRange(10000, 10000)
     })
     $(inputSelector).get(0).focus()
+  }
+
+  isCellInEditMode(row, col) {
+    return this.editFlagMatrix.getValue(row, col)
   }
 
   leaveCellEditMode(row, col) {
@@ -1213,6 +1234,7 @@ export class TableEditor {
     // reinstate mouseenter and mouseleave events
     $(tdSelector).on('mouseenter', this.genOnMouseEnterCell())
     $(tdSelector).on('mouseleave', this.genOnMouseLeaveCell())
+    this.options.onCellLeaveEditMode(row, col)
     this.dispatchCellDrawnEvent(row, col)
   }
 

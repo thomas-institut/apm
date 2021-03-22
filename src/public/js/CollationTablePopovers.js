@@ -17,6 +17,7 @@
  */
 
 import * as Util from './toolbox/Util.mjs'
+import { EDITION, FULL_TX } from './constants/TokenClass'
 
 // Classes
 const popoverDivClass = 'ctPopover'
@@ -54,10 +55,13 @@ export function getPopoverHtml(witnessIndex, tokenIndex, witness, postNotes, peo
 
   let popoverHtml = ''
 
-  let firstSourceItemIndex = token['sourceItems'][0]['index']
   let lang = witness['lang']
-  if (witness['items'][firstSourceItemIndex]['lang'] !== undefined) {
-    lang = witness['items'][firstSourceItemIndex]['lang']
+  if (token['tokenClass'] === FULL_TX) {
+    let firstSourceItemIndex = token['sourceItems'][0]['index']
+
+    if (witness['items'][firstSourceItemIndex]['lang'] !== undefined) {
+      lang = witness['items'][firstSourceItemIndex]['lang']
+    }
   }
   // console.log("Lang: " + lang)
   let langClass = langClassPrefix  + lang
@@ -65,33 +69,46 @@ export function getPopoverHtml(witnessIndex, tokenIndex, witness, postNotes, peo
 
   // the text
   popoverHtml += `<p class="${[headingClass, langClass].join(' ')}">${token.text}`
-  if (token['normalizedText'] !== undefined) {
-    popoverHtml += `<br/>${equivalentIcon} ${token['normalizedText']}<br/>`
+  if (token['normalizedText'] !== undefined && token['normalizedText'] !== '') {
+    if (token['normalizationSource'] === 'automaticCollation') {
+      popoverHtml += `<br/><span class="standard-norm">${equivalentIcon} ${token['normalizedText']}</span><br/>`
+    } else {
+      popoverHtml += `<br/>${equivalentIcon} ${token['normalizedText']}<br/>`
+    }
   }
   popoverHtml += '</p>'
 
   // item info
-
-  if (token['sourceItems'].length === 1) {
-    popoverHtml += `<div class="${[itemInfoClass, langClass].join(' ')}">`
-    popoverHtml += getItemPopoverHtmlForToken(witnessIndex, token, token['sourceItems'][0], peopleInfo, witness['items'], false)
-    popoverHtml += '</div>'
-  } else {
-    for (const itemData of token['sourceItems']) {
+  if (token['tokenClass'] === FULL_TX) {
+    if (token['sourceItems'].length === 1) {
       popoverHtml += `<div class="${[itemInfoClass, langClass].join(' ')}">`
-      popoverHtml += getItemPopoverHtmlForToken(witnessIndex, token, itemData, peopleInfo, witness['items'], true)
+      popoverHtml += getItemPopoverHtmlForToken(witnessIndex, token, token['sourceItems'][0], peopleInfo, witness['items'], false)
       popoverHtml += '</div>'
+    } else {
+      for (const itemData of token['sourceItems']) {
+        popoverHtml += `<div class="${[itemInfoClass, langClass].join(' ')}">`
+        popoverHtml += getItemPopoverHtmlForToken(witnessIndex, token, itemData, peopleInfo, witness['items'], true)
+        popoverHtml += '</div>'
+      }
+    }
+    // token address
+    popoverHtml += `<p class="${tokenAddressClass}">`
+    popoverHtml += getTokenAddressHtml(witnessIndex, token, witness['items'])
+    popoverHtml += '</p>'
+
+    if (postNotes.length > 0) {
+      popoverHtml += getNotesHtml(postNotes, peopleInfo, 'Additional Notes')
     }
   }
-  // token address
-  popoverHtml += `<p class="${tokenAddressClass}">`
-  popoverHtml += getTokenAddressHtml(witnessIndex, token, witness['items'])
-  popoverHtml += '</p>'
 
-  if (postNotes.length > 0) {
-    popoverHtml += getNotesHtml(postNotes, peopleInfo, 'Additional Notes')
-  }
   popoverHtml += '</div>'
+
+  if (token['tokenClass'] === EDITION) {
+    console.log(`Popover generated for edition token:`)
+    console.log(token)
+    console.log(`Popover html:  '${popoverHtml}'`)
+
+  }
 
   return popoverHtml
 }

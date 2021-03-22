@@ -48,6 +48,7 @@ import { CriticalApparatusGenerator } from './CriticalApparatusGenerator'
 import { EditionViewerHtml } from './EditionViewerHtml'
 import { ConfirmDialog } from './ConfirmDialog'
 import { VERBOSITY_DEBUG_PLUS, WitnessDiffCalculator } from './WitnessDiffCalculator'
+import { FULL_TX } from './constants/TokenClass'
 
 /** @namespace Twig */
 
@@ -1020,6 +1021,35 @@ export class CollationTableEditor {
     })
   }
 
+  hideAllCurrentPopovers() {
+    $('div.popover').hide()
+    this.ctDiv.popover('dispose')
+  }
+
+  restoreHiddenPopovers() {
+    // $('div.popover').show()
+    // this.setUpPopovers()
+  }
+
+  genOnEnterCellEditMode() {
+    let thisObject = this
+    return (row, col) => {
+      console.log (`Enter cell edit ${row}:${col}`)
+      $(thisObject.tableEditor.getTdSelector(row, col)).popover('hide').popover('disable')
+
+      return true
+    }
+  }
+
+  genOnLeaveCellEditMode() {
+    let thisObject = this
+    return (row, col) => {
+      console.log(`Leave cell edit ${row}:${col}`)
+      $(thisObject.tableEditor.getTdSelector(row, col)).popover('enable')
+      thisObject.restoreHiddenPopovers()
+    }
+  }
+
   genPopoverContentFunction() {
     let thisObject = this
     return function() {
@@ -1031,14 +1061,19 @@ export class CollationTableEditor {
       if (cellIndex === null) {
         console.error('Popover requested on a non-cell element!')
       }
+
+      if (thisObject.tableEditor.isCellInEditMode(cellIndex.row, cellIndex.col)){
+        // console.log(`Cell ${cellIndex.row}:${cellIndex.col} in is cell edit mode`)
+        return ''
+      }
       let witnessIndex = thisObject.ctData['witnessOrder'][cellIndex.row]
-      if (thisObject.ctData['witnesses'][witnessIndex]['witnessType'] === WitnessType.FULL_TX) {
+      //if (thisObject.ctData['witnesses'][witnessIndex]['witnessType'] === WitnessType.FULL_TX) {
         let tokenIndex = thisObject.tableEditor.getValue(cellIndex.row, cellIndex.col)
         console.log(`Getting popover for witness index ${witnessIndex}, token ${tokenIndex}, col ${cellIndex.col}`)
         return thisObject.getPopoverHtml(witnessIndex, tokenIndex, cellIndex.col)
-      }
-      console.log(`No popover text on witness ${witnessIndex}, row ${cellIndex.row}, col ${cellIndex.col}`)
-      return ''
+      //}
+      //console.log(`No popover text on witness ${witnessIndex}, row ${cellIndex.row}, col ${cellIndex.col}`)
+      //return ''
     }
   }
 
@@ -1106,6 +1141,8 @@ export class CollationTableEditor {
       groupedColumns: this.ctData.groupedColumns,
       generateCellContent: this.genGenerateCellContentFunction(),
       generateCellContentEditMode: this.genGenerateCellContentEditModeFunction(),
+      onCellEnterEditMode: this.genOnEnterCellEditMode(),
+      onCellLeaveEditMode: this.genOnLeaveCellEditMode(),
       onCellConfirmEdit: this.genOnCellConfirmEditFunction(),
       cellValidationFunction: this.genCellValidationFunction(),
       generateTableClasses: this.genGenerateTableClassesFunction(),
@@ -1304,24 +1341,27 @@ export class CollationTableEditor {
     if (tokenIndex === -1) {
       return ''
     }
-    // notice that since the  popover class is not attached to the edition witness row (i.e. the first row)
-    // this function is never called for those cells
     let popoverHtml  = this.getPopoverHtmlFromCache(witnessIndex, tokenIndex)
     if (popoverHtml !== undefined) {
       // console.log(`Popover from cache: '${popoverHtml}'`)
       return popoverHtml
     }
+    let witnessToken = this.ctData['witnesses'][witnessIndex]
 
     popoverHtml = PopoverFormatter.getPopoverHtml(
       witnessIndex,
       tokenIndex,
-      this.ctData['witnesses'][witnessIndex],
-      this.getPostNotes(witnessIndex, col, tokenIndex),
+      witnessToken,
+      witnessToken['tokenClass'] === FULL_TX ? this.getPostNotes(witnessIndex, col, tokenIndex) : [],
       this.options.peopleInfo
     )
 
     this.storePopoverHtmlInCache(witnessIndex, tokenIndex, popoverHtml)
     return popoverHtml
+  }
+
+  invalidateTokenDataCacheForToken(witnessIndex, tokenIndex) {
+    this.tokenDataCache[witnessIndex][tokenIndex] = {}
   }
 
   getPopoverHtmlFromCache(witnessIndex, tokenIndex) {
@@ -1476,6 +1516,7 @@ export class CollationTableEditor {
           break
 
         case TokenClass.EDITION:
+          classes.push('withpopover')
           let langCode = thisObject.ctData['lang']
           classes.push('text-' + langCode)
 
@@ -1584,6 +1625,9 @@ export class CollationTableEditor {
         thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] =
           Util.isPunctuationToken(newText) ? TokenType.PUNCTUATION : TokenType.WORD
       }
+
+      thisObject.invalidateTokenDataCacheForToken(witnessIndex, ref)
+      //thisObject.recalculateVariants()
 
       console.log('Edition Witness updated')
       console.log(thisObject.ctData['witnesses'][witnessIndex]['tokens'])

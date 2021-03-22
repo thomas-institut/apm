@@ -22,10 +22,12 @@ import { SequenceWithGroups } from './SequenceWithGroups'
 import { Matrix } from '@thomas-inst/matrix'
 import * as TypesetterTokenFactory from './TypesetterTokenFactory'
 import { CriticalApparatusGenerator } from './CriticalApparatusGenerator'
+import * as NormalizationSource from './constants/NormalizationSource'
 
 const INPUT_TOKEN_FIELD_TYPE = 'tokenType'
 const INPUT_TOKEN_FIELD_TEXT = 'text'
 const INPUT_TOKEN_FIELD_NORMALIZED_TEXT = 'normalizedText'
+const INPUT_TOKEN_FIELD_NORMALIZATION_SOURCE = 'normalizationSource'
 
 const noGluePunctuation = '.,:;?!'
    + String.fromCodePoint(0x60C) // // Arabic comma
@@ -210,6 +212,9 @@ export class PrintedEditionGenerator {
       .map( (t) => {   // get text for each column
         if (t.tokenType === TokenType.EMPTY) { return ''}
         if (isPunctuationToken(t.text)) { return  ''}
+        if (t.normalizedText !== undefined && t.normalizedText !== '') {
+          return t.normalizedText
+        }
         return t.text
       })
       .filter( t => t !== '')   // filter out empty text
@@ -474,7 +479,7 @@ export class PrintedEditionGenerator {
       currentMainTextIndex++
       mainTextTokens.push({
         type: E_TOKEN_TYPE_TEXT,
-        text: this.getTextFromInputToken(inputToken),
+        text: this.getTextFromInputToken(inputToken, [ NormalizationSource.AUTOMATIC_COLLATION ]),
         collationTableIndex: inputIndex
       })
       firstWordAdded = true
@@ -507,10 +512,17 @@ export class PrintedEditionGenerator {
       .join(' ')
   }
 
-  getTextFromInputToken(token){
-    return token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT] !== undefined ?
-      token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT] :
-      token[INPUT_TOKEN_FIELD_TEXT]
+  getTextFromInputToken(token, normalizationSourcesToIgnore = []){
+    let text = token[INPUT_TOKEN_FIELD_TEXT]
+    if (token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT] !== undefined && token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT] !== '') {
+      let norm = token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT]
+      let source = token[INPUT_TOKEN_FIELD_NORMALIZATION_SOURCE] !== undefined ? token[INPUT_TOKEN_FIELD_NORMALIZATION_SOURCE] : ''
+      if (source === '' || normalizationSourcesToIgnore.indexOf(source) === -1) {
+        // if source === '', this is  a normalization from the transcription
+        text = norm
+      }
+    }
+    return text
   }
 
   getCollationTableColumn(ctData, col) {

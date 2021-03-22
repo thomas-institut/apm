@@ -20,6 +20,7 @@
 namespace APM\Core\Token\Normalizer;
 
 
+use APM\Core\Token\NormalizationSource;
 use APM\Core\Token\Token;
 use APM\Core\Token\TokenType;
 
@@ -31,7 +32,7 @@ use APM\Core\Token\TokenType;
 abstract class SimpleStringNormalizer extends WitnessTokenNormalizer
 {
 
-    public function normalizeToken(Token $token, bool $overwriteCurrentNormalization = false): array
+    public function normalizeToken(Token $token, bool $overwriteCurrentNormalization = false, string $source = NormalizationSource::DEFAULT): array
     {
         if ($token->getType() !== TokenType::WORD) {
             // don't do anything to non-word tokens
@@ -43,7 +44,7 @@ abstract class SimpleStringNormalizer extends WitnessTokenNormalizer
         }
 
         $normalizedToken = clone $token;
-        $normalizedToken->setNormalization($this->normalizeString($stringToNormalize));
+        $normalizedToken->setNormalization($this->normalizeString($stringToNormalize), $source);
         return [ $normalizedToken ];
     }
 

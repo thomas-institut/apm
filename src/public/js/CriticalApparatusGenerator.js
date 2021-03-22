@@ -20,11 +20,13 @@ import * as TokenType from './constants/TokenType'
 import { isPunctuationToken } from './toolbox/Util.mjs'
 import { SequenceWithGroups } from './SequenceWithGroups'
 import { Matrix } from '@thomas-inst/matrix'
+import * as NormalizationSource from './constants/NormalizationSource'
 
 import { generateMainText} from './EditionMainTextGenerator.mjs'
 
 const INPUT_TOKEN_FIELD_TEXT = 'text'
 const INPUT_TOKEN_FIELD_NORMALIZED_TEXT = 'normalizedText'
+const INPUT_TOKEN_FIELD_NORMALIZATION_SOURCE = 'normalizationSource'
 
 const ENTRY_TYPE_ADDITION = 'addition'
 const ENTRY_TYPE_OMISSION = 'omission'
@@ -33,11 +35,17 @@ const ENTRY_TYPE_VARIANT = 'variant'
 
 export class CriticalApparatusGenerator {
 
+  constructor (options) {
+
+
+  }
+
   /**
    * Generates an automatic critical apparatus from the given collation table data (which can
-   * be an edition too) using the given witness index as the main text
+   * be an edition too) using the given witness index as the main text.
    *
    * An critical edition apparatus consists of
+   *
    * @param ctData
    * @param baseWitnessIndex
    * @returns {[]}
@@ -55,7 +63,7 @@ export class CriticalApparatusGenerator {
     let generatedNormalizedMainText = generateMainText(mainTextTokens, true)
     console.log(`Normalized main text`)
     console.log(generatedNormalizedMainText)
-    let generatedMainText = generateMainText(mainTextTokens, false)
+    let generatedMainText = generateMainText(mainTextTokens, true, [ NormalizationSource.AUTOMATIC_COLLATION ])
     console.log(`Main text`)
     console.log(generatedMainText)
 
@@ -117,7 +125,7 @@ export class CriticalApparatusGenerator {
           criticalApparatus.push({
             start: mainTextIndex,
             end: mainTextIndex,
-            lemma: this.getTextFromInputToken(generatedNormalizedMainText.mainTextTokens[mainTextIndex]),
+            lemma: this.getTextFromInputToken(generatedMainText.mainTextTokens[mainTextIndex]),
             entries:entries
           })
         }
@@ -205,6 +213,9 @@ export class CriticalApparatusGenerator {
       .map( (t) => {   // get text for each column
         if (t.tokenType === TokenType.EMPTY) { return ''}
         if (isPunctuationToken(t.text)) { return  ''}
+        if (t.normalizedText !== undefined && t.normalizedText !== '') {
+          return t.normalizedText
+        }
         return t.text
       })
       .filter( t => t !== '')   // filter out empty text
@@ -265,8 +276,6 @@ export class CriticalApparatusGenerator {
     return entries
   }
 
-
-
   getWitnessTokensFromReferenceRow(ctData, witnessIndex) {
     return ctData['collationMatrix'][witnessIndex]
       .map( tokenRef => tokenRef === -1 ? { tokenType : TokenType.EMPTY } : ctData['witnesses'][witnessIndex]['tokens'][tokenRef] )
@@ -295,15 +304,20 @@ export class CriticalApparatusGenerator {
    *  Gets the text for the given token, the normal text or
    *  the normalized text if there is one
    * @param token
+   * @param normalizationSourcesToIgnore
    * @returns {*}
    */
-  getTextFromInputToken(token){
-    if (token === undefined) {
-      return ''
+  getTextFromInputToken(token, normalizationSourcesToIgnore = []){
+    let text = token[INPUT_TOKEN_FIELD_TEXT]
+    if (token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT] !== undefined && token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT] !== '') {
+      let norm = token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT]
+      let source = token[INPUT_TOKEN_FIELD_NORMALIZATION_SOURCE] !== undefined ? token[INPUT_TOKEN_FIELD_NORMALIZATION_SOURCE] : ''
+      if (source === '' || normalizationSourcesToIgnore.indexOf(source) === -1) {
+        // if source === '', this is  a normalization from the transcription
+        text = norm
+      }
     }
-    return token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT] !== undefined ?
-      token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT] :
-      token[INPUT_TOKEN_FIELD_TEXT]
+    return text
   }
 
   getCollationTableColumn(ctData, col) {

@@ -62,8 +62,8 @@ class TranscriptionToken extends Token {
         $this->textBoxLineRange = $range;
     }
     
-    public function __construct(int $type, string $t, string $n = '') {
-        parent::__construct($type, $t, $n);
+    public function __construct(int $type, string $text, string $normalization = '') {
+        parent::__construct($type, $text, $normalization);
         $this->setSourceItemIndexes([]);
         $this->setSourceItemAddresses([]);
         $this->setSourceItemCharRanges([]);

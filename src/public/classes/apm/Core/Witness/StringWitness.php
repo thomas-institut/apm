@@ -20,6 +20,7 @@
 
 namespace APM\Core\Witness;
 
+use APM\Core\Token\NormalizationSource;
 use APM\Core\Token\StringToken;
 use APM\Core\Token\StringTokenizer;
 use APM\Core\Token\Token;
@@ -74,9 +75,10 @@ class StringWitness extends Witness {
         return $this->sourceString;
     }
 
-    public function applyTokenNormalization(WitnessTokenNormalizer $normalizer, bool $overWriteCurrentNormalizations)
+    public function applyTokenNormalization(WitnessTokenNormalizer $normalizer, bool $overWriteCurrentNormalizations,
+                                            string $source = NormalizationSource::DEFAULT)
     {
-        $this->tokens = WitnessTokenNormalizer::normalizeTokenArray($this->getTokens(), $normalizer, $overWriteCurrentNormalizations);
+        $this->tokens = WitnessTokenNormalizer::normalizeTokenArray($this->getTokens(), $normalizer, $overWriteCurrentNormalizations, $source);
     }
 
     public function getData(): array

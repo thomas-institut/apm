@@ -285,25 +285,10 @@ export class AutomaticCollationTable {
     }
   }
 
-  fetchQuickEdition() {
+  updateQuickEdition() {
     this.editionDiv.html("Requesting edition from the server... <i class=\"fa fa-spinner fa-spin fa-fw\"></i>")
     let peg = new PrintedEditionGenerator()
     let edition = peg.generateEdition(this.collationTable, this.collationTable['witnessOrder'][0])
-    // console.log('Calling API at ' + this.apiQuickEditionUrl)
-    // let apiCallOptions = {
-    //   collationTable: this.collationTable,
-    //   baseWitnessIndex: 0
-    // }
-    // let thisObject = this
-    // $.post(
-    //   this.apiQuickEditionUrl,
-    //   {data: JSON.stringify(apiCallOptions)}
-    // ).done( function (apiResponse) {
-    //   console.log("Quick edition API call successful")
-    //   console.log(apiResponse)
-    //   //thisObject.editionDiv.html("Edition Status: " + apiResponse['status'])
-
-
       let ev = new EditionViewerSvg( {
         collationTokens: edition.mainTextTokens,
         apparatusArray: edition.apparatusArray,
@@ -314,25 +299,6 @@ export class AutomaticCollationTable {
       })
 
       this.editionDiv.html(ev.getSvg())
-
-      // let siglaHtml = '<ul class="siglalist">'
-      // siglaHtml += '<li>' + 'Base witness: ' + data.quickEdition.baseSiglum + '</li>'
-      // for(const abbr in data.quickEdition.abbrToSigla) {
-      //   siglaHtml += '<li>' + '<em>' + abbr + '</em>: ' + data.quickEdition.abbrToSigla[abbr] + '</li>'
-      // }
-      // siglaHtml += '</ul>'
-      // thisObject.siglaDiv.html(siglaHtml)
-
-
-
-    // }).fail(function(resp) {
-    //   console.error('Error in quick edition')
-    //   console.log(resp)
-    //   let failMsg = 'Error getting quick edition <i class="fa fa-frown-o" aria-hidden="true"></i><br/> '
-    //   failMsg += '<span class="small">HTTP code ' + resp.status + '</span>'
-    //   thisObject.editionDiv.html(failMsg)
-    // })
-
 
   }
 
@@ -391,25 +357,10 @@ export class AutomaticCollationTable {
       thisObject.collationEngineDetailsElement.html(thisObject.getCollationEngineDetailsHtml())
       thisObject.collationTableActionsDiv.removeClass('hidden')
 
-      // let ev = new EditionViewer( {
-      //     collationTokens: thisObject.quickEdition.mainTextTokens,
-      //     apparatusArray: thisObject.quickEdition.apparatusArray,
-      //     isRightToLeft: (thisObject.quickEdition.textDirection === 'rtl'),
-      //     addGlue: false
-      // })
+
+      thisObject.updateQuickEdition()
 
 
-      thisObject.fetchQuickEdition()
-
-      // let siglaHtml = '<ul class="siglalist">'
-      // siglaHtml += '<li>' + 'Base witness: ' + thisObject.quickEdition.baseSiglum + '</li>'
-      // for(const abbr in thisObject.quickEdition.abbrToSigla) {
-      //     siglaHtml += '<li>' + '<em>' + abbr + '</em>: ' + thisObject.quickEdition.abbrToSigla[abbr] + '</li>'
-      // }
-      // siglaHtml += '</ul>'
-      // thisObject.siglaDiv.html(siglaHtml)
-
-      // new table
      thisObject.collationTableDivNew.popover({
         trigger: "hover",
         selector: '.withpopover',

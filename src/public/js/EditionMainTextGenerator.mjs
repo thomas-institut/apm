@@ -19,28 +19,25 @@
 
 import * as TokenType from './constants/TokenType.js'
 
-const INPUT_TOKEN_FIELD_TYPE = 'tokenType'
 const E_TOKEN_TYPE_TEXT = 'text'
 
+const INPUT_TOKEN_FIELD_TYPE = 'tokenType'
 const INPUT_TOKEN_FIELD_TEXT = 'text'
 const INPUT_TOKEN_FIELD_NORMALIZED_TEXT = 'normalizedText'
+const INPUT_TOKEN_FIELD_NORMALIZATION_SOURCE = 'normalizationSource'
 
 
 /**
  * Generates a object consisting of main text edition tokens and a
- * an array that maps indexes in this array to indexes in the collation table row
- *
- * This is necessary because the main text may come from a normal transcription witness
- * instead of an edition witness. Normalizations in the transcription witness should be
- * taking care of.
- *
+ * an array that maps indexes in this array to indexes in the collation table row.
  *
  * @param witnessTokens
  * @param normalized
+ * @param normalizationsToIgnore
  * @returns {{mainTextTokens: [], ctToMainTextMap: []}}
  */
 
-export function generateMainText(witnessTokens, normalized = true) {
+export function generateMainText(witnessTokens, normalized = true, normalizationsToIgnore = []) {
   let mainTextTokens = []
   let ctTokensToMainText = []
   let currentMainTextIndex = -1
@@ -58,10 +55,9 @@ export function generateMainText(witnessTokens, normalized = true) {
       continue
     }
     currentMainTextIndex++
-    // TODO: implement proper edition text tokens, which will just be copied into the return array
     mainTextTokens.push({
       type: E_TOKEN_TYPE_TEXT,
-      text: getTextFromInputToken(witnessToken, normalized),
+      text: getTextFromInputToken(witnessToken, normalized, normalizationsToIgnore),
       collationTableIndex: i
     })
     ctTokensToMainText.push(currentMainTextIndex)
@@ -73,18 +69,28 @@ export function generateMainText(witnessTokens, normalized = true) {
 }
 
 
+
 /**
  *  Gets the text for the given token, the normal text or
  *  the normalized text if there is one
  * @param token
  * @param normalized
+ * @param normalizationSourcesToIgnore
  * @returns {*}
  */
-function getTextFromInputToken(token, normalized = true){
+
+function getTextFromInputToken(token, normalized, normalizationSourcesToIgnore = []){
+  let text = token[INPUT_TOKEN_FIELD_TEXT]
   if (!normalized) {
-    return token[INPUT_TOKEN_FIELD_TEXT]
+    return text
   }
-  return token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT] !== undefined ?
-    token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT] :
-    token[INPUT_TOKEN_FIELD_TEXT]
+  if (token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT] !== undefined && token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT] !== '') {
+    let norm = token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT]
+    let source = token[INPUT_TOKEN_FIELD_NORMALIZATION_SOURCE] !== undefined ? token[INPUT_TOKEN_FIELD_NORMALIZATION_SOURCE] : ''
+    if (source === '' || normalizationSourcesToIgnore.indexOf(source) === -1) {
+      // if source === '', this is  a normalization from the transcription
+      text = norm
+    }
+  }
+  return text
 }

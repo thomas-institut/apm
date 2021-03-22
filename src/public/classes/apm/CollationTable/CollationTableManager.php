@@ -183,8 +183,10 @@ abstract class CollationTableManager implements ErrorReporter
                         $tokens[] = [
                             'tokenClass' => StandardTokenClass::EDITION,
                             'tokenType' => $witnessToken['tokenType'],
-                            'text' => isset($witnessToken['normalizedText']) ? $witnessToken['normalizedText'] : $witnessToken['text']
-                        ];
+                            'text' => $witnessToken['text'],
+                            'normalizedText' => isset($witnessToken['normalizedText']) ? $witnessToken['normalizedText'] : '',
+                            'normalizationSource' => isset($witnessToken['normalizationSource']) ? $witnessToken['normalizationSource'] : '',
+                            ];
                     }
 
                     $currentTokenIndex++;

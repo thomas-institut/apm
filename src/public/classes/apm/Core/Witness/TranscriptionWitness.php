@@ -22,6 +22,7 @@ namespace APM\Core\Witness;
 
 use APM\Core\Item\Item;
 use APM\Core\Item\Mark;
+use APM\Core\Token\NormalizationSource;
 use APM\Core\Token\TokenType;
 use APM\Core\Transcription\ItemAddressInDocument;
 use APM\Core\Transcription\ItemInDocument;
@@ -494,9 +495,10 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
         return mb_substr($sourceString, $range->getStart(), $range->getLength());
     }
 
-    public function applyTokenNormalization(WitnessTokenNormalizer $normalizer, bool $overWriteCurrentNormalizations)
+    public function applyTokenNormalization(WitnessTokenNormalizer $normalizer, bool $overWriteCurrentNormalizations,
+                                            string $source = NormalizationSource::DEFAULT)
     {
-        $this->tokenArray = WitnessTokenNormalizer::normalizeTokenArray($this->getTokens(), $normalizer, $overWriteCurrentNormalizations);
+        $this->tokenArray = WitnessTokenNormalizer::normalizeTokenArray($this->getTokens(), $normalizer, $overWriteCurrentNormalizations, $source);
     }
 
 

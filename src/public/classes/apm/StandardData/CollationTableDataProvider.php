@@ -42,7 +42,7 @@ class CollationTableDataProvider implements StandardDataProvider
     /**
      * @inheritDoc
      */
-    public function getStandardData()
+    public function getStandardData(): stdClass
     {
 
         $txWitnessClass = TranscriptionWitness::class;

@@ -20,8 +20,6 @@
 
 namespace APM\Core\Token;
 
-use APM\StandardData\StandardDataProvider;
-use APM\StandardData\StandardTokenType;
 use InvalidArgumentException;
 
 /**
@@ -42,10 +40,7 @@ use InvalidArgumentException;
 class Token {
     
     const DEFAULT_WHITESPACE_NORMALIZATION = ' ';
-
-    const ERROR_WHITESPACE_IN_TEXT = 101;
     const ERROR_INVALID_TYPE = 102;
-    
     
     /** @var int */
     private int $type;
@@ -55,18 +50,21 @@ class Token {
     
     /** @var string */
     private string $normalizedText;
+
+    /** @var string  */
+    private string $normalizationSource;
     
     /** @var array */
     private array $alternateTexts;
 
-    public function __construct(int $type, string $t, string $n = '') {
-        if ($t === '') {
+    public function __construct(int $type, string $text, string $normalization = '', string $normalizationSource = NormalizationSource::NONE) {
+        if ($text === '') {
             $type = TokenType::EMPTY;
         }
         $this->setType($type);
-        $this->setText($t);
-        $this->setNormalization($n);
-        if ($n === '' && $type===TokenType::WHITESPACE) {
+        $this->setText($text);
+        $this->setNormalization($normalization, $normalizationSource);
+        if ($normalization === '' && $type===TokenType::WHITESPACE) {
             $this->setNormalization(self::DEFAULT_WHITESPACE_NORMALIZATION);
         }
         $this->alternateTexts = [];
@@ -121,13 +119,25 @@ class Token {
         return $this->normalizedText;
     }
 
+    public function getNormalizationSource() : string {
+        return $this->normalizationSource;
+    }
+
     /**
      * Sets the token's normalization
      *
      * @param string $str
+     * @param string $source  will be ignored if $str is empty
      */
-    public function setNormalization(string $str) : void {
+    public function setNormalization(string $str, string $source = NormalizationSource::NONE) : void {
+        if ($this->text === $str) {
+            // this means that there's no normalization
+            $this->normalizedText = '';
+            $this->normalizationSource = NormalizationSource::NONE;
+        }
+
         $this->normalizedText = $str;
+        $this->normalizationSource = $str === '' ? NormalizationSource::NONE : $source;
     }
 
     /**
@@ -154,7 +164,8 @@ class Token {
         return [
             'type' => $this->getType(),
             'text' => $this->getText(),
-            'normalizedText' => $this->getNormalization()
+            'normalizedText' => $this->getNormalization(),
+            'normalizationSource' => $this->getNormalizationSource()
         ];
     }
 

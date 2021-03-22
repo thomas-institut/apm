@@ -29,7 +29,7 @@ class TranscriptionTokenDataProvider implements StandardDataProvider
     /**
      * @var TranscriptionToken
      */
-    private $token;
+    private TranscriptionToken $token;
 
     public function __construct(TranscriptionToken $token)
     {

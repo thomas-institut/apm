@@ -45,15 +45,15 @@ class StringToken extends Token {
      * StringToken constructor.
      *
      * @param int $type
-     * @param string $t
+     * @param string $text
      * @param int $startCharIndex
      * @param int $startLineNumber
      * @param int $endLineNumber
      */
-    public function __construct(int $type, string $t, int $startCharIndex, 
-            int $startLineNumber, int $endLineNumber = -1) {
-        parent::__construct($type, $t);
-        $this->charRange = new IntRange($startCharIndex, mb_strlen($t));
+    public function __construct(int $type, string $text, int $startCharIndex,
+                                int $startLineNumber, int $endLineNumber = -1) {
+        parent::__construct($type, $text);
+        $this->charRange = new IntRange($startCharIndex, mb_strlen($text));
         if ($endLineNumber === -1 || $endLineNumber < $startLineNumber) {
             $endLineNumber = $startLineNumber;
         }

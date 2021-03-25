@@ -102,7 +102,8 @@ class UnclearBlot extends SimpleFormatBlot {}
 TranscriptionEditor.registerFormatBlot(UnclearBlot, { 
   type: ITEM_UNCLEAR, 
   name: 'unclear', 
-  title: 'Unclear', 
+  title: 'Unclear',
+  canBeTarget: true,
   icon: '<i class="fas fa-low-vision"></i>',
   alttext : { title: 'Alt. Reading' },
   extrainfo: { title: 'Reason', options : Item.getValidUnclearReasons() }

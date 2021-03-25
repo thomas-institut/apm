@@ -44,12 +44,10 @@ class ApiElements extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws DependencyException
-     * @throws NotFoundException
      * @throws Exception
      */
     public function updateElementsByDocPageCol(Request $request, 
-            Response $response)
+            Response $response): Response
     {
         $dataManager = $this->getDataManager();
         $this->profiler->start();
@@ -280,7 +278,7 @@ class ApiElements extends ApiController
                 return $this->responseWithJson($response,['error' => ApiController::API_ERROR_WRONG_TARGET_FOR_EDNOTE], 409);
             }
             if (!$dataManager->userManager->userExistsById($edNotes[$i]['authorId'])) {
-                $this->logger->error("Inexisted author Id for editorial note: " . $edNotes[$i]['authorId'],
+                $this->logger->error("Inexistent author Id for editorial note: " . $edNotes[$i]['authorId'],
                     [ 'apiUserId' => $this->apiUserId,
                       'apiError' => ApiController::API_ERROR_WRONG_AUTHOR_ID,
                       'docId' => $docId,
@@ -358,7 +356,7 @@ class ApiElements extends ApiController
      * @throws DependencyException
      * @throws NotFoundException
      */
-    public function getElementsByDocPageCol(Request $request, Response $response)
+    public function getElementsByDocPageCol(Request $request, Response $response): Response
     {
         $docId = $request->getAttribute('document');
         $pageNumber = $request->getAttribute('page');

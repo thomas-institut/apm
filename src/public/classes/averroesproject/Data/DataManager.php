@@ -538,6 +538,7 @@ class DataManager implements  SqlQueryCounterTrackerAware
 
         $this->getSqlQueryCounterTracker()->incrementUpdate();
         $this->docsDataTable->updateRow($row);
+        return true;
     }
 
     /**

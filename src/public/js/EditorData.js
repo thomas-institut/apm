@@ -26,7 +26,7 @@
 class EditorData {
   
   static getApiDataFromQuillDelta(delta, editorInfo) {
-    
+
     // Transcription editor settings
     let formatBlots = TranscriptionEditor.formatBlots
     let blockBlots = TranscriptionEditor.blockBlots
@@ -151,7 +151,7 @@ class EditorData {
     }
 
     // START of ops processing
-    let opsCounter = 0
+    // let opsCounter = 0
     for (const entry of ops.entries()) {
       const curOps = entry[1]
       //console.log('[' + (opsCounter++) + '] PROCESSING OPS: ')
@@ -186,7 +186,7 @@ class EditorData {
           }
 
           if (curElement.type === invalidElementType) {
-            console.warn('WARNING: Quill 2 API : single newline without valid attribute')
+            console.warn('WARNING: Quill -> API : single newline without valid attribute')
             console.warn(JSON.stringify(curOps))
           }
           if (curElement.id === -1) {
@@ -247,7 +247,7 @@ class EditorData {
         // First take care of line gaps
         if (previousElementType===lineGapElementType) {
           if (!text.includes('\n')) {
-            console.warn("Quill 2 API: Found an insert without newlines after a lineGap, this is really odd! Skipping")
+            console.warn("Quill -> API: Found an insert without newlines after a lineGap, this is really odd! Skipping")
             previousElementType = -1
             continue
           }
@@ -398,38 +398,118 @@ class EditorData {
       if (itemIds.includes(note.target)) {
         filteredEdnotes.push(note)
       } else {
-        console.warn('WARNING: Quill 2 API : stray ednote')
+        console.warn('WARNING: Quill -> API : stray editorial note')
         console.warn(note)
       }
     }
     return {elements: processedElements, ednotes: filteredEdnotes, people: editorInfo.people, info: editorInfo.info}
   }
-  
-
 
 
   static getTranscriptionEditorDataFromApiData(columnData, editorId, langDef, minItemId)
   {
+
+    function getTargetText(targetTexts, itemId) {
+      let index = targetTexts.map( (tt) => {return tt.id}).indexOf(itemId)
+      return index === -1 ? '[none]' : targetTexts[index].text
+    }
+
+    function getItemTypesThatCanBeTargets() {
+      return TranscriptionEditor.formatBlots
+      .filter( (blot) => { return blot.canBeTarget === undefined ? false : blot.canBeTarget })
+      .map( (blot) => { return blot.type })
+    }
+
+    function generateNewLineOpsForElement(ele, formats, targetTexts) {
+      const attr = {}
+      switch(ele.type) {
+        case ELEMENT_GLOSS:
+           return {
+            insert: '\n',
+            attributes: {
+              gloss:  {
+                elementId: ele.id,
+                place: ele.placement
+              }
+            }
+          }
+
+        case ELEMENT_ADDITION:
+          return {
+            insert: '\n',
+            attributes: {
+              additionelement:  {
+                elementId: ele.id,
+                place: ele.placement,
+                target: ele.reference,
+                targetText: getTargetText(targetTexts, parseInt(ele.reference))
+              }
+            }
+          }
+
+        case ELEMENT_SUBSTITUTION:
+          return {
+            insert: '\n',
+            attributes: {
+              substelement:  {
+                elementId: ele.id,
+                place: ele.placement,
+                target: ele.reference,
+                targetText: getTargetText(targetTexts, parseInt(ele.reference))
+              }
+            }
+          }
+
+        default:
+          attr[formats[ele.type]] = true
+          return {insert: '\n', attributes: attr}
+      }
+    }
+
+    function getTargetTexts(columnData) {
+      let targetTypes = getItemTypesThatCanBeTargets()
+      let targets = []
+      columnData.elements.forEach( (ele) => {
+        ele.items.forEach( (item) => {
+          if (targetTypes.indexOf(item.type) !== -1 ) {
+            targets.push( {
+              id: item.id,
+              type: item.type,
+              text: item.theText
+            })
+          }
+        })
+      })
+      return targets
+    }
+
+    // console.log(`getTranscriptionEditorDataFromApiData`)
     const ops = []
     const formats = []
-    const additionTargetTexts = []
+    // const additionTargetTexts = []
     let formatBlots = TranscriptionEditor.formatBlots
-    let blockBlots = TranscriptionEditor.blockBlots
+    // let blockBlots = TranscriptionEditor.blockBlots
     let imageBlots = TranscriptionEditor.imageBlots
-    
-    additionTargetTexts[0] = '[none]'
-    
+
+
+    let targetTexts = getTargetTexts(columnData)
+    console.log(`Target texts`)
+    console.log(targetTexts)
+
     let languageCounts = {}
     for (const lang in langDef) {
-      languageCounts[lang] = 0
+      if (langDef.hasOwnProperty(lang)) {
+        languageCounts[lang] = 0
+      }
     }
-    
+
+
     formats[ELEMENT_HEAD] = 'headelement'
     formats[ELEMENT_CUSTODES] = 'custodes'
     formats[ELEMENT_PAGE_NUMBER] = 'pagenumber'
 
     for (const ele of columnData.elements) {
-      const attr = {}
+      // const attr = {}
       switch (ele.type) {
         case ELEMENT_LINE_GAP:
           ops.push({
@@ -455,9 +535,6 @@ class EditorData {
             let foundBlot = false
             for (const theBlot of formatBlots) {
               if (theBlot.type === item.type) {
-                if (theBlot.canBeTarget) {
-                  additionTargetTexts[item.id] = theBlot.title + ': ' + item.theText
-                }
                 let theOps = {
                   insert: item.theText
                 }
@@ -474,8 +551,10 @@ class EditorData {
                   theOps.attributes[theBlot.name].extrainfo = item.extraInfo
                 }
                 if (theBlot.target !== undefined) {
+                  // console.log(`There is a target for item inside element: ${item.target}`)
+                  // console.log(additionTargetTexts)
                   theOps.attributes[theBlot.name].target = item.target
-                  theOps.attributes[theBlot.name].targetText = additionTargetTexts[item.target]
+                  theOps.attributes[theBlot.name].targetText = getTargetText(targetTexts, item.target)
                 }
                 ops.push(theOps)
                 languageCounts[item.lang]++
@@ -484,8 +563,10 @@ class EditorData {
               }
             }
             if (foundBlot) {
+              // we found a format blot for the item, we're done with it, move on to next item
               continue
             }
+            // let's see if the item can be represented by an image blot
             for (const theBlot of imageBlots) {
               if (theBlot.type === item.type) {
                 let theAttr = {
@@ -515,10 +596,13 @@ class EditorData {
               }
             }
             if (foundBlot) {
+              // we found an image blot for the item, move on to the next item
               continue
             }
+            // is it a text item?
             if (item.type === ITEM_TEXT) {
               let curString = ''
+              // look for line breaks in the item's text and generate the appropriate block blots
               for (let i=0; i < item.theText.length; i++) {
                 if (item.theText.charAt(i) === '\n') {
                   if (curString !== '') {
@@ -529,52 +613,7 @@ class EditorData {
                       }
                     })
                   }
-                  switch(ele.type) {
-                    case ELEMENT_GLOSS:
-                      ops.push({
-                        insert: '\n',
-                        attributes: {
-                          gloss:  {
-                            elementId: ele.id,
-                            place: ele.placement
-                          }
-                        }
-                      })
-                      break;
-
-                      case ELEMENT_ADDITION:
-                      ops.push({
-                        insert: '\n',
-                        attributes: {
-                          additionelement:  {
-                            elementId: ele.id,
-                            place: ele.placement,
-                            target: ele.reference,
-                            targetText: additionTargetTexts[parseInt(ele.reference)]
-                          }
-                        }
-                      })
-                      break;
-                      
-                      case ELEMENT_SUBSTITUTION:
-                      ops.push({
-                        insert: '\n',
-                        attributes: {
-                          substelement:  {
-                            elementId: ele.id,
-                            place: ele.placement,
-                            target: ele.reference,
-                            targetText: additionTargetTexts[parseInt(ele.reference)]
-                          }
-                        }
-                      })
-                      break;
-
-                    default:
-                      attr[formats[ele.type]] = true
-                      ops.push({insert: '\n', attributes: attr})
-                      break;
-                  }
+                  ops.push(generateNewLineOpsForElement(ele, formats, targetTexts))
                   curString = ''
                 }
                 else {
@@ -595,57 +634,9 @@ class EditorData {
             languageCounts[item.lang]++
           }
           break
-          
-          // no default
       }
-      
-      switch(ele.type) {
-        case ELEMENT_GLOSS:
-          ops.push({
-            insert: '\n',
-            attributes: {
-              gloss:  {
-                elementId: ele.id,
-                place: ele.placement
-              }
-            }
-          })
-          break;
-          
-          case ELEMENT_ADDITION:
-          ops.push({
-            insert: '\n',
-            attributes: {
-              additionelement:  {
-                elementId: ele.id,
-                place: ele.placement,
-                target: ele.reference,
-                targetText: additionTargetTexts[parseInt(ele.reference)]
-              }
-            }
-          })
-          break;
-          
-          case ELEMENT_SUBSTITUTION:
-          ops.push({
-            insert: '\n',
-            attributes: {
-              substelement:  {
-                elementId: ele.id,
-                place: ele.placement,
-                target: ele.reference,
-                targetText: additionTargetTexts[parseInt(ele.reference)]
-              }
-            }
-          })
-          break;
-          
-        default:
-          attr[formats[ele.type]] = true
-          ops.push({insert: '\n', attributes: attr})
-          break;
-      }
-      
+      // generate a line break with the appropriate block blot
+      ops.push(generateNewLineOpsForElement(ele, formats, targetTexts))
     }
     let mainLang = EditorData.getMainLanguage(languageCounts)
     return { delta: {ops: ops}, mainLang: mainLang, minItemId: minItemId }
@@ -655,6 +646,9 @@ class EditorData {
     let max = 0
     let mainLanguage = false
     for (const lang in languageCounts) {
+      if (!languageCounts.hasOwnProperty(lang)) {
+        continue
+      }
       if (languageCounts[lang]===0) {
         continue
       }

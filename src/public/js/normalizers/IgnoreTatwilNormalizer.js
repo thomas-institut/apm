@@ -16,7 +16,15 @@
  *
  */
 
-export const NONE = ''
-export const DEFAULT = 'default'
-export const AUTOMATIC_COLLATION = 'automaticCollation'
-export const COLLATION_EDITOR_AUTOMATIC = 'collationTableEditorAutomatic'
+export class IgnoreTatwilNormalizer {
+
+  /**
+   *
+   * @returns string
+   * @param  str string
+   */
+  normalizeString(str) {
+    return str.replace(String.fromCodePoint(0x640), '')
+  }
+
+}

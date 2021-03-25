@@ -63,7 +63,7 @@ export class CriticalApparatusGenerator {
     let generatedNormalizedMainText = generateMainText(mainTextTokens, true)
     console.log(`Normalized main text`)
     console.log(generatedNormalizedMainText)
-    let generatedMainText = generateMainText(mainTextTokens, true, [ NormalizationSource.AUTOMATIC_COLLATION ])
+    let generatedMainText = generateMainText(mainTextTokens, true, [ NormalizationSource.AUTOMATIC_COLLATION, NormalizationSource.COLLATION_EDITOR_AUTOMATIC])
     console.log(`Main text`)
     console.log(generatedMainText)
 

@@ -561,6 +561,7 @@ class CollationTable implements LoggerAwareInterface, CodeDebugInterface {
         }
         $data['witnesses'] = $witnessDataArrays;
         $data['collationMatrix'] = $matrix;
+        //$data['automaticNormalizationsApplied'] = $this->normalizers;
         return $data;
     }
 

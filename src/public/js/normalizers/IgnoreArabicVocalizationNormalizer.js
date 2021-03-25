@@ -16,7 +16,29 @@
  *
  */
 
-export const NONE = ''
-export const DEFAULT = 'default'
-export const AUTOMATIC_COLLATION = 'automaticCollation'
-export const COLLATION_EDITOR_AUTOMATIC = 'collationTableEditorAutomatic'
+import * as Util from '../toolbox/Util.mjs'
+
+export class IgnoreArabicVocalizationNormalizer {
+  
+  constructor () {
+    this.arabicVowelDiacritics = [
+      String.fromCodePoint(0x64B),
+      String.fromCodePoint(0x64C),
+      String.fromCodePoint(0x64D),
+      String.fromCodePoint(0x64E),
+      String.fromCodePoint(0x64F),
+      String.fromCodePoint(0x650),
+      String.fromCodePoint(0x652)
+    ];
+  }
+
+  /**
+   *
+   * @returns string
+   * @param  str string
+   */
+  normalizeString(str) {
+    return Util.stringReplaceArray(str, this.arabicVowelDiacritics, '')
+  }
+
+}

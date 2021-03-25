@@ -18,6 +18,7 @@
 
 import * as Util from './toolbox/Util.mjs'
 import { EDITION, FULL_TX } from './constants/TokenClass'
+import * as NormalizationSource from './constants/NormalizationSource'
 
 // Classes
 const popoverDivClass = 'ctPopover'
@@ -70,7 +71,8 @@ export function getPopoverHtml(witnessIndex, tokenIndex, witness, postNotes, peo
   // the text
   popoverHtml += `<p class="${[headingClass, langClass].join(' ')}">${token.text}`
   if (token['normalizedText'] !== undefined && token['normalizedText'] !== '') {
-    if (token['normalizationSource'] === 'automaticCollation') {
+    if (token['normalizationSource'] ===  NormalizationSource.AUTOMATIC_COLLATION ||
+      token['normalizationSource'] === NormalizationSource.COLLATION_EDITOR_AUTOMATIC ) {
       popoverHtml += `<br/><span class="standard-norm">${equivalentIcon} ${token['normalizedText']}</span><br/>`
     } else {
       popoverHtml += `<br/>${equivalentIcon} ${token['normalizedText']}<br/>`

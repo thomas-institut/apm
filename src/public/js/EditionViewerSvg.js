@@ -24,6 +24,10 @@ import { NumeralStyles } from './NumeralStyles'
 import * as TypesetterTokenFactory from './TypesetterTokenFactory'
 import * as TypesetterTokenType from './TypesetterTokenType'
 
+
+const doubleVerticalLine = String.fromCodePoint(0x2016)
+const verticalLine = String.fromCodePoint(0x007c)
+
 export class EditionViewerSvg {
   
   constructor (userOptions) {
@@ -34,6 +38,8 @@ export class EditionViewerSvg {
     let optionsDefinition = {
       collationTokens: {type: 'Array', default: []},
       apparatusArray:  {type: 'Array', default: []},
+      entrySeparator: { type: 'string', default: verticalLine},
+      apparatusLineSeparator: { type: 'string', default: doubleVerticalLine},
       lang: { type: 'string'},
       isRightToLeft: { type: 'boolean', default: false},
       addGlue: { type: 'boolean', default: true},
@@ -256,6 +262,10 @@ export class EditionViewerSvg {
         }
 
         // line number
+        if (i !== 0) {
+          apparatusToTypeset.push(TypesetterTokenFactory.simpleText(this.options.apparatusLineSeparator).setBold())
+          apparatusToTypeset.push(TypesetterTokenFactory.normalSpace())
+        }
         apparatusToTypeset.push(TypesetterTokenFactory.simpleText(lineString).setBold())
         apparatusToTypeset.push(TypesetterTokenFactory.normalSpace())
 
@@ -316,10 +326,10 @@ export class EditionViewerSvg {
               apparatusToTypeset.push(TypesetterTokenFactory.normalSpace().setLength(10))
             }
           })
-          // insert double bars, but not if it's the last entry
+          // insert entry separators, but not if it's the last entry
           if (entryIndex !== (numEntries - 1)) {
             apparatusToTypeset.push(TypesetterTokenFactory.normalSpace().setLength(10))  // TODO: parametrize this!
-            apparatusToTypeset.push(TypesetterTokenFactory.simpleText(String.fromCodePoint(0x2016)))
+            apparatusToTypeset.push(TypesetterTokenFactory.simpleText(this.options.entrySeparator))
             apparatusToTypeset.push(TypesetterTokenFactory.normalSpace().setLength(10))  // TODO: parametrize this!
           }
         })

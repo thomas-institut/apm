@@ -23,6 +23,7 @@ import { Matrix } from '@thomas-inst/matrix'
 import * as TypesetterTokenFactory from './TypesetterTokenFactory'
 import { CriticalApparatusGenerator } from './CriticalApparatusGenerator'
 import * as NormalizationSource from './constants/NormalizationSource'
+import { main } from '@popperjs/core'
 
 const INPUT_TOKEN_FIELD_TYPE = 'tokenType'
 const INPUT_TOKEN_FIELD_TEXT = 'text'
@@ -105,7 +106,7 @@ export class PrintedEditionGenerator {
             // ignore base witness
             continue
           }
-          let theText = this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex)
+          let theText = this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex, false)
           if (theText === '') {
             // ignore empty witness text
             continue
@@ -123,11 +124,12 @@ export class PrintedEditionGenerator {
         return
       }
       // 2. There's main text, we need to find omissions and variants
-      let mainText = this._getMainTextForGroup(columnGroup, mainTextInputTokens)
-      if (mainText === '') {
+      let normalizedMainText = this._getMainTextForGroup(columnGroup, mainTextInputTokens)
+      if (normalizedMainText === '') {
         // ignore empty string (normally main text consisting only of punctuation)
         return
       }
+      // console.log(`Processing main text: '${normalizedMainText}'`)
       let groupVariants = []
       let groupOmissions = []
 
@@ -137,13 +139,14 @@ export class PrintedEditionGenerator {
           // ignore base witness
           continue
         }
-        let theText = this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex)
-        if (theText === '') {
+        let theNormalizedText = this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex, true)
+        let theText = this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex, false)
+        if (theNormalizedText === '') {
           // omission
           this._addWitnessIndexToVariantArray(groupOmissions, theText, witnessIndex)
           continue
         }
-        if (theText !== mainText) {
+        if (theNormalizedText !== normalizedMainText) {
           // variant
           this._addWitnessIndexToVariantArray(groupVariants, theText, witnessIndex)
         }
@@ -166,7 +169,7 @@ export class PrintedEditionGenerator {
       entries = this._genApparatusEntryFromArray(entries, groupVariants, sigla, ENTRY_TYPE_VARIANT, language)
       if (entries.length !== 0) {
         criticalApparatus.push({
-          mainText: mainText,
+          mainText: normalizedMainText,
           start: mainTextIndexFrom,
           end: mainTextIndexTo,
           entries: entries
@@ -445,11 +448,18 @@ export class PrintedEditionGenerator {
       .map( tokenRef => tokenRef === -1 ? { tokenType : TokenType.EMPTY } : ctData['witnesses'][witnessIndex]['tokens'][tokenRef] )
   }
 
-  generateMainText(inputTokens) {
+  /**
+   *
+   * @param inputTokens { []}
+   * @param normalized {boolean}
+   * @returns {{mainTextTokens: [], ctToMainTextMap: []}}
+   */
+  generateMainText(inputTokens, normalized = true) {
     let mainTextTokens = []
     let firstWordAdded = false
     let inputTokensToMainText = []
     let currentMainTextIndex = -1
+    let normalizationsToIgnore = [ NormalizationSource.AUTOMATIC_COLLATION, NormalizationSource.COLLATION_EDITOR_AUTOMATIC]
     for(let inputIndex = 0; inputIndex < inputTokens.length; inputIndex++) {
       let inputToken = inputTokens[inputIndex]
       let tokenType = inputToken[INPUT_TOKEN_FIELD_TYPE]
@@ -479,7 +489,7 @@ export class PrintedEditionGenerator {
       currentMainTextIndex++
       mainTextTokens.push({
         type: E_TOKEN_TYPE_TEXT,
-        text: this.getTextFromInputToken(inputToken, [ NormalizationSource.AUTOMATIC_COLLATION ]),
+        text: this.getNormalizedTextFromInputToken(inputToken, normalizationsToIgnore),
         collationTableIndex: inputIndex
       })
       firstWordAdded = true
@@ -495,14 +505,15 @@ export class PrintedEditionGenerator {
     return noGluePunctuation.includes(char)
   }
 
-  _getRowTextFromGroupMatrix(matrix, rowNumber) {
+  _getRowTextFromGroupMatrix(matrix, rowNumber, normalized = true) {
     let thisObject = this
     return matrix.getColumn(rowNumber)
       .map( (token) => {
         if (token.tokenType === TokenType.EMPTY) {
           return ''
         }
-        let theText = thisObject.getTextFromInputToken(token)
+
+        let theText = normalized ? thisObject.getNormalizedTextFromInputToken(token) : thisObject.getTextFromInputToken(token)
         if (isPunctuationToken(theText)) {
           return ''
         }
@@ -512,7 +523,13 @@ export class PrintedEditionGenerator {
       .join(' ')
   }
 
-  getTextFromInputToken(token, normalizationSourcesToIgnore = []){
+
+ getTextFromInputToken(token) {
+    return token[INPUT_TOKEN_FIELD_TEXT]
+ }
+
+
+  getNormalizedTextFromInputToken(token, normalizationSourcesToIgnore = []){
     let text = token[INPUT_TOKEN_FIELD_TEXT]
     if (token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT] !== undefined && token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT] !== '') {
       let norm = token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT]

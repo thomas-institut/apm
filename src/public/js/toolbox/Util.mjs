@@ -65,6 +65,21 @@ export function isWordToken(text) {
  return !hasSpaces(text) && !hasPunctuation(text)
 }
 
+/**
+ *
+ * @param str {string}
+ * @param searchStrings {string[]}
+ * @param replaceString {string}
+ * @returns {string}
+ */
+export function stringReplaceArray(str, searchStrings, replaceString) {
+  let result = str
+  searchStrings.forEach( (searchString) => {
+    result = result.replace(searchString, replaceString)
+  })
+  return result
+}
+
 export function isPunctuationToken(text) {
   if (text === undefined) {
     return false

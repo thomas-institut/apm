@@ -22,6 +22,7 @@ import * as CollationTableInitStrategy from './constants/CollationTableConversio
 import * as WitnessType from './constants/WitnessType'
 import * as TokenType from './constants/TokenType'
 import * as TokenClass from './constants/TokenClass'
+import * as NormalizationSource from './constants/NormalizationSource'
 
 
 import { editModeOff, columnGroupEvent, columnUngroupEvent, TableEditor } from './TableEditor'
@@ -49,6 +50,16 @@ import { EditionViewerHtml } from './EditionViewerHtml'
 import { ConfirmDialog } from './ConfirmDialog'
 import { VERBOSITY_DEBUG_PLUS, WitnessDiffCalculator } from './WitnessDiffCalculator'
 import { FULL_TX } from './constants/TokenClass'
+
+// Normalizations
+
+import { NormalizerRegister } from './NormalizerRegister'
+
+import { ToLowerCaseNormalizer } from './normalizers/ToLowerCaseNormalizer'
+import { IgnoreArabicVocalizationNormalizer } from './normalizers/IgnoreArabicVocalizationNormalizer'
+import { IgnoreShaddaNormalizer } from './normalizers/IgnoreShaddaNormalizer'
+import { RemoveHamzahMaddahFromAlifWawYahNormalizer } from './normalizers/RemoveHamzahMaddahFromAlifWawYahNormalizer'
+import { IgnoreTatwilNormalizer } from './normalizers/IgnoreTatwilNormalizer'
 
 /** @namespace Twig */
 
@@ -122,6 +133,11 @@ export class CollationTableEditor {
       this.ctData['groupedColumns'] = []
     }
 
+    // check normalization settings
+    if (this.ctData['automaticNormalizationsApplied'] === undefined) {
+      this.ctData['automaticNormalizationsApplied'] = []
+    }
+
     // let originalCtData = Util.deepCopy(this.ctData)
 
     console.groupCollapsed(`CT Data Consistency Check`)
@@ -143,6 +159,12 @@ export class CollationTableEditor {
     if (this.ctData['archived']  === undefined) {
       this.ctData['archived'] = false
     }
+
+    this.normalizerRegister = new NormalizerRegister()
+    this.registerStandardNormalizers()
+
+    console.log(`Available normalizers`)
+    console.log(this.normalizerRegister.getRegisteredNormalizers())
 
     this.lastSavedCtData = Util.deepCopy(this.ctData)
     this.witnessUpdates = []
@@ -178,6 +200,7 @@ export class CollationTableEditor {
     this.convertToEditionDiv = $('#convert-to-edition-div')
     this.convertToEditionButton = $('#convert-to-edition-btn')
     this.archiveTableButton = $('#archive-table-btn')
+    this.normalizationSettingsButton = $('#normalizations-settings-button')
 
     document.title = `${this.ctData.title} (${this.ctData['chunkId']})`
 
@@ -244,7 +267,9 @@ export class CollationTableEditor {
       containerSelector: '#popovers-toggle',
       title: 'Popovers: ',
       onIcon: '<i class="fas fa-toggle-on"></i>',
-      offIcon: '<i class="fas fa-toggle-off"></i>'
+      onPopoverText: 'Click to disable popovers',
+      offIcon: '<i class="fas fa-toggle-off"></i>',
+      offPopoverText: 'Click to enable popovers'
     })
     this.popoversToggle.on(toggleEvent, function (ev) {
       if (ev.detail.toggleStatus) {
@@ -252,6 +277,42 @@ export class CollationTableEditor {
       } else {
         thisObject.popoversOff()
       }
+    })
+
+    this.normalizationsToggle = new NiceToggle({
+      containerSelector: '#normalizations-toggle',
+      title: 'Normalizations: ',
+      initialValue: this.ctData['automaticNormalizationsApplied'].length !== 0,
+      onIcon: '<i class="fas fa-toggle-on"></i>',
+      onPopoverText: 'Click to disable automatic normalizations',
+      offIcon: '<i class="fas fa-toggle-off"></i>',
+      offPopoverText: 'Click to enable automatic normalizations'
+    })
+
+    // not caring about individual normalizations for the moment
+    this.normalizationSettingsButton.hide()
+    // if (this.normalizationsToggle.isOn) {
+    //   this.normalizationSettingsButton.show()
+    // } else {
+    //   this.normalizationSettingsButton.hide()
+    // }
+
+
+    this.normalizationsToggle.on(toggleEvent, (ev) => {
+      // if (ev.detail.toggleStatus) {
+      //   thisObject.normalizationSettingsButton.show()
+      // } else {
+      //   thisObject.normalizationSettingsButton.hide()
+      // }
+      // TODO: read normalizers to apply from settings
+      let automaticNormalizationsApplied  = ev.detail.toggleStatus ?
+        thisObject.normalizerRegister.getRegisteredNormalizers() : []
+      thisObject.applyAutomaticNormalizations(automaticNormalizationsApplied)
+      thisObject.resetTokenDataCache()
+      this.setupTableEditor()
+      thisObject.updateEditionPreview()
+      thisObject.updateSaveArea()
+      this.setCsvDownloadFile()
     })
 
     this.modeToggle = new MultiToggle({
@@ -297,7 +358,6 @@ export class CollationTableEditor {
         .prop('disabled', true)
     }
 
-
     this.setupTableEditor()
     this.updateSaveArea()
     this.setCsvDownloadFile()
@@ -324,6 +384,67 @@ export class CollationTableEditor {
         thisObject.fitCtDivToViewPort()
         thisObject.fitEditionDivToViewPort()
       })
+  }
+
+  /**
+   *
+   * @param normalizationsToApply {string[]}
+   */
+  applyAutomaticNormalizations(normalizationsToApply) {
+    let normalizationsSourcesToOverwrite = [
+      NormalizationSource.AUTOMATIC_COLLATION,
+      NormalizationSource.COLLATION_EDITOR_AUTOMATIC
+    ]
+    console.log(`Applying normalizations: [ ${normalizationsToApply.join(', ')} ]`)
+    this.ctData['automaticNormalizationsApplied'] = normalizationsToApply
+
+    let thisObject = this
+    for (let i = 0; i < this.ctData['witnesses'].length; i++) {
+      // console.log(`Processing witness ${i}`)
+      let changesInWitness = false
+      let newWitnessTokens = this.ctData['witnesses'][i]['tokens'].map( (token, tokenIndex) => {
+        if (token['tokenType'] === TokenType.WORD) {
+          if (normalizationsToApply.length !== 0) {
+            // overwrite normalizations with newly calculated ones
+            if (token['normalizationSource'] === undefined ||
+              (token['normalizedText'] === '' && token['normalizationSource'] === '') ||
+              normalizationsSourcesToOverwrite.indexOf(token['normalizationSource']) !== -1) {
+              let normalizedText = thisObject.normalizerRegister.applyNormalizerList(normalizationsToApply, token['text'])
+              if (normalizedText === token['text']) {
+                //no changes
+                return token
+              }
+              let newToken = token
+              newToken['normalizedText'] = normalizedText
+              newToken['normalizationSource'] = NormalizationSource.COLLATION_EDITOR_AUTOMATIC
+              //console.log(`Witness ${i}, token ${tokenIndex} normalized, ${token['text']} => ${normalizedText}`)
+              changesInWitness = true
+              return newToken
+            }
+          } else {
+            // remove automatic normalizations
+            let newToken = token
+            if (token['normalizedText'] !== undefined &&
+              normalizationsSourcesToOverwrite.indexOf(token['normalizationSource']) !== -1) {
+              //console.log(`Erasing normalization from token ${tokenIndex}, currently '${token['normalizedText']}'`)
+              newToken['normalizedText'] = undefined
+              newToken['normalizationSource'] = undefined
+              changesInWitness = true
+            }
+            return newToken
+          }
+        } else {
+          return token
+        }
+      })
+      if (changesInWitness) {
+        this.ctData['witnesses'][i]['tokens'] = newWitnessTokens
+      } else {
+        // console.log(`No changes`)
+      }
+    }
+    console.log(`New CT Data after automatic normalizations: [${normalizationsToApply.join(', ')}]`)
+    console.log(this.ctData)
   }
 
   _genOnClickArchiveTable() {
@@ -487,6 +608,68 @@ export class CollationTableEditor {
       console.log(`... finished, inconsistencies fixed.`)
     } else {
       console.log(`... all good, no inconsistencies found`)
+    }
+
+  }
+
+  registerStandardNormalizers() {
+    switch (this.ctData.lang) {
+      case 'la':
+        this.normalizerRegister.registerNormalizer(
+          'toLowerCase',
+          new ToLowerCaseNormalizer(),
+          {
+            lang: 'la',
+            label: 'Ignore Letter Case',
+            help: "E.g., 'Et' and 'et' will be taken to be the same word"
+          }
+        )
+        break
+
+      case 'ar':
+        this.normalizerRegister.registerNormalizer(
+          'removeHamzahMaddahFromAlifWawYah',
+          new RemoveHamzahMaddahFromAlifWawYahNormalizer(),
+          {
+            lang: 'ar',
+            label: 'Ignore hamzah and maddah in ʾalif, wāw and yāʾ',
+            help: "آ , أ, إ &larr; ا      ؤ &larr; و      ئ &larr; ي"
+
+          }
+        )
+
+        this.normalizerRegister.registerNormalizer(
+          'ignoreVocalization',
+          new IgnoreArabicVocalizationNormalizer(),
+          {
+            lang: 'ar',
+            label: 'Ignore Vocalization',
+            help: "Ignore vocal diacritics, e.g., الْحُرُوف &larr; الحروف"
+
+          }
+        )
+        this.normalizerRegister.registerNormalizer(
+          'ignoreShadda',
+          new IgnoreShaddaNormalizer(),
+          {
+            lang: 'ar',
+            label: 'Ignore Shaddah',
+            help: "Ignore shaddah, e.g., درّس &larr; درس"
+          }
+        )
+        this.normalizerRegister.registerNormalizer(
+          'ignoreTatwil',
+          new IgnoreTatwilNormalizer(),
+          {
+            lang: 'ar',
+            label: 'Ignore taṭwīl',
+            help: 'Ignore taṭwīl'
+          }
+        )
+        break
+
+      case 'he':
+        break
     }
 
   }
@@ -1361,7 +1544,9 @@ export class CollationTableEditor {
   }
 
   invalidateTokenDataCacheForToken(witnessIndex, tokenIndex) {
-    this.tokenDataCache[witnessIndex][tokenIndex] = {}
+    if (this.tokenDataCache[witnessIndex][tokenIndex] !== undefined) {
+      this.tokenDataCache[witnessIndex][tokenIndex] = {}
+    }
   }
 
   getPopoverHtmlFromCache(witnessIndex, tokenIndex) {
@@ -1621,9 +1806,21 @@ export class CollationTableEditor {
         thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = newText
         thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] = TokenType.EMPTY
       } else  {
+        let tokenType = Util.isPunctuationToken(newText) ? TokenType.PUNCTUATION : TokenType.WORD
         thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = newText
-        thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] =
-          Util.isPunctuationToken(newText) ? TokenType.PUNCTUATION : TokenType.WORD
+        thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] = tokenType
+        if (tokenType === TokenType.WORD) {
+          if (thisObject.ctData['automaticNormalizationsApplied'].length !== 0) {
+            // apply normalizations for this token
+            let norm = thisObject.normalizerRegister.applyNormalizerList(thisObject.ctData['automaticNormalizationsApplied'], newText)
+            if (norm !== newText) {
+              console.log(`New text normalized:  ${newText} => ${norm}`)
+              thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['normalizedText'] = norm
+              thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['normalizationSource'] = NormalizationSource.COLLATION_EDITOR_AUTOMATIC
+            }
+          }
+        }
+
       }
 
       thisObject.invalidateTokenDataCacheForToken(witnessIndex, ref)
@@ -2314,6 +2511,15 @@ export class CollationTableEditor {
 
     if (!ArrayUtil.arraysAreEqual(this.ctData['groupedColumns'], this.lastSavedCtData['groupedColumns'])) {
       changes.push(`Changes in column grouping`)
+    }
+
+    if (!ArrayUtil.arraysAreEqual(this.ctData['automaticNormalizationsApplied'],
+      this.lastSavedCtData['automaticNormalizationsApplied'])) {
+      if (this.ctData['automaticNormalizationsApplied'].length===0) {
+        changes.push(`Disabled automatic normalizations`)
+      } else {
+        changes.push(`Applied automatic normalizations: ${this.ctData['automaticNormalizationsApplied'].join(' ')}`)
+      }
     }
 
     return changes

@@ -408,7 +408,7 @@ class ApmSystemManager extends SystemManager {
         return $logger;
     }
 
-    protected function isDatabaseInitialized()
+    protected function isDatabaseInitialized(): bool
     {
         // Check that all tables exist
         foreach ($this->tableNames as $table){
@@ -419,7 +419,7 @@ class ApmSystemManager extends SystemManager {
         return true;
     }
     
-    protected function isDatabaseUpToDate()
+    protected function isDatabaseUpToDate(): bool
     {
         
         $dbVersion = $this->settingsMgr->getSetting('dbversion');
@@ -429,7 +429,7 @@ class ApmSystemManager extends SystemManager {
         return $dbVersion == self::DB_VERSION;
     }
     
-    private function tableExists($table)
+    private function tableExists($table): bool
     {
         $r = $this->dbConn->query("show tables like '" . $table . "'");
         if ($r === false) {

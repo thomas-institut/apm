@@ -42,7 +42,7 @@ export class NiceToggle {
       offClass: { type: 'string', required: false, default: defaultOffClass},
       offPopoverText: { type: 'string', required: false, default: 'Click to turn ON'},
       hoverClass: {type: 'string', required: false, default: defaultHoverClass},
-      initialValue: { type: 'bool', required: false, default: true},
+      initialValue: { type: 'boolean', required: false, default: true},
       onToggle : {
         type: 'function',
         required: false,
@@ -61,13 +61,21 @@ export class NiceToggle {
     }
     let oc = new OptionsChecker(optionsDefinition, "NiceToggle")
     this.options = oc.getCleanOptions(options)
+    // console.log(`NiceToggle options`)
+    // console.log(this.options)
+    this.isOn = this.options.initialValue
 
     this.container = $(this.options.containerSelector)
     this.container.html(this.getWidgetHtml())
     $(this.getButtonSelector()).on('click', this.genOnClickButton())
     $(this.getButtonSelector()).on('mouseenter', this.genOnMouseEnterButton())
     $(this.getButtonSelector()).on('mouseleave', this.genOnMouseLeaveButton())
-    this.isOn = true
+    if(this.isOn) {
+      this.toggleOn()
+    } else {
+      this.toggleOff()
+    }
+
 
   }
 

@@ -109,6 +109,12 @@
                     <div class="ct-toolbar-group">
                         <span id="popovers-toggle"></span>
                     </div>
+                    <div class="ct-toolbar-group">
+                        <span id="normalizations-toggle"></span>
+                        &nbsp;
+                        <a class="tb-button" href="#" title="Click to choose which normalizations to apply" id="normalizations-settings-button"><i class="fas fa-pen"></i></a>
+                    </div>
+
                 </div>
                 <div>
                     <a id="export-csv-button" class="tb-button"  download="apm-collationtable.csv"
@@ -176,8 +182,8 @@
     let versionInfo = JSON.parse("{{versionInfo|json_encode|e('js')}}")
     let userId = {{ userId }}
 
-      console.group(`Template parameters`)
-      console.log(`ctData`)
+    console.group(`Template parameters`)
+    console.log(`ctData`)
     console.log(ctData)
     // console.log(`peopleInfo`)
     // console.log(peopleInfo)

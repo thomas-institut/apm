@@ -405,6 +405,9 @@ class ApiCollation extends ApiController
         $standardData->witnessTitles = $titles;
         $standardData->witnessOrder = $witnessOrder;
 
+        // add normalizerNames
+        $standardData->automaticNormalizationsApplied = $normalizerNames;
+
         // add chunkId
         $standardData->chunkId = $standardData->witnesses[0]->chunkId;
 
@@ -431,7 +434,7 @@ class ApiCollation extends ApiController
             'collationTableCacheId' => $collationTableCacheId,
             'collationEngineDetails' => $collationEngineDetails,
             'collationTable' => $standardData,
-            'appliedNormalizers' => $normalizerNames,
+            'automaticNormalizationsApplied' => $normalizerNames,
             'people' => $people,
         ];
 

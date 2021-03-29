@@ -122,12 +122,12 @@ export class CriticalApparatusGenerator {
         }
         let entries = this._genApparatusEntryFromArray([], additions, ENTRY_TYPE_ADDITION)
         if (entries.length !== 0) {
-          criticalApparatus.push({
-            start: mainTextIndex,
-            end: mainTextIndex,
-            lemma: this.getTextFromInputToken(generatedMainText.mainTextTokens[mainTextIndex]),
-            entries:entries
-          })
+            criticalApparatus.push({
+              start: mainTextIndex,
+              end: mainTextIndex,
+              lemma: mainTextIndex !== -1 ? this.getTextFromInputToken(generatedMainText.mainTextTokens[mainTextIndex]) : 'pre',
+              entries:entries
+            })
         }
         return
       }

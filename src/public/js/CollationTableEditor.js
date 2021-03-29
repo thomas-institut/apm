@@ -408,7 +408,7 @@ export class CollationTableEditor {
     for (let i = 0; i < this.ctData['witnesses'].length; i++) {
       // console.log(`Processing witness ${i}`)
       let changesInWitness = false
-      let newWitnessTokens = this.ctData['witnesses'][i]['tokens'].map( (token, tokenIndex) => {
+      let newWitnessTokens = this.ctData['witnesses'][i]['tokens'].map( (token) => {
         if (token['tokenType'] === TokenType.WORD) {
           if (normalizationsToApply.length !== 0) {
             // overwrite normalizations with newly calculated ones
@@ -841,7 +841,7 @@ export class CollationTableEditor {
 
       let modalSelector = '#convert-to-edition-modal'
 
-      let twigTemplate = thisObject.getConvertToEditionDialogTemplate()
+      let twigTemplate = thisObject.getTemplateConvertToEditionDialog()
       $('body').remove(modalSelector)
         .append(twigTemplate.render({ firstWitnessTitle: thisObject.ctData['witnessTitles'][thisObject.ctData.witnessOrder[0]]}))
       let cancelButton = $(`${modalSelector} .cancel-btn`)
@@ -901,7 +901,7 @@ export class CollationTableEditor {
     let thisObject = this
     return function() {
       let profiler = new SimpleProfiler('Witness-Update')
-      let twigTemplate = thisObject.getUpdateDialogTemplate(witnessIndex)
+      let twigTemplate = thisObject.getTemplateUpdateDialog(witnessIndex)
       let currentWitness = thisObject.ctData['witnesses'][witnessIndex]
       let newWitnessInfo = thisObject.lastWitnessUpdateCheckResponse['witnesses'][witnessIndex]
       if (newWitnessInfo['upToDate']) {
@@ -1210,10 +1210,10 @@ export class CollationTableEditor {
     })
   }
 
-  hideAllCurrentPopovers() {
-    $('div.popover').hide()
-    this.ctDiv.popover('dispose')
-  }
+  // hideAllCurrentPopovers() {
+  //   $('div.popover').hide()
+  //   this.ctDiv.popover('dispose')
+  // }
 
   restoreHiddenPopovers() {
     // $('div.popover').show()
@@ -2061,7 +2061,7 @@ export class CollationTableEditor {
         console.log('No sigla presets to apply')
         return
       }
-      let dialogTemplate = thisObject.getLoadSiglaPresetTemplate()
+      let dialogTemplate = thisObject.getTemplateLoadSiglaPreset()
       $('body').append(dialogTemplate.render())
       let modalSelector= '#load-sigla-preset-modal'
       let cancelButton = $(`${modalSelector} .cancel-btn`)
@@ -2139,7 +2139,7 @@ export class CollationTableEditor {
       console.log('Click on save sigla')
       const overWritePresetButtonLabel = 'Overwrite Preset'
       const createPresetButtonLabel = 'Create New Preset'
-      let dialogTemplate = thisObject.getSaveSiglaPresetTemplate()
+      let dialogTemplate = thisObject.getTemplateSaveSiglaPreset()
       $('body').append(dialogTemplate.render())
 
       let modalSelector= '#save-sigla-preset-modal'
@@ -2696,7 +2696,7 @@ export class CollationTableEditor {
     return '"' + text + '"'
   }
 
-  getSaveSiglaPresetTemplate() {
+  getTemplateSaveSiglaPreset() {
     return Twig.twig({
       data: `
 <div id="save-sigla-preset-modal" class="modal" role="dialog">
@@ -2737,7 +2737,7 @@ export class CollationTableEditor {
   
 
 
-  getLoadSiglaPresetTemplate() {
+  getTemplateLoadSiglaPreset() {
     return Twig.twig({
       data: `
 <div id="load-sigla-preset-modal" class="modal" role="dialog">
@@ -2770,7 +2770,7 @@ export class CollationTableEditor {
     })
   }
 
-  getNormalizationSettingsDialogTemplate() {
+  getTemplateNormalizationSettingsDialog() {
     return Twig.twig({
       data: `
 <div id="normalization-settings-modal" class="modal" role="dialog">
@@ -2796,7 +2796,7 @@ export class CollationTableEditor {
     })
   }
 
-  getUpdateDialogTemplate(witnessIndex) {
+  getTemplateUpdateDialog(witnessIndex) {
     return Twig.twig( {
       data: `
 <div id="update-modal-${witnessIndex}" class="modal" role="dialog">
@@ -2829,7 +2829,7 @@ export class CollationTableEditor {
     `})
   }
 
-  getConvertToEditionDialogTemplate() {
+  getTemplateConvertToEditionDialog() {
     return Twig.twig( {
       data: `
 <div id="convert-to-edition-modal" class="modal" role="dialog">

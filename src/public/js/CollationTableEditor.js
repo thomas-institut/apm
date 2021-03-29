@@ -278,42 +278,48 @@ export class CollationTableEditor {
         thisObject.popoversOff()
       }
     })
+    if (this.normalizerRegister.getRegisteredNormalizers().length !== 0) {
+      // Set up normalization toggle and settings button
+      this.normalizationsToggle = new NiceToggle({
+        containerSelector: '#normalizations-toggle',
+        title: 'Normalizations: ',
+        initialValue: this.ctData['automaticNormalizationsApplied'].length !== 0,
+        onIcon: '<i class="fas fa-toggle-on"></i>',
+        onPopoverText: 'Click to disable automatic normalizations',
+        offIcon: '<i class="fas fa-toggle-off"></i>',
+        offPopoverText: 'Click to enable automatic normalizations'
+      })
 
-    this.normalizationsToggle = new NiceToggle({
-      containerSelector: '#normalizations-toggle',
-      title: 'Normalizations: ',
-      initialValue: this.ctData['automaticNormalizationsApplied'].length !== 0,
-      onIcon: '<i class="fas fa-toggle-on"></i>',
-      onPopoverText: 'Click to disable automatic normalizations',
-      offIcon: '<i class="fas fa-toggle-off"></i>',
-      offPopoverText: 'Click to enable automatic normalizations'
-    })
+      this.normalizationsToggle.on(toggleEvent, (ev) => {
+        if (ev.detail.toggleStatus) {
+          thisObject.normalizationSettingsButton.show()
+        } else {
+          thisObject.normalizationSettingsButton.hide()
+        }
+        // TODO: read normalizers to apply from settings
+        let automaticNormalizationsApplied  = ev.detail.toggleStatus ?
+          thisObject.normalizerRegister.getRegisteredNormalizers() : []
+        thisObject.applyAutomaticNormalizations(automaticNormalizationsApplied)
+        thisObject.resetTokenDataCache()
+        this.setupTableEditor()
+        thisObject.updateEditionPreview()
+        thisObject.updateSaveArea()
+        this.setCsvDownloadFile()
+      })
+      // not caring about individual normalizations for the moment
+      if (this.normalizationsToggle.isOn) {
+        this.normalizationSettingsButton.show()
+      } else {
+        this.normalizationSettingsButton.hide()
+      }
+    } else {
+      // no normalizations available
+      this.normalizationSettingsButton.hide()
+    }
 
-    // not caring about individual normalizations for the moment
-    this.normalizationSettingsButton.hide()
-    // if (this.normalizationsToggle.isOn) {
-    //   this.normalizationSettingsButton.show()
-    // } else {
-    //   this.normalizationSettingsButton.hide()
-    // }
 
 
-    this.normalizationsToggle.on(toggleEvent, (ev) => {
-      // if (ev.detail.toggleStatus) {
-      //   thisObject.normalizationSettingsButton.show()
-      // } else {
-      //   thisObject.normalizationSettingsButton.hide()
-      // }
-      // TODO: read normalizers to apply from settings
-      let automaticNormalizationsApplied  = ev.detail.toggleStatus ?
-        thisObject.normalizerRegister.getRegisteredNormalizers() : []
-      thisObject.applyAutomaticNormalizations(automaticNormalizationsApplied)
-      thisObject.resetTokenDataCache()
-      this.setupTableEditor()
-      thisObject.updateEditionPreview()
-      thisObject.updateSaveArea()
-      this.setCsvDownloadFile()
-    })
+
 
     this.modeToggle = new MultiToggle({
       containerSelector: '#mode-toggle',
@@ -2518,7 +2524,7 @@ export class CollationTableEditor {
       if (this.ctData['automaticNormalizationsApplied'].length===0) {
         changes.push(`Disabled automatic normalizations`)
       } else {
-        changes.push(`Applied automatic normalizations: ${this.ctData['automaticNormalizationsApplied'].join(' ')}`)
+        changes.push(`Applied automatic normalizations: ${this.ctData['automaticNormalizationsApplied'].join('+')}`)
       }
     }
 
@@ -2755,6 +2761,32 @@ export class CollationTableEditor {
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-danger load-btn">Load Sigla</button>
+                <button type="button" class="btn btn-primary cancel-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>      
+      `
+    })
+  }
+
+  getNormalizationSettingsDialogTemplate() {
+    return Twig.twig({
+      data: `
+<div id="normalization-settings-modal" class="modal" role="dialog">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Normalization Settings</h5>
+            </div>
+            <div class="modal-body">
+            <h3>Normalization settings</h3>
+            <p>Normalizations to apply</p>
+            <div class="normalization-toggles"></div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger load-btn">Apply</button>
                 <button type="button" class="btn btn-primary cancel-btn">Cancel</button>
             </div>
         </div>

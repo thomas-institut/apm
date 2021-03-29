@@ -486,6 +486,15 @@ export class AutomaticCollationTableSettingsForm {
     if (settings.ignorePunctuation) {
       title += ', ignoring punctuation'
     }
+
+    console.log(`ACT title`)
+    console.log(settings.normalizers)
+    if ( settings.normalizers === undefined || settings.normalizers === null ||
+      settings.normalizers.length !== 0 )
+     {
+
+      title += ', normalization applied'
+    }
         
     return title
   }

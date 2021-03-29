@@ -21,6 +21,7 @@
 namespace APM;
 
 require_once 'MockTranscriptionManager.php';
+require_once 'MockNormalizerManager.php';
 
 use APM\CollationEngine\CollationEngine;
 use APM\CollationEngine\DoNothingCollationEngine;
@@ -28,10 +29,12 @@ use APM\CollationEngine\NullCollationEngine;
 use APM\CollationTable\ApmCollationTableManager;
 use APM\CollationTable\ApmCollationTableVersionManager;
 use APM\CollationTable\CollationTableManager;
+use APM\Core\Token\Normalizer\MockNormalizerManager;
 use APM\FullTranscription\TranscriptionManager;
 use APM\Presets\DataTablePresetManager;
 use APM\Presets\PresetManager;
 use APM\System\ApmConfigParameter;
+use APM\System\NormalizerManager;
 use APM\System\SystemManager;
 use APM\System\SettingsManager;
 use APM\Plugin\HookManager;
@@ -161,4 +164,8 @@ class SystemManagerMockup extends SystemManager {
     }
 
 
+    public function getNormalizerManager(): NormalizerManager
+    {
+        return new MockNormalizerManager();
+    }
 }

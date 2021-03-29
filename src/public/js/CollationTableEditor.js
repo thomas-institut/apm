@@ -291,11 +291,12 @@ export class CollationTableEditor {
       })
 
       this.normalizationsToggle.on(toggleEvent, (ev) => {
-        if (ev.detail.toggleStatus) {
-          thisObject.normalizationSettingsButton.show()
-        } else {
-          thisObject.normalizationSettingsButton.hide()
-        }
+        // uncomment this when button gets implemented
+        // if (ev.detail.toggleStatus) {
+        //   thisObject.normalizationSettingsButton.show()
+        // } else {
+        //   thisObject.normalizationSettingsButton.hide()
+        // }
         // TODO: read normalizers to apply from settings
         let automaticNormalizationsApplied  = ev.detail.toggleStatus ?
           thisObject.normalizerRegister.getRegisteredNormalizers() : []
@@ -307,17 +308,18 @@ export class CollationTableEditor {
         this.setCsvDownloadFile()
       })
       // not caring about individual normalizations for the moment
-      if (this.normalizationsToggle.isOn) {
-        this.normalizationSettingsButton.show()
-      } else {
-        this.normalizationSettingsButton.hide()
-      }
+      // if (this.normalizationsToggle.isOn) {
+      //   this.normalizationSettingsButton.show()
+      // } else {
+      //   this.normalizationSettingsButton.hide()
+      // }
+
+      // Button not implemented yet, just hide it
+      this.normalizationSettingsButton.hide()
     } else {
       // no normalizations available
       this.normalizationSettingsButton.hide()
     }
-
-
 
 
 

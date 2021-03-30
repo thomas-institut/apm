@@ -380,3 +380,7 @@ td.te-rowtitle {
     color: var(--dimmed-text-color);
 }
 
+
+div.normalization-toggles ul.normalization-list {
+    list-style: none;
+}

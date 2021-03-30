@@ -109,7 +109,6 @@ export function getPopoverHtml(witnessIndex, tokenIndex, witness, postNotes, peo
     console.log(`Popover generated for edition token:`)
     console.log(token)
     console.log(`Popover html:  '${popoverHtml}'`)
-
   }
 
   return popoverHtml

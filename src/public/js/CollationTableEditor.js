@@ -99,6 +99,7 @@ export class CollationTableEditor {
       checkFail: '<i class="fas fa-exclamation-triangle"></i>',
       checkCross: '<i class="fas fa-times"></i>',
       editText: '<small><i class="fas fa-pen"></i></small>',
+      editSettings: '<i class="fas fa-cog"></i>',
       confirmEdit: '<i class="fas fa-check"></i>',
       cancelEdit: '<i class="fas fa-times"></i>',
       alert: '<i class="fas fa-exclamation-triangle"></i>',
@@ -278,8 +279,15 @@ export class CollationTableEditor {
         thisObject.popoversOff()
       }
     })
-    if (this.normalizerRegister.getRegisteredNormalizers().length !== 0) {
+
+    // Normalizers
+    this.availableNormalizers = this.normalizerRegister.getRegisteredNormalizers()
+
+    if (this.availableNormalizers.length !== 0) {
       // Set up normalization toggle and settings button
+      this.savedNormalizerSettings = this.ctData['automaticNormalizationsApplied'].length === 0 ?
+        this.availableNormalizers : this.ctData['automaticNormalizationsApplied']
+      this.setupNormalizationSettingsButton()
       this.normalizationsToggle = new NiceToggle({
         containerSelector: '#normalizations-toggle',
         title: 'Normalizations: ',
@@ -291,37 +299,27 @@ export class CollationTableEditor {
       })
 
       this.normalizationsToggle.on(toggleEvent, (ev) => {
-        // uncomment this when button gets implemented
-        // if (ev.detail.toggleStatus) {
-        //   thisObject.normalizationSettingsButton.show()
-        // } else {
-        //   thisObject.normalizationSettingsButton.hide()
-        // }
-        // TODO: read normalizers to apply from settings
+        if (ev.detail.toggleStatus) {
+          thisObject.normalizationSettingsButton.show()
+        } else {
+          thisObject.normalizationSettingsButton.hide()
+        }
         let automaticNormalizationsApplied  = ev.detail.toggleStatus ?
-          thisObject.normalizerRegister.getRegisteredNormalizers() : []
+          thisObject.savedNormalizerSettings : []
         thisObject.applyAutomaticNormalizations(automaticNormalizationsApplied)
-        thisObject.resetTokenDataCache()
-        this.setupTableEditor()
-        thisObject.updateEditionPreview()
-        thisObject.updateSaveArea()
-        this.setCsvDownloadFile()
-      })
-      // not caring about individual normalizations for the moment
-      // if (this.normalizationsToggle.isOn) {
-      //   this.normalizationSettingsButton.show()
-      // } else {
-      //   this.normalizationSettingsButton.hide()
-      // }
 
-      // Button not implemented yet, just hide it
-      this.normalizationSettingsButton.hide()
+      })
+      if (this.normalizationsToggle.isOn) {
+        this.normalizationSettingsButton.show()
+      } else {
+        this.normalizationSettingsButton.hide()
+      }
     } else {
-      // no normalizations available
+      // No normalizations available, no need to show normalization settings
       this.normalizationSettingsButton.hide()
     }
 
-
+    this.normalizationSettingsButton.on('click', this.genOnClickNormalizationSettings())
 
     this.modeToggle = new MultiToggle({
       containerSelector: '#mode-toggle',
@@ -453,6 +451,13 @@ export class CollationTableEditor {
     }
     console.log(`New CT Data after automatic normalizations: [${normalizationsToApply.join(', ')}]`)
     console.log(this.ctData)
+
+    // Update UI
+    this.resetTokenDataCache()
+    this.setupTableEditor()
+    this.updateEditionPreview()
+    this.updateSaveArea()
+    this.setCsvDownloadFile()
   }
 
   _genOnClickArchiveTable() {
@@ -738,7 +743,6 @@ export class CollationTableEditor {
     } else {
       console.log('...all good, none found')
     }
-
   }
 
   fitCtDivToViewPort() {
@@ -834,9 +838,112 @@ export class CollationTableEditor {
     })
   }
 
+  setupNormalizationSettingsButton() {
+    if (this.savedNormalizerSettings.length !== this.availableNormalizers.length) {
+      this.normalizationSettingsButton.html(`${this.icons.editSettings}<sup>*</sup>`)
+      this.normalizationSettingsButton.attr('title',
+        `${this.savedNormalizerSettings.length} of ${this.availableNormalizers.length} normalizations applied. Click to change.`)
+    } else {
+      console.log(`All normalizations`)
+      this.normalizationSettingsButton.html(`${this.icons.editSettings}`)
+      this.normalizationSettingsButton.attr('title', `All standard normalizations applied. Click to change.`)
+    }
+  }
+
+  genOnClickNormalizationSettings(){
+    let thisObject = this
+    return (ev) => {
+      ev.preventDefault()
+      let availableNormalizers = thisObject.normalizerRegister.getRegisteredNormalizers()
+      if (availableNormalizers.length === 0) {
+        console.warn(`Click on normalization settings, but no normalizations are available`)
+        return
+      }
+
+      let modalSelector = '#normalization-settings-modal'
+      $('body')
+        .remove(modalSelector)
+        .append(thisObject.getTemplateNormalizationSettingsDialog().render())
+
+      let togglesDiv = $(`${modalSelector} .normalization-toggles`)
+
+      let normalizerMetadata = availableNormalizers.map ( (name) => {
+        let obj = thisObject.normalizerRegister.getNormalizerMetadata(name)
+        obj.name = name
+        return obj
+      })
+      let togglesHtml = '<ul class="normalization-list">'
+      normalizerMetadata.forEach( (data) => {
+        togglesHtml += `<li><input type="checkbox" class="normalizer-checkbox normalizer-${data['name']}" title="${data['help']}">&nbsp;&nbsp;${data['label']}</li>`
+      })
+      togglesHtml += '</ul>'
+
+      togglesDiv.html(togglesHtml)
+
+      let currentlyAppliedNormalizers = thisObject.ctData['automaticNormalizationsApplied']
+
+      currentlyAppliedNormalizers.forEach( (name) => {
+        $(`${modalSelector} .normalizer-${name}`).prop('checked', true)
+      })
+
+      let cancelButton = $(`${modalSelector} .cancel-btn`)
+      let submitButton = $(`${modalSelector} .submit-btn`)
+      let statusSpan = $(`${modalSelector} .status-span`)
+
+      cancelButton.on('click', function(){
+        $(modalSelector).modal('hide')
+      })
+
+      submitButton.on('click', () => {
+        let checkedNormalizers = availableNormalizers.filter( (name) => {
+          return $(`${modalSelector} .normalizer-${name}`).prop('checked')
+        })
+
+        console.log(`Checked normalizers`)
+        console.log(checkedNormalizers)
+        if (!ArrayUtil.arraysAreEqual(checkedNormalizers, currentlyAppliedNormalizers, (a, b) => { return a===b})){
+          console.log(`Change in applied normalizers`)
+          if (checkedNormalizers.length === 0) {
+            // this is the same as turning normalizations off
+            submitButton.hide()
+            cancelButton.hide()
+            statusSpan.html(`Turning off normalizations  ${thisObject.icons.busy}`)
+
+            thisObject.applyAutomaticNormalizations([])
+            thisObject.savedNormalizerSettings = thisObject.availableNormalizers
+            thisObject.normalizationsToggle.toggleOff()
+            thisObject.normalizationSettingsButton.hide()
+
+          } else {
+            submitButton.hide()
+            cancelButton.hide()
+            statusSpan.html(`Recalculating normalizations ${thisObject.icons.busy}`)
+            thisObject.applyAutomaticNormalizations(checkedNormalizers)
+            thisObject.savedNormalizerSettings = checkedNormalizers
+          }
+        } else {
+          console.log(`No change in applied normalizers `)
+        }
+        this.setupNormalizationSettingsButton()
+        submitButton.show()
+        cancelButton.show()
+        statusSpan.html('')
+        $(modalSelector).modal('hide')
+      })
+
+
+      $(modalSelector).modal({
+        backdrop: 'static',
+        keyboard: false,
+        show: false
+      })
+      $(modalSelector).modal('show')
+    }
+  }
+
   genOnClickConvertToEditionButton() {
     let thisObject = this
-    return function() {
+    return () => {
       if (thisObject.ctData.type === CollationTableType.EDITION) {
         return true
       }
@@ -2779,17 +2886,18 @@ export class CollationTableEditor {
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Normalization Settings</h5>
+                <h5 class="modal-title">Normalizations To Apply</h5>
             </div>
             <div class="modal-body">
-            <h3>Normalization settings</h3>
-            <p>Normalizations to apply</p>
-            <div class="normalization-toggles"></div>
 
+            <h6>Standard</h6>
+            <div class="normalization-toggles"></div>
+            <span class="status-span text-warning"></span>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-danger load-btn">Apply</button>
+                <button type="button" class="btn btn-danger submit-btn">Apply</button>
                 <button type="button" class="btn btn-primary cancel-btn">Cancel</button>
+                
             </div>
         </div>
     </div>

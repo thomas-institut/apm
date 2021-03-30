@@ -75,7 +75,7 @@ export function isWordToken(text) {
 export function stringReplaceArray(str, searchStrings, replaceString) {
   let result = str
   searchStrings.forEach( (searchString) => {
-    result = result.replace(searchString, replaceString)
+    result = result.replaceAll(searchString, replaceString)
   })
   return result
 }

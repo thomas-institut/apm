@@ -1,6 +1,6 @@
 {
   "name": "apm-ti",
-  "version": "v0.39.2",
+  "version": "v0.39.3",
   "description": "Averroes Project Manager",
   "directories": {
     "test": "test"
@@ -20,7 +20,7 @@
     "bootstrap-validator": "0.11.9",
     "bootstrap4": "npm:bootstrap@^4.5",
     "datatables.net-dt": "^1.10.19",
-    "jquery": "3.4.1",
+    "jquery": "3.6.0",
     "js-cookie": "^2.2.0",
     "lodash": "^4.17.15",
     "moment": "^2.24.0",

@@ -32,9 +32,7 @@ use APM\FullTranscription\PageManager;
 use APM\Plugin\HookManager;
 use APM\System\ApmContainerKey;
 use AverroesProject\Data\UserManager;
-use DI\Container;
-use DI\DependencyException;
-use DI\NotFoundException;
+use Dflydev\FigCookies\Cookies;
 use Exception;
 use Psr\Container\ContainerInterface;
 use \Psr\Http\Message\ResponseInterface as Response;
@@ -52,6 +50,8 @@ use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
 
+use \Psr\Http\Message\ServerRequestInterface as Request;
+
 /**
  * Site Controller class
  *
@@ -59,12 +59,14 @@ use Twig\Error\SyntaxError;
 class SiteController implements LoggerAwareInterface, CodeDebugInterface
 {
 
+    const COOKIE_SIZE_THRESHHOLD = 1000;
+
     use LoggerAwareTrait;
     use CodeDebugWithLoggerTrait;
     /**
      * @var ContainerInterface
      */
-    protected $container;
+    protected ContainerInterface $container;
     
     /** @var ApmSystemManager */
     protected $systemManager;
@@ -79,7 +81,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     protected $dataManager;
     
     /** @var bool */
-    protected $userAuthenticated;
+    protected bool $userAuthenticated;
     
     /** @var array */
     protected $userInfo;
@@ -107,11 +109,11 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     /**
      * @var SimpleProfiler
      */
-    protected $profiler;
+    protected SimpleProfiler $profiler;
     /**
      * @var array
      */
-    protected $languagesByCode;
+    protected array $languagesByCode;
 
     /**
      * SiteController constructor.
@@ -406,6 +408,14 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
             ];
         }
         return $normalizerData;
+    }
+
+    protected function manageCookies(Request $request) {
+
+        //$cookiesToPreserve = [ 'rme', 'PHPSESSID'];
+        $cookieString = $_SERVER['HTTP_COOKIE'];
+        $this->codeDebug("Got a cookie string of " . strlen($cookieString) . " bytes for user " . $this->userInfo['id']);
+
     }
 
 

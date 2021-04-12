@@ -69,6 +69,7 @@ export class CollationTableEditor {
   //collationTable;
 
   constructor(options) {
+    console.log(`New CollationTableEditor`)
 
     let optionsDefinition = {
       userId: { type:'NonZeroNumber', required: true},
@@ -216,7 +217,7 @@ export class CollationTableEditor {
       onConfirm: this.genOnConfirmTitleField()
     })
 
-      if (this.ctData.type === CollationTableType.COLLATION_TABLE) {
+    if (this.ctData.type === CollationTableType.COLLATION_TABLE) {
       this.breadcrumbCtTitleSpan.html("Saved Collation Table")
       this.editionTabTitle.html('Quick Edition')
     } else {
@@ -247,7 +248,7 @@ export class CollationTableEditor {
 
     this.editionSvgDiv.html('Quick edition coming soon...')
     this.ctDiv.html('Collation table coming soon...')
-    this.fitCtDivToViewPort()
+    this.fitDivsToViewPort()
     this.fitEditionDivToViewPort()
 
     this.saveButton.on('click', this.genOnClickSaveButton())
@@ -373,7 +374,7 @@ export class CollationTableEditor {
       if (thisObject.editionViewerHtml !== undefined) {
         thisObject.editionViewerHtml.renderApparatuses()
         setTimeout(() => {
-        thisObject.fitEditionDivToViewPort() }, 250)
+          thisObject.fitEditionDivToViewPort() }, 250)
       }
     })
 
@@ -386,9 +387,21 @@ export class CollationTableEditor {
 
     $(window).on('resize',
       () => {
-        thisObject.fitCtDivToViewPort()
+        thisObject.fitDivsToViewPort()
         thisObject.fitEditionDivToViewPort()
       })
+
+    // Setup split
+    this.theSplit = new Split(
+    {
+      columnGutters: [{
+        track: 1,
+        element: document.querySelector('.column-gutter'),
+      }],
+      onDragStart: (direction, track) => { console.log(`Drag start ${direction} ${track}`)},
+      onDragEnd: (direction, track) => { console.log(`Drag end ${direction} ${track}`)}
+
+    })
   }
 
   /**
@@ -545,16 +558,16 @@ export class CollationTableEditor {
             if (nextNullRefIndex === -1) {
               console.log(`--- No room for token in CT, need to add a new column (not implemented yet)`)
             } else {
-                // shift may be needed
-                let nColsToShift = nextNullRefIndex - lastGoodCtCol - 1
-                for (let c = 0; c < nColsToShift; c++) {
-                  ctMatrix.setValue(wIndex, nextNullRefIndex-c, ctMatrix.getValue(wIndex, nextNullRefIndex-c-1))
-                }
-                ctMatrix.setValue(wIndex,lastGoodCtCol+1, i)
-                row = ctMatrix.getRow(wIndex)
-                lastGoodCtCol = lastGoodCtCol+1
-                lastTokenInCt = i
-                console.log(`--- Fixed, ${ nColsToShift !== 0 ? 'shifted ' + nColsToShift + ' cols' : ' no shift needed'}, token now in ct col ${lastGoodCtCol+1}`)
+              // shift may be needed
+              let nColsToShift = nextNullRefIndex - lastGoodCtCol - 1
+              for (let c = 0; c < nColsToShift; c++) {
+                ctMatrix.setValue(wIndex, nextNullRefIndex-c, ctMatrix.getValue(wIndex, nextNullRefIndex-c-1))
+              }
+              ctMatrix.setValue(wIndex,lastGoodCtCol+1, i)
+              row = ctMatrix.getRow(wIndex)
+              lastGoodCtCol = lastGoodCtCol+1
+              lastTokenInCt = i
+              console.log(`--- Fixed, ${ nColsToShift !== 0 ? 'shifted ' + nColsToShift + ' cols' : ' no shift needed'}, token now in ct col ${lastGoodCtCol+1}`)
             }
           } else {
             lastTokenInCt = i
@@ -744,15 +757,20 @@ export class CollationTableEditor {
     }
   }
 
-  fitCtDivToViewPort() {
-    let ctDivTop = this.ctDiv.offset().top
-    let windowHeight = document.defaultView.innerHeight
-    let currentHeight = this.ctDiv.height()
-    let newHeight = windowHeight - ctDivTop - 10
-    if (newHeight !== currentHeight) {
-      //console.log(`Current H: ${currentHeight}, newHeight: ${newHeight}`)
-      this.ctDiv.height(newHeight)
-    }
+  fitDivsToViewPort() {
+    let divToFit = [ this.ctDiv, $('#edition-svg-div')]
+    const offset = 10
+    divToFit.forEach( (div) => {
+      let ctDivTop = div.offset().top
+      let windowHeight = document.defaultView.innerHeight
+      let currentHeight = div.height()
+      let newHeight = windowHeight - ctDivTop - offset
+      if (newHeight !== currentHeight) {
+        console.log(`Current H: ${currentHeight}, newHeight: ${newHeight}`)
+        div.height(newHeight)
+      }
+    })
+
   }
 
   fitEditionDivToViewPort() {
@@ -787,7 +805,7 @@ export class CollationTableEditor {
         {data: JSON.stringify({
             pdfId: `ct-${thisObject.options.tableId}`,
             svg: svg
-        })}
+          })}
       ).done(
         apiResponse => {
           window.open(apiResponse.url)
@@ -834,7 +852,7 @@ export class CollationTableEditor {
       .fail( function(resp) {
         console.error('Error checking witness updates')
         console.log(resp)
-    })
+      })
   }
 
   setupNormalizationSettingsButton() {
@@ -973,11 +991,11 @@ export class CollationTableEditor {
         resultSpan.html(`Waiting for server's response... ${thisObject.icons.busy}`).addClass('text-warning')
         thisObject.convertingToEdition = true
         $.post(
-            thisObject.options.urlGenerator.apiConvertCollationTable(thisObject.tableId),
-            { data: JSON.stringify({
-                tableId: thisObject.tableId,
-                initStrategy: initStrategy
-              }) }
+          thisObject.options.urlGenerator.apiConvertCollationTable(thisObject.tableId),
+          { data: JSON.stringify({
+              tableId: thisObject.tableId,
+              initStrategy: initStrategy
+            }) }
         )
           .then( (apiResponse) => {
             resultSpan.html(`<b>Done!</b> The new edition is available <b><a href="${apiResponse.url}">here</a></b>`)
@@ -1189,7 +1207,7 @@ export class CollationTableEditor {
             })
           .catch( reason => {
             console.log(`Errors detected, reason: ${reason}`)
-        })
+          })
       })
       // go!
       $(modalSelector).modal('show')
@@ -1365,9 +1383,9 @@ export class CollationTableEditor {
       }
       let witnessIndex = thisObject.ctData['witnessOrder'][cellIndex.row]
       //if (thisObject.ctData['witnesses'][witnessIndex]['witnessType'] === WitnessType.FULL_TX) {
-        let tokenIndex = thisObject.tableEditor.getValue(cellIndex.row, cellIndex.col)
-        console.log(`Getting popover for witness index ${witnessIndex}, token ${tokenIndex}, col ${cellIndex.col}`)
-        return thisObject.getPopoverHtml(witnessIndex, tokenIndex, cellIndex.col)
+      let tokenIndex = thisObject.tableEditor.getValue(cellIndex.row, cellIndex.col)
+      console.log(`Getting popover for witness index ${witnessIndex}, token ${tokenIndex}, col ${cellIndex.col}`)
+      return thisObject.getPopoverHtml(witnessIndex, tokenIndex, cellIndex.col)
       //}
       //console.log(`No popover text on witness ${witnessIndex}, row ${cellIndex.row}, col ${cellIndex.col}`)
       //return ''
@@ -1404,7 +1422,7 @@ export class CollationTableEditor {
       let wIndex = collationTable['witnessOrder'][i]
       let title = ''
       // if (collationTable.type === CollationTableType.EDITION && wIndex === collationTable['editionWitnessIndex']) {
-        title = collationTable['witnessTitles'][wIndex]
+      title = collationTable['witnessTitles'][wIndex]
       // } else {
       //   title = `${collationTable['witnessTitles'][wIndex]} (${collationTable['sigla'][wIndex]})`
       // }
@@ -1628,9 +1646,9 @@ export class CollationTableEditor {
         thisObject.updateSaveArea()
         resolve()
       })
-      .then( () => { thisObject.ctData['collationMatrix'] = thisObject.getCollationMatrixFromTableEditor() })
-      .then( () => { thisObject.setCsvDownloadFile() })
-      .then( () => { thisObject.updateEditionPreview() })
+        .then( () => { thisObject.ctData['collationMatrix'] = thisObject.getCollationMatrixFromTableEditor() })
+        .then( () => { thisObject.setCsvDownloadFile() })
+        .then( () => { thisObject.updateEditionPreview() })
     }
   }
 
@@ -1871,17 +1889,17 @@ export class CollationTableEditor {
 
     let thisObject = this
     return (tableRow, col, currentText) => {
-        let returnObject = { isValid: true, warnings: [], errors: [] }
+      let returnObject = { isValid: true, warnings: [], errors: [] }
 
       //console.log(`Validating text '${currentText}'`)
       let trimmedText = Util.trimWhiteSpace(currentText)
       if (Util.isWordToken(trimmedText)) {
-          // TODO: do not allow words when the rest of the witnesses only have punctuation
-          return returnObject
+        // TODO: do not allow words when the rest of the witnesses only have punctuation
+        return returnObject
       }
       let isPunctuationAllowed = areAllOtherRowsEmpty(thisObject.tableEditor.getMatrix().getColumn(col), tableRow)
       if (Util.isPunctuationToken(trimmedText) && isPunctuationAllowed) {
-          return returnObject
+        return returnObject
       }
       returnObject.isValid = false
       if (isPunctuationAllowed) {
@@ -2056,7 +2074,7 @@ export class CollationTableEditor {
       html += '<td>'
       if (version['isMinor']) { html += '[m]'}
       if (version['isReview']) { html += ' [r]'}
-        html += '</td>'
+      html += '</td>'
       html += '</tr>'
     }
 
@@ -2226,15 +2244,15 @@ export class CollationTableEditor {
     return this.ctData.witnesses
       .filter( w => {  return w['witnessType'] === 'fullTx'})
       .map( (w, i) => {
-          let shortId = w['ApmWitnessId'].split('-').slice(2,5).join('-')
+        let shortId = w['ApmWitnessId'].split('-').slice(2,5).join('-')
 
-          return {
-            title : this.ctData['witnessTitles'][i],
-            id: shortId,
-            index: i,
-            currentSiglum: this.ctData.sigla[i],
-            presetSiglum: preset.data.witnesses[shortId]
-          }
+        return {
+          title : this.ctData['witnessTitles'][i],
+          id: shortId,
+          index: i,
+          currentSiglum: this.ctData.sigla[i],
+          presetSiglum: preset.data.witnesses[shortId]
+        }
       })
   }
 
@@ -2361,9 +2379,9 @@ export class CollationTableEditor {
           // reload presets
           thisObject.fetchSiglaPresets()
         }).fail( () => {
-           if (apiCommand === 'new') {}
-           footInfoLabel.html('Error: could not save new preset')
-           saveButton.removeClass('hidden')
+          if (apiCommand === 'new') {}
+          footInfoLabel.html('Error: could not save new preset')
+          saveButton.removeClass('hidden')
         })
 
       })
@@ -2505,7 +2523,7 @@ export class CollationTableEditor {
         'witness-' + wIndex,
         'witness-type-' + witness['witnessType'],
         'witness-pos-' + i
-        ]
+      ]
       let siglumClass = 'siglum-' + wIndex
       let warningTdClass = 'warning-td-' + wIndex
       let outOfDateWarningTdClass = 'outofdate-td-' + wIndex
@@ -2551,7 +2569,7 @@ export class CollationTableEditor {
         .attr('title', 'Save or discard changes before attempting to archive this table/edition')
         .addClass('disabled')
 
-      this.saveButton.html('Save Changes')
+      // this.saveButton.html('Save Changes')
       this.buttonPopoverContent = '<p>'
       this.buttonPopoverContent += '<ul>'
       for (const change of changes){
@@ -2567,6 +2585,10 @@ export class CollationTableEditor {
         content: function() { return thisObject.buttonPopoverContent}
       })
       this.saveButton.removeClass('hidden')
+      this.saveButton.removeClass('btn-light')
+        .addClass('btn-primary')
+        .html('Save')
+        .prop('disabled', false)
       this.saveMsg.addClass('hidden')
 
     } else {
@@ -2575,7 +2597,12 @@ export class CollationTableEditor {
       this.archiveTableButton
         .attr('title', 'Click to archive this table/edition')
         .removeClass('disabled')
-      this.saveButton.addClass('hidden')
+      //this.saveButton.addClass('hidden')
+      this.saveButton.removeClass('btn-primary')
+        .addClass('btn-light')
+        .html('Up to date')
+        .prop('disabled', true)
+        .popover('dispose')
       this.saveMsg.addClass('hidden')
     }
 
@@ -2842,7 +2869,7 @@ export class CollationTableEditor {
       `
     })
   }
-  
+
 
 
   getTemplateLoadSiglaPreset() {

@@ -51,6 +51,8 @@ class SiteDashboard extends SiteController
         $userId = (int) $this->userInfo['id'];
 
         $this->profiler->start();
+
+        $this->manageCookies($request);
         $docIds = $dataManager->getDocIdsTranscribedByUser($userId);
         
         $docListHtml = '';

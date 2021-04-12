@@ -78,9 +78,9 @@ class Authenticator {
     protected $router;
 
    
-    private $cookieName = 'rme';
-    private $secret = '1256106427895916503';
-    private $debugMode;
+    private string $cookieName = 'rme';
+    private string $secret = '1256106427895916503';
+    private bool $debugMode;
    
     //Constructor
 
@@ -132,18 +132,18 @@ class Authenticator {
      * @return string
      * @throws Exception
      */
-    private function generateRandomToken()
+    private function generateRandomToken(): string
     {
         return bin2hex(random_bytes(20));
     }
 
-    private function generateLongTermCookieValue($token, $userId)
+    private function generateLongTermCookieValue($token, $userId): string
     {
         $v = $userId . ':' . $token;
         return $v . ':' . $this->generateMac($v);
     }
     
-    private function generateMac($v)
+    private function generateMac($v): string
     {
         return hash_hmac('sha256', $v, $this->secret);
     }
@@ -219,8 +219,6 @@ class Authenticator {
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws DependencyException
-     * @throws NotFoundException
      * @throws LoaderError
      * @throws RuntimeError
      * @throws SyntaxError

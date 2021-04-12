@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+        xmlns:dc="http://purl.org/dc/elements/1.1/"
+        xmlns:cc="http://creativecommons.org/ns#"
+        xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+        xmlns:svg="http://www.w3.org/2000/svg"
+        xmlns="http://www.w3.org/2000/svg"
+        width="42.082081mm"
+        height="16.496868mm"
+        viewBox="0 0 42.082081 16.496868"
+        version="1.1"
+        id="svg1980" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://creativecommons.org/ns#
+http://purl.org/dc/elements/1.1/ ">
+  <defs
+          id="defs1974"/>
+  <metadata
+          id="metadata1977">
+  </metadata>
+  <g
+          id="layer1"
+          transform="translate(-121.07801,-194.3468)">
+    <path
+            class="st2"
+            d="m 129.33967,206.15388 c 0,0.7673 -0.10583,1.45521 -0.3175,2.06375 -0.21167,0.60855 -0.60854,1.45521 -1.21708,2.51355 l -0.89959,-0.3175 c 0.23813,-1.0848 0.37042,-1.95792 0.37042,-2.64584 0,-0.52916 -0.0529,-1.27 -0.15875,-2.27541 -0.10583,-1.00542 -0.23812,-1.98438 -0.37042,-2.96334 -0.15875,-0.97896 -0.39687,-2.14312 -0.74083,-3.51896 -0.13229,-0.47625 -0.18521,-0.79375 -0.18521,-0.97895 0,-0.26459 0.15875,-0.71438 0.47625,-1.34938 0.3175,-0.635 0.74084,-1.40229 1.32292,-2.30187 l 0.89958,4.49791 c 0.34396,1.71979 0.55563,3.20146 0.68792,4.47146 0.0794,0.97896 0.13229,1.905 0.13229,2.80458 z"
+            id="path1055"
+            style="fill:#bc2a01;stroke-width:0.264583"/>
+    <path
+            class="st2"
+            d="m 142.17196,200.1743 -3.88937,-5.42396 h -3.4925 l 3.67771,5.18584 c -1.77271,0.89958 -2.80459,2.61937 -3.09563,5.15937 l -0.635,5.47688 h 2.93688 l 0.635,-5.47688 c 0.15875,-1.53458 0.71437,-2.56646 1.64041,-3.06917 l 2.19604,3.12209 v -4.97417 z"
+            id="path1057"
+            style="fill:#bc2a01;stroke-width:0.264583"/>
+    <g
+            id="g1063"
+            transform="matrix(0.26458333,0,0,0.26458333,69.861339,186.70701)"
+            style="fill:#bc2a01;fill-opacity:1">
+      <path
+              class="st2"
+              d="m 312.8,80.2 c -2.4,1.8 -5.5,3 -9.3,3 -5.5,0 -10.1,-3.3 -10.1,-10.2 0,-9.6 9.4,-12.6 19.4,-13.2 v -7.4 c -19.4,1.1 -30.1,8.7 -30.1,21.7 0,8.5 6.1,16.9 18,16.9 4.7,0 8.8,-1.3 12.1,-3.3 z"
+              id="path1059"
+              style="fill:#bc2a01;fill-opacity:1"/>
+      <path
+              class="st2"
+              d="m 304.7,37.5 c 3.5,0 6.1,0.8 8.1,2 v -9.2 c -1.9,-0.4 -4.1,-0.6 -6.5,-0.6 -7.4,0 -14.5,2.1 -19.3,5.2 l 2.4,7 c 4.1,-2.7 9.8,-4.4 15.3,-4.4 z"
+              id="path1061"
+              style="fill:#bc2a01;fill-opacity:1"/>
+    </g>
+    <line
+            class="st3"
+            x1="152.623"
+            y1="194.4593"
+            x2="152.623"
+            y2="210.73117"
+            id="line1065"
+            style="fill:none;stroke:#585858;stroke-width:0.225002;stroke-linecap:round;stroke-miterlimit:10"/>
+    <line
+            class="st3"
+            x1="142.17197"
+            y1="194.4593"
+            x2="142.17197"
+            y2="210.73117"
+            id="line1067"
+            style="fill:none;stroke:#585858;stroke-width:0.225002;stroke-linecap:round;stroke-miterlimit:10"/>
+    <line
+            class="st3"
+            x1="131.64154"
+            y1="194.4593"
+            x2="131.64154"
+            y2="210.73117"
+            id="line1069"
+            style="fill:none;stroke:#585858;stroke-width:0.225002;stroke-linecap:round;stroke-miterlimit:10"/>
+    <g
+            id="g1077"
+            transform="matrix(0.26458333,0,0,0.26458333,69.861339,186.70701)"
+            style="fill:#bc2a01;fill-opacity:1">
+      <polygon
+              class="st2"
+              points="327.1,53.9 352.2,66.3 352.2,58.7 327.1,45.9 "
+              id="polygon1073"
+              style="fill:#bc2a01;fill-opacity:1"/>
+      <polygon
+              class="st2"
+              points="327.1,91.1 352.2,78.4 352.2,70.7 327.1,83.2 "
+              id="polygon1075"
+              style="fill:#bc2a01;fill-opacity:1"/>
+    </g>
+    <line
+            class="st3"
+            x1="163.04759"
+            y1="194.4593"
+            x2="163.04759"
+            y2="210.73117"
+            id="line1079"
+            style="fill:none;stroke:#585858;stroke-width:0.225002;stroke-linecap:round;stroke-miterlimit:10"/>
+  </g>
+</svg>

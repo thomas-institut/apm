@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>New split test</title>
+    <script src="../../../node_modules/jquery/dist/jquery.js "></script>
+    <script src="../../../node_modules/split-grid/dist/split-grid.js"></script>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            height: 100%;
+            flex-direction: column;
+            background: #e3e3e3;
+
+        }
+
+        .grid {
+            display: grid;
+            height: 800px;
+            grid-template-columns: 1fr 1px 1fr;
+            grid-template-rows: 1fr 1px 1fr;
+
+        }
+
+        .vertical-gutter {
+            grid-area: 1 / 2 / 4 / 2;
+        }
+
+        .horizontal-gutter {
+            grid-area: 2 / 1 / 2 / 4;
+
+        }
+        .panel {
+            border: 1px solid black;
+            overflow-y: auto;
+            overflow-x: auto;
+            padding: 5px;
+            margin: 2px;
+            background: white;
+        }
+
+        .top-bar {
+            display: flex;
+            flex-direction: row;
+            font-family: Arial, sans-serif;
+            height: 3rem;
+
+            color: #444242;
+        }
+        div.top-bar-item {
+            margin-right: 20px;
+        }
+
+        .logo {
+            font-size: 1.5em;
+            font-family: "Times New Roman", Times, serif;
+        }
+        .ct-title {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div class="top-bar">
+    <div class="top-bar-item logo">APM</div>
+    <div class="top-bar-item ct-title">Collation Table #12312</div>
+    <div class="top-bar-item">X</div>
+</div>
+<div class="grid">
+    <div class="panel">
+        <p>With all the excitement around CSS Grid, I haven’t seen as much talk about
+            the new fr CSS length unit (here’s the spec). And now that browser support
+            is rapidly improving for this feature, I think this is the time to explore
+            how it can be used in conjunction with our fancy new layout engine because there are
+            a number of benefits when using it; more legible and maintainable code being
+            the primary reasons for making the switch.</p>
+
+        <p>To get started, let’s take a look at how we’d typically think of building a
+            grid in CSS. In the example below, we’re creating a four column grid where
+            each column has an equal width</p>
+    </div>
+    <div class="panel">
+        CSS
+    </div>
+    <div class="panel">
+        JS
+    </div>
+    <div class="panel">
+        Result
+    </div>
+    <div class="horizontal-gutter">
+    </div>
+    <div class="vertical-gutter">
+    </div>
+</div>
+</body>
+
+<script>
+  class MySplit {
+    constructor (options) {
+      let thisObject = this
+      this.dragging = false
+      options.rowCursor = 'row-resize'
+      options.columnCursor = 'col-resize'
+      this.originalDragStartFunction= options.onDragStart
+      options.onDragStart = (direction, track) => {
+        thisObject.dragging = true
+        if (thisObject.originalDragStartFunction !== undefined) {
+          thisObject.originalDragStartFunction(direction, track)
+        }
+      }
+      this.originalDragEndFunction = options.onDragEnd
+      options.onDragEnd =  (direction, track) => {
+        thisObject.dragging = false
+        if (thisObject.originalDragEndFunction  !== undefined) {
+          thisObject.originalDragEndFunction(direction, track)
+        }
+      }
+      this.realSplit = Split(options)
+      this.currentCursor = window.document.body.style.cursor
+      options.columnGutters.forEach( (cg, i) => {
+        $(cg.element).on('mouseenter', () => {
+          if (thisObject.dragging) {
+            return
+          }
+          // console.log(`Mouse enter column gutter ${i}`)
+          thisObject.currentCursor = window.document.body.style.cursor
+          window.document.body.style.cursor = 'col-resize'
+        }).on('mouseleave', () => {
+          if (thisObject.dragging) {
+            return
+          }
+          // console.log(`Mouse leave column gutter ${i}`)
+          window.document.body.style.cursor = thisObject.currentCursor
+        })
+      })
+      options.rowGutters.forEach( (rg, i) => {
+        $(rg.element).on('mouseenter', () => {
+          if (thisObject.dragging) {
+            return
+          }
+          // console.log(`Mouse enter row gutter ${i}`)
+          thisObject.currentCursor = window.document.body.style.cursor
+          window.document.body.style.cursor = 'row-resize'
+        }).on('mouseleave', () => {
+          if (thisObject.dragging) {
+            return
+          }
+          // console.log(`Mouse leave row gutter ${i}`)
+          window.document.body.style.cursor = thisObject.currentCursor
+        })
+      })
+    }
+
+  }
+
+  let split = new MySplit({
+    columnGutters: [{
+      track: 1,
+      element: document.querySelector('.vertical-gutter'),
+    }],
+    rowGutters: [{
+      track: 1,
+      element: document.querySelector('.horizontal-gutter'),
+    }],
+    onDragStart: (direction, track) => { console.log(`Drag start ${direction} ${track}`)},
+    onDragEnd: (direction, track) => { console.log(`Drag end ${direction} ${track}`)}
+  })
+
+
+
+
+</script>
+</html>

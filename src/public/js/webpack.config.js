@@ -11,6 +11,10 @@ module.exports = {
       import: './CollationTableEditLoader.js',
       filename: 'CollationTableEdit.bundle.js'
     },
+    CollationTableEditorNew: {
+      import: './CollationTableEditorLoaderNew.js',
+      filename: 'CollationTableEditorNew.bundle.js'
+    },
     AutomaticCollationTable: {
       import: './AutomaticCollationTableLoader.js',
       filename: 'AutomaticCollationTable.bundle.js'

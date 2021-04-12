@@ -285,3 +285,64 @@ div#edition-html-container {
 #admindiv ul {
     list-style: none;
 }
+
+
+/** NEW COLLATION TABLE */
+
+body.ct-new-body {
+    /*background:  var(--very-light-gray);*/
+}
+
+div.top-bar {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-between;
+    height: 58px;
+    border-bottom: 2px solid gray;
+}
+
+div.top-bar-item {
+    margin-right: 2rem;
+}
+
+div.work-area {
+    display: grid;
+    grid-template-columns: 1fr 5px 1fr;
+    background: white;
+}
+
+div.pane {
+    overflow: auto;
+    margin: 5px;
+}
+div.column-gutter {
+    background-color: gray;
+    cursor: col-resize;
+}
+
+.top-bar-ct-title {
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.top-bar-item p{
+    margin: 0;
+    font-size: 0.8rem;
+}
+
+div#collationtableinfo.top-bar-item{
+    margin: 0;
+}
+
+#save-area {
+    text-align: right;
+}
+
+div.work-area div.pane div.tab-content {
+    background: white;
+}
+
+#edition-svg-div {
+    overflow: auto;
+}

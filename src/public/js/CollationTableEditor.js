@@ -60,6 +60,7 @@ import { IgnoreArabicVocalizationNormalizer } from './normalizers/IgnoreArabicVo
 import { IgnoreShaddaNormalizer } from './normalizers/IgnoreShaddaNormalizer'
 import { RemoveHamzahMaddahFromAlifWawYahNormalizer } from './normalizers/RemoveHamzahMaddahFromAlifWawYahNormalizer'
 import { IgnoreTatwilNormalizer } from './normalizers/IgnoreTatwilNormalizer'
+import { IgnoreIsolatedHamzaNormalizer } from './normalizers/IgnoreIsolatedHamzaNormalizer'
 
 /** @namespace Twig */
 
@@ -656,7 +657,7 @@ export class CollationTableEditor {
           new IgnoreArabicVocalizationNormalizer(),
           {
             lang: 'ar',
-            label: 'Ignore Vocalization',
+            label: 'Ignore vocalization',
             help: "Ignore vocal diacritics, e.g., الْحُرُوف &larr; الحروف"
 
           }
@@ -666,7 +667,7 @@ export class CollationTableEditor {
           new IgnoreShaddaNormalizer(),
           {
             lang: 'ar',
-            label: 'Ignore Shaddah',
+            label: 'Ignore shaddah',
             help: "Ignore shaddah, e.g., درّس &larr; درس"
           }
         )
@@ -677,6 +678,15 @@ export class CollationTableEditor {
             lang: 'ar',
             label: 'Ignore taṭwīl',
             help: 'Ignore taṭwīl'
+          }
+        )
+        this.normalizerRegister.registerNormalizer(
+          'ignoreIsolatedHamza',
+          new IgnoreIsolatedHamzaNormalizer(),
+          {
+            lang: 'ar',
+            label: 'Ignore isolated hamza',
+            help: 'Ignore isolated hamza'
           }
         )
         break

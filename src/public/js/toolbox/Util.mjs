@@ -117,6 +117,8 @@ function getValidPunctuationArray() {
     '!',
     '⊙',
     '¶',
+    '«',
+    '»',
     String.fromCodePoint(0x61B), // Arabic semi-colon
     String.fromCodePoint(0x61F), // Arabic question mark
     String.fromCodePoint(0x60C), // Arabic comma

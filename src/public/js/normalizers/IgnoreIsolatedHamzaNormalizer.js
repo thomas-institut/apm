@@ -1,7 +1,5 @@
-<?php
-
-/* 
- *  Copyright (C) 2019 Universität zu Köln
+/*
+ *  Copyright (C) 2021 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,26 +13,18 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
- *  
+ *
  */
 
-use APM\System\ApmConfigParameter;
+export class IgnoreIsolatedHamzaNormalizer {
 
-require_once 'config.php';
+  /**
+   *
+   * @returns string
+   * @param  str string
+   */
+  normalizeString(str) {
+    return str.replace(String.fromCodePoint(0x621), '')
+  }
 
-global $config;
-
-
-$config[ApmConfigParameter::APP_NAME] = 'APM';
-$config[ApmConfigParameter::VERSION] = '0.39.3 (2021-Apr-12)';
-
-
-$config[ApmConfigParameter::COPYRIGHT_NOTICE] = <<<EOD
-        2016-21, 
-        <a href="http://www.thomasinstitut.uni-koeln.de/">
-            Thomas-Institut</a>, 
-        <a href="http://www.uni-koeln.de/">
-            Universität zu Köln
-        </a>
-EOD;
-
+}

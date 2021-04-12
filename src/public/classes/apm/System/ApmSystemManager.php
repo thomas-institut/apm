@@ -27,7 +27,9 @@ use APM\CollationTable\ApmCollationTableManager;
 use APM\CollationTable\ApmCollationTableVersionManager;
 use APM\CollationTable\CollationTableManager;
 use APM\Core\Token\Normalizer\IgnoreArabicVocalizationNormalizer;
+use APM\Core\Token\Normalizer\IgnoreIsolatedHamzaNormalizer;
 use APM\Core\Token\Normalizer\IgnoreShaddaNormalizer;
+use APM\Core\Token\Normalizer\IgnoreTatwilNormalizer;
 use APM\Core\Token\Normalizer\RemoveHamzahMaddahFromAlifWawYahNormalizer;
 use APM\Core\Token\Normalizer\ToLowerCaseNormalizer;
 use APM\FullTranscription\TranscriptionManager;
@@ -650,11 +652,20 @@ class ApmSystemManager extends SystemManager {
             ]);
 
             $this->normalizerManager->registerNormalizer('ar', 'standard',
-                'ignoreTatwil', new IgnoreShaddaNormalizer());
+                'ignoreTatwil', new IgnoreTatwilNormalizer());
             $this->normalizerManager->setNormalizerMetadata('ignoreTatwil', [
                 'automaticCollation' => [
                     'label' => 'Ignore taṭwīl',
                     'help' => "Ignore taṭwīl"
+                ]
+            ]);
+
+            $this->normalizerManager->registerNormalizer('ar', 'standard',
+                'ignoreIsolatedHamza', new IgnoreIsolatedHamzaNormalizer());
+            $this->normalizerManager->setNormalizerMetadata('ignoreIsolatedHamza', [
+                'automaticCollation' => [
+                    'label' => 'Ignore isolated hamza',
+                    'help' => "Ignore hamza"
                 ]
             ]);
         }

@@ -456,14 +456,6 @@ $app->group('/api/data', function(RouteCollectorProxy $group){
 
 // PUBLIC API
 
-//$app->group('/api/public', function (RouteCollectorProxy $group){
-//
-//    // API -> quick collation
-//    $group->post('/collation/quick',
-//        ApiCollation::class . ':quickCollation')
-//        ->setName('api.collation.quick');
-//});
-
 // -----------------------------------------------------------------------------
 //  RUN!
 // -----------------------------------------------------------------------------

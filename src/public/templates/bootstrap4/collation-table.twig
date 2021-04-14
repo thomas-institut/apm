@@ -1,5 +1,5 @@
-{% extends "base.twig" %}
-{% import 'macros.twig' as macros %}
+{% extends "bootstrap4/base.twig" %}
+{% import 'bootstrap4/macros.twig' as macros %}
 
 {% block title %}
     ACT {{work}}-{{chunk}}-{{lang}}{%if isPartial %}-partial{%endif%}
@@ -18,7 +18,7 @@
 
 {% block finalBodyJS %}
 <script type="module">
-  $(function()  {
+  $(() =>  {
     let apiCallOptions = JSON.parse("{{apiCallOptions|json_encode|e('js')}}")
     let availableWitnesses = JSON.parse("{{availableWitnesses|json_encode|e('js')}}")
     let urlGenerator = new ApmUrlGenerator('{{baseurl}}')
@@ -48,13 +48,14 @@
 </script>
 {% endblock %}
 {% block content %}
+    <nav aria-label="breadcrumb">
      <ol class="breadcrumb">
-         <li><a href="{{url_for('chunks')}}">Chunks</a></li>
-         <li><a href="{{url_for('chunk', {'work' : work, 'chunk': chunk})}}">{{work}}-{{chunk}}</a></li>
-         <li>Automatic Collation Table</li>
-         <li class="active">{{langName}} {%if isPartial %}(partial){%endif%}</li>
+         <li class="breadcrumb-item"><a href="{{url_for('chunks')}}">Chunks</a></li>
+         <li class="breadcrumb-item"><a href="{{url_for('chunk', {'work' : work, 'chunk': chunk})}}">{{work}}-{{chunk}}</a></li>
+         <li class="breadcrumb-item">Automatic Collation Table</li>
+         <li class="breadcrumb-item active">{{langName}} {%if isPartial %}(partial){%endif%}</li>
     </ol>
-    
+    </nav>
     <h1>Automatic Collation Table</h1> 
     <div class="row">
         <div class="col-md-9">

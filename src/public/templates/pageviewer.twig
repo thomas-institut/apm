@@ -6,7 +6,6 @@
     <title>{{docInfo.title}} : {{pageNumberFoliation}}</title>
     <link rel="stylesheet" type="text/css" media="screen" href="https://fonts.googleapis.com/css?family=PT+Sans"/>
     <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/node_modules/bootstrap/dist/css/bootstrap.css">
-{#    <link rel="stylesheet" href="{{baseurl}}/fonts/font-awesome-4.7.0/css/font-awesome.min.css">#}
     <link rel="stylesheet" href="{{baseurl}}/fonts/fontawesome-free-5.10.1-web/css/all.css">
     <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/split-pane.css" />
     <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/styles.css" />
@@ -39,7 +38,7 @@
     <script>
     TranscriptionEditor.init('{{baseurl}}')
     
-    $(document).ready(function () {
+    $( () => {
         let pv = new PageViewer({
             baseUrl : '{{ baseurl }}',
             urlGenerator: new ApmUrlGenerator('{{ baseurl }}'),
@@ -68,7 +67,7 @@
     <table width="100%">
         <tr>
             <td width="280px">
-                <a href="{{url_for('home')}}" title="Back to main page"><img src="{{baseurl}}/images/apm-logo-plain.svg" height="50"></a>
+                <a href="{{url_for('home')}}" title="Back to main page"><img src="{{baseurl}}/images/apm-logo-plain.svg" height="50" alt="APM Logo"></a>
             </td>
             <td>
                 <span class="textonly"><a href="{{url_for('doc.showdoc', {'id' : doc })}}">{{ docInfo.title}}</a></span>
@@ -113,6 +112,7 @@
                     <button class="textonly headerbutton {{ page==docPageCount?' disabled':''}}" 
                                 title="Last Page" 
                                 onclick="window.location='{{url_for('pageviewer.docpage', {'doc': doc, 'page': docPageCount})}}';" {{ page==docPageCount?' disabled':''}}>
+                    </button>
                 {% else %}  
                     <button class="textonly headerbutton {{ seq==docPageCount?' disabled':''}}" 
                                 title="Last Page" 
@@ -123,12 +123,10 @@
             </td>
             <td>
                 <button title="Vertical Layout" class="textonly headerbuttonright" id="vertButton">
-                            {#<span class="glyphicon glyphicon-object-align-horizontal"></span>#}
-                            <img src="{{baseurl}}/images/stack_vertically.png"/>
+                            <img src="{{baseurl}}/images/stack_vertically.png" alt="Stack Vertically"/>
                 </button>
                 <button title="Horizontal Layout" class="textonly headerbuttonright" id="horizButton">
-                    {#<span class="glyphicon glyphicon-object-align-vertical"></span>#}
-                    <img src="{{baseurl}}/images/stack_horizontally.png"/>
+                    <img src="{{baseurl}}/images/stack_horizontally.png" alt="Stack Horizontally"/>
                 </button> 
             </td>
             <td style="text-align: right;">
@@ -159,12 +157,12 @@
                 <p><strong>Page Number:</strong> {{pageInfo.page_number}}</p>
                 <p><strong>Sequence Number:</strong> {{pageInfo.seq}}</p>
                 <p><strong>Image Number:</strong> {{pageInfo.img_number}}</p>
-                <p style="margin-top: 50px"/>
+                <p style="margin-top: 50px"></p>
                 <p><strong>Page Type:</strong> {{attribute(pageTypeNames, pageInfo.type).descr}}</p>
                 <p><strong>Foliation:</strong> {% if pageInfo.foliation %}{{pageInfo.foliation}}{% else %}Undefined{% endif%}</p>
                 <p><strong>Default Language:</strong> {{pageInfo.lang}}</p>
                 <p><button type="button" id="editPageButton" class="btn btn-primary btn-sm">Edit Settings</button></p>
-                <p style="margin-top: 50px"/>
+                <p style="margin-top: 50px"></p>
                 <p><strong>Num Columns:</strong> {{pageInfo.num_cols}}</p>
                 <p><button type="button" id="addColumnButton" data-toggle="modal" 
                          data-target="#addColumnModal"

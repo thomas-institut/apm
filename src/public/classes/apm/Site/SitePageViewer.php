@@ -38,6 +38,9 @@ use Twig\Error\SyntaxError;
  */
 class SitePageViewer extends SiteController
 {
+
+    const TEMPLATE_TRANSCRIPTION_EDITOR = 'transcription-editor.twig';
+
     /**
      * @param Request $request
      * @param Response $response
@@ -69,7 +72,7 @@ class SitePageViewer extends SiteController
             $pageNumberFoliation = $pageInfo['foliation'];
         }
 
-        return $this->renderPage($response, 'pageviewer.twig', [
+        return $this->renderPage($response, self::TEMPLATE_TRANSCRIPTION_EDITOR, [
             'navByPage' => true,
             'doc' => $docId,
             'docInfo' => $docInfo,
@@ -121,7 +124,7 @@ class SitePageViewer extends SiteController
             $pageNumberFoliation = $pageInfo['foliation'];
         }
 
-        return $this->renderPage($response, 'pageviewer.twig', [
+        return $this->renderPage($response, self::TEMPLATE_TRANSCRIPTION_EDITOR, [
             'navByPage' => false,  // i.e., navigate by sequence
             'doc' => $docId,
             'docInfo' => $docInfo,

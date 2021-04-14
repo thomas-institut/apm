@@ -60,7 +60,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
 {
 
     const COOKIE_SIZE_THRESHHOLD = 1000;
-    const TEMPLATE_ERROR_NOT_ALLOWED = 'bootstrap4/error.notallowed.twig';
+
 
     use LoggerAwareTrait;
     use CodeDebugWithLoggerTrait;

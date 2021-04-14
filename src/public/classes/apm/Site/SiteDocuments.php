@@ -38,11 +38,11 @@ use \Psr\Http\Message\ResponseInterface as Response;
 class SiteDocuments extends SiteController
 {
 
-    const TEMPLATE_DOCS_PAGE = 'bootstrap4/documents.twig';
-    const TEMPLATE_SHOW_DOCS_PAGE = 'bootstrap4/doc-details.twig';
-    const TEMPLATE_DOC_EDIT_PAGE = 'bootstrap4/doc-edit.twig';
-    const TEMPLATE_NEW_DOC_PAGE = 'bootstrap4/doc-new.twig';
-    const TEMPLATE_DEFINE_DOC_PAGES = 'bootstrap4/doc-def-pages.twig';
+    const TEMPLATE_DOCS_PAGE = 'documents.twig';
+    const TEMPLATE_SHOW_DOCS_PAGE = 'doc-details.twig';
+    const TEMPLATE_DOC_EDIT_PAGE = 'doc-edit.twig';
+    const TEMPLATE_NEW_DOC_PAGE = 'doc-new.twig';
+    const TEMPLATE_DEFINE_DOC_PAGES = 'doc-def-pages.twig';
     /**
      * @param Request $request
      * @param Response $response

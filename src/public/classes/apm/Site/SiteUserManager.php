@@ -38,10 +38,10 @@ use ThomasInstitut\TimeString\TimeString;
 class SiteUserManager extends SiteController
 {
 
-    const TEMPLATE_USER_MANAGER = 'bootstrap4/user-manager.twig';
-    const TEMPLATE_USER_PROFILE = 'bootstrap4/user-profile.twig';
-    const TEMPLATE_USER_SETTINGS = 'bootstrap4/user-settings.twig';
-    const TEMPLATE_USER_NOT_FOUND = 'bootstrap4/user-error-not-found.twig';
+    const TEMPLATE_USER_MANAGER = 'user-manager.twig';
+    const TEMPLATE_USER_PROFILE = 'user-profile.twig';
+    const TEMPLATE_USER_SETTINGS = 'user-settings.twig';
+    const TEMPLATE_USER_NOT_FOUND = 'user-error-not-found.twig';
 
     /**
      * @param Request $request

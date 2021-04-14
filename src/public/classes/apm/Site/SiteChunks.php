@@ -44,8 +44,8 @@ use Twig\Error\SyntaxError;
 class SiteChunks extends SiteController
 {
 
-    const TEMPLATE_CHUNKS = 'bootstrap4/chunks.twig';
-    const TEMPLATE_CHUNK_MAP = 'bootstrap4/chunks-map.twig';
+    const TEMPLATE_CHUNKS = 'chunks.twig';
+    const TEMPLATE_CHUNK_MAP = 'chunks-map.twig';
     /**
      * @param Request $request
      * @param Response $response

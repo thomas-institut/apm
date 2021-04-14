@@ -37,7 +37,7 @@ use \Psr\Http\Message\ResponseInterface as Response;
 class SiteDashboard extends SiteController
 {
 
-    const TEMPLATE_DASHBOARD = 'bootstrap4/dashboard.twig';
+    const TEMPLATE_DASHBOARD = 'dashboard.twig';
 
     /**
      * @param Request $request

@@ -56,10 +56,10 @@ class SiteCollationTable extends SiteController
     const ERROR_INVALID_WITNESS_ID = 'InvalidWitnessId';
     const ERROR_UNRECOGNIZED_OPTION = 'UnrecognizedOption';
     
-    const TEMPLATE_ERROR = 'bootstrap4/chunk-collation-error.twig';
-    const TEMPLATE_COLLATION_TABLE = 'bootstrap4/collation-table.twig';
-    const TEMPLATE_EDIT_COLLATION_TABLE = 'bootstrap4/collation-edit-new.twig';
-    const TEMPLATE_EDIT_COLLATION_TABLE_ERROR = 'bootstrap4/collation.edit.error.twig';
+    const TEMPLATE_ERROR = 'chunk-collation-error.twig';
+    const TEMPLATE_COLLATION_TABLE = 'collation-table.twig';
+    const TEMPLATE_EDIT_COLLATION_TABLE = 'collation-edit-new.twig';
+    const TEMPLATE_EDIT_COLLATION_TABLE_ERROR = 'collation.edit.error.twig';
 
     /**
      * Serves the collation table editor.

@@ -1,36 +1,39 @@
-{% extends "base.twig" %}
-{% import 'macros.twig' as macros %}
+{% extends "bootstrap4/base.twig" %}
+{% import 'bootstrap4/macros.twig' as macros %}
 
 {% block title %}Edit Doc: {{docInfo.title}}{% endblock %}
 
 {% block extraJS %}
 <script type="application/javascript" src="{{baseurl}}/js/DocEditPage.js"></script>
 <script>
-    $(document).ready(function () {
-        docEditObj = new DocEditPage('de', 
-        JSON.parse('{{docInfo|json_encode|e('js')}}'),
-        '{{url_for('api.doc.update', {'id': docInfo.id})}}',
-        '{{url_for('doc.showdoc', {'id' : docInfo.id })}}',
-        '{{url_for('api.doc.delete', {'id' : docInfo.id })}}',
-        '{{url_for('docs')}}',
-        )
+    $( () => {
+      new DocEditPage('de',
+        JSON.parse('{{ docInfo|json_encode|e('js') }}'),
+        '{{ url_for('api.doc.update', {'id': docInfo.id}) }}',
+        '{{ url_for('doc.showdoc', {'id' : docInfo.id }) }}',
+        '{{ url_for('api.doc.delete', {'id' : docInfo.id }) }}',
+        '{{ url_for('docs') }}',
+      )
     })
     
 </script>
 {% endblock %}
 
 {% block content %}
-     <ol class="breadcrumb">
-        <li><a href="{{url_for('docs')}}">Documents</a></li>
-        <li><a href="{{url_for('doc.showdoc', {'id' : docInfo.id })}}">{{ docInfo.title}}</a></li>
-        <li class="active">Edit Document</li>
-    </ol>
+
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{url_for('docs')}}">Documents</a></li>
+            <li class="breadcrumb-item"><a href="{{url_for('doc.showdoc', {'id' : docInfo.id })}}">{{ docInfo.title}}</a></li>
+            <li class="breadcrumb-item active">Edit Document</li>
+        </ol>
+    </nav>
 
 <h1>Edit Document Settings</h1>
   
 <div class="row">
     <div class="col-md-8">    
-<div class="withmarginleft-small">
+<div class="with-margin-left-sm">
     <form id="de-form">
         <div id="de-id-fg" class="form-group">
             <label for="de-id" id="de-title-label" class="control-label">Doc Id:</label>
@@ -58,14 +61,14 @@
             <select id="de-imagesource">{{imageSourceOptions|raw}}</select>
         </div>
         <div id="de-imagesourcedata-fg" class="form-group">
-            <label for="de-shorttitle" id="de-imagesourcedata-label" class="control-label">Image Source Data:</label>
+            <label for="de-imagesourcedata" id="de-imagesourcedata-label" class="control-label">Image Source Data:</label>
             <input type="text" class="form-control" id="de-imagesourcedata" value="{{docInfo.image_source_data}}"/>
         </div>
     </form>
     
-    <button type="button" class="btn btn-default" id="de-cancel">Cancel</button>
-    <button type="button" class="btn btn-default hidden" id="de-reset">Reset</button>
-    <button type="button" class="btn btn-primary hidden" id="de-submit">Submit Changes</button>
+    <button type="button" class="btn btn-primary" id="de-cancel">Cancel</button>
+    <button type="button" class="btn btn-primary hidden" id="de-reset">Reset</button>
+    <button type="button" class="btn btn-danger hidden" id="de-submit">Submit Changes</button>
     
     <div id="de-status"></div>
 </div>

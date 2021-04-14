@@ -1,14 +1,10 @@
-{#
 
-User profile template
-
-#}
-{% extends "base.twig" %}
+{% extends "bootstrap4/base.twig" %}
 
 {% block title %}{{theuser.fullname}} | Collaborator in the Averroes Project{% endblock %}
 
 {% block extraJS %}
-
+    <script type="text/javascript" src="{{baseurl}}/node_modules/bootstrap-validator/dist/validator.js"></script>
 <script type="application/javascript" src="{{baseurl}}/js/UserProfilePage.js"></script>
 <script>
   $(function() {
@@ -46,11 +42,15 @@ User profile template
 {% endblock %}
 
 {% block content %}
+    <nav aria-label="breadcrumb">
 <ol class="breadcrumb">
-    <li class="active"><a href="">User Profile</a></li>
+    <li class="breadcrumb-item active"><a href="">User Profile</a></li>
 </ol>
+    </nav>
+
+
 <div id="userprofile">
-<img src="https://www.gravatar.com/avatar/{{theuser.emailhash}}?d=mm&s=200">
+<img src="https://www.gravatar.com/avatar/{{theuser.emailhash}}?d=mm&s=200" alt="User Avatar">
 <h1>{{ theuser.fullname }} </h1>
 <p>Username: {{theuser.username}}</p>
 {% if theuser.email %}
@@ -65,7 +65,7 @@ User profile template
 </div>
 
 
-<div class="withtopmargin"></div>
+<div class="with-top-margin with-bottom-margin">
 
 {% if canEditProfile %}
 <button class="btn btn-primary" 
@@ -233,17 +233,15 @@ Make Root
 </div> <!-- Collapse -->
 {% endif %}
 
-<div id="reportarea"></div>
+<div id="reportarea"  class="with-top-margin">
     <h3>Manuscripts / Prints</h3>
-        <ul class="doclist">{{doclist|raw}}</ul>
-<div id="documents">
-    
-</div>
-
+        <ul class="doc-list">{{doclist|raw}}</ul>
+<div id="documents"></div>
     <h3>Collation Tables</h3>
     <div id="ctables"></div>
 
     <h3>Editions</h3>
     <div id="editions"></div>
-
+</div>
+</div>
 {% endblock %}

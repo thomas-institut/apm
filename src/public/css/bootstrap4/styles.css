@@ -114,3 +114,83 @@ table.pagetable a {
 table.pagetable td.withouttranscription a {
     color: silver;
 }
+
+.in-text {
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+.with-top-margin {
+    margin-top: 2rem;
+}
+
+.with-bottom-margin {
+    margin-bottom: 2rem;
+}
+
+.with-margin-left-sm {
+    margin-left: 1rem;
+}
+
+.with-margin-left-lg {
+    margin-left: 4rem;
+}
+
+.without-margin-left {
+    margin-left: 0;
+}
+
+.without-padding-left {
+    padding-left: 0;
+}
+
+
+ul.chunk-list {
+    list-style: none;
+    margin: 20px 0 20px 0;
+    padding: 0;
+}
+
+ul.chunk-list  li {
+    padding:0;
+    margin: 5px 0 30px 10px;
+}
+
+ul.chunk-list ul {
+    list-style: none;
+    margin: 0 0 0 20px;
+    padding: 0;
+}
+
+a.chunk-link {
+    display: inline-block;
+    min-width: 1rem;
+}
+
+ul.doc-list {
+    list-style-type: none;
+    padding: 0;
+    margin-left: 20px;
+    margin-bottom: 25px;
+}
+
+ul.doc-list li {
+    padding: 0;
+    margin-bottom: 1.5em;
+    margin-left: 20px;
+    text-indent: -20px;
+}
+
+ul.ctlist {
+    list-style-type: none;
+    padding: 0;
+    margin-left: 20px;
+    margin-bottom: 25px;
+}
+
+ul.ctlist li {
+    padding: 0;
+    margin-bottom: 1em;
+    margin-left: 20px;
+    text-indent: -20px;
+}

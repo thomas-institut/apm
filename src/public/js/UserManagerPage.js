@@ -18,7 +18,7 @@
 
 /* eslint-env jquery */
 
-/* global ApmUtil */
+/** @global DataTable */
 
 class UserManagerPage {
   
@@ -31,7 +31,13 @@ class UserManagerPage {
       $('#password2').val('')
     })
 
-    $("#usertable").DataTable({ 'paging': false, 'searching' : true });
+    $("#user-table").DataTable(
+      {
+        'paging': true,
+        'searching' : true,
+        'order': [ [2,'asc']]
+      }
+    );
     $('#theAddUserForm').validator().on('submit', this.genFormSubmitHandler())
   }
   

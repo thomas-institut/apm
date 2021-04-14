@@ -1,9 +1,9 @@
-{% extends "base.twig" %}
+{% extends "bootstrap4/base.twig" %}
 
 {% block title %}FullTx Chunk Map{% endblock %}
 
 {% block content %}
     <h1>Chunk Map</h1>
     <div id="stats">{{ stats|raw }}</div>
-    <div id="chunkmap" class="fulltxmap">{{ theMap|raw }}</div>
+    <div id="chunk-map" class="full-tx-map">{{ theMap|raw }}</div>
 {% endblock %}

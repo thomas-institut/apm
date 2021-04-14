@@ -38,12 +38,17 @@ use \Psr\Http\Message\ResponseInterface as Response;
 class SiteDocuments extends SiteController
 {
 
+    const TEMPLATE_DOCS_PAGE = 'bootstrap4/documents.twig';
+    const TEMPLATE_SHOW_DOCS_PAGE = 'bootstrap4/doc.details.twig';
+    const TEMPLATE_DOC_EDIT_PAGE = 'bootstrap4/doc.edit.twig';
+    const TEMPLATE_NEW_DOC_PAGE = 'bootstrap4/doc.new.twig';
+    const TEMPLATE_DEFINE_DOC_PAGES = 'bootstrap4/doc.defdocpages.twig';
     /**
      * @param Request $request
      * @param Response $response
      * @return Response
      */
-    public function documentsPage(Request $request, Response $response)
+    public function documentsPage(Request $request, Response $response): Response
     {
 
         $dataManager = $this->dataManager;
@@ -79,7 +84,7 @@ class SiteDocuments extends SiteController
         $this->profiler->stop();
         $this->logProfilerData('documentsPage');
 
-        return $this->renderPage($response, 'bootstrap4/documents.twig', [
+        return $this->renderPage($response, self::TEMPLATE_DOCS_PAGE, [
             'docs' => $docs,
             'peopleInfo' => $peopleInfoArray,
             'canManageDocuments' => $canManageDocuments
@@ -91,7 +96,7 @@ class SiteDocuments extends SiteController
      * @param Response $response
      * @return Response
      */
-    public function showDocPage(Request $request, Response $response)
+    public function showDocPage(Request $request, Response $response): Response
     {
         
         $docId = $request->getAttribute('id');
@@ -150,7 +155,6 @@ class SiteDocuments extends SiteController
         $versionMap = $transcriptionManager->getVersionsForChunkLocationMap($chunkLocationMap);
         $lastChunkVersions = $transcriptionManager->getLastChunkVersionFromVersionMap($versionMap);
         $lastSaves = $transcriptionManager->getLastSavesForDoc($docId, 20);
-        //$this->logger->debug('Last Versions', $lastChunkVersions);
         $chunkInfo = [];
 
         $lastVersions = [];
@@ -227,7 +231,7 @@ class SiteDocuments extends SiteController
         $this->profiler->stop();
         $this->logProfilerData('showDocPage-' . $docId);
 
-        return $this->renderPage($response, 'bootstrap4/doc.details.twig', [
+        return $this->renderPage($response, self::TEMPLATE_SHOW_DOCS_PAGE, [
             'navByPage' => false,
             'canDefinePages' => $canDefinePages,
             'doc' => $doc,
@@ -245,12 +249,12 @@ class SiteDocuments extends SiteController
      * @param Response $response
      * @return Response
      */
-    public function newDocPage(Request $request, Response $response)
+    public function newDocPage(Request $request, Response $response): Response
     {
      
         if (!$this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'create-new-documents')){
             $this->logger->debug("User " . $this->userInfo['id'] . ' tried to add new doc but is not allowed to do it');
-            return $this->renderPage($response, 'error.notallowed.twig', [
+            return $this->renderPage($response, self::TEMPLATE_ERROR_NOT_ALLOWED, [
                 'message' => 'You are not authorized to add new documents in the system'
             ]);
         }
@@ -278,7 +282,7 @@ class SiteDocuments extends SiteController
             $docTypesOptions .= '>' . $type[1] . '</option>';
         }
         
-        return $this->renderPage($response, 'doc.new.twig', [
+        return $this->renderPage($response, self::TEMPLATE_NEW_DOC_PAGE, [
             'imageSourceOptions' => $imageSourceOptions,
             'langOptions' => $langOptions,
             'docTypesOptions' => $docTypesOptions
@@ -290,12 +294,12 @@ class SiteDocuments extends SiteController
      * @param Response $response
      * @return Response
      */
-    public function editDocPage(Request $request, Response $response)
+    public function editDocPage(Request $request, Response $response): Response
     {
         $this->profiler->start();
         if (!$this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'edit-documents')){
             $this->logger->debug("User " . $this->userInfo['id'] . ' tried to edit a document but is not allowed to do it');
-            return $this->renderPage($response, 'error.notallowed.twig', [
+            return $this->renderPage($response, self::TEMPLATE_ERROR_NOT_ALLOWED, [
                 'message' => 'You are not authorized to edit document settings'
             ]);
         }
@@ -346,7 +350,7 @@ class SiteDocuments extends SiteController
         }
         $this->profiler->stop();
         $this->logProfilerData('editDocPage-' . $docId);
-        return $this->renderPage($response, 'doc.edit.twig', [
+        return $this->renderPage($response, self::TEMPLATE_DOC_EDIT_PAGE, [
             'docInfo' => $docInfo,
             'imageSourceOptions' => $imageSourceOptions,
             'langOptions' => $langOptions,
@@ -362,13 +366,13 @@ class SiteDocuments extends SiteController
      * @param Response $response
      * @return Response
      */
-    public function defineDocPages(Request $request, Response $response)
+    public function defineDocPages(Request $request, Response $response): Response
     {
         $this->profiler->start();
         
         if (!$this->dataManager->userManager->isUserAllowedTo($this->userInfo['id'], 'define-doc-pages')){
             $this->logger->debug("User " . $this->userInfo['id'] . ' tried to define document pages  but is not allowed to do it');
-            return $this->renderPage($response, 'error.notallowed.twig', [
+            return $this->renderPage($response, self::TEMPLATE_ERROR_NOT_ALLOWED, [
                 'message' => 'You are not authorized to edit document settings'
             ]);
         }
@@ -388,7 +392,7 @@ class SiteDocuments extends SiteController
 
         $this->profiler->stop();
         $this->logProfilerData('defineDocPages-' . $docId);
-        return $this->renderPage($response, 'doc.defdocpages.twig', [
+        return $this->renderPage($response, self::TEMPLATE_DEFINE_DOC_PAGES, [
             'pageTypes' => $pageTypes,
             'doc' => $doc
         ]);

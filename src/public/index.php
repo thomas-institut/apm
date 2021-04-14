@@ -71,7 +71,7 @@ require 'version.php';
 
 /**
  * Exits with an error message
- * @param $msg
+ * @param string $msg
  */
 function exitWithErrorMessage(string $msg) {
     http_response_code(503);

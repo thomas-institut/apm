@@ -1,5 +1,4 @@
 <?php
-
 /* 
  *  Copyright (C) 2019 Universität zu Köln
  *
@@ -27,8 +26,8 @@
 namespace APM\Site;
 
 use InvalidArgumentException;
-use \Psr\Http\Message\ServerRequestInterface as Request;
-use \Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\TimeString\TimeString;
 
 
@@ -39,19 +38,24 @@ use ThomasInstitut\TimeString\TimeString;
 class SiteUserManager extends SiteController
 {
 
+    const TEMPLATE_USER_MANAGER = 'bootstrap4/user.manager.twig';
+    const TEMPLATE_USER_PROFILE = 'bootstrap4/user.profile.twig';
+    const TEMPLATE_USER_SETTINGS = 'bootstrap4/user.settings.twig';
+    const TEMPLATE_USER_NOT_FOUND = 'bootstrap4/user.notfound.twig';
+
     /**
      * @param Request $request
      * @param Response $response
      * @return Response
 
      */
-    public function userProfilePage(Request $request, Response $response)
+    public function userProfilePage(Request $request, Response $response): Response
     {
         
         $profileUsername = $request->getAttribute('username');
         $this->profiler->start();
         if (!$this->dataManager->userManager->userExistsByUsername($profileUsername)) {
-            return $this->renderPage($response, 'user.notfound.twig', [
+            return $this->renderPage($response, self::TEMPLATE_USER_NOT_FOUND, [
                         'theuser' => $profileUsername
             ]);
         }
@@ -89,7 +93,7 @@ class SiteUserManager extends SiteController
                 $this->logger->error("Table $tableId reported as being active does not exist. Is version table consistent?");
                 continue;
             }
-            $chunkId = isset($ctData['chunkId']) ? $ctData['chunkId'] : $ctData['witnesses'][0]['chunkId'];
+            $chunkId = $ctData['chunkId'] ?? $ctData['witnesses'][0]['chunkId'];
 
             $tableInfo[] = [
                 'id' => $tableId,
@@ -102,7 +106,7 @@ class SiteUserManager extends SiteController
 
         $this->profiler->stop();
         $this->logProfilerData('userProfilePage-' . $profileUsername);
-        return $this->renderPage($response, 'user.profile.twig', [
+        return $this->renderPage($response, self::TEMPLATE_USER_PROFILE, [
                     'theuser' => $userProfileInfo,
                     'canEditProfile' => $canEditProfile,
                     'canMakeRoot' => $canMakeRoot,
@@ -116,14 +120,14 @@ class SiteUserManager extends SiteController
      * @param Response $response
      * @return Response
      */
-    public function userManagerPage(Request $request, Response $response)
+    public function userManagerPage(Request $request, Response $response): Response
     {
         $this->profiler->start();
         $um = $this->dataManager->userManager;
         if (!$um->isUserAllowedTo($this->userInfo['id'], 'manageUsers')){
             return $this->renderPage(
                     $response, 
-                    'error.notallowed.twig', 
+                    self::TEMPLATE_ERROR_NOT_ALLOWED,
                     [
                         'message' => 'You are not authorized to manage users.'
                     ]
@@ -134,7 +138,7 @@ class SiteUserManager extends SiteController
         
         $this->profiler->stop();
         $this->logProfilerData('userManagerPage');
-        return $this->renderPage($response, 'user.manager.twig', [
+        return $this->renderPage($response, self::TEMPLATE_USER_MANAGER, [
             'users' => $users
         ]);
     }
@@ -144,26 +148,26 @@ class SiteUserManager extends SiteController
      * @param Response $response
      * @return Response
      */
-    public function userSettingsPage(Request $request, Response $response)
+    public function userSettingsPage(Request $request, Response $response): Response
     {
         $username = $request->getAttribute('username');
         $curUserName = $this->userInfo['username'];
         $userId = $this->userInfo['id'];
         if ($username !== $curUserName && 
                 !$this->dataManager->userManager->isUserAllowedTo($userId, 'edit-user-settings')){
-            return $this->renderPage($response, 'error.notallowed.twig', [
+            return $this->renderPage($response, self::TEMPLATE_ERROR_NOT_ALLOWED, [
                 'message' => 'You are not authorized to change the settings for user ' . $username
             ]);
         }
         
         if (!$this->dataManager->userManager->userExistsByUsername($username)){
-        return $this->renderPage($response, 'user.notfound.twig', [
+        return $this->renderPage($response, self::TEMPLATE_USER_NOT_FOUND, [
             'theuser' => $username
         ]);
         }
         $userInfo = $this->dataManager->userManager->getUserInfoByUsername($username);
     
-        return $this->renderPage($response, 'user.settings.twig', [
+        return $this->renderPage($response, self::TEMPLATE_USER_SETTINGS, [
             'canedit' => true,
             'theuser' => $userInfo
         ]);

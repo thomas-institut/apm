@@ -1,5 +1,5 @@
-{% extends "base.twig" %}
-{% import 'macros.twig' as macros %}
+{% extends "bootstrap4/base.twig" %}
+{% import 'bootstrap4/macros.twig' as macros %}
 
 {% block title %}New Document{% endblock %}
 
@@ -7,16 +7,18 @@
 <script type="application/javascript" src="{{baseurl}}/js/NewDocPage.js"></script>
 <script>
     $( () => {
-        let docEditObj = new NewDocPage('de', '{{baseurl}}')
+        new NewDocPage('de', '{{baseurl}}')
     })
 </script>
 {% endblock %}
 
 {% block content %}
+<nav aria-label="breadcrumb">
      <ol class="breadcrumb">
-        <li><a href="{{url_for('docs')}}">Documents</a></li>
-        <li class="active">Add New Document</li>
+        <li class="breadcrumb-item"><a href="{{url_for('docs')}}">Documents</a></li>
+        <li class="breadcrumb-item active">Add New Document</li>
     </ol>
+</nav>
 
 <h1>New Document</h1>
   
@@ -46,13 +48,13 @@
             <select id="de-imagesource">{{imageSourceOptions|raw}}</select>
         </div>
         <div id="de-imagesourcedata-fg" class="form-group">
-            <label for="de-shorttitle" id="de-imagesourcedata-label" class="control-label">Image Source Data:</label>
+            <label for="de-imagesourcedata" id="de-imagesourcedata-label" class="control-label">Image Source Data:</label>
             <input type="text" class="form-control" id="de-imagesourcedata" value=""/>
         </div>
     </form>
     
-    <button type="button" class="btn btn-default" id="de-cancel">Cancel</button>
-    <button type="button" class="btn btn-primary hidden" id="de-submit">Create Document</button>
+    <button type="button" class="btn btn-primary" id="de-cancel">Cancel</button>
+    <button type="button" class="btn btn-danger hidden" id="de-submit">Create Document</button>
     <div id="de-status"></div>
 </div>
     </div>

@@ -43,12 +43,15 @@ use Twig\Error\SyntaxError;
  */
 class SiteChunks extends SiteController
 {
+
+    const TEMPLATE_CHUNKS = 'bootstrap4/chunks.twig';
+    const TEMPLATE_CHUNK_MAP = 'bootstrap4/chunks-map.twig';
     /**
      * @param Request $request
      * @param Response $response
      * @return Response
      */
-    public function chunksPage(Request $request, Response $response)
+    public function chunksPage(Request $request, Response $response): Response
     {
        
         $dataManager = $this->dataManager;
@@ -72,7 +75,7 @@ class SiteChunks extends SiteController
         }
         $this->profiler->stop();
         $this->logProfilerData('chunksPage');
-        return $this->renderPage($response, 'chunks.twig', [
+        return $this->renderPage($response, self::TEMPLATE_CHUNKS, [
             'works' => $works
         ]);
     }
@@ -82,7 +85,7 @@ class SiteChunks extends SiteController
      * @param Response $response
      * @return Response
      */
-    public function fullTxMapPage(Request $request, Response $response, $args)
+    public function fullTxMapPage(Request $request, Response $response, $args): Response
     {
 
         if (isset($args['timestamp'])) {
@@ -140,7 +143,7 @@ class SiteChunks extends SiteController
         $statsHtml .= "$numSegments chunk segments, $numValidSegments valid<br/>";
 
 
-        return $this->renderPage($response, 'chunks-map.twig', [ 'stats' => $statsHtml, 'theMap' => $printOut] );
+        return $this->renderPage($response, self::TEMPLATE_CHUNK_MAP, [ 'stats' => $statsHtml, 'theMap' => $printOut] );
 
     }
 

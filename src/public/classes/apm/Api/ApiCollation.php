@@ -22,6 +22,7 @@ namespace APM\Api;
 
 
 use APM\CollationTable\CollationTableVersionInfo;
+use APM\Core\Witness\EditionWitness;
 use APM\Engine\Engine;
 use APM\StandardData\CollationTableDataProvider;
 use APM\System\WitnessInfo;
@@ -37,6 +38,7 @@ use APM\Core\Witness\StringWitness;
 use APM\Core\Collation\CollationTable;
 use APM\Decorators\QuickCollationTableDecorator;
 use ThomasInstitut\DataCache\KeyNotInCacheException;
+use ThomasInstitut\TimeString\TimeString;
 
 
 /**
@@ -53,96 +55,6 @@ class ApiCollation extends ApiController
     const ERROR_INVALID_COLLATION_TABLE_ID = 2005;
     const ERROR_COLLATION_TABLE_DOES_NOT_EXIST = 2006;
     const ERROR_MISSING_VERSION_INFO = 2007;
-
-    
-//    public function quickCollation(Request $request, Response $response)
-//    {
-//        $apiCall = 'quickCollation';
-//        $this->profiler->start();
-//        $inputData = $this->checkAndGetInputData($request, $response, $apiCall, ['witnesses']);
-//        $this->debug('Input data', [ $inputData ]);
-//        if (!is_array($inputData)) {
-//            return $inputData;
-//        }
-//
-//        $witnesses = $inputData['witnesses'];
-//        if (count($witnesses) < 2) {
-//
-//            $this->logger->error("Quick Collation: not enough witnessess in data, got " . count($witnesses),
-//                    [ 'apiUserId' => $this->apiUserId,
-//                      'apiError' => self::ERROR_NOT_ENOUGH_WITNESSES,
-//                      'data' => $inputData ]);
-//            return $this->responseWithJson($response, ['error' => self::ERROR_NOT_ENOUGH_WITNESSES], 409);
-//        }
-//
-//
-//        $collation = new CollationTable();
-//
-//        // Check and get initial witness data
-//        foreach ($witnesses as $witness) {
-//            if (!isset($witness['id']) || !isset($witness['text'])) {
-//                $this->profiler->stop();
-//                $this->logger->error("Quick Collation: bad witness in data",
-//                    [ 'apiUserId' => $this->apiUserId,
-//                      'apiError' => self::ERROR_BAD_WITNESS,
-//                      'data' => $inputData ]);
-//                return $this->responseWithJson($response, ['error' => self::ERROR_BAD_WITNESS], 409);
-//            }
-//            $sw =  new StringWitness('QuickCollation', 'no-chunk', $witness['text']);
-//            $collation->addWitness($witness['id'], $sw);
-//        }
-//
-//        $collatexInput = $collation->getCollationEngineInput();
-//
-//        $collationEngine = $this->getCollationEngine();
-//
-//        // Run Collatex
-//        $collatexOutput = $collationEngine->collate($collatexInput);
-//        // @codeCoverageIgnoreStart
-//        // Not worrying about testing CollatexErrors here
-//        if ($collatexOutput === [] && $collationEngine->getErrorCode() !==  Engine::ERROR_NOERROR) {
-//
-//            $this->logger->error("Quick Collation: error running Collatex",
-//                        [ 'apiUserId' => $this->apiUserId,
-//                        'apiError' => ApiController::API_ERROR_COLLATION_ENGINE_ERROR,
-//                        'collatexError' => $collationEngine->getErrorCode(),
-//                        'collationEngineDetails' => $collationEngine->getRunDetails(),
-//                        'data' => $inputData
-//                    ]);
-//            return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_COLLATION_ENGINE_ERROR], 409);
-//        }
-//        // @codeCoverageIgnoreEnd
-//
-//        try {
-//            $collation->setCollationTableFromCollationEngineOutput($collatexOutput);
-//        }
-//        // @codeCoverageIgnoreStart
-//        // Can't replicate this consistently in testing
-//        catch(Exception $ex) {
-//
-//            $this->logger->error('Error processing collatexOutput into collation object',
-//                    [ 'apiUserId' => $this->apiUserId,
-//                        'apiError' => self::ERROR_FAILED_COLLATION_ENGINE_PROCESSING,
-//                        'data' => $inputData,
-//                         'collationEngineDetails' => $collationEngine->getRunDetails(),
-//                        'exceptionMessage' => $ex->getMessage()
-//                        ]);
-//            return $this->responseWithJson($response, ['error' => self::ERROR_FAILED_COLLATION_ENGINE_PROCESSING], 409);
-//        }
-//        // @codeCoverageIgnoreEnd
-//
-//        $decoratedCollationTable = (new QuickCollationTableDecorator())->decorate($collation);
-//
-//        $this->profiler->stop();
-//        $this->logProfilerData('quickCollation');
-//
-//        return $this->responseWithJson($response,[
-//            'collationEngineDetails' => $collationEngine->getRunDetails(),
-//            'collationTable' => $decoratedCollationTable,
-//            'sigla' => $collation->getSigla()
-//            ]);
-//
-//    }
 
 
     /**
@@ -276,8 +188,6 @@ class ApiCollation extends ApiController
                     } catch (InvalidArgumentException $e) {
                         $this->logger->warning('Cannot add fullTx witness to collation table', [$witnessInfo]);
                     }
-//                    $this->codeDebug('Added witness ' . $requestedWitness['title']);
-//                    $this->codeDebug('Collation table', $collationTable->getData()['witnesses']);
 
                     break;
 
@@ -527,6 +437,117 @@ class ApiCollation extends ApiController
 
         $this->profiler->stop();
         $this->logProfilerData('Api.SaveCollationTable (new table');
+        return $this->responseWithJson($response, $responseData);
+    }
+
+    public function convertWitnessToEdition(Request $request, Response $response): Response
+    {
+        $apiCall = 'WitnessToEdition';
+
+
+        $this->profiler->start();
+        $witnessId = $request->getAttribute('witnessId');
+        $witnessInfo = WitnessSystemId::getFullTxInfo($witnessId);
+        $this->codeDebug("Witness to Edition api call: $witnessId", get_object_vars($witnessInfo));
+        $transcriptionManager = $this->systemManager->getTranscriptionManager();
+
+        try {
+            $fullTxWitness = $transcriptionManager->getTranscriptionWitness($witnessInfo->workId,
+                $witnessInfo->chunkNumber, $witnessInfo->typeSpecificInfo['docId'],
+                $witnessInfo->typeSpecificInfo['localWitnessId'], $witnessInfo->typeSpecificInfo['timeStamp']);
+        } catch (InvalidArgumentException $e) {
+            // cannot get witness
+            $msg = "Requested witness '" . $witnessId . "' does not exist";
+            $this->logger->error($msg, [ 'exceptionError' => $e->getCode(), 'exceptionMsg' => $e->getMessage(), 'witness'=> $witnessId]);
+            return $this->responseWithJson($response, ['error' => self::ERROR_BAD_WITNESS, 'msg' => $msg], 409);
+        }
+
+        $language = $fullTxWitness->getLang();
+        $docId = $fullTxWitness->getDocId();
+        $work = $fullTxWitness->getWorkId();
+        $docInfo = $this->getDataManager()->getDocById($docId);
+        $witnessTitle = $docInfo['title'];
+
+        $normalizerManager = $this->systemManager->getNormalizerManager();
+        $normalizerNames = $normalizerManager->getNormalizerNamesByLangAndCategory($language, 'standard');
+        $normalizers = $normalizerManager->getNormalizersByLangAndCategory($language, 'standard');
+
+        // notice that we do not ignore punctuation
+        $collationTable = new CollationTable(false, $language, $normalizers);
+        $collationTable->setLogger($this->logger);
+
+        $fullTxWitnessSiglum = 'A';
+        $editionWitnessSiglum = '_edition_';
+        $collationTable->addWitness($fullTxWitnessSiglum, $fullTxWitness, $witnessTitle, false);
+
+        // save the collation table to get a table Id
+        $standardData =(new CollationTableDataProvider($collationTable))->getStandardData();
+        // add normalizer names to std data
+        $standardData->automaticNormalizationsApplied = $normalizerNames;
+
+        $ctManager = $this->systemManager->getCollationTableManager();
+
+        $versionInfo = new CollationTableVersionInfo();
+        $versionInfo->authorId = $this->apiUserId;
+        $versionInfo->description = 'Table with single witness registered in the system';
+        $versionInfo->isMinor = false;
+        $versionInfo->isReview = false;
+
+        $standardDataAsArray = json_decode(json_encode($standardData), true);
+
+        $collationTableId = $ctManager->saveNewCollationTable($standardDataAsArray, $versionInfo);
+        $this->codeDebug("Saved collation table, id = $collationTableId" );
+
+        // Build the edition witness
+        $editionWitness = new EditionWitness($fullTxWitness->getWorkId(), $fullTxWitness->getChunk());
+        $editionToFullTxTokenMap = $editionWitness->setTokensFromNonEditionTokens($fullTxWitness->getTokens());
+        $editionWitness->setLang($fullTxWitness->getLang());
+        $collationTable->addWitness($editionWitnessSiglum, $editionWitness, 'Edition', true);
+
+        // Align the tokens
+        $fullTxWitnessReferenceArray = $collationTable->getReferencesForRow($fullTxWitnessSiglum);
+        $editionWitnessReferenceArray = [];
+        foreach($fullTxWitnessReferenceArray as $ref) {
+            $indexInEditionWitness = array_search($ref, $editionToFullTxTokenMap);
+            if ($indexInEditionWitness === false) {
+                // but this should never happen!
+                $indexInEditionWitness = -1;
+            }
+            $editionWitnessReferenceArray[] = $indexInEditionWitness;
+        }
+        $collationTable->setReferencesForRow($editionWitnessSiglum, $editionWitnessReferenceArray);
+
+        $collationTable->setTitle("Edition $witnessTitle");
+
+        $standardData =(new CollationTableDataProvider($collationTable))->getStandardData();
+        $standardData->automaticNormalizationsApplied = $normalizerNames;
+        $standardData->witnesses[1]->ApmWitnessId = WitnessSystemId::buildEditionId($standardData->chunkId, $collationTableId, TimeString::now());
+        $standardData->tableId = $collationTableId;
+
+
+        // the edition is in position 0
+        $standardData->witnessOrder = [ 1, 0];
+
+        $versionInfo = new CollationTableVersionInfo();
+        $versionInfo->authorId = $this->apiUserId;
+        $versionInfo->collationTableId = $collationTableId;
+        $versionInfo->description = 'Edition text added by the system to complete creation of edition with a single witness';
+        $versionInfo->isMinor = false;
+        $versionInfo->isReview = false;
+
+        $standardDataAsArray = json_decode(json_encode($standardData), true);
+
+        $ctManager->saveCollationTable($collationTableId, $standardDataAsArray, $versionInfo);
+
+        $responseData = [
+            'status' => 'OK',
+            'witnessId' => $witnessId,
+            'lang' => $language,
+            'tableId' => $collationTableId
+        ];
+
+        $this->profiler->stop();
+        $this->logProfilerData('Witness to Edition conversion');
         return $this->responseWithJson($response, $responseData);
     }
 

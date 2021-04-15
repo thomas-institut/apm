@@ -22,6 +22,7 @@ namespace APM\StandardData;
 
 use APM\Core\Transcription\ItemInDocument;
 use APM\Core\Witness\TranscriptionWitness;
+use APM\FullTranscription\ApmTranscriptionWitness;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
 use stdClass;
@@ -30,11 +31,11 @@ class FullTxWitnessDataProvider implements StandardDataProvider
 {
 
     /**
-     * @var TranscriptionWitness
+     * @var ApmTranscriptionWitness
      */
-    private $witness;
+    private ApmTranscriptionWitness $witness;
 
-    public function __construct(TranscriptionWitness $witness)
+    public function __construct(ApmTranscriptionWitness $witness)
     {
         $this->witness = $witness;
     }
@@ -82,10 +83,10 @@ class FullTxWitnessDataProvider implements StandardDataProvider
     }
 
     protected function getNonTokenItemIndexes() : array {
-        $ntii = $this->witness->getNonTokenItemIndexes();
+        $nonTokenItemIndexes = $this->witness->getNonTokenItemIndexes();
 
         $cleanedUpArray = [];
-        foreach($ntii as $i => $indexes) {
+        foreach($nonTokenItemIndexes as $i => $indexes) {
             if ($indexes['post'] !== [] || $indexes['pre'] !== []) {
                 $cleanedUpArray[$i] = (object) $indexes;
             }

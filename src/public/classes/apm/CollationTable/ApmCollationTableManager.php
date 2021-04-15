@@ -102,7 +102,7 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
     public function saveNewCollationTable(array $collationTableData, CollationTableVersionInfo $versionInfo) : int
     {
         $time = TimeString::now();
-        $dbRow = $this->getDbRowFromCollationData($collationTableData, true);
+        $dbRow = $this->getDbRowFromCollationData($collationTableData, true, true);
         $collationTableId = $this->ctTable->createRowWithTime($dbRow, $time);
         $versionInfo->timeFrom = $time;
         $versionInfo->collationTableId = $collationTableId;
@@ -123,13 +123,14 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
         $this->versionManager->registerNewCollationTableVersion($collationTableId, $versionInfo);
     }
 
-    protected function getDbRowFromCollationData(array $collationTableData, $compress = false) {
+    protected function getDbRowFromCollationData(array $collationTableData, $compress = false, $allowSingleWitness = false): array
+    {
         if (!isset($collationTableData['witnesses'])) {
             throw new InvalidArgumentException("No witnesses in collation table");
         }
 
         $numWitnesses = count($collationTableData['witnesses']);
-        if ( $numWitnesses < 2) {
+        if ( !$allowSingleWitness &&  $numWitnesses < 2) {
             throw new InvalidArgumentException("Not enough witnesses in collation table");
         }
 

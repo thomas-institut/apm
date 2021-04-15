@@ -142,7 +142,7 @@ class ApiDocuments extends ApiController
      * @throws DependencyException
      * @throws NotFoundException
      */
-    public function addPages(Request $request, Response $response)
+    public function addPages(Request $request, Response $response): Response
     {
         $dataManager = $this->getDataManager();
         $this->profiler->start();
@@ -215,10 +215,8 @@ class ApiDocuments extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws DependencyException
-     * @throws NotFoundException
      */
-    public function newDocument(Request $request, Response $response)
+    public function newDocument(Request $request, Response $response): Response
     {
         $dataManager = $this->getDataManager();
         $this->profiler->start();
@@ -276,10 +274,8 @@ class ApiDocuments extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws DependencyException
-     * @throws NotFoundException
      */
-    public function updateDocSettings(Request $request, Response $response)
+    public function updateDocSettings(Request $request, Response $response): Response
     {
 
         $dataManager = $this->getDataManager();

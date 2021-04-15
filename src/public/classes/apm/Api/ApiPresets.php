@@ -302,13 +302,13 @@ class ApiPresets extends ApiController
             }
         }
         $this->codeDebug('Witnesses to look up', $witnessesToLookUp);
-        if (count($witnessesToLookUp) < 2) {
-            $this->logger->error("Field 'witnesses' must have 2 or more elements",
-                [ 'apiUserId' => $this->apiUserId,
-                    'apiError' => self::API_ERROR_NOT_ENOUGH_WITNESSES,
-                    'data' => $inputData ]);
-            return $this->responseWithJson($response, ['error' => self::API_ERROR_NOT_ENOUGH_WITNESSES], 409);
-        }
+//        if (count($witnessesToLookUp) < 2) {
+//            $this->logger->error("Field 'witnesses' must have 2 or more elements",
+//                [ 'apiUserId' => $this->apiUserId,
+//                    'apiError' => self::API_ERROR_NOT_ENOUGH_WITNESSES,
+//                    'data' => $inputData ]);
+//            return $this->responseWithJson($response, ['error' => self::API_ERROR_NOT_ENOUGH_WITNESSES], 409);
+//        }
 
         // let's get those presets!
 

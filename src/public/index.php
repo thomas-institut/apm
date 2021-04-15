@@ -27,6 +27,7 @@ namespace APM;
 
 
 use APM\Api\ApiTranscription;
+use phpDocumentor\Reflection\DocBlock\Tags\Formatter\AlignFormatter;
 use Slim\App;
 use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Routing\RouteCollectorProxy;
@@ -204,14 +205,15 @@ $app->group('', function (RouteCollectorProxy $group){
         ->setName('chunk.collationtable.custom');
 
     // edit collation table
-    $group->get('/collation/edit/{tableId}',
+    $group->get('/collation/edit/{tableId}[/{type}]',
         SiteCollationTable::class . ':editCollationTable')
         ->setName('collationtable.edit');
 
     // EDITION
-    $group->get('/edition/chunk/edit/{tableId}',
+    $group->get('/edition/chunk/edit/{tableId}[/{type}]',
         SiteCollationTable::class . ':editCollationTable')
         ->setName('chunkedition.edit');
+
 
     // DOCS
 
@@ -348,12 +350,15 @@ $app->group('/api', function (RouteCollectorProxy $group){
         ApiWitness::class . ':checkWitnessUpdates')
         ->setName('api.witness.check.updates');
 
+    $group->get('/witness/{witnessId}/to/edition',
+        ApiCollation::class . ':convertWitnessToEdition')
+        ->setName('api.witness.convert.to.edition');
+
     // COLLATION TABLES
 
     $group->post('/collation/auto',
         ApiCollation::class . ':automaticCollation')
         ->setName('api.collation.auto');
-
 
     $group->post('/collation/save',
         ApiCollation::class . ':saveCollationTable')

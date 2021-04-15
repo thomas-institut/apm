@@ -40,7 +40,7 @@ class TokenDataProvider implements StandardDataProvider
         $this->token = $token;
     }
 
-    public function getStandardData()
+    public function getStandardData(): object
     {
         $data = [
             self::PROPERTY_TOKEN_TYPE => StandardTokenType::getStandardTypeFromDbType($this->token->getType()),

@@ -105,15 +105,33 @@ class CollationTable implements LoggerAwareInterface, CodeDebugInterface {
      */
     private array $normalizers;
 
+    /**
+     * @var string[]
+     */
+    private array $witnessTitles;
+    private string $editionWitnessSiglum;
+    private string $title;
+
 
     public function __construct(bool $ignorePunctuation = false, string $lang = self::DEFAULT_LANGUAGE, array $normalizers = []) {
         $this->witnesses = [];
         $this->witnessTokensCache = [];
+        $this->witnessTitles = [];
         $this->referenceMatrix = [];
         $this->ignorePunctuation = $ignorePunctuation;
         $this->normalizers = $normalizers;
+        $this->editionWitnessSiglum = '';
         $this->setLanguage($lang);
         $this->setLogger(new NullLogger());
+        $this->title = 'Collation Table';
+    }
+
+    public function setTitle($title) {
+        $this->title = $title;
+    }
+
+    public function getTitle() : string {
+        return $this->title;
     }
 
     public function getLanguage(): string {
@@ -135,6 +153,18 @@ class CollationTable implements LoggerAwareInterface, CodeDebugInterface {
     public function getSigla(): array
     {
         return array_keys($this->witnesses);
+    }
+
+    public function getWitnessTitle($siglum) : string {
+        return $this->witnessTitles[$siglum];
+    }
+
+    public function isEdition() : bool {
+        return $this->editionWitnessSiglum !== '';
+    }
+
+    public function getEditionWitnessSiglum() : string {
+        return $this->editionWitnessSiglum;
     }
     
     /**
@@ -165,14 +195,14 @@ class CollationTable implements LoggerAwareInterface, CodeDebugInterface {
      * @param Witness $witness
      * @throws InvalidArgumentException
      */
-    public function addWitness(string $siglum, Witness $witness) {
+    public function addWitness(string $siglum, Witness $witness, string $title = '', bool $isEdition = false) {
 
 
         //$this->codeDebug("Adding witness $siglum", [ 'tokens' =>  $this->getTokensForLog($witness)]);
 
         $this->applyNormalizations($witness);
 
-        $this->codeDebug("After normalizations", [ 'tokens' => $this->getTokensForLog($witness)]);
+        //$this->codeDebug("After normalizations", [ 'tokens' => $this->getTokensForLog($witness)]);
 
         $originalWitnessTokens = $witness->getTokens();
 
@@ -201,6 +231,36 @@ class CollationTable implements LoggerAwareInterface, CodeDebugInterface {
         }
         $this->referenceMatrix[$siglum] = $tokenRefs;
         $this->witnesses[$siglum] = $witness;
+        $this->witnessTitles[$siglum] = $title === '' ? $siglum : $title;
+        if ($isEdition) {
+            $this->editionWitnessSiglum = $siglum;
+        }
+
+    }
+
+    /**
+     * Set the reference array for the given row in the collation table
+     *
+     * (!)  Use with care.
+     *
+     * @param $siglum
+     * @param $referenceArray
+     */
+    public function setReferencesForRow($siglum, $referenceArray) {
+        // check token counts
+        if (count($referenceArray) !== $this->getTokenCount()) {
+            throw new \InvalidArgumentException("Expected " . $this->getTokenCount() . " references in array, got" . count($referenceArray));
+        }
+
+        //make sure that each reference in the given reference array points to an existing token in the witness
+        $maxValidReference = count($this->getWitness($siglum)->getTokens()) - 1;
+        foreach($referenceArray as $ref) {
+            if ($ref !== -1 && $ref > $maxValidReference) {
+                throw new \InvalidArgumentException("Invalid reference $ref in reference array");
+            }
+        }
+        $this->referenceMatrix[$siglum] = $referenceArray;
+
     }
 
     /**

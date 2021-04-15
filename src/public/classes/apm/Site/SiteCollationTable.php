@@ -58,7 +58,8 @@ class SiteCollationTable extends SiteController
     
     const TEMPLATE_ERROR = 'chunk-collation-error.twig';
     const TEMPLATE_COLLATION_TABLE = 'collation-table.twig';
-    const TEMPLATE_EDIT_COLLATION_TABLE = 'collation-edit-new.twig';
+    const TEMPLATE_EDIT_COLLATION_TABLE = 'collation-edit.twig';
+    const TEMPLATE_EDIT_COLLATION_TABLE_NEW = 'collation-edit-new.twig';
     const TEMPLATE_EDIT_COLLATION_TABLE_ERROR = 'collation.edit.error.twig';
 
     /**
@@ -71,8 +72,6 @@ class SiteCollationTable extends SiteController
      * @return Response|\Slim\Psr7\Response
      */
     public function editCollationTable(Request $request, Response $response) {
-        //$workId = $request->getAttribute('work');
-        //$chunkNumber = intval($request->getAttribute('chunk'));
         $tableId = intval($request->getAttribute('tableId'));
 
         $this->profiler->start();
@@ -90,7 +89,7 @@ class SiteCollationTable extends SiteController
         }
 
         $versionInfo = $ctManager->getCollationTableVersions($tableId);
-        $chunkId = isset($ctData['chunkId']) ? $ctData['chunkId'] : $ctData['witnesses'][0]['chunkId'];
+        $chunkId = $ctData['chunkId'] ?? $ctData['witnesses'][0]['chunkId'];
         [ $workId, $chunkNumber] = explode('-', $chunkId);
 
         $dm = $this->dataManager;
@@ -111,7 +110,9 @@ class SiteCollationTable extends SiteController
 
         $this->profiler->stop();
         $this->logProfilerData("Edit Collation Table");
-        return $this->renderPage($response, self::TEMPLATE_EDIT_COLLATION_TABLE, [
+        $this->codeDebug('Editor Type', [$request->getAttribute('type')]);
+        $template = $request->getAttribute('type') !== 'beta' ? self::TEMPLATE_EDIT_COLLATION_TABLE : self::TEMPLATE_EDIT_COLLATION_TABLE_NEW;
+        return $this->renderPage($response, $template, [
             'userId' => $this->userInfo['id'],
             'workId' => $workId,
             'chunkNumber' => $chunkNumber,
@@ -212,8 +213,8 @@ class SiteCollationTable extends SiteController
                 $specs = explode('-', $argWitnessSpec);
                 if (count($specs) >= 2) {
                     $witnessType = $specs[0];
-                    if (!WitnessType::isValid($witnessType)) {
-                        $msg = 'Invalid witness type given: ' . $witnessType;
+                    if ($witnessType !== WitnessType::FULL_TRANSCRIPTION) {
+                        $msg = 'Non-supported witness type given: ' . $witnessType;
                         $this->logger->error($msg, [ 'args' => $args]);
                         return $this->renderPage($response, self::TEMPLATE_ERROR, [
                             'work' => $workId,
@@ -418,7 +419,7 @@ class SiteCollationTable extends SiteController
     }
 
     /**
-     * @param $collationPageOptions
+     * @param array $collationPageOptions
      * @param Response $response
      * @return Response
      */

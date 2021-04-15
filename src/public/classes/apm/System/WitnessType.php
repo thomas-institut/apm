@@ -30,7 +30,12 @@ class WitnessType
     const CHUNK_EDITION = 'edition';
 
     static public function isValid(string $type) : bool {
-        $validTypes = [ self::FULL_TRANSCRIPTION, self::PARTIAL_TRANSCRIPTION, self::TEXT_TRANSCRIPTION_PLAIN];
+        $validTypes = [
+            self::FULL_TRANSCRIPTION,
+            self::PARTIAL_TRANSCRIPTION,
+            self::TEXT_TRANSCRIPTION_PLAIN,
+            self::CHUNK_EDITION
+        ];
 
         return array_search($type, $validTypes) !== false;
     }

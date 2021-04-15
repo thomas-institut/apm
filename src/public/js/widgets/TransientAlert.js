@@ -45,7 +45,7 @@ export function transientAlert(container, title, msg, timeOn = 2000, fadeSpeed =
 
 function getAlertHtml(title, msg, id) {
   let html=''
-  html+= '<span id="' + id  + '"class="text-warning" role="alert">'
+  html+= '<span id="' + id  + '" class="text-warning" role="alert">'
   html += '<strong>' + title + '</strong> '
   html +=  msg
   html += '</div>'

@@ -31,7 +31,8 @@ class StandardTokenType
 
     const UNDEFINED = '';
 
-    static public function getStandardTypeFromDbType(int $dbTokenType) {
+    static public function getStandardTypeFromDbType(int $dbTokenType): string
+    {
         switch($dbTokenType) {
             case TokenType::WORD:
                 return self::WORD;

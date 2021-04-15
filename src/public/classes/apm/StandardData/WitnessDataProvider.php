@@ -28,7 +28,7 @@ class WitnessDataProvider implements StandardDataProvider
     /**
      * @var Witness
      */
-    private $witness;
+    private Witness $witness;
 
     public function __construct(Witness $w)
     {

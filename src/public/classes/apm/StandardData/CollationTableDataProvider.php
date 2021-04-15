@@ -21,7 +21,9 @@ namespace APM\StandardData;
 
 
 use APM\Core\Collation\CollationTable;
+use APM\Core\Witness\EditionWitness;
 use APM\Core\Witness\TranscriptionWitness;
+use APM\FullTranscription\ApmTranscriptionWitness;
 use InvalidArgumentException;
 use stdClass;
 
@@ -45,21 +47,44 @@ class CollationTableDataProvider implements StandardDataProvider
     public function getStandardData(): stdClass
     {
 
-        $txWitnessClass = TranscriptionWitness::class;
+        $apmTxWitnessClass = ApmTranscriptionWitness::class;
+        $editionWitnessClass = EditionWitness::class;
 
         $data = new stdClass();
         $data->lang = $this->ct->getLanguage();
         $data->sigla = $this->ct->getSigla();
+        $data->groupedColumns = [];
+        $data->witnessTitles = [];
+        $data->type = $this->ct->isEdition() ? CollationTableType::EDITION : CollationTableType::COLLATION_TABLE;
+        $data->title = $this->ct->getTitle();
+
         $witnessDataArrays = [];
         $matrix = [];
         foreach($data->sigla as $i => $siglum) {
             $witness = $this->ct->getWitness($siglum);
-            if (!is_a($witness, $txWitnessClass)) {
-                throw new InvalidArgumentException("$siglum is not a transcription witness");
+            $data->witnessTitles[$i] = $this->ct->getWitnessTitle($siglum);
+            if ($this->ct->isEdition() && $siglum === $this->ct->getEditionWitnessSiglum()) {
+                $data->editionWitnessIndex = $i;
             }
-            /** @var TranscriptionWitness  $witness */
-            $witnessDataArrays[$i] = (new FullTxWitnessDataProvider($witness))->getStandardData();
-            $matrix[$i] = $this->ct->getReferencesForRow($siglum);
+            switch(get_class($witness)) {
+                case $apmTxWitnessClass:
+                    /** @var ApmTranscriptionWitness  $witness */
+                    $witnessDataArrays[$i] = (new FullTxWitnessDataProvider($witness))->getStandardData();
+                    $matrix[$i] = $this->ct->getReferencesForRow($siglum);
+                    $data->chunkId = $witness->getWorkId() . "-" . $witness->getChunk();
+                    break;
+
+                case $editionWitnessClass:
+                    /** @var EditionWitness $witness */
+                    $witnessDataArrays[$i] = (new EditionWitnessDataProvider($witness))->getStandardData();
+                    $matrix[$i] = $this->ct->getReferencesForRow($siglum);
+                    break;
+
+                default:
+                    throw new InvalidArgumentException("Non supported class from $siglum  witness: " . get_class($witness));
+            }
+
+
         }
         $data->witnesses = $witnessDataArrays;
         $data->collationMatrix = $matrix;

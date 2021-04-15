@@ -33,8 +33,9 @@ export class ConfirmDialog {
       cancelButtonLabel: { type: 'string', default: 'Cancel'},
       title: { type: 'string', default: 'Please confirm'},
       body: { type: 'string', default: 'Please confirm.'},
-      acceptFunction: { type: 'function', default: (id) => { }},
-      cancelFunction: { type: 'function', default: (id) => { }},
+      acceptFunction: { type: 'function', default: (id, dialogObject) => { }},
+      hideOnAccept: { type: 'boolean', default: true},
+      cancelFunction: { type: 'function', default: (id, dialogObject) => { }},
       reuseDialog: { type: 'boolean', default: false }
     }
 
@@ -51,18 +52,22 @@ export class ConfirmDialog {
     $(this.options.modalSelector).remove()
     $('body').append(this._genHtml())
     this.modalElement = $(this.modalSelector)
+    this.acceptButton =  $(`${this.modalSelector} .accept-btn`)
+    this.cancelButton =  $(`${this.modalSelector} .cancel-btn`)
     let thisObject = this
-    $(`${this.modalSelector} .accept-btn`).on('click', (ev) => {
-      thisObject.modalElement.modal('hide')
-      thisObject.options.acceptFunction(thisObject.getDialogId())
-      if (!thisObject.options.reuseDialog) {
-        thisObject.modalElement.remove()
-        thisObject.status = STATUS_DONE
+    this.acceptButton.on('click', (ev) => {
+      if (thisObject.options.hideOnAccept) {
+        thisObject.modalElement.modal('hide')
+        if (!thisObject.options.reuseDialog) {
+          thisObject.modalElement.remove()
+          thisObject.status = STATUS_DONE
+        }
       }
+      thisObject.options.acceptFunction(thisObject.getDialogId(), thisObject)
     })
-    $(`${this.modalSelector} .cancel-btn`).on('click', (ev)=>{
+    this.cancelButton.on('click', (ev)=>{
       thisObject.modalElement.modal('hide')
-      thisObject.options.cancelFunction(thisObject.getDialogId())
+      thisObject.options.cancelFunction(thisObject.getDialogId(), thisObject)
       if (!thisObject.options.reuseDialog) {
         thisObject.modalElement.remove()
         thisObject.status = STATUS_DONE
@@ -99,6 +104,18 @@ export class ConfirmDialog {
     if (this.status === STATUS_READY) {
       this.options.message = bodyHtml
       $(`${this.modalSelector} .modal-body`).html(bodyHtml)
+    }
+  }
+
+  hideAcceptButton() {
+    if (this.status === STATUS_READY) {
+      this.acceptButton.hide()
+    }
+  }
+
+  setCancelButtonText(text) {
+    if (this.status === STATUS_READY) {
+      this.cancelButton.text(text)
     }
   }
 

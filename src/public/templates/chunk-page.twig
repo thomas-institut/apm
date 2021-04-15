@@ -46,7 +46,7 @@
 
 {% block finalBodyJS %}
 <script type="module">
-  $(function()  {// .ready()
+  $(()  => {
     let showAdminInfo = JSON.parse('{{showAdminInfo|json_encode|e('js')}}');
     let cp = new ChunkPage({
       work: '{{work}}',

@@ -26,6 +26,13 @@ import {OptionsChecker} from '@thomas-inst/optionschecker'
 import * as WitnessType from './constants/WitnessType'
 
 import {CollapseToggleButton} from './widgets/CollapseToggleButton'
+import { ConfirmDialog } from './ConfirmDialog'
+
+
+const convertToEditionIcon = '<i class="fas fa-file-alt"></i>'
+const showWitnessInfoIcon = '<i class="fas fa-cogs"></i>'
+
+const convertToEditionLinkClass =  'cte-link'
 
 /**
  * Mini JS app running in the Chunk Page
@@ -90,6 +97,10 @@ export class ChunkPage {
     this.chunkIdDiv.html(this.generateChunkIdDivHtml())
     this.witnessListNewDiv.html(this.generateWitnessListNew())
 
+   this.options.witnessInfo.forEach( (info, i) => {
+     $(`.${convertToEditionLinkClass}-${i}`).on('click', this.genOnClickConvertToEditionButton(i, info))
+   })
+
     $("#witnessTableNew").DataTable({
       paging: false,
       searching : false,
@@ -101,7 +112,8 @@ export class ChunkPage {
         null, // language
         { orderable: false}, //pages
         { orderable: false}, // info
-        { orderable: false} // extra
+        { orderable: false}, // actions
+        { orderable: false} // admin
       ]
     })
 
@@ -198,6 +210,54 @@ export class ChunkPage {
             placement: 'auto',
             sanitize: false
          })
+  }
+
+  genOnClickConvertToEditionButton(index, info) {
+    let thisObject = this
+    return (ev) => {
+      ev.preventDefault()
+      console.log(`Click on link for witness ${index}. Witness Id = ${info.systemId}`)
+      console.log(info)
+
+      let confirmDialog = new ConfirmDialog({
+        body: `
+<p>Are you sure you want to create an edition with <b>only</b> the witness <b>${info.title}</b>?</p>
+<p>This will create a new edition, even if there's already one or more with that witness.</p>
+`,
+        acceptButtonLabel: 'Create',
+        hideOnAccept: false,
+        cancelButtonLabel: 'Cancel',
+        acceptFunction: (id, dialogObject) => {
+          $.get(
+            thisObject.options.urlGenerator.apiWitnessToEdition(info.systemId)
+          ).done( function (apiResponse){
+            console.log("Success")
+            let tableUrl = thisObject.options.urlGenerator.siteEditCollationTable(apiResponse.tableId)
+            dialogObject.setTitle('Success')
+            dialogObject.setBody(`
+<p>The edition with witness ${info.title} was successfully created.<p><p>Click <a href="${tableUrl}" target="_blank" >here to open it on a new tab</a></p>
+<p>You can also close this window and find a link to the new edition under the 'Editions' section.</p>
+`)
+            dialogObject.hideAcceptButton()
+            dialogObject.setCancelButtonText(`Close and Refresh Page`)
+            dialogObject.editionCreated = true
+            console.log(apiResponse)
+          }).fail(function(resp){
+            dialogObject.setBody(`ERROR: Cannot create edition, please report to developers`)
+            console.error("Cannot create edition")
+            console.log(resp)
+          })
+        },
+        cancelFunction: (id, dialogObject) => {
+          if (dialogObject.editionCreated) {
+            console.log(`Cancel WITH edition created`)
+            window.location.reload()
+          }
+        }
+      })
+      confirmDialog.editionCreated = false
+      confirmDialog.show()
+    }
   }
 
   genSavedCollationTablesDivHtml(type) {
@@ -337,7 +397,8 @@ export class ChunkPage {
     html += '<th>Language</th>'
     html += '<th>Pages</th>'
     html += '<th>Info</th>'
-    html += '<th></th>'
+    html += '<th></th>'   // Actions
+    html += '<th></th>'  // admin
     html += '</tr>'
     html += '</thead>'
 
@@ -360,11 +421,11 @@ export class ChunkPage {
       let info = ''
       switch (witnessInfo.type) {
         case WitnessType.FULL_TX:
-          info = this.genFullTxInfo(witnessInfo)
+          info = this.genFullTxInfo(witnessInfo, i)
           break
 
         case WitnessType.PARTIAL_TX:
-          info = { 'location' : 'tbd', 'essential': 'based on TBD', 'admin' : ''}
+          info = { 'location' : 'tbd', 'essential': 'based on TBD', 'actions': '', 'admin' : ''}
           break
 
         default:
@@ -372,6 +433,7 @@ export class ChunkPage {
       }
       html += '<td>'+ info['location'] + '</td>'
       html += '<td>'+ info['essential'] + '</td>'
+      html += '<td>'+ info['actions'] + '</td>'
       if (this.options.showAdminInfo) {
         html += '<td>'+ info['admin'] + '</td>'
       }
@@ -385,7 +447,7 @@ export class ChunkPage {
     return html
   }
 
-  genFullTxInfo(witnessInfo) {
+  genFullTxInfo(witnessInfo, index) {
 
     let info = []
     let docInfo = witnessInfo["typeSpecificInfo"].docInfo
@@ -417,12 +479,14 @@ export class ChunkPage {
     }
 
      if (witnessInfo.isValid) {
-       info['admin'] = '<a href="' + this.pathFor.apiWitnessGet(witnessInfo.systemId, 'full') + '" target="_blank"><i class="fas fa-cogs" aria-hidden="true"></i></a>'
+       info['actions'] = `<a href="" class="${convertToEditionLinkClass} ${convertToEditionLinkClass}-${index}" 
+title="Click to create edition with only this witness">${convertToEditionIcon}</a>`
+       info['admin'] = `<a href="${this.pathFor.apiWitnessGet(witnessInfo.systemId, 'full')}" 
+       title="Show witness details for witness ${witnessInfo.systemId}" target="_blank">${showWitnessInfoIcon}</a>`
      } else {
+       info['actions'] = ''
        info['admin'] = ''
      }
-
-
     return info
   }
 

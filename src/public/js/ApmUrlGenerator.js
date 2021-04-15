@@ -71,6 +71,10 @@ class ApmUrlGenerator {
         return `${this.base}/api/collation/convert/${tableId}`;
     }
 
+    apiWitnessToEdition(witnessId) {
+        return `${this.base}/api/witness/${witnessId}/to/edition`;
+    }
+
     apiNewDoc() {
         return `${this.base}/api/doc/new`
     }

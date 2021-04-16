@@ -413,8 +413,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
 
     protected function manageCookies(Request $request) {
 
-        //$cookiesToPreserve = [ 'rme', 'PHPSESSID'];
-        $cookieString = $_SERVER['HTTP_COOKIE'];
+        $cookieString = $_SERVER['HTTP_COOKIE'] ?? 'N/A';
         $this->codeDebug("Got a cookie string of " . strlen($cookieString) . " bytes for user " . $this->userInfo['id']);
 
     }

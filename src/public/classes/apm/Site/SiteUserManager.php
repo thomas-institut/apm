@@ -42,6 +42,7 @@ class SiteUserManager extends SiteController
     const TEMPLATE_USER_PROFILE = 'user-profile.twig';
     const TEMPLATE_USER_SETTINGS = 'user-settings.twig';
     const TEMPLATE_USER_NOT_FOUND = 'user-error-not-found.twig';
+    const TEMPLATE_ERROR_NOT_ALLOWED = 'error-not-allowed.twig';
 
     /**
      * @param Request $request

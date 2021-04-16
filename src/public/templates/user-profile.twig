@@ -44,6 +44,7 @@
 {% block content %}
     <nav aria-label="breadcrumb">
 <ol class="breadcrumb">
+    <li class="breadcrumb-item">Users</li>
     <li class="breadcrumb-item active"><a href="">User Profile</a></li>
 </ol>
     </nav>
@@ -57,10 +58,10 @@
     <p>Email address: <a href='mailto:{{theuser.email}}'>{{theuser.email}}</a></p>
 {% endif %}
 {% if theuser.isroot %}
-<span class="label label-success">root</span>
+<span class="badge badge-danger">root</span>
 {% endif %}
 {% if theuser.isreadonly %}
-<span class="label label-info">readOnly</span>
+<span class="badge badge-info">readOnly</span>
 {% endif %}
 </div>
 

@@ -104,7 +104,6 @@ class SiteUserManager extends SiteController
             ];
         }
 
-
         $this->profiler->stop();
         $this->logProfilerData('userProfilePage-' . $profileUsername);
         return $this->renderPage($response, self::TEMPLATE_USER_PROFILE, [

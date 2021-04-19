@@ -225,7 +225,7 @@ export class AutomaticCollationTable {
       trigger: "hover",
       selector: '.withpopover',
       delay: {show: 500 , hide:0},
-      placement: "auto top",
+      placement: 'top',
       html: true,
       container: 'body'
     })

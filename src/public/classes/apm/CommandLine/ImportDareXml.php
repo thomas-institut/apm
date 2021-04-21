@@ -496,7 +496,8 @@ class ImportDareXml extends CommandLineUtility
                             break;
 
                         default:
-                            $errors[] = "Expected text or element end after element $openElement start";
+                            $currentPage = $columns[0]['darePage'] ?? 'N/A';
+                            $errors[] = "Expected text or element end after element $openElement start, last DARE page: $currentPage";
                             $state = 7; // error
                             break 2;
                     }

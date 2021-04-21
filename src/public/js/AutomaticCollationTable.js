@@ -755,3 +755,8 @@ export class AutomaticCollationTable {
 
 
 }
+
+
+
+// Load as global variable so that it can be referenced in the Twig template
+window.AutomaticCollationTable = AutomaticCollationTable

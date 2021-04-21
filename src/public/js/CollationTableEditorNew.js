@@ -3011,3 +3011,7 @@ export class CollationTableEditor {
   }
 
 }
+
+
+// Load as global variable so that it can be referenced in the Twig template
+window.CollationTableEditor = CollationTableEditor

@@ -808,3 +808,8 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
 
   
 }
+
+
+
+// Load as global variable so that it can be referenced in the Twig template
+window.ChunkPage = ChunkPage

@@ -190,3 +190,8 @@ export class DocPage {
     return '<a href="' + url + '" target="_blank" title="' + title + '">' + label + '</a>';
   }
 }
+
+
+
+// Load as global variable so that it can be referenced in the Twig template
+window.DocPage = DocPage

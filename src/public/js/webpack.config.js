@@ -3,24 +3,30 @@ const path = require('path');
 module.exports = {
   entry: {
     DocPage: {
-      import: './DocPageLoader.js',
+      import: './DocPage.js',
       filename: 'DocPage.bundle.js',
     },
     CollationTableEdit: {
-      import: './CollationTableEditLoader.js',
-      filename: 'CollationTableEdit.bundle.js'
+      import: './CollationTableEditor.js',
+      filename: 'CollationTableEditor.bundle.js'
     },
     CollationTableEditorNew: {
-      import: './CollationTableEditorLoaderNew.js',
+      import: './CollationTableEditorNew.js',
       filename: 'CollationTableEditorNew.bundle.js'
     },
     AutomaticCollationTable: {
-      import: './AutomaticCollationTableLoader.js',
+      import: './AutomaticCollationTable.js',
       filename: 'AutomaticCollationTable.bundle.js'
     },
     ChunkPage: {
-      import: './ChunkPageLoader.js',
+      import: './ChunkPage.js',
       filename: 'ChunkPage.bundle.js'
+    },
+
+    // FUNCTIONAL TESTS
+    TestArrayToTable: {
+      import: '../test/js/functional/TestArrayToTable.js',
+      filename: '../../test/js/functional/dist/TestArrayToTable.bundle.js'
     }
 
   },

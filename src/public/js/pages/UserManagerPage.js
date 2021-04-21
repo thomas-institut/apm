@@ -16,11 +16,9 @@
  *  
  */
 
-/* eslint-env jquery */
 
-/** @global DataTable */
 
-class UserManagerPage {
+export class UserManagerPage {
   
   constructor(options) {
     this.pathFor = options.urlGenerator
@@ -65,4 +63,9 @@ class UserManagerPage {
     }
   }
 }
+
+
+// Make global
+window.UserManagerPage = UserManagerPage
+
 

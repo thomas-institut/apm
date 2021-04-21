@@ -16,11 +16,8 @@
  *  
  */
 
-/* eslint-env jquery */
 
-/* global ApmUtil */
-
-class UserProfilePage {
+export class UserProfilePage {
   
   constructor(profileUserInfo, urlGenerator) {
     this.profileUserInfo = profileUserInfo
@@ -127,7 +124,7 @@ class UserProfilePage {
   }
   
   userProfileHtml (userInfo) {
-    let str = '<img src="https://www.gravatar.com/avatar/' + userInfo['emailhash'] + '?d=mm&s=200">'
+    let str = '<img src="https://www.gravatar.com/avatar/' + userInfo['emailhash'] + '?d=mm&s=200" alt="User Gravatar">'
     str += '<h1>' + userInfo['fullname'] + '</h1>'
     str += '<p>Username: ' + userInfo['username'] + '</p>'
     str += '<p>Email address: '
@@ -155,5 +152,6 @@ class UserProfilePage {
 }
 
 
-
+// make global
+window.UserProfilePage = UserProfilePage
 

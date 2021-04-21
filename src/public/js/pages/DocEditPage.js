@@ -16,14 +16,8 @@
  *  
  */
 
-/*eslint-env es6*/
-/*eslint-env jquery*/
 
-/*eslint no-var: "error"*/
-/*eslint default-case: "error"*/
-/*eslint no-console: ["error", { allow: ["warn", "error"] }] */
-
-class DocEditPage {
+export class DocEditPage {
   
   
   constructor(prefix, docInfo, docEditApiUrl, cancelUrl, deleteUrl, successDeleteUrl) {
@@ -196,3 +190,7 @@ class DocEditPage {
   }
   
 }
+
+// make global
+
+window.DocEditPage = DocEditPage

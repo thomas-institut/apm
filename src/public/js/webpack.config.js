@@ -6,6 +6,14 @@ module.exports = {
       import: './pages/DocPage.js',
       filename: 'DocPage.bundle.js',
     },
+    DocEditPage: {
+      import: './pages/DocEditPage.js',
+      filename: 'DocEditPage.bundle.js',
+    },
+    DocNewDocPage: {
+      import: './pages/DocNewDocPage.js',
+      filename: 'DocNewDocPage.bundle.js',
+    },
     CollationTableEditor: {
       import: './pages/CollationTableEditor.js',
       filename: 'CollationTableEditor.bundle.js'
@@ -21,6 +29,14 @@ module.exports = {
     ChunkPage: {
       import: './pages/ChunkPage.js',
       filename: 'ChunkPage.bundle.js'
+    },
+    UserManager: {
+      import: './pages/UserManagerPage.js',
+      filename: 'UserManagerPage.bundle.js'
+    },
+    UserProfile: {
+      import: './pages/UserProfilePage.js',
+      filename: 'UserProfilePage.bundle.js'
     },
 
     // FUNCTIONAL TESTS

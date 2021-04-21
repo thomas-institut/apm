@@ -16,14 +16,9 @@
  *  
  */
 
-/*eslint-env es6*/
-/*eslint-env jquery*/
 
-/*eslint no-var: "error"*/
-/*eslint default-case: "error"*/
-/*eslint no-console: ["error", { allow: ["warn", "error"] }] */
 
-class NewDocPage {
+class DocNewDocPage {
   
   
   constructor(prefix, baseUrl) {

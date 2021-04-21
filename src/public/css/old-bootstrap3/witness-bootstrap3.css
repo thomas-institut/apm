@@ -27,7 +27,7 @@ p.formattedchunktext {
 }
 
 .textualitem {
-    
+
 }
 .abbr {
     color: chocolate;
@@ -46,17 +46,8 @@ p.formattedchunktext {
     font-weight: bold;
 }
 
-.bold {
-    font-weight: bold;
-}
-
-.italic {
-    font-style: italic;
-}
-
 .initial {
     font-weight: bold;
-    color: #0c5460;
 }
 
 .sic {

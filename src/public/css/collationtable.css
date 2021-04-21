@@ -20,6 +20,18 @@
     Author     : Rafael Nájera <rafael.najera@uni-koeln.de>
 */
 
+
+:root {
+    --cell-border: 1px #a2a2a2 solid;
+    /*--cell-grouped-border: 1px silver dashed;*/
+    --cell-grouped-border: 1px #efefef dashed;
+    --cell-edition-row-border: 2px #a2a2a2 solid;
+
+    --move-mode-color: #b1e5f3;
+    --group-mode-color: #b8eab2;
+    --edit-mode-move-border:  4px solid var(--move-mode-color);
+    --edit-mode-group-border: 4px solid var(--group-mode-color);
+}
  textarea {
         width: 100%;
         height: 5em;
@@ -116,21 +128,28 @@ table.collationtable td.tokennotpresent {
     color: silver;
 }
 td.addition.variant-1 {
-    background-image: linear-gradient(to top, #ddecff, #fbedff);
+    background-image: linear-gradient(to top, #ddecff, #f3e7ff);
 }
 
 
 td.variant-1 {
-    background-color: #fbedff;
+    background-color: #f3e7ff;
 }
 
 td.variant-2 {
-    background-color: #ffcccc;
+    background-color: #dac9fa;
 }
 
-td.emptytoken {
-    text-align: center;
-    color: silver;
+td.variant-3 {
+    background-color: #c9b5f3;
+}
+
+td.variant-4 {
+    background-color: #b5a9ff;
+}
+
+.te-table td.token-class-edition {
+    border-bottom: var(--cell-edition-row-border);
 }
 
 .textualitem {
@@ -289,34 +308,132 @@ div.itemspopover {
 
 .te-table th {
     font-weight: normal;
+    font-size: 0.8rem;
     border: none;
     text-align: center;
-    color: white;
+    color: silver;
 }
 
 .te-table td {
     padding-left: 5px;
     padding-right: 5px;
-    border: solid 1px silver
+    border-top: var(--cell-border);
+    border-bottom: var(--cell-border);
+    min-width: 3rem;
 }
 
-td.variant-1 {
-    background-color: #fbedff;
-}
-
-td.variant-2 {
-    background: plum;
-}
-
-td.te-rowtitle {
+td.te-row-title {
     font-weight: 600;
 }
 
+a.tb-button-1.multitoggle-on {
+    background: var(--move-mode-color);
+}
 
-/*.table-edit-mode {*/
-/*    border-left: 1px solid red;*/
-/*    padding-left: 1em;*/
-/*}*/
+a.tb-button-2.multitoggle-on {
+    background: var(--group-mode-color);
+}
+
+
+td.te-row-title-edition {
+    border-bottom: var(--cell-edition-row-border);
+}
+
+div.ltrtext td.te-row-title {
+    border-left: var(--cell-border)
+}
+div.rtltext td.te-row-title {
+    border-right: var(--cell-border)
+}
+
+
+div.ltrtext td.group-none {
+    border-right: var(--cell-border);
+}
+
+div.ltrtext td.group-next {
+    border-right: var(--cell-grouped-border);
+}
+#collationtablediv {
+    overflow-y: scroll;
+    height: 800px;
+    padding: 2px;
+}
+
+div.ltrtext td.te-table-first-col {
+    border-left: var(--cell-border)
+}
+div.ltrtext td.te-table-first-col.group-previous {
+    border-left: var(--cell-grouped-border)
+}
+div.ltrtext td.te-table-first-col.group-both {
+    border-left: var(--cell-grouped-border)
+}
+
+div.ltrtext td.group-previous {
+    border-right: var(--cell-border);
+}
+
+div.ltrtext td.group-both {
+    border-right: var(--cell-grouped-border);
+}
+
+div.rtltext td.te-rowtitle {
+    border-right: var(--cell-border)
+}
+
+div.rtltext td.group-none {
+    border-left: var(--cell-border);
+}
+
+div.rtltext td.group-next {
+    border-left: var(--cell-grouped-border);
+}
+
+div.rtltext td.group-previous {
+    border-left: var(--cell-border);
+}
+
+div.rtltext td.group-both {
+    border-left: var(--cell-grouped-border);
+}
+
+div.rtltext td.te-table-first-col.group-none,
+div.rtltext td.te-table-first-col.group-next {
+    border-right: var(--cell-border)
+}
+
+div.rtltext td.te-table-first-col.group-previous,
+div.rtltext td.te-table-first-col.group-both {
+    border-right: var(--cell-grouped-border)
+}
+
+/* Edit mode borders */
+div#collationtablediv.ltrtext.table-edit-mode-move
+{
+    border-left: var(--edit-mode-move-border);
+    padding-left: 1rem;
+}
+
+div#collationtablediv.ltrtext.table-edit-mode-group
+{
+    border-left: var(--edit-mode-group-border);
+    padding-left: 1rem;
+}
+div#collationtablediv.rtltext.table-edit-mode-move
+{
+    border-right: var(--edit-mode-move-border);
+    padding-right: 1rem;
+}
+
+div#collationtablediv.rtltext.table-edit-mode-group
+ {
+    border-right: var(--edit-mode-group-border);
+    padding-right: 1rem;
+}
+
+
+
 
 .table-edit-mode .te-table th {
     font-size: 0.8em;
@@ -381,6 +498,11 @@ td.te-rowtitle {
 }
 
 
-div.normalization-toggles ul.normalization-list {
+.ctPopover .standard-norm {
+    color: var(--dimmed-text-color);
+}
+
+
+ul.normalization-list {
     list-style: none;
 }

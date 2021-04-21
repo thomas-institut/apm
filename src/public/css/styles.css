@@ -1,4 +1,4 @@
-/* 
+/*
  *  Copyright (C) 2019-20 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -13,17 +13,47 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
- *  
+ *
  */
 
-@import url('./fonts.css');
-@import url('./defaults.css');
+@import url('fonts.css');
+@import url('defaults.css');
 
 
 body, .popover {
     font-family:  var(--default-font-family);
     font-size: var(--default-font-size);
     color: var(--default-font-color);
+    text-align: inherit;
+}
+
+
+@media (min-width: 1200px) {
+    .container {
+        max-width: 1170px;   /* To make it the same as bs3, in bs4 it's 1140px*/
+    }
+}
+
+.bottom-border-light { /* To make it the same as bs3, no border in bs4*/
+    border-bottom-color: var(--very-light-gray);
+    border-bottom-width: 1px;
+    border-bottom-style: solid;
+}
+
+.navbar {
+    margin-bottom: 20px;  /* To make it the same as bs3, in bs4 it's 0 */
+}
+
+.breadcrumb {
+    background: white; /* to make it the same as bs3, in bs4 it's some sort of gray */
+}
+
+.text-warning {
+    color: #8a6d3b !important;  /* Fix BS4's awful warning colour! */
+}
+
+.hidden {
+    display: none;
 }
 
 /* Dimmed down links*/
@@ -36,169 +66,115 @@ a:hover{
     color: blue;
 }
 
-header {
-    margin: auto;
+/* Indented list, for example for documents and chunks in the dashboard */
+
+ul.list-indented {
+    list-style-type: none;
     padding: 0;
-    border: 0;
-    height: 58px;
-    border-bottom: solid 1px #ddd;
+    margin-left: 2rem;
+    margin-bottom: 1.5rem;
 }
 
-div#header-wrap{
-    width: 1000px;
-    margin: auto;
-}
-
-div#nav {
-    margin: 0;
+ul.list-indented li {
     padding: 0;
-    float: right;
+    margin-bottom: 1rem;
+    margin-left: 1.5rem;
+    text-indent: -1.5rem;  /* Hanging indentation on list items */
 }
 
-section{
-    clear: both;
-    width: 1000px;
-    margin: 25px auto auto;
-    min-height: 200px;
-}
-
-section h1 {
-    font-size: 1.2em;
-}
-
-section h2 {
-    font-size: 1em;
-}
-
-article {
-    margin: 0;
-    padding-top: 35px;
-}
-
-article h2 {
-    padding: 0;
-    margin-top: 10px;
-}
-article.mssfeedentry{
-    padding-left: 20px;
-}
-
-article.mssfeedentry p {
-    margin: 0;
-    padding: 0 0 10px;
-}
-
-article.mssfeedentry ul {
-    list-style: none;
-    margin: 0;
-    padding: 0 0 0 30px;
-}
-
-article.mssfeedentry li  {
-    padding: 0;
-}
-footer {
-    margin-top: 40px;
-}
-
-ul.horizontal {
-    margin: 0;
-    padding: 15px 0 0;
-}
-
-ul.horizontal li {
-
-    display: inline;
-    padding-right: 24px;
-}
-
-.icon {
-    color: inherit;
-    font-size: 0.8em;
-}
-
-.doctitle {
-    font-weight: 500;
-}
-
-
-
+/* PAGE TABLES, e.g. in document pages */
 table.pagetable td {
     padding: 3px;
 }
 
-/* Not set */
+/* Page Type: Not set */
 table.pagetable td.type0 {
     background-color: #EFFEEF;
 }
 
-/* Normal text */
+/* Page Type: Normal text */
 table.pagetable td.type1 {
     background-color: white;
 }
 
-/* Front Matter */
+/* Page Type: Front Matter */
 table.pagetable td.type2 {
     background-color: #f9f9f9;
 }
 
-/* Back Matter */
+/* Page Type: Back Matter */
 table.pagetable td.type3 {
     background-color: #f9f9f9;
 
 }
 table.pagetable a {
-    color: black;
+    color: var(--default-font-color);
 }
 
-table.pagetable td.withouttranscription a{
+table.pagetable td.withouttranscription a {
     color: silver;
 }
 
-.pagetablediv{
-    margin-left: 20px;
+.in-text {
+    margin-left: 5px;
+    margin-right: 5px;
 }
 
-.largetext {
-    font-size: 1.2em;
+.with-top-margin {
+    margin-top: 2rem;
 }
 
-table.doctable th {
-    padding: 7px;
-    
-}
-table.doctable td {
-    padding: 10px;
-    
+.with-bottom-margin {
+    margin-bottom: 2rem;
 }
 
-p.docinfo {
-    padding-top: 5px;
-    padding-bottom: 3px;
+.with-margin-left-sm {
+    margin-left: 1rem;
 }
 
-.breadcrumb {
-    background-color: white;
+.with-margin-left-lg {
+    margin-left: 4rem;
 }
 
-
-.withtopmargin {
-    margin-top: 30px;
+.without-margin-left {
+    margin-left: 0;
 }
 
-.withmarginleft-small {
-    margin-left: 25px;
+.without-padding-left {
+    padding-left: 0;
 }
 
 
-ul.doclist {
+ul.chunk-list {
+    list-style: none;
+    margin: 20px 0 20px 0;
+    padding: 0;
+}
+
+ul.chunk-list  li {
+    padding:0;
+    margin: 5px 0 30px 10px;
+}
+
+ul.chunk-list ul {
+    list-style: none;
+    margin: 0 0 0 20px;
+    padding: 0;
+}
+
+a.chunk-link {
+    display: inline-block;
+    min-width: 1rem;
+}
+
+ul.doc-list {
     list-style-type: none;
     padding: 0;
     margin-left: 20px;
     margin-bottom: 25px;
 }
 
-ul.doclist li {
+ul.doc-list li {
     padding: 0;
     margin-bottom: 1.5em;
     margin-left: 20px;
@@ -217,182 +193,4 @@ ul.ctlist li {
     margin-bottom: 1em;
     margin-left: 20px;
     text-indent: -20px;
-}
-
-.chunktext {
-    font-size: 1.2em;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-}
-
-.chunktext-he {
-    direction: rtl;
-    font-family: var(--hebrew-font-family);
-    font-size: var(--hebrew-font-size);
-}
-
-.chunktext-ar {
-    direction: rtl;
-    font-family: var(--arabic-font-family);
-    font-size: var(--arabic-font-size);
-}
-
-.chunktext-la {
-    direction: ltr;
-    font-style: normal;
-}
-
-ul.chunklist {
-    list-style: none;
-    margin: 20px 0 20px 0;
-    padding: 0;
-}
-
-ul.chunklist  li {
-    padding:0;
-    margin: 5px 0 30px 10px;
-}
-
-ul.chunklist ul {
-    list-style: none;
-    margin: 0 0 0 20px;
-    padding: 0;
-}
-
-.chunktexts {
-    margin-top: 40px;
-}
-
-.witnesslist {
-    margin-top: 40px;
-    margin-bottom: 60px;
-}
-
-
-.noborder {
-    border: none;
-}
-
-
-/* For Chunk page */
-
-.actsettings {
-    margin-top: 20px;
-    margin-left: 20px;
-    margin-bottom: 40px;
-}
-
-.collationtablelinks ul {
-    list-style-type: none;
-    padding: 0;
-    margin-left: 20px;
-    margin-bottom: 25px;
-}
-
-.collationtablelinks ul li {
-    padding: 0;
-    margin-left: 20px;
-}
-
-div.ct-versioninfo {
-    margin-left: 30px;
-    font-size: 0.9em;
-}
-
-.ct-versioninfo h4 {
-    padding: 0;
-    margin: 10px 0 5px 0;
-    font-size: 1.1em;
-}
-.ct-versioninfo ul {
-    list-style: none;
-    padding: 0;
-    margin-left: 20px;
-}
-
-
-.worksinfo ul {
-    list-style: none;
-    margin-top: 10px;
-}
-.worksinfo li {
-
-     margin-top: 10px;
- }
-
-table.chunktable td {
-    padding-right: 2ex;
-    padding-bottom: 0.5ex;
-    vertical-align: top;
-}
-
-a.alwaysblack {
-    color: black
-}
-
-ul.witnesslistnew {
-    list-style: none;
-    margin-top: 20px;
-    margin-bottom: 20px;
-}
-
-ul.witnesslistnew li {
-    margin-bottom: 10px;
-}
-
-div.cpheader {
-    font-size: 2.4em;
-    margin-bottom: 30px;
-}
-
-div.cpheader a {
-    color: black;
-}
-
-.justifyright {
-    text-align: right;
-}
-
-
-.collationtablelinks li.smallpadding {
-    padding-bottom: 5px;
-}
-
-.panetab {
-    padding: 5px;
-    border-bottom: 1px solid #ddd;
-    /*border-left: 1px solid #ddd;*/
-    /*border-right: 1px solid #ddd;*/
-}
-
-
-.slow-fade {
-    transition: opacity 500ms linear;
-}
-
-.opacity-0 {
-    opacity: 0;
-}
-
-.opacity-1 {
-    opacity: 100%;
-}
-
-
-.flip_H{
-    transform: scale(-1, 1);
-}
-.flip_V{
-    transform: scale(1, -1);
-}
-
-
-.text-icon {
-    font-family: var(--text-icon-font-family);
-    font-size: 0.75em;
-    font-weight: bold;
-    color: var(--default-font-color);
-    padding: 1px;
-    border: 2px solid;
-    border-radius: 25%;
 }

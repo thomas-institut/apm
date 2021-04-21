@@ -21,12 +21,12 @@
 /** @namespace Twig */
 /** @namespace DataTable */
 
-import { AutomaticCollationTableSettingsForm } from './AutoCollTableSettingsForm'
+import { AutomaticCollationTableSettingsForm } from '../AutoCollTableSettingsForm'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
-import * as WitnessType from './constants/WitnessType'
+import * as WitnessType from '../constants/WitnessType'
 
-import {CollapseToggleButton} from './widgets/CollapseToggleButton'
-import { ConfirmDialog } from './ConfirmDialog'
+import {CollapseToggleButton} from '../widgets/CollapseToggleButton'
+import { ConfirmDialog } from '../ConfirmDialog'
 
 
 const convertToEditionIcon = '<i class="fas fa-file-alt"></i>'

@@ -16,15 +16,15 @@
  *  
  */
 
-import { TableEditor } from './TableEditor'
-import  *  as CollationTableUtil from './CollationTableUtil'
-import {defaultLanguageDefinition} from './defaults/languages'
-import * as PopoverFormatter from './CollationTablePopovers'
+import { TableEditor } from '../TableEditor'
+import  *  as CollationTableUtil from '../CollationTableUtil'
+import {defaultLanguageDefinition} from '../defaults/languages'
+import * as PopoverFormatter from '../CollationTablePopovers'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
-import {CollationTableFormatter} from './CollationTableFormatter'
-import {EditionViewerSvg} from './EditionViewerSvg'
-import { PrintedEditionGenerator } from './PrintedEditionGenerator'
-import { AutomaticCollationTableSettingsForm} from './AutoCollTableSettingsForm'
+import {CollationTableFormatter} from '../CollationTableFormatter'
+import {EditionViewerSvg} from '../EditionViewerSvg'
+import { PrintedEditionGenerator } from '../PrintedEditionGenerator'
+import { AutomaticCollationTableSettingsForm} from '../AutoCollTableSettingsForm'
 
 export class AutomaticCollationTable {
   

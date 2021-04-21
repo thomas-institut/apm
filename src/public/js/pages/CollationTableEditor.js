@@ -16,51 +16,51 @@
  *
  */
 
-import { defaultLanguageDefinition } from './defaults/languages'
-import * as CollationTableType from './constants/CollationTableType'
-import * as CollationTableInitStrategy from './constants/CollationTableConversionInitStrategy'
-import * as WitnessType from './constants/WitnessType'
-import * as TokenType from './constants/TokenType'
-import * as TokenClass from './constants/TokenClass'
-import * as NormalizationSource from './constants/NormalizationSource'
+import { defaultLanguageDefinition } from '../defaults/languages'
+import * as CollationTableType from '../constants/CollationTableType'
+import * as CollationTableInitStrategy from '../constants/CollationTableConversionInitStrategy'
+import * as WitnessType from '../constants/WitnessType'
+import * as TokenType from '../constants/TokenType'
+import * as TokenClass from '../constants/TokenClass'
+import * as NormalizationSource from '../constants/NormalizationSource'
 
 
-import { editModeOff, columnGroupEvent, columnUngroupEvent, TableEditor } from './TableEditor'
-import * as CollationTableUtil from './CollationTableUtil'
-import * as PopoverFormatter from './CollationTablePopovers'
+import { editModeOff, columnGroupEvent, columnUngroupEvent, TableEditor } from '../TableEditor'
+import * as CollationTableUtil from '../CollationTableUtil'
+import * as PopoverFormatter from '../CollationTablePopovers'
 
-import {EditionViewerSvg} from './EditionViewerSvg'
-import {PrintedEditionGenerator} from './PrintedEditionGenerator'
+import {EditionViewerSvg} from '../EditionViewerSvg'
+import {PrintedEditionGenerator} from '../PrintedEditionGenerator'
 
 // widgets
-import { EditableTextField } from './widgets/EditableTextField'
-import { transientAlert} from './widgets/TransientAlert'
-import { NiceToggle, toggleEvent} from './widgets/NiceToggle'
-import { MultiToggle, optionChange} from './widgets/MultiToggle'
+import { EditableTextField } from '../widgets/EditableTextField'
+import { transientAlert} from '../widgets/TransientAlert'
+import { NiceToggle, toggleEvent} from '../widgets/NiceToggle'
+import { MultiToggle, optionChange} from '../widgets/MultiToggle'
 
-import * as HttpStatusCode from './toolbox/HttpStatusCode'
+import * as HttpStatusCode from '../toolbox/HttpStatusCode'
 
 // utilities
-import * as Util from './toolbox/Util.mjs'
-import * as ArrayUtil from './toolbox/ArrayUtil'
+import * as Util from '../toolbox/Util.mjs'
+import * as ArrayUtil from '../toolbox/ArrayUtil'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { Matrix } from '@thomas-inst/matrix'
-import { CriticalApparatusGenerator } from './CriticalApparatusGenerator'
-import { EditionViewerHtml } from './EditionViewerHtml'
-import { ConfirmDialog } from './ConfirmDialog'
-import { VERBOSITY_DEBUG_PLUS, WitnessDiffCalculator } from './WitnessDiffCalculator'
-import { FULL_TX } from './constants/TokenClass'
+import { CriticalApparatusGenerator } from '../CriticalApparatusGenerator'
+import { EditionViewerHtml } from '../EditionViewerHtml'
+import { ConfirmDialog } from '../ConfirmDialog'
+import { VERBOSITY_DEBUG_PLUS, WitnessDiffCalculator } from '../WitnessDiffCalculator'
+import { FULL_TX } from '../constants/TokenClass'
 
 // Normalizations
 
-import { NormalizerRegister } from './NormalizerRegister'
+import { NormalizerRegister } from '../NormalizerRegister'
 
-import { ToLowerCaseNormalizer } from './normalizers/ToLowerCaseNormalizer'
-import { IgnoreArabicVocalizationNormalizer } from './normalizers/IgnoreArabicVocalizationNormalizer'
-import { IgnoreShaddaNormalizer } from './normalizers/IgnoreShaddaNormalizer'
-import { RemoveHamzahMaddahFromAlifWawYahNormalizer } from './normalizers/RemoveHamzahMaddahFromAlifWawYahNormalizer'
-import { IgnoreTatwilNormalizer } from './normalizers/IgnoreTatwilNormalizer'
-import { IgnoreIsolatedHamzaNormalizer } from './normalizers/IgnoreIsolatedHamzaNormalizer'
+import { ToLowerCaseNormalizer } from '../normalizers/ToLowerCaseNormalizer'
+import { IgnoreArabicVocalizationNormalizer } from '../normalizers/IgnoreArabicVocalizationNormalizer'
+import { IgnoreShaddaNormalizer } from '../normalizers/IgnoreShaddaNormalizer'
+import { RemoveHamzahMaddahFromAlifWawYahNormalizer } from '../normalizers/RemoveHamzahMaddahFromAlifWawYahNormalizer'
+import { IgnoreTatwilNormalizer } from '../normalizers/IgnoreTatwilNormalizer'
+import { IgnoreIsolatedHamzaNormalizer } from '../normalizers/IgnoreIsolatedHamzaNormalizer'
 
 /** @namespace Twig */
 

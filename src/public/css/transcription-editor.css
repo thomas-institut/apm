@@ -39,7 +39,7 @@
 
 .ql-container {
   box-sizing: border-box;
-  margin: 0px;
+  margin: 0;
 /*  position: relative;*/
   padding: 0;
 }
@@ -82,6 +82,7 @@
     height: 32px;
     width: 32px;
     text-align: center;
+    color: white;
 }
 .toolbar button:active, button:focus {
     outline: none;
@@ -89,13 +90,16 @@
 
 .toolbar .title-button {
     font-size: 0.8em;
-    /*margin-left: 30px; */
     margin-right: 5px;
 }
 
 .toolbar span.separator {
     margin: 0 0 0 20px;
     padding: 0;
+}
+
+.toolbar .dropdown-button {
+    display: inline;
 }
 
 .toolbar .langButton {
@@ -116,6 +120,7 @@
 
 .editor-controlbar button {
     background: transparent;
+    color: gray;
     border: none;
     cursor: pointer;
     display: inline-block;
@@ -160,14 +165,19 @@
 
 .modal-ednotes > blockquote > footer {
     margin-top: 0;
+
 }
 
 .popover blockquote {
     font-size: 1em;
+    padding-left: 1em;
+    border-left: 4px solid silver;
 }
 
 .popover blockquote > footer {
     margin-top: 0;
+    color: gray;
+    font-size: 0.8em;
 }
 
 .popover .editor-popover-title {

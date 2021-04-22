@@ -146,7 +146,10 @@ class TranscriptionEditor
     
     // Language Buttons and default language options
     let langDef = this.options.langDef
-    for (const lang in this.options.langDef) {
+    for (const lang in langDef) {
+      if (!langDef.hasOwnProperty(lang)) {
+        continue
+      }
       // language button
       let buttonId = lang + '-button-' + this.id
       $('#langButtons-'+this.id).append(
@@ -157,8 +160,8 @@ class TranscriptionEditor
       $('#' + buttonId).on('click', this.genOnClickLangButton(lang))
       // option in default language menu
       let optionId = 'set-' + lang + '-' + this.id 
-      $('#set-lang-dd-menu-' + id).append('<li><a id="'+ optionId +'">' 
-              + langDef[lang].name + '</a></li>')
+      $('#set-lang-dd-menu-' + id).append('<a class="dropdown-item" href="#" id="'+ optionId +'">'
+              + langDef[lang].name + '</a>')
       $('#' + optionId).on('click', this.genOnClickSetLang(lang))
     }
    
@@ -177,7 +180,7 @@ class TranscriptionEditor
         let optionsFieldName = formatBlot.buttonWithOptions
         let optionsField = formatBlot[optionsFieldName]
         let dropdownHtml = ''
-        dropdownHtml += '<span class="dropdown">'
+        dropdownHtml += '<div class="dropdown dropdown-button">'
         dropdownHtml +=
             '<button id="' + buttonId +  '" ' + 
             'class="selFmtBtn" ' +
@@ -185,17 +188,17 @@ class TranscriptionEditor
             'disabled data-toggle="dropdown" aria-haspopup="true" aria-expanded="true"' +
             '>' + 
             formatBlot.icon + '</button>'
-        dropdownHtml += '<ul class="dropdown-menu" aria-labelledby="'  +
+        dropdownHtml += '<div class="dropdown-menu" aria-labelledby="'  +
           buttonId + '">'
-        dropdownHtml += '<li><a>' +optionsField.title + '</a></li>'
-        dropdownHtml += '<li role=separator class=divider>'
+        dropdownHtml += '<a class="dropdown-item" href="#">' +optionsField.title + '</a>'
+        dropdownHtml += '<div class="dropdown-divider"></div>'
         let optionNumber = 1
         for (const option of optionsField.options ) {
           let optionId = buttonId + '-' + optionNumber
-          dropdownHtml += '<li><a id="' + optionId + '">' + option + '</a></li>'
+          dropdownHtml += '<a class="dropdown-item" href="#" id="' + optionId + '">' + option + '</a>'
           optionNumber++
         }
-        dropdownHtml += '</ul></span'
+        dropdownHtml += '</div></div>'
         $('#simpleFormatButtons-'+this.id).append(dropdownHtml)
         optionNumber = 1
         for (const option of optionsField.options ) {
@@ -313,24 +316,24 @@ class TranscriptionEditor
           let optionsFieldName = blockBot.buttonWithOptions
           let optionsField = blockBot[optionsFieldName]
           let dropdownHtml = ''
-          dropdownHtml += '<span class="dropdown">'
+          dropdownHtml += '<div class="dropdown dropdown-button">'
           dropdownHtml +=
               '<button id="' + buttonId +  '" ' + 
               'title="' + blockBot.title + '"' + 
-              'data-toggle="dropdown" aria-haspopup="true" aria-expanded="true"' +
+              ' data-toggle="dropdown" aria-haspopup="true" aria-expanded="true"' +
               '>' + 
               blockBot.icon + '</button>'
-          dropdownHtml += '<ul class="dropdown-menu" aria-labelledby="'  +
+          dropdownHtml += '<div class="dropdown-menu" aria-labelledby="'  +
             buttonId + '">'
-          dropdownHtml += '<li><a>' +optionsField.title + '</a></li>'
-          dropdownHtml += '<li role=separator class=divider>'
+          dropdownHtml += '<a class="dropdown-item" href="#">' +optionsField.title + '</a>'
+          dropdownHtml += '<div class="dropdown-divider"></div>'
           let optionNumber = 1
           for (const option of optionsField.options ) {
             let optionId = buttonId + '-' + optionNumber
-            dropdownHtml += '<li><a id="' + optionId + '">' + option + '</a></li>'
+            dropdownHtml += '<a class="dropdown-item"  href="#" id="' + optionId + '">' + option + '</a>'
             optionNumber++
           }
-          dropdownHtml += '</ul></span'
+          dropdownHtml += '</div></div'
           $('#simpleBlockButtons-'+this.id).append(dropdownHtml)
           optionNumber = 1
           for (const option of optionsField.options ) {
@@ -340,7 +343,7 @@ class TranscriptionEditor
               this.genOnClickSimpleBlockButton(blockBot, value))
             optionNumber++
           }
-          continue
+
         } else {
           $('#simpleBlockButtons-'+this.id).append(
                   '<button id="' + buttonId +  '" ' + 
@@ -348,7 +351,6 @@ class TranscriptionEditor
                   blockBot.icon + '</button>'
             )
           $('#'+buttonId).on('click', this.genOnClickSimpleBlockButton(blockBot))
-          continue
         }
       }
     }
@@ -543,16 +545,18 @@ class TranscriptionEditor
   {
     let marginSize = this.getEditorMarginSize()
     if (this.options.langDef[this.defaultLang].rtl) {
-      $('#editor-container-' + this.id + ' .ql-editor').css('margin-left', '0')
-      $('#editor-container-' + this.id + ' .ql-editor').css('margin-right', marginSize + 'px')
-      $('#editor-container-' + this.id + ' .ql-editor').css('border-right', 'solid 1px #e0e0e0')
-      $('#editor-container-' + this.id + ' .ql-editor').css('border-left', 'none')
+      $('#editor-container-' + this.id + ' .ql-editor')
+        .css('margin-left', '0')
+        .css('margin-right', marginSize + 'px')
+        .css('border-right', 'solid 1px #e0e0e0')
+        .css('border-left', 'none')
       return true
     }
-    $('#editor-container-' + this.id + ' .ql-editor').css('margin-right', '0')
-    $('#editor-container-' + this.id + ' .ql-editor').css('margin-left', marginSize + 'px')
-    $('#editor-container-' + this.id + ' .ql-editor').css('border-left', 'solid 1px #e0e0e0')
-    $('#editor-container-' + this.id + ' .ql-editor').css('border-right', 'none')
+    $('#editor-container-' + this.id + ' .ql-editor')
+      .css('margin-right', '0')
+      .css('margin-left', marginSize + 'px')
+      .css('border-left', 'solid 1px #e0e0e0')
+      .css('border-right', 'none')
     return true
   }
 
@@ -1143,7 +1147,7 @@ class TranscriptionEditor
     // columnData.currentVersion contains the system version Id whereas
     // this.currentVersion is the index to the version in the versions array
     let i = 0
-    for (i = 0; i < this.versions.length; i++) {
+    for ( i = 0; i < this.versions.length; i++) {
       if (this.versions[i].id === columnData.info.thisVersion) {
         break;
       }
@@ -2003,25 +2007,28 @@ class TranscriptionEditor
     let thisObject = this
     return function(){
       if (!thisObject.isCurrentVersionLatest()) {
-        $('#version-modal-text-'+ thisObject.id).addClass('text-danger')
-        $('#version-modal-text-'+ thisObject.id).html('<i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Your changes are not based on the latest version')
+        $('#version-modal-text-'+ thisObject.id)
+          .addClass('text-danger')
+          .html('<i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Your changes are not based on the latest version')
         $('#version-modal-descr-'+thisObject.id).val("Edited from version " + (thisObject.currentVersion+1))
       } else {
-        $('#version-modal-text-'+ thisObject.id).removeClass('text-danger')
-        $('#version-modal-text-'+ thisObject.id).html('')
+        $('#version-modal-text-'+ thisObject.id)
+          .removeClass('text-danger')
+          .html('')
         $('#version-modal-descr-'+thisObject.id).val('')
       }
-      $('#version-modal-submit-button-' + thisObject.id).off()
-      $('#version-modal-submit-button-' + thisObject.id).on('click', function(){
-        $('#version-modal-' + thisObject.id).modal('hide')
-        let versionInfo = {
-          descr: $('#version-modal-descr-'+thisObject.id).val(),
-          isMinor: $('#version-modal-minor-cb-'+thisObject.id).prop('checked'),
-          isReview: $('#version-modal-review-cb-'+thisObject.id).prop('checked'),
-        }
-        thisObject.save(versionInfo)
-        return true
-      })
+      $('#version-modal-submit-button-' + thisObject.id)
+        .off()
+        .on('click', function(){
+          $('#version-modal-' + thisObject.id).modal('hide')
+          let versionInfo = {
+            descr: $('#version-modal-descr-'+thisObject.id).val(),
+            isMinor: $('#version-modal-minor-cb-'+thisObject.id).prop('checked'),
+            isReview: $('#version-modal-review-cb-'+thisObject.id).prop('checked'),
+          }
+          thisObject.save(versionInfo)
+          return true
+        })
       $('#version-modal-' + thisObject.id).modal('show')
       return true
     }
@@ -2536,7 +2543,7 @@ class TranscriptionEditor
       },
       container: 'body',
       animation: false,
-      template: '<div class="popover" role="tooltip"><div class="arrow"></div><div class="popover-content"></div></div>', 
+      template: '<div class="popover" role="tooltip"><div class="arrow"></div><div class="popover-body"></div></div>',
       delay: { 'show': 1500, 'hide': 0},
       html: true,
       placement: 'auto',
@@ -2884,13 +2891,13 @@ class TranscriptionEditor
 
     {# Default Language #}
     <button class="title-button" disabled>Default:</button>
-    <span class="dropdown">
+    <div class="dropdown dropdown-button">
         <button class="dropdown-toggle" type="button" id="lang-button-{{id}}" title="Latin" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
             la
        </button>
-        <ul class="dropdown-menu" id="set-lang-dd-menu-{{id}}" aria-labelledby="lang-button-{{id}}">
-       </ul>
-    </span>
+        <div class="dropdown-menu" id="set-lang-dd-menu-{{id}}" aria-labelledby="lang-button-{{id}}">
+       </div>
+    </div>
     <span class="separator"/>
       
 
@@ -2911,10 +2918,9 @@ class TranscriptionEditor
       data:`
 <!-- ITEM modal {{id}} -->            
 <div id="item-modal-{{id}}" class="modal" role="dialog">
-    <div class="modal-dialog modal-sm" role="document">
+    <div class="modal-dialog modal-sm">
         <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 <h4 id="item-modal-title-{{id}}" class="modal-title"></h4>
             </div>
             <div class="modal-body" id="item-modal-body-{{id}}">
@@ -2933,7 +2939,7 @@ class TranscriptionEditor
                     </div>
                     <div id="item-modal-length-fg-{{id}}" class="form-group">
                         <label for="item-modal-length-{{id}}" id="item-modal-length-label-{{id}}" class="control-label">Length:</label>
-                        <input type="number" name="length" class="form-control" id="item-modal-length-{{id}}"></input>
+                        <input type="number" name="length" class="form-control" id="item-modal-length-{{id}}"/>
                     </div>
                     <div id="item-modal-target-fg-{{id}}" class="form-group">
                         <label for="item-modal-target-{{id}}" id="item-modal-target-label-{{id}}" class="control-label">Extra Info:</label>
@@ -2955,7 +2961,7 @@ class TranscriptionEditor
                   </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" id="item-modal-cancel-button-{{id}}" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" id="item-modal-cancel-button-{{id}}" data-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="item-modal-submit-button-{{id}}">Submit</button>
             </div>
         </div>
@@ -2967,7 +2973,6 @@ class TranscriptionEditor
     <div class="modal-dialog modal-sm" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 <h4 id="marginal-modal-title-{{id}}" class="modal-title"></h4>
             </div>
             <div class="modal-body" id="marginal-modal-body-{{id}}">
@@ -2983,7 +2988,7 @@ class TranscriptionEditor
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" id="marginal-modal-cancel-button-{{id}}" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" id="marginal-modal-cancel-button-{{id}}" data-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="marginal-modal-submit-button-{{id}}">Submit</button>
             </div>
         </div>
@@ -2995,7 +3000,6 @@ class TranscriptionEditor
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 <h4 id="chunk-modal-title-{{id}}" class="modal-title">Chunk</h4>
             </div>
             <div class="modal-body" id="chunk-modal-body-{{id}}">
@@ -3007,7 +3011,7 @@ class TranscriptionEditor
       
                     <div id="chunk-modal-chunknumber-fg-{{id}}" class="form-group">
                         <label for="chunk-modal-chunknumber-{{id}}" id="chunk-modal-chunknumber-label-{{id}}" class="control-label">Chunk Number:</label>
-                        <input type="number" name="chunk" class="form-control" id="chunk-modal-chunknumber-{{id}}"></input>
+                        <input type="number" name="chunk" class="form-control" id="chunk-modal-chunknumber-{{id}}"/>
                     </div>
                     
                     <div id="chunk-modal-localid-fg-{{id}}" class="form-group">
@@ -3017,7 +3021,7 @@ class TranscriptionEditor
       
                     <div id="chunk-modal-segment-fg-{{id}}" class="form-group">
                         <label for="chunk-modal-segment-{{id}}" id="chunk-modal-segment-label-{{id}}" class="control-label">Segment Number:</label>
-                        <input type="number" name="segment" class="form-control" id="chunk-modal-segment-{{id}}"></input>
+                        <input type="number" name="segment" class="form-control" id="chunk-modal-segment-{{id}}"/>
                     </div>
 
 
@@ -3032,7 +3036,7 @@ class TranscriptionEditor
                </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" id="chunk-modal-cancel-button-{{id}}" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" id="chunk-modal-cancel-button-{{id}}" data-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="chunk-modal-submit-button-{{id}}">Submit</button>
             </div>
         </div>
@@ -3045,7 +3049,6 @@ class TranscriptionEditor
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 <h4 id="chapter-modal-dialogtitle-{{id}}" class="modal-title">Chapter</h4>
             </div>
             <div class="modal-body" id="chunk-modal-body-{{id}}">
@@ -3086,7 +3089,7 @@ class TranscriptionEditor
                </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" id="chapter-modal-cancel-button-{{id}}" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" id="chapter-modal-cancel-button-{{id}}" data-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="chapter-modal-submit-button-{{id}}">Submit</button>
             </div>
         </div>
@@ -3096,7 +3099,7 @@ class TranscriptionEditor
 <!-- ALERT modal {{id}} -->             
 <div id="alert-modal-{{id}}" class="modal" role="dialog">
     <div class="modal-dialog modal-sm " role="document">
-        <div class="modal-content bg-info">
+        <div class="modal-content">
             <div class="modal-header">
                 <h4 id="alert-modal-title-{{id}}">Please confirm</h4>
             </div>
@@ -3114,7 +3117,7 @@ class TranscriptionEditor
 <!-- VERSION modal {{id}} -->             
 <div id="version-modal-{{id}}" class="modal" role="dialog">
   <div class="modal-dialog modal-sm " role="document">
-    <div class="modal-content bg-info">
+    <div class="modal-content">
         <div class="modal-header">
             <h4 id="version-modal-title-{{id}}">Save New Version</h4>
         </div>

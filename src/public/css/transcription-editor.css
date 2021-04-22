@@ -102,6 +102,10 @@
     display: inline;
 }
 
+.toolbar .dropdown-item a, a:visited {
+    color: #212529
+}
+
 .toolbar .langButton {
     font-size: 0.9em;
     font-family: monospace;

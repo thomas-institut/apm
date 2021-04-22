@@ -190,7 +190,7 @@ class TranscriptionEditor
             formatBlot.icon + '</button>'
         dropdownHtml += '<div class="dropdown-menu" aria-labelledby="'  +
           buttonId + '">'
-        dropdownHtml += '<a class="dropdown-item" href="#">' +optionsField.title + '</a>'
+        dropdownHtml += '<h6 class="dropdown-header">' +optionsField.title + '</h6>'
         dropdownHtml += '<div class="dropdown-divider"></div>'
         let optionNumber = 1
         for (const option of optionsField.options ) {
@@ -325,7 +325,7 @@ class TranscriptionEditor
               blockBot.icon + '</button>'
           dropdownHtml += '<div class="dropdown-menu" aria-labelledby="'  +
             buttonId + '">'
-          dropdownHtml += '<a class="dropdown-item" href="#">' +optionsField.title + '</a>'
+          dropdownHtml += '<h6 class="dropdown-header">' +optionsField.title + '</h6>'
           dropdownHtml += '<div class="dropdown-divider"></div>'
           let optionNumber = 1
           for (const option of optionsField.options ) {

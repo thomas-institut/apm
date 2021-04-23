@@ -1,5 +1,7 @@
+import './test-array-to-table.css'
 
 import { ArrayToTable } from '../../../js/toolbox/ArrayToTable'
+
 
 $( () => {
   const selector = '#the-table'

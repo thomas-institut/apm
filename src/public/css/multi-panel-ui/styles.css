@@ -1,0 +1,85 @@
+:root {
+    --panel-border-color: #efefef;
+}
+
+html {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    background: #fcfcfc;
+}
+
+.top-bar {
+    display: grid;
+    grid-template-columns: auto 100px;
+    height: 2rem;
+    color: #444242;
+    font-size: 1.2rem;
+    padding: 3px 6px;
+    border-bottom: 1px solid var(--panel-border-color);
+}
+
+div.mode-icons {
+    /*margin-right: 20px;*/
+}
+
+.logo {
+    font-family: "Times New Roman", Times, serif;
+    margin-right: 3rem;
+}
+div.panels {
+}
+div.panels.vertical-mode{
+    display: grid;
+    grid-template-columns: 1fr 3px 1fr;
+}
+
+div.panels.horizontal-mode {
+    display: grid;
+    grid-template-rows: 1fr 3px 1fr;
+}
+
+div.divider {
+    background: var(--panel-border-color);
+}
+
+.horizontal-mode .divider {
+    cursor: row-resize;
+}
+
+.vertical-mode .divider {
+    cursor: col-resize;
+}
+
+.panel {
+    background: white;
+    padding: 3px;
+    border-radius: 5px;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+.top-panel {
+    margin-bottom: 0;
+}
+
+.bottom-panel {
+    margin-top: 0;
+}
+
+.left-panel {
+    margin-right: 0;
+}
+
+.right-panel {
+    margin-left: 0;
+}
+
+.top-bar-icon {
+    font-weight: bold;
+}

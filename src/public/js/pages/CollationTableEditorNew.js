@@ -779,7 +779,6 @@ export class CollationTableEditor {
         div.height(newHeight)
       }
     })
-
   }
 
   fitEditionDivToViewPort() {

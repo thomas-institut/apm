@@ -43,6 +43,11 @@ module.exports = {
     TestArrayToTable: {
       import: '../test/js/functional/TestArrayToTable.js',
       filename: '../../test/js/functional/dist/TestArrayToTable.bundle.js'
+    },
+
+    TestMultiPanelUI: {
+      import: '../test/js/functional/TestMultiPanelUI.js',
+      filename: '../../test/js/functional/dist/TestMultiPanelUI.bundle.js'
     }
 
   },

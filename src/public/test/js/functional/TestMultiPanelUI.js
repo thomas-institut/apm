@@ -7,6 +7,7 @@ function onResize(id, mode) {
 
 $( () => {
   let multiPanelUI = new MultiPanelUI({
+    logo: `<img src="../../../images/apm-logo-plain.svg" alt="logo"/>`,
     panels: [
       {
         id: 'panel-one',

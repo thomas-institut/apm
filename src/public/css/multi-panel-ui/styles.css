@@ -15,23 +15,40 @@ body {
 }
 
 .top-bar {
-    display: grid;
-    grid-template-columns: auto 100px;
-    height: 2rem;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
     color: #444242;
     font-size: 1.2rem;
-    padding: 3px 6px;
+    height: 44px;
+    width: 100%;
+    padding: 3px;
     border-bottom: 1px solid var(--panel-border-color);
 }
 
-div.mode-icons {
-    /*margin-right: 20px;*/
+div.top-bar-item {
+    padding-left: 1rem;
+    padding-right: 1rem;
 }
 
-.logo {
-    font-family: "Times New Roman", Times, serif;
-    margin-right: 3rem;
+div.top-bar-title {
+    font-weight: bold;
 }
+div.mode-icons {
+    text-align: right;
+}
+
+div.logo {
+    width: auto;
+    padding-left: 0;
+    padding-right: 3rem;
+}
+
+div.top-bar-right-area {
+    text-align: right;
+    padding-left: 3rem;
+}
+
 div.panels {
 }
 div.panels.vertical-mode{

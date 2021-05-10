@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Move tabs</title>
+  <link rel="stylesheet" type="text/css" href="../../../node_modules/bootstrap/dist/css/bootstrap.css"/>
+
+  <script type="text/javascript" src="../../../node_modules/jquery/dist/jquery.js"></script>
+  <script type="text/javascript" src="../../../node_modules/bootstrap/dist/js/bootstrap.js"></script>
+
+  <style>
+    div.tab-content {
+      height: 100px;
+      width: 100px;
+      border: 1px dotted silver;
+    }
+  </style>
+</head>
+<body>
+<h1>Move tabs</h1>
+
+<ul class="nav nav-tabs" id="theTabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <a class="nav-link active" href="#tab1" id="tab1-tab" role="tab">Tab 1</a>
+    <a class="nav-link active" href="#tab1" id="tab2-tab" role="tab">Tab 2</a>
+  </li>
+</ul>
+<div class="tab-content" id="tab-group-1">
+  <div id="tab1" role="tabpanel" class="tab-pane active">This is tab 1</div>
+  <div id="tab2" role="tabpanel" class="tab-pane active">This is tab 2</div>
+</div>
+</body>
+</html>

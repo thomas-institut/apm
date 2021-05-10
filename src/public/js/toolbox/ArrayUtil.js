@@ -54,3 +54,13 @@ export function arraysAreEqual(array1, array2, comparisonFunction = function (a,
 export function arraysHaveTheSameValues(array1, array2) {
   return array1.sort().join(' ') === array2.sort().join(' ')
 }
+
+
+export function prettyPrintArray(array) {
+  return '[' + array.map( (e) => { return e.toString()}).join(', ') + ']'
+}
+
+export function shuffleArray(array) {
+  array.sort(() => Math.random() - 0.5)
+  return array
+}

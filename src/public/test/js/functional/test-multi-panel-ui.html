@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <title>Multi Panel UI</title>
   <link rel="stylesheet" type="text/css" href="../../../node_modules/bootstrap/dist/css/bootstrap.css"/>
+    <link rel="stylesheet" type="text/css" href="../../../node_modules/bootstrap-icons/font/bootstrap-icons.css"/>
+
     <link rel="stylesheet" type="text/css" href="../../../css/multi-panel-ui/styles.css"/>
 
   <script type="text/javascript" src="../../../node_modules/jquery/dist/jquery.js"></script>
@@ -27,41 +29,36 @@
             background: snow;
         }
 
-        .nav-link {
-            padding: 0.5rem 0.5rem;
-            font-size: 0.8rem;
-        }
-
-        .nav-link.active {
-            font-weight: bold;
-        }
-
-        a.nav-link {
-            color: #0c5460;
-        }
-
         #save-info {
             font-size: 0.7rem;
             margin-right: 1rem;
             color: #888a85;
         }
 
-        .nav-link.dragging {
-            border-left: 2px solid green;
-            border-radius: 0;
-        }
-
-        .nav-link.dragging-last {
-            border-right: 2px solid green;
-            border-radius: 0;
-        }
-
-        .nav-link.dragged {
-            background: silver;
-        }
 
         a.banana-link {
             font-family: "Comic Sans MS", "Comic Sans", sans-serif;
+        }
+
+        input.textInput{
+            padding: 1px 10px;
+            font-size: 1rem;
+        }
+
+        input.textInput:focus {
+            border: 1px solid #009dff;
+            outline: none; !important;
+        }
+
+        div#apples {
+            padding: 1rem;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 1.2rem;
+        }
+
+        div#apple-text {
+            margin-top: 3rem;
+            margin-bottom: 3rem;
         }
 
     </style>

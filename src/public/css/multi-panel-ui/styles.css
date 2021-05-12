@@ -100,3 +100,33 @@ div.divider {
 .top-bar-icon {
     font-weight: bold;
 }
+
+
+.nav-link {
+    padding: 0.5rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+.nav-link.active {
+    font-weight: bold;
+}
+
+a.nav-link {
+    color: #0c5460;
+}
+
+.nav-link.dragging, .nav-link.active.dragging {
+    border-left: 4px solid #90b390;
+}
+
+.nav-link.dragging-last, .nav-link.active.dragging-last {
+    border-right: 4px solid #90b390;
+}
+
+.nav-link.dragged {
+    background: silver;
+}
+
+.hidden {
+    display: none;
+}

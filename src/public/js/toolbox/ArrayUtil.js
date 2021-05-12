@@ -64,3 +64,15 @@ export function shuffleArray(array) {
   array.sort(() => Math.random() - 0.5)
   return array
 }
+
+export function createSequenceArray(from, to, increment = 1) {
+  let theArray = []
+  for (let i = from; i <= to; i+=increment) {
+    theArray.push(i)
+  }
+  return theArray
+}
+
+export function createIndexArray(size) {
+  return createSequenceArray(0, size-1, 1)
+}

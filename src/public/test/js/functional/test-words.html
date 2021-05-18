@@ -1,10 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+  <meta charset="UTF-8">
+  <title>Words Test</title>
+  <link rel="stylesheet" type="text/css" href="../../../node_modules/bootstrap/dist/css/bootstrap.css"/>
+  <link rel="stylesheet" type="text/css" href="../../../node_modules/bootstrap-icons/font/bootstrap-icons.css"/>
+
+  <script type="text/javascript" src="../../../node_modules/jquery/dist/jquery.js"></script>
+  <script type="text/javascript" src="../../../node_modules/bootstrap/dist/js/bootstrap.js"></script>
+  <script src="./dist/TestWords.bundle.js"></script>
+
+  <style>
+    div.tokenArea {
+      background: #fffcf6;
+      margin: 20px;
+      padding: 20px;
+      width: 40rem;
+      border: 1px solid silver;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 14pt;
+    }
+
+    .token-selected {
+      background: skyblue;
+    }
+  </style>
 </head>
 <body>
-
+<h1>Word Test</h1>
+<p>The idea is to be able to select tokens and associate stuff with them</p>
+<div id="token-area" class="tokenArea"></div>
+<div id="info1"></div>
+<div id="info2"></div>
 </body>
 </html>

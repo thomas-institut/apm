@@ -48,6 +48,11 @@ module.exports = {
     TestMultiPanelUI: {
       import: '../test/js/functional/TestMultiPanelUI.js',
       filename: '../../test/js/functional/dist/TestMultiPanelUI.bundle.js'
+    },
+
+    TestWords: {
+      import: '../test/js/functional/TestWords.js',
+      filename: '../../test/js/functional/dist/TestWords.bundle.js'
     }
 
   },

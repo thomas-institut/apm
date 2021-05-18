@@ -142,3 +142,7 @@ export function safeGetIntVal(element, title) {
   return parseInt(val)
 }
 
+
+export function getIntegerSuffix(someString, prefix) {
+  return someString.startsWith(prefix) ? parseInt(someString.replace(prefix, '')) : null
+}

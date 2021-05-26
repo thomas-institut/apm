@@ -2,17 +2,22 @@ import { OptionsChecker } from '@thomas-inst/optionschecker'
 import Split from 'split-grid'
 import { createIndexArray, prettyPrintArray } from '../toolbox/ArrayUtil'
 import { BootstrapTabGenerator } from './BootstrapTabGenerator'
+import { maximizeElementHeightInParent} from '../toolbox/UserInterfaceUtil'
 
 const defaultIcons = {
   closePanel: '&times;',
-  horizontalMode: '<img src="/images/horizontal-mode.svg" height="20"/>',
-  verticalMode: '<img src="/images/vertical-mode.svg" height="20"/>'
+  horizontalMode: '<img src="/images/horizontal-mode.svg" alt="Horizontal Mode"/>',
+  verticalMode: '<img src="/images/vertical-mode.svg" alt="Vertical Mode"/>'
 }
 
 // classes
 const classes = {
   topBarDiv: 'top-bar',
+  topBarToolbar: 'toolbar',
+  topBarToolbarGroup: 'toolbar-group',
+
   topBarIcon: 'top-bar-icon',
+  topBarButton: 'top-bar-button',
   modeIcons: 'mode-icons',
   logo: 'logo',
   panel: 'panel',
@@ -288,7 +293,7 @@ export class MultiPanelUI {
       thisObject.dragId = getPanelIdFromTabId(ev.target.id)
       thisObject.dragIndex = thisObject.currentTabIds.indexOf(thisObject.dragId)
       thisObject.dragPanelId = panelId
-      // console.log(`Drag START: ${thisObject.dragId}, index ${thisObject.dragIndex}, tabs: ${prettyPrintArray(thisObject.currentTabIds)}`)
+      console.log(`Drag START: ${thisObject.dragId}, index ${thisObject.dragIndex}, tabs: ${prettyPrintArray(thisObject.currentTabIds)}`)
       $(ev.target).addClass(classes.dragged)
     }
   }
@@ -426,8 +431,8 @@ export class MultiPanelUI {
         $(`#${thisObject.currentTabIds[thisObject.currentTabIds.length-1]}-tab`).removeClass(classes.draggingLast)
         let index = thisObject.currentTabIds.length
         let panelIndex = thisObject.options.panels.map( panel => panel.id).indexOf(panelId)
-        // console.log(`Panel index: ${panelIndex}, current order: ${prettyPrintArray(thisObject.options.panels[panelIndex].tabOrder)}`)
-        // console.log(`Moving tab from position ${thisObject.dragIndex} to the end, (index = ${index})`)
+        console.log(`Panel index: ${panelIndex}, current order: ${prettyPrintArray(thisObject.options.panels[panelIndex].tabOrder)}`)
+        console.log(`Moving tab from position ${thisObject.dragIndex} to the end, (index = ${index})`)
         thisObject.options.panels[panelIndex].tabOrder = moveTabIndex(thisObject.options.panels[panelIndex].tabOrder, thisObject.dragIndex, index)
         this._updateActiveTabIds()
         this._renderTabList(thisObject.options.panels[panelIndex])
@@ -508,11 +513,11 @@ export class MultiPanelUI {
     return `<div class="${classes.topBarDiv}">
 <div class="top-bar-item ${classes.logo}">${this.options.logo}</div>
 ${this.options.topBarContent()}
-<div class="top-bar-item ${classes.modeIcons}">
-  <a class="${classes.topBarIcon}" id="${ids.horizontalModeButton}" role="button" href="#" title="Switch to horizontal mode">${this.options.icons.horizontalMode}</a>
-  <a class="${classes.topBarIcon}" id="${ids.verticalModeButton}" role="button" href="#" title="Swith to vertical mode">${this.options.icons.verticalMode}</a>
+<div class="top-bar-item ${classes.topBarToolbar}">
+<div class="${classes.topBarToolbarGroup}">
+  <button class="${classes.topBarButton}" id="${ids.horizontalModeButton}" role="button" title="Switch to horizontal mode">${this.options.icons.horizontalMode}</a>
+  <button class="${classes.topBarButton}" id="${ids.verticalModeButton}" role="button" title="Swith to vertical mode">${this.options.icons.verticalMode}</button>
 </div>
-<div class="top-bar-item top-bar-right-area-content">
 ${this.options.topBarRightAreaContent()}
 </div>
 </div>`
@@ -596,15 +601,15 @@ ${this.options.topBarRightAreaContent()}
   }
 }
 
-function maximizeElementHeightInParent(element, parent, offset = 0) {
-  let currentHeight = element.outerHeight()
-  let parentHeight = parent.height()
-  //console.log(`Maximizing height: current ${currentHeight}, parent ${parentHeight}, offset ${offset}`)
-  let newHeight = parentHeight - offset
-  if (newHeight !== currentHeight) {
-    element.outerHeight(newHeight)
-  }
-}
+// function maximizeElementHeightInParent(element, parent, offset = 0) {
+//   let currentHeight = element.outerHeight()
+//   let parentHeight = parent.height()
+//   //console.log(`Maximizing height: current ${currentHeight}, parent ${parentHeight}, offset ${offset}`)
+//   let newHeight = parentHeight - offset
+//   if (newHeight !== currentHeight) {
+//     element.outerHeight(newHeight)
+//   }
+// }
 
 
 function maximizeElementHeight(element, offset = 0) {
@@ -620,7 +625,7 @@ function maximizeElementHeight(element, offset = 0) {
 
 
 function getPanelIdFromTabId(tabId) {
-  return tabId.replace('-tab', '')
+  return tabId.replace(/-tab$/, '')
 }
 
 

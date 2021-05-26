@@ -24,6 +24,7 @@ body {
     width: 100%;
     padding: 3px;
     border-bottom: 1px solid var(--panel-border-color);
+    align-items: baseline;
 }
 
 div.top-bar-item {
@@ -34,6 +35,34 @@ div.top-bar-item {
 div.top-bar-title {
     font-weight: bold;
 }
+
+div.toolbar {
+    display: flex;
+    flex-direction: row;
+}
+
+div.toolbar-group {
+    display: flex;
+    flex-direction: row;
+    margin-right: 10px;
+}
+.top-bar-button {
+    border: none;
+    background: transparent;
+    margin: 0;
+    padding: 5px;
+    font-size: 20px;
+    height: 20px;
+
+}
+
+.top-bar-button img {
+    height: 20px;
+    vertical-align: -0.125em;
+    margin: 0;
+    padding: 0;
+}
+
 div.mode-icons {
     text-align: right;
 }

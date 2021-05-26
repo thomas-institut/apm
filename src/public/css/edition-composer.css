@@ -1,0 +1,50 @@
+input:focus {
+    border: 1px solid #009dff;
+    outline: none; !important;
+}
+
+div#ct-info {
+    font-size: 0.8em;
+}
+
+
+
+.panel-toolbar {
+    padding: 10px 5px;
+    margin: 0 0;
+    background: #fbfbfb;
+    color: grey;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    /*border-bottom: solid 1px #e0e0e0;*/
+}
+
+
+a.tb-button {
+    color: grey;
+}
+
+div.tab-pane {
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+div.panel-content-area {
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+/* Edition Preview Panel */
+
+
+#edition-preview div.panel-content-area {
+    background: white;
+    display: flex;
+    flex-direction: row;
+}
+
+svg.edition-svg {
+    border: 1px solid #f0f0f0;
+    margin: 20px;
+}

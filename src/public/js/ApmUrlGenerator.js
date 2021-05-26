@@ -154,4 +154,8 @@ class ApmUrlGenerator {
     siteDocs() {
         return this.base + '/documents'
     }
+
+    images() {
+        return this.base + '/images'
+    }
 }

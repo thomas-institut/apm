@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="stylesheet" type="text/css" href="{{baseurl}}/node_modules/bootstrap/dist/css/bootstrap.css"/>
+    <link rel="stylesheet" type="text/css" href="{{baseurl}}/node_modules/bootstrap-icons/font/bootstrap-icons.css"/>
+    <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/styles.css"/>
+    <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/collationtable.css" />
+    <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/multi-panel-ui/styles.css"/>
+    <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/edition-composer.css" />
+
+    <link href='{{baseurl}}/images/apm-logo-square-32x32.png' rel='icon' sizes='32x32' type='image/png'>
+
+    <title></title>
+
+    <script type="text/javascript" src="{{baseurl}}/node_modules/jquery/dist/jquery.js"></script>
+    <script type="text/javascript" src="{{baseurl}}/node_modules/bootstrap/dist/js/bootstrap.bundle.js"></script>
+    <script type="text/javascript" src="{{baseurl}}/node_modules/moment/moment.js"></script>
+    <script type="text/javascript" src="{{baseurl}}/js/SimpleProfiler.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/ApmUrlGenerator.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/dist/EditionComposer.bundle.js"></script>
+</head>
+<body>
+<div class="text-muted" style="margin: 20px;">
+    <p>Loading data..</p>
+    <div class="spinner-grow" role="status">
+        <span class="sr-only">Loading...</span>
+    </div>
+</div>
+<script>
+  $(() => {
+    let ctData  = JSON.parse("{{collationTableData|json_encode|e('js')}}")
+    let peopleInfo = JSON.parse("{{peopleInfo|json_encode|e('js')}}")
+    let workInfo = JSON.parse("{{workInfo|json_encode|e('js')}}")
+    let docInfo = JSON.parse("{{docInfo|json_encode|e('js')}}")
+    let versionInfo = JSON.parse("{{versionInfo|json_encode|e('js')}}")
+    let userId = {{ userId }};
+
+    let te = new EditionComposer({
+      userId: userId,
+      collationTableData : ctData,
+      workId: '{{ workId }}',
+      chunkNumber: {{ chunkNumber }},
+      tableId: {{ tableId }},
+      urlGenerator: new ApmUrlGenerator('{{ baseurl }}'),
+      peopleInfo: peopleInfo,
+      workInfo: workInfo,
+      docInfo: docInfo,
+      versionInfo: versionInfo
+    })
+  })
+</script>
+</body>
+</html>

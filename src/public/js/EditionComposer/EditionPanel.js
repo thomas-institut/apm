@@ -3,14 +3,16 @@
  *
  *  - Edition text and apparatus manipulation in a printed edition type user interface
  */
-export class EditionPanel {
+import { Panel } from './Panel'
+
+export class EditionPanel extends Panel{
+
   constructor (options = {}) {
-    console.log(`Edition  panel constructor`)
+    super(options)
   }
 
-  render() {
-    return `Edition user interface will be here`
+  generateHtml () {
+    return`Edition user interface will be here`
   }
-
 
 }

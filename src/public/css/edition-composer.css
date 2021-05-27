@@ -48,3 +48,36 @@ svg.edition-svg {
     border: 1px solid #f0f0f0;
     margin: 20px;
 }
+
+
+/* Admin panel */
+#admin {
+    margin-left: 1rem;
+}
+#admin h3 {
+    margin-top: 1em;
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+}
+
+#admin-ops-div {
+    margin-bottom: 2rem;
+}
+
+#admin ul {
+    list-style: none;
+}
+
+table.versioninfo td {
+    vertical-align: top;
+    padding-right: 5px;
+    padding-left: 3px;
+}
+
+table.versioninfo td.author {
+    min-width: 10em;
+}
+
+table.versioninfo td.time {
+    min-width: 11em;
+}

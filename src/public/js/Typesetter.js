@@ -117,7 +117,7 @@ export class Typesetter {
     //this.emSize = this.getTextWidthWithDefaults('m')
     this.emSize = this.options.defaultFontSize
     this.normalSpace = this.getNormalSpaceWidth()
-    console.log(`Typesetter: normal space size: ${this.normalSpace}`)
+    // console.log(`Typesetter: normal space size: ${this.normalSpace}`)
   }
 
   getNormalSpaceWidth() {

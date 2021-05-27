@@ -3,6 +3,7 @@ import Split from 'split-grid'
 import { createIndexArray, prettyPrintArray } from '../toolbox/ArrayUtil'
 import { BootstrapTabGenerator } from './BootstrapTabGenerator'
 import { maximizeElementHeightInParent} from '../toolbox/UserInterfaceUtil'
+import { doNothing, returnEmptyString} from '../toolbox/FunctionUtil'
 
 const defaultIcons = {
   closePanel: '&times;',
@@ -672,5 +673,3 @@ function moveTabIndex(currentOrder, tabIndexToMove, nextTabIndex) {
 
 }
 
-function doNothing() {}
-function returnEmptyString() { return ''}

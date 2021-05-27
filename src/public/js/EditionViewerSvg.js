@@ -344,8 +344,8 @@ export class EditionViewerSvg {
   }
   
   getSvg() {
-    console.log('Getting SVG')
-    console.log(this.typesetMainTextTokens)
+    // console.log('Getting SVG')
+    // console.log(this.typesetMainTextTokens)
     return this._getSvgHtml(
       this.typesetMainTextTokens,
       this.lineNumbers,

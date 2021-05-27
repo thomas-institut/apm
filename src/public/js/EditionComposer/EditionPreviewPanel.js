@@ -8,12 +8,12 @@ import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { PrintedEditionGenerator } from '../PrintedEditionGenerator'
 import { EditionViewerSvg } from '../EditionViewerSvg'
 import { maximizeElementHeightInParent} from '../toolbox/UserInterfaceUtil'
+import { Panel } from './Panel'
 
-export class EditionPreviewPanel {
+export class EditionPreviewPanel extends Panel {
   constructor (options = {}) {
-    console.log(`Edition preview panel constructor`)
+    super(options)
     let optionsSpec = {
-      verbose: { type: 'boolean', default: true},
       containerSelector: { type: 'string', required: true},
       ctData: { type: 'object', default: []},
       apparatus: { type: 'object', default: []},
@@ -33,13 +33,12 @@ export class EditionPreviewPanel {
     return [ 'panel-with-toolbar']
   }
 
-  updatePreview() {
-    $(this.options.containerSelector).html(this.getHtml())
-  }
+  // updatePreview() {
+  //   $(this.options.containerSelector).html(this.generateHtml())
+  // }
 
-  getHtml() {
-    console.log(this)
-    this.options.verbose && console.log(`Rendering preview`)
+  generateHtml() {
+    this.verbose && console.log(`Rendering preview`)
     if (this.previewHtml === '') {
       this.previewHtml = this._genPreviewHtml()
     }
@@ -58,13 +57,12 @@ export class EditionPreviewPanel {
   }
 
   postRender() {
-    this.options.verbose && console.log(`Post render edition preview pane`)
+    this.verbose && console.log(`Post render edition preview pane`)
     this.onResize()
-
   }
 
   onResize() {
-    this.options.verbose && console.log(`Resize edition preview pane`)
+    this.verbose && console.log(`Resize edition preview pane`)
     let previewDiv = $(`${this.options.containerSelector} .panel-content-area`)
     let toolbarDiv = $(`${this.options.containerSelector} .panel-toolbar`)
     maximizeElementHeightInParent(previewDiv, $(this.options.containerSelector), toolbarDiv.outerHeight())
@@ -72,7 +70,7 @@ export class EditionPreviewPanel {
 
 
   _genPreviewHtml() {
-    this.options.verbose && console.log(`Generating preview html`)
+    this.verbose && console.log(`Generating preview html`)
     if (this.ctData === []) {
       return `Waiting for ctData`
     }

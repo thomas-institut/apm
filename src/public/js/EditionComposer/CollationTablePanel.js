@@ -3,14 +3,15 @@
  *
  *  - Collation table manipulation: moving, grouping, normalizations
  */
-export class CollationTablePanel {
+import { Panel } from './Panel'
+
+export class CollationTablePanel extends Panel{
   constructor (options = {}) {
-    console.log(`Collation Table Panel constructor`)
+    super(options)
   }
 
-  render() {
+  generateHtml () {
     return `The Collation table will be here`
   }
-
 
 }

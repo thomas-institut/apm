@@ -6,12 +6,18 @@
  *  - Sigla (with preset)
  *  - Witness update: update status, check for updates and launch the witness update task
  */
-export class WitnessInfoPanel {
+import { Panel } from './Panel'
+
+export class WitnessInfoPanel extends Panel{
   constructor (options = {}) {
-    console.log(`Witness Info panel constructor`)
+    super(options)
+
+    let optionsSpec = {
+
+    }
   }
 
-  genHtml() {
+  generateHtml() {
     return `Witness Info Panel will be here`
   }
 

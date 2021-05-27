@@ -96,6 +96,8 @@ export class EditionComposer {
       loadPreset: '<i class="fas fa-upload"></i>'
     }
 
+    this.apiSaveCollationUrl = this.options.urlGenerator.apiSaveCollation()
+
     let ctDataCleaner = new CtDataCleaner()
     this.ctData = ctDataCleaner.getCleanCollationData(this.options['collationTableData'])
 
@@ -126,10 +128,17 @@ export class EditionComposer {
     })
 
     // Construct panels
-
     this.collationTablePanel = new CollationTablePanel({})
     this.witnessInfoPanel = new WitnessInfoPanel({})
-    this.adminPanel = new AdminPanel({})
+    this.adminPanel = new AdminPanel({
+      versionInfo: this.versionInfo,
+      peopleInfo: this.options.peopleInfo,
+      ctType: this.ctData['type'],
+      archived: this.ctData['archived'],
+      canArchive: true,
+      onConfirmArchive: this.genOnConfirmArchive()
+    })
+
     this.editionPreviewPanel = new EditionPreviewPanel({
       containerSelector: `#${editionPreviewTabId}`,
       ctData: this.ctData,
@@ -154,13 +163,27 @@ export class EditionComposer {
               {
                 id: collationTableTabId,
                 title: 'Collation Table',
-                content: this.collationTablePanel.render
+                content: () => { return thisObject.collationTablePanel.generateHtml() },
+                contentClasses: this.collationTablePanel.getContentClasses(),
+                onResize: () => { thisObject.collationTablePanel.onResize()},
+                postRender: () => { thisObject.collationTablePanel.postRender() }
               },
               {
                 id: editionTabId,
                 title: 'Edition',
-                content: this.editionPanel.render
-              }
+                content: () => { return thisObject.editionPanel.generateHtml() },
+                contentClasses: this.editionPanel.getContentClasses(),
+                onResize: () => { thisObject.editionPanel.onResize()},
+                postRender: () => { thisObject.editionPanel.postRender() }
+              },
+              {
+                id: witnessInfoTabId,
+                title: 'Witness Info',
+                content: () => { return thisObject.witnessInfoPanel.generateHtml()},
+                contentClasses: this.witnessInfoPanel.getContentClasses(),
+                onResize: () => { thisObject.witnessInfoPanel.onResize()},
+                postRender: () => { thisObject.witnessInfoPanel.postRender() }
+              },
             ]
           },
           {
@@ -170,22 +193,19 @@ export class EditionComposer {
               {
                 id: editionPreviewTabId,
                 title: 'Edition Preview',
-                content: () => { return thisObject.editionPreviewPanel.getHtml() },
-                onResize: () => { thisObject.editionPreviewPanel.onResize()},
+                content: () => { return thisObject.editionPreviewPanel.generateHtml() },
                 contentClasses: this.editionPreviewPanel.getContentClasses(),
+                onResize: () => { thisObject.editionPreviewPanel.onResize()},
                 postRender: () => { thisObject.editionPreviewPanel.postRender() }
-              },
-              {
-                id: witnessInfoTabId,
-                title: 'Witness Info',
-                content: this.witnessInfoPanel.genHtml
               },
               {
                 id: adminPanelTabId,
                 title: 'Admin',
-                content: this.adminPanel.render,
+                content: () => { return thisObject.adminPanel.generateHtml() },
+                contentClasses: this.adminPanel.getContentClasses(),
+                onResize: () => { thisObject.adminPanel.onResize()},
+                postRender: () => { thisObject.adminPanel.postRender() }
               },
-
             ]
           }
         ]
@@ -287,8 +307,49 @@ export class EditionComposer {
       case 'he':
         break
     }
-
   }
+
+  genOnConfirmArchive() {
+    let thisObject = this
+    return () => { return new Promise( (resolve, reject) => {
+      // console.log(`About to archive table`)
+      thisObject.ctData['archived'] = true
+      let apiCallOptions = {
+        collationTableId: thisObject.tableId,
+        collationTable: thisObject.ctData,
+        descr: 'Archived',
+        source: 'edit',
+        baseSiglum: thisObject.ctData['sigla'][0]
+      }
+      $.post(
+        thisObject.apiSaveCollationUrl,
+        {data: JSON.stringify(apiCallOptions)}
+      ).done( function (apiResponse){
+        // console.log("Success archiving table")
+        // console.log(apiResponse)
+        thisObject.lastSavedCtData = Util.deepCopy(thisObject.ctData)
+        // thisObject.lastSavedEditorMatrix = thisObject.tableEditor.getMatrix().clone()
+        thisObject.versionInfo = apiResponse.versionInfo
+        // thisObject.witnessUpdates = []
+        // for(let i=0; i < thisObject.lastWitnessUpdateCheckResponse['witnesses'].length; i++) {
+        //   if (thisObject.lastWitnessUpdateCheckResponse['witnesses'][i]['justUpdated']) {
+        //     thisObject.lastWitnessUpdateCheckResponse['witnesses'][i]['justUpdated'] = false
+        //   }
+        // }
+        thisObject.unsavedChanges = false
+        // thisObject.updateWitnessInfoDiv()
+        thisObject.updateSaveArea()
+        resolve(thisObject.versionInfo)
+      }).fail(function(resp){
+        console.log("ERROR: cannot archive table")
+        thisObject.ctData['archived'] = false
+        console.log(resp)
+        reject()
+      })
+    })}
+  }
+
+
   updateSaveArea() {
     console.log(`Updating save area`)
     if (this.ctData['archived']) {
@@ -299,47 +360,32 @@ export class EditionComposer {
         .prop('disabled', true)
       return
     }
-    // if (this.ctData['archived']) {
-    //   this.saveButton.addClass('hidden')
-    //   this.saveMsg.html('Archived').removeClass('hidden').addClass('text-info')
-    //   this.archiveTableButton
-    //     .attr('title', 'Already archived')
-    //     .addClass('disabled')
-
-    //   return
-    // }
 
     let changes = this.getChangesInCtData()
     if (changes.length !== 0) {
       console.log(`There are changes`)
       console.log(changes)
-        this.unsavedChanges = true
-        // this.archiveTableButton
-        //   .attr('title', 'Save or discard changes before attempting to archive this table/edition')
-        //   .addClass('disabled')
+      this.unsavedChanges = true
+      this.adminPanel.disallowArchiving('Save or discard changes before attempting to archive this table/edition')
 
-        // this.saveButton.html('Save Changes')
-        this.saveButtonPopoverContent = '<p>'
-        this.saveButtonPopoverContent += '<ul>'
-        for (const change of changes){
-          this.saveButtonPopoverContent += '<li>' + change + '</li>'
-        }
-        this.saveButtonPopoverContent += '</ul></p>'
-        this.saveButtonPopoverTitle = 'Click to save changes'
-        this.saveButton.removeClass('text-muted')
+      this.saveButtonPopoverContent = '<p>'
+      this.saveButtonPopoverContent += '<ul>'
+      for (const change of changes){
+        this.saveButtonPopoverContent += '<li>' + change + '</li>'
+      }
+      this.saveButtonPopoverContent += '</ul></p>'
+      this.saveButtonPopoverTitle = 'Click to save changes'
+      this.saveButton.removeClass('text-muted')
           .addClass('text-primary')
           .prop('disabled', false)
     } else {
       console.log(`No changes`)
       this.unsavedChanges = false
+      this.adminPanel.allowArchiving()
       let lastVersion = this.versionInfo[this.versionInfo.length-1]
       this.saveButtonPopoverContent = `Last save: ${Util.formatVersionTime(lastVersion['timeFrom'])}`
       this.saveButtonPopoverTitle = 'Nothing to save'
-        // this.archiveTableButton
-        //   .attr('title', 'Click to archive this table/edition')
-        //   .removeClass('disabled')
-        //this.saveButton.addClass('hidden')
-        this.saveButton.removeClass('text-primary')
+      this.saveButton.removeClass('text-primary')
           .addClass('text-muted')
           .prop('disabled', true)
 

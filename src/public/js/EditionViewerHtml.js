@@ -19,6 +19,7 @@
 import {OptionsChecker } from '@thomas-inst/optionschecker'
 import { getTypesettingInfo} from './BrowserTypesettingCalculations'
 import * as TokenType from './constants/TokenType'
+import { NumeralStyles } from './NumeralStyles'
 
 const noGluePunctuation = '.,:;?!'
   + String.fromCodePoint(0x60C) // // Arabic comma
@@ -49,10 +50,11 @@ export class EditionViewerHtml {
     let oc = new OptionsChecker(optionsDefinition, 'EditionViewer')
     this.options = oc.getCleanOptions(userOptions)
 
-    console.log(`EditionViewerHtml constructed with the following clean options array:`)
-    console.log(this.options)
+    // console.log(`EditionViewerHtml constructed with the following clean options array:`)
+    // console.log(this.options)
 
     this.container = $(this.options.containerSelector)
+    this.lang = this.options.ctData['lang']
 
     this.container.addClass('htmlEdition')
       .html(`Waiting to render`)
@@ -64,7 +66,7 @@ export class EditionViewerHtml {
   renderMainText() {
     let mainTextTokensWithSpaceObject = this._generateMainTextWithSpaces(this.options.mainTextTokens)
     let mainTextHtml = this._generateMainTextHtml(mainTextTokensWithSpaceObject)
-    let html = `<div class="main-text text-${this.options.ctData['lang']}">`
+    let html = `<div class="main-text text-${this.lang}">`
     html += mainTextHtml
     html += `</div>`
     html += `<div class="apparatuses"></div>`
@@ -219,10 +221,17 @@ export class EditionViewerHtml {
     return witnessData.map( (wd) => { return this.options.ctData['sigla'][wd.witnessIndex]}).join('')
   }
 
+  _getNumberString(n) {
+    if (this.lang === 'ar') {
+      return NumeralStyles.toDecimalArabic(n)
+    }
+    return NumeralStyles.toDecimalWestern(n)
+  }
+
   _getLineNumberString(apparatusEntry, mainTextTokensWithTypesettingInfo) {
     if (mainTextTokensWithTypesettingInfo.tokens[apparatusEntry.start] === undefined) {
       // before the main text
-      return 1
+      return this._getNumberString(1)
     }
 
     let startLine = mainTextTokensWithTypesettingInfo.tokens[apparatusEntry.start].lineNumber
@@ -232,9 +241,9 @@ export class EditionViewerHtml {
     }
     endLine = mainTextTokensWithTypesettingInfo.tokens[apparatusEntry.end].lineNumber
     if (startLine === endLine) {
-      return startLine
+      return this._getNumberString(startLine)
     }
-    return `${startLine}-${endLine}`
+    return `${this._getNumberString(startLine)}-${this._getNumberString(endLine)}`
   }
 
   getLemmaIndexFromElement(element) {

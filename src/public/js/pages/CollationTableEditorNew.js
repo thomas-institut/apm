@@ -850,8 +850,8 @@ export class CollationTableEditor {
     }
     $.post(apiUrl, { data: JSON.stringify(apiCallOptions)})
       .done(function(apiResponse){
-        //console.log('Got witness updates info from server')
-        //console.log(apiResponse)
+        // console.log('Got witness updates info from server')
+        // console.log(apiResponse)
         thisObject.lastWitnessUpdateCheckResponse = apiResponse
         thisObject.checkingForWitnessUpdates = false
         thisObject.updateWitnessUpdateCheckInfo(apiResponse)

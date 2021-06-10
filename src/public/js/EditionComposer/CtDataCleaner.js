@@ -35,10 +35,26 @@ export class CtDataCleaner {
     if (this.ctData['type'] === undefined) {
       this.ctData['type'] = CollationTableType.COLLATION_TABLE
     }
-    // no group, if ctData does not have it
+    // default groups (none), if data do not have them
     if (this.ctData['groupedColumns'] === undefined) {
       this.ctData['groupedColumns'] = []
     }
+
+
+    if (this.ctData['type'] === CollationTableType.EDITION) {
+      // add default apparatuses for editions
+      if (this.ctData['customApparatuses'] === undefined) {
+        this.ctData['customApparatuses'] = [ {
+          type: 'fontium',
+          entries: []
+        }]
+      }
+      // add empty critical apparatus customizations list
+      if (this.ctData['criticalApparatusCustomizations'] === undefined) {
+        this.ctData['criticalApparatusCustomizations'] = []
+      }
+    }
+
 
     // check normalization settings
     if (this.ctData['automaticNormalizationsApplied'] === undefined) {

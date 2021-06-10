@@ -20,6 +20,32 @@ div#ct-info {
     /*border-bottom: solid 1px #e0e0e0;*/
 }
 
+.panel-toolbar-group {
+    display: flex;
+    align-items: baseline;
+    flex-direction: row;
+}
+
+.panel-toolbar-item {
+   margin-right: 3px;
+}
+
+a.tb-button {
+    text-decoration: none;
+    padding: 2px;
+}
+
+a.tb-button:hover {
+    text-decoration: none;
+}
+
+
+
+.panel-toolbar-item a.multitoggle-on {
+    border: 1px solid silver;
+    border-radius: 3px;
+}
+
 
 a.tb-button {
     color: grey;
@@ -80,4 +106,82 @@ table.versioninfo td.author {
 
 table.versioninfo td.time {
     min-width: 11em;
+}
+
+/* Witness Info Panel */
+
+table.witnesstable {
+    margin-top: 20px;
+    margin-left: 20px;
+}
+
+table.witnesstable td,th {
+    padding: 10px;
+}
+
+div.witness-update-div {
+    margin: 2rem;
+
+}
+
+span.witness-update-info {
+    margin-right: 2rem;
+}
+
+
+/* Edition Panel */
+
+#edition-panel div.panel-content-area {
+    display: grid;
+    grid-template-rows: 1fr 3px 1fr;
+}
+
+
+div.main-text {
+    overflow-y: auto;
+    padding: 2em 5rem;
+}
+
+div.apparatuses {
+    margin-top: 1rem;
+    overflow-y: auto;
+}
+
+div.apparatus {
+    padding: 0 5rem;
+    overflow-y: auto;
+    /*max-height: 200px;*/
+}
+
+.direction-rtl {
+    direction: rtl;
+}
+
+.direction-ltr {
+    direction: ltr;
+}
+
+.htmlEdition .text-la {
+    font-family: "Times New Roman", Times, serif;
+}
+
+.htmlEdition .main-text {
+    line-height: 1.5em;
+}
+
+.htmlEdition div.apparatus p {
+    padding: 0;
+    margin: 0;
+}
+
+.htmlEdition .hover {
+    background: #efdf7c;
+}
+
+b.apparatus-line-number {
+    font-size: 1.2em;
+    border: 1px dotted #eeeeee;
+    border-radius: 5px;
+    padding-right: 3px;
+    padding-left: 3px;
 }

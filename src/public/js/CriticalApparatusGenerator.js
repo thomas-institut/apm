@@ -21,12 +21,9 @@ import { isPunctuationToken } from './toolbox/Util.mjs'
 import { SequenceWithGroups } from './SequenceWithGroups'
 import { Matrix } from '@thomas-inst/matrix'
 import * as NormalizationSource from './constants/NormalizationSource'
-
+import {ApparatusCommon} from './EditionComposer/ApparatusCommon'
 import { generateMainText} from './EditionMainTextGenerator.mjs'
 
-const INPUT_TOKEN_FIELD_TEXT = 'text'
-const INPUT_TOKEN_FIELD_NORMALIZED_TEXT = 'normalizedText'
-const INPUT_TOKEN_FIELD_NORMALIZATION_SOURCE = 'normalizationSource'
 
 const ENTRY_TYPE_ADDITION = 'addition'
 const ENTRY_TYPE_OMISSION = 'omission'
@@ -51,7 +48,7 @@ export class CriticalApparatusGenerator {
    * @returns {[]}
    */
   generateCriticalApparatus(ctData, baseWitnessIndex = 0) {
-    let profiler = new SimpleProfiler('criticalApparatusGeneration')
+    // let profiler = new SimpleProfiler('criticalApparatusGeneration')
 
     // let mainTextInputTokens = this.getWitnessTokensFromReferenceRow(ctData, baseWitnessIndex)
 
@@ -61,11 +58,11 @@ export class CriticalApparatusGenerator {
       .map( tokenRef => tokenRef === -1 ? { tokenType : TokenType.EMPTY } : ctData['witnesses'][baseWitnessIndex]['tokens'][tokenRef])
 
     let generatedNormalizedMainText = generateMainText(mainTextTokens, true)
-    console.log(`Normalized main text`)
-    console.log(generatedNormalizedMainText)
+    // console.log(`Normalized main text`)
+    // console.log(generatedNormalizedMainText)
     let generatedMainText = generateMainText(mainTextTokens, true, [ NormalizationSource.AUTOMATIC_COLLATION, NormalizationSource.COLLATION_EDITOR_AUTOMATIC])
-    console.log(`Main text`)
-    console.log(generatedMainText)
+    // console.log(`Main text`)
+    // console.log(generatedMainText)
 
     let columnGroups = this._getGroupsFromCtData(ctData)
     // TODO: detect a series of empty main text tokens at the beginning of the text and create a group with them
@@ -78,7 +75,7 @@ export class CriticalApparatusGenerator {
       let ctColumns = []
       let mainTextIndices = []
       for (let c = columnGroup.from; c<= columnGroup.to; c++) {
-        ctColumns.push(this.getCollationTableColumn(ctData, c))
+        ctColumns.push(ApparatusCommon.getCollationTableColumn(ctData, c))
         mainTextIndices.push(generatedNormalizedMainText.ctToMainTextMap[c])
       }
       if (ctColumns.every( col => this.isCtTableColumnEmpty(col))) {
@@ -125,14 +122,14 @@ export class CriticalApparatusGenerator {
             criticalApparatus.push({
               start: mainTextIndex,
               end: mainTextIndex,
-              lemma: mainTextIndex !== -1 ? this.getTextFromInputToken(generatedMainText.mainTextTokens[mainTextIndex]) : 'pre',
+              lemma: mainTextIndex !== -1 ? ApparatusCommon.getNormalizedTextFromInputToken(generatedMainText.mainTextTokens[mainTextIndex]) : 'pre',
               entries:entries
             })
         }
         return
       }
       // 2. There's main text, we need to find omissions and variants
-      let mainText = this._getMainTextForGroup(columnGroup, mainTextTokens)
+      let mainText = ApparatusCommon.getMainTextForGroup(columnGroup, mainTextTokens)
       if (mainText === '') {
         // ignore empty string (normally main text consisting only of punctuation)
         return
@@ -165,13 +162,13 @@ export class CriticalApparatusGenerator {
       if (mainTextIndexFrom === -1) {
         // need to find first non-empty main text token in
         //console.log('Finding non empty main text token forward')
-        mainTextIndexFrom = this._findNonEmptyMainTextToken(columnGroup.from,
+        mainTextIndexFrom = ApparatusCommon.findNonEmptyMainTextToken(columnGroup.from,
           generatedNormalizedMainText.ctToMainTextMap, generatedNormalizedMainText.mainTextTokens, true)
       }
       let mainTextIndexTo = generatedNormalizedMainText.ctToMainTextMap[columnGroup.to]
       if (mainTextIndexTo === -1) {
         //console.log(`Finding non empty main text token backwards from ${columnGroup.to}, from = ${columnGroup.from}`)
-        mainTextIndexTo = this._findNonEmptyMainTextToken(columnGroup.to,
+        mainTextIndexTo = ApparatusCommon.findNonEmptyMainTextToken(columnGroup.to,
           generatedNormalizedMainText.ctToMainTextMap, generatedNormalizedMainText.mainTextTokens, false)
       }
 
@@ -186,7 +183,7 @@ export class CriticalApparatusGenerator {
         })
       }
     })
-    profiler.stop()
+    // profiler.stop()
 
     return {
       baseWitnessIndex: baseWitnessIndex,
@@ -194,34 +191,6 @@ export class CriticalApparatusGenerator {
       criticalApparatus: criticalApparatus
     }
   }
-
-  _findNonEmptyMainTextToken(ctIndex, ctToMainTextMap, mainTextTokens, forward) {
-    while (ctIndex >= 0 && ctIndex < ctToMainTextMap.length && (
-      ctToMainTextMap[ctIndex] === -1 ||
-      isPunctuationToken(mainTextTokens[ctToMainTextMap[ctIndex]]['text'])) ) {
-      ctIndex = forward ? ctIndex + 1 : ctIndex -1
-    }
-    if (ctIndex < 0 || ctIndex >= ctToMainTextMap.length) {
-      return -1
-    }
-    return ctToMainTextMap[ctIndex]
-  }
-
-  _getMainTextForGroup(group, mainTextInputTokens) {
-    return mainTextInputTokens
-      .filter( (t, i) => { return i>=group.from && i<=group.to}) // get group main text columns
-      .map( (t) => {   // get text for each column
-        if (t.tokenType === TokenType.EMPTY) { return ''}
-        if (isPunctuationToken(t.text)) { return  ''}
-        if (t.normalizedText !== undefined && t.normalizedText !== '') {
-          return t.normalizedText
-        }
-        return t.text
-      })
-      .filter( t => t !== '')   // filter out empty text
-      .join(' ')
-  }
-
   _getGroupsFromCtData(ctData) {
     if (ctData['witnesses'].length === 0) {
       return []
@@ -282,7 +251,6 @@ export class CriticalApparatusGenerator {
   }
 
 
-
   _getRowTextFromGroupMatrix(matrix, rowNumber) {
     let thisObject = this
     return matrix.getColumn(rowNumber)
@@ -290,7 +258,7 @@ export class CriticalApparatusGenerator {
         if (token.tokenType === TokenType.EMPTY) {
           return ''
         }
-        let theText = thisObject.getTextFromInputToken(token)
+        let theText = ApparatusCommon.getNormalizedTextFromInputToken(token)
         if (isPunctuationToken(theText)) {
           return ''
         }
@@ -298,39 +266,6 @@ export class CriticalApparatusGenerator {
       })
       .filter( t => t !== '')   // filter out empty text
       .join(' ')
-  }
-
-  /**
-   *  Gets the text for the given token, the normal text or
-   *  the normalized text if there is one
-   * @param token
-   * @param normalizationSourcesToIgnore
-   * @returns {*}
-   */
-  getTextFromInputToken(token, normalizationSourcesToIgnore = []){
-    let text = token[INPUT_TOKEN_FIELD_TEXT]
-    if (token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT] !== undefined && token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT] !== '') {
-      let norm = token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT]
-      let source = token[INPUT_TOKEN_FIELD_NORMALIZATION_SOURCE] !== undefined ? token[INPUT_TOKEN_FIELD_NORMALIZATION_SOURCE] : ''
-      if (source === '' || normalizationSourcesToIgnore.indexOf(source) === -1) {
-        // if source === '', this is  a normalization from the transcription
-        text = norm
-      }
-    }
-    return text
-  }
-
-  getCollationTableColumn(ctData, col) {
-    let column = [];
-    ctData['collationMatrix'].forEach( (tokenRefs, row) => {
-      let ref = tokenRefs[col]
-      if (ref === -1) {
-        column[row] = { tokenType: TokenType.EMPTY }
-      } else {
-        column[row] = ctData['witnesses'][row]['tokens'][ref]
-      }
-    })
-    return column
   }
 
   isCtTableColumnEmpty(ctColumn) {

@@ -143,7 +143,7 @@ export class MultiPanelUI {
       },
       content: {
         // function to call to generate the html inside the tab's content div
-        //  (tabId, mode) =>  string
+        //  (tabId, visible) =>  string
         type: 'function',
         required: true
       },
@@ -159,13 +159,25 @@ export class MultiPanelUI {
       },
       postRender: {
         // Function to call after the tab's content is rendered
-        //  (tabId) => void
+        //  (tabId, mode, visible) => void
         type: 'function',
         default: doNothing
       },
       onResize: {
         // Function to call after a tab is resized
-        // (tabId) => void
+        // (tabId, mode, visible) => void
+        type: 'function',
+        default: doNothing
+      },
+      onShown: {
+        // function to call after a tab is activated by the user
+        // (tabId, mode) => void
+        type: 'function',
+        default: doNothing
+      },
+      onHidden: {
+        // function to call after a tab is hidden by the user
+        // (tabId, mode) => void
         type: 'function',
         default: doNothing
       },
@@ -205,7 +217,16 @@ export class MultiPanelUI {
       }
       goodPanelOptionsArray.push(cleanPanelOptions)
     })
-    this.options.panels = goodPanelOptionsArray
+    this.panels = goodPanelOptionsArray
+
+    let thisObject = this
+    this.panels.forEach( (panel, panelIndex) => {
+      if (panel.type === tabsPanel) {
+        panel.tabs.forEach( (tab, tabIndex) => {
+          thisObject.panels[panelIndex].tabs[tabIndex].visible = tab.id === thisObject.options.activeTabId
+        })
+      }
+    })
 
   }
 
@@ -227,6 +248,7 @@ export class MultiPanelUI {
     this._setupSplit()
     this._setupDraggingEventHandlers()
     this._callPostRenderHandlers()
+    this._setupTabEventHandlers()
 
     this.verticalModeButton = $(`#${ids.verticalModeButton}`)
     this.horizontalModeButton = $(`#${ids.horizontalModeButton}`)
@@ -264,7 +286,7 @@ export class MultiPanelUI {
   _fitPanelsToScreen() {
     // Fit panels and tab content div
     if (this.currentMode === verticalMode) {
-      this.options.panels.forEach( (panel) => {
+      this.panels.forEach( (panel) => {
         let panelDiv = $(`#${panel.id}`)
         maximizeElementHeight(panelDiv)
       })
@@ -272,7 +294,7 @@ export class MultiPanelUI {
       maximizeElementHeight($(`#${ids.panelsDiv}`))
     }
     // Fit tab content
-    this.options.panels.forEach( (panel) => {
+    this.panels.forEach( (panel) => {
       if (panel.type === tabsPanel) {
         let panelDiv = $(`#${panel.id}`)
         let tabsContentsDiv = $(`#${panel.id}-tabs-content`)
@@ -287,8 +309,8 @@ export class MultiPanelUI {
   _genEventHandlerDragStart(panelId, tabs) {
     let thisObject = this
     return (ev) => {
-      let panelIndex = thisObject.options.panels.map( panel => panel.id).indexOf(panelId)
-      let panel = thisObject.options.panels[panelIndex]
+      let panelIndex = thisObject.panels.map( panel => panel.id).indexOf(panelId)
+      let panel = thisObject.panels[panelIndex]
       thisObject.currentTabIds = panel.tabOrder.map( index => tabs[index].id)
       thisObject.dragging = true
       thisObject.dragId = getPanelIdFromTabId(ev.target.id)
@@ -418,25 +440,25 @@ export class MultiPanelUI {
           // dropping on the next tab in the list, nothing to do
           return
         }
-        let panelIndex = thisObject.options.panels.map( panel => panel.id).indexOf(panelId)
+        let panelIndex = thisObject.panels.map( panel => panel.id).indexOf(panelId)
         // console.log(`Moving tab from position ${thisObject.dragIndex} to before tab in position ${index}`)
-        // console.log(`Panel index: ${panelIndex}, current order: ${prettyPrintArray(thisObject.options.panels[panelIndex].tabOrder)}`)
-        thisObject.options.panels[panelIndex].tabOrder = moveTabIndex(thisObject.options.panels[panelIndex].tabOrder, thisObject.dragIndex, index)
+        // console.log(`Panel index: ${panelIndex}, current order: ${prettyPrintArray(thisObject.panels[panelIndex].tabOrder)}`)
+        thisObject.panels[panelIndex].tabOrder = moveTabIndex(thisObject.panels[panelIndex].tabOrder, thisObject.dragIndex, index)
         $(ev.target).removeClass(classes.draggingInto)
         this._updateActiveTabIds()
-        thisObject._renderTabList(thisObject.options.panels[panelIndex])
+        thisObject._renderTabList(thisObject.panels[panelIndex])
         return
       }
       if (element.hasClass('nav-tabs')) {
         // console.log(`Drop on tab div`)
         $(`#${thisObject.currentTabIds[thisObject.currentTabIds.length-1]}-tab`).removeClass(classes.draggingLast)
         let index = thisObject.currentTabIds.length
-        let panelIndex = thisObject.options.panels.map( panel => panel.id).indexOf(panelId)
-        console.log(`Panel index: ${panelIndex}, current order: ${prettyPrintArray(thisObject.options.panels[panelIndex].tabOrder)}`)
+        let panelIndex = thisObject.panels.map( panel => panel.id).indexOf(panelId)
+        console.log(`Panel index: ${panelIndex}, current order: ${prettyPrintArray(thisObject.panels[panelIndex].tabOrder)}`)
         console.log(`Moving tab from position ${thisObject.dragIndex} to the end, (index = ${index})`)
-        thisObject.options.panels[panelIndex].tabOrder = moveTabIndex(thisObject.options.panels[panelIndex].tabOrder, thisObject.dragIndex, index)
+        thisObject.panels[panelIndex].tabOrder = moveTabIndex(thisObject.panels[panelIndex].tabOrder, thisObject.dragIndex, index)
         this._updateActiveTabIds()
-        this._renderTabList(thisObject.options.panels[panelIndex])
+        this._renderTabList(thisObject.panels[panelIndex])
         return
       }
       console.log(`Drop on other element`)
@@ -452,7 +474,7 @@ export class MultiPanelUI {
 
   _setupDraggingEventHandlers() {
     let thisObject = this
-    this.options.panels.forEach( (panel) => {
+    this.panels.forEach( (panel) => {
       if (panel.type !== tabsPanel) {
         return
       }
@@ -470,7 +492,7 @@ export class MultiPanelUI {
 
   _callOnResizeHandlers() {
     let currentMode = this.currentMode
-    this.options.panels.forEach((panel) => {
+    this.panels.forEach((panel) => {
       panel.onResize(panel.id, currentMode)
       if (panel.type === 'tabs') {
         panel.tabs.forEach((tab) => {
@@ -484,6 +506,7 @@ export class MultiPanelUI {
     this.currentMode = newMode
     this._updateActiveTabIds()
     this._renderPanels()
+    this._setupTabEventHandlers()
     this._fitPanelsToScreen()
     this._setupSplit()
     this._setupDraggingEventHandlers()
@@ -491,7 +514,7 @@ export class MultiPanelUI {
   }
 
   _updateActiveTabIds() {
-    this.options.panels.forEach( (panel) => {
+    this.panels.forEach( (panel) => {
       if (panel.type === tabsPanel) {
         panel.activeTabId = getActiveTab(panel.tabs.map( tab => tab.id))
       }
@@ -500,11 +523,11 @@ export class MultiPanelUI {
 
   _callPostRenderHandlers() {
     let currentMode = this.currentMode
-    this.options.panels.forEach( (panel) => {
+    this.panels.forEach( (panel) => {
       panel.postRender( panel.id, currentMode)
       if (panel.type === 'tabs') {
         panel.tabs.forEach((tab) => {
-          tab.postRender(tab.id)
+          tab.postRender(tab.id, currentMode, tab.visible)
         })
       }
     })
@@ -529,9 +552,22 @@ ${this.options.topBarRightAreaContent()}
     $(`#${ids.panelsDiv}`).replaceWith(newHtml)
   }
 
+  _setupTabEventHandlers() {
+    let thisObject = this
+    this.panels.forEach((panel, panelIndex) => {
+      if (panel.type === 'tabs') {
+        panel.tabs.forEach((tab, tabIndex) => {
+          $(`#${tab.id}-tab`)
+            .on('shown.bs.tab', () => { thisObject.panels[panelIndex].tabs[tabIndex].visible = true; tab.onShown(tab.id)})
+            .on('hidden.bs.tab', () => { thisObject.panels[panelIndex].tabs[tabIndex].visible = false; tab.onHidden(tab.id)})
+        })
+      }
+    })
+  }
+
   _genHtmlPanels() {
-    let firstPanel = this.options.panels[this.options.panelOrder[0]]
-    let secondPanel = this.options.panels[this.options.panelOrder[1]]
+    let firstPanel = this.panels[this.options.panelOrder[0]]
+    let secondPanel = this.panels[this.options.panelOrder[1]]
     let firstPanelClass = this.currentMode === verticalMode ? 'left-panel' : 'top-panel'
     let secondPanelClass = this.currentMode === verticalMode ? 'right-panel' : 'bottom-panel'
     let panelsDivClass = this.currentMode === verticalMode ? 'vertical-mode' : 'horizontal-mode'
@@ -548,11 +584,11 @@ ${this.options.topBarRightAreaContent()}
         return panel.content(panel.id, this.currentMode)
 
       case tabsPanel:
-        return this._getTabsHtml(panel)
+        return this._getTabsHtml(panel, this.currentMode)
     }
   }
 
-  _getTabGeneratorForPanel(panel) {
+  _getTabGeneratorForPanel(panel, mode) {
     return new BootstrapTabGenerator({
       id: `${panel.id}-tabs`,
       tabs: panel.tabs.map( (tab) => {
@@ -566,12 +602,13 @@ ${this.options.topBarRightAreaContent()}
         }
       }),
       activeTabId: panel.activeTabId,
-      order: panel.tabOrder
+      order: panel.tabOrder,
+      mode: mode
     })
   }
 
-  _getTabsHtml(panel) {
-    let tabGenerator = this._getTabGeneratorForPanel(panel)
+  _getTabsHtml(panel, mode) {
+    let tabGenerator = this._getTabGeneratorForPanel(panel, mode)
     //tabGenerator.setActiveTab(panel.activeTabId)
     return tabGenerator.generateHtml()
   }
@@ -601,17 +638,6 @@ ${this.options.topBarRightAreaContent()}
     this.split = Split( splitOptions)
   }
 }
-
-// function maximizeElementHeightInParent(element, parent, offset = 0) {
-//   let currentHeight = element.outerHeight()
-//   let parentHeight = parent.height()
-//   //console.log(`Maximizing height: current ${currentHeight}, parent ${parentHeight}, offset ${offset}`)
-//   let newHeight = parentHeight - offset
-//   if (newHeight !== currentHeight) {
-//     element.outerHeight(newHeight)
-//   }
-// }
-
 
 function maximizeElementHeight(element, offset = 0) {
   let elementTop = element.offset().top

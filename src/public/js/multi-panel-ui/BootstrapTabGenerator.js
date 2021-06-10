@@ -45,6 +45,11 @@ export class BootstrapTabGenerator {
         // the id of the active tab, if empty, the first tab will be the active one
         type: 'string',
         default: ''
+      },
+      mode: {
+        // a string to be passed to each tab's html generator
+        type: 'string',
+        default: ''
       }
     }
 
@@ -66,8 +71,8 @@ export class BootstrapTabGenerator {
         default: ''
       },
       content: {
-        // a function to generate the tab's content
-        //  () => string
+        // a function to generate the tab's html content
+        //  (tabId, visible, mode) => string
         type: 'function',
         required: true
       },
@@ -104,6 +109,8 @@ export class BootstrapTabGenerator {
     if (this.activeTabId === '') {
       this.activeTabId = this.tabs[this.order[0]].id
     }
+
+    this.mode = cleanOptions.mode
   }
 
   setOrder(newOrder) {
@@ -162,6 +169,7 @@ aria-controls="${tab.id}" title="${linkTitle}" aria-selected="${tab.id === activ
 
   generateTabContentHtml() {
     let activeTabId = this.activeTabId
+    let mode = this.mode
     return `<div class="tab-content" id="${this.getTabContentDivId()}">` +
     this.tabs.map( (tab) => {
       let contentClasses = ['tab-pane']
@@ -171,7 +179,9 @@ aria-controls="${tab.id}" title="${linkTitle}" aria-selected="${tab.id === activ
       if (tab.id === activeTabId) {
         contentClasses.push('active')
       }
-      return `<div class="${contentClasses.join(' ')}" id="${tab.id}" role="tabpanel" aria-labelledby="${tab.id}-tab">${tab.content()}</div>`
+      return `<div class="${contentClasses.join(' ')}" id="${tab.id}" role="tabpanel" aria-labelledby="${tab.id}-tab">
+${tab.content(tab.id, mode, tab.id === activeTabId)}
+</div>`
     }).join('') +
     '</div>'
   }

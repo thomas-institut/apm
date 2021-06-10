@@ -35,8 +35,11 @@ export function trimWhiteSpace(someString) {
   return someString.replace(/^\s+/, '').replace(/\s+$/, '')
 }
 
-export function getClassArrayFromJQueryObject(jqueryObject) {
-  return jqueryObject.attr('class').split(/\s+/);
+export function getClassArrayFromJQueryObject(element) {
+  if (element.attr('class') === undefined) {
+    return []
+  }
+  return element.attr("class").split(/\s+/)
 }
 
 /**
@@ -145,4 +148,13 @@ export function safeGetIntVal(element, title) {
 
 export function getIntegerSuffix(someString, prefix) {
   return someString.startsWith(prefix) ? parseInt(someString.replace(prefix, '')) : null
+}
+
+/**
+ *
+ * @param string
+ * @returns {string}
+ */
+export function capitalizeFirstLetter(string) {
+  return string[0].toUpperCase() + string.slice(1);
 }

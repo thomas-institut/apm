@@ -43,13 +43,12 @@ import { EditionPanel } from './EditionPanel'
 import { CtDataCleaner } from './CtDataCleaner'
 import { CriticalApparatusGenerator } from '../CriticalApparatusGenerator'
 
-
 // CONSTANTS
 
 // tab ids
 const editionTitleId = 'edition-title'
 const collationTableTabId = 'collation-table'
-const editionTabId = 'edition'
+const editionTabId = 'edition-panel'
 const editionPreviewTabId = 'edition-preview'
 const witnessInfoTabId = 'witness-info'
 const adminPanelTabId = 'admin'
@@ -101,6 +100,9 @@ export class EditionComposer {
     let ctDataCleaner = new CtDataCleaner()
     this.ctData = ctDataCleaner.getCleanCollationData(this.options['collationTableData'])
 
+    console.log('CT Data')
+    console.log(this.ctData)
+
     // Normalizers
     this.normalizerRegister = new NormalizerRegister()
     this.registerStandardNormalizers()
@@ -128,8 +130,19 @@ export class EditionComposer {
     })
 
     // Construct panels
-    this.collationTablePanel = new CollationTablePanel({})
-    this.witnessInfoPanel = new WitnessInfoPanel({})
+    this.collationTablePanel = new CollationTablePanel({
+      containerSelector:  `#${collationTableTabId}`,
+      ctData: this.ctData,
+      // verbose: true
+    })
+    this.witnessInfoPanel = new WitnessInfoPanel({
+      containerSelector: `#${witnessInfoTabId}`,
+      ctData: this.ctData,
+      onWitnessOrderChange: this.genOnWitnessOrderChange(),
+      onSiglaChange: this.genOnSiglaChange(),
+      checkForWitnessUpdates: this.genCheckWitnessUpdates()
+    })
+
     this.adminPanel = new AdminPanel({
       versionInfo: this.versionInfo,
       peopleInfo: this.options.peopleInfo,
@@ -143,9 +156,15 @@ export class EditionComposer {
       containerSelector: `#${editionPreviewTabId}`,
       ctData: this.ctData,
       apparatus: this.criticalApparatus,
-      langDef: this.options.langDef
+      langDef: this.options.langDef,
+      onPdfExport: this.genOnExportPdf()
     })
-    this.editionPanel = new EditionPanel({})
+
+    this.editionPanel = new EditionPanel({
+      containerSelector: `#${editionTabId}`,
+      ctData: this.ctData,
+      verbose: true
+    })
 
     this.multiPanelUI = new MultiPanelUI({
         logo: `<img src="${this.options.urlGenerator.images()}/apm-logo-plain.svg" height="40px" alt="logo"/>`,
@@ -160,52 +179,17 @@ export class EditionComposer {
             id: 'panel-one',
             type: 'tabs',
             tabs: [
-              {
-                id: collationTableTabId,
-                title: 'Collation Table',
-                content: () => { return thisObject.collationTablePanel.generateHtml() },
-                contentClasses: this.collationTablePanel.getContentClasses(),
-                onResize: () => { thisObject.collationTablePanel.onResize()},
-                postRender: () => { thisObject.collationTablePanel.postRender() }
-              },
-              {
-                id: editionTabId,
-                title: 'Edition',
-                content: () => { return thisObject.editionPanel.generateHtml() },
-                contentClasses: this.editionPanel.getContentClasses(),
-                onResize: () => { thisObject.editionPanel.onResize()},
-                postRender: () => { thisObject.editionPanel.postRender() }
-              },
-              {
-                id: witnessInfoTabId,
-                title: 'Witness Info',
-                content: () => { return thisObject.witnessInfoPanel.generateHtml()},
-                contentClasses: this.witnessInfoPanel.getContentClasses(),
-                onResize: () => { thisObject.witnessInfoPanel.onResize()},
-                postRender: () => { thisObject.witnessInfoPanel.postRender() }
-              },
+              createTabConfig(editionTabId, 'Edition', this.editionPanel),
+              createTabConfig(collationTableTabId, 'Collation Table', this.collationTablePanel),
+              createTabConfig(witnessInfoTabId, 'Witness Info', this.witnessInfoPanel)
             ]
           },
           {
             id: 'panel-two',
             type: 'tabs',
             tabs: [
-              {
-                id: editionPreviewTabId,
-                title: 'Edition Preview',
-                content: () => { return thisObject.editionPreviewPanel.generateHtml() },
-                contentClasses: this.editionPreviewPanel.getContentClasses(),
-                onResize: () => { thisObject.editionPreviewPanel.onResize()},
-                postRender: () => { thisObject.editionPreviewPanel.postRender() }
-              },
-              {
-                id: adminPanelTabId,
-                title: 'Admin',
-                content: () => { return thisObject.adminPanel.generateHtml() },
-                contentClasses: this.adminPanel.getContentClasses(),
-                onResize: () => { thisObject.adminPanel.onResize()},
-                postRender: () => { thisObject.adminPanel.postRender() }
-              },
+              createTabConfig(editionPreviewTabId, 'Edition Preview', this.editionPreviewPanel),
+              createTabConfig(adminPanelTabId, 'Admin', this.adminPanel)
             ]
           }
         ]
@@ -349,9 +333,58 @@ export class EditionComposer {
     })}
   }
 
+  genOnExportPdf() {
+    let thisObject = this
+    return (svg) => {
+      return new Promise( (resolve, reject) => {
+        let apiUrl = thisObject.options.urlGenerator.apiConvertSvg()
+        if (svg === '') {
+          console.log('No SVG for PDF export')
+          resolve('')
+        }
+        console.log(`Calling export PDF API`)
+        $.post(
+          apiUrl,
+          {data: JSON.stringify({
+              pdfId: `ct-${thisObject.options.tableId}`,
+              svg: svg
+            })}
+        ).done(
+          apiResponse => {
+            resolve(apiResponse.url)
+          }
+        ).fail (
+          error => {
+            console.error('PDF API error')
+            console.log(error)
+            reject()
+          }
+        )
+      })
+    }
+  }
+
+  genCheckWitnessUpdates() {
+    let thisObject = this
+    return (currentWitnessUpdateData) => {
+      return new Promise( (resolve, reject) => {
+        let apiUrl = thisObject.options.urlGenerator.apiWitnessCheckUpdates()
+        $.post(apiUrl, { data: JSON.stringify(currentWitnessUpdateData)})
+          .done(function(apiResponse){
+              resolve(apiResponse)
+          })
+          .fail( function(resp) {
+            console.error('Error checking witness updates')
+            console.log(resp)
+            reject()
+          })
+      })
+    }
+  }
+
 
   updateSaveArea() {
-    console.log(`Updating save area`)
+    // console.log(`Updating save area`)
     if (this.ctData['archived']) {
       let lastVersion = this.versionInfo[this.versionInfo.length-1]
       this.saveButtonPopoverTitle = 'Saving is disabled'
@@ -363,8 +396,8 @@ export class EditionComposer {
 
     let changes = this.getChangesInCtData()
     if (changes.length !== 0) {
-      console.log(`There are changes`)
-      console.log(changes)
+      // console.log(`There are changes`)
+      // console.log(changes)
       this.unsavedChanges = true
       this.adminPanel.disallowArchiving('Save or discard changes before attempting to archive this table/edition')
 
@@ -379,7 +412,7 @@ export class EditionComposer {
           .addClass('text-primary')
           .prop('disabled', false)
     } else {
-      console.log(`No changes`)
+      // console.log(`No changes`)
       this.unsavedChanges = false
       this.adminPanel.allowArchiving()
       let lastVersion = this.versionInfo[this.versionInfo.length-1]
@@ -449,6 +482,22 @@ export class EditionComposer {
     return changes
   }
 
+  genOnWitnessOrderChange() {
+    let thisObject = this
+    return (newOrder) => {
+      thisObject.ctData['witnessOrder'] = newOrder
+      thisObject.editionPreviewPanel.updatePreview()
+    }
+  }
+
+  genOnSiglaChange() {
+    let thisObject = this
+    return (newSigla) => {
+      thisObject.ctData['sigla'] = newSigla
+      thisObject.editionPreviewPanel.updatePreview()
+    }
+  }
+
   genOnConfirmTitleField() {
     let thisObject = this
     return function (data) {
@@ -482,6 +531,19 @@ export class EditionComposer {
     return `<div id="ct-info" title="${workAuthorName}, ${workTitle}; table ID: ${this.tableId}">${this.options.workId}-${this.options.chunkNumber}</div>`
   }
 
+}
+
+function createTabConfig(id, title, panelObject) {
+  return {
+    id: id,
+    title: title,
+    content: (tabId, mode, visible) => { return panelObject.generateHtml(tabId, mode, visible) },
+    contentClasses: panelObject.getContentClasses(),
+    onResize: () => { panelObject.onResize()},
+    postRender: (id, mode, visible) => { panelObject.postRender(id, mode, visible) },
+    onShown: (id) => { panelObject.onShown(id)},
+    onHidden: (id) => { panelObject.onHidden(id)}
+  }
 }
 
 

@@ -6,7 +6,7 @@
 import { Panel } from './Panel'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { CriticalApparatusGenerator } from '../CriticalApparatusGenerator'
-import { maximizeElementHeightInParent} from '../toolbox/UserInterfaceUtil'
+import { getIdFromClasses, maximizeElementHeightInParent } from '../toolbox/UserInterfaceUtil'
 import {getTypesettingInfo} from '../BrowserTypesettingCalculations'
 import { wait } from '../toolbox/FunctionUtil'
 import { NumeralStyles } from '../NumeralStyles'
@@ -14,7 +14,7 @@ import { MultiToggle } from '../widgets/MultiToggle'
 import { BootstrapTabGenerator } from '../multi-panel-ui/BootstrapTabGenerator'
 import { capitalizeFirstLetter } from '../toolbox/Util.mjs'
 import * as ApparatusType from '../constants/ApparatusType'
-import { CRITICUS } from '../constants/ApparatusType'
+import { EditableTextField } from '../widgets/EditableTextField'
 
 const noGluePunctuation = '.,:;?!'
   + String.fromCodePoint(0x60C) // // Arabic comma
@@ -31,6 +31,10 @@ const SPACE_WIDTH_NORMAL = 'normal'
 // Edition token types
 const E_TOKEN_TYPE_GLUE = 'glue'
 const E_TOKEN_TYPE_TEXT = 'text'
+
+const EDIT_MODE_OFF = 'off'
+const EDIT_MODE_TEXT = 'text'
+const EDIT_MODE_APPARATUS = 'apparatus'
 
 const typesetInfoDelay = 200
 
@@ -55,6 +59,15 @@ export class EditionPanel extends Panel{
     this.apparatusLineSeparator = doubleVerticalLine
     this.entrySeparator = verticalLine
     this.currentEditMode = 'off'
+    this.editingTextToken = false
+    this.originalTokenText = '__null__'
+    this.tokenBeingEdited = -1
+    this.textTokenEditor = null
+    this.selection = { from: -1, to: -1}
+    this.selecting = false
+    this.cursorInToken = false
+    this.tokenIndexOne = -1
+    this.tokenIndexTwo = -1
   }
 
   _recalculateCriticalApparatusIfNeeded() {
@@ -114,7 +127,7 @@ export class EditionPanel extends Panel{
           let apparatusTabsHeight = $('#apparatus-tabs').outerHeight()
           let apparatusesDiv = $(`${containerSelector} .apparatuses`)
           thisObject.apparatusArray.forEach( (apparatus, index) => {
-            this.verbose && console.log(`Maximizing apparatus ${index}`)
+            // this.verbose && console.log(`Maximizing apparatus ${index}`)
             maximizeElementHeightInParent($(`#apparatus-${index}-div`), apparatusesDiv, apparatusTabsHeight)
           })
       })
@@ -136,6 +149,7 @@ export class EditionPanel extends Panel{
   postRender (id, mode, visible) {
     this.verbose && console.log(`Post render edition pane`)
     this.onResize()
+    let thisObject = this
     this.modeToggle = new MultiToggle({
       containerSelector: '#edition-panel-mode-toggle',
       title: '',
@@ -144,15 +158,268 @@ export class EditionPanel extends Panel{
         wrapButtonsInDiv: true,
         buttonsDivClass: 'panel-toolbar-item',
         buttonDef: [
-          { label: 'Edit Off', name: 'off', helpText: 'Turn off editing'},
-          { label: 'Main Text', name: 'text', helpText: 'Edit main text'},
-          { label: 'Apparatus', name: 'apparatus', helpText: 'Add/Edit apparatus entries'},
-        ],
-      onToggle: (ev) => {
-        // TODO: implement onToggle
-        console.log(`Edition Panel edit mode changed`)
-      }
+          { label: 'Edit Off', name: EDIT_MODE_OFF, helpText: 'Turn off editing'},
+          { label: 'Main Text', name: EDIT_MODE_TEXT, helpText: 'Edit main text'},
+          { label: 'Apparatus', name: EDIT_MODE_APPARATUS, helpText: 'Add/Edit apparatus entries'},
+        ]
+
     })
+    this.modeToggle.on('toggle',  (ev) => {
+      thisObject.currentEditMode = ev.detail.currentOption
+      thisObject.verbose && console.log(`Edit mode changed to ${thisObject.currentEditMode}`)
+      if (thisObject.editingTextToken) {
+        thisObject._stopEditingMainText(thisObject.originalTokenText)
+      }
+      thisObject._clearSelection()
+    })
+    this._setupMainTextDivEventHandlers()
+  }
+
+  _setupMainTextDivEventHandlers() {
+    $(`${this.options.containerSelector} .main-text`)
+      .on('click', this._genOnClickMainTextDiv())
+      .on('mousedown', this._genOnMouseDownMainTextDiv())
+      .on('mouseup', this._genOnMouseUpMainTextDiv())
+      .on('mouseleave', this._genOnMouseLeaveDiv())
+    $(`${this.options.containerSelector} span.main-text-token`)
+      .on('click', this._genOnClickMainTextToken())
+      .on('mousedown', this._genOnMouseDownMainTextToken())
+      .on('mouseup', this._genOnMouseUpMainTexToken())
+      .on('mouseenter', this._genOnMouseEnterToken())
+      .on('mouseleave', this._genOnMouseLeaveToken())
+  }
+
+  _genOnMouseDownMainTextDiv() {
+    let thisObject = this
+    return (ev) => {
+      if (thisObject.currentEditMode !== EDIT_MODE_APPARATUS) {
+        return
+      }
+      ev.preventDefault()
+      ev.stopPropagation()
+      this._stopSelecting()
+      this._clearSelection()
+    }
+  }
+
+  _genOnMouseUpMainTextDiv() {
+    let thisObject = this
+    return (ev) => {
+      if (thisObject.currentEditMode !== EDIT_MODE_APPARATUS) {
+        return
+      }
+      ev.preventDefault()
+      ev.stopPropagation()
+      // thisObject.verbose && console.log(`Mouse up on main text div`)
+      if (thisObject.cursorInToken) {
+        return
+      }
+      if (thisObject.selecting) {
+        thisObject._stopSelecting()
+        thisObject._clearSelection()
+      }
+    }
+  }
+
+
+  _genOnClickMainTextDiv() {
+    let thisObject = this
+    return (ev) => {
+      if (thisObject.currentEditMode !== EDIT_MODE_APPARATUS) {
+        return
+      }
+      ev.preventDefault()
+      ev.stopPropagation()
+      // thisObject.verbose && console.log(`Click on main text div`)
+    }
+  }
+
+  _genOnClickMainTextToken() {
+    return (ev) => {
+      ev.stopPropagation()
+    }
+  }
+
+  _genOnMouseDownMainTextToken() {
+    // TODO: deal with right mouse click
+    let thisObject = this
+    return (ev) => {
+      ev.preventDefault()
+      ev.stopPropagation()
+      let tokenIndex = getIdFromClasses($(ev.target), 'main-text-token-')
+      if (thisObject.editingTextToken) {
+        return
+      }
+      switch(thisObject.currentEditMode) {
+        case EDIT_MODE_TEXT:
+          thisObject.verbose && console.log(`Click on main text token ${tokenIndex} in main text edit mode`)
+          let tokenSelector = `.main-text-token-${tokenIndex}`
+          thisObject.originalTokenText = $(tokenSelector).text()
+          thisObject.tokenBeingEdited = tokenIndex
+          thisObject.textTokenEditor = new EditableTextField({
+            containerSelector:  tokenSelector,
+            initialText: thisObject.originalTokenText,
+            startInEditMode: true
+          })
+          thisObject.textTokenEditor.on('confirm', (ev) => {
+            let newText = ev.detail.newText
+            console.log(`Confirming editing, new text = '${newText}'`)
+            // TODO: actually change the token in ctData and trigger updates in other panels
+            thisObject._stopEditingMainText(newText)
+          }).on('cancel', (ev) => {
+            console.log(`Canceling edit`)
+            thisObject._stopEditingMainText(thisObject.originalTokenText)
+          })
+          thisObject.editingTextToken = true
+          break
+
+        case EDIT_MODE_APPARATUS:
+          // thisObject.verbose && console.log(`Mouse down on main text ${tokenIndex} token in apparatus edit mode`)
+          thisObject._setSelection(tokenIndex, tokenIndex)
+          thisObject.tokenIndexOne = tokenIndex
+          thisObject._showSelectionInBrowser()
+          thisObject._processNewSelection()
+          thisObject._startSelecting()
+          break
+      }
+    }
+  }
+
+  _stopEditingMainText(text) {
+    if (this.editingTextToken)  {
+      this.textTokenEditor.destroy()
+      let tokenSelector = `.main-text-token-${this.tokenBeingEdited}`
+      this.tokenBeingEdited = -1
+      this.originalTokenText = '__null__'
+      this.editingTextToken = false
+      $(tokenSelector).html(text)
+        .on('click', this._genOnClickMainTextToken())
+        .on('mousedown', this._genOnMouseDownMainTextToken())
+        .on('mouseup', this._genOnMouseUpMainTexToken())
+        .on('mouseenter', this._genOnMouseEnterToken())
+        .on('mouseleave', this._genOnMouseLeaveToken())
+    }
+  }
+
+  _startSelecting() {
+    this.selecting = true
+  }
+
+  _stopSelecting() {
+    this.selecting = false
+  }
+
+  _processNewSelection() {
+    this.verbose && console.log(`New selection: ${this.selection.from} -> ${this.selection.to}`)
+  }
+
+  _clearSelectionInBrowser() {
+    $(`${this.options.containerSelector} .main-text-token`).removeClass('token-selected')
+    $(`${this.options.containerSelector} .whitespace`).removeClass('token-selected')
+  }
+
+  _clearSelection() {
+    if (this._selectionsAreEqual(this.selection, this._createSelection(-1, -1))) {
+      return
+    }
+    this._setSelection(-1, -1)
+    this._clearSelectionInBrowser()
+    this._processNewSelection()
+  }
+
+
+  _setSelection(token1, token2) {
+    this.selection = this._createSelection(token1, token2)
+  }
+
+  _selectionsAreEqual(sel1, sel2) {
+    return sel1.from === sel2.from && sel1.to === sel2.to
+  }
+
+  _createSelection(token1, token2) {
+    return {
+      from: Math.min(token1, token2),
+      to: Math.max(token1, token2)
+    }
+  }
+
+  _showSelectionInBrowser() {
+    this._clearSelectionInBrowser()
+    for (let i=this.selection.from; i <=this.selection.to; i++) {
+      $(`${this.options.containerSelector} .main-text-token-${i}`).addClass('token-selected')
+      if (i !== this.selection.to) {
+        $(`${this.options.containerSelector} .whitespace-token-${i}`).addClass('token-selected')
+      }
+    }
+  }
+
+  _genOnMouseLeaveDiv() {
+    let thisObject = this
+    return (ev) => {
+      if (thisObject.currentEditMode !== EDIT_MODE_APPARATUS) {
+        return
+      }
+      // thisObject.verbose && console.log(`Mouse leave main text div, selecting = ${thisObject.selecting}`)
+      if (thisObject.selecting) {
+        thisObject._stopSelecting()
+      }
+    }
+  }
+
+  _genOnMouseLeaveToken() {
+    let thisObject = this
+    return (ev) => {
+      if (thisObject.currentEditMode !== EDIT_MODE_APPARATUS) {
+        return
+      }
+      ev.stopPropagation()
+      thisObject.cursorInToken = false
+    }
+  }
+
+  _genOnMouseEnterToken() {
+    let thisObject = this
+    return (ev) => {
+      if (this.currentEditMode !== EDIT_MODE_APPARATUS) {
+        return
+      }
+      ev.preventDefault()
+      ev.stopPropagation()
+      thisObject.cursorInToken = true
+      if (thisObject.selecting) {
+        this.tokenIndexTwo =  getIdFromClasses($(ev.target), 'main-text-token-')
+        // console.log(`Mouse enter on token ${thisObject.tokenIndexTwo} while selecting`)
+        thisObject._setSelection(thisObject.tokenIndexOne, thisObject.tokenIndexTwo)
+        thisObject._showSelectionInBrowser()
+        thisObject._processNewSelection()
+      }
+    }
+  }
+
+  _genOnMouseUpMainTexToken() {
+    let thisObject = this
+    return (ev) => {
+      if (thisObject.currentEditMode !== EDIT_MODE_APPARATUS) {
+        return
+      }
+      ev.preventDefault()
+      ev.stopPropagation()
+      let tokenIndex = getIdFromClasses($(ev.target), 'main-text-token-')
+      // thisObject.verbose && console.log(`Mouse up on main text ${tokenIndex} token in apparatus edit mode`)
+      if (tokenIndex === -1) {
+        console.log(`Mouse up on a token -1`)
+        return
+      }
+
+      thisObject.tokenIndexTwo = tokenIndex
+      if (!thisObject._selectionsAreEqual(thisObject.selection, thisObject._createSelection(thisObject.tokenIndexOne, thisObject.tokenIndexTwo))) {
+        thisObject._setSelection(thisObject.tokenIndexOne, thisObject.tokenIndexTwo)
+        thisObject._showSelectionInBrowser()
+        thisObject._processNewSelection()
+      }
+      thisObject._stopSelecting()
+
+    }
   }
 
   _getTextDirection() {
@@ -212,31 +479,60 @@ export class EditionPanel extends Panel{
     let thisObject = this
     return wait(typesetInfoDelay).then( () => {
       thisObject.verbose && console.log(`Updating apparatuses div`)
-      $(`${thisObject.options.containerSelector} div.apparatuses`).html(thisObject._generateApparatusesHtml())
+      let apparatusesDiv = $(`${thisObject.options.containerSelector} div.apparatuses`)
+      if (!thisObject.upToDate) {
+        console.warn(`Trying to generate apparatuses html with out of date edition`)
+        apparatusesDiv.html( 'Apparatuses coming soon...')
+        return
+      }
+      let mainTextTokensWithTypesettingInfo =
+        getTypesettingInfo(this.options.containerSelector, 'main-text-token-', this.mainTextTokens)
+      this.verbose && console.log(`Typesetting info`)
+      this.verbose && console.log(mainTextTokensWithTypesettingInfo)
+      this._drawLineNumbers(mainTextTokensWithTypesettingInfo)
+      apparatusesDiv.html(thisObject._generateApparatusesHtml(mainTextTokensWithTypesettingInfo))
     })
   }
 
   _generateMainTextHtml(mainTextTokensWithSpaceObject) {
+    let lastTokenIndex = -1
     return mainTextTokensWithSpaceObject.mainTextTokensWithSpace.map( (token, i) => {
       if (token.type=== E_TOKEN_TYPE_GLUE) {
-        return ' '
+        if (lastTokenIndex !== -1) {
+          return `<span class="whitespace whitespace-token-${lastTokenIndex}"> </span>`
+        }
+        return ''
       }
-      let classes = [ 'main-text-token', `main-text-token-${mainTextTokensWithSpaceObject.tokensWithSpaceToMainTextTokensMap[i]}`]
+      let tokenIndex = mainTextTokensWithSpaceObject.tokensWithSpaceToMainTextTokensMap[i]
+      let classes = [ 'main-text-token', `main-text-token-${tokenIndex}`]
+      lastTokenIndex = tokenIndex
       return `<span class="${classes.join(' ')} ">${token.text}</span>`
     }).join('')
   }
 
-  _generateApparatusesHtml() {
-    if (!this.upToDate) {
-      console.warn(`Trying to generate apparatuses html with out of date edition`)
-      return 'Apparatuses coming soon...'
-    }
-    let mainTextTokensWithTypesettingInfo =
-      getTypesettingInfo(this.options.containerSelector, 'main-text-token-', this.mainTextTokens)
+  _drawLineNumbers(mainTextTokensWithTypesettingInfo) {
 
-    // this.verbose && console.log(`Typesetting info`)
-    // this.verbose && console.log(mainTextTokensWithTypesettingInfo)
+    let lineFrequency = 5
+    let mainTexDiv =  $(`${this.options.containerSelector} .main-text`)
+    let lineHeight = this.lang === 'la' ? 18 : 24
+    let offsetY = mainTexDiv.offset().top + lineHeight
+    let margin = this.lang === 'la' ? 'left' : 'right'
+    let posX = margin === 'left' ? 50 : 50
+    let thisObject = this
+    let lineNumberOverlays =  mainTextTokensWithTypesettingInfo.lineMap
+      .filter( (lineSpec) => { return lineSpec.line === 1 || (lineSpec.line % lineFrequency === 0)})
+      .map( (lineSpec) => {
+        let posY = lineSpec.pY - offsetY
+        let lineString = thisObject._getNumberString(lineSpec.line)
+        return `<div class="line-number text-${thisObject.lang}" style="position: absolute; top: ${posY}px; ${margin}: ${posX}px">${lineString}</div>`
+      })
+      .join('')
 
+    $('#main-text-line-numbers').remove()
+    mainTexDiv.append(`<div id="main-text-line-numbers">${lineNumberOverlays}</div>`)
+  }
+
+  _generateApparatusesHtml(mainTextTokensWithTypesettingInfo) {
     let html = ''
     let lastLine = ''
     let thisObject = this

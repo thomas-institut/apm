@@ -73,6 +73,11 @@ div.panel-content-area {
 svg.edition-svg {
     border: 1px solid #f0f0f0;
     margin: 20px;
+    overflow-x: visible;
+}
+
+#edition-svg-div {
+    overflow-x: visible;
 }
 
 
@@ -140,6 +145,14 @@ span.witness-update-info {
 div.main-text {
     overflow-y: auto;
     padding: 2em 5rem;
+    position: relative;
+    top: 0;
+    left: 0;
+}
+
+div.line-number {
+    line-height: 1rem;
+    font-size: 1rem;
 }
 
 div.apparatuses {
@@ -184,4 +197,8 @@ b.apparatus-line-number {
     border-radius: 5px;
     padding-right: 3px;
     padding-left: 3px;
+}
+
+.token-selected {
+    background: #bddeea;
 }

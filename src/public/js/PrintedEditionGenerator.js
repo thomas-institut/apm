@@ -16,7 +16,7 @@
  *
  */
 
-import * as TokenType from './constants/TokenType'
+import * as TokenType from './constants/TranscriptionTokenType'
 import { isPunctuationToken } from './toolbox/Util.mjs'
 import { SequenceWithGroups } from './SequenceWithGroups'
 import { Matrix } from '@thomas-inst/matrix'
@@ -260,55 +260,18 @@ export class PrintedEditionGenerator {
 
       switch (style) {
         case 'la':
-          switch (apparatusType) {
-            case ENTRY_TYPE_OMISSION:
-              typesetterTokens = ApparatusCommon.genOmissionEntryLatin(theText, variant.witnessIndices, sigla)
-              break
-
-            case ENTRY_TYPE_ADDITION:
-              typesetterTokens = ApparatusCommon.genAdditionEntryLatin(theText, variant.witnessIndices, sigla)
-              break
-
-            case ENTRY_TYPE_VARIANT:
-              typesetterTokens = ApparatusCommon.genVariantEntryLatin(theText, variant.witnessIndices, sigla)
-              break
-          }
+          typesetterTokens = ApparatusCommon.genEntryLatin(apparatusType, theText, variant.witnessIndices, sigla)
           break
 
         case 'he':
-          switch(apparatusType) {
-            case ENTRY_TYPE_OMISSION:
-              typesetterTokens = ApparatusCommon.genOmissionEntryHebrew(theText, variant.witnessIndices, sigla)
-              break
-
-            case ENTRY_TYPE_ADDITION:
-              typesetterTokens = ApparatusCommon.genAdditionEntryHebrew(theText, variant.witnessIndices, sigla)
-              break
-
-            case ENTRY_TYPE_VARIANT:
-              typesetterTokens = ApparatusCommon.genVariantEntryHebrew(theText, variant.witnessIndices, sigla)
-              break
-          }
+          typesetterTokens = ApparatusCommon.genEntryHebrew(apparatusType, theText, variant.witnessIndices, sigla)
           break
 
         case 'ar':
-          switch(apparatusType) {
-            case ENTRY_TYPE_OMISSION:
-              typesetterTokens = ApparatusCommon.genOmissionEntryArabic(theText, variant.witnessIndices, sigla)
-              break
-
-            case ENTRY_TYPE_ADDITION:
-              typesetterTokens = ApparatusCommon.genAdditionEntryArabic(theText, variant.witnessIndices, sigla)
-              break
-
-            case ENTRY_TYPE_VARIANT:
-              typesetterTokens = ApparatusCommon.genVariantEntryArabic(theText, variant.witnessIndices, sigla)
-              break
-          }
+          typesetterTokens = ApparatusCommon.genEntryArabic(apparatusType, theText, variant.witnessIndices, sigla)
           break
 
       }
-
 
       entries.push({
         type: apparatusType,

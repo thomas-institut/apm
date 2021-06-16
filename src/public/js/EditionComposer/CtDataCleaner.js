@@ -1,5 +1,23 @@
+/*
+ *  Copyright (C) 2021 Universität zu Köln
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ */
+
 import * as CollationTableType from '../constants/CollationTableType'
-import * as TokenType from '../constants/TokenType'
+import * as TranscriptionTokenType from '../constants/TranscriptionTokenType'
 import { Matrix } from '@thomas-inst/matrix'
 import * as TokenClass from '../constants/CollationTableType'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
@@ -93,7 +111,7 @@ export class CtDataCleaner {
       if (ref === -1) {
         console.log(`Adding empty token in edition witness at column ${i}`)
         foundNullRef = true
-        return { 'tokenClass':  TokenClass.EDITION, 'tokenType': TokenType.EMPTY, 'text': ''}
+        return { 'tokenClass':  TokenClass.EDITION, 'tokenType': TranscriptionTokenType.EMPTY, 'text': ''}
       }
       return editionWitnessTokens[ref]
     })
@@ -127,7 +145,7 @@ export class CtDataCleaner {
       let lastTokenInCt = -1
       let lastGoodCtCol = -1
       this.ctData['witnesses'][wIndex]['tokens'].forEach( (t, i) => {
-        if (t.tokenType === TokenType.WORD) {
+        if (t.tokenType === TranscriptionTokenType.WORD) {
           let ctIndex = row.indexOf(i)
           if (ctIndex === -1) {
             errorsFound = true

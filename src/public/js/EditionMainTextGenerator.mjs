@@ -17,7 +17,7 @@
  */
 
 
-import * as TokenType from './constants/TokenType.js'
+import * as TokenType from './constants/TranscriptionTokenType.js'
 
 const E_TOKEN_TYPE_TEXT = 'text'
 

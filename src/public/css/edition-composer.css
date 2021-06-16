@@ -151,8 +151,10 @@ div.main-text {
 }
 
 div.line-number {
-    line-height: 1rem;
-    font-size: 1rem;
+    font-size: 1em;
+    margin:0;
+    padding: 0;
+    line-height: 1em;
 }
 
 div.apparatuses {
@@ -191,6 +193,10 @@ div.apparatus {
     background: #efdf7c;
 }
 
+.apparatus-toolbar {
+    margin-left: 1rem
+}
+
 b.apparatus-line-number {
     font-size: 1.2em;
     border: 1px dotted #eeeeee;
@@ -201,4 +207,15 @@ b.apparatus-line-number {
 
 .token-selected {
     background: #bddeea;
+}
+
+h1.lemma {
+    font-size: 2em;
+    margin-bottom: 2rem;
+}
+
+/* apparatus style tweaks */
+
+.sub-entry small {
+    color: #575757;
 }

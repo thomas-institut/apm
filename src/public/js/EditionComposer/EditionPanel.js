@@ -1,3 +1,22 @@
+/*
+ *  Copyright (C) 2021 Universität zu Köln
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ */
+
+
 /**
  * Edition  Panel.
  *
@@ -15,6 +34,8 @@ import { BootstrapTabGenerator } from '../multi-panel-ui/BootstrapTabGenerator'
 import { capitalizeFirstLetter } from '../toolbox/Util.mjs'
 import * as ApparatusType from '../constants/ApparatusType'
 import { EditableTextField } from '../widgets/EditableTextField'
+import { ApparatusEntryInput } from './ApparatusEntryInput'
+import { ApparatusCommon } from './ApparatusCommon'
 
 const noGluePunctuation = '.,:;?!'
   + String.fromCodePoint(0x60C) // // Arabic comma
@@ -37,6 +58,10 @@ const EDIT_MODE_TEXT = 'text'
 const EDIT_MODE_APPARATUS = 'apparatus'
 
 const typesetInfoDelay = 200
+
+const icons = {
+  addEntry: '<i class="bi bi-plus-lg"></i>'
+}
 
 export class EditionPanel extends Panel{
 
@@ -102,7 +127,16 @@ export class EditionPanel extends Panel{
   }
 
   _getToolbarHtml() {
-    return `<div class="panel-toolbar"><div class="panel-toolbar-group" id="edition-panel-mode-toggle"></div></div>`
+    return `<div class="panel-toolbar">
+        <div class="panel-toolbar-group">
+            <div class="panel-toolbar-group" id="edition-panel-mode-toggle"></div>
+            <div class="panel-toolbar-group apparatus-toolbar">
+                <div class="panel-toolbar-item">
+                    <a class="add-entry-btn tb-button hidden" href="#" title="Add custom apparatus entry">${icons.addEntry}</a>
+                </div>
+            </div>
+        </div>
+    </div>`
   }
 
   getContentClasses () {
@@ -172,7 +206,42 @@ export class EditionPanel extends Panel{
       }
       thisObject._clearSelection()
     })
+    this._eleAddEntryButton().on('click', this._genOnClickAddEntryButton())
     this._setupMainTextDivEventHandlers()
+  }
+
+  _getLemmaFromSelection() {
+    if (this.isSelectionEmpty()) {
+      return ''
+    }
+    let lemma = ''
+    for (let i=this.selection.from; i <= this.selection.to; i++) {
+      lemma += $(`${this.options.containerSelector} .main-text-token-${i}`).text() + ' '
+    }
+    return lemma
+  }
+
+  _genOnClickAddEntryButton() {
+    let thisObject = this
+    return (ev) => {
+      ev.preventDefault()
+      ev.stopPropagation()
+      if (thisObject.currentEditMode !== EDIT_MODE_APPARATUS) {
+        return
+      }
+      thisObject.verbose && console.log(`Click on add entry button`)
+      let aei = new ApparatusEntryInput({
+        apparatuses:[ { name: 'criticus', title: 'Criticus'}, { name: 'fontium', title: 'Fontium'}],
+        lemma: this._getLemmaFromSelection(),
+        lang: this.lang
+      })
+      aei.getEntry().then( (newEntry) => {
+        thisObject.verbose && console.log(`Got new entry`)
+        thisObject.verbose && console.log(newEntry)
+      }).catch( (reason) => {
+        thisObject.verbose && console.log(`FAIL: ${reason}`)
+      })
+    }
   }
 
   _setupMainTextDivEventHandlers() {
@@ -192,6 +261,7 @@ export class EditionPanel extends Panel{
   _genOnMouseDownMainTextDiv() {
     let thisObject = this
     return (ev) => {
+
       if (thisObject.currentEditMode !== EDIT_MODE_APPARATUS) {
         return
       }
@@ -266,7 +336,7 @@ export class EditionPanel extends Panel{
             console.log(`Confirming editing, new text = '${newText}'`)
             // TODO: actually change the token in ctData and trigger updates in other panels
             thisObject._stopEditingMainText(newText)
-          }).on('cancel', (ev) => {
+          }).on('cancel', () => {
             console.log(`Canceling edit`)
             thisObject._stopEditingMainText(thisObject.originalTokenText)
           })
@@ -309,8 +379,22 @@ export class EditionPanel extends Panel{
     this.selecting = false
   }
 
+  _eleAddEntryButton() {
+    return $(`${this.options.containerSelector} a.add-entry-btn`)
+  }
+
   _processNewSelection() {
     this.verbose && console.log(`New selection: ${this.selection.from} -> ${this.selection.to}`)
+    let addEntryButton = this._eleAddEntryButton()
+    if (this.isSelectionEmpty()) {
+      addEntryButton.addClass('hidden')
+    } else {
+      addEntryButton.removeClass('hidden')
+    }
+  }
+
+  isSelectionEmpty() {
+    return this.selection.from === -1
   }
 
   _clearSelectionInBrowser() {
@@ -355,7 +439,7 @@ export class EditionPanel extends Panel{
 
   _genOnMouseLeaveDiv() {
     let thisObject = this
-    return (ev) => {
+    return () => {
       if (thisObject.currentEditMode !== EDIT_MODE_APPARATUS) {
         return
       }
@@ -514,8 +598,9 @@ export class EditionPanel extends Panel{
 
     let lineFrequency = 5
     let mainTexDiv =  $(`${this.options.containerSelector} .main-text`)
-    let lineHeight = this.lang === 'la' ? 18 : 24
-    let offsetY = mainTexDiv.offset().top + lineHeight
+    let lineHeight = this.lang === 'la' ? "1em" : "1.5em"
+
+    let offsetY = mainTexDiv.offset().top
     let margin = this.lang === 'la' ? 'left' : 'right'
     let posX = margin === 'left' ? 50 : 50
     let thisObject = this
@@ -524,7 +609,7 @@ export class EditionPanel extends Panel{
       .map( (lineSpec) => {
         let posY = lineSpec.pY - offsetY
         let lineString = thisObject._getNumberString(lineSpec.line)
-        return `<div class="line-number text-${thisObject.lang}" style="position: absolute; top: ${posY}px; ${margin}: ${posX}px">${lineString}</div>`
+        return `<div class="line-number text-${thisObject.lang}" style="position: absolute; top: ${posY}px; ${margin}: ${posX}px; line-height: ${lineHeight}">${lineString}</div>`
       })
       .join('')
 
@@ -544,9 +629,11 @@ export class EditionPanel extends Panel{
           id: `apparatus-${i}-div`,
           title: tabTitle,
           linkTitle: `Click to see apparatus ${thisObject._getTitleForApparatusType(apparatus.type)}`,
-          contentClasses: [ 'apparatus',`apparatus-${i}`, `text-${thisObject.ctData['lang']}`],
+          contentClasses: [ 'apparatus',`apparatus-${i}`, `text-${thisObject.lang}`],
           content: () => {
             html = ''
+            thisObject.verbose && console.log(`Generating html for apparatus ${tabTitle}`)
+            thisObject.verbose && console.log(apparatus)
             apparatus.entries.forEach( (apparatusEntry, aeIndex) => {
               html += `<span class="apparatus-entry apparatus-entry-${i}-${aeIndex}">`
               let currentLine = thisObject._getLineNumberString(apparatusEntry, mainTextTokensWithTypesettingInfo)
@@ -558,15 +645,9 @@ export class EditionPanel extends Panel{
               }
               html +=  `${lineHtml} <span class="lemma lemma-${i}-${aeIndex}">${apparatusEntry.lemma}</span>] `
               apparatusEntry.entries.forEach( (subEntry, subEntryIndex) => {
-                let subEntryTitle = ''
-                if (subEntry.type === 'addition') {
-                  subEntryTitle =  '+'
-                }
-                if (subEntry.type === 'omission') {
-                  subEntryTitle = '-'
-                }
-                html+=  `<span class="sub-entry sub-entry-${subEntryIndex}">${subEntryTitle} ${subEntry.text} ${thisObject._getSiglaHtmlFromWitnessDataArray(subEntry.witnessData)}</span>`
-                html += '&nbsp;&nbsp;&nbsp;'
+                html+= `<span class="sub-entry sub-entry-${subEntryIndex}">
+                            ${ApparatusCommon.genEntryHtmlContent(thisObject.lang, subEntry, thisObject.ctData['sigla'])}
+                        </span>&nbsp;&nbsp;&nbsp;`
               })
               html += '</span>'
             })
@@ -608,9 +689,6 @@ export class EditionPanel extends Panel{
     return `${this._getNumberString(startLine)}-${this._getNumberString(endLine)}`
   }
 
-  _getSiglaHtmlFromWitnessDataArray(witnessData) {
-    return witnessData.map( (wd) => { return this.options.ctData['sigla'][wd.witnessIndex]}).join('')
-  }
 
   _getTitleForApparatusType(type) {
     return 'Apparatus ' + capitalizeFirstLetter(type)

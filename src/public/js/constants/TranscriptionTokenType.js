@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2021 Universität zu Köln
+ *  Copyright (C) 2019-21 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,7 +16,8 @@
  *
  */
 
-export const CRITICUS = 'criticus'
-export const FONTIUM = 'fontium'
-export const TESTIMONIA = 'testimonia'
-export const COMPARATIVE = 'comparative'
+
+export const WORD = 'word';
+export const WHITESPACE = 'whitespace';
+export const PUNCTUATION = 'punctuation';
+export const EMPTY = 'empty';

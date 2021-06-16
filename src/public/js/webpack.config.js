@@ -18,10 +18,6 @@ module.exports = {
       import: './pages/CollationTableEditor.js',
       filename: 'CollationTableEditor.bundle.js'
     },
-    CollationTableEditorNew: {
-      import: './pages/CollationTableEditorNew.js',
-      filename: 'CollationTableEditorNew.bundle.js'
-    },
     EditionComposer: {
       import: './EditionComposer/EditionComposer.js',
       filename: 'EditionComposer.bundle.js'

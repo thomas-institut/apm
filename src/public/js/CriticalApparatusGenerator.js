@@ -16,53 +16,38 @@
  *
  */
 
-import * as TokenType from './constants/TokenType'
+import * as TokenType from './constants/TranscriptionTokenType'
 import { isPunctuationToken } from './toolbox/Util.mjs'
 import { SequenceWithGroups } from './SequenceWithGroups'
 import { Matrix } from '@thomas-inst/matrix'
 import * as NormalizationSource from './constants/NormalizationSource'
 import {ApparatusCommon} from './EditionComposer/ApparatusCommon'
 import { generateMainText} from './EditionMainTextGenerator.mjs'
-
-
-const ENTRY_TYPE_ADDITION = 'addition'
-const ENTRY_TYPE_OMISSION = 'omission'
-const ENTRY_TYPE_VARIANT = 'variant'
+import * as ApparatusEntryType from './constants/ApparatusEntryType'
 
 
 export class CriticalApparatusGenerator {
 
   constructor (options) {
-
-
   }
 
   /**
    * Generates an automatic critical apparatus from the given collation table data (which can
    * be an edition too) using the given witness index as the main text.
    *
-   * An critical edition apparatus consists of
-   *
    * @param ctData
    * @param baseWitnessIndex
-   * @returns {[]}
+   * @returns object
    */
   generateCriticalApparatus(ctData, baseWitnessIndex = 0) {
-    // let profiler = new SimpleProfiler('criticalApparatusGeneration')
 
-    // let mainTextInputTokens = this.getWitnessTokensFromReferenceRow(ctData, baseWitnessIndex)
-
-    // Construct an array with main text tokens: a map of the base witness' row in the collation
-    // table exchanging the references for the actual tokens and filling the null references with empty tokens
+    // 1. Construct an array with main text tokens: a map of the base witness' row in the collation
+    //    table exchanging the references for the actual tokens and filling the null references with empty tokens
     let mainTextTokens = ctData['collationMatrix'][baseWitnessIndex]
       .map( tokenRef => tokenRef === -1 ? { tokenType : TokenType.EMPTY } : ctData['witnesses'][baseWitnessIndex]['tokens'][tokenRef])
 
     let generatedNormalizedMainText = generateMainText(mainTextTokens, true)
-    // console.log(`Normalized main text`)
-    // console.log(generatedNormalizedMainText)
     let generatedMainText = generateMainText(mainTextTokens, true, [ NormalizationSource.AUTOMATIC_COLLATION, NormalizationSource.COLLATION_EDITOR_AUTOMATIC])
-    // console.log(`Main text`)
-    // console.log(generatedMainText)
 
     let columnGroups = this._getGroupsFromCtData(ctData)
     // TODO: detect a series of empty main text tokens at the beginning of the text and create a group with them
@@ -117,7 +102,7 @@ export class CriticalApparatusGenerator {
           let witnessData = this.createWitnessData(witnessIndex)
           this._addWitnessDataToVariantArray(additions, theText, witnessData)
         }
-        let entries = this._genApparatusEntryFromArray([], additions, ENTRY_TYPE_ADDITION)
+        let entries = this._genApparatusEntryFromArray([], additions, ApparatusEntryType.ADDITION)
         if (entries.length !== 0) {
             criticalApparatus.push({
               start: mainTextIndex,
@@ -172,8 +157,8 @@ export class CriticalApparatusGenerator {
           generatedNormalizedMainText.ctToMainTextMap, generatedNormalizedMainText.mainTextTokens, false)
       }
 
-      let entries =  this._genApparatusEntryFromArray([],groupOmissions, ENTRY_TYPE_OMISSION)
-      entries = this._genApparatusEntryFromArray(entries, groupVariants, ENTRY_TYPE_VARIANT)
+      let entries =  this._genApparatusEntryFromArray([],groupOmissions, ApparatusEntryType.OMISSION)
+      entries = this._genApparatusEntryFromArray(entries, groupVariants, ApparatusEntryType.VARIANT)
       if (entries.length !== 0) {
         criticalApparatus.push({
           lemma: mainText,
@@ -183,7 +168,6 @@ export class CriticalApparatusGenerator {
         })
       }
     })
-    // profiler.stop()
 
     return {
       baseWitnessIndex: baseWitnessIndex,
@@ -245,14 +229,13 @@ export class CriticalApparatusGenerator {
     return entries
   }
 
-  getWitnessTokensFromReferenceRow(ctData, witnessIndex) {
-    return ctData['collationMatrix'][witnessIndex]
-      .map( tokenRef => tokenRef === -1 ? { tokenType : TokenType.EMPTY } : ctData['witnesses'][witnessIndex]['tokens'][tokenRef] )
-  }
+  // getWitnessTokensFromReferenceRow(ctData, witnessIndex) {
+  //   return ctData['collationMatrix'][witnessIndex]
+  //     .map( tokenRef => tokenRef === -1 ? { tokenType : TokenType.EMPTY } : ctData['witnesses'][witnessIndex]['tokens'][tokenRef] )
+  // }
 
 
   _getRowTextFromGroupMatrix(matrix, rowNumber) {
-    let thisObject = this
     return matrix.getColumn(rowNumber)
       .map( (token) => {
         if (token.tokenType === TokenType.EMPTY) {

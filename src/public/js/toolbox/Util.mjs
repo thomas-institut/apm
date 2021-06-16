@@ -158,3 +158,15 @@ export function getIntegerSuffix(someString, prefix) {
 export function capitalizeFirstLetter(string) {
   return string[0].toUpperCase() + string.slice(1);
 }
+
+
+export function getTextDirectionForLang(lang) {
+  switch(lang) {
+    case 'ar':
+    case 'he':
+      return 'rtl'
+
+    default:
+      return 'ltr'
+  }
+}

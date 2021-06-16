@@ -20,8 +20,8 @@ import { defaultLanguageDefinition } from '../defaults/languages'
 import * as CollationTableType from '../constants/CollationTableType'
 import * as CollationTableInitStrategy from '../constants/CollationTableConversionInitStrategy'
 import * as WitnessType from '../constants/WitnessType'
-import * as TokenType from '../constants/TokenType'
-import * as TokenClass from '../constants/TokenClass'
+import * as TranscriptionTokenType from '../constants/TranscriptionTokenType'
+import * as TokenClass from '../constants/TranscriptionTokenClass'
 import * as NormalizationSource from '../constants/NormalizationSource'
 
 
@@ -45,11 +45,9 @@ import * as Util from '../toolbox/Util.mjs'
 import * as ArrayUtil from '../toolbox/ArrayUtil'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { Matrix } from '@thomas-inst/matrix'
-import { CriticalApparatusGenerator } from '../CriticalApparatusGenerator'
-import { EditionViewerHtml } from '../EditionViewerHtml'
 import { ConfirmDialog } from '../ConfirmDialog'
 import { VERBOSITY_DEBUG_PLUS, WitnessDiffCalculator } from '../WitnessDiffCalculator'
-import { FULL_TX } from '../constants/TokenClass'
+import { FULL_TX } from '../constants/TranscriptionTokenClass'
 
 // Normalizations
 
@@ -67,7 +65,6 @@ import { IgnoreIsolatedHamzaNormalizer } from '../normalizers/IgnoreIsolatedHamz
 // constants
 
 export class CollationTableEditor {
-  //collationTable;
 
   constructor(options) {
 
@@ -191,8 +188,6 @@ export class CollationTableEditor {
     this.ctDivId = 'collationtablediv'
     this.ctDiv = $('#' + this.ctDivId)
     this.editionSvgDiv = $('#edition-svg-div')
-    this.editionHtmlDiv = $('#edition-html-container')
-    // this.editionEngineInfoDiv = $('#edition-engine-info-div')
     this.saveButton = $('#savebutton')
     this.saveMsg = $('#save-msg')
     this.lastSaveSpan = $('#lastSave')
@@ -369,14 +364,14 @@ export class CollationTableEditor {
     this.setCsvDownloadFile()
     this.updateEditionPreview()
 
-    $('#edition-tab-title-new').on('click', () => {
-      console.log('New Panel clicked')
-      if (thisObject.editionViewerHtml !== undefined) {
-        thisObject.editionViewerHtml.renderApparatuses()
-        setTimeout(() => {
-        thisObject.fitEditionDivToViewPort() }, 250)
-      }
-    })
+    // $('#edition-tab-title-new').on('click', () => {
+    //   console.log('New Panel clicked')
+    //   if (thisObject.editionViewerHtml !== undefined) {
+    //     thisObject.editionViewerHtml.renderApparatuses()
+    //     setTimeout(() => {
+    //     thisObject.fitEditionDivToViewPort() }, 250)
+    //   }
+    // })
 
     $(window).on('beforeunload', function() {
       if (thisObject.unsavedChanges || thisObject.convertingToEdition) {
@@ -409,7 +404,7 @@ export class CollationTableEditor {
       // console.log(`Processing witness ${i}`)
       let changesInWitness = false
       let newWitnessTokens = this.ctData['witnesses'][i]['tokens'].map( (token) => {
-        if (token['tokenType'] === TokenType.WORD) {
+        if (token['tokenType'] === TranscriptionTokenType.WORD) {
           if (normalizationsToApply.length !== 0) {
             // overwrite normalizations with newly calculated ones
             if (token['normalizationSource'] === undefined ||
@@ -534,7 +529,7 @@ export class CollationTableEditor {
       let lastTokenInCt = -1
       let lastGoodCtCol = -1
       this.ctData['witnesses'][wIndex]['tokens'].forEach( (t, i) => {
-        if (t.tokenType === TokenType.WORD) {
+        if (t.tokenType === TranscriptionTokenType.WORD) {
           let ctIndex = row.indexOf(i)
           if (ctIndex === -1) {
             errorsFound = true
@@ -728,7 +723,7 @@ export class CollationTableEditor {
       if (ref === -1) {
         console.log(`Adding empty token in edition witness at column ${i}`)
         foundNullRef = true
-        return { 'tokenClass':  TokenClass.EDITION, 'tokenType': TokenType.EMPTY, 'text': ''}
+        return { 'tokenClass':  TokenClass.EDITION, 'tokenType': TranscriptionTokenType.EMPTY, 'text': ''}
       }
       return editionWitnessTokens[ref]
     })
@@ -766,19 +761,15 @@ export class CollationTableEditor {
   }
 
   fitEditionDivToViewPort() {
-    let ctDivTop = this.editionHtmlDiv.offset().top
-    let windowHeight = document.defaultView.innerHeight
-    let currentHeight = this.editionHtmlDiv.height()
-    let newHeight = windowHeight - ctDivTop - 20
-    if (newHeight !== currentHeight) {
-      //console.log(`Current H: ${currentHeight}, newHeight: ${newHeight}`)
-      this.editionHtmlDiv.height(newHeight)
-    }
+    // let ctDivTop = this.editionHtmlDiv.offset().top
+    // let windowHeight = document.defaultView.innerHeight
+    // let currentHeight = this.editionHtmlDiv.height()
+    // let newHeight = windowHeight - ctDivTop - 20
+    // if (newHeight !== currentHeight) {
+    //   //console.log(`Current H: ${currentHeight}, newHeight: ${newHeight}`)
+    //   this.editionHtmlDiv.height(newHeight)
+    // }
   }
-  //
-  // editMode() {
-  //   return this.modeToggle.getOption()
-  // }
 
   genOnClickExportPdfButton() {
     let thisObject = this
@@ -1531,7 +1522,7 @@ export class CollationTableEditor {
           let theMatrixCol = thisObject.tableEditor.getMatrix().getColumn(col)
           let editionWitnessIndex = thisObject.ctData['witnessOrder'][0]
           let editionToken = thisObject.ctData['witnesses'][editionWitnessIndex]['tokens'][theMatrixCol[0]]
-          if (editionToken !== undefined && editionToken.tokenType !== TokenType.EMPTY) {
+          if (editionToken !== undefined && editionToken.tokenType !== TranscriptionTokenType.EMPTY) {
             // an undefined editionToken means that the edition token is empty
             return false
           }
@@ -1551,7 +1542,7 @@ export class CollationTableEditor {
 
   getEditionWitnessTokensFromMatrixRow(currentTokens, matrixRow) {
     return matrixRow.map(
-      ref => ref === -1 ?  { tokenClass: TokenClass.EDITION, tokenType: TokenType.EMPTY,text: ''} : currentTokens[ref]
+      ref => ref === -1 ?  { tokenClass: TokenClass.EDITION, tokenType: TranscriptionTokenType.EMPTY,text: ''} : currentTokens[ref]
     )
   }
 
@@ -1564,7 +1555,7 @@ export class CollationTableEditor {
 
       let witnessIndex = thisObject.ctData['witnessOrder'][row]
       let token = thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]
-      return token.tokenType === TokenType.EMPTY
+      return token.tokenType === TranscriptionTokenType.EMPTY
     }
   }
 
@@ -1928,12 +1919,12 @@ export class CollationTableEditor {
       if (newText === '') {
         // empty token
         thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = newText
-        thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] = TokenType.EMPTY
+        thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] = TranscriptionTokenType.EMPTY
       } else  {
-        let tokenType = Util.isPunctuationToken(newText) ? TokenType.PUNCTUATION : TokenType.WORD
+        let tokenType = Util.isPunctuationToken(newText) ? TranscriptionTokenType.PUNCTUATION : TranscriptionTokenType.WORD
         thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = newText
         thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] = tokenType
-        if (tokenType === TokenType.WORD) {
+        if (tokenType === TranscriptionTokenType.WORD) {
           if (thisObject.ctData['automaticNormalizationsApplied'].length !== 0) {
             // apply normalizations for this token
             let norm = thisObject.normalizerRegister.applyNormalizerList(thisObject.ctData['automaticNormalizationsApplied'], newText)
@@ -2673,25 +2664,8 @@ export class CollationTableEditor {
     })
   }
 
-  // getColumnGroups() {
-  //   this.tableEditor.getColumnGroups()
-  // }
-
   updateEditionPreview() {
     this.editionSvgDiv.html("Generating printed edition preview... <i class=\"fa fa-spinner fa-spin fa-fw\"></i>")
-
-    // TESTING THE NEW GENERATOR
-    let apparatusGenerator = new CriticalApparatusGenerator()
-    let genCriticalApp =apparatusGenerator.generateCriticalApparatus(this.ctData, this.ctData['witnessOrder'][0])
-    console.log(`Generated critical apparatus (NEW)`)
-    console.log(genCriticalApp)
-    this.editionViewerHtml = new EditionViewerHtml({
-      ctData: this.ctData,
-      mainTextTokens: genCriticalApp.mainTextTokens,
-      containerSelector: '#edition-html-container',
-      apparatusArray: [ { type: 'critical', entries: genCriticalApp.criticalApparatus} ]
-    })
-    this.editionViewerHtml.renderMainText()
 
     let peg = new PrintedEditionGenerator()
     let edition = peg.generateEdition(this.ctData, this.ctData['witnessOrder'][0])

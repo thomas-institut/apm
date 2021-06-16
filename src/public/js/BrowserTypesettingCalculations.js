@@ -22,7 +22,7 @@ export function getTypesettingInfo(containerSelector, classPrefix, tokens) {
   let tokensWithInfo = tokens.map( (t, i) => {
     let span = $(`${containerSelector} .${classPrefix}${i}`)
     let position = span.offset()
-    let pY = position.top + span.height()
+    let pY = position.top
     yPositions.push(pY)
     t.x = position.left
     t.y = pY

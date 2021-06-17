@@ -28,7 +28,6 @@ import { CriticalApparatusGenerator } from '../CriticalApparatusGenerator'
 import { getIdFromClasses, maximizeElementHeightInParent } from '../toolbox/UserInterfaceUtil'
 import {getTypesettingInfo} from '../BrowserTypesettingCalculations'
 import { wait } from '../toolbox/FunctionUtil'
-import { NumeralStyles } from '../NumeralStyles'
 import { MultiToggle } from '../widgets/MultiToggle'
 import { BootstrapTabGenerator } from '../multi-panel-ui/BootstrapTabGenerator'
 import { capitalizeFirstLetter } from '../toolbox/Util.mjs'
@@ -98,7 +97,7 @@ export class EditionPanel extends Panel{
   _recalculateCriticalApparatusIfNeeded() {
     if (!this.upToDate) {
       let apparatusGenerator = new CriticalApparatusGenerator()
-      let generatedCriticalApparatus = apparatusGenerator.generateCriticalApparatus(this.ctData, this.ctData['witnessOrder'][0])
+      let generatedCriticalApparatus = apparatusGenerator.generateCriticalApparatus(this.ctData)
       this.mainTextTokens = generatedCriticalApparatus['mainTextTokens']
       this.apparatusArray = [ { type: ApparatusType.CRITICUS, entries: generatedCriticalApparatus['criticalApparatus']} ].concat(
         this.ctData['customApparatuses']
@@ -588,7 +587,7 @@ export class EditionPanel extends Panel{
         return ''
       }
       let tokenIndex = mainTextTokensWithSpaceObject.tokensWithSpaceToMainTextTokensMap[i]
-      let classes = [ 'main-text-token', `main-text-token-${tokenIndex}`]
+      let classes = [ 'main-text-token', `main-text-token-${tokenIndex}`, `ct-index-${token.collationTableIndex}`]
       lastTokenIndex = tokenIndex
       return `<span class="${classes.join(' ')} ">${token.text}</span>`
     }).join('')
@@ -608,7 +607,7 @@ export class EditionPanel extends Panel{
       .filter( (lineSpec) => { return lineSpec.line === 1 || (lineSpec.line % lineFrequency === 0)})
       .map( (lineSpec) => {
         let posY = lineSpec.pY - offsetY
-        let lineString = thisObject._getNumberString(lineSpec.line)
+        let lineString = ApparatusCommon.getNumberString(lineSpec.line, this.lang)
         return `<div class="line-number text-${thisObject.lang}" style="position: absolute; top: ${posY}px; ${margin}: ${posX}px; line-height: ${lineHeight}">${lineString}</div>`
       })
       .join('')
@@ -644,9 +643,9 @@ export class EditionPanel extends Panel{
                 lastLine = currentLine
               }
               html +=  `${lineHtml} <span class="lemma lemma-${i}-${aeIndex}">${apparatusEntry.lemma}</span>] `
-              apparatusEntry.entries.forEach( (subEntry, subEntryIndex) => {
+              apparatusEntry.subEntries.forEach( (subEntry, subEntryIndex) => {
                 html+= `<span class="sub-entry sub-entry-${subEntryIndex}">
-                            ${ApparatusCommon.genEntryHtmlContent(thisObject.lang, subEntry, thisObject.ctData['sigla'])}
+                            ${ApparatusCommon.genSubEntryHtmlContent(thisObject.lang, subEntry, thisObject.ctData['sigla'])}
                         </span>&nbsp;&nbsp;&nbsp;`
               })
               html += '</span>'
@@ -663,18 +662,10 @@ export class EditionPanel extends Panel{
     return tabGen.generateHtml()
   }
 
-  _getNumberString(n) {
-    if (this.lang === 'ar') {
-      return NumeralStyles.toDecimalArabic(n)
-    }
-    return NumeralStyles.toDecimalWestern(n)
-  }
-
-
   _getLineNumberString(apparatusEntry, mainTextTokensWithTypesettingInfo) {
     if (mainTextTokensWithTypesettingInfo.tokens[apparatusEntry.start] === undefined) {
       // before the main text
-      return this._getNumberString(1)
+      return ApparatusCommon.getNumberString(1, this.lang)
     }
 
     let startLine = mainTextTokensWithTypesettingInfo.tokens[apparatusEntry.start].lineNumber
@@ -684,9 +675,9 @@ export class EditionPanel extends Panel{
     }
     endLine = mainTextTokensWithTypesettingInfo.tokens[apparatusEntry.end].lineNumber
     if (startLine === endLine) {
-      return this._getNumberString(startLine)
+      return  ApparatusCommon.getNumberString(startLine, this.lang)
     }
-    return `${this._getNumberString(startLine)}-${this._getNumberString(endLine)}`
+    return `${ApparatusCommon.getNumberString(startLine, this.lang)}-${ApparatusCommon.getNumberString(endLine, this.lang)}`
   }
 
 

@@ -260,15 +260,15 @@ export class PrintedEditionGenerator {
 
       switch (style) {
         case 'la':
-          typesetterTokens = ApparatusCommon.genEntryLatin(apparatusType, theText, variant.witnessIndices, sigla)
+          typesetterTokens = ApparatusCommon.typesetSubEntryLatin(apparatusType, theText, variant.witnessIndices, sigla)
           break
 
         case 'he':
-          typesetterTokens = ApparatusCommon.genEntryHebrew(apparatusType, theText, variant.witnessIndices, sigla)
+          typesetterTokens = ApparatusCommon.typesetSubEntryHebrew(apparatusType, theText, variant.witnessIndices, sigla)
           break
 
         case 'ar':
-          typesetterTokens = ApparatusCommon.genEntryArabic(apparatusType, theText, variant.witnessIndices, sigla)
+          typesetterTokens = ApparatusCommon.typesetSubEntryArabic(apparatusType, theText, variant.witnessIndices, sigla)
           break
 
       }

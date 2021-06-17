@@ -23,15 +23,16 @@
 import * as TypesetterTokenFactory from '../TypesetterTokenFactory'
 import * as TokenType from '../constants/TranscriptionTokenType'
 import { isPunctuationToken } from '../toolbox/Util.mjs'
-import * as ApparatusEntryType from '../constants/ApparatusEntryType'
+import * as ApparatusSubEntryType from '../constants/ApparatusEntryType'
+import { NumeralStyles } from '../NumeralStyles'
 
-const INPUT_TOKEN_FIELD_TYPE = 'tokenType'
+// const INPUT_TOKEN_FIELD_TYPE = 'tokenType'
 const INPUT_TOKEN_FIELD_TEXT = 'text'
 const INPUT_TOKEN_FIELD_NORMALIZED_TEXT = 'normalizedText'
 const INPUT_TOKEN_FIELD_NORMALIZATION_SOURCE = 'normalizationSource'
 
 
-const thinSpace = String.fromCodePoint(0x2009)
+// const thinSpace = String.fromCodePoint(0x2009)
 
 
 
@@ -62,16 +63,16 @@ const hebrewStyle = {
 
 export class ApparatusCommon {
 
-  static genEntryHtmlContent(style, subEntry, sigla) {
+  static genSubEntryHtmlContent(style, subEntry, sigla) {
     switch(style) {
       case 'la':
-        return this.genEntryLatinHtml(subEntry, sigla)
+        return this.genSubEntryHtmlContentLatin(subEntry, sigla)
 
       case 'ar':
-        return this.genEntryArabicHtml(subEntry, sigla)
+        return this.genSubEntryHtmlContentArabic(subEntry, sigla)
 
       case 'he':
-        return this.genEntryHebrewHtml(subEntry, sigla)
+        return this.genSubEntryHtmlContentHebrew(subEntry, sigla)
 
       default:
         console.warn(`Unsupported style/language ${style}`)
@@ -79,25 +80,25 @@ export class ApparatusCommon {
     }
   }
 
-  static genEntryHebrew(entryType, theText, witnessIndices, sigla) {
+  static typesetSubEntryHebrew(subEntryType, theText, witnessIndices, sigla) {
     // TODO: use witnessData instead of witnessIndices, like in the html version
     let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join('')
-    switch(entryType) {
-      case ApparatusEntryType.VARIANT:
+    switch(subEntryType) {
+      case ApparatusSubEntryType.VARIANT:
         return [
           TypesetterTokenFactory.simpleText(theText),
           TypesetterTokenFactory.normalSpace(),
           TypesetterTokenFactory.simpleText(siglaString).setBold()
         ]
 
-      case ApparatusEntryType.OMISSION:
+      case ApparatusSubEntryType.OMISSION:
         return [
           TypesetterTokenFactory.simpleText(hebrewStyle.strings.omission).setFontSize(hebrewStyle.smallFontFactor),
           TypesetterTokenFactory.normalSpace(),
           TypesetterTokenFactory.simpleText(siglaString).setBold()
         ]
 
-      case ApparatusEntryType.ADDITION:
+      case ApparatusSubEntryType.ADDITION:
         return [
           TypesetterTokenFactory.simpleText(hebrewStyle.strings.addition).setFontSize(hebrewStyle.smallFontFactor),
           TypesetterTokenFactory.normalSpace(),
@@ -106,32 +107,32 @@ export class ApparatusCommon {
           TypesetterTokenFactory.simpleText(siglaString).setBold()
         ]
 
-      case ApparatusEntryType.SIMPLE_TEXT:
+      case ApparatusSubEntryType.SIMPLE_TEXT:
         return [
           TypesetterTokenFactory.simpleText(theText)
         ]
 
       default:
-        console.warn(`Unsupported apparatus entry type: ${entryType}`)
+        console.warn(`Unsupported apparatus entry type: ${subEntryType}`)
         return []
     }
   }
 
-  static genEntryHebrewHtml(subEntry, sigla) {
+  static genSubEntryHtmlContentHebrew(subEntry, sigla) {
     let entryType = subEntry.type
     let theText = subEntry.text
-    let siglaString = subEntry.witnessData.map( (w) => { return sigla[w.witnessIndex]}).join('')
+    let siglaString = this._genSiglaHtmlFromWitnessData(subEntry, sigla)
     switch(entryType) {
-      case ApparatusEntryType.VARIANT:
+      case ApparatusSubEntryType.VARIANT:
         return `${theText} <b>${siglaString}</b>`
 
-      case ApparatusEntryType.OMISSION:
+      case ApparatusSubEntryType.OMISSION:
         return `<small>${hebrewStyle.strings.omission}</small> <b>${siglaString}</b>`
 
-      case ApparatusEntryType.ADDITION:
+      case ApparatusSubEntryType.ADDITION:
         return `<small>${hebrewStyle.strings.addition}</small> ${theText} <b>${siglaString}</b>`
 
-      case ApparatusEntryType.SIMPLE_TEXT:
+      case ApparatusSubEntryType.SIMPLE_TEXT:
         return theText
 
       default:
@@ -140,25 +141,25 @@ export class ApparatusCommon {
     }
   }
 
-  static genEntryArabic(entryType, theText, witnessIndices, sigla) {
+  static typesetSubEntryArabic(entryType, theText, witnessIndices, sigla) {
     // TODO: use witnessData instead of witnessIndices, like in the html version
     let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join('')
     switch(entryType) {
-      case ApparatusEntryType.VARIANT:
+      case ApparatusSubEntryType.VARIANT:
         return [
           TypesetterTokenFactory.simpleText(theText),
           TypesetterTokenFactory.normalSpace(),
           TypesetterTokenFactory.simpleText(siglaString)
         ]
 
-      case ApparatusEntryType.OMISSION:
+      case ApparatusSubEntryType.OMISSION:
         return [
           TypesetterTokenFactory.simpleText(arabicStyle.strings.omission).setFontSize(arabicStyle.smallFontFactor),
           TypesetterTokenFactory.normalSpace(),
           TypesetterTokenFactory.simpleText(siglaString)
         ]
 
-      case ApparatusEntryType.ADDITION:
+      case ApparatusSubEntryType.ADDITION:
         return [
           TypesetterTokenFactory.simpleText(arabicStyle.strings.addition).setFontSize(arabicStyle.smallFontFactor),
           TypesetterTokenFactory.normalSpace(),
@@ -167,7 +168,7 @@ export class ApparatusCommon {
           TypesetterTokenFactory.simpleText(siglaString)
         ]
 
-      case ApparatusEntryType.SIMPLE_TEXT:
+      case ApparatusSubEntryType.SIMPLE_TEXT:
         return [
           TypesetterTokenFactory.simpleText(theText)
         ]
@@ -178,21 +179,21 @@ export class ApparatusCommon {
     }
   }
 
-  static genEntryArabicHtml(subEntry, sigla) {
+  static genSubEntryHtmlContentArabic(subEntry, sigla) {
     let entryType = subEntry.type
     let theText = subEntry.text
-    let siglaString = subEntry.witnessData.map( (w) => { return sigla[w.witnessIndex]}).join('')
+    let siglaString = this._genSiglaHtmlFromWitnessData(subEntry, sigla,  'ar')
     switch(entryType) {
-      case ApparatusEntryType.VARIANT:
+      case ApparatusSubEntryType.VARIANT:
         return `${theText} ${siglaString}`
 
-      case ApparatusEntryType.OMISSION:
+      case ApparatusSubEntryType.OMISSION:
         return `<small>${arabicStyle.strings.omission}</small> ${siglaString}`
 
-      case ApparatusEntryType.ADDITION:
+      case ApparatusSubEntryType.ADDITION:
         return `<small>${arabicStyle.strings.addition}</small> ${theText} ${siglaString}`
 
-      case ApparatusEntryType.SIMPLE_TEXT:
+      case ApparatusSubEntryType.SIMPLE_TEXT:
         return theText
 
       default:
@@ -202,25 +203,25 @@ export class ApparatusCommon {
   }
 
 
-  static genEntryLatin(entryType, theText, witnessIndices, sigla) {
+  static typesetSubEntryLatin(subEntryType, theText, witnessIndices, sigla) {
     // TODO: use witnessData instead of witnessIndices, like in the html version
     let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join('')
-    switch(entryType) {
-      case ApparatusEntryType.VARIANT:
+    switch(subEntryType) {
+      case ApparatusSubEntryType.VARIANT:
         return [
           TypesetterTokenFactory.simpleText(theText),
           TypesetterTokenFactory.normalSpace(),
           TypesetterTokenFactory.simpleText(siglaString)
         ]
 
-      case ApparatusEntryType.OMISSION:
+      case ApparatusSubEntryType.OMISSION:
         return [
           TypesetterTokenFactory.simpleText(latinStyle.strings.omission).setItalic(),
           TypesetterTokenFactory.normalSpace(),
           TypesetterTokenFactory.simpleText(siglaString)
         ]
 
-      case ApparatusEntryType.ADDITION:
+      case ApparatusSubEntryType.ADDITION:
         return [
           TypesetterTokenFactory.simpleText(latinStyle.strings.addition).setItalic(),
           TypesetterTokenFactory.normalSpace(),
@@ -229,32 +230,32 @@ export class ApparatusCommon {
           TypesetterTokenFactory.simpleText(siglaString)
         ]
 
-      case ApparatusEntryType.SIMPLE_TEXT:
+      case ApparatusSubEntryType.SIMPLE_TEXT:
         return [
           TypesetterTokenFactory.simpleText(theText)
         ]
 
       default:
-        console.warn(`Unsupported apparatus entry type: ${entryType}`)
+        console.warn(`Unsupported apparatus entry type: ${subEntryType}`)
         return []
     }
   }
 
-  static genEntryLatinHtml(subEntry, sigla) {
+  static genSubEntryHtmlContentLatin(subEntry, sigla) {
     let entryType = subEntry.type
     let theText = subEntry.text
-    let siglaString = subEntry.witnessData.map( (w) => { return sigla[w.witnessIndex]}).join('')
+    let siglaString = this._genSiglaHtmlFromWitnessData(subEntry, sigla)
     switch(entryType) {
-      case ApparatusEntryType.VARIANT:
+      case ApparatusSubEntryType.VARIANT:
         return `${theText} ${siglaString}`
 
-      case ApparatusEntryType.OMISSION:
+      case ApparatusSubEntryType.OMISSION:
         return `<i>${latinStyle.strings.omission}</i> ${siglaString}`
 
-      case ApparatusEntryType.ADDITION:
+      case ApparatusSubEntryType.ADDITION:
         return `<i>${latinStyle.strings.addition}</i> ${theText} ${siglaString}`
 
-      case ApparatusEntryType.SIMPLE_TEXT:
+      case ApparatusSubEntryType.SIMPLE_TEXT:
         return theText
 
       default:
@@ -296,14 +297,16 @@ export class ApparatusCommon {
     return text
   }
 
-  static getMainTextForGroup(group, mainTextInputTokens) {
+  static getMainTextForGroup(group, mainTextInputTokens, normalized = true) {
     return mainTextInputTokens
       .filter( (t, i) => { return i>=group.from && i<=group.to}) // get group main text columns
       .map( (t) => {   // get text for each column
         if (t.tokenType === TokenType.EMPTY) { return ''}
         if (isPunctuationToken(t.text)) { return  ''}
-        if (t.normalizedText !== undefined && t.normalizedText !== '') {
-          return t.normalizedText
+        if (normalized) {
+          if (t.normalizedText !== undefined && t.normalizedText !== '') {
+            return t.normalizedText
+          }
         }
         return t.text
       })
@@ -323,7 +326,21 @@ export class ApparatusCommon {
     return ctToMainTextMap[ctIndex]
   }
 
+  static _genSiglaHtmlFromWitnessData(subEntry, sigla, numberStyle) {
+    return subEntry.witnessData
+      .map( (w) => {
+            if (w.hand !== 0) {
+              return `${sigla[w.witnessIndex]}<sup>${this.getNumberString(w.hand+1, numberStyle)}</sup>`
+            }
+            return sigla[w.witnessIndex]})
+      .join('')
+  }
 
-
+  static getNumberString(n, style) {
+    if (style === 'ar') {
+      return NumeralStyles.toDecimalArabic(n)
+    }
+    return NumeralStyles.toDecimalWestern(n)
+  }
 
 }

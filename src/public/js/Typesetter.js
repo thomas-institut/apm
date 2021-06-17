@@ -27,7 +27,8 @@
  * At the moment the typesetter only aligns the left side margin for ltr text or the right side for rtl text. That is,
  * it does not properly justifies the text.
  *
- * The typesetter assumes that the text will be placed in 2D area of a certain width given as a parameter,
+ * The first, simpler version of the typesetter assumes that the text will be placed in 2D area of a
+ * certain width given as a parameter,
  * but of indeterminate length.
  * 
  * 

@@ -31,26 +31,20 @@ import { wait } from '../toolbox/FunctionUtil'
 import { MultiToggle } from '../widgets/MultiToggle'
 import { BootstrapTabGenerator } from '../multi-panel-ui/BootstrapTabGenerator'
 import { capitalizeFirstLetter } from '../toolbox/Util.mjs'
-import * as ApparatusType from '../constants/ApparatusType'
 import { EditableTextField } from '../widgets/EditableTextField'
 import { ApparatusEntryInput } from './ApparatusEntryInput'
 import { ApparatusCommon } from './ApparatusCommon'
-
-const noGluePunctuation = '.,:;?!'
-  + String.fromCodePoint(0x60C) // // Arabic comma
-  + String.fromCodePoint(0x61F) // Arabic question mark
+import * as EditionMainTextTokenType from '../Edition/MainTextTokenType'
+import { EditionMainTextGenerator } from '../EditionMainTextGenerator.mjs'
+import { Edition } from '../Edition/Edition'
+import { CtData } from '../CtData/CtData'
+import { FmtText } from '../FmtText/FmtText'
+import { CtDataEditionGenerator } from '../Edition/EditionGenerator/CtDataEditionGenerator'
 
 
 const doubleVerticalLine = String.fromCodePoint(0x2016)
 const verticalLine = String.fromCodePoint(0x007c)
 
-// Space widths
-const SPACE_WIDTH_NORMAL = 'normal'
-
-
-// Edition token types
-const E_TOKEN_TYPE_GLUE = 'glue'
-const E_TOKEN_TYPE_TEXT = 'text'
 
 const EDIT_MODE_OFF = 'off'
 const EDIT_MODE_TEXT = 'text'
@@ -74,9 +68,10 @@ export class EditionPanel extends Panel{
     let oc = new OptionsChecker(optionsDefinition, 'Edition Panel')
     this.options = oc.getCleanOptions(options)
     this.ctData = this.options.ctData
-    this.upToDate = false
-    this.mainTextTokens = []
-    this.apparatusArray = []
+    this.edition = new Edition()
+    this.editionUpToDate = false
+    this.mainTextTokensOld = []
+    this.apparatusArrayOld = []
     this.lang = this.options.ctData['lang']
     this.lastMode = ''
     this.alreadyShown = false
@@ -94,15 +89,22 @@ export class EditionPanel extends Panel{
     this.tokenIndexTwo = -1
   }
 
-  _recalculateCriticalApparatusIfNeeded() {
-    if (!this.upToDate) {
+
+  _regenerateEditionIfNeeded() {
+    if (!this.editionUpToDate) {
+      let eg = new CtDataEditionGenerator({ ctData: this.ctData})
+      this.edition = eg.generateEdition()
+      console.log(`Edition`)
+      console.log(this.edition)
       let apparatusGenerator = new CriticalApparatusGenerator()
       let generatedCriticalApparatus = apparatusGenerator.generateCriticalApparatus(this.ctData)
-      this.mainTextTokens = generatedCriticalApparatus['mainTextTokens']
-      this.apparatusArray = [ { type: ApparatusType.CRITICUS, entries: generatedCriticalApparatus['criticalApparatus']} ].concat(
+      this.mainTextTokensOld = generatedCriticalApparatus['mainTextTokens']
+      console.log(`Main text tokens (old)`)
+      console.log(this.mainTextTokensOld)
+      this.apparatusArrayOld = [ generatedCriticalApparatus ].concat(
         this.ctData['customApparatuses']
       )
-      this.upToDate = true
+      this.editionUpToDate = true
     }
   }
 
@@ -114,9 +116,9 @@ export class EditionPanel extends Panel{
       return `Waiting to be shown to generate content`
     }
     this.alreadyShown = true
-    this._recalculateCriticalApparatusIfNeeded()
-    let mainTextTokensWithSpaceObject = this._generateMainTextWithSpaces(this.mainTextTokens)
-    let mainTextHtml = this._generateMainTextHtml(mainTextTokensWithSpaceObject)
+    this._regenerateEditionIfNeeded()
+    let mainTextTokensWithGlueObject = EditionMainTextGenerator.generateMainTextWithGlue(this.mainTextTokensOld)
+    let mainTextHtml = this._generateMainTextHtml(mainTextTokensWithGlueObject)
     return `${this._getToolbarHtml()}
 <div class="panel-content-area">
     <div class="main-text text-${this.lang}">${mainTextHtml}</div>
@@ -154,35 +156,32 @@ export class EditionPanel extends Panel{
 
     maximizeElementHeightInParent(panelContentDiv, $(containerSelector), toolbarDiv.outerHeight())
     this.verbose && console.log(`Resize: about to update apparatuses`)
-    let thisObject = this
     this._updateApparatusesDiv()
       .then( () => {
           let apparatusTabsHeight = $('#apparatus-tabs').outerHeight()
           let apparatusesDiv = $(`${containerSelector} .apparatuses`)
-          thisObject.apparatusArray.forEach( (apparatus, index) => {
+          this.apparatusArrayOld.forEach( (apparatus, index) => {
             // this.verbose && console.log(`Maximizing apparatus ${index}`)
             maximizeElementHeightInParent($(`#apparatus-${index}-div`), apparatusesDiv, apparatusTabsHeight)
           })
       })
-     .finally( () => { thisObject.verbose && console.log(`Done resizing`)})
+     .finally( () => { this.verbose && console.log(`Done resizing`)})
 
   }
 
   onShown () {
     this.verbose && console.log(`Edition Panel shown`)
-    let thisObject = this
     if (!this.alreadyShown) {
       this.alreadyShown = true
       this.reDraw(this.generateHtml('', '', true))
       this._updateApparatusesDiv()
-        .then( () => { thisObject.verbose && console.log(`Finished generating edition panel on shown`) })
+        .then( () => { this.verbose && console.log(`Finished generating edition panel on shown`) })
     }
   }
 
   postRender (id, mode, visible) {
     this.verbose && console.log(`Post render edition pane`)
     this.onResize()
-    let thisObject = this
     this.modeToggle = new MultiToggle({
       containerSelector: '#edition-panel-mode-toggle',
       title: '',
@@ -198,12 +197,12 @@ export class EditionPanel extends Panel{
 
     })
     this.modeToggle.on('toggle',  (ev) => {
-      thisObject.currentEditMode = ev.detail.currentOption
-      thisObject.verbose && console.log(`Edit mode changed to ${thisObject.currentEditMode}`)
-      if (thisObject.editingTextToken) {
-        thisObject._stopEditingMainText(thisObject.originalTokenText)
+      this.currentEditMode = ev.detail.currentOption
+      this.verbose && console.log(`Edit mode changed to ${this.currentEditMode}`)
+      if (this.editingTextToken) {
+        this._stopEditingMainText(this.originalTokenText)
       }
-      thisObject._clearSelection()
+      this._clearSelection()
     })
     this._eleAddEntryButton().on('click', this._genOnClickAddEntryButton())
     this._setupMainTextDivEventHandlers()
@@ -221,24 +220,23 @@ export class EditionPanel extends Panel{
   }
 
   _genOnClickAddEntryButton() {
-    let thisObject = this
     return (ev) => {
       ev.preventDefault()
       ev.stopPropagation()
-      if (thisObject.currentEditMode !== EDIT_MODE_APPARATUS) {
+      if (this.currentEditMode !== EDIT_MODE_APPARATUS) {
         return
       }
-      thisObject.verbose && console.log(`Click on add entry button`)
+      this.verbose && console.log(`Click on add entry button`)
       let aei = new ApparatusEntryInput({
         apparatuses:[ { name: 'criticus', title: 'Criticus'}, { name: 'fontium', title: 'Fontium'}],
         lemma: this._getLemmaFromSelection(),
         lang: this.lang
       })
       aei.getEntry().then( (newEntry) => {
-        thisObject.verbose && console.log(`Got new entry`)
-        thisObject.verbose && console.log(newEntry)
+        this.verbose && console.log(`Got new entry`)
+        this.verbose && console.log(newEntry)
       }).catch( (reason) => {
-        thisObject.verbose && console.log(`FAIL: ${reason}`)
+        this.verbose && console.log(`FAIL: ${reason}`)
       })
     }
   }
@@ -258,10 +256,8 @@ export class EditionPanel extends Panel{
   }
 
   _genOnMouseDownMainTextDiv() {
-    let thisObject = this
     return (ev) => {
-
-      if (thisObject.currentEditMode !== EDIT_MODE_APPARATUS) {
+      if (this.currentEditMode !== EDIT_MODE_APPARATUS) {
         return
       }
       ev.preventDefault()
@@ -272,34 +268,32 @@ export class EditionPanel extends Panel{
   }
 
   _genOnMouseUpMainTextDiv() {
-    let thisObject = this
     return (ev) => {
-      if (thisObject.currentEditMode !== EDIT_MODE_APPARATUS) {
+      if (this.currentEditMode !== EDIT_MODE_APPARATUS) {
         return
       }
       ev.preventDefault()
       ev.stopPropagation()
-      // thisObject.verbose && console.log(`Mouse up on main text div`)
-      if (thisObject.cursorInToken) {
+      // this.verbose && console.log(`Mouse up on main text div`)
+      if (this.cursorInToken) {
         return
       }
-      if (thisObject.selecting) {
-        thisObject._stopSelecting()
-        thisObject._clearSelection()
+      if (this.selecting) {
+        this._stopSelecting()
+        this._clearSelection()
       }
     }
   }
 
 
   _genOnClickMainTextDiv() {
-    let thisObject = this
     return (ev) => {
-      if (thisObject.currentEditMode !== EDIT_MODE_APPARATUS) {
+      if (this.currentEditMode !== EDIT_MODE_APPARATUS) {
         return
       }
       ev.preventDefault()
       ev.stopPropagation()
-      // thisObject.verbose && console.log(`Click on main text div`)
+      // this.verbose && console.log(`Click on main text div`)
     }
   }
 
@@ -311,44 +305,43 @@ export class EditionPanel extends Panel{
 
   _genOnMouseDownMainTextToken() {
     // TODO: deal with right mouse click
-    let thisObject = this
     return (ev) => {
       ev.preventDefault()
       ev.stopPropagation()
       let tokenIndex = getIdFromClasses($(ev.target), 'main-text-token-')
-      if (thisObject.editingTextToken) {
+      if (this.editingTextToken) {
         return
       }
-      switch(thisObject.currentEditMode) {
+      switch(this.currentEditMode) {
         case EDIT_MODE_TEXT:
-          thisObject.verbose && console.log(`Click on main text token ${tokenIndex} in main text edit mode`)
+          this.verbose && console.log(`Click on main text token ${tokenIndex} in main text edit mode`)
           let tokenSelector = `.main-text-token-${tokenIndex}`
-          thisObject.originalTokenText = $(tokenSelector).text()
-          thisObject.tokenBeingEdited = tokenIndex
-          thisObject.textTokenEditor = new EditableTextField({
+          this.originalTokenText = $(tokenSelector).text()
+          this.tokenBeingEdited = tokenIndex
+          this.textTokenEditor = new EditableTextField({
             containerSelector:  tokenSelector,
-            initialText: thisObject.originalTokenText,
+            initialText: this.originalTokenText,
             startInEditMode: true
           })
-          thisObject.textTokenEditor.on('confirm', (ev) => {
+          this.textTokenEditor.on('confirm', (ev) => {
             let newText = ev.detail.newText
             console.log(`Confirming editing, new text = '${newText}'`)
             // TODO: actually change the token in ctData and trigger updates in other panels
-            thisObject._stopEditingMainText(newText)
+            this._stopEditingMainText(newText)
           }).on('cancel', () => {
             console.log(`Canceling edit`)
-            thisObject._stopEditingMainText(thisObject.originalTokenText)
+            this._stopEditingMainText(this.originalTokenText)
           })
-          thisObject.editingTextToken = true
+          this.editingTextToken = true
           break
 
         case EDIT_MODE_APPARATUS:
-          // thisObject.verbose && console.log(`Mouse down on main text ${tokenIndex} token in apparatus edit mode`)
-          thisObject._setSelection(tokenIndex, tokenIndex)
-          thisObject.tokenIndexOne = tokenIndex
-          thisObject._showSelectionInBrowser()
-          thisObject._processNewSelection()
-          thisObject._startSelecting()
+          // this.verbose && console.log(`Mouse down on main text ${tokenIndex} token in apparatus edit mode`)
+          this._setSelection(tokenIndex, tokenIndex)
+          this.tokenIndexOne = tokenIndex
+          this._showSelectionInBrowser()
+          this._processNewSelection()
+          this._startSelecting()
           break
       }
     }
@@ -437,159 +430,123 @@ export class EditionPanel extends Panel{
   }
 
   _genOnMouseLeaveDiv() {
-    let thisObject = this
     return () => {
-      if (thisObject.currentEditMode !== EDIT_MODE_APPARATUS) {
+      if (this.currentEditMode !== EDIT_MODE_APPARATUS) {
         return
       }
-      // thisObject.verbose && console.log(`Mouse leave main text div, selecting = ${thisObject.selecting}`)
-      if (thisObject.selecting) {
-        thisObject._stopSelecting()
+      // this.verbose && console.log(`Mouse leave main text div, selecting = ${this.selecting}`)
+      if (this.selecting) {
+        this._stopSelecting()
       }
     }
   }
 
   _genOnMouseLeaveToken() {
-    let thisObject = this
     return (ev) => {
-      if (thisObject.currentEditMode !== EDIT_MODE_APPARATUS) {
+      if (this.currentEditMode !== EDIT_MODE_APPARATUS) {
         return
       }
       ev.stopPropagation()
-      thisObject.cursorInToken = false
+      this.cursorInToken = false
     }
   }
 
   _genOnMouseEnterToken() {
-    let thisObject = this
     return (ev) => {
       if (this.currentEditMode !== EDIT_MODE_APPARATUS) {
         return
       }
       ev.preventDefault()
       ev.stopPropagation()
-      thisObject.cursorInToken = true
-      if (thisObject.selecting) {
+      this.cursorInToken = true
+      if (this.selecting) {
         this.tokenIndexTwo =  getIdFromClasses($(ev.target), 'main-text-token-')
-        // console.log(`Mouse enter on token ${thisObject.tokenIndexTwo} while selecting`)
-        thisObject._setSelection(thisObject.tokenIndexOne, thisObject.tokenIndexTwo)
-        thisObject._showSelectionInBrowser()
-        thisObject._processNewSelection()
+        // console.log(`Mouse enter on token ${this.tokenIndexTwo} while selecting`)
+        this._setSelection(this.tokenIndexOne, this.tokenIndexTwo)
+        this._showSelectionInBrowser()
+        this._processNewSelection()
       }
     }
   }
 
+  /**
+   *
+   * @returns {(function(): void)|*}
+   * @private
+   */
   _genOnMouseUpMainTexToken() {
-    let thisObject = this
     return (ev) => {
-      if (thisObject.currentEditMode !== EDIT_MODE_APPARATUS) {
+      if (this.currentEditMode !== EDIT_MODE_APPARATUS) {
         return
       }
       ev.preventDefault()
       ev.stopPropagation()
       let tokenIndex = getIdFromClasses($(ev.target), 'main-text-token-')
-      // thisObject.verbose && console.log(`Mouse up on main text ${tokenIndex} token in apparatus edit mode`)
+      // this.verbose && console.log(`Mouse up on main text ${tokenIndex} token in apparatus edit mode`)
       if (tokenIndex === -1) {
         console.log(`Mouse up on a token -1`)
         return
       }
 
-      thisObject.tokenIndexTwo = tokenIndex
-      if (!thisObject._selectionsAreEqual(thisObject.selection, thisObject._createSelection(thisObject.tokenIndexOne, thisObject.tokenIndexTwo))) {
-        thisObject._setSelection(thisObject.tokenIndexOne, thisObject.tokenIndexTwo)
-        thisObject._showSelectionInBrowser()
-        thisObject._processNewSelection()
+      this.tokenIndexTwo = tokenIndex
+      if (!this._selectionsAreEqual(this.selection, this._createSelection(this.tokenIndexOne, this.tokenIndexTwo))) {
+        this._setSelection(this.tokenIndexOne, this.tokenIndexTwo)
+        this._showSelectionInBrowser()
+        this._processNewSelection()
       }
-      thisObject._stopSelecting()
+      this._stopSelecting()
 
     }
   }
 
+  /**
+   *
+   * @returns {string}
+   * @private
+   */
   _getTextDirection() {
     if (this.lang === 'he' || this.lang === 'ar') {
       return 'rtl'
     }
     return 'ltr'
   }
-
-  _generateMainTextWithSpaces(mainTextTokens) {
-    let mainTextTokensWithSpace = []
-    let firstWordAdded = false
-    let inputTokensToMainText = []
-    let currentMainTextIndex = -1
-    for(let i = 0; i < mainTextTokens.length; i++) {
-      let mainTextToken = mainTextTokens[i]
-      let tokenType = mainTextToken['type']
-
-      if (tokenType !== 'text'){
-        inputTokensToMainText.push(-1)
-        continue
-      }
-      let tokenText = mainTextToken['text']
-      if (tokenText === undefined) {
-        inputTokensToMainText.push(-1)
-        console.warn(`Found main text token with no text at index ${i}`)
-        continue
-      }
-
-      let addGlue = true
-      if (!firstWordAdded) {
-        addGlue = false
-      }
-      if (noGluePunctuation.includes(tokenText)) {
-        addGlue = false
-      }
-      if (addGlue) {
-        currentMainTextIndex++
-        mainTextTokensWithSpace.push({
-          type: E_TOKEN_TYPE_GLUE,
-          space: SPACE_WIDTH_NORMAL,
-        })
-        inputTokensToMainText.push(-1)
-      }
-      currentMainTextIndex++
-      mainTextTokensWithSpace.push(mainTextToken)
-      firstWordAdded = true
-      inputTokensToMainText.push(i)
-    }
-    return {
-      mainTextTokensWithSpace: mainTextTokensWithSpace,
-      tokensWithSpaceToMainTextTokensMap: inputTokensToMainText
-    }
-  }
-
   _updateApparatusesDiv() {
-    let thisObject = this
     return wait(typesetInfoDelay).then( () => {
-      thisObject.verbose && console.log(`Updating apparatuses div`)
-      let apparatusesDiv = $(`${thisObject.options.containerSelector} div.apparatuses`)
-      if (!thisObject.upToDate) {
+      this.verbose && console.log(`Updating apparatuses div`)
+      let apparatusesDiv = $(`${this.options.containerSelector} div.apparatuses`)
+      if (!this.editionUpToDate) {
         console.warn(`Trying to generate apparatuses html with out of date edition`)
         apparatusesDiv.html( 'Apparatuses coming soon...')
         return
       }
       let mainTextTokensWithTypesettingInfo =
-        getTypesettingInfo(this.options.containerSelector, 'main-text-token-', this.mainTextTokens)
+        getTypesettingInfo(this.options.containerSelector, 'main-text-token-', this.mainTextTokensOld)
       this.verbose && console.log(`Typesetting info`)
       this.verbose && console.log(mainTextTokensWithTypesettingInfo)
       this._drawLineNumbers(mainTextTokensWithTypesettingInfo)
-      apparatusesDiv.html(thisObject._generateApparatusesHtml(mainTextTokensWithTypesettingInfo))
+      apparatusesDiv.html(this._generateApparatusesHtml(mainTextTokensWithTypesettingInfo))
     })
   }
 
-  _generateMainTextHtml(mainTextTokensWithSpaceObject) {
+  _generateMainTextHtml(mainTextTokensWithGlueObject) {
     let lastTokenIndex = -1
-    return mainTextTokensWithSpaceObject.mainTextTokensWithSpace.map( (token, i) => {
-      if (token.type=== E_TOKEN_TYPE_GLUE) {
-        if (lastTokenIndex !== -1) {
-          return `<span class="whitespace whitespace-token-${lastTokenIndex}"> </span>`
-        }
-        return ''
+    return mainTextTokensWithGlueObject.mainTextTokensWithGlue.map( (token, i) => {
+      switch(token.type) {
+        case EditionMainTextTokenType.GLUE:
+          if (lastTokenIndex !== -1) {
+            return `<span class="whitespace whitespace-token-${lastTokenIndex}"> </span>`
+          }
+          return ''
+
+        case EditionMainTextTokenType.TEXT:
+          let tokenIndex = mainTextTokensWithGlueObject.tokensWithSpaceToMainTextTokensMap[i]
+          let classes = [ 'main-text-token', `main-text-token-${tokenIndex}`, `ct-index-${token.collationTableIndex}`]
+          lastTokenIndex = tokenIndex
+          return `<span class="${classes.join(' ')} ">${FmtText.getPlainText(token.fmtText)}</span>`
+
+        default:
+          return ''
       }
-      let tokenIndex = mainTextTokensWithSpaceObject.tokensWithSpaceToMainTextTokensMap[i]
-      let classes = [ 'main-text-token', `main-text-token-${tokenIndex}`, `ct-index-${token.collationTableIndex}`]
-      lastTokenIndex = tokenIndex
-      return `<span class="${classes.join(' ')} ">${token.text}</span>`
     }).join('')
   }
 
@@ -602,13 +559,12 @@ export class EditionPanel extends Panel{
     let offsetY = mainTexDiv.offset().top
     let margin = this.lang === 'la' ? 'left' : 'right'
     let posX = margin === 'left' ? 50 : 50
-    let thisObject = this
     let lineNumberOverlays =  mainTextTokensWithTypesettingInfo.lineMap
       .filter( (lineSpec) => { return lineSpec.line === 1 || (lineSpec.line % lineFrequency === 0)})
       .map( (lineSpec) => {
         let posY = lineSpec.pY - offsetY
         let lineString = ApparatusCommon.getNumberString(lineSpec.line, this.lang)
-        return `<div class="line-number text-${thisObject.lang}" style="position: absolute; top: ${posY}px; ${margin}: ${posX}px; line-height: ${lineHeight}">${lineString}</div>`
+        return `<div class="line-number text-${this.lang}" style="position: absolute; top: ${posY}px; ${margin}: ${posX}px; line-height: ${lineHeight}">${lineString}</div>`
       })
       .join('')
 
@@ -619,33 +575,32 @@ export class EditionPanel extends Panel{
   _generateApparatusesHtml(mainTextTokensWithTypesettingInfo) {
     let html = ''
     let lastLine = ''
-    let thisObject = this
     let tabGen = new BootstrapTabGenerator({
       id: 'apparatus-tabs',
-      tabs: this.apparatusArray.map( (apparatus, i) => {
-        let tabTitle = thisObject._getTitleForApparatusType(apparatus.type)
+      tabs: this.apparatusArrayOld.map( (apparatus, i) => {
+        let tabTitle = this._getTitleForApparatusType(apparatus.type)
         return {
           id: `apparatus-${i}-div`,
           title: tabTitle,
-          linkTitle: `Click to see apparatus ${thisObject._getTitleForApparatusType(apparatus.type)}`,
-          contentClasses: [ 'apparatus',`apparatus-${i}`, `text-${thisObject.lang}`],
+          linkTitle: `Click to see apparatus ${this._getTitleForApparatusType(apparatus.type)}`,
+          contentClasses: [ 'apparatus',`apparatus-${i}`, `text-${this.lang}`],
           content: () => {
             html = ''
-            thisObject.verbose && console.log(`Generating html for apparatus ${tabTitle}`)
-            thisObject.verbose && console.log(apparatus)
+            this.verbose && console.log(`Generating html for apparatus ${tabTitle}`)
+            this.verbose && console.log(apparatus)
             apparatus.entries.forEach( (apparatusEntry, aeIndex) => {
               html += `<span class="apparatus-entry apparatus-entry-${i}-${aeIndex}">`
-              let currentLine = thisObject._getLineNumberString(apparatusEntry, mainTextTokensWithTypesettingInfo)
-              let lineHtml = `&nbsp;${thisObject.entrySeparator}&nbsp;`
+              let currentLine = this._getLineNumberString(apparatusEntry, mainTextTokensWithTypesettingInfo)
+              let lineHtml = `&nbsp;${this.entrySeparator}&nbsp;`
               if (currentLine !== lastLine) {
-                let lineSep = aeIndex !== 0 ? `${thisObject.apparatusLineSeparator}&nbsp;` : ''
+                let lineSep = aeIndex !== 0 ? `${this.apparatusLineSeparator}&nbsp;` : ''
                 lineHtml = `${lineSep}<b class="apparatus-line-number">${currentLine}</b>`
                 lastLine = currentLine
               }
               html +=  `${lineHtml} <span class="lemma lemma-${i}-${aeIndex}">${apparatusEntry.lemma}</span>] `
               apparatusEntry.subEntries.forEach( (subEntry, subEntryIndex) => {
                 html+= `<span class="sub-entry sub-entry-${subEntryIndex}">
-                            ${ApparatusCommon.genSubEntryHtmlContent(thisObject.lang, subEntry, thisObject.ctData['sigla'])}
+                            ${ApparatusCommon.genSubEntryHtmlContent(this.lang, subEntry, this.ctData['sigla'])}
                         </span>&nbsp;&nbsp;&nbsp;`
               })
               html += '</span>'

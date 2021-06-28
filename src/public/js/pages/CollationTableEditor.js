@@ -20,7 +20,7 @@ import { defaultLanguageDefinition } from '../defaults/languages'
 import * as CollationTableType from '../constants/CollationTableType'
 import * as CollationTableInitStrategy from '../constants/CollationTableConversionInitStrategy'
 import * as WitnessType from '../constants/WitnessType'
-import * as TranscriptionTokenType from '../constants/TranscriptionTokenType'
+import * as TranscriptionTokenType from '../constants/WitnessTokenType'
 import * as TokenClass from '../constants/TranscriptionTokenClass'
 import * as NormalizationSource from '../constants/NormalizationSource'
 
@@ -1881,7 +1881,7 @@ export class CollationTableEditor {
           return returnObject
       }
       let isPunctuationAllowed = areAllOtherRowsEmpty(thisObject.tableEditor.getMatrix().getColumn(col), tableRow)
-      if (Util.isPunctuationToken(trimmedText) && isPunctuationAllowed) {
+      if (Util.strIsPunctuation(trimmedText) && isPunctuationAllowed) {
           return returnObject
       }
       returnObject.isValid = false
@@ -1921,7 +1921,7 @@ export class CollationTableEditor {
         thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = newText
         thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] = TranscriptionTokenType.EMPTY
       } else  {
-        let tokenType = Util.isPunctuationToken(newText) ? TranscriptionTokenType.PUNCTUATION : TranscriptionTokenType.WORD
+        let tokenType = Util.strIsPunctuation(newText) ? TranscriptionTokenType.PUNCTUATION : TranscriptionTokenType.WORD
         thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = newText
         thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] = tokenType
         if (tokenType === TranscriptionTokenType.WORD) {

@@ -16,8 +16,5 @@
  *
  */
 
-
-export const ADDITION = 'addition'
-export const OMISSION = 'omission'
-export const VARIANT = 'variant'
-export const SIMPLE_TEXT = 'simpleText'
+export const NORMAL = ''
+export const BOLD = 'bold'

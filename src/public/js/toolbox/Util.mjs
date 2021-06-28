@@ -83,7 +83,7 @@ export function stringReplaceArray(str, searchStrings, replaceString) {
   return result
 }
 
-export function isPunctuationToken(text) {
+export function strIsPunctuation(text) {
   if (text === undefined) {
     return false
   }

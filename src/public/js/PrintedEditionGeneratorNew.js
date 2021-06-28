@@ -29,8 +29,8 @@ const INPUT_TOKEN_FIELD_TEXT = 'text'
 
 
 const noGluePunctuation = '.,:;?!'
-   + String.fromCodePoint(0x60C) // // Arabic comma
-   + String.fromCodePoint(0x61F) // Arabic question mark
+  + String.fromCodePoint(0x60C) // // Arabic comma
+  + String.fromCodePoint(0x61F) // Arabic question mark
 
 
 // Space widths
@@ -46,10 +46,11 @@ const ENTRY_TYPE_OMISSION = 'omission'
 const ENTRY_TYPE_VARIANT = 'variant'
 
 
-export class PrintedEditionGenerator {
+export class PrintedEditionGeneratorNew {
 
-  generateEdition(ctData, baseWitnessIndex = 0) {
-    // let profiler = new SimpleProfiler('generateEdition')
+
+  generateEdition(ctData, apparatusArray) {
+    // this basically just creates arrays of typeset
     let sigla = ctData['sigla']
     let language = ctData['lang'];
     let textDirection = 'ltr';
@@ -168,7 +169,7 @@ export class PrintedEditionGenerator {
           start: mainTextIndexFrom,
           end: mainTextIndexTo,
           entries: entries
-          })
+        })
       }
     })
     // Optimize apparatus
@@ -367,9 +368,9 @@ export class PrintedEditionGenerator {
   }
 
 
- getTextFromInputToken(token) {
+  getTextFromInputToken(token) {
     return token[INPUT_TOKEN_FIELD_TEXT]
- }
+  }
 
   isCtTableColumnEmpty(ctColumn) {
     return ctColumn.every( e => e.tokenType === TokenType.EMPTY)

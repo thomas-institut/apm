@@ -53,6 +53,10 @@ module.exports = {
     TestWords: {
       import: '../test/js/functional/TestWords.js',
       filename: '../../test/js/functional/dist/TestWords.bundle.js'
+    },
+    TestHtmlRenderer: {
+      import: '../test/js/functional/TestFmtTextRenderer.js',
+      filename: '../../test/js/functional/dist/TestFmtTextRenderer.bundle.js'
     }
 
   },

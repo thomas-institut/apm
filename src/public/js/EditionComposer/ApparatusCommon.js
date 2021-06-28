@@ -21,9 +21,9 @@
 
 
 import * as TypesetterTokenFactory from '../TypesetterTokenFactory'
-import * as TokenType from '../constants/TranscriptionTokenType'
-import { isPunctuationToken } from '../toolbox/Util.mjs'
-import * as ApparatusSubEntryType from '../constants/ApparatusEntryType'
+import * as WitnessTokenType from '../constants/WitnessTokenType'
+import { strIsPunctuation } from '../toolbox/Util.mjs'
+import * as ApparatusSubEntryType from '../Edition/SubEntryType'
 import { NumeralStyles } from '../NumeralStyles'
 
 // const INPUT_TOKEN_FIELD_TYPE = 'tokenType'
@@ -58,8 +58,6 @@ const hebrewStyle = {
     addition: 'נוסף'
   }
 }
-
-
 
 export class ApparatusCommon {
 
@@ -107,7 +105,7 @@ export class ApparatusCommon {
           TypesetterTokenFactory.simpleText(siglaString).setBold()
         ]
 
-      case ApparatusSubEntryType.SIMPLE_TEXT:
+      case ApparatusSubEntryType.CUSTOM:
         return [
           TypesetterTokenFactory.simpleText(theText)
         ]
@@ -132,7 +130,7 @@ export class ApparatusCommon {
       case ApparatusSubEntryType.ADDITION:
         return `<small>${hebrewStyle.strings.addition}</small> ${theText} <b>${siglaString}</b>`
 
-      case ApparatusSubEntryType.SIMPLE_TEXT:
+      case ApparatusSubEntryType.CUSTOM:
         return theText
 
       default:
@@ -168,7 +166,7 @@ export class ApparatusCommon {
           TypesetterTokenFactory.simpleText(siglaString)
         ]
 
-      case ApparatusSubEntryType.SIMPLE_TEXT:
+      case ApparatusSubEntryType.CUSTOM:
         return [
           TypesetterTokenFactory.simpleText(theText)
         ]
@@ -193,7 +191,7 @@ export class ApparatusCommon {
       case ApparatusSubEntryType.ADDITION:
         return `<small>${arabicStyle.strings.addition}</small> ${theText} ${siglaString}`
 
-      case ApparatusSubEntryType.SIMPLE_TEXT:
+      case ApparatusSubEntryType.CUSTOM:
         return theText
 
       default:
@@ -230,7 +228,7 @@ export class ApparatusCommon {
           TypesetterTokenFactory.simpleText(siglaString)
         ]
 
-      case ApparatusSubEntryType.SIMPLE_TEXT:
+      case ApparatusSubEntryType.CUSTOM:
         return [
           TypesetterTokenFactory.simpleText(theText)
         ]
@@ -255,7 +253,7 @@ export class ApparatusCommon {
       case ApparatusSubEntryType.ADDITION:
         return `<i>${latinStyle.strings.addition}</i> ${theText} ${siglaString}`
 
-      case ApparatusSubEntryType.SIMPLE_TEXT:
+      case ApparatusSubEntryType.CUSTOM:
         return theText
 
       default:
@@ -269,7 +267,7 @@ export class ApparatusCommon {
     ctData['collationMatrix'].forEach( (tokenRefs, row) => {
       let ref = tokenRefs[col]
       if (ref === -1) {
-        column[row] = { tokenType: TokenType.EMPTY }
+        column[row] = { tokenType: WitnessTokenType.EMPTY }
       } else {
         column[row] = ctData['witnesses'][row]['tokens'][ref]
       }
@@ -301,8 +299,8 @@ export class ApparatusCommon {
     return mainTextInputTokens
       .filter( (t, i) => { return i>=group.from && i<=group.to}) // get group main text columns
       .map( (t) => {   // get text for each column
-        if (t.tokenType === TokenType.EMPTY) { return ''}
-        if (isPunctuationToken(t.text)) { return  ''}
+        if (t.tokenType === WitnessTokenType.EMPTY) { return ''}
+        if (strIsPunctuation(t.text)) { return  ''}
         if (normalized) {
           if (t.normalizedText !== undefined && t.normalizedText !== '') {
             return t.normalizedText
@@ -317,7 +315,7 @@ export class ApparatusCommon {
   static findNonEmptyMainTextToken(ctIndex, ctToMainTextMap, mainTextTokens, forward) {
     while (ctIndex >= 0 && ctIndex < ctToMainTextMap.length && (
       ctToMainTextMap[ctIndex] === -1 ||
-      isPunctuationToken(mainTextTokens[ctToMainTextMap[ctIndex]]['text'])) ) {
+      strIsPunctuation(mainTextTokens[ctToMainTextMap[ctIndex]]['text'])) ) {
       ctIndex = forward ? ctIndex + 1 : ctIndex -1
     }
     if (ctIndex < 0 || ctIndex >= ctToMainTextMap.length) {
@@ -325,6 +323,8 @@ export class ApparatusCommon {
     }
     return ctToMainTextMap[ctIndex]
   }
+
+
 
   static _genSiglaHtmlFromWitnessData(subEntry, sigla, numberStyle) {
     return subEntry.witnessData

@@ -17,7 +17,7 @@
  */
 
 
-import * as TranscriptionTokenType from './constants/TranscriptionTokenType'
+import * as TranscriptionTokenType from './constants/WitnessTokenType'
 import * as MyersDiff from './toolbox/MyersDiff.mjs'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 

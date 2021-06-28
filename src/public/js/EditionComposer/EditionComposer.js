@@ -40,8 +40,7 @@ import { CollationTablePanel } from './CollationTablePanel'
 import { AdminPanel } from './AdminPanel'
 import { EditionPreviewPanel } from './EditionPreviewPanel'
 import { EditionPanel } from './EditionPanel'
-import { CtDataCleaner } from './CtDataCleaner'
-import { CriticalApparatusGenerator } from '../CriticalApparatusGenerator'
+import { CtDataCleaner } from '../CtData/CtDataCleaner'
 
 // CONSTANTS
 
@@ -114,8 +113,8 @@ export class EditionComposer {
     this.versionInfo = this.options.versionInfo
 
     // initialize the automatic apparatus
-    let apparatusGenerator = new CriticalApparatusGenerator()
-    this.criticalApparatus = apparatusGenerator.generateCriticalApparatus(this.ctData, this.ctData['witnessOrder'][0])
+    // let apparatusGenerator = new CriticalApparatusGenerator()
+    // this.criticalApparatus = apparatusGenerator.generateCriticalApparatus(this.ctData, this.ctData['witnessOrder'][0])
 
     document.title = `${this.ctData.title} (${this.ctData['chunkId']})`
 

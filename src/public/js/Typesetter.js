@@ -1,5 +1,5 @@
 /* 
- *  Copyright (C) 2019 Universität zu Köln
+ *  Copyright (C) 2019-21 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Typesetter class
  * 
  * The class provides a typesetting engine that allows for various typesetting scenarios.
- * The main method is typesetTokens, which takes an array of tokens and returns a copy
+ * The main method is typesetTokens, which takes an array of TypesetterTokens and returns a copy
  * of those tokens with position information that can then be used to place them in an SVG-like element.
  *
  * At the moment the typesetter only aligns the left side margin for ltr text or the right side for rtl text. That is,

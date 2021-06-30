@@ -26,15 +26,13 @@
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { PrintedEditionGenerator } from '../PrintedEditionGenerator'
 import { EditionViewerSvg } from '../EditionViewerSvg'
-import { maximizeElementHeightInParent} from '../toolbox/UserInterfaceUtil'
-import { Panel } from './Panel'
+import { PanelWithToolbar } from './PanelWithToolbar'
 
 
-export class EditionPreviewPanel extends Panel {
+export class EditionPreviewPanel extends PanelWithToolbar {
   constructor (options = {}) {
     super(options)
     let optionsSpec = {
-      containerSelector: { type: 'string', required: true},
       ctData: { type: 'object', default: []},
       apparatus: { type: 'object', default: []},
       langDef: { type: 'object', required: true},
@@ -46,9 +44,6 @@ export class EditionPreviewPanel extends Panel {
     this.previewHtml = ''
   }
 
-  getContentClasses() {
-    return [ 'panel-with-toolbar']
-  }
 
   updatePreview() {
     this.previewHtml = this._genPreviewHtml()
@@ -56,23 +51,23 @@ export class EditionPreviewPanel extends Panel {
     this.setSvgDownloadFile()
   }
 
-  generateHtml() {
-    this.verbose && console.log(`Rendering preview`)
-    if (this.previewHtml === '') {
-      this.previewHtml = this._genPreviewHtml()
-    }
-
-    return `<div class="panel-toolbar">
-                    <div>
+  generateToolbarHtml (tabId, mode, visible) {
+    return ` <div>
                     </div>
                     <div>
                         <a id="export-svg-button" class="tb-button"  download="apm-quick-edition.svg"
                            title="Download SVG"><small>SVG</small> <i class="fas fa-download"></i></a>
                         <a id="export-pdf-button" class="tb-button margin-left-med" href="#" download="apm-quick-edition.pdf"
                            title="Download PDF"><small>PDF</small> <i class="fas fa-download"></i></a>
-                    </div>
-                </div>
-                <div id="edition-svg-div" class="panel-content-area">${this.previewHtml}</div>`
+                    </div>`
+  }
+
+  generateContentHtml (tabId, mode, visible) {
+    this.verbose && console.log(`Rendering preview`)
+    if (this.previewHtml === '') {
+      this.previewHtml = this._genPreviewHtml()
+    }
+    return this.previewHtml
   }
 
   postRender() {
@@ -86,17 +81,10 @@ export class EditionPreviewPanel extends Panel {
     let thisObject = this
     return (ev) => {
       ev.preventDefault()
-      thisObject.options.onPdfExport($('#edition-svg-div').html()).then(
+      thisObject.options.onPdfExport($(this.getContentAreaSelector()).html()).then(
         (url) => { console.log(`Got url: '${url}'`)}
       ).catch( () => { console.log('PDF export error')})
     }
-  }
-
-  onResize() {
-    this.verbose && console.log(`Resize edition preview pane`)
-    let previewDiv = $(`${this.options.containerSelector} .panel-content-area`)
-    let toolbarDiv = $(`${this.options.containerSelector} .panel-toolbar`)
-    maximizeElementHeightInParent(previewDiv, $(this.options.containerSelector), toolbarDiv.outerHeight())
   }
 
   setSvgDownloadFile() {

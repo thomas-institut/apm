@@ -25,6 +25,8 @@ import * as WitnessTokenType from '../constants/WitnessTokenType'
 import { strIsPunctuation } from '../toolbox/Util.mjs'
 import * as ApparatusSubEntryType from '../Edition/SubEntryType'
 import { NumeralStyles } from '../NumeralStyles'
+import { FmtTextFactory } from '../FmtText/FmtTextFactory'
+import { FmtText } from '../FmtText/FmtText'
 
 // const INPUT_TOKEN_FIELD_TYPE = 'tokenType'
 const INPUT_TOKEN_FIELD_TEXT = 'text'
@@ -118,7 +120,7 @@ export class ApparatusCommon {
 
   static genSubEntryHtmlContentHebrew(subEntry, sigla) {
     let entryType = subEntry.type
-    let theText = subEntry.text
+    let theText = FmtText.getPlainText(subEntry.fmtText)
     let siglaString = this._genSiglaHtmlFromWitnessData(subEntry, sigla)
     switch(entryType) {
       case ApparatusSubEntryType.VARIANT:
@@ -179,7 +181,7 @@ export class ApparatusCommon {
 
   static genSubEntryHtmlContentArabic(subEntry, sigla) {
     let entryType = subEntry.type
-    let theText = subEntry.text
+    let theText = FmtText.getPlainText(subEntry.fmtText)
     let siglaString = this._genSiglaHtmlFromWitnessData(subEntry, sigla,  'ar')
     switch(entryType) {
       case ApparatusSubEntryType.VARIANT:
@@ -241,7 +243,7 @@ export class ApparatusCommon {
 
   static genSubEntryHtmlContentLatin(subEntry, sigla) {
     let entryType = subEntry.type
-    let theText = subEntry.text
+    let theText = FmtText.getPlainText(subEntry.fmtText)
     let siglaString = this._genSiglaHtmlFromWitnessData(subEntry, sigla)
     switch(entryType) {
       case ApparatusSubEntryType.VARIANT:

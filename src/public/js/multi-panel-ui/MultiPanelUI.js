@@ -238,11 +238,10 @@ export class MultiPanelUI {
     })
     this.panels = goodPanelOptionsArray
 
-    let thisObject = this
     this.panels.forEach( (panel, panelIndex) => {
       if (panel.type === tabsPanel) {
         panel.tabs.forEach( (tab, tabIndex) => {
-          thisObject.panels[panelIndex].tabs[tabIndex].visible = tab.id === thisObject.options.activeTabId
+          this.panels[panelIndex].tabs[tabIndex].visible = tab.id === this.options.activeTabId
         })
       }
     })
@@ -511,11 +510,13 @@ export class MultiPanelUI {
 
   _callOnResizeHandlers() {
     let currentMode = this.currentMode
+    this._updateActiveTabIds()
     this.panels.forEach((panel) => {
       panel.onResize(panel.id, currentMode)
       if (panel.type === 'tabs') {
+        //console.log(`Calling on resize handlers for tab panel ${panel.id}, active tab: ${panel.activeTabId}`)
         panel.tabs.forEach((tab) => {
-          tab.onResize(tab.id)
+          tab.onResize(tab.id, tab.id === panel.activeTabId)
         })
       }
     })
@@ -546,7 +547,8 @@ export class MultiPanelUI {
       panel.postRender( panel.id, currentMode)
       if (panel.type === 'tabs') {
         panel.tabs.forEach((tab) => {
-          tab.postRender(tab.id, currentMode, tab.visible)
+          //console.log(`Calling post-render on tab ${tab.id}, visible: ${tab.id === panel.activeTabId}`)
+          tab.postRender(tab.id, currentMode, tab.id === panel.activeTabId)
         })
       }
     })
@@ -627,8 +629,9 @@ ${this.options.topBarRightAreaContent()}
   }
 
   _getTabsHtml(panel, mode) {
+    //console.log(`Getting tabs html for panel ${panel.id}, mode ${mode}, activeTabId = ${panel.activeTabId}`)
     let tabGenerator = this._getTabGeneratorForPanel(panel, mode)
-    //tabGenerator.setActiveTab(panel.activeTabId)
+    tabGenerator.setActiveTab(panel.activeTabId)
     return tabGenerator.generateHtml()
   }
 

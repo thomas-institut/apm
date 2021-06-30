@@ -11,6 +11,7 @@ export class HtmlRenderer {
   constructor (options = {}) {
 
     let optionsSpec = {
+      plainMode: { type: 'boolean', default: false},
       tokenClasses: { type: 'array', default: [ 'token']},
       tokenIndexClassPrefix: { type: 'string', default: 'token-'},
       textClasses: { type: 'array', default: ['text']},
@@ -20,6 +21,12 @@ export class HtmlRenderer {
     let oc = new OptionsChecker(optionsSpec, 'FmtText Html Renderer')
 
     this.options = oc.getCleanOptions(options)
+    if (this.options.plainMode) {
+      this.options.tokenClasses = []
+      this.options.tokenIndexClassPrefix = ''
+      this.options.textClasses = []
+      this.options.glueClasses = []
+    }
 
   }
 

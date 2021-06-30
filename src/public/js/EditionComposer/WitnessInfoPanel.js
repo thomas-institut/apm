@@ -50,7 +50,6 @@ export class WitnessInfoPanel extends Panel{
     super(options)
 
     let optionsSpec = {
-      containerSelector: { type: 'string', required: true},
       onSiglaChange: { type: 'function', default: doNothing},
       onWitnessOrderChange: { type: 'function', default: doNothing},
       checkForWitnessUpdates: {
@@ -87,7 +86,7 @@ export class WitnessInfoPanel extends Panel{
   postRender () {
     let thisObject = this
     this.updateWitnessInfoDiv(false)
-    $(this.options.containerSelector + ' .check-witness-update-btn').on('click', () => {
+    $(this.containerSelector + ' .check-witness-update-btn').on('click', () => {
       if (!thisObject.checkingForWitnessUpdates) {
         thisObject.checkForWitnessUpdates()
       }
@@ -110,28 +109,28 @@ export class WitnessInfoPanel extends Panel{
 
   updateWitnessInfoDiv(reRenderTable = false) {
     // Turn off current event handlers
-    $(this.options.containerSelector + ' .move-up-btn').off()
-    $(this.options.containerSelector + ' .move-down-btn').off()
+    $(this.containerSelector + ' .move-up-btn').off()
+    $(this.containerSelector + ' .move-down-btn').off()
 
     // set table html
     if (reRenderTable) {
-      $(this.options.containerSelector + ' .witnessinfotable').html(this._genWitnessTableHtml())
+      $(this.containerSelector + ' .witnessinfotable').html(this._genWitnessTableHtml())
     }
 
 
     // set up witness move buttons
     let firstPos = this.ctData['type'] === CollationTableType.COLLATION_TABLE ? 0 : 1
-    let firstMoveUpButton = $(`${this.options.containerSelector} td.witness-pos-${firstPos} > .move-up-btn`)
+    let firstMoveUpButton = $(`${this.containerSelector} td.witness-pos-${firstPos} > .move-up-btn`)
     firstMoveUpButton.addClass('opacity-0').addClass('disabled')
     let lastPos = this.ctData['witnessOrder'].length -1
-    $(this.options.containerSelector + ' td.witness-pos-' + lastPos +  ' > .move-down-btn').addClass('disabled')
-    $(this.options.containerSelector + ' .move-up-btn').on('click', this.genOnClickUpDownWitnessInfoButton('up'))
-    $(this.options.containerSelector + ' .move-down-btn').on('click',this.genOnClickUpDownWitnessInfoButton('down') )
+    $(this.containerSelector + ' td.witness-pos-' + lastPos +  ' > .move-down-btn').addClass('disabled')
+    $(this.containerSelector + ' .move-up-btn').on('click', this.genOnClickUpDownWitnessInfoButton('up'))
+    $(this.containerSelector + ' .move-down-btn').on('click',this.genOnClickUpDownWitnessInfoButton('down') )
 
     // set up siglum editors
     for (let i = 0; i < this.ctData['witnesses'].length; i++) {
       new EditableTextField({
-        containerSelector: this.options.containerSelector + ' .siglum-' + i,
+        containerSelector: this.containerSelector + ' .siglum-' + i,
         initialText: this.ctData['sigla'][i],
         onConfirm: this.genOnConfirmSiglumEdit(i)
       })
@@ -141,11 +140,11 @@ export class WitnessInfoPanel extends Panel{
 
 
     // set up sigla presets buttons
-    // $(this.options.containerSelector + ' .save-sigla-btn').on('click', this.genOnClickSaveSiglaPreset())
-    // $(this.options.containerSelector + ' .load-sigla-btn').on('click', this.genOnClickLoadSiglaPreset())
+    // $(this.containerSelector + ' .save-sigla-btn').on('click', this.genOnClickSaveSiglaPreset())
+    // $(this.containerSelector + ' .load-sigla-btn').on('click', this.genOnClickLoadSiglaPreset())
 
     // if (this.siglaPresets.length === 0)  {
-    //   $(this.options.containerSelector + ' .load-sigla-btn').addClass('hidden')
+    //   $(this.containerSelector + ' .load-sigla-btn').addClass('hidden')
     // }
 
     //this.fetchSiglaPresets()
@@ -153,35 +152,34 @@ export class WitnessInfoPanel extends Panel{
   }
 
   checkForWitnessUpdates() {
-    let thisObject = this
     this.checkingForWitnessUpdates = true
     if (this.currentWitnessUpdateData === '') {
       this.currentWitnessUpdateData = this.getInitialWitnessUpdateData()
     }
-    $(this.options.containerSelector + ' .witness-update-info').html(`Checking for witness updates..`)
-    $(this.options.containerSelector + ' .check-witness-update-btn').prop('disabled', true)
+    $(this.containerSelector + ' .witness-update-info').html(`Checking for witness updates..`)
+    $(this.containerSelector + ' .check-witness-update-btn').prop('disabled', true)
     this.options.checkForWitnessUpdates(this.currentWitnessUpdateData).then( (newWitnessUpdateCheckData) => {
-      thisObject.currentWitnessUpdateData = newWitnessUpdateCheckData
+      this.currentWitnessUpdateData = newWitnessUpdateCheckData
       // console.log(newWitnessUpdateCheckData)
-      thisObject.showWitnessUpdateData()
-      thisObject.checkingForWitnessUpdates = false
+      this.showWitnessUpdateData()
+      this.checkingForWitnessUpdates = false
     })
       .catch( () => {
       console.log(`Error checking witness updates`)
       $(`span.witness-update-info`).html(`Error checking witness updates, try again later`)
       $(`button.check-witness-update-btn`).prop('disabled', false)
-      thisObject.checkingForWitnessUpdates = false
+      this.checkingForWitnessUpdates = false
     })
   }
 
   showWitnessUpdateData() {
-    let infoSpan = $(this.options.containerSelector + ' .witness-update-info')
-    let button = $(this.options.containerSelector + ' .check-witness-update-btn')
+    let infoSpan = $(this.containerSelector + ' .witness-update-info')
+    let button = $(this.containerSelector + ' .check-witness-update-btn')
     let witnessesUpToDate = true
     for(let i=0; i < this.currentWitnessUpdateData['witnesses'].length; i++) {
       let witnessUpdateInfo = this.currentWitnessUpdateData['witnesses'][i]
       if (!witnessUpdateInfo['upToDate']) {
-        let warningTd = $(`${this.options.containerSelector} td.outofdate-td-${i}`)
+        let warningTd = $(`${this.containerSelector} td.outofdate-td-${i}`)
         if (witnessUpdateInfo['lastUpdate'] === -1) {
           // witness no longer defined
           warningTd.html(`<span>${icons.checkFail} Chunk no longer present in this witness`)
@@ -195,10 +193,10 @@ export class WitnessInfoPanel extends Panel{
       }
       if (witnessUpdateInfo['justUpdated']) {
         let warningHtml =  `<span>${icons.checkOK} Just updated. Don't forget to save!`
-        let warningTd = $(`${this.options.containerSelector} td.outofdate-td-${i}`)
+        let warningTd = $(`${this.containerSelector} td.outofdate-td-${i}`)
         warningTd.html(warningHtml)
       }
-      $(`${this.options.containerSelector} .witness-update-btn-${i}`).on('click', this.genOnClickWitnessUpdate(i))
+      $(`${this.containerSelector} .witness-update-btn-${i}`).on('click', this.genOnClickWitnessUpdate(i))
     }
     if (witnessesUpToDate) {
       infoSpan.removeClass('text-warning')
@@ -225,7 +223,6 @@ export class WitnessInfoPanel extends Panel{
   }
 
   genOnClickWitnessUpdate(witnessIndex) {
-    let thisObject = this
     return () => {
       console.log(`Click on witness update ${witnessIndex}`)
     }

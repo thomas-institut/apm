@@ -95,6 +95,7 @@ export class Edition {
 
   constructor () {
 
+    this.lang = ''
     this.infoText = 'Empty Edition'
     this.info = {}
     /**
@@ -124,6 +125,15 @@ export class Edition {
     return this
   }
 
+  setLang(lang) {
+    this.lang = lang
+    return this
+  }
+
+  getLang() {
+    return this.lang
+  }
+
   /**
    *
    * @param {MainTextToken[]} mainTextTokens
@@ -131,6 +141,10 @@ export class Edition {
   setSingleSectionFromMainTextTokens(mainTextTokens) {
     this.mainTextSections = [ new MainTextSection() ]
     this.mainTextSections[0].text = mainTextTokens
+  }
+
+  getSigla() {
+    return this.witnesses.map( w => w.siglum)
   }
 
 }

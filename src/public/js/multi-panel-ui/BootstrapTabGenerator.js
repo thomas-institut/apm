@@ -176,11 +176,13 @@ aria-controls="${tab.id}" title="${linkTitle}" aria-selected="${tab.id === activ
       if (tab.contentClasses !== []) {
         contentClasses = contentClasses.concat(tab.contentClasses)
       }
+      let visible = false
       if (tab.id === activeTabId) {
         contentClasses.push('active')
+        visible = true
       }
       return `<div class="${contentClasses.join(' ')}" id="${tab.id}" role="tabpanel" aria-labelledby="${tab.id}-tab">
-${tab.content(tab.id, mode, tab.id === activeTabId)}
+${tab.content(tab.id, mode, visible)}
 </div>`
     }).join('') +
     '</div>'

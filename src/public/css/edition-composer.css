@@ -56,7 +56,11 @@ div.tab-pane {
     overflow-x: auto;
 }
 
-div.panel-content-area {
+div.tab-pane.panel-with-toolbar {
+    overflow: hidden;
+}
+
+div.panel-content {
     overflow-y: auto;
     overflow-x: auto;
 }
@@ -136,11 +140,6 @@ span.witness-update-info {
 
 /* Edition Panel */
 
-#edition-panel div.panel-content-area {
-    display: grid;
-    grid-template-rows: 1fr 3px 1fr;
-}
-
 
 div.main-text {
     overflow-y: auto;
@@ -157,15 +156,10 @@ div.line-number {
     line-height: 1em;
 }
 
-div.apparatuses {
-    margin-top: 1rem;
-    overflow-y: auto;
-}
 
 div.apparatus {
-    padding: 0 5rem;
+    padding: 1rem;
     overflow-y: auto;
-    /*max-height: 200px;*/
 }
 
 .direction-rtl {
@@ -176,21 +170,17 @@ div.apparatus {
     direction: ltr;
 }
 
-.htmlEdition .text-la {
-    font-family: "Times New Roman", Times, serif;
-}
 
-.htmlEdition .main-text {
+.main-text {
     line-height: 1.5em;
 }
 
-.htmlEdition div.apparatus p {
-    padding: 0;
-    margin: 0;
+.main-text.text-la, .apparatus.text-la, .line-number.text-la{
+    font-family: "Times New Roman", Times, serif;
 }
 
-.htmlEdition .hover {
-    background: #efdf7c;
+.main-text.text-la {
+    font-size: 1.2em;
 }
 
 .apparatus-toolbar {

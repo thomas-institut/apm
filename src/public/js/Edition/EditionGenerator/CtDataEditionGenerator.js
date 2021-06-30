@@ -41,6 +41,7 @@ export class CtDataEditionGenerator extends EditionGenerator{
     console.log(`Generating edition from ctData`)
     let edition = super.generateEdition()
     let baseWitnessIndex = this.ctData['editionWitnessIndex'] !== undefined ? this.ctData['editionWitnessIndex'] : this.ctData['witnessOrder'][0]
+    edition.setLang(this.ctData['lang'])
     edition.infoText = `Edition from ctData, chunkId ${this.ctData['chunkId']}, baseWitnessIndex: ${baseWitnessIndex}`
     edition.info = {
       source: 'ctData',

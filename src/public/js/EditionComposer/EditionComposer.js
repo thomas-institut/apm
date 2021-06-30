@@ -39,15 +39,19 @@ import { WitnessInfoPanel } from './WitnessInfoPanel'
 import { CollationTablePanel } from './CollationTablePanel'
 import { AdminPanel } from './AdminPanel'
 import { EditionPreviewPanel } from './EditionPreviewPanel'
-import { EditionPanel } from './EditionPanel'
+import { MainTextPanel } from './MainTextPanel'
 import { CtDataCleaner } from '../CtData/CtDataCleaner'
+import { ApparatusPanel } from './ApparatusPanel'
+import { Edition } from '../Edition/Edition'
+import { CtDataEditionGenerator } from '../Edition/EditionGenerator/CtDataEditionGenerator'
+import { capitalizeFirstLetter } from '../toolbox/Util.mjs'
 
 // CONSTANTS
 
 // tab ids
 const editionTitleId = 'edition-title'
 const collationTableTabId = 'collation-table'
-const editionTabId = 'edition-panel'
+const mainTextTabId = 'main-text-panel'
 const editionPreviewTabId = 'edition-preview'
 const witnessInfoTabId = 'witness-info'
 const adminPanelTabId = 'admin'
@@ -112,15 +116,15 @@ export class EditionComposer {
     this.ctData['tableId'] = this.tableId
     this.versionInfo = this.options.versionInfo
 
-    // initialize the automatic apparatus
-    // let apparatusGenerator = new CriticalApparatusGenerator()
-    // this.criticalApparatus = apparatusGenerator.generateCriticalApparatus(this.ctData, this.ctData['witnessOrder'][0])
+    this.edition = new Edition()
+    this._reGenerateEdition()
 
     document.title = `${this.ctData.title} (${this.ctData['chunkId']})`
 
     let thisObject = this
 
     this.convertingToEdition = false
+
     $(window).on('beforeunload', function() {
       if (thisObject.unsavedChanges || thisObject.convertingToEdition) {
         //console.log("There are changes in editor")
@@ -135,6 +139,7 @@ export class EditionComposer {
       // verbose: true
     })
     this.witnessInfoPanel = new WitnessInfoPanel({
+      verbose: false,
       containerSelector: `#${witnessInfoTabId}`,
       ctData: this.ctData,
       onWitnessOrderChange: this.genOnWitnessOrderChange(),
@@ -143,6 +148,8 @@ export class EditionComposer {
     })
 
     this.adminPanel = new AdminPanel({
+      verbose: false,
+      containerSelector: `#${adminPanelTabId}`,
       versionInfo: this.versionInfo,
       peopleInfo: this.options.peopleInfo,
       ctType: this.ctData['type'],
@@ -154,16 +161,47 @@ export class EditionComposer {
     this.editionPreviewPanel = new EditionPreviewPanel({
       containerSelector: `#${editionPreviewTabId}`,
       ctData: this.ctData,
-      apparatus: this.criticalApparatus,
       langDef: this.options.langDef,
       onPdfExport: this.genOnExportPdf()
     })
 
-    this.editionPanel = new EditionPanel({
-      containerSelector: `#${editionTabId}`,
+    let apparatusPanels = this.edition.apparatuses
+      .map( (apparatus, index) => {
+        return new ApparatusPanel({
+          containerSelector: `#apparatus-${index}`,
+          edition: this.edition,
+          apparatusIndex: index,
+          verbose: true
+        }
+      )})
+
+    this.mainTextPanel = new MainTextPanel({
+      containerSelector: `#${mainTextTabId}`,
       ctData: this.ctData,
+      edition: this.edition,
+      apparatusPanels: apparatusPanels,
       verbose: true
     })
+
+    // tab arrays
+    let panelOneTabs = [
+      createTabConfig(mainTextTabId, 'Main Text', this.mainTextPanel),
+      createTabConfig(collationTableTabId, 'Collation Table', this.collationTablePanel),
+      createTabConfig(witnessInfoTabId, 'Witness Info', this.witnessInfoPanel)
+    ]
+
+    let panelTwoTabs = this.edition.apparatuses
+      .map( (apparatus, index) => {
+        return createTabConfig(
+          `apparatus-${index}`,
+          this._getTitleForApparatusType(apparatus.type),
+          apparatusPanels[index]
+         )
+      })
+      .concat([
+        createTabConfig(editionPreviewTabId, 'Edition Preview', this.editionPreviewPanel),
+        createTabConfig(adminPanelTabId, 'Admin', this.adminPanel)
+    ])
 
     this.multiPanelUI = new MultiPanelUI({
         logo: `<img src="${this.options.urlGenerator.images()}/apm-logo-plain.svg" height="40px" alt="logo"/>`,
@@ -177,19 +215,12 @@ export class EditionComposer {
           {
             id: 'panel-one',
             type: 'tabs',
-            tabs: [
-              createTabConfig(editionTabId, 'Edition', this.editionPanel),
-              createTabConfig(collationTableTabId, 'Collation Table', this.collationTablePanel),
-              createTabConfig(witnessInfoTabId, 'Witness Info', this.witnessInfoPanel)
-            ]
+            tabs: panelOneTabs
           },
           {
             id: 'panel-two',
             type: 'tabs',
-            tabs: [
-              createTabConfig(editionPreviewTabId, 'Edition Preview', this.editionPreviewPanel),
-              createTabConfig(adminPanelTabId, 'Admin', this.adminPanel)
-            ]
+            tabs: panelTwoTabs
           }
         ]
       }
@@ -519,6 +550,13 @@ export class EditionComposer {
     }
   }
 
+  _reGenerateEdition() {
+    let eg = new CtDataEditionGenerator({ ctData: this.ctData})
+    this.edition = eg.generateEdition()
+    console.log(`Edition Recalculated`)
+    console.log(this.edition)
+  }
+
   normalizeTitleString(title) {
     return title.replace(/^\s*/, '').replace(/\s*$/, '')
   }
@@ -530,6 +568,11 @@ export class EditionComposer {
     return `<div id="ct-info" title="${workAuthorName}, ${workTitle}; table ID: ${this.tableId}">${this.options.workId}-${this.options.chunkNumber}</div>`
   }
 
+
+  _getTitleForApparatusType(type) {
+    return 'Apparatus ' + capitalizeFirstLetter(type)
+  }
+
 }
 
 function createTabConfig(id, title, panelObject) {
@@ -538,7 +581,7 @@ function createTabConfig(id, title, panelObject) {
     title: title,
     content: (tabId, mode, visible) => { return panelObject.generateHtml(tabId, mode, visible) },
     contentClasses: panelObject.getContentClasses(),
-    onResize: () => { panelObject.onResize()},
+    onResize: (id, visible) => {  panelObject.onResize(visible)},
     postRender: (id, mode, visible) => { panelObject.postRender(id, mode, visible) },
     onShown: (id) => { panelObject.onShown(id)},
     onHidden: (id) => { panelObject.onHidden(id)}

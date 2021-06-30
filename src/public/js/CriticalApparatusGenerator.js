@@ -104,7 +104,7 @@ export class CriticalApparatusGenerator {
             // ignore base witness
             continue
           }
-          let theText = this._getNormalizedRowTextFromGroupMatrix(groupMatrix, witnessIndex)
+          let theText = this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex, true)
           if (theText === '') {
             // ignore empty witness text
             // TODO: check for deletions
@@ -148,7 +148,7 @@ export class CriticalApparatusGenerator {
           // ignore base witness
           continue
         }
-        let normalizedWitnessText = this._getNormalizedRowTextFromGroupMatrix(groupMatrix, witnessIndex)
+        let normalizedWitnessText = this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex, true)
         if (normalizedWitnessText === '') {
           // omission
           // TODO: check for deletions (i.e., the text might be present as a deletion in the witness)
@@ -160,7 +160,7 @@ export class CriticalApparatusGenerator {
           // variant
           // TODO: check for different hands and corrections
           let witnessData = this.createWitnessData(witnessIndex)
-          this._addWitnessDataToVariantArray(groupVariants, normalizedWitnessText, witnessData)
+          this._addWitnessDataToVariantArray(groupVariants, this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex, false), witnessData)
         }
       }
       let mainTextIndexFrom = ctIndexToMainTextMap[columnGroup.from].textIndex
@@ -307,7 +307,7 @@ export class CriticalApparatusGenerator {
             // ignore base witness
             continue
           }
-          let theText = this._getNormalizedRowTextFromGroupMatrix(groupMatrix, witnessIndex)
+          let theText = this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex)
           if (theText === '') {
             // ignore empty witness text
             // TODO: check for deletions
@@ -349,7 +349,7 @@ export class CriticalApparatusGenerator {
           // ignore base witness
           continue
         }
-        let normalizedWitnessText = this._getNormalizedRowTextFromGroupMatrix(groupMatrix, witnessIndex)
+        let normalizedWitnessText = this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex)
         if (normalizedWitnessText === '') {
           // omission
           // TODO: check for deletions (i.e., the text might be present as a deletion in the witness)
@@ -472,13 +472,13 @@ export class CriticalApparatusGenerator {
   }
 
 
-  _getNormalizedRowTextFromGroupMatrix(matrix, rowNumber) {
+  _getRowTextFromGroupMatrix(matrix, rowNumber, normalized = true) {
     return matrix.getColumn(rowNumber)
       .map( (token) => {
         if (token.tokenType === TokenType.EMPTY) {
           return ''
         }
-        let theText = ApparatusCommon.getNormalizedTextFromInputToken(token)
+        let theText = normalized ? ApparatusCommon.getNormalizedTextFromInputToken(token) : token['text']
         if (strIsPunctuation(theText)) {
           return ''
         }

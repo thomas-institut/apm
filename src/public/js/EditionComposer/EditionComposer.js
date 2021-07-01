@@ -18,6 +18,8 @@
 
 import { defaultLanguageDefinition } from '../defaults/languages'
 
+import * as TranscriptionTokenType from '../constants/WitnessTokenType'
+
 // widgets
 import { EditableTextField } from '../widgets/EditableTextField'
 
@@ -44,7 +46,11 @@ import { CtDataCleaner } from '../CtData/CtDataCleaner'
 import { ApparatusPanel } from './ApparatusPanel'
 import { Edition } from '../Edition/Edition'
 import { CtDataEditionGenerator } from '../Edition/EditionGenerator/CtDataEditionGenerator'
-import { capitalizeFirstLetter } from '../toolbox/Util.mjs'
+import { capitalizeFirstLetter, parseWordsAndPunctuation } from '../toolbox/Util.mjs'
+import { LocationInSection } from '../Edition/LocationInSection'
+import * as ArrayUtil from '../toolbox/ArrayUtil'
+import * as CollationTableType from '../constants/CollationTableType'
+import * as NormalizationSource from '../constants/NormalizationSource'
 
 // CONSTANTS
 
@@ -136,7 +142,7 @@ export class EditionComposer {
     this.collationTablePanel = new CollationTablePanel({
       containerSelector:  `#${collationTableTabId}`,
       ctData: this.ctData,
-      // verbose: true
+      verbose: true
     })
     this.witnessInfoPanel = new WitnessInfoPanel({
       verbose: false,
@@ -180,7 +186,8 @@ export class EditionComposer {
       ctData: this.ctData,
       edition: this.edition,
       apparatusPanels: apparatusPanels,
-      verbose: true
+      verbose: true,
+      onConfirmMainTextEdit: this.genOnConfirmMainTextEdit()
     })
 
     // tab arrays
@@ -323,37 +330,149 @@ export class EditionComposer {
     }
   }
 
+  _getMainTextWitnessCtRowIndex() {
+    return this.ctData['editionWitnessIndex'] !== undefined ? this.ctData['editionWitnessIndex'] :
+      this.ctData['witnessOrder'][0]
+
+  }
+
+  genOnConfirmMainTextEdit() {
+    return (section, tokenIndex, newText) => {
+      //console.log(`Confirming edit of main text token ${tokenIndex} in section ${prettyPrintArray(section)} with new text '${newText}'`)
+      let token = this.edition.getMainTextToken( new LocationInSection(section, tokenIndex))
+      if (token.isEmpty()) {
+        console.warn(`Trying to confirm edit of nonexistent main text token`)
+        return false
+      }
+      let ctIndex = token.collationTableIndex
+      if (ctIndex === -1) {
+        console.warn(`Trying to confirm edit of token that does not have a reference in the collation table`)
+        return false
+      }
+      let changesInCt = this._editMainText(ctIndex, newText)
+      if (changesInCt) {
+        this.updateSaveArea()
+        this._reGenerateEdition()
+        this._updateDataInPanels()
+      }
+      return changesInCt
+    }
+  }
+
+  _updateDataInPanels() {
+    this.mainTextPanel.updateData(this.ctData, this.edition)
+    this.collationTablePanel.processChangesInCtData()
+  }
+
+
+
+  /**
+   * Changes the text in the main text witness for the given index
+   * Returns true if there was an actual change in the collation table.
+   *
+   * @param {number} ctIndex
+   * @param {string} newText
+   * @return {boolean}
+   * @private
+   */
+  _editMainText(ctIndex, newText) {
+
+    function replaceToken(ctRow, ctIndex, editionWitnessRef, newText) {
+      let tokenType = Util.strIsPunctuation(newText) ? TranscriptionTokenType.PUNCTUATION : TranscriptionTokenType.WORD
+      this.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]['text'] = newText
+      this.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]['tokenType'] = tokenType
+      if (tokenType === TranscriptionTokenType.WORD) {
+        if (this.ctData['automaticNormalizationsApplied'].length !== 0) {
+          // apply normalizations for this token
+          let norm = this.normalizerRegister.applyNormalizerList(this.ctData['automaticNormalizationsApplied'], newText)
+          if (norm !== newText) {
+            console.log(`New text normalized:  ${newText} => ${norm}`)
+            this.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]['normalizedText'] = norm
+            this.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]['normalizationSource'] = NormalizationSource.COLLATION_EDITOR_AUTOMATIC
+          }
+        }
+      }
+    }
+    let ctRow = this._getMainTextWitnessCtRowIndex()
+    let editionWitnessRef = this.ctData['collationMatrix'][ctRow][ctIndex]
+    //console.log(`Editing witness token: row ${ctRow}, col ${ctIndex}, ref ${editionWitnessRef}`)
+    if (editionWitnessRef === -1) {
+      console.warn(`Null reference found editing witness token: row ${ctRow}, col ${ctIndex}, ref ${editionWitnessRef}`)
+      return false
+    }
+    let witnessToken = this.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]
+    if (witnessToken === undefined) {
+      console.warn(`Undefined witness token editing witness token: row ${ctRow}, col ${ctIndex}, ref ${editionWitnessRef}`)
+      return false
+    }
+    console.log(witnessToken)
+    newText = Util.trimWhiteSpace(newText)
+    if (witnessToken.text === newText) {
+      //console.log(`No change in text`)
+      return false
+    }
+
+    // parse new text into witness tokens
+    let parsedText = parseWordsAndPunctuation(newText)
+    console.log(parsedText)
+    if (parsedText.length === 0) {
+      // empty text
+      //console.log(`Empty text`)
+      this.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]['text'] = newText
+      this.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]['tokenType'] = TranscriptionTokenType.EMPTY
+      return true
+    }
+    if (parsedText.length === 1) {
+      // single word
+      console.log(`Single token in new text: ${parsedText[0].text}`)
+      replaceToken(ctRow, ctIndex, editionWitnessRef, newText)
+      return true
+    }
+    // more than one word
+    console.warn(`Adding multiple tokens not supported yet`)
+    let numTokensToAdd = parsedText.length -1
+
+    // TODO: implement this
+    // 1. add numTokensToAdd new empty tokens to edition witness after editionWitnessRef
+    // 2. add numTokensToAdd empty columns to collation matrix
+    // 3. replace witness tokens with new texts
+    // 4. update references in collation Matrix: editionWitnessRef ->  editionWitnessRef + numTokensToAdd
+
+
+    return false
+  }
+
   genOnConfirmArchive() {
     let thisObject = this
     return () => { return new Promise( (resolve, reject) => {
       // console.log(`About to archive table`)
-      thisObject.ctData['archived'] = true
+      this.ctData['archived'] = true
       let apiCallOptions = {
-        collationTableId: thisObject.tableId,
-        collationTable: thisObject.ctData,
+        collationTableId: this.tableId,
+        collationTable: this.ctData,
         descr: 'Archived',
         source: 'edit',
-        baseSiglum: thisObject.ctData['sigla'][0]
+        baseSiglum: this.ctData['sigla'][0]
       }
       $.post(
-        thisObject.apiSaveCollationUrl,
+        this.apiSaveCollationUrl,
         {data: JSON.stringify(apiCallOptions)}
       ).done( function (apiResponse){
         // console.log("Success archiving table")
         // console.log(apiResponse)
-        thisObject.lastSavedCtData = Util.deepCopy(thisObject.ctData)
+        this.lastSavedCtData = Util.deepCopy(thisObject.ctData)
         // thisObject.lastSavedEditorMatrix = thisObject.tableEditor.getMatrix().clone()
-        thisObject.versionInfo = apiResponse.versionInfo
+        this.versionInfo = apiResponse.versionInfo
         // thisObject.witnessUpdates = []
         // for(let i=0; i < thisObject.lastWitnessUpdateCheckResponse['witnesses'].length; i++) {
         //   if (thisObject.lastWitnessUpdateCheckResponse['witnesses'][i]['justUpdated']) {
         //     thisObject.lastWitnessUpdateCheckResponse['witnesses'][i]['justUpdated'] = false
         //   }
         // }
-        thisObject.unsavedChanges = false
+        this.unsavedChanges = false
         // thisObject.updateWitnessInfoDiv()
         thisObject.updateSaveArea()
-        resolve(thisObject.versionInfo)
+        resolve(this.versionInfo)
       }).fail(function(resp){
         console.log("ERROR: cannot archive table")
         thisObject.ctData['archived'] = false
@@ -414,7 +533,7 @@ export class EditionComposer {
 
 
   updateSaveArea() {
-    // console.log(`Updating save area`)
+    console.log(`Updating save area`)
     if (this.ctData['archived']) {
       let lastVersion = this.versionInfo[this.versionInfo.length-1]
       this.saveButtonPopoverTitle = 'Saving is disabled'
@@ -426,8 +545,8 @@ export class EditionComposer {
 
     let changes = this.getChangesInCtData()
     if (changes.length !== 0) {
-      // console.log(`There are changes`)
-      // console.log(changes)
+      console.log(`There are changes`)
+      console.log(changes)
       this.unsavedChanges = true
       this.adminPanel.disallowArchiving('Save or discard changes before attempting to archive this table/edition')
 
@@ -442,7 +561,7 @@ export class EditionComposer {
           .addClass('text-primary')
           .prop('disabled', false)
     } else {
-      // console.log(`No changes`)
+      console.log(`No changes`)
       this.unsavedChanges = false
       this.adminPanel.allowArchiving()
       let lastVersion = this.versionInfo[this.versionInfo.length-1]
@@ -457,6 +576,7 @@ export class EditionComposer {
 
   getChangesInCtData() {
     let changes = []
+
     if (this.ctData['title'] !== this.lastSavedCtData['title']) {
       changes.push("New title: '" + this.ctData['title'] + "'" )
     }
@@ -466,9 +586,9 @@ export class EditionComposer {
     //   changes.push('Changes in collation alignment')
     // }
 
-    // if (!ArrayUtil.arraysAreEqual(this.ctData['witnessOrder'], this.lastSavedCtData['witnessOrder'])) {
-    //   changes.push('New witness order')
-    // }
+    if (!ArrayUtil.arraysAreEqual(this.ctData['witnessOrder'], this.lastSavedCtData['witnessOrder'])) {
+      changes.push('New witness order')
+    }
 
     // if (!ArrayUtil.arraysAreEqual(this.ctData['sigla'], this.lastSavedCtData['sigla'])) {
     //   if (this.siglaPresetLoaded !== '') {
@@ -481,14 +601,14 @@ export class EditionComposer {
     //   this.siglaPresetLoaded = ''
     // }
 
-    // if(this.ctData['type'] === CollationTableType.EDITION) {
-    //   let editionWitnessIndex = this.ctData['witnessOrder'][0]
-    //   let oldText = this.lastSavedCtData['witnesses'][editionWitnessIndex]['tokens'].map(token => token.text).join(' ')
-    //   let newText = this.ctData['witnesses'][editionWitnessIndex]['tokens'].map(token => token.text).join(' ')
-    //   if (oldText !== newText) {
-    //     changes.push('Changes in edition text')
-    //   }
-    // }
+    if(this.ctData['type'] === CollationTableType.EDITION) {
+      let editionWitnessIndex = this.ctData['witnessOrder'][0]
+      let oldText = this.lastSavedCtData['witnesses'][editionWitnessIndex]['tokens'].map(token => token.text).join(' ')
+      let newText = this.ctData['witnesses'][editionWitnessIndex]['tokens'].map(token => token.text).join(' ')
+      if (oldText !== newText) {
+        changes.push('Changes in edition text')
+      }
+    }
 
     // if (this.witnessUpdates.length !== 0) {
     //   for(const witnessUpdate of this.witnessUpdates) {
@@ -496,18 +616,18 @@ export class EditionComposer {
     //   }
     // }
 
-    // if (!ArrayUtil.arraysAreEqual(this.ctData['groupedColumns'], this.lastSavedCtData['groupedColumns'])) {
-    //   changes.push(`Changes in column grouping`)
-    // }
+    if (!ArrayUtil.arraysAreEqual(this.ctData['groupedColumns'], this.lastSavedCtData['groupedColumns'])) {
+      changes.push(`Changes in column grouping`)
+    }
 
-    // if (!ArrayUtil.arraysAreEqual(this.ctData['automaticNormalizationsApplied'],
-    //   this.lastSavedCtData['automaticNormalizationsApplied'])) {
-    //   if (this.ctData['automaticNormalizationsApplied'].length===0) {
-    //     changes.push(`Disabled automatic normalizations`)
-    //   } else {
-    //     changes.push(`Applied automatic normalizations: ${this.ctData['automaticNormalizationsApplied'].join('+')}`)
-    //   }
-    // }
+    if (!ArrayUtil.arraysAreEqual(this.ctData['automaticNormalizationsApplied'],
+      this.lastSavedCtData['automaticNormalizationsApplied'])) {
+      if (this.ctData['automaticNormalizationsApplied'].length===0) {
+        changes.push(`Disabled automatic normalizations`)
+      } else {
+        changes.push(`Applied automatic normalizations: ${this.ctData['automaticNormalizationsApplied'].join('+')}`)
+      }
+    }
 
     return changes
   }

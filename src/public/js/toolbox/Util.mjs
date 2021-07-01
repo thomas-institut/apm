@@ -96,6 +96,38 @@ export function strIsPunctuation(text) {
   return true
 }
 
+export function parseWordsAndPunctuation(text) {
+  let parsedArray = []
+  let currentWord = ''
+  text.split('').forEach( (ch) => {
+    if (isWordToken(ch)) {
+      // word
+      currentWord += ch
+      return
+    }
+    if (strIsPunctuation(ch)) {
+      // punctuation
+      if (currentWord !== '') {
+        parsedArray.push({ type: 'w', text: currentWord})
+        currentWord = ''
+      }
+      parsedArray.push( { type: 'p', text: ch})
+      return
+    }
+    // whitespace
+    if (currentWord !== '') {
+      parsedArray.push({ type: 'w', text: currentWord })
+      currentWord = ''
+    }
+  })
+  if (currentWord !== '') {
+    parsedArray.push({ type: 'w', text: currentWord})
+  }
+
+  return parsedArray
+}
+
+
 export function hasPunctuation(text) {
   let punctuationArray = getValidPunctuationArray()
   for (let i = 0; i < text.length; i++) {
@@ -117,6 +149,8 @@ function getValidPunctuationArray() {
     ';',
     ':',
     '?',
+    '¿',
+    '¡',
     '!',
     '⊙',
     '¶',

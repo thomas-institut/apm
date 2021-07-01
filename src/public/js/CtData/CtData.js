@@ -17,6 +17,8 @@
  */
 
 import * as WitnessTokenType from '../constants/WitnessTokenType'
+import { SequenceWithGroups } from '../SequenceWithGroups'
+import { Matrix } from '@thomas-inst/matrix'
 
 
 /**
@@ -36,4 +38,46 @@ export class CtData  {
       .map( tokenRef => tokenRef === -1 ? { tokenType : WitnessTokenType.EMPTY } : ctData['witnesses'][witnessIndex]['tokens'][tokenRef])
   }
 
+  static getCollationMatrix(ctData) {
+    let rawCollationMatrix = ctData['collationMatrix']
+    let m = new Matrix(rawCollationMatrix.length, rawCollationMatrix.length === 0 ? 0 : rawCollationMatrix[0].length, -1)
+    rawCollationMatrix.forEach( (row, rowIndex) => {
+      row.forEach( (ref, colIndex) => {
+        m.setValue(rowIndex, colIndex, ref)
+      })
+    })
+    return m
+  }
+
+  static insertColumnAfter(ctData, col) {
+    let collationMatrix = this.getCollationMatrix(ctData)
+    if (collationMatrix.nRows === 0) {
+      return
+    }
+    let columnSequence = new SequenceWithGroups(collationMatrix.nCols, ctData['groupedColumns'])
+    collationMatrix.addColumnAfter(col, -1)
+    columnSequence.insertNumberAfter(col)
+    ctData['collationMatrix'] = _getRawCollationMatrixFromMatrix(collationMatrix)
+    ctData['groupedColumns'] = columnSequence.getGroupedNumbers()
+  }
+
+}
+
+/**
+ *
+ * @param {Matrix} m
+ * @private
+ */
+function _getRawCollationMatrixFromMatrix(m) {
+  let rawMatrix = []
+
+  for (let row = 0; row < m.nRows; row++) {
+    let theRow = []
+    for (let col = 0; col < m.nCols; col++) {
+      theRow.push(m.getValue(row, col))
+    }
+    rawMatrix.push(theRow)
+  }
+
+  return rawMatrix
 }

@@ -90,6 +90,7 @@ SubEntryWitnessInfo := {
 
 
 import { MainTextSection } from './MainTextSection'
+import { MainTextToken } from './MainTextToken'
 
 export class Edition {
 
@@ -145,6 +146,32 @@ export class Edition {
 
   getSigla() {
     return this.witnesses.map( w => w.siglum)
+  }
+
+  /**
+   *
+   * @param {LocationInSection} location
+   * @return {MainTextToken}
+   */
+  getMainTextToken(location) {
+    if (this.mainTextSections.length === 0 || location.isNull()) {
+      // empty edition or null address
+      return new MainTextToken()
+    }
+    if (this.mainTextSections[location.section[0]] === undefined) {
+      // location is out of scope
+      return new MainTextToken()
+    }
+
+    let section = this.mainTextSections[location.section[0]]
+    for (let i=1;i< location.section.length; i++) {
+      if (section.subSections[location.section[i]] === undefined) {
+        return new MainTextToken()
+      }
+      section = section.subSections[location.section[i]]
+    }
+
+    return section.text[location.textIndex] !== undefined ? section.text[location.textIndex] : new MainTextToken()
   }
 
 }

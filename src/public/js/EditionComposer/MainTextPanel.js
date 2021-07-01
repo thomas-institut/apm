@@ -35,6 +35,7 @@ import * as EditionMainTextTokenType from '../Edition/MainTextTokenType'
 import { Edition } from '../Edition/Edition'
 import { HtmlRenderer } from '../FmtText/HtmlRenderer'
 import { PanelWithToolbar } from './PanelWithToolbar'
+import { prettyPrintArray } from '../toolbox/ArrayUtil'
 
 const EDIT_MODE_OFF = 'off'
 const EDIT_MODE_TEXT = 'text'
@@ -53,7 +54,15 @@ export class MainTextPanel extends PanelWithToolbar {
     let optionsDefinition = {
       ctData: { type: 'object' },
       edition: { type: 'object', objectClass: Edition},
-      apparatusPanels: { type: 'array'}
+      apparatusPanels: { type: 'array'},
+      onConfirmMainTextEdit: {
+        // function to call when the user edits a main text token
+        //  (mainTextTokenIndex, newText) => boolean,  if false, no changes are made to the displayed text
+        type: 'function',
+        default: (section, tokenIndex, newText) => {
+          console.log(`Confirming edit of main text token ${tokenIndex} in section ${prettyPrintArray(section)} with new text '${newText}'`)
+          return true
+      }}
     }
 
     let oc = new OptionsChecker(optionsDefinition, 'Edition Panel')
@@ -73,6 +82,14 @@ export class MainTextPanel extends PanelWithToolbar {
     this.cursorInToken = false
     this.tokenIndexOne = -1
     this.tokenIndexTwo = -1
+  }
+
+  updateData(ctData, edition) {
+    this.ctData = ctData
+    this.edition = edition
+    this.options.apparatusPanels.forEach( (ap) => {
+      ap.updateEdition(edition)
+    })
   }
 
   generateToolbarHtml (tabId, visible) {
@@ -260,6 +277,8 @@ export class MainTextPanel extends PanelWithToolbar {
       ev.preventDefault()
       ev.stopPropagation()
       let tokenIndex = getIdFromClasses($(ev.target), 'main-text-token-')
+      // TODO: support multiple sections
+      let mainTextSection = [0]
       if (this.editingTextToken) {
         return
       }
@@ -268,7 +287,7 @@ export class MainTextPanel extends PanelWithToolbar {
       }
       switch(this.currentEditMode) {
         case EDIT_MODE_TEXT:
-          this.verbose && console.log(`Click on main text token ${tokenIndex} in main text edit mode`)
+          //this.verbose && console.log(`Click on main text token ${tokenIndex} in main text edit mode`)
           let tokenSelector = `.main-text-token-${tokenIndex}`
           this.originalTokenText = $(tokenSelector).text()
           this.tokenBeingEdited = tokenIndex
@@ -279,9 +298,23 @@ export class MainTextPanel extends PanelWithToolbar {
           })
           this.textTokenEditor.on('confirm', (ev) => {
             let newText = ev.detail.newText
-            console.log(`Confirming editing, new text = '${newText}'`)
-            // TODO: actually change the token in ctData and trigger updates in other panels
-            this._stopEditingMainText(newText)
+            // It should be assumed that newText is a valid edit (cell validation should have taken care of wrong edits).
+            // Even if newText would simply replace the current main text token, it can be the case that there is a change
+            // in the lines, so there should always be a regeneration of the edition, a redraw of the main text
+            // and an update to the apparatuses.
+            if (this.options.onConfirmMainTextEdit(mainTextSection, tokenIndex, newText)) {
+              this.verbose && console.log(`Confirming editing, new text = '${newText}'`)
+              this._stopEditingMainText(newText)
+              this._redrawMainText()
+              this._setupMainTextDivEventHandlers()
+              this._updateLineNumbersAndApparatuses().then( () => {
+                this.verbose && console.log(`Main text redrawn`)
+              })
+            } else {
+              this.verbose && console.log(`Change to main text not accepted`)
+              // TODO: indicate this error in some way in the UI, although it should NEVER happen
+              this._stopEditingMainText(this.originalTokenText)
+            }
           }).on('cancel', () => {
             console.log(`Canceling edit`)
             this._stopEditingMainText(this.originalTokenText)
@@ -462,6 +495,10 @@ export class MainTextPanel extends PanelWithToolbar {
       this._drawLineNumbers(mainTextTokensWithTypesettingInfo)
       this.options.apparatusPanels.forEach( (p) => { p.updateApparatus(mainTextTokensWithTypesettingInfo)})
     })
+  }
+
+  _redrawMainText() {
+    $(this.getContentAreaSelector()).html(this._generateMainTextHtml())
   }
 
   _generateMainTextHtml() {

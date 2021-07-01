@@ -1896,53 +1896,52 @@ export class CollationTableEditor {
   }
 
   genOnCellConfirmEditFunction() {
-    let thisObject = this
     return (tableRow, col, newText) => {
       //console.log(`Confirm edit on  ${tableRow}:${col}`)
       //console.log(`New text = '${newText}'`)
-      let witnessIndex = thisObject.ctData['witnessOrder'][tableRow]
+      let witnessIndex = this.ctData['witnessOrder'][tableRow]
       //console.log(`Witness index: ${witnessIndex}` )
-      let ref = thisObject.ctData['collationMatrix'][witnessIndex][col]
+      let ref = this.ctData['collationMatrix'][witnessIndex][col]
       //console.log(`Current ref: ${ref}`)
       if (ref === -1) {
         // TODO: deal with null refs in edition witness
         console.warn(`Trying to edit a -1 ref at witness ${witnessIndex}, row ${tableRow}, col ${col}`)
-        return { valueChange: false, value: ref}
+        return { valueChange: false, value: ref}  // forces TableEditor to keep current value
       }
 
-      let currentText = thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['text']
+      let currentText = this.ctData['witnesses'][witnessIndex]['tokens'][ref]['text']
       if (currentText === newText) {
         // no change!
-        return { valueChange: false, value: ref}
+        return { valueChange: false, value: ref} // forces TableEditor to keep current value
       }
       newText = Util.trimWhiteSpace(newText)
       if (newText === '') {
         // empty token
-        thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = newText
-        thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] = TranscriptionTokenType.EMPTY
+        this.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = newText
+        this.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] = TranscriptionTokenType.EMPTY
       } else  {
         let tokenType = Util.strIsPunctuation(newText) ? TranscriptionTokenType.PUNCTUATION : TranscriptionTokenType.WORD
-        thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = newText
-        thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] = tokenType
+        this.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = newText
+        this.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] = tokenType
         if (tokenType === TranscriptionTokenType.WORD) {
-          if (thisObject.ctData['automaticNormalizationsApplied'].length !== 0) {
+          if (this.ctData['automaticNormalizationsApplied'].length !== 0) {
             // apply normalizations for this token
-            let norm = thisObject.normalizerRegister.applyNormalizerList(thisObject.ctData['automaticNormalizationsApplied'], newText)
+            let norm = this.normalizerRegister.applyNormalizerList(this.ctData['automaticNormalizationsApplied'], newText)
             if (norm !== newText) {
               console.log(`New text normalized:  ${newText} => ${norm}`)
-              thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['normalizedText'] = norm
-              thisObject.ctData['witnesses'][witnessIndex]['tokens'][ref]['normalizationSource'] = NormalizationSource.COLLATION_EDITOR_AUTOMATIC
+              this.ctData['witnesses'][witnessIndex]['tokens'][ref]['normalizedText'] = norm
+              this.ctData['witnesses'][witnessIndex]['tokens'][ref]['normalizationSource'] = NormalizationSource.COLLATION_EDITOR_AUTOMATIC
             }
           }
         }
 
       }
 
-      thisObject.invalidateTokenDataCacheForToken(witnessIndex, ref)
+      this.invalidateTokenDataCacheForToken(witnessIndex, ref)
       //thisObject.recalculateVariants()
 
       console.log('Edition Witness updated')
-      console.log(thisObject.ctData['witnesses'][witnessIndex]['tokens'])
+      console.log(this.ctData['witnesses'][witnessIndex]['tokens'])
       // ref stays the same
       return { valueChange: true, value: ref}
     }

@@ -33,26 +33,45 @@ export class MainTextToken {
     this.collationTableIndex = -1
   }
 
+  /**
+   *
+   * @return {string}
+   */
   getPlainText() {
       return FmtText.getPlainText(this.fmtText)
   }
 
   /**
    *
+   * @return {boolean}
+   */
+  isEmpty() {
+    return this.type === MainTextTokenType.EMPTY
+  }
+
+  /**
+   *
    * @param {string|array|FmtTextToken} theText
    * @param {number} ctIndex
+   * @return {MainTextToken}
    */
   setText(theText, ctIndex = -1) {
     this.type = MainTextTokenType.TEXT
     this.fmtText = FmtTextFactory.fromAnything(theText)
     this.collationTableIndex = ctIndex
+    return this
   }
 
-
+  /**
+   *
+   * @param ctIndex
+   * @return {MainTextToken}
+   */
   setNormalSpace(ctIndex = -1) {
     this.type = MainTextTokenType.GLUE
     this.fmtText = FmtTextFactory.oneNormalSpace()
     this.collationTableIndex = ctIndex
+    return this
   }
 }
 

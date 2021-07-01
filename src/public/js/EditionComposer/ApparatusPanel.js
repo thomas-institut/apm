@@ -45,6 +45,12 @@ export class ApparatusPanel extends  PanelWithToolbar {
     this.cachedHtml = 'Apparatus coming soon...'
   }
 
+  updateEdition(edition) {
+    this.options.edition = edition
+    this.apparatus = this.options.edition.apparatuses[this.options.apparatusIndex]
+    this.lang = this.options.edition.getLang()
+  }
+
   generateContentHtml (tabId, mode, visible) {
     return this.cachedHtml
   }

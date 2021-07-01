@@ -23,12 +23,25 @@
  *  - Collation table manipulation: moving, grouping, normalizations
  */
 import { Panel } from './Panel'
+import {OptionsChecker} from '@thomas-inst/optionschecker'
 
 export class CollationTablePanel extends Panel{
   constructor (options = {}) {
     super(options)
+    let optionsDefinition = {
+      ctData: { type: 'object' }
+    }
+
+    let oc = new OptionsChecker(optionsDefinition, 'Edition Panel')
+    this.options = oc.getCleanOptions(options)
+    this.ctData = this.options.ctData
+
     this.visible = true
     this.contentGenerated = false
+  }
+
+  processChangesInCtData() {
+    this.verbose && console.log(`Got news of changes in CT data`)
   }
 
   generateHtml (tabId, mode, visible) {

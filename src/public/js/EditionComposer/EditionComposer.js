@@ -19,6 +19,7 @@
 import { defaultLanguageDefinition } from '../defaults/languages'
 
 import * as TranscriptionTokenType from '../constants/WitnessTokenType'
+import * as WitnessTokenClass from '../constants/TranscriptionTokenClass'
 
 // widgets
 import { EditableTextField } from '../widgets/EditableTextField'
@@ -384,10 +385,14 @@ export class EditionComposer {
   _editMainText(ctIndex, newText) {
     let thisObject = this
 
-    function replaceToken(ctRow, tokenIndex, newText) {
+    function replaceEditionWitnessToken(ctRow, tokenIndex, newText) {
       let tokenType = Util.strIsPunctuation(newText) ? TranscriptionTokenType.PUNCTUATION : TranscriptionTokenType.WORD
+      thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['tokenClass'] = WitnessTokenClass.EDITION
       thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['text'] = newText
       thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['tokenType'] = tokenType
+      thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['normalizedText'] = ''
+      thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['normalizationSource'] = ''
+
       if (tokenType === TranscriptionTokenType.WORD) {
         if (thisObject.ctData['automaticNormalizationsApplied'].length !== 0) {
           // apply normalizations for this token
@@ -424,7 +429,7 @@ export class EditionComposer {
     console.log(parsedText)
     if (parsedText.length === 0) {
       // empty text
-      //console.log(`Empty text`)
+      // TODO: delete the column in the CT if there is nothing in the witnesses?
       this.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]['text'] = newText
       this.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]['tokenType'] = TranscriptionTokenType.EMPTY
       return true
@@ -432,14 +437,16 @@ export class EditionComposer {
     if (parsedText.length === 1) {
       // single word
       console.log(`Single token in new text: ${parsedText[0].text}`)
-      replaceToken(ctRow, editionWitnessRef, newText)
+      replaceEditionWitnessToken(ctRow, editionWitnessRef, newText)
       return true
     }
     // more than one word
     this.ctData = CtData.insertColumnsAfter(this.ctData, ctIndex, parsedText.length-1)
     for (let col = 0; col < parsedText.length; col++ ) {
-      replaceToken(ctRow, editionWitnessRef + col, parsedText[col].text)
+      replaceEditionWitnessToken(ctRow, editionWitnessRef + col, parsedText[col].text)
     }
+    console.log(`New ct Data after multiple word edit`)
+    console.log(this.ctData)
     return true
   }
 

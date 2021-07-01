@@ -19,6 +19,7 @@
 import * as WitnessTokenType from '../constants/WitnessTokenType'
 import { SequenceWithGroups } from '../SequenceWithGroups'
 import { Matrix } from '@thomas-inst/matrix'
+import * as CollationTableType from '../constants/CollationTableType'
 
 
 /**
@@ -49,16 +50,35 @@ export class CtData  {
     return m
   }
 
-  static insertColumnAfter(ctData, col) {
+  static insertColumnsAfter(ctData, col, numCols) {
+    // 1. insert columns in collation table
     let collationMatrix = this.getCollationMatrix(ctData)
     if (collationMatrix.nRows === 0) {
       return
     }
+    if (col >= collationMatrix.nCols) {
+      return
+    }
     let columnSequence = new SequenceWithGroups(collationMatrix.nCols, ctData['groupedColumns'])
-    collationMatrix.addColumnAfter(col, -1)
-    columnSequence.insertNumberAfter(col)
+    for (let i = 0; i < numCols; i++) {
+      collationMatrix.addColumnAfter(col, -1)
+      columnSequence.insertNumberAfter(col)
+    }
     ctData['collationMatrix'] = _getRawCollationMatrixFromMatrix(collationMatrix)
     ctData['groupedColumns'] = columnSequence.getGroupedNumbers()
+
+
+    // 2. insert empty tokens in edition witness
+    let editionIndex = ctData['editionWitnessIndex']
+    if (ctData['type'] === CollationTableType.EDITION) {
+
+      for (let i = 0; i < numCols; i++) {
+        ctData['witnesses'][editionIndex].tokens.splice(col + 1, 0, { tokenType: WitnessTokenType.EMPTY })
+      }
+    }
+    // 3. fix references in collation matrix
+    ctData['collationMatrix'][editionIndex] = ctData['collationMatrix'][editionIndex].map( (ref, i) => { return i})
+    return ctData
   }
 
 }

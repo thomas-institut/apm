@@ -51,6 +51,7 @@ import { LocationInSection } from '../Edition/LocationInSection'
 import * as ArrayUtil from '../toolbox/ArrayUtil'
 import * as CollationTableType from '../constants/CollationTableType'
 import * as NormalizationSource from '../constants/NormalizationSource'
+import { CtData } from '../CtData/CtData'
 
 // CONSTANTS
 
@@ -383,18 +384,18 @@ export class EditionComposer {
   _editMainText(ctIndex, newText) {
     let thisObject = this
 
-    function replaceToken(ctRow, ctIndex, editionWitnessRef, newText) {
+    function replaceToken(ctRow, tokenIndex, newText) {
       let tokenType = Util.strIsPunctuation(newText) ? TranscriptionTokenType.PUNCTUATION : TranscriptionTokenType.WORD
-      thisObject.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]['text'] = newText
-      thisObject.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]['tokenType'] = tokenType
+      thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['text'] = newText
+      thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['tokenType'] = tokenType
       if (tokenType === TranscriptionTokenType.WORD) {
         if (thisObject.ctData['automaticNormalizationsApplied'].length !== 0) {
           // apply normalizations for this token
           let norm = thisObject.normalizerRegister.applyNormalizerList(thisObject.ctData['automaticNormalizationsApplied'], newText)
           if (norm !== newText) {
             console.log(`New text normalized:  ${newText} => ${norm}`)
-            thisObject.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]['normalizedText'] = norm
-            thisObject.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]['normalizationSource'] = NormalizationSource.COLLATION_EDITOR_AUTOMATIC
+            thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['normalizedText'] = norm
+            thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['normalizationSource'] = NormalizationSource.COLLATION_EDITOR_AUTOMATIC
           }
         }
       }
@@ -431,21 +432,15 @@ export class EditionComposer {
     if (parsedText.length === 1) {
       // single word
       console.log(`Single token in new text: ${parsedText[0].text}`)
-      replaceToken(ctRow, ctIndex, editionWitnessRef, newText)
+      replaceToken(ctRow, editionWitnessRef, newText)
       return true
     }
     // more than one word
-    console.warn(`Adding multiple tokens not supported yet`)
-    // let numTokensToAdd = parsedText.length -1
-
-    // TODO: implement this
-    // 1. add numTokensToAdd new empty tokens to edition witness after editionWitnessRef
-    // 2. add numTokensToAdd empty columns to collation matrix
-    // 3. replace witness tokens with new texts
-    // 4. update references in collation Matrix: editionWitnessRef ->  editionWitnessRef + numTokensToAdd
-
-
-    return false
+    this.ctData = CtData.insertColumnsAfter(this.ctData, ctIndex, parsedText.length-1)
+    for (let col = 0; col < parsedText.length; col++ ) {
+      replaceToken(ctRow, editionWitnessRef + col, parsedText[col].text)
+    }
+    return true
   }
 
   genOnConfirmArchive() {

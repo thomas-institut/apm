@@ -24,10 +24,15 @@ div#ct-info {
     display: flex;
     align-items: baseline;
     flex-direction: row;
+    margin-right: 1.5rem;
+}
+
+.panel-toolbar-group.leftmost {
+    margin-right: 0;
 }
 
 .panel-toolbar-item {
-   margin-right: 3px;
+   margin-right: 0.25rem;
 }
 
 a.tb-button {
@@ -208,4 +213,10 @@ h1.lemma {
 
 .sub-entry small {
     color: #575757;
+}
+
+/* Collation Table Panel */
+
+#collation-table .panel-content {
+    padding: 1rem;
 }

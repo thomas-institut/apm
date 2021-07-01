@@ -881,7 +881,7 @@ export class TableEditor {
 
   setupCellEventHandlers(row, col, restoreClickEvent = true) {
     let tdSelector = this.getTdSelector(row, col)
-    //console.log(`setting up event handlers for cell ${row}:${col}, restoreClick = ${restoreClickEvent}`)
+    // console.log(`setting up event handlers for cell ${row}:${col}, restoreClick = ${restoreClickEvent}`)
     if (this.tableEditMode !== editModeOff && restoreClickEvent) {
       if (this.isRowEditable(row)) {
         $(tdSelector).off('click')
@@ -962,6 +962,8 @@ export class TableEditor {
   _getCellIndexFromElement(element) {
     let cellIndex = null
     let classes = this.getClassList(element)
+    // console.log(`Get cell index from element`)
+    // console.log(classes)
     for(const theClass of classes) {
       if (theClass.search(/^te-cell-/) !== -1) {
         // TODO: use class constant in regex
@@ -1034,19 +1036,24 @@ export class TableEditor {
   genOnMouseEnterCell() {
     let thisObject = this
     return function(ev) {
+
       switch (thisObject.tableEditMode) {
         case editModeOff:
         case editModeGroup:
+          // console.log(`Mouse enter cell in off or group mode`)
           return true
 
         case editModeMove:
+          // console.log(`Mouse enter cell in edit mode`)
           let cellIndex = thisObject._getCellIndexFromElement($(ev.currentTarget))
           if (cellIndex === null) {
+            console.log(`Mouse enter cell on move mode, but no cell index`)
             return true
           }
+          // console.log(cellIndex)
           let row = cellIndex.row
           let col = cellIndex.col
-          //console.log('Mouse enter cell ' + row + ':' + col)
+          // console.log('Mouse enter cell move mode: ' + row + ':' + col)
           let tdSelector = thisObject.getTdSelector(row, col)
           if (thisObject.canMoveCellLeft(row, col)) {
             $(tdSelector + ' .move-cell-left-button').removeClass(hiddenClass)

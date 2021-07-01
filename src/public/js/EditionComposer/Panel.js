@@ -18,6 +18,10 @@
 
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 
+/**
+ * A panel inside the MultiUI interface
+ *
+ */
 export class Panel {
 
   constructor (options = {}) {
@@ -30,33 +34,33 @@ export class Panel {
 
     this.verbose = cleanOptions.verbose
     this.containerSelector = cleanOptions.containerSelector
-
+    this.visible = false
+    this.mode = ''
   }
 
   postRender(id, mode, visible) {
-    //this.verbose && console.log(`Post render tab ${id}, mode ${mode}, visible = ${visible}`)
+    this.visible = visible
+    this.mode = mode
   }
 
   onResize(visible) {
-    //this.verbose && console.log(`Resizing '${this.containerSelector}', visible = ${visible}`)
+    this.visible = visible
   }
 
-  onShown() {}
-  onHidden() {}
+  onShown() {
+    this.visible = true
+  }
+  onHidden() {
+    this.visible = false
+  }
   getContentClasses() {
     return []
   }
 
   generateHtml(tabId, mode, visible) {
+    this.visible = visible
+    this.mode = mode
     return `Panel id ${tabId}, mode ${mode}, ${visible ? 'visible' : 'hidden'}`
   }
-
-  reDraw(html) {
-    this.verbose && console.log(`Redrawing panel`)
-    if (this.containerSelector !== undefined) {
-      $(this.containerSelector).html(html)
-    }
-  }
-
 
 }

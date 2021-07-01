@@ -46,7 +46,7 @@ import { CtDataCleaner } from '../CtData/CtDataCleaner'
 import { ApparatusPanel } from './ApparatusPanel'
 import { Edition } from '../Edition/Edition'
 import { CtDataEditionGenerator } from '../Edition/EditionGenerator/CtDataEditionGenerator'
-import { capitalizeFirstLetter, parseWordsAndPunctuation } from '../toolbox/Util.mjs'
+import { capitalizeFirstLetter, deepCopy, parseWordsAndPunctuation } from '../toolbox/Util.mjs'
 import { LocationInSection } from '../Edition/LocationInSection'
 import * as ArrayUtil from '../toolbox/ArrayUtil'
 import * as CollationTableType from '../constants/CollationTableType'
@@ -141,7 +141,11 @@ export class EditionComposer {
     // Construct panels
     this.collationTablePanel = new CollationTablePanel({
       containerSelector:  `#${collationTableTabId}`,
+      normalizerRegister: this.normalizerRegister,
+      icons: this.icons,
       ctData: this.ctData,
+      onCtDataChange: this.genOnCtDataChangeFromCtPanel(),
+      contentAreaId: 'ct-panel-content',
       verbose: true
     })
     this.witnessInfoPanel = new WitnessInfoPanel({
@@ -354,6 +358,7 @@ export class EditionComposer {
         this.updateSaveArea()
         this._reGenerateEdition()
         this._updateDataInPanels()
+        this.editionPreviewPanel.updatePreview()
       }
       return changesInCt
     }
@@ -361,7 +366,7 @@ export class EditionComposer {
 
   _updateDataInPanels() {
     this.mainTextPanel.updateData(this.ctData, this.edition)
-    this.collationTablePanel.processChangesInCtData()
+    this.collationTablePanel.updateCtData(this.ctData)
   }
 
 
@@ -376,19 +381,20 @@ export class EditionComposer {
    * @private
    */
   _editMainText(ctIndex, newText) {
+    let thisObject = this
 
     function replaceToken(ctRow, ctIndex, editionWitnessRef, newText) {
       let tokenType = Util.strIsPunctuation(newText) ? TranscriptionTokenType.PUNCTUATION : TranscriptionTokenType.WORD
-      this.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]['text'] = newText
-      this.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]['tokenType'] = tokenType
+      thisObject.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]['text'] = newText
+      thisObject.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]['tokenType'] = tokenType
       if (tokenType === TranscriptionTokenType.WORD) {
-        if (this.ctData['automaticNormalizationsApplied'].length !== 0) {
+        if (thisObject.ctData['automaticNormalizationsApplied'].length !== 0) {
           // apply normalizations for this token
-          let norm = this.normalizerRegister.applyNormalizerList(this.ctData['automaticNormalizationsApplied'], newText)
+          let norm = thisObject.normalizerRegister.applyNormalizerList(thisObject.ctData['automaticNormalizationsApplied'], newText)
           if (norm !== newText) {
             console.log(`New text normalized:  ${newText} => ${norm}`)
-            this.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]['normalizedText'] = norm
-            this.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]['normalizationSource'] = NormalizationSource.COLLATION_EDITOR_AUTOMATIC
+            thisObject.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]['normalizedText'] = norm
+            thisObject.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]['normalizationSource'] = NormalizationSource.COLLATION_EDITOR_AUTOMATIC
           }
         }
       }
@@ -430,7 +436,7 @@ export class EditionComposer {
     }
     // more than one word
     console.warn(`Adding multiple tokens not supported yet`)
-    let numTokensToAdd = parsedText.length -1
+    // let numTokensToAdd = parsedText.length -1
 
     // TODO: implement this
     // 1. add numTokensToAdd new empty tokens to edition witness after editionWitnessRef
@@ -571,6 +577,16 @@ export class EditionComposer {
           .addClass('text-muted')
           .prop('disabled', true)
 
+    }
+  }
+
+  genOnCtDataChangeFromCtPanel() {
+    return (newCtData) => {
+      this.ctData = deepCopy(newCtData)
+      this._reGenerateEdition()
+      this.mainTextPanel.updateData(newCtData, this.edition)
+      this.updateSaveArea()
+      this.editionPreviewPanel.updatePreview()
     }
   }
 

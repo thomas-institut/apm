@@ -43,6 +43,10 @@ export class EditionMainTextGenerator {
     let mainTextTokens = []
     for(let i = 0; i < witnessTokens.length; i++) {
       let witnessToken = witnessTokens[i]
+      if (witnessToken === undefined) {
+        console.warn(`Witness token ${i} is undefined`)
+        continue
+      }
       let tokenType = witnessToken[INPUT_TOKEN_FIELD_TYPE]
       if (tokenType === WitnessTokenType.EMPTY){
         continue

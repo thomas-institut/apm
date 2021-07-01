@@ -36,6 +36,7 @@ import { Edition } from '../Edition/Edition'
 import { HtmlRenderer } from '../FmtText/HtmlRenderer'
 import { PanelWithToolbar } from './PanelWithToolbar'
 import { prettyPrintArray } from '../toolbox/ArrayUtil'
+import { deepCopy } from '../toolbox/Util.mjs'
 
 const EDIT_MODE_OFF = 'off'
 const EDIT_MODE_TEXT = 'text'
@@ -53,8 +54,8 @@ export class MainTextPanel extends PanelWithToolbar {
     super(options)
     let optionsDefinition = {
       ctData: { type: 'object' },
-      edition: { type: 'object', objectClass: Edition},
-      apparatusPanels: { type: 'array'},
+      edition: { type: 'object', objectClass: Edition },
+      apparatusPanels: { type: 'array' },
       onConfirmMainTextEdit: {
         // function to call when the user edits a main text token
         //  (mainTextTokenIndex, newText) => boolean,  if false, no changes are made to the displayed text
@@ -62,34 +63,56 @@ export class MainTextPanel extends PanelWithToolbar {
         default: (section, tokenIndex, newText) => {
           console.log(`Confirming edit of main text token ${tokenIndex} in section ${prettyPrintArray(section)} with new text '${newText}'`)
           return true
-      }}
+        }
+      }
     }
 
     let oc = new OptionsChecker(optionsDefinition, 'Edition Panel')
     this.options = oc.getCleanOptions(options)
-    this.ctData = this.options.ctData
-    this.edition = this.options.edition
+    this.ctData = deepCopy(this.options.ctData)
+    this.edition = deepCopy(this.options.edition)
     this.lang = this.options.ctData['lang']
-    // this.lastMode = ''
     this.mainTextNeedsToBeRedrawnOnNextOnShownEvent = true
     this.currentEditMode = 'off'
     this.editingTextToken = false
     this.originalTokenText = '__null__'
     this.tokenBeingEdited = -1
     this.textTokenEditor = null
-    this.selection = { from: -1, to: -1}
+    this.selection = { from: -1, to: -1 }
     this.selecting = false
     this.cursorInToken = false
     this.tokenIndexOne = -1
     this.tokenIndexTwo = -1
+    this.lastTypesetinfo = null
   }
 
   updateData(ctData, edition) {
-    this.ctData = ctData
-    this.edition = edition
+    this.ctData = deepCopy(ctData)
+    this.edition = deepCopy(edition)
+
     this.options.apparatusPanels.forEach( (ap) => {
       ap.updateEdition(edition)
     })
+
+    if (this.visible) {
+      $(this.getContentAreaSelector()).html(this.generateContentHtml('', '', true))
+      this._setupMainTextDivEventHandlers()
+      this.mainTextNeedsToBeRedrawnOnNextOnShownEvent = false
+      this._updateLineNumbersAndApparatuses()
+        .then( () => { this.verbose && console.log(`Finished showing edition on update data`) })
+    } else {
+      // use current typeset info if already calculated
+      this.mainTextNeedsToBeRedrawnOnNextOnShownEvent = true
+      if (this.lastTypesetinfo === null) {
+        // typeset info not calculated, just get one even if it's incorrect
+
+        this._updateLineNumbersAndApparatuses()
+          .then( () => { this.verbose && console.log(`Finished showing edition on update data`) })
+      } else {
+        this.options.apparatusPanels.forEach( (p) => { p.updateApparatus(this.lastTypesetinfo)})
+      }
+    }
+
   }
 
   generateToolbarHtml (tabId, visible) {
@@ -138,10 +161,12 @@ export class MainTextPanel extends PanelWithToolbar {
   }
 
   onShown () {
+    super.onShown()
     //this.verbose && console.log(`Edition Panel shown`)
     if (this.mainTextNeedsToBeRedrawnOnNextOnShownEvent) {
       this.mainTextNeedsToBeRedrawnOnNextOnShownEvent = false
       $(this.getContentAreaSelector()).html(this.generateContentHtml('', '', true))
+      this._setupMainTextDivEventHandlers()
       this._updateLineNumbersAndApparatuses()
         .then( () => { this.verbose && console.log(`Finished generating edition panel on shown`) })
     }
@@ -152,7 +177,7 @@ export class MainTextPanel extends PanelWithToolbar {
     this.onResize(visible)
     this.modeToggle = new MultiToggle({
       containerSelector: '#edition-panel-mode-toggle',
-      title: 'Edit:',
+      title: 'Edit: ',
       buttonClass: 'tb-button',
       initialOption: this.currentEditMode,
         wrapButtonsInDiv: true,
@@ -211,11 +236,13 @@ export class MainTextPanel extends PanelWithToolbar {
 
   _setupMainTextDivEventHandlers() {
     $(`${this.containerSelector} .main-text`)
+      .off()
       .on('click', this._genOnClickMainTextDiv())
       .on('mousedown', this._genOnMouseDownMainTextDiv())
       .on('mouseup', this._genOnMouseUpMainTextDiv())
       .on('mouseleave', this._genOnMouseLeaveDiv())
     $(`${this.containerSelector} span.main-text-token`)
+      .off()
       .on('click', this._genOnClickMainTextToken())
       .on('mousedown', this._genOnMouseDownMainTextToken())
       .on('mouseup', this._genOnMouseUpMainTexToken())
@@ -287,7 +314,7 @@ export class MainTextPanel extends PanelWithToolbar {
       }
       switch(this.currentEditMode) {
         case EDIT_MODE_TEXT:
-          //this.verbose && console.log(`Click on main text token ${tokenIndex} in main text edit mode`)
+          this.verbose && console.log(`Click on main text token ${tokenIndex} in main text edit mode`)
           let tokenSelector = `.main-text-token-${tokenIndex}`
           this.originalTokenText = $(tokenSelector).text()
           this.tokenBeingEdited = tokenIndex
@@ -488,12 +515,11 @@ export class MainTextPanel extends PanelWithToolbar {
   _updateLineNumbersAndApparatuses() {
     return wait(typesetInfoDelay).then( () => {
       this.verbose && console.log(`Updating apparatuses div`)
-      let mainTextTokensWithTypesettingInfo =
-        getTypesettingInfo(this.containerSelector, 'main-text-token-', this.edition.mainTextSections[0].text)
+      this.lastTypesetinfo = getTypesettingInfo(this.containerSelector, 'main-text-token-', this.edition.mainTextSections[0].text)
       this.verbose && console.log(`Typesetting info`)
-      this.verbose && console.log(mainTextTokensWithTypesettingInfo)
-      this._drawLineNumbers(mainTextTokensWithTypesettingInfo)
-      this.options.apparatusPanels.forEach( (p) => { p.updateApparatus(mainTextTokensWithTypesettingInfo)})
+      this.verbose && console.log(this.lastTypesetinfo)
+      this._drawLineNumbers(this.lastTypesetinfo)
+      this.options.apparatusPanels.forEach( (p) => { p.updateApparatus(this.lastTypesetinfo)})
     })
   }
 

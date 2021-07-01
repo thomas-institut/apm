@@ -11,12 +11,14 @@ export class PanelWithToolbar extends Panel {
   constructor (options) {
     super(options)
     let optionsSpec = {
-      maximizeContentArea: { type: 'boolean', default: true}
+      maximizeContentArea: { type: 'boolean', default: true},
+      contentAreaId: { type: 'string', default: ''}
     }
 
     let oc = new OptionsChecker(optionsSpec, 'PanelWithToolbar')
     let cleanOptions = oc.getCleanOptions(options)
     this.maximizeContentArea = cleanOptions.maximizeContentArea
+    this.contentAreaId = cleanOptions.contentAreaId
   }
 
   onResize (visible) {
@@ -32,7 +34,8 @@ export class PanelWithToolbar extends Panel {
     let toolbarHtml = this.generateToolbarHtml(tabId, mode, visible)
     let contentAreaClassString = this.getContentAreaClasses().concat( [ contentAreaClass]).join(' ')
     let contentHtml = this.generateContentHtml(tabId, mode, visible)
-    return `<div class="${toolbarClassString}">${toolbarHtml}</div><div class="${contentAreaClassString}">${contentHtml}</div>`
+    let contentAreaIdString = this.contentAreaId !== '' ?  `id="${this.contentAreaId}"` : ''
+    return `<div class="${toolbarClassString}">${toolbarHtml}</div><div class="${contentAreaClassString}" ${contentAreaIdString}>${contentHtml}</div>`
   }
 
   getContentClasses () {
@@ -63,5 +66,20 @@ export class PanelWithToolbar extends Panel {
     return []
   }
 
+  onShown () {
+    super.onShown()
+  }
+
+  onHidden () {
+    super.onHidden()
+  }
+
+  postRender (id, mode, visible) {
+    super.postRender(id, mode, visible)
+  }
+
+  replaceContent(newHtml) {
+    $(this.getContentAreaSelector()).html(newHtml)
+  }
 
 }

@@ -31,6 +31,10 @@ export function removeWhiteSpace(someString) {
   return someString.replace(/\s/g, '')
 }
 
+export function removeExtraWhiteSpace(someString) {
+  return trimWhiteSpace(someString).replace(/\s+/g, ' ')
+}
+
 export function trimWhiteSpace(someString) {
   return someString.replace(/^\s+/, '').replace(/\s+$/, '')
 }

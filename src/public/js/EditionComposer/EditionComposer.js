@@ -146,7 +146,7 @@ export class EditionComposer {
       normalizerRegister: this.normalizerRegister,
       icons: this.icons,
       ctData: this.ctData,
-      onCtDataChange: this.genOnCtDataChangeFromCtPanel(),
+      onCtDataChange: this.genOnCtDataChange(),
       contentAreaId: 'ct-panel-content',
       verbose: true
     })
@@ -193,7 +193,8 @@ export class EditionComposer {
       edition: this.edition,
       apparatusPanels: apparatusPanels,
       verbose: true,
-      onConfirmMainTextEdit: this.genOnConfirmMainTextEdit()
+      onConfirmMainTextEdit: this.genOnConfirmMainTextEdit(),
+      onCtDataChange: this.genOnCtDataChange()
     })
 
     // tab arrays
@@ -582,9 +583,11 @@ export class EditionComposer {
     }
   }
 
-  genOnCtDataChangeFromCtPanel() {
+  genOnCtDataChange() {
     return (newCtData) => {
       this.ctData = deepCopy(newCtData)
+      console.log(`New CT Data`)
+      console.log(this.ctData)
       this._reGenerateEdition()
       this.mainTextPanel.updateData(newCtData, this.edition)
       this.updateSaveArea()

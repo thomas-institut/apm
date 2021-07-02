@@ -53,7 +53,7 @@ export class CriticalApparatusGenerator {
     // 1. Construct an array with main text tokens: a map of the base witness' row in the collation
     //    table exchanging the references for the actual tokens and filling the null references with empty tokens
     let baseWitnessTokens = CtData.getCtWitnessTokens(ctData, baseWitnessIndex)
-    let ctIndexToMainTextMap = calcCtIndexToMainTextMap(baseWitnessTokens.length, mainText)
+    let ctIndexToMainTextMap = CriticalApparatusGenerator.calcCtIndexToMainTextMap(baseWitnessTokens.length, mainText)
     // Supporting only one section for now
     let section = [0]
 
@@ -509,6 +509,37 @@ export class CriticalApparatusGenerator {
   createWitnessData(witnessIndex, hand = 0, location = '') {
     return  { witnessIndex: witnessIndex, hand: hand, location: location}
   }
+
+
+  /**
+   * @param {number} ctRowLength
+   * @param {MainTextSection[]} mainTextSections
+   */
+  static calcCtIndexToMainTextMap(ctRowLength, mainTextSections) {
+    // TODO: test this with complex section trees
+    let theMap = []
+    // 1. fill the map with null references
+    for (let i = 0; i < ctRowLength; i++) {
+      theMap.push(new LocationInSection())
+    }
+
+    function visitSection(sectionLocation, section) {
+      // Collect info from text tokens
+      section.text.forEach( (textToken, textIndex) => {
+        if (textToken.collationTableIndex !== -1) {
+          theMap[textToken.collationTableIndex] = new LocationInSection(sectionLocation, textIndex)
+        }
+      })
+      // visit every subsection
+      section.subSections.forEach( (subSection, subSectionIndex) => {
+        visitSection( sectionLocation.concat([subSectionIndex]), subSection)
+      })
+    }
+    mainTextSections.forEach( (s, i) => {
+      visitSection([i], s)
+    })
+    return theMap
+  }
 }
 
 function findRangeInEntries(theArray, from, to) {
@@ -521,34 +552,4 @@ function findRangeInEntries(theArray, from, to) {
     }
   })
   return index
-}
-
-/**
- * @param {number} ctRowLength
- * @param {MainTextSection[]} mainTextSections
- */
-function calcCtIndexToMainTextMap(ctRowLength, mainTextSections) {
-  // TODO: test this with complex section trees
-  let theMap = []
-  // 1. fill the map with null references
-  for (let i = 0; i < ctRowLength; i++) {
-    theMap.push(new LocationInSection())
-  }
-
-  function visitSection(sectionLocation, section) {
-      // Collect info from text tokens
-      section.text.forEach( (textToken, textIndex) => {
-        if (textToken.collationTableIndex !== -1) {
-          theMap[textToken.collationTableIndex] = new LocationInSection(sectionLocation, textIndex)
-        }
-      })
-      // visit every subsection
-      section.subSections.forEach( (subSection, subSectionIndex) => {
-        visitSection( sectionLocation.concat([subSectionIndex]), subSection)
-      })
-  }
-  mainTextSections.forEach( (s, i) => {
-    visitSection([i], s)
-  })
-  return theMap
 }

@@ -20,11 +20,29 @@ import * as WitnessTokenType from '../constants/WitnessTokenType'
 import { SequenceWithGroups } from '../SequenceWithGroups'
 import { Matrix } from '@thomas-inst/matrix'
 import * as CollationTableType from '../constants/CollationTableType'
+import { ApparatusSubEntry } from '../Edition/ApparatusSubEntry'
+import * as SubEntryType from '../Edition/SubEntryType'
+import { FmtTextFactory } from '../FmtText/FmtTextFactory'
+import { ApparatusEntry } from '../Edition/ApparatusEntry'
 
 
-/**
- * A collection of static methods to manipulate the CtData (= Collation Table Data)  structure
+
+/*
+ A collection of static methods to manipulate the CtData (= Collation Table Data)  structure
+
+  CtData := {
+    customApparatuses: CustomApparatus[]
+  }
+
+ CustomApparatus := {
+  type: string
+  entries: CustomApparatusEntry
+ }
+
+  CustomApparatusEntry = same as ApparatusEntry, but from and to refer to the collation table, not to the main text
+
  */
+
 export class CtData  {
 
   /**
@@ -79,6 +97,62 @@ export class CtData  {
     // 3. fix references in collation matrix
     ctData['collationMatrix'][editionIndex] = ctData['collationMatrix'][editionIndex].map( (ref, i) => { return i})
     return ctData
+  }
+
+  /**
+   * Adds a custom text apparatus entry to an apparatus
+   * @param {object} ctData
+   * @param {string} apparatusType
+   * @param {number} ctFrom
+   * @param {number} ctTo
+   * @param {string} lemma
+   * @param {string|array|FmtText }text
+   */
+  static addCustomApparatusTextSubEntry(ctData, apparatusType, ctFrom, ctTo, lemma, text) {
+    let apparatusIndex = this.getCustomApparatusEntryIndexFromType(ctData, apparatusType)
+    if (apparatusIndex === -1) {
+      console.warn(`Tried to add an apparatus entry to unknown apparatus ${apparatusType}`)
+      return ctData
+    }
+    let currentEntryIndex = this.getCustomApparatusEntryIndexForCtRange(ctData, apparatusType, ctFrom, ctTo)
+    let newSubEntry = new ApparatusSubEntry()
+    newSubEntry.type = SubEntryType.CUSTOM
+    newSubEntry.fmtText = FmtTextFactory.fromAnything(text)
+    newSubEntry.plainText = text
+    if (currentEntryIndex === -1) {
+      let newEntry = new ApparatusEntry()
+      newEntry.from = ctFrom
+      newEntry.to = ctTo
+      newEntry.lemma = lemma
+      newEntry.section = [ 0 ]
+      newEntry.subEntries = [ newSubEntry]
+      ctData['customApparatuses'][apparatusIndex].entries.push(newEntry)
+    } else {
+      ctData['customApparatuses'][apparatusIndex].entries[currentEntryIndex].subEntries.push(newSubEntry)
+    }
+    return ctData
+  }
+
+  static getCustomApparatusEntryIndexFromType(ctData, apparatusType) {
+    return ctData['customApparatuses'].map( (app) => { return app.type}).indexOf(apparatusType)
+  }
+
+  static getCustomApparatusEntryIndexForCtRange(ctData, apparatusType, ctFrom, ctTo) {
+
+    let apparatusIndex = this.getCustomApparatusEntryIndexFromType(ctData, apparatusType)
+    if (apparatusIndex === -1) {
+      return -1
+    }
+
+    let index = -1
+
+    ctData['customApparatuses'][apparatusIndex].entries.forEach( (entry, entryIndex) => {
+      // ignore 'section'
+      if (entry['from'] === ctFrom && entry['to'] === ctTo) {
+        index = entryIndex
+      }
+    })
+    return index
   }
 
 }

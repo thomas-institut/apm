@@ -23,6 +23,10 @@ import { EditionMainTextGenerator } from '../../EditionMainTextGenerator.mjs'
 import { CtData } from '../../CtData/CtData'
 import { CriticalApparatusGenerator } from '../../CriticalApparatusGenerator'
 import { EditionWitnessInfo } from '../EditionWitnessInfo'
+import { Apparatus } from '../Apparatus'
+import { ApparatusEntry } from '../ApparatusEntry'
+import { ApparatusSubEntry } from '../ApparatusSubEntry'
+import { FmtTextFactory } from '../../FmtText/FmtTextFactory'
 
 export class CtDataEditionGenerator extends EditionGenerator{
   constructor (options) {
@@ -60,7 +64,32 @@ export class CtDataEditionGenerator extends EditionGenerator{
     edition.apparatuses = [
       generatedCriticalApparatus
     ]
-    edition.apparatuses = edition.apparatuses.concat(this.ctData['customApparatuses'])
+    let theMap = CriticalApparatusGenerator.calcCtIndexToMainTextMap(baseWitnessTokens, edition.mainTextSections)
+    edition.apparatuses = edition.apparatuses.concat(this._getCustomApparatuses(theMap))
     return edition
+  }
+
+  _getCustomApparatuses(ctIndexToMainTextMap) {
+    return this.ctData['customApparatuses'].map ( (apparatus) => {
+      let theApparatus = new Apparatus()
+      theApparatus.type = apparatus['type']
+      theApparatus.entries = apparatus['entries'].map ( (entry) => {
+        let theEntry = new ApparatusEntry()
+        theEntry.lemma = entry['lemma']
+        theEntry.section = entry['section']
+        theEntry.from = ctIndexToMainTextMap[entry['from']].textIndex
+        theEntry.to = ctIndexToMainTextMap[entry['to']].textIndex
+        theEntry.subEntries = entry['subEntries'].map ( (subEntry) => {
+          let theSubEntry = new ApparatusSubEntry()
+          theSubEntry.type = subEntry['type']
+          // TODO: use fmtText field
+          theSubEntry.fmtText = FmtTextFactory.fromAnything(subEntry['plainText'])
+          // TODO: support other sub entry types
+          return theSubEntry
+        })
+        return theEntry
+      })
+      return theApparatus
+    })
   }
 }

@@ -67,6 +67,25 @@ export class ApparatusPanel extends  PanelWithToolbar {
     this.verbose && console.log(`Updating apparatus ${this.options.apparatusIndex}`)
     this.cachedHtml = this._genApparatusHtml(mainTextTokensWithTypesettingInfo)
     $(this.getContentAreaSelector()).html(this.cachedHtml)
+    this._setUpEventHandlers()
+  }
+
+  _setUpEventHandlers() {
+    let lemmata = $(this.getContentAreaSelector()).find('.lemma')
+    lemmata.off()
+      .on('mouseenter', (ev)=> {
+        let target = $(ev.target)
+        if (!target.hasClass('lemma-selected')) {
+          target.addClass('lemma-hover')
+        }
+    })
+      .on('mouseleave', (ev) => {
+          $(ev.target).removeClass('lemma-hover')
+      })
+      .on('click', (ev) => {
+        lemmata.removeClass('lemma-selected')
+        $(ev.target).removeClass('lemma-hover').addClass('lemma-selected')
+      })
   }
 
   _genApparatusHtml(mainTextTokensWithTypesettingInfo) {

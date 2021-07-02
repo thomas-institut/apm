@@ -26,7 +26,7 @@
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { getIdFromClasses} from '../toolbox/UserInterfaceUtil'
 import {getTypesettingInfo} from '../BrowserTypesettingCalculations'
-import { wait } from '../toolbox/FunctionUtil'
+import { doNothing, wait } from '../toolbox/FunctionUtil'
 import { MultiToggle } from '../widgets/MultiToggle'
 import { EditableTextField } from '../widgets/EditableTextField'
 import { ApparatusEntryInput } from './ApparatusEntryInput'
@@ -36,7 +36,9 @@ import { Edition } from '../Edition/Edition'
 import { HtmlRenderer } from '../FmtText/HtmlRenderer'
 import { PanelWithToolbar } from './PanelWithToolbar'
 import { prettyPrintArray } from '../toolbox/ArrayUtil'
-import { deepCopy } from '../toolbox/Util.mjs'
+import { deepCopy, removeExtraWhiteSpace } from '../toolbox/Util.mjs'
+import { LocationInSection } from '../Edition/LocationInSection'
+import { CtData } from '../CtData/CtData'
 
 const EDIT_MODE_OFF = 'off'
 const EDIT_MODE_TEXT = 'text'
@@ -64,13 +66,14 @@ export class MainTextPanel extends PanelWithToolbar {
           console.log(`Confirming edit of main text token ${tokenIndex} in section ${prettyPrintArray(section)} with new text '${newText}'`)
           return true
         }
-      }
+      },
+      onCtDataChange: { type: 'function', default: doNothing}
     }
 
     let oc = new OptionsChecker(optionsDefinition, 'Edition Panel')
     this.options = oc.getCleanOptions(options)
     this.ctData = deepCopy(this.options.ctData)
-    this.edition = deepCopy(this.options.edition)
+    this.edition = this.options.edition
     this.lang = this.options.ctData['lang']
     this.mainTextNeedsToBeRedrawnOnNextOnShownEvent = true
     this.currentEditMode = 'off'
@@ -86,9 +89,14 @@ export class MainTextPanel extends PanelWithToolbar {
     this.lastTypesetinfo = null
   }
 
+  /**
+   *
+   * @param {object} ctData
+   * @param {Edition} edition
+   */
   updateData(ctData, edition) {
     this.ctData = deepCopy(ctData)
-    this.edition = deepCopy(edition)
+    this.edition = edition
 
     this.options.apparatusPanels.forEach( (ap) => {
       ap.updateEdition(edition)
@@ -209,7 +217,7 @@ export class MainTextPanel extends PanelWithToolbar {
     for (let i=this.selection.from; i <= this.selection.to; i++) {
       lemma += $(`${this.containerSelector} .main-text-token-${i}`).text() + ' '
     }
-    return lemma
+    return removeExtraWhiteSpace(lemma)
   }
 
   _genOnClickAddEntryButton() {
@@ -226,8 +234,23 @@ export class MainTextPanel extends PanelWithToolbar {
         lang: this.lang
       })
       aei.getEntry().then( (newEntry) => {
-        this.verbose && console.log(`Got new entry`)
+        this.verbose && console.log(`New custom apparatus entry `)
+        this.verbose && console.log(this.selection)
         this.verbose && console.log(newEntry)
+
+        let fromToken = this.edition.getMainTextToken( new LocationInSection([0], this.selection.from))
+        let toToken = this.edition.getMainTextToken( new LocationInSection([0], this.selection.to))
+
+        this.verbose && console.log(`CT range: ${fromToken.collationTableIndex} - ${toToken.collationTableIndex}`)
+        this.ctData = CtData.addCustomApparatusTextSubEntry(this.ctData,
+          newEntry.apparatus,
+          fromToken.collationTableIndex,
+          toToken.collationTableIndex,
+          this._getLemmaFromSelection(),
+          newEntry.text
+        )
+        this.options.onCtDataChange(this.ctData)
+
       }).catch( (reason) => {
         this.verbose && console.log(`FAIL: ${reason}`)
       })

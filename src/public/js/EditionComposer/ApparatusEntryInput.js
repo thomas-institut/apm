@@ -24,6 +24,12 @@
 import { ConfirmDialog } from '../ConfirmDialog'
 import { doNothing } from '../toolbox/FunctionUtil'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
+import { ApparatusCommon } from './ApparatusCommon'
+import { FmtText } from '../FmtText/FmtText'
+
+// TODO: support adding/editing multiple custom entries
+
+const updateEntryLabel = 'Update Apparatus'
 
 export class ApparatusEntryInput {
 
@@ -33,16 +39,35 @@ export class ApparatusEntryInput {
       apparatuses: { type: 'array', required: true},
       lang: { type: 'string', required: true},
       lemma: { type: 'NonEmptyString', required: true},
-      currentEntry: {type: 'string', default: ''}
+      selectedApparatusIndex: { type: 'integer', default: 0},
+      sigla: { type: 'array', required: true}
     }
 
     let oc = new OptionsChecker(optionsSpec, "Apparatus Entry Input")
     this.options = oc.getCleanOptions(options)
     console.log(this.options)
 
+    this.apparatuses = this.options.apparatuses.map( (app) => {
+      let newApp = app
+      let customEntries = app.currentEntries.filter( e => e.type === 'custom')
+      newApp.currentEntries = app.currentEntries.filter( (entry) => {
+        return entry.type !== 'custom'
+      })
+      newApp.customEntry = ''
+      newApp.newCustomEntry = true
+      if (customEntries.length !== 0) {
+        newApp.customEntry = FmtText.getPlainText(customEntries[0].fmtText)
+        newApp.newCustomEntry = false
+      }
+      return newApp
+    })
+
+    console.log(this.apparatuses)
+
+
     this.dialog = new ConfirmDialog({
       title: 'Apparatus Entry',
-      acceptButtonLabel: 'Add Entry',
+      acceptButtonLabel: updateEntryLabel,
       body: this._genBodyHtml(),
       acceptFunction: doNothing,
       cancelFunction: doNothing,
@@ -50,34 +75,98 @@ export class ApparatusEntryInput {
     })
 
     this.dialog.hideAcceptButton()
-    let thisObject = this
+
     this.textEntry = $('#free-text-entry')
     this.apparatusSelect = $('#apparatus-select')
+    this.apparatusSelect.val(this.options.selectedApparatusIndex)
+    this.apparatusSelect.on('change', () => {
+      let selectedAppIndex = this.apparatusSelect.val() * 1  // force it to be a number!
+      this._showSelectedApparatusInDialog(selectedAppIndex)
+      this.textEntry.val(this.apparatuses[selectedAppIndex].customEntry)
+      this._updateAcceptButton()
+    })
     this.textEntry.on('keyup', () => {
-      if (thisObject.textEntry.val() === '') {
-        thisObject.dialog.hideAcceptButton()
-      } else {
-        thisObject.dialog.showAcceptButton()
-      }
+      this._updateAcceptButton()
+    })
+
+    this.apparatuses.forEach( (app, apparatusIndex) => {
+      app.currentEntries.forEach( (entry, subEntryIndex) => {
+        $(`#aei-sub-entry-${apparatusIndex}-${subEntryIndex}`).on('change', () => {
+          console.log(`Change of value in check box for apparatus ${apparatusIndex}, sub entry ${subEntryIndex}`)
+          this._updateAcceptButton()
+        })
+      })
     })
   }
 
+  _updateAcceptButton() {
+    let selectedAppIndex = this.apparatusSelect.val() * 1
+    let changeInCheckboxes = false
+
+    this.apparatuses[selectedAppIndex].currentEntries.forEach( (se, sei) => {
+      if ($(`#aei-sub-entry-${selectedAppIndex}-${sei}`).prop('checked') !== se.enabled) {
+        changeInCheckboxes = true
+      }
+    })
+
+    let textInEditor = this.textEntry.val()
+    if (textInEditor === this.apparatuses[selectedAppIndex].customEntry && !changeInCheckboxes) {
+      this.dialog.hideAcceptButton()
+    } else {
+      this.dialog.showAcceptButton()
+    }
+  }
+
+  /**
+   *
+   * @param {number} appIndex
+   * @private
+   */
+  _showSelectedApparatusInDialog(appIndex) {
+    let dialogSelector = this.dialog.getSelector()
+    this.apparatuses.forEach( (app, ai) => {
+      let checkboxFormGroup =  $(`${dialogSelector} div.sub-entry-app-${ai}`)
+      if (ai === appIndex) {
+        checkboxFormGroup.removeClass('hidden')
+      } else {
+        checkboxFormGroup.addClass('hidden')
+      }
+    })
+    this.textEntry.val(this.apparatuses[appIndex].customEntry)
+
+  }
+
   getEntry() {
-    let thisObject = this
     return new Promise( (resolve, reject) => {
-      thisObject.dialog.setCancelFunction( () => {
-        thisObject.dialog.destroy()
+      this.dialog.setCancelFunction( () => {
+        this.dialog.destroy()
         reject('User cancelled')
       })
 
-      thisObject.dialog.setAcceptFunction( () => {
-        thisObject.dialog.destroy()
+      this.dialog.setAcceptFunction( () => {
+        let apparatusIndex = this.apparatusSelect.val()
+        let changesInCheckboxes = false
+        let enabledArray = []
+        this.apparatuses[apparatusIndex].currentEntries.forEach( (subEntry, sei) => {
+          let checkBoxEnabled = $(`#aei-sub-entry-${apparatusIndex}-${sei}`).prop('checked')
+          // console.log(`Checkbox ${apparatusIndex}:${sei} : ${checkBoxEnabled}`)
+          enabledArray.push(checkBoxEnabled)
+          if (checkBoxEnabled !== subEntry.enabled) {
+            changesInCheckboxes = true
+          }
+        })
+        this.dialog.destroy()
         resolve({
-          apparatus: thisObject.apparatusSelect.val(),
-          text:  thisObject.textEntry.val()
+          apparatus: this.apparatuses[this.apparatusSelect.val()].name,
+          apparatusIndex: apparatusIndex,
+          text:  this.textEntry.val(),
+          isNew: this.apparatuses[this.apparatusSelect.val()].newCustomEntry,
+          changesInEnabledEntries: changesInCheckboxes,
+          enabledEntriesArray: enabledArray
           })
       })
-      thisObject.dialog.show()
+      this.dialog.show()
+      this._showSelectedApparatusInDialog(this.options.selectedApparatusIndex)
     })
   }
 
@@ -88,13 +177,28 @@ export class ApparatusEntryInput {
         <label for="apparatus-select" class="col-sm-2 col-form-label">Apparatus:</label>
        <div class="col-sm-10">
         <select class="form-control" id="apparatus-select">
-            ${this.options.apparatuses.map( (a) => { return `<option value="${a.name}">${a.title}</option>`}).join('')}
+            ${this.apparatuses.map( (a, ai) => { return `<option value="${ai}">${a.title}</option>`}).join('')}
         </select>
         </div>
     </div>
     <div class="form-group">
-        <label for="free-text-entry">Entry:</label>
-        <input type="text" class="form-control text-${this.options.lang}" id="free-text-entry">${this.options.currentEntry}</input>
+        ${ this.apparatuses.map( (app, ai) => {
+          return app.currentEntries.map( (subEntry, sei) => {
+            let checkedString = subEntry.enabled ? 'checked' : ''
+            return `<div class="form-check sub-entry-app-${ai}"><input class="form-check-input" type="checkbox" value="" ${checkedString} id="aei-sub-entry-${ai}-${sei}">
+       <label class="form-check-label" for="aei-subtentry-${ai}-${sei}">
+${ApparatusCommon.genSubEntryHtmlContent(this.options.lang, subEntry, this.options.sigla )}
+</label>
+</div>`
+          }).join('')
+      }).join('')}
+</div>
+
+    <div class="form-group row">
+        <label for="free-text-entry" class="col-sm-2 col-form-label">Custom Entry:</label>
+        <div class="col-sm-10">
+        <input type="text" class="form-control text-${this.options.lang}" id="free-text-entry">
+        </div>
     </div>
 </form>`
   }

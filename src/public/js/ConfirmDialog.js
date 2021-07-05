@@ -135,6 +135,13 @@ export class ConfirmDialog {
     }
   }
 
+  setAcceptButtonLabel(newLabel) {
+    this.options.acceptButtonLabel = newLabel
+    if (this.status === STATUS_READY) {
+      this.acceptButton.html(newLabel)
+    }
+  }
+
   setCancelButtonText(text) {
     if (this.status === STATUS_READY) {
       this.cancelButton.text(text)

@@ -24,6 +24,7 @@ import { ApparatusSubEntry } from '../Edition/ApparatusSubEntry'
 import * as SubEntryType from '../Edition/SubEntryType'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory'
 import { ApparatusEntry } from '../Edition/ApparatusEntry'
+import { FmtText } from '../FmtText/FmtText'
 
 
 
@@ -40,6 +41,12 @@ import { ApparatusEntry } from '../Edition/ApparatusEntry'
  }
 
   CustomApparatusEntry = same as ApparatusEntry, but from and to refer to the collation table, not to the main text
+     additionally, a custom apparatus entry can be a command to disable an automatically generated entry
+
+      {
+      type: 'disableAuto'
+      hash: number, an Int32 hash that identifies an automatically generated entry
+      }
 
  */
 
@@ -133,6 +140,98 @@ export class CtData  {
     return ctData
   }
 
+  /**
+   * Deletes all custom apparatus text sub entries for the given CT range
+   * @param ctData
+   * @param apparatusType
+   * @param ctFrom
+   * @param ctTo
+   */
+  static deleteCustomApparatusTextSubEntries(ctData, apparatusType, ctFrom, ctTo) {
+    let apparatusIndex = this.getCustomApparatusEntryIndexFromType(ctData, apparatusType)
+    if (apparatusIndex === -1) {
+      console.warn(`Tried to delete custom apparatus entries from unknown apparatus ${apparatusType}`)
+      return ctData
+    }
+    let currentEntryIndex = this.getCustomApparatusEntryIndexForCtRange(ctData, apparatusType, ctFrom, ctTo)
+    if (currentEntryIndex === -1) {
+      console.log(`No entries to delete`)
+      return ctData
+    }
+    ctData['customApparatuses'][apparatusIndex].entries[currentEntryIndex].subEntries =
+      ctData['customApparatuses'][apparatusIndex].entries[currentEntryIndex].subEntries.filter( se => se.type !=='custom')
+
+    if (ctData['customApparatuses'][apparatusIndex].entries[currentEntryIndex].subEntries.length === 0) {
+      // the whole entry is not needed
+      ctData['customApparatuses'][apparatusIndex].entries.splice(currentEntryIndex, 1)
+    }
+    return ctData
+  }
+
+  /**
+   *
+   * @param {object} ctData
+   * @param {string} apparatusType
+   * @param {number} ctFrom
+   * @param {number} ctTo
+   * @param {string} subEntryHash
+   * @param {boolean} enabled
+   * @param {string} lemma
+   * @return {*}
+   */
+  static changeEnableStatusForSubEntry(ctData, apparatusType, ctFrom, ctTo, subEntryHash, enabled, lemma) {
+    let apparatusIndex = this.getCustomApparatusEntryIndexFromType(ctData, apparatusType)
+    if (apparatusIndex === -1) {
+      console.warn(`Tried to disable custom apparatus entries from unknown apparatus ${apparatusType}`)
+      return ctData
+    }
+    let entryIndex = this.getCustomApparatusEntryIndexForCtRange(ctData, apparatusType, ctFrom, ctTo)
+    if (entryIndex === -1) {
+      if (enabled) {
+        // nothing to do
+        return ctData
+      }
+      // create a new entry to add the disable sub entry
+      let newEntry = new ApparatusEntry()
+      newEntry.from = ctFrom
+      newEntry.to = ctTo
+      newEntry.lemma = lemma
+      newEntry.section = [ 0 ]
+      ctData['customApparatuses'][apparatusIndex].entries.push(newEntry)
+      entryIndex = ctData['customApparatuses'][apparatusIndex].entries.length - 1
+    }
+
+    let subEntryIndex = -1
+    ctData['customApparatuses'][apparatusIndex].entries[entryIndex].subEntries.forEach( (subEntry, i) => {
+      if (subEntry.type === SubEntryType.DISABLE && subEntry.hash === subEntryHash) {
+        subEntryIndex = i
+      }
+    })
+
+    if (subEntryIndex === -1) {
+      if (!enabled) {
+        ctData['customApparatuses'][apparatusIndex].entries[entryIndex].subEntries.push( {
+          type: SubEntryType.DISABLE,
+          hash: subEntryHash,
+
+        })
+      }
+      // nothing to do if the entry needs to be enabled
+    } else {
+      if (enabled) {
+        // remove the custom disable sub entry
+        ctData['customApparatuses'][apparatusIndex].entries[entryIndex].subEntries.splice(subEntryIndex, 1)
+        if (ctData['customApparatuses'][apparatusIndex].entries[entryIndex].subEntries.length === 0) {
+          // this entry is not needed any more
+          ctData['customApparatuses'][apparatusIndex].entries.splice(entryIndex, 1)
+        }
+      }
+      // there's already a disable entry, so nothing to do if needs to be disabled
+    }
+    return ctData
+  }
+
+
   static getCustomApparatusEntryIndexFromType(ctData, apparatusType) {
     return ctData['customApparatuses'].map( (app) => { return app.type}).indexOf(apparatusType)
   }
@@ -175,3 +274,4 @@ function _getRawCollationMatrixFromMatrix(m) {
 
   return rawMatrix
 }
+

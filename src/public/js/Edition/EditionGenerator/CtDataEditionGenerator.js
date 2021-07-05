@@ -28,6 +28,7 @@ import { ApparatusEntry } from '../ApparatusEntry'
 import { ApparatusSubEntry } from '../ApparatusSubEntry'
 import { FmtTextFactory } from '../../FmtText/FmtTextFactory'
 import * as ApparatusType from '../ApparatusType'
+import * as SubEntryType from '../SubEntryType'
 
 export class CtDataEditionGenerator extends EditionGenerator{
   constructor (options) {
@@ -89,24 +90,53 @@ export class CtDataEditionGenerator extends EditionGenerator{
       let mainTextFrom = ctIndexToMainTextMap[customEntry.from].textIndex
       let mainTextTo = ctIndexToMainTextMap[customEntry.to].textIndex
       let currentEntryIndex = generatedApparatusCriticus.findEntryIndex( [0], mainTextFrom, mainTextTo)
+      let realCustomSubEntries = customEntry['subEntries'].filter ( e => e.type !== SubEntryType.DISABLE)
+      let customDisableEntriesArray = customEntry['subEntries'].filter (e => e.type === SubEntryType.DISABLE)
+      if (customDisableEntriesArray.length !== 0) {
+        this.verbose && console.log(`There are disabled entries: ${mainTextFrom} -> ${mainTextTo}`)
+        this.verbose && console.log(customDisableEntriesArray)
+      }
       if (currentEntryIndex === -1) {
         console.log(`Found custom entry not belonging to any automatic apparatus entry`)
-        let newEntry = new ApparatusEntry()
-        newEntry.from = mainTextFrom
-        newEntry.to = mainTextTo
-        newEntry.lemma = customEntry['lemma']
-        newEntry.section = customEntry['section']
-        newEntry.subEntries = this._buildSubEntryArrayFromCustomSubEntries(customEntry['subEntries'])
-        generatedApparatusCriticus.entries.push(newEntry)
+        if (realCustomSubEntries.length !== 0) {
+          let newEntry = new ApparatusEntry()
+          newEntry.from = mainTextFrom
+          newEntry.to = mainTextTo
+          newEntry.lemma = customEntry['lemma']
+          newEntry.section = customEntry['section']
+          newEntry.subEntries = this._buildSubEntryArrayFromCustomSubEntries(realCustomSubEntries)
+          generatedApparatusCriticus.entries.push(newEntry)
+        }
       } else {
         console.log(`Found entry for index ${currentEntryIndex}`)
-        generatedApparatusCriticus.entries[currentEntryIndex].subEntries =
-          generatedApparatusCriticus.entries[currentEntryIndex].subEntries.concat(this._buildSubEntryArrayFromCustomSubEntries(customEntry['subEntries']))
+        if (realCustomSubEntries.length !== 0) {
+          generatedApparatusCriticus.entries[currentEntryIndex].subEntries =
+            generatedApparatusCriticus.entries[currentEntryIndex].subEntries.concat(this._buildSubEntryArrayFromCustomSubEntries(realCustomSubEntries))
+        }
+        generatedApparatusCriticus.entries[currentEntryIndex].subEntries = this._applyDisableEntriesArrayToSubEntries(
+          generatedApparatusCriticus.entries[currentEntryIndex].subEntries,
+          customDisableEntriesArray
+        )
       }
     })
     generatedApparatusCriticus.sortEntries()
 
     return generatedApparatusCriticus
+  }
+
+  _applyDisableEntriesArrayToSubEntries(subEntries, disableEntriesArray) {
+    return subEntries.map ( (subEntry) => {
+      let subEntryHash = subEntry.hashString()
+      let isDisabled = false
+      disableEntriesArray.forEach( (da) => {
+        if (da['hash'] === subEntryHash) {
+          isDisabled = true
+        }
+      })
+      subEntry.enabled = !isDisabled
+      return subEntry
+    })
+
   }
 
   _buildSubEntryArrayFromCustomSubEntries(customSubEntries) {

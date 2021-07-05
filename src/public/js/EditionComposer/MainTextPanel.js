@@ -233,32 +233,80 @@ export class MainTextPanel extends PanelWithToolbar {
         if (index === -1) {
           return []
         }
-        return app.entries[index]
+        return app.entries[index].subEntries
       })
 
       let aei = new ApparatusEntryInput({
         apparatuses: this.edition.apparatuses.map( (app, i) => {
-          return {  type: app.type, title: capitalizeFirstLetter(app.type), currentEntries: currentApparatusEntries[i]}
+          return {  name: app.type, title: capitalizeFirstLetter(app.type), currentEntries: currentApparatusEntries[i]}
         }),
         lemma: this._getLemmaFromSelection(),
         lang: this.lang,
+        sigla: this.edition.getSigla()
       })
       aei.getEntry().then( (newEntry) => {
-        this.verbose && console.log(`New custom apparatus entry `)
-        this.verbose && console.log(this.selection)
+        this.verbose && console.log(`Updated apparatus entry `)
+        // this.verbose && console.log(this.selection)
         this.verbose && console.log(newEntry)
 
         let fromToken = this.edition.getMainTextToken( new LocationInSection([0], this.selection.from))
         let toToken = this.edition.getMainTextToken( new LocationInSection([0], this.selection.to))
 
         this.verbose && console.log(`CT range: ${fromToken.collationTableIndex} - ${toToken.collationTableIndex}`)
-        this.ctData = CtData.addCustomApparatusTextSubEntry(this.ctData,
-          newEntry.apparatus,
-          fromToken.collationTableIndex,
-          toToken.collationTableIndex,
-          this._getLemmaFromSelection(),
-          newEntry.text
-        )
+        if (newEntry.isNew) {
+          if (newEntry.text !== '') {
+            this.ctData = CtData.addCustomApparatusTextSubEntry(this.ctData,
+              newEntry.apparatus,
+              fromToken.collationTableIndex,
+              toToken.collationTableIndex,
+              this._getLemmaFromSelection(),
+              newEntry.text
+            )
+          }
+        } else {
+          if (newEntry.text === '') {
+            console.log(`Deleting current custom entry`)
+            this.ctData = CtData.deleteCustomApparatusTextSubEntries(this.ctData,
+              newEntry.apparatus,
+              fromToken.collationTableIndex,
+              toToken.collationTableIndex
+            )
+          } else {
+            console.log('Updating custom entry....')
+            // just add and delete, perhaps do something more sophisticated later
+            this.ctData = CtData.deleteCustomApparatusTextSubEntries(this.ctData,
+              newEntry.apparatus,
+              fromToken.collationTableIndex,
+              toToken.collationTableIndex
+            )
+            this.ctData = CtData.addCustomApparatusTextSubEntry(this.ctData,
+              newEntry.apparatus,
+              fromToken.collationTableIndex,
+              toToken.collationTableIndex,
+              this._getLemmaFromSelection(),
+              newEntry.text
+            )
+          }
+        }
+
+        if (newEntry.changesInEnabledEntries) {
+          console.log(`Changes in enabled entries`)
+          newEntry.enabledEntriesArray.forEach( (enabled, i) => {
+            if (currentApparatusEntries[newEntry.apparatusIndex][i].enabled !== enabled) {
+              console.log(`Apparatus sub entry ${i} enabled change to ${enabled}`)
+              let theHash = currentApparatusEntries[newEntry.apparatusIndex][i].hashString()
+              CtData.changeEnableStatusForSubEntry(this.ctData,
+                newEntry.apparatus,
+                fromToken.collationTableIndex,
+                toToken.collationTableIndex,
+                theHash,
+                enabled,
+                this._getLemmaFromSelection()
+              )
+            }
+          })
+        }
+
         this.options.onCtDataChange(this.ctData)
 
       }).catch( (reason) => {

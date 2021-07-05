@@ -103,9 +103,13 @@ export class ApparatusPanel extends  PanelWithToolbar {
       }
       html +=  `${lineHtml} <span class="lemma lemma-${this.options.apparatusIndex}-${aeIndex}">${apparatusEntry.lemma}</span>] `
       apparatusEntry.subEntries.forEach( (subEntry, subEntryIndex) => {
-        html+= `<span class="sub-entry sub-entry-${subEntryIndex}">
+        let classes = [ 'sub-entry', `sub-entry-${subEntryIndex}`]
+        if (!subEntry.enabled) {
+          classes.push('sub-entry-disabled')
+        }
+        html+= `<span class="${classes.join(' ')}">
                             ${ApparatusCommon.genSubEntryHtmlContent(this.lang, subEntry, sigla)}
-                        </span>&nbsp;&nbsp;&nbsp;`
+         </span>&nbsp;&nbsp;&nbsp;`
       })
       html += '</span>'
     })

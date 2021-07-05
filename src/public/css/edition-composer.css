@@ -230,3 +230,8 @@ h1.lemma {
 .lemma-hover {
     background: #e7e1e1;
 }
+
+.sub-entry-disabled {
+    color: silver;
+    text-decoration: line-through;
+}

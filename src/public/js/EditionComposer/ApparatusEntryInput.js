@@ -38,6 +38,7 @@ export class ApparatusEntryInput {
 
     let oc = new OptionsChecker(optionsSpec, "Apparatus Entry Input")
     this.options = oc.getCleanOptions(options)
+    console.log(this.options)
 
     this.dialog = new ConfirmDialog({
       title: 'Apparatus Entry',

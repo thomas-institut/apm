@@ -36,7 +36,7 @@ import { Edition } from '../Edition/Edition'
 import { HtmlRenderer } from '../FmtText/HtmlRenderer'
 import { PanelWithToolbar } from './PanelWithToolbar'
 import { prettyPrintArray } from '../toolbox/ArrayUtil'
-import { deepCopy, removeExtraWhiteSpace } from '../toolbox/Util.mjs'
+import { capitalizeFirstLetter, deepCopy, removeExtraWhiteSpace } from '../toolbox/Util.mjs'
 import { LocationInSection } from '../Edition/LocationInSection'
 import { CtData } from '../CtData/CtData'
 
@@ -228,10 +228,20 @@ export class MainTextPanel extends PanelWithToolbar {
         return
       }
       this.verbose && console.log(`Click on add entry button`)
+      let currentApparatusEntries = this.edition.apparatuses.map( (app) => {
+        let index = app.findEntryIndex( [0], this.selection.from, this.selection.to)
+        if (index === -1) {
+          return []
+        }
+        return app.entries[index]
+      })
+
       let aei = new ApparatusEntryInput({
-        apparatuses:[ { name: 'criticus', title: 'Criticus'}, { name: 'fontium', title: 'Fontium'}],
+        apparatuses: this.edition.apparatuses.map( (app, i) => {
+          return {  type: app.type, title: capitalizeFirstLetter(app.type), currentEntries: currentApparatusEntries[i]}
+        }),
         lemma: this._getLemmaFromSelection(),
-        lang: this.lang
+        lang: this.lang,
       })
       aei.getEntry().then( (newEntry) => {
         this.verbose && console.log(`New custom apparatus entry `)

@@ -20,9 +20,7 @@ import * as TokenType from './constants/WitnessTokenType'
 import { strIsPunctuation } from './toolbox/Util.mjs'
 import { SequenceWithGroups } from './SequenceWithGroups'
 import { Matrix } from '@thomas-inst/matrix'
-import * as NormalizationSource from './constants/NormalizationSource'
 import {ApparatusCommon} from './EditionComposer/ApparatusCommon'
-import { EditionMainTextGenerator} from './EditionMainTextGenerator.mjs'
 import * as ApparatusEntryType from './Edition/SubEntryType'
 import * as ApparatusType from './Edition/ApparatusType'
 import * as WitnessTokenType from './constants/WitnessTokenType'
@@ -192,6 +190,8 @@ export class CriticalApparatusGenerator {
 
     let apparatus = new Apparatus()
     apparatus.type = ApparatusType.CRITICUS
+
+    // Optimize apparatus
     apparatus.entries = this._optimizeEntries(entries)
 
     // extra info
@@ -219,188 +219,6 @@ export class CriticalApparatusGenerator {
       return -1
     }
     return ctIndexToMainTextMap[ctIndex].textIndex
-  }
-
-
-
-  /**
-   * Generates an automatic critical apparatus from the given collation table data (which can
-   * be an edition too) using the given witness index as the main text.
-   *
-   * @param ctData
-   * @param baseWitnessIndex,  if not given or -1, the base witness is the edition witness given in ctData or the first witness in the table
-   * @returns object
-   */
-  generateCriticalApparatus(ctData, baseWitnessIndex = -1) {
-
-    if (baseWitnessIndex === -1) {
-      baseWitnessIndex = ctData['editionWitnessIndex'] !== undefined ? ctData['editionWitnessIndex'] : ctData['witnessOrder'][0]
-    }
-
-
-    // 1. Construct an array with main text tokens: a map of the base witness' row in the collation
-    //    table exchanging the references for the actual tokens and filling the null references with empty tokens
-    let baseWitnessTokens = CtData.getCtWitnessTokens(ctData, baseWitnessIndex)
-
-    // The following two structures are, strictly speaking, not necessary, but are helpful insofar as they
-    // take care of generating working versions of the edition's main text to make variant comparisons
-    // the same could be done directly with the base witness tokens.
-    // TODO: refine this "main text" intermediate representation: it only makes sense if
-    //  it's going to allow manipulation of witness tokens as preparation for different presentations
-    //  of the edition, e.g., as a PDF, as html, etc. Otherwise, main text should be simply tokens
-    //  of an edition witness
-
-    let generatedNormalizedMainText = EditionMainTextGenerator.generateMainText(baseWitnessTokens, true)
-    let generatedMainText = EditionMainTextGenerator.generateMainText(baseWitnessTokens, true, [ NormalizationSource.AUTOMATIC_COLLATION, NormalizationSource.COLLATION_EDITOR_AUTOMATIC])
-
-    let columnGroups = this._getGroupsFromCtData(ctData)
-    // TODO: detect a series of empty main text tokens at the beginning of the text and create a group with them
-    //  this group would only be added if the user has not already created it or created groups that contain it
-    //  entirely (for example: a user might have decided to include the first few words of the main text in
-    //  a group together with the empty main text columns so that the apparatus indicate initial variants
-    let entries = []
-    columnGroups.forEach( (columnGroup) => {
-
-      let ctColumns = []
-      //let mainTextIndices = []
-      for (let ctColNumber = columnGroup.from; ctColNumber <= columnGroup.to; ctColNumber++) {
-        ctColumns.push(ApparatusCommon.getCollationTableColumn(ctData, ctColNumber))
-        // mainTextIndices.push(generatedNormalizedMainText.ctToMainTextMap[ctColNumber])
-      }
-
-      if (ctColumns.every( col => this._isCtTableColumnEmpty(col))) {
-        // skip groups consisting of only empty columns
-        this.verbose && console.log(`Group ${columnGroup.from}-${columnGroup.to} consists of empty columns, skipping.`)
-        return
-      }
-
-      let groupMatrix = new Matrix(ctColumns.length, ctColumns[0].length)
-      groupMatrix.setFromArray(ctColumns)
-      // a row in groupMatrix is one collation table column
-      // this means that a groupMatrix column is a row in the CT
-      // if (mainTextIndices.every( i => i === -1)) {
-      if (this._isCtRowEmpty(ctColumns, baseWitnessIndex)) {
-        // this.verbose && console.log(`No base witness text for group ${columnGroup.from}-${columnGroup.to}`)
-        // First find the previous index for which there is a word in the base witness,
-        // the  sub-entries, one or more additions, will be associated with it
-        let ctIndex = columnGroup.from
-        // while (ctIndex >= 0 && (
-        //   generatedNormalizedMainText.ctToMainTextMap[ctIndex] === -1 ||
-        //   isPunctuationToken(generatedNormalizedMainText.mainTextTokens[generatedNormalizedMainText.ctToMainTextMap[ctIndex]]['text'])) ) {
-        //   ctIndex--
-        // }
-
-        while (ctIndex >= 0 && ( baseWitnessTokens[ctIndex].type === WitnessTokenType.EMPTY ||
-            strIsPunctuation(baseWitnessTokens[ctIndex].text)) ) {
-            ctIndex--
-        }
-
-        // this.verbose && console.log(`Sub-entry will be attached to ct index ${ctIndex}`)
-
-        // a mainTextIndex of -1 means that the apparatus entry comes before the text, normally with the lemma 'pre'
-        // in the printed edition
-        let mainTextIndex = ctIndex < 0 ? -1 : generatedNormalizedMainText.ctToMainTextMap[ctIndex]
-        // collect additions
-        let additions = []
-        for (let witnessIndex = 0; witnessIndex < ctColumns[0].length; witnessIndex++) {
-          if (witnessIndex === baseWitnessIndex) {
-            // ignore base witness
-            continue
-          }
-          let theText = this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex)
-          if (theText === '') {
-            // ignore empty witness text
-            // TODO: check for deletions
-            continue
-          }
-          // TODO: check for different hands and addition location
-          //  there might be complications when additions consist of words with several hands or in several locations
-
-          let witnessData = this.createWitnessData(witnessIndex)
-          this._addWitnessDataToVariantArray(additions, theText, witnessData)
-        }
-        let subEntries = this._buildSubEntryArrayFromVariantArray(additions, ApparatusEntryType.ADDITION)
-        if (subEntries.length !== 0) {
-            entries.push({
-              start: mainTextIndex,
-              end: mainTextIndex,
-              ctGroup: columnGroup,
-              from: ctIndex,
-              to: ctIndex,
-              lemma: mainTextIndex !== -1 ? ApparatusCommon.getNormalizedTextFromInputToken(generatedMainText.mainTextTokens[mainTextIndex]) : 'pre',
-              subEntries: subEntries
-            })
-        }
-        return
-      }
-      // 2. There's main text in the group, we need to find omissions and variants
-      let normalizedGroupMainText = ApparatusCommon.getMainTextForGroup(columnGroup, baseWitnessTokens, true)
-      if (normalizedGroupMainText === '') {
-        this.verbose && console.log(`Group ${columnGroup.from}-${columnGroup.to} has empty text, skipping.`)
-        // ignore empty string (normally main text consisting only of punctuation)
-        return
-      }
-      let groupVariants = []
-      let groupOmissions = []
-
-      for (let witnessIndex = 0; witnessIndex < ctColumns[0].length; witnessIndex++) {
-        // inspect every witness
-        if (witnessIndex === baseWitnessIndex) {
-          // ignore base witness
-          continue
-        }
-        let normalizedWitnessText = this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex)
-        if (normalizedWitnessText === '') {
-          // omission
-          // TODO: check for deletions (i.e., the text might be present as a deletion in the witness)
-          let witnessData = this.createWitnessData(witnessIndex)
-          this._addWitnessDataToVariantArray(groupOmissions, normalizedWitnessText, witnessData)
-          continue
-        }
-        if (normalizedWitnessText !== normalizedGroupMainText) {
-          // variant
-          // TODO: check for different hands and corrections
-          let witnessData = this.createWitnessData(witnessIndex)
-          this._addWitnessDataToVariantArray(groupVariants, normalizedWitnessText, witnessData)
-        }
-      }
-      let mainTextIndexFrom = generatedNormalizedMainText.ctToMainTextMap[columnGroup.from]
-      if (mainTextIndexFrom === -1) {
-        // need to find first non-empty main text token in
-        //console.log('Finding non empty main text token forward')
-        mainTextIndexFrom = ApparatusCommon.findNonEmptyMainTextToken(columnGroup.from,
-          generatedNormalizedMainText.ctToMainTextMap, generatedNormalizedMainText.mainTextTokens, true)
-      }
-      let mainTextIndexTo = generatedNormalizedMainText.ctToMainTextMap[columnGroup.to]
-      if (mainTextIndexTo === -1) {
-        //console.log(`Finding non empty main text token backwards from ${columnGroup.to}, from = ${columnGroup.from}`)
-        mainTextIndexTo = ApparatusCommon.findNonEmptyMainTextToken(columnGroup.to,
-          generatedNormalizedMainText.ctToMainTextMap, generatedNormalizedMainText.mainTextTokens, false)
-      }
-
-      let subEntries =  this._buildSubEntryArrayFromVariantArray(groupOmissions, ApparatusEntryType.OMISSION)
-        .concat(this._buildSubEntryArrayFromVariantArray(groupVariants, ApparatusEntryType.VARIANT))
-      if (subEntries.length !== 0) {
-        entries.push({
-          lemma: ApparatusCommon.getMainTextForGroup(columnGroup, baseWitnessTokens, false),
-          start: mainTextIndexFrom,
-          end: mainTextIndexTo,
-          ctGroup: columnGroup,
-          from: generatedMainText.mainTextTokens[mainTextIndexFrom].collationTableIndex,
-          to: generatedMainText.mainTextTokens[mainTextIndexTo].collationTableIndex,
-          subEntries: subEntries
-        })
-      }
-    })
-
-    return {
-      type: ApparatusType.CRITICUS,
-      entries: this._optimizeEntries(entries),
-      rawEntries: entries,
-      // ... extra data ...
-      baseWitnessIndex: baseWitnessIndex,
-      mainTextTokens: generatedMainText.mainTextTokens
-    }
   }
 
   _optimizeEntries(entries) {
@@ -451,15 +269,15 @@ export class CriticalApparatusGenerator {
     }
   }
 
-  _buildSubEntryArrayFromVariantArray(variantArray, subEntryType) {
-    return variantArray.map( (v) => {
-      return {
-        type: subEntryType,
-        witnessData: v.witnessDataArray,
-        text: v.text
-      }
-    })
-  }
+  // _buildSubEntryArrayFromVariantArray(variantArray, subEntryType) {
+  //   return variantArray.map( (v) => {
+  //     return {
+  //       type: subEntryType,
+  //       witnessData: v.witnessDataArray,
+  //       text: v.text
+  //     }
+  //   })
+  // }
 
   _buildSubEntryArrayFromVariantArrayNew(variantArray, subEntryType) {
     return variantArray.map( (v) => {

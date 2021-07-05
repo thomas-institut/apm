@@ -62,7 +62,12 @@ export class CtDataCleaner {
     if (this.ctData['type'] === CollationTableType.EDITION) {
       // add default apparatuses for editions
       if (this.ctData['customApparatuses'] === undefined) {
-        this.ctData['customApparatuses'] = [ {
+        this.ctData['customApparatuses'] = [
+          {
+            type: 'criticus',
+            entries: []
+          },
+          {
           type: 'fontium',
           entries: []
         }]

@@ -243,7 +243,14 @@ export class ApparatusCommon {
 
   static genSubEntryHtmlContentLatin(subEntry, sigla) {
     let entryType = subEntry.type
-    let theText = FmtText.getPlainText(subEntry.fmtText)
+    let theText = ''
+    try {
+      theText = FmtText.getPlainText(subEntry.fmtText)
+    } catch(e) {
+      console.log(`Problem : ${e}`)
+      console.log(subEntry)
+    }
+
     let siglaString = this._genSiglaHtmlFromWitnessData(subEntry, sigla)
     switch(entryType) {
       case ApparatusSubEntryType.VARIANT:

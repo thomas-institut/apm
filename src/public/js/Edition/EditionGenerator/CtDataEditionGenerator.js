@@ -27,6 +27,7 @@ import { Apparatus } from '../Apparatus'
 import { ApparatusEntry } from '../ApparatusEntry'
 import { ApparatusSubEntry } from '../ApparatusSubEntry'
 import { FmtTextFactory } from '../../FmtText/FmtTextFactory'
+import * as ApparatusType from '../ApparatusType'
 
 export class CtDataEditionGenerator extends EditionGenerator{
   constructor (options) {
@@ -61,16 +62,68 @@ export class CtDataEditionGenerator extends EditionGenerator{
     edition.mainTextSections[0].id = this.ctData['chunkId']
     let apparatusGenerator = new CriticalApparatusGenerator()
     let generatedCriticalApparatus = apparatusGenerator.generateCriticalApparatusFromCtData(this.ctData, baseWitnessIndex, edition.mainTextSections)
+    let theMap = CriticalApparatusGenerator.calcCtIndexToMainTextMap(baseWitnessTokens, edition.mainTextSections)
+    generatedCriticalApparatus = this._mergeCustomApparatusCriticusEntries(generatedCriticalApparatus, theMap)
     edition.apparatuses = [
       generatedCriticalApparatus
     ]
-    let theMap = CriticalApparatusGenerator.calcCtIndexToMainTextMap(baseWitnessTokens, edition.mainTextSections)
+
     edition.apparatuses = edition.apparatuses.concat(this._getCustomApparatuses(theMap))
     return edition
   }
 
+  _mergeCustomApparatusCriticusEntries(generatedApparatusCriticus, ctIndexToMainTextMap) {
+    let filteredCustomApparatusArray = this.ctData['customApparatuses'].filter( (apparatus) => {
+      // filter out custom entries from apparatus criticus
+      return apparatus.type === ApparatusType.CRITICUS
+    })
+    if (filteredCustomApparatusArray.length === 0) {
+      // no custom entries
+      console.log(`No custom apparatus criticus entries found`)
+      return  generatedApparatusCriticus
+    }
+    let customApparatusCriticus = filteredCustomApparatusArray[0]
+
+    console.log(`Merging custom apparatus criticus entries`)
+    customApparatusCriticus.entries.forEach( (customEntry) => {
+      let mainTextFrom = ctIndexToMainTextMap[customEntry.from].textIndex
+      let mainTextTo = ctIndexToMainTextMap[customEntry.to].textIndex
+      let currentEntryIndex = generatedApparatusCriticus.findEntryIndex( [0], mainTextFrom, mainTextTo)
+      if (currentEntryIndex === -1) {
+        console.log(`Found custom entry not belonging to any automatic apparatus entry`)
+        let newEntry = new ApparatusEntry()
+        newEntry.from = mainTextFrom
+        newEntry.to = mainTextTo
+        newEntry.lemma = customEntry['lemma']
+        newEntry.section = customEntry['section']
+        newEntry.subEntries = this._buildSubEntryArrayFromCustomSubEntries(customEntry['subEntries'])
+        generatedApparatusCriticus.entries.push(newEntry)
+      } else {
+        console.log(`Found entry for index ${currentEntryIndex}`)
+        generatedApparatusCriticus.entries[currentEntryIndex].subEntries =
+          generatedApparatusCriticus.entries[currentEntryIndex].subEntries.concat(this._buildSubEntryArrayFromCustomSubEntries(customEntry['subEntries']))
+      }
+    })
+    generatedApparatusCriticus.sortEntries()
+
+    return generatedApparatusCriticus
+  }
+
+  _buildSubEntryArrayFromCustomSubEntries(customSubEntries) {
+    return customSubEntries.map ( (subEntry) => {
+      let theSubEntry = new ApparatusSubEntry()
+      theSubEntry.type = subEntry['type']
+      // TODO: use fmtText field
+      theSubEntry.fmtText = FmtTextFactory.fromAnything(subEntry['plainText'])
+      // TODO: support other sub entry types
+      return theSubEntry
+    })
+  }
   _getCustomApparatuses(ctIndexToMainTextMap) {
-    return this.ctData['customApparatuses'].map ( (apparatus) => {
+    return this.ctData['customApparatuses'].filter( (apparatus) => {
+      // filter out custom entries from apparatus criticus
+      return apparatus.type !== ApparatusType.CRITICUS
+    }).map ( (apparatus) => {
       let theApparatus = new Apparatus()
       theApparatus.type = apparatus['type']
       theApparatus.entries = apparatus['entries'].map ( (entry) => {
@@ -79,14 +132,7 @@ export class CtDataEditionGenerator extends EditionGenerator{
         theEntry.section = entry['section']
         theEntry.from = ctIndexToMainTextMap[entry['from']].textIndex
         theEntry.to = ctIndexToMainTextMap[entry['to']].textIndex
-        theEntry.subEntries = entry['subEntries'].map ( (subEntry) => {
-          let theSubEntry = new ApparatusSubEntry()
-          theSubEntry.type = subEntry['type']
-          // TODO: use fmtText field
-          theSubEntry.fmtText = FmtTextFactory.fromAnything(subEntry['plainText'])
-          // TODO: support other sub entry types
-          return theSubEntry
-        })
+        theEntry.subEntries = this._buildSubEntryArrayFromCustomSubEntries(entry['subEntries'])
         return theEntry
       })
       return theApparatus

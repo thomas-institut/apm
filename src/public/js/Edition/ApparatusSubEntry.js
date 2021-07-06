@@ -1,8 +1,10 @@
 
 import * as SubEntryType from './SubEntryType'
+import * as SubEntrySource from './SubEntrySource'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory'
 import { FmtText } from '../FmtText/FmtText'
 import { hashCodeInt32 } from '../toolbox/Util.mjs'
+
 
 export class ApparatusSubEntry {
 
@@ -19,6 +21,12 @@ export class ApparatusSubEntry {
      * @member {boolean}
      */
     this.enabled = true
+
+    /**
+     *
+     * @type {string}
+     */
+    this.source = SubEntrySource.UNKNOWN
 
     /**
      *

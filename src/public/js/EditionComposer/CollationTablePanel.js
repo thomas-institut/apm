@@ -40,6 +40,7 @@ import * as CollationTableUtil from '../CollationTableUtil'
 import * as PopoverFormatter from '../CollationTablePopovers'
 import { FULL_TX } from '../constants/TranscriptionTokenClass'
 import { deepCopy } from '../toolbox/Util.mjs'
+import { CtData } from '../CtData/CtData'
 
 export class CollationTablePanel extends PanelWithToolbar {
   constructor (options = {}) {
@@ -49,7 +50,7 @@ export class CollationTablePanel extends PanelWithToolbar {
       normalizerRegister: { type: 'object', objectClass: NormalizerRegister},
       icons: { type: 'object', required: true},
       langDef : { type: 'object', default: defaultLanguageDefinition },
-      onCtDataChange: { type: 'function', default: () => { console.log(`New CT data, but no handler for change`)}}
+      onCtDataChange: { type: 'function', default: () => {  this.verbose && console.log(`New CT data, but no handler for change`)}}
     }
 
     let oc = new OptionsChecker(optionsDefinition, 'Collation Table Panel')
@@ -78,8 +79,13 @@ export class CollationTablePanel extends PanelWithToolbar {
     return super.getContentAreaClasses().concat([ `${this.textDirection}text`])
   }
 
-  updateCtData(ctData) {
-    this.verbose && console.log(`Got news of changes in CT data`)
+  /**
+   *
+   * @param {object} ctData
+   * @param {string} source
+   */
+  updateCtData(ctData, source) {
+    this.verbose && console.log(`Got news of changes in CT data from ${source}`)
     this.ctData = deepCopy(ctData)
     this.panelIsSetup = false
     this.resetTokenDataCache()
@@ -204,7 +210,7 @@ export class CollationTablePanel extends PanelWithToolbar {
     })
 
     this.modeToggle.on(optionChange, (ev) => {
-      console.log('New Edit Mode: ' + ev.detail.currentOption)
+      this.verbose && console.log('New Edit Mode: ' + ev.detail.currentOption)
       this.tableEditor.setEditMode(ev.detail.currentOption)
     })
 
@@ -239,7 +245,7 @@ export class CollationTablePanel extends PanelWithToolbar {
       this.normalizationSettingsButton.attr('title',
         `${this.savedNormalizerSettings.length} of ${this.availableNormalizers.length} normalizations applied. Click to change.`)
     } else {
-      console.log(`All normalizations`)
+      this.verbose && console.log(`All normalizations`)
       this.normalizationSettingsButton.html(`${this.icons.editSettings}`)
       this.normalizationSettingsButton.attr('title', `All standard normalizations applied. Click to change.`)
     }
@@ -294,10 +300,10 @@ export class CollationTablePanel extends PanelWithToolbar {
           return $(`${modalSelector} .normalizer-${name}`).prop('checked')
         })
 
-        console.log(`Checked normalizers`)
-        console.log(checkedNormalizers)
+        this.verbose && console.log(`Checked normalizers`)
+        this.verbose && console.log(checkedNormalizers)
         if (!ArrayUtil.arraysAreEqual(checkedNormalizers, currentlyAppliedNormalizers, (a, b) => { return a===b})){
-          console.log(`Change in applied normalizers`)
+          this.verbose && console.log(`Change in applied normalizers`)
           if (checkedNormalizers.length === 0) {
             // this is the same as turning normalizations off
             submitButton.hide()
@@ -317,7 +323,7 @@ export class CollationTablePanel extends PanelWithToolbar {
             thisObject.savedNormalizerSettings = checkedNormalizers
           }
         } else {
-          console.log(`No change in applied normalizers `)
+          this.verbose && console.log(`No change in applied normalizers `)
         }
         this._normalizationsSetupSettingsButton()
         submitButton.show()
@@ -369,12 +375,12 @@ export class CollationTablePanel extends PanelWithToolbar {
       NormalizationSource.AUTOMATIC_COLLATION,
       NormalizationSource.COLLATION_EDITOR_AUTOMATIC
     ]
-    console.log(`Applying normalizations: [ ${normalizationsToApply.join(', ')} ]`)
+    this.verbose && console.log(`Applying normalizations: [ ${normalizationsToApply.join(', ')} ]`)
     this.ctData['automaticNormalizationsApplied'] = normalizationsToApply
 
     let thisObject = this
     for (let i = 0; i < this.ctData['witnesses'].length; i++) {
-      // console.log(`Processing witness ${i}`)
+      //  this.verbose && console.log(`Processing witness ${i}`)
       let changesInWitness = false
       let newWitnessTokens = this.ctData['witnesses'][i]['tokens'].map( (token) => {
         if (token['tokenType'] === TranscriptionTokenType.WORD) {
@@ -391,7 +397,7 @@ export class CollationTablePanel extends PanelWithToolbar {
               let newToken = token
               newToken['normalizedText'] = normalizedText
               newToken['normalizationSource'] = NormalizationSource.COLLATION_EDITOR_AUTOMATIC
-              //console.log(`Witness ${i}, token ${tokenIndex} normalized, ${token['text']} => ${normalizedText}`)
+              // this.verbose && console.log(`Witness ${i}, token ${tokenIndex} normalized, ${token['text']} => ${normalizedText}`)
               changesInWitness = true
               return newToken
             }
@@ -400,7 +406,7 @@ export class CollationTablePanel extends PanelWithToolbar {
             let newToken = token
             if (token['normalizedText'] !== undefined &&
               normalizationsSourcesToOverwrite.indexOf(token['normalizationSource']) !== -1) {
-              //console.log(`Erasing normalization from token ${tokenIndex}, currently '${token['normalizedText']}'`)
+              // this.verbose && console.log(`Erasing normalization from token ${tokenIndex}, currently '${token['normalizedText']}'`)
               newToken['normalizedText'] = undefined
               newToken['normalizationSource'] = undefined
               changesInWitness = true
@@ -414,11 +420,11 @@ export class CollationTablePanel extends PanelWithToolbar {
       if (changesInWitness) {
         this.ctData['witnesses'][i]['tokens'] = newWitnessTokens
       } else {
-        // console.log(`No changes`)
+        //  this.verbose && console.log(`No changes`)
       }
     }
-    console.log(`New CT Data after automatic normalizations: [${normalizationsToApply.join(', ')}]`)
-    console.log(this.ctData)
+    this.verbose && console.log(`New CT Data after automatic normalizations: [${normalizationsToApply.join(', ')}]`)
+    this.verbose && console.log(this.ctData)
 
     this.options.onCtDataChange(this.ctData)
 
@@ -468,12 +474,12 @@ export class CollationTablePanel extends PanelWithToolbar {
       }
 
       if (thisObject.tableEditor.isCellInEditMode(cellIndex.row, cellIndex.col)){
-        // console.log(`Cell ${cellIndex.row}:${cellIndex.col} in is cell edit mode`)
+        //  this.verbose && console.log(`Cell ${cellIndex.row}:${cellIndex.col} in is cell edit mode`)
         return ''
       }
       let witnessIndex = thisObject.ctData['witnessOrder'][cellIndex.row]
       let tokenIndex = thisObject.tableEditor.getValue(cellIndex.row, cellIndex.col)
-      // console.log(`Getting popover for witness index ${witnessIndex}, token ${tokenIndex}, col ${cellIndex.col}`)
+      //  this.verbose && console.log(`Getting popover for witness index ${witnessIndex}, token ${tokenIndex}, col ${cellIndex.col}`)
       return thisObject.getPopoverHtml(witnessIndex, tokenIndex, cellIndex.col)
     }
   }
@@ -484,7 +490,7 @@ export class CollationTablePanel extends PanelWithToolbar {
     }
     let popoverHtml  = this.getPopoverHtmlFromCache(witnessIndex, tokenIndex)
     if (popoverHtml !== undefined) {
-      // console.log(`Popover from cache: '${popoverHtml}'`)
+      //  this.verbose && console.log(`Popover from cache: '${popoverHtml}'`)
       return popoverHtml
     }
     let witnessToken = this.ctData['witnesses'][witnessIndex]
@@ -566,6 +572,8 @@ export class CollationTablePanel extends PanelWithToolbar {
       cellValidationFunction: this.genCellValidationFunction(),
       generateTableClasses: this.genGenerateTableClassesFunction(),
       generateCellClasses: this.genGenerateCellClassesFunction(),
+      onColumnAdd: this.genOnColumnAdd(),
+      onColumnDelete: this.genOnColumnDelete(),
       icons: icons
     })
 
@@ -591,8 +599,6 @@ export class CollationTablePanel extends PanelWithToolbar {
 
     this.tableEditor.editModeOn(false)
     this.tableEditor.redrawTable()
-    this.tableEditor.on('column-delete', this.genOnColumnDelete())
-    this.tableEditor.on('column-add', this.genOnColumnAdd())
     this.tableEditor.on('cell-shift content-changed', this.genOnCollationChanges())
     this.tableEditor.on(columnGroupEvent, this.genOnGroupUngroupColumn(true))
     this.tableEditor.on(columnUngroupEvent, this.genOnGroupUngroupColumn(false))
@@ -601,8 +607,8 @@ export class CollationTablePanel extends PanelWithToolbar {
 
   genOnGroupUngroupColumn(isGrouped) {
     return (data) => {
-      console.log(`Column ${data.detail.col} ${isGrouped ? 'grouped' : 'ungrouped'}`)
-      console.log('New sequence grouped with next')
+      this.verbose && console.log(`Column ${data.detail.col} ${isGrouped ? 'grouped' : 'ungrouped'}`)
+      this.verbose && console.log('New sequence grouped with next')
       this.ctData['groupedColumns'] = data.detail.groupedColumns
       this.options.onCtDataChange(this.ctData)
     }
@@ -678,7 +684,7 @@ export class CollationTablePanel extends PanelWithToolbar {
   }
 
   genOnColumnDelete() {
-    return () => {
+    return (deletedCol) => {
       this.ctData['groupedColumns'] = this.tableEditor.columnSequence.groupedWithNextNumbers
       if (this.ctData['type'] === CollationTableType.COLLATION_TABLE) {
         // nothing else to do for regular collation tables
@@ -686,6 +692,8 @@ export class CollationTablePanel extends PanelWithToolbar {
       }
       this.syncEditionWitnessAndTableEditorFirstRow()
       this.ctData['collationMatrix'] = this.getCollationMatrixFromTableEditor()
+      // fix references in custom apparatuses
+      this.ctData['customApparatuses'] = CtData.fixReferencesInCustomApparatusesAfterColumnAdd(this.ctData, deletedCol, -1)
       this.setCsvDownloadFile()
       this.options.onCtDataChange(this.ctData)
     }
@@ -693,8 +701,8 @@ export class CollationTablePanel extends PanelWithToolbar {
 
   syncEditionWitnessAndTableEditorFirstRow() {
     let editionWitnessIndex = this.ctData['witnessOrder'][0]
-    console.log(`Syncing edition witness and editor's first row`)
-    console.log(`There are ${this.tableEditor.matrix.nCols} columns in the editor 
+    this.verbose && console.log(`Syncing edition witness and editor's first row`)
+    this.verbose && console.log(`There are ${this.tableEditor.matrix.nCols} columns in the editor 
     and ${this.ctData['witnesses'][editionWitnessIndex].tokens.length} tokens in the edition witness`)
 
     this.ctData['witnesses'][editionWitnessIndex].tokens = this.getEditionWitnessTokensFromMatrixRow(
@@ -704,7 +712,7 @@ export class CollationTablePanel extends PanelWithToolbar {
     for (let i = 0; i < this.tableEditor.matrix.nCols; i++) {
       this.tableEditor.matrix.setValue(0, i, i)
     }
-    console.log(`Now there are ${this.tableEditor.matrix.nCols} columns in the editor 
+    this.verbose && console.log(`Now there are ${this.tableEditor.matrix.nCols} columns in the editor 
     and ${this.ctData['witnesses'][editionWitnessIndex].tokens.length} tokens in the edition witness`)
   }
 
@@ -715,12 +723,15 @@ export class CollationTablePanel extends PanelWithToolbar {
   }
 
   genOnColumnAdd() {
-    return () => {
+    return (newCol) => {
+      this.verbose && console.log(`Adding new column: ${newCol}, at ${Date.now()}`)
       this.ctData['groupedColumns'] = this.tableEditor.columnSequence.groupedWithNextNumbers
       if (this.ctData['type']===CollationTableType.EDITION) {
         this.syncEditionWitnessAndTableEditorFirstRow()
       }
       this.ctData['collationMatrix'] = this.getCollationMatrixFromTableEditor()
+      // fix references in custom apparatuses
+      this.ctData['customApparatuses'] = CtData.fixReferencesInCustomApparatusesAfterColumnAdd(this.ctData, newCol-1, 1)
       this.setCsvDownloadFile()
       this.options.onCtDataChange(this.ctData)
     }
@@ -760,7 +771,7 @@ export class CollationTablePanel extends PanelWithToolbar {
           for (let col = firstColToRedraw; col <= lastColToRedraw; col++) {
             for (let row = 0; row < this.variantsMatrix.nRows; row++) {
               if (row !== theRow) {
-                //console.log(`Refreshing classes for ${theRow}:${col}`)
+                // this.verbose && console.log(`Refreshing classes for ${theRow}:${col}`)
                 this.tableEditor.refreshCellClasses(row, col)
               }
             }
@@ -855,7 +866,7 @@ export class CollationTablePanel extends PanelWithToolbar {
             // apply normalizations for this token
             let norm = this.normalizerRegister.applyNormalizerList(this.ctData['automaticNormalizationsApplied'], newText)
             if (norm !== newText) {
-              console.log(`New text normalized:  ${newText} => ${norm}`)
+              this.verbose && console.log(`New text normalized:  ${newText} => ${norm}`)
               this.ctData['witnesses'][witnessIndex]['tokens'][ref]['normalizedText'] = norm
               this.ctData['witnesses'][witnessIndex]['tokens'][ref]['normalizationSource'] = NormalizationSource.COLLATION_EDITOR_AUTOMATIC
             }
@@ -868,8 +879,8 @@ export class CollationTablePanel extends PanelWithToolbar {
       this.recalculateVariants()
       this.options.onCtDataChange(this.ctData)
 
-      // console.log('Edition Witness updated')
-      // console.log(this.ctData['witnesses'][witnessIndex]['tokens'])
+      //  this.verbose && console.log('Edition Witness updated')
+      //  this.verbose && console.log(this.ctData['witnesses'][witnessIndex]['tokens'])
       // ref stays the same
       return { valueChange: true, value: ref}
     }
@@ -1045,7 +1056,7 @@ export class CollationTablePanel extends PanelWithToolbar {
     return (tableRow, col, currentText) => {
       let returnObject = { isValid: true, warnings: [], errors: [] }
 
-      //console.log(`Validating text '${currentText}'`)
+      // this.verbose && console.log(`Validating text '${currentText}'`)
       let trimmedText = Util.trimWhiteSpace(currentText)
       if (Util.isWordToken(trimmedText)) {
         // TODO: do not allow words when the rest of the witnesses only have punctuation
@@ -1070,7 +1081,7 @@ export class CollationTablePanel extends PanelWithToolbar {
     //let theToken = this.ctData
 
     if (this.aggregatedNonTokenItemIndexes[row][tokenIndex] === undefined) {
-      console.log(`Undefined aggregate non-token item index for row ${row}, tokenIndex ${tokenIndex}`)
+      this.verbose && console.log(`Undefined aggregate non-token item index for row ${row}, tokenIndex ${tokenIndex}`)
       return []
     }
     let postItemIndexes = this.aggregatedNonTokenItemIndexes[row][tokenIndex]['post']
@@ -1178,7 +1189,7 @@ export class CollationTablePanel extends PanelWithToolbar {
 
   genOnEnterCellEditMode() {
     return (row, col) => {
-      console.log (`Enter cell edit ${row}:${col}`)
+      this.verbose &&  console.log(`Enter cell edit ${row}:${col}`)
       $(this.tableEditor.getTdSelector(row, col)).popover('hide').popover('disable')
       return true
     }
@@ -1186,7 +1197,7 @@ export class CollationTablePanel extends PanelWithToolbar {
 
   genOnLeaveCellEditMode() {
     return (row, col) => {
-      console.log(`Leave cell edit ${row}:${col}`)
+      this.verbose && console.log(`Leave cell edit ${row}:${col}`)
       $(this.tableEditor.getTdSelector(row, col)).popover('enable')
       this.restoreHiddenPopovers()
     }

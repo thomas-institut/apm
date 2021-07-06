@@ -146,7 +146,7 @@ export class EditionComposer {
       normalizerRegister: this.normalizerRegister,
       icons: this.icons,
       ctData: this.ctData,
-      onCtDataChange: this.genOnCtDataChange(),
+      onCtDataChange: this.genOnCtDataChange('collationTablePanel'),
       contentAreaId: 'ct-panel-content',
       verbose: true
     })
@@ -194,7 +194,7 @@ export class EditionComposer {
       apparatusPanels: apparatusPanels,
       verbose: true,
       onConfirmMainTextEdit: this.genOnConfirmMainTextEdit(),
-      onCtDataChange: this.genOnCtDataChange()
+      onCtDataChange: this.genOnCtDataChange('mainTextPanel')
     })
 
     // tab arrays
@@ -369,7 +369,7 @@ export class EditionComposer {
 
   _updateDataInPanels() {
     this.mainTextPanel.updateData(this.ctData, this.edition)
-    this.collationTablePanel.updateCtData(this.ctData)
+    this.collationTablePanel.updateCtData(this.ctData, 'EditionComposer')
   }
 
 
@@ -583,13 +583,22 @@ export class EditionComposer {
     }
   }
 
-  genOnCtDataChange() {
+  /**
+   *
+   * @param {string} source
+   * @return {(function(*=): void)|*}
+   */
+  genOnCtDataChange(source) {
     return (newCtData) => {
       this.ctData = deepCopy(newCtData)
-      console.log(`New CT Data`)
+      console.log(`New CT Data received from ${source}`)
       console.log(this.ctData)
       this._reGenerateEdition()
+      // even if the new data source is mainTextPanel, need to tell the panel that there's a new edition
       this.mainTextPanel.updateData(newCtData, this.edition)
+      if (source !== 'collationTablePanel') {
+        this.collationTablePanel.updateCtData(newCtData, 'EditionComposer')
+      }
       this.updateSaveArea()
       this.editionPreviewPanel.updatePreview()
     }

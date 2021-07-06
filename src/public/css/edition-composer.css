@@ -235,3 +235,7 @@ h1.lemma {
     color: silver;
     text-decoration: line-through;
 }
+
+.sub-entry-source-user {
+    color: #1875b1;
+}

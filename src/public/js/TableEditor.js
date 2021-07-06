@@ -36,6 +36,7 @@ import {escapeHtml} from './toolbox/Util.mjs'
 import { Matrix } from '@thomas-inst/matrix'
 import { SequenceWithGroups } from './SequenceWithGroups'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
+import { doNothing } from './toolbox/FunctionUtil'
 
 // Table Edit Modes
 export const editModeOff = 'off'
@@ -240,13 +241,18 @@ export class TableEditor {
         type: 'function',
         default: null
       },
-      onColumnAddHandler: {
+      onColumnAdd: {
         // a function to be called when a column is added before any redrawing of cells
         // it can be used to change the value matrix
         //   (newCol) => { .. return nothing ... }
-        required: false,
         type: 'function',
-        default: null
+        default:  doNothing
+      },
+      onColumnDelete: {
+        // a function to be called when a column is deleted
+        // (deletedCol) => { ... return nothing ... }
+        type: 'function',
+        default: doNothing
       },
       onContentChangedEventHandler: {
         required: false,
@@ -373,9 +379,9 @@ export class TableEditor {
       this.on(tableDrawnEvent, this.options.onTableDrawnEventHandler )
     }
 
-    if (this.options.onColumnAddHandler !== null) {
-      this.on(columnAddEvent, this.options.onColumnAddHandler)
-    }
+    // if (this.options.onColumnAddHandler !== null) {
+    //   this.on(columnAddEvent, this.options.onColumnAddHandler)
+    // }
 
     if (this.options.onContentChangedEventHandler !== null) {
       this.on(contentChangedEvent, this.options.onContentChangedEventHandler )
@@ -1351,7 +1357,7 @@ export class TableEditor {
       thisObject.waitingForScrollZero = true
       //thisObject.matrix.addColumnAfter(col,  thisObject.options.getEmptyValue())
       thisObject.insertColumnAfter(col)
-      thisObject.dispatchColumnAddEvents(col+1)
+      thisObject.options.onColumnAdd(col+1)
       thisObject.redrawTable()
       thisObject.forceRestoreScroll(250)
     }
@@ -1370,7 +1376,7 @@ export class TableEditor {
       thisObject.waitingForScrollZero = true
       //thisObject.matrix.addColumnAfter(col-1, thisObject.options.getEmptyValue())
       thisObject.insertColumnAfter(col-1)
-      thisObject.dispatchColumnAddEvents(col)
+      thisObject.options.onColumnAdd(col)
       thisObject.redrawTable()
       thisObject.forceRestoreScroll(250)
     }
@@ -1411,7 +1417,7 @@ export class TableEditor {
         thisObject.waitingForScrollZero = true
         thisObject.matrix.deleteColumn(col)
         thisObject.columnSequence.removeNumber(col)
-        thisObject.dispatchColumnDeleteEvents(col)
+        thisObject.options.onColumnDelete(col)
         thisObject.redrawTable()
         thisObject.forceRestoreScroll(250)
       } else {
@@ -1577,18 +1583,6 @@ export class TableEditor {
 
   dispatchTableDrawnPreEvent() {
     this.dispatchEvent('table-drawn-pre', {})
-  }
-
-  dispatchColumnDeleteEvents(deletedColumn) {
-    this.dispatchEvent('column-delete', {
-      col: deletedColumn,
-    })
-  }
-
-  dispatchColumnAddEvents(newCol) {
-    this.dispatchEvent(columnAddEvent, {
-      col: newCol,
-    })
   }
 
   dispatchCellShiftEvents(type, direction, row, firstCol, lastCol, numCols) {

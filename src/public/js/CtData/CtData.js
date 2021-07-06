@@ -25,6 +25,7 @@ import * as SubEntryType from '../Edition/SubEntryType'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory'
 import { ApparatusEntry } from '../Edition/ApparatusEntry'
 import { FmtText } from '../FmtText/FmtText'
+import { deepCopy } from '../toolbox/Util.mjs'
 
 
 
@@ -103,7 +104,27 @@ export class CtData  {
     }
     // 3. fix references in collation matrix
     ctData['collationMatrix'][editionIndex] = ctData['collationMatrix'][editionIndex].map( (ref, i) => { return i})
+
+    // 4. fix references in custom apparatuses
+    ctData['customApparatuses'] = this.fixReferencesInCustomApparatusesAfterColumnAdd(ctData, col, numCols)
+
     return ctData
+  }
+
+  static fixReferencesInCustomApparatusesAfterColumnAdd(ctData, col, numCols) {
+    return ctData['customApparatuses'].map ( (app) => {
+      let newApp = deepCopy(app)
+      newApp.entries = app.entries.map( (entry) => {
+        let newEntry = deepCopy(entry)
+        if (entry.from > col) {
+          console.log(`Shifting entry from=${entry.from}, new from = ${entry.from + numCols}`)
+        }
+        newEntry.from = entry.from > col ? entry.from + numCols : entry.from
+        newEntry.to = entry.to > col ? entry.to + numCols : entry.to
+        return newEntry
+      })
+      return newApp
+    })
   }
 
   /**

@@ -24,6 +24,7 @@ import {ApparatusCommon} from './EditionComposer/ApparatusCommon'
 import * as ApparatusEntryType from './Edition/SubEntryType'
 import * as ApparatusType from './Edition/ApparatusType'
 import * as WitnessTokenType from './constants/WitnessTokenType'
+import * as SubEntrySource from './Edition/SubEntrySource'
 import { CtData } from './CtData/CtData'
 import { Apparatus } from './Edition/Apparatus'
 import { LocationInSection } from './Edition/LocationInSection'
@@ -285,6 +286,7 @@ export class CriticalApparatusGenerator {
       subEntry.type = subEntryType
       subEntry.fmtText = FmtTextFactory.fromAnything(v.text)
       subEntry.witnessData = v.witnessDataArray
+      subEntry.source = SubEntrySource.AUTO
       return subEntry
     })
   }

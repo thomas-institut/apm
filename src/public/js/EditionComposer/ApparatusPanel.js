@@ -103,7 +103,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
       }
       html +=  `${lineHtml} <span class="lemma lemma-${this.options.apparatusIndex}-${aeIndex}">${apparatusEntry.lemma}</span>] `
       apparatusEntry.subEntries.forEach( (subEntry, subEntryIndex) => {
-        let classes = [ 'sub-entry', `sub-entry-${subEntryIndex}`]
+        let classes = [ 'sub-entry', `sub-entry-${subEntryIndex}`, `sub-entry-type-${subEntry.type}`, `sub-entry-source-${subEntry.source}`]
         if (!subEntry.enabled) {
           classes.push('sub-entry-disabled')
         }

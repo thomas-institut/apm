@@ -29,6 +29,7 @@ import { ApparatusSubEntry } from '../ApparatusSubEntry'
 import { FmtTextFactory } from '../../FmtText/FmtTextFactory'
 import * as ApparatusType from '../ApparatusType'
 import * as SubEntryType from '../SubEntryType'
+import * as SubEntrySource from '../SubEntrySource'
 
 export class CtDataEditionGenerator extends EditionGenerator{
   constructor (options) {
@@ -90,8 +91,8 @@ export class CtDataEditionGenerator extends EditionGenerator{
       let mainTextFrom = ctIndexToMainTextMap[customEntry.from].textIndex
       let mainTextTo = ctIndexToMainTextMap[customEntry.to].textIndex
       let currentEntryIndex = generatedApparatusCriticus.findEntryIndex( [0], mainTextFrom, mainTextTo)
-      let realCustomSubEntries = customEntry['subEntries'].filter ( e => e.type !== SubEntryType.DISABLE)
-      let customDisableEntriesArray = customEntry['subEntries'].filter (e => e.type === SubEntryType.DISABLE)
+      let realCustomSubEntries = customEntry['subEntries'].filter ( (e) => { return e.type !== SubEntryType.DISABLE})
+      let customDisableEntriesArray = customEntry['subEntries'].filter ( (e) => { return e.type === SubEntryType.DISABLE})
       if (customDisableEntriesArray.length !== 0) {
         this.verbose && console.log(`There are disabled entries: ${mainTextFrom} -> ${mainTextTo}`)
         this.verbose && console.log(customDisableEntriesArray)
@@ -99,6 +100,7 @@ export class CtDataEditionGenerator extends EditionGenerator{
       if (currentEntryIndex === -1) {
         console.log(`Found custom entry not belonging to any automatic apparatus entry`)
         if (realCustomSubEntries.length !== 0) {
+          console.log(`Adding new apparatus entry for lemma ${customEntry['lemma']}`)
           let newEntry = new ApparatusEntry()
           newEntry.from = mainTextFrom
           newEntry.to = mainTextTo
@@ -145,6 +147,7 @@ export class CtDataEditionGenerator extends EditionGenerator{
       theSubEntry.type = subEntry['type']
       // TODO: use fmtText field
       theSubEntry.fmtText = FmtTextFactory.fromAnything(subEntry['plainText'])
+      theSubEntry.source = SubEntrySource.USER
       // TODO: support other sub entry types
       return theSubEntry
     })

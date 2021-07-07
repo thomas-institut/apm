@@ -27,13 +27,16 @@ import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { PrintedEditionGenerator } from '../PrintedEditionGenerator'
 import { EditionViewerSvg } from '../EditionViewerSvg'
 import { PanelWithToolbar } from './PanelWithToolbar'
+import { Edition } from '../Edition/Edition'
+import { EditionViewerSvgNew } from '../Edition/EditionViewerSvgNew'
 
 
 export class EditionPreviewPanel extends PanelWithToolbar {
   constructor (options = {}) {
     super(options)
     let optionsSpec = {
-      ctData: { type: 'object', default: []},
+      ctData: { type: 'object', required: true},
+      edition: { type: 'object', objectClass: Edition, required: true},
       apparatus: { type: 'object', default: []},
       langDef: { type: 'object', required: true},
       onPdfExport: { type: 'function', default: () => { return Promise.resolve('')}}
@@ -41,13 +44,20 @@ export class EditionPreviewPanel extends PanelWithToolbar {
     let oc = new OptionsChecker(optionsSpec, 'Edition Preview Panel')
     this.options = oc.getCleanOptions(options)
     this.ctData = this.options.ctData
+    this.edition = this.options.edition
     this.previewHtml = ''
   }
 
+  updateData(ctData, edition) {
+    this.verbose && console.log(`Updating data`)
+    this.ctData = ctData
+    this.edition = edition
+    this.updatePreview()
+  }
 
   updatePreview() {
     this.previewHtml = this._genPreviewHtml()
-    $('#edition-svg-div').html(this.previewHtml)
+    $(this.getContentAreaSelector()).html(this.previewHtml)
     this.setSvgDownloadFile()
   }
 
@@ -96,18 +106,10 @@ export class EditionPreviewPanel extends PanelWithToolbar {
 
   _genPreviewHtml() {
     this.verbose && console.log(`Generating preview html`)
-    if (this.ctData === []) {
-      return `Waiting for ctData`
-    }
-    let peg = new PrintedEditionGenerator()
-    let edition = peg.generateEdition(this.ctData, this.ctData['witnessOrder'][0])
-    let ev = new EditionViewerSvg( {
-      lang: edition.lang,
-      collationTokens: edition.mainTextTokens,
-      apparatusArray: edition.apparatusArray,
-      isRightToLeft: (edition.textDirection === 'rtl'),
-      fontFamily: this.options.langDef[this.ctData['lang']].editionFont,
-      addGlue: false
+
+    let ev = new EditionViewerSvgNew({
+      edition: this.edition,
+      fontFamily:  this.options.langDef[this.edition.lang].editionFont
     })
     return ev.getSvg()
   }

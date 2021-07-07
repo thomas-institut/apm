@@ -173,8 +173,10 @@ export class EditionComposer {
     this.editionPreviewPanel = new EditionPreviewPanel({
       containerSelector: `#${editionPreviewTabId}`,
       ctData: this.ctData,
+      edition: this.edition,
       langDef: this.options.langDef,
-      onPdfExport: this.genOnExportPdf()
+      onPdfExport: this.genOnExportPdf(),
+      verbose: true
     })
 
     let apparatusPanels = this.edition.apparatuses
@@ -361,7 +363,6 @@ export class EditionComposer {
         this.updateSaveArea()
         this._reGenerateEdition()
         this._updateDataInPanels()
-        this.editionPreviewPanel.updatePreview()
       }
       return changesInCt
     }
@@ -370,6 +371,7 @@ export class EditionComposer {
   _updateDataInPanels() {
     this.mainTextPanel.updateData(this.ctData, this.edition)
     this.collationTablePanel.updateCtData(this.ctData, 'EditionComposer')
+    this.editionPreviewPanel.updateData(this.ctData, this.edition)
   }
 
 
@@ -595,12 +597,12 @@ export class EditionComposer {
       console.log(this.ctData)
       this._reGenerateEdition()
       // even if the new data source is mainTextPanel, need to tell the panel that there's a new edition
-      this.mainTextPanel.updateData(newCtData, this.edition)
+      this.mainTextPanel.updateData(this.ctData, this.edition)
       if (source !== 'collationTablePanel') {
         this.collationTablePanel.updateCtData(newCtData, 'EditionComposer')
       }
+      this.editionPreviewPanel.updateData(this.ctData, this.edition)
       this.updateSaveArea()
-      this.editionPreviewPanel.updatePreview()
     }
   }
 

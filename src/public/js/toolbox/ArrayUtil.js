@@ -76,3 +76,9 @@ export function createSequenceArray(from, to, increment = 1) {
 export function createIndexArray(size) {
   return createSequenceArray(0, size-1, 1)
 }
+
+export function pushArray(theArray, arrayToPush) {
+  arrayToPush.forEach( (e) => {
+    theArray.push(e)
+  })
+}

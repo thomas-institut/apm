@@ -140,4 +140,8 @@ export class FmtTextToken {
     return this
   }
 
+  setSmallFont() {
+    this.fontSize = 0.8
+  }
+
 }

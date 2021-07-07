@@ -168,6 +168,7 @@ export class CtDataEditionGenerator extends EditionGenerator{
         theEntry.subEntries = this._buildSubEntryArrayFromCustomSubEntries(entry['subEntries'])
         return theEntry
       })
+      theApparatus.sortEntries()
       return theApparatus
     })
   }

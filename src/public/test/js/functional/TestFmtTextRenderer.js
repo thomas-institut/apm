@@ -1,6 +1,6 @@
 
 import { FmtTextFactory } from '../../../js/FmtText/FmtTextFactory'
-import { HtmlRenderer } from '../../../js/FmtText/HtmlRenderer'
+import { HtmlRenderer } from '../../../js/FmtText/Renderer/HtmlRenderer'
 import { FmtTextTokenFactory } from '../../../js/FmtText/FmtTextTokenFactory'
 
 $( () => {

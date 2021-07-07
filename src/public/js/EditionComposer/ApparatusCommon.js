@@ -27,6 +27,8 @@ import * as ApparatusSubEntryType from '../Edition/SubEntryType'
 import { NumeralStyles } from '../NumeralStyles'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory'
 import { FmtText } from '../FmtText/FmtText'
+import { TypesetterTokenRenderer } from '../FmtText/Renderer/TypesetterTokenRenderer'
+import { pushArray } from '../toolbox/ArrayUtil'
 
 // const INPUT_TOKEN_FIELD_TYPE = 'tokenType'
 const INPUT_TOKEN_FIELD_TEXT = 'text'
@@ -82,6 +84,10 @@ export class ApparatusCommon {
 
   static typesetSubEntryHebrew(subEntryType, theText, witnessIndices, sigla) {
     // TODO: use witnessData instead of witnessIndices, like in the html version
+    if (Array.isArray(theText)) {
+      // this is an array of FmtTexTokens
+      theText = FmtText.getPlainText(theText)
+    }
     let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join('')
     switch(subEntryType) {
       case ApparatusSubEntryType.VARIANT:
@@ -143,6 +149,10 @@ export class ApparatusCommon {
 
   static typesetSubEntryArabic(entryType, theText, witnessIndices, sigla) {
     // TODO: use witnessData instead of witnessIndices, like in the html version
+    if (Array.isArray(theText)) {
+      // this is an array of FmtTexTokens
+      theText = FmtText.getPlainText(theText)
+    }
     let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join('')
     switch(entryType) {
       case ApparatusSubEntryType.VARIANT:
@@ -206,13 +216,20 @@ export class ApparatusCommon {
   static typesetSubEntryLatin(subEntryType, theText, witnessIndices, sigla) {
     // TODO: use witnessData instead of witnessIndices, like in the html version
     let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join('')
+    let theTextTokens = []
+    if (Array.isArray(theText)) {
+      // this is an array of FmtTexTokens
+      theTextTokens = (new TypesetterTokenRenderer()).render(theText)
+    } else {
+      theTextTokens.push(TypesetterTokenFactory.simpleText(theText))
+    }
+    let theTokens = []
     switch(subEntryType) {
       case ApparatusSubEntryType.VARIANT:
-        return [
-          TypesetterTokenFactory.simpleText(theText),
-          TypesetterTokenFactory.normalSpace(),
-          TypesetterTokenFactory.simpleText(siglaString)
-        ]
+        pushArray(theTokens, theTextTokens)
+        theTokens.push(TypesetterTokenFactory.normalSpace())
+        theTokens.push(TypesetterTokenFactory.simpleText(siglaString))
+        return theTokens
 
       case ApparatusSubEntryType.OMISSION:
         return [
@@ -222,18 +239,16 @@ export class ApparatusCommon {
         ]
 
       case ApparatusSubEntryType.ADDITION:
-        return [
-          TypesetterTokenFactory.simpleText(latinStyle.strings.addition).setItalic(),
-          TypesetterTokenFactory.normalSpace(),
-          TypesetterTokenFactory.simpleText(theText),
-          TypesetterTokenFactory.normalSpace(),
-          TypesetterTokenFactory.simpleText(siglaString)
-        ]
+        theTokens.push(TypesetterTokenFactory.simpleText(latinStyle.strings.addition).setItalic())
+        theTokens.push(TypesetterTokenFactory.normalSpace())
+        pushArray(theTokens, theTextTokens)
+        theTokens.push(TypesetterTokenFactory.normalSpace())
+        theTokens.push(TypesetterTokenFactory.simpleText(siglaString))
+        return theTokens
+
 
       case ApparatusSubEntryType.CUSTOM:
-        return [
-          TypesetterTokenFactory.simpleText(theText)
-        ]
+        return theTextTokens
 
       default:
         console.warn(`Unsupported apparatus entry type: ${subEntryType}`)

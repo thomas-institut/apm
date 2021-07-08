@@ -45,7 +45,7 @@ export class CtDataEditionGenerator extends EditionGenerator{
   }
 
   generateEdition () {
-    console.log(`Generating edition from ctData`)
+    // console.log(`Generating edition from ctData`)
     let edition = super.generateEdition()
     let baseWitnessIndex = this.ctData['editionWitnessIndex'] !== undefined ? this.ctData['editionWitnessIndex'] : this.ctData['witnessOrder'][0]
     edition.setLang(this.ctData['lang'])
@@ -86,7 +86,7 @@ export class CtDataEditionGenerator extends EditionGenerator{
     }
     let customApparatusCriticus = filteredCustomApparatusArray[0]
 
-    console.log(`Merging custom apparatus criticus entries`)
+    // console.log(`Merging custom apparatus criticus entries`)
     customApparatusCriticus.entries.forEach( (customEntry) => {
       let mainTextFrom = ctIndexToMainTextMap[customEntry.from].textIndex
       let mainTextTo = ctIndexToMainTextMap[customEntry.to].textIndex

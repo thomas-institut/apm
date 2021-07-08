@@ -1115,10 +1115,18 @@ export class CollationTableEditor {
               calcP.addClass('status-done')
 
               // show changes
+              // TODO: filter out changes in normalizationSource
+              let changesToShow = changes.ctChanges.filter ( (ch) => {
+                return !(ch.type === 'replace' &&
+                  ch.currentToken.text === ch.newToken.text &&
+                  ch.currentToken.normalizationSource !== undefined &&
+                    ch.currentToken.normalizationSource === 'automaticCollation'
+                )
+              })
               let html = ''
               html += '<h5>Changes:</h5>'
               html += '<ul>'
-              if (changes.ctChanges.length !== 0) {
+              if (changesToShow.length !== 0) {
 
                 function tokenText(token) {
                   let text = `'${token.text}'`
@@ -1128,7 +1136,7 @@ export class CollationTableEditor {
                   return text
                 }
 
-                for(const ctChange of changes.ctChanges) {
+                for(const ctChange of changesToShow) {
                   html += '<li>'
                   switch (ctChange.type) {
                     case 'insertColAfter':
@@ -1154,7 +1162,10 @@ export class CollationTableEditor {
                 html += '<li>Minor changes in the transcription that do not affect the collation table, e.g., added spaces, punctuation, etc.</li>'
               }
               if (changes.ctChanges.length === 0 && changes.nonCtChanges.length === 0) {
-                html += '<li>Minor changes in underlying data that do not affect the collation table, e.g., internal APM data, line numbers, etc.'
+                html += '<li>Minor changes in underlying data that do not affect the collation table, e.g., internal APM data, line numbers, etc.</li>'
+              }
+              if (changes.ctChanges.length !== changesToShow.length) {
+                html += '<li>Minor changes related to normalizations that do not affect the collation table</li>'
               }
               html += '</ul>'
               changesDiv.html(html)
@@ -2666,6 +2677,7 @@ export class CollationTableEditor {
   updateEditionPreview() {
     this.editionSvgDiv.html("Generating printed edition preview... <i class=\"fa fa-spinner fa-spin fa-fw\"></i>")
 
+    // TODO: use new SVG viewer!
     let peg = new PrintedEditionGenerator()
     let edition = peg.generateEdition(this.ctData, this.ctData['witnessOrder'][0])
     let ev = new EditionViewerSvg( {

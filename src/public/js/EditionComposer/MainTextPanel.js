@@ -141,7 +141,7 @@ export class MainTextPanel extends PanelWithToolbar {
       // }
       return `Waiting to be shown to generate content`
     }
-    this.verbose && console.log(`Generating html for main text panel`)
+    // this.verbose && console.log(`Generating html for main text panel`)
     this.mainTextNeedsToBeRedrawnOnNextOnShownEvent = false
     return this._generateMainTextHtml()
   }
@@ -597,8 +597,8 @@ export class MainTextPanel extends PanelWithToolbar {
     return wait(typesetInfoDelay).then( () => {
       this.verbose && console.log(`Updating apparatuses div`)
       this.lastTypesetinfo = getTypesettingInfo(this.containerSelector, 'main-text-token-', this.edition.mainTextSections[0].text)
-      this.verbose && console.log(`Typesetting info`)
-      this.verbose && console.log(this.lastTypesetinfo)
+      // this.verbose && console.log(`Typesetting info`)
+      // this.verbose && console.log(this.lastTypesetinfo)
       this._drawLineNumbers(this.lastTypesetinfo)
       this.options.apparatusPanels.forEach( (p) => { p.updateApparatus(this.lastTypesetinfo)})
     })

@@ -26,10 +26,10 @@ import { EditableTextField } from '../widgets/EditableTextField'
 
 // utilities
 import * as Util from '../toolbox/Util.mjs'
-import {OptionsChecker} from '@thomas-inst/optionschecker'
+import { capitalizeFirstLetter, deepCopy, parseWordsAndPunctuation } from '../toolbox/Util.mjs'
+import { OptionsChecker } from '@thomas-inst/optionschecker'
 
 // Normalizations
-
 import { NormalizerRegister } from '../NormalizerRegister'
 import { ToLowerCaseNormalizer } from '../normalizers/ToLowerCaseNormalizer'
 import { IgnoreArabicVocalizationNormalizer } from '../normalizers/IgnoreArabicVocalizationNormalizer'
@@ -47,7 +47,6 @@ import { CtDataCleaner } from '../CtData/CtDataCleaner'
 import { ApparatusPanel } from './ApparatusPanel'
 import { Edition } from '../Edition/Edition'
 import { CtDataEditionGenerator } from '../Edition/EditionGenerator/CtDataEditionGenerator'
-import { capitalizeFirstLetter, deepCopy, parseWordsAndPunctuation } from '../toolbox/Util.mjs'
 import { LocationInSection } from '../Edition/LocationInSection'
 import * as ArrayUtil from '../toolbox/ArrayUtil'
 import * as CollationTableType from '../constants/CollationTableType'
@@ -132,6 +131,7 @@ export class EditionComposer {
     let thisObject = this
 
     this.convertingToEdition = false
+    this.witnessUpdates = []
 
     $(window).on('beforeunload', function() {
       if (thisObject.unsavedChanges || thisObject.convertingToEdition) {
@@ -156,7 +156,9 @@ export class EditionComposer {
       ctData: this.ctData,
       onWitnessOrderChange: this.genOnWitnessOrderChange(),
       onSiglaChange: this.genOnSiglaChange(),
-      checkForWitnessUpdates: this.genCheckWitnessUpdates()
+      checkForWitnessUpdates: this.genCheckWitnessUpdates(),
+      updateWitness: this.genUpdateWitness(),
+      getWitnessData: this.genGetWitnessData()
     })
 
     this.adminPanel = new AdminPanel({
@@ -176,7 +178,7 @@ export class EditionComposer {
       edition: this.edition,
       langDef: this.options.langDef,
       onPdfExport: this.genOnExportPdf(),
-      verbose: true
+      verbose: false
     })
 
     let apparatusPanels = this.edition.apparatuses
@@ -368,10 +370,11 @@ export class EditionComposer {
     }
   }
 
-  _updateDataInPanels() {
+  _updateDataInPanels(updateWitnessInfo = false) {
     this.mainTextPanel.updateData(this.ctData, this.edition)
     this.collationTablePanel.updateCtData(this.ctData, 'EditionComposer')
     this.editionPreviewPanel.updateData(this.ctData, this.edition)
+    this.witnessInfoPanel.updateCtData(this.ctData, updateWitnessInfo)
   }
 
 
@@ -493,6 +496,8 @@ export class EditionComposer {
     })}
   }
 
+
+
   genOnExportPdf() {
     let thisObject = this
     return (svg) => {
@@ -521,6 +526,102 @@ export class EditionComposer {
           }
         )
       })
+    }
+  }
+
+  genGetWitnessData() {
+    return (witnessId) => {
+      return new Promise( (resolve, reject) => {
+        let apiUrl = this.options.urlGenerator.apiWitnessGet(witnessId, 'standardData')
+        $.get(apiUrl).then( (resp) => {
+          // got witness data
+          // normalize its tokens first
+          let witnessData = resp['witnessData']
+          witnessData['tokens'] = CtData.applyNormalizationsToWitnessTokens(
+            witnessData['tokens'],
+            this.normalizerRegister,
+            this.ctData['automaticNormalizationsApplied']
+          )
+
+          resolve(witnessData)
+        }).fail( (resp) => {
+          let errorMsg = `Server status ${resp.status}`
+          if (resp.responseJSON !== undefined) {
+            errorMsg += `, error message: '${resp.responseJSON.error}'`
+          }
+          console.warn(`Error getting witness data ${witnessId} from server: ${errorMsg}`)
+          reject(`Server communication error`)
+        })
+      })
+    }
+  }
+
+  genUpdateWitness() {
+    return (witnessIndex, changeData, newWitness) => {
+      console.log(`Updating witness ${witnessIndex} (${this.ctData['witnessTitles'][witnessIndex]})`)
+
+      //process column inserts
+      let insertedColumns = 0
+      let newTokenIndexes = []
+      changeData.ctChanges.forEach( (change) => {
+        if (change.type === 'insertColAfter') {
+          console.log(`Processing insertCol after ${change.afterCol}, newTokenIndex = ${change.tokenIndexInNewWitness}`)
+          CtData.insertColumnsAfter(this.ctData, change.afterCol+insertedColumns, 1)
+          insertedColumns++
+          newTokenIndexes.push({ index: change.afterCol+insertedColumns, new: change.tokenIndexInNewWitness})
+        }
+      })
+
+
+      // Update references in collation table
+      // this takes care of all 'replace' and 'empty' changes
+      console.log(`Updating references in collation table`)
+      this.ctData['collationMatrix'][witnessIndex] = this.ctData['collationMatrix'][witnessIndex].map((ref, i) => {
+        if (ref === -1) {
+          // console.log(`Col ${i}: ref -1`)
+          return ref
+        }
+        let newRef = changeData['tokenConversionArray'][ref]
+        if (newRef === undefined) {
+          newRef = -1
+          console.warn(`Col ${i}: Found undefined new ref in token conversion array, currentRef = ${ref}, setting to -1 for now`)
+        }
+        // if (newRef === ref) {
+        //   console.log(`Col ${i}: ref ${ref} does not change`)
+        // } else {
+        //   console.log(`Col ${i}: ref ${ref} changes to ${newRef}`)
+        // }
+        return newRef
+      })
+
+      newTokenIndexes.forEach( (nti) => {
+        let oldRef = this.ctData['collationMatrix'][witnessIndex][nti.index]
+        if (oldRef !== -1) {
+          console.warn(`Col: ${nti.index}, reference is not -1, cannot change to ${nti.new}. This should not happen!`)
+        } else {
+          console.log(`Col: ${nti.index}, ref changes from ${oldRef}  to ${nti.new}`)
+          this.ctData['collationMatrix'][witnessIndex][nti.index]  = nti.new
+        }
+      })
+
+      // 3. replace witness in ctData
+      this.ctData['witnesses'][witnessIndex] = newWitness
+
+      //4. Clean up references
+      // TODO: fix this, it should not be necessary
+      let cleaner = new CtDataCleaner({verbose: true})
+      this.ctData = cleaner.fixEditionWitnessReferences(this.ctData)
+
+      console.log(`New CT data after update`)
+      console.log(this.ctData)
+
+      // 4. update panels
+      this.witnessUpdates.push(witnessIndex)
+      this.updateSaveArea()
+      this._reGenerateEdition()
+      this._updateDataInPanels(false)
+      this.witnessInfoPanel.markWitnessAsJustUpdated(witnessIndex)
+      return true
     }
   }
 
@@ -602,6 +703,7 @@ export class EditionComposer {
         this.collationTablePanel.updateCtData(newCtData, 'EditionComposer')
       }
       this.editionPreviewPanel.updateData(this.ctData, this.edition)
+      this.witnessInfoPanel.updateCtData(this.ctData, false)
       this.updateSaveArea()
     }
   }
@@ -642,11 +744,9 @@ export class EditionComposer {
       }
     }
 
-    // if (this.witnessUpdates.length !== 0) {
-    //   for(const witnessUpdate of this.witnessUpdates) {
-    //     changes.push(`Witness ${this.ctData['witnessTitles'][witnessUpdate.witnessIndex]} updated`)
-    //   }
-    // }
+    this.witnessUpdates.forEach( (updatedWitnessIndex) => {
+      changes.push(`Witness ${this.ctData['witnessTitles'][updatedWitnessIndex]} updated`)
+    })
 
     if (!ArrayUtil.arraysAreEqual(this.ctData['groupedColumns'], this.lastSavedCtData['groupedColumns'])) {
       changes.push(`Changes in column grouping`)

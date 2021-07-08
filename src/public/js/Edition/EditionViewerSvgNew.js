@@ -131,9 +131,9 @@ export class EditionViewerSvgNew {
     let apparatusHeights = apparatusesTypesetTokens.map( (tokens) => { return apparatusTypesetter.getTextHeight(tokens)})
     let totalApparatusHeight = apparatusHeights.reduce( (x, y) => { return x+y})
 
-    console.log(`ApparatusHeights`)
-    console.log(apparatusHeights)
-    console.log(`Total: ${totalApparatusHeight}`)
+    // console.log(`ApparatusHeights`)
+    // console.log(apparatusHeights)
+    // console.log(`Total: ${totalApparatusHeight}`)
 
     // 3. Generate SVG
     let mainTextHeight = mainTextTypesetter.getTextHeight(mainTextTypesetTokens)
@@ -141,10 +141,10 @@ export class EditionViewerSvgNew {
 
     let svgHeight = this.geometry.margin.top + mainTextHeight +
       (this.geometry.textToApparatus * apparatusesTypesetTokens.length) + totalApparatusHeight + this.geometry.margin.bottom
-    console.log(`SVG height in px: ${svgHeight}`)
+    // console.log(`SVG height in px: ${svgHeight}`)
 
     svgHeight = Math.max(Typesetter.px2cm(svgHeight), this.options.pageHeightInCm)
-    console.log(`SVG height in cm: ${svgHeight}`)
+    // console.log(`SVG height in cm: ${svgHeight}`)
 
     let svgWidth = this.options.pageWidthInCm
 

@@ -25,15 +25,16 @@
  *  - Witness update: update status, check for updates and launch the witness update task
  */
 import { Panel } from './Panel'
-import { doNothing } from '../toolbox/FunctionUtil'
+import { doNothing, failPromise } from '../toolbox/FunctionUtil'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import * as Util from '../toolbox/Util.mjs'
 import { EditableTextField } from '../widgets/EditableTextField'
 import * as CollationTableType from '../constants/CollationTableType'
 import * as ArrayUtil from '../toolbox/ArrayUtil'
 import { transientAlert } from '../widgets/TransientAlert'
-import { deepCopy } from '../toolbox/Util.mjs'
 import * as WitnessType from '../constants/WitnessType'
+import { WitnessUpdateDialog } from './WitnessUpdateDialog'
+import { WitnessDiffCalculator } from '../WitnessDiffCalculator'
 
 const icons = {
   moveUp: '&uarr;',
@@ -61,15 +62,36 @@ export class WitnessInfoPanel extends Panel{
           })
         }
       },
+      getWitnessData: {
+        type: 'function',
+        default:
+          (witnessId) => { return failPromise(`Not really getting ${witnessId} from server`, 'Not implemented')}
+      },
+      updateWitness: {
+        type: 'function',
+        required: true
+      },
       ctData: { type: 'object', required: true}
     }
 
     let oc = new OptionsChecker(optionsSpec, 'Witness Info Panel')
     this.options = oc.getCleanOptions(options)
-    this.ctData = deepCopy(this.options.ctData)
+    this.ctData = Util.deepCopy(this.options.ctData)
     this.currentWitnessUpdateData = ''
     this.checkingForWitnessUpdates = false
 
+  }
+
+  updateCtData(newData, reRender = false) {
+    this.ctData = Util.deepCopy(newData)
+    if (reRender) {
+      this.reRender()
+    }
+  }
+
+  reRender() {
+    $(this.containerSelector).html(this.generateHtml())
+    this.postRender()
   }
 
   generateHtml() {
@@ -84,11 +106,10 @@ export class WitnessInfoPanel extends Panel{
   }
 
   postRender () {
-    let thisObject = this
     this.updateWitnessInfoDiv(false)
     $(this.containerSelector + ' .check-witness-update-btn').on('click', () => {
-      if (!thisObject.checkingForWitnessUpdates) {
-        thisObject.checkForWitnessUpdates()
+      if (!this.checkingForWitnessUpdates) {
+        this.checkForWitnessUpdates()
       }
     })
     this.convertToEditionDiv = $('#convert-to-edition-div')
@@ -148,7 +169,13 @@ export class WitnessInfoPanel extends Panel{
     // }
 
     //this.fetchSiglaPresets()
+  }
 
+  markWitnessAsJustUpdated(witnessIndex) {
+    this.currentWitnessUpdateData['witnesses'][witnessIndex]['upToDate'] = true
+    this.currentWitnessUpdateData['witnesses'][witnessIndex]['justUpdated'] = true
+    this.currentWitnessUpdateData['witnesses'][witnessIndex]['id'] = this.ctData['witnesses'][witnessIndex]['ApmWitnessId']
+    this.showWitnessUpdateData()
   }
 
   checkForWitnessUpdates() {
@@ -224,7 +251,17 @@ export class WitnessInfoPanel extends Panel{
 
   genOnClickWitnessUpdate(witnessIndex) {
     return () => {
+      let dialog = new WitnessUpdateDialog({
+        ctData: this.ctData,
+        witnessIndex: witnessIndex,
+        newWitnessInfo: this.currentWitnessUpdateData['witnesses'][witnessIndex],
+        witnessDiffCalculator: new WitnessDiffCalculator(),
+        getWitnessData: this.options.getWitnessData,
+        updateWitness: this.options.updateWitness,
+        icons: icons
+      })
       console.log(`Click on witness update ${witnessIndex}`)
+      dialog.go()
     }
   }
 

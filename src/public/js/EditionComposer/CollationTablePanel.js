@@ -245,7 +245,7 @@ export class CollationTablePanel extends PanelWithToolbar {
       this.normalizationSettingsButton.attr('title',
         `${this.savedNormalizerSettings.length} of ${this.availableNormalizers.length} normalizations applied. Click to change.`)
     } else {
-      this.verbose && console.log(`All normalizations`)
+      // this.verbose && console.log(`All normalizations`)
       this.normalizationSettingsButton.html(`${this.icons.editSettings}`)
       this.normalizationSettingsButton.attr('title', `All standard normalizations applied. Click to change.`)
     }
@@ -371,67 +371,16 @@ export class CollationTablePanel extends PanelWithToolbar {
    * @param normalizationsToApply {string[]}
    */
   _normalizationApplyAutomaticNormalizations(normalizationsToApply) {
-    let normalizationsSourcesToOverwrite = [
-      NormalizationSource.AUTOMATIC_COLLATION,
-      NormalizationSource.COLLATION_EDITOR_AUTOMATIC
-    ]
-    this.verbose && console.log(`Applying normalizations: [ ${normalizationsToApply.join(', ')} ]`)
-    this.ctData['automaticNormalizationsApplied'] = normalizationsToApply
 
-    let thisObject = this
-    for (let i = 0; i < this.ctData['witnesses'].length; i++) {
-      //  this.verbose && console.log(`Processing witness ${i}`)
-      let changesInWitness = false
-      let newWitnessTokens = this.ctData['witnesses'][i]['tokens'].map( (token) => {
-        if (token['tokenType'] === TranscriptionTokenType.WORD) {
-          if (normalizationsToApply.length !== 0) {
-            // overwrite normalizations with newly calculated ones
-            if (token['normalizationSource'] === undefined ||
-              (token['normalizedText'] === '' && token['normalizationSource'] === '') ||
-              normalizationsSourcesToOverwrite.indexOf(token['normalizationSource']) !== -1) {
-              let normalizedText = thisObject.normalizerRegister.applyNormalizerList(normalizationsToApply, token['text'])
-              if (normalizedText === token['text']) {
-                //no changes
-                return token
-              }
-              let newToken = token
-              newToken['normalizedText'] = normalizedText
-              newToken['normalizationSource'] = NormalizationSource.COLLATION_EDITOR_AUTOMATIC
-              // this.verbose && console.log(`Witness ${i}, token ${tokenIndex} normalized, ${token['text']} => ${normalizedText}`)
-              changesInWitness = true
-              return newToken
-            }
-          } else {
-            // remove automatic normalizations
-            let newToken = token
-            if (token['normalizedText'] !== undefined &&
-              normalizationsSourcesToOverwrite.indexOf(token['normalizationSource']) !== -1) {
-              // this.verbose && console.log(`Erasing normalization from token ${tokenIndex}, currently '${token['normalizedText']}'`)
-              newToken['normalizedText'] = undefined
-              newToken['normalizationSource'] = undefined
-              changesInWitness = true
-            }
-            return newToken
-          }
-        } else {
-          return token
-        }
-      })
-      if (changesInWitness) {
-        this.ctData['witnesses'][i]['tokens'] = newWitnessTokens
-      } else {
-        //  this.verbose && console.log(`No changes`)
-      }
-    }
-    this.verbose && console.log(`New CT Data after automatic normalizations: [${normalizationsToApply.join(', ')}]`)
-    this.verbose && console.log(this.ctData)
+    this.ctData = CtData.applyAutomaticNormalizations(this.ctData, this.normalizerRegister, normalizationsToApply)
+    // this.verbose && console.log(`New CT Data after automatic normalizations: [${normalizationsToApply.join(', ')}]`)
+    // this.verbose && console.log(this.ctData)
 
     this.options.onCtDataChange(this.ctData)
 
     // Update UI
-    // this.resetTokenDataCache()
+    this.resetTokenDataCache()
     this._setupPanelContent()
-
     // this.setCsvDownloadFile()
   }
 
@@ -1079,6 +1028,10 @@ export class CollationTablePanel extends PanelWithToolbar {
 
   getPostNotes(row, col, tokenIndex) {
     //let theToken = this.ctData
+    if (this.aggregatedNonTokenItemIndexes[row] === undefined) {
+      console.warn(`Found undefined row in this.aggregatedNonTokemItemIndexes, row = ${row}`)
+      return []
+    }
 
     if (this.aggregatedNonTokenItemIndexes[row][tokenIndex] === undefined) {
       this.verbose && console.log(`Undefined aggregate non-token item index for row ${row}, tokenIndex ${tokenIndex}`)

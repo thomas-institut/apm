@@ -28,7 +28,7 @@ export class CtDataCleaner {
 
   constructor(options = {}) {
     let optionsSpec = {
-      verbose: { type: 'bool', default: false}
+      verbose: { type: 'boolean', default: false}
     }
     let oc = new OptionsChecker(optionsSpec, 'CtDataCleaner')
     this.options = oc.getCleanOptions(options)
@@ -91,7 +91,7 @@ export class CtDataCleaner {
 
     // fix -1 references in edition witness
     if (this.ctData['type'] === CollationTableType.EDITION) {
-      this.fixEditionWitnessReferences()
+      this.ctData = this.fixEditionWitnessReferences(this.ctData)
     }
     // consistency check
     this.checkAndFixCollationTableConsistency()
@@ -100,16 +100,16 @@ export class CtDataCleaner {
   }
 
 
-  fixEditionWitnessReferences() {
+  fixEditionWitnessReferences(ctData) {
     this.options.verbose && console.log(`Checking for -1 references in edition witness`)
 
-    let editionWitnessIndex = this.ctData['editionWitnessIndex']
+    let editionWitnessIndex = ctData['editionWitnessIndex']
     if (editionWitnessIndex === undefined) {
       // not an edition, nothing to do
-      return
+      return ctData
     }
-    let editionWitnessTokens = this.ctData.witnesses[editionWitnessIndex]['tokens']
-    let ctEditionRow = this.ctData.collationMatrix[editionWitnessIndex]
+    let editionWitnessTokens = ctData.witnesses[editionWitnessIndex]['tokens']
+    let ctEditionRow = ctData.collationMatrix[editionWitnessIndex]
 
     let foundNullRef = false
     let newEditionWitnessTokens = ctEditionRow.map ( (ref, i) => {
@@ -125,12 +125,13 @@ export class CtDataCleaner {
       let newCtEditionRow = ctEditionRow.map( (ref, i) => {
         return i
       })
-      this.ctData.witnesses[editionWitnessIndex]['tokens'] = newEditionWitnessTokens
-      this.ctData.collationMatrix[editionWitnessIndex] = newCtEditionRow
+      ctData.witnesses[editionWitnessIndex]['tokens'] = newEditionWitnessTokens
+      ctData.collationMatrix[editionWitnessIndex] = newCtEditionRow
 
     } else {
       this.options.verbose && console.log('...all good, none found')
     }
+    return ctData
   }
 
   checkAndFixCollationTableConsistency() {

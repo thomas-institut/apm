@@ -31,7 +31,7 @@ export const VERBOSITY_DEBUG_PLUS = 100
 export class WitnessDiffCalculator {
 
 
-  constructor ( userOptions) {
+  constructor ( userOptions = {}) {
     let optionsDefinition = {
       verbosity: {
         type: 'number',
@@ -48,7 +48,14 @@ export class WitnessDiffCalculator {
 
     if (this.options.verbosity >= VERBOSITY_INFO) {
       console.groupCollapsed(`WitnessDiffCalculator : getChangesBetweenWitnesses (ctRowIndex = ${ctRowIndex})`)
+      console.log('CtRow')
+      console.log(ctRow)
+      console.log('Old Witness')
+      console.log(oldWitness)
+      console.log('new Witness')
+      console.log(newWitness)
     }
+
     // 1. Find changes in the tokens
     if (this.options.verbosity >= VERBOSITY_DEBUG_PLUS) {
       MyersDiff.setDebugMode()

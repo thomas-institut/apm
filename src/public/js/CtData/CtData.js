@@ -26,6 +26,8 @@ import { FmtTextFactory } from '../FmtText/FmtTextFactory'
 import { ApparatusEntry } from '../Edition/ApparatusEntry'
 import { FmtText } from '../FmtText/FmtText'
 import { deepCopy } from '../toolbox/Util.mjs'
+import * as TranscriptionTokenType from '../constants/WitnessTokenType'
+import * as NormalizationSource from '../constants/NormalizationSource'
 
 
 
@@ -93,20 +95,19 @@ export class CtData  {
     ctData['collationMatrix'] = _getRawCollationMatrixFromMatrix(collationMatrix)
     ctData['groupedColumns'] = columnSequence.getGroupedNumbers()
 
-
-    // 2. insert empty tokens in edition witness
-    let editionIndex = ctData['editionWitnessIndex']
     if (ctData['type'] === CollationTableType.EDITION) {
-
+      // 2. insert empty tokens in edition witness
+      let editionIndex = ctData['editionWitnessIndex']
       for (let i = 0; i < numCols; i++) {
-        ctData['witnesses'][editionIndex].tokens.splice(col + 1, 0, { tokenType: WitnessTokenType.EMPTY })
+        ctData['witnesses'][editionIndex].tokens.splice(col + 1, 0,
+          { tokenClass: 'edition',  tokenType: WitnessTokenType.EMPTY, text: "" })
       }
-    }
-    // 3. fix references in collation matrix
-    ctData['collationMatrix'][editionIndex] = ctData['collationMatrix'][editionIndex].map( (ref, i) => { return i})
+      // 3. fix references in collation matrix
+      ctData['collationMatrix'][editionIndex] = ctData['collationMatrix'][editionIndex].map( (ref, i) => { return i})
 
-    // 4. fix references in custom apparatuses
-    ctData['customApparatuses'] = this.fixReferencesInCustomApparatusesAfterColumnAdd(ctData, col, numCols)
+      // 4. fix references in custom apparatuses
+      ctData['customApparatuses'] = this.fixReferencesInCustomApparatusesAfterColumnAdd(ctData, col, numCols)
+    }
 
     return ctData
   }
@@ -275,7 +276,66 @@ export class CtData  {
     return index
   }
 
+
+  static applyAutomaticNormalizations(ctData, normalizerRegister, normalizationsToApply) {
+    let normalizationsSourcesToOverwrite = [
+      NormalizationSource.AUTOMATIC_COLLATION,
+      NormalizationSource.COLLATION_EDITOR_AUTOMATIC
+    ]
+    // console.log(`Applying normalizations: [ ${normalizationsToApply.join(', ')} ]`)
+    ctData['automaticNormalizationsApplied'] = normalizationsToApply
+
+    for (let i = 0; i < ctData['witnesses'].length; i++) {
+      ctData['witnesses'][i]['tokens'] = this.applyNormalizationsToWitnessTokens(ctData['witnesses'][i]['tokens'], normalizerRegister, normalizationsToApply)
+    }
+    // console.log(`New CT Data after automatic normalizations: [${normalizationsToApply.join(', ')}]`)
+    // console.log(ctData)
+
+    return ctData
+  }
+
+  static applyNormalizationsToWitnessTokens(tokens, normalizerRegister, normalizationsToApply) {
+    let normalizationsSourcesToOverwrite = [
+      NormalizationSource.AUTOMATIC_COLLATION,
+      NormalizationSource.COLLATION_EDITOR_AUTOMATIC
+    ]
+    return tokens.map ( (token) => {
+      if (token['tokenType'] === TranscriptionTokenType.WORD) {
+        if (normalizationsToApply.length !== 0) {
+          // overwrite normalizations with newly calculated ones
+          if (token['normalizationSource'] === undefined ||
+            (token['normalizedText'] === '' && token['normalizationSource'] === '') ||
+            normalizationsSourcesToOverwrite.indexOf(token['normalizationSource']) !== -1) {
+            let normalizedText =normalizerRegister.applyNormalizerList(normalizationsToApply, token['text'])
+            if (normalizedText === token['text']) {
+              //no changes
+              return token
+            }
+            let newToken = token
+            newToken['normalizedText'] = normalizedText
+            newToken['normalizationSource'] = NormalizationSource.COLLATION_EDITOR_AUTOMATIC
+            return newToken
+          }
+        } else {
+          // remove automatic normalizations
+          let newToken = token
+          if (token['normalizedText'] !== undefined &&
+            normalizationsSourcesToOverwrite.indexOf(token['normalizationSource']) !== -1) {
+            // this.verbose && console.log(`Erasing normalization from token ${tokenIndex}, currently '${token['normalizedText']}'`)
+            newToken['normalizedText'] = undefined
+            newToken['normalizationSource'] = undefined
+          }
+          return newToken
+        }
+      } else {
+        return token
+      }
+    })
+  }
+
 }
+
+
 
 /**
  *

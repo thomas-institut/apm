@@ -103,7 +103,7 @@ export class CriticalApparatusGenerator {
             // ignore base witness
             continue
           }
-          let theText = this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex, true)
+          let theText = this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex, false)
           if (theText === '') {
             // ignore empty witness text
             // TODO: check for deletions

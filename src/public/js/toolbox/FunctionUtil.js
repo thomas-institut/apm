@@ -13,12 +13,12 @@ export function doNothingPromise(msg = '') {
 }
 
 
-export function failPromise(msg= '') {
+export function failPromise(msg= '', reason = 'no reason') {
   return new Promise ( (resolve, reject) => {
     if (msg !== '') {
       console.log(msg)
     }
-    reject()
+    reject(reason)
   })
 }
 

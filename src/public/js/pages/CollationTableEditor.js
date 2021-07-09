@@ -59,6 +59,8 @@ import { IgnoreShaddaNormalizer } from '../normalizers/IgnoreShaddaNormalizer'
 import { RemoveHamzahMaddahFromAlifWawYahNormalizer } from '../normalizers/RemoveHamzahMaddahFromAlifWawYahNormalizer'
 import { IgnoreTatwilNormalizer } from '../normalizers/IgnoreTatwilNormalizer'
 import { IgnoreIsolatedHamzaNormalizer } from '../normalizers/IgnoreIsolatedHamzaNormalizer'
+import { deepCopy } from '../toolbox/Util.mjs'
+import { CtData } from '../CtData/CtData'
 
 /** @namespace Twig */
 
@@ -387,63 +389,9 @@ export class CollationTableEditor {
       })
   }
 
-  /**
-   *
-   * @param normalizationsToApply {string[]}
-   */
   applyAutomaticNormalizations(normalizationsToApply) {
-    let normalizationsSourcesToOverwrite = [
-      NormalizationSource.AUTOMATIC_COLLATION,
-      NormalizationSource.COLLATION_EDITOR_AUTOMATIC
-    ]
-    console.log(`Applying normalizations: [ ${normalizationsToApply.join(', ')} ]`)
-    this.ctData['automaticNormalizationsApplied'] = normalizationsToApply
+    this.ctData = CtData.applyAutomaticNormalizations(this.ctData, this.normalizerRegister, normalizationsToApply)
 
-    let thisObject = this
-    for (let i = 0; i < this.ctData['witnesses'].length; i++) {
-      // console.log(`Processing witness ${i}`)
-      let changesInWitness = false
-      let newWitnessTokens = this.ctData['witnesses'][i]['tokens'].map( (token) => {
-        if (token['tokenType'] === TranscriptionTokenType.WORD) {
-          if (normalizationsToApply.length !== 0) {
-            // overwrite normalizations with newly calculated ones
-            if (token['normalizationSource'] === undefined ||
-              (token['normalizedText'] === '' && token['normalizationSource'] === '') ||
-              normalizationsSourcesToOverwrite.indexOf(token['normalizationSource']) !== -1) {
-              let normalizedText = thisObject.normalizerRegister.applyNormalizerList(normalizationsToApply, token['text'])
-              if (normalizedText === token['text']) {
-                //no changes
-                return token
-              }
-              let newToken = token
-              newToken['normalizedText'] = normalizedText
-              newToken['normalizationSource'] = NormalizationSource.COLLATION_EDITOR_AUTOMATIC
-              //console.log(`Witness ${i}, token ${tokenIndex} normalized, ${token['text']} => ${normalizedText}`)
-              changesInWitness = true
-              return newToken
-            }
-          } else {
-            // remove automatic normalizations
-            let newToken = token
-            if (token['normalizedText'] !== undefined &&
-              normalizationsSourcesToOverwrite.indexOf(token['normalizationSource']) !== -1) {
-              //console.log(`Erasing normalization from token ${tokenIndex}, currently '${token['normalizedText']}'`)
-              newToken['normalizedText'] = undefined
-              newToken['normalizationSource'] = undefined
-              changesInWitness = true
-            }
-            return newToken
-          }
-        } else {
-          return token
-        }
-      })
-      if (changesInWitness) {
-        this.ctData['witnesses'][i]['tokens'] = newWitnessTokens
-      } else {
-        // console.log(`No changes`)
-      }
-    }
     console.log(`New CT Data after automatic normalizations: [${normalizationsToApply.join(', ')}]`)
     console.log(this.ctData)
 

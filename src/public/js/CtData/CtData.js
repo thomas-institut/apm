@@ -278,19 +278,12 @@ export class CtData  {
 
 
   static applyAutomaticNormalizations(ctData, normalizerRegister, normalizationsToApply) {
-    let normalizationsSourcesToOverwrite = [
-      NormalizationSource.AUTOMATIC_COLLATION,
-      NormalizationSource.COLLATION_EDITOR_AUTOMATIC
-    ]
-    // console.log(`Applying normalizations: [ ${normalizationsToApply.join(', ')} ]`)
+
     ctData['automaticNormalizationsApplied'] = normalizationsToApply
 
     for (let i = 0; i < ctData['witnesses'].length; i++) {
       ctData['witnesses'][i]['tokens'] = this.applyNormalizationsToWitnessTokens(ctData['witnesses'][i]['tokens'], normalizerRegister, normalizationsToApply)
     }
-    // console.log(`New CT Data after automatic normalizations: [${normalizationsToApply.join(', ')}]`)
-    // console.log(ctData)
-
     return ctData
   }
 
@@ -303,31 +296,35 @@ export class CtData  {
       if (token['tokenType'] === TranscriptionTokenType.WORD) {
         if (normalizationsToApply.length !== 0) {
           // overwrite normalizations with newly calculated ones
-          if (token['normalizationSource'] === undefined ||
-            (token['normalizedText'] === '' && token['normalizationSource'] === '') ||
-            normalizationsSourcesToOverwrite.indexOf(token['normalizationSource']) !== -1) {
-            let normalizedText =normalizerRegister.applyNormalizerList(normalizationsToApply, token['text'])
+          if (token['normalizationSource'] === undefined ||  // no normalization in token
+            (token['normalizedText'] === '' && token['normalizationSource'] === '') || // no normalization in token, 2nd possibility
+            normalizationsSourcesToOverwrite.indexOf(token['normalizationSource']) !== -1) { // normalization in token is in normalizationSourcesToOverwrite
+            let normalizedText = normalizerRegister.applyNormalizerList(normalizationsToApply, token['text'])
             if (normalizedText === token['text']) {
               //no changes
               return token
             }
-            let newToken = token
+            let newToken = deepCopy(token)
             newToken['normalizedText'] = normalizedText
             newToken['normalizationSource'] = NormalizationSource.COLLATION_EDITOR_AUTOMATIC
             return newToken
           }
+          // normalization in token no in normalizationSourcesToOverwrite: no changes
+          return token
         } else {
-          // remove automatic normalizations
-          let newToken = token
+          // no normalizations to apply
+          // => remove automatic normalizations
+          let newToken = deepCopy(token)
           if (token['normalizedText'] !== undefined &&
             normalizationsSourcesToOverwrite.indexOf(token['normalizationSource']) !== -1) {
-            // this.verbose && console.log(`Erasing normalization from token ${tokenIndex}, currently '${token['normalizedText']}'`)
+            // => remove automatic normalizations if normalization source in token is in normalizationSourcesToOverwrite
             newToken['normalizedText'] = undefined
             newToken['normalizationSource'] = undefined
           }
           return newToken
         }
       } else {
+        // non word token, no changes
         return token
       }
     })

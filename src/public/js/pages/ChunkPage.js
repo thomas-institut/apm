@@ -369,7 +369,7 @@ export class ChunkPage {
       }
       switch (witnessInfo.type) {
         case WitnessType.FULL_TX:
-          let lwid = witnessInfo.typeSpecificInfo.localWitnessId
+          let lwid = witnessInfo["typeSpecificInfo"].localWitnessId
           let title =  witnessInfo["typeSpecificInfo"].docInfo.title
           if (lwid !== 'A') {
             title += ' (' + lwid + ')'
@@ -510,7 +510,7 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
     }
     let url = this.pathFor.sitePageView(docId, sequence , column)
 
-    return '<a href="' + url + '" title="View page ' + foliation + ' col ' + column + ' in new tab" + target="_blank">' + label + '</a>'
+    return '<a href="' + url + '" title="View page ' + foliation + ' col ' + column + ' in new tab" target="_blank">' + label + '</a>'
   }
 
   getDocLink(docInfo) {
@@ -733,7 +733,8 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
           applyButtonText: 'Generate Collation',
           urlGenerator: this.options.urlGenerator,
           userId: this.options.userId,
-          normalizerData: this.options.languageInfo[urls[u].lang]['normalizerData']
+          normalizerData: this.options.languageInfo[urls[u].lang]['normalizerData'],
+          debug: true
         })
        $('#' + liId  + ' .cterasepresetbutton').on('click', function() { 
             $('#' + liId + '-a').addClass('disabled')

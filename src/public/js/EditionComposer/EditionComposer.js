@@ -151,14 +151,17 @@ export class EditionComposer {
       verbose: true
     })
     this.witnessInfoPanel = new WitnessInfoPanel({
-      verbose: false,
+      verbose: true,
+      userId: this.options.userId,
       containerSelector: `#${witnessInfoTabId}`,
       ctData: this.ctData,
       onWitnessOrderChange: this.genOnWitnessOrderChange(),
       onSiglaChange: this.genOnSiglaChange(),
       checkForWitnessUpdates: this.genCheckWitnessUpdates(),
       updateWitness: this.genUpdateWitness(),
-      getWitnessData: this.genGetWitnessData()
+      getWitnessData: this.genGetWitnessData(),
+      fetchSiglaPresets: this.genFetchSiglaPresets(),
+      saveSiglaPreset: this.genSaveSiglaPreset()
     })
 
     this.adminPanel = new AdminPanel({
@@ -639,6 +642,46 @@ export class EditionComposer {
             console.log(resp)
             reject()
           })
+      })
+    }
+  }
+
+  genFetchSiglaPresets() {
+    return () => {
+      return new Promise ( (resolve, reject) => {
+        let apiSiglaPresetsUrl = this.options.urlGenerator.apiGetSiglaPresets()
+        let apiCallOptions = {
+          lang: this.ctData['lang'],
+          witnesses: this.ctData['witnesses'].filter(w => { return w['witnessType'] === 'fullTx'}).map(w => w['ApmWitnessId'])
+        }
+        $.post(apiSiglaPresetsUrl, { data: JSON.stringify(apiCallOptions) })
+          .done(apiResponse => {
+            //console.log(apiResponse)
+            if (apiResponse['presets'] === undefined) {
+              resolve([])
+            } else {
+              resolve(apiResponse['presets'])
+            }
+        }).fail(resp => {
+          console.log('Error loading sigla presets')
+          console.log(resp)
+          reject(resp)
+        })
+      })
+    }
+  }
+
+  genSaveSiglaPreset() {
+    return (apiCallData) => {
+      return new Promise( (resolve, reject) => {
+        console.log('About to call save preset API')
+        console.log(apiCallData)
+        let apiUrl = this.options.urlGenerator.apiSaveSiglaPreset()
+        $.post(apiUrl, { data: JSON.stringify(apiCallData)}).done( () =>{
+          resolve()
+        }).fail( (resp) => {
+          reject(resp)
+        })
       })
     }
   }

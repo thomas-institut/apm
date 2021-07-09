@@ -492,14 +492,14 @@ export class AutomaticCollationTableSettingsForm {
     }
 
     console.log(`ACT title`)
-    console.log(settings.normalizers)
     if ( settings.normalizers === undefined || settings.normalizers === null ||
       settings.normalizers.length !== 0 )
      {
 
       title += ', normalization applied'
     }
-        
+    console.log(`ACT title`)
+    console.log(title)
     return title
   }
 

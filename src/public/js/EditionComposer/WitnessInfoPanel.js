@@ -71,6 +71,22 @@ export class WitnessInfoPanel extends Panel{
         type: 'function',
         required: true
       },
+      fetchSiglaPresets: {
+        // a function that fetches the sigla presets from the server.
+        // TODO: document data from the Promise resolve and reject
+        // () => {  return Promise() }
+        type: 'function',
+        required: true
+      },
+      saveSiglaPreset: {
+        // a function to save a sigla preset
+        // TODO: document apiCallData
+        // (apiCallData) => { return Promise() }
+        type: 'function',
+        required: true
+      },
+      onCtDataChange: { type: 'function', default: doNothing},
+      userId: { type: 'NonZeroNumber', required: true},
       ctData: { type: 'object', required: true}
     }
 
@@ -79,6 +95,7 @@ export class WitnessInfoPanel extends Panel{
     this.ctData = Util.deepCopy(this.options.ctData)
     this.currentWitnessUpdateData = ''
     this.checkingForWitnessUpdates = false
+    this.siglaPresets = []
 
   }
 
@@ -128,10 +145,17 @@ export class WitnessInfoPanel extends Panel{
     }
   }
 
+  /**
+   * Updates the
+   * @param {boolean} reRenderTable
+   */
   updateWitnessInfoDiv(reRenderTable = false) {
+
     // Turn off current event handlers
     $(this.containerSelector + ' .move-up-btn').off()
     $(this.containerSelector + ' .move-down-btn').off()
+    $(this.containerSelector + ' .save-sigla-btn').off()
+    $(this.containerSelector + ' .load-sigla-btn').off()
 
     // set table html
     if (reRenderTable) {
@@ -159,16 +183,303 @@ export class WitnessInfoPanel extends Panel{
     // update witness update check info
     this.checkForWitnessUpdates()
 
-
     // set up sigla presets buttons
-    // $(this.containerSelector + ' .save-sigla-btn').on('click', this.genOnClickSaveSiglaPreset())
-    // $(this.containerSelector + ' .load-sigla-btn').on('click', this.genOnClickLoadSiglaPreset())
+    $(this.containerSelector + ' .save-sigla-btn').on('click', this.genOnClickSaveSiglaPreset())
+    $(this.containerSelector + ' .load-sigla-btn').on('click', this.genOnClickLoadSiglaPreset())
 
-    // if (this.siglaPresets.length === 0)  {
-    //   $(this.containerSelector + ' .load-sigla-btn').addClass('hidden')
-    // }
+    if (this.siglaPresets.length === 0)  {
+      $(this.containerSelector + ' .load-sigla-btn').addClass('hidden')
+    }
 
-    //this.fetchSiglaPresets()
+     this.fetchSiglaPresets()
+  }
+
+  fetchSiglaPresets() {
+    this.options.fetchSiglaPresets().then( (presets) => {
+      this.siglaPresets = presets
+      this.verbose && console.log(`Fetched sigla presets`)
+      this.verbose && console.log(presets)
+      if (this.siglaPresets.length === 0)  {
+        $(this.containerSelector + ' .load-sigla-btn').addClass('hidden')
+      } else {
+        $(this.containerSelector + ' .load-sigla-btn').removeClass('hidden')
+      }
+    }).catch( (resp) => {
+      console.log(`Error getting sigla presets`)
+      console.log(resp)
+      this.siglaPresets = []
+      $(this.containerSelector + ' .load-sigla-btn').addClass('hidden')
+    })
+  }
+
+  genOnClickSaveSiglaPreset() {
+    return () => {
+      console.log('Click on save sigla')
+      const overWritePresetButtonLabel = 'Overwrite Preset'
+      const createPresetButtonLabel = 'Create New Preset'
+      $('body').append(this._genHtmlSaveSiglaPreset())
+
+      let modalSelector= '#save-sigla-preset-modal'
+      let cancelButton = $(`${modalSelector} .cancel-btn`)
+      let saveButton = $(`${modalSelector} .save-btn`)
+      let titleInput = $(`${modalSelector} .title-input`)
+      let titleLabel = $(`${modalSelector} .create-new-label`)
+      let footInfoLabel = $(`${modalSelector} .foot-info-label`)
+      let presetSelect = $(`${modalSelector} .preset-select`)
+      let presetSelectLabel = $(`${modalSelector} .preset-select-label`)
+
+      let presetOverwriteMode = false   // true if there are presets that can be overwritten
+      let apiCommand = 'new'
+
+      // get user presets
+      let userPresets = this.siglaPresets.filter( (p) => {
+        return p.userId === this.options.userId
+      })
+
+      if (userPresets.length === 0) {
+        // no user presets, just show the create new area
+        $(`${modalSelector} .select-p`).addClass('hidden')
+        titleLabel.html("New preset title:")
+        saveButton.html(createPresetButtonLabel)
+        saveButton.prop('disabled', true)
+        presetOverwriteMode = false
+        apiCommand = 'new'
+      } else {
+        presetSelect.html(
+          userPresets.map((p) => {
+            return `<option value="${p.presetId}">${p.title}</option>`
+          }).join(''))
+        saveButton.html(overWritePresetButtonLabel)
+        presetSelectLabel.addClass('active-label')
+        presetOverwriteMode = true
+        apiCommand = 'update'
+      }
+
+      // build witness sigla table
+      let siglaTableBody = this.ctData.witnesses.filter( (w) => {
+        return w['witnessType'] === 'fullTx'
+      }).map( (w, i) => {
+        return `<tr></tr><td>${this.ctData['witnessTitles'][i]}</td><td>${this.ctData.sigla[i]}</td></tr>`
+      }).join('')
+      $(`${modalSelector} .sigla-table-body`).html(siglaTableBody)
+
+      cancelButton.on('click', () => {
+        $(modalSelector).modal('hide')
+        $(modalSelector).remove()
+      })
+
+
+      titleInput.on('keyup', () => {
+        if (titleInput.val() === '') {
+          // title is empty
+          if (presetOverwriteMode) {
+            apiCommand = 'update'
+            saveButton.html(overWritePresetButtonLabel)
+            presetSelectLabel.addClass('active-label')
+            titleLabel.removeClass('active-label')
+          } else {
+            saveButton.prop('disabled', true)
+          }
+        } else {
+          // there is something in the title input
+          if (presetOverwriteMode) {
+            apiCommand = 'new'
+            saveButton.html(createPresetButtonLabel)
+            presetSelectLabel.removeClass('active-label')
+            titleLabel.addClass('active-label')
+          } else {
+            saveButton.prop('disabled', false)
+          }
+        }
+      })
+
+      saveButton.on('click', () => {
+        // build preset
+        let lang = this.ctData.lang
+        let witnessSiglaArray = {}
+        this.ctData.witnesses.forEach( (w, i) => {
+          if (w['witnessType'] === 'fullTx') {
+            witnessSiglaArray[w['ApmWitnessId']] = this.ctData.sigla[i]
+          }
+        })
+
+        // TODO: move this to EditionComposer.js
+        let apiCallData = {
+          lang: lang,
+          witnesses: witnessSiglaArray,
+          command: apiCommand,
+        }
+        if (apiCommand === 'new') {
+          apiCallData.title = titleInput.val()
+        } else {
+          apiCallData.presetId = Util.safeGetIntVal(presetSelect, 'presetSelect')
+        }
+
+        this.options.saveSiglaPreset(apiCallData).then( () => {
+          this.verbose && console.log('Save preset success')
+          if (apiCommand === 'new') {
+            footInfoLabel.html('New preset created ')
+          } else {
+            footInfoLabel.html('Preset overwritten')
+          }
+          cancelButton.html('Close')
+          // reload presets
+          this.fetchSiglaPresets()
+        }).catch( (resp) => {
+          if (apiCommand === 'new') {}
+          footInfoLabel.html('Error: could not save new preset')
+          saveButton.removeClass('hidden')
+          console.warn(`Could not save sigla presets`)
+          console.log(resp)
+        })
+      })
+
+      // go!
+      $(modalSelector).modal({
+        backdrop: 'static',
+        keyboard: false,
+        show: true
+      })
+    }
+  }
+
+  genOnClickLoadSiglaPreset() {
+    return () => {
+      console.log('Click on load sigla preset')
+      if (this.siglaPresets.length === 0) {
+        this.verbose && console.log('No sigla presets to apply')
+        return
+      }
+      $('body').append(this._genHtmlLoadSiglaPresetDialog())
+      let modalSelector= '#load-sigla-preset-modal'
+      let cancelButton = $(`${modalSelector} .cancel-btn`)
+      let loadButton = $(`${modalSelector} .load-btn`)
+      let presetSelect =  $(`${modalSelector} .preset-select`)
+      let siglaTableBody =  $(`${modalSelector} .sigla-table-body`)
+
+      presetSelect.html(
+        this.siglaPresets.map((p) => {
+          return `<option value="${p.presetId}">${p.title}, <em>${p.userName}</em></option>`
+        }).join('')
+      )
+      let p = this.siglaPresets[0]
+      siglaTableBody.html(this.getWitnessSiglaArrayFromPreset(p).map( w => {
+        return `<tr></tr><td>${w.title}</td><td>${w.currentSiglum}</td><td>${w.presetSiglum}</td></tr>`
+      }).join(''))
+
+      presetSelect.on('change', () => {
+        let id =  Util.safeGetIntVal(presetSelect, 'presetSelect')
+        let p =  this.siglaPresets.filter( (p) => { return p.presetId === id})[0]
+        siglaTableBody.html(this.getWitnessSiglaArrayFromPreset(p).map( w => {
+          return `<tr></tr><td>${w.title}</td><td>${w.currentSiglum}</td><td>${w.presetSiglum}</td></tr>`
+        }).join(''))
+      })
+
+      loadButton.on('click', () => {
+        let id =  Util.safeGetIntVal(presetSelect, 'presetSelect')
+        let p =  this.siglaPresets.filter( (p) => { return p.presetId === id})[0]
+        this.getWitnessSiglaArrayFromPreset(p).forEach( (w) => {
+          this.ctData.sigla[w.index] = w.presetSiglum
+        })
+        this.siglaPresetLoaded = p.title
+        $(modalSelector).modal('hide')
+        $(modalSelector).remove()
+        this.updateWitnessInfoDiv()
+        this.options.onCtDataChange(this.ctData)
+      })
+
+      cancelButton.on('click', () => {
+        $(modalSelector).modal('hide')
+        $(modalSelector).remove()
+      })
+
+      // go!
+      $(modalSelector).modal({
+        backdrop: 'static',
+        keyboard: false,
+        show: true
+      })
+    }
+  }
+
+  getWitnessSiglaArrayFromPreset(preset) {
+    return this.ctData.witnesses
+      .filter( w => {  return w['witnessType'] === 'fullTx'})
+      .map( (w, i) => {
+        let shortId = w['ApmWitnessId'].split('-').slice(2,5).join('-')
+
+        return {
+          title : this.ctData['witnessTitles'][i],
+          id: shortId,
+          index: i,
+          currentSiglum: this.ctData.sigla[i],
+          presetSiglum: preset.data.witnesses[shortId]
+        }
+      })
+  }
+
+  _genHtmlLoadSiglaPresetDialog() {
+    return `<div id="load-sigla-preset-modal" class="modal" role="dialog">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Load Sigla Preset</h5>
+            </div>
+            <div class="modal-body">
+                <p>
+                    <label>Preset: </label>
+                    <select class="preset-select"></select> 
+                </p>
+                <div class="info-div">
+                 <table class="sigla-table witnesstable">
+                        <tr><th>Witness</th><th>Current Siglum</th><th>Preset Siglum</th></tr>
+                        <tbody class="sigla-table-body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger load-btn">Load Sigla</button>
+                <button type="button" class="btn btn-primary cancel-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>`
+  }
+
+  _genHtmlSaveSiglaPreset() {
+    return `<div id="save-sigla-preset-modal" class="modal" role="dialog">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Save Sigla Preset</h5>
+            </div>
+            <div class="modal-body">
+                <div class="info-div">
+                    <table class="sigla-table witnesstable">
+                        <tr><th>Witness</th><th>Siglum</th></tr>
+                        <tbody class="sigla-table-body">
+                        </tbody>
+                    </table>
+                </div>
+                <p class="select-p">
+                    <label class="preset-select-label">Overwrite Preset: </label>
+                    <select class="preset-select">
+                    </select> 
+                </p>
+                <p>
+                    <label class="create-new-label">... or enter a title to create new preset: </label>
+                    <input type="text" class="title-input"> 
+                </p>
+            </div>
+            <div class="modal-footer">
+            <label class="foot-info-label"></label>
+                <button type="button" class="btn btn-danger save-btn">Save Sigla</button>
+                <button type="button" class="btn btn-primary cancel-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>`
   }
 
   markWitnessAsJustUpdated(witnessIndex) {

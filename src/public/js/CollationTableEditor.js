@@ -61,6 +61,7 @@ import { IgnoreShaddaNormalizer } from './normalizers/IgnoreShaddaNormalizer'
 import { RemoveHamzahMaddahFromAlifWawYahNormalizer } from './normalizers/RemoveHamzahMaddahFromAlifWawYahNormalizer'
 import { IgnoreTatwilNormalizer } from './normalizers/IgnoreTatwilNormalizer'
 import { IgnoreIsolatedHamzaNormalizer } from './normalizers/IgnoreIsolatedHamzaNormalizer'
+import { deepCopy } from './toolbox/Util.mjs'
 
 /** @namespace Twig */
 
@@ -112,6 +113,10 @@ export class CollationTableEditor {
     this.ltrClass = 'ltrtext'
 
     this.apiSaveCollationUrl = this.options.urlGenerator.apiSaveCollation()
+
+    let originalCtData = deepCopy(this.options['collationTableData'])
+    console.log('Original CtData')
+    console.log(originalCtData)
 
     this.ctData = this.options['collationTableData']
     // use default ordering if ctData does not have one
@@ -408,7 +413,7 @@ export class CollationTableEditor {
     for (let i = 0; i < this.ctData['witnesses'].length; i++) {
       // console.log(`Processing witness ${i}`)
       let changesInWitness = false
-      let newWitnessTokens = this.ctData['witnesses'][i]['tokens'].map( (token) => {
+      let newWitnessTokens = this.ctData['witnesses'][i]['tokens'].map( (token, tokenIndex) => {
         if (token['tokenType'] === TokenType.WORD) {
           if (normalizationsToApply.length !== 0) {
             // overwrite normalizations with newly calculated ones
@@ -420,19 +425,21 @@ export class CollationTableEditor {
                 //no changes
                 return token
               }
-              let newToken = token
+              let newToken = deepCopy(token)
               newToken['normalizedText'] = normalizedText
               newToken['normalizationSource'] = NormalizationSource.COLLATION_EDITOR_AUTOMATIC
-              //console.log(`Witness ${i}, token ${tokenIndex} normalized, ${token['text']} => ${normalizedText}`)
+              console.log(`Witness ${i}, token ${tokenIndex} normalized, ${token['text']} => ${normalizedText}`)
               changesInWitness = true
               return newToken
+            } else {
+              return token
             }
           } else {
             // remove automatic normalizations
-            let newToken = token
+            let newToken = deepCopy(token)
             if (token['normalizedText'] !== undefined &&
               normalizationsSourcesToOverwrite.indexOf(token['normalizationSource']) !== -1) {
-              //console.log(`Erasing normalization from token ${tokenIndex}, currently '${token['normalizedText']}'`)
+              console.log(`Erasing normalization from token ${tokenIndex}, currently '${token['normalizedText']}'`)
               newToken['normalizedText'] = undefined
               newToken['normalizationSource'] = undefined
               changesInWitness = true
@@ -533,6 +540,24 @@ export class CollationTableEditor {
       let row = ctMatrix.getRow(wIndex);
       let lastTokenInCt = -1
       let lastGoodCtCol = -1
+
+      // fix 'null' tokens... which should NEVER happen
+      this.ctData['witnesses'][wIndex]['tokens'] =
+        this.ctData['witnesses'][wIndex]['tokens'].map( (t, i) => {
+          if (t === null) {
+            console.log(`Found null token in witness ${wIndex}, index ${i}`)
+            return {
+              tokenType: TokenType.WORD,
+              text: '',
+              tokenClass: TokenClass.FULL_TX,
+              sourceItems: [],
+              textBox: 1,
+              line: 1
+            }
+          }
+          return t
+        })
+
       this.ctData['witnesses'][wIndex]['tokens'].forEach( (t, i) => {
         if (t.tokenType === TokenType.WORD) {
           let ctIndex = row.indexOf(i)
@@ -1810,14 +1835,22 @@ export class CollationTableEditor {
             }
           }
           // get itemZero
-          let itemZeroIndex = token['sourceItems'][0]['index']
-          let itemZero = itemWithAddressArray[itemZeroIndex]
-          // language class
+          if (token['sourceItems'].length !==0) {
+
+          }
+          // default language class
           let lang = thisObject.ctData['witnesses'][witnessIndex]['lang']
-          if (itemZero['lang'] !== undefined) {
-            lang = itemZero['lang']
+          let itemZero = null
+
+          if (token['sourceItems'].length !== 0) {
+            let itemZeroIndex = token['sourceItems'][0]['index']
+            itemZero = itemWithAddressArray[itemZeroIndex]
+            if (itemZero['lang'] !== undefined) {
+              lang = itemZero['lang']
+            }
           }
           classes.push('text-' + lang)
+
           if (token['sourceItems'].length === 1) {
             // td inherits the classes from the single source item
             return classes.concat(thisObject.getClassesFromItem(itemZero))

@@ -24,6 +24,7 @@ src/public/config.php
 /src/npm-debug.log
 /dist/
 /src/public/test/apm/tmp/c*
+/src/public/test/js/functional/dist
 /src/public/package-lock.json
 /src/public/js/istanbul/
 /src/public/js/dist/*

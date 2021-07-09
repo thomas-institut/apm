@@ -89,6 +89,8 @@ export class AutomaticCollationTableSettingsForm {
           editable: false
         }
       },
+      verbose: { type: 'boolean', default: false},
+      debug: { type: 'boolean', default: false}
     }
 
     let oc = new OptionsChecker(optionsDefinition, "AutoCollTableSettingsForm")
@@ -100,6 +102,12 @@ export class AutomaticCollationTableSettingsForm {
 
     this.witnessList = []
     this.initialSettings = this.options.initialSettings
+    this.verbose = this.options.verbose
+    this.debug = this.options.debug
+    if (this.debug) {
+      this.verbose = true
+    }
+
 
     let containerSelector = this.options.containerSelector
 
@@ -207,8 +215,8 @@ export class AutomaticCollationTableSettingsForm {
   }
   
   setSettings(settings = false) {
-    // console.log('Setting settings')
-    // console.log(settings)
+    this.verbose && console.log('Setting settings')
+    this.verbose && console.log(settings)
     if (settings === false) {
       settings = this.initialSettings
     }
@@ -221,22 +229,22 @@ export class AutomaticCollationTableSettingsForm {
     for(const witnessToInclude of settings.witnesses) {
       for (const witness of this.witnessList) {
         if (witnessToInclude.type === witness.type && this.systemIdsCorrespond(witnessToInclude.systemId,witness.systemId)) {
-          //console.log('Including witness')
-          //console.log(witness)
+          this.verbose && console.log('Including witness')
+          this.verbose && console.log(witness)
           witness.toInclude = true
         }
       }
     }
 
-    // console.log('Witness list')
-    // console.log(this.witnessList)
+    this.verbose && console.log('Witness list')
+    this.verbose && console.log(this.witnessList)
     
     // 2. Set up options
     this.ignorePunctuationCheckbox.prop('checked', settings.ignorePunctuation)
 
 
     if (settings.normalizers === undefined || settings.normalizers === null) {
-      //console.log(`No normalizers defined in setting, defaulting to all checked`)
+      this.verbose && console.log(`No normalizers defined in setting, defaulting to all checked`)
       $(`${this.options.containerSelector} .normalizer-checkbox`).prop('checked', true)
     } else {
       settings.normalizers.forEach( (name) => {
@@ -247,15 +255,15 @@ export class AutomaticCollationTableSettingsForm {
     // 3. Set up witness boxes
     
     // 3.a. Prepare html for boxes
-    // console.log('Preparing html for boxes')
+    this.debug && console.log('Preparing html for boxes')
     let witnessesAvailableHtml = ''
     let witnessesToIncludeHtml = ''
     let witnessesToIncludeHtmlElements = []
     for(const witness of this.witnessList) {
-      // console.log('Processing witness')
-      // console.log(witness)
+      this.debug && console.log('Processing witness')
+      this.debug && console.log(witness)
       let theHtml = this.getWitnessDraggableHtml(witness)
-      //console.log('The HTML:  ' + theHtml)
+      this.debug && console.log('The HTML:  ' + theHtml)
       if (!witness.toInclude) {
         witnessesAvailableHtml += theHtml
       } else {
@@ -384,7 +392,7 @@ export class AutomaticCollationTableSettingsForm {
         count++
       }
     }
-    //console.log('witnesses to include: ' + count)
+    this.debug && console.log('witnesses to include: ' + count)
     return count
   }
   
@@ -437,9 +445,9 @@ export class AutomaticCollationTableSettingsForm {
     let normalizers = this.getNormalizerNamesFromCheckBoxes()
 
     if (arraysHaveTheSameValues(normalizers, this.getNormalizerNamesFromOptions())){
-      //console.log(`All standard normalizers checked`)
+      this.debug && console.log(`All standard normalizers checked`)
     }else {
-      //console.log(`Custom normalizers in settings: [${normalizers.join(', ')}]`)
+      this.debug && console.log(`Custom normalizers in settings: [${normalizers.join(', ')}]`)
       settings.normalizers = normalizers
     }
 
@@ -491,15 +499,12 @@ export class AutomaticCollationTableSettingsForm {
       title += ', ignoring punctuation'
     }
 
-    console.log(`ACT title`)
     if ( settings.normalizers === undefined || settings.normalizers === null ||
       settings.normalizers.length !== 0 )
      {
 
       title += ', normalization applied'
     }
-    console.log(`ACT title`)
-    console.log(title)
     return title
   }
 
@@ -544,7 +549,7 @@ export class AutomaticCollationTableSettingsForm {
   genOnClickAllButton() {
     let thisObject = this
     return function() {
-      //console.log('ALL button clicked')
+      this.debug && console.log('ALL button clicked')
       let newSettings = thisObject.getSettings()
       newSettings.witnesses = []
       for(const witness of thisObject.witnessList) {
@@ -559,7 +564,7 @@ export class AutomaticCollationTableSettingsForm {
   genOnClickNoneButton() {
     let thisObject = this
     return function() {
-      //console.log('NONE button clicked')
+      this.debug && console.log('NONE button clicked')
       let newSettings = thisObject.getSettings()
       newSettings.witnesses = []
       thisObject.setSettings(newSettings)
@@ -597,7 +602,7 @@ export class AutomaticCollationTableSettingsForm {
       let presetText = thisObject.normalizePresetTitle(thisObject.presetInputText.val())
       
       if (presetText === '') {
-        //console.log('Empty preset title')
+        this.debug && console.log('Empty preset title')
         thisObject.presetSaveButton.addClass('disabled')
         thisObject.presetSave2Button.addClass('disabled')
         thisObject.presetErrorMsg.html('Preset name should not be empty')
@@ -615,11 +620,11 @@ export class AutomaticCollationTableSettingsForm {
       }
       
       if (presetText !== thisObject.options.preset.title) {
-        //console.log('Change in preset title')
+        this.debug && console.log('Change in preset title')
         thisObject.presetSaveButton.html('Update/Rename Preset')
         thisObject.presetSave2Button.removeClass('hidden')
       } else {
-        //console.log('Back to initial preset title')
+        this.debug && console.log('Back to initial preset title')
         thisObject.presetSaveButton.html('Update Preset')
         thisObject.presetSave2Button.addClass('hidden')
       }
@@ -628,12 +633,12 @@ export class AutomaticCollationTableSettingsForm {
   
   genOnClickPresetSaveButton() {
     let thisObject = this
-    return function() {
-      console.log('Saving preset')
+    return () => {
+      this.verbose && console.log('Saving preset')
       let newPresetTitle = thisObject.normalizePresetTitle(thisObject.presetInputText.val())
       let currentSettings = thisObject.getSettings()
-      console.log('Current settings')
-      console.log(currentSettings)
+      this.debug && console.log('Current settings')
+      this.debug && console.log(currentSettings)
       let witnessIdArray =[] 
       for(const w of currentSettings.witnesses) {
         if (w.type === 'fullTx') {
@@ -643,7 +648,7 @@ export class AutomaticCollationTableSettingsForm {
         }
       }
       if (!thisObject.options.isPreset || !thisObject.options.preset.editable) {
-        console.log('Saving to a new preset: ' + newPresetTitle)
+        this.verbose && console.log('Saving to a new preset: ' + newPresetTitle)
         let apiCallOptions = {
           command: 'new',
           tool: thisObject.automaticCollationPresetTool,
@@ -657,7 +662,7 @@ export class AutomaticCollationTableSettingsForm {
             normalizers: currentSettings.normalizers !== undefined ? currentSettings.normalizers : null
           }
         }
-        console.log(apiCallOptions)
+        this.debug && console.log(apiCallOptions)
         $.post(
           thisObject.options.urlGenerator.apiPostPresets(), 
           { data: JSON.stringify(apiCallOptions) }
@@ -680,15 +685,15 @@ export class AutomaticCollationTableSettingsForm {
           thisObject.editPresetButton.removeClass('hidden')
           thisObject.presetTitle.removeClass('hidden')
           
-        }).fail(function(resp) {
-          console.error('New preset API call failed')
-          console.log(resp)
+        }).fail((resp) => {
+          this.verbose && console.error('New preset API call failed')
+          this.verbose && console.log(resp)
           thisObject.presetErrorMsg.html('Cannot create new preset')
           thisObject.presetErrorSpan.removeClass('hidden')
         })
         return false
       }
-      console.log('Updating current preset')
+      this.verbose && console.log('Updating current preset')
       let apiCallOptions = {
           command: 'update',
           tool: thisObject.automaticCollationPresetTool,
@@ -706,9 +711,9 @@ export class AutomaticCollationTableSettingsForm {
         $.post(
           thisObject.options.urlGenerator.apiPostPresets(), 
           { data: JSON.stringify(apiCallOptions) }
-        ).done(function(data){
-          console.log('Preset updated successfully')
-          console.log(data)
+        ).done((data) => {
+          this.verbose && console.log('Preset updated successfully')
+          this.verbose && console.log(data)
           thisObject.dispatchEvent('preset-updated', data)
           thisObject.presetTitle.html(newPresetTitle)
           thisObject.options.preset.title = newPresetTitle
@@ -718,7 +723,7 @@ export class AutomaticCollationTableSettingsForm {
           thisObject.editPresetButton.removeClass('hidden')
           thisObject.presetTitle.removeClass('hidden')
           thisObject.presetTitle.removeClass('hidden')
-        }).fail(function(resp) {
+        }).fail((resp) => {
           if (resp.status === 409 && resp.responseJSON.error === 4007) {
             console.error('Cannot update preset: preset not found')
             thisObject.presetErrorMsg.html('Preset not in database, did you erase it?')
@@ -736,12 +741,12 @@ export class AutomaticCollationTableSettingsForm {
   
   genOnClickPresetSave2Button() {
     let thisObject = this
-    return function() {
+    return () => {
       if (!thisObject.options.isPreset || !thisObject.options.preset.editable) {
         console.error('Click on save 2 on non-editable or non-preset')
         return false
       }
-      console.log('Saving existing preset to a new one')
+      this.verbose && console.log('Saving existing preset to a new one')
       let newPresetTitle = thisObject.normalizePresetTitle(thisObject.presetInputText.val())
       let currentSettings = thisObject.getSettings()
       let witnessIdArray =[]
@@ -765,13 +770,13 @@ export class AutomaticCollationTableSettingsForm {
           normalizers: currentSettings.normalizers !== undefined ? currentSettings.normalizers : null
         }
       }
-      console.log(apiCallOptions)
+      this.debug && console.log(apiCallOptions)
       $.post(
         thisObject.options.urlGenerator.apiPostPresets(), 
         { data: JSON.stringify(apiCallOptions) }
-      ).done(function(data){
-        console.log('New preset API call successful')
-        console.log(data)
+      ).done((data) => {
+        this.verbose && console.log('New preset API call successful')
+        this.debug && console.log(data)
         thisObject.dispatchEvent('preset-new', data)
         thisObject.presetTitle.html(newPresetTitle)
         thisObject.options.preset.title = newPresetTitle
@@ -792,13 +797,12 @@ export class AutomaticCollationTableSettingsForm {
  }   
     
   genOnClickPresetCancelButton() {
-    let thisObject = this
-    return function() {
+    return () => {
       // hide edit preset mini form
-      thisObject.editPresetDiv.addClass('hidden')
+      this.editPresetDiv.addClass('hidden')
       // show title and edit button
-      thisObject.editPresetButton.removeClass('hidden')
-      thisObject.presetTitle.removeClass('hidden')
+      this.editPresetButton.removeClass('hidden')
+      this.presetTitle.removeClass('hidden')
     }
   }
   
@@ -815,8 +819,8 @@ export class AutomaticCollationTableSettingsForm {
   
   genOnDragStartFunc() {
     let thisObject = this
-    return function (e) {
-        //console.log('drag start')
+    return  function(e){
+        thisObject.debug && console.log('drag start')
         // Target (this) element is the source node.
         thisObject.dragSourceElement = this
         thisObject.dragSourceParent = this.parentNode
@@ -830,7 +834,7 @@ export class AutomaticCollationTableSettingsForm {
   genOnDragOver() {
     let thisObject = this
     return function (e) {
-      //console.log('drag over')
+      thisObject.debug && console.log('drag over')
       if (e.preventDefault) {
         e.preventDefault() // Necessary. Allows us to drop.
       }
@@ -841,9 +845,9 @@ export class AutomaticCollationTableSettingsForm {
   }
   
   genOnDragEnter() {
-    // let thisObject = this
+    let thisObject = this
     return function (e) {
-      //console.log('drag enter')
+      thisObject.debug && console.log('drag enter')
       // this / e.target is the current hover target.
     }
   }
@@ -851,7 +855,7 @@ export class AutomaticCollationTableSettingsForm {
   genOnDragLeave() {
     let thisObject = this
     return function () {
-      //console.log('drag leave')
+      thisObject.debug && console.log('drag leave')
       this.classList.remove(thisObject.overClass)  // this / e.target is previous target element.
       return false
     }
@@ -860,7 +864,7 @@ export class AutomaticCollationTableSettingsForm {
   genOnDrop() {
     let thisObject = this
     return function (e) {
-      //console.log('drop')
+      thisObject.debug && console.log('drop')
       // this/e.target is current target element.
       if (e.stopPropagation) {
         e.stopPropagation() // Stops some browsers from redirecting.
@@ -886,7 +890,7 @@ export class AutomaticCollationTableSettingsForm {
   genOnDragEnd() {
     let thisObject = this
     return function () {
-      //console.log('drag end')
+      thisObject.debug && console.log('drag end')
       this.classList.remove(thisObject.dragElementClass)
       thisObject.dispatchEvent(thisObject.settingsChangeEventName, thisObject.getSettings())
     }
@@ -896,7 +900,7 @@ export class AutomaticCollationTableSettingsForm {
   genOnDropBox() {
     let thisObject = this
     return function(e) {
-      //console.log('drop box')
+      thisObject.debug && console.log('drop box')
       e.preventDefault()
       let dropHtml = e.dataTransfer.getData('text/html')
       thisObject.dragSourceParent.removeChild(thisObject.dragSourceElement)
@@ -913,7 +917,7 @@ export class AutomaticCollationTableSettingsForm {
   genOnDragOverBox() {
     let thisObject = this
     return function (e) {
-      //console.log('drag over box')
+      thisObject.debug && console.log('drag over box')
       if (e.preventDefault) {
         e.preventDefault() // Necessary. Allows us to drop.
       }
@@ -926,7 +930,7 @@ export class AutomaticCollationTableSettingsForm {
   genOnDragLeaveBox() {
     let thisObject = this
     return function () {
-      //console.log('drag leave Box')
+      thisObject.debug && console.log('drag leave Box')
       this.classList.remove(thisObject.overBoxClass)  // this / e.target is previous target element.
     }
   }
@@ -934,12 +938,10 @@ export class AutomaticCollationTableSettingsForm {
   genOnDragEndBox() {
     let thisObject = this
     return function () {
-      //console.log('drag end box')
+      thisObject.debug && console.log('drag end box')
       this.classList.remove(thisObject.overBoxClass)
     }
   }
-  
-  
 
   addWitnessBoxDnDHandlers(elem) {
     elem.addEventListener('dragstart', this.genOnDragStartFunc(), false);

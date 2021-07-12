@@ -1,0 +1,398 @@
+/* 
+ *  Copyright (C) 2019-20 Universität zu Köln
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  
+ */
+
+@import url('../fonts.css');
+@import url('../defaults.css');
+
+
+body, .popover {
+    font-family:  var(--default-font-family);
+    font-size: var(--default-font-size);
+    color: var(--default-font-color);
+}
+
+/* Dimmed down links*/
+
+a, a:visited {
+    text-decoration: none;
+    color: var(--dimmed-blue-color);
+}
+a:hover{
+    color: blue;
+}
+
+header {
+    margin: auto;
+    padding: 0;
+    border: 0;
+    height: 58px;
+    border-bottom: solid 1px #ddd;
+}
+
+div#header-wrap{
+    width: 1000px;
+    margin: auto;
+}
+
+div#nav {
+    margin: 0;
+    padding: 0;
+    float: right;
+}
+
+section{
+    clear: both;
+    width: 1000px;
+    margin: 25px auto auto;
+    min-height: 200px;
+}
+
+section h1 {
+    font-size: 1.2em;
+}
+
+section h2 {
+    font-size: 1em;
+}
+
+article {
+    margin: 0;
+    padding-top: 35px;
+}
+
+article h2 {
+    padding: 0;
+    margin-top: 10px;
+}
+article.mssfeedentry{
+    padding-left: 20px;
+}
+
+article.mssfeedentry p {
+    margin: 0;
+    padding: 0 0 10px;
+}
+
+article.mssfeedentry ul {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 30px;
+}
+
+article.mssfeedentry li  {
+    padding: 0;
+}
+footer {
+    margin-top: 40px;
+}
+
+ul.horizontal {
+    margin: 0;
+    padding: 15px 0 0;
+}
+
+ul.horizontal li {
+
+    display: inline;
+    padding-right: 24px;
+}
+
+.icon {
+    color: inherit;
+    font-size: 0.8em;
+}
+
+.doctitle {
+    font-weight: 500;
+}
+
+
+
+table.pagetable td {
+    padding: 3px;
+}
+
+/* Not set */
+table.pagetable td.type0 {
+    background-color: #EFFEEF;
+}
+
+/* Normal text */
+table.pagetable td.type1 {
+    background-color: white;
+}
+
+/* Front Matter */
+table.pagetable td.type2 {
+    background-color: #f9f9f9;
+}
+
+/* Back Matter */
+table.pagetable td.type3 {
+    background-color: #f9f9f9;
+
+}
+table.pagetable a {
+    color: black;
+}
+
+table.pagetable td.withouttranscription a{
+    color: silver;
+}
+
+.pagetablediv{
+    margin-left: 20px;
+}
+
+.largetext {
+    font-size: 1.2em;
+}
+
+table.doctable th {
+    padding: 7px;
+    
+}
+table.doctable td {
+    padding: 10px;
+    
+}
+
+p.docinfo {
+    padding-top: 5px;
+    padding-bottom: 3px;
+}
+
+.breadcrumb {
+    background-color: white;
+}
+
+
+.withtopmargin {
+    margin-top: 30px;
+}
+
+.withmarginleft-small {
+    margin-left: 25px;
+}
+
+
+ul.doclist {
+    list-style-type: none;
+    padding: 0;
+    margin-left: 20px;
+    margin-bottom: 25px;
+}
+
+ul.doclist li {
+    padding: 0;
+    margin-bottom: 1.5em;
+    margin-left: 20px;
+    text-indent: -20px;
+}
+
+ul.ctlist {
+    list-style-type: none;
+    padding: 0;
+    margin-left: 20px;
+    margin-bottom: 25px;
+}
+
+ul.ctlist li {
+    padding: 0;
+    margin-bottom: 1em;
+    margin-left: 20px;
+    text-indent: -20px;
+}
+
+.chunktext {
+    font-size: 1.2em;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.chunktext-he {
+    direction: rtl;
+    font-family: var(--hebrew-font-family);
+    font-size: var(--hebrew-font-size);
+}
+
+.chunktext-ar {
+    direction: rtl;
+    font-family: var(--arabic-font-family);
+    font-size: var(--arabic-font-size);
+}
+
+.chunktext-la {
+    direction: ltr;
+    font-style: normal;
+}
+
+ul.chunklist {
+    list-style: none;
+    margin: 20px 0 20px 0;
+    padding: 0;
+}
+
+ul.chunklist  li {
+    padding:0;
+    margin: 5px 0 30px 10px;
+}
+
+ul.chunklist ul {
+    list-style: none;
+    margin: 0 0 0 20px;
+    padding: 0;
+}
+
+.chunktexts {
+    margin-top: 40px;
+}
+
+.witnesslist {
+    margin-top: 40px;
+    margin-bottom: 60px;
+}
+
+
+.noborder {
+    border: none;
+}
+
+
+/* For Chunk page */
+
+.actsettings {
+    margin-top: 20px;
+    margin-left: 20px;
+    margin-bottom: 40px;
+}
+
+.collationtablelinks ul {
+    list-style-type: none;
+    padding: 0;
+    margin-left: 20px;
+    margin-bottom: 25px;
+}
+
+.collationtablelinks ul li {
+    padding: 0;
+    margin-left: 20px;
+}
+
+div.ct-versioninfo {
+    margin-left: 30px;
+    font-size: 0.9em;
+}
+
+.ct-versioninfo h4 {
+    padding: 0;
+    margin: 10px 0 5px 0;
+    font-size: 1.1em;
+}
+.ct-versioninfo ul {
+    list-style: none;
+    padding: 0;
+    margin-left: 20px;
+}
+
+
+.worksinfo ul {
+    list-style: none;
+    margin-top: 10px;
+}
+.worksinfo li {
+
+     margin-top: 10px;
+ }
+
+table.chunktable td {
+    padding-right: 2ex;
+    padding-bottom: 0.5ex;
+    vertical-align: top;
+}
+
+a.alwaysblack {
+    color: black
+}
+
+ul.witnesslistnew {
+    list-style: none;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+ul.witnesslistnew li {
+    margin-bottom: 10px;
+}
+
+div.cpheader {
+    font-size: 2.4em;
+    margin-bottom: 30px;
+}
+
+div.cpheader a {
+    color: black;
+}
+
+.justifyright {
+    text-align: right;
+}
+
+
+.collationtablelinks li.smallpadding {
+    padding-bottom: 5px;
+}
+
+.panetab {
+    padding: 5px;
+    border-bottom: 1px solid #ddd;
+    /*border-left: 1px solid #ddd;*/
+    /*border-right: 1px solid #ddd;*/
+}
+
+
+.slow-fade {
+    transition: opacity 500ms linear;
+}
+
+.opacity-0 {
+    opacity: 0;
+}
+
+.opacity-1 {
+    opacity: 100%;
+}
+
+
+.flip_H{
+    transform: scale(-1, 1);
+}
+.flip_V{
+    transform: scale(1, -1);
+}
+
+
+.text-icon {
+    font-family: var(--text-icon-font-family);
+    font-size: 0.75em;
+    font-weight: bold;
+    color: var(--default-font-color);
+    padding: 1px;
+    border: 2px solid;
+    border-radius: 25%;
+}

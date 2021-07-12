@@ -46,7 +46,8 @@ class ApiWitness extends ApiController
     const WITNESS_DATA_CACHE_KEY_PREFIX = 'ApiWitness-witnessdata-';
     const WITNESS_HTML_CACHE_KEY_POSTFIX = '-html';
 
-    public function getWitness(Request $request, Response $response) {
+    public function getWitness(Request $request, Response $response): Response
+    {
 
         $witnessId = $request->getAttribute('witnessId');
         $this->profiler->start();
@@ -99,7 +100,7 @@ class ApiWitness extends ApiController
         $responseData['witnesses'] = [];
         foreach($witnessArray as $i => $witness) {
             if (!isset($witness['id'])) {
-                $msg = 'No witness id given in witness $i';
+                $msg = "No witness id given in witness $i" ;
                 $this->logger->error($msg, [
                     'apiUserId' => $this->apiUserId,
                     'apiError' => self::ERROR_UNKNOWN_WITNESS_TYPE
@@ -110,9 +111,15 @@ class ApiWitness extends ApiController
             $witnessType = WitnessSystemId::getType($witnessId);
             switch ($witnessType) {
                 case WitnessType::CHUNK_EDITION:
-                    $this->profiler->stop();
-                    $this->logProfilerData($apiCall);
-                    return $this->responseWithJson($response, [ 'status' => 'Not Applicable'], 200);
+                    // just say that chunk edition is up to date
+                    $responseData['witnesses'][] = [
+                        'id' => $witnessId,
+                        'upToDate' => true,
+                    ];
+                    break;
+//                    $this->profiler->stop();
+//                    $this->logProfilerData($apiCall);
+//                    return $this->responseWithJson($response, [ 'status' => 'Not Applicable'], 200);
 
                 case WitnessType::FULL_TRANSCRIPTION:
                     $witnessInfo = WitnessSystemId::getFullTxInfo($witnessId);
@@ -404,11 +411,13 @@ class ApiWitness extends ApiController
     }
 
 
-    private function getWitnessDataCacheKey(string $witnessId) {
+    private function getWitnessDataCacheKey(string $witnessId): string
+    {
         return self::WITNESS_DATA_CACHE_KEY_PREFIX . $witnessId;
     }
 
-    private function getWitnessHtmlCacheKey(string $witnessId) {
+    private function getWitnessHtmlCacheKey(string $witnessId): string
+    {
         return $this->getWitnessDataCacheKey($witnessId) . self::WITNESS_HTML_CACHE_KEY_POSTFIX;
     }
 

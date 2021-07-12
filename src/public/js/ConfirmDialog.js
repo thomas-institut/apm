@@ -49,7 +49,7 @@ export class ConfirmDialog {
     }
     this.modalSelector = `#${this.options.id}`
 
-    $(this.options.modalSelector).remove()
+    $(this.modalSelector).remove()
     $('body').append(this._genHtml())
     this.modalElement = $(this.modalSelector)
     this.acceptButton =  $(`${this.modalSelector} .accept-btn`)
@@ -69,8 +69,7 @@ export class ConfirmDialog {
       thisObject.modalElement.modal('hide')
       thisObject.options.cancelFunction(thisObject.getDialogId(), thisObject)
       if (!thisObject.options.reuseDialog) {
-        thisObject.modalElement.remove()
-        thisObject.status = STATUS_DONE
+        thisObject.destroy()
       }
     })
     this.modalElement.modal({
@@ -79,6 +78,19 @@ export class ConfirmDialog {
       show: false
     })
     this.status = STATUS_READY
+  }
+
+  destroy() {
+    this.modalElement.remove()
+    this.status = STATUS_DONE
+  }
+
+  setAcceptFunction(newFunction) {
+    this.options.acceptFunction = newFunction
+  }
+
+  setCancelFunction(newFunction) {
+    this.options.cancelFunction = newFunction
   }
 
   show() {
@@ -91,6 +103,10 @@ export class ConfirmDialog {
 
   getDialogId() {
     return this.options.id
+  }
+
+  getSelector() {
+    return this.modalSelector
   }
 
   setTitle(title) {
@@ -110,6 +126,19 @@ export class ConfirmDialog {
   hideAcceptButton() {
     if (this.status === STATUS_READY) {
       this.acceptButton.hide()
+    }
+  }
+
+  showAcceptButton() {
+    if (this.status === STATUS_READY) {
+      this.acceptButton.show()
+    }
+  }
+
+  setAcceptButtonLabel(newLabel) {
+    this.options.acceptButtonLabel = newLabel
+    if (this.status === STATUS_READY) {
+      this.acceptButton.html(newLabel)
     }
   }
 

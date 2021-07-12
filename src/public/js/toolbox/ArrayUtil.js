@@ -45,6 +45,10 @@ export function arraysAreEqual(array1, array2, comparisonFunction = function (a,
   return true
 }
 
+export function varsAreEqual(var1, var2) {
+  return JSON.stringify(var1) === JSON.stringify(var2)
+}
+
 /**
  * Returns true if both arrays have the same values
  * Only works if the arrays are composed of values that can be represented as strings
@@ -53,4 +57,32 @@ export function arraysAreEqual(array1, array2, comparisonFunction = function (a,
  */
 export function arraysHaveTheSameValues(array1, array2) {
   return array1.sort().join(' ') === array2.sort().join(' ')
+}
+
+
+export function prettyPrintArray(array) {
+  return '[' + array.map( (e) => { return e.toString()}).join(', ') + ']'
+}
+
+export function shuffleArray(array) {
+  array.sort(() => Math.random() - 0.5)
+  return array
+}
+
+export function createSequenceArray(from, to, increment = 1) {
+  let theArray = []
+  for (let i = from; i <= to; i+=increment) {
+    theArray.push(i)
+  }
+  return theArray
+}
+
+export function createIndexArray(size) {
+  return createSequenceArray(0, size-1, 1)
+}
+
+export function pushArray(theArray, arrayToPush) {
+  arrayToPush.forEach( (e) => {
+    theArray.push(e)
+  })
 }

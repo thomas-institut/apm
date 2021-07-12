@@ -17,7 +17,7 @@
  */
 
 
-import * as TokenType from './constants/TokenType'
+import * as TranscriptionTokenType from './constants/WitnessTokenType'
 import * as MyersDiff from './toolbox/MyersDiff.mjs'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 
@@ -31,7 +31,7 @@ export const VERBOSITY_DEBUG_PLUS = 100
 export class WitnessDiffCalculator {
 
 
-  constructor ( userOptions) {
+  constructor ( userOptions = {}) {
     let optionsDefinition = {
       verbosity: {
         type: 'number',
@@ -48,7 +48,14 @@ export class WitnessDiffCalculator {
 
     if (this.options.verbosity >= VERBOSITY_INFO) {
       console.groupCollapsed(`WitnessDiffCalculator : getChangesBetweenWitnesses (ctRowIndex = ${ctRowIndex})`)
+      console.log('CtRow')
+      console.log(ctRow)
+      console.log('Old Witness')
+      console.log(oldWitness)
+      console.log('new Witness')
+      console.log(newWitness)
     }
+
     // 1. Find changes in the tokens
     if (this.options.verbosity >= VERBOSITY_DEBUG_PLUS) {
       MyersDiff.setDebugMode()
@@ -56,15 +63,15 @@ export class WitnessDiffCalculator {
     let editScript = MyersDiff.calculate(oldWitness['tokens'], newWitness['tokens'], function(a,b) {
       if (a['tokenType'] === b['tokenType']) {
         switch(a['tokenType']) {
-          case TokenType.WHITESPACE:
-          case TokenType.EMPTY:
+          case TranscriptionTokenType.WHITESPACE:
+          case TranscriptionTokenType.EMPTY:
             // all whitespace and all empty tokens are equal
             return true
 
-          case TokenType.PUNCTUATION:
+          case TranscriptionTokenType.PUNCTUATION:
             return a['text'] === b['text']
 
-          case TokenType.WORD:
+          case TranscriptionTokenType.WORD:
             if (a['text'] !== b['text']) {
               return false
             }
@@ -271,7 +278,7 @@ function getFsmEvent(editScript, ctIndex, newTokens) {
     case 1:
       // only insert words into the collation table
       let newToken = newTokens[editScript.seq]
-      if (newToken['tokenType'] === TokenType.WORD) {
+      if (newToken['tokenType'] === TranscriptionTokenType.WORD) {
         return 'INS-CT'
       } else {
         return 'INS'

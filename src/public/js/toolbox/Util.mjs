@@ -31,12 +31,19 @@ export function removeWhiteSpace(someString) {
   return someString.replace(/\s/g, '')
 }
 
+export function removeExtraWhiteSpace(someString) {
+  return trimWhiteSpace(someString).replace(/\s+/g, ' ')
+}
+
 export function trimWhiteSpace(someString) {
   return someString.replace(/^\s+/, '').replace(/\s+$/, '')
 }
 
-export function getClassArrayFromJQueryObject(jqueryObject) {
-  return jqueryObject.attr('class').split(/\s+/);
+export function getClassArrayFromJQueryObject(element) {
+  if (element.attr('class') === undefined) {
+    return []
+  }
+  return element.attr("class").split(/\s+/)
 }
 
 /**
@@ -80,7 +87,7 @@ export function stringReplaceArray(str, searchStrings, replaceString) {
   return result
 }
 
-export function isPunctuationToken(text) {
+export function strIsPunctuation(text) {
   if (text === undefined) {
     return false
   }
@@ -92,6 +99,38 @@ export function isPunctuationToken(text) {
   }
   return true
 }
+
+export function parseWordsAndPunctuation(text) {
+  let parsedArray = []
+  let currentWord = ''
+  text.split('').forEach( (ch) => {
+    if (isWordToken(ch)) {
+      // word
+      currentWord += ch
+      return
+    }
+    if (strIsPunctuation(ch)) {
+      // punctuation
+      if (currentWord !== '') {
+        parsedArray.push({ type: 'w', text: currentWord})
+        currentWord = ''
+      }
+      parsedArray.push( { type: 'p', text: ch})
+      return
+    }
+    // whitespace
+    if (currentWord !== '') {
+      parsedArray.push({ type: 'w', text: currentWord })
+      currentWord = ''
+    }
+  })
+  if (currentWord !== '') {
+    parsedArray.push({ type: 'w', text: currentWord})
+  }
+
+  return parsedArray
+}
+
 
 export function hasPunctuation(text) {
   let punctuationArray = getValidPunctuationArray()
@@ -114,6 +153,8 @@ function getValidPunctuationArray() {
     ';',
     ':',
     '?',
+    '¿',
+    '¡',
     '!',
     '⊙',
     '¶',
@@ -140,5 +181,40 @@ export function safeGetIntVal(element, title) {
     console.error(`safeGetIntVal: Value for ${title} is object/array`)
   }
   return parseInt(val)
+}
+
+
+export function getIntegerSuffix(someString, prefix) {
+  return someString.startsWith(prefix) ? parseInt(someString.replace(prefix, '')) : null
+}
+
+/**
+ *
+ * @param string
+ * @returns {string}
+ */
+export function capitalizeFirstLetter(string) {
+  return string[0].toUpperCase() + string.slice(1);
+}
+
+
+export function getTextDirectionForLang(lang) {
+  switch(lang) {
+    case 'ar':
+    case 'he':
+      return 'rtl'
+
+    default:
+      return 'ltr'
+  }
+}
+
+export function hashCodeInt32(str){
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash += Math.pow(str.charCodeAt(i) * 31, str.length - i);
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return hash;
 }
 

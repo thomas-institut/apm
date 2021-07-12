@@ -89,6 +89,11 @@ class ApmUrlGenerator {
     siteEditCollationTable(tableId) {
         return this.base + '/collation/edit/' + tableId;
     }
+
+    siteEditCollationTableBeta(tableId) {
+        return this.base + '/collation/edit/' + tableId + '/beta'
+    }
+
     siteChunkEdition(tableId) {
         return this.base + '/edition/chunk/edit/' + tableId;
     }
@@ -153,5 +158,9 @@ class ApmUrlGenerator {
 
     siteDocs() {
         return this.base + '/documents'
+    }
+
+    images() {
+        return this.base + '/images'
     }
 }

@@ -17,7 +17,7 @@
  */
 
 import * as Util from './toolbox/Util.mjs'
-import { EDITION, FULL_TX } from './constants/TokenClass'
+import { EDITION, FULL_TX } from './constants/TranscriptionTokenClass'
 import * as NormalizationSource from './constants/NormalizationSource'
 
 // Classes
@@ -105,11 +105,11 @@ export function getPopoverHtml(witnessIndex, tokenIndex, witness, postNotes, peo
 
   popoverHtml += '</div>'
 
-  if (token['tokenClass'] === EDITION) {
-    console.log(`Popover generated for edition token:`)
-    console.log(token)
-    console.log(`Popover html:  '${popoverHtml}'`)
-  }
+  // if (token['tokenClass'] === EDITION) {
+  //   console.log(`Popover generated for edition token:`)
+  //   console.log(token)
+  //   console.log(`Popover html:  '${popoverHtml}'`)
+  // }
 
   return popoverHtml
 }

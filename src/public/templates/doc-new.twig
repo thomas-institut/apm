@@ -4,10 +4,10 @@
 {% block title %}New Document{% endblock %}
 
 {% block extraJS %}
-<script type="application/javascript" src="{{baseurl}}/js/NewDocPage.js"></script>
+<script type="application/javascript" src="{{baseurl}}/js/dist/DocNewDocPage.bundle.js"></script>
 <script>
     $( () => {
-        new NewDocPage('de', '{{baseurl}}')
+        new DocNewDocPage('de', '{{baseurl}}')
     })
 </script>
 {% endblock %}

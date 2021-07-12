@@ -167,8 +167,8 @@ class PageViewer {
       } 
       
       for (let col = 1; col <= numColumns; col++) {
-        let theUl = '<li id="colheader' + col + '">'
-        theUl += '<a data-toggle="tab" id="col-label-' + col + '" href="#col' + col +
+        let theUl = '<li class="nav-item" id="colheader' + col + '">'
+        theUl += '<a role="tab" class="nav-link" data-toggle="tab" id="col-label-' + col + '" href="#col' + col +
                 '">Column ' + col + '</a></li>'
         $('#tabsUl').append(theUl)
       }
@@ -280,6 +280,7 @@ class PageViewer {
           })
           if (col === thisObject.options.activeColumn) {
             $('#colheader' + theCol).tab('show')
+            $(`#col-label-${theCol}`).addClass('active')
           }
         })
       }

@@ -1,0 +1,348 @@
+
+#collationtablediv {
+    line-height: 1.2;
+}
+
+
+#collationtableinfo {
+    margin-top: 20px;
+    margin-bottom: 25px;
+}
+
+table.witnesstable {
+    margin-top: 20px;
+    margin-left: 20px;
+}
+
+table.witnesstable td,th {
+    padding: 10px;
+}
+
+table.versioninfo {
+    margin-top: 20px;
+    margin-left: 20px;
+    margin-bottom: 2rem;
+}
+
+table.versioninfo td,th {
+    padding: 5px;
+}
+
+.breadcrumb {
+    margin-bottom: 5px;
+}
+
+
+.te-table {
+    border-collapse: collapse;
+    margin-bottom: 3em;
+}
+
+td.te-rowtitle {
+    /*
+     * This is to try to avoid that the title gets splits in two line in the cell,
+     * which causes the table rows to grow bigger and ocassionally makes the mouse
+     * pointer to "move" to another cell
+     */
+    min-width: 12rem;
+}
+
+div.edrundetails{
+    font-size: 0.8em;
+    margin-top: 2em;
+}
+
+.nomargin-panel {
+    margin: 0;
+    padding: 0;
+}
+
+    .ct-toolbar {
+        padding: 10px 5px;
+        margin: 0 0 1em;
+        background: #fbfbfb;
+        color: grey;
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        /*border-bottom: solid 1px #e0e0e0;*/
+    }
+
+.ct-toolbar-section {
+    display: flex;
+    flex-direction: row;
+}
+
+.ct-toolbar-group {
+    display: flex;
+    flex-direction: row;
+    margin-right: 2rem;
+}
+.ct-toolbar-item {
+    display: flex;
+    flex-direction: row;
+    margin-right: 1rem;
+}
+
+.ct-toolbar.tb-button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 3px;
+}
+
+.ct-toolbar a.tb-button.multitoggle-on, a.tb-button.multitoggle-on:hover {
+    border: 1px solid grey;
+    border-radius: 3px;
+    padding-left: 5px;
+    padding-right: 5px;
+    text-decoration: none;
+}
+
+a.tb-button {
+    color: grey;
+}
+
+.margin-left-med {
+    margin-left: 10px;
+}
+
+.loading {
+    margin-top: 30px;
+    margin-bottom: 30px;
+    font-size: 3rem;
+}
+
+div.witness-update-div {
+    margin: 2rem;
+
+}
+
+span.witness-update-info {
+    margin-right: 2rem;
+}
+
+
+.witness-update-btn{
+    font-size: 0.8em;
+}
+/* Update modal */
+
+div.info {
+    margin-bottom: 2rem;
+}
+
+.status-waiting {
+    color: silver;
+}
+
+.status-running {
+    color: black;
+    font-weight: bold;
+    transition: font-weight 250ms;
+}
+
+.status-done {
+    font-weight: 200;
+    color: green;
+}
+
+.status-fail {
+    color: red;
+}
+
+div.changes {
+    padding-left: 1rem;
+    /*border: solid 1px #e0e0e0;*/
+    margin: 2rem;
+    max-height: 18rem;
+    overflow-y: scroll;
+}
+
+div.changes h5 {
+    padding: 0;
+    margin: 0 0 0.5rem;
+}
+
+svg.edition-svg {
+    border: solid 1px;
+    border-color: var(--very-light-gray);
+}
+
+.edrundetails {
+    margin-bottom: 2rem;
+}
+
+.check-witness-update-btn {
+    font-size: 0.8em;
+}
+
+table.versioninfo td {
+    vertical-align: top;
+
+}
+
+table.versioninfo td.author {
+    min-width: 10em;
+}
+
+table.versioninfo td.time {
+    min-width: 11em;
+}
+
+#convert-to-edition-div {
+    padding: 20px;
+}
+
+#convert-to-edition-modal .info {
+    font-size: 1.2em;
+}
+
+#convert-to-edition-modal .form-check {
+    margin-left: 2rem;
+}
+
+#convert-to-edition-modal .form {
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+}
+
+a.invalid {
+    color: red;
+}
+
+.info-div {
+    margin-bottom: 1rem;
+}
+
+.active-label {
+    font-weight: bold;
+}
+
+.te-table a.group-icon-float-left {
+    float: left;
+    padding: 0 1rem 0 0;
+    margin-left: -0.5em;
+}
+
+.te-table a.group-icon-float-right {
+    float: right;
+    padding: 0 0 0 1rem;
+    margin-right: -0.5em;
+}
+
+
+/*Edition Preview HTML*/
+
+div#edition-html-container {
+    font-size: 11pt;
+    display: flex;
+    flex-direction: column;
+}
+
+#edition-html-container .main-text {
+    overflow-y: auto;
+    padding: 2em 5em;
+    height: 50%;
+}
+
+#edition-html-container .apparatuses {
+    overflow-y: scroll;
+    border-top: 1px dotted silver;
+    padding: 2em 5em;
+    margin-top: 10px;
+    height: 45%;
+}
+
+
+.htmlEdition .text-la {
+    font-family: "Times New Roman", Times, serif;
+}
+
+.htmlEdition .main-text {
+    line-height: 1.5em;
+}
+
+.htmlEdition div.apparatus p {
+    padding: 0;
+    margin: 0;
+}
+
+.htmlEdition .hover {
+    background: #efdf7c;
+}
+
+#admindiv h3 {
+    margin-top: 1em;
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+}
+
+#adminopsdiv {
+    margin-bottom: 2rem;
+}
+
+#admindiv ul {
+    list-style: none;
+}
+
+
+/** NEW COLLATION TABLE */
+
+body.ct-new-body {
+    /*background:  var(--very-light-gray);*/
+}
+
+div.top-bar {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-between;
+    height: 58px;
+    border-bottom: 2px solid gray;
+}
+
+div.top-bar-item {
+    margin-right: 2rem;
+}
+
+div.work-area {
+    display: grid;
+    grid-template-columns: 1fr 5px 1fr;
+    background: white;
+}
+
+div.pane {
+    overflow: auto;
+    margin: 5px;
+}
+div.column-gutter {
+    background-color: gray;
+    cursor: col-resize;
+}
+
+.top-bar-ct-title {
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.top-bar-item p{
+    margin: 0;
+    font-size: 0.8rem;
+}
+
+div#collationtableinfo.top-bar-item{
+    margin: 0;
+}
+
+#save-area {
+    text-align: right;
+}
+
+div.work-area div.pane div.tab-content {
+    background: white;
+}
+
+#edition-svg-div {
+    overflow: auto;
+}

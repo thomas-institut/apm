@@ -22,6 +22,7 @@ import {OptionsChecker} from '@thomas-inst/optionschecker'
 
 export const confirmEvent = 'confirm'
 export const editChangeEvent = 'edit-change'
+export const cancelEvent = 'cancel'
 
 // Internal Defaults
 const defaultNormalClass = 'etf-normal'
@@ -50,11 +51,13 @@ export class EditableTextField {
 
   constructor (options) {
     let optionsDefinition = {
+      verbose: { type: 'boolean', default: false},
       containerSelector : { type: 'string', required: true},
       normalClass: { type: 'string', required: false, default: defaultNormalClass},
       editingClass: { type: 'string', required: false, default: defaultEditingClass},
       hoverClass: {type: 'string', required: false, default: defaultHoverClass},
       initialText: { type: 'string', required: true},
+      startInEditMode: { type: 'boolean', default: false},
       minTextFormSize: { type: 'PositiveInteger', required: false, default: defaultMinTextFormSize},
       maxTextFormSize: { type: 'PositiveInteger', required: false, default: defaultMaxTextFormSize},
       onConfirm : {
@@ -86,14 +89,20 @@ export class EditableTextField {
 
     let oc = new OptionsChecker(optionsDefinition, "EditableTextField")
     this.options = oc.getCleanOptions(options)
+    this.verbose = this.options.verbose
     this.currentText = this.options.initialText
     this.container = $(this.options.containerSelector)
     this.container.removeClass(this.options.normalClass)
     this.container.removeClass(this.options.editingClass)
 
-    this.editing = false
     this.confirmEnabled = true
-    this.setNormalContainer()
+    if (this.options.startInEditMode) {
+      this.editing = true
+      this.setEditContainer()
+    } else {
+      this.editing = false
+      this.setNormalContainer()
+    }
     if (this.options.onConfirm !== null){
       this.on(confirmEvent, this.options.onConfirm)
     }
@@ -102,6 +111,13 @@ export class EditableTextField {
       this.on(editChangeEvent, this.options.onEditInputChange)
     }
 
+  }
+
+  destroy() {
+    this.container.off()
+      .removeClass(this.options.normalClass)
+      .removeClass(this.options.editingClass)
+      .html('')
   }
 
   getCurrentText() {
@@ -128,17 +144,15 @@ export class EditableTextField {
 
 
   getTextInEditor() {
-    if (this.editing) {
+    // if (this.editing) {
       return this.textInput.val()
-    }
-    return this.getCurrentText()
+    // }
+    // return this.getCurrentText()
   }
 
 
   setNormalContainer() {
-    this.container.off('click')
-    this.container.off('mouseenter')
-    this.container.off('mouseleave')
+    this.container.off('click mouseenter mouseleave mousedown mouseup')
     let html = ''
     html += `<span title="Click to edit" class="${theTextClass}">${this.currentText}</span>`
     html += '&nbsp;'
@@ -157,9 +171,8 @@ export class EditableTextField {
   }
 
   setEditContainer() {
-    this.container.off('click')
-    this.container.off('mouseenter')
-    this.container.off('mouseleave')
+    this.container.off('click mouseenter mouseleave mouseup mousedown')
+
     this.container.removeClass(this.options.normalClass)
     this.container.removeClass(this.options.hoverClass)
     let size = this.currentText.length
@@ -204,13 +217,14 @@ export class EditableTextField {
     //console.log('cancel on ' + this.options.containerSelector)
     this.editing = false
     this.setNormalContainer()
+    this.dispatchEvent(cancelEvent, {})
   }
 
   confirmEdit() {
-    //console.log('confirm'+ this.options.containerSelector)
+    this.verbose && console.log(`Confirm edit: ${this.options.containerSelector}`)
     this.dispatchEvent(confirmEvent, { editor: this, newText: this.getTextInEditor(), oldText: this.getCurrentText() })
-    this.currentText = this.getTextInEditor()
     this.editing = false
+    this.currentText = this.getTextInEditor()
     this.setNormalContainer()
   }
 
@@ -288,6 +302,7 @@ export class EditableTextField {
    */
   on(eventName, f){
     this.container.on(eventName, f)
+    return this
   }
 
 }

@@ -1,0 +1,1165 @@
+/*
+ *  Copyright (C) 2021 Universität zu Köln
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ */
+
+
+/**
+ * The collation table panel in the EditorComposer.
+ *
+ *  - Collation table manipulation: moving, grouping, normalizations
+ */
+import {OptionsChecker} from '@thomas-inst/optionschecker'
+import { PanelWithToolbar } from './PanelWithToolbar'
+import { MultiToggle, optionChange } from '../widgets/MultiToggle'
+import { NiceToggle, toggleEvent } from '../widgets/NiceToggle'
+import { NormalizerRegister } from '../NormalizerRegister'
+import * as ArrayUtil from '../toolbox/ArrayUtil'
+import * as NormalizationSource from '../constants/NormalizationSource'
+import * as TranscriptionTokenType from '../constants/WitnessTokenType'
+import { defaultLanguageDefinition } from '../defaults/languages'
+import { columnGroupEvent, columnUngroupEvent, editModeOff, TableEditor } from '../TableEditor'
+import * as WitnessType from '../constants/WitnessType'
+import * as TokenClass from '../constants/TranscriptionTokenClass'
+import * as Util from '../toolbox/Util.mjs'
+import * as CollationTableType from '../constants/CollationTableType'
+import * as CollationTableUtil from '../CollationTableUtil'
+import * as PopoverFormatter from '../CollationTablePopovers'
+import { FULL_TX } from '../constants/TranscriptionTokenClass'
+import { deepCopy } from '../toolbox/Util.mjs'
+import { CtData } from '../CtData/CtData'
+
+export class CollationTablePanel extends PanelWithToolbar {
+  constructor (options = {}) {
+    super(options)
+    let optionsDefinition = {
+      ctData: { type: 'object' },
+      normalizerRegister: { type: 'object', objectClass: NormalizerRegister},
+      icons: { type: 'object', required: true},
+      langDef : { type: 'object', default: defaultLanguageDefinition },
+      onCtDataChange: { type: 'function', default: () => {  this.verbose && console.log(`New CT data, but no handler for change`)}}
+    }
+
+    let oc = new OptionsChecker(optionsDefinition, 'Collation Table Panel')
+    this.options = oc.getCleanOptions(options)
+    this.ctData = deepCopy(this.options.ctData)
+    this.panelIsSetup = false
+    this.normalizerRegister = this.options.normalizerRegister
+    this.availableNormalizers = this.normalizerRegister.getRegisteredNormalizers()
+    this.icons = this.options.icons
+    this.textDirection = this.options.langDef[this.ctData['lang']].rtl ? 'rtl' : 'ltr'
+    this.resetTokenDataCache()
+    this.aggregatedNonTokenItemIndexes = this.calculateAggregatedNonTokenItemIndexes()
+
+    // viewSettings
+    this.viewSettings = {
+      highlightVariants: true,
+      showNormalizations: false
+    }
+
+    // popovers for collation table
+    // this.setUpPopovers()
+    this._popoversTurnOn()
+  }
+
+  getContentAreaClasses () {
+    return super.getContentAreaClasses().concat([ `${this.textDirection}text`])
+  }
+
+  /**
+   *
+   * @param {object} ctData
+   * @param {string} source
+   */
+  updateCtData(ctData, source) {
+    this.verbose && console.log(`Got news of changes in CT data from ${source}`)
+    this.ctData = deepCopy(ctData)
+    this.panelIsSetup = false
+    this.resetTokenDataCache()
+    this.aggregatedNonTokenItemIndexes = this.calculateAggregatedNonTokenItemIndexes()
+    if (this.visible) {
+      this._setupPanelContent()
+      this.panelIsSetup = true
+    }
+  }
+
+  resetTokenDataCache() {
+    this.tokenDataCache = {}
+  }
+
+
+  generateToolbarHtml (tabId, mode, visible) {
+    return `<div class="panel-toolbar-group">
+        <div class="panel-toolbar-group" id="mode-toggle"></div>
+       <div class="panel-toolbar-group"><span id="popovers-toggle"></span></div>
+       <div class="panel-toolbar-group">
+            <span id="normalizations-toggle"></span>
+            <a class="tb-button" href="#" title="Click to choose which normalizations to apply" id="normalizations-settings-button"><i class="fas fa-pen"></i></a>
+       </div>
+</div>
+<div class="panel-toolbar-group leftmost">
+    <div class="panel-toolbar-item">
+        <a id="export-csv-button" class="tb-button"  download="ApmCollationTable.csv"
+                       title="Download CSV"><small>CSV</small><i class="fas fa-download"></i></a>
+    </div>
+</div>`
+  }
+
+  generateContentHtml (tabId, mode, visible) {
+    this.panelIsSetup = false
+    return `Setting up collation table....`
+  }
+
+  postRender (id, mode, visible) {
+    super.postRender(id, mode, visible)
+    this._setupToolBar()
+    if (visible) {
+      this._setupPanelContent()
+      super.onResize(visible)
+      this.panelIsSetup = true
+    }
+  }
+
+  onShown () {
+    super.onShown()
+    if (!this.panelIsSetup) {
+      this._setupPanelContent()
+      super.onResize(true)
+      this.panelIsSetup = true
+    }
+  }
+
+  onHidden () {
+    super.onHidden()
+    this.visible = false
+  }
+
+  _setupToolBar() {
+
+    let thisObject = this
+
+    // NORMALIZATIONS
+
+    this.normalizationSettingsButton = $('#normalizations-settings-button')
+    if (this.availableNormalizers.length !== 0) {
+      // Set up normalization toggle and settings button
+      this.savedNormalizerSettings = this.ctData['automaticNormalizationsApplied'].length === 0 ?
+        this.availableNormalizers : this.ctData['automaticNormalizationsApplied']
+      this._normalizationsSetupSettingsButton()
+      this.normalizationsToggle = new NiceToggle({
+        containerSelector: '#normalizations-toggle',
+        title: 'Normalizations: ',
+        initialValue: this.ctData['automaticNormalizationsApplied'].length !== 0,
+        onIcon: '<i class="fas fa-toggle-on"></i>',
+        onPopoverText: 'Click to disable automatic normalizations',
+        offIcon: '<i class="fas fa-toggle-off"></i>',
+        offPopoverText: 'Click to enable automatic normalizations'
+      })
+
+      this.normalizationsToggle.on(toggleEvent, (ev) => {
+        if (ev.detail.toggleStatus) {
+          thisObject.normalizationSettingsButton.show()
+        } else {
+          thisObject.normalizationSettingsButton.hide()
+        }
+        let automaticNormalizationsApplied  = ev.detail.toggleStatus ?
+          thisObject.savedNormalizerSettings : []
+        thisObject._normalizationApplyAutomaticNormalizations(automaticNormalizationsApplied)
+
+      })
+      if (this.normalizationsToggle.isOn) {
+        this.normalizationSettingsButton.show()
+      } else {
+        this.normalizationSettingsButton.hide()
+      }
+    } else {
+      // No normalizations available, no need to show normalization settings
+      this.normalizationSettingsButton.hide()
+    }
+
+    this.normalizationSettingsButton.on('click', this._normalizationsGenOnClickSettingsButton())
+
+
+    // EDIT MODE
+
+    this.modeToggle = new MultiToggle({
+      containerSelector: '#mode-toggle',
+      title: 'Edit: ',
+      buttonClass: 'tb-button',
+      initialOption: 'off',
+      wrapButtonsInDiv: true,
+      buttonsDivClass: 'panel-toolbar-item',
+      buttonDef: [
+        { label: 'Off', name: 'off', helpText: 'Turn off editing'},
+        { label: 'Move', name: 'move', helpText: 'Show controls to move/add/delete cells'},
+        { label: 'Group', name: 'group', helpText: 'Show controls to group columns'},
+      ]
+    })
+
+    this.modeToggle.on(optionChange, (ev) => {
+      this.verbose && console.log('New Edit Mode: ' + ev.detail.currentOption)
+      this.tableEditor.setEditMode(ev.detail.currentOption)
+    })
+
+    // POPOVERS
+
+    this.popoversToggle = new NiceToggle({
+      containerSelector: '#popovers-toggle',
+      title: 'Popovers: ',
+      onIcon: '<i class="fas fa-toggle-on"></i>',
+      onPopoverText: 'Click to disable popovers',
+      offIcon: '<i class="fas fa-toggle-off"></i>',
+      offPopoverText: 'Click to enable popovers'
+    })
+
+    this.popoversToggle.on(toggleEvent,  (ev) => {
+      if (ev.detail.toggleStatus) {
+        thisObject._popoversTurnOn()
+      } else {
+        thisObject._popoversTurnOff()
+      }
+    })
+
+    // EXPORT CSV
+    this.exportCsvButton = $('#export-csv-button')
+
+  }
+
+
+  _normalizationsSetupSettingsButton() {
+    if (this.savedNormalizerSettings.length !== this.availableNormalizers.length) {
+      this.normalizationSettingsButton.html(`${this.icons.editSettings}<sup>*</sup>`)
+      this.normalizationSettingsButton.attr('title',
+        `${this.savedNormalizerSettings.length} of ${this.availableNormalizers.length} normalizations applied. Click to change.`)
+    } else {
+      // this.verbose && console.log(`All normalizations`)
+      this.normalizationSettingsButton.html(`${this.icons.editSettings}`)
+      this.normalizationSettingsButton.attr('title', `All standard normalizations applied. Click to change.`)
+    }
+  }
+
+  _normalizationsGenOnClickSettingsButton(){
+    let thisObject = this
+    return (ev) => {
+      ev.preventDefault()
+      let availableNormalizers = thisObject.normalizerRegister.getRegisteredNormalizers()
+      if (availableNormalizers.length === 0) {
+        console.warn(`Click on normalization settings, but no normalizations are available`)
+        return
+      }
+
+      let modalSelector = '#normalization-settings-modal'
+      $('body')
+        .remove(modalSelector)
+        .append(thisObject._normalizationsGetSettingsDialogHtml())
+
+      let togglesDiv = $(`${modalSelector} .normalization-toggles`)
+
+      let normalizerMetadata = availableNormalizers.map ( (name) => {
+        let obj = thisObject.normalizerRegister.getNormalizerMetadata(name)
+        obj.name = name
+        return obj
+      })
+      let togglesHtml = '<ul class="normalization-list">'
+      normalizerMetadata.forEach( (data) => {
+        togglesHtml += `<li><input type="checkbox" class="normalizer-checkbox normalizer-${data['name']}" title="${data['help']}">&nbsp;&nbsp;${data['label']}</li>`
+      })
+      togglesHtml += '</ul>'
+
+      togglesDiv.html(togglesHtml)
+
+      let currentlyAppliedNormalizers = thisObject.ctData['automaticNormalizationsApplied']
+
+      currentlyAppliedNormalizers.forEach( (name) => {
+        $(`${modalSelector} .normalizer-${name}`).prop('checked', true)
+      })
+
+      let cancelButton = $(`${modalSelector} .cancel-btn`)
+      let submitButton = $(`${modalSelector} .submit-btn`)
+      let statusSpan = $(`${modalSelector} .status-span`)
+
+      cancelButton.on('click', () => {
+        $(modalSelector).modal('hide')
+      })
+
+      submitButton.on('click', () => {
+        let checkedNormalizers = availableNormalizers.filter( (name) => {
+          return $(`${modalSelector} .normalizer-${name}`).prop('checked')
+        })
+
+        this.verbose && console.log(`Checked normalizers`)
+        this.verbose && console.log(checkedNormalizers)
+        if (!ArrayUtil.arraysAreEqual(checkedNormalizers, currentlyAppliedNormalizers, (a, b) => { return a===b})){
+          this.verbose && console.log(`Change in applied normalizers`)
+          if (checkedNormalizers.length === 0) {
+            // this is the same as turning normalizations off
+            submitButton.hide()
+            cancelButton.hide()
+            statusSpan.html(`Turning off normalizations  ${thisObject.icons.busy}`)
+
+            thisObject._normalizationApplyAutomaticNormalizations([])
+            thisObject.savedNormalizerSettings = thisObject.availableNormalizers
+            thisObject.normalizationsToggle.toggleOff()
+            thisObject.normalizationSettingsButton.hide()
+
+          } else {
+            submitButton.hide()
+            cancelButton.hide()
+            statusSpan.html(`Recalculating normalizations ${thisObject.icons.busy}`)
+            thisObject._normalizationApplyAutomaticNormalizations(checkedNormalizers)
+            thisObject.savedNormalizerSettings = checkedNormalizers
+          }
+        } else {
+          this.verbose && console.log(`No change in applied normalizers `)
+        }
+        this._normalizationsSetupSettingsButton()
+        submitButton.show()
+        cancelButton.show()
+        statusSpan.html('')
+        $(modalSelector).modal('hide')
+      })
+
+
+      $(modalSelector).modal({
+        backdrop: 'static',
+        keyboard: false,
+        show: false
+      })
+      $(modalSelector).modal('show')
+    }
+  }
+
+
+  _normalizationsGetSettingsDialogHtml() {
+    return `
+<div id="normalization-settings-modal" class="modal" role="dialog">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Normalizations To Apply</h5>
+            </div>
+            <div class="modal-body">
+
+            <h6>Standard</h6>
+            <div class="normalization-toggles"></div>
+            <span class="status-span text-warning"></span>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger submit-btn">Apply</button>
+                <button type="button" class="btn btn-primary cancel-btn">Cancel</button>  
+            </div>
+        </div>
+    </div>
+</div>`
+  }
+
+  /**
+   *
+   * @param normalizationsToApply {string[]}
+   */
+  _normalizationApplyAutomaticNormalizations(normalizationsToApply) {
+
+    this.ctData = CtData.applyAutomaticNormalizations(this.ctData, this.normalizerRegister, normalizationsToApply)
+    // this.verbose && console.log(`New CT Data after automatic normalizations: [${normalizationsToApply.join(', ')}]`)
+    // this.verbose && console.log(this.ctData)
+
+    this.options.onCtDataChange(this.ctData)
+
+    // Update UI
+    this.resetTokenDataCache()
+    this._setupPanelContent()
+    // this.setCsvDownloadFile()
+  }
+
+
+  _popoversTurnOn() {
+    this.popoversAreOn = true
+    this._popoversSetup()
+  }
+
+  _popoversTurnOff() {
+    this.popoversAreOn = false
+    $(this.getContentAreaSelector()).popover('dispose')
+  }
+
+  _popoversSetup() {
+    $(this.getContentAreaSelector()).popover({
+      trigger: "hover",
+      selector: '.withpopover',
+      delay: {show: 500 , hide:0},
+      placement: 'auto',
+      html: true,
+      title: '',
+      container: 'body',
+      content: this._popoversGenContentFunction()
+    })
+  }
+
+  _popoversGenContentFunction() {
+    // need to use thisObject because 'this' in the popover function is bound to the element for which the popover is shown
+    // and that is needed to get the cell index
+    let thisObject = this
+    return function() {
+      if (!thisObject.popoversAreOn) {
+        return ''
+      }
+
+      let cellIndex = thisObject.tableEditor._getCellIndexFromElement($(this))
+      if (cellIndex === null) {
+        console.error('Popover requested on a non-cell element!')
+      }
+
+      if (thisObject.tableEditor.isCellInEditMode(cellIndex.row, cellIndex.col)){
+        //  this.verbose && console.log(`Cell ${cellIndex.row}:${cellIndex.col} in is cell edit mode`)
+        return ''
+      }
+      let witnessIndex = thisObject.ctData['witnessOrder'][cellIndex.row]
+      let tokenIndex = thisObject.tableEditor.getValue(cellIndex.row, cellIndex.col)
+      //  this.verbose && console.log(`Getting popover for witness index ${witnessIndex}, token ${tokenIndex}, col ${cellIndex.col}`)
+      return thisObject.getPopoverHtml(witnessIndex, tokenIndex, cellIndex.col)
+    }
+  }
+
+  getPopoverHtml(witnessIndex, tokenIndex, col) {
+    if (tokenIndex === -1) {
+      return ''
+    }
+    let popoverHtml  = this.getPopoverHtmlFromCache(witnessIndex, tokenIndex)
+    if (popoverHtml !== undefined) {
+      //  this.verbose && console.log(`Popover from cache: '${popoverHtml}'`)
+      return popoverHtml
+    }
+    let witnessToken = this.ctData['witnesses'][witnessIndex]
+
+    popoverHtml = PopoverFormatter.getPopoverHtml(
+      witnessIndex,
+      tokenIndex,
+      witnessToken,
+      witnessToken['tokenClass'] === FULL_TX ? this.getPostNotes(witnessIndex, col, tokenIndex) : [],
+      this.options.peopleInfo
+    )
+
+    this.storePopoverHtmlInCache(witnessIndex, tokenIndex, popoverHtml)
+    return popoverHtml
+  }
+
+  getPopoverHtmlFromCache(witnessIndex, tokenIndex) {
+    return this.getDataFieldFromTokenDataCache('popoverHtml', witnessIndex, tokenIndex)
+  }
+
+  storePopoverHtmlInCache(witnessIndex, tokenIndex, popoverHtml){
+    this.storeDataFieldInTokenDataCache('popoverHtml', witnessIndex, tokenIndex, popoverHtml)
+  }
+
+
+  _setupPanelContent() {
+    this.verbose && console.log(`Setting up CT panel content`)
+    this.replaceContent(`Loading collation table...`)
+    this._popoversSetup()
+    this.setupTableEditor()
+  }
+
+
+
+  setupTableEditor() {
+    let collationTable = this.ctData
+    let rowDefinition = []
+    for (let i = 0; i < collationTable['witnessOrder'].length; i++) {
+      let wIndex = collationTable['witnessOrder'][i]
+      let title = ''
+      // if (collationTable.type === CollationTableType.EDITION && wIndex === collationTable['editionWitnessIndex']) {
+      title = collationTable['witnessTitles'][wIndex]
+      // } else {
+      //   title = `${collationTable['witnessTitles'][wIndex]} (${collationTable['sigla'][wIndex]})`
+      // }
+
+      let tokenArray = collationTable['collationMatrix'][wIndex]
+      let isEditable = false
+      if (collationTable['witnesses'][wIndex]['witnessType'] === WitnessType.EDITION) {
+        isEditable = true
+      }
+      rowDefinition.push({
+        title: title,
+        values: tokenArray,
+        isEditable: isEditable
+      })
+    }
+    let icons = TableEditor.genTextIconSet()
+    icons.editCell = this.icons.editText
+    icons.confirmCellEdit = this.icons.confirmEdit
+    icons.cancelCellEdit = this.icons.cancelEdit
+
+    this.tableEditor = new TableEditor({
+      id: this.contentAreaId,
+      textDirection: this.textDirection,
+      redrawOnCellShift: false,
+      showInMultipleRows: true,
+      columnsPerRow: 10, // TODO: change this
+      rowDefinition: rowDefinition,
+      drawTableInConstructor: false,
+      getEmptyValue: () => -1,
+      isEmptyValue: this.genIsEmpty(),
+      groupedColumns: this.ctData.groupedColumns,
+      generateCellContent: this.genGenerateCellContentFunction(),
+      generateCellContentEditMode: this.genGenerateCellContentEditModeFunction(),
+      onCellEnterEditMode: this.genOnEnterCellEditMode(),
+      onCellLeaveEditMode: this.genOnLeaveCellEditMode(),
+      onCellConfirmEdit: this.genOnCellConfirmEditFunction(),
+      cellValidationFunction: this.genCellValidationFunction(),
+      generateTableClasses: this.genGenerateTableClassesFunction(),
+      generateCellClasses: this.genGenerateCellClassesFunction(),
+      onColumnAdd: this.genOnColumnAdd(),
+      onColumnDelete: this.genOnColumnDelete(),
+      icons: icons
+    })
+
+    this.variantsMatrix = null // will be calculated before table draw
+
+    let thisObject = this
+
+    this.tableEditor.setOption('canDeleteColumn', this.genCanDeleteColumn())
+
+    // hide popovers before moving cells
+    this.tableEditor.on('cell-pre-shift', (data) => {
+      for(const selector of data.detail.selectors) {
+        $(selector).popover('hide')
+      }
+    })
+
+    // recalculate variants before redrawing the table
+    this.tableEditor.on('table-drawn-pre',  () => {
+      thisObject.recalculateVariants()
+    })
+    // handle cell shifts
+    this.tableEditor.on('cell-post-shift',this.genOnCellPostShift())
+
+    this.tableEditor.editModeOn(false)
+    this.tableEditor.redrawTable()
+    this.tableEditor.on('cell-shift content-changed', this.genOnCollationChanges())
+    this.tableEditor.on(columnGroupEvent, this.genOnGroupUngroupColumn(true))
+    this.tableEditor.on(columnUngroupEvent, this.genOnGroupUngroupColumn(false))
+    this.tableEditor.setEditMode(editModeOff)
+  }
+
+  genOnGroupUngroupColumn(isGrouped) {
+    return (data) => {
+      this.verbose && console.log(`Column ${data.detail.col} ${isGrouped ? 'grouped' : 'ungrouped'}`)
+      this.verbose && console.log('New sequence grouped with next')
+      this.ctData['groupedColumns'] = data.detail.groupedColumns
+      this.options.onCtDataChange(this.ctData)
+    }
+  }
+
+  genOnCollationChanges() {
+    return () => {
+      this.ctData['collationMatrix'] = this.getCollationMatrixFromTableEditor()
+      this.setCsvDownloadFile()
+      this.options.onCtDataChange(this.ctData)
+    }
+  }
+
+  getCollationMatrixFromTableEditor() {
+    let matrix = this.tableEditor.getMatrix()
+    let cMatrix = []
+    for(let row = 0; row < matrix.nRows; row++) {
+      let witnessIndex = this.ctData['witnessOrder'][row]
+      cMatrix[witnessIndex] = []
+      for (let col =0; col < matrix.nCols; col++) {
+        cMatrix[witnessIndex][col] = matrix.getValue(row, col)
+      }
+    }
+    return cMatrix
+  }
+
+  setCsvDownloadFile() {
+    let href = 'data:text/csv,' + encodeURIComponent(this.generateCsv())
+    this.exportCsvButton.attr('href', href)
+  }
+
+  /**
+   * Generates a CSV string from the collation table
+   * @returns {string}
+   */
+  generateCsv() {
+    let sep = ','
+    let collationTable = this.ctData
+    let titles = collationTable['witnessTitles']
+    let numWitnesses = collationTable['witnesses'].length
+    let collationMatrix = collationTable['collationMatrix']
+    let order = collationTable['witnessOrder']
+
+    let output = ''
+    for (let i=0; i < numWitnesses; i++) {
+      let witnessIndex = order[i]
+      let title = titles[witnessIndex]
+      output += title + sep
+      let ctRefRow = collationMatrix[witnessIndex]
+      for (let tkRefIndex = 0; tkRefIndex < ctRefRow.length; tkRefIndex++) {
+        let tokenRef = ctRefRow[tkRefIndex]
+        let tokenCsvRep = ''
+        if (tokenRef !== -1 ) {
+          let token = collationTable.witnesses[witnessIndex].tokens[tokenRef]
+          tokenCsvRep = this.getCsvRepresentationForToken(token, this.viewSettings.showNormalizations)
+        }
+        output += tokenCsvRep + sep
+      }
+      output += "\n"
+    }
+    return output
+  }
+
+  getCsvRepresentationForToken(tkn, showNormalizations) {
+    if (tkn.empty) {
+      return ''
+    }
+    let text = tkn.text
+    if (showNormalizations) {
+      text = tkn['norm']
+    }
+    return '"' + text + '"'
+  }
+
+  genOnColumnDelete() {
+    return (deletedCol) => {
+      this.ctData['groupedColumns'] = this.tableEditor.columnSequence.groupedWithNextNumbers
+      if (this.ctData['type'] === CollationTableType.COLLATION_TABLE) {
+        // nothing else to do for regular collation tables
+        return
+      }
+      this.syncEditionWitnessAndTableEditorFirstRow()
+      this.ctData['collationMatrix'] = this.getCollationMatrixFromTableEditor()
+      // fix references in custom apparatuses
+      this.ctData['customApparatuses'] = CtData.fixReferencesInCustomApparatusesAfterColumnAdd(this.ctData, deletedCol, -1)
+      this.setCsvDownloadFile()
+      this.options.onCtDataChange(this.ctData)
+    }
+  }
+
+  syncEditionWitnessAndTableEditorFirstRow() {
+    let editionWitnessIndex = this.ctData['witnessOrder'][0]
+    this.verbose && console.log(`Syncing edition witness and editor's first row`)
+    this.verbose && console.log(`There are ${this.tableEditor.matrix.nCols} columns in the editor 
+    and ${this.ctData['witnesses'][editionWitnessIndex].tokens.length} tokens in the edition witness`)
+
+    this.ctData['witnesses'][editionWitnessIndex].tokens = this.getEditionWitnessTokensFromMatrixRow(
+      this.ctData['witnesses'][editionWitnessIndex].tokens,
+      this.tableEditor.matrix.getRow(0)
+    )
+    for (let i = 0; i < this.tableEditor.matrix.nCols; i++) {
+      this.tableEditor.matrix.setValue(0, i, i)
+    }
+    this.verbose && console.log(`Now there are ${this.tableEditor.matrix.nCols} columns in the editor 
+    and ${this.ctData['witnesses'][editionWitnessIndex].tokens.length} tokens in the edition witness`)
+  }
+
+  getEditionWitnessTokensFromMatrixRow(currentTokens, matrixRow) {
+    return matrixRow.map(
+      ref => ref === -1 ?  { tokenClass: TokenClass.EDITION, tokenType: TranscriptionTokenType.EMPTY,text: ''} : currentTokens[ref]
+    )
+  }
+
+  genOnColumnAdd() {
+    return (newCol) => {
+      this.verbose && console.log(`Adding new column: ${newCol}, at ${Date.now()}`)
+      this.ctData['groupedColumns'] = this.tableEditor.columnSequence.groupedWithNextNumbers
+      if (this.ctData['type']===CollationTableType.EDITION) {
+        this.syncEditionWitnessAndTableEditorFirstRow()
+      }
+      this.ctData['collationMatrix'] = this.getCollationMatrixFromTableEditor()
+      // fix references in custom apparatuses
+      this.ctData['customApparatuses'] = CtData.fixReferencesInCustomApparatusesAfterColumnAdd(this.ctData, newCol-1, 1)
+      this.setCsvDownloadFile()
+      this.options.onCtDataChange(this.ctData)
+    }
+  }
+
+  genOnCellPostShift() {
+    return (data) => {
+      let direction = data.detail.direction
+      let numCols = data.detail.numCols
+      let firstCol = data.detail.firstCol
+      let lastCol = data.detail.lastCol
+      let theRow = data.detail.row
+
+      // deal with shifts in edition witness
+      if (this.ctData['type'] === CollationTableType.EDITION && theRow === 0) {
+        this.syncEditionWitnessAndTableEditorFirstRow()
+      }
+
+      this.recalculateVariants()
+
+      let firstColToRedraw = direction === 'right' ? firstCol : firstCol-numCols
+      let lastColToRedraw = direction === 'right' ? lastCol+numCols : lastCol
+
+      new Promise( (resolve) => {
+        // TODO: somehow tell the user that something is happening!
+        resolve()
+      })
+        .then( () => {
+          // refresh the cells in the row being shifted
+          for (let col = firstColToRedraw; col <= lastColToRedraw; col++) {
+            this.tableEditor.refreshCell(theRow, col)
+            this.tableEditor.setupCellEventHandlers(theRow,col)
+          }
+        })
+        .then( () => {
+          // refresh cell classes of the other cells so that variants are shown
+          for (let col = firstColToRedraw; col <= lastColToRedraw; col++) {
+            for (let row = 0; row < this.variantsMatrix.nRows; row++) {
+              if (row !== theRow) {
+                // this.verbose && console.log(`Refreshing classes for ${theRow}:${col}`)
+                this.tableEditor.refreshCellClasses(row, col)
+              }
+            }
+          }
+          //profiler.lap('classes refreshed')
+        })
+    }
+  }
+
+  recalculateVariants() {
+    let refWitness = -1
+    if (this.ctData.type === 'edition') {
+      refWitness = this.ctData['editionWitnessIndex']
+    }
+    this.variantsMatrix = CollationTableUtil.genVariantsMatrix(this.tableEditor.getMatrix(),
+      this.ctData['witnesses'], this.ctData['witnessOrder'], refWitness)
+  }
+
+  genCanDeleteColumn() {
+    return (col) => {
+      switch(this.ctData['type']) {
+        case CollationTableType.COLLATION_TABLE:
+          return this.tableEditor.isColumnEmpty(col)
+
+        case CollationTableType.EDITION:
+          let theMatrixCol = this.tableEditor.getMatrix().getColumn(col)
+          let editionWitnessIndex = this.ctData['witnessOrder'][0]
+          let editionToken = this.ctData['witnesses'][editionWitnessIndex]['tokens'][theMatrixCol[0]]
+          if (editionToken !== undefined && editionToken.tokenType !== TranscriptionTokenType.EMPTY) {
+            // an undefined editionToken means that the edition token is empty
+            return false
+          }
+          for(let i = 1; i < theMatrixCol.length; i++) {
+            if (theMatrixCol[i] !== -1) {
+              return false
+            }
+          }
+          return true
+
+        default:
+          console.warn('Unknown collation table type!')
+          return false
+      }
+    }
+  }
+
+  genIsEmpty() {
+    return (row, col, ref) => {
+      if (ref === -1) {
+        return true
+      }
+
+      let witnessIndex = this.ctData['witnessOrder'][row]
+      let token = this.ctData['witnesses'][witnessIndex]['tokens'][ref]
+      return token.tokenType === TranscriptionTokenType.EMPTY
+    }
+  }
+
+  genGenerateTableClassesFunction() {
+    return () => {
+      let langCode = this.ctData['lang']
+      return [ ('te-table-' + langCode) ]
+    }
+  }
+
+  genOnCellConfirmEditFunction() {
+    return (tableRow, col, newText) => {
+      let witnessIndex = this.ctData['witnessOrder'][tableRow]
+      let ref = this.ctData['collationMatrix'][witnessIndex][col]
+      if (ref === -1) {
+        // TODO: deal with null refs in edition witness
+        console.warn(`Trying to edit a -1 ref at witness ${witnessIndex}, row ${tableRow}, col ${col}`)
+        return { valueChange: false, value: ref}  // forces TableEditor to keep current value
+      }
+
+      let currentText = this.ctData['witnesses'][witnessIndex]['tokens'][ref]['text']
+      if (currentText === newText) {
+        // no change!
+        return { valueChange: false, value: ref} // forces TableEditor to keep current value
+      }
+      newText = Util.trimWhiteSpace(newText)
+      if (newText === '') {
+        // empty token
+        this.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = newText
+        this.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] = TranscriptionTokenType.EMPTY
+      } else  {
+        let tokenType = Util.strIsPunctuation(newText) ? TranscriptionTokenType.PUNCTUATION : TranscriptionTokenType.WORD
+        this.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = newText
+        this.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] = tokenType
+        if (tokenType === TranscriptionTokenType.WORD) {
+          if (this.ctData['automaticNormalizationsApplied'].length !== 0) {
+            // apply normalizations for this token
+            let norm = this.normalizerRegister.applyNormalizerList(this.ctData['automaticNormalizationsApplied'], newText)
+            if (norm !== newText) {
+              this.verbose && console.log(`New text normalized:  ${newText} => ${norm}`)
+              this.ctData['witnesses'][witnessIndex]['tokens'][ref]['normalizedText'] = norm
+              this.ctData['witnesses'][witnessIndex]['tokens'][ref]['normalizationSource'] = NormalizationSource.COLLATION_EDITOR_AUTOMATIC
+            }
+          }
+        }
+
+      }
+
+      this.invalidateTokenDataCacheForToken(witnessIndex, ref)
+      this.recalculateVariants()
+      this.options.onCtDataChange(this.ctData)
+
+      //  this.verbose && console.log('Edition Witness updated')
+      //  this.verbose && console.log(this.ctData['witnesses'][witnessIndex]['tokens'])
+      // ref stays the same
+      return { valueChange: true, value: ref}
+    }
+  }
+
+  invalidateTokenDataCacheForToken(witnessIndex, tokenIndex) {
+    if (this.tokenDataCache[witnessIndex] === undefined) {
+      this.tokenDataCache[witnessIndex] = {}
+    }
+    if (this.tokenDataCache[witnessIndex][tokenIndex] !== undefined) {
+      this.tokenDataCache[witnessIndex][tokenIndex] = {}
+    }
+  }
+
+  genGenerateCellContentFunction() {
+    let noteIconSpan = ' <span class="noteicon"><i class="far fa-comment"></i></span>'
+    let normalizationSymbol = '<b><sub>N</sub></b>'
+    const EMPTY_CONTENT = '&mdash;'
+    return (tableRow, col, value) => {
+      if (value === -1) {
+        return EMPTY_CONTENT
+      }
+
+      let witnessIndex = this.ctData['witnessOrder'][tableRow]
+
+      let cellCachedContent = this.getDataFieldFromTokenDataCache('cellContent', witnessIndex, value)
+      if (cellCachedContent !== undefined) {
+        return cellCachedContent
+      }
+
+      let tokenArray = this.ctData['witnesses'][witnessIndex]['tokens']
+      let token = tokenArray[value]
+      if (token.tokenClass === TokenClass.EDITION) {
+        return token['text'] === '' ? EMPTY_CONTENT : token['text']
+      }
+      let postNotes = this.getPostNotes(witnessIndex, col, value)
+      if (token['sourceItems'].length === 1 && postNotes.length === 0) {
+        if (this.viewSettings.showNormalizations && token['normalizedText'] !== undefined) {
+          return token['normalizedText'] + normalizationSymbol
+        }
+        this.storeDataFieldInTokenDataCache('cellContent', witnessIndex, value, token.text)
+        return token.text
+      }
+      // spans for different items
+      let itemWithAddressArray = this.ctData['witnesses'][witnessIndex]['items']
+      let cellHtml = ''
+      for (const itemData of token['sourceItems']) {
+        let theItem = itemWithAddressArray[itemData['index']]
+        let itemText = ''
+        if (theItem['text'] !== undefined) {
+          itemText = theItem['text'].substring(itemData['charRange'].from, itemData['charRange'].to + 1)
+        }
+        if (theItem.type === 'TextualItem' && itemText!== "\n") {
+          cellHtml += '<span class="' + this.getClassesFromItem(theItem).join(' ') + '">'
+          // TODO: check to see if this is a bug in itemization! see I-DE-BER-SB-4o.Inc.4619, AW47-47
+          // filter out leading new lines
+          let theText = itemText.replace(/^\n/, '')
+          cellHtml += theText
+          cellHtml += '</span>'
+        }
+      }
+      // if there are notes after the token, put the note icon
+
+      if (postNotes.length > 0) {
+        cellHtml += noteIconSpan
+      }
+
+      this.storeDataFieldInTokenDataCache('cellContent', witnessIndex, value, cellHtml)
+      return cellHtml
+    }
+  }
+
+  getClassesFromItem(item) {
+    let classes = []
+    let hand = 0
+    if (item.hand !== undefined) {
+      hand = item.hand
+    }
+    if (hand !== 0) {
+      // no class for hand 0
+      classes.push( 'hand-' + hand)
+    }
+
+    if (item.format !== undefined && item.format !== '') {
+      classes.push(item.format)
+    }
+    if (item['clarity'] !== undefined && item['clarity'] !== 1) {
+      classes.push('unclear')
+    }
+    if (item['textualFlow']!== undefined && item['textualFlow'] === 1) {
+      classes.push('addition')
+    }
+    if (item.deletion !== undefined && item.deletion !== '') {
+      classes.push('deletion')
+    }
+    if (item['normalizationType'] !== undefined && item['normalizationType'] !== '') {
+      classes.push(item['normalizationType'])
+    }
+    return classes
+  }
+
+  genGenerateCellClassesFunction() {
+    return (tableRow, col, value) => {
+      if (value === -1) {
+        return [ 'token-type-empty']
+      }
+      let witnessIndex = this.ctData['witnessOrder'][tableRow]
+      let tokenArray = this.ctData['witnesses'][witnessIndex]['tokens']
+      let itemWithAddressArray = this.ctData['witnesses'][witnessIndex]['items']
+
+      let token = tokenArray[value]
+
+      let classes = this.getTokenClasses(token)
+
+      switch(token.tokenClass) {
+        case TokenClass.FULL_TX:
+          classes.push('withpopover')
+
+          //variant class
+          if (this.viewSettings.highlightVariants) {
+            // Note that the variantsMatrix refers to the tableRow not to the witness row
+            let variant  = this.variantsMatrix.getValue(tableRow, col)
+            if (variant !== 0) {
+              // no class for variant 0
+              classes.push('variant-' + variant )
+            }
+          }
+          // get itemZero
+          let itemZeroIndex = token['sourceItems'][0]['index']
+          let itemZero = itemWithAddressArray[itemZeroIndex]
+          // language class
+          let lang = this.ctData['witnesses'][witnessIndex]['lang']
+          if (itemZero['lang'] !== undefined) {
+            lang = itemZero['lang']
+          }
+          classes.push('text-' + lang)
+          if (token['sourceItems'].length === 1) {
+            // td inherits the classes from the single source item
+            return classes.concat(this.getClassesFromItem(itemZero))
+          }
+          break
+
+        case TokenClass.EDITION:
+          classes.push('withpopover')
+          let langCode = this.ctData['lang']
+          classes.push('text-' + langCode)
+
+      }
+
+      return classes
+    }
+  }
+
+  getTokenClasses(token) {
+    let classes = []
+    classes.push('token-type-' + token.tokenType)
+    classes.push('token-class-' + token.tokenClass)
+
+    return classes
+  }
+
+  genCellValidationFunction() {
+
+    function areAllOtherRowsEmpty(theCol, theRow) {
+      for (let i = 0; i < theCol.length; i++) {
+        if (i !== theRow && theCol[i]!== -1) {
+          return false
+        }
+      }
+      return true
+    }
+
+    return (tableRow, col, currentText) => {
+      let returnObject = { isValid: true, warnings: [], errors: [] }
+
+      // this.verbose && console.log(`Validating text '${currentText}'`)
+      let trimmedText = Util.trimWhiteSpace(currentText)
+      if (Util.isWordToken(trimmedText)) {
+        // TODO: do not allow words when the rest of the witnesses only have punctuation
+        return returnObject
+      }
+      let isPunctuationAllowed = areAllOtherRowsEmpty(this.tableEditor.getMatrix().getColumn(col), tableRow)
+      if (Util.strIsPunctuation(trimmedText) && isPunctuationAllowed) {
+        return returnObject
+      }
+      returnObject.isValid = false
+      if (isPunctuationAllowed) {
+        returnObject.errors.push(`Please enter either a single word, punctuation or leave blank`)
+      } else {
+        returnObject.errors.push(`Please enter a single word or leave blank`)
+      }
+
+      return returnObject
+    }
+  }
+
+  getPostNotes(row, col, tokenIndex) {
+    //let theToken = this.ctData
+    if (this.aggregatedNonTokenItemIndexes[row] === undefined) {
+      console.warn(`Found undefined row in this.aggregatedNonTokemItemIndexes, row = ${row}`)
+      return []
+    }
+
+    if (this.aggregatedNonTokenItemIndexes[row][tokenIndex] === undefined) {
+      this.verbose && console.log(`Undefined aggregate non-token item index for row ${row}, tokenIndex ${tokenIndex}`)
+      return []
+    }
+    let postItemIndexes = this.aggregatedNonTokenItemIndexes[row][tokenIndex]['post']
+    let itemWithAddressArray = this.ctData['witnesses'][row]['items']
+    let notes = []
+    for(const itemIndex of postItemIndexes) {
+      let theItem = itemWithAddressArray[itemIndex]
+      let itemNotes = []
+      if (theItem['notes'] !== undefined) {
+        itemNotes = theItem['notes']
+      }
+      for(const note of itemNotes) {
+        notes.push(note)
+      }
+    }
+    return notes
+  }
+
+  getDataFieldFromTokenDataCache(fieldName, witnessIndex, tokenIndex) {
+    if (this.tokenDataCache[witnessIndex] !== undefined && this.tokenDataCache[witnessIndex][tokenIndex] !== undefined) {
+      return this.tokenDataCache[witnessIndex][tokenIndex][fieldName]
+    }
+    return undefined
+  }
+
+  storeDataFieldInTokenDataCache(fieldName, witnessIndex, tokenIndex, data) {
+    if (this.tokenDataCache[witnessIndex] === undefined) {
+      this.tokenDataCache[witnessIndex] = {}
+    }
+    if (this.tokenDataCache[witnessIndex][tokenIndex] === undefined) {
+      this.tokenDataCache[witnessIndex][tokenIndex] = {}
+    }
+    this.tokenDataCache[witnessIndex][tokenIndex][fieldName] = data
+  }
+
+  aggregateNonTokenItemIndexes(witnessData, tokenRefArray) {
+    if (witnessData['witnessType'] !== WitnessType.FULL_TX) {
+      return
+    }
+    let rawNonTokenItemIndexes = witnessData['nonTokenItemIndexes']
+    let numTokens = witnessData['tokens'].length
+
+    let resultingArray = []
+
+    // aggregate post
+    let aggregatedPost = []
+    for (let i = numTokens -1; i >= 0; i--) {
+      let tokenPost = []
+      if (rawNonTokenItemIndexes[i] !== undefined && rawNonTokenItemIndexes[i]['post'] !== undefined) {
+        tokenPost = rawNonTokenItemIndexes[i]['post']
+      }
+      aggregatedPost = aggregatedPost.concat(tokenPost)
+      let tokenIndexRef = tokenRefArray.indexOf(i)
+      if (tokenIndexRef !== -1) {
+        // token i is in the collation table!
+        resultingArray[i] = { post: aggregatedPost }
+        aggregatedPost = []
+      }
+    }
+
+    // aggregate pre
+    let aggregatedPre = []
+    for (let i = 0; i < numTokens; i++ ) {
+      let tokenPre = []
+      if (rawNonTokenItemIndexes[i] !== undefined && rawNonTokenItemIndexes[i]['pre'] !== undefined) {
+        tokenPre = rawNonTokenItemIndexes[i]['pre']
+      }
+      aggregatedPre = aggregatedPre.concat(tokenPre)
+      let tokenIndexRef = tokenRefArray.indexOf(i)
+      if (tokenIndexRef !== -1) {
+        // token i is in the collation table!
+        resultingArray[i]['pre'] = aggregatedPre
+        aggregatedPre = []
+      }
+    }
+    return resultingArray
+  }
+
+
+  calculateAggregatedNonTokenItemIndexes() {
+    let indexes = []
+    for (let witnessIndex = 0; witnessIndex < this.ctData['witnesses'].length; witnessIndex++) {
+      let tokenRefs = this.ctData['collationMatrix'][witnessIndex]
+      let witness = this.ctData['witnesses'][witnessIndex]
+      indexes[witnessIndex] = this.aggregateNonTokenItemIndexes(witness, tokenRefs)
+    }
+    return indexes
+  }
+
+  genGenerateCellContentEditModeFunction() {
+    return (tableRow, col, value) => {
+      if (value === -1) {
+        console.warn(`Editing a null cell (value = -1) at row ${tableRow}, col ${col}`)
+        return ''
+      }
+      let witnessIndex = this.ctData['witnessOrder'][tableRow]
+      let tokenArray = this.ctData['witnesses'][witnessIndex]['tokens']
+      let token = tokenArray[value]
+      if (token['tokenClass'] === TokenClass.EDITION) {
+        return token['text']
+      }
+      return 'ERROR!'
+    }
+  }
+
+  genOnEnterCellEditMode() {
+    return (row, col) => {
+      this.verbose &&  console.log(`Enter cell edit ${row}:${col}`)
+      $(this.tableEditor.getTdSelector(row, col)).popover('hide').popover('disable')
+      return true
+    }
+  }
+
+  genOnLeaveCellEditMode() {
+    return (row, col) => {
+      this.verbose && console.log(`Leave cell edit ${row}:${col}`)
+      $(this.tableEditor.getTdSelector(row, col)).popover('enable')
+      this.restoreHiddenPopovers()
+    }
+  }
+
+  restoreHiddenPopovers() {
+    // TODO: is this needed?
+    // $('div.popover').show()
+    // this.setUpPopovers()
+  }
+
+}

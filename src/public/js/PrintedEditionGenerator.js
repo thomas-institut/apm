@@ -16,26 +16,22 @@
  *
  */
 
-import * as TokenType from './constants/TokenType'
-import { isPunctuationToken } from './toolbox/Util.mjs'
+import * as TokenType from './constants/WitnessTokenType'
+import { strIsPunctuation } from './toolbox/Util.mjs'
 import { SequenceWithGroups } from './SequenceWithGroups'
 import { Matrix } from '@thomas-inst/matrix'
-import * as TypesetterTokenFactory from './TypesetterTokenFactory'
-import { CriticalApparatusGenerator } from './CriticalApparatusGenerator'
 import * as NormalizationSource from './constants/NormalizationSource'
-import { main } from '@popperjs/core'
+import { ApparatusCommon } from './EditionComposer/ApparatusCommon'
+import text from 'quill/blots/text'
 
 const INPUT_TOKEN_FIELD_TYPE = 'tokenType'
 const INPUT_TOKEN_FIELD_TEXT = 'text'
-const INPUT_TOKEN_FIELD_NORMALIZED_TEXT = 'normalizedText'
-const INPUT_TOKEN_FIELD_NORMALIZATION_SOURCE = 'normalizationSource'
+
 
 const noGluePunctuation = '.,:;?!'
    + String.fromCodePoint(0x60C) // // Arabic comma
    + String.fromCodePoint(0x61F) // Arabic question mark
 
-
-const thinSpace = String.fromCodePoint(0x2009)
 
 // Space widths
 const SPACE_WIDTH_NORMAL = 'normal'
@@ -53,8 +49,7 @@ const ENTRY_TYPE_VARIANT = 'variant'
 export class PrintedEditionGenerator {
 
   generateEdition(ctData, baseWitnessIndex = 0) {
-
-    let profiler = new SimpleProfiler('generateEdition')
+    // let profiler = new SimpleProfiler('generateEdition')
     let sigla = ctData['sigla']
     let language = ctData['lang'];
     let textDirection = 'ltr';
@@ -75,7 +70,7 @@ export class PrintedEditionGenerator {
       let ctColumns = []
       let mainTextIndices = []
       for (let c = columnGroup.from; c<= columnGroup.to; c++) {
-        ctColumns.push(this.getCollationTableColumn(ctData, c))
+        ctColumns.push(ApparatusCommon.getCollationTableColumn(ctData, c))
         mainTextIndices.push(generatedMainText.ctToMainTextMap[c])
       }
       if (ctColumns.every( col => this.isCtTableColumnEmpty(col))) {
@@ -93,7 +88,7 @@ export class PrintedEditionGenerator {
         let ctIndex = columnGroup.from
         while (ctIndex >= 0 && (
           generatedMainText.ctToMainTextMap[ctIndex] === -1 ||
-          isPunctuationToken(generatedMainText.mainTextTokens[generatedMainText.ctToMainTextMap[ctIndex]]['text'])) ) {
+          strIsPunctuation(generatedMainText.mainTextTokens[generatedMainText.ctToMainTextMap[ctIndex]]['text'])) ) {
           ctIndex--
         }
         // a mainTextIndex of -1 means that the apparatus entry comes before the text, normally with the lesson 'pre'
@@ -124,7 +119,7 @@ export class PrintedEditionGenerator {
         return
       }
       // 2. There's main text, we need to find omissions and variants
-      let normalizedMainText = this._getMainTextForGroup(columnGroup, mainTextInputTokens)
+      let normalizedMainText = ApparatusCommon.getMainTextForGroup(columnGroup, mainTextInputTokens)
       if (normalizedMainText === '') {
         // ignore empty string (normally main text consisting only of punctuation)
         return
@@ -154,14 +149,14 @@ export class PrintedEditionGenerator {
       let mainTextIndexFrom = generatedMainText.ctToMainTextMap[columnGroup.from]
       if (mainTextIndexFrom === -1) {
         // need to find first non-empty main text token in
-        console.log('Finding non empty main text token forward')
-        mainTextIndexFrom = this._findNonEmptyMainTextToken(columnGroup.from,
+        // console.log('Finding non empty main text token forward')
+        mainTextIndexFrom = ApparatusCommon.findNonEmptyMainTextToken(columnGroup.from,
           generatedMainText.ctToMainTextMap, generatedMainText.mainTextTokens, true)
       }
       let mainTextIndexTo = generatedMainText.ctToMainTextMap[columnGroup.to]
       if (mainTextIndexTo === -1) {
-        console.log(`Finding non empty main text token backwards from ${columnGroup.to}, from = ${columnGroup.from}`)
-        mainTextIndexTo = this._findNonEmptyMainTextToken(columnGroup.to,
+        // console.log(`Finding non empty main text token backwards from ${columnGroup.to}, from = ${columnGroup.from}`)
+        mainTextIndexTo = ApparatusCommon.findNonEmptyMainTextToken(columnGroup.to,
           generatedMainText.ctToMainTextMap, generatedMainText.mainTextTokens, false)
       }
 
@@ -179,10 +174,10 @@ export class PrintedEditionGenerator {
     // Optimize apparatus
     // 1.
 
-    console.log('Apparatus')
-    console.log(criticalApparatus)
+    // console.log('Apparatus')
+    // console.log(criticalApparatus)
 
-    profiler.stop()
+    // profiler.stop()
 
     return {
       lang: language,
@@ -196,34 +191,6 @@ export class PrintedEditionGenerator {
       status: 'OK'
     }
   }
-
-  _findNonEmptyMainTextToken(ctIndex, ctToMainTextMap, mainTextTokens, forward) {
-    while (ctIndex >= 0 && ctIndex < ctToMainTextMap.length && (
-      ctToMainTextMap[ctIndex] === -1 ||
-      isPunctuationToken(mainTextTokens[ctToMainTextMap[ctIndex]]['text'])) ) {
-      ctIndex = forward ? ctIndex + 1 : ctIndex -1
-    }
-    if (ctIndex < 0 || ctIndex >= ctToMainTextMap.length) {
-      return -1
-    }
-    return ctToMainTextMap[ctIndex]
-  }
-
-  _getMainTextForGroup(group, mainTextInputTokens) {
-    return mainTextInputTokens
-      .filter( (t, i) => { return i>=group.from && i<=group.to}) // get group main text columns
-      .map( (t) => {   // get text for each column
-        if (t.tokenType === TokenType.EMPTY) { return ''}
-        if (isPunctuationToken(t.text)) { return  ''}
-        if (t.normalizedText !== undefined && t.normalizedText !== '') {
-          return t.normalizedText
-        }
-        return t.text
-      })
-      .filter( t => t !== '')   // filter out empty text
-      .join(' ')
-  }
-
   _getGroupsFromCtData(ctData) {
     if (ctData['witnesses'].length === 0) {
       return []
@@ -292,55 +259,18 @@ export class PrintedEditionGenerator {
 
       switch (style) {
         case 'la':
-          switch (apparatusType) {
-            case ENTRY_TYPE_OMISSION:
-              typesetterTokens = this.genOmissionEntryLatin(theText, variant.witnessIndices, sigla)
-              break
-
-            case ENTRY_TYPE_ADDITION:
-              typesetterTokens = this.genAdditionEntryLatin(theText, variant.witnessIndices, sigla)
-              break
-
-            case ENTRY_TYPE_VARIANT:
-              typesetterTokens = this.genVariantEntryLatin(theText, variant.witnessIndices, sigla)
-              break
-          }
+          typesetterTokens = ApparatusCommon.typesetSubEntryLatin(apparatusType, theText, variant.witnessIndices, sigla)
           break
 
         case 'he':
-          switch(apparatusType) {
-            case ENTRY_TYPE_OMISSION:
-              typesetterTokens = this.genOmissionEntryHebrew(theText, variant.witnessIndices, sigla)
-              break
-
-            case ENTRY_TYPE_ADDITION:
-              typesetterTokens = this.genAdditionEntryHebrew(theText, variant.witnessIndices, sigla)
-              break
-
-            case ENTRY_TYPE_VARIANT:
-              typesetterTokens = this.genVariantEntryHebrew(theText, variant.witnessIndices, sigla)
-              break
-          }
+          typesetterTokens = ApparatusCommon.typesetSubEntryHebrew(apparatusType, theText, variant.witnessIndices, sigla)
           break
 
         case 'ar':
-          switch(apparatusType) {
-            case ENTRY_TYPE_OMISSION:
-              typesetterTokens = this.genOmissionEntryArabic(theText, variant.witnessIndices, sigla)
-              break
-
-            case ENTRY_TYPE_ADDITION:
-              typesetterTokens = this.genAdditionEntryArabic(theText, variant.witnessIndices, sigla)
-              break
-
-            case ENTRY_TYPE_VARIANT:
-              typesetterTokens = this.genVariantEntryArabic(theText, variant.witnessIndices, sigla)
-              break
-          }
+          typesetterTokens = ApparatusCommon.typesetSubEntryArabic(apparatusType, theText, variant.witnessIndices, sigla)
           break
 
       }
-
 
       entries.push({
         type: apparatusType,
@@ -355,93 +285,6 @@ export class PrintedEditionGenerator {
     return entries
   }
 
-  genOmissionEntryHebrew(theText, witnessIndices, sigla) {
-    let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join(' ')
-    return [
-      TypesetterTokenFactory.simpleText('חסר').setFontSize(0.8),
-      TypesetterTokenFactory.normalSpace(),
-      TypesetterTokenFactory.simpleText(siglaString).setBold()
-    ]
-  }
-
-  genAdditionEntryHebrew(theText, witnessIndices, sigla) {
-    let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join(' ')
-    return [
-      TypesetterTokenFactory.simpleText('נוסף').setFontSize(0.8),
-      TypesetterTokenFactory.normalSpace(),
-      TypesetterTokenFactory.simpleText(theText),
-      TypesetterTokenFactory.normalSpace(),
-      TypesetterTokenFactory.simpleText(siglaString).setBold()
-    ]
-  }
-
-  genVariantEntryHebrew(theText, witnessIndices, sigla) {
-    let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join(' ')
-    return [
-      TypesetterTokenFactory.simpleText(theText),
-      TypesetterTokenFactory.normalSpace(),
-      TypesetterTokenFactory.simpleText(siglaString).setBold()
-    ]
-  }
-
-  genOmissionEntryArabic(theText, witnessIndices, sigla) {
-    let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join(thinSpace)
-    return [
-      TypesetterTokenFactory.simpleText('نقص').setFontSize(0.8),
-      TypesetterTokenFactory.normalSpace(),
-      TypesetterTokenFactory.simpleText(siglaString)
-    ]
-  }
-
-  genAdditionEntryArabic(theText, witnessIndices, sigla) {
-    let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join(thinSpace)
-    return [
-      TypesetterTokenFactory.simpleText('ز').setFontSize(0.8),
-      TypesetterTokenFactory.normalSpace(),
-      TypesetterTokenFactory.simpleText(theText),
-      TypesetterTokenFactory.normalSpace(),
-      TypesetterTokenFactory.simpleText(siglaString)
-    ]
-  }
-
-  genVariantEntryArabic(theText, witnessIndices, sigla) {
-    let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join(thinSpace)
-    return [
-      TypesetterTokenFactory.simpleText(theText),
-      TypesetterTokenFactory.normalSpace(),
-      TypesetterTokenFactory.simpleText(siglaString)
-    ]
-  }
-
-
-  genOmissionEntryLatin(theText, witnessIndices, sigla) {
-    let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join('')
-    return [
-      TypesetterTokenFactory.simpleText('om.').setItalic(),
-      TypesetterTokenFactory.normalSpace(),
-      TypesetterTokenFactory.simpleText(siglaString)
-    ]
-  }
-
-  genAdditionEntryLatin(theText, witnessIndices, sigla) {
-    let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join('')
-    return [
-      TypesetterTokenFactory.simpleText('add.').setItalic(),
-      TypesetterTokenFactory.normalSpace(),
-      TypesetterTokenFactory.simpleText(theText),
-      TypesetterTokenFactory.normalSpace(),
-      TypesetterTokenFactory.simpleText(siglaString)
-    ]
-  }
-
-  genVariantEntryLatin(theText, witnessIndices, sigla) {
-    let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join('')
-    return [
-      TypesetterTokenFactory.simpleText(theText),
-      TypesetterTokenFactory.normalSpace(),
-      TypesetterTokenFactory.simpleText(siglaString)
-    ]
-  }
 
   getWitnessTokensFromReferenceRow(ctData, witnessIndex) {
     return ctData['collationMatrix'][witnessIndex]
@@ -489,7 +332,7 @@ export class PrintedEditionGenerator {
       currentMainTextIndex++
       mainTextTokens.push({
         type: E_TOKEN_TYPE_TEXT,
-        text: this.getNormalizedTextFromInputToken(inputToken, normalizationsToIgnore),
+        text: ApparatusCommon.getNormalizedTextFromInputToken(inputToken, normalizationsToIgnore),
         collationTableIndex: inputIndex
       })
       firstWordAdded = true
@@ -513,8 +356,8 @@ export class PrintedEditionGenerator {
           return ''
         }
 
-        let theText = normalized ? thisObject.getNormalizedTextFromInputToken(token) : thisObject.getTextFromInputToken(token)
-        if (isPunctuationToken(theText)) {
+        let theText = normalized ? ApparatusCommon.getNormalizedTextFromInputToken(token) : thisObject.getTextFromInputToken(token)
+        if (strIsPunctuation(theText)) {
           return ''
         }
         return theText
@@ -527,33 +370,6 @@ export class PrintedEditionGenerator {
  getTextFromInputToken(token) {
     return token[INPUT_TOKEN_FIELD_TEXT]
  }
-
-
-  getNormalizedTextFromInputToken(token, normalizationSourcesToIgnore = []){
-    let text = token[INPUT_TOKEN_FIELD_TEXT]
-    if (token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT] !== undefined && token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT] !== '') {
-      let norm = token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT]
-      let source = token[INPUT_TOKEN_FIELD_NORMALIZATION_SOURCE] !== undefined ? token[INPUT_TOKEN_FIELD_NORMALIZATION_SOURCE] : ''
-      if (source === '' || normalizationSourcesToIgnore.indexOf(source) === -1) {
-        // if source === '', this is  a normalization from the transcription
-        text = norm
-      }
-    }
-    return text
-  }
-
-  getCollationTableColumn(ctData, col) {
-    let column = [];
-    ctData['collationMatrix'].forEach( (tokenRefs, row) => {
-      let ref = tokenRefs[col]
-      if (ref === -1) {
-        column[row] = { tokenType: TokenType.EMPTY }
-      } else {
-        column[row] = ctData['witnesses'][row]['tokens'][ref]
-      }
-    })
-    return column
-  }
 
   isCtTableColumnEmpty(ctColumn) {
     return ctColumn.every( e => e.tokenType === TokenType.EMPTY)

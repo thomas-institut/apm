@@ -5,22 +5,22 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-    <link rel="stylesheet" type="text/css" href="{{baseurl}}/node_modules/bootstrap4/dist/css/bootstrap.css"/>
-    <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/bootstrap4/styles.css"/>
-    <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/bootstrap4/collationtable.css" />
-    <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/bootstrap4/collation.edit.css" />
+    <link rel="stylesheet" type="text/css" href="{{baseurl}}/node_modules/bootstrap/dist/css/bootstrap.css"/>
+    <link rel="stylesheet" type="text/css" href="{{baseurl}}/css/styles.css"/>
+    <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/collationtable.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/collation.edit.css" />
 
     <link href='{{baseurl}}/images/apm-logo-square-32x32.png' rel='icon' sizes='32x32' type='image/png'>
 
     <title></title>
 
     <script type="text/javascript" src="{{baseurl}}/node_modules/jquery/dist/jquery.js"></script>
-    <script type="text/javascript" src="{{baseurl}}/node_modules/bootstrap4/dist/js/bootstrap.bundle.js"></script>
+    <script type="text/javascript" src="{{baseurl}}/node_modules/bootstrap/dist/js/bootstrap.bundle.js"></script>
     <script type="text/javascript" src="{{baseurl}}/node_modules/moment/moment.js"></script>
     <script type="application/javascript" src="{{baseurl}}/js/ApmUrlGenerator.js"></script>
     <script type="text/javascript" src="{{baseurl}}/js/SimpleProfiler.js"></script>
-    <script type="text/javascript" src="{{baseurl}}/node_modules/twig/twig.js"></script>
-    <script type="application/javascript" src="{{baseurl}}/js/dist/CollationTableEdit.bundle.js"></script>
+    <script type="text/javascript" src="{{baseurl}}/node_modules/twig/twig.min.js"></script>
+    <script type="application/javascript" src="{{baseurl}}/js/dist/CollationTableEditor.bundle.js"></script>
 </head>
 <body>
 <nav class="navbar navbar-expand-lg navbar-light bg-white bottom-border-light py-0">
@@ -86,9 +86,6 @@
         <li id="collationTableTabHeader" role="presentation" class="nav-item">
             <a role="tab" class="nav-link active" data-toggle="tab" href="#collationtablepanel">Collation Table</a>
         </li>
-        <li id="editionTabHeaderNew" class="nav-item" role="presentation">
-            <a role="tab" class="nav-link" data-toggle="tab" id="edition-tab-title-new" href="#editiondiv-panel-new">Edition (beta)</a>
-        </li>
         <li id="editionTabHeader" class="nav-item" role="presentation">
             <a role="tab" class="nav-link" data-toggle="tab" id="edition-tab-title" href="#editiondiv-panel">Quick Edition</a>
         </li>
@@ -139,11 +136,6 @@
 
             </div>
             <div id="edition-engine-info-div"></div>
-        </div>
-        <div role="tabpanel" class="tab-pane panetab nomargin-panel" id="editiondiv-panel-new">
-            <div id="edition-html-container">
-                <div class="loading">Loading edition...  <i class="fas fa-circle-notch fa-spin"></i></div>
-            </div>
         </div>
         <div role="tabpanel" class="tab-pane panetab" id="witnessesdiv">
             <div class="witnessinfotable"></div>

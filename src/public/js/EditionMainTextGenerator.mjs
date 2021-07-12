@@ -16,77 +16,187 @@
  *
  */
 
-
-import * as TokenType from './constants/TokenType.js'
-
-const E_TOKEN_TYPE_TEXT = 'text'
+import * as WitnessTokenType from './constants/WitnessTokenType.js'
+import { MainTextTokenFactory } from './Edition/MainTextTokenFactory.js'
+import * as MainTextTokenType from './Edition/MainTextTokenType.js'
+import { MainTextSection } from './Edition/MainTextSection.js'
 
 const INPUT_TOKEN_FIELD_TYPE = 'tokenType'
 const INPUT_TOKEN_FIELD_TEXT = 'text'
 const INPUT_TOKEN_FIELD_NORMALIZED_TEXT = 'normalizedText'
 const INPUT_TOKEN_FIELD_NORMALIZATION_SOURCE = 'normalizationSource'
 
+const noGluePunctuation = '.,:;?!'
+  + String.fromCodePoint(0x60C) // // Arabic comma
+  + String.fromCodePoint(0x61F) // Arabic question mark
 
-/**
- * Generates a object consisting of main text edition tokens and a
- * an array that maps indexes in this array to indexes in the collation table row.
- *
- * @param witnessTokens
- * @param normalized
- * @param normalizationsToIgnore
- * @returns {{mainTextTokens: [], ctToMainTextMap: []}}
- */
+export class EditionMainTextGenerator {
 
-export function generateMainText(witnessTokens, normalized = true, normalizationsToIgnore = []) {
-  let mainTextTokens = []
-  let ctTokensToMainText = []
-  let currentMainTextIndex = -1
-  for(let i = 0; i < witnessTokens.length; i++) {
-    let witnessToken = witnessTokens[i]
-    let tokenType = witnessToken[INPUT_TOKEN_FIELD_TYPE]
-    if (tokenType === TokenType.EMPTY){
-      ctTokensToMainText.push(-1)
-      continue
+  /**
+   * Takes an array of witness tokens and creates an array of MainTextSection objects with the
+   * main text, taking care of adding glue in the proper places
+   * @param witnessTokens
+   * @param normalized
+   * @param normalizationsToIgnore
+   */
+  static generateMainTextNew(witnessTokens, normalized = false, normalizationsToIgnore = []) {
+    let mainTextTokens = []
+    for(let i = 0; i < witnessTokens.length; i++) {
+      let witnessToken = witnessTokens[i]
+      if (witnessToken === undefined) {
+        console.warn(`Witness token ${i} is undefined`)
+        continue
+      }
+      let tokenType = witnessToken[INPUT_TOKEN_FIELD_TYPE]
+      if (tokenType === WitnessTokenType.EMPTY){
+        continue
+      }
+      if (tokenType === WitnessTokenType.WHITESPACE) {
+        // normally, there won't be whitespace in the collation table
+        // but just in case, make sure that no raw whitespace appears in the main text
+        continue
+      }
+      mainTextTokens.push(
+        MainTextTokenFactory.createSimpleText(getTextFromWitnessToken(witnessToken, normalized, normalizationsToIgnore), i)
+      )
     }
-    if (tokenType === TokenType.WHITESPACE) {
-      // normally, there won't be whitespace in the collation table
-      // but just in case, make sure that no raw whitespace appears in the main text
-      ctTokensToMainText.push(-1)
-      continue
+
+    // add glue
+
+    let mainTextTokensWithGlue = []
+    let firstWordAdded = false
+    for(let i = 0; i < mainTextTokens.length; i++) {
+      let mainTextToken = mainTextTokens[i]
+
+      if (mainTextToken.type !== MainTextTokenType.TEXT){
+        continue
+      }
+      let tokenPlainText = mainTextToken.getPlainText()
+      if (tokenPlainText === undefined) {
+        console.warn(`Found main text token with no text at index ${i}`)
+        continue
+      }
+
+      let addGlue = true
+      if (!firstWordAdded) {
+        addGlue = false
+      }
+      if (noGluePunctuation.includes(tokenPlainText)) {
+        addGlue = false
+      }
+      if (addGlue) {
+        mainTextTokensWithGlue.push(MainTextTokenFactory.createNormalGlue())
+      }
+      mainTextTokensWithGlue.push(mainTextToken)
+      firstWordAdded = true
     }
-    currentMainTextIndex++
-    mainTextTokens.push({
-      type: E_TOKEN_TYPE_TEXT,
-      text: getTextFromInputToken(witnessToken, normalized, normalizationsToIgnore),
-      collationTableIndex: i
-    })
-    ctTokensToMainText.push(currentMainTextIndex)
+
+    let section = new MainTextSection()
+    section.text = mainTextTokensWithGlue
+    return [ section ]
   }
-  return {
-    mainTextTokens: mainTextTokens,
-    ctToMainTextMap: ctTokensToMainText
+
+  /**
+   *
+   * @param { *[]} witnessTokens
+   * @param {boolean} normalized
+   * @param {string[]} normalizationsToIgnore
+   * @returns {{mainTextTokens: MainTextToken[], ctToMainTextMap: number[]}}
+   */
+  static generateMainText(witnessTokens, normalized = true, normalizationsToIgnore = []) {
+    let mainTextTokens = []
+    let ctTokensToMainText = []
+    let currentMainTextIndex = -1
+    for(let i = 0; i < witnessTokens.length; i++) {
+      let witnessToken = witnessTokens[i]
+      let tokenType = witnessToken[INPUT_TOKEN_FIELD_TYPE]
+      if (tokenType === WitnessTokenType.EMPTY){
+        ctTokensToMainText.push(-1)
+        continue
+      }
+      if (tokenType === WitnessTokenType.WHITESPACE) {
+        // normally, there won't be whitespace in the collation table
+        // but just in case, make sure that no raw whitespace appears in the main text
+        ctTokensToMainText.push(-1)
+        continue
+      }
+      currentMainTextIndex++
+      mainTextTokens.push(
+        MainTextTokenFactory.createSimpleText(getTextFromWitnessToken(witnessToken, normalized, normalizationsToIgnore), i)
+      )
+      ctTokensToMainText.push(currentMainTextIndex)
+    }
+    return {
+      mainTextTokens: mainTextTokens,
+      ctToMainTextMap: ctTokensToMainText
+    }
+  }
+
+  /**
+   *
+   * @param {MainTextToken[]} mainTextTokens:
+   * @returns {{mainTextTokensWithGlue: MainTextToken[], tokensWithSpaceToMainTextTokensMap: number[]}}
+   */
+  static generateMainTextWithGlue(mainTextTokens) {
+    let mainTextTokensWithGlue = []
+    let firstWordAdded = false
+    let inputTokensToMainText = []
+    let currentMainTextIndex = -1
+    for(let i = 0; i < mainTextTokens.length; i++) {
+      let mainTextToken = mainTextTokens[i]
+
+      if (mainTextToken.type !== MainTextTokenType.TEXT){
+        inputTokensToMainText.push(-1)
+        continue
+      }
+      let tokenPlainText = mainTextToken.getPlainText()
+      if (tokenPlainText === undefined) {
+        inputTokensToMainText.push(-1)
+        console.warn(`Found main text token with no text at index ${i}`)
+        continue
+      }
+
+      let addGlue = true
+      if (!firstWordAdded) {
+        addGlue = false
+      }
+      if (noGluePunctuation.includes(tokenPlainText)) {
+        addGlue = false
+      }
+      if (addGlue) {
+        currentMainTextIndex++
+        mainTextTokensWithGlue.push(MainTextTokenFactory.createNormalGlue())
+        inputTokensToMainText.push(-1)
+      }
+      currentMainTextIndex++
+      mainTextTokensWithGlue.push(mainTextToken)
+      firstWordAdded = true
+      inputTokensToMainText.push(i)
+    }
+    return {
+      mainTextTokensWithGlue: mainTextTokensWithGlue,
+      tokensWithSpaceToMainTextTokensMap: inputTokensToMainText
+    }
   }
 }
-
 
 
 /**
  *  Gets the text for the given token, the normal text or
  *  the normalized text if there is one
- * @param token
- * @param normalized
- * @param normalizationSourcesToIgnore
+ * @param witnessToken
+ * @param {boolean} normalized
+ * @param {string[]} normalizationSourcesToIgnore
  * @returns {*}
  */
-
-function getTextFromInputToken(token, normalized, normalizationSourcesToIgnore = []){
-  let text = token[INPUT_TOKEN_FIELD_TEXT]
+function getTextFromWitnessToken(witnessToken, normalized, normalizationSourcesToIgnore = []){
+  let text = witnessToken[INPUT_TOKEN_FIELD_TEXT]
   if (!normalized) {
     return text
   }
-  if (token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT] !== undefined && token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT] !== '') {
-    let norm = token[INPUT_TOKEN_FIELD_NORMALIZED_TEXT]
-    let source = token[INPUT_TOKEN_FIELD_NORMALIZATION_SOURCE] !== undefined ? token[INPUT_TOKEN_FIELD_NORMALIZATION_SOURCE] : ''
+  if (witnessToken[INPUT_TOKEN_FIELD_NORMALIZED_TEXT] !== undefined && witnessToken[INPUT_TOKEN_FIELD_NORMALIZED_TEXT] !== '') {
+    let norm = witnessToken[INPUT_TOKEN_FIELD_NORMALIZED_TEXT]
+    let source = witnessToken[INPUT_TOKEN_FIELD_NORMALIZATION_SOURCE] !== undefined ? witnessToken[INPUT_TOKEN_FIELD_NORMALIZATION_SOURCE] : ''
     if (source === '' || normalizationSourcesToIgnore.indexOf(source) === -1) {
       // if source === '', this is  a normalization from the transcription
       text = norm

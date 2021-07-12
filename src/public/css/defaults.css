@@ -19,7 +19,6 @@
 :root {
     /* DEFAULT FONT */
     --default-font-family: "Noto Sans", sans-serif;
-    /*--default-font-family: "Linux Libertine", serif;*/
     --default-font-size: 14px;
     --default-font-color: #323232;
 

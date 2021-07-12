@@ -1,0 +1,161 @@
+:root {
+    --panel-border-color: #efefef;
+}
+
+html {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    background: #fcfcfc;
+}
+
+.top-bar {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    color: #444242;
+    font-size: 1.2rem;
+    height: 44px;
+    width: 100%;
+    padding: 3px;
+    border-bottom: 1px solid var(--panel-border-color);
+    align-items: baseline;
+}
+
+div.top-bar-item {
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+div.top-bar-title {
+    font-weight: bold;
+}
+
+div.toolbar {
+    display: flex;
+    flex-direction: row;
+}
+
+div.toolbar-group {
+    display: flex;
+    flex-direction: row;
+    margin-right: 10px;
+}
+.top-bar-button {
+    border: none;
+    background: transparent;
+    margin: 0;
+    padding: 5px;
+    font-size: 20px;
+    height: 20px;
+
+}
+
+.top-bar-button img {
+    height: 20px;
+    vertical-align: -0.125em;
+    margin: 0;
+    padding: 0;
+}
+
+div.mode-icons {
+    text-align: right;
+}
+
+div.logo {
+    width: auto;
+    padding-left: 0;
+    padding-right: 3rem;
+}
+
+div.top-bar-right-area {
+    text-align: right;
+    padding-left: 3rem;
+}
+
+div.panels {
+}
+div.panels.vertical-mode{
+    display: grid;
+    grid-template-columns: 1fr 3px 1fr;
+}
+
+div.panels.horizontal-mode {
+    display: grid;
+    grid-template-rows: 1fr 3px 1fr;
+}
+
+div.divider {
+    background: var(--panel-border-color);
+}
+
+.horizontal-mode .divider {
+    cursor: row-resize;
+}
+
+.vertical-mode .divider {
+    cursor: col-resize;
+}
+
+.panel {
+    background: white;
+    padding: 3px;
+    border-radius: 5px;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+.top-panel {
+    margin-bottom: 0;
+}
+
+.bottom-panel {
+    margin-top: 0;
+}
+
+.left-panel {
+    margin-right: 0;
+}
+
+.right-panel {
+    margin-left: 0;
+}
+
+.top-bar-icon {
+    font-weight: bold;
+}
+
+
+.nav-link {
+    padding: 0.5rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+.nav-link.active {
+    font-weight: bold;
+}
+
+a.nav-link {
+    color: #0c5460;
+}
+
+.nav-link.dragging, .nav-link.active.dragging {
+    border-left: 4px solid #90b390;
+}
+
+.nav-link.dragging-last, .nav-link.active.dragging-last {
+    border-right: 4px solid #90b390;
+}
+
+.nav-link.dragged {
+    background: silver;
+}
+
+.hidden {
+    display: none;
+}

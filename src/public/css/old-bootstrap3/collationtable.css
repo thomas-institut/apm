@@ -1,0 +1,386 @@
+/* 
+ *  Copyright (C) 2019 Universität zu Köln
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  
+ */
+/* 
+    Created on : Nov 19, 2018, 10:04:53 AM
+    Author     : Rafael Nájera <rafael.najera@uni-koeln.de>
+*/
+
+ textarea {
+        width: 100%;
+        height: 5em;
+    }
+    
+div.texttitle {
+    font-weight: 600;
+    text-align: center;
+    height: 5em;
+    padding-top: 1.5em;
+    padding-bottom: 1.5em;
+}
+
+.cancelindent {
+    margin-left: 0;
+}
+table.collationtable {
+    margin-bottom: 20px;
+}
+
+table.collationtable th {
+    text-align: center;
+    font-weight: normal;
+}
+
+.ltrtext {
+    direction: ltr;
+}
+
+.rtltext {
+    direction: rtl;
+}
+
+table.collationtable a {
+    color: #333333;
+}
+
+ table.collationtable a:hover {
+    text-decoration: none;
+}
+
+.newlinesymbol {
+    color: #9abeef;
+}
+
+div#status {
+    font-size: 3em;
+}
+
+.noborder {
+    border: none;
+}
+
+div.ctdropdownform {
+    position: absolute;
+    z-index: 1000;
+    margin: 10px;
+    padding: 10px;
+    border: 1px solid silver;
+    border-radius: 5px;
+    background-color: white;
+}
+
+div.ctdropdownform h3 {
+    margin: 0;
+}
+
+div.inlineform {
+    margin-left: 20px;
+}
+
+div.ctdiv {
+    margin-top: 20px;
+    margin-bottom: 50px;
+    overflow: auto;
+    padding-left: 2px;
+    padding-right: 2px;
+}
+
+table.collationtable {
+    border-collapse: collapse;
+}
+table.collationtable td {
+    padding: 0 5px;
+    border: solid 1px silver
+ }
+
+td.witness {
+    font-weight: 600;
+}
+
+table.collationtable td.tokennotpresent {
+    text-align: center;
+    color: silver;
+}
+td.addition.variant-1 {
+    background-image: linear-gradient(to top, #ddecff, #fbedff);
+}
+
+
+td.variant-1 {
+    background-color: #fbedff;
+}
+
+td.variant-2 {
+    background-color: #ffcccc;
+}
+
+td.emptytoken {
+    text-align: center;
+    color: silver;
+}
+
+.textualitem {
+    
+}
+.abbr {
+    color: chocolate;
+}
+
+.gliph {
+    color: fuchsia;
+}
+.rubric {
+    color: blue;
+    font-weight: bold;
+}
+
+.initial {
+    font-weight: bold;
+}
+
+.sic {
+   color: #ad9c87;
+}
+
+.unclear {
+    color: #0099ff;
+}
+
+.illegible {
+    color: gray;
+}
+
+.markitem {
+    color: silver;
+    font-variant: small-caps;
+}
+
+.deletion {
+    text-decoration: line-through;
+    color: red;
+}
+
+.addition {
+    background-color: #ddecff;
+}
+
+.gloss {
+    background-color: #cbf7ce;
+}
+
+td.offline {
+    border: none;
+    border-bottom: 2px solid lightblue;
+}
+
+.note {
+    color: red;
+}
+.noteicon {
+    color: red;
+    font-size: var(--default-font-size)
+}
+
+
+.mathtext {
+    color: #990099;
+}
+
+.popover p.noteheader {
+    margin-left: 10px;
+    font-size: 0.8em;
+    color: silver;
+}
+
+.popover p.notetext {
+    margin-left: 10px;
+    margin-top: 10px;
+}
+
+.popover ul {
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+.foliation {
+    font-family: monospace;
+    color: #8a978b;
+    font-size: 0.8em;
+}
+
+.columnbreak {
+    font-family: monospace;
+    color: #8a978b;
+    font-size: 0.8em;
+}
+
+ul.siglalist {
+     list-style-type: none;
+}
+
+.popovertext-ar {
+    font-size: 1.5em;
+    direction: rtl;
+}
+.popovertext-he {
+    font-size: 1.2em;
+    direction: rtl;
+}
+
+.popoverheading {
+    font-weight: 600;
+}
+
+.textwithdashes {
+    font-weight: normal;
+}
+
+.popover-ar {
+    direction: rtl;
+}
+
+.popover-he {
+    direction: rtl;
+}
+
+.popoverheading.popover-ar {
+    font-size: 1.2em;
+    /*direction: rtl;*/
+}
+.popoverheading.popover-he {
+    font-size: 1.2em;
+    /*direction: rtl;*/
+}
+
+.authorinfo {
+    color: gray;
+    font-size: 0.8em;
+}
+
+div.itemspopover {
+    margin-bottom: 10px;
+}
+
+/*New Collation Table*/
+
+.te-table {
+    border-collapse: collapse;
+}
+
+.te-table a {
+    color: grey;
+    text-decoration: none;
+    padding: 0 5px;
+}
+
+.te-table th {
+    font-weight: normal;
+    border: none;
+    text-align: center;
+    color: white;
+}
+
+.te-table td {
+    padding-left: 5px;
+    padding-right: 5px;
+    border: solid 1px silver
+}
+
+td.variant-1 {
+    background-color: #fbedff;
+}
+
+td.variant-2 {
+    background: plum;
+}
+
+td.te-rowtitle {
+    font-weight: 600;
+}
+
+
+/*.table-edit-mode {*/
+/*    border-left: 1px solid red;*/
+/*    padding-left: 1em;*/
+/*}*/
+
+.table-edit-mode .te-table th {
+    font-size: 0.8em;
+    font-weight: 400;
+    color: #aaaaaa;
+}
+
+.hidden {
+    display: none;
+}
+
+
+/* Popovers */
+
+.ctPopover {
+
+}
+
+.ctPopover .fas, .ctPopover .far, .ctPopover .text-icon {
+    color: var(--dimmed-text-color);
+}
+
+.ctPopover .item-info {
+    margin-bottom: 1em;
+}
+.ctPopover .item-text {
+    font-size: 1.2em;
+    text-decoration: underline grey dotted;
+}
+
+.ctPopover .item-info-line {
+    margin-bottom: 0;
+}
+
+.ctPopover .item-info-sub-line {
+    padding: 0;
+    margin: 0;
+}
+
+.ctPopover .heading {
+    font-weight: 600;
+    font-size: 1.5em;
+}
+
+.ctPopover b {
+    font-weight: 600;
+}
+
+.ctPopover .notes h1 {
+    font-weight: 600;
+    font-size: 1em;
+}
+
+.ctPopover .note {
+    color: var(--default-font-color);
+    margin-left: 1em;
+}
+
+.ctPopover .note .note-caption {
+    font-size: var(--small-font-size);
+    color: var(--dimmed-text-color);
+}
+
+
+div.normalization-toggles ul.normalization-list {
+    list-style: none;
+}

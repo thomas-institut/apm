@@ -120,8 +120,8 @@ export class EditionViewerSvg {
     //console.log('Index Map')
     //console.log(this.ct2tsIndexMap)
     
-    //console.log('apparatus Array')
-    //console.log(options.apparatusArray)
+    // console.log('apparatus Array')
+    // console.log(options.apparatusArray)
     
     for(const apparatus of options.apparatusArray) {
       for (const apparatusEntry of apparatus) {
@@ -344,8 +344,8 @@ export class EditionViewerSvg {
   }
   
   getSvg() {
-    console.log('Getting SVG')
-    console.log(this.typesetMainTextTokens)
+    // console.log('Getting SVG')
+    // console.log(this.typesetMainTextTokens)
     return this._getSvgHtml(
       this.typesetMainTextTokens,
       this.lineNumbers,

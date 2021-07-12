@@ -51,6 +51,7 @@ export class EditableTextField {
 
   constructor (options) {
     let optionsDefinition = {
+      verbose: { type: 'boolean', default: false},
       containerSelector : { type: 'string', required: true},
       normalClass: { type: 'string', required: false, default: defaultNormalClass},
       editingClass: { type: 'string', required: false, default: defaultEditingClass},
@@ -88,6 +89,7 @@ export class EditableTextField {
 
     let oc = new OptionsChecker(optionsDefinition, "EditableTextField")
     this.options = oc.getCleanOptions(options)
+    this.verbose = this.options.verbose
     this.currentText = this.options.initialText
     this.container = $(this.options.containerSelector)
     this.container.removeClass(this.options.normalClass)
@@ -142,10 +144,10 @@ export class EditableTextField {
 
 
   getTextInEditor() {
-    if (this.editing) {
+    // if (this.editing) {
       return this.textInput.val()
-    }
-    return this.getCurrentText()
+    // }
+    // return this.getCurrentText()
   }
 
 
@@ -219,12 +221,11 @@ export class EditableTextField {
   }
 
   confirmEdit() {
-    //console.log('confirm'+ this.options.containerSelector)
-
-    this.currentText = this.getTextInEditor()
-    this.editing = false
-    this.setNormalContainer()
+    this.verbose && console.log(`Confirm edit: ${this.options.containerSelector}`)
     this.dispatchEvent(confirmEvent, { editor: this, newText: this.getTextInEditor(), oldText: this.getCurrentText() })
+    this.editing = false
+    this.currentText = this.getTextInEditor()
+    this.setNormalContainer()
   }
 
   genOnMouseEnter() {

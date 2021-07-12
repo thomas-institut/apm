@@ -828,29 +828,18 @@ export class EditionComposer {
       changes.push("New title: '" + this.ctData['title'] + "'" )
     }
 
-    if (!ArrayUtil.arraysAreEqual(this.ctData['collationMatrix'], this.lastSavedCtData['collationMatrix'], 2)) {
+    if (!ArrayUtil.arraysAreEqual(this.ctData['collationMatrix'], this.lastSavedCtData['collationMatrix'],
+      (a,b) => { return a===b }, 2)) {
       changes.push('Changes in collation alignment')
     }
-
-    // let currentCollationMatrix = this.getCollationMatrixFromTableEditor()
-    // if (!CollationTableUtil.collationMatricesAreEqual(currentCollationMatrix, this.lastSavedCtData['collationMatrix'])) {
-    //   changes.push('Changes in collation alignment')
-    // }
 
     if (!ArrayUtil.arraysAreEqual(this.ctData['witnessOrder'], this.lastSavedCtData['witnessOrder'])) {
       changes.push('New witness order')
     }
 
-    // if (!ArrayUtil.arraysAreEqual(this.ctData['sigla'], this.lastSavedCtData['sigla'])) {
-    //   if (this.siglaPresetLoaded !== '') {
-    //     changes.push(`Changes in sigla. Preset '${this.siglaPresetLoaded}' loaded`)
-    //   } else {
-    //     changes.push('Changes in sigla')
-    //   }
-    // } else {
-    //   // no changes, this cancels any loaded preset
-    //   this.siglaPresetLoaded = ''
-    // }
+    if (!ArrayUtil.arraysAreEqual(this.ctData['sigla'], this.lastSavedCtData['sigla'])) {
+      changes.push('Changes in sigla')
+    }
 
     if(this.ctData['type'] === CollationTableType.EDITION) {
       let editionWitnessIndex = this.ctData['witnessOrder'][0]
@@ -882,18 +871,20 @@ export class EditionComposer {
   }
 
   genOnWitnessOrderChange() {
-    let thisObject = this
     return (newOrder) => {
-      thisObject.ctData['witnessOrder'] = newOrder
-      thisObject.editionPreviewPanel.updatePreview()
+      this.ctData['witnessOrder'] = newOrder
+      this._reGenerateEdition()
+      this._updateDataInPanels()
+      this.updateSaveArea()
     }
   }
 
   genOnSiglaChange() {
-    let thisObject = this
     return (newSigla) => {
-      thisObject.ctData['sigla'] = newSigla
-      thisObject.editionPreviewPanel.updatePreview()
+      this.ctData['sigla'] = newSigla
+      this._reGenerateEdition()
+      this._updateDataInPanels()
+      this.updateSaveArea()
     }
   }
 

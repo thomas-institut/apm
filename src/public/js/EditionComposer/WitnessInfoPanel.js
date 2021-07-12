@@ -175,6 +175,7 @@ export class WitnessInfoPanel extends Panel{
     // set up siglum editors
     for (let i = 0; i < this.ctData['witnesses'].length; i++) {
       new EditableTextField({
+        verbose: false,
         containerSelector: this.containerSelector + ' .siglum-' + i,
         initialText: this.ctData['sigla'][i],
         onConfirm: this.genOnConfirmSiglumEdit(i)
@@ -379,13 +380,13 @@ export class WitnessInfoPanel extends Panel{
         let id =  Util.safeGetIntVal(presetSelect, 'presetSelect')
         let p =  this.siglaPresets.filter( (p) => { return p.presetId === id})[0]
         this.getWitnessSiglaArrayFromPreset(p).forEach( (w) => {
-          this.ctData.sigla[w.index] = w.presetSiglum
+          this.ctData['sigla'][w.index] = w.presetSiglum
         })
         this.siglaPresetLoaded = p.title
         $(modalSelector).modal('hide')
         $(modalSelector).remove()
         this.updateWitnessInfoDiv()
-        this.options.onCtDataChange(this.ctData)
+        this.options.onSiglaChange(this.ctData['sigla'])
       })
 
       cancelButton.on('click', () => {
@@ -714,6 +715,8 @@ export class WitnessInfoPanel extends Panel{
   genOnConfirmSiglumEdit(witnessIndex) {
     let thisObject = this
     return function(ev) {
+      console.log(`Confirming siglum edit`)
+      console.log(ev.detail)
       let newText = Util.removeWhiteSpace(ev.detail['newText'])
       let oldText = ev.detail['oldText']
       let editor = ev.detail['editor']
@@ -722,7 +725,7 @@ export class WitnessInfoPanel extends Panel{
         editor.setText(thisObject.ctData['sigla'][witnessIndex])
         return false
       }
-      //console.log('Change in siglum for witness index ' + witnessIndex +  ' to ' + newText)
+      console.log('Change in siglum for witness index ' + witnessIndex +  ' to ' + newText)
       if (thisObject.ctData['sigla'].indexOf(newText) !== -1) {
         transientAlert($(thisObject.options.containerSelector + ' .warning-td-' + witnessIndex), '',
           "Given siglum '" + newText + "' already exists, no changes made", 2000, 'slow')

@@ -156,10 +156,14 @@ export class AdminPanel extends  Panel {
 
     for(let i=this.versionInfo.length-1; i >= 0; i--)   {
       let version = this.versionInfo[i]
+      let authorName = 'N/A... please reload'
+      if (this.options.peopleInfo[version['authorId']] !== undefined) {
+        authorName = this.options.peopleInfo[version['authorId']].fullname
+      }
       html += '<tr>'
       html += '<td>' + (i+1) + '</td>'
       html += '<td>' + version['id'] + '</td>'
-      html += '<td class="author">' + this.options.peopleInfo[version['authorId']].fullname + '</td>'
+      html += '<td class="author">' + authorName + '</td>'
       html += '<td class="time">' + Util.formatVersionTime(version['timeFrom']) + '</td>'
       html += '<td>' + version['description'] + '</td>'
 

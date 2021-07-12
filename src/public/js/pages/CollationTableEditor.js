@@ -2683,14 +2683,15 @@ export class CollationTableEditor {
 
   genCtInfoDiv() {
     let html = ''
-
     let workTitle = this.options.workInfo['title']
     let workAuthorId = this.options.workInfo['authorId']
     let workAuthorName = this.options.peopleInfo[workAuthorId]['fullname']
+    let newEditorHtml = this.ctData['type'] === CollationTableType.EDITION
+      ? `... <a href="${this.options.urlGenerator.siteEditCollationTableBeta(this.tableId)}" title="Click to load new editor">New Editor</a>`
+      : ''
+    return `<p>${workAuthorName}, <i>${workTitle}</i>, chunk ${this.options.chunkNumber}  (${this.options.workId}-${this.options.chunkNumber})</p>
+<p>Table ID: ${this.tableId}  ${newEditorHtml} `
 
-    html += `<p>${workAuthorName}, <i>${workTitle}</i>, chunk ${this.options.chunkNumber}  (${this.options.workId}-${this.options.chunkNumber})`
-    html += '<p>Table ID: ' + this.tableId + '</p>'
-    return html
   }
 
   setCsvDownloadFile() {

@@ -45,6 +45,10 @@ export function arraysAreEqual(array1, array2, comparisonFunction = function (a,
   return true
 }
 
+export function varsAreEqual(var1, var2) {
+  return JSON.stringify(var1) === JSON.stringify(var2)
+}
+
 /**
  * Returns true if both arrays have the same values
  * Only works if the arrays are composed of values that can be represented as strings

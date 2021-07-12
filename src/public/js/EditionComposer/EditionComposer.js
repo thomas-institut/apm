@@ -848,6 +848,10 @@ export class EditionComposer {
       changes.push('Changes in sigla')
     }
 
+    if (!ArrayUtil.varsAreEqual(this.ctData['customApparatuses'], this.lastSavedCtData['customApparatuses'])) {
+      changes.push('Changes in custom apparatus entries')
+    }
+
     if(this.ctData['type'] === CollationTableType.EDITION) {
       let editionWitnessIndex = this.ctData['witnessOrder'][0]
       let oldText = this.lastSavedCtData['witnesses'][editionWitnessIndex]['tokens'].map(token => token.text).join(' ')

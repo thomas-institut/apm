@@ -52,6 +52,7 @@ import * as ArrayUtil from '../toolbox/ArrayUtil'
 import * as CollationTableType from '../constants/CollationTableType'
 import * as NormalizationSource from '../constants/NormalizationSource'
 import { CtData } from '../CtData/CtData'
+import * as HttpStatusCode from '../toolbox/HttpStatusCode'
 
 // CONSTANTS
 
@@ -62,6 +63,12 @@ const mainTextTabId = 'main-text-panel'
 const editionPreviewTabId = 'edition-preview'
 const witnessInfoTabId = 'witness-info'
 const adminPanelTabId = 'admin'
+
+// save button
+const saveButtonTextClassNoChanges = 'text-muted'
+const saveButtonTextClassChanges = 'text-primary'
+const saveButtonTextClassSaving = 'text-warning'
+const saveButtonTextClassError = 'text-danger'
 
 
 export class EditionComposer {
@@ -269,6 +276,7 @@ export class EditionComposer {
         content: () => { return thisObject.saveButtonPopoverContent}
       })
       thisObject.updateSaveArea()
+      this.saveButton.on('click', thisObject.genOnClickSaveButton())
     })
   }
 
@@ -532,6 +540,64 @@ export class EditionComposer {
     }
   }
 
+  /**
+   * Changes the 'text-xxx' class to the new class, removing all others
+   * @param element
+   * @param newClass
+   * @private
+   */
+  _changeBootstrapTextClass(element, newClass) {
+    let allClasses = 'text-primary text-secondary text-success text-danger text-warning text-info text-light text-dark text-body text-muted text-white text-black-50 text-white-50'
+    element.removeClass(allClasses).addClass(newClass)
+  }
+
+  genOnClickSaveButton() {
+    let thisObject = this
+    return () => {
+      let changes = this.getChangesInCtData()
+      if (changes.length !== 0) {
+        this.unsavedChanges = true
+        this.saveButton.popover('hide')
+        this.saveButton.html(this.icons.busy)
+        this._changeBootstrapTextClass(this.saveButton, saveButtonTextClassSaving)
+        console.log('Saving table via API call to ' + this.apiSaveCollationUrl)
+        let description = ''
+        for (let change of changes) {
+          description += change + '. '
+        }
+        let apiCallOptions = {
+          collationTableId: this.tableId,
+          collationTable: this.ctData,
+          descr: description,
+          source: 'edit',
+          baseSiglum: this.ctData['sigla'][0]
+        }
+        $.post(
+          this.apiSaveCollationUrl,
+          {data: JSON.stringify(apiCallOptions)}
+        ).done(  (apiResponse) => {
+          console.log("Success saving table")
+          console.log(apiResponse)
+          this.saveButton.html(this.icons.saveEdition)
+          this.lastSavedCtData = Util.deepCopy(this.ctData)
+          this.versionInfo = apiResponse.versionInfo
+          this.adminPanel.updateVersionInfo(this.versionInfo)
+          this.witnessUpdates = []
+          this.witnessInfoPanel.onDataSave()
+          this.unsavedChanges = false
+          this.saveErrors = false
+          this.updateSaveArea()
+        }).fail((resp) => {
+          this.saveErrors = true
+          this.saveButton.html(this.icons.saveEdition)
+          console.error("Could not save table")
+          console.log(resp)
+          this.updateSaveArea()
+        })
+      }
+    }
+  }
+
   genGetWitnessData() {
     return (witnessId) => {
       return new Promise( (resolve, reject) => {
@@ -688,6 +754,7 @@ export class EditionComposer {
 
 
   updateSaveArea() {
+
     console.log(`Updating save area`)
     if (this.ctData['archived']) {
       let lastVersion = this.versionInfo[this.versionInfo.length-1]
@@ -712,9 +779,14 @@ export class EditionComposer {
       }
       this.saveButtonPopoverContent += '</ul></p>'
       this.saveButtonPopoverTitle = 'Click to save changes'
-      this.saveButton.removeClass('text-muted')
-          .addClass('text-primary')
-          .prop('disabled', false)
+
+      if (this.saveErrors) {
+        this.saveButtonPopoverContent += `<p class="text-danger">Edition could not be saved, please try again</p>`
+        this._changeBootstrapTextClass(this.saveButton, saveButtonTextClassError)
+      } else {
+        this._changeBootstrapTextClass(this.saveButton, saveButtonTextClassChanges)
+        this.saveButton.prop('disabled', false)
+      }
     } else {
       console.log(`No changes`)
       this.unsavedChanges = false
@@ -722,10 +794,8 @@ export class EditionComposer {
       let lastVersion = this.versionInfo[this.versionInfo.length-1]
       this.saveButtonPopoverContent = `Last save: ${Util.formatVersionTime(lastVersion['timeFrom'])}`
       this.saveButtonPopoverTitle = 'Nothing to save'
-      this.saveButton.removeClass('text-primary')
-          .addClass('text-muted')
-          .prop('disabled', true)
-
+      this._changeBootstrapTextClass(this.saveButton, saveButtonTextClassNoChanges)
+      this.saveButton.prop('disabled', true)
     }
   }
 

@@ -51,6 +51,12 @@ export class AdminPanel extends  Panel {
     let oc = new OptionsChecker(optionsSpec, 'Admin Panel')
     this.options = oc.getCleanOptions(options)
     this.rendered = false
+    this.versionInfo = this.options.versionInfo
+  }
+
+  updateVersionInfo(newVersionInfo) {
+    this.versionInfo = newVersionInfo
+    $(`#${versionHistoryDiv}`).html(this._genVersionTableHtml())
   }
 
   generateHtml() {
@@ -148,8 +154,8 @@ export class AdminPanel extends  Panel {
     html += '<table class="versioninfo">'
     html += '<tr><th>N</th><th>Id</th><th>Author</th><th>Time</th><th>Description</th></tr>'
 
-    for(let i=this.options.versionInfo.length-1; i >= 0; i--)   {
-      let version = this.options.versionInfo[i]
+    for(let i=this.versionInfo.length-1; i >= 0; i--)   {
+      let version = this.versionInfo[i]
       html += '<tr>'
       html += '<td>' + (i+1) + '</td>'
       html += '<td>' + version['id'] + '</td>'

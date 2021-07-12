@@ -482,6 +482,17 @@ export class WitnessInfoPanel extends Panel{
 </div>`
   }
 
+  /**
+   * Function to be called by EditionComposer after saving to the server
+   */
+  onDataSave() {
+    this.currentWitnessUpdateData['witnesses'] = this.currentWitnessUpdateData['witnesses'].map ( (wud) => {
+      wud['justUpdated']= false
+      return wud
+    })
+    this.showWitnessUpdateData()
+  }
+
   markWitnessAsJustUpdated(witnessIndex) {
     this.currentWitnessUpdateData['witnesses'][witnessIndex]['upToDate'] = true
     this.currentWitnessUpdateData['witnesses'][witnessIndex]['justUpdated'] = true
@@ -516,8 +527,8 @@ export class WitnessInfoPanel extends Panel{
     let witnessesUpToDate = true
     for(let i=0; i < this.currentWitnessUpdateData['witnesses'].length; i++) {
       let witnessUpdateInfo = this.currentWitnessUpdateData['witnesses'][i]
+      let warningTd = $(`${this.containerSelector} td.outofdate-td-${i}`)
       if (!witnessUpdateInfo['upToDate']) {
-        let warningTd = $(`${this.containerSelector} td.outofdate-td-${i}`)
         if (witnessUpdateInfo['lastUpdate'] === -1) {
           // witness no longer defined
           warningTd.html(`<span>${icons.checkFail} Chunk no longer present in this witness`)
@@ -527,14 +538,19 @@ export class WitnessInfoPanel extends Panel{
           warningHtml += `${Util.formatVersionTime(witnessUpdateInfo['lastUpdate'])} `
           warningHtml += `<a title="Click to update witness" class="btn btn-outline-secondary btn-sm witness-update-btn witness-update-btn-${i}">Update</a>`
           warningTd.html(warningHtml)
+          $(`${this.containerSelector} .witness-update-btn-${i}`).on('click', this.genOnClickWitnessUpdate(i))
         }
+      } else {
+        // witness is up to date
+        if (witnessUpdateInfo['justUpdated']) {
+          let warningHtml =  `<span>${icons.checkOK} Just updated. Don't forget to save!`
+          warningTd.html(warningHtml)
+        } else {
+          // witness up to date, not just updated
+          warningTd.html('')
+        }
+
       }
-      if (witnessUpdateInfo['justUpdated']) {
-        let warningHtml =  `<span>${icons.checkOK} Just updated. Don't forget to save!`
-        let warningTd = $(`${this.containerSelector} td.outofdate-td-${i}`)
-        warningTd.html(warningHtml)
-      }
-      $(`${this.containerSelector} .witness-update-btn-${i}`).on('click', this.genOnClickWitnessUpdate(i))
     }
     if (witnessesUpToDate) {
       infoSpan.removeClass('text-warning')

@@ -240,6 +240,11 @@ export class EditionComposer {
         topBarRightAreaContent: () => {
           return `<div class="toolbar-group"><button class="top-bar-button" id="save-button">${this.icons.saveEdition}</button></div>`
         },
+      icons: {
+        closePanel: '&times;',
+        horizontalMode: `<img src="${this.options.urlGenerator.images()}/horizontal-mode.svg" alt="Horizontal Mode"/>`,
+        verticalMode: `<img src="${this.options.urlGenerator.images()}/vertical-mode.svg" alt="Vertical Mode"/>`
+      },
         panels: [
           {
             id: 'panel-one',

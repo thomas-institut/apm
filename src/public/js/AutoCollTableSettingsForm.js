@@ -228,9 +228,8 @@ export class AutomaticCollationTableSettingsForm {
     }
     for(const witnessToInclude of settings.witnesses) {
       for (const witness of this.witnessList) {
-        if (witnessToInclude.type === witness.type && this.systemIdsCorrespond(witnessToInclude.systemId,witness.systemId)) {
-          this.verbose && console.log('Including witness')
-          this.verbose && console.log(witness)
+        if (witnessToInclude.type === witness.type && this.systemIdsCorrespond(witnessToInclude.systemId, witness.systemId)) {
+          this.verbose && console.log(`Including witness ${witness['title']}`)
           witness.toInclude = true
         }
       }
@@ -260,10 +259,9 @@ export class AutomaticCollationTableSettingsForm {
     let witnessesToIncludeHtml = ''
     let witnessesToIncludeHtmlElements = []
     for(const witness of this.witnessList) {
-      this.debug && console.log('Processing witness')
-      this.debug && console.log(witness)
+      this.debug && console.log(`Processing witness ${witness['title']}`)
       let theHtml = this.getWitnessDraggableHtml(witness)
-      this.debug && console.log('The HTML:  ' + theHtml)
+      // this.debug && console.log('The HTML:  ' + theHtml)
       if (!witness.toInclude) {
         witnessesAvailableHtml += theHtml
       } else {
@@ -327,7 +325,7 @@ export class AutomaticCollationTableSettingsForm {
     this.warningDiv.html('')
   }
 
-  _saveEventListeners() {
+  _saveAndAddEventListenersAvailableWitnessBox() {
     this.onDropBoxFunctionForAvailableWitnesses = this.genOnDropBox()
     this.onDragOverFunctionForAvailableWitnesses = this.genOnDragOverBox()
     this.onDragLeaveFunctionForAvailableWitnesses = this.genOnDragLeaveBox()
@@ -338,38 +336,61 @@ export class AutomaticCollationTableSettingsForm {
     this.witnessesAvailableSelectBox.get(0).addEventListener('dragend', this.onDragEndFunctionForAvailableWitnesses, false)
   }
 
-  _removeEventListeners() {
+  _removeEventListenersAvailableWitnessBox() {
     this.witnessesAvailableSelectBox.get(0).removeEventListener('drop', this.onDropBoxFunctionForAvailableWitnesses, false)
     this.witnessesAvailableSelectBox.get(0).removeEventListener('dragover', this.onDragOverFunctionForAvailableWitnesses, false)
     this.witnessesAvailableSelectBox.get(0).removeEventListener('dragleave', this.onDragLeaveFunctionForAvailableWitnesses, false)
     this.witnessesAvailableSelectBox.get(0).removeEventListener('dragend', this.onDragEndFunctionForAvailableWitnesses, false)
   }
 
-  dealWithEmptyBoxes() {
+  _saveAndAddEventListenersWitnessesToIncludeBox() {
+    this.onDropBoxFunctionForWitnessesToInclude = this.genOnDropBox()
+    this.onDragOverFunctionForWitnessesToInclude = this.genOnDragOverBox()
+    this.onDragLeaveFunctionForWitnessesToInclude = this.genOnDragLeaveBox()
+    this.onDragEndFunctionForWitnessesToInclude = this.genOnDragEndBox()
+    this.witnessesToIncludeBox.get(0).addEventListener('drop', this.onDropBoxFunctionForWitnessesToInclude, false)
+    this.witnessesToIncludeBox.get(0).addEventListener('dragover', this.onDragOverFunctionForWitnessesToInclude, false)
+    this.witnessesToIncludeBox.get(0).addEventListener('dragleave', this.onDragLeaveFunctionForWitnessesToInclude, false)
+    this.witnessesToIncludeBox.get(0).addEventListener('dragend', this.onDragEndFunctionForWitnessesToInclude, false)
+  }
 
+  _removeEventListenersWitnessesToIncludeBox() {
+    this.witnessesToIncludeBox.get(0).removeEventListener('drop', this.onDropBoxFunctionForWitnessesToInclude, false)
+    this.witnessesToIncludeBox.get(0).removeEventListener('dragover', this.onDragOverFunctionForWitnessesToInclude, false)
+    this.witnessesToIncludeBox.get(0).removeEventListener('dragleave', this.onDragLeaveFunctionForWitnessesToInclude, false)
+    this.witnessesToIncludeBox.get(0).removeEventListener('dragend', this.onDragEndFunctionForWitnessesToInclude, false)
+  }
+
+  dealWithEmptyBoxes() {
+    this.debug && console.log(`Dealing with empty boxes`)
+
+    // Available Witness Box
     if (this.getAvailableWitnessesCount() === 0) {
-      // Available witness box is empty, make 
-      // save the functions so that we can remove the event listeners later on
-     this._saveEventListeners()
+      this.debug && console.log(`Available Witnesses box is empty`)
+      // Available witness box is empty: save the event listeners so that we can remove them later on
+      this._saveAndAddEventListenersAvailableWitnessBox()
       // make the box bigger, so that it can actually be seen
       // NOTE: the form container must be visible for this work
       this.witnessesAvailableSelectBox.css('height', this.witnessesToIncludeBox.height() +  'px')
     } else {
       // There are items in the box, so we don't need to whole box itself 
       // to be able to receive items
-      this._removeEventListeners()
+      this._removeEventListenersAvailableWitnessBox()
       this.witnessesAvailableSelectBox.css('height', 'auto')
     }
+
+    // Witnesses to include box
     if(this.getToIncludeWitnessesCount() === 0) {
+      this.debug && console.log(`Witnesses To Include box is empty`)
       // save the functions so that we can remove the event listeners later on
-      this._saveEventListeners()
+      this._saveAndAddEventListenersWitnessesToIncludeBox()
       // make the box bigger, so that it can actually be seen
       // NOTE: the form container must be visible for this work
       this.witnessesToIncludeBox.css('height', this.witnessesAvailableSelectBox.height() +  'px')
     } else {
       // There are items in the box, so we don't need to whole box itself 
       // to be able to receive items
-      this._removeEventListeners()
+      this._removeEventListenersWitnessesToIncludeBox()
       this.witnessesToIncludeBox.css('height', 'auto')
     }
   }
@@ -386,14 +407,14 @@ export class AutomaticCollationTableSettingsForm {
   }
   
   getToIncludeWitnessesCount() {
-    let count = 0
-    for(const witness of this.witnessList) {
-      if (witness.toInclude) {
-        count++
-      }
-    }
-    this.debug && console.log('witnesses to include: ' + count)
-    return count
+    return this.witnessList.filter( (w) => { return w.toInclude}).length
+    // let count = 0
+    // for(const witness of this.witnessList) {
+    //   if (witness.toInclude) {
+    //     count++
+    //   }
+    // }
+    // return count
   }
   
   updateWitnessListFromBoxes() {
@@ -554,7 +575,7 @@ export class AutomaticCollationTableSettingsForm {
       newSettings.witnesses = []
       for(const witness of thisObject.witnessList) {
         witness.toInclude = true
-        newSettings.witnesses.push({ type: witness.type, id: witness.id})
+        newSettings.witnesses.push(witness)
       }
       thisObject.setSettings(newSettings)
       thisObject.dispatchEvent(thisObject.settingsChangeEventName, thisObject.getSettings())
@@ -944,6 +965,7 @@ export class AutomaticCollationTableSettingsForm {
   }
 
   addWitnessBoxDnDHandlers(elem) {
+    this.debug && console.log(`Adding witness box DnD handlers ${elem.innerHTML}`)
     elem.addEventListener('dragstart', this.genOnDragStartFunc(), false);
     elem.addEventListener('dragenter', this.genOnDragEnter(), false)
     elem.addEventListener('dragover', this.genOnDragOver(), false);

@@ -18,7 +18,7 @@ export function getClassArray(element) {
 }
 
 
-export function getIdFromClasses(element, prefix) {
+export function getSingleIntIdFromClasses(element, prefix) {
   let classes = getClassArray(element)
   let id = -1
   let found = false
@@ -30,6 +30,26 @@ export function getIdFromClasses(element, prefix) {
       let suffix = theClass.slice(prefix.length)
       if (suffix !== '' && isStringAnInteger(suffix)) {
         id = parseInt(suffix)
+        found = true
+      }
+    }
+  })
+  return id
+}
+
+
+export function getIntArrayIdFromClasses(element, prefix) {
+  let classes = getClassArray(element)
+  let id = []
+  let found = false
+  classes.forEach( (theClass) => {
+    if (found) {
+      return
+    }
+    if (theClass.startsWith(prefix)) {
+      let suffix = theClass.slice(prefix.length)
+      if (suffix !== '') {
+        id = suffix.split('-').map( (str) => { return parseInt(str)})
         found = true
       }
     }

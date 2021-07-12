@@ -24,7 +24,7 @@
  */
 
 import {OptionsChecker} from '@thomas-inst/optionschecker'
-import { getIdFromClasses} from '../toolbox/UserInterfaceUtil'
+import { getSingleIntIdFromClasses} from '../toolbox/UserInterfaceUtil'
 import {getTypesettingInfo} from '../BrowserTypesettingCalculations'
 import { doNothing, wait } from '../toolbox/FunctionUtil'
 import { MultiToggle } from '../widgets/MultiToggle'
@@ -179,6 +179,46 @@ export class MainTextPanel extends PanelWithToolbar {
         .then( () => { this.verbose && console.log(`Finished generating edition panel on shown`) })
     }
   }
+
+  /**
+   * Highlights the main text that corresponds to the given lemma index
+   * @param {string} apparatusType
+   * @param {number[]}lemmaIndex
+   * @param {boolean} on
+   */
+  highlightTextForLemma(apparatusType, lemmaIndex, on) {
+    // ignore section index for now
+    // TODO: support multiple sections
+
+    if (lemmaIndex.length < 2) {
+      return
+    }
+    let theIndex = lemmaIndex[1]
+    let appIndex  = this.edition.apparatuses.map ( (app) => { return app.type}).indexOf(apparatusType)
+    if (appIndex === -1) {
+      console.warn(`Asked to highlight text for nonexistent apparatus: ${apparatusType}`)
+      return
+    }
+
+    let entry = this.edition.apparatuses[appIndex].entries[theIndex]
+    if (entry === undefined) {
+      console.warn(`Asked to highlight text for nonexistent entry ${apparatusType} : [0, ${theIndex}]`)
+      return
+    }
+
+    for (let i = entry.from; i <= entry.to; i++) {
+      let textElement = $(`${this.containerSelector} .main-text-token-${i}`)
+      if (on) {
+        textElement.addClass('token-highlighted')
+      } else {
+        textElement.removeClass('token-highlighted')
+      }
+    }
+
+
+  }
+
+
 
   postRender (id, mode, visible) {
     this.verbose && console.log(`Post render main text panel, visible = ${visible}`)
@@ -384,7 +424,7 @@ export class MainTextPanel extends PanelWithToolbar {
     return (ev) => {
       ev.preventDefault()
       ev.stopPropagation()
-      let tokenIndex = getIdFromClasses($(ev.target), 'main-text-token-')
+      let tokenIndex = getSingleIntIdFromClasses($(ev.target), 'main-text-token-')
       // TODO: support multiple sections
       let mainTextSection = [0]
       if (this.editingTextToken) {
@@ -551,7 +591,7 @@ export class MainTextPanel extends PanelWithToolbar {
       ev.stopPropagation()
       this.cursorInToken = true
       if (this.selecting) {
-        this.tokenIndexTwo =  getIdFromClasses($(ev.target), 'main-text-token-')
+        this.tokenIndexTwo =  getSingleIntIdFromClasses($(ev.target), 'main-text-token-')
         // console.log(`Mouse enter on token ${this.tokenIndexTwo} while selecting`)
         this._setSelection(this.tokenIndexOne, this.tokenIndexTwo)
         this._showSelectionInBrowser()
@@ -575,7 +615,7 @@ export class MainTextPanel extends PanelWithToolbar {
       if ($(ev.target).hasClass('whitespace')) {
         return
       }
-      let tokenIndex = getIdFromClasses($(ev.target), 'main-text-token-')
+      let tokenIndex = getSingleIntIdFromClasses($(ev.target), 'main-text-token-')
       // this.verbose && console.log(`Mouse up on main text ${tokenIndex} token in apparatus edit mode`)
       if (tokenIndex === -1) {
         console.log(`Mouse up on a token -1`)

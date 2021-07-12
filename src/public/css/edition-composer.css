@@ -204,6 +204,10 @@ b.apparatus-line-number {
     background: #bddeea;
 }
 
+.token-highlighted {
+    background: #f6f669;
+}
+
 h1.lemma {
     font-size: 2em;
     margin-bottom: 2rem;

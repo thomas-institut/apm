@@ -197,6 +197,7 @@ export class EditionComposer {
           containerSelector: `#apparatus-${index}`,
           edition: this.edition,
           apparatusIndex: index,
+          onHighlightMainText: this._genOnHighlightMainText(apparatus.type),
           verbose: true
         }
       )})
@@ -278,6 +279,12 @@ export class EditionComposer {
       thisObject.updateSaveArea()
       this.saveButton.on('click', thisObject.genOnClickSaveButton())
     })
+  }
+
+  _genOnHighlightMainText(apparatusType) {
+    return (index, on) => {
+      this.mainTextPanel.highlightTextForLemma(apparatusType, index, on)
+    }
   }
 
 

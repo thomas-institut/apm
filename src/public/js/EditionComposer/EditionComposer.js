@@ -828,6 +828,10 @@ export class EditionComposer {
       changes.push("New title: '" + this.ctData['title'] + "'" )
     }
 
+    if (!ArrayUtil.arraysAreEqual(this.ctData['collationMatrix'], this.lastSavedCtData['collationMatrix'], 2)) {
+      changes.push('Changes in collation alignment')
+    }
+
     // let currentCollationMatrix = this.getCollationMatrixFromTableEditor()
     // if (!CollationTableUtil.collationMatricesAreEqual(currentCollationMatrix, this.lastSavedCtData['collationMatrix'])) {
     //   changes.push('Changes in collation alignment')

@@ -188,6 +188,20 @@ div.apparatus {
     font-size: 1.2em;
 }
 
+
+.main-text-token input:focus {
+    border: 1px solid #eaecee;
+    outline: none; !important;
+}
+
+.main-text-token  .confirmButton {
+    display: none;
+}
+
+.main-text-token .cancelButton {
+    display: none;
+}
+
 .apparatus-toolbar {
     margin-left: 1rem
 }

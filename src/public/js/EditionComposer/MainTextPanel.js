@@ -442,6 +442,7 @@ export class MainTextPanel extends PanelWithToolbar {
           this.textTokenEditor = new EditableTextField({
             containerSelector:  tokenSelector,
             initialText: this.originalTokenText,
+            minTextFormSize: 2,
             startInEditMode: true
           })
           this.textTokenEditor.on('confirm', (ev) => {

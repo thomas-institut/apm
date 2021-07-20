@@ -184,9 +184,12 @@ export class EditionViewerSvgNew {
     // apparatuses
 
     let apparatusY = this.geometry.margin.top + mainTextHeight
-    let currentApparatusIndex = 0
     apparatusesTypesetTokens.forEach( (tokens, index) => {
-      svg += `<!-- Apparatus ${currentApparatusIndex+1} -->\n`
+      svg += `<!-- Apparatus ${index} -->\n`
+      if (tokens.length === 0) {
+        svg += `<!-- empty -->`
+        return
+      }
       apparatusY += this.geometry.textToApparatus
       apparatusY += index !== 0 ? apparatusHeights[index-1] : 0
 

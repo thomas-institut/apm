@@ -58,8 +58,8 @@ export class EditableTextField {
       hoverClass: {type: 'string', required: false, default: defaultHoverClass},
       initialText: { type: 'string', required: true},
       startInEditMode: { type: 'boolean', default: false},
-      minTextFormSize: { type: 'PositiveInteger', required: false, default: defaultMinTextFormSize},
-      maxTextFormSize: { type: 'PositiveInteger', required: false, default: defaultMaxTextFormSize},
+      minTextFormSize: { type: 'NumberGreaterThanZero', required: false, default: defaultMinTextFormSize},
+      maxTextFormSize: { type: 'NumberGreaterThanZero', required: false, default: defaultMaxTextFormSize},
       onConfirm : {
         type: 'function',
         required: false,
@@ -182,8 +182,9 @@ export class EditableTextField {
     if (size > this.options.maxTextFormSize) {
       size = this.options.maxTextFormSize
     }
+    console.log(`Edit container size: ${size}`)
     let html = ''
-    html += `<input type="text" class="${textInputClass}" value="${this.currentText}" size="${size}">`
+    html += `<input type="text" class="${textInputClass}" value="${this.currentText}" size="${size}" style="width: ${size+1}ch">`
     html += '&nbsp;'
     html += `<span class="${confirmButtonClass}" title="${confirmButtonTitle}">${this.options.confirmIcon}</span>`
     html += '&nbsp;'

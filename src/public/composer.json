@@ -4,7 +4,7 @@
     "description": "Averroes Project Manager",
     "type": "application",
     "keywords": ["mss"],
-    "homepage": "http://averroes.uni-koeln.de",
+    "homepage": "https://averroes.uni-koeln.de",
     "license": "GPL-3.0-or-later",
     
     "require": {

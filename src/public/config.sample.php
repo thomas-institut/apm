@@ -45,3 +45,10 @@ $config['plugins'][] = 'DareImageSource';
 $config['plugins'][] = 'DareDeepZoomImageSource';
 $config['plugins'][] = 'AverroesServerImageSource';
 
+
+// INKSCAPE
+// (for PDF generation)
+$config['inkscape_executable']  = '/usr/bin/inkscape';
+$config['inkscape_version'] = 0.93;
+$config['inkscape_temp_dir']  = '/tmp';
+

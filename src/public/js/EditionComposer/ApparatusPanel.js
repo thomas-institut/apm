@@ -21,7 +21,6 @@ import { Edition } from '../Edition/Edition'
 import { ApparatusCommon } from './ApparatusCommon'
 import { PanelWithToolbar } from './PanelWithToolbar'
 import { getIntArrayIdFromClasses } from '../toolbox/UserInterfaceUtil'
-import { prettyPrintArray } from '../toolbox/ArrayUtil'
 import { doNothing } from '../toolbox/FunctionUtil'
 
 const doubleVerticalLine = String.fromCodePoint(0x2016)
@@ -53,7 +52,6 @@ export class ApparatusPanel extends  PanelWithToolbar {
     this.apparatus = this.options.edition.apparatuses[this.options.apparatusIndex]
     this.lang = this.options.edition.getLang()
     this.cachedHtml = 'Apparatus coming soon...'
-    this.lastTypesetInfo = {}
     this.currentSelectedLemma = []
   }
 
@@ -76,25 +74,40 @@ export class ApparatusPanel extends  PanelWithToolbar {
 
   postRender (id, mode, visible) {
     super.postRender(id, mode, visible)
-    this._getEditEntryButtonElement().on('click', (ev) => {
+    this._getEditEntryButtonElement().on('click', this._genOnClickEditEntryButton())
+    this._getClearSelectionButtonElement().on('click', this._genOnClickClearSelectionButton() )
+  }
+
+  _genOnClickEditEntryButton() {
+    return (ev) => {
       ev.preventDefault()
       ev.stopPropagation()
       if (this.currentSelectedLemma.length === 0) {
         return false
       }
       console.log(`Click on edit entry: ${this.currentSelectedLemma[1]}`)
-    })
-    this._getClearSelectionButtonElement().on('click', (ev) => {
+    }
+  }
+
+  _genOnClickClearSelectionButton() {
+    return (ev) => {
       ev.preventDefault()
       ev.stopPropagation()
       this.options.onHighlightMainText(this.currentSelectedLemma, false)
       this.currentSelectedLemma = []
       this._getEditEntryButtonElement().addClass('hidden')
       this._getClearSelectionButtonElement().addClass('hidden')
-      $(this.getContentAreaSelector())
-        .find('.lemma')
-        .removeClass('lemma-selected')
-    })
+      this._getLemmaElements().removeClass('lemma-selected')
+    }
+  }
+
+  /**
+   *
+   * @return {JQuery}
+   * @private
+   */
+  _getLemmaElements() {
+    return $(`${this.getContentAreaSelector()} span.lemma`)
   }
 
   updateApparatus(mainTextTokensWithTypesettingInfo) {
@@ -117,8 +130,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
   }
 
   _setUpEventHandlers() {
-    $(this.getContentAreaSelector())
-      .find('.lemma').off()
+    this._getLemmaElements().off()
       .on('mouseenter', this._genOnMouseEnterLemma())
       .on('mouseleave', this._genOnMouseLeaveLemma())
       .on('click', this._genOnClickLemma())
@@ -141,15 +153,12 @@ export class ApparatusPanel extends  PanelWithToolbar {
 
   _genOnClickLemma() {
     return (ev) => {
-      let lemmata = $(this.getContentAreaSelector())
-        .find('.lemma')
-        .removeClass('lemma-selected')
+      this._getLemmaElements().removeClass('lemma-selected')
       let target = $(ev.target)
       target.removeClass('lemma-hover').addClass('lemma-selected')
-      //this._getEditEntryButtonElement().removeClass('hidden')
+      this._getEditEntryButtonElement().removeClass('hidden')
       this._getClearSelectionButtonElement().removeClass('hidden')
       let lemmaIndex = this._getLemmaIndexFromElement(target)
-      //console.log(`Click on lemma: ${prettyPrintArray(lemmaIndex)}`)
       this.options.onHighlightMainText(this.currentSelectedLemma, false)
       this.options.onHighlightMainText(lemmaIndex, true)
       this.currentSelectedLemma = lemmaIndex

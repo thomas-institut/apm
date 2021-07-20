@@ -27,11 +27,9 @@ namespace APM;
 
 
 use APM\Api\ApiTranscription;
-use phpDocumentor\Reflection\DocBlock\Tags\Formatter\AlignFormatter;
 use Slim\App;
 use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Routing\RouteCollectorProxy;
-use Slim\Views\Twig;
 use Slim\Views\TwigMiddleware;
 
 use APM\System\ApmContainerKey;

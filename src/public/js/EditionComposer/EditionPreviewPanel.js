@@ -24,12 +24,17 @@
  *  - SVG and PDF export button
  */
 import {OptionsChecker} from '@thomas-inst/optionschecker'
-import { PrintedEditionGenerator } from '../PrintedEditionGenerator'
-import { EditionViewerSvg } from '../EditionViewerSvg'
 import { PanelWithToolbar } from './PanelWithToolbar'
 import { Edition } from '../Edition/Edition'
 import { EditionViewerSvgNew } from '../Edition/EditionViewerSvgNew'
 
+
+const defaultIcons = {
+  busy: '<i class="fas fa-circle-notch fa-spin"></i>'
+}
+
+const exportPdfButtonId = 'export-pdf-btn'
+const exportSvgButtonId = 'export-svg-btn'
 
 export class EditionPreviewPanel extends PanelWithToolbar {
   constructor (options = {}) {
@@ -39,7 +44,8 @@ export class EditionPreviewPanel extends PanelWithToolbar {
       edition: { type: 'object', objectClass: Edition, required: true},
       apparatus: { type: 'object', default: []},
       langDef: { type: 'object', required: true},
-      onPdfExport: { type: 'function', default: () => { return Promise.resolve('')}}
+      onPdfExport: { type: 'function', default: () => { return Promise.resolve('')}},
+      icons: { type: 'object', default: defaultIcons}
     }
     let oc = new OptionsChecker(optionsSpec, 'Edition Preview Panel')
     this.options = oc.getCleanOptions(options)
@@ -65,9 +71,9 @@ export class EditionPreviewPanel extends PanelWithToolbar {
     return ` <div>
                     </div>
                     <div>
-                        <a id="export-svg-button" class="tb-button"  download="apm-quick-edition.svg"
+                        <a id="${exportSvgButtonId}" class="tb-button"  download="apm-edition-preview.svg"
                            title="Download SVG"><small>SVG</small> <i class="fas fa-download"></i></a>
-                        <a id="export-pdf-button" class="tb-button margin-left-med" href="#" download="apm-quick-edition.pdf"
+                        <a id="${exportPdfButtonId}" class="tb-button margin-left-med" href="#" download="apm-edition-preview.pdf"
                            title="Download PDF"><small>PDF</small> <i class="fas fa-download"></i></a>
                     </div>`
   }
@@ -84,22 +90,33 @@ export class EditionPreviewPanel extends PanelWithToolbar {
     this.verbose && console.log(`Post render edition preview pane`)
     this.onResize()
     this.setSvgDownloadFile()
-    $('#export-pdf-button').on('click', this._genOnClickExportPdfButton())
+    $(`#${exportPdfButtonId}`).on('click', this._genOnClickExportPdfButton())
   }
 
   _genOnClickExportPdfButton() {
-    let thisObject = this
     return (ev) => {
       ev.preventDefault()
-      thisObject.options.onPdfExport($(this.getContentAreaSelector()).html()).then(
-        (url) => { console.log(`Got url: '${url}'`)}
-      ).catch( () => { console.log('PDF export error')})
+      let exportPdfButton = $(`#${exportPdfButtonId}`)
+      let currentButtonHtml = exportPdfButton.html()
+      let svg = $(this.getContentAreaSelector()).html()
+      if (svg === '') {
+        return false
+      }
+      exportPdfButton.html(`Generating PDF... ${this.options.icons.busy}`)
+      this.options.onPdfExport(svg).then( (url) => {
+          exportPdfButton.html(currentButtonHtml)
+          window.open(url)
+        }
+      ).catch( () => {
+          console.log('PDF export error')
+        })
+      return true
     }
   }
 
   setSvgDownloadFile() {
-    let href = 'data:image/svg+xml,' + encodeURIComponent($('#edition-svg-div').html())
-    $('#export-svg-button')
+    let href = 'data:image/svg+xml,' + encodeURIComponent($(this.getContentAreaSelector()).html())
+    $($(`#${exportSvgButtonId}`))
       .attr("download", `ApmQuickEdition_${this.ctData['chunkId']}.svg`)
       .attr('href', href)
   }

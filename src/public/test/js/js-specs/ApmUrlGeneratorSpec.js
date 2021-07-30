@@ -22,7 +22,7 @@ describe("ApmUrlGenerator", function() {
   
   describe("Generator functions", function (){
     it("should generate urls", function (){
-      let baseUrl = 'mybase'
+      let baseUrl = 'myBase'
       let ug = new ApmUrlGenerator(baseUrl)
       
       let matchRE = '^' + baseUrl + '/.*'

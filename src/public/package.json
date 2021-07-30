@@ -34,7 +34,7 @@
     "@types/jquery": "^3.5.5",
     "css-loader": "^5.2.4",
     "html-webpack-plugin": "^4.5.2",
-    "nyc": "^15.1.0",
+    "jasmine": "^3.8.0",
     "standard": "^16.0.3",
     "style-loader": "^2.0.0",
     "webpack": "^5.35.0",

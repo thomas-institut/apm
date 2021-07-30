@@ -73,7 +73,7 @@ describe("OptionsChecker", function() {
 
       let testOptions1 = {
         option1: [1, 2, 3],
-        option2: 'somestring',
+        option2: 'someString',
         option3: '',
         option4: -1,
         option5: 0,
@@ -125,7 +125,7 @@ describe("OptionsChecker", function() {
       }
 
       let oc = new OptionsChecker(optionsDef, 'Undefined Default Test')
-      expect(function(){oc.getCleanOptions({ option1: 'somestring' })}).toThrow()
+      expect(function(){oc.getCleanOptions({ option1: 'someString' })}).toThrow()
     })
 
     it ('should deal with object classes', function() {
@@ -141,7 +141,7 @@ describe("OptionsChecker", function() {
       expect(d.option1).toBeDefined()
       expect(d.option1 instanceof Date).toBeTrue()
 
-      expect(function(){oc.getCleanOptions({ option1: new String('test')})}).toThrow()
+      expect(function(){oc.getCleanOptions({ option1: String('test')})}).toThrow()
 
     })
 

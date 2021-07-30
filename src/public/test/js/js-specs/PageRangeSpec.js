@@ -63,7 +63,7 @@ describe("PageRange", function() {
       expect(range.isInRange(21)).toBe(false)
       expect(range.isInRange(0)).toBe(false)
       expect(range.isInRange(-25)).toBe(false)
-      expect(range.isInRange('somestring')).toBe(false)
+      expect(range.isInRange('someString')).toBe(false)
       expect(range.isInRange('15a')).toBe(false)
     })
     

@@ -1,36 +1,28 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <title>APM JS Tests</title>
 
-    <link rel="shortcut icon" type="image/png" href="../jasmine/lib/jasmine-3.5.0/jasmine_favicon.png">
-    <link rel="stylesheet" href="jasmine/lib/jasmine-3.5.0/jasmine.css">
+    <link rel="shortcut icon" type="image/png" href="../../node_modules/jasmine-core/images/jasmine_favicon.png">
+    <link rel="stylesheet" href="../../node_modules/jasmine-core/lib/jasmine-core/jasmine.css">
 
     <script  src="../../node_modules/jquery/dist/jquery.js"></script>
 
 
-    <script src="jasmine/lib/jasmine-3.5.0/jasmine.js"></script>
-    <script src="jasmine/lib/jasmine-3.5.0/jasmine-html.js"></script>
-    <script src="jasmine/lib/jasmine-3.5.0/boot.js"></script>
+    <script src="../../node_modules/jasmine-core/lib/jasmine-core/jasmine.js"></script>
+    <script src="../../node_modules/jasmine-core/lib/jasmine-core/jasmine-html.js"></script>
+    <script src="../../node_modules/jasmine-core/lib/jasmine-core/boot.js"></script>
 
-  <script src="coveragereporter/SimpleIstanbulReporter.js"></script>
-  <link rel="stylesheet" href="coveragereporter/simpleistanbulreporter.css">
   
   <!-- Requirements -->
   <script type="application/javascript" src="../../node_modules/quill/dist/quill.min.js"></script>
-  <script type="text/javascript" src="../../node_modules/twig/twig.js"></script>
-
-  <!-- Things to test -->
-  <!-- All files in istanbul folder will be included in coverage report
-       Add the files to Makefile TEST_JS variable to generate instanbul versions easily -->
+  <script type="text/javascript" src="../../node_modules/twig/twig.min.js"></script>
 
   <script src="../../js/Item.js"></script>
   <script src="../../js/Element.js"></script>
   <script src="../../js/PageRange.js"></script>
   <script src="../../js/ApmUtil.js"></script>
-<!--  <script src="../../js/CollationTable.js"></script>-->
-<!--  <script src="../../js/CollationTableFormatter.js"></script>-->
   <script src="../../js/ApmUrlGenerator.js"></script>
   <script src="../../js/OptionsChecker.js"></script>
   <script src="../../js/TranscriptionEditor.js"></script>
@@ -45,36 +37,10 @@
   <script src="js-specs/ApmUtilSpec.js"></script>
   <script src="js-specs/ApmUrlGeneratorSpec.js"></script>
   <script src="js-specs/OptionsCheckerSpec.js"></script>
-
-
-  <style>
-      html {
-          font-family: sans-serif;
-      }
-      th {
-          text-align: left;
-      }
-      td {
-          padding-right: 10px;
-      }
-
-  </style>
   
   <script>
     TranscriptionEditor.init()
-    
-    var myReporter = {
-        jasmineDone: function(result) {
-            console.log('Jasmine done!')
-            console.log(window.__coverage__)
-            let sir = new SimpleIstanbulReporter()
-            $('body').append(sir.generateReport(window.__coverage__))
-        }
-    }
-    
-    jasmine.getEnv().addReporter(myReporter)
   </script>
-
 
 </head>
 <body>

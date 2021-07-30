@@ -59,7 +59,7 @@ export class CtDataEditionGenerator extends EditionGenerator{
     edition.witnesses = this.ctData['sigla'].map( (s, i) => {
       return new EditionWitnessInfo().setSiglum(s).setTitle(this.ctData['witnessTitles'][i])
     })
-    let baseWitnessTokens = CtData.getCtWitnessTokens(this.ctData, this.ctData['editionWitnessIndex'])
+    let baseWitnessTokens = CtData.getCtWitnessTokens(this.ctData, baseWitnessIndex)
     edition.setMainText(EditionMainTextGenerator.generateMainTextNew(baseWitnessTokens))
     edition.mainTextSections[0].id = this.ctData['chunkId']
     let apparatusGenerator = new CriticalApparatusGenerator()
@@ -71,10 +71,24 @@ export class CtDataEditionGenerator extends EditionGenerator{
     ]
 
     edition.apparatuses = edition.apparatuses.concat(this._getCustomApparatuses(theMap))
+    edition.apparatuses.forEach( (a, i) => {
+      a.sortEntries()
+    })
     return edition
   }
 
+  /**
+   *
+   * @param {Apparatus} generatedApparatusCriticus
+   * @param {*[]}ctIndexToMainTextMap
+   * @return {*}
+   * @private
+   */
   _mergeCustomApparatusCriticusEntries(generatedApparatusCriticus, ctIndexToMainTextMap) {
+    if (this.ctData['customApparatuses'] === undefined) {
+      // a simple collation table
+      return generatedApparatusCriticus
+    }
     let filteredCustomApparatusArray = this.ctData['customApparatuses'].filter( (apparatus) => {
       // filter out custom entries from apparatus criticus
       return apparatus.type === ApparatusType.CRITICUS
@@ -153,6 +167,9 @@ export class CtDataEditionGenerator extends EditionGenerator{
     })
   }
   _getCustomApparatuses(ctIndexToMainTextMap) {
+    if (this.ctData['customApparatuses'] === undefined) {
+      return []
+    }
     return this.ctData['customApparatuses'].filter( (apparatus) => {
       // filter out custom entries from apparatus criticus
       return apparatus.type !== ApparatusType.CRITICUS

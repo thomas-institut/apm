@@ -52,7 +52,6 @@ import * as ArrayUtil from '../toolbox/ArrayUtil'
 import * as CollationTableType from '../constants/CollationTableType'
 import * as NormalizationSource from '../constants/NormalizationSource'
 import { CtData } from '../CtData/CtData'
-import * as HttpStatusCode from '../toolbox/HttpStatusCode'
 
 // CONSTANTS
 
@@ -155,6 +154,7 @@ export class EditionComposer {
       ctData: this.ctData,
       onCtDataChange: this.genOnCtDataChange('collationTablePanel'),
       contentAreaId: 'ct-panel-content',
+      peopleInfo: this.options.peopleInfo,
       verbose: true
     })
     this.witnessInfoPanel = new WitnessInfoPanel({
@@ -564,7 +564,6 @@ export class EditionComposer {
   }
 
   genOnClickSaveButton() {
-    let thisObject = this
     return () => {
       let changes = this.getChangesInCtData()
       if (changes.length !== 0) {

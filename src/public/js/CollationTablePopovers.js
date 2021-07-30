@@ -43,7 +43,7 @@ const formatIcon = '<i class="fas fa-paint-brush"></i>'
 
 const altTextIcon = '<span class="text-icon">ALT</span>'
 
-export function getPopoverHtml(witnessIndex, tokenIndex, witness, postNotes, peopleInfo) {
+export function getPopoverHtml(witnessIndex, tokenIndex, witness, postNotes, peopleInfo=[]) {
   if (witness === undefined) {
     throw `Undefined witness getting popover html for witness index ${witnessIndex}, token index ${tokenIndex}`
   }
@@ -99,6 +99,7 @@ export function getPopoverHtml(witnessIndex, tokenIndex, witness, postNotes, peo
     popoverHtml += '</p>'
 
     if (postNotes.length > 0) {
+      // console.log(`There are notes in token ${witnessIndex}:${tokenIndex}`)
       popoverHtml += getNotesHtml(postNotes, peopleInfo, 'Additional Notes')
     }
   }
@@ -274,11 +275,17 @@ function getNotesHtml(notes, peopleInfo, title = 'Notes') {
 
 function getNoteHtml(note, peopleInfo) {
   let html = `<div class="${noteDivClass} ${langClassPrefix}en">`
-  let authorShortName = peopleInfo[note.authorId]['shortName']
-  if (authorShortName === undefined) {
-    //console.error(`No short name defined for author ${note.authorId}`)
-    authorShortName = peopleInfo[note.authorId]['fullname']
+  let authorShortName = 'Unknown'
+  if (peopleInfo[note.authorId] === undefined) {
+    console.warn(`No author info for user Id ${note.authorId}`)
+  } else {
+    authorShortName = peopleInfo[note.authorId]['shortName']
+    if (authorShortName === undefined) {
+      //console.warn(`No short name defined for author ${note.authorId}`)
+      authorShortName = peopleInfo[note.authorId]['fullname']
+    }
   }
+
 
   html += `<p class="${noteTextClass}">${Util.escapeHtml(note.text)}</p>`
   html += `<p class="${noteCaptionClass}">-- ${authorShortName}, ${formatNoteTime(note.timeStamp)}</p>`

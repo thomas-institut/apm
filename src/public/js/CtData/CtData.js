@@ -28,6 +28,7 @@ import { FmtText } from '../FmtText/FmtText'
 import { deepCopy } from '../toolbox/Util.mjs'
 import * as TranscriptionTokenType from '../constants/WitnessTokenType'
 import * as NormalizationSource from '../constants/NormalizationSource'
+import * as WitnessType from '../constants/TranscriptionTokenClass'
 
 
 
@@ -328,6 +329,64 @@ export class CtData  {
         return token
       }
     })
+  }
+
+  /**
+   * Returns an array with the non-token item indices for each witness in ctData
+   * @param ctData
+   * @return {*[]}
+   */
+  static calculateAggregatedNonTokenItemIndexes(ctData) {
+    let indexes = []
+    for (let witnessIndex = 0; witnessIndex < ctData['witnesses'].length; witnessIndex++) {
+      let tokenRefs = ctData['collationMatrix'][witnessIndex]
+      let witness = ctData['witnesses'][witnessIndex]
+      indexes[witnessIndex] = this.aggregateNonTokenItemIndexes(witness, tokenRefs)
+    }
+    return indexes
+  }
+
+  static aggregateNonTokenItemIndexes(witnessData, tokenRefArray) {
+    if (witnessData['witnessType'] !== WitnessType.FULL_TX) {
+      return[]
+    }
+    let rawNonTokenItemIndexes = witnessData['nonTokenItemIndexes']
+    let numTokens = witnessData['tokens'].length
+
+    let resultingArray = []
+
+    // aggregate post
+    let aggregatedPost = []
+    for (let i = numTokens -1; i >= 0; i--) {
+      let tokenPost = []
+      if (rawNonTokenItemIndexes[i] !== undefined && rawNonTokenItemIndexes[i]['post'] !== undefined) {
+        tokenPost = rawNonTokenItemIndexes[i]['post']
+      }
+      aggregatedPost = aggregatedPost.concat(tokenPost)
+      let tokenIndexRef = tokenRefArray.indexOf(i)
+      if (tokenIndexRef !== -1) {
+        // token i is in the collation table!
+        resultingArray[i] = { post: aggregatedPost }
+        aggregatedPost = []
+      }
+    }
+
+    // aggregate pre
+    let aggregatedPre = []
+    for (let i = 0; i < numTokens; i++ ) {
+      let tokenPre = []
+      if (rawNonTokenItemIndexes[i] !== undefined && rawNonTokenItemIndexes[i]['pre'] !== undefined) {
+        tokenPre = rawNonTokenItemIndexes[i]['pre']
+      }
+      aggregatedPre = aggregatedPre.concat(tokenPre)
+      let tokenIndexRef = tokenRefArray.indexOf(i)
+      if (tokenIndexRef !== -1) {
+        // token i is in the collation table!
+        resultingArray[i]['pre'] = aggregatedPre
+        aggregatedPre = []
+      }
+    }
+    return resultingArray
   }
 
 }

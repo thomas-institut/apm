@@ -50,6 +50,7 @@ export class CollationTablePanel extends PanelWithToolbar {
       normalizerRegister: { type: 'object', objectClass: NormalizerRegister},
       icons: { type: 'object', required: true},
       langDef : { type: 'object', default: defaultLanguageDefinition },
+      peopleInfo: { type: 'object', default: []},
       onCtDataChange: { type: 'function', default: () => {  this.verbose && console.log(`New CT data, but no handler for change`)}}
     }
 
@@ -442,13 +443,13 @@ export class CollationTablePanel extends PanelWithToolbar {
       //  this.verbose && console.log(`Popover from cache: '${popoverHtml}'`)
       return popoverHtml
     }
-    let witnessToken = this.ctData['witnesses'][witnessIndex]
+    let witness = this.ctData['witnesses'][witnessIndex]
 
     popoverHtml = PopoverFormatter.getPopoverHtml(
       witnessIndex,
       tokenIndex,
-      witnessToken,
-      witnessToken['tokenClass'] === FULL_TX ? this.getPostNotes(witnessIndex, col, tokenIndex) : [],
+      witness,
+      witness['tokens'][tokenIndex]['tokenClass'] === FULL_TX ? this.getPostNotes(witnessIndex, col, tokenIndex) : [],
       this.options.peopleInfo
     )
 
@@ -848,29 +849,29 @@ export class CollationTablePanel extends PanelWithToolbar {
     let noteIconSpan = ' <span class="noteicon"><i class="far fa-comment"></i></span>'
     let normalizationSymbol = '<b><sub>N</sub></b>'
     const EMPTY_CONTENT = '&mdash;'
-    return (tableRow, col, value) => {
-      if (value === -1) {
+    return (tableRow, col, ref) => {
+      if (ref === -1) {
         return EMPTY_CONTENT
       }
 
       let witnessIndex = this.ctData['witnessOrder'][tableRow]
 
-      let cellCachedContent = this.getDataFieldFromTokenDataCache('cellContent', witnessIndex, value)
+      let cellCachedContent = this.getDataFieldFromTokenDataCache('cellContent', witnessIndex, ref)
       if (cellCachedContent !== undefined) {
         return cellCachedContent
       }
 
       let tokenArray = this.ctData['witnesses'][witnessIndex]['tokens']
-      let token = tokenArray[value]
+      let token = tokenArray[ref]
       if (token.tokenClass === TokenClass.EDITION) {
         return token['text'] === '' ? EMPTY_CONTENT : token['text']
       }
-      let postNotes = this.getPostNotes(witnessIndex, col, value)
+      let postNotes = this.getPostNotes(witnessIndex, col, ref)
       if (token['sourceItems'].length === 1 && postNotes.length === 0) {
         if (this.viewSettings.showNormalizations && token['normalizedText'] !== undefined) {
           return token['normalizedText'] + normalizationSymbol
         }
-        this.storeDataFieldInTokenDataCache('cellContent', witnessIndex, value, token.text)
+        this.storeDataFieldInTokenDataCache('cellContent', witnessIndex, ref, token.text)
         return token.text
       }
       // spans for different items
@@ -897,7 +898,7 @@ export class CollationTablePanel extends PanelWithToolbar {
         cellHtml += noteIconSpan
       }
 
-      this.storeDataFieldInTokenDataCache('cellContent', witnessIndex, value, cellHtml)
+      this.storeDataFieldInTokenDataCache('cellContent', witnessIndex, ref, cellHtml)
       return cellHtml
     }
   }
@@ -1026,19 +1027,19 @@ export class CollationTablePanel extends PanelWithToolbar {
     }
   }
 
-  getPostNotes(row, col, tokenIndex) {
-    //let theToken = this.ctData
-    if (this.aggregatedNonTokenItemIndexes[row] === undefined) {
-      console.warn(`Found undefined row in this.aggregatedNonTokemItemIndexes, row = ${row}`)
+  getPostNotes(witnessIndex, col, tokenIndex) {
+    // this.verbose && console.log(`Getting post notes for witness ${witnessIndex}, col ${col}, token index ${tokenIndex}`)
+    if (this.aggregatedNonTokenItemIndexes[witnessIndex] === undefined) {
+      console.warn(`Found undefined row in this.aggregatedNonTokemItemIndexes, row = ${witnessIndex}`)
       return []
     }
 
-    if (this.aggregatedNonTokenItemIndexes[row][tokenIndex] === undefined) {
-      this.verbose && console.log(`Undefined aggregate non-token item index for row ${row}, tokenIndex ${tokenIndex}`)
+    if (this.aggregatedNonTokenItemIndexes[witnessIndex][tokenIndex] === undefined) {
+      this.verbose && console.log(`Undefined aggregate non-token item index for row ${witnessIndex}, tokenIndex ${tokenIndex}`)
       return []
     }
-    let postItemIndexes = this.aggregatedNonTokenItemIndexes[row][tokenIndex]['post']
-    let itemWithAddressArray = this.ctData['witnesses'][row]['items']
+    let postItemIndexes = this.aggregatedNonTokenItemIndexes[witnessIndex][tokenIndex]['post']
+    let itemWithAddressArray = this.ctData['witnesses'][witnessIndex]['items']
     let notes = []
     for(const itemIndex of postItemIndexes) {
       let theItem = itemWithAddressArray[itemIndex]
@@ -1050,6 +1051,10 @@ export class CollationTablePanel extends PanelWithToolbar {
         notes.push(note)
       }
     }
+    // if (notes.length !== 0) {
+    //   this.verbose && console.log(`There are ${notes.length} post note(s) row ${witnessIndex} col ${col}, token index ${tokenIndex}`)
+    //   this.verbose && console.log(this.ctData['witnesses'][witnessIndex]['tokens'][tokenIndex])
+    // }
     return notes
   }
 
@@ -1070,58 +1075,8 @@ export class CollationTablePanel extends PanelWithToolbar {
     this.tokenDataCache[witnessIndex][tokenIndex][fieldName] = data
   }
 
-  aggregateNonTokenItemIndexes(witnessData, tokenRefArray) {
-    if (witnessData['witnessType'] !== WitnessType.FULL_TX) {
-      return
-    }
-    let rawNonTokenItemIndexes = witnessData['nonTokenItemIndexes']
-    let numTokens = witnessData['tokens'].length
-
-    let resultingArray = []
-
-    // aggregate post
-    let aggregatedPost = []
-    for (let i = numTokens -1; i >= 0; i--) {
-      let tokenPost = []
-      if (rawNonTokenItemIndexes[i] !== undefined && rawNonTokenItemIndexes[i]['post'] !== undefined) {
-        tokenPost = rawNonTokenItemIndexes[i]['post']
-      }
-      aggregatedPost = aggregatedPost.concat(tokenPost)
-      let tokenIndexRef = tokenRefArray.indexOf(i)
-      if (tokenIndexRef !== -1) {
-        // token i is in the collation table!
-        resultingArray[i] = { post: aggregatedPost }
-        aggregatedPost = []
-      }
-    }
-
-    // aggregate pre
-    let aggregatedPre = []
-    for (let i = 0; i < numTokens; i++ ) {
-      let tokenPre = []
-      if (rawNonTokenItemIndexes[i] !== undefined && rawNonTokenItemIndexes[i]['pre'] !== undefined) {
-        tokenPre = rawNonTokenItemIndexes[i]['pre']
-      }
-      aggregatedPre = aggregatedPre.concat(tokenPre)
-      let tokenIndexRef = tokenRefArray.indexOf(i)
-      if (tokenIndexRef !== -1) {
-        // token i is in the collation table!
-        resultingArray[i]['pre'] = aggregatedPre
-        aggregatedPre = []
-      }
-    }
-    return resultingArray
-  }
-
-
   calculateAggregatedNonTokenItemIndexes() {
-    let indexes = []
-    for (let witnessIndex = 0; witnessIndex < this.ctData['witnesses'].length; witnessIndex++) {
-      let tokenRefs = this.ctData['collationMatrix'][witnessIndex]
-      let witness = this.ctData['witnesses'][witnessIndex]
-      indexes[witnessIndex] = this.aggregateNonTokenItemIndexes(witness, tokenRefs)
-    }
-    return indexes
+    return CtData.calculateAggregatedNonTokenItemIndexes(this.ctData)
   }
 
   genGenerateCellContentEditModeFunction() {

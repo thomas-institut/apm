@@ -70,7 +70,7 @@ export class MainTextPanel extends PanelWithToolbar {
       onCtDataChange: { type: 'function', default: doNothing}
     }
 
-    let oc = new OptionsChecker(optionsDefinition, 'Edition Panel')
+    let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  'Edition Panel'})
     this.options = oc.getCleanOptions(options)
     this.ctData = deepCopy(this.options.ctData)
     this.edition = this.options.edition

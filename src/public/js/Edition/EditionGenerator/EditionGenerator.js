@@ -26,7 +26,7 @@ export class EditionGenerator {
       verbose: { type: 'boolean', default: false}
     }
 
-    let oc = new OptionsChecker(optionsSpec, 'EditionGenerator')
+    let oc = new OptionsChecker({optionsDefinition: optionsSpec, context: 'EditionGenerator'})
 
     this.verbose = oc.getCleanOptions(options).verbose
   }

@@ -47,7 +47,7 @@ export class EditionPreviewPanel extends PanelWithToolbar {
       onPdfExport: { type: 'function', default: () => { return Promise.resolve('')}},
       icons: { type: 'object', default: defaultIcons}
     }
-    let oc = new OptionsChecker(optionsSpec, 'Edition Preview Panel')
+    let oc = new OptionsChecker({optionsDefinition: optionsSpec, context:  'Edition Preview Panel'})
     this.options = oc.getCleanOptions(options)
     this.ctData = this.options.ctData
     this.edition = this.options.edition

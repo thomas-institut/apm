@@ -34,7 +34,7 @@ export class TypesetterTokenRenderer extends FmtTextRenderer {
       normalFontSize: { type: 'integer', default: 12},
     }
 
-    let oc = new OptionsChecker(optionsSpec, 'FmtText Html Renderer')
+    let oc = new OptionsChecker({optionsDefinition: optionsSpec, context: 'FmtText Html Renderer'})
 
     this.options = oc.getCleanOptions(options)
   }

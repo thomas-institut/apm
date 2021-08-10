@@ -60,7 +60,7 @@ export class MultiToggle {
        helpText: { type: 'string', required: false, default: ''}
     }
 
-    let oc = new OptionsChecker(optionsDefinition, "MultiToggle")
+    let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  "MultiToggle"})
     this.options = oc.getCleanOptions(options)
 
     // check button definitions
@@ -69,7 +69,7 @@ export class MultiToggle {
     }
 
     this.buttonDef = this.options.buttonDef.map( (def, i) => {
-      let checker = new OptionsChecker(buttonDefDefinition, `MultiToggle Button Def ${i}`)
+      let checker = new OptionsChecker({optionsDefinition: buttonDefDefinition, context: `MultiToggle Button Def ${i}`})
       return checker.getCleanOptions(def)
     })
 

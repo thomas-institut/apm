@@ -30,7 +30,7 @@ export class InlineSimpleTextEditor {
       onCancel: {type: 'function',default: genReportUnhandledFunction('cancel edit')},
       onChange: { type: 'function', default: doNothing}
     }
-    let oc = new OptionsChecker(optionsSpec, 'InlineSimpleTextEditor')
+    let oc = new OptionsChecker({optionsDefinition: optionsSpec, context:  'InlineSimpleTextEditor'})
     this.options = oc.getCleanOptions(options)
     this.container = $(this.options.containerSelector)
     if (this.container.length === 0) {

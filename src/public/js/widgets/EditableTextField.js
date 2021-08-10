@@ -87,7 +87,7 @@ export class EditableTextField {
       }
     }
 
-    let oc = new OptionsChecker(optionsDefinition, "EditableTextField")
+    let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  "EditableTextField"})
     this.options = oc.getCleanOptions(options)
     this.verbose = this.options.verbose
     this.currentText = this.options.initialText

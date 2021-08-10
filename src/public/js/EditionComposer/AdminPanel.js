@@ -48,7 +48,7 @@ export class AdminPanel extends  Panel {
       canArchive: { type: 'boolean', default: true},
       cannotArchiveReason: { type: 'string', default: ''}
     }
-    let oc = new OptionsChecker(optionsSpec, 'Admin Panel')
+    let oc = new OptionsChecker({optionsDefinition: optionsSpec, context: 'Admin Panel'})
     this.options = oc.getCleanOptions(options)
     this.rendered = false
     this.versionInfo = this.options.versionInfo

@@ -39,7 +39,7 @@ export class WitnessDiffCalculator {
       }
     }
 
-    let oc = new OptionsChecker(optionsDefinition, 'WitnessDiffCalculator')
+    let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context: 'WitnessDiffCalculator'})
     this.options = oc.getCleanOptions(userOptions)
   }
 

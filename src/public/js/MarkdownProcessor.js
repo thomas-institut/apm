@@ -27,7 +27,7 @@ export class MarkdownProcessor {
       normalSpace: { type: 'NumberGreaterThanZero', default: 4}
     }
 
-    let optionsChecker = new OptionsChecker(optionsDefinition, 'MarkdownProcessor')
+    let optionsChecker = new OptionsChecker({optionsDefinition: optionsDefinition, context: 'MarkdownProcessor'})
     this.options = optionsChecker.getCleanOptions(options)
 
   }

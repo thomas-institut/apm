@@ -93,7 +93,7 @@ export class AutomaticCollationTableSettingsForm {
       debug: { type: 'boolean', default: false}
     }
 
-    let oc = new OptionsChecker(optionsDefinition, "AutoCollTableSettingsForm")
+    let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context: "AutoCollTableSettingsForm"})
     this.options = oc.getCleanOptions(options)
 
     // console.log('AutoCollTableSettingsFrom options')

@@ -36,7 +36,7 @@ export class HtmlRenderer extends FmtTextRenderer{
       glueClasses: { type: 'array', default: ['glue']}
     }
 
-    let oc = new OptionsChecker(optionsSpec, 'FmtText Html Renderer')
+    let oc = new OptionsChecker({optionsDefinition: optionsSpec, context: 'FmtText Html Renderer'})
 
     this.options = oc.getCleanOptions(options)
     if (this.options.plainMode) {

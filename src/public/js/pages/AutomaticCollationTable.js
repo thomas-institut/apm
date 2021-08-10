@@ -44,28 +44,29 @@ export class AutomaticCollationTable {
     this.rtlClass = 'rtltext'
     this.ltrClass = 'ltrtext'
 
-    let optionsDefinition = {
-      workId : { type: 'string', required: true},
-      chunkNumber: {type: 'NonZeroNumber', required: true},
-      langDef : { type: 'object', default: defaultLanguageDefinition },
-      availableWitnesses: { type: 'Array', default: [] },
-      suppressTimestampsInApiCalls: { type: 'boolean', default: false},
-      loadNow: { type: 'boolean', default: false },
-      urlGenerator: { type: 'object', objectClass: ApmUrlGenerator, required: true},
-      userId: { type: 'number', default: -1 },
-      isPreset: { type: 'boolean', default: false },
-      preset: { type: 'object', default: {
-          id: -1,
-          title: '',
-          userId: -1,
-          userName: 'no-user',
-          editable: false
-        }
-      },
-      normalizerData: { type: 'Array', default: []}
-    }
-
-    let oc = new OptionsChecker(optionsDefinition, "AutomaticCollationTable")
+    let oc = new OptionsChecker({
+      context: "AutomaticCollationTable",
+      optionsDefinition: {
+        workId : { type: 'string', required: true},
+        chunkNumber: {type: 'NonZeroNumber', required: true},
+        langDef : { type: 'object', default: defaultLanguageDefinition },
+        availableWitnesses: { type: 'Array', default: [] },
+        suppressTimestampsInApiCalls: { type: 'boolean', default: false},
+        loadNow: { type: 'boolean', default: false },
+        urlGenerator: { type: 'object', objectClass: ApmUrlGenerator, required: true},
+        userId: { type: 'number', default: -1 },
+        isPreset: { type: 'boolean', default: false },
+        preset: { type: 'object', default: {
+            id: -1,
+            title: '',
+            userId: -1,
+            userName: 'no-user',
+            editable: false
+          }
+        },
+        normalizerData: { type: 'Array', default: []}
+      }
+    })
     this.options = oc.getCleanOptions(options)
     
     this.availableWitnesses = this.options.availableWitnesses

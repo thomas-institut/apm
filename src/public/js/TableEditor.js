@@ -345,7 +345,7 @@ export class TableEditor {
       }
     }
 
-    let optionsChecker = new OptionsChecker(optionsDefinition, 'TableEditor')
+    let optionsChecker = new OptionsChecker({optionsDefinition: optionsDefinition, context: 'TableEditor'})
     this.options = optionsChecker.getCleanOptions(options)
     //console.log('Table options')
     //console.log(this.options)
@@ -353,7 +353,7 @@ export class TableEditor {
     this.rowDefinition = []
     let valueArray = []
     for (let i=0; i < this.options.rowDefinition.length; i++) {
-      let dataChecker = new OptionsChecker(rowObjectDefinition, 'dataElement ' + i)
+      let dataChecker = new OptionsChecker({optionsDefinition: rowObjectDefinition, context: 'dataElement ' + i})
       let cleanRowDefinition = dataChecker.getCleanOptions(this.options.rowDefinition[i])
       this.rowDefinition.push(cleanRowDefinition)
       valueArray.push(cleanRowDefinition.values)

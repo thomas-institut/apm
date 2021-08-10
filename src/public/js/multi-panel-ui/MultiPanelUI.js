@@ -91,7 +91,7 @@ export class MultiPanelUI {
       }
     }
 
-    let oc = new OptionsChecker(optionsSpec, 'MultiPanelUI')
+    let oc = new OptionsChecker({optionsDefinition: optionsSpec, context:  'MultiPanelUI'})
     this.options = oc.getCleanOptions(options)
     this.currentMode = this.options.mode
 
@@ -203,7 +203,7 @@ export class MultiPanelUI {
     }
     let goodPanelOptionsArray = []
     panelArray.forEach( (panelOption, panelIndex) => {
-      let panelOptionsChecker = new OptionsChecker(panelOptionsSpec, `MultiPanelUI: options for panel ${panelIndex}`)
+      let panelOptionsChecker = new OptionsChecker({optionsDefinition: panelOptionsSpec, context: `MultiPanelUI: options for panel ${panelIndex}`})
       let cleanPanelOptions = panelOptionsChecker.getCleanOptions(panelOption)
       if (cleanPanelOptions.type === tabsPanel) {
         if (cleanPanelOptions.tabs.length === 0) {
@@ -211,7 +211,7 @@ export class MultiPanelUI {
         }
         let goodTabOptionsArray = []
         cleanPanelOptions.tabs.forEach( (tabOption, tabIndex) => {
-          let tabOptionsChecker = new OptionsChecker(tabOptionsSpec, `MultiPanelUI: options for tab ${tabIndex} in panel ${panelIndex}`)
+          let tabOptionsChecker = new OptionsChecker({optionsDefinition: tabOptionsSpec, context: `MultiPanelUI: options for tab ${tabIndex} in panel ${panelIndex}`})
           let cleanTabOptions = tabOptionsChecker.getCleanOptions(tabOption)
           // do more checks
           goodTabOptionsArray.push(cleanTabOptions)

@@ -112,7 +112,7 @@ export class Typesetter {
       paragraphFirstLineIndent: { type: 'NumberGreaterThanZero', default: defaultFontSize * 2}
     }
 
-    let oc = new OptionsChecker(optionsDefinition, 'Typesetter')
+    let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context: 'Typesetter'})
     this.options = oc.getCleanOptions(options)
     
     //this.emSize = this.getTextWidthWithDefaults('m')

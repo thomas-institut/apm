@@ -43,7 +43,7 @@ export class ApparatusEntryInput {
       sigla: { type: 'array', required: true}
     }
 
-    let oc = new OptionsChecker(optionsSpec, "Apparatus Entry Input")
+    let oc = new OptionsChecker({optionsDefinition: optionsSpec, context: "Apparatus Entry Input"})
     this.options = oc.getCleanOptions(options)
     console.log(this.options)
 

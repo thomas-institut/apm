@@ -38,6 +38,11 @@ module.exports = {
       import: './pages/UserProfilePage.js',
       filename: 'UserProfilePage.bundle.js'
     },
+    // JASMINE TESTS
+    JasmineTests: {
+      import: '../test/js/modules-to-test.js',
+      filename: '../../test/js/JasmineTests.bundle.js'
+    },
 
     // FUNCTIONAL TESTS
     TestArrayToTable: {

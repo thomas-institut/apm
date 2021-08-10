@@ -29,7 +29,7 @@ export class Panel {
       verbose: { type: 'boolean', default: false},
       containerSelector: { type: 'string', required: true}
     }
-    let oc= new OptionsChecker(optionsSpec, 'Panel')
+    let oc= new OptionsChecker({optionsDefinition: optionsSpec, context:  'Panel'})
     let cleanOptions = oc.getCleanOptions(options)
 
     this.verbose = cleanOptions.verbose

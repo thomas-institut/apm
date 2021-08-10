@@ -62,7 +62,7 @@ export class EditionViewerSvg {
       textToApparatusInCm: { type: 'NumberGreaterThanZero', default: 1}
     }
 
-    let oc = new OptionsChecker(optionsDefinition, 'EditionViewer')
+    let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context: 'EditionViewer'})
     this.options = oc.getCleanOptions(userOptions)
     let options = this.options
     

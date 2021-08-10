@@ -38,7 +38,7 @@ export class CtDataEditionGenerator extends EditionGenerator{
       ctData: { type: 'object', required: true}
     }
 
-    let oc = new OptionsChecker(optionsSpec, 'CtDataEditionGenerator')
+    let oc = new OptionsChecker({optionsDefinition: optionsSpec, context: 'CtDataEditionGenerator'})
 
     this.options = oc.getCleanOptions(options)
     this.ctData = this.options.ctData

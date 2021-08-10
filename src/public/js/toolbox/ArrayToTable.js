@@ -32,7 +32,7 @@ export class ArrayToTable {
       data: { type: 'array', default: []},
     }
 
-    let oc = new OptionsChecker(optionsDefinition, "ArrayToTable")
+    let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  "ArrayToTable"})
     this.options = oc.getCleanOptions(options)
 
 

@@ -44,7 +44,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
         type: 'function',
         default: doNothing}
     }
-    let oc = new OptionsChecker(optionsSpec, 'Apparatus Panel')
+    let oc = new OptionsChecker({optionsDefinition: optionsSpec, context:'Apparatus Panel'})
     this.options = oc.getCleanOptions(options)
     /**
      * @member {Apparatus}

@@ -88,7 +88,7 @@ export class BootstrapTabGenerator {
       }
     }
 
-    let oc = new OptionsChecker(optionsSpec, 'Bootstrap Tab Manager')
+    let oc = new OptionsChecker({optionsDefinition: optionsSpec, context:  'Bootstrap Tab Manager'})
 
     let cleanOptions = oc.getCleanOptions(options)
     this.id = cleanOptions.id
@@ -97,7 +97,7 @@ export class BootstrapTabGenerator {
     this.activeTabId = cleanOptions.activeTabId
 
     cleanOptions.tabs.forEach( (tab, index) => {
-      let toc = new OptionsChecker(tabOptionsSpec, `Bootstrap Tab Manager, tab ${index}`)
+      let toc = new OptionsChecker({optionsDefinition: tabOptionsSpec, context: `Bootstrap Tab Manager, tab ${index}`})
       this.tabs.push(toc.getCleanOptions(tab))
     })
 

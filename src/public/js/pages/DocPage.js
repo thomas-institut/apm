@@ -29,7 +29,6 @@ export class DocPage {
     this.authors = authors;
     this.lastSaves = lastSaves;
 
-    let oc = new OptionsChecker({}, 'test')
   }
   genWorkInfoHtml() {
     if (Object.keys(this.chunkInfo).length === 0) {

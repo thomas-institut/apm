@@ -15,7 +15,7 @@ export class PanelWithToolbar extends Panel {
       contentAreaId: { type: 'string', default: ''}
     }
 
-    let oc = new OptionsChecker(optionsSpec, 'PanelWithToolbar')
+    let oc = new OptionsChecker({optionsDefinition: optionsSpec, context:  'PanelWithToolbar'})
     let cleanOptions = oc.getCleanOptions(options)
     this.maximizeContentArea = cleanOptions.maximizeContentArea
     this.contentAreaId = cleanOptions.contentAreaId

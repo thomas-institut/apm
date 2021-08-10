@@ -84,7 +84,7 @@ export class CollationTableEditor {
       versionInfo: { type: 'object', default: {}}
     }
 
-    let oc = new OptionsChecker(optionsDefinition, "EditCollationTable")
+    let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  "EditCollationTable"})
     this.options = oc.getCleanOptions(options)
 
     // icons

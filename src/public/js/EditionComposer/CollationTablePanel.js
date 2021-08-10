@@ -54,7 +54,7 @@ export class CollationTablePanel extends PanelWithToolbar {
       onCtDataChange: { type: 'function', default: () => {  this.verbose && console.log(`New CT data, but no handler for change`)}}
     }
 
-    let oc = new OptionsChecker(optionsDefinition, 'Collation Table Panel')
+    let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  'Collation Table Panel'})
     this.options = oc.getCleanOptions(options)
     this.ctData = deepCopy(this.options.ctData)
     this.panelIsSetup = false

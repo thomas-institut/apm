@@ -90,7 +90,7 @@ export class WitnessInfoPanel extends Panel{
       ctData: { type: 'object', required: true}
     }
 
-    let oc = new OptionsChecker(optionsSpec, 'Witness Info Panel')
+    let oc = new OptionsChecker({optionsDefinition: optionsSpec, context:  'Witness Info Panel'})
     this.options = oc.getCleanOptions(options)
     this.ctData = Util.deepCopy(this.options.ctData)
     this.currentWitnessUpdateData = ''

@@ -30,7 +30,7 @@ export class CtDataCleaner {
     let optionsSpec = {
       verbose: { type: 'boolean', default: false}
     }
-    let oc = new OptionsChecker(optionsSpec, 'CtDataCleaner')
+    let oc = new OptionsChecker({optionsDefinition: optionsSpec, context: 'CtDataCleaner'})
     this.options = oc.getCleanOptions(options)
   }
 

@@ -41,26 +41,26 @@ export class ChunkPage {
 
   constructor(options) {
 
-    let optionsDefinition = {
-      work : { required: true, type: 'string'},
-      chunk : { required: true, type: 'NumberGreaterThanZero' },
-      showAdminInfo : { type: 'boolean', default: false},
-      urlGenerator: { required: true, type: 'object'},
-      userId: { type: 'number', default: -1 },
-      witnessInfo :{ type: 'Array', default: []},
-      authorInfo:  { type: 'object', default: []},
-      pageInfo:  { type: 'object', default: []},
-      languageInfo : { type: 'object', default: []},
-      workInfo : { type: 'object', default: []},
-      validChunks : {type: 'Array', default: []},
-      savedCollationTables: { type: 'Array', default: []}
-    }
-
-    let optionsChecker = new OptionsChecker(optionsDefinition, 'ChunkPage')
+    let optionsChecker = new OptionsChecker({
+      context: 'ChunkPage',
+      optionsDefinition: {
+        work : { required: true, type: 'string'},
+        chunk : { required: true, type: 'NumberGreaterThanZero' },
+        showAdminInfo : { type: 'boolean', default: false},
+        urlGenerator: { required: true, type: 'object'},
+        userId: { type: 'number', default: -1 },
+        witnessInfo :{ type: 'Array', default: []},
+        authorInfo:  { type: 'object', default: []},
+        pageInfo:  { type: 'object', default: []},
+        languageInfo : { type: 'object', default: []},
+        workInfo : { type: 'object', default: []},
+        validChunks : {type: 'Array', default: []},
+        savedCollationTables: { type: 'Array', default: []}
+      }
+    })
     this.options = optionsChecker.getCleanOptions(options)
     console.log('Chunk Page options')
     console.log(this.options)
-
 
     // some constant labels
     this.witnessTypeLabels = {}

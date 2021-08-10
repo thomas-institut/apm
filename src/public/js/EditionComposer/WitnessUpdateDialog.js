@@ -48,7 +48,7 @@ export class WitnessUpdateDialog {
       }
     }
 
-    let oc = new OptionsChecker(optionsSpec, 'Witness Update Dialog')
+    let oc = new OptionsChecker({optionsDefinition: optionsSpec, context:  'Witness Update Dialog'})
     this.options = oc.getCleanOptions(options)
     this.ctData = Util.deepCopy(this.options.ctData)
     this.icons = this.options.icons

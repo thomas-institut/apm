@@ -59,7 +59,7 @@ export class NiceToggle {
         default : defaultOffIcon
       }
     }
-    let oc = new OptionsChecker(optionsDefinition, "NiceToggle")
+    let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  "NiceToggle"})
     this.options = oc.getCleanOptions(options)
     // console.log(`NiceToggle options`)
     // console.log(this.options)

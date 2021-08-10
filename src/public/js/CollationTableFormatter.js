@@ -50,7 +50,7 @@ export class CollationTableFormatter {
       lang: { type: 'NonEmptyString', default: 'la'},
     }
 
-    this.optionsChecker = new OptionsChecker(optionsDefinition, 'CollationTableFormatter')
+    this.optionsChecker = new OptionsChecker({optionsDefinition: optionsDefinition, context: 'CollationTableFormatter'})
     this.options = this.optionsChecker.getCleanOptions(options)
   }
 

@@ -90,7 +90,7 @@ export class EditionComposer {
       versionInfo: { type: 'object', default: {}}
     }
 
-    let oc = new OptionsChecker(optionsDefinition, "EditionComposer")
+    let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  "EditionComposer"})
     this.options = oc.getCleanOptions(options)
 
     // icons

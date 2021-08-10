@@ -12,7 +12,6 @@ export function doNothingPromise(msg = '') {
   })
 }
 
-
 export function failPromise(msg= '', reason = 'no reason') {
   return new Promise ( (resolve, reject) => {
     if (msg !== '') {

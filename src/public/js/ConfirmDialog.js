@@ -39,7 +39,7 @@ export class ConfirmDialog {
       reuseDialog: { type: 'boolean', default: false }
     }
 
-    let oc = new OptionsChecker(optionsDef, 'ConfirmDialog')
+    let oc = new OptionsChecker({optionsDefinition: optionsDef, context: 'ConfirmDialog'})
 
     this.options = oc.getCleanOptions(userOptions)
 

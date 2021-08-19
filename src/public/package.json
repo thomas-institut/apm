@@ -33,6 +33,7 @@
   "devDependencies": {
     "@types/jquery": "^3.5.5",
     "css-loader": "^5.2.4",
+    "html-loader": "^2.1.2",
     "html-webpack-plugin": "^4.5.2",
     "jasmine": "^3.8.0",
     "standard": "^16.0.3",

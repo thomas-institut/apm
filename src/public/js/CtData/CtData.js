@@ -17,7 +17,7 @@
  */
 
 import * as WitnessTokenType from '../constants/WitnessTokenType'
-import { SequenceWithGroups } from '../SequenceWithGroups'
+import { SequenceWithGroups } from '../Edition/SequenceWithGroups'
 import { Matrix } from '@thomas-inst/matrix'
 import * as CollationTableType from '../constants/CollationTableType'
 import { ApparatusSubEntry } from '../Edition/ApparatusSubEntry'

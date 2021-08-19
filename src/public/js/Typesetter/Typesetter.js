@@ -88,7 +88,7 @@
  */
 
 import {OptionsChecker} from '@thomas-inst/optionschecker'
-import { NumeralStyles } from './NumeralStyles'
+import { NumeralStyles } from '../toolbox/NumeralStyles'
 
 export class Typesetter {
   

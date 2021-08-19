@@ -25,7 +25,7 @@
 
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { getSingleIntIdFromClasses} from '../toolbox/UserInterfaceUtil'
-import {getTypesettingInfo} from '../BrowserTypesettingCalculations'
+import {getTypesettingInfo} from '../Typesetter/BrowserTypesettingCalculations'
 import { doNothing, wait } from '../toolbox/FunctionUtil'
 import { MultiToggle } from '../widgets/MultiToggle'
 import { EditableTextField } from '../widgets/EditableTextField'

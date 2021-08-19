@@ -32,11 +32,11 @@
 
  */
 
-import {escapeHtml} from './toolbox/Util.mjs'
+import {escapeHtml} from '../../toolbox/Util.mjs'
 import { Matrix } from '@thomas-inst/matrix'
-import { SequenceWithGroups } from './SequenceWithGroups'
+import { SequenceWithGroups } from '../../Edition/SequenceWithGroups'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
-import { doNothing } from './toolbox/FunctionUtil'
+import { doNothing } from '../../toolbox/FunctionUtil'
 
 // Table Edit Modes
 export const editModeOff = 'off'

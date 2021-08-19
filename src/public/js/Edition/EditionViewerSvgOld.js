@@ -17,18 +17,18 @@
  */
 
 import {OptionsChecker } from '@thomas-inst/optionschecker'
-import {Typesetter} from './Typesetter'
-import { MarkdownProcessor } from './MarkdownProcessor'
-import { NumeralStyles } from './NumeralStyles'
+import {Typesetter} from '../Typesetter/Typesetter'
+import { MarkdownProcessor } from '../Typesetter/MarkdownProcessor'
+import { NumeralStyles } from '../toolbox/NumeralStyles'
 
-import * as TypesetterTokenFactory from './TypesetterTokenFactory'
-import * as TypesetterTokenType from './TypesetterTokenType'
+import * as TypesetterTokenFactory from '../Typesetter/TypesetterTokenFactory'
+import * as TypesetterTokenType from '../Typesetter/TypesetterTokenType'
 
 
 const doubleVerticalLine = String.fromCodePoint(0x2016)
 const verticalLine = String.fromCodePoint(0x007c)
 
-export class EditionViewerSvg {
+export class EditionViewerSvgOld {
   
   constructor (userOptions) {
     // console.log('Constructing Edition Viewer')

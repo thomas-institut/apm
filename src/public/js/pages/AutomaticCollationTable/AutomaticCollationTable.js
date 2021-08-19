@@ -19,16 +19,16 @@
 
 // TODO: redo this with CollationTablePanel and EditionPreviewPanel
 
-import { TableEditor } from '../TableEditor'
-import  *  as CollationTableUtil from '../CollationTableUtil'
-import {defaultLanguageDefinition} from '../defaults/languages'
-import * as PopoverFormatter from '../CollationTablePopovers'
+import { TableEditor } from '../common/TableEditor'
+import  *  as CollationTableUtil from '../common/CollationTableUtil'
+import {defaultLanguageDefinition} from '../../defaults/languages'
+import * as PopoverFormatter from '../common/CollationTablePopovers'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
-import {CollationTableFormatter} from '../CollationTableFormatter'
-import { AutomaticCollationTableSettingsForm} from '../AutoCollTableSettingsForm'
-import { CtDataEditionGenerator } from '../Edition/EditionGenerator/CtDataEditionGenerator'
-import { EditionViewerSvgNew } from '../Edition/EditionViewerSvgNew'
-import { CtData } from '../CtData/CtData'
+import {CollationTableFormatter} from './CollationTableFormatter'
+import { AutomaticCollationTableSettingsForm} from '../common/AutoCollTableSettingsForm'
+import { CtDataEditionGenerator } from '../../Edition/EditionGenerator/CtDataEditionGenerator'
+import { EditionViewerSvgNew } from '../../Edition/EditionViewerSvgNew'
+import { CtData } from '../../CtData/CtData'
 
 export class AutomaticCollationTable {
   

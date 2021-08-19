@@ -26,8 +26,8 @@ import { doNothing, returnEmptyString} from '../toolbox/FunctionUtil'
 
 const defaultIcons = {
   closePanel: '&times;',
-  horizontalMode: '<img src="/images/horizontal-mode.svg" alt="Horizontal Mode"/>',
-  verticalMode: '<img src="/images/vertical-mode.svg" alt="Vertical Mode"/>'
+  horizontalMode: '|',
+  verticalMode: '--'
 }
 
 // classes

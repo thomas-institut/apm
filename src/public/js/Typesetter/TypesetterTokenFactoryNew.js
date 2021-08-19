@@ -16,8 +16,8 @@
  *
  */
 
-import * as TypesetterTokenType from '../TypesetterTokenType'
-import { TypesetterToken } from '../TypesetterToken'
+import * as TypesetterTokenType from './TypesetterTokenType'
+import { TypesetterToken } from './TypesetterToken'
 
 
 export class TypesetterTokenFactoryNew {

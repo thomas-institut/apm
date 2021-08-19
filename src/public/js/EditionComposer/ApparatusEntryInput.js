@@ -21,7 +21,7 @@
 /**
  * Takes cares of presenting a dialog to the user and getting an apparatus entry
  */
-import { ConfirmDialog } from '../ConfirmDialog'
+import { ConfirmDialog } from '../pages/common/ConfirmDialog'
 import { doNothing } from '../toolbox/FunctionUtil'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { ApparatusCommon } from './ApparatusCommon'

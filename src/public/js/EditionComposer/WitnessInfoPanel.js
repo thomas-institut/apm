@@ -34,7 +34,7 @@ import * as ArrayUtil from '../toolbox/ArrayUtil'
 import { transientAlert } from '../widgets/TransientAlert'
 import * as WitnessType from '../constants/WitnessType'
 import { WitnessUpdateDialog } from './WitnessUpdateDialog'
-import { WitnessDiffCalculator } from '../WitnessDiffCalculator'
+import { WitnessDiffCalculator } from '../Edition/WitnessDiffCalculator'
 
 const icons = {
   moveUp: '&uarr;',

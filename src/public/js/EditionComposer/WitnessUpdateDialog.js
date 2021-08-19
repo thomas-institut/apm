@@ -19,7 +19,7 @@
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import * as Util from '../toolbox/Util.mjs'
 import { failPromise } from '../toolbox/FunctionUtil'
-import { WitnessDiffCalculator } from '../WitnessDiffCalculator'
+import { WitnessDiffCalculator } from '../Edition/WitnessDiffCalculator'
 
 export class WitnessUpdateDialog {
 

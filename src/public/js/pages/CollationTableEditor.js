@@ -25,12 +25,12 @@ import * as TokenClass from '../constants/TranscriptionTokenClass'
 import * as NormalizationSource from '../constants/NormalizationSource'
 
 
-import { editModeOff, columnGroupEvent, columnUngroupEvent, TableEditor } from '../TableEditor'
-import * as CollationTableUtil from '../CollationTableUtil'
-import * as PopoverFormatter from '../CollationTablePopovers'
+import { editModeOff, columnGroupEvent, columnUngroupEvent, TableEditor } from './common/TableEditor'
+import * as CollationTableUtil from './common/CollationTableUtil'
+import * as PopoverFormatter from './common/CollationTablePopovers'
 
-import {EditionViewerSvg} from '../EditionViewerSvg'
-import {PrintedEditionGenerator} from '../PrintedEditionGenerator'
+import {EditionViewerSvgOld} from '../Edition/EditionViewerSvgOld'
+import {PrintedEditionGenerator} from '../Edition/PrintedEditionGenerator'
 
 // widgets
 import { EditableTextField } from '../widgets/EditableTextField'
@@ -45,13 +45,13 @@ import * as Util from '../toolbox/Util.mjs'
 import * as ArrayUtil from '../toolbox/ArrayUtil'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { Matrix } from '@thomas-inst/matrix'
-import { ConfirmDialog } from '../ConfirmDialog'
-import { VERBOSITY_DEBUG_PLUS, WitnessDiffCalculator } from '../WitnessDiffCalculator'
+import { ConfirmDialog } from './common/ConfirmDialog'
+import { VERBOSITY_DEBUG_PLUS, WitnessDiffCalculator } from '../Edition/WitnessDiffCalculator'
 import { FULL_TX } from '../constants/TranscriptionTokenClass'
 
 // Normalizations
 
-import { NormalizerRegister } from '../NormalizerRegister'
+import { NormalizerRegister } from './common/NormalizerRegister'
 import { ToLowerCaseNormalizer } from '../normalizers/ToLowerCaseNormalizer'
 import { IgnoreArabicVocalizationNormalizer } from '../normalizers/IgnoreArabicVocalizationNormalizer'
 import { IgnoreShaddaNormalizer } from '../normalizers/IgnoreShaddaNormalizer'
@@ -2657,7 +2657,7 @@ export class CollationTableEditor {
     // TODO: use new SVG viewer!
     let peg = new PrintedEditionGenerator()
     let edition = peg.generateEdition(this.ctData, this.ctData['witnessOrder'][0])
-    let ev = new EditionViewerSvg( {
+    let ev = new EditionViewerSvgOld( {
       lang: edition.lang,
       collationTokens: edition.mainTextTokens,
       apparatusArray: edition.apparatusArray,

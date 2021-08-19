@@ -16,10 +16,10 @@
  *
  */
 
-import * as WitnessTokenType from './constants/WitnessTokenType.js'
-import { MainTextTokenFactory } from './Edition/MainTextTokenFactory.js'
-import * as MainTextTokenType from './Edition/MainTextTokenType.js'
-import { MainTextSection } from './Edition/MainTextSection.js'
+import * as WitnessTokenType from '../../constants/WitnessTokenType.js'
+import { MainTextTokenFactory } from '../MainTextTokenFactory.js'
+import * as MainTextTokenType from '../MainTextTokenType.js'
+import { MainTextSection } from '../MainTextSection.js'
 
 const INPUT_TOKEN_FIELD_TYPE = 'tokenType'
 const INPUT_TOKEN_FIELD_TEXT = 'text'

@@ -2,6 +2,10 @@ const path = require('path');
 
 module.exports = {
   entry: {
+    QuillPack: {
+      import: './QuillLoader.js',
+      filename: 'Quill.bundle.js'
+    },
     DocPage: {
       import: './pages/DocPage.js',
       filename: 'DocPage.bundle.js',
@@ -23,13 +27,14 @@ module.exports = {
       filename: 'EditionComposer.bundle.js'
     },
     AutomaticCollationTable: {
-      import: './pages/AutomaticCollationTable.js',
+      import: './pages/AutomaticCollationTable/AutomaticCollationTable.js',
       filename: 'AutomaticCollationTable.bundle.js'
     },
-    ChunkPage: {
-      import: './pages/ChunkPage.js',
-      filename: 'ChunkPage.bundle.js'
-    },
+    ChunkPage: './pages/ChunkPage.js',
+    // ChunkPage: {
+    //   import: './pages/ChunkPage.js',
+    //   filename: 'ChunkPage.bundle.js'
+    // },
     UserManager: {
       import: './pages/UserManagerPage.js',
       filename: 'UserManagerPage.bundle.js'
@@ -62,6 +67,12 @@ module.exports = {
     TestHtmlRenderer: {
       import: '../test/js/functional/TestFmtTextRenderer.js',
       filename: '../../test/js/functional/dist/TestFmtTextRenderer.bundle.js'
+    },
+
+    TestQuill: {
+      import: '../test/js/functional/QuillWebPackTestApp.js',
+      dependOn: 'QuillPack',
+      filename: '../../test/js/functional/dist/QuillWebPackTestApp.bundle.js'
     }
 
   },
@@ -69,7 +80,7 @@ module.exports = {
     jquery: 'jQuery'
   },
   mode: 'development',
-  devtool: 'inline-source-map',
+  devtool: 'source-map',
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: '[name].bundle.js',
@@ -80,6 +91,10 @@ module.exports = {
         test: /\.css$/i,
         use: ['style-loader', 'css-loader'],
       },
+      {
+        test: /\.svg$/i,
+        use:  [{ loader: 'html-loader', options: { minimize: false, esModule: false } }]
+      }
     ],
   },
 };

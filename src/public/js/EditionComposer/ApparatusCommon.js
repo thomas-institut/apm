@@ -20,11 +20,11 @@
 // TODO: eliminate this file altogether!
 
 
-import * as TypesetterTokenFactory from '../TypesetterTokenFactory'
+import * as TypesetterTokenFactory from '../Typesetter/TypesetterTokenFactory'
 import * as WitnessTokenType from '../constants/WitnessTokenType'
 import { strIsPunctuation } from '../toolbox/Util.mjs'
 import * as ApparatusSubEntryType from '../Edition/SubEntryType'
-import { NumeralStyles } from '../NumeralStyles'
+import { NumeralStyles } from '../toolbox/NumeralStyles'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory'
 import { FmtText } from '../FmtText/FmtText'
 import { TypesetterTokenRenderer } from '../FmtText/Renderer/TypesetterTokenRenderer'

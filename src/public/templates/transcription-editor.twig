@@ -12,7 +12,7 @@
     <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/pageviewer.css" />
     <link rel="stylesheet" type="text/css" media="screen" href="{{baseurl}}/css/transcription-editor.css" />
     
-    <script type="application/javascript" src="{{baseurl}}/node_modules/lodash/lodash.js"></script>
+{#    <script type="application/javascript" src="{{baseurl}}/node_modules/lodash/lodash.js"></script>#}
     <script type="application/javascript" src="{{baseurl}}/node_modules/jquery/dist/jquery.js"></script>
     <script type="application/javascript" src="{{baseurl}}/node_modules/bootstrap/dist/js/bootstrap.bundle.js"></script>
     <script type="text/javascript" src="{{baseurl}}/node_modules/moment/moment.js"></script>
@@ -76,13 +76,12 @@
                 {% if navByPage==true %}
                     <button class="textonly headerbutton {{ page==1?' disabled':''}}"
                             title="First Page" 
-                             onclick="window.location='{{url_for('pageviewer.docpage', {'doc': doc, 'page': 1})}}';" {{ page==1 ? ' disabled' : '' }}>
+                            onclick="window.location='{{url_for('pageviewer.docpage', {'doc': doc, 'page': 1})}}';" {{ page==1 ? ' disabled' : '' }}>
                {% else %}
                     <button class="textonly headerbutton {{ seq==1?' disabled':''}}"
-                                onclick="window.location='{{url_for('pageviewer.docseq', {'doc': doc, 'seq': 1})}}';" {{ seq==1 ? ' disabled' : '' }}>
+                            onclick="window.location='{{url_for('pageviewer.docseq', {'doc': doc, 'seq': 1})}}';" {{ seq==1 ? ' disabled' : '' }}>
                 {% endif %}
                         <i class="fas fa-step-backward"></i>
-                </button>
                 {% if navByPage==true %}
                     <button class="textonly headerbutton {{ page==1?' disabled':''}}" 
                         title="Previous Page" 
@@ -112,7 +111,7 @@
                     <button class="textonly headerbutton {{ page==docPageCount?' disabled':''}}" 
                                 title="Last Page" 
                                 onclick="window.location='{{url_for('pageviewer.docpage', {'doc': doc, 'page': docPageCount})}}';" {{ page==docPageCount?' disabled':''}}>
-                    </button>
+
                 {% else %}  
                     <button class="textonly headerbutton {{ seq==docPageCount?' disabled':''}}" 
                                 title="Last Page" 

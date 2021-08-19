@@ -29,7 +29,7 @@ import {OptionsChecker} from '@thomas-inst/optionschecker'
 import * as Util from '../toolbox/Util.mjs'
 
 import { doNothingPromise } from '../toolbox/FunctionUtil'
-import { ConfirmDialog } from '../ConfirmDialog'
+import { ConfirmDialog } from '../pages/common/ConfirmDialog'
 import * as CollationTableType from '../constants/CollationTableType'
 import { Panel } from './Panel'
 

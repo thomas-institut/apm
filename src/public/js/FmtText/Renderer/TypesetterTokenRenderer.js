@@ -18,8 +18,8 @@
 
 import { FmtTextRenderer } from './FmtTextRenderer'
 import * as FmtTokenType from '../FmtTextTokenType'
-import { TypesetterToken } from '../../TypesetterToken'
-import * as TypesetterTokenType from '../../TypesetterTokenType'
+import { TypesetterToken } from '../../Typesetter/TypesetterToken'
+import * as TypesetterTokenType from '../../Typesetter/TypesetterTokenType'
 import { TypesetterTokenFactoryNew } from '../../Typesetter/TypesetterTokenFactoryNew'
 import * as FontStyle from '../FontStyle'
 import * as FontWeight from '../FontWeight'

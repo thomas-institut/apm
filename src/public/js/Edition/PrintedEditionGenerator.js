@@ -16,12 +16,12 @@
  *
  */
 
-import * as TokenType from './constants/WitnessTokenType'
-import { strIsPunctuation } from './toolbox/Util.mjs'
+import * as TokenType from '../constants/WitnessTokenType'
+import { strIsPunctuation } from '../toolbox/Util.mjs'
 import { SequenceWithGroups } from './SequenceWithGroups'
 import { Matrix } from '@thomas-inst/matrix'
-import * as NormalizationSource from './constants/NormalizationSource'
-import { ApparatusCommon } from './EditionComposer/ApparatusCommon'
+import * as NormalizationSource from '../constants/NormalizationSource'
+import { ApparatusCommon } from '../EditionComposer/ApparatusCommon'
 import text from 'quill/blots/text'
 
 const INPUT_TOKEN_FIELD_TYPE = 'tokenType'

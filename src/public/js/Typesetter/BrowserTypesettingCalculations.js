@@ -31,7 +31,7 @@ export function getTypesettingInfo(containerSelector, classPrefix, tokens) {
 
   let uniqueYPositions = yPositions.filter((v, i, a) => a.indexOf(v) === i).sort( (a,b) => { return a > b ? 1 : 0})
   let lineMap = calculateYPositionToLineMap(yPositions)
-  let tokensWithFullInfo = tokensWithInfo.map( (t, i) => {
+  let tokensWithFullInfo = tokensWithInfo.map( (t) => {
     t.lineNumber = getLineNumber(t.y, lineMap)
     return t
   })

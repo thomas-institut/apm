@@ -16,21 +16,21 @@
  *
  */
 
-import * as TokenType from './constants/WitnessTokenType'
-import { strIsPunctuation } from './toolbox/Util.mjs'
+import * as TokenType from '../constants/WitnessTokenType'
+import { strIsPunctuation } from '../toolbox/Util.mjs'
 import { SequenceWithGroups } from './SequenceWithGroups'
 import { Matrix } from '@thomas-inst/matrix'
-import {ApparatusCommon} from './EditionComposer/ApparatusCommon'
-import * as ApparatusEntryType from './Edition/SubEntryType'
-import * as ApparatusType from './Edition/ApparatusType'
-import * as WitnessTokenType from './constants/WitnessTokenType'
-import * as SubEntrySource from './Edition/SubEntrySource'
-import { CtData } from './CtData/CtData'
-import { Apparatus } from './Edition/Apparatus'
-import { LocationInSection } from './Edition/LocationInSection'
-import { ApparatusSubEntry } from './Edition/ApparatusSubEntry'
-import { FmtTextFactory } from './FmtText/FmtTextFactory'
-import { ApparatusEntry } from './Edition/ApparatusEntry'
+import {ApparatusCommon} from '../EditionComposer/ApparatusCommon'
+import * as ApparatusEntryType from './SubEntryType'
+import * as ApparatusType from './ApparatusType'
+import * as WitnessTokenType from '../constants/WitnessTokenType'
+import * as SubEntrySource from './SubEntrySource'
+import { CtData } from '../CtData/CtData'
+import { Apparatus } from './Apparatus'
+import { LocationInSection } from './LocationInSection'
+import { ApparatusSubEntry } from './ApparatusSubEntry'
+import { FmtTextFactory } from '../FmtText/FmtTextFactory'
+import { ApparatusEntry } from './ApparatusEntry'
 
 
 

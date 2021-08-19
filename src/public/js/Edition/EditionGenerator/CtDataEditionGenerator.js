@@ -19,9 +19,9 @@
 
 import { EditionGenerator } from './EditionGenerator'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
-import { EditionMainTextGenerator } from '../../EditionMainTextGenerator.mjs'
+import { EditionMainTextGenerator } from './EditionMainTextGenerator.mjs'
 import { CtData } from '../../CtData/CtData'
-import { CriticalApparatusGenerator } from '../../CriticalApparatusGenerator'
+import { CriticalApparatusGenerator } from '../CriticalApparatusGenerator'
 import { EditionWitnessInfo } from '../EditionWitnessInfo'
 import { Apparatus } from '../Apparatus'
 import { ApparatusEntry } from '../ApparatusEntry'

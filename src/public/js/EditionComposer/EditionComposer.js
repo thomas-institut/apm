@@ -30,7 +30,7 @@ import { capitalizeFirstLetter, deepCopy, parseWordsAndPunctuation } from '../to
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 
 // Normalizations
-import { NormalizerRegister } from '../NormalizerRegister'
+import { NormalizerRegister } from '../pages/common/NormalizerRegister'
 import { ToLowerCaseNormalizer } from '../normalizers/ToLowerCaseNormalizer'
 import { IgnoreArabicVocalizationNormalizer } from '../normalizers/IgnoreArabicVocalizationNormalizer'
 import { IgnoreShaddaNormalizer } from '../normalizers/IgnoreShaddaNormalizer'

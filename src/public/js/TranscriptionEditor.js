@@ -1367,7 +1367,7 @@ class TranscriptionEditor
 
       
       
-      if (!_.isEqual(thisObject.quillObject.getContents(), thisObject.lastSavedData)) {
+      if (!areEqual(thisObject.quillObject.getContents(), thisObject.lastSavedData)) {
         thisObject.setContentsChanged()
       } else {
         thisObject.setContentsNotChanged()
@@ -3151,4 +3151,9 @@ class TranscriptionEditor
 `
     })
   }
+}
+
+
+function areEqual(var1, var2) {
+  return JSON.stringify(var1) === JSON.stringify(var2)
 }

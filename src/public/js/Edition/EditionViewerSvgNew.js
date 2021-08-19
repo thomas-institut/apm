@@ -18,13 +18,13 @@
 
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { Edition } from './Edition'
-import { Typesetter } from '../Typesetter'
+import { Typesetter } from '../Typesetter/Typesetter'
 
 import * as MainTextTokenType from './MainTextTokenType'
 import { TypesetterTokenFactoryNew } from '../Typesetter/TypesetterTokenFactoryNew'
 import { TypesetterTokenRenderer } from '../FmtText/Renderer/TypesetterTokenRenderer'
 import { getTextDirectionForLang } from '../toolbox/Util.mjs'
-import { NumeralStyles } from '../NumeralStyles'
+import { NumeralStyles } from '../toolbox/NumeralStyles'
 import { pushArray } from '../toolbox/ArrayUtil'
 import { ApparatusCommon } from '../EditionComposer/ApparatusCommon'
 

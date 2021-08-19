@@ -18,7 +18,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "shuffleArray": () => (/* binding */ shuffleArray),
 /* harmony export */   "createSequenceArray": () => (/* binding */ createSequenceArray),
 /* harmony export */   "createIndexArray": () => (/* binding */ createIndexArray),
-/* harmony export */   "pushArray": () => (/* binding */ pushArray)
+/* harmony export */   "pushArray": () => (/* binding */ pushArray),
+/* harmony export */   "joinWithArray": () => (/* binding */ joinWithArray)
 /* harmony export */ });
 /*
  *  Copyright (C) 2020 Universität zu Köln
@@ -107,6 +108,26 @@ function pushArray(theArray, arrayToPush) {
   arrayToPush.forEach( (e) => {
     theArray.push(e)
   })
+}
+
+/**
+ *
+ * @param {array} sourceArray
+ * @param {any} separator
+ */
+function joinWithArray(sourceArray, separator) {
+  let newArray = []
+  if (sourceArray.length === 0) {
+    return []
+  }
+
+  for (let i=0; i < sourceArray.length -1; i++) {
+    newArray.push(sourceArray[i])
+    newArray.push(separator)
+  }
+
+  newArray.push(sourceArray[sourceArray.length-1])
+  return newArray
 }
 
 /***/ }),

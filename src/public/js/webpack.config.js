@@ -69,10 +69,10 @@ module.exports = {
       filename: '../../test/js/functional/dist/TestFmtTextRenderer.bundle.js'
     },
 
-    TestQuill: {
-      import: '../test/js/functional/QuillWebPackTestApp.js',
+    TestFreeTextEditor: {
+      import: '../test/js/functional/TestFreeTextEditor.js',
       dependOn: 'QuillPack',
-      filename: '../../test/js/functional/dist/QuillWebPackTestApp.bundle.js'
+      filename: '../../test/js/functional/dist/TestFreeTextEditor.bundle.js'
     }
 
   },

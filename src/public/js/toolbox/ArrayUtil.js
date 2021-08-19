@@ -86,3 +86,23 @@ export function pushArray(theArray, arrayToPush) {
     theArray.push(e)
   })
 }
+
+/**
+ *
+ * @param {array} sourceArray
+ * @param {any} separator
+ */
+export function joinWithArray(sourceArray, separator) {
+  let newArray = []
+  if (sourceArray.length === 0) {
+    return []
+  }
+
+  for (let i=0; i < sourceArray.length -1; i++) {
+    newArray.push(sourceArray[i])
+    newArray.push(separator)
+  }
+
+  newArray.push(sourceArray[sourceArray.length-1])
+  return newArray
+}

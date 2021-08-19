@@ -17,7 +17,6 @@
  */
 
 
-
 /**
  * Takes cares of presenting a dialog to the user and getting an apparatus entry
  */
@@ -26,6 +25,7 @@ import { doNothing } from '../toolbox/FunctionUtil'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { ApparatusCommon } from './ApparatusCommon'
 import { FmtText } from '../FmtText/FmtText'
+import { EntryFreeTextEditor } from './EntryFreeTextEditor'
 
 // TODO: support adding/editing multiple custom entries
 
@@ -76,16 +76,18 @@ export class ApparatusEntryInput {
 
     this.dialog.hideAcceptButton()
 
-    this.textEntry = $('#free-text-entry')
+    this.freeTextEditor = new EntryFreeTextEditor({
+      containerSelector: '#free-text-entry-div',
+      lang: this.options.lang,
+      onChange: () =>  { this._updateAcceptButton() },
+      debug: true
+    })
     this.apparatusSelect = $('#apparatus-select')
     this.apparatusSelect.val(this.options.selectedApparatusIndex)
     this.apparatusSelect.on('change', () => {
       let selectedAppIndex = this.apparatusSelect.val() * 1  // force it to be a number!
       this._showSelectedApparatusInDialog(selectedAppIndex)
-      this.textEntry.val(this.apparatuses[selectedAppIndex].customEntry)
-      this._updateAcceptButton()
-    })
-    this.textEntry.on('keyup', () => {
+      this.freeTextEditor.setText(this.apparatuses[selectedAppIndex].customEntry)
       this._updateAcceptButton()
     })
 
@@ -109,7 +111,7 @@ export class ApparatusEntryInput {
       }
     })
 
-    let textInEditor = this.textEntry.val()
+    let textInEditor = this.freeTextEditor.getText()
     if (textInEditor === this.apparatuses[selectedAppIndex].customEntry && !changeInCheckboxes) {
       this.dialog.hideAcceptButton()
     } else {
@@ -132,8 +134,7 @@ export class ApparatusEntryInput {
         checkboxFormGroup.addClass('hidden')
       }
     })
-    this.textEntry.val(this.apparatuses[appIndex].customEntry)
-
+    this.freeTextEditor.setText(this.apparatuses[appIndex].customEntry)
   }
 
   getEntry() {
@@ -159,7 +160,7 @@ export class ApparatusEntryInput {
         resolve({
           apparatus: this.apparatuses[this.apparatusSelect.val()].name,
           apparatusIndex: apparatusIndex,
-          text:  this.textEntry.val(),
+          text: this.freeTextEditor.getText(),
           isNew: this.apparatuses[this.apparatusSelect.val()].newCustomEntry,
           changesInEnabledEntries: changesInCheckboxes,
           enabledEntriesArray: enabledArray
@@ -197,7 +198,7 @@ ${ApparatusCommon.genSubEntryHtmlContent(this.options.lang, subEntry, this.optio
     <div class="form-group row">
         <label for="free-text-entry" class="col-sm-2 col-form-label">Custom Entry:</label>
         <div class="col-sm-10">
-        <input type="text" class="form-control text-${this.options.lang}" id="free-text-entry">
+            <div id="free-text-entry-div"></div>
         </div>
     </div>
 </form>`

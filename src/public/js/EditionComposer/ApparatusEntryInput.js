@@ -24,10 +24,9 @@ import { ConfirmDialog } from '../pages/common/ConfirmDialog'
 import { doNothing } from '../toolbox/FunctionUtil'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { ApparatusCommon } from './ApparatusCommon'
-import { FmtText } from '../FmtText/FmtText'
-import { EntryFreeTextEditor } from './EntryFreeTextEditor'
 import { EntryFreeTextEditorFull } from './EntryFreeTextEditorFull'
 import { varsAreEqual } from '../toolbox/ArrayUtil'
+import { FmtTextFactory} from '../FmtText/FmtTextFactory'
 
 // TODO: support adding/editing multiple custom entries
 
@@ -55,7 +54,7 @@ export class ApparatusEntryInput {
       newApp.currentEntries = app.currentEntries.filter( (entry) => {
         return entry.type !== 'custom'
       })
-      newApp.customEntry = ''
+      newApp.customEntry = FmtTextFactory.fromString('')
       newApp.newCustomEntry = true
       if (customEntries.length !== 0) {
         newApp.customEntry = customEntries[0].fmtText
@@ -109,14 +108,21 @@ export class ApparatusEntryInput {
 
     this.apparatuses[selectedAppIndex].currentEntries.forEach( (se, sei) => {
       if ($(`#aei-sub-entry-${selectedAppIndex}-${sei}`).prop('checked') !== se.enabled) {
+        console.log(`Change in checkboxes: apparatus ${selectedAppIndex} : entry ${sei}`)
         changeInCheckboxes = true
       }
     })
 
     let textInEditor = this.freeTextEditor.getFmtText()
     if (varsAreEqual(textInEditor,this.apparatuses[selectedAppIndex].customEntry) && !changeInCheckboxes) {
+      console.log(`Hiding accept button`)
       this.dialog.hideAcceptButton()
     } else {
+      console.log(`Showing accept button`)
+      console.log(`Text in editor`)
+      console.log(textInEditor)
+      console.log(`Current custom entry`)
+      console.log(this.apparatuses[selectedAppIndex].customEntry)
       this.dialog.showAcceptButton()
     }
   }

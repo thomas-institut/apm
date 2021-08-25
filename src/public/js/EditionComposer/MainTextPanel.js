@@ -640,8 +640,6 @@ export class MainTextPanel extends PanelWithToolbar {
     return wait(typesetInfoDelay).then( () => {
       this.verbose && console.log(`Updating apparatuses div`)
       this.lastTypesetinfo = getTypesettingInfo(this.containerSelector, 'main-text-token-', this.edition.mainTextSections[0].text)
-      // this.verbose && console.log(`Typesetting info`)
-      // this.verbose && console.log(this.lastTypesetinfo)
       this._drawLineNumbers(this.lastTypesetinfo)
       this.options.apparatusPanels.forEach( (p) => { p.updateApparatus(this.lastTypesetinfo)})
     })

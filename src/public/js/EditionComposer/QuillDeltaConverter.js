@@ -20,9 +20,16 @@ import { FmtTextFactory } from '../FmtText/FmtTextFactory'
 import * as FontWeight from '../FmtText/FontWeight'
 import * as FontStyle from '../FmtText/FontStyle'
 import * as FmtTextTokenType from '../Edition/MainTextTokenType'
+import { varsAreEqual } from '../toolbox/ArrayUtil'
 
 export class QuillDeltaConverter {
   static toFmtText(quillDelta) {
+    console.log(`Converting quill Delta`)
+    console.log(quillDelta.ops)
+    if (varsAreEqual(quillDelta.ops, [ {insert: "\n"}])) {
+      // empty editor
+      return []
+    }
     let opsMap = quillDelta.ops.map ( (ops) => {
       let insertText = ops.insert.replace("\n", ' ')
       // console.log(`Insert text: '${insertText}'`)

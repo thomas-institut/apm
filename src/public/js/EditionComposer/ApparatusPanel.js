@@ -75,7 +75,8 @@ export class ApparatusPanel extends  PanelWithToolbar {
   postRender (id, mode, visible) {
     super.postRender(id, mode, visible)
     this._getEditEntryButtonElement().on('click', this._genOnClickEditEntryButton())
-    this._getClearSelectionButtonElement().on('click', this._genOnClickClearSelectionButton() )
+    // this._getClearSelectionButtonElement().on('click', this._genOnClickClearSelectionButton() )
+    $(this.containerSelector).on('click', this._genOnClickClearSelectionButton())
   }
 
   _genOnClickEditEntryButton() {
@@ -123,9 +124,9 @@ export class ApparatusPanel extends  PanelWithToolbar {
                 <div class="panel-toolbar-item">
                     <a class="edit-entry-btn tb-button hidden" href="#" title="Edit Entry">${editIcon}</a>
                 </div>
-                 <div class="panel-toolbar-item">
+                 <!--<div class="panel-toolbar-item">
                     <a class="clear-selection-btn tb-button hidden" href="#" title="Clear Selection">${clearSelectionIcon}</a>
-                </div>
+                </div>-->
             </div>`
   }
 
@@ -153,6 +154,8 @@ export class ApparatusPanel extends  PanelWithToolbar {
 
   _genOnClickLemma() {
     return (ev) => {
+      ev.preventDefault()
+      ev.stopPropagation()
       this._getLemmaElements().removeClass('lemma-selected')
       let target = $(ev.target)
       target.removeClass('lemma-hover').addClass('lemma-selected')

@@ -30,6 +30,8 @@ import { FmtText } from '../FmtText/FmtText'
 import { TypesetterTokenRenderer } from '../FmtText/Renderer/TypesetterTokenRenderer'
 import { pushArray } from '../toolbox/ArrayUtil'
 import { HtmlRenderer } from '../FmtText/Renderer/HtmlRenderer'
+import { LocationInSection } from '../Edition/LocationInSection'
+import { CtData } from '../CtData/CtData'
 
 // const INPUT_TOKEN_FIELD_TYPE = 'tokenType'
 const INPUT_TOKEN_FIELD_TEXT = 'text'
@@ -362,6 +364,83 @@ export class ApparatusCommon {
       return NumeralStyles.toDecimalArabic(n)
     }
     return NumeralStyles.toDecimalWestern(n)
+  }
+
+  /**
+   *
+   * @param {object}ctData
+   * @param {Edition}edition
+   * @param {number} from
+   * @param {number} to
+   * @param newEntry
+   * @param {string}lemma
+   * @param {array}currentApparatusEntries
+   * @param {boolean}verbose
+   */
+  static updateCtDataWithNewEntry(ctData, edition, from, to, newEntry, lemma, currentApparatusEntries, verbose = false) {
+    verbose && console.log(`Updated apparatus entry `)
+    // this.verbose && console.log(this.selection)
+    verbose && console.log(newEntry)
+
+    let fromToken = edition.getMainTextToken( new LocationInSection([0], from))
+    let toToken = edition.getMainTextToken( new LocationInSection([0], to))
+
+    verbose && console.log(`CT range: ${fromToken.collationTableIndex} - ${toToken.collationTableIndex}`)
+    if (newEntry.isNew) {
+      if (FmtText.getPlainText(newEntry.text) !== '') {
+        ctData = CtData.addCustomApparatusTextSubEntry(ctData,
+          newEntry.apparatus,
+          fromToken.collationTableIndex,
+          toToken.collationTableIndex,
+          lemma,
+          newEntry.text
+        )
+      }
+    } else {
+      if (FmtText.getPlainText(newEntry.text) === '') {
+        console.log(`Deleting current custom entry`)
+        this.ctData = CtData.deleteCustomApparatusTextSubEntries(this.ctData,
+          newEntry.apparatus,
+          fromToken.collationTableIndex,
+          toToken.collationTableIndex
+        )
+      } else {
+        console.log('Updating custom entry....')
+        // just add and delete, perhaps do something more sophisticated later
+        this.ctData = CtData.deleteCustomApparatusTextSubEntries(this.ctData,
+          newEntry.apparatus,
+          fromToken.collationTableIndex,
+          toToken.collationTableIndex
+        )
+        this.ctData = CtData.addCustomApparatusTextSubEntry(this.ctData,
+          newEntry.apparatus,
+          fromToken.collationTableIndex,
+          toToken.collationTableIndex,
+          lemma,
+          newEntry.text
+        )
+      }
+    }
+
+    if (newEntry.changesInEnabledEntries) {
+      console.log(`Changes in enabled entries`)
+      newEntry.enabledEntriesArray.forEach( (enabled, i) => {
+        if (currentApparatusEntries[newEntry.apparatusIndex][i].enabled !== enabled) {
+          console.log(`Apparatus sub entry ${i} enabled change to ${enabled}`)
+          let theHash = currentApparatusEntries[newEntry.apparatusIndex][i].hashString()
+          CtData.changeEnableStatusForSubEntry(this.ctData,
+            newEntry.apparatus,
+            fromToken.collationTableIndex,
+            toToken.collationTableIndex,
+            theHash,
+            enabled,
+            lemma
+          )
+        }
+      })
+    }
+
+    return ctData
   }
 
 }

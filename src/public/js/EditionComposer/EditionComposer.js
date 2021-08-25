@@ -26,7 +26,7 @@ import { EditableTextField } from '../widgets/EditableTextField'
 
 // utilities
 import * as Util from '../toolbox/Util.mjs'
-import { capitalizeFirstLetter, deepCopy, parseWordsAndPunctuation } from '../toolbox/Util.mjs'
+import { capitalizeFirstLetter, parseWordsAndPunctuation } from '../toolbox/Util.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 
 // Normalizations
@@ -194,10 +194,12 @@ export class EditionComposer {
     let apparatusPanels = this.edition.apparatuses
       .map( (apparatus, index) => {
         return new ApparatusPanel({
+          ctData: this.ctData,
           containerSelector: `#apparatus-${index}`,
           edition: this.edition,
           apparatusIndex: index,
           onHighlightMainText: this._genOnHighlightMainText(apparatus.type),
+          onCtDataChange: this.genOnCtDataChange(`ApparatusPanel ${index}`),
           verbose: true
         }
       )})

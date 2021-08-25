@@ -22,6 +22,9 @@ import { ApparatusCommon } from './ApparatusCommon'
 import { PanelWithToolbar } from './PanelWithToolbar'
 import { getIntArrayIdFromClasses } from '../toolbox/UserInterfaceUtil'
 import { doNothing } from '../toolbox/FunctionUtil'
+import { ApparatusEntryInput } from './ApparatusEntryInput'
+import { capitalizeFirstLetter } from '../toolbox/Util.mjs'
+import { CtData } from '../CtData/CtData'
 
 const doubleVerticalLine = String.fromCodePoint(0x2016)
 const verticalLine = String.fromCodePoint(0x007c)
@@ -34,10 +37,12 @@ export class ApparatusPanel extends  PanelWithToolbar {
   constructor (options) {
     super(options)
     let optionsSpec = {
+      ctData: { type: 'object' },
       edition: { type: 'object', objectClass: Edition, required: true},
       apparatusIndex: { type: 'number', required: true},
       entrySeparator: { type: 'string', default: verticalLine},
       apparatusLineSeparator: { type: 'string', default: doubleVerticalLine},
+      onCtDataChange: { type: 'function', default: doNothing},
       onHighlightMainText: {
         // function to be called when main text needs to be highlighted
         // (lemmaIndexArray, on) => { ... return nothing }
@@ -46,19 +51,23 @@ export class ApparatusPanel extends  PanelWithToolbar {
     }
     let oc = new OptionsChecker({optionsDefinition: optionsSpec, context:'Apparatus Panel'})
     this.options = oc.getCleanOptions(options)
+
+    this.ctData = CtData.copyFromObject(this.options.ctData)
     /**
-     * @member {Apparatus}
+     * @member {Edition}
      */
-    this.apparatus = this.options.edition.apparatuses[this.options.apparatusIndex]
-    this.lang = this.options.edition.getLang()
+    this.edition = this.options.edition
+
+    this.apparatus = this.edition.apparatuses[this.options.apparatusIndex]
+    this.lang = this.edition.getLang()
     this.cachedHtml = 'Apparatus coming soon...'
     this.currentSelectedLemma = []
   }
 
   updateEdition(edition) {
-    this.options.edition = edition
-    this.apparatus = this.options.edition.apparatuses[this.options.apparatusIndex]
-    this.lang = this.options.edition.getLang()
+    this.edition = edition
+    this.apparatus = this.edition.apparatuses[this.options.apparatusIndex]
+    this.lang = this.edition.getLang()
     if (this.visible) {
 
     }
@@ -86,7 +95,42 @@ export class ApparatusPanel extends  PanelWithToolbar {
       if (this.currentSelectedLemma.length === 0) {
         return false
       }
-      console.log(`Click on edit entry: ${this.currentSelectedLemma[1]}`)
+      let apparatusIndex = this.currentSelectedLemma[0]
+      let entryIndex = this.currentSelectedLemma[1]
+      console.log(`Click on edit entry:  apparatus ${apparatusIndex}, entry ${entryIndex}`)
+      let from = this.edition.apparatuses[apparatusIndex].entries[entryIndex].from
+      let to = this.edition.apparatuses[apparatusIndex].entries[entryIndex].to
+      let currentApparatusEntries = this.edition.apparatuses.map( (app) => {
+        let index = app.findEntryIndex( [0], from, to)
+        if (index === -1) {
+          return []
+        }
+        return app.entries[index].subEntries
+      })
+      let lemma = $(`span.lemma-${apparatusIndex}-${entryIndex}`).text()
+      let aei = new ApparatusEntryInput({
+        apparatuses: this.edition.apparatuses.map( (app, i) => {
+          return {  name: app.type, title: capitalizeFirstLetter(app.type), currentEntries: currentApparatusEntries[i]}
+        }),
+        lemma: lemma,
+        lang: this.lang,
+        sigla: this.edition.getSigla()
+      })
+      aei.getEntry().then( (newEntry) => {
+        this.verbose && console.log(`Updated apparatus entry `)
+        this.verbose && console.log(newEntry)
+
+        this.ctData = ApparatusCommon.updateCtDataWithNewEntry(this.ctData, this.edition, from, to, newEntry, lemma, currentApparatusEntries, this.verbose)
+
+
+        this.options.onCtDataChange(this.ctData)
+
+      })
+        .catch( (reason) => {
+          this.verbose && console.log(`FAIL: ${reason}`)
+        })
+
+
     }
   }
 
@@ -203,7 +247,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
   _genApparatusHtml(mainTextTokensWithTypesettingInfo) {
     let html = ''
     let lastLine = ''
-    let sigla = this.options.edition.getSigla()
+    let sigla = this.edition.getSigla()
     this.apparatus.entries.forEach( (apparatusEntry, aeIndex) => {
       html += `<span class="apparatus-entry apparatus-entry-${this.options.apparatusIndex}-${aeIndex}">`
       let currentLine = this._getLineNumberString(apparatusEntry, mainTextTokensWithTypesettingInfo)

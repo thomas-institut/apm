@@ -42,6 +42,7 @@ export class FmtTextFactory {
    * @returns { FmtTextToken[] }
    */
   static fromString(theString) {
+
     let fmtText = []
     let currentWord = ''
 
@@ -59,7 +60,6 @@ export class FmtTextFactory {
     if (currentWord !== '') {
       fmtText.push(FmtTextTokenFactory.normalText(currentWord))
     }
-
     return fmtText
   }
 
@@ -69,15 +69,16 @@ export class FmtTextFactory {
    * @returns {FmtTextToken[]}
    */
   static fromAnything(theThing) {
-    if (theThing instanceof FmtTextToken) {
-      return [ theThing ]
-    }
+
     if (Array.isArray(theThing)) {
       let fmtText = []
       theThing.forEach( (arrayElement) => {
         fmtText = fmtText.concat( this.fromAnything(arrayElement))
       })
       return fmtText
+    }
+    if (typeof theThing === 'object') {
+      return [FmtTextTokenFactory.buildFromObject(theThing)]
     }
     if (typeof theThing === 'string') {
       return this.fromString(theThing)

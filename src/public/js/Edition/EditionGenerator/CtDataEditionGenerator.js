@@ -30,6 +30,8 @@ import { FmtTextFactory } from '../../FmtText/FmtTextFactory'
 import * as ApparatusType from '../ApparatusType'
 import * as SubEntryType from '../SubEntryType'
 import * as SubEntrySource from '../SubEntrySource'
+import { FmtText } from '../../FmtText/FmtText'
+import { pushArray } from '../../toolbox/ArrayUtil'
 
 export class CtDataEditionGenerator extends EditionGenerator{
   constructor (options) {
@@ -100,12 +102,16 @@ export class CtDataEditionGenerator extends EditionGenerator{
     }
     let customApparatusCriticus = filteredCustomApparatusArray[0]
 
-    // console.log(`Merging custom apparatus criticus entries`)
+    console.log(`Merging custom apparatus criticus entries`)
     customApparatusCriticus.entries.forEach( (customEntry) => {
+      console.log(`Custom Entry`)
+      console.log(customEntry)
       let mainTextFrom = ctIndexToMainTextMap[customEntry.from].textIndex
       let mainTextTo = ctIndexToMainTextMap[customEntry.to].textIndex
       let currentEntryIndex = generatedApparatusCriticus.findEntryIndex( [0], mainTextFrom, mainTextTo)
       let realCustomSubEntries = customEntry['subEntries'].filter ( (e) => { return e.type !== SubEntryType.DISABLE})
+      console.log(`There are ${realCustomSubEntries.length} custom sub entries`)
+      console.log(realCustomSubEntries)
       let customDisableEntriesArray = customEntry['subEntries'].filter ( (e) => { return e.type === SubEntryType.DISABLE})
       if (customDisableEntriesArray.length !== 0) {
         this.verbose && console.log(`There are disabled entries: ${mainTextFrom} -> ${mainTextTo}`)
@@ -126,8 +132,11 @@ export class CtDataEditionGenerator extends EditionGenerator{
       } else {
         console.log(`Found entry for index ${currentEntryIndex}`)
         if (realCustomSubEntries.length !== 0) {
-          generatedApparatusCriticus.entries[currentEntryIndex].subEntries =
-            generatedApparatusCriticus.entries[currentEntryIndex].subEntries.concat(this._buildSubEntryArrayFromCustomSubEntries(realCustomSubEntries))
+          let subEntryArray = this._buildSubEntryArrayFromCustomSubEntries(realCustomSubEntries)
+          console.log(subEntryArray)
+          pushArray(generatedApparatusCriticus.entries[currentEntryIndex].subEntries, subEntryArray)
+          // generatedApparatusCriticus.entries[currentEntryIndex].subEntries =
+          //   generatedApparatusCriticus.entries[currentEntryIndex].subEntries.concat(this._buildSubEntryArrayFromCustomSubEntries(realCustomSubEntries))
         }
         generatedApparatusCriticus.entries[currentEntryIndex].subEntries = this._applyDisableEntriesArrayToSubEntries(
           generatedApparatusCriticus.entries[currentEntryIndex].subEntries,
@@ -141,7 +150,9 @@ export class CtDataEditionGenerator extends EditionGenerator{
   }
 
   _applyDisableEntriesArrayToSubEntries(subEntries, disableEntriesArray) {
-    return subEntries.map ( (subEntry) => {
+    return subEntries.map ( (subEntry, i) => {
+      console.log(`Applying sub entry ${i}`)
+      console.log(subEntry)
       let subEntryHash = subEntry.hashString()
       let isDisabled = false
       disableEntriesArray.forEach( (da) => {
@@ -156,11 +167,16 @@ export class CtDataEditionGenerator extends EditionGenerator{
   }
 
   _buildSubEntryArrayFromCustomSubEntries(customSubEntries) {
+    console.log(`The custom sub entries`)
+    console.log(customSubEntries)
     return customSubEntries.map ( (subEntry) => {
+      console.log(`The sub entry`)
+      console.log(subEntry)
       let theSubEntry = new ApparatusSubEntry()
       theSubEntry.type = subEntry['type']
-      // TODO: use fmtText field
-      theSubEntry.fmtText = FmtTextFactory.fromAnything(subEntry['plainText'])
+      theSubEntry.fmtText = subEntry['fmtText']
+      console.log(`Assigned fmtText`)
+      console.log(theSubEntry.fmtText)
       theSubEntry.source = SubEntrySource.USER
       // TODO: support other sub entry types
       return theSubEntry

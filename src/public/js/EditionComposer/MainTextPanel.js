@@ -39,6 +39,7 @@ import { prettyPrintArray } from '../toolbox/ArrayUtil'
 import { capitalizeFirstLetter, deepCopy, removeExtraWhiteSpace } from '../toolbox/Util.mjs'
 import { LocationInSection } from '../Edition/LocationInSection'
 import { CtData } from '../CtData/CtData'
+import { FmtText } from '../FmtText/FmtText'
 
 const EDIT_MODE_OFF = 'off'
 const EDIT_MODE_TEXT = 'text'
@@ -72,7 +73,7 @@ export class MainTextPanel extends PanelWithToolbar {
 
     let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  'Edition Panel'})
     this.options = oc.getCleanOptions(options)
-    this.ctData = deepCopy(this.options.ctData)
+    this.ctData = CtData.copyFromObject(this.options.ctData)
     this.edition = this.options.edition
     this.lang = this.options.ctData['lang']
     this.mainTextNeedsToBeRedrawnOnNextOnShownEvent = true
@@ -95,7 +96,7 @@ export class MainTextPanel extends PanelWithToolbar {
    * @param {Edition} edition
    */
   updateData(ctData, edition) {
-    this.ctData = deepCopy(ctData)
+    this.ctData = CtData.copyFromObject(ctData)
     this.edition = edition
 
     this.options.apparatusPanels.forEach( (ap) => {
@@ -294,7 +295,7 @@ export class MainTextPanel extends PanelWithToolbar {
 
         this.verbose && console.log(`CT range: ${fromToken.collationTableIndex} - ${toToken.collationTableIndex}`)
         if (newEntry.isNew) {
-          if (newEntry.text !== '') {
+          if (FmtText.getPlainText(newEntry.text) !== '') {
             this.ctData = CtData.addCustomApparatusTextSubEntry(this.ctData,
               newEntry.apparatus,
               fromToken.collationTableIndex,
@@ -304,7 +305,7 @@ export class MainTextPanel extends PanelWithToolbar {
             )
           }
         } else {
-          if (newEntry.text === '') {
+          if (FmtText.getPlainText(newEntry.text) === '') {
             console.log(`Deleting current custom entry`)
             this.ctData = CtData.deleteCustomApparatusTextSubEntries(this.ctData,
               newEntry.apparatus,
@@ -349,9 +350,10 @@ export class MainTextPanel extends PanelWithToolbar {
 
         this.options.onCtDataChange(this.ctData)
 
-      }).catch( (reason) => {
-        this.verbose && console.log(`FAIL: ${reason}`)
       })
+      //   .catch( (reason) => {
+      //   this.verbose && console.log(`FAIL: ${reason}`)
+      // })
     }
   }
 

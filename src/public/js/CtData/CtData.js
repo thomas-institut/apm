@@ -56,6 +56,26 @@ import * as WitnessType from '../constants/TranscriptionTokenClass'
 
 export class CtData  {
 
+  static copyFromObject(ctDataObject) {
+    // console.log(`Copying ctData`)
+    let ctData = deepCopy(ctDataObject)
+
+    // fix FmtText
+    for (let i = 0; i < ctData['customApparatuses'].length; i++) {
+      //console.log(`Custom apparatus ${i}`)
+      for (let entryN = 0; entryN < ctData['customApparatuses'][i]['entries'].length; entryN++) {
+        //console.log(`Entry ${entryN}`)
+        for (let subEntryN = 0; subEntryN < ctData['customApparatuses'][i]['entries'][entryN]['subEntries'].length ; subEntryN++) {
+          //console.log(`Sub entry ${subEntryN}`)
+          ctData['customApparatuses'][i]['entries'][entryN]['subEntries'][subEntryN].fmtText =
+             FmtTextFactory.fromAnything(ctData['customApparatuses'][i]['entries'][entryN]['subEntries'][subEntryN].fmtText)
+        }
+      }
+    }
+
+    return ctData
+  }
+
   /**
    * Returns an array with the given witness tokens as they are laid out
    * in the collation table, replacing empty references with empty tokens
@@ -148,7 +168,7 @@ export class CtData  {
     let newSubEntry = new ApparatusSubEntry()
     newSubEntry.type = SubEntryType.CUSTOM
     newSubEntry.fmtText = FmtTextFactory.fromAnything(text)
-    newSubEntry.plainText = text
+    newSubEntry.plainText = FmtText.getPlainText(newSubEntry.fmtText)
     if (currentEntryIndex === -1) {
       let newEntry = new ApparatusEntry()
       newEntry.from = ctFrom

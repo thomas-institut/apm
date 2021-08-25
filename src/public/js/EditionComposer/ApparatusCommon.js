@@ -29,6 +29,7 @@ import { FmtTextFactory } from '../FmtText/FmtTextFactory'
 import { FmtText } from '../FmtText/FmtText'
 import { TypesetterTokenRenderer } from '../FmtText/Renderer/TypesetterTokenRenderer'
 import { pushArray } from '../toolbox/ArrayUtil'
+import { HtmlRenderer } from '../FmtText/Renderer/HtmlRenderer'
 
 // const INPUT_TOKEN_FIELD_TYPE = 'tokenType'
 const INPUT_TOKEN_FIELD_TEXT = 'text'
@@ -126,7 +127,7 @@ export class ApparatusCommon {
 
   static genSubEntryHtmlContentHebrew(subEntry, sigla) {
     let entryType = subEntry.type
-    let theText = FmtText.getPlainText(subEntry.fmtText)
+    let theText = (new HtmlRenderer({plainMode: true})).render(subEntry.fmtText)
     let siglaString = this._genSiglaHtmlFromWitnessData(subEntry, sigla)
     switch(entryType) {
       case ApparatusSubEntryType.VARIANT:
@@ -191,7 +192,7 @@ export class ApparatusCommon {
 
   static genSubEntryHtmlContentArabic(subEntry, sigla) {
     let entryType = subEntry.type
-    let theText = FmtText.getPlainText(subEntry.fmtText)
+    let theText = (new HtmlRenderer({plainMode: true})).render(subEntry.fmtText)
     let siglaString = this._genSiglaHtmlFromWitnessData(subEntry, sigla,  'ar')
     switch(entryType) {
       case ApparatusSubEntryType.VARIANT:
@@ -258,13 +259,9 @@ export class ApparatusCommon {
 
   static genSubEntryHtmlContentLatin(subEntry, sigla) {
     let entryType = subEntry.type
-    let theText = ''
-    try {
-      theText = FmtText.getPlainText(subEntry.fmtText)
-    } catch(e) {
-      console.log(`Problem : ${e}`)
-      console.log(subEntry)
-    }
+
+
+    let theText = (new HtmlRenderer({plainMode: true})).render(subEntry.fmtText)
 
     let siglaString = this._genSiglaHtmlFromWitnessData(subEntry, sigla)
     switch(entryType) {

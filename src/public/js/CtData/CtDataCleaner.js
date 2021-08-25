@@ -21,6 +21,7 @@ import * as TranscriptionTokenType from '../constants/WitnessTokenType'
 import { Matrix } from '@thomas-inst/matrix'
 import * as TokenClass from '../constants/CollationTableType'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
+import { CtData } from './CtData'
 
 
 
@@ -36,7 +37,7 @@ export class CtDataCleaner {
 
 
   getCleanCollationData(ctData) {
-    this.ctData = ctData
+    this.ctData = CtData.copyFromObject(ctData)
     // use default ordering if ctData does not have one
     if (this.ctData['witnessOrder'] === undefined) {
       this.options.verbose && console.log('Providing default witnessOrder')

@@ -24,7 +24,8 @@ module.exports = {
     },
     EditionComposer: {
       import: './EditionComposer/EditionComposer.js',
-      filename: 'EditionComposer.bundle.js'
+      filename: 'EditionComposer.bundle.js',
+      dependOn: 'QuillPack',
     },
     AutomaticCollationTable: {
       import: './pages/AutomaticCollationTable/AutomaticCollationTable.js',

@@ -26,4 +26,11 @@ export class FmtText {
   static getPlainText(fmtText) {
     return fmtText.map( (token) => { return token.getPlainText()}).join('')
   }
+
+  static check(fmtText) {
+    console.log(`Checking fmtText`)
+    fmtText.forEach( (token, i) => {
+      console.log(`Token ${i} is ${token.constructor.name}`)
+    })
+  }
 }

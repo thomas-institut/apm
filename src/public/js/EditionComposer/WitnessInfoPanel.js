@@ -35,6 +35,7 @@ import { transientAlert } from '../widgets/TransientAlert'
 import * as WitnessType from '../constants/WitnessType'
 import { WitnessUpdateDialog } from './WitnessUpdateDialog'
 import { WitnessDiffCalculator } from '../Edition/WitnessDiffCalculator'
+import { CtData } from '../CtData/CtData'
 
 const icons = {
   moveUp: '&uarr;',
@@ -92,7 +93,7 @@ export class WitnessInfoPanel extends Panel{
 
     let oc = new OptionsChecker({optionsDefinition: optionsSpec, context:  'Witness Info Panel'})
     this.options = oc.getCleanOptions(options)
-    this.ctData = Util.deepCopy(this.options.ctData)
+    this.ctData = CtData.copyFromObject(this.options.ctData)
     this.currentWitnessUpdateData = ''
     this.checkingForWitnessUpdates = false
     this.siglaPresets = []
@@ -100,7 +101,7 @@ export class WitnessInfoPanel extends Panel{
   }
 
   updateCtData(newData, reRender = false) {
-    this.ctData = Util.deepCopy(newData)
+    this.ctData = CtData.copyFromObject(newData)
     if (reRender) {
       this.reRender()
     }

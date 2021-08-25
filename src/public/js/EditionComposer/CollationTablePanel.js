@@ -56,7 +56,7 @@ export class CollationTablePanel extends PanelWithToolbar {
 
     let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  'Collation Table Panel'})
     this.options = oc.getCleanOptions(options)
-    this.ctData = deepCopy(this.options.ctData)
+    this.ctData = CtData.copyFromObject(this.options.ctData)
     this.panelIsSetup = false
     this.normalizerRegister = this.options.normalizerRegister
     this.availableNormalizers = this.normalizerRegister.getRegisteredNormalizers()

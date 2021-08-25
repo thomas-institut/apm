@@ -260,3 +260,33 @@ h1.lemma {
 .sub-entry-source-user {
     color: #1875b1;
 }
+
+/* Custom Entry Editor */
+
+.fte-toolbar {
+    padding: 3px;
+    background: lightgray;
+}
+
+.ql-editor {
+    font-family: serif;
+    font-size: 1rem;
+}
+
+.fte-toolbar button {
+    background: none;
+    border: 1px solid lightgray;
+    padding-left: 3px;
+    padding-right: 3px;
+}
+
+.fte-toolbar button.on {
+    background: #cccfd3;
+    border: 1px solid gray;
+}
+
+
+
+.fte-editor {
+    border: 1px solid silver;
+}

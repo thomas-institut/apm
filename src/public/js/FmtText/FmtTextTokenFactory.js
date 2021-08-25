@@ -33,4 +33,70 @@ export class FmtTextTokenFactory {
   static normalSpace() {
     return new FmtTextToken(FmtTextTokenType.GLUE)
   }
+
+  /**
+   *
+   * @param {FmtTextToken} texToken
+   */
+  static clone(texToken) {
+    let newText = new FmtTextToken()
+    newText.type = texToken.type
+    switch(newText.type) {
+      case FmtTextTokenType.TEXT:
+        newText.text = texToken.text
+        newText.fontStyle = texToken.fontStyle
+        newText.fontWeight = texToken.fontWeight
+        newText.verticalAlign = texToken.verticalAlign
+        break
+
+      case FmtTextTokenType.GLUE:
+        newText.space = texToken.space // i.e., default size, whatever that means for the typesetter/presenter context
+        break
+
+      default:
+        console.warn(`Unsupported type in FormattedTextToken constructor: ${type}`)
+        newText.type = FmtTextTokenType.EMPTY
+    }
+    return newText
+  }
+
+  /**
+   *
+   * @param {Object} someObject
+   */
+  static buildFromObject(someObject) {
+    // console.log(`Building from object`)
+    // console.log(someObject)
+    if (someObject instanceof FmtTextToken) {
+      return this.clone(someObject)
+    }
+    if (someObject.type === undefined) {
+      throw new Error('No type in object')
+    }
+    switch(someObject.type) {
+      case FmtTextTokenType.TEXT:
+        let newToken = new FmtTextToken(FmtTextTokenType.TEXT)
+        if (someObject.text === undefined) {
+          throw new Error('No text in object')
+        }
+        newToken.setText(someObject.text)
+        let keysToCopy = ['verticalAlign', 'fontWeight', 'fontStyle']
+        keysToCopy.forEach( (key) => {
+          if (someObject[key] !== undefined) {
+            newToken[key] = someObject[key]
+          }
+        })
+        return newToken
+
+      case FmtTextTokenType.GLUE:
+        let glueToken = this.normalSpace()
+        if (someObject.space !== undefined) {
+          glueToken.space = someObject.space
+        }
+        return glueToken
+
+      default:
+        throw new Error(`Invalid type '${someObject.type}' in object`)
+    }
+  }
 }

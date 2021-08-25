@@ -20,6 +20,7 @@ import {OptionsChecker} from '@thomas-inst/optionschecker'
 import * as Util from '../toolbox/Util.mjs'
 import { failPromise } from '../toolbox/FunctionUtil'
 import { WitnessDiffCalculator } from '../Edition/WitnessDiffCalculator'
+import { CtData } from '../CtData/CtData'
 
 export class WitnessUpdateDialog {
 
@@ -50,7 +51,7 @@ export class WitnessUpdateDialog {
 
     let oc = new OptionsChecker({optionsDefinition: optionsSpec, context:  'Witness Update Dialog'})
     this.options = oc.getCleanOptions(options)
-    this.ctData = Util.deepCopy(this.options.ctData)
+    this.ctData = CtData.copyFromObject(this.options.ctData)
     this.icons = this.options.icons
 
   }

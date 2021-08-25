@@ -26,6 +26,8 @@ import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { ApparatusCommon } from './ApparatusCommon'
 import { FmtText } from '../FmtText/FmtText'
 import { EntryFreeTextEditor } from './EntryFreeTextEditor'
+import { EntryFreeTextEditorFull } from './EntryFreeTextEditorFull'
+import { varsAreEqual } from '../toolbox/ArrayUtil'
 
 // TODO: support adding/editing multiple custom entries
 
@@ -56,7 +58,7 @@ export class ApparatusEntryInput {
       newApp.customEntry = ''
       newApp.newCustomEntry = true
       if (customEntries.length !== 0) {
-        newApp.customEntry = FmtText.getPlainText(customEntries[0].fmtText)
+        newApp.customEntry = customEntries[0].fmtText
         newApp.newCustomEntry = false
       }
       return newApp
@@ -76,7 +78,7 @@ export class ApparatusEntryInput {
 
     this.dialog.hideAcceptButton()
 
-    this.freeTextEditor = new EntryFreeTextEditor({
+    this.freeTextEditor = new EntryFreeTextEditorFull({
       containerSelector: '#free-text-entry-div',
       lang: this.options.lang,
       onChange: () =>  { this._updateAcceptButton() },
@@ -111,8 +113,8 @@ export class ApparatusEntryInput {
       }
     })
 
-    let textInEditor = this.freeTextEditor.getText()
-    if (textInEditor === this.apparatuses[selectedAppIndex].customEntry && !changeInCheckboxes) {
+    let textInEditor = this.freeTextEditor.getFmtText()
+    if (varsAreEqual(textInEditor,this.apparatuses[selectedAppIndex].customEntry) && !changeInCheckboxes) {
       this.dialog.hideAcceptButton()
     } else {
       this.dialog.showAcceptButton()
@@ -160,7 +162,7 @@ export class ApparatusEntryInput {
         resolve({
           apparatus: this.apparatuses[this.apparatusSelect.val()].name,
           apparatusIndex: apparatusIndex,
-          text: this.freeTextEditor.getText(),
+          text: this.freeTextEditor.getFmtText(),
           isNew: this.apparatuses[this.apparatusSelect.val()].newCustomEntry,
           changesInEnabledEntries: changesInCheckboxes,
           enabledEntriesArray: enabledArray

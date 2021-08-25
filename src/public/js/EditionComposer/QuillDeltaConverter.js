@@ -25,7 +25,7 @@ export class QuillDeltaConverter {
   static toFmtText(quillDelta) {
     let opsMap = quillDelta.ops.map ( (ops) => {
       let insertText = ops.insert.replace("\n", ' ')
-      console.log(`Insert text: '${insertText}'`)
+      // console.log(`Insert text: '${insertText}'`)
       let theFmtText = FmtTextFactory.fromString(insertText)
       if (ops.attributes !== undefined) {
         for (let i = 0; i < theFmtText.length; i++) {
@@ -44,13 +44,13 @@ export class QuillDeltaConverter {
     })
     let fmtText = []
     opsMap.forEach( (opsFmtText, i) => {
-      console.log(`Processing opsMap element ${i}`)
+      // console.log(`Processing opsMap element ${i}`)
       opsFmtText.forEach( (token, j) => {
-        console.log(`Processing fmtText element ${j}`)
+        // console.log(`Processing fmtText element ${j}`)
         fmtText.push(token)
       })
     })
-    console.log(fmtText)
+    // console.log(fmtText)
     return fmtText
   }
 }

@@ -817,8 +817,8 @@ export class EditionComposer {
    */
   genOnCtDataChange(source) {
     return (newCtData) => {
-      this.ctData = deepCopy(newCtData)
       console.log(`New CT Data received from ${source}`)
+      this.ctData = CtData.copyFromObject(newCtData)
       console.log(this.ctData)
       this._reGenerateEdition()
       // even if the new data source is mainTextPanel, need to tell the panel that there's a new edition

@@ -5,3 +5,14 @@ window.ArrayUtil = ArrayUtil
 import * as FunctionUtil from '../../js/toolbox/FunctionUtil'
 window.FunctionUtil = FunctionUtil
 
+import { FmtTextTokenFactory } from '../../js/FmtText/FmtTextTokenFactory'
+window.FmtTextTokenFactory = FmtTextTokenFactory
+
+import { FmtTextToken } from '../../js/FmtText/FmtTextToken'
+window.FmtTextToken = FmtTextToken
+
+import * as FmtTextTokenType from '../../js/FmtText/FmtTextTokenType'
+window.FmtTextTokenType = FmtTextTokenType
+
+import {FmtTextFactory} from '../../js/FmtText/FmtTextFactory'
+window.FmtTextFactory = FmtTextFactory

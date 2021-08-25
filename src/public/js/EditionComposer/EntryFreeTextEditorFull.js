@@ -22,6 +22,7 @@ import { doNothing } from '../toolbox/FunctionUtil'
 import Quill from '../QuillLoader'
 import { QuillDeltaRenderer } from '../FmtText/Renderer/QuillDeltaRenderer'
 import { QuillDeltaConverter } from './QuillDeltaConverter'
+import { FmtTextFactory } from '../FmtText/FmtTextFactory'
 
 const simpleFormats = [ 'bold', 'italic']
 const icons = { bold: '<strong>B</strong>', italic: '<em>I</em>'}
@@ -101,10 +102,10 @@ export class EntryFreeTextEditorFull {
 
   /**
    *
-   * @param {FmtTextToken[]} newText
+   * @param {string|FmtTextToken[]} newText
    */
   setText(newText) {
-    let newDelta = this.quillDeltaRenderer.render(newText)
+    let newDelta = this.quillDeltaRenderer.render(FmtTextFactory.fromAnything(newText))
     this.debug && console.log(`Setting text with new delta`)
     this.debug && console.log(newDelta)
     this.quillEditor.setContents(newDelta)
@@ -115,7 +116,8 @@ export class EntryFreeTextEditorFull {
   }
 
   _genOnClickFormat(format, quill, buttonSelector) {
-    return () => {
+    return (ev) => {
+      ev.preventDefault()
       let currentFormat = quill.getFormat()
       console.log(currentFormat)
       let currentState = currentFormat[format]

@@ -112,6 +112,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
         apparatuses: this.edition.apparatuses.map( (app, i) => {
           return {  name: app.type, title: capitalizeFirstLetter(app.type), currentEntries: currentApparatusEntries[i]}
         }),
+        selectedApparatusIndex: apparatusIndex,
         lemma: lemma,
         lang: this.lang,
         sigla: this.edition.getSigla()
@@ -126,9 +127,9 @@ export class ApparatusPanel extends  PanelWithToolbar {
         this.options.onCtDataChange(this.ctData)
 
       })
-        .catch( (reason) => {
-          this.verbose && console.log(`FAIL: ${reason}`)
-        })
+        // .catch( (reason) => {
+        //   this.verbose && console.log(`FAIL: ${reason}`)
+        // })
 
 
     }

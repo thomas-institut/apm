@@ -40,7 +40,7 @@ export class ApparatusEntryInput {
       apparatuses: { type: 'array', required: true},
       lang: { type: 'string', required: true},
       lemma: { type: 'NonEmptyString', required: true},
-      selectedApparatusIndex: { type: 'integer', default: 0},
+      selectedApparatusIndex: { type: 'number', default: 0},
       sigla: { type: 'array', required: true}
     }
 
@@ -186,7 +186,7 @@ export class ApparatusEntryInput {
         <label for="apparatus-select" class="col-sm-2 col-form-label">Apparatus:</label>
        <div class="col-sm-10">
         <select class="form-control" id="apparatus-select">
-            ${this.apparatuses.map( (a, ai) => { return `<option value="${ai}">${a.title}</option>`}).join('')}
+            ${this.apparatuses.map( (a, ai) => { return `<option value="${ai}" ${this.options.selectedApparatusIndex===ai ? 'selected': ''}>${a.title}</option>`}).join('')}
         </select>
         </div>
     </div>

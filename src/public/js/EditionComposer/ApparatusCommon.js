@@ -399,7 +399,7 @@ export class ApparatusCommon {
     } else {
       if (FmtText.getPlainText(newEntry.text) === '') {
         console.log(`Deleting current custom entry`)
-        this.ctData = CtData.deleteCustomApparatusTextSubEntries(this.ctData,
+        ctData = CtData.deleteCustomApparatusTextSubEntries(ctData,
           newEntry.apparatus,
           fromToken.collationTableIndex,
           toToken.collationTableIndex
@@ -407,12 +407,12 @@ export class ApparatusCommon {
       } else {
         console.log('Updating custom entry....')
         // just add and delete, perhaps do something more sophisticated later
-        this.ctData = CtData.deleteCustomApparatusTextSubEntries(this.ctData,
+        ctData = CtData.deleteCustomApparatusTextSubEntries(ctData,
           newEntry.apparatus,
           fromToken.collationTableIndex,
           toToken.collationTableIndex
         )
-        this.ctData = CtData.addCustomApparatusTextSubEntry(this.ctData,
+        ctData = CtData.addCustomApparatusTextSubEntry(ctData,
           newEntry.apparatus,
           fromToken.collationTableIndex,
           toToken.collationTableIndex,
@@ -428,7 +428,7 @@ export class ApparatusCommon {
         if (currentApparatusEntries[newEntry.apparatusIndex][i].enabled !== enabled) {
           console.log(`Apparatus sub entry ${i} enabled change to ${enabled}`)
           let theHash = currentApparatusEntries[newEntry.apparatusIndex][i].hashString()
-          CtData.changeEnableStatusForSubEntry(this.ctData,
+          CtData.changeEnableStatusForSubEntry(ctData,
             newEntry.apparatus,
             fromToken.collationTableIndex,
             toToken.collationTableIndex,

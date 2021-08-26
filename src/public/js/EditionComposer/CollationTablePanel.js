@@ -39,7 +39,6 @@ import * as CollationTableType from '../constants/CollationTableType'
 import * as CollationTableUtil from '../pages/common/CollationTableUtil'
 import * as PopoverFormatter from '../pages/common/CollationTablePopovers'
 import { FULL_TX } from '../constants/TranscriptionTokenClass'
-import { deepCopy } from '../toolbox/Util.mjs'
 import { CtData } from '../CtData/CtData'
 
 export class CollationTablePanel extends PanelWithToolbar {
@@ -57,6 +56,7 @@ export class CollationTablePanel extends PanelWithToolbar {
     let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  'Collation Table Panel'})
     this.options = oc.getCleanOptions(options)
     this.ctData = CtData.copyFromObject(this.options.ctData)
+    this.tableEditModeToRestore = editModeOff
     this.panelIsSetup = false
     this.normalizerRegister = this.options.normalizerRegister
     this.availableNormalizers = this.normalizerRegister.getRegisteredNormalizers()
@@ -87,10 +87,12 @@ export class CollationTablePanel extends PanelWithToolbar {
    */
   updateCtData(ctData, source) {
     this.verbose && console.log(`Got news of changes in CT data from ${source}`)
-    this.ctData = deepCopy(ctData)
+    this.ctData = CtData.copyFromObject(ctData)
     this.panelIsSetup = false
     this.resetTokenDataCache()
     this.aggregatedNonTokenItemIndexes = this.calculateAggregatedNonTokenItemIndexes()
+    this.tableEditModeToRestore = this.tableEditor.getTableEditMode()
+    this.verbose && console.log(`Current TableEditor edit mode: ${this.tableEditModeToRestore}`)
     if (this.visible) {
       this._setupPanelContent()
       this.panelIsSetup = true
@@ -471,6 +473,8 @@ export class CollationTablePanel extends PanelWithToolbar {
     this.replaceContent(`Loading collation table...`)
     this._popoversSetup()
     this.setupTableEditor()
+    this.verbose && console.log(`Setting tableEditor edit mode '${this.tableEditModeToRestore}'`)
+    this.tableEditor.setEditMode(this.tableEditModeToRestore, false)
   }
 
 
@@ -1030,7 +1034,7 @@ export class CollationTablePanel extends PanelWithToolbar {
   getPostNotes(witnessIndex, col, tokenIndex) {
     // this.verbose && console.log(`Getting post notes for witness ${witnessIndex}, col ${col}, token index ${tokenIndex}`)
     if (this.aggregatedNonTokenItemIndexes[witnessIndex] === undefined) {
-      console.warn(`Found undefined row in this.aggregatedNonTokemItemIndexes, row = ${witnessIndex}`)
+      console.warn(`Found undefined row in this.aggregatedNonTokenItemIndexes, row = ${witnessIndex}`)
       return []
     }
 

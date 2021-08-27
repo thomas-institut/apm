@@ -36,21 +36,22 @@ export class FmtTextTokenFactory {
 
   /**
    *
-   * @param {FmtTextToken} texToken
+   * @param textToken
    */
-  static clone(texToken) {
+  static clone(textToken) {
     let newText = new FmtTextToken()
-    newText.type = texToken.type
+    newText.type = textToken.type
     switch(newText.type) {
       case FmtTextTokenType.TEXT:
-        newText.text = texToken.text
-        newText.fontStyle = texToken.fontStyle
-        newText.fontWeight = texToken.fontWeight
-        newText.verticalAlign = texToken.verticalAlign
+        newText.text = textToken.text
+        newText.fontStyle = textToken.fontStyle
+        newText.fontWeight = textToken.fontWeight
+        newText.verticalAlign = textToken.verticalAlign
+        newText.fontSize = textToken.fontSize
         break
 
       case FmtTextTokenType.GLUE:
-        newText.space = texToken.space // i.e., default size, whatever that means for the typesetter/presenter context
+        newText.space = textToken.space // i.e., default size, whatever that means for the typesetter/presenter context
         break
 
       default:
@@ -80,7 +81,7 @@ export class FmtTextTokenFactory {
           throw new Error('No text in object')
         }
         newToken.setText(someObject.text)
-        let keysToCopy = ['verticalAlign', 'fontWeight', 'fontStyle']
+        let keysToCopy = ['verticalAlign', 'fontWeight', 'fontStyle', 'fontSize']
         keysToCopy.forEach( (key) => {
           if (someObject[key] !== undefined) {
             newToken[key] = someObject[key]

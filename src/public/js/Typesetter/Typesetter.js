@@ -238,9 +238,8 @@ export class Typesetter {
         fontDefString += token.fontWeight + ' '
       }
       let fontSize = defaultFontSize
-      if (token.fontSize) {
+      if (token.fontSize !== undefined && token.fontSize !== 1) {
         // font size is a factor of the default fontSize
-        // TODO: process numbers and 'em'  differently in fontSize
         fontSize = token.fontSize * defaultFontSize
       }
       fontDefString += fontSize + 'px ' + this.options.defaultFontFamily
@@ -380,8 +379,6 @@ export class Typesetter {
         svgString += 'font-size="' + fontSize + '" '
       }
     }
-
-
 
     if (fontStyle) {
       svgString += 'font-style="' + fontStyle +'" '

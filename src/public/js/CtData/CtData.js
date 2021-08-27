@@ -59,7 +59,11 @@ export class CtData  {
   static copyFromObject(ctDataObject) {
     // console.log(`Copying ctData`)
     let ctData = deepCopy(ctDataObject)
+    ctData = this.fixFmtText(ctData)
+    return ctData
+  }
 
+  static fixFmtText(ctData) {
     // fix FmtText
     for (let i = 0; i < ctData['customApparatuses'].length; i++) {
       //console.log(`Custom apparatus ${i}`)
@@ -68,7 +72,7 @@ export class CtData  {
         for (let subEntryN = 0; subEntryN < ctData['customApparatuses'][i]['entries'][entryN]['subEntries'].length ; subEntryN++) {
           //console.log(`Sub entry ${subEntryN}`)
           ctData['customApparatuses'][i]['entries'][entryN]['subEntries'][subEntryN].fmtText =
-             FmtTextFactory.fromAnything(ctData['customApparatuses'][i]['entries'][entryN]['subEntries'][subEntryN].fmtText)
+            FmtTextFactory.fromAnything(ctData['customApparatuses'][i]['entries'][entryN]['subEntries'][subEntryN].fmtText)
         }
       }
     }

@@ -20,6 +20,7 @@ import {OptionsChecker} from '@thomas-inst/optionschecker'
 import * as FmtTextTokenType from '../FmtTextTokenType'
 import * as FontStyle from '../FontStyle'
 import * as FontWeight from '../FontWeight'
+import * as FontSize from '../FontSize'
 import * as VerticalAlign from '../VerticalAlign'
 import { FmtTextRenderer } from './FmtTextRenderer'
 
@@ -86,6 +87,9 @@ export class HtmlRenderer extends FmtTextRenderer{
           }
           if (t.verticalAlign === VerticalAlign.SUBSCRIPT) {
             textWrappers.push('sub')
+          }
+          if (t.fontSize === FontSize.SMALL) {
+            textWrappers.push('small')
           }
           let startWrappers = ''
           for (let j = 0; j < textWrappers.length; j++) {

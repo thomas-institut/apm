@@ -287,73 +287,12 @@ export class MainTextPanel extends PanelWithToolbar {
       aei.getEntry().then( (newEntry) => {
         this.verbose && console.log(`Updated apparatus entry `)
         this.verbose && console.log(newEntry)
-
         this.ctData = ApparatusCommon.updateCtDataWithNewEntry(this.ctData, this.edition, this.selection.from, this.selection.to, newEntry, lemma, currentApparatusEntries, this.verbose)
-
-        // let fromToken = this.edition.getMainTextToken( new LocationInSection([0], this.selection.from))
-        // let toToken = this.edition.getMainTextToken( new LocationInSection([0], this.selection.to))
-        //
-        // this.verbose && console.log(`CT range: ${fromToken.collationTableIndex} - ${toToken.collationTableIndex}`)
-        // if (newEntry.isNew) {
-        //   if (FmtText.getPlainText(newEntry.text) !== '') {
-        //     this.ctData = CtData.addCustomApparatusTextSubEntry(this.ctData,
-        //       newEntry.apparatus,
-        //       fromToken.collationTableIndex,
-        //       toToken.collationTableIndex,
-        //       this._getLemmaFromSelection(),
-        //       newEntry.text
-        //     )
-        //   }
-        // } else {
-        //   if (FmtText.getPlainText(newEntry.text) === '') {
-        //     console.log(`Deleting current custom entry`)
-        //     this.ctData = CtData.deleteCustomApparatusTextSubEntries(this.ctData,
-        //       newEntry.apparatus,
-        //       fromToken.collationTableIndex,
-        //       toToken.collationTableIndex
-        //     )
-        //   } else {
-        //     console.log('Updating custom entry....')
-        //     // just add and delete, perhaps do something more sophisticated later
-        //     this.ctData = CtData.deleteCustomApparatusTextSubEntries(this.ctData,
-        //       newEntry.apparatus,
-        //       fromToken.collationTableIndex,
-        //       toToken.collationTableIndex
-        //     )
-        //     this.ctData = CtData.addCustomApparatusTextSubEntry(this.ctData,
-        //       newEntry.apparatus,
-        //       fromToken.collationTableIndex,
-        //       toToken.collationTableIndex,
-        //       this._getLemmaFromSelection(),
-        //       newEntry.text
-        //     )
-        //   }
-        // }
-        //
-        // if (newEntry.changesInEnabledEntries) {
-        //   console.log(`Changes in enabled entries`)
-        //   newEntry.enabledEntriesArray.forEach( (enabled, i) => {
-        //     if (currentApparatusEntries[newEntry.apparatusIndex][i].enabled !== enabled) {
-        //       console.log(`Apparatus sub entry ${i} enabled change to ${enabled}`)
-        //       let theHash = currentApparatusEntries[newEntry.apparatusIndex][i].hashString()
-        //       CtData.changeEnableStatusForSubEntry(this.ctData,
-        //         newEntry.apparatus,
-        //         fromToken.collationTableIndex,
-        //         toToken.collationTableIndex,
-        //         theHash,
-        //         enabled,
-        //         this._getLemmaFromSelection()
-        //       )
-        //     }
-        //   })
-        // }
-
         this.options.onCtDataChange(this.ctData)
-
       })
-        .catch( (reason) => {
-        this.verbose && console.log(`FAIL: ${reason}`)
-      })
+      //   .catch( (reason) => {
+      //   this.verbose && console.log(`FAIL: ${reason}`)
+      // })
     }
   }
 

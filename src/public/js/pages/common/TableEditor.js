@@ -193,13 +193,13 @@ export class TableEditor {
         // is done. If the function returns false, editing will not occur
         require: false,
         type: 'function',
-        default : (row, col) => { return true }
+        default : (row, col) => { this.debug && console.log(`Cell Enter Edit Mode ${row}:${col}`); return true }
       },
       onCellLeaveEditMode: {
         // a function to be called before leaving cell edit mode
         require: false,
         type: 'function',
-        default: (row, col) => {}
+        default: (row, col) => {this.debug && console.log(`Cell Leave Edit Mode ${row}:${col}`);}
       },
       onCellConfirmEdit: {
         // a function to be called when the user clicks on the confirm edit button in edit mode
@@ -325,7 +325,8 @@ export class TableEditor {
         required: false,
         type: 'object',
         default: defaultIcons
-      }
+      },
+      debug: { type: 'boolean', default: false}
     }
 
     let rowObjectDefinition = {
@@ -347,6 +348,7 @@ export class TableEditor {
 
     let optionsChecker = new OptionsChecker({optionsDefinition: optionsDefinition, context: 'TableEditor'})
     this.options = optionsChecker.getCleanOptions(options)
+    this.debug = this.options.debug
     //console.log('Table options')
     //console.log(this.options)
 

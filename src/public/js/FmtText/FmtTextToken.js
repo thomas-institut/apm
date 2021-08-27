@@ -64,6 +64,7 @@ FormattedTextToken := {
 
 import * as FmtTextTokenType from './FmtTextTokenType'
 import * as FontStyle from './FontStyle'
+import * as FontSize from './FontSize'
 import * as FontWeight from './FontWeight'
 import * as VerticalAlign from './VerticalAlign'
 
@@ -79,6 +80,7 @@ export class FmtTextToken {
         this.fontStyle = FontStyle.NORMAL
         this.fontWeight = FontWeight.NORMAL
         this.verticalAlign = VerticalAlign.BASELINE
+        this.fontSize = FontSize.NORMAL
         break
 
       case FmtTextTokenType.GLUE:
@@ -141,7 +143,7 @@ export class FmtTextToken {
   }
 
   setSmallFont() {
-    this.fontSize = 0.8
+    this.fontSize = FontSize.SMALL
   }
 
 }

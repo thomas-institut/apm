@@ -19,6 +19,7 @@
 import { FmtTextFactory } from '../FmtText/FmtTextFactory'
 import * as FontWeight from '../FmtText/FontWeight'
 import * as FontStyle from '../FmtText/FontStyle'
+import * as FontSize from '../FmtText/FontSize'
 import * as FmtTextTokenType from '../Edition/MainTextTokenType'
 import { varsAreEqual } from '../toolbox/ArrayUtil'
 
@@ -44,6 +45,9 @@ export class QuillDeltaConverter {
           }
           if (ops.attributes.italic) {
             theFmtText[i].fontStyle = FontStyle.ITALIC
+          }
+          if (ops.attributes.small) {
+            theFmtText[i].fontSize = FontSize.SMALL
           }
         }
       }

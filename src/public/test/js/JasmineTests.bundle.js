@@ -142,8 +142,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _FmtTextTokenType__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./FmtTextTokenType */ "./FmtText/FmtTextTokenType.js");
 /* harmony import */ var _FontStyle__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./FontStyle */ "./FmtText/FontStyle.js");
-/* harmony import */ var _FontWeight__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./FontWeight */ "./FmtText/FontWeight.js");
-/* harmony import */ var _VerticalAlign__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./VerticalAlign */ "./FmtText/VerticalAlign.js");
+/* harmony import */ var _FontSize__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./FontSize */ "./FmtText/FontSize.js");
+/* harmony import */ var _FontWeight__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./FontWeight */ "./FmtText/FontWeight.js");
+/* harmony import */ var _VerticalAlign__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./VerticalAlign */ "./FmtText/VerticalAlign.js");
 /*
  *  Copyright (C) 2021 Universität zu Köln
  *
@@ -213,6 +214,7 @@ FormattedTextToken := {
 
 
 
+
 const DEFAULT_GLUE_SPACE = -1
 
 class FmtTextToken {
@@ -223,8 +225,9 @@ class FmtTextToken {
       case _FmtTextTokenType__WEBPACK_IMPORTED_MODULE_0__.TEXT:
         this.text = ''
         this.fontStyle = _FontStyle__WEBPACK_IMPORTED_MODULE_1__.NORMAL
-        this.fontWeight = _FontWeight__WEBPACK_IMPORTED_MODULE_2__.NORMAL
-        this.verticalAlign = _VerticalAlign__WEBPACK_IMPORTED_MODULE_3__.BASELINE
+        this.fontWeight = _FontWeight__WEBPACK_IMPORTED_MODULE_3__.NORMAL
+        this.verticalAlign = _VerticalAlign__WEBPACK_IMPORTED_MODULE_4__.BASELINE
+        this.fontSize = _FontSize__WEBPACK_IMPORTED_MODULE_2__.NORMAL
         break
 
       case _FmtTextTokenType__WEBPACK_IMPORTED_MODULE_0__.GLUE:
@@ -262,12 +265,12 @@ class FmtTextToken {
   }
 
   setBold() {
-    this.fontWeight = _FontWeight__WEBPACK_IMPORTED_MODULE_2__.BOLD
+    this.fontWeight = _FontWeight__WEBPACK_IMPORTED_MODULE_3__.BOLD
     return this
   }
 
   setNormalWeight() {
-    this.fontWeight = _FontWeight__WEBPACK_IMPORTED_MODULE_2__.NORMAL
+    this.fontWeight = _FontWeight__WEBPACK_IMPORTED_MODULE_3__.NORMAL
     return this
   }
 
@@ -277,17 +280,17 @@ class FmtTextToken {
   }
 
   setSuperScript() {
-    this.verticalAlign = _VerticalAlign__WEBPACK_IMPORTED_MODULE_3__.SUPERSCRIPT
+    this.verticalAlign = _VerticalAlign__WEBPACK_IMPORTED_MODULE_4__.SUPERSCRIPT
     return this
   }
 
   setSubScript() {
-    this.verticalAlign = _VerticalAlign__WEBPACK_IMPORTED_MODULE_3__.SUBSCRIPT
+    this.verticalAlign = _VerticalAlign__WEBPACK_IMPORTED_MODULE_4__.SUBSCRIPT
     return this
   }
 
   setSmallFont() {
-    this.fontSize = 0.8
+    this.fontSize = _FontSize__WEBPACK_IMPORTED_MODULE_2__.SMALL
   }
 
 }
@@ -344,21 +347,22 @@ class FmtTextTokenFactory {
 
   /**
    *
-   * @param {FmtTextToken} texToken
+   * @param textToken
    */
-  static clone(texToken) {
+  static clone(textToken) {
     let newText = new _FmtTextToken__WEBPACK_IMPORTED_MODULE_0__.FmtTextToken()
-    newText.type = texToken.type
+    newText.type = textToken.type
     switch(newText.type) {
       case _FmtTextTokenType__WEBPACK_IMPORTED_MODULE_1__.TEXT:
-        newText.text = texToken.text
-        newText.fontStyle = texToken.fontStyle
-        newText.fontWeight = texToken.fontWeight
-        newText.verticalAlign = texToken.verticalAlign
+        newText.text = textToken.text
+        newText.fontStyle = textToken.fontStyle
+        newText.fontWeight = textToken.fontWeight
+        newText.verticalAlign = textToken.verticalAlign
+        newText.fontSize = textToken.fontSize
         break
 
       case _FmtTextTokenType__WEBPACK_IMPORTED_MODULE_1__.GLUE:
-        newText.space = texToken.space // i.e., default size, whatever that means for the typesetter/presenter context
+        newText.space = textToken.space // i.e., default size, whatever that means for the typesetter/presenter context
         break
 
       default:
@@ -388,7 +392,7 @@ class FmtTextTokenFactory {
           throw new Error('No text in object')
         }
         newToken.setText(someObject.text)
-        let keysToCopy = ['verticalAlign', 'fontWeight', 'fontStyle']
+        let keysToCopy = ['verticalAlign', 'fontWeight', 'fontStyle', 'fontSize']
         keysToCopy.forEach( (key) => {
           if (someObject[key] !== undefined) {
             newToken[key] = someObject[key]
@@ -444,6 +448,24 @@ __webpack_require__.r(__webpack_exports__);
 const EMPTY = 'empty'
 const TEXT = 'text'
 const GLUE = 'glue'
+
+/***/ }),
+
+/***/ "./FmtText/FontSize.js":
+/*!*****************************!*\
+  !*** ./FmtText/FontSize.js ***!
+  \*****************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "NORMAL": () => (/* binding */ NORMAL),
+/* harmony export */   "SMALL": () => (/* binding */ SMALL)
+/* harmony export */ });
+
+
+const NORMAL = 1
+const SMALL = 0.8
 
 /***/ }),
 

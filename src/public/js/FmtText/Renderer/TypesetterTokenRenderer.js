@@ -31,7 +31,7 @@ export class TypesetterTokenRenderer extends FmtTextRenderer {
   constructor (options = {}) {
     super()
     let optionsSpec = {
-      normalFontSize: { type: 'integer', default: 12},
+      normalFontSize: { type: 'number', default: 12},
     }
 
     let oc = new OptionsChecker({optionsDefinition: optionsSpec, context: 'FmtText Html Renderer'})
@@ -41,6 +41,7 @@ export class TypesetterTokenRenderer extends FmtTextRenderer {
 
 
   render (fmtText) {
+    // console.log(`Rendering fmtText as Typesetter tokens`)
 
     return fmtText.filter( (t) => {return t.type !== FmtTokenType.EMPTY}).map ( (fmtTextToken) => {
       switch( fmtTextToken.type) {
@@ -58,7 +59,7 @@ export class TypesetterTokenRenderer extends FmtTextRenderer {
           }
           // TODO: deal properly with font sizes
           if (fmtTextToken.fontSize < 1) {
-            ttToken.setFontSize(this.options.normalFontSize * fmtTextToken.fontSize)
+            ttToken.setFontSize(fmtTextToken.fontSize)
           }
           return ttToken
       }

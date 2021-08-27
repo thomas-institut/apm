@@ -181,7 +181,7 @@ export class ApparatusEntryInput {
 
   _genBodyHtml() {
       return `<h1 class="lemma text-${this.options.lang}">${this.options.lemma}</h1>
-<form>
+<form"\>
     <div class="form-group row">
         <label for="apparatus-select" class="col-sm-2 col-form-label">Apparatus:</label>
        <div class="col-sm-10">
@@ -190,13 +190,12 @@ export class ApparatusEntryInput {
         </select>
         </div>
     </div>
-    <div class="form-group">
+    <div class="form-group text-${this.options.lang}">
         ${ this.apparatuses.map( (app, ai) => {
           return app.currentEntries.map( (subEntry, sei) => {
             let checkedString = subEntry.enabled ? 'checked' : ''
-            return `<div class="form-check sub-entry-app-${ai}"><input class="form-check-input" type="checkbox" value="" ${checkedString} id="aei-sub-entry-${ai}-${sei}">
-       <label class="form-check-label" for="aei-subtentry-${ai}-${sei}">
-${ApparatusCommon.genSubEntryHtmlContent(this.options.lang, subEntry, this.options.sigla )}
+            return `<div class="form-check sub-entry-app-${ai}"><input class="form-check-input text-${this.options.lang}" type="checkbox" value="" ${checkedString} id="aei-sub-entry-${ai}-${sei}">
+       <label class="form-check-label" for="aei-subtentry-${ai}-${sei}"> ${ApparatusCommon.genSubEntryHtmlContent(this.options.lang, subEntry, this.options.sigla )}
 </label>
 </div>`
           }).join('')

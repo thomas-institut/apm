@@ -22,6 +22,7 @@ import { Matrix } from '@thomas-inst/matrix'
 import * as TokenClass from '../constants/CollationTableType'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { CtData } from './CtData'
+import { deepCopy } from '../toolbox/Util.mjs'
 
 
 
@@ -37,7 +38,7 @@ export class CtDataCleaner {
 
 
   getCleanCollationData(ctData) {
-    this.ctData = CtData.copyFromObject(ctData)
+    this.ctData = deepCopy(ctData)
     // use default ordering if ctData does not have one
     if (this.ctData['witnessOrder'] === undefined) {
       this.options.verbose && console.log('Providing default witnessOrder')
@@ -96,6 +97,8 @@ export class CtDataCleaner {
     }
     // consistency check
     this.checkAndFixCollationTableConsistency()
+
+    this.ctData = CtData.fixFmtText(this.ctData)
 
     return this.ctData
   }

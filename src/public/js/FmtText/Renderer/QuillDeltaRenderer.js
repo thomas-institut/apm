@@ -19,6 +19,7 @@
 import { FmtTextRenderer } from './FmtTextRenderer'
 import * as FmtTextTokenType from '../FmtTextTokenType'
 import * as FontStyle from '../FontStyle'
+import * as FontSize from '../FontSize'
 import * as FontWeight from '../FontWeight'
 
 export class QuillDeltaRenderer extends FmtTextRenderer {
@@ -35,6 +36,9 @@ export class QuillDeltaRenderer extends FmtTextRenderer {
       }
       if (fmtTextToken.fontWeight === FontWeight.BOLD) {
         attr.bold = true
+      }
+      if (fmtTextToken.fontSize === FontSize.SMALL) {
+        attr.small = true
       }
       return  {
         insert: fmtTextToken.text,

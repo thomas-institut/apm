@@ -20,12 +20,17 @@ import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { doNothing } from '../toolbox/FunctionUtil'
 
 import Quill from '../QuillLoader'
+import Small from './QuillBlots/Small'
 import { QuillDeltaRenderer } from '../FmtText/Renderer/QuillDeltaRenderer'
 import { QuillDeltaConverter } from './QuillDeltaConverter'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory'
 
-const simpleFormats = [ 'bold', 'italic']
-const icons = { bold: '<strong>B</strong>', italic: '<em>I</em>'}
+const simpleFormats = [ 'bold', 'italic', 'small']
+const buttons = {
+  bold: { icon: '<i class="bi bi-type-bold"></i>' , title: 'Bold'},
+  italic: { icon: '<i class="bi bi-type-italic"></i>' , title: 'Italic'},
+  small: { icon: '<small class="fte-icon">S</small>', title: 'Small Font'}
+}
 
 
 /**
@@ -132,16 +137,15 @@ export class EntryFreeTextEditorFull {
   _getHtml() {
     let buttonsHtml = simpleFormats
       .map( (fmt) => {
-        return `<button class="${fmt}-btn">${icons[fmt]}</button>`
+        return `<button class="${fmt}-btn" title="${buttons[fmt].title}">${buttons[fmt].icon}</button>`
       })
       .join('')
-    return `<div class="fte-toolbar">${buttonsHtml}</div>
-<div class="fte-editor"></div>`
+    return `<div class="fte-toolbar text-${this.lang}">${buttonsHtml}</div>
+<div class="fte-editor text-${this.lang}"></div>`
   }
 
 
 }
-
 
 
 function setButtonState(btn, state) {
@@ -151,3 +155,10 @@ function setButtonState(btn, state) {
     btn.removeClass('on')
   }
 }
+
+
+// Initialization
+
+Quill.register({
+  'formats/small' : Small
+}, true)

@@ -122,7 +122,7 @@ export class EditionComposer {
     // Normalizers
     this.normalizerRegister = new NormalizerRegister()
     this.registerStandardNormalizers()
-    this.availableNormalizers = this.normalizerRegister.getRegisteredNormalizers()
+    // this.availableNormalizers = this.normalizerRegister.getRegisteredNormalizers()
 
     this.lastSavedCtData = Util.deepCopy(this.ctData)
     this.tableId = this.options['tableId']
@@ -952,6 +952,13 @@ export class EditionComposer {
 
 }
 
+/**
+ *
+ * @param id
+ * @param title
+ * @param panelObject
+ * @return {{onResize: function, postRender: function, contentClasses: ([]|*), onShown: function, onHidden: function, id, title, content: (function(*=, *=, *=): *)}}
+ */
 function createTabConfig(id, title, panelObject) {
   return {
     id: id,

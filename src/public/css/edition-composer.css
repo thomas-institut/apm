@@ -232,9 +232,9 @@ h1.lemma {
 
 /* apparatus style tweaks */
 
-.sub-entry small {
-    color: #575757;
-}
+/*.sub-entry small {*/
+/*    color: #575757;*/
+/*}*/
 
 /* Collation Table Panel */
 
@@ -278,6 +278,7 @@ h1.lemma {
     border: 1px solid lightgray;
     padding-left: 3px;
     padding-right: 3px;
+    font-family: sans-serif;
 }
 
 .fte-toolbar button.on {
@@ -285,8 +286,21 @@ h1.lemma {
     border: 1px solid gray;
 }
 
+.form-check-input.text-ar, .form-check-input.text-he {
+    position: inherit;
+    margin-right: 0.25rem;
+    margin-left: 0.25rem;
+}
 
+.fte-icon {
+    font-family: serif;
+    vertical-align: 0.1rem;
+}
 
 .fte-editor {
     border: 1px solid silver;
+}
+
+.text-ar .ql-editor, .text-he .ql-editor {
+    text-align: right;
 }

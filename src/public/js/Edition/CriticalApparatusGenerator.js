@@ -134,7 +134,7 @@ export class CriticalApparatusGenerator {
       // 2. There's main text in the group, we need to find omissions and variants
       let normalizedGroupMainText = ApparatusCommon.getMainTextForGroup(columnGroup, baseWitnessTokens, true)
       if (normalizedGroupMainText === '') {
-        this.verbose && console.log(`Group ${columnGroup.from}-${columnGroup.to} has empty text, skipping.`)
+        // this.verbose && console.log(`Group ${columnGroup.from}-${columnGroup.to} has empty text, skipping.`)
         // ignore empty string (normally main text consisting only of punctuation)
         return
       }

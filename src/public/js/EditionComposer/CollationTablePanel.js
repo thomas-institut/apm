@@ -1,3 +1,5 @@
+// noinspection DuplicatedCode
+// TODO: remove noinspection above when getting rid of old Collation Table UI
 /*
  *  Copyright (C) 2021 Universität zu Köln
  *
@@ -15,6 +17,8 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  */
+
+
 
 
 /**
@@ -91,7 +95,9 @@ export class CollationTablePanel extends PanelWithToolbar {
     this.panelIsSetup = false
     this.resetTokenDataCache()
     this.aggregatedNonTokenItemIndexes = this.calculateAggregatedNonTokenItemIndexes()
-    this.tableEditModeToRestore = this.tableEditor.getTableEditMode()
+    if (this.tableEditor !== undefined) {
+      this.tableEditModeToRestore = this.tableEditor.getTableEditMode()
+    }
     this.verbose && console.log(`Current TableEditor edit mode: ${this.tableEditModeToRestore}`)
     if (this.visible) {
       this._setupPanelContent()
@@ -1031,6 +1037,7 @@ export class CollationTablePanel extends PanelWithToolbar {
     }
   }
 
+  // noinspection DuplicatedCode
   getPostNotes(witnessIndex, col, tokenIndex) {
     // this.verbose && console.log(`Getting post notes for witness ${witnessIndex}, col ${col}, token index ${tokenIndex}`)
     if (this.aggregatedNonTokenItemIndexes[witnessIndex] === undefined) {

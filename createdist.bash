@@ -54,8 +54,8 @@ cp -R src/public/css "$TMP_DIR"
 cp -R src/public/images "$TMP_DIR"
 cp -R src/public/js "$TMP_DIR"
 rm -fr "$TMP_DIR"/js/istanbul
-rm "$TMP_DIR"/js/Makefile
-rm "$TMP_DIR"/js/.eslintrc.json
+rm -f "$TMP_DIR"/js/Makefile
+rm -f "$TMP_DIR"/js/.eslintrc.json
 cp -R src/public/node_modules "$TMP_DIR"
 cp -R src/public/plugins "$TMP_DIR"
 cp -R src/public/templates "$TMP_DIR"

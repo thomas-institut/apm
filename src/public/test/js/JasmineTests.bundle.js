@@ -99,6 +99,8 @@ class FmtTextFactory {
     if (typeof theThing === 'string') {
       return this.fromString(theThing)
     }
+    console.log(`This is the thing`)
+    console.log(theThing)
 
     if (theThing.toString() !== undefined) {
       return FmtTextFactory.fromString(theThing.toString())

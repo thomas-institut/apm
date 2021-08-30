@@ -25,7 +25,7 @@
 
 /* global Twig */
 
-class AutomaticCollationTableViewSettingsForm {
+export class AutomaticCollationTableViewSettingsForm {
 
   constructor(containerSelector) {
     this.cancelEventName = 'cancel'

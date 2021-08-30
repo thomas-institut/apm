@@ -26,6 +26,7 @@ import * as PopoverFormatter from '../common/CollationTablePopovers'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import {CollationTableFormatter} from './CollationTableFormatter'
 import { AutomaticCollationTableSettingsForm} from '../common/AutoCollTableSettingsForm'
+import {AutomaticCollationTableViewSettingsForm} from './AutomaticCollationTableViewSettingsForm'
 import { CtDataEditionGenerator } from '../../Edition/EditionGenerator/CtDataEditionGenerator'
 import { EditionViewerSvgNew } from '../../Edition/EditionViewerSvgNew'
 import { CtData } from '../../CtData/CtData'
@@ -265,7 +266,7 @@ export class AutomaticCollationTable {
       $.post(
         this.apiSaveCollationUrl,
         {data: JSON.stringify(apiCallOptions)}
-      ).done( function (apiResponse){
+      ).done(  (apiResponse) =>{
         console.log("Success saving table")
         console.log(apiResponse)
         let tableId = apiResponse['tableId']
@@ -273,7 +274,7 @@ export class AutomaticCollationTable {
 
         this.collationTableActionsDiv.html('Table saved: <a href="' + url + '">Edit table</a>')
 
-      }).fail(function(resp){
+      }).fail((resp) => {
         console.error("Cannot save table")
         console.log(resp)
       })
@@ -506,8 +507,8 @@ export class AutomaticCollationTable {
       columnsPerRow: this.viewSettings.maxColumnsPerTable,
       rowDefinition: rowDefinition,
       drawTableInConstructor: false,
-      getEmptyValue: function() { return -1},
-      isEmptyValue: function(value) { return value === -1},
+      getEmptyValue: () => { return -1},
+      isEmptyValue: (value) => { return value === -1},
       generateCellContent: this.genGenerateCellContentFunction(),
       generateTableClasses: this.genGenerateTableClassesFunction(),
       generateCellClasses: this.genGenerateCellClassesFunction(),

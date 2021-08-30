@@ -33,4 +33,3 @@ src/public/config.php
 /src/public/test/.*
 src/public/test/php/.phpunit.result.cache
 /apm.log
-/src/public/test/js/functional/dist

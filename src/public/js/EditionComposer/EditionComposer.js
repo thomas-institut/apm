@@ -108,8 +108,12 @@ export class EditionComposer {
       alert: '<i class="fas fa-exclamation-triangle"></i>',
       savePreset:'<i class="fas fa-save"></i>',
       saveEdition: '<i class="bi bi-cloud-arrow-up"></i>',
-      loadPreset: '<i class="fas fa-upload"></i>'
+      loadPreset: '<i class="fas fa-upload"></i>',
+      error: '<i class="bi bi-bug-fill"></i>'
     }
+
+    this.errorDetected = false
+    this.errorDetail = ''
 
     this.apiSaveCollationUrl = this.options.urlGenerator.apiSaveCollation()
 
@@ -200,6 +204,7 @@ export class EditionComposer {
           apparatusIndex: index,
           onHighlightMainText: this._genOnHighlightMainText(apparatus.type),
           onCtDataChange: this.genOnCtDataChange(`ApparatusPanel ${index}`),
+          onError: (msg) => { this._setError(`${msg} (Apparatus ${index}`)},
           verbose: true
         }
       )})
@@ -240,7 +245,8 @@ export class EditionComposer {
           return `<div class="top-bar-item top-bar-title" id="${editionTitleId}">Multi-panel User Interface</div>${thisObject.genCtInfoDiv()}`
         },
         topBarRightAreaContent: () => {
-          return `<div class="toolbar-group"><button class="top-bar-button" id="save-button">${this.icons.saveEdition}</button></div>`
+          return `<div class="toolbar-group"><button class="top-bar-button text-danger" id="error-button">${this.icons.error}</button>
+<button class="top-bar-button" id="save-button">${this.icons.saveEdition}</button></div>`
         },
       icons: {
         closePanel: '&times;',
@@ -273,18 +279,31 @@ export class EditionComposer {
       })
 
       // save area
-      thisObject.saveButtonPopoverContent = 'TBD'
-      thisObject.saveButtonPopoverTitle = 'TBD'
-      thisObject.saveButton = $('#save-button')
-      thisObject.saveButton.popover({
+      this.saveButtonPopoverContent = 'TBD'
+      this.saveButtonPopoverTitle = 'TBD'
+      this.saveButton = $('#save-button')
+      this.saveButton.popover({
         trigger: 'hover',
         placement: 'left',
         html: true,
-        title: () => { return thisObject.saveButtonPopoverTitle},
-        content: () => { return thisObject.saveButtonPopoverContent}
+        title: () => { return this.saveButtonPopoverTitle},
+        content: () => { return this.saveButtonPopoverContent}
       })
-      thisObject.updateSaveArea()
+      thisObject._updateSaveArea()
       this.saveButton.on('click', thisObject.genOnClickSaveButton())
+
+      // error
+      this.errorButton = $('#error-button')
+      this.errorButtonPopoverContent = 'TBD'
+      this.errorButtonPopoverTitle = 'Error'
+      this.errorButton.popover({
+        trigger: 'hover',
+        placement: 'left',
+        html: true,
+        title: () => { return this.errorButtonPopoverTitle},
+        content: () => { return this.errorButtonPopoverContent}
+      })
+      this._updateErrorUi()
     })
   }
 
@@ -387,8 +406,8 @@ export class EditionComposer {
       }
       let changesInCt = this._editMainText(ctIndex, newText)
       if (changesInCt) {
-        this.updateSaveArea()
-        this._reGenerateEdition()
+        this._updateSaveArea()
+        this._reGenerateEdition(`Main text edit`)
         this._updateDataInPanels()
       }
       return changesInCt
@@ -396,7 +415,12 @@ export class EditionComposer {
   }
 
   _updateDataInPanels(updateWitnessInfo = false) {
-    this.mainTextPanel.updateData(this.ctData, this.edition)
+    if (this.errorDetected) {
+      console.log(`Not updating data in panels because of error`)
+      return
+    }
+
+    this.mainTextPanel.updateData(this.ctData, this.edition)  // mainTextPanel takes care of updating the apparatus panels
     this.collationTablePanel.updateCtData(this.ctData, 'EditionComposer')
     this.editionPreviewPanel.updateData(this.ctData, this.edition)
     this.witnessInfoPanel.updateCtData(this.ctData, updateWitnessInfo)
@@ -496,7 +520,7 @@ export class EditionComposer {
       $.post(
         this.apiSaveCollationUrl,
         {data: JSON.stringify(apiCallOptions)}
-      ).done( function (apiResponse){
+      ).done(  (apiResponse) => {
         // console.log("Success archiving table")
         // console.log(apiResponse)
         this.lastSavedCtData = Util.deepCopy(thisObject.ctData)
@@ -510,17 +534,38 @@ export class EditionComposer {
         // }
         this.unsavedChanges = false
         // thisObject.updateWitnessInfoDiv()
-        thisObject.updateSaveArea()
+        this._updateSaveArea()
         resolve(this.versionInfo)
-      }).fail(function(resp){
+      }).fail((resp) => {
         console.log("ERROR: cannot archive table")
-        thisObject.ctData['archived'] = false
+        this.ctData['archived'] = false
         console.log(resp)
         reject()
       })
     })}
   }
 
+  /**
+   *
+   * @param {string} detail
+   * @private
+   */
+  _setError(detail)  {
+    this.errorDetected = true
+    this.errorDetail = detail
+    this._updateErrorUi()
+  }
+
+  _updateErrorUi() {
+     if (this.errorDetected) {
+       this.errorButton.removeClass('hidden').addClass('blink')
+       this.errorButtonPopoverContent = `<p>Software error detected, please make a note of what you were doing and report it to the developers. </p>
+<p>${this.errorDetail}</p>`
+     } else {
+       this.errorButton.removeClass('blink').addClass('hidden')
+     }
+     this._updateSaveArea()
+  }
 
 
   genOnExportPdf() {
@@ -599,13 +644,13 @@ export class EditionComposer {
           this.witnessInfoPanel.onDataSave()
           this.unsavedChanges = false
           this.saveErrors = false
-          this.updateSaveArea()
+          this._updateSaveArea()
         }).fail((resp) => {
           this.saveErrors = true
           this.saveButton.html(this.icons.saveEdition)
           console.error("Could not save table")
           console.log(resp)
-          this.updateSaveArea()
+          this._updateSaveArea()
         })
       }
     }
@@ -640,6 +685,7 @@ export class EditionComposer {
 
   genUpdateWitness() {
     return (witnessIndex, changeData, newWitness) => {
+
       console.log(`Updating witness ${witnessIndex} (${this.ctData['witnessTitles'][witnessIndex]})`)
 
       //process column inserts
@@ -699,8 +745,8 @@ export class EditionComposer {
 
       // 4. update panels
       this.witnessUpdates.push(witnessIndex)
-      this.updateSaveArea()
-      this._reGenerateEdition()
+      this._updateSaveArea()
+      this._reGenerateEdition(`Witness Update`)
       this._updateDataInPanels(false)
       this.witnessInfoPanel.markWitnessAsJustUpdated(witnessIndex)
       return true
@@ -766,9 +812,19 @@ export class EditionComposer {
   }
 
 
-  updateSaveArea() {
+  _updateSaveArea() {
 
     console.log(`Updating save area`)
+
+    if (this.errorDetected) {
+      this.saveButtonPopoverTitle = 'Saving is disabled'
+      this.saveButtonPopoverContent = `<p>Software error detected</p>`
+      this._changeBootstrapTextClass(this.saveButton, saveButtonTextClassNoChanges)
+      this.saveButton
+        .prop('disabled', true)
+      return
+    }
+
     if (this.ctData['archived']) {
       let lastVersion = this.versionInfo[this.versionInfo.length-1]
       this.saveButtonPopoverTitle = 'Saving is disabled'
@@ -822,7 +878,7 @@ export class EditionComposer {
       console.log(`New CT Data received from ${source}`)
       this.ctData = CtData.copyFromObject(newCtData)
       console.log(this.ctData)
-      this._reGenerateEdition()
+      this._reGenerateEdition(`New data received from ${source}`)
       // even if the new data source is mainTextPanel, need to tell the panel that there's a new edition
       this.mainTextPanel.updateData(this.ctData, this.edition)
       if (source !== 'collationTablePanel') {
@@ -830,7 +886,7 @@ export class EditionComposer {
       }
       this.editionPreviewPanel.updateData(this.ctData, this.edition)
       this.witnessInfoPanel.updateCtData(this.ctData, false)
-      this.updateSaveArea()
+      this._updateSaveArea()
     }
   }
 
@@ -890,18 +946,18 @@ export class EditionComposer {
   genOnWitnessOrderChange() {
     return (newOrder) => {
       this.ctData['witnessOrder'] = newOrder
-      this._reGenerateEdition()
+      this._reGenerateEdition(`Change in witness order`)
       this._updateDataInPanels()
-      this.updateSaveArea()
+      this._updateSaveArea()
     }
   }
 
   genOnSiglaChange() {
     return (newSigla) => {
       this.ctData['sigla'] = newSigla
-      this._reGenerateEdition()
+      this._reGenerateEdition(`Sigla change`)
       this._updateDataInPanels()
-      this.updateSaveArea()
+      this._updateSaveArea()
     }
   }
 
@@ -920,18 +976,26 @@ export class EditionComposer {
         //console.debug('New title: ' + normalizedNewTitle)
         thisObject.ctData['title'] = normalizedNewTitle
         thisObject.titleField.setText(normalizedNewTitle)
-        thisObject.updateSaveArea()
+        thisObject._updateSaveArea()
         document.title = `${thisObject.ctData.title} (${thisObject.ctData['chunkId']})`
       }
       return false
     }
   }
 
-  _reGenerateEdition() {
+  _reGenerateEdition(context = 'N/A') {
     let eg = new CtDataEditionGenerator({ ctData: this.ctData})
-    this.edition = eg.generateEdition()
-    console.log(`Edition Recalculated`)
-    console.log(this.edition)
+    try {
+      this.edition = eg.generateEdition()
+    } catch (e) {
+      console.error(`Error generating edition`)
+      console.error(e)
+      this._setError(`Error re-generating edition, context: ${context}`)
+    }
+    if (!this.errorDetected) {
+      console.log(`Edition Recalculated`)
+      console.log(this.edition)
+    }
   }
 
   normalizeTitleString(title) {

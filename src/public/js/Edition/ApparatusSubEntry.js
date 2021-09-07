@@ -49,6 +49,7 @@ export class ApparatusSubEntry {
     let witnessDataStringRep = this.witnessData.map( (w) => {
       return `${w.witnessIndex}:h${w.hand}`
       }).join('_')
+    // FmtText.check(this.fmtText)
     let stringRep = `${this.type}-${FmtText.getPlainText(this.fmtText)}-${witnessDataStringRep}`
     if (stringRep.length > 64) {
       let theHash = hashCodeInt32(stringRep)

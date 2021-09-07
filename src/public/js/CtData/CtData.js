@@ -25,6 +25,7 @@ import * as SubEntryType from '../Edition/SubEntryType'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory'
 import { ApparatusEntry } from '../Edition/ApparatusEntry'
 import { FmtText } from '../FmtText/FmtText'
+import {FmtTextToken} from '../FmtText/FmtTextToken'
 import { deepCopy } from '../toolbox/Util.mjs'
 import * as TranscriptionTokenType from '../constants/WitnessTokenType'
 import * as NormalizationSource from '../constants/NormalizationSource'
@@ -83,6 +84,37 @@ export class CtData  {
     }
 
     return ctData
+  }
+
+  static reportCustomEntries(ctData) {
+    let noProblems = true
+    for (let i = 0; i < ctData['customApparatuses'].length; i++) {
+      // console.log(`Custom apparatus ${i}`)
+      for (let entryN = 0; entryN < ctData['customApparatuses'][i]['entries'].length; entryN++) {
+        // console.log(`Entry ${entryN}`)
+        for (let subEntryN = 0; subEntryN < ctData['customApparatuses'][i]['entries'][entryN]['subEntries'].length ; subEntryN++) {
+          // console.log(`Sub entry ${subEntryN}`)
+          if (ctData['customApparatuses'][i]['entries'][entryN]['subEntries'][subEntryN].fmtText !== undefined) {
+            // this is a custom entry, other types do not have a fmtText
+            if (!Array.isArray(ctData['customApparatuses'][i]['entries'][entryN]['subEntries'][subEntryN].fmtText) ) {
+              console.log(`Custom apparatus ${i}, entry ${entryN}, sub entry ${subEntryN}: fmtText is not an array `)
+              noProblems = false
+            } else {
+              for (let k = 0; k < ctData['customApparatuses'][i]['entries'][entryN]['subEntries'][subEntryN].fmtText.length; k++) {
+                if (!ctData['customApparatuses'][i]['entries'][entryN]['subEntries'][subEntryN].fmtText[k] instanceof FmtTextToken) {
+                  console.log(`Custom apparatus ${i}, entry ${entryN}, sub entry ${subEntryN}, fmtText[${k}] is not a FmtTextToken `)
+                  console.log(ctData['customApparatuses'][i]['entries'][entryN]['subEntries'][subEntryN].fmtText[k])
+                  noProblems = false
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    if (noProblems) {
+      console.log(`All custom entries in ctData have proper FmtText type`)
+    }
   }
 
   /**

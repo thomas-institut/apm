@@ -269,7 +269,7 @@ h1.lemma {
 }
 
 .ql-editor {
-    font-family: serif;
+    /*font-family: serif;*/
     font-size: 1rem;
 }
 
@@ -303,4 +303,8 @@ h1.lemma {
 
 .text-ar .ql-editor, .text-he .ql-editor {
     text-align: right;
+}
+
+.text-la .ql-editor {
+    font-family: serif;
 }

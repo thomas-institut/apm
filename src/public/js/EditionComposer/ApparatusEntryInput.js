@@ -32,6 +32,8 @@ import { FmtTextFactory} from '../FmtText/FmtTextFactory'
 
 const updateEntryLabel = 'Update Apparatus'
 
+export const userCancelledReason = 'User Cancelled'
+
 export class ApparatusEntryInput {
 
   constructor (options ) {
@@ -149,7 +151,7 @@ export class ApparatusEntryInput {
     return new Promise( (resolve, reject) => {
       this.dialog.setCancelFunction( () => {
         this.dialog.destroy()
-        reject('User cancelled')
+        reject(userCancelledReason)
       })
 
       this.dialog.setAcceptFunction( () => {

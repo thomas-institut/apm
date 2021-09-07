@@ -16,6 +16,7 @@
  *
  */
 
+import {FmtTextFactory} from './FmtTextFactory'
 
 export class FmtText {
 
@@ -24,7 +25,8 @@ export class FmtText {
    * @param {FmtTextToken[]} fmtText
    */
   static getPlainText(fmtText) {
-    return fmtText.map( (token) => { return token.getPlainText()}).join('')
+    let realFmtText = FmtTextFactory.fromAnything(fmtText)
+    return realFmtText.map( (token) => { return token.getPlainText()}).join('')
   }
 
   static check(fmtText) {

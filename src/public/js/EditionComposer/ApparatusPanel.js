@@ -22,7 +22,7 @@ import { ApparatusCommon } from './ApparatusCommon'
 import { PanelWithToolbar } from './PanelWithToolbar'
 import { getIntArrayIdFromClasses } from '../toolbox/UserInterfaceUtil'
 import { doNothing } from '../toolbox/FunctionUtil'
-import { ApparatusEntryInput } from './ApparatusEntryInput'
+import { ApparatusEntryInput, userCancelledReason } from './ApparatusEntryInput'
 import { capitalizeFirstLetter } from '../toolbox/Util.mjs'
 import { CtData } from '../CtData/CtData'
 
@@ -43,6 +43,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
       entrySeparator: { type: 'string', default: verticalLine},
       apparatusLineSeparator: { type: 'string', default: doubleVerticalLine},
       onCtDataChange: { type: 'function', default: doNothing},
+      onError: { type: 'function', default: doNothing},
       onHighlightMainText: {
         // function to be called when main text needs to be highlighted
         // (lemmaIndexArray, on) => { ... return nothing }
@@ -122,16 +123,16 @@ export class ApparatusPanel extends  PanelWithToolbar {
         this.verbose && console.log(newEntry)
 
         this.ctData = ApparatusCommon.updateCtDataWithNewEntry(this.ctData, this.edition, from, to, newEntry, lemma, currentApparatusEntries, this.verbose)
-
-
         this.options.onCtDataChange(this.ctData)
 
       })
-        // .catch( (reason) => {
-        //   this.verbose && console.log(`FAIL: ${reason}`)
-        // })
-
-
+        .catch( (reason) => {
+          if (reason !== userCancelledReason) {
+            console.error(`Fail updating apparatus entry`)
+            console.log(reason)
+            this.options.onError(`Error updating apparatus entry`)
+          }
+        })
     }
   }
 

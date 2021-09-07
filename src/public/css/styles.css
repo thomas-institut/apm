@@ -194,3 +194,25 @@ ul.ctlist li {
     margin-left: 20px;
     text-indent: -20px;
 }
+
+
+/* General stuff */
+
+.blink {
+    animation: blink 1s linear infinite;
+}
+
+@keyframes blink {
+    0% {
+        opacity: 0;
+    }
+    50% {
+        opacity: 0;
+    }
+    51% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 1;
+    }
+}

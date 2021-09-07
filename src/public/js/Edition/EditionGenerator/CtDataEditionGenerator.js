@@ -48,6 +48,7 @@ export class CtDataEditionGenerator extends EditionGenerator{
 
   generateEdition () {
     // console.log(`Generating edition from ctData`)
+    // CtData.reportCustomEntries(this.ctData)
     let edition = super.generateEdition()
     let baseWitnessIndex = this.ctData['editionWitnessIndex'] !== undefined ? this.ctData['editionWitnessIndex'] : this.ctData['witnessOrder'][0]
     edition.setLang(this.ctData['lang'])
@@ -112,6 +113,7 @@ export class CtDataEditionGenerator extends EditionGenerator{
       let realCustomSubEntries = customEntry['subEntries'].filter ( (e) => { return e.type !== SubEntryType.DISABLE})
       console.log(`There are ${realCustomSubEntries.length} custom sub entries`)
       console.log(realCustomSubEntries)
+      // realCustomSubEntries.forEach( (se, i) => { console.log(`Sub entry ${i}`); FmtText.check(se.fmtText)})
       let customDisableEntriesArray = customEntry['subEntries'].filter ( (e) => { return e.type === SubEntryType.DISABLE})
       if (customDisableEntriesArray.length !== 0) {
         this.verbose && console.log(`There are disabled entries: ${mainTextFrom} -> ${mainTextTo}`)

@@ -19,6 +19,11 @@ class ApmUrlGenerator {
     constructor(baseUrl) {
         this.base = baseUrl;
     }
+
+    home() {
+        return this.base
+    }
+
     apiGetNumColumns(docId, pageNumber) {
         return this.base + '/api/' + docId + '/' + pageNumber + '/numcolumns';
     }

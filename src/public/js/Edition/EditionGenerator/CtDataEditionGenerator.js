@@ -107,6 +107,11 @@ export class CtDataEditionGenerator extends EditionGenerator{
     customApparatusCriticus.entries.forEach( (customEntry) => {
       console.log(`Custom Entry`)
       console.log(customEntry)
+      if (ctIndexToMainTextMap[customEntry.from] === undefined) {
+        // this is an entry to an empty token in the main text
+        console.warn(`Entry to an empty token, from ${customEntry.from} to ${customEntry.to}, lemma: '${customEntry.lemma}'`)
+        return
+      }
       let mainTextFrom = ctIndexToMainTextMap[customEntry.from].textIndex
       let mainTextTo = ctIndexToMainTextMap[customEntry.to].textIndex
       let currentEntryIndex = generatedApparatusCriticus.findEntryIndex( [0], mainTextFrom, mainTextTo)

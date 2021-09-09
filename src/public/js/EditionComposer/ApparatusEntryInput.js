@@ -97,7 +97,7 @@ export class ApparatusEntryInput {
     this.apparatuses.forEach( (app, apparatusIndex) => {
       app.currentEntries.forEach( (entry, subEntryIndex) => {
         $(`#aei-sub-entry-${apparatusIndex}-${subEntryIndex}`).on('change', () => {
-          console.log(`Change of value in check box for apparatus ${apparatusIndex}, sub entry ${subEntryIndex}`)
+          // console.log(`Change of value in check box for apparatus ${apparatusIndex}, sub entry ${subEntryIndex}`)
           this._updateAcceptButton()
         })
       })
@@ -110,20 +110,20 @@ export class ApparatusEntryInput {
 
     this.apparatuses[selectedAppIndex].currentEntries.forEach( (se, sei) => {
       if ($(`#aei-sub-entry-${selectedAppIndex}-${sei}`).prop('checked') !== se.enabled) {
-        console.log(`Change in checkboxes: apparatus ${selectedAppIndex} : entry ${sei}`)
+        // console.log(`Change in checkboxes: apparatus ${selectedAppIndex} : entry ${sei}`)
         changeInCheckboxes = true
       }
     })
 
     let textInEditor = this.freeTextEditor.getFmtText()
     if (varsAreEqual(textInEditor,this.apparatuses[selectedAppIndex].customEntry) && !changeInCheckboxes) {
-      console.log(`Hiding accept button`)
+      // console.log(`Hiding accept button`)
       this.dialog.hideAcceptButton()
     } else {
-      console.log(`Showing accept button`)
-      console.log(`Text in editor`)
-      console.log(textInEditor)
-      console.log(`Current custom entry`)
+      // console.log(`Showing accept button`)
+      // console.log(`Text in editor`)
+      // console.log(textInEditor)
+      // console.log(`Current custom entry`)
       console.log(this.apparatuses[selectedAppIndex].customEntry)
       this.dialog.showAcceptButton()
     }

@@ -25,8 +25,8 @@ import { varsAreEqual } from '../toolbox/ArrayUtil'
 
 export class QuillDeltaConverter {
   static toFmtText(quillDelta) {
-    console.log(`Converting quill Delta`)
-    console.log(quillDelta.ops)
+    // console.log(`Converting quill Delta`)
+    // console.log(quillDelta.ops)
     if (varsAreEqual(quillDelta.ops, [ {insert: "\n"}])) {
       // empty editor
       return []

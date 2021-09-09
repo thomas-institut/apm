@@ -485,6 +485,7 @@ export class EditionComposer {
     console.log(parsedText)
     if (parsedText.length === 0) {
       // empty text
+      console.log(`Empty text `)
       // TODO: delete the column in the CT if there is nothing in the witnesses?
       this.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]['text'] = newText
       this.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]['tokenType'] = TranscriptionTokenType.EMPTY

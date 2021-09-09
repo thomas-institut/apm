@@ -58,8 +58,8 @@ class SiteCollationTable extends SiteController
     
     const TEMPLATE_ERROR = 'chunk-collation-error.twig';
     const TEMPLATE_COLLATION_TABLE = 'collation-table.twig';
-    const TEMPLATE_EDIT_COLLATION_TABLE = 'collation-edit.twig';
-    const TEMPLATE_EDIT_COLLATION_TABLE_NEW = 'edition-composer.twig';
+    const TEMPLATE_EDIT_COLLATION_TABLE_OLD = 'collation-edit.twig';
+    const TEMPLATE_EDITION_COMPOSER = 'edition-composer.twig';
     const TEMPLATE_EDIT_COLLATION_TABLE_ERROR = 'collation.edit.error.twig';
 
     /**
@@ -111,7 +111,12 @@ class SiteCollationTable extends SiteController
         $this->profiler->stop();
         $this->logProfilerData("Edit Collation Table");
         $this->codeDebug('Editor Type', [$request->getAttribute('type')]);
-        $template = $request->getAttribute('type') !== 'beta' ? self::TEMPLATE_EDIT_COLLATION_TABLE : self::TEMPLATE_EDIT_COLLATION_TABLE_NEW;
+        if ($ctData['type'] === 'edition') {
+            $template = $request->getAttribute('type') !== 'old' ? self::TEMPLATE_EDITION_COMPOSER : self::TEMPLATE_EDIT_COLLATION_TABLE_OLD;
+        } else {
+            $template = self::TEMPLATE_EDIT_COLLATION_TABLE_OLD;
+        }
+
         return $this->renderPage($response, $template, [
             'userId' => $this->userInfo['id'],
             'workId' => $workId,

@@ -29,7 +29,7 @@ import {getTypesettingInfo} from '../Typesetter/BrowserTypesettingCalculations'
 import { doNothing, wait } from '../toolbox/FunctionUtil'
 import { MultiToggle } from '../widgets/MultiToggle'
 import { EditableTextField } from '../widgets/EditableTextField'
-import { ApparatusEntryInput } from './ApparatusEntryInput'
+import { ApparatusEntryInput, userCancelledReason } from './ApparatusEntryInput'
 import { ApparatusCommon } from './ApparatusCommon'
 import * as EditionMainTextTokenType from '../Edition/MainTextTokenType'
 import { Edition } from '../Edition/Edition'
@@ -290,9 +290,13 @@ export class MainTextPanel extends PanelWithToolbar {
         this.ctData = ApparatusCommon.updateCtDataWithNewEntry(this.ctData, this.edition, this.selection.from, this.selection.to, newEntry, lemma, currentApparatusEntries, this.verbose)
         this.options.onCtDataChange(this.ctData)
       })
-      //   .catch( (reason) => {
-      //   this.verbose && console.log(`FAIL: ${reason}`)
-      // })
+        .catch( (reason) => {
+          if (reason !== userCancelledReason) {
+            console.error(`Fail updating apparatus entry`)
+            console.log(reason)
+            this.options.onError(`Error updating apparatus entry`)
+          }
+        })
     }
   }
 

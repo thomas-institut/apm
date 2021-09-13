@@ -83,7 +83,7 @@ export class ApparatusEntryInput {
       containerSelector: '#free-text-entry-div',
       lang: this.options.lang,
       onChange: () =>  { this._updateAcceptButton() },
-      debug: true
+      debug: false
     })
     this.apparatusSelect = $('#apparatus-select')
     this.apparatusSelect.val(this.options.selectedApparatusIndex)

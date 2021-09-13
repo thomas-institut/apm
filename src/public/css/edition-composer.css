@@ -244,6 +244,13 @@ h1.lemma {
 
 /* Apparatus Panel */
 
+.lemma {
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
 .lemma-selected {
     background: #bddeea;
 }

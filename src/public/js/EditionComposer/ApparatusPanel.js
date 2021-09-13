@@ -25,12 +25,15 @@ import { doNothing } from '../toolbox/FunctionUtil'
 import { ApparatusEntryInput, userCancelledReason } from './ApparatusEntryInput'
 import { capitalizeFirstLetter } from '../toolbox/Util.mjs'
 import { CtData } from '../CtData/CtData'
+import { onClickAndDoubleClick } from '../toolbox/DoubleClick'
 
 const doubleVerticalLine = String.fromCodePoint(0x2016)
 const verticalLine = String.fromCodePoint(0x007c)
 
 const editIcon = '<small><i class="fas fa-pen"></i></small>'
 const clearSelectionIcon = '<i class="bi bi-backspace"></i>'
+
+
 
 export class ApparatusPanel extends  PanelWithToolbar {
 
@@ -85,54 +88,57 @@ export class ApparatusPanel extends  PanelWithToolbar {
   postRender (id, mode, visible) {
     super.postRender(id, mode, visible)
     this._getEditEntryButtonElement().on('click', this._genOnClickEditEntryButton())
-    // this._getClearSelectionButtonElement().on('click', this._genOnClickClearSelectionButton() )
     $(this.containerSelector).on('click', this._genOnClickClearSelectionButton())
+  }
+
+  _editSelectedEntry() {
+    if (this.currentSelectedLemma.length === 0) {
+      return false
+    }
+    let apparatusIndex = this.currentSelectedLemma[0]
+    let entryIndex = this.currentSelectedLemma[1]
+    console.log(`Editing entry: apparatus ${apparatusIndex}, entry ${entryIndex}`)
+    let from = this.edition.apparatuses[apparatusIndex].entries[entryIndex].from
+    let to = this.edition.apparatuses[apparatusIndex].entries[entryIndex].to
+    let currentApparatusEntries = this.edition.apparatuses.map( (app) => {
+      let index = app.findEntryIndex( [0], from, to)
+      if (index === -1) {
+        return []
+      }
+      return app.entries[index].subEntries
+    })
+    let lemma = $(`span.lemma-${apparatusIndex}-${entryIndex}`).text()
+    let aei = new ApparatusEntryInput({
+      apparatuses: this.edition.apparatuses.map( (app, i) => {
+        return {  name: app.type, title: capitalizeFirstLetter(app.type), currentEntries: currentApparatusEntries[i]}
+      }),
+      selectedApparatusIndex: apparatusIndex,
+      lemma: lemma,
+      lang: this.lang,
+      sigla: this.edition.getSigla()
+    })
+    aei.getEntry().then( (newEntry) => {
+      this.verbose && console.log(`Updated apparatus entry `)
+      this.verbose && console.log(newEntry)
+
+      this.ctData = ApparatusCommon.updateCtDataWithNewEntry(this.ctData, this.edition, from, to, newEntry, lemma, currentApparatusEntries, this.verbose)
+      this.options.onCtDataChange(this.ctData)
+
+    })
+      .catch( (reason) => {
+        if (reason !== userCancelledReason) {
+          console.error(`Fail updating apparatus entry`)
+          console.log(reason)
+          this.options.onError(`Error updating apparatus entry`)
+        }
+      })
   }
 
   _genOnClickEditEntryButton() {
     return (ev) => {
       ev.preventDefault()
       ev.stopPropagation()
-      if (this.currentSelectedLemma.length === 0) {
-        return false
-      }
-      let apparatusIndex = this.currentSelectedLemma[0]
-      let entryIndex = this.currentSelectedLemma[1]
-      console.log(`Click on edit entry:  apparatus ${apparatusIndex}, entry ${entryIndex}`)
-      let from = this.edition.apparatuses[apparatusIndex].entries[entryIndex].from
-      let to = this.edition.apparatuses[apparatusIndex].entries[entryIndex].to
-      let currentApparatusEntries = this.edition.apparatuses.map( (app) => {
-        let index = app.findEntryIndex( [0], from, to)
-        if (index === -1) {
-          return []
-        }
-        return app.entries[index].subEntries
-      })
-      let lemma = $(`span.lemma-${apparatusIndex}-${entryIndex}`).text()
-      let aei = new ApparatusEntryInput({
-        apparatuses: this.edition.apparatuses.map( (app, i) => {
-          return {  name: app.type, title: capitalizeFirstLetter(app.type), currentEntries: currentApparatusEntries[i]}
-        }),
-        selectedApparatusIndex: apparatusIndex,
-        lemma: lemma,
-        lang: this.lang,
-        sigla: this.edition.getSigla()
-      })
-      aei.getEntry().then( (newEntry) => {
-        this.verbose && console.log(`Updated apparatus entry `)
-        this.verbose && console.log(newEntry)
-
-        this.ctData = ApparatusCommon.updateCtDataWithNewEntry(this.ctData, this.edition, from, to, newEntry, lemma, currentApparatusEntries, this.verbose)
-        this.options.onCtDataChange(this.ctData)
-
-      })
-        .catch( (reason) => {
-          if (reason !== userCancelledReason) {
-            console.error(`Fail updating apparatus entry`)
-            console.log(reason)
-            this.options.onError(`Error updating apparatus entry`)
-          }
-        })
+      return this._editSelectedEntry()
     }
   }
 
@@ -177,10 +183,11 @@ export class ApparatusPanel extends  PanelWithToolbar {
   }
 
   _setUpEventHandlers() {
-    this._getLemmaElements().off()
+    let lemmaElements = this._getLemmaElements()
+    lemmaElements.off()
       .on('mouseenter', this._genOnMouseEnterLemma())
       .on('mouseleave', this._genOnMouseLeaveLemma())
-      .on('click', this._genOnClickLemma())
+    onClickAndDoubleClick(lemmaElements, this._genOnClickLemma(), this._genOnDoubleClickLemma())
   }
 
   _genOnMouseEnterLemma() {
@@ -198,20 +205,29 @@ export class ApparatusPanel extends  PanelWithToolbar {
     }
   }
 
+  _genOnDoubleClickLemma() {
+    return (ev) => {
+      this._selectLemmaFromClickTarget(ev.target)
+      this._editSelectedEntry()
+    }
+  }
+
   _genOnClickLemma() {
     return (ev) => {
-      ev.preventDefault()
-      ev.stopPropagation()
-      this._getLemmaElements().removeClass('lemma-selected')
-      let target = $(ev.target)
-      target.removeClass('lemma-hover').addClass('lemma-selected')
-      this._getEditEntryButtonElement().removeClass('hidden')
-      this._getClearSelectionButtonElement().removeClass('hidden')
-      let lemmaIndex = this._getLemmaIndexFromElement(target)
-      this.options.onHighlightMainText(this.currentSelectedLemma, false)
-      this.options.onHighlightMainText(lemmaIndex, true)
-      this.currentSelectedLemma = lemmaIndex
+      this._selectLemmaFromClickTarget(ev.target)
     }
+  }
+
+  _selectLemmaFromClickTarget(clickTarget) {
+    let target = $(clickTarget)
+    this._getLemmaElements().removeClass('lemma-selected')
+    target.removeClass('lemma-hover').addClass('lemma-selected')
+    this._getEditEntryButtonElement().removeClass('hidden')
+    this._getClearSelectionButtonElement().removeClass('hidden')
+    let lemmaIndex = this._getLemmaIndexFromElement(target)
+    this.options.onHighlightMainText(this.currentSelectedLemma, false)
+    this.options.onHighlightMainText(lemmaIndex, true)
+    this.currentSelectedLemma = lemmaIndex
   }
 
   onHidden () {

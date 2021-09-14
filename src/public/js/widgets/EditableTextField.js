@@ -114,7 +114,8 @@ export class EditableTextField {
   }
 
   destroy() {
-    this.container.off()
+    console.log(`Destroying editor for container ${this.options.containerSelector}`)
+    $(this.options.containerSelector).off()
       .removeClass(this.options.normalClass)
       .removeClass(this.options.editingClass)
       .html('')

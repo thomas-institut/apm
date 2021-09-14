@@ -370,17 +370,18 @@ export class MainTextPanel extends PanelWithToolbar {
       ev.preventDefault()
       ev.stopPropagation()
       let tokenIndex = getSingleIntIdFromClasses($(ev.target), 'main-text-token-')
-      // TODO: support multiple sections
       let mainTextSection = [0]
-      if (this.editingTextToken) {
-        return
-      }
       if ($(ev.target).hasClass('whitespace')) {
         return
       }
       switch(this.currentEditMode) {
         case EDIT_MODE_TEXT:
           this.verbose && console.log(`Click on main text token ${tokenIndex} in main text edit mode`)
+          if (this.editingTextToken) {
+            this.verbose && console.log(`Currently editing token, confirming that edit first`)
+            this.previousEditor = this.textTokenEditor
+            this.previousEditor.confirmEdit()
+          }
           let tokenSelector = `.main-text-token-${tokenIndex}`
           this.originalTokenText = $(tokenSelector).text()
           this.tokenBeingEdited = tokenIndex
@@ -430,6 +431,7 @@ export class MainTextPanel extends PanelWithToolbar {
 
   _stopEditingMainText(text) {
     if (this.editingTextToken)  {
+      this.verbose && console.log(`Stopping editing token ${this.tokenBeingEdited}`)
       this.textTokenEditor.destroy()
       let tokenSelector = `.main-text-token-${this.tokenBeingEdited}`
       this.tokenBeingEdited = -1

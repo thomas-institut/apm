@@ -379,6 +379,7 @@ export class MainTextPanel extends PanelWithToolbar {
           this.verbose && console.log(`Click on main text token ${tokenIndex} in main text edit mode`)
           let tokenSelector = `.main-text-token-${tokenIndex}`
           this.originalTokenText = $(tokenSelector).text()
+          this.verbose && console.log(`Text to edit: '${this.originalTokenText}'`)
           this.tokenBeingEdited = tokenIndex
           this.textTokenEditor = new EditableTextField({
             containerSelector:  tokenSelector,

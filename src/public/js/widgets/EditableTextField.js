@@ -17,6 +17,7 @@
  */
 
 import {OptionsChecker} from '@thomas-inst/optionschecker'
+import { escapeHtml } from '../toolbox/Util.mjs'
 
 // Events
 
@@ -94,6 +95,7 @@ export class EditableTextField {
     this.container = $(this.options.containerSelector)
     this.container.removeClass(this.options.normalClass)
     this.container.removeClass(this.options.editingClass)
+    // this.verbose && console.log(`Initial text: '${this.currentText}'`)
 
     this.confirmEnabled = true
     if (this.options.startInEditMode) {
@@ -127,7 +129,9 @@ export class EditableTextField {
 
   setText(text) {
     if (this.editing) {
+
       this.textInput.val(text)
+      // this.verbose && console.log(`Setting text to '${text}', results in '${this.textInput.val()}'`)
     } else {
       this.currentText = text
       this.setNormalContainer()
@@ -185,7 +189,7 @@ export class EditableTextField {
     }
     console.log(`Edit container size: ${size}`)
     let html = ''
-    html += `<input type="text" class="${textInputClass}" value="${this.currentText}" size="${size}" style="width: ${size+1}ch">`
+    html += `<input type="text" class="${textInputClass}" value="${escapeHtml(this.currentText)}" size="${size}" style="width: ${size+1}ch">`
     html += '&nbsp;'
     html += `<span class="${confirmButtonClass}" title="${confirmButtonTitle}">${this.options.confirmIcon}</span>`
     html += '&nbsp;'

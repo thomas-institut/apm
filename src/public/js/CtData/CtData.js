@@ -141,13 +141,17 @@ export class CtData  {
   }
 
   static insertColumnsAfter(ctData, col, numCols) {
+    if (numCols <= 0) {
+      // nothing to do
+      return ctData
+    }
     // 1. insert columns in collation table
     let collationMatrix = this.getCollationMatrix(ctData)
     if (collationMatrix.nRows === 0) {
-      return
+      return ctData
     }
     if (col >= collationMatrix.nCols) {
-      return
+      return ctData
     }
     let columnSequence = new SequenceWithGroups(collationMatrix.nCols, ctData['groupedColumns'])
     for (let i = 0; i < numCols; i++) {

@@ -36,7 +36,7 @@ const buttons = {
 /**
  * A one-line editor for free text
  */
-export class EntryFreeTextEditorFull {
+export class EditionFreeTextEditor {
 
   constructor (options) {
     let oc = new OptionsChecker({

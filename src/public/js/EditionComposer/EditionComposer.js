@@ -475,7 +475,7 @@ export class EditionComposer {
       console.warn(`Undefined witness token editing witness token: row ${ctRow}, col ${ctIndex}, ref ${editionWitnessRef}`)
       return false
     }
-    console.log(witnessToken)
+    //console.log(witnessToken)
     newText = Util.trimWhiteSpace(newText)
     if (witnessToken.text === newText) {
       //console.log(`No change in text`)
@@ -484,7 +484,6 @@ export class EditionComposer {
 
     // parse new text into witness tokens
     let parsedText = parseWordsAndPunctuation(newText, this.lang)
-    console.log(parsedText)
     if (parsedText.length === 0) {
       // empty text
       console.log(`Empty text `)
@@ -500,7 +499,17 @@ export class EditionComposer {
       return true
     }
     // more than one word
-    this.ctData = CtData.insertColumnsAfter(this.ctData, ctIndex, parsedText.length-1)
+    // first determine if the current token text is in the new text
+    console.log(`Finding old text in the new text`)
+    let currentTokenIndex = parsedText.map( (t) => { return t.text}).indexOf(witnessToken.text)
+    if (currentTokenIndex !== -1) {
+      console.log(`The old text is in position ${currentTokenIndex+1} of ${parsedText.length}`)
+      this.ctData = CtData.insertColumnsAfter(this.ctData, ctIndex-1, currentTokenIndex)
+      this.ctData = CtData.insertColumnsAfter(this.ctData, ctIndex+currentTokenIndex, parsedText.length-1-currentTokenIndex)
+    } else {
+      console.log(`The old text is not in the new text`)
+      this.ctData = CtData.insertColumnsAfter(this.ctData, ctIndex, parsedText.length-1)
+    }
     for (let col = 0; col < parsedText.length; col++ ) {
       replaceEditionWitnessToken(ctRow, editionWitnessRef + col, parsedText[col].text, this.lang)
     }

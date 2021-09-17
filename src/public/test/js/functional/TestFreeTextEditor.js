@@ -1,4 +1,4 @@
-import { EntryFreeTextEditorFull } from '../../../js/EditionComposer/EntryFreeTextEditorFull'
+import { EditionFreeTextEditor } from '../../../js/EditionComposer/EditionFreeTextEditor'
 import { FmtTextFactory } from '../../../js/FmtText/FmtTextFactory'
 import { HtmlRenderer } from '../../../js/FmtText/Renderer/HtmlRenderer'
 import { FmtTextTokenFactory } from '../../../js/FmtText/FmtTextTokenFactory'
@@ -6,7 +6,7 @@ import { FmtTextTokenFactory } from '../../../js/FmtText/FmtTextTokenFactory'
 $( () => {
 
 
-  let editor = new EntryFreeTextEditorFull({
+  let editor = new EditionFreeTextEditor({
      containerSelector: '#editor',
      lang: 'la',
      onChange: (v) => { reportContent(editor) },

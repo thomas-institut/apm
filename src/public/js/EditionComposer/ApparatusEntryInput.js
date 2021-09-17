@@ -24,7 +24,7 @@ import { ConfirmDialog } from '../pages/common/ConfirmDialog'
 import { doNothing } from '../toolbox/FunctionUtil'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { ApparatusCommon } from './ApparatusCommon'
-import { EntryFreeTextEditorFull } from './EntryFreeTextEditorFull'
+import { EditionFreeTextEditor } from './EditionFreeTextEditor'
 import { varsAreEqual } from '../toolbox/ArrayUtil'
 import { FmtTextFactory} from '../FmtText/FmtTextFactory'
 
@@ -79,7 +79,7 @@ export class ApparatusEntryInput {
 
     this.dialog.hideAcceptButton()
 
-    this.freeTextEditor = new EntryFreeTextEditorFull({
+    this.freeTextEditor = new EditionFreeTextEditor({
       containerSelector: '#free-text-entry-div',
       lang: this.options.lang,
       onChange: () =>  { this._updateAcceptButton() },

@@ -107,6 +107,16 @@ export function strIsPunctuation(text, lang = '') {
   return true
 }
 
+/**
+ * Parses a text string into an array of tokens of the form
+ *   {
+ *    type: 'p'| 'w'  // p = punctuation, w = word
+ *    text: <string>
+ *   }
+ * @param {string} text
+ * @param {string} lang
+ * @return {*[]}
+ */
 export function parseWordsAndPunctuation(text, lang = '') {
   let parsedArray = []
   let currentWord = ''

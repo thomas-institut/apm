@@ -38,7 +38,7 @@ import { PanelWithToolbar } from './PanelWithToolbar'
 import { prettyPrintArray } from '../toolbox/ArrayUtil'
 import { capitalizeFirstLetter, removeExtraWhiteSpace } from '../toolbox/Util.mjs'
 import { CtData } from '../CtData/CtData'
-import { EntryFreeTextEditorFull } from './EntryFreeTextEditorFull'
+import { EditionFreeTextEditor } from './EditionFreeTextEditor'
 import {FmtTextFactory} from '../FmtText/FmtTextFactory'
 import {FmtTextTokenFactory} from '../FmtText/FmtTextTokenFactory'
 
@@ -315,7 +315,7 @@ export class MainTextPanel extends PanelWithToolbar {
       case EDIT_MODE_TEXT_BETA:
         this.currentEditMode = newEditMode
         $(this.getContentAreaSelector()).html(this._getMainTextBetaEditor())
-        this.freeTextEditor = new EntryFreeTextEditorFull({
+        this.freeTextEditor = new EditionFreeTextEditor({
             containerSelector: `#${betaEditorDivId}`,
             lang: this.lang,
             onChange: () =>  { console.log(`Change in text detected`) },

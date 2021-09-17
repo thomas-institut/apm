@@ -154,6 +154,15 @@ div.main-text {
     left: 0;
 }
 
+div.main-text.mode-text_beta {
+    padding: 1em 1em;
+}
+
+#text-input-beta {
+    width: 100%;
+    height: 90%;
+}
+
 div.line-number {
     font-size: 1em;
     margin:0;

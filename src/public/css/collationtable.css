@@ -27,10 +27,12 @@
     --cell-grouped-border: 1px #efefef dashed;
     --cell-edition-row-border: 2px #a2a2a2 solid;
 
-    --move-mode-color: #b1e5f3;
-    --group-mode-color: #b8eab2;
-    --edit-mode-move-border:  4px solid var(--move-mode-color);
-    --edit-mode-group-border: 4px solid var(--group-mode-color);
+    --edit-mode-one-color: #b1e5f3;
+    --edit-mode-two-color: #b8eab2;
+    --edit-mode-three-color: #e5d9d1;
+    --edit-mode-one-border:  4px solid var(--edit-mode-one-color);
+    --edit-mode-two-border: 4px solid var(--edit-mode-two-color);
+    --edit-mode-three-border: 4px solid var(--edit-mode-three-color);
 }
  textarea {
         width: 100%;
@@ -326,14 +328,20 @@ td.te-row-title {
     font-weight: 600;
 }
 
+/* Edit modes */
+/* TODO: Differentiate between CT and Main Text edit modes */
+
 a.tb-button-1.multitoggle-on {
-    background: var(--move-mode-color);
+    background: var(--edit-mode-one-color);
 }
 
 a.tb-button-2.multitoggle-on {
-    background: var(--group-mode-color);
+    background: var(--edit-mode-two-color);
 }
 
+a.tb-button-3.multitoggle-on {
+    background: var(--edit-mode-three-color);
+}
 
 td.te-row-title-edition {
     border-bottom: var(--cell-edition-row-border);
@@ -411,24 +419,24 @@ div.rtltext td.te-table-first-col.group-both {
 /* Edit mode borders */
 div#collationtablediv.ltrtext.table-edit-mode-move
 {
-    border-left: var(--edit-mode-move-border);
+    border-left: var(--edit-mode-one-border);
     padding-left: 1rem;
 }
 
 div#collationtablediv.ltrtext.table-edit-mode-group
 {
-    border-left: var(--edit-mode-group-border);
+    border-left: var(--edit-mode-two-border);
     padding-left: 1rem;
 }
 div#collationtablediv.rtltext.table-edit-mode-move
 {
-    border-right: var(--edit-mode-move-border);
+    border-right: var(--edit-mode-one-border);
     padding-right: 1rem;
 }
 
 div#collationtablediv.rtltext.table-edit-mode-group
  {
-    border-right: var(--edit-mode-group-border);
+    border-right: var(--edit-mode-two-border);
     padding-right: 1rem;
 }
 

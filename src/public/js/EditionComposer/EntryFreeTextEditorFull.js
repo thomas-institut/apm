@@ -124,7 +124,7 @@ export class EntryFreeTextEditorFull {
     return (ev) => {
       ev.preventDefault()
       let currentFormat = quill.getFormat()
-      console.log(currentFormat)
+      // console.log(currentFormat)
       let currentState = currentFormat[format]
       let btn = $(buttonSelector)
       quill.format(format, !currentState)

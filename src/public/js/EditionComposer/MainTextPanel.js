@@ -38,12 +38,18 @@ import { PanelWithToolbar } from './PanelWithToolbar'
 import { prettyPrintArray } from '../toolbox/ArrayUtil'
 import { capitalizeFirstLetter, removeExtraWhiteSpace } from '../toolbox/Util.mjs'
 import { CtData } from '../CtData/CtData'
+import { EntryFreeTextEditorFull } from './EntryFreeTextEditorFull'
+import {FmtTextFactory} from '../FmtText/FmtTextFactory'
+import {FmtTextTokenFactory} from '../FmtText/FmtTextTokenFactory'
 
 const EDIT_MODE_OFF = 'off'
 const EDIT_MODE_TEXT = 'text'
 const EDIT_MODE_APPARATUS = 'apparatus'
+const EDIT_MODE_TEXT_BETA = 'text_beta'
 
 const typesetInfoDelay = 200
+
+const betaEditorDivId = 'text-editor-beta'
 
 const icons = {
   addEntry: '<i class="bi bi-plus-lg"></i>'
@@ -75,7 +81,7 @@ export class MainTextPanel extends PanelWithToolbar {
     this.edition = this.options.edition
     this.lang = this.options.ctData['lang']
     this.mainTextNeedsToBeRedrawnOnNextOnShownEvent = true
-    this.currentEditMode = 'off'
+    this.currentEditMode = EDIT_MODE_OFF
     this.editingTextToken = false
     this.originalTokenText = '__null__'
     this.tokenBeingEdited = -1
@@ -146,7 +152,7 @@ export class MainTextPanel extends PanelWithToolbar {
   }
 
   getContentAreaClasses () {
-    return super.getContentAreaClasses().concat([ 'main-text', `text-${this.lang}`])
+    return super.getContentAreaClasses().concat([ 'main-text', `text-${this.lang}`, `mode-${this.currentEditMode}`])
   }
 
   onResize (visible) {
@@ -161,10 +167,24 @@ export class MainTextPanel extends PanelWithToolbar {
       this.verbose && console.log(`Edition panel resize but not shown yet, nothing to do`)
       return
     }
-    // the panel is visible and the main text is drawn in the content area, update line numbers and apparatuses
-    this.verbose && console.log(`Resize: about to update apparatuses`)
-    this._updateLineNumbersAndApparatuses()
-     .then( () => { this.verbose && console.log(`Done resizing`)})
+    // the panel is visible and the main text is drawn in the content area
+    switch(this.currentEditMode) {
+      case EDIT_MODE_OFF:
+      case EDIT_MODE_TEXT:
+      case EDIT_MODE_APPARATUS:
+        this.verbose && console.log(`Resize: about to update apparatuses`)
+        this._updateLineNumbersAndApparatuses()
+          .then( () => { this.verbose && console.log(`Done resizing`)})
+        break
+
+      case EDIT_MODE_TEXT_BETA:
+        //console.log(`Resize in beta editor mode, nothing to do`)
+        break
+
+      default:
+        console.error(`Unknown edit mode ${this.currentEditMode} on resize`)
+    }
+
   }
 
   onShown () {
@@ -173,9 +193,22 @@ export class MainTextPanel extends PanelWithToolbar {
     if (this.mainTextNeedsToBeRedrawnOnNextOnShownEvent) {
       this.mainTextNeedsToBeRedrawnOnNextOnShownEvent = false
       $(this.getContentAreaSelector()).html(this.generateContentHtml('', '', true))
-      this._setupMainTextDivEventHandlers()
-      this._updateLineNumbersAndApparatuses()
-        .then( () => { this.verbose && console.log(`Finished generating edition panel on shown`) })
+      switch(this.currentEditMode) {
+        case EDIT_MODE_OFF:
+        case EDIT_MODE_TEXT:
+        case EDIT_MODE_APPARATUS:
+          this._setupMainTextDivEventHandlers()
+          this._updateLineNumbersAndApparatuses()
+            .then( () => { this.verbose && console.log(`Finished generating edition panel on shown`) })
+          break
+
+        case EDIT_MODE_TEXT_BETA:
+          console.log(`Beta editor shown`)
+          break
+
+        default:
+          console.error(`Unknown edit mode ${this.currentEditMode}`)
+      }
     }
   }
 
@@ -233,19 +266,69 @@ export class MainTextPanel extends PanelWithToolbar {
           { label: 'Off', name: EDIT_MODE_OFF, helpText: 'Turn off editing'},
           { label: 'Text', name: EDIT_MODE_TEXT, helpText: 'Edit main text'},
           { label: 'Apparatus', name: EDIT_MODE_APPARATUS, helpText: 'Add/Edit apparatus entries'},
+          { label: 'Text<sup>BETA</sup>', name: EDIT_MODE_TEXT_BETA, helpText: 'Edit main text (beta)'}
         ]
 
     })
     this.modeToggle.on('toggle',  (ev) => {
-      this.currentEditMode = ev.detail.currentOption
-      this.verbose && console.log(`Edit mode changed to ${this.currentEditMode}`)
-      if (this.editingTextToken) {
-        this._stopEditingMainText(this.originalTokenText)
-      }
-      this._clearSelection()
+      let previousEditMode = this.currentEditMode
+      let newEditMode = ev.detail.currentOption
+      this._changeEditMode(newEditMode, previousEditMode)
     })
     this._eleAddEntryButton().on('click', this._genOnClickAddEntryButton())
-    this._setupMainTextDivEventHandlers()
+    switch (this.currentEditMode) {
+      case EDIT_MODE_OFF:
+      case EDIT_MODE_TEXT:
+      case EDIT_MODE_APPARATUS:
+        this._setupMainTextDivEventHandlers()
+        break
+
+      case EDIT_MODE_TEXT_BETA:
+        console.log(`Post render beta mode`)
+        break
+
+    }
+
+  }
+
+  _changeEditMode(newEditMode, previousEditMode) {
+    this.verbose && console.log(`Edit mode changed from ${previousEditMode} to ${newEditMode}`)
+
+    if (this.editingTextToken) {
+      this._stopEditingMainText(this.originalTokenText)
+    }
+    this._clearSelection()
+    $(this.getContentAreaSelector()).removeClass(`mode-${previousEditMode}`).addClass(`mode-${newEditMode}`)
+
+    switch(newEditMode) {
+      case EDIT_MODE_OFF:
+      case EDIT_MODE_TEXT:
+      case EDIT_MODE_APPARATUS:
+        this.currentEditMode = newEditMode
+        if (previousEditMode === EDIT_MODE_TEXT_BETA) {
+          $(this.getContentAreaSelector()).html(this._getMainTextHtmlVersion())
+          this._setupMainTextDivEventHandlers()
+          this._updateLineNumbersAndApparatuses().then( () => { console.log(`Finished switching mode to ${this.currentEditMode}`)})
+        }
+        break
+
+      case EDIT_MODE_TEXT_BETA:
+        this.currentEditMode = newEditMode
+        $(this.getContentAreaSelector()).html(this._getMainTextBetaEditor())
+        this.freeTextEditor = new EntryFreeTextEditorFull({
+            containerSelector: `#${betaEditorDivId}`,
+            lang: this.lang,
+            onChange: () =>  { console.log(`Change in text detected`) },
+            debug: false
+        })
+
+        this.freeTextEditor.setText( this._convertMainTextToFmtText())
+        console.log(`Now in beta mode`)
+        break
+
+      default:
+        console.error(`Unknown edit mode ${newEditMode}`)
+    }
   }
 
   _getLemmaFromSelection() {
@@ -369,6 +452,9 @@ export class MainTextPanel extends PanelWithToolbar {
     return (ev) => {
       ev.preventDefault()
       ev.stopPropagation()
+      if (this.editingTextToken) {
+        return
+      }
       let tokenIndex = getSingleIntIdFromClasses($(ev.target), 'main-text-token-')
       let mainTextSection = [0]
       if ($(ev.target).hasClass('whitespace')) {
@@ -377,11 +463,6 @@ export class MainTextPanel extends PanelWithToolbar {
       switch(this.currentEditMode) {
         case EDIT_MODE_TEXT:
           this.verbose && console.log(`Click on main text token ${tokenIndex} in main text edit mode`)
-          if (this.editingTextToken) {
-            this.verbose && console.log(`Currently editing token, confirming that edit first`)
-            this.previousEditor = this.textTokenEditor
-            this.previousEditor.confirmEdit()
-          }
           let tokenSelector = `.main-text-token-${tokenIndex}`
           this.originalTokenText = $(tokenSelector).text()
           this.verbose && console.log(`Text to edit: '${this.originalTokenText}'`)
@@ -596,6 +677,45 @@ export class MainTextPanel extends PanelWithToolbar {
   }
 
   _generateMainTextHtml() {
+    switch(this.currentEditMode) {
+      case EDIT_MODE_OFF:
+      case EDIT_MODE_TEXT:
+      case EDIT_MODE_APPARATUS:
+        return this._getMainTextHtmlVersion()
+
+      case EDIT_MODE_TEXT_BETA:
+        return  this._getMainTextBetaEditor()
+
+      default:
+         return `Error: unknown edit mode: ${this.currentEditMode}`
+    }
+  }
+
+  _convertMainTextToFmtText() {
+    console.log(`Converting Main Text to Fmt Text`)
+    console.log( this.edition.mainTextSections[0].text)
+    let fmtText = FmtTextFactory.fromAnything( this.edition.mainTextSections[0].text.map( (token) => {
+      switch (token.type) {
+        case EditionMainTextTokenType.GLUE:
+          return FmtTextTokenFactory.normalSpace()
+
+        case EditionMainTextTokenType.TEXT:
+          return token.fmtText
+
+        default:
+           return []
+      }
+    }))
+    console.log(`Fmt Text:`)
+    console.log(fmtText)
+    return fmtText
+  }
+
+  _getMainTextBetaEditor() {
+    return `<div id="${betaEditorDivId}"/>`
+  }
+
+  _getMainTextHtmlVersion() {
     let fmtTextRenderer = new HtmlRenderer({plainMode : true })
     let classes = []
     return this.edition.mainTextSections[0].text.map( (token, i) => {

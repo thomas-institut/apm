@@ -16,6 +16,7 @@
  *
  */
 
+import * as Punctuation from '../constants/Punctuation.js'
 
 // Utility functions, now as a module
 
@@ -68,8 +69,8 @@ export function escapeHtml(html) {
   });
 }
 
-export function isWordToken(text) {
- return !hasSpaces(text) && !hasPunctuation(text)
+export function isWordToken(text, lang = '') {
+ return !hasSpaces(text) && !hasPunctuation(text, lang)
 }
 
 /**
@@ -87,11 +88,17 @@ export function stringReplaceArray(str, searchStrings, replaceString) {
   return result
 }
 
-export function strIsPunctuation(text) {
+/**
+ *
+ * @param text
+ * @param lang, if an empty string only common characters are checked
+ * @return {boolean}
+ */
+export function strIsPunctuation(text, lang = '') {
   if (text === undefined) {
     return false
   }
-  let punctuationArray = getValidPunctuationArray()
+  let punctuationArray = Punctuation.getValidPunctuationForLang(lang)
   for (let i = 0; i < text.length; i++) {
     if (punctuationArray.indexOf(text.substr(i, 1)) === -1) {
       return false
@@ -100,16 +107,16 @@ export function strIsPunctuation(text) {
   return true
 }
 
-export function parseWordsAndPunctuation(text) {
+export function parseWordsAndPunctuation(text, lang = '') {
   let parsedArray = []
   let currentWord = ''
   text.split('').forEach( (ch) => {
-    if (isWordToken(ch)) {
+    if (isWordToken(ch, lang)) {
       // word
       currentWord += ch
       return
     }
-    if (strIsPunctuation(ch)) {
+    if (strIsPunctuation(ch, lang)) {
       // punctuation
       if (currentWord !== '') {
         parsedArray.push({ type: 'w', text: currentWord})
@@ -132,8 +139,8 @@ export function parseWordsAndPunctuation(text) {
 }
 
 
-export function hasPunctuation(text) {
-  let punctuationArray = getValidPunctuationArray()
+export function hasPunctuation(text, lang = '') {
+  let punctuationArray = Punctuation.getValidPunctuationForLang(lang)
   for (let i = 0; i < text.length; i++) {
     if (punctuationArray.indexOf(text.substr(i, 1)) !== -1) {
       return true
@@ -144,32 +151,6 @@ export function hasPunctuation(text) {
 
 export function hasSpaces(text) {
   return /\s/.test(text)
-}
-
-function getValidPunctuationArray() {
-  return [
-    '.',
-    ',',
-    ';',
-    ':',
-    '?',
-    '¿',
-    '¡',
-    '!',
-    '⊙',
-    '¶',
-    '«',
-    '»',
-    String.fromCodePoint(0x61B), // Arabic semi-colon
-    String.fromCodePoint(0x61F), // Arabic question mark
-    String.fromCodePoint(0x60C), // Arabic comma
-    String.fromCodePoint(0x60D), // Arabic date separator
-    String.fromCodePoint(0x5BE), // Hebrew maqaf
-    String.fromCodePoint(0x5C0), // Hebrew paseq
-    String.fromCodePoint(0x5C3) // Hebrew soft pasuq
-    // String.fromCodePoint(0x5F3), // Hebrew geresh
-    // String.fromCodePoint(0x5F4), // Hebrew gershayim
-  ]
 }
 
 export function safeGetIntVal(element, title) {

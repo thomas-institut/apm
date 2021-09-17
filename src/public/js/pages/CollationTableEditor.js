@@ -163,6 +163,7 @@ export class CollationTableEditor {
     if (this.ctData['archived']  === undefined) {
       this.ctData['archived'] = false
     }
+    this.lang = this.ctData['lang']
 
     this.normalizerRegister = new NormalizerRegister()
     this.registerStandardNormalizers()
@@ -1869,7 +1870,7 @@ export class CollationTableEditor {
           return returnObject
       }
       let isPunctuationAllowed = areAllOtherRowsEmpty(thisObject.tableEditor.getMatrix().getColumn(col), tableRow)
-      if (Util.strIsPunctuation(trimmedText) && isPunctuationAllowed) {
+      if (Util.strIsPunctuation(trimmedText, this.lang) && isPunctuationAllowed) {
           return returnObject
       }
       returnObject.isValid = false
@@ -1908,7 +1909,7 @@ export class CollationTableEditor {
         this.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = newText
         this.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] = TranscriptionTokenType.EMPTY
       } else  {
-        let tokenType = Util.strIsPunctuation(newText) ? TranscriptionTokenType.PUNCTUATION : TranscriptionTokenType.WORD
+        let tokenType = Util.strIsPunctuation(newText, this.lang) ? TranscriptionTokenType.PUNCTUATION : TranscriptionTokenType.WORD
         this.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = newText
         this.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] = tokenType
         if (tokenType === TranscriptionTokenType.WORD) {

@@ -34,6 +34,7 @@ import { ApparatusEntry } from './ApparatusEntry'
 
 
 
+
 export class CriticalApparatusGenerator {
 
   constructor (options = {}) {
@@ -55,6 +56,7 @@ export class CriticalApparatusGenerator {
     let ctIndexToMainTextMap = CriticalApparatusGenerator.calcCtIndexToMainTextMap(baseWitnessTokens.length, mainText)
     // Supporting only one section for now
     let section = [0]
+    let lang = ctData['lang']
 
     let columnGroups = this._getGroupsFromCtData(ctData)
     // TODO: detect a series of empty main text tokens at the beginning of the text and create a group with them
@@ -87,7 +89,7 @@ export class CriticalApparatusGenerator {
         let ctIndex = columnGroup.from
 
         while (ctIndex >= 0 && ( baseWitnessTokens[ctIndex].type === WitnessTokenType.EMPTY ||
-          strIsPunctuation(baseWitnessTokens[ctIndex].text)) ) {
+          strIsPunctuation(baseWitnessTokens[ctIndex].text, lang) )) {
           ctIndex--
         }
 
@@ -103,7 +105,7 @@ export class CriticalApparatusGenerator {
             // ignore base witness
             continue
           }
-          let theText = this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex, false)
+          let theText = this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex, false, lang)
           if (theText === '') {
             // ignore empty witness text
             // TODO: check for deletions
@@ -132,7 +134,7 @@ export class CriticalApparatusGenerator {
         return
       }
       // 2. There's main text in the group, we need to find omissions and variants
-      let normalizedGroupMainText = ApparatusCommon.getMainTextForGroup(columnGroup, baseWitnessTokens, true)
+      let normalizedGroupMainText = ApparatusCommon.getMainTextForGroup(columnGroup, baseWitnessTokens, true, lang)
       if (normalizedGroupMainText === '') {
         // this.verbose && console.log(`Group ${columnGroup.from}-${columnGroup.to} has empty text, skipping.`)
         // ignore empty string (normally main text consisting only of punctuation)
@@ -147,7 +149,7 @@ export class CriticalApparatusGenerator {
           // ignore base witness
           continue
         }
-        let normalizedWitnessText = this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex, true)
+        let normalizedWitnessText = this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex, true, lang)
         if (normalizedWitnessText === '') {
           // omission
           // TODO: check for deletions (i.e., the text might be present as a deletion in the witness)
@@ -159,19 +161,19 @@ export class CriticalApparatusGenerator {
           // variant
           // TODO: check for different hands and corrections
           let witnessData = this.createWitnessData(witnessIndex)
-          this._addWitnessDataToVariantArray(groupVariants, this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex, false), witnessData)
+          this._addWitnessDataToVariantArray(groupVariants, this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex, false, lang), witnessData)
         }
       }
       let mainTextIndexFrom = ctIndexToMainTextMap[columnGroup.from].textIndex
       if (mainTextIndexFrom === -1) {
         // need to find first non-empty main text token in
         //console.log('Finding non empty main text token forward')
-        mainTextIndexFrom = this._findNonEmptyMainTextToken(columnGroup.from, ctIndexToMainTextMap, baseWitnessTokens, true)
+        mainTextIndexFrom = this._findNonEmptyMainTextToken(columnGroup.from, ctIndexToMainTextMap, baseWitnessTokens, true, lang)
       }
       let mainTextIndexTo = ctIndexToMainTextMap[columnGroup.to].textIndex
       if (mainTextIndexTo === -1) {
         //console.log(`Finding non empty main text token backwards from ${columnGroup.to}, from = ${columnGroup.from}`)
-        mainTextIndexTo = this._findNonEmptyMainTextToken(columnGroup.to, ctIndexToMainTextMap, baseWitnessTokens, false)
+        mainTextIndexTo = this._findNonEmptyMainTextToken(columnGroup.to, ctIndexToMainTextMap, baseWitnessTokens, false, lang)
       }
 
       let subEntries =  this._buildSubEntryArrayFromVariantArrayNew(groupOmissions, ApparatusEntryType.OMISSION)
@@ -181,7 +183,7 @@ export class CriticalApparatusGenerator {
         entry.from = mainTextIndexFrom
         entry.to = mainTextIndexTo
         entry.section = section
-        entry.lemma = ApparatusCommon.getMainTextForGroup(columnGroup, baseWitnessTokens, false)
+        entry.lemma = ApparatusCommon.getMainTextForGroup(columnGroup, baseWitnessTokens, false, lang)
         entry.subEntries = subEntries
         // other info
         entry.ctGroup = columnGroup
@@ -207,13 +209,14 @@ export class CriticalApparatusGenerator {
    * @param {LocationInSection[]} ctIndexToMainTextMap
    * @param {*[]} baseWitnessTokens
    * @param {boolean}forward
+   * @param {string} lang
    * @return {number}
    * @private
    */
-   _findNonEmptyMainTextToken(ctIndex, ctIndexToMainTextMap, baseWitnessTokens, forward) {
+   _findNonEmptyMainTextToken(ctIndex, ctIndexToMainTextMap, baseWitnessTokens, forward, lang = '') {
     while (ctIndex >= 0 && ctIndex < ctIndexToMainTextMap.length && (
       ctIndexToMainTextMap[ctIndex].isNull()  ||
-      strIsPunctuation(baseWitnessTokens[ctIndex]['text'])) ) {
+      strIsPunctuation(baseWitnessTokens[ctIndex]['text'], lang)) ) {
       ctIndex = forward ? ctIndex + 1 : ctIndex -1
     }
     if (ctIndex < 0 || ctIndex >= ctIndexToMainTextMap.length) {
@@ -292,14 +295,14 @@ export class CriticalApparatusGenerator {
   }
 
 
-  _getRowTextFromGroupMatrix(matrix, rowNumber, normalized = true) {
+  _getRowTextFromGroupMatrix(matrix, rowNumber, normalized = true, lang = '') {
     return matrix.getColumn(rowNumber)
       .map( (token) => {
         if (token.tokenType === TokenType.EMPTY) {
           return ''
         }
         let theText = normalized ? ApparatusCommon.getNormalizedTextFromInputToken(token) : token['text']
-        if (strIsPunctuation(theText)) {
+        if (strIsPunctuation(theText, lang)) {
           return ''
         }
         return theText

@@ -60,6 +60,7 @@ export class CollationTablePanel extends PanelWithToolbar {
     let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  'Collation Table Panel'})
     this.options = oc.getCleanOptions(options)
     this.ctData = CtData.copyFromObject(this.options.ctData)
+    this.lang = this.ctData['lang']
     this.tableEditModeToRestore = editModeOff
     this.panelIsSetup = false
     this.normalizerRegister = this.options.normalizerRegister
@@ -818,7 +819,7 @@ export class CollationTablePanel extends PanelWithToolbar {
         this.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = newText
         this.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] = TranscriptionTokenType.EMPTY
       } else  {
-        let tokenType = Util.strIsPunctuation(newText) ? TranscriptionTokenType.PUNCTUATION : TranscriptionTokenType.WORD
+        let tokenType = Util.strIsPunctuation(newText, this.lang) ? TranscriptionTokenType.PUNCTUATION : TranscriptionTokenType.WORD
         this.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = newText
         this.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] = tokenType
         if (tokenType === TranscriptionTokenType.WORD) {
@@ -1023,7 +1024,7 @@ export class CollationTablePanel extends PanelWithToolbar {
         return returnObject
       }
       let isPunctuationAllowed = areAllOtherRowsEmpty(this.tableEditor.getMatrix().getColumn(col), tableRow)
-      if (Util.strIsPunctuation(trimmedText) && isPunctuationAllowed) {
+      if (Util.strIsPunctuation(trimmedText, this.lang) && isPunctuationAllowed) {
         return returnObject
       }
       returnObject.isValid = false

@@ -123,6 +123,8 @@ export class EditionComposer {
     console.log('CT Data')
     console.log(this.ctData)
 
+    this.lang = this.ctData['lang']
+
     // Normalizers
     this.normalizerRegister = new NormalizerRegister()
     this.registerStandardNormalizers()
@@ -441,8 +443,8 @@ export class EditionComposer {
   _editMainText(ctIndex, newText) {
     let thisObject = this
 
-    function replaceEditionWitnessToken(ctRow, tokenIndex, newText) {
-      let tokenType = Util.strIsPunctuation(newText) ? TranscriptionTokenType.PUNCTUATION : TranscriptionTokenType.WORD
+    function replaceEditionWitnessToken(ctRow, tokenIndex, newText, lang) {
+      let tokenType = Util.strIsPunctuation(newText, lang) ? TranscriptionTokenType.PUNCTUATION : TranscriptionTokenType.WORD
       thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['tokenClass'] = WitnessTokenClass.EDITION
       thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['text'] = newText
       thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['tokenType'] = tokenType
@@ -481,7 +483,7 @@ export class EditionComposer {
     }
 
     // parse new text into witness tokens
-    let parsedText = parseWordsAndPunctuation(newText)
+    let parsedText = parseWordsAndPunctuation(newText, this.lang)
     console.log(parsedText)
     if (parsedText.length === 0) {
       // empty text
@@ -494,13 +496,13 @@ export class EditionComposer {
     if (parsedText.length === 1) {
       // single word
       console.log(`Single token in new text: ${parsedText[0].text}`)
-      replaceEditionWitnessToken(ctRow, editionWitnessRef, newText)
+      replaceEditionWitnessToken(ctRow, editionWitnessRef, newText, this.lang)
       return true
     }
     // more than one word
     this.ctData = CtData.insertColumnsAfter(this.ctData, ctIndex, parsedText.length-1)
     for (let col = 0; col < parsedText.length; col++ ) {
-      replaceEditionWitnessToken(ctRow, editionWitnessRef + col, parsedText[col].text)
+      replaceEditionWitnessToken(ctRow, editionWitnessRef + col, parsedText[col].text, this.lang)
     }
     console.log(`New ct Data after multiple word edit`)
     console.log(this.ctData)

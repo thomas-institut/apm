@@ -89,7 +89,7 @@ export class PrintedEditionGeneratorNew {
         let ctIndex = columnGroup.from
         while (ctIndex >= 0 && (
           generatedMainText.ctToMainTextMap[ctIndex] === -1 ||
-          strIsPunctuation(generatedMainText.mainTextTokens[generatedMainText.ctToMainTextMap[ctIndex]]['text'])) ) {
+          strIsPunctuation(generatedMainText.mainTextTokens[generatedMainText.ctToMainTextMap[ctIndex]]['text'], language)) ) {
           ctIndex--
         }
         // a mainTextIndex of -1 means that the apparatus entry comes before the text, normally with the lesson 'pre'
@@ -102,7 +102,7 @@ export class PrintedEditionGeneratorNew {
             // ignore base witness
             continue
           }
-          let theText = this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex, false)
+          let theText = this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex, false, language)
           if (theText === '') {
             // ignore empty witness text
             continue
@@ -120,7 +120,7 @@ export class PrintedEditionGeneratorNew {
         return
       }
       // 2. There's main text, we need to find omissions and variants
-      let normalizedMainText = ApparatusCommon.getMainTextForGroup(columnGroup, mainTextInputTokens)
+      let normalizedMainText = ApparatusCommon.getMainTextForGroup(columnGroup, mainTextInputTokens, language)
       if (normalizedMainText === '') {
         // ignore empty string (normally main text consisting only of punctuation)
         return
@@ -135,8 +135,8 @@ export class PrintedEditionGeneratorNew {
           // ignore base witness
           continue
         }
-        let theNormalizedText = this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex, true)
-        let theText = this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex, false)
+        let theNormalizedText = this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex, true, language)
+        let theText = this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex, false, language)
         if (theNormalizedText === '') {
           // omission
           this._addWitnessIndexToVariantArray(groupOmissions, theText, witnessIndex)
@@ -152,13 +152,13 @@ export class PrintedEditionGeneratorNew {
         // need to find first non-empty main text token in
         // console.log('Finding non empty main text token forward')
         mainTextIndexFrom = ApparatusCommon.findNonEmptyMainTextToken(columnGroup.from,
-          generatedMainText.ctToMainTextMap, generatedMainText.mainTextTokens, true)
+          generatedMainText.ctToMainTextMap, generatedMainText.mainTextTokens, true, language)
       }
       let mainTextIndexTo = generatedMainText.ctToMainTextMap[columnGroup.to]
       if (mainTextIndexTo === -1) {
         // console.log(`Finding non empty main text token backwards from ${columnGroup.to}, from = ${columnGroup.from}`)
         mainTextIndexTo = ApparatusCommon.findNonEmptyMainTextToken(columnGroup.to,
-          generatedMainText.ctToMainTextMap, generatedMainText.mainTextTokens, false)
+          generatedMainText.ctToMainTextMap, generatedMainText.mainTextTokens, false, language)
       }
 
       let entries =  this._genApparatusEntryFromArray([],groupOmissions, sigla, ENTRY_TYPE_OMISSION, language)
@@ -349,7 +349,7 @@ export class PrintedEditionGeneratorNew {
     return noGluePunctuation.includes(char)
   }
 
-  _getRowTextFromGroupMatrix(matrix, rowNumber, normalized = true) {
+  _getRowTextFromGroupMatrix(matrix, rowNumber, normalized = true, lang = '') {
     let thisObject = this
     return matrix.getColumn(rowNumber)
       .map( (token) => {
@@ -358,7 +358,7 @@ export class PrintedEditionGeneratorNew {
         }
 
         let theText = normalized ? ApparatusCommon.getNormalizedTextFromInputToken(token) : thisObject.getTextFromInputToken(token)
-        if (strIsPunctuation(theText)) {
+        if (strIsPunctuation(theText, lang)) {
           return ''
         }
         return theText

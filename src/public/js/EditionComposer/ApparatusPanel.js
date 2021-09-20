@@ -31,8 +31,6 @@ const doubleVerticalLine = String.fromCodePoint(0x2016)
 const verticalLine = String.fromCodePoint(0x007c)
 
 const editIcon = '<small><i class="fas fa-pen"></i></small>'
-const clearSelectionIcon = '<i class="bi bi-backspace"></i>'
-
 
 
 export class ApparatusPanel extends  PanelWithToolbar {

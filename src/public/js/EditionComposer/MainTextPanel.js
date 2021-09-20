@@ -36,7 +36,7 @@ import { Edition } from '../Edition/Edition'
 import { HtmlRenderer } from '../FmtText/Renderer/HtmlRenderer'
 import { PanelWithToolbar } from './PanelWithToolbar'
 import { prettyPrintArray } from '../toolbox/ArrayUtil'
-import { capitalizeFirstLetter, removeExtraWhiteSpace } from '../toolbox/Util.mjs'
+import { capitalizeFirstLetter} from '../toolbox/Util.mjs'
 import { CtData } from '../CtData/CtData'
 
 import { EditionFreeTextEditor } from './EditionFreeTextEditor'

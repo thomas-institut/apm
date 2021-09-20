@@ -173,12 +173,13 @@ export class ApparatusPanel extends  PanelWithToolbar {
 
   generateToolbarHtml (tabId, mode, visible) {
     return `<div class="panel-toolbar-group">
+
                 <div class="panel-toolbar-item">
                     <a class="edit-entry-btn tb-button hidden" href="#" title="Edit Entry">${editIcon}</a>
                 </div>
-                 <!--<div class="panel-toolbar-item">
-                    <a class="clear-selection-btn tb-button hidden" href="#" title="Clear Selection">${clearSelectionIcon}</a>
-                </div>-->
+                <div class="panel-toolbar-item">
+                    &nbsp;
+                </div>
             </div>`
   }
 

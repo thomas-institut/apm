@@ -1,3 +1,9 @@
+:root {
+
+    --latin-apparatus-font-family: "Times New Roman", Times, serif;;
+}
+
+
 input:focus {
     border: 1px solid #009dff;
     outline: none; !important;
@@ -285,7 +291,6 @@ h1.lemma {
 }
 
 .ql-editor {
-    /*font-family: serif;*/
     font-size: 1rem;
 }
 
@@ -322,5 +327,9 @@ h1.lemma {
 }
 
 .text-la .ql-editor {
-    font-family: serif;
+    font-family: var(--latin-apparatus-font-family);
+}
+
+.form-group.text-la {
+    font-family: var(--latin-apparatus-font-family);
 }

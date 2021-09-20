@@ -26,11 +26,9 @@ import { EditionWitnessInfo } from '../EditionWitnessInfo'
 import { Apparatus } from '../Apparatus'
 import { ApparatusEntry } from '../ApparatusEntry'
 import { ApparatusSubEntry } from '../ApparatusSubEntry'
-import { FmtTextFactory } from '../../FmtText/FmtTextFactory'
 import * as ApparatusType from '../ApparatusType'
 import * as SubEntryType from '../SubEntryType'
 import * as SubEntrySource from '../SubEntrySource'
-import { FmtText } from '../../FmtText/FmtText'
 import { pushArray } from '../../toolbox/ArrayUtil'
 
 export class CtDataEditionGenerator extends EditionGenerator{

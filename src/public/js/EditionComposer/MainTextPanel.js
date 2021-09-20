@@ -29,7 +29,7 @@ import {getTypesettingInfo} from '../Typesetter/BrowserTypesettingCalculations'
 import { doNothing, wait } from '../toolbox/FunctionUtil'
 import { MultiToggle } from '../widgets/MultiToggle'
 import { EditableTextField } from '../widgets/EditableTextField'
-import { ApparatusEntryInput } from './ApparatusEntryInput'
+import { ApparatusEntryInput, userCancelledReason } from './ApparatusEntryInput'
 import { ApparatusCommon } from './ApparatusCommon'
 import * as EditionMainTextTokenType from '../Edition/MainTextTokenType'
 import { Edition } from '../Edition/Edition'
@@ -38,6 +38,7 @@ import { PanelWithToolbar } from './PanelWithToolbar'
 import { prettyPrintArray } from '../toolbox/ArrayUtil'
 import { capitalizeFirstLetter, removeExtraWhiteSpace } from '../toolbox/Util.mjs'
 import { CtData } from '../CtData/CtData'
+import { EditionMainTextGenerator } from '../Edition/EditionGenerator/EditionMainTextGenerator.mjs'
 
 const EDIT_MODE_OFF = 'off'
 const EDIT_MODE_TEXT = 'text'
@@ -57,6 +58,7 @@ export class MainTextPanel extends PanelWithToolbar {
       ctData: { type: 'object' },
       edition: { type: 'object', objectClass: Edition },
       apparatusPanels: { type: 'array' },
+      onError: { type: 'function', default: doNothing},
       onConfirmMainTextEdit: {
         // function to call when the user edits a main text token
         //  (mainTextTokenIndex, newText) => boolean,  if false, no changes are made to the displayed text
@@ -252,11 +254,17 @@ export class MainTextPanel extends PanelWithToolbar {
     if (this.isSelectionEmpty()) {
       return ''
     }
-    let lemma = ''
-    for (let i=this.selection.from; i <= this.selection.to; i++) {
-      lemma += $(`${this.containerSelector} .main-text-token-${i}`).text() + ' '
-    }
-    return removeExtraWhiteSpace(lemma)
+    let editionWitness = this.ctData['witnesses'][this.ctData['editionWitnessIndex']]['tokens']
+    let lemma = this.edition.mainTextSections[0].text.filter( (token, i) => {
+      return i>=this.selection.from && i<=this.selection.to
+    }).map ( (token) => { return token.getPlainText()}).join('')
+    console.log(`Lemma from selection ${this.selection.from}-${this.selection.to}: '${lemma}'`)
+    return lemma
+    // let lemma = ''
+    // for (let i=this.selection.from; i <= this.selection.to; i++) {
+    //   lemma += $(`${this.containerSelector} .main-text-token-${i}`).text() + ' '
+    // }
+    // return removeExtraWhiteSpace(lemma)
   }
 
   _genOnClickAddEntryButton() {
@@ -290,9 +298,13 @@ export class MainTextPanel extends PanelWithToolbar {
         this.ctData = ApparatusCommon.updateCtDataWithNewEntry(this.ctData, this.edition, this.selection.from, this.selection.to, newEntry, lemma, currentApparatusEntries, this.verbose)
         this.options.onCtDataChange(this.ctData)
       })
-      //   .catch( (reason) => {
-      //   this.verbose && console.log(`FAIL: ${reason}`)
-      // })
+        .catch( (reason) => {
+          if (reason !== userCancelledReason) {
+            console.error(`Fail updating apparatus entry`)
+            console.log(reason)
+            this.options.onError(`Error adding/updating apparatus entry`)
+          }
+        })
     }
   }
 

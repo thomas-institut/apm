@@ -39,7 +39,19 @@ export class EditionMainTextGenerator {
    * @param normalized
    * @param normalizationsToIgnore
    */
-  static generateMainTextNew(witnessTokens, normalized = false, normalizationsToIgnore = []) {
+  static generateMainText(witnessTokens, normalized = false, normalizationsToIgnore = []) {
+    let section = new MainTextSection()
+    section.text = this.generateMainTextTokensWithGlue(witnessTokens, normalized, normalizationsToIgnore)
+    return [ section ]
+  }
+
+  static generatePlainText(witnessTokens) {
+    return this.generateMainTextTokensWithGlue(witnessTokens, false).map( (token) => {
+      return token.getPlainText()
+    }).join('')
+  }
+
+  static generateMainTextTokensWithGlue(witnessTokens, normalized = false, normalizationsToIgnore = []) {
     let mainTextTokens = []
     for(let i = 0; i < witnessTokens.length; i++) {
       let witnessToken = witnessTokens[i]
@@ -90,10 +102,7 @@ export class EditionMainTextGenerator {
       mainTextTokensWithGlue.push(mainTextToken)
       firstWordAdded = true
     }
-
-    let section = new MainTextSection()
-    section.text = mainTextTokensWithGlue
-    return [ section ]
+    return mainTextTokensWithGlue
   }
 
   /**
@@ -103,7 +112,7 @@ export class EditionMainTextGenerator {
    * @param {string[]} normalizationsToIgnore
    * @returns {{mainTextTokens: MainTextToken[], ctToMainTextMap: number[]}}
    */
-  static generateMainText(witnessTokens, normalized = true, normalizationsToIgnore = []) {
+  static generateMainTextOld(witnessTokens, normalized = true, normalizationsToIgnore = []) {
     let mainTextTokens = []
     let ctTokensToMainText = []
     let currentMainTextIndex = -1
@@ -131,55 +140,7 @@ export class EditionMainTextGenerator {
       ctToMainTextMap: ctTokensToMainText
     }
   }
-
-  /**
-   *
-   * @param {MainTextToken[]} mainTextTokens:
-   * @returns {{mainTextTokensWithGlue: MainTextToken[], tokensWithSpaceToMainTextTokensMap: number[]}}
-   */
-  static generateMainTextWithGlue(mainTextTokens) {
-    let mainTextTokensWithGlue = []
-    let firstWordAdded = false
-    let inputTokensToMainText = []
-    let currentMainTextIndex = -1
-    for(let i = 0; i < mainTextTokens.length; i++) {
-      let mainTextToken = mainTextTokens[i]
-
-      if (mainTextToken.type !== MainTextTokenType.TEXT){
-        inputTokensToMainText.push(-1)
-        continue
-      }
-      let tokenPlainText = mainTextToken.getPlainText()
-      if (tokenPlainText === undefined) {
-        inputTokensToMainText.push(-1)
-        console.warn(`Found main text token with no text at index ${i}`)
-        continue
-      }
-
-      let addGlue = true
-      if (!firstWordAdded) {
-        addGlue = false
-      }
-      if (noGluePunctuation.includes(tokenPlainText)) {
-        addGlue = false
-      }
-      if (addGlue) {
-        currentMainTextIndex++
-        mainTextTokensWithGlue.push(MainTextTokenFactory.createNormalGlue())
-        inputTokensToMainText.push(-1)
-      }
-      currentMainTextIndex++
-      mainTextTokensWithGlue.push(mainTextToken)
-      firstWordAdded = true
-      inputTokensToMainText.push(i)
-    }
-    return {
-      mainTextTokensWithGlue: mainTextTokensWithGlue,
-      tokensWithSpaceToMainTextTokensMap: inputTokensToMainText
-    }
-  }
 }
-
 
 /**
  *  Gets the text for the given token, the normal text or

@@ -127,6 +127,12 @@ table.collationtable td.tokennotpresent {
     text-align: center;
     color: silver;
 }
+
+.te-table td.token-type-empty {
+    text-align: center;
+    color: #e0e0e0;
+}
+
 td.addition.variant-1 {
     background-image: linear-gradient(to top, #ddecff, #f3e7ff);
 }

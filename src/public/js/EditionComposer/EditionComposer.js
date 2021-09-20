@@ -206,7 +206,7 @@ export class EditionComposer {
           apparatusIndex: index,
           onHighlightMainText: this._genOnHighlightMainText(apparatus.type),
           onCtDataChange: this.genOnCtDataChange(`ApparatusPanel ${index}`),
-          onError: (msg) => { this._setError(`${msg} (Apparatus ${index}`)},
+          onError: (msg) => { this._setError(`${msg} (Apparatus ${index})`)},
           verbose: true
         }
       )})
@@ -217,6 +217,7 @@ export class EditionComposer {
       edition: this.edition,
       apparatusPanels: apparatusPanels,
       verbose: true,
+      onError: (msg) => { this._setError(`${msg} (Main Text Panel)`)},
       onConfirmMainTextEdit: this.genOnConfirmMainTextEdit(),
       onCtDataChange: this.genOnCtDataChange('mainTextPanel')
     })

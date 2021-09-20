@@ -34,6 +34,7 @@ export class MainTextTokenFactory {
     let t = new MainTextToken()
     t.type = EditionMainTextTokenType.GLUE
     t.space = 'normal'
+    t.fmtText = FmtTextFactory.oneNormalSpace()
     return t
   }
 

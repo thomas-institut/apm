@@ -17,14 +17,14 @@
  */
 
 import * as CollationTableType from '../constants/CollationTableType'
+import * as TokenClass from '../constants/CollationTableType'
 import * as TranscriptionTokenType from '../constants/WitnessTokenType'
 import { Matrix } from '@thomas-inst/matrix'
-import * as TokenClass from '../constants/CollationTableType'
-import {OptionsChecker} from '@thomas-inst/optionschecker'
+import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { CtData } from './CtData'
 import { deepCopy } from '../toolbox/Util.mjs'
-
-
+import { ApparatusCommon } from '../EditionComposer/ApparatusCommon'
+import { EditionMainTextGenerator } from '../Edition/EditionGenerator/EditionMainTextGenerator.mjs'
 
 export class CtDataCleaner {
 
@@ -36,7 +36,16 @@ export class CtDataCleaner {
     this.options = oc.getCleanOptions(options)
   }
 
-
+  /**
+   * Normalizes a ctData object fixing minor inconsistencies and creating empty data for all required
+   * object members.
+   *
+   * This function basically makes any ctData object in the system conform to the latest version.
+   *
+   *
+   * @param ctData
+   * @return {*}
+   */
   getCleanCollationData(ctData) {
     this.ctData = deepCopy(ctData)
     // use default ordering if ctData does not have one
@@ -97,11 +106,44 @@ export class CtDataCleaner {
     }
     // consistency check
     this.checkAndFixCollationTableConsistency()
-
+    this.ctData = this.fixCustomApparatuses(this.ctData)
     this.ctData = CtData.fixFmtText(this.ctData)
 
     return this.ctData
   }
+
+  /**
+   * Detects and fixes lemmata in custom apparatuses due to a bug
+   * in v0.42.0 (31 Aug 2021)
+   *
+   * @param ctData
+   * @return {*}
+   */
+  fixCustomApparatuses(ctData) {
+    if (ctData['type'] !== CollationTableType.EDITION) {
+      return ctData
+    }
+    let editionWitness = ctData['witnesses'][ctData['editionWitnessIndex']]['tokens']
+    let lang = ctData['lang']
+
+    ctData['customApparatuses'] = ctData['customApparatuses'].map( (apparatus) => {
+      apparatus.entries = apparatus.entries.map((entry) => {
+        let goodLemma = EditionMainTextGenerator.generatePlainText( editionWitness.filter( (token, i) => {
+          return i>=entry.from && i<=entry.to
+        }))
+        if (entry['lemma'] === goodLemma) {
+          return entry
+        }
+        console.warn(`Found incorrect lemma '${entry['lemma']}' in custom apparatus for tokens ${entry.from} to ${entry.to}, should be '${goodLemma}'`)
+        entry['lemma'] = goodLemma
+        return entry
+      })
+      return apparatus
+    })
+    return ctData
+  }
+
+
 
 
   fixEditionWitnessReferences(ctData) {

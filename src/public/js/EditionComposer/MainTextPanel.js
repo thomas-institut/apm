@@ -38,6 +38,7 @@ import { PanelWithToolbar } from './PanelWithToolbar'
 import { prettyPrintArray } from '../toolbox/ArrayUtil'
 import { capitalizeFirstLetter, removeExtraWhiteSpace } from '../toolbox/Util.mjs'
 import { CtData } from '../CtData/CtData'
+
 import { EditionFreeTextEditor } from './EditionFreeTextEditor'
 import {FmtTextFactory} from '../FmtText/FmtTextFactory'
 import {FmtTextTokenFactory} from '../FmtText/FmtTextTokenFactory'
@@ -63,6 +64,7 @@ export class MainTextPanel extends PanelWithToolbar {
       ctData: { type: 'object' },
       edition: { type: 'object', objectClass: Edition },
       apparatusPanels: { type: 'array' },
+      onError: { type: 'function', default: doNothing},
       onConfirmMainTextEdit: {
         // function to call when the user edits a main text token
         //  (mainTextTokenIndex, newText) => boolean,  if false, no changes are made to the displayed text
@@ -335,11 +337,16 @@ export class MainTextPanel extends PanelWithToolbar {
     if (this.isSelectionEmpty()) {
       return ''
     }
-    let lemma = ''
-    for (let i=this.selection.from; i <= this.selection.to; i++) {
-      lemma += $(`${this.containerSelector} .main-text-token-${i}`).text() + ' '
-    }
-    return removeExtraWhiteSpace(lemma)
+    let lemma = this.edition.mainTextSections[0].text.filter( (token, i) => {
+      return i>=this.selection.from && i<=this.selection.to
+    }).map ( (token) => { return token.getPlainText()}).join('')
+    console.log(`Lemma from selection ${this.selection.from}-${this.selection.to}: '${lemma}'`)
+    return lemma
+    // let lemma = ''
+    // for (let i=this.selection.from; i <= this.selection.to; i++) {
+    //   lemma += $(`${this.containerSelector} .main-text-token-${i}`).text() + ' '
+    // }
+    // return removeExtraWhiteSpace(lemma)
   }
 
   _genOnClickAddEntryButton() {
@@ -377,7 +384,7 @@ export class MainTextPanel extends PanelWithToolbar {
           if (reason !== userCancelledReason) {
             console.error(`Fail updating apparatus entry`)
             console.log(reason)
-            this.options.onError(`Error updating apparatus entry`)
+            this.options.onError(`Error adding/updating apparatus entry`)
           }
         })
     }

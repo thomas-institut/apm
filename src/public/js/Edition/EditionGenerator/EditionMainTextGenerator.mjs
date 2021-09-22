@@ -72,9 +72,7 @@ export class EditionMainTextGenerator {
         MainTextTokenFactory.createSimpleText(getTextFromWitnessToken(witnessToken, normalized, normalizationsToIgnore), i)
       )
     }
-
     // add glue
-
     let mainTextTokensWithGlue = []
     let firstWordAdded = false
     for(let i = 0; i < mainTextTokens.length; i++) {
@@ -103,42 +101,6 @@ export class EditionMainTextGenerator {
       firstWordAdded = true
     }
     return mainTextTokensWithGlue
-  }
-
-  /**
-   *
-   * @param { *[]} witnessTokens
-   * @param {boolean} normalized
-   * @param {string[]} normalizationsToIgnore
-   * @returns {{mainTextTokens: MainTextToken[], ctToMainTextMap: number[]}}
-   */
-  static generateMainTextOld(witnessTokens, normalized = true, normalizationsToIgnore = []) {
-    let mainTextTokens = []
-    let ctTokensToMainText = []
-    let currentMainTextIndex = -1
-    for(let i = 0; i < witnessTokens.length; i++) {
-      let witnessToken = witnessTokens[i]
-      let tokenType = witnessToken[INPUT_TOKEN_FIELD_TYPE]
-      if (tokenType === WitnessTokenType.EMPTY){
-        ctTokensToMainText.push(-1)
-        continue
-      }
-      if (tokenType === WitnessTokenType.WHITESPACE) {
-        // normally, there won't be whitespace in the collation table
-        // but just in case, make sure that no raw whitespace appears in the main text
-        ctTokensToMainText.push(-1)
-        continue
-      }
-      currentMainTextIndex++
-      mainTextTokens.push(
-        MainTextTokenFactory.createSimpleText(getTextFromWitnessToken(witnessToken, normalized, normalizationsToIgnore), i)
-      )
-      ctTokensToMainText.push(currentMainTextIndex)
-    }
-    return {
-      mainTextTokens: mainTextTokens,
-      ctToMainTextMap: ctTokensToMainText
-    }
   }
 }
 

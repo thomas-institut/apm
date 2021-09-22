@@ -52,6 +52,7 @@ import * as ArrayUtil from '../toolbox/ArrayUtil'
 import * as CollationTableType from '../constants/CollationTableType'
 import * as NormalizationSource from '../constants/NormalizationSource'
 import { CtData } from '../CtData/CtData'
+import { prettyPrintArray } from '../toolbox/ArrayUtil'
 
 // CONSTANTS
 
@@ -397,7 +398,7 @@ export class EditionComposer {
 
   genOnConfirmMainTextEdit() {
     return (section, tokenIndex, newText) => {
-      //console.log(`Confirming edit of main text token ${tokenIndex} in section ${prettyPrintArray(section)} with new text '${newText}'`)
+      console.log(`Confirming edit of main text token ${tokenIndex} in section ${prettyPrintArray(section)} with new text '${newText}'`)
       let token = this.edition.getMainTextToken( new LocationInSection(section, tokenIndex))
       if (token.isEmpty()) {
         console.warn(`Trying to confirm edit of nonexistent main text token`)

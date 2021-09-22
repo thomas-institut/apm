@@ -106,7 +106,7 @@ export class MainTextPanel extends PanelWithToolbar {
     this.edition = edition
 
     this.options.apparatusPanels.forEach( (ap) => {
-      ap.updateEdition(edition)
+      ap.updateData(ctData, edition)
     })
 
     if (this.visible) {

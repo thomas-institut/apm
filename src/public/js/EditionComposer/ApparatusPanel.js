@@ -66,7 +66,8 @@ export class ApparatusPanel extends  PanelWithToolbar {
     this.currentSelectedLemma = []
   }
 
-  updateEdition(edition) {
+  updateData(ctData, edition) {
+    this.ctData = CtData.copyFromObject(ctData)
     this.edition = edition
     this.apparatus = this.edition.apparatuses[this.options.apparatusIndex]
     this.lang = this.edition.getLang()
@@ -91,7 +92,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
 
   _editSelectedEntry() {
     if (this.currentSelectedLemma.length === 0) {
-      return false
+      return
     }
     let apparatusIndex = this.currentSelectedLemma[0]
     let entryIndex = this.currentSelectedLemma[1]

@@ -29,9 +29,6 @@ import { editModeOff, columnGroupEvent, columnUngroupEvent, TableEditor } from '
 import * as CollationTableUtil from './common/CollationTableUtil'
 import * as PopoverFormatter from './common/CollationTablePopovers'
 
-import {EditionViewerSvgOld} from '../Edition/EditionViewerSvgOld'
-import {PrintedEditionGenerator} from '../Edition/PrintedEditionGenerator'
-
 // widgets
 import { EditableTextField } from '../widgets/EditableTextField'
 import { transientAlert} from '../widgets/TransientAlert'
@@ -61,6 +58,8 @@ import { IgnoreIsolatedHamzaNormalizer } from '../normalizers/IgnoreIsolatedHamz
 import { deepCopy } from '../toolbox/Util.mjs'
 import { CtData } from '../CtData/CtData'
 import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'
+import { CtDataEditionGenerator } from '../Edition/EditionGenerator/CtDataEditionGenerator'
+import { EditionViewerSvg } from '../Edition/EditionViewerSvg'
 
 /** @namespace Twig */
 
@@ -2656,18 +2655,39 @@ export class CollationTableEditor {
   updateEditionPreview() {
     this.editionSvgDiv.html("Generating printed edition preview... <i class=\"fa fa-spinner fa-spin fa-fw\"></i>")
 
-    // TODO: use new SVG viewer!
-    let peg = new PrintedEditionGenerator()
-    let edition = peg.generateEdition(this.ctData, this.ctData['witnessOrder'][0])
-    let ev = new EditionViewerSvgOld( {
-      lang: edition.lang,
-      collationTokens: edition.mainTextTokens,
-      apparatusArray: edition.apparatusArray,
-      isRightToLeft: (edition.textDirection === 'rtl'),
-      fontFamily: this.options.langDef[this.ctData['lang']].editionFont,
-      addGlue: false
+    let edition = null
+
+    let eg = new CtDataEditionGenerator({ ctData: this.ctData})
+    try {
+      edition = eg.generateEdition()
+    } catch (e) {
+      console.error(`Error generating edition`)
+      console.error(e)
+      this.errorDetected = true
+    }
+    if (!this.errorDetected) {
+      console.log(`Edition Recalculated`)
+      console.log(edition)
+    }
+    if (edition === null) {
+      return
+    }
+    let editionViewer = new EditionViewerSvg({
+      edition: edition,
+      fontFamily:  this.options.langDef[edition.lang].editionFont
     })
-    this.editionSvgDiv.html(ev.getSvg())
+    // TODO: use new SVG viewer!
+    // let peg = new PrintedEditionGenerator()
+    // let edition = peg.generateEdition(this.ctData, this.ctData['witnessOrder'][0])
+    // let ev = new EditionViewerSvgOld( {
+    //   lang: edition.lang,
+    //   collationTokens: edition.mainTextTokens,
+    //   apparatusArray: edition.apparatusArray,
+    //   isRightToLeft: (edition.textDirection === 'rtl'),
+    //   fontFamily: this.options.langDef[this.ctData['lang']].editionFont,
+    //   addGlue: false
+    // })
+    this.editionSvgDiv.html(editionViewer.getSvg())
     this.setSvgDownloadFile()
   }
 

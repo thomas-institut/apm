@@ -34,7 +34,7 @@ const doubleVerticalLine = String.fromCodePoint(0x2016)
 const verticalLine = String.fromCodePoint(0x007c)
 
 
-export class EditionViewerSvgNew {
+export class EditionViewerSvg {
 
   constructor (options) {
 

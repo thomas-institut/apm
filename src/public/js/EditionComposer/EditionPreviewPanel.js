@@ -26,7 +26,7 @@
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { PanelWithToolbar } from './PanelWithToolbar'
 import { Edition } from '../Edition/Edition'
-import { EditionViewerSvgNew } from '../Edition/EditionViewerSvgNew'
+import { EditionViewerSvg } from '../Edition/EditionViewerSvg'
 
 
 const defaultIcons = {
@@ -124,7 +124,7 @@ export class EditionPreviewPanel extends PanelWithToolbar {
   _genPreviewHtml() {
     this.verbose && console.log(`Generating preview html`)
 
-    let ev = new EditionViewerSvgNew({
+    let ev = new EditionViewerSvg({
       edition: this.edition,
       fontFamily:  this.options.langDef[this.edition.lang].editionFont
     })

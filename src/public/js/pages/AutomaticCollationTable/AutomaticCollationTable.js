@@ -28,7 +28,7 @@ import {CollationTableFormatter} from './CollationTableFormatter'
 import { AutomaticCollationTableSettingsForm} from '../common/AutoCollTableSettingsForm'
 import {AutomaticCollationTableViewSettingsForm} from './AutomaticCollationTableViewSettingsForm'
 import { CtDataEditionGenerator } from '../../Edition/EditionGenerator/CtDataEditionGenerator'
-import { EditionViewerSvgNew } from '../../Edition/EditionViewerSvgNew'
+import { EditionViewerSvg } from '../../Edition/EditionViewerSvg'
 import { CtData } from '../../CtData/CtData'
 
 export class AutomaticCollationTable {
@@ -288,7 +288,7 @@ export class AutomaticCollationTable {
     let edition = eg.generateEdition()
     console.log(`Edition Recalculated`)
     console.log(edition)
-    let editionViewer = new EditionViewerSvgNew({
+    let editionViewer = new EditionViewerSvg({
       edition: edition,
       fontFamily:  this.options.langDef[edition.lang].editionFont
     })

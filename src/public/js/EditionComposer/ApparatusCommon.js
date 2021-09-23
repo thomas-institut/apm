@@ -22,7 +22,6 @@
 
 import * as TypesetterTokenFactory from '../Typesetter/TypesetterTokenFactory'
 import * as WitnessTokenType from '../constants/WitnessTokenType'
-import { strIsPunctuation } from '../toolbox/Util.mjs'
 import * as ApparatusSubEntryType from '../Edition/SubEntryType'
 import { NumeralStyles } from '../toolbox/NumeralStyles'
 import { FmtText } from '../FmtText/FmtText'
@@ -32,6 +31,7 @@ import { HtmlRenderer } from '../FmtText/Renderer/HtmlRenderer'
 import { LocationInSection } from '../Edition/LocationInSection'
 import { CtData } from '../CtData/CtData'
 import { FmtTextFactory} from '../FmtText/FmtTextFactory'
+import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'
 
 // const INPUT_TOKEN_FIELD_TYPE = 'tokenType'
 const INPUT_TOKEN_FIELD_TEXT = 'text'
@@ -310,7 +310,7 @@ export class ApparatusCommon {
       .filter( (t, i) => { return i>=group.from && i<=group.to}) // get group main text columns
       .map( (t) => {   // get text for each column
         if (t.tokenType === WitnessTokenType.EMPTY) { return ''}
-        if (strIsPunctuation(t.text, lang)) { return  ''}
+        if (WitnessTokenStringParser.strIsPunctuation(t.text, lang)) { return  ''}
         if (normalized) {
           if (t.normalizedText !== undefined && t.normalizedText !== '') {
             return t.normalizedText
@@ -325,7 +325,7 @@ export class ApparatusCommon {
   static findNonEmptyMainTextToken(ctIndex, ctToMainTextMap, mainTextTokens, forward, lang = '') {
     while (ctIndex >= 0 && ctIndex < ctToMainTextMap.length && (
       ctToMainTextMap[ctIndex] === -1 ||
-      strIsPunctuation(mainTextTokens[ctToMainTextMap[ctIndex]]['text'], lang)) ) {
+      WitnessTokenStringParser.strIsPunctuation(mainTextTokens[ctToMainTextMap[ctIndex]]['text'], lang)) ) {
       ctIndex = forward ? ctIndex + 1 : ctIndex -1
     }
     if (ctIndex < 0 || ctIndex >= ctToMainTextMap.length) {

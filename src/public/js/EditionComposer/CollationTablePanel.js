@@ -44,6 +44,7 @@ import * as CollationTableUtil from '../pages/common/CollationTableUtil'
 import * as PopoverFormatter from '../pages/common/CollationTablePopovers'
 import { FULL_TX } from '../constants/TranscriptionTokenClass'
 import { CtData } from '../CtData/CtData'
+import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'
 
 export class CollationTablePanel extends PanelWithToolbar {
   constructor (options = {}) {
@@ -819,7 +820,7 @@ export class CollationTablePanel extends PanelWithToolbar {
         this.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = newText
         this.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] = TranscriptionTokenType.EMPTY
       } else  {
-        let tokenType = Util.strIsPunctuation(newText, this.lang) ? TranscriptionTokenType.PUNCTUATION : TranscriptionTokenType.WORD
+        let tokenType = WitnessTokenStringParser.strIsPunctuation(newText, this.lang) ? TranscriptionTokenType.PUNCTUATION : TranscriptionTokenType.WORD
         this.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = newText
         this.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] = tokenType
         if (tokenType === TranscriptionTokenType.WORD) {
@@ -1019,12 +1020,12 @@ export class CollationTablePanel extends PanelWithToolbar {
 
       // this.verbose && console.log(`Validating text '${currentText}'`)
       let trimmedText = Util.trimWhiteSpace(currentText)
-      if (Util.isWordToken(trimmedText)) {
+      if (WitnessTokenStringParser.isWordToken(trimmedText)) {
         // TODO: do not allow words when the rest of the witnesses only have punctuation
         return returnObject
       }
       let isPunctuationAllowed = areAllOtherRowsEmpty(this.tableEditor.getMatrix().getColumn(col), tableRow)
-      if (Util.strIsPunctuation(trimmedText, this.lang) && isPunctuationAllowed) {
+      if (WitnessTokenStringParser.strIsPunctuation(trimmedText, this.lang) && isPunctuationAllowed) {
         return returnObject
       }
       returnObject.isValid = false

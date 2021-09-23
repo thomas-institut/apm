@@ -18,7 +18,7 @@
 
 import { defaultLanguageDefinition } from '../defaults/languages'
 
-import * as TranscriptionTokenType from '../constants/WitnessTokenType'
+import * as WitnessTokenType from '../constants/WitnessTokenType'
 import * as WitnessTokenClass from '../constants/TranscriptionTokenClass'
 
 // widgets
@@ -26,7 +26,7 @@ import { EditableTextField } from '../widgets/EditableTextField'
 
 // utilities
 import * as Util from '../toolbox/Util.mjs'
-import { capitalizeFirstLetter, parseWordsAndPunctuation } from '../toolbox/Util.mjs'
+import { capitalizeFirstLetter} from '../toolbox/Util.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 
 // Normalizations
@@ -53,6 +53,7 @@ import * as CollationTableType from '../constants/CollationTableType'
 import * as NormalizationSource from '../constants/NormalizationSource'
 import { CtData } from '../CtData/CtData'
 import { prettyPrintArray } from '../toolbox/ArrayUtil'
+import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'
 
 // CONSTANTS
 
@@ -446,14 +447,14 @@ export class EditionComposer {
     let thisObject = this
 
     function replaceEditionWitnessToken(ctRow, tokenIndex, newText, lang) {
-      let tokenType = Util.strIsPunctuation(newText, lang) ? TranscriptionTokenType.PUNCTUATION : TranscriptionTokenType.WORD
+      let tokenType = WitnessTokenStringParser.strIsPunctuation(newText, lang) ? WitnessTokenType.PUNCTUATION : WitnessTokenType.WORD
       thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['tokenClass'] = WitnessTokenClass.EDITION
       thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['text'] = newText
       thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['tokenType'] = tokenType
       thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['normalizedText'] = ''
       thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['normalizationSource'] = ''
 
-      if (tokenType === TranscriptionTokenType.WORD) {
+      if (tokenType === WitnessTokenType.WORD) {
         if (thisObject.ctData['automaticNormalizationsApplied'].length !== 0) {
           // apply normalizations for this token
           let norm = thisObject.normalizerRegister.applyNormalizerList(thisObject.ctData['automaticNormalizationsApplied'], newText)
@@ -485,13 +486,17 @@ export class EditionComposer {
     }
 
     // parse new text into witness tokens
-    let parsedText = parseWordsAndPunctuation(newText, this.lang)
+    let parsedText = WitnessTokenStringParser.parse(newText, this.lang).filter ( (t) => {
+      return t.tokenType === WitnessTokenType.WORD || t.tokenType === WitnessTokenType.PUNCTUATION
+    })
+    console.log(`Parsed new text`)
+    console.log(parsedText)
     if (parsedText.length === 0) {
       // empty text
       console.log(`Empty text `)
       // TODO: delete the column in the CT if there is nothing in the witnesses?
       this.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]['text'] = newText
-      this.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]['tokenType'] = TranscriptionTokenType.EMPTY
+      this.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]['tokenType'] = WitnessTokenType.EMPTY
       return true
     }
     if (parsedText.length === 1) {

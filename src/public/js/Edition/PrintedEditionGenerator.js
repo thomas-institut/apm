@@ -17,12 +17,12 @@
  */
 
 import * as TokenType from '../constants/WitnessTokenType'
-import { strIsPunctuation } from '../toolbox/Util.mjs'
 import { SequenceWithGroups } from './SequenceWithGroups'
 import { Matrix } from '@thomas-inst/matrix'
 import * as NormalizationSource from '../constants/NormalizationSource'
 import { ApparatusCommon } from '../EditionComposer/ApparatusCommon'
 import text from 'quill/blots/text'
+import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'
 
 const INPUT_TOKEN_FIELD_TYPE = 'tokenType'
 const INPUT_TOKEN_FIELD_TEXT = 'text'
@@ -88,7 +88,7 @@ export class PrintedEditionGenerator {
         let ctIndex = columnGroup.from
         while (ctIndex >= 0 && (
           generatedMainText.ctToMainTextMap[ctIndex] === -1 ||
-          strIsPunctuation(generatedMainText.mainTextTokens[generatedMainText.ctToMainTextMap[ctIndex]]['text'], language)) ) {
+          WitnessTokenStringParser.strIsPunctuation(generatedMainText.mainTextTokens[generatedMainText.ctToMainTextMap[ctIndex]]['text'], language)) ) {
           ctIndex--
         }
         // a mainTextIndex of -1 means that the apparatus entry comes before the text, normally with the lesson 'pre'
@@ -357,7 +357,7 @@ export class PrintedEditionGenerator {
         }
 
         let theText = normalized ? ApparatusCommon.getNormalizedTextFromInputToken(token) : thisObject.getTextFromInputToken(token)
-        if (strIsPunctuation(theText, lang)) {
+        if (WitnessTokenStringParser.strIsPunctuation(theText, lang)) {
           return ''
         }
         return theText

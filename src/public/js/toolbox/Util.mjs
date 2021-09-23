@@ -68,11 +68,6 @@ export function escapeHtml(html) {
     return entityMap[s];
   });
 }
-
-export function isWordToken(text, lang = '') {
- return !hasSpaces(text) && !hasPunctuation(text, lang)
-}
-
 /**
  *
  * @param str {string}
@@ -87,82 +82,6 @@ export function stringReplaceArray(str, searchStrings, replaceString) {
   })
   return result
 }
-
-/**
- *
- * @param text
- * @param lang, if an empty string only common characters are checked
- * @return {boolean}
- */
-export function strIsPunctuation(text, lang = '') {
-  if (text === undefined) {
-    return false
-  }
-  let punctuationArray = Punctuation.getValidPunctuationForLang(lang)
-  for (let i = 0; i < text.length; i++) {
-    if (punctuationArray.indexOf(text.substr(i, 1)) === -1) {
-      return false
-    }
-  }
-  return true
-}
-
-/**
- * Parses a text string into an array of tokens of the form
- *   {
- *    type: 'p'| 'w'  // p = punctuation, w = word
- *    text: <string>
- *   }
- * @param {string} text
- * @param {string} lang
- * @return {*[]}
- */
-export function parseWordsAndPunctuation(text, lang = '') {
-  let parsedArray = []
-  let currentWord = ''
-  text.split('').forEach( (ch) => {
-    if (isWordToken(ch, lang)) {
-      // word
-      currentWord += ch
-      return
-    }
-    if (strIsPunctuation(ch, lang)) {
-      // punctuation
-      if (currentWord !== '') {
-        parsedArray.push({ type: 'w', text: currentWord})
-        currentWord = ''
-      }
-      parsedArray.push( { type: 'p', text: ch})
-      return
-    }
-    // whitespace
-    if (currentWord !== '') {
-      parsedArray.push({ type: 'w', text: currentWord })
-      currentWord = ''
-    }
-  })
-  if (currentWord !== '') {
-    parsedArray.push({ type: 'w', text: currentWord})
-  }
-
-  return parsedArray
-}
-
-
-export function hasPunctuation(text, lang = '') {
-  let punctuationArray = Punctuation.getValidPunctuationForLang(lang)
-  for (let i = 0; i < text.length; i++) {
-    if (punctuationArray.indexOf(text.substr(i, 1)) !== -1) {
-      return true
-    }
-  }
-  return false
-}
-
-export function hasSpaces(text) {
-  return /\s/.test(text)
-}
-
 export function safeGetIntVal(element, title) {
   let val = element.val()
   if (val === undefined) {

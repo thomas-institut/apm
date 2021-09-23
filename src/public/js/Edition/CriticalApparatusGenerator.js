@@ -17,7 +17,6 @@
  */
 
 import * as TokenType from '../constants/WitnessTokenType'
-import { strIsPunctuation } from '../toolbox/Util.mjs'
 import { SequenceWithGroups } from './SequenceWithGroups'
 import { Matrix } from '@thomas-inst/matrix'
 import {ApparatusCommon} from '../EditionComposer/ApparatusCommon'
@@ -32,7 +31,7 @@ import { ApparatusSubEntry } from './ApparatusSubEntry'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory'
 import { ApparatusEntry } from './ApparatusEntry'
 
-
+import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'
 
 
 export class CriticalApparatusGenerator {
@@ -89,7 +88,7 @@ export class CriticalApparatusGenerator {
         let ctIndex = columnGroup.from
 
         while (ctIndex >= 0 && ( baseWitnessTokens[ctIndex].type === WitnessTokenType.EMPTY ||
-          strIsPunctuation(baseWitnessTokens[ctIndex].text, lang) )) {
+          WitnessTokenStringParser.strIsPunctuation(baseWitnessTokens[ctIndex].text, lang) )) {
           ctIndex--
         }
 
@@ -216,7 +215,7 @@ export class CriticalApparatusGenerator {
    _findNonEmptyMainTextToken(ctIndex, ctIndexToMainTextMap, baseWitnessTokens, forward, lang = '') {
     while (ctIndex >= 0 && ctIndex < ctIndexToMainTextMap.length && (
       ctIndexToMainTextMap[ctIndex].isNull()  ||
-      strIsPunctuation(baseWitnessTokens[ctIndex]['text'], lang)) ) {
+      WitnessTokenStringParser.strIsPunctuation(baseWitnessTokens[ctIndex]['text'], lang)) ) {
       ctIndex = forward ? ctIndex + 1 : ctIndex -1
     }
     if (ctIndex < 0 || ctIndex >= ctIndexToMainTextMap.length) {
@@ -302,7 +301,7 @@ export class CriticalApparatusGenerator {
           return ''
         }
         let theText = normalized ? ApparatusCommon.getNormalizedTextFromInputToken(token) : token['text']
-        if (strIsPunctuation(theText, lang)) {
+        if (WitnessTokenStringParser.strIsPunctuation(theText, lang)) {
           return ''
         }
         return theText

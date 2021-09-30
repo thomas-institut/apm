@@ -747,6 +747,12 @@ export class MainTextPanel extends PanelWithToolbar {
     let mainTexDiv =  $(`${this.containerSelector} .main-text`)
     let lineHeight = this.lang === 'la' ? "1em" : "1.5em"
 
+    let fontBaseLineRatio = 0.920
+    let lineNumberFontSizeFactor = 0.8
+    let fontLineHeightFactor = 1.13
+    // TODO: find this programmatically
+    let mainTextFontSize = 18
+
     let offsetY = mainTexDiv.offset().top
     let margin = this.lang === 'la' ? 'left' : 'right'
     let posX = margin === 'left' ? 50 : 50
@@ -754,8 +760,17 @@ export class MainTextPanel extends PanelWithToolbar {
       .filter( (lineSpec) => { return lineSpec.line === 1 || (lineSpec.line % lineFrequency === 0)})
       .map( (lineSpec) => {
         let posY = lineSpec.pY - offsetY
+        if (this.lang === 'la') {
+          // TODO: do this for the other languages
+          let lineOffset = mainTextFontSize*fontBaseLineRatio*(1-lineNumberFontSizeFactor)
+          posY = lineSpec.pY - offsetY + lineOffset
+          console.log(`Line number for line ${lineSpec.line}: pY = ${lineSpec.pY}, offset = ${lineOffset}`)
+        }
+
         let lineString = ApparatusCommon.getNumberString(lineSpec.line, this.lang)
-        return `<div class="line-number text-${this.lang}" style="position: absolute; top: ${posY}px; ${margin}: ${posX}px; line-height: ${lineHeight}">${lineString}</div>`
+        return `<div class="line-number text-${this.lang}" style="position: absolute; 
+top: ${posY}px; ${margin}: ${posX}px; line-height: ${fontLineHeightFactor}em;
+font-size: ${ mainTextFontSize*lineNumberFontSizeFactor}px;">${lineString}</div>`
       })
       .join('')
 

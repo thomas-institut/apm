@@ -19,12 +19,15 @@
 import * as CollationTableType from '../constants/CollationTableType'
 import * as TokenClass from '../constants/CollationTableType'
 import * as TranscriptionTokenType from '../constants/WitnessTokenType'
+import * as ApparatusType from '../constants/ApparatusType'
 import { Matrix } from '@thomas-inst/matrix'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { CtData } from './CtData'
 import { deepCopy } from '../toolbox/Util.mjs'
-import { ApparatusCommon } from '../EditionComposer/ApparatusCommon'
 import { EditionMainTextGenerator } from '../Edition/EditionGenerator/EditionMainTextGenerator.mjs'
+
+
+const defaultApparatus = [ ApparatusType.CRITICUS, ApparatusType.FONTIUM, ApparatusType.COMPARATIVUS]
 
 export class CtDataCleaner {
 
@@ -73,15 +76,13 @@ export class CtDataCleaner {
     if (this.ctData['type'] === CollationTableType.EDITION) {
       // add default apparatuses for editions
       if (this.ctData['customApparatuses'] === undefined) {
-        this.ctData['customApparatuses'] = [
-          {
-            type: 'criticus',
-            entries: []
-          },
-          {
-          type: 'fontium',
-          entries: []
-        }]
+        this.ctData['customApparatuses'] = []
+        defaultApparatus.forEach( (appType) => {
+          let appIndex = this.ctData['customApparatuses'].map( (customApp) => { return customApp.type}).indexOf(appType)
+          if (appIndex === -1) {
+            this.ctData['customApparatuses'].push( { type: appType, entries: []})
+          }
+        })
       }
       // add empty critical apparatus customizations list
       if (this.ctData['criticalApparatusCustomizations'] === undefined) {
@@ -124,8 +125,6 @@ export class CtDataCleaner {
       return ctData
     }
     let editionWitness = ctData['witnesses'][ctData['editionWitnessIndex']]['tokens']
-    let lang = ctData['lang']
-
     ctData['customApparatuses'] = ctData['customApparatuses'].map( (apparatus) => {
       apparatus.entries = apparatus.entries.map((entry) => {
         let goodLemma = EditionMainTextGenerator.generatePlainText( editionWitness.filter( (token, i) => {

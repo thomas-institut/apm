@@ -235,7 +235,8 @@ export class EditionComposer {
         return createTabConfig(
           `apparatus-${index}`,
           this._getTitleForApparatusType(apparatus.type),
-          apparatusPanels[index]
+          apparatusPanels[index],
+          this._getLinkTitleForApparatusType(apparatus.type)
          )
       })
       .concat([
@@ -1024,9 +1025,24 @@ export class EditionComposer {
     return `<div id="ct-info" title="${workAuthorName}, ${workTitle}; table ID: ${this.tableId}">${this.options.workId}-${this.options.chunkNumber}</div>`
   }
 
-
+  /**
+   *
+   * @param {string}type
+   * @return {string}
+   * @private
+   */
   _getTitleForApparatusType(type) {
-    return 'Apparatus ' + capitalizeFirstLetter(type)
+    return 'App ' + capitalizeFirstLetter(type)
+  }
+
+  /**
+   *
+   * @param {string}type
+   * @return {string}
+   * @private
+   */
+  _getLinkTitleForApparatusType(type){
+    return `Click to show the Apparatus ${capitalizeFirstLetter(type)}`
   }
 
 }
@@ -1034,14 +1050,16 @@ export class EditionComposer {
 /**
  *
  * @param id
- * @param title
+ * @param {string}title
  * @param panelObject
+ * @param {string}linkTitle
  * @return {{onResize: function, postRender: function, contentClasses: ([]|*), onShown: function, onHidden: function, id, title, content: (function(*=, *=, *=): *)}}
  */
-function createTabConfig(id, title, panelObject) {
+function createTabConfig(id, title,  panelObject, linkTitle = '') {
   return {
     id: id,
     title: title,
+    linkTitle: linkTitle,
     content: (tabId, mode, visible) => { return panelObject.generateHtml(tabId, mode, visible) },
     contentClasses: panelObject.getContentClasses(),
     onResize: (id, visible) => {  panelObject.onResize(visible)},

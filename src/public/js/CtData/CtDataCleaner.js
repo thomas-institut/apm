@@ -77,13 +77,15 @@ export class CtDataCleaner {
       // add default apparatuses for editions
       if (this.ctData['customApparatuses'] === undefined) {
         this.ctData['customApparatuses'] = []
+      }
         defaultApparatus.forEach( (appType) => {
           let appIndex = this.ctData['customApparatuses'].map( (customApp) => { return customApp.type}).indexOf(appType)
+          console.log(`Found apparatus '${appType}' with index ${appIndex}`)
           if (appIndex === -1) {
             this.ctData['customApparatuses'].push( { type: appType, entries: []})
           }
         })
-      }
+
       // add empty critical apparatus customizations list
       if (this.ctData['criticalApparatusCustomizations'] === undefined) {
         this.ctData['criticalApparatusCustomizations'] = []

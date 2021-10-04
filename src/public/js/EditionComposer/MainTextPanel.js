@@ -777,9 +777,4 @@ font-size: ${ mainTextFontSize*lineNumberFontSizeFactor}px;">${lineString}</div>
     $('#main-text-line-numbers').remove()
     mainTexDiv.append(`<div id="main-text-line-numbers">${lineNumberOverlays}</div>`)
   }
-
-
-
-
-
 }

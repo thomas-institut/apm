@@ -805,9 +805,7 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
       }
     }
   }
-  
 
-  
 }
 
 

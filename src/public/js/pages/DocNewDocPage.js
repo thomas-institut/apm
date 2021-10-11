@@ -18,7 +18,7 @@
 
 
 
-class DocNewDocPage {
+export class DocNewDocPage {
   
   
   constructor(prefix, baseUrl) {
@@ -150,3 +150,5 @@ class DocNewDocPage {
   }
   
 }
+
+window.DocNewDocPage = DocNewDocPage

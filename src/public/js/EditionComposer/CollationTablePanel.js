@@ -750,6 +750,8 @@ export class CollationTablePanel extends PanelWithToolbar {
     }
     this.variantsMatrix = CollationTableUtil.genVariantsMatrix(this.tableEditor.getMatrix(),
       this.ctData['witnesses'], this.ctData['witnessOrder'], refWitness)
+    console.log(`Variants recalculated`)
+    console.log(this.variantsMatrix)
   }
 
   genCanDeleteColumn() {

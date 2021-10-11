@@ -103,8 +103,8 @@ export class CtDataEditionGenerator extends EditionGenerator{
 
     console.log(`Merging custom apparatus criticus entries`)
     customApparatusCriticus.entries.forEach( (customEntry) => {
-      console.log(`Custom Entry`)
-      console.log(customEntry)
+      // console.log(`Custom Entry`)
+      // console.log(customEntry)
       if (ctIndexToMainTextMap[customEntry.from] === undefined) {
         // this is an entry to an empty token in the main text
         console.warn(`Entry to an empty token, from ${customEntry.from} to ${customEntry.to}, lemma: '${customEntry.lemma}'`)
@@ -114,8 +114,8 @@ export class CtDataEditionGenerator extends EditionGenerator{
       let mainTextTo = ctIndexToMainTextMap[customEntry.to].textIndex
       let currentEntryIndex = generatedApparatusCriticus.findEntryIndex( [0], mainTextFrom, mainTextTo)
       let realCustomSubEntries = customEntry['subEntries'].filter ( (e) => { return e.type !== SubEntryType.DISABLE})
-      console.log(`There are ${realCustomSubEntries.length} custom sub entries`)
-      console.log(realCustomSubEntries)
+      // console.log(`There are ${realCustomSubEntries.length} custom sub entries`)
+      // console.log(realCustomSubEntries)
       // realCustomSubEntries.forEach( (se, i) => { console.log(`Sub entry ${i}`); FmtText.check(se.fmtText)})
       let customDisableEntriesArray = customEntry['subEntries'].filter ( (e) => { return e.type === SubEntryType.DISABLE})
       if (customDisableEntriesArray.length !== 0) {
@@ -123,9 +123,9 @@ export class CtDataEditionGenerator extends EditionGenerator{
         this.verbose && console.log(customDisableEntriesArray)
       }
       if (currentEntryIndex === -1) {
-        console.log(`Found custom entry not belonging to any automatic apparatus entry`)
+        // console.log(`Found custom entry not belonging to any automatic apparatus entry`)
         if (realCustomSubEntries.length !== 0) {
-          console.log(`Adding new apparatus entry for lemma ${customEntry['lemma']}`)
+          // console.log(`Adding new apparatus entry for lemma ${customEntry['lemma']}`)
           let newEntry = new ApparatusEntry()
           newEntry.from = mainTextFrom
           newEntry.to = mainTextTo
@@ -135,7 +135,7 @@ export class CtDataEditionGenerator extends EditionGenerator{
           generatedApparatusCriticus.entries.push(newEntry)
         }
       } else {
-        console.log(`Found entry for index ${currentEntryIndex}`)
+        // console.log(`Found entry for index ${currentEntryIndex}`)
         if (realCustomSubEntries.length !== 0) {
           let subEntryArray = this._buildSubEntryArrayFromCustomSubEntries(realCustomSubEntries)
           console.log(subEntryArray)
@@ -156,8 +156,8 @@ export class CtDataEditionGenerator extends EditionGenerator{
 
   _applyDisableEntriesArrayToSubEntries(subEntries, disableEntriesArray) {
     return subEntries.map ( (subEntry, i) => {
-      console.log(`Applying sub entry ${i}`)
-      console.log(subEntry)
+      // console.log(`Applying sub entry ${i}`)
+      // console.log(subEntry)
       let subEntryHash = subEntry.hashString()
       let isDisabled = false
       disableEntriesArray.forEach( (da) => {
@@ -172,16 +172,16 @@ export class CtDataEditionGenerator extends EditionGenerator{
   }
 
   _buildSubEntryArrayFromCustomSubEntries(customSubEntries) {
-    console.log(`The custom sub entries`)
-    console.log(customSubEntries)
+    // console.log(`The custom sub entries`)
+    // console.log(customSubEntries)
     return customSubEntries.map ( (subEntry) => {
-      console.log(`The sub entry`)
-      console.log(subEntry)
+      // console.log(`The sub entry`)
+      // console.log(subEntry)
       let theSubEntry = new ApparatusSubEntry()
       theSubEntry.type = subEntry['type']
       theSubEntry.fmtText = subEntry['fmtText']
-      console.log(`Assigned fmtText`)
-      console.log(theSubEntry.fmtText)
+      // console.log(`Assigned fmtText`)
+      // console.log(theSubEntry.fmtText)
       theSubEntry.source = SubEntrySource.USER
       // TODO: support other sub entry types
       return theSubEntry

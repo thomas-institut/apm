@@ -60,11 +60,18 @@ export function genVariantsMatrix(refMatrix, witnesses, witnessOrder, refWitness
       textCol.push(rowText)
 
     }
-    //console.log(textCol)
-    let ranks = rankVariants(textCol, referenceString)
+
+    let debug = false
+    // if (col === 792 || col === 793) {
+    //   console.log(`Col ${col} `)
+    //   debug = true
+    // }
+
+    let ranks = rankVariants(textCol, referenceString, debug)
     for(let row=0; row < refMatrix.nRows; row++) {
       variantMatrix.setValue(row, col, ranks[row])
     }
+
   }
   return variantMatrix
 }
@@ -79,7 +86,18 @@ export function collationMatricesAreEqual(matrix1, matrix2) {
   return ArrayUtil.arraysAreEqual(matrix1, matrix2, function(a,b){return a===b}, 2)
 }
 
-function rankVariants(stringArray, referenceString) {
+/**
+ *
+ * @param stringArray
+ * @param referenceString
+ * @param debug
+ * @return {*[]}
+ */
+function rankVariants(stringArray, referenceString, debug = false) {
+
+  debug && console.log(`Ranking Variants `)
+  debug && console.log(stringArray)
+  debug && console.log(`Reference string: '${referenceString}'`)
   const someVeryLargeNumber = 999888777
   let countsByString = []
   for(const text of stringArray) {
@@ -99,6 +117,8 @@ function rankVariants(stringArray, referenceString) {
     countArray.push({ text: aKey, count: countsByString[aKey]})
   }
   countArray.sort((a,b) => { return b['count'] - a['count']})
+  debug && console.log(`Count array:`)
+  debug && console.log(countArray)
 
   let rankObject = {}
   countArray.forEach( (countObject, i) => { rankObject[countObject.text] = i })

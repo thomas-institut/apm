@@ -15,17 +15,10 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *  
  */
+import { PageRange } from './PageRange'
+import * as FoliationType from './constants/FoliationType'
 
-/*eslint-env es6*/
-/*eslint-env jquery*/
-
-/*eslint no-var: "error"*/
-/*eslint default-case: "error"*/
-/*eslint no-console: ["error", { allow: ["warn", "error"] }] */
-
-/* global PageRange, FOLIATION_RECTOVERSO, FOLIATION_CONSECUTIVE */
-
-class DefPagesDefAll {
+export class DefPagesDefAll {
   
   
   constructor (numPages, htmIdPrefix = 'dap-', docId, urlGenerator) {
@@ -89,7 +82,7 @@ class DefPagesDefAll {
   
    genCheckFormFunction (){
      let thisObject = this
-      return function(e) {
+      return function() {
         let fp = parseInt(thisObject.firstTextPageField.val())
         if ( fp < 1) {
           thisObject.firstTextPageField.val(1)
@@ -130,7 +123,7 @@ class DefPagesDefAll {
           thisObject.textPagesFoliationLabelGroup.show()
           thisObject.textPagesFoliationLabel.html(
                   textPagesRange.toString() + ' &rArr; ' +
-                  textPagesRange.toStringWithFoliation('', ' - ', '', FOLIATION_RECTOVERSO, 1))
+                  textPagesRange.toStringWithFoliation('', ' - ', '', FoliationType.FOLIATION_RECTOVERSO, 1))
         } else {
           thisObject.overwriteFoliationFormGroup.hide()
           thisObject.textPagesFoliationLabelGroup.hide()
@@ -140,7 +133,7 @@ class DefPagesDefAll {
           if (!frontMatterRange.isEmpty()) {
             thisObject.frontMatterFoliationLabel.html(
                   frontMatterRange.toString() + ' &rArr; ' +
-                  frontMatterRange.toStringWithFoliation('', ' - ', '', FOLIATION_CONSECUTIVE, 1, 'x') +
+                  frontMatterRange.toStringWithFoliation('', ' - ', '', FoliationType.FOLIATION_CONSECUTIVE, 1, 'x') +
                   '<br/>'
                     )
           } else {
@@ -149,7 +142,7 @@ class DefPagesDefAll {
           if (!backMatterRange.isEmpty()) {
             thisObject.backMatterFoliationLabel.html(
                   backMatterRange.toString() + ' &rArr; ' +
-                  backMatterRange.toStringWithFoliation('', ' - ', '', FOLIATION_CONSECUTIVE, frontMatterRange.getLength()+1, 'x')
+                  backMatterRange.toStringWithFoliation('', ' - ', '', FoliationType.FOLIATION_CONSECUTIVE, frontMatterRange.getLength()+1, 'x')
                     )
           } else {
             thisObject.backMatterFoliationLabel.html('')
@@ -200,7 +193,7 @@ class DefPagesDefAll {
         }
 
         if (foliateFrontBackMatter) {
-          thePageDef.foliation = frontMatterRange.foliate(page, FOLIATION_CONSECUTIVE, 1, 'x')
+          thePageDef.foliation = frontMatterRange.foliate(page, FoliationType.FOLIATION_CONSECUTIVE, 1, 'x')
           thePageDef.overwriteFoliation = overwriteFoliation
         }
         pageDefs.push(thePageDef)
@@ -216,7 +209,7 @@ class DefPagesDefAll {
         }
 
         if (foliateTextPages) {
-          thePageDef.foliation = textPagesRange.foliate(page, FOLIATION_RECTOVERSO, 1)
+          thePageDef.foliation = textPagesRange.foliate(page, FoliationType.FOLIATION_RECTOVERSO, 1)
           thePageDef.overwriteFoliation = overwriteFoliation
         }
         
@@ -236,8 +229,8 @@ class DefPagesDefAll {
         }
 
         if (foliateFrontBackMatter) {
-          thePageDef.foliation = backMatterRange.foliate(page, 
-              FOLIATION_CONSECUTIVE, 
+          thePageDef.foliation = backMatterRange.foliate(page,
+            FoliationType.FOLIATION_CONSECUTIVE,
               frontMatterRange.getLength()+1, 
               'x')
           thePageDef.overwriteFoliation = overwriteFoliation

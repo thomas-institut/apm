@@ -16,18 +16,8 @@
  *  
  */
 
-/*eslint-env es6*/
-/*eslint-env jquery*/
+export class DefPagesAddPages {
 
-/*eslint no-var: "error"*/
-/*eslint default-case: "error"*/
-/*eslint no-console: ["error", { allow: ["warn", "error"] }] */
-
-/* global PageRange, FOLIATION_RECTOVERSO, FOLIATION_CONSECUTIVE */
-
-class DefPagesAddPages {
-  
-  
   constructor (numPages, htmIdPrefix, docId, urlGenerator) {
 
     this.numPages = numPages
@@ -53,7 +43,7 @@ class DefPagesAddPages {
   
    genCheckFormFunction (){
      let thisObject = this
-      return function(e) {
+      return function() {
         let np = parseInt(thisObject.numPagesField.val())
         if (np > 0 && np <= 2000 ) {
           thisObject.submitButton.show()

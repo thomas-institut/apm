@@ -22,20 +22,8 @@
 /*eslint default-case: "error"*/
 /*eslint no-console: ["error", { allow: ["warn", "error"] }] */
 
+import * as FoliationType from './constants/FoliationType'
 
-const FOLIATION_CONSECUTIVE = 1
-const FOLIATION_RECTOVERSO = 2
-const FOLIATION_LEFTRIGHT = 3
-const FOLIATION_AB = 4
-
-const foliationAffixes = {
-  1: { a: '', b: ''},
-  2: { a: 'r', b: 'v'},
-  3: { a: 'l', b: 'r'},
-  4: { a: 'a', b: 'b'}
-}
-
-const FOLIATION_START_SAME_AS_RANGE = -1
 
 
 /**
@@ -44,7 +32,7 @@ const FOLIATION_START_SAME_AS_RANGE = -1
  *  A page range [0, 0] is considered the empty range
  * 
  */
-class PageRange {
+export class PageRange {
   
   constructor (first = 0, last = 0, upperBound = Number.MAX_SAFE_INTEGER) {
     if (upperBound <= 0) {
@@ -118,14 +106,14 @@ class PageRange {
     return n >= this.a && n <= this.b;
   }
   
-  foliate(pageNumber, type = FOLIATION_RECTOVERSO, start=FOLIATION_START_SAME_AS_RANGE, prefix = '', suffix='') {
+  foliate(pageNumber, type = FoliationType.FOLIATION_RECTOVERSO, start= FoliationType.FOLIATION_START_SAME_AS_RANGE, prefix = '', suffix='', reverse = false) {
     //console.log(`Foliating page number ${pageNumber}`)
     if (!this.isInRange(pageNumber)) {
       //console.log(`Not in range`)
       return ''
     }
     
-    if (start === FOLIATION_START_SAME_AS_RANGE) {
+    if (start === FoliationType.FOLIATION_START_SAME_AS_RANGE) {
       start = this.a
     }
     //console.log(`Start = ${start}`)
@@ -136,17 +124,17 @@ class PageRange {
     
     let foliationNumber = ''
     switch (type) {
-      case FOLIATION_CONSECUTIVE:
-        foliationNumber = pageNumber - this.a + start
+      case FoliationType.FOLIATION_CONSECUTIVE:
+        foliationNumber = reverse ?  start - (pageNumber - this.b) : start + (pageNumber - this.a)
         break
       
-      case FOLIATION_RECTOVERSO:
-      case FOLIATION_AB:
-      case FOLIATION_LEFTRIGHT:
-        let pagePos = pageNumber - this.a
-        let rectoVerso = foliationAffixes[type].a
+      case FoliationType.FOLIATION_RECTOVERSO:
+      case FoliationType.FOLIATION_AB:
+      case FoliationType.FOLIATION_LEFTRIGHT:
+        let pagePos = reverse? this.b - pageNumber : pageNumber - this.a
+        let rectoVerso = FoliationType.foliationAffixes[type].a
         if (pagePos % 2) {
-          rectoVerso = foliationAffixes[type].b
+          rectoVerso = FoliationType.foliationAffixes[type].b
         }
         foliationNumber = (Math.floor(pagePos/2) + start) + rectoVerso
         break
@@ -157,14 +145,27 @@ class PageRange {
     
     return prefix + foliationNumber + suffix
   }
-  
-  toStringWithFoliation(ini = '', sep = ' - ', end = '', type = FOLIATION_RECTOVERSO, start=FOLIATION_START_SAME_AS_RANGE, prefix = '', suffix=''){
+
+  /**
+   *
+   * @param ini
+   * @param sep
+   * @param end
+   * @param type
+   * @param start
+   * @param prefix
+   * @param suffix
+   * @param reverse
+   * @return {string}
+   */
+  toStringWithFoliation(ini = '', sep = ' - ', end = '',
+    type = FoliationType.FOLIATION_RECTOVERSO, start=FoliationType.FOLIATION_START_SAME_AS_RANGE, prefix = '', suffix='', reverse = false){
     if (this.isEmpty()) {
       // empty range
       return '-'
     }
-    let first = this.foliate(this.a, type, start, prefix, suffix)
-    let last = this.foliate(this.b, type, start, prefix, suffix)
+    let first = this.foliate(this.a, type, start, prefix, suffix, reverse)
+    let last = this.foliate(this.b, type, start, prefix, suffix, reverse)
     
     if (this.a === this.b) {
       return ini + first + end

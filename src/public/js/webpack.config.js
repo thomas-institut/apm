@@ -10,6 +10,10 @@ module.exports = {
       import: './pages/DocPage.js',
       filename: 'DocPage.bundle.js',
     },
+    DocDefPages: {
+      import: './pages/DocDefPages.js',
+      filename: 'DocDefPages.bundle.js'
+    },
     DocEditPage: {
       import: './pages/DocEditPage.js',
       filename: 'DocEditPage.bundle.js',
@@ -32,10 +36,6 @@ module.exports = {
       filename: 'AutomaticCollationTable.bundle.js'
     },
     ChunkPage: './pages/ChunkPage.js',
-    // ChunkPage: {
-    //   import: './pages/ChunkPage.js',
-    //   filename: 'ChunkPage.bundle.js'
-    // },
     UserManager: {
       import: './pages/UserManagerPage.js',
       filename: 'UserManagerPage.bundle.js'

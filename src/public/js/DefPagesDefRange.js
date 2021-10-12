@@ -16,16 +16,11 @@
  *  
  */
 
-/*eslint-env es6*/
-/*eslint-env jquery*/
 
-/*eslint no-var: "error"*/
-/*eslint default-case: "error"*/
-/*eslint no-console: ["error", { allow: ["warn", "error"] }] */
+import { PageRange } from './PageRange'
+import * as FoliationType from './constants/FoliationType'
 
-/* global PageRange, FOLIATION_RECTOVERSO, FOLIATION_CONSECUTIVE */
-
-class DefPagesDefRange {
+export class DefPagesDefRange {
   
   
   constructor (numPages, htmIdPrefix, docId, pageTypes, urlGenerator) {
@@ -34,14 +29,16 @@ class DefPagesDefRange {
     this.prefix = '#' + htmIdPrefix
     this.docId = docId
     this.pathFor = urlGenerator
+
+    console.log(`Num pages: ${numPages}`)
     
     this.updating = false
 
     this.foliationTypeStringToInt = {
-      'c' : FOLIATION_CONSECUTIVE,
-      'rv' : FOLIATION_RECTOVERSO,
-      'lr' : FOLIATION_LEFTRIGHT,
-      'ab' : FOLIATION_AB
+      'c' : FoliationType.FOLIATION_CONSECUTIVE,
+      'rv' : FoliationType.FOLIATION_RECTOVERSO,
+      'lr' : FoliationType.FOLIATION_LEFTRIGHT,
+      'ab' : FoliationType.FOLIATION_AB
     }
     
     this.dapForm = $(this.prefix + 'form')
@@ -54,6 +51,8 @@ class DefPagesDefRange {
     this.foliateCheckbox = $(this.prefix + 'foliate')
     this.overwriteFoliationFormGroup = $(this.prefix + 'overwritef-fg')
     this.overwriteFoliationCheckbox = $(this.prefix + 'overwritef')
+    this.reverseFoliationFormGroup = $(this.prefix + 'reverse-f-fg')
+    this.reverseFoliationCheckbox =  $(this.prefix + 'reverse-f')
     this.foliationLabel = $(this.prefix + 'foliation-label')
     this.foliationTypeSelect = $(this.prefix + 'foliation-type-select')
     this.foliationStartField = $(this.prefix + 'startnum')
@@ -70,6 +69,7 @@ class DefPagesDefRange {
     this.lastPageField.on('click', this.genCheckFormFunction())
     this.setPageTypeCheckbox.on('click', this.genCheckFormFunction())
     this.foliateCheckbox.on('click', this.genCheckFormFunction())
+    this.reverseFoliationCheckbox.on('click', this.genCheckFormFunction())
     this.foliationTypeSelect.on('click', this.genCheckFormFunction())
     this.foliationStartField.on('click', this.genCheckFormFunction())
     this.foliationStartField.on('keyup', this.genCheckFormFunction())
@@ -101,18 +101,19 @@ class DefPagesDefRange {
     this.overwriteFoliationFormGroup.removeClass('hidden')
     this.foliationLabel.hide()
     this.foliationLabel.removeClass('hidden')
+    this.reverseFoliationFormGroup.removeClass('hidden').hide()
   }
   
    genCheckFormFunction (){
      let thisObject = this
-      return function(e) {
-        let fp = parseInt(thisObject.firstPageField.val())
+      return () => {
+        let fp = this.firstPageField.val() * 1
         if ( fp < 1) {
           thisObject.firstPageField.val(1)
           fp = 1
         }
         
-        let lp = parseInt(thisObject.lastPageField.val())
+        let lp = thisObject.lastPageField.val() * 1
         if (lp > thisObject.numPages) {
           thisObject.lastPageField.val(thisObject.numPages)
           lp = thisObject.numPages
@@ -134,20 +135,24 @@ class DefPagesDefRange {
 
         if(thisObject.foliateCheckbox.is(':checked')) {
           thisObject.overwriteFoliationFormGroup.show()
+          thisObject.reverseFoliationFormGroup.show()
           let foliationTypeString = thisObject.foliationTypeSelect.val()
 
           let foliationType = thisObject.foliationTypeStringToInt[foliationTypeString]
           let prefix = thisObject.foliationPrefixField.val().replace(/\s+/g, '')
           let suffix = thisObject.foliationSuffixField.val().replace(/\s+/g, '')
+          let reverse = thisObject.reverseFoliationCheckbox.is(':checked')
           thisObject.foliationLabel.html(
                   pagesRange.toString() + ' &rArr; ' +
                   pagesRange.toStringWithFoliation('', ' - ', '', 
                       foliationType, 
-                      parseInt(thisObject.foliationStartField.val()), prefix, suffix ))
+                      parseInt(thisObject.foliationStartField.val()), prefix, suffix, reverse))
           thisObject.foliationLabel.show()
+
         } else {
           thisObject.overwriteFoliationFormGroup.hide()
           thisObject.foliationLabel.hide()
+          thisObject.reverseFoliationFormGroup.hide()
         }
         
         if(thisObject.setPageTypeCheckbox.is(':checked') ||
@@ -175,6 +180,7 @@ class DefPagesDefRange {
       let foliateTextPages = thisObject.foliateCheckbox.is(':checked')
       let overwriteFoliation = thisObject.overwriteFoliationCheckbox.is(':checked')
       let createCols = thisObject.createColsCheckbox.is(":checked")
+      let reverse = thisObject.reverseFoliationCheckbox.is(':checked')
       
       let pageDefs = []
        
@@ -200,7 +206,7 @@ class DefPagesDefRange {
               foliationType, 
               parseInt(thisObject.foliationStartField.val()), 
               prefix, 
-              suffix )
+              suffix, reverse )
           thePageDef.overwriteFoliation = overwriteFoliation
         }
         pageDefs.push(thePageDef)

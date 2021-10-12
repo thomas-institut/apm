@@ -4,17 +4,12 @@
 {% block title %}Define Pages: {{doc.docInfo.title}}{% endblock %}
 
 {% block extraJS %}
-<script type="application/javascript" src="{{baseurl}}/js/PageRange.js"></script>
-<script type="application/javascript" src="{{baseurl}}/js/DefPagesDefAll.js"></script>
-<script type="application/javascript" src="{{baseurl}}/js/DefPagesDefRange.js"></script>
-<script type="application/javascript" src="{{baseurl}}/js/DefPagesAddPages.js"></script>
+<script type="application/javascript" src="{{baseurl}}/js/dist/DocDefPages.bundle.js"></script>
 <script>
     $( () => {
         let pageTypes = JSON.parse('{{pageTypes|json_encode|e('js')}}')
         let urlGenerator = new ApmUrlGenerator('{{baseurl}}')
-        new DefPagesDefAll({{doc.numPages}}, 'dap-', {{doc.docInfo.id}}, urlGenerator)
-        new DefPagesDefRange({{doc.numPages}}, 'dr-', {{doc.docInfo.id}}, pageTypes, urlGenerator)
-        new DefPagesAddPages({{doc.numPages}}, 'ap-', {{doc.docInfo.id}}, urlGenerator)
+        new DocDefPages(pageTypes, {{doc.numPages}}, {{doc.docInfo.id}}, urlGenerator,)
     })
 </script>
 {% endblock %}
@@ -86,6 +81,7 @@
             <label for="dap-overwrite-f">Overwrite current page foliation</label>
         </div>
 
+
         <button type="button" class="btn btn-primary hidden" id="dap-submit-button" >Go for it!</button>
         <span id="dap-status"></span>
         </form> 
@@ -129,12 +125,14 @@
 
     <p class="with-margin-left-lg text-muted hidden" id="dr-foliation-label">
     </p>
-
     <div id="dr-overwritef-fg" class="form-group form-check  form-inline with-margin-left-sm hidden">
        <input type="checkbox" class="form-check-input" id="dr-overwritef"/>
         <label for="dr-overwritef">Overwrite current page foliation</label>
-
     </div>
+   <div id="dr-reverse-f-fg" class="form-group form-check  form-inline with-margin-left-sm hidden">
+       <input type="checkbox" class="form-check-input" id="dr-reverse-f"/>
+       <label for="dr-reverse-f">Reverse</label>
+   </div>
 
     <div id="dr-createcols-fg" class="form-group form-check form-inline without-padding-left" >
         <input type="checkbox" class="form-check-input" id="dr-createcols" aria-label="Assign columns to each text page"/>

@@ -16,7 +16,6 @@
  *  
  */
 
-/* global PageRange, expect, FOLIATION_CONSECUTIVE, FOLIATION_START_SAME_AS_RANGE, FOLIATION_RECTOVERSO */
 
 describe("PageRange", function() {
   
@@ -98,36 +97,36 @@ describe("PageRange", function() {
       let range = new PageRange(20, 30)
       expect(range.foliate(1)).toBe('')
       expect(range.foliate(35)).toBe('')
-      expect(range.foliate(20, FOLIATION_CONSECUTIVE, -2)).toBe('')
-      expect(range.foliate(20, FOLIATION_CONSECUTIVE, -2)).toBe('')
+      expect(range.foliate(20, FoliationType.FOLIATION_CONSECUTIVE, -2)).toBe('')
+      expect(range.foliate(20, FoliationType.FOLIATION_CONSECUTIVE, -2)).toBe('')
     })
     
     it("should foliate consecutively", function() {
       let range = new PageRange(20, 29)
-      expect(range.foliate(20, FOLIATION_CONSECUTIVE, FOLIATION_START_SAME_AS_RANGE, 'x', 'bis')).toBe('x20bis')
-      expect(range.foliate(20, FOLIATION_CONSECUTIVE, 1, 'x', 'bis')).toBe('x1bis')
-      expect(range.foliate(29, FOLIATION_CONSECUTIVE, 1, 'x', 'bis')).toBe('x10bis')
-      expect(range.foliate(20, FOLIATION_CONSECUTIVE, 100, 'x', 'bis')).toBe('x100bis')
-      expect(range.foliate(29, FOLIATION_CONSECUTIVE, 100, 'x', 'bis')).toBe('x109bis')
+      expect(range.foliate(20, FoliationType.FOLIATION_CONSECUTIVE, FoliationType.FOLIATION_START_SAME_AS_RANGE, 'x', 'bis')).toBe('x20bis')
+      expect(range.foliate(20, FoliationType.FOLIATION_CONSECUTIVE, 1, 'x', 'bis')).toBe('x1bis')
+      expect(range.foliate(29, FoliationType.FOLIATION_CONSECUTIVE, 1, 'x', 'bis')).toBe('x10bis')
+      expect(range.foliate(20, FoliationType.FOLIATION_CONSECUTIVE, 100, 'x', 'bis')).toBe('x100bis')
+      expect(range.foliate(29, FoliationType.FOLIATION_CONSECUTIVE, 100, 'x', 'bis')).toBe('x109bis')
     })
     
     it("should foliate recto/verso", function() {
       let range = new PageRange(20, 29)
-      expect(range.foliate(20, FOLIATION_RECTOVERSO, FOLIATION_START_SAME_AS_RANGE, 'x-', '-bis')).toBe('x-20r-bis')
-      expect(range.foliate(20, FOLIATION_RECTOVERSO, 1, 'x-', '-bis')).toBe('x-1r-bis')
-      expect(range.foliate(21, FOLIATION_RECTOVERSO, 1, 'x-', '-bis')).toBe('x-1v-bis')
-      expect(range.foliate(22, FOLIATION_RECTOVERSO, 1, 'x-', '-bis')).toBe('x-2r-bis')
-      expect(range.foliate(23, FOLIATION_RECTOVERSO, 1, 'x-', '-bis')).toBe('x-2v-bis')
-      expect(range.foliate(29, FOLIATION_RECTOVERSO, 1, 'x-', '-bis')).toBe('x-5v-bis')
-      expect(range.foliate(20, FOLIATION_RECTOVERSO, 100, 'x-', '-bis')).toBe('x-100r-bis')
-      expect(range.foliate(29, FOLIATION_RECTOVERSO, 100, 'x-', '-bis')).toBe('x-104v-bis')
+      expect(range.foliate(20, FoliationType.FOLIATION_RECTOVERSO, FoliationType.FOLIATION_START_SAME_AS_RANGE, 'x-', '-bis')).toBe('x-20r-bis')
+      expect(range.foliate(20, FoliationType.FOLIATION_RECTOVERSO, 1, 'x-', '-bis')).toBe('x-1r-bis')
+      expect(range.foliate(21, FoliationType.FOLIATION_RECTOVERSO, 1, 'x-', '-bis')).toBe('x-1v-bis')
+      expect(range.foliate(22, FoliationType.FOLIATION_RECTOVERSO, 1, 'x-', '-bis')).toBe('x-2r-bis')
+      expect(range.foliate(23, FoliationType.FOLIATION_RECTOVERSO, 1, 'x-', '-bis')).toBe('x-2v-bis')
+      expect(range.foliate(29, FoliationType.FOLIATION_RECTOVERSO, 1, 'x-', '-bis')).toBe('x-5v-bis')
+      expect(range.foliate(20, FoliationType.FOLIATION_RECTOVERSO, 100, 'x-', '-bis')).toBe('x-100r-bis')
+      expect(range.foliate(29, FoliationType.FOLIATION_RECTOVERSO, 100, 'x-', '-bis')).toBe('x-104v-bis')
     })
     
     it("should provide string representations with foliation", function () {
       let range = new PageRange(20, 29)
       expect(range.toStringWithFoliation('[',' - ', ']')).toBe('[20r - 24v]')
-      expect(range.toStringWithFoliation('[',' - ', ']', FOLIATION_RECTOVERSO, 1)).toBe('[1r - 5v]')
-      expect(range.toStringWithFoliation('',' - ', '', FOLIATION_CONSECUTIVE, 1, 'x')).toBe('x1 - x10')
+      expect(range.toStringWithFoliation('[',' - ', ']', FoliationType.FOLIATION_RECTOVERSO, 1)).toBe('[1r - 5v]')
+      expect(range.toStringWithFoliation('',' - ', '', FoliationType.FOLIATION_CONSECUTIVE, 1, 'x')).toBe('x1 - x10')
     })
     
     

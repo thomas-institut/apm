@@ -16,3 +16,9 @@ window.FmtTextTokenType = FmtTextTokenType
 
 import {FmtTextFactory} from '../../js/FmtText/FmtTextFactory'
 window.FmtTextFactory = FmtTextFactory
+
+import {PageRange} from '../../js/PageRange'
+window.PageRange = PageRange
+
+import * as FoliationType from '../../js/constants/FoliationType'
+window.FoliationType = FoliationType

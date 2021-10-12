@@ -266,13 +266,14 @@ export class ApparatusPanel extends  PanelWithToolbar {
     let html = ''
     let lastLine = ''
     let sigla = this.edition.getSigla()
+    let textDirectionMarker = this.edition.lang === 'la' ? '&lrm;' : '&rlm;'
     this.apparatus.entries.forEach( (apparatusEntry, aeIndex) => {
       html += `<span class="apparatus-entry apparatus-entry-${this.options.apparatusIndex}-${aeIndex}">`
       let currentLine = this._getLineNumberString(apparatusEntry, mainTextTokensWithTypesettingInfo)
-      let lineHtml = `&nbsp;${this.options.entrySeparator}&nbsp;`
+      let lineHtml = `${textDirectionMarker}&nbsp;${this.options.entrySeparator}&nbsp;`
       if (currentLine !== lastLine) {
         let lineSep = aeIndex !== 0 ? `${this.options.apparatusLineSeparator}&nbsp;` : ''
-        lineHtml = `${lineSep}<b class="apparatus-line-number">${currentLine}</b>`
+        lineHtml = `${textDirectionMarker}${lineSep}<b class="apparatus-line-number">${currentLine}</b>`
         lastLine = currentLine
       }
       html +=  `${lineHtml} <span class="lemma lemma-${this.options.apparatusIndex}-${aeIndex}">${apparatusEntry.lemma}</span>] `

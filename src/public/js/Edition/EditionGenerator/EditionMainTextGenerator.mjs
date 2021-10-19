@@ -36,12 +36,13 @@ export class EditionMainTextGenerator {
    * Takes an array of witness tokens and creates an array of MainTextSection objects with the
    * main text, taking care of adding glue in the proper places
    * @param witnessTokens
-   * @param normalized
-   * @param normalizationsToIgnore
+   * @param {boolean}normalized
+   * @param {*[]}normalizationsToIgnore
+   * @param {string}lang
    */
-  static generateMainText(witnessTokens, normalized = false, normalizationsToIgnore = []) {
+  static generateMainText(witnessTokens, normalized = false, normalizationsToIgnore = [], lang = '') {
     let section = new MainTextSection()
-    section.text = this.generateMainTextTokensWithGlue(witnessTokens, normalized, normalizationsToIgnore)
+    section.text = this.generateMainTextTokensWithGlue(witnessTokens, normalized, normalizationsToIgnore, lang)
     return [ section ]
   }
 
@@ -51,7 +52,7 @@ export class EditionMainTextGenerator {
     }).join('')
   }
 
-  static generateMainTextTokensWithGlue(witnessTokens, normalized = false, normalizationsToIgnore = []) {
+  static generateMainTextTokensWithGlue(witnessTokens, normalized = false, normalizationsToIgnore = [], lang = '') {
     let mainTextTokens = []
     for(let i = 0; i < witnessTokens.length; i++) {
       let witnessToken = witnessTokens[i]
@@ -69,7 +70,7 @@ export class EditionMainTextGenerator {
         continue
       }
       mainTextTokens.push(
-        MainTextTokenFactory.createSimpleText(getTextFromWitnessToken(witnessToken, normalized, normalizationsToIgnore), i)
+        MainTextTokenFactory.createSimpleText(getTextFromWitnessToken(witnessToken, normalized, normalizationsToIgnore), i, lang)
       )
     }
     // add glue

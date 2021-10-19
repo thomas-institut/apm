@@ -96,22 +96,22 @@ export class ApparatusCommon {
       case ApparatusSubEntryType.VARIANT:
         pushArray(theTokens, theTextTokens)
         theTokens.push(TypesetterTokenFactory.normalSpace())
-        theTokens.push(TypesetterTokenFactory.simpleText(siglaString).setBold())
+        theTokens.push(TypesetterTokenFactory.simpleText(siglaString, 'he').setBold())
         return theTokens
 
       case ApparatusSubEntryType.OMISSION:
         return [
-          TypesetterTokenFactory.simpleText(hebrewStyle.strings.omission).setFontSize(hebrewStyle.smallFontFactor),
+          TypesetterTokenFactory.simpleText(hebrewStyle.strings.omission, 'he').setFontSize(hebrewStyle.smallFontFactor),
           TypesetterTokenFactory.normalSpace(),
-          TypesetterTokenFactory.simpleText(siglaString).setBold()
+          TypesetterTokenFactory.simpleText(siglaString, 'he').setBold()
         ]
 
       case ApparatusSubEntryType.ADDITION:
-        theTokens.push(TypesetterTokenFactory.simpleText(hebrewStyle.strings.addition).setFontSize(hebrewStyle.smallFontFactor))
+        theTokens.push(TypesetterTokenFactory.simpleText(hebrewStyle.strings.addition, 'he').setFontSize(hebrewStyle.smallFontFactor))
         theTokens.push(TypesetterTokenFactory.normalSpace())
         pushArray(theTokens, theTextTokens)
         theTokens.push(TypesetterTokenFactory.normalSpace())
-        theTokens.push(TypesetterTokenFactory.simpleText(siglaString).setBold())
+        theTokens.push(TypesetterTokenFactory.simpleText(siglaString, 'he').setBold())
         return theTokens
 
 
@@ -157,22 +157,22 @@ export class ApparatusCommon {
       case ApparatusSubEntryType.VARIANT:
         pushArray(theTokens, theTextTokens)
         theTokens.push(TypesetterTokenFactory.normalSpace())
-        theTokens.push(TypesetterTokenFactory.simpleText(siglaString))
+        theTokens.push(TypesetterTokenFactory.simpleText(siglaString, 'ar'))
         return theTokens
 
       case ApparatusSubEntryType.OMISSION:
         return [
-          TypesetterTokenFactory.simpleText(arabicStyle.strings.omission).setFontSize(arabicStyle.smallFontFactor),
+          TypesetterTokenFactory.simpleText(arabicStyle.strings.omission, 'ar').setFontSize(arabicStyle.smallFontFactor),
           TypesetterTokenFactory.normalSpace(),
-          TypesetterTokenFactory.simpleText(siglaString)
+          TypesetterTokenFactory.simpleText(siglaString, 'ar')
         ]
 
       case ApparatusSubEntryType.ADDITION:
-        theTokens.push(TypesetterTokenFactory.simpleText(arabicStyle.strings.addition).setFontSize(arabicStyle.smallFontFactor))
+        theTokens.push(TypesetterTokenFactory.simpleText(arabicStyle.strings.addition, 'ar').setFontSize(arabicStyle.smallFontFactor))
         theTokens.push(TypesetterTokenFactory.normalSpace())
         pushArray(theTokens, theTextTokens)
         theTokens.push(TypesetterTokenFactory.normalSpace())
-        theTokens.push(TypesetterTokenFactory.simpleText(siglaString))
+        theTokens.push(TypesetterTokenFactory.simpleText(siglaString, 'ar'))
         return theTokens
 
       case ApparatusSubEntryType.CUSTOM:

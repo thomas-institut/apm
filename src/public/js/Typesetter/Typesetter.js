@@ -151,200 +151,214 @@ export class Typesetter {
   //   }
   //   return this.getStringWidth(text, this.defaultFontDefinitionString)
   // }
-  
+   __advanceX(x, deltaX, rightToLeft) {
+    if (rightToLeft) {
+      return x - deltaX
+    }
+    return x + deltaX
+  }
+
+   __makeInvisible(token) {
+    let invisibleToken = token
+    invisibleToken.status = 'set'
+    invisibleToken.width = 0
+    return invisibleToken
+  }
+
+  /**
+   *
+   * @param {TypesetterToken[]}tokens
+   * @param {number}posY
+   * @param {number}lineWidth
+   * @param {boolean}rightToLeft
+   * @param {number}lineNumber
+   * @param {number}normalSpace
+   * @param lastLine
+   * @return {*[]}
+   */
+   __typesetLine(tokens, posY, lineWidth, rightToLeft, lineNumber, normalSpace, lastLine = false) {
+
+    // console.log(`Typesetting line with ${tokens.length} tokens`)
+    // console.log(tokens)
+    // 1. make initial and final glue invisible
+    // TODO: support indentation of first line
+    let i = 0
+    while(i < tokens.length && tokens[i].type === 'glue') {
+      tokens[i] = this.__makeInvisible(tokens[i])
+      i++
+    }
+    i = tokens.length -1
+    while (i > 0 && tokens[i].type === 'glue') {
+      tokens[i] = this.__makeInvisible(tokens[i])
+      i--
+    }
+    // 2. measure line, count glue and set glue initial width
+    let measuredLineWidth = 0
+    let glueTokens = 0
+    let tokensWithInitialGlue = tokens.map( (token) => {
+      if (token.width !== undefined && token.width === 0) {
+        // skip over invisible tokens
+        return token
+      }
+      if (token.type === 'glue') {
+        let spaceWidth = (token.space === 'normal') ? normalSpace : token.space
+        let glueToken = token
+        glueToken.width = spaceWidth
+        glueTokens++
+        measuredLineWidth += spaceWidth
+        return glueToken
+      }
+      measuredLineWidth += token.width
+      return token
+    })
+    //console.log(`Line measures ${measuredLineWidth} (diff = ${lineWidth - measuredLineWidth}), ${glueTokens} glue tokens`)
+    let glueSpaceAdjustment = (lineWidth - measuredLineWidth)/glueTokens
+    if (lastLine) {
+      glueSpaceAdjustment = 0
+    }
+
+    // 3. Reorder the tokens taking into account text direction
+    let state = 0
+    let orderedTokenIndices = []
+    let reverseStack = []
+    let glueArray = []
+    let hasDirectionChanges = false
+    tokensWithInitialGlue.forEach( (token, i) => {
+      // console.log(`Processing token ${i}`)
+      let tokenLang = token.getLang()
+      let isSameDirection = true
+      if (token.type === 'text') {
+        isSameDirection = isRtl(tokenLang) === rightToLeft
+      }
+      switch (state) {
+        case 0:
+          if (token.type === 'glue' || isSameDirection) {
+            // console.log(`Pushing ${i} into main array`)
+            orderedTokenIndices.push(i)
+          } else {
+            // Detected change of direction
+            console.log(`Detected change of direction at token ${i} : ${token.type} ${token.type === 'text' ? token.text : ''}`)
+            // console.log(`Pushing ${i} into reverse stack`)
+            reverseStack.push(i)
+            hasDirectionChanges = true
+            state = 1
+          }
+          break
+
+        case 1:
+          if (token.type === 'glue') {
+            // console.log(`Token ${i}: glue token while in reverse direction, pushing to glueArray`)
+            glueArray.push(i)
+          } else {
+            if (!isSameDirection) {
+              // console.log(`Another reverse direction token ${i} : ${token.type} ${token.type === 'text' ? token.text : ''}`)
+              // console.log(`Pushing ${glueArray.length} glue tokens into reverse stack`)
+              while(glueArray.length > 0) {
+                reverseStack.push(glueArray.pop())
+              }
+              // console.log(`Pushing ${i} into reverse stack`)
+              reverseStack.push(i)
+            } else {
+              // back to sameDirection
+              // console.log(`Back to normal direction`)
+              // console.log(`Pushing all ${reverseStack.length} tokens from the reverse stack into main array `)
+              while (reverseStack.length > 0) {
+                orderedTokenIndices.push(reverseStack.pop())
+              }
+              // console.log(`Pushing ${glueArray.length} hanging glue tokens into main array`)
+              for (let j = 0; j < glueArray.length; j++) {
+                orderedTokenIndices.push(glueArray[j])
+              }
+              glueArray = []
+              // console.log(`Pushing ${i} into main array`)
+              orderedTokenIndices.push(i)
+              state = 0
+            }
+          }
+          break
+      }
+    })
+
+
+    // some checks, just to be sure
+    if (state === 0 && reverseStack.length > 0){
+      console.error(`Reverse stack has ${reverseStack.length} tokens after ending in state 0`)
+    }
+    if (state === 0 && glueArray.length > 0) {
+      console.error(`There are ${glueArray.length} glue tokens after ending ordering of tokens`)
+    }
+    // empty the reverse stack
+    while(reverseStack.length > 0) {
+      orderedTokenIndices.push(reverseStack.pop())
+    }
+    // empty the glue array
+    for (let j = 0; j < glueArray.length; j++) {
+      orderedTokenIndices.push(glueArray[j])
+    }
+    glueArray = []
+    if (hasDirectionChanges) {
+      console.log(`Line ${lineNumber} has text with mixed directions, length: ${tokens.length}`)
+      console.log(tokens)
+      console.log(orderedTokenIndices)
+    }
+    if (orderedTokenIndices.length !== tokensWithInitialGlue.length) {
+      console.error(`Ordered token indices and tokensWithInitial glue are not the same length: 
+        ${orderedTokenIndices.length} !== ${tokensWithInitialGlue.length}`)
+    }
+
+
+    // 4. Typeset tokens
+    let typesetTokens = []
+    let currentX = rightToLeft ? lineWidth : 0
+
+    orderedTokenIndices.map( (index) => { return tokensWithInitialGlue[index]}).forEach( (token) => {
+      if (token.width !== undefined && token.width === 0) {
+        // skip over invisible tokens
+        typesetTokens.push(token)
+        return
+      }
+      if (token.type === 'glue') {
+        let spaceWidth = token.width + glueSpaceAdjustment
+        let newX = this.__advanceX(currentX, spaceWidth, rightToLeft)
+        // create and insert a set glue token into output token array
+        let glueToken = token
+        glueToken.status = 'set'
+        glueToken.width = spaceWidth
+        glueToken.lineNumber = lineNumber
+        // if rightToLeft, make sure the glue is positioned correctly to the left
+        // of the currentX point, at newX
+        glueToken.deltaX = rightToLeft ? newX : currentX
+        glueToken.deltaY = posY
+        currentX = newX
+        typesetTokens.push(glueToken)
+        return
+      }
+      // text token
+      let newToken = token
+      let newX = this.__advanceX(currentX, token.width, rightToLeft)
+      newToken.lineNumber = lineNumber
+      newToken.deltaX = rightToLeft === isRtl(token.lang) ? currentX : newX
+      newToken.deltaY = posY
+      newToken.status = 'set'
+      typesetTokens.push(newToken)
+      currentX = newX
+    })
+    if (hasDirectionChanges) {
+      console.log(`Typeset tokens`)
+      console.log(typesetTokens)
+    }
+
+    return typesetTokens
+  }
+
+  /**
+   *
+   * @param {TypesetterToken[]} tokens
+   * @param {boolean|number}defaultFontSize
+   * @return {*[]}
+   */
   typesetTokens(tokens, defaultFontSize = false) {
 
-    function advanceX(x, deltaX, rightToLeft) {
-      if (rightToLeft) {
-        return x - deltaX
-      }
-      return x + deltaX
-    }
-
-    function makeInvisible(token) {
-      let invisibleToken = token
-      invisibleToken.status = 'set'
-      invisibleToken.width = 0
-      return invisibleToken
-    }
-
-    /**
-     *
-     * @param {TypesetterToken[]}tokens
-     * @param {number}posY
-     * @param {number}lineWidth
-     * @param {boolean}rightToLeft
-     * @param {number}lineNumber
-     * @param {number}normalSpace
-     * @param lastLine
-     * @return {*[]}
-     */
-    function typesetLine(tokens, posY, lineWidth, rightToLeft, lineNumber, normalSpace, lastLine = false) {
-
-
-      // 1. make initial and final glue invisible
-      // TODO: support indentation of first line
-      let i = 0
-      while(tokens[i].type === 'glue' && i < tokens.length) {
-        tokens[i] = makeInvisible(tokens[i])
-        i++
-      }
-      i = tokens.length -1
-      while (tokens[i].type === 'glue' && i > 0) {
-        tokens[i] = makeInvisible(tokens[i])
-        i--
-      }
-      // 2. measure line, count glue and set glue initial width
-      let measuredLineWidth = 0
-      let glueTokens = 0
-      let tokensWithInitialGlue = tokens.map( (token) => {
-        if (token.width !== undefined && token.width === 0) {
-          // skip over invisible tokens
-          return token
-        }
-        if (token.type === 'glue') {
-          let spaceWidth = (token.space === 'normal') ? normalSpace : token.space
-          let glueToken = token
-          glueToken.width = spaceWidth
-          glueTokens++
-          measuredLineWidth += spaceWidth
-          return glueToken
-        }
-        measuredLineWidth += token.width
-        return token
-      })
-      //console.log(`Line measures ${measuredLineWidth} (diff = ${lineWidth - measuredLineWidth}), ${glueTokens} glue tokens`)
-      let glueSpaceAdjustment = (lineWidth - measuredLineWidth)/glueTokens
-      if (lastLine) {
-        glueSpaceAdjustment = 0
-      }
-      // 3. Reorder the tokens taking into account text direction
-      let state = 0
-      let orderedTokenIndices = []
-      let reverseStack = []
-      let glueArray = []
-      let hasDirectionChanges = false
-      // tokensWithInitialGlue.forEach( (token, i) => {
-      //   orderedTokenIndices.push(i)
-      // })
-      tokensWithInitialGlue.forEach( (token, i) => {
-        let tokenLang = token.getLang()
-        let isSameDirection = true
-        if (token.type === 'text') {
-          isSameDirection = isRtl(tokenLang) === rightToLeft
-        }
-        switch (state) {
-          case 0:
-            if (token.type === 'glue' || isSameDirection) {
-              orderedTokenIndices.push(i)
-            } else {
-              // Detected change of direction
-              // console.log(`Detected change of direction at token ${i} : ${token.type} ${token.type === 'text' ? token.text : ''}`)
-              reverseStack.push(i)
-              hasDirectionChanges = true
-              state = 1
-            }
-            break
-
-          case 1:
-            if (token.type === 'glue') {
-              // console.log(`Token ${i}: glue token while in reverse direction`)
-              glueArray.push(i)
-            } else {
-              if (!isSameDirection) {
-                // console.log(`Another reverse direction token ${i} : ${token.type} ${token.type === 'text' ? token.text : ''}`)
-                // console.log(`Pushing ${glueArray.length} glue tokens into reverse stack`)
-                while(glueArray.length > 0) {
-                  reverseStack.push(glueArray.pop())
-                }
-                reverseStack.push(i)
-              } else {
-                // back to sameDirection
-                // console.log(`Back to normal direction`)
-                // console.log(`Pushing all ${reverseStack.length} tokens from the reverse stack into main array `)
-                while (reverseStack.length > 0) {
-                  orderedTokenIndices.push(reverseStack.pop())
-                }
-                // console.log(`Pushing ${glueArray.length} hanging glue tokens into main array`)
-                for (let j = 0; j < glueArray.length; j++) {
-                  orderedTokenIndices.push(glueArray[j])
-                }
-                glueArray = []
-                orderedTokenIndices.push(i)
-                state = 0
-              }
-            }
-            break
-        }
-      })
-
-
-      // some checks, just to be sure
-      if (state === 0 && reverseStack.length > 0){
-        console.error(`Reverse stack has ${reverseStack.length} tokens after ending in state 0`)
-      }
-      if (glueArray.length > 0) {
-        console.error(`There are ${glueArray.length} glue tokens after ending ordering of tokens`)
-      }
-      // empty the reverse stack
-      while(reverseStack.length > 0) {
-        orderedTokenIndices.push(reverseStack.pop())
-      }
-      if (hasDirectionChanges) {
-        console.log(`Line ${lineNumber} has text with mixed directions, length: ${tokens.length}`)
-        console.log(tokens)
-        console.log(orderedTokenIndices)
-      }
-      if (orderedTokenIndices.length !== tokensWithInitialGlue.length) {
-        console.error(`Ordered token indices and tokensWithInitial glue are not the same length: 
-        ${orderedTokenIndices.length} !== ${tokensWithInitialGlue.length}`)
-      }
-
-
-      // 4. Typeset tokens
-      let typesetTokens = []
-      let currentX = rightToLeft ? lineWidth : 0
-
-      orderedTokenIndices.map( (index) => { return tokensWithInitialGlue[index]}).forEach( (token) => {
-        if (token.width !== undefined && token.width === 0) {
-          // skip over invisible tokens
-          typesetTokens.push(token)
-          return
-        }
-        if (token.type === 'glue') {
-          let spaceWidth = token.width + glueSpaceAdjustment
-          let newX = advanceX(currentX, spaceWidth, rightToLeft)
-          // create and insert a set glue token into output token array
-          let glueToken = token
-          glueToken.status = 'set'
-          glueToken.width = spaceWidth
-          glueToken.lineNumber = lineNumber
-          // if rightToLeft, make sure the glue is positioned correctly to the left
-          // of the currentX point, at newX
-          glueToken.deltaX = rightToLeft ? newX : currentX
-          glueToken.deltaY = currentY
-          currentX = newX
-          typesetTokens.push(glueToken)
-          return
-        }
-        // text token
-        let newToken = token
-        let newX = advanceX(currentX, token.width, rightToLeft)
-        newToken.lineNumber = currentLine
-        newToken.deltaX = rightToLeft === isRtl(token.lang) ? currentX : newX
-        newToken.deltaY = posY
-        newToken.status = 'set'
-        typesetTokens.push(newToken)
-        currentX = newX
-      })
-      if (hasDirectionChanges) {
-        console.log(`Typeset tokens`)
-        console.log(typesetTokens)
-      }
-
-      return typesetTokens
-    }
-    
     if (defaultFontSize === false) {
       defaultFontSize = this.options.defaultFontSize
     }
@@ -357,6 +371,7 @@ export class Typesetter {
     let pxLineHeight = this.options.lineHeight
 
     // TODO: change this to something more like Knuth's line breaking algorithm in TeX
+    //  See The TEX Book ch 13, and "TeX, the Program"  par 813+
     //   1) Algorithm: for each paragraph in input
     //      a) Add glue to end of the paragraph so that last line is not justified.
     //      b) Determine line breaks.
@@ -393,13 +408,13 @@ export class Typesetter {
           let spaceWidth = (token.space === 'normal') ? this.normalSpace : token.space
           if (token.space <= 0) {
             // ignore negative and zero space
-            currentLineTokens.push(makeInvisible(token))
+            currentLineTokens.push(this.__makeInvisible(token))
             return
           }
           if ((accLineWidth + spaceWidth) > lineWidth) {
             // new line
-            currentLineTokens.push(makeInvisible(token))
-            let lineTypeSetTokens = typesetLine(currentLineTokens, currentY, lineWidth, rightToLeft, currentLine, this.normalSpace)
+            currentLineTokens.push(this.__makeInvisible(token))
+            let lineTypeSetTokens = this.__typesetLine(currentLineTokens, currentY, lineWidth, rightToLeft, currentLine, this.normalSpace)
             ArrayUtil.pushArray(typesetTokens, lineTypeSetTokens)
             // advance to the next line
             currentY += pxLineHeight
@@ -417,12 +432,12 @@ export class Typesetter {
         // token is text
         if (token.text === '') {
           // Empty text, ignore and move on
-          currentLineTokens.push(makeInvisible(token))
+          currentLineTokens.push(this.__makeInvisible(token))
           return
         }
         if (token.text === "\n") {
           // just make invisible
-          currentLineTokens.push(makeInvisible(token))
+          currentLineTokens.push(this.__makeInvisible(token))
           return
         }
 
@@ -452,7 +467,7 @@ export class Typesetter {
         newToken.setLang( token.getLang() === '' ? detectedTokenLang : token.getLang())
         if ( (accLineWidth + tokenWidth) > lineWidth) {
           // new line
-          let lineTypeSetTokens = typesetLine(currentLineTokens, currentY, lineWidth, rightToLeft, currentLine, this.normalSpace)
+          let lineTypeSetTokens = this.__typesetLine(currentLineTokens, currentY, lineWidth, rightToLeft, currentLine, this.normalSpace)
           ArrayUtil.pushArray(typesetTokens, lineTypeSetTokens)
           // advance to the next line
           currentY += pxLineHeight
@@ -464,7 +479,7 @@ export class Typesetter {
         accLineWidth += tokenWidth
       })
       if (currentLineTokens.length !== 0) {
-        let lineTypeSetTokens = typesetLine(currentLineTokens, currentY, lineWidth, rightToLeft, currentLine, this.normalSpace, true)
+        let lineTypeSetTokens = this.__typesetLine(currentLineTokens, currentY, lineWidth, rightToLeft, currentLine, this.normalSpace, true)
         ArrayUtil.pushArray(typesetTokens, lineTypeSetTokens)
         currentLine++
       }

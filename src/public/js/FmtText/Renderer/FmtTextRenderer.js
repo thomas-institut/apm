@@ -23,9 +23,10 @@ export class FmtTextRenderer {
   /**
    *
    * @param {FmtTextToken[]} fmtText
+   * @param {string}lang
    * @return {*}
    */
-  render(fmtText) {
+  render(fmtText, lang = '') {
     return FmtText.getPlainText(fmtText)
   }
 

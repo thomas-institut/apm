@@ -31,7 +31,7 @@ export class LanguageDetector {
       'el':/[\u0370-\u03ff\u1f00-\u1fff]/gi,
      // 'zh': /[\u3000\u3400-\u4DBF\u4E00-\u9FFF]/gi,
      // 'hi': /[\u0900-\u097F]/gi,
-      'ar': /[\u0621-\u064A\u0660-\u0669]/gi,
+      'ar': /[\u0600-\u06ff]/gi,
      // 'bn': /[\u0995-\u09B9\u09CE\u09DC-\u09DF\u0985-\u0994\u09BE-\u09CC\u09D7\u09BC]/gi,
       'he': /[\u0590-\u05FF]/gi,
     }

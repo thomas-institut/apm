@@ -22,11 +22,12 @@ import { FmtTextFactory } from '../FmtText/FmtTextFactory'
 
 export class MainTextTokenFactory {
 
-  static createSimpleText(text, ctIndex) {
+  static createSimpleText(text, ctIndex, lang = '') {
     let t = new MainTextToken()
     t.type = EditionMainTextTokenType.TEXT
     t.fmtText = FmtTextFactory.fromString(text)
     t.collationTableIndex = ctIndex
+    t.setLang(lang)
     return t
   }
 

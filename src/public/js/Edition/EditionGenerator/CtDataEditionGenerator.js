@@ -61,7 +61,7 @@ export class CtDataEditionGenerator extends EditionGenerator{
       return new EditionWitnessInfo().setSiglum(s).setTitle(this.ctData['witnessTitles'][i])
     })
     let baseWitnessTokens = CtData.getCtWitnessTokens(this.ctData, baseWitnessIndex)
-    edition.setMainText(EditionMainTextGenerator.generateMainText(baseWitnessTokens))
+    edition.setMainText(EditionMainTextGenerator.generateMainText(baseWitnessTokens, false, [], edition.getLang()))
     edition.mainTextSections[0].id = this.ctData['chunkId']
     let apparatusGenerator = new CriticalApparatusGenerator()
     let generatedCriticalApparatus = apparatusGenerator.generateCriticalApparatusFromCtData(this.ctData, baseWitnessIndex, edition.mainTextSections)

@@ -53,12 +53,22 @@ export class MainTextToken {
    *
    * @param {string|array|FmtTextToken} theText
    * @param {number} ctIndex
+   * @param {string}lang
    * @return {MainTextToken}
    */
-  setText(theText, ctIndex = -1) {
+  setText(theText, ctIndex = -1, lang = '') {
     this.type = MainTextTokenType.TEXT
     this.fmtText = FmtTextFactory.fromAnything(theText)
     this.collationTableIndex = ctIndex
+    return this.setLang(lang)
+  }
+
+  /**
+   *
+   * @param lang
+   */
+  setLang(lang) {
+    this.lang = lang === '' ? undefined : lang
     return this
   }
 

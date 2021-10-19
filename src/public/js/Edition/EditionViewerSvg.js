@@ -287,7 +287,7 @@ export class EditionViewerSvg {
           break
 
         case MainTextTokenType.TEXT:
-          let fmtTextTypesetterTokens =  typesetterRenderer.render(mainTextToken.fmtText)
+          let fmtTextTypesetterTokens =  typesetterRenderer.render(mainTextToken.fmtText, this.edition.lang)
           // tag the first typeset token with the main text index
           if (fmtTextTypesetterTokens.length > 0) {
             fmtTextTypesetterTokens[0].mainTextTokenIndex = index

@@ -40,7 +40,7 @@ export class TypesetterTokenRenderer extends FmtTextRenderer {
   }
 
 
-  render (fmtText) {
+  render (fmtText, lang = '') {
     // console.log(`Rendering fmtText as Typesetter tokens`)
 
     return fmtText.filter( (t) => {return t.type !== FmtTokenType.EMPTY}).map ( (fmtTextToken) => {
@@ -50,7 +50,7 @@ export class TypesetterTokenRenderer extends FmtTextRenderer {
           return new TypesetterToken(TypesetterTokenType.GLUE)
 
         case FmtTokenType.TEXT:
-          let ttToken = TypesetterTokenFactoryNew.simpleText(fmtTextToken.text)
+          let ttToken = TypesetterTokenFactoryNew.simpleText(fmtTextToken.text, lang)
           if (fmtTextToken.fontStyle === FontStyle.ITALIC) {
             ttToken.setItalic()
           }

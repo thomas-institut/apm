@@ -21,11 +21,12 @@ import { TypesetterToken } from './TypesetterToken'
 
 /**
  *
- * @param theText
+ * @param {string}theText
+ * @param {string}lang
  * @returns {TypesetterToken}
  */
-export function simpleText(theText) {
-  return (new TypesetterToken()).setText(theText)
+export function simpleText(theText, lang = '') {
+  return (new TypesetterToken()).setText(theText, lang)
 }
 
 /**

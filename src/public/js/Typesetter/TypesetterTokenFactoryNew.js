@@ -23,11 +23,12 @@ import { TypesetterToken } from './TypesetterToken'
 export class TypesetterTokenFactoryNew {
   /**
    *
-   * @param theText
+   * @param {string}theText
+   * @param {string}lang
    * @returns {TypesetterToken}
    */
-  static simpleText(theText) {
-    return (new TypesetterToken()).setText(theText)
+  static simpleText(theText, lang = '') {
+    return (new TypesetterToken()).setText(theText, lang)
   }
 
   /**

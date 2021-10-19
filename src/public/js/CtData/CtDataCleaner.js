@@ -80,7 +80,7 @@ export class CtDataCleaner {
       }
         defaultApparatus.forEach( (appType) => {
           let appIndex = this.ctData['customApparatuses'].map( (customApp) => { return customApp.type}).indexOf(appType)
-          console.log(`Found apparatus '${appType}' with index ${appIndex}`)
+          // console.log(`Found apparatus '${appType}' with index ${appIndex}`)
           if (appIndex === -1) {
             this.ctData['customApparatuses'].push( { type: appType, entries: []})
           }

@@ -25,7 +25,7 @@
  * of those tokens with position information that can then be used to place them in an SVG-like element.
  *
  * At the moment the typesetter only aligns the left side margin for ltr text or the right side for rtl text. That is,
- * it does not properly justifies the text.
+ * it does not properly justify the text.
  *
  * The first, simpler version of the typesetter assumes that the text will be placed in 2D area of a
  * certain width given as a parameter,
@@ -87,8 +87,11 @@
  *  glue tokens that are not necessary.
  */
 
-import {OptionsChecker} from '@thomas-inst/optionschecker'
+import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { NumeralStyles } from '../toolbox/NumeralStyles'
+import * as ArrayUtil from '../toolbox/ArrayUtil'
+import { LanguageDetector } from '../toolbox/LanguageDetector'
+import { isRtl } from '../toolbox/Util.mjs'
 
 export class Typesetter {
   
@@ -141,23 +144,16 @@ export class Typesetter {
     return metrics.width
   }
   
-  getTextWidthWithDefaults(text) {
-    if (typeof(this.defaultFontDefinitionString) === 'undefined') {
-      this.defaultFontDefinitionString = this.options.defaultFontSize  + 'px ' + '"' + this.options.defaultFontFamily + '"'
-      console.log('Default string def: ' + this.defaultFontDefinitionString)
-    }
-    return this.getStringWidth(text, this.defaultFontDefinitionString) 
-  }
+  // getTextWidthWithDefaults(text) {
+  //   if (typeof(this.defaultFontDefinitionString) === 'undefined') {
+  //     this.defaultFontDefinitionString = this.options.defaultFontSize  + 'px ' + '"' + this.options.defaultFontFamily + '"'
+  //     console.log('Default string def: ' + this.defaultFontDefinitionString)
+  //   }
+  //   return this.getStringWidth(text, this.defaultFontDefinitionString)
+  // }
   
   typesetTokens(tokens, defaultFontSize = false) {
-    
-    function isOutOfBounds(x, lineWidth, rightToLeft) {
-      if (rightToLeft) {
-        return x < 0
-      }
-      return x > lineWidth
-    }
-    
+
     function advanceX(x, deltaX, rightToLeft) {
       if (rightToLeft) {
         return x - deltaX
@@ -171,6 +167,183 @@ export class Typesetter {
       invisibleToken.width = 0
       return invisibleToken
     }
+
+    /**
+     *
+     * @param {TypesetterToken[]}tokens
+     * @param {number}posY
+     * @param {number}lineWidth
+     * @param {boolean}rightToLeft
+     * @param {number}lineNumber
+     * @param {number}normalSpace
+     * @param lastLine
+     * @return {*[]}
+     */
+    function typesetLine(tokens, posY, lineWidth, rightToLeft, lineNumber, normalSpace, lastLine = false) {
+
+
+      // 1. make initial and final glue invisible
+      // TODO: support indentation of first line
+      let i = 0
+      while(tokens[i].type === 'glue' && i < tokens.length) {
+        tokens[i] = makeInvisible(tokens[i])
+        i++
+      }
+      i = tokens.length -1
+      while (tokens[i].type === 'glue' && i > 0) {
+        tokens[i] = makeInvisible(tokens[i])
+        i--
+      }
+      // 2. measure line, count glue and set glue initial width
+      let measuredLineWidth = 0
+      let glueTokens = 0
+      let tokensWithInitialGlue = tokens.map( (token) => {
+        if (token.width !== undefined && token.width === 0) {
+          // skip over invisible tokens
+          return token
+        }
+        if (token.type === 'glue') {
+          let spaceWidth = (token.space === 'normal') ? normalSpace : token.space
+          let glueToken = token
+          glueToken.width = spaceWidth
+          glueTokens++
+          measuredLineWidth += spaceWidth
+          return glueToken
+        }
+        measuredLineWidth += token.width
+        return token
+      })
+      //console.log(`Line measures ${measuredLineWidth} (diff = ${lineWidth - measuredLineWidth}), ${glueTokens} glue tokens`)
+      let glueSpaceAdjustment = (lineWidth - measuredLineWidth)/glueTokens
+      if (lastLine) {
+        glueSpaceAdjustment = 0
+      }
+      // 3. Reorder the tokens taking into account text direction
+      let state = 0
+      let orderedTokenIndices = []
+      let reverseStack = []
+      let glueArray = []
+      let hasDirectionChanges = false
+      // tokensWithInitialGlue.forEach( (token, i) => {
+      //   orderedTokenIndices.push(i)
+      // })
+      tokensWithInitialGlue.forEach( (token, i) => {
+        let tokenLang = token.getLang()
+        let isSameDirection = true
+        if (token.type === 'text') {
+          isSameDirection = isRtl(tokenLang) === rightToLeft
+        }
+        switch (state) {
+          case 0:
+            if (token.type === 'glue' || isSameDirection) {
+              orderedTokenIndices.push(i)
+            } else {
+              // Detected change of direction
+              // console.log(`Detected change of direction at token ${i} : ${token.type} ${token.type === 'text' ? token.text : ''}`)
+              reverseStack.push(i)
+              hasDirectionChanges = true
+              state = 1
+            }
+            break
+
+          case 1:
+            if (token.type === 'glue') {
+              // console.log(`Token ${i}: glue token while in reverse direction`)
+              glueArray.push(i)
+            } else {
+              if (!isSameDirection) {
+                // console.log(`Another reverse direction token ${i} : ${token.type} ${token.type === 'text' ? token.text : ''}`)
+                // console.log(`Pushing ${glueArray.length} glue tokens into reverse stack`)
+                while(glueArray.length > 0) {
+                  reverseStack.push(glueArray.pop())
+                }
+                reverseStack.push(i)
+              } else {
+                // back to sameDirection
+                // console.log(`Back to normal direction`)
+                // console.log(`Pushing all ${reverseStack.length} tokens from the reverse stack into main array `)
+                while (reverseStack.length > 0) {
+                  orderedTokenIndices.push(reverseStack.pop())
+                }
+                // console.log(`Pushing ${glueArray.length} hanging glue tokens into main array`)
+                for (let j = 0; j < glueArray.length; j++) {
+                  orderedTokenIndices.push(glueArray[j])
+                }
+                glueArray = []
+                orderedTokenIndices.push(i)
+                state = 0
+              }
+            }
+            break
+        }
+      })
+
+
+      // some checks, just to be sure
+      if (state === 0 && reverseStack.length > 0){
+        console.error(`Reverse stack has ${reverseStack.length} tokens after ending in state 0`)
+      }
+      if (glueArray.length > 0) {
+        console.error(`There are ${glueArray.length} glue tokens after ending ordering of tokens`)
+      }
+      // empty the reverse stack
+      while(reverseStack.length > 0) {
+        orderedTokenIndices.push(reverseStack.pop())
+      }
+      if (hasDirectionChanges) {
+        console.log(`Line ${lineNumber} has text with mixed directions, length: ${tokens.length}`)
+        console.log(tokens)
+        console.log(orderedTokenIndices)
+      }
+      if (orderedTokenIndices.length !== tokensWithInitialGlue.length) {
+        console.error(`Ordered token indices and tokensWithInitial glue are not the same length: 
+        ${orderedTokenIndices.length} !== ${tokensWithInitialGlue.length}`)
+      }
+
+
+      // 4. Typeset tokens
+      let typesetTokens = []
+      let currentX = rightToLeft ? lineWidth : 0
+
+      orderedTokenIndices.map( (index) => { return tokensWithInitialGlue[index]}).forEach( (token) => {
+        if (token.width !== undefined && token.width === 0) {
+          // skip over invisible tokens
+          typesetTokens.push(token)
+          return
+        }
+        if (token.type === 'glue') {
+          let spaceWidth = token.width + glueSpaceAdjustment
+          let newX = advanceX(currentX, spaceWidth, rightToLeft)
+          // create and insert a set glue token into output token array
+          let glueToken = token
+          glueToken.status = 'set'
+          glueToken.width = spaceWidth
+          glueToken.lineNumber = lineNumber
+          // if rightToLeft, make sure the glue is positioned correctly to the left
+          // of the currentX point, at newX
+          glueToken.deltaX = rightToLeft ? newX : currentX
+          glueToken.deltaY = currentY
+          currentX = newX
+          typesetTokens.push(glueToken)
+          return
+        }
+        // text token
+        let newToken = token
+        let newX = advanceX(currentX, token.width, rightToLeft)
+        newToken.lineNumber = currentLine
+        newToken.deltaX = rightToLeft === isRtl(token.lang) ? currentX : newX
+        newToken.deltaY = posY
+        newToken.status = 'set'
+        typesetTokens.push(newToken)
+        currentX = newX
+      })
+      if (hasDirectionChanges) {
+        console.log(`Typeset tokens`)
+        console.log(typesetTokens)
+      }
+
+      return typesetTokens
+    }
     
     if (defaultFontSize === false) {
       defaultFontSize = this.options.defaultFontSize
@@ -179,107 +352,128 @@ export class Typesetter {
     let typesetTokens = []
     let lineWidth = this.options.lineWidth
     let rightToLeft = this.options.rightToLeft
-    let currentLine = 1
-    let currentX = rightToLeft ? lineWidth : 0
+
     let currentY = defaultFontSize
     let pxLineHeight = this.options.lineHeight
-    
-    for(const token of tokens) {
-      if (token.type === 'glue') {
-        let spaceWidth = (token.space === 'normal') ? this.normalSpace : token.space
-        if (token.space <= 0) {
-          // ignore negative and zero space
-          typesetTokens.push(makeInvisible(token))
-          continue
+
+    // TODO: change this to something more like Knuth's line breaking algorithm in TeX
+    //   1) Algorithm: for each paragraph in input
+    //      a) Add glue to end of the paragraph so that last line is not justified.
+    //      b) Determine line breaks.
+    //      c) For each individual line, adjust glue and calculate each token's position
+    //         taking care of changes in text direction.
+    //      d) Add vertical space after paragraph (could be set to 0)
+    //   2) A product of the typeset process should be the size of the text box and the number of lines.
+
+    // 1. Divide the text in paragraphs
+    let paragraphs = []
+    let currentParagraph = []
+    tokens.forEach( (token) => {
+      if (token.type === 'text' && token.text === "\n") {
+        currentParagraph.push(token)
+        paragraphs.push(currentParagraph)
+        currentParagraph = []
+      } else {
+        currentParagraph.push(token)
+      }
+    })
+    if (currentParagraph.length !== 0) {
+      paragraphs.push(currentParagraph)
+    }
+    // console.log(`There are ${paragraphs.length} paragraph(s) in the text`)
+
+    // 2. Process paragraphs
+    let currentLine = 1
+    let langDetector = new LanguageDetector()
+    paragraphs.forEach( (tokenArray) => {
+      let currentLineTokens = []
+      let accLineWidth = 0
+      tokenArray.forEach( (token) => {
+        if (token.type === 'glue') {
+          let spaceWidth = (token.space === 'normal') ? this.normalSpace : token.space
+          if (token.space <= 0) {
+            // ignore negative and zero space
+            currentLineTokens.push(makeInvisible(token))
+            return
+          }
+          if ((accLineWidth + spaceWidth) > lineWidth) {
+            // new line
+            currentLineTokens.push(makeInvisible(token))
+            let lineTypeSetTokens = typesetLine(currentLineTokens, currentY, lineWidth, rightToLeft, currentLine, this.normalSpace)
+            ArrayUtil.pushArray(typesetTokens, lineTypeSetTokens)
+            // advance to the next line
+            currentY += pxLineHeight
+            currentLine++
+            accLineWidth = 0
+            currentLineTokens = []
+            return
+          } else {
+            // just put the glue token into the line
+            currentLineTokens.push(token)
+            accLineWidth += spaceWidth
+          }
+          return
         }
-        let newX = advanceX(currentX, spaceWidth, rightToLeft)
-        if (isOutOfBounds(newX, lineWidth, rightToLeft)) {
-          typesetTokens.push(makeInvisible(token))
+        // token is text
+        if (token.text === '') {
+          // Empty text, ignore and move on
+          currentLineTokens.push(makeInvisible(token))
+          return
+        }
+        if (token.text === "\n") {
+          // just make invisible
+          currentLineTokens.push(makeInvisible(token))
+          return
+        }
+
+        // normal text token
+        // Determine the token's width, fontsize
+        // if
+        let detectedTokenLang = langDetector.detectLang(token.text)
+        // TODO: determine font based on actual token language and perhaps a style
+        let fontDefString = ''
+        if (token.fontWeight) {
+          fontDefString += token.fontWeight + ' '
+        }
+        let fontSize = defaultFontSize
+        if (token.fontSize !== undefined && token.fontSize !== 1) {
+          // font size is a factor of the default fontSize
+          fontSize = token.fontSize * defaultFontSize
+        }
+        fontDefString += fontSize + 'px ' + this.options.defaultFontFamily
+
+        let tokenWidth = this.getStringWidth(token.text, fontDefString)
+        let newToken = token
+        newToken.width = tokenWidth
+        newToken.fontSize = fontSize
+        newToken.fontFamily = this.options.defaultFontFamily
+        newToken.fontSize = fontSize
+        newToken.width = tokenWidth
+        newToken.setLang( token.getLang() === '' ? detectedTokenLang : token.getLang())
+        if ( (accLineWidth + tokenWidth) > lineWidth) {
+          // new line
+          let lineTypeSetTokens = typesetLine(currentLineTokens, currentY, lineWidth, rightToLeft, currentLine, this.normalSpace)
+          ArrayUtil.pushArray(typesetTokens, lineTypeSetTokens)
           // advance to the next line
           currentY += pxLineHeight
+          accLineWidth = 0
           currentLine++
-          currentX = rightToLeft ? lineWidth : 0
-        } else {
-          // create and insert a set glue token into output token array
-          let glueToken = token
-          glueToken.status = 'set'
-          glueToken.width = token.space
-          glueToken.lineNumber = currentLine
-          // if rightToLeft, make sure the glue is positioned correctly to the left
-          // of the currentX point, at newX
-          glueToken.deltaX = rightToLeft ? newX : currentX
-          glueToken.deltaY = currentY
-          currentX = newX
-          typesetTokens.push(glueToken)
+          currentLineTokens = []
         }
-        continue
-      }
-      // Token is of type text
-      if (token.text === '') {
-        // Empty text, ignore and move on
-        typesetTokens.push(makeInvisible(token))
-        continue
-      }
-      
-      if (token.text === "\n") {
-        // newline means start a new paragraph
-        typesetTokens.push(makeInvisible(token))
-        // new paragraph
-        currentY += pxLineHeight + this.options.spaceBetweenParagraphs
+        currentLineTokens.push(newToken)
+        accLineWidth += tokenWidth
+      })
+      if (currentLineTokens.length !== 0) {
+        let lineTypeSetTokens = typesetLine(currentLineTokens, currentY, lineWidth, rightToLeft, currentLine, this.normalSpace, true)
+        ArrayUtil.pushArray(typesetTokens, lineTypeSetTokens)
         currentLine++
-        currentX = rightToLeft ? lineWidth : 0
-        currentX = advanceX(currentX, this.options.paragraphFirstLineIndent, rightToLeft)
-        continue
       }
-
-      // normal text token
-      let fontDefString = ''
-      if (token.fontWeight) {
-        fontDefString += token.fontWeight + ' '
-      }
-      let fontSize = defaultFontSize
-      if (token.fontSize !== undefined && token.fontSize !== 1) {
-        // font size is a factor of the default fontSize
-        fontSize = token.fontSize * defaultFontSize
-      }
-      fontDefString += fontSize + 'px ' + this.options.defaultFontFamily
-      
-      let tokenWidth = this.getStringWidth(token.text, fontDefString) 
-      let newX = advanceX(currentX, tokenWidth, rightToLeft)
-      if (isOutOfBounds(newX, lineWidth, rightToLeft)) {
-        currentY += pxLineHeight
-        currentLine++
-        currentX = rightToLeft ? lineWidth : 0
-      } 
-      
-      let newToken = token
-      newToken.lineNumber = currentLine
-      newToken.deltaX = currentX
-      newToken.deltaY = currentY
-      newToken.fontFamily = this.options.defaultFontFamily
-      newToken.fontSize = fontSize
-      newToken.fontWeight = token.fontWeight
-      newToken.width = tokenWidth
-      newToken.status = 'set'
-      newToken.lang = this.options.lang
-      typesetTokens.push(newToken)
-      
-      currentX = advanceX(currentX, tokenWidth, rightToLeft)
-
-    }
+      // new paragraph
+      currentY += pxLineHeight + this.options.spaceBetweenParagraphs
+    })
     return typesetTokens
   }
-  
-  // typesetString(theString, defaultFontSize = false) {
-  //   let tokens = this.getTokensFromString(theString)
-  //   return this.typesetTokens(tokens, defaultFontSize)
-  // }
-  
-  
-  // typesetMarkdownString(theString, defaultFontSize) {
-  //   let tokens = this.getTokensFromMarkdownString(theString)
-  //   return this.typesetTokens(tokens, defaultFontSize)
-  // }
+
 
   getNumberString(number, style= '') {
     switch(style) {
@@ -419,9 +613,9 @@ export class Typesetter {
   
   // Unit conversion methods
   
-  static mm2px(mm) {
-    return mm * 3.7795275590551184 //   = mm * 96 [px/in] / 25.4 [mm/in]
-  }
+  // static mm2px(mm) {
+  //   return mm * 3.7795275590551184 //   = mm * 96 [px/in] / 25.4 [mm/in]
+  // }
   
   static cm2px(cm) {
     return cm * 37.795275590551184 //   = mm * 96 [px/in] / 2.54 [cm/in]
@@ -434,9 +628,9 @@ export class Typesetter {
     return pt * 4 / 3  // = pt * 72 [pt/in] *  1/96 [in/px]
   }
   
-  static in2px(inches) {
-    return inches * 96
-  }
-  
+  // static in2px(inches) {
+  //   return inches * 96
+  // }
+  //
   
 }

@@ -119,6 +119,10 @@ export function getTextDirectionForLang(lang) {
   }
 }
 
+export function isRtl(lang) {
+  return getTextDirectionForLang(lang) === 'rtl'
+}
+
 export function hashCodeInt32(str){
   let hash = 0;
   for (let i = 0; i < str.length; i++) {

@@ -57,7 +57,7 @@ export class EditionViewerSvg {
       apparatusFontSizeInPts: { type: 'NumberGreaterThanZero', default: 10},
       mainTextLineHeightInPts: { type: 'NumberGreaterThanZero', default: 15},
       apparatusLineHeightInPts: { type: 'NumberGreaterThanZero', default: 12},
-      normalSpaceWidthInEms: { type: 'NumberGreaterThanZero', default: 0.32},
+      normalSpaceWidthInEms: { type: 'NumberGreaterThanZero', default: 0.3},
       textToLineNumbersInCm: { type: 'NumberGreaterThanZero', default: 0.5},
       textToApparatusInCm: { type: 'NumberGreaterThanZero', default: 1}
     }
@@ -332,14 +332,14 @@ export class EditionViewerSvg {
         // TODO: use better space
         lineTtTokens.push(TypesetterTokenFactoryNew.normalSpace())
         lineTtTokens.push(TypesetterTokenFactoryNew.normalSpace())
-        lineTtTokens.push(TypesetterTokenFactoryNew.simpleText(this.options.entrySeparator))
+        lineTtTokens.push(TypesetterTokenFactoryNew.simpleText(this.options.entrySeparator, this.edition.lang))
         lineTtTokens.push(TypesetterTokenFactoryNew.normalSpace())
         lineTtTokens.push(TypesetterTokenFactoryNew.normalSpace())
       } else {
         if (aeIndex !== 0) {
           // insert a line separator between line numbers in all but the first line
           lineTtTokens.push(TypesetterTokenFactoryNew.normalSpace())
-          lineTtTokens.push(TypesetterTokenFactoryNew.simpleText(this.options.apparatusLineSeparator).setBold())
+          lineTtTokens.push(TypesetterTokenFactoryNew.simpleText(this.options.apparatusLineSeparator, this.edition.lang).setBold())
           lineTtTokens.push(TypesetterTokenFactoryNew.normalSpace())
         }
         lastLine = currentLine
@@ -347,7 +347,7 @@ export class EditionViewerSvg {
         lineTtTokens.push(TypesetterTokenFactoryNew.normalSpace())
       }
       pushArray(ttTokens, lineTtTokens)
-      ttTokens.push(TypesetterTokenFactoryNew.simpleText(this._getLemmaString(apparatusEntry.lemma) + ']'))
+      ttTokens.push(TypesetterTokenFactoryNew.simpleText(this._getLemmaString(apparatusEntry.lemma) + ']').setLang(this.edition.lang))
       ttTokens.push(TypesetterTokenFactoryNew.normalSpace())
       enabledSubEntries.forEach( (subEntry) => {
         let theText = subEntry.type === SubEntryType.OMISSION ? [] : subEntry.fmtText

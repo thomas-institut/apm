@@ -32,8 +32,26 @@ export class TypesetterToken {
     }
   }
 
-  setText(text) {
+  /**
+   *
+   * @param {string}text
+   * @param {string}lang
+   * @return {TypesetterToken}
+   */
+  setText(text, lang = '') {
     this.text = text
+    if (lang !== '') {
+      this.lang = lang
+    }
+    return this
+  }
+
+  setLang(lang = '') {
+    if (lang === '') {
+      this.lang = undefined
+    } else {
+      this.lang = lang
+    }
     return this
   }
 
@@ -64,6 +82,10 @@ export class TypesetterToken {
   setLength(spaceLength) {
     this.space = spaceLength
     return this
+  }
+
+  getLang() {
+    return this.lang === undefined ? '' : this.lang
   }
 
 }

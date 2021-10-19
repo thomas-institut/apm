@@ -101,7 +101,7 @@ export class CtDataEditionGenerator extends EditionGenerator{
     }
     let customApparatusCriticus = filteredCustomApparatusArray[0]
 
-    console.log(`Merging custom apparatus criticus entries`)
+    // console.log(`Merging custom apparatus criticus entries`)
     customApparatusCriticus.entries.forEach( (customEntry) => {
       // console.log(`Custom Entry`)
       // console.log(customEntry)
@@ -138,7 +138,7 @@ export class CtDataEditionGenerator extends EditionGenerator{
         // console.log(`Found entry for index ${currentEntryIndex}`)
         if (realCustomSubEntries.length !== 0) {
           let subEntryArray = this._buildSubEntryArrayFromCustomSubEntries(realCustomSubEntries)
-          console.log(subEntryArray)
+          // console.log(subEntryArray)
           pushArray(generatedApparatusCriticus.entries[currentEntryIndex].subEntries, subEntryArray)
           // generatedApparatusCriticus.entries[currentEntryIndex].subEntries =
           //   generatedApparatusCriticus.entries[currentEntryIndex].subEntries.concat(this._buildSubEntryArrayFromCustomSubEntries(realCustomSubEntries))

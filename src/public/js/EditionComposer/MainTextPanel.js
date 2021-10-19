@@ -764,7 +764,7 @@ export class MainTextPanel extends PanelWithToolbar {
           // TODO: do this for the other languages
           let lineOffset = mainTextFontSize*fontBaseLineRatio*(1-lineNumberFontSizeFactor)
           posY = lineSpec.pY - offsetY + lineOffset
-          console.log(`Line number for line ${lineSpec.line}: pY = ${lineSpec.pY}, offset = ${lineOffset}`)
+          // console.log(`Line number for line ${lineSpec.line}: pY = ${lineSpec.pY}, offset = ${lineOffset}`)
         }
 
         let lineString = ApparatusCommon.getNumberString(lineSpec.line, this.lang)

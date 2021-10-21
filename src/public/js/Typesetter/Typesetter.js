@@ -24,47 +24,19 @@
  * The main method is typesetTokens, which takes an array of TypesetterTokens and returns a copy
  * of those tokens with position information that can then be used to place them in an SVG-like element.
  *
- * At the moment the typesetter only aligns the left side margin for ltr text or the right side for rtl text. That is,
- * it does not properly justify the text.
- *
  * The first, simpler version of the typesetter assumes that the text will be placed in 2D area of a
  * certain width given as a parameter,
  * but of indeterminate length.
  * 
  * 
- * A token is an object with the following properties:
- *    type:  'text' | 'glue'
- *    
- *    type === 'text'
- *      text : string
- *      fontFamily:  string = CSS font-family (optional, defaults to defaultFontFamily given in the constructor options)
- *      fontStyle: 'normal' | 'italic',  defaults to 'normal'
- *      fontSize:  number, font size in pixels
- *      fontWeight: 'normal' | 'bold', defaults to 'normal'
- *      position: 'normal' | 'subscript' | 'superscript'
+
  *
- *    
- *    type === 'glue' 
- *       The term 'glue' is taken from Donald Knuth's the TeXbook, where it is explained in 
- *       chapter 12. Glue is meant to represent a potentially variable-length space that may or 
- *       may not eventually appear in the typeset text. It may not appear, for example, if it is an inter-word
- *       space that falls at the end of the line.
- *       
- *       space: 'normal' | number,  if a number is given this is the space size in pixels; if 'normal'
- *              the normalSpaceWidth given in the constructor options is used
- *       stretch: number, extra pixels the space can have, this is only a suggestion, the typesetter
- *           algorithm may stretch spaces more than this in extreme situations.
- *       shrink: number, how many pixels less the space can have; (space - shrink) is the absolute minimum
- *           for the space
- *           
- *       For the moment, stretch and shrink are ignored, stretch defaults to 10000 (essentially
- *       infinite) and shrink defaults to zero
- *      
  *  The typesetter returns tokens with the following properties added or overwritten
  *    
  *    deltaX: number 
  *    deltaY: number
- *    width: float, token width in pixels. 
+ *    width: float, measured or assigned width in pixels
+ *
  *        for a  text token, (deltaX, deltaY) is the position to use when placing the token in SVG using
  *        the appropriate text direction. So, if the text is left-to-right, the position
  *        corresponds to the left-most point of the text's baseline; if the text is
@@ -79,14 +51,16 @@
  *    
  *      direction: 'rtl' | 'ltr' 
  *    
- *    if type === 'glue'
+ *    if type === TypesetterTokenType.GLUE
  *       status: string, = 'set'
  *      
  *  Not all input tokens to typeset will be present in the return array. Specifically, the return
  *  array will not return glue tokens with negative space, empty text tokens and possibly some
  *  glue tokens that are not necessary.
+ *
+ *  Also, the typeset tokens might be in a different order if there are text direction changes
  */
-
+import * as TypesetterTokenType from './TypesetterTokenType'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { NumeralStyles } from '../toolbox/NumeralStyles'
 import * as ArrayUtil from '../toolbox/ArrayUtil'
@@ -107,7 +81,7 @@ export class Typesetter {
       lineHeight: { type: 'NumberGreaterThanZero', default: defaultFontSize * 2},
       lineNumberStyle: { type: 'string', default: 'latin'},
       rightToLeft: { type: 'boolean', default: false},
-      normalSpaceWidth: { type: 'number', default: 1}, // in ems
+      normalSpaceWidth: { type: 'number', default: 0.33}, // in ems
       minSpaceWidth: { type: 'number', default: 0.8}, // in ems
       justifyText: { type: 'boolean', default: false},
       lineNumbersFontSizeMultiplier: { type: 'number', default: 0.8},
@@ -118,10 +92,10 @@ export class Typesetter {
     let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context: 'Typesetter'})
     this.options = oc.getCleanOptions(options)
     
-    //this.emSize = this.getTextWidthWithDefaults('m')
-    this.emSize = this.options.defaultFontSize
+    this.emSize = this.getTextWidthWithDefaults('M')
+    console.log(`Fontsize: ${this.options.defaultFontSize}, calculated em width: ${this.emSize}`)
     this.normalSpace = this.getNormalSpaceWidth()
-    // console.log(`Typesetter: normal space size: ${this.normalSpace}`)
+    console.log(`Typesetter: normal space size: ${this.normalSpace}`)
   }
 
   getNormalSpaceWidth() {
@@ -144,13 +118,14 @@ export class Typesetter {
     return metrics.width
   }
   
-  // getTextWidthWithDefaults(text) {
-  //   if (typeof(this.defaultFontDefinitionString) === 'undefined') {
-  //     this.defaultFontDefinitionString = this.options.defaultFontSize  + 'px ' + '"' + this.options.defaultFontFamily + '"'
-  //     console.log('Default string def: ' + this.defaultFontDefinitionString)
-  //   }
-  //   return this.getStringWidth(text, this.defaultFontDefinitionString)
-  // }
+  getTextWidthWithDefaults(text) {
+    if (typeof(this.defaultFontDefinitionString) === 'undefined') {
+      this.defaultFontDefinitionString = this.options.defaultFontSize  + 'px ' + '"' + this.options.defaultFontFamily + '"'
+      console.log('Default string def: ' + this.defaultFontDefinitionString)
+    }
+    return this.getStringWidth(text, this.defaultFontDefinitionString)
+  }
+
    __advanceX(x, deltaX, rightToLeft) {
     if (rightToLeft) {
       return x - deltaX
@@ -178,17 +153,18 @@ export class Typesetter {
    */
    __typesetLine(tokens, posY, lineWidth, rightToLeft, lineNumber, normalSpace, lastLine = false) {
 
-    // console.log(`Typesetting line with ${tokens.length} tokens`)
+    console.log(`Typesetting line ${lineNumber} at posY ${posY} with ${tokens.length} tokens`)
+    console.log(`Normal space: ${normalSpace}`)
     // console.log(tokens)
     // 1. make initial and final glue invisible
     // TODO: support indentation of first line
     let i = 0
-    while(i < tokens.length && tokens[i].type === 'glue') {
+    while(i < tokens.length && tokens[i].type === TypesetterTokenType.GLUE) {
       tokens[i] = this.__makeInvisible(tokens[i])
       i++
     }
     i = tokens.length -1
-    while (i > 0 && tokens[i].type === 'glue') {
+    while (i > 0 && tokens[i].type === TypesetterTokenType.GLUE) {
       tokens[i] = this.__makeInvisible(tokens[i])
       i--
     }
@@ -200,7 +176,7 @@ export class Typesetter {
         // skip over invisible tokens
         return token
       }
-      if (token.type === 'glue') {
+      if (token.type === TypesetterTokenType.GLUE) {
         let spaceWidth = (token.space === 'normal') ? normalSpace : token.space
         let glueToken = token
         glueToken.width = spaceWidth
@@ -227,17 +203,17 @@ export class Typesetter {
       // console.log(`Processing token ${i}`)
       let tokenLang = token.getLang()
       let isSameDirection = true
-      if (token.type === 'text') {
+      if (token.type === TypesetterTokenType.BOX) {
         isSameDirection = isRtl(tokenLang) === rightToLeft
       }
       switch (state) {
         case 0:
-          if (token.type === 'glue' || isSameDirection) {
+          if (token.type === TypesetterTokenType.GLUE || isSameDirection) {
             // console.log(`Pushing ${i} into main array`)
             orderedTokenIndices.push(i)
           } else {
             // Detected change of direction
-            console.log(`Detected change of direction at token ${i} : ${token.type} ${token.type === 'text' ? token.text : ''}`)
+            console.log(`Detected change of direction at token ${i} : ${token.type} ${token.type === TypesetterTokenType.BOX ? token.text : ''}`)
             // console.log(`Pushing ${i} into reverse stack`)
             reverseStack.push(i)
             hasDirectionChanges = true
@@ -246,12 +222,12 @@ export class Typesetter {
           break
 
         case 1:
-          if (token.type === 'glue') {
+          if (token.type === TypesetterTokenType.GLUE) {
             // console.log(`Token ${i}: glue token while in reverse direction, pushing to glueArray`)
             glueArray.push(i)
           } else {
             if (!isSameDirection) {
-              // console.log(`Another reverse direction token ${i} : ${token.type} ${token.type === 'text' ? token.text : ''}`)
+              // console.log(`Another reverse direction token ${i} : ${token.type} ${token.type === TypesetterTokenType.BOX ? token.text : ''}`)
               // console.log(`Pushing ${glueArray.length} glue tokens into reverse stack`)
               while(glueArray.length > 0) {
                 reverseStack.push(glueArray.pop())
@@ -317,7 +293,7 @@ export class Typesetter {
         typesetTokens.push(token)
         return
       }
-      if (token.type === 'glue') {
+      if (token.type === TypesetterTokenType.GLUE) {
         let spaceWidth = token.width + glueSpaceAdjustment
         let newX = this.__advanceX(currentX, spaceWidth, rightToLeft)
         // create and insert a set glue token into output token array
@@ -384,7 +360,7 @@ export class Typesetter {
     let paragraphs = []
     let currentParagraph = []
     tokens.forEach( (token) => {
-      if (token.type === 'text' && token.text === "\n") {
+      if (token.type === TypesetterTokenType.BOX && token.text === "\n") {
         currentParagraph.push(token)
         paragraphs.push(currentParagraph)
         currentParagraph = []
@@ -404,7 +380,7 @@ export class Typesetter {
       let currentLineTokens = []
       let accLineWidth = 0
       tokenArray.forEach( (token) => {
-        if (token.type === 'glue') {
+        if (token.type === TypesetterTokenType.GLUE) {
           let spaceWidth = (token.space === 'normal') ? this.normalSpace : token.space
           if (token.space <= 0) {
             // ignore negative and zero space
@@ -525,7 +501,7 @@ export class Typesetter {
       if ( (i * 1) ===1 || (i % lineNumberFrequency) === 0 ) {
         let tokenWidth = this.getStringWidth(i.toString(), lineNumbersFontDefinition)
         let newToken = {
-          type: 'text',
+          type: TypesetterTokenType.BOX,
           text: this.getNumberString(i, this.options.lineNumberStyle),
           deltaX: this.options.rightToLeft ? 0 : -tokenWidth,  //left-align on rtl text and right-align on ltr text
           deltaY: lineNumbersDeltaYs[i],
@@ -542,7 +518,7 @@ export class Typesetter {
   
   genTokenSvg(left, top, token, showGlue = false, showFontBasicInfo = true) {
     
-    if (token.type === 'glue') {
+    if (token.type === TypesetterTokenType.GLUE) {
       if (!showGlue || token.width===0) {
         return ''
       }

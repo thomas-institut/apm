@@ -16,23 +16,29 @@
  *
  */
 
-import * as TypesetterTokenType from './TypesetterTokenType'
+
 import { TypesetterToken } from './TypesetterToken'
 
-/**
- *
- * @param {string}theText
- * @param {string}lang
- * @returns {TypesetterToken}
- */
-export function simpleText(theText, lang = '') {
-  return (new TypesetterToken()).setText(theText, lang)
+
+export class TypesetterTokenFactory {
+  /**
+   *
+   * @param {string}theText
+   * @param {string}lang
+   * @returns {TypesetterToken}
+   */
+  static simpleText(theText, lang = '') {
+    return (new TypesetterToken()).setText(theText, lang)
+  }
+
+  /**
+   *
+   * @returns {TypesetterToken}
+   */
+  static normalSpace() {
+    return (new TypesetterToken()).setSpace('normal')
+  }
+
 }
 
-/**
- *
- * @returns {TypesetterToken}
- */
-export function normalSpace() {
-  return new TypesetterToken(TypesetterTokenType.GLUE)
-}
+

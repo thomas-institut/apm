@@ -217,7 +217,7 @@ FormattedTextToken := {
 
 
 
-const DEFAULT_GLUE_SPACE = -1
+const DEFAULT_GLUE_SPACE = 'normal'
 
 class FmtTextToken {
 
@@ -293,6 +293,13 @@ class FmtTextToken {
 
   setSmallFont() {
     this.fontSize = _FontSize__WEBPACK_IMPORTED_MODULE_2__.SMALL
+  }
+
+  setGlue(width, stretch = 0, shrink = 0 ) {
+    this.space = ''
+    this.width = width
+    this.stretch = stretch
+    this.shrink = shrink
   }
 
 }

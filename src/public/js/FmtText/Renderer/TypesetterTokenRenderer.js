@@ -20,7 +20,7 @@ import { FmtTextRenderer } from './FmtTextRenderer'
 import * as FmtTokenType from '../FmtTextTokenType'
 import { TypesetterToken } from '../../Typesetter/TypesetterToken'
 import * as TypesetterTokenType from '../../Typesetter/TypesetterTokenType'
-import { TypesetterTokenFactoryNew } from '../../Typesetter/TypesetterTokenFactoryNew'
+import { TypesetterTokenFactory } from '../../Typesetter/TypesetterTokenFactory'
 import * as FontStyle from '../FontStyle'
 import * as FontWeight from '../FontWeight'
 
@@ -46,11 +46,18 @@ export class TypesetterTokenRenderer extends FmtTextRenderer {
     return fmtText.filter( (t) => {return t.type !== FmtTokenType.EMPTY}).map ( (fmtTextToken) => {
       switch( fmtTextToken.type) {
         case FmtTokenType.GLUE:
-          // TODO: deal with different types of glue
-          return new TypesetterToken(TypesetterTokenType.GLUE)
+          if (fmtTextToken.space === -1) {
+            // This is to deal with old fmtText, where normal was coded as space -1
+            return (new TypesetterToken()).setSpace('normal')
+          }
+          if (fmtTextToken.space !== '') {
+            return (new TypesetterToken()).setSpace(fmtTextToken.space)
+          } else {
+            return (new TypesetterToken()).setGlue(fmtTextToken.width, fmtTextToken.stretch, fmtTextToken.shrink)
+          }
 
         case FmtTokenType.TEXT:
-          let ttToken = TypesetterTokenFactoryNew.simpleText(fmtTextToken.text, lang)
+          let ttToken = TypesetterTokenFactory.simpleText(fmtTextToken.text, lang)
           if (fmtTextToken.fontStyle === FontStyle.ITALIC) {
             ttToken.setItalic()
           }

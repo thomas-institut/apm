@@ -20,7 +20,7 @@
 // TODO: eliminate this file altogether!
 
 
-import * as TypesetterTokenFactory from '../Typesetter/TypesetterTokenFactory'
+import { TypesetterTokenFactory } from '../Typesetter/TypesetterTokenFactory'
 import * as WitnessTokenType from '../constants/WitnessTokenType'
 import * as ApparatusSubEntryType from '../Edition/SubEntryType'
 import { NumeralStyles } from '../toolbox/NumeralStyles'

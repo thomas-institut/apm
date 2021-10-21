@@ -21,7 +21,7 @@ import { Edition } from './Edition'
 import { Typesetter } from '../Typesetter/Typesetter'
 
 import * as MainTextTokenType from './MainTextTokenType'
-import { TypesetterTokenFactoryNew } from '../Typesetter/TypesetterTokenFactoryNew'
+import { TypesetterTokenFactory } from '../Typesetter/TypesetterTokenFactory'
 import { TypesetterTokenRenderer } from '../FmtText/Renderer/TypesetterTokenRenderer'
 import { getTextDirectionForLang } from '../toolbox/Util.mjs'
 import { NumeralStyles } from '../toolbox/NumeralStyles'
@@ -57,7 +57,7 @@ export class EditionViewerSvg {
       apparatusFontSizeInPts: { type: 'NumberGreaterThanZero', default: 10},
       mainTextLineHeightInPts: { type: 'NumberGreaterThanZero', default: 15},
       apparatusLineHeightInPts: { type: 'NumberGreaterThanZero', default: 12},
-      normalSpaceWidthInEms: { type: 'NumberGreaterThanZero', default: 0.3},
+      normalSpaceWidthInEms: { type: 'NumberGreaterThanZero', default: 0.33},
       textToLineNumbersInCm: { type: 'NumberGreaterThanZero', default: 0.5},
       textToApparatusInCm: { type: 'NumberGreaterThanZero', default: 1}
     }
@@ -281,7 +281,7 @@ export class EditionViewerSvg {
     this.edition.mainTextSections[0].text.forEach( (mainTextToken, index) => {
       switch(mainTextToken.type) {
         case MainTextTokenType.GLUE:
-          let theGlue = TypesetterTokenFactoryNew.normalSpace()
+          let theGlue = TypesetterTokenFactory.normalSpace()
           theGlue.mainTextTokenIndex = index
           typesetterTokens.push(theGlue)
           break
@@ -330,25 +330,25 @@ export class EditionViewerSvg {
       if (currentLine === lastLine) {
         // line tokens is just an entry separator
         // TODO: use better space
-        lineTtTokens.push(TypesetterTokenFactoryNew.normalSpace())
-        lineTtTokens.push(TypesetterTokenFactoryNew.normalSpace())
-        lineTtTokens.push(TypesetterTokenFactoryNew.simpleText(this.options.entrySeparator, this.edition.lang))
-        lineTtTokens.push(TypesetterTokenFactoryNew.normalSpace())
-        lineTtTokens.push(TypesetterTokenFactoryNew.normalSpace())
+        lineTtTokens.push(TypesetterTokenFactory.normalSpace())
+        lineTtTokens.push(TypesetterTokenFactory.normalSpace())
+        lineTtTokens.push(TypesetterTokenFactory.simpleText(this.options.entrySeparator, this.edition.lang))
+        lineTtTokens.push(TypesetterTokenFactory.normalSpace())
+        lineTtTokens.push(TypesetterTokenFactory.normalSpace())
       } else {
         if (aeIndex !== 0) {
           // insert a line separator between line numbers in all but the first line
-          lineTtTokens.push(TypesetterTokenFactoryNew.normalSpace())
-          lineTtTokens.push(TypesetterTokenFactoryNew.simpleText(this.options.apparatusLineSeparator, this.edition.lang).setBold())
-          lineTtTokens.push(TypesetterTokenFactoryNew.normalSpace())
+          lineTtTokens.push(TypesetterTokenFactory.normalSpace())
+          lineTtTokens.push(TypesetterTokenFactory.simpleText(this.options.apparatusLineSeparator, this.edition.lang).setBold())
+          lineTtTokens.push(TypesetterTokenFactory.normalSpace())
         }
         lastLine = currentLine
         lineTtTokens.push(currentLineTtToken)
-        lineTtTokens.push(TypesetterTokenFactoryNew.normalSpace())
+        lineTtTokens.push(TypesetterTokenFactory.normalSpace())
       }
       pushArray(ttTokens, lineTtTokens)
-      ttTokens.push(TypesetterTokenFactoryNew.simpleText(this._getLemmaString(apparatusEntry.lemma) + ']').setLang(this.edition.lang))
-      ttTokens.push(TypesetterTokenFactoryNew.normalSpace())
+      ttTokens.push(TypesetterTokenFactory.simpleText(this._getLemmaString(apparatusEntry.lemma) + ']').setLang(this.edition.lang))
+      ttTokens.push(TypesetterTokenFactory.normalSpace())
       enabledSubEntries.forEach( (subEntry) => {
         let theText = subEntry.type === SubEntryType.OMISSION ? [] : subEntry.fmtText
         let witnessIndices = subEntry.witnessData.map ( (wd) => { return wd.witnessIndex})
@@ -370,8 +370,8 @@ export class EditionViewerSvg {
         }
         pushArray(ttTokens, typesetterTokens)
         // TODO: change this to a better space
-        ttTokens.push(TypesetterTokenFactoryNew.normalSpace())
-        ttTokens.push(TypesetterTokenFactoryNew.normalSpace())
+        ttTokens.push(TypesetterTokenFactory.normalSpace())
+        ttTokens.push(TypesetterTokenFactory.normalSpace())
 
       })
     })
@@ -405,7 +405,7 @@ export class EditionViewerSvg {
     if (range.start !== range.end) {
       lineString += '-' + this._getLineNumberString(range.end)
     }
-    return TypesetterTokenFactoryNew.simpleText(lineString).setBold()
+    return TypesetterTokenFactory.simpleText(lineString).setBold()
   }
 
   _genMainTokenIndexToTypesetterTokenMap(mainTextTokens, typesetterTokens) {

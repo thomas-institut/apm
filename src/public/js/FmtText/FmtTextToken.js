@@ -68,7 +68,7 @@ import * as FontSize from './FontSize'
 import * as FontWeight from './FontWeight'
 import * as VerticalAlign from './VerticalAlign'
 
-export const DEFAULT_GLUE_SPACE = -1
+export const DEFAULT_GLUE_SPACE = 'normal'
 
 export class FmtTextToken {
 
@@ -144,6 +144,13 @@ export class FmtTextToken {
 
   setSmallFont() {
     this.fontSize = FontSize.SMALL
+  }
+
+  setGlue(width, stretch = 0, shrink = 0 ) {
+    this.space = ''
+    this.width = width
+    this.stretch = stretch
+    this.shrink = shrink
   }
 
 }

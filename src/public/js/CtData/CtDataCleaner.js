@@ -90,6 +90,8 @@ export class CtDataCleaner {
       if (this.ctData['criticalApparatusCustomizations'] === undefined) {
         this.ctData['criticalApparatusCustomizations'] = []
       }
+
+
     }
 
 

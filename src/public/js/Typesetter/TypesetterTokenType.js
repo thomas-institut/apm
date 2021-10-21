@@ -16,5 +16,6 @@
  *
  */
 
-export const TEXT = 'text'
+export const BOX = 'text'
 export const GLUE = 'glue'
+export const PENALTY = 'penalty'

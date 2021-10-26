@@ -21,7 +21,7 @@
 
 
 import { TypesetterTokenFactory } from '../Typesetter/TypesetterTokenFactory'
-import * as WitnessTokenType from '../constants/WitnessTokenType'
+import * as WitnessTokenType from '../Witness/WitnessTokenType'
 import * as ApparatusSubEntryType from '../Edition/SubEntryType'
 import { NumeralStyles } from '../toolbox/NumeralStyles'
 import { FmtText } from '../FmtText/FmtText'
@@ -369,16 +369,19 @@ export class ApparatusCommon {
     // this.verbose && console.log(this.selection)
     verbose && console.log(newEntry)
 
-    let fromToken = edition.getMainTextToken( new LocationInSection([0], from))
+    let fromToken =edition.getMainTextToken( new LocationInSection([0], from))
     let toToken = edition.getMainTextToken( new LocationInSection([0], to))
 
-    verbose && console.log(`CT range: ${fromToken.collationTableIndex} - ${toToken.collationTableIndex}`)
+    let ctFromTokenIndex = CtData.getCtIndexForEditionWitnessTokenIndex(ctData, fromToken.editionWitnessTokenIndex)
+    let ctToTokenIndex = CtData.getCtIndexForEditionWitnessTokenIndex(ctData, toToken.editionWitnessTokenIndex)
+
+    verbose && console.log(`CT range: ${ctFromTokenIndex} - ${ctToTokenIndex}`)
     if (newEntry.isNew) {
       if (FmtText.getPlainText(newEntry.text) !== '') {
         ctData = CtData.addCustomApparatusTextSubEntry(ctData,
           newEntry.apparatus,
-          fromToken.collationTableIndex,
-          toToken.collationTableIndex,
+          ctFromTokenIndex,
+          ctToTokenIndex,
           lemma,
           newEntry.text
         )
@@ -388,21 +391,21 @@ export class ApparatusCommon {
         console.log(`Deleting current custom entry`)
         ctData = CtData.deleteCustomApparatusTextSubEntries(ctData,
           newEntry.apparatus,
-          fromToken.collationTableIndex,
-          toToken.collationTableIndex
+          ctFromTokenIndex,
+          ctToTokenIndex
         )
       } else {
         console.log('Updating custom entry....')
         // just add and delete, perhaps do something more sophisticated later
         ctData = CtData.deleteCustomApparatusTextSubEntries(ctData,
           newEntry.apparatus,
-          fromToken.collationTableIndex,
-          toToken.collationTableIndex
+          ctFromTokenIndex,
+          ctToTokenIndex
         )
         ctData = CtData.addCustomApparatusTextSubEntry(ctData,
           newEntry.apparatus,
-          fromToken.collationTableIndex,
-          toToken.collationTableIndex,
+          ctFromTokenIndex,
+          ctToTokenIndex,
           lemma,
           newEntry.text
         )
@@ -417,8 +420,8 @@ export class ApparatusCommon {
           let theHash = currentApparatusEntries[newEntry.apparatusIndex][i].hashString()
           CtData.changeEnableStatusForSubEntry(ctData,
             newEntry.apparatus,
-            fromToken.collationTableIndex,
-            toToken.collationTableIndex,
+            ctFromTokenIndex,
+            ctToTokenIndex,
             theHash,
             enabled,
             lemma

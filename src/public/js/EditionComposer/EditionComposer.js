@@ -18,8 +18,8 @@
 
 import { defaultLanguageDefinition } from '../defaults/languages'
 
-import * as WitnessTokenType from '../constants/WitnessTokenType'
-import * as WitnessTokenClass from '../constants/TranscriptionTokenClass'
+import * as WitnessTokenType from '../Witness/WitnessTokenType'
+import * as WitnessTokenClass from '../Witness/WitnessTokenClass'
 
 // widgets
 import { EditableTextField } from '../widgets/EditableTextField'
@@ -406,7 +406,7 @@ export class EditionComposer {
         console.warn(`Trying to confirm edit of nonexistent main text token`)
         return false
       }
-      let ctIndex = token.collationTableIndex
+      let ctIndex = CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, token.editionWitnessTokenIndex)
       if (ctIndex === -1) {
         console.warn(`Trying to confirm edit of token that does not have a reference in the collation table`)
         return false

@@ -745,7 +745,7 @@ export class MainTextPanel extends PanelWithToolbar {
 
     let lineFrequency = 5
     let mainTexDiv =  $(`${this.containerSelector} .main-text`)
-    let lineHeight = this.lang === 'la' ? "1em" : "1.5em"
+    // let lineHeight = this.lang === 'la' ? "1em" : "1.5em"
 
     let fontBaseLineRatio = 0.920
     let lineNumberFontSizeFactor = 0.8

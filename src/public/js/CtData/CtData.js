@@ -16,7 +16,7 @@
  *
  */
 
-import * as WitnessTokenType from '../constants/WitnessTokenType'
+import * as WitnessTokenType from '../Witness/WitnessTokenType'
 import { SequenceWithGroups } from '../Edition/SequenceWithGroups'
 import { Matrix } from '@thomas-inst/matrix'
 import * as CollationTableType from '../constants/CollationTableType'
@@ -27,9 +27,9 @@ import { ApparatusEntry } from '../Edition/ApparatusEntry'
 import { FmtText } from '../FmtText/FmtText'
 import {FmtTextToken} from '../FmtText/FmtTextToken'
 import { deepCopy } from '../toolbox/Util.mjs'
-import * as TranscriptionTokenType from '../constants/WitnessTokenType'
+import * as TranscriptionTokenType from '../Witness/WitnessTokenType'
 import * as NormalizationSource from '../constants/NormalizationSource'
-import * as WitnessType from '../constants/TranscriptionTokenClass'
+import * as WitnessType from '../Witness/WitnessTokenClass'
 
 
 
@@ -452,6 +452,17 @@ export class CtData  {
       }
     }
     return resultingArray
+  }
+
+  static getCtIndexForWitnessTokenIndex(ctData, witnessIndex, witnessTokenIndex) {
+      return ctData['collationMatrix'][witnessIndex].indexOf(witnessTokenIndex)
+  }
+
+  static getCtIndexForEditionWitnessTokenIndex(ctData, editionTokenIndex) {
+    if (ctData['type'] !== 'edition') {
+      return -1
+    }
+    return this.getCtIndexForWitnessTokenIndex(ctData, ctData['editionWitnessIndex'], editionTokenIndex)
   }
 
 }

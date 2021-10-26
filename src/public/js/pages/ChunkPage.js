@@ -23,7 +23,7 @@
 
 import { AutomaticCollationTableSettingsForm } from './common/AutoCollTableSettingsForm'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
-import * as WitnessType from '../constants/WitnessType'
+import * as WitnessType from '../Witness/WitnessType'
 
 import {CollapseToggleButton} from '../widgets/CollapseToggleButton'
 import { ConfirmDialog } from './common/ConfirmDialog'

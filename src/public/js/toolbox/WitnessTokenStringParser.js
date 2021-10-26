@@ -17,7 +17,7 @@
  */
 
 import * as Punctuation from '../defaults/Punctuation'
-import { WitnessToken } from '../Edition/WitnessToken'
+import { WitnessToken } from '../Witness/WitnessToken'
 
 export class WitnessTokenStringParser {
 

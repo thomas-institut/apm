@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2021 Universität zu Köln
+ *  Copyright (C) 2019-21 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,7 +17,8 @@
  */
 
 
+export const WORD = 'word'
+export const WHITESPACE = 'whitespace'
+export const PUNCTUATION = 'punctuation'
 export const EMPTY = 'empty'
-export const TEXT = 'text'
-export const GLUE = 'glue'
-export const PARAGRAPH_END = 'paragraph_end'
+export const FORMAT = 'format'

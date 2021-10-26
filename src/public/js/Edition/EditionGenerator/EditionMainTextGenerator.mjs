@@ -16,7 +16,7 @@
  *
  */
 
-import * as WitnessTokenType from '../../constants/WitnessTokenType.js'
+import * as WitnessTokenType from '../../Witness/WitnessTokenType.js'
 import { MainTextTokenFactory } from '../MainTextTokenFactory.js'
 import * as MainTextTokenType from '../MainTextTokenType.js'
 import { MainTextSection } from '../MainTextSection.js'

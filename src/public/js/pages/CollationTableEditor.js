@@ -19,9 +19,9 @@
 import { defaultLanguageDefinition } from '../defaults/languages'
 import * as CollationTableType from '../constants/CollationTableType'
 import * as CollationTableInitStrategy from '../constants/CollationTableConversionInitStrategy'
-import * as WitnessType from '../constants/WitnessType'
-import * as TranscriptionTokenType from '../constants/WitnessTokenType'
-import * as TokenClass from '../constants/TranscriptionTokenClass'
+import * as WitnessType from '../Witness/WitnessType'
+import * as TranscriptionTokenType from '../Witness/WitnessTokenType'
+import * as TokenClass from '../Witness/WitnessTokenClass'
 import * as NormalizationSource from '../constants/NormalizationSource'
 
 
@@ -44,7 +44,7 @@ import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { Matrix } from '@thomas-inst/matrix'
 import { ConfirmDialog } from './common/ConfirmDialog'
 import { VERBOSITY_DEBUG_PLUS, WitnessDiffCalculator } from '../Edition/WitnessDiffCalculator'
-import { FULL_TX } from '../constants/TranscriptionTokenClass'
+import { FULL_TX } from '../Witness/WitnessTokenClass'
 
 // Normalizations
 

@@ -16,27 +16,5 @@
  *
  */
 
-import { MainTextToken } from './MainTextToken'
-import * as EditionMainTextTokenType from './MainTextTokenType'
-import { FmtTextFactory } from '../FmtText/FmtTextFactory'
 
-export class MainTextTokenFactory {
-
-  static createSimpleText(text, editionWitnessTokenIndex, lang = '') {
-    let t = new MainTextToken()
-    t.type = EditionMainTextTokenType.TEXT
-    t.fmtText = FmtTextFactory.fromString(text)
-    t.editionWitnessTokenIndex = editionWitnessTokenIndex
-    t.setLang(lang)
-    return t
-  }
-
-  static createNormalGlue() {
-    let t = new MainTextToken()
-    t.type = EditionMainTextTokenType.GLUE
-    t.space = 'normal'
-    t.fmtText = FmtTextFactory.oneNormalSpace()
-    return t
-  }
-
-}
+export const PARAGRAPH_END = 'par_end'

@@ -18,7 +18,7 @@
 
 import * as CollationTableType from '../constants/CollationTableType'
 import * as TokenClass from '../constants/CollationTableType'
-import * as TranscriptionTokenType from '../constants/WitnessTokenType'
+import * as TranscriptionTokenType from '../Witness/WitnessTokenType'
 import * as ApparatusType from '../constants/ApparatusType'
 import { Matrix } from '@thomas-inst/matrix'
 import { OptionsChecker } from '@thomas-inst/optionschecker'

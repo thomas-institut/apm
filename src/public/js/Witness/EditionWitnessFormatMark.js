@@ -16,5 +16,11 @@
  *
  */
 
+/**
+ * Format marks that can appear in an EditionWitnessToken
+ *
+ */
+
+
 
 export const PARAGRAPH_END = 'par_end'

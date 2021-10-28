@@ -43,7 +43,7 @@ import { FmtText } from '../FmtText/FmtText'
  * Spaces can be generated programmatically, but other formatting marks need to be included in the edition witness
  * as well. The idea, however, is to include minimal semantic information about these marks in the edition witness
  * having the automatic main text generation algorithm take care of processing them accordingly. This leaves open
- * the possibility of generating different representations of the witness.
+ * the possibility of generating different representations of the edition main text.
  *
  *
  *

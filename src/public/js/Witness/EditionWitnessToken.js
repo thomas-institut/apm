@@ -20,11 +20,51 @@ import { WitnessToken } from './WitnessToken'
 import * as WitnessTokenType from './WitnessTokenType'
 import * as WitnessTokenClass from './WitnessTokenClass'
 import * as SpaceType from '../Typesetter/SpaceType'
-import * as WitnessFormat from './WitnessFormat'
+import * as WitnessFormat from './EditionWitnessFormatMark'
 import * as EditionWitnessParagraphStyle from './EditionWitnessParagraphStyle'
+import * as NormalizationSource from '../constants/NormalizationSource'
 
 /**
  * A token that can appear in an edition witness
+ *
+ * An edition witness is, as any other witness, an array of tokens. What sets an edition
+ * witness apart from a witness that comes out of a manuscript transcription is that
+ * the edition witness must also contain formatting information similar to what can be
+ * done in a word processor: bold, italic, superscripts, subscripts, paragraphs, sections,
+ * headings, and so on.
+ *
+ * With this information another process can take the witness and present it properly as
+ * a document to be printed or in a browser.
+ *
+ * Normally, spaces do not need to be present in the witness since they can be generated automatically and
+ * may, in fact, depend on the way the main text is to presented. For example, it is not necessarily the
+ * case that paragraphs should be indented, so indentation, which amounts to adding some space to the output,
+ * should be left to a presentation process. At the witness level it is better to concentrate on semantic
+ * descriptions of the formatting: paragraph and font styles rather than explicit formatting.
+ *
+ * EditionWitnessToken:
+ *   from WitnessToken:
+ *      text, normalizedText, normalizationSource
+ *      tokenClass (always EDITION)
+ *      tokenType: adds the type FORMAT_MARK
+ *         format marks capture things like paragraph and section marks and other special marks that
+ *         should not be considered as punctuation or whitespace for collation purposes.
+ *
+ *   newly defined members:
+ *      name: string, the name of a format mark
+ *      style: string, a single description for the style associated with the token
+ *         for example, a paragraph style
+ *
+ *      formats: string[], an array of formats to be applied to the token
+ *         for example, a word token could have several: ['bold', 'italic', 'underline']
+ *
+ *      TODO: Perhaps add a fully custom spec with FmtText, but only when absolute needed
+ *         it is best to deal with styles only
+ *      fmtText: FmtTextToken[],  if not empty, a custom, fully formatted specification of the
+ *        token.  This should only be used in extreme cases!!
+ *
+ *
+ *
  */
 
 export class EditionWitnessToken extends WitnessToken {
@@ -32,7 +72,38 @@ export class EditionWitnessToken extends WitnessToken {
   constructor () {
     super()
     this.tokenClass = WitnessTokenClass.EDITION
-    this.style = ''
+    this.__removeAllFormats()
+  }
+
+  /**
+   *
+   * @param {string} wordString
+   * @return {EditionWitnessToken}
+   */
+  setWord (wordString) {
+    super.setWord(wordString)
+    this.__removeAllFormats()
+    return this
+  }
+
+  /**
+   *
+   * @param {string} style
+   * @return {EditionWitnessToken}
+   */
+  withStyle(style) {
+    this.style = style
+    return this
+  }
+
+  /**
+   *
+   * @param {string[]} formats
+   * @return {EditionWitnessToken}
+   */
+  withFormats(formats) {
+    this.formats = formats
+    return this
   }
 
   /**
@@ -40,8 +111,7 @@ export class EditionWitnessToken extends WitnessToken {
    * @param style
    */
   setParagraphEnd(style = EditionWitnessParagraphStyle.NORMAL) {
-    this.setFormat(WitnessFormat.PARAGRAPH_END)
-    this.style = style
+    this.setFormatMark(WitnessFormat.PARAGRAPH_END, style)
   }
 
   /**
@@ -55,4 +125,40 @@ export class EditionWitnessToken extends WitnessToken {
     this.style = spaceType
   }
 
+  /**
+   *
+   * @param {string} formatMarkName
+   * @param {string}style
+   * @param {string[]}formats
+   * @return {WitnessToken}
+   */
+  setFormatMark(formatMarkName, style = '', formats = []) {
+    this.tokenType = WitnessTokenType.FORMAT_MARK
+    this.name = formatMarkName
+    this.style = style
+    this.formats = formats
+    this.__removeText()
+    return this
+  }
+
+
+  getCtDataObject () {
+    let theObject = super.getCtDataObject()
+    theObject.name = this.name
+    theObject.style = this.style
+    theObject.formats = this.formats
+    return theObject
+  }
+
+  __removeAllFormats() {
+    this.name = ''
+    this.style = ''
+    this.formats = []
+  }
+
+  __removeText() {
+    this.text = ''
+    this.normalizedText = ''
+    this.normalizationSource = NormalizationSource.NONE
+  }
 }

@@ -22,19 +22,15 @@ import * as NormalizationSource from '../constants/NormalizationSource'
 /**
  * A token that can appear in a witness
  *
- *    tokenType :  'empty' | 'whitespace' | 'punctuation' | 'word' | 'format'
+ *    tokenType :  'empty' | 'whitespace' | 'punctuation' | 'word' | ... others defined by other token classes
  *    text: string, the text associated with the token
  *    normalizedText: string
  *    normalizationSource: string, an indication of where the normalization comes from
  *    tokenClass: string, a further specification of the token type, it normally declares where the token
- *       comes from:  'fullTx' (a full transcription), 'edition', etc
+ *       comes from:  'fullTx' (a full transcription), 'edition', etc.
+ *
  *
  *    depending on the type and class, a token can have other properties
- *
- *   tokenType === 'format'
- *     Used to store format marks such as section and paragraph breaks, non-breaking space, etc. Some
- *     of these may appear in the collation table for information purposes, as opposed to whitespace, which
- *     is normally not visible in the collation table.
  */
 
 
@@ -83,18 +79,7 @@ export class WitnessToken {
     return this
   }
 
-  /**
-   *
-   * @param {string} formatText
-   * @return {WitnessToken}
-   */
-  setFormat(formatText) {
-    this.tokenType = WitnessTokenType.FORMAT
-    this.text = formatText
-    this.normalizedText = ''
-    this.normalizationSource = NormalizationSource.NONE
-    return this
-  }
+
 
   /**
    *
@@ -102,9 +87,24 @@ export class WitnessToken {
    * @param {string} normalizationSource
    * @return {WitnessToken}
    */
-  setNormalization(normalizedText, normalizationSource = NormalizationSource.DEFAULT) {
+  withNormalization(normalizedText, normalizationSource = NormalizationSource.DEFAULT) {
     this.normalizedText = normalizedText
     this.normalizationSource = normalizationSource
     return this
+  }
+
+  /**
+   * Returns a generic object that can be used to store the token in CtData
+   *
+   * @return {{tokenClass: string, normalizedText: string, text: string, tokenType: string, normalizationSource: string}}
+   */
+  getCtDataObject() {
+    return {
+      tokenClass: this.tokenClass,
+      tokenType: this.tokenType,
+      text: this.text,
+      normalizedText: this.normalizedText,
+      normalizationSource: this.normalizationSource
+    }
   }
 }

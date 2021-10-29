@@ -114,10 +114,16 @@ export class WitnessInfoPanel extends Panel{
 
   generateHtml() {
     return `<div class="witnessinfotable">${this._genWitnessTableHtml()}</div>
-       <div class="witness-update-div">
+<div class="witness-update-div">
             <span class="witness-update-info"></span>
             <button class="btn  btn-outline-secondary btn-sm check-witness-update-btn"  title="Click to check for updates to witness transcriptions">Check Now</button>
        </div>
+       <div class="sigla-groups-div">
+           <h4>Sigla Groups</h4>
+           <div class="sigla-groups-table"></div>
+           <button class="btn  btn-outline-secondary btn-sm add-sigla-group-btn"  title="Click to add a new sigla group">Add Sigla Group</button>
+</div>
+       
        <div id="convert-to-edition-div">
             <button id="convert-to-edition-btn" class="btn btn-primary" title="Click to add a main text">Add Main Text</button>
        </div>`

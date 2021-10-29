@@ -90,6 +90,7 @@ abstract class CommandLineUtility {
 
         // System Manager 
         $systemManager = new ApmSystemManager($config);
+
         $this->systemManager = $systemManager;
 
         if ($systemManager->fatalErrorOccurred()) {

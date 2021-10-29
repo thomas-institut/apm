@@ -331,3 +331,10 @@ h1.lemma {
 .form-group.text-la {
     font-family: var(--latin-apparatus-font-family);
 }
+
+
+/* Witness Info panel */
+
+#witness-info h4 {
+    font-size: 1.2em;
+}

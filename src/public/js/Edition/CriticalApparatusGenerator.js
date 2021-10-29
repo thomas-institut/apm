@@ -348,8 +348,8 @@ export class CriticalApparatusGenerator {
     function visitSection(sectionLocation, section) {
       // Collect info from text tokens
       section.text.forEach( (textToken, textIndex) => {
-        if (textToken.collationTableIndex !== -1) {
-          theMap[textToken.collationTableIndex] = new LocationInSection(sectionLocation, textIndex)
+        if (textToken.editionWitnessTokenIndex !== -1) {
+          theMap[textToken.editionWitnessTokenIndex] = new LocationInSection(sectionLocation, textIndex)
         }
       })
       // visit every subsection

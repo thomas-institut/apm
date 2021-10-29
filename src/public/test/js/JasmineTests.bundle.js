@@ -172,7 +172,7 @@ __webpack_require__.r(__webpack_exports__);
 
 Essentially a string with some standard attributes, or some empty space
 
-FormattedTextToken := {
+FmtTextToken := {
     type:  glue | text
 
     type === glue :
@@ -196,7 +196,7 @@ FormattedTextToken := {
            text: string
            weight:  normal, bold, semibold, light, etc
            style: normal, italic
-           size:  dimension (pt, em, %)
+           size:  number, font size in ems (i.e., relative to a default font size)
            decoration: none, underline, overline, strikethrough
            verticalAlign:  baseline, super, sub
            fontFamily:  string, a font name

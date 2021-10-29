@@ -100,6 +100,7 @@ class BackupDB extends CommandLineUtility {
                 $success = false;
                 $this->logger->error($f);
                 $this->printErrorMsg($f);
+                $this->printErrorMsg("When running: $mySqlCommand");
             }
             if (!$success) {
                 break;

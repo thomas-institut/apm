@@ -32,6 +32,7 @@ import * as SubEntryType from '../Edition/SubEntryType'
 
 const doubleVerticalLine = String.fromCodePoint(0x2016)
 const verticalLine = String.fromCodePoint(0x007c)
+const enDash = String.fromCodePoint(0x2013)
 
 
 export class EditionViewerSvg {
@@ -59,7 +60,8 @@ export class EditionViewerSvg {
       apparatusLineHeightInPts: { type: 'NumberGreaterThanZero', default: 12},
       normalSpaceWidthInEms: { type: 'NumberGreaterThanZero', default: 0.33},
       textToLineNumbersInCm: { type: 'NumberGreaterThanZero', default: 0.5},
-      textToApparatusInCm: { type: 'NumberGreaterThanZero', default: 1}
+      textToApparatusInCm: { type: 'NumberGreaterThanZero', default: 1.5},
+      interApparatusInCm: { type: 'NumberGreaterThanZero', default: 0.5}
     }
 
     let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context: 'EditionViewer'})
@@ -81,8 +83,11 @@ export class EditionViewerSvg {
       },
       textToLineNumbers: Typesetter.cm2px(this.options.textToLineNumbersInCm),
       textToApparatus: Typesetter.cm2px(this.options.textToApparatusInCm),
+      interApparatus: Typesetter.cm2px(this.options.interApparatusInCm),
       normalSpaceWidthInEms: this.options.normalSpaceWidthInEms
     }
+    console.log(`SVG Geometry`)
+    console.log(this.geometry)
   }
 
   /**
@@ -131,17 +136,22 @@ export class EditionViewerSvg {
     let apparatusHeights = apparatusesTypesetTokens.map( (tokens) => { return apparatusTypesetter.getTextHeight(tokens)})
     let totalApparatusHeight = apparatusHeights.reduce( (x, y) => { return x+y})
 
-    // console.log(`ApparatusHeights`)
-    // console.log(apparatusHeights)
-    // console.log(`Total: ${totalApparatusHeight}`)
+    console.log(`ApparatusHeights`)
+    console.log(apparatusHeights)
+    console.log(`Total: ${totalApparatusHeight}`)
 
     // 3. Generate SVG
     let mainTextHeight = mainTextTypesetter.getTextHeight(mainTextTypesetTokens)
     let mainTextWidth = mainTextTypesetter.getTextWidth()
 
-    let svgHeight = this.geometry.margin.top + mainTextHeight +
-      (this.geometry.textToApparatus * apparatusesTypesetTokens.length) + totalApparatusHeight + this.geometry.margin.bottom
+    let numberNonEmptyApparatuses = apparatusesTypesetTokens.filter( (app) => {return app.length !== 0}).length
+
+    let svgHeight = this.geometry.margin.top + mainTextHeight + this.geometry.textToApparatus +
+    (this.geometry.interApparatus * numberNonEmptyApparatuses) + totalApparatusHeight + this.geometry.margin.bottom
     // console.log(`SVG height in px: ${svgHeight}`)
+
+
+
 
     svgHeight = Math.max(Typesetter.px2cm(svgHeight), this.options.pageHeightInCm)
     // console.log(`SVG height in cm: ${svgHeight}`)
@@ -183,15 +193,17 @@ export class EditionViewerSvg {
 
     // apparatuses
 
-    let apparatusY = this.geometry.margin.top + mainTextHeight
+    let apparatusY = this.geometry.margin.top + mainTextHeight + this.geometry.textToApparatus
     apparatusesTypesetTokens.forEach( (tokens, index) => {
+      if (index !== 0) {
+        apparatusY += apparatusHeights[index-1]
+        apparatusY += this.geometry.interApparatus
+      }
       svg += `<!-- Apparatus ${index} -->\n`
       if (tokens.length === 0) {
         svg += `<!-- empty -->`
         return
       }
-      apparatusY += this.geometry.textToApparatus
-      apparatusY += index !== 0 ? apparatusHeights[index-1] : 0
 
       if (textDirection === 'rtl') {
         svg += '<line x1="' + (mainTextTypesetter.getTextWidth() + this.geometry.margin.left) + '" y1="' + (apparatusY - 5) + '" ' +
@@ -388,7 +400,7 @@ export class EditionViewerSvg {
     if (words.length < 4) {
       return lemma
     }
-    return  `${words[0]}...${words[words.length-1]}`
+    return  `${words[0]} ${enDash} ${words[words.length-1]}`
   }
 
   /**

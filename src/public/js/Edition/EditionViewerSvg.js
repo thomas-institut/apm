@@ -350,8 +350,8 @@ export class EditionViewerSvg {
       } else {
         if (aeIndex !== 0) {
           // insert a line separator between line numbers in all but the first line
-          lineTtTokens.push(TypesetterTokenFactory.normalSpace())
           lineTtTokens.push(TypesetterTokenFactory.simpleText(this.options.apparatusLineSeparator, this.edition.lang).setBold())
+          lineTtTokens.push(TypesetterTokenFactory.normalSpace())
           lineTtTokens.push(TypesetterTokenFactory.normalSpace())
         }
         lastLine = currentLine
@@ -383,10 +383,16 @@ export class EditionViewerSvg {
         pushArray(ttTokens, typesetterTokens)
         // TODO: change this to a better space
         ttTokens.push(TypesetterTokenFactory.normalSpace())
-        ttTokens.push(TypesetterTokenFactory.normalSpace())
+        // ttTokens.push(TypesetterTokenFactory.normalSpace())
 
       })
     })
+    if (ttTokens.length !== 0) {
+      // add a line separator at end
+      // ttTokens.push(TypesetterTokenFactory.normalSpace())
+      ttTokens.push(TypesetterTokenFactory.simpleText(this.options.apparatusLineSeparator, this.edition.lang).setBold())
+      // ttTokens.push(TypesetterTokenFactory.normalSpace())
+    }
     return ttTokens
   }
 

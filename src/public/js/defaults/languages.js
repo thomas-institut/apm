@@ -38,7 +38,7 @@ export const defaultLanguageDefinition = {
     name: 'Hebrew',
     rtl: true,
     fontsize: 3,
-    editionFont: 'Frank Ruhl Libre',
+    editionFont: 'Linux Libertine',
     standardNormalizations: []
   }
 }

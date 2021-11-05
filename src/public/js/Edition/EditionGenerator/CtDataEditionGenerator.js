@@ -113,6 +113,14 @@ export class CtDataEditionGenerator extends EditionGenerator{
         return
       }
       let mainTextFrom = ctIndexToMainTextMap[customEntry.from].textIndex
+      if (ctIndexToMainTextMap[customEntry.to] === undefined) {
+        console.warn(`Oded's bug, 2021 Nov 04`)
+        console.log(`Index ${customEntry.to} not defined in ctIndexToMainTextMap`)
+        console.log(`Custom Entry`)
+        console.log(customEntry)
+        console.log(`ctIndexToMainTextMap`)
+        console.log(ctIndexToMainTextMap)
+      }
       let mainTextTo = ctIndexToMainTextMap[customEntry.to].textIndex
       let currentEntryIndex = generatedApparatusCriticus.findEntryIndex( [0], mainTextFrom, mainTextTo)
       let realCustomSubEntries = customEntry['subEntries'].filter ( (e) => { return e.type !== SubEntryType.DISABLE})

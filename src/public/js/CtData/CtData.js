@@ -195,6 +195,49 @@ export class CtData  {
   }
 
   /**
+   * Updates the custom apparatus indexes after a shift in the edition witness tokens
+   * @param {object}ctData
+   * @param {number}fromCol
+   * @param {number}toCol
+   * @param {number}numCols
+   * @param {string}direction
+   * @returns {*}
+   */
+  static fixReferencesInCustomApparatusesAfterEditionWitnessCellShift(ctData, fromCol, toCol, numCols, direction) {
+
+    console.log(`Fixing custom apparatus references after cell shift: ${fromCol}-${toCol}, by ${numCols} cols, ${direction}`)
+    return ctData['customApparatuses'].map ( (app) => {
+      let newApp = deepCopy(app)
+      let shift = numCols
+      if (direction === 'left') {
+        shift = -shift;
+      }
+      // make sure fromCol <= toCol
+      if (fromCol > toCol) {
+        let tmp = fromCol
+        fromCol = toCol
+        toCol = tmp
+      }
+
+      newApp.entries = app.entries.map( (entry, i ) => {
+        let newEntry = deepCopy(entry)
+        newEntry.from = entry.from
+        if (entry.from >= fromCol && entry.from <= toCol) {
+          newEntry.from = entry.from + shift
+          console.log(`Shifting app. ${app.type} entry ${i} 'from' index: ${entry.from} by ${shift} to ${newEntry.from}`)
+        }
+        newEntry.to = entry.to
+        if (entry.to >= fromCol && entry.to <= toCol) {
+          newEntry.to = entry.to + shift
+          console.log(`Shifting app. ${app.type} entry ${i} 'to' index: ${entry.to} by ${shift} to ${newEntry.to}`)
+        }
+        return newEntry
+      })
+      return newApp
+    })
+  }
+
+  /**
    * Adds a custom text apparatus entry to an apparatus
    * @param {object} ctData
    * @param {string} apparatusType

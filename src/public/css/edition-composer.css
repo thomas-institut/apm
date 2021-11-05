@@ -50,8 +50,6 @@ a.tb-button:hover {
     text-decoration: none;
 }
 
-
-
 .panel-toolbar-item a.multitoggle-on {
     border: 1px solid silver;
     border-radius: 3px;
@@ -312,7 +310,8 @@ h1.lemma {
 }
 
 .fte-icon {
-    font-family: serif;
+    font-family: var(--default-serif-font);
+    font-size: 0.8em;
     vertical-align: 0.1rem;
 }
 
@@ -328,10 +327,46 @@ h1.lemma {
     font-family: var(--latin-apparatus-font-family);
 }
 
-.form-group.text-la {
+.form-group.text-la, .entry-text.text-la, .auto-entries.text-la {
     font-family: var(--latin-apparatus-font-family);
 }
 
+
+.entry-text.text-he, .auto-entries.text-he {
+    font-family: var(--hebrew-font-family);
+    font-size: var(--hebrew-font-size);
+    direction: rtl;
+}
+
+.entry-text.text-ar, .auto-entries.text-ar {
+    font-family: var(--arabic-font-family);
+    font-size: var(--arabic-font-size);
+    direction: rtl;
+}
+
+
+div.entry-header {
+    margin-bottom: 2rem;
+}
+
+.aei-multitoggle-div {
+    display: flex;
+    flex-direction: row;
+}
+
+.aei-multitoggle-button {
+    margin-right: 10px;
+
+}
+.aei-multitoggle-button a {
+    border: 1px solid #e8e8e8;
+    border-radius: 2px;
+}
+
+.aei-multitoggle-button a.multitoggle-on {
+    background: #f8fff9;
+    border-color: gray;
+}
 
 /* Witness Info panel */
 

@@ -27,6 +27,9 @@
     /* TEXT ICON FONT */
     --text-icon-font-family: FreeSans;
 
+    /* DEFAULT SERIF FONT*/
+    --default-serif-font: FreeSerif, serif;
+
     /* LATIN FONTS */
     --latin-font-family: FreeSans, sans-serif;
     --latin-font-size: 110%;

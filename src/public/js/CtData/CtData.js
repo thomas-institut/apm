@@ -201,9 +201,9 @@ export class CtData  {
    * @param {number} ctFrom
    * @param {number} ctTo
    * @param {string} lemma
-   * @param {string|array|FmtText }text
+   * @param newEntryObject
    */
-  static addCustomApparatusTextSubEntry(ctData, apparatusType, ctFrom, ctTo, lemma, text) {
+  static addCustomApparatusTextSubEntry(ctData, apparatusType, ctFrom, ctTo, lemma, newEntryObject) {
     let apparatusIndex = this.getCustomApparatusEntryIndexFromType(ctData, apparatusType)
     if (apparatusIndex === -1) {
       console.warn(`Tried to add an apparatus entry to unknown apparatus ${apparatusType}`)
@@ -212,13 +212,14 @@ export class CtData  {
     let currentEntryIndex = this.getCustomApparatusEntryIndexForCtRange(ctData, apparatusType, ctFrom, ctTo)
     let newSubEntry = new ApparatusSubEntry()
     newSubEntry.type = SubEntryType.CUSTOM
-    newSubEntry.fmtText = FmtTextFactory.fromAnything(text)
+    newSubEntry.fmtText = FmtTextFactory.fromAnything(newEntryObject.text)
     newSubEntry.plainText = FmtText.getPlainText(newSubEntry.fmtText)
     if (currentEntryIndex === -1) {
       let newEntry = new ApparatusEntry()
       newEntry.from = ctFrom
       newEntry.to = ctTo
       newEntry.lemma = lemma
+      newEntry.preLemma = newEntryObject.preLemma
       newEntry.section = [ 0 ]
       newEntry.subEntries = [ newSubEntry]
       ctData['customApparatuses'][apparatusIndex].entries.push(newEntry)

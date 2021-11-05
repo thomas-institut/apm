@@ -78,19 +78,16 @@ export class CtDataCleaner {
       if (this.ctData['customApparatuses'] === undefined) {
         this.ctData['customApparatuses'] = []
       }
-        defaultApparatus.forEach( (appType) => {
-          let appIndex = this.ctData['customApparatuses'].map( (customApp) => { return customApp.type}).indexOf(appType)
-          // console.log(`Found apparatus '${appType}' with index ${appIndex}`)
-          if (appIndex === -1) {
-            this.ctData['customApparatuses'].push( { type: appType, entries: []})
-          }
-        })
+      defaultApparatus.forEach( (appType) => {
+        let appIndex = this.ctData['customApparatuses'].map( (customApp) => { return customApp.type}).indexOf(appType)
+        // console.log(`Found apparatus '${appType}' with index ${appIndex}`)
+        if (appIndex === -1) {
+          this.ctData['customApparatuses'].push( { type: appType, entries: []})
+        }
+      })
 
-      // add empty critical apparatus customizations list
-      if (this.ctData['criticalApparatusCustomizations'] === undefined) {
-        this.ctData['criticalApparatusCustomizations'] = []
-      }
-
+      // remove unused 'criticalApparatusCustomizations'
+      delete this.ctData['criticalApparatusCustomizations']
 
     }
 
@@ -118,9 +115,6 @@ export class CtDataCleaner {
   }
 
   /**
-   * Detects and fixes lemmata in custom apparatuses due to a bug
-   * in v0.42.0 (31 Aug 2021)
-   *
    * @param ctData
    * @return {*}
    */
@@ -131,23 +125,25 @@ export class CtDataCleaner {
     let editionWitness = ctData['witnesses'][ctData['editionWitnessIndex']]['tokens']
     ctData['customApparatuses'] = ctData['customApparatuses'].map( (apparatus) => {
       apparatus.entries = apparatus.entries.map((entry) => {
+        // 1. Detect and fix bad lemmata due to a bug in v0.42.0 (31 Aug 2021)
         let goodLemma = EditionMainTextGenerator.generatePlainText( editionWitness.filter( (token, i) => {
           return i>=entry.from && i<=entry.to
         }))
-        if (entry['lemma'] === goodLemma) {
-          return entry
+        if (entry['lemma'] !== goodLemma) {
+          console.warn(`Found incorrect lemma '${entry['lemma']}' in custom apparatus for tokens ${entry.from} to ${entry.to}, should be '${goodLemma}'`)
+          entry['lemma'] = goodLemma
         }
-        console.warn(`Found incorrect lemma '${entry['lemma']}' in custom apparatus for tokens ${entry.from} to ${entry.to}, should be '${goodLemma}'`)
-        entry['lemma'] = goodLemma
+
+        // 2. Add default custom preLemma, postLemma and separator if not present
+        if (entry['preLemma'] === undefined) {
+          entry['preLemma'] = ''  // empty string = auto
+        }
         return entry
       })
       return apparatus
     })
     return ctData
   }
-
-
-
 
   fixEditionWitnessReferences(ctData) {
     this.options.verbose && console.log(`Checking for -1 references in edition witness`)

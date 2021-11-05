@@ -383,7 +383,7 @@ export class ApparatusCommon {
           ctFromTokenIndex,
           ctToTokenIndex,
           lemma,
-          newEntry.text
+          newEntry
         )
       }
     } else {
@@ -407,7 +407,7 @@ export class ApparatusCommon {
           ctFromTokenIndex,
           ctToTokenIndex,
           lemma,
-          newEntry.text
+          newEntry
         )
       }
     }

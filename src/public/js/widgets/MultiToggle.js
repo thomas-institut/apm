@@ -119,21 +119,42 @@ export class MultiToggle {
   }
 
   genOnClickButton(index) {
-    let thisObject = this
-    return function(ev) {
-      if (thisObject.currentOptionIndex === index) {
+    return () => {
+      if (this.currentOptionIndex === index) {
         // nothing to do
         return false
       }
-      thisObject.buttonDef[thisObject.currentOptionIndex].element.removeClass(thisObject.options.onClass)
-      let lastOption = thisObject.currentOptionIndex
-      thisObject.currentOptionIndex = index
-      thisObject.buttonDef[thisObject.currentOptionIndex].element.addClass(thisObject.options.onClass)
-      thisObject.dispatchEvent(optionChange, {
-        currentOption: thisObject.getOption(),
-        previousOption: thisObject.buttonDef[lastOption].name })
+      this.setOptionByIndex(index, true)
+      // this.buttonDef[this.currentOptionIndex].element.removeClass(this.options.onClass)
+      // let lastOption = this.currentOptionIndex
+      // this.currentOptionIndex = index
+      // this.buttonDef[this.currentOptionIndex].element.addClass(this.options.onClass)
+      // this.dispatchEvent(optionChange, {
+      //   currentOption: this.getOption(),
+      //   previousOption: this.buttonDef[lastOption].name })
       return false
     }
+  }
+
+  setOptionByIndex(newOptionIndex, dispatchOptionChangeEvent = false) {
+    let lastOption = this.currentOptionIndex
+    this.buttonDef[this.currentOptionIndex].element.removeClass(this.options.onClass)
+    this.currentOptionIndex = newOptionIndex
+    this.buttonDef[this.currentOptionIndex].element.addClass(this.options.onClass)
+    if (dispatchOptionChangeEvent) {
+      this.dispatchEvent(optionChange, {
+        currentOption: this.getOption(),
+        previousOption: this.buttonDef[lastOption].name })
+    }
+  }
+
+  setOptionByName(newOption, dispatchOptionChangeEvent = false) {
+    let newOptionIndex = this.buttonDef.map( (button) => { return button.name}).indexOf(newOption)
+    if (newOptionIndex === -1) {
+      console.warn(`Attempt to set an non-existent option ${newOption}`)
+      return
+    }
+    this.setOptionByIndex(newOptionIndex, dispatchOptionChangeEvent)
   }
 
 

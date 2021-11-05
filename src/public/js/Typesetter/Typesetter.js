@@ -93,9 +93,9 @@ export class Typesetter {
     this.options = oc.getCleanOptions(options)
     
     this.emSize = this.getTextWidthWithDefaults('M')
-    console.log(`Fontsize: ${this.options.defaultFontSize}, calculated em width: ${this.emSize}`)
+    // console.log(`Fontsize: ${this.options.defaultFontSize}, calculated em width: ${this.emSize}`)
     this.normalSpace = this.getNormalSpaceWidth()
-    console.log(`Typesetter: normal space size: ${this.normalSpace}`)
+    // console.log(`Typesetter: normal space size: ${this.normalSpace}`)
   }
 
   getNormalSpaceWidth() {
@@ -121,7 +121,7 @@ export class Typesetter {
   getTextWidthWithDefaults(text) {
     if (typeof(this.defaultFontDefinitionString) === 'undefined') {
       this.defaultFontDefinitionString = this.options.defaultFontSize  + 'px ' + '"' + this.options.defaultFontFamily + '"'
-      console.log('Default string def: ' + this.defaultFontDefinitionString)
+      // console.log('Default string def: ' + this.defaultFontDefinitionString)
     }
     return this.getStringWidth(text, this.defaultFontDefinitionString)
   }
@@ -153,8 +153,8 @@ export class Typesetter {
    */
    __typesetLine(tokens, posY, lineWidth, rightToLeft, lineNumber, normalSpace, lastLine = false) {
 
-    console.log(`Typesetting line ${lineNumber} at posY ${posY} with ${tokens.length} tokens`)
-    console.log(`Normal space: ${normalSpace}`)
+    // console.log(`Typesetting line ${lineNumber} at posY ${posY} with ${tokens.length} tokens`)
+    // console.log(`Normal space: ${normalSpace}`)
     // console.log(tokens)
     // 1. make initial and final glue invisible
     // TODO: support indentation of first line

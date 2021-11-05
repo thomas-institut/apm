@@ -370,7 +370,9 @@ export class MainTextPanel extends PanelWithToolbar {
         apparatuses: this.edition.apparatuses.map( (app, i) => {
           return {  name: app.type, title: capitalizeFirstLetter(app.type), currentEntries: currentApparatusEntries[i]}
         }),
-        lemma: lemma,
+        entryText: lemma,
+        ctIndexFrom: 100,  // TODO: change this to proper values
+        ctIndexTo: 120,
         lang: this.lang,
         sigla: this.edition.getSigla()
       })

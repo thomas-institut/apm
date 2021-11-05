@@ -23,6 +23,11 @@ const defaultIdPrefix = 'confirm-dialog-'
 const STATUS_READY = 'ready'
 const STATUS_DONE = 'done'
 
+export const SMALL_DIALOG = 'sm'
+export const LARGE_DIALOG = 'lg'
+export const MEDIUM_DIALOG  = ''
+export const EXTRA_LARGE_DIALOG = 'xl'
+
 export class ConfirmDialog {
 
 
@@ -32,6 +37,7 @@ export class ConfirmDialog {
       acceptButtonLabel: { type: 'string', default: 'Accept'},
       cancelButtonLabel: { type: 'string', default: 'Cancel'},
       title: { type: 'string', default: 'Please confirm'},
+      size: { type: 'string', default: LARGE_DIALOG},
       body: { type: 'string', default: 'Please confirm.'},
       acceptFunction: { type: 'function', default: (id, dialogObject) => { }},
       hideOnAccept: { type: 'boolean', default: true},
@@ -152,7 +158,7 @@ export class ConfirmDialog {
   _genHtml() {
     return `
 <div id="${this.options.id}" class="modal" role="dialog">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog ${this.options.size === MEDIUM_DIALOG ? '' : 'modal-' + this.options.size}">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">${this.options.title}</h5>

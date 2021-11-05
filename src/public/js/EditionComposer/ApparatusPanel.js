@@ -112,7 +112,9 @@ export class ApparatusPanel extends  PanelWithToolbar {
         return {  name: app.type, title: capitalizeFirstLetter(app.type), currentEntries: currentApparatusEntries[i]}
       }),
       selectedApparatusIndex: apparatusIndex,
-      lemma: lemma,
+      entryText: lemma,
+      ctIndexFrom: 100,  // TODO: change this to proper values
+      ctIndexTo: 100,
       lang: this.lang,
       sigla: this.edition.getSigla()
     })

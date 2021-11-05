@@ -122,7 +122,7 @@ export class EditionComposer {
     let ctDataCleaner = new CtDataCleaner()
     this.ctData = ctDataCleaner.getCleanCollationData(this.options['collationTableData'])
 
-    console.log('CT Data')
+    console.log('Clean CT Data')
     console.log(this.ctData)
 
     this.lang = this.ctData['lang']

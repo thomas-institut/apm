@@ -93,9 +93,9 @@ export class Typesetter {
     this.options = oc.getCleanOptions(options)
     
     this.emSize = this.getTextWidthWithDefaults('M')
-    console.log(`Fontsize: ${this.options.defaultFontSize}, calculated em width: ${this.emSize}`)
+    // console.log(`Fontsize: ${this.options.defaultFontSize}, calculated em width: ${this.emSize}`)
     this.normalSpace = this.getNormalSpaceWidth()
-    console.log(`Typesetter: normal space size: ${this.normalSpace}`)
+    // console.log(`Typesetter: normal space size: ${this.normalSpace}`)
   }
 
   getNormalSpaceWidth() {
@@ -121,7 +121,7 @@ export class Typesetter {
   getTextWidthWithDefaults(text) {
     if (typeof(this.defaultFontDefinitionString) === 'undefined') {
       this.defaultFontDefinitionString = this.options.defaultFontSize  + 'px ' + '"' + this.options.defaultFontFamily + '"'
-      console.log('Default string def: ' + this.defaultFontDefinitionString)
+      // console.log('Default string def: ' + this.defaultFontDefinitionString)
     }
     return this.getStringWidth(text, this.defaultFontDefinitionString)
   }
@@ -153,8 +153,8 @@ export class Typesetter {
    */
    __typesetLine(tokens, posY, lineWidth, rightToLeft, lineNumber, normalSpace, lastLine = false) {
 
-    console.log(`Typesetting line ${lineNumber} at posY ${posY} with ${tokens.length} tokens`)
-    console.log(`Normal space: ${normalSpace}`)
+    // console.log(`Typesetting line ${lineNumber} at posY ${posY} with ${tokens.length} tokens`)
+    // console.log(`Normal space: ${normalSpace}`)
     // console.log(tokens)
     // 1. make initial and final glue invisible
     // TODO: support indentation of first line
@@ -213,7 +213,7 @@ export class Typesetter {
             orderedTokenIndices.push(i)
           } else {
             // Detected change of direction
-            console.log(`Detected change of direction at token ${i} : ${token.type} ${token.type === TypesetterTokenType.BOX ? token.text : ''}`)
+            // console.log(`Detected change of direction at token ${i} : ${token.type} ${token.type === TypesetterTokenType.BOX ? token.text : ''}`)
             // console.log(`Pushing ${i} into reverse stack`)
             reverseStack.push(i)
             hasDirectionChanges = true
@@ -273,9 +273,9 @@ export class Typesetter {
     }
     glueArray = []
     if (hasDirectionChanges) {
-      console.log(`Line ${lineNumber} has text with mixed directions, length: ${tokens.length}`)
-      console.log(tokens)
-      console.log(orderedTokenIndices)
+      // console.log(`Line ${lineNumber} has text with mixed directions, length: ${tokens.length}`)
+      // console.log(tokens)
+      // console.log(orderedTokenIndices)
     }
     if (orderedTokenIndices.length !== tokensWithInitialGlue.length) {
       console.error(`Ordered token indices and tokensWithInitial glue are not the same length: 
@@ -320,8 +320,8 @@ export class Typesetter {
       currentX = newX
     })
     if (hasDirectionChanges) {
-      console.log(`Typeset tokens`)
-      console.log(typesetTokens)
+      // console.log(`Typeset tokens`)
+      // console.log(typesetTokens)
     }
 
     return typesetTokens

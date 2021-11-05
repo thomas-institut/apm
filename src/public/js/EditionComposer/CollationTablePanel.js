@@ -709,7 +709,9 @@ export class CollationTablePanel extends PanelWithToolbar {
 
       // deal with shifts in edition witness
       if (this.ctData['type'] === CollationTableType.EDITION && theRow === 0) {
+        console.log(`Cell shift in edition witness: ${direction}, ${numCols} col(s), ${firstCol} to ${lastCol}`)
         this.syncEditionWitnessAndTableEditorFirstRow()
+        this.ctData['customApparatuses'] = CtData.fixReferencesInCustomApparatusesAfterEditionWitnessCellShift(this.ctData, firstCol, lastCol, numCols, direction)
       }
 
       this.recalculateVariants()

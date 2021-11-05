@@ -86,8 +86,8 @@ export class EditionViewerSvg {
       interApparatus: Typesetter.cm2px(this.options.interApparatusInCm),
       normalSpaceWidthInEms: this.options.normalSpaceWidthInEms
     }
-    console.log(`SVG Geometry`)
-    console.log(this.geometry)
+    // console.log(`SVG Geometry`)
+    // console.log(this.geometry)
   }
 
   /**
@@ -136,9 +136,9 @@ export class EditionViewerSvg {
     let apparatusHeights = apparatusesTypesetTokens.map( (tokens) => { return apparatusTypesetter.getTextHeight(tokens)})
     let totalApparatusHeight = apparatusHeights.reduce( (x, y) => { return x+y})
 
-    console.log(`ApparatusHeights`)
-    console.log(apparatusHeights)
-    console.log(`Total: ${totalApparatusHeight}`)
+    // console.log(`ApparatusHeights`)
+    // console.log(apparatusHeights)
+    // console.log(`Total: ${totalApparatusHeight}`)
 
     // 3. Generate SVG
     let mainTextHeight = mainTextTypesetter.getTextHeight(mainTextTypesetTokens)

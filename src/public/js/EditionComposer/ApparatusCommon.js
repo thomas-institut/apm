@@ -28,7 +28,6 @@ import { FmtText } from '../FmtText/FmtText'
 import { TypesetterTokenRenderer } from '../FmtText/Renderer/TypesetterTokenRenderer'
 import { pushArray } from '../toolbox/ArrayUtil'
 import { HtmlRenderer } from '../FmtText/Renderer/HtmlRenderer'
-import { LocationInSection } from '../Edition/LocationInSection'
 import { CtData } from '../CtData/CtData'
 import { FmtTextFactory} from '../FmtText/FmtTextFactory'
 import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'
@@ -369,8 +368,8 @@ export class ApparatusCommon {
     // this.verbose && console.log(this.selection)
     verbose && console.log(newEntry)
 
-    let fromToken =edition.getMainTextToken( new LocationInSection([0], from))
-    let toToken = edition.getMainTextToken( new LocationInSection([0], to))
+    let fromToken =edition.getMainTextToken( from)
+    let toToken = edition.getMainTextToken( to)
 
     let ctFromTokenIndex = CtData.getCtIndexForEditionWitnessTokenIndex(ctData, fromToken.editionWitnessTokenIndex)
     let ctToTokenIndex = CtData.getCtIndexForEditionWitnessTokenIndex(ctData, toToken.editionWitnessTokenIndex)

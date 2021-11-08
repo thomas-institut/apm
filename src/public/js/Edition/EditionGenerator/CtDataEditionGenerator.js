@@ -30,6 +30,7 @@ import * as ApparatusType from '../ApparatusType'
 import * as SubEntryType from '../SubEntryType'
 import * as SubEntrySource from '../SubEntrySource'
 import { pushArray } from '../../toolbox/ArrayUtil'
+import { ApparatusCommon } from '../../EditionComposer/ApparatusCommon'
 
 export class CtDataEditionGenerator extends EditionGenerator{
   constructor (options) {
@@ -62,17 +63,20 @@ export class CtDataEditionGenerator extends EditionGenerator{
     })
     let baseWitnessTokens = CtData.getCtWitnessTokens(this.ctData, baseWitnessIndex)
     edition.setMainText(EditionMainTextGenerator.generateMainText(baseWitnessTokens, false, [], edition.getLang()))
-    edition.mainTextSections[0].id = this.ctData['chunkId']
     let apparatusGenerator = new CriticalApparatusGenerator()
-    let generatedCriticalApparatus = apparatusGenerator.generateCriticalApparatusFromCtData(this.ctData, baseWitnessIndex, edition.mainTextSections)
-    let theMap = CriticalApparatusGenerator.calcCtIndexToMainTextMap(baseWitnessTokens, edition.mainTextSections)
-    generatedCriticalApparatus = this._mergeCustomApparatusCriticusEntries(generatedCriticalApparatus, theMap)
+    let generatedCriticalApparatus = apparatusGenerator.generateCriticalApparatusFromCtData(this.ctData, baseWitnessIndex, edition.mainText)
+    let theMap = CriticalApparatusGenerator.calcCtIndexToMainTextMap(baseWitnessTokens.length, edition.mainText)
+    console.log(`Generated critical apparatus`)
+    console.log(generatedCriticalApparatus)
+    console.log(`CtIndexToMainTextMap`)
+    console.log(theMap)
+    generatedCriticalApparatus = this._mergeCustomApparatusCriticusEntries(generatedCriticalApparatus, baseWitnessTokens, theMap)
     edition.apparatuses = [
       generatedCriticalApparatus
     ]
 
-    edition.apparatuses = edition.apparatuses.concat(this._getCustomApparatuses(theMap))
-    edition.apparatuses.forEach( (a, i) => {
+    edition.apparatuses = edition.apparatuses.concat(this._getCustomApparatuses(theMap, baseWitnessTokens))
+    edition.apparatuses.forEach( (a) => {
       a.sortEntries()
     })
     return edition
@@ -81,11 +85,12 @@ export class CtDataEditionGenerator extends EditionGenerator{
   /**
    *
    * @param {Apparatus} generatedApparatusCriticus
+   * @param baseWitnessTokens
    * @param {*[]}ctIndexToMainTextMap
    * @return {*}
    * @private
    */
-  _mergeCustomApparatusCriticusEntries(generatedApparatusCriticus, ctIndexToMainTextMap) {
+  _mergeCustomApparatusCriticusEntries(generatedApparatusCriticus, baseWitnessTokens, ctIndexToMainTextMap) {
     if (this.ctData['customApparatuses'] === undefined) {
       // a simple collation table
       return generatedApparatusCriticus
@@ -112,7 +117,7 @@ export class CtDataEditionGenerator extends EditionGenerator{
         console.log(ctIndexToMainTextMap)
         return
       }
-      let mainTextFrom = ctIndexToMainTextMap[customEntry.from].textIndex
+      let mainTextFrom = ctIndexToMainTextMap[customEntry.from]
       if (ctIndexToMainTextMap[customEntry.to] === undefined) {
         console.warn(`Oded's bug, 2021 Nov 04`)
         console.log(`Index ${customEntry.to} not defined in ctIndexToMainTextMap`)
@@ -121,8 +126,8 @@ export class CtDataEditionGenerator extends EditionGenerator{
         console.log(`ctIndexToMainTextMap`)
         console.log(ctIndexToMainTextMap)
       }
-      let mainTextTo = ctIndexToMainTextMap[customEntry.to].textIndex
-      let currentEntryIndex = generatedApparatusCriticus.findEntryIndex( [0], mainTextFrom, mainTextTo)
+      let mainTextTo = ctIndexToMainTextMap[customEntry.to]
+      let currentEntryIndex = generatedApparatusCriticus.findEntryIndex( mainTextFrom, mainTextTo)
       let realCustomSubEntries = customEntry['subEntries'].filter ( (e) => { return e.type !== SubEntryType.DISABLE})
       // console.log(`There are ${realCustomSubEntries.length} custom sub entries`)
       // console.log(realCustomSubEntries)
@@ -139,8 +144,14 @@ export class CtDataEditionGenerator extends EditionGenerator{
           let newEntry = new ApparatusEntry()
           newEntry.from = mainTextFrom
           newEntry.to = mainTextTo
-          newEntry.lemma = customEntry['lemma']
-          newEntry.section = customEntry['section']
+          // TODO: is it here where auto lemmata should be built?
+          if (customEntry['lemma'] !== '') {
+            newEntry.lemma = customEntry['lemma']
+          } else {
+            // generate automatically
+            newEntry.lemma = ApparatusCommon.getMainTextForGroup({ from: customEntry['from'], to: customEntry['to'] },
+              baseWitnessTokens, false, this.ctData['lang'])
+          }
           newEntry.subEntries = this._buildSubEntryArrayFromCustomSubEntries(realCustomSubEntries)
           generatedApparatusCriticus.entries.push(newEntry)
         }
@@ -165,7 +176,7 @@ export class CtDataEditionGenerator extends EditionGenerator{
   }
 
   _applyDisableEntriesArrayToSubEntries(subEntries, disableEntriesArray) {
-    return subEntries.map ( (subEntry, i) => {
+    return subEntries.map ( (subEntry) => {
       // console.log(`Applying sub entry ${i}`)
       // console.log(subEntry)
       let subEntryHash = subEntry.hashString()
@@ -197,7 +208,7 @@ export class CtDataEditionGenerator extends EditionGenerator{
       return theSubEntry
     })
   }
-  _getCustomApparatuses(ctIndexToMainTextMap) {
+  _getCustomApparatuses(ctIndexToMainTextMap, baseWitnessTokens) {
     if (this.ctData['customApparatuses'] === undefined) {
       return []
     }
@@ -207,13 +218,18 @@ export class CtDataEditionGenerator extends EditionGenerator{
     }).map ( (apparatus) => {
       let theApparatus = new Apparatus()
       theApparatus.type = apparatus['type']
-      theApparatus.entries = apparatus['entries'].map ( (entry) => {
+      theApparatus.entries = apparatus['entries'].map ( (customEntry) => {
         let theEntry = new ApparatusEntry()
-        theEntry.lemma = entry['lemma']
-        theEntry.section = entry['section']
-        theEntry.from = ctIndexToMainTextMap[entry['from']].textIndex
-        theEntry.to = ctIndexToMainTextMap[entry['to']].textIndex
-        theEntry.subEntries = this._buildSubEntryArrayFromCustomSubEntries(entry['subEntries'])
+        if (customEntry['lemma'] !== '') {
+          theEntry.lemma = customEntry['lemma']
+        } else {
+          theEntry.lemma = ApparatusCommon.getMainTextForGroup({ from: customEntry['from'], to: customEntry['to'] },
+            baseWitnessTokens, false, this.ctData['lang'])
+        }
+
+        theEntry.from = ctIndexToMainTextMap[customEntry['from']]
+        theEntry.to = ctIndexToMainTextMap[customEntry['to']]
+        theEntry.subEntries = this._buildSubEntryArrayFromCustomSubEntries(customEntry['subEntries'])
         return theEntry
       })
       theApparatus.sortEntries()

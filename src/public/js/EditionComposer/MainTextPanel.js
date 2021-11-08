@@ -337,7 +337,7 @@ export class MainTextPanel extends PanelWithToolbar {
     if (this.isSelectionEmpty()) {
       return ''
     }
-    let lemma = this.edition.mainTextSections[0].text.filter( (token, i) => {
+    let lemma = this.edition.mainText.filter( (token, i) => {
       return i>=this.selection.from && i<=this.selection.to
     }).map ( (token) => { return token.getPlainText()}).join('')
     console.log(`Lemma from selection ${this.selection.from}-${this.selection.to}: '${lemma}'`)
@@ -358,7 +358,7 @@ export class MainTextPanel extends PanelWithToolbar {
       }
       this.verbose && console.log(`Click on add entry button`)
       let currentApparatusEntries = this.edition.apparatuses.map( (app) => {
-        let index = app.findEntryIndex( [0], this.selection.from, this.selection.to)
+        let index = app.findEntryIndex( this.selection.from, this.selection.to)
         if (index === -1) {
           return []
         }
@@ -465,7 +465,6 @@ export class MainTextPanel extends PanelWithToolbar {
         return
       }
       let tokenIndex = getSingleIntIdFromClasses($(ev.target), 'main-text-token-')
-      let mainTextSection = [0]
       if ($(ev.target).hasClass('whitespace')) {
         return
       }
@@ -488,7 +487,7 @@ export class MainTextPanel extends PanelWithToolbar {
             // Even if newText would simply replace the current main text token, it can be the case that there is a change
             // in the lines, so there should always be a regeneration of the edition, a redraw of the main text
             // and an update to the apparatuses.
-            if (this.options.onConfirmMainTextEdit(mainTextSection, tokenIndex, newText)) {
+            if (this.options.onConfirmMainTextEdit(tokenIndex, newText)) {
               this.verbose && console.log(`Confirming editing, new text = '${newText}'`)
               this._stopEditingMainText(newText)
               this._redrawMainText()
@@ -675,7 +674,7 @@ export class MainTextPanel extends PanelWithToolbar {
   _updateLineNumbersAndApparatuses() {
     return wait(typesetInfoDelay).then( () => {
       this.verbose && console.log(`Updating apparatuses div`)
-      this.lastTypesetinfo = getTypesettingInfo(this.containerSelector, 'main-text-token-', this.edition.mainTextSections[0].text)
+      this.lastTypesetinfo = getTypesettingInfo(this.containerSelector, 'main-text-token-', this.edition.mainText)
       this._drawLineNumbers(this.lastTypesetinfo)
       this.options.apparatusPanels.forEach( (p) => { p.updateApparatus(this.lastTypesetinfo)})
     })
@@ -702,8 +701,8 @@ export class MainTextPanel extends PanelWithToolbar {
 
   _convertMainTextToFmtText() {
     console.log(`Converting Main Text to Fmt Text`)
-    console.log( this.edition.mainTextSections[0].text)
-    let fmtText = FmtTextFactory.fromAnything( this.edition.mainTextSections[0].text.map( (token) => {
+    console.log( this.edition.mainText)
+    let fmtText = FmtTextFactory.fromAnything( this.edition.mainText.map( (token) => {
       switch (token.type) {
         case EditionMainTextTokenType.GLUE:
           return FmtTextTokenFactory.normalSpace()
@@ -727,14 +726,15 @@ export class MainTextPanel extends PanelWithToolbar {
   _getMainTextHtmlVersion() {
     let fmtTextRenderer = new HtmlRenderer({plainMode : true })
     let classes = []
-    return this.edition.mainTextSections[0].text.map( (token, i) => {
+    return this.edition.mainText.map( (token, i) => {
       switch(token.type) {
         case EditionMainTextTokenType.GLUE:
           classes = [ 'main-text-token', `main-text-token-${i}`, 'whitespace']
           return `<span class="${classes.join(' ')}"> </span>`
 
         case EditionMainTextTokenType.TEXT:
-          classes = [ 'main-text-token', `main-text-token-${i}`, `ct-index-${token.collationTableIndex}`]
+          let ctIndex = CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, token.editionWitnessTokenIndex)
+          classes = [ 'main-text-token', `main-text-token-${i}`, `ct-index-${ctIndex}`]
           return `<span class="${classes.join(' ')} ">${fmtTextRenderer.render(token.fmtText)}</span>`
 
         default:

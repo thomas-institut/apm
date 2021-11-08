@@ -117,7 +117,9 @@ export class EditionViewerSvg {
     let mainTextTypesetTokens = mainTextTypesetter.typesetTokens(mainTextTokensToTypeset)
 
 
-    let mainTextToTypesetterTokensMap = this._genMainTokenIndexToTypesetterTokenMap(this.edition.mainTextSections[0].text, mainTextTypesetTokens)
+    let mainTextToTypesetterTokensMap = this._genMainTokenIndexToTypesetterTokenMap(this.edition.mainText, mainTextTypesetTokens)
+    // console.log(`mainTextToTypesetterTokensMap`)
+    // console.log(mainTextToTypesetterTokensMap)
 
     // 2. Typeset the apparatuses
     let apparatusTypesetter = new Typesetter({
@@ -255,24 +257,17 @@ export class EditionViewerSvg {
     if (entry.from === -1) {
       return { start: 'pre', end: 'pre'}
     }
-    if (typeof(tsTokens[map[entry.from]]) === 'undefined') {
-      console.log('Found undefined start')
-      console.log('note.start: ' + entry.from)
-      console.log('map [note.start]: ' + map[entry.from])
-      console.log('tsTokens[map[note.start] : ' + tsTokens[map[entry.from]])
-      console.log('tsTokens.length: ' + tsTokens.length)
+    if (tsTokens[map[entry.from]] === undefined) {
+      console.warn(`Entry start undefined: from = ${entry.from}, map value = ${map[entry.from]}`)
+      console.log(entry)
       return {
         start: 'ERROR',
         end: 'ERROR'
       }
     }
-    if (entry.to !== -1 && typeof(tsTokens[map[entry.to]]) === 'undefined') {
-      console.log('Found undefined end')
+    if (entry.to !== -1 && tsTokens[map[entry.to]] === undefined) {
+      console.warn(`Entry end undefined: to = ${entry.to}, map value = ${map[entry.to]}`)
       console.log(entry)
-      console.log('note.end: ' + entry.to)
-      console.log('map [note.end]: ' + map[entry.to])
-      console.log('tsTokens[map[note.end] : ' + tsTokens[map[entry.to]])
-      console.log('tsTokens.length: ' + tsTokens.length)
       return {
         start: 'ERROR',
         end: 'ERROR'
@@ -289,8 +284,7 @@ export class EditionViewerSvg {
     let typesetterRenderer = new TypesetterTokenRenderer()
     let typesetterTokens = []
 
-    // TODO: support multiple sections
-    this.edition.mainTextSections[0].text.forEach( (mainTextToken, index) => {
+    this.edition.mainText.forEach( (mainTextToken, index) => {
       switch(mainTextToken.type) {
         case MainTextTokenType.GLUE:
           let theGlue = TypesetterTokenFactory.normalSpace()

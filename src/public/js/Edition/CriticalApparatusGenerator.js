@@ -26,7 +26,6 @@ import * as WitnessTokenType from '../Witness/WitnessTokenType'
 import * as SubEntrySource from './SubEntrySource'
 import { CtData } from '../CtData/CtData'
 import { Apparatus } from './Apparatus'
-import { LocationInSection } from './LocationInSection'
 import { ApparatusSubEntry } from './ApparatusSubEntry'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory'
 import { ApparatusEntry } from './ApparatusEntry'
@@ -44,17 +43,18 @@ export class CriticalApparatusGenerator {
    *
    * @param {object} ctData
    * @param {number} baseWitnessIndex
-   * @param {MainTextSection[]} mainText
+   * @param {MainTextToken[]} mainText
    * @return {Apparatus}
    */
-  generateCriticalApparatusFromCtData(ctData, baseWitnessIndex, mainText) {
+  generateCriticalApparatusFromCtData (ctData, baseWitnessIndex, mainText) {
 
     // 1. Construct an array with main text tokens: a map of the base witness' row in the collation
     //    table exchanging the references for the actual tokens and filling the null references with empty tokens
     let baseWitnessTokens = CtData.getCtWitnessTokens(ctData, baseWitnessIndex)
     let ctIndexToMainTextMap = CriticalApparatusGenerator.calcCtIndexToMainTextMap(baseWitnessTokens.length, mainText)
-    // Supporting only one section for now
-    let section = [0]
+    console.log(`ctIndexToMainTextMap`)
+    console.log(ctIndexToMainTextMap)
+
     let lang = ctData['lang']
 
     let columnGroups = this._getGroupsFromCtData(ctData)
@@ -63,14 +63,14 @@ export class CriticalApparatusGenerator {
     //  entirely (for example: a user might have decided to include the first few words of the main text in
     //  a group together with the empty main text columns so that the apparatus indicate initial variants
     let entries = []
-    columnGroups.forEach( (columnGroup) => {
+    columnGroups.forEach((columnGroup) => {
       let ctColumns = []
       //let mainTextIndices = []
       for (let ctColNumber = columnGroup.from; ctColNumber <= columnGroup.to; ctColNumber++) {
         ctColumns.push(ApparatusCommon.getCollationTableColumn(ctData, ctColNumber))
       }
 
-      if (ctColumns.every( col => this._isCtTableColumnEmpty(col))) {
+      if (ctColumns.every(col => this._isCtTableColumnEmpty(col))) {
         // skip groups consisting of only empty columns
         this.verbose && console.log(`Group ${columnGroup.from}-${columnGroup.to} consists of empty columns, skipping.`)
         return
@@ -87,16 +87,18 @@ export class CriticalApparatusGenerator {
         // the  sub-entries, one or more additions, will be associated with it
         let ctIndex = columnGroup.from
 
-        while (ctIndex >= 0 && ( baseWitnessTokens[ctIndex].type === WitnessTokenType.EMPTY ||
-          WitnessTokenStringParser.strIsPunctuation(baseWitnessTokens[ctIndex].text, lang) )) {
+        while (ctIndex >= 0 && (baseWitnessTokens[ctIndex].type === WitnessTokenType.EMPTY ||
+          WitnessTokenStringParser.strIsPunctuation(baseWitnessTokens[ctIndex].text, lang))) {
           ctIndex--
         }
 
         // a ctIndex of -1 means that the apparatus entry comes before the text, normally with the lemma 'pre'
         // in the printed edition
-        // TODO: what would happen if an edition is composed of multiple sections
-        // ATTENTION: assuming there's only one section
-        let mainTextIndex = ctIndex < 0 ? -1 : ctIndexToMainTextMap[ctIndex].textIndex
+        let mainTextIndex = ctIndex < 0 ? -1 : ctIndexToMainTextMap[ctIndex]
+        if (mainTextIndex === undefined) {
+          console.warn(`Main text index undefined for ctIndex ${ctIndex}`)
+          console.log(columnGroup)
+        }
         // collect additions
         let additions = []
         for (let witnessIndex = 0; witnessIndex < ctColumns[0].length; witnessIndex++) {
@@ -118,12 +120,10 @@ export class CriticalApparatusGenerator {
         }
         let subEntries = this._buildSubEntryArrayFromVariantArrayNew(additions, ApparatusEntryType.ADDITION)
 
-
         if (subEntries.length !== 0) {
           let entry = new ApparatusEntry()
           entry.from = mainTextIndex
           entry.to = mainTextIndex
-          entry.section = section
           entry.lemma = mainTextIndex !== -1 ? ApparatusCommon.getNormalizedTextFromInputToken(baseWitnessTokens[ctIndex]) : 'pre'
           entry.subEntries = subEntries
           // other info
@@ -163,25 +163,32 @@ export class CriticalApparatusGenerator {
           this._addWitnessDataToVariantArray(groupVariants, this._getRowTextFromGroupMatrix(groupMatrix, witnessIndex, false, lang), witnessData)
         }
       }
-      let mainTextIndexFrom = ctIndexToMainTextMap[columnGroup.from].textIndex
+      let mainTextIndexFrom = ctIndexToMainTextMap[columnGroup.from]
+      if (mainTextIndexFrom === undefined) {
+        console.warn(`Main text index 'from' undefined for ctIndex ${columnGroup.from}`)
+        console.log(columnGroup)
+      }
       if (mainTextIndexFrom === -1) {
         // need to find first non-empty main text token in
         //console.log('Finding non empty main text token forward')
         mainTextIndexFrom = this._findNonEmptyMainTextToken(columnGroup.from, ctIndexToMainTextMap, baseWitnessTokens, true, lang)
       }
-      let mainTextIndexTo = ctIndexToMainTextMap[columnGroup.to].textIndex
+      let mainTextIndexTo = ctIndexToMainTextMap[columnGroup.to]
+      if (mainTextIndexTo === undefined) {
+        console.warn(`Main text index 'to' undefined for ctIndex ${columnGroup.to}`)
+        console.log(columnGroup)
+      }
       if (mainTextIndexTo === -1) {
         //console.log(`Finding non empty main text token backwards from ${columnGroup.to}, from = ${columnGroup.from}`)
         mainTextIndexTo = this._findNonEmptyMainTextToken(columnGroup.to, ctIndexToMainTextMap, baseWitnessTokens, false, lang)
       }
 
-      let subEntries =  this._buildSubEntryArrayFromVariantArrayNew(groupOmissions, ApparatusEntryType.OMISSION)
+      let subEntries = this._buildSubEntryArrayFromVariantArrayNew(groupOmissions, ApparatusEntryType.OMISSION)
         .concat(this._buildSubEntryArrayFromVariantArrayNew(groupVariants, ApparatusEntryType.VARIANT))
       if (subEntries.length !== 0) {
         let entry = new ApparatusEntry()
         entry.from = mainTextIndexFrom
         entry.to = mainTextIndexTo
-        entry.section = section
         entry.lemma = ApparatusCommon.getMainTextForGroup(columnGroup, baseWitnessTokens, false, lang)
         entry.subEntries = subEntries
         // other info
@@ -205,29 +212,29 @@ export class CriticalApparatusGenerator {
   /**
    *
    * @param {number} ctIndex
-   * @param {LocationInSection[]} ctIndexToMainTextMap
+   * @param {number[]} ctIndexToMainTextMap
    * @param {*[]} baseWitnessTokens
    * @param {boolean}forward
    * @param {string} lang
    * @return {number}
    * @private
    */
-   _findNonEmptyMainTextToken(ctIndex, ctIndexToMainTextMap, baseWitnessTokens, forward, lang = '') {
+  _findNonEmptyMainTextToken (ctIndex, ctIndexToMainTextMap, baseWitnessTokens, forward, lang = '') {
     while (ctIndex >= 0 && ctIndex < ctIndexToMainTextMap.length && (
-      ctIndexToMainTextMap[ctIndex].isNull()  ||
-      WitnessTokenStringParser.strIsPunctuation(baseWitnessTokens[ctIndex]['text'], lang)) ) {
-      ctIndex = forward ? ctIndex + 1 : ctIndex -1
+      ctIndexToMainTextMap[ctIndex] === -1 ||
+      WitnessTokenStringParser.strIsPunctuation(baseWitnessTokens[ctIndex]['text'], lang))) {
+      ctIndex = forward ? ctIndex + 1 : ctIndex - 1
     }
     if (ctIndex < 0 || ctIndex >= ctIndexToMainTextMap.length) {
       return -1
     }
-    return ctIndexToMainTextMap[ctIndex].textIndex
+    return ctIndexToMainTextMap[ctIndex]
   }
 
-  _optimizeEntries(entries) {
+  _optimizeEntries (entries) {
     // 1. group sub-entries that belong to the same CT columns
     let optimizedEntries = []
-    entries.forEach( entry => {
+    entries.forEach(entry => {
       let index = findRangeInEntries(optimizedEntries, entry.from, entry.to)
       if (index === -1) {
         optimizedEntries.push(entry)
@@ -238,7 +245,7 @@ export class CriticalApparatusGenerator {
     return optimizedEntries
   }
 
-  _getGroupsFromCtData(ctData) {
+  _getGroupsFromCtData (ctData) {
     if (ctData['witnesses'].length === 0) {
       return []
     }
@@ -261,29 +268,19 @@ export class CriticalApparatusGenerator {
    * @param witnessData
    * @private
    */
-  _addWitnessDataToVariantArray(theArray, text, witnessData) {
-    let textIndex = theArray.map( v => v.text ).indexOf(text)
+  _addWitnessDataToVariantArray (theArray, text, witnessData) {
+    let textIndex = theArray.map(v => v.text).indexOf(text)
     if (textIndex === -1) {
       // the text is not in the array, create a new element
-      theArray.push( { text:text, witnessDataArray: [ witnessData]})
+      theArray.push({ text: text, witnessDataArray: [witnessData] })
     } else {
       // add the witness index to the appropriate element
       theArray[textIndex].witnessDataArray.push(witnessData)
     }
   }
 
-  // _buildSubEntryArrayFromVariantArray(variantArray, subEntryType) {
-  //   return variantArray.map( (v) => {
-  //     return {
-  //       type: subEntryType,
-  //       witnessData: v.witnessDataArray,
-  //       text: v.text
-  //     }
-  //   })
-  // }
-
-  _buildSubEntryArrayFromVariantArrayNew(variantArray, subEntryType) {
-    return variantArray.map( (v) => {
+  _buildSubEntryArrayFromVariantArrayNew (variantArray, subEntryType) {
+    return variantArray.map((v) => {
       let subEntry = new ApparatusSubEntry()
       subEntry.type = subEntryType
       subEntry.fmtText = FmtTextFactory.fromAnything(v.text)
@@ -293,10 +290,9 @@ export class CriticalApparatusGenerator {
     })
   }
 
-
-  _getRowTextFromGroupMatrix(matrix, rowNumber, normalized = true, lang = '') {
+  _getRowTextFromGroupMatrix (matrix, rowNumber, normalized = true, lang = '') {
     return matrix.getColumn(rowNumber)
-      .map( (token) => {
+      .map((token) => {
         if (token.tokenType === TokenType.EMPTY) {
           return ''
         }
@@ -306,16 +302,16 @@ export class CriticalApparatusGenerator {
         }
         return theText
       })
-      .filter( t => t !== '')   // filter out empty text
+      .filter(t => t !== '')   // filter out empty text
       .join(' ')
   }
 
-  _isCtTableColumnEmpty(ctColumn) {
-    return ctColumn.every( e => e.tokenType === TokenType.EMPTY)
+  _isCtTableColumnEmpty (ctColumn) {
+    return ctColumn.every(e => e.tokenType === TokenType.EMPTY)
   }
 
-  _isCtRowEmpty(ctColumnArray, rowIndex) {
-    return ctColumnArray.map( col => col[rowIndex]).every( token => { return token.tokenType === WitnessTokenType.EMPTY})
+  _isCtRowEmpty (ctColumnArray, rowIndex) {
+    return ctColumnArray.map(col => col[rowIndex]).every(token => { return token.tokenType === WitnessTokenType.EMPTY})
   }
 
   /**
@@ -328,40 +324,27 @@ export class CriticalApparatusGenerator {
    * @param location
    * @returns {{witnessIndex, location: string, hand: number}}
    */
-  createWitnessData(witnessIndex, hand = 0, location = '') {
-    return  { witnessIndex: witnessIndex, hand: hand, location: location}
+  createWitnessData (witnessIndex, hand = 0, location = '') {
+    return { witnessIndex: witnessIndex, hand: hand, location: location }
   }
-
 
   /**
    * @param {number} ctRowLength
-   * @param {MainTextSection[]} mainTextSections
+   * @param {MainTextToken[]}mainText
    */
-  static calcCtIndexToMainTextMap(ctRowLength, mainTextSections) {
-    // TODO: test this with complex section trees
+  static calcCtIndexToMainTextMap (ctRowLength, mainText) {
     let theMap = []
-    // 1. fill the map with null references
     for (let i = 0; i < ctRowLength; i++) {
-      theMap.push(new LocationInSection())
+      theMap[i] = -1
     }
-
-    function visitSection(sectionLocation, section) {
-      // Collect info from text tokens
-      section.text.forEach( (textToken, textIndex) => {
-        if (textToken.editionWitnessTokenIndex !== -1) {
-          theMap[textToken.editionWitnessTokenIndex] = new LocationInSection(sectionLocation, textIndex)
-        }
-      })
-      // visit every subsection
-      section.subSections.forEach( (subSection, subSectionIndex) => {
-        visitSection( sectionLocation.concat([subSectionIndex]), subSection)
-      })
-    }
-    mainTextSections.forEach( (s, i) => {
-      visitSection([i], s)
+    mainText.forEach((textToken, textIndex) => {
+      if (textToken.editionWitnessTokenIndex !== -1) {
+        theMap[textToken.editionWitnessTokenIndex] = textIndex
+      }
     })
     return theMap
   }
+
 }
 
 function findRangeInEntries(theArray, from, to) {

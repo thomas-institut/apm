@@ -16,27 +16,22 @@
  *
  */
 
-import * as CollationTableType from '../constants/CollationTableType'
-import * as TokenClass from '../constants/CollationTableType'
-import * as TranscriptionTokenType from '../Witness/WitnessTokenType'
-import * as ApparatusType from '../constants/ApparatusType'
+import * as CollationTableType from '../../constants/CollationTableType'
+import * as TokenClass from '../../constants/CollationTableType'
+import * as TranscriptionTokenType from '../../Witness/WitnessTokenType'
 import { Matrix } from '@thomas-inst/matrix'
-import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { CtData } from './CtData'
-import { deepCopy } from '../toolbox/Util.mjs'
-import { EditionMainTextGenerator } from '../Edition/EditionGenerator/EditionMainTextGenerator.mjs'
+import { CtData } from '../CtData'
+import { CtDataCleaner } from './CtDataCleaner'
 
 
-const defaultApparatus = [ ApparatusType.CRITICUS, ApparatusType.FONTIUM, ApparatusType.COMPARATIVUS]
-
-export class CtDataCleaner {
+export class CleanerOnePointZero extends CtDataCleaner{
 
   constructor(options = {}) {
-    let optionsSpec = {
-      verbose: { type: 'boolean', default: false}
-    }
-    let oc = new OptionsChecker({optionsDefinition: optionsSpec, context: 'CtDataCleaner'})
-    this.options = oc.getCleanOptions(options)
+    super(options)
+  }
+
+  sourceSchemaVersion () {
+    return '1.0'
   }
 
   /**
@@ -49,58 +44,9 @@ export class CtDataCleaner {
    * @param ctData
    * @return {*}
    */
-  getCleanCollationData(ctData) {
-    this.ctData = deepCopy(ctData)
-    // use default ordering if ctData does not have one
-    if (this.ctData['witnessOrder'] === undefined) {
-      this.options.verbose && console.log('Providing default witnessOrder')
-      this.ctData['witnessOrder'] = []
-      for(let i=0; i < this.ctData['witnesses'].length; i++) {
-        this.ctData['witnessOrder'][i] = i
-      }
-    }
-    if (this.ctData['witnessOrder'].length !== this.ctData['witnesses'].length) {
-      console.error('Not enough witnesses in witnessOrder')
-      console.log(this.ctData['witnessOrder'])
-    }
-    // default type is collation table
-    if (this.ctData['type'] === undefined) {
-      this.ctData['type'] = CollationTableType.COLLATION_TABLE
-    }
-    // default groups (none), if data do not have them
-    if (this.ctData['groupedColumns'] === undefined) {
-      this.ctData['groupedColumns'] = []
-    }
-
-
-    if (this.ctData['type'] === CollationTableType.EDITION) {
-      // add default apparatuses for editions
-      if (this.ctData['customApparatuses'] === undefined) {
-        this.ctData['customApparatuses'] = []
-      }
-      defaultApparatus.forEach( (appType) => {
-        let appIndex = this.ctData['customApparatuses'].map( (customApp) => { return customApp.type}).indexOf(appType)
-        // console.log(`Found apparatus '${appType}' with index ${appIndex}`)
-        if (appIndex === -1) {
-          this.ctData['customApparatuses'].push( { type: appType, entries: []})
-        }
-      })
-
-      // remove unused 'criticalApparatusCustomizations'
-      delete this.ctData['criticalApparatusCustomizations']
-
-    }
-
-
-    // check normalization settings
-    if (this.ctData['automaticNormalizationsApplied'] === undefined) {
-      this.ctData['automaticNormalizationsApplied'] = []
-    }
-
-    // by default, the table is not archived
-    if (this.ctData['archived']  === undefined) {
-      this.ctData['archived'] = false
-    }
+  getCleanCtData(ctData) {
+    this.ctData = super.getCleanCtData(ctData)
+   
 
     // fix -1 references in edition witness
     if (this.ctData['type'] === CollationTableType.EDITION) {
@@ -108,7 +54,7 @@ export class CtDataCleaner {
     }
     // consistency check
     this.checkAndFixCollationTableConsistency()
-    this.ctData = this.fixCustomApparatuses(this.ctData)
+    // this.ctData = this.fixCustomApparatuses(this.ctData)
     this.ctData = CtData.fixFmtText(this.ctData)
 
     return this.ctData
@@ -118,35 +64,35 @@ export class CtDataCleaner {
    * @param ctData
    * @return {*}
    */
-  fixCustomApparatuses(ctData) {
-    if (ctData['type'] !== CollationTableType.EDITION) {
-      return ctData
-    }
-    let editionWitness = ctData['witnesses'][ctData['editionWitnessIndex']]['tokens']
-    ctData['customApparatuses'] = ctData['customApparatuses'].map( (apparatus) => {
-      apparatus.entries = apparatus.entries.map((entry) => {
-        // 1. Detect and fix bad lemmata due to a bug in v0.42.0 (31 Aug 2021)
-        let goodLemma = EditionMainTextGenerator.generatePlainText( editionWitness.filter( (token, i) => {
-          return i>=entry.from && i<=entry.to
-        }))
-        if (entry['lemma'] !== goodLemma) {
-          console.warn(`Found incorrect lemma '${entry['lemma']}' in custom apparatus for tokens ${entry.from} to ${entry.to}, should be '${goodLemma}'`)
-          entry['lemma'] = goodLemma
-        }
-
-        // 2. Add default custom preLemma, postLemma and separator if not present
-        if (entry['preLemma'] === undefined) {
-          entry['preLemma'] = ''  // empty string = auto
-        }
-        return entry
-      })
-      return apparatus
-    })
-    return ctData
-  }
+  // fixCustomApparatuses(ctData) {
+  //   if (ctData['type'] !== CollationTableType.EDITION) {
+  //     return ctData
+  //   }
+  //   let editionWitness = ctData['witnesses'][ctData['editionWitnessIndex']]['tokens']
+  //   ctData['customApparatuses'] = ctData['customApparatuses'].map( (apparatus) => {
+  //     apparatus.entries = apparatus.entries.map((entry) => {
+  //       // 1. Detect and fix bad lemmata due to a bug in v0.42.0 (31 Aug 2021)
+  //       let goodLemma = EditionMainTextGenerator.generatePlainText( editionWitness.filter( (token, i) => {
+  //         return i>=entry.from && i<=entry.to
+  //       }))
+  //       if (entry['lemma'] !== goodLemma) {
+  //         console.warn(`Found incorrect lemma '${entry['lemma']}' in custom apparatus for tokens ${entry.from} to ${entry.to}, should be '${goodLemma}'`)
+  //         entry['lemma'] = goodLemma
+  //       }
+  //
+  //       // 2. Add default custom preLemma, postLemma and separator if not present
+  //       if (entry['preLemma'] === undefined) {
+  //         entry['preLemma'] = ''  // empty string = auto
+  //       }
+  //       return entry
+  //     })
+  //     return apparatus
+  //   })
+  //   return ctData
+  // }
 
   fixEditionWitnessReferences(ctData) {
-    this.options.verbose && console.log(`Checking for -1 references in edition witness`)
+    this.verbose && console.log(`Checking for -1 references in edition witness`)
 
     let editionWitnessIndex = ctData['editionWitnessIndex']
     if (editionWitnessIndex === undefined) {
@@ -159,7 +105,7 @@ export class CtDataCleaner {
     let foundNullRef = false
     let newEditionWitnessTokens = ctEditionRow.map ( (ref, i) => {
       if (ref === -1) {
-        console.log(`Adding empty token in edition witness at column ${i}`)
+        this.debug && console.log(`Adding empty token in edition witness at column ${i}`)
         foundNullRef = true
         return { 'tokenClass':  TokenClass.EDITION, 'tokenType': TranscriptionTokenType.EMPTY, 'text': ''}
       }
@@ -174,20 +120,20 @@ export class CtDataCleaner {
       ctData.collationMatrix[editionWitnessIndex] = newCtEditionRow
 
     } else {
-      this.options.verbose && console.log('...all good, none found')
+      this.verbose && console.log('...all good, none found')
     }
     return ctData
   }
 
   checkAndFixCollationTableConsistency() {
-    this.options.verbose && console.log(`Checking collation table consistency`)
+    this.verbose && console.log(`Checking collation table consistency`)
     let inconsistenciesFound = false
     for (let wIndex = 0; wIndex < this.ctData['witnesses'].length; wIndex++) {
       let ctRow = this.ctData['witnessOrder'].indexOf(wIndex)
       let title = this.ctData['witnessTitles'][wIndex]
       let errorsFound = false
       if (this.ctData['type'] === CollationTableType.EDITION && wIndex === this.ctData['editionWitnessIndex']) {
-        this.options.verbose && console.log(`... edition witness, skipping`)
+        this.debug && console.log(`... edition witness, skipping`)
         continue
       }
       let ctMatrix = new Matrix(0,0,-1)
@@ -276,13 +222,13 @@ export class CtDataCleaner {
         // replace fixed collation table
         this.ctData['collationMatrix'] = this.matrixToArray(ctMatrix)
       } else {
-        this.options.verbose && console.log(`... no problems found`)
+        this.debug && console.log(`... no problems found`)
       }
     }
     if (inconsistenciesFound) {
-      this.options.verbose && console.log(`... finished, inconsistencies fixed.`)
+      this.verbose && console.log(`... finished, inconsistencies fixed.`)
     } else {
-      this.options.verbose &&  console.log(`... all good, no inconsistencies found`)
+      this.verbose &&  console.log(`... all good, no inconsistencies found`)
     }
   }
 

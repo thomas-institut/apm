@@ -30,33 +30,80 @@ import { deepCopy } from '../toolbox/Util.mjs'
 import * as TranscriptionTokenType from '../Witness/WitnessTokenType'
 import * as NormalizationSource from '../constants/NormalizationSource'
 import * as WitnessType from '../Witness/WitnessTokenClass'
+import { CleanerOnePointZero } from './CtDataCleaner/CleanerOnePointZero'
+import { UpdaterToOnePointZero } from './CtDataUpdater/UpdaterToOnePointZero'
+import { CleanerZero } from './CtDataCleaner/CleanerZero'
 
 
 
 /*
- A collection of static methods to manipulate the CtData (= Collation Table Data)  structure
-
-  CtData := {
-    customApparatuses: CustomApparatus[]
-  }
-
- CustomApparatus := {
-  type: string
-  entries: CustomApparatusEntry
- }
-
-  CustomApparatusEntry = same as ApparatusEntry, but from and to refer to the collation table, not to the main text
-     additionally, a custom apparatus entry can be a command to disable an automatically generated entry
-
-      {
-      type: 'disableAuto'
-      hash: number, an Int32 hash that identifies an automatically generated entry
-      }
-
+ A collection of static methods to manipulate the CtData  structure
  */
+
+
+
+const schemaVersions = [ '0', '1.0']
+
 
 export class CtData  {
 
+
+  static getCleanAndUpdatedCtData(sourceCtData, verbose = true, debug = false) {
+
+    function getCleanerForSchemaVersion(sourceSchemaVersion, verbose, debug) {
+      switch(sourceSchemaVersion) {
+        case '0':
+          return new CleanerZero({verbose: verbose, debug: debug})
+        case '1.0':
+           return new CleanerOnePointZero({ verbose: verbose, debug: debug})
+        default:
+          throw new Error(`Invalid source schema ${sourceSchemaVersion} requested`)
+      }
+    }
+
+    function getUpdaterForTargetSchemaVersion(targetSchemaVersion, verbose, debug) {
+      switch(targetSchemaVersion) {
+        case '1.0':
+          return new UpdaterToOnePointZero({verbose: verbose, debug: debug})
+
+        default:
+          throw new Error(`Invalid target schema ${targetSchemaVersion} requested`)
+      }
+    }
+
+    if (sourceCtData['schemaVersion'] === undefined) {
+      sourceCtData['schemaVersion'] = '0'
+    }
+    if (debug) {
+      verbose = true
+    }
+
+    let currentSchemaVersionIndex = schemaVersions.indexOf(sourceCtData['schemaVersion'])
+    if (currentSchemaVersionIndex === -1) {
+      throw new Error(`Invalid CtData schema version found: ${sourceCtData['schemaVersion']}`)
+    }
+    let ctData = sourceCtData
+    while (currentSchemaVersionIndex < schemaVersions.length) {
+      // clean the data
+      let cleaner = getCleanerForSchemaVersion(ctData['schemaVersion'], verbose, debug)
+      ctData = cleaner.getCleanCtData(ctData)
+      if (currentSchemaVersionIndex !== schemaVersions.length -1) {
+        // not the latest schema version, so update
+        let updater = getUpdaterForTargetSchemaVersion(schemaVersions[currentSchemaVersionIndex+1], verbose, debug)
+        ctData = updater.update(ctData)
+      }
+      currentSchemaVersionIndex++
+    }
+
+    return ctData
+
+  }
+
+  /**
+   * Returns a copy of a CtDataObject
+   * @param {object} ctDataObject
+   * @return {object}
+   */
   static copyFromObject(ctDataObject) {
     // console.log(`Copying ctData`)
     let ctData = deepCopy(ctDataObject)
@@ -82,9 +129,9 @@ export class CtData  {
         }
       }
     }
-
     return ctData
   }
+
 
   static reportCustomEntries(ctData) {
     let noProblems = true

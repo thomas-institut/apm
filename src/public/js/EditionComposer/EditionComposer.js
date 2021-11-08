@@ -43,16 +43,14 @@ import { CollationTablePanel } from './CollationTablePanel'
 import { AdminPanel } from './AdminPanel'
 import { EditionPreviewPanel } from './EditionPreviewPanel'
 import { MainTextPanel } from './MainTextPanel'
-import { CtDataCleaner } from '../CtData/CtDataCleaner'
+import { CleanerOnePointZero } from '../CtData/CtDataCleaner/CleanerOnePointZero'
 import { ApparatusPanel } from './ApparatusPanel'
 import { Edition } from '../Edition/Edition'
 import { CtDataEditionGenerator } from '../Edition/EditionGenerator/CtDataEditionGenerator'
-import { LocationInSection } from '../Edition/LocationInSection'
 import * as ArrayUtil from '../toolbox/ArrayUtil'
 import * as CollationTableType from '../constants/CollationTableType'
 import * as NormalizationSource from '../constants/NormalizationSource'
 import { CtData } from '../CtData/CtData'
-import { prettyPrintArray } from '../toolbox/ArrayUtil'
 import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'
 
 // CONSTANTS
@@ -119,8 +117,8 @@ export class EditionComposer {
 
     this.apiSaveCollationUrl = this.options.urlGenerator.apiSaveCollation()
 
-    let ctDataCleaner = new CtDataCleaner()
-    this.ctData = ctDataCleaner.getCleanCollationData(this.options['collationTableData'])
+
+    this.ctData =CtData.getCleanAndUpdatedCtData(this.options['collationTableData'])
 
     console.log('Clean CT Data')
     console.log(this.ctData)
@@ -399,9 +397,9 @@ export class EditionComposer {
   }
 
   genOnConfirmMainTextEdit() {
-    return (section, tokenIndex, newText) => {
-      console.log(`Confirming edit of main text token ${tokenIndex} in section ${prettyPrintArray(section)} with new text '${newText}'`)
-      let token = this.edition.getMainTextToken( new LocationInSection(section, tokenIndex))
+    return (tokenIndex, newText) => {
+      console.log(`Confirming edit of main text token ${tokenIndex}  with new text '${newText}'`)
+      let token = this.edition.getMainTextToken( tokenIndex)
       if (token.isEmpty()) {
         console.warn(`Trying to confirm edit of nonexistent main text token`)
         return false
@@ -758,7 +756,7 @@ export class EditionComposer {
 
       //4. Clean up references
       // TODO: fix this, it should not be necessary
-      let cleaner = new CtDataCleaner({verbose: true})
+      let cleaner = new CleanerOnePointZero({verbose: true})
       this.ctData = cleaner.fixEditionWitnessReferences(this.ctData)
 
       console.log(`New CT data after update`)

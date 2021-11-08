@@ -41,9 +41,11 @@ export class EditionMainTextGenerator {
    * @param {string}lang
    */
   static generateMainText(witnessTokens, normalized = false, normalizationsToIgnore = [], lang = '') {
-    let section = new MainTextSection()
-    section.text = this.generateMainTextTokensWithGlue(witnessTokens, normalized, normalizationsToIgnore, lang)
-    return [ section ]
+    // let section = new MainTextSection()
+    // section.text = this.generateMainTextTokensWithGlue(witnessTokens, normalized, normalizationsToIgnore, lang)
+    // return [ section ]
+
+    return this.generateMainTextTokensWithGlue(witnessTokens, normalized, normalizationsToIgnore, lang)
   }
 
   static generatePlainText(witnessTokens) {

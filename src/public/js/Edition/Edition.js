@@ -6,14 +6,12 @@ Minimal data structure for a critical edition
  Edition := {
      ... optional general Id info, e.g. title, etc....
 
-     // An edition's main text is  tree of main text sections with MainTextToken at farthest leaves.
-     // The simplest case will have just one section with MainTextTokens
-     // The idea is that entries in the apparatus will be associated with main text tokens from
-     // a particular section, so that partial texts (like chunks) can can be put together into
-     // a bigger edition.
-     // Any section in this tree can be uniquely identified by an array of indexes
-     //   e.g. [0, 0], the first subsection of the first main text section
-     mainText : MainTextSection[]
+     // An edition's main text is MainTextToken array. Each token that contains a word normally refers
+     // to a column in a collation table. In the simplest case, there is only one collation table.
+     // The main text will also contain spaces and formatting marks such as paragraph and section break with
+     // a variety of styles in order to support things such as headings, chapters, etc.
+
+     mainText : MainTextToken[]
      apparatuses:  Apparatus[]
      witnesses:  EditionWitnessInfo[]
 
@@ -88,8 +86,6 @@ SubEntryWitnessInfo := {
 
  */
 
-
-import { MainTextSection } from './MainTextSection'
 import { MainTextToken } from './MainTextToken'
 
 export class Edition {
@@ -99,11 +95,9 @@ export class Edition {
     this.lang = ''
     this.infoText = 'Empty Edition'
     this.info = {}
-    /**
-     *
-     * @member {MainTextSection[]}
-     */
-    this.mainTextSections = []
+
+    this.mainText = []
+
     /**
      *
      * @member {Apparatus[]}
@@ -119,10 +113,10 @@ export class Edition {
 
   /**
    *
-   * @param {MainTextSection[]} mainTextSectionArray
+   * @param {MainTextToken[]}mainText
    */
-  setMainText(mainTextSectionArray) {
-    this.mainTextSections = mainTextSectionArray
+  setMainText(mainText) {
+    this.mainText = mainText
     return this
   }
 
@@ -134,44 +128,17 @@ export class Edition {
   getLang() {
     return this.lang
   }
-
-  /**
-   *
-   * @param {MainTextToken[]} mainTextTokens
-   */
-  setSingleSectionFromMainTextTokens(mainTextTokens) {
-    this.mainTextSections = [ new MainTextSection() ]
-    this.mainTextSections[0].text = mainTextTokens
-  }
-
   getSigla() {
     return this.witnesses.map( w => w.siglum)
   }
 
   /**
    *
-   * @param {LocationInSection} location
    * @return {MainTextToken}
+   * @param {number}index
    */
-  getMainTextToken(location) {
-    if (this.mainTextSections.length === 0 || location.isNull()) {
-      // empty edition or null address
-      return new MainTextToken()
-    }
-    if (this.mainTextSections[location.section[0]] === undefined) {
-      // location is out of scope
-      return new MainTextToken()
-    }
-
-    let section = this.mainTextSections[location.section[0]]
-    for (let i=1;i< location.section.length; i++) {
-      if (section.subSections[location.section[i]] === undefined) {
-        return new MainTextToken()
-      }
-      section = section.subSections[location.section[i]]
-    }
-
-    return section.text[location.textIndex] !== undefined ? section.text[location.textIndex] : new MainTextToken()
+  getMainTextToken(index) {
+    return this.mainText[index] !== undefined ? this.mainText[index] : new MainTextToken()
   }
 
 }

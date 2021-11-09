@@ -19,7 +19,6 @@
 import * as WitnessTokenType from '../../Witness/WitnessTokenType.js'
 import { MainTextTokenFactory } from '../MainTextTokenFactory.js'
 import * as MainTextTokenType from '../MainTextTokenType.js'
-import { MainTextSection } from '../MainTextSection.js'
 
 const INPUT_TOKEN_FIELD_TYPE = 'tokenType'
 const INPUT_TOKEN_FIELD_TEXT = 'text'

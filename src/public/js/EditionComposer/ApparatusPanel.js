@@ -100,21 +100,21 @@ export class ApparatusPanel extends  PanelWithToolbar {
     let from = this.edition.apparatuses[apparatusIndex].entries[entryIndex].from
     let to = this.edition.apparatuses[apparatusIndex].entries[entryIndex].to
     let currentApparatusEntries = this.edition.apparatuses.map( (app) => {
-      let index = app.findEntryIndex( [0], from, to)
+      let index = app.findEntryIndex(from, to)
       if (index === -1) {
         return []
       }
       return app.entries[index].subEntries
     })
-    let lemma = $(`span.lemma-${apparatusIndex}-${entryIndex}`).text()
+    let entryText = this.edition.apparatuses[apparatusIndex].entries[entryIndex].lemmaText
     let aei = new ApparatusEntryInput({
       apparatuses: this.edition.apparatuses.map( (app, i) => {
         return {  name: app.type, title: capitalizeFirstLetter(app.type), currentEntries: currentApparatusEntries[i]}
       }),
       selectedApparatusIndex: apparatusIndex,
-      entryText: lemma,
-      ctIndexFrom: 100,  // TODO: change this to proper values
-      ctIndexTo: 100,
+      entryText: entryText,
+      ctIndexFrom: CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[from].editionWitnessTokenIndex),  // TODO: change this to proper values
+      ctIndexTo: CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[to].editionWitnessTokenIndex),
       lang: this.lang,
       sigla: this.edition.getSigla()
     })
@@ -122,7 +122,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
       this.verbose && console.log(`Updated apparatus entry `)
       this.verbose && console.log(newEntry)
 
-      this.ctData = ApparatusCommon.updateCtDataWithNewEntry(this.ctData, this.edition, from, to, newEntry, lemma, currentApparatusEntries, this.verbose)
+      this.ctData = ApparatusCommon.updateCtDataWithNewEntry(this.ctData, this.edition, from, to, newEntry, entryText, currentApparatusEntries, this.verbose)
       this.options.onCtDataChange(this.ctData)
 
     })
@@ -278,7 +278,8 @@ export class ApparatusPanel extends  PanelWithToolbar {
         lineHtml = `${textDirectionMarker}${lineSep}<b class="apparatus-line-number">${currentLine}</b>`
         lastLine = currentLine
       }
-      html +=  `${lineHtml} <span class="lemma lemma-${this.options.apparatusIndex}-${aeIndex}">${apparatusEntry.lemma}</span>] `
+      let lemmaString = ApparatusCommon.getLemmaString(apparatusEntry.lemma, apparatusEntry.lemmaText)
+      html +=  `${lineHtml} <span class="lemma lemma-${this.options.apparatusIndex}-${aeIndex}">${lemmaString}</span>] `
       apparatusEntry.subEntries.forEach( (subEntry, subEntryIndex) => {
         let classes = [ 'sub-entry', `sub-entry-${subEntryIndex}`, `sub-entry-type-${subEntry.type}`, `sub-entry-source-${subEntry.source}`]
         if (!subEntry.enabled) {

@@ -40,7 +40,7 @@ const INPUT_TOKEN_FIELD_NORMALIZATION_SOURCE = 'normalizationSource'
 
 // const thinSpace = String.fromCodePoint(0x2009)
 
-
+const enDash = String.fromCodePoint(0x2013)
 
 const latinStyle = {
   strings: {
@@ -431,5 +431,39 @@ export class ApparatusCommon {
 
     return ctData
   }
+
+  /**
+   *
+   * @param {string}lemma
+   * @param {string}lemmaText
+   */
+   static getLemmaString(lemma, lemmaText) {
+    let separator = ''
+    let custom = false
+    switch(lemma) {
+      case '':
+      case 'dash':
+        separator = ` ${enDash} `
+        break
+
+      case 'ellipsis':
+        separator = '...'
+        break
+
+      default:
+        custom = true
+    }
+    if (custom) {
+      return lemma
+    }
+    let lemmaTextWords = lemmaText.split(' ')
+    // if lemmaText is short,
+    if (lemmaTextWords.length <= 3) {
+      return lemmaText
+    }
+
+    return  `${lemmaTextWords[0]}${separator}${lemmaTextWords[lemmaTextWords.length-1]}`
+  }
+
 
 }

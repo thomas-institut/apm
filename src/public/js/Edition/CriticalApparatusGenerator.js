@@ -124,7 +124,7 @@ export class CriticalApparatusGenerator {
           let entry = new ApparatusEntry()
           entry.from = mainTextIndex
           entry.to = mainTextIndex
-          entry.lemma = mainTextIndex !== -1 ? ApparatusCommon.getNormalizedTextFromInputToken(baseWitnessTokens[ctIndex]) : 'pre'
+          entry.lemmaText = mainTextIndex !== -1 ? ApparatusCommon.getNormalizedTextFromInputToken(baseWitnessTokens[ctIndex]) : 'pre'
           entry.subEntries = subEntries
           // other info
           entry.ctGroup = columnGroup
@@ -189,7 +189,7 @@ export class CriticalApparatusGenerator {
         let entry = new ApparatusEntry()
         entry.from = mainTextIndexFrom
         entry.to = mainTextIndexTo
-        entry.lemma = ApparatusCommon.getMainTextForGroup(columnGroup, baseWitnessTokens, false, lang)
+        entry.lemmaText = ApparatusCommon.getMainTextForGroup(columnGroup, baseWitnessTokens, false, lang)
         entry.subEntries = subEntries
         // other info
         entry.ctGroup = columnGroup

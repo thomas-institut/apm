@@ -32,7 +32,7 @@ import * as SubEntryType from '../Edition/SubEntryType'
 
 const doubleVerticalLine = String.fromCodePoint(0x2016)
 const verticalLine = String.fromCodePoint(0x007c)
-const enDash = String.fromCodePoint(0x2013)
+
 
 
 export class EditionViewerSvg {
@@ -353,7 +353,7 @@ export class EditionViewerSvg {
         lineTtTokens.push(TypesetterTokenFactory.normalSpace())
       }
       pushArray(ttTokens, lineTtTokens)
-      ttTokens.push(TypesetterTokenFactory.simpleText(this._getLemmaString(apparatusEntry.lemma) + ']').setLang(this.edition.lang))
+      ttTokens.push(TypesetterTokenFactory.simpleText(ApparatusCommon.getLemmaString(apparatusEntry.lemma, apparatusEntry.lemmaText) + ']').setLang(this.edition.lang))
       ttTokens.push(TypesetterTokenFactory.normalSpace())
       enabledSubEntries.forEach( (subEntry) => {
         let theText = subEntry.type === SubEntryType.OMISSION ? [] : subEntry.fmtText
@@ -390,18 +390,6 @@ export class EditionViewerSvg {
     return ttTokens
   }
 
-  /**
-   *
-   * @param lemma
-   * @private
-   */
-  _getLemmaString(lemma) {
-    let words = lemma.split(' ')
-    if (words.length < 4) {
-      return lemma
-    }
-    return  `${words[0]} ${enDash} ${words[words.length-1]}`
-  }
 
   /**
    *

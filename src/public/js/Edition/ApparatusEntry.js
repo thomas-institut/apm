@@ -5,6 +5,7 @@ export class ApparatusEntry {
     this.from = -1
     this.to = -1
     this.lemma = ''
+    this.lemmaText = ''
     this.subEntries = []
   }
 

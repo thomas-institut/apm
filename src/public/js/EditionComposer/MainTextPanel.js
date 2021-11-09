@@ -364,22 +364,23 @@ export class MainTextPanel extends PanelWithToolbar {
         }
         return app.entries[index].subEntries
       })
-      let lemma = this._getLemmaFromSelection()
-
+      let entryText = this._getLemmaFromSelection()
+      let from = this.selection.from
+      let to = this.selection.to
       let aei = new ApparatusEntryInput({
         apparatuses: this.edition.apparatuses.map( (app, i) => {
           return {  name: app.type, title: capitalizeFirstLetter(app.type), currentEntries: currentApparatusEntries[i]}
         }),
-        entryText: lemma,
-        ctIndexFrom: 100,  // TODO: change this to proper values
-        ctIndexTo: 120,
+        entryText: entryText,
+        ctIndexFrom: CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[from].editionWitnessTokenIndex),  // TODO: change this to proper values
+        ctIndexTo: CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[to].editionWitnessTokenIndex),
         lang: this.lang,
         sigla: this.edition.getSigla()
       })
       aei.getEntry().then( (newEntry) => {
         this.verbose && console.log(`Updated apparatus entry `)
         this.verbose && console.log(newEntry)
-        this.ctData = ApparatusCommon.updateCtDataWithNewEntry(this.ctData, this.edition, this.selection.from, this.selection.to, newEntry, lemma, currentApparatusEntries, this.verbose)
+        this.ctData = ApparatusCommon.updateCtDataWithNewEntry(this.ctData, this.edition, this.selection.from, this.selection.to, newEntry, entryText, currentApparatusEntries, this.verbose)
         this.options.onCtDataChange(this.ctData)
       })
         .catch( (reason) => {

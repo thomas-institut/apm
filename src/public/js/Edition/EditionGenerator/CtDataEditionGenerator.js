@@ -112,7 +112,7 @@ export class CtDataEditionGenerator extends EditionGenerator{
       // console.log(customEntry)
       if (ctIndexToMainTextMap[customEntry.from] === undefined) {
         // this is an entry to an empty token in the main text
-        console.warn(`Custom apparatus criticus entry for an empty token, from ${customEntry.from} to ${customEntry.to}, lemma: '${customEntry.lemma}'`)
+        console.warn(`Custom apparatus criticus entry for an empty token, from ${customEntry.from} to ${customEntry.to}, lemmaText: '${customEntry.lemmaText}'`)
         console.log('ctIndexToMainTextMap')
         console.log(ctIndexToMainTextMap)
         return
@@ -144,14 +144,10 @@ export class CtDataEditionGenerator extends EditionGenerator{
           let newEntry = new ApparatusEntry()
           newEntry.from = mainTextFrom
           newEntry.to = mainTextTo
-          // TODO: is it here where auto lemmata should be built?
-          if (customEntry['lemma'] !== '') {
-            newEntry.lemma = customEntry['lemma']
-          } else {
-            // generate automatically
-            newEntry.lemma = ApparatusCommon.getMainTextForGroup({ from: customEntry['from'], to: customEntry['to'] },
+          newEntry.lemma = customEntry['lemma']
+          newEntry.lemmaText = ApparatusCommon.getMainTextForGroup({ from: customEntry['from'], to: customEntry['to'] },
               baseWitnessTokens, false, this.ctData['lang'])
-          }
+
           newEntry.subEntries = this._buildSubEntryArrayFromCustomSubEntries(realCustomSubEntries)
           generatedApparatusCriticus.entries.push(newEntry)
         }
@@ -220,12 +216,9 @@ export class CtDataEditionGenerator extends EditionGenerator{
       theApparatus.type = apparatus['type']
       theApparatus.entries = apparatus['entries'].map ( (customEntry) => {
         let theEntry = new ApparatusEntry()
-        if (customEntry['lemma'] !== '') {
-          theEntry.lemma = customEntry['lemma']
-        } else {
-          theEntry.lemma = ApparatusCommon.getMainTextForGroup({ from: customEntry['from'], to: customEntry['to'] },
+        theEntry.lemma = customEntry['lemma']
+       theEntry.lemmaText = ApparatusCommon.getMainTextForGroup({ from: customEntry['from'], to: customEntry['to'] },
             baseWitnessTokens, false, this.ctData['lang'])
-        }
 
         theEntry.from = ctIndexToMainTextMap[customEntry['from']]
         theEntry.to = ctIndexToMainTextMap[customEntry['to']]

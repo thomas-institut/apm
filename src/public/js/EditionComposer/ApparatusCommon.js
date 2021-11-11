@@ -45,7 +45,9 @@ const enDash = String.fromCodePoint(0x2013)
 const latinStyle = {
   strings: {
     omission: 'om.',
-    addition: 'add.'
+    addition: 'add.',
+    ante: 'ante',
+    post: 'post'
   }
 }
 
@@ -53,7 +55,9 @@ const arabicStyle = {
   smallFontFactor: 0.8,
   strings : {
     omission: 'نقص',
-    addition: 'ز'
+    addition: 'ز',
+    ante: 'قبل',
+    post: 'بعد'
   }
 }
 
@@ -61,7 +65,9 @@ const hebrewStyle = {
   smallFontFactor: 0.8,
   strings : {
     omission: 'חסר',
-    addition: 'נוסף'
+    addition: 'נוסף',
+    ante: 'לפני',
+    post: 'אחרי'
   }
 }
 
@@ -123,6 +129,58 @@ export class ApparatusCommon {
     }
   }
 
+  static getKeywordString(keyword, lang) {
+    let stringsObject = {}
+    switch(lang) {
+      case 'la':
+        stringsObject = latinStyle.strings
+        break
+
+      case 'ar':
+        stringsObject = arabicStyle.strings
+        break
+
+      case 'he':
+        stringsObject = hebrewStyle.strings
+        break
+    }
+
+    if (stringsObject[keyword] !== undefined) {
+      return stringsObject[keyword]
+    }
+    return keyword
+  }
+
+  static getKeywordTypesetterToken(keyword, lang) {
+    let keywordString = this.getKeywordString(keyword, lang)
+    let token = TypesetterTokenFactory.simpleText(keywordString)
+    switch(lang) {
+      case 'he':
+        token.setFontSize(hebrewStyle.smallFontFactor)
+        break
+
+      case 'ar':
+        token.setFontSize(arabicStyle.smallFontFactor)
+        break
+
+      default:
+        token.setItalic()
+    }
+    return token
+  }
+
+  static getKeywordHtml(keyword, lang) {
+    let keywordString = this.getKeywordString(keyword, lang)
+    switch(lang) {
+      case 'ar':
+      case 'he':
+        return `<small>${keywordString}</small>`
+
+      default:
+        return `<i>${keywordString}</i>`
+    }
+  }
+
   static genSubEntryHtmlContentHebrew(subEntry, sigla) {
     let entryType = subEntry.type
     let theText = (new HtmlRenderer({plainMode: true})).render(subEntry.fmtText)
@@ -132,10 +190,10 @@ export class ApparatusCommon {
         return `${theText} <b>${siglaString}</b>`
 
       case ApparatusSubEntryType.OMISSION:
-        return `<small>${hebrewStyle.strings.omission}</small> <b>${siglaString}</b>`
+        return `${this.getKeywordHtml('omission', 'he')} <b>${siglaString}</b>`
 
       case ApparatusSubEntryType.ADDITION:
-        return `<small>${hebrewStyle.strings.addition}</small> ${theText} <b>${siglaString}</b>`
+        return `${this.getKeywordHtml('addition', 'he')} ${theText} <b>${siglaString}</b>`
 
       case ApparatusSubEntryType.CUSTOM:
         return theText
@@ -356,23 +414,22 @@ export class ApparatusCommon {
    *
    * @param {object}ctData
    * @param {Edition}edition
-   * @param {number} from
-   * @param {number} to
-   * @param newEntry
+   * @param {number} mainTextFromTokenIndex
+   * @param {number} mainTextToTokenIndex
+   * @param {object}newEntry
    * @param {string}lemma
    * @param {array}currentApparatusEntries
    * @param {boolean}verbose
    */
-  static updateCtDataWithNewEntry(ctData, edition, from, to, newEntry, lemma, currentApparatusEntries, verbose = false) {
+  static updateCtDataWithNewEntry(ctData, edition, mainTextFromTokenIndex, mainTextToTokenIndex, newEntry, lemma, currentApparatusEntries, verbose = false) {
     verbose && console.log(`Updated apparatus entry `)
-    // this.verbose && console.log(this.selection)
     verbose && console.log(newEntry)
 
-    let fromToken =edition.getMainTextToken( from)
-    let toToken = edition.getMainTextToken( to)
+    let fromMainTextToken = edition.getMainTextToken(mainTextFromTokenIndex)
+    let toMainTextToken = edition.getMainTextToken(mainTextToTokenIndex)
 
-    let ctFromTokenIndex = CtData.getCtIndexForEditionWitnessTokenIndex(ctData, fromToken.editionWitnessTokenIndex)
-    let ctToTokenIndex = CtData.getCtIndexForEditionWitnessTokenIndex(ctData, toToken.editionWitnessTokenIndex)
+    let ctFromTokenIndex = CtData.getCtIndexForEditionWitnessTokenIndex(ctData, fromMainTextToken.editionWitnessTokenIndex)
+    let ctToTokenIndex = CtData.getCtIndexForEditionWitnessTokenIndex(ctData, toMainTextToken.editionWitnessTokenIndex)
 
     verbose && console.log(`CT range: ${ctFromTokenIndex} - ${ctToTokenIndex}`)
     if (newEntry.isNew) {

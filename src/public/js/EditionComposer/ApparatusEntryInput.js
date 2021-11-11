@@ -29,6 +29,7 @@ import { varsAreEqual } from '../toolbox/ArrayUtil'
 import { FmtTextFactory} from '../FmtText/FmtTextFactory'
 import { MultiToggle } from '../widgets/MultiToggle'
 import { deepCopy } from '../toolbox/Util.mjs'
+import { FmtText } from '../FmtText/FmtText'
 
 // TODO: support adding/editing multiple custom entries
 
@@ -66,12 +67,21 @@ export class ApparatusEntryInput {
       newApp.customEntry = FmtTextFactory.fromString('')
       newApp.newCustomEntry = true
       if (customEntries.length !== 0) {
+        // support only one custom entry for the moment
         newApp.customEntry = customEntries[0].fmtText
         newApp.newCustomEntry = false
       }
       // Faking pre, post, lemma and separator for now
       // TODO: make this for real
-      newApp.preLemma = newApp.preLemma === '' ? 'auto' : newApp.preLemma
+      if (typeof newApp.preLemma === 'string') {
+        newApp.preLemmaToggleMode = newApp.preLemma === '' ? 'auto' : newApp.preLemma
+        newApp.customPreLemma = ''
+      } else {
+        newApp.preLemmaToggleMode = 'custom'
+        // Note that we are not supporting formatted text in preLemma
+        newApp.customPreLemma = FmtText.getPlainText(newApp.preLemma)
+      }
+
       newApp.lemma = 'auto'
       newApp.postLemma = 'auto'
       newApp.separator = 'auto'
@@ -116,12 +126,14 @@ export class ApparatusEntryInput {
     })
 
     $('#pre-lemma-div').append('<div id="pre-lemma-custom-text-entry-div">Custom text here</div>')
+
     this.preLemmaToggle.on('toggle', (ev) => {
       let selectedAppIndex = this.apparatusSelect.val() * 1
-      let newOption = ev.detail.currentOption
-      this.apparatuses[selectedAppIndex].preLemma = newOption
-      console.log(`Setting pre lemma for apparatus ${selectedAppIndex} to '${newOption}'`)
-      this._showPreLemmaInDialog(newOption)
+      let newMode = ev.detail.currentOption
+      this.apparatuses[selectedAppIndex].preLemmaToggleMode = newMode
+      console.log(`Setting pre lemma toggle mode for apparatus ${selectedAppIndex} to '${newMode}'`)
+      this._showPreLemmaToggleModeInDialog(newMode)
+      this._updateAcceptButton()
     })
 
     this.apparatusSelect = $('#apparatus-select')
@@ -148,7 +160,7 @@ export class ApparatusEntryInput {
    * @param {string}option
    * @private
    */
-  _showPreLemmaInDialog(option) {
+  _showPreLemmaToggleModeInDialog(option) {
     this.preLemmaToggle.setOptionByName(option, false)
     if (option === 'custom') {
       $('#pre-lemma-custom-text-entry-div').removeClass('hidden')
@@ -157,30 +169,46 @@ export class ApparatusEntryInput {
     }
   }
 
+  _getPreLemmaFromDialog() {
+    switch(this.preLemmaToggle.getOption()) {
+      case 'auto':
+        return ''
+
+      case 'custom':
+        return FmtTextFactory.fromString('fakeCustom')
+
+      case 'ante':
+      case 'post':
+        return this.preLemmaToggle.getOption()
+    }
+  }
+
 
 
   _updateAcceptButton() {
     let selectedAppIndex = this.apparatusSelect.val() * 1
-    let changeInCheckboxes = false
 
+    let changes = []
     this.apparatuses[selectedAppIndex].currentEntries.forEach( (se, sei) => {
       if ($(`#aei-sub-entry-${selectedAppIndex}-${sei}`).prop('checked') !== se.enabled) {
-        // console.log(`Change in checkboxes: apparatus ${selectedAppIndex} : entry ${sei}`)
-        changeInCheckboxes = true
+        changes.push(`Change in checkboxes`)
       }
     })
 
     let textInEditor = this.freeTextEditor.getFmtText()
-    if (varsAreEqual(textInEditor,this.apparatuses[selectedAppIndex].customEntry) && !changeInCheckboxes) {
-      // console.log(`Hiding accept button`)
-      this.dialog.hideAcceptButton()
-    } else {
-      // console.log(`Showing accept button`)
-      // console.log(`Text in editor`)
-      // console.log(textInEditor)
-      // console.log(`Current custom entry`)
-      console.log(this.apparatuses[selectedAppIndex].customEntry)
+    if (!varsAreEqual(textInEditor,this.apparatuses[selectedAppIndex].customEntry)) {
+      changes.push(`Change in custom entry`)
+    }
+
+    if (!varsAreEqual(this.apparatuses[selectedAppIndex].preLemma, this._getPreLemmaFromDialog())) {
+      changes.push(`Change in preLemma`)
+    }
+    if (changes.length !== 0) {
+      console.log(`Changes in entry`)
+      console.log(changes)
       this.dialog.showAcceptButton()
+    } else {
+      this.dialog.hideAcceptButton()
     }
   }
 
@@ -200,7 +228,7 @@ export class ApparatusEntryInput {
       }
     })
     this.freeTextEditor.setText(this.apparatuses[appIndex].customEntry)
-    this._showPreLemmaInDialog(this.apparatuses[appIndex].preLemma)
+    this._showPreLemmaToggleModeInDialog(this.apparatuses[appIndex].preLemmaToggleMode)
   }
 
   /**
@@ -244,12 +272,12 @@ export class ApparatusEntryInput {
         let currentApparatus = this.apparatuses[this.apparatusSelect.val()]
         resolve({
           apparatus: currentApparatus.name,
-          apparatusIndex: apparatusIndex,
+          apparatusIndex: apparatusIndex * 1,
           text: this.freeTextEditor.getFmtText(),
           isNew: currentApparatus.newCustomEntry,
           changesInEnabledEntries: changesInCheckboxes,
           enabledEntriesArray: enabledArray,
-          preLemma: currentApparatus.preLemma === 'auto' ? '' : currentApparatus.preLemma
+          preLemma: this._getPreLemmaFromDialog()
           })
       })
       this.dialog.show()

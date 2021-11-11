@@ -353,6 +353,25 @@ export class EditionViewerSvg {
         lineTtTokens.push(TypesetterTokenFactory.normalSpace())
       }
       pushArray(ttTokens, lineTtTokens)
+      // build lemma section
+      let preLemmaTokens = []
+      switch(apparatusEntry.preLemma) {
+        case '':
+          // don't do anything
+          break
+
+        case 'ante':
+        case 'post':
+          preLemmaTokens = [ ApparatusCommon.getKeywordTypesetterToken(apparatusEntry.preLemma, this.edition.lang)]
+          break
+
+        default:
+          preLemmaTokens = apparatusEntry.preLemma
+      }
+      pushArray(ttTokens, preLemmaTokens)
+      if (preLemmaTokens.length !== 0) {
+        ttTokens.push(TypesetterTokenFactory.normalSpace())
+      }
       ttTokens.push(TypesetterTokenFactory.simpleText(ApparatusCommon.getLemmaString(apparatusEntry.lemma, apparatusEntry.lemmaText) + ']').setLang(this.edition.lang))
       ttTokens.push(TypesetterTokenFactory.normalSpace())
       enabledSubEntries.forEach( (subEntry) => {

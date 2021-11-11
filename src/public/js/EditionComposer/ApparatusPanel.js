@@ -26,6 +26,7 @@ import { ApparatusEntryInput, userCancelledReason } from './ApparatusEntryInput'
 import { capitalizeFirstLetter } from '../toolbox/Util.mjs'
 import { CtData } from '../CtData/CtData'
 import { onClickAndDoubleClick } from '../toolbox/DoubleClick'
+import { FmtText } from '../FmtText/FmtText'
 
 const doubleVerticalLine = String.fromCodePoint(0x2016)
 const verticalLine = String.fromCodePoint(0x007c)
@@ -99,21 +100,26 @@ export class ApparatusPanel extends  PanelWithToolbar {
     console.log(`Editing entry: apparatus ${apparatusIndex}, entry ${entryIndex}`)
     let from = this.edition.apparatuses[apparatusIndex].entries[entryIndex].from
     let to = this.edition.apparatuses[apparatusIndex].entries[entryIndex].to
-    let currentApparatusEntries = this.edition.apparatuses.map( (app) => {
-      let index = app.findEntryIndex(from, to)
-      if (index === -1) {
-        return []
+
+    let currentApparatuses = this.edition.apparatuses.map( (app, i) => {
+      let index = app.findEntryIndex( from, to)
+      return {
+        name: app.type,
+        title: capitalizeFirstLetter(app.type),
+        entryIndex: index,
+        preLemma: index === -1 ? '' : app.entries[index].preLemma,
+        lemma: index === -1 ? '' : app.entries[index].lemma,
+        postLemma: index === -1 ? '' : app.entries[index].postLemma,
+        separator: index === -1 ? '' : app.entries[index].separator,
+        currentEntries: index === -1 ? [] : app.entries[index].subEntries
       }
-      return app.entries[index].subEntries
     })
     let entryText = this.edition.apparatuses[apparatusIndex].entries[entryIndex].lemmaText
     let aei = new ApparatusEntryInput({
-      apparatuses: this.edition.apparatuses.map( (app, i) => {
-        return {  name: app.type, title: capitalizeFirstLetter(app.type), currentEntries: currentApparatusEntries[i]}
-      }),
+      apparatuses: currentApparatuses,
       selectedApparatusIndex: apparatusIndex,
       entryText: entryText,
-      ctIndexFrom: CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[from].editionWitnessTokenIndex),  // TODO: change this to proper values
+      ctIndexFrom: CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[from].editionWitnessTokenIndex),
       ctIndexTo: CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[to].editionWitnessTokenIndex),
       lang: this.lang,
       sigla: this.edition.getSigla()
@@ -121,8 +127,8 @@ export class ApparatusPanel extends  PanelWithToolbar {
     aei.getEntry().then( (newEntry) => {
       this.verbose && console.log(`Updated apparatus entry `)
       this.verbose && console.log(newEntry)
-
-      this.ctData = ApparatusCommon.updateCtDataWithNewEntry(this.ctData, this.edition, from, to, newEntry, entryText, currentApparatusEntries, this.verbose)
+      let currentApparatusEntries = this
+      this.ctData = ApparatusCommon.updateCtDataWithNewEntry(this.ctData, this.edition, from, to, newEntry, entryText, currentApparatuses[newEntry.apparatusIndex].currentEntries, this.verbose)
       this.options.onCtDataChange(this.ctData)
 
     })
@@ -278,8 +284,25 @@ export class ApparatusPanel extends  PanelWithToolbar {
         lineHtml = `${textDirectionMarker}${lineSep}<b class="apparatus-line-number">${currentLine}</b>`
         lastLine = currentLine
       }
+      // build lemma section
+      let preLemmaSpanHtml = ''
+      switch(apparatusEntry.preLemma) {
+        case '':
+           // do nothing
+          break
+
+        case 'ante':
+        case 'post':
+          preLemmaSpanHtml = ApparatusCommon.getKeywordHtml(apparatusEntry.preLemma, this.edition.lang)
+          break
+
+        default:
+          preLemmaSpanHtml = ApparatusCommon.getKeywordHtml(FmtText.getPlainText(apparatusEntry.preLemma))
+      }
+      let preLemmaSpan = preLemmaSpanHtml === '' ? '' : `<span class="pre-lemma">${preLemmaSpanHtml}</span> `
+
       let lemmaString = ApparatusCommon.getLemmaString(apparatusEntry.lemma, apparatusEntry.lemmaText)
-      html +=  `${lineHtml} <span class="lemma lemma-${this.options.apparatusIndex}-${aeIndex}">${lemmaString}</span>] `
+      html +=  `${lineHtml} ${preLemmaSpan}<span class="lemma lemma-${this.options.apparatusIndex}-${aeIndex}">${lemmaString}</span>] `
       apparatusEntry.subEntries.forEach( (subEntry, subEntryIndex) => {
         let classes = [ 'sub-entry', `sub-entry-${subEntryIndex}`, `sub-entry-type-${subEntry.type}`, `sub-entry-source-${subEntry.source}`]
         if (!subEntry.enabled) {

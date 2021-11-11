@@ -357,22 +357,26 @@ export class MainTextPanel extends PanelWithToolbar {
         return
       }
       this.verbose && console.log(`Click on add entry button`)
-      let currentApparatusEntries = this.edition.apparatuses.map( (app) => {
+      let currentApparatuses = this.edition.apparatuses.map( (app, i) => {
         let index = app.findEntryIndex( this.selection.from, this.selection.to)
-        if (index === -1) {
-          return []
+        return {
+          name: app.type,
+          title: capitalizeFirstLetter(app.type),
+          entryIndex: index,
+          preLemma: index === -1 ? '' : app.entries[index].preLemma,
+          lemma: index === -1 ? '' : app.entries[index].lemma,
+          postLemma: index === -1 ? '' : app.entries[index].postLemma,
+          separator: index === -1 ? '' : app.entries[index].separator,
+          currentEntries: index === -1 ? [] : app.entries[index].subEntries
         }
-        return app.entries[index].subEntries
       })
       let entryText = this._getLemmaFromSelection()
       let from = this.selection.from
       let to = this.selection.to
       let aei = new ApparatusEntryInput({
-        apparatuses: this.edition.apparatuses.map( (app, i) => {
-          return {  name: app.type, title: capitalizeFirstLetter(app.type), currentEntries: currentApparatusEntries[i]}
-        }),
+        apparatuses: currentApparatuses,
         entryText: entryText,
-        ctIndexFrom: CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[from].editionWitnessTokenIndex),  // TODO: change this to proper values
+        ctIndexFrom: CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[from].editionWitnessTokenIndex),
         ctIndexTo: CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[to].editionWitnessTokenIndex),
         lang: this.lang,
         sigla: this.edition.getSigla()

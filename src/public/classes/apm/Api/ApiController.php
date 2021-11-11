@@ -67,6 +67,8 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
     protected $profiler;
     
     // Error codes
+    const API_ERROR_RUNTIME_ERROR = 1;
+
     const API_ERROR_NO_DATA = 1000;
     const API_ERROR_NO_ELEMENT_ARRAY = 1001;
     const API_ERROR_NO_EDNOTES = 1002;

@@ -414,7 +414,15 @@ class ApiCollation extends ApiController
             $versionInfo->collationTableId = $collationTableId;
 
             // save
-            $ctManager->saveCollationTable($collationTableId, $collationTableData, $versionInfo);
+            try {
+                $ctManager->saveCollationTable($collationTableId, $collationTableData, $versionInfo);
+            } catch (Exception $e) {
+                // Error saving table
+                $errorCode = $e->getCode();
+                $msg = "Server runtime error saving edition/collation table $collationTableId (error code $errorCode)";
+                $this->logger->error($msg, [ 'exceptionError' => $e->getCode(), 'exceptionMsg' => $e->getMessage(), 'tableId' => $collationTableId]);
+                return $this->responseWithJson($response, ['error' => self::API_ERROR_RUNTIME_ERROR, 'msg' => $msg], 409);
+            }
             $responseData = [
                 'status' => 'OK',
                 'tableId' => $collationTableId,

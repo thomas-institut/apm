@@ -34,6 +34,9 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager imple
 
     use LoggerAwareTrait;
     use SimpleSqlQueryCounterTrackerAware;
+
+    const MAX_DESCRIPTION_LENGTH = 2000;
+
     /**
      * @var DataTable
      */
@@ -86,6 +89,10 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager imple
         if ($versionInfo->timeFrom === TimeString::TIME_ZERO) {
             throw new InvalidArgumentException("Time from cannot be zero in new version info");
         }
+
+        // make sure the description is not longer than what the database can hold
+        // Error reported by Oded, 10 Nov 2021
+        $versionInfo->description = $this->getProperLengthVersionDescription($versionInfo->description);
 
         $currentVersions = $this->getCollationTableVersionInfo($collationTableId);
 
@@ -150,5 +157,12 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager imple
 
          return $ids;
 
+    }
+
+    private function getProperLengthVersionDescription(string $description) : string {
+        if (strlen($description) > self::MAX_DESCRIPTION_LENGTH) {
+            return substr($description, 0, self::MAX_DESCRIPTION_LENGTH - 5) . ' ...';
+        }
+        return $description;
     }
 }

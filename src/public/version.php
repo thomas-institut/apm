@@ -28,14 +28,15 @@ global $config;
 $config[ApmConfigParameter::APP_NAME] = 'APM';
 // Version 0.42.10, named after Oded, who discovered the first reproducible bug after EditionComposer's bug detector
 // was implemented
-$config[ApmConfigParameter::VERSION] = '0.42.10 a.k.a. Oded Horezky (2021-Nov-05)';
+// Version 0.42.11 still named after Oded, since he also found the bug that caused the update!
+$config[ApmConfigParameter::VERSION] = '0.42.11 a.k.a. Oded Horezky v2 (2021-Nov-11)';
 
 
 $config[ApmConfigParameter::COPYRIGHT_NOTICE] = <<<EOD
         2016-21, 
-        <a href="http://www.thomasinstitut.uni-koeln.de/">
+        <a href="https://www.thomasinstitut.uni-koeln.de/">
             Thomas-Institut</a>, 
-        <a href="http://www.uni-koeln.de/">
+        <a href="https://www.uni-koeln.de/">
             Universität zu Köln
         </a>
 EOD;

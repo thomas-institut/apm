@@ -251,6 +251,7 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
     public function getCollationTableType(int $id, string $timeStamp = ''): string
     {
         // TODO: Implement getCollationTableType() method.
+        return '';
     }
 
 

@@ -22,11 +22,10 @@ import { ApparatusCommon } from './ApparatusCommon'
 import { PanelWithToolbar } from './PanelWithToolbar'
 import { getIntArrayIdFromClasses } from '../toolbox/UserInterfaceUtil'
 import { doNothing } from '../toolbox/FunctionUtil'
-import { ApparatusEntryInput, userCancelledReason } from './ApparatusEntryInput'
-import { capitalizeFirstLetter } from '../toolbox/Util.mjs'
 import { CtData } from '../CtData/CtData'
 import { onClickAndDoubleClick } from '../toolbox/DoubleClick'
 import { FmtText } from '../FmtText/FmtText'
+import { EditionFreeTextEditor } from './EditionFreeTextEditor'
 
 const doubleVerticalLine = String.fromCodePoint(0x2016)
 const verticalLine = String.fromCodePoint(0x007c)
@@ -64,7 +63,8 @@ export class ApparatusPanel extends  PanelWithToolbar {
     this.apparatus = this.edition.apparatuses[this.options.apparatusIndex]
     this.lang = this.edition.getLang()
     this.cachedHtml = 'Apparatus coming soon...'
-    this.currentSelectedLemma = []
+    this.currentSelectedEntryIndex = -1
+    this._hideApparatusEntryForm()
   }
 
   updateData(ctData, edition) {
@@ -72,92 +72,218 @@ export class ApparatusPanel extends  PanelWithToolbar {
     this.edition = edition
     this.apparatus = this.edition.apparatuses[this.options.apparatusIndex]
     this.lang = this.edition.getLang()
-    if (this.visible) {
+  }
 
+  _loadEntryIntoEntryForm(entryIndex, from = -1, to = -1) {
+    let apparatusIndex = this.options.apparatusIndex
+    let formSelector = this.getApparatusEntryFromDivSelector()
+    console.log(`Editing entry: apparatus ${apparatusIndex}, entry ${entryIndex}`)
+    if (entryIndex !== -1) {
+      from = this.edition.apparatuses[apparatusIndex].entries[entryIndex].from
+      to = this.edition.apparatuses[apparatusIndex].entries[entryIndex].to
     }
+    let ctIndexFrom = CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[from].editionWitnessTokenIndex)
+    let ctIndexTo = CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[to].editionWitnessTokenIndex)
+    $(`${formSelector} .ct-table-cols`).html(this._getCtColumnsText(ctIndexFrom, ctIndexTo))
+    let sigla = this.edition.witnesses.map ( (w) => {return w.siglum})
+
+    let currentEntry = entryIndex !== -1 ? this.edition.apparatuses[apparatusIndex].entries[entryIndex] :
+      {
+        preLemma: '',
+        lemma: '',
+        postLemma: '',
+        separator: '',
+        currentEntries: [],
+        lemmaText: 'TBD'
+      }
+
+    console.log(currentEntry)
+    $(`${formSelector} div.entry-text`).html(currentEntry.lemmaText)
+    let autoEntriesHtml = currentEntry.subEntries.filter( (subEntry) => { return subEntry.source === 'auto'}).map( (subEntry, sei) => {
+      let checkedString = subEntry.enabled ? 'checked' : ''
+      return `<div class="form-check sub-entry-app-${apparatusIndex}">
+                <input class="form-check-input text-${this.edition.lang} aei-sub-entry-${apparatusIndex}-${sei}" type="checkbox" value="entry-${apparatusIndex}-${sei}" ${checkedString}>
+                <label class="form-check-label" for="aei-subentry-${apparatusIndex}-${sei}"> 
+                        ${ApparatusCommon.genSubEntryHtmlContent(this.edition.lang, subEntry, sigla )}
+                 </label>
+                </div>`
+    }).join('')
+    $(`${formSelector} div.auto-entries`).html(autoEntriesHtml)
+  }
+
+  _getCtColumnsText(ctFrom, ctTo) {
+    if (ctFrom === ctTo) {
+      return`${ctFrom+1}`
+    }
+    return `${ctFrom+1}&ndash;${ctTo+1}`
   }
 
   generateContentHtml (tabId, mode, visible) {
-    return this.cachedHtml
+    return `<div class="aei-form">${this._generateApparatusEntryFormHtml()}</div>
+<div class="apparatus text-${this.lang}">${this.cachedHtml}</div>`
+  }
+
+  /**
+   *
+   * @private
+   */
+  _generateApparatusEntryFormHtml() {
+    return `<div class="form-header">
+                <h5 class="form-title">Apparatus Entry</h5>
+            </div>
+            <div class="form-body">
+                <form>
+                <div class="entry-header">
+                    <div class="form-group row">
+                        <div class="col-sm-3">Edition Text:</div>
+                        <div class="col-sm-9 entry-text text-${this.options.lang}">
+                            some text  
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-sm-3">Collation Table:</div>
+                        <div class="col-sm-9 ct-table-cols"></div>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label for="pre-lemma-div" class="col-sm-3 col-form-label">Pre Lemma:</label>
+                    <div class="col-sm-9 aei-multitoggle-div pre-lemma-div"> </div>
+                </div>
+                <div class="form-group row">
+                    <label for="lemma-div" class="col-sm-3 col-form-label">Lemma:</label>
+                    <div class="col-sm-9 lemma-div">auto | force-dash | ellipsis | custom</div>
+                </div>
+                <div class="form-group row">
+                    <label for="post-lemma-div" class="col-sm-3 col-form-label">Post Lemma:</label>
+                    <div class="col-sm-9 post-lemma-div">auto | custom </div>
+                </div>
+                <div class="form-group row">
+                     <label for="separator-div" class="col-sm-3 col-form-label">Separator:</label>
+                      <div class="col-sm-9 separator-div">auto | off | custom</div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-3 col-form-label">Automatic Entries:</label>
+                    <div class="col-sm-9 auto-entries text-${this.edition.lang}"></div>
+                </div>
+                <div class="form-group row">
+                    <label for="free-text-entry" class="col-sm-3 col-form-label">Custom Entry:</label>
+                    <div class="col-sm-7">
+                        <div class="free-text-entry-div"></div>
+                    </div>
+                </div>
+                </form>
+            </div>
+            <div class="form-footer">
+                <button type="button" class="btn btn-sm btn-danger update-btn">Update Apparatus</button>
+                <button type="button" class="btn btn-sm btn-primary cancel-btn">Cancel</button>
+            </div>`
   }
 
   getContentAreaClasses () {
-    return super.getContentAreaClasses().concat( ['apparatus', `text-${this.lang}`])
+    return super.getContentAreaClasses()
+  }
+
+  getApparatusDivSelector() {
+    return `${this.containerSelector} div.apparatus`
+  }
+
+  getApparatusEntryFromDivSelector() {
+    return  `${this.containerSelector} div.aei-form`
   }
 
   postRender (id, mode, visible) {
     super.postRender(id, mode, visible)
     this._getEditEntryButtonElement().on('click', this._genOnClickEditEntryButton())
-    $(this.containerSelector).on('click', this._genOnClickClearSelectionButton())
+    $(this.getContainerSelector()).on('click', this._genOnClickPanelContainer())
+    if (this.apparatusEntryFormIsVisible) {
+      this._showApparatusEntryForm()
+    } else {
+      this._hideApparatusEntryForm()
+    }
+    this._setupApparatusEntryForm()
+  }
+
+  _setupApparatusEntryForm() {
+    let formSelector = this.getApparatusEntryFromDivSelector()
+    $(`${formSelector} .cancel-btn`).on('click', this._genOnClickApparatusEntryCancelButton())
+    // Init free text editor
+    this.freeTextEditor = new EditionFreeTextEditor({
+      containerSelector: `${formSelector} div.free-text-entry-div`,
+      lang: this.edition.lang,
+     // onChange: () =>  { this._updateAcceptButton() },
+      debug: false
+    })
+  }
+
+  _genOnClickApparatusEntryCancelButton() {
+    return (ev) => {
+      ev.preventDefault()
+      ev.stopPropagation()
+      this._hideApparatusEntryForm()
+    }
   }
 
   _editSelectedEntry() {
-    if (this.currentSelectedLemma.length === 0) {
+    // if (this.currentSelectedLemma.length === 0) {
+    //   return
+    // }
+    if (this.currentSelectedEntryIndex === -1) {
       return
     }
-    let apparatusIndex = this.currentSelectedLemma[0]
-    let entryIndex = this.currentSelectedLemma[1]
-    console.log(`Editing entry: apparatus ${apparatusIndex}, entry ${entryIndex}`)
-    let from = this.edition.apparatuses[apparatusIndex].entries[entryIndex].from
-    let to = this.edition.apparatuses[apparatusIndex].entries[entryIndex].to
 
-    let currentApparatuses = this.edition.apparatuses.map( (app, i) => {
-      let index = app.findEntryIndex( from, to)
-      return {
-        name: app.type,
-        title: capitalizeFirstLetter(app.type),
-        entryIndex: index,
-        preLemma: index === -1 ? '' : app.entries[index].preLemma,
-        lemma: index === -1 ? '' : app.entries[index].lemma,
-        postLemma: index === -1 ? '' : app.entries[index].postLemma,
-        separator: index === -1 ? '' : app.entries[index].separator,
-        currentEntries: index === -1 ? [] : app.entries[index].subEntries
-      }
-    })
-    let entryText = this.edition.apparatuses[apparatusIndex].entries[entryIndex].lemmaText
-    let aei = new ApparatusEntryInput({
-      apparatuses: currentApparatuses,
-      selectedApparatusIndex: apparatusIndex,
-      entryText: entryText,
-      ctIndexFrom: CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[from].editionWitnessTokenIndex),
-      ctIndexTo: CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[to].editionWitnessTokenIndex),
-      lang: this.lang,
-      sigla: this.edition.getSigla()
-    })
-    aei.getEntry().then( (newEntry) => {
-      this.verbose && console.log(`Updated apparatus entry `)
-      this.verbose && console.log(newEntry)
-      let currentApparatusEntries = this
-      this.ctData = ApparatusCommon.updateCtDataWithNewEntry(this.ctData, this.edition, from, to, newEntry, entryText, currentApparatuses[newEntry.apparatusIndex].currentEntries, this.verbose)
-      this.options.onCtDataChange(this.ctData)
 
-    })
-      .catch( (reason) => {
-        if (reason !== userCancelledReason) {
-          console.error(`Fail updating apparatus entry`)
-          console.log(reason)
-          this.options.onError(`Error updating apparatus entry`)
-        }
-      })
+    // TODO: show the right data in the form!
+    this._loadEntryIntoEntryForm(this.currentSelectedEntryIndex)
+    this._showApparatusEntryForm()
+    // let aei = new ApparatusEntryInput({
+    //   containerSelector: `div.apparatus-entry-form-${this.options.apparatusIndex}`,
+    //   apparatuses: currentApparatuses,
+    //   selectedApparatusIndex: apparatusIndex,
+    //   entryText: entryText,
+    //   ctIndexFrom: CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[from].editionWitnessTokenIndex),
+    //   ctIndexTo: CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[to].editionWitnessTokenIndex),
+    //   lang: this.lang,
+    //   sigla: this.edition.getSigla()
+    // })
+    // aei.getEntry().then( (newEntry) => {
+    //   this.verbose && console.log(`Updated apparatus entry `)
+    //   this.verbose && console.log(newEntry)
+    //   this.ctData = ApparatusCommon.updateCtDataWithNewEntry(this.ctData, this.edition, from, to, newEntry, entryText, currentApparatuses[newEntry.apparatusIndex].currentEntries, this.verbose)
+    //   this.options.onCtDataChange(this.ctData)
+    //
+    // })
+    //   .catch( (reason) => {
+    //     if (reason !== userCancelledReason) {
+    //       console.error(`Fail updating apparatus entry`)
+    //       console.log(reason)
+    //       this.options.onError(`Error updating apparatus entry`)
+    //     }
+    //   })
   }
 
   _genOnClickEditEntryButton() {
     return (ev) => {
       ev.preventDefault()
       ev.stopPropagation()
-      return this._editSelectedEntry()
+      this._editSelectedEntry()
     }
   }
 
-  _genOnClickClearSelectionButton() {
+
+  _genOnClickPanelContainer() {
     return (ev) => {
+      if (this.apparatusEntryFormIsVisible) {
+        return
+      }
+      if ($(ev.target).hasClass('apparatus')) {
+        return
+      }
+      // click outside of apparatus when the entry form is hidden
       ev.preventDefault()
       ev.stopPropagation()
-      this.options.onHighlightMainText(this.currentSelectedLemma, false)
-      this.currentSelectedLemma = []
-      this._getEditEntryButtonElement().addClass('hidden')
-      this._getClearSelectionButtonElement().addClass('hidden')
-      this._getLemmaElements().removeClass('lemma-selected')
+      if (this.currentSelectedEntryIndex !== -1) {
+        this._selectLemma(-1)
+      }
     }
   }
 
@@ -166,15 +292,32 @@ export class ApparatusPanel extends  PanelWithToolbar {
    * @return {JQuery}
    * @private
    */
-  _getLemmaElements() {
+  _getAllLemmaElements() {
     return $(`${this.getContentAreaSelector()} span.lemma`)
+  }
+
+  _getLemmaElement(entryIndex) {
+    return $(`${this.getContentAreaSelector()} span.lemma-${this.options.apparatusIndex}-${entryIndex}`)
+  }
+
+  _hideApparatusEntryForm() {
+    $(this.getApparatusEntryFromDivSelector()).addClass('hidden')
+    this.apparatusEntryFormIsVisible = false
+  }
+
+  _showApparatusEntryForm() {
+    $(this.getApparatusEntryFromDivSelector()).removeClass('hidden')
+    this.apparatusEntryFormIsVisible = true
   }
 
   updateApparatus(mainTextTokensWithTypesettingInfo) {
     this.verbose && console.log(`Updating apparatus ${this.options.apparatusIndex}`)
     this.cachedHtml = this._genApparatusHtml(mainTextTokensWithTypesettingInfo)
-    $(this.getContentAreaSelector()).html(this.cachedHtml)
+    $(this.getApparatusDivSelector()).html(this.cachedHtml)
     this._setUpEventHandlers()
+    if (this.currentSelectedEntryIndex !== -1) {
+      this._selectLemma(this.currentSelectedEntryIndex, false)
+    }
   }
 
 
@@ -191,7 +334,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
   }
 
   _setUpEventHandlers() {
-    let lemmaElements = this._getLemmaElements()
+    let lemmaElements = this._getAllLemmaElements()
     lemmaElements.off()
       .on('mouseenter', this._genOnMouseEnterLemma())
       .on('mouseleave', this._genOnMouseLeaveLemma())
@@ -200,6 +343,9 @@ export class ApparatusPanel extends  PanelWithToolbar {
 
   _genOnMouseEnterLemma() {
     return (ev) => {
+      if (this.apparatusEntryFormIsVisible) {
+        return
+      }
       let target = $(ev.target)
       if (!target.hasClass('lemma-selected')) {
         target.addClass('lemma-hover')
@@ -209,6 +355,9 @@ export class ApparatusPanel extends  PanelWithToolbar {
 
   _genOnMouseLeaveLemma() {
     return (ev) => {
+      if (this.apparatusEntryFormIsVisible) {
+        return
+      }
       $(ev.target).removeClass('lemma-hover')
     }
   }
@@ -222,34 +371,56 @@ export class ApparatusPanel extends  PanelWithToolbar {
 
   _genOnClickLemma() {
     return (ev) => {
-      this._selectLemmaFromClickTarget(ev.target)
+      if (!this.apparatusEntryFormIsVisible) {
+        this._selectLemmaFromClickTarget(ev.target)
+      }
     }
+  }
+
+  _selectLemma(entryIndex, runCallbacks = true) {
+    //console.log(`Selecting ${entryIndex}, runCallbacks = ${runCallbacks}`)
+    this._getAllLemmaElements().removeClass('lemma-selected lemma-hover')
+    if (entryIndex === -1) {
+      // Deselect
+      if (runCallbacks && this.currentSelectedEntryIndex !== -1) {
+        this.options.onHighlightMainText([this.options.apparatusIndex, this.currentSelectedEntryIndex], false)
+      }
+      this.currentSelectedEntryIndex = -1
+      this._getEditEntryButtonElement().addClass('hidden')
+      this._getClearSelectionButtonElement().addClass('hidden')
+      return
+    }
+    this._getLemmaElement(entryIndex).addClass('lemma-selected')
+    this._getEditEntryButtonElement().removeClass('hidden')
+    this._getClearSelectionButtonElement().removeClass('hidden')
+    let fullEntryArray = [this.options.apparatusIndex, entryIndex]
+    if (runCallbacks) {
+      if (this.currentSelectedEntryIndex !== -1) {
+        this.options.onHighlightMainText([this.options.apparatusIndex, this.currentSelectedEntryIndex], false)
+      }
+      this.options.onHighlightMainText(fullEntryArray, true)
+    }
+    this.currentSelectedEntryIndex = entryIndex
   }
 
   _selectLemmaFromClickTarget(clickTarget) {
     let target = $(clickTarget)
-    this._getLemmaElements().removeClass('lemma-selected')
-    target.removeClass('lemma-hover').addClass('lemma-selected')
-    this._getEditEntryButtonElement().removeClass('hidden')
-    this._getClearSelectionButtonElement().removeClass('hidden')
-    let lemmaIndex = this._getLemmaIndexFromElement(target)
-    this.options.onHighlightMainText(this.currentSelectedLemma, false)
-    this.options.onHighlightMainText(lemmaIndex, true)
-    this.currentSelectedLemma = lemmaIndex
+    let fullEntryArray = this._getLemmaIndexFromElement(target)
+    this._selectLemma(fullEntryArray[1])
   }
 
   onHidden () {
     super.onHidden()
-    if (this.currentSelectedLemma.length !== 0) {
-      this.options.onHighlightMainText(this.currentSelectedLemma, false)
+    if(this.currentSelectedEntryIndex !== -1) {
+      this.options.onHighlightMainText([this.options.apparatusIndex, this.currentSelectedEntryIndex], false)
     }
-    this.options.onHighlightMainText(this.currentSelectedLemma, false)
+
   }
 
   onShown () {
     super.onShown()
-    if (this.currentSelectedLemma.length !== 0) {
-      this.options.onHighlightMainText(this.currentSelectedLemma, true)
+    if(this.currentSelectedEntryIndex !== -1) {
+      this.options.onHighlightMainText([this.options.apparatusIndex, this.currentSelectedEntryIndex], true)
     }
   }
 
@@ -272,6 +443,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
 
   _genApparatusHtml(mainTextTokensWithTypesettingInfo) {
     let html = ''
+
     let lastLine = ''
     let sigla = this.edition.getSigla()
     let textDirectionMarker = this.edition.lang === 'la' ? '&lrm;' : '&rlm;'

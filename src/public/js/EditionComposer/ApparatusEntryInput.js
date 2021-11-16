@@ -18,9 +18,9 @@
 
 
 /**
- * Takes cares of presenting a dialog to the user and getting an apparatus entry
+ * Takes cares of the UI for editing and entering apparatus entries in an ApparatusPanel
  */
-import { ConfirmDialog, EXTRA_LARGE_DIALOG } from '../pages/common/ConfirmDialog'
+import { ConfirmDialog, DIALOG, INLINE, EXTRA_LARGE_DIALOG } from '../pages/common/ConfirmDialog'
 import { doNothing } from '../toolbox/FunctionUtil'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { ApparatusCommon } from './ApparatusCommon'
@@ -30,8 +30,6 @@ import { FmtTextFactory} from '../FmtText/FmtTextFactory'
 import { MultiToggle } from '../widgets/MultiToggle'
 import { deepCopy } from '../toolbox/Util.mjs'
 import { FmtText } from '../FmtText/FmtText'
-
-// TODO: support adding/editing multiple custom entries
 
 const updateEntryLabel = 'Update Apparatus'
 const maxEntryTextWordsToShow = 10
@@ -43,6 +41,7 @@ export class ApparatusEntryInput {
   constructor (options ) {
 
     let optionsSpec = {
+      containerSelector: {type: 'string', default: ''},
       apparatuses: { type: 'array', required: true},
       lang: { type: 'string', required: true},
       entryText: { type: 'NonEmptyString', required: true},
@@ -91,8 +90,14 @@ export class ApparatusEntryInput {
     console.log(this.apparatuses)
 
     // Create dialog
+    let formStyle = DIALOG
+    if (this.options.containerSelector !== '') {
+      formStyle = INLINE
+    }
     this.dialog = new ConfirmDialog({
       title: 'Apparatus Entry',
+      style: formStyle,
+      containerSelector:  this.options.containerSelector,
       acceptButtonLabel: updateEntryLabel,
       size: EXTRA_LARGE_DIALOG,
       body: this._genBodyHtml(),
@@ -105,7 +110,7 @@ export class ApparatusEntryInput {
 
     // Init free text editor
     this.freeTextEditor = new EditionFreeTextEditor({
-      containerSelector: '#free-text-entry-div',
+      containerSelector: `${this.options.containerSelector} div.free-text-entry-div`,
       lang: this.options.lang,
       onChange: () =>  { this._updateAcceptButton() },
       debug: false
@@ -113,7 +118,7 @@ export class ApparatusEntryInput {
 
     // Init preLemma toggle and entry
     this.preLemmaToggle= new MultiToggle({
-      containerSelector: '#pre-lemma-div',
+      containerSelector: `${this.options.containerSelector} div.pre-lemma-div`,
       buttonClass: 'tb-button',
       wrapButtonsInDiv: true,
       buttonsDivClass: 'aei-multitoggle-button',
@@ -125,7 +130,7 @@ export class ApparatusEntryInput {
       ]
     })
 
-    $('#pre-lemma-div').append('<div id="pre-lemma-custom-text-entry-div">Custom text here</div>')
+    $(`${this.options.containerSelector} div.pre-lemma-div`).append('<div class="pre-lemma-custom-text-entry-div">Custom text here</div>')
 
     this.preLemmaToggle.on('toggle', (ev) => {
       let selectedAppIndex = this.apparatusSelect.val() * 1
@@ -136,7 +141,7 @@ export class ApparatusEntryInput {
       this._updateAcceptButton()
     })
 
-    this.apparatusSelect = $('#apparatus-select')
+    this.apparatusSelect = $(`${this.options.containerSelector} select.apparatus-select`)
     this.apparatusSelect.val(this.options.selectedApparatusIndex)
     this.apparatusSelect.on('change', () => {
       let selectedAppIndex = this.apparatusSelect.val() * 1  // force it to be a number!
@@ -147,12 +152,16 @@ export class ApparatusEntryInput {
 
     this.apparatuses.forEach( (app, apparatusIndex) => {
       app.currentEntries.forEach( (entry, subEntryIndex) => {
-        $(`#aei-sub-entry-${apparatusIndex}-${subEntryIndex}`).on('change', () => {
-          // console.log(`Change of value in check box for apparatus ${apparatusIndex}, sub entry ${subEntryIndex}`)
+        $(this._getCheckboxSelector(apparatusIndex, subEntryIndex)).on('change', () => {
+          console.log(`Change of value in check box for apparatus ${apparatusIndex}, sub entry ${subEntryIndex}`)
           this._updateAcceptButton()
         })
       })
     })
+  }
+
+  _getCheckboxSelector(apparatusIndex, subEntryIndex) {
+    return `${this.options.containerSelector} .aei-sub-entry-${apparatusIndex}-${subEntryIndex}`
   }
 
   /**
@@ -190,7 +199,7 @@ export class ApparatusEntryInput {
 
     let changes = []
     this.apparatuses[selectedAppIndex].currentEntries.forEach( (se, sei) => {
-      if ($(`#aei-sub-entry-${selectedAppIndex}-${sei}`).prop('checked') !== se.enabled) {
+      if ($(this._getCheckboxSelector(selectedAppIndex, sei)).prop('checked') !== se.enabled) {
         changes.push(`Change in checkboxes`)
       }
     })
@@ -310,7 +319,7 @@ export class ApparatusEntryInput {
     <div class="form-group row">
         <label for="apparatus-select" class="col-sm-2 col-form-label">Apparatus:</label>
        <div class="col-sm-10">
-        <select class="form-control" id="apparatus-select">
+        <select class="form-control apparatus-select">
             ${this.apparatuses.map( (a, ai) => { return `<option value="${ai}" ${this.options.selectedApparatusIndex===ai ? 'selected': ''}>${a.title}</option>`}).join('')}
         </select>
         </div>
@@ -321,10 +330,12 @@ export class ApparatusEntryInput {
         ${ this.apparatuses.map( (app, ai) => {
           return app.currentEntries.map( (subEntry, sei) => {
             let checkedString = subEntry.enabled ? 'checked' : ''
-            return `<div class="form-check sub-entry-app-${ai}"><input class="form-check-input text-${this.options.lang}" type="checkbox" value="" ${checkedString} id="aei-sub-entry-${ai}-${sei}">
-       <label class="form-check-label" for="aei-subtentry-${ai}-${sei}"> ${ApparatusCommon.genSubEntryHtmlContent(this.options.lang, subEntry, this.options.sigla )}
-</label>
-</div>`
+            return `<div class="form-check sub-entry-app-${ai}">
+                <input class="form-check-input text-${this.options.lang} aei-sub-entry-${ai}-${sei}" type="checkbox" value="entry-${ai}-${sei}" ${checkedString}>
+                <label class="form-check-label" for="aei-subentry-${ai}-${sei}"> 
+                        ${ApparatusCommon.genSubEntryHtmlContent(this.options.lang, subEntry, this.options.sigla )}
+                 </label>
+                </div>`
           }).join('')
       }).join('')}
 </div>
@@ -332,7 +343,7 @@ export class ApparatusEntryInput {
 
     <div class="form-group row">
         <label for="pre-lemma-div" class="col-sm-2 col-form-label">Pre Lemma:</label>
-        <div class="col-sm-10 aei-multitoggle-div" id="pre-lemma-div">
+        <div class="col-sm-10 aei-multitoggle-div pre-lemma-div">
         </div>
     </div>
     
@@ -352,7 +363,7 @@ export class ApparatusEntryInput {
     
     <div class="form-group row">
         <label for="separator-div" class="col-sm-2 col-form-label">Separator:</label>
-        <div class="col-sm-10 post-lemma-div">
+        <div class="col-sm-10 separator-div">
            auto | off | custom
         </div>
     </div>
@@ -360,7 +371,7 @@ export class ApparatusEntryInput {
     <div class="form-group row">
         <label for="free-text-entry" class="col-sm-2 col-form-label">Custom Entry:</label>
         <div class="col-sm-10">
-            <div id="free-text-entry-div"></div>
+            <div class="free-text-entry-div"></div>
         </div>
     </div>
 </form>`

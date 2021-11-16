@@ -28,66 +28,89 @@ export const LARGE_DIALOG = 'lg'
 export const MEDIUM_DIALOG  = ''
 export const EXTRA_LARGE_DIALOG = 'xl'
 
+export const DIALOG = 'dialog'
+export const INLINE = 'inline'
+
 export class ConfirmDialog {
 
 
   constructor (userOptions) {
     let optionsDef = {
       id: { type: 'string', default: ''},
+      style: { type: 'string', default: DIALOG},
+      containerSelector: { type: 'string', default: ''},
       acceptButtonLabel: { type: 'string', default: 'Accept'},
       cancelButtonLabel: { type: 'string', default: 'Cancel'},
       title: { type: 'string', default: 'Please confirm'},
       size: { type: 'string', default: LARGE_DIALOG},
       body: { type: 'string', default: 'Please confirm.'},
-      acceptFunction: { type: 'function', default: (id, dialogObject) => { }},
+      acceptFunction: { type: 'function', default: (id, formObject) => { }},
       hideOnAccept: { type: 'boolean', default: true},
-      cancelFunction: { type: 'function', default: (id, dialogObject) => { }},
+      cancelFunction: { type: 'function', default: (id, formObject) => { }},
+      // TODO: change this to reuseForm
       reuseDialog: { type: 'boolean', default: false }
     }
 
-    let oc = new OptionsChecker({optionsDefinition: optionsDef, context: 'ConfirmDialog'})
+    let oc = new OptionsChecker({optionsDefinition: optionsDef, context: 'ConfirmForm'})
 
     this.options = oc.getCleanOptions(userOptions)
-
 
     if (this.options.id === '') {
       this.options.id =  defaultIdPrefix + ( 1 + Math.floor( Math.random() * 10000))
     }
-    this.modalSelector = `#${this.options.id}`
 
-    $(this.modalSelector).remove()
-    $('body').append(this._genHtml())
-    this.modalElement = $(this.modalSelector)
-    this.acceptButton =  $(`${this.modalSelector} .accept-btn`)
-    this.cancelButton =  $(`${this.modalSelector} .cancel-btn`)
-    let thisObject = this
+    this.style = this.options.style
+
+    if (this.style === DIALOG) {
+      if (this.options.containerSelector !== '') {
+        console.warn(`ConfirmForm ${this.options.id}: Option 'containerSelector' is superfluous for a dialog style form`)
+      }
+      this.formSelector = `#${this.options.id}`
+      $(this.formSelector).remove()
+      $('body').append(this._genHtml())
+    } else {
+      if (this.options.containerSelector === '') {
+        throw new Error(`ConfirmForm ${this.options.id}: need a containerSelector for an inline style form`)
+      }
+      this.formSelector = this.options.containerSelector
+      $(this.formSelector).addClass('hidden').html(this._genHtml())
+    }
+
+    this.formElement = $(this.formSelector)
+    this.acceptButton =  $(`${this.formSelector} .accept-btn`)
+    this.cancelButton =  $(`${this.formSelector} .cancel-btn`)
     this.acceptButton.on('click', (ev) => {
-      if (thisObject.options.hideOnAccept) {
-        thisObject.modalElement.modal('hide')
-        if (!thisObject.options.reuseDialog) {
-          thisObject.modalElement.remove()
-          thisObject.status = STATUS_DONE
+      if (this.options.hideOnAccept) {
+        this.hide()
+        if (!this.options.reuseDialog) {
+          this.destroy()
         }
       }
-      thisObject.options.acceptFunction(thisObject.getDialogId(), thisObject)
+      this.options.acceptFunction(this.getDialogId(), this)
     })
     this.cancelButton.on('click', (ev)=>{
-      thisObject.modalElement.modal('hide')
-      thisObject.options.cancelFunction(thisObject.getDialogId(), thisObject)
-      if (!thisObject.options.reuseDialog) {
-        thisObject.destroy()
+      this.hide()
+      this.options.cancelFunction(this.getDialogId(), this)
+      if (!this.options.reuseDialog) {
+        this.destroy()
       }
     })
-    this.modalElement.modal({
-      backdrop: 'static',
-      keyboard: false,
-      show: false
-    })
+    if (this.style === DIALOG) {
+      this.formElement.modal({
+        backdrop: 'static',
+        keyboard: false,
+        show: false
+      })
+    }
     this.status = STATUS_READY
   }
 
   destroy() {
-    this.modalElement.remove()
+    if (this.style === DIALOG) {
+      this.formElement.remove()
+    } else {
+      this.formElement.html('')
+    }
     this.status = STATUS_DONE
   }
 
@@ -101,9 +124,9 @@ export class ConfirmDialog {
 
   show() {
     if (this.status === STATUS_READY) {
-      this.modalElement.modal('show')
+      this.__showForm()
     } else {
-      console.warn(`ConfirmDialog: dialog with id ${this.getDialogId()} is not available anymore`)
+      console.warn(`ConfirmForm ${this.getDialogId()}: Form is not available anymore`)
     }
   }
 
@@ -112,20 +135,20 @@ export class ConfirmDialog {
   }
 
   getSelector() {
-    return this.modalSelector
+    return this.formSelector
   }
 
   setTitle(title) {
     if (this.status === STATUS_READY) {
       this.options.title = title
-      $(`${this.modalSelector} .modal-title`).html(title)
+      $(`${this.formSelector} .form-title`).html(title)
     }
   }
 
   setBody(bodyHtml) {
     if (this.status === STATUS_READY) {
       this.options.message = bodyHtml
-      $(`${this.modalSelector} .modal-body`).html(bodyHtml)
+      $(`${this.formSelector} .form-body`).html(bodyHtml)
     }
   }
 
@@ -154,25 +177,57 @@ export class ConfirmDialog {
     }
   }
 
+  hide() {
+    if (this.status !== STATUS_READY) {
+      return
+    }
+    if (this.style === DIALOG) {
+      this.formElement.hide()
+    } else {
+      this.formElement.addClass('hidden')
+    }
+  }
+
+  __showForm() {
+    if (this.style === DIALOG) {
+      this.formElement.show()
+    } else {
+      this.formElement.removeClass('hidden')
+    }
+  }
+
 
   _genHtml() {
-    return `
-<div id="${this.options.id}" class="modal" role="dialog">
-    <div class="modal-dialog ${this.options.size === MEDIUM_DIALOG ? '' : 'modal-' + this.options.size}">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">${this.options.title}</h5>
+    let headerExtraClass = ''
+    let bodyExtraClass = ''
+    let footerExtraClass = ''
+    let titleExtraClass = ''
+    let preHtml = ''
+    let postHtml = ''
+    if (this.style === DIALOG) {
+      headerExtraClass = 'modal-header'
+      bodyExtraClass = 'modal-body'
+      footerExtraClass = 'modal-footer'
+      titleExtraClass = 'modal-title'
+      preHtml = `
+        <div id="${this.options.id}" class="modal" role="dialog">
+        <div class="modal-dialog ${this.options.size === MEDIUM_DIALOG ? '' : 'modal-' + this.options.size}">
+            <div class="modal-content">`
+
+      postHtml = `</div></div></div>`
+    }
+
+    return `${preHtml}
+            <div class="form-header ${headerExtraClass}">
+                <h5 class="form-title ${titleExtraClass}">${this.options.title}</h5>
             </div>
-            <div class="modal-body">
+            <div class="form-body ${bodyExtraClass}">
                 ${this.options.body}
             </div>
-            <div class="modal-footer">
+            <div class="form-footer ${footerExtraClass}">
                 <button type="button" class="btn btn-danger accept-btn">${this.options.acceptButtonLabel}</button>
                 <button type="button" class="btn btn-primary cancel-btn">${this.options.cancelButtonLabel}</button>
             </div>
-        </div>
-    </div>
-</div>      
-      `
+            ${postHtml}`
   }
 }

@@ -63,4 +63,8 @@ export class Panel {
     return `Panel id ${tabId}, mode ${mode}, ${visible ? 'visible' : 'hidden'}`
   }
 
+  getContainerSelector() {
+    return this.containerSelector
+  }
+
 }

@@ -241,12 +241,6 @@ h1.lemma {
     margin-bottom: 2rem;
 }
 
-/* apparatus style tweaks */
-
-/*.sub-entry small {*/
-/*    color: #575757;*/
-/*}*/
-
 /* Collation Table Panel */
 
 #collation-table .panel-content {
@@ -280,6 +274,14 @@ h1.lemma {
 }
 
 /* Custom Entry Editor */
+
+div.aei-form {
+    margin: 1rem 1rem 1rem 10px;
+}
+
+div.aei-form div.form-footer {
+    margin-top: 1rem;
+}
 
 .fte-toolbar {
     padding: 3px;

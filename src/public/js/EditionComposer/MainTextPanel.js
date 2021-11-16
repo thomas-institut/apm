@@ -29,14 +29,12 @@ import {getTypesettingInfo} from '../Typesetter/BrowserTypesettingCalculations'
 import { doNothing, wait } from '../toolbox/FunctionUtil'
 import { MultiToggle } from '../widgets/MultiToggle'
 import { EditableTextField } from '../widgets/EditableTextField'
-import { ApparatusEntryInput, userCancelledReason } from './ApparatusEntryInput'
 import { ApparatusCommon } from './ApparatusCommon'
 import * as EditionMainTextTokenType from '../Edition/MainTextTokenType'
 import { Edition } from '../Edition/Edition'
 import { HtmlRenderer } from '../FmtText/Renderer/HtmlRenderer'
 import { PanelWithToolbar } from './PanelWithToolbar'
 import { prettyPrintArray } from '../toolbox/ArrayUtil'
-import { capitalizeFirstLetter} from '../toolbox/Util.mjs'
 import { CtData } from '../CtData/CtData'
 
 import { EditionFreeTextEditor } from './EditionFreeTextEditor'
@@ -357,43 +355,46 @@ export class MainTextPanel extends PanelWithToolbar {
         return
       }
       this.verbose && console.log(`Click on add entry button`)
-      let currentApparatuses = this.edition.apparatuses.map( (app, i) => {
-        let index = app.findEntryIndex( this.selection.from, this.selection.to)
-        return {
-          name: app.type,
-          title: capitalizeFirstLetter(app.type),
-          entryIndex: index,
-          preLemma: index === -1 ? '' : app.entries[index].preLemma,
-          lemma: index === -1 ? '' : app.entries[index].lemma,
-          postLemma: index === -1 ? '' : app.entries[index].postLemma,
-          separator: index === -1 ? '' : app.entries[index].separator,
-          currentEntries: index === -1 ? [] : app.entries[index].subEntries
-        }
-      })
+      // let currentApparatuses = this.edition.apparatuses.map( (app, i) => {
+      //   let index = app.findEntryIndex( this.selection.from, this.selection.to)
+      //   return {
+      //     name: app.type,
+      //     title: capitalizeFirstLetter(app.type),
+      //     entryIndex: index,
+      //     preLemma: index === -1 ? '' : app.entries[index].preLemma,
+      //     lemma: index === -1 ? '' : app.entries[index].lemma,
+      //     postLemma: index === -1 ? '' : app.entries[index].postLemma,
+      //     separator: index === -1 ? '' : app.entries[index].separator,
+      //     currentEntries: index === -1 ? [] : app.entries[index].subEntries
+      //   }
+      // })
       let entryText = this._getLemmaFromSelection()
       let from = this.selection.from
       let to = this.selection.to
-      let aei = new ApparatusEntryInput({
-        apparatuses: currentApparatuses,
-        entryText: entryText,
-        ctIndexFrom: CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[from].editionWitnessTokenIndex),
-        ctIndexTo: CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[to].editionWitnessTokenIndex),
-        lang: this.lang,
-        sigla: this.edition.getSigla()
-      })
-      aei.getEntry().then( (newEntry) => {
-        this.verbose && console.log(`Updated apparatus entry `)
-        this.verbose && console.log(newEntry)
-        this.ctData = ApparatusCommon.updateCtDataWithNewEntry(this.ctData, this.edition, this.selection.from, this.selection.to, newEntry, entryText, currentApparatusEntries, this.verbose)
-        this.options.onCtDataChange(this.ctData)
-      })
-        .catch( (reason) => {
-          if (reason !== userCancelledReason) {
-            console.error(`Fail updating apparatus entry`)
-            console.log(reason)
-            this.options.onError(`Error adding/updating apparatus entry`)
-          }
-        })
+      this.verbose(`Selection ${from} to ${to}, '${entryText}'`)
+
+      // TODO: show menu with apparatuses and then show the proper tab accordingly
+      // let aei = new ApparatusEntryInput({
+      //   apparatuses: currentApparatuses,
+      //   entryText: entryText,
+      //   ctIndexFrom: CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[from].editionWitnessTokenIndex),
+      //   ctIndexTo: CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[to].editionWitnessTokenIndex),
+      //   lang: this.lang,
+      //   sigla: this.edition.getSigla()
+      // })
+      // aei.getEntry().then( (newEntry) => {
+      //   this.verbose && console.log(`Updated apparatus entry `)
+      //   this.verbose && console.log(newEntry)
+      //   this.ctData = ApparatusCommon.updateCtDataWithNewEntry(this.ctData, this.edition, this.selection.from, this.selection.to, newEntry, entryText, currentApparatusEntries, this.verbose)
+      //   this.options.onCtDataChange(this.ctData)
+      // })
+      //   .catch( (reason) => {
+      //     if (reason !== userCancelledReason) {
+      //       console.error(`Fail updating apparatus entry`)
+      //       console.log(reason)
+      //       this.options.onError(`Error adding/updating apparatus entry`)
+      //     }
+      //   })
     }
   }
 

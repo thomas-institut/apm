@@ -108,8 +108,6 @@ export class CtDataEditionGenerator extends EditionGenerator{
 
     // console.log(`Merging custom apparatus criticus entries`)
     customApparatusCriticus.entries.forEach( (customEntry) => {
-      // console.log(`Custom Entry`)
-      // console.log(customEntry)
       if (ctIndexToMainTextMap[customEntry.from] === undefined) {
         // this is an entry to an empty token in the main text
         console.warn(`Custom apparatus criticus entry for an empty token, from ${customEntry.from} to ${customEntry.to}, lemmaText: '${customEntry.lemmaText}'`)
@@ -128,18 +126,16 @@ export class CtDataEditionGenerator extends EditionGenerator{
       }
       let mainTextTo = ctIndexToMainTextMap[customEntry.to]
       let currentEntryIndex = generatedApparatusCriticus.findEntryIndex( mainTextFrom, mainTextTo)
-      let realCustomSubEntries = customEntry['subEntries'].filter ( (e) => { return e.type !== SubEntryType.DISABLE})
-      // console.log(`There are ${realCustomSubEntries.length} custom sub entries`)
-      // console.log(realCustomSubEntries)
-      // realCustomSubEntries.forEach( (se, i) => { console.log(`Sub entry ${i}`); FmtText.check(se.fmtText)})
-      let customDisableEntriesArray = customEntry['subEntries'].filter ( (e) => { return e.type === SubEntryType.DISABLE})
-      if (customDisableEntriesArray.length !== 0) {
-        this.verbose && console.log(`There are disabled entries: ${mainTextFrom} -> ${mainTextTo}`)
-        this.verbose && console.log(customDisableEntriesArray)
+      let fullCustomSubEntries = customEntry['subEntries'].filter ( (e) => { return e.type === SubEntryType.FULL_CUSTOM})
+
+      let customAutoSubEntries = customEntry['subEntries'].filter ( (e) => { return e.type === SubEntryType.AUTO})
+      if (customAutoSubEntries.length !== 0) {
+        this.verbose && console.log(`There are custom auto entries: ${mainTextFrom} -> ${mainTextTo}`)
+        this.verbose && console.log(customAutoSubEntries)
       }
       if (currentEntryIndex === -1) {
         // console.log(`Found custom entry not belonging to any automatic apparatus entry`)
-        if (realCustomSubEntries.length !== 0) {
+        if (fullCustomSubEntries.length !== 0) {
           // console.log(`Adding new apparatus entry for lemma ${customEntry['lemma']}`)
           let newEntry = new ApparatusEntry()
           newEntry.from = mainTextFrom
@@ -148,21 +144,21 @@ export class CtDataEditionGenerator extends EditionGenerator{
           newEntry.lemmaText = ApparatusCommon.getMainTextForGroup({ from: customEntry['from'], to: customEntry['to'] },
               baseWitnessTokens, false, this.ctData['lang'])
 
-          newEntry.subEntries = this._buildSubEntryArrayFromCustomSubEntries(realCustomSubEntries)
+          newEntry.subEntries = this._buildSubEntryArrayFromCustomSubEntries(fullCustomSubEntries)
           generatedApparatusCriticus.entries.push(newEntry)
         }
       } else {
         // console.log(`Found entry for index ${currentEntryIndex}`)
-        if (realCustomSubEntries.length !== 0) {
-          let subEntryArray = this._buildSubEntryArrayFromCustomSubEntries(realCustomSubEntries)
+        if (fullCustomSubEntries.length !== 0) {
+          let subEntryArray = this._buildSubEntryArrayFromCustomSubEntries(fullCustomSubEntries)
           // console.log(subEntryArray)
           pushArray(generatedApparatusCriticus.entries[currentEntryIndex].subEntries, subEntryArray)
           // generatedApparatusCriticus.entries[currentEntryIndex].subEntries =
           //   generatedApparatusCriticus.entries[currentEntryIndex].subEntries.concat(this._buildSubEntryArrayFromCustomSubEntries(realCustomSubEntries))
         }
-        generatedApparatusCriticus.entries[currentEntryIndex].subEntries = this._applyDisableEntriesArrayToSubEntries(
+        generatedApparatusCriticus.entries[currentEntryIndex].subEntries = this._applyCustomAutoSubEntriesToGeneratedSubEntries(
           generatedApparatusCriticus.entries[currentEntryIndex].subEntries,
-          customDisableEntriesArray
+          customAutoSubEntries
         )
       }
     })
@@ -171,21 +167,19 @@ export class CtDataEditionGenerator extends EditionGenerator{
     return generatedApparatusCriticus
   }
 
-  _applyDisableEntriesArrayToSubEntries(subEntries, disableEntriesArray) {
-    return subEntries.map ( (subEntry) => {
-      // console.log(`Applying sub entry ${i}`)
-      // console.log(subEntry)
-      let subEntryHash = subEntry.hashString()
+  _applyCustomAutoSubEntriesToGeneratedSubEntries(generatedSubEntries, customAutoSubEntries) {
+    return generatedSubEntries.map ( (subEntry) => {
+      let generatedSubEntryHash = subEntry.hashString()
       let isDisabled = false
-      disableEntriesArray.forEach( (da) => {
-        if (da['hash'] === subEntryHash) {
-          isDisabled = true
+      customAutoSubEntries.forEach( (customAutoSubEntry) => {
+        if (customAutoSubEntry['hash'] === generatedSubEntryHash) {
+          // match!
+          isDisabled = !customAutoSubEntry['enabled']
         }
       })
       subEntry.enabled = !isDisabled
       return subEntry
     })
-
   }
 
   _buildSubEntryArrayFromCustomSubEntries(customSubEntries) {
@@ -204,6 +198,7 @@ export class CtDataEditionGenerator extends EditionGenerator{
       return theSubEntry
     })
   }
+
   _getCustomApparatuses(ctIndexToMainTextMap, baseWitnessTokens) {
     if (this.ctData['customApparatuses'] === undefined) {
       return []
@@ -217,7 +212,7 @@ export class CtDataEditionGenerator extends EditionGenerator{
       theApparatus.entries = apparatus['entries'].map ( (customEntry) => {
         let theEntry = new ApparatusEntry()
         theEntry.lemma = customEntry['lemma']
-       theEntry.lemmaText = ApparatusCommon.getMainTextForGroup({ from: customEntry['from'], to: customEntry['to'] },
+        theEntry.lemmaText = ApparatusCommon.getMainTextForGroup({ from: customEntry['from'], to: customEntry['to'] },
             baseWitnessTokens, false, this.ctData['lang'])
 
         theEntry.from = ctIndexToMainTextMap[customEntry['from']]

@@ -30,9 +30,15 @@ import { deepCopy } from '../toolbox/Util.mjs'
 import * as TranscriptionTokenType from '../Witness/WitnessTokenType'
 import * as NormalizationSource from '../constants/NormalizationSource'
 import * as WitnessType from '../Witness/WitnessTokenClass'
-import { CleanerOnePointZero } from './CtDataCleaner/CleanerOnePointZero'
-import { UpdaterToOnePointZero } from './CtDataUpdater/UpdaterToOnePointZero'
+
+// cleaners
 import { CleanerZero } from './CtDataCleaner/CleanerZero'
+import { CleanerOnePointZero } from './CtDataCleaner/CleanerOnePointZero'
+import { CleanerOnePointOne } from './CtDataCleaner/CleanerOnePointOne'
+// updaters
+import { UpdaterToOnePointZero } from './CtDataUpdater/UpdaterToOnePointZero'
+import { UpdaterToOnePointOne } from './CtDataUpdater/UpdaterToOnePointOne'
+
 
 
 
@@ -42,7 +48,7 @@ import { CleanerZero } from './CtDataCleaner/CleanerZero'
 
 
 
-const schemaVersions = [ '0', '1.0']
+const schemaVersions = [ '0', '1.0', '1.1']
 
 
 export class CtData  {
@@ -56,6 +62,8 @@ export class CtData  {
           return new CleanerZero({verbose: verbose, debug: debug})
         case '1.0':
            return new CleanerOnePointZero({ verbose: verbose, debug: debug})
+        case '1.1':
+          return new CleanerOnePointOne({ verbose: verbose, debug: debug})
         default:
           throw new Error(`Invalid source schema ${sourceSchemaVersion} requested`)
       }
@@ -65,6 +73,9 @@ export class CtData  {
       switch(targetSchemaVersion) {
         case '1.0':
           return new UpdaterToOnePointZero({verbose: verbose, debug: debug})
+
+        case '1.1':
+          return new UpdaterToOnePointOne({verbose: verbose, debug: debug})
 
         default:
           throw new Error(`Invalid target schema ${targetSchemaVersion} requested`)
@@ -125,7 +136,6 @@ export class CtData  {
             ctData['customApparatuses'][i]['entries'][entryN]['subEntries'][subEntryN].fmtText =
               FmtTextFactory.fromAnything(ctData['customApparatuses'][i]['entries'][entryN]['subEntries'][subEntryN].fmtText)
           }
-
         }
       }
     }
@@ -301,7 +311,7 @@ export class CtData  {
     }
     let currentEntryIndex = this.getCustomApparatusEntryIndexForCtRange(ctData, apparatusType, ctFrom, ctTo)
     let newSubEntry = new ApparatusSubEntry()
-    newSubEntry.type = SubEntryType.CUSTOM
+    newSubEntry.type = SubEntryType.FULL_CUSTOM
     newSubEntry.fmtText = FmtTextFactory.fromAnything(newEntryObject.text)
     newSubEntry.plainText = FmtText.getPlainText(newSubEntry.fmtText)
     if (currentEntryIndex === -1) {
@@ -375,14 +385,13 @@ export class CtData  {
       newEntry.from = ctFrom
       newEntry.to = ctTo
       newEntry.lemma = lemma
-      newEntry.section = [ 0 ]
       ctData['customApparatuses'][apparatusIndex].entries.push(newEntry)
       entryIndex = ctData['customApparatuses'][apparatusIndex].entries.length - 1
     }
 
     let subEntryIndex = -1
     ctData['customApparatuses'][apparatusIndex].entries[entryIndex].subEntries.forEach( (subEntry, i) => {
-      if (subEntry.type === SubEntryType.DISABLE && subEntry.hash === subEntryHash) {
+      if (subEntry.type === SubEntryType.AUTO && subEntry.hash === subEntryHash) {
         subEntryIndex = i
       }
     })
@@ -390,7 +399,8 @@ export class CtData  {
     if (subEntryIndex === -1) {
       if (!enabled) {
         ctData['customApparatuses'][apparatusIndex].entries[entryIndex].subEntries.push( {
-          type: SubEntryType.DISABLE,
+          type: SubEntryType.AUTO,
+          enabled: false,
           hash: subEntryHash,
 
         })

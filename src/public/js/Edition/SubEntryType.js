@@ -20,5 +20,8 @@ export const EMPTY = 'empty'
 export const ADDITION = 'addition'
 export const OMISSION = 'omission'
 export const VARIANT = 'variant'
-export const CUSTOM = 'custom'
+
+
+export const FULL_CUSTOM = 'fullCustom'
+export const AUTO = 'auto'
 export const DISABLE = 'disableAuto'

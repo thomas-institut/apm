@@ -120,7 +120,7 @@ export class ApparatusCommon {
         return theTokens
 
 
-      case ApparatusSubEntryType.CUSTOM:
+      case ApparatusSubEntryType.FULL_CUSTOM:
         return theTextTokens
 
       default:
@@ -195,7 +195,7 @@ export class ApparatusCommon {
       case ApparatusSubEntryType.ADDITION:
         return `${this.getKeywordHtml('addition', 'he')} ${theText} <b>${siglaString}</b>`
 
-      case ApparatusSubEntryType.CUSTOM:
+      case ApparatusSubEntryType.FULL_CUSTOM:
         return theText
 
       default:
@@ -232,7 +232,7 @@ export class ApparatusCommon {
         theTokens.push(TypesetterTokenFactory.simpleText(siglaString, 'ar'))
         return theTokens
 
-      case ApparatusSubEntryType.CUSTOM:
+      case ApparatusSubEntryType.FULL_CUSTOM:
         return  theTextTokens
 
       default:
@@ -255,7 +255,7 @@ export class ApparatusCommon {
       case ApparatusSubEntryType.ADDITION:
         return `<small>${arabicStyle.strings.addition}</small> ${theText} ${siglaString}`
 
-      case ApparatusSubEntryType.CUSTOM:
+      case ApparatusSubEntryType.FULL_CUSTOM:
         return theText
 
       default:
@@ -294,7 +294,7 @@ export class ApparatusCommon {
         return theTokens
 
 
-      case ApparatusSubEntryType.CUSTOM:
+      case ApparatusSubEntryType.FULL_CUSTOM:
         return theTextTokens
 
       default:
@@ -320,7 +320,7 @@ export class ApparatusCommon {
       case ApparatusSubEntryType.ADDITION:
         return `<i>${latinStyle.strings.addition}</i> ${theText} ${siglaString}`
 
-      case ApparatusSubEntryType.CUSTOM:
+      case ApparatusSubEntryType.FULL_CUSTOM:
         return theText
 
       default:

@@ -22,6 +22,8 @@ import * as TranscriptionTokenType from '../../Witness/WitnessTokenType'
 import { Matrix } from '@thomas-inst/matrix'
 import { CtData } from '../CtData'
 import { CtDataCleaner } from './CtDataCleaner'
+import { deepCopy } from '../../toolbox/Util.mjs'
+import { DEFAULT_GLUE_SPACE } from '../../FmtText/FmtTextToken'
 
 
 export class CleanerOnePointZero extends CtDataCleaner{
@@ -54,10 +56,63 @@ export class CleanerOnePointZero extends CtDataCleaner{
     }
     // consistency check
     this.checkAndFixCollationTableConsistency()
-    // this.ctData = this.fixCustomApparatuses(this.ctData)
+
+    // this may not be necessary
     this.ctData = CtData.fixFmtText(this.ctData)
 
+    // fix glue normal value in fmtText
+    this.ctData = this.fixNormalGlueValueInFmtText(this.ctData)
+
+    this.ctData = this.fixCustomApparatuses(this.ctData)
+
     return this.ctData
+  }
+
+  /**
+   * Fixes custom apparatuses from inconsistencies caused in development before release
+   * @param ctDataToFix
+   * @return {any}
+   */
+  fixCustomApparatuses(ctDataToFix) {
+    let ctData = deepCopy(ctDataToFix)
+
+    ctData['customApparatuses'] = ctData['customApparatuses'].map( (app) => {
+      app.entries = app.entries.map( (entry, entryIndex) => {
+        // make sure there's no section in the entry
+        if (entry['section'] !== undefined) {
+          this.verbose && console.log(`Deleting 'section' from apparatus '${app['type']}', entry ${entryIndex}`)
+          delete entry['section']
+        }
+
+        return entry
+      })
+      return app
+    })
+    return ctData
+  }
+
+  fixNormalGlueValueInFmtText(ctDataToFix) {
+    let ctData = deepCopy(ctDataToFix)
+    for (let i = 0; i < ctData['customApparatuses'].length; i++) {
+      // console.log(`Custom apparatus ${i}`)
+      for (let entryN = 0; entryN < ctData['customApparatuses'][i]['entries'].length; entryN++) {
+        // console.log(`Entry ${entryN}`)
+        for (let subEntryN = 0; subEntryN < ctData['customApparatuses'][i]['entries'][entryN]['subEntries'].length ; subEntryN++) {
+          // console.log(`Sub entry ${subEntryN}`)
+          if (ctData['customApparatuses'][i]['entries'][entryN]['subEntries'][subEntryN].fmtText !== undefined) {
+            // this is a custom entry, other types do not have a fmtText
+            ctData['customApparatuses'][i]['entries'][entryN]['subEntries'][subEntryN].fmtText =
+              ctData['customApparatuses'][i]['entries'][entryN]['subEntries'][subEntryN].fmtText.map( (token) => {
+                if (token.type === 'glue' && token.space === -1) {
+                  token.space = DEFAULT_GLUE_SPACE
+                }
+                return token
+              })
+          }
+        }
+      }
+    }
+    return ctData
   }
 
   /**

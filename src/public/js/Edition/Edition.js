@@ -141,5 +141,23 @@ export class Edition {
     return this.mainText[index] !== undefined ? this.mainText[index] : new MainTextToken()
   }
 
+  /**
+   *
+   * @param {number}from
+   * @param {number}to
+   * @return {string}
+   */
+  getPlainTextForRange(from, to) {
+    if (to<0 || from > to) {
+      return ''
+    }
+    if (from < 0) {
+      from = 0
+    }
+    return this.mainText.filter( (token, i) => {
+      return i>=from && i<= to
+    }).map ( (token) => { return token.getPlainText()}).join('')
+  }
+
 }
 

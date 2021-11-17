@@ -19,8 +19,6 @@
 import {CtDataUpdater} from './CtDataUpdater'
 import * as CollationTableType from '../../constants/CollationTableType'
 import * as ApparatusType from '../../constants/ApparatusType'
-import { EditionMainTextGenerator } from '../../Edition/EditionGenerator/EditionMainTextGenerator.mjs'
-
 
 const defaultApparatus = [
   ApparatusType.CRITICUS,
@@ -115,7 +113,7 @@ export  class UpdaterToOnePointZero extends CtDataUpdater {
           //   console.warn(`Found incorrect lemma '${entry['lemma']}' in custom apparatus for tokens ${entry.from} to ${entry.to}, should be '${goodLemma}'`)
           //   entry['lemma'] = goodLemma
           // }
-
+          //console.log(`Processing entry ${apparatus.type} : ${i}`)
           // Add defaults custom preLemma, lemma, postLemma and separator if not present
           entry['preLemma'] = ''
           entry['lemma'] = ''

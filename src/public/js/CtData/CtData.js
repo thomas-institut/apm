@@ -38,6 +38,7 @@ import { CleanerOnePointOne } from './CtDataCleaner/CleanerOnePointOne'
 // updaters
 import { UpdaterToOnePointZero } from './CtDataUpdater/UpdaterToOnePointZero'
 import { UpdaterToOnePointOne } from './CtDataUpdater/UpdaterToOnePointOne'
+import { pushArray } from '../toolbox/ArrayUtil'
 
 
 
@@ -140,6 +141,78 @@ export class CtData  {
       }
     }
     return ctData
+  }
+
+  /**
+   * Updates ctData with the given entry, which is normally produced by the apparatus entry editor
+   * in EditionComposer's ApparatusPanel
+   * @param ctData
+   * @param apparatusType
+   * @param {object}editedEntry
+   */
+  static updateCustomApparatuses(ctData, apparatusType, editedEntry) {
+    console.log(`Updating customs apparatuses for apparatus '${apparatusType}'`)
+    console.log(editedEntry)
+
+    // First, lets get the right apparatus
+    let apparatusIndex = ctData['customApparatuses'].map( (app) => {return app.type}).indexOf(apparatusType)
+
+    if (apparatusIndex === -1) {
+      throw new Error(`Unknown apparatus type ${apparatusType}`)
+    }
+
+    let customApparatus = ctData['customApparatuses'][apparatusIndex]
+
+    let newEntry = {
+      from: editedEntry.from,
+      to: editedEntry.to,
+      preLemma: editedEntry.preLemma,
+      lemma: editedEntry.lemma,
+      postLemma: editedEntry.postLemma,
+      separator: editedEntry.separator
+    }
+    // new entry, first get the auto subEntries that disable something
+    newEntry.subEntries = editedEntry.subEntries.filter( (subEntry) => { return subEntry.type === 'auto' && subEntry.enabled === false})
+    // add fullCustom subEntries with some text in it
+
+    pushArray(newEntry.subEntries, editedEntry.subEntries.filter( (subEntry) => {
+      return subEntry.type === 'fullCustom' && subEntry.enabled === true && subEntry.fmtText.length !== 0}))
+
+    console.log(`New Entry`)
+    console.log(newEntry)
+
+    // Does the entry exist already?
+    let entryIndex = customApparatus.entries.map( (entry) => {return `${entry.from}-${entry.to}`}).indexOf(`${editedEntry.from}-${editedEntry.to}`)
+    console.log(`Entry Index: ${entryIndex}`)
+
+    // Is this an entry that actually changes anything?
+    if (this.isEntryEqualToDefault(newEntry)) {
+      console.log(`New entry is equal to default`)
+      if (entryIndex !== -1) {
+        console.log(`Deleting entry that is now equal to default`)
+        ctData['customApparatuses'][apparatusIndex].entries = ctData['customApparatuses'][apparatusIndex].entries.filter( (entry, index) => {
+          return index !== entryIndex
+        })
+      }
+    } else {
+      if (entryIndex === -1) {
+        console.log(`Adding new entry`)
+        ctData['customApparatuses'][apparatusIndex].entries.push(newEntry)
+      } else {
+        console.log(`Replacing existing entry ${entryIndex}`)
+        ctData['customApparatuses'][apparatusIndex].entries[entryIndex] = newEntry
+      }
+    }
+
+    return ctData
+  }
+
+  static isEntryEqualToDefault(entry) {
+    if (entry.subEntries.length !== 0) {
+      return false
+    }
+    ['preLemma', 'lemma', 'postLemma', 'separator'].forEach( (member) => { if (entry[member] !== '') { return false}})
+    return true
   }
 
 
@@ -402,7 +475,6 @@ export class CtData  {
           type: SubEntryType.AUTO,
           enabled: false,
           hash: subEntryHash,
-
         })
       }
       // nothing to do if the entry needs to be enabled

@@ -30,6 +30,8 @@ import { EditionFreeTextEditor } from './EditionFreeTextEditor'
 import { deepCopy } from '../toolbox/Util.mjs'
 import { varsAreEqual } from '../toolbox/ArrayUtil'
 import * as SubEntryType from '../Edition/SubEntryType'
+import { ApparatusSubEntry } from '../Edition/ApparatusSubEntry'
+import { MultiToggle } from '../widgets/MultiToggle'
 
 const doubleVerticalLine = String.fromCodePoint(0x2016)
 const verticalLine = String.fromCodePoint(0x007c)
@@ -106,24 +108,31 @@ export class ApparatusPanel extends  PanelWithToolbar {
         // only supporting one custom entry for now
         this.entryInEditor.customEntryFmtText = customEntries[0].fmtText
       }
-      delete this.entryInEditor.subEntries
       delete this.entryInEditor.ctGroup
       from = this.entryInEditor.from
       to = this.entryInEditor.to
     } else {
       // new entry
+      if (from === -1 || to === -1) {
+        throw new Error(`Loading new entry with invalid 'from' and 'to' indexes: ${from} - ${to}`)
+      }
       this.entryInEditor = {
+          mainTextFrom: from,
+          mainTextTo: to,
           preLemma: '',
           lemma: '',
           postLemma: '',
           separator: '',
           autoEntries: [],
           customEntryText: FmtTextFactory.empty(),
-          lemmaText:  this.edition.getPlainTextForRange(from, to)
+          lemmaText:  this.edition.getPlainTextForRange(from, to),
+          subEntries: []
       }
     }
     let ctIndexFrom = CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[from].editionWitnessTokenIndex)
     let ctIndexTo = CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[to].editionWitnessTokenIndex)
+    this.entryInEditor.ctIndexFrom = ctIndexFrom
+    this.entryInEditor.ctIndexTo = ctIndexTo
     $(`${formSelector} .ct-table-cols`).html(this._getCtColumnsText(ctIndexFrom, ctIndexTo))
 
     console.log(this.entryInEditor)
@@ -221,7 +230,8 @@ export class ApparatusPanel extends  PanelWithToolbar {
             <div class="form-footer">
                 <button type="button" class="btn btn-sm btn-danger update-btn">Update Apparatus</button>
                 <button type="button" class="btn btn-sm btn-primary cancel-btn">Cancel</button>
-            </div>`
+            </div>
+            <div class="info-div"></div>`
   }
 
   getContentAreaClasses () {
@@ -252,7 +262,8 @@ export class ApparatusPanel extends  PanelWithToolbar {
     let formSelector = this.getApparatusEntryFormSelector()
     this.updateButton = $(`${formSelector} .update-btn`)
     this.updateButton.on('click', this._genOnClickUpdateApparatusButton())
-    $(`${formSelector} .cancel-btn`).on('click', this._genOnClickApparatusEntryCancelButton())
+    this.cancelButton = $(`${formSelector} .cancel-btn`)
+    this.cancelButton.on('click', this._genOnClickApparatusEntryCancelButton())
     // Init free text editor
     this.freeTextEditor = new EditionFreeTextEditor({
       containerSelector: `${formSelector} div.free-text-entry-div`,
@@ -260,6 +271,20 @@ export class ApparatusPanel extends  PanelWithToolbar {
       onChange: this._genOnChangeFreeTextEditor(),
       debug: false
     })
+
+    this.preLemmaToggle= new MultiToggle({
+      containerSelector: `${formSelector} div.pre-lemma-div`,
+      buttonClass: 'tb-button',
+      wrapButtonsInDiv: true,
+      buttonsDivClass: 'aei-multitoggle-button',
+      buttonDef: [
+        { label: 'Auto', name: 'auto', helpText: 'Let APM generate pre-lemma text'},
+        { label: '<i>ante</i>', name: 'ante', helpText: "Standard word 'ante'"},
+        { label: '<i>post</i>', name: 'post', helpText: "Standard word 'post'"},
+        { label: 'Custom', name: 'custom', helpText: "Enter custom pre-lemma text"},
+      ]
+    })
+
   }
 
   _genOnClickUpdateApparatusButton() {
@@ -269,32 +294,45 @@ export class ApparatusPanel extends  PanelWithToolbar {
         return
       }
       // so, there are changes
+      this.updateButton.addClass('hidden')
+      this.cancelButton.addClass('hidden')
+      let infoDiv =$(`${this.getApparatusEntryFormSelector()} div.info-div`)
+      infoDiv.html(`Updating edition...`)
       let entryForCtData = {
-        from: this.editedEntry.from,  // TODO: changes to ctData indexes
-        to: this.editedEntry.to,
+        from: this.editedEntry.ctIndexFrom,
+        to: this.editedEntry.ctIndexTo,
         preLemma:  this.editedEntry.preLemma,
         lemma: this.editedEntry.lemma,
         postLemma: this.editedEntry.postLemma,
         separator: this.editedEntry.separator
       }
       entryForCtData.subEntries = this.editedEntry.autoEntries.map( (autoEntry) => {
+        // a hack to get a valid hash string
+        let se = new ApparatusSubEntry()
+        se.type = 'auto'
+        se.fmtText = autoEntry.fmtText
+        se.source = autoEntry.source
+        se.type = autoEntry.type
+        se.witnessData = autoEntry.witnessData
+
         return {
           type: 'auto',
           enabled: autoEntry.enabled,
-          hash: autoEntry.hashString()
+          hash: se.hashString()
         }
       })
       if (this.editedEntry.customEntryFmtText !== []) {
-        entryForCtData.push( {
+        entryForCtData.subEntries.push( {
           type: 'fullCustom',
           enabled: true,
           fmtText: this.editedEntry.customEntryFmtText
         })
       }
-      console.log(`About to send this update to customApparatuses`)
-      console.log(entryForCtData)
-
-
+      this.ctData = CtData.updateCustomApparatuses(this.ctData, this.apparatus.type, entryForCtData)
+      this.cancelButton.removeClass('hidden')
+      infoDiv.html('')
+      this._hideApparatusEntryForm()
+      this.options.onCtDataChange(this.ctData)
     }
   }
 

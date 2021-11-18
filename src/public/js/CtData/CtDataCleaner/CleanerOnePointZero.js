@@ -24,7 +24,7 @@ import { CtData } from '../CtData'
 import { CtDataCleaner } from './CtDataCleaner'
 import { deepCopy } from '../../toolbox/Util.mjs'
 import { DEFAULT_GLUE_SPACE } from '../../FmtText/FmtTextToken'
-
+import {FmtTextFactory} from '../../FmtText/FmtTextFactory'
 
 export class CleanerOnePointZero extends CtDataCleaner{
 
@@ -83,6 +83,7 @@ export class CleanerOnePointZero extends CtDataCleaner{
           this.verbose && console.log(`Deleting 'section' from apparatus '${app['type']}', entry ${entryIndex}`)
           delete entry['section']
         }
+
 
         return entry
       })

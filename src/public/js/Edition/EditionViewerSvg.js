@@ -19,16 +19,18 @@
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { Edition } from './Edition'
 import { Typesetter } from '../Typesetter/Typesetter'
+import {FmtTextFactory} from '../FmtText/FmtTextFactory'
 
 import * as MainTextTokenType from './MainTextTokenType'
 import { TypesetterTokenFactory } from '../Typesetter/TypesetterTokenFactory'
 import { TypesetterTokenRenderer } from '../FmtText/Renderer/TypesetterTokenRenderer'
-import { getTextDirectionForLang } from '../toolbox/Util.mjs'
+import { getTextDirectionForLang, removeExtraWhiteSpace } from '../toolbox/Util.mjs'
 import { NumeralStyles } from '../toolbox/NumeralStyles'
 import { pushArray } from '../toolbox/ArrayUtil'
 import { ApparatusCommon } from '../EditionComposer/ApparatusCommon'
 
 import * as SubEntryType from '../Edition/SubEntryType'
+import { FmtText } from '../FmtText/FmtText'
 
 const doubleVerticalLine = String.fromCodePoint(0x2016)
 const verticalLine = String.fromCodePoint(0x007c)
@@ -366,7 +368,12 @@ export class EditionViewerSvg {
           break
 
         default:
-          preLemmaTokens = apparatusEntry.preLemma
+          // console.log (`Processing custom preLemma`)
+          // console.log(apparatusEntry.preLemma)
+          let preLemmaText = removeExtraWhiteSpace(FmtText.getPlainText(FmtTextFactory.fromAnything(apparatusEntry.preLemma)))
+          let preLemmaFmtText = FmtTextFactory.fromAnything(preLemmaText).map( (token) => { return token.setItalic()})
+          preLemmaTokens = (new TypesetterTokenRenderer()).render(preLemmaFmtText)
+
       }
       pushArray(ttTokens, preLemmaTokens)
       if (preLemmaTokens.length !== 0) {

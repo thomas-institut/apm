@@ -283,6 +283,11 @@ div.aei-form div.form-footer {
     margin-top: 1rem;
 }
 
+.aei-multitoggle {
+    display: flex;
+    flex-direction: row;
+}
+
 .fte-toolbar {
     padding: 3px;
     background: lightgray;

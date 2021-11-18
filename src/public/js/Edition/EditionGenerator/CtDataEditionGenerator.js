@@ -135,12 +135,15 @@ export class CtDataEditionGenerator extends EditionGenerator{
       }
       if (currentEntryIndex === -1) {
         // console.log(`Found custom entry not belonging to any automatic apparatus entry`)
-        if (fullCustomSubEntries.length !== 0) {
+        if (this.hasLemmaCustomizations(customEntry) || fullCustomSubEntries.length !== 0) {
           // console.log(`Adding new apparatus entry for lemma ${customEntry['lemma']}`)
           let newEntry = new ApparatusEntry()
           newEntry.from = mainTextFrom
           newEntry.to = mainTextTo
+          newEntry.preLemma = customEntry['preLemma']
           newEntry.lemma = customEntry['lemma']
+          newEntry.postLemma = customEntry['postLemma']
+          newEntry.separator = customEntry['separator']
           newEntry.lemmaText = ApparatusCommon.getMainTextForGroup({ from: customEntry['from'], to: customEntry['to'] },
               baseWitnessTokens, false, this.ctData['lang'])
 
@@ -149,12 +152,13 @@ export class CtDataEditionGenerator extends EditionGenerator{
         }
       } else {
         // console.log(`Found entry for index ${currentEntryIndex}`)
-        if (fullCustomSubEntries.length !== 0) {
+        if (this.hasLemmaCustomizations(customEntry) || fullCustomSubEntries.length !== 0) {
+          generatedApparatusCriticus.entries[currentEntryIndex].preLemma = customEntry['preLemma']
+          generatedApparatusCriticus.entries[currentEntryIndex].lemma = customEntry['lemma']
+          generatedApparatusCriticus.entries[currentEntryIndex].postLemma = customEntry['postLemma']
+          generatedApparatusCriticus.entries[currentEntryIndex].separator = customEntry['separator']
           let subEntryArray = this._buildSubEntryArrayFromCustomSubEntries(fullCustomSubEntries)
-          // console.log(subEntryArray)
           pushArray(generatedApparatusCriticus.entries[currentEntryIndex].subEntries, subEntryArray)
-          // generatedApparatusCriticus.entries[currentEntryIndex].subEntries =
-          //   generatedApparatusCriticus.entries[currentEntryIndex].subEntries.concat(this._buildSubEntryArrayFromCustomSubEntries(realCustomSubEntries))
         }
         generatedApparatusCriticus.entries[currentEntryIndex].subEntries = this._applyCustomAutoSubEntriesToGeneratedSubEntries(
           generatedApparatusCriticus.entries[currentEntryIndex].subEntries,
@@ -165,6 +169,16 @@ export class CtDataEditionGenerator extends EditionGenerator{
     generatedApparatusCriticus.sortEntries()
 
     return generatedApparatusCriticus
+  }
+
+  hasLemmaCustomizations(customEntry) {
+    let vars = ['preLemma', 'lemma', 'postLemma', 'separator']
+    for (let i=0; i < vars.length; i++) {
+      if (customEntry[vars[i]] !== '') {
+        return true
+      }
+    }
+    return false
   }
 
   _applyCustomAutoSubEntriesToGeneratedSubEntries(generatedSubEntries, customAutoSubEntries) {

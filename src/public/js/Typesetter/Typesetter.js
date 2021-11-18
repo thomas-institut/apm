@@ -440,7 +440,14 @@ export class Typesetter {
         newToken.fontFamily = this.options.defaultFontFamily
         newToken.fontSize = fontSize
         newToken.width = tokenWidth
-        newToken.setLang( token.getLang() === '' ? detectedTokenLang : token.getLang())
+        try {
+          newToken.setLang( token.getLang() === '' ? detectedTokenLang : token.getLang())
+        } catch (e) {
+          console.log(`Caught error`)
+          console.log(e)
+          console.log(token)
+        }
+
         if ( (accLineWidth + tokenWidth) > lineWidth) {
           // new line
           let lineTypeSetTokens = this.__typesetLine(currentLineTokens, currentY, lineWidth, rightToLeft, currentLine, this.normalSpace)

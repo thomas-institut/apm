@@ -27,7 +27,7 @@ import { onClickAndDoubleClick } from '../toolbox/DoubleClick'
 import { FmtText } from '../FmtText/FmtText'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory'
 import { EditionFreeTextEditor } from './EditionFreeTextEditor'
-import { deepCopy } from '../toolbox/Util.mjs'
+import { deepCopy, removeExtraWhiteSpace } from '../toolbox/Util.mjs'
 import { varsAreEqual } from '../toolbox/ArrayUtil'
 import * as SubEntryType from '../Edition/SubEntryType'
 import { ApparatusSubEntry } from '../Edition/ApparatusSubEntry'
@@ -74,7 +74,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
     this._hideApparatusEntryForm()
     this.entryInEditor = {}
     this.editedEntry = {}
-    this.entryIndexInEditor = -1
+
   }
 
 
@@ -152,8 +152,75 @@ export class ApparatusPanel extends  PanelWithToolbar {
       $(this._getCheckboxSelector(i)).on('change', this._genOnChangeAutoEntryCheckBox(i))
     })
     this.freeTextEditor.setText(this.entryInEditor.customEntryFmtText)
+
+    this._loadLemmaGroupVariableInForm('preLemma', this.entryInEditor, this.preLemmaToggle, this.customPreLemmaTextInput)
+    this._loadLemmaGroupVariableInForm('lemma', this.entryInEditor, this.lemmaToggle, this.customLemmaTextInput)
+    this._loadLemmaGroupVariableInForm('postLemma', this.entryInEditor, this.postLemmaToggle, this.customPostLemmaTextInput)
+    this._loadLemmaGroupVariableInForm('separator', this.entryInEditor, this.separatorToggle, this.customSeparatorTextInput)
+
     this.editedEntry = deepCopy(this.entryInEditor)
     this._updateAcceptButton()
+  }
+
+  _loadLemmaGroupVariableInForm(variable, entry, toggle, textInput) {
+    let option = this._getLemmaGroupVariableToggleOption(entry[variable])
+    toggle.setOptionByName(option)
+    if (option === 'custom') {
+      textInput.removeClass('hidden').val(FmtText.getPlainText(entry[variable]))
+    } else {
+      textInput.addClass('hidden').val('')
+    }
+  }
+
+  _getLemmaGroupVariableFromToggle(toggle, textInputElement) {
+    switch(toggle.getOption()) {
+      case 'auto':
+        return ''
+
+      case 'custom':
+        return FmtTextFactory.fromAnything(removeExtraWhiteSpace(textInputElement.val()))
+
+      default:
+        return toggle.getOption()
+    }
+  }
+
+  // _getPreLemmaFromToggle() {
+  //   return this._getLemmaGroupVariableFromToggle(this.preLemmaToggle, this.customPreLemmaTextInput)
+  // }
+
+  _genOnToggleLemmaGroupToggle(variable, toggle, textInput) {
+    return () => {
+      this.editedEntry[variable] = this._getLemmaGroupVariableFromToggle(toggle, textInput)
+      if (Array.isArray(this.editedEntry[variable])) {
+        textInput.removeClass('hidden')
+      } else {
+        textInput.addClass('hidden')
+      }
+      this._updateAcceptButton()
+    }
+  }
+
+  // _genOnTogglePreLemmaToggle() {
+  //   return () => {
+  //     this.editedEntry.preLemma = this._getPreLemmaFromToggle()
+  //     if (Array.isArray(this.editedEntry.preLemma)) {
+  //       this.customPreLemmaTextInput.removeClass('hidden')
+  //     } else {
+  //       this.customPreLemmaTextInput.addClass('hidden')
+  //     }
+  //     this._updateAcceptButton()
+  //   }
+  // }
+
+  _getLemmaGroupVariableToggleOption(variableValue) {
+    if (variableValue === ''){
+      return 'auto'
+    }
+    if (Array.isArray(variableValue)) {
+      return 'custom'
+    }
+    return variableValue
   }
 
   _genOnChangeAutoEntryCheckBox(index) {
@@ -190,7 +257,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
                 <div class="entry-header">
                     <div class="form-group row">
                         <div class="col-sm-3">Edition Text:</div>
-                        <div class="col-sm-9 entry-text text-${this.options.lang}">
+                        <div class="col-sm-9 entry-text text-${this.edition.lang}">
                             some text  
                         </div>
                     </div>
@@ -201,19 +268,35 @@ export class ApparatusPanel extends  PanelWithToolbar {
                 </div>
                 <div class="form-group row">
                     <label for="pre-lemma-div" class="col-sm-3 col-form-label">Pre Lemma:</label>
-                    <div class="col-sm-9 aei-multitoggle-div pre-lemma-div"> </div>
+                    <div class="col-sm-9 aei-multitoggle-div pre-lemma-div">
+                        <div class="pre-lemma-toggle aei-multitoggle"> </div>
+                        <div><input type="text" class="custom-pre-lemma-input" size="5"></div>
+                    </div>
+                    
                 </div>
                 <div class="form-group row">
                     <label for="lemma-div" class="col-sm-3 col-form-label">Lemma:</label>
-                    <div class="col-sm-9 lemma-div">auto | force-dash | ellipsis | custom</div>
+<!--                    <div class="col-sm-9 lemma-div">auto | force-dash | ellipsis | custom</div>-->
+                    <div class="col-sm-9 aei-multitoggle-div lemma-div">
+                        <div class="lemma-toggle aei-multitoggle"> </div>
+                        <div><input type="text" class="custom-lemma-input" size="5"></div>
+                    </div>
                 </div>
                 <div class="form-group row">
                     <label for="post-lemma-div" class="col-sm-3 col-form-label">Post Lemma:</label>
-                    <div class="col-sm-9 post-lemma-div">auto | custom </div>
+<!--                    <div class="col-sm-9 post-lemma-div">auto | custom </div>-->
+                    <div class="col-sm-9 aei-multitoggle-div post-lemma-div">
+                        <div class="post-lemma-toggle aei-multitoggle"> </div>
+                        <div><input type="text" class="custom-post-lemma-input" size="5"></div>
+                    </div>
                 </div>
                 <div class="form-group row">
                      <label for="separator-div" class="col-sm-3 col-form-label">Separator:</label>
-                      <div class="col-sm-9 separator-div">auto | off | custom</div>
+<!--                      <div class="col-sm-9 separator-div">auto | off | custom</div>-->
+                     <div class="col-sm-9 aei-multitoggle-div separator-div">
+                        <div class="separator-toggle aei-multitoggle"> </div>
+                        <div><input type="text" class="custom-separator-input" size="3"></div>
+                    </div>
                 </div>
                 <div class="form-group row">
                     <label class="col-sm-3 col-form-label">Automatic Entries:</label>
@@ -272,8 +355,9 @@ export class ApparatusPanel extends  PanelWithToolbar {
       debug: false
     })
 
-    this.preLemmaToggle= new MultiToggle({
-      containerSelector: `${formSelector} div.pre-lemma-div`,
+    // preLemma
+    this.preLemmaToggle = new MultiToggle({
+      containerSelector: `${formSelector} .pre-lemma-toggle`,
       buttonClass: 'tb-button',
       wrapButtonsInDiv: true,
       buttonsDivClass: 'aei-multitoggle-button',
@@ -284,8 +368,85 @@ export class ApparatusPanel extends  PanelWithToolbar {
         { label: 'Custom', name: 'custom', helpText: "Enter custom pre-lemma text"},
       ]
     })
+    this.customPreLemmaTextInput = $(`${formSelector} .custom-pre-lemma-input`)
+    this.customPreLemmaTextInput.addClass('hidden')
+    this.preLemmaToggle.on('toggle', this._genOnToggleLemmaGroupToggle('preLemma', this.preLemmaToggle, this.customPreLemmaTextInput))
+    this.customPreLemmaTextInput.on('keyup', this._genOnKeyUpLemmaGroupCustomTextInput('preLemma', this.preLemmaToggle, this.customPreLemmaTextInput))
+
+    // lemma
+    this.lemmaToggle = new MultiToggle({
+      containerSelector: `${formSelector} .lemma-toggle`,
+      buttonClass: 'tb-button',
+      wrapButtonsInDiv: true,
+      buttonsDivClass: 'aei-multitoggle-button',
+      buttonDef: [
+        { label: 'Auto', name: 'auto', helpText: 'Let APM generate lemma'},
+        { label: '<i>dash</i>', name: 'dash', helpText: "Force dash (&mdash;) between first and last words"},
+        { label: '<i>ellipsis</i>', name: 'ellipsis', helpText: "Force ellipsis (...) between first and last words"},
+        { label: 'Custom', name: 'custom', helpText: "Enter custom lemma text"},
+      ]
+    })
+    this.customLemmaTextInput = $(`${formSelector} .custom-lemma-input`)
+    this.customLemmaTextInput.addClass('hidden')
+    this.lemmaToggle.on('toggle', this._genOnToggleLemmaGroupToggle('lemma', this.lemmaToggle, this.customLemmaTextInput))
+    this.customLemmaTextInput.on('keyup', this._genOnKeyUpLemmaGroupCustomTextInput('lemma', this.lemmaToggle, this.customLemmaTextInput) )
+
+
+    // postLemma
+    this.postLemmaToggle = new MultiToggle({
+      containerSelector: `${formSelector} .post-lemma-toggle`,
+      buttonClass: 'tb-button',
+      wrapButtonsInDiv: true,
+      buttonsDivClass: 'aei-multitoggle-button',
+      buttonDef: [
+        { label: 'Auto', name: 'auto', helpText: 'Let APM generate post lemma text'},
+        { label: 'Custom', name: 'custom', helpText: "Enter custom post lemma text"},
+      ]
+    })
+    this.customPostLemmaTextInput = $(`${formSelector} .custom-post-lemma-input`)
+    this.customPostLemmaTextInput.addClass('hidden')
+    this.postLemmaToggle.on('toggle', this._genOnToggleLemmaGroupToggle('postLemma', this.postLemmaToggle, this.customPostLemmaTextInput))
+    this.customPostLemmaTextInput.on('keyup', this._genOnKeyUpLemmaGroupCustomTextInput('postLemma', this.postLemmaToggle, this.customPostLemmaTextInput))
+
+    // separator
+    this.separatorToggle = new MultiToggle({
+      containerSelector: `${formSelector} .separator-toggle`,
+      buttonClass: 'tb-button',
+      wrapButtonsInDiv: true,
+      buttonsDivClass: 'aei-multitoggle-button',
+      buttonDef: [
+        { label: 'Auto', name: 'auto', helpText: 'Let APM generate separator'},
+        { label: 'Off', name: 'off', helpText: "Turn off separator"},
+        { label: 'Custom', name: 'custom', helpText: "Enter custom separator"},
+      ]
+    })
+    this.customSeparatorTextInput = $(`${formSelector} .custom-separator-input`)
+    this.customSeparatorTextInput.addClass('hidden')
+    this.separatorToggle.on('toggle', this._genOnToggleLemmaGroupToggle('separator', this.separatorToggle, this.customSeparatorTextInput))
+    this.customSeparatorTextInput.on('keyup', this._genOnKeyUpLemmaGroupCustomTextInput('separator', this.separatorToggle, this.customSeparatorTextInput))
 
   }
+
+  _genOnKeyUpLemmaGroupCustomTextInput(variable, toggle, textInput) {
+    return () => {
+      this.editedEntry[variable] = this._getLemmaGroupVariableFromToggle(toggle, textInput)
+      this._updateAcceptButton()
+    }
+  }
+
+  // _genOnKeyUpPreLemmaCustomTextInput() {
+  //   return () => {
+  //     this.editedEntry.preLemma = this._getPreLemmaFromToggle()
+  //     this._updateAcceptButton()
+  //   }
+  // }
+
+  // _genOnKeyUpLemmaCustomTextInput() {
+  //   return () => {
+  //     this.editedEntry.lemma = this._getLemmaGroupVariableFromToggle(this.lemmaToggle, this.customLemmaTextInput)
+  //     this._updateAcceptButton()
+  //   }
+  // }
 
   _genOnClickUpdateApparatusButton() {
     return () => {
@@ -352,12 +513,13 @@ export class ApparatusPanel extends  PanelWithToolbar {
   }
 
   _updateAcceptButton() {
-    // console.log(`Checking for changes in form`)
     if (!varsAreEqual(this.entryInEditor, this.editedEntry)) {
       this.updateButton.removeClass('hidden')
     } else {
       this.updateButton.addClass('hidden')
     }
+    // console.log(`Changes in apparatus entry form`)
+    // console.log(this.editedEntry)
   }
 
   _genOnClickApparatusEntryCancelButton() {
@@ -590,7 +752,30 @@ export class ApparatusPanel extends  PanelWithToolbar {
       let preLemmaSpan = preLemmaSpanHtml === '' ? '' : `<span class="pre-lemma">${preLemmaSpanHtml}</span> `
 
       let lemmaString = ApparatusCommon.getLemmaString(apparatusEntry.lemma, apparatusEntry.lemmaText)
-      html +=  `${lineHtml} ${preLemmaSpan}<span class="lemma lemma-${this.options.apparatusIndex}-${aeIndex}">${lemmaString}</span>] `
+      let lemmaSpan = `<span class="lemma lemma-${this.options.apparatusIndex}-${aeIndex}">${lemmaString}</span>`
+
+      let postLemmaSpan = ''
+      if (apparatusEntry.postLemma !== '') {
+        let postLemma = ApparatusCommon.getKeywordHtml(FmtText.getPlainText(apparatusEntry.postLemma))
+        postLemmaSpan = ` <span class="pre-lemma">${postLemma}</span>`
+      }
+
+      let separator = ''
+
+      switch(apparatusEntry.separator) {
+        case '':
+          separator = ']'
+          break
+
+        case 'off':
+          separator = ''
+          break
+
+        default:
+          separator = FmtText.getPlainText(apparatusEntry.separator)
+      }
+
+      html +=  `${lineHtml} ${preLemmaSpan}${lemmaSpan}${postLemmaSpan}${separator} `
       apparatusEntry.subEntries.forEach( (subEntry, subEntryIndex) => {
         let classes = [ 'sub-entry', `sub-entry-${subEntryIndex}`, `sub-entry-type-${subEntry.type}`, `sub-entry-source-${subEntry.source}`]
         if (!subEntry.enabled) {
@@ -624,17 +809,5 @@ export class ApparatusPanel extends  PanelWithToolbar {
     return `${ApparatusCommon.getNumberString(startLine, this.lang)}-${ApparatusCommon.getNumberString(endLine, this.lang)}`
   }
 
-
-  /**
-   *
-   * @returns {string}
-   * @private
-   */
-  // _getTextDirection() {
-  //   if (this.lang === 'he' || this.lang === 'ar') {
-  //     return 'rtl'
-  //   }
-  //   return 'ltr'
-  // }
 
 }

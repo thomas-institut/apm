@@ -268,6 +268,7 @@ export class ApparatusCommon {
   static typesetSubEntryLatin(subEntryType, theText, witnessIndices, sigla) {
     // TODO: use witnessData instead of witnessIndices, like in the html version
     let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join('')
+    // convert the text tokens to proper typesetter tokens
     let theTextTokens = (new TypesetterTokenRenderer()).render(FmtTextFactory.fromAnything(theText))
 
     let theTokens = []
@@ -491,7 +492,7 @@ export class ApparatusCommon {
 
   /**
    *
-   * @param {string}lemma
+   * @param {string|FmtTextToken[]}lemma
    * @param {string}lemmaText
    */
    static getLemmaString(lemma, lemmaText) {
@@ -511,7 +512,7 @@ export class ApparatusCommon {
         custom = true
     }
     if (custom) {
-      return lemma
+      return FmtText.getPlainText(lemma)
     }
     let lemmaTextWords = lemmaText.split(' ')
     // if lemmaText is short,

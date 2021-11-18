@@ -30,7 +30,7 @@ export  class UpdaterToOnePointOne extends CtDataUpdater {
               break
 
             case 'custom':
-              this.verbose && console.log(`Updating custom for apparatus '${app.type}', entry ${entryIndex}, subEntry ${subEntryIndex}`)
+              this.verbose && console.log(`Updating custom entry for apparatus '${app.type}', entry ${entryIndex}, subEntry ${subEntryIndex}`)
               subEntry['type'] = 'fullCustom'
               subEntry['enabled'] = true
               delete subEntry['plainText']

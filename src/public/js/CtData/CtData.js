@@ -211,7 +211,12 @@ export class CtData  {
     if (entry.subEntries.length !== 0) {
       return false
     }
-    ['preLemma', 'lemma', 'postLemma', 'separator'].forEach( (member) => { if (entry[member] !== '') { return false}})
+    let vars = ['preLemma', 'lemma', 'postLemma', 'separator']
+    for (let i=0; i<vars.length; i++) {
+      if (entry[vars[i]] !== '') {
+        return false
+      }
+    }
     return true
   }
 

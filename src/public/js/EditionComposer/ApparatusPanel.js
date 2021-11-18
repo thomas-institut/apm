@@ -74,7 +74,19 @@ export class ApparatusPanel extends  PanelWithToolbar {
     this._hideApparatusEntryForm()
     this.entryInEditor = {}
     this.editedEntry = {}
+  }
 
+  editApparatusEntry(mainTextFrom, mainTextTo) {
+    let entryIndex = this.apparatus.entries.map( (entry) => {return `${entry.from}-${entry.to}`}).indexOf(`${mainTextFrom}-${mainTextTo}`)
+
+    if (entryIndex === -1) {
+      this._selectLemma(-1)
+      this._loadEntryIntoEntryForm(-1, mainTextFrom, mainTextTo)
+    } else {
+      this._selectLemma(entryIndex)
+      this._loadEntryIntoEntryForm(entryIndex)
+    }
+    this._showApparatusEntryForm()
   }
 
 
@@ -96,10 +108,12 @@ export class ApparatusPanel extends  PanelWithToolbar {
   _loadEntryIntoEntryForm(entryIndex, from = -1, to = -1) {
     let apparatusIndex = this.options.apparatusIndex
     let formSelector = this.getApparatusEntryFormSelector()
+    let formTitleElement = $(`${formSelector} .form-title`)
     console.log(`Loading entry: apparatus ${apparatusIndex}, entry ${entryIndex}`)
     let sigla = this.edition.witnesses.map ( (w) => {return w.siglum})
 
     if (entryIndex !== -1) {
+      formTitleElement.html('Apparatus Entry')
       this.entryInEditor = deepCopy(this.edition.apparatuses[apparatusIndex].entries[entryIndex])
       this.entryInEditor.autoEntries = this.entryInEditor.subEntries.filter( (e) => { return e.source === 'auto'})
       this.entryInEditor.customEntryFmtText = FmtTextFactory.empty()
@@ -113,6 +127,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
       to = this.entryInEditor.to
     } else {
       // new entry
+      formTitleElement.html('Apparatus Entry (new)')
       if (from === -1 || to === -1) {
         throw new Error(`Loading new entry with invalid 'from' and 'to' indexes: ${from} - ${to}`)
       }
@@ -124,7 +139,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
           postLemma: '',
           separator: '',
           autoEntries: [],
-          customEntryText: FmtTextFactory.empty(),
+          customEntryFmtText: FmtTextFactory.empty(),
           lemmaText:  this.edition.getPlainTextForRange(from, to),
           subEntries: []
       }
@@ -146,6 +161,9 @@ export class ApparatusPanel extends  PanelWithToolbar {
                  </label>
                 </div>`
     }).join('')
+    if (this.entryInEditor.autoEntries.length === 0) {
+      autoEntriesHtml = '<em>none</em>'
+    }
     $(`${formSelector} form-check-input`).off()
     $(`${formSelector} div.auto-entries`).html(autoEntriesHtml)
     this.entryInEditor.autoEntries.forEach( (autoEntry, i) => {

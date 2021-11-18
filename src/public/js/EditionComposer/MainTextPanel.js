@@ -40,6 +40,7 @@ import { CtData } from '../CtData/CtData'
 import { EditionFreeTextEditor } from './EditionFreeTextEditor'
 import {FmtTextFactory} from '../FmtText/FmtTextFactory'
 import {FmtTextTokenFactory} from '../FmtText/FmtTextTokenFactory'
+import { capitalizeFirstLetter } from '../toolbox/Util.mjs'
 
 const EDIT_MODE_OFF = 'off'
 const EDIT_MODE_TEXT = 'text'
@@ -72,7 +73,12 @@ export class MainTextPanel extends PanelWithToolbar {
           return true
         }
       },
-      onCtDataChange: { type: 'function', default: doNothing}
+      onCtDataChange: { type: 'function', default: doNothing},
+      editApparatusEntry : {
+        // function that opens an apparatus entry editor, provided by EditionComposer
+        type: 'function',
+        default: (apparatusIndex, mainTextFrom, mainTextTo) => { console.log(`Edit apparatus ${apparatusIndex}, from ${mainTextFrom} to ${mainTextTo}`)}
+      }
     }
 
     let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  'Edition Panel'})
@@ -129,12 +135,22 @@ export class MainTextPanel extends PanelWithToolbar {
   }
 
   generateToolbarHtml (tabId, visible) {
+
+    let apparatusLinks = this.edition.apparatuses.map( (app, index) => {
+      return `<a class="dropdown-item add-entry-apparatus-${index}" href="">${capitalizeFirstLetter(app.type)}</a>`
+    }).join('')
+
     return `<div class="panel-toolbar-group">
             <div class="panel-toolbar-group" id="edition-panel-mode-toggle"></div>
             <div class="panel-toolbar-group apparatus-toolbar">
-                <div class="panel-toolbar-item">
-                    <a class="add-entry-btn tb-button hidden" href="#" title="Add custom apparatus entry">${icons.addEntry}</a>
-                </div>
+               <div class="panel-toolbar-item add-entry-dropdown hidden">
+                  <div class="dropdown">
+                     <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="add-entry-dropdown" data-toggle="dropdown" aria-expanded="false">
+                            ${icons.addEntry}
+                     </button>
+                     <div class="dropdown-menu" aria-labelledby="add-entry-dropdown">${apparatusLinks}</div>
+                  </div>
+               </div>
             </div>
         </div>`
   }
@@ -275,7 +291,10 @@ export class MainTextPanel extends PanelWithToolbar {
       let newEditMode = ev.detail.currentOption
       this._changeEditMode(newEditMode, previousEditMode)
     })
-    this._eleAddEntryButton().on('click', this._genOnClickAddEntryButton())
+    this.edition.apparatuses.forEach( (app, index) => {
+      $(`${this.containerSelector} .add-entry-apparatus-${index}`).on('click', this._genOnClickAddEntryButton(index))
+    })
+    // this._eleAddEntryButton().on('click', this._genOnClickAddEntryButton())
     switch (this.currentEditMode) {
       case EDIT_MODE_OFF:
       case EDIT_MODE_TEXT:
@@ -347,54 +366,23 @@ export class MainTextPanel extends PanelWithToolbar {
     // return removeExtraWhiteSpace(lemma)
   }
 
-  _genOnClickAddEntryButton() {
+  _genOnClickAddEntryButton(appIndex) {
     return (ev) => {
       ev.preventDefault()
       ev.stopPropagation()
       if (this.currentEditMode !== EDIT_MODE_APPARATUS) {
         return
       }
-      this.verbose && console.log(`Click on add entry button`)
-      // let currentApparatuses = this.edition.apparatuses.map( (app, i) => {
-      //   let index = app.findEntryIndex( this.selection.from, this.selection.to)
-      //   return {
-      //     name: app.type,
-      //     title: capitalizeFirstLetter(app.type),
-      //     entryIndex: index,
-      //     preLemma: index === -1 ? '' : app.entries[index].preLemma,
-      //     lemma: index === -1 ? '' : app.entries[index].lemma,
-      //     postLemma: index === -1 ? '' : app.entries[index].postLemma,
-      //     separator: index === -1 ? '' : app.entries[index].separator,
-      //     currentEntries: index === -1 ? [] : app.entries[index].subEntries
-      //   }
-      // })
+      this.verbose && console.log(`Click on add entry button for apparatus ${appIndex}`)
+
       let entryText = this._getLemmaFromSelection()
       let from = this.selection.from
       let to = this.selection.to
-      this.verbose(`Selection ${from} to ${to}, '${entryText}'`)
+      this.verbose && console.log(`Selection ${from} to ${to}, '${entryText}'`)
 
-      // TODO: show menu with apparatuses and then show the proper tab accordingly
-      // let aei = new ApparatusEntryInput({
-      //   apparatuses: currentApparatuses,
-      //   entryText: entryText,
-      //   ctIndexFrom: CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[from].editionWitnessTokenIndex),
-      //   ctIndexTo: CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[to].editionWitnessTokenIndex),
-      //   lang: this.lang,
-      //   sigla: this.edition.getSigla()
-      // })
-      // aei.getEntry().then( (newEntry) => {
-      //   this.verbose && console.log(`Updated apparatus entry `)
-      //   this.verbose && console.log(newEntry)
-      //   this.ctData = ApparatusCommon.updateCtDataWithNewEntry(this.ctData, this.edition, this.selection.from, this.selection.to, newEntry, entryText, currentApparatusEntries, this.verbose)
-      //   this.options.onCtDataChange(this.ctData)
-      // })
-      //   .catch( (reason) => {
-      //     if (reason !== userCancelledReason) {
-      //       console.error(`Fail updating apparatus entry`)
-      //       console.log(reason)
-      //       this.options.onError(`Error adding/updating apparatus entry`)
-      //     }
-      //   })
+      this.options.editApparatusEntry(appIndex, from, to)
+      this._eleAddEntryDropdownButton().dropdown('hide')
+
     }
   }
 
@@ -550,17 +538,16 @@ export class MainTextPanel extends PanelWithToolbar {
     this.selecting = false
   }
 
-  _eleAddEntryButton() {
-    return $(`${this.containerSelector} a.add-entry-btn`)
+  _eleAddEntryDropdownButton() {
+    return $(`${this.containerSelector} .add-entry-dropdown`)
   }
 
   _processNewSelection() {
-    this.verbose && console.log(`New selection: ${this.selection.from} -> ${this.selection.to}`)
-    let addEntryButton = this._eleAddEntryButton()
+    let addEntryDropdownButton = this._eleAddEntryDropdownButton()
     if (this.isSelectionEmpty()) {
-      addEntryButton.addClass('hidden')
+      addEntryDropdownButton.addClass('hidden')
     } else {
-      addEntryButton.removeClass('hidden')
+      addEntryDropdownButton.removeClass('hidden')
     }
   }
 

@@ -241,6 +241,15 @@ h1.lemma {
     margin-bottom: 2rem;
 }
 
+div.add-entry-dropdown button.dropdown-toggle {
+    border: none;
+}
+
+div.add-entry-dropdown a.dropdown-item {
+    text-decoration: none;
+    font-size: 0.8rem;
+}
+
 /* Collation Table Panel */
 
 #collation-table .panel-content {
@@ -271,6 +280,12 @@ h1.lemma {
 
 .sub-entry-source-user {
     color: #1875b1;
+}
+
+div.aei-form .col-form-label {
+    padding-top: 0;
+    padding-bottom: 0;
+    margin: 0;
 }
 
 /* Custom Entry Editor */

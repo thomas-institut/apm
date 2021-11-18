@@ -197,7 +197,7 @@ export class EditionComposer {
       verbose: false
     })
 
-    let apparatusPanels = this.edition.apparatuses
+    this.apparatusPanels = this.edition.apparatuses
       .map( (apparatus, index) => {
         return new ApparatusPanel({
           ctData: this.ctData,
@@ -215,11 +215,12 @@ export class EditionComposer {
       containerSelector: `#${mainTextTabId}`,
       ctData: this.ctData,
       edition: this.edition,
-      apparatusPanels: apparatusPanels,
+      apparatusPanels: this.apparatusPanels,
       verbose: true,
       onError: (msg) => { this._setError(`${msg} (Main Text Panel)`)},
       onConfirmMainTextEdit: this.genOnConfirmMainTextEdit(),
-      onCtDataChange: this.genOnCtDataChange('mainTextPanel')
+      onCtDataChange: this.genOnCtDataChange('mainTextPanel'),
+      editApparatusEntry: (apparatusIndex, mainTextFrom, mainTextTo) => { this.editApparatusEntry(apparatusIndex, mainTextFrom, mainTextTo)}
     })
 
     // tab arrays
@@ -234,7 +235,7 @@ export class EditionComposer {
         return createTabConfig(
           `apparatus-${index}`,
           this._getTitleForApparatusType(apparatus.type),
-          apparatusPanels[index],
+          this.apparatusPanels[index],
           this._getLinkTitleForApparatusType(apparatus.type)
          )
       })
@@ -316,6 +317,13 @@ export class EditionComposer {
     return (index, on) => {
       this.mainTextPanel.highlightTextForLemma(apparatusType, index, on)
     }
+  }
+
+  editApparatusEntry(apparatusIndex, mainTextFrom, mainTextTo) {
+    console.log(`Got request to edit apparatus entry in apparatus ${this.edition.apparatuses[apparatusIndex].type}, from ${mainTextFrom} to ${mainTextTo}`)
+
+    this.apparatusPanels[apparatusIndex].editApparatusEntry(mainTextFrom, mainTextTo)
+    $(`#apparatus-${apparatusIndex}-tab`).tab('show')
   }
 
 

@@ -573,6 +573,7 @@ ${this.options.topBarRightAreaContent()}
     $(`#${ids.panelsDiv}`).replaceWith(newHtml)
   }
 
+
   _setupTabEventHandlers() {
     let thisObject = this
     this.panels.forEach((panel, panelIndex) => {

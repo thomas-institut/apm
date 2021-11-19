@@ -92,8 +92,7 @@ export class CriticalApparatusGenerator {
           ctIndex--
         }
 
-        // a ctIndex of -1 means that the apparatus entry comes before the text, normally with the lemma 'pre'
-        // in the printed edition
+        // a ctIndex of -1 means that the apparatus entry comes before the text
         let mainTextIndex = ctIndex < 0 ? -1 : ctIndexToMainTextMap[ctIndex]
         if (mainTextIndex === undefined) {
           console.warn(`Main text index undefined for ctIndex ${ctIndex}`)
@@ -124,6 +123,7 @@ export class CriticalApparatusGenerator {
           let entry = new ApparatusEntry()
           entry.from = mainTextIndex
           entry.to = mainTextIndex
+          // TODO: deal with 'pre' entries properly, the lemma text should be the first word in the text
           entry.lemmaText = mainTextIndex !== -1 ? ApparatusCommon.getNormalizedTextFromInputToken(baseWitnessTokens[ctIndex]) : 'pre'
           entry.subEntries = subEntries
           // other info

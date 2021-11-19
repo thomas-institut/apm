@@ -379,7 +379,26 @@ export class EditionViewerSvg {
       if (preLemmaTokens.length !== 0) {
         ttTokens.push(TypesetterTokenFactory.normalSpace())
       }
-      ttTokens.push(TypesetterTokenFactory.simpleText(ApparatusCommon.getLemmaString(apparatusEntry.lemma, apparatusEntry.lemmaText) + ']').setLang(this.edition.lang))
+      let separatorTokens = []
+
+      switch(apparatusEntry.separator) {
+        case '':
+          separatorTokens = [ TypesetterTokenFactory.simpleText(']').setLang(this.edition.lang) ]
+          break
+
+        case 'off':
+          break
+
+        case 'colon':
+          separatorTokens = [ TypesetterTokenFactory.simpleText(':').setLang(this.edition.lang) ]
+          break
+
+        default:
+          separatorTokens = (new TypesetterTokenRenderer()).render(removeExtraWhiteSpace(FmtText.getPlainText(apparatusEntry.separator)))
+      }
+
+      ttTokens.push(TypesetterTokenFactory.simpleText(ApparatusCommon.getLemmaString(apparatusEntry.lemma, apparatusEntry.lemmaText)).setLang(this.edition.lang))
+      pushArray(ttTokens, separatorTokens)
       ttTokens.push(TypesetterTokenFactory.normalSpace())
       enabledSubEntries.forEach( (subEntry) => {
         let theText = subEntry.type === SubEntryType.OMISSION ? [] : subEntry.fmtText

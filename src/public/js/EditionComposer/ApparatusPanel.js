@@ -122,7 +122,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
         // only supporting one custom entry for now
         this.entryInEditor.customEntryFmtText = customEntries[0].fmtText
       }
-      delete this.entryInEditor.ctGroup
+      //delete this.entryInEditor.ctGroup
       from = this.entryInEditor.from
       to = this.entryInEditor.to
     } else {
@@ -144,10 +144,31 @@ export class ApparatusPanel extends  PanelWithToolbar {
           subEntries: []
       }
     }
-    let ctIndexFrom = CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[from].editionWitnessTokenIndex)
-    let ctIndexTo = CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[to].editionWitnessTokenIndex)
+    let ctIndexFrom = -1
+    let ctIndexTo = -1
+    if (from === -1) {
+      if (this.entryInEditor.ctGroup !== undefined) {
+        ctIndexFrom = this.entryInEditor.ctGroup.from
+      } else {
+        console.warn(`Undefined collation table indexes for existing apparatus entry`)
+        console.log(this.entryInEditor)
+      }
+    } else {
+      ctIndexFrom = CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[from].editionWitnessTokenIndex)
+    }
+    if (to === -1) {
+      if (this.entryInEditor.ctGroup !== undefined) {
+        ctIndexTo = this.entryInEditor.ctGroup.to
+      } else {
+        console.warn(`Undefined collation table indexes for existing apparatus entry`)
+        console.log(this.entryInEditor)
+      }
+    } else {
+      ctIndexTo = CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[to].editionWitnessTokenIndex)
+    }
     this.entryInEditor.ctIndexFrom = ctIndexFrom
     this.entryInEditor.ctIndexTo = ctIndexTo
+    delete this.entryInEditor.ctGroup
     $(`${formSelector} .ct-table-cols`).html(this._getCtColumnsText(ctIndexFrom, ctIndexTo))
 
     console.log(this.entryInEditor)
@@ -258,7 +279,8 @@ export class ApparatusPanel extends  PanelWithToolbar {
   }
 
   generateContentHtml (tabId, mode, visible) {
-    return `<div class="aei-form">${this._generateApparatusEntryFormHtml()}</div>
+    let textDirection = this.edition.lang === 'la' ? 'ltr' : 'rtl'
+    return `<div class="aei-form" style="direction: ${textDirection}">${this._generateApparatusEntryFormHtml()}</div>
 <div class="apparatus text-${this.lang}">${this.cachedHtml}</div>`
   }
 
@@ -267,6 +289,11 @@ export class ApparatusPanel extends  PanelWithToolbar {
    * @private
    */
   _generateApparatusEntryFormHtml() {
+    let shortCol = 2
+    let longCol = 12 - shortCol
+    const customTextSize = 10
+    const customSeparatorTextSize = 3
+
     return `<div class="form-header">
                 <h5 class="form-title">Apparatus Entry</h5>
             </div>
@@ -274,55 +301,52 @@ export class ApparatusPanel extends  PanelWithToolbar {
                 <form>
                 <div class="entry-header">
                     <div class="form-group row">
-                        <div class="col-sm-3">Edition Text:</div>
-                        <div class="col-sm-9 entry-text text-${this.edition.lang}">
+                        <div class="col-sm-${shortCol}">Edition Text:</div>
+                        <div class="col-sm-${longCol} entry-text text-${this.edition.lang}">
                             some text  
                         </div>
                     </div>
                     <div class="form-group row">
-                        <div class="col-sm-3">Collation Table:</div>
-                        <div class="col-sm-9 ct-table-cols"></div>
+                        <div class="col-sm-${shortCol}">Collation Table:</div>
+                        <div class="col-sm-${longCol} ct-table-cols"></div>
                     </div>
                 </div>
                 <div class="form-group row">
-                    <label for="pre-lemma-div" class="col-sm-3 col-form-label">Pre Lemma:</label>
-                    <div class="col-sm-9 aei-multitoggle-div pre-lemma-div">
+                    <label for="pre-lemma-div" class="col-sm-${shortCol} col-form-label">Pre Lemma:</label>
+                    <div class="col-sm-${longCol} aei-multitoggle-div pre-lemma-div">
                         <div class="pre-lemma-toggle aei-multitoggle"> </div>
-                        <div><input type="text" class="custom-pre-lemma-input" size="5"></div>
+                        <div><input type="text" class="custom-pre-lemma-input" size="${customTextSize}"></div>
                     </div>
                     
                 </div>
                 <div class="form-group row">
-                    <label for="lemma-div" class="col-sm-3 col-form-label">Lemma:</label>
-<!--                    <div class="col-sm-9 lemma-div">auto | force-dash | ellipsis | custom</div>-->
-                    <div class="col-sm-9 aei-multitoggle-div lemma-div">
+                    <label for="lemma-div" class="col-sm-${shortCol} col-form-label">Lemma:</label>
+                    <div class="col-sm-${longCol} aei-multitoggle-div lemma-div">
                         <div class="lemma-toggle aei-multitoggle"> </div>
-                        <div><input type="text" class="custom-lemma-input" size="5"></div>
+                        <div><input type="text" class="custom-lemma-input" size="${customTextSize}"></div>
                     </div>
                 </div>
                 <div class="form-group row">
-                    <label for="post-lemma-div" class="col-sm-3 col-form-label">Post Lemma:</label>
-<!--                    <div class="col-sm-9 post-lemma-div">auto | custom </div>-->
-                    <div class="col-sm-9 aei-multitoggle-div post-lemma-div">
+                    <label for="post-lemma-div" class="col-sm-${shortCol} col-form-label">Post Lemma:</label>
+                    <div class="col-sm-${longCol} aei-multitoggle-div post-lemma-div">
                         <div class="post-lemma-toggle aei-multitoggle"> </div>
-                        <div><input type="text" class="custom-post-lemma-input" size="5"></div>
+                        <div><input type="text" class="custom-post-lemma-input" size="${customTextSize}"></div>
                     </div>
                 </div>
                 <div class="form-group row">
-                     <label for="separator-div" class="col-sm-3 col-form-label">Separator:</label>
-<!--                      <div class="col-sm-9 separator-div">auto | off | custom</div>-->
-                     <div class="col-sm-9 aei-multitoggle-div separator-div">
+                     <label for="separator-div" class="col-sm-${shortCol} col-form-label">Separator:</label>
+                     <div class="col-sm-${longCol} aei-multitoggle-div separator-div">
                         <div class="separator-toggle aei-multitoggle"> </div>
-                        <div><input type="text" class="custom-separator-input" size="3"></div>
+                        <div><input type="text" class="custom-separator-input" size="${customSeparatorTextSize}"></div>
                     </div>
                 </div>
                 <div class="form-group row">
-                    <label class="col-sm-3 col-form-label">Automatic Entries:</label>
-                    <div class="col-sm-9 auto-entries text-${this.edition.lang}"></div>
+                    <label class="col-sm-${shortCol} col-form-label">Automatic Entries:</label>
+                    <div class="col-sm-${longCol} auto-entries text-${this.edition.lang}"></div>
                 </div>
                 <div class="form-group row">
-                    <label for="free-text-entry" class="col-sm-3 col-form-label">Custom Entry:</label>
-                    <div class="col-sm-7">
+                    <label for="free-text-entry" class="col-sm-${shortCol} col-form-label">Custom Entry:</label>
+                    <div class="col-sm-${longCol}">
                         <div class="free-text-entry-div"></div>
                     </div>
                 </div>
@@ -374,6 +398,10 @@ export class ApparatusPanel extends  PanelWithToolbar {
     })
 
     // preLemma
+    let anteKeyword = ApparatusCommon.getKeywordString('ante', this.edition.lang)
+    let postKeyword = ApparatusCommon.getKeywordString('post', this.edition.lang)
+    let anteLabel = ApparatusCommon.getKeywordHtml('ante', this.edition.lang)
+    let postLabel = ApparatusCommon.getKeywordHtml('post', this.edition.lang)
     this.preLemmaToggle = new MultiToggle({
       containerSelector: `${formSelector} .pre-lemma-toggle`,
       buttonClass: 'tb-button',
@@ -381,8 +409,8 @@ export class ApparatusPanel extends  PanelWithToolbar {
       buttonsDivClass: 'aei-multitoggle-button',
       buttonDef: [
         { label: 'Auto', name: 'auto', helpText: 'Let APM generate pre-lemma text'},
-        { label: '<i>ante</i>', name: 'ante', helpText: "Standard word 'ante'"},
-        { label: '<i>post</i>', name: 'post', helpText: "Standard word 'post'"},
+        { label: anteLabel, name: 'ante', helpText: `Standard keyword '${anteKeyword}'`},
+        { label: postLabel, name: 'post', helpText: `Standard keyword '${postKeyword}'`},
         { label: 'Custom', name: 'custom', helpText: "Enter custom pre-lemma text"},
       ]
     })
@@ -435,6 +463,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
       buttonDef: [
         { label: 'Auto', name: 'auto', helpText: 'Let APM generate separator'},
         { label: 'Off', name: 'off', helpText: "Turn off separator"},
+        { label: '&nbsp; : &nbsp;', name: 'colon', helpText: "Colon ':'"},
         { label: 'Custom', name: 'custom', helpText: "Enter custom separator"},
       ]
     })
@@ -787,6 +816,10 @@ export class ApparatusPanel extends  PanelWithToolbar {
 
         case 'off':
           separator = ''
+          break
+
+        case 'colon':
+          separator = ':'
           break
 
         default:

@@ -23,6 +23,7 @@ import { deepCopy } from '../../toolbox/Util.mjs'
 import * as CollationTableType from '../../Witness/WitnessTokenClass'
 import * as TranscriptionTokenType from '../../Witness/WitnessTokenType'
 import { Matrix } from '@thomas-inst/matrix'
+import * as TokenClass from '../../Witness/WitnessTokenClass'
 
 
 export class CleanerOnePointOne extends CtDataCleaner{
@@ -225,6 +226,16 @@ export class CleanerOnePointOne extends CtDataCleaner{
       this.verbose &&  console.log(`... all good, no inconsistencies found`)
     }
   }
+
+
+  matrixToArray(matrix) {
+    let theArray = []
+    for (let i = 0; i < matrix.nRows; i++) {
+      theArray[i] = matrix.getRow(i)
+    }
+    return theArray
+  }
+
 
 
 

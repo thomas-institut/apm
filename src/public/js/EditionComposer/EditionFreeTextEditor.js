@@ -24,12 +24,14 @@ import Small from './QuillBlots/Small'
 import { QuillDeltaRenderer } from '../FmtText/Renderer/QuillDeltaRenderer'
 import { QuillDeltaConverter } from './QuillDeltaConverter'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory'
+import Superscript from './QuillBlots/Superscript'
 
-const simpleFormats = [ 'bold', 'italic', 'small']
+const simpleFormats = [ 'bold', 'italic', 'small', 'superscript']
 const buttons = {
   bold: { icon: '<i class="bi bi-type-bold"></i>' , title: 'Bold'},
   italic: { icon: '<i class="bi bi-type-italic"></i>' , title: 'Italic'},
-  small: { icon: '<small class="fte-icon">S</small>', title: 'Small Font'}
+  small: { icon: '<small class="fte-icon">S</small>', title: 'Small Font'},
+  superscript: { icon: '<small class="fte-icon">x<sup>2</sup>', title: 'Superscript'}
 }
 
 
@@ -160,5 +162,6 @@ function setButtonState(btn, state) {
 // Initialization
 
 Quill.register({
-  'formats/small' : Small
+  'formats/small' : Small,
+  'formats/superscript' : Superscript
 }, true)

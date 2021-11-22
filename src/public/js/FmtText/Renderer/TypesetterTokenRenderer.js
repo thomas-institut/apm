@@ -23,8 +23,12 @@ import * as TypesetterTokenType from '../../Typesetter/TypesetterTokenType'
 import { TypesetterTokenFactory } from '../../Typesetter/TypesetterTokenFactory'
 import * as FontStyle from '../FontStyle'
 import * as FontWeight from '../FontWeight'
+import * as VerticalAlign from '../VerticalAlign'
 
 import {OptionsChecker} from '@thomas-inst/optionschecker'
+
+const superScriptFontSize = 0.58
+const subScriptFontSize = 0.58
 
 export class TypesetterTokenRenderer extends FmtTextRenderer {
 
@@ -68,6 +72,17 @@ export class TypesetterTokenRenderer extends FmtTextRenderer {
           if (fmtTextToken.fontSize < 1) {
             ttToken.setFontSize(fmtTextToken.fontSize)
           }
+
+          if (fmtTextToken.verticalAlign === VerticalAlign.SUPERSCRIPT) {
+            ttToken.setVerticalAlign('superscript')
+            ttToken.setFontSize(superScriptFontSize)
+          }
+
+          if (fmtTextToken.verticalAlign === VerticalAlign.SUBSCRIPT) {
+            ttToken.setVerticalAlign('subscript')
+            ttToken.setFontSize(subScriptFontSize)
+          }
+
           return ttToken
       }
     })

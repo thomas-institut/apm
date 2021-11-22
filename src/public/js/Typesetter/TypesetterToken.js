@@ -19,6 +19,8 @@
 
 import * as TypesetterTokenType from './TypesetterTokenType'
 
+
+
 /**
  *
  * A TypesetterToken is an object with the following properties:
@@ -141,6 +143,11 @@ export class TypesetterToken {
     this.penalty = 0
     this.flagged = false
     this.text = ''
+    return this
+  }
+
+  setVerticalAlign(vAlign) {
+    this.verticalAlign = vAlign
     return this
   }
 

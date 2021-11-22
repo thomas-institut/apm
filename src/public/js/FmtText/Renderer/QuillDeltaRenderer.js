@@ -21,10 +21,11 @@ import * as FmtTextTokenType from '../FmtTextTokenType'
 import * as FontStyle from '../FontStyle'
 import * as FontSize from '../FontSize'
 import * as FontWeight from '../FontWeight'
+import * as VerticalAlign from '../VerticalAlign'
 
 export class QuillDeltaRenderer extends FmtTextRenderer {
 
-  render (fmtText) {
+  render (fmtText, lang = '') {
     let deltaOps = fmtText.map( (fmtTextToken) => {
       if (fmtTextToken.type === FmtTextTokenType.GLUE) {
         return { insert: ' '}
@@ -37,8 +38,16 @@ export class QuillDeltaRenderer extends FmtTextRenderer {
       if (fmtTextToken.fontWeight === FontWeight.BOLD) {
         attr.bold = true
       }
-      if (fmtTextToken.fontSize === FontSize.SMALL) {
-        attr.small = true
+
+      if (fmtTextToken.fontSize <  FontSize.NORMAL) {
+        // fontsize is a numeric value, but for Quill we only have a 'small' attribute
+        switch(fmtTextToken.verticalAlign) {
+          case VerticalAlign.SUPERSCRIPT:
+            attr.superscript = true
+            break
+          default:
+            attr.small = true
+        }
       }
       return  {
         insert: fmtTextToken.text,

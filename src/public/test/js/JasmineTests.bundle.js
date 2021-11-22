@@ -469,12 +469,16 @@ const GLUE = 'glue'
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "NORMAL": () => (/* binding */ NORMAL),
-/* harmony export */   "SMALL": () => (/* binding */ SMALL)
+/* harmony export */   "SMALL": () => (/* binding */ SMALL),
+/* harmony export */   "SUPERSCRIPT": () => (/* binding */ SUPERSCRIPT),
+/* harmony export */   "SUBSCRIPT": () => (/* binding */ SUBSCRIPT)
 /* harmony export */ });
 
 
 const NORMAL = 1
 const SMALL = 0.8
+const SUPERSCRIPT = 0.7
+const SUBSCRIPT = 0.7
 
 /***/ }),
 
@@ -561,8 +565,8 @@ __webpack_require__.r(__webpack_exports__);
  */
 
 const BASELINE = ''
-const SUBSCRIPT = 'sub'
-const SUPERSCRIPT = 'super'
+const SUBSCRIPT = 'subscript'
+const SUPERSCRIPT = 'superscript'
 
 /***/ }),
 

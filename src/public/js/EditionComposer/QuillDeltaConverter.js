@@ -22,6 +22,7 @@ import * as FontStyle from '../FmtText/FontStyle'
 import * as FontSize from '../FmtText/FontSize'
 import * as FmtTextTokenType from '../Edition/MainTextTokenType'
 import { varsAreEqual } from '../toolbox/ArrayUtil'
+import * as VerticalAlign from '../FmtText/VerticalAlign'
 
 export class QuillDeltaConverter {
   static toFmtText(quillDelta) {
@@ -48,6 +49,10 @@ export class QuillDeltaConverter {
           }
           if (ops.attributes.small) {
             theFmtText[i].fontSize = FontSize.SMALL
+          }
+          if (ops.attributes.superscript) {
+            theFmtText[i].fontSize = FontSize.SUPERSCRIPT
+            theFmtText[i].verticalAlign = VerticalAlign.SUPERSCRIPT
           }
         }
       }

@@ -67,6 +67,8 @@ import * as ArrayUtil from '../toolbox/ArrayUtil'
 import { LanguageDetector } from '../toolbox/LanguageDetector'
 import { isRtl } from '../toolbox/Util.mjs'
 
+import * as VerticalAlign from '../FmtText/VerticalAlign'
+
 export class Typesetter {
   
   constructor(options = {}) {
@@ -544,9 +546,26 @@ export class Typesetter {
     let fontFamily = this.options.defaultFontFamily
     let fontWeight = ''
     let fontStyle = ''
+    let baseLineShift = 0
 
     if (token.fontWeight) {
       fontWeight = token.fontWeight
+    }
+
+    if (token.verticalAlign) {
+      switch (token.verticalAlign) {
+        case VerticalAlign.SUPERSCRIPT:
+          console.log(`Applying superscript`)
+          console.log(token)
+          console.log(`Fontsize: ${fontSize}pt = ${Typesetter.pt2px(fontSize)}px`)
+          baseLineShift = Typesetter.pt2px(-fontSize/4)
+          console.log(`Baseline shift: ${baseLineShift}`)
+          break
+
+        case VerticalAlign.SUBSCRIPT:
+          baseLineShift = Typesetter.pt2px(fontSize/4)
+          break
+      }
     }
     
     if (token.fontStyle) {
@@ -584,7 +603,7 @@ export class Typesetter {
       svgString += 'direction="rtl" '
     }
 
-    svgString += ' x="' + posX + '" y="' + (top + token.deltaY) + '">' +  token.text + '</text>'
+    svgString += ' x="' + posX + '" y="' + (top + token.deltaY + baseLineShift) + '">' +  token.text + '</text>'
     return svgString
   }
 

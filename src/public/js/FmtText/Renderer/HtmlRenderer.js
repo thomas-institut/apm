@@ -51,9 +51,10 @@ export class HtmlRenderer extends FmtTextRenderer{
   /**
    *
    * @param {FmtTextToken[] } fmtText
+   * @param lang
    * @return {string}
    */
-  render(fmtText) {
+  render(fmtText, lang = '') {
     return fmtText.map((t, i) => {
       let tokenClasses = this.options.tokenClasses
       let classes  = []
@@ -88,7 +89,7 @@ export class HtmlRenderer extends FmtTextRenderer{
           if (t.verticalAlign === VerticalAlign.SUBSCRIPT) {
             textWrappers.push('sub')
           }
-          if (t.fontSize === FontSize.SMALL) {
+          if (t.fontSize === FontSize.SMALL && t.verticalAlign === VerticalAlign.BASELINE) {
             textWrappers.push('small')
           }
           let startWrappers = ''

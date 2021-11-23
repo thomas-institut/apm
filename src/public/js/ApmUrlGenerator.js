@@ -24,6 +24,10 @@ class ApmUrlGenerator {
         return this.base
     }
 
+    apiLog() {
+        return `${this.base}/api/admin/log`
+    }
+
     apiGetNumColumns(docId, pageNumber) {
         return this.base + '/api/' + docId + '/' + pageNumber + '/numcolumns';
     }

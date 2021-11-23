@@ -26,6 +26,7 @@
 namespace APM;
 
 
+use APM\Api\ApiLog;
 use APM\Api\ApiTranscription;
 use Slim\App;
 use Slim\Psr7\Factory\ResponseFactory;
@@ -253,6 +254,12 @@ $app->group('', function (RouteCollectorProxy $group){
 // USER AUTHENTICATED API
 
 $app->group('/api', function (RouteCollectorProxy $group){
+    // ADMIN
+
+    // API -> log message from front end
+    $group->post('/admin/log',
+        ApiLog::class . ':frontEndLog')
+        ->setName('api.admin.log');
 
     // ELEMENTS
 

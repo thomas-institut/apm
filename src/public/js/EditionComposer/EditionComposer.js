@@ -43,7 +43,6 @@ import { CollationTablePanel } from './CollationTablePanel'
 import { AdminPanel } from './AdminPanel'
 import { EditionPreviewPanel } from './EditionPreviewPanel'
 import { MainTextPanel } from './MainTextPanel'
-import { CleanerOnePointZero } from '../CtData/CtDataCleaner/CleanerOnePointZero'
 import { ApparatusPanel } from './ApparatusPanel'
 import { Edition } from '../Edition/Edition'
 import { CtDataEditionGenerator } from '../Edition/EditionGenerator/CtDataEditionGenerator'
@@ -52,6 +51,9 @@ import * as CollationTableType from '../constants/CollationTableType'
 import * as NormalizationSource from '../constants/NormalizationSource'
 import { CtData } from '../CtData/CtData'
 import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'
+import { EditionWitnessReferencesCleaner } from '../CtData/CtDataCleaner/EditionWitnessReferencesCleaner'
+import { CollationTableConsistencyCleaner } from '../CtData/CtDataCleaner/CollationTableConsistencyCleaner'
+import { ServerLogger } from '../Server/ServerLogger'
 
 // CONSTANTS
 
@@ -116,6 +118,11 @@ export class EditionComposer {
     this.errorDetail = ''
 
     this.apiSaveCollationUrl = this.options.urlGenerator.apiSaveCollation()
+
+    this.serverLogger = new ServerLogger({
+      apiCallUrl: this.options.urlGenerator.apiLog(),
+      module: 'EditionComposer'
+    })
 
 
     this.ctData =CtData.getCleanAndUpdatedCtData(this.options['collationTableData'])
@@ -580,6 +587,7 @@ export class EditionComposer {
   _setError(detail)  {
     this.errorDetected = true
     this.errorDetail = detail
+    this.serverLogger.error('main', detail, { tableId: this.ctData['tableId']})
     this._updateErrorUi()
   }
 
@@ -763,9 +771,19 @@ export class EditionComposer {
       this.ctData['witnesses'][witnessIndex] = newWitness
 
       //4. Clean up references
-      // TODO: fix this, it should not be necessary
-      let cleaner = new CleanerOnePointZero({verbose: true})
-      this.ctData = cleaner.fixEditionWitnessReferences(this.ctData)
+      let referencesCleaner = new EditionWitnessReferencesCleaner({verbose: true})
+      this.ctData = referencesCleaner.getCleanCtData(this.ctData)
+
+      // 5.Fixes inconsistencies
+      let consistencyCleaner = new CollationTableConsistencyCleaner({verbose: true})
+      this.ctData = consistencyCleaner.getCleanCtData(this.ctData)
+      let inconsistencyErrors = consistencyCleaner.getErrors()
+      if (inconsistencyErrors.length !== 0) {
+        console.warn(`Inconsistencies found after update!`)
+        this.serverLogger.warning('witnessUpdate', `Inconsistencies found in witness ${witnessIndex} (${this.ctData['witnessTitles'][witnessIndex]}), table ${this.ctData['tableId']}`, inconsistencyErrors)
+      } else {
+        this.serverLogger.info('witnessUpdate', `Witness ${witnessIndex} (${this.ctData['witnessTitles'][witnessIndex]}) updated in table ${this.ctData['tableId']}`)
+      }
 
       console.log(`New CT data after update`)
       console.log(this.ctData)

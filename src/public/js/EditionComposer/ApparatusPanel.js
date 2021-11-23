@@ -27,7 +27,7 @@ import { onClickAndDoubleClick } from '../toolbox/DoubleClick'
 import { FmtText } from '../FmtText/FmtText'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory'
 import { EditionFreeTextEditor } from './EditionFreeTextEditor'
-import { deepCopy, removeExtraWhiteSpace } from '../toolbox/Util.mjs'
+import { capitalizeFirstLetter, deepCopy, removeExtraWhiteSpace } from '../toolbox/Util.mjs'
 import { varsAreEqual } from '../toolbox/ArrayUtil'
 import * as SubEntryType from '../Edition/SubEntryType'
 import { ApparatusSubEntry } from '../Edition/ApparatusSubEntry'
@@ -36,8 +36,15 @@ import { MultiToggle } from '../widgets/MultiToggle'
 const doubleVerticalLine = String.fromCodePoint(0x2016)
 const verticalLine = String.fromCodePoint(0x007c)
 
-const editIcon = '<small><i class="fas fa-pen"></i></small>'
 
+const icons = {
+  edit: '<small><i class="fas fa-pen"></i></small>',
+  cancelEdit: '<i class="bi bi-x-circle"></i>',
+  addEntry: '<i class="bi bi-plus-lg"></i>'
+}
+
+const editEntryButtonTitle = 'Click to edit selected apparatus entry'
+const cancelEditButtonTitle = 'Click to cancel editing apparatus entry'
 
 export class ApparatusPanel extends  PanelWithToolbar {
 
@@ -56,6 +63,11 @@ export class ApparatusPanel extends  PanelWithToolbar {
         // (lemmaIndexArray, on) => { ... return nothing }
         type: 'function',
         default: doNothing
+      },
+      editApparatusEntry : {
+        // function that opens an apparatus entry editor, provided by EditionComposer
+        type: 'function',
+        default: (apparatusIndex, mainTextFrom, mainTextTo) => { console.log(`Edit apparatus ${apparatusIndex}, from ${mainTextFrom} to ${mainTextTo}`)}
       }
     }
     let oc = new OptionsChecker({ optionsDefinition: optionsSpec, context: 'Apparatus Panel' })
@@ -74,6 +86,9 @@ export class ApparatusPanel extends  PanelWithToolbar {
     this._hideApparatusEntryForm()
     this.entryInEditor = {}
     this.editedEntry = {}
+    this.selectNewEntry = false
+    this.newEntryMainTextFrom = -1
+    this.newEntryMainTextTo = -1
   }
 
   editApparatusEntry(mainTextFrom, mainTextTo) {
@@ -98,6 +113,68 @@ export class ApparatusPanel extends  PanelWithToolbar {
     this.lang = this.edition.getLang()
   }
 
+  _buildEntryToEdit(entryIndex, from = -1, to = -1) {
+    let apparatusIndex = this.options.apparatusIndex
+    let theEntry
+
+    if (entryIndex !== -1) {
+      theEntry = deepCopy(this.edition.apparatuses[apparatusIndex].entries[entryIndex])
+      theEntry.autoEntries = theEntry.subEntries.filter( (e) => { return e.source === 'auto'})
+      theEntry.customEntryFmtText = FmtTextFactory.empty()
+      let customEntries = theEntry.subEntries.filter( (e) => { return e.type === SubEntryType.FULL_CUSTOM})
+      if (customEntries.length !== 0) {
+        // only supporting one custom entry for now
+        theEntry.customEntryFmtText = customEntries[0].fmtText
+      }
+      from = theEntry.from
+      to = theEntry.to
+    } else {
+      // new entry
+      if (from === -1 || to === -1) {
+        throw new Error(`Loading new entry with invalid 'from' and 'to' indexes: ${from} - ${to}`)
+      }
+      theEntry = {
+        mainTextFrom: from,
+        mainTextTo: to,
+        preLemma: '',
+        lemma: '',
+        postLemma: '',
+        separator: '',
+        autoEntries: [],
+        customEntryFmtText: FmtTextFactory.empty(),
+        lemmaText:  this.edition.getPlainTextForRange(from, to),
+        subEntries: []
+      }
+    }
+    let ctIndexFrom = -1
+    let ctIndexTo = -1
+    if (from === -1) {
+      if (theEntry.ctGroup !== undefined) {
+        ctIndexFrom = theEntry.ctGroup.from
+      } else {
+        console.warn(`Undefined collation table indexes for existing apparatus entry`)
+        console.log(theEntry)
+      }
+    } else {
+      ctIndexFrom = CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[from].editionWitnessTokenIndex)
+    }
+    if (to === -1) {
+      if (theEntry.ctGroup !== undefined) {
+        ctIndexTo = theEntry.ctGroup.to
+      } else {
+        console.warn(`Undefined collation table indexes for existing apparatus entry`)
+        console.log(theEntry)
+      }
+    } else {
+      ctIndexTo = CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[to].editionWitnessTokenIndex)
+    }
+    theEntry.ctIndexFrom = ctIndexFrom
+    theEntry.ctIndexTo = ctIndexTo
+    delete theEntry.ctGroup
+
+    return theEntry
+  }
+
   /**
    * Reset the apparatus entry form and loads it with the given entry
    * @param {number} entryIndex
@@ -111,65 +188,14 @@ export class ApparatusPanel extends  PanelWithToolbar {
     let formTitleElement = $(`${formSelector} .form-title`)
     console.log(`Loading entry: apparatus ${apparatusIndex}, entry ${entryIndex}`)
     let sigla = this.edition.witnesses.map ( (w) => {return w.siglum})
-
+    this.entryInEditor = this._buildEntryToEdit(entryIndex, from, to)
     if (entryIndex !== -1) {
       formTitleElement.html('Apparatus Entry')
-      this.entryInEditor = deepCopy(this.edition.apparatuses[apparatusIndex].entries[entryIndex])
-      this.entryInEditor.autoEntries = this.entryInEditor.subEntries.filter( (e) => { return e.source === 'auto'})
-      this.entryInEditor.customEntryFmtText = FmtTextFactory.empty()
-      let customEntries = this.entryInEditor.subEntries.filter( (e) => { return e.type === SubEntryType.FULL_CUSTOM})
-      if (customEntries.length !== 0) {
-        // only supporting one custom entry for now
-        this.entryInEditor.customEntryFmtText = customEntries[0].fmtText
-      }
-      //delete this.entryInEditor.ctGroup
-      from = this.entryInEditor.from
-      to = this.entryInEditor.to
     } else {
-      // new entry
       formTitleElement.html('Apparatus Entry (new)')
-      if (from === -1 || to === -1) {
-        throw new Error(`Loading new entry with invalid 'from' and 'to' indexes: ${from} - ${to}`)
-      }
-      this.entryInEditor = {
-          mainTextFrom: from,
-          mainTextTo: to,
-          preLemma: '',
-          lemma: '',
-          postLemma: '',
-          separator: '',
-          autoEntries: [],
-          customEntryFmtText: FmtTextFactory.empty(),
-          lemmaText:  this.edition.getPlainTextForRange(from, to),
-          subEntries: []
-      }
     }
-    let ctIndexFrom = -1
-    let ctIndexTo = -1
-    if (from === -1) {
-      if (this.entryInEditor.ctGroup !== undefined) {
-        ctIndexFrom = this.entryInEditor.ctGroup.from
-      } else {
-        console.warn(`Undefined collation table indexes for existing apparatus entry`)
-        console.log(this.entryInEditor)
-      }
-    } else {
-      ctIndexFrom = CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[from].editionWitnessTokenIndex)
-    }
-    if (to === -1) {
-      if (this.entryInEditor.ctGroup !== undefined) {
-        ctIndexTo = this.entryInEditor.ctGroup.to
-      } else {
-        console.warn(`Undefined collation table indexes for existing apparatus entry`)
-        console.log(this.entryInEditor)
-      }
-    } else {
-      ctIndexTo = CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[to].editionWitnessTokenIndex)
-    }
-    this.entryInEditor.ctIndexFrom = ctIndexFrom
-    this.entryInEditor.ctIndexTo = ctIndexTo
-    delete this.entryInEditor.ctGroup
-    $(`${formSelector} .ct-table-cols`).html(this._getCtColumnsText(ctIndexFrom, ctIndexTo))
+
+    $(`${formSelector} .ct-table-cols`).html(this._getCtColumnsText(this.entryInEditor.ctIndexFrom, this.entryInEditor.ctIndexTo))
 
     console.log(this.entryInEditor)
     $(`${formSelector} div.entry-text`).html(this.entryInEditor.lemmaText)
@@ -374,6 +400,9 @@ export class ApparatusPanel extends  PanelWithToolbar {
   postRender (id, mode, visible) {
     super.postRender(id, mode, visible)
     this._getEditEntryButtonElement().on('click', this._genOnClickEditEntryButton())
+    this.edition.apparatuses.forEach( (app, index) => {
+      $(`${this.containerSelector} .add-entry-apparatus-${index}`).on('click', this._genOnClickAddEntryButton(index))
+    })
     $(this.getContainerSelector()).on('click', this._genOnClickPanelContainer())
     if (this.apparatusEntryFormIsVisible) {
       this._showApparatusEntryForm()
@@ -381,6 +410,22 @@ export class ApparatusPanel extends  PanelWithToolbar {
       this._hideApparatusEntryForm()
     }
     this._setupApparatusEntryForm()
+  }
+
+  _genOnClickAddEntryButton(appIndex) {
+    return (ev) => {
+      ev.preventDefault()
+      ev.stopPropagation()
+
+      this.verbose && console.log(`Click on add entry button for apparatus ${appIndex}, currently selected entry: ${this.currentSelectedEntryIndex}`)
+      if (this.currentSelectedEntryIndex === -1) {
+        return
+      }
+      let entryToEdit = this._buildEntryToEdit(this.currentSelectedEntryIndex)
+      console.log(entryToEdit)
+      this.options.editApparatusEntry(appIndex, entryToEdit.from, entryToEdit.to)
+      this._getAddEntryDropdownButton().dropdown('hide')
+    }
   }
 
   _setupApparatusEntryForm() {
@@ -540,6 +585,14 @@ export class ApparatusPanel extends  PanelWithToolbar {
       this.cancelButton.removeClass('hidden')
       infoDiv.html('')
       this._hideApparatusEntryForm()
+      if (this.currentSelectedEntryIndex === -1) {
+        this.selectNewEntry = true
+        this.newEntryMainTextFrom = this.editedEntry.mainTextFrom
+        this.newEntryMainTextTo = this.editedEntry.mainTextTo
+        this.verbose && console.log(`Just updated a new entry: ${this.newEntryMainTextFrom} to ${this.newEntryMainTextTo}`)
+      } else {
+        this.selectNewEntry = false
+      }
       this.options.onCtDataChange(this.ctData)
     }
   }
@@ -590,7 +643,11 @@ export class ApparatusPanel extends  PanelWithToolbar {
     return (ev) => {
       ev.preventDefault()
       ev.stopPropagation()
-      this._editSelectedEntry()
+      if (this.apparatusEntryFormIsVisible) {
+        this._hideApparatusEntryForm()
+      } else {
+        this._editSelectedEntry()
+      }
     }
   }
 
@@ -598,6 +655,9 @@ export class ApparatusPanel extends  PanelWithToolbar {
   _genOnClickPanelContainer() {
     return (ev) => {
       if (this.apparatusEntryFormIsVisible) {
+        return
+      }
+      if ($(ev.target).hasClass('btn')) {
         return
       }
       if ($(ev.target).hasClass('apparatus')) {
@@ -609,6 +669,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
       if (this.currentSelectedEntryIndex !== -1) {
         this._selectLemma(-1)
       }
+      this._getAddEntryDropdownButton().dropdown('hide')
     }
   }
 
@@ -627,11 +688,16 @@ export class ApparatusPanel extends  PanelWithToolbar {
 
   _hideApparatusEntryForm() {
     $(this.getApparatusEntryFormSelector()).addClass('hidden')
+    this._getEditEntryButtonElement().html(icons.edit).attr('title', editEntryButtonTitle)
+    if (this.currentSelectedEntryIndex === -1) {
+      this._getEditEntryButtonElement().addClass('hidden')
+    }
     this.apparatusEntryFormIsVisible = false
   }
 
   _showApparatusEntryForm() {
     $(this.getApparatusEntryFormSelector()).removeClass('hidden')
+    this._getEditEntryButtonElement().html(icons.cancelEdit).attr('title', cancelEditButtonTitle).removeClass('hidden')
     this.apparatusEntryFormIsVisible = true
   }
 
@@ -642,19 +708,43 @@ export class ApparatusPanel extends  PanelWithToolbar {
     this._setUpEventHandlers()
     if (this.currentSelectedEntryIndex !== -1) {
       this._selectLemma(this.currentSelectedEntryIndex, false)
+    } else {
+      this.verbose && console.log(`Apparatus update with no selected entry`)
+      if (this.selectNewEntry) {
+        this.verbose && console.log(`Finding new entry to select: ${this.newEntryMainTextFrom} - ${this.newEntryMainTextTo}`)
+        this.currentSelectedEntryIndex =
+          this.apparatus.entries.map( (entry) => {return `${entry.from}-${entry.to}`}).indexOf(`${this.newEntryMainTextFrom}-${this.newEntryMainTextTo}`)
+          this._selectLemma(this.currentSelectedEntryIndex, false)
+      }
     }
   }
 
 
   generateToolbarHtml (tabId, mode, visible) {
-    return `<div class="panel-toolbar-group">
+    let appIndex = this.options.apparatusIndex
+    let apparatusLinks = this.edition.apparatuses.map( (app, index) => {
+        if (index === appIndex) {
+          return ''
+        }
+        return `<a class="dropdown-item add-entry-apparatus-${index}" href="">${capitalizeFirstLetter(app.type)}</a>`
+    }).join('')
 
+    return `<div class="panel-toolbar-group">
                 <div class="panel-toolbar-item">
-                    <a class="edit-entry-btn tb-button hidden" href="#" title="Edit Entry">${editIcon}</a>
+                    <a class="edit-entry-btn tb-button hidden" href="#" title="${editEntryButtonTitle}">${icons.edit}</a>
                 </div>
-                <div class="panel-toolbar-item">
-                    &nbsp;
-                </div>
+                 <div class="panel-toolbar-item add-entry-dropdown hidden">
+                  <div class="dropdown">
+                     <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" 
+                     id="add-entry-dropdown-${appIndex}" data-toggle="dropdown" aria-expanded="false" title="Click to add/edit entry in other apparatus">
+                            ${icons.addEntry}
+                     </button>
+                     <div class="dropdown-menu" aria-labelledby="add-entry-dropdown-${appIndex}">${apparatusLinks}</div>
+                  </div>
+               </div>
+               <div class="panel-toolbar-item"> 
+                &nbsp;
+               </div>
             </div>`
   }
 
@@ -712,11 +802,13 @@ export class ApparatusPanel extends  PanelWithToolbar {
       }
       this.currentSelectedEntryIndex = -1
       this._getEditEntryButtonElement().addClass('hidden')
+      this._getAddEntryDropdownElement().addClass('hidden')
       this._getClearSelectionButtonElement().addClass('hidden')
       return
     }
     this._getLemmaElement(entryIndex).addClass('lemma-selected')
     this._getEditEntryButtonElement().removeClass('hidden')
+    this._getAddEntryDropdownElement().removeClass('hidden')
     this._getClearSelectionButtonElement().removeClass('hidden')
     let fullEntryArray = [this.options.apparatusIndex, entryIndex]
     if (runCallbacks) {
@@ -760,6 +852,14 @@ export class ApparatusPanel extends  PanelWithToolbar {
    */
   _getEditEntryButtonElement() {
     return  $(`${this.containerSelector} .edit-entry-btn`)
+  }
+
+  _getAddEntryDropdownElement() {
+    return  $(`${this.containerSelector} div.add-entry-dropdown`)
+  }
+
+  _getAddEntryDropdownButton() {
+    return  $(`#add-entry-dropdown-${this.options.apparatusIndex}`)
   }
 
   _getClearSelectionButtonElement() {
@@ -807,7 +907,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
         postLemmaSpan = ` <span class="pre-lemma">${postLemma}</span>`
       }
 
-      let separator = ''
+      let separator
 
       switch(apparatusEntry.separator) {
         case '':

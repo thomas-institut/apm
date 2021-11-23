@@ -214,7 +214,8 @@ export class EditionComposer {
           onHighlightMainText: this._genOnHighlightMainText(apparatus.type),
           onCtDataChange: this.genOnCtDataChange(`ApparatusPanel ${index}`),
           onError: (msg) => { this._setError(`${msg} (Apparatus ${index})`)},
-          verbose: true
+          verbose: true,
+          editApparatusEntry: (apparatusIndex, mainTextFrom, mainTextTo) => { this.editApparatusEntry(apparatusIndex, mainTextFrom, mainTextTo)}
         }
       )})
 

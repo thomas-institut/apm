@@ -20,12 +20,15 @@
 
 namespace APM\Api;
 
+use APM\FullTranscription\ApmPageManager;
 use APM\FullTranscription\PageInfo;
+use APM\FullTranscription\PageManager;
 use DI\DependencyException;
 use DI\NotFoundException;
+use Exception;
 use InvalidArgumentException;
-use \Psr\Http\Message\ServerRequestInterface as Request;
-use \Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Http\Message\ResponseInterface as Response;
 
 
 /**
@@ -40,7 +43,7 @@ class ApiDocuments extends ApiController
      * @param Response $response
      * @return Response
      */
-    public function updatePageSettings(Request $request, Response $response)
+    public function updatePageSettings(Request $request, Response $response) : Response
     {
         $dataManager = $this->getDataManager();
         $this->profiler->start();
@@ -71,7 +74,7 @@ class ApiDocuments extends ApiController
 
         try {
             $this->systemManager->getTranscriptionManager()->updatePageSettings($pageId, $pageInfo, $this->apiUserId);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->logger->error("Can't update page settings for page $pageId: " . $e->getMessage(), $pageInfo->getDatabaseRow());
             return $response->withStatus(409);
         }
@@ -87,7 +90,7 @@ class ApiDocuments extends ApiController
      * @return Response
      * @throws DependencyException
      * @throws NotFoundException
-     * @throws \Exception
+     * @throws Exception
      */
     public function deleteDocument(Request $request, Response $response)
     {
@@ -308,7 +311,7 @@ class ApiDocuments extends ApiController
 
         try {
             $dataManager->updateDocSettings($docId, $newSettings);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->logger->error("Error writing new doc settings to DB",
                 [ 'apiUserId' => $this->apiUserId,
                     'apiError' => ApiController::API_ERROR_DB_UPDATE_ERROR,
@@ -516,5 +519,52 @@ class ApiDocuments extends ApiController
         
         return $this->responseWithJson($response, $numColumns);
    }
+
+    /**
+     * Returns page information for a list of pages identified by page id
+     *
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getPageInfo(Request $request, Response $response) : Response {
+        $apiCall = 'getPageInfo';
+        $this->profiler->start();
+        $inputData = $this->checkAndGetInputData($request, $response, $apiCall, ['pages']);
+        if (!is_array($inputData)) {
+            return $inputData;
+        }
+
+        $returnData = [];
+
+        for($i = 0; $i<count($inputData['pages']); $i++) {
+            $pageId = $inputData['pages'][$i];
+            try {
+                $pageInfo = $this->systemManager->getTranscriptionManager()->getPageManager()->getPageInfoById($pageId);
+            } catch (\InvalidArgumentException $e) {
+                if ($e->getCode() === PageManager::ERROR_PAGE_NOT_FOUND) {
+                    $this->logger->error("Page $pageId not found", [ 'errorMsg' => $e->getMessage(), 'errorCode' ]);
+                    return $this->responseWithText($response,"Page $pageId not found", 404);
+                }
+                $this->logException($e, "Invalid Argument Exception from getPageInfoById, page $pageId");
+                return $this->responseWithText($response, "Server error", 500);
+            } catch (\Exception $e) {
+                $this->logException($e, "Generic Exception from getPageInfoById, page $pageId");
+                return $this->responseWithText($response, "Server error", 500);
+            }
+
+            array_push($returnData, [
+                'id' => $pageId,
+                'docId' => $pageInfo->docId,
+                'pageNumber' => $pageInfo->pageNumber,
+                'seq' => $pageInfo->sequence,
+                'numCols' => $pageInfo->numCols,
+                'foliation' => $pageInfo->foliation
+            ]);
+        }
+
+        return $this->responseWithJson($response, $returnData, 200);
+
+    }
    
 }

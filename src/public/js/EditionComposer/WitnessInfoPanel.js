@@ -36,6 +36,7 @@ import * as WitnessType from '../Witness/WitnessType'
 import { WitnessUpdateDialog } from './WitnessUpdateDialog'
 import { WitnessDiffCalculator } from '../Edition/WitnessDiffCalculator'
 import { CtData } from '../CtData/CtData'
+import { flatten} from '../toolbox/ArrayUtil'
 
 const icons = {
   moveUp: '&uarr;',
@@ -44,7 +45,8 @@ const icons = {
   loadPreset: '<i class="fas fa-upload"></i>',
   checkOK: '<i class="far fa-check-circle"></i>',
   checkFail: '<i class="fas fa-exclamation-triangle"></i>',
-  checkCross: '<i class="fas fa-times"></i>'
+  checkCross: '<i class="fas fa-times"></i>',
+  externalLink: '<i class="bi bi-box-arrow-up-right"></i>'
 }
 
 export class WitnessInfoPanel extends Panel{
@@ -62,6 +64,21 @@ export class WitnessInfoPanel extends Panel{
             resolve(lastCheckData)
           })
         }
+      },
+      getPageInfo: {
+        type: 'function',
+        default: (pageIds) => { return new Promise( resolve => {
+          console.log(`Should be getting page info for ${pageIds.length} page(s)`)
+          resolve([])
+        })}
+      },
+      getDocUrl : {
+        type: 'function',
+        default: () => { return ''}
+      },
+      getPageUrl : {
+        type: 'function',
+        default: () => {return ''}
       },
       getWitnessData: {
         type: 'function',
@@ -97,8 +114,9 @@ export class WitnessInfoPanel extends Panel{
     this.currentWitnessUpdateData = ''
     this.checkingForWitnessUpdates = false
     this.siglaPresets = []
-
   }
+
+
 
   updateCtData(newData, reRender = false) {
     this.ctData = CtData.copyFromObject(newData)
@@ -129,7 +147,37 @@ export class WitnessInfoPanel extends Panel{
        </div>`
   }
 
+  _updatePageInfo() {
+    let pageIds = CtData.getPageIds(this.ctData)
+    let allPageIds = flatten(pageIds)
+    this.options.getPageInfo(allPageIds).then( (pageInfoArray) => {
+      // this.verbose && console.log(`Got page info`)
+      // this.verbose && console.log(pageInfoArray)
+      this.ctData['witnesses'].forEach( (witness, witnessIndex) => {
+        if (witness['witnessType'] === WitnessType.FULL_TX) {
+          let pageInfoHtml = pageIds[witnessIndex].map( (pageId) => {
+            let pageInfoIndex = pageInfoArray.map((pi) => { return pi.id}).indexOf(pageId)
+            if (pageInfoIndex === -1) {
+              return ''
+            }
+            let pageInfo = pageInfoArray[pageInfoIndex]
+            // TODO: detect columns used
+            let pageUrl = this.options.getPageUrl(pageInfo.docId, pageInfo.seq, 0)
+            if (pageUrl === '') {
+              return pageInfo.foliation
+            }
+            return `<a href="${pageUrl}" title="Click to open page transcription in a new tab" target="_blank">${pageInfo.foliation}</a>`
+          }).join(', ')
+          $(`${this.containerSelector} td.info-td-${witnessIndex}`).html(pageInfoHtml)
+        }
+      })
+    })
+
+  }
+
   postRender () {
+    this._updatePageInfo()
+
     this.updateWitnessInfoDiv(false)
     $(this.containerSelector + ' .check-witness-update-btn').on('click', () => {
       if (!this.checkingForWitnessUpdates) {
@@ -616,7 +664,7 @@ export class WitnessInfoPanel extends Panel{
       }
       let classes = Util.getClassArrayFromJQueryObject($(ev.currentTarget.parentNode))
 
-      let index = thisObject.getWitnessIndexFromClasses(classes)
+      // let index = thisObject.getWitnessIndexFromClasses(classes)
       let position = thisObject.getWitnessPositionFromClasses(classes)
       let numWitnesses = thisObject.ctData['witnesses'].length
       // console.log('Click move ' + direction + ' button on witness ' + index + ', position ' + position)
@@ -642,21 +690,22 @@ export class WitnessInfoPanel extends Panel{
 
       $(thisObject.options.containerSelector + ' .witnessinfotable').html('Updating...')
       thisObject.updateWitnessInfoDiv(true)
+      thisObject._updatePageInfo()
       thisObject.options.onWitnessOrderChange(thisObject.ctData['witnessOrder'])
     }
   }
 
-  getWitnessIndexFromClasses(classes) {
-    let index = -1
-    for (let i = 0; i < classes.length; i++) {
-      let theClass = classes[i]
-      if (/^witness-/.test(theClass)) {
-        // noinspection TypeScriptValidateTypes
-        return parseInt(theClass.split('-')[1])
-      }
-    }
-    return index
-  }
+  // getWitnessIndexFromClasses(classes) {
+  //   let index = -1
+  //   for (let i = 0; i < classes.length; i++) {
+  //     let theClass = classes[i]
+  //     if (/^witness-/.test(theClass)) {
+  //       // noinspection TypeScriptValidateTypes
+  //       return parseInt(theClass.split('-')[1])
+  //     }
+  //   }
+  //   return index
+  // }
 
   getWitnessPositionFromClasses(classes) {
     let index = -1
@@ -672,51 +721,54 @@ export class WitnessInfoPanel extends Panel{
 
 
   _genWitnessTableHtml() {
-    let html = ''
+    let witnessRows = this.ctData['witnessOrder']
+      .map ( (witnessIndex, position) => {
+        if (this.ctData['witnesses'][witnessIndex]['witnessType'] === WitnessType.EDITION) {
+          return ''
+        }
+        let witness = this.ctData['witnesses'][witnessIndex]
+        let siglum = this.ctData['sigla'][witnessIndex]
+        let witnessTitle = this.ctData['witnessTitles'][witnessIndex]
 
-    html+= '<table class="witnesstable">'
-    html+= '<tr><th></th><th>Witness</th><th>Version used</th>'
-    html += `<th>Siglum &nbsp;`
-    html += `<a class="tb-button load-sigla-btn" title="Load sigla from preset">${icons.loadPreset}</a>&nbsp;`
-    html += `<a class="tb-button save-sigla-btn" title="Save current sigla as preset">${icons.savePreset}</a>`
-    html += `</th>`
-    html += '</tr>'
+        if (witness['witnessType'] === WitnessType.FULL_TX) {
+          let docLink = this.options.getDocUrl(witness['docId'])
+          if (docLink !== '') {
+            witnessTitle = `<a href="${docLink}" target="_blank" title="Click to open document page in a new tab">
+               ${this.ctData['witnessTitles'][witnessIndex]}</a>`
+          }
+        }
 
-    for(let i = 0; i < this.ctData['witnessOrder'].length; i++) {
-      let wIndex = this.ctData['witnessOrder'][i]
-      let witness = this.ctData['witnesses'][wIndex]
-      if (witness['witnessType'] === WitnessType.EDITION) {
-        continue
-      }
-      let siglum = this.ctData['sigla'][wIndex]
-      let witnessTitle = this.ctData['witnessTitles'][wIndex]
-      let witnessClasses = [
-        'witness-' + wIndex,
-        'witness-type-' + witness['witnessType'],
-        'witness-pos-' + i
-      ]
-      let siglumClass = 'siglum-' + wIndex
-      let warningTdClass = 'warning-td-' + wIndex
-      let outOfDateWarningTdClass = 'outofdate-td-' + wIndex
+        let witnessClasses = [
+          'witness-' + witnessIndex,
+          'witness-type-' + witness['witnessType'],
+          'witness-pos-' + position
+        ]
+        return  `<tr>
+            <td class="${witnessClasses.join(' ')} cte-witness-move-td">
+               <span class="btn move-up-btn" title="Move up">${icons.moveUp}</span>
+               <span class="btn move-down-btn" title="Move down">${icons.moveDown}</span>
+            </td>
+            <td>${witnessTitle}</td>
+            <td class="info-td-${witnessIndex}"></td>
+            <td>${Util.formatVersionTime(witness['timeStamp'])}</td>
+            <td class="siglum-${witnessIndex}">${siglum}</td>
+            <td class="warning-td-${witnessIndex}"></td>
+            <td class="outofdate-td-${witnessIndex}"></td>
+        </tr>`
+      }).join('')
 
-      html += '<tr>'
-
-      html += `<td class="${witnessClasses.join(' ')} cte-witness-move-td">`
-
-      html += `<span class="btn move-up-btn" title="Move up">${icons.moveUp}</span>`
-      html += `<span class="btn move-down-btn" title="Move down">${icons.moveDown}</span>`
-      html += '</td>'
-
-      html += '<td>' + witnessTitle + '</td>'
-      html += '<td>' + Util.formatVersionTime(witness['timeStamp']) + '</td>'
-      html += '<td class="' + siglumClass + '">'+ siglum + '</td>'
-
-      html += '<td class="' + warningTdClass + '"></td>'
-      html += '<td class="' + outOfDateWarningTdClass + '"></td>'
-      html += '</tr>'
-    }
-    html += '</table>'
-    return html
+   return `<table class="witnesstable">
+      <tr>
+        <th></th>
+        <th>Witness</th>
+        <th></th>  <!-- Info td-->
+        <th>Version used</th>
+        <th>Siglum &nbsp;   <a class="tb-button load-sigla-btn" title="Load sigla from preset">${icons.loadPreset}</a>&nbsp;
+                        <a class="tb-button save-sigla-btn" title="Save current sigla as preset">${icons.savePreset}</a>
+        </th>
+      </tr>
+      ${witnessRows}
+   </table>`
   }
 
   genOnConfirmSiglumEdit(witnessIndex) {

@@ -54,6 +54,8 @@ import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'
 import { EditionWitnessReferencesCleaner } from '../CtData/CtDataCleaner/EditionWitnessReferencesCleaner'
 import { CollationTableConsistencyCleaner } from '../CtData/CtDataCleaner/CollationTableConsistencyCleaner'
 import { ServerLogger } from '../Server/ServerLogger'
+import { KeyCache } from '../toolbox/KeyCache'
+import { pushArray } from '../toolbox/ArrayUtil'
 
 // CONSTANTS
 
@@ -142,6 +144,8 @@ export class EditionComposer {
     this.ctData['tableId'] = this.tableId
     this.versionInfo = this.options.versionInfo
 
+    this.cache = new KeyCache()
+
     this.edition = new Edition()
     this._reGenerateEdition()
 
@@ -181,7 +185,10 @@ export class EditionComposer {
       updateWitness: this.genUpdateWitness(),
       getWitnessData: this.genGetWitnessData(),
       fetchSiglaPresets: this.genFetchSiglaPresets(),
-      saveSiglaPreset: this.genSaveSiglaPreset()
+      saveSiglaPreset: this.genSaveSiglaPreset(),
+      getPageInfo: this.genGetPageInfo(),
+      getDocUrl: this.genGetDocUrl(),
+      getPageUrl: this.genGetPageUrl()
     })
 
     this.adminPanel = new AdminPanel({
@@ -800,16 +807,62 @@ export class EditionComposer {
   }
 
   genCheckWitnessUpdates() {
-    let thisObject = this
     return (currentWitnessUpdateData) => {
       return new Promise( (resolve, reject) => {
-        let apiUrl = thisObject.options.urlGenerator.apiWitnessCheckUpdates()
+        let apiUrl = this.options.urlGenerator.apiWitnessCheckUpdates()
         $.post(apiUrl, { data: JSON.stringify(currentWitnessUpdateData)})
           .done(function(apiResponse){
               resolve(apiResponse)
           })
           .fail( function(resp) {
             console.error('Error checking witness updates')
+            console.log(resp)
+            reject()
+          })
+      })
+    }
+  }
+
+  genGetDocUrl() {
+    return (docId) => {
+      return this.options.urlGenerator.siteDocPage(docId)
+    }
+  }
+
+  genGetPageUrl() {
+    return (docId, pageSeq, col) => {
+      return this.options.urlGenerator.sitePageView(docId, pageSeq, col)
+    }
+  }
+
+  genGetPageInfo() {
+    return (pageIds) => {
+      return new Promise( (resolve, reject) => {
+
+        let pageIdsToGetFromServer = []
+        let pageInfoInCache = []
+        pageIds.forEach( (pageId) => {
+          let cachedInfo = this.cache.retrieve(`PageInfo-${pageId}`)
+          if (cachedInfo === null) {
+            pageIdsToGetFromServer.push(pageId)
+          } else {
+            pageInfoInCache.push(cachedInfo)
+          }
+        })
+        if (pageIdsToGetFromServer.length === 0) {
+          resolve(pageInfoInCache)
+        }
+        let apiUrl = this.options.urlGenerator.apiGetPageInfo()
+        $.post(apiUrl, { data: JSON.stringify({pages: pageIdsToGetFromServer})})
+          .done((pageInfoArrayFromServer) => {
+            pageInfoArrayFromServer.forEach( (pageInfo) => {
+              this.cache.store(`PageInfo-${pageInfo.id}`, pageInfo)
+            })
+            pushArray(pageInfoInCache, pageInfoArrayFromServer)
+            resolve(pageInfoInCache)
+          })
+          .fail( function(resp) {
+            console.error('Error getting page info')
             console.log(resp)
             reject()
           })

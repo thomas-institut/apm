@@ -816,6 +816,7 @@ const FOLIATION_START_SAME_AS_RANGE = -1
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "uniq": () => (/* binding */ uniq),
 /* harmony export */   "swapElements": () => (/* binding */ swapElements),
 /* harmony export */   "arraysAreEqual": () => (/* binding */ arraysAreEqual),
 /* harmony export */   "varsAreEqual": () => (/* binding */ varsAreEqual),
@@ -824,6 +825,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "shuffleArray": () => (/* binding */ shuffleArray),
 /* harmony export */   "createSequenceArray": () => (/* binding */ createSequenceArray),
 /* harmony export */   "createIndexArray": () => (/* binding */ createIndexArray),
+/* harmony export */   "flatten": () => (/* binding */ flatten),
+/* harmony export */   "numericSort": () => (/* binding */ numericSort),
 /* harmony export */   "pushArray": () => (/* binding */ pushArray),
 /* harmony export */   "joinWithArray": () => (/* binding */ joinWithArray)
 /* harmony export */ });
@@ -845,6 +848,14 @@ __webpack_require__.r(__webpack_exports__);
  *
  */
 
+/**
+ * Returns array with only unique elements from the given array
+ * Does not work with object elements (i.e., only strings, numbers and boolean are supported
+ * @param theArray
+ */
+function uniq(theArray) {
+  return theArray.filter( (item, pos) =>{ return theArray.indexOf(item) === pos})
+}
 
 function swapElements(theArray, index1, index2) {
   let element1 = theArray[index1]
@@ -908,6 +919,25 @@ function createSequenceArray(from, to, increment = 1) {
 
 function createIndexArray(size) {
   return createSequenceArray(0, size-1, 1)
+}
+
+function flatten(theArray) {
+  let flattenedArray = []
+  theArray.forEach( (arrayElement) => {
+    if (Array.isArray(arrayElement)) {
+      pushArray(flattenedArray, flatten(arrayElement))
+    } else {
+      flattenedArray.push(arrayElement)
+    }
+  })
+  return flattenedArray
+}
+
+function numericSort(theArray, asc = true) {
+  return theArray.sort( (a,b) => {
+    if (asc) { return a-b}
+    return b-a
+  })
 }
 
 function pushArray(theArray, arrayToPush) {

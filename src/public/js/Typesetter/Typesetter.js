@@ -555,11 +555,11 @@ export class Typesetter {
     if (token.verticalAlign) {
       switch (token.verticalAlign) {
         case VerticalAlign.SUPERSCRIPT:
-          console.log(`Applying superscript`)
-          console.log(token)
-          console.log(`Fontsize: ${fontSize}pt = ${Typesetter.pt2px(fontSize)}px`)
+          // console.log(`Applying superscript`)
+          // console.log(token)
+          // console.log(`Fontsize: ${fontSize}pt = ${Typesetter.pt2px(fontSize)}px`)
           baseLineShift = Typesetter.pt2px(-fontSize/4)
-          console.log(`Baseline shift: ${baseLineShift}`)
+          // console.log(`Baseline shift: ${baseLineShift}`)
           break
 
         case VerticalAlign.SUBSCRIPT:

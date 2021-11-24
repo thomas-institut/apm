@@ -250,6 +250,9 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
             ->withStatus($status);
     }
 
+    protected function logException(\Exception  $e, $msg) {
+        $this->logger->error("Exception caught: $msg", [ 'errorMsg' => $e->getMessage(), 'erroCode' => $e->getCode(), 'trace' => $e->getTraceAsString()]);
+    }
 
     protected function logProfilerData(string $pageTitle) : void
     {

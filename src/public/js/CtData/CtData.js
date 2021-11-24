@@ -38,7 +38,7 @@ import { CleanerOnePointOne } from './CtDataCleaner/CleanerOnePointOne'
 // updaters
 import { UpdaterToOnePointZero } from './CtDataUpdater/UpdaterToOnePointZero'
 import { UpdaterToOnePointOne } from './CtDataUpdater/UpdaterToOnePointOne'
-import { pushArray } from '../toolbox/ArrayUtil'
+import { pushArray, uniq } from '../toolbox/ArrayUtil'
 
 
 
@@ -53,6 +53,19 @@ const schemaVersions = [ '0', '1.0', '1.1']
 
 
 export class CtData  {
+
+  /**
+   * Returns the pageIds used in every witness in ctData
+   * @param ctData
+   */
+  static getPageIds(ctData) {
+    return ctData['witnesses'].map( (witness) => {
+      if (witness['witnessType'] !== 'fullTx') {
+        return []
+      }
+      return uniq(witness['items'].map ( (item) => { return item.address.pageId}).sort())
+    })
+  }
 
 
   static getCleanAndUpdatedCtData(sourceCtData, verbose = true, debug = false) {

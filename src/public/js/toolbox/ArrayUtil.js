@@ -16,6 +16,14 @@
  *
  */
 
+/**
+ * Returns array with only unique elements from the given array
+ * Does not work with object elements (i.e., only strings, numbers and boolean are supported
+ * @param theArray
+ */
+export function uniq(theArray) {
+  return theArray.filter( (item, pos) =>{ return theArray.indexOf(item) === pos})
+}
 
 export function swapElements(theArray, index1, index2) {
   let element1 = theArray[index1]
@@ -79,6 +87,25 @@ export function createSequenceArray(from, to, increment = 1) {
 
 export function createIndexArray(size) {
   return createSequenceArray(0, size-1, 1)
+}
+
+export function flatten(theArray) {
+  let flattenedArray = []
+  theArray.forEach( (arrayElement) => {
+    if (Array.isArray(arrayElement)) {
+      pushArray(flattenedArray, flatten(arrayElement))
+    } else {
+      flattenedArray.push(arrayElement)
+    }
+  })
+  return flattenedArray
+}
+
+export function numericSort(theArray, asc = true) {
+  return theArray.sort( (a,b) => {
+    if (asc) { return a-b}
+    return b-a
+  })
 }
 
 export function pushArray(theArray, arrayToPush) {

@@ -74,7 +74,8 @@ export class CollationTablePanel extends PanelWithToolbar {
     // viewSettings
     this.viewSettings = {
       highlightVariants: true,
-      showNormalizations: false
+      showNormalizations: false,
+      showWitnessTitles: false
     }
 
     // popovers for collation table
@@ -490,14 +491,19 @@ export class CollationTablePanel extends PanelWithToolbar {
   setupTableEditor() {
     let collationTable = this.ctData
     let rowDefinition = []
+    let columnsPerRow
     for (let i = 0; i < collationTable['witnessOrder'].length; i++) {
       let wIndex = collationTable['witnessOrder'][i]
       let title = ''
-      // if (collationTable.type === CollationTableType.EDITION && wIndex === collationTable['editionWitnessIndex']) {
-      title = collationTable['witnessTitles'][wIndex]
-      // } else {
-      //   title = `${collationTable['witnessTitles'][wIndex]} (${collationTable['sigla'][wIndex]})`
-      // }
+
+      if (this.viewSettings.showWitnessTitles) {
+        title = collationTable['witnessTitles'][wIndex]
+        columnsPerRow = 10
+      } else {
+        title = collationTable['sigla'][wIndex]
+        columnsPerRow = 15
+      }
+
 
       let tokenArray = collationTable['collationMatrix'][wIndex]
       let isEditable = false
@@ -520,7 +526,7 @@ export class CollationTablePanel extends PanelWithToolbar {
       textDirection: this.textDirection,
       redrawOnCellShift: false,
       showInMultipleRows: true,
-      columnsPerRow: 10, // TODO: change this
+      columnsPerRow: columnsPerRow,
       rowDefinition: rowDefinition,
       drawTableInConstructor: false,
       getEmptyValue: () => -1,

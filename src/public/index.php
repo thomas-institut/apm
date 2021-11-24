@@ -245,6 +245,8 @@ $app->group('', function (RouteCollectorProxy $group){
         SitePageViewer::class . ':pageViewerPageByDocSeq')
         ->setName('pageviewer.docseq');
 
+
+
 })->add(Authenticator::class . ':authenticate');
 
 // -----------------------------------------------------------------------------
@@ -318,6 +320,9 @@ $app->group('/api', function (RouteCollectorProxy $group){
     $group->get('/{document}/{page}/newcolumn',
         ApiDocuments::class . ':addNewColumn')
         ->setName('api.newcolumn');
+
+    // API -> getPageInfo
+    $group->post('/pages/info', ApiDocuments::class . ':getPageInfo')->setName('api.getPageInfo');
 
     //  USERS
 

@@ -64,6 +64,13 @@ export class ApparatusPanel extends  PanelWithToolbar {
         type: 'function',
         default: doNothing
       },
+      highlightCollationTableRange: {
+        // function to be called when a column range in the collation table
+        // needs to be highlighted
+        //  (colStart, colEnd) => { ... return nothing }
+        type: 'function',
+        default: doNothing
+      },
       editApparatusEntry : {
         // function that opens an apparatus entry editor, provided by EditionComposer
         type: 'function',
@@ -224,6 +231,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
     this._loadLemmaGroupVariableInForm('separator', this.entryInEditor, this.separatorToggle, this.customSeparatorTextInput)
 
     this.editedEntry = deepCopy(this.entryInEditor)
+    this.options.highlightCollationTableRange(this.entryInEditor.ctIndexFrom, this.entryInEditor.ctIndexTo)
     this._updateAcceptButton()
   }
 
@@ -795,6 +803,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
   _selectLemma(entryIndex, runCallbacks = true) {
     //console.log(`Selecting ${entryIndex}, runCallbacks = ${runCallbacks}`)
     this._getAllLemmaElements().removeClass('lemma-selected lemma-hover')
+    this.options.highlightCollationTableRange(-1)
     if (entryIndex === -1) {
       // Deselect
       if (runCallbacks && this.currentSelectedEntryIndex !== -1) {

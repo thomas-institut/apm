@@ -219,6 +219,7 @@ export class EditionComposer {
           edition: this.edition,
           apparatusIndex: index,
           onHighlightMainText: this._genOnHighlightMainText(apparatus.type),
+          highlightCollationTableRange: this._genHighlightCollationTable(),
           onCtDataChange: this.genOnCtDataChange(`ApparatusPanel ${index}`),
           onError: (msg) => { this._setError(`${msg} (Apparatus ${index})`)},
           verbose: true,
@@ -326,6 +327,12 @@ export class EditionComposer {
       })
       this._updateErrorUi()
     })
+  }
+
+  _genHighlightCollationTable() {
+    return (colStart, colEnd) => {
+      this.collationTablePanel.highlightColumnRange(colStart, colEnd)
+    }
   }
 
   _genOnHighlightMainText(apparatusType) {

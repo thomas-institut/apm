@@ -809,6 +809,47 @@ export class CollationTablePanel extends PanelWithToolbar {
     }
   }
 
+  /**
+   * Highlight a range of columns in the collation table
+   * if colStart < 0, removes all current highlight
+   * if colEnd < 0, only colStart is highlighted
+   * if colEnd > max column number in the table, highlights from colStart until the end of the table
+   * @param {number}colStart
+   * @param {number}colEnd
+   * @param {bool}scrollIntoView
+   */
+  highlightColumnRange(colStart, colEnd = -1, scrollIntoView = true) {
+    if (colStart < 0 ) {
+      this.removeColumnHighlight()
+      return
+    }
+    let maxCol = this.ctData['collationMatrix'][0].length -1
+    if (colEnd < 0) {
+      colEnd = colStart
+    }
+    if (colEnd > maxCol) {
+      colEnd = maxCol
+    }
+    if (colStart > colEnd || colStart > maxCol ) {
+      console.warn(`Attempted to highlight invalid column range: ${colStart} to ${colEnd}`)
+      return
+    }
+    this.removeColumnHighlight()
+    for (let i = colStart; i <= colEnd; i++) {
+      $(`${this.containerSelector} table.te-table th.te-col-${i}`).addClass('highlight')
+    }
+    if (scrollIntoView) {
+      $(`${this.containerSelector} table.te-table th.te-col-${colStart}`).get(0).scrollIntoView()
+    }
+  }
+
+  removeColumnHighlight() {
+    $(`${this.containerSelector} table.te-table th`).removeClass('highlight')
+  }
+
+
+
+
   genOnCellConfirmEditFunction() {
     return (tableRow, col, newText) => {
       let witnessIndex = this.ctData['witnessOrder'][tableRow]

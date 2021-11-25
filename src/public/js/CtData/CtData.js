@@ -67,6 +67,27 @@ export class CtData  {
     })
   }
 
+  /**
+   * Returns an array with information about every column present in a fullTx witness
+   *    { pageId: number, column: number} []
+   * @param ctData
+   * @param witnessIndex
+   * @return { {pageId, column}[]}
+   */
+  static getColumnsForWitness(ctData, witnessIndex) {
+    if (ctData['witnesses'][witnessIndex] === undefined) {
+      return []
+    }
+    let witness = ctData['witnesses'][witnessIndex]
+    if (witness['witnessType'] !== WitnessType.FULL_TX) {
+      return []
+    }
+    let colStringArray = uniq(witness['items'].map( (item) => { return `${item.address.pageId}-${item.address.column}`}))
+
+    return colStringArray.map( (colString) => { let fields = colString.split('-'); return { pageId: fields[0]*1, column: fields[1]*1}})
+
+  }
+
 
   static getCleanAndUpdatedCtData(sourceCtData, verbose = true, debug = false) {
 

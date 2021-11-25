@@ -39,8 +39,8 @@ import { CtData } from '../CtData/CtData'
 import { flatten} from '../toolbox/ArrayUtil'
 
 const icons = {
-  moveUp: '&uarr;',
-  moveDown: '&darr;',
+  moveUp: '<i class="bi bi-arrow-up-short"></i>',
+  moveDown: '<i class="bi bi-arrow-down-short"></i>',
   savePreset:'<i class="fas fa-save"></i>',
   loadPreset: '<i class="fas fa-upload"></i>',
   checkOK: '<i class="far fa-check-circle"></i>',
@@ -151,22 +151,46 @@ export class WitnessInfoPanel extends Panel{
     let pageIds = CtData.getPageIds(this.ctData)
     let allPageIds = flatten(pageIds)
     this.options.getPageInfo(allPageIds).then( (pageInfoArray) => {
-      // this.verbose && console.log(`Got page info`)
-      // this.verbose && console.log(pageInfoArray)
       this.ctData['witnesses'].forEach( (witness, witnessIndex) => {
         if (witness['witnessType'] === WitnessType.FULL_TX) {
-          let pageInfoHtml = pageIds[witnessIndex].map( (pageId) => {
-            let pageInfoIndex = pageInfoArray.map((pi) => { return pi.id}).indexOf(pageId)
+          let pageInfoHtml = CtData.getColumnsForWitness(this.ctData, witnessIndex).map( (col) => {
+            // 1. fill in page info into the column object
+            let pageInfoIndex = pageInfoArray.map((pi) => { return pi.id}).indexOf(col.pageId)
             if (pageInfoIndex === -1) {
-              return ''
+              return col
             }
             let pageInfo = pageInfoArray[pageInfoIndex]
-            // TODO: detect columns used
-            let pageUrl = this.options.getPageUrl(pageInfo.docId, pageInfo.seq, 0)
-            if (pageUrl === '') {
-              return pageInfo.foliation
+            col.docId = pageInfo.docId
+            col.foliation = pageInfo.foliation
+            col.seq = pageInfo.seq
+            col.numCols = pageInfo.numCols
+            return col
+          }).sort ( (colA, colB) => {
+            // 2. Sort by page sequence and column
+            if (colA.seq !== colB.seq) {
+              return colA.seq - colB.seq
             }
-            return `<a href="${pageUrl}" title="Click to open page transcription in a new tab" target="_blank">${pageInfo.foliation}</a>`
+            return colA.column - colB.column
+          }).map( (colWithInfo) => {
+            // 3. Build page info html
+            if (colWithInfo.docId === undefined) {
+              // this means that there was no page info
+              return ''
+            }
+            if (colWithInfo.numCols === 1)  {
+              let pageUrl = this.options.getPageUrl(colWithInfo.docId, colWithInfo.seq, 0)
+              if (pageUrl === '') {
+                return colWithInfo.foliation
+              }
+              return `<a href="${pageUrl}" title="Click to open page transcription in a new tab" target="_blank">${colWithInfo.foliation}</a>`
+            } else {
+              let pageUrl = this.options.getPageUrl(colWithInfo.docId, colWithInfo.seq, colWithInfo.column)
+              let pageString = `${colWithInfo.foliation} c${colWithInfo.column}`
+              if (pageUrl === '') {
+                return pageString
+              }
+              return `<a href="${pageUrl}" title="Click to open page transcription in a new tab" target="_blank">${pageString}</a>`
+            }
           }).join(', ')
           $(`${this.containerSelector} td.info-td-${witnessIndex}`).html(pageInfoHtml)
         }
@@ -759,13 +783,15 @@ export class WitnessInfoPanel extends Panel{
 
    return `<table class="witnesstable">
       <tr>
-        <th></th>
+        <th></th> <!-- Move up/down icons -->
         <th>Witness</th>
         <th></th>  <!-- Info td-->
-        <th>Version used</th>
+        <th>Version Used</th>
         <th>Siglum &nbsp;   <a class="tb-button load-sigla-btn" title="Load sigla from preset">${icons.loadPreset}</a>&nbsp;
                         <a class="tb-button save-sigla-btn" title="Save current sigla as preset">${icons.savePreset}</a>
         </th>
+        <th></th>  <!-- Warning td-->
+        <th></th>  <!-- Out of date td-->
       </tr>
       ${witnessRows}
    </table>`

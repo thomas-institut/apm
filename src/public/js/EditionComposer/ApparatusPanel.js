@@ -231,7 +231,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
     this._loadLemmaGroupVariableInForm('separator', this.entryInEditor, this.separatorToggle, this.customSeparatorTextInput)
 
     this.editedEntry = deepCopy(this.entryInEditor)
-    this.options.highlightCollationTableRange(this.entryInEditor.ctIndexFrom, this.entryInEditor.ctIndexTo)
+
     this._updateAcceptButton()
   }
 
@@ -700,12 +700,14 @@ export class ApparatusPanel extends  PanelWithToolbar {
     if (this.currentSelectedEntryIndex === -1) {
       this._getEditEntryButtonElement().addClass('hidden')
     }
+    this.options.highlightCollationTableRange(-1)
     this.apparatusEntryFormIsVisible = false
   }
 
   _showApparatusEntryForm() {
     $(this.getApparatusEntryFormSelector()).removeClass('hidden')
     this._getEditEntryButtonElement().html(icons.cancelEdit).attr('title', cancelEditButtonTitle).removeClass('hidden')
+    this.options.highlightCollationTableRange(this.entryInEditor.ctIndexFrom, this.entryInEditor.ctIndexTo)
     this.apparatusEntryFormIsVisible = true
   }
 
@@ -847,6 +849,13 @@ export class ApparatusPanel extends  PanelWithToolbar {
     super.onShown()
     if(this.currentSelectedEntryIndex !== -1) {
       this.options.onHighlightMainText([this.options.apparatusIndex, this.currentSelectedEntryIndex], true)
+      if (this.apparatusEntryFormIsVisible) {
+        this.options.highlightCollationTableRange(this.entryInEditor.ctIndexFrom, this.entryInEditor.ctIndexTo)
+      } else {
+        this.options.highlightCollationTableRange(-1)
+      }
+    } else {
+      this.options.highlightCollationTableRange(-1)
     }
   }
 

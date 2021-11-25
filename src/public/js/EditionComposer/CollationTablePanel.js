@@ -839,7 +839,10 @@ export class CollationTablePanel extends PanelWithToolbar {
       $(`${this.containerSelector} table.te-table th.te-col-${i}`).addClass('highlight')
     }
     if (scrollIntoView) {
-      $(`${this.containerSelector} table.te-table th.te-col-${colStart}`).get(0).scrollIntoView()
+      let domElement = $(`${this.containerSelector} table.te-table th.te-col-${colStart}`).get(0)
+      if (domElement !== undefined) {
+        domElement.scrollIntoView()
+      }
     }
   }
 

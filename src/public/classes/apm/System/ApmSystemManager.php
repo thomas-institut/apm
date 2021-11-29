@@ -53,6 +53,7 @@ use PDO;
 use PDOException;
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
 use Twig\Error\LoaderError;
+use function GuzzleHttp\debug_resource;
 
 
 /**
@@ -94,13 +95,24 @@ class ApmSystemManager extends SystemManager {
         ApmConfigParameter::DB,
         ApmConfigParameter::SUPPORT_CONTACT_NAME,
         ApmConfigParameter::SUPPORT_CONTACT_EMAIL,
-        ApmConfigParameter::BASE_URL,
+        //ApmConfigParameter::BASE_URL,
+        ApmConfigParameter::SUB_DIR,
         ApmConfigParameter::LOG_FILENAME,
         ApmConfigParameter::LANGUAGES,
         ApmConfigParameter::LANG_CODES,
     ];
     
     const REQUIRED_CONFIG_VARIABLES_DB = [ 'host', 'db', 'user', 'pwd'];
+
+    protected array $serverLoggerFields = [
+        'url'         => 'REQUEST_URI',
+        'ip'          => 'REMOTE_ADDR',
+        'http_method' => 'REQUEST_METHOD',
+        'server'      => 'SERVER_NAME',
+        'referrer'    => 'HTTP_REFERER',
+        'forwarded_host' => 'HTTP_X_FORWARDED_HOST',
+        'forwarded_port' => 'HTTP_X_FORWARDED_PORT'
+    ];
     
     /** @var array */
     private array $tableNames;
@@ -374,7 +386,42 @@ class ApmSystemManager extends SystemManager {
     }
     
     public function getBaseUrl() : string {
-        return $this->config[ApmConfigParameter::BASE_URL];
+        $serverName = $_SERVER['SERVER_NAME'];
+        $port = $_SERVER['SERVER_PORT'];
+        if (isset($_SERVER['HTTP_X_FORWARDED_HOST'])) {
+            $serverName = $_SERVER['HTTP_X_FORWARDED_HOST'];
+        }
+        if (isset($_SERVER['HTTP_X_FORWARDED_PORT'])) {
+            $port = $_SERVER['HTTP_X_FORWARDED_PORT'];
+        }
+        $protocol = 'http';
+        if (isset($_SERVER['HTTP_X_FORWARDED_PROTO'])) {
+            // check for https in the forwarded protocols
+            $forwardedProtocols = explode(',', $_SERVER['HTTP_X_FORWARDED_PROTO']);
+            for ($i = 0; $i < count($forwardedProtocols); $i++) {
+                if ($forwardedProtocols[$i] === 'https') {
+                    $protocol = 'https';
+                    break;
+                }
+            }
+        }
+
+        $portString = ":$port";
+        switch($port) {
+            case '80':
+                $portString = '';
+                break;
+
+            case '443':
+                $portString = '';
+                $protocol = 'https';
+                break;
+        }
+
+
+
+        return "$protocol://$serverName$portString";
+        //return $this->config[ApmConfigParameter::BASE_URL];
     }
     
     public function getTableNames() : array {
@@ -405,7 +452,7 @@ class ApmSystemManager extends SystemManager {
             $logger->pushHandler($phpLog); // @codeCoverageIgnore
         }
         
-        $logger->pushProcessor(new WebProcessor);
+        $logger->pushProcessor(new WebProcessor(null,$this->serverLoggerFields));
         
         return $logger;
     }
@@ -467,7 +514,7 @@ class ApmSystemManager extends SystemManager {
         $config[ApmConfigParameter::WARNINGS] = [];
         
         foreach (self::REQUIRED_CONFIG_VARIABLES as $requiredVariable) {
-            if (!isset($config[$requiredVariable]) || ($config[$requiredVariable] === '')) {
+            if (!isset($config[$requiredVariable])) {
                 $config[ApmConfigParameter::ERROR] = true;
                 $config[ApmConfigParameter::ERROR_MESSAGES][] = 'Missing required parameter "' .
                         $requiredVariable . '"';
@@ -549,36 +596,37 @@ class ApmSystemManager extends SystemManager {
      *
      * @return string
      */
-    public function getBaseUrlSubdir() : string {
-
-        $baseUrl = $this->getBaseUrl();
-
-        $fields = explode('/', $baseUrl);
-
-        /// must have at least 3 fields
-        if (count($fields) < 3) {
-            $this->logger->debug("Fields", $fields);
-            throw new InvalidArgumentException('Badly formed url: ' . $baseUrl);
-        }
-
-        // $field[0] must be  http:  or https:
-        if ($fields[0] !== 'http:' && $fields[0] !== 'https:') {
-            throw new InvalidArgumentException('Expected http:  or https: in base Url ' . $baseUrl);
-        }
-
-        // $field[1] must be empty
-        if ($fields[1] !== '') {
-            throw new InvalidArgumentException('Expected // after http:');
-        }
-
-        // $field[2] is the website, not checking anything there
-
-        // everything after $field[2] is the subdir
-        if (!isset($fields[3])) {
-            return '';
-        }
-
-        return '/' . implode('/', array_slice($fields, 3));
+    public function getBaseUrlSubDir() : string {
+        return $this->config[ApmConfigParameter::SUB_DIR];
+//
+//        $baseUrl = $this->getBaseUrl();
+//
+//        $fields = explode('/', $baseUrl);
+//
+//        /// must have at least 3 fields
+//        if (count($fields) < 3) {
+//            $this->logger->debug("Fields", $fields);
+//            throw new InvalidArgumentException('Badly formed url: ' . $baseUrl);
+//        }
+//
+//        // $field[0] must be  http:  or https:
+//        if ($fields[0] !== 'http:' && $fields[0] !== 'https:') {
+//            throw new InvalidArgumentException('Expected http:  or https: in base Url ' . $baseUrl);
+//        }
+//
+//        // $field[1] must be empty
+//        if ($fields[1] !== '') {
+//            throw new InvalidArgumentException('Expected // after http:');
+//        }
+//
+//        // $field[2] is the website, not checking anything there
+//
+//        // everything after $field[2] is the subdir
+//        if (!isset($fields[3])) {
+//            return '';
+//        }
+//
+//        return '/' . implode('/', array_slice($fields, 3));
     }
 
     public function getTranscriptionManager(): TranscriptionManager

@@ -42,6 +42,7 @@ class ApmConfigParameter
     const SUPPORT_CONTACT_NAME = 'support_contact_name';
     const SUPPORT_CONTACT_EMAIL = 'support_contact_email';
     const BASE_URL = 'baseurl';
+    const SUB_DIR = 'sub_dir';
     const BASE_FULL_PATH = 'base_full_path';
     const LANGUAGES = 'languages';
     const LANG_CODES = 'langCodes';

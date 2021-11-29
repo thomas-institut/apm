@@ -54,7 +54,7 @@ class ApiPdfConversion extends ApiController
         $svgHash = hash('sha256', $inputData['svg']);
 
         $fileToDownload = self::PDF_DOWNLOAD_SUBDIR . '/' . self::PDF_FILE_PREFIX . $pdfId . '-'. $svgHash . '.pdf';
-        $baseUrl = $this->systemManager->getConfig()[ApmConfigParameter::BASE_URL];
+        $baseUrl = $this->systemManager->getBaseUrl();
         if (file_exists($fileToDownload)) {
             $this->codeDebug('Serving already converted file');
             $this->profiler->stop();

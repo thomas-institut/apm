@@ -105,10 +105,9 @@ $container->set(ApmContainerKey::USER_ID, 0);  // The authentication module will
 $responseFactory = new ResponseFactory();
 $app = new App($responseFactory, $container);
 
-
-$subdir = $systemManager->getBaseUrlSubdir();
-if ($subdir !== '') {
-    $app->setBasePath($subdir);
+$subDir = $systemManager->getBaseUrlSubDir();
+if ($subDir !== '') {
+    $app->setBasePath($subDir);
 }
 
 $app->addErrorMiddleware(true, true, true);

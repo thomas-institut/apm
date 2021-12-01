@@ -477,6 +477,7 @@ class ApiDocuments extends ApiController
         $pageNumber = $request->getAttribute('page');
         
         $numColumns = $this->getDataManager()->getNumColumns($docId, $pageNumber);
+        $this->info("getNumColumns successful", [ 'docId' => $docId, 'pageNumber' => $pageNumber]);
 
         return $this->responseWithJson($response, $numColumns);
     }
@@ -513,7 +514,7 @@ class ApiDocuments extends ApiController
         $numColumns = $dataManager->getNumColumns($docId, $pageNumber);
         $updaterInfo = $dataManager->userManager->getUserInfoByUserId($this->apiUserId);
         $userName = $updaterInfo['username'];
-        $this->logger->info("$userName added a column to " . 
+        $this->info("$userName added a column to " .
                 "doc $docId, page $pageNumber", 
                 ['apiUserId' => $this->apiUserId]);
         
@@ -536,6 +537,7 @@ class ApiDocuments extends ApiController
         }
 
         $returnData = [];
+        $pageIds = [];
 
         for($i = 0; $i<count($inputData['pages']); $i++) {
             $pageId = $inputData['pages'][$i];
@@ -553,6 +555,7 @@ class ApiDocuments extends ApiController
                 return $this->responseWithText($response, "Server error", 500);
             }
 
+            $pageIds[] = $pageId;
             array_push($returnData, [
                 'id' => $pageId,
                 'docId' => $pageInfo->docId,
@@ -563,6 +566,8 @@ class ApiDocuments extends ApiController
             ]);
         }
 
+
+        $this->info("$apiCall successful", [ 'pageIds' => $pageIds]);
         return $this->responseWithJson($response, $returnData, 200);
 
     }

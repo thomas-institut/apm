@@ -301,7 +301,7 @@ class ApiPresets extends ApiController
                 $witnessesToLookUp[] = $this->convertFullTxIdToSiglaPresetId($witnessId);
             }
         }
-        $this->codeDebug('Witnesses to look up', $witnessesToLookUp);
+        $this->codeDebug('Witnesses to look up', ['witnesses' => $witnessesToLookUp]);
 //        if (count($witnessesToLookUp) < 2) {
 //            $this->logger->error("Field 'witnesses' must have 2 or more elements",
 //                [ 'apiUserId' => $this->apiUserId,

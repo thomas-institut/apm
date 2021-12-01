@@ -155,7 +155,7 @@ class Authenticator {
      * @param string $msg
      * @param array $data
      */
-    private function debug(string $msg, $data=[])
+    private function debug(string $msg, array $data=[])
     {
         if ($this->debugMode){
             $this->logger->debug($msg, $data);
@@ -195,6 +195,9 @@ class Authenticator {
             $ui = $this->userManager->getUserInfoByUserId($userId);
             if ($this->userManager->isUserAllowedTo($userId, 'manageUsers')){
                 $ui['manageUsers'] = 1;
+            }
+            if ($this->userManager->isRoot($userId)) {
+                $ui['isRoot'] = true;
             }
 
             $this->container->set(ApmContainerKey::USER_INFO, $ui);

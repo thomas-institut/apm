@@ -89,7 +89,8 @@ class SiteDashboard extends SiteController
 
         return $this->renderPage($response, self::TEMPLATE_DASHBOARD, [
             'doclist' => $docListHtml,
-            'tableInfo' => $tableInfo
+            'tableInfo' => $tableInfo,
+            'isRoot' => $this->userInfo['isRoot']
         ]);
     }
 }

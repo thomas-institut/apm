@@ -30,7 +30,8 @@ use APM\ToolBox\StringType;
  */
 class StringTokenizer {
 
-    private function mbStringToArray ($string) {
+    private function mbStringToArray ($string): array
+    {
         $strlen = mb_strlen($string); 
         $array = [];
         while ($strlen) { 
@@ -41,7 +42,8 @@ class StringTokenizer {
         return $array; 
     } 
     
-    public function getStringRange(string $theString, IntRange $range) {
+    public function getStringRange(string $theString, IntRange $range): string
+    {
         return mb_substr($theString, $range->getStart(), $range->getLength());
     }
     

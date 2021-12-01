@@ -418,9 +418,17 @@ class ApmSystemManager extends SystemManager {
                 break;
         }
 
+        if ($serverName === '0.0.0.0') {
+            $serverName = 'localhost';
+        }
+        $subDir = $this->getBaseUrlSubDir();
+        if ($subDir !== '') {
+            $subDir = '/' . $subDir;
+        }
 
 
-        return "$protocol://$serverName$portString";
+
+        return "$protocol://$serverName$portString$subDir";
         //return $this->config[ApmConfigParameter::BASE_URL];
     }
     

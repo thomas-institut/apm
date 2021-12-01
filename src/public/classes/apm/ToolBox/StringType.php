@@ -47,12 +47,14 @@ class StringType
         return $theArray;
     }
 
-    static public function isWhiteSpace(string $char) {
+    static public function isWhiteSpace(string $char): bool
+    {
         $wsRegExp = '^\s+$';
         return mb_ereg_match($wsRegExp, $char);
     }
 
-    static public function hasWhiteSpace(string $char) {
+    static public function hasWhiteSpace(string $char): bool
+    {
         $wsRegExp = '.*\s';
         return mb_ereg_match($wsRegExp, $char);
     }
@@ -73,7 +75,8 @@ class StringType
         return true;
     }
 
-    static public function hasPunctuation(string $someString) {
+    static public function hasPunctuation(string $someString): bool
+    {
         for ($i = 0 ; $i < mb_strlen($someString); $i++) {
             if (array_search(mb_substr($someString, $i, 1), self::getValidPunctuationCharArray()) !== false){
                 return true;

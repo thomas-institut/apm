@@ -28,6 +28,7 @@ namespace APM;
 
 use APM\Api\ApiLog;
 use APM\Api\ApiTranscription;
+use APM\Site\SiteApmLog;
 use Slim\App;
 use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Routing\RouteCollectorProxy;
@@ -243,6 +244,10 @@ $app->group('', function (RouteCollectorProxy $group){
     $group->get('/doc/{doc}/page/{seq}/view[/c/{col}]',
         SitePageViewer::class . ':pageViewerPageByDocSeq')
         ->setName('pageviewer.docseq');
+
+
+    // ADMIN
+    $group->get('/admin/log', SiteApmLog::class . ':apmLogPage')->setName('admin.log');
 
 
 

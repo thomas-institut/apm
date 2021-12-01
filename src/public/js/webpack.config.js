@@ -36,6 +36,7 @@ module.exports = {
       filename: 'AutomaticCollationTable.bundle.js'
     },
     ChunkPage: './pages/ChunkPage.js',
+    ApmLogPage: './pages/ApmLogPage.js',
     UserManager: {
       import: './pages/UserManagerPage.js',
       filename: 'UserManagerPage.bundle.js'

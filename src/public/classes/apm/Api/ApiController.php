@@ -179,6 +179,10 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
         }
     }
 
+    protected function info(string $msg, array $data=[]) {
+        $this->logger->info($msg, $data);
+    }
+
 
     /**
      * Checks that the given request contains a 'data' field, which in 

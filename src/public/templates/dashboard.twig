@@ -92,6 +92,9 @@
         <h1>Admin</h1>
         <ul>
             <li><a href="{{url_for('user.profile', {'username' : userinfo.username})}}">Edit profile / Change Password</a></li>
+            {% if isRoot %}
+                <li><a href="{{ url_for('admin.log') }}">System Log</a></li>
+            {% endif %}
         </ul>
     </section>
 </div>

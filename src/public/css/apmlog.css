@@ -1,0 +1,35 @@
+
+.connected {
+    color: green;
+}
+
+.disconnected {
+    color: red;
+}
+
+div.debug {
+    color: gray;
+}
+
+span.timestamp {
+    margin-right: 1rem;
+}
+span.module {
+    margin-right: 1rem;
+}
+span.log-level {
+
+}
+
+div.log-entry {
+    margin-bottom: 1rem;
+}
+
+div.log-content {
+    margin-left: 2rem;
+}
+
+.log-content{
+    font-family: monospace;
+    font-size: 0.8rem;
+}

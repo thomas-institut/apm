@@ -357,6 +357,7 @@ class ApiCollation extends ApiController
         $cache->set($cacheKey,$zipped);
 
         $this->profiler->stop();
+        $this->info("Automatic Collation Table generated", ['workId'=>$workId, 'chunk' => $chunkNumber, 'lang' => $lang]);
 
         $this->logProfilerData("CollationTable-$workId-$chunkNumber-$language, encoding and storing in cache");
 
@@ -430,6 +431,7 @@ class ApiCollation extends ApiController
             ];
 
             $this->profiler->stop();
+            $this->info("Collation Table $collationTableId saved");
             $this->logProfilerData('Api.SaveCollationTable');
             return $this->responseWithJson($response, $responseData);
         }
@@ -444,6 +446,7 @@ class ApiCollation extends ApiController
         ];
 
         $this->profiler->stop();
+        $this->info("Collation Table $collationTableId saved (new table)");
         $this->logProfilerData('Api.SaveCollationTable (new table');
         return $this->responseWithJson($response, $responseData);
     }

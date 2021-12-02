@@ -99,12 +99,15 @@ export class ApparatusPanel extends  PanelWithToolbar {
   }
 
   editApparatusEntry(mainTextFrom, mainTextTo) {
+    this.verbose && console.log(`Editing apparatus entry main text ${mainTextFrom} to ${mainTextTo}`)
     let entryIndex = this.apparatus.entries.map( (entry) => {return `${entry.from}-${entry.to}`}).indexOf(`${mainTextFrom}-${mainTextTo}`)
 
     if (entryIndex === -1) {
+      this.verbose && console.log(`New entry`)
       this._selectLemma(-1)
       this._loadEntryIntoEntryForm(-1, mainTextFrom, mainTextTo)
     } else {
+      this.verbose && console.log(`Existing entry ${entryIndex}`)
       this._selectLemma(entryIndex)
       this._loadEntryIntoEntryForm(entryIndex)
     }
@@ -705,6 +708,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
   }
 
   _showApparatusEntryForm() {
+    this.verbose && console.log(`Showing apparatus entry form`)
     $(this.getApparatusEntryFormSelector()).removeClass('hidden')
     this._getEditEntryButtonElement().html(icons.cancelEdit).attr('title', cancelEditButtonTitle).removeClass('hidden')
     this.options.highlightCollationTableRange(this.entryInEditor.ctIndexFrom, this.entryInEditor.ctIndexTo)

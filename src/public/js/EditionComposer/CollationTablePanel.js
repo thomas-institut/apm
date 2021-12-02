@@ -35,7 +35,14 @@ import * as ArrayUtil from '../toolbox/ArrayUtil'
 import * as NormalizationSource from '../constants/NormalizationSource'
 import * as TranscriptionTokenType from '../Witness/WitnessTokenType'
 import { defaultLanguageDefinition } from '../defaults/languages'
-import { columnGroupEvent, columnUngroupEvent, editModeOff, TableEditor } from '../pages/common/TableEditor'
+import {
+  columnClearSelectionEvent,
+  columnGroupEvent,
+  columnSelectEvent,
+  columnUngroupEvent, editModeGroup,
+  editModeOff,
+  TableEditor
+} from '../pages/common/TableEditor'
 import * as WitnessType from '../Witness/WitnessType'
 import * as TokenClass from '../Witness/WitnessTokenClass'
 import * as Util from '../toolbox/Util.mjs'
@@ -45,6 +52,8 @@ import * as PopoverFormatter from '../pages/common/CollationTablePopovers'
 import { FULL_TX } from '../Witness/WitnessTokenClass'
 import { CtData } from '../CtData/CtData'
 import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'
+import { capitalizeFirstLetter } from '../toolbox/Util.mjs'
+import { doNothing } from '../toolbox/FunctionUtil'
 
 export class CollationTablePanel extends PanelWithToolbar {
   constructor (options = {}) {
@@ -55,7 +64,8 @@ export class CollationTablePanel extends PanelWithToolbar {
       icons: { type: 'object', required: true},
       langDef : { type: 'object', default: defaultLanguageDefinition },
       peopleInfo: { type: 'object', default: []},
-      onCtDataChange: { type: 'function', default: () => {  this.verbose && console.log(`New CT data, but no handler for change`)}}
+      onCtDataChange: { type: 'function', default: () => {  this.verbose && console.log(`New CT data, but no handler for change`)}},
+      editApparatusEntry: { type: 'function', default: doNothing}
     }
 
     let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  'Collation Table Panel'})
@@ -102,6 +112,7 @@ export class CollationTablePanel extends PanelWithToolbar {
       this.tableEditModeToRestore = this.tableEditor.getTableEditMode()
     }
     this.verbose && console.log(`Current TableEditor edit mode: ${this.tableEditModeToRestore}`)
+    this.tableEditor.clearColumnSelection()
     if (this.visible) {
       this._setupPanelContent()
       this.panelIsSetup = true
@@ -114,6 +125,11 @@ export class CollationTablePanel extends PanelWithToolbar {
 
 
   generateToolbarHtml (tabId, mode, visible) {
+
+    let apparatusLinks = this.ctData['customApparatuses'].map( (app, index) => {
+      return `<a class="dropdown-item add-entry-apparatus-${index}" href="">${capitalizeFirstLetter(app.type)}</a>`
+    }).join('')
+
     return `<div class="panel-toolbar-group">
         <div class="panel-toolbar-group" id="mode-toggle"></div>
        <div class="panel-toolbar-group"><span id="popovers-toggle"></span></div>
@@ -121,6 +137,17 @@ export class CollationTablePanel extends PanelWithToolbar {
             <span id="normalizations-toggle"></span>
             <a class="tb-button" href="#" title="Click to choose which normalizations to apply" id="normalizations-settings-button"><i class="fas fa-pen"></i></a>
        </div>
+       <div class="panel-toolbar-group">
+            <div class="panel-toolbar-item add-entry-dropdown hidden">
+                <div class="dropdown">
+                     <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" 
+                     id="ct-panel-add-entry-dropdown" data-toggle="dropdown" aria-expanded="false" title="Click to add apparatus entry">
+                            ${this.icons.addEntry}
+                     </button>
+                     <div class="dropdown-menu" aria-labelledby="ct-panel-add-entry-dropdown">${apparatusLinks}</div>
+                  </div>
+               </div>      
+        </div>
 </div>
 <div class="panel-toolbar-group leftmost">
     <div class="panel-toolbar-item">
@@ -248,6 +275,42 @@ export class CollationTablePanel extends PanelWithToolbar {
     // EXPORT CSV
     this.exportCsvButton = $('#export-csv-button')
 
+    // ADD APPARATUS ENTRY
+    this.ctData['customApparatuses'].forEach( (app, index) => {
+      $(`${this.containerSelector} .add-entry-apparatus-${index}`).on('click', this._genOnClickAddEntryButton(index))
+    })
+
+    // click on toolbar, to unselect columns
+    $(`${this.containerSelector} div.panel-toolbar`).on('click', this._genOnClickToolbar())
+  }
+
+  _genOnClickToolbar() {
+    return (ev) => {
+      if (this.tableEditor.tableEditMode !== editModeGroup) {
+        return
+      }
+      let target = $(ev.target)
+      if (target.prop('nodeName') === 'DIV' && target.hasClass('panel-toolbar')) {
+        if (this.selectedColumnsFrom !== -1) {
+          this.tableEditor.clearColumnSelection()
+        }
+      }
+    }
+  }
+
+  _genOnClickAddEntryButton(appIndex) {
+    return (ev) => {
+      ev.preventDefault()
+      ev.stopPropagation()
+
+      this.verbose && console.log(`Click on add entry button for apparatus ${appIndex}, currently selected columns`)
+      if (this.selectedColumnsFrom === -1 || this.selectedColumnsTo === -1) {
+        this.verbose && console.log(`No columns selected, nothing to do`)
+        return
+      }
+      this.options.editApparatusEntry(appIndex, this.selectedColumnsFrom, this.selectedColumnsTo)
+      $('#ct-panel-add-entry-dropdown').dropdown('hide')
+    }
   }
 
 
@@ -570,7 +633,27 @@ export class CollationTablePanel extends PanelWithToolbar {
     this.tableEditor.on('cell-shift content-changed', this.genOnCollationChanges())
     this.tableEditor.on(columnGroupEvent, this.genOnGroupUngroupColumn(true))
     this.tableEditor.on(columnUngroupEvent, this.genOnGroupUngroupColumn(false))
+    this.tableEditor.on(columnSelectEvent, this.genOnSelectColumns())
+    this.tableEditor.on(columnClearSelectionEvent, this.genOnClearColumnSelection())
     this.tableEditor.setEditMode(editModeOff)
+  }
+
+  genOnSelectColumns() {
+    return (ev) => {
+      //console.log(`Table editor says that columns ${ev.detail.from} to ${ev.detail.to} are selected`)
+      this.selectedColumnsFrom = ev.detail.from
+      this.selectedColumnsTo = ev.detail.to
+      $(`${this.containerSelector} div.add-entry-dropdown`).removeClass('hidden')
+    }
+  }
+
+  genOnClearColumnSelection() {
+    return () => {
+      //console.log(`Table editor says there are no selected columns`)
+      this.selectColumnsFrom = -1
+      this.selectedColumnsTo = -1
+      $(`${this.containerSelector} div.add-entry-dropdown`).addClass('hidden')
+    }
   }
 
   genOnGroupUngroupColumn(isGrouped) {

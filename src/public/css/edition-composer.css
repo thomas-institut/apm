@@ -261,6 +261,15 @@ th.highlight {
     color: black;
 }
 
+th.selected {
+    background-color: #81acc9;
+    color: black;
+}
+
+th.selected.highlight {
+    background-color: #dad09d;
+}
+
 /* Apparatus Panel */
 
 .lemma {

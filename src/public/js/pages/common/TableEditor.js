@@ -50,6 +50,8 @@ export const columnAddEvent = 'column-add'
 export const contentChangedEvent = 'content-changed'
 export const columnGroupEvent = 'column-group'
 export const columnUngroupEvent = 'column-ungroup'
+export const columnSelectEvent = 'column-select'
+export const columnClearSelectionEvent = 'column-clear-selection'
 
 
 //icons
@@ -372,6 +374,8 @@ export class TableEditor {
     this.container = $(this.containerSelector)
     this.icons = this.options.icons
     this.tableEditMode = editModeOff
+    this.selectedColumnsStart = -1
+    this.selectedColumnsEnd = -1
 
     if (this.options.onCellDrawnEventHandler !== null) {
       this.on(cellDrawnEvent, this.options.onCellDrawnEventHandler )
@@ -476,13 +480,16 @@ export class TableEditor {
   _setupTableForEditMode(mode) {
 
     let groupColumnButtons = $(`${this.containerSelector} a.${linkButtonClass}`)
+
     switch(mode) {
       case editModeOff:
         groupColumnButtons.addClass(hiddenClass)
+        this.clearColumnSelection()
         break
 
       case editModeMove:
         groupColumnButtons.addClass(hiddenClass)
+        this.clearColumnSelection()
         break
 
       case editModeGroup:
@@ -715,7 +722,9 @@ export class TableEditor {
     //let profiler = new SimpleProfiler('SetupEventHandlers')
     let thSelector = this.getThSelectorAll()
     $(thSelector).on('mouseenter', this.genOnMouseEnterHeader())
-    $(thSelector).on('mouseleave', this.genOnMouseLeaveHeader())
+      .on('mouseleave', this.genOnMouseLeaveHeader())
+      .on('click', this.genOnClickColumnHeader())
+
     $(`${thSelector} .${addColumnLeftButtonClass}`).on('click', this.genOnClickAddColumnLeftButton())
     $(`${thSelector} .${addColumnRightButtonClass}`).on('click', this.genOnClickAddColumnRightButton())
     $(`${thSelector} .${deleteColumnButtonClass}`).on('click', this.genOnClickDeleteColumnButton())
@@ -728,7 +737,24 @@ export class TableEditor {
        this.setupCellEventHandlers(row, col, false)
       }
     }
+    $(this.containerSelector).on('click', this._genOnClickTableEditor())
     //profiler.stop()
+  }
+
+  _genOnClickTableEditor() {
+    return (ev) => {
+      if (this.tableEditMode !== editModeGroup) {
+        return
+      }
+      let target = $(ev.target)
+      if (target.prop('nodeName') !== 'DIV') {
+        return
+      }
+      if (target.hasClass('tables-div') || target.hasClass('panel-content')) {
+        console.log(`Click on table editor outside of table`)
+        this.clearColumnSelection()
+      }
+    }
   }
 
   setupCellEventHandlersAll() {
@@ -778,6 +804,7 @@ export class TableEditor {
           thisObject.enterCellEditMode(row, col)
           return false
         }
+        return true
       }
 
       // click on an 'A'  node
@@ -817,7 +844,7 @@ export class TableEditor {
         thisObject.enterCellEditMode(row, col)
         return false
       }
-      console.warn(`Click on an unknown cell button on ${row}:${col}`)
+      console.warn(`Click on an unknown cell button on ${row}:${col}, nodeName ${theElement.prop('nodeName')}`)
       return true
     }
   }
@@ -1300,6 +1327,87 @@ export class TableEditor {
     }
   }
 
+  genOnClickColumnHeader() {
+    return (ev) => {
+      if (this.tableEditMode !== editModeGroup) {
+        return
+      }
+      ev.preventDefault()
+      ev.stopPropagation()
+      let col = this._getColFromColumnHeader(ev.currentTarget)
+      console.log(`Click on column header in group mode, col = ${col}`)
+      if (col < 0) {
+        console.warn(`Invalid column detected: ${col}`)
+        return
+      }
+      if (this.selectedColumnsStart !== -1) {
+        // there is a selection
+        console.log(`Current selection: ${this.selectedColumnsStart} to ${this.selectedColumnsEnd}`)
+        if (this.selectedColumnsStart === this.selectedColumnsEnd) {
+          // only 1 column selected
+          if (col === this.selectedColumnsStart) {
+            console.log(`Clearing column selection`)
+            this.clearColumnSelection()
+          } else {
+            if (col === this.selectedColumnsStart-1) {
+              console.log(`Expanding column selection to the left`)
+              this._selectColumnRange(col, this.selectedColumnsEnd)
+            }
+            if (col === this.selectedColumnsEnd+1) {
+              console.log(`Expanding column selection to the right`)
+              this._selectColumnRange(this.selectedColumnsStart, col)
+            }
+          }
+        } else {
+          // more than 1 column selected: unselect only if col is the first or the last column in the selected
+          // column range
+          if (col===this.selectedColumnsStart) {
+            this._selectColumnRange(this.selectedColumnsStart+1, this.selectedColumnsEnd)
+          } else if (col === this.selectedColumnsEnd) {
+            this._selectColumnRange(this.selectedColumnsStart, this.selectedColumnsEnd-1)
+          } else {
+            if (col === this.selectedColumnsStart-1) {
+              console.log(`Expanding column selection to the left`)
+              this._selectColumnRange(col, this.selectedColumnsEnd)
+            }
+            if (col === this.selectedColumnsEnd+1) {
+              console.log(`Expanding column selection to the right`)
+              this._selectColumnRange(this.selectedColumnsStart, col)
+            }
+          }
+        }
+      } else {
+        // there is no selection
+        console.log(`There is no current selection, selecting ${col} to ${col}`)
+        this._selectColumnRange(col, col)
+      }
+    }
+  }
+
+  _selectColumnRange(col1, col2) {
+    this.clearColumnSelection()
+    this.selectedColumnsStart = Math.min(col1, col2)
+    this.selectedColumnsEnd = Math.max(col1, col2)
+    for (let i = this.selectedColumnsStart; i <= this.selectedColumnsEnd; i++) {
+      $(this.getThSelector(i)).addClass('selected')
+    }
+    this.dispatchEvent(columnSelectEvent, { from: this.selectedColumnsStart, to: this.selectedColumnsEnd})
+
+  }
+
+  clearColumnSelection() {
+    for (let i = this.selectedColumnsStart; i <= this.selectedColumnsEnd; i++) {
+      $(this.getThSelector(i)).removeClass('selected')
+    }
+    this.selectedColumnsStart = -1
+    this.selectedColumnsEnd = -1
+    this.dispatchEvent(columnClearSelectionEvent, {})
+  }
+
+  _isColumnSelected(col) {
+    return (this.selectedColumnsStart !== -1 && col >= this.selectedColumnsStart && col <= this.selectedColumnsEnd)
+  }
+
   genOnClickGroupColumnButton() {
     let thisObject = this
     return (ev) => {
@@ -1332,6 +1440,20 @@ export class TableEditor {
       return false
     }
   }
+
+  _getColFromColumnHeader(domElement) {
+    let classes = this.getClassList($(domElement))
+    let col = -1
+    for(const theClass of classes) {
+      // TODO: use class constant in regex
+      if (theClass.search(/^te-col-/) !== -1) {
+        col = parseInt(theClass.replace('te-col-', ''))
+        break
+      }
+    }
+    return col
+  }
+
 
   _getColFromGroupColumnButton(domElement) {
     let classes = this.getClassList($(domElement))

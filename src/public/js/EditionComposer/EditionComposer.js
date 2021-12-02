@@ -113,7 +113,8 @@ export class EditionComposer {
       savePreset:'<i class="fas fa-save"></i>',
       saveEdition: '<i class="bi bi-cloud-arrow-up"></i>',
       loadPreset: '<i class="fas fa-upload"></i>',
-      error: '<i class="bi bi-bug-fill"></i>'
+      error: '<i class="bi bi-bug-fill"></i>',
+      addEntry: '<i class="bi bi-plus-lg"></i>'
     }
 
     this.errorDetected = false
@@ -172,6 +173,7 @@ export class EditionComposer {
       onCtDataChange: this.genOnCtDataChange('collationTablePanel'),
       contentAreaId: 'ct-panel-content',
       peopleInfo: this.options.peopleInfo,
+      editApparatusEntry: (apparatusIndex, ctIndexFrom, ctIndexTo) => { this.editApparatusEntryFromCollationTable(apparatusIndex, ctIndexFrom, ctIndexTo)},
       verbose: true
     })
     this.witnessInfoPanel = new WitnessInfoPanel({
@@ -331,6 +333,7 @@ export class EditionComposer {
 
   _genHighlightCollationTable() {
     return (colStart, colEnd) => {
+      console.log(`Highlighting CT ${colStart} - ${colEnd}`)
       this.collationTablePanel.highlightColumnRange(colStart, colEnd)
     }
   }
@@ -339,6 +342,39 @@ export class EditionComposer {
     return (index, on) => {
       this.mainTextPanel.highlightTextForLemma(apparatusType, index, on)
     }
+  }
+
+  editApparatusEntryFromCollationTable(apparatusIndex, ctFrom, ctTo) {
+    console.log(`Adding apparatus entry for apparatus ${apparatusIndex} from collation table: ${ctFrom} to ${ctTo}`)
+    if (ctFrom === -1 || ctTo === -1) {
+      console.warn(`Invalid CT column range`)
+      return
+    }
+    console.log(`Getting main text index from out of ct ${ctFrom}`)
+    let mainTextFrom = this._getMainTextIndexFromCtIndex(ctFrom)
+    if (mainTextFrom === -1) {
+      console.warn(`No main text found for given CT index`)
+      return
+    }
+    console.log(`Getting main text index to out of ct ${ctTo}`)
+    let mainTextTo = this._getMainTextIndexFromCtIndex(ctTo)
+    if (mainTextTo === -1) {
+      console.warn(`No main text found for given CT index`)
+      return
+    }
+    this.editApparatusEntry(apparatusIndex, mainTextFrom, mainTextTo)
+  }
+
+  _getMainTextIndexFromCtIndex(ctIndex) {
+    let ctData = this.ctData
+    let editionWitnessTokenIndex = ctData['collationMatrix'][ctData['editionWitnessIndex']][ctIndex]
+    console.log(`Edition witness token index for ct ${ctIndex} is ${editionWitnessTokenIndex}`)
+    for (let i = 0; i < this.edition.mainText.length; i++) {
+      if (this.edition.mainText[i].editionWitnessTokenIndex === editionWitnessTokenIndex) {
+        return i
+      }
+    }
+    return -1
   }
 
   editApparatusEntry(apparatusIndex, mainTextFrom, mainTextTo) {

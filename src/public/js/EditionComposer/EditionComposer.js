@@ -333,7 +333,11 @@ export class EditionComposer {
 
   _genHighlightCollationTable() {
     return (colStart, colEnd) => {
-      console.log(`Highlighting CT ${colStart} - ${colEnd}`)
+      if (colEnd === undefined) {
+        console.warn(`Undefined col end`)
+        console.trace()
+      }
+      //console.log(`Highlighting CT ${colStart} - ${colEnd}`)
       this.collationTablePanel.highlightColumnRange(colStart, colEnd)
     }
   }

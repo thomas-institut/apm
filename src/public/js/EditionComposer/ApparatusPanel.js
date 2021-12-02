@@ -703,7 +703,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
     if (this.currentSelectedEntryIndex === -1) {
       this._getEditEntryButtonElement().addClass('hidden')
     }
-    this.options.highlightCollationTableRange(-1)
+    this.options.highlightCollationTableRange(-1, -1)
     this.apparatusEntryFormIsVisible = false
   }
 
@@ -809,7 +809,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
   _selectLemma(entryIndex, runCallbacks = true) {
     //console.log(`Selecting ${entryIndex}, runCallbacks = ${runCallbacks}`)
     this._getAllLemmaElements().removeClass('lemma-selected lemma-hover')
-    this.options.highlightCollationTableRange(-1)
+    this.options.highlightCollationTableRange(-1, -1)
     if (entryIndex === -1) {
       // Deselect
       if (runCallbacks && this.currentSelectedEntryIndex !== -1) {
@@ -856,10 +856,14 @@ export class ApparatusPanel extends  PanelWithToolbar {
       if (this.apparatusEntryFormIsVisible) {
         this.options.highlightCollationTableRange(this.entryInEditor.ctIndexFrom, this.entryInEditor.ctIndexTo)
       } else {
-        this.options.highlightCollationTableRange(-1)
+        this.options.highlightCollationTableRange(-1, -1)
       }
     } else {
-      this.options.highlightCollationTableRange(-1)
+      if (this.apparatusEntryFormIsVisible) {
+        this.options.highlightCollationTableRange(this.entryInEditor.ctIndexFrom, this.entryInEditor.ctIndexTo)
+      } else {
+        this.options.highlightCollationTableRange(-1, -1)
+      }
     }
   }
 

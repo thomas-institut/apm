@@ -386,6 +386,7 @@ class ApmSystemManager extends SystemManager {
     }
     
     public function getBaseUrl() : string {
+        //$this->logger->debug('Server', [ 'server' => $_SERVER]);
         $serverName = $_SERVER['SERVER_NAME'];
         $port = $_SERVER['SERVER_PORT'];
         if (isset($_SERVER['HTTP_X_FORWARDED_HOST'])) {
@@ -418,17 +419,19 @@ class ApmSystemManager extends SystemManager {
                 break;
         }
 
-        if ($serverName === '0.0.0.0') {
-            $serverName = 'localhost';
-        }
+//        if ($serverName === '0.0.0.0') {
+//            $serverName = 'localhost';
+//        }
         $subDir = $this->getBaseUrlSubDir();
         if ($subDir !== '') {
             $subDir = '/' . $subDir;
         }
 
+        $host = $_SERVER['HTTP_HOST'];
 
 
-        return "$protocol://$serverName$portString$subDir";
+
+        return "$protocol://$host$subDir";
         //return $this->config[ApmConfigParameter::BASE_URL];
     }
     

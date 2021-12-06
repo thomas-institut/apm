@@ -43,11 +43,11 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
     /**
      * @var UnitemporalDataTable
      */
-    private $ctTable;
+    private UnitemporalDataTable $ctTable;
     /**
      * @var CollationTableVersionManager
      */
-    private $versionManager;
+    private CollationTableVersionManager $versionManager;
 
     public function __construct(UnitemporalDataTable $ctTable, CollationTableVersionManager $versionManager, LoggerInterface $logger)
     {

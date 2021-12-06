@@ -64,7 +64,7 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
     /**
      * @var SimpleProfiler
      */
-    protected $profiler;
+    protected SimpleProfiler $profiler;
     
     // Error codes
     const API_ERROR_RUNTIME_ERROR = 1;
@@ -103,12 +103,12 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
     /**
      * @var ContainerInterface
      */
-    private $container;
+    private ContainerInterface $container;
 
     /**
      * @var bool
      */
-    private $debugMode;
+    private bool $debugMode;
     /**
      * @var string
      */
@@ -258,15 +258,16 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
         $this->logger->error("Exception caught: $msg", [ 'errorMsg' => $e->getMessage(), 'erroCode' => $e->getCode(), 'trace' => $e->getTraceAsString()]);
     }
 
-    protected function logProfilerData(string $pageTitle) : void
+    protected function logProfilerData(string $pageTitle, $fullLapInfo = false) : void
     {
         $lapInfo = $this->profiler->getLaps();
         $totalTimeInMs = $this->getProfilerTotalTime() * 1000;
         $totalQueries = $lapInfo[count($lapInfo)-1]['mysql-queries']['cummulative']['Total'];
         $cacheHits = $lapInfo[count($lapInfo)-1]['cache']['cummulative']['hits'];
         $cacheMisses = $lapInfo[count($lapInfo)-1]['cache']['cummulative']['misses'];
+        $info = $fullLapInfo ? $lapInfo :[];
         $this->logger->debug(sprintf("PROFILER %s, finished in %0.2f ms, %d MySql queries, %d cache hits, %d misses",
-            $pageTitle, $totalTimeInMs, $totalQueries, $cacheHits, $cacheMisses), $lapInfo);
+            $pageTitle, $totalTimeInMs, $totalQueries, $cacheHits, $cacheMisses), $info);
     }
 
     protected function getProfilerTotalTime() : float

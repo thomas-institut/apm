@@ -386,7 +386,6 @@ class ApmSystemManager extends SystemManager {
     }
     
     public function getBaseUrl() : string {
-        //$this->logger->debug('Server', [ 'server' => $_SERVER]);
         $host = $_SERVER['HTTP_HOST'];
         $port = $_SERVER['SERVER_PORT'];
 

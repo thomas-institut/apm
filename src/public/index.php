@@ -93,6 +93,7 @@ $logger = $systemManager->getLogger();
 $hm = $systemManager->getHookManager();
 $dbh = $systemManager->getDbConnection();
 
+
 // Data Manager (will be replaced completely by SystemManager at some point
 $dataManager = new DataManager($dbh, $systemManager->getTableNames(), $logger, $hm, $config[ApmConfigParameter::LANG_CODES]);
 $dataManager->setSqlQueryCounterTracker($systemManager->getSqlQueryCounterTracker());
@@ -108,7 +109,7 @@ $app = new App($responseFactory, $container);
 
 $subDir = $systemManager->getBaseUrlSubDir();
 if ($subDir !== '') {
-    $app->setBasePath($subDir);
+    $app->setBasePath("/$subDir");
 }
 
 $app->addErrorMiddleware(true, true, true);

@@ -129,6 +129,7 @@ export class CriticalApparatusGenerator {
           // other info
           entry.ctGroup = columnGroup
           entries.push(entry)
+          //console.log(`Adding entry, there are now ${entries.length} in the critical apparatus`)
         }
         return
       }
@@ -181,6 +182,7 @@ export class CriticalApparatusGenerator {
       if (mainTextIndexTo === -1) {
         //console.log(`Finding non empty main text token backwards from ${columnGroup.to}, from = ${columnGroup.from}`)
         mainTextIndexTo = this._findNonEmptyMainTextToken(columnGroup.to, ctIndexToMainTextMap, baseWitnessTokens, false, lang)
+        //console.log(`  result: ${mainTextIndexTo}`)
       }
 
       let subEntries = this._buildSubEntryArrayFromVariantArrayNew(groupOmissions, ApparatusEntryType.OMISSION)
@@ -194,6 +196,7 @@ export class CriticalApparatusGenerator {
         // other info
         entry.ctGroup = columnGroup
         entries.push(entry)
+        //console.log(`Adding entry, there are now ${entries.length} in the critical apparatus`)
       }
     })
 

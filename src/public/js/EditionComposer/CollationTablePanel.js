@@ -110,9 +110,9 @@ export class CollationTablePanel extends PanelWithToolbar {
     this.aggregatedNonTokenItemIndexes = this.calculateAggregatedNonTokenItemIndexes()
     if (this.tableEditor !== undefined) {
       this.tableEditModeToRestore = this.tableEditor.getTableEditMode()
+      this.verbose && console.log(`Current TableEditor edit mode: ${this.tableEditModeToRestore}`)
+      this.tableEditor.clearColumnSelection()
     }
-    this.verbose && console.log(`Current TableEditor edit mode: ${this.tableEditModeToRestore}`)
-    this.tableEditor.clearColumnSelection()
     if (this.visible) {
       this._setupPanelContent()
       this.panelIsSetup = true

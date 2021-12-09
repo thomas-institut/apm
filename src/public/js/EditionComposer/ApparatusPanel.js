@@ -900,7 +900,14 @@ export class ApparatusPanel extends  PanelWithToolbar {
     let textDirectionMarker = this.edition.lang === 'la' ? '&lrm;' : '&rlm;'
     this.apparatus.entries.forEach( (apparatusEntry, aeIndex) => {
       html += `<span class="apparatus-entry apparatus-entry-${this.options.apparatusIndex}-${aeIndex}">`
-      let currentLine = this._getLineNumberString(apparatusEntry, mainTextTokensWithTypesettingInfo)
+      let currentLine
+      try {
+        currentLine = this._getLineNumberString(apparatusEntry, mainTextTokensWithTypesettingInfo)
+      } catch (e) {
+        console.error(`Error getting lineNumber string in apparatus entry ${aeIndex}`)
+        console.log(apparatusEntry)
+      }
+
       let lineHtml = `${textDirectionMarker}&nbsp;${this.options.entrySeparator}&nbsp;`
       if (currentLine !== lastLine) {
         let lineSep = aeIndex !== 0 ? `${this.options.apparatusLineSeparator}&nbsp;` : ''

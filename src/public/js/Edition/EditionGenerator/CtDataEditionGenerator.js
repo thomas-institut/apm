@@ -70,7 +70,7 @@ export class CtDataEditionGenerator extends EditionGenerator{
     console.log(generatedCriticalApparatus)
     console.log(`CtIndexToMainTextMap`)
     console.log(theMap)
-    generatedCriticalApparatus = this._mergeCustomApparatusCriticusEntries(generatedCriticalApparatus, baseWitnessTokens, theMap)
+    generatedCriticalApparatus = this._mergeCustomApparatusCriticusEntries(generatedCriticalApparatus, baseWitnessTokens, theMap, apparatusGenerator)
     edition.apparatuses = [
       generatedCriticalApparatus
     ]
@@ -87,10 +87,11 @@ export class CtDataEditionGenerator extends EditionGenerator{
    * @param {Apparatus} generatedApparatusCriticus
    * @param baseWitnessTokens
    * @param {*[]}ctIndexToMainTextMap
+   * @param apparatusGenerator
    * @return {*}
    * @private
    */
-  _mergeCustomApparatusCriticusEntries(generatedApparatusCriticus, baseWitnessTokens, ctIndexToMainTextMap) {
+  _mergeCustomApparatusCriticusEntries(generatedApparatusCriticus, baseWitnessTokens, ctIndexToMainTextMap, apparatusGenerator) {
     if (this.ctData['customApparatuses'] === undefined) {
       // a simple collation table
       return generatedApparatusCriticus
@@ -125,6 +126,11 @@ export class CtDataEditionGenerator extends EditionGenerator{
         console.log(ctIndexToMainTextMap)
       }
       let mainTextTo = ctIndexToMainTextMap[customEntry.to]
+      if (mainTextTo === -1) {
+         console.log(`Custom entry with mainTextTo === -1`)
+         mainTextTo = apparatusGenerator._findNonEmptyMainTextToken(customEntry.to, ctIndexToMainTextMap, baseWitnessTokens, false, this.ctData['lang'] )
+         console.log(`New mainTextTo = ${mainTextTo}`)
+      }
       let currentEntryIndex = generatedApparatusCriticus.findEntryIndex( mainTextFrom, mainTextTo)
       let fullCustomSubEntries = customEntry['subEntries'].filter ( (e) => { return e.type === SubEntryType.FULL_CUSTOM})
 

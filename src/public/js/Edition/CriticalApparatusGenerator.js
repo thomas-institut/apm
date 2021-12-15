@@ -180,13 +180,13 @@ export class CriticalApparatusGenerator {
         console.log(columnGroup)
       }
       if (mainTextIndexTo === -1) {
-        //console.log(`Finding non empty main text token backwards from ${columnGroup.to}, from = ${columnGroup.from}`)
+        //console.log(`Finding non-empty main text token backwards from ${columnGroup.to}, from = ${columnGroup.from}`)
         mainTextIndexTo = this._findNonEmptyMainTextToken(columnGroup.to, ctIndexToMainTextMap, baseWitnessTokens, false, lang)
         //console.log(`  result: ${mainTextIndexTo}`)
       }
 
-      let subEntries = this._buildSubEntryArrayFromVariantArrayNew(groupOmissions, ApparatusEntryType.OMISSION)
-        .concat(this._buildSubEntryArrayFromVariantArrayNew(groupVariants, ApparatusEntryType.VARIANT))
+      let subEntries = this._buildSubEntryArrayFromVariantArrayNew(groupVariants, ApparatusEntryType.VARIANT)
+        .concat(this._buildSubEntryArrayFromVariantArrayNew(groupOmissions, ApparatusEntryType.OMISSION))
       if (subEntries.length !== 0) {
         let entry = new ApparatusEntry()
         entry.from = mainTextIndexFrom

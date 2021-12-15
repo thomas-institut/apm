@@ -151,22 +151,34 @@ export class ApparatusCommon {
     return keyword
   }
 
-  static getKeywordTypesetterToken(keyword, lang) {
+  /**
+   * Returns an array of typesetter tokens for the given keyword
+   * Accepts also a FmtText array which will be converted to plain text before processing
+   *
+   * @param {string|FmtTextToken[]}keyword
+   * @param {string}lang
+   * @return {TypesetterToken}
+   */
+  static getKeywordTypesetterTokens(keyword, lang) {
+    if (typeof keyword !== 'string') {
+      keyword = FmtText.getPlainText(FmtTextFactory.fromAnything(keyword))
+    }
     let keywordString = this.getKeywordString(keyword, lang)
-    let token = TypesetterTokenFactory.simpleText(keywordString)
+    let fmtText = FmtTextFactory.fromAnything(keywordString)
     switch(lang) {
       case 'he':
-        token.setFontSize(hebrewStyle.smallFontFactor)
+        fmtText = fmtText.map( (token) => { return token.setFontSize(hebrewStyle.smallFontFactor)})
         break
 
       case 'ar':
-        token.setFontSize(arabicStyle.smallFontFactor)
+        fmtText = fmtText.map( (token) => { return token.setFontSize(arabicStyle.smallFontFactor)})
+        //token.setFontSize(arabicStyle.smallFontFactor)
         break
 
       default:
-        token.setItalic()
+        fmtText = fmtText.map( (token) => { return token.setItalic()})
     }
-    return token
+    return (new TypesetterTokenRenderer()).render(fmtText)
   }
 
   static getKeywordHtml(keyword, lang) {

@@ -927,7 +927,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
           break
 
         default:
-          preLemmaSpanHtml = ApparatusCommon.getKeywordHtml(FmtText.getPlainText(apparatusEntry.preLemma))
+          preLemmaSpanHtml = ApparatusCommon.getKeywordHtml(FmtText.getPlainText(apparatusEntry.preLemma), this.edition.lang)
       }
       let preLemmaSpan = preLemmaSpanHtml === '' ? '' : `<span class="pre-lemma">${preLemmaSpanHtml}</span> `
 
@@ -936,7 +936,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
 
       let postLemmaSpan = ''
       if (apparatusEntry.postLemma !== '') {
-        let postLemma = ApparatusCommon.getKeywordHtml(FmtText.getPlainText(apparatusEntry.postLemma))
+        let postLemma = ApparatusCommon.getKeywordHtml(FmtText.getPlainText(apparatusEntry.postLemma), this.edition.lang)
         postLemmaSpan = ` <span class="pre-lemma">${postLemma}</span>`
       }
 
@@ -944,7 +944,11 @@ export class ApparatusPanel extends  PanelWithToolbar {
 
       switch(apparatusEntry.separator) {
         case '':
-          separator = ']'
+          if (apparatusEntry.allSubEntriesAreOmissions()) {
+            separator = ''
+          } else {
+            separator = ']'
+          }
           break
 
         case 'off':

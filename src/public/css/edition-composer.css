@@ -1,6 +1,6 @@
 :root {
-
-    --latin-apparatus-font-family: "Times New Roman", Times, serif;;
+    --latin-apparatus-font-family: "Times New Roman", Times, serif;
+    --dimmed-apparatus-text-color: #646464;
 }
 
 
@@ -294,6 +294,18 @@ th.selected.highlight {
 
 .sub-entry-source-user {
     color: #1875b1;
+}
+
+.sub-entry-source-auto {
+    color: var(--dimmed-apparatus-text-color);
+}
+
+span.pre-lemma {
+    color: var(--dimmed-apparatus-text-color);
+}
+
+span.post-lemma {
+    color: var(--dimmed-apparatus-text-color);
 }
 
 div.aei-form .col-form-label {

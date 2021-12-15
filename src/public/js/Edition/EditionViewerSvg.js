@@ -355,7 +355,8 @@ export class EditionViewerSvg {
         lineTtTokens.push(TypesetterTokenFactory.normalSpace())
       }
       pushArray(ttTokens, lineTtTokens)
-      // build lemma section
+      // LEMMA section
+      // preLemma
       let preLemmaTokens = []
       switch(apparatusEntry.preLemma) {
         case '':
@@ -364,26 +365,36 @@ export class EditionViewerSvg {
 
         case 'ante':
         case 'post':
-          preLemmaTokens = [ ApparatusCommon.getKeywordTypesetterToken(apparatusEntry.preLemma, this.edition.lang)]
+          preLemmaTokens = ApparatusCommon.getKeywordTypesetterTokens(apparatusEntry.preLemma, this.edition.lang)
           break
 
         default:
-          // console.log (`Processing custom preLemma`)
-          // console.log(apparatusEntry.preLemma)
-          let preLemmaText = removeExtraWhiteSpace(FmtText.getPlainText(FmtTextFactory.fromAnything(apparatusEntry.preLemma)))
-          let preLemmaFmtText = FmtTextFactory.fromAnything(preLemmaText).map( (token) => { return token.setItalic()})
-          preLemmaTokens = (new TypesetterTokenRenderer()).render(preLemmaFmtText)
-
+          preLemmaTokens = ApparatusCommon.getKeywordTypesetterTokens(apparatusEntry.preLemma, this.edition.lang)
+          //preLemmaTokens = this._getTypesetTokensFromCustomLemmaGroupValue(apparatusEntry.preLemma, this.edition.lang)
       }
       pushArray(ttTokens, preLemmaTokens)
       if (preLemmaTokens.length !== 0) {
         ttTokens.push(TypesetterTokenFactory.normalSpace())
       }
-      let separatorTokens = []
 
+      // lemma
+      ttTokens.push(TypesetterTokenFactory.simpleText(ApparatusCommon.getLemmaString(apparatusEntry.lemma, apparatusEntry.lemmaText)).setLang(this.edition.lang))
+
+      // postLemma
+      if (apparatusEntry.postLemma !== '') {
+        ttTokens.push(TypesetterTokenFactory.normalSpace())
+        let postLemmaTokens  = ApparatusCommon.getKeywordTypesetterTokens(apparatusEntry.postLemma, this.edition.lang)
+        //let postLemmaTokens = this._getTypesetTokensFromCustomLemmaGroupValue(apparatusEntry.postLemma, this.edition.lang)
+        pushArray(ttTokens, postLemmaTokens)
+      }
+
+      // separator
+      let separatorTokens = []
       switch(apparatusEntry.separator) {
         case '':
-          separatorTokens = [ TypesetterTokenFactory.simpleText(']').setLang(this.edition.lang) ]
+          if (!apparatusEntry.allSubEntriesAreOmissions()) {
+            separatorTokens = [ TypesetterTokenFactory.simpleText(']').setLang(this.edition.lang) ]
+          }
           break
 
         case 'off':
@@ -396,10 +407,11 @@ export class EditionViewerSvg {
         default:
           separatorTokens = (new TypesetterTokenRenderer()).render(removeExtraWhiteSpace(FmtText.getPlainText(apparatusEntry.separator)))
       }
-
-      ttTokens.push(TypesetterTokenFactory.simpleText(ApparatusCommon.getLemmaString(apparatusEntry.lemma, apparatusEntry.lemmaText)).setLang(this.edition.lang))
       pushArray(ttTokens, separatorTokens)
       ttTokens.push(TypesetterTokenFactory.normalSpace())
+
+
+
       enabledSubEntries.forEach( (subEntry) => {
         let theText = subEntry.type === SubEntryType.OMISSION ? [] : subEntry.fmtText
         let witnessIndices = subEntry.witnessData.map ( (wd) => { return wd.witnessIndex})
@@ -433,6 +445,25 @@ export class EditionViewerSvg {
       // ttTokens.push(TypesetterTokenFactory.normalSpace())
     }
     return ttTokens
+  }
+
+  _getTypesetTokensFromCustomLemmaGroupValue(customText, lang) {
+    console.log(`Getting typeset token from custom lemma group value, lang = ${lang}`)
+    console.log(customText)
+    let text = removeExtraWhiteSpace(FmtText.getPlainText(FmtTextFactory.fromAnything(customText)))
+    console.log(`Processed plain text: '${text}'`)
+    let fmtText
+    switch (lang) {
+      case 'he':
+      case 'ar':
+        fmtText = FmtTextFactory.fromAnything(text).map( (token) => { return token.setFontSize(0.8)})
+        break
+
+      default:
+        fmtText = FmtTextFactory.fromAnything(text).map( (token) => { return token.setItalic()})
+    }
+
+    return (new TypesetterTokenRenderer()).render(fmtText)
   }
 
 

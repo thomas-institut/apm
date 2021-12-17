@@ -109,6 +109,12 @@ export class Edition {
      * @member {EditionWitnessInfo[]}
      */
     this.witnesses = []
+
+    /**
+     *
+     * @member {SiglaGroup[]}
+     */
+    this.siglaGroups = []
   }
 
   /**

@@ -146,6 +146,21 @@ span.witness-update-info {
     margin-right: 2rem;
 }
 
+div.group-preview {
+    margin-bottom: 1rem;
+}
+
+div.sigla-groups-div {
+    margin-left: 1rem;
+}
+
+div.sigla-groups-table {
+    margin: 1rem;
+}
+
+table.sigla-groups-table td {
+    padding: 8px;
+}
 
 /* Main text Panel */
 

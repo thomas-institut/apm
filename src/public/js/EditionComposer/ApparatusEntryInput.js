@@ -48,7 +48,8 @@ export class ApparatusEntryInput {
       ctIndexFrom: { type: 'number',  required: true},
       ctIndexTo: { type: 'number', required: true},
       selectedApparatusIndex: { type: 'number', default: 0},
-      sigla: { type: 'array', required: true}
+      sigla: { type: 'array', required: true},
+      siglaGroups: { type: 'array', default: []}
     }
 
     let oc = new OptionsChecker({optionsDefinition: optionsSpec, context: "Apparatus Entry Input"})
@@ -333,7 +334,7 @@ export class ApparatusEntryInput {
             return `<div class="form-check sub-entry-app-${ai}">
                 <input class="form-check-input text-${this.options.lang} aei-sub-entry-${ai}-${sei}" type="checkbox" value="entry-${ai}-${sei}" ${checkedString}>
                 <label class="form-check-label" for="aei-subentry-${ai}-${sei}"> 
-                        ${ApparatusCommon.genSubEntryHtmlContent(this.options.lang, subEntry, this.options.sigla )}
+                        ${ApparatusCommon.genSubEntryHtmlContent(this.options.lang, subEntry, this.options.sigla, this.options.siglaGroups )}
                  </label>
                 </div>`
           }).join('')

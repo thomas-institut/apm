@@ -31,6 +31,7 @@ import * as SubEntryType from '../SubEntryType'
 import * as SubEntrySource from '../SubEntrySource'
 import { pushArray } from '../../toolbox/ArrayUtil'
 import { ApparatusCommon } from '../../EditionComposer/ApparatusCommon'
+import { SiglaGroup } from '../SiglaGroup'
 
 export class CtDataEditionGenerator extends EditionGenerator{
   constructor (options) {
@@ -51,6 +52,7 @@ export class CtDataEditionGenerator extends EditionGenerator{
     let edition = super.generateEdition()
     let baseWitnessIndex = this.ctData['editionWitnessIndex'] !== undefined ? this.ctData['editionWitnessIndex'] : this.ctData['witnessOrder'][0]
     edition.setLang(this.ctData['lang'])
+    edition.siglaGroups = this.ctData['siglaGroups'].map ( (sg) => { return SiglaGroup.fromObject(sg)})
     edition.infoText = `Edition from ctData, chunkId ${this.ctData['chunkId']}, baseWitnessIndex: ${baseWitnessIndex}`
     edition.info = {
       source: 'ctData',

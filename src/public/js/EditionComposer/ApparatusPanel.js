@@ -32,6 +32,7 @@ import { varsAreEqual } from '../toolbox/ArrayUtil'
 import * as SubEntryType from '../Edition/SubEntryType'
 import { ApparatusSubEntry } from '../Edition/ApparatusSubEntry'
 import { MultiToggle } from '../widgets/MultiToggle'
+import { SiglaGroup }  from '../Edition/SiglaGroup'
 
 const doubleVerticalLine = String.fromCodePoint(0x2016)
 const verticalLine = String.fromCodePoint(0x007c)
@@ -80,7 +81,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
     let oc = new OptionsChecker({ optionsDefinition: optionsSpec, context: 'Apparatus Panel' })
     this.options = oc.getCleanOptions(options)
 
-    this.ctData = CtData.copyFromObject(this.options.ctData)
+    this.ctData = this._buildWorkingCtData(options.ctData)
     /**
      * @member {Edition}
      */
@@ -96,6 +97,12 @@ export class ApparatusPanel extends  PanelWithToolbar {
     this.selectNewEntry = false
     this.newEntryMainTextFrom = -1
     this.newEntryMainTextTo = -1
+  }
+
+  _buildWorkingCtData(ctData) {
+    let workingCtData = CtData.copyFromObject(this.options.ctData)
+    workingCtData['siglaGroups'] = ctData['siglaGroups'].map( (sg) => { return SiglaGroup.fromObject(sg)})
+    return workingCtData
   }
 
   editApparatusEntry(mainTextFrom, mainTextTo) {
@@ -117,7 +124,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
 
 
   updateData(ctData, edition) {
-    this.ctData = CtData.copyFromObject(ctData)
+    this.ctData = this._buildWorkingCtData(ctData)
     this.edition = edition
     this.apparatus = this.edition.apparatuses[this.options.apparatusIndex]
     this.lang = this.edition.getLang()
@@ -197,7 +204,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
     let formSelector = this.getApparatusEntryFormSelector()
     let formTitleElement = $(`${formSelector} .form-title`)
     console.log(`Loading entry: apparatus ${apparatusIndex}, entry ${entryIndex}`)
-    let sigla = this.edition.witnesses.map ( (w) => {return w.siglum})
+    let sigla = this.edition.getSigla()
     this.entryInEditor = this._buildEntryToEdit(entryIndex, from, to)
     if (entryIndex !== -1) {
       formTitleElement.html('Apparatus Entry')
@@ -214,7 +221,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
       return `<div class="form-check sub-entry-app-${apparatusIndex}">
                 <input class="form-check-input text-${this.edition.lang} aei-sub-entry-${apparatusIndex}-${sei}" type="checkbox" value="entry-${apparatusIndex}-${sei}" ${checkedString}>
                 <label class="form-check-label" for="aei-subentry-${apparatusIndex}-${sei}"> 
-                        ${ApparatusCommon.genSubEntryHtmlContent(this.edition.lang, subEntry, sigla )}
+                        ${ApparatusCommon.genSubEntryHtmlContent(this.edition.lang, subEntry, sigla, this.edition.siglaGroups, true)}
                  </label>
                 </div>`
     }).join('')
@@ -970,7 +977,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
           classes.push('sub-entry-disabled')
         }
         html+= `<span class="${classes.join(' ')}">
-                            ${ApparatusCommon.genSubEntryHtmlContent(this.lang, subEntry, sigla)}
+                            ${ApparatusCommon.genSubEntryHtmlContent(this.lang, subEntry, sigla, this.edition.siglaGroups)}
          </span>&nbsp;&nbsp;&nbsp;`
       })
       html += '</span>'

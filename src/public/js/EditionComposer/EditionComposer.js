@@ -183,6 +183,7 @@ export class EditionComposer {
       ctData: this.ctData,
       onWitnessOrderChange: this.genOnWitnessOrderChange(),
       onSiglaChange: this.genOnSiglaChange(),
+      onCtDataChange: this.genOnCtDataChange('witnessInfoPanel'),
       checkForWitnessUpdates: this.genCheckWitnessUpdates(),
       updateWitness: this.genUpdateWitness(),
       getWitnessData: this.genGetWitnessData(),
@@ -1031,7 +1032,7 @@ export class EditionComposer {
         this.collationTablePanel.updateCtData(newCtData, 'EditionComposer')
       }
       this.editionPreviewPanel.updateData(this.ctData, this.edition)
-      this.witnessInfoPanel.updateCtData(this.ctData, false)
+      this.witnessInfoPanel.updateCtData(this.ctData, true)
       this._updateSaveArea()
     }
   }
@@ -1055,6 +1056,11 @@ export class EditionComposer {
     if (!ArrayUtil.arraysAreEqual(this.ctData['sigla'], this.lastSavedCtData['sigla'])) {
       changes.push('Changes in sigla')
     }
+
+    if (!ArrayUtil.varsAreEqual(this.ctData['siglaGroups'], this.lastSavedCtData['siglaGroups'])) {
+      changes.push('Changes in sigla groups')
+    }
+
 
     if (!ArrayUtil.varsAreEqual(this.ctData['customApparatuses'], this.lastSavedCtData['customApparatuses'])) {
       changes.push('Changes in custom apparatus entries')

@@ -420,15 +420,15 @@ export class EditionViewerSvg {
 
         switch (this.edition.lang) {
           case 'la':
-            typesetterTokens = ApparatusCommon.typesetSubEntryLatin(subEntry.type, theText, witnessIndices, sigla)
+            typesetterTokens = ApparatusCommon.typesetSubEntryLatin(subEntry.type, theText, witnessIndices, sigla, this.edition.siglaGroups)
             break
 
           case 'he':
-            typesetterTokens = ApparatusCommon.typesetSubEntryHebrew(subEntry.type, theText, witnessIndices, sigla)
+            typesetterTokens = ApparatusCommon.typesetSubEntryHebrew(subEntry.type, theText, witnessIndices, sigla, this.edition.siglaGroups)
             break
 
           case 'ar':
-            typesetterTokens = ApparatusCommon.typesetSubEntryArabic(subEntry.type, theText, witnessIndices, sigla)
+            typesetterTokens = ApparatusCommon.typesetSubEntryArabic(subEntry.type, theText, witnessIndices, sigla, this.edition.siglaGroups)
             break
         }
         pushArray(ttTokens, typesetterTokens)

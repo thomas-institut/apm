@@ -145,6 +145,8 @@ export class CtData  {
 
   }
 
+
+
   /**
    * Returns a copy of a CtDataObject
    * @param {object} ctDataObject

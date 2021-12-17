@@ -36,7 +36,9 @@ import * as WitnessType from '../Witness/WitnessType'
 import { WitnessUpdateDialog } from './WitnessUpdateDialog'
 import { WitnessDiffCalculator } from '../Edition/WitnessDiffCalculator'
 import { CtData } from '../CtData/CtData'
-import { flatten} from '../toolbox/ArrayUtil'
+import { flatten, varsAreEqual } from '../toolbox/ArrayUtil'
+import { ConfirmDialog, MEDIUM_DIALOG, SMALL_DIALOG } from '../pages/common/ConfirmDialog'
+import { trimWhiteSpace } from '../toolbox/Util.mjs'
 
 const icons = {
   moveUp: '<i class="bi bi-arrow-up-short"></i>',
@@ -46,7 +48,9 @@ const icons = {
   checkOK: '<i class="far fa-check-circle"></i>',
   checkFail: '<i class="fas fa-exclamation-triangle"></i>',
   checkCross: '<i class="fas fa-times"></i>',
-  externalLink: '<i class="bi bi-box-arrow-up-right"></i>'
+  externalLink: '<i class="bi bi-box-arrow-up-right"></i>',
+  editSiglaGroup: '<i class="bi bi-pencil"></i>',
+  deleteSiglaGroup: '<i class="bi bi-trash"></i>'
 }
 
 export class WitnessInfoPanel extends Panel{
@@ -121,6 +125,7 @@ export class WitnessInfoPanel extends Panel{
   updateCtData(newData, reRender = false) {
     this.ctData = CtData.copyFromObject(newData)
     if (reRender) {
+      this.verbose && console.log(`New ctData, re-rendering panel`)
       this.reRender()
     }
   }
@@ -128,6 +133,30 @@ export class WitnessInfoPanel extends Panel{
   reRender() {
     $(this.containerSelector).html(this.generateHtml())
     this.postRender()
+  }
+
+  _getSiglaStringForWitnessIndexArray(witnesses) {
+    return  witnesses.map( (w) => { return this.ctData['sigla'][w]}).join('')
+  }
+
+  _genSiglaGroupsTable() {
+    if (this.ctData['siglaGroups'].length === 0) {
+      return `<em>No sigla groups defined</em>`
+    }
+    return [ '<table class="sigla-groups-table">',
+      this.ctData['siglaGroups'].map( (sg, i) => {
+         return `<tr>
+            <td><span class="sigla-group-siglum sigla-group-siglum-${i}">${sg['siglum']}</span></td>
+            <td>=</td>
+            <td><span class="sigla-group-sigla sigla-group-sigla-${i}">${this._getSiglaStringForWitnessIndexArray(sg.witnesses)}</td>
+            <td>
+                <a class="edit-sigla-group-btn-${i} tb-button" title="Edit" href="#">${icons.editSiglaGroup}</a> 
+                <a class="delete-sigla-group-btn-${i} tb-button" title="Delete" href="#">${icons.deleteSiglaGroup}</a>
+            </td>
+            </tr>`
+      }).join(''),
+      '</table>'
+    ].join('')
   }
 
   generateHtml() {
@@ -138,7 +167,7 @@ export class WitnessInfoPanel extends Panel{
        </div>
        <div class="sigla-groups-div">
            <h4>Sigla Groups</h4>
-           <div class="sigla-groups-table"></div>
+           <div class="sigla-groups-table">${this._genSiglaGroupsTable()}</div>
            <button class="btn  btn-outline-secondary btn-sm add-sigla-group-btn"  title="Click to add a new sigla group">Add Sigla Group</button>
 </div>
        
@@ -215,6 +244,49 @@ export class WitnessInfoPanel extends Panel{
       this.convertToEditionButton.on('click', this.genOnClickConvertToEditionButton())
     } else {
       this.convertToEditionDiv.addClass('hidden')
+    }
+    $(`${this.containerSelector} .add-sigla-group-btn`).on('click', this._genOnClickAddSiglaGroupButton())
+    this.ctData['siglaGroups'].forEach( (sg, i) => {
+      $(`${this.containerSelector} .edit-sigla-group-btn-${i}`).on('click', this._genOnClickEditSiglaGroupButton(i))
+      $(`${this.containerSelector} .delete-sigla-group-btn-${i}`).on('click', this._genOnClickDeleteSiglaGroup(i))
+    })
+
+  }
+
+  _genOnClickEditSiglaGroupButton(i) {
+    return (ev) => {
+      ev.preventDefault()
+      ev.stopPropagation()
+      this.verbose && console.log(`Edit sigla group ${i}`)
+      this._addEditSiglaGroup(this.ctData['siglaGroups'][i], i)
+    }
+  }
+
+  _genOnClickDeleteSiglaGroup(i) {
+    return (ev) => {
+      ev.preventDefault()
+      ev.stopPropagation()
+      let siglaGroup = this.ctData['siglaGroups'][i]
+      let dialogBody = `<p>Are you sure you want to delete this sigla group?</p> 
+                  <div class="group-preview">${this._genSiglaGroupPreviewHtml(siglaGroup, siglaGroup)}</div>`
+
+      let dialog = new ConfirmDialog({
+        title: 'Delete Sigla Group',
+        size: SMALL_DIALOG,
+        acceptButtonLabel: 'Yes, delete',
+        cancelButtonLabel: 'No',
+        body: dialogBody,
+        cancelFunction: () => { console.log(`Canceled delete sigla group`)}
+      })
+
+      dialog.setAcceptFunction( () => {
+        this.verbose && console.log(`Deleting sigla group ${i}`)
+        this.ctData['siglaGroups'] = this.ctData['siglaGroups'].filter( (sg, index) => {
+          return index !== i
+        })
+        this.options.onCtDataChange(this.ctData)
+      })
+      dialog.show()
     }
   }
 
@@ -317,7 +389,7 @@ export class WitnessInfoPanel extends Panel{
       })
 
       if (userPresets.length === 0) {
-        // no user presets, just show the create new area
+        // no user presets, just show the "Create New" area
         $(`${modalSelector} .select-p`).addClass('hidden')
         titleLabel.html("New preset title:")
         saveButton.html(createPresetButtonLabel)
@@ -421,6 +493,154 @@ export class WitnessInfoPanel extends Panel{
         show: true
       })
     }
+  }
+
+  _genOnClickAddSiglaGroupButton() {
+    return () => {
+      console.log(`Click on add sigla group button`)
+      this._addEditSiglaGroup({ siglum: '', witnesses: []}, -1)
+    }
+  }
+
+  _readSiglaGroupFromDialog(dialogSelector) {
+    let witnesses = []
+    this.ctData['sigla'].forEach( (s, i) => {
+      if ($(`${dialogSelector} .siglum-checkbox-${i}`).prop('checked')) {
+        witnesses.push(i)
+      }
+    })
+    return {
+      siglum: trimWhiteSpace($(`${dialogSelector} .group-siglum-input`).val()),
+      witnesses: witnesses
+    }
+  }
+
+  _isSiglaGroupValid(newSiglaGroup, originalSiglaGroup) {
+    if (newSiglaGroup.siglum === '') {
+      return false
+    }
+
+    if (this.ctData['sigla'].indexOf(newSiglaGroup.siglum) !== -1) {
+      return false
+    }
+
+    if (this.ctData['siglaGroups'].filter( (sg) => {
+      return sg.siglum !== originalSiglaGroup.siglum
+    }).map( (sg) => { return sg.siglum}).indexOf(newSiglaGroup.siglum) !== -1) {
+      return false
+    }
+
+    return newSiglaGroup.witnesses.length >= 2;
+
+  }
+
+  _genSiglaGroupPreviewHtml(newSiglaGroup, originalSiglaGroup) {
+    if (newSiglaGroup.siglum === '') {
+      return '<span class="text-warning">Enter a siglum</span>'
+    }
+
+    if (this.ctData['sigla'].indexOf(newSiglaGroup.siglum) !== -1) {
+      return '<span class="text-danger">Given group siglum is one of the witnesses\' sigla</span>'
+    }
+
+    if (this.ctData['siglaGroups'].filter( (sg) => {
+      return sg.siglum !== originalSiglaGroup.siglum
+    }).map( (sg) => { return sg.siglum}).indexOf(newSiglaGroup.siglum) !== -1) {
+      return '<span class="text-danger">Given group siglum is already in use in another group</span>'
+    }
+
+    if (newSiglaGroup.witnesses.length < 2) {
+      return '<span class="text-warning">Select at least 2 sigla</span>'
+    }
+    if (originalSiglaGroup.witnesses.length === 0 || varsAreEqual(newSiglaGroup, originalSiglaGroup)) {
+      return `<span class="text-primary">${newSiglaGroup.siglum} = ${this._getSiglaStringForWitnessIndexArray(newSiglaGroup.witnesses)}</span>`
+    }
+
+    return `<span class="text-primary">${originalSiglaGroup.siglum} = ${this._getSiglaStringForWitnessIndexArray(originalSiglaGroup.witnesses)}</span> 
+            <span style="margin: 0 1em;">&rarr;</span> 
+            <span class="text-info">${newSiglaGroup.siglum} = ${this._getSiglaStringForWitnessIndexArray(newSiglaGroup.witnesses)}</span>`
+  }
+
+  _updateSiglaGroupDialogAcceptButton(dialog, originalSiglaGroup) {
+    let dialogSelector = dialog.getSelector()
+    let editedSiglaGroup = this._readSiglaGroupFromDialog(dialogSelector)
+    $(`${dialogSelector} .group-preview`).html(this._genSiglaGroupPreviewHtml(editedSiglaGroup, originalSiglaGroup))
+    if (!this._isSiglaGroupValid(editedSiglaGroup, originalSiglaGroup)) {
+      dialog.hideAcceptButton()
+    } else {
+      // new Sigla group is valid
+      if (originalSiglaGroup.witnesses.length !== 0 && varsAreEqual(editedSiglaGroup, originalSiglaGroup)) {
+        // no change in group
+        dialog.hideAcceptButton()
+      } else {
+        // new group or changes in group
+        dialog.showAcceptButton()
+      }
+    }
+  }
+
+
+  _addEditSiglaGroup(siglaGroup, index) {
+    let isNew = index === -1
+
+    let siglaCheckboxesHtml = this.ctData['sigla'].filter( (s, i) => {
+      return (i !== this.ctData['editionWitnessIndex'])
+    }).map( (siglum, index) => {
+      let checkedString = siglaGroup.witnesses.indexOf(index) !== -1 ? 'checked' : ''
+
+      return `<div class="form-check form-check-inline">
+                  <input class="form-check-input siglum-checkbox siglum-checkbox-${index}" type="checkbox" value="entry-${index}" ${checkedString}>
+                  <label for="siglum-checkbox-${index}" class="form-check-label">${siglum}</label>
+                  </div>`
+    }).join('')
+
+    let dialogBody = ` <div class="group-preview"></div>
+        <form>
+        <div class="form-group row">
+            <label for="group-siglum-input" class="col-sm-3 col-form-label">Group Siglum</label>
+            <div class="col-sm-9">
+                <input type="text" class="group-siglum-input" value="${siglaGroup.siglum}">
+            </div>
+        </div>
+        <div class="form-group row">
+            <label class="col-sm-3 col-form-label" style="padding-top: 0">Witnesses</label>
+            <div class="col-sm-9">
+               ${siglaCheckboxesHtml}
+            </div>
+        </div>
+        </form>`
+
+    let dialog = new ConfirmDialog({
+      title: siglaGroup.witnesses.length === 0 ? 'Add New Sigla Group' : 'Edit Sigla Group',
+      size: MEDIUM_DIALOG,
+      acceptButtonLabel: isNew ? 'New Group' : 'Replace Group',
+      body: dialogBody,
+      hideOnAccept: false,
+      cancelFunction: () => { console.log(`Canceled add/edit sigla group`)}
+    })
+    let dialogSelector = dialog.getSelector()
+    $(`${dialogSelector} .group-preview`).html(this._genSiglaGroupPreviewHtml(siglaGroup, siglaGroup))
+    dialog.hideAcceptButton()
+    $(`${dialogSelector} .group-siglum-input`).on('keyup', () => {
+     this._updateSiglaGroupDialogAcceptButton(dialog, siglaGroup)
+    })
+    $(`${dialogSelector} .siglum-checkbox`).on('change', () => {
+      this._updateSiglaGroupDialogAcceptButton(dialog, siglaGroup)
+    })
+    dialog.setAcceptFunction( () => {
+      let editedSiglaGroup = this._readSiglaGroupFromDialog(dialogSelector)
+      if (isNew) {
+        console.log(`Adding new sigla group`)
+        this.ctData['siglaGroups'].push(editedSiglaGroup)
+      } else {
+        console.log(`Replacing sigla group at index ${index}`)
+        this.ctData['siglaGroups'][index] = editedSiglaGroup
+      }
+      dialog.hide()
+      dialog.destroy()
+      this.options.onCtDataChange(this.ctData)
+    })
+    dialog.show()
   }
 
   genOnClickLoadSiglaPreset() {
@@ -621,7 +841,7 @@ export class WitnessInfoPanel extends Panel{
           $(`${this.containerSelector} .witness-update-btn-${i}`).on('click', this.genOnClickWitnessUpdate(i))
         }
       } else {
-        // witness is up to date
+        // witness is up-to-date
         if (witnessUpdateInfo['justUpdated']) {
           let warningHtml =  `<span>${icons.checkOK} Just updated. Don't forget to save!`
           warningTd.html(warningHtml)
@@ -675,25 +895,24 @@ export class WitnessInfoPanel extends Panel{
   /**
    * generates the on click function for the witness info move buttons
    * Notice that the direction is from the point of view of the table: moving
-   * up in the table means actually moving to an lesser position in the witness
+   * up in the table means actually moving to a lesser position in the witness
    * order array. The top witness in the table is actually position 0.
    * @param direction
    * @returns {function(...[*]=)}
    */
   genOnClickUpDownWitnessInfoButton(direction) {
-    let thisObject = this
-    return function(ev) {
+    return (ev) => {
       if ($(ev.currentTarget).hasClass('disabled')) {
         return false
       }
       let classes = Util.getClassArrayFromJQueryObject($(ev.currentTarget.parentNode))
 
       // let index = thisObject.getWitnessIndexFromClasses(classes)
-      let position = thisObject.getWitnessPositionFromClasses(classes)
-      let numWitnesses = thisObject.ctData['witnesses'].length
+      let position = this.getWitnessPositionFromClasses(classes)
+      let numWitnesses = this.ctData['witnesses'].length
       // console.log('Click move ' + direction + ' button on witness ' + index + ', position ' + position)
 
-      let firstPos = thisObject.ctData['type'] === CollationTableType.COLLATION_TABLE ? 0 : 1
+      let firstPos = this.ctData['type'] === CollationTableType.COLLATION_TABLE ? 0 : 1
       let lastPos = numWitnesses - 1
 
       if (direction === 'down' && position === lastPos) {
@@ -710,26 +929,22 @@ export class WitnessInfoPanel extends Panel{
 
       let indexOffset = direction === 'up' ? -1 : 1
 
-      ArrayUtil.swapElements(thisObject.ctData['witnessOrder'],position, position+indexOffset)
+      ArrayUtil.swapElements(this.ctData['witnessOrder'],position, position+indexOffset)
 
-      $(thisObject.options.containerSelector + ' .witnessinfotable').html('Updating...')
-      thisObject.updateWitnessInfoDiv(true)
-      thisObject._updatePageInfo()
-      thisObject.options.onWitnessOrderChange(thisObject.ctData['witnessOrder'])
+      $(this.options.containerSelector + ' .witnessinfotable').html('Updating...')
+      this.updateWitnessInfoDiv(true)
+      this._updatePageInfo()
+      this._redrawSiglaGroupSigla()
+      this.options.onWitnessOrderChange(this.ctData['witnessOrder'])
     }
   }
 
-  // getWitnessIndexFromClasses(classes) {
-  //   let index = -1
-  //   for (let i = 0; i < classes.length; i++) {
-  //     let theClass = classes[i]
-  //     if (/^witness-/.test(theClass)) {
-  //       // noinspection TypeScriptValidateTypes
-  //       return parseInt(theClass.split('-')[1])
-  //     }
-  //   }
-  //   return index
-  // }
+  _redrawSiglaGroupSigla() {
+    this.ctData['siglaGroups'].forEach( (sg, i) => {
+      $(`${this.containerSelector} .sigla-group-siglum-${i}`).html(sg.siglum)
+      $(`${this.containerSelector} .sigla-group-sigla-${i}`).html(this._getSiglaStringForWitnessIndexArray(sg.witnesses))
+    })
+  }
 
   getWitnessPositionFromClasses(classes) {
     let index = -1
@@ -798,8 +1013,7 @@ export class WitnessInfoPanel extends Panel{
   }
 
   genOnConfirmSiglumEdit(witnessIndex) {
-    let thisObject = this
-    return function(ev) {
+    return (ev) => {
       console.log(`Confirming siglum edit`)
       console.log(ev.detail)
       let newText = Util.removeWhiteSpace(ev.detail['newText'])
@@ -807,19 +1021,20 @@ export class WitnessInfoPanel extends Panel{
       let editor = ev.detail['editor']
       if (oldText === newText || newText === '') {
         // just reset the editor's text in case the edited text contained whitespace
-        editor.setText(thisObject.ctData['sigla'][witnessIndex])
+        editor.setText(this.ctData['sigla'][witnessIndex])
         return false
       }
       console.log('Change in siglum for witness index ' + witnessIndex +  ' to ' + newText)
-      if (thisObject.ctData['sigla'].indexOf(newText) !== -1) {
-        transientAlert($(thisObject.options.containerSelector + ' .warning-td-' + witnessIndex), '',
+      if (this.ctData['sigla'].indexOf(newText) !== -1) {
+        transientAlert($(this.options.containerSelector + ' .warning-td-' + witnessIndex), '',
           "Given siglum '" + newText + "' already exists, no changes made", 2000, 'slow')
-        editor.setText(thisObject.ctData['sigla'][witnessIndex])
+        editor.setText(this.ctData['sigla'][witnessIndex])
       }
       // Change the siglum
-      thisObject.ctData['sigla'][witnessIndex] = newText
+      this.ctData['sigla'][witnessIndex] = newText
+      this._redrawSiglaGroupSigla()
 
-      thisObject.options.onSiglaChange(thisObject.ctData['sigla'])
+      this.options.onSiglaChange(this.ctData['sigla'])
 
     }
   }

@@ -31,6 +31,7 @@ import { HtmlRenderer } from '../FmtText/Renderer/HtmlRenderer'
 import { CtData } from '../CtData/CtData'
 import { FmtTextFactory} from '../FmtText/FmtTextFactory'
 import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'
+import { deepCopy, escapeHtml } from '../toolbox/Util.mjs'
 
 // const INPUT_TOKEN_FIELD_TYPE = 'tokenType'
 const INPUT_TOKEN_FIELD_TEXT = 'text'
@@ -73,16 +74,25 @@ const hebrewStyle = {
 
 export class ApparatusCommon {
 
-  static genSubEntryHtmlContent(style, subEntry, sigla) {
+  /**
+   *
+   * @param {string}style
+   * @param subEntry
+   * @param {string[]}sigla
+   * @param {SiglaGroup[]}siglaGroups
+   * @param fullSiglaInBrackets
+   * @return {string}
+   */
+  static genSubEntryHtmlContent(style, subEntry, sigla, siglaGroups = [], fullSiglaInBrackets = false) {
     switch(style) {
       case 'la':
-        return this.genSubEntryHtmlContentLatin(subEntry, sigla)
+        return this.genSubEntryHtmlContentLatin(subEntry, sigla, siglaGroups, fullSiglaInBrackets)
 
       case 'ar':
-        return this.genSubEntryHtmlContentArabic(subEntry, sigla)
+        return this.genSubEntryHtmlContentArabic(subEntry, sigla, siglaGroups, fullSiglaInBrackets)
 
       case 'he':
-        return this.genSubEntryHtmlContentHebrew(subEntry, sigla)
+        return this.genSubEntryHtmlContentHebrew(subEntry, sigla, siglaGroups, fullSiglaInBrackets)
 
       default:
         console.warn(`Unsupported style/language ${style}`)
@@ -90,33 +100,36 @@ export class ApparatusCommon {
     }
   }
 
-  static typesetSubEntryHebrew(subEntryType, theText, witnessIndices, sigla) {
+
+  static typesetSubEntryHebrew(subEntryType, theText, witnessIndices, sigla, siglaGroups) {
     // TODO: use witnessData instead of witnessIndices, like in the html version
 
     let theTextTokens = (new TypesetterTokenRenderer()).render(FmtTextFactory.fromAnything(theText))
     let theTokens = []
 
-    let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join('')
+    let siglaTokens = this._getSiglaTypesetterTokens(witnessIndices, sigla, siglaGroups, 'he' ).map ( (t) => { return t.setBold()})
+    console.log(`Sigla tokens: `)
+    console.log(siglaTokens)
+
     switch(subEntryType) {
       case ApparatusSubEntryType.VARIANT:
         pushArray(theTokens, theTextTokens)
         theTokens.push(TypesetterTokenFactory.normalSpace())
-        theTokens.push(TypesetterTokenFactory.simpleText(siglaString, 'he').setBold())
+        pushArray(theTokens, siglaTokens)
         return theTokens
 
       case ApparatusSubEntryType.OMISSION:
-        return [
-          TypesetterTokenFactory.simpleText(hebrewStyle.strings.omission, 'he').setFontSize(hebrewStyle.smallFontFactor),
-          TypesetterTokenFactory.normalSpace(),
-          TypesetterTokenFactory.simpleText(siglaString, 'he').setBold()
-        ]
+        theTokens.push(TypesetterTokenFactory.simpleText(hebrewStyle.strings.omission, 'he').setFontSize(hebrewStyle.smallFontFactor))
+        theTokens.push( TypesetterTokenFactory.normalSpace())
+        pushArray(theTokens, siglaTokens)
+        return theTokens
 
       case ApparatusSubEntryType.ADDITION:
         theTokens.push(TypesetterTokenFactory.simpleText(hebrewStyle.strings.addition, 'he').setFontSize(hebrewStyle.smallFontFactor))
         theTokens.push(TypesetterTokenFactory.normalSpace())
         pushArray(theTokens, theTextTokens)
         theTokens.push(TypesetterTokenFactory.normalSpace())
-        theTokens.push(TypesetterTokenFactory.simpleText(siglaString, 'he').setBold())
+        pushArray(theTokens, siglaTokens)
         return theTokens
 
 
@@ -193,10 +206,18 @@ export class ApparatusCommon {
     }
   }
 
-  static genSubEntryHtmlContentHebrew(subEntry, sigla) {
+  /**
+   *
+   * @param subEntry
+   * @param {string[]}sigla
+   * @param {SiglaGroup[]}siglaGroups
+   * @param {boolean}fullSiglaInBrackets
+   * @return {string}
+   */
+  static genSubEntryHtmlContentHebrew(subEntry, sigla, siglaGroups, fullSiglaInBrackets) {
     let entryType = subEntry.type
     let theText = (new HtmlRenderer({plainMode: true})).render(subEntry.fmtText)
-    let siglaString = this._genSiglaHtmlFromWitnessData(subEntry, sigla)
+    let siglaString = this._genSiglaHtmlFromWitnessData(subEntry, sigla, 'he', siglaGroups, fullSiglaInBrackets)
     switch(entryType) {
       case ApparatusSubEntryType.VARIANT:
         return `${theText} <b>${siglaString}</b>`
@@ -216,32 +237,31 @@ export class ApparatusCommon {
     }
   }
 
-  static typesetSubEntryArabic(entryType, theText, witnessIndices, sigla) {
+  static typesetSubEntryArabic(entryType, theText, witnessIndices, sigla, siglaGroups) {
     // TODO: use witnessData instead of witnessIndices, like in the html version
 
     let theTextTokens = (new TypesetterTokenRenderer()).render(FmtTextFactory.fromAnything(theText))
     let theTokens = []
-    let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join('')
+    let siglaTokens = this._getSiglaTypesetterTokens(witnessIndices, sigla,siglaGroups, 'ar' )
     switch(entryType) {
       case ApparatusSubEntryType.VARIANT:
         pushArray(theTokens, theTextTokens)
         theTokens.push(TypesetterTokenFactory.normalSpace())
-        theTokens.push(TypesetterTokenFactory.simpleText(siglaString, 'ar'))
+        pushArray(theTokens, siglaTokens)
         return theTokens
 
       case ApparatusSubEntryType.OMISSION:
-        return [
-          TypesetterTokenFactory.simpleText(arabicStyle.strings.omission, 'ar').setFontSize(arabicStyle.smallFontFactor),
-          TypesetterTokenFactory.normalSpace(),
-          TypesetterTokenFactory.simpleText(siglaString, 'ar')
-        ]
+        theTokens.push(TypesetterTokenFactory.simpleText(arabicStyle.strings.omission, 'ar').setFontSize(arabicStyle.smallFontFactor))
+        theTokens.push(TypesetterTokenFactory.normalSpace())
+        pushArray(theTokens, siglaTokens)
+        return theTokens
 
       case ApparatusSubEntryType.ADDITION:
         theTokens.push(TypesetterTokenFactory.simpleText(arabicStyle.strings.addition, 'ar').setFontSize(arabicStyle.smallFontFactor))
         theTokens.push(TypesetterTokenFactory.normalSpace())
         pushArray(theTokens, theTextTokens)
         theTokens.push(TypesetterTokenFactory.normalSpace())
-        theTokens.push(TypesetterTokenFactory.simpleText(siglaString, 'ar'))
+        pushArray(theTokens, siglaTokens)
         return theTokens
 
       case ApparatusSubEntryType.FULL_CUSTOM:
@@ -253,10 +273,18 @@ export class ApparatusCommon {
     }
   }
 
-  static genSubEntryHtmlContentArabic(subEntry, sigla) {
+  /**
+   *
+   * @param subEntry
+   * @param {string[]}sigla
+   * @param {SiglaGroup[]}siglaGroups
+   * @param {boolean}fullSiglaInBrackets
+   * @return {string}
+   */
+  static genSubEntryHtmlContentArabic(subEntry, sigla, siglaGroups, fullSiglaInBrackets) {
     let entryType = subEntry.type
     let theText = (new HtmlRenderer({plainMode: true})).render(subEntry.fmtText)
-    let siglaString = this._genSiglaHtmlFromWitnessData(subEntry, sigla,  'ar')
+    let siglaString = this._genSiglaHtmlFromWitnessData(subEntry, sigla,  'ar', siglaGroups, fullSiglaInBrackets)
     switch(entryType) {
       case ApparatusSubEntryType.VARIANT:
         return `${theText} ${siglaString}`
@@ -276,8 +304,18 @@ export class ApparatusCommon {
     }
   }
 
+  static _getSiglaTypesetterTokens(witnessIndices, sigla, siglaGroups, lang) {
+    // TODO: use witnessData instead of witnessIndices, like in the html version
+    let witnessData = witnessIndices.map ( (i) => { return { witnessIndex: i, hand: 0}})
+    let filledUpWitnessData = this._fillUpSigla(witnessData, sigla, siglaGroups)
 
-  static typesetSubEntryLatin(subEntryType, theText, witnessIndices, sigla) {
+    // TODO: support hands:
+    let siglaString = filledUpWitnessData.map( (w) => { return w.siglum}).join('')
+    return [ TypesetterTokenFactory.simpleText(siglaString, lang) ]
+  }
+
+
+  static typesetSubEntryLatin(subEntryType, theText, witnessIndices, sigla, siglaGroups) {
     // TODO: use witnessData instead of witnessIndices, like in the html version
     let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join('')
     // convert the text tokens to proper typesetter tokens
@@ -288,22 +326,21 @@ export class ApparatusCommon {
       case ApparatusSubEntryType.VARIANT:
         pushArray(theTokens, theTextTokens)
         theTokens.push(TypesetterTokenFactory.normalSpace())
-        theTokens.push(TypesetterTokenFactory.simpleText(siglaString))
+        pushArray(theTokens, this._getSiglaTypesetterTokens(witnessIndices, sigla, siglaGroups, 'la'))
         return theTokens
 
       case ApparatusSubEntryType.OMISSION:
-        return [
-          TypesetterTokenFactory.simpleText(latinStyle.strings.omission).setItalic(),
-          TypesetterTokenFactory.normalSpace(),
-          TypesetterTokenFactory.simpleText(siglaString)
-        ]
+        theTokens.push(TypesetterTokenFactory.simpleText(latinStyle.strings.omission).setItalic())
+        theTokens.push(TypesetterTokenFactory.normalSpace())
+        pushArray(theTokens, this._getSiglaTypesetterTokens(witnessIndices, sigla, siglaGroups, 'la'))
+        return theTokens
 
       case ApparatusSubEntryType.ADDITION:
         theTokens.push(TypesetterTokenFactory.simpleText(latinStyle.strings.addition).setItalic())
         theTokens.push(TypesetterTokenFactory.normalSpace())
         pushArray(theTokens, theTextTokens)
         theTokens.push(TypesetterTokenFactory.normalSpace())
-        theTokens.push(TypesetterTokenFactory.simpleText(siglaString))
+        pushArray(theTokens, this._getSiglaTypesetterTokens(witnessIndices, sigla, siglaGroups, 'la'))
         return theTokens
 
 
@@ -316,13 +353,13 @@ export class ApparatusCommon {
     }
   }
 
-  static genSubEntryHtmlContentLatin(subEntry, sigla) {
+  static genSubEntryHtmlContentLatin(subEntry, sigla, siglaGroups, fullSiglaInBrackets) {
     let entryType = subEntry.type
 
 
     let theText = (new HtmlRenderer({plainMode: true})).render(subEntry.fmtText)
 
-    let siglaString = this._genSiglaHtmlFromWitnessData(subEntry, sigla)
+    let siglaString = this._genSiglaHtmlFromWitnessData(subEntry, sigla, 'la', siglaGroups, fullSiglaInBrackets)
     switch(entryType) {
       case ApparatusSubEntryType.VARIANT:
         return `${theText} ${siglaString}`
@@ -405,17 +442,74 @@ export class ApparatusCommon {
   }
 
 
+  static _fillUpSigla(witnessData, sigla, siglaGroups) {
+    let wData = deepCopy(witnessData)
+    let wDataArray = wData.map ( (w) => {
+      w.siglum = sigla[w.witnessIndex]
+      return w
+    })
 
-  static _genSiglaHtmlFromWitnessData(subEntry, sigla, numberStyle) {
-    return subEntry.witnessData
-      .map( (w) => {
-            if (w.hand !== 0) {
-              return `${sigla[w.witnessIndex]}<sup>${this.getNumberString(w.hand+1, numberStyle)}</sup>`
-            }
-            return sigla[w.witnessIndex]})
-      .join('')
+    siglaGroups.forEach ( (sg) => {
+      let siglaIndexes = wDataArray.map ( (w) => {
+        // turn non-zero hands to -1 so that they are not matched by the sigla group
+        return w.hand === 0 ? w.witnessIndex : -1
+      })
+      let matchedIndexes = sg.matchWitnesses(siglaIndexes)
+      if (matchedIndexes.length !== 0) {
+        // change the first matched witness to the group siglum
+        let firstMatchedWitnessPosition = siglaIndexes.indexOf(matchedIndexes[0])
+        //console.log(`First matched witness position in array: ${firstMatchedWitnessPosition}`)
+        wDataArray[firstMatchedWitnessPosition].siglum = sg.siglum
+        wDataArray[firstMatchedWitnessPosition].hand = 0
+        wDataArray[firstMatchedWitnessPosition].witnessIndex = -1
+        // filter out matched witnesses
+        wDataArray = wDataArray.filter( (w) => {
+          return matchedIndexes.indexOf(w.witnessIndex) === -1
+        })
+      }
+    })
+
+    return wDataArray
   }
 
+  static __getSiglaHtmlFromFilledUpWitnessData(witnessData, numberStyle) {
+    return witnessData.map ( (w) => {
+      return  w.hand === 0 ? w.siglum : `${w.siglum}<sup>${this.getNumberString(w.hand+1, numberStyle)}</sup>`
+    }).join('')
+  }
+
+  /**
+   *
+   * @param subEntry
+   * @param {string[]}sigla
+   * @param {string}numberStyle
+   * @param {SiglaGroup[]}siglaGroups
+   * @param {boolean}fullSiglaInBrackets
+   * @return {string}
+   * @private
+   */
+  static _genSiglaHtmlFromWitnessData(subEntry, sigla, numberStyle, siglaGroups, fullSiglaInBrackets = false) {
+
+    let fullSiglumDataArray = this._fillUpSigla(subEntry.witnessData, sigla, [])
+    let fullSiglaHtml = this.__getSiglaHtmlFromFilledUpWitnessData(fullSiglumDataArray, numberStyle)
+    let matchedSiglumDataArray = this._fillUpSigla(subEntry.witnessData, sigla, siglaGroups)
+    let matchedSiglaHtml = this.__getSiglaHtmlFromFilledUpWitnessData(matchedSiglumDataArray, numberStyle)
+
+    if (matchedSiglaHtml === fullSiglaHtml) {
+      return fullSiglaHtml
+    }
+    if (fullSiglaInBrackets) {
+      return `${matchedSiglaHtml}  ( = ${fullSiglaHtml})`
+    }
+    return `<a title="= ${escapeHtml(fullSiglaHtml)}">${matchedSiglaHtml}</a>`
+  }
+
+  /**
+   *
+   * @param {number}n
+   * @param {string}style
+   * @return {string|*}
+   */
   static getNumberString(n, style) {
     if (style === 'ar') {
       return NumeralStyles.toDecimalArabic(n)

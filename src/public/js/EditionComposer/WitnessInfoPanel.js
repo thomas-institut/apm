@@ -540,13 +540,13 @@ export class WitnessInfoPanel extends Panel{
     }
 
     if (this.ctData['sigla'].indexOf(newSiglaGroup.siglum) !== -1) {
-      return '<span class="text-danger">Given group siglum is one of the witnesses\' sigla</span>'
+      return '<span class="text-danger">The given group siglum is one of the witnesses\' sigla</span>'
     }
 
     if (this.ctData['siglaGroups'].filter( (sg) => {
       return sg.siglum !== originalSiglaGroup.siglum
     }).map( (sg) => { return sg.siglum}).indexOf(newSiglaGroup.siglum) !== -1) {
-      return '<span class="text-danger">Given group siglum is already in use in another group</span>'
+      return '<span class="text-danger">The given group siglum is already in use in another group</span>'
     }
 
     if (newSiglaGroup.witnesses.length < 2) {

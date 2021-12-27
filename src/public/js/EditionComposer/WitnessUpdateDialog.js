@@ -46,13 +46,15 @@ export class WitnessUpdateDialog {
       icons: {
         type: 'object',
         required: true
-      }
+      },
+      debug: { type: 'boolean', default: false}
     }
 
     let oc = new OptionsChecker({optionsDefinition: optionsSpec, context:  'Witness Update Dialog'})
     this.options = oc.getCleanOptions(options)
     this.ctData = CtData.copyFromObject(this.options.ctData)
     this.icons = this.options.icons
+    this.debug = this.options.debug
 
   }
 
@@ -114,8 +116,8 @@ export class WitnessUpdateDialog {
           .then( (newWitnessData) => {
               // Load new version success
               // 2. Calculate changes
-              // console.log('Loaded witness')
-              // console.log(newWitnessData)
+              this.debug && console.log('Loaded witness')
+              this.debug && console.log(newWitnessData)
 
               // 2.1 move to step 2 in the UI
               loadP.html(`${loadStepTitle} ${this.icons.checkOK}`)
@@ -143,8 +145,8 @@ export class WitnessUpdateDialog {
           )
           .then(changeData => {
             let changes = changeData['changes']
-            console.log(`Calculated changes`)
-            console.log(changes)
+            this.debug && console.log(`Calculated changes`)
+            this.debug && console.log(changes)
             // 3. Review Changes
             calcP.html(`${calcChangesStepTitle} ${this.icons.checkOK}`)
             calcP.removeClass('status-running')
@@ -210,7 +212,7 @@ export class WitnessUpdateDialog {
               acceptButton.removeClass('hidden')
               acceptButton.on('click',  () => {
                 // 4. Do Changes!!
-                console.log('Changes accepted')
+                this.debug && console.log('Changes accepted')
                 reviewP.html(`${reviewChangesStepTitle} ${this.icons.checkOK}`)
                 reviewP.removeClass('status-running')
                 reviewP.addClass('status-done')
@@ -222,6 +224,7 @@ export class WitnessUpdateDialog {
                 doChangesP.html(`${doChangesStepTitle} ${this.icons.busy}`)
 
                 // actually do the changes!
+                this.debug && console.log(`Actually doing the changes`)
                 this.options.updateWitness(witnessIndex, changes, changeData.newWitness)
                 // changes done!
 

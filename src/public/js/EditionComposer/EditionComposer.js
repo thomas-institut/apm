@@ -779,6 +779,8 @@ export class EditionComposer {
 
       console.log(`Updating witness ${witnessIndex} (${this.ctData['witnessTitles'][witnessIndex]})`)
 
+      let originalTimeStamp = this.ctData['witnesses'][witnessIndex]['timeStamp']
+
       //process column inserts
       let insertedColumns = 0
       let newTokenIndexes = []
@@ -845,7 +847,11 @@ export class EditionComposer {
       console.log(this.ctData)
 
       // 4. update panels
-      this.witnessUpdates.push(witnessIndex)
+      this.witnessUpdates.push({
+        witnessIndex: witnessIndex,
+        originalTimeStamp: originalTimeStamp,
+        updatedTimeStamp: this.ctData['witnesses'][witnessIndex]['timeStamp']
+      })
       this._updateSaveArea()
       this._reGenerateEdition(`Witness Update`)
       this._updateDataInPanels(false)
@@ -1075,8 +1081,9 @@ export class EditionComposer {
       }
     }
 
-    this.witnessUpdates.forEach( (updatedWitnessIndex) => {
-      changes.push(`Witness ${this.ctData['witnessTitles'][updatedWitnessIndex]} updated`)
+    this.witnessUpdates.forEach( (updateInfo) => {
+      let index = updateInfo.witnessIndex
+      changes.push(`Witness ${this.ctData['witnessTitles'][index]} updated from ${updateInfo.originalTimeStamp} to ${updateInfo.updatedTimeStamp}`)
     })
 
     if (!ArrayUtil.arraysAreEqual(this.ctData['groupedColumns'], this.lastSavedCtData['groupedColumns'])) {

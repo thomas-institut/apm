@@ -845,6 +845,7 @@ export class WitnessInfoPanel extends Panel{
         if (witnessUpdateInfo['justUpdated']) {
           let warningHtml =  `<span>${icons.checkOK} Just updated. Don't forget to save!`
           warningTd.html(warningHtml)
+          $(`${this.containerSelector} td.timestamp-td-${i}`).html(Util.formatVersionTime(this.ctData['witnesses'][i]['timeStamp']))
         } else {
           // witness up to date, not just updated
           warningTd.html('')
@@ -885,7 +886,8 @@ export class WitnessInfoPanel extends Panel{
         witnessDiffCalculator: new WitnessDiffCalculator(),
         getWitnessData: this.options.getWitnessData,
         updateWitness: this.options.updateWitness,
-        icons: icons
+        icons: icons,
+        debug: true
       })
       console.log(`Click on witness update ${witnessIndex}`)
       dialog.go()
@@ -989,7 +991,7 @@ export class WitnessInfoPanel extends Panel{
             </td>
             <td>${witnessTitle}</td>
             <td class="info-td-${witnessIndex}"></td>
-            <td>${Util.formatVersionTime(witness['timeStamp'])}</td>
+            <td class="timestamp-td-${witnessIndex}">${Util.formatVersionTime(witness['timeStamp'])}</td>
             <td class="siglum-${witnessIndex}">${siglum}</td>
             <td class="warning-td-${witnessIndex}"></td>
             <td class="outofdate-td-${witnessIndex}"></td>

@@ -100,7 +100,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
   }
 
   _buildWorkingCtData(ctData) {
-    let workingCtData = CtData.copyFromObject(this.options.ctData)
+    let workingCtData = CtData.copyFromObject(ctData)
     workingCtData['siglaGroups'] = ctData['siglaGroups'].map( (sg) => { return SiglaGroup.fromObject(sg)})
     return workingCtData
   }

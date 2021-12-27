@@ -23,6 +23,7 @@ import { deepCopy } from '../../toolbox/Util.mjs'
 import { DEFAULT_GLUE_SPACE } from '../../FmtText/FmtTextToken'
 import { CollationTableConsistencyCleaner } from './CollationTableConsistencyCleaner'
 import { EditionWitnessReferencesCleaner } from './EditionWitnessReferencesCleaner'
+import { EDITION } from '../../constants/CollationTableType'
 
 export class CleanerOnePointZero extends CtDataCleaner{
 
@@ -57,13 +58,13 @@ export class CleanerOnePointZero extends CtDataCleaner{
     let consistencyCleaner = new CollationTableConsistencyCleaner()
     this.ctData = consistencyCleaner.getCleanCtData(this.ctData)
 
-    // this may not be necessary
-    this.ctData = CtData.fixFmtText(this.ctData)
-
-    // fix glue normal value in fmtText
-    this.ctData = this.fixNormalGlueValueInFmtText(this.ctData)
-
-    this.ctData = this.fixCustomApparatuses(this.ctData)
+    if (this.ctData['type'] === EDITION) {
+      // this may not be necessary
+      this.ctData = CtData.fixFmtText(this.ctData)
+      // fix glue normal value in fmtText
+      this.ctData = this.fixNormalGlueValueInFmtText(this.ctData)
+      this.ctData = this.fixCustomApparatuses(this.ctData)
+    }
 
     return this.ctData
   }

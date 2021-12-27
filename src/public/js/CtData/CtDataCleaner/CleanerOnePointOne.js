@@ -23,6 +23,7 @@ import { deepCopy } from '../../toolbox/Util.mjs'
 import * as CollationTableType from '../../Witness/WitnessTokenClass'
 import { CollationTableConsistencyCleaner } from './CollationTableConsistencyCleaner'
 import { EditionWitnessReferencesCleaner } from './EditionWitnessReferencesCleaner'
+import { EDITION } from '../../constants/CollationTableType'
 
 
 export class CleanerOnePointOne extends CtDataCleaner{
@@ -59,10 +60,11 @@ export class CleanerOnePointOne extends CtDataCleaner{
     this.ctData = consistencyCleaner.getCleanCtData(this.ctData)
 
 
-    this.ctData = this.cleanCustomApparatusesOnePointOne(this.ctData)
-
-    // this may not be necessary
-    this.ctData = CtData.fixFmtText(this.ctData)
+    if (this.ctData['type'] === CollationTableType.EDITION) {
+      this.ctData = this.cleanCustomApparatusesOnePointOne(this.ctData)
+      // this may not be necessary
+      this.ctData = CtData.fixFmtText(this.ctData)
+    }
 
     return this.ctData
   }

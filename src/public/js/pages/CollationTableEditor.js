@@ -115,7 +115,7 @@ export class CollationTableEditor {
     console.log('Original CtData')
     console.log(originalCtData)
 
-    this.ctData = this.options['collationTableData']
+    this.ctData = CtData.getCleanAndUpdatedCtData(this.options['collationTableData'], true, true)
     // use default ordering if ctData does not have one
     if (this.ctData['witnessOrder'] === undefined) {
       console.log('Providing default witnessOrder')

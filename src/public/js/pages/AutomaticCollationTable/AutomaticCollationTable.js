@@ -376,7 +376,7 @@ export class AutomaticCollationTable {
   }
 
   setDataFromApiResponse(apiResponse) {
-    this.ctData = apiResponse.collationTable
+    this.ctData = CtData.getCleanAndUpdatedCtData( apiResponse.collationTable, true, true)
     this.peopleInfo = apiResponse.people
     this.collationEngineDetails = apiResponse.collationEngineDetails
     this.aggregatedNonTokenItemIndexes = CtData.calculateAggregatedNonTokenItemIndexes(this.ctData)

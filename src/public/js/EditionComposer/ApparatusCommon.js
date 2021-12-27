@@ -108,8 +108,8 @@ export class ApparatusCommon {
     let theTokens = []
 
     let siglaTokens = this._getSiglaTypesetterTokens(witnessIndices, sigla, siglaGroups, 'he' ).map ( (t) => { return t.setBold()})
-    console.log(`Sigla tokens: `)
-    console.log(siglaTokens)
+    // console.log(`Sigla tokens: `)
+    // console.log(siglaTokens)
 
     switch(subEntryType) {
       case ApparatusSubEntryType.VARIANT:

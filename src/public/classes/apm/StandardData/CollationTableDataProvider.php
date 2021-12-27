@@ -34,7 +34,7 @@ class CollationTableDataProvider implements StandardDataProvider
     /**
      * @var CollationTable
      */
-    private $ct;
+    private CollationTable $ct;
 
     public function __construct(CollationTable $ct)
     {
@@ -55,8 +55,10 @@ class CollationTableDataProvider implements StandardDataProvider
         $data->sigla = $this->ct->getSigla();
         $data->groupedColumns = [];
         $data->witnessTitles = [];
+        $data->siglaGroups = [];
         $data->type = $this->ct->isEdition() ? CollationTableType::EDITION : CollationTableType::COLLATION_TABLE;
         $data->title = $this->ct->getTitle();
+
 
         $witnessDataArrays = [];
         $matrix = [];

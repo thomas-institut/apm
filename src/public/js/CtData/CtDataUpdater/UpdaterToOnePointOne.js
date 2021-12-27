@@ -1,4 +1,5 @@
 import { CtDataUpdater } from './CtDataUpdater'
+import { EDITION } from '../../constants/CollationTableType'
 
 export  class UpdaterToOnePointOne extends CtDataUpdater {
 
@@ -19,31 +20,34 @@ export  class UpdaterToOnePointOne extends CtDataUpdater {
 
     this.verbose && console.log(`Updating ctData from schema ${this.sourceSchemaVersion()} to ${this.targetSchemaVersion()}`)
 
-    // update custom apparatuses
-    ctData['customApparatuses'] = ctData['customApparatuses'].map( (app) => {
-      app['entries'] = app['entries'].map ( (entry, entryIndex) => {
-        entry['subEntries'] = entry['subEntries'].map( (subEntry, subEntryIndex) => {
-          switch(subEntry['type']) {
-            case 'disableAuto':
-              subEntry['type'] = 'auto'
-              subEntry['enabled'] = false
-              break
 
-            case 'custom':
-              this.verbose && console.log(`Updating custom entry for apparatus '${app.type}', entry ${entryIndex}, subEntry ${subEntryIndex}`)
-              subEntry['type'] = 'fullCustom'
-              subEntry['enabled'] = true
-              delete subEntry['plainText']
-              delete subEntry['source']
-              delete subEntry['WitnessData']
-              break
-          }
-          return subEntry
+    if (sourceCtData['type'] === EDITION) {
+      // update custom apparatuses
+      ctData['customApparatuses'] = ctData['customApparatuses'].map( (app) => {
+        app['entries'] = app['entries'].map ( (entry, entryIndex) => {
+          entry['subEntries'] = entry['subEntries'].map( (subEntry, subEntryIndex) => {
+            switch(subEntry['type']) {
+              case 'disableAuto':
+                subEntry['type'] = 'auto'
+                subEntry['enabled'] = false
+                break
+
+              case 'custom':
+                this.verbose && console.log(`Updating custom entry for apparatus '${app.type}', entry ${entryIndex}, subEntry ${subEntryIndex}`)
+                subEntry['type'] = 'fullCustom'
+                subEntry['enabled'] = true
+                delete subEntry['plainText']
+                delete subEntry['source']
+                delete subEntry['WitnessData']
+                break
+            }
+            return subEntry
+          })
+          return entry
         })
-        return entry
+        return app
       })
-      return app
-    })
+    }
 
     // done!
     ctData['schemaVersion'] = this.targetSchemaVersion()

@@ -161,6 +161,10 @@ export class CtData  {
   }
 
   static fixFmtText(ctData) {
+    if (ctData['customApparatuses'] === undefined) {
+      // not an edition
+      return ctData
+    }
     // fix FmtText
     for (let i = 0; i < ctData['customApparatuses'].length; i++) {
       // console.log(`Custom apparatus ${i}`)

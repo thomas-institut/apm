@@ -34,13 +34,13 @@ import * as EditionMainTextTokenType from '../Edition/MainTextTokenType'
 import { Edition } from '../Edition/Edition'
 import { HtmlRenderer } from '../FmtText/Renderer/HtmlRenderer'
 import { PanelWithToolbar } from './PanelWithToolbar'
-import { prettyPrintArray } from '../toolbox/ArrayUtil'
+import { prettyPrintArray, varsAreEqual } from '../toolbox/ArrayUtil'
 import { CtData } from '../CtData/CtData'
 
 import { EditionFreeTextEditor } from './EditionFreeTextEditor'
 import {FmtTextFactory} from '../FmtText/FmtTextFactory'
 import {FmtTextTokenFactory} from '../FmtText/FmtTextTokenFactory'
-import { capitalizeFirstLetter } from '../toolbox/Util.mjs'
+import { capitalizeFirstLetter, deepCopy } from '../toolbox/Util.mjs'
 
 const EDIT_MODE_OFF = 'off'
 const EDIT_MODE_TEXT = 'text'
@@ -52,7 +52,9 @@ const typesetInfoDelay = 200
 const betaEditorDivId = 'text-editor-beta'
 
 const icons = {
-  addEntry: '<i class="bi bi-plus-lg"></i>'
+  addEntry: '<i class="bi bi-plus-lg"></i>',
+  commitEdit: '<i class="bi bi-check-lg"></i>',
+  revertEdit: '<i class="bi bi-arrow-counterclockwise"></i>'
 }
 
 export class MainTextPanel extends PanelWithToolbar {
@@ -81,7 +83,7 @@ export class MainTextPanel extends PanelWithToolbar {
       }
     }
 
-    let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  'Edition Panel'})
+    let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  'Main Text Panel'})
     this.options = oc.getCleanOptions(options)
     this.ctData = CtData.copyFromObject(this.options.ctData)
     this.edition = this.options.edition
@@ -152,6 +154,14 @@ export class MainTextPanel extends PanelWithToolbar {
                   </div>
                </div>
             </div>
+            <div class="panel-toolbar-group text-edit-toolbar">
+                <div class="panel-toolbar-item text-edit-revert">
+                    <a class="tb-button text-edit-revert-btn" title="Revert Changes">${icons.revertEdit}</a>
+                </div>
+                <div class="panel-toolbar-item text-edit-commit">
+                    <a class="tb-button text-edit-commit-btn" title="Commit Changes">${icons.commitEdit}</a>
+                </div>
+            </div>
         </div>`
   }
 
@@ -174,7 +184,7 @@ export class MainTextPanel extends PanelWithToolbar {
   onResize (visible) {
     super.onResize(visible)
     if (!visible) {
-      // force a redraw on the next onShown event
+      // force redraw on the next onShown event
       this.mainTextNeedsToBeRedrawnOnNextOnShownEvent = true
       return
     }
@@ -219,7 +229,7 @@ export class MainTextPanel extends PanelWithToolbar {
           break
 
         case EDIT_MODE_TEXT_BETA:
-          console.log(`Beta editor shown`)
+          this.verbose && console.log(`Beta editor shown`)
           break
 
         default:
@@ -276,22 +286,22 @@ export class MainTextPanel extends PanelWithToolbar {
       title: 'Edit: ',
       buttonClass: 'tb-button',
       initialOption: this.currentEditMode,
-        wrapButtonsInDiv: true,
-        buttonsDivClass: 'panel-toolbar-item',
-        buttonDef: [
-          { label: 'Off', name: EDIT_MODE_OFF, helpText: 'Turn off editing'},
-          { label: 'Text', name: EDIT_MODE_TEXT, helpText: 'Edit main text'},
-          { label: 'Apparatus', name: EDIT_MODE_APPARATUS, helpText: 'Add/Edit apparatus entries'},
-          { label: 'Text<sup>BETA</sup>', name: EDIT_MODE_TEXT_BETA, helpText: 'Edit main text (beta)'}
-        ]
+      wrapButtonsInDiv: true,
+      buttonsDivClass: 'panel-toolbar-item',
+      buttonDef: [
+        { label: 'Off', name: EDIT_MODE_OFF, helpText: 'Turn off editing' },
+        { label: 'Text', name: EDIT_MODE_TEXT, helpText: 'Edit main text' },
+        { label: 'Apparatus', name: EDIT_MODE_APPARATUS, helpText: 'Add/Edit apparatus entries' },
+        { label: 'Text<sup>BETA</sup>', name: EDIT_MODE_TEXT_BETA, helpText: 'Edit main text (beta)' }
+      ]
 
     })
-    this.modeToggle.on('toggle',  (ev) => {
+    this.modeToggle.on('toggle', (ev) => {
       let previousEditMode = this.currentEditMode
       let newEditMode = ev.detail.currentOption
       this._changeEditMode(newEditMode, previousEditMode)
     })
-    this.edition.apparatuses.forEach( (app, index) => {
+    this.edition.apparatuses.forEach((app, index) => {
       $(`${this.containerSelector} .add-entry-apparatus-${index}`).on('click', this._genOnClickAddEntryButton(index))
     })
     // this._eleAddEntryButton().on('click', this._genOnClickAddEntryButton())
@@ -303,12 +313,20 @@ export class MainTextPanel extends PanelWithToolbar {
         break
 
       case EDIT_MODE_TEXT_BETA:
-        console.log(`Post render beta mode`)
+        this.verbose && console.log(`Post render beta mode`)
         break
 
     }
 
+    this.textEditCommitDiv = $(`${this.containerSelector} div.text-edit-commit`)
+    this.textEditRevertDiv = $(`${this.containerSelector} div.text-edit-revert`)
+
+    this.textEditCommitDiv.addClass('hidden')
+    this.textEditRevertDiv.addClass('hidden')
   }
+
+
+
 
   _changeEditMode(newEditMode, previousEditMode) {
     this.verbose && console.log(`Edit mode changed from ${previousEditMode} to ${newEditMode}`)
@@ -327,28 +345,76 @@ export class MainTextPanel extends PanelWithToolbar {
         if (previousEditMode === EDIT_MODE_TEXT_BETA) {
           $(this.getContentAreaSelector()).html(this._getMainTextHtmlVersion())
           this._setupMainTextDivEventHandlers()
-          this._updateLineNumbersAndApparatuses().then( () => { console.log(`Finished switching mode to ${this.currentEditMode}`)})
+          this._updateLineNumbersAndApparatuses().then( () => { this.verbose && console.log(`Finished switching mode to ${this.currentEditMode}`)})
+          this.textEditRevertDiv.addClass('hidden')
+          this.textEditCommitDiv.addClass('hidden')
         }
         break
 
       case EDIT_MODE_TEXT_BETA:
         this.currentEditMode = newEditMode
-        $(this.getContentAreaSelector()).html(this._getMainTextBetaEditor())
-        this.freeTextEditor = new EditionFreeTextEditor({
-            containerSelector: `#${betaEditorDivId}`,
-            lang: this.lang,
-            onChange: () =>  { console.log(`Change in text detected`) },
-            debug: false
-        })
+        this._setupTextEditMode()
 
-        this.freeTextEditor.setText( this._convertMainTextToFmtText())
-        console.log(`Now in beta mode`)
         break
 
       default:
         console.error(`Unknown edit mode ${newEditMode}`)
     }
   }
+
+  _setupTextEditMode() {
+    $(this.getContentAreaSelector()).html(this._getMainTextBetaEditor())
+    this.freeTextEditor = new EditionFreeTextEditor({
+      containerSelector: `#${betaEditorDivId}`,
+      lang: this.lang,
+      onChange: this._genOnChangeMainTextFreeTextEditor(),
+      debug: false
+    })
+
+    this.freeTextEditor.setText( this._convertMainTextToFmtText(), true)
+    this.commitedFreeText = deepCopy(this.freeTextEditor.getFmtText())
+    $(`${this.containerSelector} a.text-edit-revert-btn`).on('click', this._genOnClickTextEditRevertChanges())
+    $(`${this.containerSelector} a.text-edit-commit-btn`).on('click', this._genOnClickTextEditCommitChanges())
+    this.verbose && console.log(`Now in beta mode`)
+  }
+
+  _genOnChangeMainTextFreeTextEditor() {
+    return () => {
+      this.debug && console.log(`Change in text detected`)
+      if (!varsAreEqual(this.commitedFreeText, this.freeTextEditor.getFmtText())) {
+        this.textEditRevertDiv.removeClass('hidden')
+        this.textEditCommitDiv.removeClass('hidden')
+      } else {
+        this.textEditRevertDiv.addClass('hidden')
+        this.textEditCommitDiv.addClass('hidden')
+      }
+    }
+  }
+
+  _genOnClickTextEditRevertChanges() {
+    return () => {
+      this.verbose && console.log(`Reverting changes in text editor`)
+      this.freeTextEditor.setText( this.commitedFreeText, true)
+      this.textEditRevertDiv.addClass('hidden')
+      this.textEditCommitDiv.addClass('hidden')
+    }
+  }
+
+  _genOnClickTextEditCommitChanges() {
+    return () => {
+      this.verbose && console.log(`Committing changes`)
+      let newFmtText = this.freeTextEditor.getFmtText()
+      if (varsAreEqual(this.commitedFreeText, newFmtText)) {
+        this.verbose && console.log(`No changes, nothing to do`)
+        this.textEditRevertDiv.addClass('hidden')
+        this.textEditCommitDiv.addClass('hidden')
+        return
+      }
+      this.verbose && console.log(`There are changes, now it's for real`)
+    }
+  }
+
+
 
   _getLemmaFromSelection() {
     if (this.isSelectionEmpty()) {
@@ -357,7 +423,7 @@ export class MainTextPanel extends PanelWithToolbar {
     let lemma = this.edition.mainText.filter( (token, i) => {
       return i>=this.selection.from && i<=this.selection.to
     }).map ( (token) => { return token.getPlainText()}).join('')
-    console.log(`Lemma from selection ${this.selection.from}-${this.selection.to}: '${lemma}'`)
+    this.verbose && console.log(`Lemma from selection ${this.selection.from}-${this.selection.to}: '${lemma}'`)
     return lemma
     // let lemma = ''
     // for (let i=this.selection.from; i <= this.selection.to; i++) {
@@ -479,7 +545,7 @@ export class MainTextPanel extends PanelWithToolbar {
             let newText = ev.detail.newText
             // It should be assumed that newText is a valid edit (cell validation should have taken care of wrong edits).
             // Even if newText would simply replace the current main text token, it can be the case that there is a change
-            // in the lines, so there should always be a regeneration of the edition, a redraw of the main text
+            // in the lines, so there should always be a regeneration of the edition, a redrawing of the main text
             // and an update to the apparatuses.
             if (this.options.onConfirmMainTextEdit(tokenIndex, newText)) {
               this.verbose && console.log(`Confirming editing, new text = '${newText}'`)
@@ -495,7 +561,7 @@ export class MainTextPanel extends PanelWithToolbar {
               this._stopEditingMainText(this.originalTokenText)
             }
           }).on('cancel', () => {
-            console.log(`Canceling edit`)
+            this.verbose && console.log(`Canceling edit`)
             this._stopEditingMainText(this.originalTokenText)
           })
           this.editingTextToken = true
@@ -649,7 +715,7 @@ export class MainTextPanel extends PanelWithToolbar {
       let tokenIndex = getSingleIntIdFromClasses($(ev.target), 'main-text-token-')
       // this.verbose && console.log(`Mouse up on main text ${tokenIndex} token in apparatus edit mode`)
       if (tokenIndex === -1) {
-        console.log(`Mouse up on a token -1`)
+        this.verbose && console.log(`Mouse up on a token -1`)
         return
       }
 
@@ -692,10 +758,15 @@ export class MainTextPanel extends PanelWithToolbar {
     }
   }
 
+  /**
+   *
+   * @return {[]}
+   * @private
+   */
   _convertMainTextToFmtText() {
-    console.log(`Converting Main Text to Fmt Text`)
-    console.log( this.edition.mainText)
-    let fmtText = FmtTextFactory.fromAnything( this.edition.mainText.map( (token) => {
+    this.debug && console.log(`Converting Main Text to Fmt Text`)
+    this.debug && console.log( this.edition.mainText)
+    let tokens = this.edition.mainText.map( (token) => {
       switch (token.type) {
         case EditionMainTextTokenType.GLUE:
           return FmtTextTokenFactory.normalSpace()
@@ -704,12 +775,13 @@ export class MainTextPanel extends PanelWithToolbar {
           return token.fmtText
 
         default:
-           return []
+          return []
       }
-    }))
-    console.log(`Fmt Text:`)
-    console.log(fmtText)
-    return fmtText
+    })
+    let theFmtText =  FmtTextFactory.fromAnything(tokens)
+    this.debug && console.log(`Fmt Text:`)
+    this.debug && console.log(theFmtText)
+    return theFmtText
   }
 
   _getMainTextBetaEditor() {

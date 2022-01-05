@@ -27,12 +27,17 @@ export class Panel {
   constructor (options = {}) {
     let optionsSpec = {
       verbose: { type: 'boolean', default: false},
+      debug: { type: 'boolean', default: false},
       containerSelector: { type: 'string', required: true}
     }
     let oc= new OptionsChecker({optionsDefinition: optionsSpec, context:  'Panel'})
     let cleanOptions = oc.getCleanOptions(options)
 
     this.verbose = cleanOptions.verbose
+    this.debug = cleanOptions.debug
+    if (this.debug) {
+      this.verbose = true
+    }
     this.containerSelector = cleanOptions.containerSelector
     this.visible = false
     this.mode = ''

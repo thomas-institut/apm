@@ -235,7 +235,7 @@ export class EditionComposer {
       ctData: this.ctData,
       edition: this.edition,
       apparatusPanels: this.apparatusPanels,
-      verbose: true,
+      debug: true,
       onError: (msg) => { this._setError(`${msg} (Main Text Panel)`)},
       onConfirmMainTextEdit: this.genOnConfirmMainTextEdit(),
       onCtDataChange: this.genOnCtDataChange('mainTextPanel'),

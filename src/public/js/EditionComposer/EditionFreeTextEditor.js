@@ -27,6 +27,7 @@ import { FmtTextFactory } from '../FmtText/FmtTextFactory'
 import Superscript from './QuillBlots/Superscript'
 
 const simpleFormats = [ 'bold', 'italic', 'small', 'superscript']
+
 const buttons = {
   bold: { icon: '<i class="bi bi-type-bold"></i>' , title: 'Bold'},
   italic: { icon: '<i class="bi bi-type-italic"></i>' , title: 'Italic'},
@@ -110,12 +111,14 @@ export class EditionFreeTextEditor {
   /**
    *
    * @param {string|FmtTextToken[]} newText
+   * @param {boolean} silent
    */
-  setText(newText) {
+  setText(newText, silent = false) {
     let newDelta = this.quillDeltaRenderer.render(FmtTextFactory.fromAnything(newText))
     this.debug && console.log(`Setting text with new delta`)
     this.debug && console.log(newDelta)
-    this.quillEditor.setContents(newDelta)
+    let source = silent ? 'silent' : 'api'
+    this.quillEditor.setContents(newDelta, source)
   }
 
   _getBtnSelector(format) {

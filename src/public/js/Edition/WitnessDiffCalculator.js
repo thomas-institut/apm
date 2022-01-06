@@ -21,32 +21,27 @@ import * as TranscriptionTokenType from '../Witness/WitnessTokenType'
 import * as MyersDiff from '../toolbox/MyersDiff.mjs'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 
-
-
-export const VERBOSITY_SILENT = 0
-export const VERBOSITY_INFO = 10
-export const VERBOSITY_DEBUG = 20
-export const VERBOSITY_DEBUG_PLUS = 100
-
 export class WitnessDiffCalculator {
-
 
   constructor ( userOptions = {}) {
     let optionsDefinition = {
-      verbosity: {
-        type: 'number',
-        default: VERBOSITY_SILENT
+      verbose: {type: 'boolean', default: false},
+      debug: {type: 'boolean', default: false}
       }
-    }
-
     let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context: 'WitnessDiffCalculator'})
     this.options = oc.getCleanOptions(userOptions)
+
+    this.verbose = this.options.verbose
+    this.debug = this.options.debug
+    if (this.debug) {
+      this.verbose = true
+    }
   }
 
   getChangesBetweenWitnesses(ctRowIndex, ctRow, oldWitness, newWitness) {
     let changes = {}
 
-    if (this.options.verbosity >= VERBOSITY_INFO) {
+    if (this.verbose) {
       console.groupCollapsed(`WitnessDiffCalculator : getChangesBetweenWitnesses (ctRowIndex = ${ctRowIndex})`)
       console.log('CtRow')
       console.log(ctRow)
@@ -57,7 +52,7 @@ export class WitnessDiffCalculator {
     }
 
     // 1. Find changes in the tokens
-    if (this.options.verbosity >= VERBOSITY_DEBUG_PLUS) {
+    if (this.debug) {
       MyersDiff.setDebugMode()
     }
     let editScript = MyersDiff.calculate(oldWitness['tokens'], newWitness['tokens'], function(a,b) {
@@ -82,7 +77,7 @@ export class WitnessDiffCalculator {
       return false
     })
 
-    if (this.options.verbosity >= VERBOSITY_DEBUG) {
+    if (this.debug) {
       console.log('Edit Script')
       console.log(editScript)
     }
@@ -100,7 +95,7 @@ export class WitnessDiffCalculator {
       // determine the FSM event
       let ctColIndex = ctRow.indexOf(scriptItem.index)
       let event = getFsmEvent(scriptItem, ctColIndex, newWitness['tokens'])
-      if (this.options.verbosity >= VERBOSITY_DEBUG) {
+      if (this.debug) {
         console.log(`Event ${i}: ${event}, state ${state}, index ${scriptItem.index}, ctIndex ${ctColIndex}, seq ${scriptItem.seq}, lastCtColumn ${lastCtColumn}`)
       }
 
@@ -128,7 +123,13 @@ export class WitnessDiffCalculator {
               newToken: newWitness['tokens'][ scriptItem.seq],
               currentToken: oldWitness['tokens'][lastCtColumnTokenIndex]
             }
-            if (this.options.verbosity >= VERBOSITY_DEBUG) {
+            if (lastCtColumn === -1) {
+              change.afterCol = ctColIndex-1
+              change.isStartOfWitness = true
+              this.debug && console.log(`Inserting at the beginning of the witness, after CT column index ${change.afterCol}`)
+            }
+
+            if (this.debug) {
               console.log(`Pushing insertColAfter change`)
               console.log(change)
             }
@@ -146,6 +147,11 @@ export class WitnessDiffCalculator {
             lastDel = scriptItem
             lastCtColumn = ctColIndex
             lastCtColumnTokenIndex = scriptItem.index
+            if (this.debug) {
+              console.log('-- lastDel')
+              console.log(lastDel)
+              console.log(`-- lastCtColumn: ${lastCtColumn}, lastCtColumnTokenIndex: ${lastCtColumnTokenIndex}`)
+            }
             state = 1
             break
 
@@ -167,7 +173,7 @@ export class WitnessDiffCalculator {
               col: lastCtColumn,
               currentToken: oldWitness['tokens'][lastCtColumnTokenIndex]
             }
-            if (this.options.verbosity >= VERBOSITY_DEBUG) {
+            if (this.debug) {
               console.log(`Pushing change`)
               console.log(emptyCellChange)
             }
@@ -192,7 +198,7 @@ export class WitnessDiffCalculator {
               currentToken: oldWitness['tokens'][lastDel.index],
               newToken: newWitness['tokens'][scriptItem.seq]
             }
-            if (this.options.verbosity >= VERBOSITY_DEBUG) {
+            if (this.debug) {
               console.log(`Pushing replace change`)
               console.log(replaceChange)
             }
@@ -220,7 +226,7 @@ export class WitnessDiffCalculator {
               col: lastCtColumn,
               currentToken: oldWitness['tokens'][lastDel.index]
             }
-            if (this.options.verbosity >= VERBOSITY_DEBUG) {
+            if (this.debug) {
               console.log(`Pushing emptyCell change`)
               console.log(change)
             }
@@ -241,15 +247,17 @@ export class WitnessDiffCalculator {
     }
     // no more scriptItem ===> 'END' event
     if (state === 1) {
+      this.debug && console.log(`End of edit script, state = 1`)
       changes.tokenConversionArray[lastDel.index] = -1
       changes.ctChanges.push({
         type: 'emptyCell',
         row: ctRowIndex,
-        col: lastCtColumn
+        col: lastCtColumn,
+        currentToken: oldWitness['tokens'][lastDel.index]
       })
     }
 
-    if (this.options.verbosity > VERBOSITY_INFO) {
+    if (this.verbose) {
       console.groupEnd()
     }
     return changes

@@ -165,7 +165,12 @@ export class WitnessUpdateDialog {
               html += '<ul>'
               if (changesToShow.length !== 0) {
 
-                function tokenText(token) {
+                function getTokenText(token) {
+                  if (token === undefined) {
+                    console.warn(`Token is undefined`)
+                    console.trace()
+                    return '<i>empty</i>'
+                  }
                   let text = `'${token.text}'`
                   if (token['normalizedText'] !== undefined) {
                     text += ` (normalization: '${token['normalizedText']}')`
@@ -177,15 +182,19 @@ export class WitnessUpdateDialog {
                   html += '<li>'
                   switch (ctChange.type) {
                     case 'insertColAfter':
-                      html += `New column will be added after column ${ctChange.afterCol+1} (${tokenText(ctChange.currentToken)}) with the word ${tokenText(ctChange.newToken)}`
+                      if (ctChange.isStartOfWitness) {
+                        html += `New column will be added at the beginning with the word ${getTokenText(ctChange.newToken)}`
+                      } else {
+                        html += `New column will be added after column ${ctChange.afterCol+1} (${getTokenText(ctChange.currentToken)}) with the word ${getTokenText(ctChange.newToken)}`
+                      }
                       break
 
                     case 'emptyCell':
-                      html += `Column ${ctChange.col+1} will be emptied, currently contains the word ${tokenText(ctChange.currentToken)}`
+                      html += `Column ${ctChange.col+1} will be emptied, currently contains the word ${getTokenText(ctChange.currentToken)}`
                       break
 
                     case 'replace':
-                      html += `Column ${ctChange.col+1} will change from ${tokenText(ctChange.currentToken)} to ${tokenText(ctChange.newToken)}`
+                      html += `Column ${ctChange.col+1} will change from ${getTokenText(ctChange.currentToken)} to ${getTokenText(ctChange.newToken)}`
                       break
 
                     default:
@@ -237,6 +246,7 @@ export class WitnessUpdateDialog {
             })
           .catch( reason => {
             console.log(`Errors detected, reason: ${reason}`)
+            console.trace()
           })
       })
       // go!

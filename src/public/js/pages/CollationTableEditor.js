@@ -1052,7 +1052,7 @@ export class CollationTableEditor {
               calcP.addClass('status-running')
 
               // 2.2 the actual calculation
-              let witnessDiffCalculator = new WitnessDiffCalculator({ verbosity: VERBOSITY_DEBUG_PLUS })
+              let witnessDiffCalculator = new WitnessDiffCalculator({ debug: true })
               let ctRowIndex = thisObject.ctData['witnessOrder'].indexOf(witnessIndex)
               let collationRow = thisObject.tableEditor.getRow(ctRowIndex)
               let changes =  witnessDiffCalculator.getChangesBetweenWitnesses(ctRowIndex, collationRow, currentWitness, newWitness)

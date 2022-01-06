@@ -883,7 +883,7 @@ export class WitnessInfoPanel extends Panel{
         ctData: this.ctData,
         witnessIndex: witnessIndex,
         newWitnessInfo: this.currentWitnessUpdateData['witnesses'][witnessIndex],
-        witnessDiffCalculator: new WitnessDiffCalculator(),
+        witnessDiffCalculator: new WitnessDiffCalculator({debug: true}),
         getWitnessData: this.options.getWitnessData,
         updateWitness: this.options.updateWitness,
         icons: icons,

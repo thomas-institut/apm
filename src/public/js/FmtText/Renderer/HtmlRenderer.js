@@ -50,7 +50,7 @@ export class HtmlRenderer extends FmtTextRenderer{
 
   /**
    *
-   * @param {FmtTextToken[] } fmtText
+   * @param {FmtTextToken[]} fmtText
    * @param lang
    * @return {string}
    */

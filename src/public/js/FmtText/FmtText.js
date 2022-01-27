@@ -18,6 +18,16 @@
 
 import {FmtTextFactory} from './FmtTextFactory'
 
+/**
+ *  FmtText is meant to be an output-independent and versatile representation of formatted text
+ *  like the text produced by a word processor.
+ *
+ *  The idea is th
+ *
+ *
+ */
+
+
 export class FmtText {
 
   /**

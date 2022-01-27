@@ -40,9 +40,6 @@ export class EditionMainTextGenerator {
    * @param {string}lang
    */
   static generateMainText(witnessTokens, normalized = false, normalizationsToIgnore = [], lang = '') {
-    // let section = new MainTextSection()
-    // section.text = this.generateMainTextTokensWithGlue(witnessTokens, normalized, normalizationsToIgnore, lang)
-    // return [ section ]
 
     return this.generateMainTextTokensWithGlue(witnessTokens, normalized, normalizationsToIgnore, lang)
   }
@@ -53,6 +50,14 @@ export class EditionMainTextGenerator {
     }).join('')
   }
 
+  /**
+   *
+   * @param witnessTokens
+   * @param normalized
+   * @param normalizationsToIgnore
+   * @param lang
+   * @return {*[]}
+   */
   static generateMainTextTokensWithGlue(witnessTokens, normalized = false, normalizationsToIgnore = [], lang = '') {
     let mainTextTokens = []
     for(let i = 0; i < witnessTokens.length; i++) {

@@ -148,8 +148,6 @@ export class EditionFreeTextEditor {
     return `<div class="fte-toolbar text-${this.lang}">${buttonsHtml}</div>
 <div class="fte-editor text-${this.lang}"></div>`
   }
-
-
 }
 
 
@@ -161,9 +159,7 @@ function setButtonState(btn, state) {
   }
 }
 
-
 // Initialization
-
 Quill.register({
   'formats/small' : Small,
   'formats/superscript' : Superscript

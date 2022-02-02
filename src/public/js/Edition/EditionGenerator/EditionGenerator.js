@@ -23,12 +23,18 @@ export class EditionGenerator {
 
   constructor (options) {
     let optionsSpec = {
-      verbose: { type: 'boolean', default: false}
+      verbose: { type: 'boolean', default: false},
+      debug: { type: 'boolean', default: false}
     }
 
     let oc = new OptionsChecker({optionsDefinition: optionsSpec, context: 'EditionGenerator'})
 
-    this.verbose = oc.getCleanOptions(options).verbose
+    let cleanOptions = oc.getCleanOptions(options)
+    this.verbose = cleanOptions.verbose
+    this.debug = cleanOptions.debug
+    if (this.debug) {
+      this.verbose = true
+    }
   }
 
   generateEdition() {

@@ -620,6 +620,9 @@ export class ApparatusCommon {
     if (custom) {
       return FmtText.getPlainText(lemma)
     }
+    if (lemmaText === '') {
+      lemmaText = 'pre'
+    }
     let lemmaTextWords = lemmaText.split(' ')
     // if lemmaText is short,
     if (lemmaTextWords.length <= 3) {

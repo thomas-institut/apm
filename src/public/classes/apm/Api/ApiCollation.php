@@ -364,7 +364,8 @@ class ApiCollation extends ApiController
         return $this->responseWithJsonRaw($response, $jsonToCache);
     }
 
-    public function saveCollationTable(Request $request, Response $response) {
+    public function saveCollationTable(Request $request, Response $response): Response
+    {
 
         $apiCall = 'CollationSave';
         $requiredFields = [ 'collationTable'];
@@ -381,9 +382,9 @@ class ApiCollation extends ApiController
 
         $versionInfo = new CollationTableVersionInfo();
         $versionInfo->authorId = $this->apiUserId;
-        $versionInfo->description = isset($inputDataObject['descr']) ? $inputDataObject['descr'] : '';
-        $versionInfo->isMinor = isset($inputDataObject['isMinor']) ? $inputDataObject['isMinor'] : false;
-        $versionInfo->isReview = isset($inputDataObject['isReview']) ? $inputDataObject['isReview'] : false;
+        $versionInfo->description = $inputDataObject['descr'] ?? '';
+        $versionInfo->isMinor = $inputDataObject['isMinor'] ?? false;
+        $versionInfo->isReview = $inputDataObject['isReview'] ?? false;
 
         $collationTableData = $inputDataObject['collationTable'];
         if (isset($inputDataObject['collationTableId'])) {

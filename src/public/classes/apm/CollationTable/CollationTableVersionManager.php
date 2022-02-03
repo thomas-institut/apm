@@ -55,14 +55,33 @@ abstract class CollationTableVersionManager
      */
     abstract public function getActiveCollationTableIdsForUserId(int $userId) : array;
 
+    /**
+     * Returns an array with all the ctIds in the system
+     * @return int[]
+     */
+    abstract public function getAllCollationTableIds() : array;
+
+
+    /**
+     * Enforces a correct version sequence for the given collation table
+
+     * @param int $ctId
+     * @return array
+     */
+    abstract public function fixVersionSequence(int $ctId) : array;
+
 
     /**
      * Checks that the given version sequence is coherent
      * returns an array with all problems found
-     * @param array $versions
-     * @return array
+     * @param CollationTableVersionInfo[] $versions
+     * @return string[]
      */
     public function checkVersionSequenceConsistency(array $versions) : array {
+
+        //  In a coherent version sequence of m versions:
+        //  - timeUntil in version n is exactly the same as timeFrom in version n+1 for all n < m,
+        //  - timeFrom < timeUntil for all n
 
         $issues = [];
         $numVersions = count($versions);
@@ -72,10 +91,16 @@ abstract class CollationTableVersionManager
         }
 
         // check timeUntil's for the rest of versions
-        for ($i = 0; $i < $numVersions - 1; $i++) {
-            if ($versions[$i]->timeUntil !== $versions[$i+1]->timeFrom ) {
-                $issues[] = 'Broken sequence in version index ' . $i . ' timeUntil=' . $versions[$i]->timeUntil .
-                    ', next version\'s timeFrom is ' . $versions[$i+1]->timeFrom;
+        for ($i = 0; $i < $numVersions; $i++) {
+            if ($versions[$i]->timeFrom > $versions[$i]->timeUntil) {
+                $issues[] = sprintf("timeFrom > timeUntil in version index %d (id = %d): %s > %s", $i,
+                    $versions[$i]->id, $versions[$i]->timeFrom, $versions[$i]->timeUntil) ;
+            }
+            if ($i < $numVersions - 1) {
+                if ($versions[$i]->timeUntil !== $versions[$i+1]->timeFrom ) {
+                    $issues[] = sprintf("Broken sequence in version index %d (id = %d): timeUntil is %s, next version's timeFrom is %s",
+                        $i, $versions[$i]->id, $versions[$i]->timeUntil, $versions[$i+1]->timeFrom);
+                }
             }
         }
         return $issues;

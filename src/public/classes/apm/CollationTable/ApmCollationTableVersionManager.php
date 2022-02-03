@@ -40,7 +40,7 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager imple
     /**
      * @var DataTable
      */
-    private $dataTable;
+    private DataTable $dataTable;
 
     public function __construct(DataTable $columnVersionTable)
     {
@@ -164,5 +164,26 @@ class ApmCollationTableVersionManager extends CollationTableVersionManager imple
             return substr($description, 0, self::MAX_DESCRIPTION_LENGTH - 5) . ' ...';
         }
         return $description;
+    }
+
+    public function getAllCollationTableIds(): array
+    {
+
+        // TODO: fix this, I'm just using a trick here
+        $maxCtId = $this->dataTable->getMaxValueInColumn('ct_id');
+        $ids = [];
+        for ($i=1; $i<= $maxCtId; $i++) {
+            $ids[] = $i;
+        }
+        return $ids;
+    }
+
+    public function fixVersionSequence(int $ctId): array
+    {
+
+
+
+
+        return [];
     }
 }

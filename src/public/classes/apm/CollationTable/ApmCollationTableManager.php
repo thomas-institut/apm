@@ -217,11 +217,11 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
         return $idArray;
     }
 
-    public function getCollationTableInfo(int $id, string $timeString = ''): CollationTableInfo
+    public function getCollationTableInfo(int $id, string $timeStamp = ''): CollationTableInfo
     {
         $mySqlDataTableClass = MySqlUnitemporalDataTable::class;
-        if ($timeString === '') {
-            $timeString = TimeString::now();
+        if ($timeStamp === '') {
+            $timeStamp = TimeString::now();
         }
 
         if (is_a($this->ctTable, $mySqlDataTableClass) ) {
@@ -231,14 +231,14 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
             $ctTable = $this->ctTable;
 
             $result = $ctTable->select('id, title, type, archived',
-                "id='$id' AND valid_from <='$timeString' and valid_until>'$timeString'",
+                "id='$id' AND valid_from <='$timeStamp' and valid_until>'$timeStamp'",
                 0,
                 '',
-                "getCollationTableIdsForChunk");
+                "getCollationTableInfo");
 
             $rows = $result->fetchAll(PDO::FETCH_ASSOC);
         } else {
-            $rows = $this->ctTable->findRowsWithTime(['id' => $id], 0,  $timeString);
+            $rows = $this->ctTable->findRowsWithTime(['id' => $id], 0,  $timeStamp);
         }
 
         if (count($rows)=== 0) {
@@ -248,11 +248,38 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
         return CollationTableInfo::createFromDbRow($rows[0]);
     }
 
-    public function getCollationTableType(int $id, string $timeStamp = ''): string
+//    public function getCollationTableType(int $id, string $timeStamp = ''): string
+//    {
+//        // TODO: Implement getCollationTableType() method.
+//        return '';
+//    }
+
+
+    public function getCollationTableStoredVersionsInfo(int $id): array
     {
-        // TODO: Implement getCollationTableType() method.
-        return '';
+        $returnArray = [];
+
+        if (!is_a($this->ctTable, MySqlUnitemporalDataTable::class)) {
+            // for datatable without time stamp, just
+            // return the data for the currently stored version
+            return [ $this->getCollationTableInfo($id)];
+        }
+
+        /** @var MySqlUnitemporalDataTable $ctTable */
+        $ctTable = $this->ctTable;
+
+        $result = $ctTable->select('id, title, type, archived, valid_from, valid_until',
+            "id='$id' ",
+            0,
+            'valid_from',
+            "getCollationTableStoredVersionsInfo");
+
+        $rows = $result->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach($rows as $row) {
+            $returnArray[] = CollationTableInfo::createFromDbRow($row);
+        }
+
+        return $returnArray;
     }
-
-
 }

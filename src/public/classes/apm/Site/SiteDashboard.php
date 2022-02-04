@@ -44,7 +44,7 @@ class SiteDashboard extends SiteController
      * @param Response $response
      * @return Response
      */
-    public function dashboardPage(Request $request, Response $response)
+    public function dashboardPage(Request $request, Response $response): Response
     {
         
         $dataManager = $this->dataManager;
@@ -73,7 +73,7 @@ class SiteDashboard extends SiteController
             if ($ctData['archived']) {
                 continue;
             }
-            $chunkId = isset($ctData['chunkId']) ? $ctData['chunkId'] : $ctData['witnesses'][0]['chunkId'];
+            $chunkId = $ctData['chunkId'] ?? $ctData['witnesses'][0]['chunkId'];
 
             $tableInfo[] = [
                 'id' => $tableId,

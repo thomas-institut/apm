@@ -1,6 +1,7 @@
+#!/usr/bin/php -q
 <?php
 
-/* 
+/*
  *  Copyright (C) 2019 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
@@ -15,29 +16,14 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
- *  
+ *
  */
+namespace APM;
 
-use APM\System\ApmConfigParameter;
+$config = [];
 
-require_once 'config.php';
+require __DIR__ . '/../vendor/autoload.php';
+require __DIR__ . '/../setup.php';
+require __DIR__ . '/../version.php';
 
-global $config;
-
-
-$config[ApmConfigParameter::APP_NAME] = 'APM';
-// Version 0.42.10, named after Oded, who discovered the first reproducible bug after EditionComposer's bug detector
-// was implemented
-// Version 0.42.11 still named after Oded, since he also found the bug that caused the update!
-$config[ApmConfigParameter::VERSION] = '0.45.6 (2022-Feb-04)';
-
-
-$config[ApmConfigParameter::COPYRIGHT_NOTICE] = <<<EOD
-        2016-21, 
-        <a href="https://www.thomasinstitut.uni-koeln.de/">
-            Thomas-Institut</a>, 
-        <a href="https://www.uni-koeln.de/">
-            Universität zu Köln
-        </a>
-EOD;
-
+(new CommandLine\CtVersionCheckTool($config, $argc, $argv))->run();

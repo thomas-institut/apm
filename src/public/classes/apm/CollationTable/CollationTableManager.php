@@ -91,15 +91,22 @@ abstract class CollationTableManager implements ErrorReporter
      *
      * @param int $id
      * @param string $timeStamp
-     * @return string
+     * @return CollationTableInfo
      */
     abstract public function getCollationTableInfo(int $id, string $timeStamp = '') : CollationTableInfo;
 
-
-
     abstract public function getCollationTableVersionManager() : CollationTableVersionManager;
 
-    public function getCollationTableVersions(int $collationTableId) {
+
+    /**
+     * Returns an array of CollationTableInfo for every version of the collation
+     * table with the given id stored in the system.
+     *
+     * @param int $id
+     */
+    abstract public function getCollationTableStoredVersionsInfo(int $id) : array;
+
+    public function getCollationTableVersions(int $collationTableId): array {
         return $this->getCollationTableVersionManager()->getCollationTableVersionInfo($collationTableId);
     }
 

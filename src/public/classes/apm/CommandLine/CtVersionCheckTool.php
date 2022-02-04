@@ -18,7 +18,8 @@ class CtVersionCheckTool extends CommandLineUtility
             print "Fix tool not implemented yet, just checking for now\n";
         }
 
-        $versionManager = $this->systemManager->getCollationTableManager()->getCollationTableVersionManager();
+        $ctManager = $this->systemManager->getCollationTableManager();
+        $versionManager = $ctManager->getCollationTableVersionManager();
         $ctIds = [];
         $reportEveryId = true;
         $issuesFound = false;
@@ -35,13 +36,32 @@ class CtVersionCheckTool extends CommandLineUtility
 
         foreach($ctIds as $ctId) {
             $versions = $versionManager->getCollationTableVersionInfo($ctId);
+            $storedVersions = $ctManager->getCollationTableStoredVersionsInfo($ctId);
             if ($reportEveryId) {
                 print "CtId $ctId:\n";
+                print "   Versions:\n";
                 for($i=0; $i<count($versions); $i++) {
-                    printf("   %2d : %4d : %s -> %s\n", $i, $versions[$i]->id, $versions[$i]->timeFrom, $versions[$i]->timeUntil);
+                    printf("      %2d : %4d : %s -> %s\n", $i, $versions[$i]->id, $versions[$i]->timeFrom, $versions[$i]->timeUntil);
+                }
+                print "   Stored:\n";
+                for($i=0; $i<count($storedVersions); $i++) {
+                    printf("      %2d : %s -> %s\n", $i, $storedVersions[$i]->timeFrom, $storedVersions[$i]->timeUntil);
                 }
             }
             $issues = $versionManager->checkVersionSequenceConsistency($versions);
+            if (count($versions) !== count($storedVersions)) {
+                $issues[] = "Mismatch between stored versions and version info: " . count($storedVersions) . " stored, " . count($versions) . " info";
+            } else {
+                // check consistency between versions
+                for ($i = 0; $i < count($versions); $i++) {
+                    if ($versions[$i]->timeFrom !== $storedVersions[$i]->timeFrom) {
+                        $issues[] = "Version timeFrom mismatch, index $i: " . $storedVersions[$i]->timeFrom . " !== " . $versions[$i]->timeFrom;
+                    }
+                    if ($versions[$i]->timeUntil !== $storedVersions[$i]->timeUntil) {
+                        $issues[] = "Version timeFrom mismatch, index $i: " . $storedVersions[$i]->timeUntil . " !== " . $versions[$i]->timeUntil;
+                    }
+                }
+            }
 
             if (count($issues) !== 0) {
                 print("Issues found for ctId $ctId\n");

@@ -19,6 +19,8 @@
 
 namespace APM\CollationTable;
 
+use ThomasInstitut\TimeString\TimeString;
+
 /**
  * Class CollationTableInfo
  * @package APM\CollationTable
@@ -32,10 +34,15 @@ class CollationTableInfo
 
     public bool $archived;
 
+    public string $timeFrom;
+    public string $timeUntil;
+
     public function __construct()
     {
         $this->title = '';
         $this->type = '';
+        $this->timeFrom =  TimeString::TIME_ZERO;
+        $this->timeUntil = TimeString::END_OF_TIMES;
         $this->archived = false;
     }
 
@@ -43,6 +50,8 @@ class CollationTableInfo
         $this->title = $row['title'];
         $this->type = $row['type'];
         $this->archived = $row['archived'] === '1';
+        $this->timeFrom = $row['valid_from'] ?? TimeString::TIME_ZERO;
+        $this->timeUntil = $row['valid_until'] ?? TimeString::END_OF_TIMES;
     }
 
     public static function createFromDbRow(array $row): CollationTableInfo

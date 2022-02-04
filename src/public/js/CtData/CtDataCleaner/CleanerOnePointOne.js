@@ -23,7 +23,14 @@ import { deepCopy } from '../../toolbox/Util.mjs'
 import * as CollationTableType from '../../Witness/WitnessTokenClass'
 import { CollationTableConsistencyCleaner } from './CollationTableConsistencyCleaner'
 import { EditionWitnessReferencesCleaner } from './EditionWitnessReferencesCleaner'
-import { EDITION } from '../../constants/CollationTableType'
+import * as ApparatusType from '../../constants/ApparatusType'
+import { DefaultApparatusesCleaner } from './DefaultApparatusesCleaner'
+
+const defaultApparatus = [
+  ApparatusType.CRITICUS,
+  ApparatusType.FONTIUM,
+  ApparatusType.COMPARATIVUS
+]
 
 
 export class CleanerOnePointOne extends CtDataCleaner{
@@ -61,7 +68,10 @@ export class CleanerOnePointOne extends CtDataCleaner{
 
 
     if (this.ctData['type'] === CollationTableType.EDITION) {
-      this.ctData = this.cleanCustomApparatusesOnePointOne(this.ctData)
+      let defaultApparatusesCleaner = new DefaultApparatusesCleaner({verbose: this.verbose})
+      this.ctData = defaultApparatusesCleaner.getCleanCtData(this.ctData)
+
+       this.ctData = this.cleanCustomApparatusesOnePointOne(this.ctData)
       // this may not be necessary
       this.ctData = CtData.fixFmtText(this.ctData)
     }

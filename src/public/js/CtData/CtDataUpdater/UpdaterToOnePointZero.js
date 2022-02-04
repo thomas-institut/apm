@@ -19,13 +19,7 @@
 import {CtDataUpdater} from './CtDataUpdater'
 import * as CollationTableType from '../../constants/CollationTableType'
 import * as ApparatusType from '../../constants/ApparatusType'
-
-const defaultApparatus = [
-  ApparatusType.CRITICUS,
-  ApparatusType.FONTIUM,
-  ApparatusType.COMPARATIVUS
-]
-
+import { DefaultApparatusesCleaner } from '../CtDataCleaner/DefaultApparatusesCleaner'
 export  class UpdaterToOnePointZero extends CtDataUpdater {
 
   constructor (options = {}) {
@@ -84,17 +78,9 @@ export  class UpdaterToOnePointZero extends CtDataUpdater {
 
 
     if (ctData['type'] === CollationTableType.EDITION) {
-      // add default apparatuses for editions
-      if (ctData['customApparatuses'] === undefined) {
-        ctData['customApparatuses'] = []
-      }
-      defaultApparatus.forEach( (appType) => {
-        let appIndex = ctData['customApparatuses'].map( (customApp) => { return customApp.type}).indexOf(appType)
-        // console.log(`Found apparatus '${appType}' with index ${appIndex}`)
-        if (appIndex === -1) {
-          ctData['customApparatuses'].push( { type: appType, entries: []})
-        }
-      })
+
+      let defaultApparatusesCleaner = new DefaultApparatusesCleaner({verbose: this.verbose})
+      ctData = defaultApparatusesCleaner.getCleanCtData(ctData)
 
       // remove unused 'criticalApparatusCustomizations'
       delete ctData['criticalApparatusCustomizations']

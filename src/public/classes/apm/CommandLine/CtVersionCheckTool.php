@@ -41,11 +41,11 @@ class CtVersionCheckTool extends CommandLineUtility
                 print "CtId $ctId:\n";
                 print "   Versions:\n";
                 for($i=0; $i<count($versions); $i++) {
-                    printf("      %2d : %4d : %s -> %s\n", $i, $versions[$i]->id, $versions[$i]->timeFrom, $versions[$i]->timeUntil);
+                    printf("      %2d | %4d | %s | %s\n", $i, $versions[$i]->id, $versions[$i]->timeFrom, $versions[$i]->timeUntil);
                 }
                 print "   Stored:\n";
                 for($i=0; $i<count($storedVersions); $i++) {
-                    printf("      %2d : %s -> %s\n", $i, $storedVersions[$i]->timeFrom, $storedVersions[$i]->timeUntil);
+                    printf("      %2d | %s | %s\n", $i, $storedVersions[$i]->timeFrom, $storedVersions[$i]->timeUntil);
                 }
             }
             $issues = $versionManager->checkVersionSequenceConsistency($versions);
@@ -58,7 +58,7 @@ class CtVersionCheckTool extends CommandLineUtility
                         $issues[] = "Version timeFrom mismatch, index $i: " . $storedVersions[$i]->timeFrom . " !== " . $versions[$i]->timeFrom;
                     }
                     if ($versions[$i]->timeUntil !== $storedVersions[$i]->timeUntil) {
-                        $issues[] = "Version timeFrom mismatch, index $i: " . $storedVersions[$i]->timeUntil . " !== " . $versions[$i]->timeUntil;
+                        $issues[] = "Version timeUntil mismatch, index $i: " . $storedVersions[$i]->timeUntil . " !== " . $versions[$i]->timeUntil;
                     }
                 }
             }

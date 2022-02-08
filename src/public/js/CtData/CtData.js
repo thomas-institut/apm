@@ -293,6 +293,44 @@ export class CtData  {
   }
 
   /**
+   * Empties a token in a witness
+   * @param ctData
+   * @param {number} witnessIndex
+   * @param {number} tokenIndex
+   */
+  static emptyWitnessToken(ctData, witnessIndex, tokenIndex) {
+    ctData['witnesses'][witnessIndex]['tokens'][tokenIndex]['text'] = ''
+    ctData['witnesses'][witnessIndex]['tokens'][tokenIndex]['tokenType'] = TranscriptionTokenType.EMPTY
+    if (ctData.type === CollationTableType.EDITION && witnessIndex===ctData['editionWitnessIndex']) {
+      // find CT column that refers to this token
+      let ctColumnIndex = ctData['collationMatrix'][witnessIndex].indexOf(tokenIndex)
+      if (ctColumnIndex === -1) {
+        // no reference to this token in collation table, so nothing to do
+        return ctData
+      }
+      //let seq = new SequenceWithGroups(ctData['collationMatrix'][0].length, ctData['groupedColumns'])
+      ctData['customApparatuses'].forEach( (app) => {
+        app.entries = app.entries.filter( (entry) => {
+          // remove entries that refer to the token
+          // TODO: think about a way to fix the entries instead of just removing them
+          // The problem here is that the system would have to make a decision on where to move the entry.
+          // When the entry refers to a single column it is clear that it should be deleted, but when it refers
+          // to a range of columns, the system would have to decide to either expand or shrink the entry's range to the
+          // next or previous non-empty token. The decision would be always arbitrary, so the only good solution
+          // is to ask the user what to do, and this requires handling these cases in UI.
+          if (entry.from === ctColumnIndex || entry.to === ctColumnIndex) {
+            console.warn(`Removing custom apparatus entry in '${app.type}' referring to empty token ${tokenIndex} (ctCol ${ctColumnIndex})`)
+            console.log(entry)
+            return false
+          }
+          return true
+        })
+      })
+    }
+    return ctData
+  }
+
+  /**
    * Returns an array with the given witness tokens as they are laid out
    * in the collation table, replacing empty references with empty tokens
    *

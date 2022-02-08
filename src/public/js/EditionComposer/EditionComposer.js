@@ -461,7 +461,7 @@ export class EditionComposer {
     }
   }
 
-  _getMainTextWitnessCtRowIndex() {
+  _getMainTextWitnessIndex() {
     return this.ctData['editionWitnessIndex'] !== undefined ? this.ctData['editionWitnessIndex'] :
       this.ctData['witnessOrder'][0]
 
@@ -536,16 +536,16 @@ export class EditionComposer {
         }
       }
     }
-    let ctRow = this._getMainTextWitnessCtRowIndex()
-    let editionWitnessRef = this.ctData['collationMatrix'][ctRow][ctIndex]
+    let witnessIndex = this._getMainTextWitnessIndex()
+    let editionWitnessRef = this.ctData['collationMatrix'][witnessIndex][ctIndex]
     //console.log(`Editing witness token: row ${ctRow}, col ${ctIndex}, ref ${editionWitnessRef}`)
     if (editionWitnessRef === -1) {
-      console.warn(`Null reference found editing witness token: row ${ctRow}, col ${ctIndex}, ref ${editionWitnessRef}`)
+      console.warn(`Null reference found editing witness token: row ${witnessIndex}, col ${ctIndex}, ref ${editionWitnessRef}`)
       return false
     }
-    let witnessToken = this.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]
+    let witnessToken = this.ctData['witnesses'][witnessIndex]['tokens'][editionWitnessRef]
     if (witnessToken === undefined) {
-      console.warn(`Undefined witness token editing witness token: row ${ctRow}, col ${ctIndex}, ref ${editionWitnessRef}`)
+      console.warn(`Undefined witness token editing witness token: row ${witnessIndex}, col ${ctIndex}, ref ${editionWitnessRef}`)
       return false
     }
     //console.log(witnessToken)
@@ -565,14 +565,13 @@ export class EditionComposer {
       // empty text
       console.log(`Empty text `)
       // TODO: delete the column in the CT if there is nothing in the witnesses?
-      this.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]['text'] = newText
-      this.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]['tokenType'] = WitnessTokenType.EMPTY
+      this.ctData = CtData.emptyWitnessToken(this.ctData, witnessIndex, editionWitnessRef)
       return true
     }
     if (parsedText.length === 1) {
       // single word
       console.log(`Single token in new text: ${parsedText[0].text}`)
-      replaceEditionWitnessToken(ctRow, editionWitnessRef, newText, this.lang)
+      replaceEditionWitnessToken(witnessIndex, editionWitnessRef, newText, this.lang)
       return true
     }
     // more than one word
@@ -588,7 +587,7 @@ export class EditionComposer {
       this.ctData = CtData.insertColumnsAfter(this.ctData, ctIndex, parsedText.length-1)
     }
     for (let col = 0; col < parsedText.length; col++ ) {
-      replaceEditionWitnessToken(ctRow, editionWitnessRef + col, parsedText[col].text, this.lang)
+      replaceEditionWitnessToken(witnessIndex, editionWitnessRef + col, parsedText[col].text, this.lang)
     }
     console.log(`New ct Data after multiple word edit`)
     console.log(this.ctData)

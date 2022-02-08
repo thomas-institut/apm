@@ -56,6 +56,7 @@ import { CollationTableConsistencyCleaner } from '../CtData/CtDataCleaner/Collat
 import { ServerLogger } from '../Server/ServerLogger'
 import { KeyCache } from '../toolbox/KeyCache'
 import { pushArray } from '../toolbox/ArrayUtil'
+import { TechSupportPanel } from './TechSupportPanel'
 
 // CONSTANTS
 
@@ -66,6 +67,7 @@ const mainTextTabId = 'main-text-panel'
 const editionPreviewTabId = 'edition-preview'
 const witnessInfoTabId = 'witness-info'
 const adminPanelTabId = 'admin'
+const techSupportTabId = 'tech'
 
 // save button
 const saveButtonTextClassNoChanges = 'text-muted'
@@ -81,6 +83,7 @@ export class EditionComposer {
 
     let optionsDefinition = {
       userId: { type:'NonZeroNumber', required: true},
+      isTechSupport: { type: 'boolean', default: false},
       collationTableData : { type: 'object', required: true},
       workId : { type: 'string', required: true},
       chunkNumber: {type: 'NonZeroNumber', required: true},
@@ -126,7 +129,6 @@ export class EditionComposer {
       apiCallUrl: this.options.urlGenerator.apiLog(),
       module: 'EditionComposer'
     })
-
 
     this.ctData =CtData.getCleanAndUpdatedCtData(this.options['collationTableData'])
 
@@ -242,6 +244,12 @@ export class EditionComposer {
       editApparatusEntry: (apparatusIndex, mainTextFrom, mainTextTo) => { this.editApparatusEntry(apparatusIndex, mainTextFrom, mainTextTo)}
     })
 
+    this.techSupportPanel = new TechSupportPanel({
+      containerSelector: `#${techSupportTabId}`,
+      active: false,
+      ctData: this.ctData,
+    })
+
     // tab arrays
     let panelOneTabs = [
       createTabConfig(mainTextTabId, 'Main Text', this.mainTextPanel),
@@ -260,8 +268,14 @@ export class EditionComposer {
       })
       .concat([
         createTabConfig(editionPreviewTabId, 'Edition Preview', this.editionPreviewPanel),
-        createTabConfig(adminPanelTabId, 'Admin', this.adminPanel)
+        createTabConfig(adminPanelTabId, 'Admin', this.adminPanel),
     ])
+
+    if (this.options.isTechSupport) {
+      console.log(`Adding tech support panel`)
+      this.techSupportPanel.setActive(true)
+      panelTwoTabs.push( createTabConfig(techSupportTabId, 'Tech', this.techSupportPanel))
+    }
 
     this.multiPanelUI = new MultiPanelUI({
         logo: `<a href="${this.options.urlGenerator.home()}" title="Home">

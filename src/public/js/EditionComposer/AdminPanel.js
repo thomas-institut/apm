@@ -173,6 +173,7 @@ export class AdminPanel extends  Panel {
       html += '</td>'
       html += '</tr>'
     }
+    html += '</table>'
     return html
   }
 

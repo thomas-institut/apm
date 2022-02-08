@@ -330,7 +330,7 @@ class UserManager implements LoggerAwareInterface, SqlQueryCounterTrackerAware
         return $this->relationsTable->deleteRow($rows[0]['id']) === 1;
     }
     
-    public function userHasRole(int $userId, string $role)
+    public function userHasRole(int $userId, string $role): bool
     {
         $this->getSqlQueryCounterTracker()->incrementSelect();
         return $this->relationsTable->findRows(['userId' => $userId,

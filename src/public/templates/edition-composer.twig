@@ -40,10 +40,12 @@
     let workInfo = JSON.parse("{{workInfo|json_encode|e('js')}}")
     let docInfo = JSON.parse("{{docInfo|json_encode|e('js')}}")
     let versionInfo = JSON.parse("{{versionInfo|json_encode|e('js')}}")
-    let userId = {{ userId }};
+    let userId = {{ userId }} ;
+    let isTechSupport = {{ isTechSupport }} === 1;
 
     let te = new EditionComposer({
       userId: userId,
+      isTechSupport: isTechSupport,
       collationTableData : ctData,
       workId: '{{ workId }}',
       chunkNumber: {{ chunkNumber }},

@@ -126,6 +126,22 @@ table.versioninfo td.time {
     min-width: 11em;
 }
 
+/* Tech Support Panel */
+#tech {
+    margin-left: 1rem;
+}
+
+#tech h3 {
+    margin-top: 1rem;
+}
+
+#tech textarea.ct-data {
+    white-space: pre;
+    font-family: monospace;
+    font-size: 0.8rem;
+    height: auto;
+}
+
 /* Witness Info Panel */
 
 table.witnesstable {

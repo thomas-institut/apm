@@ -18,21 +18,6 @@ Minimal data structure for a critical edition
      ... eventually also:  information on how to order and display witnesses, e.g. witness groups
  }
 
-MainTextSection := {
-    id: string, some identifying name, e.g. to associate it with a specific collation table
-    style: string,
-    type: 'normal', 'multi-column', etc  .... for the time being only normal
-    breakAfter:  none | paragraph | space | column | page
-    spaceAfter:  px/pt/em
-    breakBefore: none | paragraph | space | column | page
-    spaceBefore: px/pt/em
-    subSections: MainTextSection[]
-    text: MainTextToken[]    // need to determine what to do with a section that has both subSections and text
-                             // For now, just stipulate that if there subsections the text is ignored so
-                             // basically a node in the main text tree can be either a subtree of sections or an
-                             // end node with text
-}
-
 EditionWitnessInfo := {
   siglum: string,
   title: string (optional)

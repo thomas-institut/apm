@@ -954,8 +954,7 @@ export class CollationTablePanel extends PanelWithToolbar {
       newText = Util.trimWhiteSpace(newText)
       if (newText === '') {
         // empty token
-        this.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = newText
-        this.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] = TranscriptionTokenType.EMPTY
+        this.ctData = CtData.emptyWitnessToken(this.ctData, witnessIndex, ref)
       } else  {
         let tokenType = WitnessTokenStringParser.strIsPunctuation(newText, this.lang) ? TranscriptionTokenType.PUNCTUATION : TranscriptionTokenType.WORD
         this.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = newText

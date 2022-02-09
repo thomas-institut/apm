@@ -56,6 +56,7 @@ import { CollationTableConsistencyCleaner } from '../CtData/CtDataCleaner/Collat
 import { ServerLogger } from '../Server/ServerLogger'
 import { KeyCache } from '../toolbox/KeyCache'
 import { pushArray } from '../toolbox/ArrayUtil'
+import { TechSupportPanel } from './TechSupportPanel'
 
 // CONSTANTS
 
@@ -66,6 +67,7 @@ const mainTextTabId = 'main-text-panel'
 const editionPreviewTabId = 'edition-preview'
 const witnessInfoTabId = 'witness-info'
 const adminPanelTabId = 'admin'
+const techSupportTabId = 'tech'
 
 // save button
 const saveButtonTextClassNoChanges = 'text-muted'
@@ -81,6 +83,7 @@ export class EditionComposer {
 
     let optionsDefinition = {
       userId: { type:'NonZeroNumber', required: true},
+      isTechSupport: { type: 'boolean', default: false},
       collationTableData : { type: 'object', required: true},
       workId : { type: 'string', required: true},
       chunkNumber: {type: 'NonZeroNumber', required: true},
@@ -126,7 +129,6 @@ export class EditionComposer {
       apiCallUrl: this.options.urlGenerator.apiLog(),
       module: 'EditionComposer'
     })
-
 
     this.ctData =CtData.getCleanAndUpdatedCtData(this.options['collationTableData'])
 
@@ -242,6 +244,12 @@ export class EditionComposer {
       editApparatusEntry: (apparatusIndex, mainTextFrom, mainTextTo) => { this.editApparatusEntry(apparatusIndex, mainTextFrom, mainTextTo)}
     })
 
+    this.techSupportPanel = new TechSupportPanel({
+      containerSelector: `#${techSupportTabId}`,
+      active: false,
+      ctData: this.ctData,
+    })
+
     // tab arrays
     let panelOneTabs = [
       createTabConfig(mainTextTabId, 'Main Text', this.mainTextPanel),
@@ -260,8 +268,14 @@ export class EditionComposer {
       })
       .concat([
         createTabConfig(editionPreviewTabId, 'Edition Preview', this.editionPreviewPanel),
-        createTabConfig(adminPanelTabId, 'Admin', this.adminPanel)
+        createTabConfig(adminPanelTabId, 'Admin', this.adminPanel),
     ])
+
+    if (this.options.isTechSupport) {
+      console.log(`Adding tech support panel`)
+      this.techSupportPanel.setActive(true)
+      panelTwoTabs.push( createTabConfig(techSupportTabId, 'Tech', this.techSupportPanel))
+    }
 
     this.multiPanelUI = new MultiPanelUI({
         logo: `<a href="${this.options.urlGenerator.home()}" title="Home">
@@ -461,7 +475,7 @@ export class EditionComposer {
     }
   }
 
-  _getMainTextWitnessCtRowIndex() {
+  _getMainTextWitnessIndex() {
     return this.ctData['editionWitnessIndex'] !== undefined ? this.ctData['editionWitnessIndex'] :
       this.ctData['witnessOrder'][0]
 
@@ -536,16 +550,16 @@ export class EditionComposer {
         }
       }
     }
-    let ctRow = this._getMainTextWitnessCtRowIndex()
-    let editionWitnessRef = this.ctData['collationMatrix'][ctRow][ctIndex]
+    let witnessIndex = this._getMainTextWitnessIndex()
+    let editionWitnessRef = this.ctData['collationMatrix'][witnessIndex][ctIndex]
     //console.log(`Editing witness token: row ${ctRow}, col ${ctIndex}, ref ${editionWitnessRef}`)
     if (editionWitnessRef === -1) {
-      console.warn(`Null reference found editing witness token: row ${ctRow}, col ${ctIndex}, ref ${editionWitnessRef}`)
+      console.warn(`Null reference found editing witness token: row ${witnessIndex}, col ${ctIndex}, ref ${editionWitnessRef}`)
       return false
     }
-    let witnessToken = this.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]
+    let witnessToken = this.ctData['witnesses'][witnessIndex]['tokens'][editionWitnessRef]
     if (witnessToken === undefined) {
-      console.warn(`Undefined witness token editing witness token: row ${ctRow}, col ${ctIndex}, ref ${editionWitnessRef}`)
+      console.warn(`Undefined witness token editing witness token: row ${witnessIndex}, col ${ctIndex}, ref ${editionWitnessRef}`)
       return false
     }
     //console.log(witnessToken)
@@ -565,14 +579,13 @@ export class EditionComposer {
       // empty text
       console.log(`Empty text `)
       // TODO: delete the column in the CT if there is nothing in the witnesses?
-      this.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]['text'] = newText
-      this.ctData['witnesses'][ctRow]['tokens'][editionWitnessRef]['tokenType'] = WitnessTokenType.EMPTY
+      this.ctData = CtData.emptyWitnessToken(this.ctData, witnessIndex, editionWitnessRef)
       return true
     }
     if (parsedText.length === 1) {
       // single word
       console.log(`Single token in new text: ${parsedText[0].text}`)
-      replaceEditionWitnessToken(ctRow, editionWitnessRef, newText, this.lang)
+      replaceEditionWitnessToken(witnessIndex, editionWitnessRef, newText, this.lang)
       return true
     }
     // more than one word
@@ -588,7 +601,7 @@ export class EditionComposer {
       this.ctData = CtData.insertColumnsAfter(this.ctData, ctIndex, parsedText.length-1)
     }
     for (let col = 0; col < parsedText.length; col++ ) {
-      replaceEditionWitnessToken(ctRow, editionWitnessRef + col, parsedText[col].text, this.lang)
+      replaceEditionWitnessToken(witnessIndex, editionWitnessRef + col, parsedText[col].text, this.lang)
     }
     console.log(`New ct Data after multiple word edit`)
     console.log(this.ctData)

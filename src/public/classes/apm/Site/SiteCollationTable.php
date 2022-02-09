@@ -28,10 +28,12 @@ namespace APM\Site;
 
 use APM\CollationTable\CollationTableVersionInfo;
 use APM\FullTranscription\DocInfo;
+use APM\FullTranscription\PageInfo;
 use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
 use InvalidArgumentException;
+use phpDocumentor\Reflection\Types\This;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
@@ -117,8 +119,13 @@ class SiteCollationTable extends SiteController
             $template = self::TEMPLATE_EDIT_COLLATION_TABLE_OLD;
         }
 
+        $um = $this->dataManager->userManager;
+        $isTechSupport = $um->isRoot($this->userInfo['id']) || $um->userHasRole($this->userInfo['id'], 'techSupport');
+        $this->codeDebug("Tech support: $isTechSupport", [ $this->userInfo]);
+
         return $this->renderPage($response, $template, [
             'userId' => $this->userInfo['id'],
+            'isTechSupport' => $isTechSupport,
             'workId' => $workId,
             'chunkNumber' => $chunkNumber,
             'tableId' => $tableId,

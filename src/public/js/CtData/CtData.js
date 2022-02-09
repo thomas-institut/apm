@@ -293,6 +293,120 @@ export class CtData  {
   }
 
   /**
+   * Empties a token in a witness
+   * @param ctData
+   * @param {number} witnessIndex
+   * @param {number} tokenIndex
+   */
+  static emptyWitnessToken(ctData, witnessIndex, tokenIndex) {
+    ctData['witnesses'][witnessIndex]['tokens'][tokenIndex]['text'] = ''
+    ctData['witnesses'][witnessIndex]['tokens'][tokenIndex]['tokenType'] = WitnessTokenType.EMPTY
+    if (ctData.type === CollationTableType.EDITION && witnessIndex===ctData['editionWitnessIndex']) {
+      // find CT column that refers to this token
+      let ctColumnIndex = ctData['collationMatrix'][witnessIndex].indexOf(tokenIndex)
+      if (ctColumnIndex === -1) {
+        // no reference to this token in collation table, so nothing to do
+        return ctData
+      }
+      return this.fixReferencesToEmptyTokensInEditionWitness(ctData, ctColumnIndex)
+    }
+    return ctData
+  }
+
+  /**
+   * Fixes references to empty token in the editionWitness
+   * @param ctData
+   * @param ctColumnIndex the CT column, if -1, looks into all columns
+   */
+  static fixReferencesToEmptyTokensInEditionWitness(ctData, ctColumnIndex = -1) {
+    if (ctData.type !== CollationTableType.EDITION){
+      return ctData
+    }
+    let editionWitnessIndex = ctData['editionWitnessIndex']
+    let ctRow = ctData['collationMatrix'][editionWitnessIndex]
+    let editionWitnessTokens = ctData['witnesses'][editionWitnessIndex]['tokens']
+    let ctColumnStart = 0
+    let ctColumnEnd = ctRow.length -1
+    if (ctColumnIndex >= 0) {
+      ctColumnStart = ctColumnIndex
+      ctColumnEnd = ctColumnIndex
+    }
+
+    console.log(`Fixing references to empty tokens from column ${ctColumnStart} to ${ctColumnEnd}`)
+
+    for (let column = ctColumnStart; column < ctRow.length && column <= ctColumnEnd; column++) {
+      if (editionWitnessTokens[ctRow[column]].tokenType !== WitnessTokenType.EMPTY) {
+        //console.log(`Edition witness at ${column} (index ${ctRow[column]} is not empty (type =  ${editionWitnessTokens[ctRow[column]].tokenType}) `)
+        continue
+      }
+      console.log(`Edition witness token is empty at column ${column}`)
+      ctData['customApparatuses'].forEach( (app) => {
+        app.entries = app.entries.map((entry) => {
+          if (entry.from !== entry.to) {
+            // the default action for entries associated with a range of columns
+            // in which one of the ends of the range is an empty token is to
+            // shrink the range
+            if (entry.from === column) {
+              // find the next non-empty token in the range
+              let newFrom = -1
+              for (let j = entry.from+1; j <= entry.to; j++) {
+                if (ctRow[j] !== -1 && editionWitnessTokens[ctRow[j]].type !== WitnessTokenType.EMPTY) {
+                  newFrom = j
+                  break
+                }
+              }
+              if (newFrom !== -1) {
+                console.warn(`Changed entry.from index in apparatus '${app.type}' to non-empty token. Before: ${entry.from}, after: ${newFrom}`)
+                console.log(entry)
+                entry.from = newFrom
+              } else {
+                // mark the entry so that the filter below deletes it
+                entry['toDelete'] = true
+              }
+            }
+            if (entry.to === column) {
+              // find the next non-empty token in the range
+              let newTo = -1
+              for (let j = entry.to-1; j >= entry.from; j--) {
+                if (ctRow[j] !== -1 && editionWitnessTokens[ctRow[j]].type !== WitnessTokenType.EMPTY) {
+                  newTo = j
+                  break
+                }
+              }
+              if (newTo !== -1) {
+                console.warn(`Changed entry.to index in apparatus '${app.type}' to non-empty token. Before: ${entry.to}, after: ${newTo}`)
+                console.log(entry)
+                entry.to = newTo
+              } else {
+                // mark the entry so that the filter below deletes it
+                entry['toDelete'] = true
+              }
+            }
+          }
+          return entry
+        }).filter( (entry) => {
+          // remove entries marked for deletion
+          if (entry['toDelete'] !== undefined && entry['toDelete']) {
+            console.warn(`Removing multi-column custom apparatus entry in '${app.type}' with an end of the range referring to empty token  (ctCol ${column})`)
+            console.log(entry)
+            return false
+          }
+          // remove single-column entries that refer to the token
+          if (entry.from === column || entry.to === column) {
+            console.warn(`Removing single-column custom apparatus entry in '${app.type}' referring to empty token  (ctCol ${column})`)
+            console.log(entry)
+            return false
+          }
+          return true
+        })
+      })
+    }
+
+    return ctData
+  }
+
+
+  /**
    * Returns an array with the given witness tokens as they are laid out
    * in the collation table, replacing empty references with empty tokens
    *
@@ -498,7 +612,7 @@ export class CtData  {
         // nothing to do
         return ctData
       }
-      // create a new entry to add the disable sub entry
+      // create a new entry to add the disabled sub entry
       let newEntry = new ApparatusEntry()
       newEntry.from = ctFrom
       newEntry.to = ctTo
@@ -532,7 +646,7 @@ export class CtData  {
           ctData['customApparatuses'][apparatusIndex].entries.splice(entryIndex, 1)
         }
       }
-      // there's already a disable entry, so nothing to do if needs to be disabled
+      // there's already a disabled entry, so nothing to do
     }
     return ctData
   }
@@ -648,7 +762,7 @@ export class CtData  {
       aggregatedPost = aggregatedPost.concat(tokenPost)
       let tokenIndexRef = tokenRefArray.indexOf(i)
       if (tokenIndexRef !== -1) {
-        // token i is in the collation table!
+        // token is in the collation table!
         resultingArray[i] = { post: aggregatedPost }
         aggregatedPost = []
       }
@@ -664,7 +778,7 @@ export class CtData  {
       aggregatedPre = aggregatedPre.concat(tokenPre)
       let tokenIndexRef = tokenRefArray.indexOf(i)
       if (tokenIndexRef !== -1) {
-        // token i is in the collation table!
+        // token is in the collation table!
         resultingArray[i]['pre'] = aggregatedPre
         aggregatedPre = []
       }

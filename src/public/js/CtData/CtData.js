@@ -405,6 +405,44 @@ export class CtData  {
     return ctData
   }
 
+  static fixDuplicatedEntriesInCustomApparatuses(ctData) {
+    if (ctData.type !== CollationTableType.EDITION){
+      return ctData
+    }
+    ctData['customApparatuses'].forEach( (app, appIndex) => {
+      let entryCounts = []
+      app.entries.forEach( (entry, entryIndex) => {
+        let key = `${entry.from}_${entry.to}`
+        if (entryCounts[key] === undefined) {
+          entryCounts[key] = { from: entry.from, to: entry.to, indexes: [ entryIndex]}
+        } else {
+          entryCounts[key].indexes.push(entryIndex)
+        }
+      })
+      let entriesToDelete = []
+      Object.keys(entryCounts).forEach( (ecKey) => {
+        let ec = entryCounts[ecKey]
+        if (ec.indexes.length > 1) {
+          // duplicated entry
+          console.log(`Duplicated entry in custom apparatus '${app.type}' from ${ec.from} to ${ec.to}, indexes ${ec.indexes.join(', ')}`)
+          // remove all but the last entry
+          for (let i = 0; i < ec.indexes.length-1; i++) {
+            console.log(`... entry ${ec.indexes[i]} will be deleted`)
+            entriesToDelete.push(ec.indexes[i])
+          }
+        }
+      })
+      if (entriesToDelete.length > 0) {
+        ctData['customApparatuses'][appIndex].entries = ctData['customApparatuses'][appIndex].entries.filter( (entry, entryIndex) => {
+          return entriesToDelete.indexOf(entryIndex) === -1
+        })
+      }
+    })
+
+    return ctData
+
+  }
+
 
   /**
    * Returns an array with the given witness tokens as they are laid out

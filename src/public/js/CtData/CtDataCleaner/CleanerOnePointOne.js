@@ -98,41 +98,8 @@ export class CleanerOnePointOne extends CtDataCleaner{
     })
 
     ctData = CtData.fixReferencesToEmptyTokensInEditionWitness(ctData)
+    ctData = CtData.fixDuplicatedEntriesInCustomApparatuses(ctData)
 
-    // FILTER OUT entries associated with empty edition witness tokens
-    // Apparatus entries can only be attached to actual main text, that is
-    // to edition witness tokens containing some text. The possibly
-    // confusing case is addition entries, which are generated based on the
-    // fact that in a given collation table column there is no text in
-    // the edition witness but there is some in the other witnesses. Addition
-    // entries, however, are ultimately associated with the first word in the
-    // main text before the addition.
-    // There could be entries associated with empty edition witness tokens
-    // simply because the user deleted main text.
-
-    // let editionWitnessTokens = ctData['witnesses'][ctData['editionWitnessIndex']].tokens
-    // let ctTableRow = ctData['collationMatrix'][ctData['editionWitnessIndex']]
-    // for (let ai = 0; ai < ctData['customApparatuses'].length; ai++) {
-    //   let appType = ctData['customApparatuses'][ai].type
-    //   ctData['customApparatuses'][ai].entries =
-    //     ctData['customApparatuses'][ai].entries.filter( (entry, ei) => {
-    //       let fromTokenIndex = ctTableRow[entry.from]
-    //       let toTokenIndex = ctTableRow[entry.to]
-    //       let allEmpty = true
-    //       for (let i = fromTokenIndex; i <=toTokenIndex; i++) {
-    //         if (editionWitnessTokens[i].tokenType !== 'empty') {
-    //           allEmpty = false
-    //           break
-    //         }
-    //       }
-    //       if (allEmpty) {
-    //         console.warn(`Filtering out custom apparatus entry associated with empty edition witness tokens app '${appType}' entry ${ei}: ${fromTokenIndex} to ${toTokenIndex}`)
-    //         console.log(entry)
-    //         return false
-    //       }
-    //       return true
-    //     })
-    // }
     return ctData
   }
 }

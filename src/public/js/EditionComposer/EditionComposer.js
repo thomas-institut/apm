@@ -26,7 +26,7 @@ import { EditableTextField } from '../widgets/EditableTextField'
 
 // utilities
 import * as Util from '../toolbox/Util.mjs'
-import { capitalizeFirstLetter} from '../toolbox/Util.mjs'
+import { capitalizeFirstLetter, deepCopy } from '../toolbox/Util.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 
 // Normalizations
@@ -241,7 +241,8 @@ export class EditionComposer {
       onError: (msg) => { this._setError(`${msg} (Main Text Panel)`)},
       onConfirmMainTextEdit: this.genOnConfirmMainTextEdit(),
       onCtDataChange: this.genOnCtDataChange('mainTextPanel'),
-      editApparatusEntry: (apparatusIndex, mainTextFrom, mainTextTo) => { this.editApparatusEntry(apparatusIndex, mainTextFrom, mainTextTo)}
+      editApparatusEntry: (apparatusIndex, mainTextFrom, mainTextTo) => { this.editApparatusEntry(apparatusIndex, mainTextFrom, mainTextTo)},
+      editionWitnessTokenNormalizer: this.genEditionWitnessTokenNormalizer()
     })
 
     this.techSupportPanel = new TechSupportPanel({
@@ -514,6 +515,27 @@ export class EditionComposer {
     this.collationTablePanel.updateCtData(this.ctData, 'EditionComposer')
     this.editionPreviewPanel.updateData(this.ctData, this.edition)
     this.witnessInfoPanel.updateCtData(this.ctData, updateWitnessInfo)
+  }
+
+  genEditionWitnessTokenNormalizer() {
+    return (token) => this.applyNormalizationsToWitnessToken(token)
+  }
+
+  applyNormalizationsToWitnessToken(token) {
+    if (token.tokenType !== WitnessTokenType.WORD) {
+      return token
+    }
+    let newToken = deepCopy(token)
+    if (this.ctData['automaticNormalizationsApplied'].length !== 0) {
+      // apply normalizations for this token
+      let norm = this.normalizerRegister.applyNormalizerList(this.ctData['automaticNormalizationsApplied'], token.text)
+      if (norm !== token.text) {
+        newToken['normalizedText'] = norm
+        newToken['normalizationSource'] = NormalizationSource.COLLATION_EDITOR_AUTOMATIC
+      }
+    }
+
+    return newToken
   }
 
 

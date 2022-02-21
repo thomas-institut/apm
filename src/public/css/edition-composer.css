@@ -281,6 +281,36 @@ div.add-entry-dropdown a.dropdown-item {
     font-size: 0.8rem;
 }
 
+div.main-text-with-changes {
+    margin-bottom: 2rem;
+}
+
+div.main-text-with-changes .deleted {
+    color: red;
+    text-decoration: line-through;
+}
+
+div.main-text-with-changes .replaced {
+    color: lightcoral;
+    text-decoration: line-through;
+}
+
+div.main-text-with-changes .replacement {
+    color: blue;
+}
+
+div.main-text-with-changes .replace-sign {
+    color: silver;
+}
+
+div.main-text-with-changes .added {
+    color: blue;
+}
+
+div#text-editor-info {
+    margin-top: 2rem;
+}
+
 /* Collation Table Panel */
 
 #collation-table .panel-content {

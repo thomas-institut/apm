@@ -26,20 +26,25 @@ import { QuillDeltaConverter } from './QuillDeltaConverter'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory'
 import Superscript from './QuillBlots/Superscript'
 
-const simpleFormats = [ 'bold', 'italic', 'small', 'superscript']
+const simpleFormats = [
+  'bold',
+  'italic',
+  // 'small',
+  // 'superscript'
+]
 
 const buttons = {
   bold: { icon: '<i class="bi bi-type-bold"></i>' , title: 'Bold'},
   italic: { icon: '<i class="bi bi-type-italic"></i>' , title: 'Italic'},
-  small: { icon: '<small class="fte-icon">S</small>', title: 'Small Font'},
-  superscript: { icon: '<small class="fte-icon">x<sup>2</sup>', title: 'Superscript'}
+  // small: { icon: '<small class="fte-icon">S</small>', title: 'Small Font'},
+  // superscript: { icon: '<small class="fte-icon">x<sup>2</sup>', title: 'Superscript'}
 }
 
 
 /**
  * A one-line editor for free text
  */
-export class EditionFreeTextEditor {
+export class EditionMainTextEditor {
 
   constructor (options) {
     let oc = new OptionsChecker({

@@ -339,7 +339,7 @@ export class CtData  {
         //console.log(`Edition witness at ${column} (index ${ctRow[column]} is not empty (type =  ${editionWitnessTokens[ctRow[column]].tokenType}) `)
         continue
       }
-      console.log(`Edition witness token is empty at column ${column}`)
+      // console.log(`Edition witness token is empty at column ${column}`)
       ctData['customApparatuses'].forEach( (app) => {
         app.entries = app.entries.map((entry) => {
           if (entry.from !== entry.to) {

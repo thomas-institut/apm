@@ -34,13 +34,16 @@ import * as EditionMainTextTokenType from '../Edition/MainTextTokenType'
 import { Edition } from '../Edition/Edition'
 import { HtmlRenderer } from '../FmtText/Renderer/HtmlRenderer'
 import { PanelWithToolbar } from './PanelWithToolbar'
-import { prettyPrintArray, varsAreEqual } from '../toolbox/ArrayUtil'
+import { arraysAreEqual, prettyPrintArray, pushArray, varsAreEqual } from '../toolbox/ArrayUtil'
 import { CtData } from '../CtData/CtData'
 
-import { EditionFreeTextEditor } from './EditionFreeTextEditor'
 import {FmtTextFactory} from '../FmtText/FmtTextFactory'
 import {FmtTextTokenFactory} from '../FmtText/FmtTextTokenFactory'
 import { capitalizeFirstLetter, deepCopy } from '../toolbox/Util.mjs'
+import { EditionMainTextEditor } from './EditionMainTextEditor'
+import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'
+import * as MyersDiff from '../toolbox/MyersDiff.mjs'
+import * as WitnessTokenType from '../Witness/WitnessTokenType'
 
 const EDIT_MODE_OFF = 'off'
 const EDIT_MODE_TEXT = 'text'
@@ -50,6 +53,7 @@ const EDIT_MODE_TEXT_BETA = 'text_beta'
 const typesetInfoDelay = 200
 
 const betaEditorDivId = 'text-editor-beta'
+const betaEditorInfoDiv = 'text-editor-info'
 
 const icons = {
   addEntry: '<i class="bi bi-plus-lg"></i>',
@@ -76,6 +80,7 @@ export class MainTextPanel extends PanelWithToolbar {
         }
       },
       onCtDataChange: { type: 'function', default: doNothing},
+      editionWitnessTokenNormalizer: { type: 'function', default: (token) => { return token}},
       editApparatusEntry : {
         // function that opens an apparatus entry editor, provided by EditionComposer
         type: 'function',
@@ -100,6 +105,8 @@ export class MainTextPanel extends PanelWithToolbar {
     this.tokenIndexOne = -1
     this.tokenIndexTwo = -1
     this.lastTypesetinfo = null
+
+    this.htmlRenderer = new HtmlRenderer({})
   }
 
   /**
@@ -364,7 +371,7 @@ export class MainTextPanel extends PanelWithToolbar {
 
   _setupTextEditMode() {
     $(this.getContentAreaSelector()).html(this._getMainTextBetaEditor())
-    this.freeTextEditor = new EditionFreeTextEditor({
+    this.freeTextEditor = new EditionMainTextEditor({
       containerSelector: `#${betaEditorDivId}`,
       lang: this.lang,
       onChange: this._genOnChangeMainTextFreeTextEditor(),
@@ -372,21 +379,118 @@ export class MainTextPanel extends PanelWithToolbar {
     })
 
     this.freeTextEditor.setText( this._convertMainTextToFmtText(), true)
+    this.betaEditorInfoDiv = $(`#${betaEditorInfoDiv}`).html('No changes')
     this.commitedFreeText = deepCopy(this.freeTextEditor.getFmtText())
     $(`${this.containerSelector} a.text-edit-revert-btn`).on('click', this._genOnClickTextEditRevertChanges())
     $(`${this.containerSelector} a.text-edit-commit-btn`).on('click', this._genOnClickTextEditCommitChanges())
     this.verbose && console.log(`Now in beta mode`)
   }
 
+  __getWitnessTokenHtml(token) {
+    if (token === null || token === undefined || token.type === WitnessTokenType.EMPTY) {
+      return ''
+    }
+
+    if (token.type === WitnessTokenType.WHITESPACE) {
+      return ' '
+    }
+
+    if (token.fmtText !== undefined) {
+      return this.htmlRenderer.render(token.fmtText)
+    }
+    return token.text
+  }
+
+  _genMainTextWithChanges(currentWitnessTokens, changeList) {
+
+    const replaceSign = "<span class=replace-sign'>|</span>"
+    let html = ''
+
+    let preAdditions = changeList.filter( (change) => { return change.index === -1})
+    preAdditions.forEach( (change) => {
+      if (change.change !== 'add') {
+        console.warn(`Found a change before the first CT column that is not an addition`)
+        console.log(change)
+      } else {
+        html += `<span class='added'>${this.__getWitnessTokenHtml(change.newToken)}</span> `
+      }
+    })
+
+    currentWitnessTokens.forEach ( (token, index) => {
+      let changesForToken = changeList.filter( (change) => {
+        return change.index === index
+      })
+      if (changesForToken.length === 0) {
+        html += `${this.__getWitnessTokenHtml(token)} `
+      } else {
+        if (changesForToken.filter( (change) => { return change.change === 'replace' || change.change === 'delete'}).length === 0) {
+          // the token is neither replaced nor deleted
+          html += `${this.__getWitnessTokenHtml(token)} `
+        }
+
+        changesForToken.forEach( (change) => {
+          switch(change.change) {
+            case 'replace':
+              if (token.text === change.newToken.text) {
+                // a change in format only
+                html += `<span class="replacement">${this.__getWitnessTokenHtml(change.newToken)}</span> `
+              } else {
+                html += `<span class='replaced'>${this.__getWitnessTokenHtml(token)}</span>${replaceSign}<span class="replacement">${this.__getWitnessTokenHtml(change.newToken)}</span> `
+              }
+              break
+
+            case 'delete':
+              html += `<span class='deleted'>${this.__getWitnessTokenHtml(token)}</span> `
+              break
+
+            case 'add':
+              html += `<span class='added'>${this.__getWitnessTokenHtml(change.newToken)}</span> `
+          }
+        })
+      }
+
+
+
+    })
+    return html
+  }
+
   _genOnChangeMainTextFreeTextEditor() {
     return () => {
-      this.debug && console.log(`Change in text detected`)
       if (!varsAreEqual(this.commitedFreeText, this.freeTextEditor.getFmtText())) {
         this.textEditRevertDiv.removeClass('hidden')
         this.textEditCommitDiv.removeClass('hidden')
+        console.log(`Changes in editor`)
+        let newFmtText = this.freeTextEditor.getFmtText()
+        let currentWitnessTokens = this.ctData['witnesses'][this.ctData['editionWitnessIndex']].tokens
+        let witnessTokens = this.__fmtTextToEditionWitnessTokens(newFmtText)
+        console.log(`Witness tokens from editor`)
+        console.log(witnessTokens)
+
+        let changes = this._getChangesInBetaEditor(currentWitnessTokens, witnessTokens)
+        console.log(changes)
+        let changeListHtml = changes.map( (change) => {
+          switch( change.change) {
+            case 'replace':
+              return `${change.index+1}: ${this.__getWitnessTokenHtml(change.currentToken)} &rarr; ${this.__getWitnessTokenHtml(change.newToken)}`
+
+            case 'add':
+              if (change.index === -1) {
+                return `0: <em>add</em> ${this.__getWitnessTokenHtml(change.newToken)}`
+              }
+              return ` ${change.index+1}: ${this.__getWitnessTokenHtml(change.currentToken)} <em>add</em> ${this.__getWitnessTokenHtml(change.newToken)}`
+
+            case 'delete':
+              return `${change.index+1}: ${this.__getWitnessTokenHtml(change.currentToken)} &rarr; <em>empty</em>`
+          }
+        }).map( (changeHtml) => { return `<li>${changeHtml}</li>`}).join('')
+        let mainTextWithChangesHtml = this._genMainTextWithChanges(currentWitnessTokens, changes)
+        this.betaEditorInfoDiv.removeClass('hidden').html(`<h4>Revised Text</h4><div class="main-text-with-changes">${mainTextWithChangesHtml}</div><h4>Collation Table Changes</h4><ul>${changeListHtml}</ul>`)
+
       } else {
         this.textEditRevertDiv.addClass('hidden')
         this.textEditCommitDiv.addClass('hidden')
+        this.betaEditorInfoDiv.html('No changes')
       }
     }
   }
@@ -397,7 +501,23 @@ export class MainTextPanel extends PanelWithToolbar {
       this.freeTextEditor.setText( this.commitedFreeText, true)
       this.textEditRevertDiv.addClass('hidden')
       this.textEditCommitDiv.addClass('hidden')
+      this.betaEditorInfoDiv.html('No changes')
     }
+  }
+
+  _getChangesInBetaEditor(currentWitnessTokens, newWitnessTokens) {
+    currentWitnessTokens = currentWitnessTokens
+      .map( (token, index) => {
+        // keep the original index
+        token['originalIndex'] = index
+        return token
+      })
+      .filter ( (token) => {
+        return token.tokenType !== 'empty'
+      })
+
+    let editScript = this.__getEditScript(currentWitnessTokens, newWitnessTokens)
+    return this.__getChangeList(currentWitnessTokens, newWitnessTokens, editScript)
   }
 
   _genOnClickTextEditCommitChanges() {
@@ -410,8 +530,201 @@ export class MainTextPanel extends PanelWithToolbar {
         this.textEditCommitDiv.addClass('hidden')
         return
       }
-      this.verbose && console.log(`There are changes, now it's for real`)
+      this.verbose && console.log(`There are changes, now it's almost for real`)
     }
+  }
+
+  __getChangeList(oldTokens, newTokens, editScript) {
+
+    let state = 0
+    let changeList = []
+    let lastKeptOrReplaced = -1
+    let deleteStack = []
+
+
+    editScript.forEach( (editScriptItem) => {
+      switch (state) {
+        case 0:
+          switch (editScriptItem.command) {
+            case 0:
+              // nothing to do
+              // this.verbose && console.log(`KEEP command in edit script (state = 0)`)
+              // this.verbose && console.log(editScriptItem)
+              lastKeptOrReplaced = editScriptItem.index
+              break
+
+            case 1:
+              // addition
+              this.verbose && console.log(`ADD command in edit script (state = 0)`)
+              this.verbose && console.log(editScriptItem)
+              changeList.push({
+                change: 'add',
+                index: lastKeptOrReplaced,
+                currentToken: lastKeptOrReplaced >=0 ? oldTokens[lastKeptOrReplaced] : null,
+                index2: editScriptItem.seq,
+                newToken: newTokens[editScriptItem.seq]
+              })
+              break
+
+            case -1:
+              // a delete, but it could be a replace
+              this.verbose && console.log(`DEL command in edit script (state = 0)`)
+              this.verbose && console.log(editScriptItem)
+              this.verbose && console.log(`-- adding item to the empty deleteStack`)
+              deleteStack.push(editScriptItem.index)
+              state = 1
+              break
+          }
+          break
+
+        case 1:
+          switch (editScriptItem.command) {
+            case 0:
+              // a keep command
+              this.verbose && console.log(`KEEP command in edit script (state = 1)`)
+              this.verbose && console.log(editScriptItem)
+              this.verbose && console.log(`-- emptying deleteStack, which has ${deleteStack.length} item(s)`)
+              while (deleteStack.length > 0) {
+                let deleteIndex = deleteStack.pop()
+                changeList.push({
+                  change: 'delete',
+                  index: oldTokens[deleteIndex].originalIndex,
+                  currentToken: oldTokens[deleteIndex]})
+              }
+              lastKeptOrReplaced = editScriptItem.index
+              state = 0
+              break
+
+            case -1:
+              // another delete, previous command was a delete, but will keep
+              // looking for a replace
+              this.verbose && console.log(`DEL command in edit script (state = 1)`)
+              this.verbose && console.log(editScriptItem)
+              deleteStack.push(editScriptItem.index)
+              this.verbose && console.log(`-- adding index to the deleteStack, which now has ${deleteStack.length} items`)
+              break
+
+            case 1:
+              // an ADD, match it with the first delete in the stack
+              this.verbose && console.log(`ADD command in edit script (state = 1)`)
+              this.verbose && console.log(editScriptItem)
+              this.verbose && console.log(`-- this is a REPLACE actually`)
+              let firstDeletedIndex = deleteStack.shift()
+              changeList.push({
+                change: 'replace',
+                index: oldTokens[firstDeletedIndex].originalIndex,
+                currentToken: oldTokens[firstDeletedIndex],
+                index2: editScriptItem.seq,
+                newToken: newTokens[editScriptItem.seq]
+              })
+              lastKeptOrReplaced = firstDeletedIndex
+              if (deleteStack.length === 0) {
+                this.verbose && console.log(`-- deleteStack is now empty`)
+                state = 0
+              } else {
+                this.verbose && console.log(`-- deleteStack still has ${deleteStack.length} item(s)`)
+              }
+              break
+          }
+      }
+    })
+    // empty the deleteStack
+    if (deleteStack.length > 0) {
+      this.verbose && console.log(`End of script with non-empty deleteStack, flushing ${deleteStack.length} item(s)`)
+      while (deleteStack.length > 0) {
+        let deleteIndex = deleteStack.pop()
+        changeList.push({
+          change: 'delete',
+          index: oldTokens[deleteIndex].originalIndex,
+          currentToken: oldTokens[deleteIndex]})
+      }
+    }
+
+    // now fix the indexes to make them correspond to the original token array
+    changeList = changeList.map ( (change) => {
+      if (change.index !== -1) {
+        change.index = change.currentToken.originalIndex
+      }
+      return change
+    })
+
+    return changeList
+  }
+
+  __getEditScript(oldTokens, newTokens) {
+    const attributesToCompare = [ 'fontWeight', 'fontStyle']
+    return MyersDiff.calculate(oldTokens, newTokens, function(a,b) {
+      let areEqual = true
+      if (a.tokenType !== b.tokenType) {
+        return false
+      }
+      if (a.text !== b.text) {
+        return false
+      }
+      if (a.fmtText === undefined && b.fmtText === undefined) {
+        return true
+      }
+
+      if (a.fmtText === undefined && b.fmtText !== undefined) {
+        return false
+      }
+      if (a.fmtText !== undefined && b.fmtText === undefined) {
+        return false
+      }
+
+      if (a.fmtText !== undefined && b.fmtText !== undefined) {
+        if (!arraysAreEqual(a.fmtText, b.fmtText, (x, y) => {
+          let fmtTokensAreEqual = true
+          attributesToCompare.forEach((attribute) => {
+            if (x[attribute] !== y[attribute]) {
+              fmtTokensAreEqual = false
+            }
+          })
+        })) {
+          return false
+        }
+      }
+      return true
+    })
+  }
+
+  __fmtTextToEditionWitnessTokens(fmtText) {
+    const attributesToCopy = [ 'fontWeight', 'fontStyle']
+    let witnessTokens = []
+    fmtText.forEach( (fmtTextToken) => {
+      if (fmtTextToken.type !== 'text') {
+        // ignore all non text tokens
+        return
+      }
+
+      let tmpWitnessTokens = WitnessTokenStringParser.parse(fmtTextToken.text).map( (witnessToken) => {
+        let hasFormats = false
+        let tokenFmtTokens = FmtTextFactory.fromString(witnessToken.text).map( (token) => {
+          attributesToCopy.forEach( (attribute) => {
+            if (fmtTextToken[attribute] !== undefined && fmtTextToken[attribute]!== '' ) {
+              hasFormats = true
+              token[attribute] = fmtTextToken[attribute]
+            }
+          })
+          return token
+        })
+
+        if (hasFormats) {
+          // only add fmtText when there is a format!
+          witnessToken.fmtText = tokenFmtTokens
+        }
+
+        return witnessToken
+      })
+
+      pushArray(witnessTokens, tmpWitnessTokens)
+    })
+    return witnessTokens.map( (token) => {
+      token.tokenClass = 'edition'
+      // apply normalizations
+      token = this.options.editionWitnessTokenNormalizer(token)
+      return token
+    })
   }
 
 
@@ -785,7 +1098,7 @@ export class MainTextPanel extends PanelWithToolbar {
   }
 
   _getMainTextBetaEditor() {
-    return `<div id="${betaEditorDivId}"/>`
+    return `<div id="${betaEditorDivId}">Editor will be here</div><div id="${betaEditorInfoDiv}">Info will be here </div>`
   }
 
   _getMainTextHtmlVersion() {

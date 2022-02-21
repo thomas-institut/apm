@@ -26,7 +26,7 @@ import { CtData } from '../CtData/CtData'
 import { onClickAndDoubleClick } from '../toolbox/DoubleClick'
 import { FmtText } from '../FmtText/FmtText'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory'
-import { EditionFreeTextEditor } from './EditionFreeTextEditor'
+import { ApparatusEntryTextEditor } from './ApparatusEntryTextEditor'
 import { capitalizeFirstLetter, deepCopy, removeExtraWhiteSpace } from '../toolbox/Util.mjs'
 import { varsAreEqual } from '../toolbox/ArrayUtil'
 import * as SubEntryType from '../Edition/SubEntryType'
@@ -453,7 +453,7 @@ export class ApparatusPanel extends  PanelWithToolbar {
     this.cancelButton = $(`${formSelector} .cancel-btn`)
     this.cancelButton.on('click', this._genOnClickApparatusEntryCancelButton())
     // Init free text editor
-    this.freeTextEditor = new EditionFreeTextEditor({
+    this.freeTextEditor = new ApparatusEntryTextEditor({
       containerSelector: `${formSelector} div.free-text-entry-div`,
       lang: this.edition.lang,
       onChange: this._genOnChangeFreeTextEditor(),

@@ -24,7 +24,7 @@ import { ConfirmDialog, DIALOG, INLINE, EXTRA_LARGE_DIALOG } from '../pages/comm
 import { doNothing } from '../toolbox/FunctionUtil'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { ApparatusCommon } from './ApparatusCommon'
-import { EditionFreeTextEditor } from './EditionFreeTextEditor'
+import { ApparatusEntryTextEditor } from './ApparatusEntryTextEditor'
 import { varsAreEqual } from '../toolbox/ArrayUtil'
 import { FmtTextFactory} from '../FmtText/FmtTextFactory'
 import { MultiToggle } from '../widgets/MultiToggle'
@@ -110,7 +110,7 @@ export class ApparatusEntryInput {
     this.dialog.hideAcceptButton()
 
     // Init free text editor
-    this.freeTextEditor = new EditionFreeTextEditor({
+    this.freeTextEditor = new ApparatusEntryTextEditor({
       containerSelector: `${this.options.containerSelector} div.free-text-entry-div`,
       lang: this.options.lang,
       onChange: () =>  { this._updateAcceptButton() },

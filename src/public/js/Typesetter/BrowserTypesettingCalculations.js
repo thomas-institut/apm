@@ -17,6 +17,9 @@
  */
 
 
+import { StringCounter } from '../toolbox/StringCounter'
+import { TEXT } from '../Edition/MainTextTokenType'
+
 export function getTypesettingInfo(containerSelector, classPrefix, tokens) {
   let yPositions = []
   let tokensWithInfo = tokens.map( (t, i) => {
@@ -35,7 +38,24 @@ export function getTypesettingInfo(containerSelector, classPrefix, tokens) {
     t.lineNumber = getLineNumber(t.y, lineMap)
     return t
   })
-  return { yPositions: uniqueYPositions, tokens: tokensWithFullInfo, lineMap: lineMap }
+  // get the occurrence number in each line
+  let currentLine = -1
+  let tokensWithFullInfo2 = []
+  let occurrenceInLineCounter = new StringCounter()
+  tokensWithFullInfo.forEach( (t) => {
+    if (t.lineNumber !== currentLine) {
+      occurrenceInLineCounter.reset()
+      currentLine = t.lineNumber
+    }
+    if (t.type ===TEXT ) {
+      let text = t.getPlainText()
+      occurrenceInLineCounter.addString(text)
+      t.occurrenceInLine = occurrenceInLineCounter.getCount(text)
+    }
+    tokensWithFullInfo2.push(t)
+  })
+
+  return { yPositions: uniqueYPositions, tokens: tokensWithFullInfo2, lineMap: lineMap }
 
 }
 

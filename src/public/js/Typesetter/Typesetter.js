@@ -68,6 +68,7 @@ import { LanguageDetector } from '../toolbox/LanguageDetector'
 import { isRtl } from '../toolbox/Util.mjs'
 
 import * as VerticalAlign from '../FmtText/VerticalAlign'
+import { StringCounter } from '../toolbox/StringCounter'
 
 export class Typesetter {
   
@@ -173,6 +174,7 @@ export class Typesetter {
     // 2. measure line, count glue and set glue initial width
     let measuredLineWidth = 0
     let glueTokens = 0
+    let textTokensCounter = new StringCounter()
     let tokensWithInitialGlue = tokens.map( (token) => {
       if (token.width !== undefined && token.width === 0) {
         // skip over invisible tokens
@@ -314,7 +316,9 @@ export class Typesetter {
       // text token
       let newToken = token
       let newX = this.__advanceX(currentX, token.width, rightToLeft)
+      textTokensCounter.addString(token.text)
       newToken.lineNumber = lineNumber
+      newToken.occurrenceInLine = textTokensCounter.getCount(token.text)
       newToken.deltaX = rightToLeft === isRtl(token.lang) ? currentX : newX
       newToken.deltaY = posY
       newToken.status = 'set'

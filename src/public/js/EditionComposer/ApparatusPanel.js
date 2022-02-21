@@ -899,12 +899,26 @@ export class ApparatusPanel extends  PanelWithToolbar {
     return  $(`${this.containerSelector} .clear-selection-btn`)
   }
 
+  _getOccurrenceInLineForApparatusEntry(apparatusEntry, tokensWithTypesetInfo) {
+    if(apparatusEntry.from !== apparatusEntry.to) {
+      return 1
+    }
+    if (tokensWithTypesetInfo[apparatusEntry.from] === undefined) {
+      return 1
+    }
+    return tokensWithTypesetInfo[apparatusEntry.from].occurrenceInLine
+  }
+
   _genApparatusHtml(mainTextTokensWithTypesettingInfo) {
+    console.log(`Generating Apparatus html`)
+    console.log(mainTextTokensWithTypesettingInfo)
+    console.log(mainTextTokensWithTypesettingInfo.tokens.filter( (t) => { return t.type === 'text' && t.occurrenceInLine > 1}))
     let html = ''
 
     let lastLine = ''
     let sigla = this.edition.getSigla()
     let textDirectionMarker = this.edition.lang === 'la' ? '&lrm;' : '&rlm;'
+
     this.apparatus.entries.forEach( (apparatusEntry, aeIndex) => {
       html += `<span class="apparatus-entry apparatus-entry-${this.options.apparatusIndex}-${aeIndex}">`
       let currentLine
@@ -939,7 +953,14 @@ export class ApparatusPanel extends  PanelWithToolbar {
       let preLemmaSpan = preLemmaSpanHtml === '' ? '' : `<span class="pre-lemma">${preLemmaSpanHtml}</span> `
 
       let lemmaString = ApparatusCommon.getLemmaString(apparatusEntry.lemma, apparatusEntry.lemmaText)
-      let lemmaSpan = `<span class="lemma lemma-${this.options.apparatusIndex}-${aeIndex}">${lemmaString}</span>`
+
+      let lemmaNumberString = ''
+      let occurrenceInLine = this._getOccurrenceInLineForApparatusEntry(apparatusEntry, mainTextTokensWithTypesettingInfo.tokens)
+      if (occurrenceInLine > 1) {
+        lemmaNumberString = `<sup>${ApparatusCommon.getNumberString(occurrenceInLine, this.edition.lang)}</sup>`
+      }
+
+      let lemmaSpan = `<span class="lemma lemma-${this.options.apparatusIndex}-${aeIndex}">${lemmaString}${lemmaNumberString}</span>`
 
       let postLemmaSpan = ''
       if (apparatusEntry.postLemma !== '') {

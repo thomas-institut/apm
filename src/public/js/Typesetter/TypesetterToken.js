@@ -84,7 +84,8 @@ export class TypesetterToken {
     this.flagged = false
     this.text = ''
     this.lang = ''
-
+    this.lineNumber = 0
+    this.occurrenceInLine = 0
   }
 
   /**

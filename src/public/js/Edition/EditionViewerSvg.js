@@ -25,7 +25,6 @@ import * as MainTextTokenType from './MainTextTokenType'
 import { TypesetterTokenFactory } from '../Typesetter/TypesetterTokenFactory'
 import { TypesetterTokenRenderer } from '../FmtText/Renderer/TypesetterTokenRenderer'
 import { getTextDirectionForLang, removeExtraWhiteSpace } from '../toolbox/Util.mjs'
-import { NumeralStyles } from '../toolbox/NumeralStyles'
 import { pushArray } from '../toolbox/ArrayUtil'
 import { ApparatusCommon } from '../EditionComposer/ApparatusCommon'
 
@@ -241,10 +240,20 @@ export class EditionViewerSvg {
     if (isNaN(lineNumber)) {
       return lineNumber
     }
-    if (this.edition.lang === 'ar') {
-      return NumeralStyles.toDecimalArabic(lineNumber)
+    return ApparatusCommon.getNumberString(lineNumber, this.edition.lang)
+  }
+
+  __getLemmaOccurrenceInLineForApparatusEntry(entry, tsTokens, map) {
+    if (entry.from !== entry.to) {
+      // assume any group appears only once in the line
+      // TODO: deal with short groups that appear more than once in a line
+      return 1
     }
-    return NumeralStyles.toDecimalWestern(lineNumber)
+    if ( tsTokens[map[entry.from]] === undefined) {
+      return 1
+    }
+    return tsTokens[map[entry.from]].occurrenceInLine
+
   }
 
   /**
@@ -343,6 +352,7 @@ export class EditionViewerSvg {
         lineTtTokens.push(TypesetterTokenFactory.simpleText(this.options.entrySeparator, this.edition.lang))
         lineTtTokens.push(TypesetterTokenFactory.normalSpace())
         lineTtTokens.push(TypesetterTokenFactory.normalSpace())
+
       } else {
         if (aeIndex !== 0) {
           // insert a line separator between line numbers in all but the first line
@@ -378,7 +388,17 @@ export class EditionViewerSvg {
       }
 
       // lemma
-      ttTokens.push(TypesetterTokenFactory.simpleText(ApparatusCommon.getLemmaString(apparatusEntry.lemma, apparatusEntry.lemmaText)).setLang(this.edition.lang))
+      let lemmaString = ApparatusCommon.getLemmaString(apparatusEntry.lemma, apparatusEntry.lemmaText)
+
+      ttTokens.push(TypesetterTokenFactory.simpleText(lemmaString).setLang(this.edition.lang))
+
+
+      let occurrenceInLine = this.__getLemmaOccurrenceInLineForApparatusEntry(apparatusEntry, mainTextTypesetTokens, map)
+
+      if (occurrenceInLine > 1) {
+        ttTokens.push(TypesetterTokenFactory.simpleText(
+          ApparatusCommon.getNumberString(occurrenceInLine, this.edition.lang)).setVerticalAlign('superscript').setFontSize(0.8))
+      }
 
       // postLemma
       if (apparatusEntry.postLemma !== '') {

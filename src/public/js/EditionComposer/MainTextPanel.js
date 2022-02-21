@@ -485,7 +485,7 @@ export class MainTextPanel extends PanelWithToolbar {
           }
         }).map( (changeHtml) => { return `<li>${changeHtml}</li>`}).join('')
         let mainTextWithChangesHtml = this._genMainTextWithChanges(currentWitnessTokens, changes)
-        this.betaEditorInfoDiv.removeClass('hidden').html(`<h4>Revised Text</h4><div class="main-text-with-changes">${mainTextWithChangesHtml}</div><h4>Collation Table Changes</h4><ul>${changeListHtml}</ul>`)
+        this.betaEditorInfoDiv.removeClass('hidden').html(`<h4>Revisions</h4><div class="main-text-with-changes">${mainTextWithChangesHtml}</div><h4>Collation Table Changes</h4><ul>${changeListHtml}</ul>`)
 
       } else {
         this.textEditRevertDiv.addClass('hidden')

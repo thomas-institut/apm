@@ -227,7 +227,7 @@ div.apparatus {
 }
 
 .main-text.text-la {
-    font-size: 18px;
+    font-size: 1.1rem;
 }
 
 
@@ -283,6 +283,7 @@ div.add-entry-dropdown a.dropdown-item {
 
 div.main-text-with-changes {
     margin-bottom: 2rem;
+    font-size: 0.9rem;
 }
 
 div.main-text-with-changes .deleted {
@@ -397,6 +398,10 @@ div.aei-form div.form-footer {
 
 .ql-editor {
     font-size: 1rem;
+}
+
+.text-la .ql-editor {
+    font-size: 1.1rem;
 }
 
 .fte-toolbar button {

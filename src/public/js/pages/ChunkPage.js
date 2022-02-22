@@ -346,7 +346,7 @@ export class ChunkPage {
       <p>{{title}}
         &nbsp;&nbsp;&nbsp;
     <a role="button" title="Click to show/hide text" data-toggle="collapse" href="#text-{{witnessSystemId}}" aria-expanded="true" aria-controls="text-{{witnessSystemId}}">
-      <span id="texttoggle-{{id}}-{{lwid}}"><i class="fas fa-angle-right" aria-hidden="true"></i></span>
+      <span id="texttoggle-{{witnessSystemId}}"><i class="fas fa-angle-right" aria-hidden="true"></i></span>
     </a></p>
     </div>
     <div class="collapse" id="text-{{witnessSystemId}}">

@@ -29,12 +29,14 @@ export class CollapseToggleButton {
     this.visibleIconHtml = visibleIconHtml
     this.hiddenIconHtml = hiddenIconHtml
     if (this.visibleIconHtml === '' ) {
-      this.visibleIconHtml = '<i class="fas fa-angle-down" aria-hidden="true"></i>'
+      this.visibleIconHtml = '<i class="bi bi-chevron-down"></i>'
     }
     this.hiddenIconHtml = hiddenIconHtml
     if (this.hiddenIconHtml === '' ) {
-      this.hiddenIconHtml = '<i class="fas fa-angle-right" aria-hidden="true"></i>'
+      this.hiddenIconHtml = '<i class="bi bi-chevron-right"></i>'
     }
+
+    this.iconSpan.html(this.visibleIconHtml)
     
     this.collapseElement.on('show.bs.collapse', this.genOnShownFunction())
     this.collapseElement.on('hide.bs.collapse', this.genOnHiddenFunction())
@@ -43,16 +45,15 @@ export class CollapseToggleButton {
   }
   
   genOnShownFunction() {
-    let thisObject = this
-    return function () {
-      thisObject.iconSpan.html(thisObject.visibleIconHtml)
+    return () => {
+      this.iconSpan.html(this.visibleIconHtml)
     }
   }
   
   genOnHiddenFunction() {
     let thisObject = this
-    return function () {
-      thisObject.iconSpan.html(thisObject.hiddenIconHtml)
+    return () => {
+      this.iconSpan.html(this.hiddenIconHtml)
     }
   }
   

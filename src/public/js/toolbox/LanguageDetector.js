@@ -36,10 +36,21 @@ export class LanguageDetector {
       'he': /[\u0590-\u05FF]/gi,
     }
 
+    const punctuationRegex = /[.,;]/gi
+    const numbersRegex = /[0-9]/gi
+
     for (const [lang, regex] of Object.entries(regexes)) {
       // detect occurrences of lang in a word
       let matches = text.match(regex) || []
-      let score = matches.length / text.length
+      let numMatches = matches.length
+
+      if (lang === this.options.defaultLang) {
+        let punctuationMatches = text.match(punctuationRegex) || []
+        let numberMatches = text.match(numbersRegex) || []
+        numMatches = numMatches + punctuationMatches.length + numberMatches.length
+      }
+
+      let score =numMatches / text.length
 
       if (score) {
         // high percentage, return result
@@ -49,13 +60,12 @@ export class LanguageDetector {
         scores[lang] = score
       }
     }
-    // TODO: detect numbers and punctuation, add them to defaultLang score
 
     // not detected
     if (Object.keys(scores).length === 0)
       return this.options.defaultLang
 
-    // pick lang with highest percentage
+    // pick lang with the highest percentage
     return Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b)
   }
 }

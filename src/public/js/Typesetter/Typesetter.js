@@ -381,7 +381,7 @@ export class Typesetter {
 
     // 2. Process paragraphs
     let currentLine = 1
-    let langDetector = new LanguageDetector()
+    let langDetector = new LanguageDetector({defaultLang: this.options.lang})
     paragraphs.forEach( (tokenArray) => {
       let currentLineTokens = []
       let accLineWidth = 0

@@ -17,6 +17,7 @@
  */
 
 import {FmtTextFactory} from './FmtTextFactory'
+import { pushArray } from '../toolbox/ArrayUtil'
 
 /**
  *  FmtText is meant to be an output-independent and versatile representation of formatted text
@@ -44,5 +45,14 @@ export class FmtText {
     fmtText.forEach( (token, i) => {
       console.log(`Token ${i} is ${token.constructor.name}`)
     })
+  }
+
+  static concat(fmtText1, fmtText2) {
+    let realFmt1 = FmtTextFactory.fromAnything(fmtText1)
+    let realFmt2 = FmtTextFactory.fromAnything(fmtText2)
+    let newFmtText = []
+    pushArray(newFmtText, realFmt1)
+    pushArray(newFmtText, realFmt2)
+    return newFmtText
   }
 }

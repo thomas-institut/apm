@@ -23,9 +23,9 @@
  *  - Edition text and apparatus manipulation in a printed edition type user interface
  */
 
-import {OptionsChecker} from '@thomas-inst/optionschecker'
-import { getSingleIntIdFromClasses} from '../toolbox/UserInterfaceUtil'
-import {getTypesettingInfo} from '../Typesetter/BrowserTypesettingCalculations'
+import { OptionsChecker } from '@thomas-inst/optionschecker'
+import { getSingleIntIdFromClasses } from '../toolbox/UserInterfaceUtil'
+import { getTypesettingInfo } from '../Typesetter/BrowserTypesettingCalculations'
 import { doNothing, wait } from '../toolbox/FunctionUtil'
 import { MultiToggle } from '../widgets/MultiToggle'
 import { EditableTextField } from '../widgets/EditableTextField'
@@ -37,13 +37,15 @@ import { PanelWithToolbar } from './PanelWithToolbar'
 import { arraysAreEqual, prettyPrintArray, pushArray, varsAreEqual } from '../toolbox/ArrayUtil'
 import { CtData } from '../CtData/CtData'
 
-import {FmtTextFactory} from '../FmtText/FmtTextFactory'
-import {FmtTextTokenFactory} from '../FmtText/FmtTextTokenFactory'
+import { FmtTextFactory } from '../FmtText/FmtTextFactory'
+import { FmtTextTokenFactory } from '../FmtText/FmtTextTokenFactory'
 import { capitalizeFirstLetter, deepCopy } from '../toolbox/Util.mjs'
 import { EditionMainTextEditor } from './EditionMainTextEditor'
 import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'
 import * as MyersDiff from '../toolbox/MyersDiff.mjs'
 import * as WitnessTokenType from '../Witness/WitnessTokenType'
+import { WitnessToken } from '../Witness/WitnessToken'
+import { FmtText } from '../FmtText/FmtText'
 
 const EDIT_MODE_OFF = 'off'
 const EDIT_MODE_TEXT = 'text'
@@ -462,6 +464,8 @@ export class MainTextPanel extends PanelWithToolbar {
         this.textEditCommitDiv.removeClass('hidden')
         console.log(`Changes in editor`)
         let newFmtText = this.freeTextEditor.getFmtText()
+        console.log(`fmtText from editor`)
+        console.log(newFmtText)
         let currentWitnessTokens = this.ctData['witnesses'][this.ctData['editionWitnessIndex']].tokens
         let witnessTokens = this.__fmtTextToEditionWitnessTokens(newFmtText)
         console.log(`Witness tokens from editor`)
@@ -555,8 +559,8 @@ export class MainTextPanel extends PanelWithToolbar {
 
             case 1:
               // addition
-              this.verbose && console.log(`ADD command in edit script (state = 0)`)
-              this.verbose && console.log(editScriptItem)
+              // this.verbose && console.log(`ADD command in edit script (state = 0)`)
+              // this.verbose && console.log(editScriptItem)
               changeList.push({
                 change: 'add',
                 index: lastKeptOrReplaced,
@@ -568,9 +572,9 @@ export class MainTextPanel extends PanelWithToolbar {
 
             case -1:
               // a delete, but it could be a replace
-              this.verbose && console.log(`DEL command in edit script (state = 0)`)
-              this.verbose && console.log(editScriptItem)
-              this.verbose && console.log(`-- adding item to the empty deleteStack`)
+              // this.verbose && console.log(`DEL command in edit script (state = 0)`)
+              // this.verbose && console.log(editScriptItem)
+              // this.verbose && console.log(`-- adding item to the empty deleteStack`)
               deleteStack.push(editScriptItem.index)
               state = 1
               break
@@ -581,9 +585,9 @@ export class MainTextPanel extends PanelWithToolbar {
           switch (editScriptItem.command) {
             case 0:
               // a keep command
-              this.verbose && console.log(`KEEP command in edit script (state = 1)`)
-              this.verbose && console.log(editScriptItem)
-              this.verbose && console.log(`-- emptying deleteStack, which has ${deleteStack.length} item(s)`)
+              // this.verbose && console.log(`KEEP command in edit script (state = 1)`)
+              // this.verbose && console.log(editScriptItem)
+              // this.verbose && console.log(`-- emptying deleteStack, which has ${deleteStack.length} item(s)`)
               while (deleteStack.length > 0) {
                 let deleteIndex = deleteStack.pop()
                 changeList.push({
@@ -598,17 +602,17 @@ export class MainTextPanel extends PanelWithToolbar {
             case -1:
               // another delete, previous command was a delete, but will keep
               // looking for a replace
-              this.verbose && console.log(`DEL command in edit script (state = 1)`)
-              this.verbose && console.log(editScriptItem)
+              // this.verbose && console.log(`DEL command in edit script (state = 1)`)
+              // this.verbose && console.log(editScriptItem)
               deleteStack.push(editScriptItem.index)
               this.verbose && console.log(`-- adding index to the deleteStack, which now has ${deleteStack.length} items`)
               break
 
             case 1:
               // an ADD, match it with the first delete in the stack
-              this.verbose && console.log(`ADD command in edit script (state = 1)`)
-              this.verbose && console.log(editScriptItem)
-              this.verbose && console.log(`-- this is a REPLACE actually`)
+              // this.verbose && console.log(`ADD command in edit script (state = 1)`)
+              // this.verbose && console.log(editScriptItem)
+              // this.verbose && console.log(`-- this is a REPLACE actually`)
               let firstDeletedIndex = deleteStack.shift()
               changeList.push({
                 change: 'replace',
@@ -619,10 +623,10 @@ export class MainTextPanel extends PanelWithToolbar {
               })
               lastKeptOrReplaced = firstDeletedIndex
               if (deleteStack.length === 0) {
-                this.verbose && console.log(`-- deleteStack is now empty`)
+                // this.verbose && console.log(`-- deleteStack is now empty`)
                 state = 0
               } else {
-                this.verbose && console.log(`-- deleteStack still has ${deleteStack.length} item(s)`)
+                // this.verbose && console.log(`-- deleteStack still has ${deleteStack.length} item(s)`)
               }
               break
           }
@@ -630,7 +634,7 @@ export class MainTextPanel extends PanelWithToolbar {
     })
     // empty the deleteStack
     if (deleteStack.length > 0) {
-      this.verbose && console.log(`End of script with non-empty deleteStack, flushing ${deleteStack.length} item(s)`)
+      // this.verbose && console.log(`End of script with non-empty deleteStack, flushing ${deleteStack.length} item(s)`)
       while (deleteStack.length > 0) {
         let deleteIndex = deleteStack.pop()
         changeList.push({
@@ -688,41 +692,122 @@ export class MainTextPanel extends PanelWithToolbar {
     })
   }
 
+  /**
+   *
+   * @param {WitnessToken[]}tokens
+   * @return WitnessToken
+   * @private
+   */
+  __consolidateTokens(tokens) {
+    let theToken = new WitnessToken()
+    if (tokens.length === 0) {
+      return theToken
+    }
+    let type = tokens[0].tokenType
+    let newText = []
+    tokens.forEach( (t) => {
+      let tokenFmtText = t.fmtText !== undefined ? t.fmtText : FmtTextFactory.fromString(t.text)
+      newText = FmtText.concat(newText, tokenFmtText)
+    })
+
+    theToken.tokenType = type
+    theToken.fmtText = newText
+    theToken.text = FmtText.getPlainText(theToken.fmtText)
+    return theToken
+  }
+
   __fmtTextToEditionWitnessTokens(fmtText) {
     const attributesToCopy = [ 'fontWeight', 'fontStyle']
     let witnessTokens = []
+    // fmtText.forEach( (fmtTextToken) => {
+    //   if (fmtTextToken.type !== 'text') {
+    //     // ignore all non text tokens
+    //     return
+    //   }
+    //
+    //   let tmpWitnessTokens = WitnessTokenStringParser.parse(fmtTextToken.text).map( (witnessToken) => {
+    //     let hasFormats = false
+    //     let tokenFmtTokens = FmtTextFactory.fromString(witnessToken.text).map( (token) => {
+    //       attributesToCopy.forEach( (attribute) => {
+    //         if (fmtTextToken[attribute] !== undefined && fmtTextToken[attribute]!== '' ) {
+    //           hasFormats = true
+    //           token[attribute] = fmtTextToken[attribute]
+    //         }
+    //       })
+    //       return token
+    //     })
+    //
+    //     if (hasFormats) {
+    //       // only add fmtText when there is a format!
+    //       witnessToken.fmtText = tokenFmtTokens
+    //     }
+    //
+    //     return witnessToken
+    //   })
+    //
+    //   pushArray(witnessTokens, tmpWitnessTokens)
+    // })
+
+    // Get all tokens
     fmtText.forEach( (fmtTextToken) => {
-      if (fmtTextToken.type !== 'text') {
-        // ignore all non text tokens
+      if (fmtTextToken.type === 'glue') {
+        witnessTokens.push((new WitnessToken()).setWhitespace())
         return
       }
-
       let tmpWitnessTokens = WitnessTokenStringParser.parse(fmtTextToken.text).map( (witnessToken) => {
-        let hasFormats = false
-        let tokenFmtTokens = FmtTextFactory.fromString(witnessToken.text).map( (token) => {
-          attributesToCopy.forEach( (attribute) => {
-            if (fmtTextToken[attribute] !== undefined && fmtTextToken[attribute]!== '' ) {
-              hasFormats = true
-              token[attribute] = fmtTextToken[attribute]
-            }
-          })
-          return token
-        })
-
-        if (hasFormats) {
-          // only add fmtText when there is a format!
-          witnessToken.fmtText = tokenFmtTokens
-        }
-
-        return witnessToken
+        witnessToken.fmtText = FmtTextFactory.fromString(witnessToken.text).map((token) => {
+              attributesToCopy.forEach((attribute) => {
+                if (fmtTextToken[attribute] !== undefined && fmtTextToken[attribute] !== '') {
+                  token[attribute] = fmtTextToken[attribute]
+                }
+              })
+              return token
+            })
+            return witnessToken
       })
-
       pushArray(witnessTokens, tmpWitnessTokens)
     })
-    return witnessTokens.map( (token) => {
+    // consolidate text tokens and filter out whitespace
+    let cleanWitnessTokens = []
+    let tokensToConsolidate = []
+    witnessTokens.forEach( (token) => {
+      if (token.tokenType === WitnessTokenType.WORD) {
+        tokensToConsolidate.push(token)
+      } else {
+        if (tokensToConsolidate.length > 0) {
+          // flush token heap
+          cleanWitnessTokens.push(this.__consolidateTokens(tokensToConsolidate))
+          tokensToConsolidate = []
+        }
+        cleanWitnessTokens.push(token)
+      }
+    })
+    if (tokensToConsolidate.length > 0) {
+      // flush token heap
+      cleanWitnessTokens.push(this.__consolidateTokens(tokensToConsolidate))
+    }
+
+    return cleanWitnessTokens.filter((token) => {
+      return token.tokenType!== WitnessTokenType.EMPTY && token.tokenType !== WitnessTokenType.WHITESPACE
+    }).map( (token) => {
+      // make it an edition witness token
       token.tokenClass = 'edition'
       // apply normalizations
       token = this.options.editionWitnessTokenNormalizer(token)
+
+      // simplify text
+      if (token.fmtText !== undefined && token.fmtText.length === 1) {
+        let hasFormats = false
+        let fmtTextToken = token.fmtText[0]
+        attributesToCopy.forEach( (attribute) => {
+          if (fmtTextToken[attribute] !== undefined && fmtTextToken[attribute]!== '' ) {
+            hasFormats = true
+          }
+        })
+        if (!hasFormats) {
+          delete token.fmtText
+        }
+      }
       return token
     })
   }

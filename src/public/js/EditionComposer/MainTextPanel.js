@@ -46,6 +46,7 @@ import * as MyersDiff from '../toolbox/MyersDiff.mjs'
 import * as WitnessTokenType from '../Witness/WitnessTokenType'
 import { WitnessToken } from '../Witness/WitnessToken'
 import { FmtText } from '../FmtText/FmtText'
+import { CollapsePanel } from '../widgets/CollapsePanel'
 
 const EDIT_MODE_OFF = 'off'
 const EDIT_MODE_TEXT = 'text'
@@ -107,6 +108,8 @@ export class MainTextPanel extends PanelWithToolbar {
     this.tokenIndexOne = -1
     this.tokenIndexTwo = -1
     this.lastTypesetinfo = null
+
+    this.changesInfoDivConstructed = false
 
     this.htmlRenderer = new HtmlRenderer({})
   }
@@ -450,9 +453,6 @@ export class MainTextPanel extends PanelWithToolbar {
           }
         })
       }
-
-
-
     })
     return html
   }
@@ -489,12 +489,39 @@ export class MainTextPanel extends PanelWithToolbar {
           }
         }).map( (changeHtml) => { return `<li>${changeHtml}</li>`}).join('')
         let mainTextWithChangesHtml = this._genMainTextWithChanges(currentWitnessTokens, changes)
-        this.betaEditorInfoDiv.removeClass('hidden').html(`<h4>Revisions</h4><div class="main-text-with-changes">${mainTextWithChangesHtml}</div><h4>Collation Table Changes</h4><ul>${changeListHtml}</ul>`)
+        if (!this.changesInfoDivConstructed) {
+          this.betaEditorInfoDiv.html(`<p id="num-changes"> </p>
+                <div id="revisions"></div><div id="ct-changes"></div>`)
+          this.numChangesPar = $('#num-changes')
+          this.revisionsPanel =  new CollapsePanel({
+            containerSelector: '#revisions',
+            title: 'Revisions',
+            contentClasses: ['main-text-with-changes'],
+            iconWhenShown: '<i class="bi bi-caret-down"></i>',
+            iconWhenHidden: '<i class="bi bi-caret-right"></i>',
+            initiallyShown: false
+          })
+          this.ctChangesPanel = new CollapsePanel({
+            containerSelector: '#ct-changes',
+            title: 'Collation Table Changes',
+            iconWhenShown: '<i class="bi bi-caret-down"></i>',
+            iconWhenHidden: '<i class="bi bi-caret-right"></i>',
+            initiallyShown: false
+          })
+          this.changesInfoDivConstructed = true
+        }
+
+        this.numChangesPar.html(changes.length === 1 ? 'There is 1 change:' : `There are ${changes.length} changes:`)
+        this.revisionsPanel.setContent(mainTextWithChangesHtml)
+        this.ctChangesPanel.setContent(`<ul>${changeListHtml}</ul>`)
+        this.betaEditorInfoDiv.removeClass('hidden')
+
 
       } else {
         this.textEditRevertDiv.addClass('hidden')
         this.textEditCommitDiv.addClass('hidden')
         this.betaEditorInfoDiv.html('No changes')
+        this.changesInfoDivConstructed = false
       }
     }
   }
@@ -506,6 +533,7 @@ export class MainTextPanel extends PanelWithToolbar {
       this.textEditRevertDiv.addClass('hidden')
       this.textEditCommitDiv.addClass('hidden')
       this.betaEditorInfoDiv.html('No changes')
+      this.changesInfoDivConstructed = false
     }
   }
 
@@ -571,7 +599,7 @@ export class MainTextPanel extends PanelWithToolbar {
               break
 
             case -1:
-              // a delete, but it could be a replace
+              // a DELETE, but it could be a REPLACE
               // this.verbose && console.log(`DEL command in edit script (state = 0)`)
               // this.verbose && console.log(editScriptItem)
               // this.verbose && console.log(`-- adding item to the empty deleteStack`)
@@ -600,8 +628,8 @@ export class MainTextPanel extends PanelWithToolbar {
               break
 
             case -1:
-              // another delete, previous command was a delete, but will keep
-              // looking for a replace
+              // another delete, previous command was a DELETE, but will keep
+              // looking for a REPLACE
               // this.verbose && console.log(`DEL command in edit script (state = 1)`)
               // this.verbose && console.log(editScriptItem)
               deleteStack.push(editScriptItem.index)
@@ -658,7 +686,6 @@ export class MainTextPanel extends PanelWithToolbar {
   __getEditScript(oldTokens, newTokens) {
     const attributesToCompare = [ 'fontWeight', 'fontStyle']
     return MyersDiff.calculate(oldTokens, newTokens, function(a,b) {
-      let areEqual = true
       if (a.tokenType !== b.tokenType) {
         return false
       }
@@ -719,34 +746,6 @@ export class MainTextPanel extends PanelWithToolbar {
   __fmtTextToEditionWitnessTokens(fmtText) {
     const attributesToCopy = [ 'fontWeight', 'fontStyle']
     let witnessTokens = []
-    // fmtText.forEach( (fmtTextToken) => {
-    //   if (fmtTextToken.type !== 'text') {
-    //     // ignore all non text tokens
-    //     return
-    //   }
-    //
-    //   let tmpWitnessTokens = WitnessTokenStringParser.parse(fmtTextToken.text).map( (witnessToken) => {
-    //     let hasFormats = false
-    //     let tokenFmtTokens = FmtTextFactory.fromString(witnessToken.text).map( (token) => {
-    //       attributesToCopy.forEach( (attribute) => {
-    //         if (fmtTextToken[attribute] !== undefined && fmtTextToken[attribute]!== '' ) {
-    //           hasFormats = true
-    //           token[attribute] = fmtTextToken[attribute]
-    //         }
-    //       })
-    //       return token
-    //     })
-    //
-    //     if (hasFormats) {
-    //       // only add fmtText when there is a format!
-    //       witnessToken.fmtText = tokenFmtTokens
-    //     }
-    //
-    //     return witnessToken
-    //   })
-    //
-    //   pushArray(witnessTokens, tmpWitnessTokens)
-    // })
 
     // Get all tokens
     fmtText.forEach( (fmtTextToken) => {
@@ -767,8 +766,8 @@ export class MainTextPanel extends PanelWithToolbar {
       })
       pushArray(witnessTokens, tmpWitnessTokens)
     })
-    // consolidate text tokens and filter out whitespace
-    let cleanWitnessTokens = []
+    // consolidate text tokens
+    let consolidatedWitnessTokens = []
     let tokensToConsolidate = []
     witnessTokens.forEach( (token) => {
       if (token.tokenType === WitnessTokenType.WORD) {
@@ -776,18 +775,19 @@ export class MainTextPanel extends PanelWithToolbar {
       } else {
         if (tokensToConsolidate.length > 0) {
           // flush token heap
-          cleanWitnessTokens.push(this.__consolidateTokens(tokensToConsolidate))
+          consolidatedWitnessTokens.push(this.__consolidateTokens(tokensToConsolidate))
           tokensToConsolidate = []
         }
-        cleanWitnessTokens.push(token)
+        consolidatedWitnessTokens.push(token)
       }
     })
     if (tokensToConsolidate.length > 0) {
       // flush token heap
-      cleanWitnessTokens.push(this.__consolidateTokens(tokensToConsolidate))
+      consolidatedWitnessTokens.push(this.__consolidateTokens(tokensToConsolidate))
     }
 
-    return cleanWitnessTokens.filter((token) => {
+    return consolidatedWitnessTokens.filter((token) => {
+      // filter out empty and whitespace tokens
       return token.tokenType!== WitnessTokenType.EMPTY && token.tokenType !== WitnessTokenType.WHITESPACE
     }).map( (token) => {
       // make it an edition witness token
@@ -795,7 +795,7 @@ export class MainTextPanel extends PanelWithToolbar {
       // apply normalizations
       token = this.options.editionWitnessTokenNormalizer(token)
 
-      // simplify text
+      // simplify text: only include fmtText if there are formats
       if (token.fmtText !== undefined && token.fmtText.length === 1) {
         let hasFormats = false
         let fmtTextToken = token.fmtText[0]
@@ -1183,7 +1183,7 @@ export class MainTextPanel extends PanelWithToolbar {
   }
 
   _getMainTextBetaEditor() {
-    return `<div id="${betaEditorDivId}">Editor will be here</div><div id="${betaEditorInfoDiv}">Info will be here </div>`
+    return `<div id="${betaEditorDivId}">Editor will be here</div><div id="${betaEditorInfoDiv}" >Info will be here </div>`
   }
 
   _getMainTextHtmlVersion() {

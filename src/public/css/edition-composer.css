@@ -282,7 +282,7 @@ div.add-entry-dropdown a.dropdown-item {
 }
 
 div.main-text-with-changes {
-    margin-bottom: 2rem;
+    margin: 0 3rem 2rem 3rem;
     font-size: 0.9rem;
 }
 
@@ -309,8 +309,14 @@ div.main-text-with-changes .added {
 }
 
 div#text-editor-info {
-    margin-top: 2rem;
+    margin-top: 3rem;
 }
+div#text-editor-info h4 {
+    font-size: 1rem;
+    margin-left: 1rem;
+    font-family: var(--default-font-family);
+}
+
 
 /* Collation Table Panel */
 

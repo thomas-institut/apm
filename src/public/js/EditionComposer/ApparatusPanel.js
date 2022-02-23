@@ -909,10 +909,22 @@ export class ApparatusPanel extends  PanelWithToolbar {
     return tokensWithTypesetInfo[apparatusEntry.from].occurrenceInLine
   }
 
+  _getTotalOccurrencesInLineForApparatusEntry(apparatusEntry, tokensWithTypesetInfo) {
+    if(apparatusEntry.from !== apparatusEntry.to) {
+      return 1
+    }
+    if (tokensWithTypesetInfo[apparatusEntry.from] === undefined) {
+      return 1
+    }
+    return tokensWithTypesetInfo[apparatusEntry.from].numberOfOccurrencesInLine
+  }
+
+
+
   _genApparatusHtml(mainTextTokensWithTypesettingInfo) {
-    console.log(`Generating Apparatus html`)
-    console.log(mainTextTokensWithTypesettingInfo)
-    console.log(mainTextTokensWithTypesettingInfo.tokens.filter( (t) => { return t.type === 'text' && t.occurrenceInLine > 1}))
+    // console.log(`Generating Apparatus html`)
+    // console.log(mainTextTokensWithTypesettingInfo)
+    // console.log(mainTextTokensWithTypesettingInfo.tokens.filter( (t) => { return t.type === 'text' && t.occurrenceInLine > 1}))
     let html = ''
 
     let lastLine = ''
@@ -956,7 +968,8 @@ export class ApparatusPanel extends  PanelWithToolbar {
 
       let lemmaNumberString = ''
       let occurrenceInLine = this._getOccurrenceInLineForApparatusEntry(apparatusEntry, mainTextTokensWithTypesettingInfo.tokens)
-      if (occurrenceInLine > 1) {
+      let numberOfOccurrencesInLine = this._getTotalOccurrencesInLineForApparatusEntry(apparatusEntry, mainTextTokensWithTypesettingInfo.tokens)
+      if (numberOfOccurrencesInLine > 1) {
         lemmaNumberString = `<sup>${ApparatusCommon.getNumberString(occurrenceInLine, this.edition.lang)}</sup>`
       }
 

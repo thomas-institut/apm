@@ -31,6 +31,9 @@ import { ApparatusCommon } from '../EditionComposer/ApparatusCommon'
 import * as SubEntryType from '../Edition/SubEntryType'
 import { FmtText } from '../FmtText/FmtText'
 
+import * as VerticalAlign from '../FmtText/VerticalAlign'
+import * as FontSize from '../FmtText/FontSize'
+
 const doubleVerticalLine = String.fromCodePoint(0x2016)
 const verticalLine = String.fromCodePoint(0x007c)
 
@@ -253,7 +256,18 @@ export class EditionViewerSvg {
       return 1
     }
     return tsTokens[map[entry.from]].occurrenceInLine
+  }
 
+  __getTotalLemmaOccurrenceInLineForApparatusEntry(entry, tsTokens, map) {
+    if (entry.from !== entry.to) {
+      // assume any group appears only once in the line
+      // TODO: deal with short groups that appear more than once in a line
+      return 1
+    }
+    if ( tsTokens[map[entry.from]] === undefined) {
+      return 1
+    }
+    return tsTokens[map[entry.from]].numberOfOccurrencesInLine
   }
 
   /**
@@ -394,10 +408,11 @@ export class EditionViewerSvg {
 
 
       let occurrenceInLine = this.__getLemmaOccurrenceInLineForApparatusEntry(apparatusEntry, mainTextTypesetTokens, map)
+      let numberOfOccurrencesInLine = this.__getTotalLemmaOccurrenceInLineForApparatusEntry(apparatusEntry, mainTextTypesetTokens, map)
 
-      if (occurrenceInLine > 1) {
+      if (numberOfOccurrencesInLine > 1) {
         ttTokens.push(TypesetterTokenFactory.simpleText(
-          ApparatusCommon.getNumberString(occurrenceInLine, this.edition.lang)).setVerticalAlign('superscript').setFontSize(0.8))
+          ApparatusCommon.getNumberString(occurrenceInLine, this.edition.lang)).setVerticalAlign(VerticalAlign.SUPERSCRIPT).setFontSize(FontSize.SUPERSCRIPT))
       }
 
       // postLemma

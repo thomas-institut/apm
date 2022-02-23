@@ -330,7 +330,13 @@ export class Typesetter {
       // console.log(typesetTokens)
     }
 
-    return typesetTokens
+    return typesetTokens.map ( (token) => {
+      // add total number of occurrences in line for each text token
+      if (token.occurrenceInLine !== undefined) {
+        token.numberOfOccurrencesInLine = textTokensCounter.getCount(token.text)
+      }
+      return token
+    })
   }
 
   /**

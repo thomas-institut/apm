@@ -19,6 +19,7 @@
 
 import { StringCounter } from '../toolbox/StringCounter'
 import { TEXT } from '../Edition/MainTextTokenType'
+import { pushArray } from '../toolbox/ArrayUtil'
 
 export function getTypesettingInfo(containerSelector, classPrefix, tokens) {
   let yPositions = []
@@ -34,17 +35,26 @@ export function getTypesettingInfo(containerSelector, classPrefix, tokens) {
 
   let uniqueYPositions = yPositions.filter((v, i, a) => a.indexOf(v) === i).sort( (a,b) => { return a > b ? 1 : 0})
   let lineMap = calculateYPositionToLineMap(yPositions)
-  let tokensWithFullInfo = tokensWithInfo.map( (t) => {
+  let tokensWithLineNumbers = tokensWithInfo.map( (t) => {
     t.lineNumber = getLineNumber(t.y, lineMap)
     return t
   })
   // get the occurrence number in each line
   let currentLine = -1
-  let tokensWithFullInfo2 = []
+  let tokensWithOccurrencesInfo = []
   let occurrenceInLineCounter = new StringCounter()
-  tokensWithFullInfo.forEach( (t) => {
+  let currentLineTokens = []
+  tokensWithLineNumbers.forEach( (t) => {
     if (t.lineNumber !== currentLine) {
+      currentLineTokens = currentLineTokens.map( (t) => {
+        if (t.type === TEXT) {
+          t.numberOfOccurrencesInLine = occurrenceInLineCounter.getCount(t.getPlainText())
+        }
+        return t
+      })
+      pushArray(tokensWithOccurrencesInfo, currentLineTokens)
       occurrenceInLineCounter.reset()
+      currentLineTokens = []
       currentLine = t.lineNumber
     }
     if (t.type ===TEXT ) {
@@ -52,10 +62,21 @@ export function getTypesettingInfo(containerSelector, classPrefix, tokens) {
       occurrenceInLineCounter.addString(text)
       t.occurrenceInLine = occurrenceInLineCounter.getCount(text)
     }
-    tokensWithFullInfo2.push(t)
+    currentLineTokens.push(t)
   })
+  if (currentLineTokens.length > 0) {
+    currentLineTokens = currentLineTokens.map( (t) => {
+      if (t.type === TEXT) {
+        t.numberOfOccurrencesInLine = occurrenceInLineCounter.getCount(t.getPlainText())
+      }
+      return t
+    })
+    pushArray(tokensWithOccurrencesInfo, currentLineTokens)
+  }
 
-  return { yPositions: uniqueYPositions, tokens: tokensWithFullInfo2, lineMap: lineMap }
+
+
+  return { yPositions: uniqueYPositions, tokens: tokensWithOccurrencesInfo, lineMap: lineMap }
 
 }
 

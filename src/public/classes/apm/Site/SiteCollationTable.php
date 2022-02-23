@@ -125,7 +125,7 @@ class SiteCollationTable extends SiteController
 
         return $this->renderPage($response, $template, [
             'userId' => $this->userInfo['id'],
-            'isTechSupport' => $isTechSupport,
+            'isTechSupport' => $isTechSupport ? 'yes' : 'no',
             'workId' => $workId,
             'chunkNumber' => $chunkNumber,
             'tableId' => $tableId,

@@ -41,7 +41,7 @@
     let docInfo = JSON.parse("{{docInfo|json_encode|e('js')}}")
     let versionInfo = JSON.parse("{{versionInfo|json_encode|e('js')}}")
     let userId = {{ userId }} ;
-    let isTechSupport = {{ isTechSupport }} === 1;
+    let isTechSupport = '{{isTechSupport }}' === 'yes';
 
     let te = new EditionComposer({
       userId: userId,

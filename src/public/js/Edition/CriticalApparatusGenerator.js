@@ -124,7 +124,8 @@ export class CriticalApparatusGenerator {
           entry.from = mainTextIndex
           entry.to = mainTextIndex
           // TODO: deal with 'pre' entries properly, the lemma text should be the first word in the text
-          entry.lemmaText = mainTextIndex !== -1 ? ApparatusCommon.getNormalizedTextFromInputToken(baseWitnessTokens[ctIndex]) : 'pre'
+          //entry.lemmaText = mainTextIndex !== -1 ? ApparatusCommon.getNormalizedTextFromInputToken(baseWitnessTokens[ctIndex]) : 'pre'
+          entry.lemmaText = mainTextIndex !== -1 ? baseWitnessTokens[ctIndex]['text'] : 'pre'
           entry.subEntries = subEntries
           // other info
           entry.ctGroup = columnGroup

@@ -332,7 +332,7 @@ export class CtData  {
       ctColumnEnd = ctColumnIndex
     }
 
-    console.log(`Fixing references to empty tokens from column ${ctColumnStart} to ${ctColumnEnd}`)
+    //console.log(`Fixing references to empty tokens from column ${ctColumnStart} to ${ctColumnEnd}`)
 
     for (let column = ctColumnStart; column < ctRow.length && column <= ctColumnEnd; column++) {
       if (editionWitnessTokens[ctRow[column]].tokenType !== WitnessTokenType.EMPTY) {

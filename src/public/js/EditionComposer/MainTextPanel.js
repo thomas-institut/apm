@@ -120,6 +120,7 @@ export class MainTextPanel extends PanelWithToolbar {
    * @param {Edition} edition
    */
   updateData(ctData, edition) {
+    this.verbose && console.log(`New data received`)
     this.ctData = CtData.copyFromObject(ctData)
     this.edition = edition
 
@@ -128,6 +129,7 @@ export class MainTextPanel extends PanelWithToolbar {
     })
 
     if (this.visible) {
+      this.verbose && console.log(`MainTextPanel is visible, regenerating content`)
       $(this.getContentAreaSelector()).html(this.generateContentHtml('', '', true))
       this._setupMainTextDivEventHandlers()
       this.mainTextNeedsToBeRedrawnOnNextOnShownEvent = false
@@ -168,10 +170,10 @@ export class MainTextPanel extends PanelWithToolbar {
             </div>
             <div class="panel-toolbar-group text-edit-toolbar">
                 <div class="panel-toolbar-item text-edit-revert">
-                    <a class="tb-button text-edit-revert-btn" title="Revert Changes">${icons.revertEdit}</a>
+                    <a class="btn tb-button text-edit-revert-btn" title="Revert Changes">${icons.revertEdit}</a>
                 </div>
                 <div class="panel-toolbar-item text-edit-commit">
-                    <a class="tb-button text-edit-commit-btn" title="Commit Changes">${icons.commitEdit}</a>
+                    <a class="btn tb-button text-edit-commit-btn" title="Commit Changes">${icons.commitEdit}</a>
                 </div>
             </div>
         </div>`
@@ -385,6 +387,7 @@ export class MainTextPanel extends PanelWithToolbar {
 
     this.freeTextEditor.setText( this._convertMainTextToFmtText(), true)
     this.betaEditorInfoDiv = $(`#${betaEditorInfoDiv}`).html('No changes')
+    this.changesInfoDivConstructed = false
     this.commitedFreeText = deepCopy(this.freeTextEditor.getFmtText())
     $(`${this.containerSelector} a.text-edit-revert-btn`).on('click', this._genOnClickTextEditRevertChanges())
     $(`${this.containerSelector} a.text-edit-commit-btn`).on('click', this._genOnClickTextEditCommitChanges())
@@ -538,7 +541,9 @@ export class MainTextPanel extends PanelWithToolbar {
   }
 
   _getChangesInBetaEditor(currentWitnessTokens, newWitnessTokens) {
-    currentWitnessTokens = currentWitnessTokens
+    let workingCurrentWitnessTokens = deepCopy(currentWitnessTokens)
+
+    workingCurrentWitnessTokens = workingCurrentWitnessTokens
       .map( (token, index) => {
         // keep the original index
         token['originalIndex'] = index
@@ -548,8 +553,8 @@ export class MainTextPanel extends PanelWithToolbar {
         return token.tokenType !== 'empty'
       })
 
-    let editScript = this.__getEditScript(currentWitnessTokens, newWitnessTokens)
-    return this.__getChangeList(currentWitnessTokens, newWitnessTokens, editScript)
+    let editScript = this.__getEditScript(workingCurrentWitnessTokens, newWitnessTokens)
+    return this.__getChangeList(workingCurrentWitnessTokens, newWitnessTokens, editScript)
   }
 
   _genOnClickTextEditCommitChanges() {
@@ -563,7 +568,46 @@ export class MainTextPanel extends PanelWithToolbar {
         return
       }
       this.verbose && console.log(`There are changes, now it's almost for real`)
+
+      let newWitnessTokens = this.__fmtTextToEditionWitnessTokens(newFmtText)
+      // TODO: show something if there are more than, say, 5 affected columns
+      this.updateEditionWitness(newWitnessTokens)
     }
+  }
+
+  updateEditionWitness(newWitnessTokens) {
+    let currentWitnessTokens = this.ctData['witnesses'][this.ctData['editionWitnessIndex']].tokens
+    let changes = this._getChangesInBetaEditor(currentWitnessTokens, newWitnessTokens)
+
+    let columnsAdded = 0
+    changes.forEach( (change, changeIndex) => {
+      switch(change.change) {
+        case 'replace':
+          this.ctData['witnesses'][this.ctData['editionWitnessIndex']].tokens[change.index+columnsAdded] = change.newToken
+          break
+
+        case 'delete':
+          // in the current schema, we just empty the token
+          this.ctData['witnesses'][this.ctData['editionWitnessIndex']].tokens[change.index+columnsAdded] =
+            { tokenClass: 'edition',  tokenType: WitnessTokenType.EMPTY, text: "" }
+          break
+
+        case 'add':
+          // this is the problem case, it should be left to the CtData class
+          this.ctData = CtData.insertColumnsAfter(this.ctData, change.index+columnsAdded, 1 )
+          columnsAdded = columnsAdded+1
+          this.ctData['witnesses'][this.ctData['editionWitnessIndex']].tokens[change.index+columnsAdded] = change.newToken
+          break
+
+        default:
+          throw new Error(`Unknown change type '${change.change}', changeIndex: ${changeIndex}`)
+      }
+    })
+
+    this.lastTypesetinfo = null
+    this.modeToggle.setOptionByName(EDIT_MODE_OFF, false)
+    this._changeEditMode(EDIT_MODE_OFF, EDIT_MODE_TEXT_BETA)
+    this.options.onCtDataChange(this.ctData)
   }
 
   __getChangeList(oldTokens, newTokens, editScript) {

@@ -334,6 +334,11 @@ td.te-row-title {
     font-weight: 600;
 }
 
+/*td.token-class-edition.text-la {*/
+/*    font-family: var(--latin-apparatus-font-family);*/
+/*    font-size: 1.2em;*/
+/*}*/
+
 /* Edit modes */
 /* TODO: Differentiate between CT and Main Text edit modes */
 

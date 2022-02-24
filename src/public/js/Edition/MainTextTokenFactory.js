@@ -31,6 +31,15 @@ export class MainTextTokenFactory {
     return t
   }
 
+  static createWithFmtText(fmtText, editionWitnessTokenIndex, lang = '') {
+    let t = new MainTextToken()
+    t.type = EditionMainTextTokenType.TEXT
+    t.fmtText = fmtText
+    t.editionWitnessTokenIndex = editionWitnessTokenIndex
+    t.setLang(lang)
+    return t
+  }
+
   static createNormalGlue() {
     let t = new MainTextToken()
     t.type = EditionMainTextTokenType.GLUE

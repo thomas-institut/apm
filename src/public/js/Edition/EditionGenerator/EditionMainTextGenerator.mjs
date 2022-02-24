@@ -75,9 +75,16 @@ export class EditionMainTextGenerator {
         // but just in case, make sure that no raw whitespace appears in the main text
         continue
       }
-      mainTextTokens.push(
-        MainTextTokenFactory.createSimpleText(getTextFromWitnessToken(witnessToken, normalized, normalizationsToIgnore), i, lang)
-      )
+      if (witnessToken.fmtText === undefined) {
+        mainTextTokens.push(
+          MainTextTokenFactory.createSimpleText(getTextFromWitnessToken(witnessToken, normalized, normalizationsToIgnore), i, lang)
+        )
+      } else {
+        mainTextTokens.push(
+          MainTextTokenFactory.createWithFmtText(witnessToken.fmtText, i, lang)
+        )
+      }
+
     }
     // add glue
     let mainTextTokensWithGlue = []

@@ -54,6 +54,7 @@ import { CtData } from '../CtData/CtData'
 import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'
 import { capitalizeFirstLetter } from '../toolbox/Util.mjs'
 import { doNothing } from '../toolbox/FunctionUtil'
+import { HtmlRenderer } from '../FmtText/Renderer/HtmlRenderer'
 
 export class CollationTablePanel extends PanelWithToolbar {
   constructor (options = {}) {
@@ -958,6 +959,8 @@ export class CollationTablePanel extends PanelWithToolbar {
       } else  {
         let tokenType = WitnessTokenStringParser.strIsPunctuation(newText, this.lang) ? TranscriptionTokenType.PUNCTUATION : TranscriptionTokenType.WORD
         this.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = newText
+        // TODO: allow formats in cells edited in the collation table
+        delete this.ctData['witnesses'][witnessIndex]['tokens'][ref]['fmtText']
         this.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] = tokenType
         if (tokenType === TranscriptionTokenType.WORD) {
           if (this.ctData['automaticNormalizationsApplied'].length !== 0) {
@@ -1012,7 +1015,15 @@ export class CollationTablePanel extends PanelWithToolbar {
       let tokenArray = this.ctData['witnesses'][witnessIndex]['tokens']
       let token = tokenArray[ref]
       if (token.tokenClass === TokenClass.EDITION) {
-        return token['text'] === '' ? EMPTY_CONTENT : token['text']
+        if (token.text === '') {
+          return EMPTY_CONTENT
+        }
+        // TODO: allow basic formatting
+        if (token['fmtText'] === undefined) {
+          return token['text']
+        }
+        let renderer = new HtmlRenderer({plainMode: true})
+        return renderer.render(token['fmtText'])
       }
       let postNotes = this.getPostNotes(witnessIndex, col, ref)
       if (token['sourceItems'].length === 1 && postNotes.length === 0) {

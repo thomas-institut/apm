@@ -466,10 +466,16 @@ export class MainTextPanel extends PanelWithToolbar {
         this.textEditRevertDiv.removeClass('hidden')
         this.textEditCommitDiv.removeClass('hidden')
         console.log(`Changes in editor`)
+
+        let currentWitnessTokens = this.ctData['witnesses'][this.ctData['editionWitnessIndex']].tokens
+        console.log(`Current witness tokens`)
+        console.log(currentWitnessTokens)
+
         let newFmtText = this.freeTextEditor.getFmtText()
         console.log(`fmtText from editor`)
         console.log(newFmtText)
-        let currentWitnessTokens = this.ctData['witnesses'][this.ctData['editionWitnessIndex']].tokens
+
+
         let witnessTokens = this.__fmtTextToEditionWitnessTokens(newFmtText)
         console.log(`Witness tokens from editor`)
         console.log(witnessTokens)
@@ -755,6 +761,7 @@ export class MainTextPanel extends PanelWithToolbar {
               fmtTokensAreEqual = false
             }
           })
+          return fmtTokensAreEqual
         })) {
           return false
         }

@@ -1108,11 +1108,15 @@ export class EditionComposer {
     }
 
     if(this.ctData['type'] === CollationTableType.EDITION) {
-      let editionWitnessIndex = this.ctData['witnessOrder'][0]
+      let editionWitnessIndex = this.ctData['editionWitnessIndex']
       let oldText = this.lastSavedCtData['witnesses'][editionWitnessIndex]['tokens'].map(token => token.text).join(' ')
       let newText = this.ctData['witnesses'][editionWitnessIndex]['tokens'].map(token => token.text).join(' ')
       if (oldText !== newText) {
         changes.push('Changes in edition text')
+      } else {
+        if (!ArrayUtil.varsAreEqual(this.ctData['witnesses'][editionWitnessIndex]['tokens'], this.lastSavedCtData['witnesses'][editionWitnessIndex]['tokens'])){
+          changes.push('Formatting changes in edition text')
+        }
       }
     }
 

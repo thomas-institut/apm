@@ -899,24 +899,58 @@ export class ApparatusPanel extends  PanelWithToolbar {
     return  $(`${this.containerSelector} .clear-selection-btn`)
   }
 
-  _getOccurrenceInLineForApparatusEntry(apparatusEntry, tokensWithTypesetInfo) {
-    if(apparatusEntry.from !== apparatusEntry.to) {
+  _getOccurrenceInLine(mainTextIndex, tokensWithTypesetInfo) {
+    if (tokensWithTypesetInfo[mainTextIndex] === undefined) {
       return 1
     }
-    if (tokensWithTypesetInfo[apparatusEntry.from] === undefined) {
-      return 1
-    }
-    return tokensWithTypesetInfo[apparatusEntry.from].occurrenceInLine
+    return tokensWithTypesetInfo[mainTextIndex].occurrenceInLine
   }
 
-  _getTotalOccurrencesInLineForApparatusEntry(apparatusEntry, tokensWithTypesetInfo) {
-    if(apparatusEntry.from !== apparatusEntry.to) {
+  _getTotalOccurrencesInLine(mainTextIndex, tokensWithTypesetInfo) {
+    if (tokensWithTypesetInfo[mainTextIndex] === undefined) {
       return 1
     }
-    if (tokensWithTypesetInfo[apparatusEntry.from] === undefined) {
-      return 1
+    return tokensWithTypesetInfo[mainTextIndex].numberOfOccurrencesInLine
+  }
+
+  _getLemmaHtml(apparatusEntry, typesettingInfo) {
+
+    let lemmaComponents = ApparatusCommon.getLemmaComponents(apparatusEntry.lemma, apparatusEntry.lemmaText)
+
+    switch(lemmaComponents.type) {
+      case 'custom':
+        return lemmaComponents.text
+
+      case 'full':
+        let lemmaNumberString = ''
+        if (lemmaComponents.numWords === 1) {
+          let occurrenceInLine = this._getOccurrenceInLine(apparatusEntry.from, typesettingInfo.tokens)
+          let numberOfOccurrencesInLine = this._getTotalOccurrencesInLine(apparatusEntry.from, typesettingInfo.tokens)
+          if (numberOfOccurrencesInLine > 1) {
+            lemmaNumberString = `<sup>${ApparatusCommon.getNumberString(occurrenceInLine, this.edition.lang)}</sup>`
+          }
+        }
+        return `${lemmaComponents.text}${lemmaNumberString}`
+
+      case 'shortened':
+        let lemmaNumberStringFrom = ''
+        let occurrenceInLineFrom = this._getOccurrenceInLine(apparatusEntry.from, typesettingInfo.tokens)
+        let numberOfOccurrencesInLineFrom = this._getTotalOccurrencesInLine(apparatusEntry.from, typesettingInfo.tokens)
+        if (numberOfOccurrencesInLineFrom > 1) {
+          lemmaNumberStringFrom = `<sup>${ApparatusCommon.getNumberString(occurrenceInLineFrom, this.edition.lang)}</sup>`
+        }
+        let lemmaNumberStringTo = ''
+        let occurrenceInLineTo = this._getOccurrenceInLine(apparatusEntry.to, typesettingInfo.tokens)
+        let numberOfOccurrencesInLineTo = this._getTotalOccurrencesInLine(apparatusEntry.to, typesettingInfo.tokens)
+        if (numberOfOccurrencesInLineTo > 1) {
+          lemmaNumberStringTo = `<sup>${ApparatusCommon.getNumberString(occurrenceInLineTo, this.edition.lang)}</sup>`
+        }
+        return `${lemmaComponents.from}${lemmaNumberStringFrom}${lemmaComponents.separator}${lemmaComponents.to}${lemmaNumberStringTo}`
+
+      default:
+        console.warn(`Unknown lemma component type '${lemmaComponents.type}'`)
+        return 'ERROR'
     }
-    return tokensWithTypesetInfo[apparatusEntry.from].numberOfOccurrencesInLine
   }
 
 
@@ -964,16 +998,8 @@ export class ApparatusPanel extends  PanelWithToolbar {
       }
       let preLemmaSpan = preLemmaSpanHtml === '' ? '' : `<span class="pre-lemma">${preLemmaSpanHtml}</span> `
 
-      let lemmaString = ApparatusCommon.getLemmaString(apparatusEntry.lemma, apparatusEntry.lemmaText)
 
-      let lemmaNumberString = ''
-      let occurrenceInLine = this._getOccurrenceInLineForApparatusEntry(apparatusEntry, mainTextTokensWithTypesettingInfo.tokens)
-      let numberOfOccurrencesInLine = this._getTotalOccurrencesInLineForApparatusEntry(apparatusEntry, mainTextTokensWithTypesettingInfo.tokens)
-      if (numberOfOccurrencesInLine > 1) {
-        lemmaNumberString = `<sup>${ApparatusCommon.getNumberString(occurrenceInLine, this.edition.lang)}</sup>`
-      }
-
-      let lemmaSpan = `<span class="lemma lemma-${this.options.apparatusIndex}-${aeIndex}">${lemmaString}${lemmaNumberString}</span>`
+      let lemmaSpan = `<span class="lemma lemma-${this.options.apparatusIndex}-${aeIndex}">${this._getLemmaHtml(apparatusEntry, mainTextTokensWithTypesettingInfo)}</span>`
 
       let postLemmaSpan = ''
       if (apparatusEntry.postLemma !== '') {

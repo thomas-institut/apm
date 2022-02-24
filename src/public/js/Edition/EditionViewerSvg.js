@@ -164,8 +164,11 @@ export class EditionViewerSvg {
 
     let svgWidth = this.options.pageWidthInCm
 
+    // let svgHeightInPx = Typesetter.cm2px(svgHeight)
+    // let svgWidthInPx = Typesetter.cm2px(svgWidth)
 
-    let svg = `<svg class="${svgClass}" height="${svgHeight}cm" width="${svgWidth}cm">`
+
+    let svg = `<svg class="${svgClass}" height="${svgHeight}cm" width="${svgWidth}cm"">`
 
     svg += "<!-- Text tokens -->\n"
     svg += `<g font-size="${this.geometry.mainTextFontSize}" font-family="${this.options.fontFamily}" fill="#000000">`
@@ -246,28 +249,18 @@ export class EditionViewerSvg {
     return ApparatusCommon.getNumberString(lineNumber, this.edition.lang)
   }
 
-  __getLemmaOccurrenceInLineForApparatusEntry(entry, tsTokens, map) {
-    if (entry.from !== entry.to) {
-      // assume any group appears only once in the line
-      // TODO: deal with short groups that appear more than once in a line
+  __getOccurrenceInLine(index, tsTokens, map) {
+    if ( tsTokens[map[index]] === undefined) {
       return 1
     }
-    if ( tsTokens[map[entry.from]] === undefined) {
-      return 1
-    }
-    return tsTokens[map[entry.from]].occurrenceInLine
+    return tsTokens[map[index]].occurrenceInLine
   }
 
-  __getTotalLemmaOccurrenceInLineForApparatusEntry(entry, tsTokens, map) {
-    if (entry.from !== entry.to) {
-      // assume any group appears only once in the line
-      // TODO: deal with short groups that appear more than once in a line
+  __getTotalOccurrencesInLine(index, tsTokens, map) {
+    if ( tsTokens[map[index]] === undefined) {
       return 1
     }
-    if ( tsTokens[map[entry.from]] === undefined) {
-      return 1
-    }
-    return tsTokens[map[entry.from]].numberOfOccurrencesInLine
+    return tsTokens[map[index]].numberOfOccurrencesInLine
   }
 
   /**
@@ -329,6 +322,67 @@ export class EditionViewerSvg {
     })
 
     return typesetterTokens
+  }
+
+  _getLemmaTypesetterTokens(apparatusEntry, typesettingInfo, map) {
+    let lemmaTokens = []
+    let lemmaComponents = ApparatusCommon.getLemmaComponents(apparatusEntry.lemma, apparatusEntry.lemmaText)
+
+    switch(lemmaComponents.type) {
+      case 'custom':
+        return [ TypesetterTokenFactory.simpleText(lemmaComponents.text).setLang(this.edition.lang)]
+
+      case 'full':
+        let lemmaNumberString = ''
+        if (lemmaComponents.numWords === 1) {
+          let occurrenceInLine = this.__getOccurrenceInLine(apparatusEntry.from, typesettingInfo, map)
+          let numberOfOccurrencesInLine = this.__getTotalOccurrencesInLine(apparatusEntry.from, typesettingInfo, map)
+          if (numberOfOccurrencesInLine > 1) {
+            lemmaNumberString = ApparatusCommon.getNumberString(occurrenceInLine, this.edition.lang)
+          }
+        }
+        lemmaTokens.push(TypesetterTokenFactory.simpleText(lemmaComponents.text).setLang(this.edition.lang))
+        if (lemmaNumberString !== '') {
+          lemmaTokens.push(TypesetterTokenFactory.simpleText(lemmaNumberString)
+            .setVerticalAlign(VerticalAlign.SUPERSCRIPT).setFontSize(FontSize.SUPERSCRIPT))
+        }
+        return lemmaTokens
+
+      case 'shortened':
+        // determine occurrence numbers
+        let lemmaNumberStringFrom = ''
+        let occurrenceInLineFrom = this.__getOccurrenceInLine(apparatusEntry.from, typesettingInfo, map)
+        let numberOfOccurrencesInLineFrom = this.__getTotalOccurrencesInLine(apparatusEntry.from, typesettingInfo,  map)
+        if (numberOfOccurrencesInLineFrom > 1) {
+          lemmaNumberStringFrom = ApparatusCommon.getNumberString(occurrenceInLineFrom, this.edition.lang)
+        }
+        let lemmaNumberStringTo = ''
+        let occurrenceInLineTo = this.__getOccurrenceInLine(apparatusEntry.to, typesettingInfo, map)
+        let numberOfOccurrencesInLineTo = this.__getTotalOccurrencesInLine(apparatusEntry.to, typesettingInfo, map)
+        if (numberOfOccurrencesInLineTo > 1) {
+          lemmaNumberStringTo = ApparatusCommon.getNumberString(occurrenceInLineTo, this.edition.lang)
+        }
+
+        // build lemma
+        lemmaTokens.push(TypesetterTokenFactory.simpleText(lemmaComponents.from).setLang(this.edition.lang))
+        if (lemmaNumberStringFrom !== '') {
+          lemmaTokens.push(TypesetterTokenFactory.simpleText(lemmaNumberStringFrom)
+            .setVerticalAlign(VerticalAlign.SUPERSCRIPT).setFontSize(FontSize.SUPERSCRIPT))
+        }
+        // TODO: add a little glue around the separator
+        lemmaTokens.push(TypesetterTokenFactory.simpleText(lemmaComponents.separator))
+        lemmaTokens.push(TypesetterTokenFactory.simpleText(lemmaComponents.to).setLang(this.edition.lang))
+        if (lemmaNumberStringTo !== '') {
+          lemmaTokens.push(TypesetterTokenFactory.simpleText(lemmaNumberStringTo)
+            .setVerticalAlign(VerticalAlign.SUPERSCRIPT).setFontSize(FontSize.SUPERSCRIPT))
+        }
+        return lemmaTokens
+
+
+      default:
+        console.warn(`Unknown lemma component type '${lemmaComponents.type}'`)
+        return [ TypesetterTokenFactory.simpleText('ERROR')]
+    }
   }
 
   /**
@@ -394,7 +448,6 @@ export class EditionViewerSvg {
 
         default:
           preLemmaTokens = ApparatusCommon.getKeywordTypesetterTokens(apparatusEntry.preLemma, this.edition.lang)
-          //preLemmaTokens = this._getTypesetTokensFromCustomLemmaGroupValue(apparatusEntry.preLemma, this.edition.lang)
       }
       pushArray(ttTokens, preLemmaTokens)
       if (preLemmaTokens.length !== 0) {
@@ -402,18 +455,7 @@ export class EditionViewerSvg {
       }
 
       // lemma
-      let lemmaString = ApparatusCommon.getLemmaString(apparatusEntry.lemma, apparatusEntry.lemmaText)
-
-      ttTokens.push(TypesetterTokenFactory.simpleText(lemmaString).setLang(this.edition.lang))
-
-
-      let occurrenceInLine = this.__getLemmaOccurrenceInLineForApparatusEntry(apparatusEntry, mainTextTypesetTokens, map)
-      let numberOfOccurrencesInLine = this.__getTotalLemmaOccurrenceInLineForApparatusEntry(apparatusEntry, mainTextTypesetTokens, map)
-
-      if (numberOfOccurrencesInLine > 1) {
-        ttTokens.push(TypesetterTokenFactory.simpleText(
-          ApparatusCommon.getNumberString(occurrenceInLine, this.edition.lang)).setVerticalAlign(VerticalAlign.SUPERSCRIPT).setFontSize(FontSize.SUPERSCRIPT))
-      }
+     pushArray(ttTokens, this._getLemmaTypesetterTokens(apparatusEntry, mainTextTypesetTokens, map))
 
       // postLemma
       if (apparatusEntry.postLemma !== '') {

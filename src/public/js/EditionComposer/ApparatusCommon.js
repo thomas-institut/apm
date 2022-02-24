@@ -632,5 +632,44 @@ export class ApparatusCommon {
     return  `${lemmaTextWords[0]}${separator}${lemmaTextWords[lemmaTextWords.length-1]}`
   }
 
+  static getLemmaComponents(apparatusEntryLemma, lemmaText) {
+    let separator = ''
+    let custom = false
+    switch(apparatusEntryLemma) {
+      case '':
+      case 'dash':
+        separator = `${enDash}`
+        break
+
+      case 'ellipsis':
+        separator = '...'
+        break
+
+      default:
+        custom = true
+    }
+    if (custom) {
+      return { type: 'custom', text:  FmtText.getPlainText(apparatusEntryLemma) }
+    }
+    if (lemmaText === '') {
+      lemmaText = 'pre'
+    }
+    let lemmaTextWords = lemmaText.split(' ')
+    // if lemmaText is short,
+    if (lemmaTextWords.length <= 3) {
+      return {
+        type: 'full',
+        text:  lemmaText,
+        numWords: lemmaTextWords.length
+      }
+    }
+    return {
+      type: 'shortened',
+      from: lemmaTextWords[0],
+      separator: separator,
+      to:lemmaTextWords[lemmaTextWords.length-1],
+    }
+  }
+
 
 }

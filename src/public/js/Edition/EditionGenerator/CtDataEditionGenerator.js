@@ -286,6 +286,9 @@ export class CtDataEditionGenerator extends EditionGenerator{
       theApparatus.entries = apparatus['entries'].map ( (customEntry) => {
         let theEntry = new ApparatusEntry()
         theEntry.lemma = customEntry['lemma']
+        theEntry.preLemma = customEntry['preLemma']
+        theEntry.postLemma = customEntry['postLemma']
+        theEntry.separator = customEntry['separator']
         theEntry.lemmaText = ApparatusCommon.getMainTextForGroup({ from: customEntry['from'], to: customEntry['to'] },
             baseWitnessTokens, false, this.ctData['lang'])
 

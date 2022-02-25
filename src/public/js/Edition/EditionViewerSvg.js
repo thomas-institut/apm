@@ -482,7 +482,9 @@ export class EditionViewerSvg {
           break
 
         default:
-          separatorTokens = (new TypesetterTokenRenderer()).render(removeExtraWhiteSpace(FmtText.getPlainText(apparatusEntry.separator)))
+          separatorTokens = (new TypesetterTokenRenderer()).render(
+            FmtTextFactory.fromString(removeExtraWhiteSpace(FmtText.getPlainText(apparatusEntry.separator)))
+          )
       }
       pushArray(ttTokens, separatorTokens)
       ttTokens.push(TypesetterTokenFactory.normalSpace())

@@ -168,7 +168,7 @@ export class EditionViewerSvg {
     // let svgWidthInPx = Typesetter.cm2px(svgWidth)
 
 
-    let svg = `<svg class="${svgClass}" height="${svgHeight}cm" width="${svgWidth}cm"">`
+    let svg = `<svg class="${svgClass}" height="${svgHeight}cm" width="${svgWidth}cm">`
 
     svg += "<!-- Text tokens -->\n"
     svg += `<g font-size="${this.geometry.mainTextFontSize}" font-family="${this.options.fontFamily}" fill="#000000">`

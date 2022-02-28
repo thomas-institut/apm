@@ -25,6 +25,8 @@ import { QuillDeltaRenderer } from '../FmtText/Renderer/QuillDeltaRenderer'
 import { QuillDeltaConverter } from './QuillDeltaConverter'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory'
 import Superscript from './QuillBlots/Superscript'
+import { FmtText } from '../FmtText/FmtText'
+import { removeExtraWhiteSpace, removeWhiteSpace } from '../toolbox/Util.mjs'
 
 const simpleFormats = [ 'bold', 'italic', 'small', 'superscript']
 
@@ -105,7 +107,12 @@ export class ApparatusEntryTextEditor {
   }
 
   getFmtText() {
-    return QuillDeltaConverter.toFmtText(this.getQuillDelta())
+    let fmtText = QuillDeltaConverter.toFmtText(this.getQuillDelta())
+    if (removeWhiteSpace(FmtText.getPlainText(fmtText)) === '' ) {
+      // only white space, report no text
+      return []
+    }
+    return fmtText
   }
 
   /**

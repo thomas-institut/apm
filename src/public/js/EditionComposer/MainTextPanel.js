@@ -24,7 +24,7 @@
  */
 
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { getSingleIntIdFromClasses } from '../toolbox/UserInterfaceUtil'
+import { getSingleIntIdFromAncestor, getSingleIntIdFromClasses } from '../toolbox/UserInterfaceUtil'
 import { getTypesettingInfo } from '../Typesetter/BrowserTypesettingCalculations'
 import { doNothing, wait } from '../toolbox/FunctionUtil'
 import { MultiToggle } from '../widgets/MultiToggle'
@@ -973,13 +973,17 @@ export class MainTextPanel extends PanelWithToolbar {
       if (this.editingTextToken) {
         return
       }
-      let tokenIndex = getSingleIntIdFromClasses($(ev.target), 'main-text-token-')
+      let tokenIndex = getSingleIntIdFromAncestor('SPAN', $(ev.target), 'main-text-token-')
       if ($(ev.target).hasClass('whitespace')) {
         return
       }
       switch(this.currentEditMode) {
         case EDIT_MODE_TEXT:
           this.verbose && console.log(`Click on main text token ${tokenIndex} in main text edit mode`)
+          if (tokenIndex === -1) {
+            console.warn(`Bad token index, cannot edit`)
+            break
+          }
           let tokenSelector = `.main-text-token-${tokenIndex}`
           this.originalTokenText = $(tokenSelector).text()
           this.verbose && console.log(`Text to edit: '${this.originalTokenText}'`)

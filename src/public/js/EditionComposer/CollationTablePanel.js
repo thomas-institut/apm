@@ -55,6 +55,7 @@ import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'
 import { capitalizeFirstLetter } from '../toolbox/Util.mjs'
 import { doNothing } from '../toolbox/FunctionUtil'
 import { HtmlRenderer } from '../FmtText/Renderer/HtmlRenderer'
+import { FmtText } from '../FmtText/FmtText'
 
 export class CollationTablePanel extends PanelWithToolbar {
   constructor (options = {}) {
@@ -958,9 +959,21 @@ export class CollationTablePanel extends PanelWithToolbar {
         this.ctData = CtData.emptyWitnessToken(this.ctData, witnessIndex, ref)
       } else  {
         let tokenType = WitnessTokenStringParser.strIsPunctuation(newText, this.lang) ? TranscriptionTokenType.PUNCTUATION : TranscriptionTokenType.WORD
-        this.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = newText
-        // TODO: allow formats in cells edited in the collation table
-        delete this.ctData['witnesses'][witnessIndex]['tokens'][ref]['fmtText']
+        if (this.ctData['witnesses'][witnessIndex]['tokens'][ref]['fmtText'] === undefined) {
+          // no formatting, just copy the text
+          this.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = newText
+        } else {
+          //there is some formatting
+          console.log(`Replacing edition witness token that contains formatting`)
+          console.log(`newText: ${newText}`)
+          console.log(`current fmtText: `)
+          console.log(this.ctData['witnesses'][witnessIndex]['tokens'][ref]['fmtText'])
+          let newFmtText = FmtText.withPlainText(this.ctData['witnesses'][witnessIndex]['tokens'][ref]['fmtText'], newText)
+          this.ctData['witnesses'][witnessIndex]['tokens'][ref]['fmtText'] = newFmtText
+          this.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = FmtText.getPlainText(newFmtText)
+          console.log(`new fmtText: `)
+          console.log(this.ctData['witnesses'][witnessIndex]['tokens'][ref]['fmtText'])
+        }
         this.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] = tokenType
         if (tokenType === TranscriptionTokenType.WORD) {
           if (this.ctData['automaticNormalizationsApplied'].length !== 0) {

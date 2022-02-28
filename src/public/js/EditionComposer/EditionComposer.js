@@ -57,6 +57,7 @@ import { ServerLogger } from '../Server/ServerLogger'
 import { KeyCache } from '../toolbox/KeyCache'
 import { pushArray } from '../toolbox/ArrayUtil'
 import { TechSupportPanel } from './TechSupportPanel'
+import { FmtText } from '../FmtText/FmtText'
 
 // CONSTANTS
 
@@ -555,7 +556,22 @@ export class EditionComposer {
     function replaceEditionWitnessToken(ctRow, tokenIndex, newText, lang) {
       let tokenType = WitnessTokenStringParser.strIsPunctuation(newText, lang) ? WitnessTokenType.PUNCTUATION : WitnessTokenType.WORD
       thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['tokenClass'] = WitnessTokenClass.EDITION
-      thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['text'] = newText
+      if (thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['fmtText'] === undefined) {
+        // no formatting, just copy the text
+        thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['text'] = newText
+      } else {
+        //there is some formatting
+        console.log(`Replacing edition witness token that contains formatting`)
+        console.log(`newText: ${newText}`)
+        console.log(`current fmtText: `)
+        console.log(thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['fmtText'])
+        let newFmtText = FmtText.withPlainText(thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['fmtText'], newText)
+        thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['fmtText'] = newFmtText
+        thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['text'] = FmtText.getPlainText(newFmtText)
+        console.log(`new fmtText: `)
+        console.log(thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['fmtText'])
+      }
+
       thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['tokenType'] = tokenType
       thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['normalizedText'] = ''
       thisObject.ctData['witnesses'][ctRow]['tokens'][tokenIndex]['normalizationSource'] = ''

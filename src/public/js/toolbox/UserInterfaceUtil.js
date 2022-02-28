@@ -17,6 +17,18 @@ export function getClassArray(element) {
   return element.attr("class").split(/\s+/)
 }
 
+export function getSingleIntIdFromAncestor(ancestorTagName, element, prefix, maxDepth=3) {
+  let currentDepth = 0
+  while (currentDepth <=maxDepth && element.get(0).tagName !== ancestorTagName) {
+    element = element.parent()
+  }
+  if (currentDepth > maxDepth) {
+    // could not find the tag
+    return -1
+  }
+  return getSingleIntIdFromClasses(element, prefix)
+
+}
 
 export function getSingleIntIdFromClasses(element, prefix) {
   let classes = getClassArray(element)

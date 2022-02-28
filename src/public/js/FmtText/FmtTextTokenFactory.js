@@ -37,6 +37,7 @@ export class FmtTextTokenFactory {
   /**
    *
    * @param textToken
+   * @return {FmtTextToken}
    */
   static clone(textToken) {
     let newText = new FmtTextToken()

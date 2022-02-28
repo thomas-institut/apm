@@ -18,6 +18,8 @@
 
 import {FmtTextFactory} from './FmtTextFactory'
 import { pushArray } from '../toolbox/ArrayUtil'
+import * as FmtTextTokenType from './FmtTextTokenType'
+import {FmtTextTokenFactory} from './FmtTextTokenFactory'
 
 /**
  *  FmtText is meant to be an output-independent and versatile representation of formatted text
@@ -54,5 +56,29 @@ export class FmtText {
     pushArray(newFmtText, realFmt1)
     pushArray(newFmtText, realFmt2)
     return newFmtText
+  }
+
+  /**
+   * Attempts to change the text of a fmtText preserving
+   * all formats.
+   * This only works predictably when there is a single text token in the fmtText array,
+   * if there is more than one, only the formats of the first token will the preserved
+   *
+   * @param {FmtTextToken[]}fmtText
+   * @param {string}newPlainText
+   * @return {[]}
+   */
+  static withPlainText(fmtText, newPlainText) {
+    if (fmtText.length === 0) {
+      return []
+    }
+    let textTokens = fmtText.filter( (token) => { return token.type === FmtTextTokenType.TEXT})
+    if (textTokens.length === 0) {
+      // no text
+      return fmtText
+    }
+    let theTextToken = FmtTextTokenFactory.clone(textTokens[0])
+    theTextToken.text = newPlainText
+    return [theTextToken]
   }
 }

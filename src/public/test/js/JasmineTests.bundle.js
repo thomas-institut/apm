@@ -357,6 +357,7 @@ class FmtTextTokenFactory {
   /**
    *
    * @param textToken
+   * @return {FmtTextToken}
    */
   static clone(textToken) {
     let newText = new _FmtTextToken__WEBPACK_IMPORTED_MODULE_0__.FmtTextToken()

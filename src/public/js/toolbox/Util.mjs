@@ -40,6 +40,14 @@ export function trimWhiteSpace(someString) {
   return someString.replace(/^\s+/, '').replace(/\s+$/, '')
 }
 
+export function rTrimWhiteSpace(someString) {
+  return someString.replace(/\s+$/, '')
+}
+
+export function rTrimNewlineCharacters(someString) {
+  return someString.replace(/\n+$/, '')
+}
+
 export function getClassArrayFromJQueryObject(element) {
   if (element.attr('class') === undefined) {
     return []

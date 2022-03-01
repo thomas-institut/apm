@@ -112,6 +112,7 @@ export class EditionWitnessToken extends WitnessToken {
    */
   setParagraphEnd(style = EditionWitnessParagraphStyle.NORMAL) {
     this.setFormatMark(WitnessFormat.PARAGRAPH_END, style)
+    return this
   }
 
   /**
@@ -123,6 +124,7 @@ export class EditionWitnessToken extends WitnessToken {
     this.type = WitnessTokenType.WHITESPACE
     this.setWhitespace(' ')
     this.style = spaceType
+    return this
   }
 
   /**
@@ -134,7 +136,7 @@ export class EditionWitnessToken extends WitnessToken {
    */
   setFormatMark(formatMarkName, style = '', formats = []) {
     this.tokenType = WitnessTokenType.FORMAT_MARK
-    this.name = formatMarkName
+    this.markType = formatMarkName
     this.style = style
     this.formats = formats
     this.__removeText()
@@ -144,14 +146,14 @@ export class EditionWitnessToken extends WitnessToken {
 
   getCtDataObject () {
     let theObject = super.getCtDataObject()
-    theObject.name = this.name
+    theObject.markType = this.markType
     theObject.style = this.style
     theObject.formats = this.formats
     return theObject
   }
 
   __removeAllFormats() {
-    this.name = ''
+    this.markType = ''
     this.style = ''
     this.formats = []
   }

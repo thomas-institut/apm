@@ -44,9 +44,12 @@ import { EditionMainTextEditor } from './EditionMainTextEditor'
 import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'
 import * as MyersDiff from '../toolbox/MyersDiff.mjs'
 import * as WitnessTokenType from '../Witness/WitnessTokenType'
+import * as EditionWitnessFormatMarkType from '../Witness/EditionWitnessFormatMark'
+import * as FmtTexTokenType from "../FmtText/FmtTextTokenType"
 import { WitnessToken } from '../Witness/WitnessToken'
 import { FmtText } from '../FmtText/FmtText'
 import { CollapsePanel } from '../widgets/CollapsePanel'
+import { EditionWitnessToken } from '../Witness/EditionWitnessToken'
 
 const EDIT_MODE_OFF = 'off'
 const EDIT_MODE_TEXT = 'text'
@@ -382,7 +385,7 @@ export class MainTextPanel extends PanelWithToolbar {
       containerSelector: `#${betaEditorDivId}`,
       lang: this.lang,
       onChange: this._genOnChangeMainTextFreeTextEditor(),
-      debug: false
+      debug: true
     })
 
     this.freeTextEditor.setText( this._convertMainTextToFmtText(), true)
@@ -394,14 +397,24 @@ export class MainTextPanel extends PanelWithToolbar {
     this.verbose && console.log(`Now in beta mode`)
   }
 
-  __getWitnessTokenHtml(token) {
-    if (token === null || token === undefined || token.type === WitnessTokenType.EMPTY) {
+  __getWitnessTokenHtml(token, full = true) {
+    if (token === null || token === undefined || token.tokenType === WitnessTokenType.EMPTY) {
       return ''
     }
 
-    if (token.type === WitnessTokenType.WHITESPACE) {
+    if (token.tokenType === WitnessTokenType.WHITESPACE) {
       return ' '
     }
+    if (token.tokenType === WitnessTokenType.FORMAT_MARK) {
+      if (token.markType === EditionWitnessFormatMarkType.PARAGRAPH_END) {
+        let html = '<span class="format-mark"><i class="bi bi-paragraph"></i></span>'
+        if (full) {
+           html += "<br/>"
+        }
+        return html
+      }
+    }
+
 
     if (token.fmtText !== undefined) {
       return this.htmlRenderer.render(token.fmtText)
@@ -441,9 +454,9 @@ export class MainTextPanel extends PanelWithToolbar {
             case 'replace':
               if (token.text === change.newToken.text) {
                 // a change in format only
-                html += `<span class="replacement">${this.__getWitnessTokenHtml(change.newToken)}</span> `
+                html += `<span class="replacement">${this.__getWitnessTokenHtml(change.newToken, false)}</span> `
               } else {
-                html += `<span class='replaced'>${this.__getWitnessTokenHtml(token)}</span>${replaceSign}<span class="replacement">${this.__getWitnessTokenHtml(change.newToken)}</span> `
+                html += `<span class='replaced'>${this.__getWitnessTokenHtml(token )}</span>${replaceSign}<span class="replacement">${this.__getWitnessTokenHtml(change.newToken)}</span> `
               }
               break
 
@@ -800,8 +813,15 @@ export class MainTextPanel extends PanelWithToolbar {
 
     // Get all tokens
     fmtText.forEach( (fmtTextToken) => {
-      if (fmtTextToken.type === 'glue') {
+      if (fmtTextToken.type === FmtTexTokenType.GLUE) {
         witnessTokens.push((new WitnessToken()).setWhitespace())
+        return
+      }
+      if (fmtTextToken.type === FmtTexTokenType.MARK) {
+        // only paragraphs recognized for now
+        if (fmtTextToken.markType === 'par' ) {
+          witnessTokens.push( (new EditionWitnessToken()).setParagraphEnd())
+        }
         return
       }
       let tmpWitnessTokens = WitnessTokenStringParser.parse(fmtTextToken.text).map( (witnessToken) => {

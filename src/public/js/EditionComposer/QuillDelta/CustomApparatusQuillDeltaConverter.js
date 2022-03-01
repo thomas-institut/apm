@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2019-21 Universität zu Köln
+ *  Copyright (C) 2021 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,12 +16,11 @@
  *
  */
 
+import { GenericQuillDeltaConverter } from './GenericQuillDeltaConverter'
 
-// Basic
-export const WORD = 'word'
-export const WHITESPACE = 'whitespace'
-export const PUNCTUATION = 'punctuation'
-export const EMPTY = 'empty'
-
-// Used in EditionWitnessToken
-export const FORMAT_MARK = 'formatMark'
+export class CustomApparatusQuillDeltaConverter  {
+  static toFmtText(quillDelta, debug = false) {
+    let converter = new GenericQuillDeltaConverter({ debug: debug, ignoreParagraphs: true })
+    return converter.toFmtText(quillDelta)
+  }
+}

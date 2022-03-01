@@ -147,6 +147,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _FontSize__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./FontSize */ "./FmtText/FontSize.js");
 /* harmony import */ var _FontWeight__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./FontWeight */ "./FmtText/FontWeight.js");
 /* harmony import */ var _VerticalAlign__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./VerticalAlign */ "./FmtText/VerticalAlign.js");
+/* harmony import */ var _ParagraphStyle__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./ParagraphStyle */ "./FmtText/ParagraphStyle.js");
 /*
  *  Copyright (C) 2021 Universität zu Köln
  *
@@ -217,6 +218,7 @@ FmtTextToken := {
 
 
 
+
 const DEFAULT_GLUE_SPACE = 'normal'
 
 class FmtTextToken {
@@ -234,6 +236,10 @@ class FmtTextToken {
 
       case _FmtTextTokenType__WEBPACK_IMPORTED_MODULE_0__.GLUE:
         this.space = DEFAULT_GLUE_SPACE // i.e., default size, whatever that means for the typesetter/presenter context
+        break
+
+      case _FmtTextTokenType__WEBPACK_IMPORTED_MODULE_0__.MARK:
+        this.markType = ''
         break
 
       default:
@@ -293,6 +299,18 @@ class FmtTextToken {
 
   setSmallFont() {
     this.fontSize = _FontSize__WEBPACK_IMPORTED_MODULE_2__.SMALL
+    return this
+  }
+
+  setMarkType(markType) {
+    this.type = _FmtTextTokenType__WEBPACK_IMPORTED_MODULE_0__.MARK
+    this.markType = markType
+    return this
+  }
+
+  setStyle(style) {
+    this.style = style
+    return this
   }
 
   setGlue(width, stretch = 0, shrink = 0 ) {
@@ -318,6 +336,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _FmtTextToken__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./FmtTextToken */ "./FmtText/FmtTextToken.js");
 /* harmony import */ var _FmtTextTokenType__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./FmtTextTokenType */ "./FmtText/FmtTextTokenType.js");
+/* harmony import */ var _ParagraphStyle__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./ParagraphStyle */ "./FmtText/ParagraphStyle.js");
+/* harmony import */ var _MarkType__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./MarkType */ "./FmtText/MarkType.js");
 /*
  *  Copyright (C) 2021 Universität zu Köln
  *
@@ -339,6 +359,8 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+
+
 class FmtTextTokenFactory {
 
   /**
@@ -352,6 +374,11 @@ class FmtTextTokenFactory {
 
   static normalSpace() {
     return new _FmtTextToken__WEBPACK_IMPORTED_MODULE_0__.FmtTextToken(_FmtTextTokenType__WEBPACK_IMPORTED_MODULE_1__.GLUE)
+  }
+
+  static paragraphMark(style = _ParagraphStyle__WEBPACK_IMPORTED_MODULE_2__.NORMAL) {
+    return (new _FmtTextToken__WEBPACK_IMPORTED_MODULE_0__.FmtTextToken(_FmtTextTokenType__WEBPACK_IMPORTED_MODULE_1__.MARK)).setMarkType(_MarkType__WEBPACK_IMPORTED_MODULE_3__.PARAGRAPH).setStyle(style)
+
   }
 
   /**
@@ -435,7 +462,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "EMPTY": () => (/* binding */ EMPTY),
 /* harmony export */   "TEXT": () => (/* binding */ TEXT),
-/* harmony export */   "GLUE": () => (/* binding */ GLUE)
+/* harmony export */   "GLUE": () => (/* binding */ GLUE),
+/* harmony export */   "MARK": () => (/* binding */ MARK)
 /* harmony export */ });
 /*
  *  Copyright (C) 2021 Universität zu Köln
@@ -458,6 +486,7 @@ __webpack_require__.r(__webpack_exports__);
 const EMPTY = 'empty'
 const TEXT = 'text'
 const GLUE = 'glue'
+const MARK = 'mark'
 
 /***/ }),
 
@@ -532,6 +561,77 @@ __webpack_require__.r(__webpack_exports__);
 
 const NORMAL = ''
 const BOLD = 'bold'
+
+/***/ }),
+
+/***/ "./FmtText/MarkType.js":
+/*!*****************************!*\
+  !*** ./FmtText/MarkType.js ***!
+  \*****************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "PARAGRAPH": () => (/* binding */ PARAGRAPH),
+/* harmony export */   "SECTION": () => (/* binding */ SECTION)
+/* harmony export */ });
+/*
+ *  Copyright (C) 2022 Universität zu Köln
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ */
+
+const PARAGRAPH = 'par'
+const SECTION = 'section'
+
+/***/ }),
+
+/***/ "./FmtText/ParagraphStyle.js":
+/*!***********************************!*\
+  !*** ./FmtText/ParagraphStyle.js ***!
+  \***********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "NORMAL": () => (/* binding */ NORMAL),
+/* harmony export */   "HEADING1": () => (/* binding */ HEADING1),
+/* harmony export */   "HEADING2": () => (/* binding */ HEADING2)
+/* harmony export */ });
+/*
+ *  Copyright (C) 2022 Universität zu Köln
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ */
+
+
+const NORMAL = ''
+const HEADING1 = 'h1'
+const HEADING2 = 'h2'
 
 /***/ }),
 

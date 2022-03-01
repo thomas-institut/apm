@@ -19,3 +19,4 @@
 export const EMPTY = 'empty'
 export const TEXT = 'text'
 export const GLUE = 'glue'
+export const MARK = 'mark'

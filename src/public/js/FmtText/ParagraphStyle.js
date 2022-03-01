@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2019-21 Universität zu Köln
+ *  Copyright (C) 2022 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,11 +17,6 @@
  */
 
 
-// Basic
-export const WORD = 'word'
-export const WHITESPACE = 'whitespace'
-export const PUNCTUATION = 'punctuation'
-export const EMPTY = 'empty'
-
-// Used in EditionWitnessToken
-export const FORMAT_MARK = 'formatMark'
+export const NORMAL = ''
+export const HEADING1 = 'h1'
+export const HEADING2 = 'h2'

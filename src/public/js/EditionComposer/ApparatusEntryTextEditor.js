@@ -22,7 +22,7 @@ import { doNothing } from '../toolbox/FunctionUtil'
 import Quill from '../QuillLoader'
 import Small from './QuillBlots/Small'
 import { QuillDeltaRenderer } from '../FmtText/Renderer/QuillDeltaRenderer'
-import { QuillDeltaConverter } from './QuillDeltaConverter'
+import { CustomApparatusQuillDeltaConverter } from './QuillDelta/CustomApparatusQuillDeltaConverter'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory'
 import Superscript from './QuillBlots/Superscript'
 import { FmtText } from '../FmtText/FmtText'
@@ -107,7 +107,7 @@ export class ApparatusEntryTextEditor {
   }
 
   getFmtText() {
-    let fmtText = QuillDeltaConverter.toFmtText(this.getQuillDelta())
+    let fmtText = CustomApparatusQuillDeltaConverter.toFmtText(this.getQuillDelta())
     if (removeWhiteSpace(FmtText.getPlainText(fmtText)) === '' ) {
       // only white space, report no text
       return []

@@ -18,6 +18,8 @@
 
 import { FmtTextToken } from './FmtTextToken'
 import * as FmtTextTokenType from './FmtTextTokenType'
+import * as ParagraphStyle from './ParagraphStyle'
+import * as MarkType from './MarkType'
 
 export class FmtTextTokenFactory {
 
@@ -32,6 +34,11 @@ export class FmtTextTokenFactory {
 
   static normalSpace() {
     return new FmtTextToken(FmtTextTokenType.GLUE)
+  }
+
+  static paragraphMark(style = ParagraphStyle.NORMAL) {
+    return (new FmtTextToken(FmtTextTokenType.MARK)).setMarkType(MarkType.PARAGRAPH).setStyle(style)
+
   }
 
   /**

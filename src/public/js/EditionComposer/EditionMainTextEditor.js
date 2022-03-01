@@ -22,9 +22,10 @@ import { doNothing } from '../toolbox/FunctionUtil'
 import Quill from '../QuillLoader'
 import Small from './QuillBlots/Small'
 import { QuillDeltaRenderer } from '../FmtText/Renderer/QuillDeltaRenderer'
-import { QuillDeltaConverter } from './QuillDeltaConverter'
+import { CustomApparatusQuillDeltaConverter } from './QuillDelta/CustomApparatusQuillDeltaConverter'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory'
 import Superscript from './QuillBlots/Superscript'
+import { GenericQuillDeltaConverter } from './QuillDelta/GenericQuillDeltaConverter'
 
 const simpleFormats = [
   'bold',
@@ -73,6 +74,13 @@ export class EditionMainTextEditor {
     this.quillEditor = new Quill(`${this.containerSelector} .fte-editor`,{})
     this.onChange = cleanOptions.onChange
     this.quillDeltaRenderer = new QuillDeltaRenderer()
+    this.quillDeltaConverter = new GenericQuillDeltaConverter({
+      verbose: this.verbose,
+      debug: this.debug,
+      ignoreParagraphs: false
+    })
+
+
 
     this.setText(cleanOptions.initialText)
     this.quillEditor.on('text-change', () => {
@@ -110,7 +118,9 @@ export class EditionMainTextEditor {
   }
 
   getFmtText() {
-    return QuillDeltaConverter.toFmtText(this.getQuillDelta())
+    this.debug && console.log(`Current Quill Delta`)
+    this.debug && console.log(this.getQuillDelta())
+    return this.quillDeltaConverter.toFmtText(this.getQuillDelta())
   }
 
   /**

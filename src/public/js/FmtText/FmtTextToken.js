@@ -67,6 +67,7 @@ import * as FontStyle from './FontStyle'
 import * as FontSize from './FontSize'
 import * as FontWeight from './FontWeight'
 import * as VerticalAlign from './VerticalAlign'
+import * as ParagraphStyle from './ParagraphStyle'
 
 export const DEFAULT_GLUE_SPACE = 'normal'
 
@@ -85,6 +86,10 @@ export class FmtTextToken {
 
       case FmtTextTokenType.GLUE:
         this.space = DEFAULT_GLUE_SPACE // i.e., default size, whatever that means for the typesetter/presenter context
+        break
+
+      case FmtTextTokenType.MARK:
+        this.markType = ''
         break
 
       default:
@@ -144,6 +149,18 @@ export class FmtTextToken {
 
   setSmallFont() {
     this.fontSize = FontSize.SMALL
+    return this
+  }
+
+  setMarkType(markType) {
+    this.type = FmtTextTokenType.MARK
+    this.markType = markType
+    return this
+  }
+
+  setStyle(style) {
+    this.style = style
+    return this
   }
 
   setGlue(width, stretch = 0, shrink = 0 ) {

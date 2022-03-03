@@ -190,6 +190,15 @@ export class TableEditor {
         type: 'function',
         default: (row, col, value) => thisObject.options.isEmptyValue(row, col,value) ? '' : value
       },
+      isCellEditable: {
+        // a function to test whether a particular cell is editable
+        // It will only be called on rows marked as editable, which means that a
+        // particular cell is only editable if belongs to an editable row and this function returns 'true
+        // The default function returns true, thereby making all cells in an editable row editable
+        required: false,
+        type: 'function',
+        default: (row, col, val) => { return true}
+      },
       onCellEnterEditMode: {
         // a function to be called when the user clicks on an editable cell, before any cell editing setup
         // is done. If the function returns false, editing will not occur
@@ -670,6 +679,10 @@ export class TableEditor {
     return this.rowDefinition[row].isEditable
   }
 
+  isCellEditable(row, col) {
+    return this.isRowEditable(row) && this.options.isCellEditable(row, col, this.matrix.getValue(row,col))
+  }
+
   generateTdHtml(row, col) {
     let html = ''
 
@@ -692,7 +705,7 @@ export class TableEditor {
     html += `<span class="${cellContentClass}">`
     html += this.options.generateCellContent(row,col, this.matrix.getValue(row,col))
     html += '</span>'
-    if (this.tableEditMode !== editModeOff && this.isRowEditable(row)) {
+    if (this.tableEditMode !== editModeOff && this.isCellEditable(row, col)) {
       html += this.genButtonHtml(this.icons.editCell, [ editCellButtonClass, cellButtonClass ] , 'Edit')
     }
     if (this.tableEditMode !== editModeOff) {
@@ -799,7 +812,7 @@ export class TableEditor {
 
       if (theElement.prop('nodeName') === 'TD') {
         //console.log('Not a button')
-        if (thisObject.isRowEditable(row)) {
+        if (thisObject.isCellEditable(row, col)) {
           //console.log('Editable cell clicked, row ' + row + ' col ' + col)
           thisObject.enterCellEditMode(row, col)
           return false
@@ -918,7 +931,7 @@ export class TableEditor {
     let tdSelector = this.getTdSelector(row, col)
     // console.log(`setting up event handlers for cell ${row}:${col}, restoreClick = ${restoreClickEvent}`)
     if (this.tableEditMode !== editModeOff && restoreClickEvent) {
-      if (this.isRowEditable(row)) {
+      if (this.isCellEditable(row, col)) {
         $(tdSelector).off('click')
         $(tdSelector).on('click', this.genOnClickCell(row, col))
       }
@@ -1108,7 +1121,7 @@ export class TableEditor {
               .removeClass(hiddenClass)
               .attr('title', `Push ${col + 1}-${lastCol + 1} forward 1 column`)
           }
-          if (thisObject.isRowEditable(row)) {
+          if (thisObject.isCellEditable(row, col)) {
             $(tdSelector + ' .edit-cell-button').removeClass(hiddenClass)
           }
           return true

@@ -599,6 +599,7 @@ export class CollationTablePanel extends PanelWithToolbar {
       groupedColumns: this.ctData.groupedColumns,
       generateCellContent: this.genGenerateCellContentFunction(),
       generateCellContentEditMode: this.genGenerateCellContentEditModeFunction(),
+      isCellEditable: this.genIsCellEditable(),
       onCellEnterEditMode: this.genOnEnterCellEditMode(),
       onCellLeaveEditMode: this.genOnLeaveCellEditMode(),
       onCellConfirmEdit: this.genOnCellConfirmEditFunction(),
@@ -1013,6 +1014,8 @@ export class CollationTablePanel extends PanelWithToolbar {
     let noteIconSpan = ' <span class="noteicon"><i class="far fa-comment"></i></span>'
     let normalizationSymbol = '<b><sub>N</sub></b>'
     const EMPTY_CONTENT = '&mdash;'
+    const PARAGRAPH_MARK = '&para;'
+    const UNKNOWN_MARK = '???'
     return (tableRow, col, ref) => {
       if (ref === -1) {
         return EMPTY_CONTENT
@@ -1028,6 +1031,15 @@ export class CollationTablePanel extends PanelWithToolbar {
       let tokenArray = this.ctData['witnesses'][witnessIndex]['tokens']
       let token = tokenArray[ref]
       if (token.tokenClass === TokenClass.EDITION) {
+        if (token.tokenType === 'formatMark') {
+          switch(token.markType) {
+            case 'par_end':
+              return PARAGRAPH_MARK
+
+            default:
+              return UNKNOWN_MARK
+          }
+        }
         if (token.text === '') {
           return EMPTY_CONTENT
         }
@@ -1146,10 +1158,21 @@ export class CollationTablePanel extends PanelWithToolbar {
           break
 
         case TokenClass.EDITION:
-          classes.push('withpopover')
-          let langCode = this.ctData['lang']
-          classes.push('text-' + langCode)
+          if (token.tokenType === 'formatMark') {
+            //classes.push('mark')
+            switch(token.markType) {
+              case 'par_end':
+                classes.push('paragraph-end')
+                break
 
+              default:
+                classes.push('unknown')
+            }
+          } else {
+            classes.push('withpopover')
+            let langCode = this.ctData['lang']
+            classes.push('text-' + langCode)
+          }
       }
 
       return classes
@@ -1265,6 +1288,25 @@ export class CollationTablePanel extends PanelWithToolbar {
         return token['text']
       }
       return 'ERROR!'
+    }
+  }
+
+  genIsCellEditable() {
+    return (row, col, value) => {
+      if (value === -1) {
+        // can't edit empty references
+        return false
+      }
+      let witnessIndex = this.ctData['witnessOrder'][row]
+      let witness = this.ctData['witnesses'][witnessIndex]
+      if (witness['witnessType'] !== 'edition') {
+        // can't edit other than edition witnesses
+        return false
+      }
+      let tokenArray = this.ctData['witnesses'][witnessIndex]['tokens']
+      let token = tokenArray[value]
+      // do not allow editing format marks
+      return token['tokenType'] !== 'formatMark';
     }
   }
 

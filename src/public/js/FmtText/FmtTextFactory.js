@@ -99,8 +99,14 @@ export class FmtTextFactory {
     return []
   }
 
+  /**
+   *
+   * @return {FmtTextToken[]}
+   */
   static oneNormalSpace() {
-    return [ FmtTextTokenFactory.normalSpace() ]
+    let fmtText =[]
+    fmtText.push(FmtTextTokenFactory.normalSpace())
+    return fmtText
   }
 }
 

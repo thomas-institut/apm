@@ -33,6 +33,7 @@ import { FmtText } from '../FmtText/FmtText'
 
 import * as VerticalAlign from '../FmtText/VerticalAlign'
 import * as FontSize from '../FmtText/FontSize'
+import { MainText } from './MainText'
 
 const doubleVerticalLine = String.fromCodePoint(0x2016)
 const verticalLine = String.fromCodePoint(0x007c)
@@ -118,6 +119,8 @@ export class EditionViewerSvg {
     })
 
     let mainTextTokensToTypeset = this._getTypesetterTokensForMainText()
+    console.log(`MainTextTokensToTypeset`)
+    console.log(mainTextTokensToTypeset)
     let mainTextTypesetTokens = mainTextTypesetter.typesetTokens(mainTextTokensToTypeset)
 
 
@@ -302,25 +305,31 @@ export class EditionViewerSvg {
     let typesetterRenderer = new TypesetterTokenRenderer()
     let typesetterTokens = []
 
-    this.edition.mainText.forEach( (mainTextToken, index) => {
-      switch(mainTextToken.type) {
-        case MainTextTokenType.GLUE:
-          let theGlue = TypesetterTokenFactory.normalSpace()
-          theGlue.mainTextTokenIndex = index
-          typesetterTokens.push(theGlue)
-          break
+    let paragraphs = MainText.getParagraphs(this.edition.mainText)
+    paragraphs.forEach( (paragraph) => {
+      // TODO: use better spaces
+      typesetterTokens.push(TypesetterTokenFactory.normalSpace())
+      typesetterTokens.push(TypesetterTokenFactory.normalSpace())
+      paragraph.tokens.forEach( (mainTextToken) => {
+        switch(mainTextToken.type) {
+          case MainTextTokenType.GLUE:
+            let theGlue = TypesetterTokenFactory.normalSpace()
+            theGlue.mainTextTokenIndex = mainTextToken.originalIndex
+            typesetterTokens.push(theGlue)
+            break
 
-        case MainTextTokenType.TEXT:
-          let fmtTextTypesetterTokens =  typesetterRenderer.render(mainTextToken.fmtText, this.edition.lang)
-          // tag the first typeset token with the main text index
-          if (fmtTextTypesetterTokens.length > 0) {
-            fmtTextTypesetterTokens[0].mainTextTokenIndex = index
-          }
-          typesetterTokens = typesetterTokens.concat (fmtTextTypesetterTokens)
-          break
-      }
+          case MainTextTokenType.TEXT:
+            let fmtTextTypesetterTokens =  typesetterRenderer.render(mainTextToken.fmtText, this.edition.lang)
+            // tag the first typeset token with the main text index
+            if (fmtTextTypesetterTokens.length > 0) {
+              fmtTextTypesetterTokens[0].mainTextTokenIndex = mainTextToken.originalIndex
+            }
+            typesetterTokens = typesetterTokens.concat (fmtTextTypesetterTokens)
+            break
+        }
+      })
+      typesetterTokens.push(TypesetterTokenFactory.paragraphBreak())
     })
-
     return typesetterTokens
   }
 

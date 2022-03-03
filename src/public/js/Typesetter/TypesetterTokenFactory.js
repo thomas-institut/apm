@@ -39,6 +39,10 @@ export class TypesetterTokenFactory {
     return (new TypesetterToken()).setSpace('normal')
   }
 
+  static paragraphBreak() {
+    return (new TypesetterToken()).setText("\n")
+  }
+
 }
 
 

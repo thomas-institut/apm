@@ -10,8 +10,10 @@ $config['db']['user'] = "USER";
 $config['db']['pwd'] = "PASSWORD";
 $config['db']['db'] = "DATABASE";
 
-// BASE URL  (do not add trailing slashes, e.g. https://mywebsite.com/ is wrong, use https://mywebsite.com)
-$config['baseurl'] = 'http://localhost:8888/public';
+// SUB_DIR: APM url after /,
+//  e.g. if APM runs in https://test.com/apm,  sub_dir = 'apm'
+//       if it runs in https://test.com,  sub_dir = '';
+$config['sub_dir'] = '';
 
 // TIME ZONE
 $config['default_timezone'] = "Europe/Berlin";

@@ -50,6 +50,7 @@ import { WitnessToken } from '../Witness/WitnessToken'
 import { FmtText } from '../FmtText/FmtText'
 import { CollapsePanel } from '../widgets/CollapsePanel'
 import { EditionWitnessToken } from '../Witness/EditionWitnessToken'
+import { MainText } from '../Edition/MainText'
 
 const EDIT_MODE_OFF = 'off'
 const EDIT_MODE_TEXT = 'text'
@@ -1247,6 +1248,9 @@ export class MainTextPanel extends PanelWithToolbar {
         case EditionMainTextTokenType.TEXT:
           return token.fmtText
 
+        case EditionMainTextTokenType.PARAGRAPH_END:
+          return FmtTextTokenFactory.paragraphMark(token.style)
+
         default:
           return []
       }
@@ -1263,22 +1267,36 @@ export class MainTextPanel extends PanelWithToolbar {
 
   _getMainTextHtmlVersion() {
     let fmtTextRenderer = new HtmlRenderer({plainMode : true })
-    let classes = []
-    return this.edition.mainText.map( (token, i) => {
-      switch(token.type) {
-        case EditionMainTextTokenType.GLUE:
-          classes = [ 'main-text-token', `main-text-token-${i}`, 'whitespace']
-          return `<span class="${classes.join(' ')}"> </span>`
+    let paragraphs = MainText.getParagraphs(this.edition.mainText)
 
-        case EditionMainTextTokenType.TEXT:
-          let ctIndex = CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, token.editionWitnessTokenIndex)
-          classes = [ 'main-text-token', `main-text-token-${i}`, `ct-index-${ctIndex}`]
-          return `<span class="${classes.join(' ')} ">${fmtTextRenderer.render(token.fmtText)}</span>`
+    return paragraphs.map ( (paragraph, paragraphIndex) => {
+      let paragraphInnerHtml = paragraph.tokens.map( (token) => {
+        let tokenClasses = []
+        switch(token.type) {
+          case EditionMainTextTokenType.GLUE:
+            tokenClasses = [ 'main-text-token', `main-text-token-${token.originalIndex}`, 'whitespace']
+            return `<span class="${tokenClasses.join(' ')}"> </span>`
 
-        default:
-          return ''
+          case EditionMainTextTokenType.TEXT:
+            let ctIndex = CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, token.editionWitnessTokenIndex)
+            tokenClasses = [ 'main-text-token', `main-text-token-${token.originalIndex}`, `ct-index-${ctIndex}`]
+            return `<span class="${tokenClasses.join(' ')} ">${fmtTextRenderer.render(token.fmtText)}</span>`
+
+          default:
+            return ''
+        }
+      }).join('')
+      let paragraphClasses = [ 'paragraph', `paragraph-${paragraphIndex}`]
+      if (paragraph.type !== '') {
+        paragraphClasses.push(`paragraph-${paragraph.type}`)
       }
+      if (paragraphInnerHtml === '') {
+        // an empty paragraph
+        paragraphClasses.push(`paragraph-empty`)
+      }
+      return `<p class="${paragraphClasses.join(' ')}">${paragraphInnerHtml}</p>`
     }).join('')
+
   }
 
   _drawLineNumbers(mainTextTokensWithTypesettingInfo) {

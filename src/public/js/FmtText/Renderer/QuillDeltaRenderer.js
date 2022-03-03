@@ -22,6 +22,7 @@ import * as FontStyle from '../FontStyle'
 import * as FontSize from '../FontSize'
 import * as FontWeight from '../FontWeight'
 import * as VerticalAlign from '../VerticalAlign'
+import * as MarkType from '../MarkType'
 
 export class QuillDeltaRenderer extends FmtTextRenderer {
 
@@ -29,6 +30,17 @@ export class QuillDeltaRenderer extends FmtTextRenderer {
     let deltaOps = fmtText.map( (fmtTextToken) => {
       if (fmtTextToken.type === FmtTextTokenType.GLUE) {
         return { insert: ' '}
+      }
+
+      if (fmtTextToken.type === FmtTextTokenType.MARK) {
+        switch (fmtTextToken.markType) {
+          case MarkType.PARAGRAPH:
+            return { insert: "\n"}
+
+          default:
+            console.warn(`Unsupported mark type ${fmtTextToken.markType} rendering QuillDelta from fmtText`)
+            return { insert:  ' '}
+        }
       }
 
       let attr = {}

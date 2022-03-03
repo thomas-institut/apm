@@ -75,6 +75,11 @@ export class EditionMainTextGenerator {
         // but just in case, make sure that no raw whitespace appears in the main text
         continue
       }
+
+      if (tokenType === WitnessTokenType.FORMAT_MARK) {
+        mainTextTokens.push(MainTextTokenFactory.createParagraphEnd(witnessToken['style']))
+        continue
+      }
       if (witnessToken.fmtText === undefined) {
         mainTextTokens.push(
           MainTextTokenFactory.createSimpleText(getTextFromWitnessToken(witnessToken, normalized, normalizationsToIgnore), i, lang)
@@ -91,6 +96,10 @@ export class EditionMainTextGenerator {
     let firstWordAdded = false
     for(let i = 0; i < mainTextTokens.length; i++) {
       let mainTextToken = mainTextTokens[i]
+      if (mainTextToken.type === MainTextTokenType.PARAGRAPH_END) {
+        mainTextTokensWithGlue.push(mainTextToken)
+        continue
+      }
 
       if (mainTextToken.type !== MainTextTokenType.TEXT){
         continue

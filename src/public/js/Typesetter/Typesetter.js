@@ -159,14 +159,14 @@ export class Typesetter {
     // console.log(`Typesetting line ${lineNumber} at posY ${posY} with ${tokens.length} tokens`)
     // console.log(`Normal space: ${normalSpace}`)
     // console.log(tokens)
-    // 1. make initial and final glue invisible
+    // 1. make ifinal glue invisible
     // TODO: support indentation of first line
-    let i = 0
-    while(i < tokens.length && tokens[i].type === TypesetterTokenType.GLUE) {
-      tokens[i] = this.__makeInvisible(tokens[i])
-      i++
-    }
-    i = tokens.length -1
+    // let i = 0
+    // while(i < tokens.length && tokens[i].type === TypesetterTokenType.GLUE) {
+    //   tokens[i] = this.__makeInvisible(tokens[i])
+    //   i++
+    // }
+    let i = tokens.length -1
     while (i > 0 && tokens[i].type === TypesetterTokenType.GLUE) {
       tokens[i] = this.__makeInvisible(tokens[i])
       i--

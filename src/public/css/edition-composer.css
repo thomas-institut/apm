@@ -218,6 +218,7 @@ div.apparatus {
 }
 
 
+
 .main-text {
     line-height: 1.5em;
 }
@@ -230,6 +231,16 @@ div.apparatus {
     font-size: 1.1rem;
 }
 
+div.main-text p.paragraph-normal {
+    text-indent: 1em;
+    padding: 0;
+    margin: 0;
+}
+
+div.main-text p.paragraph-empty {
+    padding: 0;
+    margin-bottom: 1.5em;
+}
 
 .main-text-token input:focus {
     border: 1px solid #eaecee;

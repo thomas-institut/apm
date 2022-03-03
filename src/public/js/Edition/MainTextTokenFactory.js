@@ -48,4 +48,10 @@ export class MainTextTokenFactory {
     return t
   }
 
+  static createParagraphEnd(style = '') {
+    let t = new MainTextToken()
+    t.type = EditionMainTextTokenType.PARAGRAPH_END
+    return t.setStyle(style)
+  }
+
 }

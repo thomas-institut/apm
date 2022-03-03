@@ -20,6 +20,7 @@
 import * as MainTextTokenType from './MainTextTokenType'
 import { FmtTextFactory } from '../FmtText/FmtTextFactory'
 import { FmtText } from '../FmtText/FmtText'
+import { FmtTextToken } from '../FmtText/FmtTextToken'
 
 /**
  * A token that can appear in the main text of an edition.
@@ -58,7 +59,7 @@ export class MainTextToken {
 
     /**
      *
-     * @member { FmtTextToken[] }
+     * @member {FmtTextToken[]}
      */
     this.fmtText = FmtTextFactory.empty()
 
@@ -67,6 +68,8 @@ export class MainTextToken {
      * @member {number}
      */
     this.editionWitnessTokenIndex = -1
+
+    this.style = ''
   }
 
   /**
@@ -97,6 +100,16 @@ export class MainTextToken {
     this.fmtText = FmtTextFactory.fromAnything(theText)
     this.editionWitnessTokenIndex = editionWitnessTokenIndex
     return this.setLang(lang)
+  }
+
+  /**
+   *
+   * @param {string}style
+   * @return {MainTextToken}
+   */
+  setStyle(style) {
+    this.style = style
+    return this
   }
 
   /**

@@ -90,6 +90,7 @@ export class FmtTextToken {
 
       case FmtTextTokenType.MARK:
         this.markType = ''
+        this.style = ''
         break
 
       default:
@@ -155,6 +156,7 @@ export class FmtTextToken {
   setMarkType(markType) {
     this.type = FmtTextTokenType.MARK
     this.markType = markType
+    this.style = ''
     return this
   }
 

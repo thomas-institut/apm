@@ -115,8 +115,14 @@ class FmtTextFactory {
     return []
   }
 
+  /**
+   *
+   * @return {FmtTextToken[]}
+   */
   static oneNormalSpace() {
-    return [ _FmtTextTokenFactory__WEBPACK_IMPORTED_MODULE_0__.FmtTextTokenFactory.normalSpace() ]
+    let fmtText =[]
+    fmtText.push(_FmtTextTokenFactory__WEBPACK_IMPORTED_MODULE_0__.FmtTextTokenFactory.normalSpace())
+    return fmtText
   }
 }
 
@@ -240,6 +246,7 @@ class FmtTextToken {
 
       case _FmtTextTokenType__WEBPACK_IMPORTED_MODULE_0__.MARK:
         this.markType = ''
+        this.style = ''
         break
 
       default:
@@ -305,6 +312,7 @@ class FmtTextToken {
   setMarkType(markType) {
     this.type = _FmtTextTokenType__WEBPACK_IMPORTED_MODULE_0__.MARK
     this.markType = markType
+    this.style = ''
     return this
   }
 
@@ -383,27 +391,33 @@ class FmtTextTokenFactory {
 
   /**
    *
-   * @param textToken
+   * @param fmtTextToken
    * @return {FmtTextToken}
    */
-  static clone(textToken) {
+  static clone(fmtTextToken) {
     let newText = new _FmtTextToken__WEBPACK_IMPORTED_MODULE_0__.FmtTextToken()
-    newText.type = textToken.type
+    newText.type = fmtTextToken.type
     switch(newText.type) {
       case _FmtTextTokenType__WEBPACK_IMPORTED_MODULE_1__.TEXT:
-        newText.text = textToken.text
-        newText.fontStyle = textToken.fontStyle
-        newText.fontWeight = textToken.fontWeight
-        newText.verticalAlign = textToken.verticalAlign
-        newText.fontSize = textToken.fontSize
+        newText.text = fmtTextToken.text
+        newText.fontStyle = fmtTextToken.fontStyle
+        newText.fontWeight = fmtTextToken.fontWeight
+        newText.verticalAlign = fmtTextToken.verticalAlign
+        newText.fontSize = fmtTextToken.fontSize
         break
 
       case _FmtTextTokenType__WEBPACK_IMPORTED_MODULE_1__.GLUE:
-        newText.space = textToken.space // i.e., default size, whatever that means for the typesetter/presenter context
+        newText.space = fmtTextToken.space // i.e., default size, whatever that means for the typesetter/presenter context
+        break
+
+
+      case _FmtTextTokenType__WEBPACK_IMPORTED_MODULE_1__.MARK:
+        newText.markType = fmtTextToken.markType
+        newText.style = fmtTextToken.style
         break
 
       default:
-        console.warn(`Unsupported type in FormattedTextToken constructor: ${type}`)
+        console.warn(`Unsupported type in FormattedTextToken constructor: ${fmtTextToken.type}`)
         newText.type = _FmtTextTokenType__WEBPACK_IMPORTED_MODULE_1__.EMPTY
     }
     return newText

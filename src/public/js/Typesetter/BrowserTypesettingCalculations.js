@@ -18,19 +18,22 @@
 
 
 import { StringCounter } from '../toolbox/StringCounter'
-import { TEXT } from '../Edition/MainTextTokenType'
+import * as MainTexTokenType from '../Edition/MainTextTokenType'
 import { pushArray } from '../toolbox/ArrayUtil'
 
 export function getTypesettingInfo(containerSelector, classPrefix, tokens) {
   let yPositions = []
-  let tokensWithInfo = tokens.map( (t, i) => {
+  let tokensWithInfo = tokens.map( (token, i) => {
+    if (token.type === MainTexTokenType.PARAGRAPH_END) {
+      return token
+    }
     let span = $(`${containerSelector} .${classPrefix}${i}`)
     let position = span.offset()
     let pY = position.top
     yPositions.push(pY)
-    t.x = position.left
-    t.y = pY
-    return t
+    token.x = position.left
+    token.y = pY
+    return token
   })
 
   let uniqueYPositions = yPositions.filter((v, i, a) => a.indexOf(v) === i).sort( (a,b) => { return a > b ? 1 : 0})
@@ -47,7 +50,7 @@ export function getTypesettingInfo(containerSelector, classPrefix, tokens) {
   tokensWithLineNumbers.forEach( (t) => {
     if (t.lineNumber !== currentLine) {
       currentLineTokens = currentLineTokens.map( (t) => {
-        if (t.type === TEXT) {
+        if (t.type === MainTexTokenType.TEXT) {
           t.numberOfOccurrencesInLine = occurrenceInLineCounter.getCount(t.getPlainText())
         }
         return t
@@ -57,7 +60,7 @@ export function getTypesettingInfo(containerSelector, classPrefix, tokens) {
       currentLineTokens = []
       currentLine = t.lineNumber
     }
-    if (t.type ===TEXT ) {
+    if (t.type === MainTexTokenType.TEXT ) {
       let text = t.getPlainText()
       occurrenceInLineCounter.addString(text)
       t.occurrenceInLine = occurrenceInLineCounter.getCount(text)
@@ -66,7 +69,7 @@ export function getTypesettingInfo(containerSelector, classPrefix, tokens) {
   })
   if (currentLineTokens.length > 0) {
     currentLineTokens = currentLineTokens.map( (t) => {
-      if (t.type === TEXT) {
+      if (t.type === MainTexTokenType.TEXT) {
         t.numberOfOccurrencesInLine = occurrenceInLineCounter.getCount(t.getPlainText())
       }
       return t

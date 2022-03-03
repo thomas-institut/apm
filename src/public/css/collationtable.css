@@ -135,6 +135,12 @@ table.collationtable td.tokennotpresent {
     color: #e0e0e0;
 }
 
+.te-table td.token-type-formatMark {
+    text-align: center;
+    color: #9eb1c5;
+}
+
+
 td.addition.variant-1 {
     background-image: linear-gradient(to top, #ddecff, #f3e7ff);
 }

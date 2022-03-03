@@ -43,27 +43,33 @@ export class FmtTextTokenFactory {
 
   /**
    *
-   * @param textToken
+   * @param fmtTextToken
    * @return {FmtTextToken}
    */
-  static clone(textToken) {
+  static clone(fmtTextToken) {
     let newText = new FmtTextToken()
-    newText.type = textToken.type
+    newText.type = fmtTextToken.type
     switch(newText.type) {
       case FmtTextTokenType.TEXT:
-        newText.text = textToken.text
-        newText.fontStyle = textToken.fontStyle
-        newText.fontWeight = textToken.fontWeight
-        newText.verticalAlign = textToken.verticalAlign
-        newText.fontSize = textToken.fontSize
+        newText.text = fmtTextToken.text
+        newText.fontStyle = fmtTextToken.fontStyle
+        newText.fontWeight = fmtTextToken.fontWeight
+        newText.verticalAlign = fmtTextToken.verticalAlign
+        newText.fontSize = fmtTextToken.fontSize
         break
 
       case FmtTextTokenType.GLUE:
-        newText.space = textToken.space // i.e., default size, whatever that means for the typesetter/presenter context
+        newText.space = fmtTextToken.space // i.e., default size, whatever that means for the typesetter/presenter context
+        break
+
+
+      case FmtTextTokenType.MARK:
+        newText.markType = fmtTextToken.markType
+        newText.style = fmtTextToken.style
         break
 
       default:
-        console.warn(`Unsupported type in FormattedTextToken constructor: ${type}`)
+        console.warn(`Unsupported type in FormattedTextToken constructor: ${fmtTextToken.type}`)
         newText.type = FmtTextTokenType.EMPTY
     }
     return newText

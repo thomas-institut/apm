@@ -307,9 +307,10 @@ export class EditionViewerSvg {
 
     let paragraphs = MainText.getParagraphs(this.edition.mainText)
     paragraphs.forEach( (paragraph) => {
-      // TODO: use better spaces
-      typesetterTokens.push(TypesetterTokenFactory.normalSpace())
-      typesetterTokens.push(TypesetterTokenFactory.normalSpace())
+      if (paragraph.type === 'normal') {
+        typesetterTokens.push(TypesetterTokenFactory.normalSpace())
+        typesetterTokens.push(TypesetterTokenFactory.normalSpace())
+      }
       paragraph.tokens.forEach( (mainTextToken) => {
         switch(mainTextToken.type) {
           case MainTextTokenType.GLUE:
@@ -324,6 +325,22 @@ export class EditionViewerSvg {
             if (fmtTextTypesetterTokens.length > 0) {
               fmtTextTypesetterTokens[0].mainTextTokenIndex = mainTextToken.originalIndex
             }
+            // apply font styles according to paragraph style
+            fmtTextTypesetterTokens = fmtTextTypesetterTokens.map( (typesetterToken) => {
+              switch (paragraph.type) {
+                case 'h1':
+                  return typesetterToken.setBold().setFontSize(1.3)
+
+                case 'h2':
+                  return typesetterToken.setBold().setFontSize(1.1)
+
+                case 'h3':
+                  return typesetterToken.setBold()
+
+                default:
+                  return typesetterToken
+              }
+            })
             typesetterTokens = typesetterTokens.concat (fmtTextTypesetterTokens)
             break
         }

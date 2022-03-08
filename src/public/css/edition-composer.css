@@ -260,11 +260,19 @@ div.main-text p.paragraph-h1, div.fte-editor h1 {
     margin: 1em 0;
 }
 
-
-
 div.main-text p.paragraph-empty {
     padding: 0;
     margin-bottom: 1.5em;
+}
+
+.mte-icon {
+    font-family: var(--default-serif-font);
+    font-size: 0.9em;
+    vertical-align: 0.1rem;
+}
+
+.mte-tb-sep {
+    margin-right: 1em;
 }
 
 .main-text-token input:focus {

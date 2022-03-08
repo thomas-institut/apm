@@ -21,10 +21,10 @@ import { doNothing } from '../toolbox/FunctionUtil'
 
 import Quill from '../QuillLoader'
 import Small from './QuillBlots/Small'
-import { QuillDeltaRenderer } from '../FmtText/Renderer/QuillDeltaRenderer'
-import { CustomApparatusQuillDeltaConverter } from './QuillDelta/CustomApparatusQuillDeltaConverter'
-import { FmtTextFactory } from '../FmtText/FmtTextFactory'
 import Superscript from './QuillBlots/Superscript'
+
+import { QuillDeltaRenderer } from '../FmtText/Renderer/QuillDeltaRenderer'
+import { FmtTextFactory } from '../FmtText/FmtTextFactory'
 import { GenericQuillDeltaConverter } from './QuillDelta/GenericQuillDeltaConverter'
 
 const simpleFormats = [
@@ -33,7 +33,6 @@ const simpleFormats = [
   // 'small',
   // 'superscript'
 ]
-
 
 const headingDepth = 3
 
@@ -46,11 +45,13 @@ const buttons = {
 
 const headingIcons = [
   '',
-  '<i class="bi bi-type-h1"></i>',
-  '<i class="bi bi-type-h2"></i>',
-  '<i class="bi bi-type-h3"></i>'
+  '<span class="mte-icon">H<sub>1</sub></span>',
+  '<span class="mte-icon">H<sub>2</sub></span>',
+  '<span class="mte-icon">H<sub>3</sub></span>'
 ]
 
+
+const toolbarSeparator = '<span class="mte-tb-sep">&nbsp;</span>'
 
 /**
  * A one-line editor for free text
@@ -196,7 +197,7 @@ export class EditionMainTextEditor {
 
 
   _getHtml() {
-    const toolbarSeparator = '&nbsp;'
+
     let buttonsHtml = simpleFormats
       .map( (fmt) => {
         return `<button class="${fmt}-btn" title="${buttons[fmt].title}">${buttons[fmt].icon}</button>`

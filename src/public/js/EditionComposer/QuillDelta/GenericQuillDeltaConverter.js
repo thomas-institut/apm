@@ -26,6 +26,7 @@ import * as FontWeight from '../../FmtText/FontWeight'
 import * as FontStyle from '../../FmtText/FontStyle'
 import * as FontSize from '../../FmtText/FontSize'
 import * as VerticalAlign from '../../FmtText/VerticalAlign'
+import * as ParagraphStyle from '../../FmtText/ParagraphStyle'
 import { rTrimNewlineCharacters } from '../../toolbox/Util.mjs'
 
 export class GenericQuillDeltaConverter extends QuillDeltaConverter {
@@ -52,11 +53,27 @@ export class GenericQuillDeltaConverter extends QuillDeltaConverter {
     let opsMap = quillDelta.ops.map ( (ops, i) => {
       this.debug && console.log(`Processing ops ${i}`)
       this.debug && console.log(ops)
-      // if (ops.insert === "\n") {
-      //   // single paragraph mark
-      //   this.debug && console.log(`Single paragraph mark, not implemented yet`)
-      //   return [ ]
-      // }
+      if (ops.insert === "\n") {
+        // single paragraph mark
+        if (ops.attributes.header !== undefined) {
+          let headerStyle = ''
+          switch(ops.attributes.header) {
+            case 1:
+              headerStyle = ParagraphStyle.HEADING1
+              break
+
+            case 2:
+              headerStyle = ParagraphStyle.HEADING2
+              break
+
+            case 3:
+              headerStyle = ParagraphStyle.HEADING3
+              break
+          }
+          return [ FmtTextTokenFactory.paragraphMark(headerStyle)]
+        }
+        return [ FmtTextTokenFactory.paragraphMark()]
+      }
       let insertText = ops.insert
       if (i === quillDelta.ops.length-1) {
         // remove trailing new lines

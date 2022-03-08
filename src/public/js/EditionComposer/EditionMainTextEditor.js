@@ -34,12 +34,22 @@ const simpleFormats = [
   // 'superscript'
 ]
 
+
+const headingDepth = 3
+
 const buttons = {
   bold: { icon: '<i class="bi bi-type-bold"></i>' , title: 'Bold'},
   italic: { icon: '<i class="bi bi-type-italic"></i>' , title: 'Italic'},
   // small: { icon: '<small class="fte-icon">S</small>', title: 'Small Font'},
   // superscript: { icon: '<small class="fte-icon">x<sup>2</sup>', title: 'Superscript'}
 }
+
+const headingIcons = [
+  '',
+  '<i class="bi bi-type-h1"></i>',
+  '<i class="bi bi-type-h2"></i>',
+  '<i class="bi bi-type-h3"></i>'
+]
 
 
 /**
@@ -49,7 +59,7 @@ export class EditionMainTextEditor {
 
   constructor (options) {
     let oc = new OptionsChecker({
-      context: 'EntryFreeTextEditor',
+      context: 'EditorMainTextEditor',
       optionsDefinition: {
         containerSelector: { type: 'string', required: true},
         lang: { type: 'string', required: true},
@@ -88,9 +98,13 @@ export class EditionMainTextEditor {
     })
 
     simpleFormats.forEach( (fmt) => {
-      let btnSelector = this._getBtnSelector(fmt)
+      let btnSelector = this._getBtnSelectorFormat(fmt)
       $(btnSelector).on('click', this._genOnClickFormat(fmt, this.quillEditor, btnSelector))
     })
+
+    for (let i = 0; i < headingDepth; i++) {
+      $(this._getBtnSelectorHeading(i+1)).on('click', this._genOnClickHeadingButton(i+1, this.quillEditor))
+    }
 
     this.quillEditor.on('selection-change', (range, oldRange, source) => {
       if (range === null) {
@@ -103,15 +117,17 @@ export class EditionMainTextEditor {
       this.debug && console.log(`Selection change from ${oldRange.index}:${oldRange.length} to ${range.index}:${range.length}, source ${source}`)
       let currentFormat = this.quillEditor.getFormat()
       simpleFormats.forEach( (fmt) => {
-        setButtonState($(this._getBtnSelector(fmt)), currentFormat[fmt])
+        setButtonState($(this._getBtnSelectorFormat(fmt)), currentFormat[fmt])
       })
+      for (let i = 0; i < headingDepth; i++) {
+        setButtonState($(this._getBtnSelectorHeading(i+1)), currentFormat.header === i+1)
+      }
     })
   }
 
   getText() {
     return this.quillEditor.getText()
   }
-
 
   getQuillDelta() {
     return this.quillEditor.getContents()
@@ -136,8 +152,12 @@ export class EditionMainTextEditor {
     this.quillEditor.setContents(newDelta, source)
   }
 
-  _getBtnSelector(format) {
+  _getBtnSelectorFormat(format) {
     return `${this.containerSelector} .${format}-btn`
+  }
+
+  _getBtnSelectorHeading(headingNumber) {
+    return `${this.containerSelector} .heading${headingNumber}-btn`
   }
 
   _genOnClickFormat(format, quill, buttonSelector) {
@@ -153,14 +173,40 @@ export class EditionMainTextEditor {
     }
   }
 
+  _genOnClickHeadingButton(headingNumber, quill) {
+    return (ev) => {
+      ev.preventDefault()
+      let currentFormat = quill.getFormat()
+      let currentHeading = currentFormat['header'] !== undefined ? currentFormat['header'] : -1
+      if (currentHeading === headingNumber) {
+        // turn off heading
+        this.verbose && console.log(`Turning off heading ${currentHeading}`)
+        quill.format('header', false)
+        setButtonState($(this._getBtnSelectorHeading(currentHeading)), false)
+      } else {
+        this.verbose && console.log(`Setting heading ${headingNumber}`)
+        quill.format('header', headingNumber)
+        for (let i = 0; i < headingDepth; i++) {
+          let buttonState = headingNumber === i+1
+          setButtonState($(this._getBtnSelectorHeading(i+1)), buttonState)
+        }
+      }
+    }
+  }
+
 
   _getHtml() {
+    const toolbarSeparator = '&nbsp;'
     let buttonsHtml = simpleFormats
       .map( (fmt) => {
         return `<button class="${fmt}-btn" title="${buttons[fmt].title}">${buttons[fmt].icon}</button>`
       })
       .join('')
-    return `<div class="fte-toolbar text-${this.lang}">${buttonsHtml}</div>
+    let headingButtonsHtml = ''
+    for (let i=0;i < headingDepth; i++) {
+      headingButtonsHtml += `<button class="heading${i+1}-btn" title="Heading ${i+1}">${headingIcons[i+1]}</button>`
+    }
+    return `<div class="fte-toolbar text-${this.lang}">${buttonsHtml}${toolbarSeparator}${headingButtonsHtml}</div>
 <div class="fte-editor text-${this.lang}"></div>`
   }
 }

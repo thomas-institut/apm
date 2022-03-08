@@ -45,6 +45,7 @@ import { WitnessTokenStringParser } from '../toolbox/WitnessTokenStringParser'
 import * as MyersDiff from '../toolbox/MyersDiff.mjs'
 import * as WitnessTokenType from '../Witness/WitnessTokenType'
 import * as EditionWitnessFormatMarkType from '../Witness/EditionWitnessFormatMark'
+import * as EditionWitnessParagraphStyle from '../Witness/EditionWitnessParagraphStyle'
 import * as FmtTexTokenType from "../FmtText/FmtTextTokenType"
 import { WitnessToken } from '../Witness/WitnessToken'
 import { FmtText } from '../FmtText/FmtText'
@@ -408,7 +409,11 @@ export class MainTextPanel extends PanelWithToolbar {
     }
     if (token.tokenType === WitnessTokenType.FORMAT_MARK) {
       if (token.markType === EditionWitnessFormatMarkType.PARAGRAPH_END) {
-        let html = '<span class="format-mark"><i class="bi bi-paragraph"></i></span>'
+        let styleHtml = ''
+        if (token.style !== 'normal') {
+          styleHtml = `(${token.style})`
+        }
+        let html = `<span class="format-mark"><i class="bi bi-paragraph"></i> ${styleHtml}</span>`
         if (full) {
            html += "<br/>"
         }
@@ -590,6 +595,8 @@ export class MainTextPanel extends PanelWithToolbar {
       this.verbose && console.log(`There are changes, now it's almost for real`)
 
       let newWitnessTokens = this.__fmtTextToEditionWitnessTokens(newFmtText)
+      this.verbose && console.log('New witness tokens')
+      this.verbose && console.log(newWitnessTokens)
       // TODO: show something if there are more than, say, 5 affected columns
       this.updateEditionWitness(newWitnessTokens)
     }
@@ -753,6 +760,17 @@ export class MainTextPanel extends PanelWithToolbar {
       if (a.tokenType !== b.tokenType) {
         return false
       }
+      if (a.tokenType === WitnessTokenType.FORMAT_MARK) {
+        // compare mark type, styles and formats
+        if (a.markType !== b.markType) {
+          return false
+        }
+        if (a.style !== b.style) {
+          return  false
+        }
+        return arraysAreEqual(a.formats, b.formats);
+      }
+      // other types: word, space, punctuation
       if (a.text !== b.text) {
         return false
       }
@@ -821,7 +839,13 @@ export class MainTextPanel extends PanelWithToolbar {
       if (fmtTextToken.type === FmtTexTokenType.MARK) {
         // only paragraphs recognized for now
         if (fmtTextToken.markType === 'par' ) {
-          witnessTokens.push( (new EditionWitnessToken()).setParagraphEnd())
+          let style = EditionWitnessParagraphStyle.NORMAL
+          if (fmtTextToken.style !== '') {
+            // TODO: implement a style translator so that I can use different names in fmtText and in Edition
+            //  Witness Tokens
+            style = fmtTextToken.style
+          }
+          witnessTokens.push( (new EditionWitnessToken()).setParagraphEnd(style))
         }
         return
       }

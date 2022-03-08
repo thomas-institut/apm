@@ -458,6 +458,17 @@ class FmtTextTokenFactory {
         }
         return glueToken
 
+      case _FmtTextTokenType__WEBPACK_IMPORTED_MODULE_1__.MARK:
+        let markToken = new _FmtTextToken__WEBPACK_IMPORTED_MODULE_0__.FmtTextToken(_FmtTextTokenType__WEBPACK_IMPORTED_MODULE_1__.MARK)
+        if (someObject.markType === undefined) {
+          throw new Error('No mark type in object')
+        }
+        markToken.setMarkType(someObject.markType)
+        if (someObject.style !== undefined) {
+          markToken.setStyle(someObject.style)
+        }
+        return markToken
+
       default:
         throw new Error(`Invalid type '${someObject.type}' in object`)
     }
@@ -622,7 +633,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "NORMAL": () => (/* binding */ NORMAL),
 /* harmony export */   "HEADING1": () => (/* binding */ HEADING1),
-/* harmony export */   "HEADING2": () => (/* binding */ HEADING2)
+/* harmony export */   "HEADING2": () => (/* binding */ HEADING2),
+/* harmony export */   "HEADING3": () => (/* binding */ HEADING3)
 /* harmony export */ });
 /*
  *  Copyright (C) 2022 Universität zu Köln
@@ -646,6 +658,7 @@ __webpack_require__.r(__webpack_exports__);
 const NORMAL = ''
 const HEADING1 = 'h1'
 const HEADING2 = 'h2'
+const HEADING3 = 'h3'
 
 /***/ }),
 

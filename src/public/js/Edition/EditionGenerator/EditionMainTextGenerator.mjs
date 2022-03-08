@@ -98,6 +98,7 @@ export class EditionMainTextGenerator {
       let mainTextToken = mainTextTokens[i]
       if (mainTextToken.type === MainTextTokenType.PARAGRAPH_END) {
         mainTextTokensWithGlue.push(mainTextToken)
+        firstWordAdded = false
         continue
       }
 

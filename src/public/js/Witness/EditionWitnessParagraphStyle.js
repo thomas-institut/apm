@@ -17,7 +17,7 @@
  */
 
 export const NORMAL = 'normal'
-export const HEADING_1 = 'heading1'
-export const HEADING_2 = 'heading2'
-export const HEADING_3 = 'heading3'
+export const HEADING_1 = 'h1'
+export const HEADING_2 = 'h2'
+export const HEADING_3 = 'h3'
 export const CHAPTER_TITLE = 'chapter_title'

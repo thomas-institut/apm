@@ -110,6 +110,17 @@ export class FmtTextTokenFactory {
         }
         return glueToken
 
+      case FmtTextTokenType.MARK:
+        let markToken = new FmtTextToken(FmtTextTokenType.MARK)
+        if (someObject.markType === undefined) {
+          throw new Error('No mark type in object')
+        }
+        markToken.setMarkType(someObject.markType)
+        if (someObject.style !== undefined) {
+          markToken.setStyle(someObject.style)
+        }
+        return markToken
+
       default:
         throw new Error(`Invalid type '${someObject.type}' in object`)
     }

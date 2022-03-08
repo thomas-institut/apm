@@ -23,6 +23,7 @@ import * as FontSize from '../FontSize'
 import * as FontWeight from '../FontWeight'
 import * as VerticalAlign from '../VerticalAlign'
 import * as MarkType from '../MarkType'
+import * as ParagraphStyle from '../ParagraphStyle'
 
 export class QuillDeltaRenderer extends FmtTextRenderer {
 
@@ -35,6 +36,23 @@ export class QuillDeltaRenderer extends FmtTextRenderer {
       if (fmtTextToken.type === FmtTextTokenType.MARK) {
         switch (fmtTextToken.markType) {
           case MarkType.PARAGRAPH:
+            let attributes = {}
+            switch(fmtTextToken.style) {
+              case ParagraphStyle.HEADING1:
+                attributes.header = 1
+                break
+
+              case ParagraphStyle.HEADING2:
+                attributes.header = 2
+                break
+
+              case ParagraphStyle.HEADING3:
+                attributes.header = 3
+                break
+            }
+            if (attributes.header !== undefined) {
+              return { insert: "\n", attributes: attributes}
+            }
             return { insert: "\n"}
 
           default:

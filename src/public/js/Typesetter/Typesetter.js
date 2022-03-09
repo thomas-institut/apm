@@ -68,7 +68,9 @@ import { LanguageDetector } from '../toolbox/LanguageDetector'
 import { isRtl } from '../toolbox/Util.mjs'
 
 import * as VerticalAlign from '../FmtText/VerticalAlign'
+import * as HorizontalAlign from './HorizontalAlign'
 import { StringCounter } from '../toolbox/StringCounter'
+import { pushArray } from '../toolbox/ArrayUtil'
 
 export class Typesetter {
   
@@ -151,21 +153,11 @@ export class Typesetter {
    * @param {boolean}rightToLeft
    * @param {number}lineNumber
    * @param {number}normalSpace
-   * @param lastLine
+   * @param textAlign
    * @return {*[]}
    */
-   __typesetLine(tokens, posY, lineWidth, rightToLeft, lineNumber, normalSpace, lastLine = false) {
-
-    // console.log(`Typesetting line ${lineNumber} at posY ${posY} with ${tokens.length} tokens`)
-    // console.log(`Normal space: ${normalSpace}`)
-    // console.log(tokens)
-    // 1. make ifinal glue invisible
-    // TODO: support indentation of first line
-    // let i = 0
-    // while(i < tokens.length && tokens[i].type === TypesetterTokenType.GLUE) {
-    //   tokens[i] = this.__makeInvisible(tokens[i])
-    //   i++
-    // }
+   _typesetLine(tokens, posY, lineWidth, rightToLeft,
+    lineNumber, normalSpace, textAlign = HorizontalAlign.JUSTIFIED) {
     let i = tokens.length -1
     while (i > 0 && tokens[i].type === TypesetterTokenType.GLUE) {
       tokens[i] = this.__makeInvisible(tokens[i])
@@ -192,9 +184,18 @@ export class Typesetter {
       return token
     })
     //console.log(`Line measures ${measuredLineWidth} (diff = ${lineWidth - measuredLineWidth}), ${glueTokens} glue tokens`)
-    let glueSpaceAdjustment = (lineWidth - measuredLineWidth)/glueTokens
-    if (lastLine) {
-      glueSpaceAdjustment = 0
+    let glueSpaceAdjustment = 0
+    if (textAlign === HorizontalAlign.JUSTIFIED) {
+      glueSpaceAdjustment = (lineWidth - measuredLineWidth)/glueTokens
+    }
+
+    let shiftX = 0
+    if (textAlign === HorizontalAlign.CENTERED) {
+      shiftX = (lineWidth - measuredLineWidth)/2
+    }
+
+    if (textAlign === HorizontalAlign.RAGGED_START) {
+      shiftX = lineWidth - measuredLineWidth
     }
 
     // 3. Reorder the tokens taking into account text direction
@@ -290,6 +291,7 @@ export class Typesetter {
     // 4. Typeset tokens
     let typesetTokens = []
     let currentX = rightToLeft ? lineWidth : 0
+    currentX = this.__advanceX(currentX, shiftX, rightToLeft)
 
     orderedTokenIndices.map( (index) => { return tokensWithInitialGlue[index]}).forEach( (token) => {
       if (token.width !== undefined && token.width === 0) {
@@ -339,24 +341,22 @@ export class Typesetter {
     })
   }
 
+
+
   /**
    *
-   * @param {TypesetterToken[]} tokens
+   * @param {Paragraph[]}paragraphs
    * @param {boolean|number}defaultFontSize
    * @return {*[]}
    */
-  typesetTokens(tokens, defaultFontSize = false) {
+  typesetParagraphs(paragraphs, defaultFontSize = false) {
 
     if (defaultFontSize === false) {
       defaultFontSize = this.options.defaultFontSize
     }
     
-    let typesetTokens = []
     let lineWidth = this.options.lineWidth
     let rightToLeft = this.options.rightToLeft
-
-    let currentY = defaultFontSize
-    let pxLineHeight = this.options.lineHeight
 
     // TODO: change this to something more like Knuth's line breaking algorithm in TeX
     //  See The TEX Book ch 13, and "TeX, the Program"  par 813+
@@ -368,30 +368,16 @@ export class Typesetter {
     //      d) Add vertical space after paragraph (could be set to 0)
     //   2) A product of the typeset process should be the size of the text box and the number of lines.
 
-    // 1. Divide the text in paragraphs
-    let paragraphs = []
-    let currentParagraph = []
-    tokens.forEach( (token) => {
-      if (token.type === TypesetterTokenType.BOX && token.text === "\n") {
-        currentParagraph.push(token)
-        paragraphs.push(currentParagraph)
-        currentParagraph = []
-      } else {
-        currentParagraph.push(token)
-      }
-    })
-    if (currentParagraph.length !== 0) {
-      paragraphs.push(currentParagraph)
-    }
-    // console.log(`There are ${paragraphs.length} paragraph(s) in the text`)
 
-    // 2. Process paragraphs
-    let currentLine = 1
     let langDetector = new LanguageDetector({defaultLang: this.options.lang})
-    paragraphs.forEach( (tokenArray) => {
+    paragraphs  = paragraphs.map( (paragraph) => {
+      let pxLineHeight = paragraph.lineHeight
+      let typesetTokens = []
       let currentLineTokens = []
       let accLineWidth = 0
-      tokenArray.forEach( (token) => {
+      let currentLine = 1
+      let currentY = pxLineHeight  // TODO: check this, it can optimized for the first line in a page
+      paragraph.tokens.forEach( (token) => {
         if (token.type === TypesetterTokenType.GLUE) {
           let spaceWidth = (token.space === 'normal') ? this.normalSpace : token.space
           if (token.space <= 0) {
@@ -402,7 +388,7 @@ export class Typesetter {
           if ((accLineWidth + spaceWidth) > lineWidth) {
             // new line
             currentLineTokens.push(this.__makeInvisible(token))
-            let lineTypeSetTokens = this.__typesetLine(currentLineTokens, currentY, lineWidth, rightToLeft, currentLine, this.normalSpace)
+            let lineTypeSetTokens = this._typesetLine(currentLineTokens, currentY, lineWidth, rightToLeft, currentLine, this.normalSpace, paragraph.textAlignment)
             ArrayUtil.pushArray(typesetTokens, lineTypeSetTokens)
             // advance to the next line
             currentY += pxLineHeight
@@ -462,7 +448,7 @@ export class Typesetter {
 
         if ( (accLineWidth + tokenWidth) > lineWidth) {
           // new line
-          let lineTypeSetTokens = this.__typesetLine(currentLineTokens, currentY, lineWidth, rightToLeft, currentLine, this.normalSpace)
+          let lineTypeSetTokens = this._typesetLine(currentLineTokens, currentY, lineWidth, rightToLeft, currentLine, this.normalSpace, paragraph.textAlignment)
           ArrayUtil.pushArray(typesetTokens, lineTypeSetTokens)
           // advance to the next line
           currentY += pxLineHeight
@@ -474,14 +460,41 @@ export class Typesetter {
         accLineWidth += tokenWidth
       })
       if (currentLineTokens.length !== 0) {
-        let lineTypeSetTokens = this.__typesetLine(currentLineTokens, currentY, lineWidth, rightToLeft, currentLine, this.normalSpace, true)
+        let lastLineTextAlignment = paragraph.textAlignment
+        if (paragraph.textAlignment === HorizontalAlign.JUSTIFIED) {
+          // last line is ragged
+          lastLineTextAlignment = HorizontalAlign.RAGGED
+        }
+        let lineTypeSetTokens = this._typesetLine(currentLineTokens, currentY, lineWidth, rightToLeft, currentLine, this.normalSpace, lastLineTextAlignment)
         ArrayUtil.pushArray(typesetTokens, lineTypeSetTokens)
         currentLine++
       }
-      // new paragraph
-      currentY += pxLineHeight + this.options.spaceBetweenParagraphs
+      paragraph.tokens = typesetTokens
+      paragraph.typesetParagraphHeight = currentY
+      paragraph.linesTypeset = currentLine-1
+      paragraph.isTypeset = true
+      return paragraph
     })
-    return typesetTokens
+
+    // adjust deltaY and line number positions
+    let currentDeltaY = 0
+    let currentDeltaLineNumber = 0
+    paragraphs = paragraphs.map( (paragraph, i) => {
+      currentDeltaY += paragraph.spaceBefore
+      paragraph.paragraphNumber = i
+      paragraph.shiftTokens(0, currentDeltaY, currentDeltaLineNumber)
+      currentDeltaY += paragraph.typesetParagraphHeight
+      currentDeltaY += paragraph.spaceAfter
+      currentDeltaLineNumber += paragraph.linesTypeset
+      return paragraph
+    })
+
+    // flatten tokens, so that this is compatible with current code
+    let outputTokens = []
+    paragraphs.forEach( (paragraph) => {
+      pushArray(outputTokens, paragraph.tokens)
+    })
+    return outputTokens
   }
 
 
@@ -512,8 +525,12 @@ export class Typesetter {
    // get line y positions
     let lineNumbersDeltaYs = []
     for(const token of typesetTokens) {
-      lineNumbersDeltaYs[token.lineNumber] = token.deltaY
+      if (token.width !== 0) {
+        lineNumbersDeltaYs[token.lineNumber] = token.deltaY
+      }
     }
+    // console.log(typesetTokens.map( (t,i) => { return `${i}: ${t.deltaY}`}))
+    // console.log(lineNumbersDeltaYs)
     let lineNumbersFontDefinition = (this.options.defaultFontSize * this.options.lineNumbersFontSizeMultiplier) + 'px ' + this.options.defaultFontFamily
     let lineNumberTokens =[]
     for (const i in lineNumbersDeltaYs) {

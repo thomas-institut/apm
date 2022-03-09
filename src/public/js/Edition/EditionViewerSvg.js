@@ -33,7 +33,9 @@ import { FmtText } from '../FmtText/FmtText'
 
 import * as VerticalAlign from '../FmtText/VerticalAlign'
 import * as FontSize from '../FmtText/FontSize'
+import * as HorizontalAlign from '../Typesetter/HorizontalAlign'
 import { MainText } from './MainText'
+import { Paragraph } from '../Typesetter/Paragraph'
 
 const doubleVerticalLine = String.fromCodePoint(0x2016)
 const verticalLine = String.fromCodePoint(0x007c)
@@ -118,11 +120,12 @@ export class EditionViewerSvg {
       lineNumberStyle: this.edition.lang
     })
 
-    let mainTextTokensToTypeset = this._getTypesetterTokensForMainText()
-    console.log(`MainTextTokensToTypeset`)
-    console.log(mainTextTokensToTypeset)
-    let mainTextTypesetTokens = mainTextTypesetter.typesetTokens(mainTextTokensToTypeset)
-
+    let mainTextParagraphsToTypeset = this._getTypesetterParagraphsForMainText()
+    console.log(`MainTextParagraphsToTypeset`)
+    console.log(mainTextParagraphsToTypeset)
+    let mainTextTypesetTokens = mainTextTypesetter.typesetParagraphs(mainTextParagraphsToTypeset)
+    console.log(`typesetTokens`)
+    console.log(mainTextTypesetTokens)
 
     let mainTextToTypesetterTokensMap = this._genMainTokenIndexToTypesetterTokenMap(this.edition.mainText, mainTextTypesetTokens)
     // console.log(`mainTextToTypesetterTokensMap`)
@@ -140,7 +143,11 @@ export class EditionViewerSvg {
     })
 
     let apparatusesTypesetTokens = this.edition.apparatuses.map( (app) => {
-      return apparatusTypesetter.typesetTokens(this._getTypesetterTokensForApparatus(app, mainTextTypesetTokens, mainTextToTypesetterTokensMap))
+      let apparatusParagraph = new Paragraph()
+      apparatusParagraph.setLineHeight(this.geometry.apparatusLineHeight)
+        .setTokens(this._getTypesetterTokensForApparatus(app, mainTextTypesetTokens, mainTextToTypesetterTokensMap))
+
+      return apparatusTypesetter.typesetParagraphs([apparatusParagraph])
     })
     let apparatusHeights = apparatusesTypesetTokens.map( (tokens) => { return apparatusTypesetter.getTextHeight(tokens)})
     let totalApparatusHeight = apparatusHeights.reduce( (x, y) => { return x+y})
@@ -300,18 +307,18 @@ export class EditionViewerSvg {
     }
   }
 
-  _getTypesetterTokensForMainText() {
+  _getTypesetterParagraphsForMainText() {
 
     let typesetterRenderer = new TypesetterTokenRenderer()
-    let typesetterTokens = []
 
-    let paragraphs = MainText.getParagraphs(this.edition.mainText)
-    paragraphs.forEach( (paragraph) => {
-      if (paragraph.type === 'normal') {
+    return MainText.getParagraphs(this.edition.mainText).map( (mainTextParagraph) => {
+      let typesetterTokens = []
+
+      if (mainTextParagraph.type === 'normal') {
         typesetterTokens.push(TypesetterTokenFactory.normalSpace())
         typesetterTokens.push(TypesetterTokenFactory.normalSpace())
       }
-      paragraph.tokens.forEach( (mainTextToken) => {
+      mainTextParagraph.tokens.forEach( (mainTextToken) => {
         switch(mainTextToken.type) {
           case MainTextTokenType.GLUE:
             let theGlue = TypesetterTokenFactory.normalSpace()
@@ -327,12 +334,13 @@ export class EditionViewerSvg {
             }
             // apply font styles according to paragraph style
             fmtTextTypesetterTokens = fmtTextTypesetterTokens.map( (typesetterToken) => {
-              switch (paragraph.type) {
+              switch (mainTextParagraph.type) {
                 case 'h1':
-                  return typesetterToken.setBold().setFontSize(1.3)
+                  return typesetterToken.setBold().setFontSize(1.5)
 
                 case 'h2':
-                  return typesetterToken.setBold().setFontSize(1.1)
+                  return typesetterToken.setBold().setFontSize(1.2)
+
 
                 case 'h3':
                   return typesetterToken.setBold()
@@ -345,9 +353,35 @@ export class EditionViewerSvg {
             break
         }
       })
-      typesetterTokens.push(TypesetterTokenFactory.paragraphBreak())
+      let paragraphToTypeset = new Paragraph()
+      paragraphToTypeset.setTokens(typesetterTokens)
+      let defaultLineHeight = this.geometry.mainTextLineHeight
+      switch(mainTextParagraph.type) {
+        case 'normal':
+          paragraphToTypeset.setLineHeight(defaultLineHeight).setTextAlignment(HorizontalAlign.JUSTIFIED)
+          break
+
+        case 'h1':
+          paragraphToTypeset.setLineHeight(defaultLineHeight*1.5)
+            .setSpaceAfter(defaultLineHeight*1.5)
+            .setTextAlignment(HorizontalAlign.CENTERED)
+          break
+
+        case 'h2':
+          paragraphToTypeset.setLineHeight(defaultLineHeight*1.2)
+            .setSpaceAfter(defaultLineHeight*1.2)
+            .setTextAlignment(HorizontalAlign.CENTERED)
+          break
+
+        case 'h3':
+          paragraphToTypeset.setLineHeight(defaultLineHeight)
+            .setSpaceAfter(defaultLineHeight*0.25)
+            .setSpaceBefore(defaultLineHeight*0.5)
+            .setTextAlignment(HorizontalAlign.RAGGED)
+          break
+      }
+      return paragraphToTypeset
     })
-    return typesetterTokens
   }
 
   _getLemmaTypesetterTokens(apparatusEntry, typesettingInfo, map) {
@@ -422,6 +456,7 @@ export class EditionViewerSvg {
     let ttTokens = []
     let sigla = this.edition.getSigla()
     let lastLine = ''
+    let firstLineNumberAlreadyPrinted = false
     app.entries.forEach( (apparatusEntry, aeIndex) => {
       //console.log(`Processing apparatus entry ${aeIndex}`)
       let enabledSubEntries = apparatusEntry.subEntries.filter( (se) => {
@@ -448,7 +483,7 @@ export class EditionViewerSvg {
         lineTtTokens.push(TypesetterTokenFactory.normalSpace())
 
       } else {
-        if (aeIndex !== 0) {
+        if (firstLineNumberAlreadyPrinted) {
           // insert a line separator between line numbers in all but the first line
           lineTtTokens.push(TypesetterTokenFactory.simpleText(this.options.apparatusLineSeparator, this.edition.lang).setBold())
           lineTtTokens.push(TypesetterTokenFactory.normalSpace())
@@ -457,6 +492,7 @@ export class EditionViewerSvg {
         lastLine = currentLine
         lineTtTokens.push(currentLineTtToken)
         lineTtTokens.push(TypesetterTokenFactory.normalSpace())
+        firstLineNumberAlreadyPrinted = true
       }
       pushArray(ttTokens, lineTtTokens)
       // LEMMA section

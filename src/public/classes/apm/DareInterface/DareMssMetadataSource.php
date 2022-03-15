@@ -20,35 +20,54 @@
 namespace  APM\DareInterface;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\ServerException;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 /**
  * Class ManuscriptData
  *
  */
-class DareMssMetadataSource implements ManuscriptMetadataSource
+class DareMssMetadataSource implements ManuscriptMetadataSource, LoggerAwareInterface
 {
     /**
      * @var string
      */
-    private $apiBaseUri;
+    private string $apiBaseUri;
+    /**
+     *
+     * @var LoggerInterface
+     */
+    protected LoggerInterface $logger;
 
     public function __construct(string $apiBaseUri)
     {
         $this->apiBaseUri = $apiBaseUri;
+        $this->logger = new NullLogger();
 
     }
 
     public function getMetadata(string $dareId) : array {
         $metaData = [];
         $metaData['serverResponse'] = 'OK';
-        $client = new Client([ 'base_uri' => $this->apiBaseUri, 'timeout' => 1.0]);
+        $client = new Client([ 'base_uri' => $this->apiBaseUri, 'timeout' => 0.5]);
+        $url = 'manuscripts/' . $dareId;
+        $this->logger->debug("Getting metadata from DARE at url $this->apiBaseUri$url");
         try {
-            $response = $client->get('manuscripts/' . $dareId);
+            $response = $client->get($url);
         } catch(ServerException $exception) {
             $metaData['serverResponse'] = 'Server Error ' . $exception->getCode();
+            $this->logger->debug('Server error', $metaData);
             return $metaData;
         }
+        catch(ConnectException $exception) {
+            $metaData['serverResponse'] = 'Connect Error ' . $exception->getCode();
+            $this->logger->debug('Server error', $metaData);
+            return $metaData;
+        }
+
 
 
         $dareData = json_decode($response->getBody(), true);
@@ -72,7 +91,13 @@ class DareMssMetadataSource implements ManuscriptMetadataSource
                 ];
             }
         }
+        $this->logger->debug('Metadata', $metaData);
 
         return $metaData;
+    }
+
+    public function setLogger(LoggerInterface $logger)
+    {
+       $this->logger = $logger;
     }
 }

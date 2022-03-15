@@ -139,14 +139,19 @@ class SiteDocuments extends SiteController
         }
         $doc['docInfoHtml'] = $docInfoHtml;
 
-        $metaData = $this->hookManager->callHookedMethods('get-doc-metadata-' . $doc['docInfo']['image_source'],
-            [ 'imageSourceData' => $doc['docInfo']['image_source_data']]);
 
-        if (!is_array($metaData)) {
-            $this->logger->debug('Invalid metadata returned for hook get-doc-metadata-' . $doc['docInfo']['image_source'],
-                [ 'returnedMetadata' =>$metaData]);
-            $metaData = [];
-        }
+        // TODO: enable metadata when there's a use for it, or when the doc details JS app
+        //  would not hang if there's an error with it.
+        $metaData = [];
+
+//        $metaData = $this->hookManager->callHookedMethods('get-doc-metadata-' . $doc['docInfo']['image_source'],
+//            [ 'imageSourceData' => $doc['docInfo']['image_source_data']]);
+//
+//        if (!is_array($metaData)) {
+//            $this->logger->debug('Invalid metadata returned for hook get-doc-metadata-' . $doc['docInfo']['image_source'],
+//                [ 'returnedMetadata' =>$metaData]);
+//            $metaData = [];
+//        }
 
 
 

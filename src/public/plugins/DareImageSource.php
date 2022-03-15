@@ -50,7 +50,9 @@ class DareImageSource extends ImageSourcePlugin {
         $data =  parent::getMetadata($param);
 
         $dareApiUrl = $this->systemManager->getConfig()['dareApiBaseUri'];
-        $metadata = (new DareMssMetadataSource($dareApiUrl))->getMetadata($data['sourceId']);
+        $metadataSource = new DareMssMetadataSource($dareApiUrl);
+        $metadataSource->setLogger($this->logger);
+        $metadata = $metadataSource->getMetadata($data['sourceId']);
 
         return array_merge($data, $metadata);
     }

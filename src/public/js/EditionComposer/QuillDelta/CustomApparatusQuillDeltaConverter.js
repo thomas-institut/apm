@@ -19,7 +19,7 @@
 import { GenericQuillDeltaConverter } from './GenericQuillDeltaConverter'
 
 export class CustomApparatusQuillDeltaConverter  {
-  static toFmtText(quillDelta, debug = false) {
+  static toFmtText(quillDelta, debug = true) {
     let converter = new GenericQuillDeltaConverter({ debug: debug, ignoreParagraphs: true })
     return converter.toFmtText(quillDelta)
   }

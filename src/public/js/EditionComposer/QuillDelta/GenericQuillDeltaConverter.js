@@ -55,7 +55,10 @@ export class GenericQuillDeltaConverter extends QuillDeltaConverter {
       this.debug && console.log(ops)
       if (ops.insert === "\n") {
         // single paragraph mark
-        if (ops.attributes.header !== undefined) {
+        if (this.options.ignoreParagraphs) {
+          return []
+        }
+        if (ops.attributes !== undefined && ops.attributes.header !== undefined) {
           let headerStyle = ''
           switch(ops.attributes.header) {
             case 1:
@@ -74,6 +77,7 @@ export class GenericQuillDeltaConverter extends QuillDeltaConverter {
         }
         return [ FmtTextTokenFactory.paragraphMark()]
       }
+      // text with, possibly, some newline characters
       let insertText = ops.insert
       if (i === quillDelta.ops.length-1) {
         // remove trailing new lines

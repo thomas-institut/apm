@@ -377,7 +377,12 @@ export class Typesetter {
       let accLineWidth = 0
       let currentLine = 1
       let currentY = pxLineHeight  // TODO: check this, it can optimized for the first line in a page
-      paragraph.tokens.forEach( (token) => {
+      paragraph.tokens.forEach( (token, i) => {
+        if (token === undefined) {
+          console.error(`Undefined token ${i} in paragraph`)
+          console.log(paragraphs)
+          return
+        }
         if (token.type === TypesetterTokenType.GLUE) {
           let spaceWidth = (token.space === 'normal') ? this.normalSpace : token.space
           if (token.space <= 0) {

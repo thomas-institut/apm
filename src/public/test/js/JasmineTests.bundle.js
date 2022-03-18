@@ -486,9 +486,9 @@ class FmtTextTokenFactory {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "EMPTY": () => (/* binding */ EMPTY),
-/* harmony export */   "TEXT": () => (/* binding */ TEXT),
 /* harmony export */   "GLUE": () => (/* binding */ GLUE),
-/* harmony export */   "MARK": () => (/* binding */ MARK)
+/* harmony export */   "MARK": () => (/* binding */ MARK),
+/* harmony export */   "TEXT": () => (/* binding */ TEXT)
 /* harmony export */ });
 /*
  *  Copyright (C) 2021 Universität zu Köln
@@ -525,8 +525,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "NORMAL": () => (/* binding */ NORMAL),
 /* harmony export */   "SMALL": () => (/* binding */ SMALL),
-/* harmony export */   "SUPERSCRIPT": () => (/* binding */ SUPERSCRIPT),
-/* harmony export */   "SUBSCRIPT": () => (/* binding */ SUBSCRIPT)
+/* harmony export */   "SUBSCRIPT": () => (/* binding */ SUBSCRIPT),
+/* harmony export */   "SUPERSCRIPT": () => (/* binding */ SUPERSCRIPT)
 /* harmony export */ });
 
 
@@ -545,8 +545,8 @@ const SUBSCRIPT = 0.7
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "NORMAL": () => (/* binding */ NORMAL),
-/* harmony export */   "ITALIC": () => (/* binding */ ITALIC)
+/* harmony export */   "ITALIC": () => (/* binding */ ITALIC),
+/* harmony export */   "NORMAL": () => (/* binding */ NORMAL)
 /* harmony export */ });
 
 
@@ -563,8 +563,8 @@ const ITALIC = 'italic'
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "NORMAL": () => (/* binding */ NORMAL),
-/* harmony export */   "BOLD": () => (/* binding */ BOLD)
+/* harmony export */   "BOLD": () => (/* binding */ BOLD),
+/* harmony export */   "NORMAL": () => (/* binding */ NORMAL)
 /* harmony export */ });
 /*
  *  Copyright (C) 2021 Universität zu Köln
@@ -631,10 +631,10 @@ const SECTION = 'section'
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "NORMAL": () => (/* binding */ NORMAL),
 /* harmony export */   "HEADING1": () => (/* binding */ HEADING1),
 /* harmony export */   "HEADING2": () => (/* binding */ HEADING2),
-/* harmony export */   "HEADING3": () => (/* binding */ HEADING3)
+/* harmony export */   "HEADING3": () => (/* binding */ HEADING3),
+/* harmony export */   "NORMAL": () => (/* binding */ NORMAL)
 /* harmony export */ });
 /*
  *  Copyright (C) 2022 Universität zu Köln
@@ -909,12 +909,12 @@ class PageRange {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "FOLIATION_CONSECUTIVE": () => (/* binding */ FOLIATION_CONSECUTIVE),
-/* harmony export */   "FOLIATION_RECTOVERSO": () => (/* binding */ FOLIATION_RECTOVERSO),
-/* harmony export */   "FOLIATION_LEFTRIGHT": () => (/* binding */ FOLIATION_LEFTRIGHT),
 /* harmony export */   "FOLIATION_AB": () => (/* binding */ FOLIATION_AB),
-/* harmony export */   "foliationAffixes": () => (/* binding */ foliationAffixes),
-/* harmony export */   "FOLIATION_START_SAME_AS_RANGE": () => (/* binding */ FOLIATION_START_SAME_AS_RANGE)
+/* harmony export */   "FOLIATION_CONSECUTIVE": () => (/* binding */ FOLIATION_CONSECUTIVE),
+/* harmony export */   "FOLIATION_LEFTRIGHT": () => (/* binding */ FOLIATION_LEFTRIGHT),
+/* harmony export */   "FOLIATION_RECTOVERSO": () => (/* binding */ FOLIATION_RECTOVERSO),
+/* harmony export */   "FOLIATION_START_SAME_AS_RANGE": () => (/* binding */ FOLIATION_START_SAME_AS_RANGE),
+/* harmony export */   "foliationAffixes": () => (/* binding */ foliationAffixes)
 /* harmony export */ });
 
 
@@ -944,19 +944,19 @@ const FOLIATION_START_SAME_AS_RANGE = -1
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "uniq": () => (/* binding */ uniq),
-/* harmony export */   "swapElements": () => (/* binding */ swapElements),
 /* harmony export */   "arraysAreEqual": () => (/* binding */ arraysAreEqual),
-/* harmony export */   "varsAreEqual": () => (/* binding */ varsAreEqual),
 /* harmony export */   "arraysHaveTheSameValues": () => (/* binding */ arraysHaveTheSameValues),
-/* harmony export */   "prettyPrintArray": () => (/* binding */ prettyPrintArray),
-/* harmony export */   "shuffleArray": () => (/* binding */ shuffleArray),
-/* harmony export */   "createSequenceArray": () => (/* binding */ createSequenceArray),
 /* harmony export */   "createIndexArray": () => (/* binding */ createIndexArray),
+/* harmony export */   "createSequenceArray": () => (/* binding */ createSequenceArray),
 /* harmony export */   "flatten": () => (/* binding */ flatten),
+/* harmony export */   "joinWithArray": () => (/* binding */ joinWithArray),
 /* harmony export */   "numericSort": () => (/* binding */ numericSort),
+/* harmony export */   "prettyPrintArray": () => (/* binding */ prettyPrintArray),
 /* harmony export */   "pushArray": () => (/* binding */ pushArray),
-/* harmony export */   "joinWithArray": () => (/* binding */ joinWithArray)
+/* harmony export */   "shuffleArray": () => (/* binding */ shuffleArray),
+/* harmony export */   "swapElements": () => (/* binding */ swapElements),
+/* harmony export */   "uniq": () => (/* binding */ uniq),
+/* harmony export */   "varsAreEqual": () => (/* binding */ varsAreEqual)
 /* harmony export */ });
 /*
  *  Copyright (C) 2020 Universität zu Köln
@@ -1105,9 +1105,9 @@ function joinWithArray(sourceArray, separator) {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "doNothing": () => (/* binding */ doNothing),
-/* harmony export */   "returnEmptyString": () => (/* binding */ returnEmptyString),
 /* harmony export */   "doNothingPromise": () => (/* binding */ doNothingPromise),
 /* harmony export */   "failPromise": () => (/* binding */ failPromise),
+/* harmony export */   "returnEmptyString": () => (/* binding */ returnEmptyString),
 /* harmony export */   "wait": () => (/* binding */ wait)
 /* harmony export */ });
 

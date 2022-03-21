@@ -29,6 +29,7 @@ namespace APM;
 use APM\Api\ApiLog;
 use APM\Api\ApiTranscription;
 use APM\Site\SiteApmLog;
+use APM\Site\SiteScratch;
 use Slim\App;
 use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Routing\RouteCollectorProxy;
@@ -149,6 +150,12 @@ $app->group('', function (RouteCollectorProxy $group){
     $group->get('/',
         SiteHomePage::class . ':homePage')
         ->setName('home');
+
+    // Scratch Page
+
+    $group->get('/scratch',
+        SiteScratch::class . ':scratchPage')
+        ->setName('scratch');
 
     // DASHBOARD
 

@@ -7,7 +7,7 @@ use \Psr\Http\Message\ResponseInterface as Response;
 
 class SiteScratch extends \APM\Site\SiteController
 {
-    const TEMPLATE_BASE_PAGE = 'scratch.twig';
+    const TEMPLATE_SCRATCH_PAGE = 'scratch.twig';
 
     /**
      * @param Request $request
@@ -19,7 +19,6 @@ class SiteScratch extends \APM\Site\SiteController
     {
         $text = "Hello World";
 
-        return $this->renderPage($response, self::TEMPLATE_BASE_PAGE, ['scratch' => $text]);
+        return $this->renderPage($response, self::TEMPLATE_SCRATCH_PAGE, ['text' => $text]);
     }
-
 }

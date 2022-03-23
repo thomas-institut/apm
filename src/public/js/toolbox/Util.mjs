@@ -16,7 +16,6 @@
  *
  */
 
-import * as Punctuation from '../defaults/Punctuation.js'
 
 // Utility functions, now as a module
 

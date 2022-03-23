@@ -174,8 +174,8 @@ export class EditionViewerSvg {
 
     let svgWidth = this.options.pageWidthInCm
 
-    // let svgHeightInPx = Typesetter.cm2px(svgHeight)
-    // let svgWidthInPx = Typesetter.cm2px(svgWidth)
+    // let svgHeightInPx = Typesetter2.cm2px(svgHeight)
+    // let svgWidthInPx = Typesetter2.cm2px(svgWidth)
 
 
     let svg = `<svg class="${svgClass}" height="${svgHeight}cm" width="${svgWidth}cm">`

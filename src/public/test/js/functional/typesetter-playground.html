@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Typesetter2 Playground</title>
+    <link rel="stylesheet" type="text/css" href="../../../node_modules/bootstrap/dist/css/bootstrap.css"/>
+    <script type="text/javascript" src="../../../node_modules/jquery/dist/jquery.js"></script>
+    <script type="text/javascript" src="../../../node_modules/bootstrap/dist/js/bootstrap.js"></script>
+    <script src="./dist/TypesetterPlayground.bundle.js"></script>
+
+    <style>
+        body {
+            margin: 10px;
+        }
+
+        div#mainRow {
+            display: flex;
+            flex-direction: row;
+        }
+
+        div#dataInput {
+            width: 400px;
+        }
+
+        div#result {
+            margin-left: 20px;
+            padding: 10px;
+            background-color: #f5f1ea;
+        }
+
+        .typesetPage {
+            background-color: #fffdf5 ;
+        }
+
+        div.form-row {
+            margin-top: 2rem;
+        }
+
+        div.row-label {
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+    <h1>Typesetter2 Playground</h1>
+    <p>Seeing the (new) typesetter in action!</p>
+    <div id="mainRow">
+        <div id="dataInput">
+            <div class="form-group">
+                <label for="textToTypesetTextArea">Text To Typeset:</label>
+                <textarea class="form-control" id="textToTypesetTextArea" rows="5">This is the text to typeset. Write whatever you want in here and see the results in the html canvas to the left.
+                </textarea>
+            </div>
+
+            <div class="form-row">
+                <div class="row-label col-3">
+                    Font<br/>
+                </div>
+                <div class="col-6">
+                    <label for="fontFamily">Family</label>
+                    <select class="form-control" id="fontFamily">
+                        <option>Times New Roman</option>
+                        <option>Arial</option>
+                    </select>
+                </div>
+                <div class="col">
+                    <label for="fontSize">Size (pt)</label><input type="number" min="8" max="36" class="form-control" id="fontSize">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="row-label col-3">
+                    Line<br/>
+                </div>
+                <div class="col-3">
+                    <label for="lineSkip">Skip (pt)</label><input type="number" min="10" max="72" class="form-control" id="lineSkip">
+                </div>
+            </div>
+
+
+            <div class="form-row">
+                <div class="row-label col-3">
+                    Page Size<br/>(cm)
+                </div>
+                <div class="col">
+                    <label for="pageWidth">Width</label><input type="text" class="form-control" id="pageWidth">
+                </div>
+                <div class="col">
+                    <label for="pageHeight">Height</label><input type="text" class="form-control" id="pageHeight">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="row-label col-3">
+                    Margins<br/>(cm)
+                </div>
+                <div class="col">
+                    <label for="marginTop">Top</label><input type="text" class="form-control" id="marginTop">
+                </div>
+                <div class="col">
+                    <label for="marginLeft">Left</label><input type="text" class="form-control" id="marginLeft">
+                </div>
+                <div class="col">
+                    <label for="marginBottom">Bottom</label><input type="text" class="form-control" id="marginBottom">
+                </div>
+                <div class="col">
+                    <label for="marginRight">Right</label><input type="text" class="form-control" id="marginRight">
+                </div>
+            </div>
+<!--            <div class="form-group">-->
+<!--                <label><small>Note: 1cm = 37.8px</small></label>-->
+<!--            </div>-->
+
+
+
+        </div>
+        <div id="result">
+            <p>The result will be shown here:</p>
+            <canvas class="typesetPage" id="theCanvas"></canvas>
+        </div>
+    </div>
+</body>
+</html>

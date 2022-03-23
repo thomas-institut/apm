@@ -133,3 +133,8 @@ export function joinWithArray(sourceArray, separator) {
   newArray.push(sourceArray[sourceArray.length-1])
   return newArray
 }
+
+
+export function maxValue(theArray) {
+  return theArray.reduce( (currentMax, val) => { return Math.max(currentMax, val)})
+}

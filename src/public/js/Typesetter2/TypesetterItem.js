@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2012 Universität zu Köln
+ *  Copyright (C) 2022 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,16 +16,48 @@
  *
  */
 
+import * as TypesetterItemDirection from './TypesetterItemDirection'
 
-export class TypesetterToken2 {
+/**
+ * The base class for all typesetter items
+ */
 
-  constructor () {
-    if (this.constructor === TypesetterToken2) {
+export class TypesetterItem {
+
+  constructor (direction = TypesetterItemDirection.HORIZONTAL) {
+    if (this.constructor === TypesetterItem) {
       throw new Error("Abstract classes cannot be instantiated")
     }
+    this.direction = direction
+    this.width = -1  // not set
+    this.height = -1 // not set
+
+    this.metaData = []
     this._markAsNotSet()
     this.x = -1
     this.y = -1
+  }
+
+  getDirection() {
+    return this.direction
+  }
+
+  getWidth() {
+    return this.width
+  }
+
+  setWidth(width) {
+    this.width = width
+    return this
+  }
+
+  getHeight() {
+    return this.height
+  }
+
+  setHeight(height) {
+    this.height = height
+    return this
   }
 
   /**
@@ -45,10 +77,19 @@ export class TypesetterToken2 {
     return this.isSet() ? this.y : -1
   }
 
+  addMetaData(someObject) {
+    this.metaData.push(someObject)
+    return this
+  }
+
+  getMetaData() {
+    return this.metaData
+  }
+
   /**
    *
    * @param {number} x
-   * @return {TypesetterToken2}
+   * @return {TypesetterItem}
    */
   setX(x) {
     this.x = x
@@ -58,21 +99,11 @@ export class TypesetterToken2 {
   /**
    *
    * @param {number}y
-   * @return {TypesetterToken2}
+   * @return {TypesetterItem}
    */
   setY(y) {
     this.y = y
     return this
-  }
-
-  // ABSTRACT METHODS
-
-  getWidth() {
-    throw new Error("Method 'getSetWidth() must be implemented")
-  }
-
-  getSetWidth() {
-    throw new Error("Method 'getSetWidth() must be implemented")
   }
 
   // PROTECTED METHODS

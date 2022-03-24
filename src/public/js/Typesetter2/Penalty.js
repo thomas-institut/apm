@@ -18,35 +18,51 @@
 
 
 import { TypesetterItem } from './TypesetterItem'
-import * as TypesetterItemDirection from './TypesetterItemDirection'
 
-export class Glue extends TypesetterItem {
+export const INFINITE = 1000
+export const MINUS_INFINITE = -1000
 
-  constructor (direction = TypesetterItemDirection.HORIZONTAL) {
-    super(direction)
-    this.stretch = 0
-    this.shrink = 0
+export class Penalty extends TypesetterItem {
+
+  constructor () {
+    super()
+    this.penalty = 0
     this.width = 0
     this.height = 0
+    this.flagged = false
   }
 
-
-
-  getStretch() {
-    return this.stretch
+  isFlagged() {
+    return this.flagged
   }
 
-  setStretch(stretch) {
-    this.stretch = stretch
+  /**
+   *
+   * @param {boolean}flagged
+   * @return {Penalty}
+   */
+  setFlagged(flagged) {
+    this.flagged = flagged
     return this
   }
 
-  getShrink() {
-    return this.shrink
+  getPenalty() {
+    return this.penalty
   }
 
-  setShrink(shrink) {
-    this.shrink = shrink
+  /**
+   *
+   * @param {number}penalty
+   * @return {Penalty}
+   */
+  setPenalty(penalty) {
+    if (penalty > INFINITE) {
+      penalty = INFINITE
+    }
+    if (penalty < MINUS_INFINITE) {
+      penalty = MINUS_INFINITE
+    }
+    this.penalty = penalty
     return this
   }
 

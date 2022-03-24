@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2012 Universität zu Köln
+ *  Copyright (C) 2022 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,6 +16,9 @@
  *
  */
 
+import { ItemList } from './ItemList'
+import * as TypesetterItemDirection from './TypesetterItemDirection'
+
 /**
  * The new typesetter class
  */
@@ -30,8 +33,23 @@ export class Typesetter2 {
   }
 
   /**
+   * Converts a horizontal list of typesetter items into a series of lines and inter-line vertical glue
+   * @param list
+   * @return {*}
+   */
+  typesetHorizontalList(list) {
+    if (!(list instanceof ItemList)) {
+      throw new Error('typesetHorizontalList called with non-ItemList item ')
+    }
+    if (list.getDirection() !== TypesetterItemDirection.HORIZONTAL) {
+      throw new Error('typesetHorizontalList called with vertical list')
+    }
+    return list
+  }
+
+  /**
    *
-   * @param {TypesetterToken2[]} tokensToTypeset
+   * @param {TypesetterItem} tokensToTypeset
    */
   typesetTokens(tokensToTypeset) {
     console.error(`typesetTokens called on abstract class Typesetter2`)

@@ -1,4 +1,3 @@
-import { TextBoxToken } from './TextBoxToken'
 import { TextBox } from './TextBox'
 
 
@@ -6,22 +5,18 @@ import { TextBox } from './TextBox'
 export class TextBoxFactory {
 
   static simpleText(text, fontSpec = {}){
-    let token = new TextBoxToken()
-    token.setText(text)
+    let item = new TextBox()
+    item.setText(text)
 
     if (fontSpec.fontFamily !== undefined) {
-      token.setFontFamily(fontSpec.fontFamily)
+      item.setFontFamily(fontSpec.fontFamily)
     }
 
     if (fontSpec.fontSize !== undefined) {
-      token.setFontSize(fontSpec.fontSize)
+      item.setFontSize(fontSpec.fontSize)
     }
 
     // TODO: fontWeight, fontStyle, baselineShift
-
-    let b = new TextBox()
-
-    b.setTextTokens([token])
-    return b
+    return item
   }
 }

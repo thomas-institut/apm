@@ -7,11 +7,14 @@
 import { TextBoxFactory } from '../../../js/Typesetter2/TextBoxFactory'
 import { BrowserUtilities } from '../../../js/toolbox/BrowserUtilities'
 import { SystemTextBoxMeasurer } from '../../../js/Typesetter2/SystemTextBoxMeasurer'
-import { CanvasTextBoxTokenMeasurer } from '../../../js/Typesetter2/CanvasTextBoxTokenMeasurer'
-import { RaggedTypesetter } from '../../../js/Typesetter2/RaggedTypesetter'
+import { CanvasTextBoxMeasurer } from '../../../js/Typesetter2/CanvasTextBoxMeasurer'
 import { removeExtraWhiteSpace } from '../../../js/toolbox/Util.mjs'
 import { Glue } from '../../../js/Typesetter2/Glue'
 import { Typesetter2 } from '../../../js/Typesetter2/Typesetter2'
+import { TextBox } from '../../../js/Typesetter2/TextBox'
+import { SimpleTypesetter } from '../../../js/Typesetter2/SimpleTypesetter'
+import { ItemList } from '../../../js/Typesetter2/ItemList'
+import * as TypesetterItemDirection from '../../../js/Typesetter2/TypesetterItemDirection'
 
 const defaultPageWidth = Typesetter2.cm2px(14.1)
 const defaultPageHeight  = Typesetter2.cm2px(21)
@@ -20,6 +23,11 @@ const defaultMarginTop = Typesetter2.cm2px(1)
 const defaultMarginLeft = Typesetter2.cm2px(1)
 const defaultMarginBottom = Typesetter2.cm2px(1)
 const defaultMarginRight = Typesetter2.cm2px(1)
+
+const sampleText = `This is the text to typeset. Write whatever you want in here and see the results in the html 
+canvas to the left. 
+
+En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor. Una olla de algo más vaca que carnero, salpicón las más noches, duelos y quebrantos los sábados, lantejas los viernes, algún palomino de añadidura los domingos, consumían las tres cuartas partes de su hacienda. El resto della concluían sayo de velarte, calzas de velludo para las fiestas, con sus pantuflos de lo mesmo, y los días de entresemana se honraba con su vellorí de lo más fino. Tenía en su casa una ama que pasaba de los cuarenta, y una sobrina que no llegaba a los veinte, y un mozo de campo y plaza, que así ensillaba el rocín como tomaba la podadera. Frisaba la edad de nuestro hidalgo con los cincuenta años; era de complexión recia, seco de carnes, enjuto de rostro, gran madrugador y amigo de la caza. Quieren decir que tenía el sobrenombre de Quijada, o Quesada, que en esto hay alguna diferencia en los autores que deste caso escriben; aunque, por conjeturas verosímiles, se deja entender que se llamaba Quejana. Pero esto importa poco a nuestro cuento; basta que en la narración dél no se salga un punto de la verdad. `
 
 
 const defaultFonts = [ 'Times New Roman', 'Arial', 'GentiumBasic', 'FreeSerif', 'Linux Libertine']
@@ -37,6 +45,7 @@ class Playground {
   constructor () {
 
     this.inputTextArea = $('#textToTypesetTextArea')
+    this.inputTextArea.text(sampleText)
     this.pageWidthInput = $('#pageWidth')
     this.pageHeightInput = $('#pageHeight')
     this.marginTopInput = $('#marginTop')
@@ -52,7 +61,7 @@ class Playground {
     BrowserUtilities.setCanvasHiPDI(this.canvas, Math.round(defaultPageWidth), Math.round(defaultPageHeight))
 
     let systemMeasurer = new SystemTextBoxMeasurer()
-    systemMeasurer.setMeasurer(new CanvasTextBoxTokenMeasurer())
+    systemMeasurer.setMeasurer(new CanvasTextBoxMeasurer())
 
     this.pageWidth = defaultPageWidth
     this.pageHeight = defaultPageHeight
@@ -65,7 +74,7 @@ class Playground {
     this._setInputFieldsFromCurrentValues()
 
     this.lastText = this.inputTextArea.val()
-    this._renderTypesetText( this._typesetPlainText(this.lastText))
+    this._renderVerticalList( this._typesetPlainText(this.lastText))
 
     this.inputTextArea.on('keyup', this.genOnChangeInputText())
     this.marginTopInput.on('change', this.getOnChangeInputField())
@@ -82,7 +91,7 @@ class Playground {
   getOnChangeInputField() {
     return () => {
       this._getDataFromInputFields()
-      this._renderTypesetText( this._typesetPlainText(this.lastText))
+      this._renderVerticalList( this._typesetPlainText(this.lastText))
     }
   }
 
@@ -92,7 +101,7 @@ class Playground {
       if (newText !== this.lastText) {
         console.log(`New input text: '${this.inputTextArea.val()}'`)
         this.lastText = newText
-        this._renderTypesetText( this._typesetPlainText(newText))
+        this._renderVerticalList( this._typesetPlainText(newText))
       }
     }
   }
@@ -153,49 +162,68 @@ class Playground {
   _setFont(fontFamily, fontSize) {
     this.fontFamily = fontFamily
     this.fontSize = fontSize
-    let spaceToken = TextBoxFactory.simpleText(' ',{fontFamily: this.fontFamily, fontSize: this.fontSize})
-    this.normalSpaceWidth = (new SystemTextBoxMeasurer()).getTokenWidth(spaceToken.textTokens[0])
+    let spaceTextBox = TextBoxFactory.simpleText(' ',{fontFamily: this.fontFamily, fontSize: this.fontSize})
+    this.normalSpaceWidth = (new SystemTextBoxMeasurer()).getBoxWidth(spaceTextBox)
     this.normalSpaceStretch = this.normalSpaceWidth/6
     this.normalSpaceShrink = this.normalSpaceWidth/9
   }
 
   _typesetPlainText(plainText) {
     // one word per line, just to see that the playground is working
-    let words = removeExtraWhiteSpace(plainText).split(' ').map ( (word) => {
+    let wordTextBoxes = removeExtraWhiteSpace(plainText).split(' ').map ( (word) => {
       return TextBoxFactory.simpleText(word, { fontFamily: this.fontFamily, fontSize: this.fontSize})
     })
+    let listToTypeset = new ItemList(TypesetterItemDirection.HORIZONTAL)
     let tokensToTypeset = []
-    words.forEach( (token) => {
-      tokensToTypeset.push(token)
+    wordTextBoxes.forEach( (textBox, i) => {
+      listToTypeset.pushItem(textBox)
       let glueToken = (new Glue()).setWidth(this.normalSpaceWidth)
         .setStretch(this.normalSpaceStretch)
         .setShrink(this.normalSpaceShrink)
-      tokensToTypeset.push(glueToken)
+      if (i !== wordTextBoxes.length - 1) {
+        listToTypeset.pushItem(glueToken)
+      }
     })
 
     //let ts = new WordPerLineTypesetter(24)
-    let ts = new RaggedTypesetter(this.pageWidth-this.marginRight-this.marginLeft, this.lineSkip)
-    return ts.typesetTokens(tokensToTypeset)
+    let ts = new SimpleTypesetter(this.pageWidth-this.marginRight-this.marginLeft, this.lineSkip)
+    return ts.typesetHorizontalList(listToTypeset)
   }
 
-  _renderTypesetText(typesetTokens, canvasElement) {
+  _renderVerticalList(verticalList) {
 
-    console.log(`Rendering typeset tokens`)
-    console.log(typesetTokens)
+    console.log(`Rendering vertical list, height = ${verticalList.getHeight()}`)
+    console.log(verticalList)
     BrowserUtilities.setCanvasHiPDI(this.canvas, Math.round(this.pageWidth), Math.round(this.pageHeight))
 
     let ctx = this.canvas.getContext('2d')
     ctx.clearRect(0,0, this.canvas.width, this.canvas.height)
-    typesetTokens.forEach( (token) => {
-      if (token.constructor.name === 'TextBox') {
-        token.textTokens.forEach( (textToken) => {
-          ctx.font = `${textToken.getFontSize()}px ${textToken.getFontFamily()}`
-          ctx.fillText(textToken.getText(), token.getX() + this.marginLeft, token.getY() + this.marginTop)
+
+    let currentY = this.marginTop
+    verticalList.getList().forEach( (item) => {
+      if (item instanceof Glue) {
+        currentY += item.getHeight()
+        return
+      }
+      if (item instanceof ItemList) {
+        // a line
+        let currentX = this.marginLeft
+        let lineHeight = item.getHeight()
+        console.log(`Rendering line, currentY = ${currentY}, lineHeight = ${lineHeight}, lineWidth = ${item.getWidth()}`)
+        item.getList().forEach( (lineItem) => {
+          if (lineItem instanceof Glue) {
+            currentX += lineItem.getWidth()
+            return
+          }
+          if (lineItem instanceof TextBox) {
+            ctx.font = `${lineItem.getFontSize()}px ${lineItem.getFontFamily()}`
+            ctx.fillText(lineItem.getText(), currentX, currentY + lineHeight)
+            currentX += lineItem.getWidth()
+          }
+          // ignore all other item types!
         })
+        currentY += lineHeight
       }
     })
   }
-
-
-
 }

@@ -1,9 +1,9 @@
-import { TextBoxTokenMeasurer } from './TextBoxTokenMeasurer'
+import { TextBoxMeasurer } from './TextBoxMeasurer'
 import { BrowserUtilities } from '../toolbox/BrowserUtilities'
 
-export class CanvasTextBoxTokenMeasurer extends TextBoxTokenMeasurer{
+export class CanvasTextBoxMeasurer extends TextBoxMeasurer {
 
-  getTokenWidth (token) {
+  getBoxWidth (token) {
     let context = this.__getContext()
     context.font = `${token.fontSize}px '${token.fontFamily}'`;
     //console.log(`Measuring token`)
@@ -14,7 +14,7 @@ export class CanvasTextBoxTokenMeasurer extends TextBoxTokenMeasurer{
     return metrics.width
   }
 
-  getTokenHeight (token) {
+  getBoxHeight (token) {
     // TODO: change this to a better measurement
     return token.fontSize
   }

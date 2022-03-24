@@ -1,7 +1,7 @@
 /**
  * A singleton containing the system text box measurer
  */
-import { TextBoxTokenMeasurer } from './TextBoxTokenMeasurer'
+import { TextBoxMeasurer } from './TextBoxMeasurer'
 
 export class SystemTextBoxMeasurer {
 
@@ -11,12 +11,12 @@ export class SystemTextBoxMeasurer {
     }
     SystemTextBoxMeasurer._instance = this
 
-    this.theActualMeasurer = new TextBoxTokenMeasurer()
+    this.theActualMeasurer = new TextBoxMeasurer()
   }
 
   /**
    *
-   * @param {TextBoxTokenMeasurer} measurer
+   * @param {TextBoxMeasurer} measurer
    */
   setMeasurer(measurer) {
     this.theActualMeasurer = measurer
@@ -24,14 +24,14 @@ export class SystemTextBoxMeasurer {
 
   /**
    *
-   * @param {TextBoxToken}token
+   * @param {TextBox}item
    * @return {*}
    */
-  getTokenWidth(token) {
-    return this.theActualMeasurer.getTokenWidth(token)
+  getBoxWidth(item) {
+    return this.theActualMeasurer.getBoxWidth(item)
   }
 
-  getTokenHeight(token) {
-    return this.theActualMeasurer.getTokenHeight(token)
+  getBoxHeight(token) {
+    return this.theActualMeasurer.getBoxHeight(token)
   }
 }

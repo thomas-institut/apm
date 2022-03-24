@@ -67,8 +67,8 @@ export class TextBoxToken {
   }
 
   __measure() {
-    this.width = (new SystemTextBoxMeasurer()).getTokenWidth(this)
-    this.height = (new SystemTextBoxMeasurer()).getTokenHeight(this)
+    this.width = (new SystemTextBoxMeasurer()).getBoxWidth(this)
+    this.height = (new SystemTextBoxMeasurer()).getBoxHeight(this)
   }
 
   __resetMeasurements() {

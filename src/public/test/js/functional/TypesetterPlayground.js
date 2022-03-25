@@ -11,11 +11,13 @@ import { CanvasTextBoxMeasurer } from '../../../js/Typesetter2/CanvasTextBoxMeas
 import { removeExtraWhiteSpace } from '../../../js/toolbox/Util.mjs'
 import { Glue } from '../../../js/Typesetter2/Glue'
 import { Typesetter2 } from '../../../js/Typesetter2/Typesetter2'
-import { TextBox } from '../../../js/Typesetter2/TextBox'
 import { SimpleTypesetter } from '../../../js/Typesetter2/SimpleTypesetter'
 import { ItemList } from '../../../js/Typesetter2/ItemList'
 import * as TypesetterItemDirection from '../../../js/Typesetter2/TypesetterItemDirection'
 import { CanvasRenderer } from '../../../js/Typesetter2/CanvasRenderer'
+import * as PDFLib from 'pdf-lib'
+import fontkit from '@pdf-lib/fontkit'
+import { PdfRenderer } from '../../../js/Typesetter2/PdfRenderer'
 
 const defaultPageWidth = Typesetter2.cm2px(14.1)
 const defaultPageHeight  = Typesetter2.cm2px(21)
@@ -36,8 +38,30 @@ const defaultFonts = [ 'Times New Roman', 'Arial', 'GentiumBasic', 'FreeSerif', 
 const defaultFontSize = Typesetter2.pt2px(12)
 const defaultLineSkip = Typesetter2.pt2px(18)
 
+const freeSerifFontUrl = 'https://averroes.uni-koeln.de/fonts/freefont/FreeSerif.ttf'
+let freeSerifFontBytes = null
+
+// async function createPdf() {
+//   const pdfDoc = await PDFLib.PDFDocument.create();
+//   pdfDoc.registerFontkit(fontkit)
+//   const freeSerifFontBytes = await fetch(freeSerifFontUrl).then( res => res.arrayBuffer())
+//   const freeSerifFont = await pdfDoc.embedFont(freeSerifFontBytes, {subset: true})
+//
+//   let pageHeight = 841.88
+//   const page = pdfDoc.addPage([595.28, pageHeight]);
+//   let fontSize = 24
+//   page.drawText('Creating PDFs in JavaScript is awesome!', {
+//     x: 50,
+//     y: 100,
+//     size: fontSize,
+//     font: freeSerifFont
+//   })
+//   document.getElementById('pdfFrame').src = await pdfDoc.saveAsBase64({ dataUri: true });
+// }
+
 $( () => {
   new Playground()
+
 })
 
 
@@ -192,12 +216,30 @@ class Playground {
     return ts.typesetHorizontalList(listToTypeset)
   }
 
-  _render(mainText) {
+  async _render(mainText) {
     console.log(`Rendering main text, height = ${mainText.getHeight()}`)
     console.log(mainText)
     BrowserUtilities.setCanvasHiPDI(this.canvas, Math.round(this.pageWidth), Math.round(this.pageHeight))
     let ctx = this.canvas.getContext('2d')
     ctx.clearRect(0,0, this.canvas.width, this.canvas.height)
     this.canvasRenderer.renderVerticalList(mainText, this.marginRight, this.marginTop)
+
+    // PDF render
+    const pdfDoc = await PDFLib.PDFDocument.create();
+    pdfDoc.registerFontkit(fontkit)
+    if (freeSerifFontBytes === null) {
+      freeSerifFontBytes = await fetch(freeSerifFontUrl).then( res => res.arrayBuffer())
+    }
+
+    const freeSerifFont = await pdfDoc.embedFont(freeSerifFontBytes, {subset: true})
+
+    let pageHeight = 841.88
+    let page = pdfDoc.addPage([Typesetter2.px2pt(this.pageWidth), Typesetter2.px2pt(this.pageHeight)])
+
+    let pdfRenderer = new PdfRenderer(page,  Typesetter2.px2pt(this.pageHeight), [ freeSerifFont])
+
+    pdfRenderer.renderVerticalList(mainText, this.marginRight, this.marginTop)
+    document.getElementById('pdfFrame').src = await pdfDoc.saveAsBase64({ dataUri: true });
+
   }
 }

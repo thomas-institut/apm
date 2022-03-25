@@ -65,7 +65,7 @@ export class SimpleTypesetter extends Typesetter2 {
     // add some metadata to the lines
     let lineNumber = 1
     lines = lines.map( (line) => {
-      return line.addMetaData(lineMetadataKey, {
+      return line.addMetadata(lineMetadataKey, {
         lineNumber: lineNumber++,
         ratio: line.getWidth() / this.lineWidth
       })

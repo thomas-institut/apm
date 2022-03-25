@@ -31,6 +31,7 @@ export class CanvasRenderer extends TypesetterRenderer {
         currentX += horizontalItem.getWidth()
       }
     })
+    return true
   }
 
   renderVerticalList (list, shiftX = 0, shiftY = 0) {
@@ -47,6 +48,7 @@ export class CanvasRenderer extends TypesetterRenderer {
         currentY += lineHeight
       }
     })
+    return true
   }
 
 }

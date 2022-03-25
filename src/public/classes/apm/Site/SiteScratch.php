@@ -15,10 +15,8 @@ class SiteScratch extends \APM\Site\SiteController
      * @return Response
      */
 
-    public function scratchPage(Request $request, Response $response): Response
+    public function scratchPage(Request $request, Response $response)
     {
-        $text = "Hello World";
-
-        return $this->renderPage($response, self::TEMPLATE_SCRATCH_PAGE, ['text' => $text]);
+        return $this->renderPage($response, self::TEMPLATE_SCRATCH_PAGE,[]);
     }
 }

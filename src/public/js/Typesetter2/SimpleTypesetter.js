@@ -6,6 +6,8 @@ import { Glue } from './Glue'
 import { TextBox } from './TextBox'
 import { MINUS_INFINITE, Penalty } from './Penalty'
 
+export const lineMetadataKey = 'SimpleTypesetterLine'
+
 export class SimpleTypesetter extends Typesetter2 {
   constructor (lineWidth, lineSkip = 24) {
     super()
@@ -63,7 +65,7 @@ export class SimpleTypesetter extends Typesetter2 {
     // add some metadata to the lines
     let lineNumber = 1
     lines = lines.map( (line) => {
-      return line.addMetaData({
+      return line.addMetaData(lineMetadataKey, {
         lineNumber: lineNumber++,
         ratio: line.getWidth() / this.lineWidth
       })

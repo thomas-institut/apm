@@ -11,7 +11,6 @@ export class TextBox extends Box {
     this.fontSize = 16
     this.fontStyle = ''
     this.fontWeight = ''
-    this.baselineShift = 0
     this.width = -1
     this.height = -1
     this.textDirection = 'ltr'

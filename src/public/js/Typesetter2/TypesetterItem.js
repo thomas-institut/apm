@@ -32,10 +32,9 @@ export class TypesetterItem {
     this.width = -1  // not set
     this.height = -1 // not set
 
-    this.metaData = []
-    this._markAsNotSet()
-    this.x = -1
-    this.y = -1
+    this.metadata = new Map()
+    this.shiftX = 0
+    this.shiftY = 0
   }
 
   getDirection() {
@@ -60,30 +59,8 @@ export class TypesetterItem {
     return this
   }
 
-  /**
-   *
-   * @return {bool}
-   */
-  isSet() {
-    return this._set
-  }
-
-
-  getX() {
-    return this.isSet() ? this.x : -1
-  }
-
-  getY() {
-    return this.isSet() ? this.y : -1
-  }
-
-  addMetaData(someObject) {
-    this.metaData.push(someObject)
-    return this
-  }
-
-  getMetaData() {
-    return this.metaData
+  getShiftX() {
+    return this.shiftX
   }
 
   /**
@@ -91,9 +68,13 @@ export class TypesetterItem {
    * @param {number} x
    * @return {TypesetterItem}
    */
-  setX(x) {
-    this.x = x
+  setShiftX(x) {
+    this.shiftX = x
     return this
+  }
+
+  getShiftY() {
+    return this.shiftY
   }
 
   /**
@@ -101,22 +82,51 @@ export class TypesetterItem {
    * @param {number}y
    * @return {TypesetterItem}
    */
-  setY(y) {
-    this.y = y
+  setShiftY(y) {
+    this.shiftY = y
     return this
   }
 
-  // PROTECTED METHODS
+  // Metadata methods
 
-  _markAsSet() {
-    this._set = true
+  /**
+   *
+   * @param {string}key
+   * @param {object}someObject
+   * @return {TypesetterItem}
+   */
+  addMetadata(key, someObject) {
+    this.metadata.set(key, someObject)
     return this
   }
 
-  _markAsNotSet() {
-    this._set = false
-    return this
+  /**
+   *
+   * @param {string}key
+   * @return {object}
+   */
+  getMetadata(key) {
+    return this.metadata.get(key)
   }
+
+  /**
+   *
+   * @param {string}key
+   * @return {boolean}
+   */
+  deleteMetadata(key) {
+    return this.metadata.delete(key)
+  }
+
+  /**
+   *
+   * @param {string}key
+   * @return {boolean}
+   */
+  hasMetadata(key) {
+    return this.metadata.has(key)
+  }
+
 
 
 }

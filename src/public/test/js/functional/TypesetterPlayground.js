@@ -15,6 +15,7 @@ import { TextBox } from '../../../js/Typesetter2/TextBox'
 import { SimpleTypesetter } from '../../../js/Typesetter2/SimpleTypesetter'
 import { ItemList } from '../../../js/Typesetter2/ItemList'
 import * as TypesetterItemDirection from '../../../js/Typesetter2/TypesetterItemDirection'
+import { CanvasRenderer } from '../../../js/Typesetter2/CanvasRenderer'
 
 const defaultPageWidth = Typesetter2.cm2px(14.1)
 const defaultPageHeight  = Typesetter2.cm2px(21)
@@ -59,6 +60,7 @@ class Playground {
 
     this.canvas = document.getElementById('theCanvas')
     BrowserUtilities.setCanvasHiPDI(this.canvas, Math.round(defaultPageWidth), Math.round(defaultPageHeight))
+    this.canvasRenderer = new CanvasRenderer(this.canvas)
 
     let systemMeasurer = new SystemTextBoxMeasurer()
     systemMeasurer.setMeasurer(new CanvasTextBoxMeasurer())
@@ -74,7 +76,7 @@ class Playground {
     this._setInputFieldsFromCurrentValues()
 
     this.lastText = this.inputTextArea.val()
-    this._renderVerticalList( this._typesetPlainText(this.lastText))
+    this._render( this._typesetPlainText(this.lastText))
 
     this.inputTextArea.on('keyup', this.genOnChangeInputText())
     this.marginTopInput.on('change', this.getOnChangeInputField())
@@ -91,7 +93,7 @@ class Playground {
   getOnChangeInputField() {
     return () => {
       this._getDataFromInputFields()
-      this._renderVerticalList( this._typesetPlainText(this.lastText))
+      this._render( this._typesetPlainText(this.lastText))
     }
   }
 
@@ -101,7 +103,7 @@ class Playground {
       if (newText !== this.lastText) {
         console.log(`New input text: '${this.inputTextArea.val()}'`)
         this.lastText = newText
-        this._renderVerticalList( this._typesetPlainText(newText))
+        this._render( this._typesetPlainText(newText))
       }
     }
   }
@@ -190,40 +192,12 @@ class Playground {
     return ts.typesetHorizontalList(listToTypeset)
   }
 
-  _renderVerticalList(verticalList) {
-
-    console.log(`Rendering vertical list, height = ${verticalList.getHeight()}`)
-    console.log(verticalList)
+  _render(mainText) {
+    console.log(`Rendering main text, height = ${mainText.getHeight()}`)
+    console.log(mainText)
     BrowserUtilities.setCanvasHiPDI(this.canvas, Math.round(this.pageWidth), Math.round(this.pageHeight))
-
     let ctx = this.canvas.getContext('2d')
     ctx.clearRect(0,0, this.canvas.width, this.canvas.height)
-
-    let currentY = this.marginTop
-    verticalList.getList().forEach( (item) => {
-      if (item instanceof Glue) {
-        currentY += item.getHeight()
-        return
-      }
-      if (item instanceof ItemList) {
-        // a line
-        let currentX = this.marginLeft
-        let lineHeight = item.getHeight()
-        console.log(`Rendering line, currentY = ${currentY}, lineHeight = ${lineHeight}, lineWidth = ${item.getWidth()}`)
-        item.getList().forEach( (lineItem) => {
-          if (lineItem instanceof Glue) {
-            currentX += lineItem.getWidth()
-            return
-          }
-          if (lineItem instanceof TextBox) {
-            ctx.font = `${lineItem.getFontSize()}px ${lineItem.getFontFamily()}`
-            ctx.fillText(lineItem.getText(), currentX, currentY + lineHeight)
-            currentX += lineItem.getWidth()
-          }
-          // ignore all other item types!
-        })
-        currentY += lineHeight
-      }
-    })
+    this.canvasRenderer.renderVerticalList(mainText, this.marginRight, this.marginTop)
   }
 }

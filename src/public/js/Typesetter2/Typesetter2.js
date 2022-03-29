@@ -33,28 +33,55 @@ export class Typesetter2 {
   }
 
   /**
-   * Converts a horizontal list of typesetter items into a series of lines and inter-line vertical glue
-   * @param list
-   * @return {*}
+   * Converts a horizontal list of typesetter items into a vertical list
+   * consisting of a series of lines and inter-line glue
+   * @param {ItemList}list
+   * @return {ItemList}
    */
   typesetHorizontalList(list) {
+    // performs type checks and returns the input list if there's no problem
     if (!(list instanceof ItemList)) {
       throw new Error('typesetHorizontalList called with non-ItemList item ')
     }
     if (list.getDirection() !== TypesetterItemDirection.HORIZONTAL) {
-      throw new Error('typesetHorizontalList called with vertical list')
+      throw new Error('typesetHorizontalList called with a vertical list')
     }
     return list
   }
 
   /**
+   * Converts a vertical list into a horizontal lists consisting of vertical lists
+   * where each one fits into a given height (previously given to the typesetter)
+   * In essence, splits a vertical list into pages
    *
-   * @param {TypesetterItem} tokensToTypeset
+   * @param {ItemList}list
+   * @return {ItemList}
    */
-  typesetTokens(tokensToTypeset) {
-    console.error(`typesetTokens called on abstract class Typesetter2`)
-    return tokensToTypeset
+  typesetVerticalList(list) {
+    // performs type checks and returns the input list if there's no problem
+    if (!(list instanceof ItemList)) {
+      throw new Error('typesetVerticalList called with non-ItemList item ')
+    }
+    if (list.getDirection() !== TypesetterItemDirection.VERTICAL) {
+      throw new Error('typesetVerticalList called with a horizontal list')
+    }
+    return list
   }
+
+  /**
+   * Typeset a list of typesetter items returning an array of pages
+   * Each concrete typesetter may impose constraints on the type
+   * of list and items that are allowed as input. Normally,
+   * the input list will be a vertical list with the paragraphs of the
+   * main text block.
+   *
+   * @param {ItemList}list
+   * @return {TypesetterPage[]}
+   */
+  typeset(list) {
+    return []
+  }
+
 
   // Unit conversion methods
 

@@ -1,18 +1,34 @@
-
 import { Typesetter2 } from './Typesetter2'
 import { ItemList } from './ItemList'
 import * as TypesetterItemDirection from './TypesetterItemDirection'
+import { HORIZONTAL, VERTICAL } from './TypesetterItemDirection'
 import { Glue } from './Glue'
 import { TextBox } from './TextBox'
 import { MINUS_INFINITE, Penalty } from './Penalty'
+import { OptionsChecker } from '@thomas-inst/optionschecker'
+import { TypesetterPage } from './TypesetterPage'
 
 export const lineMetadataKey = 'SimpleTypesetterLine'
 
 export class SimpleTypesetter extends Typesetter2 {
-  constructor (lineWidth, lineSkip = 24) {
+  constructor (options) {
     super()
-    this.lineWidth = lineWidth
-    this.lineSkip = lineSkip
+    let oc = new OptionsChecker({
+      context: 'SimpleTypesetter',
+      optionsDefinition: {
+        pageWidth: { type: 'number', required: true},
+        pageHeight: { type: 'number', required: true},
+        marginTop: { type: 'number', default: 50},
+        marginBottom: { type: 'number', default: 50},
+        marginLeft: { type: 'number', default: 50},
+        marginRight: { type: 'number', default: 50},
+        lineSkip: { type: 'number', default: 24},
+      }
+    })
+    this.options = oc.getCleanOptions(options)
+    this.lineWidth = this.options.pageWidth - this.options.marginLeft - this.options.marginRight
+    this.textAreaHeight = this.options.pageHeight - this.options.marginTop - this.options.marginBottom
+    this.lineSkip = this.options.lineSkip
   }
 
 
@@ -80,6 +96,82 @@ export class SimpleTypesetter extends Typesetter2 {
       outputList.pushItem(lines[i])
     }
     return outputList
+  }
+
+  /**
+   *
+   * @param {ItemList}list
+   * @return {ItemList}
+   */
+  typesetVerticalList (list) {
+    let inputList = super.typesetVerticalList(list)
+    let outputList = new ItemList(HORIZONTAL)
+    let currentY = 0
+    let currentVerticalList = new ItemList(VERTICAL)
+    inputList.getList().forEach( (item, i) => {
+      if (item instanceof Glue) {
+        currentY += item.getHeight()
+        currentVerticalList.pushItem(item)
+        return
+      }
+      if (item instanceof ItemList) {
+        if (item.getDirection() !== HORIZONTAL) {
+          console.warn(`Ignoring vertical list while typesetting a vertical list, item index ${i}`)
+          console.log(item)
+          return
+        }
+        currentY += item.getHeight()
+        if (currentY > this.textAreaHeight) {
+          // new page!
+          currentVerticalList.trimEndGlue()
+          outputList.pushItem(currentVerticalList)
+          currentVerticalList = new ItemList(VERTICAL)
+          currentVerticalList.pushItem(item)
+          currentY = item.getHeight()
+        } else {
+          currentVerticalList.pushItem(item)
+        }
+        return
+      }
+      console.warn(`Ignoring non-glue non-list item while typesetting vertical list, item index ${i}`)
+      console.log(item)
+    })
+    if (currentVerticalList.getList().length !== 0) {
+      currentVerticalList.trimEndGlue()
+      outputList.pushItem(currentVerticalList)
+    }
+    return outputList
+  }
+
+  typeset (list) {
+    if (list.getDirection() !== VERTICAL) {
+      throw new Error(`Cannot typeset a non-vertical list`)
+    }
+    let verticalListToTypeset = new ItemList(VERTICAL)
+    list.getList().forEach( (verticalItem) => {
+      if (verticalItem instanceof Glue) {
+        verticalListToTypeset.pushItem(verticalItem)
+        return
+      }
+      if (verticalItem instanceof ItemList) {
+        if (verticalItem.getDirection() === HORIZONTAL) {
+          // console.log(`Processing horizontal list`)
+          // console.log(verticalItem)
+          let typesetItem = this.typesetHorizontalList(verticalItem)
+          // console.log(`Typeset horizontal list`)
+          // console.log(typesetItem)
+          typesetItem.getList().forEach( (typesetItem) => {
+            verticalListToTypeset.pushItem(typesetItem)
+          })
+        }
+      }
+    })
+    let pageList = this.typesetVerticalList(verticalListToTypeset)
+    return pageList.getList().map((pageItemList) => {
+      pageItemList.setShiftX(this.options.marginLeft).setShiftY(this.options.marginTop)
+      return new TypesetterPage(this.options.pageWidth, this.options.pageHeight,
+        [  pageItemList ])
+    })
   }
 
 }

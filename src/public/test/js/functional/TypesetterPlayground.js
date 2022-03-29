@@ -18,6 +18,8 @@ import { CanvasRenderer } from '../../../js/Typesetter2/CanvasRenderer'
 import * as PDFLib from 'pdf-lib'
 import fontkit from '@pdf-lib/fontkit'
 import { PdfRenderer } from '../../../js/Typesetter2/PdfRenderer'
+import { TypesetterPage } from '../../../js/Typesetter2/TypesetterPage'
+import { VERTICAL } from '../../../js/Typesetter2/TypesetterItemDirection'
 
 const defaultPageWidth = Typesetter2.cm2px(14.1)
 const defaultPageHeight  = Typesetter2.cm2px(21)
@@ -33,13 +35,16 @@ canvas to the left.
 En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor. Una olla de algo más vaca que carnero, salpicón las más noches, duelos y quebrantos los sábados, lantejas los viernes, algún palomino de añadidura los domingos, consumían las tres cuartas partes de su hacienda. El resto della concluían sayo de velarte, calzas de velludo para las fiestas, con sus pantuflos de lo mesmo, y los días de entresemana se honraba con su vellorí de lo más fino. Tenía en su casa una ama que pasaba de los cuarenta, y una sobrina que no llegaba a los veinte, y un mozo de campo y plaza, que así ensillaba el rocín como tomaba la podadera. Frisaba la edad de nuestro hidalgo con los cincuenta años; era de complexión recia, seco de carnes, enjuto de rostro, gran madrugador y amigo de la caza. Quieren decir que tenía el sobrenombre de Quijada, o Quesada, que en esto hay alguna diferencia en los autores que deste caso escriben; aunque, por conjeturas verosímiles, se deja entender que se llamaba Quejana. Pero esto importa poco a nuestro cuento; basta que en la narración dél no se salga un punto de la verdad. `
 
 
-const defaultFonts = [ 'Times New Roman', 'Arial', 'GentiumBasic', 'FreeSerif', 'Linux Libertine']
+const defaultFonts = [ 'FreeSerif', 'Arial', 'GentiumBasic', 'Linux Libertine']
 
 const defaultFontSize = Typesetter2.pt2px(12)
 const defaultLineSkip = Typesetter2.pt2px(18)
 
 const freeSerifFontUrl = 'https://averroes.uni-koeln.de/fonts/freefont/FreeSerif.ttf'
 let freeSerifFontBytes = null
+
+const linuxLibertineFontUrl = 'https://averroes.uni-koeln.de/fonts/LinuxLibertine/LinLibertine_Rah.ttf'
+let linuxLibertineFontBytes = null
 
 // async function createPdf() {
 //   const pdfDoc = await PDFLib.PDFDocument.create();
@@ -100,7 +105,7 @@ class Playground {
     this._setInputFieldsFromCurrentValues()
 
     this.lastText = this.inputTextArea.val()
-    this._render( this._typesetPlainText(this.lastText))
+    this._render( this._typesetPlainText(this.lastText)).then( () => console.log('Rendered'))
 
     this.inputTextArea.on('keyup', this.genOnChangeInputText())
     this.marginTopInput.on('change', this.getOnChangeInputField())
@@ -199,30 +204,54 @@ class Playground {
     let wordTextBoxes = removeExtraWhiteSpace(plainText).split(' ').map ( (word) => {
       return TextBoxFactory.simpleText(word, { fontFamily: this.fontFamily, fontSize: this.fontSize})
     })
-    let listToTypeset = new ItemList(TypesetterItemDirection.HORIZONTAL)
+    let paragraphToTypeset = new ItemList(TypesetterItemDirection.HORIZONTAL)
     let tokensToTypeset = []
     wordTextBoxes.forEach( (textBox, i) => {
-      listToTypeset.pushItem(textBox)
+      paragraphToTypeset.pushItem(textBox)
       let glueToken = (new Glue()).setWidth(this.normalSpaceWidth)
         .setStretch(this.normalSpaceStretch)
         .setShrink(this.normalSpaceShrink)
       if (i !== wordTextBoxes.length - 1) {
-        listToTypeset.pushItem(glueToken)
+        paragraphToTypeset.pushItem(glueToken)
       }
     })
 
-    //let ts = new WordPerLineTypesetter(24)
-    let ts = new SimpleTypesetter(this.pageWidth-this.marginRight-this.marginLeft, this.lineSkip)
-    return ts.typesetHorizontalList(listToTypeset)
+    let verticalListToTypeset = new ItemList(VERTICAL)
+    verticalListToTypeset.pushItem(paragraphToTypeset)
+
+    let ts = new SimpleTypesetter(
+      {
+        pageWidth: this.pageWidth,
+        pageHeight: this.pageHeight,
+        marginTop: this.marginTop,
+        marginBottom: this.marginBottom,
+        marginLeft: this.marginLeft,
+        marginRight: this.marginRight,
+        lineSkip: this.lineSkip
+      })
+    return ts.typeset(verticalListToTypeset)
   }
 
-  async _render(mainText) {
-    console.log(`Rendering main text, height = ${mainText.getHeight()}`)
-    console.log(mainText)
+  /**
+   *
+   * @param {TypesetterPage[]}pages
+   * @return {Promise<void>}
+   * @private
+   */
+  async _render(pages) {
+
+    console.log(`Rendering ${pages.length} pages`)
+    console.log(pages)
     BrowserUtilities.setCanvasHiPDI(this.canvas, Math.round(this.pageWidth), Math.round(this.pageHeight))
     let ctx = this.canvas.getContext('2d')
     ctx.clearRect(0,0, this.canvas.width, this.canvas.height)
-    this.canvasRenderer.renderVerticalList(mainText, this.marginRight, this.marginTop)
+
+    if (pages.length === 0) {
+      console.log('Nothing to do, no pages to render')
+      return
+    }
+    console.log(`Rendering page 0 in canvas`)
+    this.canvasRenderer.renderPage(pages[0])
 
     // PDF render
     const pdfDoc = await PDFLib.PDFDocument.create();
@@ -230,15 +259,36 @@ class Playground {
     if (freeSerifFontBytes === null) {
       freeSerifFontBytes = await fetch(freeSerifFontUrl).then( res => res.arrayBuffer())
     }
+    if (linuxLibertineFontBytes === null) {
+      linuxLibertineFontBytes = await fetch(linuxLibertineFontUrl).then( res => res.arrayBuffer())
+    }
 
-    const freeSerifFont = await pdfDoc.embedFont(freeSerifFontBytes, {subset: true})
+    // testing the font
+    let fkFont = fontkit.create(freeSerifFontBytes)
+    console.log(`Font features`)
+    console.log(fkFont.availableFeatures)
+    const stringsToLayout = [ 'i', 'j', 's', 'ij', 'is']
+    stringsToLayout.forEach( (str) => {
+      console.log(`Layout for '${str}'`)
+      console.log(fkFont.layout(str))
+    })
 
-    let pageHeight = 841.88
-    let page = pdfDoc.addPage([Typesetter2.px2pt(this.pageWidth), Typesetter2.px2pt(this.pageHeight)])
+    const freeSerifFont = await pdfDoc.embedFont(freeSerifFontBytes, {
+      subset: true
+    })
+    const linuxLibertineFont = await pdfDoc.embedFont(linuxLibertineFontBytes, {
+      subset: true
+    })
 
-    let pdfRenderer = new PdfRenderer(page,  Typesetter2.px2pt(this.pageHeight), [ freeSerifFont])
+    let fonts = {  'FreeSerif': freeSerifFont, 'Linux Libertine': linuxLibertineFont}
 
-    pdfRenderer.renderVerticalList(mainText, this.marginRight, this.marginTop)
+    let pdfRenderer = new PdfRenderer( {
+      pdfDocument: pdfDoc,
+      fonts: fonts,
+      defaultPageHeight: this.pageHeight
+    })
+
+    pdfRenderer.renderDocument(pages)
     document.getElementById('pdfFrame').src = await pdfDoc.saveAsBase64({ dataUri: true });
 
   }

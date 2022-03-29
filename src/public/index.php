@@ -153,7 +153,7 @@ $app->group('', function (RouteCollectorProxy $group){
 
     // Scratch Page
 
-    $group->get('/scratch',
+    $group->get('/lukas',
         SiteScratch::class . ':scratchPage')
         ->setName('scratch');
 

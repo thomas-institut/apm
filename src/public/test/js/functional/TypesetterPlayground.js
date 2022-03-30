@@ -163,9 +163,11 @@ class Playground {
     this.marginBottom = this.__getPxDimensionFromInputField('cm',this.marginBottomInput, 0, this.pageHeight/2, defaultMarginBottom)
     this.marginLeft = this.__getPxDimensionFromInputField('cm',this.marginLeftInput, 0, this.pageWidth/2, defaultMarginLeft)
     this.marginRight = this.__getPxDimensionFromInputField('cm',this.marginRightInput, 0, this.pageWidth/2, defaultMarginRight)
-    this.fontFamily = defaultFonts[this.fontFamilyInput.val()]
-    this.fontSize = this.__getPxDimensionFromInputField('pt', this.fontSizeInput, 8, 36, 12)
     this.lineSkip = this.__getPxDimensionFromInputField('pt', this.lineSkipInput, 12, 72, 24)
+    this._setFont(
+      defaultFonts[this.fontFamilyInput.val()],
+      this.__getPxDimensionFromInputField('pt', this.fontSizeInput, 8, 36, 12)
+    )
 
    }
 

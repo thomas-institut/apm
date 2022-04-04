@@ -2,7 +2,35 @@
 
 {% block title %}Scratch{% endblock %}
 
-{% block content %}
-    <h1> Hello World! </h1>
+{% block finalBodyJS %}
+    <script>
+      $(document).ready(function() {
 
+        // makeText function that generates text
+        function makeText () {
+          // return document.getElementById("searchOutput").innerHTML = "New text!";
+          return $("#searchOutput").text("Search result")
+        }
+
+        // keyup event calls makeText function
+        $("#searchField").on("keyup",function(){
+          makeText();
+        });
+
+      })
+    </script>
+{%  endblock %}
+
+{% block content %}
+    <h1> Search </h1>
+<form>
+    <label for="searchField">Enter text:</label><br>
+    <input type="text" id="searchField" name="searchField">
+</form>
+    <br><br>
+    <p id="searchOutput">Search results will appear here....</p>
+    <br><br>
 {% endblock %}
+
+
+

@@ -4,11 +4,10 @@
 
 {% block finalBodyJS %}
     <script>
-      $(document).ready(function() {
+      $(function() {
 
         // makeText function that generates text
         function makeText () {
-          // return document.getElementById("searchOutput").innerHTML = "New text!";
           return $("#searchOutput").text("Search result")
         }
 
@@ -16,7 +15,6 @@
         $("#searchField").on("keyup",function(){
           makeText();
         });
-
       })
     </script>
 {%  endblock %}

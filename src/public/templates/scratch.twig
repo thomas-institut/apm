@@ -6,14 +6,14 @@
     <script>
       $(function() {
 
-        // makeText function that generates text
-        function makeText () {
-          return $("#searchOutput").text("Search result")
+        // function to display text in html-paragraph
+        function displayText (paragraph, text) {
+          return $(paragraph).text(text)
         }
 
-        // keyup event calls makeText function
+        // keyup event calls displayText function
         $("#searchField").on("keyup",function(){
-          makeText();
+          displayText("#searchOutput", "Search Results");
         });
       })
     </script>

@@ -17,7 +17,7 @@
  */
 
 import {FmtTextFactory} from './FmtTextFactory'
-import { pushArray } from '../toolbox/ArrayUtil'
+import { pushArray } from '../toolbox/ArrayUtil.mjs'
 import * as FmtTextTokenType from './FmtTextTokenType'
 import {FmtTextTokenFactory} from './FmtTextTokenFactory'
 

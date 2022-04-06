@@ -1,0 +1,7 @@
+{
+  "name": "apm-ti-node",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+  }
+}

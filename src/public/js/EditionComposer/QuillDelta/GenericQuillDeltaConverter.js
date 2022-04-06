@@ -18,7 +18,7 @@
 
 import { QuillDeltaConverter } from './QuillDeltaConverter'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { pushArray, varsAreEqual } from '../../toolbox/ArrayUtil'
+import { pushArray, varsAreEqual } from '../../toolbox/ArrayUtil.mjs'
 import { FmtTextFactory } from '../../FmtText/FmtTextFactory'
 import { FmtTextTokenFactory} from '../../FmtText/FmtTextTokenFactory'
 import * as FmtTextTokenType from '../../Edition/MainTextTokenType'

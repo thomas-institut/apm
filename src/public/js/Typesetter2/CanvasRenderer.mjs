@@ -1,8 +1,8 @@
-import { TypesetterRenderer } from './TypesetterRenderer'
-import { Glue } from './Glue'
-import { TextBox } from './TextBox'
-import { Box } from './Box'
-import { ItemList } from './ItemList'
+import { TypesetterRenderer } from './TypesetterRenderer.mjs'
+import { Glue } from './Glue.mjs'
+import { TextBox } from './TextBox.mjs'
+import { Box } from './Box.mjs'
+import { ItemList } from './ItemList.mjs'
 
 export class CanvasRenderer extends TypesetterRenderer {
 

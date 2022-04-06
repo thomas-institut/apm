@@ -936,11 +936,11 @@ const FOLIATION_START_SAME_AS_RANGE = -1
 
 /***/ }),
 
-/***/ "./toolbox/ArrayUtil.js":
-/*!******************************!*\
-  !*** ./toolbox/ArrayUtil.js ***!
-  \******************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+/***/ "./toolbox/ArrayUtil.mjs":
+/*!*******************************!*\
+  !*** ./toolbox/ArrayUtil.mjs ***!
+  \*******************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
@@ -1102,16 +1102,17 @@ function maxValue(theArray) {
 
 /***/ }),
 
-/***/ "./toolbox/FunctionUtil.js":
-/*!*********************************!*\
-  !*** ./toolbox/FunctionUtil.js ***!
-  \*********************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+/***/ "./toolbox/FunctionUtil.mjs":
+/*!**********************************!*\
+  !*** ./toolbox/FunctionUtil.mjs ***!
+  \**********************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "doNothing": () => (/* binding */ doNothing),
 /* harmony export */   "returnEmptyString": () => (/* binding */ returnEmptyString),
+/* harmony export */   "resolvedPromise": () => (/* binding */ resolvedPromise),
 /* harmony export */   "doNothingPromise": () => (/* binding */ doNothingPromise),
 /* harmony export */   "failPromise": () => (/* binding */ failPromise),
 /* harmony export */   "wait": () => (/* binding */ wait)
@@ -1120,6 +1121,12 @@ __webpack_require__.r(__webpack_exports__);
 
 function doNothing() {}
 function returnEmptyString() { return ''}
+
+function resolvedPromise(returnValue) {
+  return new Promise( (resolve) => {
+    resolve(returnValue)
+  })
+}
 
 function doNothingPromise(msg = '') {
   return new Promise( (resolve) => {
@@ -1208,8 +1215,8 @@ var __webpack_exports__ = {};
   !*** ../test/js/modules-to-test.js ***!
   \*************************************/
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _js_toolbox_ArrayUtil__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../js/toolbox/ArrayUtil */ "./toolbox/ArrayUtil.js");
-/* harmony import */ var _js_toolbox_FunctionUtil__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../js/toolbox/FunctionUtil */ "./toolbox/FunctionUtil.js");
+/* harmony import */ var _js_toolbox_ArrayUtil_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../js/toolbox/ArrayUtil.mjs */ "./toolbox/ArrayUtil.mjs");
+/* harmony import */ var _js_toolbox_FunctionUtil_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../js/toolbox/FunctionUtil.mjs */ "./toolbox/FunctionUtil.mjs");
 /* harmony import */ var _js_FmtText_FmtTextTokenFactory__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../../js/FmtText/FmtTextTokenFactory */ "./FmtText/FmtTextTokenFactory.js");
 /* harmony import */ var _js_FmtText_FmtTextToken__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../../js/FmtText/FmtTextToken */ "./FmtText/FmtTextToken.js");
 /* harmony import */ var _js_FmtText_FmtTextTokenType__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../../js/FmtText/FmtTextTokenType */ "./FmtText/FmtTextTokenType.js");
@@ -1218,10 +1225,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _js_constants_FoliationType__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../../js/constants/FoliationType */ "./constants/FoliationType.js");
 
 
-window.ArrayUtil = _js_toolbox_ArrayUtil__WEBPACK_IMPORTED_MODULE_0__
+window.ArrayUtil = _js_toolbox_ArrayUtil_mjs__WEBPACK_IMPORTED_MODULE_0__
 
 ;
-window.FunctionUtil = _js_toolbox_FunctionUtil__WEBPACK_IMPORTED_MODULE_1__
+window.FunctionUtil = _js_toolbox_FunctionUtil_mjs__WEBPACK_IMPORTED_MODULE_1__
 
 ;
 window.FmtTextTokenFactory = _js_FmtText_FmtTextTokenFactory__WEBPACK_IMPORTED_MODULE_2__.FmtTextTokenFactory

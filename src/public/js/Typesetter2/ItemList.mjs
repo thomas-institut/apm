@@ -16,9 +16,9 @@
  *
  */
 
-import { TypesetterItem } from './TypesetterItem'
-import * as TypesetterItemDirection from './TypesetterItemDirection'
-import { Glue } from './Glue'
+import { TypesetterItem } from './TypesetterItem.mjs'
+import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
+import { Glue } from './Glue.mjs'
 
 export class ItemList extends TypesetterItem {
 

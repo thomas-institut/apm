@@ -19,10 +19,10 @@
 
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import Split from 'split-grid'
-import { createIndexArray, prettyPrintArray } from '../toolbox/ArrayUtil'
+import { createIndexArray, prettyPrintArray } from '../toolbox/ArrayUtil.mjs'
 import { BootstrapTabGenerator } from './BootstrapTabGenerator'
 import { maximizeElementHeightInParent} from '../toolbox/UserInterfaceUtil'
-import { doNothing, returnEmptyString} from '../toolbox/FunctionUtil'
+import { doNothing, returnEmptyString} from '../toolbox/FunctionUtil.mjs'
 
 const defaultIcons = {
   closePanel: '&times;',

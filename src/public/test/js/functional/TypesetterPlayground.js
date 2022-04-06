@@ -4,22 +4,21 @@
   created: 21 Mar 2022
  */
 
-import { TextBoxFactory } from '../../../js/Typesetter2/TextBoxFactory'
-import { BrowserUtilities } from '../../../js/toolbox/BrowserUtilities'
-import { SystemTextBoxMeasurer } from '../../../js/Typesetter2/SystemTextBoxMeasurer'
-import { CanvasTextBoxMeasurer } from '../../../js/Typesetter2/CanvasTextBoxMeasurer'
+import { TextBoxFactory } from '../../../js/Typesetter2/TextBoxFactory.mjs'
+import { BrowserUtilities } from '../../../js/toolbox/BrowserUtilities.mjs'
+import { CanvasTextBoxMeasurer } from '../../../js/Typesetter2/CanvasTextBoxMeasurer.mjs'
 import { removeExtraWhiteSpace } from '../../../js/toolbox/Util.mjs'
-import { Glue } from '../../../js/Typesetter2/Glue'
-import { Typesetter2 } from '../../../js/Typesetter2/Typesetter2'
-import { SimpleTypesetter } from '../../../js/Typesetter2/SimpleTypesetter'
-import { ItemList } from '../../../js/Typesetter2/ItemList'
-import * as TypesetterItemDirection from '../../../js/Typesetter2/TypesetterItemDirection'
-import { CanvasRenderer } from '../../../js/Typesetter2/CanvasRenderer'
+import { Glue } from '../../../js/Typesetter2/Glue.mjs'
+import { Typesetter2 } from '../../../js/Typesetter2/Typesetter2.mjs'
+import { SimpleTypesetter } from '../../../js/Typesetter2/SimpleTypesetter.mjs'
+import { ItemList } from '../../../js/Typesetter2/ItemList.mjs'
+import * as TypesetterItemDirection from '../../../js/Typesetter2/TypesetterItemDirection.mjs'
+import { CanvasRenderer } from '../../../js/Typesetter2/CanvasRenderer.mjs'
 import * as PDFLib from 'pdf-lib'
 import fontkit from '@pdf-lib/fontkit'
-import { PdfRenderer } from '../../../js/Typesetter2/PdfRenderer'
-import { TypesetterPage } from '../../../js/Typesetter2/TypesetterPage'
-import { VERTICAL } from '../../../js/Typesetter2/TypesetterItemDirection'
+import { PdfRenderer } from '../../../js/Typesetter2/PdfRenderer.mjs'
+import { TypesetterPage } from '../../../js/Typesetter2/TypesetterPage.mjs'
+import { VERTICAL } from '../../../js/Typesetter2/TypesetterItemDirection.mjs'
 
 const defaultPageWidth = Typesetter2.cm2px(14.1)
 const defaultPageHeight  = Typesetter2.cm2px(21)
@@ -45,24 +44,6 @@ let freeSerifFontBytes = null
 
 const linuxLibertineFontUrl = 'https://averroes.uni-koeln.de/fonts/LinuxLibertine/LinLibertine_Rah.ttf'
 let linuxLibertineFontBytes = null
-
-// async function createPdf() {
-//   const pdfDoc = await PDFLib.PDFDocument.create();
-//   pdfDoc.registerFontkit(fontkit)
-//   const freeSerifFontBytes = await fetch(freeSerifFontUrl).then( res => res.arrayBuffer())
-//   const freeSerifFont = await pdfDoc.embedFont(freeSerifFontBytes, {subset: true})
-//
-//   let pageHeight = 841.88
-//   const page = pdfDoc.addPage([595.28, pageHeight]);
-//   let fontSize = 24
-//   page.drawText('Creating PDFs in JavaScript is awesome!', {
-//     x: 50,
-//     y: 100,
-//     size: fontSize,
-//     font: freeSerifFont
-//   })
-//   document.getElementById('pdfFrame').src = await pdfDoc.saveAsBase64({ dataUri: true });
-// }
 
 $( () => {
   new Playground()
@@ -90,9 +71,7 @@ class Playground {
     this.canvas = document.getElementById('theCanvas')
     BrowserUtilities.setCanvasHiPDI(this.canvas, Math.round(defaultPageWidth), Math.round(defaultPageHeight))
     this.canvasRenderer = new CanvasRenderer(this.canvas)
-
-    let systemMeasurer = new SystemTextBoxMeasurer()
-    systemMeasurer.setMeasurer(new CanvasTextBoxMeasurer())
+    this.textBoxMeasurer = new CanvasTextBoxMeasurer()
 
     this.pageWidth = defaultPageWidth
     this.pageHeight = defaultPageHeight
@@ -100,12 +79,12 @@ class Playground {
     this.marginRight = defaultMarginRight
     this.marginBottom = defaultMarginBottom
     this.marginLeft = defaultMarginLeft
-    this._setFont(defaultFonts[0], defaultFontSize)
     this.lineSkip = defaultLineSkip
-    this._setInputFieldsFromCurrentValues()
-
-    this.lastText = this.inputTextArea.val()
-    this._render( this._typesetPlainText(this.lastText)).then( () => console.log('Rendered'))
+    this._setFont(defaultFonts[0], defaultFontSize).then( () => {
+      this._setInputFieldsFromCurrentValues()
+      this.lastText = this.inputTextArea.val()
+      this.__typesetAndRender(this.lastText).then( () => {console.log('First render done')})
+    })
 
     this.inputTextArea.on('keyup', this.genOnChangeInputText())
     this.marginTopInput.on('change', this.getOnChangeInputField())
@@ -119,20 +98,30 @@ class Playground {
     this.lineSkipInput.on('change', this.getOnChangeInputField())
   }
 
+  async __typesetAndRender(text) {
+    let startTime = window.performance.now()
+    let pages = await this._typesetPlainText(text)
+    let typesetEndTime = window.performance.now()
+    console.log(`Text typeset in ${typesetEndTime - startTime} ms`)
+    await this._render(pages)
+    let renderEndTime = window.performance.now()
+    console.log(`Rendered in ${renderEndTime - typesetEndTime} ms`)
+  }
+
   getOnChangeInputField() {
-    return () => {
-      this._getDataFromInputFields()
-      this._render( this._typesetPlainText(this.lastText))
+    return async () => {
+      await this._getDataFromInputFields()
+      await this.__typesetAndRender(this.lastText)
     }
   }
 
   genOnChangeInputText() {
-    return () => {
+    return async () => {
       let newText = this.inputTextArea.val()
       if (newText !== this.lastText) {
         console.log(`New input text: '${this.inputTextArea.val()}'`)
         this.lastText = newText
-        this._render( this._typesetPlainText(newText))
+        await this.__typesetAndRender(this.lastText)
       }
     }
   }
@@ -164,7 +153,7 @@ class Playground {
     this.marginLeft = this.__getPxDimensionFromInputField('cm',this.marginLeftInput, 0, this.pageWidth/2, defaultMarginLeft)
     this.marginRight = this.__getPxDimensionFromInputField('cm',this.marginRightInput, 0, this.pageWidth/2, defaultMarginRight)
     this.lineSkip = this.__getPxDimensionFromInputField('pt', this.lineSkipInput, 12, 72, 24)
-    this._setFont(
+    return this._setFont(
       defaultFonts[this.fontFamilyInput.val()],
       this.__getPxDimensionFromInputField('pt', this.fontSizeInput, 8, 36, 12)
     )
@@ -192,13 +181,14 @@ class Playground {
     return inputValue
    }
 
-  _setFont(fontFamily, fontSize) {
+  async _setFont (fontFamily, fontSize) {
     this.fontFamily = fontFamily
     this.fontSize = fontSize
-    let spaceTextBox = TextBoxFactory.simpleText(' ',{fontFamily: this.fontFamily, fontSize: this.fontSize})
-    this.normalSpaceWidth = (new SystemTextBoxMeasurer()).getBoxWidth(spaceTextBox)
-    this.normalSpaceStretch = this.normalSpaceWidth/6
-    this.normalSpaceShrink = this.normalSpaceWidth/9
+    let spaceTextBox = TextBoxFactory.simpleText(' ', { fontFamily: this.fontFamily, fontSize: this.fontSize })
+    this.normalSpaceWidth = await this.textBoxMeasurer.getBoxWidth(spaceTextBox)
+    this.normalSpaceStretch = this.normalSpaceWidth / 6
+    this.normalSpaceShrink = this.normalSpaceWidth / 9
+
   }
 
   _typesetPlainText(plainText) {
@@ -207,7 +197,6 @@ class Playground {
       return TextBoxFactory.simpleText(word, { fontFamily: this.fontFamily, fontSize: this.fontSize})
     })
     let paragraphToTypeset = new ItemList(TypesetterItemDirection.HORIZONTAL)
-    let tokensToTypeset = []
     wordTextBoxes.forEach( (textBox, i) => {
       paragraphToTypeset.pushItem(textBox)
       let glueToken = (new Glue()).setWidth(this.normalSpaceWidth)
@@ -229,7 +218,9 @@ class Playground {
         marginBottom: this.marginBottom,
         marginLeft: this.marginLeft,
         marginRight: this.marginRight,
-        lineSkip: this.lineSkip
+        lineSkip: this.lineSkip,
+        textBoxMeasurer: this.textBoxMeasurer
+
       })
     return ts.typeset(verticalListToTypeset)
   }
@@ -252,28 +243,20 @@ class Playground {
       console.log('Nothing to do, no pages to render')
       return
     }
-    console.log(`Rendering page 0 in canvas`)
+    //console.log(`Rendering page 0 in canvas`)
     this.canvasRenderer.renderPage(pages[0])
 
     // PDF render
     const pdfDoc = await PDFLib.PDFDocument.create();
     pdfDoc.registerFontkit(fontkit)
     if (freeSerifFontBytes === null) {
+      console.log(`Fetching FreeSerif font`)
       freeSerifFontBytes = await fetch(freeSerifFontUrl).then( res => res.arrayBuffer())
     }
     if (linuxLibertineFontBytes === null) {
+      console.log(`Fetching LinuxLibertine font`)
       linuxLibertineFontBytes = await fetch(linuxLibertineFontUrl).then( res => res.arrayBuffer())
     }
-
-    // testing the font
-    let fkFont = fontkit.create(freeSerifFontBytes)
-    console.log(`Font features`)
-    console.log(fkFont.availableFeatures)
-    const stringsToLayout = [ 'i', 'j', 's', 'ij', 'is']
-    stringsToLayout.forEach( (str) => {
-      console.log(`Layout for '${str}'`)
-      console.log(fkFont.layout(str))
-    })
 
     const freeSerifFont = await pdfDoc.embedFont(freeSerifFontBytes, {
       subset: true

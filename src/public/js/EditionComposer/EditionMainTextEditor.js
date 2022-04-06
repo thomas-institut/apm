@@ -17,7 +17,7 @@
  */
 
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { doNothing } from '../toolbox/FunctionUtil'
+import { doNothing } from '../toolbox/FunctionUtil.mjs'
 
 import Quill from '../QuillLoader'
 import Small from './QuillBlots/Small'

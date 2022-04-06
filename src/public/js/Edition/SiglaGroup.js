@@ -18,7 +18,7 @@
 
 
 import { deepCopy, trimWhiteSpace } from '../toolbox/Util.mjs'
-import { arraysAreEqual, numericSort, uniq } from '../toolbox/ArrayUtil'
+import { arraysAreEqual, numericSort, uniq } from '../toolbox/ArrayUtil.mjs'
 
 export class SiglaGroup {
 

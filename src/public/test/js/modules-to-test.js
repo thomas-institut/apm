@@ -1,8 +1,8 @@
 
-import * as ArrayUtil from '../../js/toolbox/ArrayUtil'
+import * as ArrayUtil from '../../js/toolbox/ArrayUtil.mjs'
 window.ArrayUtil = ArrayUtil
 
-import * as FunctionUtil from '../../js/toolbox/FunctionUtil'
+import * as FunctionUtil from '../../js/toolbox/FunctionUtil.mjs'
 window.FunctionUtil = FunctionUtil
 
 import { FmtTextTokenFactory } from '../../js/FmtText/FmtTextTokenFactory'

@@ -17,8 +17,8 @@
  */
 
 
-import { TypesetterItem } from './TypesetterItem'
-import * as TypesetterItemDirection from './TypesetterItemDirection'
+import { TypesetterItem } from './TypesetterItem.mjs'
+import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
 
 export class Box extends TypesetterItem {
 

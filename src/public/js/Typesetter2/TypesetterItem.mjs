@@ -16,7 +16,7 @@
  *
  */
 
-import * as TypesetterItemDirection from './TypesetterItemDirection'
+import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
 
 /**
  * The base class for all typesetter items

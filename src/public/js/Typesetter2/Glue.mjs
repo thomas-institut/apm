@@ -17,52 +17,36 @@
  */
 
 
-import { TypesetterItem } from './TypesetterItem'
+import { TypesetterItem } from './TypesetterItem.mjs'
+import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
 
-export const INFINITE = 1000
-export const MINUS_INFINITE = -1000
+export class Glue extends TypesetterItem {
 
-export class Penalty extends TypesetterItem {
-
-  constructor () {
-    super()
-    this.penalty = 0
+  constructor (direction = TypesetterItemDirection.HORIZONTAL) {
+    super(direction)
+    this.stretch = 0
+    this.shrink = 0
     this.width = 0
     this.height = 0
-    this.flagged = false
   }
 
-  isFlagged() {
-    return this.flagged
+
+
+  getStretch() {
+    return this.stretch
   }
 
-  /**
-   *
-   * @param {boolean}flagged
-   * @return {Penalty}
-   */
-  setFlagged(flagged) {
-    this.flagged = flagged
+  setStretch(stretch) {
+    this.stretch = stretch
     return this
   }
 
-  getPenalty() {
-    return this.penalty
+  getShrink() {
+    return this.shrink
   }
 
-  /**
-   *
-   * @param {number}penalty
-   * @return {Penalty}
-   */
-  setPenalty(penalty) {
-    if (penalty > INFINITE) {
-      penalty = INFINITE
-    }
-    if (penalty < MINUS_INFINITE) {
-      penalty = MINUS_INFINITE
-    }
-    this.penalty = penalty
+  setShrink(shrink) {
+    this.shrink = shrink
     return this
   }
 

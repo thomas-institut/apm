@@ -3,6 +3,12 @@
 export function doNothing() {}
 export function returnEmptyString() { return ''}
 
+export function resolvedPromise(returnValue) {
+  return new Promise( (resolve) => {
+    resolve(returnValue)
+  })
+}
+
 export function doNothingPromise(msg = '') {
   return new Promise( (resolve) => {
     if (msg !== '') {

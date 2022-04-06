@@ -1,6 +1,6 @@
 
 import * as ApparatusType from './ApparatusType'
-import { arraysAreEqual } from '../toolbox/ArrayUtil'
+import { arraysAreEqual } from '../toolbox/ArrayUtil.mjs'
 
 export class Apparatus {
 

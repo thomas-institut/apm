@@ -16,8 +16,9 @@
  *
  */
 
-import { ItemList } from './ItemList'
-import * as TypesetterItemDirection from './TypesetterItemDirection'
+import { ItemList } from './ItemList.mjs'
+import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
+import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
 
 /**
  * The new typesetter class
@@ -36,7 +37,7 @@ export class Typesetter2 {
    * Converts a horizontal list of typesetter items into a vertical list
    * consisting of a series of lines and inter-line glue
    * @param {ItemList}list
-   * @return {ItemList}
+   * @return {Promise}
    */
   typesetHorizontalList(list) {
     // performs type checks and returns the input list if there's no problem
@@ -46,7 +47,7 @@ export class Typesetter2 {
     if (list.getDirection() !== TypesetterItemDirection.HORIZONTAL) {
       throw new Error('typesetHorizontalList called with a vertical list')
     }
-    return list
+    return resolvedPromise(list)
   }
 
   /**
@@ -55,7 +56,7 @@ export class Typesetter2 {
    * In essence, splits a vertical list into pages
    *
    * @param {ItemList}list
-   * @return {ItemList}
+   * @return {Promise}
    */
   typesetVerticalList(list) {
     // performs type checks and returns the input list if there's no problem
@@ -65,7 +66,7 @@ export class Typesetter2 {
     if (list.getDirection() !== TypesetterItemDirection.VERTICAL) {
       throw new Error('typesetVerticalList called with a horizontal list')
     }
-    return list
+    return resolvedPromise(list)
   }
 
   /**
@@ -76,10 +77,10 @@ export class Typesetter2 {
    * main text block.
    *
    * @param {ItemList}list
-   * @return {TypesetterPage[]}
+   * @return {Promise}
    */
   typeset(list) {
-    return []
+    return resolvedPromise([])
   }
 
 

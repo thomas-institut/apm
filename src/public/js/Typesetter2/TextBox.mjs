@@ -1,6 +1,5 @@
-import { Box } from './Box'
-import * as TypesetterItemDirection from './TypesetterItemDirection'
-import { SystemTextBoxMeasurer } from './SystemTextBoxMeasurer'
+import { Box } from './Box.mjs'
+import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
 
 export class TextBox extends Box {
 
@@ -84,8 +83,8 @@ export class TextBox extends Box {
   }
 
   __measure() {
-    this.width = (new SystemTextBoxMeasurer()).getBoxWidth(this)
-    this.height = (new SystemTextBoxMeasurer()).getBoxHeight(this)
+    // this.width = (new SystemTextBoxMeasurer()).getBoxWidth(this)
+    // this.height = (new SystemTextBoxMeasurer()).getBoxHeight(this)
   }
 
   __resetMeasurements() {

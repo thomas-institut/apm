@@ -1,22 +1,19 @@
-import { TextBoxMeasurer } from './TextBoxMeasurer'
-import { BrowserUtilities } from '../toolbox/BrowserUtilities'
+import { TextBoxMeasurer } from './TextBoxMeasurer.mjs'
+import { BrowserUtilities } from '../toolbox/BrowserUtilities.mjs'
+import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
 
 export class CanvasTextBoxMeasurer extends TextBoxMeasurer {
 
   getBoxWidth (token) {
     let context = this.__getContext()
     context.font = `${token.fontSize}px '${token.fontFamily}'`;
-    //console.log(`Measuring token`)
-    //console.log(token)
     let metrics = context.measureText(token.text);
-    //console.log(`Metrics`)
-    //console.log(metrics)
-    return metrics.width
+    return resolvedPromise(metrics.width)
   }
 
   getBoxHeight (token) {
     // TODO: change this to a better measurement
-    return token.fontSize
+    return resolvedPromise(token.fontSize)
   }
 
   __getCanvas() {

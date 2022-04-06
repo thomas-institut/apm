@@ -1,4 +1,4 @@
-import { HORIZONTAL } from './TypesetterItemDirection'
+import { HORIZONTAL } from './TypesetterItemDirection.mjs'
 
 export class TypesetterRenderer {
 

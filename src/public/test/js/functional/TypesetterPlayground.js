@@ -18,7 +18,6 @@ import * as PDFLib from 'pdf-lib'
 import fontkit from '@pdf-lib/fontkit'
 import { PdfRenderer } from '../../../js/Typesetter2/PdfRenderer.mjs'
 import { TypesetterPage } from '../../../js/Typesetter2/TypesetterPage.mjs'
-import { VERTICAL } from '../../../js/Typesetter2/TypesetterItemDirection.mjs'
 
 const defaultPageWidth = Typesetter2.cm2px(14.1)
 const defaultPageHeight  = Typesetter2.cm2px(21)
@@ -207,7 +206,7 @@ class Playground {
       }
     })
 
-    let verticalListToTypeset = new ItemList(VERTICAL)
+    let verticalListToTypeset = new ItemList(TypesetterItemDirection.VERTICAL)
     verticalListToTypeset.pushItem(paragraphToTypeset)
 
     let ts = new SimpleTypesetter(

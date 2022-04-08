@@ -29,7 +29,6 @@ namespace APM;
 use APM\Api\ApiLog;
 use APM\Api\ApiTranscription;
 use APM\Site\SiteApmLog;
-use APM\Site\SiteScratch;
 use Slim\App;
 use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Routing\RouteCollectorProxy;
@@ -49,6 +48,7 @@ use APM\Site\SitePageViewer;
 use APM\Site\SiteChunkPage;
 use APM\Site\SiteCollationTable;
 use APM\Site\SiteDocuments;
+use APM\Site\SiteSearch;
 
 use APM\System\Auth\Authenticator;
 
@@ -62,6 +62,7 @@ use APM\Api\ApiElements;
 use APM\Api\ApiCollationTableConversion;
 use APM\Api\ApiPdfConversion;
 use APM\Api\ApiWitness;
+use APM\Api\ApiSearch;
 
 use ThomasInstitut\Container\MinimalContainer;
 
@@ -151,11 +152,11 @@ $app->group('', function (RouteCollectorProxy $group){
         SiteHomePage::class . ':homePage')
         ->setName('home');
 
-    // Scratch Page
+    // Search Page
 
     $group->get('/lukas',
-        SiteScratch::class . ':scratchPage')
-        ->setName('scratch');
+        SiteSearch::class . ':searchPage')
+        ->setName('search');
 
     // DASHBOARD
 
@@ -269,6 +270,11 @@ $app->group('', function (RouteCollectorProxy $group){
 
 $app->group('/api', function (RouteCollectorProxy $group){
     // ADMIN
+
+    // Search
+     $group->post('/lukas',
+        ApiSearch::class . ':search')
+        ->setName('search2');
 
     // API -> log message from front end
     $group->post('/admin/log',

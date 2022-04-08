@@ -1,6 +1,6 @@
 {% extends "base.twig" %}
 
-{% block title %}Scratch{% endblock %}
+{% block title %}Search{% endblock %}
 
 {% block finalBodyJS %}
     <script>
@@ -13,7 +13,18 @@
 
         // keyup event calls displayText function
         $("#searchField").on("keyup",function(){
-          displayText("#searchOutput", "Search Results");
+
+          // displayText("#searchOutput", "Search Results");
+
+          const $form = $(this).closest('form');
+          $.ajax({
+            type: "POST",
+            url: $form.attr('action')
+            data: {
+              txt: (this).val()
+            },
+            success: displayText("#searchOutput", data)
+          })
         });
       })
     </script>
@@ -21,9 +32,9 @@
 
 {% block content %}
     <h1> Search </h1>
-<form action="" method="get">
+    <br>
+<form action="{{baseurl}}/lukas" method="post">
     <input type="text" id="searchField" name="searchField" value="Type here...">
-    <input type="submit">
 </form>
     <br><br>
     <p id="searchOutput">Search results will appear here....</p>

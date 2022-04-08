@@ -5,9 +5,9 @@ namespace APM\Site;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 
-class SiteScratch extends SiteController
+class SiteSearch extends SiteController
 {
-    const TEMPLATE_SCRATCH_PAGE = 'scratch.twig';
+    const TEMPLATE_SCRATCH_PAGE = 'search.twig';
 
     /**
      * @param Request $request
@@ -15,7 +15,7 @@ class SiteScratch extends SiteController
      * @return Response
      */
 
-    public function scratchPage(Request $request, Response $response): Response
+    public function searchPage(Request $request, Response $response): Response
     {
         return $this->renderPage($response, self::TEMPLATE_SCRATCH_PAGE,[]);
     }

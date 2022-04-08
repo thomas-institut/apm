@@ -15,12 +15,6 @@ class ApiSearch extends ApiController
 
     public function search(Request $request, Response $response): Response
     {
-
-       /* if (isset($_POST["#searchField"])) {
-            var_dump($_POST["#searchField"]); // $_POST['txt'] contains the text from the input field
-            // TODO: make your treatment here...
-        } */
-
         return $this->responseWithText($response, 'Nothing was found!');
     }
 }

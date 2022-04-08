@@ -11,13 +11,16 @@
           return $(paragraph).text(text)
         }
 
-        // keyup event calls displayText function
-        $("#searchField").on("keyup",function(){
+        // keyup event for searchField1 - without API call
+        $("#searchField1").on("keyup", function(){
+          displayText("#searchOutput1", "Result!");
+        })
 
-          // displayText("#searchOutput", "Search Results");
-
-          $.post( "/lukassearch", function( data ) {
-            alert( "Data Loaded: " + data );
+        // keyup event calls displayText function - with API call
+        $("#searchField2").on("keyup",function(){
+          $.post( "{{url_for('lukassearch')}}", function( data ) {
+            // alert( "Data Loaded: " + data );
+            displayText("#searchOutput2", data)
           });
         });
       })
@@ -27,11 +30,17 @@
 {% block content %}
     <h1> Search </h1>
     <br>
-<form>
-    <input type="text" id="searchField" name="searchField" value="Type here...">
-</form>
+
+    <h2>Pseudosearch without API call</h2>
+    <form> <input type="text" id="searchField1" name="searchField1" value="Type here..."></form>
     <br><br>
-    <p id="searchOutput">Search results will appear here....</p>
+    <p id="searchOutput1">Search results will appear here....</p>
+    <br>
+
+    <h2>Pseudosearch with API call</h2>
+    <form><input type="text" id="searchField2" name="searchField2" value="Type here..."></form>
+    <br><br>
+    <p id="searchOutput2">Search results should appear here....</p>
     <br><br>
 {% endblock %}
 

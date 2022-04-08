@@ -21,6 +21,6 @@ class ApiSearch extends ApiController
             // TODO: make your treatment here...
         } */
 
-        return $this->responseWithText($response, 'Hello!');
+        return $this->responseWithText($response, 'Nothing was found!');
     }
 }

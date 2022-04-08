@@ -271,10 +271,10 @@ $app->group('', function (RouteCollectorProxy $group){
 $app->group('/api', function (RouteCollectorProxy $group){
     // ADMIN
 
-    // Search
-     $group->post('/lukas',
+    // Search API
+     $group->post('/lukassearch',
         ApiSearch::class . ':search')
-        ->setName('search2');
+        ->setName('lukassearch');
 
     // API -> log message from front end
     $group->post('/admin/log',

@@ -16,15 +16,9 @@
 
           // displayText("#searchOutput", "Search Results");
 
-          const $form = $(this).closest('form');
-          $.ajax({
-            type: "POST",
-            url: $form.attr('action')
-            data: {
-              txt: (this).val()
-            },
-            success: displayText("#searchOutput", data)
-          })
+          $.post( "/lukassearch", function( data ) {
+            alert( "Data Loaded: " + data );
+          });
         });
       })
     </script>
@@ -33,7 +27,7 @@
 {% block content %}
     <h1> Search </h1>
     <br>
-<form action="{{baseurl}}/lukas" method="post">
+<form>
     <input type="text" id="searchField" name="searchField" value="Type here...">
 </form>
     <br><br>

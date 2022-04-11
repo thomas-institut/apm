@@ -4,6 +4,7 @@ import json
 
 import cairo
 import gi
+
 gi.require_version('Pango', '1.0')
 gi.require_version('PangoCairo', '1.0')
 from gi.repository import Pango
@@ -15,9 +16,9 @@ tmp_context_height = 10
 measure_scale = 1000
 
 
-def measure_text(context, text, font_desc_string):
+def measure_text(context, text, font_desc):
     layout = PangoCairo.create_layout(context)
-    desc = Pango.font_description_from_string(font_desc_string)
+    desc = Pango.font_description_from_string(font_desc)
     layout.set_font_description(desc)
     layout.set_text(text)
     ink, logical = layout.get_extents()
@@ -34,13 +35,13 @@ input_str = sys.stdin.read()
 data = json.loads(input_str)
 
 image_ctx = create_image_context()
-font_desc_string = data['fontFamily'] + ' ' +  str(data['fontSize']* measure_scale)
+font_desc_string = data['fontFamily'] + ' ' + str(data['fontSize'] * measure_scale)
 
-ink, logical, baseline  = measure_text(image_ctx, data['text'],font_desc_string)
+ink, logical, baseline = measure_text(image_ctx, data['text'], font_desc_string)
 
 data['measurements'] = {
-    'width' : logical.width / (Pango.SCALE * measure_scale),
-    'height' : logical.height / (Pango.SCALE * measure_scale),
+    'width': logical.width / (Pango.SCALE * measure_scale),
+    'height': logical.height / (Pango.SCALE * measure_scale),
     'baseline': baseline / (Pango.SCALE * measure_scale)
 }
 

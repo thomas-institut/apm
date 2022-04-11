@@ -8,6 +8,8 @@ import { ItemList } from '../public/js/Typesetter2/ItemList.mjs'
 import * as TypesetterItemDirection from '../public/js/Typesetter2/TypesetterItemDirection.mjs'
 import {Glue} from '../public/js/Typesetter2/Glue.mjs'
 
+import { hrtime } from 'node:process';
+
 
 let typesetter = new SimpleTypesetter(
   {
@@ -21,7 +23,9 @@ let typesetter = new SimpleTypesetter(
     textBoxMeasurer: new PangoMeasurer()
   })
 
-const stringToTypeset = 'This is a test and another test and a word'
+const stringToTypeset = `This is a test and another test and a word. En un lugar de la Mancha de cuyo nombre no 
+quiero acordarme, no ha mucho que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco
+y galgo corredor.`
 
 
 let wordTextBoxes = removeExtraWhiteSpace(stringToTypeset).split(' ').map ( (word) => {
@@ -41,9 +45,11 @@ wordTextBoxes.forEach( (textBox, i) => {
 let verticalListToTypeset = new ItemList(TypesetterItemDirection.VERTICAL)
 verticalListToTypeset.pushItem(paragraphToTypeset)
 
+let start = hrtime.bigint()
 typesetter.typeset(verticalListToTypeset).then( (r) => {
-  console.log(`Mock typeset done`)
+  let end = hrtime.bigint()
   console.log(r[0].lists[0].list[0].list)
+  console.log(`Mock typeset done in ${Number(end-start)/1000000} ms`)
 })
 
 

@@ -18,7 +18,11 @@
 
         // keyup event calls displayText function - with API call
         $("#searchField2").on("keyup",function(){
-          $.post( "{{url_for('lukassearch')}}", function( result ) {
+
+          var input = $(this).val();
+          // var input = "test";
+
+          $.post( "{{url_for('lukassearch')}}", {input: input}).done(function( result ) {
             displayText("#searchOutput2", result)
           });
         });

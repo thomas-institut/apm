@@ -15,15 +15,13 @@ class ApiSearch extends ApiController
 
     public function search(Request $request, Response $response): Response
     {
-        $apiCall = 'search';
         $date = date("Y-M-d");
         $time = date("h:i:s");
 
-        // $input = $this->checkAndGetInputData($request, $response, $apiCall, ['text']);
-        $input = $_POST['input'];
-        $input = "'" . $input . "'";
+        $keyword = $_POST['keyword'];
+        $keyword = "'" . $keyword . "'";
 
         return $this->responseWithText($response,
-            'Nothing found for ' . $input . '. Current date and time are: ' . $date . ', ' . $time . '.');
+            'Nothing found for ' . $keyword . '. Current date and time are: ' . $date . ', ' . $time . '.');
     }
 }

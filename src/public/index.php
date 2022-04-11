@@ -154,7 +154,7 @@ $app->group('', function (RouteCollectorProxy $group){
 
     // Search Page
 
-    $group->get('/lukas',
+    $group->get('/search',
         SiteSearch::class . ':searchPage')
         ->setName('search');
 
@@ -272,9 +272,9 @@ $app->group('/api', function (RouteCollectorProxy $group){
     // ADMIN
 
     // Search API
-     $group->post('/lukassearch',
+     $group->post('/search/keyword',
         ApiSearch::class . ':search')
-        ->setName('lukassearch');
+        ->setName('search.keyword');
 
     // API -> log message from front end
     $group->post('/admin/log',

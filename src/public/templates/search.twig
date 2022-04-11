@@ -6,24 +6,16 @@
     <script>
       $(function() {
 
-        // function to display text in html-paragraph
-        function displayText (paragraph, text) {
-          return $(paragraph).text(text)
-        }
+        // Key-Up function
+        $("#searchBox").on("keyup",function(){
 
-        // keyup event for searchField1 - without API call
-        $("#searchField1").on("keyup", function(){
-          displayText("#searchOutput1", "Result!");
-        })
+          // get user input
+          var keyword = $(this).val();
 
-        // keyup event calls displayText function - with API call
-        $("#searchField2").on("keyup",function(){
-
-          var input = $(this).val();
-          // var input = "test";
-
-          $.post( "{{url_for('lukassearch')}}", {input: input}).done(function( result ) {
-            displayText("#searchOutput2", result)
+          // send keyword to ApiSearch (via routing in index.php) and print returned result
+          $.post( "{{url_for('search.keyword')}}", {keyword: keyword})
+            .done(function( result ) {
+            return $("#searchResult").text(result)
           });
         });
       })
@@ -33,18 +25,12 @@
 {% block content %}
     <h1> Search </h1>
     <br>
-
-    <h2>Pseudosearch without API call</h2>
-    <form> <input type="text" id="searchField1" name="searchField1" value="Type here..."></form>
-    <br><br>
-    <p id="searchOutput1">Search results will appear here....</p>
+    <form>
+        <input type="text" id="searchBox" value="...">
+    </form>
     <br>
-
-    <h2>Pseudosearch with API call</h2>
-    <form><input type="text" id="searchField2" name="searchField2" value="Type here..."></form>
-    <br><br>
-    <p id="searchOutput2">Search results should appear here....</p>
-    <br><br>
+    <p id="searchResult"></p>
+    <br>
 {% endblock %}
 
 

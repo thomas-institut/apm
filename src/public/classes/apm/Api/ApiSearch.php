@@ -22,6 +22,6 @@ class ApiSearch extends ApiController
         $keyword = "'" . $keyword . "'";
 
         return $this->responseWithText($response,
-            'Nothing found for ' . $keyword . '. Current date and time are: ' . $date . ', ' . $time . '.');
+            'Nothing found for ' . $keyword . ". " . 'Time is now: ' . $date . ', ' . $time . '.');
     }
 }

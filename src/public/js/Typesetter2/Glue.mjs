@@ -20,17 +20,49 @@
 import { TypesetterItem } from './TypesetterItem.mjs'
 import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
 
+/**
+ * A Glue item with certain width and height that can
+ * shrink or stretch by a certain amount in the item's direction.
+ */
 export class Glue extends TypesetterItem {
 
+  /**
+   *
+   * @param {number}direction
+   */
   constructor (direction = TypesetterItemDirection.HORIZONTAL) {
     super(direction)
+    /**
+     * The number of pixels the item can stretch in the item's direction.
+     *
+     * Glue items will normally be allowed to stretch more than this number, but
+     * with some sort of "aesthetic" penalty associated with it.
+     *
+     * @type {number}
+     */
     this.stretch = 0
+
+    /**
+     * The number of pixels the item can shrink in the item's direction.
+     *
+     * Glue items will NOT be allowed to shrink more than this number.
+     * Typesetters will rather have an overflown line or page than a
+     * cramped one.
+     * @type {number}
+     */
     this.shrink = 0
+
+    /**
+     * Since Glue items can actually stretch more than their given stretch value,  Glue items
+     * with both stretch and shrink equal to zero are not necessarily equivalent to an empty space
+     * of the item's given width and height.
+     * When such a space is needed, a Box should be used.
+     */
+
+    // Glue items start with 0 width and height!
     this.width = 0
     this.height = 0
   }
-
-
 
   getStretch() {
     return this.stretch
@@ -49,6 +81,5 @@ export class Glue extends TypesetterItem {
     this.shrink = shrink
     return this
   }
-
 
 }

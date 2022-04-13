@@ -16,6 +16,12 @@
  *
  */
 
+/**
+ * An ItemList is a list of typesetter items
+ * that normally have a given direction (horizontal or vertical)
+ *
+ */
+
 import { TypesetterItem } from './TypesetterItem.mjs'
 import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
 import { Glue } from './Glue.mjs'

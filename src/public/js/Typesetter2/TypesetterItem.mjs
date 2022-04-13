@@ -19,46 +19,137 @@
 import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
 
 /**
- * The base class for all typesetter items
+ * The base class for all typesetter items.
+ *
+ * All typesetting work can be done with 3 types of typesetter items:
+ *   Box, Glue and Penalty.
+ *
+ * Of these, Box is the one that could have different types of descendents,
+ * the most common one being TextBox
+ *
  */
-
 export class TypesetterItem {
 
-  constructor (direction = TypesetterItemDirection.HORIZONTAL) {
+  constructor (direction = TypesetterItemDirection.UNDEFINED) {
     if (this.constructor === TypesetterItem) {
       throw new Error("Abstract classes cannot be instantiated")
     }
+
+    /**
+     * The item's direction: horizontal, vertical or undefined
+     * @type {number}
+     */
     this.direction = direction
+
+    /**
+     * The width of the item in pixels.
+     *
+     * Not necessarily the actual width of the rendered item, but rather the
+     * distance that a renderer would advance horizontally after the item is rendered.
+     *
+     * A value of -1 means that the width is not set.  Typesetter classes should decide
+     * what to do with undefined widths,  but normally some sort of measurement process will be
+     * called
+     * @type {number}
+     */
     this.width = -1  // not set
+
+    /**
+     * The height of the item in pixels.
+     *
+     * Not necessarily the actual height of the rendered item, but rather the
+     * distance that a renderer would advance in the vertical direction after the
+     * item is rendered. For text boxes this distance is actually the
+     * distance from the current vertical position to the text's baseline.
+     * Individual glyphs may go under the baseline or above the current
+     * vertical position.
+     *
+     * A value of -1 means that the height is not set.
+     *
+     * Typesetter classes should decide what to do with undefined heights,
+     * but normally some sort of measurement process will be called
+     *
+     * @type {number}
+     */
     this.height = -1 // not set
 
-    this.metadata = new Map()
+    /**
+     * The number of pixels the item should be shifted horizontally with respect
+     * to its normal position.
+     *
+     * This number is independent of the item's width.
+     *
+     * @type {number}
+     */
     this.shiftX = 0
+
+    /**
+     * The number of pixels the item should be shifted vertically with respect
+     * to its normal position.
+     *
+     * This number is independent of the item's height.
+     *
+     * @type {number}
+     */
     this.shiftY = 0
+
+    /**
+     * Data associated with the item.
+     *
+     * @type {Map<any, any>}
+     */
+    this.metadata = new Map()
+
   }
 
+  /**
+   *
+   * @return {number}
+   */
   getDirection() {
     return this.direction
   }
 
+  /**
+   *
+   * @return {number}
+   */
   getWidth() {
     return this.width
   }
 
+  /**
+   *
+   * @param width
+   * @return {TypesetterItem}
+   */
   setWidth(width) {
     this.width = width
     return this
   }
 
+  /**
+   *
+   * @return {number}
+   */
   getHeight() {
     return this.height
   }
 
+  /**
+   *
+   * @param height
+   * @return {TypesetterItem}
+   */
   setHeight(height) {
     this.height = height
     return this
   }
 
+  /**
+   *
+   * @return {number}
+   */
   getShiftX() {
     return this.shiftX
   }
@@ -73,6 +164,10 @@ export class TypesetterItem {
     return this
   }
 
+  /**
+   *
+   * @return {number}
+   */
   getShiftY() {
     return this.shiftY
   }

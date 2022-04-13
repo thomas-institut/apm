@@ -22,14 +22,38 @@ import { TypesetterItem } from './TypesetterItem.mjs'
 export const INFINITE = 1000
 export const MINUS_INFINITE = -1000
 
+/**
+ * A penalty value that helps typesetters decide whether the
+ * item's position in a list is a desirable or undesirable place
+ * to insert a break.
+ *
+ * An INFINITE penalty means that the typesetter should never
+ * break the list at this point, whereas a MINUS_INFINITE value
+ * means that the typesetter must insert a break.
+ */
 export class Penalty extends TypesetterItem {
 
   constructor () {
     super()
+    /**
+     * The penalty value, a number between MINUS_INFINITE and INFINITE.
+     * Should never be accessed directly.
+     * @type {number}
+     */
     this.penalty = 0
+    /**
+     * A boolean flag. Typesetters should try not to insert break at
+     * two consecutive flagged penalties.
+     * @type {boolean}
+     */
+    this.flagged = false
+
+    /**
+     * TODO: explain the meaning of width and height for Penalty items
+     */
     this.width = 0
     this.height = 0
-    this.flagged = false
+
   }
 
   isFlagged() {

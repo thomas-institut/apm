@@ -20,6 +20,13 @@
 import { TypesetterItem } from './TypesetterItem.mjs'
 import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
 
+/**
+ * A rectangular area of a certain width and height.
+ *
+ * Descendants of this class represent different graphical elements that
+ * can be rendered on a graphical surface, for example, text boxes,
+ * boxes filled with a certain colour or pattern, images, etc.
+ */
 export class Box extends TypesetterItem {
 
   constructor (direction = TypesetterItemDirection.HORIZONTAL) {

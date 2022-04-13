@@ -17,16 +17,14 @@
  */
 
 /**
- * A typesetter page is a 2D surface of a certain width and height
- * plus an array of ItemList with the typesetter items to be
- * rendered in the page
+ * A typesetter page is a 2D surface of a certain width and height, an array of ItemList with
+ * the typesetter items to be rendered in the page, and some metadata
  *
- * Each list must have its proper shiftX and shiftY assigned so
- * that they appear in the right places when rendered
- *
+ * Renderers reset their current position to (0, 0) before processing each list,
+ * so each list and each item on them must have proper values for width, height,
+ * shiftX and shiftY so that they are rendered in the right places.
+
  */
-
-
 export class TypesetterPage {
 
   /**
@@ -39,6 +37,7 @@ export class TypesetterPage {
     this.width = pageWidth
     this.height = pageHeight
     this.lists = lists
+    this.metadata = new Map()
   }
 
   /**

@@ -35,12 +35,21 @@ export class Typesetter2 {
 
   /**
    * Converts a horizontal list of typesetter items into a vertical list
-   * consisting of a series of lines and inter-line glue
+   * consisting of a series of lines of a certain width given previously
+   * to the typesetter and inter-line glue
+   *
+   * In essence, splits a horizontal list into lines.
+   *
+   * Normally it is in this method that text boxes are measured so that
+   * line widths are respected and that later on the text boxes can
+   * be rendered correctly.
+   *
    * @param {ItemList}list
    * @return {Promise}
    */
   typesetHorizontalList(list) {
     // performs type checks and returns the input list if there's no problem
+    // the actual typesetting work should be done by a child of this class
     if (!(list instanceof ItemList)) {
       throw new Error('typesetHorizontalList called with non-ItemList item ')
     }
@@ -52,7 +61,8 @@ export class Typesetter2 {
 
   /**
    * Converts a vertical list into a horizontal lists consisting of vertical lists
-   * where each one fits into a given height (previously given to the typesetter)
+   * where each one fits into a given height (previously given to the typesetter).
+   *
    * In essence, splits a vertical list into pages
    *
    * @param {ItemList}list
@@ -60,6 +70,7 @@ export class Typesetter2 {
    */
   typesetVerticalList(list) {
     // performs type checks and returns the input list if there's no problem
+    // the actual typesetting work should be done by a child of this class
     if (!(list instanceof ItemList)) {
       throw new Error('typesetVerticalList called with non-ItemList item ')
     }
@@ -70,7 +81,8 @@ export class Typesetter2 {
   }
 
   /**
-   * Typeset a list of typesetter items returning an array of pages
+   * Typesets a list of typesetter items returning an array of pages.
+   *
    * Each concrete typesetter may impose constraints on the type
    * of list and items that are allowed as input. Normally,
    * the input list will be a vertical list with the paragraphs of the
@@ -86,7 +98,6 @@ export class Typesetter2 {
 
   // Unit conversion methods
 
-
   static cm2px(cm) {
     return cm * 37.795275590551184 //   = mm * 96 [px/in] / 2.54 [cm/in]
   }
@@ -101,6 +112,5 @@ export class Typesetter2 {
   static px2pt(px) {
     return px * 3 / 4
   }
-
 
 }

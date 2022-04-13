@@ -45,8 +45,6 @@ import { Box } from './Box.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 
 export class PdfRenderer extends  TypesetterRenderer{
-
-
   constructor (options) {
     super()
     const optionsSpec = {
@@ -119,7 +117,7 @@ export class PdfRenderer extends  TypesetterRenderer{
     return true
   }
 
-  renderPage (page) {
+  renderPage (page, pageIndex = 0) {
     this.pdfPage = this.pdfDocument.addPage([Typesetter2.px2pt(page.width), Typesetter2.px2pt(page.height)])
     this.setPageHeight(Typesetter2.px2pt(page.height))
     super.renderPage(page)

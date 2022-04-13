@@ -19,6 +19,7 @@
 import { ItemList } from './ItemList.mjs'
 import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
 import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
+import { TypesetterDocument } from './TypesetterDocument.mjs'
 
 /**
  * The new typesetter class
@@ -81,7 +82,7 @@ export class Typesetter2 {
   }
 
   /**
-   * Typesets a list of typesetter items returning an array of pages.
+   * Typesets a list of typesetter items returning a typeset document
    *
    * Each concrete typesetter may impose constraints on the type
    * of list and items that are allowed as input. Normally,
@@ -92,7 +93,7 @@ export class Typesetter2 {
    * @return {Promise}
    */
   typeset(list) {
-    return resolvedPromise([])
+    return resolvedPromise(new TypesetterDocument())
   }
 
 

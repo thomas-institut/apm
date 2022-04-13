@@ -35,4 +35,10 @@ export class Box extends TypesetterItem {
     this.height = 0
   }
 
+  getExportObject () {
+    let obj =  super.getExportObject()
+    obj.class = 'Box'
+    return obj
+  }
+
 }

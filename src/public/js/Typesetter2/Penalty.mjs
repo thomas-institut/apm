@@ -90,5 +90,12 @@ export class Penalty extends TypesetterItem {
     return this
   }
 
+  getExportObject () {
+    let obj =  super.getExportObject()
+    obj.class = 'Penalty'
+    obj.penalty = this.penalty
+    obj.flagged = this.flagged
+    return obj
+  }
 
 }

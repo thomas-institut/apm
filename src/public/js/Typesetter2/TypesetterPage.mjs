@@ -16,6 +16,8 @@
  *
  */
 
+import { ObjectWithMetadata } from './ObjectWithMetadata.mjs'
+
 /**
  * A typesetter page is a 2D surface of a certain width and height, an array of ItemList with
  * the typesetter items to be rendered in the page, and some metadata
@@ -25,7 +27,7 @@
  * shiftX and shiftY so that they are rendered in the right places.
 
  */
-export class TypesetterPage {
+export class TypesetterPage extends ObjectWithMetadata {
 
   /**
    *
@@ -34,10 +36,10 @@ export class TypesetterPage {
    * @param {ItemList[]}lists
    */
   constructor (pageWidth, pageHeight, lists = []) {
+    super()
     this.width = pageWidth
     this.height = pageHeight
     this.lists = lists
-    this.metadata = new Map()
   }
 
   /**
@@ -53,4 +55,12 @@ export class TypesetterPage {
     return this.lists
   }
 
+  getExportObject () {
+    let obj = super.getExportObject()
+    obj.class = 'Page'
+    obj.width = this.width
+    obj.height = this.height
+    obj.lists = this.lists.map( (list) => { return list.getExportObject()})
+    return obj
+  }
 }

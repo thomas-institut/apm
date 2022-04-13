@@ -144,4 +144,15 @@ export class TextBox extends Box {
     this.height = -1
   }
 
+  getExportObject () {
+    let obj =  super.getExportObject()
+    obj.class = 'TextBox'
+    obj.text = this.text
+    obj.fontFamily = this.fontFamily
+    obj.fontSize = this.fontSize
+    obj.fontStyle = this.fontStyle
+    obj.fontWeight = this.fontWeight
+    obj.textDirection = this.textDirection
+    return obj
+  }
 }

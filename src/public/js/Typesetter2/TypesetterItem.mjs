@@ -17,6 +17,7 @@
  */
 
 import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
+import { ObjectWithMetadata } from './ObjectWithMetadata.mjs'
 
 /**
  * The base class for all typesetter items.
@@ -28,9 +29,10 @@ import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
  * the most common one being TextBox
  *
  */
-export class TypesetterItem {
+export class TypesetterItem extends ObjectWithMetadata {
 
   constructor (direction = TypesetterItemDirection.UNDEFINED) {
+    super()
     if (this.constructor === TypesetterItem) {
       throw new Error("Abstract classes cannot be instantiated")
     }
@@ -93,13 +95,6 @@ export class TypesetterItem {
      */
     this.shiftY = 0
 
-    /**
-     * Data associated with the item.
-     *
-     * @type {Map<any, any>}
-     */
-    this.metadata = new Map()
-
   }
 
   /**
@@ -121,7 +116,6 @@ export class TypesetterItem {
   /**
    *
    * @param width
-   * @return {TypesetterItem}
    */
   setWidth(width) {
     this.width = width
@@ -139,7 +133,6 @@ export class TypesetterItem {
   /**
    *
    * @param height
-   * @return {TypesetterItem}
    */
   setHeight(height) {
     this.height = height
@@ -157,7 +150,6 @@ export class TypesetterItem {
   /**
    *
    * @param {number} x
-   * @return {TypesetterItem}
    */
   setShiftX(x) {
     this.shiftX = x
@@ -175,53 +167,20 @@ export class TypesetterItem {
   /**
    *
    * @param {number}y
-   * @return {TypesetterItem}
    */
   setShiftY(y) {
     this.shiftY = y
     return this
   }
 
-  // Metadata methods
-
-  /**
-   *
-   * @param {string}key
-   * @param {object}someObject
-   * @return {TypesetterItem}
-   */
-  addMetadata(key, someObject) {
-    this.metadata.set(key, someObject)
-    return this
+  getExportObject () {
+    let obj =  super.getExportObject()
+    obj.class = 'TypesetterItem'
+    obj.width = this.width
+    obj.height = this.height
+    obj.shiftX = this.shiftX
+    obj.shiftY = this.shiftY
+    obj.direction = this.direction
+    return obj
   }
-
-  /**
-   *
-   * @param {string}key
-   * @return {object}
-   */
-  getMetadata(key) {
-    return this.metadata.get(key)
-  }
-
-  /**
-   *
-   * @param {string}key
-   * @return {boolean}
-   */
-  deleteMetadata(key) {
-    return this.metadata.delete(key)
-  }
-
-  /**
-   *
-   * @param {string}key
-   * @return {boolean}
-   */
-  hasMetadata(key) {
-    return this.metadata.has(key)
-  }
-
-
-
 }

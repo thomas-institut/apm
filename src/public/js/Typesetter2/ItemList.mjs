@@ -96,4 +96,12 @@ export class ItemList extends TypesetterItem {
     return numItemsTrimmed
   }
 
+
+  getExportObject () {
+    let obj =  super.getExportObject()
+    obj.class = 'List'
+    obj.list = this.list.map( (item) => { return item.getExportObject()})
+    return obj
+  }
+
 }

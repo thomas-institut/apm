@@ -48,8 +48,9 @@ export class TypesetterRenderer {
   /**
    *
    * @param {TypesetterPage}page
+   * @param {number}pageIndex
    */
-  renderPage(page) {
+  renderPage(page, pageIndex = 0) {
     page.getLists().forEach( (list) => {
       if (list.getDirection() === HORIZONTAL) {
         this.renderHorizontalList(list)
@@ -61,10 +62,10 @@ export class TypesetterRenderer {
 
   /**
    *
-   * @param {TypesetterPage[]}pageArray
+   * @param {TypesetterDocument}doc
    */
-  renderDocument(pageArray) {
-    pageArray.forEach( (page, pageIndex) => {
+  renderDocument(doc) {
+    doc.getPages().forEach( (page, pageIndex) => {
       this._preRenderPage(page, pageIndex)
       this.renderPage(page)
       this._postRenderPage(pageIndex)

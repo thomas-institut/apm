@@ -82,4 +82,12 @@ export class Glue extends TypesetterItem {
     return this
   }
 
+  getExportObject () {
+    let obj =  super.getExportObject()
+    obj.class = 'Glue'
+    obj.stretch = this.stretch
+    obj.shrink = this.shrink
+    return obj
+  }
+
 }

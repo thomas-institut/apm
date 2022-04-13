@@ -26,6 +26,7 @@ import { MINUS_INFINITE, Penalty } from './Penalty.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { TypesetterPage } from './TypesetterPage.mjs'
 import { TextBoxMeasurer } from './TextBoxMeasurer.mjs'
+import { TypesetterDocument } from './TypesetterDocument.mjs'
 
 export const lineMetadataKey = 'SimpleTypesetterLine'
 
@@ -51,9 +52,7 @@ export class SimpleTypesetter extends Typesetter2 {
     this.textAreaHeight = this.options.pageHeight - this.options.marginTop - this.options.marginBottom
     this.lineSkip = this.options.lineSkip
     this.debug = this.options.debug
-
   }
-
 
   typesetHorizontalList (list) {
     return new Promise( async (resolve) => {
@@ -115,7 +114,9 @@ export class SimpleTypesetter extends Typesetter2 {
       }
       // add some metadata to the lines
       let lineNumber = 1
-      lines = lines.map( (line) => {
+      lines = lines.map((line) => {
+        return line.setHeight(line.getHeight())
+      }).map( (line) => {
         return line.addMetadata(lineMetadataKey, {
           lineNumber: lineNumber++,
           ratio: line.getWidth() / this.lineWidth
@@ -206,11 +207,17 @@ export class SimpleTypesetter extends Typesetter2 {
         }
       }
       let pageList = await this.typesetVerticalList(verticalListToTypeset)
-      resolve(pageList.getList().map((pageItemList) => {
+      let doc = new TypesetterDocument()
+      doc.addMetadata('Typesetter', {
+        typesetter: 'SimpleTypesetter'
+      })
+      doc.setPages(pageList.getList().map((pageItemList) => {
         pageItemList.setShiftX(this.options.marginLeft).setShiftY(this.options.marginTop)
         return new TypesetterPage(this.options.pageWidth, this.options.pageHeight,
           [pageItemList])
       }))
+      doc.setDimensionsFromPages()
+      resolve(doc)
     })
   }
 

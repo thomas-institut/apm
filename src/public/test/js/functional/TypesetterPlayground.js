@@ -18,6 +18,7 @@ import * as PDFLib from 'pdf-lib'
 import fontkit from '@pdf-lib/fontkit'
 import { PdfRenderer } from '../../../js/Typesetter2/PdfRenderer.mjs'
 import { TypesetterPage } from '../../../js/Typesetter2/TypesetterPage.mjs'
+import { TypesetterDocument } from '../../../js/Typesetter2/TypesetterDocument.mjs'
 
 const defaultPageWidth = Typesetter2.cm2px(14.1)
 const defaultPageHeight  = Typesetter2.cm2px(21)
@@ -46,7 +47,6 @@ let linuxLibertineFontBytes = null
 
 $( () => {
   new Playground()
-
 })
 
 
@@ -71,6 +71,7 @@ class Playground {
     BrowserUtilities.setCanvasHiPDI(this.canvas, Math.round(defaultPageWidth), Math.round(defaultPageHeight))
     this.canvasRenderer = new CanvasRenderer(this.canvas)
     this.textBoxMeasurer = new CanvasTextBoxMeasurer()
+    this.currentTypesetDocument = new TypesetterDocument()
 
     this.pageWidth = defaultPageWidth
     this.pageHeight = defaultPageHeight
@@ -99,10 +100,10 @@ class Playground {
 
   async __typesetAndRender(text) {
     let startTime = window.performance.now()
-    let pages = await this._typesetPlainText(text)
+    this.currentTypesetDocument = await this._typesetPlainText(text)
     let typesetEndTime = window.performance.now()
     console.log(`Text typeset in ${typesetEndTime - startTime} ms`)
-    await this._render(pages)
+    await this._render(this.currentTypesetDocument)
     let renderEndTime = window.performance.now()
     console.log(`Rendered in ${renderEndTime - typesetEndTime} ms`)
   }
@@ -226,24 +227,29 @@ class Playground {
 
   /**
    *
-   * @param {TypesetterPage[]}pages
    * @return {Promise<void>}
    * @private
+   * @param {TypesetterDocument}doc
    */
-  async _render(pages) {
+  async _render(doc) {
 
-    console.log(`Rendering ${pages.length} pages`)
-    console.log(pages)
+    let pages = doc.getPages()
+    console.log(`Rendering document, ${doc.getPageCount()} pages`)
+    console.log(doc)
+
+    $('#docJson').html(JSON.stringify(doc.getExportObject()))
+
+
     BrowserUtilities.setCanvasHiPDI(this.canvas, Math.round(this.pageWidth), Math.round(this.pageHeight))
     let ctx = this.canvas.getContext('2d')
     ctx.clearRect(0,0, this.canvas.width, this.canvas.height)
 
-    if (pages.length === 0) {
+    if (doc.getPageCount() === 0) {
       console.log('Nothing to do, no pages to render')
       return
     }
     //console.log(`Rendering page 0 in canvas`)
-    this.canvasRenderer.renderPage(pages[0])
+    this.canvasRenderer.renderPage(doc.getPage(0), 0)
 
     // PDF render
     const pdfDoc = await PDFLib.PDFDocument.create();
@@ -272,7 +278,7 @@ class Playground {
       defaultPageHeight: this.pageHeight
     })
 
-    pdfRenderer.renderDocument(pages)
+    pdfRenderer.renderDocument(this.currentTypesetDocument)
     document.getElementById('pdfFrame').src = await pdfDoc.saveAsBase64({ dataUri: true });
 
   }

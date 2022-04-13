@@ -3,5 +3,6 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
+    "node-gtk": "^0.10.0"
   }
 }

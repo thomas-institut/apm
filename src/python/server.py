@@ -6,13 +6,14 @@ from EchoProcessor import EchoProcessor
 from Request import Request
 from TextMeasurerProcessor import TextMeasurerProcessor
 
+host = '127.0.0.1'
 port = 12345
 buffer_size = 4096
 
 s = socket.socket()
 print("Socket successfully created")
 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-s.bind(('', port))
+s.bind((host, port))
 
 print("Socket bound to %s" % port)
 
@@ -50,10 +51,13 @@ while True:
             conn.close()
             s.close()
             exit()
+        except ConnectionResetError:
+            print("Connection reset by peer")
+            conn.close()
+            break
 
-        # print("Received data")
-        # print(raw_input)
-        # print("\n".encode())
+        print("Received data from peer")
+        print(raw_input)
 
         try:
             input_string = raw_input.decode('UTF-8')
@@ -73,7 +77,7 @@ while True:
             input_obj = json.loads(input_string)
         except json.JSONDecodeError:
             input_obj = None
-            print("Invalid JSON as input")
+            print("Invalid JSON as input, closing connection")
             print(input_string)
             conn.close()
             break
@@ -96,7 +100,9 @@ while True:
             conn.send(json.dumps(response.get_result()).encode('UTF-8'))
         elif command == 'measure':
             response = measurer.process_request(request)
-            conn.send(json.dumps(response.get_result()).encode('UTF-8'))
+            print("Response to 'measure' command")
+            print(response.get_result())
+            conn.send(json.dumps({'status': response.get_status(), 'result': response.get_result()}).encode('UTF-8'))
         elif command == 'end':
             print('END connection')
             conn.close()

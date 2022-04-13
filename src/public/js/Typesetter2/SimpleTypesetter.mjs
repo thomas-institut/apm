@@ -24,35 +24,39 @@ export class SimpleTypesetter extends Typesetter2 {
         marginLeft: { type: 'number', default: 50},
         marginRight: { type: 'number', default: 50},
         lineSkip: { type: 'number', default: 24},
-        textBoxMeasurer: { type: 'object', objectClass: TextBoxMeasurer}
+        textBoxMeasurer: { type: 'object', objectClass: TextBoxMeasurer},
+        debug: { type: 'boolean', default: false}
       }
     })
     this.options = oc.getCleanOptions(options)
     this.lineWidth = this.options.pageWidth - this.options.marginLeft - this.options.marginRight
     this.textAreaHeight = this.options.pageHeight - this.options.marginTop - this.options.marginBottom
     this.lineSkip = this.options.lineSkip
+    this.debug = this.options.debug
+
   }
 
 
   typesetHorizontalList (list) {
     return new Promise( async (resolve) => {
       let inputList = await super.typesetHorizontalList(list)
-      //console.log(`Typesetting horizontal list, lineWidth = ${this.lineWidth}`)
+      this.debug && console.log(`Typesetting horizontal list, lineWidth = ${this.lineWidth}`)
       let lines = []
       let currentLine = new ItemList(TypesetterItemDirection.HORIZONTAL)
       let currentX = 0
       for (const item of inputList.getList()) {
         if (item instanceof Glue) {
-          //console.log(`Processing glue at currentX = ${currentX}`)
+          this.debug && console.log(`Processing glue at currentX = ${currentX}`)
           currentX += item.getWidth()
-          //console.log(`New currentX = ${currentX}`)
+          this.debug && console.log(`New currentX = ${currentX}`)
           currentLine.pushItem(item)
           continue
         }
         if (item instanceof TextBox) {
-          //console.log(`Processing text box at currentX = ${currentX}, text = '${item.getText()}'`)
+          this.debug && console.log(`Processing text box at currentX = ${currentX}, text = '${item.getText()}'`)
           // Measure the text box before proceeding
           if (item.getWidth() === -1) {
+            this.debug && console.log(`Getting text box width`)
             let measuredWidth = await this.options.textBoxMeasurer.getBoxWidth(item)
             item.setWidth(measuredWidth)
           }
@@ -62,10 +66,10 @@ export class SimpleTypesetter extends Typesetter2 {
           }
 
           currentX += item.getWidth()
-          //console.log(`New currentX = ${currentX}`)
+          this.debug && console.log(`New currentX = ${currentX}`)
           if (currentX > this.lineWidth) {
             // new line
-            //console.log(`New line`)
+            this.debug && console.log(`New line`)
             currentLine.trimEndGlue()
             lines.push(currentLine)
             currentLine = new ItemList(TypesetterItemDirection.HORIZONTAL)
@@ -172,11 +176,11 @@ export class SimpleTypesetter extends Typesetter2 {
         }
         if (verticalItem instanceof ItemList) {
           if (verticalItem.getDirection() === HORIZONTAL) {
-            // console.log(`Processing horizontal list`)
-            // console.log(verticalItem)
+            this.debug && console.log(`Processing horizontal list`)
+            //this.debug && console.log(verticalItem)
             let typesetItem = await this.typesetHorizontalList(verticalItem)
-            // console.log(`Typeset horizontal list`)
-            // console.log(typesetItem)
+            this.debug &&  console.log(`Typeset horizontal list`)
+            //this.debug &&  console.log(typesetItem)
             typesetItem.getList().forEach((typesetItem) => {
               verticalListToTypeset.pushItem(typesetItem)
             })

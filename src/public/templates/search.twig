@@ -10,10 +10,10 @@
         $("#searchBox").on("keyup",function(){
 
           // get user input
-          var keyword = $(this).val();
+          $keyword = $(this).val();
 
           // send keyword to ApiSearch (via routing in index.php) and print returned result
-          $.post( "{{url_for('search.keyword')}}", {keyword: keyword})
+          $.post( "{{url_for('search.keyword')}}", {keyword: $keyword})
             .done(function( result ) {
             return $("#searchResult").text(result)
           });

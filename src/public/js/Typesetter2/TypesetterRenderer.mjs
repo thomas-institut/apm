@@ -18,6 +18,13 @@
 
 
 import { HORIZONTAL } from './TypesetterItemDirection.mjs'
+import { Glue } from './Glue.mjs'
+import { Box } from './Box.mjs'
+import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
+import { ItemList } from './ItemList.mjs'
+import { Penalty } from './Penalty.mjs'
+import { TextBox } from './TextBox.mjs'
+import { list } from 'quill/ui/icons.js'
 
 export class TypesetterRenderer {
 
@@ -51,13 +58,14 @@ export class TypesetterRenderer {
    * @param {number}pageIndex
    */
   renderPage(page, pageIndex = 0) {
-    page.getLists().forEach( (list) => {
-      if (list.getDirection() === HORIZONTAL) {
-        this.renderHorizontalList(list)
-      } else {
-        this.renderVerticalList(list)
-      }
+    page.getLists().forEach( (item) => {
+      let [shiftX, shiftY] = this.getShiftForPageIndex(pageIndex)
+      this.renderItem(item, shiftX, shiftY)
     })
+  }
+
+  getShiftForPageIndex(pageIndex) {
+    return [0, 0]
   }
 
   /**
@@ -65,11 +73,21 @@ export class TypesetterRenderer {
    * @param {TypesetterDocument}doc
    */
   renderDocument(doc) {
+    this._preRenderDocument(doc)
     doc.getPages().forEach( (page, pageIndex) => {
       this._preRenderPage(page, pageIndex)
-      this.renderPage(page)
+      this.renderPage(page, pageIndex)
       this._postRenderPage(pageIndex)
     })
+    this._postRenderDocument(doc)
+  }
+
+  _preRenderDocument(doc) {
+    // do nothing
+  }
+
+  _postRenderDocument(doc) {
+
   }
 
   /**
@@ -92,6 +110,104 @@ export class TypesetterRenderer {
   _postRenderPage(page, pageIndex) {
     // do nothing, the actual work should be done by
     // one descendant of this class
+  }
+
+  /**
+   * Renders an item at the given position
+   * The position is given in rendering device units
+   * @param {TypesetterItem}item
+   * @param {number}x
+   * @param {number}y
+   */
+  renderItem(item, x, y) {
+    if (item instanceof TextBox) {
+      this.renderTextBox(item, x, y)
+    } else if (item instanceof ItemList) {
+      this.renderList(item, x, y)
+    } else if (item instanceof Glue) {
+      this.renderGlue(item, x, y)
+    } else if (item instanceof Box) {
+      this.renderBox(item, x, y)
+    }  else if (item instanceof Penalty) {
+      this.renderPenalty(item, x, y)
+    }
+  }
+
+  /**
+   *
+   * @param {ItemList}listItem
+   * @param {number}x
+   * @param {number}y
+   */
+  renderList(listItem, x, y) {
+    let [shiftX, shiftY] = this.getDeviceCoordinates(listItem.getShiftX(), listItem.getShiftY())
+    let currentX = x + shiftX
+    let currentY = y + shiftY
+    listItem.getList().forEach( (item) => {
+      this.renderItem(item, currentX, currentY)
+      let [itemWidth, itemHeight] = this.getDeviceCoordinates(item.getWidth(), item.getHeight())
+      switch(listItem.getDirection()) {
+        case TypesetterItemDirection.HORIZONTAL:
+          currentX += itemWidth
+          break
+
+        case TypesetterItemDirection.VERTICAL:
+          currentY += itemHeight
+          break
+      }
+    })
+  }
+
+  /**
+   *
+   * @param {Glue}glueItem
+   * @param {number}x
+   * @param {number}y
+   */
+  renderGlue(glueItem, x, y) {
+    // normally nothing to do, but who knows what
+    // specific renderers may come up with!
+  }
+
+  /**
+   *
+   * @param {Penalty}penaltyItem
+   * @param {number}x
+   * @param {number}y
+   */
+  renderPenalty(penaltyItem, x, y) {
+    // normally nothing to do, but who knows what
+    // specific renderers may come up with!
+  }
+
+  /**
+   *
+   * @param {Box}boxItem
+   * @param {number}x
+   * @param {number}y
+   */
+  renderBox(boxItem, x, y) {
+    //do nothing
+  }
+
+  /**
+   *
+   * @param {TextBox}textBoxItem
+   * @param {number}x
+   * @param {number}y
+   */
+  renderTextBox(textBoxItem, x, y) {
+    //do nothing
+  }
+
+  /**
+   * Returns the devices coordinates for the given x,y (in pixels)
+   * @param {number}x
+   * @param {number}y
+   * @return {*[]}
+   */
+  getDeviceCoordinates(x, y) {
+    return [x, y]
   }
 
 }

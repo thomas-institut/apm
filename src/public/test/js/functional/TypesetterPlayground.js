@@ -17,10 +17,9 @@ import { CanvasRenderer } from '../../../js/Typesetter2/CanvasRenderer.mjs'
 import * as PDFLib from 'pdf-lib'
 import fontkit from '@pdf-lib/fontkit'
 import { PdfRenderer } from '../../../js/Typesetter2/PdfRenderer.mjs'
-import { TypesetterPage } from '../../../js/Typesetter2/TypesetterPage.mjs'
 import { TypesetterDocument } from '../../../js/Typesetter2/TypesetterDocument.mjs'
 
-const defaultPageWidth = Typesetter2.cm2px(14.1)
+const defaultPageWidth = Typesetter2.cm2px(14.8)
 const defaultPageHeight  = Typesetter2.cm2px(21)
 
 const defaultMarginTop = Typesetter2.cm2px(1)
@@ -38,6 +37,11 @@ const defaultFonts = [ 'FreeSerif', 'Arial', 'GentiumBasic', 'Linux Libertine']
 
 const defaultFontSize = Typesetter2.pt2px(12)
 const defaultLineSkip = Typesetter2.pt2px(18)
+
+const zoomSteps = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.25, 3.5, 3.75, 4]
+const defaultZoomStep = 3
+
+const defaultCanvasPageMargin = 20
 
 const freeSerifFontUrl = 'https://averroes.uni-koeln.de/fonts/freefont/FreeSerif.ttf'
 let freeSerifFontBytes = null
@@ -66,10 +70,15 @@ class Playground {
     this._setupFontFamilyInput(this.fontFamilyInput, defaultFonts)
     this.fontSizeInput = $('#fontSize')
     this.lineSkipInput = $('#lineSkip')
+    this.zoomOutButton = $('#zoom-out-btn')
+    this.zoomInButton = $('#zoom-in-btn')
+    this.zoomLabel = $('#zoom-label')
+
 
     this.canvas = document.getElementById('theCanvas')
     BrowserUtilities.setCanvasHiPDI(this.canvas, Math.round(defaultPageWidth), Math.round(defaultPageHeight))
     this.canvasRenderer = new CanvasRenderer(this.canvas)
+    this.__setZoomStep(defaultZoomStep)
     this.textBoxMeasurer = new CanvasTextBoxMeasurer()
     this.currentTypesetDocument = new TypesetterDocument()
 
@@ -96,7 +105,11 @@ class Playground {
     this.fontFamilyInput.on('change', this.getOnChangeInputField())
     this.fontSizeInput.on('change', this.getOnChangeInputField())
     this.lineSkipInput.on('change', this.getOnChangeInputField())
+
+    this.zoomInButton.on('click', this.__genOnClickZoomButton(true))
+    this.zoomOutButton.on('click', this.__genOnClickZoomButton(false))
   }
+
 
   async __typesetAndRender(text) {
     let startTime = window.performance.now()
@@ -124,6 +137,37 @@ class Playground {
         await this.__typesetAndRender(this.lastText)
       }
     }
+  }
+
+  __genOnClickZoomButton(zoomIn = true) {
+    return () => {
+      let newZoomStep
+      if (zoomIn) {
+        newZoomStep = this.currentZoomStep + 1
+      } else {
+        newZoomStep = this.currentZoomStep - 1
+      }
+      if (newZoomStep === zoomSteps.length) {
+        // at the end of the scale, do nothing
+        return
+      }
+
+      if (newZoomStep < 0) {
+        return
+        // at the other end of the scale, do nothing
+      }
+
+      this.__setZoomStep(newZoomStep)
+
+      this.__renderCanvas(this.currentTypesetDocument)
+    }
+  }
+
+  __setZoomStep(newZoomStep) {
+    this.currentZoomStep = newZoomStep
+    let newScale = zoomSteps[this.currentZoomStep]
+    this.canvasRenderer.setScale(newScale).setPageMargin(defaultCanvasPageMargin*newScale)
+    this.zoomLabel.html(`${newScale * 100}%`)
   }
 
   _setupFontFamilyInput(input, fontArray) {
@@ -225,6 +269,20 @@ class Playground {
     return ts.typeset(verticalListToTypeset)
   }
 
+  __renderCanvas(doc) {
+    let [ canvasWidth, canvasHeight] = this.canvasRenderer.getCanvasDimensionsForDoc(doc)
+
+    BrowserUtilities.setCanvasHiPDI(this.canvas, canvasWidth, canvasHeight)
+    let ctx = this.canvas.getContext('2d')
+    ctx.clearRect(0,0, this.canvas.width, this.canvas.height)
+
+    if (doc.getPageCount() === 0) {
+      console.log('Nothing to do, no pages to render')
+      return
+    }
+    this.canvasRenderer.renderDocument(doc)
+  }
+
   /**
    *
    * @return {Promise<void>}
@@ -239,18 +297,7 @@ class Playground {
 
     $('#docJson').html(JSON.stringify(doc.getExportObject()))
 
-
-    BrowserUtilities.setCanvasHiPDI(this.canvas, Math.round(this.pageWidth), Math.round(this.pageHeight))
-    let ctx = this.canvas.getContext('2d')
-    ctx.clearRect(0,0, this.canvas.width, this.canvas.height)
-
-    if (doc.getPageCount() === 0) {
-      console.log('Nothing to do, no pages to render')
-      return
-    }
-    //console.log(`Rendering page 0 in canvas`)
-    this.canvasRenderer.renderPage(doc.getPage(0), 0)
-
+    this.__renderCanvas(doc)
     // PDF render
     const pdfDoc = await PDFLib.PDFDocument.create();
     pdfDoc.registerFontkit(fontkit)

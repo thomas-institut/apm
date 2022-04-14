@@ -42,14 +42,13 @@ export class TypesetterPage extends ObjectWithMetadata {
     this.lists = lists
   }
 
-  /**
-   *
-   * @param {ItemList}list
-   */
-  addList(list) {
-    this.lists.push(list)
+  getWidth() {
+    return this.width
   }
 
+  getHeight() {
+    return this.height
+  }
 
   getLists() {
     return this.lists

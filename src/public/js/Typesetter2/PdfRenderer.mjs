@@ -67,60 +67,19 @@ export class PdfRenderer extends  TypesetterRenderer{
     this.pageHeight = pageHeight
   }
 
-  renderHorizontalList (list, shiftX = 0, shiftY = 0) {
-    // console.log(`Rendering horizontal list, shift ${shiftX}, ${shiftY}`)
-    // console.log(list)
-    let currentX = shiftX + list.getShiftX()
-    let listHeight = list.getHeight()
-    let listHeightInPt = Typesetter2.px2pt(listHeight)
-    list.getList().forEach( (horizontalItem) => {
-      if (horizontalItem instanceof Glue) {
-        currentX += horizontalItem.getWidth()
-        return
-      }
-      if (horizontalItem instanceof TextBox) {
-        let pdfFont = this.__getPdfFontForTextBox(horizontalItem)
-
-        this.pdfPage.drawText(horizontalItem.getText(), {
-          x: Typesetter2.px2pt(currentX+horizontalItem.getShiftX()) ,
-          y: this.pageHeight - Typesetter2.px2pt(shiftY+horizontalItem.getShiftY()) -  listHeightInPt,
-          size: Typesetter2.px2pt(horizontalItem.getFontSize()),
-          font: pdfFont
-        })
-        currentX += horizontalItem.getWidth()
-        return
-      }
-      if (horizontalItem instanceof Box) {
-        currentX += horizontalItem.getWidth()
-      }
+  renderTextBox (textBox, x, y) {
+    let pdfFont = this.__getPdfFontForTextBox(textBox)
+    this.pdfPage.drawText(textBox.getText(), {
+      x: Typesetter2.px2pt(x+textBox.getShiftX()) ,
+      y: this.pageHeight - Typesetter2.px2pt(y+textBox.getShiftY() +  textBox.getHeight()),
+      size: Typesetter2.px2pt(textBox.getFontSize()),
+      font: pdfFont
     })
-    return true
-
   }
 
-  renderVerticalList (list, shiftX = 0, shiftY = 0) {
-    // console.log(`Rendering vertical list, shift: ${shiftX}, ${shiftY}`)
-    // console.log(list)
-    let currentY = shiftY + list.getShiftY()
-    list.getList().forEach( (item) => {
-      if (item instanceof Glue) {
-        currentY += item.getHeight()
-        return
-      }
-      if (item instanceof ItemList) {
-        // a line
-        let lineHeight = item.getHeight()
-        this.renderHorizontalList(item, shiftX + list.getShiftX(), currentY)
-        currentY += lineHeight
-      }
-    })
-    return true
-  }
-
-  renderPage (page, pageIndex = 0) {
+  _preRenderPage (page, pageIndex) {
     this.pdfPage = this.pdfDocument.addPage([Typesetter2.px2pt(page.width), Typesetter2.px2pt(page.height)])
     this.setPageHeight(Typesetter2.px2pt(page.height))
-    super.renderPage(page)
   }
 
   /**

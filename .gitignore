@@ -21,7 +21,7 @@ php-sessions/
 other/
 **/docs/
 .idea/
-
+__pycache__/
 
 
 

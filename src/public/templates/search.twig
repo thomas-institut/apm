@@ -2,35 +2,63 @@
 
 {% block title %}Search{% endblock %}
 
+{% block extraCSS%}
+<style>
+    div#search_form {
+        margin-bottom: 1rem;
+        margin-top: 2rem;
+    }
+
+    div#search_results {
+        margin-bottom: 2rem;
+        margin-left: 2rem;
+    }
+</style>
+{% endblock%}
+
 {% block finalBodyJS %}
     <script>
-      $(function() {
+      $(() => {
+        let searchBox = $("#searchBox")
+        let searchResultsDiv = $("#search_results")
 
         // Key-Up function
-        $("#searchBox").on("keyup",function(){
-
-          // get user input
-          $keyword = $(this).val();
-
+        searchBox.on("keyup", () => {
+          let searchText = searchBox.val()
           // send keyword to ApiSearch (via routing in index.php) and print returned result
-          $.post( "{{url_for('search.keyword')}}", {keyword: $keyword})
-            .done(function( result ) {
-            return $("#searchResult").text(result)
-          });
-        });
+          $.post( "{{url_for('search.keyword')}}", {searchText: searchText})
+            .done( (apiResponse) => {
+              console.log(apiResponse)
+              if (apiResponse['results'].length === 0) {
+                searchResultsDiv
+                  .html(`Nothing found for '${apiResponse['searchString']}'<br/>Server time: ${apiResponse['serverTime']}`)
+                  .addClass('text-warning')
+                return
+              }
+              // display results
+              searchResultsDiv
+                .html(`${apiResponse['results'].length} result(s) found for '${apiResponse['searchString']}' (${apiResponse['serverTime']})`)
+                .removeClass('text-warning')
+          }).fail( (status) => {
+            console.log(status)
+            searchResultsDiv
+              .html(`Something went wrong!`)
+              .removeClass('text-error')
+
+          })
+        })
       })
+
     </script>
 {%  endblock %}
 
 {% block content %}
     <h1> Search </h1>
-    <br>
-    <form>
-        <input type="text" id="searchBox" value="...">
-    </form>
-    <br>
-    <p id="searchResult"></p>
-    <br>
+    <div id="search_form">
+        <label for="searchBox">Text to search:</label> <input type="text" id="searchBox" placeholder="Enter text here" value="">
+    </div>
+    <div id="search_results"></div>
+
 {% endblock %}
 
 

@@ -19,8 +19,12 @@ from gi.repository import PangoCairo
 
 HORIZONTAL = 0
 VERTICAL = 1
-file_name_prefix = 'test'
 
+if len(sys.argv) != 2:
+    print("Need an out file name")
+    exit(0)
+
+output_file_name = sys.argv[1]
 
 def px2pt(px):
     return px * 3 / 4
@@ -55,7 +59,7 @@ def print_text_box(context, x, y, text_box):
 input_str = sys.stdin.read()
 doc = json.loads(input_str)
 
-surface_pdf = cairo.PDFSurface(file_name_prefix + '.pdf', px2pt(doc['width']), px2pt(doc['height']))
+surface_pdf = cairo.PDFSurface(output_file_name, px2pt(doc['width']), px2pt(doc['height']))
 ctx_pdf = cairo.Context(surface_pdf)
 
 for page in doc['pages']:
@@ -64,3 +68,4 @@ for page in doc['pages']:
         print_item_list(ctx_pdf, 0, 0, item_list)
     ctx_pdf.show_page()
 
+exit(1)

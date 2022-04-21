@@ -80,6 +80,11 @@ class ApmUrlGenerator {
     apiConvertSvg() {
         return this.base + '/api/convert/svg2pdf';
     }
+
+    apiConvertTypesetterData() {
+        return this.base + '/api/convert/ts2pdf'
+    }
+
     apiConvertCollationTable(tableId) {
         return `${this.base}/api/collation/convert/${tableId}`;
     }

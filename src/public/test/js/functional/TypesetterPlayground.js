@@ -33,6 +33,8 @@ const sampleText = `This is a test.
 This is another paragraph.`
 
 
+const apmBaseUrl = 'http://localhost:8888'
+
 const defaultFonts = [ 'FreeSerif', 'Arial', 'GentiumBasic', 'Linux Libertine']
 
 const defaultFontSize = Typesetter2.pt2px(12)
@@ -74,6 +76,8 @@ class Playground {
     this.zoomInButton = $('#zoom-in-btn')
     this.zoomLabel = $('#zoom-label')
 
+    this.typesetButton = $('#typeset-btn')
+
 
     this.canvas = document.getElementById('theCanvas')
     BrowserUtilities.setCanvasHiPDI(this.canvas, Math.round(defaultPageWidth), Math.round(defaultPageHeight))
@@ -95,7 +99,7 @@ class Playground {
       this.__typesetAndRender(this.lastText).then( () => {console.log('First render done')})
     })
 
-    this.inputTextArea.on('keyup', this.genOnChangeInputText())
+    this.typesetButton.on('click', this.genOnClickTypesetButton())
     this.marginTopInput.on('change', this.getOnChangeInputField())
     this.marginBottomInput.on('change', this.getOnChangeInputField())
     this.marginLeftInput.on('change', this.getOnChangeInputField())
@@ -108,6 +112,8 @@ class Playground {
 
     this.zoomInButton.on('click', this.__genOnClickZoomButton(true))
     this.zoomOutButton.on('click', this.__genOnClickZoomButton(false))
+
+    this.urlGenerator = new ApmUrlGenerator(apmBaseUrl)
   }
 
 
@@ -124,18 +130,15 @@ class Playground {
   getOnChangeInputField() {
     return async () => {
       await this._getDataFromInputFields()
-      await this.__typesetAndRender(this.lastText)
+      //await this.__typesetAndRender(this.lastText)
     }
   }
 
-  genOnChangeInputText() {
+  genOnClickTypesetButton() {
     return async () => {
-      let newText = this.inputTextArea.val()
-      if (newText !== this.lastText) {
-        // console.log(`New input text: '${this.inputTextArea.val()}'`)
-        this.lastText = newText
-        await this.__typesetAndRender(this.lastText)
-      }
+      this.lastText = this.inputTextArea.val()
+      await this._getDataFromInputFields()
+      await this.__typesetAndRender(this.lastText)
     }
   }
 
@@ -495,11 +498,20 @@ class Playground {
 
     // let pages = doc.getPages()
     console.log(`Rendering document, ${doc.getPageCount()} pages`)
-    // console.log(doc)
 
-    $('#docJson').html(JSON.stringify(doc.getExportObject()))
+    let jsonData = JSON.stringify(doc.getExportObject())
+
+    $('#docJson').html(jsonData)
 
     this.__renderCanvas(doc)
+
+    let startTime = window.performance.now()
+    let pdfUrl = await  this.__getPdfDownloadURLFromServer(jsonData)
+    let endTime = window.performance.now()
+    console.log(`PDF rendered in server in ${endTime-startTime}ms`)
+    console.log(pdfUrl)
+
+
     // PDF render
     // const pdfDoc = await PDFLib.PDFDocument.create();
     // pdfDoc.registerFontkit(fontkit)
@@ -530,5 +542,36 @@ class Playground {
     // pdfRenderer.renderDocument(this.currentTypesetDocument)
     // document.getElementById('pdfFrame').src = await pdfDoc.saveAsBase64({ dataUri: true });
 
+  }
+
+  __getPdfDownloadURLFromServer(jsonData) {
+
+    let apiUrl = this.urlGenerator.apiConvertTypesetterData()
+
+    return new Promise( (resolve, reject) => {
+      if (jsonData === '') {
+        console.log('No data for PDF export')
+        resolve('')
+      }
+      console.log(`Calling export PDF API at ${apiUrl}`)
+      $.post(
+        apiUrl,
+        {data: JSON.stringify({
+            pdfId: `ts-playground`,
+            noCache: true,
+            typesetterData: jsonData
+          })}
+      ).done(
+        apiResponse => {
+          resolve(apiResponse.url)
+        }
+      ).fail (
+        error => {
+          console.error('PDF API error')
+          console.log(error)
+          reject()
+        }
+      )
+    })
   }
 }

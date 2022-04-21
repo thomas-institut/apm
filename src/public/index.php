@@ -389,10 +389,14 @@ $app->group('/api', function (RouteCollectorProxy $group){
         ApiEditionEngine::class . ':automaticEditionEngine')
         ->setName('api.edition.auto');
 
-    // SVG CONVERSION
+    // PDF CONVERSION
     $group->post('/convert/svg2pdf',
         ApiPdfConversion::class . ':convertSVGtoPDF')
         ->setName('api.convert.svg2pdf');
+
+    $group->post('/convert/ts2pdf',
+        ApiPdfConversion::class . ':convertTypesetterDataToPdf')
+        ->setName('api.convert.ts2pdf');
 
     //  PRESETS
 

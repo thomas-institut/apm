@@ -24,7 +24,10 @@ export class CanvasTextBoxMeasurer extends TextBoxMeasurer {
 
   getBoxWidth (token) {
     let context = this.__getContext()
-    context.font = `${token.fontSize}px '${token.fontFamily}'`;
+    let fontWeight = token.getFontWeight() === '' ? 'normal' : token.getFontWeight()
+    let fontStyle = token.getFontStyle() === '' ? 'normal' : token.getFontStyle()
+    let fontVariant = 'normal'
+    context.font = `${fontStyle} ${fontVariant} ${fontWeight} ${token.fontSize}px ${token.getFontFamily()} `
     let metrics = context.measureText(token.text);
     return resolvedPromise(metrics.width)
   }

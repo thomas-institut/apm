@@ -25,6 +25,7 @@
 import { TypesetterItem } from './TypesetterItem.mjs'
 import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
 import { Glue } from './Glue.mjs'
+import { pushArray } from '../toolbox/ArrayUtil.mjs'
 
 export class ItemList extends TypesetterItem {
 
@@ -47,6 +48,16 @@ export class ItemList extends TypesetterItem {
    */
   pushItem(item) {
     this.list.push(item)
+  }
+
+  /**
+   *
+   * @param {TypesetterItem[]}itemArray
+   */
+  pushItemArray(itemArray) {
+    itemArray.forEach( (item) => {
+      this.pushItem(item)
+    })
   }
 
   popItem() {

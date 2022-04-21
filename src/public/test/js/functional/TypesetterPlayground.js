@@ -7,17 +7,18 @@
 import { TextBoxFactory } from '../../../js/Typesetter2/TextBoxFactory.mjs'
 import { BrowserUtilities } from '../../../js/toolbox/BrowserUtilities.mjs'
 import { CanvasTextBoxMeasurer } from '../../../js/Typesetter2/CanvasTextBoxMeasurer.mjs'
-import { removeExtraWhiteSpace } from '../../../js/toolbox/Util.mjs'
+import { removeExtraWhiteSpace, trimWhiteSpace } from '../../../js/toolbox/Util.mjs'
 import { Glue } from '../../../js/Typesetter2/Glue.mjs'
 import { Typesetter2 } from '../../../js/Typesetter2/Typesetter2.mjs'
 import { SimpleTypesetter } from '../../../js/Typesetter2/SimpleTypesetter.mjs'
 import { ItemList } from '../../../js/Typesetter2/ItemList.mjs'
 import * as TypesetterItemDirection from '../../../js/Typesetter2/TypesetterItemDirection.mjs'
 import { CanvasRenderer } from '../../../js/Typesetter2/CanvasRenderer.mjs'
-import * as PDFLib from 'pdf-lib'
-import fontkit from '@pdf-lib/fontkit'
-import { PdfRenderer } from '../../../js/Typesetter2/PdfRenderer.mjs'
+// import * as PDFLib from 'pdf-lib'
+// import fontkit from '@pdf-lib/fontkit'
+// import { PdfRenderer } from '../../../js/Typesetter2/PdfRenderer.mjs'
 import { TypesetterDocument } from '../../../js/Typesetter2/TypesetterDocument.mjs'
+import { TextBox } from '../../../js/Typesetter2/TextBox.mjs'
 
 const defaultPageWidth = Typesetter2.cm2px(14.8)
 const defaultPageHeight  = Typesetter2.cm2px(21)
@@ -27,10 +28,9 @@ const defaultMarginLeft = Typesetter2.cm2px(1)
 const defaultMarginBottom = Typesetter2.cm2px(1)
 const defaultMarginRight = Typesetter2.cm2px(1)
 
-const sampleText = `This is the text to typeset. Write whatever you want in here and see the results in the html 
-canvas to the left. 
+const sampleText = `This is a test.
 
-En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor. Una olla de algo más vaca que carnero, salpicón las más noches, duelos y quebrantos los sábados, lantejas los viernes, algún palomino de añadidura los domingos, consumían las tres cuartas partes de su hacienda. El resto della concluían sayo de velarte, calzas de velludo para las fiestas, con sus pantuflos de lo mesmo, y los días de entresemana se honraba con su vellorí de lo más fino. Tenía en su casa una ama que pasaba de los cuarenta, y una sobrina que no llegaba a los veinte, y un mozo de campo y plaza, que así ensillaba el rocín como tomaba la podadera. Frisaba la edad de nuestro hidalgo con los cincuenta años; era de complexión recia, seco de carnes, enjuto de rostro, gran madrugador y amigo de la caza. Quieren decir que tenía el sobrenombre de Quijada, o Quesada, que en esto hay alguna diferencia en los autores que deste caso escriben; aunque, por conjeturas verosímiles, se deja entender que se llamaba Quejana. Pero esto importa poco a nuestro cuento; basta que en la narración dél no se salga un punto de la verdad. `
+This is another paragraph.`
 
 
 const defaultFonts = [ 'FreeSerif', 'Arial', 'GentiumBasic', 'Linux Libertine']
@@ -43,11 +43,11 @@ const defaultZoomStep = 3
 
 const defaultCanvasPageMargin = 20
 
-const freeSerifFontUrl = 'https://averroes.uni-koeln.de/fonts/freefont/FreeSerif.ttf'
-let freeSerifFontBytes = null
-
-const linuxLibertineFontUrl = 'https://averroes.uni-koeln.de/fonts/LinuxLibertine/LinLibertine_Rah.ttf'
-let linuxLibertineFontBytes = null
+// const freeSerifFontUrl = 'https://averroes.uni-koeln.de/fonts/freefont/FreeSerif.ttf'
+// let freeSerifFontBytes = null
+//
+// const linuxLibertineFontUrl = 'https://averroes.uni-koeln.de/fonts/LinuxLibertine/LinLibertine_Rah.ttf'
+// let linuxLibertineFontBytes = null
 
 $( () => {
   new Playground()
@@ -132,7 +132,7 @@ class Playground {
     return async () => {
       let newText = this.inputTextArea.val()
       if (newText !== this.lastText) {
-        console.log(`New input text: '${this.inputTextArea.val()}'`)
+        // console.log(`New input text: '${this.inputTextArea.val()}'`)
         this.lastText = newText
         await this.__typesetAndRender(this.lastText)
       }
@@ -232,27 +232,229 @@ class Playground {
     this.normalSpaceWidth = await this.textBoxMeasurer.getBoxWidth(spaceTextBox)
     this.normalSpaceStretch = this.normalSpaceWidth / 6
     this.normalSpaceShrink = this.normalSpaceWidth / 9
-
   }
 
-  _typesetPlainText(plainText) {
-    // one word per line, just to see that the playground is working
-    let wordTextBoxes = removeExtraWhiteSpace(plainText).split(' ').map ( (word) => {
-      return TextBoxFactory.simpleText(word, { fontFamily: this.fontFamily, fontSize: this.fontSize})
+  /**
+   *
+   * @param {string}plainText
+   * @private
+   */
+  __parsePlainText(plainText) {
+
+    console.log(`Parsing plain text`)
+    let paragraphTextArray = trimWhiteSpace(plainText)
+      .split("\n\n")
+      .map( (rawParText) => {
+        return removeExtraWhiteSpace(rawParText)
+      })
+      .filter( (parText) => {
+        return parText !== ''
+      })
+    console.log(`${paragraphTextArray.length} paragraph(s) detected`)
+    let parsedPars = paragraphTextArray.map( (text) => { return this.__parseParagraph(text)})
+    console.log(parsedPars)
+    let ptt = parsedPars.map ( (parsedPar) => {
+      let paragraphToTypeset = new ItemList(TypesetterItemDirection.HORIZONTAL)
+      parsedPar.forEach( (cmdObject) => {
+        switch(cmdObject['cmd']) {
+          case 'text':
+            paragraphToTypeset.pushItemArray(this.__getItemsToTypesetFromString(cmdObject['arg']))
+            break
+
+          case 'b':
+          case 'i':
+          case 'bi':
+          case 'ib':
+
+            let cleanArg = trimWhiteSpace(cmdObject['arg'])
+            if (cleanArg !== '' ) {
+              let items = this.__getItemsToTypesetFromString(cleanArg)
+              items = items.map( (item) => {
+                if (item instanceof TextBox) {
+                  switch (cmdObject['cmd']){
+                    case 'b':
+                      item.setFontWeight('bold')
+                      break
+
+                    case 'i':
+                      item.setFontStyle('italic')
+                      break
+
+                    case 'bi':
+                    case 'ib':
+                      item.setFontWeight('bold').setFontStyle('italic')
+                      break
+                  }
+                }
+                return item
+              })
+              paragraphToTypeset.pushItemArray(items)
+            }
+            break
+
+
+        }
+      })
+      return paragraphToTypeset
     })
-    let paragraphToTypeset = new ItemList(TypesetterItemDirection.HORIZONTAL)
-    wordTextBoxes.forEach( (textBox, i) => {
-      paragraphToTypeset.pushItem(textBox)
+
+    // let parsToTypeset = paragraphTextArray.map( (paragraphText) => {
+    //   let words = paragraphText.split(' ')
+    //   let wordTextBoxes = words.map ( (word) => {
+    //     return TextBoxFactory.simpleText(word, { fontFamily: this.fontFamily, fontSize: this.fontSize})
+    //   })
+    //   let paragraphToTypeset = new ItemList(TypesetterItemDirection.HORIZONTAL)
+    //   wordTextBoxes.forEach( (textBox, i) => {
+    //     paragraphToTypeset.pushItem(textBox)
+    //     let glueToken = (new Glue()).setWidth(this.normalSpaceWidth)
+    //       .setStretch(this.normalSpaceStretch)
+    //       .setShrink(this.normalSpaceShrink)
+    //     if (i !== wordTextBoxes.length - 1) {
+    //       paragraphToTypeset.pushItem(glueToken)
+    //     }
+    //   })
+    //   return paragraphToTypeset
+    // })
+    console.log('Paragraphs to typeset')
+    console.log(ptt)
+    let verticalListToTypeset = new ItemList(TypesetterItemDirection.VERTICAL)
+    ptt.forEach( (parToTypeset) => {
+      verticalListToTypeset.pushItem(parToTypeset)
+    })
+    return verticalListToTypeset
+  }
+
+  __getItemsToTypesetFromString(str) {
+    let curWord = ''
+    let state = 0
+    let items = []
+    str.split('').forEach( (ch) => {
+      switch(state) {
+        case 0:
+          if (ch === ' ') {
+            if (curWord !== '') {
+              items.push(TextBoxFactory.simpleText(curWord, { fontFamily: this.fontFamily, fontSize: this.fontSize}))
+              curWord = ''
+            }
+            state = 1
+          } else {
+            curWord += ch
+          }
+          break
+
+        case 1:
+          if (ch !== ' ') {
+            let glueToken = (new Glue()).setWidth(this.normalSpaceWidth)
+              .setStretch(this.normalSpaceStretch)
+              .setShrink(this.normalSpaceShrink)
+            items.push(glueToken)
+            curWord = ch
+            state = 0
+          }
+          break
+      }
+    })
+    if (state === 0 && curWord !== '') {
+      items.push(TextBoxFactory.simpleText(curWord, { fontFamily: this.fontFamily, fontSize: this.fontSize}))
+    }
+    if (state === 1) {
       let glueToken = (new Glue()).setWidth(this.normalSpaceWidth)
         .setStretch(this.normalSpaceStretch)
         .setShrink(this.normalSpaceShrink)
-      if (i !== wordTextBoxes.length - 1) {
-        paragraphToTypeset.pushItem(glueToken)
+      items.push(glueToken)
+    }
+    return items
+  }
+
+  __parseParagraph(text) {
+    const escapedCharacters = '\\{}'
+    let state = 0
+    let commands = []
+    let curStr = ''
+    let curCmd = ''
+    text.split('').forEach( (ch) => {
+      switch(state) {
+        case 0:
+          if (ch === '\\') {
+            state = 1
+            return
+          }
+          if (ch === '{') {
+            if (curStr !== '') {
+              commands.push( { cmd: 'text', arg: curStr})
+              curStr = ''
+            }
+            state = 2
+            return
+          }
+          // other characters
+          curStr += ch
+          break
+
+        case 1:
+          if (escapedCharacters.indexOf(ch) !== -1) {
+            curStr += ch
+          }
+          state = 0
+          break
+
+        case 2:
+          if (ch === ' ' && curStr !== '') {
+            curCmd = curStr
+            curStr = ''
+            state = 3
+            return
+          }
+          if (ch === '}') {
+            if (curStr !== '') {
+              commands.push( { cmd: curStr, arg: ''})
+              curStr = ''
+              curCmd = ''
+              state = 0
+              return
+            }
+          }
+          curStr += ch
+          break
+
+        case 3:
+          if (ch === '\\') {
+            state = 4
+            return
+          }
+          if (ch === '}') {
+            commands.push( { cmd: curCmd, arg: curStr})
+            curStr = ''
+            curCmd = ''
+            state = 0
+            return
+          }
+          // other characters
+          curStr += ch
+          break
+
+        case 4:
+          if (escapedCharacters.indexOf(ch) !== -1) {
+            curStr += ch
+          }
+          state = 3
+          break
       }
     })
+    if (state === 0 && curStr !== '') {
+      commands.push( { cmd: 'text', arg: curStr})
+    }
+    return commands
+  }
 
-    let verticalListToTypeset = new ItemList(TypesetterItemDirection.VERTICAL)
-    verticalListToTypeset.pushItem(paragraphToTypeset)
+  /**
+   *
+   * @param {string}plainText
+   * @returns {Promise}
+   * @private
+   */
+  _typesetPlainText(plainText) {
+    let verticalListToTypeset = this.__parsePlainText(plainText)
 
     let ts = new SimpleTypesetter(
       {
@@ -291,42 +493,42 @@ class Playground {
    */
   async _render(doc) {
 
-    let pages = doc.getPages()
+    // let pages = doc.getPages()
     console.log(`Rendering document, ${doc.getPageCount()} pages`)
-    console.log(doc)
+    // console.log(doc)
 
     $('#docJson').html(JSON.stringify(doc.getExportObject()))
 
     this.__renderCanvas(doc)
     // PDF render
-    const pdfDoc = await PDFLib.PDFDocument.create();
-    pdfDoc.registerFontkit(fontkit)
-    if (freeSerifFontBytes === null) {
-      console.log(`Fetching FreeSerif font`)
-      freeSerifFontBytes = await fetch(freeSerifFontUrl).then( res => res.arrayBuffer())
-    }
-    if (linuxLibertineFontBytes === null) {
-      console.log(`Fetching LinuxLibertine font`)
-      linuxLibertineFontBytes = await fetch(linuxLibertineFontUrl).then( res => res.arrayBuffer())
-    }
-
-    const freeSerifFont = await pdfDoc.embedFont(freeSerifFontBytes, {
-      subset: true
-    })
-    const linuxLibertineFont = await pdfDoc.embedFont(linuxLibertineFontBytes, {
-      subset: true
-    })
-
-    let fonts = {  'FreeSerif': freeSerifFont, 'Linux Libertine': linuxLibertineFont}
-
-    let pdfRenderer = new PdfRenderer( {
-      pdfDocument: pdfDoc,
-      fonts: fonts,
-      defaultPageHeight: this.pageHeight
-    })
-
-    pdfRenderer.renderDocument(this.currentTypesetDocument)
-    document.getElementById('pdfFrame').src = await pdfDoc.saveAsBase64({ dataUri: true });
+    // const pdfDoc = await PDFLib.PDFDocument.create();
+    // pdfDoc.registerFontkit(fontkit)
+    // if (freeSerifFontBytes === null) {
+    //   console.log(`Fetching FreeSerif font`)
+    //   freeSerifFontBytes = await fetch(freeSerifFontUrl).then( res => res.arrayBuffer())
+    // }
+    // if (linuxLibertineFontBytes === null) {
+    //   console.log(`Fetching LinuxLibertine font`)
+    //   linuxLibertineFontBytes = await fetch(linuxLibertineFontUrl).then( res => res.arrayBuffer())
+    // }
+    //
+    // const freeSerifFont = await pdfDoc.embedFont(freeSerifFontBytes, {
+    //   subset: true
+    // })
+    // const linuxLibertineFont = await pdfDoc.embedFont(linuxLibertineFontBytes, {
+    //   subset: true
+    // })
+    //
+    // let fonts = {  'FreeSerif': freeSerifFont, 'Linux Libertine': linuxLibertineFont}
+    //
+    // let pdfRenderer = new PdfRenderer( {
+    //   pdfDocument: pdfDoc,
+    //   fonts: fonts,
+    //   defaultPageHeight: this.pageHeight
+    // })
+    //
+    // pdfRenderer.renderDocument(this.currentTypesetDocument)
+    // document.getElementById('pdfFrame').src = await pdfDoc.saveAsBase64({ dataUri: true });
 
   }
 }

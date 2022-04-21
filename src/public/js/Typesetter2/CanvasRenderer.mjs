@@ -60,7 +60,10 @@ export class CanvasRenderer extends TypesetterRenderer {
     let [shiftX, shiftY] = this.getDeviceCoordinates(textBoxItem.getShiftX(), textBoxItem.getShiftY())
     let [,textBoxHeight] = this.getDeviceCoordinates(0, textBoxItem.getHeight())
     let [, fontSize] = this.getDeviceCoordinates(0, textBoxItem.getFontSize())
-    this.ctx.font = `${fontSize}px ${textBoxItem.getFontFamily()}`
+    let fontWeight = textBoxItem.getFontWeight() === '' ? 'normal' : textBoxItem.getFontWeight()
+    let fontStyle = textBoxItem.getFontStyle() === '' ? 'normal' : textBoxItem.getFontStyle()
+    let fontVariant = 'normal'
+    this.ctx.font = `${fontStyle} ${fontVariant} ${fontWeight} ${fontSize}px ${textBoxItem.getFontFamily()} `
     this.ctx.fillStyle = '#000000'
     this.ctx.fillText(textBoxItem.getText(), x + shiftX,
       y +shiftY + textBoxHeight)

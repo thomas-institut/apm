@@ -116,6 +116,24 @@ export class TextBox extends Box {
     return this.fontFamily
   }
 
+  getFontWeight() {
+    return this.fontWeight
+  }
+
+  setFontWeight(weight) {
+    this.fontWeight = weight
+    return this
+  }
+
+  getFontStyle() {
+    return this.fontStyle
+  }
+
+  setFontStyle(style) {
+    this.fontStyle = style
+    return this
+  }
+
 
   setFontFamily(fontFamily) {
     this.fontFamily = fontFamily

@@ -20,28 +20,29 @@
         }
 
         div#dataInput {
-            width: 400px;
-        }
-
-        div#result {
-            margin-left: 20px;
-        }
-
-        div#canvas-wrap {
-            width: 800px;
             height: 800px;
             overflow: scroll;
         }
 
-        #pdfFrame {
-            width: 600px;
-            height: 95%;
+        div#result {
         }
+
+        div#canvas-wrap {
+            height: 750px;
+            overflow: scroll;
+            background: #fcfaf7;
+        }
+
+        /*#pdfFrame {*/
+        /*    width: 600px;*/
+        /*    height: 95%;*/
+        /*}*/
 
         div#docJson {
             font-family: monospace;
             font-size: 0.8rem;
-            white-space: pre;
+            height: 750px;
+            overflow: scroll;
         }
 
         .typesetPage {
@@ -60,8 +61,8 @@
 <body>
     <h1>Typesetter2 Playground</h1>
     <p>Seeing the (new) typesetter in action!</p>
-    <div id="mainRow">
-        <div id="dataInput">
+    <div id="mainRow" class="row">
+        <div id="dataInput" class="col-3">
             <div class="form-group">
                 <label for="textToTypesetTextArea">Text To Typeset:</label>
                 <textarea class="form-control" id="textToTypesetTextArea" rows="10"></textarea>
@@ -121,28 +122,25 @@
                     <label for="marginRight">Right</label><input type="text" class="form-control" id="marginRight">
                 </div>
             </div>
-<!--            <div class="form-group">-->
-<!--                <label><small>Note: 1cm = 37.8px</small></label>-->
-<!--            </div>-->
-
 
 
         </div>
-        <div id="result">
+        <div id="result" class="col-6">
             <div class="tb">Zoom: <span id="zoom-label">xx</span><button id="zoom-out-btn"  title="Zoom Out">-</button> <button id="zoom-in-btn"  title="Zoom In">+</button></div>
             <div id="canvas-wrap">
                 <canvas class="typesetPage" id="theCanvas"></canvas>
             </div>
         </div>
-        <div id="pdf">
-            <iframe id="pdfFrame"></iframe>
+        <div id="jsonDiv" class="col-3">
+            <p>JSON:</p>
+            <div id="docJson">
+            </div>
         </div>
 
-    </div>
-    <div id="secondRow">
-        <div id="docJson">
+<!--        <div id="pdf">-->
+<!--            <iframe id="pdfFrame"></iframe>-->
+<!--        </div>-->
 
-        </div>
     </div>
 </body>
 </html>

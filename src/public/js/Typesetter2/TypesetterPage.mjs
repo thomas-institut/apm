@@ -16,7 +16,7 @@
  *
  */
 
-import { ObjectWithMetadata } from './ObjectWithMetadata.mjs'
+import { TypesetterObject } from './TypesetterObject.mjs'
 import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
 import { ObjectFactory } from './ObjectFactory.mjs'
 import { TypesetterItem } from './TypesetterItem.mjs'
@@ -31,7 +31,7 @@ import { TypesetterItem } from './TypesetterItem.mjs'
  * TODO: consider turning TypesetterPage into an extension of ItemList since it
   * is essentially just a list of items with width and height
  */
-export class TypesetterPage extends ObjectWithMetadata {
+export class TypesetterPage extends TypesetterObject {
 
   /**
    *
@@ -67,8 +67,8 @@ export class TypesetterPage extends ObjectWithMetadata {
     return obj
   }
 
-  setFromExportObject (object, mergeValues) {
-    super.setFromExportObject(object, mergeValues)
+  setFromObject (object, mergeValues) {
+    super.setFromObject(object, mergeValues)
     const template = {  width: 0, height: 0}
     this._copyValues(template, object, mergeValues)
     if (object['items'] !== undefined && Array.isArray(object['items'])) {

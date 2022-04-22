@@ -184,8 +184,8 @@ export class TextBox extends Box {
     return obj
   }
 
-  setFromExportObject (object, mergeValues) {
-    super.setFromExportObject(object, mergeValues)
+  setFromObject (object, mergeValues) {
+    super.setFromObject(object, mergeValues)
     const template = {
       text: '',
       fontFamily: defaultFontFamily,

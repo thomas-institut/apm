@@ -115,8 +115,8 @@ export class ItemList extends TypesetterItem {
     return obj
   }
 
-  setFromExportObject (object, mergeValues) {
-    super.setFromExportObject(object, mergeValues)
+  setFromObject (object, mergeValues) {
+    super.setFromObject(object, mergeValues)
     if (object['list'] !== undefined && Array.isArray(object['list'])) {
       this.list = []
       object['list'].forEach( (itemObject, i) => {

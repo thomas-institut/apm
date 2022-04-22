@@ -9,37 +9,37 @@ import { ItemList } from './ItemList.mjs'
 
 export class ObjectFactory {
 
-  static fromObject(exportObject) {
-    if (exportObject['class'] === undefined) {
+  static fromObject(object) {
+    if (object['class'] === undefined) {
       throw  new Error('Attempting to construct from an object without class field')
     }
-    switch(exportObject['class']) {
+    switch(object['class']) {
       case 'TypesetterDocument':
-        return (new TypesetterDocument()).setFromExportObject(exportObject, false)
+        return (new TypesetterDocument()).setFromObject(object, false)
 
       case 'TypesetterPage':
-        return (new TypesetterPage()).setFromExportObject(exportObject, false)
+        return (new TypesetterPage()).setFromObject(object, false)
 
       case 'TypesetterItem':
-        return (new TypesetterItem()).setFromExportObject(exportObject, false)
+        return (new TypesetterItem()).setFromObject(object, false)
 
       case 'Box':
-        return (new Box()).setFromExportObject(exportObject, false)
+        return (new Box()).setFromObject(object, false)
 
       case 'Glue':
-        return (new Glue()).setFromExportObject(exportObject, false)
+        return (new Glue()).setFromObject(object, false)
 
       case 'Penalty':
-        return (new Penalty()).setFromExportObject(exportObject, false)
+        return (new Penalty()).setFromObject(object, false)
 
       case 'TextBox':
-        return (new TextBox()).setFromExportObject(exportObject, false)
+        return (new TextBox()).setFromObject(object, false)
 
       case 'ItemList':
-        return (new ItemList()).setFromExportObject(exportObject, false)
+        return (new ItemList()).setFromObject(object, false)
 
       default:
-        throw new Error(`Unknown object class in exportObject: '${exportObject['class']}'`)
+        throw new Error(`Unknown object class in exportObject: '${object['class']}'`)
     }
   }
 }

@@ -27,10 +27,14 @@ import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { TypesetterPage } from './TypesetterPage.mjs'
 import { TextBoxMeasurer } from './TextBoxMeasurer.mjs'
 import { TypesetterDocument } from './TypesetterDocument.mjs'
+import { Box } from './Box.mjs'
 
 const signature = 'SimpleTypesetter 0.1'
 
-export const lineMetadataKey = 'SimpleTypesetterLine'
+export const paragraphNumberKey = 'paragraphNumber'
+export const lineNumberInParagraphKey = 'lineNumberInParagraph'
+export const lineNumberKey = 'lineNumber'
+export const lineRatioKey = 'lineRatio'
 
 export class SimpleTypesetter extends Typesetter2 {
   constructor (options) {
@@ -45,6 +49,7 @@ export class SimpleTypesetter extends Typesetter2 {
         marginLeft: { type: 'number', default: 50},
         marginRight: { type: 'number', default: 50},
         lineSkip: { type: 'number', default: 24},
+        parSkip: { type: 'number', default: 0},
         textBoxMeasurer: { type: 'object', objectClass: TextBoxMeasurer},
         debug: { type: 'boolean', default: false}
       }
@@ -71,6 +76,7 @@ export class SimpleTypesetter extends Typesetter2 {
           currentLine.pushItem(item)
           continue
         }
+
         if (item instanceof TextBox) {
           this.debug && console.log(`Processing text box at currentX = ${currentX}, text = '${item.getText()}'`)
           // Measure the text box before proceeding
@@ -97,6 +103,13 @@ export class SimpleTypesetter extends Typesetter2 {
           currentLine.pushItem(item)
           continue
         }
+        if (item instanceof Box) {
+          this.debug && console.log(`Processing box at currentX = ${currentX}`)
+          currentX += item.getWidth()
+          this.debug && console.log(`New currentX = ${currentX}`)
+          currentLine.pushItem(item)
+          continue
+        }
         if (item instanceof Penalty) {
           if (item.getPenalty() === MINUS_INFINITE) {
             // force line break
@@ -115,14 +128,11 @@ export class SimpleTypesetter extends Typesetter2 {
         return outputList
       }
       // add some metadata to the lines
-      let lineNumber = 1
+      let lineNumberInParagraph = 1
       lines = lines.map((line) => {
         return line.setHeight(line.getHeight())
       }).map( (line) => {
-        return line.addMetadata(lineMetadataKey, {
-          lineNumber: lineNumber++,
-          ratio: line.getWidth() / this.lineWidth
-        })
+        return line.addMetadata(lineNumberInParagraphKey, lineNumberInParagraph++).addMetadata(lineRatioKey, line.getWidth() / this.lineWidth)
       })
       // add inter-line glue
       outputList.pushItem(lines[0])
@@ -148,6 +158,9 @@ export class SimpleTypesetter extends Typesetter2 {
       let outputList = new ItemList(HORIZONTAL)
       let currentY = 0
       let currentVerticalList = new ItemList(VERTICAL)
+      if (list.hasMetadata('type')) {
+        currentVerticalList.addMetadata('type', list.getMetadata('type'))
+      }
       inputList.getList().forEach((item, i) => {
         if (item instanceof Glue) {
           currentY += item.getHeight()
@@ -184,31 +197,69 @@ export class SimpleTypesetter extends Typesetter2 {
     })
   }
 
-  typeset (list) {
-    if (list.getDirection() !== VERTICAL) {
+  typeset (mainTextList) {
+    if (mainTextList.getDirection() !== VERTICAL) {
       throw new Error(`Cannot typeset a non-vertical list`)
     }
     return new Promise ( async (resolve) => {
       let verticalListToTypeset = new ItemList(VERTICAL)
-      for (const verticalItem of list.getList()) {
+
+      let paragraphNumber = 0
+      for (const verticalItem of mainTextList.getList()) {
         if (verticalItem instanceof Glue) {
           verticalListToTypeset.pushItem(verticalItem)
           continue
         }
         if (verticalItem instanceof ItemList) {
           if (verticalItem.getDirection() === HORIZONTAL) {
-            this.debug && console.log(`Processing horizontal list`)
-            //this.debug && console.log(verticalItem)
-            let typesetItem = await this.typesetHorizontalList(verticalItem)
-            this.debug &&  console.log(`Typeset horizontal list`)
-            //this.debug &&  console.log(typesetItem)
-            typesetItem.getList().forEach((typesetItem) => {
+            this.debug && console.log(`Processing horizontal list, i.e., a paragraph`)
+            paragraphNumber++
+            let typesetParagraph = await this.typesetHorizontalList(verticalItem)
+            typesetParagraph.getList().forEach((typesetItem) => {
+              if (typesetItem instanceof ItemList) {
+                typesetItem.addMetadata(paragraphNumberKey, paragraphNumber)
+              }
               verticalListToTypeset.pushItem(typesetItem)
             })
           }
         }
       }
-      let pageList = await this.typesetVerticalList(verticalListToTypeset)
+      // add inter-paragraph glue
+      let gotLine = false
+      let previousLine = null
+      let verticalListToTypesetForReal = new ItemList(VERTICAL)
+      verticalListToTypesetForReal.addMetadata('type', 'MainText')
+      let lineNumber = 1
+      verticalListToTypeset.getList().forEach( (item) => {
+        if (item instanceof ItemList) {
+          item.addMetadata(lineNumberKey, lineNumber++)
+          if (gotLine) {
+            // one line after the other, add inter paragraph glue
+            console.log(`one line after the other, add inter paragraph glue`)
+            let interParagraphGlue = new Glue(TypesetterItemDirection.VERTICAL)
+            let lineHeight = item.getHeight()
+            interParagraphGlue.setHeight(this.lineSkip-lineHeight+this.options.parSkip).setWidth(this.lineWidth)
+            verticalListToTypesetForReal.pushItem(previousLine)
+            verticalListToTypesetForReal.pushItem(interParagraphGlue)
+            previousLine = item
+          } else {
+            // got a line after some glue
+            gotLine = true
+            previousLine = item
+          }
+        } else {
+          // glue
+          if (gotLine) {
+            verticalListToTypesetForReal.pushItem(previousLine)
+          }
+          gotLine = false
+          verticalListToTypesetForReal.pushItem(item)
+        }
+      })
+      if (gotLine) {
+        verticalListToTypesetForReal.pushItem(previousLine)
+      }
+      let pageList = await this.typesetVerticalList(verticalListToTypesetForReal)
       let doc = new TypesetterDocument()
       doc.addMetadata('typesetter', signature)
       doc.setPages(pageList.getList().map((pageItemList) => {

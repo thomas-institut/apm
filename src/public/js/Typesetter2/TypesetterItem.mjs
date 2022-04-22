@@ -17,7 +17,7 @@
  */
 
 import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
-import { ObjectWithMetadata } from './ObjectWithMetadata.mjs'
+import { TypesetterObject } from './TypesetterObject.mjs'
 
 /**
  * The base class for all typesetter items.
@@ -29,7 +29,7 @@ import { ObjectWithMetadata } from './ObjectWithMetadata.mjs'
  * the most common one being TextBox
  *
  */
-export class TypesetterItem extends ObjectWithMetadata {
+export class TypesetterItem extends TypesetterObject {
 
   constructor (direction = TypesetterItemDirection.UNDEFINED) {
     super()
@@ -188,8 +188,8 @@ export class TypesetterItem extends ObjectWithMetadata {
     return obj
   }
 
-  setFromExportObject (object, mergeValues) {
-    super.setFromExportObject(object, mergeValues)
+  setFromObject (object, mergeValues) {
+    super.setFromObject(object, mergeValues)
     const template = {  width: -1, height: -1, shiftX: 0, shiftY: 0, direction: TypesetterItemDirection.UNDEFINED}
     this._copyValues(template, object, mergeValues)
     return this

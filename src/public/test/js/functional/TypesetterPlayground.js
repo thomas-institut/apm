@@ -19,6 +19,7 @@ import { CanvasRenderer } from '../../../js/Typesetter2/CanvasRenderer.mjs'
 // import { PdfRenderer } from '../../../js/Typesetter2/PdfRenderer.mjs'
 import { TypesetterDocument } from '../../../js/Typesetter2/TypesetterDocument.mjs'
 import { TextBox } from '../../../js/Typesetter2/TextBox.mjs'
+import { Box } from '../../../js/Typesetter2/Box.mjs'
 
 const defaultPageWidth = Typesetter2.cm2px(14.8)
 const defaultPageHeight  = Typesetter2.cm2px(21)
@@ -258,6 +259,7 @@ class Playground {
     console.log(parsedPars)
     let ptt = parsedPars.map ( (parsedPar) => {
       let paragraphToTypeset = new ItemList(TypesetterItemDirection.HORIZONTAL)
+      paragraphToTypeset.pushItem( (new Box()).setWidth(16))  // indent
       parsedPar.forEach( (cmdObject) => {
         switch(cmdObject['cmd']) {
           case 'text':

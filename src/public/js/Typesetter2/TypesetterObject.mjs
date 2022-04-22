@@ -16,7 +16,7 @@
  *
  */
 
-export class ObjectWithMetadata {
+export class TypesetterObject {
 
   constructor () {
     /**
@@ -46,7 +46,7 @@ export class ObjectWithMetadata {
    * @param {object}object
    * @param {boolean}mergeValues
    */
-  setFromExportObject(object, mergeValues ) {
+  setFromObject(object, mergeValues ) {
     if (!mergeValues) {
       this.metadata = {}
     }

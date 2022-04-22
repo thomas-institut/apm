@@ -17,7 +17,7 @@
  */
 
 
-import { ObjectWithMetadata } from './ObjectWithMetadata.mjs'
+import { TypesetterObject } from './TypesetterObject.mjs'
 import { ObjectFactory } from './ObjectFactory.mjs'
 import { TypesetterItem } from './TypesetterItem.mjs'
 import { TypesetterPage } from './TypesetterPage.mjs'
@@ -26,7 +26,7 @@ import { TypesetterPage } from './TypesetterPage.mjs'
  * A typesetter document: an array of pages with metadata
  */
 
-export class TypesetterDocument extends ObjectWithMetadata {
+export class TypesetterDocument extends TypesetterObject {
   constructor () {
     super()
 
@@ -92,8 +92,8 @@ export class TypesetterDocument extends ObjectWithMetadata {
     return obj
   }
 
-  setFromExportObject (object, mergeValues) {
-    super.setFromExportObject(object, mergeValues)
+  setFromObject (object, mergeValues) {
+    super.setFromObject(object, mergeValues)
     const template = {  width: 0, height: 0}
     this._copyValues(template, object, mergeValues)
     if (object['pages'] !== undefined && Array.isArray(object['pages'])) {

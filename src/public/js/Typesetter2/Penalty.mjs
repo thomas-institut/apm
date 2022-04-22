@@ -98,8 +98,8 @@ export class Penalty extends TypesetterItem {
     return obj
   }
 
-  setFromExportObject (object, mergeValues)  {
-    super.setFromExportObject(object, mergeValues)
+  setFromObject (object, mergeValues)  {
+    super.setFromObject(object, mergeValues)
     // repeating width and height in the template so that they default to 0, not to -1 as in TypesetterItem
     const template = {  width: 0, height: 0, penalty: 0, flagged: false}
     this._copyValues(template, object, mergeValues)

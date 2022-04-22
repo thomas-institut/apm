@@ -26,32 +26,46 @@ if len(sys.argv) != 2:
 
 output_file_name = sys.argv[1]
 
+
 def px2pt(px):
     return px * 3 / 4
 
 
+def get_value(var, key, default_value):
+    if key in var.keys():
+        return var[key]
+    return default_value
+
+
+def print_item(context, x, y, the_item):
+    if the_item['class'] == 'ItemList':
+        print_item_list(context, x, y, the_item)
+    elif the_item['class'] == 'TextBox':
+        print_text_box(context, x, y, the_item)
+
+
 def print_item_list(context, x, y, the_list_item):
-    tmp_x = x + px2pt(the_list_item['shiftX'])
-    tmp_y = y + px2pt(the_list_item['shiftY'])
-    for item in the_list_item['list']:
-        if item['class'] == 'List':
-            print_item_list(context, tmp_x, tmp_y, item)
-        elif item['class'] == 'TextBox':
-            print_text_box(context, tmp_x, tmp_y, item)
+    tmp_x = x + px2pt(get_value(the_list_item, 'shiftX', 0))
+    tmp_y = y + px2pt(get_value(the_list_item, 'shiftY', 0))
+
+    for some_item in the_list_item['list']:
+        print_item(context, tmp_x, tmp_y, some_item)
         if the_list_item['direction'] == HORIZONTAL:
-            tmp_x += px2pt(item['width'])
+            tmp_x += px2pt(some_item['width'])
         else:
-            tmp_y += px2pt(item['height'])
+            tmp_y += px2pt(some_item['height'])
 
 
 def print_text_box(context, x, y, text_box):
+    shift_x = px2pt(get_value(text_box, 'shiftX', 0))
+    shift_y = px2pt(get_value(text_box, 'shiftY', 0))
     layout = PangoCairo.create_layout(context)
     desc = Pango.FontDescription()
     desc.set_family(text_box['fontFamily'])
     desc.set_absolute_size(px2pt(text_box['fontSize'])*Pango.SCALE)
     layout.set_font_description(desc)
     layout.set_text(text_box['text'])
-    context.move_to(x + px2pt(text_box['shiftX']), y + px2pt(text_box['shiftY']))
+    context.move_to(x + shift_x, y + shift_y)
     context.set_source_rgb(0, 0, 0)
     PangoCairo.show_layout(context, layout)
 
@@ -64,8 +78,8 @@ ctx_pdf = cairo.Context(surface_pdf)
 
 for page in doc['pages']:
     surface_pdf.set_size(px2pt(page['width']), px2pt(page['height']))
-    for item_list in page['lists']:
-        print_item_list(ctx_pdf, 0, 0, item_list)
+    for item in page['items']:
+        print_item(ctx_pdf, 0, 0, item)
     ctx_pdf.show_page()
 
 exit(1)

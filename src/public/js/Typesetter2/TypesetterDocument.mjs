@@ -18,6 +18,9 @@
 
 
 import { ObjectWithMetadata } from './ObjectWithMetadata.mjs'
+import { ObjectFactory } from './ObjectFactory.mjs'
+import { TypesetterItem } from './TypesetterItem.mjs'
+import { TypesetterPage } from './TypesetterPage.mjs'
 
 /**
  * A typesetter document: an array of pages with metadata
@@ -82,10 +85,30 @@ export class TypesetterDocument extends ObjectWithMetadata {
 
   getExportObject () {
     let obj = super.getExportObject()
-    obj.class = 'Document'
+    obj.class = 'TypesetterDocument'
     obj.width = this.width
     obj.height = this.height
     obj.pages = this.pages.map( (page) => { return page.getExportObject()})
     return obj
+  }
+
+  setFromExportObject (object, mergeValues) {
+    super.setFromExportObject(object, mergeValues)
+    const template = {  width: 0, height: 0}
+    this._copyValues(template, object, mergeValues)
+    if (object['pages'] !== undefined && Array.isArray(object['pages'])) {
+      this.pages = []
+      object['pages'].forEach( (pageObject, i) => {
+        let newPage = ObjectFactory.fromObject(pageObject)
+        if (newPage instanceof TypesetterPage) {
+          this.pages.push(newPage)
+        } else {
+          console.error(`Non typesetter page found at index ${i} in input object's pages field`)
+          console.log(pageObject)
+          throw new Error('Non typesetter item found trying to set from Object')
+        }
+      })
+    }
+    return this
   }
 }

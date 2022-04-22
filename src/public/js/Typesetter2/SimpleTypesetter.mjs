@@ -28,6 +28,8 @@ import { TypesetterPage } from './TypesetterPage.mjs'
 import { TextBoxMeasurer } from './TextBoxMeasurer.mjs'
 import { TypesetterDocument } from './TypesetterDocument.mjs'
 
+const signature = 'SimpleTypesetter 0.1'
+
 export const lineMetadataKey = 'SimpleTypesetterLine'
 
 export class SimpleTypesetter extends Typesetter2 {
@@ -208,9 +210,7 @@ export class SimpleTypesetter extends Typesetter2 {
       }
       let pageList = await this.typesetVerticalList(verticalListToTypeset)
       let doc = new TypesetterDocument()
-      doc.addMetadata('Typesetter', {
-        typesetter: 'SimpleTypesetter'
-      })
+      doc.addMetadata('typesetter', signature)
       doc.setPages(pageList.getList().map((pageItemList) => {
         pageItemList.setShiftX(this.options.marginLeft).setShiftY(this.options.marginTop)
         return new TypesetterPage(this.options.pageWidth, this.options.pageHeight,

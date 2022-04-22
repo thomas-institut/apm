@@ -16,7 +16,6 @@
  *
  */
 
-
 export class ObjectWithMetadata {
 
   constructor () {
@@ -33,26 +32,46 @@ export class ObjectWithMetadata {
    * @return {Object}
    */
   getExportObject() {
-    return {
-      class: 'Object',
-      metadata: this.metadata
+    let obj = {  class: 'TypesetterObject'}
+    if (Object.keys(this.metadata).length !== 0) {
+      obj.metadata = this.metadata
     }
+    return obj
   }
 
   /**
-   *
-   * @param {string}key
-   * @param {object}someObject
+   * Sets the object's values from an object
+   * if mergeValues is true, current values not given in the input object
+   * are preserved, otherwise default values will be used
+   * @param {object}object
+   * @param {boolean}mergeValues
    */
-  addMetadata(key, someObject) {
-    this.metadata[key] = someObject
+  setFromExportObject(object, mergeValues ) {
+    if (!mergeValues) {
+      this.metadata = {}
+    }
+    if (object['metadata'] !== undefined && typeof object === 'object' && !Array.isArray(object)) {
+      Object.keys(object).forEach( (key) => {
+        this.addMetadata(key, object[key])
+      })
+    }
     return this
   }
 
   /**
    *
    * @param {string}key
-   * @return {object}
+   * @param {object|string|number}someThing
+   */
+  addMetadata(key, someThing) {
+    this.metadata[key] = someThing
+    return this
+  }
+
+  /**
+   *
+   * @param {string}key
+   * @return {any}
    */
   getMetadata(key) {
     return this.metadata[key]
@@ -75,5 +94,22 @@ export class ObjectWithMetadata {
   hasMetadata(key) {
     return this.metadata.hasOwnProperty(key)
   }
+
+  /**
+   * Utility function to copy scalar values from an object
+   * @param {object}template
+   * @param {object}inputObject
+   * @param {boolean} mergeValues
+   * @protected
+   */
+  _copyValues(template, inputObject, mergeValues) {
+    Object.keys(template).forEach( (key) => {
+      let defaultValue = mergeValues ? this[key] : template[key]
+      this[key] = inputObject[key] !== undefined ? inputObject[key] : defaultValue
+    })
+  }
+
+
+
 
 }

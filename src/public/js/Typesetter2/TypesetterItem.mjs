@@ -178,9 +178,20 @@ export class TypesetterItem extends ObjectWithMetadata {
     obj.class = 'TypesetterItem'
     obj.width = this.width
     obj.height = this.height
-    obj.shiftX = this.shiftX
-    obj.shiftY = this.shiftY
+    if (this.shiftX !== 0) {
+      obj.shiftX = this.shiftX
+    }
+    if (this.shiftY !== 0){
+      obj.shiftY = this.shiftY
+    }
     obj.direction = this.direction
     return obj
+  }
+
+  setFromExportObject (object, mergeValues) {
+    super.setFromExportObject(object, mergeValues)
+    const template = {  width: -1, height: -1, shiftX: 0, shiftY: 0, direction: TypesetterItemDirection.UNDEFINED}
+    this._copyValues(template, object, mergeValues)
+    return this
   }
 }

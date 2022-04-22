@@ -58,7 +58,7 @@ export class TypesetterRenderer {
    * @param {number}pageIndex
    */
   renderPage(page, pageIndex = 0) {
-    page.getLists().forEach( (item) => {
+    page.getItems().forEach( (item) => {
       let [shiftX, shiftY] = this.getShiftForPageIndex(pageIndex)
       this.renderItem(item, shiftX, shiftY)
     })

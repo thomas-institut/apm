@@ -25,7 +25,7 @@
 import { TypesetterItem } from './TypesetterItem.mjs'
 import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
 import { Glue } from './Glue.mjs'
-import { pushArray } from '../toolbox/ArrayUtil.mjs'
+import { ObjectFactory } from './ObjectFactory.mjs'
 
 export class ItemList extends TypesetterItem {
 
@@ -87,7 +87,7 @@ export class ItemList extends TypesetterItem {
       return this.list.reduce( (acc, item) => { return acc + item.getWidth()}, 0)
     }
     // VERTICAL list: return the max width
-    return this.height.reduce( (acc, item) => { return Math.max(acc, item.getWidth())}, -1)
+    return this.list.reduce( (acc, item) => { return Math.max(acc, item.getWidth())}, -1)
   }
 
   setHeight (height) {
@@ -110,9 +110,27 @@ export class ItemList extends TypesetterItem {
 
   getExportObject () {
     let obj =  super.getExportObject()
-    obj.class = 'List'
+    obj.class = 'ItemList'
     obj.list = this.list.map( (item) => { return item.getExportObject()})
     return obj
+  }
+
+  setFromExportObject (object, mergeValues) {
+    super.setFromExportObject(object, mergeValues)
+    if (object['list'] !== undefined && Array.isArray(object['list'])) {
+      this.list = []
+      object['list'].forEach( (itemObject, i) => {
+        let newItem = ObjectFactory.fromObject(itemObject)
+        if (newItem instanceof TypesetterItem) {
+          this.pushItem(newItem)
+        } else {
+          console.error(`Non typesetter item found at index ${i} in input object's list field`)
+          console.log(itemObject)
+          throw new Error('Non typesetter item found trying to set from Object')
+        }
+      })
+    }
+    return this
   }
 
 }

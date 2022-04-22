@@ -17,15 +17,9 @@ class ApiSearch extends ApiController
 
     public function search(Request $request, Response $response): Response
     {
-//        $date = date("Y-M-d");
-//        $time = date("h:i:s");
 
         $keyword = $_POST['searchText'];
-//        $keyword = "'" . $keyword . "'";
         $now = TimeString::now();
-
-//        return $this->responseWithText($response,
-//            'Nothing found for ' . $keyword . ". " . 'Time is now: ' . $date . ', ' . $time . '.');
 
         return $this->responseWithJson($response, [  'searchString' => $keyword,  'results' => [], 'serverTime' => $now]);
     }

@@ -40,6 +40,7 @@ const defaultFonts = [ 'FreeSerif', 'Arial', 'GentiumBasic', 'Linux Libertine']
 
 const defaultFontSize = Typesetter2.pt2px(12)
 const defaultLineSkip = Typesetter2.pt2px(18)
+const defaultParSkip = 0
 
 const zoomSteps = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.25, 3.5, 3.75, 4]
 const defaultZoomStep = 3
@@ -73,6 +74,7 @@ class Playground {
     this._setupFontFamilyInput(this.fontFamilyInput, defaultFonts)
     this.fontSizeInput = $('#fontSize')
     this.lineSkipInput = $('#lineSkip')
+    this.parSkipInput = $('#parSkip')
     this.zoomOutButton = $('#zoom-out-btn')
     this.zoomInButton = $('#zoom-in-btn')
     this.zoomLabel = $('#zoom-label')
@@ -94,6 +96,7 @@ class Playground {
     this.marginBottom = defaultMarginBottom
     this.marginLeft = defaultMarginLeft
     this.lineSkip = defaultLineSkip
+    this.parSkip = defaultParSkip
     this._setFont(defaultFonts[0], defaultFontSize).then( () => {
       this._setInputFieldsFromCurrentValues()
       this.lastText = this.inputTextArea.val()
@@ -110,6 +113,7 @@ class Playground {
     this.fontFamilyInput.on('change', this.getOnChangeInputField())
     this.fontSizeInput.on('change', this.getOnChangeInputField())
     this.lineSkipInput.on('change', this.getOnChangeInputField())
+    this.parSkipInput.on('change', this.getOnChangeInputField())
 
     this.zoomInButton.on('click', this.__genOnClickZoomButton(true))
     this.zoomOutButton.on('click', this.__genOnClickZoomButton(false))
@@ -191,6 +195,7 @@ class Playground {
     this.fontFamilyInput.val(defaultFonts.indexOf(this.fontFamily))
     this.fontSizeInput.val(Typesetter2.px2pt(this.fontSize))
     this.lineSkipInput.val(Typesetter2.px2pt(this.lineSkip))
+    this.parSkipInput.val(Typesetter2.px2pt(this.parSkip))
   }
 
   _getDataFromInputFields() {
@@ -201,9 +206,10 @@ class Playground {
     this.marginLeft = this.__getPxDimensionFromInputField('cm',this.marginLeftInput, 0, this.pageWidth/2, defaultMarginLeft)
     this.marginRight = this.__getPxDimensionFromInputField('cm',this.marginRightInput, 0, this.pageWidth/2, defaultMarginRight)
     this.lineSkip = this.__getPxDimensionFromInputField('pt', this.lineSkipInput, 12, 72, 24)
+    this.parSkip = this.__getPxDimensionFromInputField('pt', this.parSkipInput, 0, 72, 0)
     return this._setFont(
       defaultFonts[this.fontFamilyInput.val()],
-      this.__getPxDimensionFromInputField('pt', this.fontSizeInput, 8, 36, 12)
+      this.__getPxDimensionFromInputField('pt', this.fontSizeInput, 8, 48, 12)
     )
 
    }
@@ -259,7 +265,7 @@ class Playground {
     console.log(parsedPars)
     let ptt = parsedPars.map ( (parsedPar) => {
       let paragraphToTypeset = new ItemList(TypesetterItemDirection.HORIZONTAL)
-      paragraphToTypeset.pushItem( (new Box()).setWidth(16))  // indent
+      paragraphToTypeset.pushItem( (new Box()).setWidth(Typesetter2.pt2px(this.fontSize))) // indent
       parsedPar.forEach( (cmdObject) => {
         switch(cmdObject['cmd']) {
           case 'text':
@@ -303,28 +309,15 @@ class Playground {
       return paragraphToTypeset
     })
 
-    // let parsToTypeset = paragraphTextArray.map( (paragraphText) => {
-    //   let words = paragraphText.split(' ')
-    //   let wordTextBoxes = words.map ( (word) => {
-    //     return TextBoxFactory.simpleText(word, { fontFamily: this.fontFamily, fontSize: this.fontSize})
-    //   })
-    //   let paragraphToTypeset = new ItemList(TypesetterItemDirection.HORIZONTAL)
-    //   wordTextBoxes.forEach( (textBox, i) => {
-    //     paragraphToTypeset.pushItem(textBox)
-    //     let glueToken = (new Glue()).setWidth(this.normalSpaceWidth)
-    //       .setStretch(this.normalSpaceStretch)
-    //       .setShrink(this.normalSpaceShrink)
-    //     if (i !== wordTextBoxes.length - 1) {
-    //       paragraphToTypeset.pushItem(glueToken)
-    //     }
-    //   })
-    //   return paragraphToTypeset
-    // })
+
     console.log('Paragraphs to typeset')
     console.log(ptt)
     let verticalListToTypeset = new ItemList(TypesetterItemDirection.VERTICAL)
     ptt.forEach( (parToTypeset) => {
       verticalListToTypeset.pushItem(parToTypeset)
+      if (this.parSkip > 0) {
+        verticalListToTypeset.pushItem( (new Glue(TypesetterItemDirection.VERTICAL)).setHeight(this.parSkip))
+      }
     })
     return verticalListToTypeset
   }

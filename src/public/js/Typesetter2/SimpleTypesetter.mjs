@@ -19,7 +19,6 @@
 import { Typesetter2 } from './Typesetter2.mjs'
 import { ItemList } from './ItemList.mjs'
 import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
-import { HORIZONTAL, VERTICAL } from './TypesetterItemDirection.mjs'
 import { Glue } from './Glue.mjs'
 import { TextBox } from './TextBox.mjs'
 import { MINUS_INFINITE, Penalty } from './Penalty.mjs'
@@ -28,13 +27,12 @@ import { TypesetterPage } from './TypesetterPage.mjs'
 import { TextBoxMeasurer } from './TextBoxMeasurer.mjs'
 import { TypesetterDocument } from './TypesetterDocument.mjs'
 import { Box } from './Box.mjs'
+import * as MetadataKey from './MetadataKey.mjs'
+import * as ListType from './ListType.mjs'
+import * as GlueType from './GlueType.mjs'
+import { deepCopy } from '../toolbox/Util.mjs'
 
 const signature = 'SimpleTypesetter 0.1'
-
-export const paragraphNumberKey = 'paragraphNumber'
-export const lineNumberInParagraphKey = 'lineNumberInParagraph'
-export const lineNumberKey = 'lineNumber'
-export const lineRatioKey = 'lineRatio'
 
 export class SimpleTypesetter extends Typesetter2 {
   constructor (options) {
@@ -49,15 +47,16 @@ export class SimpleTypesetter extends Typesetter2 {
         marginLeft: { type: 'number', default: 50},
         marginRight: { type: 'number', default: 50},
         lineSkip: { type: 'number', default: 24},
-        parSkip: { type: 'number', default: 0},
+        minLineSkip: { type: 'number', default: 3},
         textBoxMeasurer: { type: 'object', objectClass: TextBoxMeasurer},
-        debug: { type: 'boolean', default: false}
+        debug: { type: 'boolean', default: true}
       }
     })
     this.options = oc.getCleanOptions(options)
     this.lineWidth = this.options.pageWidth - this.options.marginLeft - this.options.marginRight
     this.textAreaHeight = this.options.pageHeight - this.options.marginTop - this.options.marginBottom
     this.lineSkip = this.options.lineSkip
+    this.minLineSkip = this.options.minLineSkip
     this.debug = this.options.debug
   }
 
@@ -132,16 +131,26 @@ export class SimpleTypesetter extends Typesetter2 {
       lines = lines.map((line) => {
         return line.setHeight(line.getHeight())
       }).map( (line) => {
-        return line.addMetadata(lineNumberInParagraphKey, lineNumberInParagraph++).addMetadata(lineRatioKey, line.getWidth() / this.lineWidth)
+        return line.addMetadata(MetadataKey.LINE_NUMBER_IN_PARAGRAPH, lineNumberInParagraph++)
+          .addMetadata(MetadataKey.LINE_RATIO, line.getWidth() / this.lineWidth)
+          .addMetadata(MetadataKey.LIST_TYPE, ListType.LINE)
       })
       // add inter-line glue
-      outputList.pushItem(lines[0])
-      for (let i = 1; i < lines.length; i++) {
-        let interLineGlue = new Glue(TypesetterItemDirection.VERTICAL)
-        let lineHeight = lines[i].getHeight()
-        interLineGlue.setHeight(this.lineSkip-lineHeight).setWidth(this.lineWidth)
-        outputList.pushItem(interLineGlue)
+      for (let i = 0; i < lines.length; i++) {
         outputList.pushItem(lines[i])
+        let interLineGlue = new Glue(TypesetterItemDirection.VERTICAL)
+        interLineGlue.addMetadata(MetadataKey.GLUE_TYPE, GlueType.INTER_LINE)
+        if (i !== lines.length -1) {
+          let nextLineHeight = lines[i+1].getHeight()
+          interLineGlue.setHeight(this.__getInterLineGlueHeight(nextLineHeight))
+            .setWidth(this.lineWidth)
+            .addMetadata(MetadataKey.INTER_LINE_GLUE_SET, true)
+        } else {
+          interLineGlue.setHeight(0)
+            .setWidth(this.lineWidth)
+            .addMetadata(MetadataKey.INTER_LINE_GLUE_SET, false)
+        }
+        outputList.pushItem(interLineGlue)
       }
       resolve(outputList)
     })
@@ -155,11 +164,11 @@ export class SimpleTypesetter extends Typesetter2 {
   typesetVerticalList (list) {
     return new Promise( async (resolve) => {
       let inputList = await super.typesetVerticalList(list)
-      let outputList = new ItemList(HORIZONTAL)
+      let outputList = new ItemList(TypesetterItemDirection.HORIZONTAL)
       let currentY = 0
-      let currentVerticalList = new ItemList(VERTICAL)
-      if (list.hasMetadata('type')) {
-        currentVerticalList.addMetadata('type', list.getMetadata('type'))
+      let currentVerticalList = new ItemList(TypesetterItemDirection.VERTICAL)
+      if (list.hasMetadata(MetadataKey.LIST_TYPE)) {
+        currentVerticalList.addMetadata(MetadataKey.LIST_TYPE, list.getMetadata(MetadataKey.LIST_TYPE))
       }
       inputList.getList().forEach((item, i) => {
         if (item instanceof Glue) {
@@ -168,7 +177,7 @@ export class SimpleTypesetter extends Typesetter2 {
           return
         }
         if (item instanceof ItemList) {
-          if (item.getDirection() !== HORIZONTAL) {
+          if (item.getDirection() === TypesetterItemDirection.VERTICAL) {
             console.warn(`Ignoring vertical list while typesetting a vertical list, item index ${i}`)
             console.log(item)
             return
@@ -178,7 +187,7 @@ export class SimpleTypesetter extends Typesetter2 {
             // new page!
             currentVerticalList.trimEndGlue()
             outputList.pushItem(currentVerticalList)
-            currentVerticalList = new ItemList(VERTICAL)
+            currentVerticalList = new ItemList(TypesetterItemDirection.VERTICAL)
             currentVerticalList.pushItem(item)
             currentY = item.getHeight()
           } else {
@@ -198,68 +207,46 @@ export class SimpleTypesetter extends Typesetter2 {
   }
 
   typeset (mainTextList) {
-    if (mainTextList.getDirection() !== VERTICAL) {
+    if (mainTextList.getDirection() !== TypesetterItemDirection.VERTICAL) {
       throw new Error(`Cannot typeset a non-vertical list`)
     }
     return new Promise ( async (resolve) => {
-      let verticalListToTypeset = new ItemList(VERTICAL)
+      let verticalListToTypeset = new ItemList(TypesetterItemDirection.VERTICAL)
 
       let paragraphNumber = 0
       for (const verticalItem of mainTextList.getList()) {
         if (verticalItem instanceof Glue) {
-          verticalListToTypeset.pushItem(verticalItem)
+          if (verticalItem.getDirection() === TypesetterItemDirection.VERTICAL) {
+            verticalListToTypeset.pushItem(verticalItem)
+          } else {
+            console.warn(`${signature}: ignoring horizontal glue while building main text vertical list`)
+          }
           continue
         }
         if (verticalItem instanceof ItemList) {
-          if (verticalItem.getDirection() === HORIZONTAL) {
+          if (verticalItem.getDirection() === TypesetterItemDirection.HORIZONTAL) {
             this.debug && console.log(`Processing horizontal list, i.e., a paragraph`)
             paragraphNumber++
             let typesetParagraph = await this.typesetHorizontalList(verticalItem)
             typesetParagraph.getList().forEach((typesetItem) => {
               if (typesetItem instanceof ItemList) {
-                typesetItem.addMetadata(paragraphNumberKey, paragraphNumber)
+                typesetItem.addMetadata(MetadataKey.PARAGRAPH_NUMBER, paragraphNumber)
               }
               verticalListToTypeset.pushItem(typesetItem)
             })
           }
         }
       }
-      // add inter-paragraph glue
-      let gotLine = false
-      let previousLine = null
-      let verticalListToTypesetForReal = new ItemList(VERTICAL)
-      verticalListToTypesetForReal.addMetadata('type', 'MainText')
-      let lineNumber = 1
-      verticalListToTypeset.getList().forEach( (item) => {
-        if (item instanceof ItemList) {
-          item.addMetadata(lineNumberKey, lineNumber++)
-          if (gotLine) {
-            // one line after the other, add inter paragraph glue
-            console.log(`one line after the other, add inter paragraph glue`)
-            let interParagraphGlue = new Glue(TypesetterItemDirection.VERTICAL)
-            let lineHeight = item.getHeight()
-            interParagraphGlue.setHeight(this.lineSkip-lineHeight+this.options.parSkip).setWidth(this.lineWidth)
-            verticalListToTypesetForReal.pushItem(previousLine)
-            verticalListToTypesetForReal.pushItem(interParagraphGlue)
-            previousLine = item
-          } else {
-            // got a line after some glue
-            gotLine = true
-            previousLine = item
-          }
-        } else {
-          // glue
-          if (gotLine) {
-            verticalListToTypesetForReal.pushItem(previousLine)
-          }
-          gotLine = false
-          verticalListToTypesetForReal.pushItem(item)
-        }
-      })
-      if (gotLine) {
-        verticalListToTypesetForReal.pushItem(previousLine)
-      }
-      let pageList = await this.typesetVerticalList(verticalListToTypesetForReal)
+      // this.debug && console.log(`Finished assembling vertical list to typeset`)
+      // this.debug && console.log(deepCopy(verticalListToTypeset))
+      // set any interLine glue that still unset and add absolute line numbers
+      verticalListToTypeset = this.__fixInterLineGlue(verticalListToTypeset)
+      // this.debug && console.log(`Finished fixing inter line glue`)
+      // this.debug && console.log(deepCopy(verticalListToTypeset))
+      verticalListToTypeset = this.__addAbsoluteLineNumbers(verticalListToTypeset)
+      verticalListToTypeset.addMetadata(MetadataKey.LIST_TYPE, ListType.MAIN_TEXT)
+
+      let pageList = await this.typesetVerticalList(verticalListToTypeset)
       let doc = new TypesetterDocument()
       doc.addMetadata('typesetter', signature)
       doc.setPages(pageList.getList().map((pageItemList) => {
@@ -271,5 +258,81 @@ export class SimpleTypesetter extends Typesetter2 {
       resolve(doc)
     })
   }
+
+  __addAbsoluteLineNumbers(verticalList) {
+    let outputList = new ItemList(TypesetterItemDirection.VERTICAL)
+    let lineNumber = 0
+    verticalList.getList().forEach( (item) => {
+      if (item instanceof ItemList
+        && item.hasMetadata(MetadataKey.LIST_TYPE)
+        && item.getMetadata(MetadataKey.LIST_TYPE) === ListType.LINE) {
+        lineNumber++
+        item.addMetadata(MetadataKey.LINE_NUMBER, lineNumber)
+      }
+      outputList.pushItem(item)
+    })
+    return outputList
+  }
+
+  /**
+   *
+   * @param verticalList
+   * @return ItemList
+   * @private
+   */
+  __fixInterLineGlue(verticalList) {
+    this.debug && console.log(`Fixing inter line glue`)
+    let outputList = new ItemList(TypesetterItemDirection.VERTICAL)
+    let state = 0
+    let currentInterLineGlue = null
+    let tmpItems = []
+    verticalList.getList().forEach((item, i) => {
+      switch (state) {
+        case 0:
+          if (item.hasMetadata(MetadataKey.GLUE_TYPE)
+            && item.getMetadata(MetadataKey.GLUE_TYPE) === GlueType.INTER_LINE
+            && item.getMetadata(MetadataKey.INTER_LINE_GLUE_SET) === false
+          ) {
+            this.debug && console.log(`Item ${i} is inter line glue that is not set`)
+            currentInterLineGlue = item
+            state = 1
+          } else {
+            outputList.pushItem(item)
+          }
+          break
+
+        case 1:
+          if (item instanceof ItemList
+            && item.hasMetadata(MetadataKey.LIST_TYPE)
+            && item.getMetadata(MetadataKey.LIST_TYPE) === ListType.LINE) {
+
+            this.debug && console.log(`Got a line in state 1, setting inter line glue`)
+            let nextLineHeight = item.getHeight()
+            currentInterLineGlue.setHeight(this.__getInterLineGlueHeight(nextLineHeight))
+              .addMetadata(MetadataKey.INTER_LINE_GLUE_SET, true)
+            outputList.pushItem(currentInterLineGlue)
+            this.debug && console.log(`Pushing ${tmpItems.length} item(s) in temp stack to output list`)
+            outputList.pushItemArray(tmpItems)
+            outputList.pushItem(item)
+            tmpItems = []
+            currentInterLineGlue = null
+            state = 0
+          } else {
+            this.debug && console.log(`Saving item ${i} in temp stack`)
+            tmpItems.push(item)
+          }
+          break
+      }
+    })
+    outputList.pushItemArray(tmpItems)
+    return outputList
+  }
+
+  __getInterLineGlueHeight(nextLineHeight) {
+      return Math.max(this.minLineSkip, this.lineSkip - nextLineHeight)
+  }
+
+
+
 
 }

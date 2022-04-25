@@ -9,7 +9,7 @@ import * as TypesetterItemDirection from '../public/js/Typesetter2/TypesetterIte
 import {Glue} from '../public/js/Typesetter2/Glue.mjs'
 import { hrtime } from 'node:process';
 import { PangoMeasurerSocket } from './PangoMeasurerSocket.mjs'
-import { PangoMeasurerNodeGTK } from './PangoMeasurerNodeGTK.js'
+import { PangoMeasurerNodeGTK } from './PangoMeasurerNodeGTK.mjs'
 
 
 

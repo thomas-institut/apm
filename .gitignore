@@ -22,6 +22,8 @@ other/
 **/docs/
 .idea/
 __pycache__
+src/python/*.pdf
+src/node/output*.json
 
 
 

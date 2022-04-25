@@ -30,7 +30,6 @@ import { Box } from './Box.mjs'
 import * as MetadataKey from './MetadataKey.mjs'
 import * as ListType from './ListType.mjs'
 import * as GlueType from './GlueType.mjs'
-import { deepCopy } from '../toolbox/Util.mjs'
 
 const signature = 'SimpleTypesetter 0.1'
 
@@ -49,7 +48,7 @@ export class SimpleTypesetter extends Typesetter2 {
         lineSkip: { type: 'number', default: 24},
         minLineSkip: { type: 'number', default: 3},
         textBoxMeasurer: { type: 'object', objectClass: TextBoxMeasurer},
-        debug: { type: 'boolean', default: true}
+        debug: { type: 'boolean', default: false}
       }
     })
     this.options = oc.getCleanOptions(options)

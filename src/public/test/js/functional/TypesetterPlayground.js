@@ -135,7 +135,6 @@ class Playground {
   getOnChangeInputField() {
     return async () => {
       await this._getDataFromInputFields()
-      //await this.__typesetAndRender(this.lastText)
     }
   }
 
@@ -166,7 +165,6 @@ class Playground {
       }
 
       this.__setZoomStep(newZoomStep)
-
       this.__renderCanvas(this.currentTypesetDocument)
     }
   }
@@ -182,7 +180,6 @@ class Playground {
     input.html( fontArray.map( (fontName, i) => {
       return `<option value="${i}">${fontName}</option>`
     }))
-
   }
 
   _setInputFieldsFromCurrentValues() {
@@ -265,7 +262,7 @@ class Playground {
     console.log(parsedPars)
     let ptt = parsedPars.map ( (parsedPar) => {
       let paragraphToTypeset = new ItemList(TypesetterItemDirection.HORIZONTAL)
-      paragraphToTypeset.pushItem( (new Box()).setWidth(Typesetter2.pt2px(this.fontSize))) // indent
+      paragraphToTypeset.pushItem( (new Box()).setWidth(this.normalSpaceWidth*3)) // indent
       parsedPar.forEach( (cmdObject) => {
         switch(cmdObject['cmd']) {
           case 'text':
@@ -453,19 +450,21 @@ class Playground {
    */
   _typesetPlainText(plainText) {
     let verticalListToTypeset = this.__parsePlainText(plainText)
-
-    let ts = new SimpleTypesetter(
-      {
-        pageWidth: this.pageWidth,
-        pageHeight: this.pageHeight,
-        marginTop: this.marginTop,
-        marginBottom: this.marginBottom,
-        marginLeft: this.marginLeft,
-        marginRight: this.marginRight,
-        lineSkip: this.lineSkip,
-        textBoxMeasurer: this.textBoxMeasurer
-
-      })
+    let typesetterOptions = {
+      pageWidth: this.pageWidth,
+      pageHeight: this.pageHeight,
+      marginTop: this.marginTop,
+      marginBottom: this.marginBottom,
+      marginLeft: this.marginLeft,
+      marginRight: this.marginRight,
+      lineSkip: this.lineSkip,
+    }
+    $('#docJsonToTypeset').html(JSON.stringify({
+      options: typesetterOptions,
+      mainTextList: verticalListToTypeset.getExportObject()
+    }))
+    typesetterOptions.textBoxMeasurer =  this.textBoxMeasurer
+    let ts = new SimpleTypesetter(typesetterOptions)
     return ts.typeset(verticalListToTypeset)
   }
 

@@ -42,7 +42,14 @@
         div#docJson {
             font-family: monospace;
             font-size: 0.8rem;
-            height: 750px;
+            height: 300px;
+            overflow: scroll;
+        }
+
+        div#docJsonToTypeset {
+            font-family: monospace;
+            font-size: 0.8rem;
+            height: 300px;
             overflow: scroll;
         }
 
@@ -140,9 +147,10 @@
             </div>
         </div>
         <div id="jsonDiv" class="col-3">
-            <p>JSON:</p>
-            <div id="docJson">
-            </div>
+            <p>Data to typeset</p>
+            <div id="docJsonToTypeset"></div>
+            <p>Typeset JSON:</p>
+            <div id="docJson"></div>
         </div>
 
 <!--        <div id="pdf">-->

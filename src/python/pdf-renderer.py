@@ -63,6 +63,13 @@ def print_text_box(context, x, y, text_box):
     desc = Pango.FontDescription()
     desc.set_family(text_box['fontFamily'])
     desc.set_absolute_size(px2pt(text_box['fontSize'])*Pango.SCALE)
+    font_weight = get_value(text_box, 'fontWeight', '')
+    if font_weight == 'bold':
+        desc.set_weight(Pango.Weight.BOLD)
+
+    font_style = get_value(text_box, 'fontStyle', '')
+    if font_style == 'italic':
+        desc.set_style(Pango.Style.ITALIC)
     layout.set_font_description(desc)
     layout.set_text(text_box['text'])
     context.move_to(x + shift_x, y + shift_y)

@@ -38,24 +38,20 @@ let inputJson = fs.readFileSync(process.stdin.fd).toString()
 
 let data
 
+let info = { error: false, errorMsg: ''}
+
 try {
   data = JSON.parse(inputJson)
 }catch (e) {
-  console.log(`Error parsing input JSON, error: '${e.toString()}'`)
-  process.exit(0)
+  exitWithError(`Error parsing input JSON, error: '${e.toString()}'`)
 }
 
 if (data.options === undefined) {
-  console.log(`No options found in input`)
-  process.exit(0)
+  exitWithError(`No options found in input`)
 }
 
-// console.log(`Options`)
-// console.log(data.options)
-
 if (data.mainTextList === undefined) {
-  console.log(`No main text list found in input`)
-  process.exit(0)
+  exitWithError(`No main text list found in input`)
 }
 
 let mainTextList
@@ -63,8 +59,7 @@ let mainTextList
 try {
   mainTextList = ObjectFactory.fromObject(data.mainTextList)
 } catch (e) {
-  console.log(`Error building typesetter object from input main text list: '${e.toString()}'`)
-  process.exit(0)
+  exitWithError(`Error building typesetter object from input main text list: '${e.toString()}'`)
 }
 
 data.options.textBoxMeasurer = new PangoMeasurerNodeGTK()
@@ -73,18 +68,37 @@ let typesetterExec = new SimpleTypesetter(data.options)
 let start = hrtime.bigint()
 typesetterExec.typeset(mainTextList).then( (r) => {
   let end = hrtime.bigint()
-  console.log(`Typeset done in ${Number(end-start)/1000000} ms`)
+  info.stats = getStats()
+  info.stats.processingTime = Number(end-start)/1000000
   let exportData = JSON.stringify(r.getExportObject())
 
   fs.writeFile(outputFileName, exportData, err => {
     if (err) {
       console.log(`Error writing outfile: '${err}'`)
     }
-    process.exit(1)
+    exitNormally()
   })
 })
 
+function getStats() {
+  return {
+    measurer: 'PangoGtk',
+    measurerStats: data.options.textBoxMeasurer.getStats()
+  }
+}
 
+
+function exitWithError(errorMsg) {
+  info.error = true
+  info.errorMsg = errorMsg
+  console.log(JSON.stringify(info))
+  process.exit(0)
+}
+
+function exitNormally() {
+  console.log(JSON.stringify(info))
+  process.exit(1)
+}
 
 
 

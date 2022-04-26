@@ -19,6 +19,8 @@
 import { TextBoxMeasurer } from './TextBoxMeasurer.mjs'
 import { BrowserUtilities } from '../toolbox/BrowserUtilities.mjs'
 import { resolvedPromise } from '../toolbox/FunctionUtil.mjs'
+import { FontBaselineInfo } from './FontBaselineInfo.mjs'
+
 
 export class CanvasTextBoxMeasurer extends TextBoxMeasurer {
 
@@ -34,7 +36,7 @@ export class CanvasTextBoxMeasurer extends TextBoxMeasurer {
 
   getBoxHeight (token) {
     // TODO: change this to a better measurement
-    return resolvedPromise(token.fontSize)
+    return resolvedPromise(FontBaselineInfo.getBaseline(token.getFontFamily(), token.getFontSize()))
   }
 
   __getCanvas() {

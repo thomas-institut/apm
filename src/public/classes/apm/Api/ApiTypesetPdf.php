@@ -77,26 +77,43 @@ class ApiTypesetPdf extends ApiController
         $returnArray = [];
         $commandLine = "$typesetter $tempTypesetterOutputFileName <$tempTypesetterInputFileName";
 
-        // run renderer
+        // run typesetter
         exec($commandLine, $returnArray, $returnValue);
 
-        $this->logger->debug('Typesetter return', $returnArray);
 
         if ($returnValue !== 1) {
             $this->logger->debug('Typesetter error', [ 'array' => $returnArray, 'value' => $returnValue]);
             return [ 'status' => 'Error', 'error' => self::API_TYPESETTER_ERROR];
         }
+        $typesetterReturnData = [];
+        try {
+            $typesetterReturnData = json_decode($returnArray[0], true);
+        } catch (\Exception $e) {
+            $this->logger->debug("Bad Json returned by typesetter", [ 'array' => $returnArray, 'value' => $returnValue]);
+        }
+        $typesetterDuration = -1;
+        if (isset($typesetterReturnData['stats']['processingTime'])) {
+            $typesetterDuration = $typesetterReturnData['stats']['processingTime'];
+        }
 
         $typesetData = file_get_contents($tempTypesetterOutputFileName);
 
-        $result = $this->renderPdfFromJsonData($typesetData);
+        $result = $this->renderPdfFromJsonData($typesetData, 'ts', false);
         $this->profiler->stop();
+        $totalProcessingTime = $this->getProfilerTotalTime() * 1000;
         $this->logProfilerData($apiCall);
-        if ($result['status'] === 'Error') {
+        if ($result['status'] === 'error') {
             return $this->responseWithJson($response, ['error' => $result['error']], 409);
         }
-        $status = $result['cached'] ? 'OK (Cached)' : 'OK';
-        return $this->responseWithJson($response, [ 'status' => $status, 'url' => $result['url']]);
+        return $this->responseWithJson($response, [
+            'status' => 'OK',
+            'cached' => $result['cached'],
+            'url' => $result['url'],
+            'typesetDocument' => json_decode($typesetData, true),
+            'typesetterProcessingTime' => $typesetterDuration,
+            'pdfRenderingTime' => $totalProcessingTime - $typesetterDuration,
+            'totalProcessingTime' => $totalProcessingTime
+        ]);
     }
 
     private function saveDataToTempFile(string $tempFileName, string $data) : bool {
@@ -138,7 +155,7 @@ class ApiTypesetPdf extends ApiController
         $tempDir = $this->systemManager->getConfig()[ApmConfigParameter::PDF_RENDERER_TEMP_DIR];
         $tmpInputFileName =  $tempDir . '/' . self::TEMP_TYPESETTER_DATA_FILE_PREFIX .  $jsonDataHash . '.json';
         if (!$this->saveDataToTempFile($tmpInputFileName, $jsonData)) {
-            return [ 'status' => 'Error', 'error' => self::API_ERROR_CANNOT_CREATE_TEMP_FILE];
+            return [ 'status' => 'error', 'errorCode' => self::API_ERROR_CANNOT_CREATE_TEMP_FILE];
         }
 
         $renderer = $this->systemManager->getConfig()[ApmConfigParameter::PDF_RENDERER];
@@ -159,7 +176,7 @@ class ApiTypesetPdf extends ApiController
 
         if ($returnValue !== 1) {
             $this->logger->debug('PDF renderer error', [ 'array' => $returnArray, 'value' => $returnValue]);
-            return [ 'status' => 'Error', 'error' => self::API_ERROR_PDF_RENDERER_ERROR];
+            return [ 'status' => 'error', 'errorCode' => self::API_ERROR_PDF_RENDERER_ERROR];
         }
         return [ 'status' => 'OK', 'cached' => false,  'url' => $baseUrl . '/' . $fileToDownload];
     }
@@ -192,11 +209,14 @@ class ApiTypesetPdf extends ApiController
         $result = $this->renderPdfFromJsonData($inputData['typesetterData'], $pdfId, $useCache);
         $this->profiler->stop();
         $this->logProfilerData($apiCall);
-        if ($result['status'] === 'Error') {
-            return $this->responseWithJson($response, ['error' => $result['error']], 409);
+        if ($result['status'] === 'error') {
+            return $this->responseWithJson($response, ['error' => $result['errorCode']], 409);
         }
-        $status = $result['cached'] ? 'OK (Cached)' : 'OK';
-        return $this->responseWithJson($response, [ 'status' => $status, 'url' => $result['url']]);
+        return $this->responseWithJson($response, [
+            'status' =>  'OK',
+            'cached'=> $result['cached'],
+            'url' => $result['url']
+        ]);
     }
 
     public function convertSVGtoPDF(Request $request,  Response $response): Response

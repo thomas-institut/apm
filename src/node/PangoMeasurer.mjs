@@ -57,7 +57,7 @@ export class PangoMeasurer extends TextBoxMeasurer {
     return new Promise ( (resolve) => {
       this.__getPangoMeasurements(item).then ( (measurements) => {
         this.widthCache.set(cacheKey, measurements.width)
-        this.heightCache.set(cacheKey, measurements.height)
+        this.heightCache.set(cacheKey, measurements.baseline)
         console.log(measurements)
         resolve(measurements.height)
       })

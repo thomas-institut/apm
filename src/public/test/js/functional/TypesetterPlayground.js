@@ -296,6 +296,9 @@ class Playground {
           case 'i':
           case 'bi':
           case 'ib':
+          case 'large':
+          case 'x-large':
+          case 'small':
 
             let cleanArg = trimWhiteSpace(cmdObject['arg'])
             if (cleanArg !== '' ) {
@@ -314,6 +317,18 @@ class Playground {
                     case 'bi':
                     case 'ib':
                       item.setFontWeight('bold').setFontStyle('italic')
+                      break
+
+                    case 'large':
+                      item.setFontSize( item.getFontSize()*1.2)
+                      break
+
+                    case 'x-large':
+                      item.setFontSize( item.getFontSize()*1.5)
+                      break
+
+                    case 'small':
+                      item.setFontSize(item.getFontSize() * 0.8)
                       break
                   }
                 }
@@ -590,6 +605,7 @@ class Playground {
           })}
       ).done(
         apiResponse => {
+          console.log(apiResponse)
           resolve(apiResponse.url)
         }
       ).fail (

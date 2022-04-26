@@ -46,7 +46,7 @@ export class SimpleTypesetter extends Typesetter2 {
         marginLeft: { type: 'number', default: 50},
         marginRight: { type: 'number', default: 50},
         lineSkip: { type: 'number', default: 24},
-        minLineSkip: { type: 'number', default: 3},
+        minLineSkip: { type: 'number', default: 0},
         textBoxMeasurer: { type: 'object', objectClass: TextBoxMeasurer},
         debug: { type: 'boolean', default: false}
       }

@@ -78,8 +78,10 @@ class Playground {
     this.zoomOutButton = $('#zoom-out-btn')
     this.zoomInButton = $('#zoom-in-btn')
     this.zoomLabel = $('#zoom-label')
+    this.pdfFrame = $('#pdfFrame')
 
     this.typesetButton = $('#typeset-btn')
+    this.getPdfButton = $('#get-pdf-btn')
 
 
     this.canvas = document.getElementById('theCanvas')
@@ -88,6 +90,8 @@ class Playground {
     this.__setZoomStep(defaultZoomStep)
     this.textBoxMeasurer = new CanvasTextBoxMeasurer()
     this.currentTypesetDocument = new TypesetterDocument()
+    this.currentRawDataToTypeset = ''
+    this.pdfUpToDate = false
 
     this.pageWidth = defaultPageWidth
     this.pageHeight = defaultPageHeight
@@ -118,7 +122,26 @@ class Playground {
     this.zoomInButton.on('click', this.__genOnClickZoomButton(true))
     this.zoomOutButton.on('click', this.__genOnClickZoomButton(false))
 
+    this.getPdfButton.on('click', this.genOnClickGetPdf())
+
     this.urlGenerator = new ApmUrlGenerator(apmBaseUrl)
+  }
+
+  genOnClickGetPdf() {
+    return () => {
+      if (this.pdfUpToDate) {
+        return
+      }
+      this.getPdfButton.html('Loading...')
+      this.__getPdfDownloadURLFromServer(this.currentRawDataToTypeset).then( (url) => {
+        console.log(`PDF url: ${url}`)
+        this.__setPdfFrameUrl(url)
+        this.getPdfButton.html('Done')
+        this.pdfUpToDate = true
+      }).catch( (e) => {
+        console.log(`Error getting PDF ${e.toString()}`)
+      })
+    }
   }
 
 
@@ -459,13 +482,25 @@ class Playground {
       marginRight: this.marginRight,
       lineSkip: this.lineSkip,
     }
-    $('#docJsonToTypeset').html(JSON.stringify({
+    this.currentRawDataToTypeset = JSON.stringify({
       options: typesetterOptions,
       mainTextList: verticalListToTypeset.getExportObject()
-    }))
+    })
+    $('#docJsonToTypeset').html(this.currentRawDataToTypeset)
+    this.__emptyPdfFrame()
+    this.pdfUpToDate = false
+    this.getPdfButton.html('Get')
     typesetterOptions.textBoxMeasurer =  this.textBoxMeasurer
     let ts = new SimpleTypesetter(typesetterOptions)
     return ts.typeset(verticalListToTypeset)
+  }
+
+  __emptyPdfFrame() {
+    this.pdfFrame.attr('src', '')
+  }
+
+  __setPdfFrameUrl(url) {
+    this.pdfFrame.attr('src', url)
   }
 
   __renderCanvas(doc) {
@@ -499,11 +534,11 @@ class Playground {
 
     this.__renderCanvas(doc)
 
-    let startTime = window.performance.now()
-    let pdfUrl = await  this.__getPdfDownloadURLFromServer(jsonData)
-    let endTime = window.performance.now()
-    console.log(`PDF rendered in server in ${endTime-startTime}ms`)
-    console.log(pdfUrl)
+    // let startTime = window.performance.now()
+    // let pdfUrl = await  this.__getPdfDownloadURLFromServer(jsonData)
+    // let endTime = window.performance.now()
+    // console.log(`PDF rendered in server in ${endTime-startTime}ms`)
+    // console.log(pdfUrl)
 
 
     // PDF render
@@ -538,22 +573,20 @@ class Playground {
 
   }
 
-  __getPdfDownloadURLFromServer(jsonData) {
+  __getPdfDownloadURLFromServer(rawTypesetDataJson) {
 
-    let apiUrl = this.urlGenerator.apiConvertTypesetterData()
+    let apiUrl = this.urlGenerator.apiTypesetRaw()
 
     return new Promise( (resolve, reject) => {
-      if (jsonData === '') {
+      if (rawTypesetDataJson === '') {
         console.log('No data for PDF export')
         resolve('')
       }
-      console.log(`Calling export PDF API at ${apiUrl}`)
+      console.log(`Calling typeset API at ${apiUrl}`)
       $.post(
         apiUrl,
         {data: JSON.stringify({
-            pdfId: `ts-playground`,
-            noCache: true,
-            typesetterData: jsonData
+            jsonData: rawTypesetDataJson
           })}
       ).done(
         apiResponse => {

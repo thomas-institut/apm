@@ -59,7 +59,7 @@ use APM\Api\ApiPresets;
 use APM\Api\ApiEditionEngine;
 use APM\Api\ApiElements;
 use APM\Api\ApiCollationTableConversion;
-use APM\Api\ApiPdfConversion;
+use APM\Api\ApiTypesetPdf;
 use APM\Api\ApiWitness;
 
 use ThomasInstitut\Container\MinimalContainer;
@@ -391,12 +391,17 @@ $app->group('/api', function (RouteCollectorProxy $group){
 
     // PDF CONVERSION
     $group->post('/convert/svg2pdf',
-        ApiPdfConversion::class . ':convertSVGtoPDF')
+        ApiTypesetPdf::class . ':convertSVGtoPDF')
         ->setName('api.convert.svg2pdf');
 
     $group->post('/convert/ts2pdf',
-        ApiPdfConversion::class . ':convertTypesetterDataToPdf')
+        ApiTypesetPdf::class . ':convertTypesetterDataToPdf')
         ->setName('api.convert.ts2pdf');
+
+    // TYPESETTING
+    $group->post('/typeset/raw',
+        ApiTypesetPdf::class . ':typesetRawData')
+        ->setName('api.typeset.raw');
 
     //  PRESETS
 

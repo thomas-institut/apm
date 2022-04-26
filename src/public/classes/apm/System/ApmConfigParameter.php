@@ -57,6 +57,8 @@ class ApmConfigParameter
     const PDF_RENDERER = 'pdf-renderer';
     const PDF_RENDERER_TEMP_DIR = 'pdf-renderer_temp_dir';
 
+    const TYPESETTER = 'typesetter';
+
     const ERROR = 'error';
     const ERROR_MESSAGES = 'errorMsgs';
     const WARNINGS = 'warnings';

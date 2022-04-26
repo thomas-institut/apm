@@ -50,8 +50,8 @@ if (data.options === undefined) {
   process.exit(0)
 }
 
-console.log(`Options`)
-console.log(data.options)
+// console.log(`Options`)
+// console.log(data.options)
 
 if (data.mainTextList === undefined) {
   console.log(`No main text list found in input`)
@@ -80,6 +80,7 @@ typesetterExec.typeset(mainTextList).then( (r) => {
     if (err) {
       console.log(`Error writing outfile: '${err}'`)
     }
+    process.exit(1)
   })
 })
 

@@ -34,10 +34,10 @@
             background: #fcfaf7;
         }
 
-        /*#pdfFrame {*/
-        /*    width: 600px;*/
-        /*    height: 95%;*/
-        /*}*/
+        #pdfFrame {
+            width: 600px;
+            height: 95%;
+        }
 
         div#docJson {
             font-family: monospace;
@@ -70,7 +70,7 @@
     <h1>Typesetter2 Playground</h1>
     <p>Seeing the (new) typesetter in action!</p>
     <div id="mainRow" class="row">
-        <div id="dataInput" class="col-3">
+        <div id="dataInput" class="col-4">
             <div class="form-group">
                 <label for="textToTypesetTextArea">Text To Typeset:</label>
                 <textarea class="form-control" id="textToTypesetTextArea" rows="10"></textarea>
@@ -140,23 +140,27 @@
 
 
         </div>
-        <div id="result" class="col-6">
+        <div id="result" class="col-4">
             <div class="tb">Zoom: <span id="zoom-label">xx</span><button id="zoom-out-btn"  title="Zoom Out">-</button> <button id="zoom-in-btn"  title="Zoom In">+</button></div>
             <div id="canvas-wrap">
                 <canvas class="typesetPage" id="theCanvas"></canvas>
             </div>
         </div>
-        <div id="jsonDiv" class="col-3">
-            <p>Data to typeset</p>
-            <div id="docJsonToTypeset"></div>
-            <p>Typeset JSON:</p>
-            <div id="docJson"></div>
+
+
+        <div id="pdf" class="col-4">
+            <p>PDF (from server) <button id="get-pdf-btn">Get</button> <span id="pdf-status-span"></span></p>
+            <iframe id="pdfFrame"></iframe>
         </div>
 
-<!--        <div id="pdf">-->
-<!--            <iframe id="pdfFrame"></iframe>-->
-<!--        </div>-->
-
+    </div>
+    <div class="row">
+        <div id="jsonDiv" class="col-4">
+            <p>Data to typeset</p>
+            <div id="docJsonToTypeset"></div>
+            <p>Typeset JSON (typeset in browser):</p>
+            <div id="docJson"></div>
+        </div>
     </div>
 </body>
 </html>

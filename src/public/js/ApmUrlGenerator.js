@@ -85,6 +85,10 @@ class ApmUrlGenerator {
         return this.base + '/api/convert/ts2pdf'
     }
 
+    apiTypesetRaw() {
+        return this.base + '/api/typeset/raw'
+    }
+
     apiConvertCollationTable(tableId) {
         return `${this.base}/api/collation/convert/${tableId}`;
     }

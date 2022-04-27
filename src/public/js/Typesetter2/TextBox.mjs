@@ -156,6 +156,7 @@ export class TextBox extends Box {
   setFontSize(fontSize) {
     this.fontSize = fontSize
     this.resetMeasurements()
+    return this
   }
 
   /**

@@ -164,11 +164,14 @@ export class SimpleTypesetter extends Typesetter2 {
    * @private
    */
   __alignBaselines(line) {
+
     let lineHeight = line.getHeight()
+    //console.log(`Aligning base lines for line, line height = ${lineHeight}`)
     line.setList( line.getList().map( (item) => {
       if (item instanceof TextBox) {
         if (item.getHeight() < lineHeight) {
-          item.setShiftY(lineHeight - item.getHeight())
+          //console.log(`Adjusting shift for smaller text box in line, text '${item.getText()}'`)
+          item.setShiftY(lineHeight - item.getHeight() +item.shiftY)
         }
       }
       return item

@@ -299,6 +299,8 @@ class Playground {
           case 'large':
           case 'x-large':
           case 'small':
+          case 'sup':
+          case 'sub':
 
             let cleanArg = trimWhiteSpace(cmdObject['arg'])
             if (cleanArg !== '' ) {
@@ -329,6 +331,16 @@ class Playground {
 
                     case 'small':
                       item.setFontSize(item.getFontSize() * 0.8)
+                      break
+
+                    case 'sup':
+                      //console.log(`Creating superscript`)
+                      item.setFontSize(item.getFontSize() * 0.6).setShiftY(-0.6 * item.getFontSize())
+                      break
+
+                    case 'sub':
+                      let fs = item.getFontSize()
+                      item.setFontSize(item.getFontSize() * 0.6).setShiftY(0.3 * item.getFontSize())
                       break
                   }
                 }

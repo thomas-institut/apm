@@ -94,6 +94,7 @@ export class SimpleTypesetter extends Typesetter2 {
             // new line
             this.debug && console.log(`New line`)
             currentLine.trimEndGlue()
+            this.__alignBaselines(currentLine)
             lines.push(currentLine)
             currentLine = new ItemList(TypesetterItemDirection.HORIZONTAL)
             currentX = item.getWidth()
@@ -112,6 +113,7 @@ export class SimpleTypesetter extends Typesetter2 {
           if (item.getPenalty() === MINUS_INFINITE) {
             // force line break
             currentLine.trimEndGlue()
+            this.__alignBaselines(currentLine)
             lines.push(currentLine)
             currentX = 0
           }
@@ -119,6 +121,7 @@ export class SimpleTypesetter extends Typesetter2 {
       }
       currentLine.trimEndGlue()
       if (currentLine.getItemCount() !== 0) {
+        this.__alignBaselines(currentLine)
         lines.push(currentLine)
       }
       let outputList = new ItemList(TypesetterItemDirection.VERTICAL)
@@ -153,6 +156,23 @@ export class SimpleTypesetter extends Typesetter2 {
       }
       resolve(outputList)
     })
+  }
+
+  /**
+   *
+   * @param {ItemList} line
+   * @private
+   */
+  __alignBaselines(line) {
+    let lineHeight = line.getHeight()
+    line.setList( line.getList().map( (item) => {
+      if (item instanceof TextBox) {
+        if (item.getHeight() < lineHeight) {
+          item.setShiftY(lineHeight - item.getHeight())
+        }
+      }
+      return item
+    }))
   }
 
   /**

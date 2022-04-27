@@ -59,6 +59,7 @@ def print_item_list(context, x, y, the_list_item):
 def print_text_box(context, x, y, text_box):
     shift_x = px2pt(get_value(text_box, 'shiftX', 0))
     shift_y = px2pt(get_value(text_box, 'shiftY', 0))
+    # text_box_height = px2pt(get_value(text_box, 'height', 0))
     layout = PangoCairo.create_layout(context)
     desc = Pango.FontDescription()
     desc.set_family(text_box['fontFamily'])
@@ -72,6 +73,14 @@ def print_text_box(context, x, y, text_box):
         desc.set_style(Pango.Style.ITALIC)
     layout.set_font_description(desc)
     layout.set_text(text_box['text'])
+    # ink, logical = layout.get_extents()
+    # baseline = layout.get_baseline()/Pango.SCALE
+    # delta_y = 0
+    # if baseline != text_box_height:
+    #     delta_y = text_box_height - baseline
+    #     if delta_y != 0:
+    #         print("Found non-zero delta y: '", text_box['text'], "' : ", delta_y, "\n")
+
     context.move_to(x + shift_x, y + shift_y)
     context.set_source_rgb(0, 0, 0)
     PangoCairo.show_layout(context, layout)

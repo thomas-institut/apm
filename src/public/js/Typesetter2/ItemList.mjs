@@ -38,6 +38,16 @@ export class ItemList extends TypesetterItem {
     return this.list
   }
 
+  /**
+   *
+   * @param {TypesetterItem[]}newList
+   * @returns {ItemList}
+   */
+  setList(newList) {
+    this.list = newList
+    return this
+  }
+
   getItemCount() {
     return this.list.length
   }

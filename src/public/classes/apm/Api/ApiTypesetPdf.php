@@ -80,6 +80,7 @@ class ApiTypesetPdf extends ApiController
         // run typesetter
         exec($commandLine, $returnArray, $returnValue);
 
+        $this->logger->debug('Typesetter return', $returnArray);
 
         if ($returnValue !== 1) {
             $this->logger->debug('Typesetter error', [ 'array' => $returnArray, 'value' => $returnValue]);

@@ -34,6 +34,7 @@ export class PangoMeasurerNodeGTK extends PangoMeasurer {
     const surface = new Cairo.ImageSurface(Cairo.Format.RGB24, 300, 300)
     this.ctx = new Cairo.Context(surface)
     this.layout = PangoCairo.createLayout(this.ctx)
+    // this.debug = true
   }
 
   __measureText(text, fontDesc) {
@@ -41,16 +42,16 @@ export class PangoMeasurerNodeGTK extends PangoMeasurer {
     this.layout.setFontDescription(fd)
     this.layout.setText(text)
     let extents = this.layout.getExtents()
-    return {ink: extents[0], logical: extents[1]}
+    return {ink: extents[0], logical: extents[1], baseline: this.layout.getBaseline()}
   }
 
   __getPangoMeasurements (textBox) {
     let fontDesc = `${textBox.getFontFamily()} ${textBox.getFontWeight()} ${textBox.getFontStyle()} ${Typesetter2.px2pt(textBox.getFontSize())*measuringScale}`
-    // console.log(`Measuring '${textBox.getText()}' with font desc '${fontDesc}'`)
+    this.debug && console.log(`Measuring '${textBox.getText()}' with font desc '${fontDesc}'`)
     let extents = this.__measureText(textBox.getText(), fontDesc)
     let divisor = Pango.SCALE * measuringScale
-    let returnObject = { width: extents.logical.width/ divisor, height: extents.logical.height /divisor, baseline:this.layout.getBaseline() / divisor}
-    // console.log(returnObject)
+    let returnObject = { width: extents.logical.width/ divisor, height: extents.logical.height /divisor, baseline: extents.baseline / divisor}
+    this.debug && console.log(returnObject)
     return resolvedPromise(returnObject)
   }
 

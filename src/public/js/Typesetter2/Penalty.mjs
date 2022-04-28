@@ -19,8 +19,8 @@
 
 import { TypesetterItem } from './TypesetterItem.mjs'
 
-export const INFINITE = 1000
-export const MINUS_INFINITE = -1000
+export const INFINITE_PENALTY = 1000
+export const MINUS_INFINITE_PENALTY = -1000
 
 /**
  * A penalty value that helps typesetters decide whether the
@@ -80,11 +80,11 @@ export class Penalty extends TypesetterItem {
    * @return {Penalty}
    */
   setPenalty(penalty) {
-    if (penalty > INFINITE) {
-      penalty = INFINITE
+    if (penalty > INFINITE_PENALTY) {
+      penalty = INFINITE_PENALTY
     }
-    if (penalty < MINUS_INFINITE) {
-      penalty = MINUS_INFINITE
+    if (penalty < MINUS_INFINITE_PENALTY) {
+      penalty = MINUS_INFINITE_PENALTY
     }
     this.penalty = penalty
     return this
@@ -104,6 +104,11 @@ export class Penalty extends TypesetterItem {
     const template = {  width: 0, height: 0, penalty: 0, flagged: false}
     this._copyValues(template, object, mergeValues)
     return this
+  }
+
+  // Factory Methods
+  static createForcedBreakPenalty() {
+    return (new Penalty()).setPenalty(MINUS_INFINITE_PENALTY)
   }
 
 }

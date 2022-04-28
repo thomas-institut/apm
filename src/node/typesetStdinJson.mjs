@@ -26,7 +26,7 @@ import { hrtime } from 'node:process'
 
 import {ObjectFactory} from '../public/js/Typesetter2/ObjectFactory.mjs'
 import { PangoMeasurerNodeGTK } from './PangoMeasurerNodeGTK.mjs'
-import {SimpleTypesetter} from '../public/js/Typesetter2/SimpleTypesetter.mjs'
+import {BasicTypesetter} from '../public/js/Typesetter2/BasicTypesetter.mjs'
 
 if (process.argv.length < 3) {
   console.log(`Usage: node typesetStdinJson.mjs outputFileName`)
@@ -63,7 +63,7 @@ try {
 }
 
 data.options.textBoxMeasurer = new PangoMeasurerNodeGTK()
-let typesetterExec = new SimpleTypesetter(data.options)
+let typesetterExec = new BasicTypesetter(data.options)
 
 let start = hrtime.bigint()
 typesetterExec.typeset(mainTextList).then( (r) => {

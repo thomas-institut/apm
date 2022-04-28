@@ -21,7 +21,7 @@ import { ItemList } from './ItemList.mjs'
 import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
 import { Glue } from './Glue.mjs'
 import { TextBox } from './TextBox.mjs'
-import { MINUS_INFINITE, Penalty } from './Penalty.mjs'
+import { INFINITE_PENALTY, MINUS_INFINITE_PENALTY, Penalty } from './Penalty.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { TypesetterPage } from './TypesetterPage.mjs'
 import { TextBoxMeasurer } from './TextBoxMeasurer.mjs'
@@ -30,10 +30,13 @@ import { Box } from './Box.mjs'
 import * as MetadataKey from './MetadataKey.mjs'
 import * as ListType from './ListType.mjs'
 import * as GlueType from './GlueType.mjs'
+import { toFixedPrecision } from '../toolbox/Util.mjs'
 
-const signature = 'SimpleTypesetter 0.1'
+const signature = 'BasicTypesetter 0.1'
 
-export class SimpleTypesetter extends Typesetter2 {
+const INFINITE_BADNESS = 100000000
+
+export class BasicTypesetter extends Typesetter2 {
   constructor (options) {
     super()
     let oc = new OptionsChecker({
@@ -48,6 +51,7 @@ export class SimpleTypesetter extends Typesetter2 {
         lineSkip: { type: 'number', default: 24},
         minLineSkip: { type: 'number', default: 0},
         textBoxMeasurer: { type: 'object', objectClass: TextBoxMeasurer},
+        justify: { type: 'boolean', default: true},
         debug: { type: 'boolean', default: false}
       }
     })
@@ -59,84 +63,257 @@ export class SimpleTypesetter extends Typesetter2 {
     this.debug = this.options.debug
   }
 
+  /**
+   *
+   * @param {TypesetterItem[]}itemArray
+   * @param {number}desiredLineWidth
+   * @private
+   */
+  _calculateAdjustmentRatio(itemArray, desiredLineWidth) {
+    // this.debug && console.log(`Calculation adj ratio, desired LW = ${desiredLineWidth}`)
+    // this.debug && console.log( `on ${itemArray.length} items`)
+    let totalWidth = itemArray.map( (item) => {
+      return item.getWidth()
+    }).reduce( (total, x) => { return total+x}, 0)
+    // this.debug && console.log(`Total width: ${totalWidth}`)
+    if (desiredLineWidth === totalWidth) {
+      return 0
+    }
+    if (totalWidth < desiredLineWidth) {
+      // short line
+      let totalGlueStretch = itemArray.map( (item) => {
+        if (item instanceof Glue) {
+          return item.getStretch()
+        }
+        return 0
+      }).reduce( (total, x) => { return total+x}, 0)
+      // this.debug && console.log(`total glue stretch = ${totalGlueStretch}`)
+      if (totalGlueStretch <=0) {
+        return null
+      }
+      return (desiredLineWidth - totalWidth)/totalGlueStretch
+    }
+    // long line
+    let totalGlueShrink = itemArray.map ( (item) => {
+      if (item instanceof Glue) {
+        return item.getShrink()
+      }
+      return 0
+    }).reduce( (total, x) => { return total+x}, 0)
+    // this.debug && console.log(`total glue shrink = ${totalGlueShrink}`)
+    if (totalGlueShrink <=0) {
+      return null
+    }
+    return (desiredLineWidth - totalWidth)/totalGlueShrink
+  }
+
+  _calculateBadnessForPenalty(itemArray, penalty) {
+    return this._calculateAdjustmentRatio(itemArray, this.lineWidth)+penalty
+  }
+
+  _calculateBadness(itemArray) {
+    let adjRatio = this._calculateAdjustmentRatio(itemArray, this.lineWidth)
+    if (adjRatio === null || adjRatio < -1) {
+      return INFINITE_BADNESS
+    }
+    let badness = 100*Math.pow( Math.abs(adjRatio), 3)
+    return badness > INFINITE_BADNESS ? INFINITE_BADNESS : badness
+  }
+
+  /**
+   * Determines line break points in an item array
+   * using the best-fit algorithm
+   * @param {TypesetterItem[]}itemArray
+   * @return {number[]}
+   * @private
+   */
+  _getBreakPoints(itemArray) {
+    this.debug && console.log(`Getting break points of a paragraph with ${itemArray.length} items`)
+    let breaks = []
+    let currentBadness = INFINITE_BADNESS
+    let currentLine = []
+    let currentBestBreakPoint = -1
+    itemArray.forEach( (item, i) => {
+      if (item instanceof Box) {
+        // this.debug && console.log(`Item ${i} is a Box, pushing it`)
+        currentLine.push(item)
+        return
+      }
+      if (item instanceof Penalty) {
+        // this.debug && console.log(`Item ${i} is a Penalty`)
+        let itemPenalty = item.getPenalty()
+        if (itemPenalty === MINUS_INFINITE_PENALTY) {
+          breaks.push(i)
+          currentLine=[]
+          return
+        }
+        if (currentLine.length !== 0 && itemPenalty < INFINITE_PENALTY) {
+          // tentative breaking point
+          let breakBadness = this._calculateBadnessForPenalty(currentLine, itemPenalty)
+          if (breakBadness > currentBadness) {
+            // we found a minimum, eject line
+            breaks.push(i)
+            currentLine=[]
+          } else {
+            currentBadness = breakBadness
+          }
+        }
+      }
+      // this.debug && console.log(`Item ${i} is Glue`)
+      // item is glue
+      if (itemArray[i-1] instanceof Box) {
+        // this.debug && console.log(`Previous item was a Box, so this is a tentative break point`)
+        // tentative break point
+        let breakBadness = this._calculateBadness(currentLine)
+        this.debug && console.log(`Badness breaking at ${i} is ${breakBadness}`)
+
+        if (breakBadness > currentBadness) {
+          // we found a minimum, eject line
+          this.debug && console.log(`...which is more than current badness (${currentBadness}), so insert a break at ${currentBestBreakPoint} `)
+          breaks.push(currentBestBreakPoint)
+          currentLine=[]
+          // this.debug && console.log(`Initializing next line`)
+          let j = currentBestBreakPoint
+          while (j <= i && !itemArray[j] instanceof Box ) {
+            // this.debug && console.log(`... skipping item ${j}, not a box`)
+            j++
+          }
+          while (j <=i) {
+            // this.debug && console.log(`...adding item ${j}`)
+            currentLine.push(itemArray[j])
+            j++
+          }
+
+          currentBadness = INFINITE_BADNESS
+          currentBestBreakPoint = -1
+        } else {
+           // this.debug && console.log(`...which is less or equal than current badness (${currentBadness}), so ${i} is the current best break point `)
+          currentBadness = breakBadness
+          currentBestBreakPoint = i
+          currentLine.push(item)
+        }
+      } else {
+
+        if (currentLine.length !== 0) {
+          // this.debug && console.log(`Pushing it to currentLine`)
+          currentLine.push(item)
+        }
+      }
+    })
+    return breaks
+  }
+
+  /**
+   * Gets an array of ItemList corresponding to each line from
+   * an item array and an array of break points.
+   * @param {TypesetterItem[]}itemArray
+   * @param {number[]}breakpoints
+   * @return {ItemList[]}
+   * @private
+   */
+  _getLinesFromBreakpoints(itemArray, breakpoints) {
+    let lines = []
+    let lineStartIndex = 0
+    breakpoints.forEach( (breakIndex) => {
+      let newLine = new ItemList(TypesetterItemDirection.HORIZONTAL)
+      while(!(itemArray[lineStartIndex] instanceof Box) && lineStartIndex < breakIndex) {
+        lineStartIndex++
+      }
+      for (let i = lineStartIndex; i < breakIndex; i++) {
+        newLine.pushItem(itemArray[i])
+      }
+      lines.push(newLine)
+      lineStartIndex = breakIndex
+    })
+    return lines
+  }
+
+
   typesetHorizontalList (list) {
     return new Promise( async (resolve) => {
       let inputList = await super.typesetHorizontalList(list)
-      this.debug && console.log(`Typesetting horizontal list, lineWidth = ${this.lineWidth}`)
-      let lines = []
-      let currentLine = new ItemList(TypesetterItemDirection.HORIZONTAL)
-      let currentX = 0
-      for (const item of inputList.getList()) {
-        if (item instanceof Glue) {
-          this.debug && console.log(`Processing glue at currentX = ${currentX}`)
-          currentX += item.getWidth()
-          this.debug && console.log(`New currentX = ${currentX}`)
-          currentLine.pushItem(item)
-          continue
-        }
+      this.debug && console.log(`Typesetting horizontal list, desired lineWidth = ${this.lineWidth}`)
 
-        if (item instanceof TextBox) {
-          this.debug && console.log(`Processing text box at currentX = ${currentX}, text = '${item.getText()}'`)
-          // Measure the text box before proceeding
-          if (item.getWidth() === -1) {
-            this.debug && console.log(`Getting text box width`)
-            let measuredWidth = await this.options.textBoxMeasurer.getBoxWidth(item)
-            item.setWidth(measuredWidth)
+      // First fit algorithm
+      // first, measure all text boxes
+      let itemArray = inputList.getList()
+      for (let i = 0; i < itemArray.length; i++) {
+        if (itemArray[i] instanceof  TextBox) {
+          if (itemArray[i].getWidth() === -1) {
+            //this.debug && console.log(`Getting text box width`)
+            let measuredWidth = await this.options.textBoxMeasurer.getBoxWidth(itemArray[i])
+            itemArray[i].setWidth(measuredWidth)
           }
-          if (item.getHeight() === -1) {
-            let measuredHeight = await this.options.textBoxMeasurer.getBoxHeight(item)
-            item.setHeight(measuredHeight)
-          }
-
-          currentX += item.getWidth()
-          this.debug && console.log(`New currentX = ${currentX}`)
-          if (currentX > this.lineWidth) {
-            // new line
-            this.debug && console.log(`New line`)
-            currentLine.trimEndGlue()
-            this.__alignBaselines(currentLine)
-            lines.push(currentLine)
-            currentLine = new ItemList(TypesetterItemDirection.HORIZONTAL)
-            currentX = item.getWidth()
-          }
-          currentLine.pushItem(item)
-          continue
-        }
-        if (item instanceof Box) {
-          this.debug && console.log(`Processing box at currentX = ${currentX}`)
-          currentX += item.getWidth()
-          this.debug && console.log(`New currentX = ${currentX}`)
-          currentLine.pushItem(item)
-          continue
-        }
-        if (item instanceof Penalty) {
-          if (item.getPenalty() === MINUS_INFINITE) {
-            // force line break
-            currentLine.trimEndGlue()
-            this.__alignBaselines(currentLine)
-            lines.push(currentLine)
-            currentX = 0
+          if (itemArray[i].getHeight() === -1) {
+            let measuredHeight = await this.options.textBoxMeasurer.getBoxHeight(itemArray[i])
+            itemArray[i].setHeight(measuredHeight)
           }
         }
       }
-      currentLine.trimEndGlue()
-      if (currentLine.getItemCount() !== 0) {
-        this.__alignBaselines(currentLine)
-        lines.push(currentLine)
+
+      let lineBreaks = this._getBreakPoints(itemArray)
+      // add a break at the end if there isn't one
+      if (lineBreaks[lineBreaks.length-1] !== itemArray.length -1) {
+        lineBreaks.push(itemArray.length -1)
       }
+      this.debug && console.log(`Break points:`)
+      this.debug && console.log(lineBreaks)
+      let lines = this._getLinesFromBreakpoints(itemArray, lineBreaks)
+      this.debug && console.log(`Lines:`)
+      this.debug && console.log(lines.map( (line) => {
+        return { text: line.getText(), data: line.metadata}
+      }))
+
+      // post-process lines
+      let lineNumberInParagraph = 1
+      lines = lines.map((line) => {
+        // add list type
+        line.addMetadata(MetadataKey.LIST_TYPE, ListType.LINE)
+
+        // add line number
+        line.addMetadata(MetadataKey.LINE_NUMBER_IN_PARAGRAPH, lineNumberInParagraph++)
+
+        // set height
+        line.setHeight(line.getHeight())
+
+        // align item baselines
+        let lineHeight = line.getHeight()
+        line.setList( line.getList().map( (item) => {
+          if (item instanceof TextBox) {
+            if (item.getHeight() < lineHeight) {
+              item.setShiftY(lineHeight - item.getHeight() +item.shiftY)
+            }
+          }
+          return item
+        }))
+
+        // adjust glue
+        let adjRatio = this._calculateAdjustmentRatio(line.getList(), this.lineWidth)
+        line.addMetadata(MetadataKey.ADJUSTMENT_RATIO, adjRatio)
+        let unadjustedLineWidth = line.getWidth()
+        line.addMetadata(MetadataKey.UNADJUSTED_LINE_WIDTH, toFixedPrecision(unadjustedLineWidth, 3))
+        if (adjRatio !== null) {
+          line.setList( line.getList().map( (item) => {
+            if (item instanceof Glue) {
+              if (adjRatio>=0) {
+                item.setWidth(item.getWidth() + adjRatio*item.getStretch())
+              } else {
+                item.setWidth(item.getWidth() + adjRatio*item.getShrink())
+              }
+            }
+            return item
+          }))
+        }
+        line.addMetadata(MetadataKey.LINE_RATIO, toFixedPrecision(line.getWidth() / unadjustedLineWidth, 3))
+
+        return line
+      })
+
       let outputList = new ItemList(TypesetterItemDirection.VERTICAL)
       if (lines.length === 0) {
         return outputList
       }
-      // add some metadata to the lines
-      let lineNumberInParagraph = 1
-      lines = lines.map((line) => {
-        return line.setHeight(line.getHeight())
-      }).map( (line) => {
-        return line.addMetadata(MetadataKey.LINE_NUMBER_IN_PARAGRAPH, lineNumberInParagraph++)
-          .addMetadata(MetadataKey.LINE_RATIO, line.getWidth() / this.lineWidth)
-          .addMetadata(MetadataKey.LIST_TYPE, ListType.LINE)
-      })
+
       // add inter-line glue
       for (let i = 0; i < lines.length; i++) {
         outputList.pushItem(lines[i])
@@ -156,26 +333,6 @@ export class SimpleTypesetter extends Typesetter2 {
       }
       resolve(outputList)
     })
-  }
-
-  /**
-   *
-   * @param {ItemList} line
-   * @private
-   */
-  __alignBaselines(line) {
-
-    let lineHeight = line.getHeight()
-    //console.log(`Aligning base lines for line, line height = ${lineHeight}`)
-    line.setList( line.getList().map( (item) => {
-      if (item instanceof TextBox) {
-        if (item.getHeight() < lineHeight) {
-          //console.log(`Adjusting shift for smaller text box in line, text '${item.getText()}'`)
-          item.setShiftY(lineHeight - item.getHeight() +item.shiftY)
-        }
-      }
-      return item
-    }))
   }
 
   /**

@@ -26,6 +26,9 @@ import { TypesetterItem } from './TypesetterItem.mjs'
 import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
 import { Glue } from './Glue.mjs'
 import { ObjectFactory } from './ObjectFactory.mjs'
+import { TextBox } from './TextBox.mjs'
+import { Box } from './Box.mjs'
+import { Penalty } from './Penalty.mjs'
 
 export class ItemList extends TypesetterItem {
 
@@ -117,6 +120,23 @@ export class ItemList extends TypesetterItem {
     return numItemsTrimmed
   }
 
+  getText() {
+    return this.getList().map( (item) => {
+      if (item instanceof  Glue) {
+        return ' '
+      }
+      if (item instanceof TextBox) {
+        return item.getText()
+      }
+      if (item instanceof Box) {
+        return `{B:${item.getWidth()}x${item.getHeight()}}`
+      }
+      if (item instanceof Penalty) {
+        return `{P:${item.getPenalty()}}`
+      }
+      return ''
+    }).join('')
+  }
 
   getExportObject () {
     let obj =  super.getExportObject()

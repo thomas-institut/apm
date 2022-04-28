@@ -19,6 +19,10 @@
 
 import { TypesetterItem } from './TypesetterItem.mjs'
 import * as TypesetterItemDirection from './TypesetterItemDirection.mjs'
+import * as MetadataKey from './MetadataKey.mjs'
+import * as GlueType from './GlueType.mjs'
+
+export const INFINITE_STRETCH = 100000
 
 /**
  * A Glue item with certain width and height that can
@@ -96,6 +100,13 @@ export class Glue extends TypesetterItem {
     const template = {  width: 0, height: 0, stretch: 0, shrink: 0}
     this._copyValues(template, object, mergeValues)
     return this
+  }
+
+
+  // Factory methods
+
+  static createLineFillerGlue() {
+    return ( new Glue()).setWidth(0).setStretch(INFINITE_STRETCH).addMetadata(MetadataKey.GLUE_TYPE, GlueType.LINE_FILLER)
   }
 
 }

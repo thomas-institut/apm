@@ -42,7 +42,7 @@ export class Typesetter2 {
    * In essence, splits a horizontal list into lines.
    *
    * Normally it is in this method that text boxes are measured so that
-   * line widths are respected and that later on the text boxes can
+   * line widths are respected and later on the text boxes can
    * be rendered correctly.
    *
    * @param {ItemList}list

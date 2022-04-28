@@ -26,3 +26,5 @@ export const INTER_LINE = 'interLine'
 export const INTER_PARAGRAPH = 'postParagraph'
 
 // Horizontal Glue
+
+export const LINE_FILLER = 'lineFiller'

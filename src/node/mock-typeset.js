@@ -1,7 +1,7 @@
 
 
 import {removeExtraWhiteSpace} from '../public/js/toolbox/Util.mjs'
-import {SimpleTypesetter} from '../public/js/Typesetter2/SimpleTypesetter.mjs'
+import {BasicTypesetter} from '../public/js/Typesetter2/BasicTypesetter.mjs'
 import { PangoMeasurer } from './PangoMeasurer.mjs'
 import { TextBoxFactory} from '../public/js/Typesetter2/TextBoxFactory.mjs'
 import { ItemList } from '../public/js/Typesetter2/ItemList.mjs'
@@ -143,7 +143,7 @@ function getVerticalListToTypeset() {
 
 
 let nodeGtkMeasurer = new PangoMeasurerNodeGTK()
-let typesetterExec = new SimpleTypesetter(
+let typesetterExec = new BasicTypesetter(
   {
     pageWidth: 500,
     pageHeight: 500,
@@ -169,7 +169,7 @@ typesetterExec.typeset(getVerticalListToTypeset()).then( (r) => {
 let pangoMeasurerSocket = new PangoMeasurerSocket()
 
 pangoMeasurerSocket.init().then( () => {
-  let typesetterSocket = new SimpleTypesetter(
+  let typesetterSocket = new BasicTypesetter(
     {
       pageWidth: 500,
       pageHeight: 500,

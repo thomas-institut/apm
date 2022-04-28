@@ -139,3 +139,13 @@ export function hashCodeInt32(str){
   return hash;
 }
 
+/**
+ *
+ * @param {number}someNumber
+ * @param {number}decimals
+ */
+export function toFixedPrecision(someNumber, decimals) {
+  let factor = Math.pow(10, decimals)
+  return Math.floor(someNumber*factor) / factor
+}
+

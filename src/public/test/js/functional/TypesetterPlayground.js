@@ -8,9 +8,9 @@ import { TextBoxFactory } from '../../../js/Typesetter2/TextBoxFactory.mjs'
 import { BrowserUtilities } from '../../../js/toolbox/BrowserUtilities.mjs'
 import { CanvasTextBoxMeasurer } from '../../../js/Typesetter2/CanvasTextBoxMeasurer.mjs'
 import { removeExtraWhiteSpace, trimWhiteSpace } from '../../../js/toolbox/Util.mjs'
-import { Glue } from '../../../js/Typesetter2/Glue.mjs'
+
 import { Typesetter2 } from '../../../js/Typesetter2/Typesetter2.mjs'
-import { SimpleTypesetter } from '../../../js/Typesetter2/SimpleTypesetter.mjs'
+import { BasicTypesetter } from '../../../js/Typesetter2/BasicTypesetter.mjs'
 import { ItemList } from '../../../js/Typesetter2/ItemList.mjs'
 import * as TypesetterItemDirection from '../../../js/Typesetter2/TypesetterItemDirection.mjs'
 import { CanvasRenderer } from '../../../js/Typesetter2/CanvasRenderer.mjs'
@@ -20,6 +20,8 @@ import { CanvasRenderer } from '../../../js/Typesetter2/CanvasRenderer.mjs'
 import { TypesetterDocument } from '../../../js/Typesetter2/TypesetterDocument.mjs'
 import { TextBox } from '../../../js/Typesetter2/TextBox.mjs'
 import { Box } from '../../../js/Typesetter2/Box.mjs'
+import { Glue} from '../../../js/Typesetter2/Glue.mjs'
+import { Penalty } from '../../../js/Typesetter2/Penalty.mjs'
 
 const defaultPageWidth = Typesetter2.cm2px(14.8)
 const defaultPageHeight  = Typesetter2.cm2px(21)
@@ -41,6 +43,9 @@ const defaultFonts = [ 'FreeSerif', 'Arial', 'GentiumBasic', 'Linux Libertine']
 const defaultFontSize = Typesetter2.pt2px(12)
 const defaultLineSkip = Typesetter2.pt2px(18)
 const defaultParSkip = 0
+
+const defaultSpaceStretchFactor = 1/6
+const defaultSpaceShrinkFactor = 1/3
 
 const zoomSteps = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.25, 3.5, 3.75, 4]
 const defaultZoomStep = 3
@@ -260,8 +265,8 @@ class Playground {
     this.fontSize = fontSize
     let spaceTextBox = TextBoxFactory.simpleText(' ', { fontFamily: this.fontFamily, fontSize: this.fontSize })
     this.normalSpaceWidth = await this.textBoxMeasurer.getBoxWidth(spaceTextBox)
-    this.normalSpaceStretch = this.normalSpaceWidth / 6
-    this.normalSpaceShrink = this.normalSpaceWidth / 9
+    this.normalSpaceStretch = this.normalSpaceWidth * defaultSpaceStretchFactor
+    this.normalSpaceShrink = this.normalSpaceWidth * defaultSpaceShrinkFactor
   }
 
   /**
@@ -334,12 +339,10 @@ class Playground {
                       break
 
                     case 'sup':
-                      //console.log(`Creating superscript`)
                       item.setFontSize(item.getFontSize() * 0.6).setShiftY(-0.6 * item.getFontSize())
                       break
 
                     case 'sub':
-                      let fs = item.getFontSize()
                       item.setFontSize(item.getFontSize() * 0.6).setShiftY(0.3 * item.getFontSize())
                       break
                   }
@@ -353,6 +356,8 @@ class Playground {
 
         }
       })
+      paragraphToTypeset.pushItem(Glue.createLineFillerGlue())
+      paragraphToTypeset.pushItem(Penalty.createForcedBreakPenalty())
       return paragraphToTypeset
     })
 
@@ -508,6 +513,7 @@ class Playground {
       marginLeft: this.marginLeft,
       marginRight: this.marginRight,
       lineSkip: this.lineSkip,
+      debug: true
     }
     this.currentRawDataToTypeset = JSON.stringify({
       options: typesetterOptions,
@@ -518,7 +524,7 @@ class Playground {
     this.pdfUpToDate = false
     this.getPdfButton.html('Get')
     typesetterOptions.textBoxMeasurer =  this.textBoxMeasurer
-    let ts = new SimpleTypesetter(typesetterOptions)
+    let ts = new BasicTypesetter(typesetterOptions)
     return ts.typeset(verticalListToTypeset)
   }
 

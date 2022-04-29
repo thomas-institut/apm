@@ -176,15 +176,21 @@ export class TypesetterItem extends TypesetterObject {
   getExportObject () {
     let obj =  super.getExportObject()
     obj.class = 'TypesetterItem'
-    obj.width = this.width
-    obj.height = this.height
+    if (this.width !== -1) {
+      obj.width = this.width
+    }
+    if (this.height !== -1) {
+      obj.height = this.height
+    }
     if (this.shiftX !== 0) {
       obj.shiftX = this.shiftX
     }
     if (this.shiftY !== 0){
       obj.shiftY = this.shiftY
     }
-    obj.direction = this.direction
+    if (this.direction !== TypesetterItemDirection.UNDEFINED) {
+      obj.direction = this.direction
+    }
     return obj
   }
 

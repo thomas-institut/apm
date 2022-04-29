@@ -957,7 +957,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "numericSort": () => (/* binding */ numericSort),
 /* harmony export */   "pushArray": () => (/* binding */ pushArray),
 /* harmony export */   "joinWithArray": () => (/* binding */ joinWithArray),
-/* harmony export */   "maxValue": () => (/* binding */ maxValue)
+/* harmony export */   "maxValue": () => (/* binding */ maxValue),
+/* harmony export */   "makeCopyOfArray": () => (/* binding */ makeCopyOfArray)
 /* harmony export */ });
 /*
  *  Copyright (C) 2020 Universität zu Köln
@@ -1098,6 +1099,18 @@ function joinWithArray(sourceArray, separator) {
 
 function maxValue(theArray) {
   return theArray.reduce( (currentMax, val) => { return Math.max(currentMax, val)})
+}
+
+/**
+ *
+ * @param {any[]}someArray
+ */
+function makeCopyOfArray(someArray) {
+  let newArray = []
+  for (let i = 0; i < someArray.length; i++) {
+    newArray.push(someArray[i])
+  }
+  return newArray
 }
 
 /***/ }),

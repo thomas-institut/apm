@@ -18,6 +18,7 @@
 
 
 import { TypesetterItem } from './TypesetterItem.mjs'
+import { ObjectFactory } from './ObjectFactory.mjs'
 
 export const INFINITE_PENALTY = 1000
 export const MINUS_INFINITE_PENALTY = -1000
@@ -49,11 +50,18 @@ export class Penalty extends TypesetterItem {
     this.flagged = false
 
     /**
-     * TODO: explain the meaning of width and height for Penalty items
+     * Item to insert if a break is inserted at this penalty
+     * e.g., a hyphen
+     * TODO: allow any box or list of boxes as an item to insert
+     * @type {TextBox|null}
+     */
+    this.itemToInsert = null
+
+    /**
+     * Width and height are meaningless for penalties
      */
     this.width = 0
     this.height = 0
-
   }
 
   isFlagged() {
@@ -62,11 +70,11 @@ export class Penalty extends TypesetterItem {
 
   /**
    *
-   * @param {boolean}flagged
+   * @param {boolean}flag
    * @return {Penalty}
    */
-  setFlagged(flagged) {
-    this.flagged = flagged
+  setFlag(flag) {
+    this.flagged = flag
     return this
   }
 
@@ -90,11 +98,59 @@ export class Penalty extends TypesetterItem {
     return this
   }
 
+  hasItemToInsert() {
+    return this.itemToInsert !== null
+  }
+
+  getItemToInsert() {
+    return this.itemToInsert
+  }
+
+  /**
+   *
+   * @param {TextBox}item
+   */
+  setItemToInsert(item) {
+    this.itemToInsert = item
+    return this
+  }
+
+  getItemToInsertWidth() {
+    if (!this.hasItemToInsert()) {
+      return 0
+    }
+    return this.itemToInsert.getWidth()
+  }
+
   getExportObject () {
     let obj =  super.getExportObject()
     obj.class = 'Penalty'
-    obj.penalty = this.penalty
-    obj.flagged = this.flagged
+    // including non-zero widths and heights
+    // just in case a hypothetical descendant
+    // of Penalty want to use them for anything
+    if (this.width !== 0) {
+      obj.width = this.width
+    } else {
+      // super.getExportObject() may have set it,
+      // but it's not needed
+      delete obj.width
+    }
+    if (this.height !== 0) {
+      obj.height = this.height
+    } else {
+      // super.getExportObject() may have set it,
+      // but it's not needed
+      delete obj.height
+    }
+    if (this.penalty !== 0) {
+      obj.penalty = this.penalty
+    }
+    if (this.flagged) {
+      obj.flagged = this.flagged
+    }
+    if (this.hasItemToInsert()) {
+      obj.itemToInsert =this.itemToInsert.getExportObject()
+    }
     return obj
   }
 
@@ -103,6 +159,11 @@ export class Penalty extends TypesetterItem {
     // repeating width and height in the template so that they default to 0, not to -1 as in TypesetterItem
     const template = {  width: 0, height: 0, penalty: 0, flagged: false}
     this._copyValues(template, object, mergeValues)
+    if (object.itemToInsert === undefined || object.itemToInsert === null) {
+      this.itemToInsert = null
+    } else {
+      this.itemToInsert = ObjectFactory.fromObject(object.itemToInsert)
+    }
     return this
   }
 

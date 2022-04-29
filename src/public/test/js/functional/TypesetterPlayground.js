@@ -292,10 +292,28 @@ class Playground {
       let paragraphToTypeset = new ItemList(TypesetterItemDirection.HORIZONTAL)
       paragraphToTypeset.pushItem( (new Box()).setWidth(this.normalSpaceWidth*3)) // indent
       parsedPar.forEach( (cmdObject) => {
+        let cleanArg = trimWhiteSpace(cmdObject['arg'])
         switch(cmdObject['cmd']) {
           case 'text':
             paragraphToTypeset.pushItemArray(this.__getItemsToTypesetFromString(cmdObject['arg']))
             break
+
+
+          case 'h': // optional hyphen
+            // console.log(`Adding optional hyphen`)
+            let hyphenPenalty = (new Penalty()).setPenalty(0)
+              .setFlag(true)
+              .setItemToInsert(TextBoxFactory.simpleText('-', { fontFamily: this.fontFamily, fontSize: this.fontSize}))
+            paragraphToTypeset.pushItem(hyphenPenalty)
+            break
+
+          case 'pen':
+            let penaltyValue = parseInt(cleanArg)
+            if (typeof penaltyValue === 'number') {
+              paragraphToTypeset.pushItem( (new Penalty()).setPenalty(penaltyValue))
+            }
+            break
+
 
           case 'b':
           case 'i':
@@ -307,7 +325,7 @@ class Playground {
           case 'sup':
           case 'sub':
 
-            let cleanArg = trimWhiteSpace(cmdObject['arg'])
+
             if (cleanArg !== '' ) {
               let items = this.__getItemsToTypesetFromString(cleanArg)
               items = items.map( (item) => {
@@ -513,7 +531,7 @@ class Playground {
       marginLeft: this.marginLeft,
       marginRight: this.marginRight,
       lineSkip: this.lineSkip,
-      debug: true
+      debug: false
     }
     this.currentRawDataToTypeset = JSON.stringify({
       options: typesetterOptions,

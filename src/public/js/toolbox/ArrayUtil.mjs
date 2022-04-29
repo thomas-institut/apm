@@ -138,3 +138,15 @@ export function joinWithArray(sourceArray, separator) {
 export function maxValue(theArray) {
   return theArray.reduce( (currentMax, val) => { return Math.max(currentMax, val)})
 }
+
+/**
+ *
+ * @param {any[]}someArray
+ */
+export function makeCopyOfArray(someArray) {
+  let newArray = []
+  for (let i = 0; i < someArray.length; i++) {
+    newArray.push(someArray[i])
+  }
+  return newArray
+}

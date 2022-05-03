@@ -21,11 +21,9 @@ class ApiSearch extends ApiController
     public function search(Request $request, Response $response): Response
     {
         $client = new Client();
-        $url = "http://google.de";
-        // $url = "http://localhost:5601/people";
-        $response = $client->get($url);
+        $url = "http://localhost:5601";
+        $response = $client->request('GET', $url, ['auth' => ['admin', 'admin']]);
 
-        echo $response->getBody();
 
         $keyword = $_POST['searchText'];
         $now = TimeString::now();

@@ -65,7 +65,7 @@ class Authenticator {
     /**
      * @var ContainerInterface
      */
-    private $container;
+    private ContainerInterface $container;
 
     /**
      * @var Logger
@@ -118,7 +118,7 @@ class Authenticator {
         $this->apiLogger = $this->logger->withName('AUTH-API');
         $this->siteLogger = $this->logger->withName('AUTH-SITE');
 
-        $this->debugMode = false;
+        $this->debugMode = true;
     }
 
     /**
@@ -162,7 +162,7 @@ class Authenticator {
         }
     }
 
-    public function authenticate(Request $request, RequestHandlerInterface $handler)
+    public function authenticate(Request $request, RequestHandlerInterface $handler): Response
     {
         session_start();
 
@@ -213,8 +213,7 @@ class Authenticator {
 
             $loginUrl = $this->router->urlFor('login');
             $this->logger->debug('Redirecting to ' . $loginUrl);
-            return $response->withHeader('Location',
-                    $loginUrl);
+            return $response->withHeader('Location', $loginUrl)->withStatus(302);
         }
     }
 
@@ -276,7 +275,7 @@ class Authenticator {
                     
                     $response = FigResponseCookies::set($response, $cookie);
                     return $response->withHeader('Location', 
-                            $this->router->urlFor('home'));
+                            $this->router->urlFor('home'))->withStatus(302);
                 }
                 else {
                     $this->siteLogger->notice('Wrong user/password', 

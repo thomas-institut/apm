@@ -49,7 +49,8 @@ fi
 mkdir "$TMP_DIR" || exit
 
 cp -R src/node "$TMP_DIR"
-cp -R src/python "TMP_DIR"
+cp -R src/python "$TMP_DIR"
+cp -R src/db "$TMP_DIR"
 
 mkdir "$TMP_DIR"/www || exit
 cp -R src/www/classes "$TMP_DIR"/www

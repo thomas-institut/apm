@@ -24,9 +24,9 @@ import process from 'node:process'
 import fs from 'node:fs'
 import { hrtime } from 'node:process'
 
-import {ObjectFactory} from '../public/js/Typesetter2/ObjectFactory.mjs'
+import {ObjectFactory} from '../www/js/Typesetter2/ObjectFactory.mjs'
 import { PangoMeasurerNodeGTK } from './PangoMeasurerNodeGTK.mjs'
-import {BasicTypesetter} from '../public/js/Typesetter2/BasicTypesetter.mjs'
+import {BasicTypesetter} from '../www/js/Typesetter2/BasicTypesetter.mjs'
 
 if (process.argv.length < 3) {
   console.log(`Usage: node typesetStdinJson.mjs outputFileName`)

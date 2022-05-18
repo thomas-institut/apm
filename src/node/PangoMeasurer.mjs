@@ -17,8 +17,8 @@
  */
 
 
-import { TextBoxMeasurer } from '../public/js/Typesetter2/TextBoxMeasurer.mjs'
-import {resolvedPromise} from '../public/js/toolbox/FunctionUtil.mjs'
+import { TextBoxMeasurer } from '../www/js/Typesetter2/TextBoxMeasurer.mjs'
+import {resolvedPromise} from '../www/js/toolbox/FunctionUtil.mjs'
 import {exec} from 'node:child_process'
 
 const pythonMeasurer =  '../python/text-measurer.py'

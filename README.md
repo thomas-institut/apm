@@ -5,8 +5,10 @@ It requires
 * PHP 7.4 with the following extensions enabled: xml, gd, mbstring, mysql, intl and zip
 * a running MySQL Server 5.7+ configured with a database 
 and a user with access to that database.
-* Java running environment, e.g., Open JDK  (Note: Open JDK11 should not be used; it emits 
+* Java running environment, e.g., Open JDK, which is required by Collatex  (Note: Open JDK11 should not be used; it emits 
 a deprecation warning that breaks Collatex normal output)
+* NodeJS 14+ 
+* Python3
 
 It has been developed and tested in an Ubuntu 20.04.3 server with standard packages.
 
@@ -14,7 +16,7 @@ It has been developed and tested in an Ubuntu 20.04.3 server with standard packa
 
 Besides the general requirements given above, development requires:
 
-* git 2.7.4
+* git 2.7.4+
 * an empty test database and a test user with access to it in MySQL
 * PHP xdebug extension (for code coverage)
 * PHP Composer 1.6.5+
@@ -25,22 +27,24 @@ Clone the repository from Github.
 
 Get all PHP dependencies with composer:
 ```bash
-cd src/public
+cd src/www
 composer update
 ```
 
-Get all Javascript dependencies with npm:
+Get all Javascript dependencies for the web app and nodeJS with npm:
 ```bash
-cd src/public
+cd src/www
+npm install
+cd ../node
 npm install
 ```
-Create a ``testconfig.php`` file under ``src/public/test/php/SiteMockup`` with the correct
+Create a ``testconfig.php`` file under ``src/www/test/php/SiteMockup`` with the correct
 test database credentials. 
 
 Perform all PHP tests: 
 
 ```bash
-cd src/public/test/php
+cd src/www/test/php
 ./phpunit .
 ```
 If the installation is correct, all tests should pass in the master branch. 
@@ -50,14 +54,14 @@ people's environments.
 
 To run the app in development:
 
-* Create a configuration file in ``src/public`` 
-(see ```src/public/config.sample.php```). Notice especially the location
+* Create a configuration file in ``src/www`` 
+(see ```src/www/config.sample.php```). Notice especially the location
 of the log file and the temporary directory for Collatex, these may have to 
 be created. For development purposes, you can use ``log/apm.log`` for the main
 log file and ``collatex/tmp`` for the collatex temporary directory as these
 are marked as ignored in .gitignore. You need to create them manually.
 * Create the database structure
-with the SQL script ```src/db/dbcreation.sql```. 
+with the SQL script ```/db/dbcreation.sql```. 
 * Run the PHP7.2 webserver with root in ```src```  Run:
 ```bash
 ./runphpwebserver
@@ -65,28 +69,13 @@ with the SQL script ```src/db/dbcreation.sql```.
 * Create at least one user in the system with root status using the 
   command line:
 ```bash
-cd src/public/utilities;
+cd src/www/utilities;
 ./createuser <someuser>
 ./makeroot <someuser>
 ```
-* Browse to http://localhost:8888/public
-
-
-Perform all Javascript tests:
-
-* Install the istanbul code coverage package globally (https://istanbul.js.org/) 
-```bash
-npm i nyc -g
-```
-* Before testing and after every change in the javascript code, generate Istanbul code coverage versions of javascript files
-```bash
-cd src/public/js/
-make test
-```
-* browse to http://localhost:8888/public/test/js/runtests.html
-
-These tests should also all pass in the master branch.
-
+* Browse to http://localhost:8888, the APM should be functional.
+* Perform all JS web tests by browsing to http://localhost:8888/test/js/runtests.html, 
+these test should all pass in the master branch
 
 
 Once you are sure that the development environment is working, checkout or create

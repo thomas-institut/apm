@@ -48,33 +48,37 @@ fi
 
 mkdir "$TMP_DIR" || exit
 
-cp -R src/public/classes "$TMP_DIR"
-cp -R src/public/collatex "$TMP_DIR"
-cp -R src/public/css "$TMP_DIR"
-cp -R src/public/images "$TMP_DIR"
-cp -R src/public/js "$TMP_DIR"
-rm -fr "$TMP_DIR"/js/istanbul
-rm -f "$TMP_DIR"/js/Makefile
-rm -f "$TMP_DIR"/js/.eslintrc.json
-cp -R src/public/node_modules "$TMP_DIR"
-cp -R src/public/plugins "$TMP_DIR"
-cp -R src/public/templates "$TMP_DIR"
-cp -R src/public/utilities "$TMP_DIR"
-cp -R src/public/vendor "$TMP_DIR"
-cp -R src/public/fonts "$TMP_DIR"
-cp src/public/composer.json "$TMP_DIR"
-cp src/public/composer.lock "$TMP_DIR"
-cp src/public/config.sample.php "$TMP_DIR"
-cp src/public/index.php "$TMP_DIR"
-cp src/public/package.json "$TMP_DIR"
-cp src/public/setup.php "$TMP_DIR"
-cp src/public/version.php "$TMP_DIR"
+cp -R src/node "$TMP_DIR"
+cp -R src/python "TMP_DIR"
 
-mkdir "$TMP_DIR"/downloads
-mkdir "$TMP_DIR"/downloads/pdf
+mkdir "$TMP_DIR"/www || exit
+cp -R src/www/classes "$TMP_DIR"/www
+cp -R src/www/collatex "$TMP_DIR"/www
+cp -R src/www/css "$TMP_DIR"/www
+cp -R src/www/images "$TMP_DIR"/www
+cp -R src/www/js "$TMP_DIR"/www
+rm -fr "$TMP_DIR"/www/js/istanbul
+rm -f "$TMP_DIR"/www/js/Makefile
+rm -f "$TMP_DIR"/www/js/.eslintrc.json
+cp -R src/www/node_modules "$TMP_DIR"/www
+cp -R src/www/plugins "$TMP_DIR"/www
+cp -R src/www/templates "$TMP_DIR"/www
+cp -R src/www/utilities "$TMP_DIR"/www
+cp -R src/www/vendor "$TMP_DIR"/www
+cp -R src/www/fonts "$TMP_DIR"/www
+cp src/www/composer.json "$TMP_DIR"/www
+cp src/www/composer.lock "$TMP_DIR"/www
+cp src/www/config.sample.php "$TMP_DIR"/www
+cp src/www/index.php "$TMP_DIR"/www
+cp src/www/package.json "$TMP_DIR"/www
+cp src/www/setup.php "$TMP_DIR"/www
+cp src/www/version.php "$TMP_DIR"/www
 
-chmod a+w "$TMP_DIR"/downloads
-chmod a+w "$TMP_DIR"/downloads/pdf
+mkdir "$TMP_DIR"/www/downloads
+mkdir "$TMP_DIR"/www/downloads/pdf
+
+chmod a+w "$TMP_DIR"/www/downloads
+chmod a+w "$TMP_DIR"/www/downloads/pdf
 
 
 cd "$TMP" || exit

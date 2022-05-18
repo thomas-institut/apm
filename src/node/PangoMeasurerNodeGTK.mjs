@@ -23,8 +23,8 @@ const Cairo = GI.require('cairo')
 const Pango  = GI.require('Pango')
 const PangoCairo = GI.require('PangoCairo')
 import { PangoMeasurer } from './PangoMeasurer.mjs'
-import {resolvedPromise} from '../public/js/toolbox/FunctionUtil.mjs'
-import { Typesetter2} from '../public/js/Typesetter2/Typesetter2.mjs'
+import {resolvedPromise} from '../www/js/toolbox/FunctionUtil.mjs'
+import { Typesetter2} from '../www/js/Typesetter2/Typesetter2.mjs'
 
 const measuringScale = 10000
 

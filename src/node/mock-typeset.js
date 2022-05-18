@@ -1,12 +1,12 @@
 
 
-import {removeExtraWhiteSpace} from '../public/js/toolbox/Util.mjs'
-import {BasicTypesetter} from '../public/js/Typesetter2/BasicTypesetter.mjs'
+import {removeExtraWhiteSpace} from '../www/js/toolbox/Util.mjs'
+import {BasicTypesetter} from '../www/js/Typesetter2/BasicTypesetter.mjs'
 import { PangoMeasurer } from './PangoMeasurer.mjs'
-import { TextBoxFactory} from '../public/js/Typesetter2/TextBoxFactory.mjs'
-import { ItemList } from '../public/js/Typesetter2/ItemList.mjs'
-import * as TypesetterItemDirection from '../public/js/Typesetter2/TypesetterItemDirection.mjs'
-import {Glue} from '../public/js/Typesetter2/Glue.mjs'
+import { TextBoxFactory} from '../www/js/Typesetter2/TextBoxFactory.mjs'
+import { ItemList } from '../www/js/Typesetter2/ItemList.mjs'
+import * as TypesetterItemDirection from '../www/js/Typesetter2/TypesetterItemDirection.mjs'
+import {Glue} from '../www/js/Typesetter2/Glue.mjs'
 import { hrtime } from 'node:process';
 import { PangoMeasurerSocket } from './PangoMeasurerSocket.mjs'
 import { PangoMeasurerNodeGTK } from './PangoMeasurerNodeGTK.mjs'

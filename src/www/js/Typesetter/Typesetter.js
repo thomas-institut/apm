@@ -64,7 +64,7 @@ import * as TypesetterTokenType from './TypesetterTokenType'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { NumeralStyles } from '../toolbox/NumeralStyles'
 import * as ArrayUtil from '../toolbox/ArrayUtil.mjs'
-import { LanguageDetector } from '../toolbox/LanguageDetector'
+import { LanguageDetector } from '../toolbox/LanguageDetector.mjs'
 import { isRtl } from '../toolbox/Util.mjs'
 
 import * as VerticalAlign from '../FmtText/VerticalAlign'

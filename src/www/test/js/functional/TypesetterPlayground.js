@@ -7,7 +7,7 @@
 import { TextBoxFactory } from '../../../js/Typesetter2/TextBoxFactory.mjs'
 import { BrowserUtilities } from '../../../js/toolbox/BrowserUtilities.mjs'
 import { CanvasTextBoxMeasurer } from '../../../js/Typesetter2/CanvasTextBoxMeasurer.mjs'
-import { removeExtraWhiteSpace, trimWhiteSpace } from '../../../js/toolbox/Util.mjs'
+import { isRtl, removeExtraWhiteSpace, trimWhiteSpace } from '../../../js/toolbox/Util.mjs'
 
 import { Typesetter2 } from '../../../js/Typesetter2/Typesetter2.mjs'
 import { BasicTypesetter } from '../../../js/Typesetter2/BasicTypesetter.mjs'
@@ -22,6 +22,8 @@ import { TextBox } from '../../../js/Typesetter2/TextBox.mjs'
 import { Box } from '../../../js/Typesetter2/Box.mjs'
 import { Glue} from '../../../js/Typesetter2/Glue.mjs'
 import { Penalty } from '../../../js/Typesetter2/Penalty.mjs'
+import { LanguageDetector } from '../../../js/toolbox/LanguageDetector.mjs'
+import text from 'quill/blots/text'
 
 const defaultPageWidth = Typesetter2.cm2px(14.8)
 const defaultPageHeight  = Typesetter2.cm2px(21)
@@ -130,6 +132,7 @@ class Playground {
     this.getPdfButton.on('click', this.genOnClickGetPdf())
 
     this.urlGenerator = new ApmUrlGenerator(apmBaseUrl)
+    this.languageDetector = new LanguageDetector({ defaultLang: 'en'})
   }
 
   genOnClickGetPdf() {
@@ -392,6 +395,20 @@ class Playground {
     return verticalListToTypeset
   }
 
+  /**
+   *
+   * @param {TextBox}textBox
+   * @private
+   */
+  __detectAndSetTextDirection(textBox) {
+    let detectedLang = this.languageDetector.detectLang(textBox.getText())
+    if (isRtl(detectedLang)) {
+      return textBox.setRightToLeft()
+    } else {
+      return textBox.setLeftToRight()
+    }
+  }
+
   __getItemsToTypesetFromString(str) {
     let curWord = ''
     let state = 0
@@ -401,7 +418,7 @@ class Playground {
         case 0:
           if (ch === ' ') {
             if (curWord !== '') {
-              items.push(TextBoxFactory.simpleText(curWord, { fontFamily: this.fontFamily, fontSize: this.fontSize}))
+              items.push(this.__detectAndSetTextDirection(TextBoxFactory.simpleText(curWord, { fontFamily: this.fontFamily, fontSize: this.fontSize})))
               curWord = ''
             }
             state = 1
@@ -423,7 +440,7 @@ class Playground {
       }
     })
     if (state === 0 && curWord !== '') {
-      items.push(TextBoxFactory.simpleText(curWord, { fontFamily: this.fontFamily, fontSize: this.fontSize}))
+      items.push(this.__detectAndSetTextDirection(TextBoxFactory.simpleText(curWord, { fontFamily: this.fontFamily, fontSize: this.fontSize})))
     }
     if (state === 1) {
       let glueToken = (new Glue()).setWidth(this.normalSpaceWidth)
@@ -531,7 +548,7 @@ class Playground {
       marginLeft: this.marginLeft,
       marginRight: this.marginRight,
       lineSkip: this.lineSkip,
-      debug: false
+      debug: true
     }
     this.currentRawDataToTypeset = JSON.stringify({
       options: typesetterOptions,

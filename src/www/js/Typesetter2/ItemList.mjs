@@ -29,6 +29,7 @@ import { ObjectFactory } from './ObjectFactory.mjs'
 import { TextBox } from './TextBox.mjs'
 import { Box } from './Box.mjs'
 import { Penalty } from './Penalty.mjs'
+import * as MetadataKey from './MetadataKey.mjs'
 
 export class ItemList extends TypesetterItem {
 
@@ -37,6 +38,10 @@ export class ItemList extends TypesetterItem {
     this.list = []
   }
 
+  /**
+   *
+   * @return {TypesetterItem[]}
+   */
   getList() {
     return this.list
   }
@@ -121,7 +126,8 @@ export class ItemList extends TypesetterItem {
   }
 
   getText() {
-    return this.getList().map( (item) => {
+
+    let textArray = this.getList().map( (item) => {
       if (item instanceof  Glue) {
         return ' '
       }
@@ -135,7 +141,14 @@ export class ItemList extends TypesetterItem {
         return `{P:${item.getPenalty()}}`
       }
       return ''
-    }).join('')
+    })
+    if (this.hasMetadata(MetadataKey.HAS_RTL_TEXT) && this.getMetadata(MetadataKey.HAS_RTL_TEXT) === true) {
+      let originalIndexes = this.getList().map( (item) => {
+        return item.getMetadata(MetadataKey.ORIGINAL_ARRAY_INDEX)
+      })
+    }
+
+    return textArray.join('')
   }
 
   getExportObject () {

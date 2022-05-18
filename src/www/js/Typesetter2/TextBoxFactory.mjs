@@ -23,7 +23,7 @@ import { TextBox } from './TextBox.mjs'
  */
 export class TextBoxFactory {
 
-  static simpleText(text, fontSpec = {}){
+  static simpleText(text, fontSpec = {}, textDirection = 'ltr'){
     let item = new TextBox()
     item.setText(text)
 
@@ -36,6 +36,15 @@ export class TextBoxFactory {
     }
 
     // TODO: fontWeight, fontStyle, baselineShift
+
+    if (textDirection === 'ltr') {
+      item.setLeftToRight()
+    } else {
+      item.setRightToLeft()
+    }
+
     return item
   }
+
 }
+

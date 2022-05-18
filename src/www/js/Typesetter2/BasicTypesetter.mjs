@@ -167,7 +167,7 @@ export class BasicTypesetter extends Typesetter2 {
       await this.__measureTextBoxes(lineItemArray)
       if (this.debug) {
         let tmpList = (new ItemList()).setList(lineItemArray)
-        console.log(`Calculating badness of line '${tmpList.getText()}'`)
+        // console.log(`Calculating badness of line '${tmpList.getText()}'`)
       }
       let adjRatio = this._calculateAdjustmentRatio(lineItemArray, this.lineWidth)
       if (adjRatio === null || adjRatio < -1) {
@@ -257,7 +257,7 @@ export class BasicTypesetter extends Typesetter2 {
           // this.debug && console.log(`Previous item was a Box, so this is a tentative break point`)
           // tentative break point
           let breakBadness = await this._calculateBadness(currentLine)
-          this.debug && console.log(`Badness breaking at ${i} is ${breakBadness}`)
+          // this.debug && console.log(`Badness breaking at ${i} is ${breakBadness}`)
 
           if (breakBadness > currentBadness) {
             // we found a minimum, eject line
@@ -437,7 +437,6 @@ export class BasicTypesetter extends Typesetter2 {
         await this.__measureTextBoxes(lines[i].getList())
       }
 
-
       // post-process lines
       let lineNumberInParagraph = 1
       lines = lines.map((line) => {
@@ -480,6 +479,8 @@ export class BasicTypesetter extends Typesetter2 {
         }
         line.addMetadata(MetadataKey.LINE_RATIO, toFixedPrecision(line.getWidth() / unadjustedLineWidth, 3))
 
+        // take care of rtl text
+        line = this.__reorderRtlText(line)
         return line
       })
 
@@ -610,6 +611,108 @@ export class BasicTypesetter extends Typesetter2 {
       doc.setDimensionsFromPages()
       resolve(doc)
     })
+  }
+
+  /**
+   *
+   * @param {ItemList}line
+   * @return {ItemList}
+   * @private
+   */
+  __reorderRtlText(line) {
+    // first version: assume horizontal lists are processed LTR
+    // so, RTL item must be arranged in reverse order
+    let state = 0
+    let orderedTokenIndices = []
+    let reverseStack = []
+    let glueArray = []
+    let hasRTLText = false
+    line.getList().forEach( (item, i) => {
+      switch (state) {
+        case 0:
+          if (item instanceof Glue) {
+            orderedTokenIndices.push(i)
+            break
+          }
+          if (item instanceof Penalty) {
+            orderedTokenIndices.push(i)
+            break
+          }
+          if (item instanceof TextBox) {
+            if (item.getTextDirection() === 'rtl') {
+              reverseStack.push(i)
+              hasRTLText = true
+              state = 1
+              break
+            }
+          }
+          // item is a box or a LTR text box
+          orderedTokenIndices.push(i)
+          break
+
+        case 1:
+          if (item instanceof Glue) {
+            glueArray.push(i)
+            break
+          }
+          if (item instanceof Penalty) {
+            reverseStack.push(i)
+            break
+          }
+          if (item instanceof TextBox) {
+            if (item.getTextDirection() !== 'rtl') {
+              // back to LTR
+              while (reverseStack.length > 0) {
+                orderedTokenIndices.push(reverseStack.pop())
+              }
+              // push hanging glue tokens
+              for (let j = 0; j < glueArray.length; j++) {
+                orderedTokenIndices.push(glueArray[j])
+              }
+              glueArray = []
+              orderedTokenIndices.push(i)
+              state = 0
+            } else {
+              // still RTL
+              // put glue array in reverse stack
+              while(glueArray.length > 0) {
+                reverseStack.push(glueArray.pop())
+              }
+              reverseStack.push(i)
+            }
+            break
+          }
+          // item is a box or a TRL text box
+          reverseStack.push(i)
+          break
+      }
+    })
+    // dump whatever is on the reverse stack
+    // empty the reverse stack
+    while(reverseStack.length > 0) {
+      orderedTokenIndices.push(reverseStack.pop())
+    }
+    // empty the glue array
+    for (let j = 0; j < glueArray.length; j++) {
+      orderedTokenIndices.push(glueArray[j])
+    }
+    // some sanity checks
+    if (orderedTokenIndices.length !== line.getItemCount()) {
+      console.error(`Ordered token indices and tokensWithInitial glue are not the same length: 
+        ${orderedTokenIndices.length} !== ${line.getItemCount()}`)
+    }
+    // if there was some RTL text, reorder items
+    if (hasRTLText) {
+      this.debug && console.log(`Line has RTL text`)
+      line.addMetadata(MetadataKey.HAS_RTL_TEXT, true)
+      let originalItemArray = line.getList()
+      line.setList(orderedTokenIndices.map( (index) => {
+        return originalItemArray[index].addMetadata(MetadataKey.ORIGINAL_ARRAY_INDEX, index)
+      }))
+      this.debug && console.log(`Processed line`)
+      this.debug && console.log(line)
+    }
+    return line
   }
 
   __addAbsoluteLineNumbers(verticalList) {

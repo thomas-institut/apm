@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2020 Universität zu Köln
+ *  Copyright (C) 2020-2022 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,8 +16,6 @@
  *
  */
 
-import {OptionsChecker} from '@thomas-inst/optionschecker'
-
 export class DocPage {
   constructor(pages, chunkInfo, versionInfo, lastSaves, works, authors, docId, urlGenerator) {
     this.chunkInfo = chunkInfo;
@@ -28,8 +26,8 @@ export class DocPage {
     this.versionInfo = versionInfo;
     this.authors = authors;
     this.lastSaves = lastSaves;
-
   }
+
   genWorkInfoHtml() {
     if (Object.keys(this.chunkInfo).length === 0) {
       return '<ul>No chunk start/end marks found</ul>';
@@ -37,15 +35,12 @@ export class DocPage {
     let html = '<ul>';
     let works = this.works;
     let chunkInfo = this.chunkInfo;
-    let urlGenerator = this.urlGenerator;
-    let docId = this.docId;
     for (const work in this.chunkInfo) {
       if (!this.chunkInfo.hasOwnProperty(work)) {
         continue;
       }
       html += '<li>' + works[work]['author_name'] + ', <em>' + works[work]['title'] + '</em> (' + work + ')';
       html += '<ul><li>';
-      let chunksPerLine = 5;
       let tdArray = [];
       for (const chunkNumber in chunkInfo[work]) {
         if (!chunkInfo[work].hasOwnProperty(chunkNumber)) {
@@ -97,28 +92,23 @@ export class DocPage {
     // @ts-ignore
     return ApmUtil.getPageTable(this.docId, this.pages, pagesPerRow, this.urlGenerator);
   }
+
   getChunkLabelHtml(work, chunk) {
-    let dataContent = '';
+    let dataContent
     if (!this.isChunkValid(work, chunk)) {
       dataContent = 'Not defined correctly';
     }
     else {
-      // @ts-ignore
-      let formattedTime = ApmUtil.formatVersionTime(this.versionInfo[work][chunk].timeFrom);
+      let formattedTime = ApmUtil.formatVersionTime(this.versionInfo[work][chunk]['timeFrom'])
       let authorName = '';
       if (this.versionInfo[work][chunk].authorId !== 0) {
         authorName = this.authors[this.versionInfo[work][chunk].authorId].fullname;
       }
       dataContent = '<b>Last change:</b><br/>' + formattedTime + '<br/>' + authorName;
     }
-    return '<a class="alwaysblack" href="#" data-toggle="popover" title="' +
-      work + '-' + chunk +
-      '" data-content="' +
-      dataContent +
-      '">' +
-      chunk +
-      '</a>';
+    return `<a href="${this.urlGenerator.siteChunkPage(work, chunk)}" target="_blank" data-toggle="popover" title="${work}-${chunk}" data-content="${dataContent}">${chunk}</a>`
   }
+
   isChunkValid(work, chunk) {
     for (const segmentNumber in this.chunkInfo[work][chunk]) {
       if (!this.chunkInfo[work][chunk][segmentNumber].valid) {
@@ -134,20 +124,25 @@ export class DocPage {
       work + '-' + chunk + ' in new tab">' +
       icon + '</a>';
   }
+
+  /**
+   *
+   * @param {number}authorId
+   * @return {string}
+   */
   getAuthorLink(authorId) {
-    if (authorId == 0) {
+    if (authorId === 0) {
       return 'n/a';
     }
-    // @ts-ignore
     let url = this.urlGenerator.siteUserProfile(this.authors[authorId].username);
-    return '<a href="' + url + '" title="View user profile" target="_blank">' + this.authors[authorId].fullname + '</a>';
+    return `<a href="${url}" title="View user profile" target="_blank">${this.authors[authorId].fullname}</a>`;
   }
   getLastSavesHtml() {
     let html = '<ol>';
     for (const i in this.lastSaves) {
       let versionInfo = this.lastSaves[i];
       // @ts-ignore
-      let formattedTime = ApmUtil.formatVersionTime(versionInfo.timeFrom);
+      let formattedTime = ApmUtil.formatVersionTime(versionInfo['timeFrom']);
       let authorLink = this.getAuthorLink(versionInfo.authorId);
       html += '<li> Page ' + this.getPageLink2(versionInfo.pageId, versionInfo.column) + ', ' +
         formattedTime + ' by ' + authorLink + '</li>';

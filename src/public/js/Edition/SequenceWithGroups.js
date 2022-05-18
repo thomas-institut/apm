@@ -27,6 +27,9 @@
  * groupedWithNextNumbers:  [1,2,4]
  *
  */
+
+const debug = true
+
 export class SequenceWithGroups {
 
   constructor (length, initialGroupedWithNextNumbers = []) {
@@ -91,33 +94,55 @@ export class SequenceWithGroups {
    * @param number
    */
   insertNumberAfter(number) {
-
+    debug && console.log(`Inserting number after ${number}`)
     if (number < 0) {
       this.insertNumberZero()
       return
     }
+    // the goal is to get a new list of groups for the sequence that will now have 1 more element
+    // we start with the current groups
     let currentGroups = this.getGroups()
-
-    let groupsBefore = currentGroups.filter( (g) => { return g.from < number && g.to < number})
-    let numberGroups = currentGroups.filter( (g) => { return g.from<=number && g.to >=number })
-    let groupsAfter = currentGroups.filter( (g) => {return g.from > number && g.to > number})
-
-    if (numberGroups.length !== 1) {
+    // and then determine the groups that come before the number
+    let groupsBeforeNumber = currentGroups.filter( (g) => { return g.from < number && g.to < number})
+    // ... the group that currently includes the number
+    let currentGroupsForNumber = currentGroups.filter( (g) => { return g.from<=number && g.to >=number })
+    if (currentGroupsForNumber.length !== 1) {
       console.error(`Inconsistent groups, found more than one group for number ${number}`)
-      console.log(numberGroups)
+      console.log(currentGroupsForNumber)
     }
-    let numberGroup = numberGroups[0]
-    let newGroups = groupsBefore
-    let newNumberGroup = { from: numberGroup.from, to: numberGroup.to}
-    if (numberGroup.to !== numberGroup.from) {
-      // only extend the number's group if the group represents an interval larger than 1
-      newNumberGroup.to++
+    let numberGroup = currentGroupsForNumber[0]
+    // ... and the groups after
+    let groupsAfterNumber = currentGroups.filter( (g) => {return g.from > number && g.to > number})
+
+    // the before groups get into the new list unchanged
+    let newGroups = groupsBeforeNumber
+    // the current number group may be extended
+    let groupExtended = false
+    debug && console.log(`Current group`)
+    debug && console.log(numberGroup)
+    let updatedNumberGroup = { from: numberGroup.from, to: numberGroup.to}
+    if (numberGroup.to !== numberGroup.from ) {
+      // only extend the number's current group if the group represents an interval larger than 1
+      if (number !== numberGroup.to) {
+        // and if number is not in the boundary
+        // i.e., if number is strictly contained in the group
+        updatedNumberGroup.to++
+        groupExtended = true
+      }
     }
-    newGroups.push(newNumberGroup)
-    groupsAfter = groupsAfter
+    debug && console.log(`Updated group`)
+    debug && console.log(updatedNumberGroup)
+    newGroups.push(updatedNumberGroup)
+    // if the current number group was not extended, there should be a new group
+    if (!groupExtended) {
+      newGroups.push({from: number, to: number})
+    }
+    // the groups after should be shifted by one
+    groupsAfterNumber = groupsAfterNumber
       .map( (g) => { return {from: g.from+1, to: g.to + 1}})  // update group boundaries
-      .filter( (g) => { return g.from !== newNumberGroup.from && g.to !== newNumberGroup.to}) // remove possible duplicate
-    newGroups = newGroups.concat(groupsAfter)
+      .filter( (g) => { return g.from !== updatedNumberGroup.from && g.to !== updatedNumberGroup.to}) // remove possible duplicate
+    newGroups = newGroups.concat(groupsAfterNumber)
+
     // update the sequence
     this.groupedWithNextNumbers = this.getGroupedNumbersFromGroupArray(newGroups)
     this.length++

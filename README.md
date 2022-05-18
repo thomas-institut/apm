@@ -61,7 +61,7 @@ be created. For development purposes, you can use ``log/apm.log`` for the main
 log file and ``collatex/tmp`` for the collatex temporary directory as these
 are marked as ignored in .gitignore. You need to create them manually.
 * Create the database structure
-with the SQL script ```/db/dbcreation.sql```. 
+with the SQL script ```/src/db/dbcreation.sql```. 
 * Run the PHP7.2 webserver with root in ```src```  Run:
 ```bash
 ./runphpwebserver
@@ -88,7 +88,8 @@ To install in production:
 * Copy the tar file to the server and unpack it in the desired folder
 * Copy config.sample.php to config.php and edit it with the appropriate
   parameters
-* Create the database structure in the server. 
+* Create the database structure in the server using the scripts in 
+```db```
 * Configure the web server so that all request are handled by ```index.php``` 
   In an Apache server this can be done with the rewrite rules given
   in ```url-rewrite-rules```. Copy them to the directory configuration

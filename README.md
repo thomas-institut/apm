@@ -25,13 +25,13 @@ Clone the repository from Github.
 
 Get all PHP dependencies with composer:
 ```bash
-cd src/public
+cd src/www
 composer update
 ```
 
 Get all Javascript dependencies with npm:
 ```bash
-cd src/public
+cd src/www
 npm install
 ```
 Create a ``testconfig.php`` file under ``src/public/test/php/SiteMockup`` with the correct
@@ -40,7 +40,7 @@ test database credentials.
 Perform all PHP tests: 
 
 ```bash
-cd src/public/test/php
+cd src/www/test/php
 ./phpunit .
 ```
 If the installation is correct, all tests should pass in the master branch. 
@@ -65,7 +65,7 @@ with the SQL script ```src/db/dbcreation.sql```.
 * Create at least one user in the system with root status using the 
   command line:
 ```bash
-cd src/public/utilities;
+cd src/www/utilities;
 ./createuser <someuser>
 ./makeroot <someuser>
 ```
@@ -80,7 +80,7 @@ npm i nyc -g
 ```
 * Before testing and after every change in the javascript code, generate Istanbul code coverage versions of javascript files
 ```bash
-cd src/public/js/
+cd src/www/js/
 make test
 ```
 * browse to http://localhost:8888/public/test/js/runtests.html

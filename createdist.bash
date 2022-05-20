@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 #
-#  Copyright (C) 2019 Universität zu Köln
+#  Copyright (C) 2019-2022 Universität zu Köln
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -48,27 +48,27 @@ fi
 
 mkdir "$TMP_DIR" || exit
 
-cp -R src/public/classes "$TMP_DIR"
-cp -R src/public/collatex "$TMP_DIR"
-cp -R src/public/css "$TMP_DIR"
-cp -R src/public/images "$TMP_DIR"
-cp -R src/public/js "$TMP_DIR"
+cp -R src/www/classes "$TMP_DIR"
+cp -R src/www/collatex "$TMP_DIR"
+cp -R src/www/css "$TMP_DIR"
+cp -R src/www/images "$TMP_DIR"
+cp -R src/www/js "$TMP_DIR"
 rm -fr "$TMP_DIR"/js/istanbul
 rm -f "$TMP_DIR"/js/Makefile
 rm -f "$TMP_DIR"/js/.eslintrc.json
-cp -R src/public/node_modules "$TMP_DIR"
-cp -R src/public/plugins "$TMP_DIR"
-cp -R src/public/templates "$TMP_DIR"
-cp -R src/public/utilities "$TMP_DIR"
-cp -R src/public/vendor "$TMP_DIR"
-cp -R src/public/fonts "$TMP_DIR"
-cp src/public/composer.json "$TMP_DIR"
-cp src/public/composer.lock "$TMP_DIR"
-cp src/public/config.sample.php "$TMP_DIR"
-cp src/public/index.php "$TMP_DIR"
-cp src/public/package.json "$TMP_DIR"
-cp src/public/setup.php "$TMP_DIR"
-cp src/public/version.php "$TMP_DIR"
+cp -R src/www/node_modules "$TMP_DIR"
+cp -R src/www/plugins "$TMP_DIR"
+cp -R src/www/templates "$TMP_DIR"
+cp -R src/www/utilities "$TMP_DIR"
+cp -R src/www/vendor "$TMP_DIR"
+cp -R src/www/fonts "$TMP_DIR"
+cp src/www/composer.json "$TMP_DIR"
+cp src/www/composer.lock "$TMP_DIR"
+cp src/www/config.sample.php "$TMP_DIR"
+cp src/www/index.php "$TMP_DIR"
+cp src/www/package.json "$TMP_DIR"
+cp src/www/setup.php "$TMP_DIR"
+cp src/www/version.php "$TMP_DIR"
 
 mkdir "$TMP_DIR"/downloads
 mkdir "$TMP_DIR"/downloads/pdf

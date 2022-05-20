@@ -6,9 +6,9 @@ testconfig.php
 *.js.map
 *.bundle.js
 *.log
-/src/public/test/.*
-/src/public/test/php/.phpunit.result.cache
-/src/public/package-lock.json
+/src/www/test/.*
+/src/www/test/php/.phpunit.result.cache
+/src/www/package-lock.json
 php-sessions/
 **/vendor
 **/scratch

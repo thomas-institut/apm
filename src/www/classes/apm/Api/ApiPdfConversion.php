@@ -30,7 +30,7 @@ class ApiPdfConversion extends ApiController
     const TEMP_SVG_FILE_PREFIX = 'svg-';
     const PDF_DOWNLOAD_SUBDIR = 'downloads/pdf';
 
-    public function convertSVGtoPDF(Request $request,  Response $response)
+    public function convertSVGtoPDF(Request $request,  Response $response): Response
     {
 
         $apiCall = 'ConvertSVGtoPDF';

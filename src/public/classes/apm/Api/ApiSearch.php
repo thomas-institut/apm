@@ -31,3 +31,5 @@ class ApiSearch extends ApiController
         return $this->responseWithJson($response, [  'searchString' => $keyword,  'results' => [], 'serverTime' => $now]);
     }
 }
+
+// TEST

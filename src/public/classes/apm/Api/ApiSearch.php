@@ -8,6 +8,9 @@ use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\TimeString\TimeString;
 
+require __DIR__ . '/vendor/autoload.php'; // For using OpenSearch PHP Client
+
+
 
 class ApiSearch extends ApiController
 {
@@ -20,10 +23,6 @@ class ApiSearch extends ApiController
 
     public function search(Request $request, Response $response): Response
     {
-        $client = new Client();
-        $url = "http://localhost:5601";
-        $response = $client->request('GET', $url, ['auth' => ['admin', 'admin']]);
-
 
         $keyword = $_POST['searchText'];
         $now = TimeString::now();
@@ -32,4 +31,3 @@ class ApiSearch extends ApiController
     }
 }
 
-// TEST

@@ -1,0 +1,5 @@
+{
+    "require": {
+        "opensearch-project/opensearch-php": "^1.0"
+    }
+}

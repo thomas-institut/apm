@@ -8,9 +8,6 @@ use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\TimeString\TimeString;
 
-require __DIR__ . '/vendor/autoload.php'; // For using OpenSearch PHP Client
-
-
 
 class ApiSearch extends ApiController
 {

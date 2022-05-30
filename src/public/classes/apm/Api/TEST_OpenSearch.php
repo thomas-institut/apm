@@ -35,14 +35,24 @@ $client->create([
         'author' => 'Kant',
         'opus' => 'Kritik der reinen Vernunft',
         'year' => 1787
-    ]
+    ],
+]);
+
+$client->create([
+    'index' => $indexName,
+    'id' => 2,
+    'body' => [
+        'author' => 'Cassirer',
+        'opus' => 'Philosophie der symbolischen Formen',
+        'year' => 1923
+    ],
 ]);
 
 
 
 // Function to search the index
 
-function searchKeyword ($keyword)
+function search_for_keyword ($keyword)
     {
         global $client, $indexName;
 
@@ -52,15 +62,15 @@ function searchKeyword ($keyword)
                     'query' => [
                         'multi_match' => [
                             'query' => $keyword,
-                            'fields' => ['author']
+                            'fields' => ['author', 'opus']
                         ]
                     ]
                 ]
             ]);
 
-        return $result;
+        return $result['hits'];
 
     }
 
 // Search for keyword and print the result
-print_r(searchKeyword("Kant"));
+print_r(search_for_keyword("Kant"));

@@ -1,9 +1,6 @@
 <?php
 namespace APM\Api;
 
-use GuzzleHttp\Client;
-use GuzzleHttp\Exception\ConnectException;
-use GuzzleHttp\Exception\ServerException;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\TimeString\TimeString;

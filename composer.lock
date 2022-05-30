@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "61e3f4ad4415fbdec30c4e69962e2a8b",
+    "content-hash": "2f17fe74bd12664a8e3fa9dc938d38fa",
     "packages": [
         {
             "name": "ezimuel/guzzlestreams",
@@ -112,16 +112,16 @@
         },
         {
             "name": "opensearch-project/opensearch-php",
-            "version": "1.0.2",
+            "version": "2.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/opensearch-project/opensearch-php.git",
-                "reference": "d54af5ff2167bee3eb68d02e210283314ef74712"
+                "reference": "565c17e0ac1e062f4a6edfeb9745e9deb93ffbeb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/opensearch-project/opensearch-php/zipball/d54af5ff2167bee3eb68d02e210283314ef74712",
-                "reference": "d54af5ff2167bee3eb68d02e210283314ef74712",
+                "url": "https://api.github.com/repos/opensearch-project/opensearch-php/zipball/565c17e0ac1e062f4a6edfeb9745e9deb93ffbeb",
+                "reference": "565c17e0ac1e062f4a6edfeb9745e9deb93ffbeb",
                 "shasum": ""
             },
             "require": {
@@ -168,7 +168,7 @@
                 "opensearch",
                 "search"
             ],
-            "time": "2022-02-08T08:37:31+00:00"
+            "time": "2022-05-26T19:17:49+00:00"
         },
         {
             "name": "psr/log",

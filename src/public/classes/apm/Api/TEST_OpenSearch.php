@@ -17,7 +17,7 @@ $client = (new \OpenSearch\ClientBuilder())
 
 $indexName = 'philosophers';
 
-
+/*
 // Clear/Delete index
 $client->indices()->delete([
     'index' => $indexName
@@ -47,11 +47,10 @@ $client->create([
         'year' => 1923
     ],
 ]);
-
-
+*/
 
 // Function to search the index
-
+$indexName = 'philosophers';
 function search_for_keyword ($keyword)
     {
         global $client, $indexName;
@@ -68,8 +67,15 @@ function search_for_keyword ($keyword)
                 ]
             ]);
 
-        return $result['hits'];
-
+        if ($result['hits']['total']['value'] == 0) {
+            return "There is no match in the database for the keyword '$keyword'.";
+        }
+        else {
+            $docID = $result['hits']['hits']['0']['_id'];
+            $author = $result['hits']['hits']['0']['_source']['author'];
+            $book = $result['hits']['hits']['0']['_source']['book'];
+            return "The book '$book' of '$author' matches your search. The corresponding document has the ID $docID.";
+        }
     }
 
 // Search for keyword and print the result

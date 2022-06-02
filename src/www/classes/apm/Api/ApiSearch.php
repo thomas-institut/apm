@@ -1,11 +1,15 @@
 <?php
 namespace APM\Api;
 
+use PhpParser\Error;
+use PHPUnit\Util\Exception;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\TimeString\TimeString;
 
 require '/home/lukas/apm/vendor/autoload.php';
+
+set_time_limit(5); // Script should not run longer than 5 seconds - does this work like this?
 
 class ApiSearch extends ApiController
 {
@@ -18,22 +22,31 @@ class ApiSearch extends ApiController
 
     public function search(Request $request, Response $response): Response
     {
-        // Arrays
+
+        // Arrays for structuring queried data
         $books = [];
         $authors = [];
         $docIDs = [];
         $results = [];
+
+        // Variable for communicating errors
+        $status = 'OK';
 
         // Get user input and current time
         $keyword = $_POST['searchText'];
         $now = TimeString::now();
 
         // Setup OpenSearch php client
-        $client = (new \OpenSearch\ClientBuilder())
-            ->setHosts(['https://localhost:9200'])
-            ->setBasicAuthentication('admin', 'admin') // For testing only. Don't store credentials in code.
-            ->setSSLVerification(false) // For testing only. Use certificate for validation
-            ->build();
+        try {
+            $client = (new \OpenSearch\ClientBuilder())
+                ->setHosts(['https://localhost:9200'])
+                ->setBasicAuthentication('admin', 'admin') // For testing only. Don't store credentials in code.
+                ->setSSLVerification(false) // For testing only. Use certificate for validation
+                ->build();
+        } catch (Exception $e) {
+            $status = 'Connecting to OpenSearch server failed.';
+            return $this->responseWithJson($response, ['searchString' => $keyword,  'results' => $results, 'serverTime' => $now, 'status' => $status]);
+        } // This error handling has no effect right now - error message is currently generated in js
 
         // Set the name of the index
         $indexName = 'philosophers';
@@ -53,18 +66,18 @@ class ApiSearch extends ApiController
 
         $numMatches = $query['hits']['total']['value'];
 
-        // Collect all matches and enumerate them in a string
+        // Collect all matches in an ordered array
         if ($numMatches != 0) {
             for ($i = 0; $i <= $numMatches - 1; $i++) {
                 $docIDs[$i] = $query['hits']['hits'][$i]['_id'];
                 $authors[$i] = $query['hits']['hits'][$i]['_source']['author'];
                 $books[$i] = $query['hits']['hits'][$i]['_source']['book'];
+
                 $results[$i] = [$authors[$i], $books[$i], $docIDs[$i]];
             }
         }
 
-
-        return $this->responseWithJson($response, ['searchString' => $keyword,  'results' => $results, 'serverTime' => $now]);
+        return $this->responseWithJson($response, ['searchString' => $keyword,  'results' => $results, 'serverTime' => $now, 'status' => $status]);
     }
 }
 

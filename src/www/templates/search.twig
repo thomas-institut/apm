@@ -31,14 +31,32 @@
               console.log(apiResponse)
               if (apiResponse['results'].length === 0) {
                 searchResultsDiv
-                  .html(`Nothing found for '${apiResponse['searchString']}'<br/>Server time: ${apiResponse['serverTime']}`)
+                  .html(`'Nothing found for ${apiResponse['searchString']}'<br/> Server time: ${apiResponse['serverTime']}`)
                   .addClass('text-warning')
                 return
               }
-              // display results
-              searchResultsDiv
-                .html(`${apiResponse['results'].length} result(s) found for '${apiResponse['searchString']}' (${apiResponse['serverTime']})`)
-                .removeClass('text-warning')
+              else if (apiResponse['results'].length === 1) {
+                // layout results
+                let results = apiResponse['results'][0][0] + ': ' + apiResponse['results'][0][1] + ' (Document ID: ' + apiResponse['results'][0][2] + ')'
+                // display results
+                searchResultsDiv
+                  .html(`${apiResponse['results'].length} result found for '${apiResponse['searchString']}': <br/> ${results} <br/>  (${apiResponse['serverTime']})`)
+                  .removeClass('text-warning')
+              }
+              else {
+                // Collect and structure results
+                let results = ''
+                let numResults = apiResponse['results'].length
+
+                for (let i = 0; i < numResults; i++) {
+                  results = results + apiResponse['results'][i][0] + ': ' + apiResponse['results'][i][1] + ' (Document ID: ' + apiResponse['results'][i][2] + ')<br/>'
+                }
+
+                // display results
+                searchResultsDiv
+                  .html(`${apiResponse['results'].length} results found for '${apiResponse['searchString']}':<br/> ${results} <br/>  (${apiResponse['serverTime']})`)
+                  .removeClass('text-warning')
+              }
           }).fail( (status) => {
             console.log(status)
             searchResultsDiv

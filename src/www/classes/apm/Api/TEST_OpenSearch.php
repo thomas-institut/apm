@@ -24,7 +24,7 @@ function search_for_keyword ($keyword)
         global $client, $indexName;
 
         // Query the index
-        $result = $client->search([
+        $query = $client->search([
                 'index' => $indexName,
                 'body' => [
                     'query' => [
@@ -37,17 +37,19 @@ function search_for_keyword ($keyword)
             ]);
 
 
-        if ($result['hits']['total']['value'] == 0) { // no matches for searched keyword
+        if ($query['hits']['total']['value'] == 0) { // no matches for searched keyword
             return "There is no match in the database for the keyword '$keyword'.";
         }
-        elseif ($result['hits']['total']['value'] == 1) { // exactly one match for the searched keyword
-            $docID = $result['hits']['hits']['0']['_id'];
-            $author = $result['hits']['hits']['0']['_source']['author'];
-            $book = $result['hits']['hits']['0']['_source']['book'];
+
+        elseif ($query['hits']['total']['value'] == 1) { // exactly one match for the searched keyword
+            $docID = $query['hits']['hits']['0']['_id'];
+            $author = $query['hits']['hits']['0']['_source']['author'];
+            $book = $query['hits']['hits']['0']['_source']['book'];
             return "There is one match for your search, namely the book '$book' of '$author' (Document ID $docID).";
         }
+
         else{ // more than one match for the searched keyword
-            $numMatches = $result['hits']['total']['value'];
+            $numMatches = $query['hits']['total']['value'];
             $docIDs = [];
             $authors = [];
             $books = [];
@@ -55,9 +57,9 @@ function search_for_keyword ($keyword)
 
             // Collect all matches and enumerate them in a string
             for ($i = 0; $i <= $numMatches-1; $i++) {
-                $docIDs[$i] = $result['hits']['hits'][$i]['_id'];
-                $authors[$i] = $result['hits']['hits'][$i]['_source']['author'];
-                $books[$i] = $result['hits']['hits'][$i]['_source']['book'];
+                $docIDs[$i] = $query['hits']['hits'][$i]['_id'];
+                $authors[$i] = $query['hits']['hits'][$i]['_source']['author'];
+                $books[$i] = $query['hits']['hits'][$i]['_source']['book'];
                 if ($i != $numMatches-1 and $i != $numMatches-2) { // affects all matches besides penultimate and ultimate match
                     $enumMatches = $enumMatches . "the book '$books[$i]' of '$authors[$i]' (Document ID $docIDs[$i]), ";
                 }
@@ -69,9 +71,11 @@ function search_for_keyword ($keyword)
                 }
             }
 
-            return "There are $numMatches matches for your search, namely " . $enumMatches;
+            $results = "There are $numMatches matches for your search, namely " . $enumMatches;
+
+            return $results;
         }
     }
 
-// Search for keyword and print the result
+// Search for keyword and print the results
 print_r(search_for_keyword("Vernunft"));

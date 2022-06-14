@@ -26,4 +26,4 @@ function addToIndex ($author, $title, $year, $id) {
     return true;
 };
 
-addToIndex('Carnap', 'Der logische Aufbau der Welt', 1924, 9);
+addToIndex('Test', ['Der logische Aufbau der Welt', 'Dies ist im Array.'], 1924, 10);

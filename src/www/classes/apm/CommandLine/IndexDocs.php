@@ -20,71 +20,51 @@
 
 namespace APM\CommandLine;
 
+use APM\Api;
+
+
 /**
  * Description of ChangePasswordUtility
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 
-class InitDoc extends CommandLineUtility {
-    
-    const USAGE = "usage: initdoc <docId> <numPages> <colsPerPage>\n";
+class IndexDocs extends CommandLineUtility {
     
     public function main($argc, $argv)
     {
-        if ($argc != 4) {
-            print self::USAGE;
-            return false;
-        }
 
-        $docId = (int) $argv[1];
-        $numPages = (int) $argv[2];
-        $colsPerPage = (int) $argv[3];
-        
-        if ($docId === 0) {
-            $this->printErrorMsg('Wrong Doc Id');
-            return false;
-        }
-        
-        if ($numPages <= 0) {
-            $this->printErrorMsg('Wrong num Pages');
-            return false;
-        }
-        
-        if ($colsPerPage < 0) {
-            $this->printErrorMsg('Wrong cols per page');
-            return false;
-        }
-        
-        $docInfo = $this->dm->getDocById($docId);
-        
-        if ($docInfo === false) {
-            $this->printErrorMsg("Can't get doc info for docId $docId");
-            return false;
-        }
-        
-        print "Creating $numPages  pages for doc Id $docId (" . $docInfo['title'] . ")...\n";
-        for ($i = 0; $i < $numPages; $i++) {
-            $curPageId = $this->dm->getPageIdByDocPage($docId, $i+1);
-            if ($curPageId !== false) {
-                $this->printWarningMsg("Page " . ($i+1) . " already exists, skipping.");
-                continue;
-            }
-            $pageId = $this->dm->newPage($docId, $i+1, $docInfo['lang']);
-            if ($pageId === false) {
-                $this->printErrorMsg("Can't create page " . ($i+1));
-                return false;
-            }
-            for ($j = 0; $j < $colsPerPage; $j++) {
-                $result = $this->dm->addNewColumn($docId, $i+1);
-                if ($result === false) {
-                    $this->printErrorMsg("Can't add column " . ($j+1) . " to page " . ($i+1));
-                    return false;
-                }
-            }
-        }
-        print "Done.\n";
-        return true;
+        // Variables to store transcription data
+        $pageId = $this->dm->getPageIdByDocPage(44, 1);
+        $pageInfo = $this->dm->getPageInfo($pageId);
+        $numCols = $pageInfo['num_cols'];
+
+        // Get IDs of all docs and the total number of docs
+        $docList = $this->dm->getDocIdList('title');
+        $numDocs = count ($docList);
+
+        // Index every document in OpenSearch
+        /*for ($i = 0; $i < $numDocs; $i++) {
+           $ID = $docList[$i];
+           $author = X;
+           $title = X;
+           $transcriber = X;
+           $pages;
+           $numPages = count($pages);
+
+           for ($i = 0; $i < $numPages; $i++) {
+               if ($numCols[pages[$i]] == 1) {
+                   $text[$i] = $pages[$i];
+               }
+           }
+
+           $numCol = X;
+           $text = [];
+    }*/
+
+        print($numCols . "\n");
+        print_r ($pageInfo);
+    return true;
     }
     
 }

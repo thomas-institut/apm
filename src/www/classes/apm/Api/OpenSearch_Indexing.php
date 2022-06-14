@@ -9,7 +9,7 @@ $client = (new \OpenSearch\ClientBuilder())
 
 $indexName = 'philosophers';
 
-function addToIndex ($author, $book, $year, $id) {
+function addToIndex ($author, $title, $year, $id) {
     global $client, $indexName;
 
     $client->create([
@@ -17,11 +17,13 @@ function addToIndex ($author, $book, $year, $id) {
         'id' => $id,
         'body' => [
             'author' => $author,
-            'book' => $book,
+            'book' => $title,
             'year' => $year
         ]
     ]);
-    return "Indexed new document.";
+
+    echo "Indexed new document.";
+    return true;
 };
 
-addToIndex('Neurath', 'Empirische Soziologie', 1928, 6);
+addToIndex('Carnap', 'Der logische Aufbau der Welt', 1924, 9);

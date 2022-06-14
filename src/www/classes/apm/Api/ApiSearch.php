@@ -24,8 +24,8 @@ class ApiSearch extends ApiController
     {
 
         // Arrays for structuring queried data
-        $books = [];
         $authors = [];
+        $titles = [];
         $docIDs = [];
         $results = [];
 
@@ -43,10 +43,10 @@ class ApiSearch extends ApiController
                 ->setBasicAuthentication('admin', 'admin') // For testing only. Don't store credentials in code.
                 ->setSSLVerification(false) // For testing only. Use certificate for validation
                 ->build();
-        } catch (Exception $e) {
+        } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
             $status = 'Connecting to OpenSearch server failed.';
             return $this->responseWithJson($response, ['searchString' => $keyword,  'results' => $results, 'serverTime' => $now, 'status' => $status]);
-        } // This error handling has no effect right now - error message is currently generated in js
+        }
 
         // Set the name of the index
         $indexName = 'philosophers';
@@ -71,9 +71,9 @@ class ApiSearch extends ApiController
             for ($i = 0; $i <= $numMatches - 1; $i++) {
                 $docIDs[$i] = $query['hits']['hits'][$i]['_id'];
                 $authors[$i] = $query['hits']['hits'][$i]['_source']['author'];
-                $books[$i] = $query['hits']['hits'][$i]['_source']['book'];
+                $titles[$i] = $query['hits']['hits'][$i]['_source']['book'];
 
-                $results[$i] = [$authors[$i], $books[$i], $docIDs[$i]];
+                $results[$i] = ['author' => $authors[$i], 'title' => $titles[$i], 'docID' => $docIDs[$i]];
             }
         }
 

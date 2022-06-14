@@ -37,7 +37,7 @@
               }
               else if (apiResponse['results'].length === 1) {
                 // layout results
-                let results = apiResponse['results'][0][0] + ': ' + apiResponse['results'][0][1] + ' (Document ID: ' + apiResponse['results'][0][2] + ')'
+                let results = apiResponse['results'][0]['author'] + ': ' + apiResponse['results'][0]['title'] + ' (Document ID: ' + apiResponse['results'][0]['docID'] + ')'
                 // display results
                 searchResultsDiv
                   .html(`${apiResponse['results'].length} result found for '${apiResponse['searchString']}': <br/> ${results} <br/>  (${apiResponse['serverTime']})`)
@@ -49,7 +49,7 @@
                 let numResults = apiResponse['results'].length
 
                 for (let i = 0; i < numResults; i++) {
-                  results = results + apiResponse['results'][i][0] + ': ' + apiResponse['results'][i][1] + ' (Document ID: ' + apiResponse['results'][i][2] + ')<br/>'
+                  results = results + apiResponse['results'][i]['author'] + ': ' + apiResponse['results'][i]['title'] + ' (Document ID: ' + apiResponse['results'][i]['docID'] + ')<br/>'
                 }
 
                 // display results

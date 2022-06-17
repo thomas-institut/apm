@@ -20,15 +20,15 @@
 
 namespace APM\CommandLine;
 
-use APM\Api;
 use AverroesProject\ColumnElement\Element;
 use AverroesProject\TxText\Item;
 
 require '/home/lukas/apm/vendor/autoload.php';
 
-
 /**
- * Description of ChangePasswordUtility
+ * Description of IndexDocs
+ *
+ * Command line utility, which indexes all transcripts out of the sql-database by using methods of the DataManager class
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
@@ -37,7 +37,7 @@ class IndexDocs extends CommandLineUtility {
 
     public function main($argc, $argv)
     {
-        // Start OpenSearch client and create index
+        // Instantiate OpenSearch client
 
         $GLOBALS['client'] = (new \OpenSearch\ClientBuilder())
             ->setHosts(['https://localhost:9200'])
@@ -45,47 +45,52 @@ class IndexDocs extends CommandLineUtility {
             ->setSSLVerification(false) // For testing only. Use certificate for validation
             ->build();
 
+        // Name of the index in OpenSearch
         $GLOBALS['indexName'] = 'transcripts';
 
+        // Create new index with defined name, if not already existing
         /*$GLOBALS['client']->indices()->create([
             'index' => $GLOBALS['indexName']
         ]);*/
 
-        // Get IDs of all docs and the total number of docs
+        // Get a list of all docIDs in the sql-database
         $docList = $this->dm->getDocIdList('title');
-
-        // Index every document in OpenSearch
 
         // Iterate over all docIDs
         foreach ($docList as $docID) {
 
-         // $work = $this->dm->getWorkInfo($docID);
-         // $info = $this->dm->getDocPageInfo($docID);
-
-         // get title
+            // Get title of every document
             $docInfo = $this->dm->getDocById($docID);
             $title = ($docInfo['title']);
 
-            // iterate over transcribed pages (check for columns) and get transcriber
+            // Get a list of pageIDs with transcriptions
             $transPages = $this->dm->getTranscribedPageListByDocId($docID);
+
+            // Iterate over transcribed pages
             foreach ($transPages as $page) {
+
+                // Get pageID and number of columns of the page
                 $pageID = $this->dm->getpageIDByDocPage($docID, $page);
                 $pageInfo = $this->dm->getPageInfo($pageID);
                 $numCols = $pageInfo['num_cols'];
 
+                // Check for number of columns of the page
                 if ($numCols === 1) {
+
+                    // Get transcript and transcriber of the column
                     $elements = $this->dm->getColumnElementsBypageID($pageID, $numCols);
                     $transcript = $this->getPlainTextFromElements($elements);
                     $transcriber = $this->dm->getTranscriptionVersionsWithAuthorInfo($pageID, 1)[0]['author_name'];
                 }
-                // print_r ($title . "\n" . $page . "\n" . $transcriber . "\n"  $pageID . "\n" . $docID . "\n" . $transcript);
+
+                // Add pageData to the OpenSearch index
                 $this->indexPage($title, $page, $transcriber, $pageID, $docID, $transcript);
-                echo "Ok.";
             }
         }
     return true;
     }
 
+    // Function to get plaintext of the transcripts in the sql-database (copied from the ApiTranscription class)
     private function getPlainTextFromElements($elements) : string {
         $text = '';
         foreach($elements as $element) {
@@ -116,6 +121,7 @@ class IndexDocs extends CommandLineUtility {
         return $text;
     }
 
+    // Function to add pages to the OpenSearch index
     private function indexPage ($title, $page, $transcriber, $pageID, $docID, $transcript) {
 
         $GLOBALS['client']->create([

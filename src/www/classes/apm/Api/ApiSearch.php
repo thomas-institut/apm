@@ -23,7 +23,7 @@ class ApiSearch extends ApiController
     public function search(Request $request, Response $response): Response
     {
 
-        // Arrays for structuring queried data
+        // Arrays as containers for queried data
         $titles = [];
         $pages = [];
         $transcribers = [];
@@ -31,16 +31,17 @@ class ApiSearch extends ApiController
         $docIDs = [];
         $transcripts = [];
 
+        // Array, which will be contained in the api response
         $results = [];
 
-        // Variable for communicating errors
+        // Status variable for communicating errors – has no effect right now?
         $status = 'OK';
 
         // Get user input and current time
         $keyword = $_POST['searchText'];
         $now = TimeString::now();
 
-        // Setup OpenSearch php client
+        // Instantiate OpenSearch client
         try {
             $client = (new \OpenSearch\ClientBuilder())
                 ->setHosts(['https://localhost:9200'])
@@ -52,10 +53,10 @@ class ApiSearch extends ApiController
             return $this->responseWithJson($response, ['searchString' => $keyword,  'results' => $results, 'serverTime' => $now, 'status' => $status]);
         }
 
-        // Set the name of the index
+        // Set the name of the index, that should be queried
         $indexName = 'transcripts';
 
-        // Query the index
+        // Search for keyword in three chosen fields of the OpenSearch index
         $query = $client->search([
             'index' => $indexName,
             'body' => [
@@ -69,11 +70,14 @@ class ApiSearch extends ApiController
             ]
         ]);
 
+        // Count the number of matches
         $numMatches = $query['hits']['total']['value'];
 
-        // Collect all matches in an ordered array
+        // If there are any matches, collect them all in an ordered array
         if ($numMatches != 0) {
             for ($i = 0; $i < $numMatches && $i < 10; $i++) {
+
+                // Get title, page number, transcriber, transcript, docID and pageID of every matched entry in the OpenSearch index
                 $titles[$i] = $query['hits']['hits'][$i]['_source']['title'];
                 $pages[$i] = $query['hits']['hits'][$i]['_source']['page'];
                 $transcribers[$i] = $query['hits']['hits'][$i]['_source']['transcriber'];
@@ -81,6 +85,7 @@ class ApiSearch extends ApiController
                 $docIDs[$i] = $query['hits']['hits'][$i]['_source']['docID'];
                 $pageIDs[$i] = $query['hits']['hits'][$i]['_id'];
 
+                // Add data of every match to the results array, which will become an array of arrays – each array holds the data of a match
                 $results[$i] = ['title' => $titles[$i], 'page' => $pages[$i], 'transcriber' => $transcribers[$i], 'pageID' => $pageIDs[$i], 'docID' => $docIDs[$i], 'transcript' => $transcripts[$i]];
             }
         }

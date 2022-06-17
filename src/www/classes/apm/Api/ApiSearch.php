@@ -75,7 +75,7 @@ class ApiSearch extends ApiController
 
         // If there are any matches, collect them all in an ordered array
         if ($numMatches != 0) {
-            for ($i = 0; $i < $numMatches && $i < 10; $i++) {
+            for ($i = 0; $i < $numMatches; $i++) {
 
                 // Get title, page number, transcriber, transcript, docID and pageID of every matched entry in the OpenSearch index
                 $titles[$i] = $query['hits']['hits'][$i]['_source']['title'];

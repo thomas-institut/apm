@@ -26,6 +26,7 @@ class ApiSearch extends ApiController
         // Arrays as containers for queried data
         $titles = [];
         $pages = [];
+        $columns = [];
         $transcribers = [];
         $pageIDs = [];
         $docIDs = [];
@@ -80,13 +81,14 @@ class ApiSearch extends ApiController
                 // Get title, page number, transcriber, transcript, docID and pageID of every matched entry in the OpenSearch index
                 $titles[$i] = $query['hits']['hits'][$i]['_source']['title'];
                 $pages[$i] = $query['hits']['hits'][$i]['_source']['page'];
+                $columns[$i] = $query['hits']['hits'][$i]['_source']['column'];
                 $transcribers[$i] = $query['hits']['hits'][$i]['_source']['transcriber'];
                 $transcripts[$i] = $query['hits']['hits'][$i]['_source']['transcript'];
                 $docIDs[$i] = $query['hits']['hits'][$i]['_source']['docID'];
                 $pageIDs[$i] = $query['hits']['hits'][$i]['_id'];
 
                 // Add data of every match to the matches array, which will become an array of arrays – each array holds the data of a match
-                $matches[$i] = ['title' => $titles[$i], 'page' => $pages[$i], 'transcriber' => $transcribers[$i], 'pageID' => $pageIDs[$i], 'docID' => $docIDs[$i], 'transcript' => $transcripts[$i]];
+                $matches[$i] = ['title' => $titles[$i], 'page' => $pages[$i], 'column' => $columns[$i], 'transcriber' => $transcribers[$i], 'pageID' => $pageIDs[$i], 'docID' => $docIDs[$i], 'transcript' => $transcripts[$i]];
             }
         }
 

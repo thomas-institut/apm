@@ -44,7 +44,7 @@
               // If there is exactly one match, display the title, the page and the transcriber of the matched document
               else if (apiResponse['matches'].length === 1) {
                 // layout matches
-                let matches = apiResponse['matches'][0]['title'] + ', Page ' + apiResponse['matches'][0]['page'] + ', (Transcriber: ' + apiResponse['matches'][0]['transcriber'] + ')'
+                let matches = 'Document title: ' + apiResponse['matches'][0]['title'] + ', Page ' + apiResponse['matches'][0]['page'] + ', Column ' + apiResponse['matches'][i]['column'] + ', Transcriber: ' + apiResponse['matches'][0]['transcriber']
                 // display matches
                 searchResultsDiv
                   .html(`${apiResponse['matches'].length} match found for '${apiResponse['searchString']}': <br/> ${matches} <br/>  (${apiResponse['serverTime']})`)
@@ -59,7 +59,7 @@
 
                 // Write all matches into a string
                 for (let i = 0; i < numMatches; i++) {
-                  matches = matches + apiResponse['matches'][i]['title'] + ', Page ' + apiResponse['matches'][i]['page'] + ', (Transcriber: ' + apiResponse['matches'][i]['transcriber'] + ')<br/>'
+                  matches = matches + 'Document title: ' + apiResponse['matches'][i]['title'] + ', Page ' + apiResponse['matches'][i]['page'] + ', Column ' + apiResponse['matches'][i]['column'] + ', Transcriber: ' + apiResponse['matches'][i]['transcriber'] + '<br/>'
                 }
 
                 // Display matches

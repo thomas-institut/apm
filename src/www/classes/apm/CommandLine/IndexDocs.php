@@ -22,6 +22,7 @@ namespace APM\CommandLine;
 
 use AverroesProject\ColumnElement\Element;
 use AverroesProject\TxText\Item;
+use ThomasInstitut\TimeString\TimeString;
 
 require '/home/lukas/apm/vendor/autoload.php';
 
@@ -48,13 +49,20 @@ class IndexDocs extends CommandLineUtility {
         // Name of the index in OpenSearch
         $GLOBALS['indexName'] = 'transcripts';
 
-        // Create new index with defined name, if not already existing
-        /*$GLOBALS['client']->indices()->create([
+        // Clear existing index and create new index
+        $GLOBALS['client']->indices()->delete([
             'index' => $GLOBALS['indexName']
-        ]);*/
+        ]);
+
+        $GLOBALS['client']->indices()->create([
+            'index' => $GLOBALS['indexName']
+        ]);
 
         // Get a list of all docIDs in the sql-database
         $docList = $this->dm->getDocIdList('title');
+
+        // Ascending ID for OpenSearch enries
+        $id = 0;
 
         // Iterate over all docIDs
         foreach ($docList as $docID) {
@@ -74,17 +82,38 @@ class IndexDocs extends CommandLineUtility {
                 $pageInfo = $this->dm->getPageInfo($pageID);
                 $numCols = $pageInfo['num_cols'];
 
-                // Check for number of columns of the page
-                if ($numCols === 1) {
-
-                    // Get transcript and transcriber of the column
-                    $elements = $this->dm->getColumnElementsBypageID($pageID, $numCols);
+                // Iterate over all columns of the page and get the corresponding transcripts and transcribers
+                for ($col = 1; $col <= $numCols; $col++) {
+                    $elements = $this->dm->getColumnElementsBypageID($pageID, $col);
                     $transcript = $this->getPlainTextFromElements($elements);
-                    $transcriber = $this->dm->getTranscriptionVersionsWithAuthorInfo($pageID, 1)[0]['author_name'];
+                    $transcriber = $this->dm->getTranscriptionVersionsWithAuthorInfo($pageID, $col)[0]['author_name']; // !?Is here an error, when building the index!?
+
+                    // Add columnData to the OpenSearch index with a unique ID
+                    $id = $id + 1;
+                    $this->indexCol($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript);
                 }
 
-                // Add pageData to the OpenSearch index
-                $this->indexPage($title, $page, $transcriber, $pageID, $docID, $transcript);
+                // Do I need to check for any versions?
+                /*
+                $versionManager = $this->systemManager->getTranscriptionManager()->getColumnVersionManager();
+                for ($col = 1; $col <= $numCols; $col++) {
+                    $versions = $versionManager->getColumnVersionInfoByPageCol($pageId, $col);
+                    // for the moment, find the first published version in the array
+                    foreach($versions as $version) {
+                        $transcriberIds[$version->authorId] = 1;
+                        if ($version->isPublished) {
+                            $columnData = [ 'column' => $col];
+                            $elements = $this->getDataManager()->getColumnElementsByPageId($pageId, $col, $version->timeFrom);
+                            $columnData['plainText'] = $this->getPlainTextFromElements($elements);
+                            $columnData['text'] = $this->getExportDataFromElements($elements);
+                            $columnData['version'] = $version->timeFrom;
+                            $columnData['isLatestVersion'] = $version->timeUntil === TimeString::END_OF_TIMES;
+                            $columnData['versionTranscriberId'] = $version->authorId;
+                            $columns[] = $columnData;
+                        }
+                    }
+                }
+                */
             }
         }
     return true;
@@ -122,15 +151,17 @@ class IndexDocs extends CommandLineUtility {
     }
 
     // Function to add pages to the OpenSearch index
-    private function indexPage ($title, $page, $transcriber, $pageID, $docID, $transcript) {
+    private function indexCol ($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript) {
 
         $GLOBALS['client']->create([
             'index' => $GLOBALS['indexName'],
-            'id' => $pageID,
+            'id' => $id,
             'body' => [
                 'title' => $title,
                 'page' => $page,
+                'column' => $col,
                 'transcriber' => $transcriber,
+                'pageID' => $pageID,
                 'docID' => $docID,
                 'transcript' => $transcript
             ]

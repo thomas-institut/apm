@@ -29,42 +29,42 @@
 
           // Get user input
           let searchText = searchBox.val()
-          // Send user input to ApiSearch (via routing in index.php) and print returned result
+          // Send user input to ApiSearch (via routing in index.php) and print returned matches
           $.post( "{{url_for('search.keyword')}}", {searchText: searchText})
             .done( (apiResponse) => {
               console.log(apiResponse)
 
               // If there are no matches, display this to the user
-              if (apiResponse['results'].length === 0) {
+              if (apiResponse['matches'].length === 0) {
                 searchResultsDiv
                   .html(`'Nothing found for ${apiResponse['searchString']}'<br/> Server time: ${apiResponse['serverTime']}`)
                   .addClass('text-warning')
               }
 
               // If there is exactly one match, display the title, the page and the transcriber of the matched document
-              else if (apiResponse['results'].length === 1) {
-                // layout results
-                let results = apiResponse['results'][0]['title'] + ', Page ' + apiResponse['results'][0]['page'] + ', (Transcriber: ' + apiResponse['results'][0]['transcriber'] + ')'
-                // display results
+              else if (apiResponse['matches'].length === 1) {
+                // layout matches
+                let matches = apiResponse['matches'][0]['title'] + ', Page ' + apiResponse['matches'][0]['page'] + ', (Transcriber: ' + apiResponse['matches'][0]['transcriber'] + ')'
+                // display matches
                 searchResultsDiv
-                  .html(`${apiResponse['results'].length} result found for '${apiResponse['searchString']}': <br/> ${results} <br/>  (${apiResponse['serverTime']})`)
+                  .html(`${apiResponse['matches'].length} match found for '${apiResponse['searchString']}': <br/> ${matches} <br/>  (${apiResponse['serverTime']})`)
                   .removeClass('text-warning')
               }
 
               // If there is more than one match, display them all like above
               else {
                 // Count the number of matches
-                let results = ''
-                let numResults = apiResponse['results'].length
+                let matches = ''
+                let numMatches = apiResponse['matches'].length
 
                 // Write all matches into a string
-                for (let i = 0; i < numResults; i++) {
-                  results = results + apiResponse['results'][i]['title'] + ', Page ' + apiResponse['results'][i]['page'] + ', (Transcriber: ' + apiResponse['results'][i]['transcriber'] + ')<br/>'
+                for (let i = 0; i < numMatches; i++) {
+                  matches = matches + apiResponse['matches'][i]['title'] + ', Page ' + apiResponse['matches'][i]['page'] + ', (Transcriber: ' + apiResponse['matches'][i]['transcriber'] + ')<br/>'
                 }
 
-                // Display results
+                // Display matches
                 searchResultsDiv
-                  .html(`${apiResponse['results'].length} results found for '${apiResponse['searchString']}':<br/> ${results} <br/>  (${apiResponse['serverTime']})`)
+                  .html(`${apiResponse['matches'].length} matches found for '${apiResponse['searchString']}':<br/> ${matches} <br/>  (${apiResponse['serverTime']})`)
                   .removeClass('text-warning')
               }
               // If something went wrong, i. e. the OpenSearch server is down, display an error message

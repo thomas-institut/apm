@@ -32,7 +32,7 @@ class ApiSearch extends ApiController
         $transcripts = [];
 
         // Array, which will be contained in the api response
-        $results = [];
+        $matches = [];
 
         // Status variable for communicating errors – has no effect right now?
         $status = 'OK';
@@ -50,7 +50,7 @@ class ApiSearch extends ApiController
                 ->build();
         } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
             $status = 'Connecting to OpenSearch server failed.';
-            return $this->responseWithJson($response, ['searchString' => $keyword,  'results' => $results, 'serverTime' => $now, 'status' => $status]);
+            return $this->responseWithJson($response, ['searchString' => $keyword,  'matches' => $matches, 'serverTime' => $now, 'status' => $status]);
         }
 
         // Set the name of the index, that should be queried
@@ -85,12 +85,12 @@ class ApiSearch extends ApiController
                 $docIDs[$i] = $query['hits']['hits'][$i]['_source']['docID'];
                 $pageIDs[$i] = $query['hits']['hits'][$i]['_id'];
 
-                // Add data of every match to the results array, which will become an array of arrays – each array holds the data of a match
-                $results[$i] = ['title' => $titles[$i], 'page' => $pages[$i], 'transcriber' => $transcribers[$i], 'pageID' => $pageIDs[$i], 'docID' => $docIDs[$i], 'transcript' => $transcripts[$i]];
+                // Add data of every match to the matches array, which will become an array of arrays – each array holds the data of a match
+                $matches[$i] = ['title' => $titles[$i], 'page' => $pages[$i], 'transcriber' => $transcribers[$i], 'pageID' => $pageIDs[$i], 'docID' => $docIDs[$i], 'transcript' => $transcripts[$i]];
             }
         }
 
-        return $this->responseWithJson($response, ['searchString' => $keyword,  'results' => $results, 'serverTime' => $now, 'status' => $status]);
+        return $this->responseWithJson($response, ['searchString' => $keyword,  'matches' => $matches, 'serverTime' => $now, 'status' => $status]);
     }
 }
 

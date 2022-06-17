@@ -92,28 +92,6 @@ class IndexDocs extends CommandLineUtility {
                     $id = $id + 1;
                     $this->indexCol($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript);
                 }
-
-                // Do I need to check for any versions?
-                /*
-                $versionManager = $this->systemManager->getTranscriptionManager()->getColumnVersionManager();
-                for ($col = 1; $col <= $numCols; $col++) {
-                    $versions = $versionManager->getColumnVersionInfoByPageCol($pageId, $col);
-                    // for the moment, find the first published version in the array
-                    foreach($versions as $version) {
-                        $transcriberIds[$version->authorId] = 1;
-                        if ($version->isPublished) {
-                            $columnData = [ 'column' => $col];
-                            $elements = $this->getDataManager()->getColumnElementsByPageId($pageId, $col, $version->timeFrom);
-                            $columnData['plainText'] = $this->getPlainTextFromElements($elements);
-                            $columnData['text'] = $this->getExportDataFromElements($elements);
-                            $columnData['version'] = $version->timeFrom;
-                            $columnData['isLatestVersion'] = $version->timeUntil === TimeString::END_OF_TIMES;
-                            $columnData['versionTranscriberId'] = $version->authorId;
-                            $columns[] = $columnData;
-                        }
-                    }
-                }
-                */
             }
         }
     return true;

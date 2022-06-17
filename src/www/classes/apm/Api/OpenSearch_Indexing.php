@@ -7,7 +7,7 @@ $client = (new \OpenSearch\ClientBuilder())
     ->setSSLVerification(false) // For testing only. Use certificate for validation
     ->build();
 
-$indexName = 'philosophers';
+$indexName = 'transcripts';
 
 function addToIndex ($author, $title, $year, $id) {
     global $client, $indexName;
@@ -22,8 +22,11 @@ function addToIndex ($author, $title, $year, $id) {
         ]
     ]);
 
-    echo "Indexed new document.";
     return true;
 };
 
-addToIndex('Test', ['Der logische Aufbau der Welt', 'Dies ist im Array.'], 1924, 10);
+addToIndex('Test', ['Der logische Aufbau der Welt', 'Dies ist im Array.'], 1924, 1);
+
+$client->indices()->delete([
+    'index' => $indexName
+]);

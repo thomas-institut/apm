@@ -21,6 +21,10 @@
 namespace APM\CommandLine;
 
 use APM\Api;
+use AverroesProject\ColumnElement\Element;
+use AverroesProject\TxText\Item;
+
+require '/home/lukas/apm/vendor/autoload.php';
 
 
 /**
@@ -30,41 +34,103 @@ use APM\Api;
  */
 
 class IndexDocs extends CommandLineUtility {
-    
+
     public function main($argc, $argv)
     {
+        // Start OpenSearch client and create index
 
-        // Variables to store transcription data
-        $pageId = $this->dm->getPageIdByDocPage(44, 1);
-        $pageInfo = $this->dm->getPageInfo($pageId);
-        $numCols = $pageInfo['num_cols'];
+        $GLOBALS['client'] = (new \OpenSearch\ClientBuilder())
+            ->setHosts(['https://localhost:9200'])
+            ->setBasicAuthentication('admin', 'admin') // For testing only. Don't store credentials in code.
+            ->setSSLVerification(false) // For testing only. Use certificate for validation
+            ->build();
+
+        $GLOBALS['indexName'] = 'transcripts';
+
+        /*$GLOBALS['client']->indices()->create([
+            'index' => $GLOBALS['indexName']
+        ]);*/
 
         // Get IDs of all docs and the total number of docs
         $docList = $this->dm->getDocIdList('title');
-        $numDocs = count ($docList);
 
         // Index every document in OpenSearch
-        /*for ($i = 0; $i < $numDocs; $i++) {
-           $ID = $docList[$i];
-           $author = X;
-           $title = X;
-           $transcriber = X;
-           $pages;
-           $numPages = count($pages);
 
-           for ($i = 0; $i < $numPages; $i++) {
-               if ($numCols[pages[$i]] == 1) {
-                   $text[$i] = $pages[$i];
-               }
-           }
+        // Iterate over all docIDs
+        foreach ($docList as $docID) {
 
-           $numCol = X;
-           $text = [];
-    }*/
+         // $work = $this->dm->getWorkInfo($docID);
+         // $info = $this->dm->getDocPageInfo($docID);
 
-        print($numCols . "\n");
-        print_r ($pageInfo);
+         // get title
+            $docInfo = $this->dm->getDocById($docID);
+            $title = ($docInfo['title']);
+
+            // iterate over transcribed pages (check for columns) and get transcriber
+            $transPages = $this->dm->getTranscribedPageListByDocId($docID);
+            foreach ($transPages as $page) {
+                $pageID = $this->dm->getpageIDByDocPage($docID, $page);
+                $pageInfo = $this->dm->getPageInfo($pageID);
+                $numCols = $pageInfo['num_cols'];
+
+                if ($numCols === 1) {
+                    $elements = $this->dm->getColumnElementsBypageID($pageID, $numCols);
+                    $transcript = $this->getPlainTextFromElements($elements);
+                    $transcriber = $this->dm->getTranscriptionVersionsWithAuthorInfo($pageID, 1)[0]['author_name'];
+                }
+                // print_r ($title . "\n" . $page . "\n" . $transcriber . "\n"  $pageID . "\n" . $docID . "\n" . $transcript);
+                $this->indexPage($title, $page, $transcriber, $pageID, $docID, $transcript);
+                echo "Ok.";
+            }
+        }
     return true;
+    }
+
+    private function getPlainTextFromElements($elements) : string {
+        $text = '';
+        foreach($elements as $element) {
+            if ($element->type === Element::LINE) {
+                foreach($element->items as $item) {
+                    switch($item->type) {
+                        case Item::TEXT:
+                        case Item::HEADING:
+                        case Item::RUBRIC:
+                        case Item::BOLD_TEXT:
+                        case Item::ITALIC:
+                        case Item::MATH_TEXT:
+                        case Item::GLIPH:
+                        case Item::INITIAL:
+                            $text .= $item->theText;
+                            break;
+
+                        case Item::NO_WORD_BREAK:
+                            $text .= '-';
+                            break;
+
+
+                    }
+                }
+                $text .=  "\n";
+            }
+        }
+        return $text;
+    }
+
+    private function indexPage ($title, $page, $transcriber, $pageID, $docID, $transcript) {
+
+        $GLOBALS['client']->create([
+            'index' => $GLOBALS['indexName'],
+            'id' => $pageID,
+            'body' => [
+                'title' => $title,
+                'page' => $page,
+                'transcriber' => $transcriber,
+                'docID' => $docID,
+                'transcript' => $transcript
+            ]
+        ]);
+
+        return true;
     }
     
 }

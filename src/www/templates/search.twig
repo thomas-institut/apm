@@ -33,11 +33,10 @@
                 searchResultsDiv
                   .html(`'Nothing found for ${apiResponse['searchString']}'<br/> Server time: ${apiResponse['serverTime']}`)
                   .addClass('text-warning')
-                return
               }
               else if (apiResponse['results'].length === 1) {
                 // layout results
-                let results = apiResponse['results'][0]['author'] + ': ' + apiResponse['results'][0]['title'] + ' (Document ID: ' + apiResponse['results'][0]['docID'] + ')'
+                let results = apiResponse['results'][0]['title'] + ', Page ' + apiResponse['results'][0]['page'] + ', (Document ID: ' + apiResponse['results'][0]['transcriber'] + ')'
                 // display results
                 searchResultsDiv
                   .html(`${apiResponse['results'].length} result found for '${apiResponse['searchString']}': <br/> ${results} <br/>  (${apiResponse['serverTime']})`)
@@ -49,7 +48,7 @@
                 let numResults = apiResponse['results'].length
 
                 for (let i = 0; i < numResults; i++) {
-                  results = results + apiResponse['results'][i]['author'] + ': ' + apiResponse['results'][i]['title'] + ' (Document ID: ' + apiResponse['results'][i]['docID'] + ')<br/>'
+                  results = results + apiResponse['results'][i]['title'] + ', ' + apiResponse['results'][i]['page'] + ', (Document ID: ' + apiResponse['results'][i]['transcriber'] + ')<br/>'
                 }
 
                 // display results

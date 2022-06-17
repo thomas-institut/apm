@@ -11,16 +11,9 @@ require '/home/lukas/apm/vendor/autoload.php';
 
 set_time_limit(5); // Script should not run longer than 5 seconds - does this work like this?
 
-class ApiSearch extends ApiController
-{
 
-    /**
-     * @param Request $request
-     * @param Response $response
-     * @return Response
-     */
 
-    public function search(Request $request, Response $response): Response
+function search($word)
     {
 
         // Arrays for structuring queried data
@@ -37,8 +30,7 @@ class ApiSearch extends ApiController
         $status = 'OK';
 
         // Get user input and current time
-        $keyword = $_POST['searchText'];
-        $now = TimeString::now();
+        $keyword = $word;
 
         // Setup OpenSearch php client
         try {
@@ -49,7 +41,7 @@ class ApiSearch extends ApiController
                 ->build();
         } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
             $status = 'Connecting to OpenSearch server failed.';
-            return $this->responseWithJson($response, ['searchString' => $keyword,  'results' => $results, 'serverTime' => $now, 'status' => $status]);
+            return false;
         }
 
         // Set the name of the index
@@ -63,18 +55,17 @@ class ApiSearch extends ApiController
                 'query' => [
                     'multi_match' => [
                         'query' => $keyword,
-                        'fields' => ['title', 'transcriber', 'transcript']
+                        'fields' => ['title', 'transcriber', 'transcript'],
                     ]
                 ]
             ]
         ]);
 
         $numMatches = $query['hits']['total']['value'];
-        print_r ($query['hits']['hits']);
 
         // Collect all matches in an ordered array
         if ($numMatches != 0) {
-            for ($i = 0; $i < $numMatches && $i < 10; $i++) {
+            for ($i = 0; $i < $numMatches; $i++) {
                 $titles[$i] = $query['hits']['hits'][$i]['_source']['title'];
                 $pages[$i] = $query['hits']['hits'][$i]['_source']['page'];
                 $transcribers[$i] = $query['hits']['hits'][$i]['_source']['transcriber'];
@@ -86,7 +77,10 @@ class ApiSearch extends ApiController
             }
         }
 
-        return $this->responseWithJson($response, ['searchString' => $keyword,  'results' => $results, 'serverTime' => $now, 'status' => $status]);
+        print_r ($results);
+        return true;
     }
-}
+
+    search('david');
+
 

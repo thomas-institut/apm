@@ -70,7 +70,6 @@ class ApiSearch extends ApiController
         ]);
 
         $numMatches = $query['hits']['total']['value'];
-        print_r ($query['hits']['hits']);
 
         // Collect all matches in an ordered array
         if ($numMatches != 0) {

@@ -87,12 +87,33 @@ class ApiSearch extends ApiController
                 $docIDs[$i] = $query['hits']['hits'][$i]['_source']['docID'];
                 $pageIDs[$i] = $query['hits']['hits'][$i]['_id'];
 
+                // Get context of match, if it is a match in the transcript
+                $matchWithContext = "";
+                if (strpos($transcripts[$i], $keyword) !== false) {
+                    $transcript = $transcripts[$i];
+                    $matchWithContext = $this->getContext($transcript, $keyword);
+                }
+
                 // Add data of every match to the matches array, which will become an array of arrays – each array holds the data of a match
-                $matches[$i] = ['title' => $titles[$i], 'page' => $pages[$i], 'column' => $columns[$i], 'transcriber' => $transcribers[$i], 'pageID' => $pageIDs[$i], 'docID' => $docIDs[$i], 'transcript' => $transcripts[$i]];
+                $matches[$i] = ['title' => $titles[$i], 'page' => $pages[$i], 'column' => $columns[$i], 'transcriber' => $transcribers[$i], 'pageID' => $pageIDs[$i], 'docID' => $docIDs[$i], 'transcript' => $transcripts[$i], 'context' => $matchWithContext];
             }
         }
 
         return $this->responseWithJson($response, ['searchString' => $keyword,  'matches' => $matches, 'serverTime' => $now, 'status' => $status]);
+    }
+
+    private function getContext ($transcript, $keyword) {
+        $pos = strpos($transcript, $keyword);
+        $precedingWords = "";
+        $followingWords = "";
+
+        for ($i=0; $i<80; $i++) {
+            $precedingWords = $precedingWords . $transcript[$pos-($i+1)];
+            $followingWords = $followingWords . $transcript[$pos+$i];
+        }
+
+        $keywordWithContext = strrev($precedingWords) . $followingWords;
+        return $keywordWithContext;
     }
 }
 

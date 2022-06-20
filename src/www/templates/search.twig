@@ -59,7 +59,7 @@
 
                 // Write all matches into a string
                 for (let i = 0; i < numMatches; i++) {
-                  matches = matches + 'Document title: ' + apiResponse['matches'][i]['title'] + ', Page ' + apiResponse['matches'][i]['page'] + ', Column ' + apiResponse['matches'][i]['column'] + ', Transcriber: ' + apiResponse['matches'][i]['transcriber'] + '<br/>'
+                  matches = matches + '<br/>' + 'Document title: ' + apiResponse['matches'][i]['title'] + ', Page ' + apiResponse['matches'][i]['page'] + ', Column ' + apiResponse['matches'][i]['column'] + ', Transcriber: ' + apiResponse['matches'][i]['transcriber'] + '<br/>' + apiResponse['matches'][i]['context'] + '<br/>'
                 }
 
                 // Display matches

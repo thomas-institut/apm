@@ -34,37 +34,65 @@
             .done( (apiResponse) => {
               console.log(apiResponse)
 
+              let numMatches = apiResponse['matches'].length
+
               // If there are no matches, display this to the user
-              if (apiResponse['matches'].length === 0) {
+              if (numMatches === 0) {
                 searchResultsDiv
                   .html(`'Nothing found for ${apiResponse['searchString']}'<br/> Server time: ${apiResponse['serverTime']}`)
                   .addClass('text-warning')
               }
 
               // If there is exactly one match, display the title, the page and the transcriber of the matched document
-              else if (apiResponse['matches'].length === 1) {
-                // layout matches
-                let matches = 'Document title: ' + apiResponse['matches'][0]['title'] + ', Page ' + apiResponse['matches'][0]['page'] + ', Column ' + apiResponse['matches'][i]['column'] + ', Transcriber: ' + apiResponse['matches'][0]['transcriber']
-                // display matches
+              else if (numMatches === 1) {
+
+                // Collect relevant Data from API response
+                let title = apiResponse['matches'][0]['title']
+                let page = apiResponse['matches'][0]['page']
+                let column = apiResponse['matches'][0]['column']
+                let transcriber = apiResponse['matches'][0]['transcriber']
+                let matchInContext = apiResponse['matches'][0]['matchInContext']
+                let keyword = apiResponse['searchString']
+                let time = apiResponse['serverTime']
+
+                let results = (title + ", " +
+                    "Page " + page + ", " +
+                    "Column " + column + ", " +
+                    "transcribed by " + transcriber).italics() + "<br/>" +
+                  makeKeywordbold(matchInContext, keyword)
+
+                // Display results
                 searchResultsDiv
-                  .html(`${apiResponse['matches'].length} match found for '${apiResponse['searchString']}': <br/> ${matches} <br/>  (${apiResponse['serverTime']})`)
+                  .html(`<b>${numMatches} match found for '${keyword}':</b> <br/><br/> ${results} <br/><br/>  (${time})`)
                   .removeClass('text-warning')
               }
 
               // If there is more than one match, display them all like above
               else {
-                // Count the number of matches
-                let matches = ''
-                let numMatches = apiResponse['matches'].length
+
+                let results = ''
+                let keyword = apiResponse['searchString']
+                let time = apiResponse['serverTime']
 
                 // Write all matches into a string
                 for (let i = 0; i < numMatches; i++) {
-                  matches = matches + '<br/>' + 'Document title: ' + apiResponse['matches'][i]['title'] + ', Page ' + apiResponse['matches'][i]['page'] + ', Column ' + apiResponse['matches'][i]['column'] + ', Transcriber: ' + apiResponse['matches'][i]['transcriber'] + '<br/>' + makeKeywordbold(apiResponse['matches'][i]['context'], apiResponse['searchString']) + '<br/>'
+
+                  // Collect relevant Data from API response
+                  let title = apiResponse['matches'][i]['title']
+                  let page = apiResponse['matches'][i]['page']
+                  let column = apiResponse['matches'][i]['column']
+                  let transcriber = apiResponse['matches'][i]['transcriber']
+                  let matchInContext = apiResponse['matches'][i]['matchInContext']
+                  let keyword = apiResponse['searchString']
+
+                  results = results + '<br/>' +
+                    (title + ", " + 'page ' + page + ", " + 'column ' + column + ", " + 'transcribed by ' + transcriber + '<br/>').italics() +
+                    makeKeywordbold(matchInContext, keyword) + '<br/>'
                 }
 
-                // Display matches
+                // Display results
                 searchResultsDiv
-                  .html(`${apiResponse['matches'].length} matches found for '${apiResponse['searchString']}':<br/> ${matches} <br/>  (${apiResponse['serverTime']})`)
+                  .html(`<b>${numMatches} matches found for '${keyword}':</b> <br/><br/> ${results} <br/><br/> (${time})`)
                   .removeClass('text-warning')
               }
               // If something went wrong, i. e. the OpenSearch server is down, display an error message
@@ -78,13 +106,21 @@
         })
       })
 
+      // Function to highlight the searched keyword in its context
       function makeKeywordbold (text, keyword) {
-        let keywordLen = keyword.length
-        let pos = text.indexOf(keyword)
-        let boldKeyword = keyword.bold()
-        let newText = text.slice(0, pos) + boldKeyword + text.slice(pos+keywordLen, text.length)
 
-        return newText
+        // Check if text is not empty (this would mean, that the matched category is not transcript, but transcriber or title)
+        if (text !== "") {
+          let keywordLen = keyword.length
+          let pos = text.indexOf(keyword)
+          let boldKeyword = keyword.bold()
+          let newText = text.slice(0, pos) + boldKeyword + text.slice(pos + keywordLen, text.length)
+
+          return newText
+        }
+        else {
+          return "";
+        }
       }
     </script>
 {%  endblock %}

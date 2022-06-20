@@ -59,7 +59,7 @@
 
                 // Write all matches into a string
                 for (let i = 0; i < numMatches; i++) {
-                  matches = matches + '<br/>' + 'Document title: ' + apiResponse['matches'][i]['title'] + ', Page ' + apiResponse['matches'][i]['page'] + ', Column ' + apiResponse['matches'][i]['column'] + ', Transcriber: ' + apiResponse['matches'][i]['transcriber'] + '<br/>' + apiResponse['matches'][i]['context'] + '<br/>'
+                  matches = matches + '<br/>' + 'Document title: ' + apiResponse['matches'][i]['title'] + ', Page ' + apiResponse['matches'][i]['page'] + ', Column ' + apiResponse['matches'][i]['column'] + ', Transcriber: ' + apiResponse['matches'][i]['transcriber'] + '<br/>' + makeKeywordbold(apiResponse['matches'][i]['context'], apiResponse['searchString']) + '<br/>'
                 }
 
                 // Display matches
@@ -77,6 +77,15 @@
           })
         })
       })
+
+      function makeKeywordbold (text, keyword) {
+        let keywordLen = keyword.length
+        let pos = text.indexOf(keyword)
+        let boldKeyword = keyword.bold()
+        let newText = text.slice(0, pos) + boldKeyword + text.slice(pos+keywordLen, text.length)
+
+        return newText
+      }
     </script>
 {%  endblock %}
 

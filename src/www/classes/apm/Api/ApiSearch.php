@@ -107,9 +107,21 @@ class ApiSearch extends ApiController
         $precedingWords = "";
         $followingWords = "";
 
-        for ($i=0; $i<80; $i++) {
-            $precedingWords = $precedingWords . $transcript[$pos-($i+1)];
+        for ($i=0; $i<250; $i++) {
+
             $followingWords = $followingWords . $transcript[$pos+$i];
+
+            if ($i>20 && $transcript[$pos+$i] == ".") {
+                break;
+            }
+        }
+
+        for ($i=1; $i<150; $i++) {
+            if ($i>2 && $transcript[$pos-$i] == ".") {
+                break;
+            }
+
+        $precedingWords = $precedingWords . $transcript[$pos-$i];
         }
 
         $keywordWithContext = strrev($precedingWords) . $followingWords;

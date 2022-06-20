@@ -109,8 +109,6 @@
       // Function to highlight the searched keyword in its context
       function makeKeywordbold (text, keyword) {
 
-        // Check if text is not empty (this would mean, that the matched category is not transcript, but transcriber or title)
-        if (text !== "") {
           let keywordLen = keyword.length
           let pos = text.indexOf(keyword)
           let boldKeyword = keyword.bold()
@@ -118,10 +116,6 @@
 
           return newText
         }
-        else {
-          return "";
-        }
-      }
     </script>
 {%  endblock %}
 

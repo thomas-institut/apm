@@ -63,9 +63,11 @@ class ApiSearch extends ApiController
             'body' => [
                 'size' => 10000,
                 'query' => [
-                    'multi_match' => [
-                        'query' => $keyword,
-                        'fields' => ['title', 'transcriber', 'transcript']
+                    'match_phrase_prefix' => [
+                        'transcript' => [
+                            "query" => $keyword,
+                            "analyzer" => "standard"
+                            ]
                     ]
                 ]
             ]
@@ -87,21 +89,9 @@ class ApiSearch extends ApiController
                 $docIDs[$i] = $query['hits']['hits'][$i]['_source']['docID'];
                 $pageIDs[$i] = $query['hits']['hits'][$i]['_id'];
 
-                // Get context of a matched keyword, if it is a match in the transcript and get the matched category in any case
-
-                if (strpos($transcripts[$i], $keyword) !== false) {
-                    $matchedCategory = 'transcript';
-                    $transcript = $transcripts[$i];
-                    $matchInContext = $this->getContext($transcript, $keyword);
-                }
-                elseif (strpos($titles[$i], $keyword) !== false) {
-                    $matchedCategory = 'title';
-                    $matchInContext = "";
-                }
-                else {
-                    $matchedCategory = 'transcriber';
-                    $matchInContext = "";
-                }
+                // Get context of a matched keyword
+                $transcript = $transcripts[$i];
+                $matchInContext = $this->getContext($transcript, $keyword);
 
                 // Add data of every match to the matches array, which will become an array of arrays – each array holds the data of a match
                 $matches[$i] = [
@@ -112,7 +102,6 @@ class ApiSearch extends ApiController
                     'pageID' => $pageIDs[$i],
                     'docID' => $docIDs[$i],
                     'transcript' => $transcripts[$i],
-                    'matchedCategory' => $matchedCategory,
                     'matchInContext' => $matchInContext
                 ];
             }
@@ -141,7 +130,7 @@ class ApiSearch extends ApiController
         // Get the words, that follow the keyword (including itself)
         for ($i=0; $i<250; $i++) {
 
-            $followingWords = $followingWords . $transcript[$pos+$i];
+            $followingWords = $followingWords . $transcript[$pos + $i];
 
             if ($i>20 && $transcript[$pos+$i] == ".") {
                 break;

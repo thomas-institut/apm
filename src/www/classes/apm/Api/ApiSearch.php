@@ -111,34 +111,59 @@ class ApiSearch extends ApiController
     }
 
     // Function to get the surrounding context of a keyword
-    private function getContext ($transcript, $keyword) {
+    private function getContext ($transcript, $keyword, $cSize = 100) {
 
         // Get position of the keyword
         $pos = strpos($transcript, $keyword);
-        $precedingWords = "";
-        $followingWords = "";
+        $preChars = ""; // Will hold the preceding characters (words) of the keyword
+        $sucChars = ""; // Will hold the succeeding characters (words) of the keyword
 
-        // Get the words that precede the keyword
-        for ($i=1; $i<150; $i++) {
-            if ($i>2 && $transcript[$pos-$i] == ".") {
+        // Get the characters (words) that precede the keyword
+        for ($i=1; $i<$cSize; $i++) {
+
+            $char = $transcript[$pos-$i]; // Get next character
+
+            // Stop getting more context, if some preceding characters are already catched and the current character is a period
+            if ($i>($cSize*0.2) && $char== ".") {
+                if (substr($preChars, -1) == " ") { // remove blank space at the end of $prechars, if necessary
+                    $preChars = substr($preChars, 0, -1);
+                }
                 break;
             }
 
-            $precedingWords = $precedingWords . $transcript[$pos-$i];
+            // Stop getting more context, if many preceding characters are already catched and the current character is whitespace or colons
+            if ($i>($cSize*0.7) and ($char == " " or $char == ":")) {
+                $preChars = $preChars . "...";
+                break;
+            }
+
+            // Append new character to preceding context
+            $preChars = $preChars . $char;
         }
 
-        // Get the words, that follow the keyword (including itself)
-        for ($i=0; $i<250; $i++) {
+        // Get the words, that succeed the keyword (including itself)
+        for ($i=0; $i<$cSize; $i++) {
 
-            $followingWords = $followingWords . $transcript[$pos + $i];
+            $char = $transcript[$pos+$i]; // Get next character
 
-            if ($i>20 && $transcript[$pos+$i] == ".") {
+            // Stop getting more context, if many succeeding characters are already catched and the current character is whitespace. colons or comma
+            if ($i>($cSize*0.7) and ($char == " " or $char  == ":" or $char == ",")) {
+                $sucChars = $sucChars . "...";
                 break;
             }
+
+            // Append new character to succeeding context
+            $sucChars = $sucChars . $char;
+
+            // Stop getting more context, if some succeeding characters are already catched and the current character is a period
+            if ($i>($cSize*0.2) and $char == ".") {
+                break;
+            }
+
         }
 
         // Unite the preceding and following words
-        $keywordWithContext = strrev($precedingWords) . $followingWords;
+        $keywordWithContext = strrev($preChars) . $sucChars;
 
         return $keywordWithContext;
     }

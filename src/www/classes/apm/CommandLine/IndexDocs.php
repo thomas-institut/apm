@@ -91,6 +91,7 @@ class IndexDocs extends CommandLineUtility {
                     // Add columnData to the OpenSearch index with a unique ID
                     $id = $id + 1;
                     $this->indexCol($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript);
+                    echo "OK.";
                 }
             }
         }

@@ -82,11 +82,9 @@ function search($word)
         print_r ($results);
         echo ($numMatches);
 
-        $test = "hello";
-        echo (substr($test, 0, 1));
         return true;
     }
 
-    search('me');
+    search('intelle');
 
 

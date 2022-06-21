@@ -38,17 +38,18 @@ class ApiSearch extends ApiController
         // Status variable for communicating errors – has no effect right now?
         $status = 'OK';
 
-        // Get user input and remove whitespace before and after the keyword - this is necessary for a clean search and adequate calculation of the context with the getContext-function
+        // Get user input and remove disturbing whitespace before, after or in between keywords -
+        // this is necessary for a clean search and adequate calculation of the context with the getContext-function
         $keyword = $_POST['searchText'];
 
-        for ($i=0; $i<strlen($keyword); $i++) {
-            if (substr($keyword, -1) == " ") { // Remove whitespace at the end of the keyword
+        $keyword = preg_replace('!\s+!', ' ', $keyword); // Reduce multiple blanks following each other to one
+
+        if (substr($keyword, -1) == " ") { // Remove whitespace at the end of the keyword
                 $keyword = substr($keyword, 0, -1);
             }
-            if (substr($keyword, 0, 1) == " ") { // Remove whitespace at the beginning of the keyword
+        if (substr($keyword, 0, 1) == " ") { // Remove whitespace at the beginning of the keyword
                 $keyword = substr($keyword, 1);
             }
-        }
 
         // Get current time
         $now = TimeString::now();
@@ -77,7 +78,8 @@ class ApiSearch extends ApiController
                     'match_phrase_prefix' => [
                         'transcript' => [
                             "query" => $keyword,
-                            "analyzer" => "standard"
+                            "analyzer" => "standard",
+                            "max_expansions" => 10
                             ]
                     ]
                 ]

@@ -51,7 +51,7 @@
                 let page = apiResponse['matches'][0]['page']
                 let column = apiResponse['matches'][0]['column']
                 let transcriber = apiResponse['matches'][0]['transcriber']
-                let matchInContext = apiResponse['matches'][0]['matchInContext']
+                let keywordInContext = apiResponse['matches'][0]['keywordInContext']
                 let keyword = apiResponse['searchString']
                 let time = apiResponse['serverTime']
 
@@ -59,7 +59,7 @@
                     "Page " + page + ", " +
                     "Column " + column + ", " +
                     "transcribed by " + transcriber).italics() + "<br/>" +
-                  makeKeywordbold(matchInContext, keyword)
+                  makeKeywordbold(keywordInContext, keyword)
 
                 // Display results
                 searchResultsDiv
@@ -82,17 +82,17 @@
                   let page = apiResponse['matches'][i]['page']
                   let column = apiResponse['matches'][i]['column']
                   let transcriber = apiResponse['matches'][i]['transcriber']
-                  let matchInContext = apiResponse['matches'][i]['matchInContext']
+                  let keywordInContext = apiResponse['matches'][i]['keywordInContext']
                   let keyword = apiResponse['searchString']
 
                   results = results + '<br/>' +
                     (title + ", " + 'page ' + page + ", " + 'column ' + column + ", " + 'transcribed by ' + transcriber + '<br/>').italics() +
-                    makeKeywordbold(matchInContext, keyword) + '<br/>'
+                    makeKeywordbold(keywordInContext, keyword) + '<br/>'
                 }
 
                 // Display results
                 searchResultsDiv
-                  .html(`<b>${numMatches} matches found for '${keyword}':</b> <br/><br/> ${results} <br/><br/> (${time})`)
+                  .html(`<b>${numMatches} matches found for '${keyword}':</b><br/> ${results} <br/><br/> (${time})`)
                   .removeClass('text-warning')
               }
               // If something went wrong, i. e. the OpenSearch server is down, display an error message

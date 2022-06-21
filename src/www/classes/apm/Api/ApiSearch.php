@@ -9,7 +9,7 @@ use ThomasInstitut\TimeString\TimeString;
 
 require '/home/lukas/apm/vendor/autoload.php';
 
-set_time_limit(5); // Script should not run longer than 5 seconds - does this work like this?
+// set_time_limit(5); // Script should not run longer than 5 seconds - does this work like this?
 
 class ApiSearch extends ApiController
 {
@@ -38,8 +38,19 @@ class ApiSearch extends ApiController
         // Status variable for communicating errors – has no effect right now?
         $status = 'OK';
 
-        // Get user input and current time
+        // Get user input and remove whitespace before and after the keyword - this is necessary for a clean search and adequate calculation of the context with the getContext-function
         $keyword = $_POST['searchText'];
+
+        for ($i=0; $i<strlen($keyword); $i++) {
+            if (substr($keyword, -1) == " ") { // Remove whitespace at the end of the keyword
+                $keyword = substr($keyword, 0, -1);
+            }
+            if (substr($keyword, 0, 1) == " ") { // Remove whitespace at the beginning of the keyword
+                $keyword = substr($keyword, 1);
+            }
+        }
+
+        // Get current time
         $now = TimeString::now();
 
         // Instantiate OpenSearch client
@@ -77,7 +88,7 @@ class ApiSearch extends ApiController
         $numMatches = $query['hits']['total']['value'];
 
         // If there are any matches, collect them all in an ordered array
-        if ($numMatches != 0) {
+        if ($numMatches !== 0) {
             for ($i = 0; $i < $numMatches; $i++) {
 
                 // Get title, page number, transcriber, transcript, docID and pageID of every matched entry in the OpenSearch index
@@ -91,7 +102,7 @@ class ApiSearch extends ApiController
 
                 // Get context of a matched keyword
                 $transcript = $transcripts[$i];
-                $matchInContext = $this->getContext($transcript, $keyword);
+                $keywordInContext = $this->getContext($transcript, $keyword);
 
                 // Add data of every match to the matches array, which will become an array of arrays – each array holds the data of a match
                 $matches[$i] = [
@@ -102,7 +113,7 @@ class ApiSearch extends ApiController
                     'pageID' => $pageIDs[$i],
                     'docID' => $docIDs[$i],
                     'transcript' => $transcripts[$i],
-                    'matchInContext' => $matchInContext
+                    'keywordInContext' => $keywordInContext
                 ];
             }
         }
@@ -111,17 +122,26 @@ class ApiSearch extends ApiController
     }
 
     // Function to get the surrounding context of a keyword
-    private function getContext ($transcript, $keyword, $cSize = 100) {
+    private function getContext ($transcript, $keyword, $cSize = 100): string
+    {
 
         // Get position of the keyword
         $pos = strpos($transcript, $keyword);
         $preChars = ""; // Will hold the preceding characters (words) of the keyword
         $sucChars = ""; // Will hold the succeeding characters (words) of the keyword
+        $numPreChars = $pos-1;
+        $numSucChars = strlen($transcript)-$pos;
 
         // Get the characters (words) that precede the keyword
         for ($i=1; $i<$cSize; $i++) {
 
-            $char = $transcript[$pos-$i]; // Get next character
+            // Get next character, if there is one
+            if ($i<$numPreChars) {
+              $char = $transcript[$pos-$i];
+              }
+              else {
+                 break;
+             }
 
             // Stop getting more context, if some preceding characters are already catched and the current character is a period
             if ($i>($cSize*0.2) && $char== ".") {
@@ -144,7 +164,14 @@ class ApiSearch extends ApiController
         // Get the words, that succeed the keyword (including itself)
         for ($i=0; $i<$cSize; $i++) {
 
-            $char = $transcript[$pos+$i]; // Get next character
+            // Get the next character, if there is one
+            if ($i<$numSucChars) {
+                $char = $transcript[$pos+$i];
+            }
+            else {
+                break;
+            }
+
 
             // Stop getting more context, if many succeeding characters are already catched and the current character is whitespace. colons or comma
             if ($i>($cSize*0.7) and ($char == " " or $char  == ":" or $char == ",")) {

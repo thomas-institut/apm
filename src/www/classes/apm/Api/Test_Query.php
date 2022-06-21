@@ -53,9 +53,11 @@ function search($word)
             'body' => [
                 'size' => 10000,
                 'query' => [
-                    'multi_match' => [
-                        'query' => $keyword,
-                        'fields' => ['title', 'transcriber', 'transcript'],
+                    'match_phrase_prefix' => [
+                        'transcript' => [
+                            "query" => $keyword,
+                            "analyzer" => "standard"
+                        ]
                     ]
                 ]
             ]
@@ -78,9 +80,13 @@ function search($word)
         }
 
         print_r ($results);
+        echo ($numMatches);
+
+        $test = "hello";
+        echo (substr($test, 0, 1));
         return true;
     }
 
-    search('david');
+    search('me');
 
 

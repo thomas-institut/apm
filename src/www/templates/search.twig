@@ -51,6 +51,7 @@
                 let page = apiResponse['matches'][0]['page']
                 let column = apiResponse['matches'][0]['column']
                 let transcriber = apiResponse['matches'][0]['transcriber']
+                let matchedKeyword = apiResponse['matches'][0]['matchedKeyword']
                 let keywordInContext = apiResponse['matches'][0]['keywordInContext']
                 let keyword = apiResponse['searchString']
                 let time = apiResponse['serverTime']
@@ -59,7 +60,7 @@
                     "Page " + page + ", " +
                     "Column " + column + ", " +
                     "transcribed by " + transcriber).italics() + "<br/>" +
-                  makeKeywordbold(keywordInContext, keyword)
+                  makeKeywordbold(keywordInContext, matchedKeyword)
 
                 // Display results
                 searchResultsDiv
@@ -82,12 +83,13 @@
                   let page = apiResponse['matches'][i]['page']
                   let column = apiResponse['matches'][i]['column']
                   let transcriber = apiResponse['matches'][i]['transcriber']
+                  let matchedKeyword = apiResponse['matches'][i]['matchedKeyword']
                   let keywordInContext = apiResponse['matches'][i]['keywordInContext']
                   let keyword = apiResponse['searchString']
 
                   results = results + '<br/>' +
                     (title + ", " + 'page ' + page + ", " + 'column ' + column + ", " + 'transcribed by ' + transcriber + '<br/>').italics() +
-                    makeKeywordbold(keywordInContext, keyword) + '<br/>'
+                    makeKeywordbold(keywordInContext, matchedKeyword) + '<br/>'
                 }
 
                 // Display results

@@ -1,6 +1,7 @@
 <?php
 namespace APM\Api;
 
+use phpDocumentor\Reflection\Types\Null_;
 use PhpParser\Error;
 use PHPUnit\Util\Exception;
 use \Psr\Http\Message\ServerRequestInterface as Request;
@@ -53,7 +54,7 @@ function search($word)
             'body' => [
                 'size' => 10000,
                 'query' => [
-                    'match_phrase_prefix' => [
+                    'match' => [
                         'transcript' => [
                             "query" => $keyword,
                             "analyzer" => "standard"
@@ -79,12 +80,15 @@ function search($word)
             }
         }
 
-        print_r ($results);
+        print_r ($results[0]);
         echo ($numMatches);
 
+        $test = "Hello John, Hey";
+        $pos = strpos($test, "john");
+        echo($pos == true);
         return true;
     }
 
-    search('intelle');
+    search('intellegere');
 
 

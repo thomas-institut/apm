@@ -38,12 +38,13 @@ class ApiSearch extends ApiController
         // Status variable for communicating errors – has no effect right now?
         $status = 'OK';
 
-        // Get user input and remove disturbing whitespace before, after or in between keywords -
-        // this is necessary for a clean search and adequate calculation of the context with the getContext-function
-        $keyword = $_POST['searchText'];
+        // Get user input and make it lower case to make it fit for the getContext function (?)
+        $keyword = strtolower($_POST['searchText']);
+
+        /* Remove disturbing whitespace before, after or in between keywords
+        This is necessary for a clean search and adequate calculation of the context with the getContext-function */
 
         $keyword = preg_replace('!\s+!', ' ', $keyword); // Reduce multiple blanks following each other to one
-
         if (substr($keyword, -1) == " ") { // Remove whitespace at the end of the keyword
                 $keyword = substr($keyword, 0, -1);
             }
@@ -75,11 +76,12 @@ class ApiSearch extends ApiController
             'body' => [
                 'size' => 10000,
                 'query' => [
-                    'match_phrase_prefix' => [
+                    'match' => [
                         'transcript' => [
                             "query" => $keyword,
                             "analyzer" => "standard",
-                            "max_expansions" => 10
+                            /*"slop" => 0,
+                            "max_expansions" => 10*/
                             ]
                     ]
                 ]
@@ -102,9 +104,15 @@ class ApiSearch extends ApiController
                 $docIDs[$i] = $query['hits']['hits'][$i]['_source']['docID'];
                 $pageIDs[$i] = $query['hits']['hits'][$i]['_id'];
 
-                // Get context of a matched keyword
-                $transcript = $transcripts[$i];
-                $keywordInContext = $this->getContext($transcript, $keyword);
+                // If the keyword in the transcript is capitalized, capitalize the $matchedKeyword (important for getContext and boldening in js)
+                 if (strpos($transcripts[$i], $keyword) == null) {
+                    $matchedKeyword = ucfirst($keyword);
+                 }
+                 else {
+                     $matchedKeyword = $keyword;
+                 }
+
+                $keywordInContext = $this->getContext($transcripts[$i], $matchedKeyword);
 
                 // Add data of every match to the matches array, which will become an array of arrays – each array holds the data of a match
                 $matches[$i] = [
@@ -115,6 +123,7 @@ class ApiSearch extends ApiController
                     'pageID' => $pageIDs[$i],
                     'docID' => $docIDs[$i],
                     'transcript' => $transcripts[$i],
+                    'matchedKeyword' => $matchedKeyword,
                     'keywordInContext' => $keywordInContext
                 ];
             }
@@ -129,6 +138,7 @@ class ApiSearch extends ApiController
 
         // Get position of the keyword
         $pos = strpos($transcript, $keyword);
+
         $preChars = ""; // Will hold the preceding characters (words) of the keyword
         $sucChars = ""; // Will hold the succeeding characters (words) of the keyword
         $numPreChars = $pos-1;
@@ -145,7 +155,7 @@ class ApiSearch extends ApiController
                  break;
              }
 
-            // Stop getting more context, if some preceding characters are already catched and the current character is a period
+            // Stop getting more context, if some preceding characters have already been catched and the current character is a period
             if ($i>($cSize*0.2) && $char== ".") {
                 if (substr($preChars, -1) == " ") { // remove blank space at the end of $prechars, if necessary
                     $preChars = substr($preChars, 0, -1);
@@ -153,7 +163,7 @@ class ApiSearch extends ApiController
                 break;
             }
 
-            // Stop getting more context, if many preceding characters are already catched and the current character is whitespace or colons
+            // Stop getting more context, if many preceding characters have already been catched and the current character is whitespace or colons
             if ($i>($cSize*0.7) and ($char == " " or $char == ":")) {
                 $preChars = $preChars . "...";
                 break;

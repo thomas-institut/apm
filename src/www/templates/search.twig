@@ -51,20 +51,30 @@
                 let page = apiResponse['matches'][0]['page']
                 let column = apiResponse['matches'][0]['column']
                 let transcriber = apiResponse['matches'][0]['transcriber']
-                let matchedKeyword = apiResponse['matches'][0]['matchedKeyword']
-                let keywordInContext = apiResponse['matches'][0]['keywordInContext']
+                let csKeywordsWithPos = apiResponse['matches'][0]['csKeywordsWithPos']
+                let keywordsInContext = apiResponse['matches'][0]['keywordsInContext']
+                let keywordFreq = apiResponse['matches'][i]['keywordFreq']
                 let keyword = apiResponse['searchString']
                 let time = apiResponse['serverTime']
 
-                let results = (title + ", " +
-                    "Page " + page + ", " +
-                    "Column " + column + ", " +
-                    "transcribed by " + transcriber).italics() + "<br/>" +
-                  makeKeywordbold(keywordInContext, matchedKeyword)
+                // Convert all occurences of the keyword in their contexts into a single string
+                let keywordsInContextString = ""
+
+                for (let j=0; j < keywordFreq; j++) {
+                  keywordsInContextString = keywordsInContextString + makeKeywordBold(keywordsInContext[j], csKeywordsWithPos[j][0]) + "<br/>"
+                }
+
+                let results = (
+                    keywordFreq + ' occurence(s) in ' +
+                    'column ' + column + ", on " +
+                    'page ' + page + ", of " +
+                    title + ", " +
+                    'transcribed by ' + transcriber + '<br/>').italics() +
+                  keywordsInContextString
 
                 // Display results
                 searchResultsDiv
-                  .html(`<b>${numMatches} match found for '${keyword}':</b> <br/><br/> ${results} <br/><br/>  (${time})`)
+                  .html(`<b>${numMatches} column found, which contains the keyword '${keyword}':</b> <br/><br/> ${results} <br/><br/>  (${time})`)
                   .removeClass('text-warning')
               }
 
@@ -83,18 +93,30 @@
                   let page = apiResponse['matches'][i]['page']
                   let column = apiResponse['matches'][i]['column']
                   let transcriber = apiResponse['matches'][i]['transcriber']
-                  let matchedKeyword = apiResponse['matches'][i]['matchedKeyword']
-                  let keywordInContext = apiResponse['matches'][i]['keywordInContext']
-                  let keyword = apiResponse['searchString']
+                  let csKeywordsWithPos = apiResponse['matches'][i]['csKeywordsWithPos']
+                  let keywordsInContext = apiResponse['matches'][i]['keywordsInContext']
+                  let keywordFreq = apiResponse['matches'][i]['keywordFreq']
+
+                  // Convert all occurences of the keyword in their contexts into a single string
+                  let keywordsInContextString = ""
+
+                  for (let j=0; j < keywordFreq; j++) {
+                    keywordsInContextString = keywordsInContextString + makeKeywordBold(keywordsInContext[j], csKeywordsWithPos[j][0]) +"<br/>"
+                  }
 
                   results = results + '<br/>' +
-                    (title + ", " + 'page ' + page + ", " + 'column ' + column + ", " + 'transcribed by ' + transcriber + '<br/>').italics() +
-                    makeKeywordbold(keywordInContext, matchedKeyword) + '<br/>'
+                    (
+                      keywordFreq + ' occurence(s) in ' +
+                      'column ' + column + ", on " +
+                      'page ' + page + ", of " +
+                      title + ", " +
+                      'transcribed by ' + transcriber + '<br/>').italics() +
+                    keywordsInContextString + '<br/>'
                 }
 
                 // Display results
                 searchResultsDiv
-                  .html(`<b>${numMatches} matches found for '${keyword}':</b><br/> ${results} <br/><br/> (${time})`)
+                  .html(`<b>${numMatches} columns found, which contain the keyword '${keyword}':</b><br/> ${results} <br/><br/> (${time})`)
                   .removeClass('text-warning')
               }
               // If something went wrong, i. e. the OpenSearch server is down, display an error message
@@ -109,14 +131,26 @@
       })
 
       // Function to highlight the searched keyword in its context
-      function makeKeywordbold (text, keyword) {
+      function makeKeywordBold (text, keyword) {
 
           let keywordLen = keyword.length
-          let pos = text.indexOf(keyword)
-          let boldKeyword = keyword.bold()
-          let newText = text.slice(0, pos) + boldKeyword + text.slice(pos + keywordLen, text.length)
 
-          return newText
+            if (text.match(keyword) > 1) {
+                let firstPos = text.indexOf(keyword)
+                let slicedText = text.slice(firstPos + keywordLen, text.length)
+                let pos = slicedText.indexOf(keyword)
+                let boldKeyword = keyword.bold()
+                let newText = slicedText.slice(0, pos) + boldKeyword + slicedText.slice(pos + keywordLen, slicedText.length)
+
+                return newText
+            }
+            else {
+                let pos = text.indexOf(keyword)
+                let boldKeyword = keyword.bold()
+                let newText = text.slice(0, pos) + boldKeyword + text.slice(pos + keywordLen, text.length)
+
+                return newText
+            }
         }
     </script>
 {%  endblock %}

@@ -76,12 +76,12 @@ class ApiSearch extends ApiController
             'body' => [
                 'size' => 10000,
                 'query' => [
-                    'match' => [
+                    'match_phrase_prefix' => [
                         'transcript' => [
-                            "query" => $keyword,
-                            "analyzer" => "standard",
-                            /*"slop" => 0,
-                            "max_expansions" => 10*/
+                            "query" => $keyword
+                            // "analyzer" => "standard"
+                            // "slop" => 0
+                            // "max_expansions" => 10
                             ]
                     ]
                 ]
@@ -95,7 +95,7 @@ class ApiSearch extends ApiController
         if ($numMatches !== 0) {
             for ($i = 0; $i < $numMatches; $i++) {
 
-                // Get title, page number, transcriber, transcript, docID and pageID of every matched entry in the OpenSearch index
+                // Get document title, page number, transcriber, transcript, docID, pageID and the keyword frequency of every matched column in the OpenSearch index
                 $titles[$i] = $query['hits']['hits'][$i]['_source']['title'];
                 $pages[$i] = $query['hits']['hits'][$i]['_source']['page'];
                 $columns[$i] = $query['hits']['hits'][$i]['_source']['column'];
@@ -103,16 +103,18 @@ class ApiSearch extends ApiController
                 $transcripts[$i] = $query['hits']['hits'][$i]['_source']['transcript'];
                 $docIDs[$i] = $query['hits']['hits'][$i]['_source']['docID'];
                 $pageIDs[$i] = $query['hits']['hits'][$i]['_id'];
+                $keywordFreq = substr_count ($transcripts[$i], $keyword) + substr_count ($transcripts[$i], ucfirst($keyword));
 
-                // If the keyword in the transcript is capitalized, capitalize the $matchedKeyword (important for getContext and boldening in js)
-                 if (strpos($transcripts[$i], $keyword) == null) {
-                    $matchedKeyword = ucfirst($keyword);
-                 }
-                 else {
-                     $matchedKeyword = $keyword;
-                 }
+                // Get case sensitive keywords and their positions in the transcript for every occurence of the searched keyword
+                $csKeywordsWithPos = $this->getCaseSensitiveKeywordsWithPositions($keyword, $transcripts[$i], $keywordFreq);
 
-                $keywordInContext = $this->getContext($transcripts[$i], $matchedKeyword);
+                // Get context of every occurence of the keyword and append it to the $keywordsInContext array
+                $keywordsInContext = [];
+
+                foreach ($csKeywordsWithPos as $csKeywordWithPos) {
+                    $keywordInContext = $this->getContext($transcripts[$i], $csKeywordWithPos[1]);
+                    $keywordsInContext[] = $keywordInContext;
+                }
 
                 // Add data of every match to the matches array, which will become an array of arrays – each array holds the data of a match
                 $matches[$i] = [
@@ -123,8 +125,9 @@ class ApiSearch extends ApiController
                     'pageID' => $pageIDs[$i],
                     'docID' => $docIDs[$i],
                     'transcript' => $transcripts[$i],
-                    'matchedKeyword' => $matchedKeyword,
-                    'keywordInContext' => $keywordInContext
+                    'keywordFreq' => $keywordFreq,
+                    'csKeywordsWithPos' => $csKeywordsWithPos,
+                    'keywordsInContext' => $keywordsInContext
                 ];
             }
         }
@@ -132,12 +135,50 @@ class ApiSearch extends ApiController
         return $this->responseWithJson($response, ['searchString' => $keyword,  'matches' => $matches, 'serverTime' => $now, 'status' => $status]);
     }
 
+    private function getCaseSensitiveKeywordsWithPositions ($keyword, $transcript, $keywordFreq) {
+
+        // Create an array $csKeywordsWithPos, which contains arrays of the form [case sensitive keyword, position in transcript] and a position index $pos
+        $csKeywordsWithPos = [];
+        $pos = 0;
+
+        // Iterate $keywordFreq times
+        for ($j=0; $j < $keywordFreq; $j++) {
+
+            // First time, get the whole transcript, in every iteration get a sliced version, which excludes preceding occurences of the keyword
+            $transcript = substr($transcript, $pos);
+
+            // Get position of next lower case occurence and next upper case occurence of the keyword
+            $lowerCasePos = strpos($transcript, $keyword);
+            $upperCasePos = strpos($transcript, ucfirst($keyword));
+
+            // Check if next occurence of the keyword is lower case or upper case
+            if ($lowerCasePos !== false and $lowerCasePos < $upperCasePos or $upperCasePos == false) {
+
+                // Append nearest uncapitalized keyword with its position to $csKeywordsWithPos array
+                $csKeywordsWithPos[$j] = [$keyword, $pos + $lowerCasePos];
+
+                // Calculate offset for slicing transcript
+                $pos = $pos + $lowerCasePos + strlen($keyword);
+            }
+            else {
+
+                // Append nearest capitalized keyword with its position to $csKeywordsWithPos array
+                $csKeywordsWithPos[$j] = [ucfirst($keyword), $pos + $upperCasePos];
+
+                // Calculate offset for slicing transcript
+                $pos = $pos + $upperCasePos + strlen($keyword);
+            }
+        }
+
+        return $csKeywordsWithPos;
+    }
+
     // Function to get the surrounding context of a keyword
-    private function getContext ($transcript, $keyword, $cSize = 100): string
+    private function getContext ($transcript, $pos, $cSize = 100): string
     {
 
         // Get position of the keyword
-        $pos = strpos($transcript, $keyword);
+        // $pos = strpos($transcript, $keyword);
 
         $preChars = ""; // Will hold the preceding characters (words) of the keyword
         $sucChars = ""; // Will hold the succeeding characters (words) of the keyword

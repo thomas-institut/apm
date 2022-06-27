@@ -140,24 +140,28 @@ class ApiSearch extends ApiController
         // Create an array $csKeywordsWithPos, which contains arrays of the form [case sensitive keyword, position in transcript] and a position index $pos
         $csKeywordsWithPos = [];
         $pos = 0;
+        $shift = 0;
 
         // Iterate $keywordFreq times
         for ($j=0; $j < $keywordFreq; $j++) {
 
             // First time, get the whole transcript, in every iteration get a sliced version, which excludes preceding occurences of the keyword
-            $transcript = substr($transcript, $pos);
+            $transcript = substr($transcript, $shift);
 
             // Get position of next lower case occurence and next upper case occurence of the keyword
             $lowerCasePos = strpos($transcript, $keyword);
             $upperCasePos = strpos($transcript, ucfirst($keyword));
 
             // Check if next occurence of the keyword is lower case or upper case
-            if ($lowerCasePos !== false and $lowerCasePos < $upperCasePos or $upperCasePos == false) {
+            if (($lowerCasePos !== false and $lowerCasePos < $upperCasePos) or $upperCasePos == false) {
 
                 // Append nearest uncapitalized keyword with its position to $csKeywordsWithPos array
                 $csKeywordsWithPos[$j] = [$keyword, $pos + $lowerCasePos];
 
-                // Calculate offset for slicing transcript
+                // Calculate shift for slicing transcript
+                $shift = $lowerCasePos + strlen($keyword);
+
+                // Calculate new $pos relative to whole transcript
                 $pos = $pos + $lowerCasePos + strlen($keyword);
             }
             else {
@@ -165,7 +169,10 @@ class ApiSearch extends ApiController
                 // Append nearest capitalized keyword with its position to $csKeywordsWithPos array
                 $csKeywordsWithPos[$j] = [ucfirst($keyword), $pos + $upperCasePos];
 
-                // Calculate offset for slicing transcript
+                // Calculate shift for slicing transcript
+                $shift = $upperCasePos + strlen($keyword);
+
+                // Calculate new $pos relative to whole transcript
                 $pos = $pos + $upperCasePos + strlen($keyword);
             }
         }
@@ -177,12 +184,12 @@ class ApiSearch extends ApiController
     private function getContext ($transcript, $pos, $cSize = 100): string
     {
 
-        // Get position of the keyword
-        // $pos = strpos($transcript, $keyword);
+        // Variables for preceeding and succeeding characters (words) of the keyword
+        $preChars = "";
+        $sucChars = "";
 
-        $preChars = ""; // Will hold the preceding characters (words) of the keyword
-        $sucChars = ""; // Will hold the succeeding characters (words) of the keyword
-        $numPreChars = $pos-1;
+        // Get total number of preceeding and suceeding characters
+        $numPreChars = $pos;
         $numSucChars = strlen($transcript)-$pos;
 
         // Get the characters (words) that precede the keyword
@@ -193,7 +200,8 @@ class ApiSearch extends ApiController
               $char = $transcript[$pos-$i];
               }
               else {
-                 break;
+                  $preChars = strrev($preChars); // Reverse string to have characters (words) in right order
+                  break;
              }
 
             // Stop getting more context, if some preceding characters have already been catched and the current character is a period
@@ -201,12 +209,14 @@ class ApiSearch extends ApiController
                 if (substr($preChars, -1) == " ") { // remove blank space at the end of $prechars, if necessary
                     $preChars = substr($preChars, 0, -1);
                 }
+                $preChars = strrev($preChars); // Reverse string to have characters (words) in right order
                 break;
             }
 
             // Stop getting more context, if many preceding characters have already been catched and the current character is whitespace or colons
             if ($i>($cSize*0.7) and ($char == " " or $char == ":")) {
                 $preChars = $preChars . "...";
+                $preChars = strrev($preChars); // Reverse string to have characters (words) in right order
                 break;
             }
 
@@ -225,7 +235,6 @@ class ApiSearch extends ApiController
                 break;
             }
 
-
             // Stop getting more context, if many succeeding characters are already catched and the current character is whitespace. colons or comma
             if ($i>($cSize*0.7) and ($char == " " or $char  == ":" or $char == ",")) {
                 $sucChars = $sucChars . "...";
@@ -239,13 +248,9 @@ class ApiSearch extends ApiController
             if ($i>($cSize*0.2) and $char == ".") {
                 break;
             }
-
         }
 
-        // Unite the preceding and following words
-        $keywordWithContext = strrev($preChars) . $sucChars;
-
-        return $keywordWithContext;
+        return $preChars. $sucChars;
     }
 }
 

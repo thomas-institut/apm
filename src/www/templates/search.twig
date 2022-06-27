@@ -135,21 +135,19 @@
 
           let keywordLen = keyword.length
 
-            if (text.match(keyword) > 1) {
+            if (text.split(keyword).length - 1 == 2) {
                 let firstPos = text.indexOf(keyword)
                 let slicedText = text.slice(firstPos + keywordLen, text.length)
-                let pos = slicedText.indexOf(keyword)
+                let secondPos = slicedText.indexOf(keyword)
                 let boldKeyword = keyword.bold()
-                let newText = slicedText.slice(0, pos) + boldKeyword + slicedText.slice(pos + keywordLen, slicedText.length)
 
-                return newText
+                return text.slice(0, firstPos + keywordLen + secondPos) + boldKeyword + text.slice(firstPos + keywordLen + secondPos + keywordLen, text.length)
             }
             else {
                 let pos = text.indexOf(keyword)
                 let boldKeyword = keyword.bold()
-                let newText = text.slice(0, pos) + boldKeyword + text.slice(pos + keywordLen, text.length)
 
-                return newText
+                return text.slice(0, pos) + boldKeyword + text.slice(pos + keywordLen, text.length)
             }
         }
     </script>

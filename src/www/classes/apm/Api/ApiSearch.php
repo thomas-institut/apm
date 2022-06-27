@@ -38,8 +38,9 @@ class ApiSearch extends ApiController
         // Status variable for communicating errors – has no effect right now?
         $status = 'OK';
 
-        // Get user input and make it lower case to make it fit for the getContext function (?)
+        // Get user input and make it lower case to make it fit for the getContext function (?) – get keywordLen for varying query type
         $keyword = strtolower($_POST['searchText']);
+        $keywordLen = strlen($keyword);
 
         /* Remove disturbing whitespace before, after or in between keywords
         This is necessary for a clean search and adequate calculation of the context with the getContext-function */
@@ -70,13 +71,21 @@ class ApiSearch extends ApiController
         // Set the name of the index, that should be queried
         $indexName = 'transcripts';
 
+        // Choose query type
+        if ($keywordLen < 4) {
+            $query = 'match';
+        }
+        else {
+            $query = 'match_phrase_prefix';
+        }
+
         // Search for keyword in three chosen fields of the OpenSearch index
         $query = $client->search([
             'index' => $indexName,
             'body' => [
                 'size' => 10000,
                 'query' => [
-                    'match_phrase_prefix' => [
+                    $query => [
                         'transcript' => [
                             "query" => $keyword
                             // "analyzer" => "standard"

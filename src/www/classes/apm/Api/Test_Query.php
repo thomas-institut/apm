@@ -102,7 +102,7 @@ function search($word)
             }
         }
 
-        print_r ($results[2]['csKeywordsWithPos']);
+        print_r ($results[1]['csKeywordsWithPos']);
         echo ($numMatches);
 
         return true;
@@ -113,24 +113,28 @@ function getCaseSensitiveKeywordsWithPositions ($keyword, $transcript, $keywordF
     // Create an array $csKeywordsWithPos, which contains arrays of the form [case sensitive keyword, position in transcript] and a position index $pos
     $csKeywordsWithPos = [];
     $pos = 0;
+    $shift = 0;
 
     // Iterate $keywordFreq times
     for ($j=0; $j < $keywordFreq; $j++) {
 
         // First time, get the whole transcript, in every iteration get a sliced version, which excludes preceding occurences of the keyword
-        $transcript = substr($transcript, $pos);
+        $transcript = substr($transcript, $shift);
 
         // Get position of next lower case occurence and next upper case occurence of the keyword
         $lowerCasePos = strpos($transcript, $keyword);
         $upperCasePos = strpos($transcript, ucfirst($keyword));
 
         // Check if next occurence of the keyword is lower case or upper case
-        if ($lowerCasePos !== false and $lowerCasePos < $upperCasePos or $upperCasePos == false) {
+        if (($lowerCasePos !== false and $lowerCasePos < $upperCasePos) or $upperCasePos == false) {
 
             // Append nearest uncapitalized keyword with its position to $csKeywordsWithPos array
-            $csKeywordsWithPos[$j] = [$keyword, $pos + $lowerCasePos, $pos, $lowerCasePos, $transcript];
+            $csKeywordsWithPos[$j] = [$keyword, $pos + $lowerCasePos];
 
-            // Calculate offset for slicing transcript
+            // Calculate shift for slicing transcript
+            $shift = $lowerCasePos + strlen($keyword);
+
+            // Calculate new $pos relative to whole transcript
             $pos = $pos + $lowerCasePos + strlen($keyword);
         }
         else {
@@ -138,7 +142,10 @@ function getCaseSensitiveKeywordsWithPositions ($keyword, $transcript, $keywordF
             // Append nearest capitalized keyword with its position to $csKeywordsWithPos array
             $csKeywordsWithPos[$j] = [ucfirst($keyword), $pos + $upperCasePos];
 
-            // Calculate offset for slicing transcript
+            // Calculate shift for slicing transcript
+            $shift = $upperCasePos + strlen($keyword);
+
+            // Calculate new $pos relative to whole transcript
             $pos = $pos + $upperCasePos + strlen($keyword);
         }
     }
@@ -220,69 +227,7 @@ function getContext ($transcript, $pos, $cSize = 100): string
     return $preChars . $sucChars;
 }
 
-$test = 'nerabilium. Ergo prima materia
-et suum subiectum sunt unum numero,
-scilicet unum subiectum. Et omne quod est cum
-suo subiecto, ex quo generatur,  unum
-numero est antequam sit. Ergo prima materia est antequam sit, quod est impossibile. Et hoc impossibile sequitur ex
-hoc, quod posuimus, quod prima materia est generabilis. Et hoc modo argumentationis declaravit ipsam esse non corruptibilem
-per se. Sequitur enim ut sit corrupta antequam corrumpatur. Deinde dixit: Dico enim naturam etc., idest intelligo 
-enim cum dico naturam primum subiectum quod est in potentia, non subiectum ex quo generatur res et est in actu; et ge-
-neratum ex eo est existens per se, non per accidens. Hoc enim secundum subiectum et primum conveniunt in hoc, quod generatum
-invenitur ex eis per se; et differunt in hoc, quod primum est in potentia et secundum in actu aut modo medio inter po-
-tentiam et actum, sicut est dispositio in illo quod generatur ex pluribus uno subiecto. Et dixit hoc quia si non ponatur
-in generatione materie primum subiectum, scilicet in potentia, non contingit ut sit cum materia unum in numero
-et sic non accidit impossibile predictum. Et ideo excitavit audientem ad intelligendum ex hoc quod dixit, quod
-si prima materia generatur, indiget subiecto, idest primo subiecto.
-Cum notificavit principia esse
-tria, duo per se, scilicet forma et materia,
-et unum per accidens, scilicet privatio,
-et iam declaravit primam mater-
-iam esse de istis principiis, dicit:
-Considerare autem de principio secundum
-formam etc., idest considerare autem
-de primo principio formali, utrum
-sit unum aut plura, et que est
-substantia eius, est proprium prime philosophie.
-Formarum enim alie sunt in ma-
-teriis, alie non in materiis, ut
-declaratum est in hac scientia. Et ideo
-consideratio de formis duarum est scienti-
-arum, quarum una, scilicet naturalis,
-considerat de formis materialibus,
-secunda autem de formis simplicibus
-abstractis a materia; et est illa scientia que
-considerat de ente simpliciter.
-Sed notandum est quod istud genus en-
-tium, esse scilicet separatum a materia,
-non declaratur nisi in hac scientia
-naturali. Et qui dicunt quod prima
-philosophia nititur declarare entia
-esse separabilia, peccat. Hec enim
-entia sunt subiecta prime philosophie.
-Et declaratum est in Posteriori-
-bus Analyticis, quod impossibile est aliquam
-scientiam declarare suum subiectum esse,
-set concedit ipsum esse aut quia est manifestum
-per se, aut quia est demonstratum in alia scientia. Unde Avicenna peccavit
-maxime cum et processit in hoc in suo libro cum dixit quod primus philosophus demonstravit primum principium esse et pro-
-cessit in hoc in suo libro De scientia divina per viam, quam estimavit esse necessariam et essentialem in illa scientia. Et pecca-
-vit peccato manifesto. Certior enim illorum sermonum quibus usus est in hoc non pertransit ordinem sermonum probabi-
-lium. Et iam innuimus hoc alibi. Et peius est hoc quod dixit, quod ista scientia accipit a primo philosopho corpora componi ex ma-
-teria et forma . Negligens est ne alia via ad sciendum hoc nisi ex transmutatione existente in substantia.
-Set sicut dicit Aristoteles, phisicus declarat substantiam materie quae sit perfecte per compositionem eius ad omnes differen-
-tias entium secundum quod sunt entia. Ergo impossibile est declarare ipsam esse nisi in hac scientia. Deinde dixit:
-Quoniam iam determinavimus per hunc sermonem etc., et intendit cum dixit: Et que sunt formam
-et materiam. Et cum dixit: Et quot sunt, intendit duo per se et tertium per accidens. Deinde dixit: Et
-nos intendimus etc., et innuit hoc, quod incipere vult in secundo tractatu de natura, quid sit, de-
-inde de numeratione specierum et causarum. Et forte innuit primum principium movens, quod decla-
-ratum est in fine istius libri. Omne enim de quo loquitur in hoc libro principaliter est propter illud
-principium. Et ille est primus locus in quo naturalis inspicit alium modum essendi ab illo de quo
-considerat et apud illum cessat. Et dimisit considerationem de eo usque ad scientiam nobiliorem que
-considerat de ente secundum quod est ens. Et totum hoc est quasi contrarium eius quod estimavit Avicenne';
 
-print_r ([substr($test, 1647+7+491+7+90+7+314+7+394+7 ), strpos(substr($test, 1647+7+491+7+90+7+314+7+394+7 ), 'philoso')]);
-
-// search('philoso');
+search('phi');
 
 

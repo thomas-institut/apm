@@ -40,7 +40,8 @@ class ApiSearch extends ApiController
 
         // Get user input and make it lower case to make it fit for the getContext function (?) – get keywordLen for varying query type
         $keyword = strtolower($_POST['searchText']);
-        $contextAmount = $_POST['sliderVal'];
+        $cSize = $_POST['sliderVal'];
+        $docName = $_POST['docName'];
         $keywordLen = strlen($keyword);
 
         /* Remove disturbing whitespace before, after or in between keywords
@@ -80,7 +81,7 @@ class ApiSearch extends ApiController
             $queryAlg = 'match_phrase_prefix';
         }
 
-        // Search for keyword in three chosen fields of the OpenSearch index
+        // Search for keyword in the transcripts, which are indexed in OpenSearch
         $query = $client->search([
             'index' => $indexName,
             'body' => [
@@ -122,23 +123,41 @@ class ApiSearch extends ApiController
                 $keywordsInContext = [];
 
                 foreach ($csKeywordsWithPos as $csKeywordWithPos) {
-                    $keywordInContext = $this->getContext($transcripts[$i], $csKeywordWithPos[1], $contextAmount);
+                    $keywordInContext = $this->getContext($transcripts[$i], $csKeywordWithPos[1], $cSize + $keywordLen);
                     $keywordsInContext[] = $keywordInContext;
                 }
 
                 // Add data of every match to the matches array, which will become an array of arrays – each array holds the data of a match
-                $matches[$i] = [
-                    'title' => $titles[$i],
-                    'page' => $pages[$i],
-                    'column' => $columns[$i],
-                    'transcriber' => $transcribers[$i],
-                    'pageID' => $pageIDs[$i],
-                    'docID' => $docIDs[$i],
-                    'transcript' => $transcripts[$i],
-                    'keywordFreq' => $keywordFreq,
-                    'csKeywordsWithPos' => $csKeywordsWithPos,
-                    'keywordsInContext' => $keywordsInContext
-                ];
+                if ($docName == 'Search in all documents...') {
+                    $matches[$i] = [
+                        'title' => $titles[$i],
+                        'page' => $pages[$i],
+                        'column' => $columns[$i],
+                        'transcriber' => $transcribers[$i],
+                        'pageID' => $pageIDs[$i],
+                        'docID' => $docIDs[$i],
+                        'transcript' => $transcripts[$i],
+                        'keywordFreq' => $keywordFreq,
+                        'csKeywordsWithPos' => $csKeywordsWithPos,
+                        'keywordsInContext' => $keywordsInContext
+                    ];
+                }
+                else {
+                    if ($titles[$i] == $docName) {
+                        $matches[$i] = [
+                            'title' => $titles[$i],
+                            'page' => $pages[$i],
+                            'column' => $columns[$i],
+                            'transcriber' => $transcribers[$i],
+                            'pageID' => $pageIDs[$i],
+                            'docID' => $docIDs[$i],
+                            'transcript' => $transcripts[$i],
+                            'keywordFreq' => $keywordFreq,
+                            'csKeywordsWithPos' => $csKeywordsWithPos,
+                            'keywordsInContext' => $keywordsInContext
+                        ];
+                    }
+                }
             }
         }
 
@@ -206,16 +225,16 @@ class ApiSearch extends ApiController
         for ($i=1; $i<$cSize; $i++) {
 
             // Get next character, if there is one
-            if ($i<$numPreChars) {
+            if ($i < $numPreChars) {
               $char = $transcript[$pos-$i];
-              }
-              else {
+            }
+            else {
                   $preChars = strrev($preChars); // Reverse string to have characters (words) in right order
                   break;
-             }
+            }
 
             // Stop getting more context, if some preceding characters have already been catched and the current character is a period
-            if ($i>($cSize*0.2) && $char== ".") {
+            if ($i > ($cSize*0.2) and $char == ".") {
                 if (substr($preChars, -1) == " ") { // remove blank space at the end of $prechars, if necessary
                     $preChars = substr($preChars, 0, -1);
                 }
@@ -224,7 +243,7 @@ class ApiSearch extends ApiController
             }
 
             // Stop getting more context, if many preceding characters have already been catched and the current character is whitespace or colons
-            if ($i>($cSize*0.7) and ($char == " " or $char == ":")) {
+            if ($i > ($cSize*0.7) and ($char == " " or $char == ":")) {
                 $preChars = $preChars . "...";
                 $preChars = strrev($preChars); // Reverse string to have characters (words) in right order
                 break;
@@ -238,7 +257,7 @@ class ApiSearch extends ApiController
         for ($i=0; $i<$cSize; $i++) {
 
             // Get the next character, if there is one
-            if ($i<$numSucChars) {
+            if ($i < $numSucChars) {
                 $char = $transcript[$pos+$i];
             }
             else {
@@ -246,7 +265,7 @@ class ApiSearch extends ApiController
             }
 
             // Stop getting more context, if many succeeding characters are already catched and the current character is whitespace. colons or comma
-            if ($i>($cSize*0.7) and ($char == " " or $char  == ":" or $char == ",")) {
+            if ($i > ($cSize*0.7) and ($char == " " or $char  == ":" or $char == ",")) {
                 $sucChars = $sucChars . "...";
                 break;
             }
@@ -255,12 +274,12 @@ class ApiSearch extends ApiController
             $sucChars = $sucChars . $char;
 
             // Stop getting more context, if some succeeding characters are already catched and the current character is a period
-            if ($i>($cSize*0.2) and $char == ".") {
+            if ($i > ($cSize*0.2) and $char == ".") {
                 break;
             }
         }
 
-        return $preChars. $sucChars;
+        return $preChars . $sucChars;
     }
 }
 

@@ -22,20 +22,25 @@
 
         // Get selectors of the searchBox and the searchResults container
         let searchBox = $("#searchBox")
+        let docList = $("#docList")
         let contextSlider = $("#contextSlider")
 
         contextSlider.on("click", () => {
-          displayResults(searchBox, contextSlider)
+          displayResults(searchBox, contextSlider, docList)
+        })
+
+        docList.on("click", () => {
+          displayResults(searchBox, contextSlider, docList)
         })
 
         // Key-Up function for search box
         searchBox.on("keyup", () => {
-          displayResults(searchBox, contextSlider)
+          displayResults(searchBox, contextSlider, docList)
         })
       })
 
       // Function to display results
-      function displayResults (searchBox, contextSlider) {
+      function displayResults (searchBox, contextSlider, docList) {
 
         // Div for output
         let searchResultsDiv = $("#search_results")
@@ -43,12 +48,13 @@
         // Get user input
         let searchText = searchBox.val()
         let sliderVal = contextSlider.val()
+        let docName = docList.val();
 
         // Start search only if keyword has at least two characters
         if (searchText.length > 1) {
 
           // Send user input to ApiSearch (via routing in index.php) and print returned matches
-          $.post("{{ url_for('search.keyword') }}", { searchText: searchText, sliderVal: sliderVal })
+          $.post("{{ url_for('search.keyword') }}", { searchText: searchText, sliderVal: sliderVal, docName: docName })
             .done((apiResponse) => {
               console.log(apiResponse)
 
@@ -71,7 +77,7 @@
                 let transcriber = apiResponse['matches'][0]['transcriber']
                 let csKeywordsWithPos = apiResponse['matches'][0]['csKeywordsWithPos']
                 let keywordsInContext = apiResponse['matches'][0]['keywordsInContext']
-                let keywordFreq = apiResponse['matches'][i]['keywordFreq']
+                let keywordFreq = apiResponse['matches'][0]['keywordFreq']
                 let keyword = apiResponse['searchString']
                 let time = apiResponse['serverTime']
 
@@ -175,13 +181,22 @@
 {% block content %}
     <h1> Search </h1>
     <div id="search_form">
-        <label for="searchBox">Keyword: </label>
-        <input type="text" id="searchBox" placeholder="Enter text here" value="">
+        <label for="searchBox"></label>
+        <input type="text" id="searchBox" placeholder="Search..." value="">
     </div>
 
+    <select name="docList" id="docList">
+
+        <option>Search in all documents...</option>
+        <option>M-VA-VAT-BAV-Vat.lat.2076</option>
+        <option>Bukarest</option>
+        <option>Madrid</option>
+
+    </select>
+    <p></p>
     <form>
-        <label for="contextSlider">Context: </label>
-        <input type="range" id="contextSlider" name="contextSlider" min="0" max="200">
+        <label for="contextSlider"></label>
+        <input type="range" id="contextSlider" name="contextSlider" min="0" max="400">
     </form>
 
     <div id="search_results"></div>

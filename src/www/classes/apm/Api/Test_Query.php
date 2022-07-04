@@ -33,6 +33,14 @@ function search($word)
         // Get user input and current time
         $keyword = $word;
 
+        // Choose query type
+        if (strlen($keyword) < 4) {
+            $queryAlg = 'match';
+        }
+        else {
+            $queryAlg = 'match_phrase_prefix';
+        }
+
         // Setup OpenSearch php client
         try {
             $client = (new \OpenSearch\ClientBuilder())
@@ -54,7 +62,7 @@ function search($word)
             'body' => [
                 'size' => 10000,
                 'query' => [
-                    'match_phrase_prefix' => [
+                    $queryAlg => [
                         'transcript' => [
                             "query" => $keyword
                             // "analyzer" => "standard"
@@ -102,7 +110,7 @@ function search($word)
             }
         }
 
-        print_r ($results[1]['csKeywordsWithPos']);
+        print_r($results);
         echo ($numMatches);
 
         return true;
@@ -228,6 +236,6 @@ function getContext ($transcript, $pos, $cSize = 100): string
 }
 
 
-search('phi');
+search('res');
 
 

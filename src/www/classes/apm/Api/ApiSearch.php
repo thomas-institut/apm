@@ -40,6 +40,7 @@ class ApiSearch extends ApiController
 
         // Get user input and make it lower case to make it fit for the getContext function (?) – get keywordLen for varying query type
         $keyword = strtolower($_POST['searchText']);
+        $contextAmount = $_POST['sliderVal'];
         $keywordLen = strlen($keyword);
 
         /* Remove disturbing whitespace before, after or in between keywords
@@ -73,10 +74,10 @@ class ApiSearch extends ApiController
 
         // Choose query type
         if ($keywordLen < 4) {
-            $query = 'match';
+            $queryAlg = 'match';
         }
         else {
-            $query = 'match_phrase_prefix';
+            $queryAlg = 'match_phrase_prefix';
         }
 
         // Search for keyword in three chosen fields of the OpenSearch index
@@ -85,7 +86,7 @@ class ApiSearch extends ApiController
             'body' => [
                 'size' => 10000,
                 'query' => [
-                    $query => [
+                    $queryAlg => [
                         'transcript' => [
                             "query" => $keyword
                             // "analyzer" => "standard"
@@ -121,7 +122,7 @@ class ApiSearch extends ApiController
                 $keywordsInContext = [];
 
                 foreach ($csKeywordsWithPos as $csKeywordWithPos) {
-                    $keywordInContext = $this->getContext($transcripts[$i], $csKeywordWithPos[1]);
+                    $keywordInContext = $this->getContext($transcripts[$i], $csKeywordWithPos[1], $contextAmount);
                     $keywordsInContext[] = $keywordInContext;
                 }
 

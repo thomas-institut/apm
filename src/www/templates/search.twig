@@ -22,124 +22,138 @@
 
         // Get selectors of the searchBox and the searchResults container
         let searchBox = $("#searchBox")
-        let searchResultsDiv = $("#search_results")
+        let contextSlider = $("#contextSlider")
 
-        // Key-Up function
+        contextSlider.on("click", () => {
+          displayResults(searchBox, contextSlider)
+        })
+
+        // Key-Up function for search box
         searchBox.on("keyup", () => {
-
-          // Get user input
-          let searchText = searchBox.val()
-
-          // Start search only if keyword has at least two characters
-          if (searchText.length > 1) {
-
-                // Send user input to ApiSearch (via routing in index.php) and print returned matches
-                $.post("{{ url_for('search.keyword') }}", { searchText: searchText })
-                  .done((apiResponse) => {
-                    console.log(apiResponse)
-
-                    let numMatches = apiResponse['matches'].length
-
-                    // If there are no matches, display this to the user
-                    if (numMatches === 0) {
-                      searchResultsDiv
-                        .html(`'Nothing found for ${apiResponse['searchString']}'<br/> Server time: ${apiResponse['serverTime']}`)
-                        .addClass('text-warning')
-                    }
-
-                    // If there is exactly one match, display the title, the page and the transcriber of the matched document
-                    else if (numMatches === 1) {
-
-                      // Collect relevant Data from API response
-                      let title = apiResponse['matches'][0]['title']
-                      let page = apiResponse['matches'][0]['page']
-                      let column = apiResponse['matches'][0]['column']
-                      let transcriber = apiResponse['matches'][0]['transcriber']
-                      let csKeywordsWithPos = apiResponse['matches'][0]['csKeywordsWithPos']
-                      let keywordsInContext = apiResponse['matches'][0]['keywordsInContext']
-                      let keywordFreq = apiResponse['matches'][i]['keywordFreq']
-                      let keyword = apiResponse['searchString']
-                      let time = apiResponse['serverTime']
-
-                      // Convert all occurences of the keyword in their contexts into a single string
-                      let keywordsInContextString = ""
-
-                      for (let j = 0; j < keywordFreq; j++) {
-                        keywordsInContextString = keywordsInContextString + makeKeywordBold(keywordsInContext[j], csKeywordsWithPos[j][0]) + "<br/>"
-                      }
-
-                      let results = (
-                          keywordFreq + ' occurence(s) in ' +
-                          'column ' + column + ", on " +
-                          'page ' + page + ", of " +
-                          title + ", " +
-                          'transcribed by ' + transcriber + '<br/>').italics() +
-                        keywordsInContextString
-
-                      // Display results
-                      searchResultsDiv
-                        .html(`<b>${numMatches} column found, which contains the keyword '${keyword}':</b> <br/><br/> ${results} <br/><br/>  (${time})`)
-                        .removeClass('text-warning')
-                    }
-
-                    // If there is more than one match, display them all like above
-                    else {
-
-                      let results = ''
-                      let keyword = apiResponse['searchString']
-                      let time = apiResponse['serverTime']
-
-                      // Write all matches into a string
-                      for (let i = 0; i < numMatches; i++) {
-
-                        // Collect relevant Data from API response
-                        let title = apiResponse['matches'][i]['title']
-                        let page = apiResponse['matches'][i]['page']
-                        let column = apiResponse['matches'][i]['column']
-                        let transcriber = apiResponse['matches'][i]['transcriber']
-                        let csKeywordsWithPos = apiResponse['matches'][i]['csKeywordsWithPos']
-                        let keywordsInContext = apiResponse['matches'][i]['keywordsInContext']
-                        let keywordFreq = apiResponse['matches'][i]['keywordFreq']
-
-                        // Convert all occurences of the keyword in their contexts into a single string
-                        let keywordsInContextString = ""
-
-                        for (let j = 0; j < keywordFreq; j++) {
-                          keywordsInContextString = keywordsInContextString + makeKeywordBold(keywordsInContext[j], csKeywordsWithPos[j][0]) + "<br/>"
-                        }
-
-                        results = results + '<br/>' +
-                          (
-                            keywordFreq + ' occurence(s) in ' +
-                            'column ' + column + ", on " +
-                            'page ' + page + ", of " +
-                            title + ", " +
-                            'transcribed by ' + transcriber + '<br/>').italics() +
-                          keywordsInContextString + '<br/>'
-                      }
-
-                      // Display results
-                      searchResultsDiv
-                        .html(`<b>${numMatches} columns found, which contain the keyword '${keyword}':</b><br/> ${results} <br/><br/> (${time})`)
-                        .removeClass('text-warning')
-                    }
-                    // If something went wrong, i. e. the OpenSearch server is down, display an error message
-                  }).fail((status) => {
-                  console.log(status)
-                  searchResultsDiv
-                    .html('Search is currently not available. Please try again later.')
-                    .removeClass('text-error')
-
-                })
-            }
+          displayResults(searchBox, contextSlider)
         })
       })
+
+      // Function to display results
+      function displayResults (searchBox, contextSlider) {
+
+        // Div for output
+        let searchResultsDiv = $("#search_results")
+
+        // Get user input
+        let searchText = searchBox.val()
+        let sliderVal = contextSlider.val()
+
+        // Start search only if keyword has at least two characters
+        if (searchText.length > 1) {
+
+          // Send user input to ApiSearch (via routing in index.php) and print returned matches
+          $.post("{{ url_for('search.keyword') }}", { searchText: searchText, sliderVal: sliderVal })
+            .done((apiResponse) => {
+              console.log(apiResponse)
+
+              let numMatches = apiResponse['matches'].length
+
+              // If there are no matches, display this to the user
+              if (numMatches === 0) {
+                searchResultsDiv
+                  .html(`'Nothing found for ${apiResponse['searchString']}'<br/> Server time: ${apiResponse['serverTime']}`)
+                  .addClass('text-warning')
+              }
+
+              // If there is exactly one match, display the title, the page and the transcriber of the matched document
+              else if (numMatches === 1) {
+
+                // Collect relevant Data from API response
+                let title = apiResponse['matches'][0]['title']
+                let page = apiResponse['matches'][0]['page']
+                let column = apiResponse['matches'][0]['column']
+                let transcriber = apiResponse['matches'][0]['transcriber']
+                let csKeywordsWithPos = apiResponse['matches'][0]['csKeywordsWithPos']
+                let keywordsInContext = apiResponse['matches'][0]['keywordsInContext']
+                let keywordFreq = apiResponse['matches'][i]['keywordFreq']
+                let keyword = apiResponse['searchString']
+                let time = apiResponse['serverTime']
+
+                // Convert all occurences of the keyword in their contexts into a single string
+                let keywordsInContextString = ""
+
+                for (let j = 0; j < keywordFreq; j++) {
+                  keywordsInContextString = keywordsInContextString + makeKeywordBold(keywordsInContext[j], csKeywordsWithPos[j][0]) + "<br/>"
+                }
+
+                let results = (
+                    keywordFreq + ' occurence(s) in ' +
+                    'column ' + column + ", on " +
+                    'page ' + page + ", of " +
+                    title + ", " +
+                    'transcribed by ' + transcriber + '<br/>').italics() +
+                  keywordsInContextString
+
+                // Display results
+                searchResultsDiv
+                  .html(`<b>${numMatches} column found, which contains the keyword '${keyword}':</b> <br/><br/> ${results} <br/><br/>  (${time})`)
+                  .removeClass('text-warning')
+              }
+
+              // If there is more than one match, display them all like above
+              else {
+
+                let results = ''
+                let keyword = apiResponse['searchString']
+                let time = apiResponse['serverTime']
+
+                // Write all matches into a string
+                for (let i = 0; i < numMatches; i++) {
+
+                  // Collect relevant Data from API response
+                  let title = apiResponse['matches'][i]['title']
+                  let page = apiResponse['matches'][i]['page']
+                  let column = apiResponse['matches'][i]['column']
+                  let transcriber = apiResponse['matches'][i]['transcriber']
+                  let csKeywordsWithPos = apiResponse['matches'][i]['csKeywordsWithPos']
+                  let keywordsInContext = apiResponse['matches'][i]['keywordsInContext']
+                  let keywordFreq = apiResponse['matches'][i]['keywordFreq']
+
+                  // Convert all occurences of the keyword in their contexts into a single string
+                  let keywordsInContextString = ""
+
+                  for (let j = 0; j < keywordFreq; j++) {
+                    keywordsInContextString = keywordsInContextString + makeKeywordBold(keywordsInContext[j], csKeywordsWithPos[j][0]) + "<br/>"
+                  }
+
+                  results = results + '<br/>' +
+                    (
+                      keywordFreq + ' occurence(s) in ' +
+                      'column ' + column + ", on " +
+                      'page ' + page + ", of " +
+                      title + ", " +
+                      'transcribed by ' + transcriber + '<br/>').italics() +
+                    keywordsInContextString + '<br/>'
+                }
+
+                // Display results
+                searchResultsDiv
+                  .html(`<b>${numMatches} columns found, which contain the keyword '${keyword}':</b><br/> ${results} <br/><br/> (${time})`)
+                  .removeClass('text-warning')
+              }
+              // If something went wrong, i. e. the OpenSearch server is down, display an error message
+            }).fail((status) => {
+            console.log(status)
+            searchResultsDiv
+              .html('Search is currently not available. Please try again later.')
+              .removeClass('text-error')
+
+          })
+        }
+      }
 
       // Function to highlight the searched keyword in its context
       function makeKeywordBold (text, keyword) {
 
           let keywordLen = keyword.length
 
+        // If keyword occurs two times in the text, highlight the second one (the first one should already been handled in the previous match)
             if (text.split(keyword).length - 1 == 2) {
                 let firstPos = text.indexOf(keyword)
                 let slicedText = text.slice(firstPos + keywordLen, text.length)
@@ -161,8 +175,15 @@
 {% block content %}
     <h1> Search </h1>
     <div id="search_form">
-        <label for="searchBox">Text to search:</label> <input type="text" id="searchBox" placeholder="Enter text here" value="">
+        <label for="searchBox">Keyword: </label>
+        <input type="text" id="searchBox" placeholder="Enter text here" value="">
     </div>
+
+    <form>
+        <label for="contextSlider">Context: </label>
+        <input type="range" id="contextSlider" name="contextSlider" min="0" max="200">
+    </form>
+
     <div id="search_results"></div>
 
 {% endblock %}

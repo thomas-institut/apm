@@ -25,7 +25,8 @@
         let docList = $("#docList")
         let contextSlider = $("#contextSlider")
 
-        contextSlider.on("click", () => {
+        // Key-Up functions for search box, docList and contextSlider - all call the displayResults-function
+        searchBox.on("keyup", () => {
           displayResults(searchBox, contextSlider, docList)
         })
 
@@ -33,19 +34,18 @@
           displayResults(searchBox, contextSlider, docList)
         })
 
-        // Key-Up function for search box
-        searchBox.on("keyup", () => {
+        contextSlider.on("click", () => {
           displayResults(searchBox, contextSlider, docList)
         })
       })
 
-      // Function to display results
+      // Function to collect and display the search results in readable form
       function displayResults (searchBox, contextSlider, docList) {
 
-        // Div for output
+        // Get selector for output-Div
         let searchResultsDiv = $("#search_results")
 
-        // Get user input
+        // Get all user input
         let searchText = searchBox.val()
         let sliderVal = contextSlider.val()
         let docName = docList.val();
@@ -53,11 +53,12 @@
         // Start search only if keyword has at least two characters
         if (searchText.length > 1) {
 
-          // Send user input to ApiSearch (via routing in index.php) and print returned matches
+          // Send all user input to ApiSearch (via routing in index.php) and print returned matches
           $.post("{{ url_for('search.keyword') }}", { searchText: searchText, sliderVal: sliderVal, docName: docName })
             .done((apiResponse) => {
               console.log(apiResponse)
 
+              // Count matches
               let numMatches = apiResponse['matches'].length
 
               // If there are no matches, display this to the user
@@ -67,10 +68,10 @@
                   .addClass('text-warning')
               }
 
-              // If there is exactly one match, display the title, the page and the transcriber of the matched document
+              // If there is exactly one matched column, display it with exact information
               else if (numMatches === 1) {
 
-                // Collect relevant Data from API response
+                // Collect relevant data from API response
                 let title = apiResponse['matches'][0]['title']
                 let page = apiResponse['matches'][0]['page']
                 let column = apiResponse['matches'][0]['column']
@@ -81,13 +82,14 @@
                 let keyword = apiResponse['searchString']
                 let time = apiResponse['serverTime']
 
-                // Convert all occurences of the keyword in their contexts into a single string
+                // Convert the keywords in their context into a single string and highlight the keywords
                 let keywordsInContextString = ""
 
                 for (let j = 0; j < keywordFreq; j++) {
                   keywordsInContextString = keywordsInContextString + makeKeywordBold(keywordsInContext[j], csKeywordsWithPos[j][0]) + "<br/>"
                 }
 
+                // Results as a single string
                 let results = (
                     keywordFreq + ' occurence(s) in ' +
                     'column ' + column + ", on " +
@@ -102,7 +104,7 @@
                   .removeClass('text-warning')
               }
 
-              // If there is more than one match, display them all like above
+              // If there is more than one matched column, display them all with exact information
               else {
 
                 let results = ''
@@ -121,13 +123,14 @@
                   let keywordsInContext = apiResponse['matches'][i]['keywordsInContext']
                   let keywordFreq = apiResponse['matches'][i]['keywordFreq']
 
-                  // Convert all occurences of the keyword in their contexts into a single string
+                  // Convert all occurences of the keyword in their contexts into a single string and highlight the keywords
                   let keywordsInContextString = ""
 
                   for (let j = 0; j < keywordFreq; j++) {
                     keywordsInContextString = keywordsInContextString + makeKeywordBold(keywordsInContext[j], csKeywordsWithPos[j][0]) + "<br/>"
                   }
 
+                  // Results as a single string
                   results = results + '<br/>' +
                     (
                       keywordFreq + ' occurence(s) in ' +

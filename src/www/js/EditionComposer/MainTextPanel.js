@@ -28,7 +28,6 @@ import { getSingleIntIdFromAncestor, getSingleIntIdFromClasses } from '../toolbo
 import { getTypesettingInfo } from '../Typesetter/BrowserTypesettingCalculations'
 import { doNothing, wait } from '../toolbox/FunctionUtil.mjs'
 import { MultiToggle } from '../widgets/MultiToggle'
-import { EditableTextField } from '../widgets/EditableTextField'
 import { ApparatusCommon } from './ApparatusCommon'
 import * as EditionMainTextTokenType from '../Edition/MainTextTokenType'
 import { Edition } from '../Edition/Edition'
@@ -54,13 +53,12 @@ import { EditionWitnessToken } from '../Witness/EditionWitnessToken'
 import { MainText } from '../Edition/MainText'
 
 const EDIT_MODE_OFF = 'off'
-const EDIT_MODE_TEXT = 'text'
 const EDIT_MODE_APPARATUS = 'apparatus'
-const EDIT_MODE_TEXT_BETA = 'text_beta'
+const EDIT_MODE_TEXT = 'text'
 
 const typesetInfoDelay = 200
 
-const betaEditorDivId = 'text-editor-beta'
+const betaEditorDivId = 'text-editor'
 const betaEditorInfoDiv = 'text-editor-info'
 
 const icons = {
@@ -215,14 +213,14 @@ export class MainTextPanel extends PanelWithToolbar {
     // the panel is visible and the main text is drawn in the content area
     switch(this.currentEditMode) {
       case EDIT_MODE_OFF:
-      case EDIT_MODE_TEXT:
+      // case EDIT_MODE_TEXT_OLD:
       case EDIT_MODE_APPARATUS:
         this.verbose && console.log(`Resize: about to update apparatuses`)
         this._updateLineNumbersAndApparatuses()
           .then( () => { this.verbose && console.log(`Done resizing`)})
         break
 
-      case EDIT_MODE_TEXT_BETA:
+      case EDIT_MODE_TEXT:
         //console.log(`Resize in beta editor mode, nothing to do`)
         break
 
@@ -240,14 +238,14 @@ export class MainTextPanel extends PanelWithToolbar {
       $(this.getContentAreaSelector()).html(this.generateContentHtml('', '', true))
       switch(this.currentEditMode) {
         case EDIT_MODE_OFF:
-        case EDIT_MODE_TEXT:
+        // case EDIT_MODE_TEXT_OLD:
         case EDIT_MODE_APPARATUS:
           this._setupMainTextDivEventHandlers()
           this._updateLineNumbersAndApparatuses()
             .then( () => { this.verbose && console.log(`Finished generating edition panel on shown`) })
           break
 
-        case EDIT_MODE_TEXT_BETA:
+        case EDIT_MODE_TEXT:
           this.verbose && console.log(`Beta editor shown`)
           break
 
@@ -309,9 +307,9 @@ export class MainTextPanel extends PanelWithToolbar {
       buttonsDivClass: 'panel-toolbar-item',
       buttonDef: [
         { label: 'Off', name: EDIT_MODE_OFF, helpText: 'Turn off editing' },
-        { label: 'Text', name: EDIT_MODE_TEXT, helpText: 'Edit main text' },
+        // { label: 'Text', name: EDIT_MODE_TEXT_OLD, helpText: 'Edit main text' },
         { label: 'Apparatus', name: EDIT_MODE_APPARATUS, helpText: 'Add/Edit apparatus entries' },
-        { label: 'Text<sup>BETA</sup>', name: EDIT_MODE_TEXT_BETA, helpText: 'Edit main text (beta)' }
+        { label: 'Text', name: EDIT_MODE_TEXT, helpText: 'Edit main text' }
       ]
 
     })
@@ -326,12 +324,12 @@ export class MainTextPanel extends PanelWithToolbar {
     // this._eleAddEntryButton().on('click', this._genOnClickAddEntryButton())
     switch (this.currentEditMode) {
       case EDIT_MODE_OFF:
-      case EDIT_MODE_TEXT:
+      // case EDIT_MODE_TEXT_OLD:
       case EDIT_MODE_APPARATUS:
         this._setupMainTextDivEventHandlers()
         break
 
-      case EDIT_MODE_TEXT_BETA:
+      case EDIT_MODE_TEXT:
         this.verbose && console.log(`Post render beta mode`)
         break
 
@@ -358,10 +356,10 @@ export class MainTextPanel extends PanelWithToolbar {
 
     switch(newEditMode) {
       case EDIT_MODE_OFF:
-      case EDIT_MODE_TEXT:
+      // case EDIT_MODE_TEXT_OLD:
       case EDIT_MODE_APPARATUS:
         this.currentEditMode = newEditMode
-        if (previousEditMode === EDIT_MODE_TEXT_BETA) {
+        if (previousEditMode === EDIT_MODE_TEXT) {
           $(this.getContentAreaSelector()).html(this._getMainTextHtmlVersion())
           this._setupMainTextDivEventHandlers()
           this._updateLineNumbersAndApparatuses().then( () => { this.verbose && console.log(`Finished switching mode to ${this.currentEditMode}`)})
@@ -370,7 +368,7 @@ export class MainTextPanel extends PanelWithToolbar {
         }
         break
 
-      case EDIT_MODE_TEXT_BETA:
+      case EDIT_MODE_TEXT:
         this.currentEditMode = newEditMode
         this._setupTextEditMode()
 
@@ -633,7 +631,7 @@ export class MainTextPanel extends PanelWithToolbar {
 
     this.lastTypesetinfo = null
     this.modeToggle.setOptionByName(EDIT_MODE_OFF, false)
-    this._changeEditMode(EDIT_MODE_OFF, EDIT_MODE_TEXT_BETA)
+    this._changeEditMode(EDIT_MODE_OFF, EDIT_MODE_TEXT)
     this.options.onCtDataChange(this.ctData)
   }
 
@@ -816,7 +814,7 @@ export class MainTextPanel extends PanelWithToolbar {
     let type = tokens[0].tokenType
     let newText = []
     tokens.forEach( (t) => {
-      let tokenFmtText = t.fmtText !== undefined ? t.fmtText : FmtTextFactory.fromString(t.text)
+      let tokenFmtText = t['fmtText'] !== undefined ? t['fmtText'] : FmtTextFactory.fromString(t.text)
       newText = FmtText.concat(newText, tokenFmtText)
     })
 
@@ -1023,47 +1021,47 @@ export class MainTextPanel extends PanelWithToolbar {
         return
       }
       switch(this.currentEditMode) {
-        case EDIT_MODE_TEXT:
-          this.verbose && console.log(`Click on main text token ${tokenIndex} in main text edit mode`)
-          if (tokenIndex === -1) {
-            console.warn(`Bad token index, cannot edit`)
-            break
-          }
-          let tokenSelector = `.main-text-token-${tokenIndex}`
-          this.originalTokenText = $(tokenSelector).text()
-          this.verbose && console.log(`Text to edit: '${this.originalTokenText}'`)
-          this.tokenBeingEdited = tokenIndex
-          this.textTokenEditor = new EditableTextField({
-            containerSelector:  tokenSelector,
-            initialText: this.originalTokenText,
-            minTextFormSize: 2,
-            startInEditMode: true
-          })
-          this.textTokenEditor.on('confirm', (ev) => {
-            let newText = ev.detail.newText
-            // It should be assumed that newText is a valid edit (cell validation should have taken care of wrong edits).
-            // Even if newText would simply replace the current main text token, it can be the case that there is a change
-            // in the lines, so there should always be a regeneration of the edition, a redrawing of the main text
-            // and an update to the apparatuses.
-            if (this.options.onConfirmMainTextEdit(tokenIndex, newText)) {
-              this.verbose && console.log(`Confirming editing, new text = '${newText}'`)
-              this._stopEditingMainText(newText)
-              this._redrawMainText()
-              this._setupMainTextDivEventHandlers()
-              this._updateLineNumbersAndApparatuses().then( () => {
-                this.verbose && console.log(`Main text redrawn`)
-              })
-            } else {
-              this.verbose && console.log(`Change to main text not accepted`)
-              // TODO: indicate this error in some way in the UI, although it should NEVER happen
-              this._stopEditingMainText(this.originalTokenText)
-            }
-          }).on('cancel', () => {
-            this.verbose && console.log(`Canceling edit`)
-            this._stopEditingMainText(this.originalTokenText)
-          })
-          this.editingTextToken = true
-          break
+        // case EDIT_MODE_TEXT_OLD:
+        //   this.verbose && console.log(`Click on main text token ${tokenIndex} in main text edit mode`)
+        //   if (tokenIndex === -1) {
+        //     console.warn(`Bad token index, cannot edit`)
+        //     break
+        //   }
+        //   let tokenSelector = `.main-text-token-${tokenIndex}`
+        //   this.originalTokenText = $(tokenSelector).text()
+        //   this.verbose && console.log(`Text to edit: '${this.originalTokenText}'`)
+        //   this.tokenBeingEdited = tokenIndex
+        //   this.textTokenEditor = new EditableTextField({
+        //     containerSelector:  tokenSelector,
+        //     initialText: this.originalTokenText,
+        //     minTextFormSize: 2,
+        //     startInEditMode: true
+        //   })
+        //   this.textTokenEditor.on('confirm', (ev) => {
+        //     let newText = ev.detail.newText
+        //     // It should be assumed that newText is a valid edit (cell validation should have taken care of wrong edits).
+        //     // Even if newText would simply replace the current main text token, it can be the case that there is a change
+        //     // in the lines, so there should always be a regeneration of the edition, a redrawing of the main text
+        //     // and an update to the apparatuses.
+        //     if (this.options.onConfirmMainTextEdit(tokenIndex, newText)) {
+        //       this.verbose && console.log(`Confirming editing, new text = '${newText}'`)
+        //       this._stopEditingMainText(newText)
+        //       this._redrawMainText()
+        //       this._setupMainTextDivEventHandlers()
+        //       this._updateLineNumbersAndApparatuses().then( () => {
+        //         this.verbose && console.log(`Main text redrawn`)
+        //       })
+        //     } else {
+        //       this.verbose && console.log(`Change to main text not accepted`)
+        //       // TODO: indicate this error in some way in the UI, although it should NEVER happen
+        //       this._stopEditingMainText(this.originalTokenText)
+        //     }
+        //   }).on('cancel', () => {
+        //     this.verbose && console.log(`Canceling edit`)
+        //     this._stopEditingMainText(this.originalTokenText)
+        //   })
+        //   this.editingTextToken = true
+        //   break
 
         case EDIT_MODE_APPARATUS:
           // this.verbose && console.log(`Mouse down on main text ${tokenIndex} token in apparatus edit mode`)
@@ -1237,18 +1235,18 @@ export class MainTextPanel extends PanelWithToolbar {
     })
   }
 
-  _redrawMainText() {
-    $(this.getContentAreaSelector()).html(this._generateMainTextHtml())
-  }
+  // _redrawMainText() {
+  //   $(this.getContentAreaSelector()).html(this._generateMainTextHtml())
+  // }
 
   _generateMainTextHtml() {
     switch(this.currentEditMode) {
       case EDIT_MODE_OFF:
-      case EDIT_MODE_TEXT:
+      // case EDIT_MODE_TEXT_OLD:
       case EDIT_MODE_APPARATUS:
         return this._getMainTextHtmlVersion()
 
-      case EDIT_MODE_TEXT_BETA:
+      case EDIT_MODE_TEXT:
         return  this._getMainTextBetaEditor()
 
       default:

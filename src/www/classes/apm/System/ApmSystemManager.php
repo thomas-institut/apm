@@ -344,7 +344,8 @@ class ApmSystemManager extends SystemManager {
         return $tables;
     }
     
-    protected function setUpDbConnection() {
+    protected function setUpDbConnection(): PDO
+    {
         $dbConfig = $this->config[ApmConfigParameter::DB];
 
         $dbh = new PDO('mysql:dbname='. $dbConfig['db'] . ';host=' .

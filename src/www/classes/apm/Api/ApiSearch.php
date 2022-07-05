@@ -6,6 +6,7 @@ use PHPUnit\Util\Exception;
 use \Psr\Http\Message\ServerRequestInterface as Request;
 use \Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\TimeString\TimeString;
+use function DI\string;
 
 require '/home/lukas/apm/vendor/autoload.php';
 
@@ -119,11 +120,14 @@ class ApiSearch extends ApiController
                 // Get case sensitive keywords and their positions in the transcript for every occurence of the searched keyword
                 $csKeywordsWithPos = $this->getCaseSensitiveKeywordsWithPositions($keyword, $transcripts[$i], $keywordFreq);
 
+                // Get all keyword positions in the current column (measured in words)
+                $keywordPositions = $this->getKeywordPositions($transcripts[$i], $keyword);
+
                 // Get context of every occurence of the keyword and append it to the $keywordsInContext array
                 $keywordsInContext = [];
 
-                foreach ($csKeywordsWithPos as $csKeywordWithPos) {
-                    $keywordInContext = $this->getContext($transcripts[$i], $csKeywordWithPos[1], $cSize + $keywordLen);
+                foreach ($keywordPositions as $pos) {
+                    $keywordInContext = $this->getContext($transcripts[$i], $pos, $cSize);
                     $keywordsInContext[] = $keywordInContext;
                 }
 
@@ -209,77 +213,39 @@ class ApiSearch extends ApiController
         return $csKeywordsWithPos;
     }
 
+    private function getKeywordPositions ($transcript, $keyword): array {
+
+        $keywordPositions = [];
+        $words = explode(" ", $transcript);
+
+        for ($i=0; $i<count($words); $i++) {
+            if (strpos($words[$i], $keyword) !== false) {
+                $keywordPositions[] = $i;
+            }
+        }
+        return $keywordPositions;
+    }
+
     // Function to get the surrounding context of a keyword
-    private function getContext ($transcript, $pos, $cSize = 100): string
+    private function getContext ($transcript, $keywordPos, $cSize = 100): string
     {
+        $words = explode(" ", $transcript);
+        $numWords = count($words);
+        $numPrecWords = $keywordPos;
+        $numSucWords = $numWords - $keywordPos;
+        $precWords = array_slice($words, 0, $keywordPos);
+        $sucWords = array_slice($words, $keywordPos+1, $numWords);
+        $keywordInContext = $words[$keywordPos];
 
-        // Variables for preceeding and succeeding characters (words) of the keyword
-        $preChars = "";
-        $sucChars = "";
-
-        // Get total number of preceeding and suceeding characters
-        $numPreChars = $pos;
-        $numSucChars = strlen($transcript)-$pos;
-
-        // Get the characters (words) that precede the keyword
-        for ($i=1; $i<$cSize; $i++) {
-
-            // Get next character, if there is one
-            if ($i < $numPreChars) {
-              $char = $transcript[$pos-$i];
-            }
-            else {
-                  $preChars = strrev($preChars); // Reverse string to have characters (words) in right order
-                  break;
-            }
-
-            // Stop getting more context, if some preceding characters have already been catched and the current character is a period
-            if ($i > ($cSize*0.2) and $char == ".") {
-                if (substr($preChars, -1) == " ") { // remove blank space at the end of $prechars, if necessary
-                    $preChars = substr($preChars, 0, -1);
-                }
-                $preChars = strrev($preChars); // Reverse string to have characters (words) in right order
-                break;
-            }
-
-            // Stop getting more context, if many preceding characters have already been catched and the current character is whitespace or colons
-            if ($i > ($cSize*0.7) and ($char == " " or $char == ":")) {
-                $preChars = $preChars . "...";
-                $preChars = strrev($preChars); // Reverse string to have characters (words) in right order
-                break;
-            }
-
-            // Append new character to preceding context
-            $preChars = $preChars . $char;
+        for ($i=0; ($i<$cSize) and ($i<$numPrecWords); $i++) {
+            $keywordInContext = array_reverse($precWords)[$i] . " " . $keywordInContext;
         }
 
-        // Get the words, that succeed the keyword (including itself)
-        for ($i=0; $i<$cSize; $i++) {
-
-            // Get the next character, if there is one
-            if ($i < $numSucChars) {
-                $char = $transcript[$pos+$i];
-            }
-            else {
-                break;
-            }
-
-            // Stop getting more context, if many succeeding characters are already catched and the current character is whitespace. colons or comma
-            if ($i > ($cSize*0.7) and ($char == " " or $char  == ":" or $char == ",")) {
-                $sucChars = $sucChars . "...";
-                break;
-            }
-
-            // Append new character to succeeding context
-            $sucChars = $sucChars . $char;
-
-            // Stop getting more context, if some succeeding characters are already catched and the current character is a period
-            if ($i > ($cSize*0.2) and $char == ".") {
-                break;
-            }
+        for ($i=0; ($i<$cSize) and ($i<$numSucWords); $i++) {
+            $keywordInContext = $keywordInContext . " " . $sucWords[$i];
         }
 
-        return $preChars . $sucChars;
+        return $keywordInContext;
     }
 }
 

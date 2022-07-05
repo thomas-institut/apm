@@ -2,6 +2,7 @@
 namespace APM\Api;
 
 use phpDocumentor\Reflection\Types\Null_;
+use phpDocumentor\Reflection\Types\This;
 use PhpParser\Error;
 use PHPUnit\Util\Exception;
 use \Psr\Http\Message\ServerRequestInterface as Request;
@@ -88,11 +89,14 @@ function search($word)
                 // Create an array $csKeywordsWithPos with pairs in the following form [case sensitive keyword, position in transcript]
                 $csKeywordsWithPos = getCaseSensitiveKeywordsWithPositions($keyword, $transcripts[$i], $keywordFreq);
 
+                // Get all keyword positions in the current column (measured in words)
+                $keywordPositions = getKeywordPositions($transcripts[$i], $keyword);
+
                 // Get context of every occurence of the keyword
                 $keywordsInContext = [];
 
-                foreach ($csKeywordsWithPos as $csKeywordWithPos) {
-                    $keywordInContext = getContext($transcripts[$i], $csKeywordWithPos[1]);
+                foreach ($keywordPositions as $pos) {
+                    $keywordInContext = getContext2($transcripts[$i], $pos);
                     $keywordsInContext[] = $keywordInContext;
                 }
 
@@ -110,8 +114,8 @@ function search($word)
             }
         }
 
-        print_r($results);
-        echo ($numMatches);
+        // print_r($results);
+        // echo ($numMatches);
 
         return true;
     }
@@ -159,6 +163,52 @@ function getCaseSensitiveKeywordsWithPositions ($keyword, $transcript, $keywordF
     }
 
     return $csKeywordsWithPos;
+}
+
+function getKeywordPositions ($transcript, $keyword): array {
+
+    $keywordPositions = [];
+    $words = explode(" ", $transcript);
+
+    for ($i=0; $i<count($words); $i++) {
+        if (strpos($words[$i], $keyword) !== false) {
+            $keywordPositions[] = $i;
+        }
+    }
+    print_r($keywordPositions);
+    return $keywordPositions;
+}
+
+function array_search_partial($arr, $keyword) {
+    foreach($arr as $index => $string) {
+        if (strpos($string, $keyword) !== FALSE)
+            return $index;
+    }
+    return false;
+}
+
+function getContext2 ($transcript, $keywordPos, $cSize = 10): string
+{
+    $words = explode(" ", $transcript);
+    // $keywordPos = array_search_partial($words, $keyword);
+    $numWords = count($words);
+    $numPrecWords = $keywordPos;
+    $numSucWords = $numWords - $keywordPos;
+    $precWords = array_slice($words, 0, $keywordPos);
+    $sucWords = array_slice($words, $keywordPos+1, $numWords);
+    $keywordInContext = $words[$keywordPos];
+
+    for ($i=0; ($i<$cSize) and ($i<$numPrecWords); $i++) {
+        $keywordInContext = array_reverse($precWords)[$i] . " " . $keywordInContext;
+    }
+
+    for ($i=0; ($i<$cSize) and ($i<$numSucWords); $i++) {
+        $keywordInContext = $keywordInContext . " " . $sucWords[$i];
+    }
+
+    print_r ($keywordInContext . "-------------------------------------");
+
+    return $keywordInContext;
 }
 
 function getContext ($transcript, $pos, $cSize = 100): string
@@ -236,6 +286,6 @@ function getContext ($transcript, $pos, $cSize = 100): string
 }
 
 
-search('res');
+search('philosophum');
 
 

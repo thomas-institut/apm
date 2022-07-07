@@ -87,7 +87,7 @@ export class EditionMainTextEditor {
     this.quillDeltaRenderer = new QuillDeltaRenderer()
     this.quillDeltaConverter = new GenericQuillDeltaConverter({
       verbose: this.verbose,
-      debug: this.debug,
+      debug: false,
       ignoreParagraphs: false
     })
 

@@ -18,6 +18,11 @@
 
 let debugMode = false
 
+export const KEEP = 0
+export const ADD = 1
+export const DEL = -1
+
+
 /**
  * Calculate the shortest edit sequence to convert arrayA into arrayB
  *
@@ -121,7 +126,7 @@ function formatSolution(snakes) {
       if (debugMode) {
         console.log(`Snake ${i}, index ${x}, command -1, seq -1`)
       }
-      solution.push({ index: x, command: -1, seq: -1 })
+      solution.push({ index: x, command: DEL, seq: -1 })
       x++;
     }
     // Verticals
@@ -130,7 +135,7 @@ function formatSolution(snakes) {
       if (debugMode) {
         console.log(`Snake ${i}, index ${y}, command 1, seq ${seq}`)
       }
-      solution.push({ index: y, command: 1, seq: seq })
+      solution.push({ index: y, command: ADD, seq: seq })
       y++
       seq++
     }
@@ -140,7 +145,7 @@ function formatSolution(snakes) {
       if (debugMode) {
         console.log(`Snake ${i}, index ${x}, command 0, seq ${seq}`)
       }
-      solution.push({ index: x, command: 0, seq: seq })
+      solution.push({ index: x, command: KEEP, seq: seq })
       x++
       y++
       seq++

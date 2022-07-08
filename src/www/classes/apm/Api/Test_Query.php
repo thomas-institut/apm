@@ -90,7 +90,9 @@ function search($word)
                 $csKeywordsWithPos = getCaseSensitiveKeywordsWithPositions($keyword, $transcripts[$i], $keywordFreq);
 
                 // Get all keyword positions in the current column (measured in words)
-                $keywordPositions = getKeywordPositions($transcripts[$i], $keyword);
+                $keywordPositionsLC = getKeywordPositions($transcripts[$i], $keyword);
+                $keywordPositionsUC = getKeywordPositions($transcripts[$i], ucfirst($keyword));
+                $keywordPositions = array_merge($keywordPositionsLC, $keywordPositionsUC);
 
                 // Get context of every occurence of the keyword
                 $keywordsInContext = [];
@@ -114,8 +116,8 @@ function search($word)
             }
         }
 
-        // print_r($results);
-        // echo ($numMatches);
+        print_r($results);
+        echo ($numMatches);
 
         return true;
     }
@@ -175,28 +177,22 @@ function getKeywordPositions ($transcript, $keyword): array {
             $keywordPositions[] = $i;
         }
     }
-    print_r($keywordPositions);
-    return $keywordPositions;
-}
 
-function array_search_partial($arr, $keyword) {
-    foreach($arr as $index => $string) {
-        if (strpos($string, $keyword) !== FALSE)
-            return $index;
-    }
-    return false;
+    // print_r($keywordPositions);
+    return $keywordPositions;
 }
 
 function getContext2 ($transcript, $keywordPos, $cSize = 10): string
 {
     $words = explode(" ", $transcript);
-    // $keywordPos = array_search_partial($words, $keyword);
     $numWords = count($words);
-    $numPrecWords = $keywordPos;
-    $numSucWords = $numWords - $keywordPos;
     $precWords = array_slice($words, 0, $keywordPos);
     $sucWords = array_slice($words, $keywordPos+1, $numWords);
+    $numPrecWords = count($precWords);
+    $numSucWords = count($sucWords);
     $keywordInContext = $words[$keywordPos];
+
+    // print_r($numWords$sucWords);
 
     for ($i=0; ($i<$cSize) and ($i<$numPrecWords); $i++) {
         $keywordInContext = array_reverse($precWords)[$i] . " " . $keywordInContext;
@@ -205,8 +201,6 @@ function getContext2 ($transcript, $keywordPos, $cSize = 10): string
     for ($i=0; ($i<$cSize) and ($i<$numSucWords); $i++) {
         $keywordInContext = $keywordInContext . " " . $sucWords[$i];
     }
-
-    print_r ($keywordInContext . "-------------------------------------");
 
     return $keywordInContext;
 }

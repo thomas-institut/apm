@@ -121,7 +121,9 @@ class ApiSearch extends ApiController
                 $csKeywordsWithPos = $this->getCaseSensitiveKeywordsWithPositions($keyword, $transcripts[$i], $keywordFreq);
 
                 // Get all keyword positions in the current column (measured in words)
-                $keywordPositions = $this->getKeywordPositions($transcripts[$i], $keyword);
+                $keywordPositionsLC = $this->getKeywordPositions($transcripts[$i], $keyword);
+                $keywordPositionsUC = $this->getKeywordPositions($transcripts[$i], ucfirst($keyword));
+                $keywordPositions = array_merge($keywordPositionsLC, $keywordPositionsUC);
 
                 // Get context of every occurence of the keyword and append it to the $keywordsInContext array
                 $keywordsInContext = [];
@@ -164,6 +166,8 @@ class ApiSearch extends ApiController
                 }
             }
         }
+
+        // print_r($matches);
 
         return $this->responseWithJson($response, ['searchString' => $keyword,  'matches' => $matches, 'serverTime' => $now, 'status' => $status]);
     }
@@ -231,10 +235,10 @@ class ApiSearch extends ApiController
     {
         $words = explode(" ", $transcript);
         $numWords = count($words);
-        $numPrecWords = $keywordPos;
-        $numSucWords = $numWords - $keywordPos;
         $precWords = array_slice($words, 0, $keywordPos);
         $sucWords = array_slice($words, $keywordPos+1, $numWords);
+        $numPrecWords = count($precWords);
+        $numSucWords = count($sucWords);
         $keywordInContext = $words[$keywordPos];
 
         for ($i=0; ($i<$cSize) and ($i<$numPrecWords); $i++) {

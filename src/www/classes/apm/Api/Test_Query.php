@@ -1,6 +1,7 @@
 <?php
 namespace APM\Api;
 
+use APM\CommandLine\IndexDocs;
 use phpDocumentor\Reflection\Types\Null_;
 use phpDocumentor\Reflection\Types\This;
 use PhpParser\Error;
@@ -84,15 +85,20 @@ function search($word)
                 $transcripts[$i] = $query['hits']['hits'][$i]['_source']['transcript'];
                 $docIDs[$i] = $query['hits']['hits'][$i]['_source']['docID'];
                 $pageIDs[$i] = $query['hits']['hits'][$i]['_id'];
-                $keywordFreq = substr_count ($transcripts[$i], $keyword) + substr_count ($transcripts[$i], ucfirst($keyword));
 
-                // Create an array $csKeywordsWithPos with pairs in the following form [case sensitive keyword, position in transcript]
-                $csKeywordsWithPos = getCaseSensitiveKeywordsWithPositions($keyword, $transcripts[$i], $keywordFreq);
 
-                // Get all keyword positions in the current column (measured in words)
+                // Get all lower and upper-case keyword positions in the current column (measured in words)
+                // and sort the keywordPositions to have the positions in ascending order like they appear in the manuscript (if there is more than one occurence)
                 $keywordPositionsLC = getKeywordPositions($transcripts[$i], $keyword);
                 $keywordPositionsUC = getKeywordPositions($transcripts[$i], ucfirst($keyword));
                 $keywordPositions = array_merge($keywordPositionsLC, $keywordPositionsUC);
+                sort($keywordPositions);
+
+                // Get keyword frequency in current column
+                $keywordFreq = count($keywordPositions);
+
+                // Create an array $csKeywordsWithPos with pairs in the following form [case sensitive keyword, position in transcript]
+                $csKeywordsWithPos = getCaseSensitiveKeywordsWithPositions($keyword, $transcripts[$i], $keywordFreq);
 
                 // Get context of every occurence of the keyword
                 $keywordsInContext = [];
@@ -116,7 +122,11 @@ function search($word)
             }
         }
 
-        print_r($results);
+        foreach ($results as $result) {
+            if ($result['title'] == "E-MinioPaluello-AL_33-DeArtePoetica" and $result['page'] == 5) {
+                    print_r($result);
+                }
+        }
         echo ($numMatches);
 
         return true;
@@ -173,12 +183,11 @@ function getKeywordPositions ($transcript, $keyword): array {
     $words = explode(" ", $transcript);
 
     for ($i=0; $i<count($words); $i++) {
-        if (strpos($words[$i], $keyword) !== false) {
+        if (substr_count($words[$i], $keyword) !== 0) {
             $keywordPositions[] = $i;
         }
     }
 
-    // print_r($keywordPositions);
     return $keywordPositions;
 }
 
@@ -191,8 +200,6 @@ function getContext2 ($transcript, $keywordPos, $cSize = 10): string
     $numPrecWords = count($precWords);
     $numSucWords = count($sucWords);
     $keywordInContext = $words[$keywordPos];
-
-    // print_r($numWords$sucWords);
 
     for ($i=0; ($i<$cSize) and ($i<$numPrecWords); $i++) {
         $keywordInContext = array_reverse($precWords)[$i] . " " . $keywordInContext;
@@ -280,6 +287,6 @@ function getContext ($transcript, $pos, $cSize = 100): string
 }
 
 
-search('philosophum');
+search('res');
 
 

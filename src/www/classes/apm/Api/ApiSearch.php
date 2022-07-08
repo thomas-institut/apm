@@ -115,15 +115,19 @@ class ApiSearch extends ApiController
                 $transcripts[$i] = $query['hits']['hits'][$i]['_source']['transcript'];
                 $docIDs[$i] = $query['hits']['hits'][$i]['_source']['docID'];
                 $pageIDs[$i] = $query['hits']['hits'][$i]['_id'];
-                $keywordFreq = substr_count ($transcripts[$i], $keyword) + substr_count ($transcripts[$i], ucfirst($keyword));
-
-                // Get case sensitive keywords and their positions in the transcript for every occurence of the searched keyword
-                $csKeywordsWithPos = $this->getCaseSensitiveKeywordsWithPositions($keyword, $transcripts[$i], $keywordFreq);
 
                 // Get all keyword positions in the current column (measured in words)
+                // and sort the keywordPositions to have the positions in ascending order like they appear in the manuscript (if there is more than one occurence)
                 $keywordPositionsLC = $this->getKeywordPositions($transcripts[$i], $keyword);
                 $keywordPositionsUC = $this->getKeywordPositions($transcripts[$i], ucfirst($keyword));
                 $keywordPositions = array_merge($keywordPositionsLC, $keywordPositionsUC);
+                sort($keywordPositions);
+
+                // Get keyword frequency in current column
+                $keywordFreq = count($keywordPositions);
+
+                // Get case sensitive keywords and their positions in the transcript for every occurence of the searched keyword
+                $csKeywordsWithPos = $this->getCaseSensitiveKeywordsWithPositions($keyword, $transcripts[$i], $keywordFreq);
 
                 // Get context of every occurence of the keyword and append it to the $keywordsInContext array
                 $keywordsInContext = [];
@@ -223,7 +227,7 @@ class ApiSearch extends ApiController
         $words = explode(" ", $transcript);
 
         for ($i=0; $i<count($words); $i++) {
-            if (strpos($words[$i], $keyword) !== false) {
+            if (substr_count($words[$i], $keyword) !== 0) {
                 $keywordPositions[] = $i;
             }
         }

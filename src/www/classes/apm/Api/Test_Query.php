@@ -89,47 +89,50 @@ function search($word)
 
                 // Get all lower and upper-case keyword positions in the current column (measured in words)
                 // and sort the keywordPositions to have the positions in ascending order like they appear in the manuscript (if there is more than one occurence)
-                $keywordPositionsLC = getKeywordPositions($transcripts[$i], $keyword);
-                $keywordPositionsUC = getKeywordPositions($transcripts[$i], ucfirst($keyword));
-                $keywordPositions = array_merge($keywordPositionsLC, $keywordPositionsUC);
-                sort($keywordPositions);
 
-                // Get keyword frequency in current column
-                $keywordFreq = count($keywordPositions);
+                if ($titles[$i] == 'M-VA-VAT-BAV-Vat.lat.2076' and $pages[$i] == 22) {
+                    $keywordPositionsLC = getKeywordPositions($transcripts[$i], $keyword, $queryAlg);
+                    $keywordPositionsUC = getKeywordPositions($transcripts[$i], ucfirst($keyword), $queryAlg);
+                    $keywordPositions = array_merge($keywordPositionsLC, $keywordPositionsUC);
+                    sort($keywordPositions);
 
-                // Create an array $csKeywordsWithPos with pairs in the following form [case sensitive keyword, position in transcript]
-                $csKeywordsWithPos = getCaseSensitiveKeywordsWithPositions($keyword, $transcripts[$i], $keywordFreq);
+                    // Get keyword frequency in current column
+                    $keywordFreq = count($keywordPositions);
 
-                // Get context of every occurence of the keyword
-                $keywordsInContext = [];
+                    // Create an array $csKeywordsWithPos with pairs in the following form [case sensitive keyword, position in transcript]
+                    $csKeywordsWithPos = getCaseSensitiveKeywordsWithPositions($keyword, $transcripts[$i], $keywordFreq);
 
-                foreach ($keywordPositions as $pos) {
-                    $keywordInContext = getContext2($transcripts[$i], $pos);
-                    $keywordsInContext[] = $keywordInContext;
+                    // Get context of every occurence of the keyword
+                    $keywordsInContext = [];
+
+                    foreach ($keywordPositions as $pos) {
+                        $keywordInContext = getContext2($transcripts[$i], $pos);
+                        $keywordsInContext[] = $keywordInContext;
+                    }
+
+                    $results[$i] = [
+                        'title' => $titles[$i],
+                        'page' => $pages[$i],
+                        'transcriber' => $transcribers[$i],
+                        'pageID' => $pageIDs[$i],
+                        'docID' => $docIDs[$i],
+                        'transcript' => $transcripts[$i],
+                        'keywordFreq' => $keywordFreq,
+                        'csKeywordsWithPos' => $csKeywordsWithPos,
+                        'keywordsInContext' => $keywordsInContext
+                    ];
                 }
-
-                $results[$i] = [
-                    'title' => $titles[$i],
-                    'page' => $pages[$i],
-                    'transcriber' => $transcribers[$i],
-                    'pageID' => $pageIDs[$i],
-                    'docID' => $docIDs[$i],
-                    'transcript' => $transcripts[$i],
-                    'keywordFreq' => $keywordFreq,
-                    'csKeywordsWithPos' => $csKeywordsWithPos,
-                    'keywordsInContext' => $keywordsInContext
-                ];
             }
-        }
 
-        foreach ($results as $result) {
-            if ($result['title'] == "E-MinioPaluello-AL_33-DeArtePoetica" and $result['page'] == 5) {
-                    print_r($result);
-                }
-        }
-        echo ($numMatches);
+            /*foreach ($results as $result) {
+                if ($result['title'] == "M-VA-VAT-BAV-Vat.lat.2076") {
+                        print_r($result);
+                    }
+            }
+            echo ($numMatches);*/
 
-        return true;
+            return true;
+        }
     }
 
 function getCaseSensitiveKeywordsWithPositions ($keyword, $transcript, $keywordFreq) {
@@ -177,22 +180,32 @@ function getCaseSensitiveKeywordsWithPositions ($keyword, $transcript, $keywordF
     return $csKeywordsWithPos;
 }
 
-function getKeywordPositions ($transcript, $keyword): array {
+function getKeywordPositions ($transcript, $keyword, $queryAlg): array {
 
     $keywordPositions = [];
+    $transcript = str_replace("\n", " ", $transcript);
     $words = explode(" ", $transcript);
+    print_r($words);
 
     for ($i=0; $i<count($words); $i++) {
-        if (substr_count($words[$i], $keyword) !== 0) {
-            $keywordPositions[] = $i;
+        $cleanWord = str_replace( array( '.', ',', ';', ':', '-', '–'), '', $words[$i]);
+        if ($queryAlg == 'match_phrase_prefix') {
+            if (substr_count($cleanWord, $keyword) !== 0) {
+                $keywordPositions[] = $i;
+            }
+        }
+        elseif ($queryAlg = 'match') {
+            if ($cleanWord == $keyword) {
+                $keywordPositions[] = $i;
+            }
         }
     }
-
     return $keywordPositions;
 }
 
 function getContext2 ($transcript, $keywordPos, $cSize = 10): string
 {
+    $transcript = str_replace("\n", " ", $transcript);
     $words = explode(" ", $transcript);
     $numWords = count($words);
     $precWords = array_slice($words, 0, $keywordPos);
@@ -287,6 +300,6 @@ function getContext ($transcript, $pos, $cSize = 100): string
 }
 
 
-search('res');
+search('re');
 
 

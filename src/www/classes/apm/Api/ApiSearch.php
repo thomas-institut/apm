@@ -118,8 +118,8 @@ class ApiSearch extends ApiController
 
                 // Get all keyword positions in the current column (measured in words)
                 // and sort the keywordPositions to have the positions in ascending order like they appear in the manuscript (if there is more than one occurence)
-                $keywordPositionsLC = $this->getKeywordPositions($transcripts[$i], $keyword);
-                $keywordPositionsUC = $this->getKeywordPositions($transcripts[$i], ucfirst($keyword));
+                $keywordPositionsLC = $this->getKeywordPositions($transcripts[$i], $keyword, $queryAlg);
+                $keywordPositionsUC = $this->getKeywordPositions($transcripts[$i], ucfirst($keyword), $queryAlg);
                 $keywordPositions = array_merge($keywordPositionsLC, $keywordPositionsUC);
                 sort($keywordPositions);
 
@@ -137,8 +137,11 @@ class ApiSearch extends ApiController
                     $keywordsInContext[] = $keywordInContext;
                 }
 
+                // HIER WERDEN MATCHES AUSGEFILTERT, DIE EINEN BINDESTRICH ENTHALTEN, DAHER KEINE TATSÄCHLICHEN MATCHES SIND, ABER VON OPENSEARCH
+                // ALS SOLCHE AUSGEGEBEN WERDEN
+
                 // Add data of every match to the matches array, which will become an array of arrays – each array holds the data of a match
-                if ($docName == 'Search in all documents...') {
+                if ($docName == 'Search in all documents...' and $keywordFreq !== 0) {
                     $matches[] = [
                         'title' => $titles[$i],
                         'page' => $pages[$i],
@@ -153,7 +156,7 @@ class ApiSearch extends ApiController
                     ];
                 }
                 else {
-                    if ($titles[$i] == $docName) {
+                    if ($titles[$i] == $docName and $keywordFreq !== 0) {
                         $matches[] = [
                             'title' => $titles[$i],
                             'page' => $pages[$i],
@@ -221,14 +224,25 @@ class ApiSearch extends ApiController
         return $csKeywordsWithPos;
     }
 
-    private function getKeywordPositions ($transcript, $keyword): array {
+    private function getKeywordPositions ($transcript, $keyword, $queryAlg): array {
 
         $keywordPositions = [];
+        $transcript = str_replace("\n", " ", $transcript);
         $words = explode(" ", $transcript);
 
+        // HIER WERDEN MATCHES AUSGEFILTERT, DIE EINEN BINDESTRICH ENTHALTEN, DAHER KEINE TATSÄCHLICHEN MATCHES SIND, ABER VON OPENSEARCH
+        // ALS SOLCHE AUSGEGEBEN WERDEN
         for ($i=0; $i<count($words); $i++) {
-            if (substr_count($words[$i], $keyword) !== 0) {
-                $keywordPositions[] = $i;
+            $cleanWord = str_replace( array( '.', ',', ';', ':', "'"), '', $words[$i]);
+            if ($queryAlg == 'match_phrase_prefix') {
+                if (substr_count($cleanWord, $keyword) !== 0) {
+                    $keywordPositions[] = $i;
+                }
+            }
+            elseif ($queryAlg = 'match') {
+                if ($cleanWord == $keyword) {
+                    $keywordPositions[] = $i;
+                }
             }
         }
         return $keywordPositions;
@@ -237,6 +251,7 @@ class ApiSearch extends ApiController
     // Function to get the surrounding context of a keyword
     private function getContext ($transcript, $keywordPos, $cSize = 100): string
     {
+        $transcript = str_replace("\n", " ", $transcript);
         $words = explode(" ", $transcript);
         $numWords = count($words);
         $precWords = array_slice($words, 0, $keywordPos);

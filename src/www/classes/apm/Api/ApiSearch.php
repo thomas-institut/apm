@@ -139,7 +139,7 @@ class ApiSearch extends ApiController
 
                 // Add data of every match to the matches array, which will become an array of arrays – each array holds the data of a match
                 if ($docName == 'Search in all documents...') {
-                    $matches[$i] = [
+                    $matches[] = [
                         'title' => $titles[$i],
                         'page' => $pages[$i],
                         'column' => $columns[$i],
@@ -154,7 +154,7 @@ class ApiSearch extends ApiController
                 }
                 else {
                     if ($titles[$i] == $docName) {
-                        $matches[$i] = [
+                        $matches[] = [
                             'title' => $titles[$i],
                             'page' => $pages[$i],
                             'column' => $columns[$i],

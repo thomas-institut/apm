@@ -21,43 +21,42 @@ class ApiSearch extends ApiController
      * @return Response
      */
 
+    // Function to search in an OpenSearch-Index, which gives back an api response to js
     public function search(Request $request, Response $response): Response
     {
+        // Set the name of the index, that should be queried
+        $indexName = 'transcripts';
 
-        // Arrays as containers for queried data
-        $titles = [];
-        $pages = [];
-        $columns = [];
-        $transcribers = [];
-        $pageIDs = [];
-        $docIDs = [];
-        $transcripts = [];
-
-        // Array, which will be contained in the api response
+        // Array, which will be returned in the api response
         $matches = [];
-
-        // Status variable for communicating errors – has no effect right now?
+        // Status variable for communicating errors in the api response – has no effect right now?
         $status = 'OK';
+        // Get current time, which will be returned in the api response
+        $now = TimeString::now();
 
-        // Get user input and make it lower case to make it fit for the getContext function (?) – get keywordLen for varying query type
+        // Get all the user input and convert keyword to lower-case for better handling in following code (esp. for the getKeywordPositions-function)
         $keyword = strtolower($_POST['searchText']);
         $cSize = $_POST['sliderVal'];
         $docName = $_POST['docName'];
+
+        // Get length of keyword for choosing the right query algorithm
         $keywordLen = strlen($keyword);
 
-        /* Remove disturbing whitespace before, after or in between keywords
-        This is necessary for a clean search and adequate calculation of the context with the getContext-function */
+        /* Remove additional whitespace before, after or in between keywords – this is necessary for a clean search
+        and an adequate calculation of the surrounding context of the keyword with the getContext-function */
 
-        $keyword = preg_replace('!\s+!', ' ', $keyword); // Reduce multiple blanks following each other to one
-        if (substr($keyword, -1) == " ") { // Remove whitespace at the end of the keyword
+        // Reduce multiple blanks following each other anywhere in the keyword to one single blank
+        $keyword = preg_replace('!\s+!', ' ', $keyword);
+
+        // Remove blank at the end of the keyword
+        if (substr($keyword, -1) == " ") {
                 $keyword = substr($keyword, 0, -1);
             }
-        if (substr($keyword, 0, 1) == " ") { // Remove whitespace at the beginning of the keyword
+
+        // Remove blank at the beginning of the keyword
+        if (substr($keyword, 0, 1) == " ") {
                 $keyword = substr($keyword, 1);
             }
-
-        // Get current time
-        $now = TimeString::now();
 
         // Instantiate OpenSearch client
         try {
@@ -71,10 +70,7 @@ class ApiSearch extends ApiController
             return $this->responseWithJson($response, ['searchString' => $keyword,  'matches' => $matches, 'serverTime' => $now, 'status' => $status]);
         }
 
-        // Set the name of the index, that should be queried
-        $indexName = 'transcripts';
-
-        // Choose query type
+        // Choose query algorithm, depending on the length of the keyword
         if ($keywordLen < 4) {
             $queryAlg = 'match';
         }
@@ -82,7 +78,7 @@ class ApiSearch extends ApiController
             $queryAlg = 'match_phrase_prefix';
         }
 
-        // Search for keyword in the transcripts, which are indexed in OpenSearch
+        // Query all columns in the index!
         $query = $client->search([
             'index' => $indexName,
             'body' => [
@@ -100,81 +96,91 @@ class ApiSearch extends ApiController
             ]
         ]);
 
-        // Count the number of matches
+        // Count the number of matched columns
         $numMatches = $query['hits']['total']['value'];
 
-        // If there are any matches, collect them all in an ordered array
+        // If there are any matched columns, collect them all in an ordered array, using the arrays declared at the beginning of the function
         if ($numMatches !== 0) {
             for ($i = 0; $i < $numMatches; $i++) {
 
-                // Get document title, page number, transcriber, transcript, docID, pageID and the keyword frequency of every matched column in the OpenSearch index
-                $titles[$i] = $query['hits']['hits'][$i]['_source']['title'];
-                $pages[$i] = $query['hits']['hits'][$i]['_source']['page'];
-                $columns[$i] = $query['hits']['hits'][$i]['_source']['column'];
-                $transcribers[$i] = $query['hits']['hits'][$i]['_source']['transcriber'];
-                $transcripts[$i] = $query['hits']['hits'][$i]['_source']['transcript'];
-                $docIDs[$i] = $query['hits']['hits'][$i]['_source']['docID'];
-                $pageIDs[$i] = $query['hits']['hits'][$i]['_id'];
+                // Get document title, page number, column number, transcriber, transcript, docID and pageID
+                // of every matched column in the OpenSearch index
+                $title = $query['hits']['hits'][$i]['_source']['title'];
+                $page = $query['hits']['hits'][$i]['_source']['page'];
+                $column = $query['hits']['hits'][$i]['_source']['column'];
+                $transcriber = $query['hits']['hits'][$i]['_source']['transcriber'];
+                $transcript = $query['hits']['hits'][$i]['_source']['transcript'];
+                $docID = $query['hits']['hits'][$i]['_source']['docID'];
+                $pageID = $query['hits']['hits'][$i]['_id'];
 
-                // Get all keyword positions in the current column (measured in words)
-                // and sort the keywordPositions to have the positions in ascending order like they appear in the manuscript (if there is more than one occurence)
-                $keywordPositionsLC = $this->getKeywordPositions($transcripts[$i], $keyword, $queryAlg);
-                $keywordPositionsUC = $this->getKeywordPositions($transcripts[$i], ucfirst($keyword), $queryAlg);
+                // Make a list of words out of the transcript, which is used in following functions
+                // Therefore every line break in the transcript has to be replaced by a blank
+                $cleanTranscript = str_replace("\n", " ", $transcript);
+                $words = explode(" ", $cleanTranscript);
+
+                // Get all lower-case and all upper-case keyword positions in the current column (measured in words)
+                $keywordPositionsLC = $this->getKeywordPositions($words, $keyword, $queryAlg);
+                $keywordPositionsUC = $this->getKeywordPositions($words, ucfirst($keyword), $queryAlg);
+
+                // Sort the keywordPositions to have them in ascending order like they appear in the manuscript –
+                // this, of course, is only effective if there is more than one occurence of the keyword in the column
                 $keywordPositions = array_merge($keywordPositionsLC, $keywordPositionsUC);
                 sort($keywordPositions);
 
-                // Get keyword frequency in current column
+                // Get total keyword frequency in matched column
                 $keywordFreq = count($keywordPositions);
 
                 // Get case sensitive keywords and their positions in the transcript for every occurence of the searched keyword
-                $csKeywordsWithPos = $this->getCaseSensitiveKeywordsWithPositions($keyword, $transcripts[$i], $keywordFreq);
+                $csKeywordsWithPos = $this->getCaseSensitiveKeywordsWithPositions($keyword, $transcript, $keywordFreq);
 
-                // Get context of every occurence of the keyword and append it to the $keywordsInContext array
+                // Get surrounding context of every occurence of the keyword in the matched column as a string
+                // and append it to the keywordsInContext-array
                 $keywordsInContext = [];
-
-                foreach ($keywordPositions as $pos) {
-                    $keywordInContext = $this->getContext($transcripts[$i], $pos, $cSize);
+                foreach ($keywordPositions as $keywordPos) {
+                    $keywordInContext = $this->getContext($words, $keywordPos, $cSize);
                     $keywordsInContext[] = $keywordInContext;
                 }
 
-                // HIER WERDEN MATCHES AUSGEFILTERT, DIE EINEN BINDESTRICH ENTHALTEN, DAHER KEINE TATSÄCHLICHEN MATCHES SIND, ABER VON OPENSEARCH
-                // ALS SOLCHE AUSGEGEBEN WERDEN
+                // Add all information about the matched column to the matches array, which will become an array of arrays –
+                // each array contains the information about a single column.
 
-                // Add data of every match to the matches array, which will become an array of arrays – each array holds the data of a match
+                // The check for keywordFreq seems redundant, but is necessary, because the getKeywordPositions-functions is more strict than the query
+                // in OpenSearch. It could be, that keywordFreq is 0 for a column, which does contain a match according to the OpenSearch-algorithm.
+                // This is because the latter matches words wih hyphens, i. e. "res-", if the searched keyword is actually "res" –
+                // in the getKeywordPositions-function this is corrected and not treated as a match.
+
+                // Collect matches in all columns
                 if ($docName == 'Search in all documents...' and $keywordFreq !== 0) {
                     $matches[] = [
-                        'title' => $titles[$i],
-                        'page' => $pages[$i],
-                        'column' => $columns[$i],
-                        'transcriber' => $transcribers[$i],
-                        'pageID' => $pageIDs[$i],
-                        'docID' => $docIDs[$i],
-                        'transcript' => $transcripts[$i],
+                        'title' => $title,
+                        'page' => $page,
+                        'column' => $column,
+                        'transcriber' => $transcriber,
+                        'pageID' => $pageID,
+                        'docID' => $docID,
+                        'transcript' => $transcript,
                         'keywordFreq' => $keywordFreq,
                         'csKeywordsWithPos' => $csKeywordsWithPos,
                         'keywordsInContext' => $keywordsInContext
                     ];
                 }
-                else {
-                    if ($titles[$i] == $docName and $keywordFreq !== 0) {
+                // Collect matched columns only for a specified document title
+                elseif ($title == $docName and $keywordFreq !== 0) {
                         $matches[] = [
-                            'title' => $titles[$i],
-                            'page' => $pages[$i],
-                            'column' => $columns[$i],
-                            'transcriber' => $transcribers[$i],
-                            'pageID' => $pageIDs[$i],
-                            'docID' => $docIDs[$i],
-                            'transcript' => $transcripts[$i],
+                            'title' => $title,
+                            'page' => $page,
+                            'column' => $column,
+                            'transcriber' => $transcriber,
+                            'pageID' => $pageID,
+                            'docID' => $docID,
+                            'transcript' => $transcript,
                             'keywordFreq' => $keywordFreq,
                             'csKeywordsWithPos' => $csKeywordsWithPos,
                             'keywordsInContext' => $keywordsInContext
                         ];
-                    }
                 }
             }
         }
-
-        // print_r($matches);
 
         return $this->responseWithJson($response, ['searchString' => $keyword,  'matches' => $matches, 'serverTime' => $now, 'status' => $status]);
     }
@@ -224,46 +230,59 @@ class ApiSearch extends ApiController
         return $csKeywordsWithPos;
     }
 
-    private function getKeywordPositions ($transcript, $keyword, $queryAlg): array {
+    // Function to get all the positions of a given keyword in a transcripted column (full match or phrase match, measured in words)
+    private function getKeywordPositions ($words, $keyword, $queryAlg): array {
 
+        // Array, which will be returned
         $keywordPositions = [];
-        $transcript = str_replace("\n", " ", $transcript);
-        $words = explode(" ", $transcript);
 
-        // HIER WERDEN MATCHES AUSGEFILTERT, DIE EINEN BINDESTRICH ENTHALTEN, DAHER KEINE TATSÄCHLICHEN MATCHES SIND, ABER VON OPENSEARCH
-        // ALS SOLCHE AUSGEGEBEN WERDEN
+        // Check every word of the list of words, if it matches the keyword
         for ($i=0; $i<count($words); $i++) {
+
+            // First, clean the word by erasing some special characters
             $cleanWord = str_replace( array( '.', ',', ';', ':', "'"), '', $words[$i]);
+
+            // If query algorithm is phrase match, add position of a word to the keywordPositions-array,
+            // if it contains the searched keyword as a substring
             if ($queryAlg == 'match_phrase_prefix') {
                 if (substr_count($cleanWord, $keyword) !== 0) {
                     $keywordPositions[] = $i;
                 }
             }
+
+            // If query algoritm is match, add position of a word to the keywordPositions-array,
+            // if word in transcript is identical to the searched keyword – this is the place, where words with hyphens won't match!
             elseif ($queryAlg = 'match') {
                 if ($cleanWord == $keyword) {
                     $keywordPositions[] = $i;
                 }
             }
         }
+
         return $keywordPositions;
     }
 
-    // Function to get the surrounding context of a keyword
-    private function getContext ($transcript, $keywordPos, $cSize = 100): string
+    // Function to get the surrounding context of a given keyword (via keywordPosition) in a given transcript
+    private function getContext ($words, $keywordPos, $cSize = 100): string
     {
-        $transcript = str_replace("\n", " ", $transcript);
-        $words = explode(" ", $transcript);
+        // Get total number of words in the transcript
         $numWords = count($words);
+
+        // Get a list of all preceding and all succedding words of the keyword at keywordPosition – get the sizes of these lists
         $precWords = array_slice($words, 0, $keywordPos);
         $sucWords = array_slice($words, $keywordPos+1, $numWords);
         $numPrecWords = count($precWords);
         $numSucWords = count($sucWords);
+
+        // Get the keyword at the given keywordPosition and use this string in the next step to add context to it
         $keywordInContext = $words[$keywordPos];
 
+        // Add as many preceding words to the keywordInContext-string, as the total number of preceding words and the desired context size allows
         for ($i=0; ($i<$cSize) and ($i<$numPrecWords); $i++) {
             $keywordInContext = array_reverse($precWords)[$i] . " " . $keywordInContext;
         }
 
+        // Add as many succeeding words to the keywordInContext-string, as the total number of succeeding words and the desired context size allows
         for ($i=0; ($i<$cSize) and ($i<$numSucWords); $i++) {
             $keywordInContext = $keywordInContext . " " . $sucWords[$i];
         }

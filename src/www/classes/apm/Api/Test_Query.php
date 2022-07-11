@@ -119,7 +119,8 @@ function search($word)
                         'transcript' => $transcripts[$i],
                         'keywordFreq' => $keywordFreq,
                         'csKeywordsWithPos' => $csKeywordsWithPos,
-                        'keywordsInContext' => $keywordsInContext
+                        'keywordsInContext' => $keywordsInContext,
+                        'keywordPositions' => $keywordPositions
                     ];
                 }
             }

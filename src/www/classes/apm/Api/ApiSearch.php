@@ -130,15 +130,15 @@ class ApiSearch extends ApiController
                 // Get total keyword frequency in matched column
                 $keywordFreq = count($keywordPositions);
 
-                // Get case sensitive keywords and their positions in the transcript for every occurence of the searched keyword
-                $csKeywordsWithPos = $this->getCaseSensitiveKeywordsWithPositions($keyword, $transcript, $keywordFreq);
-
                 // Get surrounding context of every occurence of the keyword in the matched column as a string
                 // and append it to the keywordsInContext-array
                 $keywordsInContext = [];
+                $keywordPosInContext = [];
+
                 foreach ($keywordPositions as $keywordPos) {
                     $keywordInContext = $this->getContext($words, $keywordPos, $cSize);
-                    $keywordsInContext[] = $keywordInContext;
+                    $keywordsInContext[] = $keywordInContext[0];
+                    $keywordPosInContext[] = $keywordInContext[1];
                 }
 
                 // Add all information about the matched column to the matches array, which will become an array of arrays –
@@ -160,8 +160,8 @@ class ApiSearch extends ApiController
                         'docID' => $docID,
                         'transcript' => $transcript,
                         'keywordFreq' => $keywordFreq,
-                        'csKeywordsWithPos' => $csKeywordsWithPos,
-                        'keywordsInContext' => $keywordsInContext
+                        'keywordsInContext' => $keywordsInContext,
+                        'keywordPosInContext' => $keywordPosInContext
                     ];
                 }
                 // Collect matched columns only for a specified document title
@@ -175,59 +175,14 @@ class ApiSearch extends ApiController
                             'docID' => $docID,
                             'transcript' => $transcript,
                             'keywordFreq' => $keywordFreq,
-                            'csKeywordsWithPos' => $csKeywordsWithPos,
-                            'keywordsInContext' => $keywordsInContext
+                            'keywordsInContext' => $keywordsInContext,
+                            'keywordPosInContext' => $keywordPosInContext
                         ];
                 }
             }
         }
 
         return $this->responseWithJson($response, ['searchString' => $keyword,  'matches' => $matches, 'serverTime' => $now, 'status' => $status]);
-    }
-
-    private function getCaseSensitiveKeywordsWithPositions ($keyword, $transcript, $keywordFreq) {
-
-        // Create an array $csKeywordsWithPos, which contains arrays of the form [case sensitive keyword, position in transcript] and a position index $pos
-        $csKeywordsWithPos = [];
-        $pos = 0;
-        $shift = 0;
-
-        // Iterate $keywordFreq times
-        for ($j=0; $j < $keywordFreq; $j++) {
-
-            // First time, get the whole transcript, in every iteration get a sliced version, which excludes preceding occurences of the keyword
-            $transcript = substr($transcript, $shift);
-
-            // Get position of next lower case occurence and next upper case occurence of the keyword
-            $lowerCasePos = strpos($transcript, $keyword);
-            $upperCasePos = strpos($transcript, ucfirst($keyword));
-
-            // Check if next occurence of the keyword is lower case or upper case
-            if (($lowerCasePos !== false and $lowerCasePos < $upperCasePos) or $upperCasePos == false) {
-
-                // Append nearest uncapitalized keyword with its position to $csKeywordsWithPos array
-                $csKeywordsWithPos[$j] = [$keyword, $pos + $lowerCasePos];
-
-                // Calculate shift for slicing transcript
-                $shift = $lowerCasePos + strlen($keyword);
-
-                // Calculate new $pos relative to whole transcript
-                $pos = $pos + $lowerCasePos + strlen($keyword);
-            }
-            else {
-
-                // Append nearest capitalized keyword with its position to $csKeywordsWithPos array
-                $csKeywordsWithPos[$j] = [ucfirst($keyword), $pos + $upperCasePos];
-
-                // Calculate shift for slicing transcript
-                $shift = $upperCasePos + strlen($keyword);
-
-                // Calculate new $pos relative to whole transcript
-                $pos = $pos + $upperCasePos + strlen($keyword);
-            }
-        }
-
-        return $csKeywordsWithPos;
     }
 
     // Function to get all the positions of a given keyword in a transcripted column (full match or phrase match, measured in words)
@@ -263,7 +218,7 @@ class ApiSearch extends ApiController
     }
 
     // Function to get the surrounding context of a given keyword (via keywordPosition) in a given transcript
-    private function getContext ($words, $keywordPos, $cSize = 100): string
+    private function getContext ($words, $keywordPos, $cSize = 100): array
     {
         // Get total number of words in the transcript
         $numWords = count($words);
@@ -278,8 +233,11 @@ class ApiSearch extends ApiController
         $keywordInContext = $words[$keywordPos];
 
         // Add as many preceding words to the keywordInContext-string, as the total number of preceding words and the desired context size allows
+        $keywordPosInContext = 0;
+
         for ($i=0; ($i<$cSize) and ($i<$numPrecWords); $i++) {
             $keywordInContext = array_reverse($precWords)[$i] . " " . $keywordInContext;
+            $keywordPosInContext = $keywordPosInContext + 1;
         }
 
         // Add as many succeeding words to the keywordInContext-string, as the total number of succeeding words and the desired context size allows
@@ -287,7 +245,7 @@ class ApiSearch extends ApiController
             $keywordInContext = $keywordInContext . " " . $sucWords[$i];
         }
 
-        return $keywordInContext;
+        return [$keywordInContext, $keywordPosInContext];
     }
 }
 

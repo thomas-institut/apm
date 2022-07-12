@@ -23,9 +23,18 @@ namespace APM;
 
 
 use APM\Admin\ApmLogServer;
+use APM\System\ConfigLoader;
 
 require __DIR__ . '/../vendor/autoload.php';
-require __DIR__ . '/../setup.php';
+
+if (!ConfigLoader::loadConfig([__DIR__ . '/../config.php'])) {
+    print "ERROR: cannot load system configuration file\n";
+    exit();
+}
+
+include_once __DIR__ . '/../setup.php';
+include_once __DIR__ . '/../version.php';
+
 
 
 (new ApmLogServer())->run($argc, $argv);

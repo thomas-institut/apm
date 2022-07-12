@@ -29,6 +29,7 @@ namespace APM;
 use APM\Api\ApiLog;
 use APM\Api\ApiTranscription;
 use APM\Site\SiteApmLog;
+use APM\System\ConfigLoader;
 use Slim\App;
 use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Routing\RouteCollectorProxy;
@@ -61,13 +62,9 @@ use APM\Api\ApiElements;
 use APM\Api\ApiCollationTableConversion;
 use APM\Api\ApiTypesetPdf;
 use APM\Api\ApiWitness;
-
 use ThomasInstitut\Container\MinimalContainer;
 
-
 require 'vendor/autoload.php';
-
-
 
 /**
  * Exits with an error message
@@ -79,30 +76,12 @@ function exitWithErrorMessage(string $msg) {
     exit();
 }
 
-$configFilePaths = [
-    'config.php',
-    '~/ti-apm/config.php',
-    '/etc/ti-apm/config.php'
-];
-
-$configLoaded = false;
-$configLoadedFilePath = '';
-foreach ($configFilePaths as $filePath) {
-    if (!$configLoaded && file_exists($filePath)) {
-        $configLoaded = (@include_once $filePath);
-        $configLoadedFilePath = $filePath;
-    }
-}
-
-if (!$configLoaded) {
+if (!ConfigLoader::loadConfig()) {
     exitWithErrorMessage('Config file not found');
 }
 
-$config[ApmConfigParameter::CONFIG_FILE_PATH] = $configLoadedFilePath;
-
 require 'setup.php';
 require 'version.php';
-
 
 global $config;
 

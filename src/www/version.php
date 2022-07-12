@@ -20,8 +20,6 @@
 
 use APM\System\ApmConfigParameter;
 
-require_once 'config.php';
-
 global $config;
 
 

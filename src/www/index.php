@@ -66,8 +66,7 @@ use ThomasInstitut\Container\MinimalContainer;
 
 
 require 'vendor/autoload.php';
-require 'setup.php';
-require 'version.php';
+
 
 
 /**
@@ -79,6 +78,31 @@ function exitWithErrorMessage(string $msg) {
     print "<pre>ERROR: $msg";
     exit();
 }
+
+$configFilePaths = [
+    'config.php',
+    '~/ti-apm/config.php',
+    '/etc/ti-apm/config.php'
+];
+
+$configLoaded = false;
+$configLoadedFilePath = '';
+foreach ($configFilePaths as $filePath) {
+    if (!$configLoaded && file_exists($filePath)) {
+        $configLoaded = (@include_once $filePath);
+        $configLoadedFilePath = $filePath;
+    }
+}
+
+if (!$configLoaded) {
+    exitWithErrorMessage('Config file not found');
+}
+
+$config[ApmConfigParameter::CONFIG_FILE_PATH] = $configLoadedFilePath;
+
+require 'setup.php';
+require 'version.php';
+
 
 global $config;
 

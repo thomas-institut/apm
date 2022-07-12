@@ -63,4 +63,6 @@ class ApmConfigParameter
     const ERROR_MESSAGES = 'errorMsgs';
     const WARNINGS = 'warnings';
 
+    const CONFIG_FILE_PATH = 'configFilePath';
+
 }

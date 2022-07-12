@@ -28,7 +28,7 @@ future==0.18.2
 html2text==2020.1.16
 html5-parser==0.4.9
 html5lib==1.0.1
-httplib2==0.14.0
+httplib2==0.19.0
 idna==2.8
 ifaddr==0.1.6
 keyring==18.0.1

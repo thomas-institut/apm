@@ -230,12 +230,12 @@ class ApiSearch extends ApiController
         $numSucWords = count($sucWords);
 
         // Get the keyword at the given keywordPosition and use this string in the next step to add context to it
-        $keywordInContext = $words[$keywordPos];
+        $keywordInContext = [$words[$keywordPos]];
 
         // Add as many preceding words to the keywordInContext-string, as the total number of preceding words and the desired context size allows
         $keywordPosInContext = 0;
 
-        for ($i=0; ($i<$cSize) and ($i<$numPrecWords); $i++) {
+        /* for ($i=0; ($i<$cSize) and ($i<$numPrecWords); $i++) {
             $keywordInContext = array_reverse($precWords)[$i] . " " . $keywordInContext;
             $keywordPosInContext = $keywordPosInContext + 1;
         }
@@ -243,6 +243,15 @@ class ApiSearch extends ApiController
         // Add as many succeeding words to the keywordInContext-string, as the total number of succeeding words and the desired context size allows
         for ($i=0; ($i<$cSize) and ($i<$numSucWords); $i++) {
             $keywordInContext = $keywordInContext . " " . $sucWords[$i];
+        }*/
+
+        for ($i=0; ($i<$cSize) and ($i<$numPrecWords); $i++) {
+            array_unshift($keywordInContext, array_reverse($precWords)[$i]);
+            $keywordPosInContext = $keywordPosInContext + 1;
+        }
+
+        for ($i=0; ($i<$cSize) and ($i<$numSucWords); $i++) {
+            $keywordInContext[] = $sucWords[$i];
         }
 
         return [$keywordInContext, $keywordPosInContext];

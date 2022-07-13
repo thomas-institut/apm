@@ -86,7 +86,7 @@
                 let keywordsInContextString = ""
 
                 for (let j = 0; j < keywordFreq; j++) {
-                  keywordsInContextString = keywordsInContextString + makeKeywordBold(keyword, keywordsInContext[j], keywordPosInContext[j]) + "<br/>"
+                  keywordsInContextString = keywordsInContextString + makeKeywordBold(keywordsInContext[j], keywordPosInContext[j], keyword) + "<br/>"
                 }
 
                 // Results as a single string
@@ -127,7 +127,7 @@
                   let keywordsInContextString = ""
 
                   for (let j = 0; j < keywordFreq; j++) {
-                    keywordsInContextString = keywordsInContextString + makeKeywordBold(keyword, keywordsInContext[j], keywordPosInContext[j]) + "<br/>"
+                    keywordsInContextString = keywordsInContextString + makeKeywordBold(keywordsInContext[j], keywordPosInContext[j], keyword) + "<br/>"
                   }
 
                   // Results as a single string
@@ -158,58 +158,61 @@
       }
 
       // Function to highlight the searched keyword in its context
-      function makeKeywordBold (keyword, keywordInContext, keywordPos) {
-
-        // Convert text to a list of words
-        let words = keywordInContext.trim().split(" ")
+      function makeKeywordBold (keywordInContext, keywordPos, keyword) {
 
         // Variable holding text with highlighted keyword in it and variable holding the capitalized keyword in it (used above)
         let highlightedText = ""
+
+        // Get capitalized keyword for correct boldening in the next steps
         let keywordUC = keyword.replace(/^\w/, (c) => c.toUpperCase())
 
         // Iterate over all words
-        for (i=0; i<words.length; i++) {
+        for (i=0; i<keywordInContext.length; i++) {
 
           // If index is not identical to position of keyword, append word at index to highlightedText
           if (i !== keywordPos) {
-            highlightedText = highlightedText + words[i] + " "
+            highlightedText = highlightedText + keywordInContext[i] + " "
           }
 
-          // If index is identical to position of keyword and the word in deed includes the keyword, append the boldened word to highlightedText
-          else if (words[i].includes(keyword) || words[i].includes(keywordUC)) {
-              highlightedText = highlightedText + words[i].bold() + " "
+          // If index is identical to position of keyword, append the boldened word to highlightedText
+          else {
+            if (keywordInContext[i] === keyword || keywordInContext[i] === keywordUC) {
+              highlightedText = highlightedText + keywordInContext[i].bold() + " "
             }
+            else {
+              let keywordIndex = keywordInContext[i].indexOf(keyword)
+              let keywordUCIndex = keywordInContext[i].indexOf(keywordUC)
 
-          // If index is identical to position of keyword but the word in deed does not include the keyword,
-          // check if the prior word is the actual keyword and if so, append the boldened word to highlightedText
-          // (Thr following procedure is necessary, because there can occur differences between the ordering of the words list
-          // in this function and the words list of ApiSearch) MAYBE I ADD THE WORDS LIST TO THE API RESPONSE!?
-          else if (i !== 0 && (words[i-1].includes(keyword) || words[i-1].includes(keywordUC))) {
-              highlightedText = highlightedText.slice(0, -1)
-              highlightedText = removeLastWord(highlightedText)
-              highlightedText = highlightedText + " " + words[i-1].bold() + " " + words[i] + " "
+              if (keywordIndex !== -1) {
+                if (keywordIndex === 0) {
+                  let boldWord = keywordInContext[i].substring(keywordIndex, keywordIndex + keyword.length)
+                  let rest = keywordInContext[i].substring(keywordIndex + keyword.length)
+                  highlightedText = highlightedText + boldWord.bold() + rest + " "
+                }
+                else {
+                  let boldWord = keywordInContext[i].substring(keywordIndex, keywordIndex + keyword.length)
+                  let rest1 =  keywordInContext[i].substring(0, keywordIndex)
+                  let rest2 = keywordInContext[i].substring(keywordIndex + keyword.length)
+                  highlightedText = highlightedText + " " + rest1 + boldWord.bold() + rest2 + " "
+                }
+              }
+              else {
+                if (keywordUCIndex === 0) {
+                  let boldWord = keywordInContext[i].substring(keywordIndex, keywordUCIndex + keywordUC.length)
+                  let rest = keywordInContext[i].substring(keywordUCIndex + keywordUC.length)
+                  highlightedText = highlightedText + boldWord.bold() + rest + " "
+                }
+                else {
+                  let boldWord = keywordInContext[i].substring(keywordIndex, keywordIndex + keyword.length)
+                  let rest1 =  keywordInContext[i].substring(0, keywordIndex)
+                  let rest2 = keywordInContext[i].substring(keywordIndex + keyword.length)
+                  highlightedText = highlightedText + " " + rest1 + boldWord.bold() + rest2 + " "
+                }
+              }
             }
-
-            // If index is identical to position of keyword but the word in deed does not include the keyword and
-            // the prior word is not the actual keyword either, check if the following word is the actual keyword, and if so,
-            // append the boldened word to highlightedText
-          else if (words[i+1].includes(keyword) || words[i+1].includes(keywordUC)) {
-            highlightedText = highlightedText + words[i] + " " + words[i+1].bold() + " "
-            i++
+            }
           }
-          }
-
         return highlightedText
-      }
-
-      function removeLastWord(str) {
-        const lastIndexOfSpace = str.lastIndexOf(' ');
-
-        if (lastIndexOfSpace === -1) {
-          return str;
-        }
-
-        return str.substring(0, lastIndexOfSpace);
       }
     </script>
 {%  endblock %}

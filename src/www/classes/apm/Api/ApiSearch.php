@@ -33,12 +33,12 @@ class ApiSearch extends ApiController
         $now = TimeString::now();
 
         // Get all the user input and convert keyword to lower-case for better handling in following code (esp. for the getPositionsOfKeyword-function)
-        $keyword = strtolower($_POST['searchText']);
+        $searchString = strtolower($_POST['searchText']);
         $cSize = $_POST['sliderVal'];
         $docName = $_POST['docName'];
 
         // Remove additional blanks before, after or in between keywords – necessary for a clean search and position/context-handling, also in js (?)
-        $keyword = $this->removeAdditionalBlanks($keyword);
+        $searchString = $this->removeAdditionalBlanks($searchString);
 
         // Instantiate OpenSearch client
         try {
@@ -49,26 +49,32 @@ class ApiSearch extends ApiController
                 ->build();
         } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
             $status = 'Connecting to OpenSearch server failed.';
-            return $this->responseWithJson($response, ['searchString' => $keyword,  'matches' => [], 'serverTime' => $now, 'status' => $status]);
-        }
-
-        // Choose query algorithm, depending on the length of the keyword
-        $keywordLen = strlen($keyword);
-
-        if ($keywordLen < 4) {
-            $queryAlg = 'match';
-        }
-        else {
-            $queryAlg = 'match_phrase_prefix';
+            return $this->responseWithJson($response, ['searchString' => $searchString,  'matches' => [], 'serverTime' => $now, 'status' => $status]);
         }
 
         // Query all columns of the index!
-        $query = $this->queryIndex($client, $indexName, $keyword, $queryAlg);
+        $keywords = explode(" ", $searchString);
 
-        // Get all information about the matches
-        $info = $this->getInfoAboutMatches($query, $docName, $keyword, $queryAlg, $cSize);
+        // THIS MAKES, THAT ONLY THE LAST KEYWORD OF THE USER INPUT IS SEARCHED – PREPARATION FOR SEARCH OF MULTIPLE WORDS!
+        foreach ($keywords as $keyword) {
 
-        return $this->responseWithJson($response, ['searchString' => $keyword,  'matches' => $info, 'serverTime' => $now, 'status' => $status]);
+            // Choose query algorithm, depending on the length of the keyword
+            $keywordLen = strlen($keyword);
+
+            if ($keywordLen < 4) {
+                $queryAlg = 'match';
+            }
+            else {
+                $queryAlg = 'match_phrase_prefix';
+            }
+
+            $query = $this->queryIndex($client, $indexName, $keyword, $queryAlg);
+
+            // Get all information about the matches
+            $info = $this->getInfoAboutMatches($query, $docName, $keyword, $queryAlg, $cSize);
+        }
+
+        return $this->responseWithJson($response, ['searchString' => $searchString,  'matches' => $info, 'serverTime' => $now, 'status' => $status]);
     }
 
     // Function to query a given OpenSearch-index
@@ -161,6 +167,7 @@ class ApiSearch extends ApiController
                         'pageID' => $pageID,
                         'docID' => $docID,
                         'transcript' => $transcript,
+                        'keyword' => $keyword,
                         'keywordFreq' => $keywordFreq,
                         'keywordsInContext' => $keywordsInContext,
                         'keywordPosInContext' => $keywordPosInContext
@@ -176,6 +183,7 @@ class ApiSearch extends ApiController
                         'pageID' => $pageID,
                         'docID' => $docID,
                         'transcript' => $transcript,
+                        'keyword' => $keyword,
                         'keywordFreq' => $keywordFreq,
                         'keywordsInContext' => $keywordsInContext,
                         'keywordPosInContext' => $keywordPosInContext

@@ -34,7 +34,7 @@ class ApiSearch extends ApiController
         // Get current time, which will be returned in the api response
         $now = TimeString::now();
 
-        // Get all the user input and convert keyword to lower-case for better handling in following code (esp. for the getKeywordPositions-function)
+        // Get all the user input and convert keyword to lower-case for better handling in following code (esp. for the getPositionsOfKeyword-function)
         $keyword = strtolower($_POST['searchText']);
         $cSize = $_POST['sliderVal'];
         $docName = $_POST['docName'];
@@ -42,21 +42,8 @@ class ApiSearch extends ApiController
         // Get length of keyword for choosing the right query algorithm
         $keywordLen = strlen($keyword);
 
-        /* Remove additional whitespace before, after or in between keywords – this is necessary for a clean search
-        and an adequate calculation of the surrounding context of the keyword with the getContext-function */
-
-        // Reduce multiple blanks following each other anywhere in the keyword to one single blank
-        $keyword = preg_replace('!\s+!', ' ', $keyword);
-
-        // Remove blank at the end of the keyword
-        if (substr($keyword, -1) == " ") {
-                $keyword = substr($keyword, 0, -1);
-            }
-
-        // Remove blank at the beginning of the keyword
-        if (substr($keyword, 0, 1) == " ") {
-                $keyword = substr($keyword, 1);
-            }
+        // Remove additional blanks before, after or in between keywords – necessary for a clean search and position/context-handling, also in js (?)
+        $keyword = $this->removeAdditionalBlanks($keyword);
 
         // Instantiate OpenSearch client
         try {
@@ -120,8 +107,8 @@ class ApiSearch extends ApiController
                 $words = explode(" ", $cleanTranscript);
 
                 // Get all lower-case and all upper-case keyword positions in the current column (measured in words)
-                $keywordPositionsLC = $this->getKeywordPositions($words, $keyword, $queryAlg);
-                $keywordPositionsUC = $this->getKeywordPositions($words, ucfirst($keyword), $queryAlg);
+                $keywordPositionsLC = $this->getPositionsOfKeyword($words, $keyword, $queryAlg);
+                $keywordPositionsUC = $this->getPositionsOfKeyword($words, ucfirst($keyword), $queryAlg);
 
                 // Sort the keywordPositions to have them in ascending order like they appear in the manuscript –
                 // this, of course, is only effective if there is more than one occurence of the keyword in the column
@@ -137,7 +124,7 @@ class ApiSearch extends ApiController
                 $keywordPosInContext = [];
 
                 foreach ($keywordPositions as $keywordPos) {
-                    $keywordInContext = $this->getContext($words, $keywordPos, $cSize);
+                    $keywordInContext = $this->getContextOfKeyword($words, $keywordPos, $cSize);
                     $keywordsInContext[] = $keywordInContext[0];
                     $keywordPosInContext[] = $keywordInContext[1];
                 }
@@ -145,10 +132,10 @@ class ApiSearch extends ApiController
                 // Add all information about the matched column to the matches array, which will become an array of arrays –
                 // each array contains the information about a single column.
 
-                // The check for keywordFreq seems redundant, but is necessary, because the getKeywordPositions-functions is more strict than the query
+                // The check for keywordFreq seems redundant, but is necessary, because the getPositionsOfKeyword-functions is more strict than the query
                 // in OpenSearch. It could be, that keywordFreq is 0 for a column, which does contain a match according to the OpenSearch-algorithm.
                 // This is because the latter matches words wih hyphens, i. e. "res-", if the searched keyword is actually "res" –
-                // in the getKeywordPositions-function this is corrected and not treated as a match.
+                // in the getPositionsOfKeyword-function this is corrected and not treated as a match.
 
                 // Collect matches in all columns
                 if ($docName == 'Search in all documents...' and $keywordFreq !== 0) {
@@ -187,7 +174,7 @@ class ApiSearch extends ApiController
     }
 
     // Function to get all the positions of a given keyword in a transcripted column (full match or phrase match, measured in words)
-    private function getKeywordPositions ($words, $keyword, $queryAlg): array {
+    private function getPositionsOfKeyword ($words, $keyword, $queryAlg): array {
 
         // Array, which will be returned
         $keywordPositions = [];
@@ -219,7 +206,7 @@ class ApiSearch extends ApiController
     }
 
     // Function to get the surrounding context of a given keyword (via keywordPosition) in a given transcript
-    private function getContext ($words, $keywordPos, $cSize = 100): array
+    private function getContextOfKeyword ($words, $keywordPos, $cSize = 100): array
     {
         // Get total number of words in the transcript
         $numWords = count($words);
@@ -247,6 +234,24 @@ class ApiSearch extends ApiController
         }
 
         return [$keywordInContext, $keywordPosInContext];
+    }
+
+    private function removeAdditionalBlanks ($string) {
+
+        // Reduce multiple blanks following each other anywhere in the keyword to one single blank
+        $string = preg_replace('!\s+!', ' ', $string);
+
+        // Remove blank at the end of the keyword
+        if (substr($string, -1) == " ") {
+            $string = substr($string, 0, -1);
+        }
+
+        // Remove blank at the beginning of the keyword
+        if (substr($string, 0, 1) == " ") {
+            $string = substr($string, 1);
+        }
+
+        return $string;
     }
 }
 

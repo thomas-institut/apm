@@ -27,8 +27,6 @@ class ApiSearch extends ApiController
         // Set the name of the index, that should be queried
         $indexName = 'transcripts';
 
-        // Array, which will be returned in the api response
-        $matches = [];
         // Status variable for communicating errors in the api response – has no effect right now?
         $status = 'OK';
         // Get current time, which will be returned in the api response
@@ -38,9 +36,6 @@ class ApiSearch extends ApiController
         $keyword = strtolower($_POST['searchText']);
         $cSize = $_POST['sliderVal'];
         $docName = $_POST['docName'];
-
-        // Get length of keyword for choosing the right query algorithm
-        $keywordLen = strlen($keyword);
 
         // Remove additional blanks before, after or in between keywords – necessary for a clean search and position/context-handling, also in js (?)
         $keyword = $this->removeAdditionalBlanks($keyword);
@@ -54,10 +49,12 @@ class ApiSearch extends ApiController
                 ->build();
         } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
             $status = 'Connecting to OpenSearch server failed.';
-            return $this->responseWithJson($response, ['searchString' => $keyword,  'matches' => $matches, 'serverTime' => $now, 'status' => $status]);
+            return $this->responseWithJson($response, ['searchString' => $keyword,  'matches' => [], 'serverTime' => $now, 'status' => $status]);
         }
 
         // Choose query algorithm, depending on the length of the keyword
+        $keywordLen = strlen($keyword);
+
         if ($keywordLen < 4) {
             $queryAlg = 'match';
         }
@@ -65,7 +62,18 @@ class ApiSearch extends ApiController
             $queryAlg = 'match_phrase_prefix';
         }
 
-        // Query all columns in the index!
+        // Query all columns of the index!
+        $query = $this->queryIndex($client, $indexName, $keyword, $queryAlg);
+
+        // Get all information about the matches
+        $info = $this->getInfoAboutMatches($query, $docName, $keyword, $queryAlg, $cSize);
+
+        return $this->responseWithJson($response, ['searchString' => $keyword,  'matches' => $info, 'serverTime' => $now, 'status' => $status]);
+    }
+
+    // Function to query a given OpenSearch-index
+    private function queryIndex ($client, $indexName, $keyword, $queryAlg) {
+        
         $query = $client->search([
             'index' => $indexName,
             'body' => [
@@ -77,18 +85,24 @@ class ApiSearch extends ApiController
                             // "analyzer" => "standard"
                             // "slop" => 0
                             // "max_expansions" => 10
-                            ]
+                        ]
                     ]
                 ]
             ]
         ]);
 
-        // Count the number of matched columns
-        $numMatches = $query['hits']['total']['value'];
+        return $query;
+    }
+
+    // Get all information about matches, specified for a single document or all documents
+    private function getInfoAboutMatches ($query, $docName, $keyword, $queryAlg, $cSize) {
+
+        $info = [];
+        $numMatchedColumns = $query['hits']['total']['value'];
 
         // If there are any matched columns, collect them all in an ordered array, using the arrays declared at the beginning of the function
-        if ($numMatches !== 0) {
-            for ($i = 0; $i < $numMatches; $i++) {
+        if ($numMatchedColumns !== 0) {
+            for ($i = 0; $i < $numMatchedColumns; $i++) {
 
                 // Get document title, page number, column number, transcriber, transcript, docID and pageID
                 // of every matched column in the OpenSearch index
@@ -139,7 +153,7 @@ class ApiSearch extends ApiController
 
                 // Collect matches in all columns
                 if ($docName == 'Search in all documents...' and $keywordFreq !== 0) {
-                    $matches[] = [
+                    $info[] = [
                         'title' => $title,
                         'page' => $page,
                         'column' => $column,
@@ -154,23 +168,23 @@ class ApiSearch extends ApiController
                 }
                 // Collect matched columns only for a specified document title
                 elseif ($title == $docName and $keywordFreq !== 0) {
-                        $matches[] = [
-                            'title' => $title,
-                            'page' => $page,
-                            'column' => $column,
-                            'transcriber' => $transcriber,
-                            'pageID' => $pageID,
-                            'docID' => $docID,
-                            'transcript' => $transcript,
-                            'keywordFreq' => $keywordFreq,
-                            'keywordsInContext' => $keywordsInContext,
-                            'keywordPosInContext' => $keywordPosInContext
-                        ];
+                    $info[] = [
+                        'title' => $title,
+                        'page' => $page,
+                        'column' => $column,
+                        'transcriber' => $transcriber,
+                        'pageID' => $pageID,
+                        'docID' => $docID,
+                        'transcript' => $transcript,
+                        'keywordFreq' => $keywordFreq,
+                        'keywordsInContext' => $keywordsInContext,
+                        'keywordPosInContext' => $keywordPosInContext
+                    ];
                 }
             }
+            return $info;
         }
-
-        return $this->responseWithJson($response, ['searchString' => $keyword,  'matches' => $matches, 'serverTime' => $now, 'status' => $status]);
+        return $info;
     }
 
     // Function to get all the positions of a given keyword in a transcripted column (full match or phrase match, measured in words)

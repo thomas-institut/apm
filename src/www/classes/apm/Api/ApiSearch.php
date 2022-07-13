@@ -115,6 +115,7 @@ class ApiSearch extends ApiController
 
                 // Make a list of words out of the transcript, which is used in following functions
                 // Therefore every line break in the transcript has to be replaced by a blank
+                // Sometimes, I think, there are two words treated as one, but this does not disturb anything until now
                 $cleanTranscript = str_replace("\n", " ", $transcript);
                 $words = explode(" ", $cleanTranscript);
 
@@ -223,33 +224,24 @@ class ApiSearch extends ApiController
         // Get total number of words in the transcript
         $numWords = count($words);
 
-        // Get a list of all preceding and all succedding words of the keyword at keywordPosition – get the sizes of these lists
+        // Get a list of all preceding and all succeeding words of the keyword at keywordPosition – get the sizes of these lists
         $precWords = array_slice($words, 0, $keywordPos);
         $sucWords = array_slice($words, $keywordPos+1, $numWords);
         $numPrecWords = count($precWords);
         $numSucWords = count($sucWords);
 
-        // Get the keyword at the given keywordPosition and use this string in the next step to add context to it
+        // Get the keyword at the given keywordPosition into an array and use this array in the next step to add the context to it
+        // Declare variable, which holds the keyword position relative to the total number of words in the keywordInContext-array
         $keywordInContext = [$words[$keywordPos]];
-
-        // Add as many preceding words to the keywordInContext-string, as the total number of preceding words and the desired context size allows
         $keywordPosInContext = 0;
 
-        /* for ($i=0; ($i<$cSize) and ($i<$numPrecWords); $i++) {
-            $keywordInContext = array_reverse($precWords)[$i] . " " . $keywordInContext;
-            $keywordPosInContext = $keywordPosInContext + 1;
-        }
-
-        // Add as many succeeding words to the keywordInContext-string, as the total number of succeeding words and the desired context size allows
-        for ($i=0; ($i<$cSize) and ($i<$numSucWords); $i++) {
-            $keywordInContext = $keywordInContext . " " . $sucWords[$i];
-        }*/
-
+        // Add as many preceding words to the keywordInContext-array, as the total number of preceding words and the desired context size allows
         for ($i=0; ($i<$cSize) and ($i<$numPrecWords); $i++) {
             array_unshift($keywordInContext, array_reverse($precWords)[$i]);
             $keywordPosInContext = $keywordPosInContext + 1;
         }
 
+        // Add as many succeeding words to the keywordInContext-array, as the total number of succeeding words and the desired context size allows
         for ($i=0; ($i<$cSize) and ($i<$numSucWords); $i++) {
             $keywordInContext[] = $sucWords[$i];
         }

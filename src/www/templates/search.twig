@@ -161,58 +161,65 @@
       function makeKeywordBold (keywordInContext, keywordPos, keyword) {
 
         // Variable holding text with highlighted keyword in it and variable holding the capitalized keyword in it (used above)
-        let highlightedText = ""
+        let textWithBoldKeyword = ""
 
-        // Get capitalized keyword for correct boldening in the next steps
-        let keywordUC = keyword.replace(/^\w/, (c) => c.toUpperCase())
+        // Get capitalized keyword and length of keyword for correct boldening in the next steps
+        let keywordCap = keyword.replace(/^\w/, (c) => c.toUpperCase())
+        let keywordLen = keyword.length
 
         // Iterate over all words
         for (i=0; i<keywordInContext.length; i++) {
 
-          // If index is not identical to position of keyword, append word at index to highlightedText
+          // Get current word of keywordInContext-array
+          let stringContainingKeyword = keywordInContext[i]
+
+          // If current index of array is not identical to position of keyword, append word at index to textWithBoldKeyword
           if (i !== keywordPos) {
-            highlightedText = highlightedText + keywordInContext[i] + " "
+            textWithBoldKeyword = textWithBoldKeyword + stringContainingKeyword + " "
           }
 
-          // If index is identical to position of keyword, append the boldened word to highlightedText
+          // If index is identical to position of keyword, append the boldened word to textWithBoldKeyword
+          // Therefore, it needs some checks, since we want to bolden only the searched term and not necessarily whole words or
+          // even additional words – rarely, but sometimes there can be two words together at the same index in the keywordInContext-array
+
           else {
-            if (keywordInContext[i] === keyword || keywordInContext[i] === keywordUC) {
-              highlightedText = highlightedText + keywordInContext[i].bold() + " "
+            // If matched word is identical to searched keyword, append it to textWithBoldKeyword in bold letters
+            if (stringContainingKeyword === keyword || stringContainingKeyword === keywordCap) {
+              textWithBoldKeyword = textWithBoldKeyword + stringContainingKeyword.bold() + " "
             }
-            else {
-              let keywordIndex = keywordInContext[i].indexOf(keyword)
-              let keywordUCIndex = keywordInContext[i].indexOf(keywordUC)
 
+            // If matched word is not identical to searched keyword, it needs more checks
+            else {
+              // Get the position of the searched keyword (capitalized and uncapitalized) in the matched word
+              // One of these variables will have the value -1, which means the searched keyword is not in the matched word
+              let keywordIndex = stringContainingKeyword.indexOf(keyword)
+              let keywordCapIndex = stringContainingKeyword.indexOf(keywordCap)
+
+              // Variables for the partitions of the matched word
+              let matchedPart = ""
+              let unmatchedPartPre = ""
+              let unmatchedPartPost = ""
+
+              // If the unapitalized keyword is in the matched word, partition the word to be able to bolden only the part matching the keyword
               if (keywordIndex !== -1) {
-                if (keywordIndex === 0) {
-                  let boldWord = keywordInContext[i].substring(keywordIndex, keywordIndex + keyword.length)
-                  let rest = keywordInContext[i].substring(keywordIndex + keyword.length)
-                  highlightedText = highlightedText + boldWord.bold() + rest + " "
-                }
-                else {
-                  let boldWord = keywordInContext[i].substring(keywordIndex, keywordIndex + keyword.length)
-                  let rest1 =  keywordInContext[i].substring(0, keywordIndex)
-                  let rest2 = keywordInContext[i].substring(keywordIndex + keyword.length)
-                  highlightedText = highlightedText + " " + rest1 + boldWord.bold() + rest2 + " "
-                }
+                  matchedPart = stringContainingKeyword.substring(keywordIndex, keywordIndex + keywordLen)
+                  unmatchedPartPre =  stringContainingKeyword.substring(0, keywordIndex)
+                  unmatchedPartPost = stringContainingKeyword.substring(keywordIndex + keywordLen)
               }
+
+              // Same procedure as above, but with the capitalized keyword
               else {
-                if (keywordUCIndex === 0) {
-                  let boldWord = keywordInContext[i].substring(keywordIndex, keywordUCIndex + keywordUC.length)
-                  let rest = keywordInContext[i].substring(keywordUCIndex + keywordUC.length)
-                  highlightedText = highlightedText + boldWord.bold() + rest + " "
-                }
-                else {
-                  let boldWord = keywordInContext[i].substring(keywordIndex, keywordIndex + keyword.length)
-                  let rest1 =  keywordInContext[i].substring(0, keywordIndex)
-                  let rest2 = keywordInContext[i].substring(keywordIndex + keyword.length)
-                  highlightedText = highlightedText + " " + rest1 + boldWord.bold() + rest2 + " "
-                }
+                  matchedPart = stringContainingKeyword.substring(keywordCapIndex, keywordCapIndex + keywordLen)
+                  unmatchedPartPre =  stringContainingKeyword.substring(0, keywordCapIndex)
+                  unmatchedPartPost = stringContainingKeyword.substring(keywordCapIndex + keywordLen)
               }
-            }
+
+              // Append the three substrings to textWithBoldKeyword – bolden the matchedPart
+              textWithBoldKeyword = textWithBoldKeyword + " " + unmatchedPartPre + matchedPart.bold() + unmatchedPartPost + " "
             }
           }
-        return highlightedText
+        }
+        return textWithBoldKeyword
       }
     </script>
 {%  endblock %}

@@ -59,27 +59,28 @@
               console.log(apiResponse)
 
               // Count matches
-              let numMatches = apiResponse['matches'].length
+              let numMatchedColumns = apiResponse['data'].length
+              let numMatches = apiResponse['numMatches']
 
               // If there are no matches, display this to the user
-              if (numMatches === 0) {
+              if (numMatchedColumns === 0) {
                 searchResultsDiv
                   .html(`'Nothing found for your search after ${apiResponse['searchString']}'<br/> Server time: ${apiResponse['serverTime']}`)
                   .addClass('text-warning')
               }
 
               // If there is exactly one matched column, display it with exact information
-              else if (numMatches === 1) {
+              else if (numMatchedColumns === 1) {
 
                 // Collect relevant data from API response
-                let title = apiResponse['matches'][0]['title']
-                let page = apiResponse['matches'][0]['page']
-                let column = apiResponse['matches'][0]['column']
-                let transcriber = apiResponse['matches'][0]['transcriber']
-                let keywordPosInContext = apiResponse['matches'][0]['keywordPosInContext']
-                let keywordsInContext = apiResponse['matches'][0]['keywordsInContext']
-                let keywordFreq = apiResponse['matches'][0]['keywordFreq']
-                let keyword = apiResponse['matches'][0]['keyword']
+                let title = apiResponse['data'][0]['title']
+                let page = apiResponse['data'][0]['page']
+                let column = apiResponse['data'][0]['column']
+                let transcriber = apiResponse['data'][0]['transcriber']
+                let keywordPosInContext = apiResponse['data'][0]['keywordPosInContext']
+                let keywordsInContext = apiResponse['data'][0]['keywordsInContext']
+                let keywordFreq = apiResponse['data'][0]['keywordFreq']
+                let keyword = apiResponse['data'][0]['keyword']
                 let time = apiResponse['serverTime']
                 let searchString = apiResponse['searchString']
 
@@ -101,7 +102,7 @@
 
                 // Display results
                 searchResultsDiv
-                  .html(`<b>${numMatches} column found for your search after '${searchString}':</b> <br/><br/> ${results} <br/><br/>  (${time})`)
+                  .html(`<b>${numMatches} matches for your search after '${searchString}':</b> <br/><br/> ${results} <br/><br/>  (${time})`)
                   .removeClass('text-warning')
               }
 
@@ -113,17 +114,17 @@
                 let time = apiResponse['serverTime']
 
                 // Write all matches into a string
-                for (let i = 0; i < numMatches; i++) {
+                for (let i = 0; i < numMatchedColumns; i++) {
 
                   // Collect relevant Data from API response
-                  let title = apiResponse['matches'][i]['title']
-                  let page = apiResponse['matches'][i]['page']
-                  let column = apiResponse['matches'][i]['column']
-                  let transcriber = apiResponse['matches'][i]['transcriber']
-                  let keyword = apiResponse['matches'][i]['keyword']
-                  let keywordPosInContext = apiResponse['matches'][i]['keywordPosInContext']
-                  let keywordsInContext = apiResponse['matches'][i]['keywordsInContext']
-                  let keywordFreq = apiResponse['matches'][i]['keywordFreq']
+                  let title = apiResponse['data'][i]['title']
+                  let page = apiResponse['data'][i]['page']
+                  let column = apiResponse['data'][i]['column']
+                  let transcriber = apiResponse['data'][i]['transcriber']
+                  let keyword = apiResponse['data'][i]['keyword']
+                  let keywordPosInContext = apiResponse['data'][i]['keywordPosInContext']
+                  let keywordsInContext = apiResponse['data'][i]['keywordsInContext']
+                  let keywordFreq = apiResponse['data'][i]['keywordFreq']
 
                   // Convert all occurrences of the keyword in their contexts into a single string and highlight the keywords
                   let keywordsInContextString = ""
@@ -135,17 +136,16 @@
                   // Results as a single string
                   results = results + '<br/>' +
                     (
-                      keywordFreq + ' occurence(s) in ' +
-                      'column ' + column + ", on " +
-                      'page ' + page + ", of " +
-                      title + ", " +
-                      'transcribed by ' + transcriber + '<br/>').italics() +
+                      title + ", page " +
+                      page + ', column ' +
+                      column + ", transcribed by " + transcriber +
+                      '<br/>').italics() +
                     keywordsInContextString + '<br/>'
                 }
 
                 // Display results
                 searchResultsDiv
-                  .html(`<b>${numMatches} columns found for your search after '${searchString}':</b><br/> ${results} <br/><br/> (${time})`)
+                  .html(`<b>${numMatches} matches found for your search after '${searchString}':</b><br/> ${results} <br/><br/> (${time})`)
                   .removeClass('text-warning')
               }
               // If something went wrong, i. e. the OpenSearch server is down, display an error message
@@ -244,7 +244,7 @@
     <p></p>
     <form>
         <label for="contextSlider"></label>
-        <input type="range" id="contextSlider" name="contextSlider" min="4" max="40">
+        <input type="range" id="contextSlider" name="contextSlider" min="2" max="15">
     </form>
 
     <div id="search_results"></div>

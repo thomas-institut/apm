@@ -71,10 +71,16 @@ class ApiSearch extends ApiController
             $query = $this->queryIndex($client, $indexName, $keyword, $queryAlg);
 
             // Get all information about the matches
-            $info = $this->getInfoAboutMatches($query, $docName, $keyword, $queryAlg, $cSize);
+            $data = $this->getDataAboutMatches($query, $docName, $keyword, $queryAlg, $cSize);
         }
 
-        return $this->responseWithJson($response, ['searchString' => $searchString,  'matches' => $info, 'serverTime' => $now, 'status' => $status]);
+        // Get total number of matches
+        $numMatches = 0;
+        foreach ($data as $matchedColumn) {
+            $numMatches = $numMatches + $matchedColumn['keywordFreq'];
+        }
+
+        return $this->responseWithJson($response, ['searchString' => $searchString, 'numMatches' => $numMatches,  'data' => $data, 'serverTime' => $now, 'status' => $status]);
     }
 
     // Function to query a given OpenSearch-index
@@ -101,9 +107,9 @@ class ApiSearch extends ApiController
     }
 
     // Get all information about matches, specified for a single document or all documents
-    private function getInfoAboutMatches ($query, $docName, $keyword, $queryAlg, $cSize) {
+    private function getDataAboutMatches ($query, $docName, $keyword, $queryAlg, $cSize) {
 
-        $info = [];
+        $data = [];
         $numMatchedColumns = $query['hits']['total']['value'];
 
         // If there are any matched columns, collect them all in an ordered array, using the arrays declared at the beginning of the function
@@ -159,7 +165,7 @@ class ApiSearch extends ApiController
 
                 // Collect matches in all columns
                 if ($docName == 'Search in all documents...' and $keywordFreq !== 0) {
-                    $info[] = [
+                    $data[] = [
                         'title' => $title,
                         'page' => $page,
                         'column' => $column,
@@ -175,7 +181,7 @@ class ApiSearch extends ApiController
                 }
                 // Collect matched columns only for a specified document title
                 elseif ($title == $docName and $keywordFreq !== 0) {
-                    $info[] = [
+                    $data[] = [
                         'title' => $title,
                         'page' => $page,
                         'column' => $column,
@@ -190,10 +196,15 @@ class ApiSearch extends ApiController
                     ];
                 }
             }
-            return $info;
+
+            // Bring the information by title in alphabetical, and by page and colum in ascending order
+            array_multisort($data);
+
+            return $data;
         }
-        return $info;
+        return $data;
     }
+
 
     // Function to get all the positions of a given keyword in a transcripted column (full match or phrase match, measured in words)
     private function getPositionsOfKeyword ($words, $keyword, $queryAlg): array {

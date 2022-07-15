@@ -44,6 +44,8 @@
 
         // Get selector for output-Div
         let searchResultsDiv = $("#search_results")
+        let resultsTable = $("#resultsTable tbody")
+        resultsTable.empty()
 
         // Get all user input
         let searchText = searchBox.val()
@@ -70,7 +72,7 @@
               }
 
               // If there is exactly one matched column, display it with exact information
-              else if (numMatchedColumns === 1) {
+              else if (numMatchedColumns === 1 && numMatches === 1) {
 
                 // Collect relevant data from API response
                 let title = apiResponse['data'][0]['title']
@@ -89,20 +91,22 @@
 
                 for (let j = 0; j < keywordFreq; j++) {
                   keywordsInContextString = keywordsInContextString + makeKeywordBold(keywordsInContext[j], keywordPosInContext[j], keyword) + "<br/>"
+
+                  resultsTable.append(
+                    `<tr><td>${title}</td><td>${page}</td><td>${column}</td><td>${transcriber}</td><td>${keywordsInContextString}</td></tr>`)
                 }
 
                 // Results as a single string
                 let results = (
-                    keywordFreq + ' occurence(s) in ' +
-                    'column ' + column + ", on " +
-                    'page ' + page + ", of " +
-                    title + ", " +
-                    'transcribed by ' + transcriber + '<br/>').italics() +
-                  keywordsInContextString
+                    title + ", page " +
+                    page + ', column ' +
+                    column + ", transcribed by " + transcriber +
+                    '<br/>').italics() +
+                  keywordsInContextString + '<br/>'
 
                 // Display results
                 searchResultsDiv
-                  .html(`<b>${numMatches} matches for your search after '${searchString}':</b> <br/><br/> ${results} <br/><br/>  (${time})`)
+                  .html(`<b>${numMatches} match found for your search after '${searchString}' (${time})`)
                   .removeClass('text-warning')
               }
 
@@ -131,6 +135,9 @@
 
                   for (let j = 0; j < keywordFreq; j++) {
                     keywordsInContextString = keywordsInContextString + makeKeywordBold(keywordsInContext[j], keywordPosInContext[j], keyword) + "<br/>"
+
+                    resultsTable.append(
+                      `<tr><td>${title}</td><td>${page}</td><td>${column}</td><td>${transcriber}</td><td>${keywordsInContextString}</td></tr>`)
                   }
 
                   // Results as a single string
@@ -145,8 +152,9 @@
 
                 // Display results
                 searchResultsDiv
-                  .html(`<b>${numMatches} matches found for your search after '${searchString}':</b><br/> ${results} <br/><br/> (${time})`)
+                  .html(`<b>${numMatches} matches found for your search after '${searchString}' (${time})`)
                   .removeClass('text-warning')
+
               }
               // If something went wrong, i. e. the OpenSearch server is down, display an error message
             }).fail((status) => {
@@ -244,10 +252,20 @@
     <p></p>
     <form>
         <label for="contextSlider"></label>
-        <input type="range" id="contextSlider" name="contextSlider" min="2" max="15">
+        <input type="range" id="contextSlider" name="contextSlider" min="1" max="15">
     </form>
 
+
     <div id="search_results"></div>
+    <p></p>
+
+    <table class="doctable" id="resultsTable">
+        <thead><tr><th>Title</th><th>Page</th><th>Column</th><th>Transcriber</th><th>Passage</th></tr></thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <p></p>
 
 {% endblock %}
 

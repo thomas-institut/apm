@@ -76,6 +76,14 @@
               // If there is exactly one matched column, display it with exact information
               else if (numMatchedColumns === 1 && numMatches === 1) {
 
+                let time = apiResponse['serverTime']
+                let searchString = apiResponse['searchString']
+
+                // Display number of matches
+                searchResultsDiv
+                  .html(`<b>${numMatches} match found for '${searchString}' (${time})`)
+                  .removeClass('text-warning')
+
                 // Collect relevant data from API response
                 let title = apiResponse['data'][0]['title']
                 let page = apiResponse['data'][0]['page']
@@ -85,42 +93,25 @@
                 let keywordsInContext = apiResponse['data'][0]['keywordsInContext']
                 let keywordFreq = apiResponse['data'][0]['keywordFreq']
                 let keyword = apiResponse['data'][0]['keyword']
-                let time = apiResponse['serverTime']
-                let searchString = apiResponse['searchString']
 
                 // Convert the keywords in their context into a single string and highlight the keywords
                 let keywordsInContextString = ""
 
                 for (let j = 0; j < keywordFreq; j++) {
-                  keywordsInContextString = keywordsInContextString + makeKeywordBold(keywordsInContext[j], keywordPosInContext[j], keyword) + "<br/>"
+                  keywordsInContextString = makeKeywordBold(keywordsInContext[j], keywordPosInContext[j], keyword)
 
                   // Fill table with results
                   resultsTableB.append(
                     `<tr><td>${title}</td><td>${keywordsInContextString}</td><td>${page}</td><td>${column}</td><td>${transcriber}</td></tr>`)
                 }
-
-                // Results as a single string
-                let results = (
-                    title + ", page " +
-                    page + ', column ' +
-                    column + ", transcribed by " + transcriber +
-                    '<br/>').italics() +
-                  keywordsInContextString + '<br/>'
-
-                // Display number of matches
-                searchResultsDiv
-                  .html(`<b>${numMatches} match found for '${searchString}' (${time})`)
-                  .removeClass('text-warning')
               }
 
               // If there is more than one matched column, display them all with exact information
               else {
 
-                let results = ''
                 var searchString = apiResponse['searchString']
                 var time = apiResponse['serverTime']
-                var precTitle = ""
-
+                var precTitle = " "
 
                 // Display number of matches
                 searchResultsDiv
@@ -144,7 +135,8 @@
                   let keywordsInContextString = ""
 
                   for (let j = 0; j < keywordFreq; j++) {
-                    keywordsInContextString = keywordsInContextString + makeKeywordBold(keywordsInContext[j], keywordPosInContext[j], keyword) + "<br/>"
+
+                    keywordsInContextString = makeKeywordBold(keywordsInContext[j], keywordPosInContext[j], keyword)
 
                     // Fill table with results
                     if (title === precTitle) {
@@ -154,10 +146,11 @@
                       else {
                       resultsTableB.append(
                         `<tr><td>${title}</td><td>${keywordsInContextString}</td><td>${page}</td><td>${column}</td><td>${transcriber}</td></tr>`)
+                      precTitle = title
                       }
                     }
 
-                  precTitle = title
+
 
                   }
               }
@@ -256,7 +249,7 @@
     <p></p>
     <form>
         <label for="contextSlider"></label>
-        <input type="range" id="contextSlider" name="contextSlider" min="1" max="15">
+        <input type="range" id="contextSlider" name="contextSlider" min="0" max="40" value="5">
     </form>
     <p></p>
 

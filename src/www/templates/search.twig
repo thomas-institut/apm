@@ -50,7 +50,6 @@
         // Make clean results table
         resultsTableH.empty()
         resultsTableH.append(`<tr><th>Title</th><th>Matched Passage</th><th>Page</th><th>Column</th><th>Transcriber</th></tr>`)
-        resultsTableB.empty()
 
         // Get all user input
         let searchText = searchBox.val()
@@ -97,10 +96,12 @@
                 // Convert the keywords in their context into a single string and highlight the keywords
                 let keywordsInContextString = ""
 
+
                 for (let j = 0; j < keywordFreq; j++) {
                   keywordsInContextString = makeKeywordBold(keywordsInContext[j], keywordPosInContext[j], keyword)
 
                   // Fill table with results
+                  resultsTableB.empty()
                   resultsTableB.append(
                     `<tr><td>${title}</td><td>${keywordsInContextString}</td><td>${page}</td><td>${column}</td><td>${transcriber}</td></tr>`)
                 }
@@ -117,6 +118,9 @@
                 searchResultsDiv
                   .html(`<b>${numMatches} matches found for '${searchString}' (${time})`)
                   .removeClass('text-warning')
+
+                // Clear table content
+                resultsTableB.empty()
 
                 // Write all matches into the results table
                 for (let i = 0; i < numMatchedColumns; i++) {
@@ -149,9 +153,6 @@
                       precTitle = title
                       }
                     }
-
-
-
                   }
               }
               // If something went wrong, i. e. the OpenSearch server is down, display an error message

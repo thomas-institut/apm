@@ -52,26 +52,34 @@ class ApiSearch extends ApiController
             return $this->responseWithJson($response, ['searchString' => $searchString,  'matches' => [], 'serverTime' => $now, 'status' => $status]);
         }
 
-        // Query all columns of the index!
+        // Pack all keywords in the search string into an array
         $keywords = explode(" ", $searchString);
 
-        // THIS MAKES, THAT ONLY THE LAST KEYWORD OF THE USER INPUT IS SEARCHED – PREPARATION FOR SEARCH OF MULTIPLE WORDS!
-        foreach ($keywords as $keyword) {
+        // Get the first keyword
+        $keyword = $keywords[0];
 
-            // Choose query algorithm, depending on the length of the keyword
-            $keywordLen = strlen($keyword);
+        // Choose query algorithm, depending on the length of the keyword
+        $keywordLen = strlen($keyword);
 
-            if ($keywordLen < 4) {
-                $queryAlg = 'match';
+        if ($keywordLen < 4) {
+            $queryAlg = 'match';
+        }
+        else {
+            $queryAlg = 'match_phrase_prefix';
+        }
+
+        // Query index
+        $query = $this->queryIndex($client, $indexName, $keyword, $queryAlg);
+
+        // Get all information about the matches
+        $data = $this->getDataAboutMatches($query, $docName, $keyword, $queryAlg, $cSize);
+
+        // If there is more than one keyword, remove all matches, which do not match all the keywords
+        $numKeywords = count($keywords);
+        if ($numKeywords !== 1) {
+            for ($i=1; $i<$numKeywords; $i++) {
+                $data = $this->extractColumnsWithMultipleKeywords($data, $keywords[$i]);
             }
-            else {
-                $queryAlg = 'match_phrase_prefix';
-            }
-
-            $query = $this->queryIndex($client, $indexName, $keyword, $queryAlg);
-
-            // Get all information about the matches
-            $data = $this->getDataAboutMatches($query, $docName, $keyword, $queryAlg, $cSize);
         }
 
         // Get total number of matches
@@ -81,6 +89,39 @@ class ApiSearch extends ApiController
         }
 
         return $this->responseWithJson($response, ['searchString' => $searchString, 'numMatches' => $numMatches,  'data' => $data, 'serverTime' => $now, 'status' => $status]);
+    }
+
+    // Function to get results with match of multiple keywords
+    private function extractColumnsWithMultipleKeywords ($data, $keyword) {
+
+        $outputData = [];
+
+        foreach ($data as $matchedColumn) {
+            foreach ($matchedColumn['keywordsInContext'] as $keywordInContext) {
+                foreach ($keywordInContext as $string) {
+                    if (strpos($string, $keyword) !== false) {
+                        $outputData[] = $matchedColumn;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // HIER SOLLEN KONTEXTE GELÖSCHT WERDEN, DIE NICHt ALLE KEYWORDS ENTHALTEN
+
+        for ($i=0; $i<count($outputData); $i++) {
+            for ($j=0; $j<count($outputData[$i]['keywordsInContext']); $j++) {
+                $contextString = "";
+                foreach ($outputData[$i]['keywordsInContext'][$j] as $string) {
+                    $contextString = $contextString . " " . $string;
+                }
+                if (strpos($contextString, $keyword) === false) {
+                    unset($outputData[$i]['keywordsInContext'][$j]);
+                }
+            }
+        }
+
+        return $outputData;
     }
 
     // Function to query a given OpenSearch-index

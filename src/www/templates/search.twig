@@ -44,16 +44,18 @@
 
         // Get selector for output-Div
         let searchResultsDiv = $("#search_results")
-        let resultsTable = $("#resultsTable tbody")
-        resultsTable.empty()
+        let resultsTableB = $("#resultsTable tbody")
+        let resultsTableH = $("#resultsTable thead")
+
+        // Make clean results table
+        resultsTableH.empty()
+        resultsTableH.append(`<tr><th>Title</th><th>Matched Passage</th><th>Page</th><th>Column</th><th>Transcriber</th></tr>`)
+        resultsTableB.empty()
 
         // Get all user input
         let searchText = searchBox.val()
         let sliderVal = contextSlider.val()
         let docName = docList.val();
-
-        // Start search only if keyword has at least two characters
-        if (searchText.length > 1) {
 
           // Send all user input to ApiSearch (via routing in index.php) and print returned matches
           $.post("{{ url_for('search.keyword') }}", { searchText: searchText, sliderVal: sliderVal, docName: docName })
@@ -92,8 +94,9 @@
                 for (let j = 0; j < keywordFreq; j++) {
                   keywordsInContextString = keywordsInContextString + makeKeywordBold(keywordsInContext[j], keywordPosInContext[j], keyword) + "<br/>"
 
-                  resultsTable.append(
-                    `<tr><td>${title}</td><td>${page}</td><td>${column}</td><td>${transcriber}</td><td>${keywordsInContextString}</td></tr>`)
+                  // Fill table with results
+                  resultsTableB.append(
+                    `<tr><td>${title}</td><td>${keywordsInContextString}</td><td>${page}</td><td>${column}</td><td>${transcriber}</td></tr>`)
                 }
 
                 // Results as a single string
@@ -104,9 +107,9 @@
                     '<br/>').italics() +
                   keywordsInContextString + '<br/>'
 
-                // Display results
+                // Display number of matches
                 searchResultsDiv
-                  .html(`<b>${numMatches} match found for your search after '${searchString}' (${time})`)
+                  .html(`<b>${numMatches} match found for '${searchString}' (${time})`)
                   .removeClass('text-warning')
               }
 
@@ -114,10 +117,17 @@
               else {
 
                 let results = ''
-                let searchString = apiResponse['searchString']
-                let time = apiResponse['serverTime']
+                var searchString = apiResponse['searchString']
+                var time = apiResponse['serverTime']
+                var precTitle = ""
 
-                // Write all matches into a string
+
+                // Display number of matches
+                searchResultsDiv
+                  .html(`<b>${numMatches} matches found for '${searchString}' (${time})`)
+                  .removeClass('text-warning')
+
+                // Write all matches into the results table
                 for (let i = 0; i < numMatchedColumns; i++) {
 
                   // Collect relevant Data from API response
@@ -136,25 +146,20 @@
                   for (let j = 0; j < keywordFreq; j++) {
                     keywordsInContextString = keywordsInContextString + makeKeywordBold(keywordsInContext[j], keywordPosInContext[j], keyword) + "<br/>"
 
-                    resultsTable.append(
-                      `<tr><td>${title}</td><td>${page}</td><td>${column}</td><td>${transcriber}</td><td>${keywordsInContextString}</td></tr>`)
+                    // Fill table with results
+                    if (title === precTitle) {
+                    resultsTableB.append(
+                      `<tr><td></td><td>${keywordsInContextString}</td><td>${page}</td><td>${column}</td><td>${transcriber}</td></tr>`)
+                      }
+                      else {
+                      resultsTableB.append(
+                        `<tr><td>${title}</td><td>${keywordsInContextString}</td><td>${page}</td><td>${column}</td><td>${transcriber}</td></tr>`)
+                      }
+                    }
+
+                  precTitle = title
+
                   }
-
-                  // Results as a single string
-                  results = results + '<br/>' +
-                    (
-                      title + ", page " +
-                      page + ', column ' +
-                      column + ", transcribed by " + transcriber +
-                      '<br/>').italics() +
-                    keywordsInContextString + '<br/>'
-                }
-
-                // Display results
-                searchResultsDiv
-                  .html(`<b>${numMatches} matches found for your search after '${searchString}' (${time})`)
-                  .removeClass('text-warning')
-
               }
               // If something went wrong, i. e. the OpenSearch server is down, display an error message
             }).fail((status) => {
@@ -164,7 +169,6 @@
               .removeClass('text-error')
 
           })
-        }
       }
 
       // Function to highlight the searched keyword in its context
@@ -254,15 +258,14 @@
         <label for="contextSlider"></label>
         <input type="range" id="contextSlider" name="contextSlider" min="1" max="15">
     </form>
-
+    <p></p>
 
     <div id="search_results"></div>
     <p></p>
 
-    <table class="doctable" id="resultsTable">
-        <thead><tr><th>Title</th><th>Page</th><th>Column</th><th>Transcriber</th><th>Passage</th></tr></thead>
-        <tbody>
-        </tbody>
+    <table class="doctable dataTable no-footer" id="resultsTable">
+        <thead></thead>
+        <tbody></tbody>
     </table>
 
     <p></p>

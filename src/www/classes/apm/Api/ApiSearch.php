@@ -94,34 +94,41 @@ class ApiSearch extends ApiController
     // Function to get results with match of multiple keywords
     private function extractColumnsWithMultipleKeywords ($data, $keyword) {
 
-        $outputData = [];
+        // First, remove all keywordsInContext from $data, which do not match the keyword
+        foreach ($data as $i=>$matchedColumn) {
+            foreach ($matchedColumn['keywordsInContext'] as $j=>$keywordInContext) {
 
-        foreach ($data as $matchedColumn) {
-            foreach ($matchedColumn['keywordsInContext'] as $keywordInContext) {
+                // Make a string, which storer full context in it – needed for checking for keyword
+                $contextString = "";
                 foreach ($keywordInContext as $string) {
-                    if (strpos($string, $keyword) !== false) {
-                        $outputData[] = $matchedColumn;
-                        break;
+                    $contextString = $contextString . " " . $string;
+                }
+
+                // If the keyword is no ti n the contextString, remove keywordsInContext, keywordPosInContext from $data
+                // Adjust the keywordFreq in $data
+                if (strpos($contextString, $keyword) === false) {
+                    unset($data[$i]['keywordsInContext'][$j]);
+                    unset($data[$i]['keywordPosInContext'][$j]);
+                    $data[$i]['keywordFreq'] = $data[$i]['keywordFreq'] - 1;
                     }
                 }
             }
-        }
 
-        // HIER SOLLEN KONTEXTE GELÖSCHT WERDEN, DIE NICHt ALLE KEYWORDS ENTHALTEN
+        // Second, unset all columns, which do not any more have keywordsInContext
+        foreach ($data as $i=>$matchedColumn) {
+            if ($matchedColumn['keywordsInContext'] === []) {
+                unset ($data[$i]);
+            }
 
-        for ($i=0; $i<count($outputData); $i++) {
-            for ($j=0; $j<count($outputData[$i]['keywordsInContext']); $j++) {
-                $contextString = "";
-                foreach ($outputData[$i]['keywordsInContext'][$j] as $string) {
-                    $contextString = $contextString . " " . $string;
-                }
-                if (strpos($contextString, $keyword) === false) {
-                    unset($outputData[$i]['keywordsInContext'][$j]);
-                }
+            // Reset the keys of the remaining arrays
+            else {
+                $data[$i]['keywordsInContext'] = array_values($matchedColumn['keywordsInContext']);
+                $data[$i]['keywordPosInContext'] = array_values($matchedColumn['keywordPosInContext']);
             }
         }
 
-        return $outputData;
+        // Reset keys of $data and return the array
+        return array_values($data);
     }
 
     // Function to query a given OpenSearch-index

@@ -72,7 +72,7 @@ class ApiSearch extends ApiController
         $query = $this->queryIndex($client, $indexName, $keyword, $queryAlg);
 
         // Get all information about the matches
-        $data = $this->getDataAboutMatches($query, $docName, $keyword, $queryAlg, $cSize);
+        $data = $this->getDataAboutMatches($query, $docName, $keywords, $queryAlg, $cSize);
 
         // If there is more than one keyword, remove all matches, which do not match all the keywords
         $numKeywords = count($keywords);
@@ -155,7 +155,7 @@ class ApiSearch extends ApiController
     }
 
     // Get all information about matches, specified for a single document or all documents
-    private function getDataAboutMatches ($query, $docName, $keyword, $queryAlg, $cSize) {
+    private function getDataAboutMatches ($query, $docName, $keywords, $queryAlg, $cSize) {
 
         $data = [];
         $numMatchedColumns = $query['hits']['total']['value'];
@@ -181,8 +181,8 @@ class ApiSearch extends ApiController
                 $words = explode(" ", $cleanTranscript);
 
                 // Get all lower-case and all upper-case keyword positions in the current column (measured in words)
-                $keywordPositionsLC = $this->getPositionsOfKeyword($words, $keyword, $queryAlg);
-                $keywordPositionsUC = $this->getPositionsOfKeyword($words, ucfirst($keyword), $queryAlg);
+                $keywordPositionsLC = $this->getPositionsOfKeyword($words, $keywords[0], $queryAlg);
+                $keywordPositionsUC = $this->getPositionsOfKeyword($words, ucfirst($keywords[0]), $queryAlg);
 
                 // Sort the keywordPositions to have them in ascending order like they appear in the manuscript –
                 // this, of course, is only effective if there is more than one occurence of the keyword in the column
@@ -221,7 +221,7 @@ class ApiSearch extends ApiController
                         'pageID' => $pageID,
                         'docID' => $docID,
                         'transcript' => $transcript,
-                        'keyword' => $keyword,
+                        'keywords' => $keywords,
                         'keywordFreq' => $keywordFreq,
                         'keywordsInContext' => $keywordsInContext,
                         'keywordPosInContext' => $keywordPosInContext
@@ -237,7 +237,7 @@ class ApiSearch extends ApiController
                         'pageID' => $pageID,
                         'docID' => $docID,
                         'transcript' => $transcript,
-                        'keyword' => $keyword,
+                        'keywords' => $keywords,
                         'keywordFreq' => $keywordFreq,
                         'keywordsInContext' => $keywordsInContext,
                         'keywordPosInContext' => $keywordPosInContext

@@ -65,18 +65,20 @@
               let numMatchedColumns = apiResponse['data'].length
               let numMatches = apiResponse['numMatches']
 
-              // If there are no matches, display this to the user
+              var time = apiResponse['serverTime']
+              var searchString = apiResponse['searchString']
+
+              // If there are no matches, display this to the user and empty the table
               if (numMatchedColumns === 0) {
                 searchResultsDiv
-                  .html(`'Nothing found for your search after ${apiResponse['searchString']}'<br/> Server time: ${apiResponse['serverTime']}`)
+                  .html(`<b>No matches found for '${searchString}' (${time})`)
                   .addClass('text-warning')
+
+                resultsTableB.empty()
               }
 
               // If there is exactly one matched column, display it with exact information
               else if (numMatchedColumns === 1 && numMatches === 1) {
-
-                let time = apiResponse['serverTime']
-                let searchString = apiResponse['searchString']
 
                 // Display number of matches
                 searchResultsDiv
@@ -91,14 +93,14 @@
                 let keywordPosInContext = apiResponse['data'][0]['keywordPosInContext']
                 let keywordsInContext = apiResponse['data'][0]['keywordsInContext']
                 let keywordFreq = apiResponse['data'][0]['keywordFreq']
-                let keyword = apiResponse['data'][0]['keyword']
+                let keywords = apiResponse['data'][0]['keywords']
 
                 // Convert the keywords in their context into a single string and highlight the keywords
                 let keywordsInContextString = ""
 
 
                 for (let j = 0; j < keywordFreq; j++) {
-                  keywordsInContextString = makeKeywordBold(keywordsInContext[j], keywordPosInContext[j], keyword)
+                  keywordsInContextString = makeKeywordBold(keywordsInContext[j], keywordPosInContext[j], keywords)
 
                   // Fill table with results
                   resultsTableB.empty()
@@ -110,8 +112,6 @@
               // If there is more than one matched column, display them all with exact information
               else {
 
-                var searchString = apiResponse['searchString']
-                var time = apiResponse['serverTime']
                 var precTitle = " "
 
                 // Display number of matches
@@ -130,7 +130,7 @@
                   let page = apiResponse['data'][i]['page']
                   let column = apiResponse['data'][i]['column']
                   let transcriber = apiResponse['data'][i]['transcriber']
-                  let keyword = apiResponse['data'][i]['keyword']
+                  let keywords = apiResponse['data'][i]['keywords']
                   let keywordPosInContext = apiResponse['data'][i]['keywordPosInContext']
                   let keywordsInContext = apiResponse['data'][i]['keywordsInContext']
                   let keywordFreq = apiResponse['data'][i]['keywordFreq']
@@ -140,7 +140,7 @@
 
                   for (let j = 0; j < keywordFreq; j++) {
 
-                    keywordsInContextString = makeKeywordBold(keywordsInContext[j], keywordPosInContext[j], keyword)
+                    keywordsInContextString = makeKeywordBold(keywordsInContext[j], keywordPosInContext[j], keywords)
 
                     // Fill table with results
                     if (title === precTitle) {
@@ -166,10 +166,11 @@
       }
 
       // Function to highlight the searched keyword in its context
-      function makeKeywordBold (keywordInContext, keywordPos, keyword) {
+      function makeKeywordBold (keywordInContext, keywordPos, keywords) {
 
         // Variable holding text with highlighted keyword in it and variable holding the capitalized keyword in it (used above)
         let textWithBoldKeyword = ""
+        let keyword = keywords[0]
 
         // Get capitalized keyword and length of keyword for correct boldening in the next steps
         let keywordCap = keyword.replace(/^\w/, (c) => c.toUpperCase())

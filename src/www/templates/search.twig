@@ -228,6 +228,23 @@
             }
           }
         }
+
+        // First Steps: Bolden multiple keywords
+        for (i=1; i<keywords.length; i++) {
+          let keyword = keywords[i]
+          let keywordLen = keyword.length
+          let keywordPos = textWithBoldKeyword.indexOf (keyword)
+
+          if (keywordPos === -1) {
+            keyword = keyword.replace(/^\w/, (c) => c.toUpperCase())
+            keywordPos = textWithBoldKeyword.indexOf (keyword)
+          }
+
+          let precWords = textWithBoldKeyword.slice(0, keywordPos)
+          let succWords = textWithBoldKeyword.slice(keywordPos+keywordLen)
+          textWithBoldKeyword = precWords + keyword.bold() + succWords
+        }
+
         return textWithBoldKeyword
       }
     </script>

@@ -104,9 +104,9 @@ class ApiSearch extends ApiController
                     $contextString = $contextString . " " . $string;
                 }
 
-                // If the keyword is no ti n the contextString, remove keywordsInContext, keywordPosInContext from $data
+                // If the keyword is not in the contextString, remove keywordsInContext, keywordPosInContext from $data
                 // Adjust the keywordFreq in $data
-                if (strpos($contextString, $keyword) === false) {
+                if (strpos($contextString, $keyword) === false && strpos($contextString, ucfirst($keyword)) === false) {
                     unset($data[$i]['keywordsInContext'][$j]);
                     unset($data[$i]['keywordPosInContext'][$j]);
                     $data[$i]['keywordFreq'] = $data[$i]['keywordFreq'] - 1;

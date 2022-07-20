@@ -29,7 +29,6 @@
 
 use APM\System\ApmConfigParameter;
 
-require_once 'config.php';
 
 global $config;
 
@@ -37,6 +36,7 @@ $config[ApmConfigParameter::BASE_FULL_PATH] = __DIR__;
 
 // Generate langCodes
 $config[ApmConfigParameter::LANG_CODES] = [];
+
 foreach ($config[ApmConfigParameter::LANGUAGES] as $lang) {
     $config[ApmConfigParameter::LANG_CODES][] = $lang['code'];
 }

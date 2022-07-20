@@ -29,6 +29,7 @@ namespace APM;
 use APM\Api\ApiLog;
 use APM\Api\ApiTranscription;
 use APM\Site\SiteApmLog;
+use APM\System\ConfigLoader;
 use Slim\App;
 use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Routing\RouteCollectorProxy;
@@ -60,17 +61,13 @@ use APM\Api\ApiPresets;
 use APM\Api\ApiEditionEngine;
 use APM\Api\ApiElements;
 use APM\Api\ApiCollationTableConversion;
-use APM\Api\ApiPdfConversion;
+use APM\Api\ApiTypesetPdf;
 use APM\Api\ApiWitness;
 use APM\Api\ApiSearch;
 
 use ThomasInstitut\Container\MinimalContainer;
 
-
 require 'vendor/autoload.php';
-require 'setup.php';
-require 'version.php';
-
 
 /**
  * Exits with an error message
@@ -81,6 +78,13 @@ function exitWithErrorMessage(string $msg) {
     print "<pre>ERROR: $msg";
     exit();
 }
+
+if (!ConfigLoader::loadConfig()) {
+    exitWithErrorMessage('Config file not found');
+}
+
+require 'setup.php';
+require 'version.php';
 
 global $config;
 
@@ -402,10 +406,19 @@ $app->group('/api', function (RouteCollectorProxy $group){
         ApiEditionEngine::class . ':automaticEditionEngine')
         ->setName('api.edition.auto');
 
-    // SVG CONVERSION
+    // PDF CONVERSION
     $group->post('/convert/svg2pdf',
-        ApiPdfConversion::class . ':convertSVGtoPDF')
+        ApiTypesetPdf::class . ':convertSVGtoPDF')
         ->setName('api.convert.svg2pdf');
+
+    $group->post('/convert/ts2pdf',
+        ApiTypesetPdf::class . ':convertTypesetterDataToPdf')
+        ->setName('api.convert.ts2pdf');
+
+    // TYPESETTING
+    $group->post('/typeset/raw',
+        ApiTypesetPdf::class . ':typesetRawData')
+        ->setName('api.typeset.raw');
 
     //  PRESETS
 

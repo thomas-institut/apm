@@ -17,7 +17,7 @@
  */
 
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { doNothing } from '../toolbox/FunctionUtil'
+import { doNothing } from '../toolbox/FunctionUtil.mjs'
 
 import Quill from '../QuillLoader'
 import Small from './QuillBlots/Small'
@@ -87,7 +87,7 @@ export class EditionMainTextEditor {
     this.quillDeltaRenderer = new QuillDeltaRenderer()
     this.quillDeltaConverter = new GenericQuillDeltaConverter({
       verbose: this.verbose,
-      debug: this.debug,
+      debug: false,
       ignoreParagraphs: false
     })
 

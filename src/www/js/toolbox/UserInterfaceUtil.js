@@ -1,4 +1,4 @@
-import { prettyPrintArray } from './ArrayUtil'
+import { prettyPrintArray } from './ArrayUtil.mjs'
 
 export function maximizeElementHeightInParent(element, parent, offset = 0, verbose = false) {
   let currentHeight = element.outerHeight()

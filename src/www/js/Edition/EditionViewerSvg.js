@@ -25,7 +25,7 @@ import * as MainTextTokenType from './MainTextTokenType'
 import { TypesetterTokenFactory } from '../Typesetter/TypesetterTokenFactory'
 import { TypesetterTokenRenderer } from '../FmtText/Renderer/TypesetterTokenRenderer'
 import { getTextDirectionForLang, removeExtraWhiteSpace } from '../toolbox/Util.mjs'
-import { pushArray } from '../toolbox/ArrayUtil'
+import { pushArray } from '../toolbox/ArrayUtil.mjs'
 import { ApparatusCommon } from '../EditionComposer/ApparatusCommon'
 
 import * as SubEntryType from '../Edition/SubEntryType'
@@ -174,8 +174,8 @@ export class EditionViewerSvg {
 
     let svgWidth = this.options.pageWidthInCm
 
-    // let svgHeightInPx = Typesetter.cm2px(svgHeight)
-    // let svgWidthInPx = Typesetter.cm2px(svgWidth)
+    // let svgHeightInPx = Typesetter2.cm2px(svgHeight)
+    // let svgWidthInPx = Typesetter2.cm2px(svgWidth)
 
 
     let svg = `<svg class="${svgClass}" height="${svgHeight}cm" width="${svgWidth}cm">`

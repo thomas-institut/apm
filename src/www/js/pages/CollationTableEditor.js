@@ -39,7 +39,7 @@ import * as HttpStatusCode from '../toolbox/HttpStatusCode'
 
 // utilities
 import * as Util from '../toolbox/Util.mjs'
-import * as ArrayUtil from '../toolbox/ArrayUtil'
+import * as ArrayUtil from '../toolbox/ArrayUtil.mjs'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { Matrix } from '@thomas-inst/matrix'
 import { ConfirmDialog } from './common/ConfirmDialog'

@@ -19,7 +19,7 @@
 
 import { StringCounter } from '../toolbox/StringCounter'
 import * as MainTexTokenType from '../Edition/MainTextTokenType'
-import { pushArray } from '../toolbox/ArrayUtil'
+import { pushArray } from '../toolbox/ArrayUtil.mjs'
 
 export function getTypesettingInfo(containerSelector, classPrefix, tokens) {
   let yPositions = []

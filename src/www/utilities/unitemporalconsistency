@@ -21,9 +21,17 @@
 
 namespace APM;
 
-$config = [];
-require __DIR__ . '/../vendor/autoload.php';
-require __DIR__ . '/../setup.php';
-require __DIR__ . '/../version.php';
+use APM\System\ConfigLoader;
 
+require __DIR__ . '/../vendor/autoload.php';
+
+if (!ConfigLoader::loadConfig([__DIR__ . '/../config.php'])) {
+    print "ERROR: cannot load system configuration file\n";
+    exit();
+}
+
+include_once __DIR__ . '/../setup.php';
+include_once __DIR__ . '/../version.php';
+
+global $config;
 (new CommandLine\UnitemporalConsistency($config, $argc, $argv))->run();

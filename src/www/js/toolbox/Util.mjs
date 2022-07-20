@@ -16,7 +16,6 @@
  *
  */
 
-import * as Punctuation from '../defaults/Punctuation.js'
 
 // Utility functions, now as a module
 
@@ -138,5 +137,15 @@ export function hashCodeInt32(str){
     hash = hash & hash; // Convert to 32bit integer
   }
   return hash;
+}
+
+/**
+ *
+ * @param {number}someNumber
+ * @param {number}decimals
+ */
+export function toFixedPrecision(someNumber, decimals) {
+  let factor = Math.pow(10, decimals)
+  return Math.floor(someNumber*factor) / factor
 }
 

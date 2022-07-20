@@ -184,6 +184,8 @@ class ApmSystemManager extends SystemManager {
             $this->setError($msg, self::ERROR_CONFIG_ARRAY_IS_NOT_VALID);
             return;
         }
+
+
         
         parent::__construct($config);
         
@@ -193,7 +195,9 @@ class ApmSystemManager extends SystemManager {
 
         // Create logger
         $this->logger = $this->createLogger();
-        
+
+//        $this->logger->info("Config file path: '" . $config[ApmConfigParameter::CONFIG_FILE_PATH] . "'");
+
         // Dump configuration warnings in the log
         foreach($this->config[ApmConfigParameter::WARNINGS] as $warning) {
             $this->logger->debug($warning);
@@ -344,7 +348,8 @@ class ApmSystemManager extends SystemManager {
         return $tables;
     }
     
-    protected function setUpDbConnection() {
+    protected function setUpDbConnection(): PDO
+    {
         $dbConfig = $this->config[ApmConfigParameter::DB];
 
         $dbh = new PDO('mysql:dbname='. $dbConfig['db'] . ';host=' .

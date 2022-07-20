@@ -21,8 +21,11 @@ php-sessions/
 other/
 **/docs/
 .idea/
-__pycache__/
-
+__pycache__
+src/python/*.pdf
+src/node/output*.json
+src/python/venv
+src/python/.idea
 
 
 

@@ -26,15 +26,14 @@
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { getSingleIntIdFromAncestor, getSingleIntIdFromClasses } from '../toolbox/UserInterfaceUtil'
 import { getTypesettingInfo } from '../Typesetter/BrowserTypesettingCalculations'
-import { doNothing, wait } from '../toolbox/FunctionUtil'
+import { doNothing, wait } from '../toolbox/FunctionUtil.mjs'
 import { MultiToggle } from '../widgets/MultiToggle'
-import { EditableTextField } from '../widgets/EditableTextField'
 import { ApparatusCommon } from './ApparatusCommon'
 import * as EditionMainTextTokenType from '../Edition/MainTextTokenType'
 import { Edition } from '../Edition/Edition'
 import { HtmlRenderer } from '../FmtText/Renderer/HtmlRenderer'
 import { PanelWithToolbar } from './PanelWithToolbar'
-import { arraysAreEqual, prettyPrintArray, pushArray, varsAreEqual } from '../toolbox/ArrayUtil'
+import { arraysAreEqual, prettyPrintArray, pushArray, varsAreEqual } from '../toolbox/ArrayUtil.mjs'
 import { CtData } from '../CtData/CtData'
 
 import { FmtTextFactory } from '../FmtText/FmtTextFactory'
@@ -52,15 +51,15 @@ import { FmtText } from '../FmtText/FmtText'
 import { CollapsePanel } from '../widgets/CollapsePanel'
 import { EditionWitnessToken } from '../Witness/EditionWitnessToken'
 import { MainText } from '../Edition/MainText'
+import { TokenMatchScorer } from '../Edition/TokenMatchScorer'
 
 const EDIT_MODE_OFF = 'off'
-const EDIT_MODE_TEXT = 'text'
 const EDIT_MODE_APPARATUS = 'apparatus'
-const EDIT_MODE_TEXT_BETA = 'text_beta'
+const EDIT_MODE_TEXT = 'text'
 
 const typesetInfoDelay = 200
 
-const betaEditorDivId = 'text-editor-beta'
+const betaEditorDivId = 'text-editor'
 const betaEditorInfoDiv = 'text-editor-info'
 
 const icons = {
@@ -215,14 +214,14 @@ export class MainTextPanel extends PanelWithToolbar {
     // the panel is visible and the main text is drawn in the content area
     switch(this.currentEditMode) {
       case EDIT_MODE_OFF:
-      case EDIT_MODE_TEXT:
+      // case EDIT_MODE_TEXT_OLD:
       case EDIT_MODE_APPARATUS:
         this.verbose && console.log(`Resize: about to update apparatuses`)
         this._updateLineNumbersAndApparatuses()
           .then( () => { this.verbose && console.log(`Done resizing`)})
         break
 
-      case EDIT_MODE_TEXT_BETA:
+      case EDIT_MODE_TEXT:
         //console.log(`Resize in beta editor mode, nothing to do`)
         break
 
@@ -240,14 +239,14 @@ export class MainTextPanel extends PanelWithToolbar {
       $(this.getContentAreaSelector()).html(this.generateContentHtml('', '', true))
       switch(this.currentEditMode) {
         case EDIT_MODE_OFF:
-        case EDIT_MODE_TEXT:
+        // case EDIT_MODE_TEXT_OLD:
         case EDIT_MODE_APPARATUS:
           this._setupMainTextDivEventHandlers()
           this._updateLineNumbersAndApparatuses()
             .then( () => { this.verbose && console.log(`Finished generating edition panel on shown`) })
           break
 
-        case EDIT_MODE_TEXT_BETA:
+        case EDIT_MODE_TEXT:
           this.verbose && console.log(`Beta editor shown`)
           break
 
@@ -309,9 +308,9 @@ export class MainTextPanel extends PanelWithToolbar {
       buttonsDivClass: 'panel-toolbar-item',
       buttonDef: [
         { label: 'Off', name: EDIT_MODE_OFF, helpText: 'Turn off editing' },
-        { label: 'Text', name: EDIT_MODE_TEXT, helpText: 'Edit main text' },
+        // { label: 'Text', name: EDIT_MODE_TEXT_OLD, helpText: 'Edit main text' },
         { label: 'Apparatus', name: EDIT_MODE_APPARATUS, helpText: 'Add/Edit apparatus entries' },
-        { label: 'Text<sup>BETA</sup>', name: EDIT_MODE_TEXT_BETA, helpText: 'Edit main text (beta)' }
+        { label: 'Text', name: EDIT_MODE_TEXT, helpText: 'Edit main text' }
       ]
 
     })
@@ -326,12 +325,12 @@ export class MainTextPanel extends PanelWithToolbar {
     // this._eleAddEntryButton().on('click', this._genOnClickAddEntryButton())
     switch (this.currentEditMode) {
       case EDIT_MODE_OFF:
-      case EDIT_MODE_TEXT:
+      // case EDIT_MODE_TEXT_OLD:
       case EDIT_MODE_APPARATUS:
         this._setupMainTextDivEventHandlers()
         break
 
-      case EDIT_MODE_TEXT_BETA:
+      case EDIT_MODE_TEXT:
         this.verbose && console.log(`Post render beta mode`)
         break
 
@@ -358,10 +357,10 @@ export class MainTextPanel extends PanelWithToolbar {
 
     switch(newEditMode) {
       case EDIT_MODE_OFF:
-      case EDIT_MODE_TEXT:
+      // case EDIT_MODE_TEXT_OLD:
       case EDIT_MODE_APPARATUS:
         this.currentEditMode = newEditMode
-        if (previousEditMode === EDIT_MODE_TEXT_BETA) {
+        if (previousEditMode === EDIT_MODE_TEXT) {
           $(this.getContentAreaSelector()).html(this._getMainTextHtmlVersion())
           this._setupMainTextDivEventHandlers()
           this._updateLineNumbersAndApparatuses().then( () => { this.verbose && console.log(`Finished switching mode to ${this.currentEditMode}`)})
@@ -370,7 +369,7 @@ export class MainTextPanel extends PanelWithToolbar {
         }
         break
 
-      case EDIT_MODE_TEXT_BETA:
+      case EDIT_MODE_TEXT:
         this.currentEditMode = newEditMode
         this._setupTextEditMode()
 
@@ -484,23 +483,24 @@ export class MainTextPanel extends PanelWithToolbar {
       if (!varsAreEqual(this.commitedFreeText, this.freeTextEditor.getFmtText())) {
         this.textEditRevertDiv.removeClass('hidden')
         this.textEditCommitDiv.removeClass('hidden')
-        console.log(`Changes in editor`)
+        this.debug && console.log(`Changes in editor`)
 
         let currentWitnessTokens = this.ctData['witnesses'][this.ctData['editionWitnessIndex']].tokens
-        console.log(`Current witness tokens`)
-        console.log(currentWitnessTokens)
+        this.debug && console.log(`Current witness tokens`)
+        this.debug && console.log(currentWitnessTokens)
 
         let newFmtText = this.freeTextEditor.getFmtText()
-        console.log(`fmtText from editor`)
-        console.log(newFmtText)
+        this.debug && console.log(`fmtText from editor`)
+        this.debug && console.log(newFmtText)
 
 
         let witnessTokens = this.__fmtTextToEditionWitnessTokens(newFmtText)
-        console.log(`Witness tokens from editor`)
-        console.log(witnessTokens)
+        this.debug && console.log(`Witness tokens from editor`)
+        this.debug && console.log(witnessTokens)
 
-        let changes = this._getChangesInBetaEditor(currentWitnessTokens, witnessTokens)
-        console.log(changes)
+        let changes = this._getChangesInTextEditor(currentWitnessTokens, witnessTokens)
+        this.debug && console.log(`Changes`)
+        this.debug && console.log(changes)
         let changeListHtml = changes.map( (change) => {
           switch( change.change) {
             case 'replace':
@@ -565,7 +565,7 @@ export class MainTextPanel extends PanelWithToolbar {
     }
   }
 
-  _getChangesInBetaEditor(currentWitnessTokens, newWitnessTokens) {
+  _getChangesInTextEditor(currentWitnessTokens, newWitnessTokens) {
     let workingCurrentWitnessTokens = deepCopy(currentWitnessTokens)
 
     workingCurrentWitnessTokens = workingCurrentWitnessTokens
@@ -604,7 +604,7 @@ export class MainTextPanel extends PanelWithToolbar {
 
   updateEditionWitness(newWitnessTokens) {
     let currentWitnessTokens = this.ctData['witnesses'][this.ctData['editionWitnessIndex']].tokens
-    let changes = this._getChangesInBetaEditor(currentWitnessTokens, newWitnessTokens)
+    let changes = this._getChangesInTextEditor(currentWitnessTokens, newWitnessTokens)
 
     let columnsAdded = 0
     changes.forEach( (change, changeIndex) => {
@@ -633,33 +633,36 @@ export class MainTextPanel extends PanelWithToolbar {
 
     this.lastTypesetinfo = null
     this.modeToggle.setOptionByName(EDIT_MODE_OFF, false)
-    this._changeEditMode(EDIT_MODE_OFF, EDIT_MODE_TEXT_BETA)
+    this._changeEditMode(EDIT_MODE_OFF, EDIT_MODE_TEXT)
     this.options.onCtDataChange(this.ctData)
   }
 
   __getChangeList(oldTokens, newTokens, editScript) {
+    const debugStateMachine = true
+    debugStateMachine && console.log(`Get change list state machine`)
 
     let state = 0
     let changeList = []
     let lastKeptOrReplaced = -1
     let deleteStack = []
+    let addStack = []
+    let tokenMatchScorer = new TokenMatchScorer()
 
 
-    editScript.forEach( (editScriptItem) => {
+    editScript.forEach( (editScriptItem, i) => {
+
       switch (state) {
         case 0:
           switch (editScriptItem.command) {
-            case 0:
+            case MyersDiff.KEEP:
               // nothing to do
-              // this.verbose && console.log(`KEEP command in edit script (state = 0)`)
-              // this.verbose && console.log(editScriptItem)
+              // debugStateMachine && console.log(`KEEP command in edit script (state = 0)`)
               lastKeptOrReplaced = editScriptItem.index
               break
 
-            case 1:
-              // addition
-              // this.verbose && console.log(`ADD command in edit script (state = 0)`)
-              // this.verbose && console.log(editScriptItem)
+            case MyersDiff.ADD:
+              debugStateMachine && console.log(`INPUT editScriptItem ${i}:  command ${editScriptItem.command}, index ${editScriptItem.index}, seq ${editScriptItem.seq}`)
+              debugStateMachine && console.log(`ADD command in edit script (state = 0), pushing an ADD to change list`)
               changeList.push({
                 change: 'add',
                 index: lastKeptOrReplaced,
@@ -669,12 +672,13 @@ export class MainTextPanel extends PanelWithToolbar {
               })
               break
 
-            case -1:
-              // a DELETE, but it could be a REPLACE
-              // this.verbose && console.log(`DEL command in edit script (state = 0)`)
-              // this.verbose && console.log(editScriptItem)
-              // this.verbose && console.log(`-- adding item to the empty deleteStack`)
+            case MyersDiff.DEL:
+              // need to wait for further ADDs and DELs
+              debugStateMachine && console.log(`INPUT editScriptItem ${i}:  command ${editScriptItem.command}, index ${editScriptItem.index}, seq ${editScriptItem.seq}`)
+              debugStateMachine && console.log(`DEL command in edit script (state = 0)`)
+              debugStateMachine && console.log(`-- adding item to the empty deleteStack`)
               deleteStack.push(editScriptItem.index)
+              debugStateMachine && console.log(`-- State -> 1`)
               state = 1
               break
           }
@@ -682,58 +686,113 @@ export class MainTextPanel extends PanelWithToolbar {
 
         case 1:
           switch (editScriptItem.command) {
-            case 0:
-              // a keep command
-              // this.verbose && console.log(`KEEP command in edit script (state = 1)`)
-              // this.verbose && console.log(editScriptItem)
-              // this.verbose && console.log(`-- emptying deleteStack, which has ${deleteStack.length} item(s)`)
-              while (deleteStack.length > 0) {
-                let deleteIndex = deleteStack.pop()
+            case MyersDiff.KEEP:
+              debugStateMachine && console.log(`INPUT editScriptItem ${i}:  command ${editScriptItem.command}, index ${editScriptItem.index}, seq ${editScriptItem.seq}`)
+              debugStateMachine && console.log(`KEEP command in edit script (state = 1)`)
+              debugStateMachine && console.log(`-- processing deleteStack (${deleteStack.length} items) and addStack (${addStack.length} items)`)
+              deleteStack.forEach( (deleteIndex, i) => {
+                debugStateMachine && console.log(`---- deleteIndex ${i}: ${deleteIndex}`)
+                let bestMatch = -1
+                let bestScore = -1
+                addStack.forEach( (seqIndex, j) => {
+                  let score = tokenMatchScorer.getMatchScore(oldTokens[deleteIndex], newTokens[seqIndex])
+                  if (score > bestScore) {
+                    bestMatch = j
+                    bestScore = score
+                  }
+                })
+                debugStateMachine && console.log(`------ best match is ${bestMatch} with a score of ${bestScore}`)
+                if (bestMatch === -1) {
+                  // no match, just push a deletion to the changeList
+                  debugStateMachine && console.log(`------ pushing a delete to change list`)
+                  changeList.push({
+                      change: 'delete',
+                      index: oldTokens[deleteIndex].originalIndex,
+                      currentToken: oldTokens[deleteIndex]
+                  })
+
+                } else {
+                  // push all adds before the best match to the change list
+                  for (let j=0; j < bestMatch; j++) {
+                    let addIndex = addStack.shift()
+                    debugStateMachine && console.log(`------ pushing ADD ${j} to change list, addIndex ${addIndex}`)
+                    changeList.push({
+                      change: 'add',
+                      index: lastKeptOrReplaced,
+                      currentToken: lastKeptOrReplaced >=0 ? oldTokens[lastKeptOrReplaced] : null,
+                      index2: addIndex,
+                      newToken: newTokens[addIndex]
+                    })
+                  }
+                  // push a REPLACE
+                  let addIndex = addStack.shift()
+                  debugStateMachine && console.log(`------ pushing REPLACE to change list, deleteIndex ${deleteIndex}, addIndex ${addIndex}`)
+                  changeList.push({
+                    change: 'replace',
+                    index: oldTokens[deleteIndex].originalIndex,
+                    currentToken: oldTokens[deleteIndex],
+                    index2: addIndex,
+                    newToken: newTokens[addIndex]
+                  })
+                  lastKeptOrReplaced = deleteIndex
+                  debugStateMachine && console.log(`------ addStack now has ${addStack.length} items`)
+                }
+              })
+              // reset the deleteStack
+              deleteStack = []
+              // push all remaining ADDs
+              addStack.forEach( (addIndex, j) => {
+                debugStateMachine && console.log(`------ pushing ADD ${j} to change list, addIndex ${addIndex}`)
                 changeList.push({
-                  change: 'delete',
-                  index: oldTokens[deleteIndex].originalIndex,
-                  currentToken: oldTokens[deleteIndex]})
-              }
+                  change: 'add',
+                  index: lastKeptOrReplaced,
+                  currentToken: lastKeptOrReplaced >=0 ? oldTokens[lastKeptOrReplaced] : null,
+                  index2: addIndex,
+                  newToken: newTokens[addIndex]
+                })
+              })
+              // now take care of the keep: just update the lastKeptOrReplaced index
               lastKeptOrReplaced = editScriptItem.index
+
+              debugStateMachine && console.log(`-- State -> 0`)
               state = 0
               break
 
-            case -1:
-              // another delete, previous command was a DELETE, but will keep
-              // looking for a REPLACE
-              // this.verbose && console.log(`DEL command in edit script (state = 1)`)
-              // this.verbose && console.log(editScriptItem)
+            case MyersDiff.DEL:
+              // push it to deleteStack
+              debugStateMachine && console.log(`INPUT editScriptItem ${i}:  command ${editScriptItem.command}, index ${editScriptItem.index}, seq ${editScriptItem.seq}`)
+              debugStateMachine && console.log(`DEL command in edit script (state = 1)`)
               deleteStack.push(editScriptItem.index)
-              this.verbose && console.log(`-- adding index to the deleteStack, which now has ${deleteStack.length} items`)
+              debugStateMachine && console.log(`-- adding index to the deleteStack, which now has ${deleteStack.length} items`)
               break
 
-            case 1:
-              // an ADD, match it with the first delete in the stack
-              // this.verbose && console.log(`ADD command in edit script (state = 1)`)
-              // this.verbose && console.log(editScriptItem)
-              // this.verbose && console.log(`-- this is a REPLACE actually`)
-              let firstDeletedIndex = deleteStack.shift()
-              changeList.push({
-                change: 'replace',
-                index: oldTokens[firstDeletedIndex].originalIndex,
-                currentToken: oldTokens[firstDeletedIndex],
-                index2: editScriptItem.seq,
-                newToken: newTokens[editScriptItem.seq]
-              })
-              lastKeptOrReplaced = firstDeletedIndex
-              if (deleteStack.length === 0) {
-                // this.verbose && console.log(`-- deleteStack is now empty`)
-                state = 0
-              } else {
-                // this.verbose && console.log(`-- deleteStack still has ${deleteStack.length} item(s)`)
-              }
+            case MyersDiff.ADD:
+              // push it to addStack
+              debugStateMachine && console.log(`ADD command in edit script (state = 1)`)
+              addStack.push(editScriptItem.seq)
+              debugStateMachine && console.log(`-- adding seq to the addStack, which now has ${addStack.length} item(s)`)
+              // let firstDeletedIndex = deleteStack.shift()
+              // changeList.push({
+              //   change: 'replace',
+              //   index: oldTokens[firstDeletedIndex].originalIndex,
+              //   currentToken: oldTokens[firstDeletedIndex],
+              //   index2: editScriptItem.seq,
+              //   newToken: newTokens[editScriptItem.seq]
+              // })
+              // lastKeptOrReplaced = firstDeletedIndex
+              // if (deleteStack.length === 0) {
+              //   debugStateMachine && console.log(`-- deleteStack is now empty`)
+              //   state = 0
+              // } else {
+              //   debugStateMachine && console.log(`-- deleteStack still has ${deleteStack.length} item(s)`)
+              // }
               break
           }
       }
     })
     // empty the deleteStack
     if (deleteStack.length > 0) {
-      // this.verbose && console.log(`End of script with non-empty deleteStack, flushing ${deleteStack.length} item(s)`)
+      debugStateMachine && console.log(`End of script with non-empty deleteStack, flushing ${deleteStack.length} item(s)`)
       while (deleteStack.length > 0) {
         let deleteIndex = deleteStack.pop()
         changeList.push({
@@ -816,7 +875,7 @@ export class MainTextPanel extends PanelWithToolbar {
     let type = tokens[0].tokenType
     let newText = []
     tokens.forEach( (t) => {
-      let tokenFmtText = t.fmtText !== undefined ? t.fmtText : FmtTextFactory.fromString(t.text)
+      let tokenFmtText = t['fmtText'] !== undefined ? t['fmtText'] : FmtTextFactory.fromString(t.text)
       newText = FmtText.concat(newText, tokenFmtText)
     })
 
@@ -1023,47 +1082,47 @@ export class MainTextPanel extends PanelWithToolbar {
         return
       }
       switch(this.currentEditMode) {
-        case EDIT_MODE_TEXT:
-          this.verbose && console.log(`Click on main text token ${tokenIndex} in main text edit mode`)
-          if (tokenIndex === -1) {
-            console.warn(`Bad token index, cannot edit`)
-            break
-          }
-          let tokenSelector = `.main-text-token-${tokenIndex}`
-          this.originalTokenText = $(tokenSelector).text()
-          this.verbose && console.log(`Text to edit: '${this.originalTokenText}'`)
-          this.tokenBeingEdited = tokenIndex
-          this.textTokenEditor = new EditableTextField({
-            containerSelector:  tokenSelector,
-            initialText: this.originalTokenText,
-            minTextFormSize: 2,
-            startInEditMode: true
-          })
-          this.textTokenEditor.on('confirm', (ev) => {
-            let newText = ev.detail.newText
-            // It should be assumed that newText is a valid edit (cell validation should have taken care of wrong edits).
-            // Even if newText would simply replace the current main text token, it can be the case that there is a change
-            // in the lines, so there should always be a regeneration of the edition, a redrawing of the main text
-            // and an update to the apparatuses.
-            if (this.options.onConfirmMainTextEdit(tokenIndex, newText)) {
-              this.verbose && console.log(`Confirming editing, new text = '${newText}'`)
-              this._stopEditingMainText(newText)
-              this._redrawMainText()
-              this._setupMainTextDivEventHandlers()
-              this._updateLineNumbersAndApparatuses().then( () => {
-                this.verbose && console.log(`Main text redrawn`)
-              })
-            } else {
-              this.verbose && console.log(`Change to main text not accepted`)
-              // TODO: indicate this error in some way in the UI, although it should NEVER happen
-              this._stopEditingMainText(this.originalTokenText)
-            }
-          }).on('cancel', () => {
-            this.verbose && console.log(`Canceling edit`)
-            this._stopEditingMainText(this.originalTokenText)
-          })
-          this.editingTextToken = true
-          break
+        // case EDIT_MODE_TEXT_OLD:
+        //   this.verbose && console.log(`Click on main text token ${tokenIndex} in main text edit mode`)
+        //   if (tokenIndex === -1) {
+        //     console.warn(`Bad token index, cannot edit`)
+        //     break
+        //   }
+        //   let tokenSelector = `.main-text-token-${tokenIndex}`
+        //   this.originalTokenText = $(tokenSelector).text()
+        //   this.verbose && console.log(`Text to edit: '${this.originalTokenText}'`)
+        //   this.tokenBeingEdited = tokenIndex
+        //   this.textTokenEditor = new EditableTextField({
+        //     containerSelector:  tokenSelector,
+        //     initialText: this.originalTokenText,
+        //     minTextFormSize: 2,
+        //     startInEditMode: true
+        //   })
+        //   this.textTokenEditor.on('confirm', (ev) => {
+        //     let newText = ev.detail.newText
+        //     // It should be assumed that newText is a valid edit (cell validation should have taken care of wrong edits).
+        //     // Even if newText would simply replace the current main text token, it can be the case that there is a change
+        //     // in the lines, so there should always be a regeneration of the edition, a redrawing of the main text
+        //     // and an update to the apparatuses.
+        //     if (this.options.onConfirmMainTextEdit(tokenIndex, newText)) {
+        //       this.verbose && console.log(`Confirming editing, new text = '${newText}'`)
+        //       this._stopEditingMainText(newText)
+        //       this._redrawMainText()
+        //       this._setupMainTextDivEventHandlers()
+        //       this._updateLineNumbersAndApparatuses().then( () => {
+        //         this.verbose && console.log(`Main text redrawn`)
+        //       })
+        //     } else {
+        //       this.verbose && console.log(`Change to main text not accepted`)
+        //       // TODO: indicate this error in some way in the UI, although it should NEVER happen
+        //       this._stopEditingMainText(this.originalTokenText)
+        //     }
+        //   }).on('cancel', () => {
+        //     this.verbose && console.log(`Canceling edit`)
+        //     this._stopEditingMainText(this.originalTokenText)
+        //   })
+        //   this.editingTextToken = true
+        //   break
 
         case EDIT_MODE_APPARATUS:
           // this.verbose && console.log(`Mouse down on main text ${tokenIndex} token in apparatus edit mode`)
@@ -1237,18 +1296,18 @@ export class MainTextPanel extends PanelWithToolbar {
     })
   }
 
-  _redrawMainText() {
-    $(this.getContentAreaSelector()).html(this._generateMainTextHtml())
-  }
+  // _redrawMainText() {
+  //   $(this.getContentAreaSelector()).html(this._generateMainTextHtml())
+  // }
 
   _generateMainTextHtml() {
     switch(this.currentEditMode) {
       case EDIT_MODE_OFF:
-      case EDIT_MODE_TEXT:
+      // case EDIT_MODE_TEXT_OLD:
       case EDIT_MODE_APPARATUS:
         return this._getMainTextHtmlVersion()
 
-      case EDIT_MODE_TEXT_BETA:
+      case EDIT_MODE_TEXT:
         return  this._getMainTextBetaEditor()
 
       default:
@@ -1262,8 +1321,8 @@ export class MainTextPanel extends PanelWithToolbar {
    * @private
    */
   _convertMainTextToFmtText() {
-    this.debug && console.log(`Converting Main Text to Fmt Text`)
-    this.debug && console.log( this.edition.mainText)
+    // this.debug && console.log(`Converting Main Text to Fmt Text`)
+    // this.debug && console.log( this.edition.mainText)
     let tokens = this.edition.mainText.map( (token) => {
       switch (token.type) {
         case EditionMainTextTokenType.GLUE:
@@ -1280,8 +1339,8 @@ export class MainTextPanel extends PanelWithToolbar {
       }
     })
     let theFmtText =  FmtTextFactory.fromAnything(tokens)
-    this.debug && console.log(`Fmt Text:`)
-    this.debug && console.log(theFmtText)
+    // this.debug && console.log(`Fmt Text:`)
+    // this.debug && console.log(theFmtText)
     return theFmtText
   }
 

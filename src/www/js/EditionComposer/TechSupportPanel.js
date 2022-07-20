@@ -17,7 +17,7 @@
  */
 
 import { Panel } from './Panel'
-import { doNothingPromise } from '../toolbox/FunctionUtil'
+import { doNothingPromise } from '../toolbox/FunctionUtil.mjs'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { deepCopy } from '../toolbox/Util.mjs'
 

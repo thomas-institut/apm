@@ -38,7 +38,7 @@ import { CleanerOnePointOne } from './CtDataCleaner/CleanerOnePointOne'
 // updaters
 import { UpdaterToOnePointZero } from './CtDataUpdater/UpdaterToOnePointZero'
 import { UpdaterToOnePointOne } from './CtDataUpdater/UpdaterToOnePointOne'
-import { pushArray, uniq } from '../toolbox/ArrayUtil'
+import { pushArray, uniq } from '../toolbox/ArrayUtil.mjs'
 
 
 

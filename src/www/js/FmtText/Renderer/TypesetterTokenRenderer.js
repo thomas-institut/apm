@@ -45,7 +45,7 @@ export class TypesetterTokenRenderer extends FmtTextRenderer {
 
 
   render (fmtText, lang = '') {
-    // console.log(`Rendering fmtText as Typesetter tokens`)
+    // console.log(`Rendering fmtText as Typesetter2 tokens`)
 
     return fmtText.filter( (t) => {return t.type !== FmtTokenType.EMPTY}).map ( (fmtTextToken) => {
       switch( fmtTextToken.type) {

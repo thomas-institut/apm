@@ -25,18 +25,18 @@
  *  - Witness update: update status, check for updates and launch the witness update task
  */
 import { Panel } from './Panel'
-import { doNothing, failPromise } from '../toolbox/FunctionUtil'
+import { doNothing, failPromise } from '../toolbox/FunctionUtil.mjs'
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import * as Util from '../toolbox/Util.mjs'
 import { EditableTextField } from '../widgets/EditableTextField'
 import * as CollationTableType from '../constants/CollationTableType'
-import * as ArrayUtil from '../toolbox/ArrayUtil'
+import * as ArrayUtil from '../toolbox/ArrayUtil.mjs'
 import { transientAlert } from '../widgets/TransientAlert'
 import * as WitnessType from '../Witness/WitnessType'
 import { WitnessUpdateDialog } from './WitnessUpdateDialog'
 import { WitnessDiffCalculator } from '../Edition/WitnessDiffCalculator'
 import { CtData } from '../CtData/CtData'
-import { flatten, varsAreEqual } from '../toolbox/ArrayUtil'
+import { flatten, varsAreEqual } from '../toolbox/ArrayUtil.mjs'
 import { ConfirmDialog, MEDIUM_DIALOG, SMALL_DIALOG } from '../pages/common/ConfirmDialog'
 import { trimWhiteSpace } from '../toolbox/Util.mjs'
 

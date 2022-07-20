@@ -54,8 +54,15 @@ class ApmConfigParameter
     const INKSCAPE_VERSION = 'inkscape_version';
     const INKSCAPE_TEMP_DIR = 'inkscape_temp_dir';
 
+    const PDF_RENDERER = 'pdf-renderer';
+    const PDF_RENDERER_TEMP_DIR = 'pdf-renderer_temp_dir';
+
+    const TYPESETTER = 'typesetter';
+
     const ERROR = 'error';
     const ERROR_MESSAGES = 'errorMsgs';
     const WARNINGS = 'warnings';
+
+    const CONFIG_FILE_PATH = 'configFilePath';
 
 }

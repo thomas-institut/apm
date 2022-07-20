@@ -1,6 +1,6 @@
 {
   "name": "apm-ti",
-  "version": "v0.47.3",
+  "version": "v0.47.5",
   "description": "Averroes Project Manager",
   "directories": {
     "test": "test"
@@ -13,6 +13,7 @@
   "author": "Rafael Nájera <rafael.najera@uni-koeln.de>",
   "license": "GPL-3.0",
   "dependencies": {
+    "@pdf-lib/fontkit": "^1.1.1",
     "@popperjs/core": "^2.9.2",
     "@thomas-inst/matrix": "^1.0.0",
     "@thomas-inst/optionschecker": "^1.1.0",
@@ -26,6 +27,7 @@
     "lodash": "^4.17.21",
     "moment": "^2.24.0",
     "openseadragon": "^2.4.2",
+    "pdf-lib": "^1.17.1",
     "quill": "^1.3.7",
     "split-grid": "^1.0.11",
     "twig": "^1.15.4"

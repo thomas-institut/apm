@@ -204,8 +204,17 @@ class ApiSearch extends ApiController
 
                 // Sort the keywordPositions to have them in ascending order like they appear in the manuscript –
                 // this, of course, is only effective if there is more than one occurence of the keyword in the column
-                $keywordPositions = array_merge($keywordPositionsLC, $keywordPositionsUC);
-                sort($keywordPositions);
+
+                // First, check if the keywordPostions in the arrays are the same (this is the case in hebrew and arabic,
+                // because there are no upper-case letters) – if so, just take keywordPositionsLC as full array of keywordPositions
+                if ($keywordPositionsLC === $keywordPositionsUC) {
+                    $keywordPositions = $keywordPositionsLC;
+                }
+                else {
+                    $keywordPositions = array_merge($keywordPositionsLC, $keywordPositionsUC);
+                    sort($keywordPositions);
+                }
+
 
                 // Get total keyword frequency in matched column
                 $keywordFreq = count($keywordPositions);

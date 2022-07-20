@@ -25,19 +25,32 @@
         let docList = $("#docList")
         let contextSlider = $("#contextSlider")
 
-        // Key-Up functions for search box, docList and contextSlider - all call the displayResults-function
-        searchBox.on("keyup", () => {
+        // Key-Up functions for search box, docList and contextSlider - all call the displayResults-function –
+        searchBox.on("keyup", delay(function () {
           displayResults(searchBox, contextSlider, docList)
-        })
+        }, 300))
 
         docList.on("click", () => {
           displayResults(searchBox, contextSlider, docList)
         })
 
-        contextSlider.on("change", () => {
+        contextSlider.on("change", delay(function () {
           displayResults(searchBox, contextSlider, docList)
-        })
+        }, 300))
       })
+
+      // Function to delay keyup and sliderchange event to avoid unnecessary queries for unfinished user input –
+      // i. e. if quickly typed "natura", search only for "natura" and not for "n", "na", "nat",...
+      function delay(callback, ms) {
+        var timer = 0;
+        return function() {
+          var context = this, args = arguments;
+          clearTimeout(timer);
+          timer = setTimeout(function () {
+            callback.apply(context, args);
+          }, ms || 0);
+        };
+      }
 
       // Function to collect and display the search results in readable form
       function displayResults (searchBox, contextSlider, docList) {
@@ -240,19 +253,25 @@
           }
         }
 
-        // First Steps: Bolden multiple keywords
+        // Bolden other keywords, if there is more than one in the original search
         for (i=1; i<keywords.length; i++) {
+
+          // Get keyword itself, length and position of keyword in the text with the boldened first keyword
           let keyword = keywords[i]
           let keywordLen = keyword.length
           let keywordPos = textWithBoldKeyword.indexOf (keyword)
 
+          // If the actual keyword in lower-case is not in the text, get the upper-case keyword and its position
           if (keywordPos === -1) {
             keyword = keyword.replace(/^\w/, (c) => c.toUpperCase())
             keywordPos = textWithBoldKeyword.indexOf (keyword)
           }
 
+          // Get preceeding and succeeding characters of the actual keyword from textWithBoldKeyword
           let precWords = textWithBoldKeyword.slice(0, keywordPos)
           let succWords = textWithBoldKeyword.slice(keywordPos+keywordLen)
+
+          // Concatenate precWords, the boldened keyword and the succWords
           textWithBoldKeyword = precWords + keyword.bold() + succWords
         }
 

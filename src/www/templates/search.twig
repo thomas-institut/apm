@@ -4,11 +4,6 @@
 
 {% block extraCSS%}
 <style>
-    div#search_form {
-        margin-bottom: 1rem;
-        margin-top: 2rem;
-    }
-
     div#search_results {
         margin-bottom: 2rem;
         margin-left: 2rem;
@@ -56,7 +51,7 @@
       function displayResults (searchBox, contextSlider, docList) {
 
         // Get selector for output-Div
-        let searchResultsDiv = $("#search_results")
+        let searchResults = $("#search_results")
         let resultsTableB = $("#resultsTable tbody")
         let resultsTableH = $("#resultsTable thead")
 
@@ -81,7 +76,7 @@
                 if (apiResponse.errorData !== undefined) {
                   console.log(JSON.parse(apiResponse.errorData))
                 }
-                searchResultsDiv
+                searchResults
                   .html('Error while searching, please report to technical administrators.')
                   .removeClass('text-error')
                 return
@@ -92,13 +87,13 @@
               let numMatchedColumns = apiResponse['data'].length
               let numMatches = apiResponse['numMatches']
 
-              var time = apiResponse['serverTime']
+              // Get searchString
               var searchString = apiResponse['searchString']
 
               // If there are no matches, display this to the user and empty the table
               if (numMatchedColumns === 0) {
-                searchResultsDiv
-                  .html(`<b>No matches found for '${searchString}' (${time})`)
+                searchResults
+                  .html(`<b>Nothing found.`)
                   .addClass('text-warning')
 
                 resultsTableB.empty()
@@ -108,8 +103,8 @@
               else if (numMatchedColumns === 1 && numMatches === 1) {
 
                 // Display number of matches
-                searchResultsDiv
-                  .html(`<b>${numMatches} match found for '${searchString}' (${time})`)
+                searchResults
+                  .html(`<b>Matched ${numMatches} passage!`)
                   .removeClass('text-warning')
 
                 // Collect relevant data from API response
@@ -147,8 +142,8 @@
                 var precTitle = " "
 
                 // Display number of matches
-                searchResultsDiv
-                  .html(`<b>${numMatches} matches found for '${searchString}' (${time})`)
+                searchResults
+                  .html(`<b>Matched ${numMatches} passages!`)
                   .removeClass('text-warning')
 
                 // Clear table content
@@ -195,7 +190,7 @@
               // If something went wrong, i. e. the OpenSearch server is down, display an error message
             }).fail((status) => {
             console.log(status)
-            searchResultsDiv
+            searchResults
               .html('Search is currently not available. Please try again later.')
               .removeClass('text-error')
 
@@ -301,26 +296,35 @@
 
 {% block content %}
     <h1> Search </h1>
-    <div id="search_form">
-        <label for="searchBox"></label>
-        <input type="text" id="searchBox" placeholder="Search..." value="">
-    </div>
+<table class="doctable dataTable no-footer" id="searchTable">
+    <tr><td><b>Keywords</b></td><td><b>Area</b></td><td><b>Context</b></td></tr>
 
-    <select name="docList" id="docList">
+    <tr>
+        <td>
+            <div id="search_form">
+            <label for="searchBox"></label>
+            <input type="text" id="searchBox" placeholder="" value="">
+            </div>
+        </td>
+        <td>
+            <select name="docList" id="docList">
+                <option>All documents</option>
+                <option>M-VA-VAT-BAV-Vat.lat.2076</option>
 
-        <option>Search in all documents...</option>
-        <option>M-VA-VAT-BAV-Vat.lat.2076</option>
+            </select>
+        </td>
+        <td>
+            <form>
+                <label for="contextSlider"></label>
+                <input type="range" id="contextSlider" name="contextSlider" min="3" max="40" value="6">
+            </form>
+        </td>
+    </tr>
+</table>
 
-    </select>
-    <p></p>
-    <form>
-        <label for="contextSlider"></label>
-        <input type="range" id="contextSlider" name="contextSlider" min="3" max="40" value="6">
-    </form>
-    <p></p>
-
-    <div id="search_results"></div>
-    <p></p>
+    <br>
+    <h6 id="search_results"></h6>
+    <br>
 
     <table class="doctable dataTable no-footer" id="resultsTable">
         <thead></thead>

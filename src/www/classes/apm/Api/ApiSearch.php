@@ -239,7 +239,7 @@ class ApiSearch extends ApiController
                 // in the getPositionsOfKeyword-function this is corrected and not treated as a match.
 
                 // Collect matches in all columns
-                if ($docName == 'Search in all documents...' and $keywordFreq !== 0) {
+                if ($docName == 'All documents' and $keywordFreq !== 0) {
                     $data[] = [
                         'title' => $title,
                         'page' => $page,

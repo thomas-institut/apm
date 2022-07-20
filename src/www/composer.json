@@ -21,10 +21,11 @@
         "slim/psr7": "^0.6.0",
         "swaggest/json-schema": "^0.12.29",
         "ext-json": "*",
-      "ext-intl": "*",
+        "ext-intl": "*",
         "ext-mbstring": "*",
       "ext-zlib": "*",
-      "ext-posix": "*"
+      "ext-posix": "*",
+        "opensearch-project/opensearch-php": "^2.0"
     },
     
     "require-dev": {

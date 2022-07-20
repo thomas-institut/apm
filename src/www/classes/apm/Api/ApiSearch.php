@@ -1,6 +1,8 @@
 <?php
 namespace APM\Api;
 
+use APM\System\ApmConfigParameter;
+use OpenSearch\ClientBuilder;
 use PhpParser\Error;
 use PHPUnit\Util\Exception;
 use \Psr\Http\Message\ServerRequestInterface as Request;
@@ -8,7 +10,7 @@ use \Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\TimeString\TimeString;
 use function DI\string;
 
-require '/home/lukas/apm/vendor/autoload.php';
+//require '/home/lukas/apm/vendor/autoload.php';
 
 // set_time_limit(5); // Script should not run longer than 5 seconds - does this work like this?
 
@@ -40,11 +42,12 @@ class ApiSearch extends ApiController
         // Remove additional blanks before, after or in between keywords – necessary for a clean search and position/context-handling, also in js (?)
         $searchString = $this->removeAdditionalBlanks($searchString);
 
+        $config = $this->systemManager->getConfig();
         // Instantiate OpenSearch client
         try {
-            $client = (new \OpenSearch\ClientBuilder())
-                ->setHosts(['https://localhost:9200'])
-                ->setBasicAuthentication('admin', 'admin') // For testing only. Don't store credentials in code.
+            $client = (new ClientBuilder())
+                ->setHosts($config[ApmConfigParameter::OPENSEARCH_HOSTS])
+                ->setBasicAuthentication($config[ApmConfigParameter::OPENSEARCH_USER], $config[ApmConfigParameter::OPENSEARCH_PASSWORD])
                 ->setSSLVerification(false) // For testing only. Use certificate for validation
                 ->build();
         } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
@@ -69,7 +72,22 @@ class ApiSearch extends ApiController
         }
 
         // Query index
-        $query = $this->queryIndex($client, $indexName, $keyword, $queryAlg);
+        try {
+            $query = $this->queryIndex($client, $indexName, $keyword, $queryAlg);
+        } catch (\Exception $e) {
+            $status = "Opensearch query problem";
+
+            return $this->responseWithJson($response,
+                [
+                    'searchString' => $searchString,
+                    'matches' => [],
+                    'serverTime' => $now,
+                    'status' => $status,
+                    // Pass the error message to JS
+                    'errorData' => $e->getMessage()
+                ]);
+        }
+
 
         // Get all information about the matches
         $data = $this->getDataAboutMatches($query, $docName, $keywords, $queryAlg, $cSize);

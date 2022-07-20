@@ -20,53 +20,57 @@
 
 namespace APM\CommandLine;
 
+use APM\System\ApmConfigParameter;
 use AverroesProject\ColumnElement\Element;
 use AverroesProject\TxText\Item;
+use OpenSearch\Client;
+use OpenSearch\ClientBuilder;
 use ThomasInstitut\TimeString\TimeString;
 
-require '/home/lukas/apm/vendor/autoload.php';
+//require '/home/lukas/apm/vendor/autoload.php';
 
 /**
  * Description of IndexDocs
  *
  * Command line utility, which indexes all transcripts out of the sql-database by using methods of the DataManager class
  *
- * @author Rafael Nájera <rafael.najera@uni-koeln.de>
+ * @author Lukas Reichert
  */
 
 class IndexDocs extends CommandLineUtility {
 
-    public function main($argc, $argv)
+    private Client $client;
+    private string $indexName;
+
+    public function main($argc, $argv): bool
     {
         // Instantiate OpenSearch client
-
-        $GLOBALS['client'] = (new \OpenSearch\ClientBuilder())
-            ->setHosts(['https://localhost:9200'])
-            ->setBasicAuthentication('admin', 'admin') // For testing only. Don't store credentials in code.
+        $this->client =  (new ClientBuilder())
+            ->setHosts($this->config[ApmConfigParameter::OPENSEARCH_HOSTS])
+            ->setBasicAuthentication($this->config[ApmConfigParameter::OPENSEARCH_USER], $this->config[ApmConfigParameter::OPENSEARCH_PASSWORD])
             ->setSSLVerification(false) // For testing only. Use certificate for validation
             ->build();
 
         // Name of the index in OpenSearch
-        $GLOBALS['indexName'] = 'transcripts';
+        $this->indexName = 'transcripts';
 
         // Clear existing index and create new index
-        $GLOBALS['client']->indices()->delete([
-            'index' => $GLOBALS['indexName']
+        $this->client->indices()->delete([
+            'index' => $this->indexName
         ]);
 
-        $GLOBALS['client']->indices()->create([
-            'index' => $GLOBALS['indexName']
+        $this->client->indices()->create([
+            'index' => $this->indexName
         ]);
 
         // Get a list of all docIDs in the sql-database
         $docList = $this->dm->getDocIdList('title');
 
-        // Ascending ID for OpenSearch enries
+        // Ascending ID for OpenSearch entries
         $id = 0;
 
         // Iterate over all docIDs
         foreach ($docList as $docID) {
-
             // Get title of every document
             $docInfo = $this->dm->getDocById($docID);
             $title = ($docInfo['title']);
@@ -84,14 +88,19 @@ class IndexDocs extends CommandLineUtility {
 
                 // Iterate over all columns of the page and get the corresponding transcripts and transcribers
                 for ($col = 1; $col <= $numCols; $col++) {
+                    $versions = $this->dm->getTranscriptionVersionsWithAuthorInfo($pageID, $col);
+                    if (count($versions) === 0) {
+                        // no transcription in this column
+                        continue;
+                    }
                     $elements = $this->dm->getColumnElementsBypageID($pageID, $col);
                     $transcript = $this->getPlainTextFromElements($elements);
-                    $transcriber = $this->dm->getTranscriptionVersionsWithAuthorInfo($pageID, $col)[0]['author_name']; // !?Is here an error, when building the index!?
+                    $transcriber = $versions[0]['author_name'];
 
                     // Add columnData to the OpenSearch index with a unique ID
                     $id = $id + 1;
                     $this->indexCol($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript);
-                    echo "OK.";
+                    print("$id: Doc $docID ($title) page $page col $col\n");
                 }
             }
         }
@@ -130,10 +139,11 @@ class IndexDocs extends CommandLineUtility {
     }
 
     // Function to add pages to the OpenSearch index
-    private function indexCol ($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript) {
+    private function indexCol ($id, $title, $page, $col, $transcriber, $pageID, $docID, $transcript): bool
+    {
 
-        $GLOBALS['client']->create([
-            'index' => $GLOBALS['indexName'],
+        $this->client->create([
+            'index' => $this->indexName,
             'id' => $id,
             'body' => [
                 'title' => $title,

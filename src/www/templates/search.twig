@@ -59,6 +59,17 @@
           // Send all user input to ApiSearch (via routing in index.php) and print returned matches
           $.post("{{ url_for('search.keyword') }}", { searchText: searchText, sliderVal: sliderVal, docName: docName })
             .done((apiResponse) => {
+
+              if (apiResponse.status !== 'OK') {
+                console.log(`Error in query`)
+                if (apiResponse.errorData !== undefined) {
+                  console.log(JSON.parse(apiResponse.errorData))
+                }
+                searchResultsDiv
+                  .html('Error while searching, please report to technical administrators.')
+                  .removeClass('text-error')
+                return
+              }
               console.log(apiResponse)
 
               // Count matches

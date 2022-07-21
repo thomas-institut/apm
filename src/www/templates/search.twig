@@ -2,15 +2,6 @@
 
 {% block title %}Search{% endblock %}
 
-{% block extraCSS%}
-<style>
-    div#search_results {
-        margin-bottom: 2rem;
-        margin-left: 2rem;
-    }
-</style>
-{% endblock%}
-
 {% block finalBodyJS %}
     <script>
       $(() => {
@@ -29,9 +20,9 @@
           displayResults(searchBox, contextSlider, docList)
         })
 
-        contextSlider.on("change", delay(function () {
+        contextSlider.on("change", () => {
           displayResults(searchBox, contextSlider, docList)
-        }, 300))
+        })
       })
 
       // Function to delay keyup and sliderchange event to avoid unnecessary queries for unfinished user input –
@@ -51,14 +42,16 @@
       function displayResults (searchBox, contextSlider, docList) {
 
         // Get selector for output-Div
-        let searchResults = $("#search_results")
+        let errorMessage = $("#error_message")
         let numMatchesTable = $("#numMatchesTable")
         let resultsTableB = $("#resultsTable tbody")
         let resultsTableH = $("#resultsTable thead")
 
-        // Make clean results and numMatches table
+        // Make tables and divs clean
         numMatchesTable.empty()
         resultsTableH.empty()
+        resultsTableB.empty()
+        errorMessage.empty()
 
         // Get all user input
         let searchText = searchBox.val()
@@ -75,9 +68,9 @@
               if (apiResponse.status !== 'OK') {
                 console.log(`Error in query`)
                 if (apiResponse.errorData !== undefined) {
-                  console.log(JSON.parse(apiResponse.errorData))
+                 console.log(apiResponse.errorData)
                 }
-                searchResults
+                errorMessage
                   .html('Error while searching, please report to technical administrators.')
                   .removeClass('text-error')
                 return
@@ -94,9 +87,6 @@
                 numMatchesTable
                   .html(`<tr><td>Matched Documents: &nbsp</td><td>0</td><tr><td>Matched Passages:</td><td>0</td>`)
                   .addClass('text-warning')
-
-                resultsTableH.empty()
-                resultsTableB.empty()
               }
 
               // If there is exactly one matched column, display it with exact information
@@ -107,8 +97,8 @@
                   .html(`<tr><td>Matched Documents: &nbsp</td><td>${numMatchedDocs}</td><tr><td>Matched Passages:</td><td>${numMatches}</td>`)
                   .removeClass('text-warning')
 
-                // Clear table content
-                resultsTableB.empty()
+                // Make table head
+                resultsTableH.empty()
                 resultsTableH.append(`<tr><th>Title</th><th>Matched Passage</th><th>Page</th><th>Column</th><th>Transcriber</th><th>Link</th></tr>`)
 
                 // Collect relevant data from API response
@@ -148,8 +138,8 @@
                   .html(`<tr><td>Matched Documents: &nbsp</td><td>${numMatchedDocs}</td><tr><td>Matched Passages:</td><td>${numMatches}</td>`)
                   .removeClass('text-warning')
 
-                // Clear table content
-                resultsTableB.empty()
+                // Make table head
+                resultsTableH.empty()
                 resultsTableH.append(`<tr><th>Title</th><th>Matched Passage</th><th>Page</th><th>Column</th><th>Transcriber</th><th>Link</th></tr>`)
 
                 // Write all matches into the results table
@@ -190,10 +180,10 @@
                     }
                   }
               }
-              // If something went wrong, i. e. the OpenSearch server is down, display an error message
+              // If something went wrong, display an error message
             }).fail((status) => {
             console.log(status)
-            searchResults
+            errorMessage
               .html('Search is currently not available. Please try again later.')
               .removeClass('text-error')
 
@@ -341,7 +331,8 @@
     </tr>
 </table>
 
-    <div id="searchResults"></div>
+    <br>
+    <div id="error_message"></div>
 
     <br>
     <table class="doctable" id="numMatchesTable">

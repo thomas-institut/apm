@@ -55,14 +55,18 @@ class ApiSearch extends ApiController
             return $this->responseWithJson($response, ['searchString' => $searchString,  'matches' => [], 'serverTime' => $now, 'status' => $status]);
         }
 
+
+        // Get a list of all docs for display via html/js
+        // $docs = $this->getListOfIndexedDocs($client, $indexName);
+
         // Pack all keywords in the search string into an array
         $keywords = explode(" ", $searchString);
 
         // Get the first keyword
-        $keyword = $keywords[0];
+        $firstKeyword = $keywords[0];
 
         // Choose query algorithm, depending on the length of the keyword
-        $keywordLen = strlen($keyword);
+        $keywordLen = strlen($firstKeyword);
 
         if ($keywordLen < 4) {
             $queryAlg = 'match';
@@ -73,7 +77,7 @@ class ApiSearch extends ApiController
 
         // Query index
         try {
-            $query = $this->queryIndex($client, $indexName, $keyword, $queryAlg);
+            $query = $this->queryIndex($client, $indexName, $docName, $firstKeyword, $queryAlg);
         } catch (\Exception $e) {
             $status = "Opensearch query problem";
 
@@ -107,6 +111,21 @@ class ApiSearch extends ApiController
         }
 
         return $this->responseWithJson($response, ['searchString' => $searchString, 'numMatches' => $numMatches,  'data' => $data, 'serverTime' => $now, 'status' => $status]);
+    }
+
+    private function getListOfIndexedDocs ($client, $indexName) {
+
+        $docs = $client->search([
+            'index' => $indexName,
+            'body' => [
+                'size' => 10000,
+                'query' => [
+                    'match_all' => []
+                ]
+            ]
+        ]);
+
+        return $docs;
     }
 
     // Function to get results with match of multiple keywords
@@ -150,24 +169,46 @@ class ApiSearch extends ApiController
     }
 
     // Function to query a given OpenSearch-index
-    private function queryIndex ($client, $indexName, $keyword, $queryAlg) {
-        
-        $query = $client->search([
-            'index' => $indexName,
-            'body' => [
-                'size' => 10000,
-                'query' => [
-                    $queryAlg => [
-                        'transcript' => [
-                            "query" => $keyword
-                            // "analyzer" => "standard"
-                            // "slop" => 0
-                            // "max_expansions" => 10
+    private function queryIndex ($client, $indexName, $docName, $keyword, $queryAlg) {
+
+        // Search in all indexed columns
+        if ($docName === "All documents") {
+
+            $query = $client->search([
+                'index' => $indexName,
+                'body' => [
+                    'size' => 10000,
+                    'query' => [
+                        $queryAlg => [
+                            'transcript' => [
+                                "query" => $keyword
+                            ]
                         ]
                     ]
                 ]
-            ]
-        ]);
+            ]);
+        }
+
+        // Search only in the indexed column of a single document, specified by its title – DOES NOT WORK NOW!
+        else {
+
+            $queryString = $keyword . " " . $docName;
+
+            $query = $client->search([
+                'index' => $indexName,
+                'body' => [
+                    'size' => 10000,
+                    'query' => [
+                        'multi_match' => [
+                            "query" => $queryString,
+                            'operator' => 'or',
+                            'fields' => ['title', 'transcript']
+                            ]
+                        ]
+                    ]
+                ]);
+
+        }
 
         return $query;
     }
@@ -239,7 +280,7 @@ class ApiSearch extends ApiController
                 // in the getPositionsOfKeyword-function this is corrected and not treated as a match.
 
                 // Collect matches in all columns
-                if ($docName == 'All documents' and $keywordFreq !== 0) {
+                if ($keywordFreq !== 0) {
                     $data[] = [
                         'title' => $title,
                         'page' => $page,
@@ -254,8 +295,10 @@ class ApiSearch extends ApiController
                         'keywordPosInContext' => $keywordPosInContext
                     ];
                 }
+
+                // THIS SHOULD BE UNNECESSARY, WHEN QUERY IN SPECIFIC DOCS, SPECIFIED BY TITLE, WORKS!
                 // Collect matched columns only for a specified document title
-                elseif ($title == $docName and $keywordFreq !== 0) {
+                /*elseif ($title == $docName and $keywordFreq !== 0) {
                     $data[] = [
                         'title' => $title,
                         'page' => $page,
@@ -269,7 +312,7 @@ class ApiSearch extends ApiController
                         'keywordsInContext' => $keywordsInContext,
                         'keywordPosInContext' => $keywordPosInContext
                     ];
-                }
+                }*/
             }
 
             // Bring the information by title in alphabetical, and by page and colum in ascending order

@@ -189,25 +189,33 @@ class ApiSearch extends ApiController
             ]);
         }
 
-        // Search only in the indexed column of a single document, specified by its title – DOES NOT WORK NOW!
+        // Search only in the indexed columns of a single document, specified by its title
         else {
-
-            $queryString = $keyword . " " . $docName;
 
             $query = $client->search([
                 'index' => $indexName,
                 'body' => [
                     'size' => 10000,
                     'query' => [
-                        'multi_match' => [
-                            "query" => $queryString,
-                            'operator' => 'or',
-                            'fields' => ['title', 'transcript']
+                        'bool' => [
+                            'filter' => [
+                                'match_phrase' => [
+                                    'title' => [
+                                        "query" => $docName
+                                    ]
+                                ]
+                            ],
+                            'must' => [
+                                $queryAlg => [
+                                    'transcript' => [
+                                        "query" => $keyword
+                                    ]
+                                ]
                             ]
                         ]
                     ]
-                ]);
-
+                ]
+            ]);
         }
 
         return $query;
@@ -295,24 +303,6 @@ class ApiSearch extends ApiController
                         'keywordPosInContext' => $keywordPosInContext
                     ];
                 }
-
-                // THIS SHOULD BE UNNECESSARY, WHEN QUERY IN SPECIFIC DOCS, SPECIFIED BY TITLE, WORKS!
-                // Collect matched columns only for a specified document title
-                /*elseif ($title == $docName and $keywordFreq !== 0) {
-                    $data[] = [
-                        'title' => $title,
-                        'page' => $page,
-                        'column' => $column,
-                        'transcriber' => $transcriber,
-                        'pageID' => $pageID,
-                        'docID' => $docID,
-                        'transcript' => $transcript,
-                        'keywords' => $keywords,
-                        'keywordFreq' => $keywordFreq,
-                        'keywordsInContext' => $keywordsInContext,
-                        'keywordPosInContext' => $keywordPosInContext
-                    ];
-                }*/
             }
 
             // Bring the information by title in alphabetical, and by page and colum in ascending order

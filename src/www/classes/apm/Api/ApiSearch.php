@@ -55,10 +55,6 @@ class ApiSearch extends ApiController
             return $this->responseWithJson($response, ['searchString' => $searchString,  'matches' => [], 'serverTime' => $now, 'status' => $status]);
         }
 
-
-        // Get a list of all docs for display via html/js
-        // $docs = $this->getListOfIndexedDocs($client, $indexName);
-
         // Pack all keywords in the search string into an array
         $keywords = explode(" ", $searchString);
 
@@ -110,22 +106,12 @@ class ApiSearch extends ApiController
             $numMatches = $numMatches + $matchedColumn['keywordFreq'];
         }
 
-        return $this->responseWithJson($response, ['searchString' => $searchString, 'numMatches' => $numMatches,  'data' => $data, 'serverTime' => $now, 'status' => $status]);
-    }
-
-    private function getListOfIndexedDocs ($client, $indexName) {
-
-        $docs = $client->search([
-            'index' => $indexName,
-            'body' => [
-                'size' => 10000,
-                'query' => [
-                    'match_all' => []
-                ]
-            ]
-        ]);
-
-        return $docs;
+        return $this->responseWithJson($response, [
+            'searchString' => $searchString,
+            'numMatches' => $numMatches,
+            'data' => $data,
+            'serverTime' => $now,
+            'status' => $status]);
     }
 
     // Function to get results with match of multiple keywords
@@ -172,7 +158,7 @@ class ApiSearch extends ApiController
     private function queryIndex ($client, $indexName, $docName, $keyword, $queryAlg) {
 
         // Search in all indexed columns
-        if ($docName === "All documents") {
+        if ($docName === "") {
 
             $query = $client->search([
                 'index' => $indexName,
@@ -199,7 +185,7 @@ class ApiSearch extends ApiController
                     'query' => [
                         'bool' => [
                             'filter' => [
-                                'match_phrase' => [
+                                'match_phrase_prefix' => [
                                     'title' => [
                                         "query" => $docName
                                     ]
@@ -377,6 +363,69 @@ class ApiSearch extends ApiController
         return [$keywordInContext, $keywordPosInContext];
     }
 
+    // Function to get all docs
+    public function getDocs (Request $request, Response $response): Response
+    {
+        $config = $this->systemManager->getConfig();
+
+        // Status variable for communicating errors in the api response – has no effect right now?
+        $status = 'OK';
+        // Get current time, which will be returned in the api response
+        $now = TimeString::now();
+
+        $indexName = 'transcripts';
+
+        try {
+            $client = (new ClientBuilder())
+                ->setHosts($config[ApmConfigParameter::OPENSEARCH_HOSTS])
+                ->setBasicAuthentication($config[ApmConfigParameter::OPENSEARCH_USER], $config[ApmConfigParameter::OPENSEARCH_PASSWORD])
+                ->setSSLVerification(false) // For testing only. Use certificate for validation
+                ->build();
+        } catch (Exception $e) { // This error handling has seemingly no effect right now - error message is currently generated in js
+            $status = 'Connecting to OpenSearch server failed.';
+            return $this->responseWithJson($response, ['serverTime' => $now, 'status' => $status]);
+        }
+
+        // Get a list of all docs
+        $docs =  $this->getListOfPossibleValuesFromIndex($client, $indexName, 'title');
+
+        return $this->responseWithJson($response, [
+            'docs' => $docs,
+            'serverTime' => $now,
+            'status' => $status]);
+    }
+
+    // Function to get a full list of doc or transcriber values in the index – i. e. set the $field argument to 'title'
+    private function getListOfPossibleValuesFromIndex ($client, $indexName, $field) {
+
+        // Array to return
+        $values = [];
+
+        // Make a match_all query
+        $query = $client->search([
+            'index' => $indexName,
+            'size' => 10000,
+            'body' => [
+                "query" => [
+                    "match_all" => [
+                        "boost" => 1.0
+                    ]
+                ]
+            ]
+        ]);
+
+        // Append every value of the queried field to the $values-array, if not already done
+        foreach ($query['hits']['hits'] as $column) {
+
+            $value = $column['_source'][$field];
+            if (in_array($value, $values) === false) {
+                $values[] = $value;
+            }
+        }
+
+        return $values;
+    }
+
     private function removeAdditionalBlanks ($string) {
 
         // Reduce multiple blanks following each other anywhere in the keyword to one single blank
@@ -395,4 +444,3 @@ class ApiSearch extends ApiController
         return $string;
     }
 }
-

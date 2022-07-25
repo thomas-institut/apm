@@ -6,22 +6,27 @@
     <script>
       $(() => {
 
-        // Get selectors of searchBox, docList and contextSlider
+        // Get selectors of searchBox, docBox and contextSlider
         let searchBox = $("#searchBox")
+        let docBox = $("#docBox")
         let docList = $("#docList")
         let contextSlider = $("#contextSlider")
 
-        // Key-Up functions for search box, docList and contextSlider - all call the displayResults-function –
+        // Key-Up functions for search box, docBox and contextSlider - all call the displayResults-function –
         searchBox.on("keyup", delay(function () {
-          displayResults(searchBox, contextSlider, docList)
+          displayResults(searchBox, contextSlider, docBox)
         }, 300))
 
-        docList.on("click", () => {
-          displayResults(searchBox, contextSlider, docList)
+        docBox.on("click", () => {
+          getDocs ()
+        })
+
+        docBox.on("input", () => {
+          displayResults(searchBox, contextSlider, docBox)
         })
 
         contextSlider.on("change", () => {
-          displayResults(searchBox, contextSlider, docList)
+          displayResults(searchBox, contextSlider, docBox)
         })
       })
 
@@ -38,10 +43,37 @@
         };
       }
 
-      // Function to collect and display the search results in readable form
-      function displayResults (searchBox, contextSlider, docList) {
+      // Function to get list of docs from ApiSearch
+      function getDocs () {
 
-        // Get selector for output-Div
+        $.post("{{ url_for('search.docs') }}").done((apiResponse) => {
+
+          let docList = $("#docList")
+          docList.empty()
+
+            if (apiResponse.status !== 'OK') {
+              console.log(`Error in query for docs!`)
+              if (apiResponse.errorData !== undefined) {
+                console.log(apiResponse.errorData)
+              }
+              errorMessage
+                .html('Error while getting doc list, please report to technical administrators.')
+                .removeClass('text-error')
+              return
+            }
+            console.log(apiResponse)
+
+            let docs = apiResponse['docs']
+
+          docs.forEach(function (item, index) {docList.append(`<option>${item}</option>`)})
+
+        })
+      }
+
+      // Function to collect and display the search results in readable form
+      function displayResults (searchBox, contextSlider, docBox) {
+
+        // Get selectors
         let errorMessage = $("#error_message")
         let numMatchesTable = $("#numMatchesTable")
         let resultsTableB = $("#resultsTable tbody")
@@ -56,7 +88,7 @@
         // Get all user input
         let searchText = searchBox.val()
         let sliderVal = contextSlider.val()
-        let docName = docList.val();
+        let docName = docBox.val();
 
         // Get instance of ApmUrlGenerator for creating links to matching docs
         let urlGenerator = new ApmUrlGenerator('{{baseurl}}')
@@ -305,8 +337,8 @@
 
 {% block content %}
     <h1> Search </h1>
-<table class="doctable dataTable" id="searchTable">
-    <tr><td><b>Keywords</b></td><td><b>Area</b></td><td><b>Size of Passage</b></td></tr>
+<table class="dataTable" id="searchTable">
+    <tr><td><b>Keywords</b></td><td><b>Transcript</b></td><td><b>Transcriber</b></td><td><b>Size of Passage</b></td></tr>
 
     <tr>
         <td>
@@ -316,11 +348,18 @@
             </div>
         </td>
         <td>
-            <select name="docList" id="docList">
-                <option>All documents</option>
-                <option>M-VA-VAT-BAV-Vat.lat.2076</option>
-
-            </select>
+            <form>
+                <input list="docList" name="browser" id="docBox">
+                <datalist id="docList">
+                </datalist>
+            </form>
+        </td>
+        <td>
+            <form>
+                <input list="transcriberList" name="browser" id="transcriberBox">
+                <datalist id="transcriberList">
+                </datalist>
+            </form>
         </td>
         <td>
             <form>

@@ -280,6 +280,10 @@ $app->group('/api', function (RouteCollectorProxy $group){
         ApiSearch::class . ':search')
         ->setName('search.keyword');
 
+    $group->post('/search/docs',
+        ApiSearch::class . ':getDocs')
+        ->setName('search.docs');
+
     // API -> log message from front end
     $group->post('/admin/log',
         ApiLog::class . ':frontEndLog')

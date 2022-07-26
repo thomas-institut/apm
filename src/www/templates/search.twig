@@ -21,17 +21,27 @@
           getValues ('docs')
         })
 
-        docBox.on("input", () => {
-          displayResults(searchBox, contextSlider, docBox, transBox)
-        })
+        docBox.on("input", delay(function () {
+          let userText = $(this).val();
+          $("#docList").find("option").each(function() {
+            if ($(this).val() === userText || userText === "") {
+              displayResults(searchBox, contextSlider, docBox, transBox)
+            }
+          })
+        }, 50))
 
         transBox.on("click", () => {
           getValues ('transcribers')
         })
 
-        transBox.on("input", () => {
-          displayResults(searchBox, contextSlider, docBox, transBox)
-        })
+        transBox.on("input", delay(function () {
+          let userText = $(this).val();
+          $("#transcriberList").find("option").each(function() {
+            if ($(this).val() === userText || userText === "") {
+              displayResults(searchBox, contextSlider, docBox, transBox)
+            }
+          })
+        }, 50))
 
         contextSlider.on("change", () => {
           displayResults(searchBox, contextSlider, docBox, transBox)
@@ -384,22 +394,24 @@
         <td>
             <div id="search_form">
             <label for="searchBox"></label>
-            <input type="text" id="searchBox" placeholder="" value="">
+            <input type="text" id="searchBox" placeholder="">
             </div>
         </td>
         <td>
-            <form>
-                <input list="docList" id="docBox">
+            <div id="doc_form">
+                <label for="docBox"></label>
+                <input list="docList" id="docBox" placeholder="">
                 <datalist id="docList">
                 </datalist>
-            </form>
+            </div>
         </td>
         <td>
-            <form>
-                <input list="transcriberList" id="transcriberBox">
+            <div id="transcriber_form">
+                <label for="transcriberBox"></label>
+                <input list="transcriberList" id="transcriberBox" placeholder="">
                 <datalist id="transcriberList">
                 </datalist>
-            </form>
+            </div>
         </td>
         <td>
             <form>

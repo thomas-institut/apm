@@ -34,6 +34,17 @@ use ThomasInstitut\TimeString\TimeString;
  *
  * Command line utility, which indexes all transcripts out of the sql-database by using methods of the DataManager class
  *
+ * After indexing, to always get all matches for a query, this command should be run in the OpenSearch Dashboards console:
+ *  PUT /transcripts/_settings
+    {
+    "index.plugins.index_state_management.rollover_skip": true,
+    "index": {
+    "max_result_window": 20000
+    }
+    }
+ *
+ * I suppose the plugin-line can be skipped
+ *
  * @author Lukas Reichert
  */
 

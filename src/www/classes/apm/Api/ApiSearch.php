@@ -16,7 +16,6 @@ use function DI\string;
 
 class ApiSearch extends ApiController
 {
-
     /**
      * @param Request $request
      * @param Response $response
@@ -163,7 +162,7 @@ class ApiSearch extends ApiController
             $query = $client->search([
                 'index' => $indexName,
                 'body' => [
-                    'size' => 10000,
+                    'size' => 20000,
                     'query' => [
                         $queryAlg => [
                             'transcript' => [
@@ -181,7 +180,7 @@ class ApiSearch extends ApiController
             $query = $client->search([
                 'index' => $indexName,
                 'body' => [
-                    'size' => 10000,
+                    'size' => 20000,
                     'query' => [
                         'bool' => [
                             'filter' => [
@@ -209,7 +208,7 @@ class ApiSearch extends ApiController
             $query = $client->search([
                 'index' => $indexName,
                 'body' => [
-                    'size' => 10000,
+                    'size' => 20000,
                     'query' => [
                         'bool' => [
                             'filter' => [
@@ -236,7 +235,7 @@ class ApiSearch extends ApiController
             $query = $client->search([
                 'index' => $indexName,
                 'body' => [
-                    'size' => 10000,
+                    'size' => 20000,
                     'query' => [
                         'bool' => [
                             'filter' => [
@@ -499,13 +498,13 @@ class ApiSearch extends ApiController
         // Make a match_all query
         $query = $client->search([
             'index' => $indexName,
-            'size' => 10000,
+            'size' => 20000,
             'body' => [
                 "query" => [
                     "match_all" => [
                         "boost" => 1.0
                     ]
-                ]
+                ],
             ]
         ]);
 
